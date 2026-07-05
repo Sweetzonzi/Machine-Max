@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
@@ -10,12 +11,13 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenLoaderSubsyst
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 再生装弹机子系统动态属性。<br>
- * 定义弹药发现频道等运行时配置。
+ * 定义弹药发现频道、弹链构成等运行时配置。
  */
 @Getter
 public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
@@ -24,23 +26,40 @@ public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
     /** 弹药发现频道 → 目标名称列表（用于自动发现同载具内的 IAmmoConsumer） */
     public final Map<String, List<String>> discoveryOutputs;
 
-    /** 此装弹机供给的投射物类型（实例级配置，同一静态定义可用于不同弹药） */
-    public final ResourceLocation projectileType;
+    /** 原始弹链键值对（JSON 格式：弹种 → 数量），仅用于 CODEC 序列化 */
+    private final Map<ResourceLocation, Integer> projectileTypesMap;
+
+    /**
+     * 展平后的弹链序列（不可变，构造时从 JSON Map 展平）。<br>
+     * 例如 {SMK:3, AP:2, Tracer:1} → [SMK, SMK, SMK, AP, AP, Tracer]
+     */
+    public final List<ResourceLocation> projectileTypes;
 
     public static final MapCodec<RegenLoaderSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
-            ResourceLocation.CODEC.fieldOf("projectile_type").forGetter(RegenLoaderSubsystemAttr::getProjectileType),
+            Codec.unboundedMap(ResourceLocation.CODEC, Codec.INT)
+                    .fieldOf("projectile_types")
+                    .forGetter(RegenLoaderSubsystemAttr::getProjectileTypesMap),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("discovery_outputs", Map.of())
-                .forGetter(RegenLoaderSubsystemAttr::getDiscoveryOutputs)
+                    .forGetter(RegenLoaderSubsystemAttr::getDiscoveryOutputs)
     ).apply(instance, RegenLoaderSubsystemAttr::new));
 
     public RegenLoaderSubsystemAttr(
             ResourceLocation modelName,
-            ResourceLocation projectileType,
+            Map<ResourceLocation, Integer> projectileTypesMap,
             Map<String, List<String>> discoveryOutputs) {
         super(modelName);
         this.staticAttribute = (RegenLoaderSubsystemStaticAttr) getStaticAttr();
-        this.projectileType = projectileType;
+        this.projectileTypesMap = Map.copyOf(projectileTypesMap);
+
+        // 展平弹链：{SMK:3, AP:2, Tracer:1} → [SMK, SMK, SMK, AP, AP, Tracer]
+        List<ResourceLocation> flat = new ArrayList<>();
+        for (var entry : projectileTypesMap.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++)
+                flat.add(entry.getKey());
+        }
+        this.projectileTypes = List.copyOf(flat);
+
         this.discoveryOutputs = discoveryOutputs;
     }
 

@@ -149,7 +149,9 @@
             "subsystem.machine_max.50mm_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:kwk39_50mm_regen_loader",
-              "projectile_type": "machine_max:50mm_pzgr39",
+              "projectile_types": {
+                "machine_max:50mm_pzgr39": 1
+              },
               "discovery_outputs": {
                 "ammo_50mm": ["vehicle"]
               }
@@ -157,7 +159,10 @@
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:mg34_regen_loader",
-              "projectile_type": "machine_max:7_92mm_smk",
+              "projectile_types": {
+                "machine_max:7_92mm_smk": 3,
+                "machine_max:7_92mm_tracer": 1
+              },
               "discovery_outputs": {
                 "ammo_7_92mm": ["vehicle"]
               }

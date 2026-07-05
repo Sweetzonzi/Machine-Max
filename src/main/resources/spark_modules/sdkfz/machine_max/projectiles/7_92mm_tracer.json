@@ -1,24 +1,24 @@
 {
   "type": "point",
-  "tags": ["machine_max:caliber/7_92mm", "machine_max:ammo/ap"],
+  "tags": ["machine_max:caliber/7_92mm", "machine_max:ammo/tracer"],
   "max_lifetime": 2.0,
   "external": {
-    "mass": 0.013,
+    "mass": 0.012,
     "gravity_factor": 1.0,
     "drag_factor": 0.001,
     "radius": 0.004,
-    "base_velocity": 755,
-    "base_accuracy_mil": 3.0
+    "base_velocity": 740,
+    "base_accuracy_mil": 4.0
   },
   "terminal": {
-    "base_penetration": 5,
-    "base_damage": 8,
+    "base_penetration": 3,
+    "base_damage": 5,
     "penetration_velocity_coefficient": 1.0,
     "damage_velocity_coefficient": 0.5
   },
   "visual": {
-    "tracer_color": [0, 0, 0],
-    "tracer_alpha": 0
+    "tracer_color": [80, 255, 80],
+    "tracer_alpha": 255
   },
   "sounds": {
     "fire_sounds": {

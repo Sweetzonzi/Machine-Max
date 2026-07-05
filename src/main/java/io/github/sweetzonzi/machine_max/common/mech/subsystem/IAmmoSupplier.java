@@ -101,17 +101,4 @@ public interface IAmmoSupplier {
     /** 归还一发弹药给供给者（退弹用） */
     void returnRound(ProjectileType type);
 
-    /**
-     * 获取弹药明细拆解。<br>
-     * 返回此供给者当前持有的每种弹药类型及其可用数量。
-     * AmmoLoader 遍历 FIFO 容器统计，RegenLoader 报告其固定类型。
-     *
-     * @return 弹种 → 可用数量，空映射表示无弹药
-     */
-    default Map<ProjectileType, Integer> getAmmoBreakdown() {
-        ProjectileType type = getSuppliedType();
-        if (type == null) return Map.of();
-        int count = getRemainingCount();
-        return count > 0 ? Map.of(type, count) : Map.of();
-    }
 }

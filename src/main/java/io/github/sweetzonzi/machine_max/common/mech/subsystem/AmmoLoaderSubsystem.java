@@ -98,26 +98,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
-     * 获取弹药明细拆解。<br>
-     * 遍历 FIFO 容器统计每种弹药类型的数量。
-     *
-     * @return 弹种 → 可用数量，空映射表示无弹药
-     */
-    @Override
-    public Map<ProjectileType, Integer> getAmmoBreakdown() {
-        Map<ProjectileType, Integer> result = new LinkedHashMap<>();
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
-            if (stack.isEmpty()) continue;
-            ProjectileType type = getProjectileTypeFromItem(stack);
-            if (type != null) {
-                result.merge(type, stack.getCount(), Integer::sum);
-            }
-        }
-        return Collections.unmodifiableMap(result);
-    }
-
-    /**
      * 请求一发弹药，启动非阻塞装填计时器。<br>
      * 仅在本地有弹药时启动装填，无弹药直接返回 false（不再向上游请求补充）。
      * 幂等性：同一 consumer 多次调用不会创建重复计时器。

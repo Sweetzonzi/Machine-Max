@@ -24,7 +24,7 @@ import java.util.*;
  * 武器控制器子系统。<br>
  * 接收目标坐标和开火指令，控制炮塔驱动子系统指向目标，
  * 并控制发射器子系统在瞄准完毕后开火。<br>
- * 弹药管理：接管弹种选择与路由决策，维护统一的聚合弹药池视图。<br>
+ * 弹药管理：弹链模式，按弹链（有序循环弹种序列）选择和路由弹药的决策。<br>
  * 通过握手（callback）自动发现并绑定同载具内的 TurretDriver 和 Launcher 子系统。
  */
 @Getter
@@ -73,20 +73,20 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      */
     private int rippleTickCounter = 0;
 
-    // ==================== 弹药管理（新增） ====================
+    // ==================== 弹药管理（弹链模式） ====================
 
     /**
-     * 用户当前选中的弹种注册名，null = 无选择（不装填但可发射膛内已有弹药）。
+     * 用户当前选中的弹链（展平列表），null = 无选择（不装填但可发射膛内已有弹药）。
      */
     @Nullable
-    private ResourceLocation selectedProjectileType = null;
+    private List<ResourceLocation> selectedBelt = null;
 
     /**
      * 聚合弹药池快照。<br>
-     * key = 弹种注册名，value = 提供该弹种的所有 Loader 条目（按装填速度升序）。
+     * key = 弹链（展平的不可变列表），value = 提供该弹链的所有 Loader 条目（按装填速度升序）。
      * 载具结构变化时由 onVehicleStructureChanged 触发完整重建，volatile 保证跨线程可见。
      */
-    private volatile Map<ResourceLocation, List<LoaderEntry>> ammoPool = Map.of();
+    private volatile Map<List<ResourceLocation>, List<LoaderEntry>> ammoPool = Map.of();
 
     /**
      * 自上次完整重建以来的 tick 计数，用于每 10 tick 轻量刷新 availableCount。
@@ -106,9 +106,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      */
     public record LoaderEntry(
             IAmmoSupplier loader,
-            int availableCount,      // 该 Loader 中此弹种的可用数量
-            int reloadTimeTicks,     // 装填耗时
-            String channel           // 所属频道名（HUD 显示用，不影响路由）
+            List<ResourceLocation> belt,       // 弹链序列（不可变）
+            int availableCount,                // 该 Loader 的可用弹药数
+            int reloadTimeTicks,               // 装填耗时
+            String channel                     // 所属频道名（HUD 显示用，不影响路由）
     ) {
     }
 
@@ -220,35 +221,41 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         }
     }
 
-    // ==================== 弹药管理 ====================
+    // ==================== 弹药管理（弹链模式） ====================
 
     /**
      * 弹药池完整重建。<br>
      * 由 onVehicleStructureChanged() 和首次初始化触发，
-     * 遍历所有 launcher 的 supplierChannels 重建 ammoPool。
+     * 遍历所有 launcher 的 supplierChannels，按弹链（展平列表）分组重建 ammoPool。
      */
     private void rebuildAmmoPool() {
-        Map<ResourceLocation, List<LoaderEntry>> pool = new HashMap<>();
+        Map<List<ResourceLocation>, List<LoaderEntry>> pool = new HashMap<>();
+        Set<IAmmoSupplier> visited = new HashSet<>();
+
         for (LauncherSubsystem launcher : launchers.keySet()) {
             if (launcher.isDestroyed() || !launcher.isActive()) continue;
             for (Map.Entry<String, List<IAmmoSupplier>> channelEntry : launcher.getSupplierChannels().entrySet()) {
                 String channel = channelEntry.getKey();
                 for (IAmmoSupplier loader : channelEntry.getValue()) {
-                    Map<ProjectileType, Integer> breakdown = loader.getAmmoBreakdown();
-                    for (Map.Entry<ProjectileType, Integer> ammoEntry : breakdown.entrySet()) {
-                        ProjectileType type = ammoEntry.getKey();
-                        ResourceLocation typeKey = type.getRegistryKey();
-                        if (typeKey == null) continue;
-                        int count = ammoEntry.getValue();
-                        // 每个弹种内按 reloadTimeTicks 升序排序
-                        pool.computeIfAbsent(typeKey, k -> new ArrayList<>())
-                                .add(new LoaderEntry(loader, count, loader.getReloadTimeTicks(), channel));
+                    if (!visited.add(loader)) continue; // 去重
+
+                    if (loader instanceof RegenLoaderSubsystem regenLoader) {
+                        List<ResourceLocation> belt = regenLoader.getProjectileTypes();
+                        if (belt.isEmpty()) continue;
+                        pool.computeIfAbsent(belt, k -> new ArrayList<>())
+                                .add(new LoaderEntry(
+                                        regenLoader, belt,
+                                        regenLoader.getRemainingCount(),
+                                        regenLoader.getReloadTimeTicks(),
+                                        channel));
                     }
+                    // AmmoLoader 后续按弹链模式扩展
                 }
             }
         }
-        // 每个弹种内：按 reloadTimeTicks 升序排序
-        for (Map.Entry<ResourceLocation, List<LoaderEntry>> entry : pool.entrySet()) {
+
+        // 每个弹链内：按 reloadTimeTicks 升序排序
+        for (Map.Entry<List<ResourceLocation>, List<LoaderEntry>> entry : pool.entrySet()) {
             entry.getValue().sort(Comparator.comparingInt(LoaderEntry::reloadTimeTicks));
         }
         this.ammoPool = Collections.unmodifiableMap(pool);
@@ -256,108 +263,77 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 轻量刷新弹药池 availableCount（不改变结构，仅更新数量）。
-     * 每 10 tick 调用一次。
+     * 轻量刷新弹药池 availableCount（不改变结构，仅更新数量）。<br>
+     * 每 10 tick 调用一次，通过 LoaderEntry 中保存的 IAmmoSupplier 引用获取实时计数。
      */
     private void refreshAmmoPoolCounts() {
-        Map<ResourceLocation, List<LoaderEntry>> pool = this.ammoPool;
+        Map<List<ResourceLocation>, List<LoaderEntry>> pool = this.ammoPool;
         if (pool.isEmpty()) return;
-        Map<ResourceLocation, List<LoaderEntry>> updated = new HashMap<>();
-        for (Map.Entry<ResourceLocation, List<LoaderEntry>> entry : pool.entrySet()) {
+        Map<List<ResourceLocation>, List<LoaderEntry>> updated = new HashMap<>();
+        for (Map.Entry<List<ResourceLocation>, List<LoaderEntry>> entry : pool.entrySet()) {
+            List<ResourceLocation> belt = entry.getKey();
             List<LoaderEntry> updatedEntries = new ArrayList<>(entry.getValue().size());
             for (LoaderEntry le : entry.getValue()) {
-                Map<ProjectileType, Integer> breakdown = le.loader().getAmmoBreakdown();
-                // 找到 loader 中此弹种的数量
-                int count = 0;
-                for (Map.Entry<ProjectileType, Integer> ammoEntry : breakdown.entrySet()) {
-                    if (entry.getKey().equals(ammoEntry.getKey().getRegistryKey())) {
-                        count = ammoEntry.getValue();
-                        break;
-                    }
-                }
+                int count = le.loader().getRemainingCount();
                 updatedEntries.add(new LoaderEntry(
-                        le.loader(), count, le.reloadTimeTicks(), le.channel()));
+                        le.loader(), le.belt(), count, le.reloadTimeTicks(), le.channel()));
             }
-            updated.put(entry.getKey(), Collections.unmodifiableList(updatedEntries));
+            updated.put(belt, Collections.unmodifiableList(updatedEntries));
         }
         this.ammoPool = Collections.unmodifiableMap(updated);
     }
 
     /**
-     * 在可用弹种列表中循环切换选中的弹种。<br>
-     * 弹种按 ResourceLocation 自然顺序排列，保证可预测的切换顺序。
+     * 在可用弹链列表中循环切换选中的弹链。
      */
-    private void cycleSelectedType() {
-        List<ResourceLocation> available = getAvailableProjectileTypes();
-        if (available.isEmpty()) {
-            selectedProjectileType = null;
+    private void cycleSelectedBelt(boolean reverse) {
+        List<List<ResourceLocation>> belts = new ArrayList<>(ammoPool.keySet());
+        if (belts.isEmpty()) {
+            selectedBelt = null;
             return;
         }
-        if (selectedProjectileType == null) {
-            // 无选中 → 选第一个
-            selectedProjectileType = available.getFirst();
+        // 按第一发弹种排序（保持稳定顺序）
+        belts.sort(Comparator.comparing(b -> b.isEmpty() ? "" : b.getFirst().toString()));
+
+        if (selectedBelt == null) {
+            selectedBelt = belts.getFirst();
             return;
         }
-        int index = available.indexOf(selectedProjectileType);
-        int next = (index + 1) % available.size();
-        selectedProjectileType = available.get(next);
+        int idx = belts.indexOf(selectedBelt);
+        if (idx < 0) idx = -1; // 当前弹链已不存在，从头开始
+        int step = reverse ? -1 : 1;
+        int next = (idx + step + belts.size()) % belts.size();
+        selectedBelt = belts.get(next);
     }
 
     /**
-     * 反向循环切换选中的弹种（向前一个而非后一个）。
-     */
-    private void cycleSelectedTypeReverse() {
-        List<ResourceLocation> available = getAvailableProjectileTypes();
-        if (available.isEmpty()) {
-            selectedProjectileType = null;
-            return;
-        }
-        if (selectedProjectileType == null) {
-            selectedProjectileType = available.getLast();
-            return;
-        }
-        int index = available.indexOf(selectedProjectileType);
-        int prev = (index - 1 + available.size()) % available.size();
-        selectedProjectileType = available.get(prev);
-    }
-
-    /**
-     * 为指定 launcher 查找能提供 selectedType 的最优 Loader。<br>
+     * 为指定 launcher 查找能提供指定弹链的最优 Loader。<br>
      * 按 launcher.supplierChannels 的迭代顺序（= LauncherStaticAttr.ammo_inputs 列表顺序），
-     * 在第一个有匹配弹种的频道中选 reloadTimeTicks 最小的 Loader。
+     * 在第一个有匹配弹链的频道中选 reloadTimeTicks 最小的 Loader。
      *
-     * @return 最优 Loader，若无任何 loader 能提供选中弹种则返回 null
+     * @return 最优 Loader，若无任何 loader 能提供选中弹链则返回 null
      */
     @Nullable
-    private IAmmoSupplier findBestLoaderFor(LauncherSubsystem launcher) {
-        if (selectedProjectileType == null) return null;
+    private IAmmoSupplier findBestLoaderFor(LauncherSubsystem launcher, List<ResourceLocation> belt) {
+        if (belt == null) return null;
         for (Map.Entry<String, List<IAmmoSupplier>> channelEntry :
                 launcher.getSupplierChannels().entrySet()) {
-            List<IAmmoSupplier> channelLoaders = channelEntry.getValue();
-            IAmmoSupplier best = null;
-            int bestReloadTicks = Integer.MAX_VALUE;
-            for (IAmmoSupplier loader : channelLoaders) {
+            for (IAmmoSupplier loader : channelEntry.getValue()) {
                 if (!(loader instanceof AbstractSubsystem sub) || !sub.isActive()) continue;
-                Map<ProjectileType, Integer> breakdown = loader.getAmmoBreakdown();
-                for (ProjectileType type : breakdown.keySet()) {
-                    if (type != null && selectedProjectileType.equals(type.getRegistryKey())) {
-                        int reloadTicks = loader.getReloadTimeTicks();
-                        if (reloadTicks < bestReloadTicks) {
-                            bestReloadTicks = reloadTicks;
-                            best = loader;
-                        }
-                        break;
+                if (loader instanceof RegenLoaderSubsystem rl) {
+                    if (rl.getProjectileTypes().equals(belt)) {
+                        return loader;
                     }
                 }
+                // AmmoLoader 后续扩展：if (loader instanceof AmmoLoaderSubsystem al) { ... }
             }
-            if (best != null) return best; // 高优先级频道优先
         }
         return null;
     }
 
     /**
      * 弹药路由：为每个 launcher 设置最优 currentSupplier。<br>
-     * 若膛内弹种与 selectedType 不匹配，自动退膛。<br>
+     * 若膛内弹种不属于选中弹链，自动退膛。<br>
      * 在 onPrePhysicsTick 中瞄准/开火逻辑之前调用。
      */
     private void routeAmmoToLaunchers() {
@@ -368,7 +344,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
         // 处理弹药切换输入
         if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
-            cycleSelectedType();
+            cycleSelectedBelt(false);
             ammoSwitchPressed = false;
             ammoSwitchCooldown = 10; // 10 tick 防抖
         }
@@ -376,8 +352,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         for (LauncherSubsystem launcher : launchers.keySet()) {
             if (launcher.isDestroyed() || !launcher.isActive()) continue;
 
-            if (selectedProjectileType == null) {
-                // 无选中弹种：保留 handshake 建立的默认供给关系
+            if (selectedBelt == null) {
+                // 无选中弹链：保留 handshake 建立的默认供给关系
                 // 若 currentSupplier 为 null 但 supplierChannels 有 loader，自动选第一个
                 if (launcher.getCurrentSupplier() == null) {
                     IAmmoSupplier first = findFirstLoader(launcher);
@@ -385,20 +361,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                         launcher.setCurrentSupplier(first);
                     }
                 }
-                // currentSupplier 已有值 → 不动，保持默认弹药供给
                 continue;
             }
 
-            IAmmoSupplier best = findBestLoaderFor(launcher);
+            IAmmoSupplier best = findBestLoaderFor(launcher, selectedBelt);
             if (best == null) {
-                // 该 launcher 没有能提供选中弹种的 loader → 退膛
+                // 该 launcher 没有能提供选中弹链的 loader → 退膛
                 if (launcher.getChamberedType() != null) launcher.ejectRound();
                 launcher.setCurrentSupplier(null);
             } else if (launcher.getCurrentSupplier() != best) {
-                // 膛内弹种不匹配 → 退膛后由 Launcher 下次 tryLoadChamber 从新 supplier 取
+                // 膛内弹种是否在选中弹链中 → 不在则退膛
                 ProjectileType chambered = launcher.getChamberedType();
-                if (chambered != null
-                        && !selectedProjectileType.equals(chambered.getRegistryKey())) {
+                ResourceLocation chamberedKey = chambered != null ? chambered.getRegistryKey() : null;
+                if (chamberedKey != null && !selectedBelt.contains(chamberedKey)) {
                     launcher.ejectRound();
                 }
                 launcher.setCurrentSupplier(best);
@@ -425,37 +400,20 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     // ==================== 公开查询方法 ====================
 
     /**
-     * 当前选中的弹种，null = 无选择。
+     * 当前选中的弹链，null = 无选择。
      */
     @Nullable
-    public ResourceLocation getSelectedProjectileType() {
-        return selectedProjectileType;
+    public List<ResourceLocation> getSelectedBelt() {
+        return selectedBelt;
     }
 
     /**
-     * 可用弹种列表（排序后），供 HUD 弹种选择菜单。
+     * 可用弹链列表（排序后），供 HUD 弹种选择菜单。
      */
-    public List<ResourceLocation> getAvailableProjectileTypes() {
-        return ammoPool.keySet().stream().sorted().toList();
-    }
-
-    /**
-     * 静态工具方法：聚合多个 WC 的弹药池，按弹种汇总总数。<br>
-     * 可用于总览面板或 HUD 多 WC 聚合场景。
-     *
-     * @param controllers 武器控制器列表
-     * @return 弹种注册名 → 跨所有 WC 的总弹药数
-     */
-    public static Map<ResourceLocation, Integer> aggregateTotalByType(
-            List<WeaponControllerSubsystem> controllers) {
-        Map<ResourceLocation, Integer> result = new HashMap<>();
-        for (var wc : controllers) {
-            for (var entry : wc.getAmmoPool().entrySet()) {
-                int sum = entry.getValue().stream().mapToInt(LoaderEntry::availableCount).sum();
-                result.merge(entry.getKey(), sum, Integer::sum);
-            }
-        }
-        return result;
+    public List<List<ResourceLocation>> getAvailableBelts() {
+        return ammoPool.keySet().stream()
+                .sorted(Comparator.comparing(b -> b.isEmpty() ? "" : b.getFirst().toString()))
+                .toList();
     }
 
     // ==================== 齐射/轮射 ====================
@@ -582,14 +540,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 case NEXT_AMMO_TYPE:
                     // 一次性事件：仅 tickCount==0（按下瞬间）触发
                     if (tickCount == 0) {
-                        cycleSelectedType();
+                        cycleSelectedBelt(false);
                         activeChannel.put(activeSender, EmptySignal.INSTANCE);
                     }
                     break;
                 case PREV_AMMO_TYPE:
-                    // 循环反向切换弹种
+                    // 循环反向切换弹链
                     if (tickCount == 0) {
-                        cycleSelectedTypeReverse();
+                        cycleSelectedBelt(true);
                         activeChannel.put(activeSender, EmptySignal.INSTANCE);
                     }
                     break;

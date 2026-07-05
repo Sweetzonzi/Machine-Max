@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.sound.ISpreadingSoundPlayer;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
@@ -13,8 +15,11 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -30,46 +35,80 @@ import java.util.*;
  *   <li>{@code regenRoundByRound=false} — 批量产出：弹仓全空后触发再生，一次性回满</li>
  * </ul>
  * <p>
+ * 弹链机制：维护一个有序的循环弹种序列，consumeReadyRound 时逐发推进指针。
+ * 单一弹种退化为长度为 1 的弹链。
+ * <p>
  * 能量消耗通过 {@link EnergyGrid#consumeEnergy(float)} 瞬时抽取，不实现 {@code IEnergyConsumer} 接口。
  */
-public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
+public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, ISoundSpreader {
 
     public final RegenLoaderSubsystemAttr attr;
 
-    /** 当前弹药计数（网络同步） */
+    /**
+     * 当前弹药计数（网络同步）
+     */
     private static final EntityDataAccessor<Integer> AMMO_COUNT_ID =
             SynchedEntityData.defineId(RegenLoaderSubsystem.class, EntityDataSerializers.INT);
 
-    /** 再生进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发） */
+    /**
+     * 弹链当前指针位置（网络同步）
+     */
+    private static final EntityDataAccessor<Integer> BELT_INDEX =
+            SynchedEntityData.defineId(RegenLoaderSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 再生进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发）
+     */
     private float regenProgress = 0f;
 
-    /** 批量冷却剩余 tick（regenRoundByRound=false 时使用） */
+    /**
+     * 批量冷却剩余 tick（regenRoundByRound=false 时使用）
+     */
     private int batchCooldownTicks = 0;
 
-    /** 是否正在批量冷却中 */
+    /**
+     * 是否正在批量冷却中
+     */
     private boolean isBatchReloading = false;
 
-    /** 再生延迟剩余 tick，上次输送弹药后需等待此时间才恢复再生 */
+    /**
+     * 再生延迟剩余 tick，上次输送弹药后需等待此时间才恢复再生
+     */
     private int regenDelayRemainingTicks = 0;
+
+    /**
+     * 弹链指针当前索引（在展平列表中的位置）
+     */
+    private int projectileTypeIndex = 0;
 
     // ——— 装填进度音效状态（仅客户端有效） ———
 
-    /** 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发 */
+    /**
+     * 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发
+     */
     private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new HashMap<>();
 
-    /** 批量冷却模式下上次已播放音效的进度阈值 */
+    /**
+     * 批量冷却模式下上次已播放音效的进度阈值
+     */
     @Nullable
     private Float lastPlayedBatchProgressKey;
 
-    /** 批量冷却的总tick数（用于计算进度百分比） */
+    /**
+     * 批量冷却的总tick数（用于计算进度百分比）
+     */
     private int batchTotalTicks = 0;
 
     // ——— 多消费者支持 ———
 
-    /** 每个消费者的输送计时器 */
+    /**
+     * 每个消费者的输送计时器
+     */
     private final Map<IAmmoConsumer, Integer> deliveryTimers = new HashMap<>();
 
-    /** 每个消费者的弹药是否已就绪 */
+    /**
+     * 每个消费者的弹药是否已就绪
+     */
     private final Set<IAmmoConsumer> readyConsumers = new HashSet<>();
 
     public RegenLoaderSubsystem(ISubsystemHost owner, String name, RegenLoaderSubsystemAttr attr) {
@@ -81,14 +120,19 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(AMMO_COUNT_ID, 0);
+        builder.define(BELT_INDEX, 0);
     }
 
-    /** 获取当前弹药计数 */
+    /**
+     * 获取当前弹药计数
+     */
     public int getAmmoCount() {
         return getSynchedData().get(AMMO_COUNT_ID);
     }
 
-    /** 设置当前弹药计数 */
+    /**
+     * 设置当前弹药计数
+     */
     private void setAmmoCount(int count) {
         getSynchedData().set(AMMO_COUNT_ID, count);
     }
@@ -108,7 +152,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     @Nullable
     public ProjectileType getSuppliedType() {
-        return ProjectileType.get(getLevel(), attr.getProjectileType());
+        if (attr.projectileTypes.isEmpty()) return null;
+        return ProjectileType.get(getLevel(), attr.projectileTypes.get(projectileTypeIndex));
     }
 
     @Override
@@ -128,7 +173,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public String getLabel() {
-        return attr.getProjectileType().toString();
+        if (attr.projectileTypes.isEmpty()) return "---";
+        return attr.projectileTypes.get(projectileTypeIndex).toString();
     }
 
     @Override
@@ -173,6 +219,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
             setAmmoCount(getAmmoCount() - 1);
 
+        // 取当前弹链位置的弹药，然后推进指针
+        ProjectileType type = ProjectileType.get(getLevel(), attr.projectileTypes.get(projectileTypeIndex));
+        projectileTypeIndex = (projectileTypeIndex + 1) % attr.projectileTypes.size();
+        if (!getLevel().isClientSide())  // 同步指针到客户端
+            getSynchedData().set(BELT_INDEX, projectileTypeIndex);
+
         // 弹药已输送，启动再生延迟计时器（若 regenDelay > 0）
         float delay = attr.staticAttribute.getRegenDelay();
         if (delay > 0f) {
@@ -183,7 +235,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             }
         }
 
-        return ProjectileType.get(getLevel(), attr.getProjectileType());
+        return type;
     }
 
     @Override
@@ -228,6 +280,15 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (!getLevel().isClientSide() && getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
             setAmmoCount(getAmmoCount() + 1);
         }
+    }
+
+    // ==================== 弹链查询 ====================
+
+    /**
+     * 返回展平的弹链序列（不可变），供 WeaponController 构建弹药池。
+     */
+    public List<ResourceLocation> getProjectileTypes() {
+        return attr.projectileTypes;
     }
 
     // ==================== 核心逻辑 ====================
@@ -340,13 +401,6 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
     }
 
-    @Override
-    public Map<ProjectileType, Integer> getAmmoBreakdown() {
-        if (getSuppliedType()!=null)
-            return Map.of(getSuppliedType(), attr.getStaticAttribute().getMagazineCapacity());
-        else return Map.of(); // 无弹药时返回空
-    }
-
     // ==================== 装填进度音效 ====================
 
     /**
@@ -409,13 +463,16 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Nullable
     private static Float findBestProgressKey(Map<String, SoundEvent> sounds, float currentProgress) {
         return sounds.keySet().stream()
-            .map(k -> {
-                try { return Float.parseFloat(k); }
-                catch (NumberFormatException e) { return Float.NaN; }
-            })
-            .filter(k -> !Float.isNaN(k) && k <= currentProgress)
-            .max(Float::compareTo)
-            .orElse(null);
+                .map(k -> {
+                    try {
+                        return Float.parseFloat(k);
+                    } catch (NumberFormatException e) {
+                        return Float.NaN;
+                    }
+                })
+                .filter(k -> !Float.isNaN(k) && k <= currentProgress)
+                .max(Float::compareTo)
+                .orElse(null);
     }
 
     /**
@@ -427,18 +484,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     private void playProgressSound(@Nullable SoundEvent sound) {
         if (sound == null || !getLevel().isClientSide()) return;
-        ((TaskSubmitOffice) getLevel()).submitImmediateTask(
-            PPhase.ALL,
-            () -> {
-                SpreadingSoundHelper.playSpreadingSound(
-                    getLevel(), sound, SoundSource.NEUTRAL,
-                    SparkMathKt.toVec3(getSubPart().getPosition()),
-                    SparkMathKt.toVec3(getSubPart().getLinearVelocity()),
-                    1.0f, 1.0f
-                );
-                return null;
-            }
-        );
+        playSpreadingSound(getLevel(), sound, SoundSource.NEUTRAL);
     }
 
     /**
@@ -496,6 +542,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (data.contains("batch_cooldown")) batchCooldownTicks = data.getInt("batch_cooldown");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
+        if (data.contains("belt_index")) projectileTypeIndex = data.getInt("belt_index");
     }
 
     @Override
@@ -506,6 +553,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         data.putInt("batch_cooldown", batchCooldownTicks);
         data.putBoolean("is_batch_reloading", isBatchReloading);
         data.putInt("regen_delay_remaining", regenDelayRemainingTicks);
+        data.putInt("belt_index", projectileTypeIndex);
         return data;
     }
 
@@ -544,5 +592,15 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             return SignalResult.CONSUME;
         }
         return super.onSignalUpdated(channelName, sender);
+    }
+
+    @Override
+    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getPosition());
+    }
+
+    @Override
+    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 }

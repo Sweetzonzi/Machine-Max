@@ -33,7 +33,7 @@ import java.util.Map;
  * - 总剩余弹药为该弹种在所有供给者中的合计。<br>
  * - 第一行显示弹种名 + 计数，第二行仅在装填中时显示进度条 + 百分比。<br>
  * <p>
- * 数据源：从 WeaponController 的 getAmmoPool() / getSelectedProjectileType() 读取，
+ * 数据源：从 WeaponController 的 getAmmoPool() / getSelectedBelt() 读取，
  * 而非从 Launcher 的 getSupplierSummaries() 读取。
  */
 @OnlyIn(Dist.CLIENT)
@@ -104,15 +104,13 @@ public class AmmoHud implements LayeredDraw.Layer {
 
                 IAmmoSupplier supplier = launcher.getCurrentSupplier();
 
-                // 从 Controller 的 ammoPool 获取该弹种总数
+                // 从 Controller 的 ammoPool 按选中弹链获取总数
                 int totalCount = 0;
-                if (ammoType != null) {
-                    ResourceLocation typeKey = ammoType.getRegistryKey();
-                    if (typeKey != null) {
-                        var entries = wc.getAmmoPool().get(typeKey);
-                        if (entries != null) {
-                            totalCount = entries.stream().mapToInt(LoaderEntry::availableCount).sum();
-                        }
+                List<ResourceLocation> selectedBelt = wc.getSelectedBelt();
+                if (selectedBelt != null) {
+                    var entries = wc.getAmmoPool().get(selectedBelt);
+                    if (entries != null) {
+                        totalCount = entries.stream().mapToInt(LoaderEntry::availableCount).sum();
                     }
                 }
 
