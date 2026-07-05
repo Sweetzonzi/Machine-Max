@@ -24,17 +24,23 @@ public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
     /** 弹药发现频道 → 目标名称列表（用于自动发现同载具内的 IAmmoConsumer） */
     public final Map<String, List<String>> discoveryOutputs;
 
+    /** 此装弹机供给的投射物类型（实例级配置，同一静态定义可用于不同弹药） */
+    public final ResourceLocation projectileType;
+
     public static final MapCodec<RegenLoaderSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("projectile_type").forGetter(RegenLoaderSubsystemAttr::getProjectileType),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("discovery_outputs", Map.of())
                 .forGetter(RegenLoaderSubsystemAttr::getDiscoveryOutputs)
     ).apply(instance, RegenLoaderSubsystemAttr::new));
 
     public RegenLoaderSubsystemAttr(
             ResourceLocation modelName,
+            ResourceLocation projectileType,
             Map<String, List<String>> discoveryOutputs) {
         super(modelName);
         this.staticAttribute = (RegenLoaderSubsystemStaticAttr) getStaticAttr();
+        this.projectileType = projectileType;
         this.discoveryOutputs = discoveryOutputs;
     }
 

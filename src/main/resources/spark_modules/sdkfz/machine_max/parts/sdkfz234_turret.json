@@ -84,7 +84,7 @@
           "subsystems": {
             "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
-              "definition": "machine_max:default_3rd_seat",
+              "definition": "machine_max:sdkfz234_seat",
               "locator": "gunner_seat",
               "control_group_preset": "machine_max:default_gunner",
               "passenger_num_outputs": {
@@ -101,7 +101,7 @@
             },
             "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
-              "definition": "machine_max:default_3rd_seat",
+              "definition": "machine_max:sdkfz234_seat",
               "locator": "commander_seat",
               "control_group_preset": "machine_max:default_commander",
               "passenger_num_outputs": {
@@ -148,14 +148,16 @@
             },
             "subsystem.machine_max.50mm_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:sdkfz_50mm_ammo_loader",
+              "definition": "machine_max:kwk39_50mm_regen_loader",
+              "projectile_type": "machine_max:50mm_pzgr39",
               "discovery_outputs": {
                 "ammo_50mm": ["vehicle"]
               }
             },
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:sdkfz_mg34_regen_loader",
+              "definition": "machine_max:mg34_regen_loader",
+              "projectile_type": "machine_max:7_92mm_smk",
               "discovery_outputs": {
                 "ammo_7_92mm": ["vehicle"]
               }

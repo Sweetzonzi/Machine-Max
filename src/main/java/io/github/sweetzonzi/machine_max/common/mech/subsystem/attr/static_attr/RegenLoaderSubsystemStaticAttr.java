@@ -66,9 +66,6 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 每发消耗的能量值（0 = 免费再生） */
     private final float energyCostPerRound;
 
-    /** 生成的投射物类型 ID */
-    private final ResourceLocation projectileType;
-
     /** 供给一发弹药的耗时（秒）。再生模式下为弹药诞生到可用的延迟 */
     private final float reloadTime;
 
@@ -95,8 +92,6 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(RegenLoaderSubsystemStaticAttr::isRegenRoundByRound),
             Codec.FLOAT.optionalFieldOf("energy_cost_per_round", 0f)
                 .forGetter(RegenLoaderSubsystemStaticAttr::getEnergyCostPerRound),
-            ResourceLocation.CODEC.fieldOf("projectile_type")
-                .forGetter(RegenLoaderSubsystemStaticAttr::getProjectileType),
             Codec.FLOAT.fieldOf("reload_time")
                 .forGetter(RegenLoaderSubsystemStaticAttr::getReloadTime),
             Codec.BOOL.optionalFieldOf("can_supply_multiple", false)
@@ -113,7 +108,6 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float regenPerMinute,
             boolean regenRoundByRound,
             float energyCostPerRound,
-            ResourceLocation projectileType,
             float reloadTime,
             boolean canSupplyMultiple,
             float regenDelay,
@@ -124,7 +118,6 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.regenPerMinute = regenPerMinute;
         this.regenRoundByRound = regenRoundByRound;
         this.energyCostPerRound = energyCostPerRound;
-        this.projectileType = projectileType;
         this.reloadTime = reloadTime;
         this.canSupplyMultiple = canSupplyMultiple;
         this.regenDelay = regenDelay;

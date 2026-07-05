@@ -51,16 +51,7 @@
       "default": true,
       "description": "Regeneration mode. true = round-by-round (regenerates immediately after each round consumed); false = batch reload (replenishes entire magazine when empty)."
     },
-    "energy_cost_per_round": {
-      "type": "number",
-      "minimum": 0,
-      "default": 0,
-      "description": "Energy consumed per round regenerated (Joules). 0 = free regeneration."
-    },
-    "projectile_type": {
-      "$ref": "../../base/resource_location.schema.json",
-      "description": "Resource location of the projectile type that this loader supplies."
-    },
+    "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "Energy consumed per round regenerated (Joules). 0 = free regeneration." },
     "reload_time": {
       "type": "number",
       "minimum": 0,
@@ -101,14 +92,10 @@
       "description": "Regen loader subsystem sound configuration."
     }
   },
-  "required": ["type", "magazine_capacity", "projectile_type", "reload_time"],
+  "required": ["type", "magazine_capacity", "reload_time"],
   "additionalProperties": false,
   "examples": [
-    {
-      "type": "machine_max:regen_loader",
-      "magazine_capacity": 100,
-      "projectile_type": "machine_max:some_projectile",
-      "reload_time": 0,
+    { "type": "machine_max:regen_loader", "magazine_capacity": 100, "reload_time": 0,
       "description": "Minimal example - required fields only"
     },
     {
@@ -118,7 +105,6 @@
       "regen_per_minute": 800,
       "regen_round_by_round": true,
       "energy_cost_per_round": 0,
-      "projectile_type": "machine_max:7_92mm_smk",
       "reload_time": 0,
       "can_supply_multiple": false,
       "regen_delay": 0.5,
@@ -131,7 +117,6 @@
       "regen_per_minute": 10,
       "regen_round_by_round": true,
       "energy_cost_per_round": 0,
-      "projectile_type": "machine_max:50mm_pzgr39",
       "reload_time": 2.0,
       "can_supply_multiple": false,
       "description": "Slow regen example - 50mm cannon, 40 rounds, 10 rounds/min, with reload time delay"

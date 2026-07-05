@@ -108,7 +108,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     @Nullable
     public ProjectileType getSuppliedType() {
-        return ProjectileType.get(getLevel(), attr.staticAttribute.getProjectileType());
+        return ProjectileType.get(getLevel(), attr.getProjectileType());
     }
 
     @Override
@@ -128,7 +128,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public String getLabel() {
-        return attr.staticAttribute.getProjectileType().toString();
+        return attr.getProjectileType().toString();
     }
 
     @Override
@@ -183,7 +183,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             }
         }
 
-        return ProjectileType.get(getLevel(), attr.staticAttribute.getProjectileType());
+        return ProjectileType.get(getLevel(), attr.getProjectileType());
     }
 
     @Override

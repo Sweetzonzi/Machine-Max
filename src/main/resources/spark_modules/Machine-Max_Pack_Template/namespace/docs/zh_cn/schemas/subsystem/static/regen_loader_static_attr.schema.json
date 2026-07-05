@@ -14,7 +14,6 @@
     "regen_per_minute": { "type": "number", "minimum": 0, "default": 0, "description": "每分钟再生数量。0 = 无自动再生。" },
     "regen_round_by_round": { "type": "boolean", "default": true, "description": "true = 随打随产，false = 批量产出。" },
     "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "每发再生消耗的能量（焦耳）。0 = 免费。" },
-    "projectile_type": { "$ref": "../../base/resource_location.schema.json", "description": "投射物类型资源路径。" },
     "reload_time": { "type": "number", "minimum": 0, "description": "输送一发弹药所需时间（秒）。" },
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "是否允许多消费者并行接收弹药。" },
     "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "输送弹药后的再生启动延迟（秒）。0 = 边产边供。" },
@@ -28,10 +27,10 @@
       "description": "音效配置。"
     }
   },
-  "required": ["type", "magazine_capacity", "projectile_type", "reload_time"],
+  "required": ["type", "magazine_capacity", "reload_time"],
   "additionalProperties": false,
   "examples": [
-    { "type": "machine_max:regen_loader", "magazine_capacity": 100, "projectile_type": "machine_max:some_projectile", "reload_time": 0, "description": "最简示例" },
-    { "type": "machine_max:regen_loader", "magazine_capacity": 150, "regen_per_minute": 800, "projectile_type": "machine_max:7_92mm_smk", "reload_time": 0, "regen_delay": 0.5, "description": "带再生延迟示例" }
+    { "type": "machine_max:regen_loader", "magazine_capacity": 100, "reload_time": 0, "description": "最简示例" },
+    { "type": "machine_max:regen_loader", "magazine_capacity": 150, "regen_per_minute": 800, "reload_time": 0, "regen_delay": 0.5, "description": "带再生延迟示例" }
   ]
 }
