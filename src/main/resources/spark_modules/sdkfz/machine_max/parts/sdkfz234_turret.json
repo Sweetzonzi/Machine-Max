@@ -84,7 +84,7 @@
           "subsystems": {
             "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
-              "definition": "machine_max:default_seat",
+              "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "machine_max:default_gunner",
               "passenger_num_outputs": {
@@ -101,7 +101,7 @@
             },
             "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
-              "definition": "machine_max:default_seat",
+              "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
               "control_group_preset": "machine_max:default_commander",
               "passenger_num_outputs": {

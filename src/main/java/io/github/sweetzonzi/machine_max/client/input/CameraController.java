@@ -218,10 +218,8 @@ public class CameraController {
             initializeAngles(entity, partialTick);
         }
 
-        // 炮镜模式
+        // 炮镜模式（强制第一人称已在 tickCameraMode 中处理）
         if (activeCamera != null && activeCamera.isActive()) {
-            if (!type.isFirstPerson()) // 强制第一人称
-                client.options.setCameraType(CameraType.FIRST_PERSON);
             updateCameraRotCameraMode(event, partialTick);
             return;
         }
@@ -583,12 +581,19 @@ public class CameraController {
 
     /**
      * 炮镜模式每 tick（20tps）：<p>
-     * 发送 aimLocal 相比上一 tick 的增量到服务端驱动炮塔。<br>
-     * EMA 更新已移至 updateCameraRotCameraMode（每帧），此处只做增量计算和网络发送。
+     * 强制第一人称视角，发送 aimLocal 增量到服务端驱动炮塔。<br>
+     * EMA 更新已移至 updateCameraRotCameraMode（每帧），此处只做视角强制和网络发送。
      */
     private static void tickCameraMode(SeatSubsystem seat) {
         CameraSubsystem camera = activeCamera;
         if (aimPoint == null) return;
+
+        // 炮镜模式下强制第一人称——每 tick 执行一次而非每渲染帧
+        if (!client.options.getCameraType().isFirstPerson()) {
+            client.options.setCameraType(CameraType.FIRST_PERSON);
+            client.gameRenderer.checkEntityPostEffect(client.getCameraEntity());
+            client.levelRenderer.needsUpdate();
+        }
 
         // 服务端 WeaponController 对无稳轴使用增量累加（targetAngle += rad(offset)）
         // 稳定标志从 camera staticAttr 读取，随网络包发往服务端
@@ -621,7 +626,12 @@ public class CameraController {
         while ((!seat.attr.staticAttribute.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
                 (!seat.attr.staticAttribute.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK
                         || client.options.getCameraType() == CameraType.THIRD_PERSON_FRONT))) {
+            boolean wasFirstPerson = client.options.getCameraType().isFirstPerson();
             client.options.setCameraType(client.options.getCameraType().cycle());
+            if (wasFirstPerson != client.options.getCameraType().isFirstPerson()) {
+                client.gameRenderer.checkEntityPostEffect(
+                        client.options.getCameraType().isFirstPerson() ? client.getCameraEntity() : null);
+            }
             client.levelRenderer.needsUpdate();
         }
         oldExtraTransform = extraTransform;
