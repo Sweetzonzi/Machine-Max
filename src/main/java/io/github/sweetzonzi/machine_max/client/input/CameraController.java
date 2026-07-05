@@ -736,9 +736,14 @@ public class CameraController {
     }
 
     /**
-     * 退出炮镜模式
+     * 退出炮镜模式，并将常态视角转向炮镜最后瞄准的方向。
      */
     public static void exitCameraMode() {
+        // 在清除 activeCamera 之前，将炮镜瞄准方向同步到常态视角变量
+        if (activeCamera != null && activeCamera.isActive()) {
+            syncViewAnglesFromCamera();
+        }
+
         // 通知子系统退出炮镜，回到座椅直发模式
         if (client.player != null
                 && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem()
@@ -755,6 +760,27 @@ public class CameraController {
         targetZoom = 1f;
         currentZoom = 1f;
         lastZoomLerpNanos = 0;
+    }
+
+    /**
+     * 将炮镜模式缓存的 {@link #aimDirection} 转换为视角角度，同步到常态视角变量，<br>
+     * 使退出炮镜后视角无缝转向最后瞄准的方向。<br>
+     * aimDirection 由 {@link #updateCameraRotCameraMode} 每渲染帧更新，tick 时直接使用即可。
+     */
+    private static void syncViewAnglesFromCamera() {
+        float pitchDeg = (float) -Math.toDegrees(Math.asin(Math.clamp(aimDirection.y, -1.0, 1.0)));
+        float yawDeg = (float) -Math.toDegrees(Math.atan2(aimDirection.x, aimDirection.z));
+
+        // 同步到常态视角变量，使 updateCameraRotSeatMode 从炮镜方向开始
+        aimPitch = pitchDeg;
+        aimYaw = yawDeg;
+        aimRoll = 0f;
+        targetViewPitch = pitchDeg;
+        targetViewYaw = yawDeg;
+        targetViewRoll = 0f;
+        pitch = pitchDeg;
+        yaw = yawDeg;
+        roll = 0f;
     }
 
     /**
