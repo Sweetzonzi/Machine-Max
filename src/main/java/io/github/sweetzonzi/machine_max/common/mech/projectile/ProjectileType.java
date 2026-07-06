@@ -7,14 +7,12 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
+import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import lombok.Getter;
-import cn.solarmoon.spark_core.api.ParticleEffects;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -343,20 +341,22 @@ public class ProjectileType {
     // ==================== 开火粒子特效 ====================
 
     /**
-     * 在指定位置和旋转播放开火粒子特效。
+     * 播放绑定到定位器锚点的持久开火粒子特效列表。
+     * 每种粒子效果均创建独立发射器实例，每 tick 从锚点轮询 locator 位姿以跟随移动。
      * <p>
-     * 使用 {@link VisualProperties#fireParticle()} 中配置的粒子效果 ID，
-     * 通过 {@link ParticleEffects#burst} 在客户端触发。
+     * 使用 {@link VisualProperties#fireParticles()} 中配置的粒子效果 ID 列表。
      * <p>
      * <b>调用线程：</b>主线程（渲染线程/客户端 tick）。
      * <b>仅在客户端调用。</b>
      *
-     * @param level    维度（客户端）
-     * @param position 开火位置（世界坐标）
-     * @param rotation 开火朝向（四元数）
+     * @param level       维度（客户端）
+     * @param anchor      定位器锚点（如 {@code LauncherSubsystem}）
+     * @param locatorName 定位器名称（如 {@code "muzzle"}）
      */
-    public void playFireEffect(Level level, Vec3 position, Quaternionf rotation) {
-        ParticleEffects.burst(level, visual.fireParticle(), position, rotation);
+    public void playFireEffect(Level level, IParticleAnchor anchor, String locatorName) {
+        for (ResourceLocation particleId : visual.fireParticles()) {
+            anchor.playEffect(level, particleId, locatorName);
+        }
     }
 
 
@@ -456,14 +456,14 @@ public class ProjectileType {
          * 默认 0.05 对应旧版行为。
          */
         double tracerLength,
-        /** 开火粒子效果ID，在客户端播放枪口火焰/炮口焰 */
-        ResourceLocation fireParticle
+        /** 开火粒子效果ID列表，在客户端依次播放枪口火焰/炮口焰等效果 */
+        List<ResourceLocation> fireParticles
     ) {
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")
+            List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium"))
         );
 
         public static final Codec<VisualProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -475,8 +475,8 @@ public class ProjectileType {
                 .forGetter(VisualProperties::tracerWidth),
             Codec.DOUBLE.optionalFieldOf("tracer_length", DEFAULT.tracerLength)
                 .forGetter(VisualProperties::tracerLength),
-            ResourceLocation.CODEC.optionalFieldOf("fire_particle", DEFAULT.fireParticle)
-                .forGetter(VisualProperties::fireParticle)
+            Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)
+                .forGetter(VisualProperties::fireParticles)
         ).apply(instance, VisualProperties::new));
     }
 

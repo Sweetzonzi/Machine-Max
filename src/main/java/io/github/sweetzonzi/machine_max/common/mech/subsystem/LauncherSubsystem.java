@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -22,7 +23,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
  * Launcher 仅执行 currentSupplier 上的装填和发射。
  */
-public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, ISoundSpreader {
+public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
 
     public final LauncherSubsystemAttr attr;
 
@@ -331,11 +331,8 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         // ⑤ 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）
         if (getLevel().isClientSide() && firedCount > 0) {
             handleFiringSounds(firedTypes, burstJustStarted);
-            Transform muzzleTransform = getMuzzleWorldTransform();
-            Quaternionf muzzleQuat = SparkMathKt.toQuaternionf(muzzleTransform.getRotation());
-            Vec3 muzzlePos = SparkMathKt.toVec3(muzzleTransform.getTranslation());
             for (ProjectileType type : firedTypes) {
-                type.playFireEffect(getLevel(), muzzlePos, muzzleQuat);
+                type.playFireEffect(getLevel(), this, attr.locator);
             }
         }
 
@@ -731,6 +728,22 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
      */
     public Transform getMuzzleWorldTransform() {
         return getOwner().getSubPart().getLocatorWorldTransform(attr.locator);
+    }
+
+    // ——— IParticleAnchor 实现 ———
+
+    @Override
+    @Nullable
+    public Transform getLocatorTransform(@NotNull UUID instanceId, @NotNull String locatorName) {
+        // 仅响应自己的 locator
+        if (!locatorName.equals(attr.locator)) return null;
+        return getMuzzleWorldTransform();
+    }
+
+    @Override
+    @Nullable
+    public Vec3 getAnchorVelocity(@NotNull UUID instanceId, @NotNull String locatorName) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 
     /**
