@@ -658,6 +658,7 @@ public class ProjectileManager {
         List<ProjectilesHitPayload.HitEntry> entries = new ArrayList<>();
         PendingHitSync h;
         while ((h = pendingHitSyncs.poll()) != null) {
+            Long hitBlockPosLong = h.hitBlockPos() != null ? h.hitBlockPos().asLong() : null;
             entries.add(new ProjectilesHitPayload.HitEntry(
                     h.objId(),
                     h.hitPoint().x, h.hitPoint().y, h.hitPoint().z,
@@ -666,7 +667,7 @@ public class ProjectileManager {
                     h.newVelocity() != null ? h.newVelocity().x : 0,
                     h.newVelocity() != null ? h.newVelocity().y : 0,
                     h.newVelocity() != null ? h.newVelocity().z : 0,
-                    h.isArmorHit()));
+                    hitBlockPosLong));
         }
         if (entries.isEmpty()) return;
 
@@ -905,7 +906,7 @@ public class ProjectileManager {
                     projectileObjIds.remove(objId[i]);
                     broadcastHitSync(i,
                             new Vec3(posX[i], posY[i], posZ[i]),
-                            new Vec3(0, 1, 0), true, result);
+                            new Vec3(0, 1, 0), null, result);
                     destroyable.destroy();
                     swapRemove(i);
                 } else {
@@ -918,7 +919,7 @@ public class ProjectileManager {
                     }
                     broadcastHitSync(i,
                             new Vec3(posX[i], posY[i], posZ[i]),
-                            new Vec3(0, 1, 0), true, result);
+                            new Vec3(0, 1, 0), null, result);
                 }
                 continue;
             }
@@ -1068,7 +1069,7 @@ public class ProjectileManager {
                     BlockPos blockPos = entry.blockPos();
 
                     if (!(destroyable instanceof IProjectile proj)) {
-                        broadcastTerrainHit(i, entry.hitPoint());
+                        broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
                         stopped = true;
@@ -1100,17 +1101,17 @@ public class ProjectileManager {
                         velY[i] = hitResult.newVelocity().y;
                         velZ[i] = hitResult.newVelocity().z;
                         penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(pk);
-                        broadcastHitSync(i, entry.hitPoint(), entry.hitNormal(), false, hitResult.newVelocity(), false);
+                        broadcastHitSync(i, entry.hitPoint(), entry.hitNormal(), false, hitResult.newVelocity(), entry.blockPos());
                     } else {
                         // 无法击穿，停止
-                        broadcastTerrainHit(i, entry.hitPoint());
+                        broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
                         stopped = true;
                     }
                 } else if (entry.owner() == null) {
                     // null owner：直接停止（无属主信息）
-                    broadcastTerrainHit(i, entry.hitPoint());
+                    broadcastTerrainHit(i, entry.hitPoint(), null);
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);
                     stopped = true;
@@ -1189,7 +1190,7 @@ public class ProjectileManager {
     private boolean applyAfterHitResult(int i, IProjectile proj, @Nullable IProjectile.AfterHitResult result,
                                          Vec3 hitPoint, Vec3 hitNormal, PenetrationKey penKey) {
         if (result == null) return false;
-        broadcastHitSync(i, hitPoint, hitNormal, true, result);
+        broadcastHitSync(i, hitPoint, hitNormal, null, result);
         if (result.destroyed()) {
             proj.markHit();
             alive[i] = false;
@@ -1258,32 +1259,37 @@ public class ProjectileManager {
      * @param isArmorHit 是否为装甲命中（影响客户端粒子类型）
      */
     public void enqueueHitSync(int objId, Vec3 hitPoint, Vec3 hitNormal,
-                               boolean destroyed, @Nullable Vector3f newVelocity, boolean isArmorHit) {
-        pendingHitSyncs.add(new PendingHitSync(objId, hitPoint, hitNormal, destroyed, newVelocity, isArmorHit));
+                               boolean destroyed, @Nullable Vector3f newVelocity, @Nullable BlockPos hitBlockPos) {
+        pendingHitSyncs.add(new PendingHitSync(objId, hitPoint, hitNormal, destroyed, newVelocity, hitBlockPos));
     }
 
     /**
      * 广播命中同步（携带 AfterHitResult），改为入队缓冲。
+     * <p>
+     * SubPart/Entity 命中路径专用——参数 {@code hitBlockPos} 始终为 null，
+     * 因为此类命中的特效由 SubPart/Entity 自理包负责，命中包仅做弹道状态同步。
      */
-    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, @Nullable IProjectile.AfterHitResult result) {
+    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, @Nullable BlockPos hitBlockPos, @Nullable IProjectile.AfterHitResult result) {
         boolean destroyed = result == null || result.destroyed();
         Vector3f newVel = destroyed ? new Vector3f() : result.newVelocity();
-        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, isArmorHit));
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, hitBlockPos));
     }
 
     /**
      * 广播命中同步（显式指定销毁状态和速度），改为入队缓冲。
-     * 用于 suspend/resume 路径等已确定结果但无 HitResult 的场景。
+     * 用于 terrain 穿透/停止、suspend/resume 等已确定结果但无 HitResult 的场景。
      */
-    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean destroyed, @Nullable Vector3f newVel, boolean isArmorHit) {
-        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, isArmorHit));
+    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean destroyed, @Nullable Vector3f newVel, @Nullable BlockPos hitBlockPos) {
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, hitBlockPos));
     }
 
     /**
      * 命中地形时的命中同步，改为入队缓冲。
+     *
+     * @param hitBlockPos 被命中的方块位置，客户端据此查方块播特效；null 用于无方块信息场景（如 null owner）
      */
-    private void broadcastTerrainHit(int i, Vec3 hitPoint) {
-        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, new Vec3(0, 1, 0), true, null, false));
+    private void broadcastTerrainHit(int i, Vec3 hitPoint, @Nullable BlockPos hitBlockPos) {
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, new Vec3(0, 1, 0), true, null, hitBlockPos));
     }
 
     /**
@@ -1478,12 +1484,12 @@ public class ProjectileManager {
      * {@link #pendingHitSyncs}，由主线程 {@link #flushPendingHitSyncs()}
      * 统一转换为 {@link ProjectilesHitPayload.HitEntry} 并批量发送。
      *
-     * @param objId      投射物 DestroyableObject ID
-     * @param hitPoint   命中点世界坐标（MC Vec3，不可变值类型）
-     * @param hitNormal  命中面法线（MC Vec3，不可变值类型）
-     * @param destroyed  投射物是否已销毁
+     * @param objId       投射物 DestroyableObject ID
+     * @param hitPoint    命中点世界坐标（MC Vec3，不可变值类型）
+     * @param hitNormal   命中面法线（MC Vec3，不可变值类型）
+     * @param destroyed   投射物是否已销毁
      * @param newVelocity 穿透后剩余速度（destroyed=true 时为 null）
-     * @param isArmorHit 是否为装甲命中（影响客户端粒子类型）
+     * @param hitBlockPos 地形命中时为对应方块位置（客户端据此查方块播特效），非地形命中为 null
      */
     private record PendingHitSync(
             int objId,
@@ -1491,7 +1497,7 @@ public class ProjectileManager {
             Vec3 hitNormal,
             boolean destroyed,
             @Nullable Vector3f newVelocity,
-            boolean isArmorHit
+            @Nullable BlockPos hitBlockPos
     ) {}
 
     /**

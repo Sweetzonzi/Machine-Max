@@ -315,10 +315,10 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
             setLinearVelocity(newVel);
             body.setLinearVelocity(newVel);
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
-            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, false, newVel, false);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, false, newVel, null);
         } else {
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
-            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), false);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), null);
             markHit();
             destroy();
         }
@@ -336,7 +336,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     public AfterHitResult onEntityHit(Level level, Entity entity,
         float currentPen, float currentDamage, Vec3 hitPoint, Vec3 hitNormal) {
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
-        pm.enqueueHitSync(getId(), hitPoint, hitNormal, true, new Vector3f(), false);
+        pm.enqueueHitSync(getId(), hitPoint, hitNormal, true, new Vector3f(), null);
         return AfterHitResult.DESTROYED;
     }
 

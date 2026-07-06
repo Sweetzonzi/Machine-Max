@@ -5,6 +5,8 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -12,10 +14,13 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +44,10 @@ public record ProjectilesHitPayload(
 ) implements CustomPacketPayload {
 
     /**
-     * 单次命中条目，字段与旧单发命中包完全一致。
+     * 单次命中条目。
+     * <p>
+     * {@code hitBlockPos} 为非 null 时表示地形命中，客户端据此查方块类型播放对应粒子/音效。
+     * 为 null 时表示 SubPart/Entity 命中，命中包仅做弹道状态同步，特效由各自的自理包负责。
      */
     public record HitEntry(
             int objId,
@@ -47,7 +55,7 @@ public record ProjectilesHitPayload(
             double normalX, double normalY, double normalZ,
             boolean destroyed,
             double newVelX, double newVelY, double newVelZ,
-            boolean isArmorHit
+            @Nullable Long hitBlockPos
     ) {}
 
     public static final Type<ProjectilesHitPayload> TYPE = new Type<>(
@@ -66,7 +74,7 @@ public record ProjectilesHitPayload(
                                 buf.readDouble(), buf.readDouble(), buf.readDouble(),
                                 buf.readBoolean(),
                                 buf.readDouble(), buf.readDouble(), buf.readDouble(),
-                                buf.readBoolean()));
+                                buf.readBoolean() ? buf.readLong() : null));
                     }
                     return new ProjectilesHitPayload(entries);
                 }
@@ -86,7 +94,8 @@ public record ProjectilesHitPayload(
                         buf.writeDouble(e.newVelX);
                         buf.writeDouble(e.newVelY);
                         buf.writeDouble(e.newVelZ);
-                        buf.writeBoolean(e.isArmorHit);
+                        buf.writeBoolean(e.hitBlockPos != null);
+                        if (e.hitBlockPos != null) buf.writeLong(e.hitBlockPos);
                     }
                 }
             };
@@ -110,11 +119,10 @@ public record ProjectilesHitPayload(
     }
 
     /**
-     * 客户端处理：逐条更新 SoA 状态 + 播放粒子特效。
+     * 客户端处理：逐条更新 SoA 状态并播放地形命中特效。
      * <p>
-     * 逻辑与旧单发命中包逐条处理完全一致。
-     * 创建包可能尚未到达时（旧版本），命中条目会被 skip（findIndexByObjId 返回 -1），
-     * 仅播放粒子特效。新版本中创建包严格先于命中包到达，因此不会出现此情况。
+     * {@code hitBlockPos != null}：地形命中，客户端查方块类型播放原生粒子/音效。
+     * {@code hitBlockPos == null}：SubPart/Entity 命中，仅做弹道状态同步，特效自理。
      * <p>
      * <b>调用线程：</b>主线程（NeoForge 网络处理器）。
      */
@@ -149,28 +157,31 @@ public record ProjectilesHitPayload(
                     }
                 }
 
-                // 粒子特效（与旧单发命中包完全一致）
-                if (e.isArmorHit) {
-                    // 装甲命中：烟雾 + 火星
-                    level.addParticle(ParticleTypes.SMOKE,
-                            hitPoint.x, hitPoint.y, hitPoint.z,
-                            hitNormal.x * 0.5, hitNormal.y * 0.5, hitNormal.z * 0.5);
-                    for (int i = 0; i < 5; i++) {
-                        level.addParticle(ParticleTypes.FLAME,
+                // 粒子特效与音效
+                // ============================================================
+                if (e.hitBlockPos != null) {
+                    // ── 地形命中：客户端根据 BlockPos 查方块，播放方块原生的粒子/音效 ──
+                    BlockPos bp = BlockPos.of(e.hitBlockPos);
+                    BlockState state = level.getBlockState(bp);
+                    if (!state.isAir()) {
+                        // 方块破坏粒子（泥土→土屑，石头→石屑，木头→木屑...）
+                        level.addAlwaysVisibleParticle(
+                                new BlockParticleOption(ParticleTypes.BLOCK, state),
                                 hitPoint.x, hitPoint.y, hitPoint.z,
-                                hitNormal.x * (0.3 + level.random.nextDouble() * 0.5),
-                                hitNormal.y * (0.3 + level.random.nextDouble() * 0.5),
-                                hitNormal.z * (0.3 + level.random.nextDouble() * 0.5));
+                                hitNormal.x, hitNormal.y, hitNormal.z);
+                        level.addAlwaysVisibleParticle(
+                                new BlockParticleOption(ParticleTypes.BLOCK, state),
+                                hitPoint.x, hitPoint.y, hitPoint.z,
+                                hitNormal.x, hitNormal.y, hitNormal.z);
+                        // 方块原生命中音效
+                        SoundType soundType = state.getSoundType();
+                        level.playLocalSound(hitPoint.x, hitPoint.y, hitPoint.z,
+                                soundType.getHitSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                                soundType.getVolume(), soundType.getPitch(), false);
                     }
-                } else {
-                    // 地形/非装甲命中：营火烟雾 + 普通烟雾
-                    level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                            hitPoint.x, hitPoint.y, hitPoint.z,
-                            0, 0.1, 0);
-                    level.addParticle(ParticleTypes.SMOKE,
-                            hitPoint.x, hitPoint.y, hitPoint.z,
-                            hitNormal.x * 0.3, hitNormal.y * 0.3, hitNormal.z * 0.3);
                 }
+                // 若 hitBlockPos == null：SubPart/Entity 命中，命中包仅做弹道状态同步
+                // 特效由 SubPartHitEffectPayload 等自理包负责
             }
         });
     }
