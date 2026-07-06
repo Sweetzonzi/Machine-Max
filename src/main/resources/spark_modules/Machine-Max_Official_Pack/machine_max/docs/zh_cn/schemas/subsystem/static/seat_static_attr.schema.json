@@ -76,6 +76,12 @@
       "default": false,
       "description": "是否允许乘客使用物品（如武器、工具）。"
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["interact"],
+      "description": "接受的交互输入通道列表。未指定时默认接受所有interact通道的信号。"
+    },
     "sounds": {
       "type": "object",
       "properties": {

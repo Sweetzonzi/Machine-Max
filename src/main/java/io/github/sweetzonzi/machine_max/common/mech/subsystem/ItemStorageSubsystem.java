@@ -76,6 +76,11 @@ public class ItemStorageSubsystem extends BasicSubsystem implements MenuProvider
         }
     }
 
+    @Override
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getAcceptedChannels();
+    }
+
     /**
      * 在此填入各个信号名对应的接收者名列表，用于自动组织信号传输关系。<p>
      * Return a map of signal names to a list of receiver names here, to automatically organize signal transfer.

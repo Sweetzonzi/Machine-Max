@@ -18,6 +18,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
     public final boolean allowUseItems;
+    public final List<String> interactInputs;
     public final ViewAttr views;
     public final Set<String> viewInputs;
 
@@ -42,6 +43,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             )).forGetter(SeatSubsystemStaticAttr::getViews),
             Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemStaticAttr::getViewInputs),
             Codec.BOOL.optionalFieldOf("allow_use_items", false).forGetter(SeatSubsystemStaticAttr::isAllowUseItems),
+            Codec.STRING.listOf().optionalFieldOf("interact_inputs", List.of("interact")).forGetter(SeatSubsystemStaticAttr::getInteractInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, SeatSubsystemStaticAttr::new));
 
@@ -53,6 +55,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             ViewAttr views,
             List<String> viewInputs,
             boolean allowUseItems,
+            List<String> interactInputs,
             BasicSoundAttr sounds
     ) {
         super(basicAttr, sounds);
@@ -68,6 +71,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.viewInputs = new HashSet<>();
         this.viewInputs.addAll(viewInputs);
         this.allowUseItems = allowUseItems;
+        this.interactInputs = interactInputs;
     }
 
     @Override
@@ -82,6 +86,13 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     private List<String> getViewInputs() {
         return viewInputs.stream().toList();
+    }
+
+    /**
+     * 获取该子系统接受的交互输入通道列表
+     */
+    public List<String> getAcceptedChannels() {
+        return interactInputs;
     }
 
     public record ViewAttr(

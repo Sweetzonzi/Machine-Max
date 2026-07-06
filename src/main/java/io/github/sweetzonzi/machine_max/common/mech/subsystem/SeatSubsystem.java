@@ -128,6 +128,11 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getAcceptedChannels();
+    }
+
+    @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = setUpTargets(new HashMap<>(1));
         result.putAll(attr.passengerNumSignalTargets);

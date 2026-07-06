@@ -76,6 +76,12 @@
       "default": false,
       "description": "Whether to allow passengers to use items (such as weapons, tools)."
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["interact"],
+      "description": "List of accepted interaction input channels. Defaults to accepting all interact channel signals."
+    },
     "sounds": {
       "type": "object",
       "properties": {

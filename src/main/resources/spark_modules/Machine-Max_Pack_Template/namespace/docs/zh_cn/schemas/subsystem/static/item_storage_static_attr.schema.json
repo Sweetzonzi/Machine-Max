@@ -47,6 +47,12 @@
       "default": 9,
       "description": "容器的物品槽列数。"
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["interact"],
+      "description": "接受的交互输入通道列表。未指定时默认接受所有interact通道的信号。"
+    },
     "sounds": {
       "type": "object",
       "properties": {

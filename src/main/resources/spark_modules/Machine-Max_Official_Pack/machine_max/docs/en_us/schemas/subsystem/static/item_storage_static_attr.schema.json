@@ -47,6 +47,12 @@
       "default": 9,
       "description": "Number of columns of item slots in the container."
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["interact"],
+      "description": "List of accepted interaction input channels. Defaults to accepting all interact channel signals."
+    },
     "sounds": {
       "type": "object",
       "properties": {

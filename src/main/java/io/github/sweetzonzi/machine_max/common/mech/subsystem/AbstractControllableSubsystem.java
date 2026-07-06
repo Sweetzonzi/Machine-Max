@@ -195,8 +195,6 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
-
         if (channelName.equals("callback") && sender instanceof CameraSubsystem camera) {
             if (camera.getOwner().getSubPart().getPart().assembly
                     == this.getOwner().getSubPart().getPart().assembly) {
@@ -218,7 +216,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                 }
             }
         }
-        return SignalResult.PASS;
+        return super.onSignalUpdated(channelName, sender);
     }
 
     @Override

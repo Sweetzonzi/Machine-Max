@@ -42,6 +42,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      */
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalResult result = SignalResult.PASS;
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null
                 && ownerConnector.attachedConnector.signalPort != null) {
@@ -58,21 +59,21 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
                 if (currentChannels == null) {
                     return SignalResult.PASS; // 没有信号可转发
                 }
-
                 // 仅在实际发生变更时传播
-                targetReceivers.forEach((receiverName, signalReceiver) -> {
+                for (Map.Entry<String, ISignalReceiver> entry : targetReceivers.entrySet()) {
+                    ISignalReceiver signalReceiver = entry.getValue();
                     // 检查接收者是否声明接受此频道（acceptAllRoutingInput 跳过检查）
                     boolean accepts = signalReceiver.acceptAllRoutingInput()
                             || signalReceiver.getAcceptedChannels().contains(targetChannelName);
-                    if (!accepts) return;
+                    if (!accepts) continue;
 
                     SignalChannel receiverChannels = signalReceiver.getSignalInputChannels()
                             .computeIfAbsent(targetChannelName, k -> new SignalChannel());
 
                     boolean hasChanged = false;
-                    for (Map.Entry<ISignalSender, Object> entry : currentChannels.entrySet()) {
-                        ISignalSender originalSender = entry.getKey();
-                        Object signalValue = entry.getValue();
+                    for (Map.Entry<ISignalSender, Object> entry1 : currentChannels.entrySet()) {
+                        ISignalSender originalSender = entry1.getKey();
+                        Object signalValue = entry1.getValue();
 
                         // 检查信号是否已存在且相同
                         Object existingValue = receiverChannels.get(originalSender);
@@ -84,12 +85,18 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
 
                     if (hasChanged) {
                         // 使用转译后的频道名通知接收者
-                        signalReceiver.onSignalUpdated(targetChannelName, sender);
+                        var tmp = signalReceiver.onSignalUpdated(targetChannelName, sender);
+                        if (result == SignalResult.PASS) { // 返回第一个接收者的结果作为最终结果，但依旧向其他目标发送信号
+                            if (tmp == SignalResult.CONSUME)
+                                result = SignalResult.CONSUME;
+                            else if (tmp == SignalResult.FAIL)
+                                result = SignalResult.FAIL;
+                        }
                     }
-                });
+                }
             }
         }
-        return SignalResult.PASS;
+        return result;
     }
 
     /**
