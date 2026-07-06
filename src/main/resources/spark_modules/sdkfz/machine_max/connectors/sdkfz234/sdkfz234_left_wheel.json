@@ -28,8 +28,8 @@
     "yr": {
       "lower_limit": -45,
       "upper_limit": 45,
-      "stiffness": 57000,
-      "damping": 1150
+      "stiffness": 17.363193,
+      "damping": 0.35031
     }
   }
 }

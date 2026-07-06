@@ -308,14 +308,26 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                                 computeMomentOfInertia(joint.getBodyB(), axis)
                         );
                     }
-                    if (jointAttr.lowerLimit() != null)
-                        joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.lowerLimit() * (i <= 2 ? 1 : Math.PI / 180)));
-                    if (jointAttr.upperLimit() != null)
-                        joint.set(MotorParam.UpperLimit, i, (float) (jointAttr.upperLimit() * (i <= 2 ? 1 : Math.PI / 180)));
-                    if (jointAttr.equilibrium() != null)
-                        joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
+                    // 取反，以匹配Blockbench的坐标系
+                    if (i != 4) {
+                        var v = i <= 2 ? (i == 1 ? 1 : -1) : Math.PI / 180;
+                        if (jointAttr.lowerLimit() != null)
+                            joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.lowerLimit() * v));
+                        if (jointAttr.upperLimit() != null)
+                            joint.set(MotorParam.UpperLimit, i, (float) (jointAttr.upperLimit() * v));
+                        if (jointAttr.equilibrium() != null)
+                            joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * v));
+                    } else { // yr轴不知为何朝下了，特殊处理
+                        if (jointAttr.upperLimit() != null)
+                            joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.upperLimit() * - Math.PI / 180));
+                        if (jointAttr.lowerLimit() != null)
+                            joint.set(MotorParam.UpperLimit, i, (float) (jointAttr.lowerLimit() * - Math.PI / 180));
+                        if (jointAttr.equilibrium() != null)
+                            joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * - Math.PI / 180));
+                    }
                     if (jointAttr.stiffness() != null) {
-                        float stiffness = (float) (jointAttr.stiffness() * (i <= 2 ? 1 : Math.PI / 180));
+                        // 旋转轴刚度: JSON中为N·m/deg，Bullet需要N·m/rad，乘以180/π转换
+                        float stiffness = (float) (jointAttr.stiffness() * (i <= 2 ? 1 : 180.0 / Math.PI));
                         if (!getPhysicsLevel().getMcLevel().isClientSide()) {
                             float maxStiffness = safe * 4 * m_eff / (1f / getPhysicsLevel().getTps() / getPhysicsLevel().getTps());  // 稳定性条件: k_max = 4·m_eff/Δt²
                             if (stiffness > maxStiffness) {
@@ -333,7 +345,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     }
                     if (jointAttr.damping() != null) {
                         //限制最大阻尼以确保稳定性
-                        float damping = (float) (jointAttr.damping() * (i <= 2 ? 1 : Math.PI / 180));
+                        // 旋转轴阻尼: JSON中为N·m·s/deg，Bullet需要N·m·s/rad，乘以180/π转换
+                        float damping = (float) (jointAttr.damping() * (i <= 2 ? 1 : 180.0 / Math.PI));
                         if (!getPhysicsLevel().getMcLevel().isClientSide()) {
                             float stiffness = joint.get(MotorParam.Stiffness, i) / getPhysicsLevel().getTps() / getPhysicsLevel().getTps() / m_eff;
                             float maxDamping;

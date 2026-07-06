@@ -2,15 +2,18 @@
   "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
   "type": "Advanced",
   "direction": "zn",
-  "required_tags": ["machine_max:direction/front", "machine_max:bumper"],
+  "required_tags": [
+    "machine_max:direction/front",
+    "machine_max:bumper"
+  ],
   "integrity": 10.0,
   "joint_attrs": {
     "zr": {
       "lower_limit": -30.0,
       "upper_limit": 30.0,
       "equilibrium": 0.0,
-      "stiffness": 286000,
-      "damping": 5700
+      "stiffness": 87.120582,
+      "damping": 1.736319
     }
   }
 }

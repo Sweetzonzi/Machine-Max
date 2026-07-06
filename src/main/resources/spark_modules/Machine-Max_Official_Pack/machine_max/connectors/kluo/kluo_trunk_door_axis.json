@@ -5,11 +5,11 @@
   "integrity": 20.0,
   "joint_attrs": {
     "xr": {
-      "lower_limit": 80.0,
+      "lower_limit": -80.0,
       "upper_limit": 0.0,
-      "equilibrium": 45.0,
-      "stiffness": 57000,
-      "damping": 5700
+      "equilibrium": -45.0,
+      "stiffness": 17.363193,
+      "damping": 1.736319
     }
   }
 }

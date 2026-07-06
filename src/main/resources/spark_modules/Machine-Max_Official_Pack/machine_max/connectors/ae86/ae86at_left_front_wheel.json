@@ -22,15 +22,15 @@
     "yr": {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "stiffness": 229000,
-      "damping": 1150
+      "stiffness": 69.757389,
+      "damping": 0.35031
     },
     "zr": {
       "lower_limit": 1.0,
       "upper_limit": 15.0,
       "equilibrium": 1.0,
-      "stiffness": 2865000,
-      "damping": 57300
+      "stiffness": 872.728908,
+      "damping": 17.454578
     }
   }
 }

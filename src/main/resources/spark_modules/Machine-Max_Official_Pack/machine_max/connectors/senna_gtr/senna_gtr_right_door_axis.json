@@ -6,11 +6,11 @@
   "integrity": 20.0,
   "joint_attrs": {
     "zr": {
-      "lower_limit": -80.0,
-      "upper_limit": 0.0,
-      "equilibrium": -80,
-      "stiffness": 500,
-      "damping": 11500
+      "lower_limit": 0.0,
+      "upper_limit": 80.0,
+      "equilibrium": 80,
+      "stiffness": 15,
+      "damping": 3.5031
     }
   }
 }

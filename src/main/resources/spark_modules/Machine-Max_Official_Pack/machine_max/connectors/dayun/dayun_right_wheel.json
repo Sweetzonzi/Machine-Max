@@ -24,8 +24,8 @@
       "lower_limit": -8.0,
       "upper_limit": -1.0,
       "equilibrium": -1.0,
-      "stiffness": 6876000,
-      "damping": 200600
+      "stiffness": 2094.549378,
+      "damping": 61.106254
     }
   }
 }

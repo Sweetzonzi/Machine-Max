@@ -3,7 +3,10 @@
   "type": "Advanced",
   "direction": "xn",
   "integrity": 40.0,
-  "forbidden_tags": ["machine_max:hull", "machine_max:chassis"],
+  "forbidden_tags": [
+    "machine_max:hull",
+    "machine_max:chassis"
+  ],
   "joint_attrs": {
     "y": {
       "lower_limit": -0.5,
@@ -19,7 +22,7 @@
     "yr": {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "damping": 1150
+      "damping": 0.35031
     }
   }
 }

@@ -3,9 +3,14 @@
   "type": "Advanced",
   "direction": "xn",
   "integrity": 60.0,
-  "required_tags": ["machine_max:direction/left"],
+  "required_tags": [
+    "machine_max:direction/left"
+  ],
   "acceptable_tags": [],
-  "forbidden_tags": ["machine_max:hull", "machine_max:chassis"],
+  "forbidden_tags": [
+    "machine_max:hull",
+    "machine_max:chassis"
+  ],
   "joint_attrs": {
     "y": {
       "lower_limit": -1.0,
@@ -22,8 +27,8 @@
       "lower_limit": 1.0,
       "upper_limit": 5.0,
       "equilibrium": 1.0,
-      "stiffness": 344000,
-      "damping": 4900
+      "stiffness": 104.788392,
+      "damping": 1.492625
     }
   }
 }
