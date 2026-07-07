@@ -45,6 +45,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionHandler;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
+import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
@@ -94,8 +95,6 @@ import org.joml.Matrix4f;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil.calculateSlipScale;
 
 @EventBusSubscriber
 @Getter
@@ -512,6 +511,37 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public boolean isArmorPenetrated(BFDamageContext ctx) {
         return modifyPenetration(ctx) > getRHA(ctx);
+    }
+
+    /**
+     * 穿甲结果判定：跳弹 → 击穿 → 未击穿。
+     * <p>
+     * 默认实现仅区分击穿/未击穿，此处覆写增加跳弹判定：
+     * 根据入射角、弹丸口径、穿深和装甲RHA综合计算跳弹概率。
+     * 碾压时（口径或穿深远超装甲）免疫跳弹。
+     *
+     * @param ctx 命中上下文
+     * @return PENETRATED / BLOCKED / RICOCHET
+     */
+    @Override
+    public PenetrationResult resolvePenetration(BFDamageContext ctx) {
+        // 计算入射角（与法线夹角，度）
+        Vec3 normal = ctx.hitNormal();
+        Vec3 velocity = ctx.hitVelocity();
+        double cosTheta = Math.abs(normal.normalize().dot(velocity.normalize()));
+        float impactAngleDeg = (float) Math.toDegrees(Math.acos(cosTheta));
+
+        // 从扩展容器读取口径（mm），若未写入则回退到0（无碾压保护）
+        float caliber = ctx.extensions().get(BFDamageExtensions.CALIBER);
+        float effectivePen = modifyPenetration(ctx);
+        float armorRha = getRHA(ctx);
+
+        // 跳弹判定
+        if (ArmorUtil.shouldRicochet(impactAngleDeg, caliber, effectivePen, armorRha)) {
+            return PenetrationResult.RICOCHET;
+        }
+
+        return isArmorPenetrated(ctx) ? PenetrationResult.PENETRATED : PenetrationResult.BLOCKED;
     }
 
     /**

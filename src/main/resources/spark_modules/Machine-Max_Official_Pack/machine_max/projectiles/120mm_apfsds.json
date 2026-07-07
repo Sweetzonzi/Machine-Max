@@ -6,7 +6,7 @@
     "mass": 4.5,
     "gravity_factor": 1.0,
     "drag_factor": 0.00008,
-    "radius": 0.013,
+    "caliber": 26.0, // 次口径穿甲弹芯直径
     "base_velocity": 1650,
     "base_accuracy_mil": 0.8
   },

@@ -4,6 +4,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
@@ -64,6 +65,9 @@ public class ProjectileType {
 
     /** 注册键，由 {@link ProjectileModule} 加载时赋值 */
     private ResourceLocation registryKey;
+
+    /** 静态扩展数据缓存（口径、质量等不变信息），惰性初始化，命中时 copy 后追加动态值 */
+    private volatile BFDamageExtensions baseExtensions;
 
 
     // ==================== 字符串↔枚举互转 Codec ====================
@@ -129,9 +133,32 @@ public class ProjectileType {
     public float getMass() { return external.mass(); }
     public float getGravityFactor() { return external.gravityFactor(); }
     public float getDragFactor() { return external.dragFactor(); }
-    public float getRadius() { return external.radius(); }
+    /** 口径（mm） */
+    public float getCaliber() { return external.caliberMm(); }
+    /** 碰撞半径（m），由口径换算 */
+    public float getRadius() { return external.caliberMm() / 2000f; }
     public float getBaseVelocity() { return external.baseVelocity(); }
     public float getBaseAccuracyMil() { return external.baseAccuracyMil(); }
+
+    /**
+     * 获取此投射物类型的静态扩展数据缓存（口径、质量等不变字段）。
+     * 惰性初始化，命中时通过 {@link BFDamageExtensions#copy()} 复制后追加冲量等动态值。
+     *
+     * @return 预填充了 CALIBER / MASS 的扩展容器（每次返回同一实例的副本供调用方修改）
+     */
+    public BFDamageExtensions getBaseExtensions() {
+        if (baseExtensions == null) {
+            synchronized (this) {
+                if (baseExtensions == null) {
+                    BFDamageExtensions exts = new BFDamageExtensions();
+                    exts.set(BFDamageExtensions.CALIBER, getCaliber());
+                    exts.set(BFDamageExtensions.MASS, getMass());
+                    baseExtensions = exts;
+                }
+            }
+        }
+        return baseExtensions.copy();
+    }
 
     // -- 终点效应委托（→ TerminalProperties） --
 
@@ -375,8 +402,8 @@ public class ProjectileType {
         float gravityFactor,
         /** 空气阻力系数（速度²阻力），0 = 无阻力 */
         float dragFactor,
-        /** 碰撞半径（m），质点用于射线检测命中判定，刚体用于 SphereCollisionShape */
-        float radius,
+        /** 口径（mm），质点用于射线检测命中判定，刚体用于 SphereCollisionShape */
+        float caliberMm,
         /** 参考速度（m/s），速度-伤害模型的基准速度 */
         float baseVelocity,
         /**
@@ -390,7 +417,7 @@ public class ProjectileType {
             Codec.FLOAT.fieldOf("mass").forGetter(ExternalProperties::mass),
             Codec.FLOAT.optionalFieldOf("gravity_factor", 1.0f).forGetter(ExternalProperties::gravityFactor),
             Codec.FLOAT.optionalFieldOf("drag_factor", 0f).forGetter(ExternalProperties::dragFactor),
-            Codec.FLOAT.optionalFieldOf("radius", 0.05f).forGetter(ExternalProperties::radius),
+            Codec.FLOAT.optionalFieldOf("caliber", 50.0f).forGetter(ExternalProperties::caliberMm),
             Codec.FLOAT.fieldOf("base_velocity").forGetter(ExternalProperties::baseVelocity),
             Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil)
         ).apply(instance, ExternalProperties::new));

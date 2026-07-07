@@ -6,7 +6,7 @@
     "mass": 0.12,
     "gravity_factor": 1.0,
     "drag_factor": 0.0003,
-    "radius": 0.002,
+    "caliber": 20.0,
     "base_velocity": 600,
     "base_accuracy_mil": 2.0
   },

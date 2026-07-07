@@ -2,9 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
-import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
+import io.github.sweetzonzi.ballistics_framework.api.*;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,9 +14,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
-import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
@@ -129,13 +124,7 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
-        float rha = target.getRHA(ctx);
-        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
-        if (newSpeed <= 0) {
-            setPendingHitResult(AfterHitResult.DESTROYED);
-        } else {
-            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
-        }
+        resolvePenetrationSpeed(target, ctx);
     }
 
     @Override
@@ -152,24 +141,31 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
-        float rha = target.getRHA(ctx);
-        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
-        if (newSpeed <= 0) {
-            setPendingHitResult(AfterHitResult.DESTROYED);
-        } else {
-            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
-        }
+        resolvePenetrationSpeed(target, ctx);
     }
 
     @Override
     default void onSpall(BFHurtTarget target, BFDamageContext ctx) {
+        resolvePenetrationSpeed(target, ctx);
+    }
+
+    /**
+     * 碾压判定：穿深或口径远超装甲厚度时弹体保持完整。
+     * <p>
+     * 相比默认实现仅检查穿深维度，此处增加口径维度：
+     * 大口径弹丸（口径 &gt; 2× 装甲RHA）打薄板时同样视为碾压。
+     *
+     * @param target 伤害目标
+     * @param ctx    命中上下文
+     * @param result 穿甲结果
+     * @return true 表示碾压——弹体完整穿透，不触发破片
+     */
+    @Override
+    default boolean isOvermatch(BFHurtTarget target, BFDamageContext ctx, PenetrationResult result) {
+        if (result != PenetrationResult.PENETRATED) return false;
         float rha = target.getRHA(ctx);
-        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
-        if (newSpeed <= 0) {
-            setPendingHitResult(AfterHitResult.DESTROYED);
-        } else {
-            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
-        }
+        float modifiedPen = target.modifyPenetration(ctx);
+        return ArmorUtil.isOvermatched(getCaliber(), modifiedPen, rha);
     }
 
     /**
@@ -208,9 +204,10 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void beforePenetrated(BFHurtTarget target, BFDamageContext ctx) {
+        float effectivePen = target.modifyPenetration(ctx);
         float rha = target.getRHA(ctx);
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
-                computePenetrationImpulse(ctx.penetration(), rha, (float) ctx.hitVelocity().length()));
+                computePenetrationImpulse(effectivePen, rha, (float) ctx.hitVelocity().length()));
     }
 
     @Override
@@ -228,9 +225,10 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void beforeOvermatch(BFHurtTarget target, BFDamageContext ctx) {
+        float effectivePen = target.modifyPenetration(ctx);
         float rha = target.getRHA(ctx);
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
-                computePenetrationImpulse(ctx.penetration(), rha, (float) ctx.hitVelocity().length()));
+                computePenetrationImpulse(effectivePen, rha, (float) ctx.hitVelocity().length()));
     }
 
     @Override
@@ -448,6 +446,9 @@ public interface IProjectile extends BFDamageHandler {
     }
     default float getRadius()          { return getProjectileType().getRadius(); }
 
+    /** 口径（mm），供跳弹/碾压判定等使用 */
+    default float getCaliber()         { return getProjectileType().getCaliber(); }
+
     // ========== 生命周期 ==========
 
     /**
@@ -526,8 +527,8 @@ public interface IProjectile extends BFDamageHandler {
      * @return 实际造成的伤害量（协议层计算值，可能被原版护甲二次减免）
      */
     default float dealDamage(Object target, Vec3 hitPoint, Vec3 hitNormal) {
-        // 创建扩展容器，供穿透管线内外传递数据
-        BFDamageExtensions exts = new BFDamageExtensions();
+        // 从 ProjectileType 缓存复制静态扩展数据（口径、质量等），后续追加冲量等动态值
+        BFDamageExtensions exts = getProjectileType().getBaseExtensions();
         Vector3f vel = getVelocity();
         Vec3 hitVel = new Vec3(vel.x, vel.y, vel.z);
         BFDamageContext ctx = buildHurtContext(getLevel(), calculateCurrentDamage(),
@@ -580,6 +581,28 @@ public interface IProjectile extends BFDamageHandler {
                 .extensions(exts)
                 .build()
                 .withHandler(this);
+    }
+
+    /**
+     * 应用目标的穿深修正（如爆反拦截、间隙衰减），计算穿透后速率并写入命中结果。
+     * <p>
+     * 先通过 {@link BFHurtTarget#modifyPenetration} 获取目标侧修正后的有效穿深，
+     * 再代入能量法公式计算穿透后的剩余速率。结果写入 {@link #setPendingHitResult}。
+     * 供 {@link #onPenetrated} / {@link #onOvermatch} / {@link #onSpall} 共享。
+     *
+     * @param target 命中目标（用于获取穿深修正与 RHA）
+     * @param ctx    命中上下文
+     */
+    private void resolvePenetrationSpeed(BFHurtTarget target, BFDamageContext ctx) {
+        float effectivePen = target.modifyPenetration(ctx);  // 目标侧修正（爆反/间隙衰减等）
+        float rha = target.getRHA(ctx);
+        float speed = getSpeed();
+        float newSpeed = speedAfterPenetration(speed, effectivePen, rha, getPenetrationVelocityCoefficient());
+        if (newSpeed <= 0) {
+            setPendingHitResult(AfterHitResult.DESTROYED);
+        } else {
+            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(speed, 0.001f), getVelocity()));
+        }
     }
 
     /** 能量法计算穿透冲量：m × (v - v_new)，v_new 由 {@link #speedAfterPenetration} 得出 */
