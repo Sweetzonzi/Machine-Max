@@ -430,8 +430,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             Vector3f pos = body.getPhysicsLocation(null);
             int blockX = (int) pos.x;
             int blockZ = (int) pos.z;
-            // 仅在中心方块发生变化时重建高度场
-            if (blockX != lastHFBlockX || blockZ != lastHFBlockZ) {
+            // 仅在中心方块发生变化时重建高度场 (定期重建以反映方块更新)
+            if (blockX != lastHFBlockX || blockZ != lastHFBlockZ || physicsTickCount % 100 == 0) {
                 heightField.rebuild(getPhysicsLevel(), blockX, blockZ, bodyMinY);
                 lastHFBlockX = blockX;
                 lastHFBlockZ = blockZ;

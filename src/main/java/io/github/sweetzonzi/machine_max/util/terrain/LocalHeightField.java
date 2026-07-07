@@ -106,19 +106,17 @@ public class LocalHeightField {
         float highestHeight = Float.NEGATIVE_INFINITY;
         SurfaceType highestType = SurfaceType.NONE;
 
-        // 在车辆附近垂直范围内搜索碰撞体
-        for (int dy = -2; dy <= 4; dy++) {
+        // 【修复】从上往下扫描碰撞体，找到的第一个有效碰撞体即为实际地表，
+        // 避免地下空洞导致下方方块被误判为表面。
+        for (int dy = 4; dy >= -2; dy--) {
 
             BlockPos pos = new BlockPos(wx, by + dy, wz);
 
             SectionSnapshot.BlockSnapshot snap =
                     level.terrainManager.getBlockSnapshotAt(pos);
 
-            if (snap == null) {
-                if (highestType == SurfaceType.NONE)
-                    continue;
-                else break;
-            }
+            // 区块未加载，继续向下查找
+            if (snap == null) continue;
 
             BlockState state = snap.getState();
 
@@ -127,16 +125,11 @@ public class LocalHeightField {
                     BlockPos.ZERO
             );
 
-            if (shape.isEmpty()) {
-                if (highestType == SurfaceType.NONE)
-                    continue;
-                else break;
-            }
+            // 空气等无碰撞方块，继续向下查找
+            if (shape.isEmpty()) continue;
 
             float height = (float) shape.max(Direction.Axis.Y);
             float worldHeight = pos.getY() + height;
-
-            if (worldHeight <= highestHeight) continue;
 
             // 判断方块表面类型
             SurfaceType type;
@@ -152,6 +145,7 @@ public class LocalHeightField {
 
             highestHeight = worldHeight;
             highestType = type;
+            break; // 已找到实际地表，停止向下搜索
         }
 
         // 根据类型填入对应高度场，另一场置 -∞ 实现互补

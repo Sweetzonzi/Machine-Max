@@ -328,7 +328,7 @@ public class CollisionHandler {
                 radius = subPart.getWheelRadius(hitBoxIndex);
             var result = subPart.heightField.solveContact(pos, radius, worldContactPoint);
             if (result.penetration() > 0 && result.normal().y < 0.999f) {
-                //修正碰撞法线和接触点，使车辆能爬上高度场
+                //修正碰撞法线和接触点，使车辆能爬上高度场 (JME负深度代表侵入)
                 ManifoldPoints.setDistance1(manifoldPointId, Math.min(-result.penetration(), -0.01f));
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId,
                         point1.getIndex() == 0 ? result.normal() : result.normal().negate());
