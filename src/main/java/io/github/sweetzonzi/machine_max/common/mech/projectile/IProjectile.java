@@ -80,28 +80,29 @@ public interface IProjectile extends BFDamageHandler {
     // ==================== 穿透速度工具 ====================
 
     /**
-     * 计算穿透目标后的速度衰减（基于穿深残量反算新速率）。
+     * 能量法计算穿透后的剩余速率。
+     * <p>
+     * 从穿深公式反推刚好穿透目标护甲所需的速度 v_threshold，
+     * 再从当前动能中扣除穿透耗能，由剩余动能反推新速度。
      * <pre>
-     * residualRatio = max(0, (pen - targetArmor) / pen)
-     * coeff ≠ 0 → newSpeed = speed × residualRatio^(1/coeff)
-     * coeff = 0 → newSpeed = speed × √residualRatio
+     * v_threshold = v × (targetArmor / currentPen)^(1/k)
+     * v_new = sqrt(max(0, v² - v_threshold²))
      * </pre>
+     * k=0 时穿深与速度无关，不损失能量，返回原速度。
      *
-     * @param currentSpeed  当前速率（m/s）
-     * @param currentPen    当前穿深（mm RHA）
-     * @param targetArmor   目标等效护甲（mm RHA）
-     * @param penCoeff      穿深速度系数
-     * @return 穿透后的新速率 ≥ 0
+     * @param currentSpeed 当前速率（m/s）
+     * @param currentPen   当前穿深（mm RHA）
+     * @param targetArmor  目标等效护甲（mm RHA）
+     * @param penCoeff     穿深速度系数 k
+     * @return 穿透后的新速率；动能不足以穿透时返回 0
      */
     static float speedAfterPenetration(float currentSpeed, float currentPen, float targetArmor, float penCoeff) {
-        float residualPen = Math.max(0, currentPen - targetArmor);
-        float residualRatio = residualPen / Math.max(currentPen, 0.001f);
-        if (Math.abs(penCoeff) > 1e-6f) {
-            return currentSpeed * (float) Math.pow(residualRatio, 1.0f / penCoeff);
-        } else {
-            // 系数为 0 时退化为平方根衰减
-            return currentSpeed * (float) Math.sqrt(residualRatio);
-        }
+        if (Math.abs(penCoeff) < 1e-6f) return currentSpeed; // k=0 不损失能量
+        float ratio = targetArmor / Math.max(currentPen, 1e-6f);
+        float vThreshold = currentSpeed * (float) Math.pow(ratio, 1.0f / penCoeff);
+        float vNewSq = currentSpeed * currentSpeed - vThreshold * vThreshold;
+        if (vNewSq <= 0) return 0;
+        return (float) Math.sqrt(vNewSq);
     }
 
     // ==================== 命中结果桥接（回调 ↔ Manager） ====================
@@ -126,16 +127,15 @@ public interface IProjectile extends BFDamageHandler {
 
     // ==================== BFDamageHandler 回调默认实现 ====================
 
-    /** 按穿深与 RHA 的残余比例计算 passThrough 结果 */
-    private AfterHitResult passThroughByResidual(float pen, float rha) {
-        float residual = (pen - rha) / Math.max(pen, 0.001f);
-        residual = Math.max(0.1f, Math.min(1.0f, residual));
-        return AfterHitResult.passThrough((float) Math.sqrt(residual), getVelocity());
-    }
-
     @Override
     default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
-        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
+        float rha = target.getRHA(ctx);
+        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
+        if (newSpeed <= 0) {
+            setPendingHitResult(AfterHitResult.DESTROYED);
+        } else {
+            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
+        }
     }
 
     @Override
@@ -152,12 +152,24 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
-        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
+        float rha = target.getRHA(ctx);
+        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
+        if (newSpeed <= 0) {
+            setPendingHitResult(AfterHitResult.DESTROYED);
+        } else {
+            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
+        }
     }
 
     @Override
     default void onSpall(BFHurtTarget target, BFDamageContext ctx) {
-        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
+        float rha = target.getRHA(ctx);
+        float newSpeed = speedAfterPenetration(getSpeed(), ctx.penetration(), rha, getPenetrationVelocityCoefficient());
+        if (newSpeed <= 0) {
+            setPendingHitResult(AfterHitResult.DESTROYED);
+        } else {
+            setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
+        }
     }
 
     /**
@@ -181,7 +193,12 @@ public interface IProjectile extends BFDamageHandler {
         if (pen <= effectiveRha * 0.15f) {
             setPendingHitResult(AfterHitResult.DESTROYED);
         } else {
-            setPendingHitResult(passThroughByResidual(pen, effectiveRha));
+            float newSpeed = speedAfterPenetration(getSpeed(), pen, effectiveRha, getPenetrationVelocityCoefficient());
+            if (newSpeed <= 0) {
+                setPendingHitResult(AfterHitResult.DESTROYED);
+            } else {
+                setPendingHitResult(AfterHitResult.passThrough(newSpeed / Math.max(getSpeed(), 0.001f), getVelocity()));
+            }
         }
     }
 
@@ -565,12 +582,10 @@ public interface IProjectile extends BFDamageHandler {
                 .withHandler(this);
     }
 
-    /** 根据穿深和 RHA 计算穿透后的动量转移冲量（N·s），公式与 {@link #passThroughByResidual} 一致 */
+    /** 能量法计算穿透冲量：m × (v - v_new)，v_new 由 {@link #speedAfterPenetration} 得出 */
     private float computePenetrationImpulse(float pen, float rha, float impactSpeed) {
-        float residual = (pen - rha) / Math.max(pen, 0.001f);
-        residual = Math.max(0.1f, Math.min(1.0f, residual));
-        float residualSpeed = impactSpeed * (float) Math.sqrt(residual);
-        return Math.max(0f, getMass() * (impactSpeed - residualSpeed));
+        float newSpeed = speedAfterPenetration(impactSpeed, pen, rha, getPenetrationVelocityCoefficient());
+        return getMass() * (impactSpeed - newSpeed); // newSpeed=0 即全部动量转移
     }
 
     /**
