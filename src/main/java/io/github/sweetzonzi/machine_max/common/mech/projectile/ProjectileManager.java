@@ -96,6 +96,7 @@ public class ProjectileManager {
     public int[] typeIndex;             // 投射物类型索引
     public int[] objId;                 // 对应的 DestroyableObject ID
     public boolean[] alive;             // 活跃标志
+    public boolean[] skipExtrapolate;    // 命中帧暂停客户端外推（跳弹/穿透后保持位置在命中点）
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
@@ -210,6 +211,7 @@ public class ProjectileManager {
         typeIndex = new int[capacity];
         objId = new int[capacity];
         alive = new boolean[capacity];
+        skipExtrapolate = new boolean[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
         typeCache = new ProjectileType[0];
@@ -276,6 +278,7 @@ public class ProjectileManager {
         typeIndex[i] = getOrAddType(proj.getProjectileType());
         objId[i] = id;
         alive[i] = true;
+        skipExtrapolate[i] = false;
         projectileObjIds.add(id);
         // volatile write 必须在所有 SoA 数组写入之后，确保主线程读取 count 时数据已完整
         count = i + 1;
@@ -805,6 +808,12 @@ public class ProjectileManager {
                 ProjectileType type = types[typeIndex[i]];
                 // 刚体投射物跳过客户端外推（状态由服务端 writebackRigidState 同步）
                 if (type.getType().isRigid()) continue;
+
+                // 命中帧暂停外推：保持 SoA 位置在命中点，使渲染器绘制出跳弹/穿透折角
+                if (skipExtrapolate[i]) {
+                    skipExtrapolate[i] = false;  // 仅暂停一帧，下帧恢复正常外推
+                    continue;
+                }
 
                 float mass = type.getMass();
                 float gravityFactor = type.getGravityFactor();
@@ -1761,6 +1770,7 @@ public class ProjectileManager {
             typeIndex[index] = typeIndex[last];
             objId[index] = objId[last];
             alive[index] = alive[last];
+            skipExtrapolate[index] = skipExtrapolate[last];
             needsEntityRecreate[index] = needsEntityRecreate[last];
             // ★ entities 数组交换：将 last 位置的引用搬到 index 位置
             //    注意：last 位置的 entity 可能已在上一次 swapRemove 中被标记为待清理
@@ -1786,6 +1796,7 @@ public class ProjectileManager {
         typeIndex = Arrays.copyOf(typeIndex, newCap);
         objId = Arrays.copyOf(objId, newCap);
         alive = Arrays.copyOf(alive, newCap);
+        skipExtrapolate = Arrays.copyOf(skipExtrapolate, newCap);
         needsEntityRecreate = Arrays.copyOf(needsEntityRecreate, newCap);
         entities = Arrays.copyOf(entities, newCap);
         capacity = newCap;

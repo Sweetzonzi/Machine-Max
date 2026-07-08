@@ -29,8 +29,6 @@ dependencies {
     implementation "dev.latvian.mods:rhino:${rhino_version}"
     // GraalVM polyglot（Spark-Core 通过 jarJar 嵌入，运行时由 Spark-Core 提供，此处仅编译需要）
     compileOnly "org.graalvm.polyglot:polyglot:${graalvm_version}"
-    // 暴雪粒子
-//    implementation files('libs/particlestorm-1.1.4.jar')
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 加速渲染

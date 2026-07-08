@@ -136,14 +136,14 @@ public record ProjectilesHitPayload(
                 Vec3 hitPoint = new Vec3(e.hitX, e.hitY, e.hitZ);
                 Vec3 hitNormal = new Vec3(e.normalX, e.normalY, e.normalZ);
 
-                // 更新 SoA 状态（命中位置修正、速度更新、销毁标记）
+                // 更新 SoA 状态：所有命中统一修正位置到实际命中点，暂停一帧外推以绘制折角
                 int idx = pm.findIndexByObjId(e.objId);
                 if (idx >= 0) {
+                    pm.posX[idx] = (float) e.hitX;
+                    pm.posY[idx] = (float) e.hitY;
+                    pm.posZ[idx] = (float) e.hitZ;
+                    pm.skipExtrapolate[idx] = true;
                     if (e.destroyed) {
-                        // 修正客户端外推导致的位置穿模：将 SoA 位置拉回到实际命中点
-                        pm.posX[idx] = (float) e.hitX;
-                        pm.posY[idx] = (float) e.hitY;
-                        pm.posZ[idx] = (float) e.hitZ;
                         pm.alive[idx] = false;
                         // 标记客户端投射物对象为已命中，确保 MMProjectileEntity.isAlive() 返回 false
                         DestroyableObject obj = pm.getProjectile(e.objId);
@@ -151,6 +151,7 @@ public record ProjectilesHitPayload(
                             proj.markHit();
                         }
                     } else {
+                        // 跳弹/穿透：同步修正速度
                         pm.velX[idx] = (float) e.newVelX;
                         pm.velY[idx] = (float) e.newVelY;
                         pm.velZ[idx] = (float) e.newVelZ;
