@@ -1068,9 +1068,12 @@ public class ProjectileManager {
             allHits.sort(Comparator.comparingDouble(HitEntry::hitFraction));
 
             // ===== 阶段3：按序遍历处理所有命中 =====
-            boolean stopped = false;
+            boolean shouldRemove = false;
+            Vector3f refVel = new Vector3f(velX[i], velY[i], velZ[i]); // 参考速度，用于统一检测跳弹方向变化
             for (HitEntry entry : allHits) {
-                if (stopped) break;
+                if (shouldRemove) break;
+                // 上轮命中若导致方向改变（跳弹），跳出循环，下个物理帧用新方向重做 rayTest
+                if (velocityDirectionChanged(refVel, velX[i], velY[i], velZ[i])) break;
 
                 if (entry.terrain() != null) {
                     // ---- 地形方块命中 ----
@@ -1081,7 +1084,7 @@ public class ProjectileManager {
                         broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
-                        stopped = true;
+                        shouldRemove = true;
                         break;
                     }
 
@@ -1116,20 +1119,20 @@ public class ProjectileManager {
                         broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
-                        stopped = true;
+                        shouldRemove = true;
                     }
                 } else if (entry.owner() == null) {
                     // null owner：直接停止（无属主信息）
                     broadcastTerrainHit(i, entry.hitPoint(), null);
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);
-                    stopped = true;
+                    shouldRemove = true;
                 } else {
                     // ---- 非地形命中（实体/零件） ----
                     if (!(destroyable instanceof IProjectile projectile)) {
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
-                        stopped = true;
+                        shouldRemove = true;
                         break;
                     }
 
@@ -1144,14 +1147,14 @@ public class ProjectileManager {
                         case SubPart subPart -> {
                             HitBox hitBox = subPart.getHitBox(result.triangleIndex());
                             if (hitBox.isActive()) {
-                                stopped = applyAfterHitResult(i, projectile,
+                                shouldRemove = applyAfterHitResult(i, projectile,
                                         projectile.onPartHit(level, subPart,
                                                 currentPen, currentDmg, hp, hn),
                                         hp, hn, pk);
                             }
                         }
                         case BFHurtTarget bfTarget when !(entry.owner() instanceof Entity) -> {
-                            stopped = applyAfterHitResult(i, projectile,
+                            shouldRemove = applyAfterHitResult(i, projectile,
                                     projectile.onPartHit(level, bfTarget,
                                             currentPen, currentDmg, hp, hn),
                                     hp, hn, pk);
@@ -1159,14 +1162,14 @@ public class ProjectileManager {
                         case Entity entity -> {
                             if (entity.isRemoved() || (entity instanceof LivingEntity living && living.isDeadOrDying()))
                                 continue; // 实体已死亡，跳过
-                            stopped = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
+                            shouldRemove = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
                         }
                         default -> {}
                     }
                 }
             }
 
-            if (stopped) {
+            if (shouldRemove) {
                 // 异步管线中等待主线程回调的投射物不要提前清理——下一 tick 的暂停恢复会处理
                 if (destroyable instanceof IProjectile proj && proj.isHitPending()) {
                     continue;
@@ -1181,6 +1184,28 @@ public class ProjectileManager {
                 swapRemove(i);
             }
         }
+    }
+
+    /**
+     * 检测速度方向是否发生显著变化（统一跳弹判定）。
+     * <p>
+     * 比较参考速度与当前 SoA 速度的方向余弦，阈值 0.99（约 8°）。
+     * 穿透保持同方向 → cos ≈ 1.0 → 不触发；跳弹反射 → cos 显著下降 → 触发。
+     * <p>
+     * 循环每次迭代开始时调用，替代分散在各命中路径中的单独检测。
+     *
+     * @param refVel 参考速度（上轮迭代结束时的 SoA 速度快照）
+     * @param vx     当前 SoA 速度 X 分量
+     * @param vy     当前 SoA 速度 Y 分量
+     * @param vz     当前 SoA 速度 Z 分量
+     * @return true 表示方向变化显著，应停止遍历本帧后续命中条目
+     */
+    private static boolean velocityDirectionChanged(Vector3f refVel, float vx, float vy, float vz) {
+        float refLen = refVel.length();
+        float newLen = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (refLen < 1e-6f || newLen < 1e-6f) return false;
+        float cosAngle = (refVel.x * vx + refVel.y * vy + refVel.z * vz) / (refLen * newLen);
+        return cosAngle < 0.99f;
     }
 
     /**
@@ -1259,13 +1284,19 @@ public class ProjectileManager {
      * <p>
      * <b>调用线程：</b>物理线程（{@link #updatePointProjectiles} 内部广播方法，
      * 以及 {@link RigidProjectile} 碰撞回调）。
+     * <p>
+     * <b>参数语义：</b>
+     * <ul>
+     *   <li>地形命中：{@code hitBlockPos} 非 null，客户端收到后查方块播原生粒子/音效</li>
+     *   <li>SubPart / Entity 命中：{@code hitBlockPos} 为 null，特效由各自自理包负责，命中包仅做弹道状态同步</li>
+     * </ul>
      *
-     * @param objId      投射物 DestroyableObject ID
-     * @param hitPoint   命中点世界坐标
-     * @param hitNormal  命中面法线
-     * @param destroyed  投射物是否已销毁
-     * @param newVelocity 销毁后的剩余速度（destroyed=true 时可为 null）
-     * @param isArmorHit 是否为装甲命中（影响客户端粒子类型）
+     * @param objId       投射物 DestroyableObject ID
+     * @param hitPoint    命中点世界坐标
+     * @param hitNormal   命中面法线
+     * @param destroyed   投射物是否已销毁
+     * @param newVelocity 穿透后剩余速度（destroyed=true 时可为 null）
+     * @param hitBlockPos 地形命中时为被命中方块位置，客户端据此查方块播特效；非地形命中为 null
      */
     public void enqueueHitSync(int objId, Vec3 hitPoint, Vec3 hitNormal,
                                boolean destroyed, @Nullable Vector3f newVelocity, @Nullable BlockPos hitBlockPos) {
