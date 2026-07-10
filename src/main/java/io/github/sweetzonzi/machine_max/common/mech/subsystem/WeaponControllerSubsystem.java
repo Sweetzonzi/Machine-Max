@@ -6,12 +6,11 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
-import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
-import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -154,8 +153,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
         ViewInputSignal vis = this.currentViewSignal;
         Vec3 target = this.targetPosition;
-        if (!isActive() || isDestroyed() || vis == null || target == null) {
-            resetSignalOutputs();
+        if (!isActive() || isDestroyed()) {
+            releaseAllControl();
+            return;
+        }
+        if (vis == null || target == null) {
+            // 无目标时释放所有控制权
+            releaseAllControl();
             return;
         }
 
@@ -166,7 +170,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
             TurretDriverSubsystem turret = entry.getKey();
             String channel = entry.getValue();
-            if (turret.isDestroyed() || !turret.isActive()) continue;
+            if (turret.isDestroyed() || !turret.isActive()) {
+                turret.setTargetAngle(channel, null);
+                continue;
+            }
 
             Vector3f targetAngle = new Vector3f(turret.getRelativeAngle());
             boolean computed = false;
@@ -193,7 +200,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             }
             // 无稳且 offset=0 → targetAngle.y 保持当前角度（炮塔锁死）
 
-            sendCallbackToListener(channel, turret, new RotationSignal(targetAngle));
+            // 直接调用替代 sendCallbackToListener + RotationSignal
+            turret.setTargetAngle(channel, targetAngle);
         }
 
         // ② 筛选瞄准目标的发射器
@@ -212,9 +220,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 case RIPPLE -> fireRipple(aimedLaunchers);
             }
         } else {
-            // 无开火指令或无可开火发射器 → 发送空信号停止射击
+            // 无开火指令或无可开火发射器 → 释放开火权并重置轮射状态
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
+                entry.getKey().setFireCommand(entry.getValue(), null);
             }
             rippleTickCounter = 0;
             rippleIndex = 0;
@@ -419,40 +427,73 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     // ==================== 齐射/轮射 ====================
 
     /**
-     * 齐射：所有已瞄准的发射器同时开火
+     * 齐射：所有已瞄准的发射器同时开火。<br>
+     * 先停火所有发射器（释放上次控制权），再让已瞄准的同时开火。
      */
     private void fireSalvo(List<LauncherSubsystem> aimedLaunchers) {
+        float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
+        // 先停火所有发射器
+        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
+            entry.getKey().setFireCommand(entry.getValue(), null);
+        }
+        // 已瞄准的同时开火
         for (LauncherSubsystem launcher : aimedLaunchers) {
             String channel = launchers.get(launcher);
-            sendCallbackToListener(channel, launcher, 1.0f);
+            launcher.setFireCommand(channel,
+                new LauncherSubsystem.FireCommand(computeFireDirection(launcher), correctionDeg, true));
         }
     }
 
     /**
-     * 轮射：按顺序每次只让一个发射器开火，间隔由 rippleIntervalTick 控制
+     * 轮射：按顺序每次只让一个发射器开火，间隔由 rippleInterval 控制。
      */
     private void fireRipple(List<LauncherSubsystem> aimedLaunchers) {
         if (aimedLaunchers.isEmpty()) return;
 
+        float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
         int interval = (int) (attr.staticAttribute.getRippleInterval() * 20f); // 秒 → tick
 
         if (rippleTickCounter <= 0) {
-            // 发送空信号给所有发射器，先停止上轮射击
+            // 先停火所有发射器
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
+                entry.getKey().setFireCommand(entry.getValue(), null);
             }
-
             // 只让当前索引的发射器开火
             if (rippleIndex < aimedLaunchers.size()) {
                 LauncherSubsystem launcher = aimedLaunchers.get(rippleIndex);
                 String channel = launchers.get(launcher);
-                sendCallbackToListener(channel, launcher, 1.0f);
+                launcher.setFireCommand(channel,
+                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher), correctionDeg, true));
             }
-
             rippleIndex = (rippleIndex + 1) % aimedLaunchers.size();
             rippleTickCounter = interval;
         } else {
             rippleTickCounter--;
+        }
+    }
+
+    /**
+     * 计算从 launcher 枪口指向 target 的单位方向向量（JME Vector3f）。
+     */
+    private Vector3f computeFireDirection(LauncherSubsystem launcher) {
+        if (targetPosition == null) return null;
+        Vec3 muzzlePos = launcher.getMuzzleWorldPosition();
+        Vec3 toTarget = targetPosition.subtract(muzzlePos).normalize();
+        return new Vector3f((float) toTarget.x, (float) toTarget.y, (float) toTarget.z);
+    }
+
+    /**
+     * 释放对所有已绑定 Consumer 的控制权。<br>
+     * 遍历 turrets/launchers，为每个条目调用 setXxx(channel, null/false)。<br>
+     * <b>调用线程：</b>可能从主线程（onTick releaseAllControl）或物理线程（onPrePhysicsTick）调用。
+     * Consumer 侧均为 ConcurrentHashMap，线程安全。
+     */
+    private void releaseAllControl() {
+        for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
+            entry.getKey().setTargetAngle(entry.getValue(), null);
+        }
+        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
+            entry.getKey().setFireCommand(entry.getValue(), null);
         }
     }
 
@@ -607,8 +648,21 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
+        // ① 快照 + 原子清理：物理线程此后遍历 turrets/launchers 为空，无法重新写入
+        Map<TurretDriverSubsystem, String> oldTurrets = new HashMap<>(turrets);
+        Map<LauncherSubsystem, String> oldLaunchers = new HashMap<>(launchers);
         turrets.clear();
         launchers.clear();
+
+        // ② 从快照安全释放（物理线程无法干扰，因为 turrets/launchers 已空）
+        for (Map.Entry<TurretDriverSubsystem, String> e : oldTurrets.entrySet()) {
+            e.getKey().setTargetAngle(e.getValue(), null);
+        }
+        for (Map.Entry<LauncherSubsystem, String> e : oldLaunchers.entrySet()) {
+            e.getKey().setFireCommand(e.getValue(), null);
+        }
+
+        // ③ 重新握手
         handShake();
         // 载具结构变化后标记重建弹药池，实际重建延迟到下一个 onTick
         needsAmmoPoolUpdate = true;

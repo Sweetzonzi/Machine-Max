@@ -8,18 +8,18 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
-import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
-import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import jme3utilities.math.MyMath;
+import org.jetbrains.annotations.Nullable;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 炮塔驱动子系统。<br>
@@ -54,6 +54,13 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     private final float yawMaxSpeed;
     private final float pitchMaxForce;
     private final float pitchMaxSpeed;
+
+    /**
+     * 多控制器目标角度映射。<br>
+     * key = controlInputs 中的频道名，value = (pitch, yaw, roll) 弧度。<br>
+     * 所有操作均在物理线程，ConcurrentHashMap 保证多写者安全。
+     */
+    private final ConcurrentHashMap<String, Vector3f> targetAngles = new ConcurrentHashMap<>();
 
     public TurretDriverSubsystem(ISubsystemHost owner, String name, TurretDriverSubsystemAttr attr) {
         super(owner, name, attr);
@@ -99,20 +106,21 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             //   rotationMotor[1] = YR = 偏航(Yaw)
             // 旋转顺序 YXZ 保证 Yaw 先于 Pitch 应用，两轴解耦
 
-            RotationSignal rotationSignal = readRotationSignal(attr.staticAttribute.getControlInputs());
+            // 从 Map 按优先级读取目标角度，替代旧的信号轮询
+            Vector3f target = getTargetAngle();
 
             if (hasYaw) {
                 RotationMotor yawMotor = joint.getRotationMotor(1);
-                if (rotationSignal != null) {
-                    // rotationSignal.yaw 即为 computeAimAngles 返回的 yaw
+                if (target != null) {
+                    // target.y = yaw，来自 computeAimAngles 返回的 yaw
                     // setServoTarget 取负，与伺服马达方向约定一致
                     yawMotor.setMotorEnabled(true);
                     yawMotor.setServoEnabled(true);
-                    yawMotor.set(MotorParam.ServoTarget, rotationSignal.getYaw());
+                    yawMotor.set(MotorParam.ServoTarget, target.y);
                     yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
                     yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
                 } else {
-                    // 无有效信号时保持位置并停止
+                    // 无有效目标时保持位置并停止
                     yawMotor.setServoEnabled(true);
                     yawMotor.set(MotorParam.TargetVelocity, 0f);
                     yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
@@ -121,11 +129,11 @@ public class TurretDriverSubsystem extends BasicSubsystem {
 
             if (hasPitch) {
                 RotationMotor pitchMotor = joint.getRotationMotor(0);
-                if (rotationSignal != null) {
-                    // rotationSignal.pitch 即为 computeAimAngles 返回的 pitch
+                if (target != null) {
+                    // target.x = pitch，来自 computeAimAngles 返回的 pitch
                     pitchMotor.setMotorEnabled(true);
                     pitchMotor.setServoEnabled(true);
-                    pitchMotor.set(MotorParam.ServoTarget, rotationSignal.getPitch());
+                    pitchMotor.set(MotorParam.ServoTarget, target.x);
                     pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
                     pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
                 } else {
@@ -237,17 +245,27 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 从配置的输入信号频道中读取 RotationSignal。
-     * 轮询频道列表，返回第一个非空非EmptySignal的 RotationSignal；无有效信号则返回null。
+     * 由 WeaponController 直接调用，替代 RotationSignal 信号。<br>
+     * 写入优先级权重：channel 对应 controlInputs 中的声明条目。
+     *
+     * @param channel 控制频道名（对应 controlInputs 中的条目）
+     * @param angle   目标角度 (pitch, yaw, roll)，null = 该控制器释放控制权
      */
-    private RotationSignal readRotationSignal(List<String> targetInputs) {
-        for (String signalKey : targetInputs) {
-            SignalChannel channel = getSignalChannel(signalKey);
-            if (!channel.isEmpty() && !(channel.getFirstSignal() instanceof EmptySignal)) {
-                Object first = channel.getFirstSignal();
-                if (first instanceof RotationSignal rs) return rs;
-                if (first instanceof Vector3f v) return new RotationSignal(v);
-            }
+    public void setTargetAngle(String channel, @Nullable Vector3f angle) {
+        if (angle == null) targetAngles.remove(channel);
+        else targetAngles.put(channel, angle);
+    }
+
+    /**
+     * 按 controlInputs 声明的频道顺序（优先级从高到低）获取最高优先级的目标角度。
+     *
+     * @return 最高优先级的有效目标角度，null = 无控制器持有控制权
+     */
+    @Nullable
+    private Vector3f getTargetAngle() {
+        for (String channel : attr.staticAttribute.getControlInputs()) {
+            Vector3f angle = targetAngles.get(channel);
+            if (angle != null) return angle;
         }
         return null;
     }
