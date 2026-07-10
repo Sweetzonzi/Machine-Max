@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.physics.PhysicsHost;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
@@ -32,7 +34,7 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
  * 网络同步：见设计文档 §8.4.3。EntityTracker 周期性位置同步被
  * {@code updateInterval(Int.MAX_VALUE)} 禁用，仅登场/退场/DataTracker。
  */
-public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn {
+public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn, EntityPatch {
     @Getter
     private IProjectile projectile;
     private volatile boolean orphaned;
@@ -70,6 +72,11 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
         if (obj instanceof IProjectile proj) {
             this.projectile = proj;
         }
+    }
+
+    @Override
+    public boolean shouldCreateDefaultPhysicsBody() {
+        return false;
     }
 
     @Override

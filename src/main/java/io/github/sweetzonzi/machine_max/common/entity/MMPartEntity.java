@@ -104,17 +104,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     @Override
-    public void tick() {
-        if (tickCount == 2) {//移除SparkCore为实体添加的默认碰撞箱刚体
-            var body = getPhysicsBody("body");
-            if (body != null) {
-                PhysicsBodyExtensionKt.removePhysicsBody(level(), body);
-            }
-        }
-        super.tick();
-    }
-
-    @Override
     public void baseTick() {
         super.baseTick();
         if (this.subPart == null) {//如果实体没有所属的部件，则移除实体
@@ -143,6 +132,11 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             var vel = subPart.getLinearVelocity().mult(0.05f);
             this.setDeltaMovement(vel.x, vel.y, vel.z);
         }
+    }
+
+    @Override
+    public boolean shouldCreateDefaultPhysicsBody() {
+        return false;
     }
 
     @Override
