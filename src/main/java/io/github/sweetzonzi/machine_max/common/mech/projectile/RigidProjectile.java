@@ -446,11 +446,6 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         return variables;
     }
 
-    @Override
-    public void onBoneUpdate(cn.solarmoon.spark_core.event.BoneUpdateEvent event) {
-        IAnimatable.super.onBoneUpdate(event);
-    }
-
     // ========== BFHurtTarget 实现 ==========
 
     @Override
