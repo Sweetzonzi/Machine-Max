@@ -32,7 +32,7 @@ dependencies {
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 加速渲染
-    implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
+    implementation("curse.maven:accelerated-rendering-1314021:8366742")
     // AUI渲染引擎（独立mod，不打包）
     implementation files("libs/ApricityUI-neoforge-1.21.1-${aui_version}.jar")
     // 机械动力
