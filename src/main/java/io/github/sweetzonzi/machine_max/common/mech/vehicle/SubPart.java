@@ -1200,6 +1200,16 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
+     * 轻量世界坐标查询——直接取 transform 的翻译分量，零矩阵分配。
+     * 用于 LOD 系统的距离判断，避免构建完整 Matrix4f。
+     */
+    @Override
+    public Vec3 getRenderPosition(Number partialTicks) {
+        var t = transform.getTranslation(); // JME Vector3f，字段直读，零分配
+        return new Vec3(t.x, t.y, t.z);
+    }
+
+    /**
      * 获取模型坐标原点在世界坐标系下的位姿变换
      *
      * @param number 插值系数，0-1
