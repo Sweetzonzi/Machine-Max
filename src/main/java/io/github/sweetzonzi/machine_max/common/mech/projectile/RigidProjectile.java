@@ -253,6 +253,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         Object otherOwner = PhysicsBodyExtensionKt.getOwner(o2);
 
         AfterHitResult result = null;
+        BlockPos terrainBlockPos = null;
 
         // ③ 按碰撞组分派
         if (group == CollisionGroups.TERRAIN) {
@@ -272,6 +273,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
                     if (result != null && !result.destroyed()) {
                         pm.markPenetrated(getId(), blockPos, terrain);
                     }
+                    terrainBlockPos = blockPos;
                 }
             }
         } else if (group == CollisionGroups.PHYSICS_BODY) {
@@ -292,7 +294,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
         // ④ 应用结果
         if (result != null) {
-            applyHitResultAfterCollision(result, hitPointMc, hitNormalMc);
+            applyHitResultAfterCollision(result, hitPointMc, hitNormalMc, terrainBlockPos);
         }
     }
 
@@ -308,17 +310,17 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
      * {@link ProjectileManager#hasPenetrated}/{@link ProjectileManager#markPenetrated} 管理。
      */
     private void applyHitResultAfterCollision(AfterHitResult result,
-        Vec3 hitPointMc, Vec3 hitNormalMc) {
+        Vec3 hitPointMc, Vec3 hitNormalMc, @Nullable BlockPos hitBlockPos) {
         if (!result.destroyed()) {
             // 穿透后减速：回写 Bullet 刚体
             Vector3f newVel = result.newVelocity();
             setLinearVelocity(newVel);
             body.setLinearVelocity(newVel);
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
-            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, false, newVel, null);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, false, newVel, hitBlockPos);
         } else {
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
-            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), null);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), hitBlockPos);
             markHit();
             destroy();
         }

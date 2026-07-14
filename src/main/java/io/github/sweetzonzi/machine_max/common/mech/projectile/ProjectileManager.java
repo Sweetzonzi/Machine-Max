@@ -33,12 +33,15 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
+import io.github.sweetzonzi.machine_max.network.payload.TerrainShakePayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -659,6 +662,7 @@ public class ProjectileManager {
         if (pendingHitSyncs.isEmpty()) return;
 
         List<ProjectilesHitPayload.HitEntry> entries = new ArrayList<>();
+        List<Vec3> terrainHitPoints = new ArrayList<>();
         PendingHitSync h;
         while ((h = pendingHitSyncs.poll()) != null) {
             Long hitBlockPosLong = h.hitBlockPos() != null ? h.hitBlockPos().asLong() : null;
@@ -671,11 +675,29 @@ public class ProjectileManager {
                     h.newVelocity() != null ? h.newVelocity().y : 0,
                     h.newVelocity() != null ? h.newVelocity().z : 0,
                     hitBlockPosLong));
+            // 检测地形命中 → 收集命中点，稍后广播屏幕抖动
+            // 无论穿透与否，只要命中了地形方块就触发抖动
+            if (h.hitBlockPos() != null) {
+                terrainHitPoints.add(h.hitPoint());
+            }
         }
         if (entries.isEmpty()) return;
 
         if (level instanceof ServerLevel serverLevel) {
             ProjectilesHitPayload.broadcast(serverLevel, entries);
+
+            // 向方圆 100 格内的玩家广播地形抖动信号（主线程，安全可靠）
+            if (!terrainHitPoints.isEmpty()) {
+                var players = serverLevel.getServer().getPlayerList().getPlayers();
+                double radiusSq = 100.0 * 100.0;
+                for (Vec3 hp : terrainHitPoints) {
+                    for (ServerPlayer player : players) {
+                        if (player.distanceToSqr(hp.x, hp.y, hp.z) <= radiusSq) {
+                            PacketDistributor.sendToPlayer(player, new TerrainShakePayload());
+                        }
+                    }
+                }
+            }
         }
     }
 

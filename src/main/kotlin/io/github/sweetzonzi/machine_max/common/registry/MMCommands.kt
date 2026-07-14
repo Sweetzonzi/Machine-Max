@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
+import io.github.sweetzonzi.machine_max.common.command.DebugCommand
 import io.github.sweetzonzi.machine_max.common.command.ResearchCommand
 import io.github.sweetzonzi.machine_max.common.command.VehicleCommand
 import net.minecraft.commands.Commands
@@ -12,6 +13,7 @@ object MMCommands {
             Commands.literal("mm")
                 .then(VehicleCommand().create(event.buildContext))
                 .then(ResearchCommand().create(event.buildContext))
+                .then(DebugCommand().create(event.buildContext))
         )
     }
 
