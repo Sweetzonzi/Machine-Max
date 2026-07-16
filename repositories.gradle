@@ -26,7 +26,7 @@ dependencies {
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js（通过 KubeJS 的 Rhino fork 统一提供）
-    implementation "dev.latvian.mods:rhino:${rhino_version}"
+    implementation "maven.modrinth:rhino:${rhino_version}"
     // GraalVM polyglot（Spark-Core 通过 jarJar 嵌入，运行时由 Spark-Core 提供，此处仅编译需要）
     compileOnly "org.graalvm.polyglot:polyglot:${graalvm_version}"
     // 状态机
@@ -42,7 +42,7 @@ dependencies {
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
     // KubeJS（编译 + 运行时依赖）
-    implementation "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    implementation "maven.modrinth:kubejs:${kubejs_version}"
     // 其他mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // Lombok 配置
@@ -84,6 +84,8 @@ repositories {
         name = 'tterrag maven'
         url = 'https://maven.tterrag.com/'
     }
+    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" }
+
     maven {
         name = "Create Maven"
         url = "https://maven.createmod.net"
