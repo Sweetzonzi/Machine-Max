@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderType;
 
+import net.minecraft.client.renderer.RenderStateShard;
 import java.util.OptionalDouble;
 import java.util.function.Function;
 

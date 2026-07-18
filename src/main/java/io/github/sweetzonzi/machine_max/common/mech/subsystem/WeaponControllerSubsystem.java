@@ -54,6 +54,26 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     private volatile boolean firing = false;
 
     /**
+     * 调试自动开火开关。开启后无视 fire_inputs 信号，持续保持 firing = true。<br>
+     * 由 /mm debug autofire 命令控制，用于测试武器系统。
+     */
+    private volatile boolean debugAutoFire = false;
+
+    /**
+     * 调试自动开火：发射触发间隔（tick）。
+     */
+    private volatile int debugTriggerInterval = 20;
+    /**
+     * 调试自动开火：每次发射持续时长（tick）。
+     * 若 >= debugTriggerInterval，则为持续开火。
+     */
+    private volatile int debugFireDuration = 10;
+    /**
+     * 调试自动开火：内部循环计数器。
+     */
+    private int debugFireTickCounter = 0;
+
+    /**
      * 弹药切换信号（来自座椅透传的按键信号）
      */
     private volatile boolean ammoSwitchPressed = false;
@@ -216,8 +236,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         // ③ 按射击模式开火
         if (firing && !aimedLaunchers.isEmpty()) {
             switch (staticAttr.getDefaultFireMode()) {
-                case SALVO -> fireSalvo(aimedLaunchers);
-                case RIPPLE -> fireRipple(aimedLaunchers);
+                case SALVO -> fireSalvo(aimedLaunchers, target);
+                case RIPPLE -> fireRipple(aimedLaunchers, target);
             }
         } else {
             // 无开火指令或无可开火发射器 → 释放开火权并重置轮射状态
@@ -416,6 +436,39 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
+     * 设置调试自动开火开关。启用时重置内部计数器。
+     */
+    public void setDebugAutoFire(boolean v) {
+        this.debugAutoFire = v;
+        if (v) {
+            this.debugFireTickCounter = 0;
+        }
+    }
+
+    /**
+     * 调试自动开火是否开启。
+     */
+    public boolean isDebugAutoFire() {
+        return debugAutoFire;
+    }
+
+    public int getDebugTriggerInterval() {
+        return debugTriggerInterval;
+    }
+
+    public void setDebugTriggerInterval(int v) {
+        this.debugTriggerInterval = Math.max(1, v);
+    }
+
+    public int getDebugFireDuration() {
+        return debugFireDuration;
+    }
+
+    public void setDebugFireDuration(int v) {
+        this.debugFireDuration = Math.max(1, v);
+    }
+
+    /**
      * 可用弹链列表（排序后），供 HUD 弹种选择菜单。
      */
     public List<List<ResourceLocation>> getAvailableBelts() {
@@ -430,7 +483,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      * 齐射：所有已瞄准的发射器同时开火。<br>
      * 先停火所有发射器（释放上次控制权），再让已瞄准的同时开火。
      */
-    private void fireSalvo(List<LauncherSubsystem> aimedLaunchers) {
+    private void fireSalvo(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos) {
         float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
         // 先停火所有发射器
         for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
@@ -440,14 +493,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         for (LauncherSubsystem launcher : aimedLaunchers) {
             String channel = launchers.get(launcher);
             launcher.setFireCommand(channel,
-                new LauncherSubsystem.FireCommand(computeFireDirection(launcher), correctionDeg, true));
+                new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
         }
     }
 
     /**
      * 轮射：按顺序每次只让一个发射器开火，间隔由 rippleInterval 控制。
      */
-    private void fireRipple(List<LauncherSubsystem> aimedLaunchers) {
+    private void fireRipple(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos) {
         if (aimedLaunchers.isEmpty()) return;
 
         float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
@@ -463,7 +516,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 LauncherSubsystem launcher = aimedLaunchers.get(rippleIndex);
                 String channel = launchers.get(launcher);
                 launcher.setFireCommand(channel,
-                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher), correctionDeg, true));
+                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
             }
             rippleIndex = (rippleIndex + 1) % aimedLaunchers.size();
             rippleTickCounter = interval;
@@ -475,10 +528,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     /**
      * 计算从 launcher 枪口指向 target 的单位方向向量（JME Vector3f）。
      */
-    private Vector3f computeFireDirection(LauncherSubsystem launcher) {
-        if (targetPosition == null) return null;
+    private Vector3f computeFireDirection(LauncherSubsystem launcher, Vec3 targetPos) {
         Vec3 muzzlePos = launcher.getMuzzleWorldPosition();
-        Vec3 toTarget = targetPosition.subtract(muzzlePos).normalize();
+        Vec3 toTarget = targetPos.subtract(muzzlePos).normalize();
         return new Vector3f((float) toTarget.x, (float) toTarget.y, (float) toTarget.z);
     }
 
@@ -543,6 +595,23 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         SignalChannel ammoSwitchChannel = getSignalChannel("ammo_switch");
         if (!ammoSwitchChannel.isEmpty() && !(ammoSwitchChannel.getFirstSignal() instanceof EmptySignal)) {
             this.ammoSwitchPressed = true;
+        }
+
+        // 调试自动开火：周期性发射，由 debugTriggerInterval / debugFireDuration 控制
+        if (debugAutoFire) {
+            this.firing = debugFireTickCounter < debugFireDuration;
+            debugFireTickCounter++;
+            if (debugFireTickCounter >= debugTriggerInterval) {
+                debugFireTickCounter = 0;
+            }
+            if (this.targetPosition == null) {
+                Vector3f subPartPos = getOwner().getSubPart().getPosition();
+                this.targetPosition = new Vec3(subPartPos.x, subPartPos.y + 20, subPartPos.z - 30);
+            }
+            // 设置默认 ViewInputSignal，使 onPrePhysicsTick 通过 vis 非空校验并执行瞄准/开火
+            if (this.currentViewSignal == null) {
+                this.currentViewSignal = new ViewInputSignal(this.targetPosition, 0, 0, true, true);
+            }
         }
     }
 

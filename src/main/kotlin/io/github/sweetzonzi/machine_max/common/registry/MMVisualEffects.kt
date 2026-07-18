@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.client.render.renderer.PartAssemblyRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.LightSourceRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.DistantVehicleRenderer
 
 object MMVisualEffects {
 
@@ -14,6 +15,9 @@ object MMVisualEffects {
 
     @JvmStatic
     val PROJECTILE = ClientProjectileRenderer()
+
+    @JvmStatic
+    val DISTANT_VEHICLE = DistantVehicleRenderer()
 
     @JvmStatic
     fun init() {
