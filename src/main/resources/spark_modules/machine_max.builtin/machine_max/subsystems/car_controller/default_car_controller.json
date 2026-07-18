@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:car_controller", //轿车控制器子系统, 适用于大多数公路轿车 (参考AE86参数综合平衡)
   "basic_durability": 150, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪

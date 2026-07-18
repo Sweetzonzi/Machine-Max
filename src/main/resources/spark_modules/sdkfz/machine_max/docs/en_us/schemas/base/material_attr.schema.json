@@ -186,11 +186,23 @@
       ],
       "description": "Damage modifiers, convert received damage into damage values according to certain rules. If damage doesn't include damage data, uses damage value; otherwise uses damage data. Default ignores impact damage below 5, significantly reduces damage from slimes and similar per-frame damage sources."
     },
-    "un_penetrate_damage_factor": {
+    "decay_rha": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.3,
+      "description": "RHA coefficient when durability reaches zero. Interpolated with full-durability rha using power function with decay_power exponent."
+    },
+    "decay_power": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.5,
+      "description": "Armor degradation curve exponent. >1 means armor degrades slowly at first then rapidly near failure (brittle); =1 is linear degradation."
+    },
+    "unpen_power": {
       "type": "number",
       "minimum": 0.0,
       "default": 0.0,
-      "description": "Damage factor when attack fails to fully penetrate armor, formula: attack_damage * (penetration / equivalent_armor) ^ un_penetrate_damage_factor, no damage when not fully penetrated if this is 0.0."
+      "description": "Damage factor when attack fails to fully penetrate armor, formula: attack_damage * (penetration / equivalent_armor) ^ unpen_power, no damage when not fully penetrated if this is 0.0."
     },
     "sounds": {
       "type": "object",
@@ -281,7 +293,19 @@
           }
         }
       ],
-      "un_penetrate_damage_factor": 0.2,
+      "decay_rha": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.3,
+      "description": "RHA coefficient when durability reaches zero. Interpolated with full-durability rha using power function with decay_power exponent."
+    },
+    "decay_power": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.5,
+      "description": "Armor degradation curve exponent. >1 means armor degrades slowly at first then rapidly near failure (brittle); =1 is linear degradation."
+    },
+    "unpen_power": 0.2,
       "sounds": {
         "hit_un_pen": {
           "sound_id": "machine_max:hit_box.hit.up_pen.rubber",

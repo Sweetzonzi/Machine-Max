@@ -1,4 +1,4 @@
-﻿{ // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
+{ // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
   "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
   "type": "machine_max:fabricating", // 代表此配方用于制造机与手动部件组装，当配方名和某个部件的注册名匹配时，将自动成为它的手动组装配方（仅零件可手动组装）
   "ingredients": [ // 配方原料列表。手动组装按result.count等比例ceil消耗；手动拆除按result.count等比例floor返还（floor为0的条目仍保留在材料对列表中）

@@ -21,10 +21,17 @@ public record MaterialAttr(
         DamageModifier impactModifiers,
         DamageModifier piercingModifiers,
         DamageModifier damageModifiers,
-        float unPenetrateDamageFactor,
+        float decay_rha,
+        float decay_power,
+        float unpen_power,
         MaterialSoundAttr sounds
 ) {
     public static final ResourceLocation DEFAULT_ID = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "default");
+
+    /** 耐久归零时 RHA 系数的默认值（满耐久 rha=1.0 的 30%） */
+    public static final float DEFAULT_DECAY_RHA = 0.3f;
+    /** 装甲退化曲线指数的默认值（>1 则先硬后脆） */
+    public static final float DEFAULT_DECAY_POWER = 1.5f;
 
     public static final MaterialAttr DEFAULT = new MaterialAttr(
             new Vec3(0.5, 0.5, 0.5),
@@ -39,6 +46,8 @@ public record MaterialAttr(
             DamageModifier.DEFAULT_DAMAGE_MODIFIERS,
             DamageModifier.DEFAULT_PEN_DEPTH_MODIFIERS,
             DamageModifier.DEFAULT_DAMAGE_MODIFIERS,
+            DEFAULT_DECAY_RHA,
+            DEFAULT_DECAY_POWER,
             0.0f,
             MaterialSoundAttr.DEFAULT
     );
@@ -56,7 +65,9 @@ public record MaterialAttr(
             DamageModifier.CODEC.optionalFieldOf("impact_modifiers", DEFAULT.impactModifiers()).forGetter(MaterialAttr::impactModifiers),
             DamageModifier.CODEC.optionalFieldOf("penetration_modifiers", DEFAULT.piercingModifiers()).forGetter(MaterialAttr::piercingModifiers),
             DamageModifier.CODEC.optionalFieldOf("damage_modifiers", DEFAULT.damageModifiers()).forGetter(MaterialAttr::damageModifiers),
-            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", DEFAULT.unPenetrateDamageFactor()).forGetter(MaterialAttr::unPenetrateDamageFactor),
+            Codec.FLOAT.optionalFieldOf("decay_rha", DEFAULT.decay_rha()).forGetter(MaterialAttr::decay_rha),
+            Codec.FLOAT.optionalFieldOf("decay_power", DEFAULT.decay_power()).forGetter(MaterialAttr::decay_power),
+            Codec.FLOAT.optionalFieldOf("unpen_power", DEFAULT.unpen_power()).forGetter(MaterialAttr::unpen_power),
             MaterialSoundAttr.CODEC.optionalFieldOf("sounds", DEFAULT.sounds()).forGetter(MaterialAttr::sounds)
     ).apply(instance, MaterialAttr::new));
 

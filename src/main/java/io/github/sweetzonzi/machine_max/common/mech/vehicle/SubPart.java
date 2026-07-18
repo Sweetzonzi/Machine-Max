@@ -548,7 +548,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * 根据穿甲结果计算最终伤害量（毫米级精度）。
      * <p>
      * PENETRATED：击穿，伤害由碰撞箱的 {@code modifyDamage} 处理（考虑装甲后效衰减）；
-     * BLOCKED / RICOCHET：未击穿，若碰撞箱支持钝伤（{@code hasUnPenetrateDamage}），
+     * BLOCKED / RICOCHET：未击穿，若碰撞箱支持钝伤（{@code hasUnpenDamage}），
      * 按穿深/装甲厚度比计算钝伤比例（幂函数衰减），否则为 0。
      *
      * @param ctx    命中上下文
@@ -561,11 +561,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (result == PenetrationResult.PENETRATED) {
             return hitBox.modifyDamage(ctx.source(), ctx.baseDamage());
         }
-        if (hitBox.hasUnPenetrateDamage()) {
+        if (hitBox.hasUnpenDamage()) {
             float rha = getRHA(ctx);
             if (rha > 0) {
                 float ratio = Math.clamp(ctx.penetration() / rha, 0f, 1f);
-                return ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnPenetrateDamageFactor());
+                return ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnpenPower());
             }
         }
         return 0f;

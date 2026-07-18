@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
   "type": "machine_max:fabricating",
   "ingredients": [

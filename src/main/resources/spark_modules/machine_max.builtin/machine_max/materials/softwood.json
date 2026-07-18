@@ -51,7 +51,7 @@
       }
     }
   ],
-  "un_penetrate_damage_factor": 0.0,
+  "unpen_power": 0.0,
   "sounds": {
     "hit_un_pen": {
       "sound_id": "machine_max:hit_box.hit.up_pen.wood",

@@ -186,11 +186,23 @@
       ],
       "description": "伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据。默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害。"
     },
-    "un_penetrate_damage_factor": {
+    "decay_rha": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.3,
+      "description": "耐久归零时该材料的 RHA 系数，与满耐久 rha 之间按 decay_power 进行幂函数插值。"
+    },
+    "decay_power": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.5,
+      "description": "装甲退化曲线指数。>1 时装甲前期退化慢、临近损坏时快速失效（脆性）；=1 时为线性退化。"
+    },
+    "unpen_power": {
       "type": "number",
       "minimum": 0.0,
       "default": 0.0,
-      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害。"
+      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^unpen_power，此项为0.0时未击穿则无伤害。"
     },
     "sounds": {
       "type": "object",
@@ -280,7 +292,7 @@
           }
         }
       ],
-      "un_penetrate_damage_factor": 0.2,
+      "unpen_power": 0.2,
       "sounds": {
         "hit_un_pen": {
           "sound_id": "machine_max:hit_box.hit.up_pen.rubber",

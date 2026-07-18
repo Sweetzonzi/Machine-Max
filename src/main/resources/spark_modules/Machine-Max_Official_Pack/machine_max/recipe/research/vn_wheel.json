@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
   "research_cost": 120,

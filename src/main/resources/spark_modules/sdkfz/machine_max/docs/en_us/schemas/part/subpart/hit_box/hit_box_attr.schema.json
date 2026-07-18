@@ -131,7 +131,17 @@
         "damage_modifiers": {
           "$ref": "modifier/damage_modifier.schema.json"
         },
-        "un_penetrate_damage_factor": {
+        "decay_rha": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Override RHA coefficient when durability reaches zero."
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Override armor degradation curve exponent."
+        },
+        "unpen_power": {
           "type": "number",
           "minimum": 0.0
         },
@@ -209,11 +219,11 @@
       ],
       "description": "Damage modifiers, convert received damage into damage values according to certain rules. If damage doesn't include damage data, pass in damage value, otherwise pass in damage data. Default ignores impact damage below 5, significantly reduces damage caused by slimes per tick."
     },
-    "un_penetrate_damage_factor": {
+    "unpen_power": {
       "type": "number",
       "minimum": 0.0,
       "default": 0.0,
-      "description": "Damage coefficient when attack fails to fully penetrate armor, formula: attack damage * (penetration depth / equivalent armor)^un_penetrate_damage_factor, when this value is 0.0, no damage is dealt if not penetrated."
+      "description": "Damage coefficient when attack fails to fully penetrate armor, formula: attack damage * (penetration depth / equivalent armor)^unpen_power, when this value is 0.0, no damage is dealt if not penetrated."
     },
     "condition": {
       "type": "string",

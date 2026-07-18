@@ -48,5 +48,6 @@
   "subsystem.machine_max.50mm": "50mm",
   "subsystem.machine_max.gunner_sight": "Gunner Sight",
   "subsystem.machine_max.main_weapon": "主武器",
-  "subsystem.machine_max.secondary_weapon": "副武器"
+  "subsystem.machine_max.secondary_weapon": "副武器",
+  "machine_max.k17_hull": "K17 Hull"
 }

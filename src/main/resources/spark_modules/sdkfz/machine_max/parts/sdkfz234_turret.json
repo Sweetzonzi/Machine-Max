@@ -153,7 +153,9 @@
                 "machine_max:50mm_pzgr39": 1
               },
               "discovery_outputs": {
-                "ammo_50mm": ["vehicle"]
+                "ammo_50mm": [
+                  "vehicle"
+                ]
               }
             },
             "subsystem.machine_max.mg34_ammo_loader": {
@@ -164,7 +166,9 @@
                 "machine_max:7_92mm_tracer": 1
               },
               "discovery_outputs": {
-                "ammo_7_92mm": ["vehicle"]
+                "ammo_7_92mm": [
+                  "vehicle"
+                ]
               }
             }
           }

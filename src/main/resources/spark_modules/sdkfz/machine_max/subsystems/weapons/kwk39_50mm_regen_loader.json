@@ -11,15 +11,15 @@
     "progress_sounds": {
       "0.0": {
         "sound_id": "machine_max:subsystem.loader.reload_start",
-        "range": 16.0
+        "range": 16
       },
       "0.5": {
         "sound_id": "machine_max:subsystem.loader.reload_shell",
-        "range": 16.0
+        "range": 16
       },
       "0.9": {
         "sound_id": "machine_max:subsystem.loader.reload_close",
-        "range": 16.0
+        "range": 16
       }
     }
   },

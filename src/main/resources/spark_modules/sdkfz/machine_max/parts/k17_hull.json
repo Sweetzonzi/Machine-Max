@@ -1,0 +1,99 @@
+{
+  "variants": {
+    "model": "machine_max:k17.geo",
+    "textures": "machine_max:textures/part/k17/k17.png",
+    "tags": [
+      "machine_max:category/structural",
+      "machine_max:type/land"
+    ],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "AllHull",
+        "end_bones": [
+          "LeftWheel1",
+          "LeftWheel2",
+          "LeftWheel3",
+          "LeftWheel4",
+          "RightWheel1",
+          "RightWheel2",
+          "RightWheel3",
+          "RightWheel4"
+        ],
+        "durability": 500,
+        "mass": 1500,
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2,
+        "hit_boxes": {
+          "HullFrontArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy"
+          },
+          "HullBackArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy"
+          },
+          "HullSideArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy"
+          },
+          "HullTopArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy"
+          },
+          "EngineHitBox": {
+            "id": "engine",
+            "type": "box",
+            "material": "machine_max:structural_steel",
+            "subsystem": "subsystem.machine_max.engine"
+          },
+          "HullBottomArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy"
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine",
+            "definition": "machine_max:truck_diesel_engine",
+            "power_output": "subsystem.machine_max.gearbox",
+            "speed_outputs": {
+              "engine_speed": [
+                "vehicle",
+                "subpart"
+              ]
+            }
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox",
+            "definition": "machine_max:sdkfz234_gearbox",
+            "power_output": "subsystem.machine_max.transmission",
+            "gear_outputs": {
+              "gear": [
+                "subpart",
+                "vehicle"
+              ]
+            }
+          },
+          "subsystem.machine_max.transmission": {
+            "type": "machine_max:transmission",
+            "definition": "machine_max:heavy_duty_transmission",
+            "power_outputs": {
+              "vehicle": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
-import cn.solarmoon.spark_core.molang.SparkMolangContext;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
@@ -61,20 +60,41 @@ public class HitBox {
         return attr.damageModifiers().apply(source, amount);
     }
 
+    /**
+     * 计算等效护甲厚度（RHA 毫米数），根据零部件当前耐久度动态衰减。
+     * <p>
+     * 公式：thickness × [decay_rha + (rha - decay_rha) × (durabilityRatio)^decay_power]
+     * </p>
+     *
+     * @param subPart 所属零部件
+     * @return 等效护甲厚度
+     */
     public float getRHA(SubPart subPart) {
-        return attr.thickness * attr.rha() * (subPart.isDestroyed() ? 0.5f : 1.0f);
+        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
+        float rhaCoeff = attr.decay_rha() + (attr.rha() - attr.decay_rha()) * (float) Math.pow(durabilityRatio, attr.decay_power());
+        return attr.thickness * rhaCoeff;
     }
 
     public boolean hasAngleEffect() {
         return attr.angleEffect();
     }
 
-    public boolean hasUnPenetrateDamage() {
-        return attr.unPenetrateDamageFactor() > 0.0f;
+    /**
+     * 是否有未穿透钝伤效果
+     *
+     * @return true 表示未穿透时仍可造成部分伤害
+     */
+    public boolean hasUnpenDamage() {
+        return attr.unpen_power() > 0.0f;
     }
 
-    public float getUnPenetrateDamageFactor() {
-        return attr.unPenetrateDamageFactor();
+    /**
+     * 获取未穿透伤害指数（幂次）
+     *
+     * @return 未穿透伤害指数
+     */
+    public float getUnpenPower() {
+        return attr.unpen_power();
     }
 
     /**

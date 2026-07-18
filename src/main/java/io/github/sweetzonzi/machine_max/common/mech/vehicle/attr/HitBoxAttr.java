@@ -96,7 +96,9 @@ public class HitBoxAttr {
      * @param impactModifiers         冲击伤害修正
      * @param piercingModifiers       穿甲伤害修正
      * @param damageModifiers         普通伤害修正
-     * @param unPenetrateDamageFactor 未穿透伤害系数
+     * @param decay_rha               耐久归零时的 RHA 系数
+     * @param decay_power             装甲退化曲线指数（>1 先硬后脆）
+     * @param unpen_power             未穿透伤害指数
      * @param sounds                  材质音效属性
      */
     public record OverwriteAttr(
@@ -112,7 +114,9 @@ public class HitBoxAttr {
             Optional<DamageModifier> impactModifiers,
             Optional<DamageModifier> piercingModifiers,
             Optional<DamageModifier> damageModifiers,
-            Optional<Float> unPenetrateDamageFactor,
+            Optional<Float> decay_rha,
+            Optional<Float> decay_power,
+            Optional<Float> unpen_power,
             Optional<MaterialAttr.MaterialSoundAttr> sounds
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -128,7 +132,9 @@ public class HitBoxAttr {
                 DamageModifier.CODEC.optionalFieldOf("impact_modifiers").forGetter(OverwriteAttr::impactModifiers),
                 DamageModifier.CODEC.optionalFieldOf("piercing_modifiers").forGetter(OverwriteAttr::piercingModifiers),
                 DamageModifier.CODEC.optionalFieldOf("damage_modifiers").forGetter(OverwriteAttr::damageModifiers),
-                Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor").forGetter(OverwriteAttr::unPenetrateDamageFactor),
+                Codec.FLOAT.optionalFieldOf("decay_rha").forGetter(OverwriteAttr::decay_rha),
+                Codec.FLOAT.optionalFieldOf("decay_power").forGetter(OverwriteAttr::decay_power),
+                Codec.FLOAT.optionalFieldOf("unpen_power").forGetter(OverwriteAttr::unpen_power),
                 MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds").forGetter(OverwriteAttr::sounds)
         ).apply(instance, OverwriteAttr::new));
     }
@@ -197,7 +203,9 @@ public class HitBoxAttr {
                 overwrite.impactModifiers().isPresent() ? overwrite.impactModifiers().get() : baseMaterial.impactModifiers(),
                 overwrite.piercingModifiers().isPresent() ? overwrite.piercingModifiers().get() : baseMaterial.piercingModifiers(),
                 overwrite.damageModifiers().isPresent() ? overwrite.damageModifiers().get() : baseMaterial.damageModifiers(),
-                overwrite.unPenetrateDamageFactor().isPresent() ? overwrite.unPenetrateDamageFactor().get() : baseMaterial.unPenetrateDamageFactor(),
+                overwrite.decay_rha().isPresent() ? overwrite.decay_rha().get() : baseMaterial.decay_rha(),
+                overwrite.decay_power().isPresent() ? overwrite.decay_power().get() : baseMaterial.decay_power(),
+                overwrite.unpen_power().isPresent() ? overwrite.unpen_power().get() : baseMaterial.unpen_power(),
                 overwrite.sounds().isPresent() ? overwrite.sounds().get() : baseMaterial.sounds()
         );
     }
@@ -282,8 +290,16 @@ public class HitBoxAttr {
         return effectiveMaterial.damageModifiers();
     }
 
-    public float unPenetrateDamageFactor() {
-        return effectiveMaterial.unPenetrateDamageFactor();
+    public float decay_rha() {
+        return effectiveMaterial.decay_rha();
+    }
+
+    public float decay_power() {
+        return effectiveMaterial.decay_power();
+    }
+
+    public float unpen_power() {
+        return effectiveMaterial.unpen_power();
     }
 
     public MaterialAttr.MaterialSoundAttr sounds() {

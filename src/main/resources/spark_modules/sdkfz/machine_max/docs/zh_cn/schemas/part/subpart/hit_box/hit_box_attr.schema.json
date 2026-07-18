@@ -137,7 +137,17 @@
           "$ref": "modifier/damage_modifier.schema.json",
           "description": "伤害修正覆写。"
         },
-        "un_penetrate_damage_factor": {
+        "decay_rha": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "耐久归零时 RHA 系数覆写。"
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "装甲退化曲线指数覆写。"
+        },
+        "unpen_power": {
           "type": "number",
           "minimum": 0.0,
           "description": "未击穿伤害系数覆写。"
@@ -211,7 +221,17 @@
             }
           }
         ],
-        "un_penetrate_damage_factor": 0.15,
+        "decay_rha": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "耐久归零时 RHA 系数覆写。"
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "装甲退化曲线指数覆写。"
+        },
+        "unpen_power": 0.15,
         "sounds": {
           "hit_un_pen": {
             "sound_id": "machine_max:hit_box.hit.up_pen.metal",

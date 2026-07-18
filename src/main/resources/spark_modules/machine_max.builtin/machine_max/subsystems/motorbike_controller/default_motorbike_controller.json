@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:motorbike_controller", //摩托车控制器，适用于运动摩托车/街车，参考R700
   "basic_durability": 60, //(可选, 默认20.0)子系统基础耐久度，降至0时会瘫痪
