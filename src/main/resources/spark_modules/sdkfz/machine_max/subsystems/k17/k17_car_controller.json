@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:car_controller",
+  "basic_durability": 350,
+  "manual_gear_shift": false,
+  "auto_hand_brake": true,
+  "drift_assist": false,
+  "min_steering_radius": 6.2,
+  "lateral_acceleration": 40,
+  "max_drift_angular_velocity": 1
+}

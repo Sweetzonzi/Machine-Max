@@ -20,6 +20,8 @@ public class KeyBinding {
     public static final String LEAVE_VEHICLE_KEY = "key.machine_max.general.leave_vehicle";
     public static final String GENERAL_TOGGLE_LIGHT_KEY = "key.machine_max.general.toggle_light";
     public static final String GENERAL_VEHICLE_INFO_KEY = "key.machine_max.general.vehicle_info";
+    public static final String VIEW_VEHICLE_INTERNAL_KEY = "key.machine_max.general.view_vehicle_internal";
+
 
     public static final String GROUND_FORWARD_KEY = "key.machine_max.ground.forward";
     public static final String GROUND_BACKWARD_KEY = "key.machine_max.ground.backward";
@@ -48,7 +50,6 @@ public class KeyBinding {
     public static final String NEXT_AMMO_TYPE_KEY = "key.machine_max.general.next_ammo_type";
     public static final String PREV_AMMO_TYPE_KEY = "key.machine_max.general.prev_ammo_type";
     public static final String CYCLE_CONTROL_GROUP_KEY = "key.machine_max.general.cycle_control_group";
-
     /**
      * 在此注册所有按键
      */
@@ -60,6 +61,7 @@ public class KeyBinding {
         event.register(KeyBinding.generalLeaveVehicleKey);//离开载具
         event.register(KeyBinding.generalToggleLightKey);//灯光开关
         event.register(KeyBinding.generalVehicleInfoKey);//车辆信息面板
+        event.register(KeyBinding.generalViewVehicleInternalKey);//内构查看
         //地面载具
         event.register(KeyBinding.groundForwardKey);//地面载具前进
         event.register(KeyBinding.groundBackWardKey);//地面载具后退
@@ -284,6 +286,14 @@ public class KeyBinding {
             KeyCategory.GENERAL,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_TAB,
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    /** 内构查看：按住查看载具零件耐久与连接点状态，默认 O 键 */
+    public static KeyMapping generalViewVehicleInternalKey = new KeyMapping(VIEW_VEHICLE_INTERNAL_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_O,
             KeyCategory.GENERAL.getCategory()
     );
 }

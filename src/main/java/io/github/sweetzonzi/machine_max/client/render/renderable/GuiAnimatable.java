@@ -308,6 +308,8 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     @NotNull
     @Override
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
+        if (params.lastTransform == null && params.transform != null)
+            params.lastTransform = params.transform;
         return SparkMathKt.toMatrix4f(SparkMathKt.lerp(params.lastTransform, params.transform, number.floatValue()).toTransformMatrix());
     }
 

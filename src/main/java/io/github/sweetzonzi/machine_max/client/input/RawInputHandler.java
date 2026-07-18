@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
+import io.github.sweetzonzi.machine_max.client.render.renderer.VehicleInspectorRenderer;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.mech.control.BindingAction;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
@@ -95,6 +96,8 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleMoveInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
+        // 内构查看：按住 O 键时激活
+        VehicleInspectorRenderer.inspecting = KeyBinding.generalViewVehicleInternalKey.isDown();
         if (client.player != null &&
                 ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
                 seat.owner instanceof SubPart subPart) {

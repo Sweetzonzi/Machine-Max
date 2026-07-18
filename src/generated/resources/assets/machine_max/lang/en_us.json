@@ -134,6 +134,7 @@
   "key.machine_max.general.secondary_weapon_fire": "Secondary Weapon Fire",
   "key.machine_max.general.toggle_light": "Toggle Light",
   "key.machine_max.general.vehicle_info": "Vehicle Info Panel",
+  "key.machine_max.general.view_vehicle_internal": "Inspect Internal",
   "key.machine_max.ground.backward": "Backward",
   "key.machine_max.ground.clutch": "Clutch",
   "key.machine_max.ground.down_shift": "Shift Down",

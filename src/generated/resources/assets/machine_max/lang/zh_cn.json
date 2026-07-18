@@ -157,6 +157,7 @@
   "key.machine_max.general.secondary_weapon_fire": "副武器开火",
   "key.machine_max.general.toggle_light": "灯光开关",
   "key.machine_max.general.vehicle_info": "载具信息面板",
+  "key.machine_max.general.view_vehicle_internal": "查看内构",
   "key.machine_max.ground.backward": "后退",
   "key.machine_max.ground.clutch": "离合",
   "key.machine_max.ground.down_shift": "降档",

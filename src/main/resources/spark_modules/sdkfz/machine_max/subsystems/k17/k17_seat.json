@@ -1,0 +1,25 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:seat",
+  "block_damage": true,
+  "render_passenger": false,
+  "views": {
+    "enable_first_person": false,
+    "enable_third_person": true,
+    "third_person_hud": [
+      "machine_max:example_hud"
+    ],
+    "follow_vehicle": false,
+    "focus_on_center": true,
+    "distance_scale": 1.2,
+    "third_person_offset": [
+      0,
+      2,
+      0
+    ],
+    "min_pitch": -90,
+    "max_pitch": 90,
+    "yaw_limit": 360
+  },
+  "allow_use_items": true
+}

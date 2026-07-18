@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.client.render.renderer.PartAssemblyRende
 import io.github.sweetzonzi.machine_max.client.render.renderer.LightSourceRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.DistantVehicleRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.VehicleInspectorRenderer
 
 object MMVisualEffects {
 
@@ -18,6 +19,9 @@ object MMVisualEffects {
 
     @JvmStatic
     val DISTANT_VEHICLE = DistantVehicleRenderer()
+
+    @JvmStatic
+    val VEHICLE_INSPECTOR = VehicleInspectorRenderer()
 
     @JvmStatic
     fun init() {

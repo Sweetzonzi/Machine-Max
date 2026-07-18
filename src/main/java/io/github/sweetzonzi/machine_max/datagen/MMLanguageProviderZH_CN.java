@@ -54,6 +54,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.general.next_ammo_type", "下一个弹种");
         this.add("key.machine_max.general.prev_ammo_type", "上一个弹种");
         this.add("key.machine_max.general.cycle_control_group", "轮换控制组");
+        this.add("key.machine_max.general.view_vehicle_internal", "查看内构");
         // 按键名称-地面载具
         this.add("key.machine_max.ground.forward", "前进");
         this.add("key.machine_max.ground.backward", "后退");

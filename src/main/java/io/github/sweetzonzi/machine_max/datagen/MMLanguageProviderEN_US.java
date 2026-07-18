@@ -54,6 +54,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.general.next_ammo_type", "Next Ammo Type");
         this.add("key.machine_max.general.prev_ammo_type", "Previous Ammo Type");
         this.add("key.machine_max.general.cycle_control_group", "Cycle Control Group");
+        this.add("key.machine_max.general.view_vehicle_internal", "Inspect Internal");
         //Key names-Ground
         this.add("key.machine_max.ground.forward", "Forward");
         this.add("key.machine_max.ground.backward", "Backward");

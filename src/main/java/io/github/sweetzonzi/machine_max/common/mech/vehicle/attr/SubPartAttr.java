@@ -150,7 +150,7 @@ public class SubPartAttr {
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
                     String hitBoxName = hitBoxEntry.getKey();
-                    OBone bone = bones.get(hitBoxEntry.getKey());
+                    OBone bone = bones.get(hitBoxName);
                     Matrix4f pose = new Matrix4f();
                     bone.applyTransformToLocal(pose, bones.get(startBone));
                     switch (hitBoxEntry.getValue().shapeType) {

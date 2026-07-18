@@ -151,11 +151,13 @@ public class HudAttr {
         this.modelIndex = new ModelIndex("hud", model);
         this.animation = animation;
         this.texture = texture;
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
-        this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
-        this.transform.setScale(PhysicsHelperKt.toBVector3f(scale));
+        setTransform(new Transform(
+                PhysicsHelperKt.toBVector3f(offset),
+                SparkMathKt.toBQuaternion(quaternionf),
+                PhysicsHelperKt.toBVector3f(scale)
+        ));
         this.color = color;
         this.transparency = transparency;
         this.perspective = perspective;
@@ -172,9 +174,7 @@ public class HudAttr {
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = true;
-        this.scopeBehavior = ScopeBehavior.FOLLOW_POSITION;
         this.ignoreZoom = false;
-        this.scissor = ScissorParams.DEFAULT;
         this.textAttr = Map.of();
     }
 

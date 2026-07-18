@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderType;
 
-import net.minecraft.client.renderer.RenderStateShard;
 import java.util.OptionalDouble;
 import java.util.function.Function;
 
@@ -115,22 +114,22 @@ public class MMRenderTypes {
      * @param width 线宽（像素），默认 2.0
      */
     private static final Function<Double, RenderType> TRACER_LINE = Util.memoize(width ->
-        RenderType.create(
-            "machine_max_tracer_line",
-            DefaultVertexFormat.POSITION_COLOR,
-            VertexFormat.Mode.LINES,
-            1536,
-            RenderType.CompositeState.builder()
-                .setShaderState(RENDERTYPE_LINES_SHADER)
-                .setLineState(new LineStateShard(OptionalDouble.of(width)))
-                .setLayeringState(NO_LAYERING)
-                .setTransparencyState(ADDITIVE_TRANSPARENCY)
-                .setOutputState(ITEM_ENTITY_TARGET)
-                .setWriteMaskState(COLOR_WRITE)
-                .setCullState(NO_CULL)
-                .setDepthTestState(LEQUAL_DEPTH_TEST)
-                .createCompositeState(false)
-        )
+            RenderType.create(
+                    "machine_max_tracer_line",
+                    DefaultVertexFormat.POSITION_COLOR,
+                    VertexFormat.Mode.LINES,
+                    1536,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(RENDERTYPE_LINES_SHADER)
+                            .setLineState(new LineStateShard(OptionalDouble.of(width)))
+                            .setLayeringState(NO_LAYERING)
+                            .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                            .setOutputState(ITEM_ENTITY_TARGET)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setCullState(NO_CULL)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .createCompositeState(false)
+            )
     );
 
     public static RenderType tracerLine(double width) {
