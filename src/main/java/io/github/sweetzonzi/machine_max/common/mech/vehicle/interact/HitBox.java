@@ -56,8 +56,21 @@ public class HitBox {
         return attr.piercingModifiers().apply(source, amount);
     }
 
+    /**
+     * 完整伤害修正管线：条件化修正 → 线性减伤 → 百分比乘算。
+     *
+     * @param source 伤害来源
+     * @param amount 原始伤害量
+     * @return 修正后的伤害量
+     */
     public float modifyDamage(DamageSource source, float amount) {
-        return attr.damageModifiers().apply(source, amount);
+        // ① 条件化伤害修正（类型/实体特定调整）
+        float dmg = attr.damageModifiers().apply(source, amount);
+        // ② 全局线性减伤（材料硬度阈值）
+        dmg = Math.max(0, dmg - getEffectiveDmgResist(subPart));
+        // ③ 全局百分比减伤（材料能量耗散效率）
+        dmg *= getEffectiveDmgMult(subPart);
+        return dmg;
     }
 
     /**
@@ -73,6 +86,34 @@ public class HitBox {
         float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
         float rhaCoeff = attr.decay_rha() + (attr.rha() - attr.decay_rha()) * (float) Math.pow(durabilityRatio, attr.decay_power());
         return attr.thickness * rhaCoeff;
+    }
+
+    /**
+     * 计算考虑耐久衰减后的有效线性减伤值。
+     * <p>
+     * 公式：decay_dmg_resist + (dmg_resist - decay_dmg_resist) × durability^decay_power
+     * </p>
+     *
+     * @param subPart 所属零部件
+     * @return 有效线性减伤值
+     */
+    public float getEffectiveDmgResist(SubPart subPart) {
+        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
+        return attr.decay_dmg_resist() + (attr.dmg_resist() - attr.decay_dmg_resist()) * (float) Math.pow(durabilityRatio, attr.decay_power());
+    }
+
+    /**
+     * 计算考虑耐久衰减后的有效伤害乘数。
+     * <p>
+     * 公式：decay_dmg_mult + (dmg_mult - decay_dmg_mult) × durability^decay_power
+     * </p>
+     *
+     * @param subPart 所属零部件
+     * @return 有效伤害乘数（1.0=无变化，0.5=一半伤害）
+     */
+    public float getEffectiveDmgMult(SubPart subPart) {
+        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
+        return attr.decay_dmg_mult() + (attr.dmg_mult() - attr.decay_dmg_mult()) * (float) Math.pow(durabilityRatio, attr.decay_power());
     }
 
     public boolean hasAngleEffect() {
