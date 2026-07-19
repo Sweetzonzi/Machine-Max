@@ -74,11 +74,11 @@
         }
       }
     ],
-    "rha": 1.0,
+    "rha": 0.06,
     "angle_effect": true,
     "dmg_resist": 1.0,
     "dmg_mult": 0.95,
-    "decay_rha": 0.3,
+    "decay_rha": 0.02,
     "decay_power": 1.5,
     "unpen_power": 0.0,
     "decay_dmg_resist": 0.0,
