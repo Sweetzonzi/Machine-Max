@@ -129,19 +129,19 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             }
         }
 
-        boolean inspecting = VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart);
-        if (inspecting) {
-            color = getInspectColor(entity.subPart.getDurability(), entity.subPart.getMaxDurability());
+        // 内构查看模式：不渲染到主缓冲，由 VehicleInspectorRenderer 在 AFTER_ENTITIES 统一处理剪影
+        if (VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart)) {
+            return;
         }
 
         int light = LightTexture.pack(blockLight, skyLight);
         var bones = entity.subPart.getBones();
 
         if (!useWireframe) {
-            renderTextured(bones, modelInstance, inspecting, light, overlay, color,
+            renderTextured(bones, modelInstance, false, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
         } else {
-            renderWireframe(bones, modelInstance, assemblingProgress, inspecting, light, overlay, color,
+            renderWireframe(bones, modelInstance, assemblingProgress, false, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
         }
     }

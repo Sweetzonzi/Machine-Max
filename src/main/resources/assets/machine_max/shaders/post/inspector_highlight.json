@@ -1,0 +1,30 @@
+{
+    "targets": [
+        "input",
+        "mcdepth",
+        "output"
+    ],
+    "passes": [
+        {
+            "name": "machine_max:inspector_highlight",
+            "intarget": "input",
+            "outtarget": "output",
+            "shaders": [
+                {
+                    "name": "machine_max:program/inspector_highlight",
+                    "uniforms": {
+                        "OutlineSize": { "type": "float", "values": [ 2.0 ] },
+                        "OutlineCullSize": { "type": "float", "values": [ 0.25 ] }
+                    }
+                }
+            ],
+            "inputs": [
+                { "name": "DiffuseSampler", "id": "input" }
+            ],
+            "auxtargets": [
+                { "name": "DiffuseDepthSampler", "id": "input:depth" },
+                { "name": "MCDepthSampler",      "id": "mcdepth:depth" }
+            ]
+        }
+    ]
+}
