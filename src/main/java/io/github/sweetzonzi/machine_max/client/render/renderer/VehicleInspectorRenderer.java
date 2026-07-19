@@ -190,7 +190,8 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
                 OverlayTexture.NO_OVERLAY,
                 color,
                 partialTick,
-                true
+                false,  // 不强制渲染无UV面（剪影模型有合法UV），保留背面剔除
+                true    // 跳过AR加速管线，避免延迟提交顶点导致FBO数据不完整
             );
         }
 
@@ -263,7 +264,8 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
                     OverlayTexture.NO_OVERLAY,
                     color,
                     partialTick,
-                    true
+                    true,   // 强制渲染无UV的HitBox面（debugQuads无纹理坐标）
+                    true    // 跳过AR加速管线
             );
         }
         poseStack.popPose();
@@ -273,8 +275,9 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
 
     /**
      * 渲染 SubPart 上所有外部连接点标记。
-     * 每个连接点用 9 根线（3 轴 × 3 色 RGB）绘制十字。
-     * 完整性 = 100% 时三线重叠呈白色，受损时 RGB 分离形成印刷错位效果。
+     * 每个连接点用 3 根纯色线（RGB 对应 XYZ 轴）绘制空间十字。
+     * 完整性 = 100% 时三线重叠静止，受损时各轴在垂直于自身的方向上随机抖动，
+     * 模拟"结构松动"的视觉效果。
      */
     private void renderConnectorPoints(SubPart subPart, PoseStack poseStack,
                                        MultiBufferSource bufferSource, float partialTick) {
@@ -287,13 +290,13 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
             float integrity = connector.getIntegrity();
             float maxIntegrity = connector.getBasicIntegrity();
             float damageRatio = maxIntegrity > 0 ? 1f - Math.clamp(integrity / maxIntegrity, 0f, 1f) : 0f;
+            // 抖动幅度 = 损伤比例 × 最大抖动范围
             float jitter = damageRatio * JITTER_MAX;
 
             // 应用连接器相对质心的偏移
             poseStack.pushPose();
             poseStack.mulPose(SparkMathKt.toMatrix4f(connector.getOffsetFromMassCenter().toTransformMatrix()));
 
-            // 三轴三色 = 3 根线
             drawAxisCross(lineBuffer, poseStack, jitter);
 
             poseStack.popPose();
@@ -302,18 +305,47 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
     }
 
     /**
-     * 在当前位置绘制三轴十字，每轴一根纯色线。
-     * 完整性降低时各轴沿自身方向偏移，形成"结构松动"的视觉错位。
+     * 在当前位置绘制三轴空间十字，每轴一根纯色线。
+     * 每帧每轴生成独立的随机偏移，使线在垂直于自身的平面内抖动。
+     * 六组随机数（每轴两个正交方向），同一轴两端点共享偏移，保证轴线不歪。
+     *
+     * @param jitter 最大抖动幅度（损伤比例 × JITTER_MAX）
      */
     private void drawAxisCross(VertexConsumer lineBuffer, PoseStack poseStack, float jitter) {
         var matrix = poseStack.last().pose();
         float hs = CROSS_HALF_SIZE;
-        // X 轴 — 红，沿 X 偏移
-        addLineVertex(lineBuffer, matrix, -hs + jitter, 0, 0, hs + jitter, 0, 0, RED_LINE);
-        // Y 轴 — 绿，沿 Y 偏移
-        addLineVertex(lineBuffer, matrix, 0, -hs + jitter, 0, 0, hs + jitter, 0, GREEN_LINE);
-        // Z 轴 — 蓝，沿 Z 偏移
-        addLineVertex(lineBuffer, matrix, 0, 0, -hs + jitter, 0, 0, hs + jitter, BLUE_LINE);
+
+        if (jitter <= 0f) {
+            // 无损伤 → 三轴完美正交，无抖动
+            addLineVertex(lineBuffer, matrix, -hs, 0, 0, hs, 0, 0, RED_LINE);
+            addLineVertex(lineBuffer, matrix, 0, -hs, 0, 0, hs, 0, GREEN_LINE);
+            addLineVertex(lineBuffer, matrix, 0, 0, -hs, 0, 0, hs, BLUE_LINE);
+            return;
+        }
+
+        // 每轴两个正交方向的随机偏移（每帧独立）
+        // X 轴（红）：沿 X 延伸，在 YZ 平面抖动
+        float xY = nextJitter(jitter);  // X轴的Y方向抖动
+        float xZ = nextJitter(jitter);  // X轴的Z方向抖动
+        addLineVertex(lineBuffer, matrix, -hs, xY, xZ, hs, xY, xZ, RED_LINE);
+
+        // Y 轴（绿）：沿 Y 延伸，在 XZ 平面抖动
+        float yX = nextJitter(jitter);  // Y轴的X方向抖动
+        float yZ = nextJitter(jitter);  // Y轴的Z方向抖动
+        addLineVertex(lineBuffer, matrix, yX, -hs, yZ, yX, hs, yZ, GREEN_LINE);
+
+        // Z 轴（蓝）：沿 Z 延伸，在 XY 平面抖动
+        float zX = nextJitter(jitter);  // Z轴的X方向抖动
+        float zY = nextJitter(jitter);  // Z轴的Y方向抖动
+        addLineVertex(lineBuffer, matrix, zX, zY, -hs, zX, zY, hs, BLUE_LINE);
+    }
+
+    /**
+     * 生成 [-max, +max] 范围内的随机偏移值。
+     * 使用 Math.random() 保证每帧独立变化。
+     */
+    private static float nextJitter(float max) {
+        return (float)((Math.random() * 2.0 - 1.0) * max);
     }
 
     private static void addLineVertex(VertexConsumer buffer, org.joml.Matrix4f matrix,
