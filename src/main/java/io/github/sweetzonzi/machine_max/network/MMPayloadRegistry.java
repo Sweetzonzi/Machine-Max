@@ -11,6 +11,8 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationS
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
+import io.github.sweetzonzi.machine_max.util.environment.EnvironmentSettings;
+import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -70,6 +72,13 @@ public class MMPayloadRegistry {
                 ViewInputPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ViewInputPayload::serverHandler)
         );
+        EnvironmentWrapper.run(EnvironmentSettings.PLAYER_LOOK_AT_PAYLOAD, () -> {
+            input.playToServer(//同步玩家视角输入（瞄准点世界坐标）
+                PlayerLookAtPayload.TYPE,
+                PlayerLookAtPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PlayerLookAtPayload::serverHandler)
+            );
+        });
         input.playToServer(//控制组按键绑定输入
                 ControlBindingPayload.TYPE,
                 ControlBindingPayload.STREAM_CODEC,

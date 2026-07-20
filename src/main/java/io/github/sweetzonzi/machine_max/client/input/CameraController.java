@@ -11,6 +11,9 @@ import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.network.payload.PlayerHitImpactPayload;
+import io.github.sweetzonzi.machine_max.network.payload.PlayerLookAtPayload;
+import io.github.sweetzonzi.machine_max.util.environment.EnvironmentSettings;
+import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
 import io.github.sweetzonzi.machine_max.util.fl.physics.PlayerPhysicalBodyBuilder;
 import io.github.sweetzonzi.machine_max.util.fl.physics.PlayerPhysicalBodyModel;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
@@ -172,40 +175,43 @@ public class CameraController {
     private static long shakeTimes = 0;
 
     private static void applyHeadImpactOffset(ViewportEvent.ComputeCameraAngles event) {
-        if (impactIntensity <= 0f) return;
-        // 身体旋转通过颈部弹簧传递到头部，叠加显式身体偏转，使中弹后全身受击效果更完整
-        float totalPitch = (float) ((playerPhysicalBody.getHeadPitch()-Math.PI/2f) * impactIntensity);
-        float totalYaw = playerPhysicalBody.getHeadYaw() * impactIntensity;
-        float totalRoll = playerPhysicalBody.getHeadRoll() * impactIntensity;
+        EnvironmentWrapper.run(EnvironmentSettings.PLAYER_LOOK_AT_PAYLOAD, () -> {
+            if (impactIntensity <= 0f) return;
+            // 身体旋转通过颈部弹簧传递到头部，叠加显式身体偏转，使中弹后全身受击效果更完整
+            float totalPitch = (float) ((playerPhysicalBody.getHeadPitch()-Math.PI/2f) * impactIntensity);
+            float totalYaw = playerPhysicalBody.getHeadYaw() * impactIntensity;
+            float totalRoll = playerPhysicalBody.getHeadRoll() * impactIntensity;
 
-        if (Math.abs(totalPitch) > 0.005f || Math.abs(totalYaw) > 0.005f || Math.abs(totalRoll) > 0.005f) {
-            event.setPitch(event.getPitch() + totalPitch);
-            event.setYaw(event.getYaw() + totalYaw);
-            event.setRoll(event.getRoll() + totalRoll);
-            // 先保持强度（hold 帧数内不衰减），再指数收束，实现"剧烈抖动一下再收束"
-            if (hitHoldFrames > 0) {
-                hitHoldFrames--;
+            if (Math.abs(totalPitch) > 0.005f || Math.abs(totalYaw) > 0.005f || Math.abs(totalRoll) > 0.005f) {
+                event.setPitch(event.getPitch() + totalPitch);
+                event.setYaw(event.getYaw() + totalYaw);
+                event.setRoll(event.getRoll() + totalRoll);
+                PacketDistributor.sendToServer(new PlayerLookAtPayload(event.getPitch(), event.getYaw()));
+                // 先保持强度（hold 帧数内不衰减），再指数收束，实现"剧烈抖动一下再收束"
+                if (hitHoldFrames > 0) {
+                    hitHoldFrames--;
+                } else {
+                    impactIntensity *= 0.963f;
+                }
+            } else if (impactIntensity > 0.01f) {
+                long now = System.currentTimeMillis();
+                if (now - lastSwapTimeMs >= MIN_SWAP_INTERVAL_MS) {
+                    shakeTimes ++;
+                    // 偏移量已基本归零，但 impactIntensity 尚未完全衰减 → 强制归零并置换模型
+                    if (shakeTimes < 3) return;
+                    shakeTimes = 0;
+                    playerPhysicalBody = new PlayerPhysicalBodyBuilder().build();
+                    impactIntensity = 0f;
+                    lastSwapTimeMs = now;
+                } else {
+                    // 距上次swap不足500ms，仅归零强度值，暂不置换模型
+                    impactIntensity = 0f;
+                }
             } else {
-                impactIntensity *= 0.963f;
-            }
-        } else if (impactIntensity > 0.01f) {
-            long now = System.currentTimeMillis();
-            if (now - lastSwapTimeMs >= MIN_SWAP_INTERVAL_MS) {
-                shakeTimes ++;
-                // 偏移量已基本归零，但 impactIntensity 尚未完全衰减 → 强制归零并置换模型
-                if (shakeTimes < 3) return;
-                shakeTimes = 0;
-                playerPhysicalBody = new PlayerPhysicalBodyBuilder().build();
-                impactIntensity = 0f;
-                lastSwapTimeMs = now;
-            } else {
-                // 距上次swap不足500ms，仅归零强度值，暂不置换模型
+                // impactIntensity 已足够小，直接归零
                 impactIntensity = 0f;
             }
-        } else {
-            // impactIntensity 已足够小，直接归零
-            impactIntensity = 0f;
-        }
+        });
     }
 
 
