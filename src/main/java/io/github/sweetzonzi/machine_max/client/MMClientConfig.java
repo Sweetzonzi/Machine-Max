@@ -29,11 +29,18 @@ public class MMClientConfig {
     private static final ModConfigSpec.EnumValue<ControlPreference> GROUND_POSE_PREFERENCE;
     private static final ModConfigSpec.BooleanValue GROUND_SPEED_TURNING_LIMIT;
     private static final ModConfigSpec.BooleanValue GROUND_SEPARATE_THROTTLE_BRAKE;
+    /** 是否在启动后首次进入标题画面时显示欢迎页面 */
+    private static final ModConfigSpec.BooleanValue SHOW_WELCOME_SCREEN;
+
+    // ---- 视觉特效 ----
+    private static final ModConfigSpec.BooleanValue OVERLOAD_ENABLED;
+    private static final ModConfigSpec.BooleanValue SUPPRESSION_ENABLED;
+    private static final ModConfigSpec.DoubleValue OVERLOAD_INTENSITY;
+    private static final ModConfigSpec.DoubleValue SUPPRESSION_INTENSITY;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
-    /** 是否在启动后首次进入标题画面时显示欢迎页面 */
-    private static final ModConfigSpec.BooleanValue SHOW_WELCOME_SCREEN;
+
     public static final ModConfigSpec.DoubleValue SHIP_FULL_STEERING_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_POWER_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_PITCH_TIME;
@@ -75,6 +82,28 @@ public class MMClientConfig {
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
+        SHOW_WELCOME_SCREEN = builder
+                .comment("Show the welcome screen when entering the title screen for the first time after launch.\nSet to false to skip it. Can be re-enabled in the config menu later.\nDefault: true")
+                .define("show_welcome_screen", true);
+
+        builder.push("visual_effects");
+
+        OVERLOAD_ENABLED = builder
+                .comment("Enable overload blackout/redout post-processing effect.\nDefault: true")
+                .define("overload_enabled", true);
+
+        SUPPRESSION_ENABLED = builder
+                .comment("Enable suppression (desaturation/grayscale) post-processing effect.\nDefault: true")
+                .define("suppression_enabled", true);
+
+        OVERLOAD_INTENSITY = builder
+                .comment("Overload effect intensity multiplier.\nRange: 0.0 ~ 1.0. Default: 1.0")
+                .defineInRange("overload_intensity", 1.0, 0.0, 1.0);
+
+        SUPPRESSION_INTENSITY = builder
+                .comment("Suppression effect intensity multiplier.\nRange: 0.0 ~ 1.0. Default: 1.0")
+                .defineInRange("suppression_intensity", 1.0, 0.0, 1.0);
+
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
                 .define("render_hit_whitening", true);
@@ -87,9 +116,7 @@ public class MMClientConfig {
                 .comment("Whether to replace cutout part rendering with translucent entity rendering.\nOff by default because translucent rendering often causes incorrect z-sorting and object culling.")
                 .define("render_force_translucent_parts", false);
 
-        SHOW_WELCOME_SCREEN = builder
-                .comment("Show the welcome screen when entering the title screen for the first time after launch.\nSet to false to skip it. Can be re-enabled in the config menu later.\nDefault: true")
-                .define("show_welcome_screen", true);
+        builder.pop();
 
         builder.push("ground_vehicle");
 
@@ -359,6 +386,44 @@ public class MMClientConfig {
     public static void setShowWelcomeScreen(boolean show) {
         SHOW_WELCOME_SCREEN.set(show);
         CLIENT_SPEC.save();
+    }
+
+    // ---- 视觉特效配置 ----
+
+    /**
+     * 获取过载效果开关状态。
+     *
+     * @return true 表示启用过载效果
+     */
+    public static boolean isOverloadEnabled() {
+        return OVERLOAD_ENABLED.get();
+    }
+
+    /**
+     * 获取压制（灰度化）效果开关状态。
+     *
+     * @return true 表示启用压制效果
+     */
+    public static boolean isSuppressionEnabled() {
+        return SUPPRESSION_ENABLED.get();
+    }
+
+    /**
+     * 获取过载效果强度倍率。
+     *
+     * @return [0, 1] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getOverloadIntensity() {
+        return OVERLOAD_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取压制效果强度倍率。
+     *
+     * @return [0, 1] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getSuppressionIntensity() {
+        return SUPPRESSION_INTENSITY.get().floatValue();
     }
 }
 

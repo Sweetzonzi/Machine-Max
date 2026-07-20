@@ -276,6 +276,18 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "将使用Cutout渲染的部件改为半透明实体渲染。默认关闭是因为半透明渲染容易出现排序错误，导致其后的对象被错误剔除。默认值：false");
         this.add("machine_max.configuration.show_welcome_screen", "显示欢迎页面");
         this.add("machine_max.configuration.show_welcome_screen.tooltip", "启动后首次进入标题画面时弹出欢迎页面。默认值：true");
+        // 后处理视觉特效配置
+        this.add("machine_max.configuration.visual_effects", "视觉特效");
+        this.add("machine_max.configuration.visual_effects.button", "视觉特效");
+        this.add("machine_max.configuration.visual_effects.tooltip", "后处理视觉特效设置");
+        this.add("machine_max.configuration.overload_enabled", "过载效果");
+        this.add("machine_max.configuration.overload_enabled.tooltip", "启用过载黑视/红视后处理效果。默认值：true");
+        this.add("machine_max.configuration.suppression_enabled", "压制效果");
+        this.add("machine_max.configuration.suppression_enabled.tooltip", "启用压制（灰度化）后处理效果。默认值：true");
+        this.add("machine_max.configuration.overload_intensity", "过载强度");
+        this.add("machine_max.configuration.overload_intensity.tooltip", "过载效果的强度倍率。范围 0.0 ~ 1.0。默认值：1.0");
+        this.add("machine_max.configuration.suppression_intensity", "压制强度");
+        this.add("machine_max.configuration.suppression_intensity.tooltip", "压制效果的强度倍率。范围 0.0 ~ 1.0。默认值：1.0");
         // 舰艇配置
         this.add("machine_max.configuration.ship", "舰艇");
         this.add("machine_max.configuration.ship.button", "舰艇");

@@ -22,4 +22,12 @@ public class VisualEffectHelper {
      * <p>与{@link #boundingBox}配合使用，提供更直观的放置预览。</p>
      */
     public static VehicleAnimatable vehicleProjection = null;
+
+    // ---- 后处理特效状态值（服务端子系统写入，客户端渲染只读） ----
+
+    /** 失色程度 [0, 1]，0=全彩，1=全灰度，由伤害/环境系统写入 */
+    public static volatile float desaturationLevel = 0f;
+
+    /** 过载程度 [-1, 1]，正=黑视，负=红视，由子系统过载状态写入 */
+    public static volatile float overloadLevel = 0f;
 }

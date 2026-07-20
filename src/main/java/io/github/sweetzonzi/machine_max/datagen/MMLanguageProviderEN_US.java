@@ -252,6 +252,18 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "Replace cutout part rendering with translucent entity rendering. Off by default because translucent rendering often causes incorrect z-sorting and object culling. Default: false");
         this.add("machine_max.configuration.show_welcome_screen", "Show Welcome Screen");
         this.add("machine_max.configuration.show_welcome_screen.tooltip", "Show the welcome screen when entering the title screen for the first time after launch. Default: true");
+        // Visual Effects Configuration
+        this.add("machine_max.configuration.visual_effects", "Visual Effects");
+        this.add("machine_max.configuration.visual_effects.button", "Visual Effects");
+        this.add("machine_max.configuration.visual_effects.tooltip", "Post-processing visual effects settings");
+        this.add("machine_max.configuration.overload_enabled", "Overload Effect");
+        this.add("machine_max.configuration.overload_enabled.tooltip", "Enable overload blackout/redout post-processing effect. Default: true");
+        this.add("machine_max.configuration.suppression_enabled", "Suppression Effect");
+        this.add("machine_max.configuration.suppression_enabled.tooltip", "Enable suppression (desaturation/grayscale) post-processing effect. Default: true");
+        this.add("machine_max.configuration.overload_intensity", "Overload Intensity");
+        this.add("machine_max.configuration.overload_intensity.tooltip", "Intensity multiplier for overload effect. Range: 0.0 ~ 1.0. Default: 1.0");
+        this.add("machine_max.configuration.suppression_intensity", "Suppression Intensity");
+        this.add("machine_max.configuration.suppression_intensity.tooltip", "Intensity multiplier for suppression effect. Range: 0.0 ~ 1.0. Default: 1.0");
         // Ship Configuration
         this.add("machine_max.configuration.ship", "Ship");
         this.add("machine_max.configuration.ship.button", "Ship");
