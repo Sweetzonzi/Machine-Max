@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/material_attr.json",
   "title": "材料属性",
-  "description": "定义材料的物理属性，包括摩擦系数、弹性、伤害修正和音效等。",
+  "description": "定义材料的物理属性、装甲防护和命中音效，按 physics / armor / sounds 三组组织。",
   "type": "object",
   "properties": {
     "$schema": {
@@ -10,199 +10,86 @@
       "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
       "default": "../docs/zh_cn/schemas/base/material_attr.schema.json"
     },
-    "friction": {
-      "$ref": "vector_3d.schema.json",
-      "default": [0.5, 0.5, 0.5],
-      "description": "摩擦系数向量，格式为[x, y, z]。x为侧向摩擦系数，y为前向摩擦系数，z无实际意义。"
-    },
-    "slip_adaptation": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.5,
-      "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
-    },
-    "slip_curve": {
+    "physics": {
       "type": "object",
-      "description": "轮胎滑移摩擦曲线参数。用于控制纵向滑移率与侧向滑移角变化时的摩擦缩放。",
+      "description": "物理属性：摩擦、滑移、弹性等物理模拟参数。",
       "properties": {
-        "longitudinal": {
+        "friction": {
+          "$ref": "vector_3d.schema.json",
+          "default": [0.5, 0.5, 0.5],
+          "description": "摩擦系数向量，格式为[x, y, z]。x为侧向摩擦系数，y为前向摩擦系数，z无实际意义。"
+        },
+        "slip_adaptation": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
+        },
+        "slip_curve": {
           "type": "object",
-          "description": "纵向滑移率曲线参数。",
+          "description": "轮胎滑移摩擦曲线参数。",
           "properties": {
-            "peak_slip_ratio": {
-              "type": "number",
-              "minimum": 0.0,
-              "default": 0.2,
-              "description": "峰值滑移率（无量纲），达到该值时摩擦缩放为peak_scale。"
+            "longitudinal": {
+              "type": "object",
+              "description": "纵向滑移率曲线参数。",
+              "properties": {
+                "peak_slip_ratio": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "峰值滑移率（无量纲）。" },
+                "base_scale": { "type": "number", "default": 1.0, "description": "滑移率为0时的摩擦缩放。" },
+                "peak_scale": { "type": "number", "default": 1.4, "description": "峰值滑移率处的摩擦缩放。" },
+                "kinetic_scale": { "type": "number", "default": 0.9, "description": "高滑移状态下（动摩擦段）的摩擦缩放。" }
+              },
+              "additionalProperties": false
             },
-            "base_scale": {
-              "type": "number",
-              "default": 1.0,
-              "description": "滑移率为0时的摩擦缩放。"
-            },
-            "peak_scale": {
-              "type": "number",
-              "default": 1.4,
-              "description": "峰值滑移率处的摩擦缩放。"
-            },
-            "kinetic_scale": {
-              "type": "number",
-              "default": 0.9,
-              "description": "高滑移状态下（动摩擦段）的摩擦缩放。"
+            "lateral": {
+              "type": "object",
+              "description": "侧向滑移角曲线参数（角度单位为度）。",
+              "properties": {
+                "peak_angle_deg": { "type": "number", "minimum": 0.0, "default": 12.0, "description": "峰值侧偏角（度）。" },
+                "kinetic_angle_deg": { "type": "number", "minimum": 0.0, "default": 90.0, "description": "进入动摩擦平台的侧偏角（度）。" },
+                "base_scale": { "type": "number", "default": 1.0, "description": "侧偏角为0度时的摩擦缩放。" },
+                "peak_scale": { "type": "number", "default": 1.2, "description": "峰值侧偏角处的摩擦缩放。" },
+                "kinetic_scale": { "type": "number", "default": 0.7, "description": "高侧偏角状态下（动摩擦段）的摩擦缩放。" }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
         },
-        "lateral": {
-          "type": "object",
-          "description": "侧向滑移角曲线参数（角度单位为度）。",
-          "properties": {
-            "peak_angle_deg": {
-              "type": "number",
-              "minimum": 0.0,
-              "default": 12.0,
-              "description": "峰值侧偏角（度）。"
-            },
-            "kinetic_angle_deg": {
-              "type": "number",
-              "minimum": 0.0,
-              "default": 90.0,
-              "description": "进入动摩擦平台的侧偏角（度）。"
-            },
-            "base_scale": {
-              "type": "number",
-              "default": 1.0,
-              "description": "侧偏角为0度时的摩擦缩放。"
-            },
-            "peak_scale": {
-              "type": "number",
-              "default": 1.2,
-              "description": "峰值侧偏角处的摩擦缩放。"
-            },
-            "kinetic_scale": {
-              "type": "number",
-              "default": 0.7,
-              "description": "高侧偏角状态下（动摩擦段）的摩擦缩放。"
-            }
-          },
-          "additionalProperties": false
-        }
+        "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "滚动摩擦系数。" },
+        "spinning_friction": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "旋转摩擦系数。" },
+        "restitution": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.1, "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。" },
+        "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "方块破坏系数，0为无法破坏方块。" }
       },
       "additionalProperties": false
     },
-    "rolling_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.2,
-      "description": "滚动摩擦系数。"
-    },
-    "spinning_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "旋转摩擦系数。"
-    },
-    "restitution": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.1,
-      "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。"
-    },
-    "block_damage_factor": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 1.0,
-      "description": "方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力。"
-    },
-    "rha": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 1.0,
-      "description": "材料相对轧制均质装甲(RHA)的抗穿能力系数。0.5表示同等厚度下仅有50%RHA抗穿，1.5表示1.5倍RHA抗穿。"
-    },
-    "angle_effect": {
-      "type": "boolean",
-      "default": true,
-      "description": "等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度。"
-    },
-    "impact_modifiers": {
-      "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
-      "description": "冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点。默认为空列表，造成多少伤害就对连接点施加多少冲击。"
-    },
-    "penetration_modifiers": {
-      "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "multiply",
-          "value": 0.5,
-          "condition": {
-            "type": "not",
-            "condition": {
-              "type": "damage_tag",
-              "tag": "machine_max:has_pen_depth"
-            }
-          }
+    "armor": {
+      "type": "object",
+      "description": "装甲属性：抗穿、线性减伤、百分比减伤、耐久衰减参数及条件化伤害修正器。伤害管线：damage_modifiers → (dmg - dmg_resist) * dmg_mult。",
+      "properties": {
+        "rha": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "材料相对轧制均质装甲(RHA)的抗穿能力系数。" },
+        "angle_effect": { "type": "boolean", "default": true, "description": "等效护甲厚度是否受入射角度影响。" },
+        "dmg_resist": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "全局线性减伤值，最终伤害将被减去该值（受耐久衰减影响）。" },
+        "dmg_mult": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.95, "description": "全局伤害乘数，最终伤害将被乘以该值（受耐久衰减影响）。0.95=承受95%伤害。" },
+        "decay_rha": { "type": "number", "minimum": 0.0, "default": 0.3, "description": "耐久归零时 RHA 系数的残余值。" },
+        "decay_dmg_resist": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "耐久归零时线性减伤的残余值，默认0.0表示完全归零。" },
+        "decay_dmg_mult": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 1.0, "description": "耐久归零时伤害乘数的残余值，默认1.0表示完全失效。" },
+        "decay_power": { "type": "number", "minimum": 0.0, "default": 1.5, "description": "装甲退化曲线指数。>1时装甲前期退化慢、临近损坏时快速失效（脆性）；=1时为线性退化。" },
+        "unpen_power": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "攻击未能完全击穿护甲时的伤害指数。公式: 伤害*(穿深/等效护甲)^unpen_power。" },
+        "impact_modifiers": {
+          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "description": "条件驱动的冲击修正器。"
+        },
+        "penetration_modifiers": {
+          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "description": "条件驱动的穿深修正器。"
+        },
+        "damage_modifiers": {
+          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "description": "条件驱动的伤害修正器（类型/实体特定调节）。"
         }
-      ],
-      "description": "穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深。默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深。"
-    },
-    "damage_modifiers": {
-      "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "add",
-          "value": -5.0,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:fly_into_wall"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:sweet_berry_bush"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:slime"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.1,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:magma_cube"
-          }
-        }
-      ],
-      "description": "伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据。默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害。"
-    },
-    "decay_rha": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.3,
-      "description": "耐久归零时该材料的 RHA 系数，与满耐久 rha 之间按 decay_power 进行幂函数插值。"
-    },
-    "decay_power": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 1.5,
-      "description": "装甲退化曲线指数。>1 时装甲前期退化慢、临近损坏时快速失效（脆性）；=1 时为线性退化。"
-    },
-    "unpen_power": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^unpen_power，此项为0.0时未击穿则无伤害。"
+      },
+      "additionalProperties": false
     },
     "sounds": {
       "type": "object",
@@ -210,18 +97,12 @@
         "hit_un_pen": {
           "$ref": "sound_event.schema.json",
           "description": "碰撞箱被命中但未穿透时的音效事件。",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
-            "range": 64
-          }
+          "default": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 }
         },
         "hit_pen": {
           "$ref": "sound_event.schema.json",
           "description": "碰撞箱被命中且穿透时的音效事件。",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.pen.metal",
-            "range": 64
-          }
+          "default": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
         }
       },
       "additionalProperties": false,
@@ -230,78 +111,16 @@
   },
   "additionalProperties": false,
   "examples": [
-    {},
     {
-      "friction": [0.8, 0.8, 0.8],
-      "slip_adaptation": 0.3,
-      "slip_curve": {
-        "longitudinal": {
-          "peak_slip_ratio": 0.18,
-          "base_scale": 1.0,
-          "peak_scale": 1.5,
-          "kinetic_scale": 0.85
-        },
-        "lateral": {
-          "peak_angle_deg": 10.0,
-          "kinetic_angle_deg": 75.0,
-          "base_scale": 1.0,
-          "peak_scale": 1.25,
-          "kinetic_scale": 0.65
-        }
+      "physics": { "friction": [0.5, 0.5, 0.5] },
+      "armor": {
+        "rha": 1.0,
+        "dmg_resist": 1.0,
+        "dmg_mult": 0.95
       },
-      "rolling_friction": 0.1,
-      "spinning_friction": 0.01,
-      "restitution": 0.05,
-      "block_damage_factor": 0.5,
-      "rha": 1.2,
-      "angle_effect": false,
-      "impact_modifiers": [
-        {
-          "operation": "multiply",
-          "value": 0.8,
-          "condition": {
-            "type": "always"
-          }
-        }
-      ],
-      "penetration_modifiers": [
-        {
-          "operation": "multiply",
-          "value": 0.3,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:explosion"
-          }
-        }
-      ],
-      "damage_modifiers": [
-        {
-          "operation": "add",
-          "value": -10.0,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:fly_into_wall"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.02,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:slime"
-          }
-        }
-      ],
-      "unpen_power": 0.2,
       "sounds": {
-        "hit_un_pen": {
-          "sound_id": "machine_max:hit_box.hit.up_pen.rubber",
-          "range": 48
-        },
-        "hit_pen": {
-          "sound_id": "machine_max:hit_box.hit.pen.rubber",
-          "range": 48
-        }
+        "hit_un_pen": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 },
+        "hit_pen": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
       }
     }
   ]

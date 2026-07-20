@@ -565,7 +565,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float rha = getRHA(ctx);
             if (rha > 0) {
                 float ratio = Math.clamp(ctx.penetration() / rha, 0f, 1f);
-                return ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnpenPower());
+                float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnpenPower());
+                return hitBox.modifyDamage(ctx.source(), unpenDmg);
             }
         }
         return 0f;

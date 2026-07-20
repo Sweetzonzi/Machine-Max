@@ -1,0 +1,22 @@
+{
+    "vertex": "machine_max:inspector_highlight",
+    "fragment": "machine_max:inspector_highlight",
+    "attributes": [ "Position" ],
+    "samplers": [
+        { "name": "DiffuseSampler" },
+        { "name": "DiffuseDepthSampler" },
+        { "name": "MCDepthSampler" }
+    ],
+    "uniforms": [
+        { "name": "OutlineSize",     "type": "float",    "count": 1,  "values": [ 2.0 ] },
+        { "name": "ProjMat",         "type": "matrix4x4", "count": 16, "values": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] },
+        { "name": "InSize",          "type": "float",    "count": 2,  "values": [ 1, 1 ] },
+        { "name": "OutSize",         "type": "float",    "count": 2,  "values": [ 1, 1 ] },
+        { "name": "OutlineCullSize", "type": "float",    "count": 1,  "values": [ 0.25 ] }
+    ],
+    "blend": {
+        "func": "add",
+        "srcrgb": "srcalpha",
+        "dstrgb": "1-srcalpha"
+    }
+}

@@ -39,7 +39,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     private final Matrix4f reusableTransform = new Matrix4f();
 
     /** 内构查看模式 — SubPart 耐久度着色（alpha 128） */
-    private static final int INSPECT_COLOR_FULL      = new Color(128, 128, 128, 128).getRGB();  // 灰 — 满耐久
+    private static final int INSPECT_COLOR_FULL      = new Color(200, 200, 200, 128).getRGB();  // 灰 — 满耐久
     private static final int INSPECT_COLOR_YELLOW    = new Color(128, 128, 0, 128).getRGB();    // 黄
     private static final int INSPECT_COLOR_ORANGE    = new Color(128, 64, 0, 128).getRGB();     // 橙
     private static final int INSPECT_COLOR_DARK_RED  = new Color(128, 0, 0, 128).getRGB();      // 暗红
@@ -129,19 +129,19 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             }
         }
 
-        boolean inspecting = VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart);
-        if (inspecting) {
-            color = getInspectColor(entity.subPart.getDurability(), entity.subPart.getMaxDurability());
+        // 内构查看模式：透明度渲染
+        if (VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart)) {
+            color = new Color(255, 255, 255, 64).getRGB();
         }
 
         int light = LightTexture.pack(blockLight, skyLight);
         var bones = entity.subPart.getBones();
 
         if (!useWireframe) {
-            renderTextured(bones, modelInstance, inspecting, light, overlay, color,
+            renderTextured(bones, modelInstance, false, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
         } else {
-            renderWireframe(bones, modelInstance, assemblingProgress, inspecting, light, overlay, color,
+            renderWireframe(bones, modelInstance, assemblingProgress, false, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
         }
     }

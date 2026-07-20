@@ -380,7 +380,7 @@ public class CollisionHandler {
     private void applyWheelFriction(HitBox hitBox, float slipAngle, float slipRatio,
                                     Vector3f slipVel, float slipVelLen, Vector3f normal,
                                     long manifoldPointId, float blockFriction, float wetFactor) {
-        var slipCurve = hitBox.attr.getEffectiveMaterial().slipCurve();
+        var slipCurve = hitBox.attr.getEffectiveMaterial().physics().slipCurve();
         var longitudinalCurve = slipCurve.longitudinal();
         var lateralCurve = slipCurve.lateral();
         float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));

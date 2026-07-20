@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.OptionalDouble;
 import java.util.function.Function;
@@ -134,6 +136,37 @@ public class MMRenderTypes {
 
     public static RenderType tracerLine(double width) {
         return TRACER_LINE.apply(width);
+    }
+
+    /**
+     * 内构查看剪影 RenderType — 带 UV 采样做 alpha 遮罩，输出不透明耐久样式色。
+     * 使用 {@link DefaultVertexFormat#NEW_ENTITY}（含 UV0），片段着色器丢弃透明像素。
+     * 关闭混合与上传排序，使用最近邻过滤，避免区域边界颜色插值产生伪边缘。
+     */
+    private static final Function<ResourceLocation, RenderType> INSPECTOR_SILHOUETTE = Util.memoize(texture ->
+            RenderType.create(
+                    "machine_max_inspector_silhouette",
+                    DefaultVertexFormat.NEW_ENTITY,
+                    VertexFormat.Mode.QUADS,
+                    1536,
+                    false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(new ShaderStateShard(() -> MMRenderTypes.inspectorShader))
+                            .setTextureState(new TextureStateShard(texture, false, false))
+                            .setTransparencyState(NO_TRANSPARENCY)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setWriteMaskState(COLOR_DEPTH_WRITE)
+                            .setCullState(NO_CULL)
+                            .createCompositeState(false)
+            )
+    );
+
+    /** 内构查看核心着色器实例，在 {@link RegisterShadersEvent} 中赋值 */
+    public static volatile ShaderInstance inspectorShader;
+
+    /** 按纹理获取内构查看剪影 RenderType */
+    public static RenderType inspectorSilhouette(ResourceLocation texture) {
+        return INSPECTOR_SILHOUETTE.apply(texture);
     }
 
     public static RenderType alwaysVisibleLines() {
