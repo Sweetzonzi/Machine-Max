@@ -1,0 +1,21 @@
+{
+    "targets": ["swap"],
+    "passes": [
+        {
+            "name": "machine_max:overload_vision",
+            "intarget": "minecraft:main",
+            "outtarget": "swap",
+            "uniforms": [
+                {
+                    "name": "Overload",
+                    "values": [0.0]
+                }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "swap",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}
