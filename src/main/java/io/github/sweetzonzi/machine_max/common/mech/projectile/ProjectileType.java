@@ -168,6 +168,11 @@ public class ProjectileType {
     public float getDamageVelocityCoefficient() { return terminal.damageVelocityCoefficient(); }
     public float getBlockDamageFactor() { return terminal.blockDamageFactor(); }
 
+    /** 稳定距离（mm），0 = 无限稳定 */
+    public float getStableDistance() { return terminal.stableDistance(); }
+    /** 失稳后穿深保留因子（0~1） */
+    public float getUnstablePenFactor() { return terminal.unstablePenFactor(); }
+
     // -- 视觉委托（→ VisualProperties） --
 
     public Vec3i getTracerColor() { return visual.tracerColor(); }
@@ -446,7 +451,17 @@ public class ProjectileType {
          * 穿透方块时，动能×此因子与方块耐久对比，决定是否实际破坏方块。
          * 0 = 永远不破坏方块（仅穿透）。默认值 1。
          */
-        float blockDamageFactor
+        float blockDamageFactor,
+        /**
+         * 稳定距离（mm），弹头在材料中能够保持定向飞行的最大物理距离。
+         * 与穿深单位一致。0 = 无限稳定（如 APFSDS 长杆弹）。默认值 0。
+         */
+        float stableDistance,
+        /**
+         * 失稳后穿深保留因子（0~1）。弹头翻滚后有效穿深 = 当前穿深 × 此因子。
+         * 0 = 失稳后无法继续穿透。默认值 0.1。
+         */
+        float unstablePenFactor
     ) {
         public static final Codec<TerminalProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.fieldOf("base_penetration").forGetter(TerminalProperties::basePenetration),
@@ -456,7 +471,11 @@ public class ProjectileType {
             Codec.FLOAT.optionalFieldOf("damage_velocity_coefficient", 0f)
                 .forGetter(TerminalProperties::damageVelocityCoefficient),
             Codec.FLOAT.optionalFieldOf("block_damage_factor", 1.0f)
-                .forGetter(TerminalProperties::blockDamageFactor)
+                .forGetter(TerminalProperties::blockDamageFactor),
+            Codec.FLOAT.optionalFieldOf("stable_distance", 0f)
+                .forGetter(TerminalProperties::stableDistance),
+            Codec.FLOAT.optionalFieldOf("unstable_pen_factor", 0.1f)
+                .forGetter(TerminalProperties::unstablePenFactor)
         ).apply(instance, TerminalProperties::new));
     }
 

@@ -100,6 +100,8 @@ public class ProjectileManager {
     public int[] objId;                 // 对应的 DestroyableObject ID
     public boolean[] alive;             // 活跃标志
     public boolean[] skipExtrapolate;    // 命中帧暂停客户端外推（跳弹/穿透后保持位置在命中点）
+    /** 剩余稳定距离（mm），&lt;=0 表示弹头已失稳。初始值来自 ProjectileType.stableDistance */
+    public float[] remainingStableDistance;
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
@@ -215,6 +217,7 @@ public class ProjectileManager {
         objId = new int[capacity];
         alive = new boolean[capacity];
         skipExtrapolate = new boolean[capacity];
+        remainingStableDistance = new float[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
         typeCache = new ProjectileType[0];
@@ -282,6 +285,7 @@ public class ProjectileManager {
         objId[i] = id;
         alive[i] = true;
         skipExtrapolate[i] = false;
+        remainingStableDistance[i] = proj.getProjectileType().getStableDistance();
         projectileObjIds.add(id);
         // volatile write 必须在所有 SoA 数组写入之后，确保主线程读取 count 时数据已完整
         count = i + 1;
@@ -1171,19 +1175,19 @@ public class ProjectileManager {
                             if (hitBox.isActive()) {
                                 shouldRemove = applyAfterHitResult(i, projectile,
                                         projectile.onPartHit(level, subPart,
-                                                currentPen, currentDmg, hp, hn),
+                                                currentPen, currentDmg, hp, hn, hitBox),
                                         hp, hn, pk);
                             }
                         }
                         case BFHurtTarget bfTarget when !(entry.owner() instanceof Entity) -> {
                             shouldRemove = applyAfterHitResult(i, projectile,
                                     projectile.onPartHit(level, bfTarget,
-                                            currentPen, currentDmg, hp, hn),
+                                            currentPen, currentDmg, hp, hn, null),
                                     hp, hn, pk);
                         }
                         case Entity entity -> {
                             if (entity.isRemoved() || (entity instanceof LivingEntity living && living.isDeadOrDying()))
-                                continue; // 实体已死亡，跳过
+                                continue;
                             shouldRemove = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
                         }
                         default -> {}
@@ -1824,6 +1828,7 @@ public class ProjectileManager {
             objId[index] = objId[last];
             alive[index] = alive[last];
             skipExtrapolate[index] = skipExtrapolate[last];
+            remainingStableDistance[index] = remainingStableDistance[last];
             needsEntityRecreate[index] = needsEntityRecreate[last];
             // ★ entities 数组交换：将 last 位置的引用搬到 index 位置
             //    注意：last 位置的 entity 可能已在上一次 swapRemove 中被标记为待清理
@@ -1850,6 +1855,7 @@ public class ProjectileManager {
         objId = Arrays.copyOf(objId, newCap);
         alive = Arrays.copyOf(alive, newCap);
         skipExtrapolate = Arrays.copyOf(skipExtrapolate, newCap);
+        remainingStableDistance = Arrays.copyOf(remainingStableDistance, newCap);
         needsEntityRecreate = Arrays.copyOf(needsEntityRecreate, newCap);
         entities = Arrays.copyOf(entities, newCap);
         capacity = newCap;

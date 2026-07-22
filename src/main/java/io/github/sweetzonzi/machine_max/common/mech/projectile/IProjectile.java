@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.*;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -128,6 +129,7 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
+        decrementStableDistance(target, ctx);   // 穿透成功则递减稳定距离
         resolvePenetrationSpeed(target, ctx);
     }
 
@@ -317,14 +319,27 @@ public interface IProjectile extends BFDamageHandler {
      * @param currentDamage       当前伤害
      * @param hitPoint            命中点世界坐标
      * @param hitNormal           命中面法线
+     * @param hitBox              命中的碰撞箱（SubPart 命中时有值，否则 null）
      * @return AfterHitResult — passThrough / DESTROYED / ricochet
      */
     default AfterHitResult onPartHit(
         Level level, BFHurtTarget target,
         float currentPenetration, float currentDamage,
-        Vec3 hitPoint, Vec3 hitNormal
+        Vec3 hitPoint, Vec3 hitNormal,
+        @Nullable io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox hitBox
     ) {
-        dealDamage(target, hitPoint, hitNormal);
+        BFDamageExtensions exts = getProjectileType().getBaseExtensions();
+        Vector3f vel = getVelocity();
+        Vec3 hitVel = new Vec3(vel.x, vel.y, vel.z);
+
+        if (hitBox != null) {
+            exts.set(MMDamageExtensions.HIT_BOX, hitBox);
+            exts.set(MMDamageExtensions.HIT_PHYSICAL_THICKNESS, hitBox.getAttr().getThickness());
+        }
+
+        BFDamageContext ctx = buildHurtContext(getLevel(), currentDamage,
+                hitVel, hitPoint, hitNormal, exts);
+        dealDamage(target, ctx);
         return consumePendingHitResult();
     }
 
@@ -368,18 +383,27 @@ public interface IProjectile extends BFDamageHandler {
 
             // 决议到非实体 BFHurtTarget → 同步管线，立即返回
             if (!(rt instanceof Entity)) {
-                dealDamage(rt, resolved.correctedHitPoint(), resolved.correctedHitNormal());
+                BFDamageExtensions exts = getProjectileType().getBaseExtensions();
+                BFDamageContext ctx = buildHurtContext(level, currentDamage,
+                        hitVel, resolved.correctedHitPoint(), resolved.correctedHitNormal(), exts);
+                dealDamage(rt, ctx);
                 return consumePendingHitResult();
             }
         }
 
-        // 异步管线：提交主线程执行伤害，穿透/击退由 dealDamage 内部统一处理
+        // 异步管线：捕获当前弹道参数，提交主线程构造上下文并执行伤害
         setHitPending(true);
+        float capturedDmg = calculateCurrentDamage();
         SparkLevel.submitImmediateTask(level, PPhase.POST,
                 () -> {
                     if (entity instanceof LivingEntity livingEntity)
                         livingEntity.invulnerableTime = 0;
-                    dealDamage(entity, hitPoint, hitNormal);
+
+                    BFDamageExtensions exts = getProjectileType().getBaseExtensions();
+                    exts.set(MMDamageExtensions.HIT_PHYSICAL_THICKNESS, entity.getBbWidth() * 1000f);
+                    BFDamageContext ctx = buildHurtContext(level, capturedDmg,
+                            hitVel, hitPoint, hitNormal, exts);
+                    dealDamage(entity, ctx);
                 });
         return null;
     }
@@ -453,6 +477,22 @@ public interface IProjectile extends BFDamageHandler {
     /** 口径（mm），供跳弹/碾压判定等使用 */
     default float getCaliber()         { return getProjectileType().getCaliber(); }
 
+    /** 稳定距离（mm），0 = 无限稳定 */
+    default float getStableDistance()   { return getProjectileType().getStableDistance(); }
+    /** 失稳后穿深保留因子（0~1） */
+    default float getUnstablePenFactor(){ return getProjectileType().getUnstablePenFactor(); }
+
+    // ========== 稳定性状态（由 SoA 数组支持） ==========
+
+    /** 剩余稳定距离（mm），&lt;=0 表示弹头已失稳。由 ProjectileManager SoA 管理 */
+    float getRemainingStableDistance();
+    void setRemainingStableDistance(float v);
+
+    /** 当前是否已失稳（稳定距离耗尽） */
+    default boolean isCurrentlyUnstable() {
+        return getStableDistance() > 0 && getRemainingStableDistance() <= 0;
+    }
+
     // ========== 生命周期 ==========
 
     /**
@@ -517,36 +557,25 @@ public interface IProjectile extends BFDamageHandler {
     /**
      * 向目标发起协议伤害，并将自身注入为 {@link BFDamageHandler}。
      * <p>
-     * 穿甲管线（getRHA → modifyPenetration → resolvePenetration → calculateFinalDamage → hurt）
-     * 完成后，BallisticsFramework 自动回调 {@link #onPenetrated} / {@link #onBlocked} /
-     * {@link #onRicochet} 等，将命中结果写入 {@link #setPendingHitResult(AfterHitResult)}。
+     * 上下文由调用方在调用前构造（含 HIT_BOX、物理厚度、稳定性判定等），
+     * 此方法仅执行 BF 管线 + 击退 + 玩家命中冲击包。
      * <p>
-     * 目标可以是 {@link BFHurtTarget}（完整协议管线）、带护甲的实体（适配器管线）、
-     * 或普通实体（回退原版 hurt）。穿透判定不由 Manager 自行计算——
-     * BallisticsFramework 管线是穿透判定的唯一权威来源。
+     * 穿甲管线完成后，BallisticsFramework 自动回调 {@link #onPenetrated} / {@link #onBlocked} /
+     * {@link #onRicochet} 等，将命中结果写入 {@link #setPendingHitResult(AfterHitResult)}。
      *
-     * @param target    伤害目标（BFHurtTarget / Entity 等，传入 {@link BFDamageApi#hurt}）
-     * @param hitPoint  命中点世界坐标（MC Vec3）
-     * @param hitNormal 命中面法线（MC Vec3）
-     * @return 实际造成的伤害量（协议层计算值，可能被原版护甲二次减免）
+     * @param target 伤害目标（BFHurtTarget / Entity 等）
+     * @param ctx    已构造的命中上下文（含稳定性折减、HIT_BOX、物理厚度等）
+     * @return 实际造成的伤害量
      */
-    default float dealDamage(Object target, Vec3 hitPoint, Vec3 hitNormal) {
-        // 从 ProjectileType 缓存复制静态扩展数据（口径、质量等），后续追加冲量等动态值
-        BFDamageExtensions exts = getProjectileType().getBaseExtensions();
-        Vector3f vel = getVelocity();
-        Vec3 hitVel = new Vec3(vel.x, vel.y, vel.z);
-        BFDamageContext ctx = buildHurtContext(getLevel(), calculateCurrentDamage(),
-                calculateCurrentPenetration(), hitVel, hitPoint, hitNormal, exts);
-
-        // 先执行伤害管线（before* 回调已在 hurt 前写入 IMPULSE）
+    default float dealDamage(Object target, BFDamageContext ctx) {
+        // 执行伤害管线（before* 回调已在 hurt 前写入 IMPULSE）
         float dmg = BFDamageHandler.super.dealDamage(target, ctx);
 
         // 对实体直接施加击退（SubPart 由延迟任务读取 IMPULSE 自处理）
         if (target instanceof Entity entity) {
-            float impulse = exts.get(BFDamageExtensions.IMPULSE);
+            float impulse = ctx.extensions().get(BFDamageExtensions.IMPULSE);
             if (impulse > 1e-6f) {
                 Vec3 dir = ctx.hitVelocity().normalize();
-                // 冲量转换为速度变化
                 if (entity instanceof LivingEntity livingEntity)
                     livingEntity.knockback(impulse / MassUtil.getEntityMass(entity), -dir.x, -dir.z);
                 else
@@ -556,6 +585,8 @@ public interface IProjectile extends BFDamageHandler {
 
         // 玩家直接命中：发送冲击数据到客户端，用于 CameraController 的头部命中效果
         if (target instanceof Player player && !getLevel().isClientSide()) {
+            Vec3 hitVel = ctx.hitVelocity();
+            Vec3 hitPoint = ctx.hitPoint();
             PacketDistributor.sendToPlayer((ServerPlayer) player,
                     new PlayerHitImpactPayload(hitVel.x, hitVel.y, hitVel.z,
                             hitPoint.x, hitPoint.y, hitPoint.z, ctx.baseDamage()));
@@ -567,26 +598,33 @@ public interface IProjectile extends BFDamageHandler {
     // ========== 私有辅助 ==========
 
     /**
-     * 构造带 handler 的 {@link BFDamageContext}，由 {@link #dealDamage} 调用。
+     * 构造带 handler 的 {@link BFDamageContext}，内含稳定性判定与原始穿深保留。
      * <p>
-     * 集中管理上下文构造逻辑，避免 builder 链在多处重复。
+     * 穿深通过 {@link #calculateCurrentPenetration()} 实时计算，
+     * 失稳时 ×unstablePenFactor 写入上下文，原始值存入扩展供能量法使用。
      *
-     * @param level       维度（用于获取通用 DamageSource）
-     * @param damage      伤害量（已按速度衰减的当前值）
-     * @param penetration 穿深 mm RHA
-     * @param hitVel      命中速度矢量（MC Vec3，m/s）
-     * @param hitPoint    命中点世界坐标
-     * @param hitNormal   命中面法线
-     * @param exts        扩展容器
+     * @param level     维度（用于获取通用 DamageSource）
+     * @param damage    伤害量（已按速度衰减的当前值）
+     * @param hitVel    命中速度矢量（MC Vec3，m/s）
+     * @param hitPoint  命中点世界坐标
+     * @param hitNormal 命中面法线
+     * @param exts      扩展容器
      * @return 已注入当前投射物为 handler 的上下文
      */
-    private BFDamageContext buildHurtContext(Level level, float damage, float penetration,
+    private BFDamageContext buildHurtContext(Level level, float damage,
                                              Vec3 hitVel, Vec3 hitPoint, Vec3 hitNormal,
                                              BFDamageExtensions exts) {
+        // 稳定性判定：失稳时上下文穿深打折，但保留原始穿深供能量法使用
+        float originalPen = calculateCurrentPenetration();
+        float effectivePen = isCurrentlyUnstable()
+                ? originalPen * getUnstablePenFactor()
+                : originalPen;
+        exts.set(MMDamageExtensions.ORIGINAL_PENETRATION, originalPen);
+
         return BFDamageContext.builder()
                 .source(level.damageSources().generic())
                 .baseDamage(damage)
-                .penetration(penetration)
+                .penetration(effectivePen)
                 .hitVelocity(hitVel)
                 .hitPoint(hitPoint)
                 .hitNormal(hitNormal)
@@ -596,20 +634,34 @@ public interface IProjectile extends BFDamageHandler {
     }
 
     /**
-     * 应用目标的穿深修正（如爆反拦截、间隙衰减），计算穿透后速率并写入命中结果。
+     * 应用目标的穿深修正与稳定性折减，计算穿透后速率并写入命中结果。
      * <p>
-     * 先通过 {@link BFHurtTarget#modifyPenetration} 获取目标侧修正后的有效穿深，
-     * 再代入能量法公式计算穿透后的剩余速率。结果写入 {@link #setPendingHitResult}。
+     * 两步处理：
+     * <ol>
+     *   <li>通过 {@link BFHurtTarget#modifyPenetration} 获取目标侧修正后的有效穿深
+     *       （如爆反拦截、间隙衰减等真实物理过程）</li>
+     *   <li>用上下文中的原始穿深（{@link MMDamageExtensions#ORIGINAL_PENETRATION}）
+     *       乘以目标修正比例，得到既不含稳定性打折、又经过目标修正的能量计算用穿深</li>
+     * </ol>
+     * 最终代入能量法公式计算穿透后的剩余速率，结果写入 {@link #setPendingHitResult}。
      * 供 {@link #onPenetrated} / {@link #onOvermatch} / {@link #onSpall} 共享。
      *
      * @param target 命中目标（用于获取穿深修正与 RHA）
      * @param ctx    命中上下文
      */
     private void resolvePenetrationSpeed(BFHurtTarget target, BFDamageContext ctx) {
-        float effectivePen = target.modifyPenetration(ctx);  // 目标侧修正（爆反/间隙衰减等）
+        float modifiedPen = target.modifyPenetration(ctx);  // 目标侧修正（爆反/间隙衰减等）
         float rha = target.getRHA(ctx);
         float speed = getSpeed();
-        float newSpeed = speedAfterPenetration(speed, effectivePen, rha, getPenetrationVelocityCoefficient());
+
+        // 能量法使用修正后的原始穿深：原始穿深 × (目标修正后 / 上下文穿深) 的比例
+        // 这样既保留了 ERA 等真实减效的影响，又排除了稳定性打折（unstablePenFactor）的人为折扣
+        float originalPen = ctx.extensions().get(MMDamageExtensions.ORIGINAL_PENETRATION);
+        if (originalPen <= 0) originalPen = ctx.penetration();
+        float modRatio = ctx.penetration() > 0 ? modifiedPen / ctx.penetration() : 1f;
+        float energyPen = originalPen * modRatio;
+
+        float newSpeed = speedAfterPenetration(speed, energyPen, rha, getPenetrationVelocityCoefficient());
         if (newSpeed <= 0) {
             setPendingHitResult(AfterHitResult.DESTROYED);
         } else {
@@ -621,6 +673,43 @@ public interface IProjectile extends BFDamageHandler {
     private float computePenetrationImpulse(float pen, float rha, float impactSpeed) {
         float newSpeed = speedAfterPenetration(impactSpeed, pen, rha, getPenetrationVelocityCoefficient());
         return getMass() * (impactSpeed - newSpeed); // newSpeed=0 即全部动量转移
+    }
+
+    /**
+     * 根据命中上下文递减弹头的剩余稳定距离。
+     * <p>
+     * 从上下文中读取物理厚度（{@link MMDamageExtensions#HIT_PHYSICAL_THICKNESS}），
+     * 若不可用则回退到 {@link BFHurtTarget#getRHA} 估算。
+     * 结合命中方向与法线计算视厚度（LOS = 物理厚度 / cosθ），
+     * 从剩余稳定距离中扣除。若稳定距离耗尽则弹头将在下一命中时以打折穿深判定。
+     * <p>
+     * 仅在 {@link #onPenetrated} 中调用，{@link #onOvermatch} 跳过此递减——
+     * 碾压穿甲时弹体保持完整，不消耗稳定距离。
+     *
+     * @param target 命中目标（用于 RHA 回退）
+     * @param ctx    命中上下文（含命中方向与法线）
+     */
+    private void decrementStableDistance(BFHurtTarget target, BFDamageContext ctx) {
+        float remaining = getRemainingStableDistance();
+        if (remaining <= 0) return; // 已失稳，无需递减
+
+        float physicalThickness = ctx.extensions().get(MMDamageExtensions.HIT_PHYSICAL_THICKNESS);
+        if (physicalThickness <= 0) {
+            // 回退：非 SubPart/Entity 的 BFHurtTarget 用 RHA 估算物理厚度
+            physicalThickness = target.getRHA(ctx);
+        }
+        if (physicalThickness <= 0) return;
+
+        // 计算视厚度（LOS）：物理厚度 / cos(入射角)
+        Vec3 hitVel = ctx.hitVelocity();
+        Vec3 hitNormal = ctx.hitNormal();
+        double speed = hitVel.length();
+        if (speed < 1e-6) return;
+        double cosTheta = Math.abs(hitVel.dot(hitNormal)) / speed;
+        float losThickness = (float)(physicalThickness / Math.max(cosTheta, 0.01));
+
+        remaining = Math.max(0, remaining - losThickness);
+        setRemainingStableDistance(remaining);
     }
 
     /**

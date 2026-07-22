@@ -17,4 +17,16 @@ public final class MMDamageExtensions {
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_box"),
                     HitBox.class, () -> null);
 
+    /** 折减前的原始穿深（mm RHA），供能量法使用。失稳弹头在上下文穿深打折后，能量计算仍需用此值 */
+    public static final BFDamageExtensionKey<Float> ORIGINAL_PENETRATION =
+            BFDamageExtensions.register(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "original_penetration"),
+                    Float.class, () -> 0f);
+
+    /** 当前命中的物理厚度（mm），供稳定性判定中计算视厚度（LOS）使用 */
+    public static final BFDamageExtensionKey<Float> HIT_PHYSICAL_THICKNESS =
+            BFDamageExtensions.register(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_physical_thickness"),
+                    Float.class, () -> 0f);
+
 }

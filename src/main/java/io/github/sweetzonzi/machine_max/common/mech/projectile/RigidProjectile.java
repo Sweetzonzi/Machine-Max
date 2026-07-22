@@ -277,12 +277,12 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
                 }
             }
         } else if (group == CollisionGroups.PHYSICS_BODY) {
-            // 零件：过滤渲染代理后分派
+            // 零件：过滤渲染代理后分派（刚体碰撞无 triangleIndex，传 null HitBox）
             if (otherOwner instanceof BFHurtTarget target
                 && !(otherOwner instanceof MMPartEntity)
                 && !(otherOwner instanceof MMProjectileEntity)) {
                 result = onPartHit(level, target,
-                    currentPen, currentDamage, hitPointMc, hitNormalMc);
+                    currentPen, currentDamage, hitPointMc, hitNormalMc, null);
             }
         } else if (group == CollisionGroups.PAWN) {
             // 实体：阶段一覆写直接返回 DESTROYED
@@ -463,5 +463,23 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     @Override
     public ArmorLevel getArmorLevel(BFDamageContext ctx) {
         return ArmorLevel.UNARMORED_1;
+    }
+
+    // ========== 稳定性状态（SoA 数组支持） ==========
+
+    @Override
+    public float getRemainingStableDistance() {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return 0;
+        int idx = pm.findIndexByObjId(getId());
+        return (idx >= 0) ? pm.remainingStableDistance[idx] : 0;
+    }
+
+    @Override
+    public void setRemainingStableDistance(float v) {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return;
+        int idx = pm.findIndexByObjId(getId());
+        if (idx >= 0) pm.remainingStableDistance[idx] = v;
     }
 }

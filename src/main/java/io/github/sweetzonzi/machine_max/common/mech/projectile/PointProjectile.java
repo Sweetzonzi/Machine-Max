@@ -287,4 +287,22 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     public ArmorLevel getArmorLevel(BFDamageContext ctx) {
         return ArmorLevel.UNARMORED_1;
     }
+
+    // ========== 稳定性状态（SoA 数组支持） ==========
+
+    @Override
+    public float getRemainingStableDistance() {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return 0;
+        int idx = pm.findIndexByObjId(getId());
+        return (idx >= 0) ? pm.remainingStableDistance[idx] : 0;
+    }
+
+    @Override
+    public void setRemainingStableDistance(float v) {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return;
+        int idx = pm.findIndexByObjId(getId());
+        if (idx >= 0) pm.remainingStableDistance[idx] = v;
+    }
 }
