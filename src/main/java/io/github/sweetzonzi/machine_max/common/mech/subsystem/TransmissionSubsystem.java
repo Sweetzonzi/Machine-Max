@@ -149,42 +149,77 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     }
 
     /**
-     * 差速锁保证输出端转速相同，按转速差异分配功率
-     * @param totalPower 输入功率
-     * @param inputSpeed 输入转速
-     * @param feedbacks 输出端反馈转速
+     * 差速锁功率分配：基于摩擦离合器物理模型的扭矩再分配
+     * <p>
+     * 物理原理（模拟摩擦片式限滑差速器）：
+     * <ol>
+     *   <li>输入扭矩均分至各输出端：τ_base = τ_in / N</li>
+     *   <li>转速偏差驱动扭矩从快端向慢端转移（摩擦离合器效应）：
+     *       Δτ_i = k × (ω_avg - ω_fb_i)，偏慢的输出端获得额外扭矩，偏快的释放扭矩</li>
+     *   <li>负扭矩钳位至零后归一化，保证 Στ_out = τ_in（扭矩守恒）</li>
+     *   <li>输出转速强制为差速锁同步转速：ω_out = ω_in / gearRatio</li>
+     *   <li>输出功率 P_i = τ_i × |ω_in|，ΣP_i = P_in（能量自动守恒）</li>
+     * </ol>
+     *
+     * @param totalPower 输入总功率
+     * @param inputSpeed 输入轴转速（正=前进，负=倒车）
+     * @param feedbacks  各输出端反馈转速（已乘以减速比，折算至输入端坐标系）
      */
     private void distributeDiffLock(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
-        float totalWeight = 0f;
-        Map<String, Float> weights = new HashMap<>();
-        for (var entry : feedbacks.entrySet()) {
-            String name = entry.getKey();
-            float speed = (float) (0.8 * entry.getValue() + 0.2 * inputSpeed);
-            float weight;
-            if (Math.signum(speed * inputSpeed) >= 0) {
-                weight = 1f;
-            } else {
-                weight = -3f;
-            }
-            weight /= (float) Math.pow(Math.max(1f, Math.abs(speed) + 1f), attr.staticAttribute.diffLockSensitivity);
-            weights.put(name, weight);
-            totalWeight += Math.abs(weight);
+        int n = feedbacks.size();
+
+        // 计算平均反馈转速（输入端坐标系）
+        float avgSpeed = 0f;
+        for (float speed : feedbacks.values()) {
+            avgSpeed += speed;
         }
-        if (totalWeight == 0) {
+        avgSpeed /= n;
+
+        // 输入扭矩 τ_in = P_in / |ω_in|
+        float absInputSpeed = Math.abs(inputSpeed);
+        if (absInputSpeed < 1e-6f) {
             pushMechPower(MechPower.EMPTY);
             return;
         }
+        float tauIn = totalPower / absInputSpeed;
+        float tauBase = tauIn / n; // 基础均分扭矩
+
+        // 耦合刚度 k：控制扭矩转移的激进程度，值越大转速偏差导致的扭矩转移越多
+        float k = attr.staticAttribute.diffLockSensitivity;
+
+        // 第一遍：计算各输出端原始扭矩
+        Map<String, Float> rawTorques = new HashMap<>();
+        float totalPositiveTorque = 0f;
+
+        for (var entry : feedbacks.entrySet()) {
+            String name = entry.getKey();
+            float fbSpeed = entry.getValue();
+            // 偏差 = 平均转速 - 当前反馈转速
+            // 正偏差(+): 该端偏慢（负载重），应获得额外扭矩
+            // 负偏差(-): 该端偏快（负载轻/打滑），应释放扭矩
+            float deviation = avgSpeed - fbSpeed;
+            float torque = tauBase + k * deviation;
+            if (torque < 0f) torque = 0f; // 负扭矩钳位：打滑轮不输出动力
+            rawTorques.put(name, torque);
+            totalPositiveTorque += torque;
+        }
+
+        // 第二遍：归一化保证 Στ = τ_in，以锁止转速计算输出功率
         Map<String, MechPower> outputs = new HashMap<>();
+        float normalizer = totalPositiveTorque > 0f ? tauIn / totalPositiveTorque : 1f;
+
         for (var entry : feedbacks.entrySet()) {
             String name = entry.getKey();
             Float gearRatio = attr.getPowerOutputs().get(name);
             if (gearRatio == null || gearRatio == 0f) continue;
-            float weight = weights.get(name);
-            float power = totalPower * weight / totalWeight;
-            float speed = 0.8f * entry.getValue() + 0.2f * inputSpeed;
-            if (speed == 0f) speed = 0.2f * inputSpeed;
-            outputs.put(name, new MechPower(power, speed / gearRatio));
+
+            float torque = rawTorques.get(name) * normalizer; // 归一化保证扭矩守恒
+            float power = torque * absInputSpeed;             // P = τ × |ω|
+            float lockSpeed = inputSpeed / gearRatio;          // 差速锁同步转速
+
+            outputs.put(name, new MechPower(power, lockSpeed));
         }
+
         pushMechPower(outputs);
     }
 
