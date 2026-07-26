@@ -5274,21 +5274,35 @@
 					}
 				},
 				{
-					"name": "AllGun",
+					"name": "AllGunShield",
 					"parent": "AllTurret",
-					"pivot": [0, 35.1, -21],
+					"pivot": [0, 36.3, -24.6],
 					"locators": {
-						"gun_mass_center": [0, 35.45, -21],
-						"main_gun_muzzle": [0, 35.45, -61],
+						"gun_shield_mass_center": [0, 35.45, -21],
 						"mg_muzzle": [-3.75, 35.55, -25.9],
 						"gunner_sight": [5, 33.55, -21.9],
-						"gun_turret_axis": [0, 35.1, -21]
+						"shield_gun_axis": [0, 35.1, -21],
+						"shield_turret_axis": [0, 35.1, -21]
 					}
 				},
 				{
-					"name": "Gun",
-					"parent": "AllGun",
+					"name": "GunShieldHitBox",
+					"parent": "AllGunShield",
 					"pivot": [0, 35.1, -21],
+					"cubes": [
+						{
+							"origin": [-3.4, 32.9, -29.4],
+							"size": [5.6, 5.6, 11.4],
+							"pivot": [0, 36.3, -24.6],
+							"rotation": [0, 0, -45],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "GunShield",
+					"parent": "AllGunShield",
+					"pivot": [0, 36.3, -24.6],
 					"cubes": [
 						{
 							"origin": [-2.4, 32.7, -23.4],
@@ -5541,10 +5555,32 @@
 								"up": {"uv": [278, 252], "uv_size": [3, 2]},
 								"down": {"uv": [278, 257], "uv_size": [3, -2]}
 							}
-						},
+						}
+					]
+				},
+				{
+					"name": "AllGun",
+					"parent": "AllTurret",
+					"pivot": [0, 35.1, -21],
+					"locators": {
+						"gun_mass_center": [0, 35.45, -41],
+						"main_gun_muzzle": [0, 35.45, -61],
+						"gun_shield_lock": [0, 35.1, -21]
+					}
+				},
+				{
+					"name": "Gun",
+					"parent": "AllGun",
+					"pivot": [0, 35.1, -21]
+				},
+				{
+					"name": "Barral",
+					"parent": "Gun",
+					"pivot": [0, 36.3, -24.6],
+					"cubes": [
 						{
 							"origin": [-1.32, 34.98, -54.6],
-							"size": [1.44, 1.44, 25.2],
+							"size": [1.44, 1.44, 37.2],
 							"pivot": [0, 36.3, -24.6],
 							"rotation": [0, 0, -45],
 							"uv": {
@@ -5599,20 +5635,6 @@
 						{
 							"origin": [-1.32, 34.98, -60.6],
 							"size": [1.44, 1.44, 42.2],
-							"pivot": [0, 36.3, -24.6],
-							"rotation": [0, 0, -45],
-							"uv": {}
-						}
-					]
-				},
-				{
-					"name": "GunShieldHitBox",
-					"parent": "GunHitBoxes",
-					"pivot": [0, 35.1, -21],
-					"cubes": [
-						{
-							"origin": [-3.4, 32.9, -29.4],
-							"size": [5.6, 5.6, 11.4],
 							"pivot": [0, 36.3, -24.6],
 							"rotation": [0, 0, -45],
 							"uv": {}

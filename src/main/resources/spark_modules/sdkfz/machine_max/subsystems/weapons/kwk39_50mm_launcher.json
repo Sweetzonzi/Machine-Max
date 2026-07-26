@@ -6,7 +6,7 @@
   "velocity_bonus": 0,
   "horizontal_accuracy_multiplier": 1,
   "vertical_accuracy_multiplier": 1,
-  "recoil_absorption": 0.1,
+  "recoil_absorption": 0,
   "control_inputs": [
     "weapon_control"
   ],
