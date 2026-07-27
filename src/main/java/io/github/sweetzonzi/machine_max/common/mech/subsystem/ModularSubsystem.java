@@ -3,7 +3,9 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -108,11 +110,7 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         return modules.isEmpty() ? super.getDurability() : getAggregatedDurability();
     }
 
-    @Override
-    public float getMaxDurability() {
-        tryInitModules();
-        return modules.isEmpty() ? super.getMaxDurability() : getAggregatedMaxDurability();
-    }
+    // getMaxDurability() 无需覆写：模块最大耐久按权重从 basicDurability 分配，聚合后数学上恒等于 basicDurability
 
     // ==================== onHurt ====================
 
@@ -132,9 +130,10 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
             event.setDamageAmount(getDurability());
         }
 
-        // 注意：当前 SubPartDamageEvent.Pre 不直接携带 HitBox 引用，
-        // 若后续增加 getHitBox() 方法，可从此处读取 module 名并传入 routeDamage。
-        routeDamage(null, event.getDamageAmount());
+        // 从伤害上下文中获取命中的 HitBox，提取模块名进行精确路由
+        HitBox hitBox = event.getCtx().extensions().get(MMDamageExtensions.HIT_BOX);
+        String moduleName = (hitBox != null) ? hitBox.getAttr().getModule() : null;
+        routeDamage(moduleName, event.getDamageAmount());
         // 不调用 super.onHurt() —— 伤害已由子模块消费
     }
 
@@ -155,7 +154,7 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         }
         // 未指定或不存在：按最大耐久比例分摊
         // 分母为所有模块（含已摧毁）——已摧毁模块仍占据体积、吸收动能
-        float totalMax = getAggregatedMaxDurability();
+        float totalMax = getMaxDurability();
         if (totalMax <= 0) return;
         for (SubModule m : modules.values()) {
             if (!m.isDestroyed()) {
@@ -206,9 +205,8 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
 
     @Override
     public float getAggregatedMaxDurability() {
-        float sum = 0;
-        for (SubModule m : modules.values()) sum += m.getMaxDurability();
-        return sum;
+        // 模块最大耐久按权重从 basicDurability 分配，聚合后恒等于 basicDurability
+        return getMaxDurability();
     }
 
     @Override
