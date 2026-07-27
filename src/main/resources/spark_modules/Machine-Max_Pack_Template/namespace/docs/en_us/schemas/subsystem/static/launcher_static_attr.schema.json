@@ -1,0 +1,255 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/launcher_static_attr.json",
+  "title": "Launcher Subsystem Static Attributes",
+  "description": "Static attributes of the launcher subsystem, containing configuration for barrel, breech, and capacitor modules.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:launcher",
+      "description": "Subsystem type, must be 'machine_max:launcher'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability. Becomes paralyzed at 0, restores functionality when repaired to 30%."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem is transferred to the part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer to remaining durability. e.g. 40 damage, 20 remaining, only 20 transfers."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD, commonly used for non-functional parts that only provide damage differentiation."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["weapon_control"],
+      "description": "Fire signal input channel list, ordered by priority (highest first)."
+    },
+    "ammo_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Ammunition supply discovery channel list. Empty list means universal receive mode (accepts any channel signal)."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "dry_fire": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Dry fire sound event (trigger pulled but no ammunition).",
+          "default": {
+            "sound_id": "machine_max:subsystem.launcher.dry_fire",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Launcher sound attributes, including basic sounds and dry fire sound."
+    },
+    "barrel": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Module durability weight. Total subsystem durability is distributed among modules proportionally to their weight."
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "Barrel decay curve exponent. Higher values mean shallower initial performance degradation and steeper decline at low durability."
+        },
+        "damaged_spread": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "Damage limit spread multiplier. Spread multiplier when durability approaches 0 but is not yet destroyed."
+        },
+        "destroyed_spread": {
+          "type": "number",
+          "minimum": 0,
+          "default": 8.0,
+          "description": "Destroyed spread multiplier. Spread multiplier when durability reaches 0 (cliff effect)."
+        },
+        "damaged_muzzle_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "Damage limit muzzle velocity multiplier. Velocity ratio when durability approaches 0 but is not yet destroyed."
+        },
+        "destroyed_muzzle_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.1,
+          "description": "Destroyed muzzle velocity multiplier. Velocity ratio when durability reaches 0."
+        },
+        "velocity_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Velocity multiplier, applied first (determined by barrel length/rifling)."
+        },
+        "velocity_bonus": {
+          "type": "number",
+          "default": 0,
+          "description": "Velocity linear bonus (m/s)."
+        },
+        "horizontal_accuracy_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Horizontal accuracy multiplier. 1.0 = no change from projectile's default horizontal accuracy."
+        },
+        "vertical_accuracy_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Vertical accuracy multiplier. 1.0 = no change from projectile's default vertical accuracy."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Barrel module attributes - defines baseline accuracy, muzzle velocity, and damage/destroyed decay."
+    },
+    "breech": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Module durability weight. Total subsystem durability is distributed among modules proportionally to their weight."
+        },
+        "fire_rate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fire rate (RPM)."
+        },
+        "recoil_absorption": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "Recoil absorption rate. 0.0 = full recoil, 1.0 = fully absorbed."
+        },
+        "required_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Ammunition tags that must all be present. Empty list means no requirement."
+        },
+        "acceptable_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Ammunition tags where at least one must be present. Empty list means any is accepted."
+        },
+        "forbidden_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Ammunition tags that must not be present. Empty list means no restriction."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Breech module attributes - defines fire rate, recoil absorption, and ammunition compatibility constraints."
+    },
+    "capacitor": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Module durability weight. Total subsystem durability is distributed among modules proportionally to their weight."
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "Capacitor decay curve exponent."
+        },
+        "damaged_charge_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "Damage limit charge rate multiplier."
+        },
+        "destroyed_charge_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "Destroyed charge rate multiplier."
+        },
+        "damaged_max_power": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "Damage limit max power multiplier."
+        },
+        "destroyed_max_power": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "Destroyed max power multiplier."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Capacitor module attributes (optional, used for railgun-style charge weapons)."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:launcher",
+      "description": "Minimal example - required fields only, uses all defaults"
+    },
+    {
+      "type": "machine_max:launcher",
+      "basic_durability": 80,
+      "control_inputs": ["weapon_control"],
+      "ammo_inputs": ["ammo_main"],
+      "description": "Standard example - basic launcher configuration"
+    }
+  ]
+}

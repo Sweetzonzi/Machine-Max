@@ -34,6 +34,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IModularSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
@@ -757,13 +758,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (repairAmount > 0f) {
                 setDurability(currentDurability + repairAmount);
             }
-            // 修理子系统
+            // 修理子系统（若实现 IModularSubsystem 则路由到模块，否则直接设置耐久度）
             for (AbstractSubsystem subsystem : subsystems.values()) {
                 if (subsystemsRepairAmount <= 0) break;
                 if (subsystem.getDurability() < subsystem.getMaxDurability()) {
-                    float subSystemRepairAmount = Math.min(subsystemsRepairAmount, subsystem.getMaxDurability() - subsystem.getDurability());
-                    subsystem.setDurability(subsystem.getDurability() + subSystemRepairAmount);
-                    subsystemsRepairAmount -= subSystemRepairAmount;
+                    if (subsystem instanceof IModularSubsystem modular) {
+                        // 模块化子系统：通过 routeRepair 按受损比例分摊到各模块
+                        modular.routeRepair(null, subsystemsRepairAmount);
+                        subsystemsRepairAmount -= subsystem.getMaxDurability() - subsystem.getDurability();
+                    } else {
+                        float subSystemRepairAmount = Math.min(subsystemsRepairAmount, subsystem.getMaxDurability() - subsystem.getDurability());
+                        subsystem.setDurability(subsystem.getDurability() + subSystemRepairAmount);
+                        subsystemsRepairAmount -= subSystemRepairAmount;
+                    }
                 }
             }
             // 加固连接点

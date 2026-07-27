@@ -1,0 +1,255 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/launcher_static_attr.json",
+  "title": "发射器子系统静态属性",
+  "description": "发射器子系统的静态属性，包含炮管、炮闩、电容三个模块的配置。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:launcher",
+      "description": "子系统类型，必须为 'machine_max:launcher'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度。降为 0 时瘫痪，修复至 30% 时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否将伤害传递给子系统持有者。为 true 时子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值不超过子系统剩余耐久度。例如 40 伤害、剩余 20，则只传递 20。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否在 HUD 中隐藏该子系统，常用于仅提供模型零件伤害区分的非功能子系统。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["weapon_control"],
+      "description": "开火信号输入频道列表，优先级从高到低。"
+    },
+    "ammo_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "弹药供给发现频道列表。空列表表示万能接收模式（接受任意频道信号）。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统激活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "dry_fire": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "空膛击发音效（扣扳机但无弹药时播放）。",
+          "default": {
+            "sound_id": "machine_max:subsystem.launcher.dry_fire",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "发射器音效属性，包含基础音效和空膛击发音效。"
+    },
+    "barrel": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "炮管衰减曲线指数。值越大，战损初期性能下降越平缓、后期下降越陡峭。"
+        },
+        "damaged_spread": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "战损极限散布乘数。耐久→0 但未归零时的精度损失倍率。"
+        },
+        "destroyed_spread": {
+          "type": "number",
+          "minimum": 0,
+          "default": 8.0,
+          "description": "摧毁散布乘数。耐久归零后的精度损失倍率（质变悬崖）。"
+        },
+        "damaged_muzzle_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "战损极限初速乘数。耐久→0 但未归零时的初速比例。"
+        },
+        "destroyed_muzzle_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.1,
+          "description": "摧毁初速乘数。耐久归零后的初速比例。"
+        },
+        "velocity_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "初速乘数，先应用此（炮管长度/膛线决定）。"
+        },
+        "velocity_bonus": {
+          "type": "number",
+          "default": 0,
+          "description": "初速线性加成 (m/s)。"
+        },
+        "horizontal_accuracy_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "水平精度乘子。1.0 = 不改变弹丸默认水平精度。"
+        },
+        "vertical_accuracy_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "垂直精度乘子。1.0 = 不改变弹丸默认垂直精度。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "炮管模块属性——定义精度和初速的基准值及战损/摧毁衰减。"
+    },
+    "breech": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
+        },
+        "fire_rate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "射速 (RPM)。"
+        },
+        "recoil_absorption": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "后坐力吸收率。0.0 = 全后坐力，1.0 = 完全吸收。"
+        },
+        "required_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "弹药必须全部具备的 tag。空列表表示不要求。"
+        },
+        "acceptable_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "弹药至少具备其一即可的 tag。空列表表示接受任意。"
+        },
+        "forbidden_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "弹药不能包含的 tag。空列表表示不禁止。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "炮闩模块属性——定义射速、后坐力吸收和弹药兼容性约束。"
+    },
+    "capacitor": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
+        },
+        "decay_power": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.0,
+          "description": "电容衰减曲线指数。"
+        },
+        "damaged_charge_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "战损极限蓄力速率乘数。"
+        },
+        "destroyed_charge_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "摧毁蓄力速率乘数。"
+        },
+        "damaged_max_power": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "战损极限最大功率乘数。"
+        },
+        "destroyed_max_power": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "description": "摧毁最大功率乘数。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "电容模块属性（可选，用于磁轨炮等蓄力武器）。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:launcher",
+      "description": "最简示例——仅必需字段，使用所有默认值"
+    },
+    {
+      "type": "machine_max:launcher",
+      "basic_durability": 80,
+      "control_inputs": ["weapon_control"],
+      "ammo_inputs": ["ammo_main"],
+      "description": "标准示例——基础发射器配置"
+    }
+  ]
+}

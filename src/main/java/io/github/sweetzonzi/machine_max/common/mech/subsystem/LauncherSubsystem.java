@@ -23,6 +23,9 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.CapacitorModuleAttr;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,7 +39,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
  * Launcher 仅执行 currentSupplier 上的装填和发射。
  */
-public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
+public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
 
     public final LauncherSubsystemAttr attr;
 
@@ -154,6 +157,20 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         }
     }
 
+    // ==================== 模块化子系统 ====================
+
+    @Override
+    protected Map<String, ? extends AbstractModuleAttr> defineModules() {
+        // 从显式字段构建模块映射，与 LauncherSubsystemStaticAttr 的结构保持一致
+        Map<String, AbstractModuleAttr> modules = new LinkedHashMap<>();
+        modules.put("barrel", attr.staticAttribute.getBarrel());
+        modules.put("breech", attr.staticAttribute.getBreech());
+        if (attr.staticAttribute.getCapacitor() != null) {
+            modules.put("capacitor", attr.staticAttribute.getCapacitor());
+        }
+        return modules;
+    }
+
     // ——— IAmmoConsumer 实现 ———
 
     @Override
@@ -222,7 +239,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
 
     @Override
     public boolean canAccept(ProjectileType type) {
-        return attr.staticAttribute.isAmmoCompatible(type);
+        return attr.staticAttribute.getBreech().isAmmoCompatible(type);
     }
 
     /**
@@ -299,7 +316,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
 
         // ★ 记录是否为本burst首帧（在 wasFiring 被置 true 之前）
         boolean burstJustStarted = !wasFiring;
-        float intervalSec = 60f / attr.staticAttribute.getFireRate();
+        float intervalSec = 60f / attr.staticAttribute.getBreech().fireRate();
 
         // ① 计时器累积：首帧预填充 intervalSec 以立即发射，后续帧正常 +0.05s
         if (!wasFiring) {
@@ -493,20 +510,29 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         }
 
         // ④ 服务端：开火——ProjectileType 内部处理 bullet_num、散布、速度
+        // 计算炮管模块对散布和初速的衰减乘数
+        float spreadMult = 1.0f;
+        float velMult = attr.staticAttribute.getBarrel().velocityMultiplier();
+        SubModule barrelModule = getModule("barrel");
+        if (barrelModule != null) {
+            BarrelModuleAttr barrelAttr = (BarrelModuleAttr) barrelModule.getAttr();
+            spreadMult = barrelAttr.getSpreadMultiplier(barrelModule.getDurabilityRatio());
+            velMult *= barrelAttr.getMuzzleVelocityMultiplier(barrelModule.getDurabilityRatio());
+        }
         List<IProjectile> projectiles = type.fire(
             getLevel(), jmePos, direction,
-            attr.staticAttribute.getVelocityMultiplier(),
-            attr.staticAttribute.getVelocityBonus(),
-            attr.staticAttribute.getHorizontalAccuracyMultiplier(),
-            attr.staticAttribute.getVerticalAccuracyMultiplier(),
+            velMult,
+            attr.staticAttribute.getBarrel().velocityBonus(),
+            attr.staticAttribute.getBarrel().horizontalAccuracyMultiplier() * spreadMult,
+            attr.staticAttribute.getBarrel().verticalAccuracyMultiplier() * spreadMult,
             getSubPart().getLinearVelocity()
         );
 
         // ⑤ 后坐力——总弹丸质量 × 速度
-        float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getVelocityMultiplier()
-                         + attr.staticAttribute.getVelocityBonus();
+        float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getBarrel().velocityMultiplier()
+                         + attr.staticAttribute.getBarrel().velocityBonus();
         float totalMass = type.getMass() * projectiles.size();
-        float absorption = attr.staticAttribute.getRecoilAbsorption();
+        float absorption = attr.staticAttribute.getBreech().recoilAbsorption();
         float recoilImpulse = totalMass * finalSpeed * (1.0f - absorption);
         if (recoilImpulse > 1e-6f) {
             Vector3f impulseWorld = direction.mult(-recoilImpulse);
@@ -721,7 +747,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
      * @return 最佳匹配的档位key
      */
     private String findBestFireSoundKey(Map<String, SoundEvent> sounds) {
-        float rpm = attr.staticAttribute.getFireRate();
+        float rpm = attr.staticAttribute.getBreech().fireRate();
         return sounds.keySet().stream()
             .filter(k -> !"0.0".equals(k))
             .map(k -> new AbstractMap.SimpleEntry<>(k, parseRpm(k)))
@@ -766,7 +792,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         if (tierKey != null) {
             float designRPM = parseRpm(tierKey);
             if (!Float.isNaN(designRPM) && designRPM > 0) {
-                float actualRPM = attr.staticAttribute.getFireRate();
+                float actualRPM = attr.staticAttribute.getBreech().fireRate();
                 return Math.clamp(actualRPM / designRPM, 0.5f, 2.0f);
             }
         }

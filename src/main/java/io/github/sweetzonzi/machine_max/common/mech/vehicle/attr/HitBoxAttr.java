@@ -21,6 +21,8 @@ public class HitBoxAttr {
     public final String shapeType;
     /** 子系统名称，受到伤害时会将伤害等量地传递给子系统 */
     public final String subsystem;
+    /** 子系统内部模块名，如 "barrel"、"breech"、"radiator"。空字符串 = 作用于子系统整体 */
+    public final String module;
     /** 材质注册id，用于获取摩擦，减伤等属性 */
     public final ResourceLocation material;
     /** 等效护甲厚度，用于穿甲判定 */
@@ -33,10 +35,11 @@ public class HitBoxAttr {
     /** 最终材质属性，考虑用户自定义覆写 */
     private final MaterialAttr effectiveMaterial;
 
-    public HitBoxAttr(String id, String shapeType, String subsystem, ResourceLocation material, float thickness, String condition, @Nullable OverwriteAttr overwrite) {
+    public HitBoxAttr(String id, String shapeType, String subsystem, String module, ResourceLocation material, float thickness, String condition, @Nullable OverwriteAttr overwrite) {
         this.id = id;
         this.shapeType = shapeType;
         this.subsystem = subsystem;
+        this.module = module;
         this.material = material;
         this.thickness = thickness;
         this.condition = condition;
@@ -48,6 +51,7 @@ public class HitBoxAttr {
             Codec.STRING.optionalFieldOf("id", "").forGetter(HitBoxAttr::getId),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::getShapeType),
             Codec.STRING.optionalFieldOf("subsystem", "").forGetter(HitBoxAttr::getSubsystem),
+            Codec.STRING.optionalFieldOf("module", "").forGetter(HitBoxAttr::getModule),
             ResourceLocation.CODEC.optionalFieldOf("material", MaterialAttr.DEFAULT_ID).forGetter(HitBoxAttr::getMaterial),
             Codec.FLOAT.optionalFieldOf("thickness", 1.0f).forGetter(HitBoxAttr::getThickness),
             Codec.STRING.optionalFieldOf("condition", "true").forGetter(HitBoxAttr::getCondition),
@@ -56,11 +60,12 @@ public class HitBoxAttr {
             id,
             shapeType,
             subsystem,
+            module,
             material,
             thickness,
             condition,
             overwrite
-    ) -> new HitBoxAttr(id, shapeType, subsystem, material, thickness, condition, overwrite.orElse(null))));
+    ) -> new HitBoxAttr(id, shapeType, subsystem, module, material, thickness, condition, overwrite.orElse(null))));
 
     public static final Codec<Map<String, HitBoxAttr>> MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,   // 形状骨骼名称

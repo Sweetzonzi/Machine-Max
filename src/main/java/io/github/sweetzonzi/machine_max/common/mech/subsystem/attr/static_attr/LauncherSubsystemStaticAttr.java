@@ -5,28 +5,25 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BreechModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.CapacitorModuleAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 /**
  * 发射器子系统静态属性。<br>
- * 定义射速、初速加成、精度修正、开火信号输入频道、弹药输入频道等硬件参数。<br>
- * 一个子系统代表一个发射管/挂架/炮闩。
+ * 一个子系统代表一个发射管/挂架/炮闩，包含炮管、炮闩、电容三个模块。
  */
 @Getter
 public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /**
      * 发射器音效属性 — 包含基础音效和发射器特有音效。
-     * <p>
-     * 仿 {@code GearboxSubsystemStaticAttr.GearBoxSoundAttr} 的组织模式。
-     * </p>
      *
      * @param basicSounds  基础音效（onDestroyed / onActivated / onDeactivated）
      * @param dryFireSound 空膛击发音效（扣扳机但无弹药）
@@ -48,135 +45,67 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         ).apply(instance, LauncherSoundAttr::new));
     }
 
-    private final float fireRate;                       // 射速 (RPM)
-    private final float velocityMultiplier;             // 初速乘数，先应用此
-    private final float velocityBonus;                  // 初速线性加成 (m/s)
-    private final float horizontalAccuracyMultiplier;   // 水平精度乘子，1.0=不改变弹丸默认水平精度
-    private final float verticalAccuracyMultiplier;     // 垂直精度乘子，1.0=不改变弹丸默认垂直精度
-    /** 后坐力吸收率：0.0=全后坐力，1.0=完全吸收 */
-    private final float recoilAbsorption;
+    // ====== 子系统级字段 ======
+
     /** 开火信号输入频道列表，优先级从高到低 */
     private final List<String> controlInputs;
-    /** 弹药必须全部具备的tag，空列表表示不要求 */
-    private final List<ResourceLocation> requiredTags;
-    /** 弹药至少具备其一即可的tag，空列表表示接受任意 */
-    private final List<ResourceLocation> acceptableTags;
-    /** 弹药不能包含的tag，空列表表示不禁止 */
-    private final List<ResourceLocation> forbiddenTags;
-
-    /**
-     * 弹药供给发现频道列表。<br>
-     * 发射器通过此列表中的频道接收来自 IAmmoSupplier 的握手信号。<br>
-     * <b>空列表表示接受任意频道信号</b>（万能接收模式）。
-     */
+    /** 弹药供给发现频道列表（空列表 = 万能接收模式） */
     private final List<String> ammoInputs;
-
-    public static final MapCodec<LauncherSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Codec.FLOAT.fieldOf("fire_rate").forGetter(LauncherSubsystemStaticAttr::getFireRate),
-            Codec.FLOAT.optionalFieldOf("velocity_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getVelocityMultiplier),
-            Codec.FLOAT.optionalFieldOf("velocity_bonus", 0f).forGetter(LauncherSubsystemStaticAttr::getVelocityBonus),
-            Codec.FLOAT.optionalFieldOf("horizontal_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getHorizontalAccuracyMultiplier),
-            Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getVerticalAccuracyMultiplier),
-            Codec.FLOAT.optionalFieldOf("recoil_absorption", 0.0f).forGetter(LauncherSubsystemStaticAttr::getRecoilAbsorption),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of())
-                .forGetter(LauncherSubsystemStaticAttr::getRequiredTags),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of())
-                .forGetter(LauncherSubsystemStaticAttr::getAcceptableTags),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags", List.of())
-                .forGetter(LauncherSubsystemStaticAttr::getForbiddenTags),
-            Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
-                .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
-            LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
-                .forGetter(LauncherSubsystemStaticAttr::getLauncherSounds)
-    ).apply(instance, LauncherSubsystemStaticAttr::new));
-
     /** 发射器专属音效属性 */
     private final LauncherSoundAttr launcherSoundAttr;
 
+    // ====== 模块字段 ======
+
+    /** 炮管模块（必填，有默认值） */
+    private final BarrelModuleAttr barrel;
+    /** 炮闩模块（必填，有默认值） */
+    private final BreechModuleAttr breech;
+    /** 电容模块（可空，null = 无电容/非电磁炮） */
+    private final @javax.annotation.Nullable CapacitorModuleAttr capacitor;
+
+    public static final MapCodec<LauncherSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control"))
+                    .forGetter(LauncherSubsystemStaticAttr::getControlInputs),
+            Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
+                    .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
+            LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
+                    .forGetter(LauncherSubsystemStaticAttr::getLauncherSounds),
+            BarrelModuleAttr.CODEC.codec().optionalFieldOf("barrel", BarrelModuleAttr.DEFAULT)
+                    .forGetter(LauncherSubsystemStaticAttr::getBarrel),
+            BreechModuleAttr.CODEC.codec().optionalFieldOf("breech", BreechModuleAttr.DEFAULT)
+                    .forGetter(LauncherSubsystemStaticAttr::getBreech),
+            CapacitorModuleAttr.CODEC.codec().optionalFieldOf("capacitor")
+                    .forGetter(attr -> Optional.ofNullable(attr.getCapacitor()))
+    ).apply(instance, LauncherSubsystemStaticAttr::new));
+
     public LauncherSubsystemStaticAttr(
             BasicAttr basicAttr,
-            float fireRate,
-            float velocityMultiplier,
-            float velocityBonus,
-            float horizontalAccuracyMultiplier,
-            float verticalAccuracyMultiplier,
-            float recoilAbsorption,
             List<String> controlInputs,
-            List<ResourceLocation> requiredTags,
-            List<ResourceLocation> acceptableTags,
-            List<ResourceLocation> forbiddenTags,
             List<String> ammoInputs,
-            LauncherSoundAttr sounds) {
+            LauncherSoundAttr sounds,
+            BarrelModuleAttr barrel,
+            BreechModuleAttr breech,
+            Optional<CapacitorModuleAttr> capacitor) {
         super(basicAttr, sounds.basicSounds());
-        this.launcherSoundAttr = sounds;
-        this.fireRate = fireRate;
-        this.velocityMultiplier = velocityMultiplier;
-        this.velocityBonus = velocityBonus;
-        this.horizontalAccuracyMultiplier = horizontalAccuracyMultiplier;
-        this.verticalAccuracyMultiplier = verticalAccuracyMultiplier;
-        this.recoilAbsorption = recoilAbsorption;
         this.controlInputs = controlInputs;
-        this.requiredTags = requiredTags;
-        this.acceptableTags = acceptableTags;
-        this.forbiddenTags = forbiddenTags;
         this.ammoInputs = ammoInputs;
+        this.launcherSoundAttr = sounds;
+        this.barrel = barrel;
+        this.breech = breech;
+        this.capacitor = capacitor.orElse(null);
     }
 
-    /** 获取发射器完整音效属性 */
-    public LauncherSoundAttr getLauncherSounds() {
-        return launcherSoundAttr;
-    }
+    // ====== 便捷访问器 ======
 
     /** 获取空膛击发音效 */
     public SoundEvent getDryFireSound() {
         return launcherSoundAttr.dryFireSound();
     }
 
-    /**
-     * 判断传入的弹药tag列表是否与该发射器的弹药tag约束兼容。<br>
-     * 规则同连接点tag匹配：
-     * <ul>
-     *   <li>{@code requiredTags} 必须全部包含，空=不要求</li>
-     *   <li>{@code acceptableTags} 至少包含一个，空=允许任意</li>
-     *   <li>{@code forbiddenTags} 不能包含任何，空=不禁止</li>
-     * </ul>
-     *
-     * @param ammoTags 弹药的tag列表
-     * @return 兼容返回true
-     */
-    public boolean isAmmoCompatible(List<ResourceLocation> ammoTags) {
-        Set<ResourceLocation> tagSet = new HashSet<>(ammoTags);
-
-        if (!requiredTags.isEmpty() && !tagSet.containsAll(requiredTags)) return false;
-
-        if (!acceptableTags.isEmpty()) {
-            boolean hasAny = false;
-            for (ResourceLocation tag : acceptableTags) {
-                if (tagSet.contains(tag)) { hasAny = true; break; }
-            }
-            if (!hasAny) return false;
-        }
-
-        if (!forbiddenTags.isEmpty()) {
-            for (ResourceLocation tag : forbiddenTags) {
-                if (tagSet.contains(tag)) return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * 判断传入的投射物类型是否与该发射器的弹药tag约束兼容。<br>
-     * 委托到 {@link #isAmmoCompatible(List)}。
-     *
-     * @param type 投射物类型
-     * @return 兼容返回true
-     */
-    public boolean isAmmoCompatible(ProjectileType type) {
-        return isAmmoCompatible(type.getTags());
+    /** 获取发射器完整音效属性 */
+    public LauncherSoundAttr getLauncherSounds() {
+        return launcherSoundAttr;
     }
 
     @Override

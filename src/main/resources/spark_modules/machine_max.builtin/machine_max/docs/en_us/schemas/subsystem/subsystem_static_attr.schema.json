@@ -14,6 +14,7 @@
         "machine_max:engine",
         "machine_max:gearbox",
         "machine_max:item_storage",
+        "machine_max:launcher",
         "machine_max:motor",
         "machine_max:motor_controller",
         "machine_max:regen_loader",
@@ -91,6 +92,18 @@
       },
       "then": {
         "$ref": "static/item_storage_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:launcher"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/launcher_static_attr.schema.json"
       }
     },
     {
