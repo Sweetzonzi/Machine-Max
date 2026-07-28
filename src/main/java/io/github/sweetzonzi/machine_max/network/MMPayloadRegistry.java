@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
@@ -65,6 +66,14 @@ public class MMPayloadRegistry {
                 new DirectionalPayloadHandler<>(
                         ScriptablePayload::clientHandler,
                         ScriptablePayload::serverHandler
+                )
+        );
+        input.playBidirectional(//物理测试网络包
+                PhysicsTestRePlayPayload.TYPE,
+                PhysicsTestRePlayPayload.STREAM_CODEC,
+                new DirectionalPayloadHandler<>(
+                        PhysicsTestRePlayPayload::clientHandler,
+                        PhysicsTestRePlayPayload::serverHandler
                 )
         );
         input.playToServer(//视角输入（瞄准点世界坐标）

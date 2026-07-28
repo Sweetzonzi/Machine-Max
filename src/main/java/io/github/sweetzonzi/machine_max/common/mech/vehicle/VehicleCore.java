@@ -13,7 +13,9 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.physics_test.PhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.ConnectorAlignmentHelper;
@@ -420,6 +422,41 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
+    }
+
+    /**供测试用例调用的冻结方法*/
+    public void freezeAllPhysics(PhysicsTest testInstance) {
+        if (testInstance != null) {
+            if (physicsFrozen) return;
+            physicsFrozen = true;
+            SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+                for (Part part : partMap.values()) {
+                    for (SubPart subPart : part.subParts.values()) {
+                        var body = subPart.body;
+                        if (!body.isInWorld()) continue;
+                        testInstance.storeBody(body); //去除力之前记录
+                    }
+                }
+                return null;
+            });
+        }
+    }
+
+    /**供测试用例调用的解冻方法*/
+    public void unfreezeAllPhysics(PhysicsTest testInstance) {
+        if (testInstance != null) {
+            physicsFrozen = false;
+            SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+                for (Part part : partMap.values()) {
+                    for (SubPart subPart : part.subParts.values()) {
+                        var body = subPart.body;
+                        if (!body.isInWorld()) continue;
+                        testInstance.resetBody(body);
+                    }
+                }
+                return null;
+            });
+        }
     }
 
     /**

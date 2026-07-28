@@ -8,7 +8,6 @@ import io.github.sweetzonzi.machine_max.common.mech.control.BindingAction;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -20,6 +19,7 @@ import io.github.sweetzonzi.machine_max.network.payload.ControlGroupSetEditPaylo
 import io.github.sweetzonzi.machine_max.network.payload.ControlBindingPayload;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
+import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
 import io.github.sweetzonzi.machine_max.util.MMJoystickHandler;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.client.Minecraft;
@@ -340,6 +340,16 @@ public class RawInputHandler {
                         vehicleLightsOn = !vehicleLightsOn;
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
+
+            /*
+              物理测试快捷操作
+              f9 - 运行上一次的命令
+              f8 - 执行 暂停/继续 播放
+              */
+            new KeyHooks.EVENT(InputConstants.getKey(GLFW.GLFW_KEY_F9, 0))
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.run)));
+            new KeyHooks.EVENT(InputConstants.getKey(GLFW.GLFW_KEY_F8, 0))
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.resume)));
 
             // TODO: 车辆信息面板按键 — 暂时禁用，Tab 键被重新分配给控制组轮换
             //new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
