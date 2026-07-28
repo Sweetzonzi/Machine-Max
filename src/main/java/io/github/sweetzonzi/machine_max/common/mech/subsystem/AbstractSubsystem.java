@@ -77,16 +77,42 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onTick() {
         tickCount++;
         if (!getLevel().isClientSide()) {
-            if (!this.isDestroyed() && this.getDurability() <= 0) {
-                //摧毁耐久度归零的子系统
-                this.onDestroyed();
-            } else if (this.isDestroyed() && !getOwner().getSubPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
-                //重新激活修复到一定程度的子系统
+            boolean dataDestroyed = synchedData.get(DATA_DESTROYED_ID);
+            if (!dataDestroyed && shouldDestroy()) {
+                // 摧毁判定通过 → 标记摧毁并触发回调
+                synchedData.set(DATA_DESTROYED_ID, true);
+                onDestroyed();
+            } else if (dataDestroyed && !getOwner().getSubPart().isDestroyed()
+                       && !shouldDestroy() && shouldRecover()) {
+                // 已摧毁但已满足恢复条件 → 标记恢复并触发回调
                 synchedData.set(DATA_DESTROYED_ID, false);
+                onRecovered();
             }
         }
         if(!getSubPart().getLevel().isClientSide()) syncToClient();
     }
+
+    /**
+     * 是否需要判定为摧毁。默认耐久 ≤ 0。
+     * 模块化子系统覆写以检查 critical 模块状态。
+     */
+    protected boolean shouldDestroy() {
+        return getDurability() <= 0;
+    }
+
+    /**
+     * 是否已恢复到可运转状态。默认耐久 ≥ 30%。
+     * 模块化子系统覆写以检查所有 critical 模块是否已修复至阈值以上。
+     */
+    protected boolean shouldRecover() {
+        return getDurability() >= getMaxDurability() * 0.3f;
+    }
+
+    /**
+     * 从摧毁状态恢复时的回调。默认空实现，子类覆写用于重新注册能源网等业务逻辑。
+     * 注意：DATA_DESTROYED_ID 已由 onTick() 框架层设置为 false，回调中不需重复操作。
+     */
+    protected void onRecovered() {}
 
     public void onPrePhysicsTick() {
     }

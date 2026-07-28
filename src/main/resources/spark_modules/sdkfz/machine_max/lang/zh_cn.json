@@ -49,5 +49,18 @@
   "subsystem.machine_max.gunner_sight": "Gunner Sight",
   "subsystem.machine_max.main_weapon": "主武器",
   "subsystem.machine_max.secondary_weapon": "副武器",
-  "machine_max.k17_hull": "K17 Hull"
+  "machine_max.k17_hull": "K17 Hull",
+  "interact.machine_max.driver_hatch_interact": "Driver Hatch Interact",
+  "interact.machine_max.back_hatch_interact": "Back Hatch Interact",
+  "driver_seat": "Driver Seat",
+  "commander_seat": "Commander Seat",
+  "gunner_seat": "Gunner Seat",
+  "connector.machine_max.turret_hull_axis_2": "Turret Hull Axis 2",
+  "connector.machine_max.turret_gun_axis_2": "Turret Gun Axis 2",
+  "subsystem.machine_max.50mm_ammo_loader": "50mm Ammo Loader",
+  "subsystem.machine_max.mg34_ammo_loader": "Mg34 Ammo Loader",
+  "connector.machine_max.gun_shield_lock": "Gun Shield Lock",
+  "sub_part.machine_max.gun_shield": "Gun Shield",
+  "connector.machine_max.shield_gun_axis": "Shield Gun Axis",
+  "connector.machine_max.shield_turret_axis": "Shield Turret Axis"
 }

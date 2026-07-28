@@ -15,7 +15,8 @@
         "sub_part.machine_max.main": {
           "start_bone": "AllTurret",
           "end_bones": [
-            "AllGun"
+            "AllGun",
+            "AllGunShield"
           ],
           "durability": 1000,
           "mass": 2500,
@@ -74,11 +75,13 @@
           "connectors": {
             "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
-              "definition": "machine_max:turret_azimuth_axis"
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {}
             },
             "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
-              "definition": "machine_max:turret_elevation_axis"
+              "definition": "machine_max:turret_elevation_axis",
+              "overwrite": {}
             }
           },
           "subsystems": {
@@ -95,7 +98,7 @@
               },
               "camera_discovery_targets": {
                 "gunner_sight": [
-                  "connector.machine_max.turret_gun_axis"
+                  "vehicle"
                 ]
               }
             },
@@ -112,7 +115,7 @@
               },
               "camera_discovery_targets": {
                 "gunner_sight": [
-                  "connector.machine_max.turret_gun_axis"
+                  "vehicle"
                 ]
               }
             },
@@ -131,9 +134,7 @@
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
                 "weapon_control": [
-                  "subsystem.machine_max.elevation_driver",
-                  "subsystem.machine_max.azimuth_driver",
-                  "connector.machine_max.turret_gun_axis"
+                  "vehicle"
                 ]
               }
             },
@@ -142,7 +143,7 @@
               "definition": "machine_max:secondary_weapon_controller",
               "control_outputs": {
                 "secondary_weapon_control": [
-                  "connector.machine_max.turret_gun_axis"
+                  "vehicle"
                 ]
               }
             },

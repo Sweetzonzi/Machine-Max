@@ -20,7 +20,7 @@
           "RightWheel4"
         ],
         "durability": 500,
-        "mass": 1500,
+        "mass": 18499.5,
         "projected_area": [
           -1,
           -1,
@@ -61,10 +61,76 @@
             "material": "machine_max:7035_aluminum_alloy"
           }
         },
+        "interact_boxes": {
+          "interact.machine_max.driver_hatch_interact": {
+            "bone": "DriverHatchInteract",
+            "signal_targets": {
+              "interact": [
+                "driver_seat"
+              ]
+            }
+          },
+          "interact.machine_max.back_hatch_interact": {
+            "bone": "BackHatchInteract",
+            "signal_targets": {
+              "interact": [
+                "commander_seat",
+                "gunner_seat"
+              ]
+            }
+          }
+        },
+        "connectors": {
+          "connector.machine_max.hull_turret_axis": {
+            "locator": "hull_turret_axis",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_right_wheel_1": {
+            "locator": "hull_right_wheel_1",
+            "definition": "machine_max:k17_right_front_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_left_wheel_1": {
+            "locator": "hull_left_wheel_1",
+            "definition": "machine_max:k17_left_front_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_right_wheel_2": {
+            "locator": "hull_right_wheel_2",
+            "definition": "machine_max:k17_right_front_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_left_wheel_2": {
+            "locator": "hull_left_wheel_2",
+            "definition": "machine_max:k17_left_front_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_right_wheel_3": {
+            "locator": "hull_right_wheel_3",
+            "definition": "machine_max:k17_right_back_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_left_wheel_3": {
+            "locator": "hull_left_wheel_3",
+            "definition": "machine_max:k17_left_back_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_right_wheel_4": {
+            "locator": "hull_right_wheel_4",
+            "definition": "machine_max:k17_right_back_wheel",
+            "overwrite": {}
+          },
+          "connector.machine_max.hull_left_wheel_4": {
+            "locator": "hull_left_wheel_4",
+            "definition": "machine_max:k17_left_back_wheel",
+            "overwrite": {}
+          }
+        },
         "subsystems": {
           "subsystem.machine_max.engine": {
             "type": "machine_max:engine",
-            "definition": "machine_max:truck_diesel_engine",
+            "definition": "machine_max:k17_engine",
             "power_output": "subsystem.machine_max.gearbox",
             "speed_outputs": {
               "engine_speed": [
@@ -75,7 +141,7 @@
           },
           "subsystem.machine_max.gearbox": {
             "type": "machine_max:gearbox",
-            "definition": "machine_max:sdkfz234_gearbox",
+            "definition": "machine_max:k17_gearbox",
             "power_output": "subsystem.machine_max.transmission",
             "gear_outputs": {
               "gear": [
@@ -86,9 +152,82 @@
           },
           "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission",
-            "definition": "machine_max:heavy_duty_transmission",
+            "definition": "machine_max:k17_transmission",
             "power_outputs": {
               "vehicle": 1
+            }
+          },
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller",
+            "definition": "machine_max:default_car_controller",
+            "control_outputs": {
+              "car_control": []
+            },
+            "speed_outputs": {
+              "vehicle_speed": [
+                "subpart",
+                "vehicle"
+              ]
+            },
+            "throttle_outputs": {
+              "throttle": [
+                "subpart",
+                "vehicle"
+              ]
+            },
+            "steering_outputs": {
+              "steering": [
+                "subpart",
+                "vehicle"
+              ]
+            },
+            "brake_outputs": {
+              "brake": [
+                "subpart",
+                "vehicle"
+              ]
+            },
+            "handbrake_outputs": {
+              "handbrake": [
+                "subpart",
+                "vehicle"
+              ]
+            }
+          },
+          "driver_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:k17_seat",
+            "locator": "driver_seat",
+            "control_group_preset": "machine_max:default_driver",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "subpart",
+                "vehicle"
+              ]
+            }
+          },
+          "commander_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:k17_seat",
+            "locator": "commander_seat",
+            "control_group_preset": "machine_max:default_commander",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "subpart",
+                "vehicle"
+              ]
+            }
+          },
+          "gunner_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:k17_seat",
+            "locator": "gunner_seat",
+            "control_group_preset": "machine_max:default_gunner",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "subpart",
+                "vehicle"
+              ]
             }
           }
         }

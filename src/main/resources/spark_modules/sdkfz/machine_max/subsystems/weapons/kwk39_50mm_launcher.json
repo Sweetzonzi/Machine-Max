@@ -1,22 +1,17 @@
 {
   "type": "machine_max:launcher",
   "basic_durability": 100,
-  "fire_rate": 600,
-  "velocity_multiplier": 1,
-  "velocity_bonus": 0,
-  "horizontal_accuracy_multiplier": 1,
-  "vertical_accuracy_multiplier": 1,
-  "recoil_absorption": 0.1,
   "control_inputs": [
     "weapon_control"
   ],
-  "required_tags": [
-    "machine_max:caliber/50mm"
-  ],
-  "acceptable_tags": [],
-  "forbidden_tags": [],
   "ammo_inputs": [
     "ammo_50mm"
   ],
+  "breech": {
+    "fire_rate": 600,
+    "required_tags": [
+      "machine_max:caliber/50mm"
+    ]
+  },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

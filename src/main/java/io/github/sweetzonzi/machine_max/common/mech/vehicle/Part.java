@@ -1,7 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -46,6 +48,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
 import java.util.*;
 
@@ -454,18 +458,102 @@ public class Part {
                 subPart.body.setInverseInertiaLocal(new Vector3f(1.0f / Ix, 1.0f / Iyz, 1.0f / Iyz));
             }
         }
+
+        // 提前选出 rootSubPart（质量最大者），作为其余 SubPart 布放的基准
+        SubPart rootSubPart = selectRootSubPart();
+        rootSubPart.setDurability(rootSubPart.getMaxDurability());
+
+        // 将非 rootSubPart 按模型中的相对质心位置偏移到正确位置，再连接内部关节
+        OModel model = OModel.getORIGINS().get(new ModelIndex("part", variant.getModel()));
+        positionSubPartsForInternalAttach(model, rootSubPart);
         autoAttachInternalConnectors();
-        //设置默认根零件，取质量最大的
-        float maxMass = -100;
-        SubPart rootSubPart = null;
+
+        // 设置其余 SubPart 的初始耐久度
         for (SubPart subPart : subParts.values()) {
-            subPart.setDurability(subPart.getMaxDurability());
-            if (subPart.body.getMass() > maxMass) {
-                maxMass = subPart.body.getMass();
-                rootSubPart = subPart;
+            if (subPart != rootSubPart) {
+                subPart.setDurability(subPart.getMaxDurability());
             }
         }
         return rootSubPart;
+    }
+
+    /**
+     * <p>选出质量最大的 SubPart 作为 rootSubPart。</p>
+     */
+    private SubPart selectRootSubPart() {
+        float maxMass = -100;
+        SubPart root = null;
+        for (SubPart subPart : subParts.values()) {
+            if (subPart.body.getMass() > maxMass) {
+                maxMass = subPart.body.getMass();
+                root = subPart;
+            }
+        }
+        return root;
+    }
+
+    /**
+     * <p>以 rootSubPart 的全局模型空间质心为基准，将其余 SubPart 的刚体移动到正确的相对位置。</p>
+     * <p>布放完成后各 SubPart 在世界空间中的相对位置与模型中一致，内部连接点的世界空间位姿自然对齐。</p>
+     *
+     * @param model        部件模型
+     * @param rootSubPart  根子部件（保持在原位不动）
+     */
+    private void positionSubPartsForInternalAttach(OModel model, SubPart rootSubPart) {
+        Vector3f rootGlobalMc = computeSubPartGlobalMassCenter(rootSubPart, model);
+
+        for (SubPart subPart : subParts.values()) {
+            if (subPart == rootSubPart) continue;
+            Vector3f globalMc = computeSubPartGlobalMassCenter(subPart, model);
+            Vector3f offset = globalMc.subtract(rootGlobalMc);
+            // 移动刚体（构造期尚未加入物理世界，直接操作安全）
+            subPart.body.setPhysicsLocation(subPart.body.getPhysicsLocation(null).add(offset));
+            // 同步 Transform 缓存
+            Transform transform = subPart.body.getTransform(null);
+            subPart.transform = transform.clone();
+            subPart.oldTransform = transform.clone();
+        }
+    }
+
+    /**
+     * <p>计算 SubPart 质心在全局模型空间中的位置。</p>
+     * <p>优先使用 mass_center locator 的全局位姿；若 locator 不存在则回退到
+     * massCenterTransform（startBone 空间）+ startBone 全局变换。</p>
+     *
+     * @param subPart 子部件
+     * @param model   部件模型
+     * @return 质心在全局模型空间中的位置
+     */
+    private Vector3f computeSubPartGlobalMassCenter(SubPart subPart, OModel model) {
+        SubPartAttr attr = subPart.attr;
+        Map<String, OBone> bones = SubPartAttr.filterBones(
+                model.getBones(), attr.getStartBone(), attr.getEndBones());
+
+        // 优先：通过 mass_center locator 获取全局位置
+        OLocator mcLocator = model.getLocator(attr.getMassCenterName());
+        if (mcLocator != null) {
+            Matrix4f pose = new Matrix4f();
+            pose.identity()
+                    .setTranslation(mcLocator.getOffset().toVector3f())
+                    .rotateZYX(mcLocator.getRotation().toVector3f());
+            mcLocator.getBone().applyTransformToLocal(pose, null); // 追溯到模型根骨骼
+            org.joml.Vector3f tmp = new org.joml.Vector3f();
+            return PhysicsHelperKt.toBVector3f(pose.getTranslation(tmp));
+        }
+
+        // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换
+        Transform mcLocal = attr.getMassCenterTransform();
+        OBone startBone = bones.get(attr.getStartBone());
+        Matrix4f sbGlobalMat = new Matrix4f().identity();
+        startBone.applyTransformToLocal(sbGlobalMat, null);
+        org.joml.Vector3f jomlTrans = new org.joml.Vector3f();
+        org.joml.Quaternionf jomlRot = new org.joml.Quaternionf();
+        Transform sbGlobalTransform = new Transform(
+                PhysicsHelperKt.toBVector3f(sbGlobalMat.getTranslation(jomlTrans)),
+                SparkMathKt.toBQuaternion(sbGlobalMat.getNormalizedRotation(jomlRot))
+        );
+        Transform globalMc = MyMath.combine(mcLocal, sbGlobalTransform, null);
+        return globalMc.getTranslation();
     }
 
     /**

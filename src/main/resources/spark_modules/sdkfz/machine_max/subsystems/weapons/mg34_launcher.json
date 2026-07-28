@@ -1,22 +1,21 @@
 {
   "type": "machine_max:launcher",
   "basic_durability": 50,
-  "fire_rate": 800,
-  "velocity_multiplier": 1,
-  "velocity_bonus": 0,
-  "horizontal_accuracy_multiplier": 2,
-  "vertical_accuracy_multiplier": 2,
-  "recoil_absorption": 0,
   "control_inputs": [
     "secondary_weapon_control"
   ],
-  "required_tags": [
-    "machine_max:caliber/7_92mm"
-  ],
-  "acceptable_tags": [],
-  "forbidden_tags": [],
   "ammo_inputs": [
     "ammo_7_92mm"
   ],
+  "barrel": {
+    "horizontal_accuracy_multiplier": 2,
+    "vertical_accuracy_multiplier": 2
+  },
+  "breech": {
+    "fire_rate": 800,
+    "required_tags": [
+      "machine_max:caliber/7_92mm"
+    ]
+  },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }
