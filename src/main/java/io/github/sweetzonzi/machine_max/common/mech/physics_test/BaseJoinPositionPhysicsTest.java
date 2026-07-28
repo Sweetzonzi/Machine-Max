@@ -62,21 +62,19 @@ public abstract class BaseJoinPositionPhysicsTest implements PhysicsTest {
     /**重放方法*/
     @Override
     public Component onResume() {
-        Component msg = null;
+        Component msg = Component.literal("\n"+(playing ? "暂停测试" : "继续测试"));
         if (initiated) {
             getUnremovedVehicleStream().forEach(vehicleCore ->
                     {
                         if (playing) {
                             vehicleCore.freezeAllPhysics(this);
-                        } else if (initiated) {
+                        } else {
                             vehicleCore.unfreezeAllPhysics(this);
                         }
                     }
             );
-            msg = Component.literal("\n"+(playing ? "暂停测试" : "继续测试"));
             playing = !playing;
         }
-
         return msg;
     }
 
