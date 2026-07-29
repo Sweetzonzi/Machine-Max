@@ -23,7 +23,7 @@ import java.util.UUID;
 @Accessors(chain=true)
 @Data
 public class SubsystemInteractPayload implements CustomPacketPayload {
-    UUID excutePlayerUUID = null;
+    Integer executingPlayerId = null;
     final int subPartId;
     final String interactBoxName;
     public SubsystemInteractPayload(int subPartId, String interactBoxName) {
@@ -37,16 +37,16 @@ public class SubsystemInteractPayload implements CustomPacketPayload {
         @Override
         public @NotNull SubsystemInteractPayload decode(FriendlyByteBuf buffer) {
             return new SubsystemInteractPayload(buffer.readInt(), buffer.readUtf())
-                    .setExcutePlayerUUID(buffer.readBoolean() ? null : buffer.readUUID());
+                    .setExecutingPlayerId(buffer.readBoolean() ? null : buffer.readInt());
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull SubsystemInteractPayload value) {
             buffer.writeInt(value.subPartId);
             buffer.writeUtf(value.interactBoxName);
-            boolean uuidIsNull = value.excutePlayerUUID == null;
+            boolean uuidIsNull = value.getExecutingPlayerId() == null;
             buffer.writeBoolean(uuidIsNull);
-            if (!uuidIsNull) buffer.writeUUID(value.excutePlayerUUID);
+            if (!uuidIsNull) buffer.writeInt(value.getExecutingPlayerId());
         }
     };
 
@@ -65,18 +65,23 @@ public class SubsystemInteractPayload implements CustomPacketPayload {
         //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作
         Player player = context.player();
         PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(),
-                payload.setExcutePlayerUUID(player.getUUID())); // 传输前将当前触发者UUID填入
+                payload.setExecutingPlayerId(player.getId())); // 传输前将当前触发者UUID填入
     }
 
     public static void handle(SubsystemInteractPayload payload, IPayloadContext context) {
         Level level = context.player().level();
         String envStr = level.isClientSide() ? "客户端" : "服务端";
-        Player executingPlayer =
-                payload.getExcutePlayerUUID() == null ?
-                context.player() : //为空，说明是服务端
-                level.getPlayerByUUID(payload.excutePlayerUUID);
+        final Player executingPlayer;
+        if (payload.getExecutingPlayerId() == null) {
+            //为空，说明是服务端在调用接收
+            executingPlayer = context.player();
+        } else if (level.getEntity(payload.getExecutingPlayerId()) instanceof Player ep) {
+            executingPlayer = ep;
+        } else {
+            executingPlayer = null;
+        }
         if (executingPlayer == null) {
-            MachineMax.LOGGER.warn("UUID 为 {} 的玩家在该{}未被发现, handle发送终止", payload.excutePlayerUUID, envStr);
+            MachineMax.LOGGER.warn("实体id 为 {} 的触发者在该{}未被发现, handle发送终止", payload.getExecutingPlayerId(), envStr);
             return;
         }
         DestroyableObject object = ObjectManager.getDestroyableObject(level, payload.getSubPartId());
