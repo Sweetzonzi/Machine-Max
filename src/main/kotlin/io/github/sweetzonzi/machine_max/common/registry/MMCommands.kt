@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.common.command.DebugCommand
+import io.github.sweetzonzi.machine_max.common.command.PartCommand
+import io.github.sweetzonzi.machine_max.common.command.PhysicsTestCommand
 import io.github.sweetzonzi.machine_max.common.command.ResearchCommand
 import io.github.sweetzonzi.machine_max.common.command.VehicleCommand
 import net.minecraft.commands.Commands
@@ -14,6 +16,8 @@ object MMCommands {
                 .then(VehicleCommand().create(event.buildContext))
                 .then(ResearchCommand().create(event.buildContext))
                 .then(DebugCommand().create(event.buildContext))
+                .then(PartCommand().create(event.buildContext))
+                .then(PhysicsTestCommand().create(event.buildContext))
         )
     }
 
