@@ -543,9 +543,10 @@ public class Part {
 
         // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换
         Transform mcLocal = attr.getMassCenterTransform();
-        OBone startBone = bones.get(attr.getStartBone());
         Matrix4f sbGlobalMat = new Matrix4f().identity();
-        startBone.applyTransformToLocal(sbGlobalMat, null);
+        OBone startBone = bones.get(attr.getStartBone());
+        if (startBone != null)
+            startBone.applyTransformToLocal(sbGlobalMat, null);
         org.joml.Vector3f jomlTrans = new org.joml.Vector3f();
         org.joml.Quaternionf jomlRot = new org.joml.Quaternionf();
         Transform sbGlobalTransform = new Transform(
