@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -18,18 +19,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-
+@RequiredArgsConstructor
 @Accessors(chain=true)
 @Data
 public class SubsystemInteractPayload implements CustomPacketPayload {
     Integer executingPlayerId = null;
     final int subPartId;
     final String interactBoxName;
-    public SubsystemInteractPayload(int subPartId, String interactBoxName) {
-        this.subPartId = subPartId;
-        this.interactBoxName = interactBoxName;
-    }
     public static final Type<SubsystemInteractPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem_interact_payload")
     );
@@ -44,9 +40,9 @@ public class SubsystemInteractPayload implements CustomPacketPayload {
         public void encode(FriendlyByteBuf buffer, @NotNull SubsystemInteractPayload value) {
             buffer.writeInt(value.subPartId);
             buffer.writeUtf(value.interactBoxName);
-            boolean uuidIsNull = value.getExecutingPlayerId() == null;
-            buffer.writeBoolean(uuidIsNull);
-            if (!uuidIsNull) buffer.writeInt(value.getExecutingPlayerId());
+            boolean playerIdIsNull = value.getExecutingPlayerId() == null;
+            buffer.writeBoolean(playerIdIsNull);
+            if (!playerIdIsNull) buffer.writeInt(value.getExecutingPlayerId());
         }
     };
 
@@ -84,6 +80,8 @@ public class SubsystemInteractPayload implements CustomPacketPayload {
             MachineMax.LOGGER.warn("实体id 为 {} 的触发者在该{}未被发现, handle发送终止", payload.getExecutingPlayerId(), envStr);
             return;
         }
+
+
         DestroyableObject object = ObjectManager.getDestroyableObject(level, payload.getSubPartId());
         if (object instanceof SubPart subPart) {
             InteractBox interactBox = subPart.interactBoxes.get(payload.getInteractBoxName());
