@@ -12,8 +12,10 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.LightingSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -24,15 +26,32 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-public record RegularInputPayload(int key, int tick_count) implements CustomPacketPayload {
+
+@RequiredArgsConstructor
+@Accessors(chain=true)
+@Data
+public class RegularInputPayload implements CustomPacketPayload {
+    Integer executingPlayerId = null;
+    final int key;
+    final int tick_count;
+
     public static final Type<RegularInputPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "regular_input_payload"));
-    public static final StreamCodec<ByteBuf, RegularInputPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT,
-            RegularInputPayload::key,//按下的按键
-            ByteBufCodecs.VAR_INT,
-            RegularInputPayload::tick_count,//0为按下，1为松开
-            RegularInputPayload::new
-    );
+    public static final StreamCodec<FriendlyByteBuf, RegularInputPayload> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull RegularInputPayload decode(FriendlyByteBuf buffer) {
+            return new RegularInputPayload(buffer.readInt(), buffer.readInt())
+                    .setExecutingPlayerId(buffer.readBoolean() ? null : buffer.readInt());
+        }
+
+        @Override
+        public void encode(FriendlyByteBuf buffer, @NotNull RegularInputPayload value) {
+            buffer.writeInt(value.getKey());
+            buffer.writeInt(value.getTick_count());
+            boolean playerIdIsNull = value.getExecutingPlayerId() == null;
+            buffer.writeBoolean(playerIdIsNull);
+            if (!playerIdIsNull) buffer.writeInt(value.getExecutingPlayerId());
+        }
+    };
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
@@ -48,14 +67,30 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
         handle(payload, context);
         //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作 TODO: 这可行吗？
         Player player = context.player();
-        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
+        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload.setExecutingPlayerId(player.getId()));
     }
 
     public static void handle(final RegularInputPayload payload, final IPayloadContext context) {
-        Player player = context.player();
-        Level level = player.level();
+        //todo 重复的代码 后期建议在需要这种按角色分界的情形直接继承特定FL功能即可（或者其他更好的封装设计）
+        Level level = context.player().level();
+        String envStr = level.isClientSide() ? "客户端" : "服务端";
+        final Player executingPlayer;
+        if (payload.getExecutingPlayerId() == null) {
+            //为空，说明是服务端在调用接收
+            executingPlayer = context.player();
+        } else if (level.getEntity(payload.getExecutingPlayerId()) instanceof Player ep) {
+            executingPlayer = ep;
+        } else {
+            executingPlayer = null;
+        }
+        if (executingPlayer == null) {
+            MachineMax.LOGGER.warn("实体id 为 {} 的触发者在该{}未被发现, handle发送终止", payload.getExecutingPlayerId(), envStr);
+            return;
+        }
+
+
         VehicleAssemblyAttachment assemblyCache;
-        switch (KeyInputMapping.fromValue(payload.key())) {
+        switch (KeyInputMapping.fromValue(payload.getKey())) {
             /*
              *  通用功能
              */
@@ -66,63 +101,63 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
                 break;
             case LEAVE_VEHICLE://与载具等交互
-                if ((player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getControllingSubsystem() != null) && payload.tick_count() >= 10) {
+                if ((executingPlayer.getVehicle() != null || ((IEntityMixin) executingPlayer).machine_Max$getControllingSubsystem() != null) && payload.getTick_count() >= 10) {
                     //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
-                    if (((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubSystem) {
+                    if (((IEntityMixin) executingPlayer).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubSystem) {
                         seatSubSystem.removePassenger();
-                    } else player.stopRiding();//一般载具实体的处理方式
+                    } else executingPlayer.stopRiding();//一般载具实体的处理方式
                 }
                 break;
             case TOGGLE_LIGHT://灯光开关
                 if (!level.isClientSide()) {
-                    handleToggleLight(player, payload.tick_count() == 1);
+                    handleToggleLight(executingPlayer, payload.getTick_count() == 1);
                 }
                 break;
             /*
              * 地面载具
              */
             case CLUTCH, UP_SHIFT, DOWN_SHIFT, HAND_BRAKE, TOGGLE_HAND_BRAKE:
-                handleRegularInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count());
+                handleRegularInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count());
                 break;
             /*
              *  武器控制 — 路由到控制组的 mainWeaponTargets / secondaryWeaponTargets
              */
             case MAIN_FIRE, NEXT_AMMO_TYPE, PREV_AMMO_TYPE:
-                handleWeaponInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count(), true);
+                handleWeaponInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count(), true);
                 break;
             case SECONDARY_FIRE:
-                handleWeaponInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count(), false);
+                handleWeaponInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count(), false);
                 break;
             /*
              *  载具组装
              */
             case ADD_PART_ATTACH_ANGLE://切换部件安装角度
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleAttachAngle(true);
                 }
                 break;
             case SUB_PART_ATTACH_ANGLE://切换部件安装角度
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleAttachAngle(false);
                 }
                 break;
             case CYCLE_PART_CONNECTORS://切换部件连接点
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleConnectors();
                 }
                 break;
             case CYCLE_PART_VARIANTS://切换部件变体
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleVariants();
                 }
                 break;
             case CYCLE_PART_RECIPES://切换部件配方
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleRecipe();
                 }
                 break;
