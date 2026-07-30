@@ -183,16 +183,6 @@ public class MMPayloadRegistry {
                 ProjectilesSpawnPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ProjectilesSpawnPayload::handle)
         );
-        sync.playToClient(//玩家受投射物命中冲击同步（服务端→客户端），驱动 CameraController 头部冲击效果
-                PlayerHitImpactPayload.TYPE,
-                PlayerHitImpactPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(PlayerHitImpactPayload::handle)
-        );
-        sync.playToClient(//地形命中屏幕抖动（服务端→客户端），驱动 CameraController 随机方向小幅度抖动
-                TerrainShakePayload.TYPE,
-                TerrainShakePayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(TerrainShakePayload::handle)
-        );
         sync.playToClient(//向客户端发送载具数据，由客户端保存到本地文件
                 VehicleDataSavedPayload.TYPE,
                 VehicleDataSavedPayload.STREAM_CODEC,

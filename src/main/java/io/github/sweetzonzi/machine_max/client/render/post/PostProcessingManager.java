@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.post;
 
 import io.github.sweetzonzi.machine_max.client.event.RenderLevelLastEvent;
+import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -36,11 +37,13 @@ public class PostProcessingManager {
         INSTANCE.desaturate.render(event.getPartialTick().getGameTimeDeltaPartialTick(false));
     }
 
-    /** 客户端 Tick：退出世界时自动释放所有 PostChain GPU 资源 */
+    /** 客户端 Tick：退出世界时自动释放所有 PostChain GPU 资源，同时衰减失色压制效果 */
     @SubscribeEvent
     private static void onClientTick(ClientTickEvent.Pre event) {
         if (Minecraft.getInstance().level == null) {
             INSTANCE.disposeAll();
+        } else {
+            CameraShakeController.tickSuppression(); // 失色压制每帧衰减
         }
     }
 

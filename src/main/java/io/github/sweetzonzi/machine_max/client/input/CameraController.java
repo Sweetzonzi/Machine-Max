@@ -10,12 +10,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
-import io.github.sweetzonzi.machine_max.network.payload.PlayerHitImpactPayload;
+import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
 import io.github.sweetzonzi.machine_max.network.payload.PlayerLookAtPayload;
 import io.github.sweetzonzi.machine_max.util.environment.EnvironmentSettings;
 import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
-import io.github.sweetzonzi.machine_max.util.fl.physics.PlayerPhysicalBodyBuilder;
-import io.github.sweetzonzi.machine_max.util.fl.physics.PlayerPhysicalBodyModel;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
@@ -45,9 +43,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.util.List;
-import java.util.Queue;
-import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class CameraController {
@@ -77,45 +72,6 @@ public class CameraController {
     private static Vec3 lastSentAimPoint = null;
     private static final double AIM_MAX_DISTANCE = 64.0;
     private static final double AIM_POINT_THRESHOLD_SQ = 0.0001;
-    private static PlayerPhysicalBodyModel playerPhysicalBody = new PlayerPhysicalBodyBuilder().build();
-    /**
-     * 视觉衰减强度（独立于物理模拟）。中弹时重置为 1.5，每帧指数衰减至零，归零后置换物理模型
-     */
-    private static float impactIntensity = 0f;
-    /**
-     * 冲击保持帧数：在此期间 impactIntensity 不衰减，维持最大抖动，产生"剧烈抖动一下再收束"的效果。
-     */
-    private static int hitHoldFrames = 0;
-    private static final int HIT_HOLD_FRAMES = 8; // ≈130ms@60fps，足够产生一次剧烈震荡感知
-    /** 上次模型置换的时刻（毫秒），防止密集火力下频繁 swap */
-    private static long lastSwapTimeMs = 0L;
-    private static final long MIN_SWAP_INTERVAL_MS = 500L;
-    /**
-     * 玩家命中冲击数据缓冲区。
-     * 服务端 {@link io.github.sweetzonzi.machine_max.network.payload.PlayerHitImpactPayload} handler
-     * 入队，渲染帧 {@link #updateCameraRot} 消费。
-     */
-    private static final Queue<PlayerHitImpactEntry> pendingHitImpacts = new ConcurrentLinkedQueue<>();
-
-    // ===== 地形命中屏幕抖动 =====
-
-    /** 当前地形抖动强度，指数衰减至零 */
-    private static float terrainShakeIntensity = 0f;
-    /** 正弦振荡相位（帧计数器），用于产生"抖动的收束"感 */
-    private static int terrainShakePhase = 0;
-    /** 随机方向偏量（各轴方向单位值，-1~1），每次触发时重新生成 */
-    private static float terrainShakePitchDir = 0f;
-    private static float terrainShakeYawDir = 0f;
-    private static float terrainShakeRollDir = 0f;
-    /** 地形抖动初始幅度（度），每次命中累加此值 */
-    private static final float TERRAIN_SHAKE_INITIAL = 0.6f;
-    /** 地形抖动最大累计幅度（度），防止密集火力下过激 */
-    private static final float TERRAIN_SHAKE_MAX = 2.4f;
-    /** 每帧衰减系数，约 22 帧（0.37s@60fps）后归零 */
-    private static final float TERRAIN_SHAKE_DECAY = 0.9f;
-    /** 正弦振荡角频率（弧度/帧），完成约 3 次振荡后基本衰减完毕 */
-    private static final float TERRAIN_SHAKE_FREQ = 0.55f * (float) Math.PI;
-    private static final Random SHAKE_RANDOM = new Random();
 
     // ===== 炮镜模式状态 =====
     /**
@@ -172,51 +128,13 @@ public class CameraController {
      */
     private static long lastZoomLerpNanos = 0;
 
-    private static long shakeTimes = 0;
-
-    private static void applyHeadImpactOffset(ViewportEvent.ComputeCameraAngles event) {
-        EnvironmentWrapper.run(EnvironmentSettings.PLAYER_LOOK_AT_PAYLOAD, () -> {
-            if (impactIntensity <= 0f) return;
-            // 身体旋转通过颈部弹簧传递到头部，叠加显式身体偏转，使中弹后全身受击效果更完整
-            float totalPitch = (float) ((playerPhysicalBody.getHeadPitch()-Math.PI/2f) * impactIntensity);
-            float totalYaw = playerPhysicalBody.getHeadYaw() * impactIntensity;
-            float totalRoll = playerPhysicalBody.getHeadRoll() * impactIntensity;
-
-            if (Math.abs(totalPitch) > 0.005f || Math.abs(totalYaw) > 0.005f || Math.abs(totalRoll) > 0.005f) {
-                event.setPitch(event.getPitch() + totalPitch);
-                event.setYaw(event.getYaw() + totalYaw);
-                event.setRoll(event.getRoll() + totalRoll);
-                PacketDistributor.sendToServer(new PlayerLookAtPayload(event.getPitch(), event.getYaw()));
-                // 先保持强度（hold 帧数内不衰减），再指数收束，实现"剧烈抖动一下再收束"
-                if (hitHoldFrames > 0) {
-                    hitHoldFrames--;
-                } else {
-                    impactIntensity *= 0.963f;
-                }
-            } else if (impactIntensity > 0.01f) {
-                long now = System.currentTimeMillis();
-                if (now - lastSwapTimeMs >= MIN_SWAP_INTERVAL_MS) {
-                    shakeTimes ++;
-                    // 偏移量已基本归零，但 impactIntensity 尚未完全衰减 → 强制归零并置换模型
-                    if (shakeTimes < 3) return;
-                    shakeTimes = 0;
-                    playerPhysicalBody = new PlayerPhysicalBodyBuilder().build();
-                    impactIntensity = 0f;
-                    lastSwapTimeMs = now;
-                } else {
-                    // 距上次swap不足500ms，仅归零强度值，暂不置换模型
-                    impactIntensity = 0f;
-                }
-            } else {
-                // impactIntensity 已足够小，直接归零
-                impactIntensity = 0f;
-            }
-        });
-    }
-
-
     public static boolean isCameraMode() {
         return activeCamera != null;
+    }
+
+    /** @return 玩家当前是否乘坐载具（座椅模式） */
+    public static boolean isOnBoard() {
+        return onBoard;
     }
 
     /**
@@ -252,30 +170,63 @@ public class CameraController {
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
 
+        // 炮镜模式：相机固定在 locator 位置，不应用任何抖动/惯性效果
         if (activeCamera != null && activeCamera.isActive()) {
             Transform locator = activeCamera.getLerpedLocatorWorldTransform(partialTick);
             event.setCameraPos(SparkMathKt.toVec3(locator.getTranslation()));
             return;
         }
 
+        // 计算理想相机位置（idealPos = 无抖动/惯性偏移时的相机位置）
+        Vec3 idealPos = null;
+
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             Quaternionf seatRot = new Quaternionf();
             seat.getSubPart().getWorldPositionMatrix(partialTick).getNormalizedRotation(seatRot);
             if (!type.isFirstPerson() && seat.attr.staticAttribute.views.focusOnCenter()) {
                 if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
-                    event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
+                    idealPos = vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
                             .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
                                     PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.thirdPersonOffset()),
-                                    SparkMathKt.toBQuaternion(seatRot)))));
+                                    SparkMathKt.toBQuaternion(seatRot))));
                 }
             } else {
                 Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
-                event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation())
+                idealPos = SparkMathKt.toVec3(transform.getTranslation())
                         .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
                                 PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.firstPersonOffset()),
-                                SparkMathKt.toBQuaternion(seatRot)))));
+                                SparkMathKt.toBQuaternion(seatRot))));
+            }
+
+            // System B：载具相机惯性追赶，传入理想位置
+            if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
+                float maxOffset = computeVehicleMaxOffset(vehicle);
+                CameraShakeController.onVehicleCameraChase(idealPos, maxOffset);
             }
         }
+
+        // 非载具模式下以当前相机位置作为基准
+        if (idealPos == null) {
+            idealPos = camera.getPosition();
+        }
+
+        // System B：应用载具惯性追赶偏移（第一人称大幅降低幅度）
+        Vec3 chaseOff = CameraShakeController.getVehicleChaseOffset();
+        if (chaseOff.lengthSqr() > 1e-8) {
+            float fpScale = type.isFirstPerson() ? CameraShakeController.getFpVehicleScale() : 1.0f;
+            idealPos = idealPos.add(chaseOff.scale(fpScale));
+        }
+
+        // System A：应用位置抖动偏移（仅第三人称非炮镜模式）
+        float posScale = CameraShakeController.getPositionShakeFactor();
+        if (posScale > 0) {
+            Vec3 posOff = CameraShakeController.getPositionOffset();
+            if (posOff.lengthSqr() > 1e-8) {
+                idealPos = idealPos.add(posOff.scale(posScale));
+            }
+        }
+
+        event.setCameraPos(idealPos);
     }
 
     @SubscribeEvent
@@ -303,23 +254,13 @@ public class CameraController {
         LocalPlayer player = client.player;
         if (player == null) return;
 
-        // 从服务端 PlayerHitImpactPayload 缓冲区的命中冲击数据中消费
-        PlayerHitImpactEntry impact = pendingHitImpacts.poll();
-        if (impact != null) {
-            double speed = impact.hitVel().length();
-            if (speed > 0.1) {
-                float scale = impact.baseDamage() * (float) speed * 30.0f;
-                Vec3 impactForce = impact.hitVel().normalize().scale(scale);
-                playerPhysicalBody.applyImpactToHead(impactForce, impact.hitPoint());
-            }
-        }
-
-        playerPhysicalBody.physicsTick((float) event.getPartialTick());
-
         Camera camera = event.getCamera();
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
         float partialTick = (float) event.getPartialTick();
+
+        // ===== 镜头抖动控制器本帧更新（System A + B 弹簧积分） =====
+        CameraShakeController.tick((int) client.level.getGameTime(), partialTick);
 
         if (!anglesInitialized) {
             initializeAngles(entity, partialTick);
@@ -328,8 +269,8 @@ public class CameraController {
         // 炮镜模式（强制第一人称已在 tickCameraMode 中处理）
         if (activeCamera != null && activeCamera.isActive()) {
             updateCameraRotCameraMode(event, partialTick);
-            applyTerrainShake(event);
-            applyHeadImpactOffset(event);
+            // 炮镜模式：旋转偏移 × CAMERA_MODE_ROTATION_SCALE，位置偏移禁用
+            applyShakeRotation(event, CameraShakeController.CAMERA_MODE_ROTATION_SCALE);
             return;
         }
 
@@ -339,8 +280,10 @@ public class CameraController {
         } else {
             updateCameraRotDefault(event, entity, partialTick);
         }
-        applyTerrainShake(event);
-        applyHeadImpactOffset(event);
+        // 第一人称 × FIRST_PERSON_ROTATION_SCALE，第三人称 × THIRD_PERSON_ROTATION_SCALE
+        applyShakeRotation(event, type.isFirstPerson()
+                ? CameraShakeController.FIRST_PERSON_ROTATION_SCALE
+                : CameraShakeController.THIRD_PERSON_ROTATION_SCALE);
     }
 
     private static void initializeAngles(Entity entity, float partialTick) {
@@ -517,6 +460,8 @@ public class CameraController {
             onBoard = false;
             justLeft = true;
             anglesInitialized = false;
+            // 离开载具时清空惯性追赶状态，防止下次上车时残留 offset 导致瞬跳
+            CameraShakeController.onLeaveVehicle();
         }
         event.setPitch(entity.getViewXRot(partialTick));
         event.setYaw(entity.getViewYRot(partialTick));
@@ -941,59 +886,29 @@ public class CameraController {
     }
 
     /**
-     * 供 {@link io.github.sweetzonzi.machine_max.network.payload.PlayerHitImpactPayload} handler 调用，
-     * 将服务端发送的命中冲击数据入队。渲染帧 {@link #updateCameraRot} 在下一帧消费。
+     * 根据载具相机距离计算最大滞后距离。大载具允许更大的弹簧阻尼滞后。
      *
-     * @param hitVel    命中速度矢量
-     * @param hitPoint  命中点世界坐标
-     * @param baseDamage 基础伤害值
+     * @param vehicle 当前乘坐的载具
+     * @return 最大滞后距离（格），范围 0.5~4.0
      */
+    private static float computeVehicleMaxOffset(VehicleCore vehicle) {
+        return (float) Mth.clamp(vehicle.cameraDistance * 0.6, 0.5, 4.0);
+    }
+
     /**
-     * 供 {@link io.github.sweetzonzi.machine_max.network.payload.TerrainShakePayload} handler 调用，
-     * 生成一组随机方向振荡参数，下一渲染帧开始产生快速小幅度正弦抖动。
-     * 不依赖命中速度/方向/伤害，纯客户端随机，营造地面震动的感受。
+     * 应用弹簧阻尼系统产生的旋转偏移（System A 投射物抖屏）。
+     * 偏移量已通过 {@link CameraShakeController#onProjectileHit} 中的视角/载具/炮镜因子缩放，
+     * 此处仅按当前视角模式做最终倍率调节。
+     *
+     * @param event 视角事件
+     * @param scale 当前视角模式倍率（第一人称 0.4，第三人称 1.0，炮镜 0.3）
      */
-    public static void enqueueTerrainShake() {
-        // 仅当上次抖动基本平息时才重新随机化方向；连续命中保持方向一致性，避免抖动感被频繁转向削弱
-        if (terrainShakeIntensity < 0.05f) {
-            terrainShakePitchDir = (SHAKE_RANDOM.nextFloat() - 0.5f) * 2f;
-            terrainShakeYawDir = (SHAKE_RANDOM.nextFloat() - 0.5f) * 2f;
-            terrainShakeRollDir = (SHAKE_RANDOM.nextFloat() - 0.5f) * 2f;
+    private static void applyShakeRotation(ViewportEvent.ComputeCameraAngles event, float scale) {
+        var rotOff = CameraShakeController.getRotationOffset();
+        if (rotOff.lengthSqr() > 1e-8) {
+            event.setPitch(event.getPitch() + (float) rotOff.x * scale);
+            event.setYaw(event.getYaw() + (float) rotOff.y * scale);
+            event.setRoll(event.getRoll() + (float) rotOff.z * scale);
         }
-        // 累加模式：连续命中叠加抖动幅度，之后若无命中逐渐归零平复
-        terrainShakeIntensity = Math.min(terrainShakeIntensity + TERRAIN_SHAKE_INITIAL, TERRAIN_SHAKE_MAX);
-        // 注意：不移除 phase，让正弦波连续振荡。重置 phase→sin(0)=0 会使每次命中第一帧无效果，持续射击时抖动感明显减弱
     }
-
-    /**
-     * todo 暂时写成空网络包触发的随机抖动，后续可以考虑是否需要根据命中速度/方向/伤害动态调整抖动参数
-     * todo 不知道为什么单发炮弹不触发这个抖动？？可能是什么原因 没有让terrainShakeIntensity增长
-     * 渲染帧中应用地形抖动。产生一个小幅度正弦振荡 + 指数衰减的抖动效果。
-     * 与 {@link #applyHeadImpactOffset} 无关，两个效果可同时存在。
-     */
-    private static void applyTerrainShake(ViewportEvent.ComputeCameraAngles event) {
-        if (terrainShakeIntensity < 0.001f) {
-            terrainShakeIntensity = 0f;
-            return;
-        }
-        // 正弦振荡：初始为零 → 正峰值 → 过零 → 负峰值 → 收束，产生"抖动"感
-        float oscillation = (float) Math.sin(terrainShakePhase * TERRAIN_SHAKE_FREQ);
-        float magnitude = terrainShakeIntensity * oscillation;
-        event.setPitch(event.getPitch() + magnitude * terrainShakePitchDir);
-        event.setYaw(event.getYaw() + magnitude * terrainShakeYawDir);
-        event.setRoll(event.getRoll() + magnitude * terrainShakeRollDir);
-        terrainShakePhase++;
-        terrainShakeIntensity *= TERRAIN_SHAKE_DECAY;
-    }
-
-    public static void enqueueHitImpact(Vec3 hitVel, Vec3 hitPoint, float baseDamage) {
-        impactIntensity = 1.5f; // 初始强度提高 50%，产生更剧烈的抖动
-        hitHoldFrames = HIT_HOLD_FRAMES; // 先保持不衰减，再收束
-        pendingHitImpacts.add(new PlayerHitImpactEntry(hitVel, hitPoint, baseDamage));
-    }
-
-    /**
-     * 玩家命中冲击数据条目，由 {@link PlayerHitImpactPayload} 解析后入队。
-     */
-    private record PlayerHitImpactEntry(Vec3 hitVel, Vec3 hitPoint, float baseDamage) {}
 }
