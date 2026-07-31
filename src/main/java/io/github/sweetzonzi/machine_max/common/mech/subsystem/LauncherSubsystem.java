@@ -528,12 +528,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             getSubPart().getLinearVelocity()
         );
 
-        // ⑤ 后坐力——总弹丸质量 × 速度
+        // ⑤ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
         float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getBarrel().velocityMultiplier()
                          + attr.staticAttribute.getBarrel().velocityBonus();
         float totalMass = type.getMass() * projectiles.size();
-        float absorption = attr.staticAttribute.getBreech().recoilAbsorption();
-        float recoilImpulse = totalMass * finalSpeed * (1.0f - absorption);
+        float recoilImpulse = totalMass * finalSpeed * attr.staticAttribute.getBarrel().recoilMultiplier();
         if (recoilImpulse > 1e-6f) {
             Vector3f impulseWorld = direction.mult(-recoilImpulse);
             var body = getSubPart().getBody();

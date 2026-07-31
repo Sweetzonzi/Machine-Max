@@ -35,6 +35,11 @@ public class BarrelModuleAttr extends AbstractModuleAttr {
     private final float horizontalAccuracyMultiplier;
     /** 垂直精度乘子，1.0=不改变弹丸默认垂直精度 */
     private final float verticalAccuracyMultiplier;
+    /**
+     * 后坐力倍率：总后坐冲量 = 弹丸总动量 × 此倍率。
+     * 1.0=仅弹丸动量；默认 1.5≈弹丸+火药燃气（炮口暴风）；炮口制退器 &lt;1.0；无后坐力设计 ≈0。
+     */
+    private final float recoilMultiplier;
 
     public static final MapCodec<BarrelModuleAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("durability_weight", 1.0f).forGetter(AbstractModuleAttr::durabilityWeight),
@@ -46,19 +51,21 @@ public class BarrelModuleAttr extends AbstractModuleAttr {
             Codec.FLOAT.optionalFieldOf("velocity_multiplier", 1.0f).forGetter(BarrelModuleAttr::velocityMultiplier),
             Codec.FLOAT.optionalFieldOf("velocity_bonus", 0f).forGetter(BarrelModuleAttr::velocityBonus),
             Codec.FLOAT.optionalFieldOf("horizontal_accuracy_multiplier", 1.0f).forGetter(BarrelModuleAttr::horizontalAccuracyMultiplier),
-            Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(BarrelModuleAttr::verticalAccuracyMultiplier)
+            Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(BarrelModuleAttr::verticalAccuracyMultiplier),
+            Codec.FLOAT.optionalFieldOf("recoil_multiplier", 1.5f).forGetter(BarrelModuleAttr::recoilMultiplier)
     ).apply(instance, BarrelModuleAttr::new));
 
-    /** 炮管模块默认实例（耐久权重=0.6，不含衰减，精度/初速为 1.0x） */
+    /** 炮管模块默认实例（耐久权重=0.6，不含衰减，精度/初速为 1.0x，后坐力倍率=1.5） */
     public static final BarrelModuleAttr DEFAULT = new BarrelModuleAttr(
             0.6f, 2.0f, 2.0f, 8.0f, 0.7f, 0.1f,
-            1.0f, 0f, 1.0f, 1.0f);
+            1.0f, 0f, 1.0f, 1.0f, 1.5f);
 
     public BarrelModuleAttr(float durabilityWeight, float decayPower,
                             float damagedSpread, float destroyedSpread,
                             float damagedMuzzleVelocity, float destroyedMuzzleVelocity,
                             float velocityMultiplier, float velocityBonus,
-                            float horizontalAccuracyMultiplier, float verticalAccuracyMultiplier) {
+                            float horizontalAccuracyMultiplier, float verticalAccuracyMultiplier,
+                            float recoilMultiplier) {
         super(durabilityWeight, false); // 炮管非 critical，硬编码
         this.decayPower = decayPower;
         this.damagedSpread = damagedSpread;
@@ -69,6 +76,7 @@ public class BarrelModuleAttr extends AbstractModuleAttr {
         this.velocityBonus = velocityBonus;
         this.horizontalAccuracyMultiplier = horizontalAccuracyMultiplier;
         this.verticalAccuracyMultiplier = verticalAccuracyMultiplier;
+        this.recoilMultiplier = recoilMultiplier;
     }
 
     // ====== 衰减计算（战损/摧毁） ======
@@ -97,4 +105,5 @@ public class BarrelModuleAttr extends AbstractModuleAttr {
     public float velocityBonus() { return velocityBonus; }
     public float horizontalAccuracyMultiplier() { return horizontalAccuracyMultiplier; }
     public float verticalAccuracyMultiplier() { return verticalAccuracyMultiplier; }
+    public float recoilMultiplier() { return recoilMultiplier; }
 }
