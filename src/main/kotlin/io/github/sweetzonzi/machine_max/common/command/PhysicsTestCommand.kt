@@ -1,11 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.command
 
 import cn.solarmoon.spark_core.command.BaseCommand
-import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.util.toBQuaternion
-import com.jme3.math.Transform
 import com.mojang.brigadier.context.CommandContext
-import com.mojang.datafixers.util.Pair
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.PhysicsTestBus
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
@@ -13,12 +9,7 @@ import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.ResourceLocationArgument
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.entity.ai.attributes.Attributes
-import net.minecraft.world.level.ClipContext
-import net.minecraft.world.phys.Vec3
-import org.joml.Quaternionf
 
 class PhysicsTestCommand : BaseCommand("physics_test", 4) {
     override fun putExecution(context: CommandBuildContext) {
@@ -84,29 +75,29 @@ class PhysicsTestCommand : BaseCommand("physics_test", 4) {
 //        return 1
 //    }
 
-    companion object {
-        @JvmStatic
-        fun addJoinPosition(player: ServerPlayer): Pair<Vec3?, Transform?>? {
-            val rotation = Quaternionf()
-                .rotationY(-Math.toRadians(player.yRot.toDouble()).toFloat())
-            val transform = Transform(
-                player.level().clip(
-                    ClipContext(
-                        player.eyePosition,
-                        player.eyePosition.add(
-                            player.getViewVector(1.0f)
-                                .scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))
-                        ),
-                        ClipContext.Block.COLLIDER,
-                        ClipContext.Fluid.NONE,
-                        player
-                    )
-                ).location.toBVector3f(),
-                rotation.toBQuaternion()
-            )
-            return Pair.of(player.lookAngle, transform)
-        }
-    }
+//    companion object {
+//        @JvmStatic
+//        fun addJoinPosition(player: ServerPlayer): Pair<Vec3?, Transform?>? {
+//            val rotation = Quaternionf()
+//                .rotationY(-Math.toRadians(player.yRot.toDouble()).toFloat())
+//            val transform = Transform(
+//                player.level().clip(
+//                    ClipContext(
+//                        player.eyePosition,
+//                        player.eyePosition.add(
+//                            player.getViewVector(1.0f)
+//                                .scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))
+//                        ),
+//                        ClipContext.Block.COLLIDER,
+//                        ClipContext.Fluid.NONE,
+//                        player
+//                    )
+//                ).location.toBVector3f(),
+//                rotation.toBQuaternion()
+//            )
+//            return Pair.of(player.lookAngle, transform)
+//        }
+//    }
 
 
 //    private fun clearJoinPositions(ctx: CommandContext<CommandSourceStack>): Int {
