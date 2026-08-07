@@ -80,6 +80,7 @@ io.github.sweetzonzi.machine_max/
 │   ├── AGENTS.md                    # 子模块智能体指南
 │   └── MMPayloadRegistry.java       # 载荷注册中心
 ├── mixin/                           # 12 个 Mixin（6 服务端 + 6 客户端）
+├── mixin_native/                    # 针对本项目自身类的 AOP Mixin（machine_max.native.mixins.json 注册）
 ├── mixin_interface/                  # 3 个 Mixin 接口（IClientLevelMixin, IEntityMixin, IProjectileMixin）
 ├── util/                            # PD/PID 控制器、地形（LocalHeightField）、MMMath
 ├── external/                        # 外部资源与嵌入式引擎
