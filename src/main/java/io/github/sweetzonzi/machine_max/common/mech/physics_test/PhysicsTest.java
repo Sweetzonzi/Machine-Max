@@ -43,21 +43,22 @@ public interface PhysicsTest {
     void run();
     /**可暂停、恢复该测试用例*/
     void onResume();
+
+    /**
+     * VehicleCore 物理tick
+     * <p>由 {@link io.github.sweetzonzi.machine_max.mixin_native.VehicleCoreMixin} 在物理线程
+     */
     void vehicle_core$prePhysicsTick(VehicleCore core);
 
     /**
      * SubPart 撞击地形时回调。
      * <p>由 {@link io.github.sweetzonzi.machine_max.mixin_native.CollisionHandlerMixin} 在物理线程
-     * 记录事件（对应原版区块碰撞处理），随后由主线程在 LevelTickEvent 中经
-     * {@link PhysicsTestBus#dispatchPending()} 回调本方法。可安全执行增删载具等主线程级操作。</p>
      */
     void subpart$onTerrainCollision(SubPart subPart);
 
     /**
      * SubPart 破坏方块前回调。
      * <p>由 {@link io.github.sweetzonzi.machine_max.mixin_native.CollisionHandlerMixin} 在物理线程
-     * 记录事件（对应 applyBlockDamage 调用前），随后由主线程在 LevelTickEvent 中经
-     * {@link PhysicsTestBus#dispatchPending()} 回调本方法。可安全执行增删载具等主线程级操作。</p>
      */
     void subpart$onDestroyBlock(SubPart subPart);
 
