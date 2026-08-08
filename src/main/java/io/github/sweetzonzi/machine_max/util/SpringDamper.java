@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util;
 
+import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -20,6 +21,8 @@ public class SpringDamper {
 
     private final float k;                // 刚度
     private final float d;                // 阻尼系数
+
+    @Getter
     private Vec3 offset = Vec3.ZERO;      // 当前偏移量
     private Vec3 velocity = Vec3.ZERO;    // 当前速度
 
@@ -80,11 +83,6 @@ public class SpringDamper {
         Vec3 acceleration = offset.scale(-k).add(velocity.scale(-d));
         velocity = velocity.add(acceleration.scale(dt));
         offset = offset.add(velocity.scale(dt));
-    }
-
-    /** @return 当前偏移量 */
-    public Vec3 getOffset() {
-        return offset;
     }
 
     /**

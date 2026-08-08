@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
  * 包含三个独立的 {@link SpringDamper} 实例：
  * <ul>
  *   <li>{@link #rotationDamper} / {@link #positionDamper}: System A 投射物抖屏（高k，临界阻尼）</li>
- *   <li>{@link #vehicleChaseDamper}: System B 载具相机惯性追赶（低k，欠阻尼）</li>
+ *   <li>{@link #vehicleChaseDamper}: System B 载具相机惯性追赶（高k，欠阻尼）</li>
  * </ul>
  * <p>
  * 两套刚度必须分开实例，因为挤在一套上会导致抖屏的临界阻尼和追赶的欠阻尼
@@ -40,9 +40,9 @@ public class CameraShakeController {
     private static final SpringDamper positionDamper  = new SpringDamper(SHAKE_STIFFNESS, SHAKE_DAMPING);
 
     // ===== System B: 载具相机惯性追赶 =====
-    // 低k + 欠阻尼 → 缓慢追赶，有余振，有惯性感
-    private static final float CHASE_STIFFNESS = 3f;
-    private static final float CHASE_DAMPING   = 1.5f; // 欠阻尼：d < 2·sqrt(k)
+    // 高k + 欠阻尼 → 迅速追赶，有余振，有惯性感
+    private static final float CHASE_STIFFNESS = 175f;
+    private static final float CHASE_DAMPING   = 12.5f; // 欠阻尼：d < 2·sqrt(k)
     private static final SpringDamper vehicleChaseDamper = new SpringDamper(CHASE_STIFFNESS, CHASE_DAMPING);
 
     // ===== 帧计时 =====

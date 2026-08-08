@@ -198,11 +198,11 @@ public class CameraController {
                                 SparkMathKt.toBQuaternion(seatRot))));
             }
 
-            // System B：载具相机惯性追赶，传入理想位置
-            if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
-                float maxOffset = computeVehicleMaxOffset(vehicle);
-                CameraShakeController.onVehicleCameraChase(idealPos, maxOffset);
-            }
+            // System B：载具相机惯性追赶 —— 暂已关闭（弹簧阻尼效果一般，临时移除，保留调用可随时恢复）
+            // if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
+            //     float maxOffset = computeVehicleMaxOffset(vehicle);
+            //     CameraShakeController.onVehicleCameraChase(idealPos, maxOffset);
+            // }
         }
 
         // 非载具模式下以当前相机位置作为基准
@@ -210,12 +210,12 @@ public class CameraController {
             idealPos = camera.getPosition();
         }
 
-        // System B：应用载具惯性追赶偏移（第一人称大幅降低幅度）
-        Vec3 chaseOff = CameraShakeController.getVehicleChaseOffset();
-        if (chaseOff.lengthSqr() > 1e-8) {
-            float fpScale = type.isFirstPerson() ? CameraShakeController.getFpVehicleScale() : 1.0f;
-            idealPos = idealPos.add(chaseOff.scale(fpScale));
-        }
+        // System B：应用载具惯性追赶偏移 —— 暂已关闭（与上方 onVehicleCameraChase 一并移除）
+        // Vec3 chaseOff = CameraShakeController.getVehicleChaseOffset();
+        // if (chaseOff.lengthSqr() > 1e-8) {
+        //     float fpScale = type.isFirstPerson() ? CameraShakeController.getFpVehicleScale() : 1.0f;
+        //     idealPos = idealPos.add(chaseOff.scale(fpScale));
+        // }
 
         // System A：应用位置抖动偏移（仅第三人称非炮镜模式）
         float posScale = CameraShakeController.getPositionShakeFactor();
