@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.external.js.hook;
 
+import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.external.js.InputSignalProvider;
@@ -16,6 +17,8 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 /**
@@ -29,6 +32,8 @@ import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL
 public class KeyHooks {
     public final static String INVERSE_NAME = "_inv";
     private static final HashMap<String, _Watcher> cachedWatchers = new HashMap<>(); // 按频道分配的所有观察器
+
+    private final static ConcurrentHashMap<String, EVENT> instanceMap =  new ConcurrentHashMap<>();
 
     @Getter
     public enum Combination {
@@ -62,6 +67,18 @@ public class KeyHooks {
         }
 
     }
+
+    public static final ImmutableMap<Integer, OtherKeyType> actionCode$otherKeyTypeMapping =
+            ImmutableMap.of(
+                    0, OtherKeyType.LeftMouseButton,
+                    1, OtherKeyType.RightMouseButton,
+                    2, OtherKeyType.MiddleMouseButton,
+                    3, OtherKeyType.MouseButton4,
+                    4, OtherKeyType.MouseButton5,
+                    5, OtherKeyType.MouseButton6,
+                    6, OtherKeyType.MouseButton7,
+                    7, OtherKeyType.MouseButton8
+            );
 
     public enum OtherKeyType {
         LeftMouseButton("key.mouse.left"),
@@ -107,6 +124,39 @@ public class KeyHooks {
         }
     }
 
+
+    private static EVENT getEventInstance(String cacheKey, Supplier<EVENT> creator) {
+        return instanceMap.computeIfAbsent(cacheKey, k -> creator.get());
+    }
+
+    public static EVENT EVENT(OtherKeyType otherKey) {
+        return getEventInstance(otherKey.name(), () -> new EVENT(otherKey));
+    }
+
+    public static EVENT EVENT(int GLFW_KEY) {
+        InputConstants.Key key = InputConstants.getKey(GLFW_KEY, 0);
+        return getEventInstance(key.getName(), () -> new EVENT(key));
+    }
+    public static EVENT EVENT(String key) {
+        return getEventInstance(key, () -> new EVENT(key));
+    }
+
+    public static EVENT EVENT(InputConstants.Key key) {
+        return getEventInstance(key.getName(), () -> new EVENT(key));
+    }
+
+    public static EVENT EVENT(KeyMapping mapping) {
+        EVENT event = getEventInstance(mapping.getKey().getName(), () -> new EVENT(mapping));
+        event.mapping = mapping;
+        return event;
+    }
+    public static EVENT EVENT(GamePadSetting gamePadSetting) {
+        EVENT event = getEventInstance(gamePadSetting.getKeyName(), () -> new EVENT(gamePadSetting));
+        event.gamePadSetting = gamePadSetting;
+        return event;
+    }
+
+
     public static class EVENT {
         private final String keyName;
         private KeyMapping mapping = null;
@@ -115,8 +165,13 @@ public class KeyHooks {
         private final Collection<Combination> combinationKeys = new HashSet<>();
         private final Collection<EVENT> combinationEvents = new HashSet<>();
 
-        public EVENT(String keyName) {
-            this.keyName = InputSignalProvider.key(keyName);
+
+        public EVENT(OtherKeyType otherKey) {
+            this.keyName = otherKey.name();
+        }
+
+        public EVENT(String key) {
+            this.keyName = InputSignalProvider.key(key);
         }
 
         public EVENT(InputConstants.Key key) {
@@ -555,17 +610,11 @@ public class KeyHooks {
     public static void onMouseButton(InputEvent.MouseButton.Pre event) {
         int button = event.getButton();
         int action = event.getAction();
-        String keyName = switch (button) {
-            case 0 -> "key.mouse.left";
-            case 1 -> "key.mouse.right";
-            case 2 -> "key.mouse.middle";
-            case 3 -> "key.mouse.4";
-            case 4 -> "key.mouse.5";
-            case 5 -> "key.mouse.6";
-            case 6 -> "key.mouse.7";
-            case 7 -> "key.mouse.8";
-            default -> "key.mouse." + button;
-        };
+
+        String keyName = "key.mouse." + button;
+        if (actionCode$otherKeyTypeMapping.containsKey(button)) {
+            keyName = Objects.requireNonNull(actionCode$otherKeyTypeMapping.get(button)).name();
+        }
 
         if (!HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
 

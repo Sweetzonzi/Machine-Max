@@ -2,29 +2,34 @@ package io.github.sweetzonzi.machine_max.common.mech.physics_test;
 
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
+import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 /**
  * 根据入点进行物理测试的基类
  */
-public abstract class BaseJoinPositionPhysicsTest implements PhysicsTest {
-    /**所有的入点，命令可以从首尾修改访问*/
-    public final static LinkedList<Pair<Vec3, Transform>> JOIN_POSITIONS = new LinkedList<>();
+public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
+    public final ServerPlayer player;
 
-    /**该测试用例代理的所有载具 todo 需要粽子审查代码，决定清理时机，避免内存溢出*/
-    protected final List<VehicleCore> vehicles = new ArrayList<>();
+    /**入点：玩家面朝方向角 和 姿态栈*/
+    @Setter
+    @Getter
+    protected Pair<Vec3, Transform> joinPosition = null;
+
+    /**由运行状态管理的事件 true正在运行 false暂停，子类可以通过重写自定义逻辑*/
+    @Getter
+    private Consumer<Boolean> playingEvent = null;
+
+    /**该入点测试用例的对象物品，通过泛型灵活指定*/
+    @Getter
+    private final P p;
+
+    protected final ServerLevel level;
     /**
      * 是否初始化
      * <p>
@@ -33,61 +38,40 @@ public abstract class BaseJoinPositionPhysicsTest implements PhysicsTest {
     /**该测试用例正在运行*/
     boolean playing = false;
 
-    /**供子类继承使用的封装方法，提供了
-     * @param player 运行测试用例的玩家
-     * @param joinPosition 入点位置与部件姿态栈
-     * */
-    public abstract void runWithJoinPosition(Player player, Pair<Vec3, Transform> joinPosition);
+    public BaseJoinPositionPhysicsTest(ServerPlayer player) {
+        this.level = (ServerLevel) player.level();
+        this.player = player;
+        joinPosition = setJoinPosition();
+        p = setPhysicsTestingObject();
 
+    }
+
+    public abstract Pair<Vec3, Transform> setJoinPosition();
+
+    protected abstract P setPhysicsTestingObject();
+    protected P getPhysicsTestingObject() {
+        return p;
+    }
 
     /**底层总线调用的方法*/
     @Override
-    public final Component run(Player player) {
+    public final void run() {
         initiated = true;
         playing = true;
-        getUnremovedVehicleStream().forEach(ObjectManager::removeVehicle);
-        var status = Component.literal("未知错误");
-        int count = 0;
-        for (Pair<Vec3, Transform> pair : JOIN_POSITIONS) {
-            runWithJoinPosition(player, pair);
-            count++;
-        }
-        status = count != 0 ?
-                Component.literal("%s个入点，召唤成功".formatted(count)):
-                Component.literal("你还没有设置入点");
-        return status;
+        run(p);
     }
 
+    public abstract void run(P physicsTestingObject);
 
-    /**重放方法*/
+
     @Override
-    public Component onResume() {
-        Component msg = Component.literal("\n"+(playing ? "暂停测试" : "继续测试"));
-        if (initiated) {
-            getUnremovedVehicleStream().forEach(vehicleCore ->
-                    {
-                        if (playing) {
-                            vehicleCore.freezeAllPhysics(this);
-                        } else {
-                            vehicleCore.unfreezeAllPhysics(this);
-                        }
-                    }
-            );
+    public void onResume() {
+        Consumer<Boolean> playingEvent = getPlayingEvent();
+        if (initiated && playingEvent != null) {
+            playingEvent.accept(playing);
             playing = !playing;
         }
-        return msg;
     }
 
-    /**用于遍历未删除状态的载具核心*/
-    protected @NotNull Stream<VehicleCore> getUnremovedVehicleStream() {
-        return vehicles.stream().filter(vehicleCore -> !vehicleCore.isRemoved);
-    }
 
-    /**全自动注册测试用例包名
-     * <p>
-     * 由于底层总线会调用它注册测试用例，所以该方法应该属于初始基类*/
-    @Override
-    public final ResourceLocation path() {
-        return ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, getClass().getSimpleName().replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase());
-    }
 }

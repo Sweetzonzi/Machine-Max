@@ -108,10 +108,10 @@ public class RawInputHandler {
 
             switch (((VehicleCore) part.assembly).mode) {
                 case GROUND -> {
-                    boolean forward = new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover();
-                    boolean backWard = new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();
-                    boolean leftward = new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover();
-                    boolean rightward = new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover();
+                    boolean forward = KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover();
+                    boolean backWard = KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();
+                    boolean leftward = KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover();
+                    boolean rightward = KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover();
 
                     if (MMClientConfig.isSeparateThrottleBrake()) {
                         // 分离模式：W=油门(trans_z_input), S=刹车(trans_z_conflict)，各自独立非负
@@ -293,7 +293,7 @@ public class RawInputHandler {
     public static void handleNormalInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
         // TODO: 策略组的事件体测试区
-        new KeyHooks.EVENT("e")
+        KeyHooks.EVENT("e")
                 .with(LEFT_CTRL)
                 .OnKeyTriplePress(() -> System.out.println("弹射跳伞"))
                 .flush() //与上方的绑定断开
@@ -311,11 +311,11 @@ public class RawInputHandler {
          */
 
             //载具交互
-            new KeyHooks.EVENT(KeyBinding.generalInteractKey)
+            KeyHooks.EVENT(KeyBinding.generalInteractKey)
                     .OnKeyDown(() -> client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract());
 
             //离开载具
-            new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
+            KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
                     .OnKeyHover(tick -> {
                         if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
@@ -335,7 +335,7 @@ public class RawInputHandler {
                     });
 
             //灯光开关
-            new KeyHooks.EVENT(KeyBinding.generalToggleLightKey)
+            KeyHooks.EVENT(KeyBinding.generalToggleLightKey)
                     .OnKeyDown(() -> {
                         vehicleLightsOn = !vehicleLightsOn;
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
@@ -346,13 +346,13 @@ public class RawInputHandler {
               f9 - 运行上一次的命令
               f8 - 执行 暂停/继续 播放
               */
-            new KeyHooks.EVENT(InputConstants.getKey(GLFW.GLFW_KEY_F9, 0))
+            KeyHooks.EVENT(GLFW.GLFW_KEY_F9)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.run)));
-            new KeyHooks.EVENT(InputConstants.getKey(GLFW.GLFW_KEY_F8, 0))
+            KeyHooks.EVENT(GLFW.GLFW_KEY_F8)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.resume)));
 
             // TODO: 车辆信息面板按键 — 暂时禁用，Tab 键被重新分配给控制组轮换
-            //new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
+            //KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
             //        .OnKeyDown(() -> {
             //            long now = System.currentTimeMillis();
             //            if (now - lastTabPressTime < TAB_DEBOUNCE_MS) return;
@@ -369,7 +369,7 @@ public class RawInputHandler {
               控制组轮换 — 按下后顺次激活下一个控制组，到末尾时回到 base（-1）。
               base 控制组始终激活，不会因轮换被关闭。
              */
-            new KeyHooks.EVENT(KeyBinding.generalCycleControlGroupKey)
+            KeyHooks.EVENT(KeyBinding.generalCycleControlGroupKey)
                     .OnKeyDown(() -> {
                         if (!(((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub))
                             return;
@@ -418,58 +418,58 @@ public class RawInputHandler {
           地面载具
          */
             //离合
-            new KeyHooks.EVENT(KeyBinding.groundClutchKey)
+            KeyHooks.EVENT(KeyBinding.groundClutchKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0)))
                     .OnKeyUp(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1)));
 
             //升档
-            new KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
+            KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0)));
 
             //降档
-            new KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
+            KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0)));
 
             //按住手刹
-            new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
-                    .addChild(new KeyHooks.EVENT( // 模仿尘埃拉力：手柄B键也会触发
+            KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
+                    .addChild(KeyHooks.EVENT( // 模仿尘埃拉力：手柄B键也会触发
                             new KeyHooks.GamePadSetting(0, KeyHooks.GamePadSetting.GType.Button, GLFW.GLFW_GAMEPAD_BUTTON_B)))
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0)))
                     .OnKeyUp(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1)));
 
             //切换手刹
-            new KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
+            KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0)));
 
         /*
           载具组装
          */
             //切换部件安装角
-            new KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
+            KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue(), 0)));
 
-            new KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
+            KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue(), 0)));
 
             //切换部件连接点
-            new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
+            KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0)));
 
             //切换部件变体类型
-            new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
+            KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0)));
 
             //切换部件配方
-            new KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)
+            KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0)));
 
             /*
               摄像机控制
              */
-            new KeyHooks.EVENT(KeyBinding.generalCycleCameraKey)
+            KeyHooks.EVENT(KeyBinding.generalCycleCameraKey)
                     .OnKeyDown(() -> CameraController.switchCamera(1));
 
-            new KeyHooks.EVENT(KeyBinding.generalCameraZoomKey)
+            KeyHooks.EVENT(KeyBinding.generalCameraZoomKey)
                     .OnKeyDown(CameraController::toggleZoom);
 
             //连续变焦：每帧按住时调整
@@ -485,26 +485,26 @@ public class RawInputHandler {
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
                 // 主武器开火（hold 类型）
-                new KeyHooks.EVENT(KeyBinding.generalMainWeaponFireKey)
+                KeyHooks.EVENT(KeyBinding.generalMainWeaponFireKey)
                         .OnKeyDown(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.MAIN_FIRE.getValue(), 0)))
                         .OnKeyUp(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.MAIN_FIRE.getValue(), 1)));
 
                 // 副武器开火（hold 类型）
-                new KeyHooks.EVENT(KeyBinding.generalSecondaryWeaponFireKey)
+                KeyHooks.EVENT(KeyBinding.generalSecondaryWeaponFireKey)
                         .OnKeyDown(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.SECONDARY_FIRE.getValue(), 0)))
                         .OnKeyUp(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.SECONDARY_FIRE.getValue(), 1)));
 
                 // 下一个弹种（单次触发）
-                new KeyHooks.EVENT(KeyBinding.generalNextAmmoTypeKey)
+                KeyHooks.EVENT(KeyBinding.generalNextAmmoTypeKey)
                         .OnKeyDown(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.NEXT_AMMO_TYPE.getValue(), 0)));
 
                 // 上一个弹种（单次触发）
-                new KeyHooks.EVENT(KeyBinding.generalPrevAmmoTypeKey)
+                KeyHooks.EVENT(KeyBinding.generalPrevAmmoTypeKey)
                         .OnKeyDown(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.PREV_AMMO_TYPE.getValue(), 0)));
             }
@@ -521,7 +521,7 @@ public class RawInputHandler {
                     ControlBinding binding = bindings.get(i);
                     int index = i;
                     InputConstants.Key inputKey = InputConstants.getKey(binding.trigger);
-                    new KeyHooks.EVENT(inputKey)
+                    KeyHooks.EVENT(inputKey)
                             .OnKeyDown(() -> {
                                 PacketDistributor.sendToServer(
                                         new ControlBindingPayload(subPartId, subSystemName, index, 0));
