@@ -62,6 +62,7 @@ class PhysicsTestCommand : BaseCommand("physics_test", 4) {
             return 1
         }
         instance.run()
+        if (instance.isDisabled()) return 0
         PhysicsTestBus.INSTANCE_LIST.add(instance)
         PhysicsTestBus.LAST_RUN = instance
         return 1

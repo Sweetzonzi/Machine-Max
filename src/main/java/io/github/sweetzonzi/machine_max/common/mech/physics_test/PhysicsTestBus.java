@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.physics_test;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.physics_test.instance.BlueprintVehicleSummonTest;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.instance.PartSummonTest;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -42,6 +43,7 @@ public class PhysicsTestBus {
     // 所有测试用例在这里注册
     static {
         register(PartSummonTest.class);
+        register(BlueprintVehicleSummonTest.class);
     }
 
     /**注册方法*/

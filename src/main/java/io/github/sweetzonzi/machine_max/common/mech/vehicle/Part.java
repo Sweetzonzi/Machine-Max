@@ -934,17 +934,21 @@ public class Part {
         Transform rootTransform = rootSubPart.body.getTransform(null).invert();
         rootSubPart.setPosition(transform.getTranslation());
         rootSubPart.setRotation(transform.getRotation());
-        rootSubPart.transform = transform.clone();
-        rootSubPart.oldTransform = transform.clone();
-        rootSubPart.body.setPhysicsTransform(transform);
-        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setTransform(transform);
-        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setLastTransform(transform);
+        // 碰撞形状（CompoundCollisionShape）不支持缩放，矩阵运算产生的浮点误差（如 0.9999998）会导致 setPhysicsTransform 抛异常，故物理变换强制 scale=1
+        Transform rootPhysics = transform.clone();
+        rootPhysics.setScale(Vector3f.UNIT_XYZ);
+        rootSubPart.transform = rootPhysics.clone();
+        rootSubPart.oldTransform = rootPhysics.clone();
+        rootSubPart.body.setPhysicsTransform(rootPhysics);
+        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setTransform(rootPhysics);
+        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setLastTransform(rootPhysics);
         Transform subPartTransform = new Transform();
         for (SubPart subPart : subParts.values()) {
             if (subPart == rootSubPart) continue;
             subPart.body.getTransform(subPartTransform);
             MyMath.combine(subPartTransform, rootTransform, subPartTransform);
             MyMath.combine(subPartTransform, transform, subPartTransform);
+            subPartTransform.setScale(Vector3f.UNIT_XYZ);
             subPart.setPosition(subPartTransform.getTranslation());
             subPart.setRotation(subPartTransform.getRotation());
             subPart.transform = subPartTransform.clone();
