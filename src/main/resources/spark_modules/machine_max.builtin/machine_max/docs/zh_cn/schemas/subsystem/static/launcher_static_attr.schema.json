@@ -141,10 +141,16 @@
           "minimum": 0,
           "default": 1.0,
           "description": "垂直精度乘子。1.0 = 不改变弹丸默认垂直精度。"
+        },
+        "recoil_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.5,
+          "description": "后坐力倍率。总后坐冲量 = 弹丸总动量 × 此值。1.0 = 仅弹丸动量；默认 1.5 ≈ 弹丸+火药燃气（炮口暴风）；炮口制退器 < 1.0；无后坐力设计 ≈ 0。"
         }
       },
       "additionalProperties": false,
-      "description": "炮管模块属性——定义精度和初速的基准值及战损/摧毁衰减。"
+      "description": "炮管模块属性——定义精度、初速、后坐力的基准值及战损/摧毁衰减。"
     },
     "breech": {
       "type": "object",
@@ -159,13 +165,6 @@
           "type": "number",
           "minimum": 0,
           "description": "射速 (RPM)。"
-        },
-        "recoil_absorption": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1.0,
-          "default": 0.0,
-          "description": "后坐力吸收率。0.0 = 全后坐力，1.0 = 完全吸收。"
         },
         "required_tags": {
           "type": "array",
@@ -187,7 +186,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "炮闩模块属性——定义射速、后坐力吸收和弹药兼容性约束。"
+      "description": "炮闩模块属性——定义射速和弹药兼容性约束。"
     },
     "capacitor": {
       "type": "object",

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload.projectile;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
@@ -183,6 +184,12 @@ public record ProjectilesHitPayload(
                 }
                 // 若 hitBlockPos == null：SubPart/Entity 命中，命中包仅做弹道状态同步
                 // 特效由 SubPartHitEffectPayload 等自理包负责
+
+                // ===== 镜头抖动 + 失色压制（System A + C） =====
+                // 复用已有 idx（SoA 索引），无需二次查找
+                if (idx >= 0) {
+                    CameraShakeController.onProjectileHit(e, context.player(), pm, idx);
+                }
             }
         });
     }

@@ -9,11 +9,11 @@
 
 ## 依赖项目
 
-| 项目 | 版本 | 用途 |
-|------|------|------|
-| [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core) | 1.0.1029 | Bullet 物理引擎封装、实体注册框架 |
-| [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API |
-| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI) | 1.1.3-dev | 载具控制面板 Web UI 框架 |
+| 项目                                                                       | 版本            | 用途                   |
+| ------------------------------------------------------------------------ | ------------- | -------------------- |
+| [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1029      | Bullet 物理引擎封装、实体注册框架 |
+| [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API        |
+| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.1.3-dev     | 载具控制面板 Web UI 框架     |
 
 构建时也依赖 GraalVM 24.2.2（JS 引擎）、JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
 
@@ -145,23 +145,23 @@ io.github.sweetzonzi.machine_max/
 
 ## 快速定位
 
-| 任务 | 位置 | 说明 |
-|------|------|------|
-| 修改载具物理 | `common/mech/vehicle/` | VehicleCore（聚合根）、SubPart、Part、连接器 |
-| 新增子系统类型 | `common/mech/subsystem/` | 继承 AbstractSubsystem，注册到 SubsystemTypes |
-| 新增网络包 | `network/payload/` + `MMPayloadRegistry.java` | 按功能子目录归类 |
-| 新增 GUI/HUD | `client/render/gui/` | Screen、HUD、hud3d、panel |
-| 新增物品/方块/实体 | `common/registry/`（Kotlin） | MMItems.kt, MMBlocks.kt, MMEntities.kt |
-| 新增内容包数据 | `src/main/resources/spark_modules/` | Official_Pack / builtin / sdkfz |
-| 新增配方 | `common/recipe/` + `spark_modules/.../recipe/` | 两部分配合 |
-| 修复渲染 | `client/render/renderer/` | PartEntityRenderer 是主载具渲染器 |
-| 修复碰撞 | `common/mech/vehicle/collision/` | CollisionHandler + CollisionEffectManager |
-| 修复输入/控制 | `client/input/` + `common/mech/control/` | 键盘 → 网络包 → 信号系统 |
-| 修复能源系统 | `common/mech/energy/` | EnergyGrid 直流总线 |
-| 修改信号系统 | `common/mech/signal/` | SignalChannel, ISignalReceiver/Sender |
-| 修改投射物 | `common/mech/projectile/` | ProjectileManager（SoA）、BFDamageApi |
-| 修改 molang | `common/mech/molang/` | MechMolangContext |
-| 修改方块实体 | `client/render/renderer/block/` | Fabricator、ResearchTable、TotalStation |
+| 任务         | 位置                                             | 说明                                        |
+| ---------- | ---------------------------------------------- | ----------------------------------------- |
+| 修改载具物理     | `common/mech/vehicle/`                         | VehicleCore（聚合根）、SubPart、Part、连接器         |
+| 新增子系统类型    | `common/mech/subsystem/`                       | 继承 AbstractSubsystem，注册到 SubsystemTypes   |
+| 新增网络包      | `network/payload/` + `MMPayloadRegistry.java`  | 按功能子目录归类                                  |
+| 新增 GUI/HUD | `client/render/gui/`                           | Screen、HUD、hud3d、panel                    |
+| 新增物品/方块/实体 | `common/registry/`（Kotlin）                     | MMItems.kt, MMBlocks.kt, MMEntities.kt    |
+| 新增内容包数据    | `src/main/resources/spark_modules/`            | Official\_Pack / builtin / sdkfz          |
+| 新增配方       | `common/recipe/` + `spark_modules/.../recipe/` | 两部分配合                                     |
+| 修复渲染       | `client/render/renderer/`                      | PartEntityRenderer 是主载具渲染器                |
+| 修复碰撞       | `common/mech/vehicle/collision/`               | CollisionHandler + CollisionEffectManager |
+| 修复输入/控制    | `client/input/` + `common/mech/control/`       | 键盘 → 网络包 → 信号系统                           |
+| 修复能源系统     | `common/mech/energy/`                          | EnergyGrid 直流总线                           |
+| 修改信号系统     | `common/mech/signal/`                          | SignalChannel, ISignalReceiver/Sender     |
+| 修改投射物      | `common/mech/projectile/`                      | ProjectileManager（SoA）、BFDamageApi        |
+| 修改 molang  | `common/mech/molang/`                          | MechMolangContext                         |
+| 修改方块实体     | `client/render/renderer/block/`                | Fabricator、ResearchTable、TotalStation     |
 
 ## 命令
 
@@ -175,7 +175,7 @@ io.github.sweetzonzi.machine_max/
 
 ## 约定
 
-- **Kotlin 声明，Java 逻辑**：注册表文件（MM*.kt）、数据生成器、资源模块用 Kotlin；载具核心、物理、网络、渲染用 Java。
+- **Kotlin 声明，Java 逻辑**：注册表文件（MM\*.kt）、数据生成器、资源模块用 Kotlin；载具核心、物理、网络、渲染用 Java。
 - **ObjectRegister 模式**：单一 `MachineMax.REGISTER` 字段通过 Spark-Core 处理所有 NeoForge 注册。
 - **线程标注**：方法 Javadoc 标注调用线程 — `主线程`（20tps）vs `物理线程`（Bullet 物理步进）。
 - **内容包一切**：部件、子系统、连接器、配方、蓝图全在 JSON 中定义，位于 `spark_modules/` 下。
@@ -185,11 +185,11 @@ io.github.sweetzonzi.machine_max/
 ## 反模式（本项目特有）
 
 - **严禁混用 JME 和 JOML 数学**：物理用 `com.jme3.math.*`，渲染用 `org.joml.*`。始终通过 `SparkMathKt.*` 转换。
-- **严禁在 `partNet` 之外使用 `synchronized`**：仅 VehicleCore.java 中存在 2 处 `synchronized` 块（保护 Guava `MutableNetwork`）。其他所有共享状态使用 `ConcurrentHashMap`、`ConcurrentLinkedQueue`、`volatile` 或 `CopyOnWriteArraySet`。
+- **严禁在** **`partNet`** **之外使用** **`synchronized`**：仅 VehicleCore.java 中存在 2 处 `synchronized` 块（保护 Guava `MutableNetwork`）。其他所有共享状态使用 `ConcurrentHashMap`、`ConcurrentLinkedQueue`、`volatile` 或 `CopyOnWriteArraySet`。
 - **严禁在主线程直接操作物理体**：使用 `getPhysicsLevel().submitImmediateTask(PPhase.ALL/PRE, ...)`。
-- **严禁忽略 `DestroyableRigidObject.updateLock`**：服务端→同步数据期间置为 `true`，防止反馈循环。
+- **严禁忽略** **`DestroyableRigidObject.updateLock`**：服务端→同步数据期间置为 `true`，防止反馈循环。
 - **严禁绕过 AbstractSubsystem 生命周期**：始终在 tick/prePhysicsTick/postPhysicsTick 中调用 super。
-- **子系统必须配套 static_attr**：每种子系统类型都需要对应的 JSON 加载用静态属性类。
+- **子系统必须配套 static\_attr**：每种子系统类型都需要对应的 JSON 加载用静态属性类。
 
 ## 独特风格
 
@@ -206,7 +206,7 @@ io.github.sweetzonzi.machine_max/
 - **无单元测试**：仅 NeoForge 运行时游戏测试（`runGameTestServer`）。无 `src/test/` 目录。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
-- **已知崩溃（已探明）**：多线程物理 + 关节 = 崩溃。**根因**：关节连接的两个刚体均为运动学模式（Bullet 不支持两运动学体间的 Joint 约束）。临时方案：顺序 addToLevel（确保物理线程初始化后设置运动学标志）。
+- **已知崩溃（已探明）**：多线程物理 + 关节 = 崩溃。**根因**：关节连接的两个刚体均为运动学模式（Bullet 不支持两运动学体间的 Joint 约束）。临时方案：禁止将刚体设为运动学以停止其外力影响，使用speedFactor。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
 - **打包说明**：部分内容包（如 sdkfz/）属于外部项目示例，打包时可能需要分离。
@@ -222,3 +222,4 @@ io.github.sweetzonzi.machine_max/
 - `docs/AUI性能边界.md` — AUI 性能分析
 - `docs/机娘模组企划.md` — 机娘模组企划
 - `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）
+

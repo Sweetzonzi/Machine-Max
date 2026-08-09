@@ -141,10 +141,16 @@
           "minimum": 0,
           "default": 1.0,
           "description": "Vertical accuracy multiplier. 1.0 = no change from projectile's default vertical accuracy."
+        },
+        "recoil_multiplier": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.5,
+          "description": "Recoil multiplier. Total recoil impulse = projectile total momentum × this value. 1.0 = projectile only; default 1.5 ≈ projectile + propellant gas (muzzle blast); muzzle brake < 1.0; recoilless ≈ 0."
         }
       },
       "additionalProperties": false,
-      "description": "Barrel module attributes - defines baseline accuracy, muzzle velocity, and damage/destroyed decay."
+      "description": "Barrel module attributes - defines baseline accuracy, muzzle velocity, recoil, and damage/destroyed decay."
     },
     "breech": {
       "type": "object",
@@ -159,13 +165,6 @@
           "type": "number",
           "minimum": 0,
           "description": "Fire rate (RPM)."
-        },
-        "recoil_absorption": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1.0,
-          "default": 0.0,
-          "description": "Recoil absorption rate. 0.0 = full recoil, 1.0 = fully absorbed."
         },
         "required_tags": {
           "type": "array",
@@ -187,7 +186,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Breech module attributes - defines fire rate, recoil absorption, and ammunition compatibility constraints."
+      "description": "Breech module attributes - defines fire rate and ammunition compatibility constraints."
     },
     "capacitor": {
       "type": "object",

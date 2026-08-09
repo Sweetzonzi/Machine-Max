@@ -189,6 +189,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         }
         float i = 0f;
         for (OBone bone : bones.values()) {
+            // applyTransformWithParents 内部为累乘（ma.mul），复用矩阵必须每次重置为单位阵，否则变换逐骨骼累积
+            reusableTransform.identity();
             bone.applyTransformWithParents(modelInstance.getPose(), reusableTransform, partialTick);
             poseStack.pushPose();
             poseStack.mulPose(reusableTransform);
@@ -249,6 +251,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         }
         float i = 0f;
         for (OBone bone : bones.values()) {
+            // applyTransformWithParents 内部为累乘（ma.mul），复用矩阵必须每次重置为单位阵，否则变换逐骨骼累积
+            reusableTransform.identity();
             bone.applyTransformWithParents(modelInstance.getPose(), reusableTransform, partialTick);
             poseStack.pushPose();
             poseStack.mulPose(reusableTransform);

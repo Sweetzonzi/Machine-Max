@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 炮闩模块属性——定义射速、后坐力吸收和弹药兼容性约束。
+ * 炮闩模块属性——定义射速和弹药兼容性约束。
  * <p>
  * 炮闩受损 → 闭锁/供弹机构故障 → {@code critical=true} 硬编码，归零即触发子系统整体摧毁。
  * 当前版本炮闩无战损衰减——摧毁后 {@code isActive()} 返回 false，发射器无法开火。
@@ -21,8 +21,6 @@ import java.util.Set;
 public class BreechModuleAttr extends AbstractModuleAttr {
     /** 射速 (RPM) */
     private final float fireRate;
-    /** 后坐力吸收率：0.0=全后坐力，1.0=完全吸收 */
-    private final float recoilAbsorption;
     /** 弹药必须全部具备的 tag，空列表表示不要求 */
     private final List<ResourceLocation> requiredTags;
     /** 弹药至少具备其一即可的 tag，空列表表示接受任意 */
@@ -33,7 +31,6 @@ public class BreechModuleAttr extends AbstractModuleAttr {
     public static final MapCodec<BreechModuleAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("durability_weight", 1.0f).forGetter(AbstractModuleAttr::durabilityWeight),
             Codec.FLOAT.fieldOf("fire_rate").forGetter(BreechModuleAttr::fireRate),
-            Codec.FLOAT.optionalFieldOf("recoil_absorption", 0.0f).forGetter(BreechModuleAttr::recoilAbsorption),
             ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of())
                     .forGetter(BreechModuleAttr::requiredTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of())
@@ -42,16 +39,15 @@ public class BreechModuleAttr extends AbstractModuleAttr {
                     .forGetter(BreechModuleAttr::forbiddenTags)
     ).apply(instance, BreechModuleAttr::new));
 
-    /** 炮闩模块默认实例（耐久权重=0.4，射速=600 RPM，无后坐力吸收，无弹药约束） */
+    /** 炮闩模块默认实例（耐久权重=0.4，射速=600 RPM，无弹药约束） */
     public static final BreechModuleAttr DEFAULT = new BreechModuleAttr(
-            0.4f, 600f, 0.0f, List.of(), List.of(), List.of());
+            0.4f, 600f, List.of(), List.of(), List.of());
 
-    public BreechModuleAttr(float durabilityWeight, float fireRate, float recoilAbsorption,
+    public BreechModuleAttr(float durabilityWeight, float fireRate,
                             List<ResourceLocation> requiredTags, List<ResourceLocation> acceptableTags,
                             List<ResourceLocation> forbiddenTags) {
         super(durabilityWeight, true); // 炮闩 critical，硬编码
         this.fireRate = fireRate;
-        this.recoilAbsorption = recoilAbsorption;
         this.requiredTags = requiredTags;
         this.acceptableTags = acceptableTags;
         this.forbiddenTags = forbiddenTags;
@@ -102,7 +98,6 @@ public class BreechModuleAttr extends AbstractModuleAttr {
     // ====== getter ======
 
     public float fireRate() { return fireRate; }
-    public float recoilAbsorption() { return recoilAbsorption; }
     public List<ResourceLocation> requiredTags() { return requiredTags; }
     public List<ResourceLocation> acceptableTags() { return acceptableTags; }
     public List<ResourceLocation> forbiddenTags() { return forbiddenTags; }

@@ -11,7 +11,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.Boat;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.BlockPos;
@@ -22,8 +21,6 @@ import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.PPhase;
-import io.github.sweetzonzi.machine_max.network.payload.PlayerHitImpactPayload;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 
@@ -581,15 +578,6 @@ public interface IProjectile extends BFDamageHandler {
                 else
                     entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(impulse / MassUtil.getEntityMass(entity))));
             }
-        }
-
-        // 玩家直接命中：发送冲击数据到客户端，用于 CameraController 的头部命中效果
-        if (target instanceof Player player && !getLevel().isClientSide()) {
-            Vec3 hitVel = ctx.hitVelocity();
-            Vec3 hitPoint = ctx.hitPoint();
-            PacketDistributor.sendToPlayer((ServerPlayer) player,
-                    new PlayerHitImpactPayload(hitVel.x, hitVel.y, hitVel.z,
-                            hitPoint.x, hitPoint.y, hitPoint.z, ctx.baseDamage()));
         }
 
         return dmg;
