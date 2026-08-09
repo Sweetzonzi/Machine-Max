@@ -179,11 +179,13 @@ public class CollisionHandler {
     private void setupFriction(HitBox hitBox, int hitBoxIndex) {
         Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
         //非轮子部件重设各向异性摩擦，轮胎另行处理
+        //(1,1,1) 表示各向同性，需关闭各向异性模式；否则仅在值变化时才更新逐轴摩擦缩放，
+        //避免连续相同材质接触时每 tick 在"各向异性/各向同性"间翻转
         if (!subPart.isWheel(hitBoxIndex)) {
-            if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
-                subPart.body.setAnisotropicFriction(friction, AfMode.basic);
-            else if (!friction.equals(Vector3f.UNIT_XYZ))
+            if (friction.equals(Vector3f.UNIT_XYZ))
                 subPart.body.setAnisotropicFriction(Vector3f.UNIT_XYZ, AfMode.none);
+            else if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
+                subPart.body.setAnisotropicFriction(friction, AfMode.basic);
         }
         if (hitBox.attr.rollingFriction() != subPart.body.getRollingFriction())
             subPart.body.setRollingFriction(hitBox.attr.rollingFriction());
@@ -261,7 +263,6 @@ public class CollisionHandler {
         other.shouldShowDebugBoxWhenNonColldeWith = true;
 
         var hitBox = subPart.getHitBox(hitBoxIndex);
-        var vel = subPart.body.getLinearVelocity(null);
         BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
         //验证接触点是否在本区块范围内
         BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
@@ -283,35 +284,8 @@ public class CollisionHandler {
         float blockSlip = block.getSlip(); // 湿滑系数，0~1
         float partMass = subPart.getEquivalentMass();
 
-        //摩擦计算相关
-        float normalContactVel = contactVel.dot(normal); // 法线方向接触速度
-        Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel)); // 滑移速度
-        Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint,
-                subPart.body.getPhysicsRotation(null), subPart.body.getAngularVelocity(null));
-        //计算前向和侧向方向
-        normal.cross(subPart.getRightVector(), tmpFront);
-        tmpFront.cross(normal, tmpSide);
-        float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel)); // 滑移角
-        float moveVelLen = vel.length();
-        float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
-        float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f); // 滑移率
-        float slipVelLen = Math.max(slipVel.length(), 0.001f);
-
-        if (!level.isClientSide()) { // 服务端执行摩擦力修正
-            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation()); // 有效湿滑强度
-            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f); // 湿滑衰减
-            if (subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex)) {
-                //轮胎特殊处理：基于滑移曲线的各向异性摩擦
-                applyWheelFriction(hitBox, slipAngle, slipRatio, slipVel, slipVelLen, normal, manifoldPointId,
-                        blockFriction, wetFactor);
-            } else {
-                //非轮胎直接重设组合摩擦系数
-                ManifoldPoints.setCombinedFriction(manifoldPointId,
-                        Math.max(0.001f, subPart.body.getFriction() * blockFriction * wetFactor));
-            }
-            ManifoldPoints.setCombinedRollingFriction(manifoldPointId,
-                    Math.max(0f, subPart.body.getRollingFriction() * blockRollingFriction));
-        }
+        //保存原始接触法线（攀爬分支内会将其覆写为 UNIT_Y / 高度场法线）
+        Vector3f rawNormal = new Vector3f(normal);
 
         //攀爬辅助处理
         if (subPart.climbableBlocks.contains(blockPos)) {
@@ -335,9 +309,9 @@ public class CollisionHandler {
                 ManifoldPoints.setPositionWorldOnA(manifoldPointId, result.contact());
                 ManifoldPoints.setPositionWorldOnB(manifoldPointId, result.contact());
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
-                Vector3f slipVelNorm = slipVel.subtract(result.normal().mult(slipVel.dot(normal))).normalize();
-                ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVelNorm);
-                ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(slipVelNorm));
+                //用坡面法线重算滑移摩擦，保证摩擦方向/大小与修正后的接触面自洽
+                setupContactFriction(manifoldPointId, result.normal(), contactVel, localContactPoint,
+                        hitBox, hitBoxIndex, blockFriction, blockRollingFriction, blockSlip);
                 return;
             } else if (result.penetration() <= 0 && Float.isFinite(result.penetration())) {
                 //尚未接触高度场，跳过碰撞
@@ -347,6 +321,10 @@ public class CollisionHandler {
                 return;
             }
         }
+
+        //普通路径：用接触法线计算并写入摩擦（滑移率供效果/伤害记录使用）
+        float slipRatio = setupContactFriction(manifoldPointId, rawNormal, contactVel, localContactPoint,
+                hitBox, hitBoxIndex, blockFriction, blockRollingFriction, blockSlip);
 
         //调用子系统碰撞回调
         if (hitBox.subsystem != null) {
@@ -374,11 +352,12 @@ public class CollisionHandler {
 
     /**
      * 轮胎滑移曲线摩擦计算。
-     * 根据纵向和侧向滑移率查滑移曲线获取等效摩擦系数，
-     * 重设碰撞点的摩擦方向和组合摩擦系数。
+     * 根据纵向和侧向滑移率查滑移曲线获取等效摩擦系数（摩擦椭圆），
+     * 并将摩擦方向设为椭圆合成后的最终方向（切平面内归一化滑移方向）。
+     * <p>调用线程：物理线程。</p>
      */
     private void applyWheelFriction(HitBox hitBox, float slipAngle, float slipRatio,
-                                    Vector3f slipVel, float slipVelLen, Vector3f normal,
+                                    Vector3f slipVel,
                                     long manifoldPointId, float blockFriction, float wetFactor) {
         var slipCurve = hitBox.attr.getEffectiveMaterial().physics().slipCurve();
         var longitudinalCurve = slipCurve.longitudinal();
@@ -403,16 +382,83 @@ public class CollisionHandler {
                 lateralCurve.peakScale(),
                 lateralCurve.kineticScale()
         );
-        //合成摩擦力方向向量
+        //摩擦椭圆：考虑双轴摩擦耦合，斜向滑移时总抓地力按椭圆半径衰减（漂移物理基础）
         var vz = slipVel.dot(tmpFront);
         var vx = slipVel.dot(tmpSide);
         double theta = Math.atan2(vx, vz);
         var muEff = (float) (muFront * muSide / Math.sqrt(muFront * muFront * Math.sin(theta) * Math.sin(theta) + muSide * muSide * Math.cos(theta) * Math.cos(theta)));
-        //重设摩擦方向和系数
-        ManifoldPoints.setLateralFrictionDir1(manifoldPointId, normal.cross(slipVel)); // 横向
-        ManifoldPoints.setLateralFrictionDir2(manifoldPointId, slipVel); // 纵向
+        //摩擦方向 = 椭圆合成后的最终方向（切平面内归一化滑移方向）。
+        //必须设置 LATERAL_FRICTION 标志，求解器（CacheDirection 模式）才会采用该方向
+        float slipLen = slipVel.length();
+        if (slipLen > 0.01f) {
+            ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVel.mult(1f / slipLen));
+            ManifoldPoints.setFlags(manifoldPointId,
+                    ManifoldPoints.getFlags(manifoldPointId) | ContactPointFlag.LATERAL_FRICTION);
+        } else {
+            //无显著滑移（纯滚动）：清标志，让求解器回退 plane-space，避免退化方向抖动
+            ManifoldPoints.setFlags(manifoldPointId,
+                    ManifoldPoints.getFlags(manifoldPointId) & ~ContactPointFlag.LATERAL_FRICTION);
+        }
         ManifoldPoints.setCombinedFriction(manifoldPointId,
                 Math.max(0.001f, subPart.body.getFriction() * muEff * blockFriction * wetFactor));
+    }
+
+    /**
+     * 计算并写入某接触点的滑移摩擦与滚动摩擦（服务端执行）。
+     * <p>平地、高度场坡面、Create 地形三路共用：法线不同时传各自切平面法线
+     * （高度场路径传高度场法线，其余传接触法线），滑移/椭圆/方向均以该法线为准。</p>
+     * <p>调用线程：物理线程。</p>
+     *
+     * @param manifoldPointId      接触点ID
+     * @param normal               接触切平面法线
+     * @param contactVel           接触点相对速度（世界坐标）
+     * @param localContactPoint    接触点在部件本地坐标的位置（计算轮面旋转速度用）
+     * @param hitBox               当前碰撞箱
+     * @param hitBoxIndex          接触点对应的子形状索引
+     * @param blockFriction        方块摩擦系数
+     * @param blockRollingFriction 方块滚动摩擦
+     * @param blockSlip            方块湿滑系数 0~1
+     * @return 滑移率（供调用方记录效果/方块破坏使用）
+     */
+    private float setupContactFriction(long manifoldPointId, Vector3f normal,
+                                       Vector3f contactVel, Vector3f localContactPoint,
+                                       HitBox hitBox, int hitBoxIndex,
+                                       float blockFriction, float blockRollingFriction, float blockSlip) {
+        //切向滑移速度（相对传入的接触平面法线）
+        float normalContactVel = contactVel.dot(normal);
+        Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel));
+        //轮面旋转引起的表面速度（仅角速度贡献）
+        Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint,
+                subPart.body.getPhysicsRotation(null), subPart.body.getAngularVelocity(null));
+        //切平面前向/侧向基
+        normal.cross(subPart.getRightVector(), tmpFront);
+        tmpFront.cross(normal, tmpSide);
+        float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel));
+        //滑移率与滑移速度
+        float moveVelLen = subPart.body.getLinearVelocity(null).length();
+        float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
+        float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f);
+
+        //服务端才写入摩擦（客户端物理仅供表现）
+        if (!subPart.getLevel().isClientSide()) {
+            //湿滑衰减
+            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation());
+            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f);
+            if (subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex)) {
+                //轮胎：滑移曲线 + 摩擦椭圆 + 单一合成方向
+                applyWheelFriction(hitBox, slipAngle, slipRatio, slipVel,
+                        manifoldPointId, blockFriction, wetFactor);
+            } else {
+                //非轮胎：各向同性，不设方向，清除可能残留的摩擦方向标志
+                ManifoldPoints.setCombinedFriction(manifoldPointId,
+                        Math.max(0.001f, subPart.body.getFriction() * blockFriction * wetFactor));
+                ManifoldPoints.setFlags(manifoldPointId,
+                        ManifoldPoints.getFlags(manifoldPointId) & ~ContactPointFlag.LATERAL_FRICTION);
+            }
+            ManifoldPoints.setCombinedRollingFriction(manifoldPointId,
+                    Math.max(0f, subPart.body.getRollingFriction() * blockRollingFriction));
+        }
+        return slipRatio;
     }
 
     /**
@@ -517,39 +563,15 @@ public class CollisionHandler {
 
         other.shouldShowDebugBoxWhenNonColldeWith = true;
         var hitBox = subPart.getHitBox(hitBoxIndex);
-        var vel = subPart.getLinearVelocity();
         BlockPos worldBlockPos = BlockPos.containing(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z);
         float blockFriction = BlockCollisionUtil.getBlockFriction(blockState);
         float blockRollingFriction = BlockCollisionUtil.getBlockRollingFriction(blockState);
         ChunkAccess chunk = level.getChunkAt(worldBlockPos);
         float blockSlip = BlockCollisionUtil.getSlip(chunk, blockState, worldBlockPos);
 
-        //摩擦相关计算（过程与 handleTerrainCollision 相同）
-        float normalContactVel = contactVel.dot(normal);
-        Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel));
-        Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint,
-                subPart.body.getPhysicsRotation(null), subPart.body.getAngularVelocity(null));
-        normal.cross(subPart.getRightVector(), tmpFront);
-        tmpFront.cross(normal, tmpSide);
-        float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel));
-        float moveVelLen = subPart.body.getLinearVelocity(null).length();
-        float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
-        float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f);
-        float slipVelLen = Math.max(slipVel.length(), 0.001f);
-
-        if (!level.isClientSide()) {
-            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation());
-            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f);
-            if (subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex)) {
-                applyWheelFriction(hitBox, slipAngle, slipRatio, slipVel, slipVelLen, normal,
-                        manifoldPointId, blockFriction, wetFactor);
-            } else {
-                ManifoldPoints.setCombinedFriction(manifoldPointId,
-                        Math.max(0.001f, subPart.body.getFriction() * blockFriction * wetFactor));
-            }
-            ManifoldPoints.setCombinedRollingFriction(manifoldPointId,
-                    Math.max(0f, subPart.body.getRollingFriction() * blockRollingFriction));
-        }
+        //摩擦计算（与 handleTerrainCollision 共用同一方法）
+        float slipRatio = setupContactFriction(manifoldPointId, normal, contactVel, localContactPoint,
+                hitBox, hitBoxIndex, blockFriction, blockRollingFriction, blockSlip);
 
         //子系统碰撞回调
         if (hitBox.subsystem != null) {
