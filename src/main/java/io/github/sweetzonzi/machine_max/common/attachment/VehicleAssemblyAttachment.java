@@ -94,7 +94,7 @@ public class VehicleAssemblyAttachment {
                 PartType oldPartType = cache.getPartType();
                 PartType newPartType = PartAssemblyItem.getPartType(stack, level);
                 cache.setPartType(newPartType);
-                if (!level.isClientSide() && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
+                if (!level.isClientSide() && newPartType!= null && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
                     if (oldPartType != newPartType) // 切换了部件类型时重新计算偏移等数据
                         cache.reCalculateOffset();
                     var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());

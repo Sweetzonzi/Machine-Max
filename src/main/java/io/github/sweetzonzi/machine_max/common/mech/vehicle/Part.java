@@ -59,7 +59,9 @@ import java.util.*;
 @Getter
 public class Part {
     //常规属性 General attributes
-    /** 所属的装配体（VehicleCore、MechUnit 等） */
+    /**
+     * 所属的装配体（VehicleCore、MechUnit 等）
+     */
     public volatile IPartAssembly assembly;
     public String name;
     public final PartType type;
@@ -121,6 +123,9 @@ public class Part {
     public Part(PartData data, Level level, boolean readAdditionalData) {
         this.name = data.name;
         this.type = PartType.get(level, data.registryKey);
+        if (this.type == null) {//部件类型不存在（如内容包缺失或存档引用已删除部件），保留明确错误信息而非 NPE
+            throw new IllegalArgumentException("Unknown part type: " + data.registryKey);
+        }
         this.level = level;
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
@@ -345,12 +350,13 @@ public class Part {
                 } else {
                     continue;
                 }
-
+                // 跳过条件不符或位于同一个子零件内的连接点
                 if (!advancedConnector.conditionCheck(simpleConnector.subPart.part)
-                        || !simpleConnector.conditionCheck(advancedConnector.subPart.part)) {
+                        || !simpleConnector.conditionCheck(advancedConnector.subPart.part)
+                        || simpleConnector.subPart == advancedConnector.subPart) {
                     continue;
                 }
-
+                // 跳过几何位置或方向不匹配的连接点
                 if (!ConnectorAlignmentHelper.isAlignedForAttach(
                         advancedConnector,
                         simpleConnector,
@@ -496,8 +502,8 @@ public class Part {
      * <p>以 rootSubPart 的全局模型空间质心为基准，将其余 SubPart 的刚体移动到正确的相对位置。</p>
      * <p>布放完成后各 SubPart 在世界空间中的相对位置与模型中一致，内部连接点的世界空间位姿自然对齐。</p>
      *
-     * @param model        部件模型
-     * @param rootSubPart  根子部件（保持在原位不动）
+     * @param model       部件模型
+     * @param rootSubPart 根子部件（保持在原位不动）
      */
     private void positionSubPartsForInternalAttach(OModel model, SubPart rootSubPart) {
         Vector3f rootGlobalMc = computeSubPartGlobalMassCenter(rootSubPart, model);

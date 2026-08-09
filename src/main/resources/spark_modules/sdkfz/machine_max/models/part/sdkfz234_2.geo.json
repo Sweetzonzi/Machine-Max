@@ -5282,7 +5282,7 @@
 						"mg_muzzle": [-3.75, 35.55, -25.9],
 						"gunner_sight": [5, 33.55, -21.9],
 						"shield_gun_axis": [0, 35.1, -21],
-						"shield_turret_axis": [0, 35.1, -21]
+						"shield_turret_axis": [0, 35.1, -20]
 					}
 				},
 				{
@@ -7096,7 +7096,7 @@
 					"pivot": [0, 31.5, -5.4],
 					"locators": {
 						"turret_hull_axis": [0, 31.5, -5.4],
-						"turret_gun_axis": [0, 35.1, -21]
+						"turret_gun_axis": [0, 35.1, -20]
 					}
 				},
 				{

@@ -62,5 +62,6 @@
   "connector.machine_max.gun_shield_lock": "Gun Shield Lock",
   "sub_part.machine_max.gun_shield": "Gun Shield",
   "connector.machine_max.shield_gun_axis": "Shield Gun Axis",
-  "connector.machine_max.shield_turret_axis": "Shield Turret Axis"
+  "connector.machine_max.shield_turret_axis": "Shield Turret Axis",
+  "sub_part.machine_max.barrel": "Barrel"
 }

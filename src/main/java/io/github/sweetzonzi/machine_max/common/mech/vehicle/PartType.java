@@ -11,6 +11,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -105,12 +106,11 @@ public class PartType {
         this.variants = variants;
     }
 
+    @Nullable
     public static PartType get(Level level, ResourceLocation registryKey) {
-        PartType result = null;
+        PartType result;
         if (level.isClientSide) result = MMDynamicRes.PART_TYPES.get(registryKey);
         else result = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
-        if (result == null)
-            throw new IllegalArgumentException("Unknown part type: " + registryKey);
         return result;
     }
 
