@@ -83,7 +83,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
     public Pair<Vec3, Transform> setJoinPosition() {
         // 若没有可用的连接点，则尝试直接放置零件
         Quaternionf rotation = new Quaternionf()
-                .rotationY((float) Math.toRadians(0 - player.getYRot()));
+                .rotationY((float) Math.toRadians(180 - player.getYRot()));
 
         Transform transform = new Transform(
                 PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -101,20 +101,19 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
     private void setVehicleState(VehicleCore vehicle) {
         vehicle.setTransform(getJoinPosition().getSecond());
 
-        //todo 初速度在测试时效果好像不太好？
-        double strength = 500.0; //初速度常数
+        double strength = 70.0; //初速度常数
         var lookAt = getJoinPosition().getFirst();
         var velocity = new Vec3(lookAt.x * strength, lookAt.y * strength, lookAt.z * strength);
         Vector3f v = new Vector3f((float) velocity.x, (float) velocity.y, (float) velocity.z);
 
-        var hg = 0; //角速度常数
-        Vector3f v2 = new Vector3f(0f, (float) (lookAt.x * hg), (float) (lookAt.z * hg));
+        Vector3f v2 = new Vector3f(0f, 0f, 0f);
 
         for (Part part : vehicle.getPartMap().values()) {
             PhysicsRigidBody partBody = part.rootSubPart.body;
-            partBody.setLinearVelocity(v.divideLocal(partBody.getMass()));
-            partBody.setAngularVelocity(v2.divideLocal(partBody.getMass()));
-            break;
+            part.rootSubPart.setLinearVelocity(v);
+            partBody.setLinearVelocity(v);
+            part.rootSubPart.setAngularVelocity(v2);
+            partBody.setAngularVelocity(v2);
         }
     }
 
