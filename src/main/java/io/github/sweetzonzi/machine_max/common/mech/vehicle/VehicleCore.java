@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 @Getter
 public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private static final float COMBO_ATTACH_MAX_POS_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR;
-    private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//1°以内视为方向对齐
+    private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//约1e-4°以内视为方向对齐（locator 严格对齐场景）
 
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();

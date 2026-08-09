@@ -5,8 +5,8 @@ import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 
 public final class ConnectorAlignmentHelper {
-    public static final float DEFAULT_MAX_POS_ERROR = 0.1f;
-    public static final float DEFAULT_MAX_DIRECTION_ERROR = (float) Math.toRadians(1);
+    public static final float DEFAULT_MAX_POS_ERROR = 1e-4f;
+    public static final float DEFAULT_MAX_DIRECTION_ERROR = (float) Math.toRadians(1e-4f);
 
     private ConnectorAlignmentHelper() {
     }
