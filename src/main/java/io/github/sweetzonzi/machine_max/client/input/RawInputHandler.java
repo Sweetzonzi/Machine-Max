@@ -22,6 +22,7 @@ import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
 import io.github.sweetzonzi.machine_max.util.MMJoystickHandler;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -341,15 +342,19 @@ public class RawInputHandler {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
 
-            /*
-              物理测试快捷操作
-              f9 - 运行上一次的命令
-              f8 - 执行 暂停/继续 播放
-              */
-            KeyHooks.EVENT(GLFW.GLFW_KEY_F9)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.run)));
-            KeyHooks.EVENT(GLFW.GLFW_KEY_F8)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.resume)));
+
+            EnvironmentWrapper.run(EnvironmentWrapper.Env.DEVELOPMENT, () -> {
+                /*
+                    物理测试快捷操作 仅开发环境可用
+                    f9 - 运行上一次的命令
+                    f8 - 执行 暂停/继续 播放
+                */
+                KeyHooks.EVENT(GLFW.GLFW_KEY_F9)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.run)));
+                KeyHooks.EVENT(GLFW.GLFW_KEY_F8)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(new PhysicsTestRePlayPayload(PhysicsTestRePlayPayload.CallType.resume)));
+            });
+
 
             // TODO: 车辆信息面板按键 — 暂时禁用，Tab 键被重新分配给控制组轮换
             //KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)

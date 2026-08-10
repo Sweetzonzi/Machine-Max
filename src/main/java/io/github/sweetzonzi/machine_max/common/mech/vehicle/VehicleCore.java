@@ -32,6 +32,7 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetach
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleStatusSyncPayload;
+import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -1086,6 +1087,38 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             part.rootSubPart.body.getTransform(transform);
             transform.setTranslation(transform.getTranslation().add(delta));
             part.setTransform(transform);
+        }
+    }
+
+    /**
+     * 主线程 Main thread
+     * <p>设置整个载具的姿态（位置+旋转），所有部件保持相对位置与相对姿态不变。</p>
+     * <p>载具由多个 Part 组成，入点变换应作用于整车，不能逐个应用到每个部件，否则多部件会叠在同一姿态上。</p>
+     */
+    public void setTransform(Transform transform) {
+        if (!inLevel) applyTransform(transform);
+        else SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            applyTransform(transform);
+            return null;
+        });
+        this.position = SparkMathKt.toVec3(transform.getTranslation());
+    }
+
+    /** 将整车姿态变换应用到所有部件：先映射到整车参考姿态的局部系，再套用新的目标姿态 */
+    private void applyTransform(Transform transform) {
+        Transform inverse = null;
+        Transform partWorld = new Transform();
+        for (Part part : partMap.values()) {
+            part.rootSubPart.body.getTransform(partWorld);
+            if (inverse == null) {
+                // 以第一个部件的根零件当前世界姿态作为整车参考姿态
+                inverse = partWorld.invert();
+            }
+            // partWorld = inverse * partWorld：部件相对整车参考的局部姿态
+            MyMath.combine(partWorld, inverse, partWorld);
+            // partWorld = transform * partWorld：套用新的整车姿态
+            MyMath.combine(partWorld, transform, partWorld);
+            part.setTransform(partWorld);
         }
     }
 

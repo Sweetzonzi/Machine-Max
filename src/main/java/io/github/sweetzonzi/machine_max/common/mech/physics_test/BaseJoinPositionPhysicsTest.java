@@ -58,6 +58,7 @@ public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
     public final void run() {
         initiated = true;
         playing = true;
+        if (p == null) return;
         run(p);
     }
 
