@@ -42,6 +42,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
 
     @Override
     public void run(VehicleCore physicsTestingObject) {
+        setState(physicsTestingObject.getPartMap().values().iterator().next());
         ObjectManager.addVehicle(physicsTestingObject);
     }
 
@@ -91,7 +92,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
     private void setState(Part part) {
         part.setTransform(getJoinPosition().getSecond());
 
-        double strength = 60.0; //初速度常数
+        double strength = 340.0; //初速度常数
         var lookAt = getJoinPosition().getFirst();
         var velocity = new Vec3(lookAt.x * strength, lookAt.y * strength, lookAt.z * strength);
         Vector3f v = new Vector3f((float) velocity.x, (float) velocity.y, (float) velocity.z);
@@ -114,17 +115,15 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
         if (resetCooldown > 0) resetCooldown--;
 
 
-        if (core.tickCount % 2 == 0) {
-            for (Part part : core.getPartMap().values()) {
-                part.rootSubPart.body.applyCentralForce(
-                        MMMath.localVectorToWorldVector(new Vector3f(0, 0, -133.3f), part.rootSubPart.body));
-                //每物理刻对部件正前方施加单位推力（正前方即部件局部 -Z 轴，随部件旋转）
-            }
-//            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 64f);
-//            SpreadingSoundHelper.playSpreadingSound(core.level, sound, SoundSource.NEUTRAL, core.getPosition(), core.getVelocity(),
-//                    (float) (1f + 0.1f * (Math.random() - 0.5f)),
-//                    5f);
+        for (Part part : core.getPartMap().values()) {
+            part.rootSubPart.body.applyCentralForce(
+                    MMMath.localVectorToWorldVector(new Vector3f(0, 0, -233.3f), part.rootSubPart.body));
+            //每物理刻对部件正前方施加单位推力（正前方即部件局部 -Z 轴，随部件旋转）
         }
+        SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 300f);
+        SpreadingSoundHelper.playSpreadingSound(core.level, sound, SoundSource.NEUTRAL, core.getPosition(), core.getVelocity(),
+                (float) (1f + 0.1f * (Math.random() - 0.5f)),
+                0.4f);
 
     }
 

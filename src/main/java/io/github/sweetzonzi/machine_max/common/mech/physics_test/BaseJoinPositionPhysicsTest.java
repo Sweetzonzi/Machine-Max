@@ -34,9 +34,9 @@ public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
      * 是否初始化
      * <p>
      * 用于确保：玩家还没有初次运行命令的情况下，不应该被重放键触发测试*/
-    boolean initiated = false;
+    private boolean initiated = false;
     /**该测试用例正在运行*/
-    boolean playing = false;
+    private boolean playing = false;
 
     public BaseJoinPositionPhysicsTest(ServerPlayer player) {
         this.level = (ServerLevel) player.level();
@@ -56,6 +56,10 @@ public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
     /**底层总线调用的方法*/
     @Override
     public final void run() {
+        onResume();
+        onResume();
+        //很奇怪，不触发onResume会导致初速度有时候变得特别大
+
         initiated = true;
         playing = true;
         if (p == null) return;
