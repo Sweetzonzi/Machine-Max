@@ -7,6 +7,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 
 /**
  * 后处理特效管理器。
@@ -24,6 +26,7 @@ public class PostProcessingManager {
 
     private final DesaturateEffect desaturate = new DesaturateEffect();
     private final OverloadVisionEffect overloadVision = new OverloadVisionEffect();
+    private final CrtMonitorEffect crtMonitor = new CrtMonitorEffect();
 
     private PostProcessingManager() {}
 
@@ -37,6 +40,12 @@ public class PostProcessingManager {
         INSTANCE.desaturate.render(event.getPartialTick().getGameTimeDeltaPartialTick(false));
     }
 
+    @SubscribeEvent
+    private static void onRenderGui(RenderGuiEvent.Post event) {
+        // CRT 滤镜内部自检 enabled 开关，默认关闭时不加载、不处理
+        INSTANCE.crtMonitor.render(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+    }
+
     /** 客户端 Tick：退出世界时自动释放所有 PostChain GPU 资源，同时衰减失色压制效果 */
     @SubscribeEvent
     private static void onClientTick(ClientTickEvent.Pre event) {
@@ -47,11 +56,25 @@ public class PostProcessingManager {
         }
     }
 
+    // ========== 对外开关 ==========
+
+    /**
+     * 外部启用/关闭 CRT 显像管滤镜（默认关闭）。
+     * <p>关闭时 {@link CrtMonitorEffect} 不加载、不执行 PostChain；
+     * 开启后下一帧 GUI 渲染阶段即生效。</p>
+     *
+     * @param enabled true 启用 CRT 后处理，false 关闭
+     */
+    public static void setCrtMonitorEnabled(boolean enabled) {
+        INSTANCE.crtMonitor.enabled = enabled;
+    }
+
     // ========== 生命周期 ==========
 
     /** 释放所有后处理资源 */
     private void disposeAll() {
         desaturate.dispose();
         overloadVision.dispose();
+        crtMonitor.dispose();
     }
 }

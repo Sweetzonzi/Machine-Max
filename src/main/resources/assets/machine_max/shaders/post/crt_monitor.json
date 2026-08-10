@@ -1,0 +1,33 @@
+{
+    "targets": ["swap"],
+    "passes": [
+        {
+            "name": "machine_max:crt_monitor",
+            "intarget": "minecraft:main",
+            "outtarget": "swap",
+            "uniforms": [
+                {
+                    "name": "Intensity",
+                    "values": [1.0]
+                },
+                {
+                    "name": "ScanlineAmount",
+                    "values": [0.9]
+                },
+                {
+                    "name": "MaskAmount",
+                    "values": [0.5]
+                },
+                {
+                    "name": "BloomAmount",
+                    "values": [0.6]
+                }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "swap",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}
