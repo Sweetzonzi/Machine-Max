@@ -3,14 +3,16 @@ package io.github.sweetzonzi.machine_max.external.js.hook;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 轴事件钩子类，用于监听和处理轴输入事件
+ * 轴事件钩子类（单例），用于监听和处理轴输入事件
  * <p>
- * 该类提供了一个统一的接口来处理各种轴输入事件，如鼠标移动、滚轮滚动等。
- * 它使用线程池异步处理事件，确保事件处理不会阻塞主线程。
+ * 该类以单例模式提供统一的接口来处理各种轴输入事件，如鼠标移动、滚轮滚动等。
+ * 全局仅存在一个 {@link AxisHook} 实例，通过 {@link #createWith(AxisType...)} 注册
+ * 轻量级监听器即可订阅数据，避免频繁创建对象。
  * <p>
  * 主要功能：
  * 1. 注册轴类型并监听其数据变化
@@ -20,14 +22,33 @@ import java.util.concurrent.Executors;
  */
 public class AxisHook {
     public static final String AxisDataHead = "axis."; //不会自增的数据 多用于轴输入
-    private final static Set<AxisHook> axisHookList = new HashSet<>();
     /// 优化：添加线程池用于异步处理事件 暂时仅为轴输入支持
     private static final ExecutorService eventExecutor = Executors.newCachedThreadPool();
 
-    private final Map<AxisType, Double> dataMap = new ConcurrentHashMap<>();
-    private final List<AxisType> axisTypesList = new ArrayList<>(); // 保存轴类型的顺序
+    /// 单例实例
+    private static volatile AxisHook instance;
 
-    private AxisEvent axisEvent;
+    private final Map<AxisType, Double> dataMap = new ConcurrentHashMap<>();
+    /// 注册的监听器列表，CopyOnWriteArrayList 保证并发读写安全
+    private final List<Listener> listeners = new CopyOnWriteArrayList<>();
+
+    /// 构造方法私有化，禁止外部创建实例
+    private AxisHook() {
+    }
+
+    /**
+     * 获取 AxisHook 单例实例（双重检查锁）
+     */
+    public static AxisHook getInstance() {
+        if (instance == null) {
+            synchronized (AxisHook.class) {
+                if (instance == null) {
+                    instance = new AxisHook();
+                }
+            }
+        }
+        return instance;
+    }
 
     @FunctionalInterface
     public interface AxisEvent {
@@ -35,21 +56,44 @@ public class AxisHook {
     }
 
     /**
-     * @param types 怎么写入的类型顺序，拿到就是什么顺序的数据
-     * */
-    public static AxisHook createWith(AxisType... types) {
-        AxisHook instance = new AxisHook();
-        for (AxisType type : types) {
-            instance.dataMap.put(type, 0D); //todo 默认值暂时为0，以后也许要为不同类型定义各自定义默认值
-            instance.axisTypesList.add(type); // 保存轴类型的顺序
+     * 轴监听器，持有感兴趣的轴类型顺序与事件回调
+     */
+    public static class Listener {
+        private final List<AxisType> axisTypesList = new ArrayList<>(); // 保存轴类型的顺序
+        private AxisEvent axisEvent;
+
+        private Listener(AxisType... types) {
+            axisTypesList.addAll(Arrays.asList(types));
         }
-        axisHookList.add(instance);
-        return instance;
+
+        public Listener EVENT(AxisEvent event) {
+            axisEvent = event;
+            return this;
+        }
+
+        private void triggerEvent(Map<AxisType, Double> dataMap, AxisType triggerType) {
+            if (axisEvent == null) return;
+            double[] values = new double[axisTypesList.size()];
+            int i = 0;
+            boolean match = false;
+            for (AxisType axisType : axisTypesList) {
+                if (axisType.equals(triggerType)) match = true;
+                Double v = dataMap.get(axisType);
+                if (v == null) v = 0D;
+                values[i] = v;
+                i++;
+            }
+            if (match) eventExecutor.execute(() -> axisEvent.event(values));
+        }
     }
 
-    public AxisHook EVENT(AxisEvent event) {
-        axisEvent = event;
-        return this;
+    /**
+     * @param types 怎么写入的类型顺序，拿到就是什么顺序的数据
+     * */
+    public static Listener createWith(AxisType... types) {
+        Listener listener = new Listener(types);
+        getInstance().listeners.add(listener);
+        return listener;
     }
 
     public enum AxisType {
@@ -85,28 +129,10 @@ public class AxisHook {
      * 数据源注入方法，标明数据类型和值即可
      * */
     public static void putAxisData(AxisType type, Double data) {
-        for (AxisHook ah : axisHookList) {
-            ah.dataMap.put(type, data);
-            ah.triggerEvent(type); // 数据输入时触发事件
-        }
-    }
-
-    /**
-     * 触发事件的方法
-     * */
-    private void triggerEvent(AxisType triggerType) {
-        if (axisEvent != null) {
-            double[] values = new double[axisTypesList.size()];
-            int i = 0;
-            boolean match = false;
-            for (AxisType axisType : axisTypesList) {
-                if (axisType.equals(triggerType)) match = true;
-                Double v = dataMap.get(axisType);
-                if (v == null) v = 0D;
-                values[i] = v;
-                i++;
-            }
-            if (match) eventExecutor.execute(() -> {axisEvent.event(values);});
+        AxisHook hook = getInstance();
+        hook.dataMap.put(type, data);
+        for (Listener listener : hook.listeners) {
+            listener.triggerEvent(hook.dataMap, type); // 数据输入时触发事件
         }
     }
 
