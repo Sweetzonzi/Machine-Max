@@ -87,9 +87,10 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
 
                         // 原版设置渲染距离内的由老管线（PartEntityRenderer）接管，阈值 = 当前渲染距离（方块）
                         if (!FMLLoader.getDist().isClient()) return;
-                        float renderDistance = Minecraft.getInstance().gameRenderer.getRenderDistance();
-                        if (distSqr < (double) renderDistance * 30) continue;
-
+                        int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance();
+                        double renderDist = (renderDistance - (renderDistance*0.09)) * 64;
+                        // 还是这个老的renderDist阈值显示正常些
+                        if (distSqr < renderDist) continue;
                         renderSubPart(subPart, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
                     } catch (Exception e) {
                         MachineMax.LOGGER.warn("远程载具渲染失败: subPart={}", subPart.name, e);
