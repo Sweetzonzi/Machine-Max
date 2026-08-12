@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.client.render.renderer;
 
-import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -31,6 +30,9 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.awt.*;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 远程载具渲染器 — 通过 {@link RenderLevelStageEvent} 代理渲染超出实体渲染距离的远处载具。
@@ -44,6 +46,8 @@ import java.awt.*;
  * 销毁倒计时中按近距离同样逻辑黑化/淡出。不处理淡入、受击闪白、线框/组装进度等状态。</p>
  */
 public class DistantVehicleRenderer extends VisualEffectRenderer {
+
+    private final Map<UUID, Integer> partUuid$LightValueCache = new ConcurrentHashMap<>();
 
     @Override
     public void tick() {
@@ -83,11 +87,8 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
 
                         // 原版设置渲染距离内的由老管线（PartEntityRenderer）接管，阈值 = 当前渲染距离（方块）
                         if (!FMLLoader.getDist().isClient()) return;
-                        int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance();
-                        double renderDist = (renderDistance - (renderDistance*0.09)) * 64;
-                        //todo 我发现随着设置渲染区块变大，distSqr越难以超越renderDist，导致出现了某个距离载具没有渲染，
-                        // 所以我为renderDistance加了个简单的逐级递减的函数，有可能问题还没有解决？多观察下
-                        if (distSqr < renderDist) continue;
+                        float renderDistance = Minecraft.getInstance().gameRenderer.getRenderDistance();
+                        if (distSqr < (double) renderDistance * 30) continue;
 
                         renderSubPart(subPart, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
                     } catch (Exception e) {
@@ -121,6 +122,14 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         int blockLight = level.getBrightness(LightLayer.BLOCK, blockPos);
         int skyLight = level.getBrightness(LightLayer.SKY, blockPos);
         int light = LightTexture.pack(blockLight, skyLight);
+        if (light != 0) {
+            partUuid$LightValueCache.put(subPart.getPart().getUuid(), light);
+        } else {
+            Integer cachedLight = partUuid$LightValueCache.get(subPart.getPart().getUuid());
+            if (cachedLight != null) {
+                light = cachedLight;
+            } else return;
+        }
         // 销毁黑化/淡出：与近距离渲染（PartEntityRenderer#renderNormal）一致，按销毁倒计时计算 alpha，
         // 配置开启时颜色渐变为黑(64,64,64)，否则保持白色仅淡出
         int color = Color.WHITE.getRGB();
@@ -139,13 +148,12 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         RenderType renderType = RenderType.entityCutout(texture);
         for (OBone bone : bones.values()) {
             // 车灯（ysmGlow）骨骼：与近距离渲染（PartEntityRenderer#renderTextured）相同，用发光着色器 + 全亮
-            boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
             ModelRenderHelperKt.render(
                     bone,
                     modelInstance.getPose(),
                     poseStack,
-                    bufferSource.getBuffer(ysmGlow ? RenderType.eyes(texture) : renderType),
-                    ysmGlow ? Brightness.FULL_BRIGHT.pack() : light,
+                    bufferSource.getBuffer(renderType),
+                    light,
                     overlay,
                     color,
                     partialTick,
