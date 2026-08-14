@@ -596,7 +596,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 if (!joint.getBodyB().isInWorld())
                     subPart.getPhysicsLevel().getWorld().addCollisionObject(joint.getBodyB());
                 if (!getPhysicsLevel().getMcLevel().isClientSide()) // 仅服务端才实际将关节加入世界，避免不必要的求解
-                    subPart.getPhysicsLevel().getWorld().addJoint(joint); // 注意，双端均为动力学会崩掉物理线程
+                    subPart.getPhysicsLevel().getWorld().addJoint(joint); // 服务端两刚体均为动力学模式，安全；Bullet 崩溃仅发生在两运动学体间的关节（实测确认，与加入顺序无关）
             }
             return null;
         });

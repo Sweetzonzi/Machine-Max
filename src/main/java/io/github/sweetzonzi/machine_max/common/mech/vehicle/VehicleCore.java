@@ -1123,7 +1123,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     }
 
     public void onAddToLevel() {
-        // TODO: 使用多线程版本的物理库时，关节的存在会导致崩溃，是因为关节加入世界时刚体尚未加入吗？
+        // 崩溃根因已实测确认为"两运动学体间的关节"（Bullet 不支持），与加入顺序无关。
+        // 此处保持先刚体后关节的顺序作为工程惯例：连接器 addToLevel 内部经 submitImmediateTask 保证刚体入世界后再 addJoint
         partMap.values().forEach(Part::addToLevel);
         this.inLevel = true;
     }
