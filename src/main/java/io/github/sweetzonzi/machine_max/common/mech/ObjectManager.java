@@ -172,6 +172,7 @@ public class ObjectManager {
 
         vehicle.isRemoved = true;
         vehicle.inLevel = false;
+        vehicle.releaseVehicleHeldChunks();
         vehicle.subSystemController.allSubsystems.clear();
         vehicle.subSystemController.channels.clear();
         vehicle.subSystemController.signalStorage.clear();
@@ -202,7 +203,7 @@ public class ObjectManager {
         return vehicle;
     }
 
-    @SubscribeEvent(priority = EventPriority.NORMAL)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPreTick(LevelTickEvent.Pre event) {
         Level mcLevel = event.getLevel();
         // 投射物管理器生命周期 Pre（含寿命递减 + 投射物 preTick）
@@ -275,7 +276,13 @@ public class ObjectManager {
         if (!vehicle.getOldChunkPos().equals(chunkPos)) {// 检查载具是否移动到了新的区块
             vehicle.setOldChunkPos(chunkPos);// 更新旧区块坐标为当前区块坐标
         }
-        vehicle.setInLoadedChunk(level.getChunkSource().hasChunk(chunkPos.x, chunkPos.z));
+        // 服务端：载具占用的物理区块已保活（不卸载），载具永远有地形支撑，始终视为 inLoadedChunk；
+        // 客户端无 PhysicsChunkManager，仍以区块加载状态驱动
+        if (level.isClientSide()) {
+            vehicle.setInLoadedChunk(level.getChunkSource().hasChunk(chunkPos.x, chunkPos.z));
+        } else {
+            vehicle.setInLoadedChunk(true);
+        }
     }
 
     public static void saveVehicles(ServerLevel serverLevel) {

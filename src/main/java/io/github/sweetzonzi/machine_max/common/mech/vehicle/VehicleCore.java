@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkManager;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.google.common.graph.EndpointPair;
@@ -33,11 +34,13 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePaylo
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleStatusSyncPayload;
 import jme3utilities.math.MyMath;
+import kotlin.ranges.IntRange;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -87,14 +90,17 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public boolean loadFromSavedData = false;//是否已加载
     public boolean loaded = false;//是否已加载完毕
     public boolean isRemoved = false;//是否已被移除
-    /** 上一帧的区块加载状态，用于检测状态转换。初始为 true 以处理服务器启动时全部载具的场景 */
-    private boolean wasInLoadedChunk = true;
-    /** 解冻倒计时（tick），区块加载后延迟解冻以等待地形碰撞体重建 */
-    private int unfreezeCountdown = 0;
-    /** 物理刚体是否已被冻结（LinearFactor设为0） */
+    /** 物理刚体是否已被冻结（测试用例专用） */
     private boolean physicsFrozen = false;
-    /** 解冻延迟tick数，给地形异步构建留出时间 */
-    private static final int UNFREEZE_DELAY_TICKS = 20;
+    /** 当前已保活的区块集合（服务端），用于对比并释放不再占用的区块（null = 尚未保活） */
+    @Nullable
+    private Set<ChunkPos> heldChunkPositions = null;
+    /** 服务端：召唤/加载后等待下方物理地形构建完成期间，刚体保持 kinematic 不坠落（true = 等待中） */
+    private boolean waitingForTerrain = false;
+    /** 等待物理地形期间累计的 tick 数，超时强制恢复动态，防止地形异常导致永久浮空 */
+    private int terrainWaitTicks = 0;
+    /** 等待物理地形的最长 tick 数（100 tick = 5 秒），超时后强制恢复刚体动态 */
+    private static final int TERRAIN_WAIT_TIMEOUT_TICKS = 100;
     //控制
     public SubsystemController subSystemController;
     private final AtomicInteger skillCount = new AtomicInteger();
@@ -335,26 +341,28 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 //        if (tickCount == 100)
 //            recalculateCameraDistance();
 
-        // 仅在服务端处理物理冻结/解冻（客户端刚体为运动学模式，无需处理）
+        // 仅在服务端维护载具占用区块的保活注册（客户端刚体为运动学模式，无需保活）
         if (!level.isClientSide() && !isRemoved) {
-            if (!wasInLoadedChunk && inLoadedChunk) {
-                // 区块刚加载 → 启动解冻倒计时，等待地形碰撞体重建
-                unfreezeCountdown = UNFREEZE_DELAY_TICKS;
-                // 区块加载后立即刷新所有子部件实体，确保客户端收到正确的实体数据
-                refreshAllPartEntities();
-            }
-            if (wasInLoadedChunk && !inLoadedChunk) {
-                // 区块刚卸载 → 立即冻结刚体，防止失去地形支撑后跌落
-                freezeAllPhysics();
-            }
-            if (unfreezeCountdown > 0) {
-                unfreezeCountdown--;
-                if (unfreezeCountdown == 0 && inLoadedChunk) {
-                    // 倒计时结束且区块已加载 → 解冻刚体
-                    unfreezeAllPhysics();
+            updateVehicleTerrainHold();
+            // 等待地形就绪期间：每 tick 复查，就绪后解除刚体 kinematic 冻结恢复动态；
+            // 超时兜底：长时间未就绪（地形构建异常）强制恢复动态，避免载具永久浮空冻结
+            if (waitingForTerrain) {
+                terrainWaitTicks++;
+                if (isVehicleTerrainReady() || terrainWaitTicks > TERRAIN_WAIT_TIMEOUT_TICKS) {
+                    if (terrainWaitTicks > TERRAIN_WAIT_TIMEOUT_TICKS) {
+                        MachineMax.LOGGER.warn("载具 {} 等待物理地形超时（{} tick），强制恢复刚体动态", uuid, terrainWaitTicks);
+                    }
+                    waitingForTerrain = false;
+                    SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+                        for (Part part : partMap.values()) {
+                            for (SubPart subPart : part.subParts.values()) {
+                                subPart.body.setKinematic(false);
+                            }
+                        }
+                        return null;
+                    });
                 }
             }
-            wasInLoadedChunk = inLoadedChunk;
         }
 
         //保持激活与控制量更新
@@ -461,71 +469,92 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     }
 
     /**
-     * 冻结所有子部件的物理刚体，防止在区块卸载后因失去地形支撑而跌落
+     * 更新载具占用区块的保活注册（仅服务端调用）。
      * <p>
-     * 将 LinearFactor 和 AngularFactor 设为零，同时清零速度和力，
-     * 使刚体在物理空间中保持在原位不动。
-     * 在物理线程上执行。
+     * 计算当前 AABB 覆盖的区块与 section Y 范围，通过 PhysicsChunkManager
+     * 将承载区块强制保持加载并激活（MC ticket），载具在哪地形就在哪，
+     * 不会因玩家离开导致区块卸载而失去支撑。
+     * 每 tick 调用会刷新 MC ticket 寿命；载具移动时自动释放不再占用的区块。
      */
-    private void freezeAllPhysics() {
-        if (physicsFrozen) return;
-        physicsFrozen = true;
-        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            for (Part part : partMap.values()) {
-                for (SubPart subPart : part.subParts.values()) {
-                    var body = subPart.body;
-                    if (!body.isInWorld()) continue;
-                    body.clearForces();
-                    body.setLinearVelocity(new Vector3f(0, 0, 0));
-                    body.setAngularVelocity(new Vector3f(0, 0, 0));
-                    body.setLinearFactor(new Vector3f(0, 0, 0));
-                    body.setAngularFactor(new Vector3f(0, 0, 0));
-                }
-            }
-            return null;
-        });
-    }
+    private void updateVehicleTerrainHold() {
+        AABB aabb = getAABB();
+        // 无有效包围盒（如无部件）时释放全部保活并返回
+        if (aabb.getXsize() <= 0 || aabb.getYsize() <= 0 || aabb.getZsize() <= 0) {
+            releaseVehicleHeldChunks();
+            return;
+        }
+        int xMin = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minX));
+        int xMax = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxX));
+        int zMin = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minZ));
+        int zMax = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxZ));
+        // 相比 AABB 向下多保活一个 section，确保支撑载具的地面刚体也被激活，
+        // 与 isVehicleTerrainReady() 的检查范围保持一致，避免检查范围覆盖了未被激活的 section 导致永久等待
+        int yMinSec = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minY)) - 1;
+        int yMaxSec = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxY));
 
-    /**
-     * 解冻所有子部件的物理刚体，恢复正常的物理模拟
-     * <p>
-     * 恢复 LinearFactor 和 AngularFactor，使刚体重新受物理引擎控制。
-     * 在物理线程上执行。
-     * 注意：不使用 physicsFrozen 作为 guard，因为载具分裂时可能继承了已冻结的刚体。
-     */
-    private void unfreezeAllPhysics() {
-        physicsFrozen = false;
-        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            for (Part part : partMap.values()) {
-                for (SubPart subPart : part.subParts.values()) {
-                    var body = subPart.body;
-                    if (!body.isInWorld()) continue;
-                    body.setLinearFactor(new Vector3f(1, 1, 1));
-                    body.setAngularFactor(new Vector3f(1, 1, 1));
-                    body.setLinearVelocity(Vector3f.ZERO);//冻结期间速度仍会积累，需要重置
-                    body.setAngularVelocity(Vector3f.ZERO);
-                    body.activate();
-                }
+        Set<ChunkPos> newChunkPosSet = new HashSet<>();
+        for (int x = xMin; x <= xMax; x++) {
+            for (int z = zMin; z <= zMax; z++) {
+                newChunkPosSet.add(new ChunkPos(x, z));
             }
-            return null;
-        });
-    }
+        }
 
-    /**
-     * 刷新所有子部件的实体（MMPartEntity）
-     * <p>
-     * 当区块重新加载后，客户端侧的实体可能已被移除。
-     * 此方法在主线程上重建所有已无效的实体，确保客户端收到正确的实体数据。
-     * 仅在服务端调用。
-     */
-    private void refreshAllPartEntities() {
-        for (Part part : partMap.values()) {
-            for (SubPart subPart : part.subParts.values()) {
-                if (subPart.entity == null || subPart.entity.isRemoved()) {
-                    subPart.refreshPartEntity();
+        // 释放不再被载具占用的区块
+        if (heldChunkPositions != null) {
+            for (ChunkPos cp : heldChunkPositions) {
+                if (!newChunkPosSet.contains(cp)) {
+                    SparkLevel.getPhysicsLevel(level).getTerrainManager().releaseVehicleHeldChunkTerrain(cp);
                 }
             }
         }
+
+        // 保活当前占用的区块（每 tick 调用即刷新 ticket 寿命）
+        PhysicsChunkManager mgr = SparkLevel.getPhysicsLevel(level).getTerrainManager();
+        for (ChunkPos chunkPos : newChunkPosSet) {
+            mgr.holdVehicleChunkTerrain(chunkPos, yMinSec, yMaxSec);
+        }
+        this.heldChunkPositions = newChunkPosSet;
+    }
+
+    /**
+     * 检查载具 AABB 覆盖的物理地形是否已全部就绪（已加载 + 已构建 + 已激活）。
+     * 服务端召唤/加载载具后用于决定刚体能否恢复动态，避免地形未就绪时坠落穿透。
+     * 检查范围与保活范围一致（含 AABB 下方一个 section 的支撑地面）。
+     */
+    private boolean isVehicleTerrainReady() {
+        AABB aabb = getAABB();
+        if (aabb.getXsize() <= 0 || aabb.getYsize() <= 0 || aabb.getZsize() <= 0) {
+            return false;
+        }
+        int xMin = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minX));
+        int xMax = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxX));
+        int zMin = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minZ));
+        int zMax = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxZ));
+        int yMinSec = SectionPos.blockToSectionCoord((int) Math.floor(aabb.minY)) - 1;
+        int yMaxSec = SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxY));
+        PhysicsChunkManager mgr = SparkLevel.getPhysicsLevel(level).getTerrainManager();
+        for (int x = xMin; x <= xMax; x++) {
+            for (int z = zMin; z <= zMax; z++) {
+                if (!mgr.isTerrainReady(new ChunkPos(x, z), new IntRange(yMinSec, yMaxSec))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 释放载具占用的全部区块保活（在载具从世界移除时调用）。
+     */
+    public void releaseVehicleHeldChunks() {
+        if (heldChunkPositions == null) return;
+        if (SparkLevel.isSparkLevel(level)) {
+            PhysicsChunkManager mgr = SparkLevel.getPhysicsLevel(level).getTerrainManager();
+            for (ChunkPos cp : heldChunkPositions) {
+                mgr.releaseVehicleHeldChunkTerrain(cp);
+            }
+        }
+        this.heldChunkPositions = null;
     }
 
     public void updateTotalMass() {
@@ -1126,10 +1155,27 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         // 崩溃根因已实测确认为"两运动学体间的关节"（Bullet 不支持），与加入顺序无关。
         // 此处保持先刚体后关节的顺序作为工程惯例：连接器 addToLevel 内部经 submitImmediateTask 保证刚体入世界后再 addJoint
         partMap.values().forEach(Part::addToLevel);
+        if (!level.isClientSide()) {
+            // 服务端：召唤/加载后立即发起下方地形保活，避免地形异步构建期间载具坠落穿透
+            updateVehicleTerrainHold();
+            if (!isVehicleTerrainReady()) {
+                // 地形未就绪：先冻结刚体为 kinematic（不坠地），等待 preTick 复查就绪后恢复动态
+                waitingForTerrain = true;
+                SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+                    for (Part part : partMap.values()) {
+                        for (SubPart subPart : part.subParts.values()) {
+                            subPart.body.setKinematic(true);
+                        }
+                    }
+                    return null;
+                });
+            }
+        }
         this.inLevel = true;
     }
 
     public void onRemoveFromLevel() {
+        releaseVehicleHeldChunks();
         subSystemController.destroy();
         for (Part part : partMap.values()) {
             partNet.removeNode(part);
