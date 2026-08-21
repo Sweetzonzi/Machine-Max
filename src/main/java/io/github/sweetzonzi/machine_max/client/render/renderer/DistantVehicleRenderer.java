@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.renderer;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -19,7 +20,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Brightness;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
@@ -79,7 +79,7 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
                 for (SubPart subPart : part.subParts.values()) {
                     try {
                         Matrix4f worldMatrix = subPart.getRenderWorldPositionMatrix(partialTick);
-                        Vector3f subPartPos = new Vector3f(worldMatrix.m30(), worldMatrix.m31(), worldMatrix.m32());
+                        Vector3f subPartPos = SparkMathKt.toVector3f(subPart.getPosition());
                         double dx = subPartPos.x() - camPos.x;
                         double dy = subPartPos.y() - camPos.y;
                         double dz = subPartPos.z() - camPos.z;
@@ -88,10 +88,10 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
                         // 原版设置渲染距离内的由老管线（PartEntityRenderer）接管，阈值 = 当前渲染距离（方块）
                         if (!FMLLoader.getDist().isClient()) return;
                         int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance();
-                        double renderDist = (renderDistance - (renderDistance*0.09)) * 64;
+                        double renderDist = (renderDistance - (renderDistance*0.09)) * 1024;
                         // 还是这个老的renderDist阈值显示正常些
                         if (distSqr < renderDist) continue;
-                        renderSubPart(subPart, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
+                        renderSubPart(subPart, subPartPos, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
                     } catch (Exception e) {
                         MachineMax.LOGGER.warn("远程载具渲染失败: subPart={}", subPart.name, e);
                     }
@@ -100,7 +100,7 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         }
     }
 
-    private void renderSubPart(SubPart subPart, Matrix4f worldMatrix, Vec3 camPos,
+    private void renderSubPart(SubPart subPart, Vector3f subPartPos, Matrix4f worldMatrix, Vec3 camPos,
                                Matrix4f modelViewMatrix, PoseStack poseStack,
                                MultiBufferSource bufferSource, float partialTick) {
         var modelController = subPart.getModelController();
@@ -117,7 +117,6 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         poseStack.mulPose(worldMatrix);
 
         // 亮度：与近距离载具渲染（PartEntityRenderer）相同机制 — 按 SubPart 世界位置采样方块光/天空光后打包
-        Vector3f subPartPos = new Vector3f(worldMatrix.m30(), worldMatrix.m31(), worldMatrix.m32());
         Level level = Minecraft.getInstance().level;
         BlockPos blockPos = BlockPos.containing(subPartPos.x, subPartPos.y, subPartPos.z);
         int blockLight = level.getBrightness(LightLayer.BLOCK, blockPos);
