@@ -536,7 +536,11 @@ public class Part {
                 model.getBones(), attr.getStartBone(), attr.getEndBones());
 
         // 优先：通过 mass_center locator 获取全局位置
-        OLocator mcLocator = model.getLocator(attr.getMassCenterName());
+        // 注意：只能在 start_bone~end_bones 区间内的骨骼里查找 locator，避免误用其他 subpart 的质心，
+        // 同时规避多个骨骼同名 locator 时全模型 map 按遍历顺序覆盖导致的不确定性。
+        LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
+        for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
+        OLocator mcLocator = locators.get(attr.getMassCenterName());
         if (mcLocator != null) {
             Matrix4f pose = new Matrix4f();
             pose.identity()
@@ -545,6 +549,11 @@ public class Part {
             mcLocator.getBone().applyTransformToLocal(pose, null); // 追溯到模型根骨骼
             org.joml.Vector3f tmp = new org.joml.Vector3f();
             return PhysicsHelperKt.toBVector3f(pose.getTranslation(tmp));
+        } else if (model.getLocator(attr.getMassCenterName()) != null) {
+            // 全模型存在同名质心locator但不在本 subpart 骨骼区间内，提示内容包配置可能有误
+            MachineMax.LOGGER.warn(
+                    "SubPart{}的 mass_center 位于 start_bone({}) 到 end_bones({}) 区间之外，已回退到 massCenterTransform。",
+                    subPart.name, attr.getStartBone(), attr.getEndBones());
         }
 
         // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换

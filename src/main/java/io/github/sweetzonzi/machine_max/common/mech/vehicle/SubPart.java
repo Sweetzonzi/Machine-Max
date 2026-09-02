@@ -2,8 +2,10 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimGroups;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
+import cn.solarmoon.spark_core.animation.anim.origin.Loop;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
@@ -310,7 +312,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimations()));
             if (level.isClientSide() && !animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
+                // 仅自动播放持续动画（loop:true）；一次性事件动画由 playAnim 按名触发，避免零件出现时被预播
                 for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
+                    if (entry.getValue().getLoop() != Loop.TRUE) continue;
                     String name = entry.getKey();
                     var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimations()), name));
                     animInstance.enter();
@@ -1193,6 +1197,33 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     public Map<String, OBone> getBones() {
         return attr.getBones(part.variant);
+    }
+
+    /**
+     * 播放指定名称的动画（仅客户端）。
+     * <p>
+     * 动画取自零件变体自身的动画集（{@code part.variant.getAnimations()}），按名称查找。
+     * 循环行为由动画自身的 {@code loop} 设置决定：缺省（未写 loop）为 ONCE 一次性，播完自停；
+     * 写 {@code loop:true} 则持续循环。
+     * <p>
+     * 播放于 {@link AnimGroups#ACTION} 动作覆盖层，位于 parallel 常驻的 POSTURE 层之上，
+     * 可与常态动画按骨混合、互不干扰；连发重触发时先停本层再进入，确保从 0 重启不叠堆。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（20tps）。
+     *
+     * @param animName 动画名（对应 variant 动画集中的键，例如 "recoil_2a42"）
+     */
+    public void playAnim(String animName) {
+        if (!level.isClientSide()) return;
+        ModelIndex index = new ModelIndex("part", part.variant.getAnimations());
+        OAnimationSet set = OAnimationSet.getOrEmpty(index);
+        if (!set.hasAnimation(animName)) {
+            MachineMax.LOGGER.warn("[SubPart {}-{}] 未找到动画 {}", part.name, name, animName);
+            return;
+        }
+        AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
+        instance.setGroup(AnimGroups.ACTION);
+        instance.independentEnter();
     }
 
     @Override
