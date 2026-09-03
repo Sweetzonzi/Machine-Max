@@ -55,6 +55,13 @@ public class SubPartAttr {
     // 运行时缓存
     @Getter(value = AccessLevel.PRIVATE)
     private Map<String, OBone> bonesCache = null;
+    /**
+     * 运行时缓存：自动排除骨骼列表。
+     * 由 VariantAttr 装配时根据模型骨骼层级计算，内容为本子部件所有"后代子部件"的 start_bone。
+     * 用于在骨骼过滤时自动剔除，避免嵌套子部件的骨骼被子部件重复宣称。
+     */
+    @Getter(value = AccessLevel.PRIVATE)
+    private List<String> autoEndBones = List.of();
     public CompoundCollisionShape hitBoxShape = null;
     public CompoundCollisionShape interactBoxShape = null;
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
@@ -140,7 +147,7 @@ public class SubPartAttr {
             // 加载模型骨骼
             Map<String, OBone> bones = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
-                    startBone, endBones);
+                    startBone, getEffectiveEndBones());
             if (bones.isEmpty()) throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             // 获取并储存定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
@@ -291,7 +298,7 @@ public class SubPartAttr {
             // 加载模型骨骼
             Map<String, OBone> bones = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
-                    startBone, endBones);
+                    startBone, getEffectiveEndBones());
             // 获取定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
@@ -336,13 +343,40 @@ public class SubPartAttr {
         if (bonesCache == null) {
             bonesCache = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", variant.getModel())).getBones(),
-                    startBone, endBones);
+                    startBone, getEffectiveEndBones());
         }
         return bonesCache;
     }
 
     /**
-     * 将骨骼列表过滤，只保留在指定骨骼之间的骨骼
+     * 设置自动排除骨骼列表（由 VariantAttr 装配时调用）。
+     * @param autoEndBones 本子部件所有后代子部件的 start_bone 列表
+     */
+    void setAutoEndBones(List<String> autoEndBones) {
+        this.autoEndBones = autoEndBones == null ? List.of() : autoEndBones;
+    }
+
+    /**
+     * 获取真正用于骨骼过滤的结束骨骼列表：配置的 end_bones 与运行时自动排除骨骼（后代子部件 start_bone）的并集。
+     * 在过滤骨骼时使用本方法，确保嵌套子部件的骨骼不会被多个子部件重复宣称。
+     * @return 合并去重后的结束骨骼列表
+     */
+    public List<String> getEffectiveEndBones() {
+        if (autoEndBones.isEmpty()) return endBones;
+        if (endBones.isEmpty()) return autoEndBones;
+        LinkedHashSet<String> merged = new LinkedHashSet<>(endBones);
+        merged.addAll(autoEndBones);
+        return List.copyOf(merged);
+    }
+
+    /**
+     * 将骨骼列表过滤，只保留在指定骨骼之间的骨骼。
+     * <p>规则：</p>
+     * <ul>
+     *   <li>起始骨骼本身无条件保留；</li>
+     *   <li>起始骨骼范围（start_bone 为空表示整棵模型）内的骨骼，若落在任一 end_bones 骨骼的子树内则被排除；</li>
+     *   <li>start_bone 为空时同样会递归排除 end_bones 的后代，而不是仅跳过结束骨骼本身。</li>
+     * </ul>
      *
      * @param bones     骨骼列表
      * @param startBone 起始骨骼名称
@@ -351,28 +385,27 @@ public class SubPartAttr {
      */
     public static Map<String, OBone> filterBones(LinkedHashMap<String, OBone> bones, String startBone, List<String> endBones) {
         if (startBone.isEmpty() && endBones.isEmpty()) return bones;
-        else {
-            LinkedHashMap<String, OBone> filteredBones = new LinkedHashMap<>();
-            for (Map.Entry<String, OBone> entry : bones.entrySet()) {
-                String boneName = entry.getKey();
-                OBone bone = entry.getValue();
-                if (endBones.contains(boneName)) continue; // 跳过子骨骼
-                if (boneName.equals(startBone) || startBone.isEmpty()) {
-                    filteredBones.put(boneName, bone);
-                } else if (bone.isChildOf(startBone)) {
-                    // 排除子骨骼
-                    boolean isExcluded = false;
-                    for (String excludedBone : endBones) {
-                        if (bone.isChildOf(excludedBone)) {
-                            isExcluded = true;
-                            break;
-                        }
+        LinkedHashMap<String, OBone> filteredBones = new LinkedHashMap<>();
+        for (Map.Entry<String, OBone> entry : bones.entrySet()) {
+            String boneName = entry.getKey();
+            OBone bone = entry.getValue();
+            if (endBones.contains(boneName)) continue; // 跳过结束骨骼本身
+            // 判断是否落在起始范围之外（空 start_bone 表示整棵模型都算在内）
+            if (!boneName.equals(startBone) && !startBone.isEmpty() && !bone.isChildOf(startBone)) continue;
+            // 起始骨骼本身无条件保留；其余骨骼需排除落在结束骨骼子树内的部分
+            if (!boneName.equals(startBone)) {
+                boolean isExcluded = false;
+                for (String excludedBone : endBones) {
+                    if (bone.isChildOf(excludedBone)) {
+                        isExcluded = true;
+                        break;
                     }
-                    if (!isExcluded) filteredBones.put(boneName, bone);
                 }
+                if (isExcluded) continue;
             }
-            return filteredBones;
+            filteredBones.put(boneName, bone);
         }
+        return filteredBones;
     }
 
     /**

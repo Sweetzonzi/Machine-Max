@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
@@ -89,9 +90,43 @@ public class VariantAttr {
         if (getTextures().isEmpty()) {
             throw new IllegalArgumentException(Component.translatable("error.machine_max.part.missing_textures").getString());
         }
+        // 为每个子部件计算"自动排除骨骼"（其所有后代子部件的 start_bone），
+        // 使嵌套子部件的骨骼不会被多个子部件重复宣称。需在构建碰撞体积之前完成，
+        // 因为 getCollisionShape 内部会将配置 end_bones 与自动排除骨骼合并后再过滤。
+        computeAutoEndBones(oModel);
         // 构建并缓存部件碰撞体积
         for (SubPartAttr subPartAttr : subParts.values()) {
             subPartAttr.getCollisionShape(this);
+        }
+    }
+
+    /**
+     * 根据模型骨骼层级，为每个子部件计算其所有后代子部件的 start_bone，
+     * 作为该子部件的"自动排除骨骼"写入运行时缓存。
+     * 逻辑与插件侧的 auto_end_bones 预览一致，但在此处作为权威数据在运行时计算。
+     * @param oModel 部件的模型
+     */
+    private void computeAutoEndBones(OModel oModel) {
+        Map<String, OBone> allBones = oModel.getBones();
+        for (SubPartAttr subPart : subParts.values()) {
+            List<String> auto = new ArrayList<>();
+            String startBone = subPart.getStartBone();
+            for (SubPartAttr other : subParts.values()) {
+                if (other == subPart) continue;
+                String otherStart = other.getStartBone();
+                if (otherStart == null || otherStart.isEmpty()) continue;
+                // 当本子部件 start_bone 为空（占据整个模型）时，其余所有子部件都应被排除；
+                // 否则仅排除那些 start_bone 是本子部件 start_bone 子代的后代子部件。
+                boolean isDescendant;
+                if (startBone.isEmpty()) {
+                    isDescendant = true;
+                } else {
+                    OBone otherBone = allBones.get(otherStart);
+                    isDescendant = otherBone != null && otherBone.isChildOf(startBone);
+                }
+                if (isDescendant) auto.add(otherStart);
+            }
+            subPart.setAutoEndBones(auto);
         }
     }
 

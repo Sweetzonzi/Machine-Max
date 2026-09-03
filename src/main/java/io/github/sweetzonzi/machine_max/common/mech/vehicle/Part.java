@@ -533,7 +533,7 @@ public class Part {
     private Vector3f computeSubPartGlobalMassCenter(SubPart subPart, OModel model) {
         SubPartAttr attr = subPart.attr;
         Map<String, OBone> bones = SubPartAttr.filterBones(
-                model.getBones(), attr.getStartBone(), attr.getEndBones());
+                model.getBones(), attr.getStartBone(), attr.getEffectiveEndBones());
 
         // 优先：通过 mass_center locator 获取全局位置
         // 注意：只能在 start_bone~end_bones 区间内的骨骼里查找 locator，避免误用其他 subpart 的质心，
@@ -553,7 +553,7 @@ public class Part {
             // 全模型存在同名质心locator但不在本 subpart 骨骼区间内，提示内容包配置可能有误
             MachineMax.LOGGER.warn(
                     "SubPart{}的 mass_center 位于 start_bone({}) 到 end_bones({}) 区间之外，已回退到 massCenterTransform。",
-                    subPart.name, attr.getStartBone(), attr.getEndBones());
+                    subPart.name, attr.getStartBone(), attr.getEffectiveEndBones());
         }
 
         // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换
