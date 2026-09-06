@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.external.js.hook;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.external.js.InputSignalProvider;
@@ -67,18 +66,6 @@ public class KeyHooks {
         }
 
     }
-
-    public static final ImmutableMap<Integer, OtherKeyType> actionCode$otherKeyTypeMapping =
-            ImmutableMap.of(
-                    0, OtherKeyType.LeftMouseButton,
-                    1, OtherKeyType.RightMouseButton,
-                    2, OtherKeyType.MiddleMouseButton,
-                    3, OtherKeyType.MouseButton4,
-                    4, OtherKeyType.MouseButton5,
-                    5, OtherKeyType.MouseButton6,
-                    6, OtherKeyType.MouseButton7,
-                    7, OtherKeyType.MouseButton8
-            );
 
     public enum OtherKeyType {
         LeftMouseButton("key.mouse.left"),
@@ -611,10 +598,10 @@ public class KeyHooks {
         int button = event.getButton();
         int action = event.getAction();
 
-        String keyName = "key.mouse." + button;
-        if (actionCode$otherKeyTypeMapping.containsKey(button)) {
-            keyName = Objects.requireNonNull(actionCode$otherKeyTypeMapping.get(button)).name();
-        }
+        // 统一使用原版键名（如 key.mouse.left / key.mouse.middle / key.mouse.4），
+        // 与 EVENT(KeyMapping) 中 mapping.getKey().getName()、onKeyInput 保持一致，
+        // 避免鼠标按键因键名错位（旧代码写入 LeftMouseButton 等枚举名）导致事件无法触发
+        String keyName = InputConstants.Type.MOUSE.getOrCreate(button).getName();
 
         if (!HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
 
