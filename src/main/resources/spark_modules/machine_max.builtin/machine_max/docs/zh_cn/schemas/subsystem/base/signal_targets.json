@@ -7,7 +7,7 @@
   "additionalProperties": {
     "type": "array",
     "items": { "type": "string" },
-    "description": "目标名称列表，可以是子系统名称、连接点名称、'part'或'vehicle'。"
+    "description": "目标名称列表，可以是子系统名称、连接点名称、'part'或'global'。"
   },
   "default": {},
   "examples": [

@@ -88,6 +88,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.part.connector_locator_not_found", "Failed to find locator %2$s's locator %3$s in the model of part %1$");
         this.add("error.machine_max.part.invalid_connector_type", "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");
+        this.add("error.machine_max.part.duplicate_name", "Duplicate name %1$s in part variant %4$s: %2$s conflicts with %3$s");
+        this.add("error.machine_max.part.reserved_name", "Name %1$s (%2$s of %3$s) in part variant %4$s is a reserved signal address and cannot be used for connectors/subsystems/interact boxes");
         //Hint messages
         this.add("toast.machine_max.research_complete", "Research Complete!");
         this.add("message.machine_max.control_group_switched", "Control Group: %s");

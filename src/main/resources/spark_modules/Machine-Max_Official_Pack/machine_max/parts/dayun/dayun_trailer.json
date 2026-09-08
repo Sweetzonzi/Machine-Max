@@ -32,7 +32,7 @@
           "TrailerSupportHitBox": {
             "type": "box",
             "material": "machine_max:structural_steel",
-            "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
+            "condition": "!local.has_connector('connector.machine_max.chassis_connection')"
           }
         },
         "connectors": {

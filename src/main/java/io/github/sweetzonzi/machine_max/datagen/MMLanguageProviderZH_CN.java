@@ -88,6 +88,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.part.connector_locator_not_found", "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s");
         this.add("error.machine_max.part.invalid_connector_type", "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"");
+        this.add("error.machine_max.part.duplicate_name", "部件变体 %4$s 内名称 %1$s 重复：%2$s 与 %3$s 冲突");
+        this.add("error.machine_max.part.reserved_name", "部件变体 %4$s 内名称 %1$s（%3$s 的 %2$s）为信号保留地址，不得用作连接点/子系统/交互区名");
         // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("message.machine_max.control_group_switched", "已切换控制组：%s");

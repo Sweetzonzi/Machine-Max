@@ -24,7 +24,7 @@ public class ControlBinding {
     /** 输出频道名，信号将被发送到此频道 */
     public final String channel;
 
-    /** 信号目标名列表，默认 ["vehicle"] 走总线广播；可指定具体接收者走路由 */
+    /** 信号目标名列表，默认 ["global"] 走总线广播；可指定具体接收者走路由 */
     public final List<String> targets;
 
     /** TOGGLE 模式下的运行时状态，持久化保存 */
@@ -34,7 +34,7 @@ public class ControlBinding {
         this.trigger = trigger;
         this.action = action != null ? action : BindingAction.PRESS;
         this.channel = channel != null ? channel : "";
-        this.targets = (targets != null && !targets.isEmpty()) ? List.copyOf(targets) : List.of("vehicle");
+        this.targets = (targets != null && !targets.isEmpty()) ? List.copyOf(targets) : List.of("global");
     }
 
     /** 获取 TOGGLE 的当前状态 */
@@ -57,7 +57,7 @@ public class ControlBinding {
             Codec.STRING.fieldOf("trigger").forGetter(b -> b.trigger),
             BindingAction.CODEC.fieldOf("action").forGetter(b -> b.action),
             Codec.STRING.fieldOf("channel").forGetter(b -> b.channel),
-            Codec.STRING.listOf().optionalFieldOf("targets", List.of("vehicle")).forGetter(b -> b.targets)
+            Codec.STRING.listOf().optionalFieldOf("targets", List.of("global")).forGetter(b -> b.targets)
     ).apply(instance, ControlBinding::new));
 
     private static final StreamCodec<ByteBuf, List<String>> TARGETS_STREAM_CODEC = new StreamCodec<>() {

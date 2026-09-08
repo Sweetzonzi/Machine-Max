@@ -9,8 +9,8 @@
 ```
 vehicle/
 ├── VehicleCore.java            # 聚合根（1233行），实现 IPartAssembly
-├── Part.java                   # 部件容器（863行），管理 SubPart 清单
-├── SubPart.java                # 零件实体（1123行），实现 IAnimatable/ISubsystemHost/ISignalReceiver
+├── Part.java                   # 部件聚合 + 动画体（IAnimatable<Part>），持有 ModelController/AnimController/Molang 与 SubPart 清单
+├── SubPart.java                # 零件实体（刚体 + 骨骼切分 + 渲染视图），实现 ISubsystemHost
 ├── PartType.java               # 部件类型数据（JSON Codec + StreamCodec）
 ├── IPartAssembly.java          # 装配体顶层接口（解耦 Part↔VehicleCore）
 ├── DamageModifier.java         # 数据驱动的伤害修改器
@@ -86,7 +86,7 @@ vehicle/
 
 ```
 VehicleCore (IPartAssembly)
-  ├── 拥有 N 个 Part
+  ├── 拥有 N 个 Part（动画体：ModelController + AnimController + 共享 ModelPose + Molang 上下文）
   │     └── 每个 Part 拥有 N 个 SubPart
   │           ├── 刚体（Bullet Physics via Spark-Core）
   │           ├── N 个 AbstractConnector（连接点）
@@ -106,6 +106,10 @@ VehicleCore (IPartAssembly)
 - **伤害传递链**：外部伤害 → SubPart → Part（折算）→ VehicleCore（累计）。
 - **连接器对偶性**：一次连接涉及 2 个 Connector（同类型配对），每个 SubPart 持有一组。
 - **序列化**：使用 Mojang Codec（JSON） + StreamCodec（网络）。`data/` 包处理全量序列化。
+- **动画体归属**：`Part implements IAnimatable<Part>`，独占共享 `ModelPose`；由 `VehicleCore` 驱动 `Part.onTick()`（主线程发布）/ `Part.onPrePhysicsTick()`（物理线程混合），双端运行且两侧同门控（`inLoadedChunk`）。`setChanged()` 唯一发布者。
+- **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，`getName()` 仅身份/日志。保留地址 `"local"` = Part、`"global"` = 装配体。
+- **Molang 命名空间**：`local.*` = Part（耐久取 `rootSubPart`、按名寻址连接点/子系统），`global.*` = 装配体（HP/能源/信号存储）。
+- **涂装 Part 级统一**：`Part.applyTexture()` 只做本地状态变更，广播由调用方负责（`SprayCanItem` / `PartPaintPayload`）。
 
 ## 反模式
 
@@ -114,6 +118,7 @@ VehicleCore (IPartAssembly)
 - **严禁混用 JME 和 JOML**：物理用 JME，渲染用 JOML。通过 `SparkMathKt.*` 转换。
 - **严禁忽略 `DestroyableRigidObject.updateLock`**：同步期间置 `true` 防反馈循环。
 - **严禁在遍历 SubPart 列表时修改**：使用快照迭代器或 `CopyOnWriteArraySet`。
+- **严禁让 `MMPartEntity` 重新实现 `IEntityAnimatable`**：会产生第二个动画发布者，破坏共享 `ModelPose` 的插值（渲染冻结/抖动）。
 
 ## 已知问题
 

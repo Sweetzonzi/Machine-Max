@@ -95,27 +95,27 @@
             },
             "speed_outputs": {
               "vehicle_speed": [
-                "vehicle"
+                "global"
               ]
             },
             "throttle_outputs": {
               "throttle": [
-                "vehicle"
+                "global"
               ]
             },
             "brake_outputs": {
               "brake": [
-                "vehicle"
+                "global"
               ]
             },
             "steering_outputs": {
               "steering": [
-                "vehicle"
+                "global"
               ]
             },
             "handbrake_outputs": {
               "handbrake": [
-                "vehicle"
+                "global"
               ]
             }
           },
@@ -125,7 +125,7 @@
             "power_output": "subsystem.machine_max.gearbox",
             "speed_outputs": {
               "engine_speed": [
-                "vehicle"
+                "global"
               ]
             }
           },
@@ -135,7 +135,7 @@
             "power_output": "subsystem.machine_max.transmission",
             "gear_outputs": {
               "gear": [
-                "vehicle"
+                "global"
               ]
             }
           },

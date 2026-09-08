@@ -4,13 +4,27 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public interface ISignalReceiver {
-    String getName();
+    /**
+     * 返回此接收者在信号路由中的寻址名（目标名）。
+     * <p>与身份名区分：身份名仅用于日志 / 翻译，不参与任何路由；路由一律使用本方法。
+     * 保留地址：{@code "local"}（Part）、{@code "global"}（装配体）。</p>
+     */
+    String getSignalAddress();
 
     ConcurrentMap<String, SignalChannel> getSignalInputChannels();
+
+    /**
+     * 返回此接收者的信号存储表，供 Molang 的 {@code get / get_str} 查询。
+     * <p>无存储的接收者返回 {@code null}，发送端只做一次判空。</p>
+     */
+    default Map<String, Object> getSignalStorage() {
+        return null;
+    }
 
     default SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         return SignalResult.PASS;

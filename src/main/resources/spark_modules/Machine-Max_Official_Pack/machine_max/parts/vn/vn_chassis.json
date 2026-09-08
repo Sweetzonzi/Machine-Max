@@ -58,7 +58,7 @@
             "definition": "machine_max:vn_motor",
             "power_output": "subsystem.machine_max.transmission",
             "speed_outputs": {
-              "engine_speed": ["subpart", "vehicle"]
+              "engine_speed": ["local", "global"]
             }
           },
           "subsystem.machine_max.transmission": {

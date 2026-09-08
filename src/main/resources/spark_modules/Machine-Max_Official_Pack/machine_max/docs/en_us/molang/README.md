@@ -4,8 +4,8 @@ Machine-Max uses the Molang scripting system to control vehicle animations, HUD 
 
 ## Table of Contents
 
-- [Subpart Methods](./subpart.md) - Methods and properties related to parts
-- [Vehicle Methods](./vehicle.md) - Methods and properties related to vehicles
+- [Local Methods](./local.md) - Methods and properties related to parts
+- [Global Methods](./global.md) - Methods and properties related to vehicles
 - [Math Functions](./math.md) - Mathematical calculation functions
 - [Usage Examples](./examples.md) - Practical usage examples
 
@@ -31,7 +31,7 @@ v.a == 3.0  // Equal to comparison
 variable > 0 ? 1.0 : 0.0
 
 // Practical application: warning light based on subsystem status
-subpart.has_subsystem('engine') && subpart.subsystem_destroyed('engine') ? 1.0 : 0.0
+local.has_subsystem('engine') && local.subsystem_destroyed('engine') ? 1.0 : 0.0
 
 // Nested usage
 v.fuel_level > 50 ? 0.0 : (v.fuel_level > 10 ? 0.5 : 1.0)
@@ -40,13 +40,13 @@ v.fuel_level > 50 ? 0.0 : (v.fuel_level > 10 ? 0.5 : 1.0)
 ### Null Coalescing Operator (??)
 ```molang
 // Basic syntax: value ?? default_value
-vehicle.get('signal_name')??0.0
+global.get('signal_name')??0.0
 
 // Practical application: handling potentially missing signals
-math.abs(vehicle.get('vehicle_speed')??0.0) * 3.6
+math.abs(global.get('vehicle_speed')??0.0) * 3.6
 
 // Chained usage
-vehicle.get('engine_speed')??vehicle.get('motor_speed')??0.0
+global.get('engine_speed')??global.get('motor_speed')??0.0
 ```
 
 ### Function Calls
@@ -56,8 +56,8 @@ math.sin(angle)
 math.floor(value)
 
 // Vehicle and part methods
-vehicle.get('steering')
-subpart.has_subsystem('engine')
+global.get('steering')
+local.has_subsystem('engine')
 ```
 
 ## Common Patterns
@@ -65,24 +65,24 @@ subpart.has_subsystem('engine')
 ### Signal Retrieval and Safe Access
 ```molang
 // Safe signal value retrieval
-vehicle.get('signal_name')??default_value
+global.get('signal_name')??default_value
 
 // Conditional access after checking
-subpart.has_subsystem('engine') ? subpart.subsystem_durability('engine') : 0.0
+local.has_subsystem('engine') ? local.subsystem_durability('engine') : 0.0
 ```
 
 ### Unit Conversion
 ```molang
 // Meters per second to kilometers per hour
-vehicle.get('vehicle_speed')??0.0 * 3.6
+global.get('vehicle_speed')??0.0 * 3.6
 
 // Radians per second to revolutions per minute (RPM)
-vehicle.get('engine_speed')??0.0 * 30 / math.pi
+global.get('engine_speed')??0.0 * 30 / math.pi
 ```
 
 ## Next Steps
 
-- View [Subpart Methods](./subpart.md) to learn about all part-related methods
-- View [Vehicle Methods](./vehicle.md) to learn about vehicle signal retrieval methods
+- View [Local Methods](./local.md) to learn about all part-related methods
+- View [Global Methods](./global.md) to learn about vehicle signal retrieval methods
 - View [Math Functions](./math.md) to learn about available mathematical calculation functions
 - View [Usage Examples](./examples.md) to learn practical application examples

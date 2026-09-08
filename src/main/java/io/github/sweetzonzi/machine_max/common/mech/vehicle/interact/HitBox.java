@@ -26,7 +26,7 @@ public class HitBox {
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
         alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
-        this.hitBoxCondition = alwaysActive ? null : MolangContextRegistry.compile(attr.condition, subPart.getSparkMolangContext());
+        this.hitBoxCondition = alwaysActive ? null : MolangContextRegistry.compile(attr.condition, subPart.part.getSparkMolangContext());
     }
 
     /**
@@ -39,7 +39,7 @@ public class HitBox {
             return;
         }
         try {
-            active = hitBoxCondition.evaluate(subPart.getSparkMolangContext()) > 0;
+            active = hitBoxCondition.evaluate(subPart.part.getSparkMolangContext()) > 0;
         } catch (Exception e) {
             io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn(
                     "Failed to evaluate condition for HitBox '{}' in part '{}-{}': {}",

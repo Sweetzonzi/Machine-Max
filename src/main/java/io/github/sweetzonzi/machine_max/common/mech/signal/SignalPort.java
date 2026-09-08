@@ -34,6 +34,12 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
         this.signalTranslation = signalTranslation;
     }
 
+    /** 信号端口以连接点名为寻址名 */
+    @Override
+    public String getSignalAddress() {
+        return name;
+    }
+
     /**
      * 信号实际发生变化时，将信号连同发送者传播至与自己连接的对侧接口的信号传输目标，并将接收到的信号频道名转译为对侧接口配置的目标频道名
      *

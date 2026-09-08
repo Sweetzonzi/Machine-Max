@@ -30,7 +30,7 @@ public class GuiToggleAction extends AbstractGuiAction {
     public static final MapCodec<GuiToggleAction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.STRING.fieldOf("label").forGetter(a -> a.label),
             Codec.STRING.fieldOf("channel").forGetter(a -> a.channel),
-            Codec.STRING.listOf().optionalFieldOf("targets", List.of("vehicle")).forGetter(a -> a.targets),
+            Codec.STRING.listOf().optionalFieldOf("targets", List.of("global")).forGetter(a -> a.targets),
             Codec.BOOL.optionalFieldOf("active", false).forGetter(a -> a.active)
     ).apply(instance, (label, channel, targets, active) -> {
         var a = new GuiToggleAction(label, channel, targets);

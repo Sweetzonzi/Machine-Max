@@ -5,7 +5,7 @@
 			"loop": true,
 			"bones": {
 				"SteeringWheel": {
-					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.left_front_wheel', 1) + local.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
 				}
 			}
 		}

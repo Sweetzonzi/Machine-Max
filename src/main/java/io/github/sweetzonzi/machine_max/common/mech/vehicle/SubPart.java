@@ -1,15 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.anim.AnimController;
-import cn.solarmoon.spark_core.animation.anim.AnimGroups;
-import cn.solarmoon.spark_core.animation.anim.AnimInstance;
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
-import cn.solarmoon.spark_core.animation.anim.origin.Loop;
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
-import cn.solarmoon.spark_core.animation.model.ModelController;
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
@@ -20,8 +10,6 @@ import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import cn.solarmoon.spark_core.molang.SparkMolangContext;
-import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
@@ -34,8 +22,6 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
-import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IModularSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
@@ -61,7 +47,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
@@ -84,28 +69,22 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @EventBusSubscriber
 @Getter
-public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
-    //模型、动画与渲染
-    public final ModelController modelController;
-    public final AnimController animController;
-    public String textureName;//当前使用的纹理的索引(用于切换纹理)
+public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
+    //渲染与交互
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
     //游戏机制
@@ -116,10 +95,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final InteractBoxes interactBoxes;//交互判定
     public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
-    public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
-    public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
-    //MoLang 求值上下文
-    private final MechMolangContext molangContext = new MechMolangContext(this);
     /** 子系统额外质量映射表（子系统名称 → 额外质量值 kg），由 ISubsystemHost.updateExtraMass() 管理 */
     private final ConcurrentHashMap<String, Float> extraMassMap = new ConcurrentHashMap<>();
     //物理
@@ -148,12 +123,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         this.part = part;
         this.name = name;
         this.attr = attr;
-        Map.Entry<String, ResourceLocation> texture = part.variant.getTextures().entrySet().iterator().next();
-        this.textureName = texture.getKey();
-        this.modelController = new ModelController(this);
-        this.animController = new AnimController(this);
-        this.getModelController().setModel(new ModelIndex("part", part.variant.getModel()));
-        this.getModelController().setTextureLocation(part.variant.getTexture(textureName));
         if (!attr.interactBoxes.isEmpty()) {
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant));
         } else this.interactBoxes = null;
@@ -222,22 +191,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             this.entity.remove(Entity.RemovalReason.DISCARDED);
             this.entity = null;
         }
-    }
-
-    /**
-     * 按给定的纹理名切换部件纹理
-     * 可用于为拥有多个纹理的部件选择外观
-     *
-     * @param name 纹理名
-     */
-    public void switchTexture(String name) {
-        if (part.variant.getTextures().size() == 1) return;
-        this.textureName = name;
-        this.getModelController().setTextureLocation(part.variant.getTexture(name));
-        //同步客户端
-        if (!getLevel().isClientSide() && part.assembly != null)
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(),
-                    new PartPaintPayload(this.getId(), this.textureName));
     }
 
     public void refreshPartEntity() {
@@ -309,16 +262,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 Vector3f center = PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation();
                 entity.boundingBox.set(box);
                 entity.bodyCenter.set(center);
-            }
-            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimations()));
-            if (level.isClientSide() && !animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
-                // 仅自动播放持续动画（loop:true）；一次性事件动画由 playAnim 按名触发，避免零件出现时被预播
-                for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
-                    if (entry.getValue().getLoop() != Loop.TRUE) continue;
-                    String name = entry.getKey();
-                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimations()), name));
-                    animInstance.enter();
-                }
             }
         }
         collisionHandler.effectManager.tick();
@@ -1121,22 +1064,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     @Override
-    public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
-        return signalInputChannels;
-    }
-
-    @Override
-    public SubPart getAnimatable() {
-        return this;
-    }
-
-    @Nullable
-    @Override
-    public Level getAnimLevel() {
-        return getLevel();
-    }
-
-    @Override
     public SubPart getSubPart() {
         return this;
     }
@@ -1173,57 +1100,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
-    @NotNull
-    @Override
-    public ModelIndex getDefaultModelIndex() {
-        return new ModelIndex("part", part.variant.getModel());
-    }
-
-    /**
-     * 获取 MoLang 求值上下文，用于解析 subpart.* 等自定义 MoLang 表达式。
-     * 每次调用会自动重置上下文以匹配当前零件状态。
-     *
-     * @return MechMolangContext 实例
-     */
-    public SparkMolangContext<IAnimatable<SubPart>> getSparkMolangContext() {
-        molangContext.reset(this, 0);
-        return molangContext;
-    }
-
-    @Override
-    public @NotNull MechMolangContext getMolangContext() {
-        return molangContext;
-    }
-
     public Map<String, OBone> getBones() {
         return attr.getBones(part.variant);
-    }
-
-    /**
-     * 播放指定名称的动画（仅客户端）。
-     * <p>
-     * 动画取自零件变体自身的动画集（{@code part.variant.getAnimations()}），按名称查找。
-     * 循环行为由动画自身的 {@code loop} 设置决定：缺省（未写 loop）为 ONCE 一次性，播完自停；
-     * 写 {@code loop:true} 则持续循环。
-     * <p>
-     * 播放于 {@link AnimGroups#ACTION} 动作覆盖层，位于 parallel 常驻的 POSTURE 层之上，
-     * 可与常态动画按骨混合、互不干扰；连发重触发时先停本层再进入，确保从 0 重启不叠堆。
-     * <p>
-     * <b>调用线程：</b>客户端主线程（20tps）。
-     *
-     * @param animName 动画名（对应 variant 动画集中的键，例如 "recoil_2a42"）
-     */
-    public void playAnim(String animName) {
-        if (!level.isClientSide()) return;
-        ModelIndex index = new ModelIndex("part", part.variant.getAnimations());
-        OAnimationSet set = OAnimationSet.getOrEmpty(index);
-        if (!set.hasAnimation(animName)) {
-            MachineMax.LOGGER.warn("[SubPart {}-{}] 未找到动画 {}", part.name, name, animName);
-            return;
-        }
-        AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
-        instance.setGroup(AnimGroups.ACTION);
-        instance.independentEnter();
     }
 
     @Override
@@ -1242,7 +1120,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * 轻量世界坐标查询——直接取 transform 的翻译分量，零矩阵分配。
      * 用于 LOD 系统的距离判断，避免构建完整 Matrix4f。
      */
-    @Override
     public Vec3 getRenderPosition(Number partialTicks) {
         var t = transform.getTranslation(); // JME Vector3f，字段直读，零分配
         return new Vec3(t.x, t.y, t.z);
@@ -1256,11 +1133,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     public Matrix4f getRenderWorldPositionMatrix(@NotNull Number number) {
         return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().invert().toTransformMatrix()));
-    }
-
-    @Override
-    public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
-        return signalStorage;
     }
 }
 

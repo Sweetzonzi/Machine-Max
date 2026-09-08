@@ -11,13 +11,13 @@ This document provides practical usage examples of Molang in Machine-Max, helpin
 ```json
 {
   "axisRightFront": {
-    "rotation": [0, 0, "math.atan2(subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16,20)"]
+    "rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.right_front_wheel', 1)*16,20)"]
   },
   "rodLeftFront": {
-    "rotation": ["-65.7725+math.atan2(20-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,9)", 0, 0]
+    "rotation": ["-65.7725+math.atan2(20-local.connector_offset('connector.machine_max.left_front_wheel', 1)*16,9)", 0, 0]
   },
   "rodLeftFrontInner": {
-    "scale": [1, "math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,2)+81)/22", 1]
+    "scale": [1, "math.sqrt(math.pow(20-local.connector_offset('connector.machine_max.left_front_wheel', 1)*16,2)+81)/22", 1]
   }
 }
 ```
@@ -26,7 +26,7 @@ This document provides practical usage examples of Molang in Machine-Max, helpin
 
 1. **Suspension Height Retrieval**:
    ```molang
-   subpart.connector_offset('connector.machine_max.left_front_wheel', 1)
+   local.connector_offset('connector.machine_max.left_front_wheel', 1)
    ```
    - Gets Y-axis offset of left front wheel connector (suspension height)
    - Return value in meters
@@ -63,7 +63,7 @@ This suspension system simulates real double-wishbone suspension:
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }
@@ -73,7 +73,7 @@ This suspension system simulates real double-wishbone suspension:
 
 1. **Engine Speed Retrieval**:
    ```molang
-   vehicle.get('engine_speed')??0
+   global.get('engine_speed')??0
    ```
    - Retrieves engine speed signal
    - `??0` is null coalescing operator, ensures default value
@@ -115,9 +115,9 @@ This suspension system simulates real double-wishbone suspension:
 {
   "speed": {
     "molang_args": [
-      "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-      "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-      "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+      "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+      "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+      "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
     ]
   }
 }
@@ -127,7 +127,7 @@ This suspension system simulates real double-wishbone suspension:
 
 1. **Speed Retrieval and Unit Conversion**:
    ```molang
-   speed_kmh = math.abs(vehicle.get('vehicle_speed')??0.0) * 3.6
+   speed_kmh = math.abs(global.get('vehicle_speed')??0.0) * 3.6
    ```
    - Retrieves vehicle speed (meters per second)
    - Converts to kilometers per hour: km/h = m/s × 3.6
@@ -166,7 +166,7 @@ This method decomposes three-digit speed into three separate numbers, making it 
 ```json
 {
   "rot2": {
-    "rotation": [0, 0, "vehicle.get('steering')*225"]
+    "rotation": [0, 0, "global.get('steering')*225"]
   }
 }
 ```
@@ -175,7 +175,7 @@ This method decomposes three-digit speed into three separate numbers, making it 
 
 1. **Steering Signal Retrieval**:
    ```molang
-   steering_input = vehicle.get('steering')
+   steering_input = global.get('steering')
    ```
    - Retrieves steering input signal
    - Range: -1.0 (left turn) to 1.0 (right turn)
@@ -199,16 +199,16 @@ This method decomposes three-digit speed into three separate numbers, making it 
 ### 1. Error Handling
 ```molang
 // Use null coalescing operator
-vehicle.get('signal_name')??default_value
+global.get('signal_name')??default_value
 
 // Check subsystem existence
-subpart.has_subsystem('engine') ? subpart.subsystem_durability('engine') : 0.0
+local.has_subsystem('engine') ? local.subsystem_durability('engine') : 0.0
 ```
 
 ### 2. Performance Optimization
 ```molang
 // Avoid repeated calculations
-let speed = math.abs(vehicle.get('vehicle_speed')??0.0) * 3.6;
+let speed = math.abs(global.get('vehicle_speed')??0.0) * 3.6;
 math.floor(speed / 100), math.floor(math.mod(speed, 100) / 10), math.floor(math.mod(speed, 10))
 
 // Use simple mathematical operations
@@ -218,7 +218,7 @@ math.floor(speed / 100), math.floor(math.mod(speed, 100) / 10), math.floor(math.
 ### 3. Readability
 ```molang
 // Use meaningful variable names
-let engine_rpm = math.abs(vehicle.get('engine_speed')??0) * 30 / math.pi;
+let engine_rpm = math.abs(global.get('engine_speed')??0) * 30 / math.pi;
 let max_rpm = 9000;
 let pointer_range = 240;
 let pointer_angle = (engine_rpm / max_rpm) * pointer_range;

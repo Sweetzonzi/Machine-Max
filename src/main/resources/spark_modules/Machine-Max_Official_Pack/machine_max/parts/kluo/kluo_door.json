@@ -26,14 +26,14 @@
             "LeftDoorMirror": { // 后视镜
               "type": "box",
               "subsystem": "subsystem.machine_max.rearview_mirror",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
               "material": "machine_max:glass"
             },
             "LeftFrontGlass": { // 车门玻璃
               "id": "glass",
               "type": "box",
               "subsystem": "subsystem.machine_max.glass",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.glass')",
               "material": "machine_max:glass"
             }
           },
@@ -90,14 +90,14 @@
             "RightDoorMirror": { // 后视镜
               "type": "box",
               "subsystem": "subsystem.machine_max.rearview_mirror",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
               "material": "machine_max:glass"
             },
             "RightFrontGlass": { // 车门玻璃
               "id": "glass",
               "type": "box",
               "subsystem": "subsystem.machine_max.glass",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')", // 仅当前左后车窗玻璃未被摧毁时才生效
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.glass')", // 仅当前左后车窗玻璃未被摧毁时才生效
               "material": "machine_max:glass"
             }
           },

@@ -1,14 +1,14 @@
-# Vehicle Methods
+# Global Methods
 
-The `vehicle` object provides methods to access global vehicle status and signals.
+The `global` object provides methods to access global vehicle status and signals.
 
-## vehicle.get(channel)
+## global.get(channel)
 
 Retrieves the value from the vehicle's signal channel.
 
 ### Syntax
 ```molang
-vehicle.get(channel_name)
+global.get(channel_name)
 ```
 
 ### Parameters
@@ -20,19 +20,19 @@ vehicle.get(channel_name)
 ### Examples
 ```molang
 // Get steering signal
-vehicle.get('steering')
+global.get('steering')
 
 // Get throttle signal
-vehicle.get('throttle')
+global.get('throttle')
 
 // Get brake signal
-vehicle.get('brake')
+global.get('brake')
 
 // Get vehicle speed (meters per second)
-vehicle.get('vehicle_speed')
+global.get('vehicle_speed')
 
 // Get engine speed (radians per second)
-vehicle.get('engine_speed')
+global.get('engine_speed')
 ```
 
 ## Common Signal Channels
@@ -62,13 +62,13 @@ Use steering signal to control steering wheel rotation in AE86 animation file:
 ```json
 {
   "rot2": {
-    "rotation": [0, 0, "vehicle.get('steering')*225"]
+    "rotation": [0, 0, "global.get('steering')*225"]
   }
 }
 ```
 
 **Explanation**: 
-- `vehicle.get('steering')` retrieves steering input value (-1.0 to 1.0)
+- `global.get('steering')` retrieves steering input value (-1.0 to 1.0)
 - Multiply by 225 degrees to convert input value to rotation angle
 - When steering input is -1.0 (left turn), steering wheel rotates -225 degrees
 - When steering input is 1.0 (right turn), steering wheel rotates 225 degrees
@@ -80,14 +80,14 @@ Use engine speed to control pointer deflection in example HUD animation:
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }
 ```
 
 **Explanation**:
-- `vehicle.get('engine_speed')` retrieves engine speed (radians per second)
+- `global.get('engine_speed')` retrieves engine speed (radians per second)
 - `??0` is null coalescing operator, uses 0 if signal doesn't exist
 - `*30/math.pi` converts radians per second to revolutions per minute (RPM)
 - `/9000` normalizes to maximum speed of 9000 RPM
@@ -100,16 +100,16 @@ Calculate display values using speed signal in HUD configuration:
 {
   "speed": {
     "molang_args": [
-      "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-      "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-      "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+      "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+      "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+      "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
     ]
   }
 }
 ```
 
 **Explanation**:
-- `vehicle.get('vehicle_speed')` retrieves vehicle speed (meters per second)
+- `global.get('vehicle_speed')` retrieves vehicle speed (meters per second)
 - `* 3.6` converts meters per second to kilometers per hour
 - First parameter: Calculate hundreds digit (speed divided by 100, floored)
 - Second parameter: Calculate tens digit (speed modulo 100, divided by 10, floored)

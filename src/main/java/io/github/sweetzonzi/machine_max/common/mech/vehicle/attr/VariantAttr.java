@@ -28,6 +28,9 @@ public class VariantAttr {
     public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
     public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
 
+    /** 信号保留地址：不得用作连接点 / 子系统 / 交互区名 */
+    private static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global", "subpart", "vehicle");
+
     public static final Codec<Map<String, ResourceLocation>> TEXTURES_CODEC = Codec.either(
             ResourceLocation.CODEC,
             Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
@@ -90,6 +93,8 @@ public class VariantAttr {
         if (getTextures().isEmpty()) {
             throw new IllegalArgumentException(Component.translatable("error.machine_max.part.missing_textures").getString());
         }
+        // Part 级按名寻址（Molang local.*）要求名称在单变体内无歧义
+        validateUniqueNames();
         // 为每个子部件计算"自动排除骨骼"（其所有后代子部件的 start_bone），
         // 使嵌套子部件的骨骼不会被多个子部件重复宣称。需在构建碰撞体积之前完成，
         // 因为 getCollisionShape 内部会将配置 end_bones 与自动排除骨骼合并后再过滤。
@@ -97,6 +102,40 @@ public class VariantAttr {
         // 构建并缓存部件碰撞体积
         for (SubPartAttr subPartAttr : subParts.values()) {
             subPartAttr.getCollisionShape(this);
+        }
+    }
+
+    /**
+     * 校验单个变体内「连接点 / 子系统 / 交互区」名称唯一，且不使用信号保留地址。
+     * <p>三者共用信号命名空间；Part 级按名寻址（Molang {@code local.*}）必须无歧义。
+     * 作用域是单变体的 {@code sub_parts} 集合（不是 part 类型全局，避免多变体复用同名被误判）。</p>
+     */
+    private void validateUniqueNames() {
+        Map<String, String> ownerByName = new HashMap<>();// 名称 -> "子零件名/类别"
+        for (Map.Entry<String, SubPartAttr> entry : subParts.entrySet()) {
+            String subPartName = entry.getKey();
+            SubPartAttr attr = entry.getValue();
+            for (String name : attr.connectors.keySet())
+                checkNameUnique(name, "connector", subPartName, ownerByName);
+            for (String name : attr.subsystems.keySet())
+                checkNameUnique(name, "subsystem", subPartName, ownerByName);
+            for (String name : attr.interactBoxes.keySet())
+                checkNameUnique(name, "interact_box", subPartName, ownerByName);
+        }
+    }
+
+    private void checkNameUnique(String name, String kind, String subPartName, Map<String, String> ownerByName) {
+        if (RESERVED_SIGNAL_NAMES.contains(name)) {
+            throw new IllegalArgumentException(Component.translatable(
+                    "error.machine_max.part.reserved_name",
+                    name, kind, subPartName, model.toString()).getString());
+        }
+        String owner = subPartName + "/" + kind;
+        String previous = ownerByName.putIfAbsent(name, owner);
+        if (previous != null) {
+            throw new IllegalArgumentException(Component.translatable(
+                    "error.machine_max.part.duplicate_name",
+                    name, previous, owner, model.toString()).getString());
         }
     }
 

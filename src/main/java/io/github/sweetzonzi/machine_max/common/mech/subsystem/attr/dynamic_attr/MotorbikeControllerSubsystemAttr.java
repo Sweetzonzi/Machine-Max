@@ -20,11 +20,11 @@ public class MotorbikeControllerSubsystemAttr extends CarControllerSubsystemAttr
     public static final MapCodec<MotorbikeControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.fieldOf("control_outputs").forGetter(MotorbikeControllerSubsystemAttr::getControlOutputTargets),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("subpart", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getSpeedOutputTargets),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("subpart", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getThrottleOutputTargets),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("subpart", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getSteeringOutputTargets),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("subpart", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getBrakeOutputTargets),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("subpart", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getHandbrakeOutputTargets)
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("local", "global"))).forGetter(MotorbikeControllerSubsystemAttr::getSpeedOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("local", "global"))).forGetter(MotorbikeControllerSubsystemAttr::getThrottleOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("local", "global"))).forGetter(MotorbikeControllerSubsystemAttr::getSteeringOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("local", "global"))).forGetter(MotorbikeControllerSubsystemAttr::getBrakeOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("local", "global"))).forGetter(MotorbikeControllerSubsystemAttr::getHandbrakeOutputTargets)
     ).apply(instance, MotorbikeControllerSubsystemAttr::new));
 
     public MotorbikeControllerSubsystemAttr(

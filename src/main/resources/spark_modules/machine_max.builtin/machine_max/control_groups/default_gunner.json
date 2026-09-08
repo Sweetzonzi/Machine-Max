@@ -4,14 +4,14 @@
         "control_mode": "inherit",
         "move_targets": {},
         "view_targets": {
-            "aim_input_p2": ["vehicle"]
+            "aim_input_p2": ["global"]
         },
         "regular_targets": {},
         "main_weapon_targets": {
-            "fire_input_p2": ["vehicle"]
+            "fire_input_p2": ["global"]
         },
         "secondary_weapon_targets": {
-            "secondary_fire_input_p2": ["vehicle"]
+            "secondary_fire_input_p2": ["global"]
         },
         "bindings": [
         ]

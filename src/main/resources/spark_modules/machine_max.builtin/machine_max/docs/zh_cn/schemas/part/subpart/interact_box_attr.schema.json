@@ -15,7 +15,7 @@
         "type": "array",
         "items": { "type": "string" }
       },
-      "description": "信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"door_interact\": [\"door_controller\"]}。"
+      "description": "信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/global）。例如：{\"door_interact\": [\"door_controller\"]}。"
     },
     "interact_mode": {
       "type": "string",

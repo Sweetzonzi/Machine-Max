@@ -30,7 +30,7 @@
       "definition": "machine_max:basic_azimuth_driver",
       "connector": "turret_joint",
       "rotation_outputs": {
-        "turret_angle": ["subpart", "vehicle"]
+        "turret_angle": ["local", "global"]
       }
     }
   ]

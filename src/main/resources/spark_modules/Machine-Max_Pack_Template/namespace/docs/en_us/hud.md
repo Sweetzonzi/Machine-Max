@@ -126,7 +126,7 @@ Animation files control the dynamic behavior of HUD elements and can use Molang 
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }
@@ -150,9 +150,9 @@ Using Molang parameters for dynamic content:
 "speed": {
   "key": "hud.machine_max.default_1.speed",
   "molang_args": [
-    "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-    "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-    "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+    "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+    "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+    "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
   ],
   "significand": 0
 }
@@ -162,7 +162,7 @@ Using Molang parameters for dynamic content:
 ```json
 "gear": {
   "key": "hud.machine_max.default_1.gear",
-  "molang_args": ["vehicle.get('gear')??'NO GBX'"],
+  "molang_args": ["global.get('gear')??'NO GBX'"],
   "centered": true,
   "shadow": true
 }
@@ -177,28 +177,28 @@ The HUD system fully utilizes Molang's powerful functionality to achieve complex
 #### Signal Acquisition and Unit Conversion
 ```molang
 // Get vehicle speed and convert to km/h
-math.abs(vehicle.get('vehicle_speed')??0.0) * 3.6
+math.abs(global.get('vehicle_speed')??0.0) * 3.6
 
 // Get engine speed and convert to RPM
-math.abs(vehicle.get('engine_speed')??0) * 30 / math.pi
+math.abs(global.get('engine_speed')??0) * 30 / math.pi
 ```
 
 #### Number Decomposition Display
 ```molang
 // Hundreds digit
-math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)
+math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)
 
 // Tens digit
-math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
+math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
 
 // Units digit
-math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))
+math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))
 ```
 
 #### Conditional Display
 ```molang
 // Display warnings based on subsystem status
-subpart.has_subsystem('engine') && subpart.subsystem_destroyed('engine') ? 1.0 : 0.0
+local.has_subsystem('engine') && local.subsystem_destroyed('engine') ? 1.0 : 0.0
 ```
 
 ## Subsystem HUD Association
@@ -257,16 +257,16 @@ This is a fully functional vehicle dashboard HUD configuration that can simultan
       "shadow": true,
       "scale": [2, 2, 2],
       "molang_args": [
-        "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-        "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-        "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+        "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+        "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+        "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
       ]
     },
     "gear": {
       "key": "hud.machine_max.default_1.gear",
       "centered": true,
       "shadow": true,
-      "molang_args": ["vehicle.get('gear')??'NO GBX'"]
+      "molang_args": ["global.get('gear')??'NO GBX'"]
     }
   }
 }
@@ -316,7 +316,7 @@ Animation files define the dynamic behavior of HUD elements, such as the rotatio
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }

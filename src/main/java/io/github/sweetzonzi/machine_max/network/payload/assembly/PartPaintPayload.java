@@ -42,7 +42,7 @@ public record PartPaintPayload(
         context.enqueueWork(() -> {
             DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
             if (object instanceof SubPart subPart) {
-                subPart.switchTexture(payload.textureName());
+                subPart.part.applyTexture(payload.textureName());
             } else MachineMax.LOGGER.error("维度{}中不存在SubPart(id={})，无法切换涂装。",
                     context.player().level().dimension().location(), payload.subPartId());
         });

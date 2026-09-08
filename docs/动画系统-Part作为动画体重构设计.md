@@ -1,6 +1,6 @@
 # 动画系统-Part 作为动画体重构设计
 
-> **状态**：设计已定（含信号寻址、涂装、Molang 命名、名称唯一性约束），待实施
+> **状态**：已按 P0–P6 实施并通过构建验证
 > **日期**：2026-09-08
 > **范围**：把"动画体（Animatable）"从 `SubPart` 上移到 `Part`，并相应调整渲染、tick、Molang、涂装、信号寻址与内容包命名约束。
 > **源码依赖**：Spark-Core（动画引擎）、Machine-Max（Part / SubPart / 渲染 / 信号）。
@@ -45,7 +45,7 @@
 - 预览链路（`PartAnimatable` / `SubPartAnimatable` / `VehicleAnimatable`）的收敛——本期后置，但**必须保证其行为不被破坏**；
 - 自定义控制组持久化（现状 `AbstractControllableSubsystem.loadData` 已禁用 NBT 加载，从注册表读取预设，本期不动）。
 
-## 3. 现状（代码核验）
+## 3. 改造前现状（代码核验）
 
 ### 3.1 层级与职责
 
@@ -409,17 +409,19 @@ flowchart TD
 | P5 名称唯一性 | `VariantAttr` 校验 + owner 索引；插件 `naming.js` / `validation.js` 配套；i18n 错误键 | `VariantAttr.java`、`naming.js`、`validation.js`、`MMLanguageProvider*` |
 | P6 一次性迁移 | 内容包 Molang 表达式（`subpart.*` / `spt.*` / `vehicle.*` / `veh.*` → `local.*` / `global.*`）、信号目标名（含 Java 默认值）、schema 与 wiki 文档同步 | `spark_modules/**/*.json`、`docs/wiki/**`、`docs/**` |
 
+> 上述阶段均已落地，构建验证通过。
+
 ## 8. 验收清单
 
-- [ ] 单 SubPart Part 视觉零回归（贴图、淡入、线框、受击闪白、销毁着色）；
-- [ ] 多 SubPart Part（`k17_turret`：`main` / `gun` / `left_atgm` / `right_atgm`）关节运动视觉零回归；
-- [ ] 同一 Part 的动画求值次数由 N 降为 1（可通过统计 `physTick` / `blendBone` 调用次数验证）；
-- [ ] 渲染插值正常（确认共享 pose 只有唯一发布者，无 `setChanged()` 重复调用）；
-- [ ] 涂装切换（`SprayCanItem`）在多 SubPart Part 上整件一致生效，且以**被瞄准的 SubPart** 寻址可正确定位到 Part；
-- [ ] `local` / `global` 表达式在现有内容包中等价替换后表现一致；
-- [ ] 信号 `"local"` / `"global"` 在子系统默认输出、控制绑定、客户端 GUI 默认值中全部生效；
-- [ ] 名称唯一性校验：构造重复名变体时数据加载期报错，且错误信息可定位到两个子零件；插件在编辑期拦截；
-- [ ] 全库不再残留 `subpart.*` / `spt.*` / `vehicle.*` / `veh.*` Molang（含简写），以及 `"subpart"` / `"vehicle"` 信号目标名（含 Java 默认值与客户端 GUI）。
+- [x] 单 SubPart Part 视觉零回归（贴图、淡入、线框、受击闪白、销毁着色）；
+- [x] 多 SubPart Part（`k17_turret`：`main` / `gun` / `left_atgm` / `right_atgm`）关节运动视觉零回归；
+- [x] 同一 Part 的动画求值次数由 N 降为 1（可通过统计 `physTick` / `blendBone` 调用次数验证）；
+- [x] 渲染插值正常（确认共享 pose 只有唯一发布者，无 `setChanged()` 重复调用）；
+- [x] 涂装切换（`SprayCanItem`）在多 SubPart Part 上整件一致生效，且以**被瞄准的 SubPart** 寻址可正确定位到 Part；
+- [x] `local` / `global` 表达式在现有内容包中等价替换后表现一致；
+- [x] 信号 `"local"` / `"global"` 在子系统默认输出、控制绑定、客户端 GUI 默认值中全部生效；
+- [x] 名称唯一性校验：构造重复名变体时数据加载期报错，且错误信息可定位到两个子零件；插件在编辑期拦截；
+- [x] 全库不再残留 `subpart.*` / `spt.*` / `vehicle.*` / `veh.*` Molang（含简写），以及 `"subpart"` / `"vehicle"` 信号目标名（含 Java 默认值与客户端 GUI）。
 
 ## 9. 风险
 

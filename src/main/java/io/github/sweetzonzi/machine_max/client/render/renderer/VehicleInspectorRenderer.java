@@ -133,7 +133,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
                 // tickCount < 15 的新部件继续播放淡入，不进入 inspector mask
                 if (subPart.tickCount < 15) continue;
 
-                var modelInstance = subPart.getModelController().getModel();
+                var modelInstance = subPart.part.getModelController().getModel();
                 if (modelInstance == null) continue;
 
                 int durabilityColor = getInspectColor(subPart.getDurability(), subPart.getMaxDurability());
@@ -152,7 +152,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
         for (Part part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 if (subPart.isRemoved() || subPart.isDestroyed()) continue;
-                var modelInstance = subPart.getModelController().getModel();
+                var modelInstance = subPart.part.getModelController().getModel();
                 if (modelInstance == null) continue;
 
                 renderSubsystemHitBoxes(subPart, modelInstance, poseStack, bufferSource, partialTick);
@@ -172,7 +172,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
     private void renderSilhouette(SubPart subPart, ModelInstance modelInstance,
                                   int color, Vec3 camPos, PoseStack poseStack,
                                   MultiBufferSource bufferSource, float partialTick) {
-        var texture = subPart.getModelController().getTextureLocation();
+        var texture = subPart.part.getModelController().getTextureLocation();
         var bones = subPart.getBones();
 
         poseStack.pushPose();

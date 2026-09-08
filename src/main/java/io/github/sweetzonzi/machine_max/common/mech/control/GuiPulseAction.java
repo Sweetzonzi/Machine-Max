@@ -24,7 +24,7 @@ public class GuiPulseAction extends AbstractGuiAction {
     public static final MapCodec<GuiPulseAction> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.STRING.fieldOf("label").forGetter(a -> a.label),
             Codec.STRING.fieldOf("channel").forGetter(a -> a.channel),
-            Codec.STRING.listOf().optionalFieldOf("targets", List.of("vehicle")).forGetter(a -> a.targets)
+            Codec.STRING.listOf().optionalFieldOf("targets", List.of("global")).forGetter(a -> a.targets)
     ).apply(instance, GuiPulseAction::new));
 
     public static final StreamCodec<ByteBuf, GuiPulseAction> STREAM_CODEC = StreamCodec.composite(

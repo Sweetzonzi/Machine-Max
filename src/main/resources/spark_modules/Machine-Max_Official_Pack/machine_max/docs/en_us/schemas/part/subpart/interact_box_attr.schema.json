@@ -15,7 +15,7 @@
         "type": "array",
         "items": { "type": "string" }
       },
-      "description": "Signal transmission targets, key is signal channel, value is target list (subsystem/connection point name/part/vehicle). For example: {\"door_interact\": [\"door_controller\"]}."
+      "description": "Signal transmission targets, key is signal channel, value is target list (subsystem/connection point name/part/global). For example: {\"door_interact\": [\"door_controller\"]}."
     },
     "interact_mode": {
       "type": "string",

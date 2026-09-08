@@ -28,43 +28,43 @@
           "ysmGlowGtRightMain": {
             "type": "box",
             "subsystem": "subsystem.machine_max.right_main_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_main_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_main_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtLeftMain": {
             "type": "box",
             "subsystem": "subsystem.machine_max.left_main_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_main_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_main_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtLeft": {
             "type": "box",
             "subsystem": "subsystem.machine_max.left_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtMiddle": {
             "type": "box",
             "subsystem": "subsystem.machine_max.middle_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.middle_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.middle_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtRight": {
             "type": "box",
             "subsystem": "subsystem.machine_max.right_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtLeftFog": {
             "type": "box",
             "subsystem": "subsystem.machine_max.left_fog_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_fog_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_fog_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtRightFog": {
             "type": "box",
             "subsystem": "subsystem.machine_max.right_fog_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_fog_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_fog_light')",
             "material": "machine_max:glass"
           }
         },

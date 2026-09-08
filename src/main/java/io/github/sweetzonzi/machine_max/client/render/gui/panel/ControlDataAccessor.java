@@ -110,7 +110,7 @@ public class ControlDataAccessor {
                 Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("key.l", BindingAction.TOGGLE, "lights", List.of("lighting")),
-                        new ControlBinding("key.h", BindingAction.PRESS, "horn", List.of("vehicle"))
+                        new ControlBinding("key.h", BindingAction.PRESS, "horn", List.of("global"))
                 )
         );
 

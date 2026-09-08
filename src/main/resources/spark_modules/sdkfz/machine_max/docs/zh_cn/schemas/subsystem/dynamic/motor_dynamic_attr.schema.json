@@ -15,7 +15,7 @@
     },
     "power_output": {
       "type": "string",
-      "description": "功率输出目标，可填写任意本部件内其他子系统名称、部件连接点名称，或'part'，或'vehicle'。"
+      "description": "功率输出目标，可填写任意本部件内其他子系统名称、部件连接点名称，或'part'，或'global'。"
     },
     "speed_outputs": {
       "$ref": "../base/signal_targets.json",
@@ -29,7 +29,7 @@
       "type": "machine_max:motor",
       "definition": "machine_max:electric_motor",
       "power_output": "transmission",
-      "speed_outputs": { "motor_speed": ["part", "vehicle"] }
+      "speed_outputs": { "motor_speed": ["part", "global"] }
     }
   ]
 }

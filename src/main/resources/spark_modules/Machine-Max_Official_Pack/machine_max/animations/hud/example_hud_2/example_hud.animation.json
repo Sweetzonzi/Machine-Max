@@ -5,10 +5,10 @@
 			"loop": true,
 			"bones": {
 				"Pointer": {
-					"rotation": [0, 0, "210*math.abs(veh.get('vehicle_speed')*3.6??0.0)/240"]
+					"rotation": [0, 0, "210*math.abs(global.get('vehicle_speed')*3.6??0.0)/240"]
 				},
 				"Pointer2": {
-					"rotation": [0, 0, "115*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/6000"]
+					"rotation": [0, 0, "115*(math.abs(global.get('engine_speed')??0)*30/math.pi)/6000"]
 				}
 			}
 		}

@@ -95,14 +95,14 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     }
 
     /**
-     * 获取 Molang 上下文。如果玩家坐在载具座位上，委派给 SubPart 的上下文，
+     * 获取 Molang 上下文。如果玩家坐在载具座位上，委派给所属 Part 的上下文，
      * 否则使用自身的上下文。
      */
     @Override
     public SparkMolangContext<?> getMolangContext() {
         SubPart sp = getRidingSubPart();
         if (sp != null) {
-            return sp.getSparkMolangContext();  // 内部 reset 到当前零件状态
+            return sp.part.getSparkMolangContext();  // 内部 reset 到当前 Part 状态
         }
         return molangContext;
     }

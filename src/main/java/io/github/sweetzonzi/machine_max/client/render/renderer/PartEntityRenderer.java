@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
-import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -19,6 +18,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
@@ -31,7 +31,7 @@ import org.joml.Matrix4f;
 import java.awt.*;
 import java.util.Map;
 
-public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
+public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
 
     /** 复用的可变 BlockPos，避免 render() 每帧分配 */
     private final BlockPos.MutableBlockPos reusableBlockPos = new BlockPos.MutableBlockPos();
@@ -53,7 +53,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @NotNull
     @Override
     public ResourceLocation getTextureLocation(@NotNull MMPartEntity entity) {
-        if (entity.subPart != null) return entity.subPart.getModelController().getTextureLocation();
+        if (entity.subPart != null) return entity.subPart.part.getModelController().getTextureLocation();
         else return BlueprintData.EMPTY;
     }
 
@@ -74,7 +74,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @Override
     public void render(@NotNull MMPartEntity entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         if (entity.subPart == null) return;
-        ModelController modelController = entity.subPart.getModelController();
+        ModelController modelController = entity.subPart.part.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
 

@@ -410,8 +410,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public void prePhysicsTick() {
         subSystemController.prePhysicsTick();
-        for (Part part : partMap.values()) {
-            part.onPrePhysicsTick();
+        // 动画物理刻与主线程 tick 必须同门控：否则物理线程持续写入共享 pose 而主线程不发布，导致渲染冻结
+        if (inLoadedChunk && !isRemoved) {
+            for (Part part : partMap.values()) {
+                part.onPrePhysicsTick();
+            }
         }
     }
 

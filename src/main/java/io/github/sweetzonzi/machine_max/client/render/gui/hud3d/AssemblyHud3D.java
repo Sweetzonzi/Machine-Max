@@ -415,7 +415,7 @@ public class AssemblyHud3D implements IHud3DElement {
         ctx.poseStack.translate(offset.x(), offset.y(), offset.z()); // 将展示中心挪到AABB中心
         ctx.poseStack.pushPose();
         ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix())); // 考虑模型原点和质心的位置差异
-        ModelController modelController = subPart.getModelController();
+        ModelController modelController = subPart.part.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         // 渲染所有块
         var bonesToRender = subPart.attr.getBones(subPart.part.variant);

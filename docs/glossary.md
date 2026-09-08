@@ -17,7 +17,7 @@
 ### Part（零件）
 
 - **职责**：组装与 UGC 创作的最小单元
-- **描述**：`Part` 是载具的基本组成单元，持有多个 `SubPart`（子零件）。零件拥有 `PartType`（类型定义）和 `VariantAttr`（变体属性），通过 `AdvancedConnector` / `SimpleConnector` 与其他零件连接构成载具拓扑结构。
+- **描述**：`Part` 是载具的基本组成单元，持有多个 `SubPart`（子零件）。零件拥有 `PartType`（类型定义）和 `VariantAttr`（变体属性），通过 `AdvancedConnector` / `SimpleConnector` 与其他零件连接构成载具拓扑结构。**同时是动画体**（`IAnimatable<Part>`）：独占 `ModelController` / `AnimController` / 共享 `ModelPose` / Molang 上下文（`local.*`）/ 涂装（`textureName`）与信号存储（`getSignalAddress()` = `"local"`）。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.mech.vehicle.Part` — 零件本体
   - `io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType` — 零件类型定义（耐久度系数、伤害传递系数、功能阈值等）
@@ -28,9 +28,9 @@
 ### SubPart（子零件）
 
 - **职责**：零件内部的模块化组件
-- **描述**：`SubPart` 是零件内部的更细粒度拆分，承载碰撞体、连接点（`AbstractConnector`）、交互判定区（`InteractBox`）、物理刚体以及子系统（`AbstractSubsystem`）。它是物理模拟的基本参与单位。
+- **描述**：`SubPart` 是零件内部的更细粒度拆分，承载碰撞体、连接点（`AbstractConnector`）、交互判定区（`InteractBox`）、物理刚体以及子系统（`AbstractSubsystem`）。它是物理模拟的基本参与单位，并负责渲染时的骨骼子树过滤（`getBones()`）；动画体与信号接收职责已上移到 `Part`。
 - **关键类**：
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart` — 子零件，持有碰撞体、连接点、子系统
+  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart` — 子零件，持有碰撞体、连接点、子系统、刚体与骨骼视图
 
 ---
 
@@ -87,13 +87,13 @@
 ### Signal System（信号系统）
 
 - **职责**：载具内部的信号传递机制
-- **描述**：通过 `SignalPort` 绑定到连接点或交互盒上，在不同零件/子系统间传递各类信号，包括：`RegularInputSignal`（常规按键输入）、`MoveInputSignal`（移动输入）、`MotorControlSignal`（电机控制）、`WheelControlSignal`（车轮控制）、`InteractSignal`（交互信号）等。`SignalChannel` 为命名通道，`ISignalReceiver` / `ISignalSender` 定义收发接口。
+- **描述**：通过 `SignalPort` 绑定到连接点或交互盒上，在不同零件/子系统间传递各类信号，包括：`RegularInputSignal`（常规按键输入）、`MoveInputSignal`（移动输入）、`MotorControlSignal`（电机控制）、`WheelControlSignal`（车轮控制）、`InteractSignal`（交互信号）等。`SignalChannel` 为命名通道，`ISignalReceiver` / `ISignalSender` 定义收发接口；路由使用 `getSignalAddress()`（保留地址 `"local"` = Part、`"global"` = 装配体），`getSignalStorage()` 提供 Molang 查询存储。
 - **关键类**：
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.Signal` — 信号抽象基类
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalPort` — 信号端口，挂载在连接点上
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalChannel` — 命名信号通道
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalReceiver` — 信号接收接口
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalSender` — 信号发送接口
+  - `io.github.sweetzonzi.machine_max.common.mech.signal.Signal` — 信号抽象基类
+  - `io.github.sweetzonzi.machine_max.common.mech.signal.SignalPort` — 信号端口，挂载在连接点上
+  - `io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel` — 命名信号通道
+  - `io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver` — 信号接收接口
+  - `io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender` — 信号发送接口
 
 ---
 
@@ -253,10 +253,9 @@
 ### Molang & Scripting（动画表达式与脚本系统）
 
 - **职责**：提供动画表达式绑定与 JavaScript 扩展能力
-- **描述**：`VehicleBinding` 和 `SubPartBinding` 将载具运行时数据暴露给 Molang 动画表达式引擎，支持数据驱动的动画。`ScriptableSubsystem` 集成 GraalJS JavaScript 引擎，允许 UGC 作者编写自定义子系统逻辑。
+- **描述**：`MechMolangContext` 将载具运行时数据暴露给 Molang 动画表达式引擎（`local.*` = Part、`global.*` = 装配体），支持数据驱动的动画。`ScriptableSubsystem` 集成 GraalJS JavaScript 引擎，允许 UGC 作者编写自定义子系统逻辑。
 - **关键类**：
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.molang.VehicleBinding` — 载具 Molang 绑定
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.molang.SubPartBinding` — 子零件 Molang 绑定
+  - `io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext` — Part 级 Molang 上下文（local.* / global.*）
   - `io.github.sweetzonzi.machine_max.common.mech.subsystem.ScriptableSubsystem` — JavaScript 脚本子系统
   - `io.github.sweetzonzi.machine_max.external.js.JSUtils` — JS 工具类
 

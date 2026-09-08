@@ -27,25 +27,25 @@
           "ysmGlow_collision_front_left_main_light": {
             "type": "box",
             "subsystem": "subsystem.machine_max.glow_left_main_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_front_right_main_light": {
             "type": "box",
             "subsystem": "subsystem.machine_max.glow_right_main_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_back_left_light": {
             "type": "box",
             "subsystem": "subsystem.machine_max.glow_back_left_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_back_right_light": {
             "type": "box",
             "subsystem": "subsystem.machine_max.glow_back_right_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_right_light')",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_right_light')",
             "material": "machine_max:glass"
           }
         },

@@ -1027,7 +1027,7 @@ public class PanelConfigEditor {
 
     /** 添加 GUI 交互元素 */
     private static void onAddGuiAction() {
-        actionList.add(new ActionEditData("PULSE", "NEW ACTION", "channel", List.of("vehicle")));
+        actionList.add(new ActionEditData("PULSE", "NEW ACTION", "channel", List.of("global")));
         selAction = actionList.size() - 1;
         selBinding = -1;
         LOGGER.debug("[ConfigEditor] Added GUI action");
@@ -1298,7 +1298,7 @@ public class PanelConfigEditor {
 
     /**
      * 将逗号分隔的字符串解析为字符串列表，自动去除首尾空格并过滤空条目。<br>
-     * 例如 {@code "vehicle, weapon.primary"} → {@code ["vehicle", "weapon.primary"]}
+     * 例如 {@code "global, weapon.primary"} → {@code ["global", "weapon.primary"]}
      */
     private static List<String> parseCommaList(String input) {
         if (input == null || input.isBlank()) return List.of();

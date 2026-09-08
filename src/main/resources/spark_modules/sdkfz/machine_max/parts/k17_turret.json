@@ -83,7 +83,7 @@
             "definition": "machine_max:main_weapon_controller",
             "control_outputs": {
               "weapon_control": [
-                "vehicle"
+                "global"
               ]
             }
           },
@@ -92,7 +92,7 @@
             "definition": "machine_max:secondary_weapon_controller",
             "control_outputs": {
               "weapon.mg": [
-                "vehicle"
+                "global"
               ]
             }
           },
@@ -104,7 +104,7 @@
             },
             "discovery_outputs": {
               "ammo_2a42": [
-                "vehicle"
+                "global"
               ]
             }
           },
@@ -117,7 +117,7 @@
             },
             "discovery_outputs": {
               "ammo_pktm": [
-                "vehicle"
+                "global"
               ]
             }
           },

@@ -3,10 +3,10 @@
         "name": "controlGroup.machine_max.base",
         "control_mode": "ground",
         "move_targets": {
-            "move_input": ["vehicle"]
+            "move_input": ["global"]
         },
         "regular_targets": {
-            "regular_input": ["vehicle"]
+            "regular_input": ["global"]
         }
     },
     "groups": [
@@ -14,26 +14,26 @@
             "name": "controlGroup.machine_max.backup_fire_control",
             "control_mode": "inherit",
             "view_targets": {
-                "aim_input": ["vehicle"]
+                "aim_input": ["global"]
             },
             "main_weapon_targets": {
-                "fire_input": ["vehicle"]
+                "fire_input": ["global"]
             },
             "secondary_weapon_targets": {
-                "secondary_fire_input": ["vehicle"]
+                "secondary_fire_input": ["global"]
             }
         },
         {
             "name": "controlGroup.machine_max.commander_override",
             "control_mode": "inherit",
             "view_targets": {
-                "aim_input_p1": ["vehicle"]
+                "aim_input_p1": ["global"]
             },
             "main_weapon_targets": {
-                "fire_input_p1": ["vehicle"]
+                "fire_input_p1": ["global"]
             },
             "secondary_weapon_targets": {
-                "secondary_fire_input_p1": ["vehicle"]
+                "secondary_fire_input_p1": ["global"]
             }
         }
     ]

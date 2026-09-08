@@ -56,27 +56,27 @@
               ]
             },
             "speed_outputs": { //(可选, 默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
-              "vehicle_speed": ["subpart", "vehicle"]
+              "vehicle_speed": ["local", "global"]
             },
             "throttle_outputs": { //(可选, 默认将油门[0,1]发至部件和载具的throttle频道)油门信号输出频道及目标
-              "throttle": ["subpart", "vehicle"]
+              "throttle": ["local", "global"]
             },
             "brake_outputs": { //(可选, 默认将制动程度[0,1]发至部件和载具的brake频道)制动信号输出频道及目标
-              "brake": ["subpart", "vehicle"]
+              "brake": ["local", "global"]
             },
             "steering_outputs": { //(可选, 默认将转向程度[-1,1]发至部件和载具的steering频道)转向角度信号输出频道及目标
-              "steering": ["subpart", "vehicle"]
+              "steering": ["local", "global"]
             },
             "handbrake_outputs": { //(可选, 默认将手刹程度[0,1]发至部件和载具的handbrake频道)手刹器开关信号输出频道及目标
-              "handbrake": ["subpart", "vehicle"]
+              "handbrake": ["local", "global"]
             }
           },
           "subsystem.machine_max.engine": {
             "type": "machine_max:engine", //电动机子系统, 低速下恒扭矩, 高速下恒功率
             "definition": "machine_max:van_engine",//子系统型号, 需要与子系统类型相匹配
-            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
+            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“global”
             "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
-              "engine_speed": ["subpart", "vehicle"]
+              "engine_speed": ["local", "global"]
             }
           },
           "subsystem.machine_max.gearbox": {
@@ -84,7 +84,7 @@
             "definition": "machine_max:van_gearbox", //子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
             "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
-              "gear": ["subpart", "vehicle"]
+              "gear": ["local", "global"]
             }
           },
           "subsystem.machine_max.glove_box": {

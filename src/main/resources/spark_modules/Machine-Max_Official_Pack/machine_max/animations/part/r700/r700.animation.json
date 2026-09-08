@@ -5,19 +5,19 @@
 			"loop": true,
 			"bones": {
 				"FrontSpringInner": {
-					"position": [0, "subpart.connector_offset('connector.machine_max.front_wheel', 1)*16", 0]
+					"position": [0, "local.connector_offset('connector.machine_max.front_wheel', 1)*16", 0]
 				},
 				"FrontFork": {
-					"rotation": [0, "subpart.connector_rotation('connector.machine_max.front_wheel', 1)", 0]
+					"rotation": [0, "local.connector_rotation('connector.machine_max.front_wheel', 1)", 0]
 				},
 				"BackSpring": {
-					"rotation": ["(55-math.atan((10.24-subpart.connector_offset('connector.machine_max.back_wheel', 1)*16)/7.17))", 0, 0]
+					"rotation": ["(55-math.atan((10.24-local.connector_offset('connector.machine_max.back_wheel', 1)*16)/7.17))", 0, 0]
 				},
 				"Rear": {
-					"rotation": ["math.atan(subpart.connector_offset('connector.machine_max.back_wheel', 1)*16/13.05)", 0, 0]
+					"rotation": ["math.atan(local.connector_offset('connector.machine_max.back_wheel', 1)*16/13.05)", 0, 0]
 				},
 				"BackSpringInner": {
-					"position": [0, "12.5-math.sqrt(math.pow((10.24-subpart.connector_offset('connector.machine_max.back_wheel', 1)*16),2)+51.41)", 0]
+					"position": [0, "12.5-math.sqrt(math.pow((10.24-local.connector_offset('connector.machine_max.back_wheel', 1)*16),2)+51.41)", 0]
 				},
 				"Vent": {
 					"rotation": ["-0.4 * math.sin(q.anim_time*36000)", 0, 0]

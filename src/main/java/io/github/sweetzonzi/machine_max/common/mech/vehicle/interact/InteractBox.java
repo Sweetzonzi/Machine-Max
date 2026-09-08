@@ -38,6 +38,12 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
         this.interactMode = InteractMode.valueOf(attr.getMode().toUpperCase());
     }
 
+    /** 交互区以自身名称为寻址名 */
+    @Override
+    public String getSignalAddress() {
+        return name;
+    }
+
     /**
      * 载具结构发生变化时重新确定连接的子系统
      */
@@ -140,7 +146,7 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
             String channelName = entry.getKey();
             Map<String, ISignalReceiver> receivers = entry.getValue();
             for (ISignalReceiver receiver : receivers.values()) {
-                SignalResult result = sendSignalToTarget(channelName, receiver.getName(), new InteractSignal(entity));
+                SignalResult result = sendSignalToTarget(channelName, receiver.getSignalAddress(), new InteractSignal(entity));
                 if (result == SignalResult.CONSUME || result == SignalResult.FAIL) {
                     return;
                 }

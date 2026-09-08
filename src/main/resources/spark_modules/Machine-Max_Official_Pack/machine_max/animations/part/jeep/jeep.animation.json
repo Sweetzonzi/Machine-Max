@@ -5,25 +5,25 @@
 			"loop": true,
 			"bones": {
 				"FXP": {
-					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.left_front_wheel', 1) + local.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
 				},
 				"throttle": {
-					"position": [0, 0, "-1.0*vehicle.get('throttle')"]
+					"position": [0, 0, "-1.0*global.get('throttle')"]
 				},
 				"brake": {
-					"position": [0, 0, "-1.0*vehicle.get('brake')"]
+					"position": [0, 0, "-1.0*global.get('brake')"]
 				},
 				"left_back_suspension": {
-					"scale": [1, "1-subpart.connector_offset('connector.machine_max.left_back_wheel', 1)", 1]
+					"scale": [1, "1-local.connector_offset('connector.machine_max.left_back_wheel', 1)", 1]
 				},
 				"right_back_suspension": {
-					"scale": [1, "1-subpart.connector_offset('connector.machine_max.right_back_wheel', 1)", 1]
+					"scale": [1, "1-local.connector_offset('connector.machine_max.right_back_wheel', 1)", 1]
 				},
 				"right_front_suspension": {
-					"scale": [1, "1-subpart.connector_offset('connector.machine_max.right_front_wheel', 1)", 1]
+					"scale": [1, "1-local.connector_offset('connector.machine_max.right_front_wheel', 1)", 1]
 				},
 				"left_front_suspension": {
-					"scale": [1, "1-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)", 1]
+					"scale": [1, "1-local.connector_offset('connector.machine_max.left_front_wheel', 1)", 1]
 				}
 			}
 		}

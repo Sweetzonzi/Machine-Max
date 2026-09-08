@@ -6,7 +6,7 @@
 			"bones": {
 				"Pointer": {
 					"rotation": {
-						"0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+						"0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
 					}
 				}
 			}

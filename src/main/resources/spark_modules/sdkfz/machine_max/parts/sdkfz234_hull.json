@@ -144,8 +144,8 @@
               "power_output": "subsystem.machine_max.gearbox",
               "speed_outputs": {
                 "engine_speed": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               }
             },
@@ -155,8 +155,8 @@
               "power_output": "subsystem.machine_max.transmission",
               "gear_outputs": {
                 "gear": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               }
             },
@@ -193,32 +193,32 @@
               },
               "speed_outputs": {
                 "vehicle_speed": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "throttle_outputs": {
                 "throttle": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "steering_outputs": {
                 "steering": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "brake_outputs": {
                 "brake": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "handbrake_outputs": {
                 "handbrake": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               }
             },
@@ -273,8 +273,8 @@
               "control_group_preset": "machine_max:default_driver",
               "passenger_num_outputs": {
                 "passenger_num": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               }
             },
@@ -285,8 +285,8 @@
               "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
                 "passenger_num": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               }
             }

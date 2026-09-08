@@ -15,7 +15,7 @@
     },
     "power_output": {
       "type": "string",
-      "description": "Power output target, can be any other subsystem name within this part, part connection point name, or 'part', or 'vehicle'."
+      "description": "Power output target, can be any other subsystem name within this part, part connection point name, or 'part', or 'global'."
     },
     "speed_outputs": {
       "$ref": "../base/signal_targets.json",
@@ -29,7 +29,7 @@
       "type": "machine_max:engine",
       "definition": "machine_max:ae86at_engine",
       "power_output": "gearbox",
-      "speed_outputs": { "engine_speed": ["part", "vehicle"] }
+      "speed_outputs": { "engine_speed": ["part", "global"] }
     }
   ]
 }

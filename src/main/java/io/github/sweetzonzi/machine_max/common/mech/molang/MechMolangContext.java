@@ -10,8 +10,8 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.player.Player;
@@ -20,179 +20,191 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Machine-Max 的 MoLang 求值上下文，继承 {@link SparkMolangContext}。
  * <p>
- * 通过 {@code @QueryBinding} 和 {@code @StringQueryBinding} 注解
- * 将 {@code subpart.* / spt.* / vehicle.* / veh.*} 命名空间映射为 Context 实例方法。
+ * 动画体已上移到 {@link Part}，因此命名空间重划为：
+ * <ul>
+ *   <li>{@code local.*} —— 当前动画体（Part）：耐久、连接点、子系统、信号存储</li>
+ *   <li>{@code global.*} —— 所属装配体（VehicleCore / MechUnit 等）：HP、能源、装配体信号存储</li>
+ * </ul>
+ * 通过 {@code @QueryBinding} / {@code @StringQueryBinding} 注解映射为 Context 实例方法，
  * 编译器生成直接 {@code INVOKEVIRTUAL} 字节码，零反射开销。
  * <p>
- * 泛型约束为 {@code IAnimatable<SubPart>}，因此 {@code getEntity().getAnimatable()}
- * 直接返回 {@link SubPart}，无需 instanceof 检查。
+ * 泛型约束为 {@code IAnimatable<Part>}，因此 {@code getEntity().getAnimatable()}
+ * 直接返回 {@link Part}，无需 instanceof 检查。
  */
-public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> {
+public class MechMolangContext extends SparkMolangContext<IAnimatable<Part>> {
 
     /** 无参构造（供编译器创建原型实例用） */
     public MechMolangContext() {
         super();
     }
 
-    /** 绑定 SubPart 的构造 */
-    public MechMolangContext(@Nullable IAnimatable<SubPart> animatable) {
+    /** 绑定 Part 的构造 */
+    public MechMolangContext(@Nullable IAnimatable<Part> animatable) {
         super(animatable);
     }
 
     // ======================== 辅助方法 ========================
 
-    /** 获取当前零件，null 安全 */
+    /** 获取当前动画体（Part），null 安全 */
     @Nullable
-    private SubPart sp() {
+    private Part part() {
         IAnimatable<?> e = getEntity();
         if (e == null) return null;
         Object animatable = e.getAnimatable();
-        // entity 的持有者直接是 SubPart（正常物理线程/直接 reset 的路径）
-        if (animatable instanceof SubPart sp) return sp;
-        // entity 的持有者不是 SubPart（如 ModelAnimatable 持有 Player），
-        // 尝试从玩家乘坐的座椅找到所属零件
+        // 动画体直接是 Part（正常物理线程 / 直接 reset 的路径）
+        if (animatable instanceof Part p) return p;
+        // 动画体不是 Part（如 ModelAnimatable 持有 Player），
+        // 尝试从玩家乘坐的座椅找到所属零件，再取 Part
         if (animatable instanceof Player player
                 && player instanceof IEntityMixin mixin
                 && mixin.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
                 && seat.getOwner() instanceof ISubsystemHost host) {
-            return host.getSubPart();
+            return host.getSubPart().part;
         }
         return null;
     }
 
-    /** 通过 SubPart → Part → Assembly 链获取 VehicleCore */
+    /** 获取所属装配体 */
     @Nullable
-    private VehicleCore vehicle() {
-        SubPart sp = sp();
-        if (sp != null && sp.part.getAssembly() instanceof VehicleCore vc) return vc;
-        return null;
+    private IPartAssembly assembly() {
+        Part p = part();
+        return p != null ? p.getAssembly() : null;
     }
 
-    /** 获取 SubsystemController */
+    /** 获取装配体子系统控制器 */
     @Nullable
     private SubsystemController subsystems() {
-        SubPart sp = sp();
-        if (sp == null) return null;
-        IPartAssembly assembly = sp.part.getAssembly();
-        return assembly != null ? assembly.getSubsystemController() : null;
+        IPartAssembly a = assembly();
+        return a != null ? a.getSubsystemController() : null;
     }
 
-    // ======================== subpart.* 命名空间 ========================
+    /**
+     * 获取代表 Part 耐久的子零件（rootSubPart）。
+     * <p>Part 自身无单耐久，且 {@code getSharedDurability()} 在 shareDurability=false 时恒为 0，
+     * 故此处以 rootSubPart 代表 Part 耐久。</p>
+     */
+    @Nullable
+    private SubPart root() {
+        Part p = part();
+        return p != null ? p.getRootSubPart() : null;
+    }
 
-    @QueryBinding(value = "durability", namespace = "subpart", aliases = {"spt"})
-    public double subpartDurability() { SubPart s = sp(); return s != null ? s.getDurability() : 0.0; }
+    // ======================== local.* 命名空间（当前动画体 Part） ========================
 
-    @QueryBinding(value = "max_durability", namespace = "subpart", aliases = {"spt"})
-    public double subpartMaxDurability() { SubPart s = sp(); return s != null ? s.getMaxDurability() : 0.0; }
+    @QueryBinding(value = "durability", namespace = "local")
+    public double localDurability() { SubPart s = root(); return s != null ? s.getDurability() : 0.0; }
 
-    @QueryBinding(value = "is_destroyed", namespace = "subpart", aliases = {"spt"})
-    public double subpartIsDestroyed() { SubPart s = sp(); return s != null && s.isDestroyed() ? 1.0 : 0.0; }
+    @QueryBinding(value = "max_durability", namespace = "local")
+    public double localMaxDurability() { SubPart s = root(); return s != null ? s.getMaxDurability() : 0.0; }
 
-    @QueryBinding(value = "has_connector", namespace = "subpart", aliases = {"spt"})
-    public double subpartHasConnector(String name) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractConnector c = s.getConnectors().get(name);
+    @QueryBinding(value = "is_destroyed", namespace = "local")
+    public double localIsDestroyed() { SubPart s = root(); return s != null && s.isDestroyed() ? 1.0 : 0.0; }
+
+    @QueryBinding(value = "has_connector", namespace = "local")
+    public double localHasConnector(String name) {
+        Part p = part(); if (p == null) return 0.0;
+        AbstractConnector c = p.getConnectorsByName().get(name);
         return c != null && c.hasPart() ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "connector_offset", namespace = "subpart", aliases = {"spt"})
-    public double subpartConnectorOffset(String name, int axis) {
+    @QueryBinding(value = "connector_offset", namespace = "local")
+    public double localConnectorOffset(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractConnector c = s.getConnectors().get(name);
+        Part p = part(); if (p == null) return 0.0;
+        AbstractConnector c = p.getConnectorsByName().get(name);
         return c != null ? c.getPivotOffset().get(axis) : 0.0;
     }
 
-    @QueryBinding(value = "connector_rotation", namespace = "subpart", aliases = {"spt"})
-    public double subpartConnectorRotation(String name, int axis) {
+    @QueryBinding(value = "connector_rotation", namespace = "local")
+    public double localConnectorRotation(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractConnector c = s.getConnectors().get(name);
+        Part p = part(); if (p == null) return 0.0;
+        AbstractConnector c = p.getConnectorsByName().get(name);
         return c != null ? c.getPivotRotation().get(axis) : 0.0;
     }
 
-    @QueryBinding(value = "has_subsystem", namespace = "subpart", aliases = {"spt"})
-    public double subpartHasSubsystem(String name) {
-        SubPart s = sp(); return s != null && s.getSubsystems().containsKey(name) ? 1.0 : 0.0;
+    @QueryBinding(value = "has_subsystem", namespace = "local")
+    public double localHasSubsystem(String name) {
+        Part p = part(); return p != null && p.getSubsystemsByName().containsKey(name) ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_durability", namespace = "subpart", aliases = {"spt"})
-    public double subpartSubsystemDurability(String name) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractSubsystem sub = s.getSubsystems().get(name);
+    @QueryBinding(value = "subsystem_durability", namespace = "local")
+    public double localSubsystemDurability(String name) {
+        Part p = part(); if (p == null) return 0.0;
+        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
         return sub != null ? sub.getDurability() : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_max_durability", namespace = "subpart", aliases = {"spt"})
-    public double subpartSubsystemMaxDurability(String name) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractSubsystem sub = s.getSubsystems().get(name);
+    @QueryBinding(value = "subsystem_max_durability", namespace = "local")
+    public double localSubsystemMaxDurability(String name) {
+        Part p = part(); if (p == null) return 0.0;
+        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
         return sub != null ? sub.getMaxDurability() : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_active", namespace = "subpart", aliases = {"spt"})
-    public double subpartSubsystemActive(String name) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractSubsystem sub = s.getSubsystems().get(name);
+    @QueryBinding(value = "subsystem_active", namespace = "local")
+    public double localSubsystemActive(String name) {
+        Part p = part(); if (p == null) return 0.0;
+        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
         return sub != null && sub.isActive() ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_destroyed", namespace = "subpart", aliases = {"spt"})
-    public double subpartSubsystemDestroyed(String name) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        AbstractSubsystem sub = s.getSubsystems().get(name);
+    @QueryBinding(value = "subsystem_destroyed", namespace = "local")
+    public double localSubsystemDestroyed(String name) {
+        Part p = part(); if (p == null) return 0.0;
+        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
         return sub != null && sub.isDestroyed() ? 1.0 : 0.0;
     }
 
-    /** subpart.get(channel) — 读取 SubPart 信号值 */
-    @QueryBinding(value = "get", namespace = "subpart", aliases = {"spt"})
-    public double subpartGet(String channel) {
-        SubPart s = sp(); if (s == null) return 0.0;
-        Object val = s.signalStorage.get(channel);
+    /** local.get(channel) — 读取 Part 信号存储 */
+    @QueryBinding(value = "get", namespace = "local")
+    public double localGet(String channel) {
+        Part p = part(); if (p == null) return 0.0;
+        Object val = p.getSignalStorage().get(channel);
         return val instanceof Number n ? n.doubleValue() : 0.0;
     }
 
-    /** subpart.get_str(channel) — 字符串版本，null → ?? 兜底 */
-    @StringQueryBinding(value = "get_str", namespace = "subpart", aliases = {"spt"})
-    public String subpartGetStr(String channel) {
-        SubPart s = sp(); if (s == null) return null;
-        Object val = s.signalStorage.get(channel);
+    /** local.get_str(channel) — 字符串版本，null → ?? 兜底 */
+    @StringQueryBinding(value = "get_str", namespace = "local")
+    public String localGetStr(String channel) {
+        Part p = part(); if (p == null) return null;
+        Object val = p.getSignalStorage().get(channel);
         return val != null ? val.toString() : null;
     }
 
-    // ======================== vehicle.* 命名空间 ========================
+    // ======================== global.* 命名空间（所属装配体） ========================
 
-    @QueryBinding(value = "durability", namespace = "vehicle", aliases = {"veh"})
-    public double vehicleDurability() { VehicleCore v = vehicle(); return v != null ? v.getHp() : 0.0; }
+    @QueryBinding(value = "hp", namespace = "global")
+    public double globalHp() { IPartAssembly a = assembly(); return a != null ? a.getHp() : 0.0; }
 
-    @QueryBinding(value = "max_durability", namespace = "vehicle", aliases = {"veh"})
-    public double vehicleMaxDurability() { VehicleCore v = vehicle(); return v != null ? v.getMaxHp() : 0.0; }
+    @QueryBinding(value = "max_hp", namespace = "global")
+    public double globalMaxHp() { IPartAssembly a = assembly(); return a != null ? a.getMaxHp() : 0.0; }
 
-    @QueryBinding(value = "energy", namespace = "vehicle", aliases = {"veh"})
-    public double vehicleEnergy() {
+    @QueryBinding(value = "energy", namespace = "global")
+    public double globalEnergy() {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         EnergyGrid g = c.getEnergyGrid();
         return g != null ? g.getTotalStoredEnergy() : 0.0;
     }
 
-    @QueryBinding(value = "max_energy", namespace = "vehicle", aliases = {"veh"})
-    public double vehicleMaxEnergy() {
+    @QueryBinding(value = "max_energy", namespace = "global")
+    public double globalMaxEnergy() {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         EnergyGrid g = c.getEnergyGrid();
         return g != null ? g.getMaxStoredEnergy() : 0.0;
     }
 
-    /** vehicle.get(key) — 读取装配体信号值 */
-    @QueryBinding(value = "get", namespace = "vehicle", aliases = {"veh"})
-    public double vehicleGet(String key) {
+    /** global.get(key) — 读取装配体信号存储 */
+    @QueryBinding(value = "get", namespace = "global")
+    public double globalGet(String key) {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         Object val = c.signalStorage.get(key);
         return val instanceof Number n ? n.doubleValue() : 0.0;
     }
 
-    /** vehicle.get_str(key) — 字符串版本，null → ?? 兜底 */
-    @StringQueryBinding(value = "get_str", namespace = "vehicle", aliases = {"veh"})
-    public String vehicleGetStr(String key) {
+    /** global.get_str(key) — 字符串版本，null → ?? 兜底 */
+    @StringQueryBinding(value = "get_str", namespace = "global")
+    public String globalGetStr(String key) {
         SubsystemController c = subsystems(); if (c == null) return null;
         Object val = c.signalStorage.get(key);
         return val != null ? val.toString() : null;

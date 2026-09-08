@@ -31,14 +31,14 @@ common/mech/
 |------|------|------|
 | 修改载具拓扑 | `vehicle/VehicleCore.java` | partNet（MutableNetwork），merge/split 逻辑 |
 | 修改物理体 | `vehicle/SubPart.java` | 刚体、碰撞、空气动力学、BallisticsFramework |
-| 修改组装/配方 | `vehicle/Part.java` | SubPart 容器、材料进度、耐久度 |
+| 修改组装/配方 | `vehicle/Part.java` | SubPart 容器、材料进度、耐久度；同时是动画体（模型/动画/Molang/涂装） |
 | 新增连接器类型 | `vehicle/connector/AbstractConnector.java` | 关节（New6Dof）、信号端口、完整性 |
 | 修改碰撞 | `vehicle/collision/CollisionHandler.java` | 地形、实体、载具-载具、Create 兼容 |
 | 新增信号类型 | `signal/Signal.java` | 继承基础类，注册到 ISignalReceiver/Sender |
 | 添加控制绑定 | `control/ControlBinding.java` | 按键 → 网络包 → 信号映射 |
 | 修改能源网格 | `energy/EnergyGrid.java` | 直流总线、优先级负载卸载 |
 | 新增投射物行为 | `projectile/ProjectileManager.java` | SoA 数组、rayTest、BFDamageApi |
-| 修改 MoLang 上下文 | `molang/MechMolangContext.java` | 粒子/HUD 动画表达式 |
+| 修改 MoLang 上下文 | `molang/MechMolangContext.java` | `local.*`（Part）/ `global.*`（装配体）表达式，供动画/粒子/HUD 使用 |
 | 修复物理线程崩溃 | `VehicleCore.java` | 根因：关节两刚体均为运动学模式 |
 
 ## 约定
@@ -50,6 +50,8 @@ common/mech/
 - **SignalChannel extends ConcurrentHashMap**：通过继承实现线程安全。
 - **EnergyGrid**：生产/消费者用 `CopyOnWriteArraySet`；供应比例用 `ConcurrentMap`。
 - **机械功率流**：Engine/Motor → Gearbox → Transmission → WheelDriver/JointDriver，通过连接器上的 MechPowerPort 传递。
+- **动画体归属**：`Part implements IAnimatable<Part>`（共享 `ModelPose`），`SubPart` 只负责刚体与骨骼子树渲染；动画 tick 由 `VehicleCore` 驱动、双端且两侧同门控。
+- **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。
 
 ## 反模式
 

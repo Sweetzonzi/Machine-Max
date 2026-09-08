@@ -19,27 +19,27 @@
     },
     "speed_outputs": {
       "$ref": "../base/signal_targets.json",
-      "default": { "vehicle_speed": ["subpart", "vehicle"] },
+      "default": { "vehicle_speed": ["local", "global"] },
       "description": "Movement speed signal output channel and targets. Optional, by default sends movement speed (m/s) to the vehicle_speed channel of parts and vehicles."
     },
     "throttle_outputs": {
       "$ref": "../base/signal_targets.json",
-      "default": { "throttle": ["subpart", "vehicle"] },
+      "default": { "throttle": ["local", "global"] },
       "description": "Throttle signal output channel and targets. Optional, by default sends throttle [0,1] to the throttle channel of parts and vehicles."
     },
     "brake_outputs": {
       "$ref": "../base/signal_targets.json",
-      "default": { "brake": ["subpart", "vehicle"] },
+      "default": { "brake": ["local", "global"] },
       "description": "Brake signal output channel and targets. Optional, by default sends brake level [0,1] to the brake channel of parts and vehicles."
     },
     "steering_outputs": {
       "$ref": "../base/signal_targets.json",
-      "default": { "steering": ["subpart", "vehicle"] },
+      "default": { "steering": ["local", "global"] },
       "description": "Steering angle signal output channel and targets. Optional, by default sends steering level [-1,1] to the steering channel of parts and vehicles."
     },
     "handbrake_outputs": {
       "$ref": "../base/signal_targets.json",
-      "default": { "handbrake": ["subpart", "vehicle"] },
+      "default": { "handbrake": ["local", "global"] },
       "description": "Handbrake switch signal output channel and targets. Optional, by default sends handbrake level [0,1] to the handbrake channel of parts and vehicles."
     }
   },

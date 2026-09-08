@@ -128,7 +128,7 @@ HUD模型使用标准的Minecraft Bedrock格式，需要包含以下元素：
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }
@@ -153,9 +153,9 @@ HUD模型使用标准的Minecraft Bedrock格式，需要包含以下元素：
 "speed": {
   "key": "hud.machine_max.default_1.speed",
   "molang_args": [
-    "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-    "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-    "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+    "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+    "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+    "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
   ],
   "significand": 0
 }
@@ -165,7 +165,7 @@ HUD模型使用标准的Minecraft Bedrock格式，需要包含以下元素：
 ```json
 "gear": {
   "key": "hud.machine_max.default_1.gear",
-  "molang_args": ["vehicle.get('gear')??'NO GBX'"],
+  "molang_args": ["global.get('gear')??'NO GBX'"],
   "centered": true,
   "shadow": true
 }
@@ -180,28 +180,28 @@ HUD系统充分利用了Molang的强大功能，可以实现复杂的动态显�
 #### 信号获取和单位转换
 ```molang
 // 获取车辆速度并转换为km/h
-math.abs(vehicle.get('vehicle_speed')??0.0) * 3.6
+math.abs(global.get('vehicle_speed')??0.0) * 3.6
 
 // 获取发动机转速并转换为RPM
-math.abs(vehicle.get('engine_speed')??0) * 30 / math.pi
+math.abs(global.get('engine_speed')??0) * 30 / math.pi
 ```
 
 #### 数字分解显示
 ```molang
 // 百位数
-math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)
+math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)
 
 // 十位数
-math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
+math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
 
 // 个位数
-math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))
+math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))
 ```
 
 #### 条件显示
 ```molang
 // 根据子系统状态显示警告
-subpart.has_subsystem('engine') && subpart.subsystem_destroyed('engine') ? 1.0 : 0.0
+local.has_subsystem('engine') && local.subsystem_destroyed('engine') ? 1.0 : 0.0
 ```
 
 ## 子系统HUD关联
@@ -261,16 +261,16 @@ HUD通过座椅子系统的视图属性与特定座位关联：
       "shadow": true,
       "scale": [2, 2, 2],
       "molang_args": [
-        "math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)",
-        "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
-        "math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 10))"
+        "math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+        "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+        "math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))"
       ]
     },
     "gear": {
       "key": "hud.machine_max.default_1.gear",
       "centered": true,
       "shadow": true,
-      "molang_args": ["vehicle.get('gear')??'NO GBX'"]
+      "molang_args": ["global.get('gear')??'NO GBX'"]
     }
   }
 }
@@ -321,7 +321,7 @@ HUD通过座椅子系统的视图属性与特定座位关联：
 {
   "Pointer": {
     "rotation": {
-      "0.0": [0, 0, "240*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+      "0.0": [0, 0, "240*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
     }
   }
 }

@@ -21,13 +21,13 @@ public abstract class AbstractGuiAction {
     /** 输出频道名 */
     public final String channel;
 
-    /** 信号目标名列表，默认 ["vehicle"] */
+    /** 信号目标名列表，默认 ["global"] */
     public final List<String> targets;
 
     protected AbstractGuiAction(String label, String channel, List<String> targets) {
         this.label = label;
         this.channel = channel != null ? channel : "";
-        this.targets = (targets != null && !targets.isEmpty()) ? List.copyOf(targets) : List.of("vehicle");
+        this.targets = (targets != null && !targets.isEmpty()) ? List.copyOf(targets) : List.of("global");
     }
 
     /** 交互元素类型 */

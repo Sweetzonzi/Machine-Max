@@ -1,10 +1,20 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimGroups;
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
+import cn.solarmoon.spark_core.animation.anim.origin.Loop;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.molang.SparkMolangContext;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -16,6 +26,9 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
+import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
@@ -47,17 +60,22 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * <p>组装与UGC创作的最小单元</p>
+ * <p>同时是动画体（{@link IAnimatable}）：模型、动画、Molang 变量与涂装均为 Part 级，
+ * 子零件（{@link SubPart}）仅保留物理、骨骼切分与渲染视图职责。</p>
  */
 @Getter
-public class Part {
+public class Part implements IAnimatable<Part>, ISignalReceiver {
     //常规属性 General attributes
     /**
      * 所属的装配体（VehicleCore、MechUnit 等）
@@ -76,10 +94,24 @@ public class Part {
     public final SubPart rootSubPart;
     public float totalMass;
     public boolean destroyed = false;
+    //模型、动画与渲染（动画体上移到 Part，纹理与 Molang 亦为 Part 级）
+    public final ModelController modelController;
+    public final AnimController animController;
+    /** Part 级 Molang 求值上下文（同时供动画、HitBox 条件与 HUD 使用） */
+    private final MechMolangContext molangContext;
+    /** 当前使用的纹理索引（用于切换纹理） */
+    public String textureName;
+    /** 部件级信号存储，同时作为 Molang 变量表（{@link #getVariables()}） */
+    public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     //模块化属性 Modular attributes
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
+    /** Part 级按名索引：连接点名 → 连接点（用于 Molang 按名寻址） */
+    public final Map<String, AbstractConnector> connectorsByName = HashMap.newHashMap(1);
+    /** Part 级按名索引：子系统名 → 子系统（用于 Molang 按名寻址） */
+    public final Map<String, AbstractSubsystem> subsystemsByName = HashMap.newHashMap(1);
 
     /**
      * <p>创建新部件，使用指定变体</p>
@@ -97,6 +129,14 @@ public class Part {
         this.variant = partType.getVariants().get(variantName);
         this.level = level;
         this.uuid = UUID.randomUUID();
+        // 动画体相关成员必须先于 createSubParts() 初始化：
+        // ModelController 构造即读取 defaultModelIndex；HitBox 构造期即需 Part 级 Molang 上下文
+        this.modelController = new ModelController(this);
+        this.animController = new AnimController(this);
+        this.molangContext = new MechMolangContext(this);
+        this.getModelController().setModel(new ModelIndex("part", variant.getModel()));
+        this.textureName = variant.getTextures().keySet().iterator().next();
+        this.getModelController().setTextureLocation(variant.getTexture(textureName));
         this.rootSubPart = createSubParts(variant.getSubParts());//创建子部件并指定根子部件
         updateMass();
     }
@@ -134,6 +174,17 @@ public class Part {
         this.renderWireframe = readAdditionalData ? data.renderWireframe : true;
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
         this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
+        // 动画体相关成员必须先于 createSubParts() 初始化（同上）
+        this.modelController = new ModelController(this);
+        this.animController = new AnimController(this);
+        this.molangContext = new MechMolangContext(this);
+        this.getModelController().setModel(new ModelIndex("part", variant.getModel()));
+        // 涂装：PartData 携带纹理名；旧存档缺失或纹理已移除时回落首个纹理
+        String savedTexture = readAdditionalData ? data.textureName : null;
+        this.textureName = savedTexture != null && variant.getTextures().containsKey(savedTexture)
+                ? savedTexture
+                : variant.getTextures().keySet().iterator().next();
+        this.getModelController().setTextureLocation(variant.getTexture(textureName));
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
@@ -142,7 +193,6 @@ public class Part {
             if (data.subParts.containsKey(subPartName)) {
                 SubPartData subPartData = data.subParts.get(subPartName);
                 if (level.isClientSide()) subPart.setId(subPartData.id);//仅客户端接收应用服务端发送的id
-                subPart.switchTexture(subPartData.getTextureName());
                 PosRotVelVel posRotVelVel = subPartData.posRotVelVel;
                 subPart.setPosition(posRotVelVel.position());
                 subPart.setRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
@@ -184,6 +234,10 @@ public class Part {
         updateMass();//更新部件总质量
     }
 
+    /**
+     * 主线程每 tick 调用（由 VehicleCore 在区块加载时驱动）。
+     * <p>发布共享动画姿态（唯一发布者），并在客户端自动播放循环动画。</p>
+     */
     public void onTick() {
         if (shouldRenderWireframe() && getAssemblingProgress() > type.getFunctionalThreshold()) {
             setRenderWireframe(false);
@@ -194,9 +248,61 @@ public class Part {
             break;
         }
         if (shouldDestroy) this.destroyed = true;
+        // 发布共享 pose（唯一 setChanged 调用点）
+        animController.tick();
+        if (level.isClientSide()) autoPlayLoopAnimations();
     }
 
+    /**
+     * 物理线程每物理刻调用（由 VehicleCore 在区块加载时驱动）。
+     * <p>推进动画时间并将骨骼混合到共享 pose。</p>
+     */
     public void onPrePhysicsTick() {
+        animController.physTick();
+    }
+
+    /**
+     * 客户端自动播放持续动画（loop:true）；一次性事件动画由 {@link #playAnim(String)} 按名触发。
+     */
+    private void autoPlayLoopAnimations() {
+        ModelIndex index = new ModelIndex("part", variant.getAnimations());
+        OAnimationSet animSet = OAnimationSet.getORIGINS().get(index);
+        if (animController.isPlayingAnim() || animSet == null || animSet.getAnimations().isEmpty()) return;
+        for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
+            if (entry.getValue().getLoop() != Loop.TRUE) continue;
+            AnimInstance instance = new AnimInstance(this, new AnimIndex(index, entry.getKey()));
+            instance.enter();
+        }
+    }
+
+    /**
+     * 播放指定名称的动画（仅客户端）。
+     * <p>动画取自变体自身的动画集，播放于 {@link AnimGroups#ACTION} 动作覆盖层。</p>
+     *
+     * @param animName 动画名（对应 variant 动画集中的键）
+     */
+    public void playAnim(String animName) {
+        if (!level.isClientSide()) return;
+        ModelIndex index = new ModelIndex("part", variant.getAnimations());
+        OAnimationSet set = OAnimationSet.getOrEmpty(index);
+        if (!set.hasAnimation(animName)) {
+            MachineMax.LOGGER.warn("[Part {}-{}] 未找到动画 {}", name, uuid, animName);
+            return;
+        }
+        AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
+        instance.setGroup(AnimGroups.ACTION);
+        instance.independentEnter();
+    }
+
+    /**
+     * 应用指定纹理（纯本地状态变更，不广播；广播由调用方负责）。
+     *
+     * @param name 纹理名
+     */
+    public void applyTexture(String name) {
+        if (variant.getTextures().size() == 1) return;
+        this.textureName = name;
+        this.getModelController().setTextureLocation(variant.getTexture(name));
     }
 
     public void onPostPhysicsTick() {
@@ -250,6 +356,7 @@ public class Part {
             AbstractSubsystemAttr attr = entry.getValue();
             AbstractSubsystem subsystem = attr.createSubsystem(subPart, name);
             subPart.subsystems.put(name, subsystem);//部件内的子系统
+            subsystemsByName.put(name, subsystem);//Part 级按名索引
         }
     }
 
@@ -278,6 +385,7 @@ public class Part {
                     );
                 }
                 subPart.connectors.put(connectorName, connector);
+                this.connectorsByName.put(connectorName, connector);//Part 级按名索引
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
@@ -966,6 +1074,75 @@ public class Part {
             PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(subPartTransform);
             PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(subPartTransform);
         }
+    }
+
+    // ======================== IAnimatable<Part> 实现 ========================
+
+    @Override
+    public Part getAnimatable() {
+        return this;
+    }
+
+    @Override
+    public Level getAnimLevel() {
+        return level;
+    }
+
+    @Override
+    public ModelIndex getDefaultModelIndex() {
+        return new ModelIndex("part", variant.getModel());
+    }
+
+    /**
+     * 获取本部件整模型的全部骨骼（供后续关节采样等使用）。
+     * <p>注意：渲染所需的骨骼子树过滤仍由 {@link SubPart#getBones()} 提供。</p>
+     */
+    public Map<String, OBone> getBones() {
+        return OModel.getOrEmpty(new ModelIndex("part", variant.getModel())).getBones();
+    }
+
+    /**
+     * 获取 Part 级 Molang 上下文（不做 reset，供编译器获取原型）。
+     */
+    @Override
+    public @NotNull MechMolangContext getMolangContext() {
+        return molangContext;
+    }
+
+    /**
+     * 获取已 reset 到当前 Part 状态的 Molang 上下文，用于表达式求值。
+     */
+    public SparkMolangContext<IAnimatable<Part>> getSparkMolangContext() {
+        molangContext.reset(this, 0);
+        return molangContext;
+    }
+
+    @Override
+    public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
+        return signalStorage;
+    }
+
+    @Override
+    public Matrix4f getWorldPositionMatrix(@NotNull Number partialTicks) {
+        return rootSubPart.getWorldPositionMatrix(partialTicks);
+    }
+
+    @Override
+    public Vec3 getRenderPosition(Number partialTicks) {
+        return rootSubPart.getRenderPosition(partialTicks);
+    }
+
+    // ======================== ISignalReceiver 实现 ========================
+
+    /** Part 在信号路由中的保留地址：{@code "local"} 表示当前动画体（Part） */
+    @Override
+    public String getSignalAddress() {
+        return "local";
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getSignalStorage() {
+        return signalStorage;
     }
 
 }

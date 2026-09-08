@@ -93,13 +93,13 @@
               "control_group_preset": "machine_max:default_gunner",
               "passenger_num_outputs": {
                 "passenger_num": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "camera_discovery_targets": {
                 "gunner_sight": [
-                  "vehicle"
+                  "global"
                 ]
               }
             },
@@ -110,13 +110,13 @@
               "control_group_preset": "machine_max:default_commander",
               "passenger_num_outputs": {
                 "passenger_num": [
-                  "subpart",
-                  "vehicle"
+                  "local",
+                  "global"
                 ]
               },
               "camera_discovery_targets": {
                 "gunner_sight": [
-                  "vehicle"
+                  "global"
                 ]
               }
             },
@@ -135,10 +135,10 @@
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
                 "weapon_control": [
-                  "vehicle"
+                  "global"
                 ],
                 "weapon.gun": [
-                  "vehicle"
+                  "global"
                 ]
               }
             },
@@ -147,7 +147,7 @@
               "definition": "machine_max:secondary_weapon_controller",
               "control_outputs": {
                 "weapon.mg": [
-                  "vehicle"
+                  "global"
                 ]
               }
             },
@@ -159,7 +159,7 @@
               },
               "discovery_outputs": {
                 "ammo_50mm": [
-                  "vehicle"
+                  "global"
                 ]
               }
             },
@@ -172,7 +172,7 @@
               },
               "discovery_outputs": {
                 "ammo_7_92mm": [
-                  "vehicle"
+                  "global"
                 ]
               }
             }

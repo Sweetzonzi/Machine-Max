@@ -3,11 +3,11 @@
         "name": "controlGroup.machine_max.base",
         "control_mode": "ground",
         "move_targets": {
-            "move_input_p1": ["vehicle"]
+            "move_input_p1": ["global"]
         },
         "view_targets": {},
         "regular_targets": {
-            "regular_input_p1": ["vehicle"]
+            "regular_input_p1": ["global"]
         },
         "bindings": []
     }

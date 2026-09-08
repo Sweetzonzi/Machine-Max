@@ -27,7 +27,7 @@
             "collision_left_mirror": { // 后视镜
               "type": "box",
               "subsystem": "subsystem.machine_max.rearview_mirror",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
               "material": "machine_max:glass"
             }
           },
@@ -83,7 +83,7 @@
             "collision_right_mirror": { // 后视镜
               "type": "box",
               "subsystem": "subsystem.machine_max.rearview_mirror",
-              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
               "material": "machine_max:glass"
             }
           },

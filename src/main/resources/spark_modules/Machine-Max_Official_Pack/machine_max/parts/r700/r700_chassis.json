@@ -109,9 +109,9 @@
           "subsystem.machine_max.engine": {
             "type": "machine_max:engine", //电动机子系统, 低速下恒扭矩, 高速下恒功率
             "definition": "machine_max:r700_engine",//子系统型号, 需要与子系统类型相匹配
-            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
+            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“global”
             "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
-              "engine_speed": ["subpart", "vehicle"]
+              "engine_speed": ["local", "global"]
             }
           },
           "subsystem.machine_max.gearbox": {
@@ -119,7 +119,7 @@
             "definition": "machine_max:r700_gearbox", //子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.back_wheel_driver", //功率输出目标, 子系统或部件连接点名
             "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
-              "gear": ["subpart", "vehicle"]
+              "gear": ["local", "global"]
             }
           },
           "subsystem.machine_max.glove_box": {

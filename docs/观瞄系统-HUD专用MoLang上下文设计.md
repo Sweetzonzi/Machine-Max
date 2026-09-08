@@ -6,7 +6,7 @@
 
 ## 一、设计动机
 
-现有 `MechMolangContext` 绑定 `IAnimatable<SubPart>`，为载具部件动画提供 `subpart.*` / `vehicle.*` / `spt.*` / `veh.*` 查询。但在 HUD 渲染场景中缺少以下能力：
+现有 `MechMolangContext` 绑定 `IAnimatable<Part>`，为载具部件动画提供 `local.*`（Part）/ `global.*`（装配体）查询。但在 HUD 渲染场景中缺少以下能力：
 
 1. **HUD 渲染参数读取**：无法在模型动画关键帧中获取当前 zoom、FOV、屏幕尺寸、透视/正交标志
 2. **HudAttr 参数可用**：模型的 `offset.z`（分划板距离）、`scale`（模型缩放）对角度→骨骼位移换算至关重要
@@ -19,8 +19,8 @@
 ## 二、类层次结构
 
 ```
-SparkMolangContext<IAnimatable<SubPart>>        (Spark-Core)
-  └─ MechMolangContext                           (现有：subpart.* vehicle.* spt.* veh.*)
+SparkMolangContext<IAnimatable<Part>>          (Spark-Core)
+  └─ MechMolangContext                           (现有：local.* global.*)
        └─ HudMolangContext                       (★ 新增：hud.* scope.*)
 ```
 
@@ -33,7 +33,7 @@ SparkMolangContext<IAnimatable<SubPart>>        (Spark-Core)
 ```java
 // GuiAnimatable.java
 
-/** HUD 专用 MoLang 上下文。非 null 时优先使用，覆盖 SubPart 默认上下文 */
+/** HUD 专用 MoLang 上下文。非 null 时优先使用，覆盖 Part 默认上下文 */
 private SparkMolangContext<?> hudContext = null;
 
 public void setHudContext(SparkMolangContext<?> ctx) { this.hudContext = ctx; }
@@ -42,7 +42,7 @@ public void setHudContext(SparkMolangContext<?> ctx) { this.hudContext = ctx; }
 public SparkMolangContext<?> getMolangContext() {
     if (hudContext != null) return hudContext;
     SubPart sp = getRidingSubPart();
-    if (sp != null) return sp.getSparkMolangContext();
+    if (sp != null) return sp.part.getSparkMolangContext();
     return molangContext;
 }
 ```
@@ -323,7 +323,7 @@ hud.renderContent(poseStack, bufferSource, partialTick);
 
 | 系统 | 关系 |
 |------|------|
-| `MechMolangContext` | 继承，自动获得 subpart.* / vehicle.* 查询 |
+| `MechMolangContext` | 继承，自动获得 local.* / global.* 查询 |
 | `GuiAnimatable` | 通过 hudContext 字段注入，不修改现有渲染逻辑 |
 | `CustomHud` | prepareFrame 在正交/透视渲染循环中调用 |
 | `SightHud` | 不变，引擎级元素不涉及 MoLang |

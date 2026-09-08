@@ -74,6 +74,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.resetSignalOutputs();
     }
 
+    /**
+     * 子系统以自身名称为寻址名（虚拟分派，脚本子系统可经 Hook 覆写 getName()）。
+     */
+    @Override
+    public String getSignalAddress() {
+        return getName();
+    }
+
     public void onTick() {
         tickCount++;
         if (!getLevel().isClientSide()) {

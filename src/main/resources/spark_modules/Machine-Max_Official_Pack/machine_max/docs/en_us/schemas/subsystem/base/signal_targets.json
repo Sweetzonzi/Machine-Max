@@ -7,7 +7,7 @@
   "additionalProperties": {
     "type": "array",
     "items": { "type": "string" },
-    "description": "List of target names, can be subsystem names, connection point names, 'part' or 'vehicle'."
+    "description": "List of target names, can be subsystem names, connection point names, 'part' or 'global'."
   },
   "default": {},
   "examples": [

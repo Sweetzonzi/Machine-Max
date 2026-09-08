@@ -103,7 +103,7 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
     private void renderSubPart(SubPart subPart, Vector3f subPartPos, Matrix4f worldMatrix, Vec3 camPos,
                                Matrix4f modelViewMatrix, PoseStack poseStack,
                                MultiBufferSource bufferSource, float partialTick) {
-        var modelController = subPart.getModelController();
+        var modelController = subPart.part.getModelController();
         var modelInstance = modelController.getModel();
         if (modelInstance == null) return;
 

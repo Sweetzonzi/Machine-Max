@@ -1,9 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
 import cn.solarmoon.spark_core.EntityPatch;
-import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.AnimController;
-import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -31,7 +28,6 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -56,7 +52,7 @@ import org.joml.Quaternionf;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, EntityPatch {
+public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpawn, EntityPatch {
 
     public SubPart subPart;//实体所属的零件
     public UUID vehicleUUID;
@@ -65,8 +61,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
     public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
     private PhysicsGhostObject testGhost;
-    @Getter
-    private final Map<String, Object> variables = HashMap.newHashMap(1);
     /**
      * 缓存1倍尺寸的AABB，供 getBoundingBoxForCulling 使用，避免每帧创建
      */
@@ -535,17 +529,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         return SparkLevel.getPhysicsLevel(level());
     }
 
-    @Override
-    public MMPartEntity getAnimatable() {
-        return this;
-    }
-
-    @Override
-    public @NotNull AnimController getAnimController() {
-        if (subPart == null) return new AnimController(this);
-        else return subPart.getAnimController();
-    }
-
     private void updatePart() {
         VehicleCore vehicle = ObjectManager.clientAllVehicles.get(vehicleUUID);
         if (vehicle != null && vehicle.level == this.level()) {
@@ -594,20 +577,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @NotNull
     @Override
-    public Level getAnimLevel() {
-        return this.level();
-    }
-
-    @NotNull
-    @Override
     public BlackBoard getHurtData() {
         return new BlackBoard();
-    }
-
-    @NotNull
-    @Override
-    public ModelController getModelController() {
-        if (subPart != null) return subPart.getModelController();
-        else return new ModelController(this);
     }
 }

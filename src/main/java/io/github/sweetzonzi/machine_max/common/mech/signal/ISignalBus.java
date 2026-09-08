@@ -9,7 +9,7 @@ import java.util.Set;
  * <p>
  * 同时继承 ISignalReceiver 和 ISignalSender：
  * <ul>
- *   <li>作为 ISignalReceiver：可从现有信号路由接收信号（通过 "vehicle" 目标名）</li>
+ *   <li>作为 ISignalReceiver：可从现有信号路由接收信号（通过 "global" 目标名）</li>
  *   <li>作为 ISignalSender：可被其他组件列为目标，允许回复/回调</li>
  *   <li>broadcast()：将信号转发给所有订阅者中接受此频道的接收者，保留原始发送者身份</li>
  * </ul>

@@ -11,8 +11,10 @@ import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -23,6 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -44,11 +47,14 @@ public class SprayCanItem extends Item implements ICustomModelItem {
                 //TODO:粒子效果
                 Iterator<String> iterator = part.part.variant.getTextures().keySet().iterator();
                 String textureName = iterator.next();
-                while (iterator.hasNext() && !textureName.equals(part.textureName))
+                while (iterator.hasNext() && !textureName.equals(part.part.textureName))
                     textureName = iterator.next();
                 if (iterator.hasNext()) textureName = iterator.next();
                 else textureName = part.part.variant.getTextures().keySet().stream().toList().getFirst();
-                part.switchTexture(textureName);
+                // 涂装为 Part 级：本地应用后由调用方广播（Part.applyTexture 不广播）
+                part.part.applyTexture(textureName);
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                        new PartPaintPayload(part.getId(), textureName));
                 SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 32f);
                 SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));

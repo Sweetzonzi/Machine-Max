@@ -181,6 +181,8 @@ io.github.sweetzonzi.machine_max/
 - **内容包一切**：部件、子系统、连接器、配方、蓝图全在 JSON 中定义，位于 `spark_modules/` 下。
 - **双数学库**：物理使用 JME（`com.jme3.math.*`），渲染使用 JOML（`org.joml.*`）。通过 `SparkMathKt.*` 转换。
 - **控制绑定管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。
+- **动画体在 Part**：`Part implements IAnimatable<Part>`（共享 `ModelPose`、`local.*` Molang、涂装）；`SubPart` 只负责刚体与骨骼子树渲染，`MMPartEntity` 仅作渲染入口/原版交互点。
+- **信号寻址**：路由用 `ISignalReceiver.getSignalAddress()`，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。
 
 ## 反模式（本项目特有）
 

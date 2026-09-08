@@ -118,8 +118,19 @@ public class SubsystemController implements ISignalBus {
         return channels;
     }
 
+    /** 装配体在信号路由中的保留地址：{@code "global"} */
+    @Override
+    public String getSignalAddress() {
+        return "global";
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getSignalStorage() {
+        return signalStorage;
+    }
+
     /**
-     * 当总线自身作为路由目标收到信号时（"vehicle" 目标名），
+     * 当总线自身作为路由目标收到信号时（"global" 目标名），
      * 将信号转发给所有订阅了此频道的子系统，并写入 signalStorage。
      */
     @Override
@@ -139,7 +150,7 @@ public class SubsystemController implements ISignalBus {
     /**
      * 转发回调请求给所有接受此频道且可作为发送者的订阅者。
      * <p>
-     * 当 SubsystemController 作为路由目标收到带回调的信号时（"vehicle" 目标名），
+     * 当 SubsystemController 作为路由目标收到带回调的信号时（"global" 目标名），
      * 在 onSignalUpdated / broadcast 之前遍历所有订阅者，让每个订阅者
      * 自主决定是否向原始发送者回传 callback。
      * <p>

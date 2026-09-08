@@ -74,7 +74,7 @@ Calculates the arctangent of y/x (returns angle).
 **Example**:
 ```molang
 // Used in AE86 suspension animation
-math.atan2(subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16, 20)
+math.atan2(local.connector_offset('connector.machine_max.right_front_wheel', 1)*16, 20)
 ```
 
 ## Exponential and Logarithmic Functions
@@ -115,7 +115,7 @@ Calculates the square root of a value.
 **Example**:
 ```molang
 // Calculate link length in AE86 suspension animation
-math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16, 2)+81)
+math.sqrt(math.pow(20-local.connector_offset('connector.machine_max.left_front_wheel', 1)*16, 2)+81)
 ```
 
 ## Rounding Functions
@@ -131,7 +131,7 @@ Rounds down to the nearest integer.
 **Example**:
 ```molang
 // Used in HUD speed display
-math.floor((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6 / 100)
+math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)
 ```
 
 ### math.ceil(value)
@@ -163,7 +163,7 @@ Calculates the absolute value.
 **Example**:
 ```molang
 // Ensure speed value is positive
-math.abs(vehicle.get('vehicle_speed')??0.0)
+math.abs(global.get('vehicle_speed')??0.0)
 ```
 
 ### math.mod(value1, value2)
@@ -178,7 +178,7 @@ Calculates the remainder of value1 divided by value2.
 **Example**:
 ```molang
 // Extract tens digit in HUD speed display
-math.floor(math.mod((math.abs(vehicle.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
+math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)
 ```
 
 ### math.sign(value)
@@ -250,10 +250,10 @@ degrees * math.pi / 180
 ### 1. Unit Conversion
 ```molang
 // Meters per second to kilometers per hour
-vehicle.get('vehicle_speed') * 3.6
+global.get('vehicle_speed') * 3.6
 
 // Radians per second to revolutions per minute (RPM)
-vehicle.get('engine_speed') * 30 / math.pi
+global.get('engine_speed') * 30 / math.pi
 ```
 
 ### 2. Animation Control

@@ -44,6 +44,22 @@ public interface IPartAssembly {
     /** 所有 Part 的总质量 */
     float getTotalMass();
 
+    /**
+     * 装配体当前 HP（用于 Molang {@code global.hp}）。
+     * <p>未实现 HP 概念的装配体可保持默认返回 0。</p>
+     */
+    default float getHp() {
+        return 0f;
+    }
+
+    /**
+     * 装配体 HP 上限（用于 Molang {@code global.max_hp}）。
+     * <p>未实现 HP 概念的装配体可保持默认返回 0。</p>
+     */
+    default float getMaxHp() {
+        return 0f;
+    }
+
     // ========================================
     // 零件管理
     // ========================================
