@@ -10,6 +10,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -105,6 +106,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /** 本轮连射已打的弹数（用于检测首发射击） */
     private int roundsFiredThisBurst = 0;
+
+    /**
+     * 开火动画是否已被判定为不可用（零件动画集中不存在该名称）。
+     * <p>首次解析失败时置 true 并告警一次，之后静默跳过——
+     * 高射速武器若每发都告警会刷屏。</p>
+     * <p><b>调用线程：</b>仅客户端主线程（{@link #onTick()}）。</p>
+     */
+    private boolean fireAnimUnavailable = false;
 
     // ——— 弹药状态 ———
 
@@ -370,6 +379,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             for (ProjectileType type : firedTypes) {
                 type.playFireEffect(getLevel(), this, attr.locator);
             }
+            playFireAnimation();
         }
 
         // ⑥ 扣除已发射数对应的时间
@@ -593,6 +603,32 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // fromAngleNormalAxis: Quaternion 的正确方法名
         Quaternion rot = new Quaternion().fromAngleNormalAxis((float) Math.toRadians(maxAngleDeg), axis);
         return MyQuaternion.rotate(rot, forward, null);
+    }
+
+    // ——— 开火动画（仅客户端 onTick 中调用） ———
+
+    /**
+     * 客户端：为本 tick 的射击触发开火动画。
+     * <p>动画名取自 {@code attr.fireAnimation}（缺省 {@code "fire"}），
+     * 由 {@link Part#playAnim(String)} 播放于 ACTION 覆盖层。</p>
+     * <p><b>触发粒度：</b>每个 tick 至多触发一次。同一 tick 内的多发在视觉上无法区分，
+     * 且 {@code enter()} 是异步提交到物理线程，重复调用会创建多个实例。</p>
+     * <p><b>缺失处理：</b>动画集中不存在该名称时告警一次并永久禁用，避免高射速下刷屏。</p>
+     * <p><b>调用线程：</b>主线程（{@link #onTick()} 客户端分支）。</p>
+     */
+    private void playFireAnimation() {
+        if (fireAnimUnavailable) return;
+        String animName = attr.fireAnimation;
+        if (animName == null || animName.isEmpty()) return;
+        Part part = getSubPart().part;
+        if (part == null) return;
+        if (!part.hasAnim(animName)) {
+            fireAnimUnavailable = true;
+            MachineMax.LOGGER.warn("发射器 {} 的开火动画 {} 不存在于零件 {} 的动画集中，已禁用开火动画",
+                    name, animName, part.name);
+            return;
+        }
+        part.playAnim(animName);
     }
 
     // ——— 音效管理（仅在客户端 onTick 中调用） ———

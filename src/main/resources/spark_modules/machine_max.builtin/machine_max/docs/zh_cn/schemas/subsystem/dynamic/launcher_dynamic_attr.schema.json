@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/launcher_dynamic_attr.json",
+  "title": "发射器子系统动态属性",
+  "description": "发射器子系统实例属性，定义发射点定位器、开火动画与剩余弹药反馈输出。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:launcher",
+      "description": "子系统类型，必须为 'machine_max:launcher'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的发射器子系统静态属性定义文件。"
+    },
+    "locator": {
+      "type": "string",
+      "description": "发射点定位器名称。投射物从此定位器的世界位姿射出。"
+    },
+    "fire_animation": {
+      "type": "string",
+      "default": "fire",
+      "description": "开火时播放的动画名，对应零件动画集中的键。缺省为 'fire'。同名动画会从 0 重启；同一零件上的多个发射器需指定不同名称才能互不打断。动画缺失时告警一次并禁用开火动画。"
+    },
+    "ammo_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "剩余弹药反馈输出频道及目标。可选。"
+    }
+  },
+  "required": ["type", "definition", "locator"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:launcher",
+      "definition": "machine_max:2a42_launcher",
+      "locator": "2a42_launch_point",
+      "fire_animation": "recoil_2a42"
+    }
+  ]
+}

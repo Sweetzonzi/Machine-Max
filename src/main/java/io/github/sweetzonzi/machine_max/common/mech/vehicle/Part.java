@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.anim.AnimGroups;
+import cn.solarmoon.spark_core.animation.anim.AnimLayer;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.Loop;
@@ -278,6 +279,11 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     /**
      * 播放指定名称的动画（仅客户端）。
      * <p>动画取自变体自身的动画集，播放于 {@link AnimGroups#ACTION} 动作覆盖层。</p>
+     * <p><b>重触发粒度：</b>仅退出 ACTION 层中<b>同名</b>的旧实例后再进入，
+     * 而非清空整层。这样同一零件上的多个事件动画（如一门机炮 + 一挺机枪共用同一 Part）
+     * 只要动画名不同即可同时播放、互不打断；同名则从 0 重启。</p>
+     * <p>循环行为由动画自身的 {@code loop} 设置决定：缺省 ONCE 播完自停；
+     * 作者写 {@code loop:true} 则持续循环，需自行负责停止。</p>
      *
      * @param animName 动画名（对应 variant 动画集中的键）
      */
@@ -285,13 +291,33 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         if (!level.isClientSide()) return;
         ModelIndex index = new ModelIndex("part", variant.getAnimations());
         OAnimationSet set = OAnimationSet.getOrEmpty(index);
-        if (!set.hasAnimation(animName)) {
+        OAnimation target = set.getAnimation(animName);
+        if (target == null) {
             MachineMax.LOGGER.warn("[Part {}-{}] 未找到动画 {}", name, uuid, animName);
             return;
         }
+        // 按名精确退出：只打断同一动画的旧实例，保留同层其他事件动画
+        AnimLayer layer = animController.getLayers().get(AnimGroups.ACTION);
+        if (layer != null) {
+            for (AnimInstance old : new ArrayList<>(layer.getAnimations())) {
+                if (old.getOrigin() == target) old.exit();
+            }
+        }
         AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
         instance.setGroup(AnimGroups.ACTION);
-        instance.independentEnter();
+        instance.enter();
+    }
+
+    /**
+     * 判断本零件的动画集中是否存在指定名称的动画（不产生日志）。
+     * <p>供高频事件触发方在进入前校验，避免动画缺失时按射速刷屏告警。</p>
+     *
+     * @param animName 动画名
+     * @return true 表示动画存在
+     */
+    public boolean hasAnim(String animName) {
+        ModelIndex index = new ModelIndex("part", variant.getAnimations());
+        return OAnimationSet.getOrEmpty(index).hasAnimation(animName);
     }
 
     /**

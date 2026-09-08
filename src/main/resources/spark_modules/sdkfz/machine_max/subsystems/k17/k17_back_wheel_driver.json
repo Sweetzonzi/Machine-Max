@@ -1,0 +1,17 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:wheel_driver",
+  "basic_durability": 500,
+  "roll": {
+    "max_drive_force": 8000,
+    "max_brake_force": 6500,
+    "max_hand_brake_force": 500,
+    "max_rpm": 30000
+  },
+  "abs_enabled": true,
+  "abs_target_slip_ratio": 0.15,
+  "abs_wheel_radius": 0.672,
+  "control_inputs": [
+    "car_control"
+  ]
+}

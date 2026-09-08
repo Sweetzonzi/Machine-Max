@@ -38,6 +38,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.awt.*;
@@ -155,14 +156,30 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
 
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        try {
-            ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-            RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(type);
-            return recipeHolder.value().getResult().getHoverName().copy()
-                    .append(Component.translatable("item.machine_max.fabricating_blueprint"));
-        } catch (Exception e) {
-            return super.getName(stack);
+        Component productName = getProductName(stack);
+        if (productName == null) return super.getName(stack);
+        return productName.copy()
+                .append(Component.translatable("item.machine_max.fabricating_blueprint"));
+    }
+
+    /**
+     * 获取制造蓝图对应的产物显示名称。
+     * <p>优先取制造配方的产物名称；若该部件没有对应的制造配方（例如内容包只定义了零件、
+     * 未提供制造配方），则回退到部件类型自身的名称，避免蓝图只显示“制造蓝图”而丢失部件名。</p>
+     *
+     * @param stack 蓝图物品堆
+     * @return 产物名称；无法解析时返回 {@code null}
+     */
+    @Nullable
+    private static Component getProductName(ItemStack stack) {
+        ResourceLocation recipeId = stack.get(MMDataComponents.getRECIPE_TYPE());
+        if (recipeId != null) {
+            RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(recipeId);
+            if (recipeHolder != null) return recipeHolder.value().getResult().getHoverName();
         }
+        ResourceLocation partType = stack.get(MMDataComponents.getPART_TYPE());
+        if (partType != null) return Component.translatable(partType.toLanguageKey());
+        return null;
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {

@@ -23,21 +23,25 @@ import java.util.Map;
 public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final LauncherSubsystemStaticAttr staticAttribute;
     public final String locator;                              // 发射点locator名称
+    public final String fireAnimation;                        // 开火时播放的动画名（零件动画集内的键）
     public final Map<String, List<String>> ammoCountOutputs;   // 剩余弹药反馈输出
 
     public static final MapCodec<LauncherSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("locator").forGetter(LauncherSubsystemAttr::getLocator),
+            Codec.STRING.optionalFieldOf("fire_animation", "fire").forGetter(LauncherSubsystemAttr::getFireAnimation),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("ammo_outputs", Map.of()).forGetter(LauncherSubsystemAttr::getAmmoCountOutputs)
     ).apply(instance, LauncherSubsystemAttr::new));
 
     public LauncherSubsystemAttr(
             ResourceLocation modelName,
             String locator,
+            String fireAnimation,
             Map<String, List<String>> ammoCountOutputs) {
         super(modelName);
         this.staticAttribute = (LauncherSubsystemStaticAttr) getStaticAttr();
         this.locator = locator;
+        this.fireAnimation = fireAnimation;
         this.ammoCountOutputs = ammoCountOutputs;
     }
 

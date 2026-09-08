@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/launcher_dynamic_attr.json",
+  "title": "Launcher Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the launcher subsystem, defining the muzzle locator, fire animation, and remaining ammo feedback outputs.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:launcher",
+      "description": "Subsystem type, must be 'machine_max:launcher'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding launcher subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "description": "Muzzle locator name. Projectiles are fired from the world transform of this locator."
+    },
+    "fire_animation": {
+      "type": "string",
+      "default": "fire",
+      "description": "Animation name played on fire, keyed in the part's animation set. Defaults to 'fire'. Same-name animations restart from 0; multiple launchers on the same part must use different names to avoid interrupting each other. A missing animation triggers a single warning and disables the fire animation."
+    },
+    "ammo_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Remaining ammo feedback output channels and targets. Optional."
+    }
+  },
+  "required": ["type", "definition", "locator"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:launcher",
+      "definition": "machine_max:2a42_launcher",
+      "locator": "2a42_launch_point",
+      "fire_animation": "recoil_2a42"
+    }
+  ]
+}
