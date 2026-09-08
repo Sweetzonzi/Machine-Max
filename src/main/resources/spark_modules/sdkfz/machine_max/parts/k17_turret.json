@@ -10,6 +10,7 @@
       "sub_part.machine_max.main": {
         "start_bone": "Turret",
         "end_bones": [],
+        "mass": 4000,
         "projected_area": [
           -1,
           -1,
@@ -136,6 +137,7 @@
       "sub_part.machine_max.gun": {
         "start_bone": "2A42_All",
         "end_bones": [],
+        "mass": 500,
         "projected_area": [
           -1,
           -1,
@@ -172,6 +174,7 @@
       "sub_part.machine_max.left_atgm": {
         "start_bone": "ATGM_Left",
         "end_bones": [],
+        "mass": 250,
         "projected_area": [
           -1,
           -1,
@@ -196,6 +199,7 @@
       "sub_part.machine_max.right_atgm": {
         "start_bone": "ATGM_Right",
         "end_bones": [],
+        "mass": 250,
         "projected_area": [
           -1,
           -1,

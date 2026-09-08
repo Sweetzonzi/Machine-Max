@@ -14,6 +14,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedCo
 import jme3utilities.math.MyMath;
 import org.jetbrains.annotations.Nullable;
 import jme3utilities.math.MyQuaternion;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -62,6 +63,15 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      */
     private final ConcurrentHashMap<String, Vector3f> targetAngles = new ConcurrentHashMap<>();
 
+    /**
+     * 重载后待恢复的刹车角度 (pitch, yaw, roll)，单位弧度。<br>
+     * 由 {@link #loadData(CompoundTag)} 在载具重建时（主线程、任何物理刻之前）写入，
+     * 在重载后首次进入空闲分支时写入伺服目标并立即置空，之后按关节实际角度保持。<br>
+     * 作用：确保重新进入世界后炮塔刹停在退出游戏时的位置，而非被伺服驱向 0 位。
+     */
+    @Nullable
+    private Vector3f restoredBrakeAngle;
+
     public TurretDriverSubsystem(ISubsystemHost owner, String name, TurretDriverSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -109,6 +119,13 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             // 从 Map 按优先级读取目标角度，替代旧的信号轮询
             Vector3f target = getTargetAngle();
 
+            // 空闲时的保持角度：优先使用重载恢复的刹车角度（仅首次），否则保持当前关节角
+            Vector3f holdAngle = target == null
+                    ? (restoredBrakeAngle != null ? restoredBrakeAngle : getRelativeAngle())
+                    : null;
+            // 恢复角度只消费一次：被外部目标接管或已写入伺服目标后即丢弃，避免之后回跳
+            restoredBrakeAngle = null;
+
             if (hasYaw) {
                 RotationMotor yawMotor = joint.getRotationMotor(1);
                 if (target != null) {
@@ -120,9 +137,13 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                     yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
                     yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
                 } else {
-                    // 无有效目标时保持位置并停止
+                    // 无有效目标时保持位置并制动：
+                    // 关节重载后是新建对象，马达默认关闭，而伺服在马达关闭时完全无效，
+                    // 因此必须显式使能马达，否则炮塔会在重力下自由摆动
+                    yawMotor.setMotorEnabled(true);
                     yawMotor.setServoEnabled(true);
-                    yawMotor.set(MotorParam.TargetVelocity, 0f);
+                    yawMotor.set(MotorParam.ServoTarget, holdAngle.y);//锁定到当前/恢复的角度
+                    yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
                     yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
                 }
             }
@@ -137,8 +158,11 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                     pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
                     pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
                 } else {
+                    // 同偏航轴：马达关闭时伺服无效，需显式使能并锁定当前角度
+                    pitchMotor.setMotorEnabled(true);
                     pitchMotor.setServoEnabled(true);
-                    pitchMotor.set(MotorParam.TargetVelocity, 0f);
+                    pitchMotor.set(MotorParam.ServoTarget, holdAngle.x);//锁定到当前/恢复的角度
+                    pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
                     pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
                 }
             }
@@ -161,6 +185,29 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                 sendSignalToAllTargets(signalKey, feedbackAngle);
             }
         }
+    }
+
+    @Override
+    public void loadData(CompoundTag data) {
+        super.loadData(data);
+        //读取退出游戏时的刹车角度，供重载后首次空闲物理刻恢复炮塔位置
+        if (data.contains("brake_pitch") && data.contains("brake_yaw")) {
+            this.restoredBrakeAngle = new Vector3f(
+                    data.getFloat("brake_pitch"),
+                    data.getFloat("brake_yaw"),
+                    0f
+            );
+        }
+    }
+
+    @Override
+    public CompoundTag saveData(CompoundTag data) {
+        super.saveData(data);
+        //保存当前关节角作为刹车位置，确保重新进入世界后炮塔停在退出时的角度
+        Vector3f angle = getRelativeAngle();
+        data.putFloat("brake_pitch", angle.x);
+        data.putFloat("brake_yaw", angle.y);
+        return data;
     }
 
     /**
