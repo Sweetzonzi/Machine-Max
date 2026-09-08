@@ -93,6 +93,11 @@ public class MMPayloadRegistry {
                 ControlBindingPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ControlBindingPayload::serverHandler)
         );
+        input.playToServer(//手动零件组装放置请求
+                PartAssemblyRequestPayload.TYPE,
+                PartAssemblyRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartAssemblyRequestPayload::serverHandler)
+        );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
                 VehicleCreatePayload.STREAM_CODEC,
@@ -137,11 +142,6 @@ public class MMPayloadRegistry {
                 PartAssemblyProgressSyncPayload.TYPE,
                 PartAssemblyProgressSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartAssemblyProgressSyncPayload::handle)
-        );
-        sync.playToClient(//同步客户端玩家部件组装缓存
-                PlayerPartAssemblyCacheSyncPayload.TYPE,
-                PlayerPartAssemblyCacheSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(PlayerPartAssemblyCacheSyncPayload::handle)
         );
         sync.commonToServer(//客户端请求维度载具数据
                 ClientRequestVehicleDataPayload.TYPE,

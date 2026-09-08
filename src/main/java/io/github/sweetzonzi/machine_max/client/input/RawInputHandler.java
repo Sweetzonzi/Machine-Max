@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllab
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
@@ -275,16 +276,14 @@ public class RawInputHandler {
         boolean isCtrlPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS;
         if (client.player.getMainHandItem().getItem() instanceof PartAssemblyItem) {
             if (event.getScrollDeltaY() != 0) {
-                int key = -1;
                 if (isAltPressed) {
-                    key = event.getScrollDeltaY() > 0 ? KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue() : KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue();
+                    // 本地演化安装角，无需服务端往返
+                    VehicleAssemblyHelper.getInstance().cycleAttachAngle(event.getScrollDeltaY() > 0);
                 } else if (isCtrlPressed) {
 
                 } else if (isShiftPressed) {
 
                 }
-                if (key != -1)
-                    PacketDistributor.sendToServer(new RegularInputPayload(key, 0));
             }
         }
     }
@@ -447,22 +446,22 @@ public class RawInputHandler {
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0)));
 
         /*
-          载具组装
+          载具组装（装配选择状态为客户端本地演化，配方切换仍走服务端）
          */
             //切换部件安装角
             KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue(), 0)));
+                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleAttachAngle(true));
 
             KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue(), 0)));
+                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleAttachAngle(false));
 
             //切换部件连接点
             KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0)));
+                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleConnectors());
 
             //切换部件变体类型
             KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0)));
+                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleVariants());
 
             //切换部件配方
             KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)

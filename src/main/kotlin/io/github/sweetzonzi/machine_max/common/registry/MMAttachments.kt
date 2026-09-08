@@ -4,7 +4,6 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
-import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
 import net.minecraft.client.Minecraft
 import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs
@@ -21,13 +20,6 @@ object MMAttachments {
         factory = { _ -> LivingEntityEyesightAttachment(Minecraft.getInstance().player) }
     }
 
-
-    //实体组装部件时的缓存信息，如持有的部件类型，变体类型，选中的连接点等
-    @JvmStatic
-    val VEHICLE_ASSEMBLY = MachineMax.REGISTER.attachment {
-        id = "vehicle_assembly_cache"
-        factory = { _ -> VehicleAssemblyAttachment(Minecraft.getInstance().player) }
-    }
 
     //实体的载具控制偏好
     @JvmStatic

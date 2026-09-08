@@ -18,8 +18,8 @@ import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.visual.*;
@@ -61,15 +61,15 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             VisualEffectHelper.vehicleProjection = null;
         }
 
-        var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-        if (cache.getPartType() instanceof PartType type) {
-            VariantAttr variantAttr = cache.getVariant();
+        var helper = VehicleAssemblyHelper.getInstance();
+        if (helper.getPartType() instanceof PartType type) {
+            VariantAttr variantAttr = helper.getVariant();
             if (variantAttr == null) {
                 VisualEffectHelper.partToPlace = null;
                 return;
             }
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.variantAttr != variantAttr) {
-                VisualEffectHelper.partToPlace = new PartAnimatable(player.level(), type, cache.getVariantName());
+                VisualEffectHelper.partToPlace = new PartAnimatable(player.level(), type, helper.getVariantName());
                 VisualEffectHelper.partToPlace.setTransform(new Transform(
                         PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
                                 player.getEyePosition(),
@@ -103,9 +103,9 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-        if (cache.getPartType() instanceof PartType partType) {
-            String variant = cache.getVariantName();
+        var helper = VehicleAssemblyHelper.getInstance();
+        if (helper.getPartType() instanceof PartType partType) {
+            String variant = helper.getVariantName();
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
             renderPart(camPos, poseStack, bufferSource, partialTick);
         } else {

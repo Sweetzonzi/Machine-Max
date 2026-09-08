@@ -4,32 +4,27 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -38,14 +33,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +50,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     }
 
     /**
-     * 右键点击物品，尝试将零件放置到世界中或尝试与选择的连接口连接
+     * 右键点击物品，尝试将零件放置到世界中或尝试与选择的连接口连接。
+     * <p>客户端基于本地装配选择状态构造请求上报，服务端由 {@code VehicleAssemblyServerHelper} 权威处理。</p>
      *
      * @param level    世界
      * @param player   玩家
@@ -66,34 +61,13 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
-        if (!level.isClientSide()) {
-            if (player.hasData(MMAttachments.getVEHICLE_ASSEMBLY())) {
-                var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                if (cache.getPartType() != null && cache.getVariantName() != null) {
-                    try {
-                        Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
-                        RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
-                        if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
-                            part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
-                        }
-                        restoreAssemblyStateFromDamage(stack, part);
-                        var result = cache.assembly(level, player, stack, part); // 放出部件
-                        if (result.getResult() == InteractionResult.CONSUME) { // 若成功则播放音效
-                            stack.consume(1, player);
-                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
-                        }
-                        return result;
-                    } catch (Exception e) {
-                        MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
-                        player.sendSystemMessage(
-                                Component.translatable("message.machine_max.part.place_failed", e.getMessage())
-                                        .withColor(Color.RED.getRGB()));
-                        return InteractionResultHolder.fail(stack);
-                    }
-                } else return InteractionResultHolder.pass(stack);
-            } else return InteractionResultHolder.pass(stack);
-        } else return InteractionResultHolder.success(stack);
+        if (level.isClientSide()) {
+            PartAssemblyRequestPayload request = VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack);
+            if (request == null) return InteractionResultHolder.pass(stack);
+            PacketDistributor.sendToServer(request);
+            return InteractionResultHolder.success(stack);
+        }
+        return InteractionResultHolder.pass(stack);
     }
 
 
@@ -102,14 +76,14 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (level.isClientSide() && isSelected && entity instanceof Player player) {
             try {
-                var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                var helper = VehicleAssemblyHelper.getInstance();
                 var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-                PartType partType = cache.getPartType();//获取物品保存的部件类型
+                PartType partType = helper.getPartType();//获取本地装配状态保存的部件类型
                 if (partType == null) return;
-                VariantAttr variantAttr = cache.getVariant();//获取物品保存的部件变体属性
+                VariantAttr variantAttr = helper.getVariant();//获取本地装配状态保存的部件变体属性
                 if (variantAttr == null) return;
-                String variantName = cache.getVariantName();//获取物品保存的部件变体
-                ConnectorAttr connectorAttr = cache.getConnector();
+                String variantName = helper.getVariantName();//获取本地装配状态保存的部件变体
+                ConnectorAttr connectorAttr = helper.getConnector();
                 SubPart targetSubPart = eyesight.getSubPart();
                 AbstractConnector targetConnector = eyesight.getEmptyConnector();
                 MutableComponent message = Component.empty();
@@ -131,8 +105,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     if (targetConnector.conditionCheck(partType, variantName)) {
                         if ((targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
                             message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + " 部件接口:"
-                                    + Component.translatable(cache.getConnectorName().getFirst()).getString() + "-"
-                                    + Component.translatable(cache.getConnectorName().getSecond()).getString());
+                                    + Component.translatable(helper.getConnectorName().getFirst()).getString() + "-"
+                                    + Component.translatable(helper.getConnectorName().getSecond()).getString());
                             if (!variantName.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
                             if (VisualEffectHelper.partToPlace != null) {
@@ -141,11 +115,11 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
                                                         connectorAttr.getDirection(),
-                                                        PhysicsHelperKt.toBVector3f(cache.getOffset()),
-                                                        SparkMathKt.toBQuaternion(cache.getQuaternion()),
-                                                        cache.getAttachRotation()).invert()
+                                                        PhysicsHelperKt.toBVector3f(helper.getOffset()),
+                                                        SparkMathKt.toBQuaternion(helper.getQuaternion()),
+                                                        helper.getAttachRotation()).invert()
                                         ),
-                                        cache.getConnectorName().getFirst()
+                                        helper.getConnectorName().getFirst()
                                 );
                             }
                         } else message.append("无法连接两个高级连接点");
@@ -156,7 +130,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");
                     if (VisualEffectHelper.partToPlace != null) {
-                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
+                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(helper.getAttachRotation() - entity.getYRot()));
                         VisualEffectHelper.partToPlace.updateTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -253,23 +227,5 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (displayContext == ItemDisplayContext.GUI) return MMMath.ONE;
         else return new Vector3f(0.3f);
-    }
-
-    private static void restoreAssemblyStateFromDamage(ItemStack stack, Part part) {
-        if (!stack.has(DataComponents.MAX_DAMAGE)) return;
-        int cap = stack.getMaxDamage();
-        if (cap <= 0) return;
-
-        FabricatingRecipe recipe = part.getRecipe();
-        if (recipe == null || !recipe.isManualAssemblablePart()) return;
-        if (recipe.getManualAssembleIngredientList().isEmpty()) return;
-
-        int gap = Math.clamp(stack.getDamageValue(), 0, cap);
-        int provided = Math.clamp(cap - gap, 0, cap);
-        part.setMaterialProgress(provided);
-        part.setAssemblingProgress((float) provided / cap);
-        for (SubPart subPart : part.subParts.values()) {
-            subPart.setDurability(subPart.getMaxDurability());
-        }
     }
 }

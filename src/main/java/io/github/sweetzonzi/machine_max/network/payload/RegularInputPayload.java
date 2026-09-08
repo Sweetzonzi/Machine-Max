@@ -1,9 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyServerHelper;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
@@ -89,7 +88,6 @@ public class RegularInputPayload implements CustomPacketPayload {
         }
 
 
-        VehicleAssemblyAttachment assemblyCache;
         switch (KeyInputMapping.fromValue(payload.getKey())) {
             /*
              *  通用功能
@@ -131,34 +129,9 @@ public class RegularInputPayload implements CustomPacketPayload {
             /*
              *  载具组装
              */
-            case ADD_PART_ATTACH_ANGLE://切换部件安装角度
-                if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleAttachAngle(true);
-                }
-                break;
-            case SUB_PART_ATTACH_ANGLE://切换部件安装角度
-                if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleAttachAngle(false);
-                }
-                break;
-            case CYCLE_PART_CONNECTORS://切换部件连接点
-                if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleConnectors();
-                }
-                break;
-            case CYCLE_PART_VARIANTS://切换部件变体
-                if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleVariants();
-                }
-                break;
             case CYCLE_PART_RECIPES://切换部件配方
-                if (!level.isClientSide()) {//仅在服务器端处理
-                    assemblyCache = executingPlayer.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleRecipe();
+                if (!level.isClientSide()) {//仅在服务器端处理（改的是共享世界状态并广播）
+                    VehicleAssemblyServerHelper.cycleRecipe(executingPlayer);
                 }
                 break;
         }
