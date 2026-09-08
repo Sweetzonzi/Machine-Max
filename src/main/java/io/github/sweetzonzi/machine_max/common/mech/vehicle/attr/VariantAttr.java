@@ -24,6 +24,11 @@ public class VariantAttr {
     public final Map<String, ResourceLocation> textures; // 纹理名 -> 纹理
     public final ResourceLocation animations; // 状态 -> 动画
     public final Map<String, SubPartAttr> subParts; //子部件名称-子部件属性
+    /**
+     * 根子部件名称：质量最大的子部件；质量相同时取 {@code sub_parts} 声明顺序中的第一个。
+     * <p>作为部件刚体初始布放与预览动画体（PartAnimatable）的绝对锚点，两者必须一致。</p>
+     */
+    private final String rootSubPartName;
 
     public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
     public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
@@ -86,6 +91,8 @@ public class VariantAttr {
         this.textures = textures;
         this.animations = animations;
         this.subParts = subParts;
+        // 选取根子部件（质量最大者），供实体布放与预览动画体共用，保证锚点一致
+        this.rootSubPartName = selectRootSubPartName(subParts);
         OModel oModel = OModel.getOrEmpty(new ModelIndex("part", model));
         if (oModel.equals(OModel.Companion.getEMPTY())){
             throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", model.toString()).getString());
@@ -103,6 +110,25 @@ public class VariantAttr {
         for (SubPartAttr subPartAttr : subParts.values()) {
             subPartAttr.getCollisionShape(this);
         }
+    }
+
+    /**
+     * 选取根子部件：质量最大的子部件；质量相同时取 {@code sub_parts} 声明顺序中的第一个。
+     *
+     * @param subParts 子部件属性表
+     * @return 根子部件名称，表为空时返回 null
+     */
+    private static String selectRootSubPartName(Map<String, SubPartAttr> subParts) {
+        String best = null;
+        float maxMass = -Float.MAX_VALUE;
+        for (Map.Entry<String, SubPartAttr> entry : subParts.entrySet()) {
+            float mass = entry.getValue().getMass();
+            if (mass > maxMass) {
+                maxMass = mass;
+                best = entry.getKey();
+            }
+        }
+        return best;
     }
 
     /**

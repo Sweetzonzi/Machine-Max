@@ -136,6 +136,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                             if (!variantName.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
                             if (VisualEffectHelper.partToPlace != null) {
+                                // 服务端 adjustTransform 以“待安装连接点所属 SubPart”为绝对锚点，预览需保持一致
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
@@ -143,7 +144,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
                                                         cache.getAttachRotation()).invert()
-                                        )
+                                        ),
+                                        cache.getConnectorName().getFirst()
                                 );
                             }
                         } else message.append("无法连接两个高级连接点");

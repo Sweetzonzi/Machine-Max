@@ -349,6 +349,56 @@ public class SubPartAttr {
     }
 
     /**
+     * 计算本子部件质心在模型空间（模型根骨骼坐标系）中的位置。
+     *
+     * <p>优先使用 mass_center locator 的模型空间位姿；若该 locator 不存在，则回退到
+     * {@link #massCenterTransform}（start_bone 空间）与 start_bone 全局变换的合成。</p>
+     *
+     * <p>该方法同时被真实 {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart} 的
+     * 初始布放与预览用 {@link io.github.sweetzonzi.machine_max.common.visual.SubPartAnimatable} 使用，
+     * 以保证预览与实体的相对位置一致。</p>
+     *
+     * @param model 部件模型
+     * @return 质心在模型空间中的位置（JME 向量）
+     */
+    public Vector3f computeGlobalMassCenter(OModel model) {
+        Map<String, OBone> bones = filterBones(model.getBones(), startBone, getEffectiveEndBones());
+
+        // 优先：通过 mass_center locator 获取模型空间位置
+        // 注意：只能在 start_bone~end_bones 区间内的骨骼里查找 locator，避免误用其他 subpart 的质心，
+        // 同时规避多个骨骼同名 locator 时全模型 map 按遍历顺序覆盖导致的不确定性。
+        LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
+        for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
+        OLocator mcLocator = locators.get(massCenterName);
+        if (mcLocator != null) {
+            Matrix4f pose = new Matrix4f();
+            pose.identity()
+                    .setTranslation(mcLocator.getOffset().toVector3f())
+                    .rotateZYX(mcLocator.getRotation().toVector3f());
+            mcLocator.getBone().applyTransformToLocal(pose, null); // 追溯到模型根骨骼
+            return PhysicsHelperKt.toBVector3f(pose.getTranslation(new org.joml.Vector3f()));
+        } else if (model.getLocator(massCenterName) != null) {
+            // 全模型存在同名质心 locator 但不在本 subpart 骨骼区间内，提示内容包配置可能有误
+            MachineMax.LOGGER.warn(
+                    "mass_center({}) 位于 start_bone({}) 到 end_bones({}) 区间之外，已回退到 massCenterTransform。",
+                    massCenterName, startBone, getEffectiveEndBones());
+        }
+
+        // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换
+        Matrix4f sbGlobalMat = new Matrix4f().identity();
+        OBone start = bones.get(startBone);
+        if (start != null) start.applyTransformToLocal(sbGlobalMat, null);
+        org.joml.Vector3f jomlTrans = new org.joml.Vector3f();
+        org.joml.Quaternionf jomlRot = new org.joml.Quaternionf();
+        Transform sbGlobalTransform = new Transform(
+                PhysicsHelperKt.toBVector3f(sbGlobalMat.getTranslation(jomlTrans)),
+                SparkMathKt.toBQuaternion(sbGlobalMat.getNormalizedRotation(jomlRot))
+        );
+        Transform globalMc = MyMath.combine(massCenterTransform, sbGlobalTransform, null);
+        return globalMc.getTranslation();
+    }
+
+    /**
      * 设置自动排除骨骼列表（由 VariantAttr 装配时调用）。
      * @param autoEndBones 本子部件所有后代子部件的 start_bone 列表
      */

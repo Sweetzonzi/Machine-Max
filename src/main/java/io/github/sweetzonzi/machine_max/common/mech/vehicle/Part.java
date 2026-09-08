@@ -592,18 +592,14 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     /**
-     * <p>选出质量最大的 SubPart 作为 rootSubPart。</p>
+     * <p>选出根子部件（质量最大者）。</p>
+     * <p>与预览动画体 {@link io.github.sweetzonzi.machine_max.common.visual.PartAnimatable} 共用
+     * {@link VariantAttr#getRootSubPartName()} 的判定结果，确保布放/预览锚点一致。</p>
      */
     private SubPart selectRootSubPart() {
-        float maxMass = -100;
-        SubPart root = null;
-        for (SubPart subPart : subParts.values()) {
-            if (subPart.body.getMass() > maxMass) {
-                maxMass = subPart.body.getMass();
-                root = subPart;
-            }
-        }
-        return root;
+        SubPart root = subParts.get(variant.getRootSubPartName());
+        // 理论上不会为 null；兜底取第一个，避免空指针
+        return root != null ? root : subParts.values().iterator().next();
     }
 
     /**
@@ -639,45 +635,8 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
      * @return 质心在全局模型空间中的位置
      */
     private Vector3f computeSubPartGlobalMassCenter(SubPart subPart, OModel model) {
-        SubPartAttr attr = subPart.attr;
-        Map<String, OBone> bones = SubPartAttr.filterBones(
-                model.getBones(), attr.getStartBone(), attr.getEffectiveEndBones());
-
-        // 优先：通过 mass_center locator 获取全局位置
-        // 注意：只能在 start_bone~end_bones 区间内的骨骼里查找 locator，避免误用其他 subpart 的质心，
-        // 同时规避多个骨骼同名 locator 时全模型 map 按遍历顺序覆盖导致的不确定性。
-        LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
-        for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
-        OLocator mcLocator = locators.get(attr.getMassCenterName());
-        if (mcLocator != null) {
-            Matrix4f pose = new Matrix4f();
-            pose.identity()
-                    .setTranslation(mcLocator.getOffset().toVector3f())
-                    .rotateZYX(mcLocator.getRotation().toVector3f());
-            mcLocator.getBone().applyTransformToLocal(pose, null); // 追溯到模型根骨骼
-            org.joml.Vector3f tmp = new org.joml.Vector3f();
-            return PhysicsHelperKt.toBVector3f(pose.getTranslation(tmp));
-        } else if (model.getLocator(attr.getMassCenterName()) != null) {
-            // 全模型存在同名质心locator但不在本 subpart 骨骼区间内，提示内容包配置可能有误
-            MachineMax.LOGGER.warn(
-                    "SubPart{}的 mass_center 位于 start_bone({}) 到 end_bones({}) 区间之外，已回退到 massCenterTransform。",
-                    subPart.name, attr.getStartBone(), attr.getEffectiveEndBones());
-        }
-
-        // 回退：massCenterTransform（startBone 空间）合成 startBone 全局变换
-        Transform mcLocal = attr.getMassCenterTransform();
-        Matrix4f sbGlobalMat = new Matrix4f().identity();
-        OBone startBone = bones.get(attr.getStartBone());
-        if (startBone != null)
-            startBone.applyTransformToLocal(sbGlobalMat, null);
-        org.joml.Vector3f jomlTrans = new org.joml.Vector3f();
-        org.joml.Quaternionf jomlRot = new org.joml.Quaternionf();
-        Transform sbGlobalTransform = new Transform(
-                PhysicsHelperKt.toBVector3f(sbGlobalMat.getTranslation(jomlTrans)),
-                SparkMathKt.toBQuaternion(sbGlobalMat.getNormalizedRotation(jomlRot))
-        );
-        Transform globalMc = MyMath.combine(mcLocal, sbGlobalTransform, null);
-        return globalMc.getTranslation();
+        // 统一走 SubPartAttr 的实现，保证与预览动画体（SubPartAnimatable）的布放算法一致
+        return subPart.attr.computeGlobalMassCenter(model);
     }
 
     /**
