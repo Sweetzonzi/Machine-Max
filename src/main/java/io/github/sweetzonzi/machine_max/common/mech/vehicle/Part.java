@@ -763,7 +763,8 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                 setAssemblingProgress(newProgress);
                 return true;
             }
-        } else if (getAssemblingProgress() < 1f) {
+        } else if (recipe == null && getAssemblingProgress() < 1f) {
+            // 无制造配方（无材料需求）的零件直接涨进度
             setAssemblingProgress(getAssemblingProgress() + progress * 0.01f);
             return true;
         }

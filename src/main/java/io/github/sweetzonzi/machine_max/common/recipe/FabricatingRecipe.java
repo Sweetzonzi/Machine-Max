@@ -120,6 +120,16 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
         }
     }
 
+    /**
+     * 判断该制造配方的产物是否为「可手动装配的零件」。
+     * <p>判据是配方产物带有 {@code PART_TYPE} 组件：只有这类产物才能作为零件放置到世界中
+     * （放置链路见 {@code PartAssemblyItem.getPartType} → {@code VehicleAssemblyHelper.buildRequest}），
+     * 因而可以边焊接边推进装配进度。</p>
+     * <p>反之，产物不带 {@code PART_TYPE} 的配方（例如仅用于制造台的中间件模板）不参与手动装配，
+     * 只能作为制造台的制造配方使用。</p>
+     *
+     * @return 产物是零件（带 {@code PART_TYPE} 组件）时返回 {@code true}
+     */
     public boolean isManualAssemblablePart() {
         return result.has(MMDataComponents.getPART_TYPE());
     }
