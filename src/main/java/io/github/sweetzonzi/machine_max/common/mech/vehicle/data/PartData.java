@@ -25,6 +25,7 @@ public class PartData {
     public final String variant;//部件的变体
     public final ResourceLocation customRecipe;//部件的自定义配方
     public final float assemblingProgress;//部件的组装进度
+    public final float sharedDurabilityRatio;//共享耐久度比例（0~1，仅 shareDurability 部件有效）
     public final int materialAssemblingProgress;//部件的材料供给进度
     public final boolean renderWireframe;//部件是否渲染线框
     public final String textureName;//部件的涂装纹理名（Part 级统一）
@@ -37,6 +38,7 @@ public class PartData {
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
             ResourceLocation.CODEC.optionalFieldOf("custom_recipe", FabricatingRecipe.EMPTY).forGetter(PartData::getCustomRecipe),
             Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(PartData::getAssemblingProgress),
+            Codec.FLOAT.optionalFieldOf("shared_durability_ratio", 1f).forGetter(PartData::getSharedDurabilityRatio),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(PartData::getMaterialAssemblingProgress),
             Codec.BOOL.optionalFieldOf("render_wireframe", true).forGetter(PartData::isRenderWireframe),
             Codec.STRING.optionalFieldOf("texture_name", "default").forGetter(PartData::getTextureName),
@@ -55,11 +57,12 @@ public class PartData {
             String variant = buffer.readUtf();
             ResourceLocation customRecipe = buffer.readResourceLocation();
             float assemblingProgress = buffer.readFloat();
+            float sharedDurabilityRatio = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
             boolean renderWireframe = buffer.readBoolean();
             String textureName = buffer.readUtf();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, materialAssemblingProgress, renderWireframe, textureName, subParts);
+            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, renderWireframe, textureName, subParts);
         }
 
         @Override
@@ -70,6 +73,7 @@ public class PartData {
             buffer.writeUtf(value.variant);
             buffer.writeResourceLocation(value.customRecipe);
             buffer.writeFloat(value.assemblingProgress);
+            buffer.writeFloat(value.sharedDurabilityRatio);
             buffer.writeInt(value.materialAssemblingProgress);
             buffer.writeBoolean(value.renderWireframe);
             buffer.writeUtf(value.textureName);
@@ -109,6 +113,7 @@ public class PartData {
             String variant,
             ResourceLocation customRecipe,
             float assemblingProgress,
+            float sharedDurabilityRatio,
             int materialAssemblingProgress,
             boolean renderWireframe,
             String textureName,
@@ -119,6 +124,7 @@ public class PartData {
         this.variant = variant;
         this.customRecipe = customRecipe;
         this.assemblingProgress = assemblingProgress;
+        this.sharedDurabilityRatio = sharedDurabilityRatio;
         this.materialAssemblingProgress = materialAssemblingProgress;
         this.renderWireframe = renderWireframe;
         this.textureName = textureName;
@@ -137,6 +143,11 @@ public class PartData {
         this.variant = part.variantName;
         this.customRecipe = part.customRecipe;
         this.assemblingProgress = part.assemblingProgress;
+        // 共享耐久以比例持久化；非共享部件固定写入 1
+        float sharedMaxDurability = part.getSharedMaxDurability();
+        this.sharedDurabilityRatio = (part.type.shareDurability && sharedMaxDurability > 0f)
+                ? Math.clamp(part.getSharedDurability() / sharedMaxDurability, 0f, 1f)
+                : 1f;
         this.materialAssemblingProgress = part.materialProgress;
         this.renderWireframe = part.renderWireframe;
         this.textureName = part.textureName;

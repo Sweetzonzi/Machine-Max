@@ -4,7 +4,7 @@
     1.894078572591141,
     2.308092329237196
   ],
-  "hp": 100000000.0,
+  "hp_ratio": 1.0,
   "parts": {
     "09c409d7-f1f2-4677-b82a-1691a649c493": {
       "custom_recipe": "machine_max:ae86_chassis_all_terrain",
@@ -14,58 +14,58 @@
           "texture_name": "print.machine_max.ae86at.1",
           "connector_data": {
             "connector.machine_max.left_front_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_back_wheel": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back_wheel": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.copilot_seat": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_front_wheel": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.driver_seat": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.hull": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.back_seat": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.left_front_wheel_driver": {
-              "durability": 400.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_wheel_driver": {
-              "durability": 400.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.engine": {
-              "durability": 270.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.gearbox": {
-              "durability": 270.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.car_controller": {
-              "durability": 200.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_front_wheel_driver": {
-              "durability": 400.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.transmission": {
-              "durability": 500.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_back_wheel_driver": {
-              "durability": 400.0
+              "durability_ratio": 1.0
             }
           },
           "id": 53,
-          "durability": 550.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -161.75473,
@@ -104,11 +104,11 @@
           "texture_name": "print.machine_max.red",
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 57,
-          "durability": 180.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -159.22325,
@@ -147,11 +147,11 @@
           "texture_name": "print.machine_max.red",
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 61,
-          "durability": 180.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -163.91148,
@@ -190,11 +190,11 @@
           "texture_name": "print.machine_max.red",
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 59,
-          "durability": 180.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -163.84753,
@@ -233,29 +233,29 @@
           "texture_name": "print.machine_max.ae86.1",
           "connector_data": {
             "connector.machine_max.front_engine": {
-              "integrity": 400.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.chassis_connection": {
-              "integrity": 400.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.upper_engine": {
-              "integrity": 400.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_back": {
-              "integrity": 400.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back": {
-              "integrity": 400.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.trunk": {
               "Items": [],
-              "durability": 100.0
+              "durability_ratio": 1.0
             }
           },
           "id": 71,
-          "durability": 400.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -161.76007,
@@ -293,19 +293,19 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.left_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             }
           },
           "id": 69,
-          "durability": 100.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -160.5729,
@@ -343,16 +343,16 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machinemax.seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             }
           },
           "id": 65,
-          "durability": 75.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -161.52089,
@@ -391,11 +391,11 @@
           "texture_name": "print.machine_max.red",
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 63,
-          "durability": 180.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -159.2872,
@@ -433,16 +433,16 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machinemax.seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             }
           },
           "id": 67,
-          "durability": 75.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -161.5007,

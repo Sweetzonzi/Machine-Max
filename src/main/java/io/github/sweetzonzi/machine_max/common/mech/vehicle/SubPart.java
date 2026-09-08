@@ -1038,8 +1038,29 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     @Override
     public void setDurability(float durability) {
+        // 共享耐久：写入 Part 持有的单一值并广播到本部件所有 SubPart
+        if (part.type.shareDurability) {
+            part.setSharedDurability(durability);
+            return;
+        }
+        setRawDurability(durability);
+    }
+
+    /**
+     * <p>直接写入本子零件的原始耐久值（不经过共享耐久委托），供 Part 广播共享耐久使用。</p>
+     * <p>Directly writes this sub-part's raw durability, bypassing shared-durability delegation.
+     * Used by {@link Part#setSharedDurability(float)} to broadcast the shared value.</p>
+     */
+    public void setRawDurability(float durability) {
         float durabilityCap = this.getMaxDurability() * Math.max(part.getAssemblingProgress(), 0.05f);
         this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0F, durabilityCap));
+    }
+
+    /**
+     * <p>读取本子零件的原始耐久值（不经过共享耐久委托）。</p>
+     */
+    public float getRawDurability() {
+        return super.getDurability();
     }
 
     /**

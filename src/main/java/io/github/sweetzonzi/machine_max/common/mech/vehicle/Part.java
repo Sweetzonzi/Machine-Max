@@ -26,7 +26,6 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
@@ -215,7 +214,11 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
             //加载子系统储存的数据
             for (Map.Entry<String, SubPartData> entry : data.subParts.entrySet()) {
                 SubPart subPart = subParts.get(entry.getKey());
-                subPart.setDurability(entry.getValue().durability);
+                if (subPart == null) continue;
+                // 共享耐久的部件在循环结束后按 Part 级比例统一恢复，避免逐个写入相互覆盖
+                if (!type.shareDurability) {
+                    subPart.setDurability(entry.getValue().durabilityRatio * subPart.getMaxDurability());
+                }
                 for (Map.Entry<String, CompoundTag> connectorData : entry.getValue().connectorData.entrySet()) {
                     String connectorName = connectorData.getKey();
                     CompoundTag connectorTagData = connectorData.getValue();
@@ -230,6 +233,10 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                     if (subsystem != null)
                         subsystem.loadData(subsystemTagData);
                 }
+            }
+            // 共享耐久：按 Part 级比例一次性写入全部 SubPart
+            if (type.shareDurability) {
+                setSharedDurability(data.sharedDurabilityRatio * getSharedMaxDurability());
             }
         }
         updateMass();//更新部件总质量
@@ -358,15 +365,33 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         return result;
     }
 
+    /**
+     * <p>获取共享耐久值。</p>
+     * <p>共享耐久语义：同一部件下所有 SubPart 共用同一个耐久值，上限为各 SubPart 耐久上限之和；
+     * 该值以任意一个 SubPart 的原始耐久值为权威来源，其余 SubPart 由
+     * {@link #setSharedDurability(float)} 同步写入。</p>
+     *
+     * @return 共享耐久值；非共享部件返回 0
+     */
     public float getSharedDurability() {
-        float result = 0;
-        if (type.shareDurability && !subParts.isEmpty()) {
-            for (SubPart subPart : subParts.values()) {
-                result += subPart.getSyncedData().get(DestroyableObject.DATA_DURABILITY_ID);
-            }
-            result /= subParts.size();
+        if (!type.shareDurability || subParts.isEmpty()) return 0f;
+        return subParts.values().iterator().next().getRawDurability();
+    }
+
+    /**
+     * <p>设置共享耐久值：写入本部件全部 SubPart 的原始耐久值。</p>
+     * <p>统一钳制到 [0, 共享上限 × max(组装进度, 0.05)]，与
+     * {@link SubPart#setRawDurability(float)} 的钳制口径保持一致。</p>
+     *
+     * @param durability 目标共享耐久值
+     */
+    public void setSharedDurability(float durability) {
+        if (!type.shareDurability || subParts.isEmpty()) return;
+        float cap = getSharedMaxDurability() * Math.max(getAssemblingProgress(), 0.05f);
+        float value = Math.clamp(durability, 0f, cap);
+        for (SubPart subPart : subParts.values()) {
+            subPart.setRawDurability(value);
         }
-        return result;
     }
 
     public float getVehicleDurabilityContribution() {

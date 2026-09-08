@@ -635,13 +635,17 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public void loadData(CompoundTag data) {
-        //加载子系统耐久度
-        setIntegrityInternal(data.getFloat("integrity"));
+        //加载连接点完整度（按比例持久化；旧数据缺失该键时视为满完整度）
+        float ratio = data.contains("integrity_ratio") ? data.getFloat("integrity_ratio") : 1f;
+        setIntegrityInternal(Math.clamp(ratio, 0f, 1f) * getBasicIntegrity());
     }
 
     public CompoundTag saveData(CompoundTag data) {
-        //保存子系统耐久度
-        data.putFloat("integrity", getIntegrity());
+        //保存连接点完整度比例，避免内容包调整完整度上限后存档数值失真
+        float basicIntegrity = getBasicIntegrity();
+        data.putFloat("integrity_ratio", basicIntegrity > 0f
+                ? Math.clamp(getIntegrity() / basicIntegrity, 0f, 1f)
+                : 1f);
         return data;
     }
 

@@ -20,7 +20,7 @@ import java.util.Map;
 @Getter
 public class SubPartData {
     public final int id;// 零件的ID
-    public final float durability;// 零件的耐久度
+    public final float durabilityRatio;// 零件的耐久度比例（0~1，1 表示满耐久）
     public final PosRotVelVel posRotVelVel;// 零件的位置、朝向、速度、角速度
     public final Map<String, CompoundTag> connectorData;// 连接点结构完整性
     public final Map<String, CompoundTag> subsystemData;// 零件的子系统数据
@@ -29,7 +29,7 @@ public class SubPartData {
 
     public static final Codec<SubPartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("id").forGetter(SubPartData::getId),
-            Codec.FLOAT.optionalFieldOf("durability", Float.MAX_VALUE).forGetter(SubPartData::getDurability),
+            Codec.FLOAT.optionalFieldOf("durability_ratio", 1f).forGetter(SubPartData::getDurabilityRatio),
             PosRotVelVel.CODEC.fieldOf("pos_rot_vel_vel").forGetter(SubPartData::getPosRotVelVel),
             DATA_CODEC.optionalFieldOf("connector_data", Map.of()).forGetter(SubPartData::getConnectorData),
             DATA_CODEC.optionalFieldOf("subsystem_data", Map.of()).forGetter(SubPartData::getSubsystemData)
@@ -41,7 +41,7 @@ public class SubPartData {
         @Override
         public @NotNull SubPartData decode(RegistryFriendlyByteBuf buffer) {
             int id = buffer.readInt();
-            float durability = buffer.readFloat();
+            float durabilityRatio = buffer.readFloat();
             PosRotVelVel posRotVelVel = PosRotVelVel.STREAM_CODEC.decode(buffer);
 
             // 解码 connectorData
@@ -62,13 +62,13 @@ public class SubPartData {
                 subsystemData.put(key, value);
             }
 
-            return new SubPartData(id, durability, posRotVelVel, connectorData, subsystemData);
+            return new SubPartData(id, durabilityRatio, posRotVelVel, connectorData, subsystemData);
         }
 
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, SubPartData value) {
             buffer.writeInt(value.id);
-            buffer.writeFloat(value.durability);
+            buffer.writeFloat(value.durabilityRatio);
             PosRotVelVel.STREAM_CODEC.encode(buffer, value.posRotVelVel);
 
             // 编码 connectorData
@@ -115,15 +115,15 @@ public class SubPartData {
 
     /**
      * @param id                 零件的ID
-     * @param durability         零件的耐久度
+     * @param durabilityRatio    零件的耐久度比例（0~1）
      * @param posRotVelVel       零件的位置、朝向、速度、角速度
      * @param connectorData      零件的连接点数据
      * @param subsystemData      零件的子系统数据
      */
-    public SubPartData(int id, float durability, PosRotVelVel posRotVelVel,
+    public SubPartData(int id, float durabilityRatio, PosRotVelVel posRotVelVel,
                       Map<String, CompoundTag> connectorData, Map<String, CompoundTag> subsystemData) {
         this.id = id;
-        this.durability = durability;
+        this.durabilityRatio = durabilityRatio;
         this.posRotVelVel = posRotVelVel;
         this.connectorData = connectorData;
         this.subsystemData = subsystemData;
@@ -147,7 +147,11 @@ public class SubPartData {
             subPartSubsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
         }
         this.id = subPart.getId();
-        this.durability = subPart.getDurability();
+        // 耐久以比例持久化，避免内容包调整耐久上限后存档数值失真
+        float maxDurability = subPart.getMaxDurability();
+        this.durabilityRatio = maxDurability > 0f
+                ? Math.clamp(subPart.getDurability() / maxDurability, 0f, 1f)
+                : 1f;
         this.posRotVelVel = new PosRotVelVel(position, rotation, linearVel, angularVel);
         this.connectorData = connectorData;
         this.subsystemData = subPartSubsystemData;

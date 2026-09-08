@@ -127,7 +127,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
         this.uuid = UUID.fromString(savedData.uuid);
-        this.synchedData.set(DATA_HP_ID, Math.max(savedData.hp, 0f));
+        // 血量以比例持久化：待部件重建并重算上限后再换算为绝对值
+        final float savedHpRatio = Math.clamp(savedData.hpRatio, 0f, 1f);
         this.position = savedData.pos;
         this.oldPosition = savedData.pos;
         this.name = savedData.name;
@@ -152,7 +153,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             subSystemController.initAllSubsystems();//子系统初始化
-            recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+            recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);//先按新上限填满，再按保存的比例恢复
+            this.setHp(getMaxHp() * savedHpRatio);
             recalculateCameraDistance();
         } catch (Exception e) {
             onRemoveFromLevel(); // 移除数据出错的载具

@@ -248,13 +248,17 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void loadData(CompoundTag data) {
-        //加载子系统耐久度
-        setDurability(data.getFloat("durability"));
+        //加载子系统耐久度（按比例持久化；旧数据缺失该键时视为满耐久）
+        float ratio = data.contains("durability_ratio") ? data.getFloat("durability_ratio") : 1f;
+        setDurability(Math.clamp(ratio, 0f, 1f) * getMaxDurability());
     }
 
     public CompoundTag saveData(CompoundTag data) {
-        //保存子系统耐久度
-        data.putFloat("durability", getDurability());
+        //保存子系统耐久度比例，避免内容包调整耐久上限后存档数值失真
+        float maxDurability = getMaxDurability();
+        data.putFloat("durability_ratio", maxDurability > 0f
+                ? Math.clamp(getDurability() / maxDurability, 0f, 1f)
+                : 1f);
         return data;
     }
 

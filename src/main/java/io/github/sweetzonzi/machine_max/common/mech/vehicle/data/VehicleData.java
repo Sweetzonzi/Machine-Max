@@ -29,7 +29,7 @@ public class VehicleData {
     public final Vec3 pos;
     public final Vec3 min;
     public final Vec3 max;
-    public final float hp;
+    public final float hpRatio;//血量比例（0~1，1 表示满血）
     public final Map<String, PartData> parts;
     public final List<ConnectionData> connections;
 
@@ -39,7 +39,7 @@ public class VehicleData {
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),
             Vec3.CODEC.optionalFieldOf("max", Vec3.ZERO).forGetter(VehicleData::getMax),
-            Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),
+            Codec.FLOAT.optionalFieldOf("hp_ratio", 1f).forGetter(VehicleData::getHpRatio),
             PartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections)
     ).apply(instance, VehicleData::new));
@@ -61,10 +61,10 @@ public class VehicleData {
             double maxY = buffer.readFloat();
             double maxZ = buffer.readFloat();
             Vec3 max = new Vec3(maxX, maxY, maxZ);
-            float hp = buffer.readFloat();
+            float hpRatio = buffer.readFloat();
             Map<String, PartData> parts = PartData.MAP_STREAM_CODEC.decode(buffer);
             List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
-            return new VehicleData(name, uuid, pos, min, max, hp, parts, connections);
+            return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections);
         }
 
         @Override
@@ -80,7 +80,7 @@ public class VehicleData {
             buffer.writeFloat((float) value.max.x);
             buffer.writeFloat((float) value.max.y);
             buffer.writeFloat((float) value.max.z);
-            buffer.writeFloat(value.hp);
+            buffer.writeFloat(value.hpRatio);
             PartData.MAP_STREAM_CODEC.encode(buffer, value.parts);
             buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
         }
@@ -88,13 +88,13 @@ public class VehicleData {
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
-                       float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
+                       float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections) {
         this.name = name;
         this.uuid = uuid;
         this.pos = pos;
         this.min = min;
         this.max = max;
-        this.hp = hp;
+        this.hpRatio = hpRatio;
         this.parts = parts;
         this.connections = connections;
     }
@@ -111,7 +111,10 @@ public class VehicleData {
         AABB aabb = vehicle.getAABB();
         this.min = aabb.getMinPosition().subtract(pos);
         this.max = aabb.getMaxPosition().subtract(pos);
-        this.hp = vehicle.getHp();
+        // 血量以比例持久化，避免内容包调整部件耐久上限后存档血量失真
+        this.hpRatio = vehicle.getMaxHp() > 0f
+                ? Math.clamp(vehicle.getHp() / vehicle.getMaxHp(), 0f, 1f)
+                : 1f;
         this.parts = vehicle.getPartData();
         this.connections = vehicle.getConnectionData();
     }
@@ -137,19 +140,19 @@ public class VehicleData {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof VehicleData that)) return false;
-        return Float.compare(hp, that.hp) == 0 && Objects.equals(name, that.name) && Objects.equals(uuid, that.uuid) && Objects.equals(pos, that.pos) && Objects.equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(parts, that.parts) && Objects.equals(connections, that.connections);
+        return Float.compare(hpRatio, that.hpRatio) == 0 && Objects.equals(name, that.name) && Objects.equals(uuid, that.uuid) && Objects.equals(pos, that.pos) && Objects.equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(parts, that.parts) && Objects.equals(connections, that.connections);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, uuid, pos, min, max, hp, parts, connections);
+        return Objects.hash(name, uuid, pos, min, max, hpRatio, parts, connections);
     }
 
     public VehicleData withNewName(String name) {
-        return new VehicleData(name, uuid, pos, min, max, hp, parts, connections);
+        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections);
     }
 
     public VehicleData withNewUUID(UUID uuid) {
-        return new VehicleData(name, uuid.toString(), pos, min, max, hp, parts, connections);
+        return new VehicleData(name, uuid.toString(), pos, min, max, hpRatio, parts, connections);
     }
 }

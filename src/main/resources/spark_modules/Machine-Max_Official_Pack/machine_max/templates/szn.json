@@ -4,7 +4,7 @@
     1.5158355712890668,
     2.1693298339843636
   ],
-  "hp": 100000000.0,
+  "hp_ratio": 1.0,
   "parts": {
     "7be81402-672a-40b2-b28e-1696323643bc": {
       "custom_recipe": "machine_max:szn_wheel",
@@ -13,11 +13,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 25.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 27,
-          "durability": 250.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -333.40576,
@@ -55,46 +55,46 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.left_front_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_front_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_back_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.left_front_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.motor": {
-              "durability": 145.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.car_controller": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_front_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.driver_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.transmission": {
-              "durability": 290.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_back_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             }
           },
           "id": 21,
-          "durability": 400.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -332.3334,
@@ -132,11 +132,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 25.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 25,
-          "durability": 250.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -333.50067,
@@ -174,11 +174,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 25.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 29,
-          "durability": 250.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -331.15732,
@@ -216,11 +216,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 25.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 23,
-          "durability": 250.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               -331.25223,

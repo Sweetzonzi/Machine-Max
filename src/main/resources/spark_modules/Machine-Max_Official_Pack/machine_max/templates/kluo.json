@@ -4,7 +4,7 @@
     1.446709394454956,
     1.464888095855713
   ],
-  "hp": 770.0,
+  "hp_ratio": 1.0,
   "parts": {
     "35bf4904-3ecf-4604-bc95-52a86389ce1c": {
       "material_assembling_progress": 2147483647,
@@ -13,141 +13,141 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.left_front_wheel": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.hood_axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.trunk_door_axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.top_left_front": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back_wheel": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.trunk_door_lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_door_lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.top_left_back": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_door_axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.back_bumper_right": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.front_light_right": {
-              "integrity": 10.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.hood_lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.top_right_front": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left_door_lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_back_wheel": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.back_bumper_left": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.front_bumper_left": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_door_axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.front_bumper_right": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.right_front_wheel": {
-              "integrity": 30.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.front_light_left": {
-              "integrity": 10.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.top_right_back": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.trunk": {
               "Items": [],
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.front_glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_back_glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_front_fog_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.car_controller": {
-              "durability": 50.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_front_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.copilot_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.transmission": {
-              "durability": 50.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_back_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_front_fog_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.glove_box": {
               "Items": [],
-              "durability": 50.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_front_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_back_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.motor": {
-              "durability": 50.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_front_light": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.gearbox": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.driver_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_front_light": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             }
           },
           "id": 1,
-          "durability": 250.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               209.71149,
@@ -186,22 +186,22 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.rearview_mirror": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             }
           },
           "id": 15,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               209.39006,
@@ -240,14 +240,14 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.right": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 41,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               211.58496,
@@ -286,14 +286,14 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 11,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               207.98589,
@@ -332,11 +332,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 5,
-          "durability": 80.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               208.42972,
@@ -375,11 +375,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 3,
-          "durability": 80.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               210.93304,
@@ -418,11 +418,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 9,
-          "durability": 80.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               210.96664,
@@ -461,25 +461,25 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.left_back_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_light": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             }
           },
           "id": 43,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               211.34059,
@@ -518,14 +518,14 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.right": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.left": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 39,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               207.81155,
@@ -564,22 +564,22 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.lock": {
-              "integrity": 5.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.axis": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.glass": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.rearview_mirror": {
-              "durability": 2.0
+              "durability_ratio": 1.0
             }
           },
           "id": 13,
-          "durability": 50.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               209.42343,
@@ -618,11 +618,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 7,
-          "durability": 80.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               208.46333,

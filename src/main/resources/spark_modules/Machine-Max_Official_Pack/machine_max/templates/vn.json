@@ -4,7 +4,7 @@
     1.0531005859375,
     1.842789967854813
   ],
-  "hp": 380.0,
+  "hp_ratio": 1.0,
   "parts": {
     "b36c0361-82ca-4793-894b-9886c5b0ef8f": {
       "material_assembling_progress": 2147483647,
@@ -13,11 +13,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 19,
-          "durability": 100.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               85.49336,
@@ -56,34 +56,34 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.front_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             },
             "connector.machine_max.back_wheel": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "subsystem_data": {
             "subsystem.machine_max.motor": {
-              "durability": 150.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.motorbike_controller": {
-              "durability": 40.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.driver_seat": {
-              "durability": 20.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.transmission": {
-              "durability": 250.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.front_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.back_wheel_driver": {
-              "durability": 100.0
+              "durability_ratio": 1.0
             }
           },
           "id": 15,
-          "durability": 300.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               85.4854,
@@ -122,11 +122,11 @@
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
+              "integrity_ratio": 1.0
             }
           },
           "id": 17,
-          "durability": 100.0,
+          "durability_ratio": 1.0,
           "pos_rot_vel_vel": {
             "position": [
               85.47772,
