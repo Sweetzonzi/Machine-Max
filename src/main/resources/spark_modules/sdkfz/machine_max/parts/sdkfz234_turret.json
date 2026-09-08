@@ -136,6 +136,9 @@
               "control_outputs": {
                 "weapon_control": [
                   "vehicle"
+                ],
+                "weapon.gun": [
+                  "vehicle"
                 ]
               }
             },
@@ -143,7 +146,7 @@
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:secondary_weapon_controller",
               "control_outputs": {
-                "secondary_weapon_control": [
+                "weapon.mg": [
                   "vehicle"
                 ]
               }

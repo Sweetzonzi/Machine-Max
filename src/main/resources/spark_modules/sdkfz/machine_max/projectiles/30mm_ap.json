@@ -1,0 +1,51 @@
+{
+  "type": "point",
+  "tags": ["machine_max:caliber/30mm", "machine_max:ammo/ap", "machine_max:ammo/apbc"],
+  "max_lifetime": 5.0,
+  "external": {
+    "mass": 0.4,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0004,
+    "caliber": 30.0,
+    "base_velocity": 960,
+    "base_accuracy_mil": 1.5
+  },
+  "terminal": {
+    "base_penetration": 50,
+    "base_damage": 45,
+    "penetration_velocity_coefficient": 1.2,
+    "damage_velocity_coefficient": 0.6,
+    "stable_distance": 0,
+    "unstable_pen_factor": 0.3
+  },
+  "visual": {
+    "tracer_color": [255, 200, 80],
+    "tracer_alpha": 220
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.middle",
+        "range": 160.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.fire.50mm_kwk",
+        "range": 160.0
+      }
+    },
+    "cease_fire_sound": {
+      "sound_id": "machine_max:projectile.fire.mg34_release",
+      "range": 160.0
+    },
+    "shell_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    }
+  }
+}

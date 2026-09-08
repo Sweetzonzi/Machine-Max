@@ -1,0 +1,28 @@
+{
+  "type": "machine_max:regen_loader",
+  "basic_durability": 80,
+  "magazine_capacity": 300,
+  "regen_per_minute": 100,
+  "regen_round_by_round": true,
+  "energy_cost_per_round": 0,
+  "reload_time": 0.5,
+  "can_supply_multiple": false,
+  "regen_delay": 0.3,
+  "sounds": {
+    "progress_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:subsystem.loader.reload_start",
+        "range": 16
+      },
+      "0.5": {
+        "sound_id": "machine_max:subsystem.loader.reload_shell",
+        "range": 16
+      },
+      "0.9": {
+        "sound_id": "machine_max:subsystem.loader.reload_close",
+        "range": 16
+      }
+    }
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

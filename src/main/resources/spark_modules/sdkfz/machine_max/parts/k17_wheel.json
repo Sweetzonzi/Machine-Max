@@ -1,0 +1,85 @@
+{
+  "variants": {
+    "left": {
+      "model": "machine_max:k17.geo",
+      "textures": "machine_max:textures/part/k17/k17.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/mobility",
+        "machine_max:type/land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "LeftWheel_1",
+          "end_bones": [],
+          "durability": 100,
+          "mass": 50,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2,
+          "climb_assist": true,
+          "hit_boxes": {
+            "LeftWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.left_wheel_hull": {
+              "locator": "left_wheel_hull",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "model": "machine_max:k17.geo",
+      "textures": "machine_max:textures/part/k17/k17.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/mobility",
+        "machine_max:type/land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "RightWheel_1",
+          "end_bones": [],
+          "durability": 100,
+          "mass": 50,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2,
+          "climb_assist": true,
+          "hit_boxes": {
+            "RightWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.right_wheel_hull": {
+              "locator": "right_wheel_hull",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

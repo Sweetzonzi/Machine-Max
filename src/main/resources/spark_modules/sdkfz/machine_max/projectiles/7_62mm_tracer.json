@@ -1,0 +1,49 @@
+{
+  "type": "point",
+  "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/tracer"],
+  "max_lifetime": 2.5,
+  "external": {
+    "mass": 0.0096,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.001,
+    "caliber": 7.62,
+    "base_velocity": 855,
+    "base_accuracy_mil": 3.0
+  },
+  "terminal": {
+    "base_penetration": 5,
+    "base_damage": 7,
+    "penetration_velocity_coefficient": 1.0,
+    "damage_velocity_coefficient": 0.5
+  },
+  "visual": {
+    "tracer_color": [60, 255, 80],
+    "tracer_alpha": 255
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.small",
+        "range": 128.0
+      },
+      "750.0": {
+        "sound_id": "machine_max:projectile.fire.mg34_loop",
+        "range": 128.0
+      }
+    },
+    "cease_fire_sound": {
+      "sound_id": "machine_max:projectile.fire.mg34_release",
+      "range": 128.0
+    },
+    "shell_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "750.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    }
+  }
+}

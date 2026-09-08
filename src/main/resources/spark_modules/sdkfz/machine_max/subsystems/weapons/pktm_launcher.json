@@ -3,19 +3,19 @@
   "basic_durability": 50,
   "control_inputs": [
     "weapon.mg",
-    "weapon.mg.mg34"
+    "weapon.mg.pktm"
   ],
   "ammo_inputs": [
-    "ammo_7_92mm"
+    "ammo_pktm"
   ],
   "barrel": {
     "horizontal_accuracy_multiplier": 2,
     "vertical_accuracy_multiplier": 2
   },
   "breech": {
-    "fire_rate": 800,
+    "fire_rate": 750,
     "required_tags": [
-      "machine_max:caliber/7_92mm"
+      "machine_max:caliber/7_62mm"
     ]
   },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"

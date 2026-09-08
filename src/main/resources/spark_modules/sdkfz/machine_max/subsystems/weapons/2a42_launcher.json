@@ -1,0 +1,23 @@
+{
+  "type": "machine_max:launcher",
+  "basic_durability": 100,
+  "control_inputs": [
+    "weapon.autocannon",
+    "weapon.autocannon.2a42"
+  ],
+  "ammo_inputs": [
+    "ammo_2a42"
+  ],
+  "barrel": {
+    "horizontal_accuracy_multiplier": 1,
+    "vertical_accuracy_multiplier": 1,
+    "recoil_multiplier": 1.3
+  },
+  "breech": {
+    "fire_rate": 550,
+    "required_tags": [
+      "machine_max:caliber/30mm"
+    ]
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

@@ -246,9 +246,9 @@
     {
       "type": "machine_max:launcher",
       "basic_durability": 80,
-      "control_inputs": ["weapon_control"],
+      "control_inputs": ["weapon.autocannon"],
       "ammo_inputs": ["ammo_main"],
-      "description": "标准示例——基础发射器配置"
+      "description": "标准示例——基础发射器配置（类型级火控频道）"
     }
   ]
 }
