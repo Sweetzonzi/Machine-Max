@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
@@ -32,43 +31,27 @@ public class AssemblyItem extends BaseVehicleItem {
 
     @Nullable
     @Override
-    protected VehicleData getVehicleData(ItemStack stack) {
-        return getVehicleDataStatic(stack);
-    }
-
-    @Override
-    protected VehicleCore createVehicle(Level level, VehicleData vehicleData) {
-        return new VehicleCore(level, vehicleData, true);
-    }
-
-    @Override
-    protected String getNameTranslationKey(ItemStack stack) {
-        String itemName;
-        ResourceLocation location = stack.get(MMDataComponents.getASSEMBLY_PATH());
-        if (location != null) {
-            itemName = location.toLanguageKey().replace("/", ".");
-        } else {
-            VehicleData vehicleData = getVehicleData(stack);
-            if (vehicleData != null) {
-                itemName = vehicleData.getName();
-            } else {
-                itemName = "machine_max:unreadable_blueprint";
-            }
-        }
-        return itemName;
+    protected ResourceLocation getTemplateId(ItemStack stack) {
+        ResourceLocation template = getAssemblyData(stack).getTemplate();
+        return AssemblyData.EMPTY.equals(template) ? null : template;
     }
 
     @Nullable
     @Override
-    protected String getTooltipContent(ItemStack stack) {
-        try {
-            if (MMDynamicRes.TOOLTIPS.get(getAssemblyData(stack).getTooltip()) instanceof String content) {
-                return content;
-            }
-        } catch (NullPointerException e) {
-            return null;
-        }
-        return null;
+    protected ResourceLocation getPathId(ItemStack stack) {
+        return stack.get(MMDataComponents.getASSEMBLY_PATH());
+    }
+
+    @Nullable
+    @Override
+    protected ResourceLocation getTooltipId(ItemStack stack) {
+        return getAssemblyData(stack).getTooltip();
+    }
+
+    /** 收纳物品：放置时原样恢复进度 / 耐久 / 连接器 / 子系统 */
+    @Override
+    protected boolean restoreFullState() {
+        return true;
     }
 
     @Override
@@ -148,17 +131,5 @@ public class AssemblyItem extends BaseVehicleItem {
             assemblyData = stack.getOrDefault(MMDataComponents.getASSEMBLY_DATA(), AssemblyData.DEFAULT);
         }
         return assemblyData;
-    }
-
-    @Nullable
-    private static VehicleData getVehicleDataStatic(ItemStack stack) {
-        VehicleData vehicleData = null;
-        AssemblyData assemblyData = getAssemblyData(stack);
-        if (assemblyData.getTemplate() != AssemblyData.EMPTY) {
-            vehicleData = MMDynamicRes.TEMPLATES.get(assemblyData.getTemplate());
-        } else if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
-            vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
-        }
-        return vehicleData;
     }
 }

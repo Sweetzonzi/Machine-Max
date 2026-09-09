@@ -1,25 +1,36 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
+import io.github.sweetzonzi.machine_max.client.blueprint.BlueprintLibraryClient;
+import io.github.sweetzonzi.machine_max.client.render.gui.renderable.BlueprintLibraryListWidget;
+import io.github.sweetzonzi.machine_max.client.render.gui.renderable.BlueprintMaterialWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ItemModelWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.TabbedMaterialWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ResearchRecipeListWidget;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
+import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
+import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
+import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import io.github.sweetzonzi.machine_max.network.payload.library.BlueprintExtractLocalPayload;
+import io.github.sweetzonzi.machine_max.network.payload.library.BlueprintExtractPackPayload;
+import io.github.sweetzonzi.machine_max.network.payload.library.BlueprintStoreRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchReclaimPayload;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import lombok.Getter;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -41,6 +52,19 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
     private ResearchState selected;
     private List<ResearchState> states;
+
+    /** 标签页：研发 / 蓝图库（纯客户端 UI 状态，不影响 Menu） */
+    private enum Tab { RESEARCH, LIBRARY }
+
+    private Tab activeTab = Tab.RESEARCH;
+
+    private BlueprintLibraryListWidget libraryList;
+    private BlueprintMaterialWidget libraryMaterialWidget;
+    private EditBox renameBox;
+    private Button renameConfirmButton;
+    private Button storeButton;
+    private Button researchTabButton;
+    private Button libraryTabButton;
 
     public BlueprintResearchScreen(BlueprintResearchMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -98,7 +122,177 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         this.modelWidget.setEmptyText(Component.translatable("gui.machine_max.research.no_preview"));
         this.addRenderableWidget(modelWidget);
 
+        // 标签页按钮（位于 GUI 上方）
+        int tabY = topPos - 18;
+        this.researchTabButton = Button.builder(
+                        Component.translatable("gui.machine_max.research.tab.research"),
+                        button -> switchTab(Tab.RESEARCH))
+                .bounds(leftPos, tabY, 76, 16).build();
+        this.libraryTabButton = Button.builder(
+                        Component.translatable("gui.machine_max.research.tab.library"),
+                        button -> switchTab(Tab.LIBRARY))
+                .bounds(leftPos + 80, tabY, 76, 16).build();
+        this.addRenderableWidget(researchTabButton);
+        this.addRenderableWidget(libraryTabButton);
+
+        // 蓝图库标签页控件（与研发标签页共用预览区）
+        this.libraryList = new BlueprintLibraryListWidget(minecraft, leftPos + 8, topPos + 18, 160, 195);
+        this.libraryList.setCallbacks(new BlueprintLibraryListWidget.Callbacks() {
+            @Override
+            public void onSelect(BlueprintLibraryListWidget.Row row) {
+                libraryMaterialWidget.setVehicleData(row.payload());
+                modelWidget.setItemStack(buildPreviewStack(row));
+                modelWidget.setEmptyText(Component.translatable("gui.machine_max.research.no_preview"));
+                if (row.fileName() != null) renameBox.setValue(row.label().getString());
+            }
+
+            @Override
+            public void onExtract(BlueprintLibraryListWidget.Row row) {
+                if (row.type() == BlueprintLibraryListWidget.RowType.LOCAL && row.payload() != null) {
+                    PacketDistributor.sendToServer(new BlueprintExtractLocalPayload(
+                            row.payload(), row.payload().getMeta()));
+                } else if (row.type() == BlueprintLibraryListWidget.RowType.PACK && row.packId() != null) {
+                    PacketDistributor.sendToServer(new BlueprintExtractPackPayload(row.packId()));
+                }
+            }
+
+            @Override
+            public void onDelete(BlueprintLibraryListWidget.Row row) {
+                if (row.fileName() != null) {
+                    BlueprintLibraryClient.delete(row.fileName());
+                    refreshLibraryList();
+                }
+            }
+
+            @Override
+            public void onRename(BlueprintLibraryListWidget.Row row) {
+                if (row.fileName() != null) {
+                    renameBox.setValue(row.label().getString());
+                    renameBox.setFocused(true);
+                }
+            }
+        });
+        this.addRenderableWidget(libraryList);
+
+        this.libraryMaterialWidget = new BlueprintMaterialWidget(leftPos + 175, topPos + 139, 220, 74);
+        this.addRenderableWidget(libraryMaterialWidget);
+
+        // 存入库：把背包中第一个可入库的蓝图（带 VEHICLE_DATA 组件）交给服务端回传
+        this.storeButton = Button.builder(
+                        Component.translatable("gui.machine_max.blueprint_library.store"),
+                        button -> storeFirstStorableBlueprint())
+                .bounds(leftPos + 175, topPos + 6, 96, 16).build();
+        this.addRenderableWidget(storeButton);
+
+        this.renameBox = new EditBox(font, leftPos + 175, topPos + 26, 60, 16, Component.empty());
+        this.renameBox.setMaxLength(50);
+        this.addRenderableWidget(renameBox);
+
+        this.renameConfirmButton = Button.builder(
+                        Component.translatable("gui.machine_max.blueprint_library.rename"),
+                        button -> renameSelectedBlueprint())
+                .bounds(leftPos + 237, topPos + 26, 34, 16).build();
+        this.addRenderableWidget(renameConfirmButton);
+
         restoreSelection();
+        applyTab();
+    }
+
+    /** 切换标签页；进入蓝图库时现场扫描本地目录 */
+    private void switchTab(Tab tab) {
+        if (activeTab == tab) return;
+        activeTab = tab;
+        if (tab == Tab.LIBRARY) {
+            BlueprintLibraryClient.rescan(minecraft != null ? minecraft.level : null);
+        } else {
+            BlueprintLibraryClient.stop();
+        }
+        applyTab();
+    }
+
+    /** 应用标签页可见性 */
+    private void applyTab() {
+        boolean research = activeTab == Tab.RESEARCH;
+        if (searchBox != null) {
+            searchBox.visible = research;
+            searchBox.active = research;
+            // 切走时释放焦点，避免隐藏的搜索框继续吞掉按键
+            if (!research) searchBox.setFocused(false);
+        }
+        if (recipeList != null) recipeList.visible = research;
+        if (materialWidget != null) materialWidget.visible = research;
+        if (libraryList != null) libraryList.visible = !research;
+        if (libraryMaterialWidget != null) libraryMaterialWidget.visible = !research;
+        if (storeButton != null) storeButton.visible = !research;
+        if (renameBox != null) {
+            renameBox.visible = !research;
+            if (research) renameBox.setFocused(false);
+        }
+        if (renameConfirmButton != null) renameConfirmButton.visible = !research;
+        // 两个标签按钮必须始终可点击：active=false 会禁用点击，选中态改用文字前缀标记
+        if (researchTabButton != null) {
+            researchTabButton.active = true;
+            researchTabButton.setMessage(tabLabel("gui.machine_max.research.tab.research", research));
+        }
+        if (libraryTabButton != null) {
+            libraryTabButton.active = true;
+            libraryTabButton.setMessage(tabLabel("gui.machine_max.research.tab.library", !research));
+        }
+        if (!research) {
+            refreshLibraryList();
+        }
+    }
+
+    /** 标签文字：当前页加「▶」前缀作为选中标记 */
+    private static Component tabLabel(String translationKey, boolean selected) {
+        Component label = Component.translatable(translationKey);
+        return selected ? Component.literal("▶ ").append(label) : label;
+    }
+
+    /** 重建蓝图库列表数据 */
+    private void refreshLibraryList() {
+        if (libraryList == null) return;
+        libraryList.setData(BlueprintLibraryClient.getValid(), BlueprintLibraryClient.getBroken(),
+                minecraft != null ? minecraft.level : null);
+    }
+
+    /** 构造用于预览的蓝图物品：PACK 写路径，LOCAL 写内联数据 */
+    private ItemStack buildPreviewStack(BlueprintLibraryListWidget.Row row) {
+        if (row.payload() == null && row.packId() == null) return ItemStack.EMPTY;
+        ItemStack stack = new ItemStack(MMItems.getVEHICLE_BLUEPRINT().get());
+        if (row.type() == BlueprintLibraryListWidget.RowType.PACK) {
+            stack.set(MMDataComponents.getVEHICLE_BLUEPRINT_PATH(), row.packId());
+        } else if (row.payload() != null) {
+            stack.set(MMDataComponents.getVEHICLE_DATA(), row.payload());
+        }
+        return stack;
+    }
+
+    /** 把背包中第一个可入库的蓝图交给服务端 */
+    private void storeFirstStorableBlueprint() {
+        Player player = minecraft != null ? minecraft.player : null;
+        if (player == null) return;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() instanceof VehicleBlueprintItem
+                    && stack.has(MMDataComponents.getVEHICLE_DATA())) {
+                PacketDistributor.sendToServer(new BlueprintStoreRequestPayload(i));
+                return;
+            }
+        }
+        player.displayClientMessage(
+                Component.translatable("message.machine_max.blueprint_library.no_storable"), true);
+    }
+
+    /** 重命名选中的本地蓝图 */
+    private void renameSelectedBlueprint() {
+        BlueprintLibraryListWidget.Row row = libraryList != null ? libraryList.getSelected() : null;
+        if (row == null || row.fileName() == null) return;
+        String name = renameBox.getValue().trim();
+        if (name.isEmpty()) return;
+        if (BlueprintLibraryClient.rename(row.fileName(), name)) {
+            refreshLibraryList();
+        }
     }
 
     /**
@@ -245,9 +439,21 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     @Override
     protected void containerTick() {
         super.containerTick();
-        rebuildEntries();
-        recipeList.setStates(this.states);
-        restoreSelection();
+        if (activeTab == Tab.RESEARCH) {
+            rebuildEntries();
+            recipeList.setStates(this.states);
+            restoreSelection();
+        } else if (BlueprintLibraryClient.isScanning()) {
+            // 主线程限流：每 tick 至多解析 1 个文件
+            BlueprintLibraryClient.tick(minecraft != null ? minecraft.level : null);
+            refreshLibraryList();
+        }
+    }
+
+    @Override
+    public void onClose() {
+        BlueprintLibraryClient.stop();
+        super.onClose();
     }
 
     @Override

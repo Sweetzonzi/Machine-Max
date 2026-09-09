@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
@@ -50,43 +49,27 @@ public class VehicleBlueprintItem extends BaseVehicleItem {
 
     @Nullable
     @Override
-    protected VehicleData getVehicleData(ItemStack stack) {
-        return getVehicleDataStatic(stack);
-    }
-
-    @Override
-    protected VehicleCore createVehicle(Level level, VehicleData vehicleData) {
-        return new VehicleCore(level, vehicleData, false);
-    }
-
-    @Override
-    protected String getNameTranslationKey(ItemStack stack) {
-        String itemName;
-        ResourceLocation location = stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
-        if (location != null) {
-            itemName = location.toLanguageKey().replace("/", ".");
-        } else {
-            VehicleData vehicleData = getVehicleData(stack);
-            if (vehicleData != null) {
-                itemName = vehicleData.getName();
-            } else {
-                itemName = "machine_max:unreadable_blueprint";
-            }
-        }
-        return itemName;
+    protected ResourceLocation getTemplateId(ItemStack stack) {
+        ResourceLocation template = getBlueprintData(stack).getTemplate();
+        return BlueprintData.EMPTY.equals(template) ? null : template;
     }
 
     @Nullable
     @Override
-    protected String getTooltipContent(ItemStack stack) {
-        try {
-            if (MMDynamicRes.TOOLTIPS.get(getBlueprintData(stack).getTooltip()) instanceof String content) {
-                return content;
-            }
-        } catch (NullPointerException e) {
-            return null;
-        }
-        return null;
+    protected ResourceLocation getPathId(ItemStack stack) {
+        return stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
+    }
+
+    @Nullable
+    @Override
+    protected ResourceLocation getTooltipId(ItemStack stack) {
+        return getBlueprintData(stack).getTooltip();
+    }
+
+    /** 蓝图：放置产出骨架（进度归零、不读耐久 / 连接器 / 子系统数据） */
+    @Override
+    protected boolean restoreFullState() {
+        return false;
     }
 
     @Override
@@ -163,17 +146,5 @@ public class VehicleBlueprintItem extends BaseVehicleItem {
             bluePrintData = stack.getOrDefault(MMDataComponents.getBLUEPRINT_DATA(), BlueprintData.EMPTY_BLUEPRINT);
         }
         return bluePrintData;
-    }
-
-    @Nullable
-    private static VehicleData getVehicleDataStatic(ItemStack stack) {
-        VehicleData vehicleData = null;
-        BlueprintData blueprintData = getBlueprintData(stack);
-        if (blueprintData.getTemplate() != BlueprintData.EMPTY) {
-            vehicleData = MMDynamicRes.TEMPLATES.get(blueprintData.getTemplate());
-        } else if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
-            vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
-        }
-        return vehicleData;
     }
 }

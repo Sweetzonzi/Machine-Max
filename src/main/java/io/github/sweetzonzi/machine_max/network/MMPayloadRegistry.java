@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import io.github.sweetzonzi.machine_max.network.payload.library.*;
 import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
@@ -258,6 +259,26 @@ public class MMPayloadRegistry {
                 FabricationCollectAllPayload.TYPE,
                 StreamCodec.unit(new FabricationCollectAllPayload()),
                 new MainThreadPayloadHandler<>(FabricationCollectAllPayload::handler)
+        );
+        misc.playToServer(//取出内容包蓝图（只发 blueprintId，服务端自行解析模板）
+                BlueprintExtractPackPayload.TYPE,
+                BlueprintExtractPackPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(BlueprintExtractPackPayload::serverHandler)
+        );
+        misc.playToServer(//取出玩家库蓝图（完整 VehicleData + 独立 meta）
+                BlueprintExtractLocalPayload.TYPE,
+                BlueprintExtractLocalPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(BlueprintExtractLocalPayload::serverHandler)
+        );
+        misc.playToServer(//将手中蓝图存入库（服务端读组件后回传 VehicleDataSavedPayload）
+                BlueprintStoreRequestPayload.TYPE,
+                BlueprintStoreRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(BlueprintStoreRequestPayload::serverHandler)
+        );
+        misc.playToClient(//蓝图取出结果回执
+                BlueprintExtractResultPayload.TYPE,
+                BlueprintExtractResultPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(BlueprintExtractResultPayload::clientHandler)
         );
     }
 }

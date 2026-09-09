@@ -9,7 +9,10 @@ import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -155,5 +158,32 @@ public class PartData {
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             subParts.put(entry.getKey(), new SubPartData(entry.getValue()));
         }
+    }
+
+    /**
+     * 解析本零件的<b>有效制造配方 id</b>，供装配进度研发门禁与蓝图材料清单共用。
+     *
+     * <p>规则：{@code customRecipe} 非 {@link FabricatingRecipe#EMPTY} 且能在 {@code RecipeManager}
+     * 中命中 {@link FabricatingRecipe} 时用它，否则回退到零件类型注册键（默认零件即属此类）。</p>
+     *
+     * @param level           用于配方查询
+     * @param customRecipe    自定义配方，可为空
+     * @param partRegistryKey 零件类型注册键
+     * @return 有效配方 id，总是存在
+     */
+    public static ResourceLocation resolveRecipeId(Level level, @Nullable ResourceLocation customRecipe,
+                                                   ResourceLocation partRegistryKey) {
+        if (customRecipe != null && !FabricatingRecipe.EMPTY.equals(customRecipe)) {
+            RecipeHolder<?> holder = level.getRecipeManager().byKey(customRecipe).orElse(null);
+            if (holder != null && holder.value() instanceof FabricatingRecipe) {
+                return customRecipe;
+            }
+        }
+        return partRegistryKey;
+    }
+
+    /** 解析本零件的有效制造配方 id（等价于 {@link #resolveRecipeId}，使用自身字段） */
+    public ResourceLocation resolveRecipeId(Level level) {
+        return resolveRecipeId(level, customRecipe, registryKey);
     }
 }

@@ -62,6 +62,7 @@ public class MMDynamicRes {
     public static HashMap<ResourceLocation, RecipeHolder<FabricatingRecipe>> ALL_FABRICATING_RECIPES = new HashMap<>(); // 所有制造配方
     public static HashMap<ResourceLocation, RecipeHolder<ResearchRecipe>> ALL_RESEARCH_RECIPES = new HashMap<>(); // 所有研发配方
     public static HashMap<ResourceLocation, RecipeHolder<BlueprintResearchRecipe>> BLUEPRINT_RESEARCH_RECIPES = new HashMap<>(); // 蓝图研发配方
+    public static HashMap<ResourceLocation, ResourceLocation> RESEARCH_BY_FABRICATING_RECIPE = new HashMap<>(); // 制造配方ID -> 研发配方ID，供装配进度研发门禁反查
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
 
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
@@ -88,6 +89,7 @@ public class MMDynamicRes {
             MMDynamicRes.ALL_FABRICATING_RECIPES.clear();
             MMDynamicRes.ALL_RESEARCH_RECIPES.clear();
             MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.clear();
+            MMDynamicRes.RESEARCH_BY_FABRICATING_RECIPE.clear();
             return Set.of();
         }
 
@@ -117,6 +119,8 @@ public class MMDynamicRes {
                 for (RecipeHolder<BlueprintResearchRecipe> recipeHolder : blueprintResearchRecipes) {
                     MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.put(recipeHolder.id(), recipeHolder);
                     MMDynamicRes.ALL_RESEARCH_RECIPES.put(recipeHolder.id(), (RecipeHolder<ResearchRecipe>) (RecipeHolder<?>) recipeHolder);
+                    // 反向索引：制造配方ID -> 研发配方ID，供装配进度研发门禁 O(1) 反查
+                    MMDynamicRes.RESEARCH_BY_FABRICATING_RECIPE.put(recipeHolder.value().getUnlockRecipe(), recipeHolder.id());
                 }
 //                LOGGER.debug("从服务器数据为{}种个零件配方添加了{}种配方", PART_RECIPES.size(), count);
             }

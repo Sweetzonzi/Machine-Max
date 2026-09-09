@@ -895,6 +895,18 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     /**
+     * <p>获取部件的<b>有效制造配方 id</b>，供研发门禁与蓝图材料清单共用</p>
+     * <p>规则：{@code customRecipe} 非 {@link FabricatingRecipe#EMPTY} 且能在 {@code RecipeManager}
+     * 中命中 {@link FabricatingRecipe} 时用它，否则回退到 {@code partType} 注册键
+     * （默认零件即属此类，与 {@link #getRecipe()} 的回退结果一致）。</p>
+     *
+     * @return 有效配方 id，总是存在
+     */
+    public ResourceLocation getRecipeId() {
+        return PartData.resolveRecipeId(level, customRecipe, type.getRegistryKey());
+    }
+
+    /**
      * <p>设置部件的材料进度，用于计算组装状态，不存在配方时无效</p>
      *
      * @param progress 材料进度，0~材料总量

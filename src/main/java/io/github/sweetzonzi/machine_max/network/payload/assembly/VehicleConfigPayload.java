@@ -14,7 +14,8 @@ import org.jetbrains.annotations.NotNull;
 
 public record VehicleConfigPayload(
         int menuId,
-        String name
+        String name,
+        String description
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<VehicleConfigPayload> TYPE = new CustomPacketPayload.Type<>
             (ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "vehicle_config"));
@@ -22,6 +23,7 @@ public record VehicleConfigPayload(
     public static final StreamCodec<ByteBuf, VehicleConfigPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, VehicleConfigPayload::menuId,
             ByteBufCodecs.STRING_UTF8, VehicleConfigPayload::name,
+            ByteBufCodecs.STRING_UTF8, VehicleConfigPayload::description,
             VehicleConfigPayload::new
     );
 
@@ -33,7 +35,7 @@ public record VehicleConfigPayload(
                     ItemStack blueprintStack = menu.getBlueprintStack();
                     if (!blueprintStack.isEmpty()) {
                         //调用保存逻辑
-                        VehicleNamingMenu.saveVehicleWithName(serverPlayer, blueprintStack, packet.name());
+                        VehicleNamingMenu.saveVehicleWithName(serverPlayer, blueprintStack, packet.name(), packet.description());
                     }
                 }
             }

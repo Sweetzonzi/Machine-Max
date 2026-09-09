@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
@@ -344,6 +345,42 @@ public class BlueprintAttachment {
     }
 
     /**
+     * 判断玩家是否有资格推进指定部件的装配进度（研发门禁）。
+     *
+     * <p>判定顺序：</p>
+     * <ol>
+     *   <li>创造模式直接放行；</li>
+     *   <li>无配方零件（{@code getRecipe() == null}）放行——否则这类零件永远无法装配；</li>
+     *   <li>有效配方 id 找不到对应研究条目时放行（内容包可能只定义零件、未定义研究）；</li>
+     *   <li>该研究已完成；</li>
+     *   <li>背包 / 产物缓存中持有对应制造蓝图（复用 {@code availableRecipes} 缓存，不每 tick 扫描背包）。</li>
+     * </ol>
+     *
+     * @param player 玩家
+     * @param part   目标部件
+     * @return 允许推进时返回 true
+     */
+    public boolean canAdvanceAssembly(Player player, Part part) {
+        if (player.isCreative()) return true;
+        // 无配方零件走 assemble 的慢速兜底分支，必须放行
+        if (part.getRecipe() == null) return true;
+        ResourceLocation recipeId = part.getRecipeId();
+        ResourceLocation researchId = MMDynamicRes.RESEARCH_BY_FABRICATING_RECIPE.get(recipeId);
+        // 未定义研究条目：放行，避免内容包缺研究导致零件永久无法装配
+        if (researchId == null) return true;
+        if (completedResearches.contains(researchId)) return true;
+        // 持有对应制造蓝图即可装配；缓存由 EntityTickEvent 定时刷新
+        if (isDirty()) rebuildAvailableRecipes(player);
+        LinkedHashSet<RecipeHolder<FabricatingRecipe>> holders = availableRecipes.get(part.getType().getRegistryKey());
+        if (holders != null) {
+            for (RecipeHolder<FabricatingRecipe> holder : holders) {
+                if (holder.id().equals(recipeId)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 获取指定研发配方的ID与对象
      *
      * @param researchRecipe 研发配方
@@ -436,7 +473,9 @@ public class BlueprintAttachment {
         for (int i = 0; i < inventory.items.size(); i++) {
             checkAndRecord(inventory.items.get(i), player);
         }
-        // 检查专用存储中的配方 TODO: 蓝图库检查
+        // 检查专用存储中的配方
+        // TODO: 蓝图库检查——计划中的蓝图收纳道具（统一存放玩家的制造蓝图，避免背包被蓝图塞满），
+        //  实现后需在此扫描该道具内保存的附件信息并一并录入可用配方
         for (ItemStack product : research.products.values())
             checkAndRecord(product, player);
     }

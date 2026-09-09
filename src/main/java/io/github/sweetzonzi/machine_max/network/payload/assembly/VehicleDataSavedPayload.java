@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,14 +14,17 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
- * 服务端→客户端的载具数据保存包
- * 使用 VehicleData.STREAM_CODEC 传输完整载具数据，由客户端序列化为 JSON 保存到本地文件系统
+ * 服务端→客户端的载具数据保存包。
+ *
+ * <p>使用 {@link VehicleData#STREAM_CODEC} 传输载具数据（不含 meta），元信息以<b>独立字段</b>
+ * 随包附带，由客户端写文件时合并进 JSON。同时被「抄录」与「存入库」两条链路复用。</p>
  */
 public record VehicleDataSavedPayload(
         VehicleData vehicleData,
-        String fileName
+        BlueprintMeta meta
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<VehicleDataSavedPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "vehicle_data_saved")
@@ -28,7 +32,7 @@ public record VehicleDataSavedPayload(
 
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleDataSavedPayload> STREAM_CODEC = StreamCodec.composite(
             VehicleData.STREAM_CODEC, VehicleDataSavedPayload::vehicleData,
-            net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8, VehicleDataSavedPayload::fileName,
+            BlueprintMeta.STREAM_CODEC, VehicleDataSavedPayload::meta,
             VehicleDataSavedPayload::new
     );
 
@@ -41,9 +45,10 @@ public record VehicleDataSavedPayload(
                 saveDir.mkdirs();
             }
 
-            var saveFile = new File(saveDir, packet.fileName());
+            // 文件名与展示名解耦：每次写入生成新的随机 UUID，与 VehicleData.uuid 无关，不再静默覆盖
+            var saveFile = new File(saveDir, UUID.randomUUID() + ".json");
             try (FileWriter writer = new FileWriter(saveFile)) {
-                writer.write(VehicleData.serializeToJsonString(packet.vehicleData));
+                writer.write(VehicleData.serializeToJsonString(packet.vehicleData().withMeta(packet.meta())));
                 MachineMax.LOGGER.info("已保存载具蓝图到客户端目录: {}", saveFile.getAbsolutePath());
             } catch (IOException e) {
                 MachineMax.LOGGER.error("客户端保存载具蓝图失败!", e);

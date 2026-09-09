@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machine_max.external.html.TextHtNode;
 import io.github.sweetzonzi.machine_max.external.style.StyleProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -52,15 +53,67 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         super(properties);
     }
 
+    /**
+     * 物品指向的内容包模板 id；返回 {@code null} 表示回退到内联 {@code VEHICLE_DATA}。
+     * <p>子类只需声明「路径组件 → 注册表」的解析结果。</p>
+     */
     @Nullable
-    protected abstract VehicleData getVehicleData(ItemStack stack);
+    protected ResourceLocation getTemplateId(ItemStack stack) {
+        return null;
+    }
 
-    protected abstract VehicleCore createVehicle(Level level, VehicleData vehicleData);
+    /** 物品指向的内容包路径组件 id，用于名称与工具提示解析；无则 {@code null} */
+    @Nullable
+    protected ResourceLocation getPathId(ItemStack stack) {
+        return null;
+    }
 
-    protected abstract String getNameTranslationKey(ItemStack stack);
+    /** 物品指向的工具提示键 id；无则 {@code null} */
+    @Nullable
+    protected ResourceLocation getTooltipId(ItemStack stack) {
+        return null;
+    }
+
+    /**
+     * 放置后是否恢复完整状态（进度 / 耐久 / 连接器 / 子系统）。
+     * <p>{@code true} = 原样搬运（收纳物品）；{@code false} = 产出骨架（蓝图）。</p>
+     */
+    protected boolean restoreFullState() {
+        return false;
+    }
+
+    /**
+     * 解析物品携带的载具数据：优先内容包模板，其次内联 {@code VEHICLE_DATA}。
+     *
+     * @param stack 物品
+     * @return 载具数据，两者皆无时为 {@code null}
+     */
+    @Nullable
+    protected VehicleData getVehicleData(ItemStack stack) {
+        ResourceLocation templateId = getTemplateId(stack);
+        if (templateId != null) {
+            return MMDynamicRes.TEMPLATES.get(templateId);
+        }
+        return stack.get(MMDataComponents.getVEHICLE_DATA());
+    }
+
+    protected VehicleCore createVehicle(Level level, VehicleData vehicleData) {
+        return new VehicleCore(level, vehicleData, restoreFullState());
+    }
+
+    protected String getNameTranslationKey(ItemStack stack) {
+        ResourceLocation path = getPathId(stack);
+        if (path != null) return path.toLanguageKey().replace("/", ".");
+        VehicleData vehicleData = getVehicleData(stack);
+        return vehicleData != null ? vehicleData.getName() : "machine_max:unreadable_blueprint";
+    }
 
     @Nullable
-    protected abstract String getTooltipContent(ItemStack stack);
+    protected String getTooltipContent(ItemStack stack) {
+        ResourceLocation tooltipId = getTooltipId(stack);
+        if (tooltipId == null) return null;
+        return MMDynamicRes.TOOLTIPS.get(tooltipId) instanceof String content ? content : null;
+    }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {

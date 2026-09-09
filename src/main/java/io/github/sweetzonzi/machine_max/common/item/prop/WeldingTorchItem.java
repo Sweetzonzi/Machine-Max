@@ -17,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractCo
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -86,11 +87,18 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK)
                                 || (subPart.getPart().getAssembly() instanceof VehicleCore vc && vc.repair(repairStep * VEHICLE_REPAIR_PER_TICK));
-                        // 尝试同时组装部件
+                        // 尝试同时组装部件（研发门禁：未通过则不推进进度，仅提示）
                         float assembleStep = 5;
-                        boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                        if (assembled && remainingUseDuration % 10 == 0)
-                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        BlueprintAttachment blueprint = player.getData(MMAttachments.getBLUEPRINT());
+                        if (blueprint.canAdvanceAssembly(player, part)) {
+                            boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                            if (assembled && remainingUseDuration % 10 == 0)
+                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        } else {
+                            player.displayClientMessage(Component.translatable(
+                                    "message.machine_max.assembly.locked",
+                                    Component.translatable(part.getName())), true);
+                        }
                         if (repaired && remainingUseDuration % 10 == 0)
                             BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料

@@ -22,13 +22,14 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/vehicle_naming.png");
 
     private EditBox nameEditBox;
+    private EditBox descriptionEditBox;
     private Button confirmButton;
     private Button cancelButton;
 
     public VehicleNamingScreen(VehicleNamingMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 100;
+        this.imageHeight = 132;
     }
 
     @Override
@@ -40,25 +41,32 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
         int y = (this.height - this.imageHeight) / 2;
 
         // 名称输入框
-        this.nameEditBox = new EditBox(this.font, x + 20, y + 30, 136, 20, Component.empty());
+        this.nameEditBox = new EditBox(this.font, x + 20, y + 28, 136, 20, Component.empty());
         this.nameEditBox.setMaxLength(50);
         this.nameEditBox.setValue(menu.getVehicleName());
         this.nameEditBox.setResponder(this::onNameChanged);
         this.addRenderableWidget(this.nameEditBox);
         this.setInitialFocus(this.nameEditBox);
 
+        // 描述输入框（可选）
+        this.descriptionEditBox = new EditBox(this.font, x + 20, y + 66, 136, 20, Component.empty());
+        this.descriptionEditBox.setMaxLength(200);
+        this.descriptionEditBox.setValue(menu.getVehicleDescription());
+        this.descriptionEditBox.setResponder(menu::setVehicleDescription);
+        this.addRenderableWidget(this.descriptionEditBox);
+
         // 确认按钮
         this.confirmButton = Button.builder(
                 Component.translatable("gui.machine_max.confirm"),
                 button -> this.confirm()
-        ).bounds(x + 20, y + 65, 60, 20).build();
+        ).bounds(x + 20, y + 98, 60, 20).build();
         this.addRenderableWidget(this.confirmButton);
 
         // 取消按钮
         this.cancelButton = Button.builder(
                 Component.translatable("gui.machine_max.cancel"),
                 button -> this.onClose()
-        ).bounds(x + 96, y + 65, 60, 20).build();
+        ).bounds(x + 96, y + 98, 60, 20).build();
         this.addRenderableWidget(this.cancelButton);
 
         this.updateButtonState();
@@ -76,10 +84,11 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
 
     private void confirm() {
         if (this.confirmButton.active) {
-            // 发送数据包到服务器处理保存
+            // 发送数据包到服务器处理保存（含可选描述）
             PacketDistributor.sendToServer(new VehicleConfigPayload(
                     this.menu.containerId,
-                    this.nameEditBox.getValue().trim()
+                    this.nameEditBox.getValue().trim(),
+                    this.descriptionEditBox.getValue().trim()
             ));
             this.onClose();
         }
@@ -127,12 +136,17 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
         guiGraphics.drawString(this.font,
                 Component.translatable("gui.machine_max.enter_vehicle_name").withColor(Color.WHITE.getRGB()),
                 20, 15, 0x404040, false);
+        guiGraphics.drawString(this.font,
+                Component.translatable("gui.machine_max.enter_vehicle_description").withColor(Color.WHITE.getRGB()),
+                20, 53, 0x404040, false);
     }
 
     @Override
     public void resize(net.minecraft.client.Minecraft minecraft, int width, int height) {
         String currentName = this.nameEditBox.getValue();
+        String currentDescription = this.descriptionEditBox.getValue();
         super.resize(minecraft, width, height);
         this.nameEditBox.setValue(currentName);
+        this.descriptionEditBox.setValue(currentDescription);
     }
 }
