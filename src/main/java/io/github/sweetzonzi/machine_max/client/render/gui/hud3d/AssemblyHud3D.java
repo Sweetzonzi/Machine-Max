@@ -414,7 +414,11 @@ public class AssemblyHud3D implements IHud3DElement {
         Vector3f offset = resolveViewTranslation(subPart).mul(-1f);
         ctx.poseStack.translate(offset.x(), offset.y(), offset.z()); // 将展示中心挪到AABB中心
         ctx.poseStack.pushPose();
-        ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix())); // 考虑模型原点和质心的位置差异
+        // 坐标系校正（与 SubPart#getRenderWorldPositionMatrix 一致）：
+        // 先减去 start_bone 空间的质心，把 poseStack 挪到质心处；再乘【模型根空间 → start_bone 空间】换基矩阵，
+        // 因为下面骨骼链（ModelRenderHelperKt.render）累乘的是模型根空间变换。
+        ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix()));
+        ctx.poseStack.mulPose(subPart.attr.getModelToStartBone(subPart.part.variant));
         ModelController modelController = subPart.part.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         // 渲染所有块

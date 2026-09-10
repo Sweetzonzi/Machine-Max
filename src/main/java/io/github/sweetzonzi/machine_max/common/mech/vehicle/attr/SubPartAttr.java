@@ -73,6 +73,13 @@ public class SubPartAttr {
     public final ConcurrentMap<String, Set<String>> hydrodynamicLocators = new ConcurrentHashMap<>();
     public final Transform massCenterTransform = new Transform();
 
+    /**
+     * 运行时缓存：模型根空间 → start_bone 空间的换基矩阵，即 start_bone 父链静态变换的逆。
+     * 因存在同名的带参方法 {@link #getModelToStartBone(VariantAttr)}，禁止 Lombok 生成无参 getter。
+     */
+    @Getter(value = AccessLevel.NONE)
+    private Matrix4f modelToStartBone = null;
+
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
     }
@@ -346,6 +353,44 @@ public class SubPartAttr {
                     startBone, getEffectiveEndBones());
         }
         return bonesCache;
+    }
+
+    /**
+     * 获取【模型根空间 → start_bone 空间】的换基矩阵，等于 start_bone 父链静态变换的逆。
+     *
+     * <p>本模组涉及三套坐标系，务必区分：</p>
+     * <ul>
+     *   <li><b>模型根空间</b>：模型文件（Blockbench）的原始坐标。渲染器
+     *       {@code OBone.render} / {@code OBone.applyTransformWithParents} 是从模型根开始
+     *       逐级累乘骨骼变换的，因此输入给渲染的骨骼矩阵都表达在模型根空间。</li>
+     *   <li><b>start_bone 空间</b>：剥掉 start_bone 祖先链、只保留本子部件自身骨骼链后的坐标。
+     *       碰撞子形状（{@link #getCollisionShape}）、{@link #massCenterTransform}、
+     *       连接点 locator（{@link #locatorTransforms}）都表达在这个空间。</li>
+     *   <li><b>刚体局部空间</b>：start_bone 空间再减去质心，即物理刚体原点所在的坐标系。</li>
+     * </ul>
+     *
+     * <p>渲染位姿 {@code SubPart#getRenderWorldPositionMatrix} 已把 poseStack 停在质心
+     * （start_bone 空间），但骨骼链来自模型根空间，二者相差恰好是 start_bone 父链的静态变换；
+     * 再右乘本矩阵即可把模型根空间换算到 start_bone 空间，使渲染与碰撞体、连接点严格对齐。</p>
+     *
+     * <p>与 {@link #bonesCache} 相同，本缓存假定一个属性实例只对应一个模型（同变体内复用）。</p>
+     *
+     * @param variant 变体属性，存储模型路径
+     * @return 模型根空间 → start_bone 空间的换基矩阵（无父骨骼时为单位阵）
+     */
+    public Matrix4f getModelToStartBone(VariantAttr variant) {
+        if (modelToStartBone == null) {
+            Matrix4f inv = new Matrix4f();
+            OBone start = getBones(variant).get(startBone);
+            OBone parent = start == null ? null : start.getParent();
+            if (parent != null) {
+                // applyTransformToLocal(..., null) 会沿父链累乘到模型根，得到 start_bone 父链的静态变换
+                parent.applyTransformToLocal(inv.identity(), null);
+                inv.invert();
+            }
+            modelToStartBone = inv;
+        }
+        return modelToStartBone;
     }
 
     /**

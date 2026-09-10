@@ -6,6 +6,7 @@
       "machine_max:category/weapon",
       "machine_max:type/land"
     ],
+    "animations": "machine_max:k17",
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "Turret",
@@ -85,6 +86,9 @@
             "control_outputs": {
               "weapon_control": [
                 "global"
+              ],
+              "weapon.autocannon": [
+                "global"
               ]
             }
           },
@@ -162,7 +166,8 @@
           "subsystem.machine_max.2a42": {
             "type": "machine_max:launcher",
             "definition": "machine_max:2a42_launcher",
-            "locator": "2a42_launch_point"
+            "locator": "2a42_launch_point",
+            "fire_animation": "2a42_fire"
           },
           "subsystem.machine_max.pktm": {
             "type": "machine_max:launcher",

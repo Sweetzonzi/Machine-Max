@@ -1147,13 +1147,22 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * 获取模型坐标原点在世界坐标系下的位姿变换
+     * 获取渲染用位姿矩阵：把 poseStack 停在【刚体局部空间】。坐标系链如下：
+     * <ol>
+     *   <li>{@link #getWorldPositionMatrix} —— 刚体局部空间 → 世界空间（刚体原点位于质心）；</li>
+     *   <li>右乘质心变换的逆 —— 把 poseStack 从刚体原点回退到 start_bone 空间的质心处
+     *       （碰撞子形状、连接点 locator 都表达在 start_bone 空间）；</li>
+     *   <li>再右乘 {@link SubPartAttr#getModelToStartBone} —— 把渲染器输出的
+     *       【模型根空间】骨骼链换算到 start_bone 空间，使渲染与碰撞体、连接点对齐。</li>
+     * </ol>
      *
      * @param number 插值系数，0-1
-     * @return 模型坐标原点在世界坐标系下的位姿变换，常用于渲染
+     * @return 渲染用位姿矩阵，常用于渲染
      */
     public Matrix4f getRenderWorldPositionMatrix(@NotNull Number number) {
-        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().invert().toTransformMatrix()));
+        return getWorldPositionMatrix(number)
+                .mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().invert().toTransformMatrix()))
+                .mul(getAttr().getModelToStartBone(part.variant));
     }
 }
 
