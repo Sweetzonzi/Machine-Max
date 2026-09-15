@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.ExplosionTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
@@ -125,6 +126,13 @@ object MMItems {
     val PROJECTILE_TEST_ITEM = MachineMax.REGISTER.item{
         id="projectile_test"
         factory = { ProjectileTestItem() }
+    }
+
+    //测试物品：右键在准星位置引爆一次硬编码参数的爆炸
+    @JvmStatic
+    val EXPLOSION_TEST_ITEM = MachineMax.REGISTER.item{
+        id="explosion_test"
+        factory = { ExplosionTestItem() }
     }
 
     //油漆喷罐，为部件切换贴图

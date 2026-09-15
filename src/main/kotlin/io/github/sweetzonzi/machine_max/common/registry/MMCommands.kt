@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.common.command.DebugCommand
+import io.github.sweetzonzi.machine_max.common.command.ExplosionCommand
 import io.github.sweetzonzi.machine_max.common.command.PartCommand
 import io.github.sweetzonzi.machine_max.common.command.PhysicsTestCommand
 import io.github.sweetzonzi.machine_max.common.command.ResearchCommand
@@ -18,6 +19,7 @@ object MMCommands {
                 .then(DebugCommand().create(event.buildContext))
                 .then(PartCommand().create(event.buildContext))
                 .then(PhysicsTestCommand().create(event.buildContext))
+                .then(ExplosionCommand().create(event.buildContext))
         )
     }
 

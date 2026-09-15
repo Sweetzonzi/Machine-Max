@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.network.handler.research.*;
 import io.github.sweetzonzi.machine_max.network.payload.*;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.*;
+import io.github.sweetzonzi.machine_max.network.payload.explosion.ExplosionDetonatePayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
@@ -188,6 +189,11 @@ public class MMPayloadRegistry {
                 VehicleDataSavedPayload.TYPE,
                 VehicleDataSavedPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleDataSavedPayload::handler)
+        );
+        sync.playToClient(//起爆事件（起爆点 + 种子 + 参数集），客户端据此复现表现
+                ExplosionDetonatePayload.TYPE,
+                ExplosionDetonatePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ExplosionDetonatePayload::handle)
         );
 
         research.playToClient(//玩家蓝图的自由研发点同步
