@@ -17,6 +17,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
+    //TODO:指定tag的方块不参与地形平滑，应数据驱动
     //TODO:保存的蓝图在指定路径储存，可被特定方块访问蓝图库，并制作蓝图物品
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
@@ -26,7 +27,6 @@ public class MachineMax {
     //TODO:放置部件前检查空间是否足够
     //TODO:刀刃判定子系统
     //TODO:通用分层作动器控制，计算期望姿态，计算所需角速度，计算所需舵面偏角/推进器推力等，见 https://chat.deepseek.com/share/pneht1jesjnjakyh9g
-    //TODO:外骨骼与机甲，穿戴外骨骼时仍可乘坐载具
     //TODO:方块/方块实体代理子系统（存在于一个FakeLevel），互动以及tick时有对应方块的功能
     //TODO:载具触发压力板
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
