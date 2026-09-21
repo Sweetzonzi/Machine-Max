@@ -22,6 +22,7 @@
     "ItemRendererMixin",
     "LevelRendererMixin",
     "LivingEntityRendererMixin",
-    "MouseHandlerMixin"
+    "MouseHandlerMixin",
+    "PostChainAccessor"
   ]
 }

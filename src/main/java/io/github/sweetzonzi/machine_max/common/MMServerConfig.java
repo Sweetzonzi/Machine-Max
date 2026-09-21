@@ -12,7 +12,7 @@ public class MMServerConfig {
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_MIN_TICKS;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_ADVANCE_TICKS_PER_DAMAGE;
 
-    // ==================== 爆炸系统（见 docs/武器系统-爆炸系统详细设计.md §11.2）====================
+    // ==================== 爆炸系统 ====================
 
     private static final ModConfigSpec.BooleanValue EXPLOSION_BLOCK_DAMAGE;
     private static final ModConfigSpec.DoubleValue EXPLOSION_TERRAIN_DAMAGE_MULTIPLIER;

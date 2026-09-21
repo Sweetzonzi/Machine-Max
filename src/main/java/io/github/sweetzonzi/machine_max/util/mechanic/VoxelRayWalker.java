@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 跨 section 的全局 3D DDA 体素遍历（Amanatides–Woo）。
  *
- * <p>与 {@code ProjectileManager.walkBlocksAlongRay} 的三点关键差异（见爆炸系统设计文档 §14.2）：</p>
+ * <p>与 {@code ProjectileManager.walkBlocksAlongRay} 的三点关键差异：</p>
  * <ol>
  *   <li>直接读 Minecraft 区块数据（{@code LevelChunk.getSection(...).getBlockState(...)}），
  *       不要求已构建的物理地形 section；</li>
@@ -64,7 +64,7 @@ public final class VoxelRayWalker {
             cursor.voxelX = ix;
             cursor.voxelY = iy;
             cursor.voxelZ = iz;
-            // 起点体素参与判定（§14.2：起点在实心方块内部时若跳过会导致爆炸从介质里"凭空穿出"）
+            // 起点体素参与判定（起点在实心方块内部时若跳过会导致爆炸从介质里"凭空穿出"）
             addIfSolid(level, ix, iy, iz, 0f, out);
         }
 

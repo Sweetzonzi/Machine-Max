@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.post;
 
 import io.github.sweetzonzi.machine_max.client.event.RenderLevelLastEvent;
 import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,17 +28,27 @@ public class PostProcessingManager {
     private final DesaturateEffect desaturate = new DesaturateEffect();
     private final OverloadVisionEffect overloadVision = new OverloadVisionEffect();
     private final CrtMonitorEffect crtMonitor = new CrtMonitorEffect();
+    private final BlastDistortionEffect blastDistortion = new BlastDistortionEffect();
 
     private PostProcessingManager() {}
 
     // ========== 事件回调 ==========
 
-    /** 在世界渲染最后一帧时按序执行所有后处理特效：先过载→再失色 */
+    /** 在世界渲染最后一帧时按序执行所有后处理特效：折射最先 → 过载 → 失色 */
     @SubscribeEvent
     private static void onRenderLevelLast(RenderLevelLastEvent event) {
-        if (Minecraft.getInstance().level == null) return;
-        INSTANCE.overloadVision.render(event.getPartialTick().getGameTimeDeltaPartialTick(false));
-        INSTANCE.desaturate.render(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        // 爆炸波前折射要读未被染色的画面，因此必须排在过载与失色之前
+        INSTANCE.blastDistortion.render(
+                event.getModelViewMatrix(),
+                event.getProjectionMatrix(),
+                event.getCamera().getPosition(),
+                ExplosionManager.get(mc.level).visuals(),
+                partialTick);
+        INSTANCE.overloadVision.render(partialTick);
+        INSTANCE.desaturate.render(partialTick);
     }
 
     @SubscribeEvent
@@ -76,5 +87,6 @@ public class PostProcessingManager {
         desaturate.dispose();
         overloadVision.dispose();
         crtMonitor.dispose();
+        blastDistortion.dispose();
     }
 }

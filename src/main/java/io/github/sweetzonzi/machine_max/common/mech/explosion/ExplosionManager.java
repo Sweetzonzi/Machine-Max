@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 每 Level 单例的调度器（爆炸系统设计文档 §14）。<b>双端各一份</b>。
+ * 每 Level 单例的调度器。<b>双端各一份</b>。
  *
  * <p>服务端只做三件事：接收请求、订阅快照就绪事件、按顺序驱动活跃实例；
- * 客户端不建实例、不结算，只维护表现条目（§3.5）。</p>
+ * 客户端不建实例、不结算，只维护表现条目。</p>
  *
  * <p>推进必须挂在快照刷新之后，即订阅 {@link PhysicsSnapshotReadyEvent}——
  * "事件即一步"，不需要待排队步数计数器，也不需要新鲜度标志。</p>
@@ -54,10 +54,10 @@ public final class ExplosionManager {
     }
 
     /**
-     * 三种调用方共用的唯一入口（§14.1）。主线程调用。
+     * 三种调用方共用的唯一入口。主线程调用。
      *
      * <p>内部：广播起爆包 → 纳入活跃表（新实例的年龄从 0 起算）。
-     * 起爆包只含"起爆点 + 种子 + 参数集"，不带实例标识（§13）。</p>
+     * 起爆包只含"起爆点 + 种子 + 参数集"，不带实例标识。</p>
      *
      * <p>仅服务端生效：客户端通过起爆包建立表现条目。</p>
      *
@@ -68,7 +68,7 @@ public final class ExplosionManager {
      */
     public void detonate(Vector3f origin, ExplosionParams params, DamageSource source, long seed) {
         if (level.isClientSide()) return;
-        // 殉爆环路保护：限制每维度同时活跃的实例数（§12.4）
+        // 殉爆环路保护：限制每维度同时活跃的实例数
         if (active.size() >= MMServerConfig.explosionMaxActiveInstances()) {
             MachineMax.LOGGER.warn("爆炸实例数已达上限 {}，忽略本次起爆 @ {}",
                     MMServerConfig.explosionMaxActiveInstances(), origin);
@@ -90,10 +90,17 @@ public final class ExplosionManager {
     }
 
     /**
-     * 快照就绪事件的订阅点（§3.4）。只处理本 Level 的事件。
+     * 表现条目的只读视图，供客户端渲染读取（无活跃爆炸时为空表，渲染侧据此不提交后处理 pass）。
+     */
+    public List<BlastFrontVisual> visuals() {
+        return Collections.unmodifiableList(visuals);
+    }
+
+    /**
+     * 快照就绪事件的订阅点。只处理本 Level 的事件。
      *
      * <p>三个方法按固定顺序调用，不可合并：顺序本身承担确定性、
-     * "每去重键每 tick 至多一次"、摧毁与世界修改解耦三项保证（§4.5）。</p>
+     * "每去重键每 tick 至多一次"、摧毁与世界修改解耦三项保证。</p>
      */
     @SubscribeEvent
     public static void onSnapshotReady(PhysicsSnapshotReadyEvent event) {
@@ -118,7 +125,7 @@ public final class ExplosionManager {
      * 每次快照就绪推进一步。
      *
      * <p>活跃表的重入处理：先取一份快照再遍历，因此 settle/execute 内触发殉爆新增的实例
-     * 不在本 tick 内处理，留到下一次事件（§12.4）。</p>
+     * 不在本 tick 内处理，留到下一次事件。</p>
      */
     private void tick() {
         if (!active.isEmpty()) {

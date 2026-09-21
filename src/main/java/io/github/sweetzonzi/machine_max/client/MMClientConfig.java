@@ -37,6 +37,10 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue SUPPRESSION_ENABLED;
     private static final ModConfigSpec.DoubleValue OVERLOAD_INTENSITY;
     private static final ModConfigSpec.DoubleValue SUPPRESSION_INTENSITY;
+    /** 爆炸波前折射后处理总开关 */
+    private static final ModConfigSpec.BooleanValue BLAST_DISTORTION_ENABLED;
+    /** 爆炸波前折射强度倍率 */
+    private static final ModConfigSpec.DoubleValue BLAST_DISTORTION_INTENSITY;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
@@ -103,6 +107,14 @@ public class MMClientConfig {
         SUPPRESSION_INTENSITY = builder
                 .comment("Suppression effect intensity multiplier.\nRange: 0.0 ~ 1.0. Default: 1.0")
                 .defineInRange("suppression_intensity", 1.0, 0.0, 1.0);
+
+        BLAST_DISTORTION_ENABLED = builder
+                .comment("Enable the blast front distortion effect (screen-space refraction ring around an explosion wavefront).\nDefault: true")
+                .define("blast_distortion_enabled", true);
+
+        BLAST_DISTORTION_INTENSITY = builder
+                .comment("Blast front distortion intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
+                .defineInRange("blast_distortion_intensity", 1.0, 0.0, 2.0);
 
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
@@ -424,6 +436,24 @@ public class MMClientConfig {
      */
     public static float getSuppressionIntensity() {
         return SUPPRESSION_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取爆炸波前折射效果开关状态。
+     *
+     * @return true 表示启用爆炸波前折射
+     */
+    public static boolean isBlastDistortionEnabled() {
+        return BLAST_DISTORTION_ENABLED.get();
+    }
+
+    /**
+     * 获取爆炸波前折射强度倍率。
+     *
+     * @return [0, 2] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getBlastDistortionIntensity() {
+        return BLAST_DISTORTION_INTENSITY.get().floatValue();
     }
 }
 

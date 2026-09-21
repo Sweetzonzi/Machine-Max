@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
  * 起爆网络包（服务端 → 客户端）：载荷只含"起爆点 + 种子 + 参数集"。
  *
  * <p>客户端凭这三项即可完整重建射线方向集与波前半径（年龄各自从 0 起算），
- * <b>不逐条同步射线</b>，也不在客户端建立逻辑实例（爆炸系统设计文档 §13）。</p>
+ * <b>不逐条同步射线</b>，也不在客户端建立逻辑实例。</p>
  */
 public record ExplosionDetonatePayload(
         ResourceKey<Level> dimension,

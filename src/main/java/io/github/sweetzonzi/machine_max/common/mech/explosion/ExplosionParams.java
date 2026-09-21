@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
 /**
- * 单发爆炸的参数（爆炸系统设计文档 §12.1）。
+ * 单发爆炸的参数。
  *
  * <p><b>参数表里没有任何能量量纲</b>：三个终端标定量（{@code base_penetration}、
  * {@code base_damage}、{@code base_impulse}）都以"参考半径处、无介质消耗、单位迎流面积"标定，
@@ -25,7 +25,7 @@ import net.minecraft.network.codec.StreamCodec;
  * @param frontSpeed      波前推进速度（m/s，默认 20.0）
  * @param destroyBlocks   是否破坏地形（默认 true）
  * @param dropItems       摧毁方块是否掉落（默认 false）
- * @param causesFire      是否点燃；首期强制 false（§12.3，尚无实现）
+ * @param causesFire      是否点燃；首期强制 false（尚无实现）
  */
 public record ExplosionParams(
         float basePenetration,
@@ -80,7 +80,7 @@ public record ExplosionParams(
      * 紧凑构造器：做最小必要的防呆。
      *
      * <ul>
-     *   <li>{@code causesFire} 强制为 false——内容包里写 true 也不会生效，避免出现"没有实现的开关"（§12.3）；</li>
+     *   <li>{@code causesFire} 强制为 false——内容包里写 true 也不会生效，避免出现"没有实现的开关"；</li>
      *   <li>{@code nearRadius}/{@code frontSpeed} 取下界，避免除零与零步长；</li>
      *   <li>{@code maxRadius} 不小于 {@code nearRadius}。</li>
      * </ul>
@@ -92,7 +92,7 @@ public record ExplosionParams(
         maxRadius = Math.max(maxRadius, nearRadius);
     }
 
-    /** 每主线程 tick 的推进距离（m），见设计文档 §4.3。 */
+    /** 每主线程 tick 的推进距离（m）。 */
     public float advancePerStep() {
         return frontSpeed / 20f;
     }

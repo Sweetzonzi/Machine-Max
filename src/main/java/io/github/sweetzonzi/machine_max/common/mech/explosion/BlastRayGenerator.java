@@ -5,7 +5,7 @@ import com.jme3.math.Vector3f;
 import java.util.Random;
 
 /**
- * 爆炸射线的确定性方向集与射线数自适应（爆炸系统设计文档 §4.1、§4.7）。纯静态、无状态。
+ * 爆炸射线的确定性方向集与射线数自适应。纯静态、无状态。
  *
  * <p><b>抖动只在这里发生一次</b>：{@link #generate} 之后方向不再改变，这是客户端能凭
  * "起爆点 + 种子"复现整条时间线的前提。</p>
@@ -17,14 +17,14 @@ public final class BlastRayGenerator {
     /** 射线数上界（纯性能参数，代码常量，JSON 不可配置）。 */
     public static final int MAX_RAYS = 4096;
 
-    /** §4.7 的自适应系数：rayCount ≥ 10 · 4π · near_radius² ≈ 126 · near_radius²。 */
+    /** 自适应系数：rayCount ≥ 10 · 4π · near_radius² ≈ 126 · near_radius²。 */
     private static final float RAY_DENSITY_COEFF = 126f;
 
     private BlastRayGenerator() {
     }
 
     /**
-     * 依 {@code near_radius} 自适应射线数（§4.7）。这是该公式的唯一定义处：
+     * 依 {@code near_radius} 自适应射线数。这是该公式的唯一定义处：
      * 射线数不进 JSON，起爆时由 {@link ExplosionManager} 调一次，客户端按同一公式重算。
      *
      * @param nearRadius 参考距离（m）
@@ -36,7 +36,7 @@ public final class BlastRayGenerator {
     }
 
     /**
-     * Fibonacci 球 + 种子抖动，一次性固定方向（§4.1）。
+     * Fibonacci 球 + 种子抖动，一次性固定方向。
      *
      * @param origin   起爆点
      * @param seed     起爆种子（双端一致，决定抖动）

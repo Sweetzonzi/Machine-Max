@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 一次爆炸的聚合根（爆炸系统设计文档 §14）。
+ * 一次爆炸的聚合根。
  *
  * <p>跨 tick 存活，寿命 = {@code max_radius / front_speed} 秒；结束时连同射线组一并被回收。
  * 一次推进 = 一次 {@code PhysicsSnapshotReadyEvent}，内部按固定顺序执行
@@ -99,7 +99,7 @@ public final class ExplosionInstance {
 
     // ==================== 累计与待摧毁 ====================
 
-    /** 本 tick 的累积表，settle 后清空。用插入序容器保证确定性（§4.5、§7.4）。 */
+    /** 本 tick 的累积表，settle 后清空。用插入序容器保证确定性。 */
     private final Map<Object, BlastAccum> accum = new LinkedHashMap<>();
 
     /** 本 tick 标记待摧毁的方块，execute 后清空。 */
@@ -152,7 +152,7 @@ public final class ExplosionInstance {
 
     // ==================== 派生读取 ====================
 
-    /** 已推进距离 = tickCount × advancePerStep（§4.8）。 */
+    /** 已推进距离 = tickCount × advancePerStep。 */
     public float frontRadius() {
         return tickCount * params.advancePerStep();
     }
@@ -183,7 +183,7 @@ public final class ExplosionInstance {
     // ==================== 推进期 ====================
 
     /**
-     * 推进一次（一次快照就绪事件 = 一步），并登记命中（§4.3、§4.4）。
+     * 推进一次（一次快照就绪事件 = 一步），并登记命中。
      * 步长固定为 {@code frontSpeed / 20}。
      */
     void advance() {
@@ -252,7 +252,7 @@ public final class ExplosionInstance {
         }
     }
 
-    /** §4.4：每爆炸每 tick 一次的球查询，把候选刚体及其 AABB 读进 Java 侧缓存。 */
+    /** 每爆炸每 tick 一次的球查询，把候选刚体及其 AABB 读进 Java 侧缓存。 */
     private void coarseCull(float step) {
         if (worldSnapshot == null) {
             candidateCount = 0;
@@ -281,7 +281,7 @@ public final class ExplosionInstance {
         }
     }
 
-    /** §14.2：共享体素遍历器，读取本 tick 推进段内的方块命中。 */
+    /** 共享体素遍历器，读取本 tick 推进段内的方块命中。 */
     private void walkVoxels(BlastRay ray, float ox, float oy, float oz, float step) {
         blockHits.clear();
         dirTmp.set(ray.dirX(), ray.dirY(), ray.dirZ());
@@ -299,7 +299,7 @@ public final class ExplosionInstance {
     }
 
     /**
-     * §4.3：对 [起点, 终点] 段做一次快照 rayTest，命中刚体登记。
+     * 对 [起点, 终点] 段做一次快照 rayTest，命中刚体登记。
      * 候选集按 owner 分派：仅 {@link SubPart} 走完整通路；其余（实体刚体、交互区、地形、未知）跳过。
      */
     private void rayTestRigid(BlastRay ray, float ox, float oy, float oz, float ex, float ey, float ez) {
@@ -353,7 +353,7 @@ public final class ExplosionInstance {
         return false;
     }
 
-    /** §3.2：一般实体用主线程 AABB 相交发现命中，取进入 t 作 hitFraction。 */
+    /** 一般实体用主线程 AABB 相交发现命中，取进入 t 作 hitFraction。 */
     private void entitiesAlong(BlastRay ray, float ox, float oy, float oz, float ex, float ey, float ez) {
         double minX = Math.min(ox, ex) - 0.3, maxX = Math.max(ox, ex) + 0.3;
         double minY = Math.min(oy, ey) - 0.3, maxY = Math.max(oy, ey) + 0.3;
@@ -381,7 +381,7 @@ public final class ExplosionInstance {
 
     /**
      * 顺次消费一个命中：判定是否拦下本射线，击穿则折减能量，并把原始数据登记进累积表。
-     * <b>只登记，不施加</b>（§4.5）。
+     * <b>只登记，不施加</b>。
      */
     private void consume(BlastRay ray, Hit hit, float baseDistance, float step) {
         float d = baseDistance + hit.fraction * step;
@@ -444,7 +444,7 @@ public final class ExplosionInstance {
                 if (!ray.markStruck(hit.entity)) return;
                 BlastAccum acc = accumFor(hit.entity);
                 acc.hitCount++;
-                // 实体不延续传播：ΔE 按"到达"计（§8.4）
+                // 实体不延续传播：ΔE 按"到达"计
                 acc.deltaE += w;
                 acc.sumFootprintSqrtI += footprintSqrtI;
                 accumulateWeights(acc, w, hit);
@@ -455,7 +455,7 @@ public final class ExplosionInstance {
         }
     }
 
-    /** 能量加权的法线与命中点累加（权重 = E_r·λ_r，§10.3）。 */
+    /** 能量加权的法线与命中点累加（权重 = E_r·λ_r）。 */
     private static void accumulateWeights(BlastAccum acc, float w, Hit hit) {
         acc.weightSum += w;
         acc.wNx += w * hit.nx;
@@ -470,7 +470,7 @@ public final class ExplosionInstance {
         return accum.computeIfAbsent(key, k -> new BlastAccum());
     }
 
-    /** 传输效率 η = (A_pen / (A_pen + A_armor))²（§8.2、§8.3）。 */
+    /** 传输效率 η = (A_pen / (A_pen + A_armor))²。 */
     private static float eta(float aPen, float aArmor) {
         if (aArmor <= 0f) return 1f;
         float denom = aPen + aArmor;
@@ -481,7 +481,7 @@ public final class ExplosionInstance {
 
     // ==================== 结算期与施加 ====================
 
-    /** 逐去重键结算并对外施加一次（§7.4 ③④、§9.5）。 */
+    /** 逐去重键结算并对外施加一次。 */
     void settle() {
         if (accum.isEmpty()) return;
         Iterator<Map.Entry<Object, BlastAccum>> it = accum.entrySet().iterator();
@@ -500,7 +500,7 @@ public final class ExplosionInstance {
         accum.clear();
     }
 
-    /** §9.3：聚合后每个 HitBox 每 tick 只 hurt 一次；代表穿深取本键最大的 A_pen。 */
+    /** 聚合后每个 HitBox 每 tick 只 hurt 一次；代表穿深取本键最大的 A_pen。 */
     private void settleSubPart(BlastAccum acc) {
         if (acc.subPart == null) return;
         float damage = BlastField.damage(acc.deltaE, params);
@@ -521,7 +521,7 @@ public final class ExplosionInstance {
         BFDamageApi.hurt(acc.subPart, ctx);
     }
 
-    /** §9.2：方块看伤害不看能量；只标记，由 execute 统一摧毁。 */
+    /** 方块看伤害不看能量；只标记，由 execute 统一摧毁。 */
     private void settleBlock(BlockPos pos, BlastAccum acc) {
         if (acc.deltaE <= 0f) return;
         if (!params.destroyBlocks()) return;
@@ -539,7 +539,7 @@ public final class ExplosionInstance {
         }
     }
 
-    /** §9.4、§10.4：实体伤害交 BF/原版链条，击退按冲量方向直接施加。 */
+    /** 实体伤害交 BF/原版链条，击退按冲量方向直接施加。 */
     private void settleEntity(Entity entity, BlastAccum acc) {
         if (entity.isRemoved()) return;
         float damage = BlastField.damage(acc.deltaE, params);
@@ -580,7 +580,7 @@ public final class ExplosionInstance {
 
     // ==================== 执行期 ====================
 
-    /** 统一摧毁本 tick 标记的方块，杜绝遍历顺序依赖（§9.2）。 */
+    /** 统一摧毁本 tick 标记的方块，杜绝遍历顺序依赖。 */
     void execute() {
         if (pendingDestroy.isEmpty()) return;
         boolean drop = params.dropItems();
@@ -593,7 +593,7 @@ public final class ExplosionInstance {
     // ==================== 内部结构 ====================
 
     /**
-     * 本 tick 对<b>一个去重键</b>的累积（§7.4、§9.5）。
+     * 本 tick 对<b>一个去重键</b>的累积。
      *
      * <p>两个求和范围不同，这是设计口径的直接体现，不可混用：
      * {@link #deltaE} 只累加<b>被击穿</b>的射线（实体键按"到达"计）；

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 跨 tick 持久存在的传播射线（爆炸系统设计文档 §4.2）。
+ * 跨 tick 持久存在的传播射线。
  *
  * <p>射线维护的是<b>剩余能量比例</b> {@code E_r}（初始 1.0，本征量），只被穿透折减；
  * 强度比 {@code I} 是派生量，由 {@link BlastField} 现算。射线方向在构造后终生不变。</p>
@@ -38,7 +38,7 @@ public final class BlastRay {
 
     /**
      * 生命周期级去重集合（不清空）：键为 {@code PenetrationKey} / {@code BlockPos} / {@code Entity} 三类之一。
-     * 同一去重键在射线整个生命周期内只判定一次——见设计文档 §4.2。
+     * 同一去重键在射线整个生命周期内只判定一次。
      */
     private final Set<Object> struck = new HashSet<>();
 
