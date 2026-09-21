@@ -27,6 +27,12 @@
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "Passenger count signal output channel and targets."
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Ordered list of dismount locator names; the list order is the priority for dismount attempts. Every name must exist in the model locators; an empty list means this seat declares no dismount point."
     }
   },
   "required": ["type", "definition"],

@@ -1017,6 +1017,19 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         }
     }
 
+    /**
+     * 判断本零件是否声明了指定名称的 locator。
+     * <p>{@link #getLocatorWorldTransform(String)} 与 {@link #getLocatorLocalTransform(String)}
+     * 在名字不存在时会静默返回单位变换或质心位置，调用方无法察觉；需要显式区分「名字拼错」
+     * 与「变换真的在原点」时，先用本方法判定。</p>
+     *
+     * @param locatorName locator 名称
+     * @return 模型中存在该 locator 时返回 true
+     */
+    public boolean hasLocator(String locatorName) {
+        return locatorName != null && !locatorName.isEmpty() && attr.getLocatorTransforms().containsKey(locatorName);
+    }
+
     @Override
     public void setPosition(Vector3f position) {
         if (entity != null && !entity.isRemoved() && !updateLock) {

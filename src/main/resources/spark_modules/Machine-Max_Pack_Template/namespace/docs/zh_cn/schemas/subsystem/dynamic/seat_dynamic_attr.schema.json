@@ -32,6 +32,12 @@
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "摄像机发现握手配置。在这些频道上发送握手信号即可发现本载具上可用的摄像机。例如 {\"gunner_optics\": [\"gunner_primary_sight\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "下车点定位器名称列表，列表顺序即下车尝试的优先级。每个名称都必须在模型 locators 中存在；留空表示该座位不声明下车点。"
     }
   },
   "required": ["type", "definition"],

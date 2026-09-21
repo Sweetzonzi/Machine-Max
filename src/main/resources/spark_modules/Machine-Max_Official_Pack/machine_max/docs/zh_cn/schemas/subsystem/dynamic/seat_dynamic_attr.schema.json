@@ -27,6 +27,12 @@
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "乘客数量信号输出频道及目标。"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "下车点定位器名称列表，列表顺序即下车尝试的优先级。每个名称都必须在模型 locators 中存在；留空表示该座位不声明下车点。"
     }
   },
   "required": ["type", "definition"],

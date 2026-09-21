@@ -81,6 +81,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.part.subsystem_hitbox_not_found", "Failed to find hit-box %3$s for subsystem %2$s in part %1$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "Seat subsystem requires a locator (e.g. \"locator\": \"seat_locator\") to define sitting position");
         this.add("error.machine_max.seat_subsystem.no_view", "Seat subsystem must either allow first person view or third person view");
+        this.add("error.machine_max.seat_subsystem.empty_dismount_locator", "The dismount_locators list of a seat subsystem must not contain empty names; fill in a locator name or remove the entry");
         this.add("error.machine_max.item_storage_subsystem.invalid_row_num", "The row number of item-storage subsystem must be greater than 1");
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "The column number of item-storage subsystem must be greater than 1");
         //Part assembly exception handler

@@ -32,6 +32,12 @@
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "Camera discovery handshake configuration. Subsystems on these channels will receive handshake signals to discover available cameras on this vehicle. e.g. {\"gunner_optics\": [\"gunner_primary_sight\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Ordered list of dismount locator names; the list order is the priority for dismount attempts. Every name must exist in the model locators; an empty list means this seat declares no dismount point."
     }
   },
   "required": ["type", "definition"],
