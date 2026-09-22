@@ -18,6 +18,6 @@
   ],
   "icon": "machine_max:textures/icon/van/van_hull_icon.png",
   "description": "research.machine_max.van_hull_blueprint.desc",
-  "unlock_recipe": "machine_max:van_hull"
+  "unlock_recipe": "machine_max:part_fabricating/van_hull"
 }
 

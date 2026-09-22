@@ -29,5 +29,5 @@
   ],
   "icon": "machine_max:textures/icon/kluo/kluo_gt_wheel_icon.png",
   "description": "research.machine_max.kluo_gt_wheel_blueprint.desc",
-  "unlock_recipe": "machine_max:kluo_gt_wheel"
+  "unlock_recipe": "machine_max:part_fabricating/kluo_gt_wheel"
 }

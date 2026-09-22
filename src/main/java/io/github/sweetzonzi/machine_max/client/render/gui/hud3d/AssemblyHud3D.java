@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedFloat;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedQuaternion;
@@ -15,7 +14,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.animation.TimeSource;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
@@ -167,10 +166,9 @@ public class AssemblyHud3D implements IHud3DElement {
         animatedHudWidth.update(currentTime);
         // 计算状态
         List<MaterialStatus> materials;
-        if (part != null && part.getRecipe() instanceof FabricatingRecipe recipe)
+        if (part != null && part.getRecipe() instanceof PartFabricatingRecipe recipe)
             materials = buildMaterialStatus(recipe, part, ctx.player);
         else materials = List.of();
-        var research = ctx.player.getData(MMAttachments.getBLUEPRINT());
         if (subPart != null) {
             warningMessages.clear();
             hintMessages.clear();
@@ -337,7 +335,6 @@ public class AssemblyHud3D implements IHud3DElement {
             startY += TEXT_LINE_HEIGHT + 2;
             boolean crouching = ctx.mc.player.isCrouching();
             if (ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
-                var availableRecipes = research.getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
                 ctx.drawText(
                         Component.translatable("hud.key.machine_max.assemble",
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
@@ -349,16 +346,6 @@ public class AssemblyHud3D implements IHud3DElement {
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
-                if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
-                    if (!availableRecipes.isEmpty() && availableRecipes.size() > 1) {
-                        startY += TEXT_LINE_HEIGHT + 2;
-                        ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
-                                        KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
-                                        availableRecipes.size()),
-                                startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                        );
-                    }
-                }
             } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {
                 ctx.drawText(
                         Component.translatable("hud.key.machine_max.tear_down",
@@ -705,7 +692,7 @@ public class AssemblyHud3D implements IHud3DElement {
     }
 
     private List<MaterialStatus> buildMaterialStatus(
-            FabricatingRecipe recipe,
+            PartFabricatingRecipe recipe,
             Part part,
             LocalPlayer player
     ) {

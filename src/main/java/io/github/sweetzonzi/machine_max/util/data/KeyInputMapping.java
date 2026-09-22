@@ -15,8 +15,6 @@ public enum KeyInputMapping {
     HAND_BRAKE(104),
     TOGGLE_HAND_BRAKE(105),
 
-    CYCLE_PART_RECIPES(504),
-
     /* 武器控制 (200号段) */
     MAIN_FIRE(200),              // 主武器开火（hold 类型）
     SECONDARY_FIRE(201),         // 副武器开火（hold 类型）

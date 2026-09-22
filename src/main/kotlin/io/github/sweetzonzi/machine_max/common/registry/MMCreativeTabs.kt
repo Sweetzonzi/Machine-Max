@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
@@ -114,8 +115,10 @@ object MMCreativeTabs {
                     if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
                     else {
                         val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random()
-                        val item = ItemStack(MMItems.FABRICATING_BLUEPRINT)
-                        item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
+                        val item = ItemStack(MMItems.PART_FABRICATING_BLUEPRINT)
+                        val partId = MMDynamicRes.PART_TYPES.keys.toList()[randomIndex]
+                        item.set(MMDataComponents.PART_TYPE, partId)
+                        item.set(MMDataComponents.RECIPE_TYPE, PartFabricatingRecipe.recipeIdFromPartType(partId))
                         item
                     }
                 }
@@ -131,7 +134,6 @@ object MMCreativeTabs {
                 val externalParts = ArrayList<ItemStack>(1)//将所有外部包部件加入创造物品栏
                 MMDynamicRes.PART_TYPES.forEach { (loc, type) ->
                     val itemStack = ItemStack(MMItems.PART_ITEM)
-                    itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     itemStack.set(DataComponents.MAX_STACK_SIZE, type.maxStackSize)
                     externalParts.add(itemStack)
@@ -160,11 +162,11 @@ object MMCreativeTabs {
             }
             MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
-                val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包部件蓝图加入创造物品栏
+                val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包零件制造蓝图加入创造物品栏
                 MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
-                    val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
-                    itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
+                    val itemStack = ItemStack(MMItems.PART_FABRICATING_BLUEPRINT)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
+                    itemStack.set(MMDataComponents.RECIPE_TYPE, PartFabricatingRecipe.recipeIdFromPartType(loc))
                     externalBlueprints.add(itemStack)
                 }
                 externalBlueprints.forEach { event.accept(it) }

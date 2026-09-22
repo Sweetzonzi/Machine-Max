@@ -71,9 +71,13 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.assembly.sub_attach_angle", "Rotate Attach Angle (-)");
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
-        this.add("key.machine_max.assembly.cycle_recipe", "Cycle Part Recipe");
         //Custom pack exception handler
         this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
+        this.add("error.machine_max.recipe.wrong_directory", "Part recipes must be placed under recipe/part_fabricating/");
+        this.add("error.machine_max.recipe.wrong_type_directory", "Recipes under recipe/part_fabricating/ must use type machine_max:part_fabricating");
+        this.add("error.machine_max.recipe.unknown_part", "The recipe file name does not match any registered part");
+        this.add("error.machine_max.recipe.duplicate_part", "A second part recipe exists for the same part");
+        this.add("error.machine_max.recipe.invalid_result_count", "Result count must be greater than 0 and not exceed the part's stack limit");
         this.add("error.machine_max.invalid_resource_location", "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.");
         this.add("error.machine_max.subpart.zero_mass", "Sub-part mass must be greater than zero");
         this.add("error.machine_max.subpart.empty_hit_boxes", "Sub-part must have at least one hit-box");
@@ -137,6 +141,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.ender_gk_resin", "Ender GK Resin");
         this.add("item.machine_max.empty_blueprint", "Empty Vehicle Blueprint");
         this.add("item.machine_max.fabricating_blueprint", "Fabricating Blueprint");
+        this.add("item.machine_max.part_fabricating_blueprint", "Part Fabricating Blueprint");
         this.add("item.machine_max.structural_component_1", "Basic Structural Component");
         this.add("item.machine_max.mechanic_component_1", "Basic Mechanical Component");
         this.add("item.machine_max.weapon_component_1", "Basic Weapon Component");
@@ -222,7 +227,6 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.key.machine_max.assemble", "[%1$s] Assemble & Repair & Reinforce");
         this.add("hud.key.machine_max.repair_without_assemble", "[%1$s] Repair & Reinforce");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] Disassemble");
-        this.add("hud.key.machine_max.cycle_recipe", "[%1$s] Cycle Recipe (%2$s Available)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] Remove part");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] Detach connector");
         // Research Point Hud

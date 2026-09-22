@@ -3,14 +3,11 @@ package io.github.sweetzonzi.machine_max.common.recipe;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -24,15 +21,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 通用制造配方。
+ *
+ * <p>只描述「一组原料 → 一个产物 + 耗时」的制造语义，供制造机、JEI 配方页与研究台预览消费。
+ * 产物为零件时使用其子类 {@link PartFabricatingRecipe}，该类额外携带手动组装与拆卸所需的信息。</p>
+ *
+ * <p>本类不参与手动组装：装配侧的准入与材料清单一律由 {@link PartFabricatingRecipe} 提供。</p>
+ */
 @Getter
 public class FabricatingRecipe implements Recipe<FabricatingInput> {
-    public static final ResourceLocation EMPTY = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
     private final List<IngredientCountPair> ingredientPairs;//材料-数量对列表
     private final List<Ingredient> ingredientList = new ArrayList<>();//扁平化材料需求列表，每个材料为一个元素
-    private final List<IngredientCountPair> manualAssembleIngredientPairs = new ArrayList<>();
-    private final List<IngredientCountPair> manualDisassembleIngredientPairs = new ArrayList<>();
-    private final List<Ingredient> manualAssembleIngredientList = new ArrayList<>();
-    private final List<Ingredient> manualDisassembleIngredientList = new ArrayList<>();
     private final ItemStack result;
     private final int processingTime;
     private final String tooltip;
@@ -105,72 +105,45 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
                 ingredientList.add(pair.ingredient());
             }
         }
-        int resultCount = Math.max(result.getCount(), 1);
-        for (IngredientCountPair pair : ingredientPairs) {
-            int assembleCount = Math.ceilDiv(pair.count(), resultCount);
-            int disassembleCount = pair.count() / resultCount;
-            manualAssembleIngredientPairs.add(new IngredientCountPair(pair.ingredient(), assembleCount));
-            manualDisassembleIngredientPairs.add(new IngredientCountPair(pair.ingredient(), disassembleCount));
-            for (int i = 0; i < assembleCount; i++) {
-                manualAssembleIngredientList.add(pair.ingredient());
-            }
-            for (int i = 0; i < disassembleCount; i++) {
-                manualDisassembleIngredientList.add(pair.ingredient());
-            }
-        }
     }
 
     /**
-     * 判断该制造配方的产物是否为「可手动装配的零件」。
-     * <p>判据是配方产物带有 {@code PART_TYPE} 组件：只有这类产物才能作为零件放置到世界中
-     * （放置链路见 {@code PartAssemblyItem.getPartType} → {@code VehicleAssemblyHelper.buildRequest}），
-     * 因而可以边焊接边推进装配进度。</p>
-     * <p>反之，产物不带 {@code PART_TYPE} 的配方（例如仅用于制造台的中间件模板）不参与手动装配，
-     * 只能作为制造台的制造配方使用。</p>
-     *
-     * @return 产物是零件（带 {@code PART_TYPE} 组件）时返回 {@code true}
-     */
-    public boolean isManualAssemblablePart() {
-        return result.has(MMDataComponents.getPART_TYPE());
-    }
-
-    /**
-     * 检查指定物品容器是否包含配方所需的所有原料或研究原料（考虑数量）
+     * 检查指定物品容器是否包含配方所需的所有原料（考虑数量）
      */
     public boolean hasRequiredIngredients(Container container) {
         return IngredientCountPair.hasRequiredIngredients(container, ingredientPairs);
     }
 
     /**
-     * 检查指定物品列表是否包含配方所需的所有原料或研究原料（考虑数量）
+     * 检查指定物品列表是否包含配方所需的所有原料（考虑数量）
      */
     public boolean hasRequiredIngredients(List<ItemStack> itemStacks) {
         return IngredientCountPair.hasRequiredIngredients(itemStacks, ingredientPairs);
     }
 
     /**
-     * 检查指定玩家是否包含配方所需的所有原料或研究原料（考虑数量）
+     * 检查指定玩家是否包含配方所需的所有原料（考虑数量）
      */
     public boolean hasRequiredIngredients(Player player) {
         return hasRequiredIngredients(player.getInventory());
     }
 
     /**
-     * 从指定容器中消耗配方所需的原料或研究原料
+     * 从指定容器中消耗配方所需的原料
      */
     public void consumeIngredients(Container container) {
         IngredientCountPair.consumeIngredients(container, ingredientPairs);
     }
 
     /**
-     * 从指定物品列表中消耗配方所需的原料或研究原料（返回消耗后的新列表）
+     * 从指定物品列表中消耗配方所需的原料（返回消耗后的新列表）
      */
     public List<ItemStack> consumeIngredients(List<ItemStack> itemStacks) {
         return IngredientCountPair.consumeIngredients(itemStacks, ingredientPairs);
     }
 
     /**
-     * 从指定玩家的物品栏中消耗配方所需的原料或研究原料
+     * 从指定玩家的物品栏中消耗配方所需的原料
      */
     public void consumeIngredients(Player player) {
         consumeIngredients(player.getInventory());

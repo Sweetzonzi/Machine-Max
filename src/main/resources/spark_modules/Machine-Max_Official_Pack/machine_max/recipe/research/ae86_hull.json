@@ -24,5 +24,5 @@
   ],
   "icon": "machine_max:textures/icon/ae86/ae86_hull_icon.png",
   "description": "research.machine_max.ae86_hull_blueprint.desc",
-  "unlock_recipe": "machine_max:ae86_hull"
+  "unlock_recipe": "machine_max:part_fabricating/ae86_hull"
 }

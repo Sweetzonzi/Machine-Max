@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/wine_fox/wine_fox_bumper_icon.png",
   "description": "research.machine_max.wine_fox_bumper_blueprint.desc",
-  "unlock_recipe": "machine_max:wine_fox_bumper"
+  "unlock_recipe": "machine_max:part_fabricating/wine_fox_bumper"
 }

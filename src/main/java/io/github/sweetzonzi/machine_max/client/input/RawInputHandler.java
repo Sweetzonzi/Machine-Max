@@ -463,10 +463,6 @@ public class RawInputHandler {
             KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
                     .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleVariants());
 
-            //切换部件配方
-            KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)
-                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0)));
-
             /*
               摄像机控制
              */

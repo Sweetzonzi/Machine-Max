@@ -26,5 +26,5 @@
   ],
   "icon": "machine_max:textures/icon/reinforced_container_16x16x8_icon.png",
   "description": "research.machine_max.reinforced_container_16x16x8_blueprint.desc",
-  "unlock_recipe": "machine_max:reinforced_container_16x16x8"
+  "unlock_recipe": "machine_max:part_fabricating/reinforced_container_16x16x8"
 }

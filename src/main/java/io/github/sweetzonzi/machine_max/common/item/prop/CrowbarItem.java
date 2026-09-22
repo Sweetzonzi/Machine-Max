@@ -9,7 +9,7 @@ import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
@@ -94,17 +94,17 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
                         ItemStack itemStack = null;
                         float assemblingProgress = part.getAssemblingProgress();
-                        FabricatingRecipe recipe = part.getRecipe();
+                        PartFabricatingRecipe recipe = part.getRecipe();
                         if (assemblingProgress >= 1f) {
-                            itemStack = createPartItemStack(part, partType);
+                            itemStack = createPartItemStack(partType);
                         } else if (recipe != null) {
-                            int materialCap = recipe.isManualAssemblablePart() ? recipe.getManualAssembleIngredientList().size() : 0;
+                            int materialCap = recipe.getManualAssembleIngredientList().size();
                             if (materialCap > 0) {
                                 int materialProvided = Math.clamp(part.getMaterialProgress(), 0, materialCap);
                                 int materialGap = materialCap - materialProvided;
-                                itemStack = createDamagedPartItemStack(part, partType, materialCap, materialGap);
+                                itemStack = createDamagedPartItemStack(partType, materialCap, materialGap);
                             } else {
-                                itemStack = createPartItemStack(part, partType);
+                                itemStack = createPartItemStack(partType);
                             }
                         }
                         if (itemStack != null && !player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
@@ -215,16 +215,16 @@ public class CrowbarItem extends Item implements ICustomModelItem {
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
     }
 
-    private static ItemStack createPartItemStack(Part part, PartType partType) {
+    /** 生成零件物品：只带 {@code part_type} 与堆叠上限，不写配方组件（配方由装配侧索引按零件 id 求出） */
+    private static ItemStack createPartItemStack(PartType partType) {
         ItemStack stack = new ItemStack(MMItems.getPART_ITEM());
         stack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
-        stack.set(MMDataComponents.getRECIPE_TYPE(), part.getCustomRecipe());
         stack.set(DataComponents.MAX_STACK_SIZE, partType.getMaxStackSize());
         return stack;
     }
 
-    private static ItemStack createDamagedPartItemStack(Part part, PartType partType, int materialCap, int materialGap) {
-        ItemStack stack = createPartItemStack(part, partType);
+    private static ItemStack createDamagedPartItemStack(PartType partType, int materialCap, int materialGap) {
+        ItemStack stack = createPartItemStack(partType);
         int clampedCap = Math.max(materialCap, 0);
         int clampedGap = Math.clamp(materialGap, 0, clampedCap);
         if (clampedGap > 0) {

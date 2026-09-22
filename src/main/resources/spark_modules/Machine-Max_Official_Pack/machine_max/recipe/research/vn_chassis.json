@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/vn/vn_chassis_icon.png",
   "description": "research.machine_max.vn_chassis_blueprint.desc",
-  "unlock_recipe": "machine_max:vn_chassis"
+  "unlock_recipe": "machine_max:part_fabricating/vn_chassis"
 }

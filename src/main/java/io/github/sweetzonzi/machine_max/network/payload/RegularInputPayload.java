@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyServerHelper;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
@@ -125,14 +124,6 @@ public class RegularInputPayload implements CustomPacketPayload {
                 break;
             case SECONDARY_FIRE:
                 handleWeaponInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count(), false);
-                break;
-            /*
-             *  载具组装
-             */
-            case CYCLE_PART_RECIPES://切换部件配方
-                if (!level.isClientSide()) {//仅在服务器端处理（改的是共享世界状态并广播）
-                    VehicleAssemblyServerHelper.cycleRecipe(executingPlayer);
-                }
                 break;
         }
     }

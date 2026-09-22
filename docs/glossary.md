@@ -144,12 +144,15 @@
 ### Research & Blueprint System（研究与蓝图系统）
 
 - **职责**：研究的解锁与载具/零件的蓝图保存/制造
-- **描述**：`ResearchRecipe` 和 `BlueprintResearchRecipe` 定义研究配方（消耗研发点和材料解锁新技术）。`FabricatingRecipe` 定义制造配方（消耗材料按时间加工零件）。`BlueprintData` 保存载具的完整结构数据，可序列化为物品。`AssemblyData` 保存单个装配体数据。
+- **描述**：`ResearchRecipe` 和 `BlueprintResearchRecipe` 定义研究配方（消耗研发点和材料解锁新技术）。制造配方分两类：`FabricatingRecipe`（通用制造配方，产物由 `result` 完整声明，只在制造台加工）与 `PartFabricatingRecipe`（零件配方，产物零件由文件名推导，除制造台外还驱动手动焊枪组装/拆卸）。两类配方分别以客户端容器（`ALL_FABRICATING_RECIPES` / `ALL_PART_FABRICATING_RECIPES` / `PART_RECIPES`）与服务端容器（`SERVER_` 前缀）建立索引，读取统一走 `MMDynamicRes.getAllFabricating(Level)` 与 `MMDynamicRes.getPartRecipe(Level, ResourceLocation)`。`BlueprintData` 保存载具的完整结构数据，可序列化为物品。`AssemblyData` 保存单个装配体数据。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe` — 研究配方基类
   - `io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe` — 蓝图研究配方
-  - `io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe` — 制造台配方
+  - `io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe` — 通用制造配方
+  - `io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe` — 零件配方（`manual` 开关、组装/拆卸材料清单、`partType` 注入）
   - `io.github.sweetzonzi.machine_max.common.recipe.FabricatingInput` — 制造输入
+  - `io.github.sweetzonzi.machine_max.external.MMDynamicRes` — 制造索引与只读入口
+  - `io.github.sweetzonzi.machine_max.client.event.ClientRecipeIndexHandler` — 客户端索引的构建与清空
   - `io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData` — 蓝图数据
   - `io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData` — 装配体数据
   - `io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData` — 载具完整数据（用于保存/同步）
@@ -159,12 +162,13 @@
 ### Item System（物品系统）
 
 - **职责**：玩家交互的核心物品
-- **描述**：一系列具有自定义模型和 3D 预览的特殊物品：`PartItem`（放置零件）、`PartAssemblyItem`（零件装配接口）、`AssemblyItem`（放置整个装配体）、`VehicleBlueprintItem`（载具蓝图，预览并生成载具）、`FabricatingBlueprintItem`（制造蓝图）、`EmptyBlueprintItem`（空白蓝图用于保存）、`VehicleCaptureItem`（载具封装接口，由具体物品实现）、`EnderGkResinItem`（末影树脂，封装载具为装配体）、`EnderScannerItem`（末影扫描仪，封装载具为装配体）、`CrowbarItem`（撬棍，拆卸部件）、`WeldingTorchItem`（焊枪，修复组装）、`SprayCanItem`（喷罐，切换贴图）、`MaterialItem`（合成材料）。
+- **描述**：一系列具有自定义模型和 3D 预览的特殊物品：`PartItem`（放置零件）、`PartAssemblyItem`（零件装配接口）、`AssemblyItem`（放置整个装配体）、`VehicleBlueprintItem`（载具蓝图，预览并生成载具）、`FabricatingBlueprintItem`（通用制造蓝图，只有凭证与展示语义）、`PartFabricatingBlueprintItem`（零件制造蓝图，可放置为线框零件并参与装配）、`EmptyBlueprintItem`（空白蓝图用于保存）、`VehicleCaptureItem`（载具封装接口，由具体物品实现）、`EnderGkResinItem`（末影树脂，封装载具为装配体）、`EnderScannerItem`（末影扫描仪，封装载具为装配体）、`CrowbarItem`（撬棍，拆卸部件）、`WeldingTorchItem`（焊枪，修复组装）、`SprayCanItem`（喷罐，切换贴图）、`MaterialItem`（合成材料）。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.item.prop.PartItem` — 零件物品，右键放置到世界
   - `io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem` — 装配体物品，放置预组装的零件组
   - `io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem` — 载具蓝图物品
-  - `io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem` — 制造蓝图物品
+  - `io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem` — 通用制造蓝图物品
+  - `io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem` — 零件制造蓝图物品
   - `io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem` — 空白蓝图
   - `io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem` — 撬棍
   - `io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem` — 焊枪

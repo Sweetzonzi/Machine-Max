@@ -1,0 +1,35 @@
+{ 
+  "$schema": "../../docs/zh_cn/schemas/recipe/part_fabricating_recipe.schema.json",
+  "type": "machine_max:part_fabricating", // 代表此配方是零件配方：产物零件由本文件名（recipe/part_fabricating/ 下的文件名）决定
+  "ingredients": [ // 配方原料列表。手动组装按result.count等比例ceil消耗；手动拆除按result.count等比例floor返还（floor为0的条目仍保留在材料对列表中）
+    {
+      "ingredient": { // 原料的类型
+        "item": "machine_max:structural_component_1" 
+      },
+      "count": 8 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1" 
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "count": 1
+  },
+  "time": 60 // 手动组装或制造机的制作时间，单位为tick，1秒=20tick
+}
+

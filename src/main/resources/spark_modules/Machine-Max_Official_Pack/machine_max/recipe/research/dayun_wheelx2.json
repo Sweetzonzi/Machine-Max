@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/dayun/dayun_wheelx2_icon.png",
   "description": "research.machine_max.dayun_wheelx2_blueprint.desc",
-  "unlock_recipe": "machine_max:dayun_wheelx2"
+  "unlock_recipe": "machine_max:part_fabricating/dayun_wheelx2"
 }

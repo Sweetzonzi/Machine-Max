@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
@@ -102,7 +102,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
             LocalPlayer player,
             float deltaTicks
     ) {
-        if (!(part.getRecipe() instanceof FabricatingRecipe recipe)) return;
+        if (!(part.getRecipe() instanceof PartFabricatingRecipe recipe)) return;
 
         List<MaterialStatus> materials = buildMaterialStatus(recipe, part, player);
 
@@ -270,7 +270,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
      * 根据配方、装配进度和库存构建材料状态列表
      */
     private List<MaterialStatus> buildMaterialStatus(
-            FabricatingRecipe recipe,
+            PartFabricatingRecipe recipe,
             Part part,
             LocalPlayer player
     ) {

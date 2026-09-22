@@ -4,11 +4,10 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
-import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
-import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
@@ -51,7 +50,7 @@ public class BlueprintAttachment {
     private final List<Pair<RpAddReason, Integer>> rpChangeRecords = new ArrayList<>();
     @Getter
     public final Set<ResourceLocation> completedResearches;
-    private final Map<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> availableRecipes = new HashMap<>();
+    private final Map<ResourceLocation, RecipeHolder<PartFabricatingRecipe>> availableRecipes = new HashMap<>();
     @Getter
     // 研发产物缓存：key 永远是 researchId，value 是可领取的制造蓝图物品（其内部 RECIPE_TYPE 才是制造配方ID）
     public final Map<ResourceLocation, ItemStack> products;
@@ -236,18 +235,30 @@ public class BlueprintAttachment {
     }
 
     /**
-     * 获取指定蓝图研发配方的产物蓝图
+     * 获取指定蓝图研发配方的产物蓝图。
+     *
+     * <p>按 {@code unlock_recipe} 指向的配方实例类型分流：零件配方产出零件制造蓝图（同时写入
+     * {@code recipe_type} 与 {@code part_type}），通用制造配方产出通用制造蓝图（只写 {@code recipe_type}）。</p>
      *
      * @param researchRecipe 研发配方ID（researchId）
-     * @return 制造蓝图（蓝图内部携带 unlockRecipe/fabricatingRecipeId）
+     * @return 制造蓝图物品；研发配方不存在或解锁的配方缺失时返回空堆
      */
     public ItemStack createBlueprintProduct(ResourceLocation researchRecipe) {
-        ItemStack stack = ItemStack.EMPTY;
-        if (getBlueprintResearchResult(researchRecipe) instanceof RecipeHolder<FabricatingRecipe> fabricatingRecipe) {
-            stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
-            stack.set(MMDataComponents.getRECIPE_TYPE(), fabricatingRecipe.id());
+        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
+        if (blueprintResearch == null) return ItemStack.EMPTY;
+        RecipeHolder<FabricatingRecipe> holder =
+                MMDynamicRes.SERVER_ALL_FABRICATING_RECIPES.get(blueprintResearch.value().getUnlockRecipe());
+        if (holder == null) return ItemStack.EMPTY;
+        if (holder.value() instanceof PartFabricatingRecipe partRecipe) {
+            ItemStack stack = new ItemStack(MMItems.getPART_FABRICATING_BLUEPRINT());
+            stack.set(MMDataComponents.getRECIPE_TYPE(), holder.id());
+            if (partRecipe.getPartType() != null) {
+                stack.set(MMDataComponents.getPART_TYPE(), partRecipe.getPartType());
+            }
             return stack;
         }
+        ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
+        stack.set(MMDataComponents.getRECIPE_TYPE(), holder.id());
         return stack;
     }
 
@@ -350,10 +361,10 @@ public class BlueprintAttachment {
      * <p>判定顺序：</p>
      * <ol>
      *   <li>创造模式直接放行；</li>
-     *   <li>无配方零件（{@code getRecipe() == null}）放行——否则这类零件永远无法装配；</li>
-     *   <li>有效配方 id 找不到对应研究条目时放行（内容包可能只定义零件、未定义研究）；</li>
+     *   <li>无零件配方（{@code getRecipe() == null}）放行——否则这类零件永远无法装配；</li>
+     *   <li>该零件找不到对应研究条目时放行（内容包可能只定义零件、未定义研究）；</li>
      *   <li>该研究已完成；</li>
-     *   <li>背包 / 产物缓存中持有对应制造蓝图（复用 {@code availableRecipes} 缓存，不每 tick 扫描背包）。</li>
+     *   <li>背包 / 产物缓存中持有对应的零件制造蓝图（复用 {@code availableRecipes} 缓存，不每 tick 扫描背包）。</li>
      * </ol>
      *
      * @param player 玩家
@@ -362,22 +373,15 @@ public class BlueprintAttachment {
      */
     public boolean canAdvanceAssembly(Player player, Part part) {
         if (player.isCreative()) return true;
-        // 无配方零件走 assemble 的慢速兜底分支，必须放行
+        // 无零件配方零件走 assemble 的慢速兜底分支，必须放行
         if (part.getRecipe() == null) return true;
-        ResourceLocation recipeId = part.getRecipeId();
-        ResourceLocation researchId = MMDynamicRes.RESEARCH_BY_FABRICATING_RECIPE.get(recipeId);
+        ResourceLocation researchId = MMDynamicRes.SERVER_RESEARCH_BY_PART.get(part.getType().getRegistryKey());
         // 未定义研究条目：放行，避免内容包缺研究导致零件永久无法装配
         if (researchId == null) return true;
         if (completedResearches.contains(researchId)) return true;
-        // 持有对应制造蓝图即可装配；缓存由 EntityTickEvent 定时刷新
+        // 持有对应零件制造蓝图即可装配；缓存由 EntityTickEvent 定时刷新
         if (isDirty()) rebuildAvailableRecipes(player);
-        LinkedHashSet<RecipeHolder<FabricatingRecipe>> holders = availableRecipes.get(part.getType().getRegistryKey());
-        if (holders != null) {
-            for (RecipeHolder<FabricatingRecipe> holder : holders) {
-                if (holder.id().equals(recipeId)) return true;
-            }
-        }
-        return false;
+        return availableRecipes.containsKey(part.getType().getRegistryKey());
     }
 
     /**
@@ -402,61 +406,25 @@ public class BlueprintAttachment {
         return MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(researchRecipe);
     }
 
-    /**
-     * 获取蓝图研发配方解锁的制造配方ID与对象
-     *
-     * @param researchRecipe 研发配方
-     * @return 制造配方ID与对象容器
-     */
-    @Nullable
-    public RecipeHolder<FabricatingRecipe> getBlueprintResearchResult(ResourceLocation researchRecipe) {
-        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
-        if (blueprintResearch == null) {
-            return null;
-        }
-        return MMDynamicRes.ALL_FABRICATING_RECIPES.get(blueprintResearch.value().getUnlockRecipe());
-    }
-
     public void markDirty(Player player) {
         dirty = true;
         player.setData(MMAttachments.getBLUEPRINT(), this);
     }
 
     /**
-     * 统计玩家库存，获取所有可用于制造指定部件的配方，不包括已研发但未持有的配方，创造模式无视库存直接展示所有配方
+     * 获取指定零件的装配候选配方：玩家持有该零件的零件制造蓝图即为可用，创造模式直接取本侧索引。
      *
      * @param player   玩家
-     * @param partType 部件类型
-     * @return 可用配方集合
+     * @param partType 零件 id
+     * @return 该零件的零件配方；玩家尚未持有对应蓝图（或该零件没有零件配方）时返回 {@code null}
      */
-    public LinkedHashSet<RecipeHolder<FabricatingRecipe>> getAvailablePartRecipeFor(Player player, ResourceLocation partType) {
-        return getAvailablePartRecipeFor(player, partType, false);
-    }
-
-    private static final LinkedHashSet<RecipeHolder<FabricatingRecipe>> EMPTY_SET = new LinkedHashSet<>(1);
-
-    /**
-     * 统计玩家库存，获取所有可用于制造指定部件的配方，创造模式无视库存直接展示所有配方
-     *
-     * @param player         玩家
-     * @param partType       部件类型
-     * @param withResearched 是否包含已研发但未持有的配方
-     * @return 可用配方集合
-     */
-    public LinkedHashSet<RecipeHolder<FabricatingRecipe>> getAvailablePartRecipeFor(Player player, ResourceLocation partType, boolean withResearched) {
-        if (!player.isCreative()) { // 非创造模式检查背包
-            if (isDirty()) rebuildAvailableRecipes(player); // 刷新可用配方列表
-            LinkedHashSet<RecipeHolder<FabricatingRecipe>> result = new LinkedHashSet<>();
-            if (availableRecipes.containsKey(partType)) result.addAll(availableRecipes.get(partType));
-            if (withResearched) {
-                // 检查已研发但未持有的配方
-                for (RecipeHolder<FabricatingRecipe> holder : MMDynamicRes.PART_RECIPES.get(partType)) {
-                    if (result.contains(holder)) continue; // 已在可用列表中则跳过
-                    result.add(holder);
-                }
-            }
-            return result;
-        } else return MMDynamicRes.PART_RECIPES.getOrDefault(partType, EMPTY_SET); // 创造模式直接返回所有配方
+    @Nullable
+    public RecipeHolder<PartFabricatingRecipe> getAvailablePartRecipeFor(Player player, ResourceLocation partType) {
+        if (player.isCreative()) {
+            return MMDynamicRes.getPartRecipe(player.level(), partType);
+        }
+        if (isDirty()) rebuildAvailableRecipes(player); // 刷新可用配方列表
+        return availableRecipes.get(partType);
     }
 
     /**
@@ -481,26 +449,20 @@ public class BlueprintAttachment {
     }
 
     /**
-     * 检查是否为部件蓝图，并将其记录于可用配方列表中
+     * 检查是否为零件制造蓝图，并将其记录于可用配方列表中。
+     *
+     * <p>索引键取物品的 {@code machine_max:part_type} 组件，与配方实例的 {@code partType} 同值；
+     * 通用制造蓝图不进入装配候选。</p>
      *
      * @param stack  物品
-     * @param player 玩家，用于查询注册表
+     * @param player 玩家，用于选定逻辑侧索引
      */
-    @SuppressWarnings("unchecked")
     private void checkAndRecord(ItemStack stack, Player player) {
-        if (stack.getItem() instanceof FabricatingBlueprintItem) {
-            RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, player.level());
-            if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe fabricatingRecipe) {
-                RecipeHolder<FabricatingRecipe> fabRecipeHolder = (RecipeHolder<FabricatingRecipe>) recipeHolder;
-                ItemStack result = fabricatingRecipe.getResultItem(player.level().registryAccess());
-                if (result.getItem() instanceof PartItem) {
-                    ResourceLocation partRegistryKey = result.get(MMDataComponents.getPART_TYPE());
-                    if (partRegistryKey != null) {
-                        availableRecipes.computeIfAbsent(partRegistryKey, k -> new LinkedHashSet<>()).add(fabRecipeHolder);
-                    }
-                }
-            }
-        }
+        if (!(stack.getItem() instanceof PartFabricatingBlueprintItem)) return;
+        ResourceLocation partType = stack.get(MMDataComponents.getPART_TYPE());
+        if (partType == null) return;
+        RecipeHolder<PartFabricatingRecipe> holder = MMDynamicRes.getPartRecipe(player.level(), partType);
+        if (holder != null) availableRecipes.put(partType, holder);
     }
 
     private int hashInventory(Player player) {

@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.crafting.RecipeType
@@ -21,6 +22,22 @@ object MMResources {
         id = "fabricating"
         factory = {
             FabricatingRecipe.Serializer.INSTANCE
+        }
+    }
+
+    @JvmStatic
+    val PART_FABRICATION_RECIPE_TYPE = MachineMax.REGISTER.recipeType{
+        id = "part_fabricating"
+        factory = {
+            RecipeType.simple<PartFabricatingRecipe>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_fabricating"))
+        }
+    }
+
+    @JvmStatic
+    val PART_FABRICATION_RECIPE_SERIALIZER = MachineMax.REGISTER.recipeSerializer{
+        id = "part_fabricating"
+        factory = {
+            PartFabricatingRecipe.Serializer.INSTANCE
         }
     }
 

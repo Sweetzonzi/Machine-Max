@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.ExplosionTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
@@ -84,6 +85,13 @@ object MMItems {
     val FABRICATING_BLUEPRINT = MachineMax.REGISTER.item {
         id="fabricating_blueprint"
         factory = { FabricatingBlueprintItem() }
+    }
+
+    //零件制造蓝图物品原型
+    @JvmStatic
+    val PART_FABRICATING_BLUEPRINT = MachineMax.REGISTER.item {
+        id="part_fabricating_blueprint"
+        factory = { PartFabricatingBlueprintItem() }
     }
 
     //载具保存物品原型
@@ -201,6 +209,7 @@ object MMItems {
             WELDING_TORCH_ITEM,
             PART_ITEM,
             FABRICATING_BLUEPRINT,
+            PART_FABRICATING_BLUEPRINT,
             VEHICLE_BLUEPRINT,
             EMPTY_BLUEPRINT,
             ENDER_SCANNER_ITEM,

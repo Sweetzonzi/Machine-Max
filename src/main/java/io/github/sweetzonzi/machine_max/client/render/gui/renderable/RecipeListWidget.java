@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
-import io.github.sweetzonzi.machine_max.common.registry.MMResources;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Setter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -17,10 +17,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -49,10 +49,10 @@ public class RecipeListWidget extends AbstractScrollWidget {
     private void loadRecipes() {
         if (minecraft.level == null) return;
 
-        RecipeManager recipeManager = minecraft.level.getRecipeManager();
         allRecipes.clear();
-
-        allRecipes.addAll(recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get()));
+        // 索引是哈希表，这里按配方 id 排序以保证列表顺序稳定
+        allRecipes.addAll(MMDynamicRes.getAllFabricating(minecraft.level).values());
+        allRecipes.sort(Comparator.comparing(holder -> holder.id().toString()));
 
         applySearchFilter();
     }

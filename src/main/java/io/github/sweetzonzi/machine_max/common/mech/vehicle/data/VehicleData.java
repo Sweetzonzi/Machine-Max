@@ -13,13 +13,10 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -227,7 +224,6 @@ public class VehicleData {
                     part.name,
                     part.uuid,
                     part.variant,
-                    part.customRecipe,
                     part.assemblingProgress,
                     part.sharedDurabilityRatio,
                     part.materialAssemblingProgress,
@@ -319,16 +315,6 @@ public class VehicleData {
             }
             if (partType.getVariant(part.variant) == null) {
                 problems.add(BlueprintProblem.missingVariant(part.registryKey + "#" + part.variant));
-            }
-
-            // 配方：EMPTY 或产物 PART_TYPE 与 registryKey 一致
-            if (!FabricatingRecipe.EMPTY.equals(part.customRecipe)) {
-                RecipeHolder<?> holder = level.getRecipeManager().byKey(part.customRecipe).orElse(null);
-                if (holder == null || !(holder.value() instanceof FabricatingRecipe recipe)
-                        || !part.registryKey.equals(recipe.getResultItem(level.registryAccess())
-                        .get(MMDataComponents.getPART_TYPE()))) {
-                    problems.add(BlueprintProblem.invalidValue("非法 customRecipe: " + part.customRecipe));
-                }
             }
         }
 

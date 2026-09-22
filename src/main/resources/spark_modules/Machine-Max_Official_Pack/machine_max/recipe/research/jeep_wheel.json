@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/jeep/jeep_wheel_icon.png",
   "description": "research.machine_max.jeep_wheel_blueprint.desc",
-  "unlock_recipe": "machine_max:jeep_wheel"
+  "unlock_recipe": "machine_max:part_fabricating/jeep_wheel"
 }

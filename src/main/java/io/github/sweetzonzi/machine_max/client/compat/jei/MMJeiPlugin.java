@@ -30,7 +30,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -55,6 +54,10 @@ public class MMJeiPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(
                 MMItems.getPART_ITEM().get(),
                 interpreter(MMJeiPlugin::buildPartSubtypeKey)
+        );
+        registration.registerSubtypeInterpreter(
+                MMItems.getPART_FABRICATING_BLUEPRINT().get(),
+                interpreter(MMJeiPlugin::buildFabricatingBlueprintSubtypeKey)
         );
         registration.registerSubtypeInterpreter(
                 MMItems.getFABRICATING_BLUEPRINT().get(),
@@ -83,6 +86,7 @@ public class MMJeiPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
+            // 世界尚未建立：客户端索引还没建好，此时只登记研发配方
             registration.addRecipes(
                     MMJeiRecipeTypes.FABRICATING,
                     new ArrayList<>(MMDynamicRes.ALL_FABRICATING_RECIPES.values())
@@ -94,11 +98,12 @@ public class MMJeiPlugin implements IModPlugin {
             return;
         }
 
-        RecipeManager recipeManager = minecraft.level.getRecipeManager();
+        // 制造配方取本侧全配方索引（通用制造配方 + 通过校验的零件配方）
         List<RecipeHolder<FabricatingRecipe>> fabricatingRecipes =
-                recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get());
+                new ArrayList<>(MMDynamicRes.getAllFabricating(minecraft.level).values());
         List<RecipeHolder<BlueprintResearchRecipe>> blueprintResearchRecipes =
-                recipeManager.getAllRecipesFor(MMResources.getBLUEPRINT_RESEARCH_RECIPE_TYPE().get());
+                minecraft.level.getRecipeManager().getAllRecipesFor(
+                        MMResources.getBLUEPRINT_RESEARCH_RECIPE_TYPE().get());
 
         registration.addRecipes(MMJeiRecipeTypes.FABRICATING, fabricatingRecipes);
         registration.addRecipes(MMJeiRecipeTypes.BLUEPRINT_RESEARCH, blueprintResearchRecipes);

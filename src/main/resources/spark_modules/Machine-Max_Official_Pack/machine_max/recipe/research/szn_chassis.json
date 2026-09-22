@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/szn/szn_chassis_icon.png",
   "description": "research.machine_max.szn_chassis_blueprint.desc",
-  "unlock_recipe": "machine_max:szn_chassis"
+  "unlock_recipe": "machine_max:part_fabricating/szn_chassis"
 }

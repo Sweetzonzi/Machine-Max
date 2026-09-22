@@ -29,7 +29,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -43,6 +43,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyProgressSyncPayload;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
@@ -87,7 +88,6 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
-    public ResourceLocation customRecipe = FabricatingRecipe.EMPTY;
     public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
     public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
     public boolean renderWireframe = true; // 是否渲染线框（用于维修可视化状态机）
@@ -169,7 +169,6 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         this.level = level;
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
-        this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
         this.renderWireframe = readAdditionalData ? data.renderWireframe : true;
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
@@ -703,9 +702,9 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         if (!level.isClientSide() && container instanceof Inventory inventory) {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
-        FabricatingRecipe recipe = getRecipe();
-        // 未找到配方或非手动部件配方则每progress对应0.01组装进度
-        if (recipe != null && recipe.isManualAssemblablePart()) {
+        PartFabricatingRecipe recipe = getRecipe();
+        // 未找到零件配方则每progress对应0.01组装进度
+        if (recipe != null) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress + step, 0f, 1f);
@@ -785,9 +784,9 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         if (!level.isClientSide() && container instanceof Inventory inventory) {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
-        FabricatingRecipe recipe = getRecipe();
-        // 未找到配方或非手动部件配方则不改变组装进度
-        if (recipe != null && recipe.isManualAssemblablePart()) {
+        PartFabricatingRecipe recipe = getRecipe();
+        // 未找到零件配方则不改变组装进度
+        if (recipe != null) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress - step, 0f, 1f);
@@ -870,40 +869,16 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     /**
-     * <p>获取部件的手动组装配方，无则返回null</p>
-     * <p>Gets the manual assembly recipe of the part, returns null if there is no manual assembly recipe.</p>
+     * <p>获取本零件的零件配方，无则返回null</p>
+     * <p>配方由装配侧索引按零件 id 一次求出：索引未命中（该零件没有零件配方，或索引尚未重建）时返回
+     * {@code null}，此时组装走无材料需求的兜底分支。</p>
      *
-     * @return 配方，包含使用材料，时间等信息 Recipe, including the materials, time, etc.
+     * @return 零件配方，包含使用材料，时间等信息；无零件配方时返回 {@code null}
      */
     @Nullable
-    public FabricatingRecipe getRecipe() {
-        try {
-            RecipeHolder<?> recipeHolder = null;
-            if (customRecipe != FabricatingRecipe.EMPTY && level.getRecipeManager().byKey(customRecipe).isPresent()) {
-                recipeHolder = level.getRecipeManager().byKey(customRecipe).get();
-                if (!(recipeHolder.value() instanceof FabricatingRecipe)) recipeHolder = null;
-            }
-            if (recipeHolder == null) { // 未找到自定义配方，则使用默认配方
-                recipeHolder = level.getRecipeManager().byKey(type.getRegistryKey()).orElseThrow();
-            }
-            if (recipeHolder.value() instanceof FabricatingRecipe recipe) {
-                return recipe;
-            } else return null;
-        } catch (NoSuchElementException ignore) {
-            return null;
-        }
-    }
-
-    /**
-     * <p>获取部件的<b>有效制造配方 id</b>，供研发门禁与蓝图材料清单共用</p>
-     * <p>规则：{@code customRecipe} 非 {@link FabricatingRecipe#EMPTY} 且能在 {@code RecipeManager}
-     * 中命中 {@link FabricatingRecipe} 时用它，否则回退到 {@code partType} 注册键
-     * （默认零件即属此类，与 {@link #getRecipe()} 的回退结果一致）。</p>
-     *
-     * @return 有效配方 id，总是存在
-     */
-    public ResourceLocation getRecipeId() {
-        return PartData.resolveRecipeId(level, customRecipe, type.getRegistryKey());
+    public PartFabricatingRecipe getRecipe() {
+        RecipeHolder<PartFabricatingRecipe> holder = MMDynamicRes.getPartRecipe(level, type.getRegistryKey());
+        return holder == null ? null : holder.value();
     }
 
     /**
@@ -912,12 +887,9 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
      * @param progress 材料进度，0~材料总量
      */
     public void setMaterialProgress(int progress) {
-        if (getRecipe() instanceof FabricatingRecipe recipe) {
-            if (recipe.isManualAssemblablePart()) {
-                materialProgress = Math.clamp(progress, 0, recipe.getManualAssembleIngredientList().size());
-            } else {
-                materialProgress = 0;
-            }
+        PartFabricatingRecipe recipe = getRecipe();
+        if (recipe != null) {
+            materialProgress = Math.clamp(progress, 0, recipe.getManualAssembleIngredientList().size());
         } else materialProgress = Math.max(0, progress);
     }
 
@@ -949,11 +921,10 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
             durabilityRatio = Math.max(durabilityRatio, ratio);
         }
 
-        FabricatingRecipe recipe = getRecipe();
-        boolean hasManualRecipe = recipe != null && recipe.isManualAssemblablePart();
-        int totalMaterials = hasManualRecipe ? recipe.getManualAssembleIngredientList().size() : 0;
+        PartFabricatingRecipe recipe = getRecipe();
+        int totalMaterials = recipe != null ? recipe.getManualAssembleIngredientList().size() : 0;
 
-        if (!hasManualRecipe || totalMaterials == 0) {
+        if (recipe == null || totalMaterials == 0) {
             setAssemblingProgress(durabilityRatio);
         } else {
             materialProgress = Math.clamp(materialProgress, 0, totalMaterials);

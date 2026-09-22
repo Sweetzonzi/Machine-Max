@@ -7,7 +7,6 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
@@ -16,11 +15,9 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartChangeRecipePayload;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -29,14 +26,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -81,10 +75,6 @@ public final class VehicleAssemblyServerHelper {
         try {
             // 部件构造：复刻原 PartItem.use / FabricatingBlueprintItem.use 的构造流程
             Part part = new Part(partType, request.variant(), level);
-            RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
-            if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
-                part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
-            }
             if (stack.getItem() instanceof PartItem) {
                 restoreAssemblyStateFromDamage(stack, part);
             } else {
@@ -116,13 +106,12 @@ public final class VehicleAssemblyServerHelper {
         // 目标必须是同类型且尚未组装的部件
         if (!targetPart.type.getRegistryKey().equals(part.type.getRegistryKey())) return false;
         if (targetPart.getAssemblingProgress() != 0 || targetPart.getMaterialProgress() != 0) return false;
-        // 分支1：手持带进度的 PartItem → 填进度 + 更新配方
+        // 分支1：手持带进度的 PartItem → 填进度
         if (stack.getItem() instanceof PartItem
                 && Objects.equals(part.variantName, targetPart.variantName)
                 && part.getMaterialProgress() > 0 && part.getAssemblingProgress() > 0) {
             targetPart.setMaterialProgress(part.getMaterialProgress());
             targetPart.setAssemblingProgress(part.getAssemblingProgress());
-            targetPart.customRecipe = part.customRecipe;
             for (Map.Entry<String, SubPart> entry : targetPart.subParts.entrySet()) {
                 SubPart source = part.subParts.get(entry.getKey());
                 if (source != null) entry.getValue().setDurability(source.getDurability());
@@ -130,13 +119,6 @@ public final class VehicleAssemblyServerHelper {
             Vector3f pos = targetSubPart.getPosition();
             ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
             consumeItem(player, stack, level);
-            return true;
-        }
-        // 分支2：蹲下持蓝图 → 仅更新配方（不消耗物品）
-        if (player.isCrouching() && stack.getItem() instanceof FabricatingBlueprintItem
-                && targetPart.customRecipe != FabricatingRecipe.EMPTY
-                && !targetPart.customRecipe.equals(part.customRecipe)) {
-            targetPart.customRecipe = part.customRecipe;
             return true;
         }
         return false;
@@ -210,8 +192,8 @@ public final class VehicleAssemblyServerHelper {
         int cap = stack.getMaxDamage();
         if (cap <= 0) return;
 
-        FabricatingRecipe recipe = part.getRecipe();
-        if (recipe == null || !recipe.isManualAssemblablePart()) return;
+        PartFabricatingRecipe recipe = part.getRecipe();
+        if (recipe == null) return;
         if (recipe.getManualAssembleIngredientList().isEmpty()) return;
 
         int gap = Math.clamp(stack.getDamageValue(), 0, cap);
@@ -220,41 +202,6 @@ public final class VehicleAssemblyServerHelper {
         part.setAssemblingProgress((float) provided / cap);
         for (SubPart subPart : part.subParts.values()) {
             subPart.setDurability(subPart.getMaxDurability());
-        }
-    }
-
-    /**
-     * 循环切换目标未组装部件的配方（原 {@code VehicleAssemblyAttachment.cycleRecipe}）。
-     * <p>改的是共享世界状态 {@code Part.customRecipe}，需广播全维度，因此仍由服务端处理。</p>
-     */
-    public static void cycleRecipe(Player player) {
-        if (player.level().isClientSide()) return;
-        if (!player.hasData(MMAttachments.getENTITY_EYESIGHT())) return;
-        var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-        SubPart subPart = eyesight.getSubPart();
-        if (subPart == null || (!player.isCreative()
-                && (subPart.part.getMaterialProgress() > 0 || subPart.part.getAssemblingProgress() > 0))) {
-            return;
-        }
-        var blueprints = player.getData(MMAttachments.getBLUEPRINT());
-        var availableRecipes = blueprints.getAvailablePartRecipeFor(player, subPart.part.getType().getRegistryKey());
-        if (availableRecipes == null) return;
-        Iterator<RecipeHolder<FabricatingRecipe>> recipeIterator = availableRecipes.iterator();
-        // 使用下一个配方
-        if (subPart.part.getCustomRecipe() != FabricatingRecipe.EMPTY) {
-            // 首先找到当前使用的配方
-            while (subPart.part.customRecipe != recipeIterator.next().id()) {
-                if (!recipeIterator.hasNext()) break; // 若没有找到当前使用的配方，则重置迭代器
-            }
-            if (!recipeIterator.hasNext()) recipeIterator = availableRecipes.iterator();
-        } // 未指定配方或为默认配方则直接取用第一个配方
-        if (recipeIterator.hasNext()) {
-            ResourceLocation newRecipe = recipeIterator.next().id();
-            if (newRecipe != subPart.part.getCustomRecipe()) {
-                subPart.part.customRecipe = newRecipe;
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(),
-                        new PartChangeRecipePayload(subPart.part.assembly.getAssemblyId(), subPart.part.getUuid(), newRecipe));
-            }
         }
     }
 }

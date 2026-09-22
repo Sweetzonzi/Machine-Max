@@ -1,18 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.menu;
 
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.NotNull;
 
 @Getter
@@ -38,14 +34,7 @@ public class FabricatingMenu extends AbstractContainerMenu {
      * 开始生产任务
      */
     public void startFabrication(ResourceLocation recipeId, Player player) {
-        if (!(fabricatorBlockEntity.getLevel() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-        RecipeManager recipeManager = serverLevel.getRecipeManager();
-        Recipe<?> recipe = recipeManager.byKey(recipeId).orElseThrow().value();
-        if (recipe instanceof FabricatingRecipe fabricatingRecipe) {
-            fabricatorBlockEntity.addFabricationTask(player, fabricatingRecipe);
-        }
+        fabricatorBlockEntity.addFabricationTask(player, recipeId);
     }
 
     /**

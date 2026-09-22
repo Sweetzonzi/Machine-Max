@@ -7,7 +7,7 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
-import io.github.sweetzonzi.machine_max.common.registry.MMResources;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -19,10 +19,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -218,10 +220,23 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     }
 
     /**
-     * 添加新生产任务
+     * 添加新生产任务。
+     *
+     * <p>配方由入参 id 决定：该 id 必须命中服务端制造索引，未命中即拒绝，
+     * 使装载期校验排除的配方无法经制造机产出（界面与服务端同一判据）。</p>
+     *
+     * @param player   发起制造的玩家
+     * @param recipeId 配方 id
+     * @return 是否成功建任务
      */
-    public boolean addFabricationTask(Player player, FabricatingRecipe recipe) {
+    public boolean addFabricationTask(Player player, ResourceLocation recipeId) {
         if (level == null) return false;
+
+        RecipeHolder<FabricatingRecipe> holder = MMDynamicRes.SERVER_ALL_FABRICATING_RECIPES.get(recipeId);
+        if (holder == null) {
+            return false;
+        }
+        FabricatingRecipe recipe = holder.value();
 
         // 检查是否有空闲任务槽
         int freeSlot = getFreeTaskSlot();
@@ -240,17 +255,9 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
         }
 
         // 创建生产任务
-        String recipeId = level.getRecipeManager()
-                .getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get())
-                .stream()
-                .filter(holder -> holder.value() == recipe)
-                .map(holder -> holder.id().toString())
-                .findFirst()
-                .orElse("unknown");
-
         ProductionTask task = new ProductionTask(
                 freeSlot,
-                recipeId,
+                recipeId.toString(),
                 recipe.getResultItem(level.registryAccess()),
                 recipe.getProcessingTime()
         );

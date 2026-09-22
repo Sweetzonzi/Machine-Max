@@ -2,13 +2,13 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -24,14 +24,13 @@ import java.util.Map;
 /**
  * 蓝图库标签页的材料清单控件。
  *
- * <p>按 {@link VehicleData#getParts()} 逐件解析<b>有效配方 id</b>（与研发门禁共用
- * {@link PartData#resolveRecipeId(net.minecraft.world.level.Level)}）并汇总：</p>
+ * <p>按 {@link VehicleData#getParts()} 逐件取该零件的零件配方，并展开其组装材料清单汇总：</p>
  * <ul>
- *   <li>可手工组装的零件 → 展开 {@code getManualAssembleIngredientList()}，显示原材料并汇总数量；</li>
- *   <li>不可手工组装的零件 → 显示该配方产物（成品零件）并汇总数量。</li>
+ *   <li>用原材料装配的零件 → 清单内容为折算后的原料；</li>
+ *   <li>用本配方产物整件装配的零件 → 清单内容为成品零件单件。</li>
  * </ul>
  *
- * <p>每个槽位按「已有 / 所需」着色，悬停显示明细。</p>
+ * <p>两种情形都由清单自身表达，本控件只读清单内容。每个槽位按「已有 / 所需」着色，悬停显示明细。</p>
  */
 public class BlueprintMaterialWidget extends AbstractWidget {
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -65,25 +64,15 @@ public class BlueprintMaterialWidget extends AbstractWidget {
         // 先按物品合并所需数量，再统一统计背包持有量，避免同物品重复累加
         Map<Integer, Accumulator> accumulators = new LinkedHashMap<>();
         for (PartData part : data.getParts().values()) {
-            ResourceLocation recipeId = part.resolveRecipeId(player.level());
-            RecipeHolder<?> holder = player.level().getRecipeManager().byKey(recipeId).orElse(null);
-            if (holder == null || !(holder.value() instanceof FabricatingRecipe recipe)) continue;
-
-            if (recipe.isManualAssemblablePart()) {
-                // 可手工组装：展开原材料
-                for (Ingredient ingredient : recipe.getManualAssembleIngredientList()) {
-                    ItemStack[] items = ingredient.getItems();
-                    if (items.length == 0) continue;
-                    ItemStack display = items[0].copyWithCount(1);
-                    accumulators.computeIfAbsent(ItemStack.hashItemAndComponents(display),
-                            k -> new Accumulator(display)).required++;
-                }
-            } else {
-                // 不可手工组装：显示成品零件
-                ItemStack result = recipe.getResultItem(player.level().registryAccess()).copyWithCount(1);
-                if (result.isEmpty()) continue;
-                accumulators.computeIfAbsent(ItemStack.hashItemAndComponents(result),
-                        k -> new Accumulator(result)).required++;
+            RecipeHolder<PartFabricatingRecipe> holder =
+                    MMDynamicRes.getPartRecipe(player.level(), part.registryKey);
+            if (holder == null) continue;
+            for (Ingredient ingredient : holder.value().getManualAssembleIngredientList()) {
+                ItemStack[] items = ingredient.getItems();
+                if (items.length == 0) continue;
+                ItemStack display = items[0].copyWithCount(1);
+                accumulators.computeIfAbsent(ItemStack.hashItemAndComponents(display),
+                        k -> new Accumulator(display)).required++;
             }
         }
 

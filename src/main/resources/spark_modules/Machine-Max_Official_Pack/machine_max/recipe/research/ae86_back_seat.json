@@ -12,5 +12,5 @@
   ],
   "icon": "machine_max:textures/icon/ae86/ae86_back_seat_icon.png",
   "description": "research.machine_max.ae86_back_seat_blueprint.desc",
-  "unlock_recipe": "machine_max:ae86_back_seat"
+  "unlock_recipe": "machine_max:part_fabricating/ae86_back_seat"
 }

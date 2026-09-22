@@ -1,0 +1,23 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/part_fabricating_recipe.schema.json",
+  "type": "machine_max:part_fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "count": 1
+  },
+  "time": 50
+}
+

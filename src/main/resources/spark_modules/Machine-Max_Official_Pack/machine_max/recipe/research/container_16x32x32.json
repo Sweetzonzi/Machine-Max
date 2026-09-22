@@ -26,5 +26,5 @@
   ],
   "icon": "machine_max:textures/icon/container_16x32x32_icon.png",
   "description": "research.machine_max.container_16x32x32_blueprint.desc",
-  "unlock_recipe": "machine_max:container_16x32x32"
+  "unlock_recipe": "machine_max:part_fabricating/container_16x32x32"
 }

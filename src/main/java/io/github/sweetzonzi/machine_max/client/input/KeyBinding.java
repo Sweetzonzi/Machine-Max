@@ -37,7 +37,6 @@ public class KeyBinding {
     public static final String ASSEMBLY_SUB_ATTACH_ANGLE_KEY = "key.machine_max.assembly.sub_attach_angle";
     public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
     public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
-    public static final String ASSEMBLY_CYCLE_RECIPE_KEY = "key.machine_max.assembly.cycle_recipe";
     public static final String SCRIPT_HOT_RELOAD_KEY = "key.machine_max.assembly.hot_reload";
 
     public static final String CYCLE_CAMERA_KEY = "key.machine_max.general.cycle_camera";
@@ -83,7 +82,6 @@ public class KeyBinding {
         event.register(KeyBinding.assemblySubAttachAngleKey);//部件降低安装角
         event.register(KeyBinding.assemblyCycleConnectorKey);//部件循环选取连接点
         event.register(KeyBinding.assemblyCycleVariantKey);//部件循环选取变体类型
-        event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
         event.register(KeyBinding.JavascriptHotReloadKey);//脚本热更新
 
         event.register(KeyBinding.generalCycleCameraKey);//循环切换摄像机
@@ -208,13 +206,6 @@ public class KeyBinding {
             KeyCategory.ASSEMBLY,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
             GLFW.GLFW_KEY_V,//默认按键
-            KeyCategory.ASSEMBLY.getCategory()//键位类型
-    );
-
-    public static KeyMapping assemblyCycleRecipeKey = new KeyMapping(ASSEMBLY_CYCLE_RECIPE_KEY,//键位名称
-            KeyCategory.ASSEMBLY,//键位冲突类型
-            InputConstants.Type.KEYSYM,//默认为键盘
-            GLFW.GLFW_KEY_C,//默认按键shift+c
             KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/part_fabricating_recipe.schema.json",
+  "type": "machine_max:part_fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 24
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 6
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:energetic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 6
+    }
+  ],
+  "result": {
+    "count": 1
+  },
+  "time": 600
+}
+

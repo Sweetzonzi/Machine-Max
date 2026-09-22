@@ -71,9 +71,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.assembly.sub_attach_angle", "旋转部件(-)");
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
-        this.add("key.machine_max.assembly.cycle_recipe", "循环切换配方");
         // 内容包异常处理
         this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
+        this.add("error.machine_max.recipe.wrong_directory", "零件配方必须放在 recipe/part_fabricating/ 目录下");
+        this.add("error.machine_max.recipe.wrong_type_directory", "recipe/part_fabricating/ 目录下的配方类型必须为 machine_max:part_fabricating");
+        this.add("error.machine_max.recipe.unknown_part", "配方文件名未对应任何已注册零件");
+        this.add("error.machine_max.recipe.duplicate_part", "同一零件存在第二条零件配方");
+        this.add("error.machine_max.recipe.invalid_result_count", "产物数量必须大于 0 且不超过该零件的堆叠上限");
         this.add("error.machine_max.invalid_resource_location", "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符");
         this.add("error.machine_max.subpart.zero_mass", "零件质量必须大于零");
         this.add("error.machine_max.subpart.empty_hit_boxes", "零件需要至少被指定一个碰撞体积");
@@ -137,6 +141,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.ender_gk_resin", "末影GK树脂");
         this.add("item.machine_max.empty_blueprint", "空白载具蓝图");
         this.add("item.machine_max.fabricating_blueprint", "制造蓝图");
+        this.add("item.machine_max.part_fabricating_blueprint", "零件制造蓝图");
         this.add("item.machine_max.structural_component_1", "初级结构部件");
         this.add("item.machine_max.mechanic_component_1", "初级机械构件");
         this.add("item.machine_max.weapon_component_1", "初级武器零件");
@@ -246,7 +251,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.key.machine_max.assemble", "[%1$s] 组装&修复&加固");
         this.add("hud.key.machine_max.repair_without_assemble", "[%1$s] 修复&加固");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] 拆解");
-        this.add("hud.key.machine_max.cycle_recipe", "[%1$s] 切换配方(%2$s可用)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] 拆除部件");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] 断开连接点");
         // 研究点显示HUD

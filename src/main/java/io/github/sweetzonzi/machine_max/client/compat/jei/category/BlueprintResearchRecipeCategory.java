@@ -4,8 +4,10 @@ import io.github.sweetzonzi.machine_max.client.compat.jei.MMJeiRecipeTypes;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -21,10 +23,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHolder<BlueprintResearchRecipe>> {
     private static final int WIDTH = 176;
@@ -89,16 +91,16 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
             shownInputs++;
         }
 
-        ItemStack blueprint = buildFabricatingBlueprint(recipe.getUnlockRecipe());
+        RecipeHolder<FabricatingRecipe> unlocked = resolveUnlockedRecipe(recipe.getUnlockRecipe());
+        ItemStack blueprint = buildResearchProduct(recipe.getUnlockRecipe(), unlocked);
         builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_BLUEPRINT_X, OUTPUT_BLUEPRINT_Y)
                 .setOutputSlotBackground()
                 .addItemStack(blueprint);
 
-        Optional<ItemStack> unlockedResult = resolveUnlockedResult(recipe.getUnlockRecipe());
-        if (unlockedResult.isPresent()) {
+        if (unlocked != null) {
             builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_UNLOCK_X, OUTPUT_UNLOCK_Y)
                     .setOutputSlotBackground()
-                    .addItemStack(unlockedResult.get());
+                    .addItemStack(unlocked.value().getResult().copy());
         }
     }
 
@@ -111,21 +113,33 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
         graphics.drawString(Minecraft.getInstance().font, rpText, RP_TEXT_X, RP_TEXT_Y, 0xFFFFFF, true);
     }
 
-    private static ItemStack buildFabricatingBlueprint(ResourceLocation unlockRecipe) {
+    /** 按配方 id 取本侧全配方索引中的制造配方；索引未就绪或该配方被装载期校验排除时返回 {@code null} */
+    @Nullable
+    private static RecipeHolder<FabricatingRecipe> resolveUnlockedRecipe(ResourceLocation unlockRecipe) {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            return null;
+        }
+        return MMDynamicRes.getAllFabricating(level).get(unlockRecipe);
+    }
+
+    /**
+     * 按解锁配方的类型选择奖励蓝图物品：零件配方产出零件制造蓝图（同时写入 {@code part_type}），
+     * 通用制造配方产出通用制造蓝图。
+     */
+    private static ItemStack buildResearchProduct(ResourceLocation unlockRecipe,
+                                                  @Nullable RecipeHolder<FabricatingRecipe> unlocked) {
+        if (unlocked != null && unlocked.value() instanceof PartFabricatingRecipe partRecipe) {
+            ItemStack blueprint = new ItemStack(MMItems.getPART_FABRICATING_BLUEPRINT().get());
+            blueprint.set(MMDataComponents.getRECIPE_TYPE(), unlocked.id());
+            if (partRecipe.getPartType() != null) {
+                blueprint.set(MMDataComponents.getPART_TYPE(), partRecipe.getPartType());
+            }
+            return blueprint;
+        }
         ItemStack blueprint = new ItemStack(MMItems.getFABRICATING_BLUEPRINT().get());
         blueprint.set(MMDataComponents.getRECIPE_TYPE(), unlockRecipe);
         return blueprint;
-    }
-
-    private static Optional<ItemStack> resolveUnlockedResult(ResourceLocation unlockRecipe) {
-        Level level = Minecraft.getInstance().level;
-        if (level == null) {
-            return Optional.empty();
-        }
-        return level.getRecipeManager()
-                .byKey(unlockRecipe)
-                .filter(holder -> holder.value() instanceof FabricatingRecipe)
-                .map(holder -> ((FabricatingRecipe) holder.value()).getResult().copy());
     }
 
     private static List<ItemStack> toDisplayStacks(IngredientCountPair pair) {

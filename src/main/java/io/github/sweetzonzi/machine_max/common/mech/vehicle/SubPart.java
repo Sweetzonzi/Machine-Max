@@ -27,7 +27,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -684,8 +684,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             float currentDurability = getDurability();
             if (requestedRepairAmount > 0f && maxDurability > 0f && currentDurability < maxDurability) {
                 float maxRepairRatio = 1f;
-                FabricatingRecipe recipe = part.getRecipe();
-                if (recipe != null && recipe.isManualAssemblablePart()) {
+                PartFabricatingRecipe recipe = part.getRecipe();
+                if (recipe != null) {
                     int totalMaterials = recipe.getManualAssembleIngredientList().size();
                     if (totalMaterials > 0) {
                         maxRepairRatio = Math.clamp((float) part.getMaterialProgress() / totalMaterials, 0f, 1f);

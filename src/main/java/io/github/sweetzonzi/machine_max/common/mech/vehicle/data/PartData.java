@@ -2,17 +2,13 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +22,6 @@ public class PartData {
     public final String name;//部件的名称
     public final String uuid;//部件的UUID
     public final String variant;//部件的变体
-    public final ResourceLocation customRecipe;//部件的自定义配方
     public final float assemblingProgress;//部件的组装进度
     public final float sharedDurabilityRatio;//共享耐久度比例（0~1，仅 shareDurability 部件有效）
     public final int materialAssemblingProgress;//部件的材料供给进度
@@ -39,7 +34,6 @@ public class PartData {
             Codec.STRING.fieldOf("name").forGetter(PartData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
-            ResourceLocation.CODEC.optionalFieldOf("custom_recipe", FabricatingRecipe.EMPTY).forGetter(PartData::getCustomRecipe),
             Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(PartData::getAssemblingProgress),
             Codec.FLOAT.optionalFieldOf("shared_durability_ratio", 1f).forGetter(PartData::getSharedDurabilityRatio),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(PartData::getMaterialAssemblingProgress),
@@ -58,14 +52,13 @@ public class PartData {
             String name = buffer.readUtf();
             String uuid = buffer.readUtf();
             String variant = buffer.readUtf();
-            ResourceLocation customRecipe = buffer.readResourceLocation();
             float assemblingProgress = buffer.readFloat();
             float sharedDurabilityRatio = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
             boolean renderWireframe = buffer.readBoolean();
             String textureName = buffer.readUtf();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, renderWireframe, textureName, subParts);
+            return new PartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, renderWireframe, textureName, subParts);
         }
 
         @Override
@@ -74,7 +67,6 @@ public class PartData {
             buffer.writeUtf(value.name);
             buffer.writeUtf(value.uuid);
             buffer.writeUtf(value.variant);
-            buffer.writeResourceLocation(value.customRecipe);
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeFloat(value.sharedDurabilityRatio);
             buffer.writeInt(value.materialAssemblingProgress);
@@ -114,7 +106,6 @@ public class PartData {
             String name,
             String uuid,
             String variant,
-            ResourceLocation customRecipe,
             float assemblingProgress,
             float sharedDurabilityRatio,
             int materialAssemblingProgress,
@@ -125,7 +116,6 @@ public class PartData {
         this.name = name;
         this.uuid = uuid;
         this.variant = variant;
-        this.customRecipe = customRecipe;
         this.assemblingProgress = assemblingProgress;
         this.sharedDurabilityRatio = sharedDurabilityRatio;
         this.materialAssemblingProgress = materialAssemblingProgress;
@@ -144,7 +134,6 @@ public class PartData {
         this.name = part.name;
         this.uuid = part.uuid.toString();
         this.variant = part.variantName;
-        this.customRecipe = part.customRecipe;
         this.assemblingProgress = part.assemblingProgress;
         // 共享耐久以比例持久化；非共享部件固定写入 1
         float sharedMaxDurability = part.getSharedMaxDurability();
@@ -158,32 +147,5 @@ public class PartData {
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             subParts.put(entry.getKey(), new SubPartData(entry.getValue()));
         }
-    }
-
-    /**
-     * 解析本零件的<b>有效制造配方 id</b>，供装配进度研发门禁与蓝图材料清单共用。
-     *
-     * <p>规则：{@code customRecipe} 非 {@link FabricatingRecipe#EMPTY} 且能在 {@code RecipeManager}
-     * 中命中 {@link FabricatingRecipe} 时用它，否则回退到零件类型注册键（默认零件即属此类）。</p>
-     *
-     * @param level           用于配方查询
-     * @param customRecipe    自定义配方，可为空
-     * @param partRegistryKey 零件类型注册键
-     * @return 有效配方 id，总是存在
-     */
-    public static ResourceLocation resolveRecipeId(Level level, @Nullable ResourceLocation customRecipe,
-                                                   ResourceLocation partRegistryKey) {
-        if (customRecipe != null && !FabricatingRecipe.EMPTY.equals(customRecipe)) {
-            RecipeHolder<?> holder = level.getRecipeManager().byKey(customRecipe).orElse(null);
-            if (holder != null && holder.value() instanceof FabricatingRecipe) {
-                return customRecipe;
-            }
-        }
-        return partRegistryKey;
-    }
-
-    /** 解析本零件的有效制造配方 id（等价于 {@link #resolveRecipeId}，使用自身字段） */
-    public ResourceLocation resolveRecipeId(Level level) {
-        return resolveRecipeId(level, customRecipe, registryKey);
     }
 }

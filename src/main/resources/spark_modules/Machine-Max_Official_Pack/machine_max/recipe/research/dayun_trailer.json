@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/dayun/dayun_trailer_icon.png",
   "description": "research.machine_max.dayun_trailer_blueprint.desc",
-  "unlock_recipe": "machine_max:dayun_trailer"
+  "unlock_recipe": "machine_max:part_fabricating/dayun_trailer"
 }

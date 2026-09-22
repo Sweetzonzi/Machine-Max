@@ -18,5 +18,5 @@
   ],
   "icon": "machine_max:textures/icon/dayun/dayun_steel_coil_icon.png",
   "description": "research.machine_max.dayun_steel_coil_blueprint.desc",
-  "unlock_recipe": "machine_max:dayun_steel_coil"
+  "unlock_recipe": "machine_max:part_fabricating/dayun_steel_coil"
 }
