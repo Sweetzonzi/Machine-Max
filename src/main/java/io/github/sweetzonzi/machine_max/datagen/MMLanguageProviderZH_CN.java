@@ -26,6 +26,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.type.marine", "水上");
         this.add("machine_max.type.aerial", "空中");
         this.add("machine_max.type.mecha", "机甲");
+        this.add("attribute.machine_max.grab_strength", "抓取力量");
 
         // 控制组名称
         this.add("controlGroup.machine_max.base", "基础");

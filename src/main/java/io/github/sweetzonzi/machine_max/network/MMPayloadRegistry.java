@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import io.github.sweetzonzi.machine_max.network.payload.grab.*;
 import io.github.sweetzonzi.machine_max.network.payload.library.*;
 import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
@@ -94,6 +95,21 @@ public class MMPayloadRegistry {
                 ControlBindingPayload.TYPE,
                 ControlBindingPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ControlBindingPayload::serverHandler)
+        );
+        input.playToServer(//开始抓取（只携带意图，服务端重算目标与参数）
+                GrabStartPayload.TYPE,
+                StreamCodec.unit(new GrabStartPayload()),
+                new MainThreadPayloadHandler<>(GrabStartPayload::handler)
+        );
+        input.playToServer(//放下
+                GrabReleasePayload.TYPE,
+                StreamCodec.unit(new GrabReleasePayload()),
+                new MainThreadPayloadHandler<>(GrabReleasePayload::handler)
+        );
+        input.playToServer(//丢出
+                GrabThrowPayload.TYPE,
+                StreamCodec.unit(new GrabThrowPayload()),
+                new MainThreadPayloadHandler<>(GrabThrowPayload::handler)
         );
         input.playToServer(//手动零件组装放置请求
                 PartAssemblyRequestPayload.TYPE,

@@ -592,11 +592,10 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 }
             }
         }
-        this.updateTotalMass();
         partMap.put(part.uuid, part);
         partNet.addNode(part);
         subSystemController.addSubsystems(part.getAllSubsystems());
-//        subSystemController.rebuildAllEnergyPaths();
+        this.updateTotalMass();
     }
 
     public void removePart(Part part) {

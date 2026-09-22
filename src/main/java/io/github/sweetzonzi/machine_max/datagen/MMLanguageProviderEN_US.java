@@ -26,6 +26,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.type.marine", "Marine");
         this.add("machine_max.type.aerial", "Aerial");
         this.add("machine_max.type.mecha", "Mecha");
+        this.add("attribute.machine_max.grab_strength", "Grab Strength");
 
         // 控制组名称
         this.add("controlGroup.machine_max.base", "Base");
