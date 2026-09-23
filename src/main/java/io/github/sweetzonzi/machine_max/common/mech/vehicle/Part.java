@@ -311,6 +311,10 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         }
         AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
         instance.setGroup(AnimGroups.ACTION);
+        // 事件动画（开火/后座）需要即时响应：AnimInstance 默认 inTransitionTime = 0.15s，
+        // 权重从 0 线性爬升会导致后坐位移缓慢淡入，高射速重触发时永远爬不满权重。
+        // 置 0 使实例进入后第一个物理子步即达满权重。
+        instance.setInTransitionTime(0f);
         instance.enter();
     }
 
