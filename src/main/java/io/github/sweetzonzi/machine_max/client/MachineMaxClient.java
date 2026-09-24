@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
+import io.github.sweetzonzi.machine_max.client.render.gui.element.PartModelElement;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -19,11 +21,27 @@ public class MachineMaxClient {
 
     public MachineMaxClient(IEventBus bus, ModContainer container) {
         MachineMax.REGISTER.register(bus);
+        registerAuiElements();
         // 配置菜单
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         bus.addListener(MMClientConfig::onChangeConfig);
         // 注册自定义着色器
         bus.addListener(MachineMaxClient::onRegisterShaders);
+    }
+
+    /**
+     * 登记本项目的 AUI 自定义元素。
+     *
+     * <p>这里用 {@link Element#register} 直接登记标签，而不用 AUI 的 {@code @ElementRegister} 注解：
+     * AUI 的注解扫描在它自己的模组构造期执行，且执行前先把扫描范围收窄到
+     * {@code com.sighs.apricityui.element}，本项目声明了 {@code ordering="AFTER"}，
+     * 注定在 AUI 之后构造，注解扫描看不到本项目的类。</p>
+     *
+     * <p>时机：模组构造期早于任何 Document 的创建，因此在页面被解析前登记即可生效。</p>
+     */
+    private static void registerAuiElements() {
+        Element.register(PartModelElement.TAG_NAME,
+                (document, tagName) -> new PartModelElement(document));
     }
 
     /**

@@ -251,7 +251,7 @@ public class PanelDeviceControl {
      * Body 级鼠标移动事件：更新滑条填充百分比。<br>
      * 使用 VSLIDER_TRACK_HEIGHT 将像素偏移转化为百分比变化。
      */
-    private static void onVSliderMouseMove(com.sighs.apricityui.init.Event e) {
+    private static void onVSliderMouseMove(com.sighs.apricityui.event.Event e) {
         if (dragTrack == null) return;
         MouseEvent me = (MouseEvent) e;
         double delta = dragStartY - me.clientY;
@@ -268,7 +268,7 @@ public class PanelDeviceControl {
      * Body 级鼠标释放事件：结束滑条拖拽。<br>
      * 将最终百分比值通过 GuiActionPayload 发送到服务端。
      */
-    private static void onVSliderMouseUp(com.sighs.apricityui.init.Event e) {
+    private static void onVSliderMouseUp(com.sighs.apricityui.event.Event e) {
         if (dragTrack != null && dragActionIndex >= 0) {
             // 从 fill 读取最终百分比
             String fillStyle = dragFill.getAttribute("style");

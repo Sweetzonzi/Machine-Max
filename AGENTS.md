@@ -13,7 +13,7 @@
 | ------------------------------------------------------------------------ | ------------- | -------------------- |
 | [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1029      | Bullet 物理引擎封装、实体注册框架 |
 | [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API        |
-| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.1.3-dev     | 载具控制面板 Web UI 框架     |
+| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.5         | 载具控制面板 Web UI 框架     |
 
 构建时也依赖 GraalVM 24.2.2（JS 引擎）、JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
 
@@ -266,7 +266,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 ## 补充说明
 
-- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework`、`../AUI` 三个本地源码项目。本地目录不存在时回退到 Maven jar。
+- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
 - **无单元测试**：仅 NeoForge 运行时游戏测试（`runGameTestServer`）。无 `src/test/` 目录。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。

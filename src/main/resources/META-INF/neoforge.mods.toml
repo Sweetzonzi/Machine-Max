@@ -77,7 +77,7 @@ file="META-INF/accesstransformer.cfg"
 [[dependencies.${mod_id}]]
     modId="apricityui"
     type="required"
-    versionRange="[1.1.0,)"
+    versionRange="[1.2.5,)"
     ordering="AFTER"
     side="BOTH"
 

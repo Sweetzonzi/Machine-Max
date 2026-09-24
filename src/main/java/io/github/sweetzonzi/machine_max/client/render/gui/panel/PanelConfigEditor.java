@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.panel;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.sighs.apricityui.dev.ToastManager;
+import com.sighs.apricityui.ui.ToastManager;
 import com.sighs.apricityui.event.MouseEvent;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
@@ -924,7 +924,7 @@ public class PanelConfigEditor {
     private static boolean hDragBodyRegistered = false;
 
     /** 水平滑条拖拽移动 */
-    private static void onHSliderMove(com.sighs.apricityui.init.Event e) {
+    private static void onHSliderMove(com.sighs.apricityui.event.Event e) {
         if (!hDragActive || hDragTrack == null) return;
         MouseEvent me = (MouseEvent) e;
         double trackWidth = 100.0; // 基准宽度，AUI 无法获取实际宽度
@@ -941,7 +941,7 @@ public class PanelConfigEditor {
     }
 
     /** 水平滑条拖拽释放 */
-    private static void onHSliderUp(com.sighs.apricityui.init.Event e) {
+    private static void onHSliderUp(com.sighs.apricityui.event.Event e) {
         if (!hDragActive) return;
         if (hDragFill != null) {
             String style = hDragFill.getAttribute("style");

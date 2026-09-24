@@ -34,7 +34,7 @@ dependencies {
     // 加速渲染
     implementation("curse.maven:accelerated-rendering-1314021:8366742")
     // AUI渲染引擎（独立mod，不打包）
-    implementation files("libs/ApricityUI-neoforge-1.21.1-${aui_version}.jar")
+    implementation("com.sighs:ApricityUI-neoforge-1.21.1:${aui_version}")
     // 机械动力
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
