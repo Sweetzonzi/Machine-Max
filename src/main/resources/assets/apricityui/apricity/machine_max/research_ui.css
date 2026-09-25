@@ -1,0 +1,692 @@
+/* ================================================================
+   研究台界面 — 原型公共样式表
+   ================================================================
+   渲染引擎：ApricityUI
+   页面：research_ui_prototype.html（纯静态原型，不依赖任何 Java 代码）
+
+   本文件只放两个标签页共用的部分：重置、标签页条、双栏骨架、
+   树控件、详情面板骨架、通用按钮与状态色调。
+
+   Tab 专用样式：
+     - research_ui_research.css  — 研发标签页（强调色、材料/研发点/前置区块）
+     - research_ui_library.css   — 蓝图库标签页（强调色、蓝图属性区块）
+
+   两处书写约定，与 AUI 引擎能力对齐：
+     1. 不用 calc()，不用负 margin，不用 grid-template-areas；
+     2. transition 只写在 AUI 的可动画白名单属性上（颜色、透明度、宽高、
+        transform、box-shadow 等），名单外属性会直接跳变。
+   ================================================================ */
+
+/* ---------- 根元素高度基准（为 body 的 height:100% 提供参考） ---------- */
+html {
+    height: 100%;
+
+    /* 原型专有底衬。整页的半透明深色是按“屏幕后面还有 Minecraft 世界与
+       屏幕遮罩”设计的；浏览器预览时后面是白色画布，半透明深色会被冲成中灰，
+       正文与背景就混为一色。正式实现时由游戏画面充当这层底衬，这条删掉即可。
+       #14171D 接近游戏内遮罩后的屏幕亮度，也留出了左右两栏明暗差的空间。 */
+    background: #14171D;
+}
+
+/* ---------- 全局重置 ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;                     /* 禁止选中，避免误触选中条目文字 */
+}
+
+/* 搜索框内允许选中文本 */
+input {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* ---------- body 基础排版 ---------- */
+body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: #D2D2DC;                        /* 默认文字色：浅灰 */
+    /* unset = 使用 Minecraft 原版字体。浏览器预览时 unset 落到系统默认字体，
+       且浏览器对小字号有下限（Chrome 中文最小字号），7~8px 的文本会被放大，
+       行距看着比游戏内松——字号不要照浏览器观感调。 */
+    font-family: unset;
+    background: #14171D;                   /* 原型底衬，见 html 一节的说明 */
+}
+
+/* ================================================================
+   顶部标签页条
+   两个标签页与载具控制面板的导航条同构：编号 + 名称，
+   激活项白底黑字，并用该 Tab 的强调色作下沿指示（强调色在各 Tab 样式表中给）。
+   ================================================================ */
+.tab-strip {
+    flex-shrink: 0;
+    height: 26px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background: rgba(11, 11, 11, 0.6);
+    border-bottom: 1px solid #EAEAEA;
+    overflow: hidden;
+}
+
+.tab-item {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding-left: 14px;
+    padding-right: 14px;
+    cursor: pointer;
+    background: rgba(11, 11, 11, 0.6);
+    border-right: 1px solid #EAEAEA;
+    border-bottom: 2px solid transparent;
+    transition: background-color 0.2s ease;
+}
+.tab-item:hover {
+    background: #1A1A1A;
+}
+
+/* 激活态：白底黑字（下沿颜色由各 Tab 样式表指定） */
+.tab-item.active {
+    background: #FFFFFF;
+}
+
+.tab-index {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 1px;
+}
+.tab-item.active .tab-index {
+    color: rgba(17, 17, 17, 0.40);
+}
+
+.tab-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #E8E8F0;
+}
+.tab-item.active .tab-name {
+    color: #111111;
+}
+
+/* ================================================================
+   页面容器与标签页切换
+   ================================================================ */
+.panel-content {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.page {
+    display: none;
+}
+.page.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    animation: pageFadeIn 0.15s linear;
+}
+
+@keyframes pageFadeIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* ================================================================
+   主体双栏骨架：左树 + 右详情
+   左栏弹性伸缩，右栏定宽（窄屏下只压缩左栏）。
+   AUI 下 flex-basis:auto 有按内容尺寸取的倾向，因此两侧都写死 basis：
+   弹性栏用 0，定宽栏直接用像素值——只写 width + flex-shrink:0 会被内容撑宽。
+   ================================================================ */
+.ui-split {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pane-tree {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.12);
+    border-right: 1px solid #EAEAEA;
+}
+
+.pane-detail {
+    flex: 0 0 170px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.30);
+}
+
+/* ================================================================
+   树工具栏：搜索框 + 展开/折叠开关
+   ================================================================ */
+.tree-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 6px;
+    padding-right: 6px;
+    border-bottom: 1px solid #333333;
+}
+
+.search-box {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+.search-box:focus-within {
+    border-color: var(--accent, #888888);
+}
+
+.search-icon {
+    flex: 0 0 auto;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.40);
+}
+
+.search-box input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    color: #D2D2DC;
+    font-family: unset;
+    font-size: 10px;
+}
+
+/* 搜索框内提示文字（AUI 支持 ::placeholder 状态伪类） */
+.search-box input::placeholder {
+    color: rgba(255, 255, 255, 0.38);
+}
+
+.toolbar-btn {
+    flex: 0 0 auto;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.82);
+}
+
+/* ================================================================
+   树本体
+   结构约定（Java 侧将生成同样的 DOM 形状）：
+     .tree > .tree-node
+       .node-row                     一行
+       .tree-children > .tree-node…  子层容器（可缺省）
+   缩进由 .tree-children 的两侧留白累积而成，
+   缩进连接线就是它左边那条 1px 边框。
+   ================================================================ */
+.tree-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 4px;
+    padding-bottom: 8px;
+}
+
+/* 折叠：直接去掉子层容器，折叠状态下不产生多余元素（与 AUI 无脏区渲染的特点相合） */
+.tree-node.collapsed > .tree-children {
+    display: none;
+}
+
+/* 缩进层级：每深一层多 14px 留白。depth ≥ 4 时视觉不再增长，
+   由 Java 侧对更深的层加 .depth-cap 类，这里把额外留白抹平。 */
+.tree-children {
+    margin-left: 10px;
+    padding-left: 5px;
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+.tree-children.depth-cap {
+    margin-left: 2px;
+    padding-left: 2px;
+}
+
+.node-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    min-height: 17px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 5px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background-color 0.12s ease;
+}
+.node-row:hover {
+    background: rgba(255, 255, 255, 0.045);
+}
+.node-row.selected {
+    background: rgba(255, 255, 255, 0.09);
+    border-left-color: var(--accent, #FFFFFF);
+}
+
+/* --- 展开箭头 ---
+   行内布局约定（AUI 下必须显式写全 flex 三值）：
+   弹性文本用 flex: 1 1 auto + min-width: 0，其余固定项一律 flex: 0 0 auto。
+   AUI 的 flex 实现里 flex: 1（basis 0%）与 flex-shrink: 0 单独出现时，
+   主轴尺寸的回写有条件，会出现「右侧元素被挤出容器」或「弹性文本被压成一个字」。
+   这套写法取自 AUI 自带资源管理器的文件树（devtools/resource.html）。 */
+.n-toggle {
+    flex: 0 0 auto;
+    width: 9px;
+    font-size: 8px;
+    line-height: 9px;
+    text-align: center;
+    color: #A0A0AE;
+    transform-origin: 4px 4px;
+    transition: transform 0.15s ease;
+}
+.tree-node.collapsed > .node-row .n-toggle {
+    transform: rotate(-90deg);
+}
+/* 叶子节点：箭头不占位也不可见 */
+.n-toggle.empty {
+    visibility: hidden;
+}
+
+/* --- 条目图标（<texture> 无固有尺寸，必须给稳定宽高） ---
+   display:block 是为了让宽高在浏览器预览里也生效——浏览器不认识 <texture>，
+   这一格会退化成空的图标位；游戏内则是图标垫底的一格浅色底。 */
+.n-icon {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.n-icon texture {
+    display: block;
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+/* --- 名称：弹性项。flex-basis 用 auto 而非 0，且必须给 min-width:0，
+   省略号才会生效、右侧固定项才不会被挤出去 --- */
+.n-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 10px;
+    color: #D2D2DC;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- 次级标注（如“另需 1 项”“其他分组”） --- */
+.n-note {
+    flex: 0 0 auto;
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.50);
+    letter-spacing: 0.3px;
+}
+
+/* --- 组头进度 --- */
+.n-progress {
+    flex: 0 0 auto;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.66);
+    letter-spacing: 0.5px;
+}
+
+/* --- 状态文案 --- */
+.n-status {
+    flex: 0 0 auto;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+/* --- 行内动作：常驻但低透明，悬停或选中时增亮 ---
+   动作在行内一律用等宽方形图标按钮：文字按钮的宽度随字数变化（“重印”比
+   “开始研究”窄一大截），一列排下来参差不齐。图标含义由右侧详情的文字按钮兜底。 */
+.n-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    opacity: 0.45;
+    transition: opacity 0.15s ease;
+}
+.node-row:hover .n-actions,
+.node-row.selected .n-actions {
+    opacity: 1;
+}
+
+.n-actions .btn-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 3px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 9px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.n-actions .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+.n-actions .btn-icon.primary {
+    border-color: var(--accent, #FFFFFF);
+    color: var(--accent, #FFFFFF);
+}
+.n-actions .btn-icon.danger {
+    border-color: rgba(224, 106, 90, 0.40);
+    color: #E06A5A;
+}
+.n-actions .btn-icon.disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.n-actions .btn-icon.disabled:hover {
+    background: transparent;
+}
+
+/* --- 组头：作为分组分隔，给一层底并压一条线 ---
+   组头的选择器与 .node-row:hover / .node-row.selected 同权重，
+   写在后面会盖掉它们，因此这两态要在这里再声明一次。 */
+.node-row.group {
+    background: rgba(255, 255, 255, 0.055);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    min-height: 19px;
+}
+.node-row.group:hover {
+    background: rgba(255, 255, 255, 0.085);
+}
+.node-row.group.selected {
+    background: rgba(255, 255, 255, 0.13);
+}
+.node-row.group .n-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #F2F2F8;
+    letter-spacing: 0.5px;
+}
+
+/* --- 不可达条目：整行压暗，靠状态色与详情说明表达原因 --- */
+.node-row.unreachable .n-label {
+    color: #9A9AA8;
+}
+.node-row.unreachable .n-icon {
+    opacity: 0.35;
+}
+
+/* ================================================================
+   状态色调（行内状态、详情状态、蓝图状态的统一取色）
+   ================================================================ */
+.tone-ok      { color: #6FCF8B; }    /* 已完成 / 正常 */
+.tone-ready   { color: var(--accent, #FFFFFF); }  /* 可研发 / 可重获 */
+.tone-warn    { color: #D8A631; }    /* 材料不足 / 模板缺失 */
+.tone-locked  { color: #8E8E9C; }    /* 前置未完成 / 锁定 */
+.tone-bad     { color: #E06A5A; }    /* 不可研发 / 解析失败 */
+
+/* ================================================================
+   详情面板骨架
+   ================================================================ */
+.detail-head {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 7px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom: 1px solid #333333;
+}
+
+.detail-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #E8E8F0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 标题下的次要标识（研发 id / 组 id / 蓝图来源） */
+.detail-sub {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.48);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-status {
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.detail-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-top: 7px;
+    padding-bottom: 8px;
+}
+
+/* 底部动作区。按钮按内容取宽，左对齐——不拉伸成等分块。 */
+.detail-foot {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px 8px;
+    border-top: 1px solid #333333;
+}
+.detail-foot .btn-sm {
+    flex: 0 0 auto;
+}
+
+.detail-empty {
+    padding: 24px 10px;
+    text-align: center;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.38);
+    letter-spacing: 1px;
+}
+
+/* --- 详情分区 --- */
+.sect {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-bottom: 9px;
+}
+
+.sect-head {
+    font-size: 7px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.sect-text {
+    font-size: 8px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* --- 键值行（两栏） --- */
+.kv-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 8px;
+}
+.kv-key {
+    flex: 0 0 auto;
+    color: rgba(255, 255, 255, 0.48);
+}
+.kv-val {
+    min-width: 0;
+    text-align: right;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.82);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- 预览框：产物预览与 3D 预览共用的方框 --- */
+.preview-box {
+    height: 74px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.preview-box texture {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.09);
+}
+.preview-box .pb-hint {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.36);
+    letter-spacing: 1px;
+}
+.preview-box .pb-name {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+/* ================================================================
+   通用小按钮（详情面板底部的文字按钮）
+   ================================================================ */
+.btn-sm {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.78);
+    font-family: unset;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.btn-sm:hover {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+/* 主按钮：跟随当前 Tab 的强调色 */
+.btn-sm.primary {
+    border-color: var(--accent, #FFFFFF);
+    color: var(--accent, #FFFFFF);
+}
+.btn-sm.primary:hover {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+/* 危险按钮 */
+.btn-sm.danger {
+    border-color: rgba(224, 106, 90, 0.40);
+    color: #E06A5A;
+}
+.btn-sm.danger:hover {
+    background: rgba(224, 106, 90, 0.14);
+}
+
+/* 禁用态 */
+.btn-sm.disabled {
+    opacity: 0.38;
+    cursor: default;
+}
+.btn-sm.disabled:hover {
+    background: transparent;
+}
+
+/* ================================================================
+   自绘滚动条
+   ================================================================ */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+}

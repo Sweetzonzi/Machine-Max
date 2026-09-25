@@ -1,0 +1,201 @@
+/* ================================================================
+   研究台界面 — 研发标签页专用样式
+   ================================================================
+   渲染引擎：ApricityUI
+   页面：research_ui_prototype.html
+   依赖：research_ui.css（公共变量与组件）
+
+   主题：沿用 BlueprintResearchScreen 现有的橙色强调（#FF6400），
+         背景取橙黑渐变，与载具控制面板的深色工业风同构。
+
+   本文件内容：
+     - 该 Tab 的强调色变量与标签页下沿色
+     - 产物预览、研发点、材料、前置条件四个专属区块
+     - 不可研发的原因提示框
+   ================================================================ */
+
+/* ================================================================
+   Tab 01: 研发
+   ================================================================ */
+#tab-research {
+    background: linear-gradient(180deg, rgba(14, 8, 2, 0.5), rgba(22, 12, 6, 0.5));
+    --accent: #FF6400;                     /* 主强调色：橙，取自现有 THEME */
+}
+
+/* 标签页条上的激活下沿色 */
+.tab-item[data-tab="research"].active {
+    border-bottom-color: #FF6400;
+}
+
+/* ================================================================
+   细节：区内小标题与数字
+   ================================================================ */
+
+/* 研发点成本：数字放大显示 */
+.cost-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+}
+.cost-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #E8E8F0;
+    letter-spacing: 0.5px;
+}
+.cost-unit {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.48);
+    margin-left: 2px;
+}
+
+/* ================================================================
+   材料清单
+   ================================================================ */
+.mat-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+.mat-head {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.mat-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.72);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 已有 / 所需，形如 “8 / 16” */
+.mat-count {
+    flex: 0 0 auto;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* 材料充足与不足的两种取色 */
+.mat-row.ok .mat-count   { color: #79D193; }
+.mat-row.lack .mat-count { color: #E0B345; }
+
+/* 进度轨 */
+.mat-track {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.mat-fill {
+    height: 100%;
+    border-radius: 2px;
+    /* 填充宽度由渲染层按下式给出：已有 / 所需 */
+}
+.mat-row.ok .mat-fill   { background: #63AE7C; }
+.mat-row.lack .mat-fill { background: #C79A2E; }
+
+/* ================================================================
+   前置条件清单
+   ================================================================ */
+.pre-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    font-size: 8px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+/* 前置条目的状态标记：实心方块表示已完成，空心表示未完成 */
+.pre-mark {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+}
+.pre-row.done .pre-mark {
+    background: #6FCF8B;
+    border-color: #6FCF8B;
+}
+
+.pre-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: rgba(255, 255, 255, 0.70);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pre-row.done .pre-name {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.pre-state {
+    flex: 0 0 auto;
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* 组外前置的标记 */
+.pre-outside {
+    flex: 0 0 auto;
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+/* ================================================================
+   不可研发的原因提示框
+   ================================================================ */
+.block-reason {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background: rgba(224, 106, 90, 0.08);
+    border-left: 2px solid #E06A5A;
+}
+.block-reason .br-title {
+    font-size: 8px;
+    font-weight: 700;
+    color: #E06A5A;
+}
+.block-reason .br-text {
+    font-size: 7px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* 组内状态分布（组详情用） */
+.dist-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 8px;
+}
+.dist-name {
+    color: rgba(255, 255, 255, 0.58);
+}
+.dist-count {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+}

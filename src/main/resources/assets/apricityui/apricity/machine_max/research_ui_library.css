@@ -1,0 +1,114 @@
+/* ================================================================
+   研究台界面 — 蓝图库标签页专用样式
+   ================================================================
+   渲染引擎：ApricityUI
+   页面：research_ui_prototype.html
+   依赖：research_ui.css（公共变量与组件）
+
+   主题：蓝图取蓝色强调（#4A9BD8），与研发标签页的橙色区分。
+         背景取蓝黑渐变。
+
+   本文件内容：
+     - 该 Tab 的强调色变量与标签页下沿色
+     - 蓝图属性（零件数 / 质量 / 费用 / 来源 / 装配模板 / 保存时间）
+     - 解析失败与模板缺失条目的样式
+   ================================================================ */
+
+/* ================================================================
+   Tab 02: 蓝图库
+   ================================================================ */
+#tab-library {
+    background: linear-gradient(180deg, rgba(4, 8, 14, 0.5), rgba(6, 12, 22, 0.5));
+    --accent: #4A9BD8;                     /* 主强调色：蓝图蓝 */
+}
+
+/* 标签页条上的激活下沿色 */
+.tab-item[data-tab="library"].active {
+    border-bottom-color: #4A9BD8;
+}
+
+/* ================================================================
+   蓝图属性区块
+   ================================================================ */
+
+/* 载具名：详情标题下方的一行产品标识 */
+.bp-vehicle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+.bp-vehicle texture {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+}
+.bp-vehicle .bp-vehicle-name {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.72);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 统计行：零件数 / 质量 / 费用（对应现有 tooltip.stats 的字段划分） */
+.bp-stats {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+}
+.bp-stat {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background: rgba(0, 0, 0, 0.30);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.bp-stat-value {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.88);
+}
+.bp-stat-label {
+    font-size: 6px;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.46);
+}
+
+/* ================================================================
+   解析失败的条目
+   ================================================================ */
+.bp-error {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background: rgba(224, 106, 90, 0.08);
+    border-left: 2px solid #E06A5A;
+}
+.bp-error .be-title {
+    font-size: 8px;
+    font-weight: 700;
+    color: #E06A5A;
+}
+.bp-error .be-text {
+    font-size: 7px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* 损坏条目整行压暗 */
+.node-row.broken .n-label {
+    color: #9A9AA8;
+}
+.node-row.broken .n-icon {
+    opacity: 0.35;
+}

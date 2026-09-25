@@ -1,0 +1,1383 @@
+<!--
+  研究台界面 — 静态原型页
+  ==========================================================================
+  用途：在写任何界面 Java 代码之前，先把「研发」与「蓝图库」两个标签页的
+        风格与布局做成实物，供确认（对应计划文档 §七 原型阶段）。
+
+  约束（与计划文档 §7.2 一致）：
+    - 数据全部硬编码在本页内，用真实载具名与真实图标资源；
+    - 不引入任何 Java 代码，不发网络包；点击只改变本地 DOM 状态。
+
+  样式分离：
+    research_ui.css           公共部分（重置、标签页条、双栏骨架、树、详情骨架）
+    research_ui_research.css  研发标签页（橙色主题，材料/研发点/前置区块）
+    research_ui_library.css   蓝图库标签页（蓝色主题，蓝图属性区块）
+
+  打开方式：
+    按 F10 打开 AUI 内置资源管理器，在资源树里找到
+    machine_max/research_ui_prototype.html，双击即可开出可交互预览窗口。
+    本页不写 <meta name="aui-viewport">，沿用与 vehicle_control.html 相同的
+    默认 gui 视口——最终 Screen 也按该视口承载，预览所见即实现所得。
+
+  数据说明（原型期占位）：
+    - 研发条目取自官方内容包真实存在的研发配方与真实图标；
+    - 原型只放 5 个组作为取样：AE86、大运重卡、吉普牧马人、K螺小车车与杂项，
+      真实内容包共 12 个组、61 条研发配方；
+    - 条目的成本、材料、前置与状态是编造的样例值，用于覆盖各种展示形态，
+      真实研发路径会在实施阶段 6 随内容包数据重写；
+    - 蓝图库「内容包蓝图」段只取两份真实蓝图作为取样，实际有 15 份。
+  ==========================================================================
+-->
+
+<!-- 公共样式 -->
+<link rel="stylesheet" href="research_ui.css">
+<!-- Tab 专用样式 -->
+<link rel="stylesheet" href="research_ui_research.css">
+<link rel="stylesheet" href="research_ui_library.css">
+
+<body>
+
+  <!-- ================= 顶部标签页条 ================= -->
+  <div class="tab-strip" id="tab-strip">
+    <div class="tab-item active" id="tab-btn-research" data-tab="research">
+      <span class="tab-index">01</span>
+      <span class="tab-name">研发</span>
+    </div>
+    <div class="tab-item" id="tab-btn-library" data-tab="library">
+      <span class="tab-index">02</span>
+      <span class="tab-name">蓝图库</span>
+    </div>
+  </div>
+
+  <div class="panel-content" id="panel-body">
+
+    <!-- ================= Tab 01: 研发 ================= -->
+    <div class="page active" id="tab-research">
+      <div class="ui-split">
+
+        <!-- 左窗格：组 → 依赖层级 -->
+        <div class="pane-tree">
+          <div class="tree-toolbar">
+            <div class="search-box">
+              <span class="search-icon">/</span>
+              <input type="text" id="search-research" data-tree="tree-research"
+                     placeholder="搜索研发项目或载具">
+            </div>
+            <div class="toolbar-btn" data-tree="tree-research" data-act="expand">展开全部</div>
+            <div class="toolbar-btn" data-tree="tree-research" data-act="collapse">折叠全部</div>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree" id="tree-research" data-detail="detail-research" data-row-actions="on">
+              <!-- ================= AE86（默认展开首组） ================= -->
+              <div class="tree-node">
+                <div class="node-row group" data-kind="group" data-id="machine_max:ae86"
+                     data-sub="组 id：machine_max:ae86（载具级语言键 machine_max.ae86）"
+                     data-mode="research">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">AE86</span>
+                  <span class="n-progress">3 / 7</span>
+                </div>
+                <div class="tree-children">
+
+                  <!-- 车架：无前置，组根层 -->
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="ae86_chassis" data-status="已完成" data-tone="ok"
+                         data-cost="120" data-mats="初级结构部件,6,6;空白载具蓝图,1,1"
+                         data-desc="承载动力总成与悬挂的基础结构，是全车研发的起点。"
+                         data-actions="reclaim">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_chassis_icon.png"></texture></span>
+                      <span class="n-label">AE86车架</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                    <div class="tree-children">
+
+                      <!-- 车壳：前置 车架 -->
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="ae86_hull" data-status="已完成" data-tone="ok"
+                             data-cost="140" data-mats="初级结构部件,4,4;空白载具蓝图,1,1"
+                             data-prereqs="AE86车架,done"
+                             data-desc="外观覆盖件，决定载具的整体轮廓与风阻。"
+                             data-actions="reclaim">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_hull_icon.png"></texture></span>
+                          <span class="n-label">AE86车壳</span>
+                          <span class="n-status tone-ok">已完成</span>
+                        </div>
+                      </div>
+
+                      <!-- 座椅：前置 车架；后排座椅再挂在它下面，形成一层缩进 -->
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="ae86_seat" data-status="已完成" data-tone="ok"
+                             data-cost="100" data-mats="初级结构部件,2,2"
+                             data-prereqs="AE86车架,done"
+                             data-desc="驾驶与乘坐单元，装配后决定载具的座位数。"
+                             data-actions="reclaim">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_seat_icon.png"></texture></span>
+                          <span class="n-label">AE86座椅</span>
+                          <span class="n-status tone-ok">已完成</span>
+                        </div>
+                        <div class="tree-children">
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="ae86_back_seat" data-status="可研发" data-tone="ready"
+                                 data-cost="60" data-mats="初级结构部件,2,2"
+                                 data-prereqs="AE86座椅,done"
+                                 data-desc="后排双人座椅，研发后可在装配时追加座位。"
+                                 data-actions="research">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_back_seat_icon.png"></texture></span>
+                              <span class="n-label">AE86后排座椅</span>
+                              <span class="n-status tone-ready">可研发</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 车轮：材料不足，且另有一个组外前置（组头之外的技术门禁） -->
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-default="1"
+                             data-id="ae86_wheel" data-status="材料不足" data-tone="warn"
+                             data-cost="90" data-mats="初级结构部件,1,3;初级机械构件,2,2"
+                             data-prereqs="AE86车架,done;空白载具蓝图,done,other"
+                             data-note="另需 1 项：空白载具蓝图（其他分组）"
+                             data-desc="标准公路轮胎，抓地力与耐用度均衡。"
+                             data-actions="research:0">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_wheel_icon.png"></texture></span>
+                          <span class="n-label">AE86车轮</span>
+                          <span class="n-note">另需 1 项</span>
+                          <span class="n-status tone-warn">材料不足</span>
+                        </div>
+                        <div class="tree-children">
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="ae86_wheel_all_terrain" data-status="前置未完成" data-tone="locked"
+                                 data-cost="180" data-mats="初级结构部件,3,3;初级机械构件,2,2"
+                                 data-prereqs="AE86车轮,todo;AE86车壳,done"
+                                 data-note="另需 1 项：AE86车壳（本组）"
+                                 data-desc="加大花纹的越野轮胎，需要先掌握标准车轮的制造工艺。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_wheel_all_terrain_icon.png"></texture></span>
+                              <span class="n-label">AE86全地形轮</span>
+                              <span class="n-note">另需 1 项</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- 全地形车架：前置引用了不存在的研发 id，判定为不可达成。
+                       按决策 12 置于组根层，不缩进、不承载子节点，行内标注原因。 -->
+                  <div class="tree-node">
+                    <div class="node-row unreachable" data-kind="leaf" data-leaf="research"
+                         data-id="ae86_chassis_all_terrain" data-status="不可研发" data-tone="bad"
+                         data-cost="200"
+                         data-prereqs="AE86四驱套件,todo"
+                         data-reason="前置 machine_max:ae86_awd_kit 未在本内容包中注册，该前置永远不会完成，因此本条目的研发门禁永远无法满足。"
+                         data-desc="四轮驱动车架，前置项目在内容包中缺失。">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_chassis_all_terrain_icon.png"></texture></span>
+                      <span class="n-label">AE86全地形车架</span>
+                      <span class="n-status tone-bad">不可研发</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ================= 大运重卡 ================= -->
+              <div class="tree-node">
+                <div class="node-row group collapsed" data-kind="group" data-id="machine_max:dayun"
+                     data-sub="组 id：machine_max:dayun（载具级语言键 machine_max.dayun）"
+                     data-mode="research">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">大运重卡</span>
+                  <span class="n-progress">1 / 6</span>
+                </div>
+                <div class="tree-children">
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="dayun_chassis" data-status="已完成" data-tone="ok"
+                         data-cost="130" data-mats="初级结构部件,6,6;空白载具蓝图,1,1"
+                         data-desc="重卡承载式车架，是全车研发的起点。"
+                         data-actions="reclaim">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_chassis_icon.png"></texture></span>
+                      <span class="n-label">大运车架</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                    <div class="tree-children">
+
+                      <!-- 车壳：前置 车架；半挂车再挂在它下面（层级 = 主前置层级 + 1） -->
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="dayun_hull" data-status="可研发" data-tone="ready"
+                             data-cost="150" data-mats="初级结构部件,4,4;空白载具蓝图,1,1"
+                             data-prereqs="大运车架,done"
+                             data-desc="驾驶室外壳，含风挡与车门框。"
+                             data-actions="research">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_hull_icon.png"></texture></span>
+                          <span class="n-label">大运车壳</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                        <div class="tree-children">
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="dayun_trailer" data-status="前置未完成" data-tone="locked"
+                                 data-cost="320" data-mats="初级结构部件,5,5;初级机械构件,2,2"
+                                 data-prereqs="大运车壳,todo"
+                                 data-desc="可拖挂的半挂车厢，显著提高载货量。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_trailer_icon.png"></texture></span>
+                              <span class="n-label">大运半挂车</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="dayun_steel_coil" data-status="可研发" data-tone="ready"
+                             data-cost="80" data-mats="初级结构部件,3,3"
+                             data-prereqs="大运车架,done"
+                             data-desc="固定货物的钢卷，属于随车附件。"
+                             data-actions="research">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_steel_coil_icon.png"></texture></span>
+                          <span class="n-label">钢卷</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="dayun_wheel" data-status="材料不足" data-tone="warn"
+                             data-cost="100" data-mats="初级结构部件,2,3;初级机械构件,1,2"
+                             data-prereqs="大运车架,done"
+                             data-desc="重载轮胎，单胎承重远高于乘用车轮。"
+                             data-actions="research:0">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_wheel_icon.png"></texture></span>
+                          <span class="n-label">大运车轮</span>
+                          <span class="n-status tone-warn">材料不足</span>
+                        </div>
+                        <div class="tree-children">
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="dayun_wheelx2" data-status="前置未完成" data-tone="locked"
+                                 data-cost="200" data-mats="初级结构部件,3,3;初级机械构件,2,2"
+                                 data-prereqs="大运车轮,todo"
+                                 data-desc="双胎轮组，用于后轴以提高载重能力。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_wheelx2_icon.png"></texture></span>
+                              <span class="n-label">大运双车轮</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ================= 吉普牧马人 ================= -->
+              <div class="tree-node">
+                <div class="node-row group collapsed" data-kind="group" data-id="machine_max:jeep"
+                     data-sub="组 id：machine_max:jeep（载具级语言键 machine_max.jeep）"
+                     data-mode="research">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">吉普牧马人</span>
+                  <span class="n-progress">1 / 3</span>
+                </div>
+                <div class="tree-children">
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="jeep_chassis" data-status="已完成" data-tone="ok"
+                         data-cost="110" data-mats="初级结构部件,5,5;空白载具蓝图,1,1"
+                         data-desc="越野车用梯形车架，抗扭刚度高。"
+                         data-actions="reclaim">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/jeep/jeep_chassis_icon.png"></texture></span>
+                      <span class="n-label">吉普牧马人车架</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                    <div class="tree-children">
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="jeep_hull" data-status="可研发" data-tone="ready"
+                             data-cost="150" data-mats="初级结构部件,4,4;空白载具蓝图,1,1"
+                             data-prereqs="吉普牧马人车架,done"
+                             data-desc="可拆卸车顶的越野车壳。"
+                             data-actions="research">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/jeep/jeep_hull_icon.png"></texture></span>
+                          <span class="n-label">吉普牧马人车壳</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="jeep_wheel" data-status="材料不足" data-tone="warn"
+                             data-cost="90" data-mats="初级结构部件,1,3"
+                             data-prereqs="吉普牧马人车架,done"
+                             data-desc="越野花纹轮胎，适合非铺装路面。"
+                             data-actions="research:0">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/jeep/jeep_wheel_icon.png"></texture></span>
+                          <span class="n-label">吉普牧马人车轮</span>
+                          <span class="n-status tone-warn">材料不足</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ================= K螺小车车 ================= -->
+              <div class="tree-node">
+                <div class="node-row group collapsed" data-kind="group" data-id="machine_max:kluo"
+                     data-sub="组 id：machine_max:kluo（载具级语言键 machine_max.kluo）"
+                     data-mode="research">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">K螺小车车</span>
+                  <span class="n-progress">3 / 10</span>
+                </div>
+                <div class="tree-children">
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="kluo_hull" data-status="已完成" data-tone="ok"
+                         data-cost="110" data-mats="初级结构部件,4,4;空白载具蓝图,1,1"
+                         data-desc="复古风格的两厢车体，是全车研发的起点（本组未定义独立的车架条目）。"
+                         data-actions="reclaim">
+                      <span class="n-toggle">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_hull_icon.png"></texture></span>
+                      <span class="n-label">K螺小车车车体</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                    <div class="tree-children">
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="kluo_bumper" data-status="已完成" data-tone="ok"
+                             data-cost="70" data-mats="初级结构部件,2,2"
+                             data-prereqs="K螺小车车车体,done"
+                             data-desc="前后保险杠，装配后提供低速碰撞缓冲。"
+                             data-actions="reclaim">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_bumper_icon.png"></texture></span>
+                          <span class="n-label">K螺小车车保险杠</span>
+                          <span class="n-status tone-ok">已完成</span>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="kluo_door" data-status="材料不足" data-tone="warn"
+                             data-cost="80" data-mats="初级结构部件,1,2"
+                             data-prereqs="K螺小车车车体,done"
+                             data-desc="侧开车门，含玻璃与内衬。"
+                             data-actions="research:0">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_door_icon.png"></texture></span>
+                          <span class="n-label">K螺小车车车门</span>
+                          <span class="n-status tone-warn">材料不足</span>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="kluo_hood" data-status="已完成" data-tone="ok"
+                             data-cost="75" data-mats="初级结构部件,2,2"
+                             data-prereqs="K螺小车车车体,done"
+                             data-desc="前舱盖，覆盖动力总成。"
+                             data-actions="reclaim">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_hood_icon.png"></texture></span>
+                          <span class="n-label">K螺小车车引擎盖</span>
+                          <span class="n-status tone-ok">已完成</span>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="kluo_trunk_door" data-status="可研发" data-tone="ready"
+                             data-cost="85" data-mats="初级结构部件,2,2"
+                             data-prereqs="K螺小车车车体,done"
+                             data-desc="掀背式后备箱盖。"
+                             data-actions="research">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_trunk_door_icon.png"></texture></span>
+                          <span class="n-label">K螺小车车后备箱盖</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                      </div>
+
+                      <!-- 车轮：GT 套件全部以它为前置，缩进两层 -->
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="kluo_wheel" data-status="可研发" data-tone="ready"
+                             data-cost="95" data-mats="初级结构部件,3,3;初级机械构件,2,2"
+                             data-prereqs="K螺小车车车体,done"
+                             data-desc="标准公路轮胎，也是 GT 套件零件的共同前置。"
+                             data-actions="research">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_wheel_icon.png"></texture></span>
+                          <span class="n-label">K螺小车车车轮</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                        <div class="tree-children">
+
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="kluo_gt_bumper" data-status="前置未完成" data-tone="locked"
+                                 data-cost="160" data-mats="初级机械构件,3,3;初级能源组件,1,1"
+                                 data-prereqs="K螺小车车车轮,todo"
+                                 data-desc="带前唇与扩散器的 GT 保险杠。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_gt_bumper_icon.png"></texture></span>
+                              <span class="n-label">K螺小车车GT保险杠</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="kluo_gt_light" data-status="前置未完成" data-tone="locked"
+                                 data-cost="140" data-mats="初级电子元件,2,2;初级能源组件,1,1"
+                                 data-prereqs="K螺小车车车轮,todo"
+                                 data-desc="GT 头灯组，含透镜与日行灯。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_gt_light_icon.png"></texture></span>
+                              <span class="n-label">K螺小车车GT头灯</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="kluo_gt_spoiler" data-status="前置未完成" data-tone="locked"
+                                 data-cost="150" data-mats="初级机械构件,3,3"
+                                 data-prereqs="K螺小车车车轮,todo"
+                                 data-desc="尾翼，用于提高高速稳定性。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_gt_spoiler_icon.png"></texture></span>
+                              <span class="n-label">K螺小车车GT扰流板</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="kluo_gt_wheel" data-status="前置未完成" data-tone="locked"
+                                 data-cost="190" data-mats="初级机械构件,3,3;初级能源组件,1,1"
+                                 data-prereqs="K螺小车车车轮,todo"
+                                 data-desc="半热熔赛道轮胎，需要先掌握标准车轮的工艺。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_gt_wheel_icon.png"></texture></span>
+                              <span class="n-label">K螺小车车GT轮胎</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- ================= 杂项（未声明任何组的条目） ================= -->
+              <div class="tree-node">
+                <div class="node-row group collapsed" data-kind="group" data-id="misc"
+                     data-sub="无所属组：未在配方中声明 groups 的条目"
+                     data-mode="research">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">杂项</span>
+                  <span class="n-progress">2 / 5</span>
+                </div>
+                <div class="tree-children">
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="container_16x16x8" data-status="已完成" data-tone="ok"
+                         data-cost="60" data-mats="初级结构部件,2,2;初级电子元件,1,1"
+                         data-desc="随车储物箱，装配后提供额外的物品存储空间。"
+                         data-actions="reclaim">
+                      <span class="n-toggle">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/container_16x16x8_icon.png"></texture></span>
+                      <span class="n-label">1/2SCU储物箱</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                    <div class="tree-children">
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="container_16x16x32" data-status="可研发" data-tone="ready"
+                             data-cost="90" data-mats="初级结构部件,3,3"
+                             data-prereqs="1/2SCU储物箱,done"
+                             data-desc="加高款储物箱，容量翻倍。"
+                             data-actions="research">
+                          <span class="n-toggle">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/container_16x16x32_icon.png"></texture></span>
+                          <span class="n-label">2SCU储物箱</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                        <div class="tree-children">
+                          <div class="tree-node">
+                            <div class="node-row" data-kind="leaf" data-leaf="research"
+                                 data-id="container_16x32x32" data-status="前置未完成" data-tone="locked"
+                                 data-cost="150" data-mats="初级结构部件,4,4;初级电子元件,2,2"
+                                 data-prereqs="2SCU储物箱,todo"
+                                 data-desc="双宽双高储物箱，适合团队出行。">
+                              <span class="n-toggle empty">▾</span>
+                              <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/container_16x32x32_icon.png"></texture></span>
+                              <span class="n-label">4SCU储物箱</span>
+                              <span class="n-status tone-locked">前置未完成</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="tree-node">
+                        <div class="node-row" data-kind="leaf" data-leaf="research"
+                             data-id="reinforced_container_16x16x8" data-status="可研发" data-tone="ready"
+                             data-cost="110" data-mats="初级结构部件,3,3;初级机械构件,1,1"
+                             data-prereqs="1/2SCU储物箱,done"
+                             data-desc="加装装甲板的储物箱，可作为防弹掩体。"
+                             data-actions="research">
+                          <span class="n-toggle empty">▾</span>
+                          <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/reinforced_container_16x16x8_icon.png"></texture></span>
+                          <span class="n-label">1/2SCU强化储物箱</span>
+                          <span class="n-status tone-ready">可研发</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="research"
+                         data-id="golden_closestool" data-status="已完成" data-tone="ok"
+                         data-cost="300" data-mats="初级结构部件,4,4;空白载具蓝图,1,1"
+                         data-desc="镀金的装饰性部件，与任何载具都不构成依赖关系。"
+                         data-actions="reclaim">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/golden_closestool_icon.png"></texture></span>
+                      <span class="n-label">黄金马桶</span>
+                      <span class="n-status tone-ok">已完成</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右窗格：选中项详情 -->
+        <div class="pane-detail" id="detail-research">
+          <div class="detail-empty">选择左侧条目查看详情</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= Tab 02: 蓝图库 ================= -->
+    <div class="page" id="tab-library">
+      <div class="ui-split">
+
+        <div class="pane-tree">
+          <div class="tree-toolbar">
+            <div class="search-box">
+              <span class="search-icon">/</span>
+              <input type="text" id="search-library" data-tree="tree-library"
+                     placeholder="搜索蓝图">
+            </div>
+            <div class="toolbar-btn" data-tree="tree-library" data-act="expand">展开全部</div>
+            <div class="toolbar-btn" data-tree="tree-library" data-act="collapse">折叠全部</div>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree" id="tree-library" data-detail="detail-library">
+              <!-- 本树刻意不给行内动作：蓝图条目有取出/重印/改名/删除四个动作，
+                   放进行内会把名称挤没，因此动作只出现在右侧详情面板底部。
+                   研发树条目最多一个动作，行内展示是可行的，见 data-row-actions="on"。 -->
+
+              <!-- 来源一：我的设计（本地保存的蓝图文件） -->
+              <div class="tree-node">
+                <div class="node-row group" data-kind="group" data-id="lib-local"
+                     data-sub="来源：本地保存" data-mode="library">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">我的设计</span>
+                  <span class="n-progress">4</span>
+                </div>
+                <div class="tree-children">
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="blueprint"
+                         data-id="ae86_rally.mmbp" data-status="正常" data-tone="ok"
+                         data-src="本地保存" data-template="machine_max:ae86"
+                         data-parts="14" data-mass="980" data-cost="4200"
+                         data-time="2026-09-24 18:32"
+                         data-desc="自建蓝图：AE86 拉力版，去掉了内饰并加装了防滚架。"
+                         data-actions="take,reprint,rename,delete">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_icon.png"></texture></span>
+                      <span class="n-label">AE86 拉力版</span>
+                      <span class="n-status tone-ok">正常</span>
+                    </div>
+                  </div>
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="blueprint"
+                         data-id="kluo_street.mmbp" data-status="正常" data-tone="ok"
+                         data-src="本地保存" data-template="machine_max:kluo"
+                         data-parts="11" data-mass="742" data-cost="3150"
+                         data-time="2026-09-23 21:07"
+                         data-actions="take,reprint,rename,delete">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/kluo/kluo_icon.png"></texture></span>
+                      <span class="n-label">K螺小车车 街道版</span>
+                      <span class="n-status tone-ok">正常</span>
+                    </div>
+                  </div>
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="blueprint"
+                         data-id="untitled_03.mmbp" data-status="模板缺失" data-tone="warn"
+                         data-src="本地保存" data-template="examplepack:prototype_x"
+                         data-time="2026-09-21 10:14"
+                         data-reason="蓝图引用的装配体模板 examplepack:prototype_x 未注册，可能是所属内容包被移除或改名。"
+                         data-actions="rename,delete">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"></span>
+                      <span class="n-label">未命名设计</span>
+                      <span class="n-status tone-warn">模板缺失</span>
+                    </div>
+                  </div>
+
+                  <div class="tree-node">
+                    <div class="node-row broken" data-kind="leaf" data-leaf="blueprint"
+                         data-id="broken_01.mmbp" data-status="解析失败" data-tone="bad"
+                         data-src="本地保存" data-time="2026-09-19 08:45"
+                         data-reason="蓝图文件解析失败：缺少 parts 字段（第 12 行）。"
+                         data-actions="delete">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"></span>
+                      <span class="n-label">损坏条目</span>
+                      <span class="n-status tone-bad">解析失败</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- 来源二：内容包蓝图（blueprints/ 下的成品蓝图模板） -->
+              <div class="tree-node">
+                <div class="node-row group" data-kind="group" data-id="lib-pack"
+                     data-sub="来源：内容包" data-mode="library">
+                  <span class="n-toggle">▾</span>
+                  <span class="n-label">内容包蓝图</span>
+                  <span class="n-progress">2</span>
+                </div>
+                <div class="tree-children">
+                  <!-- 成品蓝图条目：名称取蓝图 id 的语言键，图标与装配模板来自 blueprints/*.json -->
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="blueprint"
+                         data-id="machine_max:ae86" data-status="正常" data-tone="ok"
+                         data-src="内容包" data-template="machine_max:ae86"
+                         data-parts="7" data-mass="512" data-cost="1980"
+                         data-actions="take,reprint">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/ae86/ae86_icon.png"></texture></span>
+                      <span class="n-label">AE86</span>
+                      <span class="n-status tone-ok">正常</span>
+                    </div>
+                  </div>
+
+                  <div class="tree-node">
+                    <div class="node-row" data-kind="leaf" data-leaf="blueprint"
+                         data-id="machine_max:dayun" data-status="正常" data-tone="ok"
+                         data-src="内容包" data-template="machine_max:dayun"
+                         data-parts="6" data-mass="2140" data-cost="4360"
+                         data-actions="take,reprint">
+                      <span class="n-toggle empty">▾</span>
+                      <span class="n-icon"><texture class="n-icon-tex" src="machine_max:textures/icon/dayun/dayun_icon.png"></texture></span>
+                      <span class="n-label">大运重卡</span>
+                      <span class="n-status tone-ok">正常</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="pane-detail" id="detail-library">
+          <div class="detail-empty">选择左侧蓝图查看详情</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* ==========================================================================
+   原型交互脚本（仅本原型使用，实施阶段由 Java 侧渲染取代）
+
+   Rhino 不是现代 JS 引擎，本段刻意只用 var / function / 传统循环，
+   不使用箭头函数、模板字符串、解构、const/let（见 AUI web-api 文档）。
+
+   节点模型与计划文档 §6.4 的字段表对应：
+     data-kind      group | leaf
+     data-leaf      research | blueprint（group 行没有此属性）
+     data-id        稳定标识
+     data-status    状态文案        data-tone   状态色调
+     data-actions   行内动作清单，形如 take:1,delete:0（:0 表示禁用）
+     data-mats      材料清单，形如 名称,已有,需要;名称,已有,需要
+     data-prereqs   前置清单，形如 名称,done;名称,todo;名称,done,other（第三段 other 表示组外）
+
+   全部属性一律经 attr()/attrOrNull() 读取，不要直接调 getAttribute——原因见 attr 的注释。
+   属性的内部分隔符只用 "," 与 ";"，两者在 ES 与 Java 正则下都是字面量。
+   ========================================================================== */
+
+/* ---------- 动作文案与色调 ---------- */
+var ACTION_LABEL = {
+    research: "开始研究",
+    reclaim: "重印",
+    take: "取出",
+    reprint: "重印",
+    rename: "改名",
+    delete: "删除"
+};
+var ACTION_DANGER = { delete: 1 };
+var ACTION_PRIMARY = { research: 1, reclaim: 1, take: 1 };
+
+/* 行内动作的图标。文字按钮的宽度随字数变化（"重印"比"开始研究"窄一大截），
+   一列排下来参差不齐，所以行内改用等宽的方形图标按钮。
+   符号取自项目现有语言条目里的前缀（"▶ 开始研究""↓ 重新获取研究成果"），
+   这两颗字形在游戏内已经渲染过，不引入新字符。
+   没有配图标的动作在行内退化为文字按钮。 */
+var ACTION_ICON = {
+    research: "▶",
+    reclaim: "↓"
+};
+
+/* 无 data-desc 的条目使用这段兜底说明 */
+var DEFAULT_DESC = "研发完成后面向该零件产出制造蓝图，之后可据蓝图制造与装配。";
+
+/* 每个树各自记录上一次的搜索词与折叠快照（键为树的 id） */
+var lastQuery = {};
+var collapseSnap = {};
+
+/* 当前选中的行，供详情面板底部的按钮回指它所描述的树节点 */
+var currentRow = null;
+
+/* ---------- 基础工具 ---------- */
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+function setClass(el, cls, on) {
+    if (el == null) return;
+    if (on) el.classList.add(cls);
+    else el.classList.remove(cls);
+}
+
+/* 只绑一次监听器：用属性做标记，避免 Document 刷新或重复初始化时叠加监听
+   （AUI 内置资源管理器同款做法） */
+function bindOnce(el, type, fn) {
+    if (el == null) return;
+    if (attr(el, "data-java-bound") === "1") return;
+    el.setAttribute("data-java-bound", "1");
+    el.addEventListener(type, function (event) { fn(el, event); });
+}
+
+/* 统一的属性读取口。
+   必须显式 String(...)：AUI 侧 getAttribute 返回的是 Java String，Rhino 会把
+   其上的方法调用派发到 Java 的同名方法——例如 split("|") 会落到
+   java.lang.String.split(String regex)，正则里的 "|" 是交替，于是按字符切开。
+   String(...) 之后拿到的是 JS 字符串原语，方法语义与浏览器一致。
+   属性的数据格式因此也只用 "," 与 ";"（两者在 ES 与 Java 正则下都是字面量）。 */
+function attr(el, name) {
+    if (el == null) return "";
+    var value = el.getAttribute(name);
+    return value == null ? "" : String(value);
+}
+
+/* attr 的“可能缺省”版本：未声明该属性时返回 null，用于区分“无”与“空串” */
+function attrOrNull(el, name) {
+    if (el == null || !el.hasAttribute(name)) return null;
+    return attr(el, name);
+}
+
+function labelOf(row) {
+    var el = row.querySelector(".n-label");
+    return el == null ? "" : String(el.textContent);
+}
+
+function iconOf(row) {
+    var el = row.querySelector(".n-icon-tex");
+    return el == null ? "" : attr(el, "src");
+}
+
+/* .node-row 的直接子容器中，第 2 个元素（存在时）是 .tree-children */
+function childrenBox(node) {
+    return node.children.length > 1 ? node.children[1] : null;
+}
+
+function hasChildren(row) {
+    var node = row.parentNode;
+    return node != null && node.children.length > 1;
+}
+
+/* ==========================================================================
+   标签页切换
+   ========================================================================== */
+
+function initTabStrip() {
+    var strip = $("tab-strip");
+    if (strip == null) return;
+    for (var i = 0; i < strip.children.length; i++) {
+        bindOnce(strip.children[i], "click", onTabClick);
+    }
+}
+
+function onTabClick(item) {
+    var names = ["research", "library"];
+    for (var i = 0; i < names.length; i++) {
+        var on = item === $("tab-btn-" + names[i]);
+        setClass($("tab-btn-" + names[i]), "active", on);
+        setClass($("tab-" + names[i]), "active", on);
+    }
+}
+
+/* ==========================================================================
+   树的通用交互：选中 / 折叠 / 搜索 / 全部展开折叠
+   ========================================================================== */
+
+function initTree(tree) {
+    var rows = tree.getElementsByClassName("node-row");
+    for (var i = 0; i < rows.length; i++) {
+        bindOnce(rows[i], "click", onRowClick);
+    }
+    var buttons = tree.parentNode.parentNode.getElementsByClassName("toolbar-btn");
+    for (var j = 0; j < buttons.length; j++) {
+        bindOnce(buttons[j], "click", onToolbarBtn);
+    }
+    var input = $("search-" + attr(tree, "data-detail").replace("detail-", ""));
+    if (input != null) bindOnce(input, "input", onSearchInput);
+
+    if (attr(tree, "data-row-actions") === "on") applyRowActions(tree);
+
+    /* 默认选中项：优先取标了 data-default 的行，否则取第一个叶子 */
+    var target = tree.querySelector(".node-row[data-default='1']");
+    if (target == null) target = tree.querySelector(".node-row[data-leaf]");
+    if (target != null) selectRow(target);
+}
+
+/* 行内动作区：按行上的 data-actions 生成，等价于实施阶段由 Java 渲染器产出的部分。
+   只对研发树启用——蓝图库条目有四个动作，放进行内会挤没名称（见页面注释）。 */
+function applyRowActions(tree) {
+    var rows = tree.getElementsByClassName("node-row");
+    for (var i = 0; i < rows.length; i++) {
+        var html = rowActionsHtml(rows[i]);
+        if (html === "") continue;
+        var box = document.createElement("span");
+        box.setAttribute("class", "n-actions");
+        box.innerHTML = html;
+        rows[i].appendChild(box);
+    }
+}
+
+function onRowClick(row, event) {
+    var hit = event == null ? null : event.target;
+    if (hit != null && hit.classList != null
+        && (hit.classList.contains("btn-sm") || hit.classList.contains("btn-icon"))) {
+        return;                       /* 行内动作按钮：原型期不做动作 */
+    }
+    if (hit != null && hit.classList != null
+        && hit.classList.contains("n-toggle") && hasChildren(row)) {
+        toggleNode(row.parentNode);
+        return;
+    }
+    selectRow(row);
+}
+
+function toggleNode(node) {
+    if (childrenBox(node) == null) return;
+    node.classList.toggle("collapsed", !node.classList.contains("collapsed"));
+}
+
+function onToolbarBtn(btn) {
+    var tree = $(attr(btn, "data-tree"));
+    if (tree == null) return;
+    var collapse = attr(btn, "data-act") === "collapse";
+    var nodes = tree.getElementsByClassName("tree-node");
+    for (var i = 0; i < nodes.length; i++) {
+        if (childrenBox(nodes[i]) != null) setClass(nodes[i], "collapsed", collapse);
+    }
+}
+
+function selectRow(row) {
+    var tree = row.closest(".tree");
+    if (tree == null) return;
+    var selected = tree.getElementsByClassName("node-row");
+    for (var i = 0; i < selected.length; i++) {
+        selected[i].classList.remove("selected");
+    }
+    row.classList.add("selected");
+    renderDetail(tree, row);
+}
+
+/* ---------- 搜索：命中子节点时保留祖先链，命中组名时展开该组 ---------- */
+
+function onSearchInput(input) {
+    var tree = $(attr(input, "data-tree"));
+    if (tree == null) return;
+    var query = input.value == null ? "" : input.value;
+    var key = tree.id;
+    var previous = lastQuery[key] == null ? "" : lastQuery[key];
+    if (previous === query) return;
+
+    if (previous === "" && query !== "") {
+        collapseSnap[key] = snapshotCollapse(tree);   /* 进入搜索：记住原折叠状态 */
+    }
+    if (query === "") restoreCollapse(tree);
+
+    lastQuery[key] = query;
+    var roots = tree.children;
+    for (var i = 0; i < roots.length; i++) {
+        filterNode(roots[i], query.toLowerCase(), false);
+    }
+}
+
+/* 折叠快照：把当前折叠的节点 id 串起来（节点 id 取自行上的 data-id） */
+function snapshotCollapse(tree) {
+    var nodes = tree.getElementsByClassName("tree-node");
+    var out = [];
+    for (var i = 0; i < nodes.length; i++) {
+        if (childrenBox(nodes[i]) != null && nodes[i].classList.contains("collapsed")) {
+            out.push(nodeKey(nodes[i]));
+        }
+    }
+    return out.join(",");
+}
+
+function nodeKey(node) {
+    var row = node.children.length > 0 ? node.children[0] : null;
+    if (row == null) return "";
+    var id = attr(row, "data-id");
+    return id == null ? "" : id;
+}
+
+function restoreCollapse(tree) {
+    var key = tree.id;
+    var saved = collapseSnap[key] == null ? "" : collapseSnap[key];
+    var want = saved === "" ? [] : saved.split(",");
+    var nodes = tree.getElementsByClassName("tree-node");
+    for (var i = 0; i < nodes.length; i++) {
+        var k = nodeKey(nodes[i]);
+        var was = false;
+        for (var j = 0; j < want.length; j++) {
+            if (want[j] === k) { was = true; break; }
+        }
+        setClass(nodes[i], "collapsed", was);
+        nodes[i].style.display = "";
+    }
+}
+
+/* 递归过滤：返回该节点是否可见；forceAll 表示祖先已命中，整棵展开 */
+function filterNode(node, query, forceAll) {
+    var row = node.children.length > 0 ? node.children[0] : null;
+    if (row == null) return false;
+    var kids = childrenBox(node);
+    var self = forceAll;
+    if (!self && query !== "") {
+        self = labelOf(row).toLowerCase().indexOf(query) >= 0;
+    }
+    var hit = false;
+    if (kids != null) {
+        for (var i = 0; i < kids.children.length; i++) {
+            if (filterNode(kids.children[i], query, self)) hit = true;
+        }
+    }
+    var visible = query === "" || self || hit;
+    node.style.display = visible ? "" : "none";
+    if (kids != null && query !== "") setClass(node, "collapsed", !visible);
+    return visible;
+}
+
+/* ==========================================================================
+   详情面板：按行上的 data-* 属性重建内容
+   每次整体重建而非原地改文本——AUI 对原地重写 innerText 不会触发重渲染
+   ========================================================================== */
+
+function renderDetail(tree, row) {
+    var box = $(attr(tree, "data-detail"));
+    if (box == null) return;
+    currentRow = row;
+    var kind = attr(row, "data-kind");
+    if (kind === "group") box.innerHTML = groupDetail(row);
+    else if (attrOrNull(row, "data-leaf") === "blueprint") box.innerHTML = blueprintDetail(row);
+    else box.innerHTML = researchDetail(row);
+}
+
+/* 组详情底部的展开 / 折叠按钮：作用于当前选中的组 */
+function initDetailPane(box) {
+    bindOnce(box, "click", onDetailClick);
+}
+
+function onDetailClick(box, event) {
+    var hit = event == null ? null : event.target;
+    if (hit == null || hit.classList == null || !hit.classList.contains("btn-sm")) return;
+    var act = attr(hit, "data-act");
+    if (act !== "expand" && act !== "collapse") return;
+    if (currentRow == null || currentRow.parentNode == null) return;
+    var node = currentRow.parentNode;
+    if (childrenBox(node) == null) return;
+    setClass(node, "collapsed", act === "collapse");
+}
+
+/* ---------- 组详情：进度与状态分布 ---------- */
+
+function groupDetail(row) {
+    var label = labelOf(row);
+    var sub = attrOrNull(row, "data-sub");
+    var leaves = row.parentNode.getElementsByClassName("node-row");
+    var items = [];
+    for (var i = 0; i < leaves.length; i++) {
+        if (attrOrNull(leaves[i], "data-leaf") != null) items.push(leaves[i]);
+    }
+
+    /* 按状态归并计数，保持首次出现的顺序 */
+    var names = [];
+    var counts = [];
+    var tones = [];
+    for (var m = 0; m < items.length; m++) {
+        var status = attr(items[m], "data-status");
+        var index = names.indexOf(status);
+        if (index < 0) {
+            names.push(status);
+            counts.push(0);
+            tones.push(attr(items[m], "data-tone"));
+            index = names.length - 1;
+        }
+        counts[index] = counts[index] + 1;
+    }
+
+    var doneIndex = names.indexOf("已完成");
+    var done = doneIndex < 0 ? 0 : counts[doneIndex];
+    var isLibrary = attr(row, "data-mode") === "library";
+
+    var h = '<div class="detail-head">';
+    h += '<div class="detail-title">' + label + '</div>';
+    h += '<div class="detail-sub">' + (sub == null ? "无所属组" : sub) + '</div>';
+    h += '<div class="detail-status tone-ready">'
+       + (isLibrary ? items.length + " 份蓝图" : "已完成 " + done + " / " + items.length)
+       + '</div>';
+    h += '</div>';
+
+    h += '<div class="detail-body">';
+    h += '<div class="sect"><div class="sect-head">状态分布</div>';
+    for (var k = 0; k < names.length; k++) {
+        h += '<div class="dist-row"><span class="dist-name tone-' + tones[k] + '">'
+           + names[k] + '</span><span class="dist-count">' + counts[k] + '</span></div>';
+    }
+    h += '</div>';
+
+    h += '<div class="sect"><div class="sect-head">说明</div><div class="sect-text">'
+       + (isLibrary
+            ? "蓝图库按来源分层：本地保存的设计可取出、重印、改名或删除；内容包蓝图只读，可取出与重印。"
+            : "组头显示该组名称与“已完成 / 总数”，兼作进度总览。组内条目按前置关系缩进，"
+              + "缩进连接线表示依赖层级；不可研发的条目置于组根层并标注原因。")
+       + '</div></div>';
+    h += '</div>';
+
+    h += '<div class="detail-foot">'
+       + '<div class="btn-sm" data-act="expand">展开全部</div>'
+       + '<div class="btn-sm" data-act="collapse">折叠全部</div>'
+       + '</div>';
+    return h;
+}
+
+/* ---------- 研发条目详情：产物 / 研发点 / 材料 / 前置 / 说明 ---------- */
+
+function researchDetail(row) {
+    var id = attr(row, "data-id");
+    var label = labelOf(row);
+    var status = attr(row, "data-status");
+    var tone = attr(row, "data-tone");
+    var icon = iconOf(row);
+    var cost = attrOrNull(row, "data-cost");
+    var mats = attrOrNull(row, "data-mats");
+    var pres = attr(row, "data-prereqs");
+    var note = attrOrNull(row, "data-note");
+    var desc = attrOrNull(row, "data-desc");
+    var reason = attrOrNull(row, "data-reason");
+
+    var h = '<div class="detail-head">';
+    h += '<div class="detail-title">' + label + '</div>';
+    h += '<div class="detail-sub">machine_max:' + id + '</div>';
+    h += '<div class="detail-status tone-' + tone + '">' + status + '</div>';
+    h += '</div>';
+
+    h += '<div class="detail-body">';
+
+    if (reason != null) {
+        h += '<div class="sect"><div class="block-reason">'
+           + '<span class="br-title">不可研发</span>'
+           + '<span class="br-text">' + reason + '</span></div></div>';
+    }
+
+    /* 产物预览：无产物的通用研究条目用 data-nopreview="1" 标记 */
+    h += '<div class="sect"><div class="sect-head">产物预览</div>';
+    if (attr(row, "data-nopreview") === "1") {
+        h += '<div class="preview-box"><span class="pb-hint">无可预览产物</span></div>';
+    } else {
+        h += '<div class="preview-box">'
+           + '<texture class="pb-tex" src="' + icon + '"></texture>'
+           + '<span class="pb-name">' + label + ' ×1</span></div>';
+    }
+    h += '</div>';
+
+    if (cost != null) {
+        h += '<div class="sect"><div class="sect-head">研发点</div>'
+           + '<div class="cost-row"><span class="cost-value">' + cost
+           + '<span class="cost-unit">RP</span></span></div></div>';
+    }
+
+    if (mats != null) {
+        h += '<div class="sect"><div class="sect-head">研发材料</div>';
+        h += matsHtml(mats);
+        h += '</div>';
+    }
+
+    h += '<div class="sect"><div class="sect-head">前置条件</div>';
+    if (pres == null || pres === "") {
+        h += '<div class="sect-text">无前置条件，位于组根层。</div>';
+    } else {
+        h += presHtml(pres);
+    }
+    h += '</div>';
+
+    h += '<div class="sect"><div class="sect-head">说明</div>'
+       + '<div class="sect-text">' + (desc == null ? DEFAULT_DESC : desc) + '</div>';
+    if (note != null) h += '<div class="sect-text">' + note + '</div>';
+    h += '</div>';
+
+    h += '</div>';
+    h += '<div class="detail-foot">' + actionsHtml(row) + '</div>';
+    return h;
+}
+
+/* 材料串：名称,已有,需要;名称,已有,需要。分隔符只用 "," 与 ";"，
+   两者在 ES 与 Java 正则下都是字面量。 */
+function matsHtml(mats) {
+    var parts = mats.split(";");
+    var h = "";
+    for (var i = 0; i < parts.length; i++) {
+        if (parts[i] === "") continue;
+        var f = parts[i].split(",");
+        var have = parseInt(f[1], 10);
+        var need = parseInt(f[2], 10);
+        var ok = have >= need;
+        var percent = need > 0 ? Math.round(have * 100 / need) : 100;
+        if (percent > 100) percent = 100;
+        h += '<div class="mat-row ' + (ok ? "ok" : "lack") + '">'
+           + '<div class="mat-head"><span class="mat-name">' + f[0] + '</span>'
+           + '<span class="mat-count">' + have + ' / ' + need + '</span></div>'
+           + '<div class="mat-track"><div class="mat-fill" style="width:' + percent + '%"></div></div>'
+           + '</div>';
+    }
+    return h;
+}
+
+/* 前置串：名称,done 或 名称,todo，第三段为 other 表示该前置位于其他分组 */
+function presHtml(pres) {
+    var parts = pres.split(";");
+    var h = "";
+    for (var i = 0; i < parts.length; i++) {
+        if (parts[i] === "") continue;
+        var f = parts[i].split(",");
+        var done = f[1] === "done";
+        h += '<div class="pre-row ' + (done ? "done" : "todo") + '">'
+           + '<span class="pre-mark"></span>'
+           + '<span class="pre-name">' + f[0] + '</span>'
+           + (f[2] === "other" ? '<span class="pre-outside">其他分组</span>' : '')
+           + '<span class="pre-state">' + (done ? "已完成" : "未完成") + '</span></div>';
+    }
+    return h;
+}
+
+/* ---------- 蓝图详情：属性 / 3D 预览 / 来源 ---------- */
+
+function blueprintDetail(row) {
+    var id = attr(row, "data-id");
+    var label = labelOf(row);
+    var status = attr(row, "data-status");
+    var tone = attr(row, "data-tone");
+    var src = attr(row, "data-src");
+    var template = attrOrNull(row, "data-template");
+    var parts = attrOrNull(row, "data-parts");
+    var mass = attrOrNull(row, "data-mass");
+    var cost = attrOrNull(row, "data-cost");
+    var time = attrOrNull(row, "data-time");
+    var desc = attrOrNull(row, "data-desc");
+    var reason = attrOrNull(row, "data-reason");
+    var isLocal = src === "本地保存";
+
+    var h = '<div class="detail-head">';
+    h += '<div class="detail-title">' + label + '</div>';
+    h += '<div class="detail-sub">' + id + '</div>';
+    h += '<div class="detail-status tone-' + tone + '">' + status + '</div>';
+    h += '</div>';
+
+    h += '<div class="detail-body">';
+
+    if (reason != null) {
+        h += '<div class="sect"><div class="bp-error">'
+           + '<span class="be-title">' + status + '</span>'
+           + '<span class="be-text">' + reason + '</span></div></div>';
+    }
+
+    h += '<div class="sect"><div class="sect-head">预览</div>'
+       + '<div class="preview-box"><span class="pb-hint">3D 预览（PartModelElement）</span></div></div>';
+
+    if (parts != null) {
+        h += '<div class="sect"><div class="sect-head">成品属性</div>'
+           + '<div class="bp-stats">'
+           + statCell(parts, "零件")
+           + statCell(mass, "质量 kg")
+           + statCell(cost, "费用 RP")
+           + '</div></div>';
+    }
+
+    h += '<div class="sect"><div class="sect-head">来源</div>';
+    h += '<div class="kv-row"><span class="kv-key">来源</span><span class="kv-val">' + src + '</span></div>';
+    if (template != null) {
+        h += '<div class="kv-row"><span class="kv-key">装配模板</span><span class="kv-val">' + template + '</span></div>';
+    }
+    if (time != null) {
+        h += '<div class="kv-row"><span class="kv-key">保存时间</span><span class="kv-val">' + time + '</span></div>';
+    }
+    h += '<div class="kv-row"><span class="kv-key">写入权限</span><span class="kv-val">'
+       + (isLocal ? "可改名 / 可删除" : "只读") + '</span></div>';
+    h += '</div>';
+
+    h += '<div class="sect"><div class="sect-head">说明</div><div class="sect-text">'
+       + (desc == null
+            ? (isLocal ? "本地保存的载具设计，可取出成品、重印蓝图或整理条目。"
+                       : "内容包自带的成品蓝图，只读；可取出成品或重印一份蓝图。")
+            : desc)
+       + '</div></div>';
+
+    h += '</div>';
+    h += '<div class="detail-foot">' + actionsHtml(row) + '</div>';
+    return h;
+}
+
+function statCell(value, label) {
+    return '<div class="bp-stat"><span class="bp-stat-value">' + (value == null ? "—" : value) + '</span>'
+         + '<span class="bp-stat-label">' + label + '</span></div>';
+}
+
+/* ---------- 动作按钮 ---------- */
+
+/* 详情面板底部：文字按钮，标签完整，承担图标的含义说明 */
+function actionsHtml(row) {
+    var list = actionList(row);
+    var h = "";
+    for (var i = 0; i < list.length; i++) {
+        h += buttonHtml(list[i], ACTION_LABEL[list[i].key], "btn-sm");
+    }
+    return h === "" ? '<span class="sect-text">当前状态无可执行操作</span>' : h;
+}
+
+/* 行内：有图标的用方形图标按钮，没有的退化为文字按钮 */
+function rowActionsHtml(row) {
+    var list = actionList(row);
+    var h = "";
+    for (var i = 0; i < list.length; i++) {
+        var icon = ACTION_ICON[list[i].key];
+        h += icon == null
+            ? buttonHtml(list[i], ACTION_LABEL[list[i].key], "btn-sm")
+            : buttonHtml(list[i], icon, "btn-icon");
+    }
+    return h;
+}
+
+/* 解析 data-actions，形如 research:1,delete:0（:0 表示禁用） */
+function actionList(row) {
+    var raw = attr(row, "data-actions");
+    if (raw == null || raw === "") return [];
+    var parts = raw.split(",");
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+        var f = parts[i].split(":");
+        var key = f[0];
+        if (ACTION_LABEL[key] == null) continue;
+        out.push({ key: key, enabled: f.length < 2 || f[1] !== "0" });
+    }
+    return out;
+}
+
+function buttonHtml(action, text, baseClass) {
+    var label = ACTION_LABEL[action.key];
+    var cls = baseClass;
+    if (ACTION_PRIMARY[action.key] === 1) cls += " primary";
+    if (ACTION_DANGER[action.key] === 1) cls += " danger";
+    if (!action.enabled) cls += " disabled";
+    /* 图标按钮补一个 title，浏览器预览里悬停能看到含义；游戏内该属性被忽略 */
+    var title = text === label ? "" : ' title="' + label + '"';
+    return '<div class="' + cls + '"' + title + '>' + text + '</div>';
+}
+
+/* ---------- 启动 ---------- */
+
+var booted = false;
+
+function initPrototype() {
+    if (booted) return;
+    booted = true;
+    initTabStrip();
+    initTree($("tree-research"));
+    initTree($("tree-library"));
+    initDetailPane($("detail-research"));
+    initDetailPane($("detail-library"));
+}
+
+/* DOMContentLoaded 与 body 的 load 都挂一次：AUI 在解析完成后派发它们，
+   哪个先到就先初始化，booted 保证不会重复执行 */
+document.addEventListener("DOMContentLoaded", function () { initPrototype(); });
+if (document.body != null) {
+    document.body.addEventListener("load", function () { initPrototype(); });
+}
+</script>
+
+</body>
