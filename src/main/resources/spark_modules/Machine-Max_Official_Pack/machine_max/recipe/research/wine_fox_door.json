@@ -1,21 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:wine_fox"],
   "research_cost": 100,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
+  "prerequisites": ["machine_max:research/wine_fox_hull"],
   "icon": "machine_max:textures/icon/wine_fox/wine_fox_door_icon.png",
   "description": "research.machine_max.wine_fox_door_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/wine_fox_door"

@@ -3,8 +3,6 @@ package io.github.sweetzonzi.machine_max.client.compat.jei;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.compat.jei.category.BlueprintResearchRecipeCategory;
 import io.github.sweetzonzi.machine_max.client.compat.jei.category.FabricatingRecipeCategory;
-import io.github.sweetzonzi.machine_max.client.compat.jei.handler.BlueprintResearchJeiHandler;
-import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlocks;
@@ -19,7 +17,6 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
-import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -40,8 +37,6 @@ public class MMJeiPlugin implements IModPlugin {
     // JEI 插件唯一 ID，仅在安装 JEI 时由 JEI 侧扫描并加载。
     private static final ResourceLocation PLUGIN_UID =
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "jei_plugin");
-
-    private final BlueprintResearchJeiHandler researchJeiHandler = new BlueprintResearchJeiHandler();
 
     @Override
     public @NotNull ResourceLocation getPluginUid() {
@@ -107,11 +102,6 @@ public class MMJeiPlugin implements IModPlugin {
 
         registration.addRecipes(MMJeiRecipeTypes.FABRICATING, fabricatingRecipes);
         registration.addRecipes(MMJeiRecipeTypes.BLUEPRINT_RESEARCH, blueprintResearchRecipes);
-    }
-
-    @Override
-    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        registration.addGuiContainerHandler(BlueprintResearchScreen.class, researchJeiHandler);
     }
 
     @Override

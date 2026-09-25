@@ -22,14 +22,20 @@ client/
 │   │       ├── ResearchTableBlockEntityRenderer.java
 │   │       └── TotalStationBlockEntityRenderer.java
 │   ├── gui/
-│   │   ├── screen/               # 7 个游戏屏幕
+│   │   ├── screen/               # 6 个游戏屏幕
 │   │   │   ├── VehicleControlScreen.java  # AUI 载具控制面板
 │   │   │   ├── FabricatingScreen.java     # 制造屏幕
 │   │   │   ├── BlueprintResearchScreen.java
 │   │   │   ├── ItemStorageSubsystemScreen.java
 │   │   │   ├── VehicleNamingScreen.java
-│   │   │   ├── WelcomeScreen.java
-│   │   │   └── ResearchState.java
+│   │   │   └── WelcomeScreen.java
+│   │   ├── research/             # 研究台界面：树数据装配与渲染（6 个文件）
+│   │   │   ├── ResearchTreeData.java        # 研发树数据装配
+│   │   │   ├── ResearchTreeNode.java        # 树节点模型
+│   │   │   ├── ResearchTreeView.java        # 树渲染与交互
+│   │   │   ├── ResearchDetailRenderer.java  # 右侧详情渲染
+│   │   │   ├── BlueprintLibraryTreeData.java # 蓝图库树数据装配
+│   │   │   └── ResearchHtml.java            # 界面 HTML 片段工具
 │   │   ├── hud/                  # HUD 叠加层
 │   │   │   ├── AssemblyHud.java
 │   │   │   ├── CustomHud.java

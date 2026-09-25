@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.block.research_table;
 
 import com.mojang.serialization.MapCodec;
+import io.github.sweetzonzi.machine_max.network.payload.research.ResearchScreenOpenPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,6 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -139,10 +142,10 @@ public class ResearchTableBlock extends BaseEntityBlock {
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockPos mainPos = getMainPos(pos, state);
-        BlockEntity be = level.getBlockEntity(mainPos);
-
-        if (be instanceof ResearchTableBlockEntity researchTable) {
-            player.openMenu(researchTable);
+        if (level.getBlockEntity(mainPos) instanceof ResearchTableBlockEntity
+                && player instanceof ServerPlayer serverPlayer) {
+            // 研究台界面由纯 Screen 承载，开屏改由服务端下发载荷
+            PacketDistributor.sendToPlayer(serverPlayer, new ResearchScreenOpenPayload());
             return InteractionResult.CONSUME;
         }
 

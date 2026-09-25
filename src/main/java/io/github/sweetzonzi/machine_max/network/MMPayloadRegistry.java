@@ -217,25 +217,20 @@ public class MMPayloadRegistry {
                 ResearchCompleteRequestPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ResearchCompleteRequestHandler::handler)
         );
-        research.playToServer(//玩家获取研发产物
-                ResearchClaimPayload.TYPE,
-                ResearchClaimPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchClaimHandler::handler)
-        );
-        research.playToServer(//玩家消耗研发点重新获取已研发蓝图
-                ResearchReclaimPayload.TYPE,
-                ResearchReclaimPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchReclaimHandler::handler)
+        research.playToServer(//玩家消耗空白蓝图抄录已研发条目的制造蓝图
+                ResearchTranscribePayload.TYPE,
+                ResearchTranscribePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchTranscribeHandler::handler)
         );
         research.playToClient(//通知客户端蓝图研发完成
                 ResearchCompletePayload.TYPE,
                 ResearchCompletePayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ResearchCompleteHandler::handler)
         );
-        research.playToClient(//同步玩家蓝图研发产物
-                ResearchProductSyncPayload.TYPE,
-                ResearchProductSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchProductSyncHandler::handler)
+        research.playToClient(//通知客户端打开研究台界面
+                ResearchScreenOpenPayload.TYPE,
+                ResearchScreenOpenPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchScreenOpenHandler::handler)
         );
         research.playToClient(//同步玩家研发数据
                 ResearchAttachmentSyncPayload.TYPE,

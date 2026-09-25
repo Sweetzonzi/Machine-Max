@@ -21,11 +21,8 @@
 html {
     height: 100%;
 
-    /* 原型专有底衬。整页的半透明深色是按“屏幕后面还有 Minecraft 世界与
-       屏幕遮罩”设计的；浏览器预览时后面是白色画布，半透明深色会被冲成中灰，
-       正文与背景就混为一色。正式实现时由游戏画面充当这层底衬，这条删掉即可。
-       #14171D 接近游戏内遮罩后的屏幕亮度，也留出了左右两栏明暗差的空间。 */
-    background: #14171D;
+    /* 页面自身不铺底衬：底衬由承载它的 Minecraft 屏幕遮罩提供，
+       左右两栏的明暗差来自 .pane-tree / .pane-detail 自己的半透明底色。 */
 }
 
 /* ---------- 全局重置 ---------- */
@@ -58,7 +55,6 @@ body {
        且浏览器对小字号有下限（Chrome 中文最小字号），7~8px 的文本会被放大，
        行距看着比游戏内松——字号不要照浏览器观感调。 */
     font-family: unset;
-    background: #14171D;                   /* 原型底衬，见 html 一节的说明 */
 }
 
 /* ================================================================
@@ -118,6 +114,32 @@ body {
 }
 .tab-item.active .tab-name {
     color: #111111;
+}
+
+/* ---------------- 标签页条右端：自由研发点 ---------------- */
+
+/* 靠占满剩余空间 + 内容右对齐来定位，不用 margin-left:auto：
+   AUI 会把块级子元素的 margin 重复计入。取中性色而非标签页强调色，
+   因为该元素在两个标签页下都要显示。 */
+.tab-points {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-right: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+.tab-points-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+}
+.tab-points-value {
+    color: #E8E8F0;
 }
 
 /* ================================================================
@@ -198,6 +220,14 @@ body {
 
 .search-box {
     flex: 1 1 auto;
+    /* width:100% 只为让本元素的宽度「确定」：AUI 仅在 flex 容器自身宽度确定时
+       （Size.hasDefiniteAutoResolvedWidth）才采用子项的主轴分配，而该判定对
+       「父级是行向 flex 容器」的元素返回 false——本元素的宽度正是父级行向 flex
+       分配的。缺了它，内部 input 的 flex:1 1 auto 不生效，会停在 UA 样式
+       global.css 里 input 的 64px 宽度上：占位文字被 input 的 overflow:hidden
+       截断，可点击区域也只有那 64px。写死的 100% 只让宽度变确定，
+       最终宽度由父级行向 flex 的分配给出。 */
+    width: 100%;
     min-width: 0;
     display: flex;
     flex-direction: row;
@@ -258,8 +288,10 @@ body {
      .tree > .tree-node
        .node-row                     一行
        .tree-children > .tree-node…  子层容器（可缺省）
-   缩进由 .tree-children 的两侧留白累积而成，
-   缩进连接线就是它左边那条 1px 边框。
+
+   缩进与层级引导线都写在行上（.node-row 的行内 padding-left + 多级 inset box-shadow），
+   容器只负责折叠时隐藏子树。原因：AUI 会把块级子元素的 margin-left 计入两次，且嵌套后代的
+   宽度基准不随祖先内容盒收缩；容器带水平留白时每深一层会多跑 10px，行右侧内容被滚动容器裁掉。
    ================================================================ */
 .tree-scroll {
     flex: 1;
@@ -275,16 +307,20 @@ body {
     display: none;
 }
 
-/* 缩进层级：每深一层多 14px 留白。depth ≥ 4 时视觉不再增长，
-   由 Java 侧对更深的层加 .depth-cap 类，这里把额外留白抹平。 */
-.tree-children {
-    margin-left: 10px;
-    padding-left: 5px;
-    border-left: 1px solid rgba(255, 255, 255, 0.14);
+/* --- 层级缩进与引导线 ---
+   每个上级各占一个 .n-guide：缩进由它撑开（12px 宽 + 行内 gap 4px = 每层 16px），
+   竖线由内部的 .n-guide-line 画。行内元素只参与行的 flex 排布，行本身的宽度与位置不变，
+   因此不会踩到 AUI 对嵌套容器水平留白的结算偏差（见顶部说明）。 */
+.n-guide {
+    flex: 0 0 auto;
+    width: 12px;
+    align-self: stretch;
+    display: flex;
+    justify-content: center;
 }
-.tree-children.depth-cap {
-    margin-left: 2px;
-    padding-left: 2px;
+.n-guide-line {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .node-row {

@@ -1,0 +1,98 @@
+<!--
+  研究台界面 — 研发 / 蓝图库
+  ==========================================================================
+  这是 BlueprintResearchScreen 的页面骨架。树与详情的内容全部由 Java 侧渲染成
+  HTML 片段后写入 #tree-research、#tree-library、#detail-research、#detail-library，
+  标签页条右端的自由研发点数值写入 #tab-points-value；
+  页面本身只承担标签页条、搜索框、工具栏与四个空容器。
+
+  样式分离（与载具控制面板同构）：
+    research_ui.css           公共部分：重置、标签页条、双栏骨架、树、详情骨架
+    research_ui_research.css  研发标签页：橙色主题、材料/研发点/前置区块
+    research_ui_library.css   蓝图库标签页：蓝色主题、蓝图属性区块
+
+  静态标签用 <translation> 元素取语言键；带参数的文案由 Java 侧格式化后写入节点。
+
+  页面结构对照静态原型（research_ui_prototype.html）逐节点一致，
+  原型即本页的外壳，区别只是数据来自 Java 而非页面脚本。
+  ==========================================================================
+-->
+
+<!-- 公共样式 -->
+<link rel="stylesheet" href="research_ui.css">
+<!-- Tab 专用样式 -->
+<link rel="stylesheet" href="research_ui_research.css">
+<link rel="stylesheet" href="research_ui_library.css">
+
+<body>
+
+  <!-- ================= 顶部标签页条 ================= -->
+  <div class="tab-strip" id="tab-strip">
+    <div class="tab-item active" id="tab-btn-research" data-tab="research">
+      <span class="tab-index">01</span>
+      <span class="tab-name"><translation>gui.machine_max.research.tab.research</translation></span>
+    </div>
+    <div class="tab-item" id="tab-btn-library" data-tab="library">
+      <span class="tab-index">02</span>
+      <span class="tab-name"><translation>gui.machine_max.research.tab.library</translation></span>
+    </div>
+    <!-- 右端：玩家现有自由研发点数，数值由 Java 侧写入 #tab-points-value -->
+    <div class="tab-points" id="tab-points">
+      <span class="tab-points-label"><translation>gui.machine_max.research.free_rp</translation></span>
+      <span class="tab-points-value" id="tab-points-value"></span>
+    </div>
+  </div>
+
+  <div class="panel-content" id="panel-body">
+
+    <!-- ================= Tab 01: 研发 ================= -->
+    <div class="page active" id="tab-research">
+      <div class="ui-split">
+
+        <!-- 左窗格：组 → 依赖层级 -->
+        <div class="pane-tree">
+          <div class="tree-toolbar">
+            <div class="search-box">
+              <span class="search-icon">/</span>
+              <input type="text" id="search-research">
+            </div>
+            <div class="toolbar-btn" id="btn-research-expand"><translation>gui.machine_max.research.expand_all</translation></div>
+            <div class="toolbar-btn" id="btn-research-collapse"><translation>gui.machine_max.research.collapse_all</translation></div>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree" id="tree-research"></div>
+          </div>
+        </div>
+
+        <!-- 右窗格：选中项详情 -->
+        <div class="pane-detail" id="detail-research"></div>
+
+      </div>
+    </div>
+
+    <!-- ================= Tab 02: 蓝图库 ================= -->
+    <div class="page" id="tab-library">
+      <div class="ui-split">
+
+        <div class="pane-tree">
+          <div class="tree-toolbar">
+            <div class="search-box">
+              <span class="search-icon">/</span>
+              <input type="text" id="search-library">
+            </div>
+            <div class="toolbar-btn" id="btn-library-expand"><translation>gui.machine_max.research.expand_all</translation></div>
+            <div class="toolbar-btn" id="btn-library-collapse"><translation>gui.machine_max.research.collapse_all</translation></div>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree" id="tree-library"></div>
+          </div>
+        </div>
+
+        <div class="pane-detail" id="detail-library"></div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>

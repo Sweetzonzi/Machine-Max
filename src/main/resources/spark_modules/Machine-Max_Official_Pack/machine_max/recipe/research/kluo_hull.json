@@ -1,21 +1,8 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:kluo"],
   "research_cost": 100,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 2
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
   "icon": "machine_max:textures/icon/kluo/kluo_hull_icon.png",
   "description": "research.machine_max.kluo_hull_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/kluo_hull"

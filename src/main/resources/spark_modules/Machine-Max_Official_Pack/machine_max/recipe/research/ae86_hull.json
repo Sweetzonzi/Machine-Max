@@ -1,27 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:ae86"],
   "research_cost": 110,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "machine_max:structural_component_1"
-      },
-      "count": 5
-    },
-    {
-      "ingredient": {
-        "item": "machine_max:electronic_component_1"
-      },
-      "count": 2
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
+  "prerequisites": ["machine_max:research/ae86_chassis"],
   "icon": "machine_max:textures/icon/ae86/ae86_hull_icon.png",
   "description": "research.machine_max.ae86_hull_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/ae86_hull"

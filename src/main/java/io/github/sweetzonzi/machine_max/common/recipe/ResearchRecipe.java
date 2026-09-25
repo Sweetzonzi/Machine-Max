@@ -9,7 +9,10 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -20,9 +23,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 研发项目基类：持有研发点成本、研发材料、前置项目、归属组、图标与描述。
+ *
+ * <p>实现原版 {@link Recipe} 以接入配方数据加载与客户端同步，但研发项目本身不产出物品：
+ * 制造蓝图由抄录动作按 {@code unlock_recipe} 现场产出，见 {@code BlueprintResearchRecipe}。</p>
+ */
 @Getter
-public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<FabricatingInput> {
+public class ResearchRecipe implements Recipe<FabricatingInput> {
+    private final int researchCost;
+    private final List<IngredientCountPair> researchIngredientPairs;
+    private final List<Ingredient> researchIngredientList = new ArrayList<>();
     private final List<ResourceLocation> prerequisites;
+    private final List<ResourceLocation> groups;
     private final ResourceLocation icon;
     private final String tooltip;
 
@@ -31,6 +44,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                     Codec.INT.fieldOf("research_cost").forGetter(ResearchRecipe::getResearchCost),
                     IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(ResearchRecipe::getResearchIngredientPairs),
                     ResourceLocation.CODEC.listOf().optionalFieldOf("prerequisites", List.of()).forGetter(ResearchRecipe::getPrerequisites),
+                    ResourceLocation.CODEC.listOf().optionalFieldOf("groups", List.of()).forGetter(ResearchRecipe::getGroups),
                     ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("textures/missingno.png")).forGetter(ResearchRecipe::getIcon),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(ResearchRecipe::getTooltip)
             ).apply(instance, ResearchRecipe::new)
@@ -50,15 +64,12 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                 ));
             }
 
-            int prerequisiteCount = buffer.readVarInt();
-            List<ResourceLocation> prerequisites = new ArrayList<>(prerequisiteCount);
-            for (int i = 0; i < prerequisiteCount; i++) {
-                prerequisites.add(ResourceLocation.STREAM_CODEC.decode(buffer));
-            }
+            List<ResourceLocation> prerequisites = readIdList(buffer);
+            List<ResourceLocation> groups = readIdList(buffer);
 
             ResourceLocation icon = ResourceLocation.STREAM_CODEC.decode(buffer);
             String tooltip = buffer.readUtf();
-            return new ResearchRecipe(researchPointCost, ingredients, prerequisites, icon, tooltip);
+            return new ResearchRecipe(researchPointCost, ingredients, prerequisites, groups, icon, tooltip);
         }
 
         @Override
@@ -72,27 +83,83 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                 buffer.writeVarInt(pair.count());
             }
 
-            buffer.writeVarInt(recipe.prerequisites.size());
-            for (ResourceLocation prerequisite : recipe.prerequisites) {
-                ResourceLocation.STREAM_CODEC.encode(buffer, prerequisite);
-            }
+            writeIdList(buffer, recipe.prerequisites);
+            writeIdList(buffer, recipe.groups);
 
             ResourceLocation.STREAM_CODEC.encode(buffer, recipe.icon);
             buffer.writeUtf(recipe.tooltip);
         }
     };
 
+    /** 读写资源路径列表，供本类与子类的流编解码共用 */
+    protected static List<ResourceLocation> readIdList(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<ResourceLocation> ids = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            ids.add(ResourceLocation.STREAM_CODEC.decode(buffer));
+        }
+        return ids;
+    }
+
+    /** 写资源路径列表，供本类与子类的流编解码共用 */
+    protected static void writeIdList(RegistryFriendlyByteBuf buffer, List<ResourceLocation> ids) {
+        buffer.writeVarInt(ids.size());
+        for (ResourceLocation id : ids) {
+            ResourceLocation.STREAM_CODEC.encode(buffer, id);
+        }
+    }
+
     public ResearchRecipe(int researchCost,
                           List<IngredientCountPair> researchIngredientPairs,
                           List<ResourceLocation> prerequisites,
+                          List<ResourceLocation> groups,
                           ResourceLocation icon,
                           String tooltip) {
-        super(researchCost, researchIngredientPairs);
+        if (researchCost < 0) {
+            throw new IllegalArgumentException("Research point cost must be non-negative, got: " + researchCost);
+        }
+        this.researchCost = researchCost;
+        this.researchIngredientPairs = researchIngredientPairs;
+        for (IngredientCountPair pair : researchIngredientPairs) {
+            for (int i = 0; i < pair.count(); i++) {
+                researchIngredientList.add(pair.ingredient());
+            }
+        }
         this.prerequisites = prerequisites;
+        this.groups = groups;
         this.icon = icon;
         this.tooltip = tooltip;
     }
 
+    public boolean hasRequiredIngredients(Container container) {
+        return IngredientCountPair.hasRequiredIngredients(container, researchIngredientPairs);
+    }
+
+    public boolean hasRequiredIngredients(List<ItemStack> itemStacks) {
+        return IngredientCountPair.hasRequiredIngredients(itemStacks, researchIngredientPairs);
+    }
+
+    public boolean hasRequiredIngredients(Player player) {
+        return hasRequiredIngredients(player.getInventory());
+    }
+
+    public void consumeIngredients(Container container) {
+        IngredientCountPair.consumeIngredients(container, researchIngredientPairs);
+    }
+
+    public List<ItemStack> consumeIngredients(List<ItemStack> itemStacks) {
+        return IngredientCountPair.consumeIngredients(itemStacks, researchIngredientPairs);
+    }
+
+    public void consumeIngredients(Player player) {
+        consumeIngredients(player.getInventory());
+    }
+
+    public List<ItemStack> getAllPossibleResearchInputs() {
+        return IngredientCountPair.getAllPossibleInputs(researchIngredientPairs);
+    }
+
+    /** 全部前置项目都已完成时返回 true；无前置时恒为 true */
     public boolean isCompletedBy(Set<ResourceLocation> completedResearches) {
         for (ResourceLocation prerequisite : prerequisites) {
             if (!completedResearches.contains(prerequisite)) {

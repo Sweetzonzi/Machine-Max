@@ -181,6 +181,7 @@
           }
         }
       },
+      "custom_recipe": "machine_max:wine_fox_gt_bumper",
       "registry_key": "machine_max:wine_fox_gt_bumper",
       "name": "machine_max.wine_fox_gt_bumper",
       "uuid": "ae768d10-d985-481a-be73-73feaa7e72a3",
@@ -226,6 +227,7 @@
           }
         }
       },
+      "custom_recipe": "machine_max:wine_fox_gt_bumper",
       "registry_key": "machine_max:wine_fox_gt_bumper",
       "name": "machine_max.wine_fox_gt_bumper",
       "uuid": "8fd82d9f-c872-4de0-90ac-afb2ca71006b",

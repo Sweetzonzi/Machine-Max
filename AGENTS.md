@@ -44,7 +44,7 @@ io.github.sweetzonzi.machine_max/
 │   │   └── prop/                    # 物品属性类
 │   ├── block/                       # Fabricator, ResearchTable, TotalStation, RoadBase
 │   ├── entity/                      # MMPartEntity, MMProjectileEntity, PartHitHandler ...
-│   ├── menu/                        # FabricatingMenu, BlueprintResearchMenu, VehicleNamingMenu ...
+│   ├── menu/                        # FabricatingMenu, ItemStorageSubsystemMenu, VehicleNamingMenu ...
 │   ├── recipe/                      # ResearchRecipe, FabricatingRecipe
 │   ├── attachment/                  # VehicleAssemblyAttachment, BlueprintAttachment, ControlPreference ...
 │   ├── registry/ (Java)             # MMDamageTypes, MMMenus, MMTags
@@ -54,7 +54,7 @@ io.github.sweetzonzi.machine_max/
 │   ├── render/
 │   │   ├── renderer/                # PartEntityRenderer（主渲染器）, block 渲染器, 投射物渲染器
 │   │   ├── gui/                     # Screen、HUD、3D HUD、动画、面板、控件
-│   │   │   ├── screen/              # VehicleControlScreen, FabricatingScreen 等 7 个屏幕
+│   │   │   ├── screen/              # VehicleControlScreen, FabricatingScreen 等 6 个屏幕
 │   │   │   ├── hud/                 # AssemblyHud, CustomHud, InteractHud
 │   │   │   ├── hud3d/               # AssemblyHud3D 等 3D HUD
 │   │   │   ├── panel/               # 载具信息面板等
@@ -75,8 +75,8 @@ io.github.sweetzonzi.machine_max/
 │   │   ├── assembly/                # 14 个组装相关载荷
 │   │   ├── fabrication/             # 4 个制造相关载荷
 │   │   ├── projectile/              # 2 个投射物载荷
-│   │   └── research/                # 7 个研究系统载荷
-│   ├── handler/research/            # 7 个研究系统处理器
+│   │   └── research/                # 6 个研究系统载荷
+│   ├── handler/research/            # 6 个研究系统处理器
 │   ├── AGENTS.md                    # 子模块智能体指南
 │   └── MMPayloadRegistry.java       # 载荷注册中心
 ├── mixin/                           # 12 个 Mixin（6 服务端 + 6 客户端）

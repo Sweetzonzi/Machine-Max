@@ -13,9 +13,16 @@
       "items": { "$ref": "#/definitions/ingredient_count_pair" },
       "default": []
     },
+    "groups": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "研发条目所属的组 id 列表，缺省表示不归属任何组",
+      "default": []
+    },
     "prerequisites": {
       "type": "array",
       "items": { "type": "string" },
+      "description": "前置研发配方 id 列表。每项为另一条研发配方的完整注册名，即该配方文件在 recipe/ 下的相对路径，例如 research/ae86_chassis 写作 machine_max:research/ae86_chassis",
       "default": []
     },
     "icon": { "$ref": "#/definitions/resource_location" },

@@ -26,10 +26,11 @@ public class ClientRecipeIndexHandler {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRecipesUpdated(RecipesUpdatedEvent event) {
         MMDynamicRes.rebuildFabricatingIndex(event.getRecipeManager(), false);
+        MMDynamicRes.rebuildResearchIndex(event.getRecipeManager(), false);
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        MMDynamicRes.clearFabricatingIndex(false);
+        MMDynamicRes.clearRecipeIndex(false);
     }
 }

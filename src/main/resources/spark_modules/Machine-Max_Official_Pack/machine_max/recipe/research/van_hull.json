@@ -1,23 +1,10 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:van"],
   "research_cost": 150,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:netherite_ingot"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
+  "prerequisites": ["machine_max:research/van_chassis"],
   "icon": "machine_max:textures/icon/van/van_hull_icon.png",
   "description": "research.machine_max.van_hull_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/van_hull"
 }
-

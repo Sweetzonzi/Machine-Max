@@ -1,21 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:senna_gtr"],
   "research_cost": 200,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 4
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
+  "prerequisites": ["machine_max:research/senna_gtr_chassis"],
   "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_bumper_icon.png",
   "description": "research.machine_max.senna_gtr_bumper_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/senna_gtr_bumper"

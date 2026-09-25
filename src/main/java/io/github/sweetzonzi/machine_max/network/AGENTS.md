@@ -11,7 +11,7 @@ network/
 │   ├── assembly/                   # LevelVehicleData, PlayerPartAssemblyCache, VehicleDataSaved 等 14 个
 │   ├── fabrication/                # 制造相关载荷 4 个
 │   ├── projectile/                 # 投射物载荷 2 个
-│   ├── research/                   # FreeRpSync, ResearchCompleteRequest 等 7 个
+│   ├── research/                   # FreeRpSync, ResearchCompleteRequest 等 6 个
 │   ├── ConnectorSyncPayload.java   # 连接器状态同步
 │   ├── ControlBindingPayload.java  # 按键绑定同步
 │   ├── ControlGroupSetEditPayload.java
@@ -24,7 +24,7 @@ network/
 │   ├── SubsystemInteractPayload.java # 子系统交互
 │   ├── SubsystemSyncPayload.java   # 子系统状态同步
 │   └── ViewInputPayload.java       # 视角输入
-└── handler/research/               # 7 个研究系统载荷处理器
+└── handler/research/               # 6 个研究系统载荷处理器
 ```
 
 ## 快速定位

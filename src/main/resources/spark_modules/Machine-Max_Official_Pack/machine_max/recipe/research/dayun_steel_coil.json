@@ -1,21 +1,8 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:dayun"],
   "research_cost": 10,
-  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
-    {
-      "ingredient": {
-        "item": "minecraft:tnt"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
   "icon": "machine_max:textures/icon/dayun/dayun_steel_coil_icon.png",
   "description": "research.machine_max.dayun_steel_coil_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/dayun_steel_coil"

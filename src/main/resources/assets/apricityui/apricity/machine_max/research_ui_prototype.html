@@ -35,6 +35,23 @@
 <link rel="stylesheet" href="research_ui_research.css">
 <link rel="stylesheet" href="research_ui_library.css">
 
+<style>
+  /* 本页是给浏览器看的静态设计记录，缩进沿用「.tree-children 容器留白」的写法。
+     真正实现把缩进与竖线都放进行内（每级一个 .n-guide 元素，见 research_ui.css 顶部说明）：
+     AUI 会把块级子元素的 margin-left 计入两次，且嵌套后代的宽度基准不随祖先内容盒收缩，
+     容器留白会让每深一层多跑 10px、把行右侧的状态与动作挤出滚动容器裁掉；
+     inset box-shadow 又会被 AUI 渲染成色块。原型页在 AUI 里预览同样会看到这些问题。 */
+  .tree-children {
+    margin-left: 10px;
+    padding-left: 5px;
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .tree-children.depth-cap {
+    margin-left: 2px;
+    padding-left: 2px;
+  }
+</style>
+
 <body>
 
   <!-- ================= 顶部标签页条 ================= -->
@@ -621,9 +638,8 @@
           </div>
           <div class="tree-scroll">
             <div class="tree" id="tree-library" data-detail="detail-library">
-              <!-- 本树刻意不给行内动作：蓝图条目有取出/重印/改名/删除四个动作，
-                   放进行内会把名称挤没，因此动作只出现在右侧详情面板底部。
-                   研发树条目最多一个动作，行内展示是可行的，见 data-row-actions="on"。 -->
+              <!-- 行内动作只给「取出」一个（下箭头图标，与研发项抄录一致）——取用蓝图是蓝图库的常用操作。
+                   改名/删除/重印用得少，四个动作全放进行内会把名称挤没，因此它们只出现在右侧详情面板底部。 -->
 
               <!-- 来源一：我的设计（本地保存的蓝图文件） -->
               <div class="tree-node">

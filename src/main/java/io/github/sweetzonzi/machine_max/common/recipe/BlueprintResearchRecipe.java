@@ -15,6 +15,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 蓝图研发项目：在 {@link ResearchRecipe} 之上持有 {@code unlock_recipe}，
+ * 指明该条目被抄录时产出的制造蓝图。
+ */
 @Getter
 public class BlueprintResearchRecipe extends ResearchRecipe {
     private final ResourceLocation unlockRecipe;
@@ -24,6 +28,7 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                     Codec.INT.fieldOf("research_cost").forGetter(BlueprintResearchRecipe::getResearchCost),
                     IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(BlueprintResearchRecipe::getResearchIngredientPairs),
                     ResourceLocation.CODEC.listOf().optionalFieldOf("prerequisites", List.of()).forGetter(BlueprintResearchRecipe::getPrerequisites),
+                    ResourceLocation.CODEC.listOf().optionalFieldOf("groups", List.of()).forGetter(BlueprintResearchRecipe::getGroups),
                     ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("textures/missingno.png")).forGetter(BlueprintResearchRecipe::getIcon),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(BlueprintResearchRecipe::getTooltip),
                     ResourceLocation.CODEC.fieldOf("unlock_recipe").forGetter(BlueprintResearchRecipe::getUnlockRecipe)
@@ -44,16 +49,13 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                 ));
             }
 
-            int prerequisiteCount = buffer.readVarInt();
-            List<ResourceLocation> prerequisites = new ArrayList<>(prerequisiteCount);
-            for (int i = 0; i < prerequisiteCount; i++) {
-                prerequisites.add(ResourceLocation.STREAM_CODEC.decode(buffer));
-            }
+            List<ResourceLocation> prerequisites = readIdList(buffer);
+            List<ResourceLocation> groups = readIdList(buffer);
 
             ResourceLocation icon = ResourceLocation.STREAM_CODEC.decode(buffer);
             String tooltip = buffer.readUtf();
             ResourceLocation unlockRecipe = ResourceLocation.STREAM_CODEC.decode(buffer);
-            return new BlueprintResearchRecipe(researchPointCost, ingredients, prerequisites, icon, tooltip, unlockRecipe);
+            return new BlueprintResearchRecipe(researchPointCost, ingredients, prerequisites, groups, icon, tooltip, unlockRecipe);
         }
 
         @Override
@@ -67,10 +69,8 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                 buffer.writeVarInt(pair.count());
             }
 
-            buffer.writeVarInt(recipe.getPrerequisites().size());
-            for (ResourceLocation prerequisite : recipe.getPrerequisites()) {
-                ResourceLocation.STREAM_CODEC.encode(buffer, prerequisite);
-            }
+            writeIdList(buffer, recipe.getPrerequisites());
+            writeIdList(buffer, recipe.getGroups());
 
             ResourceLocation.STREAM_CODEC.encode(buffer, recipe.getIcon());
             buffer.writeUtf(recipe.getTooltip());
@@ -81,10 +81,11 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
     public BlueprintResearchRecipe(int researchCost,
                                    List<IngredientCountPair> researchIngredientPairs,
                                    List<ResourceLocation> prerequisites,
+                                   List<ResourceLocation> groups,
                                    ResourceLocation icon,
                                    String tooltip,
                                    ResourceLocation unlockRecipe) {
-        super(researchCost, researchIngredientPairs, prerequisites, icon, tooltip);
+        super(researchCost, researchIngredientPairs, prerequisites, groups, icon, tooltip);
         this.unlockRecipe = unlockRecipe;
     }
 

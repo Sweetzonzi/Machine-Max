@@ -1,21 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:kluo"],
   "research_cost": 100,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
+  "prerequisites": ["machine_max:research/kluo_hull"],
   "icon": "machine_max:textures/icon/kluo/kluo_trunk_door_icon.png",
   "description": "research.machine_max.kluo_trunk_door_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/kluo_trunk_door"

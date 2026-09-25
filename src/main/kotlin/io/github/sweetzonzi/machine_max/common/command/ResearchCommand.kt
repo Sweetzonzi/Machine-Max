@@ -3,10 +3,7 @@ package io.github.sweetzonzi.machine_max.common.command
 import cn.solarmoon.spark_core.command.BaseCommand
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.context.CommandContext
-import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents
-import io.github.sweetzonzi.machine_max.common.registry.MMItems
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchAttachmentSyncPayload
 import net.minecraft.commands.CommandBuildContext
@@ -18,7 +15,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.ItemStack
 import net.neoforged.neoforge.network.PacketDistributor
 
 class ResearchCommand() : BaseCommand("research", 4) {
@@ -31,20 +27,12 @@ class ResearchCommand() : BaseCommand("research", 4) {
                         .then(Commands.literal("clear").executes { clearAllResearch(it) })
                         .then(Commands.literal("all").executes { allResearch(it) })
                         .then(
-                            Commands.literal("remove")
-                                .then(Commands.argument("recipe", ResourceLocationArgument.id()).executes { clearSpecificResearch(it) })
-                        )
-                        .then(
                             Commands.literal("add")
-                                .then(Commands.argument("recipe", ResourceLocationArgument.id())
-                                    .then(Commands.argument("levels", IntegerArgumentType.integer()).executes { addResearchLevel(it) })
-                                )
+                                .then(Commands.argument("recipe", ResourceLocationArgument.id()).executes { addResearch(it) })
                         )
                         .then(
-                            Commands.literal("set")
-                                .then(Commands.argument("recipe", ResourceLocationArgument.id())
-                                    .then(Commands.argument("levels", IntegerArgumentType.integer(0)).executes { setResearchLevel(it) })
-                                )
+                            Commands.literal("remove")
+                                .then(Commands.argument("recipe", ResourceLocationArgument.id()).executes { removeResearch(it) })
                         )
                 )
                 .then(
@@ -83,10 +71,6 @@ class ResearchCommand() : BaseCommand("research", 4) {
         return IntegerArgumentType.getInteger(context, "amount")
     }
 
-    private fun getLevels(context: CommandContext<CommandSourceStack>): Int {
-        return IntegerArgumentType.getInteger(context, "levels")
-    }
-
     private fun getValidatedResearchId(context: CommandContext<CommandSourceStack>): ResourceLocation? {
         val source = context.source
         val researchId = getRecipeId(context)
@@ -104,7 +88,6 @@ class ResearchCommand() : BaseCommand("research", 4) {
             players.forEach { player ->
                 val research = player.getData(MMAttachments.BLUEPRINT)
                 research.completedResearches.clear()
-                research.products.clear()
                 research.markDirty(player)
                 syncResearchAttachment(player)
             }
@@ -125,12 +108,6 @@ class ResearchCommand() : BaseCommand("research", 4) {
                 MMDynamicRes.ALL_RESEARCH_RECIPES.keys.forEach { researchId ->
                     research.completedResearches.add(researchId)
                 }
-                MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.keys.forEach { researchId ->
-                    val blueprint = makeBlueprint(research, researchId)
-                    if (!blueprint.isEmpty) {
-                        research.products[researchId] = blueprint
-                    }
-                }
                 research.markDirty(player)
                 syncResearchAttachment(player)
             }
@@ -142,7 +119,26 @@ class ResearchCommand() : BaseCommand("research", 4) {
         }
     }
 
-    private fun clearSpecificResearch(context: CommandContext<CommandSourceStack>): Int {
+    private fun addResearch(context: CommandContext<CommandSourceStack>): Int {
+        val source = context.source
+        val researchId = getValidatedResearchId(context) ?: return 0
+        return try {
+            val players = getPlayers(context)
+            players.forEach { player ->
+                val research = player.getData(MMAttachments.BLUEPRINT)
+                research.completedResearches.add(researchId)
+                research.markDirty(player)
+                syncResearchAttachment(player)
+            }
+            source.sendSuccess({ Component.literal("已标记研发完成: $researchId") }, true)
+            1
+        } catch (e: Exception) {
+            source.sendFailure(Component.literal("执行失败: ${e.message}"))
+            0
+        }
+    }
+
+    private fun removeResearch(context: CommandContext<CommandSourceStack>): Int {
         val source = context.source
         val researchId = getValidatedResearchId(context) ?: return 0
         return try {
@@ -150,70 +146,10 @@ class ResearchCommand() : BaseCommand("research", 4) {
             players.forEach { player ->
                 val research = player.getData(MMAttachments.BLUEPRINT)
                 research.completedResearches.remove(researchId)
-                research.products.remove(researchId)
                 research.markDirty(player)
                 syncResearchAttachment(player)
             }
-            source.sendSuccess({ Component.literal("已移除研发: $researchId") }, true)
-            1
-        } catch (e: Exception) {
-            source.sendFailure(Component.literal("执行失败: ${e.message}"))
-            0
-        }
-    }
-
-    private fun addResearchLevel(context: CommandContext<CommandSourceStack>): Int {
-        val source = context.source
-        val researchId = getValidatedResearchId(context) ?: return 0
-        return try {
-            val players = getPlayers(context)
-            val levels = getLevels(context)
-            players.forEach { player ->
-                val research = player.getData(MMAttachments.BLUEPRINT)
-                if (levels > 0) {
-                    research.completedResearches.add(researchId)
-                    if (MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.containsKey(researchId)) {
-                        val blueprint = makeBlueprint(research, researchId)
-                        if (!blueprint.isEmpty) {
-                            research.products[researchId] = blueprint
-                        }
-                    }
-                }
-                research.markDirty(player)
-                syncResearchAttachment(player)
-            }
-            source.sendSuccess({ Component.literal("已更新研发状态: $researchId") }, true)
-            1
-        } catch (e: Exception) {
-            source.sendFailure(Component.literal("执行失败: ${e.message}"))
-            0
-        }
-    }
-
-    private fun setResearchLevel(context: CommandContext<CommandSourceStack>): Int {
-        val source = context.source
-        val researchId = getValidatedResearchId(context) ?: return 0
-        return try {
-            val players = getPlayers(context)
-            val target = getLevels(context)
-            players.forEach { player ->
-                val research = player.getData(MMAttachments.BLUEPRINT)
-                if (target > 0) {
-                    research.completedResearches.add(researchId)
-                    if (MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.containsKey(researchId)) {
-                        val blueprint = makeBlueprint(research, researchId)
-                        if (!blueprint.isEmpty) {
-                            research.products[researchId] = blueprint
-                        }
-                    }
-                } else {
-                    research.completedResearches.remove(researchId)
-                    research.products.remove(researchId)
-                }
-                research.markDirty(player)
-                syncResearchAttachment(player)
-            }
-            source.sendSuccess({ Component.literal("已设置研发状态: $researchId -> $target") }, true)
+            source.sendSuccess({ Component.literal("已清除研发完成标记: $researchId") }, true)
             1
         } catch (e: Exception) {
             source.sendFailure(Component.literal("执行失败: ${e.message}"))
@@ -264,10 +200,6 @@ class ResearchCommand() : BaseCommand("research", 4) {
             source.sendFailure(Component.literal("执行失败: ${e.message}"))
             0
         }
-    }
-
-    private fun makeBlueprint(research: BlueprintAttachment, researchId: ResourceLocation): ItemStack {
-        return research.createBlueprintProduct(researchId)
     }
 
     private fun syncResearchAttachment(player: Player) {

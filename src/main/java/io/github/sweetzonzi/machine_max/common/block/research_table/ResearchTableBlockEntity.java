@@ -5,16 +5,10 @@ import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -29,14 +23,14 @@ import java.util.Map;
 /**
  * 蓝图研发台 BlockEntity
  * 当前职责：
- * - 作为 MenuProvider
+ * - 作为研究台方块的存在标记，右键时由方块下发打开界面的载荷
  * - 承载未来扩展点（团队科研 / 能量 / 插件）
  * 当前版本：
  * - 不存储任何数据
  * - 不进行 tick
  */
 @Getter
-public class ResearchTableBlockEntity extends BlockEntity implements MenuProvider, IBlockEntityAnimatable<ResearchTableBlockEntity> {
+public class ResearchTableBlockEntity extends BlockEntity implements IBlockEntityAnimatable<ResearchTableBlockEntity> {
 
     public final AnimController animController = new AnimController(this);
     public final ModelController modelController = new ModelController(this);
@@ -44,20 +38,6 @@ public class ResearchTableBlockEntity extends BlockEntity implements MenuProvide
 
     public ResearchTableBlockEntity(BlockPos pos, BlockState state) {
         super(MMBlockEntities.getRESEARCH_TABLE_BLOCK_ENTITY().get(), pos, state);
-    }
-
-    @Override
-    public @NotNull Component getDisplayName() {
-        return Component.empty();
-    }
-
-    @Override
-    public @Nullable AbstractContainerMenu createMenu(
-            int id,
-            @NotNull Inventory inventory,
-            @NotNull Player player
-    ) {
-        return new BlueprintResearchMenu(id, inventory);
     }
 
     @Override

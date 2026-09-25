@@ -13,9 +13,16 @@
       "items": { "$ref": "#/definitions/ingredient_count_pair" },
       "default": []
     },
+    "groups": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Group ids this research entry belongs to; omitted means no group",
+      "default": []
+    },
     "prerequisites": {
       "type": "array",
       "items": { "type": "string" },
+      "description": "List of prerequisite research recipe ids. Each entry is the full registry name of another research recipe, i.e. the recipe file's path relative to recipe/, e.g. machine_max:research/ae86_chassis",
       "default": []
     },
     "icon": { "$ref": "#/definitions/resource_location" },

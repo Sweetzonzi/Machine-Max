@@ -1,9 +1,6 @@
 package io.github.sweetzonzi.machine_max.network.payload.research;
 
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
-import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -11,8 +8,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
+/**
+ * 通知客户端一个研发项目已完成。
+ *
+ * @param researchId 研发配方ID
+ * @param product    该条目 {@code unlock_recipe} 的产物物品，仅供完成弹窗展示；研发不产出实物
+ */
 public record ResearchCompletePayload(
         ResourceLocation researchId,
         ItemStack product

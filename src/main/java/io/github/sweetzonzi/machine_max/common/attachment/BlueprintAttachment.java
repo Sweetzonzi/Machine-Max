@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -24,7 +25,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -43,6 +43,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+/**
+ * 玩家科研状态：研发点余额、已完成研发集合与可用零件配方缓存。
+ *
+ * <p>研发项目只登记完成态、不产出物品：完成研发消耗研发材料与研发点，制造蓝图由抄录动作
+ * 按 {@code unlock_recipe} 现场产出并直接进入背包，每次抄录消耗一张空白蓝图。</p>
+ *
+ * <p>可用零件配方缓存由背包中的零件制造蓝图构建，供装配门禁与装配候选查询使用。</p>
+ */
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class BlueprintAttachment {
     @Getter
@@ -52,22 +60,17 @@ public class BlueprintAttachment {
     public final Set<ResourceLocation> completedResearches;
     private final Map<ResourceLocation, RecipeHolder<PartFabricatingRecipe>> availableRecipes = new HashMap<>();
     @Getter
-    // 研发产物缓存：key 永远是 researchId，value 是可领取的制造蓝图物品（其内部 RECIPE_TYPE 才是制造配方ID）
-    public final Map<ResourceLocation, ItemStack> products;
-    @Getter
     private boolean dirty = true;
     private int inventoryHash = Integer.MIN_VALUE;
     private static final int HIT_RP_COOLDOWN = 5;
     private int hitRpCooldown = 0;
 
     public static final Codec<Set<ResourceLocation>> COMPLETED_RESEARCHES_CODEC = ResourceLocation.CODEC.listOf().xmap(HashSet::new, ArrayList::new);
-    public static final Codec<Map<ResourceLocation, ItemStack>> PRODUCTS_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, ItemStack.CODEC);
 
     public static final Codec<BlueprintAttachment> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("research_point", 0).forGetter(BlueprintAttachment::getFreeResearchPoint),
-                    COMPLETED_RESEARCHES_CODEC.optionalFieldOf("completed_researches", Set.of()).forGetter(BlueprintAttachment::getCompletedResearches),
-                    PRODUCTS_CODEC.fieldOf("products").forGetter(BlueprintAttachment::getProducts)
+                    COMPLETED_RESEARCHES_CODEC.optionalFieldOf("completed_researches", Set.of()).forGetter(BlueprintAttachment::getCompletedResearches)
             ).apply(instance, BlueprintAttachment::new)
     );
 
@@ -124,45 +127,19 @@ public class BlueprintAttachment {
         }
     };
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, Map<ResourceLocation, ItemStack>> PRODUCTS_STREAM_CODEC = new StreamCodec<>() {
-        @Override
-        public @NotNull Map<ResourceLocation, ItemStack> decode(RegistryFriendlyByteBuf buffer) {
-            int size = buffer.readInt();
-            Map<ResourceLocation, ItemStack> products = new LinkedHashMap<>(size);
-
-            for (int i = 0; i < size; i++) {
-                ResourceLocation key = ResourceLocation.STREAM_CODEC.decode(buffer);
-                ItemStack value = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer);
-                products.put(key, value);
-            }
-            return products;
-        }
-
-        @Override
-        public void encode(RegistryFriendlyByteBuf buffer, Map<ResourceLocation, ItemStack> products) {
-            buffer.writeInt(products.size());
-            products.forEach((key, value) -> {
-                ResourceLocation.STREAM_CODEC.encode(buffer, key);
-                ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, value);
-            });
-        }
-    };
-
     public static final StreamCodec<RegistryFriendlyByteBuf, BlueprintAttachment> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, BlueprintAttachment::getFreeResearchPoint,
             COMPLETED_RESEARCHES_STREAM_CODEC, BlueprintAttachment::getCompletedResearches,
-            PRODUCTS_STREAM_CODEC, BlueprintAttachment::getProducts,
             BlueprintAttachment::new
     );
 
-    public BlueprintAttachment(int freeResearchPoint, Set<ResourceLocation> completedResearches, Map<ResourceLocation, ItemStack> products) {
+    public BlueprintAttachment(int freeResearchPoint, Set<ResourceLocation> completedResearches) {
         this.freeResearchPoint = freeResearchPoint;
         this.completedResearches = new HashSet<>(completedResearches);
-        this.products = new HashMap<>(products);
     }
 
     public BlueprintAttachment(int freeResearchPoint) {
-        this(freeResearchPoint, new HashSet<>(), new HashMap<>());
+        this(freeResearchPoint, new HashSet<>());
     }
 
     /**
@@ -209,33 +186,55 @@ public class BlueprintAttachment {
         return missing;
     }
 
+    /**
+     * 完成一次研发：消耗研发材料与研发点，登记完成态。
+     *
+     * <p>本方法不产出任何物品；制造蓝图由 {@link #transcribe(Player, ResourceLocation)} 产出。
+     * 完成载荷只携带 {@code unlock_recipe} 的产物，供客户端弹窗告知玩家学会了什么。</p>
+     *
+     * @param player         玩家
+     * @param researchRecipe 研发配方ID
+     * @return 完成时返回 true
+     */
     public boolean completeResearch(Player player, ResourceLocation researchRecipe) {
         RecipeHolder<ResearchRecipe> holder = getResearch(researchRecipe);
         if (holder == null || !canCompleteResearch(player, researchRecipe)) {
             return false;
         }
-        ResourceLocation researchId = holder.id();
         ResearchRecipe recipe = holder.value();
         recipe.consumeIngredients(player);
         setRp(player, freeResearchPoint - recipe.getResearchCost());
         completedResearches.add(researchRecipe);
         markDirty(player);
 
-        ItemStack product = ItemStack.EMPTY;
-        if (holder instanceof RecipeHolder<?> rawHolder && rawHolder.value() instanceof BlueprintResearchRecipe blueprintResearch) {
-            product = createBlueprintProduct(researchId);
-            products.put(researchId, product);
-        }
-
         if (player instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchRecipe, product));
+            PacketDistributor.sendToPlayer(serverPlayer,
+                    new ResearchCompletePayload(researchRecipe, getUnlockedProduct(player, researchRecipe)));
             rpChangeRecords.clear();
         }
         return true;
     }
 
     /**
-     * 获取指定蓝图研发配方的产物蓝图。
+     * 取蓝图研发项目 {@code unlock_recipe} 所指配方的产物物品。
+     *
+     * <p>仅用于完成提示与界面预览，不进入玩家背包。</p>
+     *
+     * @param player         玩家，用于取得注册表访问
+     * @param researchRecipe 研发配方ID
+     * @return 产物物品；非蓝图研发项目或解锁配方缺失时返回空堆
+     */
+    public ItemStack getUnlockedProduct(Player player, ResourceLocation researchRecipe) {
+        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
+        if (blueprintResearch == null) return ItemStack.EMPTY;
+        RecipeHolder<FabricatingRecipe> holder =
+                MMDynamicRes.SERVER_ALL_FABRICATING_RECIPES.get(blueprintResearch.value().getUnlockRecipe());
+        if (holder == null) return ItemStack.EMPTY;
+        return holder.value().getResultItem(player.level().registryAccess());
+    }
+
+    /**
+     * 获取指定蓝图研发配方的制造蓝图物品。
      *
      * <p>按 {@code unlock_recipe} 指向的配方实例类型分流：零件配方产出零件制造蓝图（同时写入
      * {@code recipe_type} 与 {@code part_type}），通用制造配方产出通用制造蓝图（只写 {@code recipe_type}）。</p>
@@ -263,56 +262,65 @@ public class BlueprintAttachment {
     }
 
     /**
-     * 检查是否满足重新获取蓝图的条件
+     * 检查是否满足抄录条件：该条目是蓝图研发项目、已完成研发，且背包中有空白蓝图。
      *
+     * <p>抄录的可重复性不受手中与背包中已有蓝图数量影响——每次抄录都单独消耗一张空白蓝图。</p>
+     *
+     * @param player         玩家
      * @param researchRecipe 研发配方ID
-     * @return 是否可获取
+     * @return 可抄录时返回 true
      */
-    public boolean canReclaim(ResourceLocation researchRecipe) {
-        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
-        if (blueprintResearch == null) {
+    public boolean canTranscribe(Player player, ResourceLocation researchRecipe) {
+        if (getBlueprintResearch(researchRecipe) == null) {
             return false;
         }
-        return isResearched(blueprintResearch.id()) && products.getOrDefault(researchRecipe, ItemStack.EMPTY) == ItemStack.EMPTY;
+        if (!isResearched(researchRecipe)) {
+            return false;
+        }
+        return player.isCreative() || countEmptyBlueprints(player) > 0;
     }
 
-
     /**
-     * 重新获取某个已经研发过的蓝图，存入产物缓存
+     * 抄录：消耗一张空白蓝图，把该条目对应的制造蓝图直接放入玩家背包。
      *
      * @param player         玩家
      * @param researchRecipe 研发配方ID
      */
-    public void reclaim(Player player, ResourceLocation researchRecipe) {
-        if (canReclaim(researchRecipe)) {
-            products.put(researchRecipe, createBlueprintProduct(researchRecipe));
-            this.markDirty(player);
-            if (player instanceof ServerPlayer serverPlayer) {
-                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(products));
-            }
+    public void transcribe(Player player, ResourceLocation researchRecipe) {
+        if (!canTranscribe(player, researchRecipe)) return;
+        ItemStack blueprint = createBlueprintProduct(researchRecipe);
+        if (blueprint.isEmpty()) return;
+        if (!player.isCreative() && !consumeEmptyBlueprint(player)) return;
+        if (!player.getInventory().add(blueprint)) {
+            player.drop(blueprint, false);
         }
+        markDirty(player);
     }
 
-    /**
-     * 获取指定研发配方的蓝图物品，需要先完成研发
-     *
-     * @param player         玩家
-     * @param researchRecipe 研发配方ID
-     */
-    public void claim(Player player, ResourceLocation researchRecipe) {
-        ItemStack product = getProducts().getOrDefault(researchRecipe, ItemStack.EMPTY);
-        if (product != ItemStack.EMPTY) {
-            boolean success = player.getInventory().add(product); // 首先尝试放入背包
-            Entity itemEntity = product.getEntityRepresentation();
-            if (!success && itemEntity != null) { // 未成功放入背包则掉落为物品
-                itemEntity.setPos(player.getPosition(1));
-                player.level().addFreshEntity(itemEntity);
+    /** 统计背包中空白蓝图的总数量 */
+    public static int countEmptyBlueprints(Player player) {
+        int count = 0;
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(MMTags.EMPTY_BLUEPRINT)) {
+                count += stack.getCount();
             }
-            getProducts().remove(researchRecipe); // 清空暂存
-            this.markDirty(player);
-            if (player instanceof ServerPlayer serverPlayer)
-                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(getProducts()));
         }
+        return count;
+    }
+
+    /** 从背包中扣除一张空白蓝图；扣不到时返回 false */
+    private static boolean consumeEmptyBlueprint(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(MMTags.EMPTY_BLUEPRINT)) {
+                stack.shrink(1);
+                return true;
+            }
+        }
+        return false;
     }
 
     public void givRp(Player player, int rp, RpAddReason reason) {
@@ -362,10 +370,12 @@ public class BlueprintAttachment {
      * <ol>
      *   <li>创造模式直接放行；</li>
      *   <li>无零件配方（{@code getRecipe() == null}）放行——否则这类零件永远无法装配；</li>
-     *   <li>该零件找不到对应研究条目时放行（内容包可能只定义零件、未定义研究）；</li>
-     *   <li>该研究已完成；</li>
-     *   <li>背包 / 产物缓存中持有对应的零件制造蓝图（复用 {@code availableRecipes} 缓存，不每 tick 扫描背包）。</li>
+     *   <li>该零件对应的研究条目已完成；</li>
+     *   <li>背包中持有对应的零件制造蓝图（复用 {@code availableRecipes} 缓存，不每 tick 扫描背包）。</li>
      * </ol>
+     *
+     * <p>没有研究条目、或研究条目不可达的零件，第三条恒为假，判定落到"持有制造蓝图"上，
+     * 因此不为这些情形开设放行分支。</p>
      *
      * @param player 玩家
      * @param part   目标部件
@@ -376,9 +386,7 @@ public class BlueprintAttachment {
         // 无零件配方零件走 assemble 的慢速兜底分支，必须放行
         if (part.getRecipe() == null) return true;
         ResourceLocation researchId = MMDynamicRes.SERVER_RESEARCH_BY_PART.get(part.getType().getRegistryKey());
-        // 未定义研究条目：放行，避免内容包缺研究导致零件永久无法装配
-        if (researchId == null) return true;
-        if (completedResearches.contains(researchId)) return true;
+        if (researchId != null && completedResearches.contains(researchId)) return true;
         // 持有对应零件制造蓝图即可装配；缓存由 EntityTickEvent 定时刷新
         if (isDirty()) rebuildAvailableRecipes(player);
         return availableRecipes.containsKey(part.getType().getRegistryKey());
@@ -441,11 +449,8 @@ public class BlueprintAttachment {
         for (int i = 0; i < inventory.items.size(); i++) {
             checkAndRecord(inventory.items.get(i), player);
         }
-        // 检查专用存储中的配方
         // TODO: 蓝图库检查——计划中的蓝图收纳道具（统一存放玩家的制造蓝图，避免背包被蓝图塞满），
         //  实现后需在此扫描该道具内保存的附件信息并一并录入可用配方
-        for (ItemStack product : research.products.values())
-            checkAndRecord(product, player);
     }
 
     /**
