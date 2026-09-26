@@ -65,9 +65,20 @@
 .mat-head {
     display: flex;
     flex-direction: row;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 4px;
+}
+
+/* 材料图标：单候选时这个类落在 <item> 上，多候选时落在 <ingredient> 上
+   （后者自己不管绘制，画物品的是它控制的 <item>）。
+   position: relative 是给 <ingredient> 用的——它控制的 <item> 是绝对定位，
+   需要一个包含块；16×16 是为了两种标签尺寸一致（global.css 给 item 的默认尺寸）。 */
+.mat-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
 }
 
 .mat-name {

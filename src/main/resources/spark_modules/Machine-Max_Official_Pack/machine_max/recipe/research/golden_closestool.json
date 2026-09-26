@@ -2,6 +2,14 @@
   "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
   "type": "machine_max:blueprint_research",
   "research_cost": 5900,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      },
+      "count": 8
+    }
+  ],
   "icon": "machine_max:textures/icon/golden_closestool_icon.png",
   "description": "research.machine_max.golden_closestool_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/golden_closestool"

@@ -1,11 +1,17 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.research;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import com.sighs.apricityui.slot.IngredientExpressionCompiler;
+import com.sighs.apricityui.slot.ItemStackExpressionCompiler;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -167,7 +173,9 @@ public final class ResearchDetailRenderer {
             boolean enough = have >= need;
             int percent = need <= 0 ? 100 : Math.min(100, (int) Math.round(have * 100.0 / need));
             builder.append("<div class=\"mat-row ").append(enough ? "ok" : "lack").append("\">")
-                    .append("<div class=\"mat-head\"><span class=\"mat-name\">")
+                    .append("<div class=\"mat-head\">")
+                    .append(iconHtml(player, pair.ingredient()))
+                    .append("<span class=\"mat-name\">")
                     .append(ResearchHtml.escape(ingredientName(pair.ingredient())))
                     .append("</span><span class=\"mat-count\">").append(have).append(" / ").append(need)
                     .append("</span></div>")
@@ -175,6 +183,80 @@ public final class ResearchDetailRenderer {
                     .append(percent).append("%\"></div></div></div>");
         }
         return builder.toString();
+    }
+
+    /**
+     * 材料图标：解出候选栈，并挑一条 AUI 真能解析回物品栈的表达式。
+     *
+     * <p>单个候选没有轮播可言，发 {@code <item>}（它直接走
+     * {@code ItemStackExpressionCompiler.parse}，认 SNBT）；多个候选拼成竖线列表交给
+     * {@code <ingredient>}，轮播、悬停暂停、间隔全由 AUI 自己管，本模组不写轮播逻辑。
+     * 两个标签都由 AUI 自身注册（{@code com.sighs.apricityui.element}），无需本模组登记，
+     * 也都不参与文本绘制，所以表达式文本不会显示出来。</p>
+     *
+     * <p>不用 AUI 的 {@code ItemStackExpressionCompiler.serialize}：它丢掉了
+     * {@code ItemStack.save(provider, prefix)} 的返回值，而 1.21.1 的这个重载返回一个新
+     * tag、并不写进传入的 prefix，于是它恒定返回空对象 {@code {}}。AUI 自己的受控 item
+     * 走的是 drivenStack 而非这段文本，所以该 bug 在它那边没暴露。这里自己取返回值。</p>
+     */
+    private static String iconHtml(Player player, Ingredient ingredient) {
+        if (ingredient == null || ingredient.isEmpty()) return "";
+        List<ItemStack> candidates = new ArrayList<>();
+        for (ItemStack stack : ingredient.getItems()) {
+            if (stack != null && !stack.isEmpty()) candidates.add(stack);
+        }
+        if (candidates.isEmpty()) return "";
+
+        boolean single = candidates.size() == 1;
+        List<String> parts = new ArrayList<>(candidates.size());
+        for (ItemStack stack : candidates) {
+            parts.add(serializeStack(player, stack));
+        }
+        String pipe = String.join("|", parts);
+        String json = ingredientJson(ingredient);
+        boolean pipeUsable = isUsable(pipe, single);
+        boolean jsonUsable = !json.isEmpty() && isUsable(json, false);
+
+        // 竖线（SNBT）优先：它能把数据组件一起带上，部件材料因此才有图标。SNBT 走不通时
+        // 退回 ingredient 自身的 JSON——那条路对普通物品与标签是通的，等价于改动前的行为。
+        String expression = pipeUsable ? pipe : jsonUsable ? json : "";
+        if (expression.isEmpty()) return "";
+        String body = ResearchHtml.escape(expression);
+        return single && pipeUsable
+                ? "<item class=\"mat-icon\">" + body + "</item>"
+                : "<ingredient class=\"mat-icon\">" + body + "</ingredient>";
+    }
+
+    /** 物品栈 → AUI 认的 SNBT 文本：取 {@code save} 的返回值，而不是传入的 tag。 */
+    private static String serializeStack(Player player, ItemStack stack) {
+        try {
+            return stack.save(player.level().registryAccess(), new CompoundTag()).toString();
+        } catch (Throwable throwable) {
+            MachineMax.LOGGER.warn("[MM 材料图标] 序列化物品栈失败 stack={}", stack, throwable);
+            return "";
+        }
+    }
+
+    /** 该表达式交给 AUI 后能否解出候选 */
+    private static boolean isUsable(String expression, boolean single) {
+        try {
+            return single
+                    ? !ItemStackExpressionCompiler.parse(expression).isEmpty()
+                    : IngredientExpressionCompiler.compile(expression, false, 1000L).hasCandidates();
+        } catch (Throwable throwable) {
+            MachineMax.LOGGER.warn("[MM 材料图标] 解析表达式抛异常 expression={}", expression, throwable);
+            return false;
+        }
+    }
+
+    /** ingredient 自身的 JSON 形式：竖线走不通时的兜底 */
+    private static String ingredientJson(Ingredient ingredient) {
+        try {
+            return Ingredient.CODEC.encodeStart(JsonOps.INSTANCE, ingredient)
+                    .result().map(JsonElement::toString).orElse("");
+        } catch (Throwable throwable) {
+            return "";
+        }
     }
 
     private static String prerequisitesHtml(BlueprintAttachment research, ResearchTreeNode groupNode, ResearchRecipe recipe) {
