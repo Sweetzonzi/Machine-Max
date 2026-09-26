@@ -1,0 +1,1058 @@
+{
+  "parts": {
+    "720da790-0156-4f87-8e45-03349b463b3a": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.2635498,
+              -0.13088918,
+              -1.016983
+            ],
+            "rotation": [
+              0.038195517,
+              -0.6913218,
+              0.036666114,
+              0.72060454
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.left_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 15
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "720da790-0156-4f87-8e45-03349b463b3a",
+      "variant": "left",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "9637eec5-da9d-42ae-bd22-3c28eb8ee3e9": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.1716309,
+              -0.1308822,
+              1.2010956
+            ],
+            "rotation": [
+              -0.029978516,
+              -0.69169897,
+              -0.028637026,
+              0.72099495
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.right_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 13
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "9637eec5-da9d-42ae-bd22-3c28eb8ee3e9",
+      "variant": "right",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "f67ad9a2-b9ef-4f75-91fb-f20d63dce939": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.7561035,
+              1.1956253,
+              -0.03147888
+            ],
+            "rotation": [
+              0.003978446,
+              -0.69228256,
+              0.003885656,
+              0.7216051
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.turret_gun_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.turret_hull_axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.mg34_ammo_loader": {
+              "ammo_count": 150,
+              "is_batch_reloading": 0,
+              "durability_ratio": 1.0,
+              "regen_delay_remaining": 0,
+              "belt_index": 1,
+              "batch_cooldown": 0,
+              "regen_progress": 0.33333337
+            },
+            "subsystem.machine_max.elevation_driver": {
+              "brake_yaw": -1.0102377E-6,
+              "brake_pitch": -0.03680334,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.50mm_ammo_loader": {
+              "ammo_count": 6,
+              "is_batch_reloading": 0,
+              "durability_ratio": 1.0,
+              "regen_delay_remaining": 0,
+              "belt_index": 0,
+              "batch_cooldown": 0,
+              "regen_progress": 0.9499953
+            },
+            "subsystem.machine_max.commander_seat": {
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base",
+                  "regular_targets": {
+                    "regular_input": [
+                      "global"
+                    ]
+                  },
+                  "move_targets": {
+                    "move_input": [
+                      "global"
+                    ]
+                  },
+                  "control_mode": "ground"
+                },
+                "groups": [
+                  {
+                    "view_targets": {
+                      "aim_input": [
+                        "global"
+                      ]
+                    },
+                    "name": "controlGroup.machine_max.backup_fire_control",
+                    "main_weapon_targets": {
+                      "fire_input": [
+                        "global"
+                      ]
+                    },
+                    "secondary_weapon_targets": {
+                      "secondary_fire_input": [
+                        "global"
+                      ]
+                    }
+                  },
+                  {
+                    "view_targets": {
+                      "aim_input_p1": [
+                        "global"
+                      ]
+                    },
+                    "name": "controlGroup.machine_max.commander_override",
+                    "main_weapon_targets": {
+                      "fire_input_p1": [
+                        "global"
+                      ]
+                    },
+                    "secondary_weapon_targets": {
+                      "secondary_fire_input_p1": [
+                        "global"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.secondary_weapon": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.main_weapon": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.gunner_seat": {
+              "control_group_set": {
+                "base_group": {
+                  "view_targets": {
+                    "aim_input_p2": [
+                      "global"
+                    ]
+                  },
+                  "name": "controlGroup.machine_max.base",
+                  "main_weapon_targets": {
+                    "fire_input_p2": [
+                      "global"
+                    ]
+                  },
+                  "secondary_weapon_targets": {
+                    "secondary_fire_input_p2": [
+                      "global"
+                    ]
+                  }
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.azimuth_driver": {
+              "brake_yaw": -7.689E-6,
+              "brake_pitch": 1.0173153E-7,
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 29
+        },
+        "sub_part.machine_max.barrel": {
+          "pos_rot_vel_vel": {
+            "position": [
+              2.9396973,
+              1.4500585,
+              -0.12210083
+            ],
+            "rotation": [
+              -0.009212144,
+              -0.6922374,
+              -0.008768802,
+              0.7215578
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.gun_shield_lock": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.50mm": {
+              "chambered_type": "machine_max:50mm_pzgr39",
+              "modules": {
+                "barrel": {
+                  "destroyed": 0,
+                  "durability": 37.5
+                },
+                "breech": {
+                  "destroyed": 0,
+                  "durability": 62.5
+                }
+              },
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 30
+        },
+        "sub_part.machine_max.gun_shield": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.6903076,
+              1.4818714,
+              -0.07026672
+            ],
+            "rotation": [
+              -0.009205625,
+              -0.6922376,
+              -0.008762578,
+              0.72155774
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.shield_turret_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.shield_gun_axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.mg34": {
+              "chambered_type": "machine_max:7_92mm_smk",
+              "modules": {
+                "barrel": {
+                  "destroyed": 0,
+                  "durability": 25.0
+                },
+                "breech": {
+                  "destroyed": 0,
+                  "durability": 25.0
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.gunner_sight": {
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 31
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "f67ad9a2-b9ef-4f75-91fb-f20d63dce939",
+      "variant": "sdkfz234_2",
+      "registry_key": "machine_max:sdkfz234_turret",
+      "name": "machine_max.sdkfz234_turret"
+    },
+    "92610814-fbf0-4d0a-bfdf-04c6f094784d": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.5592041,
+              -0.15659755,
+              0.023223877
+            ],
+            "rotation": [
+              0.003978594,
+              -0.6922798,
+              0.003885571,
+              0.72160774
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.hull_back_wheel": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_wheel_1": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_wheel_1": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_wheel_2": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_wheel_3": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_wheel_4": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_wheel_4": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_wheel_3": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_wheel_2": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_turret_axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.engine": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_wheel_3": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_wheel_4": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_wheel_1": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_wheel_2": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_wheel_1": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_wheel_2": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.item_storage": {
+              "Items": [],
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_wheel_3": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.radio_seat": {
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_wheel_4": {
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base",
+                  "regular_targets": {
+                    "regular_input_p1": [
+                      "global"
+                    ]
+                  },
+                  "move_targets": {
+                    "move_input_p1": [
+                      "global"
+                    ]
+                  },
+                  "control_mode": "ground"
+                }
+              },
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 5
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "variant": "sdkfz234_2",
+      "registry_key": "machine_max:sdkfz234_hull",
+      "name": "machine_max.sdkfz234_hull"
+    },
+    "8919fcd4-3b51-47ca-8c43-47940b478a1f": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.6796875,
+              -0.12953675,
+              -1.1392059
+            ],
+            "rotation": [
+              0.017764153,
+              -0.69208145,
+              0.016853197,
+              0.72140396
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.left_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 19
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "8919fcd4-3b51-47ca-8c43-47940b478a1f",
+      "variant": "left",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "e80b211f-128d-497c-ad20-6511af273194": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.7717285,
+              -0.12953115,
+              1.0789642
+            ],
+            "rotation": [
+              0.010397265,
+              -0.6922085,
+              0.010201974,
+              0.7215506
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.right_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 23
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "e80b211f-128d-497c-ad20-6511af273194",
+      "variant": "right",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "6e096252-9044-4e8a-9841-019e6e4ea96e": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.71765137,
+              -0.13021511,
+              1.1407928
+            ],
+            "rotation": [
+              0.009968411,
+              -0.6922118,
+              0.009735044,
+              0.7215598
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.right_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 25
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "6e096252-9044-4e8a-9841-019e6e4ea96e",
+      "variant": "right",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "b564a9f4-d80e-46cd-8547-9d5647795331": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              2.110962,
+              -0.12887925,
+              -1.1986084
+            ],
+            "rotation": [
+              0.011736018,
+              -0.69220096,
+              0.011019417,
+              0.7215252
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.left_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 21
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "b564a9f4-d80e-46cd-8547-9d5647795331",
+      "variant": "left",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "53471c64-35fc-46cd-aeaf-22841940919d": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.80981445,
+              -0.13022,
+              -1.0773773
+            ],
+            "rotation": [
+              0.003481975,
+              -0.6922756,
+              0.0031814983,
+              0.7216178
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.left_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 17
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "53471c64-35fc-46cd-aeaf-22841940919d",
+      "variant": "left",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    },
+    "85d8a55f-3198-41c4-ad52-4aba5ae31c22": {
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              2.203125,
+              -0.12887388,
+              1.019577
+            ],
+            "rotation": [
+              0.008195425,
+              -0.6922413,
+              0.008124568,
+              0.7215739
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.right_wheel_hull": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 27
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "uuid": "85d8a55f-3198-41c4-ad52-4aba5ae31c22",
+      "variant": "right",
+      "registry_key": "machine_max:sdkfz234_wheel",
+      "name": "machine_max.sdkfz234_wheel"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "9637eec5-da9d-42ae-bd22-3c28eb8ee3e9",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_wheel_hull",
+      "posRotS": {
+        "position": [
+          -0.09749997,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_4",
+      "posRotA": {
+        "position": [
+          1.0125,
+          -0.037500024,
+          1.659375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "720da790-0156-4f87-8e45-03349b463b3a",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_wheel_hull",
+      "posRotS": {
+        "position": [
+          0.09749985,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_4",
+      "posRotA": {
+        "position": [
+          -1.0125,
+          -0.037500024,
+          1.659375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "53471c64-35fc-46cd-aeaf-22841940919d",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_wheel_hull",
+      "posRotS": {
+        "position": [
+          0.09749985,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_3",
+      "posRotA": {
+        "position": [
+          -1.0125,
+          -0.037500024,
+          0.20437497
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "8919fcd4-3b51-47ca-8c43-47940b478a1f",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_wheel_hull",
+      "posRotS": {
+        "position": [
+          0.09749985,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_2",
+      "posRotA": {
+        "position": [
+          -1.0125,
+          -0.037500024,
+          -1.28625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "b564a9f4-d80e-46cd-8547-9d5647795331",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_wheel_hull",
+      "posRotS": {
+        "position": [
+          0.09749985,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_1",
+      "posRotA": {
+        "position": [
+          -1.0125,
+          -0.037500024,
+          -2.71875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "e80b211f-128d-497c-ad20-6511af273194",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_wheel_hull",
+      "posRotS": {
+        "position": [
+          -0.09749997,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_2",
+      "posRotA": {
+        "position": [
+          1.0125,
+          -0.037500024,
+          -1.28625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "6e096252-9044-4e8a-9841-019e6e4ea96e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_wheel_hull",
+      "posRotS": {
+        "position": [
+          -0.09749997,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_3",
+      "posRotA": {
+        "position": [
+          1.0125,
+          -0.037500024,
+          0.20437497
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "85d8a55f-3198-41c4-ad52-4aba5ae31c22",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_wheel_hull",
+      "posRotS": {
+        "position": [
+          -0.09749997,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_1",
+      "posRotA": {
+        "position": [
+          1.0125,
+          -0.037500024,
+          -2.71875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.hull_turret_axis",
+      "posRotS": {
+        "position": [
+          0.0,
+          1.36875,
+          -1.29375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "f67ad9a2-b9ef-4f75-91fb-f20d63dce939",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.turret_hull_axis",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.03125,
+          0.037499994
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "meta": {
+    "author": "Dev",
+    "created_at": "2026-09-27T02:35:39.592446900+08:00"
+  },
+  "max": [
+    4.217675685882568,
+    1.845064401626587,
+    1.8301849365234375
+  ],
+  "name": "sdkfz234/2",
+  "uuid": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
+  "pos": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "min": [
+    -3.2752442359924316,
+    -0.7937283515930176,
+    -1.8264923095703125
+  ]
+}

@@ -1,4 +1,5 @@
 {
+  "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_wheel.png",
   "variants": {
     "left": {
       "model": "machine_max:sdkfz234_2.geo",
@@ -15,7 +16,8 @@
         "sub_part.machine_max.main": {
           "start_bone": "LeftWheel_1",
           "end_bones": [],
-          "durability": 50,
+          "durability": 100,
+          "mass": 50,
           "projected_area": [
             -1,
             -1,
@@ -57,7 +59,8 @@
         "sub_part.machine_max.main": {
           "start_bone": "RightWheel_1",
           "end_bones": [],
-          "durability": 50,
+          "durability": 100,
+          "mass": 50,
           "projected_area": [
             -1,
             -1,
