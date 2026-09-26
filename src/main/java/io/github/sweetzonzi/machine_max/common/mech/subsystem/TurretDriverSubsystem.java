@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 炮塔驱动子系统。<br>
  * 控制炮塔的方向机(Yaw，偏航)和/或高低机(Pitch，俯仰)旋转到目标角度，均采用伺服模式。<br>
  * 旋转顺序固定为 YXZ（Yaw 先于 Pitch），保证两轴解耦，控制器可独立求解两个角度。<br>
+ * 无控制器目标时，伺服锁定在进入空闲时采样出的固定锁止角上，抵抗重力与外力。<br>
  * 输入输出使用统一的 RotationSignal（x=pitch, y=yaw, z=roll）。<br>
  * <br>
  * <b>内容包布置约定：</b><br>
@@ -64,13 +65,15 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     private final ConcurrentHashMap<String, Vector3f> targetAngles = new ConcurrentHashMap<>();
 
     /**
-     * 重载后待恢复的刹车角度 (pitch, yaw, roll)，单位弧度。<br>
-     * 由 {@link #loadData(CompoundTag)} 在载具重建时（主线程、任何物理刻之前）写入，
-     * 在重载后首次进入空闲分支时写入伺服目标并立即置空，之后按关节实际角度保持。<br>
-     * 作用：确保重新进入世界后炮塔刹停在退出游戏时的位置，而非被伺服驱向 0 位。
+     * 空闲锁止角 (pitch, yaw, roll)，单位弧度。<br>
+     * 失去控制器目标时作为伺服的持续目标，使炮塔在无输入时锁止并抵抗重力与外力。<br>
+     * 来源有两种：载具重建时由 {@link #loadData(CompoundTag)} 从存档写入退出游戏时的刹车角（主线程、任何物理刻之前）；
+     * 无存档值时在进入空闲的那一刻采样当前关节角（物理线程）。<br>
+     * 锁止角一经确定便固定不变：若每物理刻都刷新为当前关节角，伺服误差恒为 0，Bullet 伺服不会输出力矩，炮塔会退化为只受约束阻尼的自由关节。<br>
+     * 有控制器接管时清空，下一次失去目标时重新确定。
      */
     @Nullable
-    private Vector3f restoredBrakeAngle;
+    private Vector3f lockedAngle;
 
     public TurretDriverSubsystem(ISubsystemHost owner, String name, TurretDriverSubsystemAttr attr) {
         super(owner, name, attr);
@@ -119,52 +122,36 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             // 从 Map 按优先级读取目标角度，替代旧的信号轮询
             Vector3f target = getTargetAngle();
 
-            // 空闲时的保持角度：优先使用重载恢复的刹车角度（仅首次），否则保持当前关节角
-            Vector3f holdAngle = target == null
-                    ? (restoredBrakeAngle != null ? restoredBrakeAngle : getRelativeAngle())
-                    : null;
-            // 恢复角度只消费一次：被外部目标接管或已写入伺服目标后即丢弃，避免之后回跳
-            restoredBrakeAngle = null;
+            if (target != null) {
+                // 有控制器接管：解除锁止，跟随其下发的目标角
+                lockedAngle = null;
+            } else if (lockedAngle == null) {
+                // 进入空闲：锁定当前关节角，并在空闲期间保持不变，伺服才能持续输出力矩抵抗外力
+                lockedAngle = getRelativeAngle();
+            }
 
+            // 伺服目标：有控制器时跟随其目标角，空闲时锁定在固定的锁止角上
+            Vector3f servoAngle = target != null ? target : lockedAngle;
+
+            // 每刻都显式使能马达与伺服：关节重载后为新建对象，马达默认关闭时伺服完全无效
             if (hasYaw) {
+                // servoAngle.y = yaw
                 RotationMotor yawMotor = joint.getRotationMotor(1);
-                if (target != null) {
-                    // target.y = yaw，来自 computeAimAngles 返回的 yaw
-                    // setServoTarget 取负，与伺服马达方向约定一致
-                    yawMotor.setMotorEnabled(true);
-                    yawMotor.setServoEnabled(true);
-                    yawMotor.set(MotorParam.ServoTarget, target.y);
-                    yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
-                    yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
-                } else {
-                    // 无有效目标时保持位置并制动：
-                    // 关节重载后是新建对象，马达默认关闭，而伺服在马达关闭时完全无效，
-                    // 因此必须显式使能马达，否则炮塔会在重力下自由摆动
-                    yawMotor.setMotorEnabled(true);
-                    yawMotor.setServoEnabled(true);
-                    yawMotor.set(MotorParam.ServoTarget, holdAngle.y);//锁定到当前/恢复的角度
-                    yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
-                    yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
-                }
+                yawMotor.setMotorEnabled(true);
+                yawMotor.setServoEnabled(true);
+                yawMotor.set(MotorParam.ServoTarget, servoAngle.y);
+                yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
+                yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
             }
 
             if (hasPitch) {
+                // servoAngle.x = pitch
                 RotationMotor pitchMotor = joint.getRotationMotor(0);
-                if (target != null) {
-                    // target.x = pitch，来自 computeAimAngles 返回的 pitch
-                    pitchMotor.setMotorEnabled(true);
-                    pitchMotor.setServoEnabled(true);
-                    pitchMotor.set(MotorParam.ServoTarget, target.x);
-                    pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
-                    pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
-                } else {
-                    // 同偏航轴：马达关闭时伺服无效，需显式使能并锁定当前角度
-                    pitchMotor.setMotorEnabled(true);
-                    pitchMotor.setServoEnabled(true);
-                    pitchMotor.set(MotorParam.ServoTarget, holdAngle.x);//锁定到当前/恢复的角度
-                    pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
-                    pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
-                }
+                pitchMotor.setMotorEnabled(true);
+                pitchMotor.setServoEnabled(true);
+                pitchMotor.set(MotorParam.ServoTarget, servoAngle.x);
+                pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
+                pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
             }
         }
     }
@@ -190,9 +177,9 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     @Override
     public void loadData(CompoundTag data) {
         super.loadData(data);
-        //读取退出游戏时的刹车角度，供重载后首次空闲物理刻恢复炮塔位置
+        //读取退出游戏时的刹车角度，作为重载后的初始锁止角，使炮塔停在退出时的位置而非被伺服驱向 0 位
         if (data.contains("brake_pitch") && data.contains("brake_yaw")) {
-            this.restoredBrakeAngle = new Vector3f(
+            this.lockedAngle = new Vector3f(
                     data.getFloat("brake_pitch"),
                     data.getFloat("brake_yaw"),
                     0f
