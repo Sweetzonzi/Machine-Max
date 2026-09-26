@@ -154,17 +154,18 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
                                 PoseStack poseStack, MultiBufferSource bufferSource,
                                 float partialTick, ResourceLocation texture) {
         for (OBone bone : bones.values()) {
-            boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
+            // 发光骨骼由模型命名约定在解析期判定（见 Spark-Core OBone#shouldGlow）
+            boolean glow = bone.getShouldGlow();
             ModelRenderHelperKt.render(
                     bone,
                     modelInstance.getPose(),
                     poseStack,
                     inspecting
                             ? bufferSource.getBuffer(RenderType.entityTranslucent(texture))
-                            : ysmGlow
+                            : glow
                             ? bufferSource.getBuffer(RenderType.eyes(texture))
                             : bufferSource.getBuffer(RenderType.entityTranslucent(texture)),
-                    ysmGlow && !inspecting
+                    glow && !inspecting
                             ? Brightness.FULL_BRIGHT.pack()
                             : light,
                     overlay,

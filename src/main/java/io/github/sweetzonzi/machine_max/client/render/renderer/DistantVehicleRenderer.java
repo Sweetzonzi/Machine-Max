@@ -41,8 +41,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 遍历 {@link ObjectManager#clientAllVehicles} 中的所有 {@link SubPart}，
  * 跳过：已移除的、在原版实体渲染距离内的（由 {@link io.github.sweetzonzi.machine_max.client.render.renderer.PartEntityRenderer} 渲染）、
  * 超出最大渲染距离（20倍实体渲染距离）的；销毁倒计时中的（isDestroyed）仍渲染黑化/淡出效果。</p>
- * <p>使用简化渲染：{@link RenderType#entityCutout} + 与近距离载具渲染（{@link PartEntityRenderer}）一致的光照机制
- * （按 SubPart 世界位置采样方块光/天空光）；车灯（ysmGlow）骨骼与近距离一致，用 {@link RenderType#eyes} + 全亮发光；
+ * <p>使用简化渲染：所有骨骼一律 {@link RenderType#entityCutout} + 与近距离载具渲染（{@link PartEntityRenderer}）一致的光照机制
+ * （按 SubPart 世界位置采样方块光/天空光，采样结果为 0 时回退到该零件缓存的上一次光照值）；
+ * 自发光骨骼（命名以 {@code ysmGlow} 为前缀或 {@code _illuminated} 为后缀，见 Spark-Core {@code OBone#shouldGlow}）
+ * 在本渲染器中同样走普通纹理渲染，不做 {@link RenderType#eyes} 与全亮处理；
  * 销毁倒计时中按近距离同样逻辑黑化/淡出。不处理淡入、受击闪白、线框/组装进度等状态。</p>
  */
 public class DistantVehicleRenderer extends VisualEffectRenderer {
@@ -89,7 +91,7 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
                         if (!FMLLoader.getDist().isClient()) return;
                         int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance();
                         double renderDist = (renderDistance - (renderDistance*0.09)) * 1024;
-                        // 还是这个老的renderDist阈值显示正常些
+                        // 经实测，取该阈值时远近切换的显示效果最自然
                         if (distSqr < renderDist) continue;
                         renderSubPart(subPart, subPartPos, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
                     } catch (Exception e) {
@@ -147,7 +149,9 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         ResourceLocation texture = modelController.getTextureLocation();
         RenderType renderType = RenderType.entityCutout(texture);
         for (OBone bone : bones.values()) {
-            // 车灯（ysmGlow）骨骼：与近距离渲染（PartEntityRenderer#renderTextured）相同，用发光着色器 + 全亮
+            // 此渲染器不做自发光处理：自发光骨骼（命名以 ysmGlow 为前缀或 _illuminated 为后缀，
+            // 见 Spark-Core OBone#shouldGlow）在这里与普通骨骼一样用 entityCutout + 采样光照，
+            // 不套用 PartEntityRenderer#renderTextured 中的 RenderType.eyes + 全亮分支
             ModelRenderHelperKt.render(
                     bone,
                     modelInstance.getPose(),
