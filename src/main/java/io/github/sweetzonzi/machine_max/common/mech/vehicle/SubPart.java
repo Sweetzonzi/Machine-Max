@@ -767,11 +767,25 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 }
             }
             if (totalDamage > 0) {
+                // 扣除前的剩余耐久：用于把本次伤害拆成"零件承受"与"溢出摧毁"两段
+                float remainingDurability = Math.max(0f, getDurability());
                 setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
                 part.recomputeAssemblyFromDurability();
                 if (part.assembly != null) {
-                    float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
-                    part.assembly.onPartDamage(part, Math.max(0f, totalDamage * rate));
+                    float vehicleDamage;
+                    if (isDestroyed()) {
+                        // 零件已处于摧毁状态：本次伤害全部按摧毁传导率传导
+                        vehicleDamage = totalDamage * part.type.vehicleDamageRateDestroyed;
+                    } else if (totalDamage > remainingDurability) {
+                        // 零件未摧毁但本次伤害足以打空耐久：
+                        // 承受住的部分（≤剩余耐久）按正常传导率，超出而摧毁零件的那部分按摧毁传导率
+                        vehicleDamage = part.type.vehicleDamageRate * remainingDurability
+                                + part.type.vehicleDamageRateDestroyed * (totalDamage - remainingDurability);
+                    } else {
+                        // 零件未摧毁且耐久足以承受：全额按正常传导率传导
+                        vehicleDamage = totalDamage * part.type.vehicleDamageRate;
+                    }
+                    part.assembly.onPartDamage(part, Math.max(0f, vehicleDamage));
                 }
                 if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
                     int extraAdvance = Math.round(totalDamage * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());

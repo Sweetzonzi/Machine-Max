@@ -309,7 +309,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (chamberedType == null) tryLoadChamber();
 
         if (!isActive() || isDestroyed()) {
-            handleCeaseFire();
+            // ★ 仅在"存在进行中的连射/未收尾的循环音效"时执行一次停火处理。
+            //   子系统被摧毁、宿主零件被摧毁或装配度跌破阈值时该分支会每 tick 命中，
+            //   若无条件调用 handleCeaseFire()，停火尾音会被反复播放。
+            if (wasFiring || currentAutoFireUuid != null || currentShellSoundUuid != null) {
+                handleCeaseFire();
+            }
             resetFireState();
             return;
         }
