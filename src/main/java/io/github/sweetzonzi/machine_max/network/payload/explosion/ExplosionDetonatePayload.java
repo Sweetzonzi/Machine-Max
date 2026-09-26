@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload.explosion;
 
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.BlastDetonationEffects;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.BlastFrontVisual;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionParams;
@@ -67,5 +68,7 @@ public record ExplosionDetonatePayload(
         }
         // 只建立表现条目，不建逻辑实例
         ExplosionManager.get(level).addVisual(new BlastFrontVisual(payload.origin(), payload.params(), payload.seed()));
+        // 起爆一次性表现：粒子 + 传播音效
+        BlastDetonationEffects.playOnDetonate(level, payload.origin(), payload.params());
     }
 }

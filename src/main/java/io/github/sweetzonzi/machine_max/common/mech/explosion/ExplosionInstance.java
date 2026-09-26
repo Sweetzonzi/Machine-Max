@@ -26,7 +26,10 @@ import io.github.sweetzonzi.machine_max.util.mechanic.VoxelRayWalker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -585,7 +588,16 @@ public final class ExplosionInstance {
         if (pendingDestroy.isEmpty()) return;
         boolean drop = params.dropItems();
         for (BlockPos pos : pendingDestroy) {
-            level.destroyBlock(pos, drop);
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir()) continue;
+            if (drop) {
+                BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+                Block.dropResources(state, level, pos, blockEntity, null, ItemStack.EMPTY);
+            }
+            // 与原版爆炸同路：直接置为空气，不走 Level#destroyBlock。
+            // 后者会逐方块发 levelEvent(2001)（N 次网络广播 + N 个客户端音效实例与方块粒子），
+            // 大批量破坏时开销显著，且起爆音效与粒子已覆盖听感与观感。
+            level.removeBlock(pos, false);
         }
         pendingDestroy.clear();
     }
