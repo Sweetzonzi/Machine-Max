@@ -1,0 +1,440 @@
+<!--
+  PDA 蓝图终端 — 静态原型页
+  ==========================================================================
+  用途：在写任何界面 Java 代码之前，把布局、配色与「先选条目再选格位」的绑定
+        交互做成实物，供确认。
+
+  约束：
+    - 数据全部硬编码在本页内，用内容包里真实存在的零件名与真实图标资源；
+    - 不引入任何 Java 代码，不发网络包；点击只改变本地 DOM 状态；
+    - 结构与样式按实施页对齐，实施时把硬编码行换成 Java 侧渲染的 HTML 片段。
+
+  样式：pda_ui.css
+
+  打开方式：
+    浏览器直接打开本文件即可预览（此时脚本生效，可点击交互）；
+    或在游戏内按 F10 打开 AUI 内置资源管理器，找到
+    machine_max/pda/pda_ui_prototype.html 双击预览（此时若脚本未执行，页面仍完整显示，
+    只是点击不改变状态）。
+
+  数据说明（原型期取样）：
+    - 已收纳 10 条：8 条无限、2 条有限，用于覆盖「∞」与数字两种次数展示；
+    - 快捷栏预绑定 3 格，用于展示绑定态外观；
+    - 背包蓝图 5 条，覆盖「存入」「已收纳」「合并 +N」三种按钮形态；
+    - 图标取自机器实际的零件图标资源；无图标的条目（通用配方类）留空底块。
+  ==========================================================================
+-->
+
+<link rel="stylesheet" href="pda_ui.css">
+
+<body>
+
+  <div class="pda-root">
+
+    <!-- ================= 标题栏 ================= -->
+    <div class="pda-header">
+      <span class="pda-title" id="pda-title">蓝图终端</span>
+      <span class="pda-counts">
+        <span>已收纳 <b id="pda-count-stored">10</b> 项</span>
+        <span>无限 <b id="pda-count-infinite">8</b></span>
+        <span>有限 <b id="pda-count-limited">2</b></span>
+      </span>
+    </div>
+
+    <!-- ================= 设计模式快捷栏 ================= -->
+    <div class="shortcut-block">
+      <div class="block-label">设计模式快捷栏 &#183; 数字键 1-9 / 滚轮切换，原版物品栏切换同时被屏蔽</div>
+      <div class="shortcut-bar" id="pda-shortcut-bar">
+        <div class="shortcut" id="pda-shortcut-0" data-index="0"><span class="key">1</span><span class="icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_hull.png')"></span></div>
+        <div class="shortcut" id="pda-shortcut-1" data-index="1"><span class="key">2</span><span class="icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_turret.png')"></span></div>
+        <div class="shortcut" id="pda-shortcut-2" data-index="2"><span class="key">3</span><span class="icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_wheel.png')"></span></div>
+        <div class="shortcut" id="pda-shortcut-3" data-index="3"><span class="key">4</span></div>
+        <div class="shortcut" id="pda-shortcut-4" data-index="4"><span class="key">5</span></div>
+        <div class="shortcut" id="pda-shortcut-5" data-index="5"><span class="key">6</span></div>
+        <div class="shortcut" id="pda-shortcut-6" data-index="6"><span class="key">7</span></div>
+        <div class="shortcut" id="pda-shortcut-7" data-index="7"><span class="key">8</span></div>
+        <div class="shortcut" id="pda-shortcut-8" data-index="8"><span class="key">9</span></div>
+      </div>
+    </div>
+
+    <!-- ================= 双栏主体 ================= -->
+    <div class="pda-body">
+
+      <!-- 左栏：已收纳 -->
+      <div class="pda-pane">
+        <div class="pane-head">
+          <span>已收纳</span>
+        </div>
+        <div class="pane-scroll">
+          <div class="list" id="pda-entry-list">
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:sdkfz234_hull">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_hull.png')"></span>
+              <span class="row-name">Sd.Kfz.234车体</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:sdkfz234_turret">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_turret.png')"></span>
+              <span class="row-name">Sd.Kfz.234炮塔</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:sdkfz234_wheel">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_wheel.png')"></span>
+              <span class="row-name">Sd.Kfz.234车轮</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:k17_hull">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_hull.png')"></span>
+              <span class="row-name">K-17车体</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:k17_turret">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_turret.png')"></span>
+              <span class="row-name">K-17炮塔</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:k17_wheel">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_wheel.png')"></span>
+              <span class="row-name">K-17车轮</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="PART" data-target="machine_max:reinforced_container_16x16x8">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/Machine-Max_Official_Pack/machine_max/textures/icon/reinforced_container_16x16x8_icon.png')"></span>
+              <span class="row-name">强化集装箱 16&#215;16&#215;8</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="GENERAL" data-target="machine_max:steel_coil">
+              <span class="tag tag-general">通用</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/Machine-Max_Official_Pack/machine_max/textures/icon/dayun/dayun_steel_coil_icon.png')"></span>
+              <span class="row-name">钢卷</span>
+              <span class="row-uses infinite">&#8734;</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="GENERAL" data-target="machine_max:advanced_circuit">
+              <span class="tag tag-general">通用</span>
+              <span class="row-icon"></span>
+              <span class="row-name">高级电路</span>
+              <span class="row-uses">3</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+            <div class="row" data-act="SELECT_ENTRY" data-kind="GENERAL" data-target="machine_max:copper_wire_harness">
+              <span class="tag tag-general">通用</span>
+              <span class="row-icon"></span>
+              <span class="row-name">铜线束</span>
+              <span class="row-uses">5</span>
+              <span class="row-act" data-act="UNBIND" style="display:none">解绑</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 右栏：背包中的蓝图 -->
+      <div class="pda-pane">
+        <div class="pane-head">
+          <span>背包中的蓝图</span>
+          <span class="spacer"></span>
+          <span class="toolbar-btn" id="pda-btn-deposit-all">一键存入全部</span>
+        </div>
+        <div class="pane-scroll">
+          <div class="list" id="pda-inventory-list">
+
+            <div class="row" data-kind="PART" data-target="machine_max:sdkfz234_turret" data-depositable="0">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_turret.png')"></span>
+              <span class="row-name">Sd.Kfz.234炮塔</span>
+              <span class="row-act disabled" data-act="DEPOSIT">已收纳</span>
+            </div>
+
+            <div class="row" data-kind="PART" data-target="machine_max:k17_wheel" data-depositable="0">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_wheel.png')"></span>
+              <span class="row-name">K-17车轮</span>
+              <span class="row-act disabled" data-act="DEPOSIT">已收纳</span>
+            </div>
+
+            <div class="row" data-kind="GENERAL" data-target="machine_max:advanced_circuit" data-depositable="1">
+              <span class="tag tag-general">通用</span>
+              <span class="row-icon"></span>
+              <span class="row-name">高级电路</span>
+              <span class="row-act" data-act="DEPOSIT" data-merge="1">合并 (+1)</span>
+            </div>
+
+            <div class="row" data-kind="PART" data-target="machine_max:container_16x32x32" data-depositable="1">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/Machine-Max_Official_Pack/machine_max/textures/icon/container_16x32x32_icon.png')"></span>
+              <span class="row-name">集装箱 16&#215;32&#215;32</span>
+              <span class="row-act" data-act="DEPOSIT">存入</span>
+            </div>
+
+            <div class="row" data-kind="PART" data-target="machine_max:golden_closestool" data-depositable="1">
+              <span class="tag tag-part">零件</span>
+              <span class="row-icon" style="background-image:url('../../../../../spark_modules/Machine-Max_Official_Pack/machine_max/textures/icon/golden_closestool_icon.png')"></span>
+              <span class="row-name">黄金马桶</span>
+              <span class="row-act" data-act="DEPOSIT">存入</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= 底部提示栏 ================= -->
+    <div class="pda-status" id="pda-status"></div>
+
+  </div>
+
+  <!--
+    原型脚本：只做本地 DOM 状态变更，不发任何网络请求。
+    实施时这段逻辑全部搬到 Java 侧（Element.addEventListener + 发包）。
+  -->
+  <script>
+  (function () {
+    'use strict';
+
+    var bar = document.getElementById('pda-shortcut-bar');
+    var entryList = document.getElementById('pda-entry-list');
+    var invList = document.getElementById('pda-inventory-list');
+    var statusEl = document.getElementById('pda-status');
+    var depositAllBtn = document.getElementById('pda-btn-deposit-all');
+    if (!bar || !entryList || !invList || !statusEl) { return; }
+
+    var pickedRow = null;   // 待绑定条目
+    var armedSlot = null;   // 待绑定格位
+
+    function setStatus(html) { statusEl.innerHTML = html || ''; }
+    function rowKey(row) { return row.getAttribute('data-kind') + ':' + row.getAttribute('data-target'); }
+    function rowName(row) { var n = row.querySelector('.row-name'); return n ? n.textContent : ''; }
+    function rowIcon(row) { var i = row.querySelector('.row-icon'); return i ? i.style.backgroundImage : ''; }
+    function kindLabel(row) { return row.getAttribute('data-kind') === 'PART' ? '零件' : '通用'; }
+    function kindClass(row) { return row.getAttribute('data-kind') === 'PART' ? 'tag-part' : 'tag-general'; }
+    function slotLabel(slot) { return '第 ' + (Number(slot.getAttribute('data-index')) + 1) + ' 栏'; }
+
+    function clearPicked() { if (pickedRow) { pickedRow.classList.remove('picked'); pickedRow = null; } }
+    function clearArmed() { if (armedSlot) { armedSlot.classList.remove('armed'); armedSlot = null; } }
+
+    /* 解绑按钮只在该条目被任一格位引用时显示 */
+    function syncUnbind() {
+      var used = {};
+      var slots = bar.querySelectorAll('.shortcut');
+      for (var i = 0; i < slots.length; i++) {
+        var key = slots[i].getAttribute('data-bind-key');
+        if (key) { used[key] = true; }
+      }
+      var rows = entryList.querySelectorAll('.row');
+      for (var j = 0; j < rows.length; j++) {
+        var btn = rows[j].querySelector('[data-act="UNBIND"]');
+        if (!btn) { continue; }
+        btn.style.display = used[rowKey(rows[j])] ? '' : 'none';
+      }
+    }
+
+    function unbind(slot) {
+      slot.removeAttribute('data-bind-key');
+      slot.classList.remove('bound');
+      slot.removeAttribute('title');
+      var icon = slot.querySelector('.icon');
+      if (icon) { icon.parentNode.removeChild(icon); }
+    }
+
+    function bind(slot, row) {
+      var key = rowKey(row);
+      var slots = bar.querySelectorAll('.shortcut');
+      for (var i = 0; i < slots.length; i++) {
+        if (slots[i].getAttribute('data-bind-key') === key) { unbind(slots[i]); }
+      }
+      slot.setAttribute('data-bind-key', key);
+      var icon = slot.querySelector('.icon');
+      if (!icon) {
+        icon = document.createElement('span');
+        icon.className = 'icon';
+        slot.appendChild(icon);
+      }
+      icon.style.backgroundImage = rowIcon(row);
+      slot.title = rowName(row);
+      syncUnbind();
+    }
+
+    function findEntryRow(key) {
+      var rows = entryList.querySelectorAll('.row');
+      for (var i = 0; i < rows.length; i++) {
+        if (rowKey(rows[i]) === key) { return rows[i]; }
+      }
+      return null;
+    }
+
+    /* 背包蓝图 → 新条目（蓝图物品不带次数，故新条目为无限） */
+    function addEntry(src) {
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.setAttribute('data-act', 'SELECT_ENTRY');
+      row.setAttribute('data-kind', src.getAttribute('data-kind'));
+      row.setAttribute('data-target', src.getAttribute('data-target'));
+      row.innerHTML =
+        '<span class="tag ' + kindClass(src) + '">' + kindLabel(src) + '</span>' +
+        '<span class="row-icon" style="background-image:' + rowIcon(src) + '"></span>' +
+        '<span class="row-name">' + rowName(src) + '</span>' +
+        '<span class="row-uses infinite">\u221E</span>' +
+        '<span class="row-act" data-act="UNBIND" style="display:none">解绑</span>';
+      entryList.appendChild(row);
+    }
+
+    /* 有限次条目：次数累加；无限条目不会出现在可存入列表里 */
+    function mergeIntoEntry(src) {
+      var row = findEntryRow(rowKey(src));
+      if (!row) { addEntry(src); return; }
+      var uses = row.querySelector('.row-uses');
+      if (!uses || uses.classList.contains('infinite')) { return; }
+      var n = parseInt(uses.textContent, 10);
+      uses.textContent = String(isNaN(n) ? 1 : n + 1);
+    }
+
+    function refreshCounts() {
+      var rows = entryList.querySelectorAll('.row');
+      var infinite = 0;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].querySelector('.row-uses.infinite')) { infinite++; }
+      }
+      document.getElementById('pda-count-stored').textContent = String(rows.length);
+      document.getElementById('pda-count-infinite').textContent = String(infinite);
+      document.getElementById('pda-count-limited').textContent = String(rows.length - infinite);
+    }
+
+    /* ---------- 交互：已收纳列表 ---------- */
+    entryList.addEventListener('click', function (ev) {
+      var row = ev.target.closest ? ev.target.closest('.row') : null;
+      var act = ev.target.closest ? ev.target.closest('[data-act]') : null;
+      if (!row) { return; }
+
+      if (act && act.getAttribute('data-act') === 'UNBIND') {
+        var key = rowKey(row);
+        var slots = bar.querySelectorAll('.shortcut');
+        for (var i = 0; i < slots.length; i++) {
+          if (slots[i].getAttribute('data-bind-key') === key) { unbind(slots[i]); }
+        }
+        syncUnbind();
+        setStatus('已解除「<span class="hl">' + rowName(row) + '</span>」的绑定');
+        return;
+      }
+
+      /* 已先选格位：直接把该条目绑上去 */
+      if (armedSlot) {
+        var slot = armedSlot;
+        var label = slotLabel(slot);
+        bind(slot, row);
+        clearArmed();
+        clearPicked();
+        setStatus('已把「<span class="hl">' + rowName(row) + '</span>」绑定到 ' + label);
+        return;
+      }
+
+      if (pickedRow === row) { clearPicked(); setStatus(''); return; }
+      clearPicked();
+      pickedRow = row;
+      row.classList.add('picked');
+      setStatus('已选中「<span class="hl">' + rowName(row) + '</span>」，请点击快捷栏位以完成绑定');
+    });
+
+    /* ---------- 交互：快捷栏 ---------- */
+    bar.addEventListener('click', function (ev) {
+      var slot = ev.target.closest ? ev.target.closest('.shortcut') : null;
+      if (!slot) { return; }
+
+      if (pickedRow) {
+        var row = pickedRow;
+        clearPicked();
+        clearArmed();
+        bind(slot, row);
+        setStatus('已把「<span class="hl">' + rowName(row) + '</span>」绑定到 ' + slotLabel(slot));
+        return;
+      }
+
+      if (armedSlot === slot) { clearArmed(); setStatus(''); return; }
+      clearArmed();
+      armedSlot = slot;
+      slot.classList.add('armed');
+      setStatus('已选中 ' + slotLabel(slot) + '，请点击左侧条目以完成绑定');
+    });
+
+    /* ---------- 交互：背包中的蓝图 ---------- */
+    invList.addEventListener('click', function (ev) {
+      var row = ev.target.closest ? ev.target.closest('.row') : null;
+      if (!row) { return; }
+
+      var name = rowName(row);
+      if (row.getAttribute('data-depositable') !== '1') {
+        setStatus('「<span class="hl">' + name + '</span>」已收纳，未重复存入');
+        return;
+      }
+      var act = row.querySelector('[data-act="DEPOSIT"]');
+      if (act && act.getAttribute('data-merge') === '1') { mergeIntoEntry(row); } else { addEntry(row); }
+      row.parentNode.removeChild(row);
+      refreshCounts();
+      syncUnbind();
+      setStatus('已存入「<span class="hl">' + name + '</span>」');
+    });
+
+    if (depositAllBtn) {
+      depositAllBtn.addEventListener('click', function () {
+        var rows = invList.querySelectorAll('.row');
+        var list = [];
+        for (var i = 0; i < rows.length; i++) { list.push(rows[i]); }
+        var stored = 0;
+        var rejected = 0;
+        for (var j = 0; j < list.length; j++) {
+          var row = list[j];
+          if (row.getAttribute('data-depositable') !== '1') { rejected++; continue; }
+          var act = row.querySelector('[data-act="DEPOSIT"]');
+          if (act && act.getAttribute('data-merge') === '1') { mergeIntoEntry(row); } else { addEntry(row); }
+          row.parentNode.removeChild(row);
+          stored++;
+        }
+        refreshCounts();
+        syncUnbind();
+        setStatus('已存入 ' + stored + ' 张蓝图' + (rejected > 0 ? '，' + rejected + ' 张已收纳' : ''));
+      });
+    }
+
+    /* 预绑定：1→车体、2→炮塔、3→车轮 */
+    (function preBind() {
+      var rows = entryList.querySelectorAll('.row');
+      var slots = bar.querySelectorAll('.shortcut');
+      var preset = { '0': 0, '1': 1, '2': 2 };
+      for (var idx in preset) {
+        if (!preset.hasOwnProperty(idx)) { continue; }
+        var target = slots[Number(idx)];
+        var source = rows[preset[idx]];
+        if (target && source) { bind(target, source); }
+      }
+    })();
+
+    refreshCounts();
+    syncUnbind();
+  })();
+  </script>
+
+</body>

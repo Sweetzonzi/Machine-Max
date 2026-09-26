@@ -32,7 +32,7 @@ import org.lwjgl.glfw.GLFW;
 @OnlyIn(Dist.CLIENT)
 public class VehicleControlScreen extends Screen {
 
-    private static final String AUI_DOC_PATH = "machine_max/vehicle_control.html";
+    private static final String AUI_DOC_PATH = "machine_max/vehicle_control/vehicle_control.html";
 
     /** 所有会被 Java 动态填充子元素的容器 ID，用于热重载时的显式清理 */
     private static final String[] PANEL_CONTAINER_IDS = {

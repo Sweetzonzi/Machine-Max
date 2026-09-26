@@ -1,0 +1,109 @@
+<!--
+  PDA 蓝图终端 — 设计模式 HUD 快捷栏 · 静态原型页
+  ==========================================================================
+  用途：在写 HUD 绘制代码之前，把「设计模式下替代原版快捷栏」的外观做成实物，
+        供确认。本页与 pda_ui_prototype.html 是两件不同的东西：
+          pda_ui_prototype.html   — 常态右键打开的管理界面（全屏）
+          pda_hotbar_prototype.html — 设计模式下的常驻 HUD 叠层（底部窄条）
+
+  约束：
+    - 数据硬编码在本页内，用内容包里真实存在的零件名与真实图标资源；
+    - 不引入任何 Java 代码，不发网络包；点击只改变本地 DOM 状态；
+    - 实施时本页由 AUI 的 Overlay Document 承载：客户端调
+      ApricityUI.createDocument("machine_max/pda/pda_hotbar.html")，AUI 在
+      「无 Screen 打开且未按 F1 隐藏 HUD」时自动每帧绘制。
+
+  样式：pda_hotbar.css
+
+  打开方式：
+    浏览器直接打开本文件即可预览（此时脚本生效，可点击切格）；
+    或在游戏内按 F10 打开 AUI 内置资源管理器，找到
+    machine_max/pda/pda_hotbar_prototype.html 双击预览。
+
+  视口与输入：
+    <meta name="aui-viewport"> 用默认的 gui 视口，与原版快捷栏的 GUI 坐标一致。
+    刻意不写 <meta name="aui-mouse-events" content="intercept">：
+    HUD 叠层不参与输入，滚轮与数字键由 PdaInputInterceptor 独占处理。
+
+  数据说明（原型期取样）：
+    - 第 1~7 格绑定零件制造蓝图，第 2 格为当前选中态；
+    - 第 8 格空位，用于展示未绑定格位的外观；
+    - 第 9 格绑定通用制造蓝图，序号呈琥珀色表示该条目不可放置。
+  ==========================================================================
+-->
+
+<meta name="aui-viewport" content="mode=gui">
+<link rel="stylesheet" href="pda_hotbar.css">
+
+<body>
+
+  <!-- 静态原型专用：示意背景，实施页不含这两块 -->
+  <div class="mock-scene"></div>
+  <div class="mock-note">
+    静态原型 · 背景为示意<br>
+    点击格位可切换选中态；第 8 格为空位，第 9 格序号呈琥珀色表示该条目不可放置
+  </div>
+
+  <!-- ================= HUD 快捷栏 ================= -->
+  <div class="hotbar-anchor">
+    <div class="hotbar-wrap">
+
+      <!-- 选中蓝图名，位置相当于原版快捷栏上方的物品名提示 -->
+      <div class="hotbar-label" id="pda-hotbar-label"></div>
+
+      <div class="hotbar" id="pda-hotbar">
+        <div class="hs" id="pda-hotbar-slot-0" data-index="0" data-name="Sd.Kfz.234车体"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_hull.png')"><span class="k">1</span></div>
+        <div class="hs" id="pda-hotbar-slot-1" data-index="1" data-name="Sd.Kfz.234炮塔"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_turret.png')"><span class="k">2</span></div>
+        <div class="hs" id="pda-hotbar-slot-2" data-index="2" data-name="Sd.Kfz.234车轮"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/sdkfz234/sdkfz234_wheel.png')"><span class="k">3</span></div>
+        <div class="hs" id="pda-hotbar-slot-3" data-index="3" data-name="K-17车体"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_hull.png')"><span class="k">4</span></div>
+        <div class="hs" id="pda-hotbar-slot-4" data-index="4" data-name="K-17炮塔"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_turret.png')"><span class="k">5</span></div>
+        <div class="hs" id="pda-hotbar-slot-5" data-index="5" data-name="K-17车轮"
+             style="background-image:url('../../../../../spark_modules/sdkfz/machine_max/textures/icon/k17/k17_wheel.png')"><span class="k">6</span></div>
+        <div class="hs" id="pda-hotbar-slot-6" data-index="6" data-name="强化集装箱 16&#215;16&#215;8"
+             style="background-image:url('../../../../../spark_modules/Machine-Max_Official_Pack/machine_max/textures/icon/reinforced_container_16x16x8_icon.png')"><span class="k">7</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-7" data-index="7"><span class="k">8</span></div>
+        <div class="hs blocked" id="pda-hotbar-slot-8" data-index="8" data-name="高级电路"><span class="k">9</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!--
+    原型脚本：只做本地 DOM 状态变更，不发任何网络请求。
+    实施时选中态由 Java 侧按 PdaClientState 写入，点击不需要监听。
+  -->
+  <script>
+  (function () {
+    'use strict';
+
+    var bar = document.getElementById('pda-hotbar');
+    var label = document.getElementById('pda-hotbar-label');
+    if (!bar || !label) { return; }
+
+    var slots = bar.querySelectorAll('.hs');
+
+    function select(target) {
+      for (var i = 0; i < slots.length; i++) {
+        slots[i].classList.remove('selected');
+      }
+      target.classList.add('selected');
+      var name = target.getAttribute('data-name');
+      label.textContent = name ? name : '未绑定蓝图';
+    }
+
+    bar.addEventListener('click', function (ev) {
+      var slot = ev.target.closest ? ev.target.closest('.hs') : null;
+      if (slot) { select(slot); }
+    });
+
+    /* 初值：第 2 格为选中态，对应 PdaClientState.shortcutIndex() == 1 */
+    select(slots[1]);
+  })();
+  </script>
+
+</body>

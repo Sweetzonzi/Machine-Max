@@ -16,7 +16,7 @@
 /* ---------- @font-face: 注册 Microgramma 字体 ---------- */
 @font-face {
     font-family: "microgramma";
-    src: url("microgrammadbolext.ttf");
+    src: url("../microgrammadbolext.ttf");
 }
 
 /* ---------- 根元素高度基准 ---------- */

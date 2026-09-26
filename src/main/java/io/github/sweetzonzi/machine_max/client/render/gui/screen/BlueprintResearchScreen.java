@@ -41,7 +41,7 @@ import java.util.function.BiConsumer;
  */
 @OnlyIn(Dist.CLIENT)
 public class BlueprintResearchScreen extends ApricityScreen {
-    private static final String AUI_DOC_PATH = "machine_max/research_ui.html";
+    private static final String AUI_DOC_PATH = "machine_max/research/research_ui.html";
 
     /** 折叠状态与上次选中项：静态字段，跨界面开关保留 */
     private static final Set<String> RESEARCH_COLLAPSED = new LinkedHashSet<>();

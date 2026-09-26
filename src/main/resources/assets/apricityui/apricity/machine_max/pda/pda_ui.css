@@ -1,0 +1,347 @@
+/* ================================================================
+   PDA 蓝图终端 — 样式表
+   ================================================================
+   渲染引擎：ApricityUI
+   页面：pda_ui.html（实施页） / pda_ui_prototype.html（静态原型）
+
+   本文件承载整页样式：标题栏、设计模式快捷栏、双栏列表、提示栏。
+   与项目其他 AUI 页面同构的书写约定：
+     1. 不用 calc()，不用负 margin，不用 grid-template-areas；
+     2. transition 只写在 AUI 的可动画白名单属性上（颜色、透明度、宽高、
+        transform、box-shadow），名单外属性会直接跳变；
+     3. 页面不铺整屏底衬，底衬由承载它的 Minecraft 屏幕遮罩提供。
+
+   主题色走 CSS 变量，见 :root。
+   ================================================================ */
+
+:root {
+    --accent: #58C9D8;                            /* 主题强调色：青 */
+    --accent-dim: rgba(88, 201, 216, 0.32);        /* 强调色低饱和态：未选中边框 */
+    --accent-veil: rgba(88, 201, 216, 0.15);       /* 强调色蒙层：悬停与选中底色 */
+    --panel-bg: rgba(11, 11, 11, 0.62);            /* 区块底色 */
+    --panel-bg-soft: rgba(255, 255, 255, 0.045);   /* 次级底色：格位、图标底 */
+    --row-hover: #1C1C22;                          /* 列表行悬停底色 */
+    --line: #EAEAEA;                               /* 分隔线 */
+}
+
+/* ---------- 全局重置 ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: #D2D2DC;
+    /* unset = 使用 Minecraft 原版字体；浏览器预览时落到系统默认字体。
+       浏览器对小字号有下限，9~10px 的文本会被放大，字号不要照浏览器观感调。 */
+    font-family: unset;
+}
+
+.pda-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--panel-bg);
+}
+
+/* ================================================================
+   标题栏
+   ================================================================ */
+.pda-header {
+    flex: 0 0 auto;
+    height: 28px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background: rgba(11, 11, 11, 0.75);
+    border-bottom: 1px solid var(--line);
+}
+
+.pda-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #E8E8F0;
+}
+
+.pda-counts {
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    font-size: 9px;
+    color: rgba(210, 210, 220, 0.65);
+}
+
+.pda-counts b {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* ================================================================
+   区块标签
+   ================================================================ */
+.block-label {
+    flex: 0 0 auto;
+    padding: 6px 12px 4px 12px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(210, 210, 220, 0.55);
+}
+
+/* ================================================================
+   设计模式快捷栏
+   ================================================================ */
+.shortcut-block {
+    flex: 0 0 auto;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(234, 234, 234, 0.35);
+}
+
+.shortcut-bar {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.shortcut {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--accent-dim);
+    background: var(--panel-bg-soft);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shortcut:hover {
+    background: var(--row-hover);
+}
+
+/* 待绑定格位：等玩家点条目 */
+.shortcut.armed {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.shortcut .key {
+    position: absolute;
+    top: 1px;
+    left: 3px;
+    font-size: 8px;
+    color: rgba(210, 210, 220, 0.45);
+}
+
+.shortcut .icon {
+    width: 22px;
+    height: 22px;
+    background-color: var(--panel-bg-soft);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+/* ================================================================
+   双栏主体
+   ================================================================ */
+.pda-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+}
+
+.pda-pane {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.pda-pane + .pda-pane {
+    border-left: 1px solid rgba(234, 234, 234, 0.35);
+}
+
+.pane-head {
+    flex: 0 0 auto;
+    height: 24px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 10px;
+    background: rgba(11, 11, 11, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #E8E8F0;
+}
+
+.pane-head .spacer {
+    margin-left: auto;
+}
+
+.toolbar-btn {
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0;
+    padding: 1px 7px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.toolbar-btn:hover {
+    background: var(--accent-veil);
+}
+
+.pane-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+/* ================================================================
+   列表行
+   ================================================================ */
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding-left: 12px;
+    padding-right: 10px;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+.row:hover {
+    background: var(--row-hover);
+}
+
+/* 待绑定条目：等玩家点格位 */
+.row.picked {
+    padding-left: 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-veil);
+}
+
+.tag {
+    flex: 0 0 auto;
+    padding: 0 4px;
+    font-size: 8px;
+    line-height: 14px;
+    border: 1px solid transparent;
+}
+
+.tag-part {
+    color: #8FD3E8;
+    border-color: rgba(143, 211, 232, 0.45);
+}
+
+.tag-general {
+    color: #D8C68F;
+    border-color: rgba(216, 198, 143, 0.45);
+}
+
+.row-icon {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    background-color: var(--panel-bg-soft);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.row-name {
+    flex: 1 1 auto;
+    font-size: 10px;
+    color: #E2E2EA;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.row-uses {
+    flex: 0 0 auto;
+    font-size: 9px;
+    color: rgba(210, 210, 220, 0.6);
+}
+
+.row-uses.infinite {
+    color: var(--accent);
+}
+
+.row-act {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    font-size: 9px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.row-act:hover {
+    background: var(--accent-veil);
+}
+
+.row-act.disabled {
+    color: rgba(210, 210, 220, 0.32);
+    border-color: rgba(210, 210, 220, 0.16);
+    cursor: default;
+}
+
+.row-act.disabled:hover {
+    background: transparent;
+}
+
+.empty {
+    padding: 8px 12px;
+    font-size: 9px;
+    color: rgba(210, 210, 220, 0.35);
+}
+
+/* ================================================================
+   底部提示栏
+   ================================================================ */
+.pda-status {
+    flex: 0 0 auto;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 9px;
+    color: rgba(210, 210, 220, 0.75);
+    background: rgba(11, 11, 11, 0.7);
+    border-top: 1px solid var(--line);
+}
+
+.pda-status .hl {
+    color: var(--accent);
+}

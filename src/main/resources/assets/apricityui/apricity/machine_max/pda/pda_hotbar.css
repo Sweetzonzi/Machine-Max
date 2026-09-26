@@ -1,0 +1,154 @@
+/* ================================================================
+   PDA 蓝图终端 — 设计模式 HUD 快捷栏样式表
+   ================================================================
+   渲染引擎：ApricityUI（Overlay Document）
+   页面：pda_hotbar.html（实施页） / pda_hotbar_prototype.html（静态原型）
+
+   这是设计模式下替代原版快捷栏的 HUD 元素：一条 9 格蓝图选择条，
+   贴在屏幕底部居中，与原版快捷栏占用同一屏幕区域。
+
+   与 pda_ui.css 的差异：
+     - 本页是 HUD 叠层，不是全屏管理界面，只画一条窄带；
+     - 页面自身不铺底衬，只给条体一层半透明深色，保证在任何地形上都可读；
+     - 尺寸按原版快捷栏对齐：格 20px、格间距 1px、条体四周 1px 内衬。
+
+   书写约定沿用项目其他 AUI 页面：不用 calc()、不用负 margin、
+   不用 grid-template-areas；transition 只写在可动画白名单属性上。
+   ================================================================ */
+
+:root {
+    --accent: #58C9D8;                              /* 主题强调色：青 */
+    --slot-size: 20px;                              /* 单格边长，与原版快捷栏一致 */
+    --slot-gap: 1px;                                /* 格间距 */
+    --bar-bg: rgba(0, 0, 0, 0.45);                  /* 条体底色 */
+    --slot-bg: rgba(30, 30, 38, 0.6);               /* 空格底色 */
+    --slot-frame: rgba(255, 255, 255, 0.14);        /* 未选中格描边 */
+    --selected-frame: #FFFFFF;                      /* 选中格描边 */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    font-family: unset;
+    color: #D2D2DC;
+}
+
+/* ================================================================
+   定位：底部居中
+   原版快捷栏同样贴底居中，两者占用同一区域，因此经验条与
+   生命/饥饿条无需额外处理。
+   ================================================================ */
+.hotbar-anchor {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.hotbar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+/* 选中蓝图名，位置相当于原版快捷栏上方的物品名提示 */
+.hotbar-label {
+    height: 12px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+}
+
+/* ================================================================
+   条体
+   ================================================================ */
+.hotbar {
+    display: flex;
+    flex-direction: row;
+    gap: var(--slot-gap);
+    padding: var(--slot-gap);
+    background: var(--bar-bg);
+    border: 1px solid var(--slot-frame);
+}
+
+/* 单格 */
+.hs {
+    position: relative;
+    width: var(--slot-size);
+    height: var(--slot-size);
+    background-color: var(--slot-bg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: 1px solid var(--slot-frame);
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+/* 未绑定的格位：去掉描边，视觉上退到背景里 */
+.hs.empty {
+    border-color: transparent;
+    background-color: rgba(30, 30, 38, 0.35);
+}
+
+/* 当前选中格位：白框 + 提亮，对应原版快捷栏的选中高亮 */
+.hs.selected {
+    border-color: var(--selected-frame);
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+/* 格位序号 1~9 */
+.hs .k {
+    position: absolute;
+    top: -1px;
+    left: 1px;
+    font-size: 7px;
+    line-height: 8px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* 当前格位绑定的条目类别为 GENERAL（不可放置）时的提示色 */
+.hs.blocked .k {
+    color: #D8C68F;
+}
+
+/* ================================================================
+   静态原型专用：示意背景与说明
+   实施页不包含 .mock-* 这些节点。
+   ================================================================ */
+.mock-scene {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(#7AB7E8 0%, #A8CFE8 42%, #6B8F4E 42%, #47632F 100%);
+}
+
+.mock-note {
+    position: fixed;
+    left: 8px;
+    top: 8px;
+    font-size: 9px;
+    line-height: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
