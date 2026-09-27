@@ -145,6 +145,12 @@ body {
     box-shadow: 0 0 0 1px var(--accent);
 }
 
+/* 当前格位：与设计模式 HUD 的选中格位同义，对应 PDA_DATA.selected */
+.shortcut.selected {
+    border-color: var(--accent);
+    background: var(--accent-veil);
+}
+
 .shortcut .key {
     position: absolute;
     top: 1px;
@@ -267,6 +273,12 @@ body {
 .tag-general {
     color: #D8C68F;
     border-color: rgba(216, 198, 143, 0.45);
+}
+
+/* 未知蓝图：条目引用的配方已从本侧索引中失效，只置灰不删除 */
+.tag-unknown {
+    color: rgba(210, 210, 220, 0.45);
+    border-color: rgba(210, 210, 220, 0.22);
 }
 
 .row-icon {

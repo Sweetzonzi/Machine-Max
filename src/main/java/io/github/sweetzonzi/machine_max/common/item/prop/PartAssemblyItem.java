@@ -26,14 +26,18 @@ import java.util.List;
  */
 public interface PartAssemblyItem {
     /**
-     * 解析物品代表的零件类型：优先读 {@code machine_max:part_type} 组件，缺失时经零件配方索引反查产物。
+     * 解析物品自身提供的零件来源：默认实现优先读 {@code machine_max:part_type} 组件，缺失时经零件配方索引反查产物。
+     *
+     * <p>能提供零件来源的物品可以覆写本方法，以自己的方式回答"本次放置的是哪个零件"
+     * （例如 PDA 读当前格位绑定的条目）。外部调用方一律经静态派发器
+     * {@link #partTypeOf(ItemStack, Level)} 调用，不直接取 {@code getItem()} 强转。</p>
      *
      * @param stack 物品堆
      * @param level 用于判定逻辑侧
      * @return 零件类型；无法解析时返回 {@code null}
      */
     @Nullable
-    static PartType getPartType(ItemStack stack, Level level) {
+    default PartType getPartType(ItemStack stack, Level level) {
         ResourceLocation partTypeId = stack.get(MMDataComponents.getPART_TYPE());
         if (partTypeId != null) {
             PartType partType = PartType.get(level, partTypeId);
@@ -43,6 +47,21 @@ public interface PartAssemblyItem {
         if (holder == null) return null;
         ResourceLocation resolved = holder.value().getPartType();
         return resolved == null ? null : PartType.get(level, resolved);
+    }
+
+    /**
+     * 静态派发器：把"手持物品 → 零件类型"的翻译交给物品自身。
+     *
+     * @param stack 物品堆
+     * @param level 用于判定逻辑侧
+     * @return 零件类型；物品未实现 {@link PartAssemblyItem}、或物品自身解析不出时返回 {@code null}
+     */
+    @Nullable
+    static PartType partTypeOf(ItemStack stack, Level level) {
+        if (stack.getItem() instanceof PartAssemblyItem item) {
+            return item.getPartType(stack, level);
+        }
+        return null;
     }
 
     /**

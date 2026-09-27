@@ -131,6 +131,11 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.blueprint.place_failed", "No enough space to deploy vehicle");
         this.add("message.machine_max.vehicle.place_failed", "Failed to deploy vehicle: %1$s");
         this.add("message.machine_max.part.place_failed", "Failed to place part: %1$s");
+        // Blueprint terminal
+        this.add("message.machine_max.pda.deposit.success", "Stored %1$s blueprint(s)");
+        this.add("message.machine_max.pda.deposit.rejected", "%1$s blueprint(s) already stored");
+        this.add("message.machine_max.pda.design_mode.enter", "Design mode enabled");
+        this.add("message.machine_max.pda.design_mode.exit", "Design mode disabled");
         //Item Group
         this.add("itemGroup.machine_max.main", "MachineMax: Materials and Tools");
         this.add("itemGroup.machine_max.part", "MachineMax: Parts");
@@ -153,6 +158,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "Basic Electronic Component");
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
+        this.add("item.machine_max.pda", "Blueprint Terminal");
         // Item sound effects
         this.add("subtitles.item.welding_torch.start", "Welding torch starts");
         this.add("subtitles.item.welding_torch.loop", "Welding torch running");
@@ -229,6 +235,32 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.research.action.take", "Extract");
         this.add("gui.machine_max.research.action.rename", "Rename");
         this.add("gui.machine_max.research.action.delete", "Delete");
+        // Blueprint terminal screen
+        this.add("gui.machine_max.pda.title", "Blueprint Terminal");
+        this.add("gui.machine_max.pda.group.stored", "Stored");
+        this.add("gui.machine_max.pda.group.inventory", "Blueprints in Inventory");
+        this.add("gui.machine_max.pda.group.shortcut", "Design Mode Shortcuts");
+        this.add("gui.machine_max.pda.btn.deposit", "Store");
+        this.add("gui.machine_max.pda.btn.deposit_all", "Store All");
+        this.add("gui.machine_max.pda.btn.stored", "Stored");
+        this.add("gui.machine_max.pda.btn.merge", "Merge (+%1$s)");
+        this.add("gui.machine_max.pda.btn.unbind", "Unbind");
+        this.add("gui.machine_max.pda.status.select_entry", "Selected \"%1$s\" - click a shortcut slot to bind");
+        this.add("gui.machine_max.pda.status.select_slot", "Selected slot %1$s - click a stored entry to bind");
+        this.add("gui.machine_max.pda.hint.general", "This blueprint has no direct use");
+        this.add("gui.machine_max.pda.hint.empty_slot", "No blueprint bound to this slot");
+        this.add("gui.machine_max.pda.tag.unknown", "Unknown Blueprint");
+        this.add("gui.machine_max.pda.tag.part", "Part");
+        this.add("gui.machine_max.pda.tag.general", "General");
+        this.add("gui.machine_max.pda.hint.unavailable", "This blueprint is currently unavailable (recipe missing)");
+        this.add("gui.machine_max.pda.count.stored", "Stored %1$s");
+        this.add("gui.machine_max.pda.count.infinite", "Infinite %1$s");
+        this.add("gui.machine_max.pda.count.limited", "Limited %1$s");
+        this.add("gui.machine_max.pda.hud.title", "Design Mode");
+        this.add("gui.machine_max.pda.key.right_click", "Right-click");
+        this.add("gui.machine_max.pda.key.sneak", "Sneak");
+        this.add("gui.machine_max.pda.action.place", "Place Part");
+        this.add("gui.machine_max.pda.action.exit", "Exit");
         // Blueprint library tab
         this.add("gui.machine_max.research.library.status.normal", "OK");
         this.add("gui.machine_max.research.library.status.parse_error", "Parse Failed");

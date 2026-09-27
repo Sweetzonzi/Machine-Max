@@ -1,0 +1,76 @@
+<!--
+  PDA 蓝图终端 — 管理界面 · 实施页
+  ==========================================================================
+  由 PdaScreen（ApricityScreen 子类）承载：页面由 AUI 创建并绘制，本页只提供
+  结构与样式，数据与交互全部在 Java 侧（列表行 HTML 由 Java 生成后写入容器）。
+
+  三块内容：
+    标题栏          标题（静态） + 已收纳 / 无限 / 有限 三项计数（Java 写入）
+    设计模式快捷栏  9 个格位（Java 生成子节点），点格位完成绑定
+    双栏主体        左：已收纳列表（Java 写入 innerHTML）
+                    右：背包蓝图列表（Java 写入 innerHTML） + 一键存入全部
+
+  元素 id 与 data-act 取值见接口设计文档 7.1；条目行与格位的选中态、
+  待绑定态由 Java 切 CSS 类，本页不含脚本。
+
+  交互顺序（详情设计文档 8.3）：先选条目再选格位；也支持先选格位再选条目。
+
+  样式：pda_ui.css
+  ==========================================================================
+-->
+
+<link rel="stylesheet" href="pda_ui.css">
+
+<body>
+
+  <div class="pda-root">
+
+    <!-- ================= 标题栏 ================= -->
+    <div class="pda-header">
+      <span class="pda-title" id="pda-title"><translation>gui.machine_max.pda.title</translation></span>
+      <span class="pda-counts">
+        <span id="pda-count-stored"></span>
+        <span id="pda-count-infinite"></span>
+        <span id="pda-count-limited"></span>
+      </span>
+    </div>
+
+    <!-- ================= 设计模式快捷栏 ================= -->
+    <div class="shortcut-block">
+      <div class="block-label"><translation>gui.machine_max.pda.group.shortcut</translation></div>
+      <div class="shortcut-bar" id="pda-shortcut-bar"></div>
+    </div>
+
+    <!-- ================= 双栏主体 ================= -->
+    <div class="pda-body">
+
+      <!-- 左栏：已收纳 -->
+      <div class="pda-pane">
+        <div class="pane-head">
+          <span><translation>gui.machine_max.pda.group.stored</translation></span>
+        </div>
+        <div class="pane-scroll">
+          <div class="list" id="pda-entry-list"></div>
+        </div>
+      </div>
+
+      <!-- 右栏：背包中的蓝图 -->
+      <div class="pda-pane">
+        <div class="pane-head">
+          <span><translation>gui.machine_max.pda.group.inventory</translation></span>
+          <span class="spacer"></span>
+          <span class="toolbar-btn" id="pda-btn-deposit-all"><translation>gui.machine_max.pda.btn.deposit_all</translation></span>
+        </div>
+        <div class="pane-scroll">
+          <div class="list" id="pda-inventory-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= 底部提示栏 ================= -->
+    <div class="pda-status" id="pda-status"></div>
+
+  </div>
+
+</body>

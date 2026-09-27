@@ -1,0 +1,61 @@
+<!--
+  PDA 蓝图终端 — 设计模式 HUD 快捷栏 · 实施页
+  ==========================================================================
+  由客户端 PdaHotbarOverlay 创建的 AUI Overlay Document 承载：
+  无 Screen 打开且未按 F1 隐藏 HUD 时由 AUI 逐帧自动绘制，绘制时机在所有
+  LayeredDraw 图层之后，因此天然盖住原版 HUD 的同区域。
+
+  显隐：根元素（html）的 pda-hotbar-hidden 类控制整体隐藏，由
+  PdaHotbarOverlay 切换；文档一经创建即保留复用，不随模式切换反复销毁重建。
+
+  输入：刻意不声明 <meta name="aui-mouse-events">，HUD 叠层不参与输入，
+  滚轮与数字键由 PdaInputInterceptor 独占。
+
+  元素约定（见接口设计文档 7.3）：
+    #pda-hotbar          条体容器，含 9 个格位
+    #pda-hotbar-label    选中蓝图名（Java 写入）
+    #pda-hotbar-slot-0..8  单个格位（Java 写入图标与状态类）
+    #pda-hotbar-banner   左上角常驻「设计模式」横幅（内容经 <translation> 取语言键，Java 不写入）
+
+  格位内的 <texture class="hs-icon"> 由 Java 写入 src（条目对应的零件图标），
+  与研究台界面同一套纹理元素写法。
+
+  样式：pda_hotbar.css
+  ==========================================================================
+-->
+
+<meta name="aui-viewport" content="mode=gui">
+<link rel="stylesheet" href="pda_hotbar.css">
+
+<body>
+
+  <!-- ================= HUD 快捷栏 ================= -->
+  <div class="hotbar-anchor">
+    <div class="hotbar-wrap">
+
+      <!-- 选中蓝图名，位置相当于原版快捷栏上方的物品名提示 -->
+      <div class="hotbar-label" id="pda-hotbar-label"></div>
+
+      <div class="hotbar" id="pda-hotbar">
+        <div class="hs empty" id="pda-hotbar-slot-0"><texture class="hs-icon"></texture><span class="k">1</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-1"><texture class="hs-icon"></texture><span class="k">2</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-2"><texture class="hs-icon"></texture><span class="k">3</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-3"><texture class="hs-icon"></texture><span class="k">4</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-4"><texture class="hs-icon"></texture><span class="k">5</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-5"><texture class="hs-icon"></texture><span class="k">6</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-6"><texture class="hs-icon"></texture><span class="k">7</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-7"><texture class="hs-icon"></texture><span class="k">8</span></div>
+        <div class="hs empty" id="pda-hotbar-slot-8"><texture class="hs-icon"></texture><span class="k">9</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= 设计模式横幅（左上角常驻，多行） ================= -->
+  <div class="mode-banner" id="pda-hotbar-banner">
+    <div class="mb-title"><translation>gui.machine_max.pda.hud.title</translation></div>
+    <div class="mb-line"><translation class="mb-key">gui.machine_max.pda.key.right_click</translation><translation class="mb-verb">gui.machine_max.pda.action.place</translation></div>
+    <div class="mb-line"><translation class="mb-key">gui.machine_max.pda.key.sneak</translation><span class="mb-sep">+</span><translation class="mb-key">gui.machine_max.pda.key.right_click</translation><translation class="mb-verb">gui.machine_max.pda.action.exit</translation></div>
+  </div>
+
+</body>

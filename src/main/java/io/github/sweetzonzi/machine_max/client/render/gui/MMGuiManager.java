@@ -14,11 +14,13 @@ import io.github.sweetzonzi.machine_max.client.render.gui.screen.ItemStorageSubs
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleNamingScreen;
 import io.github.sweetzonzi.machine_max.client.render.renderable.ITickableRenderable;
 import io.github.sweetzonzi.machine_max.client.render.renderer.Hud3DRenderer;
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -145,6 +147,14 @@ public class MMGuiManager {
                 && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
                 && !seat.attr.staticAttribute.allowUseItems) {
             if (event.getName() == VanillaGuiLayers.HOTBAR) event.setCanceled(true);
+        }
+
+        // 设计模式：原版快捷栏的格位语义已与热栏脱钩，用蓝图选择条整体替代它
+        if (event.getName() == VanillaGuiLayers.HOTBAR) {
+            InteractionHand hand = PdaHelper.heldPdaHand(player);
+            if (hand != null && PdaHelper.getData(player.getItemInHand(hand)).designMode()) {
+                event.setCanceled(true);
+            }
         }
     }
 }

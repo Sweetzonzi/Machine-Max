@@ -3,41 +3,26 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
-import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
@@ -70,87 +55,6 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
         return InteractionResultHolder.pass(stack);
     }
 
-
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, portId, isSelected);
-        if (level.isClientSide() && isSelected && entity instanceof Player player) {
-            try {
-                var helper = VehicleAssemblyHelper.getInstance();
-                var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-                PartType partType = helper.getPartType();//获取本地装配状态保存的部件类型
-                if (partType == null) return;
-                VariantAttr variantAttr = helper.getVariant();//获取本地装配状态保存的部件变体属性
-                if (variantAttr == null) return;
-                String variantName = helper.getVariantName();//获取本地装配状态保存的部件变体
-                ConnectorAttr connectorAttr = helper.getConnector();
-                SubPart targetSubPart = eyesight.getSubPart();
-                AbstractConnector targetConnector = eyesight.getEmptyConnector();
-                MutableComponent message = Component.empty();
-                if (targetSubPart != null // 直接填满未组装的蓝图部件进度
-                        && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()
-                        && Objects.equals(variantName, targetSubPart.part.variantName)
-                        && targetSubPart.part.getAssemblingProgress() == 0
-                        && targetSubPart.part.getMaterialProgress() == 0) {
-                    message.append("右键以直接完成" + Component.translatable(targetSubPart.part.name).getString() + "的组装进度");
-                    if (VisualEffectHelper.partToPlace != null) {
-                        VisualEffectHelper.partToPlace.updateTransform(
-                                new Transform(
-                                        targetSubPart.part.rootSubPart.getPosition(),
-                                        targetSubPart.part.rootSubPart.getRotation()
-                                )
-                        );
-                    }
-                } else if (targetConnector != null && connectorAttr != null) {
-                    if (targetConnector.conditionCheck(partType, variantName)) {
-                        if ((targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
-                            message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + " 部件接口:"
-                                    + Component.translatable(helper.getConnectorName().getFirst()).getString() + "-"
-                                    + Component.translatable(helper.getConnectorName().getSecond()).getString());
-                            if (!variantName.equals("default") && partType.variants.size() > 1)
-                                message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
-                            if (VisualEffectHelper.partToPlace != null) {
-                                // 服务端 adjustTransform 以“待安装连接点所属 SubPart”为绝对锚点，预览需保持一致
-                                VisualEffectHelper.partToPlace.updateTransform(
-                                        targetConnector.mergeTransform(
-                                                targetConnector.calculateExtraTransform(
-                                                        connectorAttr.getDirection(),
-                                                        PhysicsHelperKt.toBVector3f(helper.getOffset()),
-                                                        SparkMathKt.toBQuaternion(helper.getQuaternion()),
-                                                        helper.getAttachRotation()).invert()
-                                        ),
-                                        helper.getConnectorName().getFirst()
-                                );
-                            }
-                        } else message.append("无法连接两个高级连接点");
-                    } else {
-                        message = Component.empty().append(" 连接点 " + Component.translatable(targetConnector.name).getString()
-                                + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString() + " 的 " + Component.translatable(variantName).getString() + " 变体");
-                    }
-                } else {
-                    message.append("未选中可用的部件接口，右键将直接放置零件");
-                    if (VisualEffectHelper.partToPlace != null) {
-                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(helper.getAttachRotation() - entity.getYRot()));
-                        VisualEffectHelper.partToPlace.updateTransform(
-                                new Transform(
-                                        PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                                entity.getEyePosition(),
-                                                entity.getEyePosition().add(entity.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                                        SparkMathKt.toBQuaternion(rotation)
-                                )
-
-                        );
-                    }
-                }
-                player.displayClientMessage(message, true);
-            } catch (NullPointerException e) {
-                if (entity.tickCount % 100 == 0)
-                    MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
-            }
-        }
-    }
-
     //TODO:之后用这个改Tooltip，为零件添加各类详细信息
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
@@ -176,7 +80,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
         // GUI上下文：使用2D图标模型
         if (context == ItemDisplayContext.GUI) {
             var animatable = new ItemAnimatable(itemStack, level);
-            PartType partType = PartAssemblyItem.getPartType(itemStack, level);//获取物品保存的部件类型
+            PartType partType = PartAssemblyItem.partTypeOf(itemStack, level);//获取物品保存的部件类型
             if (partType == null) return animatable;
             String variant = partType.getVariantIterator().next();
             HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
@@ -193,7 +97,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
             return animatable;
         } else {
             // 非GUI上下文（第一人称、第三人称等）：使用PartAnimatable以支持按零件渲染
-            PartType partType = PartAssemblyItem.getPartType(itemStack, level);
+            PartType partType = PartAssemblyItem.partTypeOf(itemStack, level);
             if (partType == null) {
                 // 无法获取部件类型，回退到ItemAnimatable
                 return new ItemAnimatable(itemStack, level);

@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
@@ -444,13 +445,13 @@ public class BlueprintAttachment {
         var research = player.getData(MMAttachments.getBLUEPRINT());
         research.inventoryHash = research.hashInventory(player);
         availableRecipes.clear();
-        // 检查背包中的配方
+        // 检查背包中的配方：蓝图物品与蓝图终端收纳的条目一并录入
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.items.size(); i++) {
-            checkAndRecord(inventory.items.get(i), player);
+            ItemStack stack = inventory.items.get(i);
+            checkAndRecord(stack, player);
+            checkPdaAndRecord(stack, player);
         }
-        // TODO: 蓝图库检查——计划中的蓝图收纳道具（统一存放玩家的制造蓝图，避免背包被蓝图塞满），
-        //  实现后需在此扫描该道具内保存的附件信息并一并录入可用配方
     }
 
     /**
@@ -468,6 +469,25 @@ public class BlueprintAttachment {
         if (partType == null) return;
         RecipeHolder<PartFabricatingRecipe> holder = MMDynamicRes.getPartRecipe(player.level(), partType);
         if (holder != null) availableRecipes.put(partType, holder);
+    }
+
+    /**
+     * 检查是否为蓝图终端，并把其收纳的零件条目一并录入可用配方列表。
+     *
+     * <p>索引键取条目反查出的零件 id（与 {@link #checkAndRecord} 的键一致）；通用配方与在本侧索引中
+     * 查不到的失效配方不入索引，条目本身仍保留在 PDA 数据中。</p>
+     *
+     * @param stack  物品
+     * @param player 玩家，用于选定逻辑侧索引
+     */
+    private void checkPdaAndRecord(ItemStack stack, Player player) {
+        if (!PdaHelper.isPda(stack)) return;
+        for (ResourceLocation recipeId : PdaHelper.getData(stack).entries().keySet()) {
+            RecipeHolder<PartFabricatingRecipe> holder = PdaHelper.partRecipeOf(player.level(), recipeId);
+            if (holder == null) continue;
+            ResourceLocation partType = holder.value().getPartType();
+            if (partType != null) availableRecipes.put(partType, holder);
+        }
     }
 
     private int hashInventory(Player player) {

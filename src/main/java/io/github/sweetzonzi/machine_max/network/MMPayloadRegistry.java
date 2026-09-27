@@ -1,9 +1,11 @@
 package io.github.sweetzonzi.machine_max.network;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.network.handler.pda.*;
 import io.github.sweetzonzi.machine_max.network.handler.research.*;
 import io.github.sweetzonzi.machine_max.network.payload.*;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.*;
+import io.github.sweetzonzi.machine_max.network.payload.pda.*;
 import io.github.sweetzonzi.machine_max.network.payload.explosion.ExplosionDetonatePayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
@@ -33,6 +35,7 @@ public class MMPayloadRegistry {
         final PayloadRegistrar sync = event.registrar("sync:1.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
+        final PayloadRegistrar pda = event.registrar("pda:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置
                 ControlPreferencePayload.TYPE,
@@ -291,6 +294,27 @@ public class MMPayloadRegistry {
                 BlueprintExtractResultPayload.TYPE,
                 BlueprintExtractResultPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(BlueprintExtractResultPayload::clientHandler)
+        );
+
+        pda.playToServer(//把背包中的蓝图存入 PDA
+                PdaDepositPayload.TYPE,
+                PdaDepositPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PdaDepositHandler::handler)
+        );
+        pda.playToServer(//绑定或解绑设计模式快捷栏格位
+                PdaBindShortcutPayload.TYPE,
+                PdaBindShortcutPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PdaBindShortcutHandler::handler)
+        );
+        pda.playToServer(//写入当前格位序号
+                PdaSelectShortcutPayload.TYPE,
+                PdaSelectShortcutPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PdaSelectShortcutHandler::handler)
+        );
+        pda.playToServer(//写入设计模式开关
+                PdaSetDesignModePayload.TYPE,
+                PdaSetDesignModePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PdaSetDesignModeHandler::handler)
         );
     }
 }

@@ -58,7 +58,7 @@
 - 通用制造蓝图：`recipe_type` 组件指向配方 id，见 `FabricatingBlueprintItem.getProductName(ItemStack)`（同目录，第 56~65 行）。
 - **`part_type` 不是独立信息**：零件配方 id 的 path 形如 `part_fabricating/[子目录/]零件名`，零件 id 由它唯一推导（`PartFabricatingRecipe.partTypeFromRecipeId(ResourceLocation)`，`common/recipe/PartFabricatingRecipe.java`，第 174~187 行）；索引构建期再把同一个零件 id 注入配方实例（`setResolvedProduct`，第 156~171 行）。两处同值，因此 `recipe_type`（配方 id）是蓝图身份的唯一权威，`part_type` 只是它的派生物。这是 4.2"条目只存配方 id"的现状依据。
 
-**蓝图物品在放置零件时不被消耗**。`VehicleAssemblyServerHelper.consumeItem(...)` 只消耗 `PartItem`。
+**蓝图物品在放置零件时不被消耗**。`VehicleAssemblyServerHelper.finishPlacement(...)` 只对 `PartItem` 消耗物品；蓝图与 PDA 不消耗，三者都得到同一份放置音效反馈，但 `ParticleTypes.PORTAL` 粒子只随零件物品发出。
 
 ### 2.2 零件放置链路上的两处"手持解析"
 
@@ -155,6 +155,8 @@ flowchart TD
 
 设计模式不限制 PDA 位于哪一只手；两个状态字段的存放与写入约定见 5.3，格位切换与原版输入拦截见 5.2，`getPartType` 的覆写见第 6 章。
 
+放置预览由两部分合成：预览模型的创建与替换在渲染器（`PartAssemblyRenderer`，按 `PartAssemblyItem.partTypeOf` 的结果决定是否构造、构造哪个变体）；**姿态对齐与瞄准提示在装配助手**——`VehicleAssemblyHelper.onClientTick` 每 tick 在解析出手持物品后调用 `updatePreview`（`common/mech/vehicle/VehicleAssemblyHelper.java`，第 155~219 行），按"瞄准可用连接点 → 对齐到该连接点""否则 → 对齐到视线落点"两种情形摆放模型，并把结果写入动作栏提示。该解析与变体过滤、放置请求用的是同一份"主手优先、副手兜底"结果，因此 PDA、零件物品、零件制造蓝图共用同一条预览路径，预览姿态的更新对象与后端物品始终一致。"填组装进度"的对齐只属于零件物品（服务端只对零件物品走该分支），由 `canFillAssemblyProgress` 按物品类型门控（同文件，第 234~248 行）。
+
 ### 4.2 数据模型
 
 PDA 的全部状态存在物品的数据组件里，随物品走：放入容器、丢弃、交易、死亡掉落都自然带上。
@@ -245,7 +247,7 @@ stateDiagram-v2
 
 | 输入 | 设计模式下的行为 | 屏蔽方式 |
 | --- | --- | --- |
-| 滚轮上/下 | 当前格位 +1 / -1，越界环绕；写本地组件并发送 `PdaSelectShortcutPayload` | `InputEvent.MouseScrollingEvent` 中 `event.setCanceled(true)` |
+| 滚轮上/下 | 当前格位 -1 / +1（与原版热栏同向：上滚取前一格），越界环绕；写本地组件并发送 `PdaSelectShortcutPayload` | `InputEvent.MouseScrollingEvent` 中 `event.setCanceled(true)` |
 | 数字键 1-9 | 直接选中对应格位；写本地组件并发送 `PdaSelectShortcutPayload` | `InputEvent.Key` 中对 `Minecraft.getInstance().options.keyHotbarSlots[i]` 调用 `consumeClick()` 与 `setDown(false)` |
 
 两个拦截共用同一条件：**手持 PDA 且该 PDA 的 `designMode == true`、且当前没有打开任何界面**。条件不满足时不得触碰任何原版输入状态。
@@ -312,6 +314,7 @@ flowchart TB
 - **接口**：`PartAssemblyItem.getPartType` 由静态方法改为可覆写的实例方法，原静态方法体成为默认实现；新增静态派发器 `partTypeOf(ItemStack, Level)`，非 `PartAssemblyItem` 返回 `null`。既有的 5 个调用点（2.2 列出）改用它。
 - **PDA 覆写**：`PdaItem.getPartType` 读 `PDA_DATA.selected` → `shortcuts` 取配方 id → 经本侧索引取该零件配方的 `getPartType()`。设计模式关闭、格位为空、条目不是零件配方三种情形都返回 `null`。
 - **客户端**：`VehicleAssemblyHelper.onClientTick` 与 `buildRequest` 不新增分支——`instanceof PartAssemblyItem` 已匹配 PDA，解析由覆写完成；`buildRequest` 内部"本地状态与手持物品一致"的判定因此对 PDA 天然成立。
+- **预览姿态**：预览模型的姿态对齐（瞄准连接点或视线落点）与瞄准提示由 `VehicleAssemblyHelper.updatePreview` 承担，`onClientTick` 每 tick 调用它；预览模型本身的创建与替换由 `PartAssemblyRenderer` 按 `partTypeOf` 的结果完成。PDA 不需要任何专属代码——三种手持物品（PDA、零件物品、零件制造蓝图）共用同一条预览路径（4.1）。
 - **服务端**：`VehicleAssemblyServerHelper.handle` 同样不新增分支；它用 `partTypeOf` 从自己的 PDA 副本解析 `heldType`，与请求的 `registryKey` 比对。
 
 放置请求不携带格位序号；`PdaItem.getPartType` 只返回零件类型，不产出也不修改任何物品栈，因此天然满足 G4 的"不可逆"。
@@ -391,12 +394,12 @@ PDA 放在背包中（不要求手持）即计入其收纳的零件制造蓝图�
 | 位置 | 屏幕底部居中，与原版快捷栏占用同一区域 |
 | 格位 | 9 格，格边长 20px、格间距 1px；与原版快捷栏同尺寸，因此上方的经验条、下方的生命与饥饿条都不需要额外处理 |
 | 选中态 | 当前格位用白色描边加提亮底色标出，对应原版快捷栏的选中高亮 |
-| 格位内容 | 该格绑定的条目图标；未绑定的格位留空并弱化描边，序号保留 |
+| 格位内容 | 该格绑定的条目图标，经 AUI 的纹理元素绘制（与研发界面同范式，Java 只写其 `src`）；未绑定的格位留空并弱化描边，序号保留 |
 | 不可用格位 | 绑定的条目不是零件配方（通用配方，或配方已从索引中失效）的格位，序号改用琥珀色，提示该条目不可放置 |
 | 上方文字 | 一行选中蓝图名，位置相当于原版快捷栏上方的物品名提示 |
-| 左上角横幅 | 黑底 + 左侧一条橙竖线的扁平色块（橙取研发/制造菜单的 `#FF6400`），逐行写明「设计模式」「右键 放置零件」「潜行键 + 右键 退出」。位置取左上角，因为原版 HUD 该处本就为空（聊天在左下，状态效果与吐司弹窗在右上），不会与任何原版元素相撞。内容全为常量，Java 不写入；横幅的显隐随叠层一同受 `designMode` 控制 |
+| 左上角横幅 | 黑底 + 左侧一条橙竖线的扁平色块（橙取研发/制造菜单的 `#FF6400`），逐行写明「设计模式」「右键 放置零件」「潜行键 + 右键 退出」。位置取左上角，因为原版 HUD 该处本就为空（聊天在左下，状态效果与吐司弹窗在右上），不会与任何原版元素相撞。文案经 `<translation>` 元素取语言键（静态），Java 不写入；横幅的显隐随叠层一同受 `designMode` 控制 |
 
-**显隐与生命周期**：与 PDA 的 `designMode` 同步——为 true 时创建并显示，为 false 或没有手持 PDA 时置为不可见但不销毁，断开连接时销毁。刷新与清理的时机由 `PdaHotbarOverlay` 自身的两个事件处理器承担（`ClientTickEvent.Post` 调刷新、`ClientPlayerNetworkEvent.LoggingOut` 调清理）。页面刻意不声明 `aui-mouse-events=intercept`，HUD 不参与任何输入，滚轮与数字键由 5.2 的拦截器独占。
+**显隐与生命周期**：与 PDA 的 `designMode` 同步——为 true 时创建并显示，为 false 或没有手持 PDA 时置为不可见但不销毁（不可见由文档根元素上的 `pda-hotbar-hidden` 类实现），断开连接时销毁。刷新与清理的时机由 `PdaHotbarOverlay` 自身的两个事件处理器承担（`ClientTickEvent.Post` 调刷新、`ClientPlayerNetworkEvent.LoggingOut` 调清理）。页面刻意不声明 `aui-mouse-events=intercept`，HUD 不参与任何输入，滚轮与数字键由 5.2 的拦截器独占。
 
 **未采用的方案**：
 
@@ -413,18 +416,19 @@ PDA 放在背包中（不要求手持）即计入其收纳的零件制造蓝图�
 | `common/item/prop/PdaHelper.java`（新增） | 数据组件读写（`getData` / `setData`）、`selectedRecipe` / `getShortcut` / `heldPdaHand`、配方反查（`recipeOf` / `partRecipeOf`）、条目归一（`recipeIdOf`） |
 | `common/item/prop/PdaDepositService.java`（新增） | 四个服务端写入方法：`deposit`、`bindShortcut`、`selectShortcut`、`setDesignMode`，每个都写组件并触发物品同步 |
 | `common/item/prop/PartAssemblyItem.java` | `getPartType` 改为 `default` 实例方法，新增静态派发器 `partTypeOf`；`getRecipeHolder` 保持静态（第 6 章） |
-| `common/item/prop/PartItem.java` | 2 处 `PartAssemblyItem.getPartType(...)` 调用改为实例调用 |
+| `common/item/prop/PartItem.java` | 2 处 `PartAssemblyItem.getPartType(...)` 调用改为实例调用；删除 `inventoryTick`（姿态对齐与瞄准提示迁往 `VehicleAssemblyHelper.updatePreview`，第 6 章） |
+| `common/item/prop/PartFabricatingBlueprintItem.java` | 删除 `inventoryTick`（姿态对齐与瞄准提示迁往 `VehicleAssemblyHelper.updatePreview`，第 6 章） |
 | `common/registry/MMItems.kt` | 把被注释的 `pad` 注册改为 `pda`，工厂为 `PdaItem()`；`MMCreativeTabs.kt` 中同一物品的注释行一并放行 |
 | `common/registry/MMDataComponents.java` | 注册 `PDA_DATA` 数据组件（`persistent` + `networkSynchronized`） |
 | `common/attachment/BlueprintAttachment.java` | `rebuildAvailableRecipes` 追加 PDA 条目扫描，替换该处 TODO（第 7 章） |
-| `common/mech/vehicle/VehicleAssemblyHelper.java` | `onClientTick` 与 `buildRequest` 的 `getPartType` 调用改为 `partTypeOf`；不新增字段、不新增分支（第 6 章） |
+| `common/mech/vehicle/VehicleAssemblyHelper.java` | `onClientTick` 与 `buildRequest` 的 `getPartType` 调用改为 `partTypeOf`；新增 `updatePreview`（摆放预览模型并写瞄准提示）与 `canFillAssemblyProgress`（零件物品的填进度判据），`onClientTick` 末尾调用前者；不新增字段（第 6 章） |
 | `common/mech/vehicle/VehicleAssemblyServerHelper.java` | `handle` 的 `getPartType` 调用改为 `partTypeOf`；不新增分支（第 6 章） |
 | `network/payload/pda/`（新增） | `PdaDepositPayload`、`PdaBindShortcutPayload`、`PdaSelectShortcutPayload`、`PdaSetDesignModePayload` |
 | `network/handler/pda/`（新增） | 上述四个载荷的服务端处理器 |
 | `network/MMPayloadRegistry.java` | 注册 `pda:1.0.0` 载荷组 |
 | `client/input/PdaInputInterceptor.java`（新增） | 设计模式下拦截滚轮与热栏数字键：写本地组件并发送 `PdaSelectShortcutPayload` |
 | `client/render/gui/screen/PdaScreen.java`（新增） | 界面装配与绑定交互 |
-| `client/render/gui/pda/`（新增） | 列表与快捷栏的 HTML 片段渲染工具 |
+| `client/render/gui/pda/PdaHtml.java`（新增） | 列表行与快捷栏格位的 HTML 片段渲染工具 |
 | `client/render/gui/MMGuiManager.java` | 手持 PDA 处于设计模式时取消原版快捷栏图层（8.5） |
 | `client/render/gui/hud/PdaHotbarOverlay.java`（新增） | 管理与切换 AUI 快捷栏叠层文档；自行注册 `ClientTickEvent.Post` 与 `ClientPlayerNetworkEvent.LoggingOut` |
 | `assets/apricityui/apricity/machine_max/pda/pda_ui.html`（新增） | 管理界面页面骨架 |
@@ -467,8 +471,13 @@ PDA 放在背包中（不要求手持）即计入其收纳的零件制造蓝图�
 | 2026-09-27 | 条目身份收敛为配方 id：取消 `PdaEntryKind` 与 `PdaEntryKey`，类别与零件 id 一律经本侧配方索引反查（4.2、4.3、6、7）。 |
 | 2026-09-27 | 条目进一步收敛为映射项：`entries` 由 `List<PdaEntry>` 改为 `Map<ResourceLocation, Integer>`，`PdaEntry` 类型随之取消（4.2、8.2、9、10）。 |
 | 2026-09-27 | `entries` 改为有序映射（`SortedMap`，定序器为配方 id 字符串序），顺序由数据类型保证，渲染端不再排序；不采用"`LinkedHashMap` + 构造后重排"（4.2、8.2、10）。 |
+| 2026-09-27 | HUD 格位图标由 AUI 纹理元素承载（Java 只写 `src`），叠层显隐由根元素的 `pda-hotbar-hidden` 类控制；界面 HTML 片段渲染收拢到 `PdaHtml`；语言键清单补充标签键与计数键（8.5、9）。 |
+| 2026-09-27 | HUD 横幅文案改由 `<translation>` 元素取语言键本地化；橙竖线固定为 3px `#FF6400`（8.5、9）。 |
+| 2026-09-27 | `PdaItem` 实现 `inventoryTick`：放置预览的姿态对齐与瞄准提示由物品侧承担，预览模型本体的创建与替换在渲染器（4.1、第 6 章、9）。 |
 | 2026-09-27 | `PartAssemblyItem.getPartType` 改为可覆写的实例方法（新增静态派发器 `partTypeOf`），`PdaItem` 覆写它提供当前格位的零件来源；取消"等效蓝图临时栈"与 `resolveEffectiveBlueprint`，放置请求不携带格位序号（第 2、6 章）。 |
 | 2026-09-27 | 设计模式开关与当前格位改为 `PDA_DATA` 的字段，客户端预写、服务端权威写入；"手持 PDA"不再需要每 tick 复验（4.2、5.2、5.3、8.4、10）。 |
 | 2026-09-27 | `PdaHotbarOverlay` 自行注册 `ClientTickEvent.Post` 与 `ClientPlayerNetworkEvent.LoggingOut`；取消原版快捷栏的判据改为手持 PDA 的 `designMode`（8.5）。 |
 | 2026-09-27 | 叠层在屏幕左上角增加常驻的「设计模式」横幅，写明退出方式为潜行键 + 右键（8.5）。 |
 | 2026-09-27 | 横幅改为扁平多行样式：黑底 + 左侧橙竖线（橙取研发/制造菜单的 `#FF6400`），并增列「右键 放置零件」（8.5）。 |
+| 2026-09-27 | 放置预览的姿态对齐与瞄准提示由三种手持物品的 `inventoryTick` 收敛到 `VehicleAssemblyHelper.updatePreview`（由 `onClientTick` 调用），解析口径与变体过滤、放置请求统一为"主手优先、副手兜底"；"填组装进度"改由 `canFillAssemblyProgress` 按物品类型门控，其判据与服务端填进度分支对齐；蓝图与 PDA 里与 `onClientTick` 重复的内联变体循环删除（4.1、第 6 章、9）。 |
+| 2026-09-27 | 滚轮切格方向改为与原版热栏同向（上滚取前一格）；`VehicleAssemblyServerHelper` 的放置音效与物品消耗解耦，蓝图/PDA 成功放置同样播放音效（2.1、5.2）。 |

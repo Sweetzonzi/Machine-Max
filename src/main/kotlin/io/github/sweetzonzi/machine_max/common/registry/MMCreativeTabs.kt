@@ -28,7 +28,7 @@ object MMCreativeTabs {
 //                    output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
                     output.accept(MMItems.RESEARCH_TABLE_BLOCK_ITEM.get())
 //                    output.accept(MMItems.TOTAL_STATION_BLOCK_ITEM.get())
-//                    output.accept(MMItems.PAD_ITEM.get())
+                    output.accept(MMItems.PDA_ITEM.get())
                     output.accept(MMItems.CROWBAR_ITEM.get())
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())

@@ -54,7 +54,7 @@ public final class VehicleAssemblyServerHelper {
         Level level = player.level();
         ItemStack stack = player.getItemInHand(request.hand());
         // 校验1：请求部件类型必须与手持物品解析结果一致（防作弊换物品）
-        PartType heldType = PartAssemblyItem.getPartType(stack, level);
+        PartType heldType = PartAssemblyItem.partTypeOf(stack, level);
         if (heldType == null || !heldType.getRegistryKey().equals(request.registryKey())) return;
         PartType partType = PartType.get(level, request.registryKey());
         if (partType == null) return;
@@ -118,7 +118,7 @@ public final class VehicleAssemblyServerHelper {
             }
             Vector3f pos = targetSubPart.getPosition();
             ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
-            consumeItem(player, stack, level);
+            finishPlacement(player, stack, level);
             return true;
         }
         return false;
@@ -148,7 +148,7 @@ public final class VehicleAssemblyServerHelper {
         if (!(targetConnector.subPart.part.assembly instanceof VehicleCore vehicleCore)) return;
         targetConnector.adjustTransform(partConnector, attachRotation);
         vehicleCore.attachConnector(targetConnector, partConnector, part);
-        consumeItem(player, stack, level);
+        finishPlacement(player, stack, level);
     }
 
     /**
@@ -165,19 +165,24 @@ public final class VehicleAssemblyServerHelper {
         );
         part.setTransform(transform);
         ObjectManager.addVehicle(new VehicleCore(level, part));
+        // 粒子反馈只给零件物品：蓝图（含 PDA 路径）成功放置不产生粒子，但音效对所有物品统一（见 finishPlacement）
         if (stack.getItem() instanceof PartItem) {
             Vector3f pos = transform.getTranslation();
             ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
         }
-        consumeItem(player, stack, level);
+        finishPlacement(player, stack, level);
     }
 
     /**
-     * 成功放置后的副作用：PartItem 消耗 1 个并播放放置音效，蓝图路径不消耗物品。
+     * 成功放置 / 安装后的副作用：播放放置音效；零件物品额外消耗 1 个。
+     *
+     * <p>音效与物品消耗是两件事：音效是放置成功的听觉反馈，所有成功路径、所有手持物品（零件物品、零件制造蓝图、PDA）
+     * 都播放；消耗只对零件物品生效。粒子反馈另有一套口径——只在零件物品路径发出（见 {@code placeInAir}）。</p>
      */
-    private static void consumeItem(Player player, ItemStack stack, Level level) {
-        if (!(stack.getItem() instanceof PartItem)) return;
-        stack.consume(1, player);
+    private static void finishPlacement(Player player, ItemStack stack, Level level) {
+        if (stack.getItem() instanceof PartItem) {
+            stack.consume(1, player);
+        }
         SoundEvent sound = SoundEvent.createFixedRangeEvent(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
         SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1),

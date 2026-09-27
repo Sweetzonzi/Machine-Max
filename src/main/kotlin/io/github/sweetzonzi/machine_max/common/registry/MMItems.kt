@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
@@ -66,12 +67,12 @@ object MMItems {
         factory = { BlockItem(MMBlocks.TOTAL_STATION_BLOCK.get(), Item.Properties()) }
     }
 
-    //PAD
-//    @JvmStatic
-//    val PAD_ITEM = MachineMax.REGISTER.item{
-//        id="pad"
-//        factory = { PadItem() }
-//    }
+    //PDA 蓝图终端：收纳制造蓝图，并作为零件来源参与装配
+    @JvmStatic
+    val PDA_ITEM = MachineMax.REGISTER.item{
+        id="pda"
+        factory = { PdaItem() }
+    }
 
     //载具蓝图物品原型
     @JvmStatic

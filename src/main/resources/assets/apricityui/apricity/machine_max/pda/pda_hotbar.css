@@ -41,6 +41,12 @@ html {
     height: 100%;
 }
 
+/* 叠层隐藏态：根元素带此类时整体不参与布局与绘制，由 PdaHotbarOverlay 在
+   退出设计模式或 PDA 不在手时切换；文档本身保留复用，不反复创建销毁。 */
+html.pda-hotbar-hidden {
+    display: none;
+}
+
 body {
     width: 100%;
     height: 100%;
@@ -110,6 +116,15 @@ body {
     background-color: rgba(30, 30, 38, 0.35);
 }
 
+/* 格位图标：由 Java 写入 src（条目对应的零件图标）；幅面撑满格内可用区 */
+.hs-icon {
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 16px;
+    height: 16px;
+}
+
 /* 当前选中格位：白框 + 提亮，对应原版快捷栏的选中高亮 */
 .hs.selected {
     border-color: var(--selected-frame);
@@ -151,7 +166,9 @@ body {
     /* 黑底带一点暖调，取自研发标签页的橙黑底色配方，此处提高不透明度
        以便压在地形上仍然可读 */
     background: linear-gradient(180deg, rgba(14, 8, 2, 0.78), rgba(22, 12, 6, 0.78));
-    border-left: 2px solid var(--accent);
+    /* 单边橙竖线衬边：橙取研发/制造菜单的 #FF6400，与 --accent 同值；
+       此处写字面色，避免饰边依赖变量的解析结果 */
+    border-left: 3px solid #FF6400;
 }
 
 /* 首行：模式名 */

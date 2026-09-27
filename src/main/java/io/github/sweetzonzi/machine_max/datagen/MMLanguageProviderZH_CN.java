@@ -131,6 +131,11 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
         this.add("message.machine_max.vehicle.place_failed", "部署载具失败: %1$s");
         this.add("message.machine_max.part.place_failed", "放置部件失败: %1$s");
+        // 蓝图终端
+        this.add("message.machine_max.pda.deposit.success", "已存入 %1$s 张蓝图");
+        this.add("message.machine_max.pda.deposit.rejected", "%1$s 张蓝图已收纳，未重复存入");
+        this.add("message.machine_max.pda.design_mode.enter", "已进入设计模式");
+        this.add("message.machine_max.pda.design_mode.exit", "已退出设计模式");
         // 创造模式物品栏
         this.add("itemGroup.machine_max.main", "MachineMax: 工具与材料");
         this.add("itemGroup.machine_max.part", "MachineMax: 零部件");
@@ -153,6 +158,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
+        this.add("item.machine_max.pda", "蓝图终端");
         // 物品音效
         this.add("subtitles.item.welding_torch.start", "焊枪启动");
         this.add("subtitles.item.welding_torch.loop", "焊接中");
@@ -244,6 +250,32 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.research.action.take", "取出");
         this.add("gui.machine_max.research.action.rename", "改名");
         this.add("gui.machine_max.research.action.delete", "删除");
+        // 蓝图终端界面
+        this.add("gui.machine_max.pda.title", "蓝图终端");
+        this.add("gui.machine_max.pda.group.stored", "已收纳");
+        this.add("gui.machine_max.pda.group.inventory", "背包中的蓝图");
+        this.add("gui.machine_max.pda.group.shortcut", "设计模式快捷栏");
+        this.add("gui.machine_max.pda.btn.deposit", "存入");
+        this.add("gui.machine_max.pda.btn.deposit_all", "一键存入全部");
+        this.add("gui.machine_max.pda.btn.stored", "已收纳");
+        this.add("gui.machine_max.pda.btn.merge", "合并 (+%1$s)");
+        this.add("gui.machine_max.pda.btn.unbind", "解除绑定");
+        this.add("gui.machine_max.pda.status.select_entry", "已选中「%1$s」，请点击快捷栏位以完成绑定");
+        this.add("gui.machine_max.pda.status.select_slot", "已选中第 %1$s 栏，请点击左侧条目以完成绑定");
+        this.add("gui.machine_max.pda.hint.general", "该蓝图暂无直接使用方式");
+        this.add("gui.machine_max.pda.hint.empty_slot", "当前栏位未绑定蓝图");
+        this.add("gui.machine_max.pda.tag.unknown", "未知蓝图");
+        this.add("gui.machine_max.pda.tag.part", "零件");
+        this.add("gui.machine_max.pda.tag.general", "通用");
+        this.add("gui.machine_max.pda.hint.unavailable", "该蓝图当前不可用（配方已失效）");
+        this.add("gui.machine_max.pda.count.stored", "已收纳 %1$s 项");
+        this.add("gui.machine_max.pda.count.infinite", "无限 %1$s");
+        this.add("gui.machine_max.pda.count.limited", "有限 %1$s");
+        this.add("gui.machine_max.pda.hud.title", "设计模式");
+        this.add("gui.machine_max.pda.key.right_click", "右键");
+        this.add("gui.machine_max.pda.key.sneak", "潜行键");
+        this.add("gui.machine_max.pda.action.place", "放置零件");
+        this.add("gui.machine_max.pda.action.exit", "退出");
         // 蓝图库标签页
         this.add("gui.machine_max.research.library.status.normal", "正常");
         this.add("gui.machine_max.research.library.status.parse_error", "解析失败");

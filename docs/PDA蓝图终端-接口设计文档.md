@@ -120,6 +120,16 @@ public static DataComponentType<PdaData> getPDA_DATA();
 | `gui.machine_max.pda.hint.general` | 该蓝图暂无直接使用方式 |
 | `gui.machine_max.pda.hint.empty_slot` | 当前栏位未绑定蓝图 |
 | `gui.machine_max.pda.tag.unknown` | 未知蓝图 |
+| `gui.machine_max.pda.tag.part` | 零件 |
+| `gui.machine_max.pda.tag.general` | 通用 |
+| `gui.machine_max.pda.count.stored` | 已收纳 %1$s 项 |
+| `gui.machine_max.pda.count.infinite` | 无限 %1$s |
+| `gui.machine_max.pda.count.limited` | 有限 %1$s |
+| `gui.machine_max.pda.hud.title` | 设计模式 |
+| `gui.machine_max.pda.key.right_click` | 右键 |
+| `gui.machine_max.pda.key.sneak` | 潜行键 |
+| `gui.machine_max.pda.action.place` | 放置零件 |
+| `gui.machine_max.pda.action.exit` | 退出 |
 | `gui.machine_max.pda.hint.unavailable` | 该蓝图当前不可用（配方已失效） |
 | `message.machine_max.pda.deposit.success` | 已存入 %1$s 张蓝图 |
 | `message.machine_max.pda.deposit.rejected` | %1$s 张蓝图已收纳，未重复存入 |
@@ -513,7 +523,7 @@ public final class PdaInputInterceptor {
 
 | 方法 | 行为 |
 | --- | --- |
-| `onMouseScroll` | 未按 Alt：按 `event.getScrollDeltaY()` 的正负把格位加一 / 减一（越界环绕 0~8），写本地组件并发送 `PdaSelectShortcutPayload`。按住 Alt：不切格位，Alt+滚轮旋转安装角的行为保持不变。两种情形最后都 `event.setCanceled(true)` |
+| `onMouseScroll` | 未按 Alt：按 `event.getScrollDeltaY()` 的正负切换格位——上滚（`> 0`）取前一格（减一）、下滚取后一格（加一），与原版热栏同向；越界环绕 0~8，写本地组件并发送 `PdaSelectShortcutPayload`。按住 Alt：不切格位，Alt+滚轮旋转安装角的行为保持不变。两种情形最后都 `event.setCanceled(true)` |
 | `onKey` | 遍历 `options.keyHotbarSlots[0..8]`，对 `consumeClick()` 命中的下标执行 `setDown(false)`，把该下标设为当前格位（写本地组件并发送 `PdaSelectShortcutPayload`） |
 
 共同约束：
@@ -558,7 +568,7 @@ public final class PdaHotbarOverlay {
 | `document` | 只读访问入口，供调试与断言使用 |
 
 - 文档路径固定为 `machine_max/pda/pda_hotbar.html`；
-- 显隐通过给文档根元素切换 CSS 类实现，不依赖文档的创建与销毁；
+- 显隐通过给文档根元素切换 `pda-hotbar-hidden` 类实现（样式表以 `display: none` 让叠层整体不参与布局与绘制），不依赖文档的创建与销毁；
 - 该类的两个事件处理器覆盖了"每客户端 tick 刷新"与"退出世界时清理"两个时机；HUD 的逐帧绘制由 AUI 自身完成，原版快捷栏的取消由 `MMGuiManager` 负责，都不在本类内。
 
 ## 7. AUI 元素契约
@@ -570,7 +580,7 @@ public final class PdaHotbarOverlay {
 | id | 用途 | 写入方 |
 | --- | --- | --- |
 | `pda-title` | 标题文本 | 静态（`<translation>`） |
-| `pda-count-stored` | 标题栏"已收纳 N 项" | Java |
+| `pda-count-stored` | 标题栏"已收纳 N 项"，Java 写入整段文案 | Java |
 | `pda-count-infinite` | 标题栏"无限 N" | Java |
 | `pda-count-limited` | 标题栏"有限 N" | Java |
 | `pda-shortcut-bar` | 快捷栏容器，含 9 个格位 | Java 生成子节点 |
@@ -622,7 +632,7 @@ public final class PdaHotbarOverlay {
 | `pda-hotbar` | 条体容器，含 9 个格位 | 静态 |
 | `pda-hotbar-label` | 选中蓝图名 | Java |
 | `pda-hotbar-slot-0` … `pda-hotbar-slot-8` | 单个格位，下标与格位序号一一对应 | Java |
-| `pda-hotbar-banner` | 左上角常驻的「设计模式」横幅，逐行提示：设计模式 / 右键放置零件 / 潜行键 + 右键退出 | 静态，内容全为常量，Java 不写入 |
+| `pda-hotbar-banner` | 左上角常驻的「设计模式」横幅，逐行提示：设计模式 / 右键放置零件 / 潜行键 + 右键退出 | 静态，内容由 `<translation>` 元素取语言键，Java 不写入 |
 
 格位元素的状态类：
 
@@ -632,7 +642,9 @@ public final class PdaHotbarOverlay {
 | `empty` | 该格位未绑定条目 |
 | `blocked` | 该格位绑定的条目不是零件配方（通用配方，或配方已失效），序号改琥珀色，提示不可放置 |
 
-格位元素的 `background-image` 由 Java 写为该条目图标；变化时才写，避免每帧触碰 DOM。样式集中在 `pda_hotbar.css`，沿用 7.2 的书写约定；该页强调色取研发/制造菜单的橙 `#FF6400`（7.2 的 `--accent` 是管理界面的青），格边长 20px、格间距 1px。
+格位内嵌一个 AUI 纹理元素（`<texture class="hs-icon">`，与研发界面同一套写法），其 `src` 由 Java 写为该条目图标的资源路径；变化时才写，避免每帧触碰 DOM。格位的选中态、空位与不可放置态分别用 `selected` / `empty` / `blocked` 类表达。样式集中在 `pda_hotbar.css`，沿用 7.2 的书写约定；该页强调色取研发/制造菜单的橙 `#FF6400`（7.2 的 `--accent` 是管理界面的青），格边长 20px、格间距 1px。
+
+叠层显隐：`PdaHotbarOverlay` 给文档根元素（`html`）加 / 去 `pda-hotbar-hidden` 类，样式表以 `html.pda-hotbar-hidden { display: none; }` 让整个叠层不参与布局与绘制；文档一经创建即保留复用，模式切换只切类不销毁。
 
 ## 8. 兼容性与约束
 
@@ -679,3 +691,9 @@ public final class PdaHotbarOverlay {
 | 2026-09-27 | `PdaHotbarOverlay` 改为注册 `ClientTickEvent.Post` 与 `ClientPlayerNetworkEvent.LoggingOut`，`refresh` 的显隐判据改为手持 PDA 的 `designMode`（6.5）。 |
 | 2026-09-27 | HUD 文档契约新增 `pda-hotbar-banner`：左上角常驻的「设计模式」横幅，内容全为常量、Java 不写入（7.3）。 |
 | 2026-09-27 | 横幅改为扁平多行样式（黑底 + 左侧橙竖线），并增列「右键 放置零件」；HUD 页的强调色取研发/制造菜单的橙 `#FF6400`（7.3）。 |
+| 2026-09-27 | 语言键清单补充条目标签键（`tag.part` / `tag.general`）与标题栏计数键（`count.stored` / `count.infinite` / `count.limited`）（2.4）。 |
+| 2026-09-27 | HUD 格位图标由 AUI 纹理元素承载（Java 只写 `src`），叠层显隐由根元素的 `pda-hotbar-hidden` 类控制；`pda-count-stored` 由 Java 写入整段文案（6.5、7.1、7.3）。 |
+| 2026-09-27 | 语言键清单补充 HUD 横幅与键名文案键（`hud.title` / `key.right_click` / `key.sneak` / `action.place` / `action.exit`）；`pda-hotbar-banner` 的内容明确由 `<translation>` 取语言键（2.4、7.3）。 |
+| 2026-09-27 | `PdaItem` 的类契约补 `inventoryTick`（客户端对齐放置预览与瞄准提示）（2.1）。 |
+| 2026-09-27 | `PdaItem` 的类契约移除 `inventoryTick`：放置预览的姿态对齐与瞄准提示改由 `VehicleAssemblyHelper.onClientTick` 调用的 `updatePreview` 承担，`PartItem` 与 `PartFabricatingBlueprintItem` 的同名方法一并取消（2.1）。 |
+| 2026-09-27 | `onMouseScroll` 的切格方向改为与原版热栏同向：上滚取前一格、下滚取后一格（5.2）。 |

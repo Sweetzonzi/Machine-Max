@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaData;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -124,6 +125,16 @@ public class MMDataComponents {
                     .build()
     );
 
+    /** 保存在蓝图终端（PDA）物品上的全部状态：收纳条目、格位绑定、当前格位与设计模式开关 */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<PdaData>> PDA_DATA = COMPONENTS.register(
+            "pda_data",
+            () -> DataComponentType.<PdaData>builder()
+                    .persistent(PdaData.CODEC)
+                    .networkSynchronized(PdaData.STREAM_CODEC)
+                    .cacheEncoding()
+                    .build()
+    );
+
     // ──────── 静态 getter（兼容旧 Kotlin @JvmStatic 调用方）────────
 
     public static DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> getRECIPE_TYPE() { return RECIPE_TYPE; }
@@ -137,6 +148,7 @@ public class MMDataComponents {
     public static DeferredHolder<DataComponentType<?>, DataComponentType<AssemblyData>> getASSEMBLY_DATA() { return ASSEMBLY_DATA; }
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static DeferredHolder<DataComponentType<?>, DataComponentType<HashMap<ItemDisplayContext, IAnimatable<?>>>> getCUSTOM_ITEM_MODEL() { return CUSTOM_ITEM_MODEL; }
+    public static DeferredHolder<DataComponentType<?>, DataComponentType<PdaData>> getPDA_DATA() { return PDA_DATA; }
 
     /**
      * 将数据组件注册到事件总线
