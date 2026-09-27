@@ -26,13 +26,17 @@
 | --- | --- |
 | 零件制造蓝图 | 物品类 `PartFabricatingBlueprintItem`，携带 `part_type` 与 `recipe_type` 两个数据组件，可放置为未组装零件 |
 | 通用制造蓝图 | 物品类 `FabricatingBlueprintItem`，携带 `recipe_type` 数据组件，不能放置 |
-| 蓝图条目 | PDA 内记录的一条已收纳蓝图，由"类别 + 定位"唯一标识 |
+| 蓝图条目 | PDA 内记录的一条已收纳蓝图，由配方 id 唯一标识 |
+| 零件配方 | 物品类 `PartFabricatingRecipe`；其 id 的 path 以 `part_fabricating/` 开头，零件 id 由该 id 推导 |
+| 通用配方 | `FabricatingRecipe` 中不是零件配方者，只在制造机中加工 |
+| 配方索引 | 本侧（客户端与服务端各一份）的"配方 id → 配方"映射，由装载期构建，统一经 `MMDynamicRes.getAllFabricating(Level)` 访问 |
 | 装配资格 | 玩家推进某零件装配的许可；持有该零件的零件制造蓝图即可获得 |
-| 等效蓝图栈 | 由 PDA 条目即时重建的临时物品栈，只用于解析，不入任何物品栏 |
-| 设计模式 | 手持 PDA 时的一种输入状态：右键按当前格位的蓝图放置零件 |
+| 零件来源 | 一次放置请求所依据的零件；由手持物品提供——零件物品与零件蓝图读自身组件，PDA 读当前格位绑定的条目 |
+| 设计模式 | PDA 的一种状态，存在 `PDA_DATA.designMode`：开启时右键按当前格位的条目放置零件 |
+| 当前格位 | PDA 的选中格位，存在 `PDA_DATA.selected`，取值域 0~8 |
 | 设计模式快捷栏 | PDA 内置的 9 格蓝图选择器，格位序号 0~8 |
 
-以下命名空间简称在本文中通用：`MMItems` 指 `common.registry.MMItems`（Kotlin 注册表），`MMDataComponents` 指 `common.registry.MMDataComponents`，`MMAttachments` 指 `common.registry.MMAttachments`，`MMPayloadRegistry` 指 `network.MMPayloadRegistry`，`MMDynamicRes` 指 `external.MMDynamicRes`。
+以下命名空间简称在本文中通用：`MMItems` 指 `common.registry.MMItems`（Kotlin 注册表），`MMDataComponents` 指 `common.registry.MMDataComponents`，`MMPayloadRegistry` 指 `network.MMPayloadRegistry`，`MMDynamicRes` 指 `external.MMDynamicRes`，`VehicleAssemblyHelper` 指 `common.mech.vehicle.VehicleAssemblyHelper`。
 
 包路径约定：物品与数据模型置于 `io.github.sweetzonzi.machine_max.common.item.prop`，载荷置于 `io.github.sweetzonzi.machine_max.network.payload.pda`，处理器置于 `io.github.sweetzonzi.machine_max.network.handler.pda`，客户端界面置于 `io.github.sweetzonzi.machine_max.client.render.gui.screen`。
 
@@ -48,21 +52,26 @@
 | 注册位置 | `MMItems.kt` |
 
 ```java
-public class PdaItem extends Item {
+public class PdaItem extends Item implements PartAssemblyItem {
     public PdaItem();
 
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand);
+
+    /** 见 3.3。 */
+    @Override
+    @Nullable
+    public PartType getPartType(ItemStack stack, Level level);
 }
 ```
 
-`use` 的契约：
+`use` 的契约（客户端按顺序判定；服务端在任意条件下不做任何事并返回 `success`）：
 
-| 端 | 条件 | 行为 | 返回值 |
-| --- | --- | --- | --- |
-| 客户端 | 未按 Shift | `Minecraft.getInstance().setScreen(new PdaScreen(usedHand))`，服务端不参与 | `success` |
-| 客户端 | 按住 Shift | 以 `PdaClientState.toggled()` 翻转设计模式状态 | `success` |
-| 服务端 | 任意 | 不做任何事 | `success` |
+| 条件 | 行为 | 返回值 |
+| --- | --- | --- |
+| 按住 Shift | 把 `PDA_DATA.designMode` 取反：先写入本地 PDA 栈的数据组件，再发 `PdaSetDesignModePayload`（见 6.2） | `success` |
+| `PDA_DATA.designMode == true` | 走既有放置链路：以 `VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack)` 构造请求并 `PacketDistributor.sendToServer(request)`；请求为 `null` 时不发送（见 6.3） | `success` |
+| 其余 | `Minecraft.getInstance().setScreen(new PdaScreen(usedHand))` | `success` |
 
 ### 2.2 数据组件
 
@@ -77,41 +86,20 @@ public static DataComponentType<PdaData> getPDA_DATA();
 
 约束：必须同时提供 `persistent` 与 `networkSynchronized`，缺任一项都会导致界面读不到最新数据或数据无法落盘。
 
-### 2.3 附件
+### 2.3 网络载荷
 
-在 `MMAttachments` 新增（不提供序列化器，即不落盘）：
-
-| 项 | 值 |
-| --- | --- |
-| 附件 id | `pda_client_state` |
-| 类型 | `PdaClientState`（设计模式开关 + 当前格位序号） |
-| 工厂 | `PdaClientState::inactive` |
-| 用途 | 玩家级设计模式状态与当前格位，仅在客户端读写 |
-
-```java
-public record PdaClientState(boolean designMode, int shortcutIndex) {
-    public static final int SHORTCUT_COUNT = 9;
-
-    public static PdaClientState inactive();            // designMode=false, shortcutIndex=0
-    public PdaClientState toggled();                    // 翻转 designMode
-    public PdaClientState withShortcut(int index);      // index 归一化到 0~8
-}
-
-public static AttachmentType<PdaClientState> getPDA_CLIENT_STATE();
-```
-
-### 2.4 网络载荷
-
-在 `MMPayloadRegistry` 新增载荷组 `pda:1.0.0`，注册两个 C→S 载荷：
+在 `MMPayloadRegistry` 新增载荷组 `pda:1.0.0`，注册四个 C→S 载荷：
 
 | 载荷 | 方向 | 作用 |
 | --- | --- | --- |
 | `PdaDepositPayload` | C→S | 把背包中的蓝图存入 PDA |
 | `PdaBindShortcutPayload` | C→S | 绑定或解绑设计模式快捷栏格位 |
+| `PdaSelectShortcutPayload` | C→S | 写入当前格位序号 |
+| `PdaSetDesignModePayload` | C→S | 写入设计模式开关 |
 
-同时扩展既有的装配请求载荷（见 5.3）。
+放置请求载荷 `PartAssemblyRequestPayload` 保持现有字段不变。
 
-### 2.5 语言键
+### 2.4 语言键
 
 新增键（中英各一份，写入 `MMLanguageProviderZH_CN.java` 与 `MMLanguageProviderEN_US.java`）：
 
@@ -131,6 +119,8 @@ public static AttachmentType<PdaClientState> getPDA_CLIENT_STATE();
 | `gui.machine_max.pda.status.select_slot` | 已选中第 %1$s 栏，请点击左侧条目以完成绑定 |
 | `gui.machine_max.pda.hint.general` | 该蓝图暂无直接使用方式 |
 | `gui.machine_max.pda.hint.empty_slot` | 当前栏位未绑定蓝图 |
+| `gui.machine_max.pda.tag.unknown` | 未知蓝图 |
+| `gui.machine_max.pda.hint.unavailable` | 该蓝图当前不可用（配方已失效） |
 | `message.machine_max.pda.deposit.success` | 已存入 %1$s 张蓝图 |
 | `message.machine_max.pda.deposit.rejected` | %1$s 张蓝图已收纳，未重复存入 |
 | `message.machine_max.pda.design_mode.enter` | 已进入设计模式 |
@@ -138,70 +128,62 @@ public static AttachmentType<PdaClientState> getPDA_CLIENT_STATE();
 
 沿用既有物品名的键：`item.machine_max.part_fabricating_blueprint`（零件制造蓝图）、`item.machine_max.fabricating_blueprint`（制造蓝图）。
 
-## 3. 数据模型接口
+### 2.5 既有接口 `PartAssemblyItem` 的改造
 
-### 3.1 枚举 `PdaEntryKind`
+`PartAssemblyItem`（`common/item/prop/PartAssemblyItem.java`）当前的零件解析入口是静态方法 `getPartType(ItemStack, Level)`；本设计把它改为可覆写的实例方法，使"能提供零件来源的物品"成为可扩展契约：
 
 ```java
-public enum PdaEntryKind {
-    PART,       // 来自零件制造蓝图；target 是零件类型注册名
-    GENERAL;    // 来自通用制造蓝图；target 是配方 id
+public interface PartAssemblyItem {
+    /** 物品自身提供零件来源；默认实现读物品栈上的组件。 */
+    @Nullable
+    default PartType getPartType(ItemStack stack, Level level);
 
-    public static final Codec<PdaEntryKind> CODEC;         // 字符串枚举名
-    public static final StreamCodec<ByteBuf, PdaEntryKind> STREAM_CODEC;
+    /** 静态派发：非 PartAssemblyItem 返回 null。所有外部调用点改用它。 */
+    @Nullable
+    static PartType partTypeOf(ItemStack stack, Level level);
+
+    /** 仍为静态：无同名实例方法，且只被默认实现内部调用。 */
+    @Nullable
+    static RecipeHolder<PartFabricatingRecipe> getRecipeHolder(ItemStack stack, Level level);
 }
 ```
 
-### 3.2 记录 `PdaEntry`
+约束：
+
+- 默认实现与改造前 `getPartType` 的行为一致：先读 `machine_max:part_type` 组件，缺失时经 `machine_max:recipe_type` 组件查本侧零件配方索引取 `PartType`。因此 `PartItem` 与 `PartFabricatingBlueprintItem` 不需要改写解析逻辑；
+- `PdaItem` 覆写 `getPartType`，契约见 3.3；
+- 既有调用点由 `PartAssemblyItem.getPartType(...)` 改为 `PartAssemblyItem.partTypeOf(...)`，共 5 处：`PartItem` 内 2 处、`VehicleAssemblyHelper.onClientTick`、`VehicleAssemblyHelper.buildRequest`、`VehicleAssemblyServerHelper.handle`；
+- `instanceof PartAssemblyItem` 的判定在改造后同样匹配 `PdaItem`。
+
+## 3. 数据模型与解析契约
+
+### 3.1 记录 `PdaData`
 
 ```java
-public record PdaEntry(PdaEntryKind kind, ResourceLocation target, int remainingUses) {
-    public static final Codec<PdaEntry> CODEC;
-    public static final StreamCodec<ByteBuf, PdaEntry> STREAM_CODEC;
-
-    public static PdaEntry unlimited(PdaEntryKind kind, ResourceLocation target);  // remainingUses = -1
-    public boolean isInfinite();                                                   // remainingUses < 0
-    public PdaEntryKey key();
-}
-```
-
-字段契约：
-
-| 字段 | 含义 | 约束 |
-| --- | --- | --- |
-| `kind` | 条目类别 | 非空 |
-| `target` | `PART` 时是零件类型注册名；`GENERAL` 时是配方 id | 非空 |
-| `remainingUses` | 残留可使用次数 | `-1` 表示无限；其它负值非法，读取时按 `-1` 处理 |
-
-JSON 字段名：`kind`、`target`、`remaining_uses`（缺省 `-1`）。
-
-### 3.3 记录 `PdaEntryKey`
-
-```java
-public record PdaEntryKey(PdaEntryKind kind, ResourceLocation target) {
-    public static final Codec<PdaEntryKey> CODEC;
-    public static final StreamCodec<ByteBuf, PdaEntryKey> STREAM_CODEC;
-}
-```
-
-`PdaEntryKey` 是条目的唯一标识，`equals` / `hashCode` 由 record 自动提供，可直接用作 Map 键。
-
-### 3.4 记录 `PdaData`
-
-```java
-public record PdaData(List<PdaEntry> entries, Map<Integer, PdaEntryKey> shortcuts) {
+public record PdaData(SortedMap<ResourceLocation, Integer> entries,
+                      Map<Integer, ResourceLocation> shortcuts,
+                      int selected,
+                      boolean designMode) {
+    /** 残留次数的哨兵值：表示无限次。 */
+    public static final int INFINITE_USES = -1;
+    /** entries 的定序器：配方 id 的字符串序（显式比较器，不依赖 ResourceLocation 自身的比较规则）。 */
+    public static final Comparator<ResourceLocation> ENTRY_ORDER;
     public static final int SHORTCUT_COUNT = 9;
     public static final PdaData EMPTY;
 
-    public static final Codec<PdaData> CODEC;                        // entries + shortcuts
+    public static final Codec<PdaData> CODEC;                        // 四个字段全部参与编解码
     public static final StreamCodec<ByteBuf, PdaData> STREAM_CODEC;  // 由 CODEC 派生
 
-    @Nullable public PdaEntryKey shortcutAt(int index);
-    @Nullable public PdaEntry find(PdaEntryKey key);
-    public PdaData withShortcut(int index, @Nullable PdaEntryKey key);   // key 为 null 即解绑
-    public PdaData withEntry(PdaEntry entry);                             // 按 4.2 规则合并或新增
-    public PdaData withoutEntry(PdaEntryKey key);                          // 同时清除引用它的格位
-    public PdaData sanitized();                                            // 见 3.5
+    public static boolean isInfinite(int uses);                    // uses < 0
+
+    @Nullable public ResourceLocation shortcutAt(int index);
+    @Nullable public Integer usesOf(ResourceLocation recipeId);    // 未收纳时为 null
+    public PdaData withShortcut(int index, @Nullable ResourceLocation recipeId);  // 为 null 即解绑
+    public PdaData withSelected(int index);                                       // 见 6.2 的归一规则
+    public PdaData withDesignMode(boolean on);
+    public PdaData mergeEntry(ResourceLocation recipeId, int incomingUses);       // 按 4.2 规则合并或新增
+    public PdaData withoutEntry(ResourceLocation recipeId);                       // 同时清除引用它的格位
+    public PdaData sanitized();                                                   // 见 3.2
 }
 ```
 
@@ -209,22 +191,58 @@ public record PdaData(List<PdaEntry> entries, Map<Integer, PdaEntryKey> shortcut
 
 | 字段 | 含义 | 约束 |
 | --- | --- | --- |
-| `entries` | 已收纳条目 | 不存在重复 `(kind, target)` |
-| `shortcuts` | 格位 → 条目键 | 键域为 `0..8`；每个值必须在 `entries` 中有对应条目 |
+| `entries` | 配方 id → 残留次数（有序映射） | 键非空；值域为 `INFINITE_USES` 或正整数；迭代顺序恒为 `ENTRY_ORDER` |
+| `shortcuts` | 格位 → 配方 id | 键域为 `0..8`；每个值必须在 `entries` 中有对应键 |
+| `selected` | 当前格位序号 | 域为 `0..8` |
+| `designMode` | 设计模式开关 | 无附加约束 |
 
-JSON 形态：`entries` 为数组；`shortcuts` 为对象，键是格位序号的十进制字符串（`"0"`~`"8"`），值是 `PdaEntryKey`。
+`selected` 与 `designMode` 是 PDA 的物品状态：随数据组件持久化，并随网络同步到客户端（见 6.2 的写入约定）。
 
-### 3.5 不变量与 `sanitized()`
+"条目"不是独立类型，它指 `entries` 里的一对「配方 id → 残留次数」；配方 id 即条目的唯一标识，键唯一由映射结构保证、读入时无需去重。
+
+`entries` 的迭代顺序**由数据模型保证**：恒为 `ENTRY_ORDER`（配方 id 字符串序），与解码顺序、插入顺序无关。因此消费方直接按迭代顺序渲染即可，不需要自己排序。`PdaData` 的相等性与顺序无关（映射的相等性按条目比较），因此定序不影响 `mergeEntry` / `withoutEntry` 的判定。
+
+**条目不存条目类别，也不存零件 id**：两者都经 `PdaHelper.partRecipeOf` / `PdaHelper.recipeOf`（见 4.1）从配方 id 反查。反查返回 `null` 表示该配方在本侧索引中不存在（被移除或装载期校验未通过），条目降级为不可用，不删除。
+
+JSON 形态：`entries` 与 `shortcuts` 是对象，`selected` 是整数，`designMode` 是布尔。`entries` 的键是配方 id 字符串、值是残留次数（`-1` 表示无限）；`shortcuts` 的键是格位序号的十进制字符串（`"0"`~`"8"`）、值是配方 id 字符串。JSON 对象的键只能是字符串，因此两个映射都需要"字符串键"编解码器：`entries` 的键用 `ResourceLocation.CODEC`，解码结果再经 `xmap` 收口到 `ENTRY_ORDER` 有序映射；`shortcuts` 的键用 `Codec.STRING.xmap(Integer::parseInt, Object::toString)`。
+
+### 3.2 不变量与 `sanitized()`
 
 `sanitized()` 按顺序执行，返回一个满足全部不变量的新实例，用于所有反序列化入口（读组件、收报文）：
 
-1. 丢弃 `target` 为空或 `kind` 为空的条目；
-2. `remainingUses < -1` 归一为 `-1`；
-3. 对 `entries` 按 `key()` 去重，保留首次出现者，其余丢弃，丢弃项按累加规则并入首次出现者（见 4.2）；
-4. 丢弃 `shortcuts` 中键不在 `0..8` 的项；
-5. 丢弃 `shortcuts` 中值在 `entries` 里找不到对应条目的项。
+1. 丢弃 `entries` 中键为空的项；
+2. `entries` 的值小于 `INFINITE_USES` 时归一为 `INFINITE_USES`；值为 `0` 的条目丢弃（残留次数为 0 等价于已耗尽）；
+3. 丢弃 `shortcuts` 中键不在 `0..8` 的项；
+4. 丢弃 `shortcuts` 中值在 `entries` 里找不到对应键的项；
+5. `selected` 不在 `0..8` 时归一为 `Math.floorMod(selected, SHORTCUT_COUNT)`，与 `withSelected(int)` 共用同一段归一逻辑；
+6. `designMode` 不做处理。
+
+键唯一性由映射结构保证，因此不存在去重步骤；`entries` 的定序同样由结构保证（第 1 步之后重建为 `ENTRY_ORDER` 有序映射）。每一步都作用在它上一步的结果上，因此第 4 步看到的是第 2 步过滤后的 `entries`。
 
 写入组件的所有路径都必须先经过 `sanitized()`；读出时可以再次调用以保证防御性。
+
+**产出 `PdaData` 的每条路径都必须以 `sanitized()` 收口**——解码（组件读取、组件网络同步、`CODEC` 的 `xmap`）与每个改动方法（`mergeEntry`、`withoutEntry`、`withShortcut`）都一样。`entries` 的迭代顺序是可见状态（列表次序、8.4 的签名比较），漏在一处就会静默退化成插入序。
+
+`sanitized()` **不**校验 `recipeId` 是否存在于本侧索引：它是无上下文（拿不到 `Level`）的纯数据类，且配方消失时条目应当保留（见 3.1）。
+
+### 3.3 `PdaItem.getPartType` 的契约
+
+`PdaItem` 覆写 `PartAssemblyItem.getPartType(ItemStack, Level)`，把"手持 PDA"解析为"当前格位的零件来源"：
+
+| 前置状态 | 返回值 |
+| --- | --- |
+| `PDA_DATA.designMode == false` | `null` |
+| 设计模式开启，`selected` 指向的格位未绑定条目 | `null` |
+| 设计模式开启，格位绑定的配方在本侧索引中不是零件配方（通用配方或配方已失效） | `null` |
+| 设计模式开启，格位绑定的配方在本侧索引中是零件配方 | `partRecipeOf(...).value().getPartType()` |
+
+三种 `null` 情形对外不可区分，消费方一律按"该物品此刻不提供零件来源"处理：`VehicleAssemblyHelper` 会把预览状态清空，`buildRequest` 返回 `null`，服务端校验不通过。
+
+实现约束：
+
+- 解析一律走 `MMDynamicRes` 的本侧零件配方索引（`PdaHelper.partRecipeOf`，见 4.1），不查 `RecipeManager`；
+- 不产出也不修改任何物品栈；
+- 调用方经 `PartAssemblyItem.partTypeOf(ItemStack, Level)` 调用（见 2.5），不直接取 `getItem()` 强转。
 
 ## 4. 服务端逻辑接口
 
@@ -241,48 +259,62 @@ public final class PdaHelper {
     public static void setData(ItemStack stack, PdaData data);
 
     /**
-     * 把一张蓝图物品解析为条目。
-     * 判定顺序：先 PartFabricatingBlueprintItem（子类），后 FabricatingBlueprintItem。
-     * 零件制造蓝图取 part_type 组件作 target，通用制造蓝图取 recipe_type 组件作 target。
+     * 本侧配方索引查找。
      *
-     * @return 无法解析（非蓝图物品、或所需组件缺失）时返回 null
+     * @return 索引未就绪或该 id 不存在时返回 null
      */
     @Nullable
-    public static PdaEntry entryOf(ItemStack stack, Level level);
-
-    /** 读某一格位绑定的条目键；格位越界或未绑定时返回 null。 */
-    @Nullable
-    public static PdaEntryKey getShortcut(ItemStack pdaStack, int shortcutIndex);
+    public static RecipeHolder<FabricatingRecipe> recipeOf(Level level, ResourceLocation recipeId);
 
     /**
-     * 按格位重建等效蓝图临时栈，供装配链路解析。
-     * PART  → PartFabricatingBlueprintItem，写 PART_TYPE = target 与对应 RECIPE_TYPE
-     * GENERAL → FabricatingBlueprintItem，写 RECIPE_TYPE = target
+     * 按配方 id 取零件配方，即"条目是不是零件配方"的判据。
      *
-     * @return 格位越界、未绑定、条目类别为 GENERAL 时返回 null
+     * @return 不是零件配方、或该 id 不存在时返回 null
      */
     @Nullable
-    public static ItemStack resolveEffectiveBlueprint(ItemStack pdaStack, Level level, int shortcutIndex);
+    public static RecipeHolder<PartFabricatingRecipe> partRecipeOf(Level level, ResourceLocation recipeId);
 
-    /** 取当前手持的 PDA 栈；不是 PDA 时返回 ItemStack.EMPTY。 */
-    public static ItemStack heldPda(Player player, InteractionHand hand);
+    /**
+     * 把一张蓝图物品解析为配方 id（存入时的归一入口）。
+     * 归一顺序：part_type 组件经本侧零件配方索引反查配方 id → 缺失时读 recipe_type 组件。
+     *
+     * @return 无法解析（非蓝图物品、两个组件都缺失、或反查不到配方）时返回 null
+     */
+    @Nullable
+    public static ResourceLocation recipeIdOf(ItemStack stack, Level level);
+
+    /** 读某一格位绑定的配方 id；格位越界或未绑定时返回 null。 */
+    @Nullable
+    public static ResourceLocation getShortcut(ItemStack pdaStack, int shortcutIndex);
+
+    /** 读当前格位（`selected`）绑定的配方 id；栈不是 PDA、或该格位未绑定时返回 null。 */
+    @Nullable
+    public static ResourceLocation selectedRecipe(ItemStack pdaStack);
+
+    /**
+     * 玩家主手优先、副手兜底地找出持有的 PDA 在哪只手。
+     *
+     * @return 两只手都没有 PDA 时返回 null
+     */
+    @Nullable
+    public static InteractionHand heldPdaHand(Player player);
 }
 ```
 
-`PdaHelper` 无内部状态，所有方法可在主线程调用；`resolveEffectiveBlueprint` 只在解析期被调用，不修改任何物品栈。
+`PdaHelper` 无内部状态，所有方法可在主线程调用；`getData` 与 `selectedRecipe` 只读，`setData` 是唯一的写入入口（内部先 `sanitized()`）。`recipeOf` / `partRecipeOf` 一律走 `MMDynamicRes` 的本侧索引，不查 `RecipeManager`。
 
-### 4.2 合并规则（`withEntry` 的契约）
+### 4.2 合并规则（`mergeEntry` 的契约）
 
-`withEntry(entry)` 是"把一张刚解析出的蓝图并入数据"的纯函数：
+`mergeEntry(recipeId, incomingUses)` 是"把一张刚解析出的蓝图并入数据"的纯函数：
 
-| 前置状态 | 传入 `entry` | `withEntry` 结果 |
+| 前置状态：`usesOf(recipeId)` | 传入 `incomingUses` | 结果 |
 | --- | --- | --- |
-| 无该键 | 任意 | 追加 `entry` |
-| 有，`remainingUses == -1` | 任意 | 原样返回（本次并入被拒绝） |
-| 有，`remainingUses > 0` | `remainingUses > 0` | 结果为两者之和 |
-| 有，`remainingUses > 0` | `remainingUses == -1` | 结果为 `-1` |
+| `null`（未收纳） | 任意 | 新增 `recipeId → incomingUses` |
+| `INFINITE_USES` | 任意 | 原样返回（本次并入被拒绝） |
+| 正数 | 正数 | 写入两者之和 |
+| 正数 | `INFINITE_USES` | 写入 `INFINITE_USES` |
 
-调用方需要知道本次是否被拒绝时，用 `find(key) == null` 与 `withEntry` 前后的对象比对判断，或用 4.3 的存入服务（它直接返回被拒绝的张数）。
+调用方需要知道本次是否被拒绝时，用 `usesOf(recipeId)` 与 `mergeEntry` 前后的对象比对判断，或用 4.3 的存入服务（它直接返回被拒绝的张数）。
 
 ### 4.3 `PdaDepositService`
 
@@ -303,11 +335,25 @@ public final class PdaDepositService {
     /**
      * 绑定或解绑格位。主线程调用。
      *
-     * @param key 为 null 表示解绑该格位
-     * @return PDA 不在指定手、格位越界、或 key 在 entries 中无对应条目时返回 false
+     * @param recipeId 为 null 表示解绑该格位
+     * @return PDA 不在指定手、格位越界、或 recipeId 在 entries 中无对应条目时返回 false
      */
     public static boolean bindShortcut(ServerPlayer player, InteractionHand hand,
-                                       int shortcutIndex, @Nullable PdaEntryKey key);
+                                       int shortcutIndex, @Nullable ResourceLocation recipeId);
+
+    /**
+     * 写入当前格位。主线程调用。
+     *
+     * @return PDA 不在指定手、或 shortcutIndex 不在 0..8 内时返回 false
+     */
+    public static boolean selectShortcut(ServerPlayer player, InteractionHand hand, int shortcutIndex);
+
+    /**
+     * 写入设计模式开关。主线程调用。
+     *
+     * @return PDA 不在指定手时返回 false
+     */
+    public static boolean setDesignMode(ServerPlayer player, InteractionHand hand, boolean on);
 
     public record DepositResult(int stored, int rejected) {}
 }
@@ -315,10 +361,11 @@ public final class PdaDepositService {
 
 共同契约：
 
-- 两个方法都以 `hand` 定位 PDA 栈（`player.getItemInHand(hand)`），若该栈不是 `PdaItem` 则立即失败；
+- 四个方法都以 `hand` 定位 PDA 栈（`player.getItemInHand(hand)`），若该栈不是 `PdaItem` 则立即失败；
 - 写入数据后必须把该栈写回并触发物品同步，否则客户端界面读到旧数据。推荐做法：定位到具体槽位后 `inventory.setItem(slot, stack)` 并调用 `inventoryMenu.broadcastChanges()`；
-- `deposit` 对每个候选物品调用 `PdaHelper.entryOf`，返回值非空者按 4.2 规则并入，被拒绝者留在背包；并入成功者从背包中移除原件；
-- 若 `stored == 0`，方法仍可返回，由调用方决定是否提示（提示文案见 2.5）。
+- `deposit` 对每个候选物品调用 `PdaHelper.recipeIdOf`，返回值非空者取其蓝图物品的次数数据（当前恒为 `INFINITE_USES`）调用 `PdaData.mergeEntry` 并入，被拒绝者留在背包；并入成功者从背包中移除原件；
+- `selectShortcut` 与 `setDesignMode` 分别写 `withSelected` / `withDesignMode`。客户端在发包前已用同一个目标值写过本地组件（见 6.2），因此服务端回显的内容与客户端已持有的内容一致；
+- 若 `stored == 0`，方法仍可返回，由调用方决定是否提示（提示文案见 2.4）。
 
 ### 4.4 装配资格接入
 
@@ -332,12 +379,13 @@ private void rebuildAvailableRecipes(Player player);
 
 ```text
 对背包中的每个 PdaItem 栈：
-    对 PdaData.entries 中每个 kind == PART 的条目：
-        RecipeHolder<PartFabricatingRecipe> holder = MMDynamicRes.getPartRecipe(player.level(), entry.target());
-        若 holder 非 null，则 availableRecipes.put(entry.target(), holder);
+    对 PdaData.entries 的每个键（配方 id）：
+        RecipeHolder<PartFabricatingRecipe> holder = PdaHelper.partRecipeOf(player.level(), recipeId);
+        若 holder 非 null 且 holder.value().getPartType() 非 null：
+            availableRecipes.put(holder.value().getPartType(), holder);   // 键是零件 id，不是配方 id
 ```
 
-`GENERAL` 条目不入索引。索引失效沿用既有机制：`hashInventory` 基于 `ItemStack.hashItemAndComponents`，PDA 数据组件内容变化会改变背包哈希，从而触发重建。
+通用配方与查不到配方（失效）的条目不进入索引。索引失效沿用既有机制：`hashInventory` 基于 `ItemStack.hashItemAndComponents`，PDA 数据组件内容变化会改变背包哈希，从而触发重建。
 
 ## 5. 网络接口
 
@@ -357,31 +405,33 @@ private void rebuildAvailableRecipes(Player player);
 | --- | --- | --- |
 | `hand` | `InteractionHand` | 手持 PDA 的手 |
 | `shortcutIndex` | `int` | 格位序号，合法域 `0..8` |
-| `key` | `Optional<PdaEntryKey>` | 待绑定条目键；`empty` 表示解绑 |
+| `recipe` | `Optional<ResourceLocation>` | 待绑定的配方 id；`empty` 表示解绑 |
 
-服务端契约：校验 `hand` 物品为 `PdaItem`、`shortcutIndex` 在 `0..8` 内、`key` 存在时必须在 `entries` 中有对应条目；任一不满足则忽略本次请求。通过后调用 `PdaDepositService.bindShortcut`。
+服务端契约：校验 `hand` 物品为 `PdaItem`、`shortcutIndex` 在 `0..8` 内、`recipe` 存在时必须在 `entries` 中有对应条目；任一不满足则忽略本次请求。通过后调用 `PdaDepositService.bindShortcut`。
 
-### 5.3 `PartAssemblyRequestPayload` 扩展
-
-在既有字段之外新增：
+### 5.3 `PdaSelectShortcutPayload`（C→S）
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
-| `pdaShortcut` | `int` | 本次放置取自 PDA 的第几格；`-1` 表示不是 PDA 来源 |
+| `hand` | `InteractionHand` | 手持 PDA 的手 |
+| `shortcutIndex` | `int` | 新的当前格位序号，合法域 `0..8` |
 
-服务端契约（`VehicleAssemblyServerHelper.handle` 中"手持物品解析出的 PartType 与请求一致"这一步）：
+服务端契约：校验 `hand` 上的物品为 `PdaItem`、`shortcutIndex` 在 `0..8` 内；任一不满足则忽略本次请求（不报错、不断开连接）。通过后调用 `PdaDepositService.selectShortcut`。
 
-```text
-若手持物品是 PdaItem：
-    当 pdaShortcut < 0 时中止；
-    ItemStack effective = PdaHelper.resolveEffectiveBlueprint(手持栈, level, pdaShortcut);
-    当 effective 为 null 时中止；
-    以 effective 的 PartType 作为"手持解析结果"参与既有校验；
-否则：
-    保持既有行为（以手持物品解析的 PartType 参与校验）。
-```
+### 5.4 `PdaSetDesignModePayload`（C→S）
 
-中止的处理方式与既有校验失败一致，不新增失败分支的对外行为。
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `hand` | `InteractionHand` | 手持 PDA 的手 |
+| `on` | `boolean` | 目标状态 |
+
+服务端契约：校验 `hand` 上的物品为 `PdaItem`；不满足则忽略本次请求。通过后调用 `PdaDepositService.setDesignMode(player, hand, on)`。
+
+载荷携带**目标状态**而不是"翻转"指令：重复发送同一个值的结果是幂等的，因此丢包或重发都不会把开关翻回来。客户端在发包前已用同一个目标值写过本地组件（见 6.2）。
+
+### 5.5 放置请求
+
+`PartAssemblyRequestPayload` 不新增字段。服务端 `VehicleAssemblyServerHelper.handle` 中"手持物品解析出的 `PartType` 与请求 `registryKey` 一致"这一步改为经 `PartAssemblyItem.partTypeOf(手持栈, level)` 取得（见 2.5）；手持 PDA 时该调用由 `PdaItem.getPartType` 回答（见 3.3），因此这条路径不需要 PDA 专属分支，也不需要请求携带格位序号。
 
 ## 6. 客户端接口
 
@@ -405,43 +455,46 @@ public class PdaScreen extends ApricityScreen {
 
 ### 6.2 设计模式与格位的读写
 
-设计模式开关与当前格位都通过附件读写，客户端唯一入口：
+设计模式开关（`designMode`）与当前格位序号（`selected`）都是 `PDA_DATA` 的字段，随物品走，两端读同一份数据。客户端是它们的**预写方**：本机操作时先把目标值写进本地 PDA 栈的组件，再发对应的载荷（5.3 / 5.4），由服务端把权威副本改成同一个值。这样输入反馈不必等待往返，而服务端回显的内容与本地已持有的内容一致。
+
+写入口共三类，都遵循"先本地写、后发包"：
+
+| 入口 | 写入 | 载荷 |
+| --- | --- | --- |
+| `PdaItem.use` 的 Shift 分支 | `designMode` 取反 | `PdaSetDesignModePayload` |
+| `PdaInputInterceptor` 的滚轮与数字键 | `selected` 加一 / 减一（越界环绕）或指定下标 | `PdaSelectShortcutPayload` |
+| `PdaScreen` 的格位交互 | 只改 `shortcuts`（绑定 / 解绑），不改 `selected` | `PdaBindShortcutPayload` |
+
+本地写入的代码形状（`heldStack` 由 `PdaHelper.heldPdaHand(player)` 定位）：
 
 ```java
-// 客户端
-LocalPlayer player = Minecraft.getInstance().player;
-PdaClientState state = player.getData(MMAttachments.getPDA_CLIENT_STATE());
-player.setData(MMAttachments.getPDA_CLIENT_STATE(), state.toggled());            // 进出设计模式
-player.setData(MMAttachments.getPDA_CLIENT_STATE(), state.withShortcut(index));  // 切换格位
+PdaData data = PdaHelper.getData(heldStack);
+PdaHelper.setData(heldStack, data.withSelected(nextIndex));   // withSelected 内部按 0..8 归一
 ```
 
-服务端不读取该附件。
+约束：
 
-### 6.3 `VehicleAssemblyHelper` 接入点
+- **两端共用同一段构造逻辑**：`PdaData.withSelected(int)` 与 `PdaData.withDesignMode(boolean)` 是唯一的构造入口，客户端与服务端都只调它们，保证写入值恒等；
+- **只有 `selected` 与 `designMode` 预写**：`entries` 与 `shortcuts` 的合并与校验规则（4.2、4.3）只由服务端执行，客户端等服务端回显；
+- 读取一律经 `PdaHelper.getData`，不缓存字段副本；`PdaHelper.selectedRecipe(heldStack)` 给出当前格位绑定的配方 id；
+- "设计模式开启"与"手持 PDA"不会出现不一致：`designMode` 是 PDA 自己的字段，PDA 不在手时该状态不产生任何效果（`PdaItem.getPartType` 返回 `null`，见 3.3）。
 
-在 `onClientTick` 解析手持装配物品的位置，插入 PDA 分支：
+### 6.3 放置请求的构造与发送
+
+设计模式下的右键放置沿用既有装配请求链路，不需要任何 PDA 专属处理：
 
 ```java
-@Nullable
-private static ItemStack resolveHeldAssemblyStack(LocalPlayer player);   // 新增的私有辅助方法
+// PdaItem.use 的 designMode == true 分支
+ItemStack stack = player.getItemInHand(usedHand);
+PartAssemblyRequestPayload request = VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack);
+if (request != null) PacketDistributor.sendToServer(request);
 ```
 
-该方法的行为：
+- `buildRequest` 内部的"本地状态与手持物品是否一致"判定走 `PartAssemblyItem.partTypeOf(stack, level)`（见 2.5）；手持 PDA 时由 `PdaItem.getPartType` 回答，该判定天然成立；
+- 请求不携带格位序号：服务端 `handle` 用同一个 `partTypeOf` 从自己的 PDA 副本解析（见 5.5），两端读到的是同一份 `selected`；
+- 变体自动过滤、连接点循环、安装角计算等全部复用既有逻辑。
 
-```text
-主手物品是 PartAssemblyItem            → 返回主手栈
-副手物品是 PartAssemblyItem            → 返回副手栈
-主手或副手是 PdaItem 且设计模式开启    → 返回 PdaHelper.resolveEffectiveBlueprint(PDA栈, level, 当前格位序号)
-其它                                   → 返回 null
-```
-
-返回的栈随后按既有方式参与 `PartAssemblyItem.getPartType` 解析；变体自动过滤、连接点循环、安装角计算等全部复用既有逻辑，不新增加分支。
-
-### 6.4 `PdaItem.use` 的发包路径
-
-设计模式下右键的发包沿用既有装配请求链路：客户端由 `VehicleAssemblyHelper` 构造请求后发送 `PartAssemblyRequestPayload`，并在该请求中把 `pdaShortcut` 填为当前格位序号（`PdaClientState.shortcutIndex()`）。
-
-### 6.5 输入拦截
+### 6.4 输入拦截
 
 新增客户端输入拦截器，负责格位切换与原版热栏屏蔽：
 
@@ -456,35 +509,43 @@ public final class PdaInputInterceptor {
 }
 ```
 
-契约：
+前置条件（两者相同）：本地玩家手持 PDA 且该 PDA 的 `designMode == true`，且 `Minecraft.getInstance().screen == null`。
 
-| 方法 | 前置条件 | 行为 |
-| --- | --- | --- |
-| `onMouseScroll` | 本地玩家处于设计模式、手持 PDA，且 `Minecraft.getInstance().screen == null` | 按 `event.getScrollDeltaY()` 的正负把格位 +1 / -1（越界环绕 0~8），然后 `event.setCanceled(true)` |
-| `onKey` | 同上 | 遍历 `options.keyHotbarSlots[0..8]`，对 `consumeClick()` 命中的下标执行 `setDown(false)`，并把该下标设为当前格位 |
+| 方法 | 行为 |
+| --- | --- |
+| `onMouseScroll` | 未按 Alt：按 `event.getScrollDeltaY()` 的正负把格位加一 / 减一（越界环绕 0~8），写本地组件并发送 `PdaSelectShortcutPayload`。按住 Alt：不切格位，Alt+滚轮旋转安装角的行为保持不变。两种情形最后都 `event.setCanceled(true)` |
+| `onKey` | 遍历 `options.keyHotbarSlots[0..8]`，对 `consumeClick()` 命中的下标执行 `setDown(false)`，把该下标设为当前格位（写本地组件并发送 `PdaSelectShortcutPayload`） |
 
 共同约束：
 
 - 前置条件不满足时立即返回，不得调用 `consumeClick()`、`setCanceled` 或任何会改变原版输入状态的 API；
 - `onKey` 必须逐项 `consumeClick()`，不得直接比较 GLFW 键码，以尊重玩家的按键重绑定；
-- 两个处理器只在客户端注册，不发送网络包。
+- 滚轮一律 `setCanceled(true)`（含按住 Alt 的情形），否则原版热栏切换会与格位切换同时发生；Alt+滚轮的安装角旋转由既有 `RawInputHandler` 处理，它不检查事件的取消状态，因此两者可以共存；
+- 两个处理器只在客户端注册；除 `PdaSelectShortcutPayload` 外不发送其它网络包。
 
-### 6.6 `PdaHotbarOverlay`
+### 6.5 `PdaHotbarOverlay`
 
 设计模式下的 HUD 快捷栏由 AUI 的 Overlay Document 承载，其生命周期由这个类独占管理：
 
 ```java
 @OnlyIn(Dist.CLIENT)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public final class PdaHotbarOverlay {
-    /** 按当前 PdaClientState 同步显隐；首次需要显示时创建文档。每客户端 tick 调用。 */
+    /** 按"手持 PDA 的 designMode"同步显隐；首次需要显示时创建文档。 */
     public static void refresh();
 
-    /** 移除文档；回到主菜单或断开连接时调用。幂等。 */
+    /** 移除文档。幂等。 */
     public static void dispose();
 
     /** 当前文档；尚未创建时为 null。 */
     @Nullable
     public static Document document();
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event);                      // 调 refresh()
+
+    @SubscribeEvent
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event);       // 调 dispose()
 }
 ```
 
@@ -492,13 +553,13 @@ public final class PdaHotbarOverlay {
 
 | 方法 | 行为 |
 | --- | --- |
-| `refresh` | 读本地玩家的 `PdaClientState`：`designMode == true` 时确保文档已创建并可见；`false` 时把文档置为不可见。文档一经创建即保留复用，不随模式切换反复销毁重建 |
+| `refresh` | 经 `PdaHelper.heldPdaHand(player)` 找到手持 PDA 并读其 `designMode`：为 true 时确保文档已创建、可见，并写入格位图标与选中态；为 false 或没有手持 PDA 时把文档置为不可见。文档一经创建即保留复用，不随模式切换反复销毁重建 |
 | `dispose` | 调 `Document.remove()` 移除文档并清空内部引用；未创建时不做任何事 |
 | `document` | 只读访问入口，供调试与断言使用 |
 
 - 文档路径固定为 `machine_max/pda/pda_hotbar.html`；
 - 显隐通过给文档根元素切换 CSS 类实现，不依赖文档的创建与销毁；
-- 该类不注册任何 NeoForge 事件：HUD 的逐帧绘制由 AUI 自身完成；原版快捷栏的取消由 `MMGuiManager` 负责，不在本类内。
+- 该类的两个事件处理器覆盖了"每客户端 tick 刷新"与"退出世界时清理"两个时机；HUD 的逐帧绘制由 AUI 自身完成，原版快捷栏的取消由 `MMGuiManager` 负责，都不在本类内。
 
 ## 7. AUI 元素契约
 
@@ -523,11 +584,11 @@ public final class PdaHotbarOverlay {
 
 | `data-act` | 所在区域 | 含义 |
 | --- | --- | --- |
-| `SELECT_ENTRY` | 已收纳列表 | 选中条目进入待绑定态，行内需带 `data-kind` 与 `data-target` |
+| `SELECT_ENTRY` | 已收纳列表 | 选中条目进入待绑定态，行内需带 `data-target` |
 | `DEPOSIT` | 背包蓝图列表 | 存入该行，行内需带 `data-slot` |
 | `UNBIND` | 已收纳列表 | 清除所有引用该条目的格位 |
 
-**不使用** `data-act` 之外的自定义属性名；`data-kind` 取 `PART` / `GENERAL`，`data-target` 取 `ResourceLocation.toString()`。
+**不使用** `data-act` 之外的自定义属性名。`data-target` 取配方 id 的 `ResourceLocation.toString()`，它就是条目的唯一标识，也是绑定与解绑请求携带的值；行内的"零件 / 通用"标签、配色与"未知蓝图"降级态由 Java 生成行 HTML 时决定，不需要额外的 DOM 属性（原型页自行用 `data-kind` / `data-depositable` / `data-merge` / `data-index` 做脚手架，实施页不复用）。
 
 ### 7.2 CSS 契约
 
@@ -561,38 +622,45 @@ public final class PdaHotbarOverlay {
 | `pda-hotbar` | 条体容器，含 9 个格位 | 静态 |
 | `pda-hotbar-label` | 选中蓝图名 | Java |
 | `pda-hotbar-slot-0` … `pda-hotbar-slot-8` | 单个格位，下标与格位序号一一对应 | Java |
+| `pda-hotbar-banner` | 左上角常驻的「设计模式」横幅，逐行提示：设计模式 / 右键放置零件 / 潜行键 + 右键退出 | 静态，内容全为常量，Java 不写入 |
 
 格位元素的状态类：
 
 | 类名 | 含义 |
 | --- | --- |
-| `selected` | 该格位是当前格位（`PdaClientState.shortcutIndex()`） |
+| `selected` | 该格位是当前格位（`PDA_DATA.selected`） |
 | `empty` | 该格位未绑定条目 |
-| `blocked` | 该格位绑定的是 `GENERAL` 条目，序号改琥珀色，提示不可放置 |
+| `blocked` | 该格位绑定的条目不是零件配方（通用配方，或配方已失效），序号改琥珀色，提示不可放置 |
 
-格位元素的 `background-image` 由 Java 写为该条目图标；变化时才写，避免每帧触碰 DOM。样式集中在 `pda_hotbar.css`，沿用 7.2 的 CSS 变量与书写约定，格边长 20px、格间距 1px。
+格位元素的 `background-image` 由 Java 写为该条目图标；变化时才写，避免每帧触碰 DOM。样式集中在 `pda_hotbar.css`，沿用 7.2 的书写约定；该页强调色取研发/制造菜单的橙 `#FF6400`（7.2 的 `--accent` 是管理界面的青），格边长 20px、格间距 1px。
 
 ## 8. 兼容性与约束
 
 | 约束 | 说明 |
 | --- | --- |
-| 类型判定顺序 | `PartFabricatingBlueprintItem` 是 `FabricatingBlueprintItem` 的子类，解析蓝图时必须先判子类 |
+| 类型判定顺序 | `PartFabricatingBlueprintItem` 是 `FabricatingBlueprintItem` 的子类、`PartFabricatingRecipe` 是 `FabricatingRecipe` 的子类，两处判定都必须先判子类 |
+| 配方反查来源 | 条目类别与零件 id 一律经 `MMDynamicRes.getAllFabricating(Level)` 的本侧索引反查（`PdaHelper.recipeOf` / `partRecipeOf`），不查 `RecipeManager`；索引未就绪时反查返回 `null` |
+| 失效条目 | 条目引用的配方反查不到时不删除条目，只降级为不可用；`PdaData.sanitized()` 无 `Level`，不做存在性校验 |
+| 映射定序 | `PdaData.entries` 恒为 `ENTRY_ORDER`（配方 id 字符串序）有序映射；产出 `PdaData` 的所有路径（`CODEC` 解码、`mergeEntry`、`withoutEntry`、`withShortcut`、`withSelected`、`withDesignMode`）都必须经 `sanitized()` 收口，否则迭代顺序会静默退化 |
+| 零件来源解析 | 外部一律经 `PartAssemblyItem.partTypeOf(ItemStack, Level)` 取零件类型（见 2.5），不硬编码 `PdaItem` 类型判断；`PdaItem` 自身覆写 `getPartType`（见 3.3） |
 | 组件双写 | `PDA_DATA` 必须同时 `persistent` 与 `networkSynchronized` |
 | 同步触发 | 服务端改写 `PDA_DATA` 后必须触发物品同步（`inventoryMenu.broadcastChanges()` 或等价手段），否则客户端界面停在旧数据 |
-| 载荷注册 | 新增载荷必须挂到 `MMPayloadRegistry` 的 `pda:1.0.0` 组；`pdaShortcut` 字段的默认值 `-1` 必须与"非 PDA 来源"语义一致 |
+| 载荷注册 | 新增载荷必须挂到 `MMPayloadRegistry` 的 `pda:1.0.0` 组；`PdaSetDesignModePayload` 携带目标状态而不是"翻转"指令（见 5.4） |
 | 输入拦截时序 | `PdaInputInterceptor.onKey` 依赖 `InputEvent.Key` 早于原版 `Minecraft.handleKeybinds()` 执行的顺序；消费热栏键只能发生在该处理器内 |
+| 输入拦截与安装角 | 设计模式下的滚轮拦截不占用 Alt 组合：按住 Alt 时切格位不发生，安装角旋转沿用既有行为（见 6.4） |
+| 设计模式状态 | `designMode` 与 `selected` 是 `PDA_DATA` 的字段（见 3.1），随物品持久化并同步；服务端按 5.3 / 5.4 的载荷写入，不维护任何独立副本 |
+| 客户端预写 | 只有 `selected` 与 `designMode` 由客户端预写（见 6.2），两端都必须经 `PdaData.withSelected` / `withDesignMode` 构造目标值，禁止绕开它们直接写入；`entries` 与 `shortcuts` 禁止客户端预写 |
 | HUD 叠层输入 | `pda_hotbar.html` 不得声明 `aui-mouse-events`；HUD 叠层只负责绘制，不消费任何输入事件 |
 | 取消的图层 | 只取消 `VanillaGuiLayers.HOTBAR`；`RegisterGuiLayersEvent` 不支持覆盖同名图层，替代栏必须由 `PdaHotbarOverlay` 另行绘制 |
 | 线程 | 本章所有服务端方法都在主线程调用；不涉及物理线程，不使用 `synchronized` |
-| 不可逆 | 不提供任何从 `PdaData` 生成蓝图物品的接口；`resolveEffectiveBlueprint` 的返回值只允许在解析期使用，禁止写入任何容器 |
+| 不可逆 | 不提供任何从 `PdaData` 生成蓝图物品的接口；`PdaItem.getPartType` 只返回零件类型，不产出也不修改物品栈 |
 | 无容器槽位 | 界面不使用 AUI 容器屏，不注册 `MenuType`，不新增 `Slot` |
 
 ## 9. 待定项
 
 | 项 | 影响 | 待定原因 |
 | --- | --- | --- |
-| 蓝图物品的次数组件 | 决定 `PdaHelper.entryOf` 中 `remainingUses` 的取值来源 | 有限次蓝图尚未设计，当前恒取 `-1` |
-| `resolveEffectiveBlueprint` 写入的 `RECIPE_TYPE` 取值 | 只影响蓝图的显示名与图标解析 | 需确认是否总要写入零件配方 id，或可省略 |
+| 蓝图物品的次数组件 | 决定存入时传给 `PdaData.mergeEntry` 的 `incomingUses` 取值来源 | 有限次蓝图尚未设计，当前恒取 `INFINITE_USES` |
 | 替代栏的屏幕占位 | 决定是否要额外取消经验条 | 设计上按 20px 格、底部居中，与原版快捷栏同占位；实机对齐后若出现错位再评估 |
 
 ---
@@ -602,3 +670,12 @@ public final class PdaHotbarOverlay {
 | 日期 | 内容 |
 | --- | --- |
 | 2026-09-27 | 初稿。 |
+| 2026-09-27 | 设计模式开关与格位序号改为 `VehicleAssemblyHelper` 的客户端实例字段，取消 `pda_client_state` 附件注册（原 2.3，后续小节顺次前移）。 |
+| 2026-09-27 | 条目身份收敛为配方 id：删除 `PdaEntryKind` 与 `PdaEntryKey`，类别与零件 id 改由 `PdaHelper.recipeOf` / `partRecipeOf` 反查（原 3.1、3.3 删除，第 3 章小节顺次前移）。 |
+| 2026-09-27 | 条目进一步收敛为映射项：`entries` 由 `List<PdaEntry>` 改为 `Map<ResourceLocation, Integer>`，`PdaEntry` 类型删除，`withEntry` → `mergeEntry`、`find` → `usesOf`（第 3 章由 3 节收缩为 2 节）。 |
+| 2026-09-27 | `entries` 改为 `SortedMap`（定序器 `ENTRY_ORDER` = 配方 id 字符串序），迭代顺序成为数据模型的保证，渲染端不再排序；产出 `PdaData` 的所有路径以 `sanitized()` 收口。 |
+| 2026-09-27 | `PartAssemblyItem.getPartType` 由静态方法改为可覆写的实例方法，并新增静态派发器 `partTypeOf`；`PdaItem` 覆写它提供当前格位的零件来源，取消 `PdaHelper.resolveEffectiveBlueprint` 与"等效蓝图临时栈"，`PartAssemblyRequestPayload` 不新增字段（新增 2.5、3.3、5.5）。 |
+| 2026-09-27 | `designMode` 与 `selected` 改为 `PDA_DATA` 的字段：客户端预写、服务端权威写入；新增 `PdaSelectShortcutPayload` 与 `PdaSetDesignModePayload`，`PdaBindShortcutPayload` 语义收窄为只改绑定（3.1、5.3、5.4、6.2）。 |
+| 2026-09-27 | `PdaHotbarOverlay` 改为注册 `ClientTickEvent.Post` 与 `ClientPlayerNetworkEvent.LoggingOut`，`refresh` 的显隐判据改为手持 PDA 的 `designMode`（6.5）。 |
+| 2026-09-27 | HUD 文档契约新增 `pda-hotbar-banner`：左上角常驻的「设计模式」横幅，内容全为常量、Java 不写入（7.3）。 |
+| 2026-09-27 | 横幅改为扁平多行样式（黑底 + 左侧橙竖线），并增列「右键 放置零件」；HUD 页的强调色取研发/制造菜单的橙 `#FF6400`（7.3）。 |

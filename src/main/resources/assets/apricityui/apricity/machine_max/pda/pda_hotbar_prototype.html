@@ -12,6 +12,10 @@
     - 实施时本页由 AUI 的 Overlay Document 承载：客户端调
       ApricityUI.createDocument("machine_max/pda/pda_hotbar.html")，AUI 在
       「无 Screen 打开且未按 F1 隐藏 HUD」时自动每帧绘制。
+    - 左上角的「设计模式」横幅（#pda-hotbar-banner）是叠层的一部分，不是原型
+      脚手架：它常驻显示，逐行写明当前处于设计模式、右键放置零件、潜行键 +
+      右键退出；内容全部静态，不需要 Java 写入。样式取黑底 + 左侧橙竖线，
+      与研发/制造菜单同风格（见 pda_hotbar.css）。
 
   样式：pda_hotbar.css
 
@@ -73,9 +77,16 @@
     </div>
   </div>
 
+  <!-- ================= 设计模式横幅（左上角常驻，多行） ================= -->
+  <div class="mode-banner" id="pda-hotbar-banner">
+    <div class="mb-title">设计模式</div>
+    <div class="mb-line"><span class="mb-key">右键</span><span class="mb-verb">放置零件</span></div>
+    <div class="mb-line"><span class="mb-key">潜行键</span><span class="mb-sep">+</span><span class="mb-key">右键</span><span class="mb-verb">退出</span></div>
+  </div>
+
   <!--
     原型脚本：只做本地 DOM 状态变更，不发任何网络请求。
-    实施时选中态由 Java 侧按 PdaClientState 写入，点击不需要监听。
+    实施时选中态由 Java 侧按 PDA 数据组件的 selected 字段写入，点击不需要监听。
   -->
   <script>
   (function () {
@@ -101,7 +112,7 @@
       if (slot) { select(slot); }
     });
 
-    /* 初值：第 2 格为选中态，对应 PdaClientState.shortcutIndex() == 1 */
+    /* 初值：第 2 格为选中态，对应 PDA_DATA.selected == 1 */
     select(slots[1]);
   })();
   </script>

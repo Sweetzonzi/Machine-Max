@@ -5,7 +5,8 @@
    页面：pda_hotbar.html（实施页） / pda_hotbar_prototype.html（静态原型）
 
    这是设计模式下替代原版快捷栏的 HUD 元素：一条 9 格蓝图选择条，
-   贴在屏幕底部居中，与原版快捷栏占用同一屏幕区域。
+   贴在屏幕底部居中，与原版快捷栏占用同一屏幕区域；另在左上角有一条
+   常驻的「设计模式」横幅，提示当前状态与退出方式。
 
    与 pda_ui.css 的差异：
      - 本页是 HUD 叠层，不是全屏管理界面，只画一条窄带；
@@ -17,7 +18,7 @@
    ================================================================ */
 
 :root {
-    --accent: #58C9D8;                              /* 主题强调色：青 */
+    --accent: #FF6400;                              /* 主题强调色：橙，与研发/制造菜单同色 */
     --slot-size: 20px;                              /* 单格边长，与原版快捷栏一致 */
     --slot-gap: 1px;                                /* 格间距 */
     --bar-bg: rgba(0, 0, 0, 0.45);                  /* 条体底色 */
@@ -131,6 +132,64 @@ body {
 }
 
 /* ================================================================
+   设计模式横幅：左上角常驻，多行
+   风格与研发/制造菜单一致：黑底、左侧一条橙竖线衬边、无圆角无阴影。
+   位置取左上角，因为原版 HUD 的左上角本就是空的（聊天在左下、状态效果
+   与吐司弹窗在右上），横幅不会与任何原版元素相撞。
+   ================================================================ */
+.mode-banner {
+    position: fixed;
+    left: 6px;
+    top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 10px;
+    /* 黑底带一点暖调，取自研发标签页的橙黑底色配方，此处提高不透明度
+       以便压在地形上仍然可读 */
+    background: linear-gradient(180deg, rgba(14, 8, 2, 0.78), rgba(22, 12, 6, 0.78));
+    border-left: 2px solid var(--accent);
+}
+
+/* 首行：模式名 */
+.mb-title {
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 12px;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+
+/* 其余行：一行一条操作提示 */
+.mb-line {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 8px;
+    line-height: 11px;
+}
+
+/* 动作说明文字：压暗，让键名先被读到 */
+.mb-verb {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+/* 键名：提亮加粗，与说明文字区分 */
+.mb-key {
+    font-weight: 600;
+    color: #E8E8F0;
+}
+
+/* 键名之间的连接符 */
+.mb-sep {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ================================================================
    静态原型专用：示意背景与说明
    实施页不包含 .mock-* 这些节点。
    ================================================================ */
@@ -143,10 +202,11 @@ body {
     background: linear-gradient(#7AB7E8 0%, #A8CFE8 42%, #6B8F4E 42%, #47632F 100%);
 }
 
+/* 静态原型专用：说明文字，避开左上角的设计模式横幅 */
 .mock-note {
     position: fixed;
     left: 8px;
-    top: 8px;
+    top: 58px;
     font-size: 9px;
     line-height: 13px;
     color: rgba(255, 255, 255, 0.85);
