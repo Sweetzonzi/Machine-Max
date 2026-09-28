@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 public class TransmissionSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final diffLockMode diffLock;//是否启用差速锁，即强制限制输出端转速成固定比例，可选ture,false,auto,manual
-    public final float diffLockSensitivity;//差速锁灵敏度
+    public final float diffLockSensitivity;//限滑强度：速度环按0~1钳位使用，同时作为差速锁扭矩转移的耦合系数（不钳位）
     public final float autoDiffLockThreshold;//自动差速锁阈值，当输出端反馈转速差距百分比超过该值且diff_lock为auto时，自动启用差速锁
     public final List<String> manualDiffLockInputChannels;//控制信号名，优先级递减，留空接收所有信号
 
@@ -30,7 +30,6 @@ public class TransmissionSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.STRING.optionalFieldOf("diff_lock", "auto").forGetter(TransmissionSubsystemStaticAttr::getDiffLock),
             Codec.FLOAT.optionalFieldOf("diff_lock_sensitivity", 1f).forGetter(TransmissionSubsystemStaticAttr::getDiffLockSensitivity),
             Codec.FLOAT.optionalFieldOf("auto_diff_lock_threshold", 10f).forGetter(TransmissionSubsystemStaticAttr::getAutoDiffLockThreshold),
-            // TODO: 更新schema
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control")).forGetter(TransmissionSubsystemStaticAttr::getManualDiffLockInputChannels),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, TransmissionSubsystemStaticAttr::new));

@@ -32,6 +32,8 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
     private final float MAX_BRAKE_FORCE;
     private final float MAX_HAND_BRAKE_FORCE;
     private final float MAX_STEERING_FORCE;
+    /** 反推驱动扭矩时目标转速的分母下限(rad/s)，避免目标转速趋近 0 时扭矩被无限放大 */
+    private static final float MIN_SPEED_FOR_TORQUE = 0.25f;
     private volatile boolean isBraking = false;
     private boolean wasBraking = false;
 
@@ -96,8 +98,8 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
         //计算收到的机械功率 Calculate received mechanical power
-        float totalPower = receivedPower.power();//计算收到的总功率，正功率代表加速，负功率代表减速 Calculate total power, positive power means acceleration, negative power means deceleration
-        float speed = receivedPower.speed();
+        float totalPower = receivedPower.power();//下发的功率 = 期望驱动扭矩 × 目标转速，正功率代表加速，负功率代表减速
+        float speed = receivedPower.speed();//动力链下发的目标转速，正代表前进，负代表倒车
         if (Float.isNaN(totalPower) || Float.isNaN(speed)) {
             totalPower = 0f;
             speed = 0f;
@@ -118,12 +120,13 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
                     isBraking = false;
                 }
                 float handBrakeTorque = wheelControlSignal.getHandBrakeControl() * MAX_HAND_BRAKE_FORCE;
-                if (speed != 0) torque = totalPower / Math.abs(speed);//正扭矩代表加速，负扭矩代表减速
+                //由下发功率与目标转速反推驱动扭矩：P = τ × |ω|，目标转速过小时按下限计算避免扭矩被放大
+                torque = totalPower / Math.max(Math.abs(speed), MIN_SPEED_FOR_TORQUE);//正扭矩代表加速，负扭矩代表减速
                 torque = Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE);//限制最大驱动力 Limit maximum drive force
                 torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
                 rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
-                if (torque > 0) {//加速过程 Accelerating
-                    rollingMotor.set(MotorParam.TargetVelocity, - Math.signum(speed) * Math.min(30 + Math.abs(speed), MAX_SPEED));
+                if (torque > 0) {//加速过程 Accelerating：直接跟随动力链下发的目标转速，超出部分由速度伺服自动拖曳制动
+                    rollingMotor.set(MotorParam.TargetVelocity, -Math.clamp(speed, -MAX_SPEED, MAX_SPEED));
                 } else {//减速过程 Decelerating
                     rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }

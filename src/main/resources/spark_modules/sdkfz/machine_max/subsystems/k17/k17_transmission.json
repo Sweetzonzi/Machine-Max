@@ -5,7 +5,7 @@
   "diff_lock": "auto",
   "diff_lock_sensitivity": 2,
   "auto_diff_lock_threshold": 5,
-  "diff_lock_inputs": [
+  "control_inputs": [
     "diff_lock_control"
   ]
 }

@@ -45,19 +45,19 @@
       "type": "number",
       "minimum": 0,
       "default": 1.0,
-      "description": "Differential lock sensitivity."
+      "description": "Limited-slip strength. The speed loop clamps it to 0~1: higher values approach a rigid lock (1 pulls a slipping output back to the synchronous speed immediately), 0 applies no drag. The same value also acts as the coupling coefficient of differential lock torque transfer, where it is not clamped."
     },
     "auto_diff_lock_threshold": {
       "type": "number",
       "minimum": 0,
       "default": 10.0,
-      "description": "Automatic differential lock threshold, when the percentage difference in output end speed exceeds this value and diff_lock is auto, automatically enable the differential lock."
+      "description": "Automatic differential lock threshold. When the deviation of an output end feedback speed from the average feedback speed exceeds this percentage and diff_lock is auto, the differential lock is enabled automatically."
     },
-    "diff_lock_inputs": {
+    "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["diff_lock_control"],
-      "description": "List of manual differential lock control signal keys, in descending priority."
+      "default": ["car_control"],
+      "description": "List of signal channel names for manual differential lock control, in descending priority. Read only when diff_lock is manual."
     },
     "sounds": {
       "type": "object",
@@ -91,7 +91,7 @@
       "basic_durability": 70.0,
       "diff_lock": "auto",
       "auto_diff_lock_threshold": 15.0,
-      "diff_lock_sensitivity": 1.5
+      "diff_lock_sensitivity": 1.0
     }
   ]
 }

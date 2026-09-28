@@ -45,19 +45,19 @@
       "type": "number",
       "minimum": 0,
       "default": 1.0,
-      "description": "差速锁灵敏度。"
+      "description": "限滑强度。速度环按0~1钳位使用：越大越接近刚性锁止（1为立即把打滑轮拉回同步转速），0为完全不拖曳；同一数值也作为差速锁扭矩转移的耦合系数，不钳位。"
     },
     "auto_diff_lock_threshold": {
       "type": "number",
       "minimum": 0,
       "default": 10.0,
-      "description": "自动差速锁阈值，当输出端转速差百分比超过该值且diff_lock为auto时，自动启用差速锁。"
+      "description": "自动差速锁阈值，当输出端反馈转速相对平均反馈转速的偏差百分比超过该值且diff_lock为auto时，自动启用差速锁。"
     },
-    "diff_lock_inputs": {
+    "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["diff_lock_control"],
-      "description": "手动差速锁控制信号键列表，优先级递减。"
+      "default": ["car_control"],
+      "description": "手动差速锁控制信号接收频道名列表，优先级递减，仅diff_lock为manual时读取。"
     },
     "sounds": {
       "type": "object",
@@ -91,7 +91,7 @@
       "basic_durability": 70.0,
       "diff_lock": "auto",
       "auto_diff_lock_threshold": 15.0,
-      "diff_lock_sensitivity": 1.5
+      "diff_lock_sensitivity": 1.0
     }
   ]
 }
