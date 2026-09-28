@@ -5,7 +5,7 @@
   "regen_per_minute": 100,
   "regen_round_by_round": true,
   "energy_cost_per_round": 0,
-  "reload_time": 0.5,
+  "reload_time": 0.0,
   "can_supply_multiple": false,
   "regen_delay": 0.3,
   "sounds": {

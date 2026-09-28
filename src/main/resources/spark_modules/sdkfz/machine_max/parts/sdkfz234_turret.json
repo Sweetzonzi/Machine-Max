@@ -20,7 +20,7 @@
             "AllGunShield"
           ],
           "durability": 1000,
-          "mass": 2500,
+          "mass": 1000,
           "mass_center": "turret_mass_center",
           "projected_area": [
             -1,

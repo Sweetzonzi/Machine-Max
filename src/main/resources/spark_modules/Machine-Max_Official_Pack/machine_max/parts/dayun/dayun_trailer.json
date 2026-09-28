@@ -22,7 +22,7 @@
         "mass": 6000.0,
         "mass_center": "trailer_mass_center",
         "block_collision": "ground",
-        "collision_height": 1.5,
+        "collision_height": 2.5,
         "hit_boxes": {
           "TrailerHitBox": {
             "type": "box",

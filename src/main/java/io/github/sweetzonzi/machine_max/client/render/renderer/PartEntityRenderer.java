@@ -83,7 +83,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         boolean useWireframe = entity.subPart.part.shouldRenderWireframe() && assemblingProgress < functionalThreshold;
         var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         var pos = entity.subPart.transform.getTranslation();
-        reusableBlockPos.set((int) pos.x, (int) pos.y, (int) pos.z);
+        reusableBlockPos.set((int) pos.x, (int) (pos.y + entity.getBbHeight()), (int) pos.z);
         int blockLight = this.getBlockLightLevel(entity, reusableBlockPos);
         int skyLight = this.getSkyLightLevel(entity, reusableBlockPos);
         

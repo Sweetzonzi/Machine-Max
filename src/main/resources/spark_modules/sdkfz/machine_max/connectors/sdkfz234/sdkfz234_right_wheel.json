@@ -16,10 +16,10 @@
   "joint_attrs": {
     "y": {
       "lower_limit": -1,
-      "upper_limit": 1,
+      "upper_limit": 2,
       "equilibrium": -0.1,
       "stiffness": 86000,
-      "damping": 1200
+      "damping": 4500
     },
     "xr": {
       "lower_limit": 1,

@@ -16,7 +16,7 @@
           "durability": 50.0,
           "mass": 35.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "hit_boxes": {
             "Collision": {
               "type": "box",
@@ -56,7 +56,7 @@
           "durability": 50.0,
           "mass": 35.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "hit_boxes": {
             "Collision": {
               "type": "box",

@@ -41,9 +41,9 @@ public class BlastDistortionEffect {
     /** 屏幕单瓣宽下限（px）：远处不至于细到看不见，也避免采样抖动 */
     private static final float MIN_RING_WIDTH_PX = 7.0f;
     /** 屏幕径向偏移峰值上限（px） */
-    private static final float MAX_OFFSET_PX = 12.0f;
-    /** 色散比：三通道偏移量的最大相对差（0.12 表示 ±12%） */
-    private static final float CHROMA_RATIO = 0.12f;
+    private static final float MAX_OFFSET_PX = 16.0f;
+    /** 色散比：三通道偏移量的最大相对差（0.15 表示 ±15%） */
+    private static final float CHROMA_RATIO = 0.25f;
     /** 时间包络淡入终点（归一化进度 R/max_radius） */
     private static final float FADE_IN_PROGRESS = 0.06f;
     /** 时间包络淡出起点，末段归零，避免波前到达 max_radius 时被硬切 */

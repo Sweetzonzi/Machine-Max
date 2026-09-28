@@ -16,7 +16,7 @@
           "durability": 80.0,
           "mass": 32.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "Collision": {
@@ -54,7 +54,7 @@
           "durability": 80.0,
           "mass": 32.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "Collision": {
@@ -92,7 +92,7 @@
           "durability": 80.0,
           "mass": 35.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "Collision": {
@@ -130,7 +130,7 @@
           "durability": 80.0,
           "mass": 35.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "Collision": {

@@ -9,7 +9,7 @@
     "ammo_50mm"
   ],
   "breech": {
-    "fire_rate": 600,
+    "fire_rate": 30,
     "required_tags": [
       "machine_max:caliber/50mm"
     ]

@@ -25,11 +25,7 @@
   "sounds": {
     "fire_sounds": {
       "0.0": {
-        "sound_id": "machine_max:projectile.fire.middle",
-        "range": 160.0
-      },
-      "550.0": {
-        "sound_id": "machine_max:projectile.fire.50mm_kwk",
+        "sound_id": "machine_max:projectile.fire.large",
         "range": 160.0
       }
     },

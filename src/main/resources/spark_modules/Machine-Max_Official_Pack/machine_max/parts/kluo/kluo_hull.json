@@ -22,7 +22,7 @@
         "durability": 250.0,
         "mass": 400.0,
         "block_collision": "ground",
-        "collision_height": 1.5,
+        "collision_height": 2.5,
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
           "HullHitBox": { //值:碰撞形状属性
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder

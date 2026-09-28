@@ -14,7 +14,7 @@
         "durability": 4000.0,
         "mass": 350.0,
         "block_collision": "ground",
-        "collision_height": 1.5,
+        "collision_height": 2.5,
         "hit_boxes": {
           "collision": {
             "type": "box",

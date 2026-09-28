@@ -14,7 +14,7 @@
         "durability": 300.0,
         "mass": 150.0,
         "block_collision": "ground",
-        "collision_height": 1.5,
+        "collision_height": 2.5,
         "hit_boxes": {
           "Collision": { //值:碰撞形状属性
             "id": "part",
