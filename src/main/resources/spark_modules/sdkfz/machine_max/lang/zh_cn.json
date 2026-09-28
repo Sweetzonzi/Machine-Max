@@ -52,6 +52,7 @@
   "commander_seat": "车长座",
   "gunner_seat": "炮手座",
   "subsystem.machine_max.50mm_ammo_loader": "50mm 装弹机",
+  "subsystem.machine_max.50mm_he_ammo_loader": "50mm 高爆弹装弹机",
   "subsystem.machine_max.mg34_ammo_loader": "MG34 装弹机",
   "connector.machine_max.gun_shield_lock": "火炮防盾锁扣",
   "sub_part.machine_max.gun_shield": "火炮防盾",

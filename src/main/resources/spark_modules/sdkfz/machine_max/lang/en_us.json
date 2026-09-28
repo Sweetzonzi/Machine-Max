@@ -52,6 +52,7 @@
   "commander_seat": "Commander Seat",
   "gunner_seat": "Gunner Seat",
   "subsystem.machine_max.50mm_ammo_loader": "50mm Ammo Loader",
+  "subsystem.machine_max.50mm_he_ammo_loader": "50mm HE Ammo Loader",
   "subsystem.machine_max.mg34_ammo_loader": "Mg34 Ammo Loader",
   "connector.machine_max.gun_shield_lock": "Gun Shield Lock",
   "sub_part.machine_max.gun_shield": "Gun Shield",

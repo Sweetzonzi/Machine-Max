@@ -153,7 +153,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Nullable
     public ProjectileType getSuppliedType() {
         if (attr.projectileTypes.isEmpty()) return null;
-        return ProjectileType.get(getLevel(), attr.projectileTypes.get(projectileTypeIndex));
+        return ProjectileType.get(getLevel(), attr.projectileTypes.get(normalizedBeltIndex()));
     }
 
     @Override
@@ -174,7 +174,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public String getLabel() {
         if (attr.projectileTypes.isEmpty()) return "---";
-        return attr.projectileTypes.get(projectileTypeIndex).toString();
+        return attr.projectileTypes.get(normalizedBeltIndex()).toString();
     }
 
     @Override
@@ -219,9 +219,13 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
             setAmmoCount(getAmmoCount() - 1);
 
+        // 弹链为空时无弹可发（内容包未定义弹链，但存档仍带弹药计数）
+        if (attr.projectileTypes.isEmpty()) return null;
+
         // 取当前弹链位置的弹药，然后推进指针
-        ProjectileType type = ProjectileType.get(getLevel(), attr.projectileTypes.get(projectileTypeIndex));
-        projectileTypeIndex = (projectileTypeIndex + 1) % attr.projectileTypes.size();
+        int beltIndex = normalizedBeltIndex();
+        ProjectileType type = ProjectileType.get(getLevel(), attr.projectileTypes.get(beltIndex));
+        projectileTypeIndex = (beltIndex + 1) % attr.projectileTypes.size();
         if (!getLevel().isClientSide())  // 同步指针到客户端
             getSynchedData().set(BELT_INDEX, projectileTypeIndex);
 
@@ -289,6 +293,27 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     public List<ResourceLocation> getProjectileTypes() {
         return attr.projectileTypes;
+    }
+
+    /**
+     * 读取弹链指针前先把它收进当前弹链的有效范围。
+     * <p>
+     * 弹链由内容包定义、指针由存档持久化，两者生命周期不同步：改动内容包（增删弹种或改数量）
+     * 后，旧存档里的 {@code belt_index} 可能已越界（如弹链由 4 项缩为 2 项而指针仍为 3）。
+     * {@link #attr}{@code .projectileTypes} 是不可变列表，越界取值会抛异常，
+     * 因此所有以指针索引弹链的位置都必须经由此方法。
+     * <p>
+     * 越界时把指针折回有效范围并就地修正字段，下次保存即为合法值。
+     *
+     * @return 有效范围内的弹链指针；弹链为空时返回 0（调用方在此之前已判空）
+     */
+    private int normalizedBeltIndex() {
+        int size = attr.projectileTypes.size();
+        if (size == 0) return 0;
+        if (projectileTypeIndex < 0 || projectileTypeIndex >= size) {
+            projectileTypeIndex = Math.floorMod(projectileTypeIndex, size);
+        }
+        return projectileTypeIndex;
     }
 
     // ==================== 核心逻辑 ====================

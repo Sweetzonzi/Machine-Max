@@ -1,0 +1,46 @@
+{
+  "type": "point",
+  "tags": ["machine_max:caliber/50mm", "machine_max:ammo/he"],
+  "max_lifetime": 5.0,
+  "external": {
+    "mass": 1.9,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0005,
+    "caliber": 50.0,
+    "base_velocity": 810,
+    "base_accuracy_mil": 1.2
+  },
+  "terminal": {
+    "base_penetration": 20,
+    "base_damage": 110,
+    "penetration_velocity_coefficient": 0.8,
+    "damage_velocity_coefficient": 0.5,
+    "block_damage_factor": 1.5
+  },
+  "warheads": [
+    {
+      "type": "machine_max:blast",
+      "base_penetration": 25.0,
+      "base_damage": 22.0,
+      "base_impulse": 800.0,
+      "near_radius": 1.5,
+      "max_radius": 6.0,
+      "front_speed": 20.0,
+      "destroy_blocks": true,
+      "drop_items": false,
+      "causes_fire": false
+    }
+  ],
+  "visual": {
+    "tracer_color": [255, 170, 80],
+    "tracer_alpha": 180
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.50mm_kwk",
+        "range": 128.0
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "type": "point",
+  "tags": ["machine_max:caliber/30mm", "machine_max:ammo/he"],
+  "max_lifetime": 5.0,
+  "external": {
+    "mass": 0.39,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0004,
+    "caliber": 30.0,
+    "base_velocity": 950,
+    "base_accuracy_mil": 1.8
+  },
+  "terminal": {
+    "base_penetration": 12,
+    "base_damage": 55,
+    "penetration_velocity_coefficient": 0.8,
+    "damage_velocity_coefficient": 0.5,
+    "block_damage_factor": 1.5,
+    "stable_distance": 0,
+    "unstable_pen_factor": 0.3
+  },
+  "warheads": [
+    {
+      "type": "machine_max:blast",
+      "base_penetration": 15.0,
+      "base_damage": 12.0,
+      "base_impulse": 300.0,
+      "near_radius": 1.0,
+      "max_radius": 4.0,
+      "front_speed": 20.0,
+      "destroy_blocks": true,
+      "drop_items": false,
+      "causes_fire": false
+    }
+  ],
+  "visual": {
+    "tracer_color": [255, 150, 60],
+    "tracer_alpha": 200
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.large",
+        "range": 160.0
+      }
+    },
+    "cease_fire_sound": {
+      "sound_id": "machine_max:projectile.fire.mg34_release",
+      "range": 160.0
+    },
+    "shell_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    }
+  }
+}

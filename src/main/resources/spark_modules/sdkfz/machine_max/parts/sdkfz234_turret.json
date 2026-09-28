@@ -164,6 +164,18 @@
                 ]
               }
             },
+            "subsystem.machine_max.50mm_he_ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "machine_max:kwk39_50mm_regen_loader",
+              "projectile_types": {
+                "machine_max:50mm_sprgr38": 1
+              },
+              "discovery_outputs": {
+                "ammo_50mm": [
+                  "global"
+                ]
+              }
+            },
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:mg34_regen_loader",
