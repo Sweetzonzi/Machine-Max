@@ -14,6 +14,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationS
 import io.github.sweetzonzi.machine_max.network.payload.grab.*;
 import io.github.sweetzonzi.machine_max.network.payload.library.*;
 import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTestRePlayPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesGuidedStatePayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
@@ -198,6 +199,11 @@ public class MMPayloadRegistry {
                 ProjectilesSpawnPayload.TYPE,
                 ProjectilesSpawnPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ProjectilesSpawnPayload::handle)
+        );
+        sync.playToClient(//制导弹位姿快照（服务端→客户端），客户端不施加制导
+                ProjectilesGuidedStatePayload.TYPE,
+                ProjectilesGuidedStatePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ProjectilesGuidedStatePayload::handle)
         );
         sync.playToClient(//向客户端发送载具数据，由客户端保存到本地文件
                 VehicleDataSavedPayload.TYPE,

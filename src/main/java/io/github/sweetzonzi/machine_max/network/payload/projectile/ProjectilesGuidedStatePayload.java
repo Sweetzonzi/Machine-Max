@@ -1,0 +1,140 @@
+package io.github.sweetzonzi.machine_max.network.payload.projectile;
+
+import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 制导弹位姿快照包（服务端→客户端）。
+ * <p>
+ * 带制导律的投射物<b>不适用客户端外推</b>——客户端无法复现制导（纯追踪尚可，
+ * 未来的 PN 依赖视线角速度历史，导引头还有视场/丢锁状态），双端各自积分必然静默漂移。
+ * 因此改为<b>服务端权威</b>：服务端每 tick 广播位姿/速度/寿命快照，
+ * 客户端在两次快照之间只按纯弹道插值（{@code clientExtrapolate} 不施加制导）。
+ * <p>
+ * 与 {@link ProjectilesSpawnPayload} 的分工：生成包只负责"创建 + 初速"，
+ * 本包负责此后每 tick 的状态覆盖。
+ * <p>
+ * <b>零回归：</b>非制导弹种不进入本包，客户端行为与既有完全一致。
+ * <p>
+ * <b>调用线程：</b>主线程（由 {@link ProjectileManager#postTick()} 调用）。
+ *
+ * @see ProjectileManager#flushGuidedState()
+ */
+public record ProjectilesGuidedStatePayload(
+        List<StateEntry> entries
+) implements CustomPacketPayload {
+
+    public static final Type<ProjectilesGuidedStatePayload> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectiles_guided_state"));
+
+    /**
+     * 单个制导弹的状态条目。
+     * <p>
+     * {@code lifetime} 一并携带：客户端 {@code clientExtrapolate} 每 tick 多次递减寿命，
+     * 不覆盖会提前清理该投射物。
+     *
+     * @param objId    DestroyableObject ID
+     * @param posX     世界坐标 X
+     * @param posY     世界坐标 Y
+     * @param posZ     世界坐标 Z
+     * @param velX     速度 X (m/s)
+     * @param velY     速度 Y (m/s)
+     * @param velZ     速度 Z (m/s)
+     * @param lifetime 剩余存活 tick
+     */
+    public record StateEntry(
+            int objId,
+            double posX, double posY, double posZ,
+            double velX, double velY, double velZ,
+            int lifetime
+    ) {}
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, ProjectilesGuidedStatePayload> STREAM_CODEC =
+            new StreamCodec<>() {
+                @Override
+                public ProjectilesGuidedStatePayload decode(RegistryFriendlyByteBuf buf) {
+                    int count = buf.readVarInt();
+                    List<StateEntry> entries = new ArrayList<>(count);
+                    for (int i = 0; i < count; i++) {
+                        entries.add(new StateEntry(
+                                buf.readVarInt(),
+                                buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                                buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                                buf.readVarInt()
+                        ));
+                    }
+                    return new ProjectilesGuidedStatePayload(entries);
+                }
+
+                @Override
+                public void encode(RegistryFriendlyByteBuf buf, ProjectilesGuidedStatePayload pkt) {
+                    buf.writeVarInt(pkt.entries.size());
+                    for (StateEntry e : pkt.entries) {
+                        buf.writeVarInt(e.objId);
+                        buf.writeDouble(e.posX);
+                        buf.writeDouble(e.posY);
+                        buf.writeDouble(e.posZ);
+                        buf.writeDouble(e.velX);
+                        buf.writeDouble(e.velY);
+                        buf.writeDouble(e.velZ);
+                        buf.writeVarInt(e.lifetime);
+                    }
+                }
+            };
+
+    @Override
+    public @NotNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    /**
+     * 服务端广播：向维度内所有玩家发送一批制导弹位姿快照。
+     * <p>
+     * <b>调用线程：</b>仅主线程（{@link ProjectileManager#postTick()}）。
+     *
+     * @param serverLevel 服务端维度
+     * @param entries     本批状态条目（从 SoA 直接读取）
+     */
+    public static void broadcast(ServerLevel serverLevel, List<StateEntry> entries) {
+        PacketDistributor.sendToPlayersInDimension(serverLevel,
+                new ProjectilesGuidedStatePayload(entries));
+    }
+
+    /**
+     * 客户端处理：逐条覆盖本地 SoA 的位姿/速度/寿命。
+     * <p>
+     * 复用既有的 {@link ProjectileManager#syncPointProjectileState}（语义完全吻合）。
+     * 找不到 objId 时静默跳过——生成包可能尚未到达或已销毁。
+     * <p>
+     * <b>调用线程：</b>主线程（NeoForge 网络处理器）。
+     */
+    public static void handle(final ProjectilesGuidedStatePayload payload, final IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Level level = context.player().level();
+            ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+            if (pm == null) return;
+
+            for (StateEntry entry : payload.entries) {
+                pm.syncPointProjectileState(
+                        entry.objId,
+                        new Vector3f((float) entry.posX, (float) entry.posY, (float) entry.posZ),
+                        new Vector3f((float) entry.velX, (float) entry.velY, (float) entry.velZ),
+                        entry.lifetime);
+            }
+        });
+    }
+}

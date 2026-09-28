@@ -1,0 +1,20 @@
+{
+  "type": "machine_max:launcher",
+  "basic_durability": 60,
+  "control_inputs": [
+    "weapon.atgm"
+  ],
+  "ammo_inputs": [
+    "ammo_atgm"
+  ],
+  "barrel": {
+    "recoil_multiplier": 0.0
+  },
+  "breech": {
+    "fire_rate": 30,
+    "required_tags": [
+      "machine_max:ammo/atgm"
+    ]
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

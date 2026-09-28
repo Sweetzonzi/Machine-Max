@@ -286,7 +286,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:k17_seat",
             "locator": "gunner_seat",
-            "control_group_preset": "machine_max:default_gunner",
+            "control_group_preset": "machine_max:k17_gunner",
             "passenger_num_outputs": {
               "passenger_num": [
                 "local",

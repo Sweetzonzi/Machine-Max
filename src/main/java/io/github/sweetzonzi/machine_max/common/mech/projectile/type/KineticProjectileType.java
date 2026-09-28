@@ -12,12 +12,15 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileTypeEnum;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.RigidProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceLaw;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -49,6 +52,16 @@ public class KineticProjectileType extends ProjectileType {
     private final TerminalProperties terminal;
 
     /**
+     * 制导律 — 自含算法参数与限幅配置；{@code null} 表示无制导（纯弹道）。
+     * <p>
+     * JSON 中为可选对象，按 {@code "type"} 字段分派到具体律（形状与 {@code warheads} 一致）。
+     * 缺省为 {@code null}，现有内容包 JSON 零改动。仅 {@code point} 模型首期支持
+     * （刚体制导需姿态控制，见《武器系统-制导组件实现备忘》§2.2）。
+     */
+    @Nullable
+    private final GuidanceLaw guidance;
+
+    /**
      * 战斗部效果列表 — 命中判定完成后依次执行的世界效果。
      * <p>
      * 空列表表示纯动能弹（仅执行直接动能命中）。首期唯一实现是参数化爆炸
@@ -64,7 +77,7 @@ public class KineticProjectileType extends ProjectileType {
     private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
         Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
 
-    // ==================== CODEC（9 字段，远低于 16 上限） ====================
+    // ==================== CODEC（10 字段，远低于 16 上限） ====================
 
     /**
      * Mojang MapCodec：将 JSON 反序列化为 {@link KineticProjectileType}。
@@ -84,13 +97,20 @@ public class KineticProjectileType extends ProjectileType {
             .forGetter(KineticProjectileType::getExternal),
         TerminalProperties.CODEC.fieldOf("terminal")
             .forGetter(KineticProjectileType::getTerminal),
+        // 可选制导配置（形状同 warheads：type 字段直接分派到律的 codec）。
+        // Optional 必须留在 codec 组内、由 apply 回调解包——
+        // 若用 xmap 把它映射成 null，null 会穿过 DFU 的 DataResult 触发 NPE（见 TurretDriverSubsystemStaticAttr 同款写法）
+        GuidanceLaw.CODEC.optionalFieldOf("guidance")
+            .forGetter(attr -> Optional.ofNullable(attr.guidance)),
         WorldEffect.CODEC.listOf().optionalFieldOf("warheads", List.of())
             .forGetter(KineticProjectileType::getWarheads),
         VisualProperties.CODEC.optionalFieldOf("visual", VisualProperties.DEFAULT)
             .forGetter(ProjectileType::getVisual),
         ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
             .forGetter(ProjectileType::getSounds)
-    ).apply(instance, KineticProjectileType::new));
+    ).apply(instance, (type, tags, maxLifetime, bulletNum, external, terminal, guidance, warheads, visual, sounds) ->
+        new KineticProjectileType(type, tags, maxLifetime, bulletNum, external, terminal,
+            guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
 
@@ -101,6 +121,7 @@ public class KineticProjectileType extends ProjectileType {
         int bulletNum,
         ExternalProperties external,
         TerminalProperties terminal,
+        @Nullable GuidanceLaw guidance,
         List<WorldEffect> warheads,
         VisualProperties visual,
         ProjectileSoundAttr sounds
@@ -109,12 +130,22 @@ public class KineticProjectileType extends ProjectileType {
         this.type = type;
         this.external = external;
         this.terminal = terminal;
+        this.guidance = guidance;
         this.warheads = warheads;
     }
 
     @Override
     public String getSerializedName() {
         return type.getSerializedName();
+    }
+
+    /**
+     * 本弹种是否受制导。
+     *
+     * @return true 表示配置了 guidance 组件
+     */
+    public boolean hasGuidance() {
+        return guidance != null;
     }
 
     // ==================== 外弹道委托（→ ExternalProperties） ====================
@@ -128,6 +159,10 @@ public class KineticProjectileType extends ProjectileType {
     public float getRadius() { return external.caliberMm() / 2000f; }
     public float getBaseVelocity() { return external.baseVelocity(); }
     public float getBaseAccuracyMil() { return external.baseAccuracyMil(); }
+    /** 推进段配置（缺省 {@link ExternalProperties.ThrustProperties#NONE}，即无推力） */
+    public ExternalProperties.ThrustProperties getThrust() { return external.thrust(); }
+    /** 是否配置了有效推进段 */
+    public boolean hasThrust() { return external.thrust().isActive(); }
 
     /**
      * 获取此投射物类型的静态扩展数据缓存（口径、质量等不变字段）。
@@ -326,7 +361,9 @@ public class KineticProjectileType extends ProjectileType {
          * 表示 1σ 散步角，与发射器的精度乘子叠加。
          * 默认 5.0 密位 ≈ 每公里 5 米散布。
          */
-        float baseAccuracyMil
+        float baseAccuracyMil,
+        /** 推进段配置，缺省 {@link ThrustProperties#NONE}（无推力，纯弹道） */
+        ThrustProperties thrust
     ) {
         public static final Codec<ExternalProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.fieldOf("mass").forGetter(ExternalProperties::mass),
@@ -334,8 +371,49 @@ public class KineticProjectileType extends ProjectileType {
             Codec.FLOAT.optionalFieldOf("drag_factor", 0f).forGetter(ExternalProperties::dragFactor),
             Codec.FLOAT.optionalFieldOf("caliber", 50.0f).forGetter(ExternalProperties::caliberMm),
             Codec.FLOAT.fieldOf("base_velocity").forGetter(ExternalProperties::baseVelocity),
-            Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil)
+            Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil),
+            ThrustProperties.CODEC.optionalFieldOf("thrust", ThrustProperties.NONE)
+                .forGetter(ExternalProperties::thrust)
         ).apply(instance, ExternalProperties::new));
+
+        /**
+         * 推进段 — 单段恒推力，沿<b>速度矢量</b>施加（无姿态质点弹的合理近似：弹轴 ≈ 速度）。
+         * <p>
+         * 只增速率、不改方向，与制导/阻力/重力共用同一套半隐式 Euler 积分。
+         * 推力段内加速度为 {@code F / m}，燃烧窗口为 {@code [ignition_delay, ignition_delay + duration)}。
+         * 首期只支持单段点火（多段 / 推力曲线见《武器系统-制导组件实现备忘》§十四）。
+         * <p>
+         * <b>两端一致：</b>服务端 {@code updatePointProjectiles} 与客户端 {@code clientExtrapolate}
+         * 均按同一窗口施加推力，保证客户端外推轨迹与服务端一致。
+         *
+         * @param force         推力（N）
+         * @param duration      燃烧时长（s）
+         * @param ignitionDelay 点火延迟（s），从发射瞬间起算；0 = 出膛即点火
+         */
+        public record ThrustProperties(
+            float force,
+            float duration,
+            float ignitionDelay
+        ) {
+            /** 无推力（缺省），等价于纯弹道 */
+            public static final ThrustProperties NONE = new ThrustProperties(0f, 0f, 0f);
+
+            public static final Codec<ThrustProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.FLOAT.optionalFieldOf("force", 0f).forGetter(ThrustProperties::force),
+                Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustProperties::duration),
+                Codec.FLOAT.optionalFieldOf("ignition_delay", 0f).forGetter(ThrustProperties::ignitionDelay)
+            ).apply(instance, ThrustProperties::new));
+
+            /** 是否配置了有效推进段（推力和燃时均 &gt; 0） */
+            public boolean isActive() {
+                return force > 0f && duration > 0f;
+            }
+
+            /** 燃烧窗口结束时刻（s，从发射瞬间起算） */
+            public float burnEnd() {
+                return ignitionDelay + duration;
+            }
+        }
     }
 
     /**

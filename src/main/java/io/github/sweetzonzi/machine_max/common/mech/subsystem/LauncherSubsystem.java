@@ -8,7 +8,10 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
@@ -86,6 +89,25 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      */
     private final ConcurrentLinkedQueue<KineticProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
+
+    // ——— 制导弹的目标推送（物理线程内闭环） ———
+
+    /**
+     * 本发射器打出的制导弹 objId 列表。
+     * <p>
+     * <b>仅物理线程访问</b>：{@link #fireSingle} 登记，{@link #updateGuidedTargets()} 剔除消亡条目；
+     * 二者与武器控制器的目标推送同处物理线程 tick，故用普通 ArrayList 即可，无需加锁。
+     */
+    private final List<Integer> guidedObjIds = new ArrayList<>();
+
+    /**
+     * 当前制导目标点，由受控的武器控制器每物理步写入。
+     * <p>
+     * 目标是一个<b>世界坐标点</b>而非实体，可能每物理步移动；{@code null} = 无目标，
+     * 此时在飞制导弹交回纯弹道。volatile 保证跨线程可见性。
+     */
+    @Nullable
+    private volatile Vec3 guidanceTarget = null;
 
     // ——— 音效状态（仅客户端有效，由 onTick 管理） ———
 
@@ -547,7 +569,22 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             getSubPart().getLinearVelocity()
         );
 
-        // ⑤ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
+        // ⑤ 制导弹登记：记住 objId 以便后续每物理步推送目标，并装订初始目标
+        if (type.hasGuidance()) {
+            ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(getLevel());
+            Vec3 target = this.guidanceTarget;
+            boolean hasTarget = target != null;
+            float tx = hasTarget ? (float) target.x : Float.NaN;
+            float ty = hasTarget ? (float) target.y : Float.NaN;
+            float tz = hasTarget ? (float) target.z : Float.NaN;
+            for (IProjectile p : projectiles) {
+                int id = ((DestroyableObject) p).getId();
+                guidedObjIds.add(id);
+                pm.setGuidanceTarget(id, tx, ty, tz);
+            }
+        }
+
+        // ⑥ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
         float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getBarrel().velocityMultiplier()
                          + attr.staticAttribute.getBarrel().velocityBonus();
         float totalMass = type.getMass() * projectiles.size();
@@ -557,6 +594,44 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             var body = getSubPart().getBody();
             Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
             body.applyImpulse(impulseWorld, jmePos.subtract(bodyWorldPos));
+        }
+    }
+
+    // ——— 制导目标推送 API（由 WeaponController 每物理步调用） ———
+
+    /**
+     * 设置本发射器的制导目标点。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@code WeaponControllerSubsystem.onPrePhysicsTick}，
+     * 与 {@link #onPrePhysicsTick()} 同处物理线程 tick，因此目标推送无需队列）。
+     *
+     * @param target 目标世界坐标点，{@code null} 表示无目标
+     */
+    public void setGuidanceTarget(@Nullable Vec3 target) {
+        this.guidanceTarget = target;
+    }
+
+    /**
+     * 把当前目标推送给本发射器打出的所有存活制导弹，并剔除已消亡的条目。
+     * <p>
+     * 无可推送目标时写入 {@code NaN}——制导弹本步交回纯弹道。
+     * <p>
+     * <b>调用线程：</b>物理线程（由 {@code WeaponControllerSubsystem.onPrePhysicsTick} 调用）。
+     */
+    public void updateGuidedTargets() {
+        if (guidedObjIds.isEmpty()) return;
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(getLevel());
+        Vec3 target = this.guidanceTarget;
+        boolean hasTarget = target != null;
+        float tx = hasTarget ? (float) target.x : Float.NaN;
+        float ty = hasTarget ? (float) target.y : Float.NaN;
+        float tz = hasTarget ? (float) target.z : Float.NaN;
+
+        for (Iterator<Integer> it = guidedObjIds.iterator(); it.hasNext(); ) {
+            int id = it.next();
+            if (!pm.containsProjectile(id) || !pm.setGuidanceTarget(id, tx, ty, tz)) {
+                it.remove();
+            }
         }
     }
 

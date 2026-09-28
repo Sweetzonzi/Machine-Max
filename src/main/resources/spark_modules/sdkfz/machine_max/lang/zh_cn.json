@@ -77,5 +77,16 @@
   "subsystem.machine_max.pktm_ammo_loader": "PKTM 装弹机",
   "gunner_optics": "炮手瞄具",
   "commander_optics": "车长瞄具",
-  "subsystem.machine_max.pktm": "PKTM 机枪"
+  "subsystem.machine_max.pktm": "PKTM 机枪",
+  "subsystem.machine_max.left_atgm_tube_1": "左反坦克导弹管1",
+  "subsystem.machine_max.left_atgm_tube_2": "左反坦克导弹管2",
+  "subsystem.machine_max.right_atgm_tube_1": "右反坦克导弹管1",
+  "subsystem.machine_max.right_atgm_tube_2": "右反坦克导弹管2",
+  "subsystem.machine_max.atgm_weapon": "反坦克导弹火控",
+  "subsystem.machine_max.atgm_ammo_loader_1": "反坦克导弹装弹机1",
+  "subsystem.machine_max.atgm_ammo_loader_2": "反坦克导弹装弹机2",
+  "subsystem.machine_max.atgm_ammo_loader_3": "反坦克导弹装弹机3",
+  "subsystem.machine_max.atgm_ammo_loader_4": "反坦克导弹装弹机4",
+  "controlGroup.machine_max.autocannon_control": "机关炮",
+  "controlGroup.machine_max.atgm_control": "反坦克导弹"
 }

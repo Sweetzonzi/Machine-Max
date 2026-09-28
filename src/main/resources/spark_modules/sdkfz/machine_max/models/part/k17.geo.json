@@ -975,6 +975,8 @@
 						}
 					],
 					"locators": {
+						"left_atgm1_launch_point": [27.5258, 46.263, 2.0768],
+						"left_atgm2_launch_point": [23.1698, 46.263, 2.0768],
 						"left_atgm_turret": [20.2658, 41.907, 18.8188]
 					}
 				},
@@ -1484,7 +1486,9 @@
 						}
 					],
 					"locators": {
-						"right_atgm_turret": [-23.4951, 41.907, 18.8188]
+						"right_atgm_turret": [-23.4951, 41.907, 18.8188],
+						"right_atgm2_launch_point": [-26.3991, 46.263, 2.0768],
+						"right_atgm1_launch_point": [-30.7551, 46.263, 2.0768]
 					}
 				},
 				{

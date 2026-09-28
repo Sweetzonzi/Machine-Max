@@ -77,5 +77,16 @@
   "subsystem.machine_max.pktm_ammo_loader": "Pktm Ammo Loader",
   "gunner_optics": "Gunner Optics",
   "commander_optics": "Commander Optics",
-  "subsystem.machine_max.pktm": "Pktm"
+  "subsystem.machine_max.pktm": "Pktm",
+  "subsystem.machine_max.left_atgm_tube_1": "Left Atgm Tube 1",
+  "subsystem.machine_max.left_atgm_tube_2": "Left Atgm Tube 2",
+  "subsystem.machine_max.right_atgm_tube_1": "Right Atgm Tube 1",
+  "subsystem.machine_max.right_atgm_tube_2": "Right Atgm Tube 2",
+  "subsystem.machine_max.atgm_weapon": "Atgm Fire Control",
+  "subsystem.machine_max.atgm_ammo_loader_1": "Atgm Ammo Loader 1",
+  "subsystem.machine_max.atgm_ammo_loader_2": "Atgm Ammo Loader 2",
+  "subsystem.machine_max.atgm_ammo_loader_3": "Atgm Ammo Loader 3",
+  "subsystem.machine_max.atgm_ammo_loader_4": "Atgm Ammo Loader 4",
+  "controlGroup.machine_max.autocannon_control": "Autocannon",
+  "controlGroup.machine_max.atgm_control": "ATGM"
 }

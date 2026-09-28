@@ -1,0 +1,29 @@
+{
+  "base_group": {
+    "name": "controlGroup.machine_max.base",
+    "control_mode": "inherit",
+    "view_targets": {
+      "aim_input_p2": ["global"]
+    }
+  },
+  "groups": [
+    {
+      "name": "controlGroup.machine_max.autocannon_control",
+      "control_mode": "inherit",
+      "main_weapon_targets": {
+        "fire_input_p2": ["global"]
+      },
+      "secondary_weapon_targets": {
+        "secondary_fire_input_p2": ["global"]
+      }
+    },
+    {
+      "name": "controlGroup.machine_max.atgm_control",
+      "control_mode": "inherit",
+      "main_weapon_targets": {
+        "atgm_fire_input": ["global"]
+      }
+    }
+  ],
+  "active_index": 0
+}

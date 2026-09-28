@@ -1,0 +1,63 @@
+{
+  "type": "point",
+  "tags": ["machine_max:caliber/152mm", "machine_max:ammo/atgm"],
+  "max_lifetime": 25.0,
+  "external": {
+    "mass": 26.0,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0025,
+    "caliber": 152.0,
+    "base_velocity": 50,
+    "base_accuracy_mil": 8.0,
+    "thrust": {
+      "force": 2600.0,
+      "duration": 2.5,
+      "ignition_delay": 0.1
+    }
+  },
+  "terminal": {
+    "base_penetration": 1200,
+    "base_damage": 300,
+    "penetration_velocity_coefficient": 0,
+    "damage_velocity_coefficient": 0.2,
+    "block_damage_factor": 1.0
+  },
+  "guidance": {
+    "type": "machine_max:pure_pursuit",
+    "turn_gain": 3.0,
+    "limits": {
+      "structural_limit_g": 15.0,
+      "lift_coefficient_max": 2.5,
+      "reference_area": 0.05,
+      "induced_drag_coefficient": 0.10,
+      "max_turn_rate_dps": 180.0
+    }
+  },
+  "warheads": [
+    {
+      "type": "machine_max:blast",
+      "base_penetration": 60.0,
+      "base_damage": 120.0,
+      "base_impulse": 300.0,
+      "near_radius": 2.5,
+      "max_radius": 7.0,
+      "front_speed": 18.0,
+      "destroy_blocks": true,
+      "drop_items": false,
+      "causes_fire": false
+    }
+  ],
+  "visual": {
+    "tracer_color": [255, 170, 60],
+    "tracer_alpha": 255,
+    "tracer_length": 1.05
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.huge",
+        "range": 200.0
+      }
+    }
+  }
+}

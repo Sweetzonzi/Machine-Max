@@ -21,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectContext;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectExecutor;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceContext;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -37,6 +38,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesGuidedStatePayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import lombok.Getter;
@@ -103,6 +105,22 @@ public class ProjectileManager {
     public boolean[] skipExtrapolate;    // 命中帧暂停客户端外推（跳弹/穿透后保持位置在命中点）
     /** 剩余稳定距离（mm），&lt;=0 表示弹头已失稳。初始值来自 ProjectileType.stableDistance */
     public float[] remainingStableDistance;
+    /**
+     * 制导目标点世界坐标（仅服务端有意义）。
+     * <p>
+     * {@link Float#NaN} 表示"无目标"——用 NaN 作哨兵，避免再引入一个布尔数组。
+     * 由 {@code LauncherSubsystem} 在物理线程写入（发射时装订初值，此后每物理步覆盖），
+     * {@link #updatePointProjectiles} 在积分前读取。客户端不读。
+     */
+    public float[] targetX, targetY, targetZ;
+    /**
+     * 推进计时（秒，从发射瞬间起算的已飞行时间）。
+     * <p>
+     * 用于判定 {@code external.thrust} 的燃烧窗口 {@code [ignition_delay, ignition_delay + duration)}。
+     * <b>不能复用 {@link #lifetime}</b>：服务端每 tick 减 1（20Hz），客户端每个外推子步减 1（100Hz），
+     * 两端速率不一致；本字段两端都按物理步长（0.01s）累加，时基天然对齐。
+     */
+    public float[] burnTime;
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
@@ -219,6 +237,8 @@ public class ProjectileManager {
     private final Vector3f rayTo = new Vector3f();
     private final Vector3f hitPointJme = new Vector3f();
     private final Vector3f hitNormalJme = new Vector3f();
+    /** 制导解算的输出缓冲（复用，避免热路径分配），仅物理线程使用 */
+    private final Vector3f guidanceAccel = new Vector3f();
 
     public ProjectileManager(Level level) {
         this.level = level;
@@ -235,6 +255,10 @@ public class ProjectileManager {
         alive = new boolean[capacity];
         skipExtrapolate = new boolean[capacity];
         remainingStableDistance = new float[capacity];
+        targetX = new float[capacity];
+        targetY = new float[capacity];
+        targetZ = new float[capacity];
+        burnTime = new float[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
         typeCache = new KineticProjectileType[0];
@@ -303,6 +327,11 @@ public class ProjectileManager {
         alive[i] = true;
         skipExtrapolate[i] = false;
         remainingStableDistance[i] = proj.getProjectileType().getStableDistance();
+        // 制导目标初值：NaN = 无目标（装订由 LauncherSubsystem 在 fireSingle 后写入）
+        targetX[i] = Float.NaN;
+        targetY[i] = Float.NaN;
+        targetZ[i] = Float.NaN;
+        burnTime[i] = 0f;
         projectileObjIds.add(id);
         // volatile write 必须在所有 SoA 数组写入之后，确保主线程读取 count 时数据已完整
         count = i + 1;
@@ -787,6 +816,7 @@ public class ProjectileManager {
      *   <li>冲刷本帧物理线程新增的投射物 Entity 创建与发包</li>
      *   <li>冲刷本帧物理线程缓冲的命中同步包</li>
      *   <li>冲刷本帧物理线程缓冲的战斗部起爆请求（主线程执行世界效果）</li>
+     *   <li>广播制导弹的位姿快照（服务端权威，非制导弹种不广播）</li>
      *   <li>调用各投射物的 {@code postTick()}，回写 SoA 到 SynchedEntityData</li>
      * </ol>
      * <p>
@@ -798,6 +828,7 @@ public class ProjectileManager {
         flushProjectileEntities();   // ① 先发创建包，确保客户端 SoA 中有该投射物
         flushPendingHitSyncs();      // ② 再发命中包，保证创建包严格先于命中包到达
         flushPendingDetonations();   // ③ 最后执行战斗部效果（主线程）
+        flushGuidedState();          // ④ 制导弹位姿快照（服务端权威；非制导弹种不广播）
         postTickAndSync();
     }
 
@@ -905,10 +936,25 @@ public class ProjectileManager {
                     dragAccZ = dragAcc * (-velZ[i] * invSpeed);
                 }
 
+                // ——— 推进段：与服务端 updatePointProjectiles 同一燃烧窗口，保证两端外推一致 ———
+                float thrustAccX = 0, thrustAccY = 0, thrustAccZ = 0;
+                var thrust = type.getThrust();
+                if (thrust.isActive() && speed > 1e-6f) {
+                    float burnElapsed = burnTime[i];
+                    if (burnElapsed >= thrust.ignitionDelay() && burnElapsed < thrust.burnEnd()) {
+                        float thrustAcc = thrust.force() / mass;
+                        float invThrustSpeed = 1f / speed;
+                        thrustAccX = thrustAcc * velX[i] * invThrustSpeed;
+                        thrustAccY = thrustAcc * velY[i] * invThrustSpeed;
+                        thrustAccZ = thrustAcc * velZ[i] * invThrustSpeed;
+                    }
+                }
+                burnTime[i] += dt;
+
                 // Semi-implicit Euler：先更新速度，再用新速度更新位置
-                velX[i] += dragAccX * dt;
-                velY[i] += (gravityAccY + dragAccY) * dt;
-                velZ[i] += dragAccZ * dt;
+                velX[i] += (dragAccX + thrustAccX) * dt;
+                velY[i] += (gravityAccY + dragAccY + thrustAccY) * dt;
+                velZ[i] += (dragAccZ + thrustAccZ) * dt;
 
                 posX[i] += velX[i] * dt;
                 posY[i] += velY[i] * dt;
@@ -1012,11 +1058,47 @@ public class ProjectileManager {
             float radius = type.getRadius();
             float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
+            // 空气密度按需计算一次（阻力与制导共用同一 ρ(h)）
+            float rho = Float.NaN;
+
+            // ——— 制导项：在 Euler 积分前追加一个指令加速度，不改变既有积分结构 ———
+            // 目标无效（NaN）→ 本步不给指令，交回纯弹道
+            float guideAccX = 0f, guideAccY = 0f, guideAccZ = 0f;
+            if (type.hasGuidance() && !Float.isNaN(targetX[i])) {
+                rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                GuidanceContext guidanceCtx = new GuidanceContext(
+                        posX[i], posY[i], posZ[i],
+                        velX[i], velY[i], velZ[i],
+                        targetX[i], targetY[i], targetZ[i],
+                        mass, radius, rho);
+                if (type.getGuidance().computeAcceleration(guidanceCtx, guidanceAccel)) {
+                    guideAccX = guidanceAccel.x;
+                    guideAccY = guidanceAccel.y;
+                    guideAccZ = guidanceAccel.z;
+                }
+            }
+
+            // ——— 推进段：单段恒推力，沿速度矢量施加（只增速率、不改方向）———
+            // 燃烧窗口 [ignition_delay, ignition_delay + duration)；计时用 burnTime（见字段注释）
+            float thrustAccX = 0f, thrustAccY = 0f, thrustAccZ = 0f;
+            var thrust = type.getThrust();
+            if (thrust.isActive() && speed > 1e-6f) {
+                float burnElapsed = burnTime[i];
+                if (burnElapsed >= thrust.ignitionDelay() && burnElapsed < thrust.burnEnd()) {
+                    float thrustAcc = thrust.force() / mass;
+                    float invThrustSpeed = 1f / speed;
+                    thrustAccX = thrustAcc * velX[i] * invThrustSpeed;
+                    thrustAccY = thrustAcc * velY[i] * invThrustSpeed;
+                    thrustAccZ = thrustAcc * velZ[i] * invThrustSpeed;
+                }
+            }
+            burnTime[i] += dt;
+
             // 半隐式 Euler 积分
             float gravityAccY = -gravityFactor * 9.81f;
             float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
             if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                if (Float.isNaN(rho)) rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
                 // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
                 float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
                 float dragAcc = dragForce / mass;
@@ -1026,9 +1108,9 @@ public class ProjectileManager {
                 dragAccZ = dragAcc * (-velZ[i] * invSpeed);
             }
 
-            velX[i] += dragAccX * dt;
-            velY[i] += (gravityAccY + dragAccY) * dt;
-            velZ[i] += dragAccZ * dt;
+            velX[i] += (dragAccX + guideAccX + thrustAccX) * dt;
+            velY[i] += (gravityAccY + dragAccY + guideAccY + thrustAccY) * dt;
+            velZ[i] += (dragAccZ + guideAccZ + thrustAccZ) * dt;
 
             float prevX = posX[i], prevY = posY[i], prevZ = posZ[i];
             posX[i] += velX[i] * dt;
@@ -1433,6 +1515,63 @@ public class ProjectileManager {
     }
 
     /**
+     * 写入某个投射物的制导目标点（物理线程）。
+     * <p>
+     * 目标由发射方的武器控制器通过 {@code LauncherSubsystem} 每物理步推送；
+     * {@code NaN} 表示无目标（制导弹本步交回纯弹道）。
+     *
+     * @param targetObjId 目标对象 ID
+     * @param x           目标点世界坐标 X（无目标传 {@link Float#NaN}）
+     * @param y           目标点世界坐标 Y
+     * @param z           目标点世界坐标 Z
+     * @return true 表示找到了该投射物
+     */
+    public boolean setGuidanceTarget(int targetObjId, float x, float y, float z) {
+        for (int i = 0; i < count; i++) {
+            if (objId[i] == targetObjId) {
+                targetX[i] = x;
+                targetY[i] = y;
+                targetZ[i] = z;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 冲刷制导弹的服务端权威位姿快照（主线程）。
+     * <p>
+     * 扫描所有活跃且 {@link KineticProjectileType#hasGuidance()} 的投射物，
+     * 打包为 {@link ProjectilesGuidedStatePayload} 广播——客户端据此覆盖
+     * 本地 SoA，且<b>不对制导弹施加制导</b>（两次快照之间按纯弹道插值）。
+     * <p>
+     * 非制导弹种不进入本集合，客户端行为与既有完全一致（零回归）。
+     * <p>
+     * <b>调用线程：</b>仅主线程（{@link #postTick()}，在战斗部起爆之后、
+     * {@link #postTickAndSync()} 之前）。
+     */
+    private void flushGuidedState() {
+        if (level.isClientSide()) return;
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (count == 0) return;
+
+        KineticProjectileType[] types = this.typeCache;
+        List<ProjectilesGuidedStatePayload.StateEntry> entries = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            if (!alive[i]) continue;
+            if (!types[typeIndex[i]].hasGuidance()) continue;
+            entries.add(new ProjectilesGuidedStatePayload.StateEntry(
+                    objId[i],
+                    posX[i], posY[i], posZ[i],
+                    velX[i], velY[i], velZ[i],
+                    lifetime[i]));
+        }
+        if (entries.isEmpty()) return;
+
+        ProjectilesGuidedStatePayload.broadcast(serverLevel, entries);
+    }
+
+    /**
      * 在发射时预测投射物弹道经过的区块，并预约地形刚体加载。
      * <p>
      * 使用 {@link RealisticTrajectory#forwardSolve} 进行弹道正解，
@@ -1445,6 +1584,10 @@ public class ProjectileManager {
      * <p>
      * 性能：单次发射约 200~600 次浮点运算（取决于寿命），
      * 最多预加载 200 个区块，去重后通常远小于此值。
+     * <p>
+     * <b>制导弹降级：</b>制导弹会拐弯，弹道正解不等于实际航迹，因此对
+     * {@link KineticProjectileType#hasGuidance()} 的弹种改为"沿<b>出膛方向</b>直线推进"预测
+     * （出膛方向通常已大致指向瞄准点，早期飞行覆盖率足够）。滚动重算见备忘 §十四。
      *
      * @param startPos 发射位置（JME 世界坐标，米）
      * @param startVel 初速度（m/s，JME）
@@ -1466,16 +1609,31 @@ public class ProjectileManager {
         Vec3 startMc = new Vec3(startPos.x, startPos.y, startPos.z);
         Vec3 velMc = new Vec3(startVel.x, startVel.y, startVel.z);
 
-        // 弹道正解（使用与 updatePointProjectiles 相同的密度函数）
-        TrajectoryResult result = RealisticTrajectory.forwardSolve(startMc, velMc, config, densityFunction);
+        // 预测航迹点序列（下标即到达 tick）
+        List<Vec3> path = new ArrayList<>();
+        if (type.hasGuidance()) {
+            float step = 1f / SparkLevel.getPhysicsLevel(getLevel()).getTps();
+            int steps = type.getMaxLifetimeTicks();
+            for (int t = 1; t <= steps; t++) {
+                path.add(new Vec3(
+                        startMc.x + velMc.x * step * t,
+                        startMc.y + velMc.y * step * t,
+                        startMc.z + velMc.z * step * t));
+            }
+        } else {
+            // 弹道正解（使用与 updatePointProjectiles 相同的密度函数）
+            TrajectoryResult result = RealisticTrajectory.forwardSolve(startMc, velMc, config, densityFunction);
+            for (TrajectorySample sample : result.samples()) {
+                path.add(sample.position());
+            }
+        }
 
         // 按 ChunkPos 分组，收集每个区块的到达 tick 和 Y 范围
         LinkedHashMap<ChunkPos, int[]> chunkInfo = new LinkedHashMap<>(); // int[3]: [arrivalTick, minY, maxY]
         int maxChunks = 200; // 最多预加载 200 个区块，防止极端情况
 
-        for (int tick = 0; tick < result.samples().size(); tick++) {
-            TrajectorySample sample = result.samples().get(tick);
-            Vec3 p = sample.position();
+        for (int tick = 0; tick < path.size(); tick++) {
+            Vec3 p = path.get(tick);
 
             // 出界检查：超出 MC 世界 Y 范围则停止预测
             if (p.y < -64 || p.y > 320) break;
@@ -1894,6 +2052,10 @@ public class ProjectileManager {
             alive[index] = alive[last];
             skipExtrapolate[index] = skipExtrapolate[last];
             remainingStableDistance[index] = remainingStableDistance[last];
+            targetX[index] = targetX[last];
+            targetY[index] = targetY[last];
+            targetZ[index] = targetZ[last];
+            burnTime[index] = burnTime[last];
             needsEntityRecreate[index] = needsEntityRecreate[last];
             // ★ entities 数组交换：将 last 位置的引用搬到 index 位置
             //    注意：last 位置的 entity 可能已在上一次 swapRemove 中被标记为待清理
@@ -1921,6 +2083,10 @@ public class ProjectileManager {
         alive = Arrays.copyOf(alive, newCap);
         skipExtrapolate = Arrays.copyOf(skipExtrapolate, newCap);
         remainingStableDistance = Arrays.copyOf(remainingStableDistance, newCap);
+        targetX = Arrays.copyOf(targetX, newCap);
+        targetY = Arrays.copyOf(targetY, newCap);
+        targetZ = Arrays.copyOf(targetZ, newCap);
+        burnTime = Arrays.copyOf(burnTime, newCap);
         needsEntityRecreate = Arrays.copyOf(needsEntityRecreate, newCap);
         entities = Arrays.copyOf(entities, newCap);
         capacity = newCap;

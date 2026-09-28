@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.ExplosionWorldEffect
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.PurePursuitGuidance
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr
@@ -73,6 +74,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("regen_loader")) { RegenLoaderSubsystemAttr.CODEC}
 
         event.register(MMDataRegistries.WORLD_EFFECT_CODEC.key(), id("blast")) { ExplosionWorldEffect.CODEC }
+
+        event.register(MMDataRegistries.GUIDANCE_LAW_CODEC.key(), id("pure_pursuit")) { PurePursuitGuidance.CODEC }
 
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("seat")) { SeatSubsystemStaticAttr.CODEC}

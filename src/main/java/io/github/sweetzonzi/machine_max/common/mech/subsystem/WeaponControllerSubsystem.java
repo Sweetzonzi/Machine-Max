@@ -174,11 +174,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         ViewInputSignal vis = this.currentViewSignal;
         Vec3 target = this.targetPosition;
         if (!isActive() || isDestroyed()) {
+            pushGuidanceTargets(null);
             releaseAllControl();
             return;
         }
         if (vis == null || target == null) {
             // 无目标时释放所有控制权
+            pushGuidanceTargets(null);
             releaseAllControl();
             return;
         }
@@ -246,6 +248,28 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             }
             rippleTickCounter = 0;
             rippleIndex = 0;
+        }
+
+        // ④ 向受控发射器推送制导目标（瞄准点）——在飞制导弹据此持续修正
+        pushGuidanceTargets(target);
+    }
+
+    /**
+     * 向所有受控发射器推送制导目标点，并让其转发给本发射器打出的在飞制导弹。
+     * <p>
+     * 目标点是<b>世界坐标</b>（不一定是实体），可能每物理步变化；{@code null} 表示无目标，
+     * 此时在飞制导弹交回纯弹道。首期同一发射器打出的所有制导弹共享同一瞄准点。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link #onPrePhysicsTick()}）——与
+     * {@code LauncherSubsystem.onPrePhysicsTick()} 同处物理线程 tick，
+     * 因此目标推送是对投射物 SoA 的物理线程直写，无需队列。
+     *
+     * @param target 瞄准点世界坐标，{@code null} = 无目标
+     */
+    private void pushGuidanceTargets(@Nullable Vec3 target) {
+        for (LauncherSubsystem launcher : launchers.keySet()) {
+            launcher.setGuidanceTarget(target);
+            launcher.updateGuidedTargets();
         }
     }
 

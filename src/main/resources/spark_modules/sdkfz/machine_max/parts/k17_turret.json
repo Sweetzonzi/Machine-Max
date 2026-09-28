@@ -128,6 +128,63 @@
               ]
             }
           },
+          "subsystem.machine_max.atgm_weapon": {
+            "type": "machine_max:weapon_controller",
+            "definition": "machine_max:atgm_weapon_controller",
+            "control_outputs": {
+              "weapon.atgm": [
+                "global"
+              ]
+            }
+          },
+          "subsystem.machine_max.atgm_ammo_loader_1": {
+            "type": "machine_max:regen_loader",
+            "definition": "machine_max:atgm_regen_loader",
+            "projectile_types": {
+              "machine_max:9m133_kornet": 1
+            },
+            "discovery_outputs": {
+              "ammo_atgm": [
+                "global"
+              ]
+            }
+          },
+          "subsystem.machine_max.atgm_ammo_loader_2": {
+            "type": "machine_max:regen_loader",
+            "definition": "machine_max:atgm_regen_loader",
+            "projectile_types": {
+              "machine_max:9m133_kornet": 1
+            },
+            "discovery_outputs": {
+              "ammo_atgm": [
+                "global"
+              ]
+            }
+          },
+          "subsystem.machine_max.atgm_ammo_loader_3": {
+            "type": "machine_max:regen_loader",
+            "definition": "machine_max:atgm_regen_loader",
+            "projectile_types": {
+              "machine_max:9m133_kornet": 1
+            },
+            "discovery_outputs": {
+              "ammo_atgm": [
+                "global"
+              ]
+            }
+          },
+          "subsystem.machine_max.atgm_ammo_loader_4": {
+            "type": "machine_max:regen_loader",
+            "definition": "machine_max:atgm_regen_loader",
+            "projectile_types": {
+              "machine_max:9m133_kornet": 1
+            },
+            "discovery_outputs": {
+              "ammo_atgm": [
+                "global"
+              ]
+            }
+          },
           "gunner_optics": {
             "type": "machine_max:sight",
             "definition": "machine_max:gunner_sight_dual_stb",
@@ -201,6 +258,18 @@
             "internal": true,
             "overwrite": {}
           }
+        },
+        "subsystems": {
+          "subsystem.machine_max.left_atgm_tube_1": {
+            "type": "machine_max:launcher",
+            "definition": "machine_max:atgm_tube_launcher",
+            "locator": "left_atgm1_launch_point"
+          },
+          "subsystem.machine_max.left_atgm_tube_2": {
+            "type": "machine_max:launcher",
+            "definition": "machine_max:atgm_tube_launcher",
+            "locator": "left_atgm2_launch_point"
+          }
         }
       },
       "sub_part.machine_max.right_atgm": {
@@ -225,6 +294,18 @@
             "definition": "machine_max:fixed_back",
             "internal": true,
             "overwrite": {}
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.right_atgm_tube_1": {
+            "type": "machine_max:launcher",
+            "definition": "machine_max:atgm_tube_launcher",
+            "locator": "right_atgm1_launch_point"
+          },
+          "subsystem.machine_max.right_atgm_tube_2": {
+            "type": "machine_max:launcher",
+            "definition": "machine_max:atgm_tube_launcher",
+            "locator": "right_atgm2_launch_point"
           }
         }
       }
