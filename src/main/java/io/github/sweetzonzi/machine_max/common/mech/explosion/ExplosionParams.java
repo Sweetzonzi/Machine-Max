@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.explosion;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -39,8 +40,13 @@ public record ExplosionParams(
         boolean causesFire
 ) {
 
-    /** JSON Codec，供内容包加载。 */
-    public static final Codec<ExplosionParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    /**
+     * JSON MapCodec，供内容包加载。
+     * <p>
+     * 字段直接平铺在当前对象上，因此本类型可直接作为其它 Codec 的一层
+     * （如 {@code ExplosionWorldEffect.CODEC} 的 xmap 源），不需要额外的字段包装。
+     */
+    public static final MapCodec<ExplosionParams> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.fieldOf("base_penetration").forGetter(ExplosionParams::basePenetration),
             Codec.FLOAT.fieldOf("base_damage").forGetter(ExplosionParams::baseDamage),
             Codec.FLOAT.fieldOf("base_impulse").forGetter(ExplosionParams::baseImpulse),
@@ -51,6 +57,9 @@ public record ExplosionParams(
             Codec.BOOL.optionalFieldOf("drop_items", false).forGetter(ExplosionParams::dropItems),
             Codec.BOOL.optionalFieldOf("causes_fire", false).forGetter(ExplosionParams::causesFire)
     ).apply(instance, ExplosionParams::new));
+
+    /** JSON Codec（由 {@link #MAP_CODEC} 派生），供内容包加载。 */
+    public static final Codec<ExplosionParams> CODEC = MAP_CODEC.codec();
 
     /** 网络 StreamCodec：起爆包携带"起爆点 + 种子 + 参数集"中的参数集部分。 */
     public static final StreamCodec<RegistryFriendlyByteBuf, ExplosionParams> STREAM_CODEC = new StreamCodec<>() {

@@ -12,6 +12,7 @@ import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -38,7 +39,7 @@ import java.util.Map;
  */
 public class PointProjectile extends DestroyableObject implements IProjectile, IAnimatable<PointProjectile> {
 
-    private final ProjectileType projectileType;
+    private final KineticProjectileType projectileType;
     private boolean hasHit = false;
 
     /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
@@ -74,7 +75,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
      */
-    public PointProjectile(Level level, ProjectileType type, Vector3f position, Vector3f velocity) {
+    public PointProjectile(Level level, KineticProjectileType type, Vector3f position, Vector3f velocity) {
         super(level);
         this.projectileType = type;
         setPosition(position);
@@ -94,7 +95,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
      * 改由批量包 {@code ProjectilesSpawnPayload} 发送。<br>
      * <b>客户端：</b>直接播放开火音效。
      * <p>
-     * <b>调用线程：</b>物理线程（由 {@link ProjectileType#create} → addToLevel 链调用）。
+     * <b>调用线程：</b>物理线程（由 {@link KineticProjectileType#create} → addToLevel 链调用）。
      */
     @Override
     public void addToLevel() {
@@ -104,7 +105,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     }
 
     @Override
-    public ProjectileType getProjectileType() {
+    public KineticProjectileType getProjectileType() {
         return projectileType;
     }
 

@@ -23,6 +23,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -54,7 +55,7 @@ import java.util.Map;
  */
 public class RigidProjectile extends DestroyableRigidObject implements IProjectile, IAnimatable<RigidProjectile> {
 
-    private final ProjectileType projectileType;
+    private final KineticProjectileType projectileType;
     private volatile boolean hasHit = false;
 
     /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
@@ -90,7 +91,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
      */
-    public RigidProjectile(Level level, ProjectileType type, Vector3f position, Vector3f velocity) {
+    public RigidProjectile(Level level, KineticProjectileType type, Vector3f position, Vector3f velocity) {
         super(level, createCollisionShape(type.getRadius()), type.getMass());
         this.projectileType = type;
 
@@ -117,7 +118,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
      * {@link ProjectileManager#flushProjectileEntities()}（主线程 preTick），
      * 改由批量包 {@code ProjectilesSpawnPayload} 发送。
      * <p>
-     * <b>调用线程：</b>物理线程（由 {@link io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType#create} → addToLevel 链调用）。
+     * <b>调用线程：</b>物理线程（由 {@link io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType#create} → addToLevel 链调用）。
      */
     @Override
     public void addToLevel() {
@@ -147,7 +148,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     }
 
     @Override
-    public ProjectileType getProjectileType() {
+    public KineticProjectileType getProjectileType() {
         return projectileType;
     }
 
@@ -321,6 +322,8 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         } else {
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
             pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), hitBlockPos);
+            // 有战斗部 → 在命中点入队起爆请求（主线程由 ProjectileManager 冲刷执行）
+            pm.enqueueWarheadDetonation(this, hitPointMc);
             markHit();
             destroy();
         }
@@ -339,6 +342,8 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         float currentPen, float currentDamage, Vec3 hitPoint, Vec3 hitNormal) {
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.enqueueHitSync(getId(), hitPoint, hitNormal, true, new Vector3f(), null);
+        // 有战斗部 → 在命中点入队起爆请求（主线程由 ProjectileManager 冲刷执行）
+        pm.enqueueWarheadDetonation(this, hitPoint);
         return AfterHitResult.DESTROYED;
     }
 

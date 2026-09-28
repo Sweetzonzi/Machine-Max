@@ -3,6 +3,9 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.*;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.world.entity.Entity;
@@ -23,6 +26,7 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * 投射物公共接口。
@@ -296,6 +300,8 @@ public interface IProjectile extends BFDamageHandler {
                             () -> level.destroyBlock(blockPos, false));
                 }
             }
+            // 有战斗部 → 视作无穿透，命中即停止（起爆由 ProjectileManager 入队）
+            if (hasWarheads()) return AfterHitResult.DESTROYED;
 
             return AfterHitResult.passThrough(velocityRetention, getVelocity());
         }
@@ -337,6 +343,8 @@ public interface IProjectile extends BFDamageHandler {
         BFDamageContext ctx = buildHurtContext(getLevel(), currentDamage,
                 hitVel, hitPoint, hitNormal, exts);
         dealDamage(target, ctx);
+        // 有战斗部 → 视作无穿透，动能判定完成后停止（起爆由 ProjectileManager 入队）
+        if (hasWarheads()) return AfterHitResult.DESTROYED;
         return consumePendingHitResult();
     }
 
@@ -384,6 +392,8 @@ public interface IProjectile extends BFDamageHandler {
                 BFDamageContext ctx = buildHurtContext(level, currentDamage,
                         hitVel, resolved.correctedHitPoint(), resolved.correctedHitNormal(), exts);
                 dealDamage(rt, ctx);
+                // 有战斗部 → 视作无穿透，动能判定完成后停止（起爆由 ProjectileManager 入队）
+                if (hasWarheads()) return AfterHitResult.DESTROYED;
                 return consumePendingHitResult();
             }
         }
@@ -401,6 +411,13 @@ public interface IProjectile extends BFDamageHandler {
                     BFDamageContext ctx = buildHurtContext(level, capturedDmg,
                             hitVel, hitPoint, hitNormal, exts);
                     dealDamage(entity, ctx);
+
+                    // 有战斗部 → 视作无穿透：先把起爆请求追加在本次动能伤害之后，再强制销毁
+                    if (hasWarheads()) {
+                        setPendingHitResult(AfterHitResult.DESTROYED);
+                        ObjectManager.getOrCreateProjectileManager(level)
+                                .enqueueWarheadDetonation(this, hitPoint);
+                    }
                 });
         return null;
     }
@@ -444,7 +461,27 @@ public interface IProjectile extends BFDamageHandler {
     /**
      * @return 此投射物关联的类型定义（含全部弹道参数）
      */
-    ProjectileType getProjectileType();
+    KineticProjectileType getProjectileType();
+
+    /**
+     * @return 本弹种的战斗部效果列表（空列表 = 纯动能弹）
+     */
+    default List<WorldEffect> getWarheads() {
+        return getProjectileType().getWarheads();
+    }
+
+    /**
+     * 本弹种是否携带战斗部效果。
+     * <p>
+     * 有战斗部时命中结果一律视作<b>无穿透</b>：先照常完成动能击穿 / 伤害判定，
+     * 随后在命中点执行全部战斗部效果，最后销毁投射物（起爆由
+     * {@link ProjectileManager} 入队、主线程冲刷）。
+     *
+     * @return true 表示至少有一个战斗部效果
+     */
+    default boolean hasWarheads() {
+        return !getWarheads().isEmpty();
+    }
 
     /**
      * @return 投射物模型控制器，可能为 null（无模型时不渲染）。

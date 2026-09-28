@@ -10,6 +10,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
@@ -81,10 +82,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 待物理线程发射的弹药类型队列。
      * <p>
      * <b>生产者：</b>主线程 onTick（弹药消费循环）。<br>
-     * <b>消费者：</b>物理线程 {@link #onPrePhysicsTick()}（{@link #fireSingle(ProjectileType)}）。<br>
+     * <b>消费者：</b>物理线程 {@link #onPrePhysicsTick()}（{@link #fireSingle(KineticProjectileType)}）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      */
-    private final ConcurrentLinkedQueue<ProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<KineticProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
 
     // ——— 音效状态（仅客户端有效，由 onTick 管理） ———
 
@@ -120,7 +121,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /** 膛内当前弹药类型。null = 空膛 */
     @Nullable
     @Getter
-    private ProjectileType chamberedType;
+    private KineticProjectileType chamberedType;
 
     /**
      * 当前选中的供给者引用（由 WeaponController 的路由决策设置）。<br>
@@ -194,8 +195,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     @Override
     public boolean receiveAmmo(ProjectileType type) {
+        // 发射器只装填飞行弹丸；其它运动模型由各自的发射器处理
+        if (!(type instanceof KineticProjectileType kinetic)) return false;
         if (chamberedType == null && isActive()) {
-            chamberedType = type;
+            chamberedType = kinetic;
             reloading = false;
             return true;
         }
@@ -258,9 +261,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * @return true 表示装填成功
      */
     public boolean loadRound(ProjectileType type) {
+        if (!(type instanceof KineticProjectileType kinetic)) return false;
         if (chamberedType != null || !isActive()) return false;
         if (!canAccept(type)) return false;
-        chamberedType = type;
+        chamberedType = kinetic;
         reloading = false;
         return true;
     }
@@ -415,8 +419,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         if (supplier.isRoundReady(this)) {
             ProjectileType offered = supplier.consumeReadyRound(this);
-            if (offered != null && canAccept(offered)) {
-                chamberedType = offered;
+            if (offered instanceof KineticProjectileType kinetic && canAccept(offered)) {
+                chamberedType = kinetic;
                 reloading = false;
                 return true;
             } else {
@@ -483,7 +487,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.onPrePhysicsTick();
         if (getOwner() == null) return;
 
-        ProjectileType type;
+        KineticProjectileType type;
         while ((type = pendingFires.poll()) != null) {
             fireSingle(type);
         }
@@ -503,7 +507,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *   <li>后坐力 {@code applyImpulse} 直接作用到发射平台刚体</li>
      * </ol>
      */
-    private void fireSingle(ProjectileType type) {
+    private void fireSingle(KineticProjectileType type) {
         // ① 枪口位姿
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
@@ -945,7 +949,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.loadData(data);
         if (data.contains("chambered_type")) {
             ResourceLocation key = ResourceLocation.parse(data.getString("chambered_type"));
-            chamberedType = ProjectileType.get(getLevel(), key);
+            ProjectileType stored = ProjectileType.get(getLevel(), key);
+            chamberedType = stored instanceof KineticProjectileType kinetic ? kinetic : null;
         } else {
             chamberedType = null;
         }

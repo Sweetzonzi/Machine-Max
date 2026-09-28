@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.util.SpringDamper;
@@ -130,7 +130,7 @@ public class CameraShakeController {
      */
     public static void onProjectileHit(ProjectilesHitPayload.HitEntry entry, Player player, ProjectileManager pm, int idx) {
         // ① 从 SoA typeCache 获取投射物质量
-        ProjectileType type = pm.getProjectileTypeByIndex(idx);
+        KineticProjectileType type = pm.getProjectileTypeByIndex(idx);
         float mass = type.getMass();
 
         // ② 计算命中速度 → 动量

@@ -18,6 +18,10 @@ import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectoryResult
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectorySample;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectContext;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectExecutor;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
@@ -149,7 +153,7 @@ public class ProjectileManager {
     /**
      * 该维度所有已加载的投射物类型，typeIndex 映射到此数组
      */
-    private volatile ProjectileType[] typeCache;
+    private volatile KineticProjectileType[] typeCache;
 
     /**
      * 待主线程清理的代理实体队列。
@@ -193,6 +197,22 @@ public class ProjectileManager {
     private final ConcurrentLinkedQueue<PendingHitSync> pendingHitSyncs = new ConcurrentLinkedQueue<>();
 
     /**
+     * 待主线程执行的战斗部起爆请求队列。
+     * <p>
+     * <b>生产者：</b>物理线程（三条命中路径在动能判定完成后入队——
+     * {@link #updatePointProjectiles} 的地形/零件路径、{@link IProjectile#onEntityHit}
+     * 提交的主线程伤害任务尾部、{@link RigidProjectile} 的碰撞回调）。<br>
+     * <b>消费者：</b>主线程（{@link #flushPendingDetonations()}，在 {@link #postTick()}
+     * 的命中包之后调用）。<br>
+     * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
+     * <p>
+     * 起爆必须在主线程执行：{@code ExplosionManager.detonate} 内含发包与非线程安全的活跃表。
+     * 有战斗部时命中一律视作无穿透，因此该请求与投射物销毁天然同步发生，
+     * 顺序上头一条命中只会入队一次。
+     */
+    private final ConcurrentLinkedQueue<PendingDetonation> pendingDetonations = new ConcurrentLinkedQueue<>();
+
+    /**
      * 复用 Vector3f 避免热路径中重复分配
      */
     private final Vector3f rayFrom = new Vector3f();
@@ -217,7 +237,7 @@ public class ProjectileManager {
         remainingStableDistance = new float[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
-        typeCache = new ProjectileType[0];
+        typeCache = new KineticProjectileType[0];
     }
 
     /**
@@ -311,11 +331,11 @@ public class ProjectileManager {
      * 获取或注册一个投射物类型到类型缓存，返回索引。
      * 相同的 ProjectileType 实例复用同一索引。
      */
-    private int getOrAddType(ProjectileType type) {
+    private int getOrAddType(KineticProjectileType type) {
         for (int i = 0; i < typeCache.length; i++) {
             if (typeCache[i] == type) return i;
         }
-        ProjectileType[] newCache = Arrays.copyOf(typeCache, typeCache.length + 1);
+        KineticProjectileType[] newCache = Arrays.copyOf(typeCache, typeCache.length + 1);
         newCache[typeCache.length] = type;
         typeCache = newCache;
         return typeCache.length - 1;
@@ -472,7 +492,7 @@ public class ProjectileManager {
      * @param index SoA 数组索引
      * @return 投射物类型
      */
-    public ProjectileType getProjectileTypeByIndex(int index) {
+    public KineticProjectileType getProjectileTypeByIndex(int index) {
         return typeCache[typeIndex[index]];
     }
 
@@ -684,6 +704,50 @@ public class ProjectileManager {
     }
 
     /**
+     * 入队一次战斗部起爆请求（物理线程）。
+     * <p>
+     * 在命中路径的<b>动能判定完成之后</b>调用，请求载荷只含命中点与该弹种的
+     * {@code warheads} 列表；归属 {@code DamageSource} 与起爆种子由主线程冲刷时生成。
+     * 无战斗部的投射物调用本方法不做任何事，因此调用方无需先判断。
+     *
+     * @param projectile 命中的投射物（读取其战斗部列表）
+     * @param hitPoint   实测命中点（世界坐标，MC Vec3）
+     */
+    public void enqueueWarheadDetonation(IProjectile projectile, Vec3 hitPoint) {
+        List<WorldEffect> warheads = projectile.getWarheads();
+        if (warheads.isEmpty()) return;
+        pendingDetonations.add(new PendingDetonation(hitPoint, warheads));
+    }
+
+    /**
+     * 清空 {@link #pendingDetonations} 队列，在主线程逐条执行战斗部效果。
+     * <p>
+     * 每条请求构造一个展平的 {@link EffectContext}（首期只填 {@code level / origin}，
+     * owner 归属字段一律为 null），交由 {@link EffectExecutor} 按
+     * {@code warheads} 列表顺序执行。
+     * <p>
+     * <b>调用线程：</b>仅主线程（在 {@link #postTick()} 中
+     * {@link #flushPendingHitSyncs()} 之后调用）。
+     */
+    private void flushPendingDetonations() {
+        if (pendingDetonations.isEmpty()) return;
+        // 客户端不参与起爆：服务端才是权威，客户端只收起爆包建表现
+        if (level.isClientSide()) {
+            pendingDetonations.clear();
+            return;
+        }
+
+        PendingDetonation d;
+        while ((d = pendingDetonations.poll()) != null) {
+            EffectContext context = new EffectContext(
+                    level, d.hitPoint(), Vec3.ZERO,
+                    null, null, null,
+                    null, null, null);
+            EffectExecutor.executeAll(d.warheads(), context);
+        }
+    }
+
+    /**
      * 按 SoA 索引获取投射物类型的注册键。
      * <p>
      * 工具方法，供批量发包等外部调用方回退读取使用。
@@ -694,7 +758,7 @@ public class ProjectileManager {
     @Nullable
     public ResourceLocation getTypeKeyByIndex(int idx) {
         if (idx < 0 || idx >= count || typeIndex[idx] < 0 || typeIndex[idx] >= typeCache.length) return null;
-        ProjectileType type = typeCache[typeIndex[idx]];
+        KineticProjectileType type = typeCache[typeIndex[idx]];
         return type != null ? type.getRegistryKey() : null;
     }
 
@@ -721,6 +785,8 @@ public class ProjectileManager {
      *   <li>清理物理线程延迟的代理实体（{@link #orphanedEntities}），
      *       确保在 {@code ChunkMap.tick()} 之后执行，不会并发修改 {@code entityMap}</li>
      *   <li>冲刷本帧物理线程新增的投射物 Entity 创建与发包</li>
+     *   <li>冲刷本帧物理线程缓冲的命中同步包</li>
+     *   <li>冲刷本帧物理线程缓冲的战斗部起爆请求（主线程执行世界效果）</li>
      *   <li>调用各投射物的 {@code postTick()}，回写 SoA 到 SynchedEntityData</li>
      * </ol>
      * <p>
@@ -731,6 +797,7 @@ public class ProjectileManager {
         cleanOrphanedEntities();
         flushProjectileEntities();   // ① 先发创建包，确保客户端 SoA 中有该投射物
         flushPendingHitSyncs();      // ② 再发命中包，保证创建包严格先于命中包到达
+        flushPendingDetonations();   // ③ 最后执行战斗部效果（主线程）
         postTickAndSync();
     }
 
@@ -791,7 +858,7 @@ public class ProjectileManager {
      * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
     private void clientExtrapolate() {
-        ProjectileType[] types = this.typeCache;
+        KineticProjectileType[] types = this.typeCache;
         for (int i = count - 1; i >= 0; i--) {
             if (!alive[i] && lifetime[i] < types[typeIndex[i]].getMaxLifetimeTicks()) { // 至少保证存在1tick
                 projectileObjIds.remove(objId[i]);
@@ -809,7 +876,7 @@ public class ProjectileManager {
                 lifetime[i]--;
                 if (!alive[i]) continue;
 
-                ProjectileType type = types[typeIndex[i]];
+                KineticProjectileType type = types[typeIndex[i]];
                 // 刚体投射物跳过客户端外推（状态由服务端 writebackRigidState 同步）
                 if (type.getType().isRigid()) continue;
 
@@ -893,7 +960,7 @@ public class ProjectileManager {
 
         var world = physicsLevel.getWorld();
         float dt = 1.0f / physicsLevel.getTps();
-        ProjectileType[] types = this.typeCache;
+        KineticProjectileType[] types = this.typeCache;
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         Vector3f rayFrom = this.rayFrom;
         Vector3f rayTo = this.rayTo;
@@ -938,7 +1005,7 @@ public class ProjectileManager {
             }
 
             // 从类型缓存读取弹道参数
-            ProjectileType type = types[typeIndex[i]];
+            KineticProjectileType type = types[typeIndex[i]];
             float mass = type.getMass();
             float gravityFactor = type.getGravityFactor();
             float dragFactor = type.getDragFactor();
@@ -1119,7 +1186,8 @@ public class ProjectileManager {
                         penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(pk);
                         broadcastHitSync(i, entry.hitPoint(), entry.hitNormal(), false, hitResult.newVelocity(), entry.blockPos());
                     } else {
-                        // 无法击穿，停止
+                        // 无法击穿，停止（有战斗部时 onTerrainHit 直接返回 DESTROYED）
+                        enqueueWarheadDetonation(proj, entry.hitPoint());
                         broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
@@ -1127,6 +1195,9 @@ public class ProjectileManager {
                     }
                 } else if (entry.owner() == null) {
                     // null owner：直接停止（无属主信息）
+                    if (destroyable instanceof IProjectile proj) {
+                        enqueueWarheadDetonation(proj, entry.hitPoint());
+                    }
                     broadcastTerrainHit(i, entry.hitPoint(), null);
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);
@@ -1233,6 +1304,8 @@ public class ProjectileManager {
             proj.markHit();
             alive[i] = false;
             projectileObjIds.remove(objId[i]);
+            // 有战斗部 → 动能判定已完成，在命中点入队起爆请求
+            enqueueWarheadDetonation(proj, hitPoint);
             return true;
         }
         velX[i] = result.newVelocity().x;
@@ -1377,7 +1450,7 @@ public class ProjectileManager {
      * @param startVel 初速度（m/s，JME）
      * @param type     投射物类型（提供质量、阻力系数、重力等物理参数）
      */
-    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, ProjectileType type) {
+    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, KineticProjectileType type) {
         // ProjectileType 与 BallisticConfig 1:1 映射（阻力公式统一为 ½·ρ·Cd·A·v²）
         // dragFactor = Cd, π·r² = A, gravityFactor·9.81 = g
         BallisticConfig config = new BallisticConfig(
@@ -1542,6 +1615,20 @@ public class ProjectileManager {
             boolean destroyed,
             @Nullable Vector3f newVelocity,
             @Nullable BlockPos hitBlockPos
+    ) {}
+
+    /**
+     * 物理线程捕获的战斗部起爆请求，等待主线程冲刷执行。
+     * <p>
+     * 只固化"命中点 + 战斗部列表"两项：归属 {@code DamageSource} 与起爆种子
+     * 都在主线程冲刷时生成（种子必须与起爆包一致，由 {@code ExplosionManager} 负责同步）。
+     *
+     * @param hitPoint 实测命中点（世界坐标，MC Vec3，不可变值类型）
+     * @param warheads 该弹种的战斗部效果列表（内容包加载后只读，可安全跨线程共享）
+     */
+    private record PendingDetonation(
+            Vec3 hitPoint,
+            List<WorldEffect> warheads
     ) {}
 
     /**

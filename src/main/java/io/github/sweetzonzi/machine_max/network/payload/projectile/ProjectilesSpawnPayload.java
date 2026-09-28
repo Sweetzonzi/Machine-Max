@@ -4,6 +4,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -117,7 +118,8 @@ public record ProjectilesSpawnPayload(
             Level level = context.player().level();
             for (SpawnEntry entry : payload.entries) {
                 ProjectileType type = ProjectileType.get(level, entry.typeKey);
-                if (type == null) continue;
+                // 只有飞行弹丸（Kinetic）由本包驱动创建；其它运动模型走各自的生成路径
+                if (!(type instanceof KineticProjectileType kineticType)) continue;
 
                 Vector3f pos = new Vector3f(
                         (float) entry.posX, (float) entry.posY, (float) entry.posZ);
@@ -126,7 +128,7 @@ public record ProjectilesSpawnPayload(
 
                 // createWithId → setId(服务端objId) → addToLevel：
                 // ObjectManager 注册 + SoA 写入使用服务端 ID，确保后续命中包可匹配
-                type.createWithId(level, pos, vel, entry.objId);
+                kineticType.createWithId(level, pos, vel, entry.objId);
             }
         });
     }

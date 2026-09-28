@@ -16,6 +16,20 @@
     "penetration_velocity_coefficient": 0,
     "damage_velocity_coefficient": 0.3
   },
+  "warheads": [
+    {
+      "type": "machine_max:blast",
+      "base_penetration": 80.0,
+      "base_damage": 40.0,
+      "base_impulse": 3000.0,
+      "near_radius": 3.0,
+      "max_radius": 14.0,
+      "front_speed": 20.0,
+      "destroy_blocks": true,
+      "drop_items": false,
+      "causes_fire": false
+    }
+  ],
   "visual": {
     "tracer_color": [255, 200, 50],
     "tracer_alpha": 160
