@@ -23,6 +23,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType.VulnerabilityProperties;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
@@ -64,8 +65,9 @@ import java.util.Map;
  *   <li>发起方——实现 {@link BFDamageHandler}，把穿甲判定后的命中行为
  *       （击穿/跳弹/停止）封装为 {@link AfterHitResult}，由 {@link ProjectileManager}
  *       消费后执行 SoA 操作；</li>
- *   <li>目标——继承 {@link DestroyableObject} 的 {@link BFHurtTarget} 实现，
- *       护甲与结构血量语义见相关设计文档。</li>
+ *   <li>目标——作为 {@link BFHurtTarget}，护甲等效厚度与结构血量由内容包的
+ *       {@code vulnerability} 块定义：命中走精确 RHA 比较，打穿后按耐久累加伤害，
+ *       耐久归零即损毁；未配置该块的弹种不可被击毁。</li>
  * </ul>
  * <p>
  * 碰撞检测在 {@link ProjectileManager#updateProjectiles} 中通过 JME rayTest 完成。
@@ -113,7 +115,14 @@ public class BallisticProjectile extends DestroyableObject
     // ==================== 状态 ====================
 
     private final BallisticProjectileType projectileType;
-    private boolean hasHit = false;
+
+    /**
+     * 是否已命中。
+     * <p>
+     * 写入方可能是物理线程（消费命中结果）或主线程（耐久归零），
+     * 读取方在两端都有，因此用 volatile 保证可见性。
+     */
+    private volatile boolean hasHit = false;
 
     /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
     @Getter
@@ -155,6 +164,9 @@ public class BallisticProjectile extends DestroyableObject
         setLinearVelocity(velocity);
         transform = new Transform(position, Quaternion.IDENTITY);
         oldTransform = transform.clone();
+        // 结构血量的容量来自内容包，而 DATA_DURABILITY_ID 自带 20 的默认值，
+        // 与配置无关，因此必须在此显式写入一次初值
+        setDurability(getMaxDurability());
     }
 
     /**
@@ -228,8 +240,11 @@ public class BallisticProjectile extends DestroyableObject
         if (isRemoved) return;
         tickCount++;
         if (hurtTime > 0) hurtTime--;
-        if (!level.isClientSide() && checkDestroyed()) {
-            setDestroyed();
+        if (!level.isClientSide()) {
+            handleAccumulatedDamage();   // 伤害队列唯一的消费点：先结算伤害，再判定摧毁
+            if (checkDestroyed()) {
+                setDestroyed();
+            }
         }
     }
 
@@ -257,12 +272,12 @@ public class BallisticProjectile extends DestroyableObject
     }
 
     /**
-     * 覆写：基于 hasHit / SoA 寿命判断摧毁，而非耐久度。
-     * 寿命权威来源为 {@link ProjectileManager} SoA 数组。
+     * 覆写：基于 hasHit / SoA 寿命 / 结构血量判断摧毁。
+     * 寿命权威来源为 {@link ProjectileManager} SoA 数组，结构血量来自基类 {@code durability}。
      */
     @Override
     protected boolean checkDestroyed() {
-        return !isDestroyed() && (hasHit || getLifetime() <= 0);
+        return !isDestroyed() && (hasHit || getLifetime() <= 0 || getDurability() <= 0);
     }
 
     /**
@@ -280,19 +295,49 @@ public class BallisticProjectile extends DestroyableObject
     protected void tickDestroyTimer(int tick) {
     }
 
-    /** 覆写为空操作：投射物不接收伤害累积 */
+    /**
+     * 结算伤害队列（主线程，由 {@link #preTick()} 调用）。
+     * <p>
+     * 伤害由任意线程经 {@link #accumulateDamage} 入队，此处是唯一消费点。
+     * 结构血量归零时在最后一次命中的命中点执行战斗部，
+     * 随后的 {@link #checkDestroyed()} 会因耐久归零而标记销毁。
+     */
     @Override
     protected void handleAccumulatedDamage() {
+        float total = 0f;
+        BFDamageContext last = null;
+        while (!accumulatedDamage.isEmpty()) {
+            var pair = accumulatedDamage.poll();
+            total += pair.getFirst();
+            last = pair.getSecond();
+        }
+        if (total <= 0f) return;
+        setDurability(getDurability() - total);
+        if (getDurability() > 0f) return;
+
+        // 结构耗尽：在命中点执行战斗部
+        Vec3 hitPoint = last != null ? last.hitPoint()
+                : new Vec3(getPosition().x, getPosition().y, getPosition().z);
+        ObjectManager.getOrCreateProjectileManager(level).enqueueWarheadDetonation(this, hitPoint);
+        markHit();
     }
 
-    /** 覆写为空操作：投射物不接收伤害累积 */
+    /**
+     * 伤害入队。
+     * <p>
+     * 未配置 {@code vulnerability} 的弹种按不可被击毁处理，直接丢弃伤害；
+     * 其余交给基类累加器，由主线程 {@link #handleAccumulatedDamage()} 结算。
+     */
     @Override
     public void accumulateDamage(float damage, BFDamageContext ctx) {
+        if (projectileType.getVulnerability() == null) return;
+        super.accumulateDamage(damage, ctx);
     }
 
     @Override
     public float getMaxDurability() {
-        return 1;
+        VulnerabilityProperties v = projectileType.getVulnerability();
+        return v == null ? 1f : v.durability();
     }
 
     /**
@@ -353,20 +398,75 @@ public class BallisticProjectile extends DestroyableObject
     }
 
     // ========== BFHurtTarget 实现 ==========
+    //
+    // 护甲与结构血量的语义由内容包的 vulnerability 块定义：
+    //   vulnerability 缺省 → 本弹种不可被击毁（hurt 恒 false、护甲按 0.5mm 处理、耐久容量 1）
+    //   vulnerability 存在 → 命中走精确 RHA 比较，打穿则按耐久累加伤害
 
+    /**
+     * 命中等效厚度（mm RHA）。未配置 {@code vulnerability} 的弹种按
+     * {@link ArmorLevel#UNARMORED_1} 的中位值处理。
+     */
     @Override
-    public boolean hurt(DamageSource source, float amount) {
-        return false;
+    public float getRHA(BFDamageContext ctx) {
+        VulnerabilityProperties v = projectileType.getVulnerability();
+        return v == null ? ArmorLevel.UNARMORED_1.medianRha() : v.rha();
     }
 
-    @Override
-    public BFDamageContext createContextFromVanilla(DamageSource source, float amount) {
-        return null;
-    }
-
+    /** 护甲等级与精确 RHA 保持一致，供 HUD 与等级语义使用 */
     @Override
     public ArmorLevel getArmorLevel(BFDamageContext ctx) {
-        return ArmorLevel.UNARMORED_1;
+        return ArmorLevel.fromRha(getRHA(ctx));
+    }
+
+    /**
+     * 精确穿深比较。
+     * <p>
+     * 默认的离散等级比较会把 11mm 穿深判为击穿 19mm 装甲；
+     * 精确比较与 {@code SubPart} 的口径一致。
+     */
+    @Override
+    public boolean isArmorPenetrated(BFDamageContext ctx) {
+        return modifyPenetration(ctx) > getRHA(ctx);
+    }
+
+    /**
+     * 接受协议伤害。
+     * <p>
+     * 只负责把伤害送进基类累加器，不做耐久运算——命中管线先判穿甲，
+     * 未击穿时 {@code calculateFinalDamage} 返回 0，在 {@code amount <= 0f} 处早退，
+     * 因此"未击穿不扣耐久"由管线自身保证。
+     * <p>
+     * <b>调用线程：</b>任意线程（物理线程或主线程的伤害任务），
+     * 耐久写入统一发生在主线程 {@link #handleAccumulatedDamage()}。
+     */
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (getLevel().isClientSide()) return false;
+        if (getProjectileType().getVulnerability() == null || amount <= 0f) return false;
+        // 命中几何从上下文栈取回；取不到时入队 null，起爆点由 handleAccumulatedDamage 用当前位置兜底
+        accumulateDamage(amount, BFDamageApi.getContextFor(this));
+        return true;
+    }
+
+    /**
+     * 协议外伤害的上下文入口。
+     * <p>
+     * 原版与其他模组的伤害（箭矢、近战、爆炸）经 mixin 拦截后由此构造上下文，
+     * 返回 null 即视为"该目标不接受协议外伤害"而交回原版流程。
+     * <p>
+     * {@code penetration} 取 {@code amount}：协议外伤害没有弹道模型，伤害值同时充当穿深，
+     * 因此原版箭矢这类低伤害来源会被 {@link #getRHA} 挡在门外。
+     */
+    @Override
+    @Nullable
+    public BFDamageContext createContextFromVanilla(DamageSource source, float amount) {
+        if (getProjectileType().getVulnerability() == null) return null;
+        return BFDamageContext.builder()
+                .source(source)
+                .baseDamage(amount)
+                .penetration(amount)
+                .build();
     }
 
     // ========== 稳定性状态（SoA 数组支持） ==========

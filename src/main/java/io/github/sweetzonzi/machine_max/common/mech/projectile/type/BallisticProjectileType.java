@@ -5,8 +5,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
-import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
@@ -64,10 +62,20 @@ public class BallisticProjectileType extends ProjectileType {
      */
     private final List<WorldEffect> warheads;
 
+    /**
+     * 受击属性 — 本弹种作为<b>目标</b>被命中时的护甲与结构血量；{@code null} 表示不可被击毁。
+     * <p>
+     * JSON 中为可选对象：整块缺省时投射物不持有运动学触发体，
+     * {@code getArmorLevel} 维持 {@link io.github.sweetzonzi.ballistics_framework.api.ArmorLevel#UNARMORED_1}、
+     * {@code hurt} 维持返回 false，内容包可以按需选择弹种开启拦截。
+     */
+    @Nullable
+    private final VulnerabilityProperties vulnerability;
+
     /** 静态扩展数据缓存（口径、质量等不变信息），惰性初始化，命中时 copy 后追加动态值 */
     private volatile BFDamageExtensions baseExtensions;
 
-    // ==================== CODEC（9 字段，远低于 16 上限） ====================
+    // ==================== CODEC（10 字段，远低于 16 上限） ====================
 
     /**
      * Mojang MapCodec：将 JSON 反序列化为 {@link BallisticProjectileType}。
@@ -83,9 +91,11 @@ public class BallisticProjectileType extends ProjectileType {
             .forGetter(BallisticProjectileType::getExternal),
         TerminalProperties.CODEC.fieldOf("terminal")
             .forGetter(BallisticProjectileType::getTerminal),
-        // 可选制导配置（形状同 warheads：type 字段直接分派到律的 codec）。
-        // Optional 必须留在 codec 组内、由 apply 回调解包——
+        // 可选受击配置。Optional 必须留在 codec 组内、由 apply 回调解包——
         // 若用 xmap 把它映射成 null，null 会穿过 DFU 的 DataResult 触发 NPE（见 TurretDriverSubsystemStaticAttr 同款写法）
+        VulnerabilityProperties.CODEC.optionalFieldOf("vulnerability")
+            .forGetter(attr -> Optional.ofNullable(attr.vulnerability)),
+        // 可选制导配置（形状同 warheads：type 字段直接分派到律的 codec）
         GuidanceLaw.CODEC.optionalFieldOf("guidance")
             .forGetter(attr -> Optional.ofNullable(attr.guidance)),
         WorldEffect.CODEC.listOf().optionalFieldOf("warheads", List.of())
@@ -94,9 +104,9 @@ public class BallisticProjectileType extends ProjectileType {
             .forGetter(ProjectileType::getVisual),
         ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
             .forGetter(ProjectileType::getSounds)
-    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, guidance, warheads, visual, sounds) ->
+    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, vulnerability, guidance, warheads, visual, sounds) ->
         new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal,
-            guidance.orElse(null), warheads, visual, sounds)));
+            vulnerability.orElse(null), guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
 
@@ -106,6 +116,7 @@ public class BallisticProjectileType extends ProjectileType {
         int bulletNum,
         ExternalProperties external,
         TerminalProperties terminal,
+        @Nullable VulnerabilityProperties vulnerability,
         @Nullable GuidanceLaw guidance,
         List<WorldEffect> warheads,
         VisualProperties visual,
@@ -114,6 +125,7 @@ public class BallisticProjectileType extends ProjectileType {
         super(tags, maxLifetime, bulletNum, visual, sounds);
         this.external = external;
         this.terminal = terminal;
+        this.vulnerability = vulnerability;
         this.guidance = guidance;
         this.warheads = warheads;
     }
@@ -193,7 +205,7 @@ public class BallisticProjectileType extends ProjectileType {
      */
     public BallisticProjectile create(Level level, Vector3f position, Vector3f velocity) {
         BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
-        ((DestroyableObject) p).addToLevel();
+        p.addToLevel();
         return p;
     }
 
@@ -201,7 +213,7 @@ public class BallisticProjectileType extends ProjectileType {
      * 按指定 ID 创建投射物（服务端→客户端同步专用）。
      * <p>
      * 客户端从 {@code ProjectilesSpawnPayload} 收到服务端分配的 objId 后调用此方法，
-     * 在 {@link DestroyableObject#addToLevel()} 之前覆写自动生成的本地 ID，
+     * 在 {@link BallisticProjectile#addToLevel()} 之前覆写自动生成的本地 ID，
      * 确保客户端 SoA / ObjectManager 中的 objId 与服务端一致，
      * 后续命中包才能通过 objId 匹配到正确的投射物。
      * <p>
@@ -215,8 +227,8 @@ public class BallisticProjectileType extends ProjectileType {
      */
     public BallisticProjectile createWithId(Level level, Vector3f position, Vector3f velocity, int objId) {
         BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
-        ((DestroyableObject) p).setId(objId); // ★ 在 addToLevel 之前覆写，ObjectManager 和 SoA 均用此 ID
-        ((DestroyableObject) p).addToLevel();
+        p.setId(objId); // ★ 在 addToLevel 之前覆写，ObjectManager 和 SoA 均用此 ID
+        p.addToLevel();
         return p;
     }
 
@@ -314,10 +326,37 @@ public class BallisticProjectileType extends ProjectileType {
     // ==================== 嵌套类（运动模型专属属性） ====================
 
     /**
+     * 受击属性 — 本弹种作为目标被命中时的护甲与结构血量。
+     * <p>
+     * {@code rha} 与零部件侧的 {@code rha} <b>同名不同量纲</b>：零部件的 {@code rha} 是
+     * 厚度的无量纲抗穿系数（{@code HitBox.getRHA} = 厚度 × rha），弹体没有材质与厚度结构，
+     * 因此这里的 {@code rha} 直接就是垂直等效厚度（mm）。
+     * <p>
+     * {@code rha} 是硬门槛：命中管线先判穿甲，未击穿时默认的
+     * {@code calculateFinalDamage} 返回 0，耐久因此不减少。
+     * 要让某型拦截弹打得动某型目标，就把它配到能击穿对应厚度。
+     * <p>
+     * 触发体半径不在此块配置：由口径直接换算。
+     *
+     * @param rha        命中判定用的垂直等效厚度（mm）
+     * @param durability 结构血量（点），累计伤害达到该值即损毁；
+     *                   与零部件的 {@code durability} 走同一套机制
+     */
+    public record VulnerabilityProperties(
+        float rha,
+        float durability
+    ) {
+        public static final Codec<VulnerabilityProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.FLOAT.fieldOf("rha").forGetter(VulnerabilityProperties::rha),
+            Codec.FLOAT.fieldOf("durability").forGetter(VulnerabilityProperties::durability)
+        ).apply(instance, VulnerabilityProperties::new));
+    }
+
+    /**
      * 外弹道属性 — 决定投射物如何飞行。
      * <p>
      * 所有参数采用国际单位制（SI）：质量 kg、长度 m、速度 m/s、角度密位。
-     * 这些字段供运动积分（质点 SoA / Bullet 刚体）与 {@code BallisticsFramework} 外弹道解算使用。
+     * 这些字段供运动积分与 {@code BallisticsFramework} 外弹道解算使用。
      */
     public record ExternalProperties(
         /** 质量（kg） */
