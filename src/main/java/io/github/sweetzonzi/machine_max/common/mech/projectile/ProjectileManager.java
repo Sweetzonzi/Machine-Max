@@ -960,8 +960,8 @@ public class ProjectileManager {
      * 5 子步推进，每子步 dt = 0.01s（匹配服务端 100Hz 物理步进），
      * 消除大步长 Euler 积分在非线性阻力下的精度损失。
      * <p>
-     * 制导弹除外：其位置/速度/寿命以服务端权威快照为准
-     * （见 {@link #flushAuthoritativeState()}），客户端既不积分也不递减其寿命。
+     * 制导弹同样参与外推——客户端不施加制导，只按纯弹道推进；其位姿与寿命随后被
+     * 服务端权威快照覆盖（见 {@link #flushAuthoritativeState()}）。
      * <p>
      * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
