@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
-import net.minecraft.client.Minecraft
+import net.minecraft.world.entity.LivingEntity
 import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs
 
 object MMAttachments {
@@ -17,7 +17,7 @@ object MMAttachments {
     @JvmStatic
     val ENTITY_EYESIGHT = MachineMax.REGISTER.attachment {
         id = "entity_eyesight"
-        factory = { _ -> LivingEntityEyesightAttachment(Minecraft.getInstance().player) }
+        factory = { holder -> LivingEntityEyesightAttachment(holder as LivingEntity) }
     }
 
 

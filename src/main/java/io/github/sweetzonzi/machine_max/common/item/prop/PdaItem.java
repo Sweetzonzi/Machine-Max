@@ -1,12 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
-import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaSetDesignModePayload;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -20,6 +18,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 /**
  * 蓝图终端（PDA）：收纳零件制造蓝图与通用制造蓝图，并作为零件来源参与装配。
  *
@@ -27,11 +28,30 @@ import org.jetbrains.annotations.Nullable;
  * 丢弃、交易、死亡掉落都自然带上。它同时是"谁能提供零件来源"这个问题的答案载体——覆写
  * {@link #getPartType} 后，服务端与客户端从同一份 {@code selected} 得到同一个结果。</p>
  *
- * <p>右键分派：潜行键切换设计模式；设计模式下右键按当前格位放置零件；常态下右键打开管理界面。</p>
+ * <p>右键分派：潜行键切换设计模式；设计模式下右键按当前格位放置零件；常态下右键打开管理界面。
+ * 管理界面是客户端独有物，由 {@link #setScreenOpener} 注入的钩子打开。</p>
  */
 public class PdaItem extends Item implements PartAssemblyItem {
+
+    /**
+     * 打开管理界面的客户端实现。
+     *
+     * <p>本类属于共通代码，专用服务器同样会加载它，因此这里只持有 {@link Consumer}：直接引用客户端
+     * 界面类会让类校验在专用服务器上加载 {@code net.minecraft.client} 下的类而失败。默认空实现，
+     * 由客户端入口 {@code MachineMaxClient} 覆盖。</p>
+     */
+    private static Consumer<InteractionHand> screenOpener = hand -> {
+    };
+
     public PdaItem() {
         super(new Item.Properties().stacksTo(1));
+    }
+
+    /**
+     * 注入打开管理界面的客户端实现。只在客户端调用，专用服务器保持默认空实现。
+     */
+    public static void setScreenOpener(@NotNull Consumer<InteractionHand> opener) {
+        screenOpener = Objects.requireNonNull(opener, "screenOpener");
     }
 
     /**
@@ -59,7 +79,7 @@ public class PdaItem extends Item implements PartAssemblyItem {
             if (request != null) PacketDistributor.sendToServer(request);
             return InteractionResultHolder.success(stack);
         }
-        Minecraft.getInstance().setScreen(new PdaScreen(usedHand));
+        screenOpener.accept(usedHand);
         return InteractionResultHolder.success(stack);
     }
 

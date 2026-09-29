@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.network;
 
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
 import io.github.sweetzonzi.machine_max.client.render.toast.BlueprintResearchToast;
 import io.github.sweetzonzi.machine_max.network.payload.research.FreeRpSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompletePayload;
@@ -34,6 +35,16 @@ public class ClientResearchHandler {
 
     public static void handleFreeRpChange(FreeRpSyncPayload payload) {
         RP_CHANGE.addAll(payload.rpChanges());
+    }
+
+    /**
+     * 打开研究台界面（研发树 / 蓝图库）。
+     *
+     * <p>由共通包的载荷处理器 {@code ResearchScreenOpenHandler} 以方法引用转发进来：触发打开的消息
+     * 必须能经服务端转发，而打开界面只能在客户端做，因此界面类只在这里出现。</p>
+     */
+    public static void openBlueprintResearchScreen() {
+        Minecraft.getInstance().setScreen(new BlueprintResearchScreen());
     }
 
     /**

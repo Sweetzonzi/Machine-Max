@@ -5,6 +5,8 @@ import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.element.PartModelElement;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -22,6 +24,8 @@ public class MachineMaxClient {
     public MachineMaxClient(IEventBus bus, ModContainer container) {
         MachineMax.REGISTER.register(bus);
         registerAuiElements();
+        // 共通物品类的客户端界面钩子
+        PdaItem.setScreenOpener(PdaScreen::open);
         // 配置菜单
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         bus.addListener(MMClientConfig::onChangeConfig);

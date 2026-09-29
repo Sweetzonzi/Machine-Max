@@ -254,6 +254,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - **严禁忽略** **`DestroyableRigidObject.updateLock`**：服务端→同步数据期间置为 `true`，防止反馈循环。
 - **严禁绕过 AbstractSubsystem 生命周期**：始终在 tick/prePhysicsTick/postPhysicsTick 中调用 super。
 - **子系统必须配套 static\_attr**：每种子系统类型都需要对应的 JSON 加载用静态属性类。
+- **严禁共通代码引用客户端类**：`net.minecraft.client.*`、`com.mojang.blaze3d.*` 以及本项目 `client/` 包下的类，都不得出现在共通类（`common/`、`network/`、`external/`、`util/` 等）的方法描述符、字段描述符、`new`/`checkcast` 目标里。专用服务器加载共通类时，类校验会解析描述符里的类型；一旦命中就抛 `Attempted to load class ... for invalid dist DEDICATED_SERVER` 并中止启动，与那段代码是否真的执行过无关——形如 `Minecraft.setScreen(Screen)` 的形参类型、或 `AttachmentType.factory` 里把 `LocalPlayer` 传给 `LivingEntity` 形参，都会命中。客户端行为要么放在 `client/` 包的处理器里由共通类转发（`ClientResearchHandler`），要么由客户端入口注入钩子（`PdaItem.setScreenOpener`）。
 
 ## 独特风格
 
@@ -267,7 +268,8 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 ## 补充说明
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
-- **无单元测试**：仅 NeoForge 运行时游戏测试（`runGameTestServer`）。无 `src/test/` 目录。
+- **无自动化测试**：无 `src/test/` 目录，也没有游戏测试函数——`runGameTestServer` 因此会走到专用服务器启动的最后一刻，再由 `GameTestServer.create` 抛 `IllegalArgumentException: No test functions were given!` 中止。可用的运行期验证通道是 `runServer`（启动到 `Done`，可验证注册、内容包解码、配方加载）与 `runClient`（进世界验证玩法）。
+- **`runServer` 会加载客户端专属 mod**：`repositories.gradle` 用 `runtimeOnly files(fileTree(dir: 'mods', ...))` 与不分端的 `implementation` 声明依赖，于是专用服务器会连带载入 `mods/` 下的 Distant Horizons / Iris / Sodium 以及 JEI、AUI、加速渲染。它不影响启动，但会让专用服务器测试偏离真实环境（Distant Horizons 会在服务端跑世界生成与建库）。要贴近真实环境，需把客户端专属 jar 拆到只挂在 `runs.client` 的配置里。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
 - **已知崩溃（已探明）**：多线程物理 + 关节 = 崩溃。**根因**：关节连接的两个刚体均为运动学模式（Bullet 不支持两运动学体间的 Joint 约束）。临时方案：禁止将刚体设为运动学以停止其外力影响，使用speedFactor。

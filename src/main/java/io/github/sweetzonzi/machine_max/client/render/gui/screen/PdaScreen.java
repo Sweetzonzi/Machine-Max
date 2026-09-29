@@ -6,6 +6,7 @@ import com.sighs.apricityui.screen.ApricityScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.pda.PdaHtml;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaData;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
+import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaBindShortcutPayload;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaDepositPayload;
 import net.minecraft.client.Minecraft;
@@ -54,6 +55,14 @@ public class PdaScreen extends ApricityScreen {
         this.hand = hand;
         setPauseGame(false);
         setShowDefaultBackground(true);
+    }
+
+    /**
+     * 打开管理界面。装载该界面的调用方位于共通代码，通过 {@link PdaItem#setScreenOpener} 注入本方法，
+     * 界面类本身因此不出现在共通类的常量池里。
+     */
+    public static void open(InteractionHand hand) {
+        Minecraft.getInstance().setScreen(new PdaScreen(hand));
     }
 
     @Override

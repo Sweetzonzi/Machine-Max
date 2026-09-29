@@ -10,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +58,14 @@ public class MachineMax {
         MMResources.register();//注册所有自定义配方类型
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
         // 注册配置文件
-        container.registerConfig(
-                ModConfig.Type.CLIENT,
-                MMClientConfig.CLIENT_SPEC
-        );
+        // 客户端配置只在客户端注册：专用服务器上 NeoForge 不加载 CLIENT 规格的配置，
+        // 而读取 MMClientConfig.CLIENT_SPEC 会连带加载只存在于客户端的类。
+        if (FMLEnvironment.dist.isClient()) {
+            container.registerConfig(
+                    ModConfig.Type.CLIENT,
+                    MMClientConfig.CLIENT_SPEC
+            );
+        }
         container.registerConfig(
                 ModConfig.Type.COMMON,
                 MMCommonConfig.COMMON_SPEC

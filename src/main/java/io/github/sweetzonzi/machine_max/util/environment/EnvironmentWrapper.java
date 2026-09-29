@@ -1,11 +1,9 @@
 package io.github.sweetzonzi.machine_max.util.environment;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import net.minecraft.client.Minecraft;
 import net.neoforged.fml.loading.FMLLoader;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -176,9 +174,18 @@ public class EnvironmentWrapper {
     }
 
 
-    public static void safeRun(Consumer<Minecraft> action) {
+    /**
+     * 仅在客户端执行代码块，非客户端环境打印调用栈并跳过。
+     *
+     * <p>参数刻意取 {@link Runnable}：本类位于共通代码，专用服务器同样会加载它，
+     * 若形参或局部变量里出现 {@code net.minecraft.client} 下的类型，类校验就会在专用服务器上
+     * 触发"为错误的分发端加载客户端类"而失败。客户端代码应当写在调用方的方法体内。</p>
+     *
+     * @param clientAction 客户端才执行的逻辑
+     */
+    public static void safeRun(Runnable clientAction) {
         if (FMLLoader.getDist().isClient()) {
-            action.accept(Minecraft.getInstance());
+            clientAction.run();
         } else {
             MachineMax.LOGGER.warn("尝试在非客户端环境中执行客户端代码，成功拦截", new Throwable("调用栈"));
         }

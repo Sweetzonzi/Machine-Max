@@ -21,12 +21,13 @@ import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
+import net.neoforged.api.distmarker.Dist
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = [Dist.CLIENT])
 object MMItems {
     @JvmStatic
     fun register() {

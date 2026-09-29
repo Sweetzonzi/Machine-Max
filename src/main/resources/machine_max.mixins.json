@@ -5,7 +5,6 @@
   "package": "io.github.sweetzonzi.machine_max.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ClientLevelMixin",
     "EntityMixin",
     "PlayerMixin",
     "ProjectileMixin",
@@ -17,6 +16,7 @@
   },
   "client": [
     "CameraMixin",
+    "ClientLevelMixin",
     "ClientPacketListenerMixin",
     "GameRendererMixin",
     "ItemRendererMixin",
