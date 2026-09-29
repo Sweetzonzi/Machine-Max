@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
+import io.github.sweetzonzi.ballistics_framework.api.BFHitResolver;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
@@ -18,6 +20,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 轻量 Entity 兼容层 —— 代表 SOA 中一个投射物在 Minecraft 世界的"投影"。
@@ -31,10 +34,15 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
  * 客户端通过 {@link IEntityWithComplexSpawn} 携带的 objId 反查
  * {@link ObjectManager#levelDestroyableObjects} 获取引用。
  * <p>
+ * 本类实现 {@link BFHitResolver}：原版与其他模组的投射物命中这个实体投影时，
+ * 伤害经框架的协议外转发落到 {@link BallisticProjectile} 本体（见
+ * {@link #resolveHit(Vec3, Vec3)}）。这条通路要求实体先能被投射物选中，
+ * 因此 {@link #isPickable()} 返回 true。
+ * <p>
  * 网络同步：见设计文档 §8.4.3。EntityTracker 周期性位置同步被
  * {@code updateInterval(Int.MAX_VALUE)} 禁用，仅登场/退场/DataTracker。
  */
-public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn, EntityPatch {
+public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn, EntityPatch, BFHitResolver {
     @Getter
     private BallisticProjectile projectile;
     private volatile boolean orphaned;
@@ -52,7 +60,7 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
 
     public void bindToProjectile(BallisticProjectile projectile) {
         this.projectile = projectile;
-        this.projectileObjId = ((DestroyableObject) projectile).getId();
+        this.projectileObjId = projectile.getId();
         this.orphaned = false;
     }
 
@@ -136,9 +144,39 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
         return true;
     }
 
+    /**
+     * 返回 true，使本实体进入原版投射物的命中判定链。
+     * <p>
+     * 原版 {@code Projectile.canHitEntity} 的判据链是
+     * {@code Entity.canBeHitByProjectile()} → {@code isPickable()}，
+     * 返回 false 时原版箭矢永远不会为本实体生成 {@code EntityHitResult}，
+     * {@link #resolveHit(Vec3, Vec3)} 也就没有触发机会。
+     * <p>
+     * 副作用是本实体同时进入玩家准星与近战的实体选取——这正是
+     * "外部攻击者可以命中投射物"需要的行为。
+     */
     @Override
     public boolean isPickable() {
-        return false;
+        return true;
+    }
+
+    /**
+     * 把命中原版实体投影的伤害解析到投射物本体。
+     * <p>
+     * 契约要求本方法是幂等且无副作用的纯查询：同一组 {@code (hitPoint, delta)}
+     * 必须始终返回同一结果，否则投射物会在"继续飞行"与"销毁"之间反复。
+     * 返回 null 表示实际未命中（投射物已不存在），交回原版流程。
+     *
+     * @param hitPoint 原版报告的命中点（世界坐标）
+     * @param delta    搜索矢量，其模为搜索距离上限（m）
+     * @return 解析到投射物本体的结果；投射物已不存在时返回 null
+     */
+    @Override
+    @Nullable
+    public BFHitResolveResult resolveHit(Vec3 hitPoint, Vec3 delta) {
+        BallisticProjectile p = projectile;
+        if (p == null || !p.isAlive()) return null;
+        return new BFHitResolveResult(p, hitPoint, Vec3.ZERO);
     }
 
     public void markOrphaned() {
