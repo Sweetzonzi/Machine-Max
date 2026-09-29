@@ -67,7 +67,7 @@ int[] typeIndex;               // 投射物类型索引
   ProjectileManager.preTick()
     ├── tickAndPreTick()      # 寿命递减 + 各投射物 preTick()；寿命到期同样经 destroy() 出列
     ├── tryRecreateEntities() # 重建因区块卸载丢失的 MMProjectileEntity
-    └── clientExtrapolate()   # 仅客户端：5 子步自主外推
+    └── clientExtrapolate()   # 仅客户端：死条目清理扫描（保留一次供渲染）+ 5 子步自主外推
   ProjectileManager.postTick()
     ├── cleanOrphanedEntities()      # 延迟清理代理实体
     ├── flushProjectileEntities()    # 生成包（ProjectilesSpawnPayload）
@@ -103,6 +103,7 @@ int[] typeIndex;               // 投射物类型索引
 - **碰撞组**：触发体是 `CollisionGroups.PROJECTILE`、`collideWith = NONE`。射线与扫掠查询**不检查碰撞掩码**，可见性由每个调用方自己的组白名单决定。
 - **BallisticsFramework 集成**：使用 `BFDamageApi.hurt()`，命中目标经 `BFDamageApi.resolveHitTarget()` 解析，上下文通过 `BFDamageContext.Builder` 构造。
 - **曳光渲染**：客户端通过 `ClientProjectileRenderer` 读取 SoA 位置数组渲染。
+- **客户端死条目保留一 tick**：`deadRetained` 让死条目多留一次清理扫描，`ClientProjectileRenderer` 借此画出"出膛即命中销毁"那一发的曳光；保留时长由该标记而非 `lifetime` 决定——`tickAndPreTick()` 与 `clientExtrapolate()` 的寿命递减都被 `alive` 检查挡在死条目之外，死条目的寿命恒定不变，用"寿命已小于上限"作判据的条目会永久留在数组里。
 
 ## 反模式
 

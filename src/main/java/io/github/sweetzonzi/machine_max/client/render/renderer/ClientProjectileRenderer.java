@@ -58,7 +58,8 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
         Vector3f tmpPos = new Vector3f();
 
         for (int i = 0; i < pm.count; i++) {
-            // 就算投射物已销毁，也尝试渲染，避免创建即命中销毁的投射物不渲染
+            // 不检查 alive：已死的条目由 ProjectileManager.deadRetained 在数组里多留一次清理扫描，
+            // 这一帧要把它画出来，否则"出膛即命中销毁"的投射物完全没有曳光
             ProjectileType type = pm.getProjectileTypeByIndex(i);
             Vec3i tracerColor = type.getTracerColor();
             int tracerAlpha = type.getTracerAlpha();

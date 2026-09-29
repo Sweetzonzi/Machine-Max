@@ -107,6 +107,22 @@ public class ProjectileManager {
     public int[] objId;                 // 对应的 DestroyableObject ID
     public boolean[] alive;             // 活跃标志
     public boolean[] skipExtrapolate;    // 命中帧暂停客户端外推（跳弹/穿透后保持位置在命中点）
+    /**
+     * 死条目渲染保留标记（仅客户端写入、仅 {@link #clientExtrapolate()} 的清理扫描读写）。
+     * <p>
+     * 客户端把已死的条目在数组里多留一次清理扫描，让 {@link ClientProjectileRenderer}
+     * 有机会画出这一发的命中闪光——渲染器遍历 SoA 时不检查 {@link #alive}，
+     * 正是为了渲染"创建即命中销毁"的投射物。
+     * <p>
+     * 保留时长不能由 {@link #lifetime} 推导：{@link #tickAndPreTick()} 与
+     * {@link #clientExtrapolate()} 都先跳过非活跃条目，死条目的寿命因此恒定不变。
+     * 出膛当 tick 就被销毁的条目，其寿命等于
+     * {@link BallisticProjectileType#getMaxLifetimeTicks()}，用"寿命已小于上限"作清理判据时
+     * 该判据永远不成立，条目会一直留在数组里，被渲染器反复画成一条静止的曳光线。
+     * <p>
+     * 语义：{@code false} = 本次扫描仍保留，{@code true} = 下次扫描摘除。
+     */
+    public boolean[] deadRetained;
     /** 剩余稳定距离（mm），&lt;=0 表示弹头已失稳。初始值来自 ProjectileType.stableDistance */
     public float[] remainingStableDistance;
     /**
@@ -121,8 +137,8 @@ public class ProjectileManager {
      * 推进计时（秒，从发射瞬间起算的已飞行时间）。
      * <p>
      * 用于判定 {@code external.thrust} 的燃烧窗口 {@code [ignition_delay, ignition_delay + duration)}。
-     * <b>不能复用 {@link #lifetime}</b>：服务端每 tick 减 1（20Hz），客户端每个外推子步减 1（100Hz），
-     * 两端速率不一致；本字段两端都按物理步长（0.01s）累加，时基天然对齐。
+     * <b>不能复用 {@link #lifetime}</b>：它是按游戏 tick（0.05s）递减的整数倒计时，分辨率不足以刻画
+     * 秒级燃烧窗口；本字段两端都按物理步长（0.01s）累加，时基天然对齐。
      */
     public float[] burnTime;
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
@@ -310,6 +326,7 @@ public class ProjectileManager {
         objId = new int[capacity];
         alive = new boolean[capacity];
         skipExtrapolate = new boolean[capacity];
+        deadRetained = new boolean[capacity];
         remainingStableDistance = new float[capacity];
         targetX = new float[capacity];
         targetY = new float[capacity];
@@ -391,6 +408,7 @@ public class ProjectileManager {
         objId[i] = id;
         alive[i] = true;
         skipExtrapolate[i] = false;
+        deadRetained[i] = false;
         remainingStableDistance[i] = proj.getProjectileType().getStableDistance();
         // 制导目标初值：NaN = 无目标（装订由 LauncherSubsystem 在 fireSingle 后写入）
         targetX[i] = Float.NaN;
@@ -963,15 +981,34 @@ public class ProjectileManager {
      * 制导弹同样参与外推——客户端不施加制导，只按纯弹道推进；其位姿与寿命随后被
      * 服务端权威快照覆盖（见 {@link #flushAuthoritativeState()}）。
      * <p>
+     * 开头的清理扫描是客户端摘除死条目的唯一入口（服务端在
+     * {@link #updateProjectiles} 顶部无条件清扫）：死条目先由
+     * {@link #deadRetained} 保留一次扫描供渲染器画命中闪光，下一次扫描连对象一起释放。
+     * <p>
      * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
     private void clientExtrapolate() {
         BallisticProjectileType[] types = this.typeCache;
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         for (int i = count - 1; i >= 0; i--) {
-            if (!alive[i] && lifetime[i] < types[typeIndex[i]].getMaxLifetimeTicks()) { // 至少保证存在1tick
-                projectileObjIds.remove(objId[i]);
-                swapRemove(i);
+            if (alive[i]) continue;
+
+            // 死条目保留一次扫描：本 tick 渲染器仍会画出它（静止在命中点的曳光）
+            if (!deadRetained[i]) {
+                deadRetained[i] = true;
+                continue;
             }
+
+            // 客户端对象不会自行出列：命中包只调 markHit()，不调 destroy()，
+            // 对象一直留在 ObjectManager.levelDestroyableObjects 里。这里随条目一并释放，
+            // 否则每发命中销毁的投射物都在客户端漏一个对象（寿命到期路径已由 destroy() 出列，
+            // 此处取不到对象，幂等）
+            DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
+            if (obj != null && !obj.isRemoved) {
+                obj.destroy();
+            }
+            projectileObjIds.remove(objId[i]);
+            swapRemove(i);
         }
         if (count == 0) return;
 
@@ -985,7 +1022,9 @@ public class ProjectileManager {
 
                 BallisticProjectileType type = types[typeIndex[i]];
 
-                lifetime[i]--;
+                // 寿命的递减与到期销毁只在 tickAndPreTick() 里发生（两端同速：每 tick 减 1）。
+                // 本循环只做运动积分：若在 5 个子步里各减一次，客户端的存活时间会只有服务端的 1/6，
+                // 曳光提前消失，且此后服务端发来的命中包匹配不到条目，特效与镜头抖动全部丢失
 
                 // 命中帧暂停外推：保持 SoA 位置在命中点，使渲染器绘制出跳弹/穿透折角
                 if (skipExtrapolate[i]) {
@@ -2240,6 +2279,7 @@ public class ProjectileManager {
             objId[index] = objId[last];
             alive[index] = alive[last];
             skipExtrapolate[index] = skipExtrapolate[last];
+            deadRetained[index] = deadRetained[last];
             remainingStableDistance[index] = remainingStableDistance[last];
             targetX[index] = targetX[last];
             targetY[index] = targetY[last];
@@ -2275,6 +2315,7 @@ public class ProjectileManager {
         objId = Arrays.copyOf(objId, newCap);
         alive = Arrays.copyOf(alive, newCap);
         skipExtrapolate = Arrays.copyOf(skipExtrapolate, newCap);
+        deadRetained = Arrays.copyOf(deadRetained, newCap);
         remainingStableDistance = Arrays.copyOf(remainingStableDistance, newCap);
         targetX = Arrays.copyOf(targetX, newCap);
         targetY = Arrays.copyOf(targetY, newCap);
