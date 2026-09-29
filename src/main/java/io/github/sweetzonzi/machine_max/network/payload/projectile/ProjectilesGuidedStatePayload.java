@@ -18,21 +18,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 制导弹位姿快照包（服务端→客户端）。
+ * 投射物权威位姿快照包（服务端→客户端）。
  * <p>
- * 带制导律的投射物<b>不适用客户端外推</b>——客户端无法复现制导（纯追踪尚可，
- * 未来的 PN 依赖视线角速度历史，导引头还有视场/丢锁状态），双端各自积分必然静默漂移。
- * 因此改为<b>服务端权威</b>：服务端每 tick 广播位姿/速度/寿命快照，
- * 客户端在两次快照之间只按纯弹道插值（{@code clientExtrapolate} 不施加制导）。
+ * 承载两类客户端无法自行复现运动的投射物：
+ * <ul>
+ *   <li><b>制导弹</b>——客户端复现制导必然静默漂移（PN 依赖视线角速度历史，
+ *       导引头还有视场/丢锁状态）</li>
+ *   <li><b>刚体投射物</b>——运动由 Bullet 刚体驱动，客户端没有对应积分器，
+ *       也不参与 {@code clientExtrapolate}</li>
+ * </ul>
+ * 服务端每 tick 广播位置/速度/寿命快照，客户端以之覆盖本地 SoA。
+ * <b>朝向不随本包传输</b>：刚体姿态约定为"弹轴 = 速度方向"，
+ * 两端用同一函数（{@code RigidProjectile#facingFromVelocity}）从速度推导。
  * <p>
  * 与 {@link ProjectilesSpawnPayload} 的分工：生成包只负责"创建 + 初速"，
  * 本包负责此后每 tick 的状态覆盖。
  * <p>
- * <b>零回归：</b>非制导弹种不进入本包，客户端行为与既有完全一致。
+ * 无制导的质点弹不进入本包，客户端行为不受影响。
  * <p>
  * <b>调用线程：</b>主线程（由 {@link ProjectileManager#postTick()} 调用）。
  *
- * @see ProjectileManager#flushGuidedState()
+ * @see ProjectileManager#flushAuthoritativeState()
  */
 public record ProjectilesGuidedStatePayload(
         List<StateEntry> entries
@@ -42,10 +48,11 @@ public record ProjectilesGuidedStatePayload(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectiles_guided_state"));
 
     /**
-     * 单个制导弹的状态条目。
+     * 单个投射物的状态条目。
      * <p>
-     * {@code lifetime} 一并携带：客户端 {@code clientExtrapolate} 每 tick 多次递减寿命，
-     * 不覆盖会提前清理该投射物。
+     * {@code lifetime} 一并携带：质点弹在客户端每 tick 多次递减寿命，
+     * 刚体弹的寿命则完全由本快照覆盖——两种情况都需要服务端值兜底，
+     * 否则客户端会提前清理该投射物。
      *
      * @param objId    DestroyableObject ID
      * @param posX     世界坐标 X
@@ -102,7 +109,7 @@ public record ProjectilesGuidedStatePayload(
     }
 
     /**
-     * 服务端广播：向维度内所有玩家发送一批制导弹位姿快照。
+     * 服务端广播：向维度内所有玩家发送一批投射物权威位姿快照。
      * <p>
      * <b>调用线程：</b>仅主线程（{@link ProjectileManager#postTick()}）。
      *

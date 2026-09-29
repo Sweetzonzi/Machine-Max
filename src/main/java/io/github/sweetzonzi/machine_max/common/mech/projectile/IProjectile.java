@@ -627,6 +627,9 @@ public interface IProjectile extends BFDamageHandler {
      * <p>
      * 穿深通过 {@link #calculateCurrentPenetration()} 实时计算，
      * 失稳时 ×unstablePenFactor 写入上下文，原始值存入扩展供能量法使用。
+     * <p>
+     * 对实现方可见：实现类自行发起命中结算时（如 {@code RigidProjectile} 的实体命中）
+     * 复用本方法，保证两种运动模型的上下文口径一致。
      *
      * @param level     维度（用于获取通用 DamageSource）
      * @param damage    伤害量（已按速度衰减的当前值）
@@ -636,7 +639,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param exts      扩展容器
      * @return 已注入当前投射物为 handler 的上下文
      */
-    private BFDamageContext buildHurtContext(Level level, float damage,
+    default BFDamageContext buildHurtContext(Level level, float damage,
                                              Vec3 hitVel, Vec3 hitPoint, Vec3 hitNormal,
                                              BFDamageExtensions exts) {
         // 稳定性判定：失稳时上下文穿深打折，但保留原始穿深供能量法使用

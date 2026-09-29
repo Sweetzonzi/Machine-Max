@@ -279,6 +279,21 @@ public class ProjectileManager {
     }
 
     /**
+     * 查询指定世界坐标处的归一化空气密度（海平面 y=62 处为 1.0）。
+     * <p>
+     * 与质点积分、弹道预测共用同一密度函数，供刚体投射物在物理步内做制导解算时读取，
+     * 保证两种运动模型的过载包线与诱导阻力口径一致。
+     *
+     * @param x 世界坐标 X
+     * @param y 世界坐标 Y
+     * @param z 世界坐标 Z
+     * @return 归一化空气密度
+     */
+    public float getDensityAt(float x, float y, float z) {
+        return densityFunction.getDensity(new Vec3(x, y, z));
+    }
+
+    /**
      * 注册一个质点投射物到 SoA 数组。
      * 在 {@link PointProjectile} 构造时由服务端调用。
      *
@@ -371,7 +386,14 @@ public class ProjectileManager {
     }
 
     /**
-     * 按 DestroyableObject ID 从 SoA 数组中移除一个投射物（质点/刚体通用）。
+     * 标记指定投射物在 SoA 中已死亡（质点/刚体通用）。
+     * <p>
+     * 只置 {@code alive=false} 并从 O(1) 查询集合中摘除，数组整理（swap-remove）交给
+     * 所属线程的清理扫描完成：服务端是 {@link #updatePointProjectiles} 顶部的死条目扫描，
+     * 客户端是 {@link #clientExtrapolate} 开头的扫描。
+     * <p>
+     * 这样可以从任意线程安全调用（例如投射物自身的 {@code destroy()}），
+     * 无需在两个线程上分别实现数组整理。
      *
      * @param objIdToRemove 目标对象 ID
      */
@@ -380,7 +402,6 @@ public class ProjectileManager {
             if (objId[i] == objIdToRemove) {
                 alive[i] = false;
                 projectileObjIds.remove(objIdToRemove);
-                swapRemove(i);
                 return;
             }
         }
@@ -478,6 +499,37 @@ public class ProjectileManager {
     }
 
     // ==================== 穿透去重公共 API ====================
+
+    /**
+     * 查询指定投射物是否已处理过给定穿透密钥。
+     * <p>
+     * 非地形目标（零件、实体）的通用去重入口，与地形去重共用同一张表。
+     * 同一密钥既可能来自"上一次命中已穿透"，也可能来自"发射时预先排除的发射者"。
+     *
+     * @param projectileId 投射物的 DestroyableObject ID
+     * @param key          穿透密钥（{@link PenetrationKey}）
+     * @return true 表示该目标应被忽略
+     */
+    public boolean hasPenetrated(int projectileId, PenetrationKey key) {
+        Set<PenetrationKey> set = penetratedKeys.get(projectileId);
+        return set != null && set.contains(key);
+    }
+
+    /**
+     * 记录指定投射物已处理过给定穿透密钥（非地形目标的通用入口）。
+     * <p>
+     * 两种用法：
+     * <ul>
+     *   <li>命中穿透后写回，避免同一目标在后续物理步被重复结算</li>
+     *   <li>发射时预先登记发射者自身的密钥，使投射物从出膛起就忽略发射者</li>
+     * </ul>
+     *
+     * @param projectileId 投射物的 DestroyableObject ID
+     * @param key          穿透密钥（{@link PenetrationKey}）
+     */
+    public void markPenetrated(int projectileId, PenetrationKey key) {
+        penetratedKeys.computeIfAbsent(projectileId, k -> new HashSet<>()).add(key);
+    }
 
     /**
      * 查询指定投射物是否已穿透了给定方块位置。
@@ -592,6 +644,10 @@ public class ProjectileManager {
      * <p>
      * 将原本两趟独立的遍历（forEachPostTick + syncAllToSyncedData）合并为一趟，
      * 减少对 SoA 数组和 HashMap 的重复访问。
+     * <p>
+     * 刚体投射物走单独分支：其位姿/速度权威值在 Bullet 刚体侧（服务端由
+     * {@link RigidProjectile#postTick()} 写入 SynchedEntityData），SoA 只是镜像，
+     * 因此这里不回写 synced data，只刷新渲染插值用的 {@code oldTransform}/{@code transform}。
      */
     private void postTickAndSync() {
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
@@ -604,8 +660,16 @@ public class ProjectileManager {
 
             obj.postTick();
 
-            // 刚体投射物跳过回写（RigidProjectile.postTick 中已自行从 Bullet 同步）
-            if (obj instanceof RigidProjectile) continue;
+            if (obj instanceof RigidProjectile) {
+                // 位置与朝向都取自 SoA（服务端是刚体镜像，客户端是权威快照）；
+                // 朝向按"弹轴 = 速度方向"推导，与 RigidProjectile.applyVelocityFacing() 同一规则，
+                // 因此姿态不需要随网络传输。
+                obj.oldTransform = obj.getTransform().clone();
+                obj.transform = new Transform(
+                        new Vector3f(posX[i], posY[i], posZ[i]),
+                        RigidProjectile.facingFromVelocity(new Vector3f(velX[i], velY[i], velZ[i])));
+                continue;
+            }
 
             obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
             obj.oldTransform = obj.getTransform();
@@ -816,7 +880,7 @@ public class ProjectileManager {
      *   <li>冲刷本帧物理线程新增的投射物 Entity 创建与发包</li>
      *   <li>冲刷本帧物理线程缓冲的命中同步包</li>
      *   <li>冲刷本帧物理线程缓冲的战斗部起爆请求（主线程执行世界效果）</li>
-     *   <li>广播制导弹的位姿快照（服务端权威，非制导弹种不广播）</li>
+     *   <li>广播服务端权威位姿快照（制导弹与刚体投射物，其余弹种不广播）</li>
      *   <li>调用各投射物的 {@code postTick()}，回写 SoA 到 SynchedEntityData</li>
      * </ol>
      * <p>
@@ -828,7 +892,7 @@ public class ProjectileManager {
         flushProjectileEntities();   // ① 先发创建包，确保客户端 SoA 中有该投射物
         flushPendingHitSyncs();      // ② 再发命中包，保证创建包严格先于命中包到达
         flushPendingDetonations();   // ③ 最后执行战斗部效果（主线程）
-        flushGuidedState();          // ④ 制导弹位姿快照（服务端权威；非制导弹种不广播）
+        flushAuthoritativeState();   // ④ 权威位姿快照（制导弹 + 刚体投射物）
         postTickAndSync();
     }
 
@@ -884,7 +948,8 @@ public class ProjectileManager {
      * <p>
      * 5 子步推进，每子步 dt = 0.01s（匹配服务端 100Hz 物理步进），
      * 消除大步长 Euler 积分在非线性阻力下的精度损失。
-     * 刚体投射物跳过——状态由服务端 {@link #writebackRigidState} 同步，客户端不双重积分。
+     * 刚体投射物不参与外推：其位置/速度/寿命以服务端权威快照为准
+     * （见 {@link #flushAuthoritativeState()}），客户端既不积分也不递减其寿命。
      * <p>
      * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
@@ -904,12 +969,13 @@ public class ProjectileManager {
 
         for (int sub = 0; sub < SUBSTEPS; sub++) {
             for (int i = 0; i < count; i++) {
-                lifetime[i]--;
                 if (!alive[i]) continue;
 
                 KineticProjectileType type = types[typeIndex[i]];
-                // 刚体投射物跳过客户端外推（状态由服务端 writebackRigidState 同步）
+                // 刚体投射物：位置/速度/寿命均以服务端权威快照为准，客户端不积分也不递减寿命
                 if (type.getType().isRigid()) continue;
+
+                lifetime[i]--;
 
                 // 命中帧暂停外推：保持 SoA 位置在命中点，使渲染器绘制出跳弹/穿透折角
                 if (skipExtrapolate[i]) {
@@ -1539,18 +1605,23 @@ public class ProjectileManager {
     }
 
     /**
-     * 冲刷制导弹的服务端权威位姿快照（主线程）。
+     * 冲刷"服务端权威"投射物的位姿快照（主线程）。
      * <p>
-     * 扫描所有活跃且 {@link KineticProjectileType#hasGuidance()} 的投射物，
-     * 打包为 {@link ProjectilesGuidedStatePayload} 广播——客户端据此覆盖
-     * 本地 SoA，且<b>不对制导弹施加制导</b>（两次快照之间按纯弹道插值）。
+     * 广播对象是客户端无法自行复现运动的两类投射物：
+     * <ul>
+     *   <li><b>制导弹</b>（{@link KineticProjectileType#hasGuidance()}）——
+     *       客户端复现制导必然静默漂移（PN 依赖视线角速度历史，导引头还有视场/丢锁状态）</li>
+     *   <li><b>刚体投射物</b>（{@code rigid}）——运动由 Bullet 刚体驱动，客户端没有对应积分器</li>
+     * </ul>
+     * 打包为 {@link ProjectilesGuidedStatePayload} 广播，客户端据此覆盖本地 SoA，
+     * 服务端与客户端之间不施加任何本地逻辑（刚体姿态由两端按速度方向各自推导，无需传输）。
      * <p>
-     * 非制导弹种不进入本集合，客户端行为与既有完全一致（零回归）。
+     * 其余弹种不进入本集合，客户端行为不受影响。
      * <p>
      * <b>调用线程：</b>仅主线程（{@link #postTick()}，在战斗部起爆之后、
      * {@link #postTickAndSync()} 之前）。
      */
-    private void flushGuidedState() {
+    private void flushAuthoritativeState() {
         if (level.isClientSide()) return;
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (count == 0) return;
@@ -1559,7 +1630,8 @@ public class ProjectileManager {
         List<ProjectilesGuidedStatePayload.StateEntry> entries = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            if (!types[typeIndex[i]].hasGuidance()) continue;
+            KineticProjectileType type = types[typeIndex[i]];
+            if (!type.hasGuidance() && !type.getType().isRigid()) continue;
             entries.add(new ProjectilesGuidedStatePayload.StateEntry(
                     objId[i],
                     posX[i], posY[i], posZ[i],

@@ -55,8 +55,11 @@ public class KineticProjectileType extends ProjectileType {
      * 制导律 — 自含算法参数与限幅配置；{@code null} 表示无制导（纯弹道）。
      * <p>
      * JSON 中为可选对象，按 {@code "type"} 字段分派到具体律（形状与 {@code warheads} 一致）。
-     * 缺省为 {@code null}，现有内容包 JSON 零改动。仅 {@code point} 模型首期支持
-     * （刚体制导需姿态控制，见《武器系统-制导组件实现备忘》§2.2）。
+     * 缺省为 {@code null}，未配置 {@code guidance} 的内容包 JSON 保持纯弹道。
+     * <p>
+     * {@code point} 与 {@code rigid} 两种运动模型都受支持：质点弹把指令加速度并入 SoA 积分，
+     * 刚体弹把指令加速度换算为中心力提交给 Bullet 刚体并按速度方向驱动姿态；
+     * 两者的过载限幅与诱导阻力共用 {@link GuidanceLaw#computeAcceleration} 路径。
      */
     @Nullable
     private final GuidanceLaw guidance;

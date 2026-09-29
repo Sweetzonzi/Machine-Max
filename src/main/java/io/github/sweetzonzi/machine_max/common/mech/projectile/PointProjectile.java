@@ -141,6 +141,19 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
         this.hasHit = true;
     }
 
+    /**
+     * 覆写：先从 {@link ProjectileManager} 的 SoA 中标记摘除，再走基类销毁。
+     * <p>
+     * 命中销毁、寿命到期、超时清理三条路径最终都会经过这里，
+     * 因此 SoA 不会残留死条目。
+     */
+    @Override
+    public void destroy() {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm != null) pm.removeProjectile(getId());
+        super.destroy();
+    }
+
     // ========== 覆写 DestroyableObject 生命周期 ==========
 
     @Override

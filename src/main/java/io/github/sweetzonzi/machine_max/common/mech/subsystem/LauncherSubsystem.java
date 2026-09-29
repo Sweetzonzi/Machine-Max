@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -15,6 +16,8 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -584,7 +587,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             }
         }
 
-        // ⑥ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
+        // ⑥ 自身排除：把本发射器零件的命中框预先登记为"已穿透"，使新弹从出膛起忽略本零件
+        registerSelfExclusion(projectiles);
+
+        // ⑦ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
         float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getBarrel().velocityMultiplier()
                          + attr.staticAttribute.getBarrel().velocityBonus();
         float totalMass = type.getMass() * projectiles.size();
@@ -594,6 +600,28 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             var body = getSubPart().getBody();
             Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
             body.applyImpulse(impulseWorld, jmePos.subtract(bodyWorldPos));
+        }
+    }
+
+    /**
+     * 把本发射器所在零件的全部命中框登记为"已穿透"，令新弹从出膛起忽略该零件。
+     * <p>
+     * 复用投射物自身的穿透去重表：质点弹的射线检测与刚体弹的接触判定都会先查该表，
+     * 因此登记一次即可同时覆盖两种运动模型；刚体弹的预碰撞回调还会据此取消接触响应，
+     * 使弹体不被自身挂架弹开。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link #fireSingle} 内）。
+     *
+     * @param projectiles 本次出膛的投射物
+     */
+    private void registerSelfExclusion(List<IProjectile> projectiles) {
+        SubPart self = getSubPart();
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(getLevel());
+        for (IProjectile p : projectiles) {
+            int id = ((DestroyableObject) p).getId();
+            for (HitBox hitBox : self.hitBoxes.values()) {
+                pm.markPenetrated(id, new PenetrationKey(self, hitBox.getAttr().getId()));
+            }
         }
     }
 
