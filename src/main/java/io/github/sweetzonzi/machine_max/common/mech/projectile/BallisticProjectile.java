@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -147,6 +148,14 @@ public class BallisticProjectile extends DestroyableObject
     int cachedLifetime = 0;
 
     /**
+     * 运动学触发体——本弹在物理世界中的可探测体积。
+     * <p>
+     * 仅服务端、且仅对配置了 {@code vulnerability} 的弹种创建；销毁时摘除。
+     */
+    @Nullable
+    private volatile ProjectileHitBox hitBox;
+
+    /**
      * 创建一个弹道投射物。
      * <p>
      * 服务端：注册到 {@link ObjectManager} 和 {@link ProjectileManager} 的 SoA 数组。
@@ -187,6 +196,34 @@ public class BallisticProjectile extends DestroyableObject
         super.addToLevel();
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.addProjectile(this);
+
+        // 触发体只在服务端参与判定，客户端建出来的刚体位姿无人刷新、判定无人查询
+        if (!level.isClientSide() && isInterceptable()) {
+            ProjectileHitBox box = new ProjectileHitBox(this);
+            this.hitBox = box;
+            // 预登记触发体自身的密钥，让攻击弹从出膛起就忽略自己的触发体
+            // （与 LauncherSubsystem 预登记发射器零件同一手法）。属主是 ProjectileHitBox、
+            // 区域标识取默认实现的 null，因此密钥恒为 PenetrationKey(box, null)
+            pm.markPenetrated(getId(), new PenetrationKey(box, null));
+        }
+    }
+
+    /**
+     * 本弹种是否可被拦截——即是否持有运动学触发体。
+     * <p>
+     * 判据只有一条：内容包是否配置了 {@code vulnerability}。触发体创建、HUD 与验证
+     * 都走这个入口，避免"是否持有触发体"与"是否配了 vulnerability"两处判据漂移。
+     *
+     * @return true 表示本弹可被其他投射物或外部攻击命中
+     */
+    public boolean isInterceptable() {
+        return projectileType.getVulnerability() != null;
+    }
+
+    /** @return 运动学触发体；未配置 {@code vulnerability} 的弹种与客户端为 null */
+    @Nullable
+    public ProjectileHitBox getHitBox() {
+        return hitBox;
     }
 
     public BallisticProjectileType getProjectileType() {
@@ -221,13 +258,19 @@ public class BallisticProjectile extends DestroyableObject
     }
 
     /**
-     * 覆写：先从 {@link ProjectileManager} 的 SoA 中标记摘除，再走基类销毁。
+     * 覆写：先摘除运动学触发体，再从 {@link ProjectileManager} 的 SoA 中标记摘除，
+     * 最后走基类销毁。
      * <p>
      * 命中销毁、寿命到期、超时清理三条路径最终都会经过这里，
-     * 因此 SoA 不会残留死条目。
+     * 因此 SoA 不会残留死条目，物理世界也不会残留可被射线命中的幽灵触发体。
      */
     @Override
     public void destroy() {
+        ProjectileHitBox box = hitBox;
+        if (box != null) {
+            box.remove();
+            hitBox = null;
+        }
         ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
         if (pm != null) pm.removeProjectile(getId());
         super.destroy();

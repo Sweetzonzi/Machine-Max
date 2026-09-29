@@ -29,8 +29,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.collision.PhysicsSweepTestResult;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
@@ -124,6 +128,44 @@ public class ProjectileManager {
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
+    // ========== 判定分趟用的单步临时数据（仅服务端 updateProjectiles 使用） ==========
+
+    /**
+     * 本物理步积分前的位置（世界坐标，JME）。
+     * <p>
+     * 命中判定拆成三趟后，射线起点（线段前段）要在判定趟里取回，而位置在推进趟就已
+     * 写进 {@link #posX} 等数组，因此这里保留一步的旧值。每步重写，不参与对外语义。
+     */
+    private float[] prevPosX, prevPosY, prevPosZ;
+
+    /**
+     * 本物理步是否推进过位置。
+     * <p>
+     * 命中待决并在本步消费到"穿透"结果的条目只改速度、不推进位置，
+     * 判定趟据此跳过它们——否则会以零长度线段发起射线检测。
+     */
+    private boolean[] stepAdvanced;
+
+    /** 触发体位姿同步时复用的坐标缓冲，避免热路径分配 */
+    private final Vector3f triggerPos = new Vector3f();
+
+    // ========== 凸体扫掠（hit_detection = sweep）复用的查询资源 ==========
+
+    /**
+     * 扫掠球形状缓存：弹种 → 以自身口径为半径的球。
+     * <p>
+     * 形状是不可变几何，按弹种缓存一次即可，与触发体半径同源（口径 / 2000 m）。
+     * 仅在物理线程访问。
+     */
+    private final Map<BallisticProjectileType, SphereCollisionShape> sweepShapes = new HashMap<>();
+
+    /** 扫掠结果列表（复用，避免每发每步分配） */
+    private final List<PhysicsSweepTestResult> sweepResults = new ArrayList<>();
+
+    /** 扫掠起止变换（复用） */
+    private final Transform sweepFrom = new Transform();
+    private final Transform sweepTo = new Transform();
+
     // ========== Entity 兼容层数组 ==========
     /**
      * Entity 因区块卸载丢失，待重建标志。
@@ -142,6 +184,22 @@ public class ProjectileManager {
      * Entity 重建检查间隔（tick）。每 N tick 遍历一次 needsEntityRecreate。
      */
     private static final int RECREATE_CHECK_INTERVAL = 10;
+
+    /**
+     * 凸体扫掠允许的穿透容差（物理单位，本项目 1 单位 = 1 m）。
+     * <p>
+     * 允许起步相位存在不超过该深度的相互侵入，避免形状 margin 造成的即刻假接触。
+     * 该值远小于触发体半径（155mm 弹为 0.0775 m），不会把真正错过的目标算成命中。
+     */
+    private static final float ALLOWED_CCD_PENETRATION = 0.05f;
+
+    /**
+     * 凸体扫掠的最小起止距离（物理单位）。
+     * <p>
+     * 底层的 Bullet 扫掠要求起止位置至少相距该距离；本物理步位移不足时回退质心射线
+     * （宽相位与窄相位都退化，扫掠无意义）。
+     */
+    private static final float MIN_SWEEP_DISTANCE = 0.4f;
 
     /**
      * 重建检查计数器
@@ -259,6 +317,10 @@ public class ProjectileManager {
         burnTime = new float[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
+        prevPosX = new float[capacity];
+        prevPosY = new float[capacity];
+        prevPosZ = new float[capacity];
+        stepAdvanced = new boolean[capacity];
         typeCache = new BallisticProjectileType[0];
     }
 
@@ -585,8 +647,9 @@ public class ProjectileManager {
                 needsEntityRecreate[i] = false;
                 DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (obj != null) {
-                    obj.isRemoved = true;
-                    objMap.remove(objId[i]);
+                    // 走 destroy() 统一出列：触发体的摘除只依赖 destroy() 一处。
+                    // removeDestroyableObject 与 removeProjectile 重复执行无副作用，因此这里幂等
+                    obj.destroy();
                 }
                 continue;
             }
@@ -977,27 +1040,28 @@ public class ProjectileManager {
     }
 
     /**
-     * 批量更新所有活跃质点投射物（仅质点，刚体由 Bullet 管理）。
+     * 批量更新所有活跃投射物（仅服务端；客户端由 {@link #clientExtrapolate()} 外推）。
      * <p>
-     * 每个物理步对每个活跃质点执行：
+     * 每个物理步分三趟执行：
      * <ol>
-     *   <li>清理死条（被主线程 {@link #tickAndPreTick()} 标记的）</li>
-     *   <li>暂停恢复：若投射物在等待主线程命中结果，消费结果并决定飞/停</li>
-     *   <li>半隐式 Euler 积分（重力 + 空气阻力）</li>
-     *   <li>JME {@code rayTest} 碰撞检测</li>
-     *   <li>穿透去重检查（{@link PenetrationKey}）</li>
-     *   <li>命中处理 — 分层策略：
-     *     <ul>
-     *       <li>地形：永远停止</li>
-     *       <li>SubPart / 非实体 BFHurtTarget：同步调用 dealDamage，
-     *           由 BallisticsFramework 管线完成穿透判定并回调写入 {@link BallisticProjectile.AfterHitResult}，
-     *           Manager 立即消费</li>
-     *       <li>Entity BFHurtTarget：通过 {@code BFDamageApi.resolveHitTarget} 决议目标，
-     *           暂停投射物，提交主线程执行 hurt，下一物理帧消费结果</li>
-     *       <li>非协议感知 Entity → 汇入统一异步管线，onNormalEntityHit 回调决定去留</li>
-     *     </ul>
-     *   </li>
+     *   <li><b>趟一（推进）</b>——清理死条目、暂停恢复、半隐式 Euler 积分
+     *       （重力 + 阻力 + 推力 + 制导）并写回 SoA</li>
+     *   <li><b>趟二（同步）</b>——把持有运动学触发体的条目按 SoA 位姿刷新物理体积。
+     *       必须在任何命中查询之前全部完成，否则攻击弹会按目标上一物理步的位置求交</li>
+     *   <li><b>趟三（判定）</b>——逐条发起命中查询（射线或凸体扫掠）、收集条目、
+     *       按 hitFraction 排序后统一处理命中</li>
      * </ol>
+     * 趟三的命中处理为分层策略：
+     * <ul>
+     *   <li>地形：永远停止（可穿透则按能量法衰减速度继续飞行）</li>
+     *   <li>零件 / 投射物触发体 / 非实体 BFHurtTarget：经
+     *       {@code BFDamageApi.resolveHitTarget} 解析出实际目标后同步调用 dealDamage，
+     *       由 BallisticsFramework 管线完成穿透判定并回调写入
+     *       {@link BallisticProjectile.AfterHitResult}，Manager 立即消费</li>
+     *   <li>Entity BFHurtTarget：通过 {@code BFDamageApi.resolveHitTarget} 决议目标，
+     *       暂停投射物，提交主线程执行 hurt，下一物理帧消费结果</li>
+     *   <li>非协议感知 Entity → 汇入统一异步管线，onNormalEntityHit 回调决定去留</li>
+     * </ul>
      * <p>
      * 优化项：
      * <ul>
@@ -1026,14 +1090,22 @@ public class ProjectileManager {
         Vector3f hitPointJme = this.hitPointJme;
         Vector3f hitNormalJme = this.hitNormalJme;
 
+        // 复位本步推进标记。整段清零而非逐条设置：swapRemove 会把末尾元素搬到当前下标，
+        // 若沿用上一步的标记，被搬入的条目会在判定趟被误当成"本步已推进"。
+        // 清整个数组而非前 count 个：本物理步新增的条目（发射器在 prePhysicsTick 中开火）
+        // 落在 count 之外，同样不能带入旧标记
+        Arrays.fill(stepAdvanced, false);
+
+        // ============================================================
+        //  趟一：推进（暂停恢复 → 制导/推力/阻力/重力积分 → 写回 SoA）
+        // ============================================================
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
 
             DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
 
-            // ============================================================
-            //  暂停恢复：消费主线程写入的命中结果
-            // ============================================================
+            // 暂停恢复：消费主线程写入的命中结果。必须排在积分之前——
+            // 消费后才知道本步是销毁、改速，还是照常积分
             if (destroyable instanceof BallisticProjectile proj && proj.isHitPending()) {
                 BallisticProjectile.AfterHitResult result = proj.consumePendingHitResult();
                 if (result == null) continue;
@@ -1062,6 +1134,12 @@ public class ProjectileManager {
                 }
                 continue;
             }
+
+            // 记录积分前位置：位置在本步推进后，判定趟要靠它取回射线线段的起点
+            prevPosX[i] = posX[i];
+            prevPosY[i] = posY[i];
+            prevPosZ[i] = posZ[i];
+            stepAdvanced[i] = true;
 
             // 从类型缓存读取弹道参数
             BallisticProjectileType type = types[typeIndex[i]];
@@ -1125,12 +1203,33 @@ public class ProjectileManager {
             velY[i] += (gravityAccY + dragAccY + guideAccY + thrustAccY) * dt;
             velZ[i] += (dragAccZ + guideAccZ + thrustAccZ) * dt;
 
-            float prevX = posX[i], prevY = posY[i], prevZ = posZ[i];
             posX[i] += velX[i] * dt;
             posY[i] += velY[i] * dt;
             posZ[i] += velZ[i] * dt;
+        }
 
-            rayFrom.set(prevX, prevY, prevZ);
+        // ============================================================
+        //  趟二：同步运动学触发体位姿
+        //  必须在本步的任何射线检测之前全部写完，否则攻击弹会按目标上一物理步的
+        //  位置求交——100 Hz 下 10 ms，两侧各 1000 m/s 的迎头拦截对应约 20 m 偏差
+        // ============================================================
+        for (int i = 0; i < count; i++) {
+            if (!alive[i] || !stepAdvanced[i]) continue;
+            if (!(objMap != null && objMap.get(objId[i]) instanceof BallisticProjectile proj)) continue;
+            ProjectileHitBox hitBox = proj.getHitBox();
+            if (hitBox == null) continue;
+            hitBox.syncPosition(triggerPos.set(posX[i], posY[i], posZ[i]));
+        }
+
+        // ============================================================
+        //  趟三：命中判定与分派
+        // ============================================================
+        for (int i = 0; i < count; i++) {
+            if (!alive[i] || !stepAdvanced[i]) continue;
+
+            DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
+
+            rayFrom.set(prevPosX[i], prevPosY[i], prevPosZ[i]);
             rayTo.set(posX[i], posY[i], posZ[i]);
 
             // 射线方向分量，用于精确计算命中点（而非取方块中心）
@@ -1138,63 +1237,29 @@ public class ProjectileManager {
             float dy = rayTo.y - rayFrom.y;
             float dz = rayTo.z - rayFrom.z;
 
-            List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
-
             // ===== 阶段1：收集所有命中条目到统一列表 =====
             List<HitEntry> allHits = new ArrayList<>();
 
-            for (PhysicsRayTestResult result : results) {
-                PhysicsCollisionObject collObj = result.getCollisionObject();
-                if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
-                        && collObj.getCollisionGroup() != CollisionGroups.TERRAIN
-                        && collObj.getCollisionGroup() != CollisionGroups.PAWN)
-                    continue;
-                if (!(collObj instanceof PhysicsRigidBody body)) continue;
-
-                Object owner = PhysicsBodyExtensionKt.getOwner(body);
-
-                float hitFrac = result.getHitFraction();
-                hitPointJme.set(
-                        rayFrom.x + (rayTo.x - rayFrom.x) * hitFrac,
-                        rayFrom.y + (rayTo.y - rayFrom.y) * hitFrac,
-                        rayFrom.z + (rayTo.z - rayFrom.z) * hitFrac);
-                Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
-                result.getHitNormalLocal(hitNormalJme);
-                Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
-
-                if (owner instanceof PhysicsChunkSection terrain) {
-                    // 地形：DDA遍历展开为逐方块条目，每个方块携带独立的hitFraction和面法线
-                    List<BlockHitEntry> blocks = walkBlocksAlongRay(rayFrom, rayTo, terrain);
-                    for (BlockHitEntry be : blocks) {
-                        PenetrationKey pk = new PenetrationKey(terrain, be.blockPos().toShortString());
-                        // 通过 hitFraction 线性插值计算射线进入该方块的精确命中点
-                        float t = be.hitFraction();
-                        Vec3 bp = new Vec3(rayFrom.x + dx * t, rayFrom.y + dy * t, rayFrom.z + dz * t);
-                        // 使用DDA中射线-包围盒求交得出的精确法线
-                        Vector3f bnJme = be.hitNormal();
-                        Vec3 bn = (bnJme.x == 0 && bnJme.y == 0 && bnJme.z == 0)
-                                ? hitNormalMc  // 安全回退（理论上不会发生）
-                                : new Vec3(bnJme.x, bnJme.y, bnJme.z);
-                        allHits.add(new HitEntry(be.hitFraction(), result, body, terrain,
-                                be.blockPos(), terrain, bp, bn, pk));
-                    }
-                } else if (owner == null) {
-                    // null owner：无属主命中，作为停止条目参与排序
-                    allHits.add(new HitEntry(hitFrac, result, body, null,
-                            null, null, hitPointMc, hitNormalMc, null));
-                } else if (owner instanceof MMPartEntity || owner instanceof MMProjectileEntity) {
-                    // 渲染代理，跳过
-                } else {
-                    // 非地形命中（实体/零件）：收集阶段做穿透去重
-                    PenetrationKey pk = PenetrationKey.fromCollision(collObj, result.triangleIndex());
-                    if (pk != null) {
-                        Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
-                        if (penetrated != null && penetrated.contains(pk)) {
-                            continue; // 已穿透，跳过此非地形命中
-                        }
-                    }
-                    allHits.add(new HitEntry(hitFrac, result, body, owner,
-                            null, null, hitPointMc, hitNormalMc, pk));
+            BallisticProjectileType type = types[typeIndex[i]];
+            float stepLength = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (type.usesSweep() && stepLength >= MIN_SWEEP_DISTANCE) {
+                // 凸体扫掠：命中阈值 = 攻击弹半径 + 目标半径。
+                // 本物理步位移不足最小扫掠距离时回退质心射线
+                sweepFrom.setTranslation(rayFrom);
+                sweepTo.setTranslation(rayTo);
+                for (PhysicsSweepTestResult result : world.sweepTest(
+                        sweepShapeFor(type), sweepFrom, sweepTo, sweepResults, ALLOWED_CCD_PENETRATION)) {
+                    result.getHitNormalLocal(hitNormalJme);
+                    collectHitEntry(i, allHits, result.getCollisionObject(),
+                            result.getHitFraction(), result.triangleIndex(),
+                            rayFrom, rayTo, dx, dy, dz);
+                }
+            } else {
+                for (PhysicsRayTestResult result : world.rayTest(rayFrom, rayTo)) {
+                    result.getHitNormalLocal(hitNormalJme);
+                    collectHitEntry(i, allHits, result.getCollisionObject(),
+                            result.getHitFraction(), result.triangleIndex(),
+                            rayFrom, rayTo, dx, dy, dz);
                 }
             }
 
@@ -1204,7 +1269,7 @@ public class ProjectileManager {
             // 尤其是水平射线 + 同 Y 层贪心合并大 BoxShape 场景下，rayTest 会完全 miss。
             // 此时通过 DDA 直接遍历射线路径上的方块，手动构造 HitEntry 补充地形命中条目。
             // 实体命中仍由上方 rayTest 正常检测，不受影响。
-            BlockPos fromBP = BlockPos.containing(prevX, prevY, prevZ);
+            BlockPos fromBP = BlockPos.containing(prevPosX[i], prevPosY[i], prevPosZ[i]);
             var terrainMgr = physicsLevel.getTerrainManager();
             if (terrainMgr.getBlockSnapshotAt(fromBP) != null) {
                 // 射线起点在地形方块内部，获取起点所在 section 并做 DDA 遍历
@@ -1223,8 +1288,7 @@ public class ProjectileManager {
                         Vec3 bn = (bnJme.x == 0 && bnJme.y == 0 && bnJme.z == 0)
                                 ? ddaNormal  // 安全回退（理论上不会发生）
                                 : new Vec3(bnJme.x, bnJme.y, bnJme.z);
-                        allHits.add(new HitEntry(be.hitFraction(), null,
-                                startSection.getPhysicsBody(), startSection,
+                        allHits.add(new HitEntry(be.hitFraction(), -1, startSection,
                                 be.blockPos(), startSection, bp, bn, pk));
                     }
                 }
@@ -1298,7 +1362,7 @@ public class ProjectileManager {
                     projectileObjIds.remove(objId[i]);
                     shouldRemove = true;
                 } else {
-                    // ---- 非地形命中（实体/零件） ----
+                    // ---- 非地形命中（零件 / 投射物触发体 / 实体） ----
                     if (!(destroyable instanceof BallisticProjectile projectile)) {
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
@@ -1308,34 +1372,49 @@ public class ProjectileManager {
 
                     float currentPen = projectile.calculateCurrentPenetration();
                     float currentDmg = projectile.calculateCurrentDamage();
-                    PhysicsRayTestResult result = entry.rayResult();
+                    int triangleIndex = entry.triangleIndex();
                     Vec3 hp = entry.hitPoint();
                     Vec3 hn = entry.hitNormal();
                     PenetrationKey pk = entry.penKey();
+                    Object owner = entry.owner();
 
-                    switch (entry.owner()) {
-                        case SubPart subPart -> {
-                            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
-                            if (hitBox.isActive()) {
+                    // 泛化解析：触发体→投射物、SubPart→零件、协议实体→其自身。
+                    // 只对协议感知的属主发起——resolveHitTarget 对"两者都不是"的属主返回 null，
+                    // 而那个 null 的语义是"假阳性，继续飞行"，与"不是协议目标、应走原版实体管线"是两回事
+                    BFHitResolveResult resolved = BFDamageApi.isProtocolAware(owner)
+                            ? BFDamageApi.resolveHitTarget(owner, hp,
+                                    new Vec3(velX[i], velY[i], velZ[i]).scale(1.0 / 20.0))
+                            : null;
+
+                    if (resolved != null) {
+                        BFHurtTarget target = resolved.actualTarget();
+                        if (target instanceof SubPart subPart) {
+                            HitBox hitBox = subPart.getHitBox(triangleIndex);
+                            if (hitBox != null && hitBox.isActive()) {
                                 shouldRemove = applyAfterHitResult(i, projectile,
                                         projectile.onPartHit(level, subPart,
                                                 currentPen, currentDmg, hp, hn, hitBox),
                                         hp, hn, pk);
                             }
-                        }
-                        case BFHurtTarget bfTarget when !(entry.owner() instanceof Entity) -> {
-                            shouldRemove = applyAfterHitResult(i, projectile,
-                                    projectile.onPartHit(level, bfTarget,
-                                            currentPen, currentDmg, hp, hn, null),
-                                    hp, hn, pk);
-                        }
-                        case Entity entity -> {
+                        } else if (target instanceof Entity entity) {
                             if (entity.isRemoved() || (entity instanceof LivingEntity living && living.isDeadOrDying()))
                                 continue;
                             shouldRemove = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
+                        } else {
+                            shouldRemove = applyAfterHitResult(i, projectile,
+                                    projectile.onPartHit(level, target,
+                                            currentPen, currentDmg, hp, hn, null),
+                                    hp, hn, pk);
                         }
-                        default -> {}
+                    } else if (owner instanceof Entity entity) {
+                        // 非协议实体（生物、矿车、船等）与"协议感知但解析失败"的假阳性都交回实体管线——
+                        // onEntityHit 内部会再判一次 isProtocolAware，自行决定同步/异步与原版回退。
+                        // 这一路承担着"非协议实体回退原版伤害"的职责，不能被解析分支吞掉
+                        if (entity.isRemoved() || (entity instanceof LivingEntity living && living.isDeadOrDying()))
+                            continue;
+                        shouldRemove = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
                     }
+                    // 无属主或无法分派：跳过
                 }
             }
 
@@ -1354,6 +1433,96 @@ public class ProjectileManager {
                 swapRemove(i);
             }
         }
+    }
+
+    /**
+     * 把一个命中查询结果归一化为 {@link HitEntry} 并加入收集列表。
+     * <p>
+     * {@link PhysicsRayTestResult} 与 {@link PhysicsSweepTestResult} 的字段逐项对应，
+     * 因此这里只接收已提取出的字段，不关心查询原语。命中法线由调用方写入
+     * {@link #hitNormalJme}。
+     *
+     * @param i             SoA 索引（穿透去重按投射物分开）
+     * @param allHits       收集列表
+     * @param collObj       命中的碰撞对象
+     * @param hitFrac       命中比例
+     * @param triangleIndex 三角面 / 子形状索引（凸体未定义，约定 -1）
+     * @param rayFrom       本步线段起点
+     * @param rayTo         本步线段终点
+     * @param dx            线段分量 X
+     * @param dy            线段分量 Y
+     * @param dz            线段分量 Z
+     */
+    private void collectHitEntry(int i, List<HitEntry> allHits, PhysicsCollisionObject collObj,
+                                 float hitFrac, int triangleIndex,
+                                 Vector3f rayFrom, Vector3f rayTo, float dx, float dy, float dz) {
+        // 命中查询不按碰撞掩码过滤，可见范围由这里的白名单决定。
+        // PROJECTILE 是投射物的运动学触发体——可被拦截弹种在物理世界中的体积
+        int group = collObj.getCollisionGroup();
+        if (group != CollisionGroups.PHYSICS_BODY
+                && group != CollisionGroups.TERRAIN
+                && group != CollisionGroups.PAWN
+                && group != CollisionGroups.PROJECTILE)
+            return;
+        if (!(collObj instanceof PhysicsRigidBody body)) return;
+
+        Object owner = PhysicsBodyExtensionKt.getOwner(body);
+
+        hitPointJme.set(
+                rayFrom.x + (rayTo.x - rayFrom.x) * hitFrac,
+                rayFrom.y + (rayTo.y - rayFrom.y) * hitFrac,
+                rayFrom.z + (rayTo.z - rayFrom.z) * hitFrac);
+        Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
+        Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
+
+        if (owner instanceof PhysicsChunkSection terrain) {
+            // 地形：DDA遍历展开为逐方块条目，每个方块携带独立的hitFraction和面法线
+            List<BlockHitEntry> blocks = walkBlocksAlongRay(rayFrom, rayTo, terrain);
+            for (BlockHitEntry be : blocks) {
+                PenetrationKey pk = new PenetrationKey(terrain, be.blockPos().toShortString());
+                // 通过 hitFraction 线性插值计算射线进入该方块的精确命中点
+                float t = be.hitFraction();
+                Vec3 bp = new Vec3(rayFrom.x + dx * t, rayFrom.y + dy * t, rayFrom.z + dz * t);
+                // 使用DDA中射线-包围盒求交得出的精确法线
+                Vector3f bnJme = be.hitNormal();
+                Vec3 bn = (bnJme.x == 0 && bnJme.y == 0 && bnJme.z == 0)
+                        ? hitNormalMc  // 安全回退（理论上不会发生）
+                        : new Vec3(bnJme.x, bnJme.y, bnJme.z);
+                allHits.add(new HitEntry(be.hitFraction(), triangleIndex, terrain,
+                        be.blockPos(), terrain, bp, bn, pk));
+            }
+        } else if (owner == null) {
+            // null owner：无属主命中，作为停止条目参与排序
+            allHits.add(new HitEntry(hitFrac, triangleIndex, null,
+                    null, null, hitPointMc, hitNormalMc, null));
+        } else if (owner instanceof MMPartEntity || owner instanceof MMProjectileEntity) {
+            // 渲染代理，跳过
+        } else {
+            // 非地形命中（实体/零件/投射物触发体）：收集阶段做穿透去重
+            PenetrationKey pk = PenetrationKey.fromCollision(collObj, triangleIndex);
+            if (pk != null) {
+                Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
+                if (penetrated != null && penetrated.contains(pk)) {
+                    return; // 已穿透，跳过此非地形命中
+                }
+            }
+            allHits.add(new HitEntry(hitFrac, triangleIndex, owner,
+                    null, null, hitPointMc, hitNormalMc, pk));
+        }
+    }
+
+    /**
+     * 按弹种取扫掠球形状（以自身口径为半径），首次访问时创建并缓存。
+     * <p>
+     * 形状是不可变几何，与触发体半径同源，因此每个弹种只需要一个实例。
+     * <p>
+     * <b>调用线程：</b>物理线程。
+     *
+     * @param type 弹种
+     * @return 该弹种的扫掠球形状
+     */
+    private SphereCollisionShape sweepShapeFor(BallisticProjectileType type) {
+        return sweepShapes.computeIfAbsent(type, t -> new SphereCollisionShape(t.getRadius()));
     }
 
     /**
@@ -2009,26 +2178,30 @@ public class ProjectileManager {
     }
 
     /**
-     * 统一命中条目。收集阶段由rayTest非地形结果或DDA地形遍历展开产生，
+     * 统一命中条目。收集阶段由命中查询的非地形结果或 DDA 地形遍历展开产生，
      * 按 hitFraction 排序后统一逐条处理。
      * <p>
-     * rayResult 和 body 可为 null——当射线起点在地形内部时，rayTest 无法检测到命中，
-     * 此时由 DDA 遍历直接构造 HitEntry，不经过 Bullet 射线检测结果。
+     * 字段是 {@link PhysicsRayTestResult} 与
+     * {@code PhysicsSweepTestResult} 的归一化结果——两者逐项对应（碰撞对象、命中比例、
+     * 命中法线、三角面索引），因此命中分派、穿透去重与 {@code subPart.getHitBox(...)}
+     * 都不需要区分查询来源。两个结果类都只有私有构造器、由原生代码实例化，
+     * 所以这里只保存字段，不保存结果对象本身。
+     * <p>
+     * 当射线起点在地形内部时，命中查询检测不到地形命中，此时由 DDA 遍历直接构造
+     * HitEntry，三角面索引取 -1。
      *
-     * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
-     * @param rayResult   原始射线检测结果（DDA补充条目为null）
-     * @param body        碰撞刚体（DDA补充条目为null）
-     * @param owner       碰撞体所有者（PhysicsChunkSection / SubPart / Entity / BFHurtTarget）
-     * @param blockPos    地形方块位置（仅地形命中非null）
-     * @param terrain     地形section引用（仅地形命中非null）
-     * @param hitPoint    命中点世界坐标（MC Vec3）
-     * @param hitNormal   命中法线（MC Vec3）
-     * @param penKey      穿透去重密钥（可为null）
+     * @param hitFraction   沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
+     * @param triangleIndex 三角面 / 子形状索引（凸体未定义，约定 -1）
+     * @param owner         碰撞体所有者（PhysicsChunkSection / SubPart / Entity / ProjectileHitBox）
+     * @param blockPos      地形方块位置（仅地形命中非null）
+     * @param terrain       地形section引用（仅地形命中非null）
+     * @param hitPoint      命中点世界坐标（MC Vec3）
+     * @param hitNormal     命中法线（MC Vec3）
+     * @param penKey        穿透去重密钥（可为null）
      */
     private record HitEntry(
             float hitFraction,
-            @Nullable PhysicsRayTestResult rayResult,
-            @Nullable PhysicsRigidBody body,
+            int triangleIndex,
             Object owner,
             @Nullable BlockPos blockPos,
             @Nullable PhysicsChunkSection terrain,
@@ -2073,6 +2246,10 @@ public class ProjectileManager {
             targetZ[index] = targetZ[last];
             burnTime[index] = burnTime[last];
             needsEntityRecreate[index] = needsEntityRecreate[last];
+            prevPosX[index] = prevPosX[last];
+            prevPosY[index] = prevPosY[last];
+            prevPosZ[index] = prevPosZ[last];
+            stepAdvanced[index] = stepAdvanced[last];
             // ★ entities 数组交换：将 last 位置的引用搬到 index 位置
             //    注意：last 位置的 entity 可能已在上一次 swapRemove 中被标记为待清理
             //    但尚未被主线程处理，此时将其转移到 index 位置继续等待即可
@@ -2105,6 +2282,10 @@ public class ProjectileManager {
         burnTime = Arrays.copyOf(burnTime, newCap);
         needsEntityRecreate = Arrays.copyOf(needsEntityRecreate, newCap);
         entities = Arrays.copyOf(entities, newCap);
+        prevPosX = Arrays.copyOf(prevPosX, newCap);
+        prevPosY = Arrays.copyOf(prevPosY, newCap);
+        prevPosZ = Arrays.copyOf(prevPosZ, newCap);
+        stepAdvanced = Arrays.copyOf(stepAdvanced, newCap);
         capacity = newCap;
     }
 }

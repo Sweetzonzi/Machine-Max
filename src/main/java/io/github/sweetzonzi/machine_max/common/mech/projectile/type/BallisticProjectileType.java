@@ -72,10 +72,18 @@ public class BallisticProjectileType extends ProjectileType {
     @Nullable
     private final VulnerabilityProperties vulnerability;
 
+    /**
+     * 命中检测原语 — 本弹种作为<b>攻击者</b>时用哪种查询发现目标。
+     * <p>
+     * JSON 中为可选字段 {@code hit_detection}，缺省 {@link HitDetection#RAY}。
+     * 与 {@link #vulnerability} 正交：前者决定"自己如何探测别人"，后者决定"别人能否打掉自己"。
+     */
+    private final HitDetection hitDetection;
+
     /** 静态扩展数据缓存（口径、质量等不变信息），惰性初始化，命中时 copy 后追加动态值 */
     private volatile BFDamageExtensions baseExtensions;
 
-    // ==================== CODEC（10 字段，远低于 16 上限） ====================
+    // ==================== CODEC（11 字段，远低于 16 上限） ====================
 
     /**
      * Mojang MapCodec：将 JSON 反序列化为 {@link BallisticProjectileType}。
@@ -95,6 +103,8 @@ public class BallisticProjectileType extends ProjectileType {
         // 若用 xmap 把它映射成 null，null 会穿过 DFU 的 DataResult 触发 NPE（见 TurretDriverSubsystemStaticAttr 同款写法）
         VulnerabilityProperties.CODEC.optionalFieldOf("vulnerability")
             .forGetter(attr -> Optional.ofNullable(attr.vulnerability)),
+        HitDetection.CODEC.optionalFieldOf("hit_detection", HitDetection.RAY)
+            .forGetter(BallisticProjectileType::getHitDetection),
         // 可选制导配置（形状同 warheads：type 字段直接分派到律的 codec）
         GuidanceLaw.CODEC.optionalFieldOf("guidance")
             .forGetter(attr -> Optional.ofNullable(attr.guidance)),
@@ -104,9 +114,9 @@ public class BallisticProjectileType extends ProjectileType {
             .forGetter(ProjectileType::getVisual),
         ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
             .forGetter(ProjectileType::getSounds)
-    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, vulnerability, guidance, warheads, visual, sounds) ->
+    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, vulnerability, hitDetection, guidance, warheads, visual, sounds) ->
         new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal,
-            vulnerability.orElse(null), guidance.orElse(null), warheads, visual, sounds)));
+            vulnerability.orElse(null), hitDetection, guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
 
@@ -117,6 +127,7 @@ public class BallisticProjectileType extends ProjectileType {
         ExternalProperties external,
         TerminalProperties terminal,
         @Nullable VulnerabilityProperties vulnerability,
+        HitDetection hitDetection,
         @Nullable GuidanceLaw guidance,
         List<WorldEffect> warheads,
         VisualProperties visual,
@@ -126,6 +137,7 @@ public class BallisticProjectileType extends ProjectileType {
         this.external = external;
         this.terminal = terminal;
         this.vulnerability = vulnerability;
+        this.hitDetection = hitDetection;
         this.guidance = guidance;
         this.warheads = warheads;
     }
@@ -142,6 +154,15 @@ public class BallisticProjectileType extends ProjectileType {
      */
     public boolean hasGuidance() {
         return guidance != null;
+    }
+
+    /**
+     * 本弹种是否用凸体扫掠而非质心射线做命中查询。
+     *
+     * @return true 表示 {@code hit_detection} 为 {@link HitDetection#SWEEP}
+     */
+    public boolean usesSweep() {
+        return hitDetection == HitDetection.SWEEP;
     }
 
     // ==================== 外弹道委托（→ ExternalProperties） ====================
@@ -324,6 +345,57 @@ public class BallisticProjectileType extends ProjectileType {
     }
 
     // ==================== 嵌套类（运动模型专属属性） ====================
+
+    /**
+     * 命中检测原语。
+     * <p>
+     * 两种取值的差别只在"攻击弹自身半径是否计入命中阈值"：
+     * <ul>
+     *   <li>{@link #RAY}——攻击弹的<b>质心</b>沿本物理步线段扫掠，零厚度，
+     *       命中阈值只有目标半径；与地形 DDA、穿透去重、碰撞箱识别全部兼容，开销最低</li>
+     *   <li>{@link #SWEEP}——以攻击弹自身半径的球做凸体扫掠，命中阈值为
+     *       攻击弹半径 + 目标半径，适合"大弹打小弹"这类不能忽略自身截面的场合；
+     *       每次查询带形状，宽相比射线贵，且起止距离须 ≥ 0.4 物理单位
+     *       （不足时调用方回退射线）</li>
+     * </ul>
+     * 两者不是互斥的两套管线：结果字段逐项对应，归一化后喂入同一套命中分派。
+     */
+    public enum HitDetection {
+
+        /** 质心射线 */
+        RAY("ray"),
+
+        /** 自身半径的凸体扫掠 */
+        SWEEP("sweep");
+
+        private final String serializedName;
+
+        HitDetection(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        public String getSerializedName() {
+            return serializedName;
+        }
+
+        /**
+         * 从 JSON 字符串转换为枚举。
+         *
+         * @param name 序列化名（{@code "ray"} / {@code "sweep"}）
+         * @return 对应的枚举值
+         * @throws IllegalArgumentException 不匹配时抛出（由 ProjectileModule 捕获并记为内容包加载错误）
+         */
+        public static HitDetection fromString(String name) {
+            return switch (name) {
+                case "ray" -> RAY;
+                case "sweep" -> SWEEP;
+                default -> throw new IllegalArgumentException("未知命中检测原语: " + name);
+            };
+        }
+
+        public static final Codec<HitDetection> CODEC =
+            Codec.STRING.xmap(HitDetection::fromString, HitDetection::getSerializedName);
+    }
 
     /**
      * 受击属性 — 本弹种作为目标被命中时的护甲与结构血量。

@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -46,6 +47,17 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Getter
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class LivingEntityEyesightAttachment implements PhysicsCollisionListener {
+
+    /**
+     * 视野射线忽略的碰撞组。
+     * <p>
+     * 射线查询本身不检查碰撞掩码（原生射线回调只覆写 {@code addSingleResult}），
+     * 可见范围完全由调用方决定，因此这里显式列出不应进入视线判定的组：
+     * 投射物的运动学触发体（{@link CollisionGroups#PROJECTILE}）只是供命中检测
+     * 使用的可探测体积，路过的投射物不应成为视线目标列表的一员。
+     */
+    private static final Set<Integer> EYESIGHT_IGNORED_GROUPS = Set.of(CollisionGroups.PROJECTILE);
+
     public final LivingEntity owner;
     public final PhysicsGhostObject trigger;
     private Vector3f startPos;
@@ -90,6 +102,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 for (PhysicsRayTestResult result : rayTestResults) {
                     PhysicsCollisionObject object = result.getCollisionObject();
                     if (object instanceof PhysicsRigidBody body
+                            && !EYESIGHT_IGNORED_GROUPS.contains(body.getCollisionGroup())
                             && PhysicsBodyExtensionKt.getOwner(body) != null
                             && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
