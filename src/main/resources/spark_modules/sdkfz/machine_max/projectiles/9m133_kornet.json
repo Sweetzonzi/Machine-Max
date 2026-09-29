@@ -1,5 +1,5 @@
 {
-  "type": "point",
+  "type": "ballistic",
   "tags": ["machine_max:caliber/152mm", "machine_max:ammo/atgm"],
   "max_lifetime": 25.0,
   "external": {

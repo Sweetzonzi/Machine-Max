@@ -1,5 +1,5 @@
 {
-  "type": "point",
+  "type": "ballistic",
   "tags": ["machine_max:caliber/20mm"],
   "max_lifetime": 3.0,
   "external": {

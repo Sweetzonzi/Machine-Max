@@ -11,10 +11,10 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
@@ -88,10 +88,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 待物理线程发射的弹药类型队列。
      * <p>
      * <b>生产者：</b>主线程 onTick（弹药消费循环）。<br>
-     * <b>消费者：</b>物理线程 {@link #onPrePhysicsTick()}（{@link #fireSingle(KineticProjectileType)}）。<br>
+     * <b>消费者：</b>物理线程 {@link #onPrePhysicsTick()}（{@link #fireSingle(BallisticProjectileType)}）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      */
-    private final ConcurrentLinkedQueue<KineticProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<BallisticProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
 
     // ——— 制导弹的目标推送（物理线程内闭环） ———
 
@@ -146,7 +146,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /** 膛内当前弹药类型。null = 空膛 */
     @Nullable
     @Getter
-    private KineticProjectileType chamberedType;
+    private BallisticProjectileType chamberedType;
 
     /**
      * 当前选中的供给者引用（由 WeaponController 的路由决策设置）。<br>
@@ -221,7 +221,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     public boolean receiveAmmo(ProjectileType type) {
         // 发射器只装填飞行弹丸；其它运动模型由各自的发射器处理
-        if (!(type instanceof KineticProjectileType kinetic)) return false;
+        if (!(type instanceof BallisticProjectileType kinetic)) return false;
         if (chamberedType == null && isActive()) {
             chamberedType = kinetic;
             reloading = false;
@@ -286,7 +286,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * @return true 表示装填成功
      */
     public boolean loadRound(ProjectileType type) {
-        if (!(type instanceof KineticProjectileType kinetic)) return false;
+        if (!(type instanceof BallisticProjectileType kinetic)) return false;
         if (chamberedType != null || !isActive()) return false;
         if (!canAccept(type)) return false;
         chamberedType = kinetic;
@@ -444,7 +444,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         if (supplier.isRoundReady(this)) {
             ProjectileType offered = supplier.consumeReadyRound(this);
-            if (offered instanceof KineticProjectileType kinetic && canAccept(offered)) {
+            if (offered instanceof BallisticProjectileType kinetic && canAccept(offered)) {
                 chamberedType = kinetic;
                 reloading = false;
                 return true;
@@ -512,7 +512,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.onPrePhysicsTick();
         if (getOwner() == null) return;
 
-        KineticProjectileType type;
+        BallisticProjectileType type;
         while ((type = pendingFires.poll()) != null) {
             fireSingle(type);
         }
@@ -532,7 +532,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *   <li>后坐力 {@code applyImpulse} 直接作用到发射平台刚体</li>
      * </ol>
      */
-    private void fireSingle(KineticProjectileType type) {
+    private void fireSingle(BallisticProjectileType type) {
         // ① 枪口位姿
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
@@ -563,7 +563,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             spreadMult = barrelAttr.getSpreadMultiplier(barrelModule.getDurabilityRatio());
             velMult *= barrelAttr.getMuzzleVelocityMultiplier(barrelModule.getDurabilityRatio());
         }
-        List<IProjectile> projectiles = type.fire(
+        List<BallisticProjectile> projectiles = type.fire(
             getLevel(), jmePos, direction,
             velMult,
             attr.staticAttribute.getBarrel().velocityBonus(),
@@ -580,7 +580,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             float tx = hasTarget ? (float) target.x : Float.NaN;
             float ty = hasTarget ? (float) target.y : Float.NaN;
             float tz = hasTarget ? (float) target.z : Float.NaN;
-            for (IProjectile p : projectiles) {
+            for (BallisticProjectile p : projectiles) {
                 int id = ((DestroyableObject) p).getId();
                 guidedObjIds.add(id);
                 pm.setGuidanceTarget(id, tx, ty, tz);
@@ -614,10 +614,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *
      * @param projectiles 本次出膛的投射物
      */
-    private void registerSelfExclusion(List<IProjectile> projectiles) {
+    private void registerSelfExclusion(List<BallisticProjectile> projectiles) {
         SubPart self = getSubPart();
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(getLevel());
-        for (IProjectile p : projectiles) {
+        for (BallisticProjectile p : projectiles) {
             int id = ((DestroyableObject) p).getId();
             for (HitBox hitBox : self.hitBoxes.values()) {
                 pm.markPenetrated(id, new PenetrationKey(self, hitBox.getAttr().getId()));
@@ -1053,7 +1053,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (data.contains("chambered_type")) {
             ResourceLocation key = ResourceLocation.parse(data.getString("chambered_type"));
             ProjectileType stored = ProjectileType.get(getLevel(), key);
-            chamberedType = stored instanceof KineticProjectileType kinetic ? kinetic : null;
+            chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
         } else {
             chamberedType = null;
         }

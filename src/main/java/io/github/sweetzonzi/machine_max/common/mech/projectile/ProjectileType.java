@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
@@ -25,16 +25,16 @@ import java.util.Map;
  * {@link #getVisual() 视觉}、{@link #getSounds() 音效}），并按 JSON 中的
  * {@code "type"} 字段经 {@link #CODEC dispatch} 分派到具体子类。
  * <p>
- * 运动模型专属字段（外弹道、终点效应等）下沉到子类，见 {@link KineticProjectileType}。
+ * 运动模型专属字段（外弹道、终点效应等）下沉到子类，见 {@link BallisticProjectileType}。
  * <p>
  * 所有弹道参数通过 {@link ProjectileModule} 加载至 {@link MMDynamicRes}，
- * 运行时由 {@link IProjectile#getProjectileType()} 获取。
+ * 运行时由 {@link BallisticProjectile#getProjectileType()} 获取。
  * <p>
  * 为向后兼容，平铺字段和所有嵌套字段的属性都提供委托 getter（如
  * {@link #getTracerColor()}、{@link #getFireSounds()} 等），调用方无需改动。
  * <p>
  * 字段语义参见设计文档《武器系统-组件化投射物与类型体系设计》§二、§三。
- * 速度-伤害模型见 {@link IProjectile} 中的幂函数实现。
+ * 速度-伤害模型见 {@link BallisticProjectile} 中的幂函数实现。
  */
 @Getter
 public abstract class ProjectileType {
@@ -78,7 +78,9 @@ public abstract class ProjectileType {
     // ==================== 类型分派 ====================
 
     /**
-     * JSON 中的类型名（{@code "point"} / {@code "rigid"} / 未来的 {@code "pulse"} / {@code "beam"}）。
+     * JSON 中的类型名。当前只有 {@code "ballistic"} 一种取值——它标识
+     * "SoA 积分 + 射线检测"这条运动模型；未来的光束族（{@code "pulse"} /
+     * {@code "beam"}）会在 {@link #CODEC} 中新增分支，届时才有对应的取值。
      * <p>
      * 既是 {@link #CODEC dispatch} 的路由键，也是编码时写回 {@code "type"} 字段的值。
      *
@@ -89,7 +91,7 @@ public abstract class ProjectileType {
     /**
      * Mojang Codec：按 {@code "type"} 字段分派到具体子类的 Codec。
      * <p>
-     * 分派表当前只注册 {@code point} / {@code rigid}（路由到 {@link KineticProjectileType}）；
+     * 分派表当前只注册 {@code ballistic}（路由到 {@link BallisticProjectileType}）；
      * 未注册的名字（如 {@code pulse} / {@code beam}）会在此处抛出异常，
      * 由 {@link ProjectileModule} 捕获并记录为内容包加载错误。
      */
@@ -97,7 +99,7 @@ public abstract class ProjectileType {
         "type",
         ProjectileType::getSerializedName,
         name -> switch (name) {
-            case "point", "rigid" -> KineticProjectileType.CODEC;
+            case "ballistic" -> BallisticProjectileType.CODEC;
             default -> throw new IllegalArgumentException("未知投射物类型: " + name);
         }
     );

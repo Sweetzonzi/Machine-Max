@@ -1,5 +1,5 @@
 {
-  "type": "point",
+  "type": "ballistic",
   "tags": ["machine_max:caliber/30mm", "machine_max:ammo/ap", "machine_max:ammo/apbc"],
   "max_lifetime": 5.0,
   "external": {

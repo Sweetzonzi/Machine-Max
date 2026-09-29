@@ -7,7 +7,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,12 +22,12 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 /**
  * 轻量 Entity 兼容层 —— 代表 SOA 中一个投射物在 Minecraft 世界的"投影"。
  * <p>
- * 自身不承担物理计算，位置/速度从关联的 {@link IProjectile} 对象拉取，
+ * 自身不承担物理计算，位置/速度从关联的 {@link BallisticProjectile} 对象拉取，
  * 仅作为模组兼容性外壳，使其他模组可通过 {@code instanceof Projectile}
  * 和 {@code level.getProjectiles()} 识别 Machine-Max 投射物。
  * <p>
  * 服务端由 {@link ProjectileManager#createProjectileEntity(int)} 创建并
- * 通过 {@link #bindToProjectile(IProjectile)} 直接持有对象引用；
+ * 通过 {@link #bindToProjectile(BallisticProjectile)} 直接持有对象引用；
  * 客户端通过 {@link IEntityWithComplexSpawn} 携带的 objId 反查
  * {@link ObjectManager#levelDestroyableObjects} 获取引用。
  * <p>
@@ -36,7 +36,7 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
  */
 public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn, EntityPatch {
     @Getter
-    private IProjectile projectile;
+    private BallisticProjectile projectile;
     private volatile boolean orphaned;
     private int projectileObjId = -1;
 
@@ -50,7 +50,7 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
     }
 
-    public void bindToProjectile(IProjectile projectile) {
+    public void bindToProjectile(BallisticProjectile projectile) {
         this.projectile = projectile;
         this.projectileObjId = ((DestroyableObject) projectile).getId();
         this.orphaned = false;
@@ -69,7 +69,7 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
     private void tryBindProjectile() {
         if (projectileObjId < 0 || projectile != null) return;
         DestroyableObject obj = ObjectManager.getDestroyableObject(level(), projectileObjId);
-        if (obj instanceof IProjectile proj) {
+        if (obj instanceof BallisticProjectile proj) {
             this.projectile = proj;
         }
     }
@@ -88,7 +88,7 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
             tryBindProjectile();
             if (projectile == null) {
                 if (tickCount > 100) {
-                    MachineMax.LOGGER.warn("MMProjectileEntity 未匹配到 IProjectile (objId={})，已移除", projectileObjId);
+                    MachineMax.LOGGER.warn("MMProjectileEntity 未匹配到 BallisticProjectile (objId={})，已移除", projectileObjId);
                     markOrphaned();
                 }
                 return;
@@ -147,8 +147,8 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
     }
 
     /**
-     * @return 投射物模型控制器，委托至关联的 {@link IProjectile#getModelController()}。
-     * 投射物本身（{@link PointProjectile} / {@link RigidProjectile}）实现
+     * @return 投射物模型控制器，委托至关联的 {@link BallisticProjectile#getModelController()}。
+     * 投射物本身（{@link BallisticProjectile}）实现
      * {@link cn.solarmoon.spark_core.animation.IAnimatable}，拥有真实的
      * {@link ModelController}；未实现时返回 null，渲染器将跳过渲染。
      */

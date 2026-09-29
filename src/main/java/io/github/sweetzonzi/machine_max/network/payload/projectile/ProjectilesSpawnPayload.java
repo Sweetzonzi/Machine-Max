@@ -4,7 +4,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -22,7 +22,7 @@ import java.util.List;
  * <p>
  * 将一帧内同一发射器产生的多发投射物合并为一个包广播，减少网络帧头开销。
  * <p>
- * 不携带 {@code maxLifetime} 和 {@code isRigid}——客户端从 {@link ProjectileType} 本地读取。
+ * 不携带 {@code maxLifetime}——客户端从 {@link ProjectileType} 本地读取。
  * <p>
  * <b>调用线程：</b>主线程（由 {@link ProjectileManager#flushProjectileEntities()} 调用）。
  *
@@ -119,7 +119,7 @@ public record ProjectilesSpawnPayload(
             for (SpawnEntry entry : payload.entries) {
                 ProjectileType type = ProjectileType.get(level, entry.typeKey);
                 // 只有飞行弹丸（Kinetic）由本包驱动创建；其它运动模型走各自的生成路径
-                if (!(type instanceof KineticProjectileType kineticType)) continue;
+                if (!(type instanceof BallisticProjectileType kineticType)) continue;
 
                 Vector3f pos = new Vector3f(
                         (float) entry.posX, (float) entry.posY, (float) entry.posZ);

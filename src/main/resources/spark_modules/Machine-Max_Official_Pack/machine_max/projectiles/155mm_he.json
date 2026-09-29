@@ -1,5 +1,5 @@
 {
-  "type": "rigid",
+  "type": "ballistic",
   "tags": ["machine_max:caliber/155mm", "machine_max:ammo/he"],
   "max_lifetime": 20.0,
   "external": {

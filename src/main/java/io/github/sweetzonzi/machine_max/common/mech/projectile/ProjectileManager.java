@@ -22,7 +22,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectExecutor;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceContext;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
@@ -59,7 +59,7 @@ import javax.annotation.Nullable;
 /**
  * 投射物管理器（每 Level 一个实例）。
  * <p>
- * 统一管理该维度所有质点投射物和刚体投射物的位置/速度/寿命数据，
+ * 统一管理该维度所有投射物的位置/速度/寿命数据，
  * 以 SoA（Structure of Arrays）方式存储，追求 CPU 缓存命中率。
  * <p>
  * <b>生命周期方法由 {@link ObjectManager} 统一调用：</b>
@@ -95,7 +95,7 @@ public class ProjectileManager {
      */
     private final DensityFunction densityFunction;
 
-    // ========== SoA 数组：统一存放质点 & 刚体投射物数据 ==========
+    // ========== SoA 数组：投射物运动状态 ==========
     public float[] posX, posY, posZ;    // 世界坐标 (JME)
     public float[] velX, velY, velZ;    // 速度 (m/s)
     public int[] lifetime;              // 剩余存活 tick（主线程权威）
@@ -110,7 +110,7 @@ public class ProjectileManager {
      * <p>
      * {@link Float#NaN} 表示"无目标"——用 NaN 作哨兵，避免再引入一个布尔数组。
      * 由 {@code LauncherSubsystem} 在物理线程写入（发射时装订初值，此后每物理步覆盖），
-     * {@link #updatePointProjectiles} 在积分前读取。客户端不读。
+     * {@link #updateProjectiles} 在积分前读取。客户端不读。
      */
     public float[] targetX, targetY, targetZ;
     /**
@@ -156,7 +156,7 @@ public class ProjectileManager {
 
     /**
      * 穿透记录：投射物 objId → 已穿透的穿透密钥集合。
-     * 仅在物理线程（{@link #updatePointProjectiles}）读写，无并发问题。
+     * 仅在物理线程（{@link #updateProjectiles}）读写，无并发问题。
      * 同一次飞行中，同一 (owner, zoneId) 不会被重复判定。
      */
     private final Map<Integer, Set<PenetrationKey>> penetratedKeys = new HashMap<>();
@@ -171,7 +171,7 @@ public class ProjectileManager {
     /**
      * 该维度所有已加载的投射物类型，typeIndex 映射到此数组
      */
-    private volatile KineticProjectileType[] typeCache;
+    private volatile BallisticProjectileType[] typeCache;
 
     /**
      * 待主线程清理的代理实体队列。
@@ -187,12 +187,12 @@ public class ProjectileManager {
     /**
      * 待主线程创建 Entity 并广播的投射物快照队列。
      * <p>
-     * <b>生产者：</b>物理线程（{@link #addProjectileInternal(IProjectile, Vector3f, Vector3f)}）
+     * <b>生产者：</b>物理线程（{@link #addProjectileInternal(BallisticProjectile, Vector3f, Vector3f)}）
      * — 写入 SoA 后，立即捕获炮口位置和初速的快照入队。<br>
      * <b>消费者：</b>主线程（{@link #flushProjectileEntities()} 清空）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      * <p>
-     * 存快照而非 {@link IProjectile} 引用——物理线程在入队后会继续修改
+     * 存快照而非 {@link BallisticProjectile} 引用——物理线程在入队后会继续修改
      * 投射物的 position/velocity，主线程 flush 时若读引用将得到已被积分的值，
      * 导致客户端接收到错误的生成位置（非炮口）。快照在构造瞬间凝固数据。
      */
@@ -201,10 +201,8 @@ public class ProjectileManager {
     /**
      * 待主线程批量广播的命中同步事件队列。
      * <p>
-     * <b>生产者：</b>物理线程（{@link #updatePointProjectiles} 中所有
-     * {@code broadcastHitSync/broadcastTerrainHit} 调用，
-     * 以及 {@link RigidProjectile#applyHitResultAfterCollision} 通过
-     * {@link #enqueueHitSync} 入队）。<br>
+     * <b>生产者：</b>物理线程（{@link #updateProjectiles} 中所有
+     * {@code broadcastHitSync/broadcastTerrainHit} 调用）。<br>
      * <b>消费者：</b>主线程（{@link #flushPendingHitSyncs()}，
      * 在 {@link #flushProjectileEntities()} 发包之后调用）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
@@ -217,9 +215,9 @@ public class ProjectileManager {
     /**
      * 待主线程执行的战斗部起爆请求队列。
      * <p>
-     * <b>生产者：</b>物理线程（三条命中路径在动能判定完成后入队——
-     * {@link #updatePointProjectiles} 的地形/零件路径、{@link IProjectile#onEntityHit}
-     * 提交的主线程伤害任务尾部、{@link RigidProjectile} 的碰撞回调）。<br>
+     * <b>生产者：</b>物理线程（两条命中路径在动能判定完成后入队——
+     * {@link #updateProjectiles} 的地形/零件路径、{@link BallisticProjectile#onEntityHit}
+     * 提交的主线程伤害任务尾部）。<br>
      * <b>消费者：</b>主线程（{@link #flushPendingDetonations()}，在 {@link #postTick()}
      * 的命中包之后调用）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
@@ -261,7 +259,7 @@ public class ProjectileManager {
         burnTime = new float[capacity];
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
-        typeCache = new KineticProjectileType[0];
+        typeCache = new BallisticProjectileType[0];
     }
 
     /**
@@ -281,8 +279,8 @@ public class ProjectileManager {
     /**
      * 查询指定世界坐标处的归一化空气密度（海平面 y=62 处为 1.0）。
      * <p>
-     * 与质点积分、弹道预测共用同一密度函数，供刚体投射物在物理步内做制导解算时读取，
-     * 保证两种运动模型的过载包线与诱导阻力口径一致。
+     * 与质点积分、弹道预测共用同一密度函数，供物理步内的制导解算等读取，
+     * 保证各处空气动力口径一致。
      *
      * @param x 世界坐标 X
      * @param y 世界坐标 Y
@@ -294,36 +292,26 @@ public class ProjectileManager {
     }
 
     /**
-     * 注册一个质点投射物到 SoA 数组。
-     * 在 {@link PointProjectile} 构造时由服务端调用。
+     * 注册一个投射物到 SoA 数组。
+     * 在 {@link BallisticProjectile} 构造时由服务端调用。
      *
-     * @param p 质点投射物实例
+     * @param p 投射物实例
      */
-    public void addPointProjectile(PointProjectile p) {
+    public void addProjectile(BallisticProjectile p) {
         addProjectileInternal(p, p.getPosition(), p.getVelocity());
-    }
-
-    /**
-     * 注册一个刚体投射物到 SoA 数组。
-     * 在 {@link RigidProjectile} 构造时由服务端调用。
-     *
-     * @param r 刚体投射物实例
-     */
-    public void addRigidProjectile(RigidProjectile r) {
-        addProjectileInternal(r, r.getPosition(), r.getLinearVelocity());
     }
 
     /**
      * 内部：将投射物的位置/速度/类型写入 SoA。
      * <p>
-     * <b>调用线程：</b>物理线程（{@link PointProjectile}/{@link RigidProjectile} 构造链）。
+     * <b>调用线程：</b>物理线程（{@link BallisticProjectile} 构造链）。
      * 所有 SoA 数组写入完成后才执行 volatile count 写入，保证 happens-before：
      * 主线程读取 count 后必定能看到完整的 SoA 数据。
      * <p>
      * 不再在此方法内创建 Entity 或发包——改为入队 {@link #pendingProjectiles}，
      * 由主线程 {@link #flushProjectileEntities()} 统一处理。
      */
-    private void addProjectileInternal(IProjectile proj, Vector3f pos, Vector3f vel) {
+    private void addProjectileInternal(BallisticProjectile proj, Vector3f pos, Vector3f vel) {
         if (proj instanceof DestroyableObject projectile)
             ObjectManager.addDestroyableObject(projectile);
         ensureCapacity(count + 1);
@@ -375,11 +363,11 @@ public class ProjectileManager {
      * 获取或注册一个投射物类型到类型缓存，返回索引。
      * 相同的 ProjectileType 实例复用同一索引。
      */
-    private int getOrAddType(KineticProjectileType type) {
+    private int getOrAddType(BallisticProjectileType type) {
         for (int i = 0; i < typeCache.length; i++) {
             if (typeCache[i] == type) return i;
         }
-        KineticProjectileType[] newCache = Arrays.copyOf(typeCache, typeCache.length + 1);
+        BallisticProjectileType[] newCache = Arrays.copyOf(typeCache, typeCache.length + 1);
         newCache[typeCache.length] = type;
         typeCache = newCache;
         return typeCache.length - 1;
@@ -389,7 +377,7 @@ public class ProjectileManager {
      * 标记指定投射物在 SoA 中已死亡（质点/刚体通用）。
      * <p>
      * 只置 {@code alive=false} 并从 O(1) 查询集合中摘除，数组整理（swap-remove）交给
-     * 所属线程的清理扫描完成：服务端是 {@link #updatePointProjectiles} 顶部的死条目扫描，
+     * 所属线程的清理扫描完成：服务端是 {@link #updateProjectiles} 顶部的死条目扫描，
      * 客户端是 {@link #clientExtrapolate} 开头的扫描。
      * <p>
      * 这样可以从任意线程安全调用（例如投射物自身的 {@code destroy()}），
@@ -411,7 +399,7 @@ public class ProjectileManager {
 
     /**
      * 为 SoA 中索引为 idx 的投射物创建配套的 {@link MMProjectileEntity}。
-     * 通过 {@link ObjectManager#levelDestroyableObjects} 实时获取 IProjectile 对象引用。
+     * 通过 {@link ObjectManager#levelDestroyableObjects} 实时获取 BallisticProjectile 对象引用。
      * 仅在服务端主线程调用（内部调用了 {@code level.addFreshEntity}，需要主线程上下文）。
      *
      * @param idx SoA 数组索引
@@ -420,7 +408,7 @@ public class ProjectileManager {
         var objMap = ObjectManager.levelDestroyableObjects.get(level);
         if (objMap == null) return;
         DestroyableObject obj = objMap.get(objId[idx]);
-        if (!(obj instanceof IProjectile projectile)) return;
+        if (!(obj instanceof BallisticProjectile projectile)) return;
 
         // 清理旧 Entity（若存在）
         if (entities[idx] != null) {
@@ -468,29 +456,6 @@ public class ProjectileManager {
     }
 
     /**
-     * 由刚体投射物在其 {@code postTick()} 中调用，将其 Bullet 刚体状态回写到 SoA。
-     * <p>
-     * 仅更新位置和速度字段；寿命由 {@link #tickAndPreTick()} 统一管理。
-     *
-     * @param targetObjId 刚体投射物的 DestroyableObject ID
-     * @param pos         刚体当前世界坐标（JME）
-     * @param vel         刚体当前速度（JME）
-     */
-    public void writebackRigidState(int targetObjId, Vector3f pos, Vector3f vel) {
-        for (int i = 0; i < count; i++) {
-            if (this.objId[i] == targetObjId && alive[i]) {
-                posX[i] = pos.x;
-                posY[i] = pos.y;
-                posZ[i] = pos.z;
-                velX[i] = vel.x;
-                velY[i] = vel.y;
-                velZ[i] = vel.z;
-                return;
-            }
-        }
-    }
-
-    /**
      * O(1) 检查指定的 DestroyableObject ID 是否由此管理器管理。
      * 使用 ConcurrentHashSet 替代线性扫描 SoA 数组。
      */
@@ -534,7 +499,7 @@ public class ProjectileManager {
     /**
      * 查询指定投射物是否已穿透了给定方块位置。
      * <p>
-     * 用于穿透去重：在调用 {@link IProjectile#onTerrainHit} 之前检查，
+     * 用于穿透去重：在调用 {@link BallisticProjectile#onTerrainHit} 之前检查，
      * 若已穿透则跳过。仅用于地形穿透。
      *
      * @param projectileId 投射物的 DestroyableObject ID
@@ -554,7 +519,7 @@ public class ProjectileManager {
     /**
      * 记录指定投射物已穿透了给定方块。
      * <p>
-     * 在 {@link IProjectile#onTerrainHit} 返回 {@link IProjectile.AfterHitResult.PassThrough}
+     * 在 {@link BallisticProjectile#onTerrainHit} 返回 {@link BallisticProjectile.AfterHitResult.PassThrough}
      * 后由调用方写入。仅用于地形穿透。
      *
      * @param projectileId 投射物的 DestroyableObject ID
@@ -573,7 +538,7 @@ public class ProjectileManager {
      * @param index SoA 数组索引
      * @return 投射物类型
      */
-    public KineticProjectileType getProjectileTypeByIndex(int index) {
+    public BallisticProjectileType getProjectileTypeByIndex(int index) {
         return typeCache[typeIndex[index]];
     }
 
@@ -582,9 +547,9 @@ public class ProjectileManager {
      * <p>
      * 从 {@link ObjectManager#levelDestroyableObjects} 中查找并返回。
      * 该方法是一个方便的封装，调用方无需直接操作 Map。
-     * 返回 {@link DestroyableObject} 而非 {@link IProjectile}，
+     * 返回 {@link DestroyableObject} 而非 {@link BallisticProjectile}，
      * 因为部分调用方（如客户端渲染器）需要调用 {@link DestroyableObject#getWorldPositionMatrix}。
-     * 调用方若需 {@link IProjectile} 接口，可自行判断 {@code instanceof}。
+     * 调用方若需 {@link BallisticProjectile} 接口，可自行判断 {@code instanceof}。
      *
      * @param objId 目标投射物的 DestroyableObject ID
      * @return 投射物的 DestroyableObject 实例，若不存在则返回 null
@@ -629,10 +594,8 @@ public class ProjectileManager {
             // preTick：先写入缓存寿命，避免 preTick → checkDestroyed → getLifetime 的 O(n) 线性扫描
             DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
             if (obj != null) {
-                if (obj instanceof PointProjectile pp) {
+                if (obj instanceof BallisticProjectile pp) {
                     pp.cachedLifetime = lifetime[i];
-                } else if (obj instanceof RigidProjectile rp) {
-                    rp.cachedLifetime = lifetime[i];
                 }
                 obj.preTick();
             }
@@ -644,10 +607,6 @@ public class ProjectileManager {
      * <p>
      * 将原本两趟独立的遍历（forEachPostTick + syncAllToSyncedData）合并为一趟，
      * 减少对 SoA 数组和 HashMap 的重复访问。
-     * <p>
-     * 刚体投射物走单独分支：其位姿/速度权威值在 Bullet 刚体侧（服务端由
-     * {@link RigidProjectile#postTick()} 写入 SynchedEntityData），SoA 只是镜像，
-     * 因此这里不回写 synced data，只刷新渲染插值用的 {@code oldTransform}/{@code transform}。
      */
     private void postTickAndSync() {
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
@@ -659,17 +618,6 @@ public class ProjectileManager {
             if (obj == null) continue;
 
             obj.postTick();
-
-            if (obj instanceof RigidProjectile) {
-                // 位置与朝向都取自 SoA（服务端是刚体镜像，客户端是权威快照）；
-                // 朝向按"弹轴 = 速度方向"推导，与 RigidProjectile.applyVelocityFacing() 同一规则，
-                // 因此姿态不需要随网络传输。
-                obj.oldTransform = obj.getTransform().clone();
-                obj.transform = new Transform(
-                        new Vector3f(posX[i], posY[i], posZ[i]),
-                        RigidProjectile.facingFromVelocity(new Vector3f(velX[i], velY[i], velZ[i])));
-                continue;
-            }
 
             obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
             obj.oldTransform = obj.getTransform();
@@ -713,7 +661,7 @@ public class ProjectileManager {
     /**
      * 冲刷待创建 Entity 的投射物并批量广播生成包（主线程）。
      * <p>
-     * 清空 {@link #pendingProjectiles} 队列（每个条目是创建时的快照，而非 IProjectile 引用）。
+     * 清空 {@link #pendingProjectiles} 队列（每个条目是创建时的快照，而非 BallisticProjectile 引用）。
      * <ol>
      *   <li>通过 {@link #findIndexByObjId(int)} 找到 SoA 索引，区块已加载则创建 {@link MMProjectileEntity}</li>
      *   <li>将快照转换为 {@link ProjectilesSpawnPayload.SpawnEntry} 列表，批量广播</li>
@@ -806,7 +754,7 @@ public class ProjectileManager {
      * @param projectile 命中的投射物（读取其战斗部列表）
      * @param hitPoint   实测命中点（世界坐标，MC Vec3）
      */
-    public void enqueueWarheadDetonation(IProjectile projectile, Vec3 hitPoint) {
+    public void enqueueWarheadDetonation(BallisticProjectile projectile, Vec3 hitPoint) {
         List<WorldEffect> warheads = projectile.getWarheads();
         if (warheads.isEmpty()) return;
         pendingDetonations.add(new PendingDetonation(hitPoint, warheads));
@@ -851,7 +799,7 @@ public class ProjectileManager {
     @Nullable
     public ResourceLocation getTypeKeyByIndex(int idx) {
         if (idx < 0 || idx >= count || typeIndex[idx] < 0 || typeIndex[idx] >= typeCache.length) return null;
-        KineticProjectileType type = typeCache[typeIndex[idx]];
+        BallisticProjectileType type = typeCache[typeIndex[idx]];
         return type != null ? type.getRegistryKey() : null;
     }
 
@@ -859,14 +807,14 @@ public class ProjectileManager {
      * 主线程 Pre 阶段。
      * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()} +
      * 尝试重建因区块卸载丢失的 {@link MMProjectileEntity}。
-     * 客户端额外执行质点投射物外推（5 子步 semi-implicit Euler）。
+     * 客户端额外执行投射物外推（5 子步 semi-implicit Euler）。
      * <p>
      * 优化：合并寿命递减和 preTick 为一趟遍历，减少 SoA 数组重复访问。
      */
     public void preTick() {
         tickAndPreTick();
         tryRecreateEntities();
-        // 客户端：主线程自主外推质点投射物，消除物理线程与渲染线程的 SoA 并发读写竞争
+        // 客户端：主线程自主外推，消除物理线程与渲染线程的 SoA 并发读写竞争
         if (level.isClientSide()) {
             clientExtrapolate();
         }
@@ -880,7 +828,7 @@ public class ProjectileManager {
      *   <li>冲刷本帧物理线程新增的投射物 Entity 创建与发包</li>
      *   <li>冲刷本帧物理线程缓冲的命中同步包</li>
      *   <li>冲刷本帧物理线程缓冲的战斗部起爆请求（主线程执行世界效果）</li>
-     *   <li>广播服务端权威位姿快照（制导弹与刚体投射物，其余弹种不广播）</li>
+     *   <li>广播服务端权威位姿快照（制导弹，其余弹种不广播）</li>
      *   <li>调用各投射物的 {@code postTick()}，回写 SoA 到 SynchedEntityData</li>
      * </ol>
      * <p>
@@ -892,7 +840,7 @@ public class ProjectileManager {
         flushProjectileEntities();   // ① 先发创建包，确保客户端 SoA 中有该投射物
         flushPendingHitSyncs();      // ② 再发命中包，保证创建包严格先于命中包到达
         flushPendingDetonations();   // ③ 最后执行战斗部效果（主线程）
-        flushAuthoritativeState();   // ④ 权威位姿快照（制导弹 + 刚体投射物）
+        flushAuthoritativeState();   // ④ 权威位姿快照（制导弹）
         postTickAndSync();
     }
 
@@ -917,20 +865,20 @@ public class ProjectileManager {
 
     /**
      * 物理线程 Pre 阶段。
-     * 调用各投射物的 {@code prePhysicsTick()}，服务端执行质点投射物批量积分+碰撞检测。
+     * 调用各投射物的 {@code prePhysicsTick()}，服务端执行投射物批量积分+碰撞检测。
      * <p>
-     * 客户端不再在此阶段外推——已迁移至主线程 {@link #preTick()}。
+     * 客户端的外推在主线程 {@link #preTick()} 中执行。
      */
     public void prePhysicsTick(PhysicsLevel physicsLevel) {
         forEachPrePhysicsTick();
         if (!level.isClientSide()) {
-            updatePointProjectiles(physicsLevel);
+            updateProjectiles(physicsLevel);
         }
     }
 
     /**
      * 物理线程 Post 阶段。
-     * 调用各投射物的 {@code postPhysicsTick()}（刚体会在此阶段将 Bullet 位置回写到 SoA）。
+     * 调用各投射物的 {@code postPhysicsTick()}。
      */
     public void postPhysicsTick() {
         forEachPostPhysicsTick();
@@ -941,20 +889,21 @@ public class ProjectileManager {
     // ================================================================
 
     /**
-     * 客户端自主外推所有质点投射物（Semi-implicit Euler 5 子步积分，无碰撞检测）。
+     * 客户端自主外推所有投射物（Semi-implicit Euler 5 子步积分，无碰撞检测）。
      * <p>
      * 服务端仅广播关键事件（创建/命中/超时），客户端依赖自主外推来维持帧间
      * 位置连续性，供 {@code ClientProjectileRenderer} 读取。
      * <p>
      * 5 子步推进，每子步 dt = 0.01s（匹配服务端 100Hz 物理步进），
      * 消除大步长 Euler 积分在非线性阻力下的精度损失。
-     * 刚体投射物不参与外推：其位置/速度/寿命以服务端权威快照为准
+     * <p>
+     * 制导弹除外：其位置/速度/寿命以服务端权威快照为准
      * （见 {@link #flushAuthoritativeState()}），客户端既不积分也不递减其寿命。
      * <p>
      * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
     private void clientExtrapolate() {
-        KineticProjectileType[] types = this.typeCache;
+        BallisticProjectileType[] types = this.typeCache;
         for (int i = count - 1; i >= 0; i--) {
             if (!alive[i] && lifetime[i] < types[typeIndex[i]].getMaxLifetimeTicks()) { // 至少保证存在1tick
                 projectileObjIds.remove(objId[i]);
@@ -971,9 +920,7 @@ public class ProjectileManager {
             for (int i = 0; i < count; i++) {
                 if (!alive[i]) continue;
 
-                KineticProjectileType type = types[typeIndex[i]];
-                // 刚体投射物：位置/速度/寿命均以服务端权威快照为准，客户端不积分也不递减寿命
-                if (type.getType().isRigid()) continue;
+                BallisticProjectileType type = types[typeIndex[i]];
 
                 lifetime[i]--;
 
@@ -1002,7 +949,7 @@ public class ProjectileManager {
                     dragAccZ = dragAcc * (-velZ[i] * invSpeed);
                 }
 
-                // ——— 推进段：与服务端 updatePointProjectiles 同一燃烧窗口，保证两端外推一致 ———
+                // ——— 推进段：与服务端 updateProjectiles 同一燃烧窗口，保证两端外推一致 ———
                 float thrustAccX = 0, thrustAccY = 0, thrustAccZ = 0;
                 var thrust = type.getThrust();
                 if (thrust.isActive() && speed > 1e-6f) {
@@ -1043,7 +990,7 @@ public class ProjectileManager {
      *     <ul>
      *       <li>地形：永远停止</li>
      *       <li>SubPart / 非实体 BFHurtTarget：同步调用 dealDamage，
-     *           由 BallisticsFramework 管线完成穿透判定并回调写入 {@link IProjectile.AfterHitResult}，
+     *           由 BallisticsFramework 管线完成穿透判定并回调写入 {@link BallisticProjectile.AfterHitResult}，
      *           Manager 立即消费</li>
      *       <li>Entity BFHurtTarget：通过 {@code BFDamageApi.resolveHitTarget} 决议目标，
      *           暂停投射物，提交主线程执行 hurt，下一物理帧消费结果</li>
@@ -1061,7 +1008,7 @@ public class ProjectileManager {
      *
      * @param physicsLevel 当前维度的物理世界
      */
-    public void updatePointProjectiles(PhysicsLevel physicsLevel) {
+    public void updateProjectiles(PhysicsLevel physicsLevel) {
         for (int i = count - 1; i >= 0; i--) {
             if (!alive[i]) {
                 projectileObjIds.remove(objId[i]);
@@ -1072,7 +1019,7 @@ public class ProjectileManager {
 
         var world = physicsLevel.getWorld();
         float dt = 1.0f / physicsLevel.getTps();
-        KineticProjectileType[] types = this.typeCache;
+        BallisticProjectileType[] types = this.typeCache;
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         Vector3f rayFrom = this.rayFrom;
         Vector3f rayTo = this.rayTo;
@@ -1087,8 +1034,8 @@ public class ProjectileManager {
             // ============================================================
             //  暂停恢复：消费主线程写入的命中结果
             // ============================================================
-            if (destroyable instanceof IProjectile proj && proj.isHitPending()) {
-                IProjectile.AfterHitResult result = proj.consumePendingHitResult();
+            if (destroyable instanceof BallisticProjectile proj && proj.isHitPending()) {
+                BallisticProjectile.AfterHitResult result = proj.consumePendingHitResult();
                 if (result == null) continue;
 
                 proj.setHitPending(false);
@@ -1117,7 +1064,7 @@ public class ProjectileManager {
             }
 
             // 从类型缓存读取弹道参数
-            KineticProjectileType type = types[typeIndex[i]];
+            BallisticProjectileType type = types[typeIndex[i]];
             float mass = type.getMass();
             float gravityFactor = type.getGravityFactor();
             float dragFactor = type.getDragFactor();
@@ -1299,7 +1246,7 @@ public class ProjectileManager {
                     PhysicsChunkSection terrain = entry.terrain();
                     BlockPos blockPos = entry.blockPos();
 
-                    if (!(destroyable instanceof IProjectile proj)) {
+                    if (!(destroyable instanceof BallisticProjectile proj)) {
                         broadcastTerrainHit(i, entry.hitPoint(), entry.blockPos());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
@@ -1323,7 +1270,7 @@ public class ProjectileManager {
                     float currentPen = proj.calculateCurrentPenetration();
                     float currentSpeed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
-                    IProjectile.AfterHitResult hitResult = proj.onTerrainHit(level, blockPos, state,
+                    BallisticProjectile.AfterHitResult hitResult = proj.onTerrainHit(level, blockPos, state,
                             currentPen, currentSpeed, entry.hitPoint(), entry.hitNormal());
 
                     if (hitResult != null && !hitResult.destroyed()) {
@@ -1343,7 +1290,7 @@ public class ProjectileManager {
                     }
                 } else if (entry.owner() == null) {
                     // null owner：直接停止（无属主信息）
-                    if (destroyable instanceof IProjectile proj) {
+                    if (destroyable instanceof BallisticProjectile proj) {
                         enqueueWarheadDetonation(proj, entry.hitPoint());
                     }
                     broadcastTerrainHit(i, entry.hitPoint(), null);
@@ -1352,7 +1299,7 @@ public class ProjectileManager {
                     shouldRemove = true;
                 } else {
                     // ---- 非地形命中（实体/零件） ----
-                    if (!(destroyable instanceof IProjectile projectile)) {
+                    if (!(destroyable instanceof BallisticProjectile projectile)) {
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
                         shouldRemove = true;
@@ -1394,7 +1341,7 @@ public class ProjectileManager {
 
             if (shouldRemove) {
                 // 异步管线中等待主线程回调的投射物不要提前清理——下一 tick 的暂停恢复会处理
-                if (destroyable instanceof IProjectile proj && proj.isHitPending()) {
+                if (destroyable instanceof BallisticProjectile proj && proj.isHitPending()) {
                     continue;
                 }
                 DestroyableObject finalDestroyable = (objMap != null) ? objMap.get(objId[i]) : null;
@@ -1444,7 +1391,7 @@ public class ProjectileManager {
      * @param penKey 穿透密钥（可为 null）
      * @return true 表示投射物应销毁
      */
-    private boolean applyAfterHitResult(int i, IProjectile proj, @Nullable IProjectile.AfterHitResult result,
+    private boolean applyAfterHitResult(int i, BallisticProjectile proj, @Nullable BallisticProjectile.AfterHitResult result,
                                          Vec3 hitPoint, Vec3 hitNormal, PenetrationKey penKey) {
         if (result == null) return false;
         broadcastHitSync(i, hitPoint, hitNormal, null, result);
@@ -1470,22 +1417,22 @@ public class ProjectileManager {
      *
      * @see #applyAfterHitResult
      */
-    private boolean applyHitResult(int i, IProjectile proj, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, PenetrationKey penKey) {
+    private boolean applyHitResult(int i, BallisticProjectile proj, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, PenetrationKey penKey) {
         return applyAfterHitResult(i, proj, proj.consumePendingHitResult(), hitPoint, hitNormal, penKey);
     }
 
     /**
-     * 处理实体命中。委托 {@link IProjectile#onEntityHit} 统一管线。
+     * 处理实体命中。委托 {@link BallisticProjectile#onEntityHit} 统一管线。
      * <p>
      * 同步路径（决议到非实体 BFHurtTarget）：onEntityHit 返回即时结果，直接 apply。
      * 异步路径（Entity / 非协议实体）：onEntityHit 返回 null，Manager 保存穿透密钥以待后续帧消费。
      *
      * @return true 表示投射物已停止或被标记为暂停（hitPending）
      */
-    private boolean handleEntityHit(int i, IProjectile projectile, Entity entity,
+    private boolean handleEntityHit(int i, BallisticProjectile projectile, Entity entity,
                                     Vec3 hitPoint, Vec3 hitNormal, float dt,
                                     PenetrationKey penKey) {
-        IProjectile.AfterHitResult result = projectile.onEntityHit(level, entity,
+        BallisticProjectile.AfterHitResult result = projectile.onEntityHit(level, entity,
                 projectile.calculateCurrentPenetration(),
                 projectile.calculateCurrentDamage(),
                 hitPoint, hitNormal);
@@ -1507,8 +1454,7 @@ public class ProjectileManager {
      * 所有命中事件统一走此方法 → {@link #pendingHitSyncs} 队列 →
      * 主线程 {@link #flushPendingHitSyncs()} 批量发包。
      * <p>
-     * <b>调用线程：</b>物理线程（{@link #updatePointProjectiles} 内部广播方法，
-     * 以及 {@link RigidProjectile} 碰撞回调）。
+     * <b>调用线程：</b>物理线程（{@link #updateProjectiles} 内部广播方法）。
      * <p>
      * <b>参数语义：</b>
      * <ul>
@@ -1534,7 +1480,7 @@ public class ProjectileManager {
      * SubPart/Entity 命中路径专用——参数 {@code hitBlockPos} 始终为 null，
      * 因为此类命中的特效由 SubPart/Entity 自理包负责，命中包仅做弹道状态同步。
      */
-    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, @Nullable BlockPos hitBlockPos, @Nullable IProjectile.AfterHitResult result) {
+    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, @Nullable BlockPos hitBlockPos, @Nullable BallisticProjectile.AfterHitResult result) {
         boolean destroyed = result == null || result.destroyed();
         Vector3f newVel = destroyed ? new Vector3f() : result.newVelocity();
         pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, hitBlockPos));
@@ -1565,7 +1511,7 @@ public class ProjectileManager {
      * @param vel         速度
      * @param life        剩余寿命
      */
-    public void syncPointProjectileState(int targetObjId, Vector3f pos, Vector3f vel, int life) {
+    public void syncProjectileState(int targetObjId, Vector3f pos, Vector3f vel, int life) {
         for (int i = 0; i < count; i++) {
             if (targetObjId == objId[i]) {
                 posX[i] = pos.x;
@@ -1607,14 +1553,12 @@ public class ProjectileManager {
     /**
      * 冲刷"服务端权威"投射物的位姿快照（主线程）。
      * <p>
-     * 广播对象是客户端无法自行复现运动的两类投射物：
-     * <ul>
-     *   <li><b>制导弹</b>（{@link KineticProjectileType#hasGuidance()}）——
-     *       客户端复现制导必然静默漂移（PN 依赖视线角速度历史，导引头还有视场/丢锁状态）</li>
-     *   <li><b>刚体投射物</b>（{@code rigid}）——运动由 Bullet 刚体驱动，客户端没有对应积分器</li>
-     * </ul>
+     * 广播对象是客户端无法自行复现运动的制导弹
+     * （{@link BallisticProjectileType#hasGuidance()}）：客户端复现制导必然静默漂移
+     * （PN 依赖视线角速度历史，导引头还有视场/丢锁状态）。
+     * <p>
      * 打包为 {@link ProjectilesGuidedStatePayload} 广播，客户端据此覆盖本地 SoA，
-     * 服务端与客户端之间不施加任何本地逻辑（刚体姿态由两端按速度方向各自推导，无需传输）。
+     * 服务端与客户端之间不施加任何本地逻辑。
      * <p>
      * 其余弹种不进入本集合，客户端行为不受影响。
      * <p>
@@ -1626,12 +1570,12 @@ public class ProjectileManager {
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (count == 0) return;
 
-        KineticProjectileType[] types = this.typeCache;
+        BallisticProjectileType[] types = this.typeCache;
         List<ProjectilesGuidedStatePayload.StateEntry> entries = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            KineticProjectileType type = types[typeIndex[i]];
-            if (!type.hasGuidance() && !type.getType().isRigid()) continue;
+            BallisticProjectileType type = types[typeIndex[i]];
+            if (!type.hasGuidance()) continue;
             entries.add(new ProjectilesGuidedStatePayload.StateEntry(
                     objId[i],
                     posX[i], posY[i], posZ[i],
@@ -1647,7 +1591,7 @@ public class ProjectileManager {
      * 在发射时预测投射物弹道经过的区块，并预约地形刚体加载。
      * <p>
      * 使用 {@link RealisticTrajectory#forwardSolve} 进行弹道正解，
-     * 物理模型与 {@link #updatePointProjectiles} 统一（相同的阻力公式+密度函数），
+     * 物理模型与 {@link #updateProjectiles} 统一（相同的阻力公式+密度函数），
      * 确保预测轨迹与实际飞行轨迹一致。
      * <p>
      * 预测长度 = 投射物最大寿命（{@link ProjectileType#getMaxLifetimeTicks}），
@@ -1658,14 +1602,14 @@ public class ProjectileManager {
      * 最多预加载 200 个区块，去重后通常远小于此值。
      * <p>
      * <b>制导弹降级：</b>制导弹会拐弯，弹道正解不等于实际航迹，因此对
-     * {@link KineticProjectileType#hasGuidance()} 的弹种改为"沿<b>出膛方向</b>直线推进"预测
+     * {@link BallisticProjectileType#hasGuidance()} 的弹种改为"沿<b>出膛方向</b>直线推进"预测
      * （出膛方向通常已大致指向瞄准点，早期飞行覆盖率足够）。滚动重算见备忘 §十四。
      *
      * @param startPos 发射位置（JME 世界坐标，米）
      * @param startVel 初速度（m/s，JME）
      * @param type     投射物类型（提供质量、阻力系数、重力等物理参数）
      */
-    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, KineticProjectileType type) {
+    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, BallisticProjectileType type) {
         // ProjectileType 与 BallisticConfig 1:1 映射（阻力公式统一为 ½·ρ·Cd·A·v²）
         // dragFactor = Cd, π·r² = A, gravityFactor·9.81 = g
         BallisticConfig config = new BallisticConfig(
@@ -1693,7 +1637,7 @@ public class ProjectileManager {
                         startMc.z + velMc.z * step * t));
             }
         } else {
-            // 弹道正解（使用与 updatePointProjectiles 相同的密度函数）
+            // 弹道正解（使用与 updateProjectiles 相同的密度函数）
             TrajectoryResult result = RealisticTrajectory.forwardSolve(startMc, velMc, config, densityFunction);
             for (TrajectorySample sample : result.samples()) {
                 path.add(sample.position());
@@ -1866,7 +1810,7 @@ public class ProjectileManager {
      * <p>
      * 物理线程创建投射物后立即捕获炮口位置、初速和类型键，
      * 入队到 {@link #pendingProjectiles}。主线程 flush 时读取快照中的凝固数据，
-     * 而非从 {@link IProjectile} 引用读取已被物理积分覆盖的当前值。
+     * 而非从 {@link BallisticProjectile} 引用读取已被物理积分覆盖的当前值。
      *
      * @param objId    DestroyableObject ID
      * @param typeKey  投射物类型注册键

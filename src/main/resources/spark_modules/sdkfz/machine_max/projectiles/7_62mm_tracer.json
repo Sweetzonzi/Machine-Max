@@ -1,5 +1,5 @@
 {
-  "type": "point",
+  "type": "ballistic",
   "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/tracer"],
   "max_lifetime": 2.5,
   "external": {

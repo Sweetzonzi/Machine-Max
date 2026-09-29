@@ -1,51 +1,83 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.ballistics_framework.api.*;
+import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
+import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
+import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
+import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
+import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
+import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.Boat;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import io.github.sweetzonzi.machine_max.common.MMServerConfig;
-import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
-import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.util.PPhase;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 投射物公共接口。
+ * 弹道投射物（JSON {@code "type": "ballistic"}）。
  * <p>
- * 定义质点投射物（{@link PointProjectile}）和刚体投射物（{@link RigidProjectile}）
- * 共有的物理状态协议、弹道参数协议和速度-伤害模型。
- * 所有弹道参数的默认实现均委托至 {@link ProjectileType}，实现数据驱动的设计。
+ * 适用于小口径穿甲弹、APFSDS 长杆弹、榴弹等按弹道飞行的实体弹丸。
+ * 没有 JME 物理刚体，不受 Bullet 管理，运动由 {@link ProjectileManager} 的 SoA 批量积分驱动。
+ * <p>
+ * 继承 {@link DestroyableObject} 以复用其生命周期管理（自动注册/注销于
+ * {@link ObjectManager#levelDestroyableObjects}），但覆写了所有摧毁倒计时相关方法
+ * （投射物命中即消失，无需倒计时）。
+ * <p>
+ * 本类同时承担"伤害发起方"与"伤害目标"两个角色：
+ * <ul>
+ *   <li>发起方——实现 {@link BFDamageHandler}，把穿甲判定后的命中行为
+ *       （击穿/跳弹/停止）封装为 {@link AfterHitResult}，由 {@link ProjectileManager}
+ *       消费后执行 SoA 操作；</li>
+ *   <li>目标——继承 {@link DestroyableObject} 的 {@link BFHurtTarget} 实现，
+ *       护甲与结构血量语义见相关设计文档。</li>
+ * </ul>
+ * <p>
+ * 碰撞检测在 {@link ProjectileManager#updateProjectiles} 中通过 JME rayTest 完成。
  * <p>
  * 速度-伤害模型采用幂函数（德马尔式）：
  * <pre>
  * effective = base × (currentSpeed / baseVelocity)^coefficient
  * </pre>
  * 系数为 0 时退化为常数值（与速度无关）。
- * <p>
- * 扩展 {@link BFDamageHandler}，将穿甲判定后的命中行为（击穿/跳弹/停止）
- * 封装为 {@link AfterHitResult}，由 {@link ProjectileManager} 消费后执行 SoA 操作。
- * 具体弹种（引信、战斗部、子系统等）只需覆写对应回调方法，无需修改 Manager。
  */
-public interface IProjectile extends BFDamageHandler {
+public class BallisticProjectile extends DestroyableObject
+        implements BFDamageHandler, IAnimatable<BallisticProjectile> {
 
     // ==================== 命中结果 ====================
 
@@ -57,18 +89,18 @@ public interface IProjectile extends BFDamageHandler {
      * @param destroyed   投射物是否应销毁
      * @param newVelocity 若未销毁，命中后的新速度矢量（JME）
      */
-    record AfterHitResult(boolean destroyed, Vector3f newVelocity) {
+    public record AfterHitResult(boolean destroyed, Vector3f newVelocity) {
 
         /** 销毁 */
-        static final AfterHitResult DESTROYED = new AfterHitResult(true, Vector3f.ZERO);
+        public static final AfterHitResult DESTROYED = new AfterHitResult(true, Vector3f.ZERO);
 
         /** 穿过后以指定保留率继续飞行 */
-        static AfterHitResult passThrough(float speedRetention, Vector3f currentVelocity) {
+        public static AfterHitResult passThrough(float speedRetention, Vector3f currentVelocity) {
             return new AfterHitResult(false, new Vector3f(currentVelocity).multLocal(speedRetention));
         }
 
         /** 跳弹：按法线反射后乘以能量保持率 */
-        static AfterHitResult ricochet(float retention, Vector3f velocity, Vector3f normal) {
+        public static AfterHitResult ricochet(float retention, Vector3f velocity, Vector3f normal) {
             Vector3f reflected = new Vector3f(velocity);
             float dot = reflected.dot(normal);
             Vector3f correction = new Vector3f(normal).multLocal(2 * dot);
@@ -76,6 +108,281 @@ public interface IProjectile extends BFDamageHandler {
             reflected.multLocal(retention);
             return new AfterHitResult(false, reflected);
         }
+    }
+
+    // ==================== 状态 ====================
+
+    private final BallisticProjectileType projectileType;
+    private boolean hasHit = false;
+
+    /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
+    @Getter
+    @Setter
+    private volatile boolean hitPending = false;
+
+    /** 待处理的命中结果（由 BFDamageHandler 回调写入，Manager 在物理线程消费） */
+    @Getter
+    @Setter
+    @Nullable private AfterHitResult pendingHitResult;
+
+    // ========== IAnimatable 实现 ==========
+    // 模型/动画控制器使用懒加载，确保构造完成后再初始化
+    private AnimController animController;
+    private ModelController modelController;
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
+
+    /**
+     * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
+     * 避免 getLifetime() 在 preTick() → checkDestroyed() 链条中进行 O(n) 线性扫描。
+     */
+    int cachedLifetime = 0;
+
+    /**
+     * 创建一个弹道投射物。
+     * <p>
+     * 服务端：注册到 {@link ObjectManager} 和 {@link ProjectileManager} 的 SoA 数组。
+     * 客户端：仅创建实例等待服务端同步。
+     *
+     * @param level    维度
+     * @param type     投射物类型定义
+     * @param position 初始世界坐标（JME）
+     * @param velocity 初始速度矢量（JME，单位 m/s）
+     */
+    public BallisticProjectile(Level level, BallisticProjectileType type, Vector3f position, Vector3f velocity) {
+        super(level);
+        this.projectileType = type;
+        setPosition(position);
+        setLinearVelocity(velocity);
+        transform = new Transform(position, Quaternion.IDENTITY);
+        oldTransform = transform.clone();
+    }
+
+    /**
+     * 将投射物注册到世界（两端的统一入口）。
+     * <p>
+     * {@link DestroyableObject#addToLevel()} → 注册到 {@link ObjectManager#levelDestroyableObjects}
+     * → 注册到 {@link ProjectileManager} SoA 数组。
+     * <p>
+     * <b>服务端：</b>Entity 创建与网络广播已移至
+     * {@link ProjectileManager#flushProjectileEntities()}（主线程 preTick），
+     * 改由批量包 {@code ProjectilesSpawnPayload} 发送。<br>
+     * <b>客户端：</b>直接播放开火音效。
+     * <p>
+     * <b>调用线程：</b>物理线程（由 {@link BallisticProjectileType#create} → addToLevel 链调用）。
+     */
+    @Override
+    public void addToLevel() {
+        super.addToLevel();
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+        pm.addProjectile(this);
+    }
+
+    public BallisticProjectileType getProjectileType() {
+        return projectileType;
+    }
+
+    public Vector3f getVelocity() {
+        return getLinearVelocity();
+    }
+
+    public boolean isAlive() {
+        return !isRemoved && !hasHit;
+    }
+
+    /**
+     * 返回剩余存活 tick 数。
+     * <p>
+     * 寿命的权威来源是 {@link ProjectileManager} 的 SoA 数组，
+     * {@link ProjectileManager#tickAndPreTick()} 在每 tick 将 SoA 中的寿命
+     * 写入 {@link #cachedLifetime}，避免在此处进行 O(n) 线性扫描。
+     */
+    public int getLifetime() {
+        return cachedLifetime;
+    }
+
+    public int getMaxLifetime() {
+        return projectileType.getMaxLifetimeTicks();
+    }
+
+    public void markHit() {
+        this.hasHit = true;
+    }
+
+    /**
+     * 覆写：先从 {@link ProjectileManager} 的 SoA 中标记摘除，再走基类销毁。
+     * <p>
+     * 命中销毁、寿命到期、超时清理三条路径最终都会经过这里，
+     * 因此 SoA 不会残留死条目。
+     */
+    @Override
+    public void destroy() {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm != null) pm.removeProjectile(getId());
+        super.destroy();
+    }
+
+    // ========== 覆写 DestroyableObject 生命周期 ==========
+
+    @Override
+    public void preTick() {
+        if (isRemoved) return;
+        tickCount++;
+        if (hurtTime > 0) hurtTime--;
+        if (!level.isClientSide() && checkDestroyed()) {
+            setDestroyed();
+        }
+    }
+
+    /**
+     * 覆写：跳过逐 tick syncToClient。
+     * <p>
+     * 投射物网络同步采用关键事件模式（创建/命中/超时），
+     * 不每 tick 同步。仅检查摧毁后立即清理。
+     */
+    @Override
+    public void postTick() {
+        if (isDestroyed() && getDestroyTime() <= 0) {
+            this.destroy();
+        }
+    }
+
+    @Override
+    public void prePhysicsTick() {
+        if (isRemoved) return;
+        physicsTickCount++;
+    }
+
+    @Override
+    public void postPhysicsTick() {
+    }
+
+    /**
+     * 覆写：基于 hasHit / SoA 寿命判断摧毁，而非耐久度。
+     * 寿命权威来源为 {@link ProjectileManager} SoA 数组。
+     */
+    @Override
+    protected boolean checkDestroyed() {
+        return !isDestroyed() && (hasHit || getLifetime() <= 0);
+    }
+
+    /**
+     * 覆写：跳过摧毁倒计时，立即标记为已摧毁。
+     * 投射物不需要像 SubPart 那样有销毁动画/倒计时。
+     */
+    @Override
+    protected void setDestroyed() {
+        getSyncedData().set(DATA_DESTROYED_ID, true);
+        getSyncedData().set(DESTROY_TIME_ID, 0);
+    }
+
+    /** 覆写为空操作：投射物不需要摧毁倒计时推进 */
+    @Override
+    protected void tickDestroyTimer(int tick) {
+    }
+
+    /** 覆写为空操作：投射物不接收伤害累积 */
+    @Override
+    protected void handleAccumulatedDamage() {
+    }
+
+    /** 覆写为空操作：投射物不接收伤害累积 */
+    @Override
+    public void accumulateDamage(float damage, BFDamageContext ctx) {
+    }
+
+    @Override
+    public float getMaxDurability() {
+        return 1;
+    }
+
+    /**
+     * 弹道投射物无物理刚体，调用此方法将抛出异常。
+     */
+    @Override
+    public @NotNull PhysicsLevel getPhysicsLevel() {
+        throw new UnsupportedOperationException("BallisticProjectile has no physics body");
+    }
+
+    @Override
+    protected void defineSyncedData(SynchedEntityData.Builder builder) {
+    }
+
+    // ========== IAnimatable 实现 ==========
+
+    @Override
+    public BallisticProjectile getAnimatable() {
+        return this;
+    }
+
+    @Override
+    public Level getAnimLevel() {
+        return level;
+    }
+
+    private ModelIndex defaultModelIndex;
+
+    @Override
+    public @NotNull ModelIndex getDefaultModelIndex() {
+        if (defaultModelIndex == null) {
+            ResourceLocation key = projectileType.getRegistryKey();
+            defaultModelIndex = new ModelIndex("projectile", key != null ? key
+                    : ResourceLocation.fromNamespaceAndPath("machine_max", "ballistic_default"));
+        }
+        return defaultModelIndex;
+    }
+
+    @Override
+    public @NotNull AnimController getAnimController() {
+        if (animController == null) {
+            animController = new AnimController(this);
+        }
+        return animController;
+    }
+
+    @Override
+    public @NotNull ModelController getModelController() {
+        if (modelController == null) {
+            modelController = new ModelController(this);
+        }
+        return modelController;
+    }
+
+    @Override
+    public @NotNull Map<String, Object> getVariables() {
+        return variables;
+    }
+
+    // ========== BFHurtTarget 实现 ==========
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        return false;
+    }
+
+    @Override
+    public BFDamageContext createContextFromVanilla(DamageSource source, float amount) {
+        return null;
+    }
+
+    @Override
+    public ArmorLevel getArmorLevel(BFDamageContext ctx) {
+        return ArmorLevel.UNARMORED_1;
+    }
+
+    // ========== 稳定性状态（SoA 数组支持） ==========
+
+    public float getRemainingStableDistance() {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return 0;
+        int idx = pm.findIndexByObjId(getId());
+        return (idx >= 0) ? pm.remainingStableDistance[idx] : 0;
+    }
+
+    public void setRemainingStableDistance(float v) {
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return;
+        int idx = pm.findIndexByObjId(getId());
+        if (idx >= 0) pm.remainingStableDistance[idx] = v;
     }
 
     // ==================== 穿透速度工具 ====================
@@ -97,7 +404,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param penCoeff     穿深速度系数 k
      * @return 穿透后的新速率；动能不足以穿透时返回 0
      */
-    static float speedAfterPenetration(float currentSpeed, float currentPen, float targetArmor, float penCoeff) {
+    private static float speedAfterPenetration(float currentSpeed, float currentPen, float targetArmor, float penCoeff) {
         if (Math.abs(penCoeff) < 1e-6f) return currentSpeed; // k=0 不损失能量
         float ratio = targetArmor / Math.max(currentPen, 1e-6f);
         float vThreshold = currentSpeed * (float) Math.pow(ratio, 1.0f / penCoeff);
@@ -108,51 +415,40 @@ public interface IProjectile extends BFDamageHandler {
 
     // ==================== 命中结果桥接（回调 ↔ Manager） ====================
 
-    /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
-    boolean isHitPending();
-    void setHitPending(boolean pending);
-
-    /** 读取当前命中结果（写入后由 Manager 通过 consume 消费） */
-    @Nullable
-    AfterHitResult getPendingHitResult();
-
-    /** 写入命中结果（由 BFDamageHandler 回调写入，可在物理线程或主线程调用） */
-    void setPendingHitResult(@Nullable AfterHitResult result);
-
     /** 消费命中结果（物理线程调用，消费后清空） */
-    default @Nullable AfterHitResult consumePendingHitResult() {
+    public @Nullable AfterHitResult consumePendingHitResult() {
         AfterHitResult r = getPendingHitResult();
         setPendingHitResult(null);
         return r;
     }
 
-    // ==================== BFDamageHandler 回调默认实现 ====================
+    // ==================== BFDamageHandler 回调实现 ====================
 
     @Override
-    default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
+    public void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
         decrementStableDistance(target, ctx);   // 穿透成功则递减稳定距离
         resolvePenetrationSpeed(target, ctx);
     }
 
     @Override
-    default void onBlocked(BFHurtTarget target, BFDamageContext ctx) {
+    public void onBlocked(BFHurtTarget target, BFDamageContext ctx) {
         setPendingHitResult(AfterHitResult.DESTROYED);
     }
 
     @Override
-    default void onRicochet(BFHurtTarget target, BFDamageContext ctx) {
+    public void onRicochet(BFHurtTarget target, BFDamageContext ctx) {
         Vec3 normalMc = ctx.hitNormal();
         Vector3f normal = new Vector3f((float) normalMc.x, (float) normalMc.y, (float) normalMc.z);
         setPendingHitResult(AfterHitResult.ricochet(0.8f, getVelocity(), normal));
     }
 
     @Override
-    default void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
+    public void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
         resolvePenetrationSpeed(target, ctx);
     }
 
     @Override
-    default void onSpall(BFHurtTarget target, BFDamageContext ctx) {
+    public void onSpall(BFHurtTarget target, BFDamageContext ctx) {
         resolvePenetrationSpeed(target, ctx);
     }
 
@@ -168,7 +464,7 @@ public interface IProjectile extends BFDamageHandler {
      * @return true 表示碾压——弹体完整穿透，不触发破片
      */
     @Override
-    default boolean isOvermatch(BFHurtTarget target, BFDamageContext ctx, PenetrationResult result) {
+    public boolean isOvermatch(BFHurtTarget target, BFDamageContext ctx, PenetrationResult result) {
         if (result != PenetrationResult.PENETRATED) return false;
         float rha = target.getRHA(ctx);
         float modifiedPen = target.modifyPenetration(ctx);
@@ -189,7 +485,7 @@ public interface IProjectile extends BFDamageHandler {
      * 否则按残余比例衰减速度，公式与 {@link #onPenetrated} 一致。
      */
     @Override
-    default void onNormalEntityHit(Entity entity, BFDamageContext ctx,
+    public void onNormalEntityHit(Entity entity, BFDamageContext ctx,
                              float baseDamage, boolean success) {
         float effectiveRha = computeEntityEffectiveRha(entity);
         float pen = calculateCurrentPenetration();
@@ -210,7 +506,7 @@ public interface IProjectile extends BFDamageHandler {
     // 在此时计算冲量并写入扩展容器，确保 SubPart.hurt() 的延迟任务在读取时值已就绪。
 
     @Override
-    default void beforePenetrated(BFHurtTarget target, BFDamageContext ctx) {
+    public void beforePenetrated(BFHurtTarget target, BFDamageContext ctx) {
         float effectivePen = target.modifyPenetration(ctx);
         float rha = target.getRHA(ctx);
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
@@ -218,20 +514,20 @@ public interface IProjectile extends BFDamageHandler {
     }
 
     @Override
-    default void beforeBlocked(BFHurtTarget target, BFDamageContext ctx) {
+    public void beforeBlocked(BFHurtTarget target, BFDamageContext ctx) {
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
                 getMass() * (float) ctx.hitVelocity().length());
     }
 
     @Override
-    default void beforeRicochet(BFHurtTarget target, BFDamageContext ctx) {
+    public void beforeRicochet(BFHurtTarget target, BFDamageContext ctx) {
         // 跳弹冲量：弹体以 0.8 倍速率反射，转移约 20% 动量
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
                 getMass() * (float) ctx.hitVelocity().length() * 0.2f);
     }
 
     @Override
-    default void beforeOvermatch(BFHurtTarget target, BFDamageContext ctx) {
+    public void beforeOvermatch(BFHurtTarget target, BFDamageContext ctx) {
         float effectivePen = target.modifyPenetration(ctx);
         float rha = target.getRHA(ctx);
         ctx.extensions().set(BFDamageExtensions.IMPULSE,
@@ -239,12 +535,12 @@ public interface IProjectile extends BFDamageHandler {
     }
 
     @Override
-    default void beforeSpall(BFHurtTarget target, BFDamageContext ctx) {
+    public void beforeSpall(BFHurtTarget target, BFDamageContext ctx) {
         // 破片场景：parent beforePenetrated/Blocked 已写冲量，此处无需额外操作
     }
 
     @Override
-    default void beforeNormalEntityHit(Entity entity, BFDamageContext ctx, float baseDamage) {
+    public void beforeNormalEntityHit(Entity entity, BFDamageContext ctx, float baseDamage) {
         float impactSpeed = (float) ctx.hitVelocity().length();
         float pen = calculateCurrentPenetration();
         float effectiveRha = computeEntityEffectiveRha(entity);
@@ -260,7 +556,7 @@ public interface IProjectile extends BFDamageHandler {
 
     /**
      * 处理地形命中。计算方块等效护甲，判定穿透/停住，可选方块破坏。
-     * 由 Manager（质点 rayTest）或碰撞回调（刚体）调用。
+     * 由 Manager 在射线检测路径调用。
      * <p>
      * 调用方应在调用此方法之前检查穿透密钥（通过
      * {@link ProjectileManager#hasPenetrated}），若已穿透则跳过；
@@ -275,7 +571,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param hitNormal           命中面法线（指向投射物）
      * @return AfterHitResult — passThrough(速率保留率) / DESTROYED
      */
-    default AfterHitResult onTerrainHit(
+    public AfterHitResult onTerrainHit(
         Level level, BlockPos blockPos, BlockState blockState,
         float currentPenetration, float currentSpeed,
         Vec3 hitPoint, Vec3 hitNormal
@@ -325,7 +621,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param hitBox              命中的碰撞箱（SubPart 命中时有值，否则 null）
      * @return AfterHitResult — passThrough / DESTROYED / ricochet
      */
-    default AfterHitResult onPartHit(
+    public AfterHitResult onPartHit(
         Level level, BFHurtTarget target,
         float currentPenetration, float currentDamage,
         Vec3 hitPoint, Vec3 hitNormal,
@@ -369,7 +665,7 @@ public interface IProjectile extends BFDamageHandler {
      * @return AfterHitResult — 同步路径返回即时结果；异步路径返回 null，结果由回调链写入 pendingHitResult
      */
     @Nullable
-    default AfterHitResult onEntityHit(
+    public AfterHitResult onEntityHit(
         Level level, Entity entity,
         float currentPenetration, float currentDamage,
         Vec3 hitPoint, Vec3 hitNormal
@@ -422,51 +718,10 @@ public interface IProjectile extends BFDamageHandler {
         return null;
     }
 
-    // ==================== 物理状态协议 ====================
+    // ==================== 弹道参数快捷委托（全部委托至 ProjectileType） ====================
 
-    /**
-     * @return 投射物当前世界坐标（JME Vector3f）
-     */
-    Vector3f getPosition();
-
-    /**
-     * @return 投射物当前速度矢量（JME Vector3f，单位 m/s）
-     */
-    Vector3f getVelocity();
-
-    /**
-     * @return 投射物前方向量（模型朝向）
-     */
-    Vector3f getFrontVector();
-
-    /**
-     * @return 当前速率（速度矢量的模长，单位 m/s）
-     */
-    default float getSpeed() {
-        return getVelocity().length();
-    }
-
-    /**
-     * 获取归一化的运动方向。
-     * 当速度接近零时回退到 {@link #getFrontVector()} 作为方向。
-     *
-     * @return 归一化方向矢量
-     */
-    default Vector3f getDirection() {
-        Vector3f vel = getVelocity();
-        if (vel.lengthSquared() < 1e-12f) return getFrontVector();
-        return vel.normalize();
-    }
-
-    /**
-     * @return 此投射物关联的类型定义（含全部弹道参数）
-     */
-    KineticProjectileType getProjectileType();
-
-    /**
-     * @return 本弹种的战斗部效果列表（空列表 = 纯动能弹）
-     */
-    default List<WorldEffect> getWarheads() {
+    /** @return 本弹种的战斗部效果列表（空列表 = 纯动能弹） */
+    public List<WorldEffect> getWarheads() {
         return getProjectileType().getWarheads();
     }
 
@@ -479,78 +734,56 @@ public interface IProjectile extends BFDamageHandler {
      *
      * @return true 表示至少有一个战斗部效果
      */
-    default boolean hasWarheads() {
+    public boolean hasWarheads() {
         return !getWarheads().isEmpty();
     }
 
-    /**
-     * @return 投射物模型控制器，可能为 null（无模型时不渲染）。
-     * 实现类（如 {@link PointProjectile}、{@link RigidProjectile}）应
-     * 实现 {@link cn.solarmoon.spark_core.animation.IAnimatable} 接口
-     * 并返回真实的 {@link ModelController}。
-     */
-    default ModelController getModelController() { return null; }
-
-    // ========== 弹道参数快捷委托（全部委托至 ProjectileType） ==========
-
-    default float getMass()            { return getProjectileType().getMass(); }
-    default float getGravityFactor()   { return getProjectileType().getGravityFactor(); }
-    default float getDragFactor()      { return getProjectileType().getDragFactor(); }
-    default float getBaseVelocity()    { return getProjectileType().getBaseVelocity(); }
-    default float getBasePenetration() { return getProjectileType().getBasePenetration(); }
-    default float getBaseDamage()      { return getProjectileType().getBaseDamage(); }
-    default float getBaseAccuracyMil() { return getProjectileType().getBaseAccuracyMil(); }
-    default float getPenetrationVelocityCoefficient() {
+    public float getMass()            { return getProjectileType().getMass(); }
+    public float getGravityFactor()   { return getProjectileType().getGravityFactor(); }
+    public float getDragFactor()      { return getProjectileType().getDragFactor(); }
+    public float getBaseVelocity()    { return getProjectileType().getBaseVelocity(); }
+    public float getBasePenetration() { return getProjectileType().getBasePenetration(); }
+    public float getBaseDamage()      { return getProjectileType().getBaseDamage(); }
+    public float getBaseAccuracyMil() { return getProjectileType().getBaseAccuracyMil(); }
+    public float getPenetrationVelocityCoefficient() {
         return getProjectileType().getPenetrationVelocityCoefficient();
     }
-    default float getDamageVelocityCoefficient() {
+    public float getDamageVelocityCoefficient() {
         return getProjectileType().getDamageVelocityCoefficient();
     }
-    default float getRadius()          { return getProjectileType().getRadius(); }
+    public float getRadius()          { return getProjectileType().getRadius(); }
 
     /** 口径（mm），供跳弹/碾压判定等使用 */
-    default float getCaliber()         { return getProjectileType().getCaliber(); }
+    public float getCaliber()         { return getProjectileType().getCaliber(); }
 
     /** 稳定距离（mm），0 = 无限稳定 */
-    default float getStableDistance()   { return getProjectileType().getStableDistance(); }
+    public float getStableDistance()   { return getProjectileType().getStableDistance(); }
     /** 失稳后穿深保留因子（0~1） */
-    default float getUnstablePenFactor(){ return getProjectileType().getUnstablePenFactor(); }
-
-    // ========== 稳定性状态（由 SoA 数组支持） ==========
-
-    /** 剩余稳定距离（mm），&lt;=0 表示弹头已失稳。由 ProjectileManager SoA 管理 */
-    float getRemainingStableDistance();
-    void setRemainingStableDistance(float v);
+    public float getUnstablePenFactor(){ return getProjectileType().getUnstablePenFactor(); }
 
     /** 当前是否已失稳（稳定距离耗尽） */
-    default boolean isCurrentlyUnstable() {
+    public boolean isCurrentlyUnstable() {
         return getStableDistance() > 0 && getRemainingStableDistance() <= 0;
     }
 
-    // ========== 生命周期 ==========
+    /**
+     * @return 当前速率（速度矢量的模长，单位 m/s）
+     */
+    public float getSpeed() {
+        return getVelocity().length();
+    }
 
     /**
-     * @return 投射物是否仍活跃（未命中、未超时、未移除）
+     * 获取归一化的运动方向。
+     * 当速度接近零时回退到 {@link #getFrontVector()} 作为方向。
+     *
+     * @return 归一化方向矢量
      */
-    boolean isAlive();
-
-    /**
-     * @return 当前剩余存活 tick 数
-     */
-    int getLifetime();
-
-    /**
-     * @return 最大存活 tick 数（来自 {@link ProjectileType#getMaxLifetimeTicks()}）
-     */
-    int getMaxLifetime();
-
-    /**
-     * 标记投射物已命中。
-     * 调用后 {@link #isAlive()} 应返回 false，管理器将在下次 tick 中清理此投射物。
-     */
-    void markHit();
-
-    Level getLevel();
+    public Vector3f getDirection() {
+        Vector3f vel = getVelocity();
+        if (vel.lengthSquared() < 1e-12f) return getFrontVector();
+        return vel.normalize();
+    }
 
     // ========== 速度-伤害模型 ==========
 
@@ -563,7 +796,7 @@ public interface IProjectile extends BFDamageHandler {
      *
      * @return 有效穿深（mm RHA）
      */
-    default float calculateCurrentPenetration() {
+    public float calculateCurrentPenetration() {
         float coeff = getPenetrationVelocityCoefficient();
         if (Math.abs(coeff) < 1e-6f) return getBasePenetration();
         float baseV = Math.max(getBaseVelocity(), 1e-6f);
@@ -579,7 +812,7 @@ public interface IProjectile extends BFDamageHandler {
      *
      * @return 有效伤害值
      */
-    default float calculateCurrentDamage() {
+    public float calculateCurrentDamage() {
         float coeff = getDamageVelocityCoefficient();
         if (Math.abs(coeff) < 1e-6f) return getBaseDamage();
         float baseV = Math.max(getBaseVelocity(), 1e-6f);
@@ -601,7 +834,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param ctx    已构造的命中上下文（含稳定性折减、HIT_BOX、物理厚度等）
      * @return 实际造成的伤害量
      */
-    default float dealDamage(Object target, BFDamageContext ctx) {
+    public float dealDamage(Object target, BFDamageContext ctx) {
         // 执行伤害管线（before* 回调已在 hurt 前写入 IMPULSE）
         float dmg = BFDamageHandler.super.dealDamage(target, ctx);
 
@@ -627,9 +860,6 @@ public interface IProjectile extends BFDamageHandler {
      * <p>
      * 穿深通过 {@link #calculateCurrentPenetration()} 实时计算，
      * 失稳时 ×unstablePenFactor 写入上下文，原始值存入扩展供能量法使用。
-     * <p>
-     * 对实现方可见：实现类自行发起命中结算时（如 {@code RigidProjectile} 的实体命中）
-     * 复用本方法，保证两种运动模型的上下文口径一致。
      *
      * @param level     维度（用于获取通用 DamageSource）
      * @param damage    伤害量（已按速度衰减的当前值）
@@ -639,7 +869,7 @@ public interface IProjectile extends BFDamageHandler {
      * @param exts      扩展容器
      * @return 已注入当前投射物为 handler 的上下文
      */
-    default BFDamageContext buildHurtContext(Level level, float damage,
+    public BFDamageContext buildHurtContext(Level level, float damage,
                                              Vec3 hitVel, Vec3 hitPoint, Vec3 hitNormal,
                                              BFDamageExtensions exts) {
         // 稳定性判定：失稳时上下文穿深打折，但保留原始穿深供能量法使用

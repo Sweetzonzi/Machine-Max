@@ -6,11 +6,9 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.PointProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileTypeEnum;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.RigidProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceLaw;
 import lombok.Getter;
@@ -24,26 +22,21 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 飞行弹丸类型（{@code point} / {@code rigid}）。
+ * 飞行弹丸类型（JSON {@code "type": "ballistic"}）。
  * <p>
  * 在 {@link ProjectileType} 共享字段之外，承载运动模型专属字段：
- * {@link #getType() 物理模型枚举}、{@link ExternalProperties 外弹道}、
- * {@link TerminalProperties 终点效应}，以及 {@link #getWarheads() 战斗部效果列表}。
+ * {@link ExternalProperties 外弹道}、{@link TerminalProperties 终点效应}，
+ * 以及 {@link #getWarheads() 战斗部效果列表}。
  * <p>
- * 由 {@link ProjectileType#CODEC} 按 JSON 的 {@code "type"} 字段分派到此类的
- * {@link #CODEC}；{@code point} 与 {@code rigid} 路由到同一个 {@code CODEC}，
- * 二者的区分由 {@code "type"} 字段本身（{@link #getType()}）完成。
+ * 由 {@link ProjectileType#CODEC} 按 JSON 的 {@code "type"} 字段分派到此类的 {@link #CODEC}。
  * <p>
- * 速度-伤害模型见 {@link IProjectile} 中的幂函数实现。
+ * 速度-伤害模型见 {@link BallisticProjectile} 中的幂函数实现。
  * 字段语义参见设计文档《武器系统-组件化投射物与类型体系设计》§三。
  */
 @Getter
-public class KineticProjectileType extends ProjectileType {
+public class BallisticProjectileType extends ProjectileType {
 
     // ==================== 运动模型专属字段 ====================
-
-    /** 物理模型类型（枚举），JSON 中以字符串 "point" / "rigid" 读写 */
-    private final ProjectileTypeEnum type;
 
     /** 外弹道属性 — 决定投射物如何飞行 */
     private final ExternalProperties external;
@@ -57,9 +50,8 @@ public class KineticProjectileType extends ProjectileType {
      * JSON 中为可选对象，按 {@code "type"} 字段分派到具体律（形状与 {@code warheads} 一致）。
      * 缺省为 {@code null}，未配置 {@code guidance} 的内容包 JSON 保持纯弹道。
      * <p>
-     * {@code point} 与 {@code rigid} 两种运动模型都受支持：质点弹把指令加速度并入 SoA 积分，
-     * 刚体弹把指令加速度换算为中心力提交给 Bullet 刚体并按速度方向驱动姿态；
-     * 两者的过载限幅与诱导阻力共用 {@link GuidanceLaw#computeAcceleration} 路径。
+     * 指令加速度并入 SoA 积分，过载限幅与诱导阻力走
+     * {@link GuidanceLaw#computeAcceleration} 路径。
      */
     @Nullable
     private final GuidanceLaw guidance;
@@ -75,21 +67,12 @@ public class KineticProjectileType extends ProjectileType {
     /** 静态扩展数据缓存（口径、质量等不变信息），惰性初始化，命中时 copy 后追加动态值 */
     private volatile BFDamageExtensions baseExtensions;
 
-    // ==================== 字符串↔枚举互转 Codec ====================
-
-    private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
-        Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
-
-    // ==================== CODEC（10 字段，远低于 16 上限） ====================
+    // ==================== CODEC（9 字段，远低于 16 上限） ====================
 
     /**
-     * Mojang MapCodec：将 JSON 反序列化为 {@link KineticProjectileType}。
-     * <p>
-     * {@code "type"} 字段同时被 {@link ProjectileType#CODEC} 的 dispatch 读取（用于路由）
-     * 和本 Codec 读取（用于确定 {@link #getType()} 枚举），两者取值一致。
+     * Mojang MapCodec：将 JSON 反序列化为 {@link BallisticProjectileType}。
      */
-    public static final MapCodec<KineticProjectileType> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-        ENUM_CODEC.fieldOf("type").forGetter(KineticProjectileType::getType),
+    public static final MapCodec<BallisticProjectileType> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
         ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of())
             .forGetter(ProjectileType::getTags),
         Codec.FLOAT.optionalFieldOf("max_lifetime", 10.0f)
@@ -97,28 +80,27 @@ public class KineticProjectileType extends ProjectileType {
         Codec.INT.optionalFieldOf("bullet_num", 1)
             .forGetter(ProjectileType::getBulletNum),
         ExternalProperties.CODEC.fieldOf("external")
-            .forGetter(KineticProjectileType::getExternal),
+            .forGetter(BallisticProjectileType::getExternal),
         TerminalProperties.CODEC.fieldOf("terminal")
-            .forGetter(KineticProjectileType::getTerminal),
+            .forGetter(BallisticProjectileType::getTerminal),
         // 可选制导配置（形状同 warheads：type 字段直接分派到律的 codec）。
         // Optional 必须留在 codec 组内、由 apply 回调解包——
         // 若用 xmap 把它映射成 null，null 会穿过 DFU 的 DataResult 触发 NPE（见 TurretDriverSubsystemStaticAttr 同款写法）
         GuidanceLaw.CODEC.optionalFieldOf("guidance")
             .forGetter(attr -> Optional.ofNullable(attr.guidance)),
         WorldEffect.CODEC.listOf().optionalFieldOf("warheads", List.of())
-            .forGetter(KineticProjectileType::getWarheads),
+            .forGetter(BallisticProjectileType::getWarheads),
         VisualProperties.CODEC.optionalFieldOf("visual", VisualProperties.DEFAULT)
             .forGetter(ProjectileType::getVisual),
         ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
             .forGetter(ProjectileType::getSounds)
-    ).apply(instance, (type, tags, maxLifetime, bulletNum, external, terminal, guidance, warheads, visual, sounds) ->
-        new KineticProjectileType(type, tags, maxLifetime, bulletNum, external, terminal,
+    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, guidance, warheads, visual, sounds) ->
+        new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal,
             guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
 
-    public KineticProjectileType(
-        ProjectileTypeEnum type,
+    public BallisticProjectileType(
         List<ResourceLocation> tags,
         float maxLifetime,
         int bulletNum,
@@ -130,7 +112,6 @@ public class KineticProjectileType extends ProjectileType {
         ProjectileSoundAttr sounds
     ) {
         super(tags, maxLifetime, bulletNum, visual, sounds);
-        this.type = type;
         this.external = external;
         this.terminal = terminal;
         this.guidance = guidance;
@@ -139,7 +120,7 @@ public class KineticProjectileType extends ProjectileType {
 
     @Override
     public String getSerializedName() {
-        return type.getSerializedName();
+        return "ballistic";
     }
 
     /**
@@ -203,22 +184,15 @@ public class KineticProjectileType extends ProjectileType {
     // ==================== 工厂方法 ====================
 
     /**
-     * 按类型枚举自动分派创建投射物实例。
-     * <p>
-     * {@link ProjectileTypeEnum#POINT} → {@link PointProjectile}，
-     * {@link ProjectileTypeEnum#RIGID} → {@link RigidProjectile}。
-     * 调用方无需手动判断。
+     * 创建投射物实例。
      *
      * @param level    维度
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
      * @return 已创建的投射物实例
      */
-    public IProjectile create(Level level, Vector3f position, Vector3f velocity) {
-        IProjectile p = switch (type) {
-            case POINT -> new PointProjectile(level, this, position, velocity);
-            case RIGID -> new RigidProjectile(level, this, position, velocity);
-        };
+    public BallisticProjectile create(Level level, Vector3f position, Vector3f velocity) {
+        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
         ((DestroyableObject) p).addToLevel();
         return p;
     }
@@ -239,11 +213,8 @@ public class KineticProjectileType extends ProjectileType {
      * @param objId    服务端分配的 DestroyableObject ID
      * @return 已创建并注册的投射物实例
      */
-    public IProjectile createWithId(Level level, Vector3f position, Vector3f velocity, int objId) {
-        IProjectile p = switch (type) {
-            case POINT -> new PointProjectile(level, this, position, velocity);
-            case RIGID -> new RigidProjectile(level, this, position, velocity);
-        };
+    public BallisticProjectile createWithId(Level level, Vector3f position, Vector3f velocity, int objId) {
+        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
         ((DestroyableObject) p).setId(objId); // ★ 在 addToLevel 之前覆写，ObjectManager 和 SoA 均用此 ID
         ((DestroyableObject) p).addToLevel();
         return p;
@@ -271,7 +242,7 @@ public class KineticProjectileType extends ProjectileType {
      * @param platformVelocity   发射平台速度（JME Vector3f，继承用）
      * @return 已创建的投射物列表（全部已 addToLevel）
      */
-    public List<IProjectile> fire(
+    public List<BallisticProjectile> fire(
         Level level,
         Vector3f muzzlePosition,
         Vector3f direction,
@@ -285,7 +256,7 @@ public class KineticProjectileType extends ProjectileType {
         float hRad = external.baseAccuracyMil() * hAccuracyMul / 1000f;
         float vRad = external.baseAccuracyMil() * vAccuracyMul / 1000f;
 
-        List<IProjectile> projectiles = new ArrayList<>(getBulletNum());
+        List<BallisticProjectile> projectiles = new ArrayList<>(getBulletNum());
         for (int i = 0; i < getBulletNum(); i++) {
             Vector3f spreadDir = applyEllipticSpread(direction, hRad, vRad);
             Vector3f vel = spreadDir.mult(finalSpeed).addLocal(platformVelocity);
@@ -355,7 +326,7 @@ public class KineticProjectileType extends ProjectileType {
         float gravityFactor,
         /** 空气阻力系数（速度²阻力），0 = 无阻力 */
         float dragFactor,
-        /** 口径（mm），质点用于射线检测命中判定，刚体用于 SphereCollisionShape */
+        /** 口径（mm）。换算为半径（口径/2000 m）后同时用于风阻截面积 π·r² 与射线命中判定 */
         float caliberMm,
         /** 参考速度（m/s），速度-伤害模型的基准速度 */
         float baseVelocity,
@@ -386,7 +357,7 @@ public class KineticProjectileType extends ProjectileType {
          * 推力段内加速度为 {@code F / m}，燃烧窗口为 {@code [ignition_delay, ignition_delay + duration)}。
          * 首期只支持单段点火（多段 / 推力曲线见《武器系统-制导组件实现备忘》§十四）。
          * <p>
-         * <b>两端一致：</b>服务端 {@code updatePointProjectiles} 与客户端 {@code clientExtrapolate}
+         * <b>两端一致：</b>服务端 {@code updateProjectiles} 与客户端 {@code clientExtrapolate}
          * 均按同一窗口施加推力，保证客户端外推轨迹与服务端一致。
          *
          * @param force         推力（N）

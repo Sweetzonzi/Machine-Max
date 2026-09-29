@@ -20,21 +20,15 @@ import java.util.List;
 /**
  * 投射物权威位姿快照包（服务端→客户端）。
  * <p>
- * 承载两类客户端无法自行复现运动的投射物：
- * <ul>
- *   <li><b>制导弹</b>——客户端复现制导必然静默漂移（PN 依赖视线角速度历史，
- *       导引头还有视场/丢锁状态）</li>
- *   <li><b>刚体投射物</b>——运动由 Bullet 刚体驱动，客户端没有对应积分器，
- *       也不参与 {@code clientExtrapolate}</li>
- * </ul>
+ * 承载客户端无法自行复现运动的制导弹：客户端复现制导必然静默漂移
+ * （PN 依赖视线角速度历史，导引头还有视场/丢锁状态）。
+ * <p>
  * 服务端每 tick 广播位置/速度/寿命快照，客户端以之覆盖本地 SoA。
- * <b>朝向不随本包传输</b>：刚体姿态约定为"弹轴 = 速度方向"，
- * 两端用同一函数（{@code RigidProjectile#facingFromVelocity}）从速度推导。
  * <p>
  * 与 {@link ProjectilesSpawnPayload} 的分工：生成包只负责"创建 + 初速"，
  * 本包负责此后每 tick 的状态覆盖。
  * <p>
- * 无制导的质点弹不进入本包，客户端行为不受影响。
+ * 无制导的弹种不进入本包，客户端行为不受影响。
  * <p>
  * <b>调用线程：</b>主线程（由 {@link ProjectileManager#postTick()} 调用）。
  *
@@ -50,9 +44,8 @@ public record ProjectilesGuidedStatePayload(
     /**
      * 单个投射物的状态条目。
      * <p>
-     * {@code lifetime} 一并携带：质点弹在客户端每 tick 多次递减寿命，
-     * 刚体弹的寿命则完全由本快照覆盖——两种情况都需要服务端值兜底，
-     * 否则客户端会提前清理该投射物。
+     * {@code lifetime} 一并携带：客户端也自行递减寿命，
+     * 需要服务端值兜底，否则客户端会提前清理该投射物。
      *
      * @param objId    DestroyableObject ID
      * @param posX     世界坐标 X
@@ -124,7 +117,7 @@ public record ProjectilesGuidedStatePayload(
     /**
      * 客户端处理：逐条覆盖本地 SoA 的位姿/速度/寿命。
      * <p>
-     * 复用既有的 {@link ProjectileManager#syncPointProjectileState}（语义完全吻合）。
+     * 复用既有的 {@link ProjectileManager#syncProjectileState}（语义完全吻合）。
      * 找不到 objId 时静默跳过——生成包可能尚未到达或已销毁。
      * <p>
      * <b>调用线程：</b>主线程（NeoForge 网络处理器）。
@@ -136,7 +129,7 @@ public record ProjectilesGuidedStatePayload(
             if (pm == null) return;
 
             for (StateEntry entry : payload.entries) {
-                pm.syncPointProjectileState(
+                pm.syncProjectileState(
                         entry.objId,
                         new Vector3f((float) entry.posX, (float) entry.posY, (float) entry.posZ),
                         new Vector3f((float) entry.velX, (float) entry.velY, (float) entry.velZ),

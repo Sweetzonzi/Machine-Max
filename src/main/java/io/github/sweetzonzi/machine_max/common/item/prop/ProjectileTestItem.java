@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.type.KineticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -44,7 +44,7 @@ public class ProjectileTestItem extends Item {
             : ResourceLocation.parse("machine_max:20mm_ap");
         ProjectileType type = ProjectileType.get(level, typeKey);
         // 本测试物品只发射飞行弹丸（Kinetic）
-        if (!(type instanceof KineticProjectileType kineticType)) return InteractionResultHolder.fail(stack);
+        if (!(type instanceof BallisticProjectileType kineticType)) return InteractionResultHolder.fail(stack);
 
         // 计算发射位置和初始速度
         var look = player.getLookAngle();
@@ -52,7 +52,7 @@ public class ProjectileTestItem extends Item {
         var jmePos = PhysicsHelperKt.toBVector3f(spawnPos);
         var jmeVel = PhysicsHelperKt.toBVector3f(look).multLocal(kineticType.getBaseVelocity());
 
-        // 由 KineticProjectileType 自动分派创建质点或刚体投射物
+        // 创建投射物并加入世界
         kineticType.create(level, jmePos, jmeVel);
 
         // 播放单发开火音效

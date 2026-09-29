@@ -70,7 +70,7 @@ public interface GuidanceLaw {
      * 实现方需自行处理几何退化（速度过小、已对准、目标重合等），
      * 无有效指令时返回 {@code false}（{@code out} 内容视为无效）。
      * <p>
-     * <b>调用线程：</b>物理线程（{@code ProjectileManager.updatePointProjectiles}）。
+     * <b>调用线程：</b>物理线程（{@code ProjectileManager.updateProjectiles}）。
      *
      * @param ctx 展平的每步上下文（位置、速度、目标点、气动参数）
      * @param out 输出缓冲（复用，避免热路径分配）

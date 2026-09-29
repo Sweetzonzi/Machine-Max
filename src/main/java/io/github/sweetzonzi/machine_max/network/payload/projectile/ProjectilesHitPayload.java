@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -148,7 +148,7 @@ public record ProjectilesHitPayload(
                         pm.alive[idx] = false;
                         // 标记客户端投射物对象为已命中，确保 MMProjectileEntity.isAlive() 返回 false
                         DestroyableObject obj = pm.getProjectile(e.objId);
-                        if (obj instanceof IProjectile proj) {
+                        if (obj instanceof BallisticProjectile proj) {
                             proj.markHit();
                         }
                     } else {
