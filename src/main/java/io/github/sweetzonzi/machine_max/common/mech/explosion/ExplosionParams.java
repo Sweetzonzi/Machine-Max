@@ -3,8 +3,13 @@ package io.github.sweetzonzi.machine_max.common.mech.explosion;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.List;
 
 /**
  * 单发爆炸的参数。
@@ -27,6 +32,14 @@ import net.minecraft.network.codec.StreamCodec;
  * @param destroyBlocks   是否破坏地形（默认 true）
  * @param dropItems       摧毁方块是否掉落（默认 false）
  * @param causesFire      是否点燃；首期强制 false（尚无实现）
+ * @param particles       起爆瞬间在起爆点播放的基岩版粒子特效 id 列表（默认空列表）。
+ *                        按 Spark-Core 内容包的粒子定义解析，因此可写 {@code machine_max:blast_medium}
+ *                        这类标识符；列表为空即该爆炸不起爆粒子。构造时会复制为不可变列表。
+ * @param particleScale   {@code particles} 的整体缩放系数（默认 1.0，下界 1e-3）。
+ *                        <b>它缩放的是散布而不是贴图尺寸</b>：Spark-Core 只在粒子生成瞬间把发射器变换
+ *                        作用在局部偏移与初始速度上，因此形状半径与飞散距离按此系数等比放大，
+ *                        而 {@code particle_appearance_billboard.size} 决定的单个烟团大小不变；
+ *                        模拟随后回到世界空间，重力与浮力加速度也不随此系数放大。
  */
 public record ExplosionParams(
         float basePenetration,
@@ -37,7 +50,9 @@ public record ExplosionParams(
         float frontSpeed,
         boolean destroyBlocks,
         boolean dropItems,
-        boolean causesFire
+        boolean causesFire,
+        List<ResourceLocation> particles,
+        float particleScale
 ) {
 
     /**
@@ -55,7 +70,10 @@ public record ExplosionParams(
             Codec.FLOAT.optionalFieldOf("front_speed", 20.0f).forGetter(ExplosionParams::frontSpeed),
             Codec.BOOL.optionalFieldOf("destroy_blocks", true).forGetter(ExplosionParams::destroyBlocks),
             Codec.BOOL.optionalFieldOf("drop_items", false).forGetter(ExplosionParams::dropItems),
-            Codec.BOOL.optionalFieldOf("causes_fire", false).forGetter(ExplosionParams::causesFire)
+            Codec.BOOL.optionalFieldOf("causes_fire", false).forGetter(ExplosionParams::causesFire),
+            Codec.list(ResourceLocation.CODEC).optionalFieldOf("particles", List.of())
+                    .forGetter(ExplosionParams::particles),
+            Codec.FLOAT.optionalFieldOf("particle_scale", 1.0f).forGetter(ExplosionParams::particleScale)
     ).apply(instance, ExplosionParams::new));
 
     /** JSON Codec（由 {@link #MAP_CODEC} 派生），供内容包加载。 */
@@ -68,7 +86,9 @@ public record ExplosionParams(
             return new ExplosionParams(
                     buf.readFloat(), buf.readFloat(), buf.readFloat(),
                     buf.readFloat(), buf.readFloat(), buf.readFloat(),
-                    buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
+                    buf.readBoolean(), buf.readBoolean(), buf.readBoolean(),
+                    PARTICLES_STREAM_CODEC.decode(buf),
+                    buf.readFloat());
         }
 
         @Override
@@ -82,8 +102,14 @@ public record ExplosionParams(
             buf.writeBoolean(p.destroyBlocks());
             buf.writeBoolean(p.dropItems());
             buf.writeBoolean(p.causesFire());
+            PARTICLES_STREAM_CODEC.encode(buf, p.particles());
+            buf.writeFloat(p.particleScale());
         }
     };
+
+    /** {@link ExplosionParams#particles()} 的网络编解码；空列表按长度 0 编解码。 */
+    private static final StreamCodec<ByteBuf, List<ResourceLocation>> PARTICLES_STREAM_CODEC =
+            ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list());
 
     /**
      * 紧凑构造器：做最小必要的防呆。
@@ -91,7 +117,9 @@ public record ExplosionParams(
      * <ul>
      *   <li>{@code causesFire} 强制为 false——内容包里写 true 也不会生效，避免出现"没有实现的开关"；</li>
      *   <li>{@code nearRadius}/{@code frontSpeed} 取下界，避免除零与零步长；</li>
-     *   <li>{@code maxRadius} 不小于 {@code nearRadius}。</li>
+     *   <li>{@code maxRadius} 不小于 {@code nearRadius}；</li>
+     *   <li>{@code particles} 复制为不可变列表，使实例整体保持不可变；</li>
+     *   <li>{@code particleScale} 取下界，避免零或负系数把粒子云压成一点或反向。</li>
      * </ul>
      */
     public ExplosionParams {
@@ -99,6 +127,8 @@ public record ExplosionParams(
         nearRadius = Math.max(nearRadius, 0.1f);
         frontSpeed = Math.max(frontSpeed, 1e-3f);
         maxRadius = Math.max(maxRadius, nearRadius);
+        particles = List.copyOf(particles);
+        particleScale = Math.max(particleScale, 1e-3f);
     }
 
     /** 每主线程 tick 的推进距离（m）。 */

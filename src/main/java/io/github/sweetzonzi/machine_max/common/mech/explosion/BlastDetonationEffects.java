@@ -1,14 +1,16 @@
 package io.github.sweetzonzi.machine_max.common.mech.explosion;
 
+import cn.solarmoon.spark_core.api.ParticleEffects;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Vector3f;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 /**
  * 起爆的客户端一次性表现：爆炸粒子 + 带声速的爆炸音效。
@@ -26,7 +28,10 @@ import net.minecraft.world.phys.Vec3;
  * 直接使用会让 16 格以外的听者永远听不到。故用 {@link SoundEvent#createFixedRangeEvent}
  * 按档位指定传播半径。</p>
  *
- * <p><b>粒子</b>：统一在起爆点生成一个原版 {@link ParticleTypes#EXPLOSION}，不随档位变化。</p>
+ * <p><b>粒子</b>：由 {@link ExplosionParams#particles()} 逐个指定，每个 id 都在起爆点触发一次
+ * Spark-Core 的基岩版粒子效果；列表为空时该爆炸不产生起爆粒子。
+ * {@link ExplosionParams#particleScale()} 作为发射器变换的缩放一并传入，放大的是形状半径与飞散距离，
+ * 单个烟团的贴图尺寸不随之变化。</p>
  */
 public final class BlastDetonationEffects {
 
@@ -39,12 +44,19 @@ public final class BlastDetonationEffects {
      *
      * @param level  收到起爆包的维度（客户端 level）
      * @param origin 起爆点（世界坐标，JME）
-     * @param params 起爆参数集，用于取 {@code maxRadius} 分档
+     * @param params 起爆参数集，用于取 {@code particles} / {@code particleScale} 与 {@code maxRadius} 分档
      */
     public static void playOnDetonate(Level level, Vector3f origin, ExplosionParams params) {
         if (!level.isClientSide()) return;
-        // 原版爆炸烟球；SimpleParticleType 的额外参数无意义，沿用原版 (1, 0, 0)
-        level.addParticle(ParticleTypes.EXPLOSION, origin.x, origin.y, origin.z, 1.0, 0.0, 0.0);
+        // 每个 id 独立建一个发射器实例；定义缺失时 Spark-Core 只记一条警告并跳过该 id
+        Vec3 pos = SparkMathKt.toVec3(origin);
+        // 起爆特效不旋转，局部轴即世界轴；scale 走发射器变换，由 Spark-Core 作用在生成瞬间的偏移与初速上
+        float s = params.particleScale();
+        Quaternionf rotation = new Quaternionf();
+        Vec3 scale = new Vec3(s, s, s);
+        for (ResourceLocation particleId : params.particles()) {
+            ParticleEffects.burst(level, particleId, pos, rotation, scale);
+        }
         playExplosionSound(level, origin, params.maxRadius());
     }
 

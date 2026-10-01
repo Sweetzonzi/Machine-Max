@@ -31,7 +31,9 @@
       "front_speed": 20.0,
       "destroy_blocks": true,
       "drop_items": false,
-      "causes_fire": false
+      "causes_fire": false,
+      "particles": ["machine_max:blast_medium"],
+      "particle_scale": 1.4
     }
   ],
   "visual": {

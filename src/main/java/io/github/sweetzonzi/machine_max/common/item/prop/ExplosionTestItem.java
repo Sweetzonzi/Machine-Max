@@ -1,9 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionParams;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -15,6 +17,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
 
 /**
  * 爆炸系统测试物品。
@@ -45,6 +49,10 @@ public class ExplosionTestItem extends Item {
         final boolean DESTROY_BLOCKS = true;     // 是否破坏地形
         final boolean DROP_ITEMS = false;        // 摧毁方块是否掉落
         final boolean CAUSES_FIRE = false;       // 是否点燃（首期强制 false）
+        // 起爆粒子：与 12 m 的硬截断半径相称的中等特效
+        final List<ResourceLocation> PARTICLES =
+                List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blast_medium"));
+        final float PARTICLE_SCALE = 1.0f;       // 粒子散布缩放（放大形状半径与飞散距离）
         final double AIM_RANGE = 64.0;           // 瞄准射线长度（m）
         // ======================================================
 
@@ -77,7 +85,7 @@ public class ExplosionTestItem extends Item {
         ExplosionParams params = new ExplosionParams(
                 BASE_PENETRATION, BASE_DAMAGE, BASE_IMPULSE,
                 NEAR_RADIUS, MAX_RADIUS, FRONT_SPEED,
-                DESTROY_BLOCKS, DROP_ITEMS, CAUSES_FIRE);
+                DESTROY_BLOCKS, DROP_ITEMS, CAUSES_FIRE, PARTICLES, PARTICLE_SCALE);
         DamageSource source = level.damageSources().source(MMDamageTypes.BLAST);
         long seed = level.random.nextLong();
 
