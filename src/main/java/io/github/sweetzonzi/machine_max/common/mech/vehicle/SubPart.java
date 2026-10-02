@@ -756,7 +756,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
                 //向子系统发送伤害事件，对子系统造成伤害
                 HitBox hitBox = findHitBox(ctx);
-                if (hitBox != null && hitBox.getSubsystem() != null) {
+                if (hitBox.getSubsystem() != null) {
                     hitBox.getSubsystem().onHurt(event);
                 }
                 if (!event.isCanceled()) { // 若伤害未被子系统取消

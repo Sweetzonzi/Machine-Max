@@ -478,8 +478,8 @@ public class CollisionHandler {
         Level level = subPart.getLevel();
         float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
         float subPartArmor = hitBox.getRHA(subPart);
-        double contactNormalSpeed = Math.abs(contactVel.dot(normal))
-                + ManifoldPoints.getAppliedImpulse(manifoldPointId) / subPart.body.getMass();
+        double contactNormalSpeed = Math.abs(contactVel.dot(normal));
+//                + ManifoldPoints.getAppliedImpulse(manifoldPointId) / subPart.body.getMass();
         float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
         ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
         double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);
