@@ -44,7 +44,7 @@ common/mech/
 ## 约定
 
 - **线程模型**：Javadoc 标注 `主线程`（20tps）vs `物理线程`（Bullet 物理步进）。
-- **累加器模式**：物理线程入队到 `ConcurrentLinkedQueue`；主线程在 `handleAccumulated*()` 中清空。
+- **累加器模式**：物理线程入队到 `ConcurrentLinkedQueue`；主线程在 `settleAccumulatedDamage()` 与 `handleAccumulated*()` 中清空。
 - **Volatile 快照**：`CollisionEffectManager.latestWheelSnapshot` — 物理写，主读。
 - **双数学库**：物理用 JME（`com.jme3.math.*`），渲染用 JOML（`org.joml.*`）。通过 `SparkMathKt.*` 转换。
 - **SignalChannel extends ConcurrentHashMap**：通过继承实现线程安全。

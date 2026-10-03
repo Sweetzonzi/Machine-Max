@@ -2,7 +2,7 @@
 
 **范围**: 载具核心拓扑、零件实体、连接器、碰撞、数据序列化、事件系统。
 
-**文件数**: 42 个 | **总行数**: ~8800 行
+**文件数**: 47 个（含子目录）| **总行数**: ~9800 行
 
 ## 结构
 
@@ -13,6 +13,7 @@ vehicle/
 ├── SubPart.java                # 零件实体（刚体 + 骨骼切分 + 渲染视图），实现 ISubsystemHost
 ├── PartType.java               # 部件类型数据（JSON Codec + StreamCodec）
 ├── IPartAssembly.java          # 装配体顶层接口（解耦 Part↔VehicleCore）
+├── SubPartHitDamage.java       # 单次命中的结算记录，随批次通告交给装配体
 ├── DamageModifier.java         # 数据驱动的伤害修改器
 ├── CollisionManager.java       # 实体碰撞冲量管理器
 │
@@ -100,7 +101,7 @@ VehicleCore (IPartAssembly)
 
 - **线程模型**：Javadoc 标注 `主线程` vs `物理线程`。物理线程操作入队到 `ConcurrentLinkedQueue`。
 - **拓扑图线程安全**：`partNet` 仅有的 2 处 `synchronized` 块（VehicleCore.java:893,972）。
-- **累加器模式**：物理线程入队伤害/冲击/完整性变更；主线程在 `handleAccumulated*()` 清空。
+- **累加器模式**：物理线程入队伤害/冲击/完整性变更；主线程在 `DestroyableObject.postTick()` 的 `settleAccumulatedDamage()` 与连接点的 `handleAccumulated*()` 中清空。
 - **Volatile 快照**：`CollisionEffectManager.latestWheelSnapshot` — 物理写，主读。
 - **同步数据**：`SynchedEntityData` + 增量同步（byte 255 终结符）。
 - **伤害传递链**：外部伤害 → SubPart → Part（折算）→ VehicleCore（累计）。

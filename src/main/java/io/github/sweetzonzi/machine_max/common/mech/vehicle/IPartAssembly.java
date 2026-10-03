@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractCo
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -99,6 +100,26 @@ public interface IPartAssembly {
 
     /** Part 受到伤害后向装配体顶层上报，由实现者决定如何折算到装配体的 HP */
     void onPartDamage(Part part, float damage);
+
+    /**
+     * 一次结算的通告：携带本零件本次结算产生的全部命中记录。
+     * <p>
+     * 与 {@link #onPartDamage(Part, float)} 的差别只在粒度——后者只有一个折算后的总量，
+     * 前者还带有逐次命中的金额与协议上下文（伤害来源、命中几何），
+     * 供需要把伤害继续投递给承载实体的装配体使用。
+     * 记录里的零件字段让"把多个零件的记录汇总成一个扁平列表"的场景自带来源信息。
+     * 通告发生在结算过程中（{@code LevelTickEvent.Post} 内），若实现要把伤害投递给承载实体，
+     * 必须自行推迟到全部零件结算之后。
+     * </p>
+     * <p>默认实现把记录折算为总量后调用 {@link #onPartDamage(Part, float)}，因此只实现该重载的装配体照常工作。</p>
+     */
+    default void onPartDamage(Part part, List<SubPartHitDamage> hits) {
+        float total = 0f;
+        for (SubPartHitDamage hit : hits) {
+            total += hit.vehicleDamage();
+        }
+        if (total > 0f) onPartDamage(part, total);
+    }
 
     // ========================================
     // 物理

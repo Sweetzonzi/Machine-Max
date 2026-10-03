@@ -75,23 +75,21 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
         if (isRemoved) return;
         tickCount++;
         if (hurtTime > 0) hurtTime--;
-        if (!level.isClientSide()) {
-            handleAccumulatedDamage(); // 处理各线程造成的伤害
-        } else {
+        if (level.isClientSide()) {
             //客户端处理同步位姿数据
             clientSyncPose();
         }
-        //判定摧毁
-        if (!level.isClientSide() && checkDestroyed())
-            setDestroyed();
     }
 
     public void postTick() {
         if (!level.isClientSide()) {
+            settleAccumulatedDamage(); // 结算各线程造成的伤害
+            //判定摧毁：紧跟结算，否则本 tick 打到 0 的耐久要等下一 tick 才被标记
+            if (checkDestroyed()) setDestroyed();
             if (isDestroyed()) { //物体已被摧毁，倒计时结束后移除
                 tickDestroyTimer(1);
             }
-            syncToClient(); // 同步数据至客户端
+            syncToClient(); // 同步数据至客户端；晚于结算，使本次耐久变化在同一 tick 内可见
         }
         if (isDestroyed() && getDestroyTime() <= 0) this.destroy();
     }
@@ -143,10 +141,10 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
     }
 
     /**
-     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#preTick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#preTick()}</p>
+     * <p>结算各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#postTick()}</p>
+     * <p>Settles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#postTick()}</p>
      */
-    abstract protected void handleAccumulatedDamage();
+    abstract protected void settleAccumulatedDamage();
 
     public void addToLevel() {
         ObjectManager.addDestroyableObject(this);

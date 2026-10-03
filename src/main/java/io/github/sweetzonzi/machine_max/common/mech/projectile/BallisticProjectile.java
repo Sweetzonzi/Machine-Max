@@ -284,7 +284,7 @@ public class BallisticProjectile extends DestroyableObject
         tickCount++;
         if (hurtTime > 0) hurtTime--;
         if (!level.isClientSide()) {
-            handleAccumulatedDamage();   // 伤害队列唯一的消费点：先结算伤害，再判定摧毁
+            settleAccumulatedDamage();   // 伤害队列唯一的消费点：先结算伤害，再判定摧毁
             if (checkDestroyed()) {
                 setDestroyed();
             }
@@ -346,7 +346,7 @@ public class BallisticProjectile extends DestroyableObject
      * 随后的 {@link #checkDestroyed()} 会因耐久归零而标记销毁。
      */
     @Override
-    protected void handleAccumulatedDamage() {
+    protected void settleAccumulatedDamage() {
         float total = 0f;
         BFDamageContext last = null;
         while (!accumulatedDamage.isEmpty()) {
@@ -369,7 +369,7 @@ public class BallisticProjectile extends DestroyableObject
      * 伤害入队。
      * <p>
      * 未配置 {@code vulnerability} 的弹种按不可被击毁处理，直接丢弃伤害；
-     * 其余交给基类累加器，由主线程 {@link #handleAccumulatedDamage()} 结算。
+     * 其余交给基类累加器，由主线程 {@link #settleAccumulatedDamage()} 结算。
      */
     @Override
     public void accumulateDamage(float damage, BFDamageContext ctx) {
@@ -481,13 +481,13 @@ public class BallisticProjectile extends DestroyableObject
      * 因此"未击穿不扣耐久"由管线自身保证。
      * <p>
      * <b>调用线程：</b>任意线程（物理线程或主线程的伤害任务），
-     * 耐久写入统一发生在主线程 {@link #handleAccumulatedDamage()}。
+     * 耐久写入统一发生在主线程 {@link #settleAccumulatedDamage()}。
      */
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (getLevel().isClientSide()) return false;
         if (getProjectileType().getVulnerability() == null || amount <= 0f) return false;
-        // 命中几何从上下文栈取回；取不到时入队 null，起爆点由 handleAccumulatedDamage 用当前位置兜底
+        // 命中几何从上下文栈取回；取不到时入队 null，起爆点由 settleAccumulatedDamage 用当前位置兜底
         accumulateDamage(amount, BFDamageApi.getContextFor(this));
         return true;
     }

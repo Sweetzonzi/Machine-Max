@@ -742,61 +742,69 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#preTick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#preTick()}</p>
+     * <p>结算本次批次内的每一次命中：逐次折算载具伤害，批次结束后统一扣减耐久并通告装配体，在主线程中统一处理，参见 {@link DestroyableObject#postTick()}</p>
+     * <p>Settles each hit of the batch, then applies the durability loss and notifies the assembly, handled in the main thread, see {@link DestroyableObject#postTick()}</p>
      */
-    protected void handleAccumulatedDamage() {
-        if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
-            float totalDamage = 0;
-            Vec3 soundPos = Vec3.ZERO;
-            while (!accumulatedDamage.isEmpty()) {
-                Pair<Float, BFDamageContext> pair = accumulatedDamage.poll();
-                float damage = pair.getFirst();
-                BFDamageContext ctx = pair.getSecond();
-                SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
-                //向子系统发送伤害事件，对子系统造成伤害
-                HitBox hitBox = findHitBox(ctx);
-                if (hitBox.getSubsystem() != null) {
-                    hitBox.getSubsystem().onHurt(event);
-                }
-                if (!event.isCanceled()) { // 若伤害未被子系统取消
-                    // 广播事件
-                    NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, ctx, damage));
-                    totalDamage += damage;
-                    soundPos = ctx.hitPoint();
-                }
+    @Override
+    protected void settleAccumulatedDamage() {
+        if (level.isClientSide() || accumulatedDamage.isEmpty()) return;
+        float remaining = Math.max(0f, getDurability()); // 本批开始前读取一次，批内沿用该值
+        float drained = 0f;                              // 本批此前已结算的量（取自子系统事件的最终金额）
+        List<SubPartHitDamage> hits = new ArrayList<>();
+        while (!accumulatedDamage.isEmpty()) {
+            Pair<Float, BFDamageContext> pair = accumulatedDamage.poll();
+            float damage = pair.getFirst();
+            BFDamageContext ctx = pair.getSecond();
+            if (damage <= 0f) continue; // 非正伤害不入账
+            // 构造事件后直接交给命中判定所属的子系统，不经事件总线
+            SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
+            HitBox hitBox = findHitBox(ctx);
+            // findHitBox 声明 @NotNull，但无命中框时 findStrongestHitBox 返回 null，守卫必须保留
+            if (hitBox.getSubsystem() != null) {
+                hitBox.getSubsystem().onHurt(event);
             }
-            if (totalDamage > 0) {
-                // 扣除前的剩余耐久：用于把本次伤害拆成"零件承受"与"溢出摧毁"两段
-                float remainingDurability = Math.max(0f, getDurability());
-                setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
-                part.recomputeAssemblyFromDurability();
-                if (part.assembly != null) {
-                    float vehicleDamage;
-                    if (isDestroyed()) {
-                        // 零件已处于摧毁状态：本次伤害全部按摧毁传导率传导
-                        vehicleDamage = totalDamage * part.type.vehicleDamageRateDestroyed;
-                    } else if (totalDamage > remainingDurability) {
-                        // 零件未摧毁但本次伤害足以打空耐久：
-                        // 承受住的部分（≤剩余耐久）按正常传导率，超出而摧毁零件的那部分按摧毁传导率
-                        vehicleDamage = part.type.vehicleDamageRate * remainingDurability
-                                + part.type.vehicleDamageRateDestroyed * (totalDamage - remainingDurability);
-                    } else {
-                        // 零件未摧毁且耐久足以承受：全额按正常传导率传导
-                        vehicleDamage = totalDamage * part.type.vehicleDamageRate;
-                    }
-                    part.assembly.onPartDamage(part, Math.max(0f, vehicleDamage));
-                }
-                if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
-                    int extraAdvance = Math.round(totalDamage * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
-                    if (extraAdvance > 0) {
-                        tickDestroyTimer(Math.min(extraAdvance, getDestroyTime() - 20));
-                    }
-                }
-                //发包同步部件状态
-                syncToClient();
+            if (event.isCanceled()) continue; // 被子系统取消的命中不产生记录，也不扣耐久
+            // 广播事件：金额与上下文沿用入队原值，供第三方记账
+            NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, ctx, damage));
+
+            // 子系统可以下调本次金额：事件最终金额是零件耐久与载具伤害的唯一输入
+            float effective = Math.max(0f, event.getDamageAmount());
+            if (effective <= 0f) continue;
+            // 本次命中开始前的剩余耐久：用于把本次伤害拆成"零件承受"与"溢出摧毁"两段
+            float leftBefore = Math.max(0f, remaining - drained);
+            float vehicleDamage;
+            if (isDestroyed()) {
+                // 零件已处于摧毁状态：本次伤害全部按摧毁传导率传导
+                vehicleDamage = effective * part.type.vehicleDamageRateDestroyed;
+            } else if (effective > leftBefore) {
+                // 零件未摧毁但本次伤害足以打空耐久：
+                // 承受住的部分（≤剩余耐久）按正常传导率，超出而摧毁零件的那部分按摧毁传导率
+                vehicleDamage = part.type.vehicleDamageRate * leftBefore
+                        + part.type.vehicleDamageRateDestroyed * (effective - leftBefore);
+            } else {
+                // 零件未摧毁且耐久足以承受：全额按正常传导率传导
+                vehicleDamage = effective * part.type.vehicleDamageRate;
+            }
+            drained += effective;
+            if (vehicleDamage > 0f) {
+                hits.add(new SubPartHitDamage(effective, vehicleDamage, ctx, part));
             }
         }
+        if (drained > 0f) {
+            setDurability(Math.clamp(getDurability() - drained, 0, getMaxDurability()));
+            part.recomputeAssemblyFromDurability();
+            if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
+                int extraAdvance = Math.round(drained * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
+                if (extraAdvance > 0) {
+                    tickDestroyTimer(Math.min(extraAdvance, getDestroyTime() - 20));
+                }
+            }
+        }
+        // 通告晚于耐久写入：装配体可以据此读取零件的最新状态
+        if (!hits.isEmpty() && part.assembly != null) {
+            part.assembly.onPartDamage(part, List.copyOf(hits));
+        }
+        // 同步包由基类 postTick 在结算之后统一发送，本方法内不发送
     }
 
     protected void setDestroyed() {

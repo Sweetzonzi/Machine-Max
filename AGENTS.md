@@ -278,7 +278,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 ## 独特风格
 
-- **ConcurrentLinkedQueue 累加器模式**：物理线程入队伤害/冲击/完整性变更；主线程在 `handleAccumulated*()` 中清空。
+- **ConcurrentLinkedQueue 累加器模式**：物理线程入队伤害/冲击/完整性变更；主线程在 `settleAccumulatedDamage()`（零件在 `postTick`、投射物在 `preTick`）与连接点的 `handleAccumulated*()` 中清空。
 - **Volatile 快照模式**：`CollisionEffectManager.latestWheelSnapshot` — 物理线程写入，主线程读取，仅取最新值。
 - **SoA 投射物数组**：`ProjectileManager` 使用原始类型数组（`posX[]`、`velX[]` 等），swap-remove O(1) 删除。
 - **双数学转换文件**：9 个文件同时导入 JME 和 JOML（MMMath, PosRot, VehicleAnimatable 等）。
