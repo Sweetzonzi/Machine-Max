@@ -173,6 +173,26 @@ io.github.sweetzonzi.machine_max/
 ./gradlew runData            # 重新生成 src/generated/resources/
 ```
 
+### 开发期 mod 目录（两个）
+
+开发期用的第三方 jar 放在仓库根，按「哪些 run 需要它」分两个目录，各自是一个私有配置（`canBeConsumed = false`，不属于任何 variant）：
+
+| 目录 | 内容 | 落点 | 哪些 run 加载 |
+|------|------|------|---------------|
+| `mods/` | 双端都要：Curios、SuperbWarfare | 私有配置 `devServerMods` → main 的 `runtimeClasspath` | `runClient`、`runServer`、`runGameTestServer`、`runData` |
+| `mods-client/` | 仅客户端：DistantHorizons、Iris、Sodium | 私有配置 `devClientMods` → `runClient` 任务的 `classpathProvider` | 只有 `runClient` |
+
+- **jar 不入库**：三份目录都只提交各自的 `README.md`，`.gitignore` 忽略其中的 `*.jar`；clone 之后按 README 里的清单自行下载放置（版本以 README 为准）。目录为空或整个不存在时，对应的 run 只是少加载几个 mod。ARMS-Core 用的是同一套目录布局与同两条挂载规则。
+- **判据是 jar 在不在该 run 的 JVM 类路径上**。run 的类路径就是 main 的 `runtimeClasspath`：moddev 的 `RunGameTask.exec()` 执行 `classpath(getClasspathProvider())`，`classpathProvider` 由 `ModDevRunWorkflow#setupRunInGradle` 用 `sourceSet.runtimeClasspath` 填充。FML 的开发期 mod 发现读的也是这条类路径——`UserdevLocator` 用 `DevEnvUtils` 在系统类加载器上枚举 `META-INF/neoforge.mods.toml`，即 `java.class.path`。
+- **不能挂 `<run>AdditionalRuntimeClasspath`**：那条配置（`RunModel` 为每个 run 建的同名配置）只被 `WriteLegacyClasspath` 写进 `build/moddev/<run>LegacyClasspath.txt`，由 `BootstrapLauncher` 读取后建 MC-BOOTSTRAP 模块层，并用它取代 `java.class.path`。写在那里的 jar 不属于任何 run 的类路径，因此不会被当作 mod 扫描；同一个 jar 若同时出现在模块层与 mod 列表里，还会让同一个包被两层导出。
+- **两个目录都不能写进 `runtimeOnly`**：文件依赖没有坐标，声明在 `runtimeOnly` 上会作为 root component 进入 `runtimeElements`，随复合构建原样传给下游项目（如 ARMS-Core）的每一个 run。DistantHorizons 会在 `ServerAboutToStart` 里把服务器强转 `DedicatedServer`，让下游的 `GameTestServer` 在启动阶段以 `ClassCastException` 退出。`runtimeClasspath` 只用于解析、不属于任何 variant，挂它不受此影响。
+- **仅客户端模组只能挂 run 任务**：`runServer`、`runData`、`runGameTestServer` 与 `runClient` 共用 main 的 `runtimeClasspath`，所以 `mods-client/` 加在 `runClient` 的 `classpathProvider` 上。这条挂法只覆盖 Gradle 发起的 run：从 IDE 发起时类路径由 IDE 模块给出（四个 run 共用一份），`gradlew createClientLaunchScript` 生成的启动脚本也取 source set 的 `runtimeClasspath`，两者都只带 `mods/`。
+- **GeckoLib 与 Spark 不放 `mods/`**：两者的 jar 与其它来源的同名模块同时在类路径上时，ModLauncher 在模块解析阶段中止，服务端起不来——
+  `java.lang.module.ResolutionException: Modules geckolib and geckolib.neoforge export package … to module mixinextras.neoforge`。
+  GeckoLib 已由本项目与 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<geckolib_version>` 提供，不需要 jar。Spark 的模块来自 Spark-Core：那份构建脚本用 `implementation(files(fileTree("mods")))` 声明 `mods/spark-1.10.124-neoforge.jar`，它作为 root component 进入 Spark-Core 的 `runtimeElements`，于是出现在每个消费方的 `runtimeClasspath` 上（本项目 `gradlew runClient` 的 Mod List 里就有 `spark 1.10.124`）；本地再放一份同名模块就会撞包。两份 jar 都放在 `mods-disabled/`（`mods-disabled/` 不参与任何 run）。
+- 顺序要求：两个私有配置必须在 `build.gradle` 里先声明（`repositories.gradle` 由 `apply from` 在本文件之后执行，那里只填内容）。
+- 核对办法：`run/logs/latest.log` 里 `ModDiscoverer` 打出的 Mod List 是最终生效的 mod 集合；`build/moddev/{client,server,data,gameTestServer}LegacyClasspath.txt` 只是 MC-BOOTSTRAP 模块层的清单（由 `gradlew write<Run>LegacyClasspath` 刷新），其中出现某个 jar 不代表它会被当成 mod 载入。
+
 ## 约定
 
 - **Kotlin 声明，Java 逻辑**：注册表文件（MM\*.kt）、数据生成器、资源模块用 Kotlin；载具核心、物理、网络、渲染用 Java。
@@ -269,7 +289,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
 - **无自动化测试**：无 `src/test/` 目录，也没有游戏测试函数——`runGameTestServer` 因此会走到专用服务器启动的最后一刻，再由 `GameTestServer.create` 抛 `IllegalArgumentException: No test functions were given!` 中止。可用的运行期验证通道是 `runServer`（启动到 `Done`，可验证注册、内容包解码、配方加载）与 `runClient`（进世界验证玩法）。
-- **`runServer` 会加载客户端专属 mod**：`repositories.gradle` 用 `runtimeOnly files(fileTree(dir: 'mods', ...))` 与不分端的 `implementation` 声明依赖，于是专用服务器会连带载入 `mods/` 下的 Distant Horizons / Iris / Sodium 以及 JEI、AUI、加速渲染。它不影响启动，但会让专用服务器测试偏离真实环境（Distant Horizons 会在服务端跑世界生成与建库）。要贴近真实环境，需把客户端专属 jar 拆到只挂在 `runs.client` 的配置里。
+- **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
 - **已知崩溃（已探明）**：多线程物理 + 关节 = 崩溃。**根因**：关节连接的两个刚体均为运动学模式（Bullet 不支持两运动学体间的 Joint 约束）。临时方案：禁止将刚体设为运动学以停止其外力影响，使用speedFactor。

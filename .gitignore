@@ -36,3 +36,8 @@ docs/site/
 # NeoForge Gradle 源码缓存
 /net/
 Machine-Max.code-workspace
+
+# 开发期第三方 jar：不入库，放置说明见各目录的 README.md
+/mods/*.jar
+/mods-client/*.jar
+/mods-disabled/*.jar

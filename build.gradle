@@ -78,7 +78,30 @@ neoForge {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
+    // 开发期第三方 jar 的两个来源（内容在 repositories.gradle 里填，jar 不入库，见各目录 README.md）：
+    //
+    //   devServerMods  mods/        双端（Curios、SuperbWarfare）→ main 的 runtimeClasspath，四个 run 全加载
+    //   devClientMods  mods-client/ 仅客户端（DistantHorizons、Iris、Sodium）→ 只挂 runClient
+    //
+    // 判据、两个不能用的落点（runtimeOnly 与 <run>AdditionalRuntimeClasspath）、GeckoLib/Spark 为什么不放
+    // 这两份目录，见 AGENTS.md「开发期 mod 目录」。
+    devServerMods {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+    devClientMods {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+
     runtimeClasspath.extendsFrom localRuntime
+    runtimeClasspath.extendsFrom devServerMods
+}
+
+// mods-client/ 只挂 runClient 任务自己的 classpathProvider（理由见上）。
+def clientOnlyMods = configurations.getByName('devClientMods')
+tasks.named('runClient').configure { runClient ->
+    runClient.classpathProvider.from(clientOnlyMods)
 }
 
 tasks.withType(ProcessResources).configureEach {

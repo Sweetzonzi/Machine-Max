@@ -44,7 +44,10 @@ dependencies {
     // KubeJS（编译 + 运行时依赖）
     implementation "maven.modrinth:kubejs:${kubejs_version}"
     // 其他mod
-    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
+    //
+    // 开发期第三方 jar：jar 不入库，放置说明见各目录 README.md；落点与判据见 build.gradle 与 AGENTS.md。
+    devServerMods files(fileTree(dir: 'mods', includes: ['*.jar']))
+    devClientMods files(fileTree(dir: 'mods-client', includes: ['*.jar']))
     // Lombok 配置
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
