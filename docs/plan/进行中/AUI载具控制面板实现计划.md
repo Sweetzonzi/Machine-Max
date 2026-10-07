@@ -1,6 +1,7 @@
 # AUI 载具控制面板 — 实现计划
 
 **版本**：1.2（AUI 能力重调研）\
+**状态**：进行中（`vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据）
 **日期**：2026-05-28\
 **目标**：使用 AUI（ApricityUI）实现 Machine-Max 的载具信息查看与控制系统可视化编辑
 
@@ -1548,4 +1549,3 @@ private float resolveVehicleFitScale(VehicleAnimatable vehicle, float targetW, f
   - 降低预览帧率（例如每 2 帧渲染一次）
   - 使用 `MMRenderTypes` 的简化渲染类型
   - 仅在 Tab 01/02 激活时渲染（已实现）
-

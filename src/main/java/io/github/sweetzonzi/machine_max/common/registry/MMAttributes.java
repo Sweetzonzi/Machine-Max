@@ -14,7 +14,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * Machine-Max 的自定义实体属性注册。
  * <p>
  * 与 {@link MMEntities}、{@link MMDataComponents} 同属传统 {@code DeferredRegister} 注册类
- * （见 docs/抓取系统-详细设计文档.md §5.1）。
+ * （见 docs/plan/已实现/抓取系统-详细设计文档.md §5.1）。
  */
 public class MMAttributes {
     public static final DeferredRegister<Attribute> ATTRIBUTES =

@@ -1,18 +1,18 @@
 # PDA 蓝图终端：详细设计文档
 
-**文档状态**：设计中（未实施）
+**文档状态**：已实现
 **适用版本**：NeoForge 1.21.1 · Machine-Max 1.0.3-beta.6
 **编写日期**：2026-09-27
 
 ## 0. 本文自包含
 
-阅读本文不需要预先阅读任何其他文档、代码或历史讨论。本文完整描述一个尚未实施的新功能——**PDA 蓝图终端**。第 2 章给出该功能所依赖的现存代码基线及其位置，第 3~8 章给出完整设计，第 9 章给出改动清单。文中出现的"现状"一律指第 2 章描述的代码状态，不指任何历史版本。
+阅读本文不需要预先阅读任何其他文档、代码或历史讨论。本文完整描述 **PDA 蓝图终端** 这一功能。第 2 章给出该功能所依赖的现存代码基线及其位置，第 3~8 章给出完整设计，第 9 章给出改动清单。文中出现的"现状"一律指第 2 章描述的代码状态，不指任何历史版本。
 
 配套产物：
 
 | 产物 | 位置 | 用途 |
 | --- | --- | --- |
-| 接口设计文档 | `docs/PDA蓝图终端-接口设计文档.md` | 类名、方法签名、数据组件、网络包、语言键的精确契约 |
+| 接口设计文档 | `docs/plan/已实现/PDA蓝图终端-接口设计文档.md` | 类名、方法签名、数据组件、网络包、语言键的精确契约 |
 | 静态原型 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_ui_prototype.html` + `pda_ui.css` | 管理界面的外观与绑定交互记录 |
 | 实施页 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_ui.html` | 管理界面的真实页面骨架 |
 | HUD 原型 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_hotbar_prototype.html` + `pda_hotbar.css` | 设计模式替代快捷栏的外观记录 |

@@ -209,7 +209,7 @@ io.github.sweetzonzi.machine_max/
 ### 自包含性检查（编辑任何文档后、报告完成前必做）
 
 **适用范围**：`docs/`、`docs/wiki/`、各 `AGENTS.md`、`src/main/resources/spark_modules/*/docs/`，以及代码注释与 Javadoc。
-`docs/武器系统-爆炸系统详细设计.md` 首部的「**本文自包含**」声明只覆盖了「不要求先读别的文档」；本节补齐另一半——**也不要求读过本文的旧版本**。
+`docs/plan/已实现/武器系统-爆炸系统详细设计.md` 首部的「**本文自包含**」声明只覆盖了「不要求先读别的文档」；本节补齐另一半——**也不要求读过本文的旧版本**。
 
 **失效模式**：编辑留下的「差分残留」——句子的成立以读者知道修改前的内容为前提。
 典型：`文件名不再使用 X`、`掩体仍然生效`、`A 取消，改为 B`、`（原 foo()）`、`比之前更简单`。
@@ -292,12 +292,14 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
-- **关节 + 运动学模式 = 物理线程崩溃（已实测定位并修复）**：崩溃表现是 `hs_err` 里 `EXCEPTION_ACCESS_VIOLATION` 落在 `bulletjme.dll`，栈顶为 `PhysicsSpace.stepSimulation`，线程是 `Server PhysicsThread`。
-  - **触发条件**：服务端把**已经通过关节连进物理空间**的刚体切成运动学模式（`body.setKinematic(true)`），物理空间里随即出现 Bullet 不支持的「两运动学体间关节」。**与 `addJoint` 的时机无关**，只要这个状态出现过就会在后续步进中崩。
-  - **只在多线程求解构建上崩**：Windows / Linux 加载的是 `bullet_dpmt`（双精度 + 多线程，2 求解线程），求解器对运动学刚体走 `btSequentialImpulseConstraintSolver::getOrInitSolverBody` 的 kinematic 分支（整段在 `BT_THREADSAFE` 内，按 `m_worldArrayIndex` 查表）；单线程构建（`threadSafe:false`）不进入该分支，同样的状态不崩，因此崩溃曾长期被掩盖。放大镜：`run/logs/latest.log` 里的 `物理 native: bullet_dpmt（Dp + Mt，2 求解线程）` 与 `threadSafe:true`。
-  - **触发窗口**：只有"召唤/读档时下方物理地形尚未就绪"才会产生该状态——读档路径在 `PhysicsLevelInitEvent` 里执行，此时地形 section 一个都没激活，必然命中；在地形已加载处放置散件则不会。这就是"有关节的载具崩、散件不崩"以及同一操作有时崩有时不崩的原因。
-  - **现行做法**：服务端等待地形期间**禁止改动运动学模式**，改用平动/转动系数归零把刚体原地钉住（`VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()`）。新代码若要在服务端让刚体停止受力，同样用 `setLinearFactor` / `setAngularFactor`，或遵守「禁止以运动学模式制动刚体，使用 `speedFactor`」既有纪律。
-  - **连带注意**：Spark-Core 的 `PhysicsSpace.addRigidBody` 对运动学刚体做隐式「dynamic → add → kinematic」翻转，`PhysicsRigidBody.rebuildRigidBody()`（`setMass` 从 0 变非 0、`setCollisionShape`）会再走一遍——即关节存在期间任何质量/形状重建都会让刚体短暂变成动力学，排查时属第二可疑入口。
+- **运动学刚体接约束入世后步进 = 物理线程崩溃（已定位）**：崩溃表现是 `hs_err` 里 `EXCEPTION_ACCESS_VIOLATION` 落在 `bulletjme.dll`，栈顶为 `PhysicsSpace.stepSimulation`，线程是 `Server PhysicsThread`。**症状、根因、其他可能路径与上游 issue 草稿见 [`docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`](docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md)。**
+  - **症状**：已加入碰撞世界的刚体被切成运动学模式后，若它被关节连接，多线程构建下一次步进即崩；与关节数量、接触数、刚体总数无关。**"两端都是运动学"是最稳的复现形态。**
+  - **根因**：归岛用的并查集按定义跳过静态/运动学刚体（`btUnionFind.h:24` 的 `STATIC_SIMULATION_ISLAND_OPTIMIZATION` 默认开；`btSimulationIslandManager.cpp:109-113` 把这类体的 `m_islandTag1` 写成 `-1`）。于是两端 tag 均为负 → `btGetConstraintIslandId1()` 返回 `-1` → `btSimulationIslandManagerMt::addConstraintsToIslands()` 在 release 下无保护地用它索引 `m_lookupIslandFromId`（元素 8 字节 → 故障地址 `-8`）。该函数在 bullet3 master 上仍未修。
+  - **为什么只有多线程构建会崩**：`addConstraintsToIslands()` 是 `btSimulationIslandManagerMt` 独有的成员，单线程的 `btSimulationIslandManager` 没有对应函数——单线程路径把零散片段攒进队列一次解掉，从不需要回答"这条约束属于哪个岛"。多线程管理器必须把约束与流形散进各岛才能分派给求解线程池，于是"无岛可归"的约束在这里成了问题。详见文档 §2.3。
+  - **放大镜**：`btSimulationIslandManagerMt` 只被 `btDiscreteDynamicsWorldMt` 实例化，非 `BT_THREADSAFE` 构建根本不编译它。`run/logs/latest.log` 里的 `物理 native: bullet_dpmt（Dp + Mt，2 求解线程）` 与 `threadSafe:true` 即确认当前正走这条路径。
+  - **其他可能触发路径（机制上到同一中间量，未逐一验证）**：两端都是静态刚体；刚体从未加入碰撞世界；加入后被移出（`removeCollisionObject` 只清 `m_worldArrayIndex`、不清 island tag，这条**未闭合**，判别数据自相矛盾）。缓冲区非空时故障形态变成越界读+越界写（垃圾岛指针），比读到空指针更严重。
+  - **硬性纪律**：**不要用运动学模式冻结参与关节的刚体**；要停住刚体用平动/转动系数归零。另外，**约束加入世界时两端刚体应当已在碰撞世界中，移出刚体前应先摘掉引用它的约束**——Spark-Core 的 `PhysicsSpace.addJoint()` 对未入世界的刚体只打 WARNING 不阻断；`removePhysicsBody()` 也不摘约束，调用侧必须自己保证。
+  - **现行做法**：服务端等待地形期间用平动/转动系数归零把刚体原地钉住（`VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()`），**刚体保持动态、照常参与岛屿构建并保有 tag**——这正是它能避开本崩溃的理由。要停住刚体就用这对方法，或遵守「禁止以运动学模式制动刚体，使用 `speedFactor`」既有纪律。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
 - **打包说明**：部分内容包（如 sdkfz/）属于外部项目示例，打包时可能需要分离。
@@ -309,7 +311,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - `docs/wiki/3-子系统详解/3.8-武器系统.md` — 武器子系统与弹药供给/装填
 - `docs/观瞄系统-CameraSubsystem详细设计.md` — 摄像机子系统设计文档
 - `docs/信号回调机制重构设计.md` — 信号系统重构设计
-- `docs/AUI载具控制面板实现计划.md` — AUI 控制面板实现计划
+- `docs/plan/进行中/AUI载具控制面板实现计划.md` — AUI 控制面板实现计划
 - `docs/AUI性能边界.md` — AUI 性能分析
 - `docs/机娘模组企划.md` — 机娘模组企划
 - `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）

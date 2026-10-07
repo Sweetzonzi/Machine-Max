@@ -1,12 +1,12 @@
 # PDA 蓝图终端：接口设计文档
 
-**文档状态**：设计中（未实施）
+**文档状态**：已实现
 **适用版本**：NeoForge 1.21.1 · Machine-Max 1.0.3-beta.6
 **编写日期**：2026-09-27
 
 ## 0. 本文自包含
 
-阅读本文不需要预先阅读任何其他文档、代码或历史讨论。本文给出 **PDA 蓝图终端**（一个尚未实施的新功能）的全部对外契约：注册项、数据模型、方法签名、网络包字段、客户端接口、AUI 元素 id 与语言键。每一处契约都写明调用方、被调方、参数含义与失败返回值。
+阅读本文不需要预先阅读任何其他文档、代码或历史讨论。本文给出 **PDA 蓝图终端**的全部对外契约：注册项、数据模型、方法签名、网络包字段、客户端接口、AUI 元素 id 与语言键。每一处契约都写明调用方、被调方、参数含义与失败返回值。
 
 本文只写"接口长什么样、怎么调用"，不写设计动机与取舍理由；动机与完整背景见配套的《PDA蓝图终端-详细设计文档.md》。两份文档可以独立阅读：本文用到的每一个类型与概念都在第 1 章或本节内定义。
 
@@ -14,7 +14,7 @@
 
 | 产物 | 位置 |
 | --- | --- |
-| 详细设计文档 | `docs/PDA蓝图终端-详细设计文档.md` |
+| 详细设计文档 | `docs/plan/已实现/PDA蓝图终端-详细设计文档.md` |
 | 静态原型 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_ui_prototype.html` + `pda_ui.css` |
 | 实施页 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_ui.html` |
 | HUD 原型 | `src/main/resources/assets/apricityui/apricity/machine_max/pda/pda_hotbar_prototype.html` + `pda_hotbar.css` |

@@ -81,7 +81,7 @@ vehicle/
 | 新增事件 | `event/` | 继承对应事件基类，注册到 NeoForge 总线 |
 | 修改交互框 | `interact/InteractBox.java` | 玩家右键交互、命中检测 |
 | 修改实体碰撞 | `CollisionManager.java` | 实体碰撞冲量映射 |
-| 修复物理线程崩溃 | `VehicleCore.java` | 关节已进物理空间时不可切运动学模式，见「已知问题」 |
+| 修复物理线程崩溃 | `VehicleCore.java` | 勿用运动学模式冻结参与关节的刚体；见「已知问题」 |
 
 ## 关键类关系
 
@@ -123,5 +123,5 @@ VehicleCore (IPartAssembly)
 
 ## 已知问题
 
-- **关节 + 运动学模式 = 崩溃**（`VehicleCore.java`）。关节已进物理空间时把刚体切成运动学，即构成 Bullet 不支持的「两运动学体间关节」，只在多线程求解构建（`bullet_dpmt`）上崩。规制：服务端让刚体停止受力用 `setLinearFactor` / `setAngularFactor` 归零，不改运动学模式；完整定位与放大镜见仓库根 `AGENTS.md`。
+- **运动学刚体接约束入世后步进 = 崩溃**（`VehicleCore.java`）。关节两端都是运动学刚体时，多线程构建下一次步进即崩在物理线程的岛屿划分阶段（根因：归岛用的并查集按定义跳过运动学体、其 island tag 恒为 `-1`，而该值被无保护地当作下标用；碰撞检测本身不受影响，只有关节归岛会拿到 `-1`；单线程构建不编译该管理器，故不崩）。规制：**不要用运动学模式冻结参与关节的刚体**——需要停住刚体时用 `setLinearFactor` / `setAngularFactor` 归零（刚体保持动态）；另**加约束时两端应当已在碰撞世界中，移出刚体前先摘掉引用它的约束**。症状、根因与其他可能路径见仓库根 `AGENTS.md` 及 `docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，轮子停止时振荡。

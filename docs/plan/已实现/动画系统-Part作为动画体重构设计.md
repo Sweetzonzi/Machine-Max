@@ -4,7 +4,7 @@
 > **日期**：2026-09-08
 > **范围**：把"动画体（Animatable）"从 `SubPart` 上移到 `Part`，并相应调整渲染、tick、Molang、涂装、信号寻址与内容包命名约束。
 > **源码依赖**：Spark-Core（动画引擎）、Machine-Max（Part / SubPart / 渲染 / 信号）。
-> **关联文档**：[动画系统-事件触发动画设计.md](./动画系统-事件触发动画设计.md)、[载具概念与层级](./wiki/2-载具系统完全指南/2.1-载具概念与层级.md)
+> **关联文档**：[动画系统-事件触发动画设计.md](./动画系统-事件触发动画设计.md)、[载具概念与层级](../../wiki/2-载具系统完全指南/2.1-载具概念与层级.md)
 
 ---
 
@@ -60,69 +60,69 @@ flowchart TD
     G["MMPartEntity<br/>IEntityAnimatable"] -.委派.-> D
 ```
 
-- `Part` 仅为逻辑聚合，**不实现 `IAnimatable`**、无刚体（[Part.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L58-L81)）。
-- `SubPart implements IAnimatable<SubPart>, ISignalReceiver`，持有独立 `ModelController` / `AnimController` / `signalStorage`（[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L104-L122)）。
-- `SubPart` 之间用 `New6Dof` 连接（[AbstractConnector.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/connector/AbstractConnector.java#L267-L277)）。
+- `Part` 仅为逻辑聚合，**不实现 `IAnimatable`**、无刚体（[Part.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L58-L81)）。
+- `SubPart implements IAnimatable<SubPart>, ISignalReceiver`，持有独立 `ModelController` / `AnimController` / `signalStorage`（[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L104-L122)）。
+- `SubPart` 之间用 `New6Dof` 连接（[AbstractConnector.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/connector/AbstractConnector.java#L267-L277)）。
 
 ### 3.2 资源粒度在 Part
 
 | 资源 | 定义位置 | 证据 |
 |---|---|---|
-| 模型 | `VariantAttr.model` | [VariantAttr.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L22-L26) |
+| 模型 | `VariantAttr.model` | [VariantAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L22-L26) |
 | 贴图表 | `VariantAttr.textures` | 同上 |
 | 动画集 | `VariantAttr.animations` | 同上 |
 | 子零件结构 | `VariantAttr.subParts` | 同上 |
 
-SubPart 构造时统一使用 `new ModelIndex("part", part.variant.getModel())`，动画集取 `part.variant.getAnimations()`（[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L155)、[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L313-L322)）。
+SubPart 构造时统一使用 `new ModelIndex("part", part.variant.getModel())`，动画集取 `part.variant.getAnimations()`（[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L155)、[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L313-L322)）。
 
-骨骼互斥切分由 `SubPartAttr.getBones` / `filterBones` 与 `VariantAttr.computeAutoEndBones` 完成（[SubPartAttr.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/SubPartAttr.java#L342-L409)、[VariantAttr.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L109-L131)）。
+骨骼互斥切分由 `SubPartAttr.getBones` / `filterBones` 与 `VariantAttr.computeAutoEndBones` 完成（[SubPartAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/SubPartAttr.java#L342-L409)、[VariantAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L109-L131)）。
 
 ### 3.3 渲染链路与数学事实
 
-1. 整个 Part 共用**同一套模型空间**：`OBone.applyTransformWithParents` 从模型根累乘到目标骨骼，`OBone.render` 再把结果乘进 poseStack，因此 **poseStack 必须停在"模型原点"**（[OBone.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/origin/OBone.kt#L104-L124)、[ModelRenderHelper.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/renderer/ModelRenderHelper.kt#L50-L59)）。
-2. 骨骼的**静态模型空间摆位**（pivot + 静态 rotation）包含在 `BonePose.getLocalTransformMatrix` 中，动画只叠加增量（[BonePose.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/BonePose.kt#L45-L52)）。
-3. 每个 SubPart 的锚矩阵 = **Part 模型原点世界矩阵 × 该 SubPart 刚体在模型空间中的相对运动**：`M_i = COM_i_world · inverse(MassCenter_i)`（[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L1257-L1259)、[DestroyableObject.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/DestroyableObject.java#L314-L317)）。静止时所有 `M_i` 相等。
+1. 整个 Part 共用**同一套模型空间**：`OBone.applyTransformWithParents` 从模型根累乘到目标骨骼，`OBone.render` 再把结果乘进 poseStack，因此 **poseStack 必须停在"模型原点"**（[OBone.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/origin/OBone.kt#L104-L124)、[ModelRenderHelper.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/renderer/ModelRenderHelper.kt#L50-L59)）。
+2. 骨骼的**静态模型空间摆位**（pivot + 静态 rotation）包含在 `BonePose.getLocalTransformMatrix` 中，动画只叠加增量（[BonePose.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/BonePose.kt#L45-L52)）。
+3. 每个 SubPart 的锚矩阵 = **Part 模型原点世界矩阵 × 该 SubPart 刚体在模型空间中的相对运动**：`M_i = COM_i_world · inverse(MassCenter_i)`（[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L1257-L1259)、[DestroyableObject.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/DestroyableObject.java#L314-L317)）。静止时所有 `M_i` 相等。
 4. 当前每个 SubPart 各自渲染的合成为：`world = M_i × 祖先骨骼链 × 本子树骨骼链`。
 
 **结论**：SubPart 之间共享模型空间，唯一差异是锚矩阵 `M_i`。因此"共享一份 `ModelPose`、各 SubPart 仍用自己的 `M_i` 渲染自己的骨骼子树"是**数学等价**的改造，不引入任何视觉变化。
 
 ### 3.4 动画 tick 通道与唯一性约束
 
-- Spark-Core 的 `AnimApplier` 按 `IEntityAnimatable` 实体逐个驱动：物理线程 `physTick()`、主线程 `tick()`（[AnimApplier.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/anim/AnimApplier.kt#L13-L36)）。
-- `MMPartEntity` 目前实现 `IEntityAnimatable`，并把控制器委派给 `subPart`（[MMPartEntity.java](../src/main/java/io/github/sweetzonzi/machine_max/common/entity/MMPartEntity.java#L544-L547)）。
-- **约束一**：`PartEntityRenderer extends GeoEntityRenderer<MMPartEntity>`，而 `GeoEntityRenderer<T> where T : IEntityAnimatable<T>`（[GeoEntityRenderer.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/renderer/GeoEntityRenderer.kt#L13)）。若 `MMPartEntity` 退出 `IEntityAnimatable`，渲染器必须改为直接继承 `EntityRenderer`。
-- **约束二**：`AnimController.tick()` 会对共享 pose 逐骨骼调用 `setChanged()`（[AnimController.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/anim/AnimController.kt#L158-L172)），而 `setChanged()` 把 `oLocalTransform = localTransform`（[BonePose.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/BonePose.kt#L32-L35)）。若同一共享 pose 被多个控制器 tick，**第二次调用会抹掉插值差值**。因此共享 pose 必须只有唯一发布者。
+- Spark-Core 的 `AnimApplier` 按 `IEntityAnimatable` 实体逐个驱动：物理线程 `physTick()`、主线程 `tick()`（[AnimApplier.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/anim/AnimApplier.kt#L13-L36)）。
+- `MMPartEntity` 目前实现 `IEntityAnimatable`，并把控制器委派给 `subPart`（[MMPartEntity.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/entity/MMPartEntity.java#L544-L547)）。
+- **约束一**：`PartEntityRenderer extends GeoEntityRenderer<MMPartEntity>`，而 `GeoEntityRenderer<T> where T : IEntityAnimatable<T>`（[GeoEntityRenderer.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/renderer/GeoEntityRenderer.kt#L13)）。若 `MMPartEntity` 退出 `IEntityAnimatable`，渲染器必须改为直接继承 `EntityRenderer`。
+- **约束二**：`AnimController.tick()` 会对共享 pose 逐骨骼调用 `setChanged()`（[AnimController.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/anim/AnimController.kt#L158-L172)），而 `setChanged()` 把 `oLocalTransform = localTransform`（[BonePose.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/model/BonePose.kt#L32-L35)）。若同一共享 pose 被多个控制器 tick，**第二次调用会抹掉插值差值**。因此共享 pose 必须只有唯一发布者。
 
-`Part` 已有现成的双线程驱动入口：主线程 `Part.onTick()`、物理线程 `Part.onPrePhysicsTick()` / `onPostPhysicsTick()`，由 `VehicleCore` 分别在主 tick 与 `PhysicsLevelTickEvent` 中调用（[VehicleCore.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#L382-L423)、[ObjectManager.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/ObjectManager.java#L240-L254)）。
+`Part` 已有现成的双线程驱动入口：主线程 `Part.onTick()`、物理线程 `Part.onPrePhysicsTick()` / `onPostPhysicsTick()`，由 `VehicleCore` 分别在主 tick 与 `PhysicsLevelTickEvent` 中调用（[VehicleCore.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#L382-L423)、[ObjectManager.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/ObjectManager.java#L240-L254)）。
 
 ### 3.5 Molang 现状
 
-- `MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>>`，绑定 `subpart.*` / `vehicle.*`（[MechMolangContext.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/molang/MechMolangContext.java#L30-L200)）。
-- 动画关键帧表达式通过**动画体自身的上下文**求值（[JSMolangValue.kt](../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/js/molang/JSMolangValue.kt#L49-L53)）。
+- `MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>>`，绑定 `subpart.*` / `vehicle.*`（[MechMolangContext.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/molang/MechMolangContext.java#L30-L200)）。
+- 动画关键帧表达式通过**动画体自身的上下文**求值（[JSMolangValue.kt](../../../../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/js/molang/JSMolangValue.kt#L49-L53)）。
 - Molang 上下文**不止用于动画**：
-  - `HitBox` 条件在构造期编译、在物理刻求值，均使用 SubPart 上下文（[HitBox.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/interact/HitBox.java#L29-L42)）；
-  - HUD 在玩家乘坐时委派给 SubPart 上下文（[GuiAnimatable.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/GuiAnimatable.java#L102-L108)）。
+  - `HitBox` 条件在构造期编译、在物理刻求值，均使用 SubPart 上下文（[HitBox.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/interact/HitBox.java#L29-L42)）；
+  - HUD 在玩家乘坐时委派给 SubPart 上下文（[GuiAnimatable.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/GuiAnimatable.java#L102-L108)）。
 - 内容包实际使用的方法（非文档、非 schema）仅：`connector_rotation`、`connector_offset`、`has_connector`、`subsystem_active`、`subsystem_destroyed`，以及 `vehicle.get` / `vehicle.get_str`。
 
 ### 3.6 信号与存储现状
 
-- `ISignalReceiver` 仅要求 `getName()` 与 `getSignalInputChannels()`，其余为默认实现（[ISignalReceiver.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalReceiver.java#L10-L21)）。
+- `ISignalReceiver` 仅要求 `getName()` 与 `getSignalInputChannels()`，其余为默认实现（[ISignalReceiver.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalReceiver.java#L10-L21)）。
 - 实现者：`SubPart`、`SubsystemController`（经 `ISignalBus`）、`SignalPort`、`AbstractSubsystem`、`InteractBox`。
-- `sendSignalToTarget` 对 `"subpart"` / `"vehicle"` 做特殊解析，并按 `instanceof` 写入对应存储（[ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L130-L159)）；目标名解析在同一 SubPart 的「子系统 ∪ 交互区 ∪ 连接点」命名空间内进行（[ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L221-L248)）。
-- 信号存储已是两级：装配体级 `SubsystemController.signalStorage`、零件级 `SubPart.signalStorage`（[SubsystemController.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/SubsystemController.java#L25)、[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L120)）。
+- `sendSignalToTarget` 对 `"subpart"` / `"vehicle"` 做特殊解析，并按 `instanceof` 写入对应存储（[ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L130-L159)）；目标名解析在同一 SubPart 的「子系统 ∪ 交互区 ∪ 连接点」命名空间内进行（[ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L221-L248)）。
+- 信号存储已是两级：装配体级 `SubsystemController.signalStorage`、零件级 `SubPart.signalStorage`（[SubsystemController.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/SubsystemController.java#L25)、[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L120)）。
 - **Java 侧存在硬编码默认目标名** `["subpart","vehicle"]` / `["vehicle"]`（子系统静态属性、控制绑定、GUI 动作、客户端面板）。
 
 ### 3.7 涂装现状
 
-- 纹理名 `SubPart.textureName` 存在 SubPart 上，`SubPart.switchTexture` 改 `ModelController.textureLocation` 并广播 `PartPaintPayload(subPartId, textureName)`（[SubPart.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L227-L241)）。
-- 客户端由 `subPartId` 经 `ObjectManager.getDestroyableObject` 反查 `SubPart`（[PartPaintPayload.java](../src/main/java/io/github/sweetzonzi/machine_max/network/payload/assembly/PartPaintPayload.java#L41-L49)）。
-- 调用点：`SprayCanItem` 直接读 `SubPart.textureName` 并调用 `SubPart.switchTexture`（[SprayCanItem.java](../src/main/java/io/github/sweetzonzi/machine_max/common/item/prop/SprayCanItem.java#L45-L51)）；`Part` 反序列化时逐 SubPart 调 `switchTexture`（[Part.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L145)）。
+- 纹理名 `SubPart.textureName` 存在 SubPart 上，`SubPart.switchTexture` 改 `ModelController.textureLocation` 并广播 `PartPaintPayload(subPartId, textureName)`（[SubPart.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#L227-L241)）。
+- 客户端由 `subPartId` 经 `ObjectManager.getDestroyableObject` 反查 `SubPart`（[PartPaintPayload.java](../../../src/main/java/io/github/sweetzonzi/machine_max/network/payload/assembly/PartPaintPayload.java#L41-L49)）。
+- 调用点：`SprayCanItem` 直接读 `SubPart.textureName` 并调用 `SubPart.switchTexture`（[SprayCanItem.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/item/prop/SprayCanItem.java#L45-L51)）；`Part` 反序列化时逐 SubPart 调 `switchTexture`（[Part.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L145)）。
 
 ### 3.8 命名现状（唯一性作用域为 SubPart）
 
-- 数据模型：连接点/子系统是 **per-SubPart Map**；`Part.allConnectors` / `externalConnectors` 用 **`Pair(subPartName, connectorName)`** 复合键，即**当前明确允许跨 SubPart 重名**（[Part.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L281-L282)、[VariantAttr.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L147-L175)）。
-- 插件校验作用域也是 per-SubPart（[naming.js](../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L68-L100)），`collectIssues` 无跨 SubPart 重名检查（[validation.js](../../Machine-Max_BlockbenchPlugin/src/mode/validation.js#L182-L260)）。
-- 连接点默认名由 locator 名生成 `connector.<ns>.<snake(locator)>`（[naming.js](../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L34-L56)），对称子零件极易撞名。
+- 数据模型：连接点/子系统是 **per-SubPart Map**；`Part.allConnectors` / `externalConnectors` 用 **`Pair(subPartName, connectorName)`** 复合键，即**当前明确允许跨 SubPart 重名**（[Part.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L281-L282)、[VariantAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L147-L175)）。
+- 插件校验作用域也是 per-SubPart（[naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L68-L100)），`collectIssues` 无跨 SubPart 重名检查（[validation.js](../../../../Machine-Max_BlockbenchPlugin/src/mode/validation.js#L182-L260)）。
+- 连接点默认名由 locator 名生成 `connector.<ns>.<snake(locator)>`（[naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L34-L56)），对称子零件极易撞名。
 - 实测：全库仅 `k17_turret`（4 子零件）与 `sdkfz234_turret`（3 子零件）为真·多子零件 Part，且二者命名**已天然全局唯一**；其余为单子零件（多 occurrence 来自多变体）。因此唯一性作用域必须是**单变体内的 Part**，不能是 part 类型全局（否则 `van_seat` 等多变体复用同名会被误判）。
 
 ## 4. 设计决策
@@ -239,12 +239,12 @@ flowchart LR
 
 需同步替换的**活体 `SubPart`** 调用点：
 
-- [PartEntityRenderer.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/PartEntityRenderer.java#L56-L77)
-- [VehicleInspectorRenderer.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/VehicleInspectorRenderer.java#L136-L176)
-- [DistantVehicleRenderer.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/DistantVehicleRenderer.java#L106-L147)
-- [AssemblyHud3D.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud3d/AssemblyHud3D.java#L418)
+- [PartEntityRenderer.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/PartEntityRenderer.java#L56-L77)
+- [VehicleInspectorRenderer.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/VehicleInspectorRenderer.java#L136-L176)
+- [DistantVehicleRenderer.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/DistantVehicleRenderer.java#L106-L147)
+- [AssemblyHud3D.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud3d/AssemblyHud3D.java#L418)
 
-> **注意**：[PartAssemblyRenderer.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/PartAssemblyRenderer.java#L121-L129) 与 [CustomModelItemRenderer.java](../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/CustomModelItemRenderer.java#L165-L177) 使用的是 **`SubPartAnimatable`（预览链路，自带独立 `ModelController`）**，**不得改动**。
+> **注意**：[PartAssemblyRenderer.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/PartAssemblyRenderer.java#L121-L129) 与 [CustomModelItemRenderer.java](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/renderer/CustomModelItemRenderer.java#L165-L177) 使用的是 **`SubPartAnimatable`（预览链路，自带独立 `ModelController`）**，**不得改动**。
 
 ### 6.4 涂装（Part 级统一）
 
@@ -279,15 +279,15 @@ Part(PartData) 反序列化: applyTexture(...)（assembly 尚未绑定，天然�
 | `AbstractSubsystem` | 子系统名 |
 | `InteractBox` | 交互区名 |
 
-调用点仅 3 处：[ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L172)（`sendSignalToTargetWithCallback`）、[ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L215)（`setTargetFromNames` 建表）、[InteractBox.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/interact/InteractBox.java#L143)。
+调用点仅 3 处：[ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L172)（`sendSignalToTargetWithCallback`）、[ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L215)（`setTargetFromNames` 建表）、[InteractBox.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/interact/InteractBox.java#L143)。
 
-> 改名后 `getTargets()` 的键自然变为 `"local"` / `"global"`，可**删除** [ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L134-L143) 的按类型扫描兜底，改为由发送者直接解析：`"local"` → `getSubPart().part`，`"global"` → `assembly.getSubsystemController()`。
+> 改名后 `getTargets()` 的键自然变为 `"local"` / `"global"`，可**删除** [ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L134-L143) 的按类型扫描兜底，改为由发送者直接解析：`"local"` → `getSubPart().part`，`"global"` → `assembly.getSubsystemController()`。
 >
 > `getName()` 退出接口后仅用于日志 / 身份（例如 `SubsystemController.getName()` 仍返回 `"subsystemController"`），**不参与任何路由**；路由一律使用 `getSignalAddress()`。
 
 #### 6.5.2 存储写入抽象
 
-`sendSignalToTarget` 现有的 `instanceof SubsystemController` / `instanceof SubPart` 分支（[ISignalSender.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L147-L151)）改为 **`ISignalReceiver`** 的接口默认方法：
+`sendSignalToTarget` 现有的 `instanceof SubsystemController` / `instanceof SubPart` 分支（[ISignalSender.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L147-L151)）改为 **`ISignalReceiver`** 的接口默认方法：
 
 ```java
 default Map<String, Object> getSignalStorage() { return null; }
@@ -306,7 +306,7 @@ default Map<String, Object> getSignalStorage() { return null; }
 
 > `"local"` 的语义从"宿主 SubPart"上移为"宿主 Part"。多 SubPart 的 Part 中，不同子零件输出同名频道会互相覆盖；需要按子零件区分时应使用独立频道名（`local.subpart_get` 已随 `SubPart.signalStorage` 一并移除）。
 >
-> **目标解析作用域（本期不变）**：[`setTargetFromNames` / `getReceiversFromNames`](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L204-L248) 仍只在**发送者所在 SubPart** 内解析子系统 / 交互区 / 连接点，因此本期跨 SubPart 的目标名仍解析不到（发送者与目标同属一个 SubPart 时行为不变）。
+> **目标解析作用域（本期不变）**：[`setTargetFromNames` / `getReceiversFromNames`](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L204-L248) 仍只在**发送者所在 SubPart** 内解析子系统 / 交互区 / 连接点，因此本期跨 SubPart 的目标名仍解析不到（发送者与目标同属一个 SubPart 时行为不变）。
 >
 > **TODO（后续）**：若要让信号也享受 Part 级唯一寻址，需把上述建表改为聚合整个 Part 的所有 SubPart（复用 6.7 的 Part 级 owner 索引）。本期不实现。
 
@@ -315,12 +315,12 @@ default Map<String, Object> getSignalStorage() { return null; }
 | 位置 | 内容 |
 |---|---|
 | 内容包 `spark_modules/**/*.json` | `signal_targets` / `*_outputs` / `control_groups` 中的 `"subpart"` / `"vehicle"` |
-| 子系统静态属性 | [CarControllerSubsystemAttr](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/CarControllerSubsystemAttr.java#L35-L39)、[MotorSubsystemAttr](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/MotorSubsystemAttr.java#L29)、[EngineSubsystemAttr](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/EngineSubsystemAttr.java#L28)、[MotorbikeControllerSubsystemAttr](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/MotorbikeControllerSubsystemAttr.java#L23-L27)、[GearboxSubsystemAttr](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/GearboxSubsystemAttr.java#L36) 的默认目标列表 |
-| 控制绑定 / GUI 动作 | [ControlBinding](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/control/ControlBinding.java#L27-L60)、[AbstractGuiAction](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/control/AbstractGuiAction.java#L24-L30)、`GuiPulseAction` / `GuiSliderAction` / `GuiToggleAction` 的默认 `targets` |
-| 客户端 GUI | [ControlDataAccessor](../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/ControlDataAccessor.java#L113)、[PanelConfigEditor](../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelConfigEditor.java#L1030) 的硬编码 `"vehicle"` |
+| 子系统静态属性 | [CarControllerSubsystemAttr](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/CarControllerSubsystemAttr.java#L35-L39)、[MotorSubsystemAttr](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/MotorSubsystemAttr.java#L29)、[EngineSubsystemAttr](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/EngineSubsystemAttr.java#L28)、[MotorbikeControllerSubsystemAttr](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/MotorbikeControllerSubsystemAttr.java#L23-L27)、[GearboxSubsystemAttr](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/GearboxSubsystemAttr.java#L36) 的默认目标列表 |
+| 控制绑定 / GUI 动作 | [ControlBinding](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/control/ControlBinding.java#L27-L60)、[AbstractGuiAction](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/control/AbstractGuiAction.java#L24-L30)、`GuiPulseAction` / `GuiSliderAction` / `GuiToggleAction` 的默认 `targets` |
+| 客户端 GUI | [ControlDataAccessor](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/ControlDataAccessor.java#L113)、[PanelConfigEditor](../../../src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelConfigEditor.java#L1030) 的硬编码 `"vehicle"` |
 | 文档 | `ISignalBus` / `SubsystemController` 等 javadoc 中的 `"vehicle"` 说明 |
 
-> **无需存档迁移**：`AbstractControllableSubsystem.loadData` 的 NBT 加载已被注释禁用（[AbstractControllableSubsystem.java](../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractControllableSubsystem.java#L401-L410)），控制组每次从注册表预设读取，存档中残留的目标名不参与加载。
+> **无需存档迁移**：`AbstractControllableSubsystem.loadData` 的 NBT 加载已被注释禁用（[AbstractControllableSubsystem.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractControllableSubsystem.java#L401-L410)），控制组每次从注册表预设读取，存档中残留的目标名不参与加载。
 
 ### 6.6 Molang `local` / `global`
 
@@ -369,8 +369,8 @@ Part 级按名寻址要求名字在 Part 内唯一（Molang 本期即为 Part �
 
 **插件配套**
 
-- [naming.js](../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L68-L127)：connector / subsystem / interact_box 的唯一性作用域从 `subPartKey` 提升到 variant，`ensureUniqueName` 同步；
-- [validation.js](../../Machine-Max_BlockbenchPlugin/src/mode/validation.js#L131-L268)：`collectIssues` 增加跨 SubPart 重名检测（error 级）与保留地址检测。
+- [naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L68-L127)：connector / subsystem / interact_box 的唯一性作用域从 `subPartKey` 提升到 variant，`ensureUniqueName` 同步；
+- [validation.js](../../../../Machine-Max_BlockbenchPlugin/src/mode/validation.js#L131-L268)：`collectIssues` 增加跨 SubPart 重名检测（error 级）与保留地址检测。
 
 **现状核验**：现有内容仅 `k17_turret` / `sdkfz234_turret` 为多子零件，二者已合规，**迁移无破坏**；旧存档以 `Pair(subPartName, connectorName)` 为键，不重名即可正常加载。
 

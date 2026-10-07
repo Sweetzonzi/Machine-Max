@@ -1,6 +1,7 @@
 # 炮镜 HUD 自定义分划设计
 
 > 版本 1.2 · 2026-06-14
+> **状态**：已实现（`huds/*.json` 由 `HudModule` 载入 `MMDynamicRes.CUSTOM_HUD`，客户端 `CustomHud` 渲染）
 
 ***
 
@@ -536,4 +537,3 @@ private void renderOrthogonalInScope(GuiGraphics guiGraphics, GuiAnimatable hud,
   "alpha": 200
 }
 ```
-
