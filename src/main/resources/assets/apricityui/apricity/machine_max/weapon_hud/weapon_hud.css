@@ -1,0 +1,381 @@
+/* ================================================================
+   Machine-Max — 武器状态 HUD · 静态原型样式表
+   ================================================================
+   渲染引擎：ApricityUI
+   页面：weapon_hud_prototype.html
+         （游戏内按 F10 打开 AUI 资源管理器 →
+           machine_max/weapon_hud/weapon_hud_prototype.html 双击预览；
+           浏览器直接打开该文件亦可）
+
+   书写约定沿用本项目其他 AUI 页面：
+     - 不用 calc() / 负 margin / vh / fr / grid-template-areas；
+     - body 显式声明 display:flex；
+     - 显示字体复用 machine_max/microgrammadbolext.ttf（相对路径 ../）。
+
+   原型说明：本页给 body 铺一层半透明暗衬（rgba(0,0,0,0.6)）便于预览。
+   正式 HUD 元素应把 body 背景改为 transparent，仅保留 .hud 面板自身深底，
+   以免遮住游戏画面。
+   ================================================================ */
+
+/* ---------- 显示字体：项目内 Microgramma（窄体工业字体） ----------
+   Microgramma 只含西文与数字、无中文字形，因此所有引用处都写成回退链：
+       font-family: "microgramma", "lxgw", sans-serif;
+   西文/数字用 Microgramma，中文回退到 AUI 内置 lxgw（霞鹜文楷）。
+   AUI 自 v1.1.6-dev 起支持 font-family 逗号回退链，按 codepoint 拆分渲染
+   （见 docs/AUI性能边界.md §7.4），故中英混排不会乱码。 */
+@font-face {
+    font-family: "microgramma";
+    src: url("../microgrammadbolext.ttf");
+}
+
+/* ---------- 设计令牌 ---------- */
+:root {
+    --bg-secondary: #111111;
+    --bg-tertiary: #161616;
+    --text-primary: #FFFFFF;
+    --text-secondary: #AAAAAA;
+    --text-dim: #666666;
+    --border-color: #EAEAEA;
+    --border-subtle: #333333;
+
+    --accent-yellow: #D8A631;
+    --accent-red: #9E3434;
+    --accent-green: #5E7A4A;
+
+    --space-05: 4px;
+    --space-1: 8px;
+    --space-2: 16px;
+    --space-3: 24px;
+    --space-4: 32px;
+}
+
+/* ---------- 全局重置 ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html {
+    height: 100%;                          /* 为 body 的 height:100% 提供基准 */
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: rgba(0, 0, 0, 0.6);        /* 原型预览暗衬，正式 HUD 改 transparent */
+    color: var(--text-primary);
+    font-family: unset;                    /* unset = 使用 Minecraft 原版字体 */
+    overflow: auto;
+}
+
+/* ================================================================
+   舞台标题
+   ================================================================ */
+
+.stage-head {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--border-subtle);
+}
+
+.stage-no {
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 30px;
+    line-height: 1.3;
+    padding: 0 var(--space-1);
+    background: var(--text-primary);
+    color: #000000;
+}
+
+.stage-title h1 {
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+
+.stage-title p {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+}
+
+.stage-tag {
+    margin-left: auto;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: var(--space-05) var(--space-1);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.stage-body {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ================================================================
+   HUD 面板
+   ================================================================ */
+
+.hud {
+    width: 360px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-subtle);
+}
+
+/* 角色分组：左侧竖条强调线（主 = 白，副 = 灰） */
+.hud-group {
+    border-left: 3px solid var(--border-subtle);
+}
+
+.hud-group--primary {
+    border-left-color: var(--border-color);
+}
+
+.group-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* 角色标签：主 = 白底黑字（高对比），副 = 描边 */
+.role-tag {
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-subtle);
+}
+
+.role-tag--primary {
+    background: var(--text-primary);
+    color: #000000;
+    border-color: var(--text-primary);
+}
+
+.role-tag--secondary {
+    color: var(--text-primary);
+}
+
+.group-title {
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.group-sub {
+    margin-left: auto;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+}
+
+.hud-divider {
+    height: 2px;
+    background: var(--border-subtle);
+}
+
+/* ================================================================
+   武器块（一个武器控制器 = 一个块）
+   ================================================================ */
+
+.w {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.w-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+}
+
+.w-name {
+    flex: 1;
+    min-width: 0;
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.w-ammo {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.w-count {
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 14px;
+}
+
+.w-cap {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+/* 尾标固定最小宽度，避免“就绪 / 2.1s”字数不同导致横向抖动 */
+.w-ready {
+    min-width: 58px;
+    text-align: right;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+/* ── 装填条：一段 = 一发射器 ── */
+.w-segbar {
+    display: flex;
+    gap: var(--space-05);
+    margin-top: var(--space-05);
+}
+
+.seg {
+    flex: 1;
+    height: 6px;
+    background: var(--border-subtle);
+}
+
+.seg i {
+    display: block;
+    height: 100%;
+    background: var(--accent-green);
+}
+
+.seg.is-loading i {
+    background: var(--accent-yellow);
+}
+
+.seg.is-off i {
+    background: var(--accent-red);
+}
+
+/* ── 弹种选项卡：仅多于一种弹种时出现 ── */
+.w-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-05);
+    margin-top: var(--space-05);
+}
+
+.tab {
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: var(--space-05) var(--space-1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.tab b {
+    margin-left: var(--space-05);
+    color: var(--text-primary);
+}
+
+.tab.is-on {
+    background: var(--text-primary);
+    color: #000000;
+    border-color: var(--text-primary);
+}
+
+.tab.is-on b {
+    color: #000000;
+}
+
+/* ── 武器级状态：只染尾标与数字，不改布局 ── */
+.w.is-ready .w-ready {
+    color: var(--accent-green);
+}
+
+.w.is-reloading .w-ready {
+    color: var(--accent-yellow);
+}
+
+.w.is-empty .w-ready,
+.w.is-empty .w-count {
+    color: var(--accent-red);
+}
+
+/* ================================================================
+   装填填充比例（避免在 HTML 写 inline style）
+   ================================================================ */
+
+.fill-0   { width: 0%; }
+.fill-10  { width: 10%; }
+.fill-20  { width: 20%; }
+.fill-30  { width: 30%; }
+.fill-40  { width: 40%; }
+.fill-50  { width: 50%; }
+.fill-60  { width: 60%; }
+.fill-70  { width: 70%; }
+.fill-80  { width: 80%; }
+.fill-90  { width: 90%; }
+.fill-100 { width: 100%; }
+
+/* ================================================================
+   图例：说明槽位出现规则
+   ================================================================ */
+
+.legend {
+    width: 300px;
+    padding: var(--space-2);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-subtle);
+}
+
+.legend-title {
+    font-family: "microgramma", "lxgw", sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding-bottom: var(--space-1);
+    margin-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.legend ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.legend li {
+    display: flex;
+    gap: var(--space-1);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.swatch {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    margin-top: 3px;
+}
+
+.swatch--ready   { background: var(--accent-green); }
+.swatch--loading { background: var(--accent-yellow); }
+.swatch--tab     { background: var(--text-primary); }

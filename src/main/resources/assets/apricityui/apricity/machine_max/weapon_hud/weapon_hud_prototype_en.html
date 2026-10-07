@@ -1,0 +1,187 @@
+<!--
+  Machine-Max — Weapon Status HUD · Static Prototype (English)
+  ==========================================================================
+  Purpose: English-text counterpart of weapon_hud_prototype.html, for checking
+           layout under Latin strings and for internationalization review.
+           Styles are shared: weapon_hud.css.
+
+  i18n note:
+    This page hard-codes English text so the layout can be reviewed directly.
+    In the shipping AUI document, user-visible strings should use AUI's
+    <translation> element (Minecraft Component.translatable()), e.g.
+        <translation key="machine_max.weapon_hud.ready"></translation>
+    so a single document serves every language. This file is the English
+    reference for those keys; see weapon_hud_prototype.html for the Chinese one.
+
+  Structure model (three levels):
+    Role (Primary / Secondary) -- 1:N -- Weapon Controller (WC) -- 1:N -- Launchers
+    Belt (ammo selection) lives at WC level: one active belt per WC, shared by
+    all launchers under it.
+
+  Weapon block slots (fixed order):
+    Name / Current ammo / Current·Capacity / Reload bar / Ammo tabs
+    Slot PRESENCE is decided by static structure (launcher count, ammo-type
+    count, whether the weapon reloads at all); slot CONTENT is runtime-driven.
+    Therefore HUD height stays constant while the vehicle is unchanged.
+
+  Cases covered:
+    A  1 launcher · 3 ammo types · reloading     -- multi ammo tabs
+    B  2 launchers · 2 ammo types · ready        -- segmented reload bar (full)
+    C  1 launcher · 1 ammo type · no reload      -- belt-fed MG: no bar, no tabs
+    D  2 launchers · 2 ammo types · one ready, one reloading -- per-launcher state
+    E  1 launcher · 1 ammo type · reloading
+    F  1 launcher · 1 ammo type · empty          -- slot kept, row not removed
+
+  Data: fully hard-coded in this page; no Java, no network packets.
+
+  Opening:
+    Open this file directly in a browser, or in-game press F10 to open the AUI
+    resource browser and double-click
+    machine_max/weapon_hud/weapon_hud_prototype_en.html
+  ==========================================================================
+-->
+
+<link rel="stylesheet" href="weapon_hud.css">
+<meta name="aui-viewport" content="mode=gui">
+
+<body>
+
+  <!-- ── Stage header ── -->
+  <header class="stage-head">
+    <span class="stage-no">HUD</span>
+    <div class="stage-title">
+      <h1>WEAPON STATUS</h1>
+      <p>/// FIRE-CONTROL FEEDBACK</p>
+    </div>
+    <span class="stage-tag">PROTOTYPE</span>
+  </header>
+
+  <div class="stage-body">
+
+    <section class="hud">
+
+      <!-- ── Primary weapons ─────────────────────────────────── -->
+      <div class="hud-group hud-group--primary">
+        <div class="group-head">
+          <span class="role-tag role-tag--primary">PRI</span>
+          <span class="group-title">PRIMARY</span>
+          <span class="group-sub">/// MAIN</span>
+        </div>
+
+        <!-- Case A: 1 launcher · 3 ammo types · reloading -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">120mm Cannon</span>
+            <span class="w-ammo">APFSDS</span>
+            <span class="w-count">24<span class="w-cap">/30</span></span>
+            <span class="w-ready">2.1s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-loading"><i class="fill-60"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">APFSDS <b>24</b></span>
+            <span class="tab">HEAT <b>12</b></span>
+            <span class="tab">HE <b>18</b></span>
+          </div>
+        </article>
+
+        <!-- Case B: 2 launchers · 2 ammo types · ready -->
+        <article class="w is-ready">
+          <div class="w-head">
+            <span class="w-name">ATGM Launcher</span>
+            <span class="w-ammo">ATGM</span>
+            <span class="w-count">4<span class="w-cap">/6</span></span>
+            <span class="w-ready">READY</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg"><i class="fill-100"></i></span>
+            <span class="seg"><i class="fill-100"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">ATGM <b>4</b></span>
+            <span class="tab">HE <b>8</b></span>
+          </div>
+        </article>
+      </div>
+
+      <div class="hud-divider"></div>
+
+      <!-- ── Secondary weapons ───────────────────────────────── -->
+      <div class="hud-group hud-group--secondary">
+        <div class="group-head">
+          <span class="role-tag role-tag--secondary">SEC</span>
+          <span class="group-title">SECONDARY</span>
+          <span class="group-sub">/// AUX</span>
+        </div>
+
+        <!-- Case C: 1 launcher · 1 ammo type · no reload mechanic (belt-fed) -->
+        <article class="w is-ready">
+          <div class="w-head">
+            <span class="w-name">Coax MG</span>
+            <span class="w-ammo">7.92mm</span>
+            <span class="w-count">480<span class="w-cap">/600</span></span>
+            <span class="w-ready">READY</span>
+          </div>
+        </article>
+
+        <!-- Case D: 2 launchers · 2 ammo types · one ready, one reloading -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">AA HMG</span>
+            <span class="w-ammo">12.7mm</span>
+            <span class="w-count">200<span class="w-cap">/240</span></span>
+            <span class="w-ready">0.8s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg"><i class="fill-100"></i></span>
+            <span class="seg is-loading"><i class="fill-30"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">AP <b>200</b></span>
+            <span class="tab">TRACER <b>120</b></span>
+          </div>
+        </article>
+
+        <!-- Case E: 1 launcher · 1 ammo type · reloading -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">40mm AGL</span>
+            <span class="w-ammo">HE</span>
+            <span class="w-count">30<span class="w-cap">/48</span></span>
+            <span class="w-ready">3.4s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-loading"><i class="fill-70"></i></span>
+          </div>
+        </article>
+
+        <!-- Case F: 1 launcher · 1 ammo type · empty (slot kept, row not removed) -->
+        <article class="w is-empty">
+          <div class="w-head">
+            <span class="w-name">Hull MG</span>
+            <span class="w-ammo">7.92mm</span>
+            <span class="w-count">0<span class="w-cap">/600</span></span>
+            <span class="w-ready">EMPTY</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-off"><i class="fill-0"></i></span>
+          </div>
+        </article>
+      </div>
+
+    </section>
+
+    <!-- ── Legend ── -->
+    <aside class="legend">
+      <div class="legend-title">SLOT RULES</div>
+      <ul>
+        <li><span class="swatch swatch--ready"></span>Reload bar: one segment per launcher; appears only on weapons with a reload mechanic (belt-fed MGs have no such slot)</li>
+        <li><span class="swatch swatch--loading"></span>READY / reloading / EMPTY: only fill and tail label change; slots never appear or disappear, so height stays fixed</li>
+        <li><span class="swatch swatch--tab"></span>Ammo tabs: appear only when a weapon has more than one ammo type, each belt showing its remaining count</li>
+      </ul>
+    </aside>
+
+  </div>
+
+</body>

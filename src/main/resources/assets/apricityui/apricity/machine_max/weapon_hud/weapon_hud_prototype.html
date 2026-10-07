@@ -1,0 +1,183 @@
+<!--
+  Machine-Max — 武器状态 HUD · 静态原型页
+  ==========================================================================
+  用途：在写 HUD 绘制代码之前，把「武器状态反馈」的外观与信息结构做成实物，
+        供确认。样式见同目录 weapon_hud.css。
+
+  结构模型（三级树）：
+    角色（主 / 副） ── 1:N ── 武器控制器（WC） ── 1:N ── 发射器
+    弹链（弹种选择）挂在 WC 级：一个 WC 一条当前弹链，其下发射器共享。
+
+  武器块插槽（固定顺序）：
+    名称 / 当前弹种 / 当前·容量 / 装填条 / 弹种选项卡
+    插槽的「有无」由静态结构决定（发射器数、弹种数、是否有装填机制），
+    插槽的「内容」由运行态决定；因此载具不变时高度恒定，不会随装填跳动。
+
+  本页覆盖的用例：
+    A  单管 · 三弹种 · 装填中      —— 多弹种选项卡
+    B  双联装 · 两弹种 · 就绪      —— 分段装填条（全满）
+    C  单管 · 单弹种 · 无装填机制  —— 弹链机枪：无装填条、无选项卡
+    D  双管 · 两弹种 · 一管就绪一管装填 —— 分段体现每管独立
+    E  单管 · 单弹种 · 装填中
+    F  单管 · 单弹种 · 空弹        —— 空态保留槽位、不删行
+
+  数据：全部硬编码在本页内，不引入 Java，不发网络包。
+
+  国际化（实现时注意）：
+    本页文案为硬编码，仅用于原型评审。正式实现不应维护多语言 HTML，
+    而应把可见文案替换为 AUI 的 <translation> 元素（走 Minecraft 的
+    Component.translatable()，按玩家语言自动切换），例如：
+        <translation key="machine_max.weapon_hud.ready"></translation>
+    本页与 weapon_hud_prototype_en.html 可分别作为 zh_cn / en_us 取值参考。
+
+  打开方式：
+    浏览器直接打开本文件预览；
+    或游戏内按 F10 打开 AUI 资源管理器，双击
+    machine_max/weapon_hud/weapon_hud_prototype.html 预览。
+  ==========================================================================
+-->
+
+<link rel="stylesheet" href="weapon_hud.css">
+<meta name="aui-viewport" content="mode=gui">
+
+<body>
+
+  <!-- ── 舞台标题 ── -->
+  <header class="stage-head">
+    <span class="stage-no">HUD</span>
+    <div class="stage-title">
+      <h1>WEAPON STATUS</h1>
+      <p>/// FIRE-CONTROL FEEDBACK</p>
+    </div>
+    <span class="stage-tag">PROTOTYPE</span>
+  </header>
+
+  <div class="stage-body">
+
+    <section class="hud">
+
+      <!-- ── 主武器 ─────────────────────────────────────────── -->
+      <div class="hud-group hud-group--primary">
+        <div class="group-head">
+          <span class="role-tag role-tag--primary">主</span>
+          <span class="group-title">主武器</span>
+          <span class="group-sub">PRIMARY</span>
+        </div>
+
+        <!-- 案例 A：单管 · 三弹种 · 装填中 -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">120mm 主炮</span>
+            <span class="w-ammo">APFSDS</span>
+            <span class="w-count">24<span class="w-cap">/30</span></span>
+            <span class="w-ready">2.1s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-loading"><i class="fill-60"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">APFSDS <b>24</b></span>
+            <span class="tab">HEAT <b>12</b></span>
+            <span class="tab">HE <b>18</b></span>
+          </div>
+        </article>
+
+        <!-- 案例 B：双联装 · 两弹种 · 就绪 -->
+        <article class="w is-ready">
+          <div class="w-head">
+            <span class="w-name">反坦克导弹</span>
+            <span class="w-ammo">ATGM</span>
+            <span class="w-count">4<span class="w-cap">/6</span></span>
+            <span class="w-ready">就绪</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg"><i class="fill-100"></i></span>
+            <span class="seg"><i class="fill-100"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">ATGM <b>4</b></span>
+            <span class="tab">HE <b>8</b></span>
+          </div>
+        </article>
+      </div>
+
+      <div class="hud-divider"></div>
+
+      <!-- ── 副武器 ─────────────────────────────────────────── -->
+      <div class="hud-group hud-group--secondary">
+        <div class="group-head">
+          <span class="role-tag role-tag--secondary">副</span>
+          <span class="group-title">副武器</span>
+          <span class="group-sub">SECONDARY</span>
+        </div>
+
+        <!-- 案例 C：单管 · 单弹种 · 无装填机制（弹链机枪），无装填条、无选项卡 -->
+        <article class="w is-ready">
+          <div class="w-head">
+            <span class="w-name">同轴机枪</span>
+            <span class="w-ammo">7.92mm</span>
+            <span class="w-count">480<span class="w-cap">/600</span></span>
+            <span class="w-ready">就绪</span>
+          </div>
+        </article>
+
+        <!-- 案例 D：双管 · 两弹种 · 一根就绪、一根装填中 -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">高射机枪</span>
+            <span class="w-ammo">12.7mm</span>
+            <span class="w-count">200<span class="w-cap">/240</span></span>
+            <span class="w-ready">0.8s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg"><i class="fill-100"></i></span>
+            <span class="seg is-loading"><i class="fill-30"></i></span>
+          </div>
+          <div class="w-tabs">
+            <span class="tab is-on">穿甲 <b>200</b></span>
+            <span class="tab">曳光 <b>120</b></span>
+          </div>
+        </article>
+
+        <!-- 案例 E：单管 · 单弹种 · 装填中 -->
+        <article class="w is-reloading">
+          <div class="w-head">
+            <span class="w-name">40mm 榴弹发射器</span>
+            <span class="w-ammo">HE</span>
+            <span class="w-count">30<span class="w-cap">/48</span></span>
+            <span class="w-ready">3.4s</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-loading"><i class="fill-70"></i></span>
+          </div>
+        </article>
+
+        <!-- 案例 F：单管 · 单弹种 · 空弹（保留槽位，不删行） -->
+        <article class="w is-empty">
+          <div class="w-head">
+            <span class="w-name">航向机枪</span>
+            <span class="w-ammo">7.92mm</span>
+            <span class="w-count">0<span class="w-cap">/600</span></span>
+            <span class="w-ready">空弹</span>
+          </div>
+          <div class="w-segbar">
+            <span class="seg is-off"><i class="fill-0"></i></span>
+          </div>
+        </article>
+      </div>
+
+    </section>
+
+    <!-- ── 图例 ── -->
+    <aside class="legend">
+      <div class="legend-title">SLOT RULES</div>
+      <ul>
+        <li><span class="swatch swatch--ready"></span>装填条：一段 = 一发射器；仅「有装填机制」的武器出现该槽位（弹链机枪无此槽位）</li>
+        <li><span class="swatch swatch--loading"></span>就绪 / 装填中 / 空弹：只改填充与尾标，不增减槽位，高度恒定</li>
+        <li><span class="swatch swatch--tab"></span>弹种选项卡：仅「多于一种弹种」的武器出现，每条弹链显示余量</li>
+      </ul>
+    </aside>
+
+  </div>
+
+</body>
