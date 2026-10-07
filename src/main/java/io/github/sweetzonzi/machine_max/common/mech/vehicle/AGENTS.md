@@ -81,7 +81,7 @@ vehicle/
 | 新增事件 | `event/` | 继承对应事件基类，注册到 NeoForge 总线 |
 | 修改交互框 | `interact/InteractBox.java` | 玩家右键交互、命中检测 |
 | 修改实体碰撞 | `CollisionManager.java` | 实体碰撞冲量映射 |
-| 修复物理线程崩溃 | `VehicleCore.java` | 根因：关节两刚体均为运动学模式 |
+| 修复物理线程崩溃 | `VehicleCore.java` | 关节已进物理空间时不可切运动学模式，见「已知问题」 |
 
 ## 关键类关系
 
@@ -123,5 +123,5 @@ VehicleCore (IPartAssembly)
 
 ## 已知问题
 
-- **多线程物理 + 关节 = 崩溃**（VehicleCore.java）。临时方案：顺序 addToLevel。
+- **关节 + 运动学模式 = 崩溃**（`VehicleCore.java`）。关节已进物理空间时把刚体切成运动学，即构成 Bullet 不支持的「两运动学体间关节」，只在多线程求解构建（`bullet_dpmt`）上崩。规制：服务端让刚体停止受力用 `setLinearFactor` / `setAngularFactor` 归零，不改运动学模式；完整定位与放大镜见仓库根 `AGENTS.md`。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，轮子停止时振荡。

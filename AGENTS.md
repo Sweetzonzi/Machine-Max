@@ -292,7 +292,12 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
-- **已知崩溃（已探明）**：多线程物理 + 关节 = 崩溃。**根因**：关节连接的两个刚体均为运动学模式（Bullet 不支持两运动学体间的 Joint 约束）。临时方案：禁止将刚体设为运动学以停止其外力影响，使用speedFactor。
+- **关节 + 运动学模式 = 物理线程崩溃（已实测定位并修复）**：崩溃表现是 `hs_err` 里 `EXCEPTION_ACCESS_VIOLATION` 落在 `bulletjme.dll`，栈顶为 `PhysicsSpace.stepSimulation`，线程是 `Server PhysicsThread`。
+  - **触发条件**：服务端把**已经通过关节连进物理空间**的刚体切成运动学模式（`body.setKinematic(true)`），物理空间里随即出现 Bullet 不支持的「两运动学体间关节」。**与 `addJoint` 的时机无关**，只要这个状态出现过就会在后续步进中崩。
+  - **只在多线程求解构建上崩**：Windows / Linux 加载的是 `bullet_dpmt`（双精度 + 多线程，2 求解线程），求解器对运动学刚体走 `btSequentialImpulseConstraintSolver::getOrInitSolverBody` 的 kinematic 分支（整段在 `BT_THREADSAFE` 内，按 `m_worldArrayIndex` 查表）；单线程构建（`threadSafe:false`）不进入该分支，同样的状态不崩，因此崩溃曾长期被掩盖。放大镜：`run/logs/latest.log` 里的 `物理 native: bullet_dpmt（Dp + Mt，2 求解线程）` 与 `threadSafe:true`。
+  - **触发窗口**：只有"召唤/读档时下方物理地形尚未就绪"才会产生该状态——读档路径在 `PhysicsLevelInitEvent` 里执行，此时地形 section 一个都没激活，必然命中；在地形已加载处放置散件则不会。这就是"有关节的载具崩、散件不崩"以及同一操作有时崩有时不崩的原因。
+  - **现行做法**：服务端等待地形期间**禁止改动运动学模式**，改用平动/转动系数归零把刚体原地钉住（`VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()`）。新代码若要在服务端让刚体停止受力，同样用 `setLinearFactor` / `setAngularFactor`，或遵守「禁止以运动学模式制动刚体，使用 `speedFactor`」既有纪律。
+  - **连带注意**：Spark-Core 的 `PhysicsSpace.addRigidBody` 对运动学刚体做隐式「dynamic → add → kinematic」翻转，`PhysicsRigidBody.rebuildRigidBody()`（`setMass` 从 0 变非 0、`setCollisionShape`）会再走一遍——即关节存在期间任何质量/形状重建都会让刚体短暂变成动力学，排查时属第二可疑入口。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
 - **打包说明**：部分内容包（如 sdkfz/）属于外部项目示例，打包时可能需要分离。

@@ -39,7 +39,7 @@ common/mech/
 | 修改能源网格 | `energy/EnergyGrid.java` | 直流总线、优先级负载卸载 |
 | 新增投射物行为 | `projectile/ProjectileManager.java` | SoA 数组、rayTest、BFDamageApi |
 | 修改 MoLang 上下文 | `molang/MechMolangContext.java` | `local.*`（Part）/ `global.*`（装配体）表达式，供动画/粒子/HUD 使用 |
-| 修复物理线程崩溃 | `VehicleCore.java` | 根因：关节两刚体均为运动学模式 |
+| 修复物理线程崩溃 | `VehicleCore.java` | 关节已进物理空间时不可切运动学模式；停止受力用 `setLinearFactor`/`setAngularFactor` 归零 |
 
 ## 约定
 

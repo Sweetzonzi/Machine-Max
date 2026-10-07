@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
+import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -95,11 +96,16 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     /** 当前已保活的区块集合（服务端），用于对比并释放不再占用的区块（null = 尚未保活） */
     @Nullable
     private Set<ChunkPos> heldChunkPositions = null;
-    /** 服务端：召唤/加载后等待下方物理地形构建完成期间，刚体保持 kinematic 不坠落（true = 等待中） */
+    /**
+     * 服务端：召唤/加载后等待下方物理地形构建完成期间，以平动/转动系数归零把刚体原地钉住不坠落
+     * （true = 等待中）。
+     * <p>不使用运动学模式：关节一旦进入物理空间，把两端刚体切成运动学即构成 Bullet 不支持的
+     * 「两运动学体间关节」，见 {@link #freezePhysicsForTerrainWait()}。
+     */
     private boolean waitingForTerrain = false;
-    /** 等待物理地形期间累计的 tick 数，超时强制恢复动态，防止地形异常导致永久浮空 */
+    /** 等待物理地形期间累计的 tick 数，超时强制解除钉住，防止地形异常导致永久悬停 */
     private int terrainWaitTicks = 0;
-    /** 等待物理地形的最长 tick 数（100 tick = 5 秒），超时后强制恢复刚体动态 */
+    /** 等待物理地形的最长 tick 数（100 tick = 5 秒），超时后强制解除钉住 */
     private static final int TERRAIN_WAIT_TIMEOUT_TICKS = 100;
     //控制
     public SubsystemController subSystemController;
@@ -346,23 +352,16 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         // 仅在服务端维护载具占用区块的保活注册（客户端刚体为运动学模式，无需保活）
         if (!level.isClientSide() && !isRemoved) {
             updateVehicleTerrainHold();
-            // 等待地形就绪期间：每 tick 复查，就绪后解除刚体 kinematic 冻结恢复动态；
-            // 超时兜底：长时间未就绪（地形构建异常）强制恢复动态，避免载具永久浮空冻结
+            // 等待地形就绪期间：每 tick 复查，就绪后解除刚体钉住恢复受力；
+            // 超时兜底：长时间未就绪（地形构建异常）强制解除，避免载具永久悬停
             if (waitingForTerrain) {
                 terrainWaitTicks++;
                 if (isVehicleTerrainReady() || terrainWaitTicks > TERRAIN_WAIT_TIMEOUT_TICKS) {
                     if (terrainWaitTicks > TERRAIN_WAIT_TIMEOUT_TICKS) {
-                        MachineMax.LOGGER.warn("载具 {} 等待物理地形超时（{} tick），强制恢复刚体动态", uuid, terrainWaitTicks);
+                        MachineMax.LOGGER.warn("载具 {} 等待物理地形超时（{} tick），强制解除刚体钉住", uuid, terrainWaitTicks);
                     }
                     waitingForTerrain = false;
-                    SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                        for (Part part : partMap.values()) {
-                            for (SubPart subPart : part.subParts.values()) {
-                                subPart.body.setKinematic(false);
-                            }
-                        }
-                        return null;
-                    });
+                    unfreezePhysicsForTerrainWait();
                 }
             }
         }
@@ -471,6 +470,55 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 return null;
             });
         }
+    }
+
+    /**
+     * 服务端：等待下方物理地形构建期间，把整车刚体原地钉住，不受重力也不被关节内力推动。
+     * <p>做法是平动/转动系数归零并清空速度与受力，<b>不改动运动学模式</b>：关节创建后即在物理空间中，
+     * 此时把两端刚体切成运动学就构成 Bullet 不支持的「两运动学体间关节」，在多线程求解构建下会崩掉物理线程。
+     * <p><b>调用线程：</b>物理线程（任务提交，由物理线程执行）。
+     */
+    private void freezePhysicsForTerrainWait() {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            Vector3f zero = new Vector3f(0f, 0f, 0f);
+            for (Part part : partMap.values()) {
+                for (SubPart subPart : part.subParts.values()) {
+                    PhysicsRigidBody body = subPart.body;
+                    if (!body.isInWorld()) continue;
+                    body.clearForces();
+                    body.setLinearVelocity(zero);
+                    body.setAngularVelocity(zero);
+                    body.setLinearFactor(zero);
+                    body.setAngularFactor(zero);
+                }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * 服务端：解除 {@link #freezePhysicsForTerrainWait()} 的钉住，恢复刚体受力。
+     * <p>恢复系数后立即清空速度，避免解除瞬间带着累积速度弹出，并激活刚体使其参与本 tick 求解。
+     * <p><b>调用线程：</b>物理线程（任务提交，由物理线程执行）。
+     */
+    private void unfreezePhysicsForTerrainWait() {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            Vector3f unit = new Vector3f(1f, 1f, 1f);
+            Vector3f zero = new Vector3f(0f, 0f, 0f);
+            for (Part part : partMap.values()) {
+                for (SubPart subPart : part.subParts.values()) {
+                    PhysicsRigidBody body = subPart.body;
+                    if (!body.isInWorld()) continue;
+                    body.clearForces();
+                    body.setLinearFactor(unit);
+                    body.setAngularFactor(unit);
+                    body.setLinearVelocity(zero);
+                    body.setAngularVelocity(zero);
+                    body.activate();
+                }
+            }
+            return null;
+        });
     }
 
     /**
@@ -1163,16 +1211,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             // 服务端：召唤/加载后立即发起下方地形保活，避免地形异步构建期间载具坠落穿透
             updateVehicleTerrainHold();
             if (!isVehicleTerrainReady()) {
-                // 地形未就绪：先冻结刚体为 kinematic（不坠地），等待 preTick 复查就绪后恢复动态
+                // 地形未就绪：先钉住刚体（平动/转动系数归零）不坠地，等待 preTick 复查就绪后解除
                 waitingForTerrain = true;
-                SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                    for (Part part : partMap.values()) {
-                        for (SubPart subPart : part.subParts.values()) {
-                            subPart.body.setKinematic(true);
-                        }
-                    }
-                    return null;
-                });
+                freezePhysicsForTerrainWait();
             }
         }
         this.inLevel = true;
