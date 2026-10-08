@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.CapacitorModuleAttr;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -181,9 +181,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     private final ConcurrentHashMap<String, FireCommand> fireCommands = new ConcurrentHashMap<>();
 
-    /** 当前是否正在等待装填（requestRound 已调用但弹药未就绪） */
-    private boolean reloading = false;
-
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -224,7 +221,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (!(type instanceof BallisticProjectileType kinetic)) return false;
         if (chamberedType == null && isActive()) {
             chamberedType = kinetic;
-            reloading = false;
             return true;
         }
         return false;
@@ -236,9 +232,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return currentSupplier;
     }
 
+    /**
+     * 设置当前供给者（由 WeaponController 的路由决策调用）。<br>
+     * 引用发生变化时顺带取消旧供给者那边尚未取走的交付
+     * （{@link IAmmoSupplier#cancelRound(IAmmoConsumer)}）：那条交付是"点名给本管的"，
+     * 本管一走它就无人认领，旧装弹机会一直把输弹线占着，弹仓里那发既不会被取走也不会给别人。
+     * 清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link WeaponControllerSubsystem#onTick()} 内的弹药路由）。
+     *
+     * @param supplier 新供给者，null 表示无供给者（不装填，仍可发射膛内已有弹药）
+     */
     @Override
     public void setCurrentSupplier(@Nullable IAmmoSupplier supplier) {
+        IAmmoSupplier previous = this.currentSupplier;
+        if (previous == supplier) return;
         this.currentSupplier = supplier;
+        if (previous != null) previous.cancelRound(this);
     }
 
     @Override
@@ -290,13 +300,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (chamberedType != null || !isActive()) return false;
         if (!canAccept(type)) return false;
         chamberedType = kinetic;
-        reloading = false;
         return true;
     }
 
     /**
      * 退膛：返回膛内弹药并清空。<br>
-     * 若当前供给者可接收退弹则归还，否则返回 null（后续可扩展为生成 ItemEntity）。
+     * 退出的弹尝试还给当前供给者；收不收由供给者自己判（弹种是否在它的弹链上、弹仓有没有位置），
+     * 被拒时弹药从膛内消失且未入库——掉落物品的落地位置与物品映射尚未实现。
      *
      * @return 退出的弹药类型，空膛返回 null
      */
@@ -305,14 +315,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         ProjectileType round = chamberedType;
         if (round == null) return null;
         chamberedType = null;
-        reloading = false;
 
-        // 尝试归还给当前供给者
+        // 尝试归还给当前供给者；是否接收由供给者判定
         IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier != null && supplier.canEject()) {
-            supplier.returnRound(round);
-        }
-        // TODO: 若无法归还，生成 ItemEntity 掉落于发射器 locator 位置
+        if (supplier != null) supplier.returnRound(round);
+        // TODO: returnRound 返回 false（不放行/放不下）时，生成 ItemEntity 掉落于发射器 locator 位置
         return round;
     }
 
@@ -435,6 +442,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 尝试从供给者装填一发弹药到膛室。<br>
      * 已移除 handleIncompatibleAmmo 逻辑——Controller 负责路由决策，
      * 若收到不兼容弹药则防御性归还并等待 Controller 下 tick 重路由。
+     * <p>
+     * 弹药未就绪时每次都向供给者重发请求：{@link IAmmoSupplier#requestRound} 幂等——
+     * 已轮到本管时直接返回，本次没被排上也只返回"已受理"，下个 tick 重发即可再试。
+     * 发射器不缓存"已请求"状态，因为"轮到没轮到"是供给者那边的交付状态，缓存在本地会在换供给者时脱节。
      *
      * @return true 表示膛室已有弹药（可立即发射）
      */
@@ -446,29 +457,20 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             ProjectileType offered = supplier.consumeReadyRound(this);
             if (offered instanceof BallisticProjectileType kinetic && canAccept(offered)) {
                 chamberedType = kinetic;
-                reloading = false;
                 return true;
             } else {
-                // 防御性处理：Controller 不应选不兼容的 Loader
-                if (offered != null && supplier.canEject()) {
+                // 防御性处理：Controller 不应选不兼容的 Loader。
+                // 归还与否交给供给者判（它才知道自己收不收这个弹种）
+                if (offered != null) {
                     MachineMax.LOGGER.warn("Launcher {} 收到不兼容弹药 {}，归还并等待 Controller 重路由", name, offered);
                     supplier.returnRound(offered);
                 }
-                reloading = false;
                 return false;
             }
         }
 
-        // 弹药未就绪 → 若未在装填中则发起请求
-        if (!reloading) {
-            // ★ 仅当 requestRound 成功接受时才设 reloading=true，
-            //    防止供给者无弹药时陷入死锁（reloading 永远不会变为 false）
-            boolean accepted = supplier.requestRound(this);
-            if (accepted) {
-                reloading = true;
-            }
-            // 无论是否成功，等待下一 tick 重试
-        }
+        // 弹药未就绪 → 请求（或重复请求）交付，本次未到手就等下一 tick
+        supplier.requestRound(this);
         return false;
     }
 
@@ -477,21 +479,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 在每发射击后立即调用，启动供给者的输送计时器，使弹药输送与射击并发进行。<br>
      * 对于 {@code reloadTimeTicks > 0} 的供给者，这能显著减少有效射击间隔。
      *
-     * @return true 表示预请求成功（或已在装填中），false 表示供给者拒绝请求
+     * @return true 表示请求已被受理（已轮到本管，或本次没排上、下个 tick 可再试）；
+     *         false 表示供给者当前无弹可给
      */
     private boolean tryRequestNextRound() {
-        if (reloading) return true; // 已在装填中，供给者的请求幂等
-
         IAmmoSupplier supplier = getCurrentSupplier();
         if (supplier == null) return false;
 
-        boolean accepted = supplier.requestRound(this);
-        if (accepted) {
-            reloading = true;
-        }
         // 即使请求被拒绝（供给者无弹药），也不阻塞：下个 tick 会重试
         // 若供给者为 RegenLoader，弹药再生产后 requestRound 会重新成功
-        return accepted;
+        return supplier.requestRound(this);
     }
 
     /**

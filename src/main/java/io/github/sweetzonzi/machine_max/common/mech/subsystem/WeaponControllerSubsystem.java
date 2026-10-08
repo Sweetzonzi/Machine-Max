@@ -49,7 +49,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      */
     private volatile ViewInputSignal currentViewSignal = null;
     /**
-     * 当前是否有开火指令
+     * 当前是否有开火指令。<br>
+     * 写点在 {@link #readInputSignals()} 与 {@link #updateRegularInputs()}（都在主线程的
+     * {@link #onTick()} 里），读点在 {@link #onPrePhysicsTick()} 的物理步进，因此声明 volatile：
+     * 主线程末尾定下的值要能被紧随其后的物理步进看到。
      */
     private volatile boolean firing = false;
 
@@ -95,7 +98,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     // ==================== 弹药管理（弹链模式） ====================
 
     /**
-     * 用户当前选中的弹链（展平列表），null = 无选择（不装填但可发射膛内已有弹药）。
+     * 用户当前选中的弹链（展平列表），null = 无选择（不装填但可发射膛内已有弹药）。<br>
+     * 三个写入点都在主线程的 {@link #onTick()} 里：{@code ammo_switch} 频道、
+     * {@code NEXT_AMMO_TYPE} / {@code PREV_AMMO_TYPE} 指令（{@link #updateRegularInputs()}），
+     * 以及 {@link #cycleSelectedBelt(boolean)}；读取点也在主线程（路由与 HUD 刷新）。
      */
     @Nullable
     private List<ResourceLocation> selectedBelt = null;
@@ -149,8 +155,22 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
         readInputSignals();
 
-        // 弹药切换防抖递减
+        // 读取标准化的武器控制指令（AI/脚本可直接发送 RegularInputSignal 至此）。
+        // 排在 readInputSignals 之后：它要覆盖通用扫描的结论（标准化指令压过通道扫描）。
+        // 读信号与用信号分离——这里定下 firing，本 tick 的物理步进再拿它下开火指令。
+        updateRegularInputs();
+
+        // 弹药切换：readInputSignals 刚写下 ammoSwitchPressed，这里同 tick 消费，
+        // 使路由与 HUD 立刻看到新弹链
+        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
+            cycleSelectedBelt(false);
+            ammoSwitchPressed = false;
+            ammoSwitchCooldown = 10; // 10 tick 防抖
+        }
         if (ammoSwitchCooldown > 0) ammoSwitchCooldown--;
+
+        // 弹药路由：与装弹机的装填计时、发射器的取弹同在主线程
+        routeAmmoToLaunchers();
 
         // 每 10 tick 轻量刷新弹药池 availableCount
         tickSincePoolRebuild++;
@@ -163,12 +183,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-
-        // 0) 读取标准化的武器控制指令（AI/脚本可直接发送 RegularInputSignal 至此）
-        updateRegularInputs();
-
-        // 1) 弹药路由：在瞄准/开火之前执行
-        routeAmmoToLaunchers();
 
         // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
         ViewInputSignal vis = this.currentViewSignal;
@@ -279,6 +293,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      * 弹药池完整重建。<br>
      * 由 onVehicleStructureChanged() 和首次初始化触发，
      * 遍历所有 launcher 的 supplierChannels，按弹链（展平列表）分组重建 ammoPool。
+     * <p>
+     * 只有带弹链概念的供给者（再生装弹机）进入弹药池：池是"HUD 弹链选项卡 + 弹链选择"的数据源，
+     * 而 {@code AmmoLoaderSubsystem} 的物理弹仓按装填顺序出弹，没有可枚举的弹链。
+     * 无弹链的供给者仍可被路由选中，见 {@link #findSupplier}。
      */
     private void rebuildAmmoPool() {
         Map<List<ResourceLocation>, List<LoaderEntry>> pool = new HashMap<>();
@@ -291,17 +309,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 for (IAmmoSupplier loader : channelEntry.getValue()) {
                     if (!visited.add(loader)) continue; // 去重
 
-                    if (loader instanceof RegenLoaderSubsystem regenLoader) {
-                        List<ResourceLocation> belt = regenLoader.getProjectileTypes();
-                        if (belt.isEmpty()) continue;
-                        pool.computeIfAbsent(belt, k -> new ArrayList<>())
-                                .add(new LoaderEntry(
-                                        regenLoader, belt,
-                                        regenLoader.getRemainingCount(),
-                                        regenLoader.getReloadTimeTicks(),
-                                        channel));
-                    }
-                    // AmmoLoader 后续按弹链模式扩展
+                    List<ResourceLocation> belt = beltOf(loader);
+                    if (belt.isEmpty()) continue;
+                    pool.computeIfAbsent(belt, k -> new ArrayList<>())
+                            .add(new LoaderEntry(
+                                    loader, belt,
+                                    loader.getRemainingCount(),
+                                    loader.getReloadTimeTicks(),
+                                    channel));
                 }
             }
         }
@@ -312,6 +327,18 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         }
         this.ammoPool = Collections.unmodifiableMap(pool);
         this.tickSincePoolRebuild = 0;
+    }
+
+    /**
+     * 供给者的弹链（展平的弹种序列）。<br>
+     * 无弹链概念的供给者（装弹机）返回空列表，因此不进弹药池。
+     */
+    private static List<ResourceLocation> beltOf(IAmmoSupplier supplier) {
+        if (supplier instanceof RegenLoaderSubsystem regenLoader) {
+            return regenLoader.getProjectileTypes();
+        }
+        // AmmoLoader 无弹链：物理弹仓按装填顺序出弹，弹种由 getSuppliedType() 逐发报告
+        return List.of();
     }
 
     /**
@@ -359,94 +386,183 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 为指定 launcher 查找能提供指定弹链的最优 Loader。<br>
-     * 按 launcher.supplierChannels 的迭代顺序（= LauncherStaticAttr.ammo_inputs 列表顺序），
-     * 在第一个有匹配弹链的频道中选 reloadTimeTicks 最小的 Loader。
+     * 供给者是否可被某个发射器选中：运行中、能接受该弹种、且当前有弹药。<br>
+     * 弹种尚未解码（内容包缺投射物定义）时不做否决，交由发射器取弹时按炮闩判定。
      *
-     * @return 最优 Loader，若无任何 loader 能提供选中弹链则返回 null
+     * @return true 表示可以选中该供给者
      */
-    @Nullable
-    private IAmmoSupplier findBestLoaderFor(LauncherSubsystem launcher, List<ResourceLocation> belt) {
-        if (belt == null) return null;
-        for (Map.Entry<String, List<IAmmoSupplier>> channelEntry :
-                launcher.getSupplierChannels().entrySet()) {
-            for (IAmmoSupplier loader : channelEntry.getValue()) {
-                if (!(loader instanceof AbstractSubsystem sub) || !sub.isActive()) continue;
-                if (loader instanceof RegenLoaderSubsystem rl) {
-                    if (rl.getProjectileTypes().equals(belt)) {
-                        return loader;
-                    }
-                }
-                // AmmoLoader 后续扩展：if (loader instanceof AmmoLoaderSubsystem al) { ... }
-            }
-        }
-        return null;
+    private static boolean canSupplyTo(IAmmoSupplier supplier, LauncherSubsystem launcher) {
+        return supplyTypeAccepted(supplier, launcher) && supplier.hasAmmo();
     }
 
     /**
-     * 弹药路由：为每个 launcher 设置最优 currentSupplier。<br>
-     * 若膛内弹种不属于选中弹链，自动退膛。<br>
-     * 在 onPrePhysicsTick 中瞄准/开火逻辑之前调用。
+     * 供给者是否仍算这根管的合法供给者：运行中、正在供的弹种炮闩能吃。<br>
+     * 与 {@link #canSupplyTo} 的区别是不要求"此刻有余弹"——装填中的装弹机弹仓里
+     * 那一发已被认领，余弹数可能已经归零，但它仍在为这根管服务，不该被判为失效。
+     */
+    private static boolean supplyTypeAccepted(IAmmoSupplier supplier, LauncherSubsystem launcher) {
+        if (!(supplier instanceof AbstractSubsystem sub) || !sub.isActive() || sub.isDestroyed()) return false;
+        ProjectileType offered = supplier.getSuppliedType();
+        return offered == null || launcher.canAccept(offered);
+    }
+
+    /**
+     * 切换供给者时是否需要退膛。<br>
+     * 判据是新旧两家的弹种是否一致，而不是"膛内弹种是否属于选中弹链"：
+     * 两条弹链可以共用同一个弹种，只要新供给者给的还是同一发弹药，膛内那发就仍然有效，
+     * 退掉再装只是白费一次装填。
+     *
+     * @return true 表示膛内弹药与新供给者的弹种不符，应退膛
+     */
+    private static boolean shouldEjectOnSupplierChange(LauncherSubsystem launcher, IAmmoSupplier newSupplier) {
+        ProjectileType chambered = launcher.getChamberedType();
+        if (chambered == null) return false;
+        ProjectileType incoming = newSupplier.getSuppliedType();
+        if (incoming == null) return false; // 新供给者弹种未知，留给取弹时的兼容校验
+        return !chambered.getRegistryKey().equals(incoming.getRegistryKey());
+    }
+
+    /**
+     * 从弹药池里取指定弹链的全部供给者（按装填耗时升序，同耗时保持池内插入顺序）。<br>
+     * 弹药池是每 10 tick 刷新一次的快照，这里只借用它的排序，命中判定仍以实时接口为准。
+     *
+     * @param belt 选中的弹链；{@code null}（未选弹链）时返回空列表
+     */
+    private static List<IAmmoSupplier> beltSuppliers(WeaponControllerSubsystem controller,
+                                                     @Nullable List<ResourceLocation> belt) {
+        if (belt == null) return List.of();
+        List<LoaderEntry> entries = controller.ammoPool.get(belt);
+        if (entries == null || entries.isEmpty()) return List.of();
+        List<IAmmoSupplier> suppliers = new ArrayList<>(entries.size());
+        for (LoaderEntry entry : entries) {
+            suppliers.add(entry.loader());
+        }
+        return suppliers;
+    }
+
+    /**
+     * 候选供给者的优先级，数字越小越优先。<br>
+     * <ol>
+     *   <li>{@code 0} — 已开始为这根管交付（计时中或已就绪）：换人等于丢掉已推进的交付</li>
+     *   <li>{@code 1} — 还能再接一根管（空闲，或本就允许多消费者并行）</li>
+     *   <li>{@code 2} — 独占装弹机正在为别的管交付：只能等</li>
+     * </ol>
+     * 独占装弹机（{@code canSupplyMultiple=false}）同时只服务一根管，前一根管占走一台后，
+     * 那台对后一根管就落到第 3 档，因此 N 根管会自动摊到 N 台装弹机上。
+     */
+    private static int supplierRank(IAmmoSupplier supplier, LauncherSubsystem launcher) {
+        if (supplier.isRoundScheduled(launcher)) return 0;
+        if (supplier.canSupplyMultiple()) return 1;
+        return supplier.hasScheduledRound() ? 2 : 1;
+    }
+
+    /**
+     * 为发射器选定供给者：先取选中弹链的供给者，没有再退到任意可用供给者。<br>
+     * 后者覆盖面更广——{@code AmmoLoaderSubsystem} 不在弹药池里（物理弹仓没有弹链），
+     * 只认池内条目的实现会让这类装弹机永远选不上。
+     * <p>
+     * 每条路都按"已轮到本管 → 空闲 → 被别人占着"排序，同档内保持传入顺序（弹链一路已按
+     * 装填耗时升序），因此 N 根管会自动落到 N 台装弹机上：前一根管选走一台后，
+     * 那台对后一根管就降档成"被别人占着"。
+     *
+     * @return 选定的供给者；无可用供给者时返回 null
+     */
+    @Nullable
+    private IAmmoSupplier findSupplier(LauncherSubsystem launcher,
+                                       @Nullable List<ResourceLocation> selectedBelt) {
+        List<IAmmoSupplier> usable = new ArrayList<>();
+        for (IAmmoSupplier loader : beltSuppliers(this, selectedBelt)) {
+            if (loader != launcher.getCurrentSupplier() && canSupplyTo(loader, launcher)) usable.add(loader);
+        }
+        if (usable.isEmpty()) {
+            Map<IAmmoSupplier, Boolean> seen = new HashMap<>();
+            for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
+                for (IAmmoSupplier loader : channelLoaders) {
+                    if (seen.put(loader, Boolean.TRUE) != null) continue;
+                    if (canSupplyTo(loader, launcher)) usable.add(loader);
+                }
+            }
+        }
+        if (usable.isEmpty()) {
+            // 都被别人占着：只要当前供给者还能供弹就守住它
+            IAmmoSupplier current = launcher.getCurrentSupplier();
+            return supplyTypeAccepted(current, launcher) ? current : null;
+        }
+        usable.sort(Comparator.comparingInt(s -> supplierRank(s, launcher)));
+        return usable.getFirst();
+    }
+
+    /**
+     * 弹药路由：为每根管选定它的装弹机（{@code currentSupplier}）。<br>
+     * 由 {@link #onTick()} 在主线程调用，与装弹机的装填计时、发射器的取弹同步。
+     * <p>
+     * 每根管的决策顺序：
+     * <ol>
+     *   <li>当前供给者仍能供弹（弹种可接受）且仍在<a>为它服务</a>
+     *       （已轮到它，或那台本就允许多消费者并行）→ 留着</li>
+     *   <li>否则在候选里挑一台（{@link #findSupplier}）——空闲的与可并行的排在前面，
+     *       已在为别的管交付的独占装弹机排最后，于是 N 根管摊到 N 台装弹机上</li>
+     *   <li>换人时按弹种决定是否退膛（{@link #shouldEjectOnSupplierChange}）；
+     *       旧供给者那边的待交付由 {@code LauncherSubsystem.setCurrentSupplier} 内部取消</li>
+     * </ol>
+     * 发射器按名字排序处理，保证每 tick 的分配结果一致（不依赖握手顺序）。
      */
     private void routeAmmoToLaunchers() {
         if (!isActive() || isDestroyed()) return;
 
-        // 弹药池尚未重建（handshake 未完成），跳过路由，等待 onTick 中重建
+        // 弹药池尚未重建（handshake 未完成），跳过路由，等待下一次 onTick 重建
         if (needsAmmoPoolUpdate) return;
 
-        // 处理弹药切换输入
-        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
-            cycleSelectedBelt(false);
-            ammoSwitchPressed = false;
-            ammoSwitchCooldown = 10; // 10 tick 防抖
-        }
-
+        List<LauncherSubsystem> activeLaunchers = new ArrayList<>();
         for (LauncherSubsystem launcher : launchers.keySet()) {
-            if (launcher.isDestroyed() || !launcher.isActive()) continue;
+            if (!launcher.isDestroyed() && launcher.isActive()) activeLaunchers.add(launcher);
+        }
+        // 按名字排序：launchers 是无序 Map，不定序会让分配结果每 tick 抖动
+        activeLaunchers.sort(Comparator.comparing(l -> l.name));
 
-            if (selectedBelt == null) {
-                // 无选中弹链：保留 handshake 建立的默认供给关系
-                // 若 currentSupplier 为 null 但 supplierChannels 有 loader，自动选第一个
-                if (launcher.getCurrentSupplier() == null) {
-                    IAmmoSupplier first = findFirstLoader(launcher);
-                    if (first != null) {
-                        launcher.setCurrentSupplier(first);
-                    }
+        List<ResourceLocation> belt = selectedBelt;
+        for (LauncherSubsystem launcher : activeLaunchers) {
+            IAmmoSupplier current = launcher.getCurrentSupplier();
+
+            // 留着当前供给者的条件：它还在供本管能吃的弹种，且它要么已轮到本管、
+            // 要么还没被别人占走（空闲）。第二半句是"多根管摊到多台装弹机"的关键：
+            // 一根管占走某台后 hasScheduledRound() 变真，其余还绑在这台上的管这才肯让位；
+            // 若把它换成"只在已被服务时才留"，绑定会在闲置期间每 tick 重挑，反而抖起来。
+            if (current != null && supplyTypeAccepted(current, launcher)
+                    && (current.isRoundScheduled(launcher)
+                        || current.canSupplyMultiple()
+                        || !current.hasScheduledRound())) {
+                // 只有它供的不是选中弹链、且有更该选的候选时才换
+                if (belt == null || beltSuppliers(this, belt).contains(current)) continue;
+                IAmmoSupplier preferred = findSupplier(launcher, belt);
+                if (preferred != null && preferred != current
+                        && supplierRank(preferred, launcher) < supplierRank(current, launcher)) {
+                    switchSupplier(launcher, preferred);
                 }
                 continue;
             }
 
-            IAmmoSupplier best = findBestLoaderFor(launcher, selectedBelt);
-            if (best == null) {
-                // 该 launcher 没有能提供选中弹链的 loader → 退膛
+            IAmmoSupplier chosen = findSupplier(launcher, belt);
+            if (chosen == null) {
+                // 无可用供给者 → 退膛，但仍可发射膛内已有弹药
                 if (launcher.getChamberedType() != null) launcher.ejectRound();
                 launcher.setCurrentSupplier(null);
-            } else if (launcher.getCurrentSupplier() != best) {
-                // 膛内弹种是否在选中弹链中 → 不在则退膛
-                ProjectileType chambered = launcher.getChamberedType();
-                ResourceLocation chamberedKey = chambered != null ? chambered.getRegistryKey() : null;
-                if (chamberedKey != null && !selectedBelt.contains(chamberedKey)) {
-                    launcher.ejectRound();
-                }
-                launcher.setCurrentSupplier(best);
+                continue;
             }
+            if (chosen != current) switchSupplier(launcher, chosen);
         }
     }
 
     /**
-     * 查找 launcher 的第一个可用 Loader。<br>
-     * 按 supplierChannels 迭代顺序返回第一个频道的第一个 loader，无可用时返回 null。
+     * 换供给者：按弹种决定是否退膛，再写入新供给者。<br>
+     * 旧供给者那边的待交付由 {@code LauncherSubsystem.setCurrentSupplier} 内部取消，
+     * 调用方不需要（也不应该）自己再做一次。
      */
-    @Nullable
-    private IAmmoSupplier findFirstLoader(LauncherSubsystem launcher) {
-        for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
-            for (IAmmoSupplier loader : channelLoaders) {
-                if (loader instanceof AbstractSubsystem sub && sub.isActive()) {
-                    return loader;
-                }
-            }
+    private static void switchSupplier(LauncherSubsystem launcher, IAmmoSupplier supplier) {
+        if (shouldEjectOnSupplierChange(launcher, supplier)) {
+            launcher.ejectRound();
         }
-        return null;
+        launcher.setCurrentSupplier(supplier);
     }
 
     // ==================== 公开查询方法 ====================
@@ -469,23 +585,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         }
     }
 
-    /**
-     * 调试自动开火是否开启。
-     */
-    public boolean isDebugAutoFire() {
-        return debugAutoFire;
-    }
-
-    public int getDebugTriggerInterval() {
-        return debugTriggerInterval;
-    }
-
     public void setDebugTriggerInterval(int v) {
         this.debugTriggerInterval = Math.max(1, v);
-    }
-
-    public int getDebugFireDuration() {
-        return debugFireDuration;
     }
 
     public void setDebugFireDuration(int v) {
@@ -641,9 +742,11 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
     /**
      * 从 fireInputs 频道读取标准化的 RegularInputSignal 武器控制指令。<br>
-     * 在 readInputSignals() 之后调用，由 onPrePhysicsTick() 驱动。<br>
-     * AI 实体可通过发送 RegularInputSignal 到此子系统直接控制武器，
-     * 无需经过控制组绑定。
+     * 在 {@link #readInputSignals()} 之后由 {@link #onTick()} 调用，与它同在主线程：
+     * 两者都写 {@link #firing}，同线程才谈得上确定的覆盖顺序（标准化指令压过通道扫描）。
+     * 指令由玩家按键（边沿触发，按下/松开各一包）或 AI 直发，速率远低于 tick，无需按物理步进频率轮询。
+     * <p>
+     * AI 实体可通过发送 RegularInputSignal 到此子系统直接控制武器，无需经过控制组绑定。
      */
     private void updateRegularInputs() {
         RegularInputSignal activeRegular = null;
@@ -808,7 +911,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(attr.controlOutputTargets);
-        return result;
+        return new HashMap<>(attr.controlOutputTargets);
     }
 }

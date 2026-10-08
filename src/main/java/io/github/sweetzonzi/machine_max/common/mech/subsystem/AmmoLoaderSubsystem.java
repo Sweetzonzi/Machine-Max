@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * 装弹机子系统。<br>
  * 管理物理弹药供给、装填时序和弹序循环，仅实现 {@link IAmmoSupplier} 接口。<br>
- * 不再实现 {@link IAmmoConsumer}（已移除多级弹药链支持）。<br>
+ * 不实现 {@link IAmmoConsumer}（无多级弹药链支持）。
  * <p>
  * 两种装填模式：
  * <ul>
@@ -27,6 +27,19 @@ import java.util.*;
  * </ul>
  * <p>
  * 状态机：IDLE → RELOADING(consumer, remainingTicks) → READY → consume → IDLE
+ * <p>
+ * 多消费者：{@code can_supply_multiple=false} 时整台装弹机同一时刻只推进一个消费者的计时器，
+ * 没排上的消费者在 {@link #requestRound(IAmmoConsumer)} 中只得到"已受理"，不起计时器，
+ * 下个 tick 重发请求再试，直到前一个消费者取走弹药腾出输弹线——一条输弹链一次只能移动一发。
+ * {@code can_supply_multiple=true} 时所有消费者的计时器并行推进。<br>
+ * 因此不存在等待队列：{@link #reloadTimers} 里有没有本消费者，就是"轮到没轮到"。
+ * <p>
+ * 计时器与就绪位都用插入有序的普通集合：本子系统的读写全在主线程（自身 tick、武器控制器的路由、
+ * HUD 刷新都在主线程），不需要并发容器。
+ * <p>
+ * <b>WIP：</b>弹仓以物品容器实现，退弹 {@link #returnRound(ProjectileType)} 的物品映射尚未做完
+ * （投射物类型的注册名与物品注册名不通用，取不到时落成 {@code Items.ARROW}，
+ * 再取弹时因解析不出投射物类型而被丢弃）。弹药链与路由决策暂由再生装弹机承担。
  */
 public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
 
@@ -35,11 +48,11 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     /** 物理弹药容器（FIFO） */
     private final SimpleContainer container;
 
-    /** 每个消费者的装填剩余 tick 计时器 */
-    private final Map<IAmmoConsumer, Integer> reloadTimers = new HashMap<>();
+    /** 每个消费者的装填剩余 tick 计时器，插入有序 */
+    private final Map<IAmmoConsumer, Integer> reloadTimers = new LinkedHashMap<>();
 
-    /** 每个消费者弹药是否已就绪 */
-    private final Set<IAmmoConsumer> readyConsumers = new HashSet<>();
+    /** 每个消费者弹药是否已就绪（交付已完成、等消费者取走），插入有序 */
+    private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
 
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
@@ -99,24 +112,71 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /**
      * 请求一发弹药，启动非阻塞装填计时器。<br>
-     * 仅在本地有弹药时启动装填，无弹药直接返回 false（不再向上游请求补充）。
+     * 仅在本地有弹药时启动装填，无弹药直接返回 false（不从上游请求补充）。
      * 幂等性：同一 consumer 多次调用不会创建重复计时器。
+     * <p>
+     * {@code can_supply_multiple=false} 且已有别人在装填时，本次请求返回 true 但不启动计时器
+     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #reloadTimers}
+     * 一张表表达"谁的交付在进行中"，因此不记录等待队列。
      *
-     * @return true 表示请求已接受（首次请求或已在装填中）
+     * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示本地无弹
      */
     @Override
     public boolean requestRound(IAmmoConsumer consumer) {
-        // 幂等性：已在装填中则直接返回 true
-        if (reloadTimers.containsKey(consumer)) return true;
-        if (readyConsumers.contains(consumer)) return true;
+        // 已在交付中（计时中或待取）→ 幂等返回
+        if (isRoundScheduled(consumer)) return true;
 
-        // 有弹药 → 启动装填计时器（秒 → tick）
-        if (hasAmmo()) {
-            reloadTimers.put(consumer, (int) (attr.staticAttribute.getReloadTime() * 20f));
-            return true;
-        }
+        // 无弹药：不受理，等弹药到位后由消费者再请求
+        if (!hasAmmo()) return false;
 
-        return false;
+        // 独占装弹机：已有别人占着这条输弹线，本次不排上
+        if (!canSupplyMultiple() && hasScheduledRound()) return true;
+
+        reloadTimers.put(consumer, (int) (attr.staticAttribute.getReloadTime() * 20f));
+        return true;
+    }
+
+    @Override
+    public boolean isRoundScheduled(IAmmoConsumer consumer) {
+        return reloadTimers.containsKey(consumer) || readyConsumers.contains(consumer);
+    }
+
+    /**
+     * 是否已有消费者被开始交付。<br>
+     * 交付计时或已就绪待取都算"占着"：待取的那发还在弹仓里没被取走，同样不能被别人认领。
+     */
+    @Override
+    public boolean hasScheduledRound() {
+        return !reloadTimers.isEmpty() || !readyConsumers.isEmpty();
+    }
+
+    /**
+     * 清掉已经不能再来取弹（被摧毁或失活）的消费者的交付状态。<br>
+     * 消费者退场时不会通知供给者，而它的计时器/就绪位会一直占着输弹线，
+     * 使这台装弹机对后来者永久不可用；因此在 tick 里自行清理。
+     */
+    private void pruneGoneConsumers() {
+        reloadTimers.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
+        readyConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
+    }
+
+    /**
+     * 该消费者是否已经不能再来取弹（被摧毁或失活）。
+     */
+    private static boolean isConsumerGone(IAmmoConsumer consumer) {
+        return consumer instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive());
+    }
+
+    /**
+     * 取消该消费者尚未取走的交付。<br>
+     * 计时器与就绪位都只表示"已承诺交付"，弹仓计数要等
+     * {@link #consumeReadyRound(IAmmoConsumer)} 取出时才扣减，因此这里没有已扣出的弹药需要归还，
+     * 清掉承诺即可；取消后输弹线立刻空出，等待中的消费者下次请求即可被排上。
+     */
+    @Override
+    public void cancelRound(IAmmoConsumer consumer) {
+        reloadTimers.remove(consumer);
+        readyConsumers.remove(consumer);
     }
 
     @Override
@@ -124,6 +184,11 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return readyConsumers.contains(consumer);
     }
 
+    /**
+     * 取走已就绪的弹药。
+     *
+     * @return 弹药类型；消费者未就绪或弹仓已空时返回 null
+     */
     @Override
     @Nullable
     public ProjectileType consumeReadyRound(IAmmoConsumer consumer) {
@@ -149,24 +214,28 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return null;
     }
 
+    /**
+     * 接收一发退还的弹药：有空槽位就把它放进去。<br>
+     * 弹仓是异构物品容器（弹种由每格物品决定），因此没有"弹链匹配"这一层判断，
+     * 只需确认放得下；{@link #getAmmoItem(ProjectileType)} 取不到对应物品时按 WIP 说明
+     * 退回占位物品，再取弹时会因解析不出投射物类型而被丢弃。
+     *
+     * @param type 退还的弹药类型
+     * @return true 表示已放入弹仓
+     */
     @Override
-    public boolean canEject() {
-        // 弹仓有剩余空间即可退弹
-        return getFreeCapacityInternal() > 0;
-    }
-
-    @Override
-    public void returnRound(ProjectileType type) {
-        if (getFreeCapacityInternal() <= 0) return;
+    public boolean returnRound(ProjectileType type) {
+        if (getFreeCapacityInternal() <= 0) return false;
         // 将退弹放入第一个空槽位
         for (int i = 0; i < container.getContainerSize(); i++) {
             if (container.getItem(i).isEmpty()) {
                 // 创建一个占位物品（弹药通过 NBT 标记类型）
                 ItemStack stack = new ItemStack(getAmmoItem(type), 1);
                 container.setItem(i, stack);
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     @Override
@@ -174,13 +243,25 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return attr.staticAttribute.getMagazineCapacity();
     }
 
+    /**
+     * 装弹机当前工作状态（per-consumer）。<br>
+     * 注意这里不表达"有没有被排上"——那由 {@link #isRoundScheduled(IAmmoConsumer)} 回答。
+     */
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
+        if (readyConsumers.contains(consumer)) return SupplierStatus.READY;
         if (reloadTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
         if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
         return SupplierStatus.READY;
     }
 
+    /**
+     * 装填进度（0~1）。<br>
+     * 未被排上的消费者没有计时器，进度为 0。
+     *
+     * @param consumer 请求进度的消费者
+     * @return 进度值；无计时器时返回 0
+     */
     @Override
     public float getReloadProgress(IAmmoConsumer consumer) {
         Integer remaining = reloadTimers.get(consumer);
@@ -196,7 +277,10 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         super.onTick();
         if (!isActive() || isDestroyed()) return;
 
-        // ① 推进装填计时器（已移除向上游自动请求补充逻辑）
+        // 清掉已退场的消费者，别让它们的交付占着输弹线
+        pruneGoneConsumers();
+
+        // 推进装填计时器（本子系统不从上游补充弹药：弹仓空了就拒绝请求）
         Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = reloadTimers.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<IAmmoConsumer, Integer> entry = iter.next();

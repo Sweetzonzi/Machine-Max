@@ -38,6 +38,15 @@ import java.util.*;
  * 弹链机制：维护一个有序的循环弹种序列，consumeReadyRound 时逐发推进指针。
  * 单一弹种退化为长度为 1 的弹链。
  * <p>
+ * 多消费者：{@code can_supply_multiple=false} 时整台装弹机同一时刻只推进一个消费者的输送计时器，
+ * 没排上的消费者在 {@link #requestRound(IAmmoConsumer)} 中只得到"已受理"，不起计时器，
+ * 下个 tick 重发请求再试，直到前一个消费者取走弹药腾出输弹线——一条输弹链一次只能移动一发。
+ * {@code can_supply_multiple=true} 时所有消费者的计时器并行推进，各自拿到弹链上的下一发。<br>
+ * 因此不存在等待队列：{@link #deliveryTimers} 里有没有本消费者，就是"轮到没轮到"。
+ * <p>
+ * 计时器与就绪位都用插入有序的普通集合：本子系统的读写全在主线程（自身 tick、武器控制器的路由、
+ * HUD 刷新都在主线程），不需要并发容器。
+ * <p>
  * 能量消耗通过 {@link EnergyGrid#consumeEnergy(float)} 瞬时抽取，不实现 {@code IEnergyConsumer} 接口。
  */
 public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, ISoundSpreader {
@@ -51,7 +60,11 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             SynchedEntityData.defineId(RegenLoaderSubsystem.class, EntityDataSerializers.INT);
 
     /**
-     * 弹链当前指针位置（网络同步）
+     * BELT_INDEX 的当前取值是否合法由 {@link #normalizedBeltIndex()} 保证。
+     * <p>
+     * 弹链指针的唯一载体是 {@link #BELT_INDEX} 这个 {@code SynchedEntityData} 访问器，
+     * 服务端与客户端读同一个来源：服务端每发写入后按增量推送自动送达客户端，
+     * 客户端因此不需要自行从存档恢复起点。
      */
     private static final EntityDataAccessor<Integer> BELT_INDEX =
             SynchedEntityData.defineId(RegenLoaderSubsystem.class, EntityDataSerializers.INT);
@@ -76,17 +89,14 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     private int regenDelayRemainingTicks = 0;
 
-    /**
-     * 弹链指针当前索引（在展平列表中的位置）
-     */
-    private int projectileTypeIndex = 0;
-
     // ——— 装填进度音效状态（仅客户端有效） ———
 
     /**
-     * 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发
+     * 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发。<br>
+     * 由装填音效在 tick 中维护，{@link #consumeReadyRound(IAmmoConsumer)} 里清理；
+     * 两者都在主线程（取弹由发射器在 tick 中发起），插入有序即可。
      */
-    private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new HashMap<>();
+    private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new LinkedHashMap<>();
 
     /**
      * 批量冷却模式下上次已播放音效的进度阈值
@@ -101,15 +111,11 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     // ——— 多消费者支持 ———
 
-    /**
-     * 每个消费者的输送计时器
-     */
-    private final Map<IAmmoConsumer, Integer> deliveryTimers = new HashMap<>();
+    /** 每个消费者的输送计时器，插入有序 */
+    private final Map<IAmmoConsumer, Integer> deliveryTimers = new LinkedHashMap<>();
 
-    /**
-     * 每个消费者的弹药是否已就绪
-     */
-    private final Set<IAmmoConsumer> readyConsumers = new HashSet<>();
+    /** 每个消费者的弹药是否已就绪（输送已完成、等消费者取走），插入有序 */
+    private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
 
     public RegenLoaderSubsystem(ISubsystemHost owner, String name, RegenLoaderSubsystemAttr attr) {
         super(owner, name, attr);
@@ -173,27 +179,123 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public String getLabel() {
-        if (attr.projectileTypes.isEmpty()) return "---";
-        return attr.projectileTypes.get(normalizedBeltIndex()).toString();
+        return getBeltLabel();
     }
 
+    /**
+     * 弹链名（HUD 弹链选项卡用）。<br>
+     * 层级：① {@code belt_label} 非空 → 按字面返回；② 取弹链首发弹种的展示名；
+     * ③ 首发尚未解码为投射物类型 → 取该资源的路径；④ 弹链为空 → {@code "---"}。<br>
+     * 不读指针，因此同一弹链的返回值恒定。
+     * <p>
+     * <b>调用线程：</b>主线程（HUD 刷新）。<b>仅在客户端调用</b>（弹种展示名取玩家语言的文本）。
+     */
+    public String getBeltLabel() {
+        if (!attr.getBeltLabel().isEmpty()) return attr.getBeltLabel();
+        if (attr.projectileTypes.isEmpty()) return "---";
+        return roundLabel(attr.projectileTypes.getFirst());
+    }
+
+    /**
+     * 弹链指针当前指向的弹种展示名（HUD 弹种槽用）。<br>
+     * 指针来源是 {@link #BELT_INDEX}（客户端可读，见 {@link #normalizedBeltIndex()}）；
+     * 该发尚未解码为投射物类型时取该资源的路径；弹链为空时返回空串（弹种槽留空）。
+     * <p>
+     * <b>调用线程：</b>主线程（HUD 刷新）。<b>仅在客户端调用</b>。
+     */
+    public String getCurrentRoundLabel() {
+        if (attr.projectileTypes.isEmpty()) return "";
+        return roundLabel(attr.projectileTypes.get(normalizedBeltIndex()));
+    }
+
+    /**
+     * 单个弹种的展示名：解码得到投射物类型时用其语言键文本，否则退回资源的路径。
+     */
+    private String roundLabel(ResourceLocation projectileTypeId) {
+        ProjectileType type = ProjectileType.get(getLevel(), projectileTypeId);
+        return type != null ? type.getDisplayLabel() : projectileTypeId.getPath();
+    }
+
+    /**
+     * 请求一发弹药，启动非阻塞输送计时器。<br>
+     * 幂等性：同一 consumer 多次调用不会创建重复计时器。
+     * <p>
+     * {@code can_supply_multiple=false} 且已有别人在输送时，本次请求返回 true 但不启动计时器
+     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #deliveryTimers}
+     * 一张表表达"谁的输送在进行中"，因此不记录等待队列。
+     *
+     * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示弹仓无弹
+     */
     @Override
     public boolean requestRound(IAmmoConsumer consumer) {
-        if (deliveryTimers.containsKey(consumer) || readyConsumers.contains(consumer)) {
-            return true; // 幂等
-        }
+        // 已在输送中（计时中或待取）→ 幂等返回
+        if (isRoundScheduled(consumer)) return true;
 
+        // 无弹药：不受理，等再生到位后由消费者再请求
         if (getAmmoCount() <= 0) return false;
 
-        // 启动输送计时器（秒 → tick）
+        // 独占装弹机：已有别人占着这条输弹线，本次不排上
+        if (!canSupplyMultiple() && hasScheduledRound()) return true;
+
+        startDelivery(consumer);
+        return true;
+    }
+
+    /**
+     * 启动该消费者的输送计时器；{@code reload_time=0} 时直接转入待取。
+     */
+    private void startDelivery(IAmmoConsumer consumer) {
         int tickTime = (int) (attr.staticAttribute.getReloadTime() * 20f);
         if (tickTime > 0) {
             deliveryTimers.put(consumer, tickTime);
         } else {
-            // 瞬时交付
-            readyConsumers.add(consumer);
+            readyConsumers.add(consumer); // 瞬时交付
         }
-        return true;
+    }
+
+    @Override
+    public boolean isRoundScheduled(IAmmoConsumer consumer) {
+        return deliveryTimers.containsKey(consumer) || readyConsumers.contains(consumer);
+    }
+
+    /**
+     * 是否已有消费者被开始交付。<br>
+     * 交付计时或已就绪待取都算"占着"：待取的那发还在弹仓里没被取走，同样不能被别人认领。
+     */
+    @Override
+    public boolean hasScheduledRound() {
+        return !deliveryTimers.isEmpty() || !readyConsumers.isEmpty();
+    }
+
+    /**
+     * 清掉已经不能再来取弹（被摧毁或失活）的消费者的交付状态。<br>
+     * 消费者退场时不会通知供给者，而它的计时器/就绪位会一直占着输弹线，
+     * 使这台装弹机对后来者永久不可用；因此在 tick 里自行清理。
+     */
+    private void pruneGoneConsumers() {
+        deliveryTimers.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
+        readyConsumers.removeIf(RegenLoaderSubsystem::isConsumerGone);
+        lastPlayedProgressKeys.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
+    }
+
+    /**
+     * 该消费者是否已经不能再来取弹（被摧毁或失活）。
+     */
+    private static boolean isConsumerGone(IAmmoConsumer consumer) {
+        return consumer instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive());
+    }
+
+    /**
+     * 取消该消费者尚未取走的交付。<br>
+     * 就绪位里的那发<b>仍记在弹仓计数里</b>（{@link #takeRoundFromMagazine()} 才扣减），
+     * 因此清掉计时器与就绪位即可，不需要 {@code returnRound} 补弹——补了会让同一发被算两次。
+     * 取消后输弹线立刻空出，等待中的消费者下次请求即可被排上。
+     */
+    @Override
+    public void cancelRound(IAmmoConsumer consumer) {
+        deliveryTimers.remove(consumer);
+        readyConsumers.remove(consumer);
+        lastPlayedProgressKeys.remove(consumer);
     }
 
     @Override
@@ -201,13 +303,21 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (readyConsumers.contains(consumer)) {
             return true;
         } else if (deliveryTimers.containsKey(consumer)) {
-            return false; // 未完成输送
+            return false; // 输送尚未完成
         } else {
+            // 未被排上（或从未请求）：顺手再请求一次，由供给者决定这次能否排上
             requestRound(consumer);
-            return false; // 未请求
+            return false;
         }
     }
 
+    /**
+     * 取走已就绪的弹药。<br>
+     * 弹链指针在这里推进：一发对应弹链上的一格，因此只有真正被取走的弹药才会让指针前进。
+     * 取走后输弹线立刻空出，未被排上的消费者下次请求即可被排上。
+     *
+     * @return 弹药类型；消费者未就绪、弹仓已空或弹链未定义时返回 null
+     */
     @Override
     @Nullable
     public ProjectileType consumeReadyRound(IAmmoConsumer consumer) {
@@ -215,6 +325,16 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         readyConsumers.remove(consumer);
         lastPlayedProgressKeys.remove(consumer); // 弹药已消费，清理该消费者的音效追踪
 
+        return takeRoundFromMagazine();
+    }
+
+    /**
+     * 从弹仓取出一发并推进弹链指针。
+     *
+     * @return 弹药类型；弹仓已空或弹链未定义时返回 null
+     */
+    @Nullable
+    private ProjectileType takeRoundFromMagazine() {
         if (getAmmoCount() <= 0) return null;
         if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
             setAmmoCount(getAmmoCount() - 1);
@@ -225,9 +345,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         // 取当前弹链位置的弹药，然后推进指针
         int beltIndex = normalizedBeltIndex();
         ProjectileType type = ProjectileType.get(getLevel(), attr.projectileTypes.get(beltIndex));
-        projectileTypeIndex = (beltIndex + 1) % attr.projectileTypes.size();
-        if (!getLevel().isClientSide())  // 同步指针到客户端
-            getSynchedData().set(BELT_INDEX, projectileTypeIndex);
+        // 推进结果写入 BELT_INDEX：两端都以该访问器为指针载体，服务端写入后自动同步到客户端
+        getSynchedData().set(BELT_INDEX, (beltIndex + 1) % attr.projectileTypes.size());
 
         // 弹药已输送，启动再生延迟计时器（若 regenDelay > 0）
         float delay = attr.staticAttribute.getRegenDelay();
@@ -247,13 +366,25 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         return attr.staticAttribute.getMagazineCapacity();
     }
 
+    /**
+     * 再生装弹机当前工作状态（per-consumer）。<br>
+     * 注意这里不表达"有没有被排上"——那由 {@link #isRoundScheduled(IAmmoConsumer)} 回答。
+     */
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
-        if (isBatchReloading || deliveryTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
+        if (readyConsumers.contains(consumer)) return SupplierStatus.READY;
+        if (deliveryTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
+        // 批量冷却：弹仓归零后整批再生，此时每个消费者都在等同一批弹药
+        if (isBatchReloading) return SupplierStatus.RELOADING;
         if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
         return SupplierStatus.READY;
     }
 
+    /**
+     * 装填进度（0~1）。<br>
+     * 未被排上的消费者没有输送计时器，落到末尾的"余量/容量"分支：它不是真正的输送进度，
+     * 而是这台的弹药储备水平（供 HUD 显示）。
+     */
     @Override
     public float getReloadProgress(IAmmoConsumer consumer) {
         int cap = attr.staticAttribute.getMagazineCapacity();
@@ -273,17 +404,30 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         return (float) getAmmoCount() / cap;
     }
 
+    /**
+     * 接收一发退还的弹药。<br>
+     * 收下条件有两条，都由本机自己判：① 弹种在本机弹链上——弹链之外的弹种收进来也发不出去，
+     * 只会让弹仓计数与实际供给能力脱节；② 弹仓还有空位。两条都满足才计数 +1。
+     * <p>
+     * 计数只在服务端递增（客户端跟随服务端推送）。
+     *
+     * @param type 退还的弹药类型
+     * @return true 表示已收下并计入弹仓
+     */
     @Override
-    public boolean canEject() {
-        return getFreeCapacity() > 0;
+    public boolean returnRound(ProjectileType type) {
+        if (!isOnBelt(type)) return false;
+        if (getAmmoCount() >= attr.staticAttribute.getMagazineCapacity()) return false;
+        if (!getLevel().isClientSide()) setAmmoCount(getAmmoCount() + 1);
+        return true;
     }
 
-    @Override
-    public void returnRound(ProjectileType type) {
-        // 仅服务端更新弹药计数
-        if (!getLevel().isClientSide() && getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
-            setAmmoCount(getAmmoCount() + 1);
-        }
+    /**
+     * 该弹种是否在本机弹链上。
+     */
+    private boolean isOnBelt(ProjectileType type) {
+        ResourceLocation key = type.getRegistryKey();
+        return key != null && attr.projectileTypes.contains(key);
     }
 
     // ==================== 弹链查询 ====================
@@ -303,17 +447,19 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * {@link #attr}{@code .projectileTypes} 是不可变列表，越界取值会抛异常，
      * 因此所有以指针索引弹链的位置都必须经由此方法。
      * <p>
-     * 越界时把指针折回有效范围并就地修正字段，下次保存即为合法值。
+     * 指针存在 {@link #BELT_INDEX} 访问器里（{@code SynchedEntityData}），服务端与客户端
+     * 读同一个来源；越界时把折回后的修正值写回该访问器，服务端下次保存即为合法值。
+     * 客户端不读存档、只跟随服务端的推送，因此两端的指针不会各自走偏。
      *
      * @return 有效范围内的弹链指针；弹链为空时返回 0（调用方在此之前已判空）
      */
     private int normalizedBeltIndex() {
         int size = attr.projectileTypes.size();
         if (size == 0) return 0;
-        if (projectileTypeIndex < 0 || projectileTypeIndex >= size) {
-            projectileTypeIndex = Math.floorMod(projectileTypeIndex, size);
-        }
-        return projectileTypeIndex;
+        int index = getSynchedData().get(BELT_INDEX);
+        int normalized = Math.floorMod(index, size);
+        if (normalized != index) getSynchedData().set(BELT_INDEX, normalized);
+        return normalized;
     }
 
     // ==================== 核心逻辑 ====================
@@ -322,6 +468,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     public void onTick() {
         super.onTick();
         if (!isActive() || isDestroyed()) return;
+
+        // 清掉已退场的消费者，别让它们的交付占着输弹线
+        pruneGoneConsumers();
 
         // ① 推进输送计时器
         Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = deliveryTimers.entrySet().iterator();
@@ -525,13 +674,6 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         return consumed >= amount - 0.001f;
     }
 
-    /**
-     * 获取剩余容量。
-     */
-    private int getFreeCapacity() {
-        return attr.staticAttribute.getMagazineCapacity() - getAmmoCount();
-    }
-
     // ==================== 握手机制 ====================
 
     @Override
@@ -567,7 +709,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (data.contains("batch_cooldown")) batchCooldownTicks = data.getInt("batch_cooldown");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
-        if (data.contains("belt_index")) projectileTypeIndex = data.getInt("belt_index");
+        if (data.contains("belt_index")) getSynchedData().set(BELT_INDEX, data.getInt("belt_index"));
     }
 
     @Override
@@ -578,7 +720,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         data.putInt("batch_cooldown", batchCooldownTicks);
         data.putBoolean("is_batch_reloading", isBatchReloading);
         data.putInt("regen_delay_remaining", regenDelayRemainingTicks);
-        data.putInt("belt_index", projectileTypeIndex);
+        data.putInt("belt_index", getSynchedData().get(BELT_INDEX));
         return data;
     }
 

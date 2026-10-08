@@ -3,8 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 /**
  * 弹药供给者接口。<br>
  * 供给者负责管理弹药储备、装填计时和弹药交付。
@@ -43,7 +41,72 @@ public interface IAmmoSupplier {
     /** 是否允许多个消费者同时等待装填 */
     boolean canSupplyMultiple();
 
-    /** HUD 弹种标签 */
+    /**
+     * 该消费者是否已被本供给者开始交付（交付计时中，或弹药已就绪待取）。<br>
+     * 这是"轮到我了"的唯一判据：
+     * <ul>
+     *   <li>{@code canSupplyMultiple()=true} — 请求被接受即开始交付，本方法随即为 true</li>
+     *   <li>{@code canSupplyMultiple()=false} — 同一时刻只有一位消费者被交付，
+     *       未排上的请求返回 true 但本方法保持 false，消费者下个 tick 重发请求即可再试</li>
+     * </ul>
+     * 因此"排队"不是持久状态，而是"本次未被排上"的瞬时结果，供给者无需为它记录队列。
+     * <p>
+     * 与 {@link #getStatus(IAmmoConsumer)} 的区别：状态里的 {@code RELOADING} 既可能是"已轮到它"，
+     * 也可能是"它还没被排上"，本方法只回答前者。
+     * <p>
+     * 未覆写时返回 false，调用方按"尚未轮到"处理。
+     *
+     * @param consumer 请求查询的消费者
+     * @return true 表示该消费者正被交付
+     */
+    default boolean isRoundScheduled(IAmmoConsumer consumer) {
+        return false;
+    }
+
+    /**
+     * 是否已有消费者被开始交付（等价于"这条交付通道已被占"）。<br>
+     * 独占供给者用它决定能否再接一位消费者；武器控制器用它判断这台装弹机是不是已经
+     * 名花有主、别的发射器该去找别人。允许并行供弹（{@link #canSupplyMultiple()}）时该标志
+     * 不构成限制，多根管可以同时挂在同一台上。
+     * <p>
+     * 未覆写时返回 false，调用方按"无人交付"处理。
+     */
+    default boolean hasScheduledRound() {
+        return false;
+    }
+
+    /**
+     * 取消该消费者在本供给者处<b>进行中或尚未取走</b>的交付，让那发重新可被分配。<br>
+     * 由消费者在换供给者时调用（见 {@code LauncherSubsystem.setCurrentSupplier}），
+     * 否则旧供给者会一直为一位已经不管它的消费者留着这条交付通道，
+     * 弹仓里那发既不会被取走，也不会被别的消费者使用。
+     * <p>
+     * 调用时该消费者可能处于两种状态，本方法都要覆盖：交付<b>计时中</b>，或弹药<b>已就绪待取</b>。
+     * 取消后（独占模式下）这条通道立刻空出，等待中的消费者下次请求即可被排上。
+     * <p>
+     * 与 {@link #returnRound(ProjectileType)} 的分工：那个是"把已经拿到手的弹药还回来"，
+     * 会改变库存计数；本方法只取消"尚未取走"的交付承诺，而承诺阶段库存本来就没扣，
+     * 所以<b>不要在这里补弹</b>——本接口的既有实现都只在
+     * {@link #consumeReadyRound(IAmmoConsumer)} 里扣减库存，补弹会让同一发被算两次。
+     * 只有"在承诺阶段就已扣出库存"的实现才需要归还，由该实现自行处理。
+     * <p>
+     * 未覆写时为空操作。
+     *
+     * @param consumer 要取消交付的消费者
+     */
+    default void cancelRound(IAmmoConsumer consumer) {
+    }
+
+    /**
+     * HUD 弹链名。
+     * <p>
+     * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。名字是给玩家读的语义标签，
+     * 两条构成不同的弹链可以合法地显示同一个名字（例如都以穿甲弹开头的两条弹链）。
+     * 需要标识弹链时用展平弹链列表（{@code RegenLoaderSubsystem.getProjectileTypes()}），
+     * 需要标识弹种时用 {@link #getSuppliedType()} 返回的 {@link ProjectileType} 实例。
+     * <p>
+     * <b>仅在客户端调用</b>：文本取自玩家语言的翻译键，服务端的语言表不含内容包的键。
+     */
     String getLabel();
 
     /**
@@ -95,10 +158,17 @@ public interface IAmmoSupplier {
         return 0f;
     }
 
-    /** 是否支持退弹（接收弹药归还） */
-    boolean canEject();
-
-    /** 归还一发弹药给供给者（退弹用） */
-    void returnRound(ProjectileType type);
+    /**
+     * 接收一发退还的弹药。<br>
+     * <b>收不收由供给者自己判</b>——弹种是不是自己这条弹链上的、弹仓还有没有位置，
+     * 都是供给者内部的规则，消费者不该替它做判断，因此本方法返回是否收下。
+     * <p>
+     * 典型调用点是发射器退膛：退膛的弹想还给供给者，被拒（弹种不符或已满）时由消费者
+     * 自行处置（例如掉成物品）。
+     *
+     * @param type 退还的弹药类型
+     * @return true 表示已收下；false 表示未接收（弹种不符或无空位）
+     */
+    boolean returnRound(ProjectileType type);
 
 }
