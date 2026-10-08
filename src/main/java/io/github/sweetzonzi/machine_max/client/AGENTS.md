@@ -49,6 +49,8 @@ client/
 │   │   ├── MMGuiManager.java     # GUI 管理器
 │   │   ├── MMGuis.java           # GUI 注册
 │   │   └── VehicleInfoPanelManager.java
+│   ├── post/                     # 屏幕空间后处理（深度与 PostChain 的坑见 post/AGENTS.md）
+│   ├── fbo/                      # 离屏渲染目标（OffscreenFbo：检查器、CCTV）
 │   ├── renderable/               # ModelAnimatable, GuiAnimatable
 │   ├── toast/                    # Toast 通知
 │   └── MMRenderTypes.java        # 自定义渲染类型
@@ -80,6 +82,7 @@ client/
 | 修复输入处理 | `input/RawInputHandler.java` | 键盘/鼠标 → 网络载荷 |
 | 修复摄像头 | `input/CameraController.java` | 座位摄像机、分轴稳定、FOV 过渡 |
 | 新增渲染类型 | `render/MMRenderTypes.java` | LINES_ALWAYS_VISIBLE, SOLID_ALWAYS_VISIBLE |
+| 修复后处理 / 深度问题 | `render/post/` | 先读 `render/post/AGENTS.md`：深度快照时机、链目标格式、GL 状态还原 |
 | 修复方块实体渲染 | `render/renderer/block/*.java` | Fabricator, ResearchTable, TotalStation |
 | 新增 JEI/Jade 集成 | `compat/jei/` 或 `compat/jade/` | 客户端配方/信息显示 |
 | 客户端网络处理 | `network/ClientResearchHandler.java` | 研究系统客户端处理 |
@@ -91,6 +94,7 @@ client/
 - **输入管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。
 - **VisualEffectHelper**（位于 `common/visual/VisualEffectHelper.java`）：存储客户端只渲染对象（附着点、包围盒、投射）。
 - **3D HUD**：使用 `Hud3DRenderer` 配合自定义姿态栈和顶点消费者。
+- **后处理的世界深度只在 `AFTER_LEVEL` 有效**：更晚读主目标深度，无光影会话下拿到的是被抹平的远平面、光影会话下却看似正常。硬约束、会静默出错的点与诊断配方见 `render/post/AGENTS.md`。
 
 ## 反模式
 
