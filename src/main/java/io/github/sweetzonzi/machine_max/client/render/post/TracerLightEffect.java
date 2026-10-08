@@ -59,13 +59,18 @@ public class TracerLightEffect {
      *
      * <p>照射半径由弹种口径线性折算：{@code R = 基准 + 每毫米口径增量 × 口径(mm)}。
      * 中心处的衰减值恒为 1（{@code (1 - d/R)²} 在 d=0 处为 1），因此 R 只决定"够得着多远"、
-     * 不决定峰值亮度：R 越大，光斑越大越柔。基准 1.5 m 保证小口径曳光贴地/贴车飞过时也有可见光斑。</p>
+     * 不决定峰值亮度：R 越大，光斑越大越柔。</p>
+     *
+     * <p>基准 3 m 是按"曳光在常见高度上要有可见落点"定的：步枪弹在 1.7 m 高度平飞时，
+     * 正下方地面的衰减值 {@code (1 − 1.7/3.15)² ≈ 0.21}，看得见但不刺眼；半径为 1.5 m 时该值归零，
+     * 也就是脚下完全不亮、只有擦到车体或墙面才见光。想更亮就抬基准与斜率（两者一起抬，
+     * 否则大小口径的差距会被压平）。</p>
      */
-    private static final float LIGHT_RADIUS_BASE_M = 1.5f;
-    /** 每毫米口径增加的照亮半径（m）：1 cm/mm */
-    private static final float LIGHT_RADIUS_PER_MM_M = 0.01f;
+    private static final float LIGHT_RADIUS_BASE_M = 3.0f;
+    /** 每毫米口径增加的照亮半径（m）：2 cm/mm */
+    private static final float LIGHT_RADIUS_PER_MM_M = 0.02f;
     /** 照亮半径上限（m）：避免超大口径变成探照灯 */
-    private static final float LIGHT_RADIUS_MAX_M = 4.0f;
+    private static final float LIGHT_RADIUS_MAX_M = 8.0f;
 
     /**
      * 遮挡容差的绝对下限（m）：口径折算的常数项。
@@ -399,11 +404,11 @@ public class TracerLightEffect {
     }
 
     /**
-     * 照亮半径：{@code R = 1.5 m + 1 cm × 口径(mm)}，上限 4 m。
+     * 照亮半径：{@code R = 3 m + 2 cm × 口径(mm)}，上限 8 m。
      *
      * <p>口径是"弹丸有多大"这件事在数据里的唯一载体（{@code external.caliber}，单位 mm），
      * 物理半径 = 口径/2000 m、命中半径与风阻截面积都由它换算，因此照射半径也由它线性折算，
-     * 不需要新增内容包字段：7.62mm → 1.58 m，20mm → 1.70 m，50mm → 2.00 m，155mm → 3.05 m。</p>
+     * 不需要新增内容包字段：7.62mm → 3.15 m，20mm → 3.40 m，50mm → 4.00 m，155mm → 6.10 m。</p>
      *
      * @param caliberMm 弹种口径（mm）
      * @return 世界半径（m）

@@ -36,10 +36,11 @@
 
 设计依据、两次采集的对照数据与验收判据见 `docs/plan/计划中/武器系统-投射物曳光光照设计.md` 的 §5.1、§5.2、§6.7 与 §七。
 
-## 会静默出错的四个点
+## 会静默出错的五个点
 
 | 症状 | 原因 | 处置 |
 |------|------|------|
+| 光斑/环整体**上下镜像**到视线轴另一侧（近轴时几乎看不出，接地时光斑跑到天上） | 把屏幕 y 当成了自上而下。后处理全屏 quad 的顶点是 `(0,0),(W,0),(W,H),(0,H)`，正交矩阵是 `setOrtho(0, W, 0, H, ...)`，所以 `Position.y = 0` 在屏幕**下沿**，`px.y = texCoord.y · OutSize.y` 自下而上 | 视线方向写成 `q.y = (px.y - H/2) / f`，世界点投影写成 `c.y = H/2 + f·C.y/zc`；两者必须同号，否则先是画错、再是"天空早退"把该亮的像素全跳过 |
 | `copyDepthFrom` 抛 `GL_INVALID_OPERATION`，副本里只剩清屏值 | 副本深度是 `GL_DEPTH_COMPONENT`，主目标是深度-模板格式，深度位 blit 非法 | 用链 JSON 声明的目标：`PostChain.addTempTarget` 会镜像主目标的 stencil；手工 `new TextureTarget(...)` 必须自己 `enableStencil()` |
 | 该调用之后的渲染错位、清除打到窗口上 | `RenderTarget.copyDepthFrom`、`RenderTarget.clear` / `resize`、`PostChain` 构造结束时都会把 FBO 0 绑在 DRAW 上 | 每处之后 `main.bindWrite(true)` |
 | 该清的没清，或深度被意外抹平 | `glClear` 受 `GL_DEPTH_WRITEMASK` 与剪裁框约束，与"上一次是谁清的"无关 | 需要清就临时 `_depthMask(true)`，随后还原原值 |

@@ -39,8 +39,10 @@ void main() {
     vec2 px  = texCoord * OutSize;
 
     // 本像素的视空间视线方向（未归一化时 z 分量为 -1）
+    // px.y 自下而上：后处理 quad 的顶点是 (0,0),(W,0),(W,H),(0,H) 且正交矩阵为 setOrtho(0, W, 0, H, ...)，
+    // 所以 y 项必须是 (px.y - H/2)；写成 (H/2 - px.y) 会把整个环上下镜像到视线轴另一侧。
     vec2  q   = vec2((px.x - OutSize.x * 0.5) / FocalPx,
-                     (OutSize.y * 0.5 - px.y) / FocalPx);
+                     (px.y - OutSize.y * 0.5) / FocalPx);
     float L   = sqrt(1.0 + dot(q, q));
     vec3  dir = vec3(q, -1.0) / L;
 
@@ -73,9 +75,9 @@ void main() {
         if (zFront < NEAR_Z) continue;                // 相机在球内，或交点在相机背后
         if (zScene < zFront - DEPTH_EPS_M) continue;  // 被前景遮挡
 
-        // 屏幕径向方向：爆心的屏幕投影 → 本像素
+        // 屏幕径向方向：爆心的屏幕投影 → 本像素（y 同样自下而上）
         vec2 centerPx = vec2(OutSize.x * 0.5 + FocalPx * C.x / -C.z,
-                             OutSize.y * 0.5 - FocalPx * C.y / -C.z);
+                             OutSize.y * 0.5 + FocalPx * C.y / -C.z);
         vec2 dirPx    = px - centerPx;
 
         float g = gradient(t) * delta;

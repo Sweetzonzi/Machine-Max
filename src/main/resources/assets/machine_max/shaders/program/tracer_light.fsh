@@ -40,9 +40,12 @@ void main() {
 
     vec2 px = texCoord * OutSize;
 
-    // 本像素的视空间视线方向（未归一化时 z 分量为 -1）
+    // 本像素的视空间视线方向（未归一化时 z 分量为 -1）。
+    // px.y 自下而上：后处理全屏 quad 的顶点是 (0,0),(W,0),(W,H),(0,H)、正交矩阵是 setOrtho(0, W, 0, H, ...)，
+    // 因此 Position.y = 0 落在屏幕下沿，y 项必须写成 (px.y - H/2)。写成 (H/2 - px.y) 会把整个世界上下镜像：
+    // 相机下方的光斑被画到天上，而天上像素会被天空早退跳过——表现是"光斑跟着视角跑、地上什么都没有"。
     vec2  q   = vec2((px.x - OutSize.x * 0.5) / FocalPx,
-                     (OutSize.y * 0.5 - px.y) / FocalPx);
+                     (px.y - OutSize.y * 0.5) / FocalPx);
     float L   = sqrt(1.0 + dot(q, q));
     vec3  dir = vec3(q, -1.0) / L;
 
@@ -76,7 +79,7 @@ void main() {
         float zc = -C.z;
         if (zc > NEAR_Z) {
             vec2 lightPx = vec2(OutSize.x * 0.5 + FocalPx * C.x / zc,
-                                OutSize.y * 0.5 - FocalPx * C.y / zc);
+                                OutSize.y * 0.5 + FocalPx * C.y / zc);   // y 同样自下而上
             if (all(greaterThanEqual(lightPx, vec2(0.0))) &&
                 all(lessThan(lightPx, OutSize))) {                  // 越界按可见处理
                 float tol   = max(LightTol[i], zc * OcclusionTolRel);
