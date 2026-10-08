@@ -48,6 +48,7 @@ public class MachineMax {
         MMDataComponents.register(bus);//注册所有物品数据组件
         MMAttributes.register(bus);//注册所有自定义实体属性
         MMAttachments.register();//注册所有附件类型
+        MMEntityDataSerializers.register();//注册所有自定义同步数据序列化器
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMDynamicRes.initResources();//首次启动时读取外部资源文件

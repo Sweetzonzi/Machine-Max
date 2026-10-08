@@ -56,7 +56,10 @@ public interface IAmmoConsumer {
     /** 获取当前选中的供给者 */
     @Nullable IAmmoSupplier getCurrentSupplier();
 
-    /** 设置当前选中的供给者（直接引用，null 表示无供给者） */
+    /**
+     * 设置当前选中的供给者（直接引用，null 表示无供给者）。<br>
+     * 由服务端的弹药路由调用；客户端不调用，它的指认来自服务端同步过来的供给者身份。
+     */
     void setCurrentSupplier(@Nullable IAmmoSupplier supplier);
 
     /** 获取所有已注册的供给者列表 */

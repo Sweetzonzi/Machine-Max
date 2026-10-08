@@ -18,9 +18,13 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticPro
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
@@ -46,6 +50,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 投射物类型由当前供给者提供，而非静态属性直接指定。<br>
  * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
  * Launcher 仅执行 currentSupplier 上的装填和发射。
+ * <p>
+ * <b>供给者指认的双端口径：</b>"本管由哪台机器供弹"是服务端的决定，经 {@link #SUPPLIER_ID}
+ * 同步给客户端；客户端据此解析出本机的供给者实例，挑选只发生在服务端。指认变化时旧供给者那边
+ * 尚未取走的交付由 {@link #assignSupplier} 取消，两端都不会留下无人认领的输弹线。
  */
 public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
 
@@ -149,7 +157,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private BallisticProjectileType chamberedType;
 
     /**
-     * 当前选中的供给者引用（由 WeaponController 的路由决策设置）。<br>
+     * 本管当前供给者的<b>身份</b>（网络同步）。<br>
+     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，三者都随存档持久化，
+     * 因此同一个值在两端、在重启前后都指同一台机器，可以直接进存档也可以直接跨端传。
+     * <p>
+     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）与载入时的存档播种（{@link #loadData}）。
+     * 客户端在 {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
+     * （{@link #resolveSyncedSupplier()}），因此两端的指认由服务端单方面决定：
+     * 客户端的路由不参与决策，只跟随。
+     * <p>
+     * 写入存档还有一个用途：后进玩家在收到载具数据时就能拿到当前指认，不必等服务端下一次改动。
+     */
+    private static final EntityDataAccessor<SupplierRef> SUPPLIER_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
+
+    /**
+     * 当前选中的供给者引用。<br>
+     * 服务端由 WeaponController 的路由决策设置；客户端由 {@link #SUPPLIER_ID} 同步值解析得到。
      * null 表示无供给者（不装填，可发射膛内已有弹药）。
      */
     @Nullable
@@ -203,6 +227,34 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return modules;
     }
 
+    // ==================== 同步数据 ====================
+
+    /**
+     * 定义本子系统的同步数据项。<br>
+     * 这些项与 {@link AbstractSubsystem} 的耐久/激活/摧毁位合并成同一张表，
+     * 由基类每 tick 打包推送。
+     */
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SUPPLIER_ID, SupplierRef.NONE);
+    }
+
+    /**
+     * 同步数据落地后的处理。<br>
+     * 收到子系统同步包时，基类会逐个访问器回调本方法（服务端自己写值时同样回调一次）。
+     * 这里只处理客户端：服务端推来的指认要落到本机的供给者实例上。
+     *
+     * @param dataAccessor 发生变化的访问器
+     */
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
+        super.onSyncedDataUpdated(dataAccessor);
+        if (getLevel().isClientSide() && dataAccessor.equals(SUPPLIER_ID)) {
+            applySyncedSupplier();
+        }
+    }
+
     // ——— IAmmoConsumer 实现 ———
 
     @Override
@@ -233,11 +285,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 设置当前供给者（由 WeaponController 的路由决策调用）。<br>
+     * 设置当前供给者，由 WeaponController 的服务端路由调用。<br>
      * 引用发生变化时顺带取消旧供给者那边尚未取走的交付
      * （{@link IAmmoSupplier#cancelRound(IAmmoConsumer)}）：那条交付是"点名给本管的"，
      * 本管一走它就无人认领，旧装弹机会一直把输弹线占着，弹仓里那发既不会被取走也不会给别人。
      * 清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
+     * <p>
+     * 指认随之写入 {@link #SUPPLIER_ID} 推给客户端。客户端不调用本方法：它的指认由同步值经
+     * {@link #applySyncedSupplier()} 落到同一字段上，两端因此不会各自决策出不同结果。
      * <p>
      * <b>调用线程：</b>主线程（{@link WeaponControllerSubsystem#onTick()} 内的弹药路由）。
      *
@@ -245,10 +300,71 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     @Override
     public void setCurrentSupplier(@Nullable IAmmoSupplier supplier) {
+        assignSupplier(supplier);
+        if (!getLevel().isClientSide()) {
+            getSynchedData().set(SUPPLIER_ID, SupplierRef.of(supplier));
+        }
+    }
+
+    /**
+     * 把指认落到本机字段上，并取消旧供给者的待交付。<br>
+     * 不含任何同步动作，也不动膛内那发：换指认只影响<b>后续</b>装填，膛内已经压好的那发照打
+     * （它属于哪条弹链由玩家的显式退膛操作决定，不在这里替玩家丢）。服务端由
+     * {@link #setCurrentSupplier} 追加写入同步值，客户端由 {@link #applySyncedSupplier()}
+     * （跟随推送）与 {@link #resolveSyncedSupplier()}（载入播种）调用。
+     */
+    private void assignSupplier(@Nullable IAmmoSupplier supplier) {
         IAmmoSupplier previous = this.currentSupplier;
         if (previous == supplier) return;
         this.currentSupplier = supplier;
         if (previous != null) previous.cancelRound(this);
+    }
+
+    /**
+     * 应用服务端推来的指认（客户端）。<br>
+     * 值非空表示"这台机器派给了本管"，解析成本机实例；值为空表示服务端当前没给本管派供给者。
+     * 两种情形都只改指认，不动膛内那发——与服务端的口径一致（换指认只影响后续装填）。
+     */
+    private void applySyncedSupplier() {
+        SupplierRef ref = getSynchedData().get(SUPPLIER_ID);
+        if (ref.isNone()) {
+            assignSupplier(null);
+            return;
+        }
+        IAmmoSupplier target = findSupplierByRef(ref);
+        // 握手里还没出现这台机器：保持现状，等 onTick 的重试
+        if (target == null || target == currentSupplier) return;
+        assignSupplier(target);
+    }
+
+    /**
+     * 按 {@link #SUPPLIER_ID} 里的身份在本机已发现的供给者中找出实例并指认。<br>
+     * 身份是"宿主 Part uuid + SubPart 名 + 子系统名"，同一台机器在两端、在重启前后都是这个值，
+     * 因此不需要跨端传对象引用，也不需要额外的查表。客户端在刚载入时（还没收到任何推送）用它把
+     * 存档带回来的指认落地，服务端同样用它把存档里的指认在握手完成后落地。
+     * <p>
+     * 本方法只认领、不改变膛内状态：载入时的膛内弹药是存档里的既成事实，
+     * 退不退由玩家显式操作决定。
+     */
+    private void resolveSyncedSupplier() {
+        SupplierRef ref = getSynchedData().get(SUPPLIER_ID);
+        if (ref.isNone()) return;
+        IAmmoSupplier target = findSupplierByRef(ref);
+        if (target != null && target != currentSupplier) assignSupplier(target);
+    }
+
+    /**
+     * 在本机已发现的供给者里按身份找实例。
+     *
+     * @return 对应实例；身份为空或握手里还没有这台机器时返回 null
+     */
+    @Nullable
+    private IAmmoSupplier findSupplierByRef(SupplierRef ref) {
+        if (ref.isNone()) return null;
+        for (IAmmoSupplier supplier : getSuppliers()) {
+            if (SupplierRef.of(supplier).equals(ref)) return supplier;
+        }
+        return null;
     }
 
     @Override
@@ -275,13 +391,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 带频道名的供给者注册。<br>
      * 由 Loader 在 handshake 回调中调用。
      * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
+     * <p>
+     * 同一台重复握手（结构变化后重新发现）不重复登记。这里不写指认：谁给本管供弹由服务端的
+     * 路由决定，登记只负责让本管知道"有哪些供给者存在"。
      */
     @Override
     public void addSupplier(IAmmoSupplier supplier, String channelName) {
-        supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>()).add(supplier);
-        if (currentSupplier == null) {
-            currentSupplier = supplier;
-        }
+        List<IAmmoSupplier> channelSuppliers = supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>());
+        if (channelSuppliers.contains(supplier)) return;
+        channelSuppliers.add(supplier);
     }
 
     @Override
@@ -341,6 +459,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     public void onTick() {
         super.onTick();
+        // 指认的种子：本机字段还空着时（刚载入、握手尚未完成）按同步值里的身份认一次。
+        // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
+        if (currentSupplier == null) resolveSyncedSupplier();
         // 若膛内无弹，尝试从供给者取弹
         if (chamberedType == null) tryLoadChamber();
 
@@ -440,8 +561,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 尝试从供给者装填一发弹药到膛室。<br>
-     * 已移除 handleIncompatibleAmmo 逻辑——Controller 负责路由决策，
-     * 若收到不兼容弹药则防御性归还并等待 Controller 下 tick 重路由。
+     * 弹种兼容性由 Controller 的路由负责：本方法收到不兼容弹药时只做防御性归还，
+     * 等待下个 tick 的重路由。
      * <p>
      * 弹药未就绪时每次都向供给者重发请求：{@link IAmmoSupplier#requestRound} 幂等——
      * 已轮到本管时直接返回，本次没被排上也只返回"已受理"，下个 tick 重发即可再试。
@@ -1054,6 +1175,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else {
             chamberedType = null;
         }
+        // 供给者指认随载具数据一起送达（同步值只在变化时推送，所以这里补一次当前值）。
+        // 身份是 Part uuid + SubPart 名 + 子系统名，三者都在数据里持久化，重启后仍指同一台机器。
+        // 客户端解析要等本机握手完成，落空时由 onTick 重试。
+        if (data.hasUUID("supplier_part")) {
+            getSynchedData().set(SUPPLIER_ID, new SupplierRef(
+                    data.getUUID("supplier_part"),
+                    data.getString("supplier_sub_part"),
+                    data.getString("supplier_subsystem")));
+        }
     }
 
     @Override
@@ -1061,6 +1191,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.saveData(data);
         if (chamberedType != null) {
             data.putString("chambered_type", chamberedType.getRegistryKey().toString());
+        }
+        SupplierRef supplierRef = getSynchedData().get(SUPPLIER_ID);
+        if (!supplierRef.isNone()) {
+            data.putUUID("supplier_part", supplierRef.partUuid());
+            data.putString("supplier_sub_part", supplierRef.subPartName());
+            data.putString("supplier_subsystem", supplierRef.subsystemName());
         }
         return data;
     }

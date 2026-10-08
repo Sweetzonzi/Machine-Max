@@ -142,6 +142,16 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
+     * 这次装填已经走了多少 tick：总耗时减剩余。<br>
+     * 计时器是倒计时，所以这里换算一次。
+     */
+    @Override
+    public int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
+        Integer remaining = reloadTimers.get(consumer);
+        return remaining == null ? -1 : Math.max(0, getReloadTimeTicks() - remaining);
+    }
+
+    /**
      * 是否已有消费者被开始交付。<br>
      * 交付计时或已就绪待取都算"占着"：待取的那发还在弹仓里没被取走，同样不能被别人认领。
      */

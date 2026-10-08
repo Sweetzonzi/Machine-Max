@@ -1,12 +1,25 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
  * 弹药供给者接口。<br>
  * 供给者负责管理弹药储备、装填计时和弹药交付。
  * 消费者调用 requestRound → 等待 isRoundReady → consumeReadyRound 三步完成弹药获取。
+ * <p>
+ * <b>双端契约：</b>"哪根管由哪台供给者供弹"是服务端单方面的决定，客户端经
+ * {@link IAmmoConsumer} 上的同步指认跟随（身份由 {@link SupplierRef} 表达）。
+ * 客户端同样会跑完整的 {@code requestRound → isRoundReady → consumeReadyRound} 链，
+ * 但它只驱动本机表现——装填进度、装填音效、开火特效；库存计数与弹链指针只有服务端写。
  */
 public interface IAmmoSupplier {
 
@@ -149,13 +162,25 @@ public interface IAmmoSupplier {
 
     /**
      * 装填/再生进度（0~1）。<br>
-     * AmmoLoader 按 consumer 区分装填计时器；RegenLoader 使用共享弹药池。
      *
      * @param consumer 请求进度的消费者
      * @return 进度值 0.0~1.0
      */
-    default float getReloadProgress(IAmmoConsumer consumer) {
-        return 0f;
+    float getReloadProgress(IAmmoConsumer consumer);
+
+    /**
+     * 该消费者在本供给者处这次输送已经走了多少 tick。<br>
+     * 与 {@link #getReloadProgress(IAmmoConsumer)} 的分工：那个是给显示用的比例（会被钳位、
+     * 在没有计时器时可能退化成别的含义），这里是内部计时的原始刻度，供调用方判断"这一发是否
+     * 还值得改主意"（例如武器控制器只在开装后的头几 tick 内允许换装弹机）。
+     * <p>
+     * 未覆写时返回 -1，调用方按"没有为本消费者输送"处理。
+     *
+     * @param consumer 请求查询的消费者
+     * @return 已输送的 tick 数；本供给者没有为它输送时返回 -1
+     */
+    default int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
+        return -1;
     }
 
     /**
@@ -170,5 +195,62 @@ public interface IAmmoSupplier {
      * @return true 表示已收下；false 表示未接收（弹种不符或无空位）
      */
     boolean returnRound(ProjectileType type);
+
+    /**
+     * 供给者身份：宿主 Part 的 uuid + SubPart 名 + 子系统名。<br>
+     * 三者都随存档持久化（{@code PartData.uuid}、SubPart 名、子系统名），因此这个身份在重启、
+     * 换会话、两端之间都指同一台机器，可以直接写进 NBT，也可以直接跨端传递。
+     * SubPart 的 int id 不满足这个要求：它由会话内计数器分配，存档里不带它，
+     * 客户端那份是从载具数据包里恢复的，只够运行期定位，不能当身份用。
+     * <p>
+     * 空值用 {@link #NONE} 表达（{@code partUuid} 取 nil uuid；真实部件的 uuid 来自
+     * {@link java.util.UUID#randomUUID()}，不会是 nil）。
+     * <p>
+     * {@link #compareTo} 给出与内容无关的全序，供路由在候选排序里做稳定的决胜键。
+     */
+    record SupplierRef(UUID partUuid, String subPartName, String subsystemName)
+            implements Comparable<SupplierRef> {
+
+        /** 无供给者 */
+        public static final SupplierRef NONE = new SupplierRef(new UUID(0L, 0L), "", "");
+
+        /** 通过网络传输的编解码器：UUID + 两个 UTF-8 名 */
+        public static final StreamCodec<ByteBuf, SupplierRef> STREAM_CODEC = StreamCodec.composite(
+                UUIDUtil.STREAM_CODEC, SupplierRef::partUuid,
+                ByteBufCodecs.STRING_UTF8, SupplierRef::subPartName,
+                ByteBufCodecs.STRING_UTF8, SupplierRef::subsystemName,
+                SupplierRef::new);
+
+        /** 是否为空值 */
+        public boolean isNone() {
+            return NONE.partUuid.equals(partUuid);
+        }
+
+        /**
+         * 取某台供给者的身份。<br>
+         * 供给者不是子系统、或拿不到宿主 Part 时返回 {@link #NONE}。
+         */
+        public static SupplierRef of(@Nullable IAmmoSupplier supplier) {
+            if (supplier instanceof AbstractSubsystem sub) {
+                SubPart subPart = sub.getSubPart();
+                Part part = subPart.part;
+                if (part != null) {
+                    return new SupplierRef(part.uuid, subPart.name, sub.getName());
+                }
+            }
+            return NONE;
+        }
+
+        /**
+         * 先按宿主 Part uuid、再按 SubPart 名与子系统名的全序。
+         */
+        @Override
+        public int compareTo(SupplierRef other) {
+            int byPart = partUuid.compareTo(other.partUuid);
+            if (byPart != 0) return byPart;
+            int bySubPart = subPartName.compareTo(other.subPartName);
+            return bySubPart != 0 ? bySubPart : subsystemName.compareTo(other.subsystemName);
+        }
+    }
 
 }

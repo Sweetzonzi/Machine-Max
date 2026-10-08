@@ -80,6 +80,8 @@ subsystem/
 - **能源网格**：`BatterySubsystem` 同时实现 `IEnergyProducer` 和 `IEnergyConsumer`。`EnergyGrid` 每 tick 平衡。
 - **保存/加载**：在 `AbstractSubsystem` 中重写 `saveData()`/`loadData()` 进行 NBT 持久化。
 - **线程**：`onCollideWithBlock()` 在物理线程调用；`onInteract()` 在主线程调用。
+- **弹药指认服务端独占**：`WeaponControllerSubsystem` 的弹药路由只在服务端执行，客户端经发射器上的供给者身份同步值跟随（`IAmmoSupplier.SupplierRef` = 宿主 Part uuid + SubPart 名 + 子系统名，三者都随存档持久化）。客户端的 `requestRound → consumeReadyRound` 链只驱动本机表现（装填进度、装填音效、开火特效），库存计数与弹链指针只有服务端写。
+- **自定义同步数据序列化器**：注册在 `MMEntityDataSerializers`（NeoForge 的 `ENTITY_DATA_SERIALIZERS` 注册表，线号为 `256 + 注册表内 id`）。`SynchedEntityData.defineId` 在子系统静态初始化里执行，因此注册文件必须持有序列化器**实例**、注册时交出同一实例，不能从 `DeferredHolder` 取。
 
 ## 反模式
 

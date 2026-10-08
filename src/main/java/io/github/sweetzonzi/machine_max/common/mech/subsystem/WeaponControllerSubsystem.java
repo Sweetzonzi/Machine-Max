@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 
 import lombok.Getter;
@@ -407,22 +408,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 切换供给者时是否需要退膛。<br>
-     * 判据是新旧两家的弹种是否一致，而不是"膛内弹种是否属于选中弹链"：
-     * 两条弹链可以共用同一个弹种，只要新供给者给的还是同一发弹药，膛内那发就仍然有效，
-     * 退掉再装只是白费一次装填。
-     *
-     * @return true 表示膛内弹药与新供给者的弹种不符，应退膛
-     */
-    private static boolean shouldEjectOnSupplierChange(LauncherSubsystem launcher, IAmmoSupplier newSupplier) {
-        ProjectileType chambered = launcher.getChamberedType();
-        if (chambered == null) return false;
-        ProjectileType incoming = newSupplier.getSuppliedType();
-        if (incoming == null) return false; // 新供给者弹种未知，留给取弹时的兼容校验
-        return !chambered.getRegistryKey().equals(incoming.getRegistryKey());
-    }
-
-    /**
      * 从弹药池里取指定弹链的全部供给者（按装填耗时升序，同耗时保持池内插入顺序）。<br>
      * 弹药池是每 10 tick 刷新一次的快照，这里只借用它的排序，命中判定仍以实时接口为准。
      *
@@ -441,29 +426,77 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 候选供给者的优先级，数字越小越优先。<br>
-     * <ol>
-     *   <li>{@code 0} — 已开始为这根管交付（计时中或已就绪）：换人等于丢掉已推进的交付</li>
-     *   <li>{@code 1} — 还能再接一根管（空闲，或本就允许多消费者并行）</li>
-     *   <li>{@code 2} — 独占装弹机正在为别的管交付：只能等</li>
-     * </ol>
-     * 独占装弹机（{@code canSupplyMultiple=false}）同时只服务一根管，前一根管占走一台后，
-     * 那台对后一根管就落到第 3 档，因此 N 根管会自动摊到 N 台装弹机上。
+     * 占用档位：0 = 本管现在就能用它（空闲，或本就允许多消费者并行），1 = 它正为别的管交付、只能等。<br>
+     * 独占装弹机（{@code canSupplyMultiple=false}）同时只服务一根管，前一根管占走一台后，那台对
+     * 后一根管就落到 1 档，因此 N 根管会自动摊到 N 台装弹机上。
      */
-    private static int supplierRank(IAmmoSupplier supplier, LauncherSubsystem launcher) {
-        if (supplier.isRoundScheduled(launcher)) return 0;
-        if (supplier.canSupplyMultiple()) return 1;
-        return supplier.hasScheduledRound() ? 2 : 1;
+    private static int occupancyTier(IAmmoSupplier supplier, LauncherSubsystem launcher) {
+        if (supplier.canSupplyMultiple()) return 0;
+        return supplier.hasScheduledRound() && !supplier.isRoundScheduled(launcher) ? 1 : 0;
+    }
+
+    /**
+     * 现在就能服务本管：有余弹，或已为本管在途/备好一发。<br>
+     * 后者不可省：正在装填的那台弹仓计数可能已经归零，但那一发是给本管的。
+     */
+    private static boolean canServe(LauncherSubsystem launcher, IAmmoSupplier supplier) {
+        return supplier.hasAmmo() || supplier.isRoundScheduled(launcher);
+    }
+
+    /**
+     * 当前供给者是否值得留：拿它与最优候选逐级比。<br>
+     * <ol>
+     *   <li>弹链匹配（硬条件：玩家选的弹链优先于一切，包括"已经有一发在装填中"）</li>
+     *   <li>炮闩吃得下它供的弹种（硬条件）</li>
+     *   <li>现在就能服务本管——干着空转的那台在这里被降级，让位给有弹的候选</li>
+     *   <li>到手的东西不放弃：已为本管备好的一发留住</li>
+     *   <li>换人窗口：在途的这一发走过 2 tick 或更多就留着装完（判据
+     *       {@code getDeliveryElapsedTicks(launcher) > 1}）。多让这一格是因为各子系统的 tick 顺序不定：
+     *       装弹机在上一 tick 收到请求、本 tick 先步进计时器，武器控制器最后才判定，本方法读到
+     *       经过时间为 1 时那一发其实刚起步，卡在 1 上等于换人没有机会。这一发是慢的也认了，
+     *       下一发再从更好的机器开始</li>
+     *   <li>占用档位：不去抢正在为别的管装填的机器（保住 N 管摊 N 台）</li>
+     *   <li>装填耗时：更快的那台赢</li>
+     *   <li>身份：稳定决胜，使同一份载具状态下结果可复现</li>
+     * </ol>
+     *
+     * @param current   当前指认，可为 null（此时一律该换）
+     * @param candidate {@link #findSupplier} 给出的最优候选，非 null 且不等于 current
+     * @param belt      选中的弹链，null = 未选
+     * @return true 表示留着当前供给者
+     */
+    private boolean isWorthKeeping(LauncherSubsystem launcher, @Nullable IAmmoSupplier current,
+                                   IAmmoSupplier candidate, @Nullable List<ResourceLocation> belt) {
+        if (current == null || !supplyTypeAccepted(current, launcher)) return false;
+        if (belt != null && !beltSuppliers(this, belt).contains(current)) return false;
+        if (!canServe(launcher, current)) return false;
+        // 已备好的一发绝不放弃（isRoundReady 在"未排上"的分支里会顺手重发请求，所以先判 isRoundScheduled）
+        if (current.isRoundScheduled(launcher) && current.isRoundReady(launcher)) return true;
+        // 窗口已关：这一发算承诺给它的，等它装完；-1 表示根本没在为本管输送，没有承诺。
+        // 阈值取字面量 1（经过时间 > 1 才关门）：装弹机可能在本 tick 先步进计时器、武器控制器后判定，
+        // 读到的 1 其实还是刚起步的那一发，取 0 会让换人彻底没有机会。
+        if (current.getDeliveryElapsedTicks(launcher) > 1) return true;
+        int currentTier = occupancyTier(current, launcher);
+        int candidateTier = occupancyTier(candidate, launcher);
+        if (currentTier != candidateTier) return currentTier < candidateTier;
+        int currentReload = Math.max(0, current.getReloadTimeTicks());
+        int candidateReload = Math.max(0, candidate.getReloadTimeTicks());
+        if (currentReload != candidateReload) return currentReload < candidateReload;
+        return SupplierRef.of(current).compareTo(SupplierRef.of(candidate)) <= 0;
     }
 
     /**
      * 为发射器选定供给者：先取选中弹链的供给者，没有再退到任意可用供给者。<br>
-     * 后者覆盖面更广——{@code AmmoLoaderSubsystem} 不在弹药池里（物理弹仓没有弹链），
+     * 兜底覆盖面更广——{@code AmmoLoaderSubsystem} 不在弹药池里（物理弹仓没有弹链），
      * 只认池内条目的实现会让这类装弹机永远选不上。
      * <p>
-     * 每条路都按"已轮到本管 → 空闲 → 被别人占着"排序，同档内保持传入顺序（弹链一路已按
-     * 装填耗时升序），因此 N 根管会自动落到 N 台装弹机上：前一根管选走一台后，
-     * 那台对后一根管就降档成"被别人占着"。
+     * 兜底还有一个前提：<b>选中弹链上确实没有能接这活的供给者</b>。弹链上有人、只是暂时没弹时应当
+     * 等它，而不是跑去用别的弹链——否则每 tick 都会在两条弹链之间来回换（换人 → 取消在途交付 →
+     * 下个 tick 又换回来），一发都装不上。
+     * <p>
+     * 每条路都按"已轮到本管 → 空闲 → 被别人占着"排序，同档内再按装填耗时、最后按供给者身份
+     * 排序。前两档让 N 根管自动落到 N 台装弹机上（前一根管选走一台后，那台对后一根管就降档成
+     * "被别人占着"）；身份是稳定的决胜键，使同一份载具状态下每次摊派的结果一致。
      *
      * @return 选定的供给者；无可用供给者时返回 null
      */
@@ -471,10 +504,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     private IAmmoSupplier findSupplier(LauncherSubsystem launcher,
                                        @Nullable List<ResourceLocation> selectedBelt) {
         List<IAmmoSupplier> usable = new ArrayList<>();
-        for (IAmmoSupplier loader : beltSuppliers(this, selectedBelt)) {
+        List<IAmmoSupplier> beltLoaders = beltSuppliers(this, selectedBelt);
+        for (IAmmoSupplier loader : beltLoaders) {
             if (loader != launcher.getCurrentSupplier() && canSupplyTo(loader, launcher)) usable.add(loader);
         }
-        if (usable.isEmpty()) {
+        boolean beltHasTaker = beltLoaders.stream().anyMatch(loader -> supplyTypeAccepted(loader, launcher));
+        if (usable.isEmpty() && !beltHasTaker) {
             Map<IAmmoSupplier, Boolean> seen = new HashMap<>();
             for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
                 for (IAmmoSupplier loader : channelLoaders) {
@@ -484,11 +519,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             }
         }
         if (usable.isEmpty()) {
-            // 都被别人占着：只要当前供给者还能供弹就守住它
+            // 没有更该选的：只要当前供给者还能供弹就守住它
             IAmmoSupplier current = launcher.getCurrentSupplier();
             return supplyTypeAccepted(current, launcher) ? current : null;
         }
-        usable.sort(Comparator.comparingInt(s -> supplierRank(s, launcher)));
+        usable.sort(Comparator
+                .comparingInt((IAmmoSupplier supplier) -> occupancyTier(supplier, launcher))
+                .thenComparingInt(IAmmoSupplier::getReloadTimeTicks)
+                .thenComparing(SupplierRef::of));
         return usable.getFirst();
     }
 
@@ -496,18 +534,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      * 弹药路由：为每根管选定它的装弹机（{@code currentSupplier}）。<br>
      * 由 {@link #onTick()} 在主线程调用，与装弹机的装填计时、发射器的取弹同步。
      * <p>
-     * 每根管的决策顺序：
-     * <ol>
-     *   <li>当前供给者仍能供弹（弹种可接受）且仍在<a>为它服务</a>
-     *       （已轮到它，或那台本就允许多消费者并行）→ 留着</li>
-     *   <li>否则在候选里挑一台（{@link #findSupplier}）——空闲的与可并行的排在前面，
-     *       已在为别的管交付的独占装弹机排最后，于是 N 根管摊到 N 台装弹机上</li>
-     *   <li>换人时按弹种决定是否退膛（{@link #shouldEjectOnSupplierChange}）；
-     *       旧供给者那边的待交付由 {@code LauncherSubsystem.setCurrentSupplier} 内部取消</li>
-     * </ol>
-     * 发射器按名字排序处理，保证每 tick 的分配结果一致（不依赖握手顺序）。
+     * <b>仅服务端执行：</b>指认是权威决策，客户端经发射器上的供给者身份同步值跟随
+     * （见 {@code LauncherSubsystem.SUPPLIER_ID}），不自行挑选——两端各自跑一遍路由会因为
+     * 本机计时器与滞后一个往返的余弹读数而摊出不同的配对。
      */
     private void routeAmmoToLaunchers() {
+        if (getLevel().isClientSide()) return;
         if (!isActive() || isDestroyed()) return;
 
         // 弹药池尚未重建（handshake 未完成），跳过路由，等待下一次 onTick 重建
@@ -523,46 +555,22 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         List<ResourceLocation> belt = selectedBelt;
         for (LauncherSubsystem launcher : activeLaunchers) {
             IAmmoSupplier current = launcher.getCurrentSupplier();
+            IAmmoSupplier candidate = findSupplier(launcher, belt);
 
-            // 留着当前供给者的条件：它还在供本管能吃的弹种，且它要么已轮到本管、
-            // 要么还没被别人占走（空闲）。第二半句是"多根管摊到多台装弹机"的关键：
-            // 一根管占走某台后 hasScheduledRound() 变真，其余还绑在这台上的管这才肯让位；
-            // 若把它换成"只在已被服务时才留"，绑定会在闲置期间每 tick 重挑，反而抖起来。
-            if (current != null && supplyTypeAccepted(current, launcher)
-                    && (current.isRoundScheduled(launcher)
-                        || current.canSupplyMultiple()
-                        || !current.hasScheduledRound())) {
-                // 只有它供的不是选中弹链、且有更该选的候选时才换
-                if (belt == null || beltSuppliers(this, belt).contains(current)) continue;
-                IAmmoSupplier preferred = findSupplier(launcher, belt);
-                if (preferred != null && preferred != current
-                        && supplierRank(preferred, launcher) < supplierRank(current, launcher)) {
-                    switchSupplier(launcher, preferred);
-                }
-                continue;
-            }
+            // 当前就是候选（含"没有更好的，守住它"那条兜底）→ 不动
+            if (candidate == current) continue;
+            // 否则逐级比：当前不输给候选就留（判据见 isWorthKeeping）
+            if (candidate != null && isWorthKeeping(launcher, current, candidate, belt)) continue;
 
-            IAmmoSupplier chosen = findSupplier(launcher, belt);
-            if (chosen == null) {
-                // 无可用供给者 → 退膛，但仍可发射膛内已有弹药
-                if (launcher.getChamberedType() != null) launcher.ejectRound();
+            if (candidate == null) {
+                // 没有任何可用供给者：清掉指认，膛内那发照打（退膛是显式操作，不在这里替玩家决定）
                 launcher.setCurrentSupplier(null);
                 continue;
             }
-            if (chosen != current) switchSupplier(launcher, chosen);
+            // 换人：旧供给者那边的待交付由 setCurrentSupplier 内部 cancelRound 掉，
+            // 那发仍在旧装弹机的弹仓里（见 RegenLoaderSubsystem#cancelRound），不会丢
+            launcher.setCurrentSupplier(candidate);
         }
-    }
-
-    /**
-     * 换供给者：按弹种决定是否退膛，再写入新供给者。<br>
-     * 旧供给者那边的待交付由 {@code LauncherSubsystem.setCurrentSupplier} 内部取消，
-     * 调用方不需要（也不应该）自己再做一次。
-     */
-    private static void switchSupplier(LauncherSubsystem launcher, IAmmoSupplier supplier) {
-        if (shouldEjectOnSupplierChange(launcher, supplier)) {
-            launcher.ejectRound();
-        }
-        launcher.setCurrentSupplier(supplier);
     }
 
     // ==================== 公开查询方法 ====================
