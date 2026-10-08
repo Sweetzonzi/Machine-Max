@@ -117,6 +117,7 @@ public abstract class ProjectileType {
     public int getTracerAlpha() { return visual.tracerAlpha(); }
     public double getTracerWidth() { return visual.tracerWidth(); }
     public double getTracerLength() { return visual.tracerLength(); }
+    public double getTracerLightIntensity() { return visual.tracerLightIntensity(); }
 
     // -- 音效委托（→ ProjectileSoundAttr） --
 
@@ -209,6 +210,16 @@ public abstract class ProjectileType {
          * 默认 0.05 对应旧版行为。
          */
         double tracerLength,
+        /**
+         * 曳光光源强度倍率（可选，默认 1.0）。最终强度还要乘曳光透明度与超时淡出。
+         * <p>
+         * 光源的<b>颜色与照射半径都不在这里配置</b>：颜色取 {@link #tracerColor}（光是曳光
+         * 自己发的，没有分色的需求），半径由弹种口径折算（每毫米口径 1 cm，基准 1.5 m）。
+         * 强度单独成项的理由是它与 {@code tracerAlpha} 各自承担不同的量：透明度是曳光线自己的
+         * 可见度，而大口径弹种可以用较低的透明度（曳光线更暗）配更高的强度（闪光更强）。
+         * 见 {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
+         */
+        double tracerLightIntensity,
         /** 开火粒子效果ID列表，在客户端依次播放枪口火焰/炮口焰等效果 */
         List<ResourceLocation> fireParticles
     ) {
@@ -216,6 +227,7 @@ public abstract class ProjectileType {
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
+            1.0,
             List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium"))
         );
 
@@ -228,6 +240,8 @@ public abstract class ProjectileType {
                 .forGetter(VisualProperties::tracerWidth),
             Codec.DOUBLE.optionalFieldOf("tracer_length", DEFAULT.tracerLength)
                 .forGetter(VisualProperties::tracerLength),
+            Codec.DOUBLE.optionalFieldOf("tracer_light_intensity", DEFAULT.tracerLightIntensity)
+                .forGetter(VisualProperties::tracerLightIntensity),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)
                 .forGetter(VisualProperties::fireParticles)
         ).apply(instance, VisualProperties::new));

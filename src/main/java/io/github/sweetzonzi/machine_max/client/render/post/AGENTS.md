@@ -1,25 +1,27 @@
 # client/render/post/ — 屏幕空间后处理
 
-**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、过载黑视、失色、CRT 显像管）。
+**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、投射物曳光光照、过载黑视、失色、CRT 显像管）。
 
-**文件数**: 6 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
+**文件数**: 7 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
 
 ## 结构
 
 | 文件 | 作用 |
 |------|------|
-| `PostProcessingManager.java` | 唯一的事件订阅点与次序所有者：世界渲染阶段 **折射 → 过载 → 失色**；GUI 阶段 CRT。各效果的懒加载与释放也在这里统一转发 |
+| `PostProcessingManager.java` | 唯一的事件订阅点与次序所有者：`AFTER_LEVEL` 内先取两份世界深度快照、再提交 **曳光光照**；`RenderLevelLastEvent` 内 **折射 → 过载 → 失色**；GUI 阶段 CRT。各效果的懒加载与释放也在这里统一转发 |
 | `BlastDistortionEffect.java` | 爆炸波前折射；持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`） |
+| `TracerLightEffect.java` | 投射物曳光光照；持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`，在 `render` 内、pass 之前）。照射半径与遮挡容差都由弹种口径折算，见下 |
 | `OverloadVisionEffect.java` / `DesaturateEffect.java` / `CrtMonitorEffect.java` | 全屏颜色滤镜，不参与深度通路 |
 | `BlastProjectionUtil.java` | 共享数学：世界坐标→视空间、像素焦距、深度两点标定 |
 
 深度副本的另一份既有写法在 `client/fbo/OffscreenFbo.java`（`copyMainDepth`），与本包同源。
 
-## 三条硬约束
+## 四条硬约束
 
-1. **一帧一份世界深度快照，取在 `RenderLevelStageEvent` 的 `AFTER_LEVEL`。** 更晚就没有世界几何了（见下）。
+1. **每帧的世界深度快照取在 `RenderLevelStageEvent` 的 `AFTER_LEVEL`。** 更晚就没有世界几何了（见下）。
 2. **所有需要深度的 pass 都从快照采样**，都不声明 `minecraft:main:depth`。
 3. **快照目标的深度格式必须与主目标逐位相同**（本仓库基线为 `GL_DEPTH32F_STENCIL8`，带 stencil）。深度位 blit 在两侧格式不一致时按规范非法。
+4. **一帧内所有快照必须在第一个以 `minecraft:main` 为输出目标的 pass 之前取完。** 曳光光照的 pass 就挂在 `AFTER_LEVEL`、正是一个这样的 pass，所以 `PostProcessingManager` 里两个 `capture*` 都排在它的 `render()` 之前——顺序反了，后取的那份快照拿到的是被 pass 清空过的深度（常量，~0.12 m），判据会全像素命中。当前副本所有权是"每条链各声明并拷贝一份"（两份取的是同一时刻的同一份深度），因此别把两条链的取快照时机拆到不同的事件里。
 
 ## 为什么：主目标的深度什么时候还有效
 
@@ -28,8 +30,9 @@
   - Iris 会话：掩码为假（实测四个时刻均为假）→ 清除是空操作，深度原样留下。
 
   于是 `RenderLevelLastEvent` 时刻的 `minecraft:main:depth` 在无光影下不含世界几何、在光影下却完好——**同一份代码的表现随光影开关变化**，不可依赖。
-- 任何以 `minecraft:main` 为输出目标的 pass（本项目每条链末尾的 `blit → main`）在绘制前会清空自己的输出目标，把主目标深度写成常量（本项目标定下约 0.12 m）。因此**排在它后面的深度读取会全像素判为"被完全遮挡"**：折射链若直读主目标深度、又让曳光光照链排在前面，爆炸环会整屏消失。
+- 任何以 `minecraft:main` 为输出目标的 pass（本项目每条链末尾的 `blit → main`）在绘制前会清空自己的输出目标，把主目标深度写成常量（本项目标定下约 0.12 m）。因此**排在它后面的深度读取会全像素判为"被完全遮挡"**：曳光光照链的 pass 就挂在 `AFTER_LEVEL`，若把折射链的快照取在它之后，爆炸环会整屏消失。
 - `AFTER_LEVEL` 取的快照与那一刻的世界深度**逐位相同**（实测 0 / 409920 像素不同），既不受手部清除影响，也不含手部与 HUD。
+- **曳光光照的 pass 排在手部渲染之前**，因此它那次 `blit → main` 会先一步清空主目标深度：无光影会话本来就在此处有一次生效的清除（行为不变），光影会话里手部则从"与遮挡它的世界几何做深度测试"变成"总画在最前"——只在手被更近的几何挡住时可辨，已知且接受。设计文档把它记为 §13 风险 13。
 
 设计依据、两次采集的对照数据与验收判据见 `docs/plan/计划中/武器系统-投射物曳光光照设计.md` 的 §5.1、§5.2、§6.7 与 §七。
 
@@ -47,7 +50,7 @@
 | 量 | 路径 | 关键点 |
 |----|------|--------|
 | 标量 | `PostChain.setUniform(String, float)` | 只写第 0 个分量：**不要打包 `vec2` / `vec3` / 小数组**，其余分量会取到 JSON 默认值里的垃圾；**int uniform 走这条路会因 `floatValues` 为 null 而 NPE**，计数量必须是 float |
-| 数组 | `PostChainAccessor` 取 `PostPass` → `Uniform.set(float[])` | JSON 默认值只有前若干个分量有效、其余是未初始化内存 → 每帧全量写；`Uniform` 引用在链加载时取一次 |
+| 数组 | `PostChainAccessor` 取 `PostPass` → `Uniform.set(float[])` | JSON 默认值只有前若干个分量有效、其余是未初始化内存 → 每帧全量写；`Uniform` 引用在链加载时取一次。**数组长度必须 ≥ JSON 声明的 `count`**：不足时 `Uniform.set` 只打一条 WARN 并整段忽略（静默失效，不崩） |
 | 链内目标 | `PostChain.getTempTarget(name)` | 名字与链 JSON 的 `targets` 一致；只有声明尺寸等于屏幕尺寸的目标会跟随窗口 `resize`，显式声明其它尺寸的目标不会 |
 
 链 JSON 的三个加载期约束：`targets` 是**数组**（字符串项按屏幕尺寸建，对象项可给 `width` / `height`）；`auxtargets` 的 `id` 在**加载时**解析，引用未声明的目标会让整条链加载失败；每条链的目标表彼此独立——跨链共用一份副本要么注入目标表，要么把两个效果并入同一条链。
@@ -70,14 +73,16 @@
 ## 反模式
 
 - 在 `RenderLevelLastEvent` 直读 `minecraft:main:depth`。
+- 把任一 `capture*`（取深度快照）排在曳光光照 `render()` 之后——那一帧的快照已经是 pass 清过的深度。
 - 拿某一时刻读到的 `depthMask` 推断另一时刻的清除是否生效。
 - 用与主目标格式不一致的目标接深度 blit。
 - 在诊断代码里不做状态还原，或让它每帧重复执行。
 - 把 int 或打包向量写进 `chain.setUniform`。
 - 在本包文档与注释里写死行号（会随改动失准）——引用符号名。
+- 在 CPU 侧回读深度来做逐光源遮挡剔除——那是一次 GPU→CPU 同步；S2 的片元形态把成本摊进已有的一次全屏 pass。
 
 ## 参考文件
 
-- `docs/plan/计划中/武器系统-投射物曳光光照设计.md` — 折射的深度快照、链次序不变量与 F1 的落地/实测记录（§5.1、§5.2、§6.7、§七）
-- `docs/plan/已实现/武器系统-爆炸波前视觉设计.md` — 屏幕空间折射的完整设计（几何、剖面、色散）
+- `docs/plan/计划中/武器系统-投射物曳光光照设计.md` — 曳光光照的完整设计（S1/S2 落地形态与实测待办见 §十五）、折射的深度快照、链次序不变量与 F1 的落地/实测记录（§5.1、§5.2、§6.7、§七）
+- `docs/plan/已实现/武器系统-爆炸波前视觉设计.md` — 屏幕空间折射的完整设计（几何、剖面、色散、深度的获取与比对）
 - `client/fbo/OffscreenFbo.java` — 深度副本与离屏目标的既有写法

@@ -41,6 +41,10 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue BLAST_DISTORTION_ENABLED;
     /** 爆炸波前折射强度倍率 */
     private static final ModConfigSpec.DoubleValue BLAST_DISTORTION_INTENSITY;
+    /** 投射物曳光光照后处理总开关 */
+    private static final ModConfigSpec.BooleanValue TRACER_LIGHT_ENABLED;
+    /** 投射物曳光光照强度倍率 */
+    private static final ModConfigSpec.DoubleValue TRACER_LIGHT_INTENSITY;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
@@ -115,6 +119,14 @@ public class MMClientConfig {
         BLAST_DISTORTION_INTENSITY = builder
                 .comment("Blast front distortion intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
                 .defineInRange("blast_distortion_intensity", 1.0, 0.0, 2.0);
+
+        TRACER_LIGHT_ENABLED = builder
+                .comment("Enable the projectile tracer light effect (screen-space lighting cast by tracers onto nearby surfaces).\nDefault: true")
+                .define("tracer_light_enabled", true);
+
+        TRACER_LIGHT_INTENSITY = builder
+                .comment("Projectile tracer light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
+                .defineInRange("tracer_light_intensity", 1.0, 0.0, 2.0);
 
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
@@ -454,6 +466,24 @@ public class MMClientConfig {
      */
     public static float getBlastDistortionIntensity() {
         return BLAST_DISTORTION_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取投射物曳光光照效果开关状态。
+     *
+     * @return true 表示启用曳光光照
+     */
+    public static boolean isTracerLightEnabled() {
+        return TRACER_LIGHT_ENABLED.get();
+    }
+
+    /**
+     * 获取投射物曳光光照强度倍率。
+     *
+     * @return [0, 2] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getTracerLightIntensity() {
+        return TRACER_LIGHT_INTENSITY.get().floatValue();
     }
 }
 
