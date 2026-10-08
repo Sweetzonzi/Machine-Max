@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.client.render.post;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.Uniform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
@@ -14,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -62,12 +65,20 @@ public class BlastDistortionEffect {
             ResourceLocation.parse("machine_max:shaders/post/blast_distortion.json");
     /** 本效果 pass 的名字，与链 JSON 中声明的 name 一致 */
     private static final String PASS_NAME = "machine_max:blast_distortion";
+    /** 链内声明的世界深度快照目标名，与链 JSON 的 targets 一致 */
+    private static final String WORLD_DEPTH_TARGET = "worlddepth";
 
     @Nullable
     private PostChain chain;
     private boolean loaded = false;
     private int cachedWidth = -1;
     private int cachedHeight = -1;
+
+    /** 链内声明的世界深度快照；折射 pass 采样它，而不是 {@code minecraft:main:depth} */
+    @Nullable
+    private RenderTarget worldDepth;
+    /** 快照目标的深度格式是否已与主目标对齐（每个链实例只需检查一次） */
+    private boolean worldDepthFormatChecked;
 
     /**
      * 数组 uniform 无法经 {@code PostChain#setUniform(String, float)} 写入，
@@ -103,6 +114,12 @@ public class BlastDistortionEffect {
             cachedWidth = mc.getWindow().getWidth();
             cachedHeight = mc.getWindow().getHeight();
             chain.resize(cachedWidth, cachedHeight);
+            worldDepth = newChain.getTempTarget(WORLD_DEPTH_TARGET);
+            worldDepthFormatChecked = false;
+            if (worldDepth == null) {
+                MachineMax.LOGGER.error("爆炸波前折射：链未声明世界深度快照目标 {}，遮挡判据将拿不到世界深度",
+                        WORLD_DEPTH_TARGET);
+            }
             bindArrayUniforms(newChain);
             loaded = true;
             MachineMax.LOGGER.debug("爆炸波前折射后处理已加载");
@@ -148,11 +165,7 @@ public class BlastDistortionEffect {
                        List<BlastFrontVisual> visuals, float partialTick) {
         if (!MMClientConfig.isBlastDistortionEnabled()) return;
         if (visuals.isEmpty()) return;
-        if (!loaded && chain == null) {
-            load();
-            return;
-        }
-        if (chain == null) return;
+        if (!ensureLoaded()) return;
         if (blastViewUniform == null || blastShapeUniform == null) return;
 
         Minecraft mc = Minecraft.getInstance();
@@ -182,6 +195,59 @@ public class BlastDistortionEffect {
 
         chain.process(partialTick);
         mc.getMainRenderTarget().bindWrite(true);
+    }
+
+    /**
+     * 在 {@code AFTER_LEVEL} 把主目标的世界深度拷进链内的快照目标。
+     *
+     * <p>取快照的时机是遮挡判据能否成立的前提：世界画完之后、手部块之前。手部块里的
+     * {@code RenderSystem.clear(GL_DEPTH_BUFFER_BIT)} 会把主目标深度整体写成远平面——原版会话里深度写掩码为真，
+     * 清除生效；光影会话里掩码为假，清除是空操作。所以等到 {@code RenderLevelLastEvent} 再取，
+     * 原版下 {@code minecraft:main:depth} 已不含任何世界几何，判据 {@code zScene < zFront - eps} 永远不成立、
+     * 环不会被掩体切断；光影会话里却能正常遮挡。固定在这里取快照，两种会话拿到的都是完好的世界深度。</p>
+     *
+     * <p>快照另存之后，折射 pass 不再读 {@code minecraft:main:depth}，本链收尾 blit 回主目标所摧毁的深度不再影响
+     * 自己，与其它链的先后顺序也因此解耦。</p>
+     *
+     * @param visuals 当前表现条目；空表表示本帧不会有折射 pass，不必拷
+     */
+    public void captureWorldDepth(List<BlastFrontVisual> visuals) {
+        if (!MMClientConfig.isBlastDistortionEnabled()) return;
+        if (visuals.isEmpty()) return;
+        if (!ensureLoaded()) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget main = mc.getMainRenderTarget();
+        RenderTarget target = worldDepth;
+        if (target == null) return;
+        if (target.width != main.width || target.height != main.height) return;
+
+        if (!worldDepthFormatChecked) {
+            worldDepthFormatChecked = true;
+            // 深度位 blit 要求两侧深度格式完全一致：主目标带 stencil 时快照也必须带，
+            // 否则 glBlitFrameBuffer 会抛 GL_INVALID_OPERATION，副本里只剩清屏值。
+            if (main.isStencilEnabled() && !target.isStencilEnabled()) {
+                target.enableStencil();
+                MachineMax.LOGGER.info("爆炸波前折射：世界深度快照目标已切换为与主目标一致的深度-模板格式");
+            }
+        }
+
+        boolean maskBefore = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        GlStateManager._depthMask(true);
+        target.copyDepthFrom(main);
+        // copyDepthFrom 结束时把 FBO 0 绑在 DRAW 上，必须还原主目标，否则后续渲染会打错目标
+        main.bindWrite(true);
+        GlStateManager._depthMask(maskBefore);
+    }
+
+    /** 惰性加载；返回链是否可用。加载过程会绑过临时 FBO，结束前还原主目标。 */
+    private boolean ensureLoaded() {
+        if (chain != null) return true;
+        if (!loaded) {
+            load();
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+        }
+        return chain != null;
     }
 
     /**
@@ -275,6 +341,8 @@ public class BlastDistortionEffect {
         }
         blastViewUniform = null;
         blastShapeUniform = null;
+        worldDepth = null;
+        worldDepthFormatChecked = false;
         loaded = false;
         cachedWidth = -1;
         cachedHeight = -1;

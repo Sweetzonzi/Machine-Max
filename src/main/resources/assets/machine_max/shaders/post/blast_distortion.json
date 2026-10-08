@@ -1,5 +1,5 @@
 {
-    "targets": ["swap"],
+    "targets": ["swap", "worlddepth"],
     "passes": [
         {
             "name": "machine_max:blast_distortion",
@@ -7,7 +7,7 @@
             "outtarget": "swap",
             "use_linear_filter": true,
             "auxtargets": [
-                { "name": "MCDepthSampler", "id": "minecraft:main:depth" }
+                { "name": "MCDepthSampler", "id": "worlddepth:depth" }
             ]
         },
         {

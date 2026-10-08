@@ -10,6 +10,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 /**
  * 后处理特效管理器。
@@ -49,6 +50,22 @@ public class PostProcessingManager {
                 partialTick);
         INSTANCE.overloadVision.render(partialTick);
         INSTANCE.desaturate.render(partialTick);
+    }
+
+    /**
+     * 世界深度快照：取在 {@code AFTER_LEVEL}，也就是世界画完、手部块之前。
+     *
+     * <p>手部块（{@code GameRenderer#renderLevel} 中 {@code popPush("hand")} 之后）会执行一次
+     * {@code RenderSystem.clear(GL_DEPTH_BUFFER_BIT)}：原版会话里深度写掩码为真，它把主目标深度整体写成远平面；
+     * 光影会话里掩码为假，清除是空操作。等到了 {@link RenderLevelLastEvent} 再取，原版下已经没有世界几何，
+     * 遮挡判据不可能成立。所以快照点固定在这里，两种会话都能拿到完好的世界深度。</p>
+     */
+    @SubscribeEvent
+    private static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        INSTANCE.blastDistortion.captureWorldDepth(ExplosionManager.get(mc.level).visuals());
     }
 
     @SubscribeEvent
