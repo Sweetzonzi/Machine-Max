@@ -100,13 +100,25 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     // ==================== 弹药管理（弹链模式） ====================
 
     /**
-     * 用户当前选中的弹链（展平列表），null = 无选择（不装填但可发射膛内已有弹药）。<br>
-     * 三个写入点都在主线程的 {@link #onTick()} 里：{@code ammo_switch} 频道、
-     * {@code NEXT_AMMO_TYPE} / {@code PREV_AMMO_TYPE} 指令（{@link #updateRegularInputs()}），
-     * 以及 {@link #cycleSelectedBelt(boolean)}；读取点也在主线程（路由与 HUD 刷新）。
+     * 当前选中的弹链（展平列表）。<br>
+     * 弹药池里有链时不会是 null：{@link #rebuildAmmoPool()} 建池后默认选中排序第一条
+     * （顺序见 {@link #BELT_ORDER}），选中的链随结构变化消失时也由它改选。池为空时保持 null
+     * ——那时没有可选的链，路由改走无弹链的兜底供给者（物理弹仓的 {@code AmmoLoaderSubsystem}）。
+     * <p>
+     * 写入点都在主线程：建池时的默认选中与改选、{@code ammo_switch} 频道、
+     * {@code NEXT_AMMO_TYPE} / {@code PREV_AMMO_TYPE} 指令（{@link #updateRegularInputs()}）、
+     * {@link #cycleSelectedBelt(boolean)}；读取点也在主线程（路由与 HUD 刷新）。
      */
     @Nullable
     private List<ResourceLocation> selectedBelt = null;
+
+    /**
+     * 弹链的排序顺序：按第一发弹种的资源地址升序。<br>
+     * 默认选中（{@link #rebuildAmmoPool()} 建池后）、轮切（{@link #cycleSelectedBelt(boolean)}）
+     * 与 HUD 列表（{@link #getAvailableBelts()}）共用它，三者因此总是指向同一条链。
+     */
+    private static final Comparator<List<ResourceLocation>> BELT_ORDER =
+            Comparator.comparing(belt -> belt.isEmpty() ? "" : belt.getFirst().toString());
 
     /**
      * 聚合弹药池快照。<br>
@@ -329,6 +341,18 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         }
         this.ammoPool = Collections.unmodifiableMap(pool);
         this.tickSincePoolRebuild = 0;
+        selectDefaultBelt();
+    }
+
+    /**
+     * 保证选中的弹链在池里：未选中或选中的链已消失（结构变化后它的供给者被拆掉）时改选第一条。<br>
+     * 池为空时保持 null：没有可选的链，路由随后落到无弹链的兜底供给者。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #rebuildAmmoPool()}）。
+     */
+    private void selectDefaultBelt() {
+        if (ammoPool.isEmpty() || ammoPool.containsKey(selectedBelt)) return;
+        selectedBelt = ammoPool.keySet().stream().min(BELT_ORDER).orElse(null);
     }
 
     /**
@@ -368,23 +392,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      * 在可用弹链列表中循环切换选中的弹链。
      */
     private void cycleSelectedBelt(boolean reverse) {
-        List<List<ResourceLocation>> belts = new ArrayList<>(ammoPool.keySet());
+        List<List<ResourceLocation>> belts = getAvailableBelts();
         if (belts.isEmpty()) {
             selectedBelt = null;
             return;
         }
-        // 按第一发弹种排序（保持稳定顺序）
-        belts.sort(Comparator.comparing(b -> b.isEmpty() ? "" : b.getFirst().toString()));
-
-        if (selectedBelt == null) {
+        int idx = belts.indexOf(selectedBelt);
+        if (idx < 0) {
+            // 未选中，或选中的链已不在池里：从第一条开始
             selectedBelt = belts.getFirst();
             return;
         }
-        int idx = belts.indexOf(selectedBelt);
-        if (idx < 0) idx = -1; // 当前弹链已不存在，从头开始
         int step = reverse ? -1 : 1;
-        int next = (idx + step + belts.size()) % belts.size();
-        selectedBelt = belts.get(next);
+        selectedBelt = belts.get(Math.floorMod(idx + step, belts.size()));
     }
 
     /**
@@ -603,12 +623,11 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 可用弹链列表（排序后），供 HUD 弹种选择菜单。
+     * 可用弹链列表，供 HUD 弹种选择菜单。<br>
+     * 顺序同 {@link #BELT_ORDER}，也就是默认选中与轮切所用的顺序。
      */
     public List<List<ResourceLocation>> getAvailableBelts() {
-        return ammoPool.keySet().stream()
-                .sorted(Comparator.comparing(b -> b.isEmpty() ? "" : b.getFirst().toString()))
-                .toList();
+        return ammoPool.keySet().stream().sorted(BELT_ORDER).toList();
     }
 
     // ==================== 齐射/轮射 ====================
