@@ -323,5 +323,9 @@
   "subtitles.subsystem.wheel_driver.brake_on": "刹车开启",
   "subtitles.subsystem.wheel_driver.brake_off": "刹车关闭",
   "subtitles.subsystem.wheel_driver.air_brake_on": "气刹开启",
-  "subtitles.subsystem.wheel_driver.air_brake_off": "气刹关闭"
+  "subtitles.subsystem.wheel_driver.air_brake_off": "气刹关闭",
+
+  "machine_max.120mm_apfsds": "脱穿",
+  "machine_max.155mm_he": "高爆",
+  "machine_max.20mm_ap": "AP"
 }

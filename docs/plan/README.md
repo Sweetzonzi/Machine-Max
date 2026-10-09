@@ -43,7 +43,7 @@
 | 文档 | 当前进度 |
 | --- | --- |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
-| [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | AUI 原型页 `weapon_hud/weapon_hud_prototype.html` 与样式已就位；标签与弹链的 HUD 数据链路尚未接入 |
+| [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | 三个阶段均已落地：`getDisplayLabel()` / `belt_label` / 弹链指针单一载体、内容包语言键与实例 schema、AUI 正式页 `weapon_hud.html` 与 `WeaponHudOverlay` 为唯一在绘制的武器状态 HUD（`ammo_hud` 图层未注册，`AmmoHud` 类保留作回退）。待 `runClient` 进世界按 §7.2 人工验收 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
 
 ## 计划中

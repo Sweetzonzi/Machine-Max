@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * 再生装弹机子系统动态属性。<br>
- * 定义弹药发现频道、弹链构成等运行时配置。
+ * 定义弹药发现频道、弹链构成与弹链名等运行时配置。
  */
 @Getter
 public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
@@ -35,11 +35,19 @@ public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
      */
     public final List<ResourceLocation> projectileTypes;
 
+    /**
+     * 弹链名（可选，JSON 中的 {@code belt_label}），空串表示未填写。<br>
+     * 按字面返回、不查语言文件；不参与弹药池分组，因此改动它不影响路由与已装填载具的状态。
+     */
+    private final String beltLabel;
+
     public static final MapCodec<RegenLoaderSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.unboundedMap(ResourceLocation.CODEC, Codec.INT)
                     .fieldOf("projectile_types")
                     .forGetter(RegenLoaderSubsystemAttr::getProjectileTypesMap),
+            Codec.STRING.optionalFieldOf("belt_label", "")
+                    .forGetter(RegenLoaderSubsystemAttr::getBeltLabel),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("discovery_outputs", Map.of())
                     .forGetter(RegenLoaderSubsystemAttr::getDiscoveryOutputs)
     ).apply(instance, RegenLoaderSubsystemAttr::new));
@@ -47,10 +55,12 @@ public class RegenLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
     public RegenLoaderSubsystemAttr(
             ResourceLocation modelName,
             Map<ResourceLocation, Integer> projectileTypesMap,
+            String beltLabel,
             Map<String, List<String>> discoveryOutputs) {
         super(modelName);
         this.staticAttribute = (RegenLoaderSubsystemStaticAttr) getStaticAttr();
         this.projectileTypesMap = Map.copyOf(projectileTypesMap);
+        this.beltLabel = beltLabel;
 
         // 展平弹链：{SMK:3, AP:2, Tracer:1} → [SMK, SMK, SMK, AP, AP, Tracer]
         List<ResourceLocation> flat = new ArrayList<>();

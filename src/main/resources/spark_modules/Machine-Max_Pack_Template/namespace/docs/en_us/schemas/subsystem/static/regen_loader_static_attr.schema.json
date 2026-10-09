@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "Regen Loader Subsystem Static Attributes",
-  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior.",
+  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior.Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",
   "properties": {
     "$schema": { "type": "string", "description": "JSON Schema reference path", "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json" },
     "type": { "type": "string", "const": "machine_max:regen_loader", "description": "Subsystem type, must be 'machine_max:regen_loader'." },

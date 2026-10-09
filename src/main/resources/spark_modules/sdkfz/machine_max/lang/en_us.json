@@ -88,5 +88,15 @@
   "subsystem.machine_max.atgm_ammo_loader_3": "Atgm Ammo Loader 3",
   "subsystem.machine_max.atgm_ammo_loader_4": "Atgm Ammo Loader 4",
   "controlGroup.machine_max.autocannon_control": "Autocannon",
-  "controlGroup.machine_max.atgm_control": "ATGM"
+  "controlGroup.machine_max.atgm_control": "ATGM",
+
+  "machine_max.30mm_ap": "AP",
+  "machine_max.30mm_he": "HE",
+  "machine_max.50mm_pzgr39": "AP",
+  "machine_max.50mm_sprgr38": "HE",
+  "machine_max.7_62mm_ap": "AP",
+  "machine_max.7_62mm_tracer": "TRACER",
+  "machine_max.7_92mm_smk": "AP",
+  "machine_max.7_92mm_tracer": "TRACER",
+  "machine_max.9m133_kornet": "ATGM"
 }

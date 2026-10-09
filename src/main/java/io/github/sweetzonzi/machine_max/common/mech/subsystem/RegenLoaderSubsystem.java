@@ -388,6 +388,10 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     /**
      * 再生装弹机当前工作状态（per-consumer）。<br>
      * 注意这里不表达"有没有被排上"——那由 {@link #isRoundScheduled(IAmmoConsumer)} 回答。
+     * <p>
+     * 弹仓空了但正在逐发再生时报 {@code RELOADING}：这一档是给显示用的——按 {@code regen_per_minute}
+     * 产弹的型号（{@code reload_time=0}）没有输送计时器，若照"没弹就是 EMPTY"报，打空后的整段
+     * 再生时间在界面上是一片熄灭，看不出它正在回弹。
      */
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
@@ -395,15 +399,27 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (deliveryStartTicks.containsKey(consumer)) return SupplierStatus.RELOADING;
         // 批量冷却：弹仓归零后整批再生，此时每个消费者都在等同一批弹药
         if (isBatchReloading) return SupplierStatus.RELOADING;
-        if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
+        if (getAmmoCount() <= 0) {
+            return isRegenerating() ? SupplierStatus.RELOADING : SupplierStatus.EMPTY;
+        }
         return SupplierStatus.READY;
+    }
+
+    /**
+     * 是否正在逐发再生中：逐发再生模式、且已经累积了一点再生进度。
+     * <p>
+     * 只看进度不看速率：速率大于 0 而进度仍为 0 时（刚被取走那一 tick）报 EMPTY 与报 RELOADING
+     * 都成立，但"零进度"在界面上本来就是全暗的一格，不需要额外区分。
+     */
+    private boolean isRegenerating() {
+        return attr.staticAttribute.isRegenRoundByRound() && regenProgress > 0f;
     }
 
     /**
      * 装填进度（0~1）：经过时间 ÷ <b>当前</b>装填耗时。<br>
      * 现算而不是按开始时的总耗时折算，因此加速/减速 buff 对在途那一发同样生效，进度也不会越界。
-     * 未被排上的消费者没有输送计时器，落到末尾的"余量/容量"分支：它不是真正的输送进度，
-     * 而是这台的弹药储备水平（供 HUD 显示）。
+     * 未在为本消费者输送时按弹仓状态报：逐发再生模式下报<b>再生进度</b>（下一发还有多久，
+     * {@code reload_time=0} 的型号没有别的进度可报），其余报"余量 / 容量"这一储备水平。
      */
     @Override
     public float getReloadProgress(IAmmoConsumer consumer) {
@@ -417,7 +433,10 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (deliveryStart != null && getReloadTimeTicks() > 0) {
             return progressOf(tickCount - deliveryStart, getReloadTimeTicks());
         }
-        // 非 batch 模式：当前余量 / 总容量
+        // 未在为本消费者输送：逐发再生时报再生进度，其余报储备水平
+        if (attr.staticAttribute.isRegenRoundByRound() && getAmmoCount() < cap) {
+            return Math.clamp(regenProgress, 0f, 1f);
+        }
         return (float) getAmmoCount() / cap;
     }
 

@@ -88,5 +88,15 @@
   "subsystem.machine_max.atgm_ammo_loader_3": "反坦克导弹装弹机3",
   "subsystem.machine_max.atgm_ammo_loader_4": "反坦克导弹装弹机4",
   "controlGroup.machine_max.autocannon_control": "机关炮",
-  "controlGroup.machine_max.atgm_control": "反坦克导弹"
+  "controlGroup.machine_max.atgm_control": "反坦克导弹",
+
+  "machine_max.30mm_ap": "AP",
+  "machine_max.30mm_he": "HE",
+  "machine_max.50mm_pzgr39": "AP",
+  "machine_max.50mm_sprgr38": "HE",
+  "machine_max.7_62mm_ap": "AP",
+  "machine_max.7_62mm_tracer": "曳光",
+  "machine_max.7_92mm_smk": "AP",
+  "machine_max.7_92mm_tracer": "曳光",
+  "machine_max.9m133_kornet": "ATGM"
 }

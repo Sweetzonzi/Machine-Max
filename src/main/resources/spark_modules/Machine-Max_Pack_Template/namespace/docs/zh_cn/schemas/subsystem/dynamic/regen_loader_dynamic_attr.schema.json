@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/regen_loader_dynamic_attr.json",
+  "title": "再生装弹机子系统动态属性",
+  "description": "再生装弹机子系统的实例属性，描述写在部件 JSON 的 subsystems 块里的逐实例字段：弹链构成、弹链名与弹药发现频道。弹仓容量、再生速率等按型号共享的字段写在 definition 指向的静态属性文件里，不在本文件描述范围内。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_loader",
+      "description": "子系统类型，必须为 'machine_max:regen_loader'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的再生装弹机静态属性定义文件。"
+    },
+    "projectile_types": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 1 },
+      "description": "弹链构成：键为投射物资源地址，值为该弹种在弹链中重复的发数。逐项按发数展开为有序弹链（如 {\"machine_max:7_62mm_ap\": 3, \"machine_max:7_62mm_tracer\": 1} 展开为 AP、AP、AP、曳光），发射时按该顺序循环取用。键的书写顺序就是弹链顺序，因此第一条弹种决定未填写 belt_label 时的弹链名。弹种在界面上显示的文本取自该弹种自己的语言键（投射物注册键按 <命名空间>.<路径> 拼写，路径中的斜杠原样保留），键写在该弹种所属内容包的 lang/<locale>.json 里；语言键缺失时界面显示键名本身，用于暴露漏写。"
+    },
+    "belt_label": {
+      "type": "string",
+      "default": "",
+      "description": "弹链名，显示在武器状态 HUD 的弹链选项卡上。留空时取弹链首发弹种的展示文本；填写时按字面使用所填字符串、不查语言文件，因此同一份内容包在各语言下显示同一个名字。弹链不止一种弹、或自动取值不够准确时填写。该字段只影响弹链名，不影响弹种槽（弹种槽始终报告指针当前指向的真实弹种），也不参与弹药池分组，因此改动它不影响弹药路由与已装填载具的状态。"
+    },
+    "discovery_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "弹药发现频道及目标，装弹机据此发现同载具内的弹药消费者。可选。"
+    }
+  },
+  "required": ["type", "definition", "projectile_types"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_loader",
+      "definition": "machine_max:2a42_regen_loader",
+      "projectile_types": {
+        "machine_max:30mm_ap": 1,
+        "machine_max:30mm_he": 1
+      },
+      "belt_label": "AP/HE",
+      "discovery_outputs": {
+        "ammo_2a42": ["global"]
+      }
+    }
+  ]
+}

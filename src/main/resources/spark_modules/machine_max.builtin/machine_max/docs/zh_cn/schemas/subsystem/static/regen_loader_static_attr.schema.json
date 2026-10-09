@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "再生装弹机子系统静态属性",
-  "description": "再生装弹机子系统的静态属性，定义弹仓容量、再生速率、每发能耗和弹药供给行为。用于能量武器（激光、爆能束）和街机风格再生武器（导弹冷却再生）。",
+  "description": "再生装弹机子系统的静态属性，定义弹仓容量、再生速率、每发能耗和弹药供给行为。用于能量武器（激光、爆能束）和街机风格再生武器（导弹冷却再生）。弹链构成（projectile_types）与弹链名（belt_label）是逐实例字段，写在部件 JSON 的子系统实例块里，见 subsystem/dynamic/regen_loader_dynamic_attr.schema.json，不写在本文件。",
   "properties": {
     "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
     "type": { "type": "string", "const": "machine_max:regen_loader", "description": "子系统类型，必须为 'machine_max:regen_loader'。" },

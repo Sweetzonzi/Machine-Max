@@ -314,5 +314,9 @@
   "subtitles.subsystem.wheel_driver.brake_on": "Brake engages",
   "subtitles.subsystem.wheel_driver.brake_off": "Brake disengages",
   "subtitles.subsystem.wheel_driver.air_brake_on": "Air brake engages",
-  "subtitles.subsystem.wheel_driver.air_brake_off": "Air brake disengages"
+  "subtitles.subsystem.wheel_driver.air_brake_off": "Air brake disengages",
+
+  "machine_max.120mm_apfsds": "APFSDS",
+  "machine_max.155mm_he": "HE",
+  "machine_max.20mm_ap": "AP"
 }

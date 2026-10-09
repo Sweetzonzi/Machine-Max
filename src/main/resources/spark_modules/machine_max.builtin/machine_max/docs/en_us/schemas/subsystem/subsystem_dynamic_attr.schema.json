@@ -23,7 +23,8 @@
         "machine_max:lighting",
         "machine_max:turret_driver",
         "machine_max:weapon_controller",
-        "machine_max:launcher"
+        "machine_max:launcher",
+        "machine_max:regen_loader"
       ],
       "description": "Subsystem type, determines which specific subsystem schema to use."
     }
@@ -211,6 +212,18 @@
       },
       "then": {
         "$ref": "dynamic/launcher_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:regen_loader"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/regen_loader_dynamic_attr.schema.json"
       }
     }
   ],

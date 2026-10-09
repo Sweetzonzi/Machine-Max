@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "Regen Loader Subsystem Static Attributes",
-  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen).",
+  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen).Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",
   "properties": {
     "$schema": {
       "type": "string",

@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.core.Vec3i;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
@@ -41,7 +42,12 @@ public abstract class ProjectileType {
 
     // ==================== 共享字段 ====================
 
-    /** 弹药标签列表，用于与发射器的 required_tags / acceptable_tags / forbidden_tags 匹配 */
+    /**
+     * 弹药标签列表，用于与发射器的 required_tags / acceptable_tags / forbidden_tags 匹配。
+     * <p>
+     * <b>显示文本不读本字段</b>：弹种的展示名取 {@link #getDisplayLabel()}（注册键的语言键）。
+     * 标签是兼容性匹配与作者侧分类的载体，不是标识符到文本的映射表。
+     */
     private final List<ResourceLocation> tags;
 
     /** 最大存活时间（秒，SI 单位），内部使用时 ×20 转为 tick */
@@ -133,6 +139,34 @@ public abstract class ProjectileType {
     /** 获取弹壳音效映射 */
     public Map<String, SoundEvent> getShellSounds() { return sounds.shellSounds(); }
 
+    // ==================== 显示文本 ====================
+
+    /**
+     * 弹种展示名，如 {@code AP}、{@code HE}、{@code ATGM}。
+     * <p>
+     * 文本取自本弹种自己的翻译键：{@link #getRegistryKey() 注册键} 经
+     * {@link ResourceLocation#toLanguageKey()} 得到
+     * {@code <命名空间>.<路径>}（{@code machine_max:50mm_pzgr39} →
+     * {@code machine_max.50mm_pzgr39}，路径中的 {@code /} 原样保留），
+     * 由该弹种所属的内容包在自己的 {@code lang/<locale>.json} 里给出取值。
+     * 弹种的 {@link #getTags() 标签}不参与本方法。
+     * <p>
+     * 语言表中没有该键时返回键字符串本身（{@code machine_max.50mm_pzgr39}）。
+     * 这是刻意的可见失败：内容包漏写语言键时界面直接暴露缺失的键名。
+     * <p>
+     * 返回值<b>仅供显示</b>，不保证唯一，不得用于比对、查找或路由。
+     * <p>
+     * <b>调用线程：</b>主线程（HUD 刷新，可能每帧调用）。
+     * <b>仅在客户端调用</b>：服务端的语言表只含原版 {@code en_us}，内容包的键在服务端取不到取值，
+     * 服务端需要弹种标识时改用 {@link #getRegistryKey()}。
+     * <p>
+     * 实现内部不缓存：一次 {@code toLanguageKey()} 加一次 {@link Component#translatable(String)}
+     * 都是廉价操作。
+     */
+    public String getDisplayLabel() {
+        return Component.translatable(registryKey.toLanguageKey()).getString();
+    }
+
     // ==================== 注册键管理 ====================
 
     /**
@@ -200,14 +234,13 @@ public abstract class ProjectileType {
         /** 曳光透明度，0=完全透明，255=完全不透明 */
         int tracerAlpha,
         /**
-         * 曳光线宽（像素）。默认 2.0，与旧版行为一致。
+         * 曳光线宽（像素）。默认 2.0。
          * 值存入 {@link net.minecraft.client.renderer.RenderStateShard.LineStateShard}，
          * 通过 OpenGL glLineWidth 控制 LINES 模式下的线宽。
          */
         double tracerWidth,
         /**
-         * 拖尾长度乘子（无量纲）。实际拖尾长度 = 当前速度 × 此值（米）。
-         * 默认 0.05 对应旧版行为。
+         * 拖尾长度乘子（无量纲）。实际拖尾长度 = 当前速度 × 此值（米）。默认 0.05。
          */
         double tracerLength,
         /**

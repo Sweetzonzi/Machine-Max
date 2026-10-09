@@ -23,6 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,11 +84,42 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             new ConcurrentHashMap<>();
 
     /**
+     * 武器控制器在控制组中承担的角色。<br>
+     * 由发现握手按“该控制器接受了哪一类武器频道的握手”判定：接受主武器频道的是主武器，
+     * 只接受副武器频道的是副武器。这一判定与开火指令的走线同源，因此角色总是与“哪个扳机
+     * 能打响它”一致。
+     */
+    public enum WeaponRole {
+        /** 主武器：由控制组的 main_weapon_targets 频道握手发现 */
+        MAIN,
+        /** 副武器：只由控制组的 secondary_weapon_targets 频道握手发现 */
+        SECONDARY
+    }
+
+    /**
+     * 武器控制器 → 角色。<br>
+     * 一个控制器可能被同一控制组的主、副武器频道同时发现（既响应主扳机也响应副扳机），
+     * 此时记录 {@link WeaponRole#MAIN}；未被任何武器频道发现（只经由瞄准、移动或绑定
+     * 频道发现）时不在本表中，查询侧按 {@link WeaponRole#MAIN} 兜底。
+     */
+    private final Map<WeaponControllerSubsystem, WeaponRole> weaponControllerRoles =
+            new ConcurrentHashMap<>();
+
+    /**
+     * 当前正在握手的频道所属的武器角色，null = 该频道不是武器频道。<br>
+     * 仅在 {@link #discoverWeaponControllersForGroup} 的发送循环内非空：握手回调
+     * 在同一次发送调用中同步完成，回调侧因此读到的总是当前频道的角色。
+     */
+    @Nullable
+    private volatile WeaponRole handshakingRole = null;
+
+    /**
      * 武器控制器发现握手：遍历所有控制组的全部输出频道，通过回调发现 WeaponController。<br>
-     * 利用回调的信号值携带控制组名，实现精确归属归类。
+     * 利用回调的信号值携带控制组名，实现精确归属归类；同时按武器频道记录角色。
      */
     protected void weaponControllerDiscoveryHandshake() {
         weaponControllersByGroup.clear();
+        weaponControllerRoles.clear();
         // baseGroup 固定 key = "base"
         discoverWeaponControllersForGroup("base", controlGroupSet.baseGroup);
         // 子控制组 key = 组名
@@ -117,11 +149,29 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         }
 
         // ★ 以控制组名作为信号值，callbackReturnsSignalValue=true，
-        //    回调中拿到的 callbackValue 就是 groupKey，从而精确归类
+        //    回调中拿到的 callbackValue 就是 groupKey，从而精确归类。
+        //    回调在同一次发送调用内同步完成，因此 handshakingRole 描述的正是当前频道所属的角色。
         for (String channel : channels) {
             if (channel.isEmpty()) continue;
-            sendSignalToAllTargetsWithCallback(channel, groupKey, true);
+            handshakingRole = roleOfWeaponChannel(group, channel);
+            try {
+                sendSignalToAllTargetsWithCallback(channel, groupKey, true);
+            } finally {
+                handshakingRole = null;
+            }
         }
+    }
+
+    /**
+     * 频道在控制组中承担的武器角色。<br>
+     * 主武器频道的键 → {@link WeaponRole#MAIN}；副武器频道的键 → {@link WeaponRole#SECONDARY}；
+     * 其余频道（瞄准、移动、常规、绑定等）→ null。同一频道同时出现在两个表中时取主武器。
+     */
+    @Nullable
+    private static WeaponRole roleOfWeaponChannel(ControlGroup group, String channel) {
+        if (group.mainWeaponTargets.containsKey(channel)) return WeaponRole.MAIN;
+        if (group.secondaryWeaponTargets.containsKey(channel)) return WeaponRole.SECONDARY;
+        return null;
     }
 
     /**
@@ -144,6 +194,25 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             }
         }
         return result;
+    }
+
+    /**
+     * 当前激活控制组对应的 WeaponController 列表，按角色分组（HUD 显示用）。<br>
+     * 键只包含实际出现过的角色，顺序固定为 {@link WeaponRole#MAIN} → {@link WeaponRole#SECONDARY}；
+     * 组内顺序与 {@link #getActiveWeaponControllers()} 一致。未被武器频道发现的控制器
+     * 归入 {@link WeaponRole#MAIN}。
+     * <p>
+     * <b>调用线程：</b>主线程（HUD 刷新）。
+     *
+     * @return 角色 → 该角色的控制器列表（各组为可变列表，调用方不修改）
+     */
+    public Map<WeaponRole, List<WeaponControllerSubsystem>> getActiveWeaponControllersByRole() {
+        Map<WeaponRole, List<WeaponControllerSubsystem>> byRole = new EnumMap<>(WeaponRole.class);
+        for (WeaponControllerSubsystem wc : getActiveWeaponControllers()) {
+            WeaponRole role = weaponControllerRoles.getOrDefault(wc, WeaponRole.MAIN);
+            byRole.computeIfAbsent(role, k -> new ArrayList<>()).add(wc);
+        }
+        return byRole;
     }
 
     @Override
@@ -213,6 +282,13 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                     if (!list.contains(wc)) {
                         list.add(wc);
                     }
+                }
+                // 记录角色：主武器频道覆盖副武器频道，未被角色频道发现时不入表
+                WeaponRole role = handshakingRole;
+                if (role == WeaponRole.MAIN) {
+                    weaponControllerRoles.put(wc, WeaponRole.MAIN);
+                } else if (role == WeaponRole.SECONDARY) {
+                    weaponControllerRoles.putIfAbsent(wc, WeaponRole.SECONDARY);
                 }
             }
         }

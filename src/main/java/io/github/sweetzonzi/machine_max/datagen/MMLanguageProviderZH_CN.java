@@ -276,6 +276,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.pda.key.sneak", "潜行键");
         this.add("gui.machine_max.pda.action.place", "放置零件");
         this.add("gui.machine_max.pda.action.exit", "退出");
+        // 武器状态 HUD
+        this.add("gui.machine_max.weapon_hud.role.tag.primary", "主");
+        this.add("gui.machine_max.weapon_hud.role.tag.secondary", "副");
+        this.add("gui.machine_max.weapon_hud.role.title.primary", "主武器");
+        this.add("gui.machine_max.weapon_hud.role.title.secondary", "副武器");
+        this.add("gui.machine_max.weapon_hud.ready", "就绪");
+        this.add("gui.machine_max.weapon_hud.empty", "空弹");
         // 蓝图库标签页
         this.add("gui.machine_max.research.library.status.normal", "正常");
         this.add("gui.machine_max.research.library.status.parse_error", "解析失败");

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/regen_loader_dynamic_attr.json",
+  "title": "Regen Loader Subsystem Instance Attributes",
+  "description": "Per-instance attributes of a regen loader subsystem, written in the subsystems block of a part JSON: belt composition, belt label and the ammo discovery channel. Attributes shared by every instance of a model (magazine capacity, regen rate, ...) live in the static attribute file referenced by definition and are not described here.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_loader",
+      "description": "Subsystem type. Must be 'machine_max:regen_loader'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource address of the subsystem model, pointing at the matching regen loader static attribute definition file."
+    },
+    "projectile_types": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 1 },
+      "description": "Belt composition: keys are projectile resource addresses, values are how many rounds of that type the belt repeats. Each entry is expanded by count into an ordered belt ({\"machine_max:7_62mm_ap\": 3, \"machine_max:7_62mm_tracer\": 1} expands to AP, AP, AP, tracer), and firing consumes it cyclically in that order. Key order is belt order, so the first projectile decides the belt label when belt_label is left empty. The text shown for a projectile in the HUD comes from that projectile's own language key (spelled <namespace>.<path> from the projectile registry key, slashes in the path kept as-is), provided by the lang/<locale>.json of the pack that owns the projectile; when the key is missing the HUD shows the key itself, which surfaces the omission."
+    },
+    "belt_label": {
+      "type": "string",
+      "default": "",
+      "description": "Belt name shown on the weapon status HUD belt tab. When empty the display text of the belt's first projectile is used; when set, the string is used verbatim without a language file lookup, so one pack definition shows the same name in every language. Set it when the belt holds more than one projectile type or when the automatic value is not accurate enough. It affects the belt name only: the current-round slot still reports the projectile the belt pointer points at, and the field takes no part in ammo pool grouping, so changing it never affects ammo routing or already-loaded vehicles."
+    },
+    "discovery_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Ammo discovery channels and targets, used by the loader to discover the ammo consumers on the same vehicle. Optional."
+    }
+  },
+  "required": ["type", "definition", "projectile_types"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_loader",
+      "definition": "machine_max:2a42_regen_loader",
+      "projectile_types": {
+        "machine_max:30mm_ap": 1,
+        "machine_max:30mm_he": 1
+      },
+      "belt_label": "AP/HE",
+      "discovery_outputs": {
+        "ammo_2a42": ["global"]
+      }
+    }
+  ]
+}
