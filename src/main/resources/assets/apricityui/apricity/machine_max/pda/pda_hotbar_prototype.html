@@ -25,7 +25,7 @@
     machine_max/pda/pda_hotbar_prototype.html 双击预览。
 
   视口与输入：
-    <meta name="aui-viewport"> 用默认的 gui 视口，与原版快捷栏的 GUI 坐标一致。
+    <meta name="aui-viewport" content="mode=gui"> 声明 GUI 缩放视口，与原版快捷栏的 GUI 坐标一致。
     刻意不写 <meta name="aui-mouse-events" content="intercept">：
     HUD 叠层不参与输入，滚轮与数字键由 PdaInputInterceptor 独占处理。
 

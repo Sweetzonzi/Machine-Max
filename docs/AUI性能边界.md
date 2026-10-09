@@ -5,6 +5,8 @@
 **源码路径**: [`d:\Files\Project_MinecraftMods\AUI`](file:///d:/Files/Project_MinecraftMods/AUI)  
 **目的**: 评估 AUI 作为 Machine-Max 载具控制面板渲染引擎的可行性、性能极限与限制
 
+> **复核记录（2026-10-09）**：§8.5 的 #17、#18 两条坑点已按本仓库当前依赖的 AUI **1.2.7** 源码逐条复核（并与 1.2.5 逐文件比对，`Element.tick()`、`DOMTokenList`、`setInnerHTML`、`Element.init`/`NodeTree`、`StyleScope` 在这两个版本之间没有变化），结论就地写在对应行内。其余条目与全部性能结论仍基于 v1.1.6-dev，尚未按 1.2.7 复核。
+
 ---
 
 ## 一、概述
@@ -739,8 +741,8 @@ AUI 支持两种显示模式：
 | 14 | 8 位 hex `#RRGGBBAA` 的 alpha 被错误解析 | `Color.parseHex()` 对 8 位 hex 不做字节重排，直接 `Long.parseLong(hex, 16)` 原样存入 int。而内部颜色格式为 **ARGB**（alpha 在 bits 24-31，blue 在 bits 0-7）。`#FFFFFF4D` 期望白 @ 30% 透明度（A=0x4D），实际解析为完全不透明的蓝白色（A=0xFF, B=0x4D）。**必须用 `rgba(r,g,b,a)` 替代 8 位 hex 来表达半透明色**。详见 §九。 |
 | 15 | `padding`/`margin` 多值简写不生效 | ✅ **v1.1.6-dev 已修复**。`Box.parseFourSideLengths()` 支持 1-4 值 CSS 简写（`padding: 10px 20px` × `padding-top: 10px; padding-right: 20px; padding-left: 20px; padding-bottom: 10px`）。[`Box.java:182-199`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Box.java#L182-L199) |
 | 16 | `@keyframes` 不支持 `from`/`to` 关键字 | ✅ **v1.1.6-dev 已修复**。`CSS.java` 中的 `parseKeyframePercent()` 将 `from` → `0%`，`to` → `100%`。[`CSS.java:335-338`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/resource/CSS.java#L335-L338) |
-| 17 | **父元素 class 变化不传播子元素 CSS 重匹配** | 修改父元素 class（如 `toggle.setAttribute("class", "toggle-switch on")`）后，AUI 不会自动对子元素重新执行 CSS 选择器匹配。子元素的样式依赖于父 class 的后代选择器（如 `.toggle-switch.on .knob`）将**保持旧值**。必须用内联 style 直接操作子元素。见 #18。 |
-| 18 | **`innerText` 直接赋值不触发文本重渲染** | 在某些场景（尤其是父元素 class 同时变化时），`element.innerText = "新文本"` 不会触发 AUI 的文本缓存失效。必须用 **remove() 旧元素 → createElement() 创建新元素 → append() 追加** 的三步式替换。见 `GroupStripRenderer.java`。 |
+| 17 | **父元素 class 变化不传播子元素 CSS 重匹配** | 修改父元素 class（如 `toggle.setAttribute("class", "toggle-switch on")`）后，AUI 不会自动对子元素重新执行 CSS 选择器匹配。子元素的样式依赖于父 class 的后代选择器（如 `.toggle-switch.on .knob`）将**保持旧值**。必须用内联 style 直接操作子元素。见 #18。<br>**v1.2.7 复核（本项目依赖的版本）**：`Element.invalidateStyle()` → `StyleScope.requestRecalc(element)` 的默认模式是 `SUBTREE`，`flushPendingUpdates()` 按深度递归重算整棵子树的样式，因此改父元素 class 会重匹配其后代，后代选择器随之生效；`GroupStripRenderer` 里为规避本条而写的"删掉旧元素、新建元素"不再是必需的。 |
+| 18 | **`innerText` 直接赋值不触发文本重渲染** | 在某些场景（尤其是父元素 class 同时变化时），`element.innerText = "新文本"` 不会触发 AUI 的文本缓存失效。必须用 **remove() 旧元素 → createElement() 创建新元素 → append() 追加** 的三步式替换。见 `GroupStripRenderer.java`。<br>**v1.2.7 复核（本项目依赖的版本）**：`Element.tick()` 每帧比对 `innerText` 与 `lastInnerText`，变化时清 `text`/`wrappedText`/`size` 缓存并标脏；渲染侧 `getLegacyRenderTextNode()` 也按 `innerText` 重建文本节点。无子节点的元素直接给 `innerText` 字段赋值即可生效，三步式替换不再必需。注意 `innerText` 只在**无子节点**的元素上参与渲染，带子元素的槽位要拆出叶子元素来写文本；每次都会重建文本节点的是 `setInnerText()`（它走 `setTextContent("")` + 逐个 `createTextNode`）。 |
 
 ---
 

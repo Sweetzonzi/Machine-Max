@@ -16,8 +16,10 @@
   打开方式：
     按 F10 打开 AUI 内置资源管理器，在资源树里找到
     machine_max/research/research_ui_prototype.html，双击即可开出可交互预览窗口。
-    本页不写 <meta name="aui-viewport">，沿用与 vehicle_control.html 相同的
-    默认 gui 视口——最终 Screen 也按该视口承载，预览所见即实现所得。
+    本页与 vehicle_control.html 一样声明 GUI 缩放视口
+    （<meta name="aui-viewport" content="mode=gui">；AUI 1.2.7 起不声明时的默认视口
+    是 browser，尺寸口径与 GUI 坐标不同）——最终 Screen 也按该视口承载，
+    预览所见即实现所得。
 
   数据说明（原型期占位）：
     - 研发条目取自官方内容包真实存在的研发配方与真实图标；
@@ -29,6 +31,8 @@
   ==========================================================================
 -->
 
+<!-- 视口：GUI 缩放坐标，与 vehicle_control.html 一致 -->
+<meta name="aui-viewport" content="mode=gui">
 <!-- 公共样式 -->
 <link rel="stylesheet" href="research_ui.css">
 <!-- Tab 专用样式 -->

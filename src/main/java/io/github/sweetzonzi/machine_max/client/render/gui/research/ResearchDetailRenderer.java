@@ -194,10 +194,11 @@ public final class ResearchDetailRenderer {
      * 两个标签都由 AUI 自身注册（{@code com.sighs.apricityui.element}），无需本模组登记，
      * 也都不参与文本绘制，所以表达式文本不会显示出来。</p>
      *
-     * <p>不用 AUI 的 {@code ItemStackExpressionCompiler.serialize}：它丢掉了
-     * {@code ItemStack.save(provider, prefix)} 的返回值，而 1.21.1 的这个重载返回一个新
-     * tag、并不写进传入的 prefix，于是它恒定返回空对象 {@code {}}。AUI 自己的受控 item
-     * 走的是 drivenStack 而非这段文本，所以该 bug 在它那边没暴露。这里自己取返回值。</p>
+     * <p>不用 AUI 的 {@code ItemStackExpressionCompiler.serialize}：AUI 1.2.5 的实现在 1.21.1 上
+     * 恒定返回空对象 {@code {}}——它丢掉了 {@code ItemStack.save(provider, prefix)} 的返回值，
+     * 而 1.21.1 的这个重载返回一个新 tag、并不写进传入的 prefix（AUI 自己的受控 item 走
+     * drivenStack 而非这段文本，所以该 bug 在它那边没暴露）。AUI 1.2.7 已修这处，并让 ingredient
+     * 的 JSON 解析改用带注册表的 ops；本模组保留自取返回值的写法。</p>
      */
     private static String iconHtml(Player player, Ingredient ingredient) {
         if (ingredient == null || ingredient.isEmpty()) return "";
