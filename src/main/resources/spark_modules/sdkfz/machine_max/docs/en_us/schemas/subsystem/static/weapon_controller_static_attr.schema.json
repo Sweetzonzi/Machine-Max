@@ -63,7 +63,7 @@
       "type": "array",
       "items": { "type": "string" },
       "default": [],
-      "description": "List of fire command input channels. Any non-EmptySignal on any channel is treated as a fire command. Typically receives key-triggered fire signals."
+      "description": "List of fire command input channels. A channel counts as firing when it carries a fire signal: a main/secondary weapon fire instruction, a boolean true, or a non-zero number. Ammo-type switching instructions share these channels and are never treated as fire. Typically receives key-triggered fire signals."
     },
     "sounds": {
       "type": "object",

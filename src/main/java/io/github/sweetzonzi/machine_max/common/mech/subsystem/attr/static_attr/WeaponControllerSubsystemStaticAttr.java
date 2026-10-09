@@ -39,7 +39,9 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
     private final float aimToleranceDeg;
     /** 瞄准目标坐标输入频道列表，从任一频道读取Vec3世界坐标 */
     private final List<String> aimInputs;
-    /** 开火指令输入频道列表，任一频道有非EmptySignal即视为开火指令 */
+    /** 开火指令输入频道列表，任一频道里出现开火信号即视为开火指令。<br>
+     * 信号按语义判定：主/副武器开火指令、值为 true 的 Boolean、非 0 的数值算开火；
+     * 弹种切换指令与开火指令共用这些频道，不会被当作开火。 */
     private final List<String> fireInputs;
 
     /**

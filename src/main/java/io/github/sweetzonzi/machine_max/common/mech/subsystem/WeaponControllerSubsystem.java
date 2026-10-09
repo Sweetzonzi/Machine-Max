@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -710,13 +711,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         this.targetPosition = pos;
         this.currentViewSignal = newVis;
 
-        // 读取开火指令：仅接受 RegularInputSignal（控制组/AI按键）或 Number（ControlBinding HOLD/PRESS），
-        // 过滤握手信号（String 类型的 groupKey）防止误触发
+        // 读取开火指令：频道里只有表达"开火"的信号才算开火，判据见 isFireSignal。
+        // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 fire_input_*），它不算开火，
+        // 因此不能按"频道里有东西"来判，否则按一次切换弹种键就会打出一发。
         this.firing = false;
         fire: for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
             for (Object signal : channel.values()) {
-                if (signal instanceof RegularInputSignal || signal instanceof Number) {
+                if (isFireSignal(signal)) {
                     this.firing = true;
                     break fire;
                 }
@@ -746,6 +748,31 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 this.currentViewSignal = new ViewInputSignal(this.targetPosition, 0, 0, true, true);
             }
         }
+    }
+
+    /**
+     * 信号是否表达"开火"。<br>
+     * 开火频道与弹种切换指令共用线路（座位的开火目标频道就是 {@code fire_input_*}），
+     * 所以判定必须看信号语义，不能只看"频道里有东西"：
+     * <ul>
+     *   <li>{@link RegularInputSignal}：主武器、副武器开火指令算开火；弹种切换等其余按键语义不算</li>
+     *   <li>Boolean：仅 {@code true} 算开火</li>
+     *   <li>数值（ControlBinding 的 HOLD/PRESS/TOGGLE 写入）：仅非 0 算开火，
+     *       因此开关型绑定拨到关（0）不会残留开火</li>
+     *   <li>其余（握手用的 String、{@link EmptySignal} 等）：不算开火</li>
+     * </ul>
+     *
+     * @param signal 频道里的信号值
+     * @return true 表示这条信号要求开火
+     */
+    private static boolean isFireSignal(Object signal) {
+        if (signal instanceof RegularInputSignal regular) {
+            KeyInputMapping type = regular.getInputType();
+            return type == KeyInputMapping.MAIN_FIRE || type == KeyInputMapping.SECONDARY_FIRE;
+        }
+        if (signal instanceof Boolean firing) return firing;
+        if (signal instanceof Number number) return number.doubleValue() != 0.0;
+        return false;
     }
 
     /**
