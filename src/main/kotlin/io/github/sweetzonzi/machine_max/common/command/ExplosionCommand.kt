@@ -74,12 +74,12 @@ class ExplosionCommand : BaseCommand("explosion", 4) {
             false,
             false,
             COMMAND_DETONATION_PARTICLES,
-            COMMAND_DETONATION_PARTICLE_SCALE
+            COMMAND_DETONATION_PARTICLE_SCALE,
+            MMDamageTypes.BLAST
         )
         val origin = Vector3f(player.x.toFloat(), player.y.toFloat() + 1f, player.z.toFloat())
         val seed = level.random.nextLong()
-        val damageSource = level.damageSources().source(MMDamageTypes.BLAST)
-        ExplosionManager.get(level).detonate(origin, params, damageSource, seed)
+        ExplosionManager.get(level).detonate(origin, params, seed)
 
         source.sendSuccess(
             {

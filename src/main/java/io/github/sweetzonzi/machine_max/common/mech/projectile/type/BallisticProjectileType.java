@@ -9,8 +9,12 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjecti
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceLaw;
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import lombok.Getter;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -208,6 +212,16 @@ public class BallisticProjectileType extends ProjectileType {
     public float getPenetrationVelocityCoefficient() { return terminal.penetrationVelocityCoefficient(); }
     public float getDamageVelocityCoefficient() { return terminal.damageVelocityCoefficient(); }
     public float getBlockDamageFactor() { return terminal.blockDamageFactor(); }
+
+    /**
+     * 本弹种造成的伤害类型（{@link DamageType} 资源键）。
+     * <p>
+     * 默认 {@link MMDamageTypes#PROJECTILE}（{@code machine_max:projectile}）。命中发起的
+     * {@code DamageSource} 由它构造，因此该类型决定本次伤害落入哪些按类型分派的行为——材料侧的
+     * {@code damage_modifiers}（按 {@code damage_type} / {@code damage_tag} 条件）、
+     * 原版免疫与无敌帧、{@code SubPart.hurt} 的击退分支等。
+     */
+    public ResourceKey<DamageType> getDamageType() { return terminal.damageType(); }
 
     /** 稳定距离（mm），0 = 无限稳定 */
     public float getStableDistance() { return terminal.stableDistance(); }
@@ -532,7 +546,16 @@ public class BallisticProjectileType extends ProjectileType {
          * 失稳后穿深保留因子（0~1）。弹头翻滚后有效穿深 = 当前穿深 × 此因子。
          * 0 = 失稳后无法继续穿透。默认值 0.1。
          */
-        float unstablePenFactor
+        float unstablePenFactor,
+        /**
+         * 伤害类型（{@link DamageType} 资源键）。默认 {@link MMDamageTypes#PROJECTILE}。
+         * <p>
+         * 命中时经 {@code Level.damageSources().source(...)} 构造发起的 DamageSource，
+         * 决定该次伤害落入原版与本项目的哪些按类型分派的行为
+         * （材料侧 {@code damage_modifiers} 的 {@code damage_type} / {@code damage_tag} 条件、
+         * 原版免疫与无敌帧等）。
+         */
+        ResourceKey<DamageType> damageType
     ) {
         public static final Codec<TerminalProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.fieldOf("base_penetration").forGetter(TerminalProperties::basePenetration),
@@ -546,7 +569,9 @@ public class BallisticProjectileType extends ProjectileType {
             Codec.FLOAT.optionalFieldOf("stable_distance", 0f)
                 .forGetter(TerminalProperties::stableDistance),
             Codec.FLOAT.optionalFieldOf("unstable_pen_factor", 0.1f)
-                .forGetter(TerminalProperties::unstablePenFactor)
+                .forGetter(TerminalProperties::unstablePenFactor),
+            ResourceKey.codec(Registries.DAMAGE_TYPE).optionalFieldOf("damage_type", MMDamageTypes.PROJECTILE)
+                .forGetter(TerminalProperties::damageType)
         ).apply(instance, TerminalProperties::new));
     }
 }

@@ -396,5 +396,13 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "Minimum destroy timer ticks for destroyed sub-parts. Default: 200. Range: 0 ~ 1000000");
         this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "SubPart Destroy Advance Ticks Per Damage");
         this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "Additional destroy timer advance ticks per 1 damage applied to already destroyed sub-parts. Default: 20. Range: 0 ~ 100000");
+
+        // Damage-type death messages（键为 death.attack.<MMDamageTypes 的 message_id>）
+        this.add("death.attack.machine_max.projectile", "%1$s was torn apart by a shell");
+        this.add("death.attack.machine_max.projectile.player", "%1$s was torn apart by %2$s's shell");
+        this.add("death.attack.machine_max.blast", "%1$s was blown to pieces");
+        this.add("death.attack.machine_max.blast.player", "%1$s was blown to pieces by %2$s");
+        this.add("death.attack.machine_max.part_collision", "%1$s was crushed");
+        this.add("death.attack.machine_max.part_collision.player", "%1$s was crushed by %2$s");
     }
 }

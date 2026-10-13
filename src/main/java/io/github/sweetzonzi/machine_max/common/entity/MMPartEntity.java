@@ -200,8 +200,10 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                 end = PhysicsHelperKt.toBVector3f(this.position());
             }
             if (end.subtract(start).length() > 0) {
-                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {
-                    // 爆炸/范围伤害：直接找最近的部件和最厚的装甲
+                if ((source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
+                        && BFDamageApi.getContextFor(this) == null) {
+                    // 爆炸/范围伤害（外部来源，未经协议管线）：直接找最近的部件和最厚的装甲。
+                    // 协议内伤害已携带逐 HitBox 的精确命中几何，跳过本分支、走下方射线检测路径。
                     SubPart nearest = null;
                     float nearestDistance = Float.MAX_VALUE;
                     Vector3f normal = new Vector3f();
@@ -215,23 +217,16 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                     }
                     if (nearest != null) {
                         // 爆炸没有精确的碰撞箱，用最厚装甲作为命中部位
-                        BFDamageContext ctx = BFDamageApi.getContextFor(this);
                         HitBox hitBox = subPart.findStrongestHitBox();
-                        if (ctx != null) {
-                            if (ctx.extensions().get(MMDamageExtensions.HIT_BOX) == null) {
-                                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
-                            }
-                        } else {
-                            ctx = BFDamageContext.builder()
-                                    .source(source)
-                                    .baseDamage(amount)
-                                    .hitVelocity(SparkMathKt.toVec3(normal.mult(-1)))
-                                    .hitPoint(SparkMathKt.toVec3(contactPoint))
-                                    .hitNormal(SparkMathKt.toVec3(normal))
-                                    .penetration(amount)
-                                    .build();
-                            ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
-                        }
+                        BFDamageContext ctx = BFDamageContext.builder()
+                                .source(source)
+                                .baseDamage(amount)
+                                .hitVelocity(SparkMathKt.toVec3(normal.mult(-1)))
+                                .hitPoint(SparkMathKt.toVec3(contactPoint))
+                                .hitNormal(SparkMathKt.toVec3(normal))
+                                .penetration(amount)
+                                .build();
+                        ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                         return BFDamageApi.hurt(nearest, ctx) > 0;
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 // === 一般实体攻击/近战：射线检测精确命中 ===

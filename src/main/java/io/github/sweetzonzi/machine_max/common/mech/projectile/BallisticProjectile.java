@@ -1001,7 +1001,7 @@ public class BallisticProjectile extends DestroyableObject
      * 穿深通过 {@link #calculateCurrentPenetration()} 实时计算，
      * 失稳时 ×unstablePenFactor 写入上下文，原始值存入扩展供能量法使用。
      *
-     * @param level     维度（用于获取通用 DamageSource）
+     * @param level     维度（用于按弹种伤害类型构造 DamageSource）
      * @param damage    伤害量（已按速度衰减的当前值）
      * @param hitVel    命中速度矢量（MC Vec3，m/s）
      * @param hitPoint  命中点世界坐标
@@ -1020,7 +1020,7 @@ public class BallisticProjectile extends DestroyableObject
         exts.set(MMDamageExtensions.ORIGINAL_PENETRATION, originalPen);
 
         return BFDamageContext.builder()
-                .source(level.damageSources().generic())
+                .source(level.damageSources().source(getProjectileType().getDamageType()))
                 .baseDamage(damage)
                 .penetration(effectivePen)
                 .hitVelocity(hitVel)

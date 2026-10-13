@@ -4,7 +4,6 @@ import com.jme3.math.Vector3f;
 import com.mojang.serialization.MapCodec;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionParams;
-import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -38,7 +37,8 @@ public record ExplosionWorldEffect(ExplosionParams params) implements WorldEffec
     /**
      * 起爆：把上下文起点翻译为一次 {@link ExplosionManager#detonate}。
      * <p>
-     * 归属固定为 {@link MMDamageTypes#BLAST}，不带 owner（owner 归属属后续阶段）。
+     * 伤害归属取自 {@link ExplosionParams#damageType()}（默认 {@code machine_max:blast}），
+     * 不带 owner（owner 归属属后续阶段）。
      * 种子由服务端生成并随起爆包同步，保证双端一致。
      * <p>
      * <b>调用线程：</b>主线程（{@code detonate} 内含发包与非线程安全的活跃表）。
@@ -52,7 +52,6 @@ public record ExplosionWorldEffect(ExplosionParams params) implements WorldEffec
         ExplosionManager.get(level).detonate(
                 new Vector3f((float) origin.x, (float) origin.y, (float) origin.z),
                 params,
-                level.damageSources().source(MMDamageTypes.BLAST),
                 level.random.nextLong());
     }
 }

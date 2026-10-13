@@ -3,11 +3,15 @@ package io.github.sweetzonzi.machine_max.common.mech.explosion;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageType;
 
 import java.util.List;
 
@@ -40,6 +44,11 @@ import java.util.List;
  *                        作用在局部偏移与初始速度上，因此形状半径与飞散距离按此系数等比放大，
  *                        而 {@code particle_appearance_billboard.size} 决定的单个烟团大小不变；
  *                        模拟随后回到世界空间，重力与浮力加速度也不随此系数放大。
+ * @param damageType      本次爆炸造成的伤害类型（{@link DamageType} 资源键），默认
+ *                        {@link MMDamageTypes#BLAST}。{@link ExplosionManager#detonate}
+ *                        用它构造 {@code DamageSource}，因此它决定该次爆炸伤害落入
+ *                        原版与本项目的哪些按类型分派的行为。
+ *                        <b>它不参与网络编解码</b>：客户端只用参数集重建表现，不施加伤害。
  */
 public record ExplosionParams(
         float basePenetration,
@@ -52,8 +61,18 @@ public record ExplosionParams(
         boolean dropItems,
         boolean causesFire,
         List<ResourceLocation> particles,
-        float particleScale
+        float particleScale,
+        ResourceKey<DamageType> damageType
 ) {
+
+    /**
+     * 缺省伤害类型：JSON 未写 {@code damage_type}、以及起爆包未携带该字段时都取它。
+     * <p>
+     * {@link MMDamageTypes#BLAST} 是本项目爆炸的标准归属。该字段决定伤害按哪些类型条件分派
+     * （材料侧 {@code damage_modifiers} 的 {@code damage_type} / {@code damage_tag} 条件、
+     * 实体的原版免疫与无敌帧等）；内容包可按需改配为其它类型，含原版爆炸类型。
+     */
+    public static final ResourceKey<DamageType> DEFAULT_DAMAGE_TYPE = MMDamageTypes.BLAST;
 
     /**
      * JSON MapCodec，供内容包加载。
@@ -73,13 +92,20 @@ public record ExplosionParams(
             Codec.BOOL.optionalFieldOf("causes_fire", false).forGetter(ExplosionParams::causesFire),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("particles", List.of())
                     .forGetter(ExplosionParams::particles),
-            Codec.FLOAT.optionalFieldOf("particle_scale", 1.0f).forGetter(ExplosionParams::particleScale)
+            Codec.FLOAT.optionalFieldOf("particle_scale", 1.0f).forGetter(ExplosionParams::particleScale),
+            ResourceKey.codec(Registries.DAMAGE_TYPE).optionalFieldOf("damage_type", DEFAULT_DAMAGE_TYPE)
+                    .forGetter(ExplosionParams::damageType)
     ).apply(instance, ExplosionParams::new));
 
     /** JSON Codec（由 {@link #MAP_CODEC} 派生），供内容包加载。 */
     public static final Codec<ExplosionParams> CODEC = MAP_CODEC.codec();
 
-    /** 网络 StreamCodec：起爆包携带"起爆点 + 种子 + 参数集"中的参数集部分。 */
+    /**
+     * 网络 StreamCodec：起爆包携带"起爆点 + 种子 + 参数集"中的参数集部分。
+     * <p>
+     * {@code damage_type} 不参与编解码：客户端只凭参数集重建射线方向集、波前与粒子表现，
+     * 不施加伤害，因此解码端一律取 {@link #DEFAULT_DAMAGE_TYPE}。
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, ExplosionParams> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public ExplosionParams decode(RegistryFriendlyByteBuf buf) {
@@ -88,7 +114,8 @@ public record ExplosionParams(
                     buf.readFloat(), buf.readFloat(), buf.readFloat(),
                     buf.readBoolean(), buf.readBoolean(), buf.readBoolean(),
                     PARTICLES_STREAM_CODEC.decode(buf),
-                    buf.readFloat());
+                    buf.readFloat(),
+                    DEFAULT_DAMAGE_TYPE);
         }
 
         @Override
@@ -119,7 +146,9 @@ public record ExplosionParams(
      *   <li>{@code nearRadius}/{@code frontSpeed} 取下界，避免除零与零步长；</li>
      *   <li>{@code maxRadius} 不小于 {@code nearRadius}；</li>
      *   <li>{@code particles} 复制为不可变列表，使实例整体保持不可变；</li>
-     *   <li>{@code particleScale} 取下界，避免零或负系数把粒子云压成一点或反向。</li>
+     *   <li>{@code particleScale} 取下界，避免零或负系数把粒子云压成一点或反向；</li>
+     *   <li>{@code damageType} 为 null 时取 {@link #DEFAULT_DAMAGE_TYPE}，避免构造出的
+     *       参数集缺少伤害归属。</li>
      * </ul>
      */
     public ExplosionParams {
@@ -129,6 +158,7 @@ public record ExplosionParams(
         maxRadius = Math.max(maxRadius, nearRadius);
         particles = List.copyOf(particles);
         particleScale = Math.max(particleScale, 1e-3f);
+        damageType = damageType == null ? DEFAULT_DAMAGE_TYPE : damageType;
     }
 
     /** 每主线程 tick 的推进距离（m）。 */

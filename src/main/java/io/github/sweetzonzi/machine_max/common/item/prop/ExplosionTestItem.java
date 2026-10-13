@@ -8,7 +8,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
@@ -85,13 +84,13 @@ public class ExplosionTestItem extends Item {
         ExplosionParams params = new ExplosionParams(
                 BASE_PENETRATION, BASE_DAMAGE, BASE_IMPULSE,
                 NEAR_RADIUS, MAX_RADIUS, FRONT_SPEED,
-                DESTROY_BLOCKS, DROP_ITEMS, CAUSES_FIRE, PARTICLES, PARTICLE_SCALE);
-        DamageSource source = level.damageSources().source(MMDamageTypes.BLAST);
+                DESTROY_BLOCKS, DROP_ITEMS, CAUSES_FIRE, PARTICLES, PARTICLE_SCALE,
+                MMDamageTypes.BLAST);   // 伤害类型：本项目爆炸归属
         long seed = level.random.nextLong();
 
         ExplosionManager.get(level).detonate(
                 new Vector3f((float) target.x, (float) target.y, (float) target.z),
-                params, source, seed);
+                params, seed);
 
         player.getCooldowns().addCooldown(this, 20);
         return InteractionResultHolder.success(stack);

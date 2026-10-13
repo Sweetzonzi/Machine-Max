@@ -56,17 +56,17 @@ public final class ExplosionManager {
     /**
      * 三种调用方共用的唯一入口。主线程调用。
      *
-     * <p>内部：广播起爆包 → 纳入活跃表（新实例的年龄从 0 起算）。
-     * 起爆包只含"起爆点 + 种子 + 参数集"，不带实例标识。</p>
+     * <p>内部：按参数集的伤害类型构造 {@code DamageSource} → 广播起爆包 → 纳入活跃表
+     * （新实例的年龄从 0 起算）。起爆包只含"起爆点 + 种子 + 参数集"，不带实例标识。</p>
      *
      * <p>仅服务端生效：客户端通过起爆包建立表现条目。</p>
      *
      * @param origin 起爆点
-     * @param params 参数集
-     * @param source 伤害来源（应为 {@code machine_max:blast}）
+     * @param params 参数集；伤害归属取自 {@link ExplosionParams#damageType()}，
+     *               调用方不传 {@code DamageSource}
      * @param seed   起爆种子，双端必须一致
      */
-    public void detonate(Vector3f origin, ExplosionParams params, DamageSource source, long seed) {
+    public void detonate(Vector3f origin, ExplosionParams params, long seed) {
         if (level.isClientSide()) return;
         // 殉爆环路保护：限制每维度同时活跃的实例数
         if (active.size() >= MMServerConfig.explosionMaxActiveInstances()) {
@@ -74,6 +74,7 @@ public final class ExplosionManager {
                     MMServerConfig.explosionMaxActiveInstances(), origin);
             return;
         }
+        DamageSource source = level.damageSources().source(params.damageType());
         PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                 new ExplosionDetonatePayload(level.dimension(), origin, seed, params));
         active.add(new ExplosionInstance(level, origin, params, source, seed));

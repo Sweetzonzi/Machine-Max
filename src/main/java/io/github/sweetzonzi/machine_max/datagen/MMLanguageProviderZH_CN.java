@@ -411,5 +411,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "零件损毁后的最小销毁倒计时Tick数。默认值：200。范围：0 ~ 1000000");
         this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "零件受伤加速销毁Tick");
         this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "零件已损毁时，每1点伤害额外推进的销毁倒计时Tick数。默认值：20。范围：0 ~ 100000");
+
+        // 伤害类型死亡信息（键为 death.attack.<MMDamageTypes 的 message_id>）
+        this.add("death.attack.machine_max.projectile", "%1$s 被炮弹撕成碎片");
+        this.add("death.attack.machine_max.projectile.player", "%1$s 被 %2$s 的炮弹撕成碎片");
+        this.add("death.attack.machine_max.blast", "%1$s 被炸得支离破碎");
+        this.add("death.attack.machine_max.blast.player", "%1$s 被 %2$s 炸得支离破碎");
+        this.add("death.attack.machine_max.part_collision", "%1$s 被碾碎");
+        this.add("death.attack.machine_max.part_collision.player", "%1$s 被 %2$s 碾碎");
     }
 }
