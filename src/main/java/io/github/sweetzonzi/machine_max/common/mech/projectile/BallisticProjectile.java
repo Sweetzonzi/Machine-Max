@@ -28,7 +28,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticPro
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
-import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -985,11 +985,8 @@ public class BallisticProjectile extends DestroyableObject
         if (target instanceof Entity entity) {
             float impulse = ctx.extensions().get(BFDamageExtensions.IMPULSE);
             if (impulse > 1e-6f) {
-                Vec3 dir = ctx.hitVelocity().normalize();
-                if (entity instanceof LivingEntity livingEntity)
-                    livingEntity.knockback(impulse / MassUtil.getEntityMass(entity), -dir.x, -dir.z);
-                else
-                    entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(impulse / MassUtil.getEntityMass(entity))));
+                // 沿弹丸入射方向推离；质量折算、m/s → 方块/tick 换算与击退抗性都在 KnockbackUtil 内
+                KnockbackUtil.applyImpulse(entity, impulse, ctx.hitVelocity());
             }
         }
 

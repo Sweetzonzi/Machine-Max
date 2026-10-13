@@ -28,6 +28,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -723,7 +724,9 @@ public class CollisionHandler {
                                 net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK,
                                 net.minecraft.sounds.SoundSource.AMBIENT, 1f, 1f);
                     }
-                    livingEntity.knockback(impulse / entityMass, normal.x, normal.z);
+                    // 沿接触法线把实体推离部件（与上面给实体刚体的冲量同向）：
+                    // 质量折算、m/s → 方块/tick 换算与击退抗性都在 KnockbackUtil 内
+                    KnockbackUtil.applyImpulse(livingEntity, impulse, SparkMathKt.toVec3(normal));
                 });
     }
 

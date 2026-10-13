@@ -21,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensi
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.VoxelHit;
 import io.github.sweetzonzi.machine_max.util.mechanic.VoxelRayWalker;
 import net.minecraft.core.BlockPos;
@@ -67,12 +68,6 @@ public final class ExplosionInstance {
      * 在此之前取 1.0，即基准伤害直接与方块耐久阈值比较。
      */
     private static final float BLOCK_DAMAGE_FACTOR = 1.0f;
-
-    /**
-     * 一般实体击退：把"单位迎流面积冲量"换算为原版 delta-movement 的经验系数。
-     * 刚体侧走 {@link BFDamageExtensions#IMPULSE}（真实 N·s），实体侧没有质量信息，故用系数折算。
-     */
-    private static final float ENTITY_IMPULSE_TO_VELOCITY = 0.02f;
 
     // ==================== 标识与年龄 ====================
 
@@ -542,7 +537,7 @@ public final class ExplosionInstance {
         }
     }
 
-    /** 实体伤害交 BF/原版链条，击退按冲量方向直接施加。 */
+    /** 实体伤害交 BF/原版链条；击退沿推离爆心方向，按 {@link KnockbackUtil} 折算质量与每 tick 速度。 */
     private void settleEntity(Entity entity, BlastAccum acc) {
         if (entity.isRemoved()) return;
         float damage = BlastField.damage(acc.deltaE, params);
@@ -562,9 +557,9 @@ public final class ExplosionInstance {
         BFDamageApi.hurt(entity, ctx);
 
         if (impulse > 0f) {
-            Vec3 dir = normal.scale(-1);
-            float k = impulse * ENTITY_IMPULSE_TO_VELOCITY;
-            entity.push(dir.x * k, dir.y * k, dir.z * k);
+            // 冲量沿"推离爆心"方向（-n̄）施加；Δv = J / m 与 m/s → 方块/tick 的折算、
+            // 以及生物的击退抗性折减都收在 KnockbackUtil 里
+            KnockbackUtil.applyImpulse(entity, impulse, normal.scale(-1));
         }
     }
 
