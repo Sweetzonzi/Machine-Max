@@ -171,7 +171,8 @@ public class BallisticProjectile extends DestroyableObject
         this.projectileType = type;
         setPosition(position);
         setLinearVelocity(velocity);
-        transform = new Transform(position, Quaternion.IDENTITY);
+        Quaternion attitude = ProjectileManager.velocityAttitude(velocity.x, velocity.y, velocity.z);
+        transform = new Transform(position, attitude);
         oldTransform = transform.clone();
         // 结构血量的容量来自内容包，而 DATA_DURABILITY_ID 自带 20 的默认值，
         // 与配置无关，因此必须在此显式写入一次初值

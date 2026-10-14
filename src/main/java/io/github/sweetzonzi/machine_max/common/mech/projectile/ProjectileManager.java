@@ -702,9 +702,65 @@ public class ProjectileManager {
 
             obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
             obj.oldTransform = obj.getTransform();
-            obj.transform = new Transform(obj.getPosition(), Quaternion.IDENTITY);
+            // 旋转分量 = 速度姿态：oldTransform/transform 这一对由 getWorldPositionMatrix
+            // 做平移 lerp + 旋转 slerp，投射物（含模型）因此沿速度矢量帧间平滑转向
+            obj.transform = new Transform(obj.getPosition(),
+                    velocityAttitude(velX[i], velY[i], velZ[i]));
             obj.setLinearVelocity(new Vector3f(velX[i], velY[i], velZ[i]));
         }
+    }
+
+    /**
+     * 构造"局部前向（-Z）对齐速度方向"的姿态四元数。
+     * <p>
+     * 投射物没有刚体，也没有参与解算的姿态；{@code transform} 的旋转分量在这里被用作
+     * <b>渲染姿态</b>。{@link DestroyableObject#getWorldPositionMatrix(Number)} 会在
+     * {@code oldTransform → transform} 之间做平移 lerp + 旋转 slerp，把速度方向写进旋转后，
+     * 曳光渲染器与投射物模型渲染器拿到的方向天然是帧间插值的，制导弹因此不再逐 tick 跳变。
+     * <p>
+     * 局部前向取 {@code -Z}，与 {@link DestroyableObject#getFrontVector()} 一致，带模型的内容包
+     * 按 -Z 建模即可沿速度指向。绕前向轴的滚转不做稳定：速度接近竖直时参考上方向切换为 +Z，
+     * 该切换只改变滚转、不改变前向（slerp 绕前向轴旋转时前向保持不变）。
+     * <p>
+     * <b>线程：</b>纯函数、无共享状态，主线程与物理线程均可调用；不分配 Vector3f。
+     *
+     * @param vx 速度 X（m/s）
+     * @param vy 速度 Y（m/s）
+     * @param vz 速度 Z（m/s）
+     * @return 对齐速度方向的姿态；速度过小时返回 {@link Quaternion#IDENTITY}
+     */
+    public static Quaternion velocityAttitude(float vx, float vy, float vz) {
+        float speedSq = vx * vx + vy * vy + vz * vz;
+        if (speedSq < 1e-8f) return Quaternion.IDENTITY;
+        float invSpeed = 1f / (float) Math.sqrt(speedSq);
+        float fx = vx * invSpeed, fy = vy * invSpeed, fz = vz * invSpeed;
+
+        // 参考上方向：速度接近竖直时改用 +Z，避免与前向共线导致叉积退化
+        float ux = 0f, uy = 1f, uz = 0f;
+        if (Math.abs(fy) > 0.999f) {
+            uy = 0f;
+            uz = 1f;
+        }
+
+        // right = 前向 × 参考上方向，归一化
+        float rx = fy * uz - fz * uy;
+        float ry = fz * ux - fx * uz;
+        float rz = fx * uy - fy * ux;
+        float invRight = 1f / (float) Math.sqrt(rx * rx + ry * ry + rz * rz);
+        rx *= invRight;
+        ry *= invRight;
+        rz *= invRight;
+
+        // up = right × 前向
+        float upx = ry * fz - rz * fy;
+        float upy = rz * fx - rx * fz;
+        float upz = rx * fy - ry * fx;
+
+        // fromRotationMatrix 的九个分量按列排布：局部 X/Y/Z 的世界像
+        return new Quaternion().fromRotationMatrix(
+                rx, upx, -fx,
+                ry, upy, -fy,
+                rz, upz, -fz);
     }
 
     /**
@@ -1466,7 +1522,8 @@ public class ProjectileManager {
                 if (finalDestroyable != null) {
                     finalDestroyable.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
                     finalDestroyable.oldTransform = finalDestroyable.getTransform();
-                    finalDestroyable.transform = new Transform(finalDestroyable.getPosition(), Quaternion.IDENTITY);
+                    finalDestroyable.transform = new Transform(finalDestroyable.getPosition(),
+                            velocityAttitude(velX[i], velY[i], velZ[i]));
                     finalDestroyable.destroy();
                 }
                 swapRemove(i);

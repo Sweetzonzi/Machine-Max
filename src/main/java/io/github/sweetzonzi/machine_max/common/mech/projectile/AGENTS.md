@@ -102,7 +102,7 @@ int[] typeIndex;               // 投射物类型索引
 - **触发体只在服务端创建**：客户端不建刚体；触发体随 `destroy()` 摘除，因此三条出列路径都收敛到同一个清理点。
 - **碰撞组**：触发体是 `CollisionGroups.PROJECTILE`、`collideWith = NONE`。射线与扫掠查询**不检查碰撞掩码**，可见性由每个调用方自己的组白名单决定。
 - **BallisticsFramework 集成**：使用 `BFDamageApi.hurt()`，命中目标经 `BFDamageApi.resolveHitTarget()` 解析，上下文通过 `BFDamageContext.Builder` 构造。
-- **曳光渲染**：客户端通过 `ClientProjectileRenderer` 读取 SoA 位置数组渲染。
+- **曳光渲染与姿态**：投射物的 `transform` 旋转分量是渲染姿态，由 `ProjectileManager.postTickAndSync()` 每 tick 写成速度方向（局部前向取 `-Z`，与 `getFrontVector()` 一致）；`ClientProjectileRenderer` 从 `DestroyableObject.getWorldPositionMatrix(partialTick)` 同时取起点位置与方向（平移 lerp + 旋转 slerp），方向因此帧间平滑，投射物模型（`ProjectileEntityRenderer`）也随之沿速度指向。拖尾长度取 SoA 当前速率 × `tracer_length`，速率不做插值，助推段线长逐 tick 轻微跳动是已知取舍。
 - **曳光光照**：曳光对周围车体与方块的世界空间光照由屏幕空间后处理承担（`client/render/post/TracerLightEffect`，设计见 `docs/plan/计划中/武器系统-投射物曳光光照设计.md`）。**判据、颜色与几何全部复用既有字段**：只有 `tracer_alpha > 0` 的弹种会照亮，光斑颜色取 `tracer_color`，照射半径按 `external.caliber`（**毫米**）折算 `3 m + 2 cm/mm`（上限 8 m），遮挡容差同理；光照侧唯一的新增可选字段是 `tracer_light_intensity`，弹种 JSON 不必为光照新增任何必填字段。
 - **客户端死条目保留一 tick**：`deadRetained` 让死条目多留一次清理扫描，`ClientProjectileRenderer` 借此画出"出膛即命中销毁"那一发的曳光；保留时长由该标记而非 `lifetime` 决定——`tickAndPreTick()` 与 `clientExtrapolate()` 的寿命递减都被 `alive` 检查挡在死条目之外，死条目的寿命恒定不变，用"寿命已小于上限"作判据的条目会永久留在数组里。
 

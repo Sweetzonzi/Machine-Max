@@ -22,7 +22,10 @@ import org.joml.Vector3f;
  * 投射物曳光渲染器（仅客户端）。
  * <p>
  * 在 {@link RenderLevelStageEvent.Stage#AFTER_TRANSLUCENT_BLOCKS} 阶段绘制射弹运动方向线段。
- * 通过 {@link DestroyableObject#getWorldPositionMatrix} 获取帧间插值位置，
+ * 起点位置与拖尾方向都取自 {@link DestroyableObject#getWorldPositionMatrix}（平移 lerp + 旋转
+ * slerp）：投射物的姿态由 {@code ProjectileManager} 写成速度方向，因此方向与位置同源、同
+ * {@code partialTick}，制导弹大幅改向时不会逐 tick 跳变。拖尾长度另取 SoA 当前速率乘
+ * {@code tracer_length}，速率不做插值。
  * 颜色和透明度取自 JSON 配置的 {@code tracer_color / tracer_alpha}。
  */
 public class ClientProjectileRenderer extends VisualEffectRenderer {
@@ -56,6 +59,7 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
 
         // 复用 Vector3f 避免热路径重复分配
         Vector3f tmpPos = new Vector3f();
+        Vector3f tmpDir = new Vector3f();
 
         for (int i = 0; i < pm.count; i++) {
             // 不检查 alive：已死的条目由 ProjectileManager.deadRetained 在数组里多留一次清理扫描，
@@ -86,14 +90,18 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
             // 按投射物类型配置获取线宽和拖尾长度
             var buffer = bufferSource.getBuffer(MMRenderTypes.tracerLine(type.getTracerWidth()));
 
-            // 拖尾方向：使用 SoA 速度矢量 × 可配置长度乘子
-            float dirX = pm.velX[i] * (float) type.getTracerLength();
-            float dirY = pm.velY[i] * (float) type.getTracerLength();
-            float dirZ = pm.velZ[i] * (float) type.getTracerLength();
+            // 拖尾方向：取帧间插值后的姿态（局部前向 -Z），与起点位置同源、同 partialTick
+            worldMatrix.transformDirection(tmpDir.set(0f, 0f, -1f));
 
-            float endX = tmpPos.x + dirX;
-            float endY = tmpPos.y + dirY;
-            float endZ = tmpPos.z + dirZ;
+            // 拖尾长度：速率仍取 SoA 当前值，不做插值。助推段速率逐 tick 变化会让线长轻微
+            // 跳动，这是"方向平滑优先"下明确接受的取舍
+            float speed = (float) Math.sqrt(
+                    pm.velX[i] * pm.velX[i] + pm.velY[i] * pm.velY[i] + pm.velZ[i] * pm.velZ[i]);
+            float length = speed * (float) type.getTracerLength();
+
+            float endX = tmpPos.x + tmpDir.x * length;
+            float endY = tmpPos.y + tmpDir.y * length;
+            float endZ = tmpPos.z + tmpDir.z * length;
 
             buffer.addVertex(poseStack.last().pose(), tmpPos.x, tmpPos.y, tmpPos.z)
                     .setColor(r, g, b, a);
