@@ -51,7 +51,9 @@
   "visual": {
     "tracer_color": [255, 170, 60],
     "tracer_alpha": 255,
-    "tracer_length": 1.05
+    "tracer_length": 1.05,
+    "model": "machine_max:9m133.geo",
+    "texture": "machine_max:textures/projectile/9m133.png"
   },
   "sounds": {
     "fire_sounds": {

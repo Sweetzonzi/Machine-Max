@@ -53,6 +53,7 @@
 | [履带系统-物理实现设计文档](计划中/履带系统-物理实现设计文档.md) | 草案 v5.4；代码中尚无 `TrackLink` / `TrackAttr` |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差改为按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |
+| [武器系统-投射物模型渲染设计](计划中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 已能解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放、LOD 距离与投射物动画驱动未实现 |
 | [渲染-屏幕空间光照通用化设计](计划中/渲染-屏幕空间光照通用化设计.md) | 设计待审阅；代码中尚无 `ScreenSpaceLightEffect` / `ScreenSpaceLightBuffer` / `ScreenSpaceLightSource`，现有 `TracerLightEffect` 为曳光专用的一条链 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext` |

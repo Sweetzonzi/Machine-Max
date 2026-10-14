@@ -410,12 +410,23 @@ public class BallisticProjectile extends DestroyableObject
 
     private ModelIndex defaultModelIndex;
 
+    /**
+     * 模型索引：优先取弹种配置的 {@code visual.model}，缺省时按弹种注册键查找同名模型。
+     * <p>
+     * 结果缓存：{@link ModelController} 构造时就会读本方法，而它只在客户端渲染路径上被调用。
+     * 两条路径取到同一个 {@link ModelIndex} 时，模型数据也来自同一份
+     * {@code OModel}（由内容包的 {@code models/projectile/} 加载）。
+     */
     @Override
     public @NotNull ModelIndex getDefaultModelIndex() {
         if (defaultModelIndex == null) {
-            ResourceLocation key = projectileType.getRegistryKey();
-            defaultModelIndex = new ModelIndex("projectile", key != null ? key
-                    : ResourceLocation.fromNamespaceAndPath("machine_max", "ballistic_default"));
+            ResourceLocation model = projectileType.getModel().orElse(null);
+            if (model == null) {
+                ResourceLocation key = projectileType.getRegistryKey();
+                model = key != null ? key
+                        : ResourceLocation.fromNamespaceAndPath("machine_max", "ballistic_default");
+            }
+            defaultModelIndex = new ModelIndex("projectile", model);
         }
         return defaultModelIndex;
     }
@@ -431,7 +442,10 @@ public class BallisticProjectile extends DestroyableObject
     @Override
     public @NotNull ModelController getModelController() {
         if (modelController == null) {
+            // ModelController 构造时即读 getDefaultModelIndex()；贴图只在弹种显式配置时覆盖，
+            // 缺省由 ModelInstance 按模型名推导（textures/projectile/<模型名>.png）
             modelController = new ModelController(this);
+            projectileType.getTexture().ifPresent(modelController::setTextureLocation);
         }
         return modelController;
     }

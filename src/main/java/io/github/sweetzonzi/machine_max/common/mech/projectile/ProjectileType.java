@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 投射物类型数据的抽象基类。
@@ -125,6 +126,23 @@ public abstract class ProjectileType {
     public double getTracerLength() { return visual.tracerLength(); }
     public double getTracerLightIntensity() { return visual.tracerLightIntensity(); }
 
+    /**
+     * 获取弹体模型名。
+     * <p>
+     * 未配置时回退为按弹种注册键查找同名模型，回退逻辑在
+     * {@link BallisticProjectile#getDefaultModelIndex()}。
+     *
+     * @return 模型名；{@link Optional#empty()} 表示未配置
+     */
+    public Optional<ResourceLocation> getModel() { return visual.model(); }
+
+    /**
+     * 获取模型贴图全路径。
+     *
+     * @return 贴图路径；{@link Optional#empty()} 表示未配置，由模型名推导
+     */
+    public Optional<ResourceLocation> getTexture() { return visual.texture(); }
+
     // -- 音效委托（→ ProjectileSoundAttr） --
 
     /** 获取音效属性 */
@@ -226,6 +244,11 @@ public abstract class ProjectileType {
      * <p>
      * 整个 {@code visual} 对象在 JSON 中是可选的，缺失时使用 {@link #DEFAULT}。
      * 音效相关字段已独立为 {@link ProjectileSoundAttr}。
+     * <p>
+     * 曳光与模型是两条各自独立的呈现通路：{@code tracer_*} 一组的载体是 {@code ClientProjectileRenderer}
+     * 画出的线段，{@link #model} / {@link #texture} 一组的载体是 {@code ProjectileEntityRenderer}
+     * 遍历骨骼画出的立体弹体。两者可以同时存在，也可以各自单独存在。
+     * <p>
      * 未来可扩展字段：枪口闪光（muzzle_flash）、命中粒子（impact_particle）、弹道烟迹（ribbon_trail）等。
      */
     public record VisualProperties(
@@ -254,14 +277,31 @@ public abstract class ProjectileType {
          */
         double tracerLightIntensity,
         /** 开火粒子效果ID列表，在客户端依次播放枪口火焰/炮口焰等效果 */
-        List<ResourceLocation> fireParticles
+        List<ResourceLocation> fireParticles,
+        /**
+         * 弹体模型名 — {@code models/projectile/} 下的文件名去掉 {@code .json}，如
+         * {@code machine_max:9m133.geo}。
+         * <p>
+         * 缺省（{@link Optional#empty()}）时回退到"按弹种注册键查找同名模型"，因此内容包把模型文件
+         * 命名成弹种名即可零配置接入；显式配置则可以让多个弹种共用一个模型，或指向任意名字的模型。
+         */
+        Optional<ResourceLocation> model,
+        /**
+         * 模型贴图全路径，如 {@code machine_max:textures/projectile/9m133.png}。
+         * <p>
+         * 缺省时按 {@code textures/projectile/<model 的路径>.png} 推导。推导只把模型名里的
+         * {@code .geo} 当作普通名字的一部分，因此贴图文件名与模型名不一致时必须显式配置本字段。
+         */
+        Optional<ResourceLocation> texture
     ) {
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
             1.0,
-            List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium"))
+            List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")),
+            Optional.empty(),
+            Optional.empty()
         );
 
         public static final Codec<VisualProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -276,7 +316,11 @@ public abstract class ProjectileType {
             Codec.DOUBLE.optionalFieldOf("tracer_light_intensity", DEFAULT.tracerLightIntensity)
                 .forGetter(VisualProperties::tracerLightIntensity),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)
-                .forGetter(VisualProperties::fireParticles)
+                .forGetter(VisualProperties::fireParticles),
+            ResourceLocation.CODEC.optionalFieldOf("model")
+                .forGetter(VisualProperties::model),
+            ResourceLocation.CODEC.optionalFieldOf("texture")
+                .forGetter(VisualProperties::texture)
         ).apply(instance, VisualProperties::new));
     }
 
