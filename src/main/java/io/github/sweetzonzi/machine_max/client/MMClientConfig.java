@@ -45,6 +45,14 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue TRACER_LIGHT_ENABLED;
     /** 投射物曳光光照强度倍率 */
     private static final ModConfigSpec.DoubleValue TRACER_LIGHT_INTENSITY;
+    /** 屏幕空间表面光照总开关（曳光、爆炸火光、车灯共用一个开关） */
+    private static final ModConfigSpec.BooleanValue SCREEN_SPACE_LIGHT_ENABLED;
+    /** 屏幕空间表面光照全局强度倍率，在各类别倍率之外再乘一次 */
+    private static final ModConfigSpec.DoubleValue SCREEN_SPACE_LIGHT_INTENSITY;
+    /** 爆炸火光类别开关 */
+    private static final ModConfigSpec.BooleanValue EXPLOSION_LIGHT_ENABLED;
+    /** 爆炸火光类别强度倍率 */
+    private static final ModConfigSpec.DoubleValue EXPLOSION_LIGHT_INTENSITY;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
@@ -127,6 +135,22 @@ public class MMClientConfig {
         TRACER_LIGHT_INTENSITY = builder
                 .comment("Projectile tracer light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
                 .defineInRange("tracer_light_intensity", 1.0, 0.0, 2.0);
+
+        SCREEN_SPACE_LIGHT_ENABLED = builder
+                .comment("Master switch for every screen-space surface light (tracer, explosion, vehicle).\nTurning it off skips all light collection and the lighting pass; transient light lifetimes still advance.\nDefault: true")
+                .define("screen_space_light_enabled", true);
+
+        SCREEN_SPACE_LIGHT_INTENSITY = builder
+                .comment("Global screen-space lighting intensity multiplier, applied once per light on top of its category multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
+                .defineInRange("screen_space_light_intensity", 1.0, 0.0, 2.0);
+
+        EXPLOSION_LIGHT_ENABLED = builder
+                .comment("Enable explosion light (screen-space lighting cast by explosion flashes onto nearby surfaces).\nDefault: true")
+                .define("explosion_light_enabled", true);
+
+        EXPLOSION_LIGHT_INTENSITY = builder
+                .comment("Explosion light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
+                .defineInRange("explosion_light_intensity", 1.0, 0.0, 2.0);
 
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
@@ -484,6 +508,42 @@ public class MMClientConfig {
      */
     public static float getTracerLightIntensity() {
         return TRACER_LIGHT_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取屏幕空间表面光照的总开关状态。
+     *
+     * @return true 表示启用屏幕空间表面光照
+     */
+    public static boolean isScreenSpaceLightEnabled() {
+        return SCREEN_SPACE_LIGHT_ENABLED.get();
+    }
+
+    /**
+     * 获取屏幕空间表面光照的全局强度倍率。
+     *
+     * @return [0, 2] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getScreenSpaceLightIntensity() {
+        return SCREEN_SPACE_LIGHT_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取爆炸火光类别开关状态。
+     *
+     * @return true 表示启用爆炸火光
+     */
+    public static boolean isExplosionLightEnabled() {
+        return EXPLOSION_LIGHT_ENABLED.get();
+    }
+
+    /**
+     * 获取爆炸火光类别强度倍率。
+     *
+     * @return [0, 2] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getExplosionLightIntensity() {
+        return EXPLOSION_LIGHT_INTENSITY.get().floatValue();
     }
 }
 

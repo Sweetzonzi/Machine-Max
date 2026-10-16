@@ -15,6 +15,7 @@
         { "name": "LightView",       "type": "float",     "count": 64, "values": [0.0] },
         { "name": "LightColor",      "type": "float",     "count": 64, "values": [0.0] },
         { "name": "LightTol",        "type": "float",     "count": 16, "values": [0.0] },
+        { "name": "LightOcclusion",  "type": "float",     "count": 16, "values": [0.0] },
         { "name": "ProjMat",         "type": "matrix4x4", "count": 16, "values": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
         { "name": "OutSize",         "type": "float",     "count": 2,  "values": [1, 1] }
     ]

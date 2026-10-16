@@ -5,9 +5,9 @@
 // 每像素遍历光源数组：重建本像素的视空间表面点，按世界空间距离做有限支撑衰减，
 // 再用 screen 混合叠加到已画好的画面上。
 //
-// 本文件是通用光照链的 P1 编码：光源表里的条目按球光（POINT）打包，
-// 遮挡策略只接入 NONE 与 SOURCE_DEPTH（S2）。锥光（SPOT）与 S3（SCREEN_RAY）
-// 在光源表提交处被报告为不支持，不会走到这里——它们的字段与分支在 P5 增加。
+// 本文件是通用光照链的当前编码：光源表里的条目按球光（POINT）打包，遮挡策略由 LightOcclusion
+// 逐盏选择 NONE 或 SOURCE_DEPTH（S2）。锥光（SPOT）与 S3（SCREEN_RAY）在光源表提交处被报告为
+// 不支持，不会走到这里——它们的字段与分支在 P5 增加。
 //
 // 两条包围剔除缺一不可：
 //   perp2 > R*R  视线到光心的垂距超过 R —— 必要，视线完全不穿过球时球内任何点都不在此视线上
@@ -32,6 +32,7 @@ uniform float OcclusionTolRel;      // 遮挡容差的相对分量
 uniform float LightView[64];        // 每槽 4 个：视空间光心 xyz、世界半径 R(m)
 uniform float LightColor[64];       // 每槽 4 个：颜色 rgb、强度
 uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分量(m)，由来源折算
+uniform float LightOcclusion[16];   // 每槽 1 个：遮挡策略，0 = 不做遮挡判定，1 = 在光心投影处采一次深度（S2）
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -80,8 +81,10 @@ void main() {
         // 光源级遮挡：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
         // 自身的模型会把光源剔掉、光照凭空消失，太大则近处遮挡物漏光。
+        // 是否执行本判定由光源表逐盏给出：爆炸火光用“不判定”（它的光心可能不在视野内，
+        // 也可能被起爆自身的粒子与烟尘挡住，用光心深度判定会整盏误杀），曳光用 S2。
         float zc = -C.z;
-        if (zc > NEAR_Z) {
+        if (LightOcclusion[i] > 0.5 && zc > NEAR_Z) {
             vec2 lightPx = vec2(OutSize.x * 0.5 + FocalPx * C.x / zc,
                                 OutSize.y * 0.5 + FocalPx * C.y / zc);   // y 同样自下而上
             if (all(greaterThanEqual(lightPx, vec2(0.0))) &&

@@ -15,9 +15,15 @@ import java.util.Map;
  * → {@link #endFrame}。槽位选择规则是 {@code (来源优先级升序, 投影半径降序)}，同键先到先留；
  * 优先级不是保留名额，高优先级来源占满容量时低优先级来源会被全部排除（设计文档 §5.2）。</p>
  *
- * <p><b>P1 的公共剔除只做有限性、非负与零半径/零强度。</b>曳光的光心背后、渲染距离与屏幕投影
- * 下限三条剔除留在 {@link ProjectileTracerLightSource}：容量表里的候选因此与拆出通用通路之前的
- * 曳光链逐一对应。影响体距离与视锥剔除在 P2 随火光/车灯来源进入本类（设计文档 §4.3）。</p>
+ * <p><b>公共剔除做数值校验与影响体剔除。</b>数值侧是有限性、非负、零半径/零强度；几何侧按光源的
+ * <b>影响球</b>判定——光心距离超过渲染距离加半径、整个球位于近裁面之后、球与视锥不相交，三条之一
+ * 成立才剔除。光心在相机背后或光心投影离屏本身都不构成剔除理由：球的一部分仍可能落在可见表面上，
+ * 而这类光源（爆炸火光）正是曳光不需要处理的形态。据此本类不采用“背后光心即丢弃”这条不区分
+ * 来源的规则（设计文档 §4.3）。</p>
+ *
+ * <p>来源特有的剔除留在来源里：曳光的光心背后、渲染距离与屏幕投影下限三条仍由
+ * {@link ProjectileTracerLightSource} 执行，因此该来源的候选集与拆出通用通路之前逐一对应
+ * （设计文档 §4.3、§7）。</p>
  *
  * <p><b>P1 的阶段能力在提交处显式报告</b>：锥光（{@link ScreenSpaceLight.Shape#SPOT}）与 S3
  * （{@link ScreenSpaceLight.OcclusionMode#SCREEN_RAY}）返回 {@link SubmitResult#UNSUPPORTED}，
@@ -33,7 +39,7 @@ public final class ScreenSpaceLightBuffer {
         ACCEPTED,
         /** 字段非法：NaN/Infinity、负值、越界颜色、锥角关系错误，或未设置就提交 */
         INVALID,
-        /** 数值合法但不产生贡献：零半径或零强度 */
+        /** 数值合法但不产生贡献：零半径、零强度，或影响球被距离/近裁面/视锥剔除 */
         CULLED,
         /** 形状或遮挡策略在当前阶段没有 GPU 编码 */
         UNSUPPORTED,
@@ -43,7 +49,7 @@ public final class ScreenSpaceLightBuffer {
 
     /** 容量触顶汇总日志的最小间隔（ms）；短暂不触顶不会绕过这个限制 */
     private static final long CAPACITY_LOG_INTERVAL_MS = 5_000L;
-    /** 近裁面（m）：光心在它之后时改用保守评分，避免投影半径成为 Infinity */
+    /** 近裁面（m）：影响球与它相交时改用保守评分，避免投影半径成为 Infinity */
     private static final float NEAR_PLANE_M = 0.05f;
     /** 锥光方向被视为单位向量时允许的偏差（对 lengthSquared 的比较） */
     private static final float UNIT_DIRECTION_TOLERANCE = 1e-3f;
@@ -55,6 +61,8 @@ public final class ScreenSpaceLightBuffer {
     private final float[] colorIntensity;
     /** 每槽 1 个：S2 的绝对容差（m） */
     private final float[] sourceDepthTolerance;
+    /** 每槽 1 个：遮挡策略编码，{@code 0} = 不做遮挡判定，{@code 1} = 在光心投影处采一次深度（S2） */
+    private final float[] occlusion;
     /** 槽内条目的投影半径（px），只用于排序与“超限时置换最弱一个” */
     private final float[] sortRadiusPx;
     /** 槽内条目的来源优先级，只用于容量比较 */
@@ -66,6 +74,10 @@ public final class ScreenSpaceLightBuffer {
     private float focalPx = 1f;
     private float globalIntensity = 1f;
     private float screenDiagonal = 1f;
+    private float renderDistance = 0f;
+    /** 投影矩阵的 m00 / m11 绝对值，只用于构造视锥侧平面；0 表示投影退化 */
+    private float projectionM00 = 0f;
+    private float projectionM11 = 0f;
     private boolean capped;
     private boolean cappedLastFrame;
     private long lastCapacityLogMs;
@@ -86,15 +98,16 @@ public final class ScreenSpaceLightBuffer {
         this.positionRadius = new float[capacity * 4];
         this.colorIntensity = new float[capacity * 4];
         this.sourceDepthTolerance = new float[capacity];
+        this.occlusion = new float[capacity];
         this.sortRadiusPx = new float[capacity];
         this.slotPriority = new int[capacity];
         this.slotSourceId = new ResourceLocation[capacity];
     }
 
     /**
-     * 开始一帧：清空槽位、重置逐来源的本帧计数。
+     * 开始一帧：清空槽位、重置逐来源的本帧计数，并冻结本帧的投影与渲染距离。
      *
-     * @param frame           本帧的只读上下文，提供像素焦距与视口尺寸
+     * @param frame           本帧的只读上下文，提供像素焦距、视口尺寸、投影矩阵与渲染距离
      * @param globalIntensity 全局强度倍率，由本类在写入槽位时乘且只乘一次
      */
     public void beginFrame(LightFrameContext frame, float globalIntensity) {
@@ -106,6 +119,9 @@ public final class ScreenSpaceLightBuffer {
         double width = frame.viewportWidth();
         double height = frame.viewportHeight();
         this.screenDiagonal = (float) Math.sqrt(width * width + height * height);
+        this.renderDistance = frame.renderDistance();
+        this.projectionM00 = Math.abs(frame.projectionMatrix().m00());
+        this.projectionM11 = Math.abs(frame.projectionMatrix().m11());
         for (SourceStats stats : statsBySource.values()) stats.resetFrame();
     }
 
@@ -186,6 +202,11 @@ public final class ScreenSpaceLightBuffer {
         return sourceDepthTolerance;
     }
 
+    /** @return 扁平数组 {@code [capacity]}：每槽遮挡策略编码，0 = 不做遮挡判定，1 = S2 */
+    public float[] occlusion() {
+        return occlusion;
+    }
+
     /**
      * 清空诊断状态：关闭效果、0 候选与退出世界时调用，避免上一帧的触顶状态漏进下一段会话。
      */
@@ -237,6 +258,10 @@ public final class ScreenSpaceLightBuffer {
             stats.culled++;
             return SubmitResult.CULLED;
         }
+        if (isOutsideInfluenceVolume(position, radius)) {
+            stats.culled++;
+            return SubmitResult.CULLED;
+        }
 
         stats.candidates++;
         float sortPx = sortRadiusPx(position, radius);
@@ -272,19 +297,74 @@ public final class ScreenSpaceLightBuffer {
         colorIntensity[base + 2] = color.z;
         colorIntensity[base + 3] = light.intensity() * globalIntensity;
         sourceDepthTolerance[slot] = light.sourceDepthTolerance();
+        occlusion[slot] = encodeOcclusion(light.occlusionMode());
         sortRadiusPx[slot] = sortPx;
         slotPriority[slot] = light.priority();
         slotSourceId[slot] = light.sourceId();
     }
 
     /**
-     * 排序半径：前方且远离近裁面时用投影半径，近裁面相交或光心在相机背后时用有限的屏幕对角线
+     * 排序半径：影响球不与近裁面相交时用投影半径；相交或光心在相机背后时用有限的屏幕对角线
      * 作为保守评分。屏占比公式在除数接近 0 时会给出 Infinity，那样任何比较都失去意义。
      */
     private float sortRadiusPx(Vector3f position, float radius) {
         float frontDepth = -position.z;
-        if (frontDepth > NEAR_PLANE_M) return focalPx * radius / frontDepth;
+        if (frontDepth - radius > NEAR_PLANE_M) return focalPx * radius / frontDepth;
         return screenDiagonal;
+    }
+
+    /**
+     * 影响体剔除：距离、近裁面与视锥三条都按影响球判定（设计文档 §4.3）。
+     *
+     * <p>三条的保守方向一致——只在“整个球都不可能贡献”时剔除，球的一部分仍可能照亮可见表面时保留。
+     * 因此光心在相机背后、光心投影离屏都不是剔除理由：爆炸火光的位置经常正好落在这些区域。</p>
+     *
+     * @param position 视空间光心（米）
+     * @param radius   影响半径（m），调用方保证非负
+     * @return 整个影响球都不可能对可见像素产生贡献时为 true
+     */
+    private boolean isOutsideInfluenceVolume(Vector3f position, float radius) {
+        // 距离：球上离相机最近的点也在渲染距离之外
+        if (position.length() - radius > renderDistance) return true;
+        // 近裁面：球的最大前向深度 = -z + R，连它都不到近裁面时整球在相机与近裁面之间
+        if (-position.z + radius < NEAR_PLANE_M) return true;
+        return !intersectsFrustum(position, radius);
+    }
+
+    /**
+     * 影响球是否与视锥相交。
+     *
+     * <p>侧平面由投影矩阵的 {@code m00} / {@code m11} 直接给出：透视投影下视空间点
+     * {@code (x, y, z)} 的裁剪坐标满足 {@code x_clip = m00·x}、{@code w_clip = -z}，
+     * 于是"在左平面内侧"即 {@code m00·x ≥ z}，对应平面法线 {@code (m00, 0, -1)}。这样取平面
+     * 自动跟随 FOV、视口比例与任何改变投影的状态，不需要额外的相机参数。</p>
+     *
+     * <p>球完全在某个平面外侧的判据是 {@code n·C < -R·|n|}（球在该半空间的最大值仍小于 0）。
+     * 用未归一化的法线比较，省掉每次开方；投影退化时不做视锥剔除，退回保守保留。</p>
+     */
+    private boolean intersectsFrustum(Vector3f position, float radius) {
+        if (projectionM00 <= 0f || projectionM11 <= 0f) return true;
+        return !outsidePlane(projectionM00, 0f, -1f, position, radius)
+                && !outsidePlane(-projectionM00, 0f, -1f, position, radius)
+                && !outsidePlane(0f, projectionM11, -1f, position, radius)
+                && !outsidePlane(0f, -projectionM11, -1f, position, radius);
+    }
+
+    /** @return 影响球是否完全位于半空间 {@code n·p ≥ 0} 之外 */
+    private static boolean outsidePlane(float nx, float ny, float nz, Vector3f position, float radius) {
+        float norm = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        float center = nx * position.x + ny * position.y + nz * position.z;
+        return center < -radius * norm;
+    }
+
+    /**
+     * 遮挡策略的 GPU 编码：{@code 0} 不做遮挡判定，{@code 1} 在光心投影处采一次深度（S2）。
+     *
+     * <p>只有 {@code NONE} 与 {@code SOURCE_DEPTH} 会走到这里：{@code SCREEN_RAY} 在
+     * {@link #commit} 里已按 {@link SubmitResult#UNSUPPORTED} 拒绝，锥光同理。</p>
+     */
+    private static float encodeOcclusion(ScreenSpaceLight.OcclusionMode mode) {
+        return mode == ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH ? 1f : 0f;
     }
 
     /** @return 最弱的槽：优先级数值最大者优先，同优先级取投影半径最小者 */

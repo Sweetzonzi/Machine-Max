@@ -4,6 +4,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.Uniform;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.mixin.PostChainAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
@@ -24,7 +25,11 @@ import java.util.List;
  * <p>本类不认识任何具体光源：它按构造期固定的来源列表逐帧调用
  * {@link ScreenSpaceLightSource#collect}，把候选交给 {@link ScreenSpaceLightBuffer}，
  * 再把光源表的扁平数组一次性上传。逐光源的语义与剔除在各自的来源里
- * （P1 只有 {@link ProjectileTracerLightSource}）。</p>
+ * （{@link ProjectileTracerLightSource}、{@link ExplosionLightSource}）。</p>
+ *
+ * <p>总开关 {@code screen_space_light_enabled} 关闭时本类不采集任何来源、不加载链；总倍率
+ * {@code screen_space_light_intensity} 交给光源表在写入槽位时统一乘一次。类别开关与类别倍率
+ * 在各自的来源里生效。</p>
  *
  * <p>每帧在 {@code AFTER_LEVEL} 执行：那时世界几何（含实体、方块实体、粒子、云）已全部画完、
  * 深度完整，而第一人称手部还没画。深度快照在本方法内、在任何以 {@code minecraft:main} 为输出
@@ -39,7 +44,7 @@ public class ScreenSpaceLightEffect {
 
     // ===== 数值策略常量（改这些不需要重编着色器）=====
 
-    /** P1 的槽位数：与链 JSON 的 {@code LightView[64]} / {@code LightColor[64]} / {@code LightTol[16]} 对齐 */
+    /** 槽位数：与链 JSON 的 {@code LightView[64]} / {@code LightColor[64]} / {@code LightTol[16]} / {@code LightOcclusion[16]} 对齐 */
     private static final int CAPACITY = 16;
 
     /**
@@ -49,13 +54,6 @@ public class ScreenSpaceLightEffect {
      * 与之成比例的余量。它与具体来源无关，所以留在链这一层，不逐盏上传。</p>
      */
     private static final float SOURCE_DEPTH_RELATIVE_TOLERANCE = 0.002f;
-
-    /**
-     * P1 的全局强度倍率：通用总倍率（{@code screen_space_light_intensity}）在 P2 接入配置，
-     * 这里固定 1。每条光源的最终强度 = 内容强度 × 时间包络 × 类别倍率（来源内乘）× 全局倍率
-     * （光源表统一乘一次）。
-     */
-    private static final float GLOBAL_INTENSITY = 1.0f;
 
     /** 深度两点标定的近点前向深度（m） */
     private static final float CALIB_Z_NEAR = 1.0f;
@@ -100,6 +98,11 @@ public class ScreenSpaceLightEffect {
     private Uniform lightColorUniform;
     @Nullable
     private Uniform lightTolUniform;
+    @Nullable
+    private Uniform lightOcclusionUniform;
+
+    /** 上一帧是否因总开关关闭而跳过：用于在进入关闭状态的那一帧清一次诊断 */
+    private boolean disabledLastFrame;
 
     /**
      * @param sources 光源来源列表，构造期复制；列表顺序只影响同键时的先到先留，不表达优先级
@@ -119,6 +122,17 @@ public class ScreenSpaceLightEffect {
      */
     public void render(Matrix4f modelViewMatrix, Matrix4f projectionMatrix, Vec3 cameraPos,
                        Level level, float partialTick) {
+        if (!MMClientConfig.isScreenSpaceLightEnabled()) {
+            // 总开关关闭：不采集、不加载链、不提交 pass。进入关闭状态的那一帧清一次诊断计数，
+            // 使重新打开时不沿用关闭前的触顶状态；瞬态光源的年龄由游戏时钟推导，照常推进。
+            if (!disabledLastFrame) {
+                disabledLastFrame = true;
+                buffer.resetDiagnostics();
+            }
+            return;
+        }
+        disabledLastFrame = false;
+
         Minecraft mc = Minecraft.getInstance();
         int width = mc.getWindow().getWidth();
         int height = mc.getWindow().getHeight();
@@ -127,7 +141,7 @@ public class ScreenSpaceLightEffect {
 
         frame.update(level, cameraPos, modelViewMatrix, projectionMatrix,
                 width, height, focalPx, renderDistance, partialTick);
-        buffer.beginFrame(frame, GLOBAL_INTENSITY);
+        buffer.beginFrame(frame, MMClientConfig.getScreenSpaceLightIntensity());
         for (ScreenSpaceLightSource source : sources) {
             buffer.beginSource(source);
             source.collect(frame, buffer);
@@ -140,7 +154,10 @@ public class ScreenSpaceLightEffect {
         if (count == 0) return;
 
         if (!ensureLoaded()) return;
-        if (lightViewUniform == null || lightColorUniform == null || lightTolUniform == null) return;
+        if (lightViewUniform == null || lightColorUniform == null
+                || lightTolUniform == null || lightOcclusionUniform == null) {
+            return;
+        }
 
         if (width != cachedWidth || height != cachedHeight) {
             cachedWidth = width;
@@ -161,6 +178,7 @@ public class ScreenSpaceLightEffect {
         lightViewUniform.set(buffer.positionRadius());
         lightColorUniform.set(buffer.colorIntensity());
         lightTolUniform.set(buffer.sourceDepthTolerance());
+        lightOcclusionUniform.set(buffer.occlusion());
 
         chain.process(partialTick);
         mc.getMainRenderTarget().bindWrite(true);
@@ -233,15 +251,18 @@ public class ScreenSpaceLightEffect {
         lightViewUniform = null;
         lightColorUniform = null;
         lightTolUniform = null;
+        lightOcclusionUniform = null;
         for (PostPass pass : ((PostChainAccessor) newChain).machineMax$getPasses()) {
             if (!PASS_NAME.equals(pass.getName())) continue;
             lightViewUniform = pass.getEffect().getUniform("LightView");
             lightColorUniform = pass.getEffect().getUniform("LightColor");
             lightTolUniform = pass.getEffect().getUniform("LightTol");
+            lightOcclusionUniform = pass.getEffect().getUniform("LightOcclusion");
         }
-        if (lightViewUniform == null || lightColorUniform == null || lightTolUniform == null) {
+        if (lightViewUniform == null || lightColorUniform == null
+                || lightTolUniform == null || lightOcclusionUniform == null) {
             MachineMax.LOGGER.error(
-                    "屏幕空间光照：pass {} 未声明数组 uniform LightView/LightColor/LightTol，光照不会生效",
+                    "屏幕空间光照：pass {} 未声明数组 uniform LightView/LightColor/LightTol/LightOcclusion，光照不会生效",
                     PASS_NAME);
         }
     }
@@ -254,24 +275,31 @@ public class ScreenSpaceLightEffect {
      * 而不是让每一帧的上传静默失效。</p>
      */
     private void verifyArrayCounts() {
-        if (lightViewUniform == null || lightColorUniform == null || lightTolUniform == null) return;
+        if (lightViewUniform == null || lightColorUniform == null
+                || lightTolUniform == null || lightOcclusionUniform == null) {
+            return;
+        }
         int viewCount = lightViewUniform.getCount();
         int colorCount = lightColorUniform.getCount();
         int tolCount = lightTolUniform.getCount();
+        int occlusionCount = lightOcclusionUniform.getCount();
         if (viewCount == buffer.positionRadius().length
                 && colorCount == buffer.colorIntensity().length
-                && tolCount == buffer.sourceDepthTolerance().length) {
+                && tolCount == buffer.sourceDepthTolerance().length
+                && occlusionCount == buffer.occlusion().length) {
             return;
         }
         MachineMax.LOGGER.error(
                 "屏幕空间光照：数组 uniform 的 count 与 Java 数组长度不一致"
-                        + "（LightView {}/{}、LightColor {}/{}、LightTol {}/{}），光照不会生效",
+                        + "（LightView {}/{}、LightColor {}/{}、LightTol {}/{}、LightOcclusion {}/{}），光照不会生效",
                 viewCount, buffer.positionRadius().length,
                 colorCount, buffer.colorIntensity().length,
-                tolCount, buffer.sourceDepthTolerance().length);
+                tolCount, buffer.sourceDepthTolerance().length,
+                occlusionCount, buffer.occlusion().length);
         lightViewUniform = null;
         lightColorUniform = null;
         lightTolUniform = null;
+        lightOcclusionUniform = null;
     }
 
     /**
@@ -326,12 +354,14 @@ public class ScreenSpaceLightEffect {
         lightViewUniform = null;
         lightColorUniform = null;
         lightTolUniform = null;
+        lightOcclusionUniform = null;
         worldDepth = null;
         worldDepthFormatChecked = false;
         sizeMismatchLogged = false;
         loaded = false;
         cachedWidth = -1;
         cachedHeight = -1;
+        disabledLastFrame = false;
         buffer.resetDiagnostics();
     }
 }

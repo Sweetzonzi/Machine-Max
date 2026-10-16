@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>客户端凭这三项即可完整重建射线方向集与波前半径（年龄各自从 0 起算），
  * <b>不逐条同步射线</b>，也不在客户端建立逻辑实例。</p>
+ *
+ * <p>处理时登记三样客户端表现：波前条目（{@link BlastFrontVisual}）、屏幕空间火光
+ * （{@link ExplosionManager#spawnLight}，按自己寿命独立结束）与起爆一次性效果（粒子与音效）。</p>
  */
 public record ExplosionDetonatePayload(
         ResourceKey<Level> dimension,
@@ -67,7 +70,10 @@ public record ExplosionDetonatePayload(
             return;
         }
         // 只建立表现条目，不建逻辑实例
-        ExplosionManager.get(level).addVisual(new BlastFrontVisual(payload.origin(), payload.params(), payload.seed()));
+        ExplosionManager manager = ExplosionManager.get(level);
+        manager.addVisual(new BlastFrontVisual(payload.origin(), payload.params(), payload.seed()));
+        // 屏幕空间火光：与波前独立计时，由客户端火光状态按自己的寿命结束
+        manager.spawnLight(payload.origin(), payload.params());
         // 起爆一次性表现：粒子 + 传播音效
         BlastDetonationEffects.playOnDetonate(level, payload.origin(), payload.params());
     }

@@ -49,6 +49,10 @@ import java.util.List;
  *                        用它构造 {@code DamageSource}，因此它决定该次爆炸伤害落入
  *                        原版与本项目的哪些按类型分派的行为。
  *                        <b>它不参与网络编解码</b>：客户端只用参数集重建表现，不施加伤害。
+ * @param light           本次爆炸的客户端火光参数（可选子对象 {@code light}），默认
+ *                        {@link ExplosionLightParams#DEFAULT}。它只影响客户端的屏幕空间光照表现，
+ *                        不改变伤害、冲量、波前速度、起火与粒子；<b>它参与网络编解码</b>，
+ *                        客户端用服务端解析后的值，不重新读内容包。
  */
 public record ExplosionParams(
         float basePenetration,
@@ -62,7 +66,8 @@ public record ExplosionParams(
         boolean causesFire,
         List<ResourceLocation> particles,
         float particleScale,
-        ResourceKey<DamageType> damageType
+        ResourceKey<DamageType> damageType,
+        ExplosionLightParams light
 ) {
 
     /**
@@ -94,7 +99,9 @@ public record ExplosionParams(
                     .forGetter(ExplosionParams::particles),
             Codec.FLOAT.optionalFieldOf("particle_scale", 1.0f).forGetter(ExplosionParams::particleScale),
             ResourceKey.codec(Registries.DAMAGE_TYPE).optionalFieldOf("damage_type", DEFAULT_DAMAGE_TYPE)
-                    .forGetter(ExplosionParams::damageType)
+                    .forGetter(ExplosionParams::damageType),
+            ExplosionLightParams.CODEC.optionalFieldOf("light", ExplosionLightParams.DEFAULT)
+                    .forGetter(ExplosionParams::light)
     ).apply(instance, ExplosionParams::new));
 
     /** JSON Codec（由 {@link #MAP_CODEC} 派生），供内容包加载。 */
@@ -105,6 +112,9 @@ public record ExplosionParams(
      * <p>
      * {@code damage_type} 不参与编解码：客户端只凭参数集重建射线方向集、波前与粒子表现，
      * 不施加伤害，因此解码端一律取 {@link #DEFAULT_DAMAGE_TYPE}。
+     * <p>
+     * {@code light} 参与编解码：火光是客户端表现，必须用服务端解析后的内容包值，
+     * 客户端不重新读内容包。新增字段即改变线格式，因此起爆包所属的 registrar 版本随之提升。
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, ExplosionParams> STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -115,7 +125,8 @@ public record ExplosionParams(
                     buf.readBoolean(), buf.readBoolean(), buf.readBoolean(),
                     PARTICLES_STREAM_CODEC.decode(buf),
                     buf.readFloat(),
-                    DEFAULT_DAMAGE_TYPE);
+                    DEFAULT_DAMAGE_TYPE,
+                    ExplosionLightParams.STREAM_CODEC.decode(buf));
         }
 
         @Override
@@ -131,6 +142,7 @@ public record ExplosionParams(
             buf.writeBoolean(p.causesFire());
             PARTICLES_STREAM_CODEC.encode(buf, p.particles());
             buf.writeFloat(p.particleScale());
+            ExplosionLightParams.STREAM_CODEC.encode(buf, p.light());
         }
     };
 
@@ -148,7 +160,9 @@ public record ExplosionParams(
      *   <li>{@code particles} 复制为不可变列表，使实例整体保持不可变；</li>
      *   <li>{@code particleScale} 取下界，避免零或负系数把粒子云压成一点或反向；</li>
      *   <li>{@code damageType} 为 null 时取 {@link #DEFAULT_DAMAGE_TYPE}，避免构造出的
-     *       参数集缺少伤害归属。</li>
+     *       参数集缺少伤害归属；</li>
+     *   <li>{@code light} 为 null 时取 {@link ExplosionLightParams#DEFAULT}，使网络解码与
+     *       直接构造都得到一份可用的火光参数。</li>
      * </ul>
      */
     public ExplosionParams {
@@ -159,6 +173,7 @@ public record ExplosionParams(
         particles = List.copyOf(particles);
         particleScale = Math.max(particleScale, 1e-3f);
         damageType = damageType == null ? DEFAULT_DAMAGE_TYPE : damageType;
+        light = light == null ? ExplosionLightParams.DEFAULT : light;
     }
 
     /** 每主线程 tick 的推进距离（m）。 */

@@ -33,7 +33,9 @@ public class MMPayloadRegistry {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
-        final PayloadRegistrar sync = event.registrar("sync:1.0.0");
+        // sync 处于 2.0.0：起爆包携带爆炸火光参数（light），线格式与 1.0.0 不兼容，
+        // 版本号让不兼容的旧端在握手阶段被拒绝，而不是解出一包错位的参数集
+        final PayloadRegistrar sync = event.registrar("sync:2.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

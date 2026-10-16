@@ -37,9 +37,13 @@ public class PostProcessingManager {
     private final OverloadVisionEffect overloadVision = new OverloadVisionEffect();
     private final CrtMonitorEffect crtMonitor = new CrtMonitorEffect();
     private final BlastDistortionEffect blastDistortion = new BlastDistortionEffect();
-    /** 通用屏幕空间光照；来源列表在构造期固定，优先级与容量规则见各来源自己的声明 */
+    /**
+     * 通用屏幕空间光照；来源列表在构造期固定，优先级与容量规则见各来源自己的声明。
+     *
+     * <p>列表顺序只决定容量同键时的先到先留：曳光与火光的优先级不同，谁的顺序在前都不改变选择结果。</p>
+     */
     private final ScreenSpaceLightEffect screenSpaceLight =
-            new ScreenSpaceLightEffect(List.of(new ProjectileTracerLightSource()));
+            new ScreenSpaceLightEffect(List.of(new ProjectileTracerLightSource(), new ExplosionLightSource()));
 
     private PostProcessingManager() {}
 

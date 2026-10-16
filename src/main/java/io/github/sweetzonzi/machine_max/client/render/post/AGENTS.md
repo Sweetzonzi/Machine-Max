@@ -1,8 +1,8 @@
 # client/render/post/ — 屏幕空间后处理
 
-**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、通用屏幕空间光照、过载黑视、失色、CRT 显像管）。屏幕空间光照按"来源 → 光源表 → 效果"三层拆开，当前来源只有投射物曳光。
+**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、通用屏幕空间光照、过载黑视、失色、CRT 显像管）。屏幕空间光照按"来源 → 光源表 → 效果"三层拆开，当前来源是投射物曳光与爆炸火光。
 
-**文件数**: 13 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
+**文件数**: 15 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
 
 ## 结构
 
@@ -10,10 +10,12 @@
 |------|------|
 | `PostProcessingManager.java` | 唯一的事件订阅点与次序所有者：`AFTER_LEVEL` 内先取两份世界深度快照、再提交 **屏幕空间光照**；`RenderLevelLastEvent` 内 **折射 → 过载 → 失色**；GUI 阶段 CRT。各效果的懒加载与释放也在这里统一转发，光照的来源列表也在这里构造 |
 | `BlastDistortionEffect.java` | 爆炸波前折射；持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`） |
-| `ScreenSpaceLightEffect.java` | 通用光照效果：按来源列表采集、持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`，在 `render` 内、pass 之前），并在加载期核验数组长度与 JSON `count` 一致（`verifyArrayCounts`） |
+| `ScreenSpaceLightEffect.java` | 通用光照效果：总开关与总倍率、按来源列表采集、持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`，在 `render` 内、pass 之前），并在加载期核验数组长度与 JSON `count` 一致（`verifyArrayCounts`） |
 | `ScreenSpaceLightSource.java` | 来源接口：稳定的来源 ID、显式优先级、`collect(frame, out)` |
-| `ProjectileTracerLightSource.java` | 当前唯一来源（投射物曳光）：门禁、按弹种口径折算的照射半径与遮挡容差、剩余寿命淡出；三条曳光特有剔除留在本类 |
-| `ScreenSpaceLightBuffer.java` | 光源表：数值校验、`(优先级升序, 投影半径降序)` 容量选择、扁平数组与逐来源诊断计数；不含 GL 调用 |
+| `ProjectileTracerLightSource.java` | 曳光来源：门禁、按弹种口径折算的照射半径与遮挡容差、剩余寿命淡出；三条曳光特有剔除留在本类 |
+| `ExplosionLightSource.java` | 火光来源：按游戏时钟求年龄包络、火光类别倍率、`NONE` 遮挡策略；几何剔除交给光源表 |
+| `ExplosionLightState.java` | 客户端火光状态：按维度登记，每条按自己的 `duration_ticks` 独立结束，退出世界/换维度时清理；`onDetonate` 是绑定给 `ExplosionManager#setLightSink` 的入口 |
+| `ScreenSpaceLightBuffer.java` | 光源表：数值校验、影响体剔除（距离/近裁面/视锥）、`(优先级升序, 投影半径降序)` 容量选择、扁平数组与逐来源诊断计数；不含 GL 调用 |
 | `ScreenSpaceLight.java` / `ScreenSpaceLightPriority.java` / `LightFrameContext.java` | 光源提交载体（`setPoint` / `setSpot` 一次写齐）、优先级常量、每帧只读的帧上下文 |
 | `OverloadVisionEffect.java` / `DesaturateEffect.java` / `CrtMonitorEffect.java` | 全屏颜色滤镜，不参与深度通路 |
 | `BlastProjectionUtil.java` | 共享数学：世界坐标→视空间、像素焦距、深度两点标定 |
@@ -23,11 +25,14 @@
 ## 屏幕空间光照：来源 → 光源表 → 效果
 
 - **来源**只提供身份、优先级与采集函数：采集不碰 GL，不保存借用的上下文，逐盏复用同一个 `ScreenSpaceLight` 载体（每盏灯新建记录会让采集分配随光源数增长）。
-- **光源表**是唯一做校验与选择的地方：排序键 `(来源优先级升序, 投影半径降序)`，同键先到先留；优先级不是保留名额，高优先级来源占满容量时低优先级来源会被整类排除。当前容量 16，与链 JSON 的 `LightView[64]` / `LightColor[64]` / `LightTol[16]` 对齐。
+- **光源表**是唯一做校验与选择的地方：排序键 `(来源优先级升序, 投影半径降序)`，同键先到先留；优先级不是保留名额，高优先级来源占满容量时低优先级来源会被整类排除。当前容量 16，与程序 JSON 的 `LightView[64]` / `LightColor[64]` / `LightTol[16]` / `LightOcclusion[16]` 对齐。
+- **影响体剔除按光源的影响球判定**：`distanceToCenter > renderDistance + radius`、整个球位于近裁面之后、球与视锥不相交，三条之一成立才剔除。光心在相机背后或投影离屏都不是剔除理由——爆炸火光经常正好落在这些位置。视锥侧平面取自投影矩阵的 `m00` / `m11`，跟随 FOV 与视口比例。
+- **遮挡策略逐盏上传**：`LightOcclusion` 编 0（不做判定）或 1（S2），片元据此决定是否在光心投影处采一次深度。曳光用 S2，爆炸火光用 `NONE`（爆心可能不在视野内、也可能被自己掀起的粒子挡住，用光心深度会整盏误杀）。同一帧里两种策略可以共存。
 - **阶段能力在提交处显式报告**：锥光（`Shape.SPOT`）与 S3（`OcclusionMode.SCREEN_RAY`）当前返回 `UNSUPPORTED`，不会按球光或按 S2 悄悄渲染；接入对应 GPU 编码后才放开那条判断。
-- **来源特有剔除留在来源里**：光心在相机背后、超出渲染距离、屏幕投影半径小于下限三条留在 `ProjectileTracerLightSource`；光源表的公共剔除只做有限性、非负与零半径/零强度，不叠一层与来源无关的距离或视锥规则——容量表里因此只有来源自己认可的候选。
+- **来源特有剔除留在来源里**：光心在相机背后、超出渲染距离、屏幕投影半径小于下限三条留在 `ProjectileTracerLightSource`。光源表的影响体剔除只会移除整球都不可能贡献的条目，因此它腾出的槽位可能让同一帧里排序更后的低优先级光源入选。
 - **诊断**按来源计提交/非法/几何剔除/候选/入选/容量拒绝/被置换；容量触顶日志限频 5 秒（短暂不触顶不重置限频），非法数据日志与容量日志分开。
-- **新增一类光源** = 新增一个 `ScreenSpaceLightSource` 实现并加进 `PostProcessingManager` 的来源列表；优先级、容量与数组契约都不必改（只有改容量才要同步链 JSON、Java 常量与 GLSL 数组长度）。
+- **瞬态光源的寿命不依赖是否入选**：火光年龄由关卡游戏时钟推导（暂停即冻结），关效果、容量拒绝、换维度都不影响它推进；总开关关闭时 `ScreenSpaceLightEffect` 连采集都不做，年龄仍照常。
+- **新增一类光源** = 新增一个 `ScreenSpaceLightSource` 实现并加进 `PostProcessingManager` 的来源列表；优先级、容量与数组契约都不必改（只有改容量才要同步程序 JSON、Java 常量与 GLSL 数组长度）。
 
 ## 四条硬约束
 
@@ -82,6 +87,8 @@
 
 - 有 JVM 占用 neoforge 的 artifact jar（开发客户端、另一个 Gradle 构建）时，`createMinecraftArtifacts` 删不掉它、报 `Unable to delete file`。`-x createMinecraftArtifacts` 只排除根项目的同名任务，复合构建里 `:Spark-Core` 与 `:BallisticsFramework` 的仍会执行，因此要逐个限定：`gradlew compileJava -x createMinecraftArtifacts -x :Spark-Core:createMinecraftArtifacts -x :BallisticsFramework:createMinecraftArtifacts`。
 - 改链 JSON 或着色器后要让链**重新加载**：链在进入世界时懒加载一次、退出世界才释放，资源重载不会重建它。
+- 改**程序** JSON（`shaders/program/*.json`）里的数组声明后必须重启客户端：数组 `count` 在链加载期与 Java 数组长度比对，不一致会直接拒绝本链生效（日志里有一条 `count 与 Java 数组长度不一致`）；只改数值不重启不算生效。
+- 火光参数走内容包与网络：`common/mech/explosion/ExplosionParams` 的线格式变化要求对端同版本（registrar `sync:2.0.0`），因此改这些字段时客户端与服务端必须同时更新。
 - **光影会话与无光影会话的渲染状态不同**（深度写掩码），深度相关改动两个都要测；`run/config/iris.properties` 会滞后于游戏内开关，判断当前状态要读运行期值。
 
 ## 反模式
@@ -97,7 +104,7 @@
 
 ## 参考文件
 
-- `docs/plan/进行中/渲染-屏幕空间光照通用化设计.md` — 通用光照通路的设计：提交契约、容量与优先级、诊断、爆炸火光与车灯的分期（P1 已落地，P2–P5 未实现）
+- `docs/plan/进行中/渲染-屏幕空间光照通用化设计.md` — 通用光照通路的设计：提交契约、容量与优先级、诊断、爆炸火光与车灯的分期（P1 与 P2 已落地，P3–P5 未实现）
 - `docs/plan/计划中/武器系统-投射物曳光光照设计.md` — 曳光光照的完整设计（S1/S2 落地形态与实测待办见 §十五）、折射的深度快照、链次序不变量与 F1 的落地/实测记录（§5.1、§5.2、§6.7、§七）
 - `docs/plan/已实现/武器系统-爆炸波前视觉设计.md` — 屏幕空间折射的完整设计（几何、剖面、色散、深度的获取与比对）
 - `client/fbo/OffscreenFbo.java` — 深度副本与离屏目标的既有写法

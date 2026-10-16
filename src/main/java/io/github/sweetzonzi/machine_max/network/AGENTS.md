@@ -40,7 +40,7 @@ network/
 
 ## 约定
 
-- **4 个协议组**：`input:1.0.0`（控制）、`sync:1.0.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.0.0`（GUI/制造）。
+- **4 个协议组**：`input:1.0.0`（控制）、`sync:2.0.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.0.0`（GUI/制造）。
 - **全部处理器在主线程**：使用 `MainThreadPayloadHandler`。无物理线程处理器。
 - **双向载荷**：使用 `DirectionalPayloadHandler` 分离客户端/服务端方法。
 - **增量同步**：`SubPartSyncPayload` 使用 `SynchedEntityData.DataValue` 列表 + byte `255` 终结符。
