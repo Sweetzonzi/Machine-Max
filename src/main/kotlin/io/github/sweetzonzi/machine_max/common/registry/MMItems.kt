@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ExplosionTestItem
+import io.github.sweetzonzi.machine_max.common.item.prop.FlareTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
@@ -143,6 +144,13 @@ object MMItems {
     val EXPLOSION_TEST_ITEM = MachineMax.REGISTER.item{
         id="explosion_test"
         factory = { ExplosionTestItem() }
+    }
+
+    //测试物品：右键沿视线打出一发信号弹（照明弹），用于验收显式光源字段
+    @JvmStatic
+    val FLARE_TEST_ITEM = MachineMax.REGISTER.item{
+        id="flare_test"
+        factory = { FlareTestItem() }
     }
 
     //油漆喷罐，为部件切换贴图

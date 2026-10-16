@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
@@ -267,15 +268,39 @@ public abstract class ProjectileType {
          */
         double tracerLength,
         /**
-         * 曳光光源强度倍率（可选，默认 1.0）。最终强度还要乘曳光透明度与超时淡出。
+         * 曳光光源强度倍率（可选，默认 1.0）。最终强度还要乘透明度因子与超时淡出。
          * <p>
-         * 光源的<b>颜色与照射半径都不在这里配置</b>：颜色取 {@link #tracerColor}（光是曳光
-         * 自己发的，没有分色的需求），半径由弹种口径折算（每毫米口径 2 cm，基准 3 m）。
-         * 强度单独成项的理由是它与 {@code tracerAlpha} 各自承担不同的量：透明度是曳光线自己的
-         * 可见度，而大口径弹种可以用较低的透明度（曳光线更暗）配更高的强度（闪光更强）。
-         * 见 {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
+         * 强度与透明度各自承担不同的量：透明度是曳光线自己的可见度，而大口径弹种可以用较低的
+         * 透明度（曳光线更暗）配更高的强度（闪光更强）。见
+         * {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
          */
         double tracerLightIntensity,
+        /**
+         * 曳光光源的照射半径（m，可选）。缺省 {@link #DERIVE_LIGHT_RADIUS} 表示按
+         * {@link BallisticProjectileType.ExternalProperties#caliberMm} 折算
+         * （{@code min(3 + 0.02 × 口径mm, 8)} m），既有弹种因此不必配置本字段。
+         * <p>
+         * 显式取值不受折算式的 8 m 上限约束（上限改为整条链的 {@value #MAX_LIGHT_RADIUS_M} m）：
+         * 照明弹一类需要几十米照射范围的光源正是靠它表达的。取值须为
+         * {@link #DERIVE_LIGHT_RADIUS} 或 {@code (0, }{@value #MAX_LIGHT_RADIUS_M}{@code ]} 内的正数，
+         * 越界在内容包加载期报错。
+         */
+        double tracerLightRadius,
+        /**
+         * 曳光光源颜色（可选）。缺省（{@link Optional#empty()}）回退到 {@link #tracerColor}：
+         * 光是曳光自己发的，同色是常规情形；需要"曳光线与照明颜色不同"时（暖色弹道曳光配白色照明）
+         * 才显式配置。
+         */
+        Optional<Vec3i> tracerLightColor,
+        /**
+         * 曳光光源的独立开关（可选）。缺省（{@link Optional#empty()}）沿用"曳光线可见才发光"，
+         * 即 {@code tracerAlpha > 0}。
+         * <p>
+         * 显式设为 {@code true} 后，发光不再要求曳光线可见：透明度为 0 时曳光线整条不画，但光斑
+         * 照常以 {@code tracerLightIntensity} 的完整强度照亮周围。照明弹一类"只有光、没有弹道线"
+         * 的来源用它；显式设为 {@code false} 则关掉该弹种的光而不影响它的曳光线。
+         */
+        Optional<Boolean> tracerLightEnabled,
         /** 开火粒子效果ID列表，在客户端依次播放枪口火焰/炮口焰等效果 */
         List<ResourceLocation> fireParticles,
         /**
@@ -294,11 +319,37 @@ public abstract class ProjectileType {
          */
         Optional<ResourceLocation> texture
     ) {
+        /**
+         * {@link #tracerLightRadius} 的缺省值：按弹种口径折算照射半径。
+         * <p>
+         * 它是一个哨兵值而不是"0 表示缺省"：0 是有意义的半径（影响球退化为一个点，实际不产生贡献），
+         * 用 0 兼任缺省会让"作者显式想关掉光"与"作者没写这个字段"无法区分。
+         */
+        public static final double DERIVE_LIGHT_RADIUS = -1.0;
+
+        /** 渲染侧可接受的照射半径上界（m），与爆炸火光的字段边界取同一个量级 */
+        public static final double MAX_LIGHT_RADIUS_M = 64.0;
+
+        /**
+         * {@link #tracerLightRadius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。
+         */
+        private static final Codec<Double> LIGHT_RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
+            if (value == DERIVE_LIGHT_RADIUS) return DataResult.success(value);
+            if (!Double.isFinite(value) || value <= 0.0 || value > MAX_LIGHT_RADIUS_M) {
+                return DataResult.error(() -> "tracer_light_radius 必须是 " + DERIVE_LIGHT_RADIUS
+                        + "（按口径折算）或 (0, " + MAX_LIGHT_RADIUS_M + "] m 内的正数，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
             1.0,
+            DERIVE_LIGHT_RADIUS,
+            Optional.empty(),
+            Optional.empty(),
             List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")),
             Optional.empty(),
             Optional.empty()
@@ -315,6 +366,12 @@ public abstract class ProjectileType {
                 .forGetter(VisualProperties::tracerLength),
             Codec.DOUBLE.optionalFieldOf("tracer_light_intensity", DEFAULT.tracerLightIntensity)
                 .forGetter(VisualProperties::tracerLightIntensity),
+            LIGHT_RADIUS_CODEC.optionalFieldOf("tracer_light_radius", DEFAULT.tracerLightRadius)
+                .forGetter(VisualProperties::tracerLightRadius),
+            Vec3i.CODEC.optionalFieldOf("tracer_light_color")
+                .forGetter(VisualProperties::tracerLightColor),
+            Codec.BOOL.optionalFieldOf("tracer_light_enabled")
+                .forGetter(VisualProperties::tracerLightEnabled),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)
                 .forGetter(VisualProperties::fireParticles),
             ResourceLocation.CODEC.optionalFieldOf("model")

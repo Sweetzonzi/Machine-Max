@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType.VisualProperties;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
@@ -14,14 +15,19 @@ import org.joml.Vector3f;
  * 投射物曳光光源来源：把 {@link ProjectileManager} 的 SoA 数组里满足门禁的每一发曳光
  * 提交进通用光源表。
  *
- * <p>门禁与 {@code ClientProjectileRenderer} 完全相同：<b>看类型的曳光配置与对象能否取到，
+ * <p>门禁与 {@code ClientProjectileRenderer} 同源：<b>看类型的曳光配置与对象能否取到，
  * 不看 {@code alive}</b>——死条目由 {@code deadRetained} 多留一次清理扫描，这一帧仍要画出曳光，
- * 光照若按 {@code alive} 早退，那一发就只剩曳光线、没有光。只有 {@code tracer_alpha > 0} 的弹种
- * 会照亮，颜色取自曳光配置。</p>
+ * 光照若按 {@code alive} 早退，那一发就只剩曳光线、没有光。</p>
+ *
+ * <p>发光与否、照射半径、颜色与强度全部来自内容包：{@code tracer_light_enabled}（缺省 =
+ * {@code tracer_alpha > 0}）、{@code tracer_light_radius}（缺省 = 按口径折算）、
+ * {@code tracer_light_color}（缺省 = {@code tracer_color}）、{@code tracer_light_intensity}。
+ * 因此同一个来源既能表达"曳光弹的小光斑"，也能表达照明弹那种几十米、只有光没有弹道线的光源。</p>
  *
  * <p>强度在提交前乘好的因子是内容强度（弹种 {@code tracer_light_intensity}）、类别倍率
- * （{@code MMClientConfig} 的曳光强度）与时间包络（剩余寿命淡出、曳光自身 alpha）；全局倍率
- * 由 {@link ScreenSpaceLightBuffer} 统一乘且只乘一次，合计每项各乘一次。</p>
+ * （{@code MMClientConfig} 的曳光强度）、时间包络（剩余寿命淡出）与透明度因子（只在缺省门禁下
+ * 参与，显式声明开关后光强完全由内容字段决定）；全局倍率由 {@link ScreenSpaceLightBuffer}
+ * 统一乘且只乘一次，合计每项各乘一次。</p>
  *
  * <p>三条剔除留在本类，不进入光源表的公共剔除：光心在相机背后、光心距离超过渲染距离、
  * 屏幕投影半径小于下限。这样容量表里的候选与拆出通用通路之前的曳光链逐一对应
@@ -118,8 +124,11 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
             BallisticProjectileType type = pm.getProjectileTypeByIndex(i);
             if (type == null) continue;
 
-            // 门禁：曳光不可见的弹种不发光（与渲染器同一条判据）
-            if (type.getTracerAlpha() <= 0) continue;
+            // 门禁：显式开关优先；缺省沿用"曳光线可见才发光"（与渲染器同一条判据）
+            int alpha = type.getTracerAlpha();
+            VisualProperties visual = type.getVisual();
+            boolean lightEnabled = visual.tracerLightEnabled().orElse(alpha > 0);
+            if (!lightEnabled) continue;
 
             DestroyableObject obj = pm.getProjectile(pm.objId[i]);
             if (obj == null) continue;
@@ -132,7 +141,8 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
             if (frontDepth <= 0f) continue; // 光心在相机背后：屏幕投影会翻转
 
             float caliberMm = type.getCaliber();
-            float radius = lightRadius(caliberMm);
+            double explicitRadius = visual.tracerLightRadius();
+            float radius = explicitRadius > 0.0 ? (float) explicitRadius : lightRadius(caliberMm);
 
             // 屏幕半径剔除：投影半径小于下限的光源贡献不可辨识
             float radiusPx = focalPx * radius / frontDepth;
@@ -141,13 +151,16 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
             // 视空间长度等于世界距离，可直接当作“光心到相机的距离”用
             if (viewPos.length() > maxDistance) continue;
 
-            float intensity = (float) type.getTracerLightIntensity() * categoryIntensity
-                    * (type.getTracerAlpha() / 255f);
+            // 透明度因子只在缺省门禁（"曳光线可见才发光"）下参与光强：那时它表示这发弹的可见度。
+            // 显式声明 tracer_light_enabled 后，光强完全由 tracer_light_intensity 决定、透明度只管
+            // 线本身——否则"不画曳光线"或"曳光线很淡"会连带把光强改小
+            float alphaFactor = visual.tracerLightEnabled().isPresent() ? 1f : (alpha > 0 ? alpha / 255f : 1f);
+            float intensity = (float) type.getTracerLightIntensity() * categoryIntensity * alphaFactor;
             if (pm.lifetime[i] < FADE_TICKS) {
                 intensity *= pm.lifetime[i] / (float) FADE_TICKS;
             }
 
-            Vec3i color = type.getTracerColor();
+            Vec3i color = visual.tracerLightColor().orElse(type.getTracerColor());
             colorScratch.set(color.getX() / 255f, color.getY() / 255f, color.getZ() / 255f);
             light.setPoint(viewPos, radius, colorScratch, intensity,
                     ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH, occlusionTolerance(caliberMm), 0f);
@@ -156,11 +169,12 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
     }
 
     /**
-     * 照亮半径：{@code R = 3 m + 2 cm × 口径(mm)}，上限 8 m。
+     * 照亮半径的缺省折算：{@code R = 3 m + 2 cm × 口径(mm)}，上限 8 m。
      *
      * <p>口径是“弹丸有多大”这件事在数据里的唯一载体（{@code external.caliber}，单位 mm），
-     * 物理半径 = 口径/2000 m、命中半径与风阻截面积都由它换算，因此照射半径也由它线性折算，
-     * 不需要新增内容包字段：7.62mm → 3.15 m，20mm → 3.40 m，50mm → 4.00 m，155mm → 6.10 m。</p>
+     * 物理半径 = 口径/2000 m、命中半径与风阻截面积都由它换算，因此它也是照射半径的合理缺省：
+     * 7.62mm → 3.15 m，20mm → 3.40 m，50mm → 4.00 m，155mm → 6.10 m。内容包写
+     * {@code tracer_light_radius} 时改用显式值，本方法与 8 m 上限都不再参与。</p>
      *
      * @param caliberMm 弹种口径（mm）
      * @return 世界半径（m）
