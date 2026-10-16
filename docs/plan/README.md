@@ -45,6 +45,7 @@
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
 | [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | 三个阶段均已落地：`getDisplayLabel()` / `belt_label` / 弹链指针单一载体、内容包语言键与实例 schema、AUI 正式页 `weapon_hud.html` 与 `WeaponHudOverlay` 为唯一在绘制的武器状态 HUD（`ammo_hud` 图层未注册，`AmmoHud` 类保留作回退）。待 `runClient` 进世界按 §7.2 人工验收 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
+| [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）已落地，曳光专用的 `TracerLightEffect` 与 `tracer_light.*` 已移除；P1 等价验收按 §7 由用户实机目视。P2 火光、P4 车灯球光、P5 锥光与 S3/S4 未实现 |
 
 ## 计划中
 
@@ -54,7 +55,6 @@
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |
 | [武器系统-投射物模型渲染设计](计划中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 已能解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放、LOD 距离与投射物动画驱动未实现 |
-| [渲染-屏幕空间光照通用化设计](计划中/渲染-屏幕空间光照通用化设计.md) | 设计已完成首轮源码审阅与用户讨论，P1 等价验收方式定为用户实机目视；代码中尚无 `ScreenSpaceLightEffect` / `ScreenSpaceLightBuffer` / `ScreenSpaceLightSource`，现有 `TracerLightEffect` 为曳光专用的一条链 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext`。通用元素持有 `hud.*` 上下文，武器元素继承并增加 `weapon.*`；每个元素独立取数 |
 | [界面-HUD样式挂载与布局设计](计划中/界面-HUD样式挂载与布局设计.md) | 设计阶段；代码中尚无 `HudStyle` / `HudMount` / `HudLayoutSet` 注册表与玩家覆盖。定义三层资源、三方宿主和视角组、AUI 绑定层、内容包资源桥；玩家拖动位置的存储格式待确定 |

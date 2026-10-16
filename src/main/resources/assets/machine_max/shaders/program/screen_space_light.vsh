@@ -1,6 +1,6 @@
 #version 150
 
-// Machine-Max: 投射物曳光光照后处理 - 顶点着色器
+// Machine-Max: 屏幕空间光照后处理 - 顶点着色器
 // 全屏四边形顶点映射，Position 为像素坐标（ProjMat 为像素空间正交矩阵）
 
 in vec4 Position;

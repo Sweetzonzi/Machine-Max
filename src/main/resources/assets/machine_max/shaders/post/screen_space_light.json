@@ -2,7 +2,7 @@
     "targets": ["swap", "worlddepth"],
     "passes": [
         {
-            "name": "machine_max:tracer_light",
+            "name": "machine_max:screen_space_light",
             "intarget": "minecraft:main",
             "outtarget": "swap",
             "use_linear_filter": true,

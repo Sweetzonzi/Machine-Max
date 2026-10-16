@@ -1,9 +1,13 @@
 #version 150
 
-// Machine-Max: 投射物曳光光照后处理 - 片段着色器
+// Machine-Max: 屏幕空间光照后处理 - 片段着色器
 //
 // 每像素遍历光源数组：重建本像素的视空间表面点，按世界空间距离做有限支撑衰减，
 // 再用 screen 混合叠加到已画好的画面上。
+//
+// 本文件是通用光照链的 P1 编码：光源表里的条目按球光（POINT）打包，
+// 遮挡策略只接入 NONE 与 SOURCE_DEPTH（S2）。锥光（SPOT）与 S3（SCREEN_RAY）
+// 在光源表提交处被报告为不支持，不会走到这里——它们的字段与分支在 P5 增加。
 //
 // 两条包围剔除缺一不可：
 //   perp2 > R*R  视线到光心的垂距超过 R —— 必要，视线完全不穿过球时球内任何点都不在此视线上
@@ -27,7 +31,7 @@ uniform float LightCount;           // 有效光源数；必须是 float（int u
 uniform float OcclusionTolRel;      // 遮挡容差的相对分量
 uniform float LightView[64];        // 每槽 4 个：视空间光心 xyz、世界半径 R(m)
 uniform float LightColor[64];       // 每槽 4 个：颜色 rgb、强度
-uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分量(m)，由弹种口径折算
+uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分量(m)，由来源折算
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -74,7 +78,7 @@ void main() {
         if (perp2 > R * R) continue;
 
         // 光源级遮挡：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
-        // 容差按弹种口径折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则投射物
+        // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
         // 自身的模型会把光源剔掉、光照凭空消失，太大则近处遮挡物漏光。
         float zc = -C.z;
         if (zc > NEAR_Z) {

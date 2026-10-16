@@ -1,6 +1,6 @@
 {
-    "vertex": "machine_max:tracer_light",
-    "fragment": "machine_max:tracer_light",
+    "vertex": "machine_max:screen_space_light",
+    "fragment": "machine_max:screen_space_light",
     "attributes": ["Position"],
     "samplers": [
         { "name": "DiffuseSampler" },
