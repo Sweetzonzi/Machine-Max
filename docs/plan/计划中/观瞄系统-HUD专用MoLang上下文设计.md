@@ -1,332 +1,115 @@
 # HUD 专用 MoLang 上下文设计
 
-> 版本 1.0 · 2026-06-15
-> **状态**：计划中（未实现；代码中尚无 `HudMolangContext`）
+> 版本 1.3 · 2026-10-17
+> **状态**：计划中。代码中尚无本文的 HUD 元素和上下文层次；现有模型 HUD 由 `client/render/renderable/GuiAnimatable.java` 与 `client/render/gui/hud/CustomHud.java` 驱动。
+>
+> 本文定义通用 HUD 元素的 `hud.*` 与武器控制器 HUD 元素的 `weapon.*`。样式、挂载、布局、玩家覆盖及 AUI 页面绑定见《[界面-HUD样式挂载与布局设计](界面-HUD样式挂载与布局设计.md)》；武器状态字段口径见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
 
-***
+## 一、对象与上下文的边界
 
-## 一、设计动机
+内容包中的 `HudStyle` 是可复用的样式定义；运行时的 HUD 元素是一次具体挂载。它知道自己的宿主（座椅、相机或武器控制器）、所属 Part/装配体、当前生效的 `HudMount`，并持有自己的 MoLang 上下文。玩家覆盖布局后，元素采用实际生效的挂载进行渲染。
 
-现有 `MechMolangContext` 绑定 `IAnimatable<Part>`，为载具部件动画提供 `local.*`（Part）/ `global.*`（装配体）查询。但在 HUD 渲染场景中缺少以下能力：
-
-1. **HUD 渲染参数读取**：无法在模型动画关键帧中获取当前 zoom、FOV、屏幕尺寸、透视/正交标志
-2. **HudAttr 参数可用**：模型的 `offset.z`（分划板距离）、`scale`（模型缩放）对角度→骨骼位移换算至关重要
-3. **炮镜分划数据**：弹道 hold-over 角度需要在 MoLang 表达式中引用，驱动分划刻度线的骨骼位移
-
-统一方案：新建 `HudMolangContext`，继承 `MechMolangContext`，新增 `hud.*` 与 `scope.*` 命名空间查询。
-
-***
-
-## 二、类层次结构
-
-```
-SparkMolangContext<IAnimatable<Part>>          (Spark-Core)
-  └─ MechMolangContext                           (现有：local.* global.*)
-       └─ HudMolangContext                       (★ 新增：hud.* scope.*)
+```text
+运行时通用 HUD 元素（实现 IAnimatable<HudElement>）
+  ├─ 宿主、有效挂载、相机视角数据
+  └─ HudMolangContext                    → hud.*
+       ↑
+运行时武器 HUD 元素（继承通用元素，直接持有所属武器控制器）
+  └─ WeaponHudMolangContext（继承 HudMolangContext）
+                                       → hud.* + weapon.*
 ```
 
-`HudMolangContext` 继承 `MechMolangContext`，自动获得全部载具查询能力，无需转发。
+`SparkMolangContext<T>` 要求 `T extends IAnimatable<?>`。因此上下文以实现 `IAnimatable<HudElement>` 的 HUD 元素为关联对象，元素的 `getAnimatable()` 返回自身；宿主是元素上的独立引用，不要求座椅或武器控制器实现 `IAnimatable`。`HudMolangContext` 应直接继承 `SparkMolangContext`，而非继承现有 `MechMolangContext`：后者的泛型绑定到 `IAnimatable<Part>`，不能直接用 HUD 元素调用其 `reset`。可行的类型形态是 `HudMolangContext<E extends HudElement> extends SparkMolangContext<E>`，再由 `WeaponHudMolangContext extends HudMolangContext<WeaponHudElement>` 特化；具体类名在实现时确定。
 
-### 2.1 多态用法
+`IAnimatable#getMolangContext()` 由元素返回它持有的上下文。模型载体用元素上下文计算骨骼动画与文本；AUI 页面绑定层用对应元素的上下文计算页面值。`IAnimatable` 还要求模型与动画控制器等成员；纯 AUI 样式的元素如何满足这些接口成员，应在载体实现中明确，不能假定页面本身就是动画体。现有 `GuiAnimatable` 实现 `IAnimatable<Player>`，`getAnimatable()` 返回玩家；新元素通过独立字段访问宿主及所属 Part，武器元素通过控制器字段取数。
 
-`GuiAnimatable` 持有一个 `hudContext` 字段（可空），`getMolangContext()` 中优先返回：
+**上下文按元素隔离**：相机边框、座椅仪表、两台武器的分划即使使用同一份样式，也分别持有上下文。`CustomHud` 可管理元素集合，但不持有供所有元素轮流改写的全局可变上下文。Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译结果，实例之间可复用；它用上下文类的无参构造创建编译原型，因此两类上下文都须有可访问的无参构造。武器子类继承的 `hud.*` 绑定在编译时仍可见。
 
-```java
-// GuiAnimatable.java
+现有 `MMGuiManager#onAnimTick` 与 `#onPhysicsTick` 分别在客户端主线程和物理线程推进 HUD 动画；Spark 的 `JSMolangValue` 会对返回的上下文执行 `reset(holder, animTime)`。因此同一元素的可变上下文也不能在两条线程上同时求值。实现时按元素、按消费线程缓存上下文实例，两份实例读取同一份原子发布的不可变视角/挂载及武器快照；`getMolangContext()` 返回当前求值线程对应的实例。文本与 AUI 在客户端主线程求值，物理线程上的动画表达式只读已发布快照。该规则不产生第二套 HUD 元素或武器控制器。
 
-/** HUD 专用 MoLang 上下文。非 null 时优先使用，覆盖 Part 默认上下文 */
-private SparkMolangContext<?> hudContext = null;
+载具 HP、能量和通用信号属于 `global.*` / `local.*` 的长期查询面：现有官方 HUD 已用 `global.get('vehicle_speed')`。HUD 上下文须显式关联所属 Part 与装配体，并转发这两组查询，或把公共查询实现抽取为多个上下文共用的代码；跨物理/主线程读取时须采用已发布的数据，不能直接读取另一线程正在修改的 Part 状态。该能力不能靠继承 `MechMolangContext` 自动获得。`math.*` 是 Spark 的通用词表；新增的 HUD 专用查询只建立 `hud.*` 和 `weapon.*` 两个前缀。
 
-public void setHudContext(SparkMolangContext<?> ctx) { this.hudContext = ctx; }
+## 二、`hud.*`：所有 HUD 元素共有
 
-@Nullable
-public SparkMolangContext<?> getMolangContext() {
-    if (hudContext != null) return hudContext;
-    SubPart sp = getRidingSubPart();
-    if (sp != null) return sp.part.getSparkMolangContext();
-    return molangContext;
-}
-```
+`hud.*` 只提供屏幕 HUD 普遍需要的**当前视角与视口**信息。座椅、相机、武器控制器持有的元素都读取玩家正在看到的相机；这里的“相机”不是相机子系统的 locator。表中查询均无参数，数值均在客户端渲染帧采样。
 
-`CustomHud` 在首次为炮镜创建 HUD 元素时调用 `hud.setHudContext(hudMolangContext)`，后续永久生效。
+| 名字 | 参数 | 用途说明 |
+| --- | --- | --- |
+| `hud.camera_pos_x` | 无 | 当前渲染相机的世界 X 坐标；第三人称取实际镜头位置 |
+| `hud.camera_pos_y` | 无 | 当前渲染相机的世界 Y 坐标，可显示镜头高度 |
+| `hud.camera_pos_z` | 无 | 当前渲染相机的世界 Z 坐标；第三人称取实际镜头位置 |
+| `hud.view_heading_deg` | 无 | 当前视线的水平航向，北为 0°、向东顺时针增加，范围 `[0, 360)`；电子罗盘或航向带可直接使用 |
+| `hud.view_pitch_deg` | 无 | 当前视线俯仰角，度，抬头为正；用于俯仰刻度和姿态指示 |
+| `hud.view_roll_deg` | 无 | 当前视线横滚角，度，顺时针为正；用于地平仪或倾斜提示 |
+| `hud.fov_deg` | 无 | 当前渲染视角的垂直 FOV，度；用于视野相关刻度 |
+| `hud.current_zoom` | 无 | 当前炮镜变焦倍率，1 为基准；普通视角为 1 |
+| `hud.screen_width` | 无 | HUD GUI 的逻辑像素宽度，用于自适应排版；不是物理窗口像素 |
+| `hud.screen_height` | 无 | HUD GUI 的逻辑像素高度，用于自适应排版；不是物理窗口像素 |
 
-***
+航向、俯仰和横滚取玩家**最终看到的视角**，包括稳定器和相机偏转的结果；载具车体、炮塔或相机 locator 的姿态不是这组查询的含义。内容包若要显示车体朝向，应另定义明确的装配体参考轴，不能复用 `hud.view_heading_deg`。摄像机旋转与变焦在渲染帧变化，因此按客户端 tick 更新会让电子罗盘与视野刻度跳动；实现须在这些表达式求值前提供同一渲染帧的视角快照。
 
-## 三、`hud.*` 命名空间 — HUD 渲染参数
+装配体 HP 和能量继续使用 `global.hp` / `global.max_hp`、`global.energy` / `global.max_energy`。速度可继续从既有信号 `global.get('vehicle_speed')` 读取；该信号由汽车控制器提供有符号前向速度，并非所有装配体的通用速度。若增加直接的 `global.speed_mps`，应先定义为装配体速度模长及非载具装配体的取值，再在 `global.*` 中发布，不放进 `hud.*`。
 
-每帧渲染前由 `CustomHud` 调用 `prepareFrame()` 刷新。
+## 三、`weapon.*`：所属武器控制器
 
-```java
-public class HudMolangContext extends MechMolangContext {
+只有武器控制器持有的 HUD 元素使用 `WeaponHudMolangContext`。它直接引用自己的 `WeaponControllerSubsystem`，按每客户端 tick 的武器显示快照提供名称、状态、弹药、发射管与弹链。具体字段和取数口径在《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》§二、§三定义。
 
-    // ===== 每帧更新的渲染参数 =====
-    private float currentZoom = 1f;
-    private float vFovDeg = 70f;
-    private int screenWidth = 1920;
-    private int screenHeight = 1080;
-    private boolean isPerspective = false;
-    private float modelScaleX = 1f;
-    private float modelScaleY = 1f;
-    private float modelScaleZ = 1f;
-    private float hudOffsetX = 0f;
-    private float hudOffsetY = 0f;
-    private float hudOffsetZ = 0f;
-    private float scopeCenterX = 960f;  // 炮镜投影中心（屏幕像素坐标）
-    private float scopeCenterY = 540f;
+武器业务查询统一收在 `weapon.*` 下：单值如 `weapon.ammo_remaining`，列表项如 `weapon.tube_fill(i)`、`weapon.belt_remaining(i)`。无参查询优先写成属性，带索引或距离的查询写成函数。普通 HUD 元素不编译武器表达式；绑定层应提示作者把武器表达式放在武器控制器的 HUD 样式中，避免未绑定查询静默退回 0。
 
-    /**
-     * CustomHud 渲染每个元素前调用，更新 HUD 渲染参数。
-     * 调用时机：renderOrthogonalInScope / renderPerspectiveInScopeBatch 的循环体内，
-     * renderContent() 之前。
-     */
-    public void prepareFrame(float zoom, float vFov, int scrW, int scrH, boolean persp,
-                             Vector3f scale, Vector3f offset,
-                             float scopeCX, float scopeCY) {
-        this.currentZoom = zoom;
-        this.vFovDeg = vFov;
-        this.screenWidth = scrW;
-        this.screenHeight = scrH;
-        this.isPerspective = persp;
-        this.modelScaleX = scale.x;
-        this.modelScaleY = scale.y;
-        this.modelScaleZ = scale.z;
-        this.hudOffsetX = offset.x;
-        this.hudOffsetY = offset.y;
-        this.hudOffsetZ = offset.z;
-        this.scopeCenterX = scopeCX;
-        this.scopeCenterY = scopeCY;
-    }
-```
+### 3.1 炮镜下的分划
 
-### 3.1 查询方法定义
+相机宿主自己的 `scope` HUD 元素提供边框、遮罩等基础显示。弹道分划是武器控制器布局的 `scope` 视角组中的元素。该元素从**所属控制器**确定当前弹药和弹道参数，不从座椅查找控制器，也不由相机反查武器。
 
-| MoLang 表达式 | 返回值 | 说明 |
-|---|---|---|
-| `hud.current_zoom` | float | 当前变焦倍率（1.0=基准） |
-| `hud.fov` | float | 当前垂直视场角（度） |
-| `hud.screen_width` | int | 屏幕宽度（像素） |
-| `hud.screen_height` | int | 屏幕高度（像素） |
-| `hud.is_perspective` | 0/1 | 是否透视投影 |
-| `hud.model_scale_x` | float | HudAttr.scale.x |
-| `hud.model_scale_y` | float | HudAttr.scale.y |
-| `hud.model_scale_z` | float | HudAttr.scale.z |
-| `hud.offset_x` | float | HudAttr.offset.x |
-| `hud.offset_y` | float | HudAttr.offset.y |
-| `hud.offset_z` | float | HudAttr.offset.z（分划板到后镜的视觉距离） |
-| `hud.scope_center_x` | float | 炮镜投影中心 X（屏幕坐标） |
-| `hud.scope_center_y` | float | 炮镜投影中心 Y（屏幕坐标） |
-| `hud.focal_length_px` | float | 焦距像素值：`screenH/2 / tan(vFov/2)` |
+| 查询 | 返回 | 口径 |
+| --- | --- | --- |
+| `weapon.active_ammo` | string | 所属控制器当前用于显示/分划的弹药注册键；没有时为空 |
+| `weapon.bdc_hold_rad(distance_m)` | number | 该控制器当前弹道在给定距离的 hold-over 角，弧度；无可用弹道数据时为 0 |
 
-`hud.focal_length_px` 是计算属性（每次从当前 `screenHeight`/`vFov` 算），其他直接返回字段。
+武器快照中“当前弹药”按本控制器发射管的稳定显示顺序选取，与弹种槽一致。多发射管且弹种不同的型号如需逐管分划，应在 `weapon.*` 中增加显式管索引查询，不能隐式借用座椅的控制器顺序。弹道查表的缓存键须包含影响结果的弹药与发射/归零参数，实际输入由 BallisticsFramework 接口和武器数据确定。
 
----
+弹道缓存按控制器实际使用的弹药及弹道参数生成距离到 hold-over 角的表；相邻采样点之间插值，避免刻度在每个采样距离处跳动。`weapon.bdc_hold_rad` 对非有限、负距离或无可用弹道数据返回 0；若样式必须区分“无需修正”与“没有数据”，再增加独立的可用性查询。缓存的建立和失效发生在内容包重载或影响弹道的参数变化时，不在逐帧表达式里运行弹道求解。
 
-## 四、`scope.*` 命名空间 — 炮镜分划数据
+`weapon.bdc_hold_rad` 返回弹道角，具体样式如何把角度标定为分划模型的骨骼位置由该样式决定；通用 `hud.*` 不提供模型坐标换算查询。
 
-### 4.1 弹道数据模型
+同一武器元素也可以在炮镜视角显示弹药文本；相机边框元素只有 `hud.*`，不读取 `weapon.*`。若两台控制器都为 `scope` 组配置分划，它们各自显示自己的元素；是否同时显示由布局与控制器激活规则决定。
 
-分划弹道数据为一组 `{距离, holdOverAngle}` 对，按弹药类型缓存。
+## 四、填充与求值时机
 
-```java
-/**
- * 弹道分划数据缓存。从 BallisticsFramework 预计算，运行时查表。
- * <p>
- * 按弹药类型（ResourceLocation）索引，每组为距离→hold-over 角度（弧度）的数组。
- * 距离步长固定 100m，覆盖归零距离~2000m。
- */
-public class BallisticHoldCache {
-    /** 弹药 → (距离索引 → hold-over角弧度) */
-    private final Map<ResourceLocation, float[]> holdMap = new ConcurrentHashMap<>();
+| 时机 | 动作 |
+| --- | --- |
+| 创建运行时元素 | 确定宿主和有效挂载，创建当前消费线程的上下文；绑定所属 Part/装配体 |
+| 每客户端 tick | 武器元素更新本控制器显示快照；AUI 页面按该元素上下文更新武器数据槽 |
+| 每渲染帧采样后、消费 `hud.*` 的表达式求值前 | 发布该帧的相机视角与视口快照；当前线程上下文按 Spark 契约 `reset` 后读取已发布快照 |
+| 每次模型文本渲染前 | 将客户端主线程上下文 `reset` 到当前元素，读取该渲染帧的视角快照，再计算 `molang_args` |
+| 玩家布局修改、视角切换或内容包热重载 | 更新有效挂载或重建受影响元素，再按新的上下文/样式编译或取缓存 |
 
-    /**
-     * @param ammo       弹药 ResourceLocation
-     * @param distanceMeters 目标距离（米）
-     * @return hold-over 角（弧度），无数据返回 0
-     */
-    public float getHoldAngle(ResourceLocation ammo, float distanceMeters) {
-        float[] holds = holdMap.get(ammo);
-        if (holds == null) return 0f;
-        int idx = Math.round(distanceMeters / 100f);
-        if (idx < 0 || idx >= holds.length) return 0f;
-        return holds[idx];
-    }
+逐帧视角快照必须早于消费 `hud.*` 的表达式求值。现有物理 tick 与 GUI 渲染的先后顺序不足以保证骨骼表达式使用本次渲染的 `partialTick` 值；实现时须让依赖实时航向的 HUD 骨骼表达式在渲染阶段求值，或接受并验证上一份快照的延迟。AUI 的“按发射管数量自动生成多段界面”属于页面绑定层，和 `weapon.tube_fill(i)` 的索引传递另在框架文档 §八说明，不改变上下文类层次。
 
-    /** 加载/重载时从 BallisticsFramework 预计算全部已注册弹药的分划表 */
-    public void reload() { ... }
-}
-```
+## 五、实施与验收
 
-### 4.2 查询方法定义
+1. 建立通用/武器 HUD 元素和对应上下文类，先让现有模型 HUD 的 `molang_args` 使用每元素上下文；让 `local.*` / `global.*` 在 HUD 上下文中保持可用。
+2. 建立武器显示快照与 `weapon.*` 查询；炮镜边框由相机布局提供，分划由武器控制器布局的 `scope` 组提供。
+3. AUI 绑定层按元素关联对应上下文；页面重复条目的具体索引规则在 AUI 实现阶段确定。
+4. 采集并发布渲染帧视角快照，校验模型与 AUI 两种载体、视角切换和热重载。
 
-```java
-// ===== scope.* 在 HudMolangContext 中 =====
+验收至少覆盖：同一座位下两台控制器的分划/弹药互不串值；炮镜边框无武器查询；电子罗盘跟随渲染帧视线平滑转动且不误读车体朝向；第三人称坐标取实际镜头位置；模型骨骼和文字各在线程实例上读取同一元素发布的快照；现有官方 HUD 的 `global.get('vehicle_speed')` 仍能求值。本文是设计文档，代码尚未实现，因此不以现有运行结果宣称这些用例通过。
 
-/** scope.bdc_hold_rad(distance) → 该距离的 hold-over 角（弧度） */
-@QueryBinding(value = "bdc_hold_rad", namespace = "scope")
-public double scopeBdcHoldRad(double distanceMeters) {
-    if (holdCache == null || activeAmmo == null) return 0.0;
-    return holdCache.getHoldAngle(activeAmmo, (float) distanceMeters);
-}
+## 六、相关代码
 
-/** scope.bdc_mark_y(distance) → 可直接用作骨骼 Y 位移的模型空间偏移量。
- *  自动区分正交/透视：正交用 focal_length 手动换算，透视用 offset_z 配合 GPU 投影矩阵。 */
-@QueryBinding(value = "bdc_mark_y", namespace = "scope")
-public double scopeBdcMarkY(double distanceMeters) {
-    double angle = scopeBdcHoldRad(distanceMeters);
-    double tanA = Math.tan(angle);
-    if (isPerspective) {
-        // 透视：GPU setPerspective 处理投影，元素距摄像机 hudOffsetZ
-        // 角偏移 → 相机局部空间位移 = tan(θ) × 距离
-        return tanA * Math.abs(hudOffsetZ) / modelScaleY;
-    } else {
-        // 正交：手动做透视投影换算
-        // 屏幕像素偏移 = tan(θ) × focal_length
-        // 模型空间单位 = 屏幕像素 / (zoom × modelScale)
-        double focal = (screenHeight / 2.0) / Math.tan(Math.toRadians(vFovDeg / 2.0));
-        return tanA * focal / (currentZoom * modelScaleY);
-    }
-}
-```
+| 当前代码 | 作用 |
+| --- | --- |
+| `../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/animation/IAnimatable.kt#getMolangContext` | 动画体提供自己的上下文 |
+| `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/SparkMolangContext.java#reset` | 上下文关联动画体 |
+| `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/MolangContextRegistry.java#getOrCreateEngine` | 无参原型与按上下文类缓存编译结果 |
+| `src/main/java/io/github/sweetzonzi/machine_max/common/mech/molang/MechMolangContext.java#localGet` | Part 上下文的现有 `local.*` / `global.*` 查询 |
+| `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/GuiAnimatable.java#getMolangContext` | 当前模型 HUD 读取 Part 上下文的路径 |
+| `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#syncHuds` | 当前模型 HUD 的创建与同步 |
 
-| MoLang 表达式 | 返回值 | 说明 |
-|---|---|---|
-| `scope.bdc_hold_rad(200)` | float | 200m 处的 hold-over 角（弧度） |
-| `scope.bdc_mark_y(200)` | float | 200m 刻度线的骨骼 Y 位移（模型空间） |
-| `scope.active_ammo` | string | 当前弹药 ResourceLocation（可选） |
+## 七、修订记录
 
----
-
-## 五、CustomHud 集成
-
-### 5.1 初始化（首帧）
-
-CustomHud 持有一个 `HudMolangContext` 单例。在 `syncHuds()` 为新创建的 `GuiAnimatable` 设置：
-
-```java
-// CustomHud.java 字段
-private final HudMolangContext hudMolangContext = new HudMolangContext();
-private final BallisticHoldCache ballisticHoldCache = new BallisticHoldCache();
-
-// syncHuds() 中新 HUD 创建后：
-if (hud.getHudContext() == null) {
-    hud.setHudContext(hudMolangContext);
-}
-```
-
-### 5.2 每帧 prepareFrame()
-
-在 `renderOrthogonalInScope` 和 `renderPerspectiveInScopeBatch` 中，渲染每个元素前调用：
-
-```java
-// renderOrthogonalInScope() 中，renderContent() 之前：
-hudMolangContext.prepareFrame(
-    currentZoom, vFov, screenW, screenH, false /* 正交 */,
-    params.getScale(partialTick),
-    params.getOffset(partialTick),
-    scCenterX, scCenterY
-);
-// 有活跃火炮时刷新弹道查表
-CameraSubsystem activeCam = CameraController.getActiveCamera();
-if (activeCam instanceof SightSubsystem sight) {
-    hudMolangContext.setActiveAmmo(sight.getLoadedAmmunition());
-}
-hud.renderContent(poseStack, bufferSource, partialTick);
-```
-
-### 5.3 BallisticsFramework 预计算
-
-在内容包加载完成后（或在首次渲染前懒加载），对每种弹药预计算分划表：
-
-```
-输入：弹药初速 V₀、弹道系数 BC、归零距离 Z、空气密度 ρ
-对每个目标距离 D = 100, 200, 300, ..., 2000:
-  二分搜索仰角 e 使弹道在水平距离≈D 处高度=0
-  hold(D) = e - zeroAngle
-  存入 holds[D/100]
-```
-
----
-
-## 六、美术侧用法示例
-
-### 6.1 分划刻度骨骼动画
-
-```json
-{
-  "BDC_2": {
-    "position": { "0.0": [0, "scope.bdc_mark_y(200)", 0] }
-  },
-  "BDC_4": {
-    "position": { "0.0": [0, "scope.bdc_mark_y(400)", 0] }
-  },
-  "BDC_6": {
-    "position": { "0.0": [0, "scope.bdc_mark_y(600)", 0] }
-  },
-  "BDC_8": {
-    "position": { "0.0": [0, "scope.bdc_mark_y(800)", 0] }
-  }
-}
-```
-
-### 6.2 数字标签反向缩放
-
-标签骨骼不随变焦放大（`ignore_zoom` 的 MoLang 替代方案）：
-
-```json
-{
-  "BDC_4_label": {
-    "scale": {
-      "0.0": [
-        "1 / hud.current_zoom",
-        "1 / hud.current_zoom",
-        "1 / hud.current_zoom"
-      ]
-    },
-    "position": { "0.0": [0, "scope.bdc_mark_y(400)", 0] }
-  }
-}
-```
-
-### 6.3 自适应遮罩
-
-利用 `hud.*` 参数做圆形遮罩裁剪：
-
-```json
-{
-  "scope_mask": {
-    "scale": {
-      "0.0": [
-        "hud.screen_height / hud.model_scale_y * 0.015",
-        "hud.screen_height / hud.model_scale_y * 0.015",
-        1
-      ]
-    }
-  }
-}
-```
-
----
-
-## 七、涉及文件与改动量
-
-| 文件 | 改动 | 说明 |
-|------|------|------|
-| `molang/HudMolangContext.java` | 新建，~80行 | HUD 专用上下文，hud.* + scope.* |
-| `molang/BallisticHoldCache.java` | 新建，~60行 | 弹道分划预计算与查表 |
-| `GuiAnimatable.java` | +1字段 +3行 | hudContext 字段与 getMolangContext 分支 |
-| `CustomHud.java` | +~10行 | 初始化 hudContext、每帧 prepareFrame |
-
-总新增 ~150 行，改动 ~15 行。
-
----
-
-## 八、与现有系统的关系
-
-| 系统 | 关系 |
-|------|------|
-| `MechMolangContext` | 继承，自动获得 local.* / global.* 查询 |
-| `GuiAnimatable` | 通过 hudContext 字段注入，不修改现有渲染逻辑 |
-| `CustomHud` | prepareFrame 在正交/透视渲染循环中调用 |
-| `SightHud` | 不变，引擎级元素不涉及 MoLang |
-| `BallisticsFramework` | 预计算时调用弹道求解 API，不侵入 |
-| 内容包 JSON | 无影响，现有 HudAttr CODEC 不变 |
+| 版本 | 日期 | 内容 |
+| --- | --- | --- |
+| 1.0 | 2026-06-15 | 提出 HUD 渲染参数、弹道分划查询与模型 HUD 接线 |
+| 1.1 | 2026-10-16 | 补充模型 HUD 与武器 HUD 计划之间的引用关系 |
+| 1.2 | 2026-10-16 | 定义通用/武器元素及上下文继承、`hud.*` / `weapon.*` 词表、武器控制器持有的分划和逐元素求值时机 |
+| 1.3 | 2026-10-17 | 按实际显示需求收缩 `hud.*` 至视角与视口查询；载具仪表沿用 `global.*`，分划骨骼换算由样式负责 |
