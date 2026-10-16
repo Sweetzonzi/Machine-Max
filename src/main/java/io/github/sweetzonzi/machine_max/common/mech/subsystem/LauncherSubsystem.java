@@ -41,6 +41,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.m
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * 发射器子系统。<br>
@@ -158,15 +159,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 本管当前供给者的<b>身份</b>（网络同步）。<br>
-     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，三者都随存档持久化，
-     * 因此同一个值在两端、在重启前后都指同一台机器，可以直接进存档也可以直接跨端传。
+     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，同一会话内两端一致。
      * <p>
-     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）与载入时的存档播种（{@link #loadData}）。
-     * 客户端在 {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
+     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）。客户端在
+     * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
      * （{@link #resolveSyncedSupplier()}），因此两端的指认由服务端单方面决定：
      * 客户端的路由不参与决策，只跟随。
      * <p>
-     * 写入存档还有一个用途：后进玩家在收到载具数据时就能拿到当前指认，不必等服务端下一次改动。
+     * <b>初值来源是补推，不是变化推送：</b>指认是"服务端每 tick 现算、载入后往往不再变化"的值，
+     * 载具在客户端建好那一刻由 {@code SubsystemController.pushAllTo(ServerPlayer)} 补一份全量快照
+     * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}）；此后只有真的换人时才走变化广播。
+     * 本字段因此不进存档。
      */
     private static final EntityDataAccessor<SupplierRef> SUPPLIER_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
@@ -1175,15 +1178,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else {
             chamberedType = null;
         }
-        // 供给者指认随载具数据一起送达（同步值只在变化时推送，所以这里补一次当前值）。
-        // 身份是 Part uuid + SubPart 名 + 子系统名，三者都在数据里持久化，重启后仍指同一台机器。
-        // 客户端解析要等本机握手完成，落空时由 onTick 重试。
-        if (data.hasUUID("supplier_part")) {
-            getSynchedData().set(SUPPLIER_ID, new SupplierRef(
-                    data.getUUID("supplier_part"),
-                    data.getString("supplier_sub_part"),
-                    data.getString("supplier_subsystem")));
-        }
     }
 
     @Override
@@ -1191,12 +1185,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.saveData(data);
         if (chamberedType != null) {
             data.putString("chambered_type", chamberedType.getRegistryKey().toString());
-        }
-        SupplierRef supplierRef = getSynchedData().get(SUPPLIER_ID);
-        if (!supplierRef.isNone()) {
-            data.putUUID("supplier_part", supplierRef.partUuid());
-            data.putString("supplier_sub_part", supplierRef.subPartName());
-            data.putString("supplier_subsystem", supplierRef.subsystemName());
         }
         return data;
     }

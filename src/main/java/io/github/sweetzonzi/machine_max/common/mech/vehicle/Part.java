@@ -170,7 +170,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
         this.uuid = UUID.fromString(data.uuid);
-        this.renderWireframe = readAdditionalData ? data.renderWireframe : true;
+        this.renderWireframe = !readAdditionalData || data.renderWireframe;
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
         this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
         // 动画体相关成员必须先于 createSubParts() 初始化（同上）

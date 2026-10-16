@@ -100,11 +100,54 @@ public class ObjectManager {
             PacketDistributor.sendToPlayersInDimension(//发包给维度内玩家，在他们的客户端添加载具
                     (ServerLevel) vehicle.level,
                     new VehicleCreatePayload(vehicle.level.dimension(), new VehicleData(vehicle)));
+            // 紧跟着创建包补一份子系统同步值全量快照：载入后不再变化的值走不到变化广播。
+            // 顺序要求见 pushSubsystemState 的文档
+            for (ServerPlayer player : ((ServerLevel) vehicle.level).players()) {
+                pushSubsystemState(vehicle, player);
+            }
         } else {
             clientVehiclesToAdd.remove(vehicle.getUuid());
             clientAllVehicles.put(vehicle.getUuid(), vehicle);
         }
         vehicle.onAddToLevel();
+    }
+
+    /**
+     * 给单个玩家补发一台载具的全部子系统同步值（{@link io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload}）。<br>
+     * 用于"该玩家的客户端刚建好这台载具"的时刻。
+     * <p>
+     * <b>必须紧跟在对应的载具创建包之后调用</b>：本补推与创建包走的是同一条连接，
+     * 由协议保证先后到达；客户端在创建包的处理器内就把载具建好（同线程执行，未入主线程队列），
+     * 因此补推包到达时目标必然已存在。若把本调用挪到别的事件或别的 tick，这个保证即失效，
+     * 包会被 {@code SubsystemSyncPayload} 的处理器按"目标不存在"丢弃且不会重发。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     *
+     * @param vehicle 已存在于服务端内存的载具
+     * @param player  接收方
+     */
+    public static void pushSubsystemState(VehicleCore vehicle, ServerPlayer player) {
+        vehicle.getSubsystemController().pushAllTo(player);
+    }
+
+    /**
+     * 给单个玩家补发该维度内全部载具的子系统同步值。<br>
+     * 同样必须紧跟在维度载具创建包之后调用，顺序要求与单台版本一致。
+     * <p>
+     * 取的是服务端内存里的载具，而不是 {@code LEVEL_VEHICLES} 存档快照：补推要的是
+     * "当前值"，存档快照的写入时机与它无关。手上的载具在服务端不存在（例如客户端专用
+     * 世界或数据尚未落地）时该项跳过，不抛异常。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     *
+     * @param level  载具所在维度
+     * @param player 接收方
+     */
+    public static void pushSubsystemState(Level level, ServerPlayer player) {
+        if (level.isClientSide()) return;
+        for (VehicleCore vehicle : levelVehicles.getOrDefault(level, Map.of()).values()) {
+            pushSubsystemState(vehicle, player);
+        }
     }
 
     /**
@@ -302,6 +345,8 @@ public class ObjectManager {
         for (int i = 0; i < packetNum; i++) {
             PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), iterator.next(), packetNum));
         }
+        // 创建包发完再补子系统同步值：与上面的载荷相邻发送，顺序由同一条连接保证（见 pushSubsystemState）
+        pushSubsystemState(level, (ServerPlayer) event.getEntity());
         MachineMax.LOGGER.info("玩家{}登录进入维度{}，发送维度内现有载具数据包", event.getEntity().getName().getString(), level.dimension().location());
     }
 
