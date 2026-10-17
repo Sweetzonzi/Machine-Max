@@ -290,13 +290,16 @@ public abstract class ProjectileType {
         public static final int MAX_DURATION_TICKS = 40;
 
         /**
-         * 缺省枪口火光：按口径折算半径、暖白色、强度 1、持续 2 tick（≈100 ms）。
+         * 缺省枪口火光：按口径折算半径、暖白色、强度 2、持续 6 tick（≈300 ms）。
          *
-         * <p>数值是首轮标定起点，不是实测结论：2 tick 覆盖步枪到坦克炮的常见枪口焰宽度，
-         * 榴弹炮一类可以上调到 4–6 tick；强度 1 与爆炸火光缺省同量级，靠"短"而不是"暗"区分。</p>
+         * <p><b>标定目标是"夜里打一发就看得见"</b>：强度 2 让单发在 60 fps 下把枪口周围的地面与
+         * 车体明显照亮，6 tick 让它在画面上停留 3–4 帧（更短的值只覆盖 1–2 帧，肉眼容易漏掉），
+         * 同时不至于久留成常亮。{@code (1-u)²} 包络使后半程快速变暗，因此实际可辨时长约一半。
+         * 连射时多条登记会重叠（见 {@link MuzzleFlashLight} 的"每 tick 至多一条"），
+         * 表现为持续光而不是逐发频闪。</p>
          */
         public static final MuzzleFlash DEFAULT =
-            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 1f, 2);
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 2f, 6);
 
         /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
         private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
@@ -407,7 +410,7 @@ public abstract class ProjectileType {
         /**
          * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
          * <p>
-         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、强度 1、2 tick。
+         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、强度 2、6 tick。
          * 意思是"任何有口径的弹种开火都会闪一下"，想关掉的弹种写 {@code muzzle_flash.enabled = false}。
          * <p>
          * 它按弹种而不是按发射器配置，理由与 {@code fire_particles}、{@code fire_sounds} 相同：

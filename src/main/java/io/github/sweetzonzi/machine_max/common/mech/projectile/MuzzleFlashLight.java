@@ -31,17 +31,18 @@ public final class MuzzleFlashLight {
     /**
      * 按口径折算照射半径时的基准值（m）。
      *
-     * <p>枪口焰的物理体只比炮口大一圈，照射半径取"火焰本身 + 一小段地面"：
-     * 7.62mm → 1.38 m，20mm → 2.0 m，50mm → 3.5 m，120mm → 7.0 m。基准 1 m 保证最小的
-     * 弹种也能照亮枪口周围的墙面与车体，每毫米 5 cm 让大口径按装药量自然拉开差距。</p>
+     * <p><b>标定目标是"夜里打一发就看得见"</b>，不是火焰本身的大小：枪口焰的物理体只比炮口大一圈，
+     * 但夜晚的枪口焰会把枪口周围相当一片地面与车体照亮。基准 2 m 保证最小的弹种也能照到脚下的
+     * 地面与身边的车体，每毫米 15 cm 让大口径按装药量自然拉开差距：7.62mm → 3.1 m、20mm → 5.0 m、
+     * 50mm → 9.5 m、120mm → 20 m、155mm → 25.3 m。</p>
      */
-    private static final float RADIUS_BASE_M = 1.0f;
+    private static final float RADIUS_BASE_M = 2.0f;
 
-    /** 每毫米口径增加的照射半径（m）：5 cm/mm */
-    private static final float RADIUS_PER_MM_M = 0.05f;
+    /** 每毫米口径增加的照射半径（m）：15 cm/mm */
+    private static final float RADIUS_PER_MM_M = 0.15f;
 
     /** 折算半径上限（m）：避免超大口径把枪口焰变成探照灯；显式 {@code radius} 不受它约束 */
-    private static final float RADIUS_MAX_M = 8.0f;
+    private static final float RADIUS_MAX_M = 48.0f;
 
     /** 客户端实现的登记入口；缺省空实现，由 {@code MachineMaxClient} 注入 */
     private static volatile MuzzleFlashSink sink = (level, position, params) -> {};
@@ -110,16 +111,16 @@ public final class MuzzleFlashLight {
     }
 
     /**
-     * 照射半径：显式值优先，否则 {@code R = 1 m + 5 cm × 口径(mm)}，上限 8 m。
+     * 照射半径：显式值优先，否则 {@code R = 2 m + 15 cm × 口径(mm)}，上限 48 m。
      *
      * <p>口径是"装药量有多大"在数据里的唯一载体（{@code external.caliber}，单位 mm），因此也是
-     * 枪口焰尺度的合理缺省：7.62mm → 1.38 m，20mm → 2.0 m，30mm → 2.5 m，50mm → 3.5 m，
-     * 120mm → 7.0 m，155mm → 8.0 m（触顶）。内容包写 {@code muzzle_flash.radius} 时改用显式值，
-     * 本方法与 8 m 上限只作用于缺省折算。</p>
+     * 枪口焰尺度的合理缺省：7.62mm → 3.1 m，20mm → 5.0 m，30mm → 6.5 m，50mm → 9.5 m，
+     * 120mm → 20 m，155mm → 25.3 m；折算式到 48 m 封顶（口径约 307 mm 起）。
+     * 内容包写 {@code muzzle_flash.radius} 时改用显式值，本方法与 48 m 上限只作用于缺省折算。</p>
      *
      * <p><b>次口径弹按弹芯口径折算</b>：{@code caliber} 对 120mm APFSDS 是 26 mm（弹芯），
-     * 折算出的枪口焰会明显小于炮口本身的尺度。要按炮口而不是弹芯表达，就在该弹种写显式
-     * {@code radius}——折算式不区分"口径"是炮口还是弹芯，这一点由内容作者决定。</p>
+     * 折算出的枪口焰会明显小于炮口本身的尺度（5.9 m vs 20 m）。要按炮口而不是弹芯表达，
+     * 就在该弹种写显式 {@code radius}——折算式不区分"口径"是炮口还是弹芯，这一点由内容作者决定。</p>
      *
      * @param caliberMm        弹种口径（mm）
      * @param configuredRadius 内容包半径：{@code > 0} 为显式值，{@link ProjectileType.MuzzleFlash#DERIVE_RADIUS}
