@@ -7,11 +7,14 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.render.gui.MMGuiManager;
+import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatable;
 import io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable;
+import io.github.sweetzonzi.machine_max.client.render.renderable.HudElementInstance;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
@@ -65,7 +68,7 @@ import java.util.Set;
 @OnlyIn(Dist.CLIENT)
 public class CustomHud implements LayeredDraw.Layer {
     // 当前视角的宿主 → 该宿主的运行时元素；空列表表示宿主在当前视角没有 HUD
-    private final Map<IHudHost, List<GuiAnimatable>> huds = new LinkedHashMap<>();
+    private final Map<IHudHost, List<HudElementInstance>> huds = new LinkedHashMap<>();
     /** 当前生效的视角；null 表示尚未建立任何宿主。 */
     private HudView activeView;
     /** 已经提示过的缺失样式，避免每 tick 刷屏。 */
@@ -135,7 +138,7 @@ public class CustomHud implements LayeredDraw.Layer {
         clearAll();
         activeView = view;
         for (IHudHost host : hosts) {
-            List<GuiAnimatable> elements = new ArrayList<>();
+            List<HudElementInstance> elements = new ArrayList<>();
             HudLayout layout = host.hudLayoutFor(view);
             if (layout == null) layout = HudLayout.EMPTY_LAYOUT;
             for (HudElement element : layout.elements()) {
@@ -146,14 +149,14 @@ public class CustomHud implements LayeredDraw.Layer {
                     }
                     continue;
                 }
-                if (!(style instanceof ModelHudStyle modelStyle)) {
-                    if (warnedStyles.add(element.style())) {
-                        MachineMax.LOGGER.warn("HUD 样式载体尚不支持，跳过该条目: {} (type={})",
-                                element.style(), style.type());
-                    }
-                    continue;
+                if (style instanceof ModelHudStyle modelStyle) {
+                    elements.add(new GuiAnimatable(element.style(), modelStyle, element));
+                } else if (style instanceof AuiHudStyle auiStyle) {
+                    elements.add(new AuiHudAnimatable(element.style(), auiStyle, element));
+                } else if (warnedStyles.add(element.style())) {
+                    MachineMax.LOGGER.warn("HUD 样式载体尚不支持，跳过该条目: {} (type={})",
+                            element.style(), style.type());
                 }
-                elements.add(new GuiAnimatable(element.style(), modelStyle, element));
             }
             huds.put(host, elements);
         }
@@ -181,10 +184,10 @@ public class CustomHud implements LayeredDraw.Layer {
         }
 
         // 第1趟：正交 HUD — 使用 Minecraft 默认 GUI 正交投影逐个渲染
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) {
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) {
                 if (!hud.isPerspective()) {
-                    hud.render(guiGraphics, 0, 0, partialTick);
+                    hud.renderGui(guiGraphics, partialTick);
                 }
             }
         }
@@ -197,8 +200,8 @@ public class CustomHud implements LayeredDraw.Layer {
 
     /** 当前是否有透视元素；没有时跳过投影矩阵的备份/恢复。 */
     private boolean hasPerspective() {
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) {
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) {
                 if (hud.isPerspective()) return true;
             }
         }
@@ -228,9 +231,9 @@ public class CustomHud implements LayeredDraw.Layer {
         RenderSystem.applyModelViewMatrix();
 
         // 渲染所有透视 HUD
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) {
-                if (!hud.isPerspective()) continue;
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
                 PoseStack poseStack = guiGraphics.pose();
                 poseStack.pushPose();
                 poseStack.setIdentity();
@@ -297,13 +300,17 @@ public class CustomHud implements LayeredDraw.Layer {
         }
 
         // === 第1趟：正交 UGC 元素 ===
-        // 每个元素按 scope_behavior 单独设置 poseStack
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) {
-                if (hud.isPerspective()) continue;
-                renderOrthogonalInScope(guiGraphics, hud, screenW, screenH,
-                        scopeCenterX, scopeCenterY, pitchDiff, yawDiff,
-                        currentZoom, partialTick);
+        // 每个元素按 scope_behavior 单独设置 poseStack；AUI 载体按自己的锚点投放
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (instance.isPerspective()) continue;
+                if (instance instanceof GuiAnimatable hud) {
+                    renderOrthogonalInScope(guiGraphics, hud, screenW, screenH,
+                            scopeCenterX, scopeCenterY, pitchDiff, yawDiff,
+                            currentZoom, partialTick);
+                } else {
+                    instance.renderGui(guiGraphics, partialTick);
+                }
             }
         }
 
@@ -403,9 +410,9 @@ public class CustomHud implements LayeredDraw.Layer {
         RenderSystem.applyModelViewMatrix();
 
         // 渲染所有透视 HUD
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) {
-                if (!hud.isPerspective()) continue;
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
                 PoseStack poseStack = guiGraphics.pose();
                 poseStack.pushPose();
                 poseStack.setIdentity();
@@ -456,8 +463,8 @@ public class CustomHud implements LayeredDraw.Layer {
 
     /** 清除所有运行时元素。 */
     private void clearAll() {
-        for (List<GuiAnimatable> elements : huds.values()) {
-            for (GuiAnimatable hud : elements) hud.destroy();
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) hud.dispose();
         }
         huds.clear();
         activeView = null;

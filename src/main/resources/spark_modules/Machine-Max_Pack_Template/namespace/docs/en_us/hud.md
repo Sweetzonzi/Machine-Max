@@ -68,7 +68,7 @@ A HUD style defines the internal appearance of one HUD and contains no position,
 ### Configuration Parameter Description
 
 #### Basic Properties
-- **type** (Required): Carrier type; currently only `machine_max:model_hud`
+- **type** (Required): Carrier type: `machine_max:model_hud` (Bedrock model) or `machine_max:aui_hud` (AUI page)
 - **model** (Required): HUD 3D model resource address, e.g., `machine_max:example_hud.geo`
 - **animation** (Required): HUD animation resource address, e.g., `machine_max:example_hud`
 - **texture** (Required): HUD texture resource address, e.g., `machine_max:textures/hud/example_hud.png`
@@ -107,6 +107,23 @@ A HUD style defines the internal appearance of one HUD and contains no position,
   - **width**: Clipping rectangle width (pixels)
   - **height**: Clipping rectangle height (pixels)
 
+### AUI Page Styles
+
+`machine_max:aui_hud` replaces the model with an HTML page supplied by the pack's `documents/` directory; the container is the AUI HUD overlay.
+
+```json
+{
+  "type": "machine_max:aui_hud",
+  "page": "machine_max/weapon_hud_element/weapon_ammo.html",
+  "defaults": { "--hud-accent": "#7dd3fc" }
+}
+```
+
+- **page** (Required): AUI page key in the form `<pack namespace>/<relative path>`; the pack file `documents/weapon_hud_element/weapon_ammo.html` maps to `machine_max/weapon_hud_element/weapon_ammo.html`
+- **defaults** (Optional): CSS variables written onto the page `body`, readable through `var(...)` in the page stylesheet
+
+The page shrinks to its content: the runtime adds the `mm-hud` class to `body` and injects `inline-block`, zero margin and a transparent background. A page describes only its own content and must not position itself on screen; the layout's `anchor`, `offset` and `scale` decide where it appears. AUI pages always render in the GUI/HUD orthographic pass and never use perspective projection.
+
 ## HUD Layouts (hud_layouts/)
 
 A layout file is an array. Each entry is an element: one style reference plus a complete set of placement values. Elements are inline in the layout and are not registered separately; the same style may appear multiple times in one layout.
@@ -132,6 +149,9 @@ A layout file is an array. Each entry is an element: one style reference plus a 
 | `scale` | No | Scaling factor |
 | `scope_behavior` | No | Default `follow_position`; only effective in a sight layout: `screen_fixed` / `follow_position` / `follow_transform` |
 | `ignore_zoom` | No | Default `false`; when `true`, element size does not scale with sight zoom |
+| `anchor` | No | AUI carrier only: default `top_left`, one of `top_center`, `top_right`, `center_left`, `center`, `center_right`, `bottom_left`, `bottom_center`, `bottom_right`; the element's matching corner (or center) aligns with the screen's matching corner (or center) |
+
+The AUI carrier ignores `perspective`, `rotation`, `scope_behavior` and `ignore_zoom`: it always renders in the orthographic batch, rotation belongs to the page's own CSS, `offset` uses 2D logical pixels (`z` is ignored) and `scale` uses `x`. The model carrier ignores `anchor`.
 
 Key rule: the file path relative to the module directory without `.json`, prefixed by the pack namespace, is the resource key. `hud_layouts/seat_dashboard.json` is `machine_max:seat_dashboard`; `hud_layouts/foo/bar.json` is `machine_max:foo/bar`. Styles follow the same rule: `huds/example_hud.json` is `machine_max:example_hud`. Layouts and styles live in separate modules, so identical keys do not collide.
 

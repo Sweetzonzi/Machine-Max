@@ -1,7 +1,7 @@
 # HUD 样式、布局与元素设计
 
-> 版本 3.0 · 2026-10-18
-> **状态**：进行中。V1（模型载体的样式 / 布局 / 元素、座椅与相机/瞄具宿主、内容包迁移）已落地；V2（AUI 载体、`hud.*` 上下文、AUI 绑定层）、V3（武器控制器宿主、`weapon.*`）、V4（玩家覆盖与编辑页）未实现。
+> 版本 3.4 · 2026-10-18
+> **状态**：进行中。V1（模型载体的样式 / 布局 / 元素、座椅与相机/瞄具宿主、内容包迁移）已落地并实机验收。V2 的 AUI 载体已落地：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、按布局顺序手动绘制；`data-mm-*` 绑定层与 `hud.*` 上下文未实现。V3（武器控制器宿主、`weapon.*`）与 V4（玩家覆盖与编辑页）未实现。
 
 ***
 
@@ -130,6 +130,8 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 
 页面的结构与取值见 §八。
 
+运行时实现：每个布局条目创建一个独立 `Document`，标记 `manuallyRendered`，AUI 的 overlay 批次跳过该标记的文档，由 `CustomHud` 在布局顺序里调用 `Base.drawOverlayDocument` 绘制；页面 `body` 加 `mm-hud` 类并注入按内容收缩、无外边距、透明背景的规则；位置由元素的 `anchor` / `offset` / `scale.x` 决定；页面随 `/reload` 刷新。
+
 ### 3.3 为什么"行为"不算内部
 
 `scope_behavior` 与 `ignore_zoom` 描述的是"这份分划在炮镜里怎么动"，属于 `HudElement`，不属于 `HudStyle`。内容包中的 `gun_sight_hud.json` 与 `gun_sight_hud_fixed.json` 使用同一个模型、同一份动画与纹理，差异只有这两个字段；它们对应同一份 `HudStyle`，行为差异由引用该样式的不同布局表达。
@@ -154,7 +156,7 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 | 字段 | 模型载体 | AUI 载体 |
 | --- | --- | --- |
 | `style` | 必填：`HudStyle` 的 RL | 必填：`HudStyle` 的 RL |
-| `perspective` | 读 | 不适用：AUI 页面固定在 GUI/HUD 正交阶段渲染；写 `true` 时提示并按 `false` 处理 |
+| `perspective` | 读 | 不适用：AUI 页面固定在 GUI/HUD 正交阶段渲染；写 `true` 也按 `false` 处理 |
 | `scope_behavior` / `ignore_zoom` | 读；仅当布局被宿主的 `scope` 字段引用时生效 | 忽略（提示警告） |
 | `anchor` | 忽略 | 读：`top_left` … `bottom_right` / `center` |
 | `offset` | 读三维（透视下米、正交下像素），相对屏幕中心 | 读二维逻辑像素（`z` 忽略） |
@@ -165,8 +167,8 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 
 1. **一个元素就是一组完整投放值**，不做"部分覆盖"。需要另一种投放就在布局里再写一个元素。每项投放只有一个权威来源。
 2. **没有 `z` / `order` 字段**。`offset.z` 是空间深度：透视下为摄像机前方距离（现有内容使用负值，如 `-135`），正交下为 GUI 深度平移；`FOLLOW_TRANSFORM` 的分划板距离也取 `offset.z`。`offset.z` 不参与绘制顺序；绘制顺序由布局数组决定（同投影模式内）。
-3. `scope_behavior` / `ignore_zoom` 只在布局被 `scope` 视角字段引用时生效；被 `first_hud_layout` / `third_hud_layout` 引用时忽略并提示，避免内容包把炮镜行为写进普通视角。
-4. `anchor`、`rotation` 等载体专属字段按上表处理；不适用于当前载体的字段忽略并提示。
+3. `scope_behavior` / `ignore_zoom` 只在布局被 `scope` 视角字段引用时生效；被 `first_hud_layout` / `third_hud_layout` 引用时忽略，避免内容包把炮镜行为写进普通视角。
+4. `anchor`、`rotation` 等载体专属字段按上表处理；不适用于当前载体的字段忽略。
 5. **投影模式由载体决定，不由字段单独决定**：`perspective` 是模型载体专属字段；模型载体的元素按它进入透视或正交批次，AUI 载体的元素一律进入正交批次。布局可以同时包含两种载体，运行时先解析 `style` 的 `type`，再决定元素归入哪个批次。
 
 ### 4.1 为什么元素内联在布局里
@@ -220,7 +222,7 @@ public record HudLayout(List<HudElement> elements) {
 
 规则：
 
-1. **数组顺序是同一种投影模式内的提交顺序**，没有 `order`。透视元素之间、正交元素之间分别按数组顺序提交；透视与正交之间的先后由渲染批次决定，不作为布局契约。`offset.z` 只决定空间深度，不参与排序。归入哪个批次由 `style` 的载体类型决定：模型载体看 `perspective`，AUI 载体一律归正交（§四规则 5）。透视批次共用一个 `MultiBufferSource` 与 `entityTranslucent`，同 buffer 的半透明四边形在上传时可能按深度重排，因此数组顺序不保证等于像素覆盖顺序；这是已接受的边界，验收只断言提交顺序。
+1. **数组顺序是同一种投影模式内的提交顺序**，没有 `order`。透视元素之间、正交元素之间分别按数组顺序提交；透视与正交之间的先后由渲染批次决定，不作为布局契约。`offset.z` 只决定空间深度，不参与排序。归入哪个批次由 `style` 的载体类型决定：模型载体看 `perspective`，AUI 载体一律归正交（§四规则 5）。AUI 文档由 AUI 的平面文档层绘制（z 从 1.0 起），同一帧内位于模型元素之上；数组顺序决定 AUI 文档之间的提交顺序，不改变它们与模型元素的上下关系。透视批次共用一个 `MultiBufferSource` 与 `entityTranslucent`，同 buffer 的半透明四边形在上传时可能按深度重排，因此数组顺序不保证等于像素覆盖顺序；这是已接受的边界，验收只断言提交顺序。
 2. **布局不含视角信息**。同一份布局可以被座椅的 `first_hud_layout` 与 `third_hud_layout` 同时引用，也可以被相机/瞄具的 `scope_hud_layout` 引用；视角由宿主的字段名决定。
 3. **空数组 = 该视角不显示 HUD**；宿主字段缺失 = 该视角没有布局，同样不显示。
 4. **布局是命名资源**：`hud_layouts/*.json` 由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`，键为 `<命名空间>:<相对路径>`，与样式使用同一条拼键规则，不额外加 `layout/` 前缀。`hud_layouts/` 下的子目录参与拼键，因此 `hud_layouts/foo/bar.json` 的键是 `<命名空间>:foo/bar`，不同目录的同名文件不会撞键。布局与样式分属两张注册表，键同名互不影响。
@@ -473,12 +475,16 @@ V1 的内容包迁移已完成，当前形态：
 | --- | --- |
 | `common/visual/HudView.java` | 视角枚举：`FIRST` / `THIRD` / `SCOPE` |
 | `common/visual/IHudHost.java` | 宿主接口：`hudLayoutFor(HudView)` 返回实际布局对象，`null` 表示无 HUD；静态 `resolve(ResourceLocation)` 供持有内容包 RL 的宿主把键解析成对象，缺失时提示一次 |
-| `common/visual/HudStyle.java` | 样式接口：`type` 分派、`ScissorParams`、`TextParams` |
+| `common/visual/HudStyle.java` | 样式接口：`type` 分派（`model_hud` / `aui_hud`）、`ScissorParams`、`TextParams` |
 | `common/visual/ModelHudStyle.java` | 模型载体样式：`model`/`animation`/`texture`/`color`/`alpha`/`scissor`/`texts` |
-| `common/visual/HudElement.java` | `style` RL + 投放值；`perspective`、`scope_behavior`、`ignore_zoom`、`offset`、`rotation`、`scale` |
+| `common/visual/AuiHudStyle.java` | AUI 载体样式：`page` 页面键与 `defaults` CSS 变量 |
+| `common/visual/HudAnchor.java` | 九宫格锚点枚举，`anchor` 字段的序列化取值 |
+| `common/visual/HudElement.java` | `style` RL + 投放值；`perspective`、`scope_behavior`、`ignore_zoom`、`offset`、`rotation`、`scale`、`anchor` |
 | `common/visual/HudLayout.java` | 裸元素数组的 codec；`EMPTY` 是无布局的哨兵 RL，`EMPTY_LAYOUT` 是空布局对象 |
-| `client/render/renderable/GuiAnimatable.java` | 每个实例绑定一份 `ModelHudStyle` + 一个 `HudElement`；上下文仍委派给玩家所坐座椅的 Part |
-| `client/render/gui/hud/CustomHud.java` | 按宿主分组：`LinkedHashMap<IHudHost, List<GuiAnimatable>>`；每 tick 解析当前视角的宿主集合，集合或视角变化时整体重建；向宿主取 `hudLayoutFor`，为 `null` 时按空布局处理；每个宿主保留一个可能为空的列表，空列表也占键；渲染按宿主顺序，透视/正交用 `isPerspective()` 分趟；炮镜的 `scope_behavior` 变换链不变 |
+| `client/render/renderable/GuiAnimatable.java` | 模型元素：每个实例绑定一份 `ModelHudStyle` + 一个 `HudElement`；上下文仍委派给玩家所坐座椅的 Part |
+| `client/render/renderable/HudElementInstance.java` | 两种载体共用的运行时接口：`isPerspective` / `renderGui` / `dispose` |
+| `client/render/renderable/AuiHudAnimatable.java` | AUI 元素：每个条目创建一个 `Document`，标记 `manuallyRendered`，按 `anchor` / `offset` / `scale.x` 投放；`body` 加 `mm-hud` 类并注入收缩规则；`/reload` 后重新贴类名 |
+| `client/render/gui/hud/CustomHud.java` | 按宿主分组：`LinkedHashMap<IHudHost, List<HudElementInstance>>`；每 tick 解析当前视角的宿主集合，集合或视角变化时整体重建；向宿主取 `hudLayoutFor`，为 `null` 时按空布局处理；每个宿主保留一个可能为空的列表，空列表也占键；渲染按宿主顺序，透视/正交用 `isPerspective()` 分趟；AUI 元素在正交趟按布局顺序手动绘制并刷新 AUI 批次；炮镜的 `scope_behavior` 变换链不变 |
 | `external/MMDynamicRes.java` | `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
 | `common/resource/modules/HudModule.kt` / `HudLayoutModule.kt` | 按 `<命名空间>:<相对路径>` 拼键，子目录参与键；分别解码样式与布局 |
 | `common/registry/MMPackModuleRegistries.kt` | 注册 `huds` 与 `hud_layouts` 两个内容包模块 |
@@ -488,7 +494,7 @@ V1 的内容包迁移已完成，当前形态：
 | `common/mech/subsystem/attr/static_attr/SeatSubsystemStaticAttr.java` | `first_hud_layout` / `third_hud_layout` 各一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 | `CameraSubsystemStaticAttr.java` / `SightSubsystemStaticAttr.java` | `scope_hud_layout` 一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 
-尚未实现：`HudMolangContext` / `WeaponHudMolangContext`、AUI 载体与绑定层、武器控制器 HUD 的内容包示例与 schema、玩家布局管理器与编辑页。
+尚未实现：`HudMolangContext` / `WeaponHudMolangContext`、AUI 绑定层（`data-mm-*`）、武器控制器 HUD 的内容包示例与 schema、玩家布局管理器与编辑页。AUI 载体的页面渲染已接入，语法的取值通道仍待绑定层。
 
 RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样式目录是 `huds/`、布局目录是 `hud_layouts/`，因此两者的键可以同名而互不冲突；不额外加 `layout/` 前缀，也不在键里写目录名。
 
@@ -550,11 +556,12 @@ RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样
 | 阶段 | 内容 | 产出 |
 | --- | --- | --- |
 | **V1（已实现）** | `HudStyle` / `HudElement` / `HudLayout` 与两张资源表；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
-| **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层、`DocumentModule` 与客户端资源包注入 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用；内容包页面可创建 |
+| **V2-b（进行中）** | AUI 载体：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、`body.mm-hud` 收缩规则、按布局顺序手动绘制；`DocumentModule` 与客户端资源包注入 | AUI 页面作为 HUD 元素渲染；内容包页面可创建 |
+| **V2-a（后做）** | 通用 `HudMolangContext`（`hud.*`）、AUI 绑定层（`data-mm-*`）、`local.*` / `global.*` 在 HUD 上下文中的转发 | AUI 页面显示数值；`hud.*` 查询可用；内容包页面按表达式刷新 |
 | **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段与宿主选择已入代码；剩余 `WeaponHudElement`、`WeaponHudMolangContext`、`HudWeaponSnapshot`、`weapon.*`、`scope` 分划、内容包示例与动态属性 schema | 座椅当前控制组选中的 WC 全部按各视角显示；`weapon.*` 数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
-V1 已落地并通过 `gradlew compileJava compileKotlin`，`runClient` 进世界的表现验收见 §十三。宿主分组与武器控制器宿主的集合选择也已落地：座椅、相机/瞄具、武器控制器都实现 `IHudHost`，`CustomHud` 按宿主集合重建；武器控制器没有布局字段时不产生元素。V1 刻意不包含 `HudMolangContext`、`WeaponHudMolangContext`、AUI 绑定与玩家覆盖。座椅 HUD 的 `global.get('vehicle_speed')` 继续走 Part 的 `MechMolangContext`；相机/瞄具的模型 HUD 只要求静态文本或现有上下文能求值的表达式。V2 起提供 `hud.*`，V3 起提供 `weapon.*`。`WeaponHudOverlay` 继续作为武器状态面板。
+V1 已落地并通过 `gradlew compileJava compileKotlin`，`runClient` 进世界的表现验收见 §十三。宿主分组与武器控制器宿主的集合选择也已落地：座椅、相机/瞄具、武器控制器都实现 `IHudHost`，`CustomHud` 按宿主集合重建；武器控制器没有布局字段时不产生元素。V1 刻意不包含 `HudMolangContext`、`WeaponHudMolangContext`、AUI 绑定与玩家覆盖。座椅 HUD 的 `global.get('vehicle_speed')` 继续走 Part 的 `MechMolangContext`；相机/瞄具的模型 HUD 只要求静态文本或现有上下文能求值的表达式。V2-a 起提供 `hud.*`，V3 起提供 `weapon.*`。`WeaponHudOverlay` 继续作为武器状态面板。AUI 载体已在 V2-b 接入 `CustomHud`：页面由 `AuiHudAnimatable` 持有并绘制，静态内容不依赖 `hud.*`，表达式绑定等 V2-a。
 
 渲染顺序契约只覆盖提交顺序：同一宿主内按布局数组顺序提交，宿主之间按宿主集合的迭代顺序提交。宿主顺序不构成契约，内容包负责让同一视角的元素互不遮挡；两个投影批次之间的先后由渲染器固定，不要求布局表达跨投影顺序。同批次半透明几何按深度重排的风险已接受，验收只断言提交顺序。
 
@@ -578,7 +585,9 @@ V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世
 | 同一布局用于第一/第三人称 | V1 | 同一 RL 在两个视角各自生成元素，互不串值 |
 | 不同车不同布局 | V1 | 两台车的座椅/相机/瞄具子系统引用不同布局 RL，互不影响 |
 | 同投影模式内的提交顺序 | V1 | 同一布局中多个透视元素、多个正交元素分别按数组顺序提交；同批次半透明几何可能按深度重排，不作像素覆盖顺序断言；跨投影的先后不作断言 |
-| AUI 载体的投影归类 | V2 | 布局中的 AUI 元素即使写 `perspective: true` 也按 `false` 处理并进入正交批次；诊断提示可见 |
+| AUI 载体的投影归类 | V2 | 布局中的 AUI 元素即使写 `perspective: true` 也按 `false` 处理并进入正交批次 |
+| AUI 页面渲染 | V2-b | 页面在 `anchor` 指定的屏幕位置出现，背景透明，不遮挡世界；页面缺失时只提示一次并跳过该条目 |
+| AUI 元素与模型元素同帧 | V2-b | 同一布局内先提交模型元素，再提交 AUI 文档；AUI 文档位于模型元素之上（AUI 平面文档层 z 从 1.0 起） |
 | 玩家按视角覆盖 | V4 | 只覆盖 `first` 时 `third` 使用预设；`first: []` 明确隐藏；单视角重置与整宿主重置 |
 | 武器分划 | V3 | 相机/瞄具边框使用普通上下文；每台武器的 `scope` 分划读取本控制器弹药，数据互不串值 |
 | 武器选中集合 | V3 | 同一座椅选中多台 WC 时全部进入宿主集合；不属于当前控制组的 WC 不进入；不按主/副分组；不按 `isActive`/`isDestroyed` 过滤；未配布局的 WC 为空列表 |
@@ -622,3 +631,4 @@ V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世
 | 3.1 | 2026-10-18 | 宿主分组落地：新增 `HudView` / `IHudHost`，座椅、相机/瞄具与武器控制器均实现；`CustomHud` 改为 `LinkedHashMap<IHudHost, List<GuiAnimatable>>`，每 tick 比较解析出的宿主集合与键集合、并比较视角，变化时整体重建；空布局宿主保留空列表；武器控制器动态属性加入三个 `*_hud_layout`；跨宿主绘制顺序明确不设契约，内容包负责元素不重叠；热重载改为上下车/换视角时生效 |
 | 3.2 | 2026-10-18 | 修正 `*_hud_layout` 的 codec：改用 `optionalFieldOf(..., HudLayout.EMPTY)` 的非空默认值，删除产生 null 的 `xmap`；新增 `HudLayout.EMPTY` 哨兵与 `EMPTY_LAYOUT`；`IHudHost` 只保留 `hudLayoutFor`（返回实际布局对象），另提供静态 `resolve` 供持有内容包 RL 的宿主解析，玩家自定义布局直接覆盖 `hudLayoutFor`；`CustomHud` 对 `null` 布局按空布局处理；内容包错误上报对空异常消息与两列表长度不一致做兜底 |
 | 3.3 | 2026-10-18 | V1 实机验收：`runClient` 进世界加载无失败，座椅与炮镜 HUD 的位置、缩放、投影和 `global.get('vehicle_speed')` 求值正常 |
+| 3.4 | 2026-10-18 | AUI 载体落地：`AuiHudStyle`（`aui_hud`，`page` + `defaults`）、`HudAnchor` 与元素 `anchor` 字段、`HudElementInstance`；`AuiHudAnimatable` 为每个条目创建 `manuallyRendered` Document，按锚点/偏移/缩放投放并注入 `body.mm-hud` 收缩规则；`CustomHud` 改用 `List<HudElementInstance>`，正交趟按布局顺序绘制 AUI 文档并刷新 AUI 批次；内容包示例与 `hud.md` 同步。`data-mm-*` 绑定层与 `hud.*` 上下文留待 V2-a |

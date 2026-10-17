@@ -49,8 +49,8 @@ io.github.sweetzonzi.machine_max/
 │   ├── attachment/                  # VehicleAssemblyAttachment, BlueprintAttachment, ControlPreference ...
 │   ├── registry/ (Java)             # MMDamageTypes, MMMenus, MMTags
 │   └── visual/                      # PartAnimatable, VehicleAnimatable, AnimatableParams,
-│                                    # HudStyle, ModelHudStyle, HudElement, HudLayout,
-│                                    # HudView, IHudHost,
+│                                    # HudStyle, ModelHudStyle, AuiHudStyle, HudElement,
+│                                    # HudLayout, HudAnchor, HudView, IHudHost,
 │                                    # RenderableBoundingBox, SubPartAnimatable, VisualEffectHelper
 ├── client/                          # # 客户端渲染、输入、GUI — 见 client/AGENTS.md
 │   ├── render/

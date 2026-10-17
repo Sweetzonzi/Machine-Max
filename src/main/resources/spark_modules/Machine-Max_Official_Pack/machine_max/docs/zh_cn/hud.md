@@ -69,7 +69,7 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 ### 配置参数说明
 
 #### 基本属性
-- **type** (必需): 载体类型，当前只有 `machine_max:model_hud`
+- **type** (必需): 载体类型：`machine_max:model_hud`（基岩模型）或 `machine_max:aui_hud`（AUI 页面）
 - **model** (必需): HUD的3D模型资源地址，如 `machine_max:example_hud.geo`
 - **animation** (必需): HUD的动画资源地址，如 `machine_max:example_hud`
 - **texture** (必需): HUD的纹理资源地址，如 `machine_max:textures/hud/example_hud.png`
@@ -109,6 +109,23 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
   - **width**: 剪裁矩形宽度（像素）
   - **height**: 剪裁矩形高度（像素）
 
+### AUI 页面样式
+
+`machine_max:aui_hud` 用一个 HTML 页面代替模型，页面由内容包 `documents/` 目录提供，容器是 AUI 的 HUD 叠层。
+
+```json
+{
+  "type": "machine_max:aui_hud",
+  "page": "machine_max/weapon_hud_element/weapon_ammo.html",
+  "defaults": { "--hud-accent": "#7dd3fc" }
+}
+```
+
+- **page** (必需): AUI 页面键，形式为 `<内容包命名空间>/<相对路径>`，例如内容包里的 `documents/weapon_hud_element/weapon_ammo.html` 对应 `machine_max/weapon_hud_element/weapon_ammo.html`
+- **defaults** (可选): 写进页面 `body` 的 CSS 变量，页面样式表可用 `var(...)` 读取
+
+页面按内容收缩：运行时给 `body` 加上 `mm-hud` 类并注入 `inline-block`、无外边距、透明背景的规则。页面只描述自己的内容，不要写整屏定位；元素在屏幕上的位置由布局里的 `anchor`、`offset` 与 `scale` 决定。AUI 页面固定走 GUI/HUD 正交阶段，不参与透视投影。
+
 ## HUD布局（hud_layouts/）
 
 布局文件的内容是一个数组，每个条目是一个元素：一份样式引用加一组完整投放值。元素内联在布局里，不单独注册；同一个样式可以在一个布局里出现多次。
@@ -134,6 +151,9 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 | `scale` | 否 | 缩放比例 |
 | `scope_behavior` | 否 | 默认 `follow_position`；只在炮镜布局里生效，可选 `screen_fixed` / `follow_position` / `follow_transform` |
 | `ignore_zoom` | 否 | 默认 `false`；`true` 时元素尺寸不随炮镜变焦变化 |
+| `anchor` | 否 | 仅 AUI 载体：默认 `top_left`，可选 `top_center`、`top_right`、`center_left`、`center`、`center_right`、`bottom_left`、`bottom_center`、`bottom_right`；元素的对应角（或中心）对齐屏幕的对应角（或中心） |
+
+AUI 载体不读 `perspective`、`rotation`、`scope_behavior` 与 `ignore_zoom`：它固定进入正交批次，旋转属于页面自己的 CSS，`offset` 取二维逻辑像素（`z` 忽略），`scale` 取 `x`。模型载体忽略 `anchor`。
 
 键的规则：文件相对路径去掉 `.json` 就是资源键，并带上内容包命名空间。`hud_layouts/seat_dashboard.json` 的键是 `machine_max:seat_dashboard`；`hud_layouts/foo/bar.json` 的键是 `machine_max:foo/bar`。样式同理：`huds/example_hud.json` 的键是 `machine_max:example_hud`。布局与样式分属两个模块，键同名不会冲突。
 

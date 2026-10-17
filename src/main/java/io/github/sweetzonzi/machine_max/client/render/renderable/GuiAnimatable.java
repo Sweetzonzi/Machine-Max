@@ -63,7 +63,7 @@ import java.util.Map;
  * 所属 Part 的 {@link cn.solarmoon.spark_core.molang.SparkMolangContext}。
  */
 @OnlyIn(Dist.CLIENT)
-public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, Renderable {
+public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, ITickableRenderable, Renderable {
     private final Minecraft minecraft = Minecraft.getInstance();
     /** 样式资源键，仅用于诊断。 */
     private final ResourceLocation styleId;
@@ -117,6 +117,16 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
 
     public boolean isPerspective() {
         return perspective;
+    }
+
+    @Override
+    public void renderGui(GuiGraphics guiGraphics, float partialTick) {
+        render(guiGraphics, 0, 0, partialTick);
+    }
+
+    @Override
+    public void dispose() {
+        ITickableRenderable.super.destroy();
     }
 
     public ScopeBehavior scopeBehavior() {

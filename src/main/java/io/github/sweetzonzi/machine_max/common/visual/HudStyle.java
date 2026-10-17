@@ -18,7 +18,8 @@ import java.util.Map;
  * {@link io.github.sweetzonzi.machine_max.external.MMDynamicRes#HUD_STYLES}。
  * 运行时由 {@link HudElement} 通过 {@link HudElement#style()} 引用。
  * <p>
- * {@code type} 字段决定载体类型；V1 只有模型载体 {@link ModelHudStyle}。
+ * {@code type} 字段决定载体类型；现有模型载体 {@link ModelHudStyle} 与
+ * AUI 页面载体 {@link AuiHudStyle}。
  */
 public interface HudStyle {
 
@@ -39,6 +40,9 @@ public interface HudStyle {
     static MapCodec<? extends HudStyle> codecFor(ResourceLocation type) {
         if (MODEL_HUD.equals(type)) {
             return ModelHudStyle.CODEC;
+        }
+        if (AuiHudStyle.AUI_HUD.equals(type)) {
+            return AuiHudStyle.CODEC;
         }
         throw new IllegalArgumentException("Unknown HUD style type: " + type);
     }
