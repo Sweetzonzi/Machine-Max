@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_reload_ring</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!--
+  独立元素：4 段装填环。
+  每段是一个固定的 90° 弧，指针只在段内旋转（--p）。
+  N 段时每段角度 = 360 / N；这里用 4 段演示。
+-->
+<div class="el el-ring">
+  <div class="ring-seg" style="--i:0; --p:1">
+    <div class="ring-track is-ready"></div>
+    <div class="ring-hand is-ready" style="--p:1"></div>
+  </div>
+  <div class="ring-seg" style="--i:1; --p:1">
+    <div class="ring-track is-ready"></div>
+    <div class="ring-hand is-ready" style="--p:1"></div>
+  </div>
+  <div class="ring-seg" style="--i:2; --p:0.62">
+    <div class="ring-track is-loading"></div>
+    <div class="ring-hand is-loading" style="--p:0.62"></div>
+  </div>
+  <div class="ring-seg" style="--i:3; --p:0">
+    <div class="ring-track is-empty"></div>
+    <div class="ring-hand is-empty"></div>
+  </div>
+  <div class="ring-gap g0"></div>
+  <div class="ring-gap g1"></div>
+  <div class="ring-gap g2"></div>
+  <div class="ring-gap g3"></div>
+  <div class="ring-status">
+    <span class="dot"></span>
+    <b>2 / 4</b>
+    <span>就绪</span>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

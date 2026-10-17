@@ -1,0 +1,377 @@
+/* ============================================================
+   Composition and gallery previews.
+   The element documents above do not know about screen position;
+   every position in this file belongs to the preview stage only.
+   ============================================================ */
+
+body.preview {
+    margin: 0;
+    overflow: hidden;
+    background: #010305;
+    font-family: var(--hud-font);
+}
+
+.preview-shell {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+}
+
+.stage {
+    position: relative;
+    width: 1600px;
+    height: 900px;
+    overflow: hidden;
+    transform-origin: center center;
+    background: #03070a;
+}
+
+.stage iframe {
+    position: absolute;
+    display: block;
+    border: 0;
+    background: transparent;
+    pointer-events: none;
+}
+
+.stage-label {
+    position: absolute;
+    right: 26px;
+    bottom: 18px;
+    z-index: 20;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 2.4px;
+    color: rgba(255, 255, 255, 0.55);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+}
+
+/* Same role as the PDA prototype's .mock-note: say the scene is a mock. */
+.mock-note {
+    position: absolute;
+    left: 26px;
+    bottom: 18px;
+    z-index: 20;
+    font-size: 9px;
+    line-height: 1.6;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.62);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------
+   Third-person stage
+   ------------------------------------------------------------ */
+
+/* A deliberately simple in-game mock: overcast sky, blocky ground.
+   This is scene context, not part of the HUD element set. */
+.stage-third {
+    background:
+        radial-gradient(ellipse 34% 24% at 68% 18%, rgba(255, 255, 255, 0.10), transparent 70%),
+        linear-gradient(#486b80 0%, #7898a2 43%, #64724a 43%, #303d26 100%);
+}
+
+.stage-third .horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 43%;
+    height: 1px;
+    background: rgba(236, 250, 245, 0.26);
+    box-shadow: 0 0 26px rgba(236, 250, 245, 0.12);
+}
+
+.stage-third .floor-grid {
+    position: absolute;
+    left: -12%;
+    right: -12%;
+    top: 43%;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(16, 26, 14, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 26, 14, 0.18) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: linear-gradient(#000, transparent 92%);
+    mask-image: linear-gradient(#000, transparent 92%);
+    opacity: 0.7;
+}
+
+.stage-third .stage-glow {
+    display: none;
+}
+
+/* Slight shade over the mock scene so light HUD text stays readable. */
+.stage-third .scene-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(2, 8, 10, 0.10), rgba(2, 8, 10, 0.30));
+    pointer-events: none;
+}
+
+.stage-crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46px;
+    height: 46px;
+    transform: translate(-50%, -50%);
+    opacity: 0.52;
+}
+
+.stage-crosshair i {
+    position: absolute;
+    background: #f2feff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.stage-crosshair .t { left: 50%; top: 0; width: 1px; height: 10px; }
+.stage-crosshair .b { left: 50%; bottom: 0; width: 1px; height: 10px; }
+.stage-crosshair .l { left: 0; top: 50%; width: 10px; height: 1px; }
+.stage-crosshair .r { right: 0; top: 50%; width: 10px; height: 1px; }
+
+#third-identity {
+    left: 48px;
+    top: 40px;
+    width: 380px;
+    height: 80px;
+}
+
+#third-belts {
+    left: 1272px;
+    top: 496px;
+    width: 280px;
+    height: 130px;
+}
+
+#third-ammo {
+    left: 1272px;
+    top: 740px;
+    width: 280px;
+    height: 130px;
+}
+
+#third-tubes {
+    left: 610px;
+    top: 800px;
+    width: 380px;
+    height: 60px;
+}
+
+/* ------------------------------------------------------------
+   Scope stage
+   ------------------------------------------------------------ */
+
+.stage-scope {
+    background:
+        radial-gradient(ellipse 46% 36% at 50% 44%, rgba(255, 255, 255, 0.05), transparent 68%),
+        linear-gradient(#3b5668 0%, #6b818a 42%, #596843 42%, #202b1b 100%);
+}
+
+.stage-scope::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(16, 26, 14, 0.22) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 26, 14, 0.22) 1px, transparent 1px);
+    background-size: 168px 168px;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.stage-scope .scope-horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 42%;
+    height: 1px;
+    background: rgba(236, 250, 245, 0.18);
+    box-shadow: 0 0 28px rgba(236, 250, 245, 0.10);
+}
+
+.stage-scope .scope-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    box-shadow: inset 0 0 170px 52px rgba(0, 0, 0, 0.82);
+    pointer-events: none;
+}
+
+.stage-scope .scope-caption {
+    position: absolute;
+    left: 50%;
+    top: 26px;
+    z-index: 6;
+    transform: translateX(-50%);
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 3.4px;
+    color: rgba(111, 152, 163, 0.58);
+    pointer-events: none;
+}
+
+#scope-reticle {
+    left: 630px;
+    top: 280px;
+    z-index: 1;
+    width: 340px;
+    height: 340px;
+}
+
+#scope-ring {
+    left: 630px;
+    top: 280px;
+    z-index: 2;
+    width: 340px;
+    height: 340px;
+}
+
+#scope-ammo {
+    left: 660px;
+    top: 790px;
+    z-index: 3;
+    width: 280px;
+    height: 50px;
+}
+
+/* ------------------------------------------------------------
+   Gallery
+   ------------------------------------------------------------ */
+
+body.gallery {
+    display: block;
+    min-height: 100vh;
+    overflow: auto;
+    background: #04070a;
+    color: var(--hud-text);
+    padding: 34px 40px 56px;
+}
+
+.gallery-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1440px;
+    margin: 0 auto 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--hud-line);
+}
+
+.gallery-title {
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: 2.4px;
+    color: var(--hud-text);
+}
+
+.gallery-sub {
+    margin-top: 6px;
+    font-size: 10px;
+    line-height: 1.5;
+    letter-spacing: 1.6px;
+    color: var(--hud-dim);
+}
+
+.gallery-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gallery-actions a {
+    display: inline-block;
+    padding: 9px 12px;
+    border: 1px solid var(--hud-line);
+    color: var(--hud-accent);
+    text-decoration: none;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+}
+
+.gallery-actions a:hover {
+    border-color: var(--hud-accent);
+    background: rgba(116, 230, 255, 0.06);
+}
+
+.gallery-note {
+    max-width: 1440px;
+    margin: 0 auto 22px;
+    font-size: 10px;
+    line-height: 1.7;
+    letter-spacing: 0.4px;
+    color: var(--hud-dim);
+}
+
+.gallery-note code {
+    color: var(--hud-text);
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+    align-items: start;
+    gap: 22px;
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--hud-line);
+    background: #05090c;
+}
+
+.card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--hud-line);
+}
+
+.card-head b {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.6px;
+    color: var(--hud-accent);
+}
+
+.card-head span {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--hud-faint);
+}
+
+.card iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: transparent;
+}
+
+.card-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--hud-line);
+    font-size: 9px;
+    letter-spacing: 1.2px;
+}
+
+.card-foot a {
+    color: var(--hud-dim);
+    text-decoration: none;
+}
+
+.card-foot a:hover {
+    color: var(--hud-accent);
+}

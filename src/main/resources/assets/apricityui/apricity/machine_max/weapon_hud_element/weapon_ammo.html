@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_ammo</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!-- 独立元素：当前弹链的量 + 装填状态。不含屏幕位置。 -->
+<div class="el el-ammo is-reloading">
+  <div class="ammo-head">
+    <span class="ammo-label">APFSDS · 穿甲弹</span>
+    <span class="ammo-state">装填中</span>
+  </div>
+  <div class="ammo-num">
+    <b>24</b>
+    <span>/ 30</span>
+  </div>
+  <div class="reload-track"><i style="width:62%"></i></div>
+  <div class="reload-line">
+    <span>装填中</span>
+    <b>2.1s</b>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

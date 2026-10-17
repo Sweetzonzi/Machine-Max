@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_tubes</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!-- 独立元素：N 根发射管的逐管状态。这里是 4 管示例。 -->
+<div class="el el-tubes">
+  <div class="tubes-head">
+    <span>发射管</span>
+    <b>2 / 4 就绪</b>
+  </div>
+  <div class="tube-row">
+    <div class="tube is-ready">
+      <span>01</span>
+      <i style="width:100%"></i>
+    </div>
+    <div class="tube is-ready">
+      <span>02</span>
+      <i style="width:100%"></i>
+    </div>
+    <div class="tube is-loading">
+      <span>03</span>
+      <i style="width:62%"></i>
+    </div>
+    <div class="tube is-empty">
+      <span>04</span>
+      <i style="width:0%"></i>
+    </div>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

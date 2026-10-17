@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_belts</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!-- 独立元素：可选弹链标签列表。每行是一条 belt，标签由内容包给出。 -->
+<div class="el el-belts">
+  <div class="belt-list">
+    <div class="belt is-on">
+      <span class="belt-no">01</span>
+      <span class="belt-name">APFSDS</span>
+      <span class="belt-count">24</span>
+    </div>
+    <div class="belt">
+      <span class="belt-no">02</span>
+      <span class="belt-name">HEAT</span>
+      <span class="belt-count">12</span>
+    </div>
+    <div class="belt">
+      <span class="belt-no">03</span>
+      <span class="belt-name">HE</span>
+      <span class="belt-count">18</span>
+    </div>
+    <div class="belt">
+      <span class="belt-no">04</span>
+      <span class="belt-name">SMOKE</span>
+      <span class="belt-count">06</span>
+    </div>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>
