@@ -399,29 +399,48 @@ MoLang 不提供可靠的字符串拼接；`weapon.ammo_text` 等组合文本由
 
 ***
 
-## 九、内容包资源桥
+## 九、内容包页面模块、资源桥与模板注入
 
-AUI 的资源解析链是：开发期项目根 → `<gamedir>/apricity/<path>` → 类路径 `assets/apricityui/apricity/<path>` → MC 资源管理器（资源包）。内容包模块（`spark_modules/`）的文件由 Spark-Core 读进内存，不在上述任何一条链上，因此内容包不能自带 HTML 页面。本节描述的 AUI 资源桥解决这一点。
+AUI 的资源解析链是：开发期项目根 → `<gamedir>/apricity/<path>` → 类路径 `assets/apricityui/apricity/<path>` → MC 资源管理器（资源包）。内容包模块（`spark_modules/`）的文件由 Spark-Core 读进内存，不在上述任何一条链上。
 
-AUI 提供了可替换的资源服务：`AuiServices.setResources(AuiResourceService)` 是公开 setter，不受 bootstrap 门控；唯一安装点是 NeoForge 的 `ClientServicesBootstrap`，它在 AUI 模组构造期执行。本模组在 `neoforge.mods.toml` 中声明 `ordering="AFTER"`（apricityui），因此在客户端侧安装一个委托包装器即可：
+AUI 1.2.7 提供两个可用的公开入口：
+
+- `AuiServices.setResources(AuiResourceService)` 可替换资源服务，覆盖 `openResource` 与 `listResourcePaths`；
+- `HTML.putTemple(String path, String html)` 可把页面正文写入模板表。
+
+这条资源桥方案里两条都必须使用。`AuiResourceService` 只负责按路径打开 CSS、JS、图片等资源；`Document.create` 在构造文档前检查 `HTML.getTemple(path)`，模板不存在时直接失败并返回 `null`，不会回退到 `openResource`。只替换资源服务时，页面无法创建。
+
+推荐结构：
 
 ```java
 AuiServices.setResources(new PackAwareResourceService(AuiServices.resources()));
-// openResource(path):  先查 Spark 包图（内存中的包内文件）→ 命中即返回，否则委托
-// listResourcePaths(): 合并包图条目与委托结果
+// openResource(path):  先查内容包页面表（内存中的包内文件）→ 命中即返回，否则委托
+// listResourcePaths(): 合并内容包页面表与委托结果
+```
+
+页面正文由客户端模板安装器在客户端主线程写入模板表：
+
+```java
+HTML.putTemple(pageKey, html);
 ```
 
 落地要点：
 
 | 项 | 要求 |
 | --- | --- |
-| 安装时机 | 客户端构造期或 `FMLClientSetupEvent`，必须晚于 AUI 的 `ClientServicesBootstrap`；幂等（重复安装不得套娃） |
-| 线程安全 | `openResource` 会被样式与图片的异步处理器调用；包图用 volatile 快照，重载时换引用 |
-| 缓存失效 | 安装后调用一次 `ClientLoader.invalidateStaticResourceCache()`，否则 AUI 的静态资源清单可能不含包内页面 |
-| 优先级 | `<gamedir>/apricity/` 由 AUI 的文件系统分支先命中，天然高于本桥；本桥高于资源包 |
-| 路径规范化 | 处理前导 `/`、`..`、大小写；后缀过滤与 `listResourcePaths` 的语义一致 |
+| 安装时机 | 客户端构造期或普通 `FMLClientSetupEvent` 监听器，晚于 AUI 的 `ClientServicesBootstrap`；不要只放进 `event.enqueueWork` 队列尾部，AUI 的首次扫描在同一队列里；幂等，重复安装不套娃 |
+| 页面模板 | 每个 `.html` 在第一次创建 HUD 文档前调用 `HTML.putTemple`；只写资源服务不够 |
+| 资源范围 | `openResource` 覆盖 CSS、JS、`<img>`、`@font-face`、`<audio>`；`<canvas>` 的 `drawImage` 直接走 `Loader`，不在覆盖范围 |
+| 线程安全 | `openResource` 会被样式与图片的异步处理器调用；包图用 volatile 快照，重载时整体换引用；模板表只在客户端主线程写 |
+| 缓存失效 | 发布新快照后调用 `ClientLoader.invalidateStaticResourceCache()`；否则 AUI 的静态资源清单可能仍是旧快照 |
+| 优先级 | `<gamedir>/apricity/` 由 AUI 的文件系统分支先命中，高于本桥；本桥高于资源包 |
+| 路径 | 键为 `<内容包命名空间>/<模块 id>/<模块内相对路径>`，`HudStyle.page` 与键相同；页面内相对引用按 AUI 的 `Loader.resolve` 解析 |
+| 路径规范化 | 处理前导 `/`、`..`、反斜杠；拒绝逃出页面根与未登记后缀，避免把内容包当成任意文件读取通道 |
+| 安全边界 | 内容包页面是可执行内容：脚本由 KubeJS 执行，CSS/图片可引用远程 URL。接受服务端同步页面前必须定信任策略；第一阶段只使用模组 JAR 内页面，不开放内容包页面 |
 
 这条桥同时服务两个载体：模型载体的模型/动画/纹理由内容包提供，AUI 载体也能自带页面。`hud_layouts/*.json` 由 Spark 内容包模块读取，不经过这条资源桥。
+
+第一阶段只使用本模组 JAR 的 `assets/apricityui/apricity/machine_max/...` 页面；内容包页面接入留到第二阶段。模块、安装器与验证计划见 [内容包 AUI 页面加载可行性调查](界面-内容包AUI页面加载可行性调查.md)。
 
 ***
 
@@ -449,8 +468,9 @@ AuiServices.setResources(new PackAwareResourceService(AuiServices.resources()));
 | `client/render/gui/hud/CustomHud.java` | 按宿主视角字段解析 `HudLayout` 与玩家覆盖，按 `HudElement` 创建各自带上下文的运行时元素；按解析后的投影归类维护两个有序 `List`（模型且 `perspective: true` 进透视列表，模型 `false` 与全部 AUI 进正交列表），同一 `style` 可出现多次，组内顺序即布局数组顺序；武器控制器元素只为该座椅当前控制组选中的 WC 创建，集合内全部显示，不按主/副分组 |
 | `external/MMDynamicRes.java` | `CUSTOM_HUD` 拆为 `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
 | `common/resource/modules/HudModule.kt` | 按模块 id/path 分派 `HudStyle` 与 `HudLayout`；增加 `hud_layouts` 模块 id |
+| `common/resource/modules/HudPageModule.kt` | 读取内容包 `hud_pages/` 下的 `.html`、`.css`、`.js` 与图片字节，按命名空间/相对路径存入共享表；不引用 AUI 类 |
 | 相机、瞄具、座椅、武器控制器属性类 | 各提供按视角的 `*_hud_layout` 字段 |
-| 新类 | `HudStyleRegistry` / `HudLayoutRegistry`、玩家布局管理器、内容包 AUI 资源桥、通用/武器 HUD 元素与对应 MoLang 上下文、AUI 绑定层 |
+| 新类 | `HudStyleRegistry` / `HudLayoutRegistry`、玩家布局管理器、内容包 AUI 页面模块与资源桥、模板安装器、通用/武器 HUD 元素与对应 MoLang 上下文、AUI 绑定层 |
 
 RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布局 RL 加前缀 `machine_max:layout/<文件名>`。如果 `hud_layouts/` 下按子目录组织，模块需把子目录纳入 RL，或统一加前缀，避免不同目录同名文件撞键。
 
@@ -512,7 +532,7 @@ RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布�
 | 阶段 | 内容 | 产出 |
 | --- | --- | --- |
 | **V1（先验证）** | `HudStyle` 与 `HudLayout` 两个注册表，以及 `HudElement` 的 codec；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
-| **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层与内容包 AUI 资源桥 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用 |
+| **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层、内容包 AUI 页面模块与资源桥、模板注入 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用；内容包页面可创建 |
 | **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段、`WeaponHudElement`、`WeaponHudMolangContext`、`HudWeaponSnapshot`、`weapon.*` 与 `scope` 分划 | 座椅当前控制组选中的 WC 全部按各视角显示；`weapon.*` 数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
@@ -542,7 +562,7 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 武器分划 | V3 | 相机/瞄具边框使用普通上下文；每台武器的 `scope` 分划读取本控制器弹药，数据互不串值 |
 | 武器选中集合 | V3 | 同一座椅选中多台 WC 时全部显示；不属于当前控制组的 WC 不显示；不按主/副分组；重叠由布局决定 |
 | AUI 基础绑定 | V2 | 页面显示数值；错误只使对应槽位降级 |
-| 内容包自带页面 | V2 | 包内页面由资源桥解析；本地 `<gamedir>/apricity/` 同名文件优先 |
+| 内容包自带页面 | V2 | 包内 HTML 经 `HTML.putTemple` 进入模板表；CSS/JS/图片由资源桥解析；本地 `<gamedir>/apricity/` 同名文件优先 |
 | 未安装 KubeJS | V2 | HUD 正常显示 |
 
 ***
@@ -572,3 +592,4 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 1.7 | 2026-10-17 | 明确 AUI 载体的绘制阶段：Overlay/Screen 文档固定走 GUI/HUD 正交，`WorldWindow` 的世界内透视路径不属于 HUD 宿主；`perspective` 仅对模型载体生效，AUI 元素一律归正交批次，并补相应验收与待决项 |
 | 1.8 | 2026-10-17 | 收紧 AUI 载体的措辞为“本设计的 HUD 路径”；补充 `WorldWindow` 的客户端本地性与同步后世界可见性边界，明确 world panel 必须另定 carrier 与可见性模型 |
 | 1.9 | 2026-10-18 | 武器控制器 HUD 可见性改为座椅当前控制组的选中集合：选中的 WC 全部显示，不区分主/副、不设焦点组；多台重叠由内容包布局处理 |
+| 2.0 | 2026-10-18 | §九 补齐内容包 AUI 页面的模板注入：`AuiResourceService` 只覆盖 CSS/JS/图片，HTML 必须经 `HTML.putTemple` 进入模板表；补页面模块、线程/缓存/路径/安全边界与第一阶段 JAR 内页面基线；V2 与验收同步 |
