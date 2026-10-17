@@ -1,9 +1,9 @@
 # HUD 专用 MoLang 上下文设计
 
 > 版本 1.5 · 2026-10-18
-> **状态**：计划中。代码中尚无本文的 HUD 元素和上下文层次；现有模型 HUD 由 `client/render/renderable/GuiAnimatable.java` 与 `client/render/gui/hud/CustomHud.java` 驱动。
+> **状态**：计划中。代码中尚无 `HudMolangContext` / `WeaponHudMolangContext`；V1 的模型 HUD 元素由 `client/render/renderable/GuiAnimatable.java` 持有样式与布局元素，上下文仍委派给玩家所坐座椅所属 Part 的 `SparkMolangContext`，由 `client/render/gui/hud/CustomHud.java` 驱动。
 >
-> 本文定义通用 HUD 元素的 `hud.*` 与武器控制器 HUD 元素的 `weapon.*`。样式、布局、元素、玩家覆盖及 AUI 页面绑定见《[界面-HUD样式挂载与布局设计](界面-HUD样式挂载与布局设计.md)》；武器状态字段口径见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
+> 本文定义通用 HUD 元素的 `hud.*` 与武器控制器 HUD 元素的 `weapon.*`。样式、布局、元素、玩家覆盖及 AUI 页面绑定见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；武器状态字段口径见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
 
 ## 一、对象与上下文的边界
 

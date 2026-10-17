@@ -1,7 +1,7 @@
 # HUD 样式、布局与元素设计
 
-> 版本 1.9 · 2026-10-18
-> **状态**：计划中（未实现。当前代码的 HUD 定义是单一 codec：`MMDynamicRes.CUSTOM_HUD` 存 `HudAttr`，表现与投放写在同一个文件里；宿主用内联 RL 列表声明；代码中尚无 `HudStyle` / `HudElement` / `HudLayout` 与玩家覆盖）
+> 版本 3.0 · 2026-10-18
+> **状态**：进行中。V1（模型载体的样式 / 布局 / 元素、座椅与相机/瞄具宿主、内容包迁移）已落地；V2（AUI 载体、`hud.*` 上下文、AUI 绑定层）、V3（武器控制器宿主、`weapon.*`）、V4（玩家覆盖与编辑页）未实现。
 
 ***
 
@@ -11,23 +11,24 @@
 
 | 环节 | 现状 |
 | --- | --- |
-| HUD 定义 | `huds/*.json`（4 份：`example_hud`、`example_hud_2`、`gun_sight_hud`、`gun_sight_hud_fixed`），由 `HudModule` 读入 `MMDynamicRes.CUSTOM_HUD`。**表现与投放（`offset` / `rotation` / `scale` / `perspective`）写在同一个文件里** |
-| 相机/瞄具宿主 | `CameraSubsystemStaticAttr.hud_components`（`SightSubsystemStaticAttr` 的同名字段）：裸 `ResourceLocation` 列表 |
-| 座椅宿主 | `SeatSubsystemStaticAttr.ViewAttr.first_person_hud` / `third_person_hud`：两个裸 RL 列表（`first_person_offset` / `third_person_offset` 是相机支点，不是 HUD 投放，见 [CameraController](../../../src/main/java/io/github/sweetzonzi/machine_max/client/input/CameraController.java) 的第三人称支点计算） |
-| 武器控制器宿主 | 无（武器状态 HUD 由 `WeaponHudOverlay` 单独实现，见《武器系统-武器控制器HUD样式与布局设计》） |
-| 玩家参与 | 无 |
+| HUD 样式 | `huds/*.json`（3 份：`example_hud`、`example_hud_2`、`gun_sight_hud`），由 `HudModule` 读入 `MMDynamicRes.HUD_STYLES`；`type` 字段判别载体，V1 只有 `machine_max:model_hud`。样式只描述模型、动画、纹理、染色、文本槽与 `scissor` |
+| HUD 布局 | `hud_layouts/*.json`（4 份：`seat_dashboard`、`seat_dashboard_2`、`scope_gunner`、`scope_gunner_fixed`），由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`；文件内容是裸元素数组，键为 `<命名空间>:<相对路径>` |
+| 相机/瞄具宿主 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段）：一个 `ResourceLocation` |
+| 座椅宿主 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout`：各一个 `ResourceLocation` |
+| 武器控制器宿主 | 无（武器状态 HUD 由 `WeaponHudOverlay` 单独实现，V3 接入） |
+| 玩家参与 | 无（V4） |
 
-由此产生三个问题：
+这套结构解决三件事：
 
-1. **投放无法复用也无法调整**：`machine_max:example_hud` 被 7 个座椅以主/副视角共约 10 处引用，全部共用文件里那一组投放值；想给某个座位挪一点位置，只能再复制一份 HUD 定义。
-2. **三方形状不一致**：相机与座椅是"列表"，武器控制器目前没有布局字段，同一件事有两种写法。
-3. **玩家无从参与**：布局完全由内容包决定。
+1. **投放可复用**：`machine_max:seat_dashboard` 被 7 个座椅文件的第一/第三人称共 11 处引用，`seat_dashboard_2` 被 `dayun` 的两处引用；投放只在布局里写一次，样式文件只保留外观。
+2. **宿主同形**：座椅与相机/瞄具的每个视角字段都是一个 `ResourceLocation`，视角由字段名决定；武器控制器在 V3 沿用同一形态。
+3. **样式与行为分离**：`gun_sight_hud` 与 `scope_gunner_fixed` 共用同一份样式，差异只由布局里的 `scope_behavior` 表达。
 
 ### 1.2 目标
 
 | 目标 | 落地判据 |
 | --- | --- |
-| 定义只说"长什么样" | `HudStyle` 里不存在任何投放字段 |
+| 定义只说"长什么样" | `HudStyle` 里不存在投放字段；`scissor` 是 §14.3 记录的例外，V1 仍留在样式里 |
 | 投放可复用、可命名 | `HudLayout` 是具名资源，一份布局可被多个宿主、多个视角引用 |
 | 宿主引用同形 | 每个视角字段都是一个 `ResourceLocation`；视角由字段名决定 |
 | 内容包默认与玩家覆盖同 codec | 布局文件与玩家文件的每视角值都是 `HudElement` 数组 |
@@ -51,11 +52,11 @@
 | 术语 | 含义 |
 | --- | --- |
 | **样式（HudStyle）** | 一份 HUD 的内部：模型载体的 `model`/`animation`/`texture`/`color`/`alpha`/`scissor`/`texts`，或 AUI 载体的 `page` |
-| **布局（HudLayout）** | 一份有序的 `HudElement` 数组；命名资源 `hud_layouts/*.json`；不含视角分组 |
+| **布局（HudLayout）** | 一份有序的 `HudElement` 数组；命名资源 `hud_layouts/*.json`；键为 `<命名空间>:<相对路径>`；不含视角分组 |
 | **元素（HudElement）** | 布局中的一个条目：`style` RL + 一组完整投放值；内联，不单独注册 |
 | **宿主（host）** | 声明"哪个视角用哪份布局"的子系统：座椅、相机/瞄具、武器控制器 |
 | **视角字段（view field）** | `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`；字段名决定视角 |
-| **玩家覆盖** | 玩家本地按宿主键保存的每视角元素数组，优先于内容包预设 |
+| **玩家覆盖** | 玩家本地按宿主键保存的每视角元素数组，优先于内容包预设（V4） |
 
 ### 2.1 与控制组预设的对照
 
@@ -176,6 +177,12 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 
 ***
 
+### 4.2 运行时元素身份
+
+运行时元素的身份是**当前视角内、该宿主布局数组的序数**，不引入第二套键。`CustomHud` 每个客户端 tick 收集当前视角的宿主集合（座椅或相机/瞄具，加上座椅当前控制组选中的武器控制器），集合或视角变化时销毁全部运行时元素并按各宿主自己的布局重建；同一份样式可以在一个布局里出现多次，运行时按数组下标各自管理。布局与样式都是静态内容包资源，整体重建的成本与元素数成正比（通常每个宿主 1~3 个元素），不做逐元素差集。内容包重载不在运行中检测：上下车、切换视角或重连世界时随重建生效。
+
+***
+
 ## 五、HudLayout：有序元素数组
 
 ```jsonc
@@ -213,17 +220,18 @@ public record HudLayout(List<HudElement> elements) {
 
 规则：
 
-1. **数组顺序是同一种投影模式内的绘制顺序**，没有 `order`。透视元素之间、正交元素之间分别按数组顺序绘制；透视与正交之间的先后由渲染批次决定，不作为布局契约。`offset.z` 只决定空间深度，不参与排序。归入哪个批次由 `style` 的载体类型决定：模型载体看 `perspective`，AUI 载体一律归正交（§四规则 5）。
+1. **数组顺序是同一种投影模式内的提交顺序**，没有 `order`。透视元素之间、正交元素之间分别按数组顺序提交；透视与正交之间的先后由渲染批次决定，不作为布局契约。`offset.z` 只决定空间深度，不参与排序。归入哪个批次由 `style` 的载体类型决定：模型载体看 `perspective`，AUI 载体一律归正交（§四规则 5）。透视批次共用一个 `MultiBufferSource` 与 `entityTranslucent`，同 buffer 的半透明四边形在上传时可能按深度重排，因此数组顺序不保证等于像素覆盖顺序；这是已接受的边界，验收只断言提交顺序。
 2. **布局不含视角信息**。同一份布局可以被座椅的 `first_hud_layout` 与 `third_hud_layout` 同时引用，也可以被相机/瞄具的 `scope_hud_layout` 引用；视角由宿主的字段名决定。
 3. **空数组 = 该视角不显示 HUD**；宿主字段缺失 = 该视角没有布局，同样不显示。
-4. **布局是命名资源**：`hud_layouts/*.json` 由 `HudModule` 读入 `MMDynamicRes.HUD_LAYOUTS`，键为 `machine_max:layout/<文件名>`。如果 `hud_layouts/` 下再分子目录，模块需把子目录纳入 RL，或统一使用前缀，避免不同目录同名文件撞键。
+4. **布局是命名资源**：`hud_layouts/*.json` 由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`，键为 `<命名空间>:<相对路径>`，与样式使用同一条拼键规则，不额外加 `layout/` 前缀。`hud_layouts/` 下的子目录参与拼键，因此 `hud_layouts/foo/bar.json` 的键是 `<命名空间>:foo/bar`，不同目录的同名文件不会撞键。布局与样式分属两张注册表，键同名互不影响。
 5. **布局只描述"按顺序画哪些元素"**；它不知道被哪个宿主、哪个视角引用，也不知道玩家是否覆盖。
+6. **跨宿主顺序不设契约**。同一视角可能同时有座椅/相机布局和多台武器控制器布局；`CustomHud` 按宿主集合的迭代顺序提交，这个顺序由当前控制组选中的控制器集合决定，内容包不能依赖它。内容包负责让同一视角的元素互不遮挡；如果将来需要显式交错，再在元素上加排序字段。
 
 ### 5.1 为什么布局是具名资源
 
-`machine_max:example_hud` 与 `example_hud_2` 被 `dayun`、`senna_gtr`、`vn`、`golden_closestool`、`k17`、`sdkfz234` 等座椅以主/副视角共约 10 处引用，且共用同一组投放。若投放内联在宿主里，同一组数要抄 10 遍，改一次仪表盘布局要改 10 个文件。具名布局让"一处定义、多处引用"成立：
+`machine_max:seat_dashboard` 被 `default_seat`、`default_3rd_seat`、`vn`、`senna_gtr`、`golden_closestool`、`k17`、`sdkfz234` 七个座椅文件以第一/第三人称共 11 处引用，`machine_max:seat_dashboard_2` 被 `dayun` 的第一/第三人称引用。若投放内联在宿主里，同一组数要抄 13 遍，改一次仪表盘布局要改 8 个文件。具名布局让"一处定义、多处引用"成立：
 
-- 多个座椅可以引用同一份 `seat_dashboard_fp`；
+- 多个座椅可以引用同一份 `machine_max:seat_dashboard`；
 - 同一份布局可以被第一人称和第三人称同时引用；
 - 某辆车需要不同投放时，写一份新的布局文件并在该车的子系统里引用它。
 
@@ -233,19 +241,19 @@ public record HudLayout(List<HudElement> elements) {
 
 ### 6.1 引用形态
 
-| 宿主 | 字段 | 视角 | 玩家覆盖键 |
+| 宿主 | 字段 | 视角 | 玩家覆盖键（V4） |
 | --- | --- | --- | --- |
 | 相机/瞄具 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段） | `scope` | `camera:<子系统名>` |
 | 座椅 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout` | `first` / `third`（`THIRD_PERSON_FRONT` 归 `third`） | `seat:<子系统名>` |
 | 武器控制器 | 动态属性 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`（`WeaponControllerSubsystemAttr`） | `first` / `third` / `scope` | `wc:<子系统名>` |
 
-每个字段是一个 `ResourceLocation`，指向一份 `HudLayout`。字段名决定视角，宿主不读取其它视角的字段。RL 查不到或布局解码失败时，记录一次可定位诊断，并按该视角无 HUD 处理。
+每个字段是一个 `ResourceLocation`，指向一份 `HudLayout`。字段名决定视角，宿主不读取其它视角的字段。三类宿主的字段都已按此形态落地；武器控制器的内容包示例待补。`CustomHud` 每个客户端 tick 解析当前视角的宿主集合（座椅或相机/瞄具，加上座椅当前控制组选中的武器控制器），集合或视角变化时整体重建；随后向宿主取实际布局（`hudLayoutFor`），宿主内部用 `IHudHost.resolve` 把内容包 RL 解析成对象，缺失时提示一次。没有布局时按空布局处理，样式 RL 查不到时跳过该条目并提示一次。没有布局的宿主保留一个空列表，使宿主集合与键集合一致。
 
 ```jsonc
 // 座椅
 "views": {
-  "first_hud_layout": "machine_max:layout/seat_dashboard_fp",
-  "third_hud_layout": "machine_max:layout/seat_dashboard_tp",
+  "first_hud_layout": "machine_max:seat_dashboard",
+  "third_hud_layout": "machine_max:seat_dashboard",
   "enable_first_person": true,
   ...
 }
@@ -253,7 +261,7 @@ public record HudLayout(List<HudElement> elements) {
 
 ```jsonc
 // 相机/炮镜
-"scope_hud_layout": "machine_max:layout/scope_gunner"
+"scope_hud_layout": "machine_max:scope_gunner"
 ```
 
 ```jsonc
@@ -262,19 +270,19 @@ public record HudLayout(List<HudElement> elements) {
   "type": "machine_max:weapon_controller",
   "definition": "machine_max:basic_weapon_controller",
   "control_outputs": { "weapon_control": ["subsystem.machine_max.main_launcher"] },
-  "first_hud_layout": "machine_max:layout/wc_gunner_first",
-  "third_hud_layout": "machine_max:layout/wc_gunner_third",
-  "scope_hud_layout": "machine_max:layout/wc_gunner_scope"
+  "first_hud_layout": "machine_max:wc_gunner_first",
+  "third_hud_layout": "machine_max:wc_gunner_third",
+  "scope_hud_layout": "machine_max:wc_gunner_scope"
 }
 ```
 
 字段缺失表示该视角没有 HUD。武器控制器可以使用三个视角字段；座椅只有第一/第三人称；相机/瞄具只有炮镜。座椅没有 `scope_hud_layout`：炮镜态下要显示的基础元素由该炮镜自己的 `scope_hud_layout` 提供，武器分划与弹药由武器控制器的 `scope_hud_layout` 提供。
 
-武器控制器的 HUD 不由座椅聚合弹药数据：运行时取该座椅当前控制组（base + 当前子组）的选中集合 `getActiveWeaponControllers()`，集合内、当前视角有布局且未停用的 WC 全部显示；不区分主/副，不设焦点组。多台 WC 的布局重叠由内容包处理；座椅只提供选中集合。
+武器控制器的 HUD 不由座椅聚合弹药数据：运行时取该座椅当前控制组（base + 当前子组）的选中集合 `getActiveWeaponControllers()`，集合内、当前视角有布局的 WC 全部进入宿主集合；不区分主/副，不设焦点组。宿主集合不按 `isActive` / `isDestroyed` 过滤：停用或已摧毁的控制器仍保留宿主，其布局条目照常显示。多台 WC 的布局重叠由内容包处理；座椅只提供选中集合。
 
 ### 6.2 数据上下文由持有者决定
 
-每个被引用的布局条目在运行时生成自己的 HUD 元素，元素缓存自己的 MoLang 上下文。所有元素可读 `hud.*`（当前渲染视角与视口）；武器控制器元素继承通用元素，并增加直接取自所属控制器的 `weapon.*`。`math.*` 属于 Spark 通用词表；载具 HP、能量与信号等继续从 `local.*` / `global.*` 读取，HUD 元素通过所属 Part/装配体关联它们。类层次和查询口径见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》。
+每个被引用的布局条目在运行时生成自己的 HUD 元素，元素缓存自己的 MoLang 上下文。所有元素可读 `hud.*`（当前渲染视角与视口）；武器控制器元素继承通用元素，并增加直接取自所属控制器的 `weapon.*`。`math.*` 属于 Spark 通用词表；载具 HP、能量与信号等继续从 `local.*` / `global.*` 读取，HUD 元素通过所属 Part/装配体关联它们。类层次和查询口径见《[观瞄系统-HUD专用MoLang上下文设计](../计划中/观瞄系统-HUD专用MoLang上下文设计.md)》。V1 尚未实现元素级上下文，模型元素继续沿用座椅 Part 的上下文，边界见 §8.1。
 
 | 持有者 | 自有数据与炮镜职责 |
 | --- | --- |
@@ -341,6 +349,8 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 
 模型载体的动画与文本槽使用元素的 `getMolangContext()`；AUI 页面绑定层给该元素的页面区域关联同一上下文。一个 AUI `Document` 可以包含多个元素区域，内部按运行时元素路由求值；内容包作者写单元素样式时不必声明“查哪台控制器”。武器元素从自己持有的控制器构造快照，不经座椅选控制器。
 
+**V1 的上下文边界**：模型 HUD 元素仍由 `GuiAnimatable` 委派到“玩家所坐座椅所属 Part”的 `SparkMolangContext`，因此 `local.*` / `global.*` 与重构前等价；相机/瞄具宿主下的 `local.*` 读到的是座椅所在部件，而不是相机所在部件。`hud.*` 与按宿主解析 Part 属于 V2 的 `HudMolangContext`，V1 的样式只使用静态文本或现有上下文能求值的表达式。
+
 | API | 作用 |
 | --- | --- |
 | `MolangContextRegistry.compile(expr, ctx)` | 编译数值表达式，按上下文类和表达式复用 |
@@ -391,8 +401,8 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 
 ### 8.4 词表归属
 
-- `hud.*`：通用 HUD 元素的当前相机视角与视口；座椅、相机/瞄具、武器元素均可读。见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》。
-- `weapon.*`：仅武器控制器元素可读，包含所属控制器的弹药、发射管、弹链和分划弹道角。见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
+- `hud.*`：通用 HUD 元素的当前相机视角与视口；座椅、相机/瞄具、武器元素均可读。见《[观瞄系统-HUD专用MoLang上下文设计](../计划中/观瞄系统-HUD专用MoLang上下文设计.md)》。
+- `weapon.*`：仅武器控制器元素可读，包含所属控制器的弹药、发射管、弹链和分划弹道角。见《[武器系统-武器控制器HUD样式与布局设计](../计划中/武器系统-武器控制器HUD样式与布局设计.md)》。
 - `math.*`：Spark 通用查询；`local.*` / `global.*`：Part 与装配体查询，持续用于载具仪表。这三者不形成新的 HUD 业务前缀。
 
 MoLang 不提供可靠的字符串拼接；`weapon.ammo_text` 等组合文本由查询返回，或由模型文本槽的本地化键和 `molang_args` 组装。普通元素使用 `weapon.*`、表达式语法错误或求值失败时，绑定层应标明出错槽位并记录一次可定位诊断，其他槽位继续刷新。
@@ -432,11 +442,11 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 
 `DocumentModule` 使用 `ReadMode.LOCAL_ONLY`：客户端读取本地 `spark_modules`，服务端不向客户端发送文档。文档属于客户端表现资源，不参与游戏性同步；客户端调试页面也可以放在 `<gamedir>/apricity/` 或模组 JAR 的 `assets/apricityui/apricity/`。
 
-备选方案是 `AuiServices.setResources(AuiResourceService)` 包装器 + `HTML.putTemple`：不依赖资源包命名空间，但要实现六个委托方法并额外维护模板注入。两种方案的比较、命名空间种子细节与验证计划见 [内容包 AUI 页面加载可行性调查](界面-内容包AUI页面加载可行性调查.md)。
+备选方案是 `AuiServices.setResources(AuiResourceService)` 包装器 + `HTML.putTemple`：不依赖资源包命名空间，但要实现六个委托方法并额外维护模板注入。两种方案的比较、命名空间种子细节与验证计划见 [内容包 AUI 页面加载可行性调查](../计划中/界面-内容包AUI页面加载可行性调查.md)。
 
 这条管线同时服务两个载体：模型载体的模型/动画/纹理由内容包提供，AUI 载体也能自带页面。`hud_layouts/*.json` 由 Spark 内容包模块读取，不经过这条资源管线。
 
-第一阶段只使用本模组 JAR 的 `assets/apricityui/apricity/machine_max/...` 页面；内容包页面接入留到第二阶段。
+页面来源有两条：模组 JAR 的 `assets/apricityui/apricity/machine_max/...`，以及内容包 `documents/` 经 `DocumentModule` 写入 `CLIENT_PACK` 的页面。`machine_max.builtin` 的 `documents/weapon_hud_element/index.html` 是内容包页面的现成实例。HUD 样式引用页面（`machine_max:aui_hud`）与 `data-mm-*` 绑定层属于 V2。
 
 ***
 
@@ -444,31 +454,43 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 
 ### 10.1 内容包
 
-| 对象 | 现状 | 迁移后 |
-| --- | --- | --- |
-| `huds/example_hud.json`、`example_hud_2.json` | 表现 + 投放 | 各一份样式（去掉 `offset`/`rotation`/`scale`/`perspective`/`scope_behavior`/`ignore_zoom`）+ 引用该样式的布局文件 |
-| `huds/gun_sight_hud.json`、`gun_sight_hud_fixed.json` | 同模型两种行为 | 一份样式 + 两个布局（或同一布局的两个元素，按引用方式） |
-| `subsystems/*/*_seat.json` | `first_person_hud` / `third_person_hud` 两个 RL 列表 | `views.first_hud_layout` / `third_hud_layout` 各一个 RL；当前列表中的多个 HUD 收进同一份布局数组 |
-| 相机/瞄具子系统 | `hud_components` RL 列表 | `scope_hud_layout` 一个 RL；当前列表中的多个 HUD 收进同一份布局数组 |
-| 武器控制器 | 无布局字段 | `first_hud_layout` / `third_hud_layout` / `scope_hud_layout` |
-| `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 单层 HUD 定义 | 分"样式 / 布局 / 元素"三章；提供三份 schema |
+V1 的内容包迁移已完成，当前形态：
 
-迁移后只保留新字段；同一语义不保留两套写法。
+| 对象 | 当前形态 |
+| --- | --- |
+| `huds/example_hud.json`、`example_hud_2.json` | 各一份样式，只含 `type`/`model`/`animation`/`texture`/`color`/`alpha`/`texts`/`scissor`；投放分别在 `hud_layouts/seat_dashboard.json` 与 `hud_layouts/seat_dashboard_2.json` |
+| `huds/gun_sight_hud.json` | 一份样式；两个布局 `hud_layouts/scope_gunner.json`（`follow_position`）与 `hud_layouts/scope_gunner_fixed.json`（`screen_fixed`）共用它 |
+| `subsystems/*/*_seat.json` | `views.first_hud_layout` / `third_hud_layout` 各一个 RL；空列表的视角直接省略字段 |
+| 相机/瞄具子系统 | `scope_hud_layout` 一个 RL；没有布局时省略字段 |
+| 武器控制器 | 动态属性已有 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`，默认省略即无 HUD；内容包尚无使用这些字段的示例 |
+| `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 座椅、相机/瞄具的 schema 已含对应视角字段；武器控制器动态属性的 schema 尚未补三个 HUD 字段；`hud.md` 按"样式 / 布局 / 元素"三部分组织 |
+
+当前代码只读取新字段：`first_person_hud`、`third_person_hud`、`hud_components` 没有对应的解码字段，写进 JSON 会被忽略。
 
 ### 10.2 代码
 
-| 文件 | 改动 |
+| 文件 | 当前实现 |
 | --- | --- |
-| `common/visual/HudAttr.java` | 拆为 `HudStyle`（表现）与 `HudElement`（`style` RL + 投放），或保留类名并按 §三/§四 裁剪字段 |
-| `client/render/renderable/GuiAnimatable.java` | 模型载体读取 `HudStyle` 与 `HudElement`；由通用 HUD 元素提供 `IAnimatable#getMolangContext()` |
-| `client/render/gui/hud/CustomHud.java` | 按宿主视角字段解析 `HudLayout` 与玩家覆盖，按 `HudElement` 创建各自带上下文的运行时元素；按解析后的投影归类维护两个有序 `List`（模型且 `perspective: true` 进透视列表，模型 `false` 与全部 AUI 进正交列表），同一 `style` 可出现多次，组内顺序即布局数组顺序；武器控制器元素只为该座椅当前控制组选中的 WC 创建，集合内全部显示，不按主/副分组 |
-| `external/MMDynamicRes.java` | `CUSTOM_HUD` 拆为 `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
-| `common/resource/modules/HudModule.kt` | 按模块 id/path 分派 `HudStyle` 与 `HudLayout`；增加 `hud_layouts` 模块 id |
-| `common/resource/modules/DocumentModule.kt` | 读取客户端本地内容包 `documents/` 下的全部页面资源，按命名空间/相对路径直接写 `CLIENT_PACK`；不引用 AUI 类；HUD、手册、PDA 共用 |
-| 相机、瞄具、座椅、武器控制器属性类 | 各提供按视角的 `*_hud_layout` 字段 |
-| 新类 | `HudStyleRegistry` / `HudLayoutRegistry`、玩家布局管理器、`DocumentModule`、通用/武器 HUD 元素与对应 MoLang 上下文、AUI 绑定层 |
+| `common/visual/HudView.java` | 视角枚举：`FIRST` / `THIRD` / `SCOPE` |
+| `common/visual/IHudHost.java` | 宿主接口：`hudLayoutFor(HudView)` 返回实际布局对象，`null` 表示无 HUD；静态 `resolve(ResourceLocation)` 供持有内容包 RL 的宿主把键解析成对象，缺失时提示一次 |
+| `common/visual/HudStyle.java` | 样式接口：`type` 分派、`ScissorParams`、`TextParams` |
+| `common/visual/ModelHudStyle.java` | 模型载体样式：`model`/`animation`/`texture`/`color`/`alpha`/`scissor`/`texts` |
+| `common/visual/HudElement.java` | `style` RL + 投放值；`perspective`、`scope_behavior`、`ignore_zoom`、`offset`、`rotation`、`scale` |
+| `common/visual/HudLayout.java` | 裸元素数组的 codec；`EMPTY` 是无布局的哨兵 RL，`EMPTY_LAYOUT` 是空布局对象 |
+| `client/render/renderable/GuiAnimatable.java` | 每个实例绑定一份 `ModelHudStyle` + 一个 `HudElement`；上下文仍委派给玩家所坐座椅的 Part |
+| `client/render/gui/hud/CustomHud.java` | 按宿主分组：`LinkedHashMap<IHudHost, List<GuiAnimatable>>`；每 tick 解析当前视角的宿主集合，集合或视角变化时整体重建；向宿主取 `hudLayoutFor`，为 `null` 时按空布局处理；每个宿主保留一个可能为空的列表，空列表也占键；渲染按宿主顺序，透视/正交用 `isPerspective()` 分趟；炮镜的 `scope_behavior` 变换链不变 |
+| `external/MMDynamicRes.java` | `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
+| `common/resource/modules/HudModule.kt` / `HudLayoutModule.kt` | 按 `<命名空间>:<相对路径>` 拼键，子目录参与键；分别解码样式与布局 |
+| `common/registry/MMPackModuleRegistries.kt` | 注册 `huds` 与 `hud_layouts` 两个内容包模块 |
+| `common/mech/subsystem/SeatSubsystem.java` | 实现 `IHudHost`：`first` / `third` 读静态属性，`scope` 取 `HudLayout.EMPTY`，三者都经 `IHudHost.resolve` 解析 |
+| `CameraSubsystem.java` / `SightSubsystem.java` | 实现/继承 `IHudHost`：`scope` 读静态属性，其余视角取 `HudLayout.EMPTY`，都经 `IHudHost.resolve` |
+| `WeaponControllerSubsystem.java` / `WeaponControllerSubsystemAttr.java` | 实现 `IHudHost`：三个视角读动态属性，字段缺省时取 `HudLayout.EMPTY`，都经 `IHudHost.resolve` |
+| `common/mech/subsystem/attr/static_attr/SeatSubsystemStaticAttr.java` | `first_hud_layout` / `third_hud_layout` 各一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
+| `CameraSubsystemStaticAttr.java` / `SightSubsystemStaticAttr.java` | `scope_hud_layout` 一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 
-RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布局 RL 加前缀 `machine_max:layout/<文件名>`。如果 `hud_layouts/` 下按子目录组织，模块需把子目录纳入 RL，或统一加前缀，避免不同目录同名文件撞键。
+尚未实现：`HudMolangContext` / `WeaponHudMolangContext`、AUI 载体与绑定层、武器控制器 HUD 的内容包示例与 schema、玩家布局管理器与编辑页。
+
+RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样式目录是 `huds/`、布局目录是 `hud_layouts/`，因此两者的键可以同名而互不冲突；不额外加 `layout/` 前缀，也不在键里写目录名。
 
 ***
 
@@ -527,22 +549,22 @@ RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布�
 
 | 阶段 | 内容 | 产出 |
 | --- | --- | --- |
-| **V1（先验证）** | `HudStyle` 与 `HudLayout` 两个注册表，以及 `HudElement` 的 codec；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
+| **V1（已实现）** | `HudStyle` / `HudElement` / `HudLayout` 与两张资源表；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
 | **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层、`DocumentModule` 与客户端资源包注入 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用；内容包页面可创建 |
-| **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段、`WeaponHudElement`、`WeaponHudMolangContext`、`HudWeaponSnapshot`、`weapon.*` 与 `scope` 分划 | 座椅当前控制组选中的 WC 全部按各视角显示；`weapon.*` 数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
+| **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段与宿主选择已入代码；剩余 `WeaponHudElement`、`WeaponHudMolangContext`、`HudWeaponSnapshot`、`weapon.*`、`scope` 分划、内容包示例与动态属性 schema | 座椅当前控制组选中的 WC 全部按各视角显示；`weapon.*` 数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
-V1 刻意不包含 `HudMolangContext`、`WeaponHudMolangContext`、AUI 绑定、武器控制器宿主与玩家覆盖。座椅 HUD 的 `global.get('vehicle_speed')` 继续走 Part 的 `MechMolangContext`；相机/瞄具的模型 HUD 只要求静态文本或现有上下文能求值的表达式。V2 起提供 `hud.*`，V3 起提供 `weapon.*`。§10.1 的武器控制器字段属于 V3；V1 只迁移座椅/相机/瞄具内容，`WeaponHudOverlay` 继续作为武器 HUD。
+V1 已落地并通过 `gradlew compileJava compileKotlin`，`runClient` 进世界的表现验收见 §十三。宿主分组与武器控制器宿主的集合选择也已落地：座椅、相机/瞄具、武器控制器都实现 `IHudHost`，`CustomHud` 按宿主集合重建；武器控制器没有布局字段时不产生元素。V1 刻意不包含 `HudMolangContext`、`WeaponHudMolangContext`、AUI 绑定与玩家覆盖。座椅 HUD 的 `global.get('vehicle_speed')` 继续走 Part 的 `MechMolangContext`；相机/瞄具的模型 HUD 只要求静态文本或现有上下文能求值的表达式。V2 起提供 `hud.*`，V3 起提供 `weapon.*`。`WeaponHudOverlay` 继续作为武器状态面板。
 
-V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透视/正交各维护一个有序列表，分别按布局数组顺序渲染；两个批次之间的先后由渲染器固定，不要求布局表达跨投影顺序。这样不需要按 run 切换投影，也不需要限制一个布局只能有一种投影。
+渲染顺序契约只覆盖提交顺序：同一宿主内按布局数组顺序提交，宿主之间按宿主集合的迭代顺序提交。宿主顺序不构成契约，内容包负责让同一视角的元素互不遮挡；两个投影批次之间的先后由渲染器固定，不要求布局表达跨投影顺序。同批次半透明几何按深度重排的风险已接受，验收只断言提交顺序。
 
-`scissor` 是样式级、相对屏幕中心的矩形；V1 沿用这套语义。现有四份 HUD 的 `scissor.enable` 为 false，因此不阻塞 V1；开启 scissor 的样式由 §14.3 单独决定归属。
+`scissor` 是样式级、相对屏幕中心的矩形；V1 沿用这套语义。现有三份样式的 `scissor.enable` 为 false，因此不阻塞 V1；开启 scissor 的样式由 §14.3 单独决定归属。
 
 ***
 
 ## 十三、验收
 
-计划实现后在 `runClient` 进世界验证：
+V1 已通过 `gradlew compileJava compileKotlin`；下列用例在 `runClient` 进世界验证：
 
 | 用例 | 阶段 | 覆盖 |
 | --- | --- | --- |
@@ -550,13 +572,16 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 一份布局被两个宿主引用 | V1 | 默认投放共享；每个运行时元素独立创建 |
 | 同一份样式的两种炮镜行为 | V1 | 两个布局/元素读取各自 `scope_behavior`/`ignore_zoom` |
 | 视角字段过滤 | V1 | 座椅只读 `first_hud_layout`/`third_hud_layout`；相机/瞄具只读 `scope_hud_layout` |
+| 宿主集合变化重建 | V1 | 上下车、换座、切换第一/第三人称、开关炮镜时整体重建；宿主集合与视角都不变时不重建 |
+| 无布局宿主保留空列表 | V1 | 武器控制器未配 `*_hud_layout` 时该宿主为空列表，键集合仍与宿主集合一致，不触发每 tick 重建 |
+| 热重载刷新时机 | V1 | 内容包重载后运行中的 HUD 不立即刷新；上下车或切换视角后按新资源重建 |
 | 同一布局用于第一/第三人称 | V1 | 同一 RL 在两个视角各自生成元素，互不串值 |
 | 不同车不同布局 | V1 | 两台车的座椅/相机/瞄具子系统引用不同布局 RL，互不影响 |
-| 同投影模式内的绘制顺序 | V1 | 同一布局中多个透视元素、多个正交元素分别按数组顺序绘制；跨投影的先后不作断言 |
+| 同投影模式内的提交顺序 | V1 | 同一布局中多个透视元素、多个正交元素分别按数组顺序提交；同批次半透明几何可能按深度重排，不作像素覆盖顺序断言；跨投影的先后不作断言 |
 | AUI 载体的投影归类 | V2 | 布局中的 AUI 元素即使写 `perspective: true` 也按 `false` 处理并进入正交批次；诊断提示可见 |
 | 玩家按视角覆盖 | V4 | 只覆盖 `first` 时 `third` 使用预设；`first: []` 明确隐藏；单视角重置与整宿主重置 |
 | 武器分划 | V3 | 相机/瞄具边框使用普通上下文；每台武器的 `scope` 分划读取本控制器弹药，数据互不串值 |
-| 武器选中集合 | V3 | 同一座椅选中多台 WC 时全部显示；不属于当前控制组的 WC 不显示；不按主/副分组；重叠由布局决定 |
+| 武器选中集合 | V3 | 同一座椅选中多台 WC 时全部进入宿主集合；不属于当前控制组的 WC 不进入；不按主/副分组；不按 `isActive`/`isDestroyed` 过滤；未配布局的 WC 为空列表 |
 | AUI 基础绑定 | V2 | 页面显示数值；错误只使对应槽位降级 |
 | 内容包自带页面 | V2 | 客户端本地包内资源写入 `CLIENT_PACK`；AUI 资源扫描/自动重载后模板可创建；CSS/JS/图片由资源管理器解析；本地 `<gamedir>/apricity/` 同名文件优先 |
 | 未安装 KubeJS | V2 | HUD 正常显示 |
@@ -567,7 +592,7 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 
 1. **玩家覆盖键是否带载具/部件型号**：`seat:<子系统名>` 与 `seat:<型号>:<子系统名>` 之间尚待选择；示例使用前者。两台车共用同一个子系统定义时会共享覆盖。
 2. **元素级复用与部分覆盖**：当前布局是复用单位，元素按完整投放值定义；如果将来需要跨布局共享一个元素，再加显式引用，不做部分覆盖。
-3. **`scissor` 的归属**：当前放在样式里；其 x/y 是相对屏幕中心的屏幕坐标，与"样式只描述内部"的边界冲突。应移到元素、使用元素局部坐标，或继续留在样式并接受例外。
+3. **`scissor` 的归属**：V1 把它留在样式里，且 x/y 是相对屏幕中心的屏幕坐标，与"样式只描述内部"的边界冲突。后续应移到元素、使用元素局部坐标，或明确接受这个例外。
 4. **玩家自定义命名布局**：v1 只保存每宿主一份覆盖，命名多套布局留待后续。
 5. **AUI 动态列表**：按发射管/弹链数量重复界面时，需定义每段的稳定下标与热重载行为；该机制当前未实现。
 6. **AUI 世界内面板与 HUD 的关系**：`WorldWindow` 能用关卡投影矩阵做透视，但它有世界坐标、遮挡、交互与显示距离，语义与屏幕空间 HUD 不同。`WorldWindow` 默认只在创建它的客户端本地渲染，AUI 不提供窗口的网络同步；若将来把载具面板同步给其他客户端并由各客户端重建窗口，它就属于世界可见内容，私人 HUD 只适用于未同步的本地窗口。实现前必须定义 per-viewer 与 world-visible 两种可见性，以及同步、距离与性能边界；不复用 `HudElement.perspective`。
@@ -593,3 +618,6 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 2.2 | 2026-10-18 | `DocumentModule` 与客户端资源包注入器落地；§九 与迁移表对齐 `documents/` 目录与服务端同步语义；待客户端实机验收 |
 | 2.3 | 2026-10-18 | 文档收敛为客户端本地资源：`DocumentModule` 使用 `LOCAL_ONLY`，`read` 直接写 `CLIENT_PACK`；移除扫描钩子与服务端同步；页面发现交给 AUI 自动重载 |
 | 2.4 | 2026-10-18 | `DocumentModule.onFinish` 在客户端补一次 `HTML.scan()` 作为保险；`HTML` 属于 AUI common 包，不需要额外客户端钩子 |
+| 3.0 | 2026-10-18 | V1 落地：`HudStyle`（`type` 分派，现只有 `model_hud`）/`ModelHudStyle`/`HudElement`/`HudLayout` 与 `HUD_STYLES`/`HUD_LAYOUTS` 两张表；运行时元素以当前视角内数组序数为身份，宿主/视角/布局对象/样式对象变化时整体重建；布局与样式都按 `<命名空间>:<相对路径>` 拼键、子目录参与键、不加 `layout/` 前缀；座椅与相机/瞄具切到单个 `*_hud_layout`，内容包与 schema 同步迁移；V1 上下文继续用座椅 Part，绘制顺序契约降为提交顺序并接受同批次深度重排 |
+| 3.1 | 2026-10-18 | 宿主分组落地：新增 `HudView` / `IHudHost`，座椅、相机/瞄具与武器控制器均实现；`CustomHud` 改为 `LinkedHashMap<IHudHost, List<GuiAnimatable>>`，每 tick 比较解析出的宿主集合与键集合、并比较视角，变化时整体重建；空布局宿主保留空列表；武器控制器动态属性加入三个 `*_hud_layout`；跨宿主绘制顺序明确不设契约，内容包负责元素不重叠；热重载改为上下车/换视角时生效 |
+| 3.2 | 2026-10-18 | 修正 `*_hud_layout` 的 codec：改用 `optionalFieldOf(..., HudLayout.EMPTY)` 的非空默认值，删除产生 null 的 `xmap`；新增 `HudLayout.EMPTY` 哨兵与 `EMPTY_LAYOUT`；`IHudHost` 只保留 `hudLayoutFor`（返回实际布局对象），另提供静态 `resolve` 供持有内容包 RL 的宿主解析，玩家自定义布局直接覆盖 `hudLayoutFor`；`CustomHud` 对 `null` 布局按空布局处理；内容包错误上报对空异常消息与两列表长度不一致做兜底 |

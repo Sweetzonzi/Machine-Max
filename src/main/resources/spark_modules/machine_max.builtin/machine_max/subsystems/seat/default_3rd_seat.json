@@ -6,7 +6,7 @@
   "views": {
     "enable_first_person": false, //(可选,默认true)是否启用第一人称视角
     "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-    "third_person_hud": ["machine_max:example_hud"],//(可选,默认[])第三人称视角下的HUD组件
+    "third_hud_layout": "machine_max:seat_dashboard",//(可选)第三人称视角使用的 HUD 布局，缺失表示不显示
     "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
     "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
     "distance_scale": 1.2, //(可选,默认1.1)第三人称视角距离倍率

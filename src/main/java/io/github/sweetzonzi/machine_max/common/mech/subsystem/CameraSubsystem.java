@@ -7,10 +7,14 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CameraSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudView;
+import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,7 +26,7 @@ import java.util.Map;
  * 不自行发送信号 —— 座椅直发和炮镜模式的信号发送均由 AbstractControllableSubsystem 通过控制组统一处理。<br>
  * 仅保留 locator 变换查询和 TRACKING 模式跟踪目标读取。
  */
-public class CameraSubsystem extends BasicSubsystem {
+public class CameraSubsystem extends BasicSubsystem implements IHudHost {
     public final CameraSubsystemAttr attr;
 
     /** TRACKING 模式下跟踪的外部目标世界坐标（从信号频道读取） */
@@ -109,5 +113,17 @@ public class CameraSubsystem extends BasicSubsystem {
     /** 获取插值后的世界位姿（渲染帧用） */
     public Transform getLerpedLocatorWorldTransform(float partialTick) {
         return getOwner().getSubPart().getLerpedLocatorWorldTransform(attr.locator, partialTick);
+    }
+
+    /**
+     * 相机/瞄具只提供炮镜视角的基础 HUD；第一/第三人称由座椅提供，本类返回
+     * {@link HudLayout#EMPTY}。
+     */
+    @Override
+    @Nullable
+    public HudLayout hudLayoutFor(HudView view) {
+        return IHudHost.resolve(view == HudView.SCOPE
+                ? attr.staticAttribute.getScopeHudLayout()
+                : HudLayout.EMPTY);
     }
 }

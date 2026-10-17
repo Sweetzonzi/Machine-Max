@@ -10,15 +10,17 @@
       "default": true,
       "description": "Whether to enable first-person view."
     },
-    "first_person_hud": {
-      "type": "array",
-      "items": { "$ref": "../../base/resource_location.schema.json" },
-      "default": [],
-      "description": "List of HUD interface resources for first-person view."
+    "first_hud_layout": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示该视角不显示 HUD。"
     },
     "first_person_offset": {
       "$ref": "../../base/vector_3d.schema.json",
-      "default": [0.0, 0.0, 0.0],
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ],
       "description": "3D offset for first-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
     },
     "enable_third_person": {
@@ -26,15 +28,17 @@
       "default": true,
       "description": "Whether to enable third-person view."
     },
-    "third_person_hud": {
-      "type": "array",
-      "items": { "$ref": "../../base/resource_location.schema.json" },
-      "default": [],
-      "description": "List of HUD interface resources for third-person view."
+    "third_hud_layout": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示该视角不显示 HUD。"
     },
     "third_person_offset": {
       "$ref": "../../base/vector_3d.schema.json",
-      "default": [0.0, 0.75, 0.0],
+      "default": [
+        0.0,
+        0.75,
+        0.0
+      ],
       "description": "3D offset for third-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
     },
     "follow_vehicle": {
@@ -79,14 +83,22 @@
   "examples": [
     {
       "enable_first_person": true,
-      "first_person_hud": ["machine_max:hud/driver"],
-      "first_person_offset": [0.0, 0.3, 0.0],
+      "first_person_offset": [
+        0.0,
+        0.3,
+        0.0
+      ],
       "enable_third_person": true,
-      "distance_scale": 1.2
+      "distance_scale": 1.2,
+      "first_hud_layout": "machine_max:seat_dashboard"
     },
     {
       "enable_first_person": true,
-      "first_person_offset": [0.0, 0.2, 0.0],
+      "first_person_offset": [
+        0.0,
+        0.2,
+        0.0
+      ],
       "enable_third_person": false,
       "min_pitch": -30,
       "max_pitch": 60,

@@ -39,7 +39,7 @@ class ConnectorModule : SparkPackModule {
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)
                 MMDynamicRes.errorFiles.add("[Connectors]$id")
-                MMDynamicRes.errorMessages.add(Component.literal(e.message))
+                MMDynamicRes.errorMessages.add(Component.literal(e.message ?: e.toString()))
             }
         }
     }

@@ -45,7 +45,7 @@ class ControlGroupModule : SparkPackModule {
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)
                 MMDynamicRes.errorFiles.add("[ControlGroup]$id")
-                MMDynamicRes.errorMessages.add(Component.literal(e.message))
+                MMDynamicRes.errorMessages.add(Component.literal(e.message ?: e.toString()))
             }
         }
     }

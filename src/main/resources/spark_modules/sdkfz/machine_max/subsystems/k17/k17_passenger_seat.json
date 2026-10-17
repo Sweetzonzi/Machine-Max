@@ -6,7 +6,6 @@
   "views": {
     "enable_first_person": false,
     "enable_third_person": true,
-    "third_person_hud": [],
     "follow_vehicle": true,
     "focus_on_center": true,
     "distance_scale": 0.8,

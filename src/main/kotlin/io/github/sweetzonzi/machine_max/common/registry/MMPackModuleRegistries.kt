@@ -8,7 +8,8 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
 object MMPackModuleRegistries {
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ColorModule())//自定义色板
-        event.register(HudModule())//自定义HUD元素
+        event.register(HudModule())//HUD 样式
+        event.register(HudLayoutModule())//HUD 布局
         event.register(DocumentModule())//自定义AUI文档资源
         event.register(TooltipModule())//自定义描述信息
         event.register(SubsystemModule())//子系统型号

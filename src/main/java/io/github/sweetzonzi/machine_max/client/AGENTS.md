@@ -51,7 +51,7 @@ client/
 │   │   └── VehicleInfoPanelManager.java
 │   ├── post/                     # 屏幕空间后处理（深度与 PostChain 的坑见 post/AGENTS.md）
 │   ├── fbo/                      # 离屏渲染目标（OffscreenFbo：检查器、CCTV）
-│   ├── renderable/               # ModelAnimatable, GuiAnimatable
+│   ├── renderable/               # ModelAnimatable, GuiAnimatable（HUD 样式 + 布局元素实例）
 │   ├── toast/                    # Toast 通知
 │   └── MMRenderTypes.java        # 自定义渲染类型
 ├── input/

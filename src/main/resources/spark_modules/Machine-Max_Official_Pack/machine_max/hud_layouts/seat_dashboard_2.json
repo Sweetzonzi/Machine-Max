@@ -1,0 +1,9 @@
+[
+  {
+    "style": "machine_max:example_hud_2",
+    "perspective": true,
+    "offset": [95, 45, -135],
+    "rotation": [-25, -30, 0],
+    "scale": [20, 20, 20]
+  }
+]

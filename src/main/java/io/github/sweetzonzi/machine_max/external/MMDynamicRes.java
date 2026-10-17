@@ -16,7 +16,8 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.A
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.common.visual.HudAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -69,7 +70,8 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, BlueprintData> BLUEPRINTS = new ConcurrentHashMap<>(); // 蓝图数据
     public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
-    public static ConcurrentMap<ResourceLocation, HudAttr> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
+    public static ConcurrentMap<ResourceLocation, HudStyle> HUD_STYLES = new ConcurrentHashMap<>(); // HUD 样式（huds/）
+    public static ConcurrentMap<ResourceLocation, HudLayout> HUD_LAYOUTS = new ConcurrentHashMap<>(); // HUD 布局（hud_layouts/）
     public static ConcurrentMap<ResourceLocation, ControlGroupSet> CONTROL_GROUP_PRESETS = new ConcurrentHashMap<>(); // 控制组预设
 
     // ==================== 客户端制造索引（仅客户端容器） ====================
@@ -682,19 +684,28 @@ public class MMDynamicRes {
     }
 
     public static void sendErrorToPlayer(Player player) {
-        for (String file : errorFiles) {
-            int i = errorFiles.indexOf(file);
-            MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
+        for (int i = 0; i < errorFiles.size(); i++) {
+            String file = errorFiles.get(i);
+            MutableComponent message = errorMessageAt(i).withColor(Color.RED.getRGB());
             player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
         }
     }
 
     public static void sendErrorToConsole(MinecraftServer server) {
-        for (String file : errorFiles) {
-            int i = errorFiles.indexOf(file);
-            Component message = MMDynamicRes.errorMessages.get(i);
+        for (int i = 0; i < errorFiles.size(); i++) {
+            String file = errorFiles.get(i);
+            Component message = errorMessageAt(i);
             server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
         }
+    }
+
+    /**
+     * 取第 {@code index} 条错误消息。
+     * <p>错误文件与错误消息理论上一一对应；某条消息缺失时返回占位文本，避免读到下一条的错位消息或越界。
+     */
+    private static MutableComponent errorMessageAt(int index) {
+        if (index >= 0 && index < errorMessages.size()) return errorMessages.get(index);
+        return Component.literal("(无错误信息)");
     }
 
     /**

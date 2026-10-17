@@ -1,9 +1,9 @@
 # 武器控制器 HUD 词表与宿主接入设计
 
-> 版本 1.4 · 2026-10-18
-> **状态**：计划中。当前武器状态由 `client/render/gui/hud/WeaponHudOverlay.java` 从座椅取激活控制器、创建一块 AUI 面板并逐 tick 写入；控制器自有 HUD 尚未实现。
+> 版本 1.5 · 2026-10-18
+> **状态**：计划中。当前武器状态由 `client/render/gui/hud/WeaponHudOverlay.java` 从座椅取激活控制器、创建一块 AUI 面板并逐 tick 写入。宿主接入已落地：`WeaponControllerSubsystemAttr` 的三个可空 `*_hud_layout` 字段、`WeaponControllerSubsystem` 的 `IHudHost` 实现、`CustomHud` 按宿主集合选择；武器专用元素、`HudWeaponSnapshot` 与 `weapon.*` 尚未实现。
 >
-> 本文定义每台武器控制器自己的 HUD 元素、显示快照与 `weapon.*` 查询。通用元素的 `hud.*` 与上下文继承见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》；样式、布局、元素及玩家覆盖见《[界面-HUD样式挂载与布局设计](界面-HUD样式挂载与布局设计.md)》；信息量分级、武器类型画像与炮镜装填环见《[武器系统-武器HUD信息分级与视角形态需求分析](武器系统-武器HUD信息分级与视角形态需求分析.md)》。
+> 本文定义每台武器控制器自己的 HUD 元素、显示快照与 `weapon.*` 查询。通用元素的 `hud.*` 与上下文继承见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》；样式、布局、元素及玩家覆盖见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；信息量分级、武器类型画像与炮镜装填环见《[武器系统-武器HUD信息分级与视角形态需求分析](武器系统-武器HUD信息分级与视角形态需求分析.md)》。
 
 ## 一、目标与宿主
 
@@ -22,13 +22,13 @@
   "type": "machine_max:weapon_controller",
   "definition": "machine_max:basic_weapon_controller",
   "control_outputs": { "weapon_control": ["subsystem.machine_max.main_launcher"] },
-  "first_hud_layout": "machine_max:layout/wc_gunner_first",
-  "third_hud_layout": "machine_max:layout/wc_gunner_third",
-  "scope_hud_layout": "machine_max:layout/wc_gunner_scope"
+  "first_hud_layout": "machine_max:wc_gunner_first",
+  "third_hud_layout": "machine_max:wc_gunner_third",
+  "scope_hud_layout": "machine_max:wc_gunner_scope"
 }
 ```
 
-字段缺失表示该视角没有 HUD。控制器可使用三个视角字段；座椅自身只显示座椅布局，相机在 `scope_hud_layout` 提供炮镜边框、遮罩等基础元素。弹药、装填与弹道分划由武器控制器元素提供。控制器的激活状态、当前视角布局与座椅选中集合共同决定元素是否显示；数据查询只读取元素所属的控制器，不从座椅聚合弹药数据。
+字段缺失表示该视角没有 HUD。控制器可使用三个视角字段；座椅自身只显示座椅布局，相机在 `scope_hud_layout` 提供炮镜边框、遮罩等基础元素。弹药、装填与弹道分划由武器控制器元素提供。当前视角布局与座椅选中集合共同决定元素是否显示，宿主集合不按激活状态过滤；数据查询只读取元素所属的控制器，不从座椅聚合弹药数据。
 
 选中集合由 `AbstractControllableSubsystem.getActiveWeaponControllers()` 给出：base 组与当前子组的并集，来源是控制组频道经 connector 转发或 `global` 广播的发现回调。它只含控制器引用，不含弹药/发射器数据；HUD 不设焦点组，也不按主/副分组。所有选中且在当前视角有布局的 WC 一同显示。
 
@@ -36,7 +36,7 @@
 
 ## 二、每台控制器的显示快照
 
-客户端每 tick 为每台需要显示的控制器构造一份不可变快照。快照只含本控制器数据，不包含座椅、控制组序号或角色；是否显示由座椅选中集合、控制器激活状态与当前视角布局决定。不同样式由控制器的 `*_hud_layout` 决定。
+客户端每 tick 为每台需要显示的控制器构造一份不可变快照。快照只含本控制器数据，不包含座椅、控制组序号或角色；是否显示由座椅选中集合与当前视角布局决定。不同样式由控制器的 `*_hud_layout` 决定。
 
 ```java
 public record HudWeaponSnapshot(
@@ -70,7 +70,7 @@ public record TubeSnapshot(String label, String state, float fill, String reload
 | 装填段 | 每根有效发射器一段：有膛弹常亮；空膛显示供给者状态与进度；无供给者熄灭 |
 | 尾标 | 全空显示空弹；任一装填中显示最慢一段的剩余时间或百分比；否则显示就绪 |
 
-发射器数和可选弹链数来自该控制器关联的载具结构。弹链耗尽时保留条目并切换状态；控制器被摧毁或未激活时隐藏它的 HUD 元素，不影响其它控制器。
+发射器数和可选弹链数来自该控制器关联的载具结构。弹链耗尽时保留条目并切换状态；控制器被摧毁或未激活时不单独隐藏其 HUD 元素，宿主与布局条目仍在，是否显示由内容包布局决定。
 
 ## 三、`weapon.*` 词表
 
@@ -128,7 +128,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 
 框架计划的 S5 阶段接入武器控制器宿主。可先从现有 `WeaponHudOverlay` 抽出单控制器快照供面板使用，再让控制器 HUD 元素消费同一口径。内容包与玩家的 `*_hud_layout` 采用框架文档 §六、§七的解析规则。
 
-验收至少覆盖：同一座椅选中的两台控制器使用不同样式且数据不串；多台选中的控制器同时显示时重叠由内容包布局决定；控制器不在当前座椅选中集合时不显示；多管武器各装填段读取正确管索引；炮镜边框由相机元素显示而分划与弹药由控制器元素显示；控制器停用时只隐藏本控制器元素；玩家覆盖并重置布局；面板切换前后的弹种、计数和装填口径一致。设计尚未落地，游戏内结果需实现后验证。
+验收至少覆盖：同一座椅选中的两台控制器使用不同样式且数据不串；多台选中的控制器同时显示时重叠由内容包布局决定；控制器不在当前座椅选中集合时不显示；多管武器各装填段读取正确管索引；炮镜边框由相机元素显示而分划与弹药由控制器元素显示；控制器停用时其宿主与元素仍在（不按激活状态过滤）；玩家覆盖并重置布局；面板切换前后的弹种、计数和装填口径一致。设计尚未落地，游戏内结果需实现后验证。
 
 ## 六、待决事项
 
@@ -145,3 +145,4 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 | 1.2 | 2026-10-16 | 定义每控制器自有元素和快照、`weapon.*` 查询、控制器 `scope` 分划与 AUI 重复段边界 |
 | 1.3 | 2026-10-17 | 控制器字段改为按视角的 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`；删除 `HudMount` 与布局组概念，布局为元素数组 |
 | 1.4 | 2026-10-18 | 可见性改为座椅当前控制组的选中集合：所有选中的 WC 一同显示，不区分主/副；多台重叠由内容包布局处理；快照只含本控制器数据 |
+| 1.5 | 2026-10-18 | 宿主接入落地：三个 `*_hud_layout` 进入动态属性，`WeaponControllerSubsystem` 实现 `IHudHost`，`CustomHud` 按宿主集合选择；武器专用元素、快照与 `weapon.*` 仍未实现 |

@@ -12,6 +12,9 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudView;
+import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -19,13 +22,14 @@ import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractControllableSubsystem {
+public class SeatSubsystem extends AbstractControllableSubsystem implements IHudHost {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public LivingEntity passenger;
@@ -190,5 +194,19 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     public Transform getSeatPointLocalTransform() {
         String locatorName = attr.locator;
         return getOwner().getSubPart().getLocatorLocalTransform(locatorName);
+    }
+
+    /**
+     * 座椅只有第一/第三人称布局；炮镜视角的基础元素由相机/瞄具的
+     * {@code scope_hud_layout} 提供，武器分划由武器控制器提供，座椅在该视角返回 {@code null}。
+     */
+    @Override
+    @Nullable
+    public HudLayout hudLayoutFor(HudView view) {
+        return IHudHost.resolve(switch (view) {
+            case FIRST -> attr.staticAttribute.views.firstHudLayout();
+            case THIRD -> attr.staticAttribute.views.thirdHudLayout();
+            case SCOPE -> HudLayout.EMPTY;
+        });
     }
 }

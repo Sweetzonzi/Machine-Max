@@ -35,7 +35,7 @@
 | [武器系统-制导组件实现备忘](已实现/武器系统-制导组件实现备忘.md) | 提交 `c1c0db71`；`GuidanceLaw`、`PurePursuitGuidance`、`AuthorityLimits` 已落地 |
 | [研究台界面-研发分组与蓝图库统一重构计划](已实现/研究台界面-研发分组与蓝图库统一重构计划.md) | 提交 `87615e1e`；研究台树形界面与研发分组已在 AUI 上实现 |
 | [蓝图库-玩家设计保存与取用设计](已实现/蓝图库-玩家设计保存与取用设计.md) | `BlueprintLibraryClient` 与客户端 `saved_blueprints/*.json` 已落地 |
-| [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | `huds/*.json` 由 `HudModule` 载入 `MMDynamicRes.CUSTOM_HUD`，客户端 `CustomHud` 渲染 |
+| [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | 分划行为与炮镜跟随语义已落地；当前的资源形态是 `huds/*.json` 样式 + `hud_layouts/*.json` 布局，由 `HudModule` / `HudLayoutModule` 载入，客户端 `CustomHud` 渲染 |
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
 
 ## 进行中
@@ -47,6 +47,7 @@
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
 | [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.0.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）、光照物理化（线性空间、`1/d²` + 窗、有界合成曲线、逐弹种绝对辐照度）与 S4 朝向响应已落地；实机目视按 §7 由用户完成。P4 车灯球光、P5 锥光与 S3 未实现 |
 | [渲染-屏幕空间光照物理化设计](进行中/渲染-屏幕空间光照物理化设计.md) | 阶段 A–C 与 D1 已落地：`screen_space_light.fsh` 用 `1/d²` + 四窗 + 朝向响应 + 有界合成曲线（线性空间、sRGB 解码在光源表），`LightMinDist[16]` 逐槽上传，13 个弹种与两处代码缺省写入绝对辐照度，法线由邻域深度重建、权重可配置；阶段 D2（光晕/散射）未实现。标定值为首轮锚点，实机观感待按 §4.4 复核 |
+| [HUD 样式、布局与元素设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；座椅与相机/瞄具使用单个 `*_hud_layout`。宿主分组已落地：`HudView`/`IHudHost`，座椅、相机/瞄具与武器控制器均实现，`CustomHud` 按宿主集合重建。V2（AUI 载体、`hud.*`、绑定层）、V3（`WeaponHudElement`、`weapon.*`、武器控制器内容包示例与 schema）、V4（玩家覆盖）未实现；`runClient` 表现验收待人工完成 |
 
 ## 计划中
 
@@ -58,7 +59,6 @@
 | [武器系统-投射物模型渲染设计](计划中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 已能解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放、LOD 距离与投射物动画驱动未实现 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext`。通用元素持有 `hud.*` 上下文，武器元素继承并增加 `weapon.*`；每个元素独立取数 |
-| [HUD 样式、布局与元素设计](计划中/界面-HUD样式挂载与布局设计.md) | 设计阶段；代码中尚无 `HudStyle` / `HudElement` / `HudLayout` 与玩家覆盖。定义样式/布局/元素三层、宿主按视角一个 RL、AUI 绑定层、`DocumentModule` 页面注入（Spark `CLIENT_PACK` + `HTML.scan`）；武器控制器 HUD 按座椅选中集合显示；玩家覆盖按视角保存元素数组 |
 | [内容包 AUI 页面加载可行性调查](计划中/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 已落地，待客户端实机验收。客户端本地内容包 `documents/` 直接写 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用；`LOCAL_ONLY`，不参与服务端同步；AUI 自动重载，`onFinish` 再补一次 `HTML.scan()`；`AuiResourceService` 包装器为备选 |
 | [武器系统-武器控制器HUD样式与布局设计](计划中/武器系统-武器控制器HUD样式与布局设计.md) | 设计阶段；代码中尚无 `HudWeaponSnapshot`。定义每控制器快照与 `weapon.*` 词表；座椅当前控制组选中的 WC 全部显示，不区分主/副；控制器的 `scope` 元素绘制分划，相机元素提供基础边框 |
 | [武器系统-武器HUD信息分级与视角形态需求分析](计划中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析；定义 `minimal` / `standard` / `scope` / `full` 四款呈现、武器类型画像、第三人称/炮镜分工与装填环语义；不按主/副角色分组；尚未实现 |

@@ -1,7 +1,7 @@
 # 炮镜 HUD 自定义分划设计
 
-> 版本 1.2 · 2026-06-14
-> **状态**：已实现（`huds/*.json` 由 `HudModule` 载入 `MMDynamicRes.CUSTOM_HUD`，客户端 `CustomHud` 渲染）
+> 版本 1.3 · 2026-10-18
+> **状态**：已实现。本文记录炮镜分划的行为与变换链设计；资源形态由 `huds/*.json` 样式 + `hud_layouts/*.json` 布局承载（`HudStyle` / `ModelHudStyle` / `HudElement` / `HudLayout`），`scope_behavior` 与 `ignore_zoom` 是布局元素字段，客户端 `CustomHud` 渲染。文中出现的 `HudAttr` 指单文件定义时代的类名，当前对应 `ModelHudStyle`（表现）与 `HudElement`（投放）。
 
 ***
 
