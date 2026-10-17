@@ -420,15 +420,17 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 
 | 项 | 要求 |
 | --- | --- |
-| 命名空间种子 | 资源包注册前写入 `apricityui:apricity/.keep`，让 `CLIENT_PACK` 在 `MultiPackResourceManager` 构造时具有 `apricityui` 命名空间；否则服务端同步后新增的页面不会被列出 |
-| 注入时机 | 本地内容包在 `AddPackFindersEvent` 预加载阶段写入；服务端同步在 `SparkPackagePayload` 的 `read/onFinish` 写入 |
-| 页面模板 | 注入后调用 `HTML.scan()`，让新 HTML 进入模板表；只写资源包不会更新 `HTML.temples` |
-| 缓存失效 | 每次注入后调用 `ClientLoader.invalidateStaticResourceCache()`；AUI 的静态资源清单可能仍是旧快照 |
+| 命名空间种子 | 资源包注册前写入 `apricityui:apricity/.keep`，让 `CLIENT_PACK` 在 `MultiPackResourceManager` 构造时具有 `apricityui` 命名空间；否则之后通过 `/reload` 新增的页面不会被列出 |
+| 注入时机 | 客户端读取本地内容包时，在 `DocumentModule.read` 中直接写入 `CLIENT_PACK`；启动阶段在资源包构造前，`/reload` 阶段在 AUI 资源重载前 |
+| 页面模板 | `DocumentModule.onFinish` 在客户端调用一次 `HTML.scan()` 作为保险；AUI 的资源扫描/自动重载仍负责常规发现 |
+| 缓存失效 | 不需要本模组手动失效；AUI 的资源重载处理自己的静态清单 |
 | 资源范围 | HTML/CSS/JS/`<img>`/`@font-face`/`<audio>` 全部走资源管理器；`<canvas>` 的 `drawImage` 直接走 `Loader`，不在覆盖范围 |
-| 优先级 | `HTML.scan` 的顺序是资源包 → `<gamedir>/apricity` → 开发目录；本地覆盖文件优先 |
+| 优先级 | AUI 资源扫描的顺序是资源包 → `<gamedir>/apricity` → 开发目录；本地覆盖文件优先 |
 | 路径 | 页面键为 `<内容包命名空间>/<path>`，例如 `machine_max/hud/speed.html`、`machine_max/manual/tank.html`；`HudStyle.page` 与键相同 |
-| 路径规范化 | 处理前导 `/`、`..`、反斜杠；拒绝逃出页面根与未登记后缀，避免把内容包当成任意文件读取通道 |
-| 安全边界 | 内容包页面是可执行内容：脚本由 KubeJS 执行，CSS/图片可引用远程 URL。接受服务端同步页面前必须定信任策略；第一阶段只使用模组 JAR 内页面，不开放内容包页面 |
+| 路径规范化 | 处理前导 `/`、`..`、反斜杠；拒绝逃出页面根与空段，避免把内容包当成任意文件读取通道 |
+| 安全边界 | 文档来自客户端本地内容包，安装者即信任来源；脚本仍由 KubeJS 执行，CSS/图片仍可引用远程 URL |
+
+`DocumentModule` 使用 `ReadMode.LOCAL_ONLY`：客户端读取本地 `spark_modules`，服务端不向客户端发送文档。文档属于客户端表现资源，不参与游戏性同步；客户端调试页面也可以放在 `<gamedir>/apricity/` 或模组 JAR 的 `assets/apricityui/apricity/`。
 
 备选方案是 `AuiServices.setResources(AuiResourceService)` 包装器 + `HTML.putTemple`：不依赖资源包命名空间，但要实现六个委托方法并额外维护模板注入。两种方案的比较、命名空间种子细节与验证计划见 [内容包 AUI 页面加载可行性调查](界面-内容包AUI页面加载可行性调查.md)。
 
@@ -462,9 +464,9 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 | `client/render/gui/hud/CustomHud.java` | 按宿主视角字段解析 `HudLayout` 与玩家覆盖，按 `HudElement` 创建各自带上下文的运行时元素；按解析后的投影归类维护两个有序 `List`（模型且 `perspective: true` 进透视列表，模型 `false` 与全部 AUI 进正交列表），同一 `style` 可出现多次，组内顺序即布局数组顺序；武器控制器元素只为该座椅当前控制组选中的 WC 创建，集合内全部显示，不按主/副分组 |
 | `external/MMDynamicRes.java` | `CUSTOM_HUD` 拆为 `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
 | `common/resource/modules/HudModule.kt` | 按模块 id/path 分派 `HudStyle` 与 `HudLayout`；增加 `hud_layouts` 模块 id |
-| `common/resource/modules/AuiPageModule.kt` | 读取内容包 `aui_pages/` 下的全部页面资源，按命名空间/相对路径存入共享表；不引用 AUI 类；HUD、手册、PDA 共用 |
+| `common/resource/modules/DocumentModule.kt` | 读取客户端本地内容包 `documents/` 下的全部页面资源，按命名空间/相对路径直接写 `CLIENT_PACK`；不引用 AUI 类；HUD、手册、PDA 共用 |
 | 相机、瞄具、座椅、武器控制器属性类 | 各提供按视角的 `*_hud_layout` 字段 |
-| 新类 | `HudStyleRegistry` / `HudLayoutRegistry`、玩家布局管理器、通用 AUI 页面模块与客户端资源包注入器、通用/武器 HUD 元素与对应 MoLang 上下文、AUI 绑定层 |
+| 新类 | `HudStyleRegistry` / `HudLayoutRegistry`、玩家布局管理器、`DocumentModule`、通用/武器 HUD 元素与对应 MoLang 上下文、AUI 绑定层 |
 
 RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布局 RL 加前缀 `machine_max:layout/<文件名>`。如果 `hud_layouts/` 下按子目录组织，模块需把子目录纳入 RL，或统一加前缀，避免不同目录同名文件撞键。
 
@@ -526,7 +528,7 @@ RL 命名约定：样式 RL 保持 `machine_max:<文件名>`（`huds/`）；布�
 | 阶段 | 内容 | 产出 |
 | --- | --- | --- |
 | **V1（先验证）** | `HudStyle` 与 `HudLayout` 两个注册表，以及 `HudElement` 的 codec；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
-| **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层、通用 AUI 页面模块与客户端资源包注入 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用；内容包页面可创建 |
+| **V2（按需）** | AUI 载体（仅 GUI/HUD 正交；`WorldWindow` 不在内）、通用 `HudMolangContext`（`hud.*`）、AUI 绑定层、`DocumentModule` 与客户端资源包注入 | AUI 样式显示数值；`hud.*` 查询可用；`local.*` / `global.*` 在 HUD 上下文中继续可用；内容包页面可创建 |
 | **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段、`WeaponHudElement`、`WeaponHudMolangContext`、`HudWeaponSnapshot`、`weapon.*` 与 `scope` 分划 | 座椅当前控制组选中的 WC 全部按各视角显示；`weapon.*` 数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
@@ -556,7 +558,7 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 武器分划 | V3 | 相机/瞄具边框使用普通上下文；每台武器的 `scope` 分划读取本控制器弹药，数据互不串值 |
 | 武器选中集合 | V3 | 同一座椅选中多台 WC 时全部显示；不属于当前控制组的 WC 不显示；不按主/副分组；重叠由布局决定 |
 | AUI 基础绑定 | V2 | 页面显示数值；错误只使对应槽位降级 |
-| 内容包自带页面 | V2 | 包内资源注入 `CLIENT_PACK`；`HTML.scan()` 后模板可创建；CSS/JS/图片由资源管理器解析；本地 `<gamedir>/apricity/` 同名文件优先 |
+| 内容包自带页面 | V2 | 客户端本地包内资源写入 `CLIENT_PACK`；AUI 资源扫描/自动重载后模板可创建；CSS/JS/图片由资源管理器解析；本地 `<gamedir>/apricity/` 同名文件优先 |
 | 未安装 KubeJS | V2 | HUD 正常显示 |
 
 ***
@@ -588,3 +590,6 @@ V1 的渲染顺序契约限定在同一种投影模式内：`CustomHud` 按透�
 | 1.9 | 2026-10-18 | 武器控制器 HUD 可见性改为座椅当前控制组的选中集合：选中的 WC 全部显示，不区分主/副、不设焦点组；多台重叠由内容包布局处理 |
 | 2.0 | 2026-10-18 | §九 补齐内容包 AUI 页面的模板注入：`AuiResourceService` 只覆盖 CSS/JS/图片，HTML 必须经 `HTML.putTemple` 进入模板表；补页面模块、线程/缓存/路径/安全边界与第一阶段 JAR 内页面基线；V2 与验收同步 |
 | 2.1 | 2026-10-18 | §九 改为通用 AUI 页面管线：推荐注入 Spark `CLIENT_PACK` 的 `apricityui:apricity/<key>`，HUD/手册/PDA 共用；补命名空间种子与 `HTML.scan` 时机；`AuiResourceService` 包装器降为备选；V2 与验收同步 |
+| 2.2 | 2026-10-18 | `DocumentModule` 与客户端资源包注入器落地；§九 与迁移表对齐 `documents/` 目录与服务端同步语义；待客户端实机验收 |
+| 2.3 | 2026-10-18 | 文档收敛为客户端本地资源：`DocumentModule` 使用 `LOCAL_ONLY`，`read` 直接写 `CLIENT_PACK`；移除扫描钩子与服务端同步；页面发现交给 AUI 自动重载 |
+| 2.4 | 2026-10-18 | `DocumentModule.onFinish` 在客户端补一次 `HTML.scan()` 作为保险；`HTML` 属于 AUI common 包，不需要额外客户端钩子 |
