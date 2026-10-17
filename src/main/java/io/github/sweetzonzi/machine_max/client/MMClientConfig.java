@@ -53,6 +53,10 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue EXPLOSION_LIGHT_ENABLED;
     /** 爆炸火光类别强度倍率 */
     private static final ModConfigSpec.DoubleValue EXPLOSION_LIGHT_INTENSITY;
+    /** 枪口火光类别开关 */
+    private static final ModConfigSpec.BooleanValue MUZZLE_FLASH_LIGHT_ENABLED;
+    /** 枪口火光类别强度倍率 */
+    private static final ModConfigSpec.DoubleValue MUZZLE_FLASH_LIGHT_INTENSITY;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
@@ -151,6 +155,14 @@ public class MMClientConfig {
         EXPLOSION_LIGHT_INTENSITY = builder
                 .comment("Explosion light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
                 .defineInRange("explosion_light_intensity", 1.0, 0.0, 2.0);
+
+        MUZZLE_FLASH_LIGHT_ENABLED = builder
+                .comment("Enable muzzle flash light (screen-space lighting cast by a launcher's muzzle flash when it fires).\nPer-ammo radius, color, intensity and duration come from the content pack's visual.muzzle_flash block.\nDefault: true")
+                .define("muzzle_flash_light_enabled", true);
+
+        MUZZLE_FLASH_LIGHT_INTENSITY = builder
+                .comment("Muzzle flash light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
+                .defineInRange("muzzle_flash_light_intensity", 1.0, 0.0, 2.0);
 
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
@@ -544,6 +556,24 @@ public class MMClientConfig {
      */
     public static float getExplosionLightIntensity() {
         return EXPLOSION_LIGHT_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取枪口火光类别开关状态。
+     *
+     * @return true 表示启用枪口火光
+     */
+    public static boolean isMuzzleFlashLightEnabled() {
+        return MUZZLE_FLASH_LIGHT_ENABLED.get();
+    }
+
+    /**
+     * 获取枪口火光类别强度倍率。
+     *
+     * @return [0, 2] 范围内的倍率，1.0 为原始强度
+     */
+    public static float getMuzzleFlashLightIntensity() {
+        return MUZZLE_FLASH_LIGHT_INTENSITY.get().floatValue();
     }
 }
 

@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
@@ -569,6 +570,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 type.playFireEffect(getLevel(), this, attr.locator);
             }
             playFireAnimation();
+            playMuzzleFlash(firedTypes.get(0));
         }
 
         // ⑥ 扣除已发射数对应的时间
@@ -886,6 +888,26 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         part.playAnim(animName);
+    }
+
+    /**
+     * 客户端：为本 tick 的开火登记一次枪口火光。
+     * <p>
+     * <b>触发粒度：</b>每个 tick 至多一条，与 {@link #playFireAnimation()} 同粒度——同一 tick 内的
+     * 多发落在枪口同一点上，视觉无法区分，逐发登记只会让实际亮度随射速漂移。
+     * <p>
+     * <b>参数来源：</b>半径、颜色、强度与寿命全部由弹种的 {@code visual.muzzle_flash} 与口径在
+     * {@link MuzzleFlashLight#emit} 内部求值，本方法只提供枪口位姿与本 tick 的弹种；火光不在
+     * 服务端结算，也不经过网络。
+     * <p>
+     * <b>失败处理：</b>弹种未启用火光、强度为 0 或口径缺失时，{@code emit} 自行早退，本方法无分支。
+     * <p><b>调用线程：</b>主线程（{@link #onTick()} 客户端分支）。
+     *
+     * @param type 本 tick 发射的弹种（取首发：一 tick 内膛室只装一种弹）
+     */
+    private void playMuzzleFlash(ProjectileType type) {
+        if (!(type instanceof BallisticProjectileType ballistic)) return;
+        MuzzleFlashLight.emit(getLevel(), getMuzzleWorldPosition(), ballistic);
     }
 
     // ——— 音效管理（仅在客户端 onTick 中调用） ———

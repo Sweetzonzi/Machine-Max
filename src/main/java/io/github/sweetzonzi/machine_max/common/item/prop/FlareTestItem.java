@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import net.minecraft.resources.ResourceLocation;
@@ -26,6 +27,8 @@ import net.minecraft.world.phys.Vec3;
  * <p>
  * 它同时是"显式光源字段"（{@code tracer_light_radius} / {@code tracer_light_color} /
  * {@code tracer_light_enabled}）的最小验收载体：改弹种 JSON 即可改变光斑，不需要动代码。
+ * 客户端分支还会按弹种的 {@code visual.muzzle_flash} 登记一次枪口火光，因此它同时也是枪口火光的
+ * 无载具验收载体。
  */
 public class FlareTestItem extends Item {
 
@@ -48,7 +51,6 @@ public class FlareTestItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) return InteractionResultHolder.success(stack);
 
         ProjectileType type = ProjectileType.get(level, FLARE_TYPE);
         if (!(type instanceof BallisticProjectileType flare)) {
@@ -62,6 +64,13 @@ public class FlareTestItem extends Item {
         // 沿视线出膛：方向由玩家给定，速度取弹种的参考速度
         Vec3 look = player.getLookAngle();
         Vec3 spawnPos = player.getEyePosition().add(look.scale(SPAWN_OFFSET_M));
+
+        // 客户端只做表现：枪口火光按弹种参数由本机登记；投射物本身由服务端生成
+        if (level.isClientSide) {
+            MuzzleFlashLight.emit(level, spawnPos, flare);
+            return InteractionResultHolder.success(stack);
+        }
+
         Vector3f jmePos = PhysicsHelperKt.toBVector3f(spawnPos);
         Vector3f jmeVel = PhysicsHelperKt.toBVector3f(look).multLocal(flare.getBaseVelocity());
         flare.create(level, jmePos, jmeVel);
