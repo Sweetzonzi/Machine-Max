@@ -29,6 +29,12 @@ import java.util.Map;
  * （{@link ScreenSpaceLight.OcclusionMode#SCREEN_RAY}）返回 {@link SubmitResult#UNSUPPORTED}，
  * 不会按球光或按 S2 悄悄渲染；两者接入 GPU 编码后本条判断才放开（设计文档 §4.1、§10 的 P5）。</p>
  *
+ * <p><b>提交到 GPU 的数值口径在这里统一一次</b>：颜色在写入槽位时由 sRGB 编码转成线性辐射度
+ * （内容包里的 {@code [0,255]} 颜色按显示值理解；直接当线性系数用会让暖色偏冷），强度在写入时
+ * 乘上全局倍率。片元的算子只有一条：逐光源 {@code color · I · o · w(d) / max(d², d_min²)} 求和
+ * （{@code o} 是朝向响应，权重取全局 {@code NormalWeight}），再用合成曲线映射回显示值
+ * （设计文档 §3.2、§3.3、§3.5、§4.1）。</p>
+ *
  * <p>渲染线程独占：本类不持有锁，也不接受物理线程写入提交记录。</p>
  */
 public final class ScreenSpaceLightBuffer {
@@ -57,12 +63,14 @@ public final class ScreenSpaceLightBuffer {
     private final int capacity;
     /** 每槽 4 个：视空间光心 xyz、影响半径（m） */
     private final float[] positionRadius;
-    /** 每槽 4 个：颜色 rgb、强度（已乘全局倍率） */
+    /** 每槽 4 个：线性颜色 rgb、强度（1 m 处辐照度，已乘全局倍率） */
     private final float[] colorIntensity;
     /** 每槽 1 个：S2 的绝对容差（m） */
     private final float[] sourceDepthTolerance;
     /** 每槽 1 个：遮挡策略编码，{@code 0} = 不做遮挡判定，{@code 1} = 在光心投影处采一次深度（S2） */
     private final float[] occlusion;
+    /** 每槽 1 个：{@code 1/d²} 的奇点截断距离（m），逐来源取值 */
+    private final float[] minDistance;
     /** 槽内条目的投影半径（px），只用于排序与“超限时置换最弱一个” */
     private final float[] sortRadiusPx;
     /** 槽内条目的来源优先级，只用于容量比较 */
@@ -99,6 +107,7 @@ public final class ScreenSpaceLightBuffer {
         this.colorIntensity = new float[capacity * 4];
         this.sourceDepthTolerance = new float[capacity];
         this.occlusion = new float[capacity];
+        this.minDistance = new float[capacity];
         this.sortRadiusPx = new float[capacity];
         this.slotPriority = new int[capacity];
         this.slotSourceId = new ResourceLocation[capacity];
@@ -207,6 +216,11 @@ public final class ScreenSpaceLightBuffer {
         return occlusion;
     }
 
+    /** @return 扁平数组 {@code [capacity]}：每槽 {@code 1/d²} 的奇点截断距离（m） */
+    public float[] minDistance() {
+        return minDistance;
+    }
+
     /**
      * 清空诊断状态：关闭效果、0 候选与退出世界时调用，避免上一帧的触顶状态漏进下一段会话。
      */
@@ -233,14 +247,17 @@ public final class ScreenSpaceLightBuffer {
         float intensity = light.intensity();
         float tolerance = light.sourceDepthTolerance();
         float normalWeight = light.normalWeight();
+        float minDistance = light.minDistance();
         if (!finite(position) || !finite(color)
                 || !Float.isFinite(radius) || !Float.isFinite(intensity)
-                || !Float.isFinite(tolerance) || !Float.isFinite(normalWeight)) {
+                || !Float.isFinite(tolerance) || !Float.isFinite(normalWeight)
+                || !Float.isFinite(minDistance)) {
             stats.invalid++;
             return SubmitResult.INVALID;
         }
         if (radius < 0f || intensity < 0f || tolerance < 0f
                 || normalWeight < 0f || normalWeight > 1f
+                || minDistance < 0f
                 || !normalized(color)) {
             stats.invalid++;
             return SubmitResult.INVALID;
@@ -292,12 +309,13 @@ public final class ScreenSpaceLightBuffer {
         positionRadius[base + 1] = position.y;
         positionRadius[base + 2] = position.z;
         positionRadius[base + 3] = light.radius();
-        colorIntensity[base] = color.x;
-        colorIntensity[base + 1] = color.y;
-        colorIntensity[base + 2] = color.z;
+        colorIntensity[base] = srgbToLinear(color.x);
+        colorIntensity[base + 1] = srgbToLinear(color.y);
+        colorIntensity[base + 2] = srgbToLinear(color.z);
         colorIntensity[base + 3] = light.intensity() * globalIntensity;
         sourceDepthTolerance[slot] = light.sourceDepthTolerance();
         occlusion[slot] = encodeOcclusion(light.occlusionMode());
+        minDistance[slot] = light.minDistance();
         sortRadiusPx[slot] = sortPx;
         slotPriority[slot] = light.priority();
         slotSourceId[slot] = light.sourceId();
@@ -397,6 +415,18 @@ public final class ScreenSpaceLightBuffer {
 
     private static boolean inUnitRange(float channel) {
         return channel >= 0f && channel <= 1f;
+    }
+
+    /**
+     * sRGB 编码的显示值 → 线性辐射度，与着色器的解码用同一条分段函数。
+     *
+     * <p>内容包的颜色是 {@code [0,255]} 的显示值；线性空间里的 {@code (1.00, 0.85, 0.60)}
+     * 与 sRGB 里的 {@code (1.00, 0.93, 0.80)} 不是同一个颜色，直接拿编码值当系数会让暖色偏冷。
+     * 换算只在提交时做一次，着色器收到的一律是线性 RGB。</p>
+     */
+    private static float srgbToLinear(float channel) {
+        if (channel <= 0.04045f) return channel / 12.92f;
+        return (float) Math.pow((channel + 0.055f) / 1.055f, 2.4);
     }
 
     /** 锥光的必填关系：单位方向、两个余弦有限且 {@code cosInner >= cosOuter}、两者都在 [-1,1]。 */

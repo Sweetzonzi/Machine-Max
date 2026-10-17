@@ -53,7 +53,9 @@
     "tracer_alpha": 255,
     "tracer_length": 1.05,
     "model": "machine_max:9m133.geo",
-    "texture": "machine_max:textures/projectile/9m133.png"
+    "texture": "machine_max:textures/projectile/9m133.png",
+    "tracer_light_intensity": 15.9,
+    "muzzle_flash": { "intensity": 616 }
   },
   "sounds": {
     "fire_sounds": {

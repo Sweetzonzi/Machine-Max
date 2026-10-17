@@ -27,7 +27,7 @@ import java.util.List;
  * @param enabled       是否产生火光；false 表示该爆炸完全不发光，其余字段仍照常同步
  * @param colorRgb      颜色，打包的 {@code 0xRRGGBB}；每个通道都在 {@code [0,255]}
  * @param radius        固定照射半径（m），{@code 0 < R <= 64}；不随波前扩张
- * @param intensity     起爆瞬间的峰值强度（无量纲，{@code [0,8]}）；0 表示不产生光照
+ * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示不产生光照
  * @param durationTicks 总寿命（游戏 tick，{@code [1,200]}），按 20 TPS 计，暂停时冻结
  */
 public record ExplosionLightParams(
@@ -40,19 +40,24 @@ public record ExplosionLightParams(
 
     /** 照射半径上界（m）：建议内容边界，超出即内容包配置错误 */
     public static final float MAX_RADIUS_M = 64f;
-    /** 峰值强度上界：与曳光的量纲同一口径，8 已在明亮表面上接近饱和 */
-    public static final float MAX_INTENSITY = 8f;
+    /**
+     * 辐照度上界（1 m 处）：与枪口火光同一量纲。
+     *
+     * <p>缺省值约 166，4 个数量级的余量留给超大口径与特效弹种，同时挡住明显的笔误。</p>
+     */
+    public static final float MAX_INTENSITY = 4096f;
     /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
     public static final int MIN_DURATION_TICKS = 1;
     /** 寿命上界（tick）：200 tick = 10 秒 */
     public static final int MAX_DURATION_TICKS = 200;
 
     /**
-     * 缺省火光：半径 8 m、强度 1、寿命 6 tick 的橙黄色闪光。
+     * 缺省火光：半径 8 m、辐照度 166、寿命 6 tick 的橙黄色闪光。
      *
-     * <p>数值是首轮标定起点，不是实测结论；内容包未写 {@code light}、或只写部分字段时逐字段回落到这里。</p>
+     * <p>166 来自“半径 8 m、参考距离 4 m 处把 0.10 的灰板抬到 0.45”这个锚点（物理化设计 §4.2），
+     * 是首轮标定起点，不是实测结论；内容包未写 {@code light}、或只写部分字段时逐字段回落到这里。</p>
      */
-    public static final ExplosionLightParams DEFAULT = new ExplosionLightParams(true, 0xFFB464, 8f, 1f, 6);
+    public static final ExplosionLightParams DEFAULT = new ExplosionLightParams(true, 0xFFB464, 8f, 166f, 6);
 
     /** 颜色字段：恰好三个 {@code [0,255]} 整数，分别对应红、绿、蓝。 */
     private static final Codec<Integer> PACKED_COLOR_CODEC =

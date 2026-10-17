@@ -24,10 +24,15 @@ import java.util.List;
  * <p>本来源不做额外剔除：它没有"光心在相机背后/投影半径过小"这类特有门禁（枪口焰永远落在
  * 枪口，投影半径过小的情形交给光源表的公共影响体剔除）。</p>
  *
- * <p>提交的最终强度 = 内容强度 × 时间包络 × 类别倍率（本类乘） × 全局倍率（光源表统一乘一次），
- * 每项各乘一次。</p>
+ * <p><b>强度口径</b>：{@code muzzle_flash.intensity} 是光源在 1 m 处的辐照度（设计文档 §4.1），
+ * 不是叠加倍率；半径只决定“照到多远”与窗宽，不参与亮度。提交前乘好的因子是时间包络与类别倍率
+ * （{@code MMClientConfig} 的枪口火光强度），全局倍率由光源表统一乘一次，每项各乘一次。</p>
  *
- * <p>设计文档：{@code docs/plan/进行中/渲染-屏幕空间光照通用化设计.md} §2.4、§8.6。</p>
+ * <p>{@code 1/d²} 的奇点截断沿用 {@link ScreenSpaceLight#DEFAULT_MIN_DISTANCE_M}：光心就在炮口，
+ * 相机贴到炮管旁边是常态。</p>
+ *
+ * <p>设计文档：{@code docs/plan/进行中/渲染-屏幕空间光照通用化设计.md} §2.4、§8.6；
+ * 算子与强度语义：{@code docs/plan/进行中/渲染-屏幕空间光照物理化设计.md} §3、§4.1。</p>
  */
 public class MuzzleFlashLightSource implements ScreenSpaceLightSource {
 

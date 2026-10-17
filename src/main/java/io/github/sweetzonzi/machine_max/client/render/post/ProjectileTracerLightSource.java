@@ -24,10 +24,14 @@ import org.joml.Vector3f;
  * {@code tracer_light_color}（缺省 = {@code tracer_color}）、{@code tracer_light_intensity}。
  * 因此同一个来源既能表达"曳光弹的小光斑"，也能表达照明弹那种几十米、只有光没有弹道线的光源。</p>
  *
- * <p>强度在提交前乘好的因子是内容强度（弹种 {@code tracer_light_intensity}）、类别倍率
+ * <p><b>强度口径</b>：{@code tracer_light_intensity} 是光源在 1 m 处的辐照度（设计文档 §4.1），
+ * 不是叠加倍率；半径只决定“够得着多远”与窗宽，不参与亮度。提交前乘好的因子是类别倍率
  * （{@code MMClientConfig} 的曳光强度）、时间包络（剩余寿命淡出）与透明度因子（只在缺省门禁下
  * 参与，显式声明开关后光强完全由内容字段决定）；全局倍率由 {@link ScreenSpaceLightBuffer}
  * 统一乘且只乘一次，合计每项各乘一次。</p>
+ *
+ * <p>{@code 1/d²} 的奇点截断：曳光沿弹道掠过车体与地面，距离可以小到几十厘米，因此沿用
+ * {@link ScreenSpaceLight#DEFAULT_MIN_DISTANCE_M} 的 0.5 m，不再另设取值。</p>
  *
  * <p>三条剔除留在本类，不进入光源表的公共剔除：光心在相机背后、光心距离超过渲染距离、
  * 屏幕投影半径小于下限。这样容量表里的候选与拆出通用通路之前的曳光链逐一对应

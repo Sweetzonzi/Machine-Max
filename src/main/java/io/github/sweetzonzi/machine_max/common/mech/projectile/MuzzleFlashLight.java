@@ -55,7 +55,7 @@ public final class MuzzleFlashLight {
      *
      * @param radius        照射半径（m），已按弹种口径折算或取显式值，保证 {@code > 0}
      * @param colorRgb      颜色，打包的 {@code 0xRRGGBB}；每个通道都在 {@code [0,255]}
-     * @param intensity     枪口瞬间的峰值强度（无量纲），已由内容包给出
+     * @param intensity     光源在 1 m 处的辐照度（归一化单位），已由内容包给出
      * @param durationTicks 总寿命（游戏 tick），按 20 TPS 计
      */
     public record Params(float radius, int colorRgb, float intensity, int durationTicks) {

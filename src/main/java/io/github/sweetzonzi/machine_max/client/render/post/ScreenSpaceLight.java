@@ -14,8 +14,10 @@ import javax.annotation.Nullable;
  * “提交后全部清零”证明不了完整性。</p>
  *
  * <p>单位与口径（设计文档 §4.1）：位置是视空间米制、前方为负 Z；半径是有限影响半径（m），
- * 点到光心距离达到半径时贡献严格为 0；颜色通道归一化到 {@code [0,1]}；强度是非负峰值系数，
- * 全局倍率由光源表统一乘一次，这里放的只是内容强度与时间包络的乘积。</p>
+ * 只决定剔除范围与窗宽、不决定亮度，点到光心距离达到半径时贡献严格为 0；颜色是 <b>sRGB 编码</b>的
+ * {@code [0,1]} 通道，由光源表在写入槽位时一次性转成线性；强度是光源在 1 m 处的辐照度
+ * （归一化单位，数值越大只是在同一距离上更亮），全局倍率由光源表统一乘一次，这里放的只是
+ * 内容强度与时间包络的乘积。</p>
  *
  * <p>渲染线程独占；来源 ID 与优先级由光源表在提交时盖上，不由调用方填写。</p>
  */
@@ -37,6 +39,15 @@ public final class ScreenSpaceLight {
         SCREEN_RAY
     }
 
+    /**
+     * {@code 1/d²} 奇点截断距离的缺省值（m）。
+     *
+     * <p>0.5 m 适合“光心会贴到表面上”的来源：枪口焰就在炮口、曳光沿弹道掠过车体与地面，
+     * 距离小到几十厘米是常态。爆炸火光的光心通常离表面更远、且没有强方向性，取更大的值
+     * （见 {@code ExplosionLightSource}）可以让爆心的过曝范围不至于太小。</p>
+     */
+    public static final float DEFAULT_MIN_DISTANCE_M = 0.5f;
+
     /** 提交时由光源表盖上的来源身份，用于逐来源诊断 */
     @Nullable
     private ResourceLocation sourceId;
@@ -49,6 +60,7 @@ public final class ScreenSpaceLight {
     private float radius;
     private final Vector3f color = new Vector3f();
     private float intensity;
+    private float minDistance = DEFAULT_MIN_DISTANCE_M;
 
     private Shape shape = Shape.POINT;
     private final Vector3f directionView = new Vector3f();
@@ -63,12 +75,13 @@ public final class ScreenSpaceLight {
      * 一次写齐一条球光。
      *
      * @param positionView          视空间光心（米，前方为负 Z），按下标读到的是本次调用的数值
-     * @param radius                有限影响半径（m），须大于 0
-     * @param color                 非负 RGB，通道归一化到 {@code [0,1]}
-     * @param intensity             非负峰值系数，不含全局倍率
+     * @param radius                有限影响半径（m），须大于 0；只决定剔除与窗宽
+     * @param color                 非负 RGB，sRGB 编码、通道归一化到 {@code [0,1]}
+     * @param intensity             非负辐照度（1 m 处），不含全局倍率
      * @param occlusionMode         遮挡策略；当前阶段支持 {@code NONE} 与 {@code SOURCE_DEPTH}
      * @param sourceDepthTolerance  S2 的绝对容差（m），允许 0
-     * @param normalWeight          法线响应权重 {@code [0,1]}，0 表示不乘法线项
+     * @param normalWeight          法线响应权重 {@code [0,1]}；逐盏值在 P5 接入锥光时随 {@code LightNormalWeight[16]} 上传，
+     *                              当前球光路径的朝向权重取全局 {@code NormalWeight}
      */
     public void setPoint(Vector3f positionView, float radius, Vector3f color, float intensity,
                          OcclusionMode occlusionMode, float sourceDepthTolerance, float normalWeight) {
@@ -76,6 +89,7 @@ public final class ScreenSpaceLight {
         this.radius = radius;
         this.color.set(color);
         this.intensity = intensity;
+        this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.shape = Shape.POINT;
         this.directionView.set(0f, 0f, -1f);
         this.cosInner = 1f;
@@ -91,14 +105,15 @@ public final class ScreenSpaceLight {
      *
      * @param positionView          视空间光心（米，前方为负 Z）
      * @param radius                有限影响半径（m），须大于 0；锥光被同半径球截断
-     * @param color                 非负 RGB，通道归一化到 {@code [0,1]}
-     * @param intensity             非负峰值系数，不含全局倍率
+     * @param color                 非负 RGB，sRGB 编码、通道归一化到 {@code [0,1]}
+     * @param intensity             非负辐照度（1 m 处），不含全局倍率
      * @param directionView         视空间照射方向，单位向量，从灯指向照射方向
      * @param cosInner              内半角的余弦，须满足 {@code cosInner >= cosOuter}
      * @param cosOuter              外半角的余弦
      * @param occlusionMode         遮挡策略
      * @param sourceDepthTolerance  S2 的绝对容差（m），允许 0
-     * @param normalWeight          法线响应权重 {@code [0,1]}
+     * @param normalWeight          法线响应权重 {@code [0,1]}；逐盏值在 P5 接入锥光时随 {@code LightNormalWeight[16]} 上传，
+     *                              当前球光路径的朝向权重取全局 {@code NormalWeight}
      */
     public void setSpot(Vector3f positionView, float radius, Vector3f color, float intensity,
                         Vector3f directionView, float cosInner, float cosOuter,
@@ -107,6 +122,7 @@ public final class ScreenSpaceLight {
         this.radius = radius;
         this.color.set(color);
         this.intensity = intensity;
+        this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.shape = Shape.SPOT;
         this.directionView.set(directionView);
         this.cosInner = cosInner;
@@ -159,9 +175,27 @@ public final class ScreenSpaceLight {
         return color;
     }
 
-    /** @return 强度峰值系数，不含全局倍率 */
+    /** @return 强度（1 m 处辐照度），不含全局倍率 */
     public float intensity() {
         return intensity;
+    }
+
+    /**
+     * 设置 {@code 1/d²} 的奇点截断距离（m）。
+     *
+     * <p>可选：由 {@link #setPoint}/{@link #setSpot} 复位为 {@link #DEFAULT_MIN_DISTANCE_M}，
+     * 来源需要别的值时才在写齐之后再调一次。允许 0（退化为无截断的 {@code 1/d²}），
+     * 非有限值或负值会被光源表按非法提交拒绝。</p>
+     *
+     * @param minDistance 截断距离（m），{@code >= 0}
+     */
+    public void setMinDistance(float minDistance) {
+        this.minDistance = minDistance;
+    }
+
+    /** @return {@code 1/d²} 的奇点截断距离（m） */
+    public float minDistance() {
+        return minDistance;
     }
 
     /** @return 形状 */
@@ -194,7 +228,7 @@ public final class ScreenSpaceLight {
         return sourceDepthTolerance;
     }
 
-    /** @return 法线响应权重 */
+    /** @return 法线响应权重（逐盏值；当前片元读到的是全局 {@code NormalWeight}，逐盏值留待 P5 随锥光一起上传） */
     public float normalWeight() {
         return normalWeight;
     }

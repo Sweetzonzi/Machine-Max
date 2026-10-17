@@ -259,7 +259,7 @@ public abstract class ProjectileType {
      * @param enabled       是否产生枪口火光；false 表示该弹种开火不发光，其余字段照常解析
      * @param radius        照射半径（m）；{@link #DERIVE_RADIUS} 表示按口径折算，显式值取 {@code (0, 64]}
      * @param color         颜色，三个 {@code [0,255]} 整数
-     * @param intensity     枪口瞬间的峰值强度（无量纲，{@code [0,8]}）；0 表示该弹种开火不发光
+     * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
      * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
      */
     public record MuzzleFlash(
@@ -280,8 +280,13 @@ public abstract class ProjectileType {
         /** 显式照射半径上界（m）：与曳光显式半径、爆炸火光半径取同一量级 */
         public static final double MAX_RADIUS_M = 64.0;
 
-        /** 峰值强度上界：与爆炸火光同一量纲，8 已在明亮表面上接近饱和 */
-        public static final float MAX_INTENSITY = 8f;
+        /**
+         * 辐照度上界（1 m 处）：与爆炸火光同一量纲。
+         *
+         * <p>新口径下步枪弹约 10、155 mm 炮口约 640，4 个数量级的余量留给超大口径与特效弹种，
+         * 同时挡住明显的笔误（例如把 {@code 255} 当成"最大亮度"）。</p>
+         */
+        public static final float MAX_INTENSITY = 4096f;
 
         /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
         public static final int MIN_DURATION_TICKS = 1;
@@ -290,16 +295,20 @@ public abstract class ProjectileType {
         public static final int MAX_DURATION_TICKS = 40;
 
         /**
-         * 缺省枪口火光：按口径折算半径、暖白色、强度 2、持续 6 tick（≈300 ms）。
+         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、持续 6 tick（≈300 ms）。
          *
-         * <p><b>标定目标是"夜里打一发就看得见"</b>：强度 2 让单发在 60 fps 下把枪口周围的地面与
-         * 车体明显照亮，6 tick 让它在画面上停留 3–4 帧（更短的值只覆盖 1–2 帧，肉眼容易漏掉），
-         * 同时不至于久留成常亮。{@code (1-u)²} 包络使后半程快速变暗，因此实际可辨时长约一半。
-         * 连射时多条登记会重叠（见 {@link MuzzleFlashLight} 的"每 tick 至多一条"），
-         * 表现为持续光而不是逐发频闪。</p>
+         * <p><b>强度是绝对量</b>：90 对应 50 mm 档（缺省半径 9.5 m，参考距离 4.75 m 处把 0.10 的
+         * 灰板抬到 0.30 所需的辐照度，见物理化设计 §4.2）。任何弹种都可以用它当起点，但真正
+         * 按装药量区分的做法是在 {@code visual.muzzle_flash.intensity} 里按本节的口径写显式值：
+         * 7.62 mm ≈ 10、20 mm ≈ 25、30 mm ≈ 42、50 mm ≈ 90、120 mm ≈ 400、155 mm ≈ 640。</p>
+         *
+         * <p><b>标定目标是"夜里打一发就看得见"</b>：6 tick 让它在画面上停留 3–4 帧（更短的值只覆盖
+         * 1–2 帧，肉眼容易漏掉），同时不至于久留成常亮。{@code (1-u)²} 包络使后半程快速变暗，
+         * 因此实际可辨时长约一半。连射时多条登记会重叠（见 {@link MuzzleFlashLight} 的
+         * "每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
          */
         public static final MuzzleFlash DEFAULT =
-            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 2f, 6);
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 6);
 
         /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
         private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
@@ -374,10 +383,14 @@ public abstract class ProjectileType {
          */
         double tracerLength,
         /**
-         * 曳光光源强度倍率（可选，默认 1.0）。最终强度还要乘透明度因子与超时淡出。
+         * 曳光光源在 1 m 处的辐照度（可选，默认 3.0）。最终强度还要乘透明度因子与超时淡出。
+         * <p>
+         * 它是绝对量而不是叠加倍率：数值越大，同一距离上被照亮的表面越亮。缺省 3.0 约等于
+         * 7.62 mm 步枪弹（半径 3.15 m，参考距离 1.58 m 处把 0.06 的灰板抬到 0.12）；大口径弹种
+         * 写显式值，首轮值见 {@code docs/plan/进行中/渲染-屏幕空间光照物理化设计.md} §4.2。
          * <p>
          * 强度与透明度各自承担不同的量：透明度是曳光线自己的可见度，而大口径弹种可以用较低的
-         * 透明度（曳光线更暗）配更高的强度（闪光更强）。见
+         * 透明度（曳光线更暗）配更高的辐照度（闪光更强）。见
          * {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
          */
         double tracerLightIntensity,
@@ -410,7 +423,7 @@ public abstract class ProjectileType {
         /**
          * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
          * <p>
-         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、强度 2、6 tick。
+         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、6 tick。
          * 意思是"任何有口径的弹种开火都会闪一下"，想关掉的弹种写 {@code muzzle_flash.enabled = false}。
          * <p>
          * 它按弹种而不是按发射器配置，理由与 {@code fire_particles}、{@code fire_sounds} 相同：
@@ -462,7 +475,7 @@ public abstract class ProjectileType {
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
-            1.0,
+            3.0,
             DERIVE_LIGHT_RADIUS,
             Optional.empty(),
             Optional.empty(),

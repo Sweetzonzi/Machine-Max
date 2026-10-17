@@ -57,6 +57,8 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue MUZZLE_FLASH_LIGHT_ENABLED;
     /** 枪口火光类别强度倍率 */
     private static final ModConfigSpec.DoubleValue MUZZLE_FLASH_LIGHT_INTENSITY;
+    /** 屏幕空间光照的朝向响应权重（S4）：0 不乘法线项，1 为完整 Lambert 项 */
+    private static final ModConfigSpec.DoubleValue SCREEN_SPACE_LIGHT_NORMAL_WEIGHT;
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
@@ -163,6 +165,17 @@ public class MMClientConfig {
         MUZZLE_FLASH_LIGHT_INTENSITY = builder
                 .comment("Muzzle flash light intensity multiplier.\nRange: 0.0 ~ 2.0. Default: 1.0")
                 .defineInRange("muzzle_flash_light_intensity", 1.0, 0.0, 2.0);
+
+        SCREEN_SPACE_LIGHT_NORMAL_WEIGHT = builder
+                .comment("Surface orientation response (Lambert cos) weight for every screen-space light.\n"
+                        + "The coefficient is (1 - w) + w*cos, clamped to 0: surfaces facing away from the light\n"
+                        + "stay dark at any weight, while grazing surfaces keep a floor of (1 - w).\n"
+                        + "0 = no normal term: a floor and a wall at the same distance receive the same light.\n"
+                        + "1 = full Lambert term: only surfaces facing the light receive it.\n"
+                        + "0.5 is standard wrap lighting; 0.7 keeps more of the shading contrast and still lifts\n"
+                        + "grazing surfaces such as grass quads, which full Lambert leaves black under a high light.\n"
+                        + "Range: 0.0 ~ 1.0. Default: 0.5")
+                .defineInRange("screen_space_light_normal_weight", 0.5, 0.0, 1.0);
 
         RENDER_HIT_WHITENING = builder
                 .comment("Show a white flash on parts when they are hit.\nDefault: true")
@@ -574,6 +587,20 @@ public class MMClientConfig {
      */
     public static float getMuzzleFlashLightIntensity() {
         return MUZZLE_FLASH_LIGHT_INTENSITY.get().floatValue();
+    }
+
+    /**
+     * 获取屏幕空间光照的朝向响应权重（S4）。
+     *
+     * <p>0 表示完全不乘法线项（地面与竖直墙面等量受光），1 表示完整 Lambert 项。中间的权重按
+     * {@code (1 − w) + w·cos} 插值后钳到 0：掠射面保留 {@code 1 − w} 的底，真正背光的面在任何权重下
+     * 都是 0。缺省 0.5 即常见的 wrap lighting（{@code 0.5 + 0.5·cos}），掠射面拿一半。
+     * 调这一项不要动各弹种的辐照度。</p>
+     *
+     * @return [0, 1] 范围内的权重，缺省 0.5
+     */
+    public static float getScreenSpaceLightNormalWeight() {
+        return SCREEN_SPACE_LIGHT_NORMAL_WEIGHT.get().floatValue();
     }
 }
 

@@ -18,6 +18,8 @@
   },
   "visual": {
     "tracer_color": [255, 120, 50],
-    "tracer_alpha": 220
+    "tracer_alpha": 220,
+    "tracer_light_intensity": 7.3,
+    "muzzle_flash": { "intensity": 25.0 }
   }
 }
