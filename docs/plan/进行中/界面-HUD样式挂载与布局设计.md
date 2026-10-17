@@ -564,7 +564,7 @@ V1 已落地并通过 `gradlew compileJava compileKotlin`，`runClient` 进世�
 
 ## 十三、验收
 
-V1 已通过 `gradlew compileJava compileKotlin`；下列用例在 `runClient` 进世界验证：
+V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世界：世界加载无失败；座椅与炮镜 HUD 的位置、缩放、投影和 `global.get('vehicle_speed')` 求值均正常。逐条用例：
 
 | 用例 | 阶段 | 覆盖 |
 | --- | --- | --- |
@@ -621,3 +621,4 @@ V1 已通过 `gradlew compileJava compileKotlin`；下列用例在 `runClient` �
 | 3.0 | 2026-10-18 | V1 落地：`HudStyle`（`type` 分派，现只有 `model_hud`）/`ModelHudStyle`/`HudElement`/`HudLayout` 与 `HUD_STYLES`/`HUD_LAYOUTS` 两张表；运行时元素以当前视角内数组序数为身份，宿主/视角/布局对象/样式对象变化时整体重建；布局与样式都按 `<命名空间>:<相对路径>` 拼键、子目录参与键、不加 `layout/` 前缀；座椅与相机/瞄具切到单个 `*_hud_layout`，内容包与 schema 同步迁移；V1 上下文继续用座椅 Part，绘制顺序契约降为提交顺序并接受同批次深度重排 |
 | 3.1 | 2026-10-18 | 宿主分组落地：新增 `HudView` / `IHudHost`，座椅、相机/瞄具与武器控制器均实现；`CustomHud` 改为 `LinkedHashMap<IHudHost, List<GuiAnimatable>>`，每 tick 比较解析出的宿主集合与键集合、并比较视角，变化时整体重建；空布局宿主保留空列表；武器控制器动态属性加入三个 `*_hud_layout`；跨宿主绘制顺序明确不设契约，内容包负责元素不重叠；热重载改为上下车/换视角时生效 |
 | 3.2 | 2026-10-18 | 修正 `*_hud_layout` 的 codec：改用 `optionalFieldOf(..., HudLayout.EMPTY)` 的非空默认值，删除产生 null 的 `xmap`；新增 `HudLayout.EMPTY` 哨兵与 `EMPTY_LAYOUT`；`IHudHost` 只保留 `hudLayoutFor`（返回实际布局对象），另提供静态 `resolve` 供持有内容包 RL 的宿主解析，玩家自定义布局直接覆盖 `hudLayoutFor`；`CustomHud` 对 `null` 布局按空布局处理；内容包错误上报对空异常消息与两列表长度不一致做兜底 |
+| 3.3 | 2026-10-18 | V1 实机验收：`runClient` 进世界加载无失败，座椅与炮镜 HUD 的位置、缩放、投影和 `global.get('vehicle_speed')` 求值正常 |
