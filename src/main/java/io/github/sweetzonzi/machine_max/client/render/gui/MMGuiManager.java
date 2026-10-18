@@ -89,6 +89,7 @@ public class MMGuiManager {
 
     @SubscribeEvent
     private static void onAnimTick(LevelTickEvent.Post event) {
+        if (!event.getLevel().isClientSide()) return;
         try {
             if (customHud != null) customHud.tick();
             WeakReference<ITickableRenderable> ref;
