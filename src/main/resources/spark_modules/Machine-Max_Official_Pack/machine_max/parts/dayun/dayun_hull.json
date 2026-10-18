@@ -100,14 +100,12 @@
       "connectors": { //子部件用于与其他零件连接的连接点列表
         "connector.machine_max.chassis_axis": { //连接点名称
           "locator": "hull_chassis_axis", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-          "definition": "machine_max:fixed_down"
+          "definition": "machine_max:fixed_down",
+          "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
         },
         "connector.machine_max.chassis_lock": {
           "locator": "hull_chassis_lock",
-          "definition": "machine_max:fixed_down",
-          "overwrite": {
-            "integrity": 10
-          }
+          "definition": "machine_max:fixed_down"
         }
       },
       "hydro_priority": 1, //(可选, 默认0)空气阻力计算优先级, 值越大优先级越高, 优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化

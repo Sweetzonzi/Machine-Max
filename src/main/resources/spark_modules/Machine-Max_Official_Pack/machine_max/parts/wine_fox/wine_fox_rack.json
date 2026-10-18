@@ -28,44 +28,32 @@
           "connector.machine_max.left_back": {//连接点名称
             "locator": "rack_left_back",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:fixed_down",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.right_back": {
             "locator": "rack_right_back",
             "definition": "machine_max:fixed_down",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.left_front": {
             "locator": "rack_left_front",
             "definition": "machine_max:fixed_down",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.right_front": {
             "locator": "rack_right_front",
             "definition": "machine_max:fixed_down",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_left": {
             "locator": "rack_top_left",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right": {
             "locator": "rack_top_right",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           }
         }
       }

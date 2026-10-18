@@ -39,8 +39,8 @@ public record ConnectorStaticAttr(
     public static final Codec<ConnectorStaticAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("type", "simple").forGetter(ConnectorStaticAttr::type),
             Axis.CODEC.optionalFieldOf("direction", Axis.YP).forGetter(ConnectorStaticAttr::direction),
-            Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(ConnectorStaticAttr::integrity),
-            Codec.FLOAT.optionalFieldOf("impact_absorption", 0.5f).forGetter(ConnectorStaticAttr::impactAbsorption),
+            Codec.FLOAT.optionalFieldOf("integrity", 15f).forGetter(ConnectorStaticAttr::integrity),
+            Codec.FLOAT.optionalFieldOf("impact_absorption", 0.3f).forGetter(ConnectorStaticAttr::impactAbsorption),
             Codec.FLOAT.optionalFieldOf("impact_absorption_destroyed", 2.0f).forGetter(ConnectorStaticAttr::impactAbsorptionDestroyed),
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorStaticAttr::impactReduction),
             Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.0f).forGetter(ConnectorStaticAttr::impactMultiplier),

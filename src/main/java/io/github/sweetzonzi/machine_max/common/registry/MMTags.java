@@ -15,7 +15,7 @@ public class MMTags {
 
     public static final TagKey<DamageType> IS_IMPACT = TagKey.create(
             Registries.DAMAGE_TYPE,
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "is_impact")
+            ResourceLocation.fromNamespaceAndPath("c", "is_impact")
     );
 
     public static final TagKey<Item> EMPTY_BLUEPRINT = TagKey.create(

@@ -53,10 +53,7 @@
             },
             "connector.machine_max.left_front_door_lock": {//连接点名称
               "locator": "left_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "overwrite": {
-                "integrity": 10
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }
@@ -109,10 +106,7 @@
             },
             "connector.machine_max.right_front_door_lock": {//连接点名称
               "locator": "right_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "overwrite": {
-                "integrity": 10
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }

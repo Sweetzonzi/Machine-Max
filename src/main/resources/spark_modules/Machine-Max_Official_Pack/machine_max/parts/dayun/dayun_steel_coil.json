@@ -26,7 +26,8 @@
         "connectors": {
           "connector.machine_max.bottom": {
             "locator": "steel_coil_trailer_lock",
-            "definition": "machine_max:fixed_down"
+            "definition": "machine_max:fixed_down",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           }
         }
       }

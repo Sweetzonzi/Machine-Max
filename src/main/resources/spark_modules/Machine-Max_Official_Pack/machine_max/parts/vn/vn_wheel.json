@@ -26,12 +26,7 @@
         "connectors": {//子部件用于与其他零件连接的连接点列表
           "connector.machine_max.chassis_connection": {//连接点名称
             "locator": "chassis_connection",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "definition": "machine_max:fixed_right",
-            "overwrite": {
-              "integrity": 40.0,
-              "impact_reduction": 3.0,
-              "impact_multiplier": 0.8
-            }
+            "definition": "machine_max:fixed_right"
           }
         },
         "projected_area": [0.766, 0.11, 0.11],

@@ -26,7 +26,8 @@
           "connectors": {
             "connector.machine_max.chassis_front": {
               "locator": "hull_chassis_front",
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
             },
             "connector.machine_max.left_door_axis": {
               "locator": "hull_left_door_axis",
@@ -69,7 +70,8 @@
           "connectors": {
             "connector.machine_max.chassis_back": {
               "locator": "hull_chassis_back",
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
             },
             "connector.machine_max.left_door_lock": {
               "locator": "hull_left_door_lock",

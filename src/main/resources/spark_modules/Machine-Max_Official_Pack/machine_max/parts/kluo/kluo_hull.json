@@ -333,10 +333,7 @@
           },
           "connector.machine_max.left_door_lock": {
             "locator": "hull_left_door_lock",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_door_axis": {
             "locator": "hull_right_door_axis",
@@ -344,10 +341,7 @@
           },
           "connector.machine_max.right_door_lock": {
             "locator": "hull_right_door_lock",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.trunk_door_axis": {
             "locator": "hull_trunk_door_axis",
@@ -355,10 +349,7 @@
           },
           "connector.machine_max.trunk_door_lock": {
             "locator": "hull_trunk_door_lock",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.hood_axis": {
             "locator": "hull_hood_axis",
@@ -366,38 +357,27 @@
           },
           "connector.machine_max.hood_lock": {
             "locator": "hull_hood_lock",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_left_front": {
             "locator": "hull_top_left_front",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_left_back": {
             "locator": "hull_top_left_back",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right_front": {
             "locator": "hull_top_right_front",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right_back": {
             "locator": "hull_top_right_back",
             "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 5
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           }
         },
         "projected_area": [8.6, 13.9, 6.5],

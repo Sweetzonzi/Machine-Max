@@ -5,7 +5,10 @@
     "machine_max:direction/left",
     "machine_max:door"
   ],
-  "integrity": 20.0,
+  "integrity": 15.0,
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0,
   "joint_attrs": {
     "yr": {
       "lower_limit": -80.0,

@@ -181,11 +181,13 @@
           },
           "connector.machine_max.hull_front": {
             "locator": "chassis_hull_front",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           },
           "connector.machine_max.hull_back": {
             "locator": "chassis_hull_back",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           }
         },
         "projected_area": [4.8, 10.25, 2.46],

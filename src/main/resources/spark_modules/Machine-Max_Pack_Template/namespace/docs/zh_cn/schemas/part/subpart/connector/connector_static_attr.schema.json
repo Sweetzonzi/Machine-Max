@@ -22,7 +22,7 @@
     "integrity": {
       "type": "number",
       "minimum": 0,
-      "default": 20.0,
+      "default": 15.0,
       "description": "部件基础结构完整度，部件可承受不高于此数值的冲击力而不脱落，冲击力来自伤害或关节应力。"
     },
     "impact_reduction": {
@@ -41,7 +41,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "default": 0.5,
+      "default": 0.3,
       "description": "连接点受到冲击但未被击落时，冲击转为结构完整性损耗的比例。例如0.5表示50%的冲击会转化为结构完整性的损耗。"
     },
     "impact_absorption_destroyed": {

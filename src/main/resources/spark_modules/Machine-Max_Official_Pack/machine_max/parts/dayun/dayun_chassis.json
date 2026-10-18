@@ -138,10 +138,7 @@
         },
         "connector.machine_max.hull_lock": {
           "locator": "chassis_hull_lock",
-          "definition": "machine_max:fixed_up",
-          "overwrite": {
-            "integrity": 10
-          }
+          "definition": "machine_max:fixed_up"
         },
         "connector.machine_max.trailer": {
           "locator": "chassis_trailer_axis",

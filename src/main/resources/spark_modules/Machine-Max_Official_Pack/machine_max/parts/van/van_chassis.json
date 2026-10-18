@@ -114,6 +114,7 @@
           "connector.machine_max.hull_locator_chassis": {
             "locator": "chassis_hull",
             "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
             "signal_targets": { //向各个座椅传输来自车门的互动信号
               "interact_left_front_door": ["connector.machine_max.left_front_seat"],
               "interact_right_front_door": ["connector.machine_max.right_front_seat"],

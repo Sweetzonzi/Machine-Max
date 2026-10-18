@@ -199,6 +199,7 @@
           "connector.machine_max.hull_connection": {
             "locator": "hull",
             "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
             "signal_targets": {
               "interact_left_door": ["subsystem.machine_max.driver_seat"],
               "interact_right_door": ["subsystem.machine_max.copilot_seat"]
