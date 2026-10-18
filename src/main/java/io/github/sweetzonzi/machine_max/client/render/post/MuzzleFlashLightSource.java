@@ -97,6 +97,7 @@ public class MuzzleFlashLightSource implements ScreenSpaceLightSource {
                     ScreenSpaceLight.OcclusionMode.NONE, 0f, 0f);
             // 光晕半径用内容强度（不含包络）派生：包络每帧都在缩小，拿它算半径会让光晕往回缩
             light.setGlow(params.intensity(), params.glow());
+            light.setGlare(params.glare());
             out.submit(light);
         }
     }

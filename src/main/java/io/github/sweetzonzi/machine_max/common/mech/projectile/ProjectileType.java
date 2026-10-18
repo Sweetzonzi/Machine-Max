@@ -262,6 +262,8 @@ public abstract class ProjectileType {
      * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
      * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
      *                      {@code 0} 表示该弹种开火只有表面光照、没有光晕
+     * @param glare         十字炫光的倍率（非负，无上界）：同时缩放臂根的亮度与臂长，
+     *                      {@code 0} 表示该弹种开火没有星芒
      * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
      */
     public record MuzzleFlash(
@@ -270,6 +272,7 @@ public abstract class ProjectileType {
         Vec3i color,
         float intensity,
         float glow,
+        float glare,
         int durationTicks
     ) {
         /**
@@ -298,7 +301,7 @@ public abstract class ProjectileType {
         public static final int MAX_DURATION_TICKS = 40;
 
         /**
-         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、持续 6 tick（≈300 ms）。
+         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、星芒倍率 1、持续 6 tick（≈300 ms）。
          *
          * <p><b>强度是绝对量</b>：90 对应 50 mm 档（缺省半径 9.5 m，参考距离 4.75 m 处把 0.10 的
          * 灰板抬到 0.30 所需的辐照度，见物理化设计 §4.2）。任何弹种都可以用它当起点，但真正
@@ -311,7 +314,7 @@ public abstract class ProjectileType {
          * "每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
          */
         public static final MuzzleFlash DEFAULT =
-            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 6);
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 1f, 6);
 
         /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
         private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
@@ -336,21 +339,30 @@ public abstract class ProjectileType {
         });
 
         /**
-         * {@link #glow} 的校验：有限且非负，没有上界。
+         * 非负的浮点字段：没有上界，只挡非有限值与负值。
          *
-         * <p>倍率没有统一的物理最大值：超过 {@code 32 m / (GlowScale·sqrt(intensity))} 后阈值半径
-         * 被半径上限截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。写多大的
-         * 倍率都是观感选择，这里只挡非有限值与负值。</p>
+         * <p>光晕与星芒的倍率都只有"关闭"（{@code 0}）与"放大"两端，物理上没有统一的最大值：
+         * 光晕倍率超过 {@code 32 m / (GlowScale·sqrt(intensity))} 后阈值半径被半径上限截断、
+         * 只剩亮度继续增长；星芒的臂长超过屏高的一个固定比例后按像素封顶。两者的亮度都由
+         * 着色器的 {@code GLOW_MAX} 兜住，因此写多大的倍率都是观感选择。</p>
          */
-        private static final Codec<Float> GLOW_CODEC = Codec.FLOAT.validate(value -> {
-            if (!Float.isFinite(value)) {
-                return DataResult.error(() -> "muzzle_flash.glow 必须是有限数，实际为 " + value);
-            }
-            if (value < 0f) {
-                return DataResult.error(() -> "muzzle_flash.glow 必须为非负数，实际为 " + value);
-            }
-            return DataResult.success(value);
-        });
+        private static Codec<Float> nonNegative(String field) {
+            return Codec.FLOAT.validate(value -> {
+                if (!Float.isFinite(value)) {
+                    return DataResult.error(() -> field + " 必须是有限数，实际为 " + value);
+                }
+                if (value < 0f) {
+                    return DataResult.error(() -> field + " 必须为非负数，实际为 " + value);
+                }
+                return DataResult.success(value);
+            });
+        }
+
+        /** {@link #glow} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Float> GLOW_CODEC = nonNegative("muzzle_flash.glow");
+
+        /** {@link #glare} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Float> GLARE_CODEC = nonNegative("muzzle_flash.glare");
 
         /** {@link #durationTicks} 的校验：整数且落在 {@code [1, 40]}。 */
         private static final Codec<Integer> DURATION_CODEC = Codec.INT.validate(value -> {
@@ -372,6 +384,8 @@ public abstract class ProjectileType {
                 .forGetter(MuzzleFlash::intensity),
             GLOW_CODEC.optionalFieldOf("glow", DEFAULT.glow)
                 .forGetter(MuzzleFlash::glow),
+            GLARE_CODEC.optionalFieldOf("glare", DEFAULT.glare)
+                .forGetter(MuzzleFlash::glare),
             DURATION_CODEC.optionalFieldOf("duration_ticks", DEFAULT.durationTicks)
                 .forGetter(MuzzleFlash::durationTicks)
         ).apply(instance, MuzzleFlash::new));
@@ -453,6 +467,14 @@ public abstract class ProjectileType {
          */
         double tracerGlow,
         /**
+         * 曳光光源的十字炫光倍率（可选，默认 1.0，非负、无上界）。
+         * <p>
+         * 倍率同时缩放臂根亮度与臂长，{@code 0} 表示该弹种没有星芒。星芒的驱动量是相机处的
+         * 表观照度 {@code I/d²}，所以曳光只有在贴近相机掠过时才会画出来（10 m 处约 0.2 的线性
+         * 亮度），远距离弹道不会被画成一串星芒；嫌它吵就把本字段写成 0。
+         */
+        double tracerGlare,
+        /**
          * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
          * <p>
          * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、光晕倍率 1、6 tick。
@@ -492,21 +514,30 @@ public abstract class ProjectileType {
         public static final double MAX_LIGHT_RADIUS_M = 64.0;
 
         /**
-         * {@link #tracerGlow} 的校验：有限且非负，没有上界。
+         * 非负的浮点字段：没有上界，只挡非有限值与负值。
          *
          * <p>曳光的辐照度比信号弹低两三个数量级，要让它的光晕可见就得把倍率写到远高于 4；
          * 倍率超过 {@code 32 m / (GlowScale·sqrt(tracer_light_intensity))} 后阈值半径被半径上限
-         * 截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。</p>
+         * 截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。星芒同理：臂长
+         * 撞到屏高比例的封顶后只剩亮度增长。</p>
          */
-        private static final Codec<Double> GLOW_CODEC = Codec.DOUBLE.validate(value -> {
-            if (!Double.isFinite(value)) {
-                return DataResult.error(() -> "tracer_glow 必须是有限数，实际为 " + value);
-            }
-            if (value < 0.0) {
-                return DataResult.error(() -> "tracer_glow 必须为非负数，实际为 " + value);
-            }
-            return DataResult.success(value);
-        });
+        private static Codec<Double> nonNegative(String field) {
+            return Codec.DOUBLE.validate(value -> {
+                if (!Double.isFinite(value)) {
+                    return DataResult.error(() -> field + " 必须是有限数，实际为 " + value);
+                }
+                if (value < 0.0) {
+                    return DataResult.error(() -> field + " 必须为非负数，实际为 " + value);
+                }
+                return DataResult.success(value);
+            });
+        }
+
+        /** {@link #tracerGlow} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Double> GLOW_CODEC = nonNegative("tracer_glow");
+
+        /** {@link #tracerGlare} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Double> GLARE_CODEC = nonNegative("tracer_glare");
 
         /**
          * {@link #tracerLightRadius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。
@@ -528,6 +559,7 @@ public abstract class ProjectileType {
             DERIVE_LIGHT_RADIUS,
             Optional.empty(),
             Optional.empty(),
+            1.0,
             1.0,
             MuzzleFlash.DEFAULT,
             List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")),
@@ -554,6 +586,8 @@ public abstract class ProjectileType {
                 .forGetter(VisualProperties::tracerLightEnabled),
             GLOW_CODEC.optionalFieldOf("tracer_glow", DEFAULT.tracerGlow)
                 .forGetter(VisualProperties::tracerGlow),
+            GLARE_CODEC.optionalFieldOf("tracer_glare", DEFAULT.tracerGlare)
+                .forGetter(VisualProperties::tracerGlare),
             MuzzleFlash.CODEC.optionalFieldOf("muzzle_flash", MuzzleFlash.DEFAULT)
                 .forGetter(VisualProperties::muzzleFlash),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)

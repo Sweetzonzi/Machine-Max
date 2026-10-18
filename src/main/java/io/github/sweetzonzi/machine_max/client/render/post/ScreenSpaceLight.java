@@ -81,6 +81,7 @@ public final class ScreenSpaceLight {
     private float minDistance = DEFAULT_MIN_DISTANCE_M;
     private float baseIntensity;
     private float glowMultiplier = 1f;
+    private float glareMultiplier = 1f;
 
     private Shape shape = Shape.POINT;
     private final Vector3f directionView = new Vector3f();
@@ -112,6 +113,7 @@ public final class ScreenSpaceLight {
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
         this.glowMultiplier = 1f;
+        this.glareMultiplier = 1f;                  // 星芒缺省按标定倍率画：来源不调 setGlare 也有
         this.shape = Shape.POINT;
         this.directionView.set(0f, 0f, -1f);
         this.cosInner = 1f;
@@ -147,6 +149,7 @@ public final class ScreenSpaceLight {
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
         this.glowMultiplier = 1f;
+        this.glareMultiplier = 1f;                  // 星芒缺省按标定倍率画：来源不调 setGlare 也有
         this.shape = Shape.SPOT;
         this.directionView.set(directionView);
         this.cosInner = cosInner;
@@ -250,6 +253,28 @@ public final class ScreenSpaceLight {
     /** @return 逐来源光晕倍率 {@code k}；同时缩放阈值半径与亮度，{@code 0} 表示该光源没有光晕 */
     public float glowMultiplier() {
         return glowMultiplier;
+    }
+
+    /**
+     * 写星芒（十字炫光）的逐来源倍率（设计文档 §3.7）。
+     *
+     * <p>可选，且必须在 {@link #setPoint}/{@link #setSpot} 之后调用：两者会把它复位成 1，
+     * 载体逐盏复用，不复位就会把上一盏灯的倍率带过来。不调用即按 1 处理。</p>
+     *
+     * <p>星芒与空气散射光晕是两项独立的加法：本倍率同时缩放臂根亮度（线性）与臂长（开方），
+     * {@code 0} 关闭该光源的星芒，不影响它的表面光照与光晕。它不参与阈值半径。
+     * 没有内容侧的固定上界：臂长超过屏高的一个固定比例后按像素封顶，亮度由着色器的
+     * {@code GLOW_MAX} 兜住。</p>
+     *
+     * @param glareMultiplier 逐来源倍率 {@code g}，{@code >= 0}；{@code 1} 为标定值
+     */
+    public void setGlare(float glareMultiplier) {
+        this.glareMultiplier = glareMultiplier;
+    }
+
+    /** @return 逐来源星芒倍率 {@code g}；{@code 0} 表示该光源没有星芒 */
+    public float glareMultiplier() {
+        return glareMultiplier;
     }
 
     /** @return 形状 */

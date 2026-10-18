@@ -30,6 +30,8 @@ import java.util.List;
  * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示不产生光照
  * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
  *                      {@code 0} 表示只有表面光照、没有光晕
+ * @param glare         十字炫光的倍率（非负，无上界）：同时缩放臂根的亮度与臂长，
+ *                      {@code 0} 表示只有光照、没有星芒
  * @param durationTicks 总寿命（游戏 tick，{@code [1,200]}），按 20 TPS 计，暂停时冻结
  */
 public record ExplosionLightParams(
@@ -38,6 +40,7 @@ public record ExplosionLightParams(
         float radius,
         float intensity,
         float glow,
+        float glare,
         int durationTicks
 ) {
 
@@ -55,12 +58,13 @@ public record ExplosionLightParams(
     public static final int MAX_DURATION_TICKS = 200;
 
     /**
-     * 缺省火光：半径 8 m、辐照度 166、光晕倍率 1、寿命 6 tick 的橙黄色闪光。
+     * 缺省火光：半径 8 m、辐照度 166、光晕倍率 1、星芒倍率 1、寿命 6 tick 的橙黄色闪光。
      *
      * <p>166 来自“半径 8 m、参考距离 4 m 处把 0.10 的灰板抬到 0.45”这个锚点（物理化设计 §4.2），
      * 是首轮标定起点，不是实测结论；内容包未写 {@code light}、或只写部分字段时逐字段回落到这里。</p>
      */
-    public static final ExplosionLightParams DEFAULT = new ExplosionLightParams(true, 0xFFB464, 8f, 166f, 1f, 6);
+    public static final ExplosionLightParams DEFAULT =
+            new ExplosionLightParams(true, 0xFFB464, 8f, 166f, 1f, 1f, 6);
 
     /** 颜色字段：恰好三个 {@code [0,255]} 整数，分别对应红、绿、蓝。 */
     private static final Codec<Integer> PACKED_COLOR_CODEC =
@@ -79,6 +83,8 @@ public record ExplosionLightParams(
                     .forGetter(ExplosionLightParams::intensity),
             nonNegativeFloat("光晕倍率").optionalFieldOf("glow", DEFAULT.glow())
                     .forGetter(ExplosionLightParams::glow),
+            nonNegativeFloat("星芒倍率").optionalFieldOf("glare", DEFAULT.glare())
+                    .forGetter(ExplosionLightParams::glare),
             Codec.INT.validate(ExplosionLightParams::validateDuration)
                     .optionalFieldOf("duration_ticks", DEFAULT.durationTicks())
                     .forGetter(ExplosionLightParams::durationTicks)
@@ -102,6 +108,7 @@ public record ExplosionLightParams(
                             buf.readFloat(),
                             buf.readFloat(),
                             buf.readFloat(),
+                            buf.readFloat(),
                             buf.readVarInt());
                 }
 
@@ -112,6 +119,7 @@ public record ExplosionLightParams(
                     buf.writeFloat(p.radius());
                     buf.writeFloat(p.intensity());
                     buf.writeFloat(p.glow());
+                    buf.writeFloat(p.glare());
                     buf.writeVarInt(p.durationTicks());
                 }
             };
@@ -127,6 +135,7 @@ public record ExplosionLightParams(
         radius = Math.min(Math.max(radius, 0f), MAX_RADIUS_M);
         intensity = Math.min(Math.max(intensity, 0f), MAX_INTENSITY);
         glow = Math.max(glow, 0f);
+        glare = Math.max(glare, 0f);
         durationTicks = Math.min(Math.max(durationTicks, MIN_DURATION_TICKS), MAX_DURATION_TICKS);
     }
 
@@ -176,7 +185,8 @@ public record ExplosionLightParams(
      *
      * <p>光晕倍率只有"关闭"（{@code 0}）与"放大"两端，物理上没有统一的最大值：倍率超过
      * {@code 32 m / (GlowScale·sqrt(I))} 后阈值半径被半径上限截断，只剩亮度继续增长，而亮度又由
-     * 着色器的 {@code GLOW_MAX} 兜住。因此这里只挡非有限值与负值，写多大的倍率都是作者的观感选择。</p>
+     * 着色器的 {@code GLOW_MAX} 兜住。星芒倍率同理：臂长撞到屏高比例的封顶后只剩亮度增长。
+     * 因此这里只挡非有限值与负值，写多大的倍率都是作者的观感选择。</p>
      *
      * @param label 报错里的字段含义（中文）
      */

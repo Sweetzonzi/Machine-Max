@@ -44,7 +44,7 @@ public class ScreenSpaceLightEffect {
 
     // ===== 数值策略常量（改这些不需要重编着色器）=====
 
-    /** 槽位数：与链 JSON 的 {@code LightView[64]} / {@code LightColor[64]} / {@code LightTol[16]} / {@code LightOcclusion[16]} / {@code LightMinDist[16]} / {@code LightGlow[32]} 对齐 */
+    /** 槽位数：与链 JSON 的 {@code LightView[64]} / {@code LightColor[64]} / {@code LightTol[16]} / {@code LightOcclusion[16]} / {@code LightMinDist[16]} / {@code LightGlow[32]} / {@code LightGlare[16]} 对齐 */
     private static final int CAPACITY = 16;
 
     /**
@@ -104,6 +104,8 @@ public class ScreenSpaceLightEffect {
     private Uniform lightMinDistUniform;
     @Nullable
     private Uniform lightGlowUniform;
+    @Nullable
+    private Uniform lightGlareUniform;
 
     /** 上一帧是否因总开关关闭而跳过：用于在进入关闭状态的那一帧清一次诊断 */
     private boolean disabledLastFrame;
@@ -160,7 +162,8 @@ public class ScreenSpaceLightEffect {
         if (!ensureLoaded()) return;
         if (lightViewUniform == null || lightColorUniform == null
                 || lightTolUniform == null || lightOcclusionUniform == null
-                || lightMinDistUniform == null || lightGlowUniform == null) {
+                || lightMinDistUniform == null || lightGlowUniform == null
+                || lightGlareUniform == null) {
             return;
         }
 
@@ -187,6 +190,7 @@ public class ScreenSpaceLightEffect {
         lightOcclusionUniform.set(buffer.occlusion());
         lightMinDistUniform.set(buffer.minDistance());
         lightGlowUniform.set(buffer.glow());
+        lightGlareUniform.set(buffer.glare());
 
         chain.process(partialTick);
         mc.getMainRenderTarget().bindWrite(true);
@@ -262,6 +266,7 @@ public class ScreenSpaceLightEffect {
         lightOcclusionUniform = null;
         lightMinDistUniform = null;
         lightGlowUniform = null;
+        lightGlareUniform = null;
         for (PostPass pass : ((PostChainAccessor) newChain).machineMax$getPasses()) {
             if (!PASS_NAME.equals(pass.getName())) continue;
             lightViewUniform = pass.getEffect().getUniform("LightView");
@@ -270,12 +275,14 @@ public class ScreenSpaceLightEffect {
             lightOcclusionUniform = pass.getEffect().getUniform("LightOcclusion");
             lightMinDistUniform = pass.getEffect().getUniform("LightMinDist");
             lightGlowUniform = pass.getEffect().getUniform("LightGlow");
+            lightGlareUniform = pass.getEffect().getUniform("LightGlare");
         }
         if (lightViewUniform == null || lightColorUniform == null
                 || lightTolUniform == null || lightOcclusionUniform == null
-                || lightMinDistUniform == null || lightGlowUniform == null) {
+                || lightMinDistUniform == null || lightGlowUniform == null
+                || lightGlareUniform == null) {
             MachineMax.LOGGER.error(
-                    "屏幕空间光照：pass {} 未声明数组 uniform LightView/LightColor/LightTol/LightOcclusion/LightMinDist/LightGlow，光照不会生效",
+                    "屏幕空间光照：pass {} 未声明数组 uniform LightView/LightColor/LightTol/LightOcclusion/LightMinDist/LightGlow/LightGlare，光照不会生效",
                     PASS_NAME);
         }
     }
@@ -290,7 +297,8 @@ public class ScreenSpaceLightEffect {
     private void verifyArrayCounts() {
         if (lightViewUniform == null || lightColorUniform == null
                 || lightTolUniform == null || lightOcclusionUniform == null
-                || lightMinDistUniform == null || lightGlowUniform == null) {
+                || lightMinDistUniform == null || lightGlowUniform == null
+                || lightGlareUniform == null) {
             return;
         }
         int viewCount = lightViewUniform.getCount();
@@ -299,29 +307,33 @@ public class ScreenSpaceLightEffect {
         int occlusionCount = lightOcclusionUniform.getCount();
         int minDistCount = lightMinDistUniform.getCount();
         int glowCount = lightGlowUniform.getCount();
+        int glareCount = lightGlareUniform.getCount();
         if (viewCount == buffer.positionRadius().length
                 && colorCount == buffer.colorIntensity().length
                 && tolCount == buffer.sourceDepthTolerance().length
                 && occlusionCount == buffer.occlusion().length
                 && minDistCount == buffer.minDistance().length
-                && glowCount == buffer.glow().length) {
+                && glowCount == buffer.glow().length
+                && glareCount == buffer.glare().length) {
             return;
         }
         MachineMax.LOGGER.error(
                 "屏幕空间光照：数组 uniform 的 count 与 Java 数组长度不一致"
-                        + "（LightView {}/{}、LightColor {}/{}、LightTol {}/{}、LightOcclusion {}/{}、LightMinDist {}/{}、LightGlow {}/{}），光照不会生效",
+                        + "（LightView {}/{}、LightColor {}/{}、LightTol {}/{}、LightOcclusion {}/{}、LightMinDist {}/{}、LightGlow {}/{}、LightGlare {}/{}），光照不会生效",
                 viewCount, buffer.positionRadius().length,
                 colorCount, buffer.colorIntensity().length,
                 tolCount, buffer.sourceDepthTolerance().length,
                 occlusionCount, buffer.occlusion().length,
                 minDistCount, buffer.minDistance().length,
-                glowCount, buffer.glow().length);
+                glowCount, buffer.glow().length,
+                glareCount, buffer.glare().length);
         lightViewUniform = null;
         lightColorUniform = null;
         lightTolUniform = null;
         lightOcclusionUniform = null;
         lightMinDistUniform = null;
         lightGlowUniform = null;
+        lightGlareUniform = null;
     }
 
     /**
@@ -379,6 +391,7 @@ public class ScreenSpaceLightEffect {
         lightOcclusionUniform = null;
         lightMinDistUniform = null;
         lightGlowUniform = null;
+        lightGlareUniform = null;
         worldDepth = null;
         worldDepthFormatChecked = false;
         sizeMismatchLogged = false;

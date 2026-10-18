@@ -28,8 +28,17 @@
 //      并进 e 会被曲线吃掉。
 //      半径 Rg 与倍率 k 由 Java 侧按 Rg = GlowScale·sqrt(I_base)·k 算好上传，着色器不做 sqrt；
 //      I_base 是内容强度（不含时间包络），因此尺寸在闪烁期间稳定，变的是亮度。
+//   5. 星芒：glare_i = GLARE_GAIN · s · g_i · c_i · max(armX, armY)，屏幕空间、固定角度。
+//      s = L/(L + GLARE_HALF) 是"相机处表观照度" L = I/max(|C|², d_min²) 的饱和曲线；臂长随 s 从
+//      GLARE_MIN_DEG 长到 GLARE_MAX_DEG，臂根亮度同时按 s 缩放，所以更近更亮的闪光是更长更亮的十字。
+//      两条臂沿屏幕 ±x / ±y：星芒是镜头成像（光圈衍射 + 传感器饱和溢出），随画幅固定，不随世界转。
+//      横向剖面是标准差随臂长外扩的楔形；`(1 − u)²` 让臂尖 C¹ 归零，不依赖窗函数。
+//      **它不按像素深度截断**：墙挡住光源时整条消失（光源自身的遮挡判定仍生效），但光源可见时
+//      星芒会压在墙与车体上——这是真实镜头的行为，也是它与第 4 项最本质的差别。
+//      星芒与光晕共用 GLOW_MAX 的加法预算，参数完全独立：光晕是米制的阈值半径与 1/D 律，
+//      星芒是固定角度与 1/D² 律。
 //
-// 受光修正的旁路：e 与 glow 全零时直接返回 src，连解码/编码的浮点往返都不参与；某个通道两者
+// 受光修正的旁路：e 与 glow/glare 全零时直接返回 src，连解码/编码的浮点往返都不参与；某个通道两者
 // 之和为零时该通道同样保持原值，因此纯蓝光不会抬红绿通道。天空像素只在光晕也为零时逐位不变。
 //
 // 法线由邻域深度重建（S4）：每像素在横竖两条轴上各取一个相邻像素，每条轴只用与中心深度更近的
@@ -68,6 +77,7 @@ uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分�
 uniform float LightOcclusion[16];   // 每槽 1 个：遮挡策略，0 = 不做遮挡判定，1 = 在光心投影处采一次深度（S2）
 uniform float LightMinDist[16];     // 每槽 1 个：1/d² 的奇点截断 d_min(m)，逐来源取值
 uniform float LightGlow[32];        // 每槽 2 个：光晕阈值半径 Rg(m)、倍率 k；k = 0 关闭该光源的光晕
+uniform float LightGlare[16];       // 每槽 1 个：星芒（十字炫光）的倍率 g；g = 0 关闭该光源的星芒
 uniform float NormalWeight;         // S4 朝向响应权重：0 = 不乘法线项，1 = 完整 Lambert 项；0.5 即 wrap（0.5 + 0.5·cos）
 
 in  vec2 texCoord;
@@ -78,7 +88,15 @@ const float DARK_BOOST = 0.03;      // β：暗部补偿常数，越大越容易
 const float E_MAX      = 1024.0;    // 单光源辐照度上限：兜住异常内容，避免 inf/NaN 进入求和
 const float D_MIN_FLOOR = 0.001;    // d_min 的下限（m）：d_min 配 0 且表面点正好落在光心时不留 0/0
 const float SCATTER    = 2.1e-4;    // 光晕整体强度：信号弹 30 m 处中心接近饱和的标定起点（§4.3）
-const float GLOW_MAX   = 4.0;       // 光晕逐通道上限：兜异常内容与贴脸光源
+const float GLOW_MAX   = 4.0;       // 光晕与星芒的逐通道上限：兜异常内容与贴脸光源
+const float GLARE_HALF = 0.6;       // 星芒饱和曲线的半值照度：表观照度等于它时臂长与亮度各取一半
+const float GLARE_MIN_DEG = 0.7;    // 星芒最短臂长（度）：很远的闪光只剩一个点
+const float GLARE_MAX_DEG = 5.0;    // 星芒最长臂长（度）：贴脸的强光源
+const float GLARE_GAIN = 2.0;       // 臂根亮度（曲线之后的线性值）：2.0 即压到接近纯白
+const float GLARE_SIGMA_PX = 1.8;   // 臂的横向标准差下限（px）：再细就会随镜头转动逐帧闪烁
+const float GLARE_WEDGE = 2.0;      // 楔形系数：臂尖处横向标准差 = (1 + WEDGE)·GLARE_SIGMA_PX
+const float GLARE_MAX_FRACTION = 0.15; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
+const float DEG_TO_RAD = 0.01745329252; // 度 → 弧度
 
 // sRGB 编码的显示值 → 线性辐射度（分段函数，与光源表提交侧的换算同源）
 vec3 srgbToLinear(vec3 c) {
@@ -199,33 +217,60 @@ void main() {
     bool  hasN = false;
     if (hasSurface && nw > 0.0) hasN = viewNormal(texCoord, zfwd, N);   // 写成 if 而不是 &&，采样与否不受求值顺序影响
 
-    // 逐通道响应：e 是表面辐照度之和，glow 是空气散射（线性，不进合成曲线）
-    vec3 e    = vec3(0.0);
-    vec3 glow = vec3(0.0);
+    // 逐通道响应：e 是表面辐照度之和，glow 是空气散射、glare 是星芒，后两者都是线性、都不进合成曲线
+    vec3 e     = vec3(0.0);
+    vec3 glow  = vec3(0.0);
+    vec3 glare = vec3(0.0);
 
     for (int i = 0; i < int(LightCount); i++) {
         vec3  C  = vec3(LightView[i * 4], LightView[i * 4 + 1], LightView[i * 4 + 2]);
         float R  = LightView[i * 4 + 3];
         float Rg = LightGlow[i * 2];
         float gk = LightGlow[i * 2 + 1];
+        float gg = LightGlare[i];
         if (R <= 0.0) continue;
+
+        vec3  radiance  = vec3(LightColor[i * 4], LightColor[i * 4 + 1], LightColor[i * 4 + 2]);
+        float intensity = LightColor[i * 4 + 3];
 
         // 必要性：视线到光心的垂距超过影响半径，球内任何点都不在此视线上。
         // 用垂距而不是"屏幕圆"，屏幕角落处同样正确。光晕球可能比照明球大，取两者较大者。
-        float tc    = dot(C, dir);
-        float perp2 = max(dot(C, C) - tc * tc, 0.0);
-        float Rc    = max(R, gk > 0.0 ? Rg : 0.0);
-        if (perp2 > Rc * Rc) continue;
+        float tc     = dot(C, dir);
+        float perp2  = max(dot(C, C) - tc * tc, 0.0);
+        float Rc     = max(R, gk > 0.0 ? Rg : 0.0);
+        bool  haloIn = perp2 <= Rc * Rc;
+
+        // 光心的屏幕投影：遮挡判定与星芒都要用。zcSafe 只防 0 除；有效范围由 zc 判断。
+        float zc      = -C.z;
+        float zcSafe  = max(zc, NEAR_Z);
+        vec2  lightPx = vec2(OutSize.x * 0.5 + FocalPx * C.x / zcSafe,
+                             OutSize.y * 0.5 + FocalPx * C.y / zcSafe);   // y 同样自下而上
+
+        // 星芒没有米制范围，可见性只能在像素空间判定：以光心投影为中心、边长 2·thPx 的方框。
+        // 光心在相机背后时没有可用的投影，整条跳过。
+        vec2  dp       = vec2(0.0);
+        float thPx     = 0.0;
+        float glareAmp = 0.0;
+        bool  glareIn  = false;
+        if (gg > 0.0 && zc > NEAR_Z) {
+            float dmin  = max(LightMinDist[i], D_MIN_FLOOR);
+            float lApp  = intensity / max(dot(C, C), dmin * dmin);         // 镜头处的表观照度
+            float sat   = lApp / (lApp + GLARE_HALF);
+            float thRad = (GLARE_MIN_DEG + (GLARE_MAX_DEG - GLARE_MIN_DEG) * sat) * DEG_TO_RAD;
+            thPx     = min(thRad * sqrt(gg) * FocalPx, OutSize.y * GLARE_MAX_FRACTION);
+            dp       = px - lightPx;
+            glareIn  = thPx > 0.5 && abs(dp.x) <= thPx && abs(dp.y) <= thPx;
+            glareAmp = GLARE_GAIN * sat * gg;
+        }
+        if (!haloIn && !glareIn) continue;
 
         // 光源级遮挡：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
         // 自身的模型会把光源剔掉、光照凭空消失，太大则近处遮挡物漏光。
         // 是否执行本判定由光源表逐盏给出：爆炸火光用“不判定”（它的光心可能不在视野内，
         // 也可能被起爆自身的粒子与烟尘挡住，用光心深度判定会整盏误杀），曳光用 S2。
-        float zc = -C.z;
+        // 它同时是星芒的门禁：光源自身都不在画面上时没有星芒。
         if (LightOcclusion[i] > 0.5 && zc > NEAR_Z) {
-            vec2 lightPx = vec2(OutSize.x * 0.5 + FocalPx * C.x / zc,
-                                OutSize.y * 0.5 + FocalPx * C.y / zc);   // y 同样自下而上
             if (all(greaterThanEqual(lightPx, vec2(0.0))) &&
                 all(lessThan(lightPx, OutSize))) {                  // 越界按可见处理
                 float tol   = max(LightTol[i], zc * OcclusionTolRel);
@@ -234,11 +279,8 @@ void main() {
             }
         }
 
-        vec3  radiance  = vec3(LightColor[i * 4], LightColor[i * 4 + 1], LightColor[i * 4 + 2]);
-        float intensity = LightColor[i * 4 + 3];
-
         // 表面项：只在本像素有表面、且表面点落在照明半径内时贡献
-        if (hasSurface) {
+        if (haloIn && hasSurface) {
             float d = length(P - C);
             if (d < R) {
                 // 有限支撑窗：必须在 d = R 处严格归零且一阶导为零，否则包围剔除会在阈值处留下硬边。
@@ -284,20 +326,38 @@ void main() {
                 }
             }
         }
+
+        // 星芒项：屏幕空间的固定角度十字。不查深度、不被前景截断（镜头内的成像，不是空气里的散射），
+        // 只在光源自身可见（上面的光源级遮挡）时出现。
+        if (glareIn) {
+            float ux = abs(dp.x) / thPx;
+            float uy = abs(dp.y) / thPx;
+            float ax = 1.0 - ux;
+            float ay = 1.0 - uy;
+            ax *= ax;                                              // 臂尖 C¹ 归零，不留硬边
+            ay *= ay;
+            float sx = GLARE_SIGMA_PX * (1.0 + GLARE_WEDGE * ux);  // 横臂的横向标准差随臂长外扩
+            float sy = GLARE_SIGMA_PX * (1.0 + GLARE_WEDGE * uy);
+            float armX = ax * exp(-(dp.y * dp.y) / (sx * sx));     // 沿 x 衰减、横跨 y 收窄
+            float armY = ay * exp(-(dp.x * dp.x) / (sy * sy));
+            // max 而不是 sum：两条臂在光心相交，相加会把那里叠成一块方块
+            glare += min(radiance * (glareAmp * max(armX, armY)), vec3(GLOW_MAX));
+        }
     }
 
-    // 表面项与光晕都没有贡献：直接返回原画面，逐位不变（不解码、不编码）
-    vec3 added = e + glow;
+    // 表面项、光晕与星芒都没有贡献：直接返回原画面，逐位不变（不解码、不编码）
+    vec3 added = e + glow + glare;
     if (all(lessThanEqual(added, vec3(0.0)))) { fragColor = vec4(src.rgb, 1.0); return; }
 
-    // 线性空间里做增量，再编码回显示值；光晕在曲线之后叠加，不乘表面颜色、不受曲线压缩
+    // 线性空间里做增量，再编码回显示值；光晕与星芒在曲线之后叠加，不乘表面颜色、不受曲线压缩。
+    // 两者共用同一个加法预算：任一项再亮也只会把该像素推到 GLOW_MAX。
     vec3 C   = srgbToLinear(src.rgb);
     vec3 qd  = C + DARK_BOOST * (vec3(1.0) - C);
     vec3 lit = vec3(1.0) - (vec3(1.0) - C) / (vec3(1.0) + e * qd);
-    lit += min(glow, vec3(GLOW_MAX));
+    lit += min(glow + glare, vec3(GLOW_MAX));
     vec3 encoded = linearToSrgb(lit);
 
-    // 逐通道旁路：该通道既没有表面光照也没有光晕时保持原始编码值，避免解码/编码的浮点往返引入 ±1 的抖动
+    // 逐通道旁路：该通道既没有表面光照，也没有光晕与星芒时保持原始编码值，避免解码/编码的浮点往返引入 ±1 的抖动
     encoded = mix(encoded, src.rgb, lessThanEqual(added, vec3(0.0)));
 
     // alpha 必须强制为 1.0：链尾的 blit 会做 alpha 混合，把 alpha 留给画面内容会把天空清成黑色

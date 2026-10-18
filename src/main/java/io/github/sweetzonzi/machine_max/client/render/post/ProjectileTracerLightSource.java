@@ -170,6 +170,7 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
                     ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH, occlusionTolerance(caliberMm), 0f);
             // 光晕半径用内容强度（不含透明度因子与超时淡出）派生：曳光线淡出时尺寸不该跟着缩
             light.setGlow((float) type.getTracerLightIntensity(), (float) visual.tracerGlow());
+            light.setGlare((float) visual.tracerGlare());
             out.submit(light);
         }
     }

@@ -42,6 +42,12 @@ import java.util.Map;
  * {@code I} 与 {@code R} 不成标定比例时），按照明半径剔除会把光晕一起丢掉。当前标定下
  * {@code Rg/R ≤ 0.52}，这条恒取 {@code R}，它防的是内容。</p>
  *
+ * <p><b>星芒（十字炫光）只上传逐来源倍率</b>：臂长与臂根亮度都在片元里按"相机处的表观照度"
+ * {@code I/d²} 现场求值（设计文档 §3.7），光源表不做任何派生。它不进影响球——星芒是固定角度的
+ * 成像项而不是米制范围，{@code max(R, Rg)} 里没有它的位置；片元按像素距离自己剔除。代价是
+ * 整球落在视锥外的光源会先被本类剔除，连带没有星芒——只有极远处（影响球张角小于臂长）才会发生，
+ * 那时表观照度已可忽略。</p>
+ *
  * <p>渲染线程独占：本类不持有锁，也不接受物理线程写入提交记录。</p>
  */
 public final class ScreenSpaceLightBuffer {
@@ -80,6 +86,8 @@ public final class ScreenSpaceLightBuffer {
     private final float[] minDistance;
     /** 每槽 2 个：光晕的阈值半径（m）、逐来源倍率 {@code k}；半径按基础强度派生，倍率由内容给出 */
     private final float[] glow;
+    /** 每槽 1 个：星芒（十字炫光）的逐来源倍率 {@code g}，{@code 0} 表示该光源没有星芒 */
+    private final float[] glare;
     /** 槽内条目的投影半径（px），只用于排序与“超限时置换最弱一个” */
     private final float[] sortRadiusPx;
     /** 槽内条目的来源优先级，只用于容量比较 */
@@ -118,6 +126,7 @@ public final class ScreenSpaceLightBuffer {
         this.occlusion = new float[capacity];
         this.minDistance = new float[capacity];
         this.glow = new float[capacity * 2];
+        this.glare = new float[capacity];
         this.sortRadiusPx = new float[capacity];
         this.slotPriority = new int[capacity];
         this.slotSourceId = new ResourceLocation[capacity];
@@ -236,6 +245,11 @@ public final class ScreenSpaceLightBuffer {
         return glow;
     }
 
+    /** @return 扁平数组 {@code [capacity]}：每槽星芒（十字炫光）的逐来源倍率 */
+    public float[] glare() {
+        return glare;
+    }
+
     /**
      * 清空诊断状态：关闭效果、0 候选与退出世界时调用，避免上一帧的触顶状态漏进下一段会话。
      */
@@ -265,17 +279,20 @@ public final class ScreenSpaceLightBuffer {
         float minDistance = light.minDistance();
         float baseIntensity = light.baseIntensity();
         float glowMultiplier = light.glowMultiplier();
+        float glareMultiplier = light.glareMultiplier();
         if (!finite(position) || !finite(color)
                 || !Float.isFinite(radius) || !Float.isFinite(intensity)
                 || !Float.isFinite(tolerance) || !Float.isFinite(normalWeight)
                 || !Float.isFinite(minDistance)
-                || !Float.isFinite(baseIntensity) || !Float.isFinite(glowMultiplier)) {
+                || !Float.isFinite(baseIntensity) || !Float.isFinite(glowMultiplier)
+                || !Float.isFinite(glareMultiplier)) {
             stats.invalid++;
             return SubmitResult.INVALID;
         }
         if (radius < 0f || intensity < 0f || tolerance < 0f
                 || normalWeight < 0f || normalWeight > 1f
                 || minDistance < 0f || baseIntensity < 0f || glowMultiplier < 0f
+                || glareMultiplier < 0f
                 || !normalized(color)) {
             stats.invalid++;
             return SubmitResult.INVALID;
@@ -341,6 +358,7 @@ public final class ScreenSpaceLightBuffer {
         int glowBase = slot * 2;
         glow[glowBase] = glowRadius(light.baseIntensity(), light.glowMultiplier());
         glow[glowBase + 1] = light.glowMultiplier();
+        glare[slot] = light.glareMultiplier();
         sortRadiusPx[slot] = sortPx;
         slotPriority[slot] = light.priority();
         slotSourceId[slot] = light.sourceId();
