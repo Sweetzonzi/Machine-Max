@@ -23,7 +23,7 @@
           "RightWheel3",
           "RightWheel4"
         ],
-        "durability": 392,
+        "durability": 390,
         "mass": 10000,
         "projected_area": [
           -1,
@@ -36,33 +36,39 @@
           "HullFrontArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:7035_aluminum_alloy"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 40
           },
           "HullBackArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:7035_aluminum_alloy"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 20
           },
           "HullSideArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:7035_aluminum_alloy"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 25
           },
           "HullTopArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:7035_aluminum_alloy"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 12
           },
           "EngineHitBox": {
             "id": "engine",
             "type": "box",
-            "material": "machine_max:structural_steel",
+            "material": "machine_max:internal_machinery",
+            "thickness": 12,
             "subsystem": "subsystem.machine_max.engine"
           },
           "HullBottomArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:7035_aluminum_alloy"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 8
           }
         },
         "interact_boxes": {

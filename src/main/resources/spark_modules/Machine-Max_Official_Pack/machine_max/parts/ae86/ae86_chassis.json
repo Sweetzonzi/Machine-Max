@@ -28,14 +28,14 @@
             "id": "chassis",
             "type": "box",
             "material": "machine_max:structural_steel",
-            "thickness": 10
+            "thickness": 3
           }, 
           "mmCollision_Box_Engine": {
             "id": "engine",
             "type": "box",
             "subsystem": "subsystem.machine_max.engine",
-            "material": "machine_max:structural_steel",
-            "thickness": 2
+            "material": "machine_max:internal_machinery",
+            "thickness": 10
           }
         },
         "subsystems": {

@@ -18,7 +18,7 @@
         "sub_part.machine_max.main": {
           "start_bone": "AllHull",
           "end_bones": [],
-          "durability": 336,
+          "durability": 335,
           "mass": 5500,
           "mass_center": "hull_mass_center",
           "projected_area": [

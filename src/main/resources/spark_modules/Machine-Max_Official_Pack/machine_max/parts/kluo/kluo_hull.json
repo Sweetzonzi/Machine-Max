@@ -29,11 +29,11 @@
             "material": "machine_max:structural_steel",
             "thickness": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           },
-          "EngineHitBox": { // 挡风玻璃
+          "EngineHitBox": { // 电机舱
             "id": "engine",
             "type": "box",
-            "material": "machine_max:structural_steel",
-            "thickness": 1,
+            "material": "machine_max:internal_machinery",
+            "thickness": 5,
             "subsystem": "subsystem.machine_max.motor"
           },
           "FrontGlass": { // 挡风玻璃

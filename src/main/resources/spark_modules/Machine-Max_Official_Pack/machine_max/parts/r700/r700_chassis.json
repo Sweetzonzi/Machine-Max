@@ -26,8 +26,8 @@
             "id": "engine",
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
             "subsystem": "subsystem.machine_max.engine", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
-            "material": "machine_max:structural_steel",
-            "thickness": 1 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+            "material": "machine_max:internal_machinery",
+            "thickness": 6 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           },
           "TrunkCollision": {
             "id": "trunk",
@@ -37,14 +37,14 @@
             "thickness": 1
           },
           "GloveBoxCollision": {
-            "id": "trunk",
+            "id": "glove_box",
             "type": "box",
             "subsystem": "subsystem.machine_max.glove_box",
             "damage_modifiers": [],
             "thickness": 1
           },
           "FrontCaseCollision": {
-            "id": "trunk",
+            "id": "front_case",
             "type": "box",
             "subsystem": "subsystem.machine_max.front_case",
             "damage_modifiers": [],

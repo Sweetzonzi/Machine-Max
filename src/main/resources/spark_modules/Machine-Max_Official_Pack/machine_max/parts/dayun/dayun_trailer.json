@@ -27,7 +27,7 @@
           "TrailerHitBox": {
             "type": "box",
             "material": "machine_max:structural_steel",
-            "thickness": 10
+            "thickness": 3
           },
           "TrailerSupportHitBox": {
             "type": "box",

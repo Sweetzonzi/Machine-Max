@@ -22,7 +22,7 @@
             "AllGun",
             "AllGunShield"
           ],
-          "durability": 129.3,
+          "durability": 130,
           "mass": 1000,
           "mass_center": "turret_mass_center",
           "projected_area": [
@@ -47,7 +47,7 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 10
             },
             "TurretBackTopHitBox": {
               "id": "part",
@@ -197,7 +197,7 @@
         "sub_part.machine_max.barrel": {
           "start_bone": "AllGun",
           "end_bones": [],
-          "durability": 12.9,
+          "durability": 15,
           "mass": 100,
           "mass_center": "gun_mass_center",
           "projected_area": [
@@ -240,7 +240,7 @@
         "sub_part.machine_max.gun_shield": {
           "start_bone": "AllGunShield",
           "end_bones": [],
-          "durability": 25.8,
+          "durability": 25,
           "mass": 200,
           "mass_center": "gun_shield_mass_center",
           "projected_area": [
@@ -252,7 +252,8 @@
             "GunShieldHitBox": {
               "id": "part",
               "type": "box",
-              "material": "machine_max:rha"
+              "material": "machine_max:rha",
+              "thickness": 30
             }
           },
           "connectors": {

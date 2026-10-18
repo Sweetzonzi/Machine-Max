@@ -28,10 +28,11 @@
           "thickness": 5
         },
         "EngineHitBox": {
+          "id": "engine",
           "type": "box",
-          "material": "machine_max:structural_steel",
+          "material": "machine_max:internal_machinery",
           "subsystem": "subsystem.machine_max.engine",
-          "thickness": 1
+          "thickness": 12
         }
       },
       "subsystems": {

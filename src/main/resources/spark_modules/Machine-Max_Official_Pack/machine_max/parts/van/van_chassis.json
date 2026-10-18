@@ -27,8 +27,8 @@
           "collision_engine": {
             "id": "engine",
             "type": "box",
-            "material": "machine_max:structural_steel",
-            "thickness": 1,
+            "material": "machine_max:internal_machinery",
+            "thickness": 10,
             "subsystem": "subsystem.machine_max.engine"
           }
         },

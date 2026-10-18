@@ -25,10 +25,11 @@
             "thickness": 5
           },
           "collision_engine": {
+            "id": "engine",
             "type": "box",
             "subsystem": "subsystem.machine_max.engine",
-            "material": "machine_max:structural_steel",
-            "thickness": 2
+            "material": "machine_max:internal_machinery",
+            "thickness": 10
           }
         },
         "interact_boxes": {
