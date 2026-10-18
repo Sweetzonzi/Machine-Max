@@ -289,8 +289,8 @@ public final class ScreenSpaceLightBuffer {
             stats.unsupported++;
             return SubmitResult.UNSUPPORTED;
         }
-        // 影响球：照明球与光晕球取较大者。光晕倍率过大时 Rg 会超过 R，按照明半径剔除会把
-        // 整圈光晕丢掉；倍率上限由内容侧钳制，这里只兜半径上限。
+        // 影响球：照明球与光晕球取较大者。光晕倍率没有内容侧上限，k 稍大就会让 Rg 超过 R，
+        // 按照明半径剔除会把整圈光晕丢掉；这里只兜半径上限（MAX_GLOW_RADIUS_M）。
         float glowRadius = glowRadius(baseIntensity, glowMultiplier);
         float influenceRadius = Math.max(radius, glowRadius);
         if (influenceRadius == 0f || intensity == 0f) {
@@ -404,7 +404,9 @@ public final class ScreenSpaceLightBuffer {
      * 光晕阈值半径：{@code Rg = min(GLOW_SCALE_M · sqrt(I_base) · k, MAX_GLOW_RADIUS_M)}。
      *
      * <p>用基础强度而不是当前强度：包络会让半径随闪烁抖动。倍率 {@code k} 线性缩放半径（与亮度同步），
-     * {@code k = 0} 得到 0，该光源没有光晕。着色器只做积分与 {@code atan}，不做 {@code sqrt}。</p>
+     * {@code k = 0} 得到 0，该光源没有光晕；{@code k} 没有内容侧上限，超过
+     * {@code MAX_GLOW_RADIUS_M / (GLOW_SCALE_M·sqrt(I_base))} 之后半径在这里被封顶、只有亮度继续增长。
+     * 着色器只做积分与 {@code atan}，不做 {@code sqrt}。</p>
      *
      * @param baseIntensity  内容强度，不含时间包络
      * @param glowMultiplier 逐来源倍率

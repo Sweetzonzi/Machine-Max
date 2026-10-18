@@ -28,7 +28,7 @@ import java.util.List;
  * @param colorRgb      颜色，打包的 {@code 0xRRGGBB}；每个通道都在 {@code [0,255]}
  * @param radius        固定照射半径（m），{@code 0 < R <= 64}；不随波前扩张
  * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示不产生光照
- * @param glow          空气散射光晕的倍率（{@code [0,4]}）：同时缩放光晕的阈值半径与亮度，
+ * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
  *                      {@code 0} 表示只有表面光照、没有光晕
  * @param durationTicks 总寿命（游戏 tick，{@code [1,200]}），按 20 TPS 计，暂停时冻结
  */
@@ -49,8 +49,6 @@ public record ExplosionLightParams(
      * <p>缺省值约 166，4 个数量级的余量留给超大口径与特效弹种，同时挡住明显的笔误。</p>
      */
     public static final float MAX_INTENSITY = 4096f;
-    /** 光晕倍率上界：倍率同时缩放阈值半径与亮度，超过 4 会让光晕盖过照明本身 */
-    public static final float MAX_GLOW = 4f;
     /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
     public static final int MIN_DURATION_TICKS = 1;
     /** 寿命上界（tick）：200 tick = 10 秒 */
@@ -79,7 +77,7 @@ public record ExplosionLightParams(
                     .forGetter(ExplosionLightParams::radius),
             boundedFloat("强度", MAX_INTENSITY).optionalFieldOf("intensity", DEFAULT.intensity())
                     .forGetter(ExplosionLightParams::intensity),
-            nonNegativeFloat("光晕倍率", MAX_GLOW).optionalFieldOf("glow", DEFAULT.glow())
+            nonNegativeFloat("光晕倍率").optionalFieldOf("glow", DEFAULT.glow())
                     .forGetter(ExplosionLightParams::glow),
             Codec.INT.validate(ExplosionLightParams::validateDuration)
                     .optionalFieldOf("duration_ticks", DEFAULT.durationTicks())
@@ -128,7 +126,7 @@ public record ExplosionLightParams(
         colorRgb = packColor(unpackColor(colorRgb));
         radius = Math.min(Math.max(radius, 0f), MAX_RADIUS_M);
         intensity = Math.min(Math.max(intensity, 0f), MAX_INTENSITY);
-        glow = Math.min(Math.max(glow, 0f), MAX_GLOW);
+        glow = Math.max(glow, 0f);
         durationTicks = Math.min(Math.max(durationTicks, MIN_DURATION_TICKS), MAX_DURATION_TICKS);
     }
 
@@ -174,20 +172,21 @@ public record ExplosionLightParams(
     }
 
     /**
-     * 非负且带下界 0 的浮点字段：与 {@link #boundedFloat} 同源，区别是允许 0。
+     * 非负的浮点字段：没有上界。
      *
-     * <p>光晕倍率的 {@code 0} 是有意义的取值（关闭该光源的光晕），不能按"正数"校验。</p>
+     * <p>光晕倍率只有"关闭"（{@code 0}）与"放大"两端，物理上没有统一的最大值：倍率超过
+     * {@code 32 m / (GlowScale·sqrt(I))} 后阈值半径被半径上限截断，只剩亮度继续增长，而亮度又由
+     * 着色器的 {@code GLOW_MAX} 兜住。因此这里只挡非有限值与负值，写多大的倍率都是作者的观感选择。</p>
      *
      * @param label 报错里的字段含义（中文）
-     * @param max   上界（含）
      */
-    private static Codec<Float> nonNegativeFloat(String label, float max) {
+    private static Codec<Float> nonNegativeFloat(String label) {
         return Codec.FLOAT.validate(value -> {
             if (!Float.isFinite(value)) {
                 return DataResult.error(() -> label + "必须是有限数，实际为 " + value);
             }
-            if (value < 0f || value > max) {
-                return DataResult.error(() -> label + "必须落在 [0, " + max + "] 内，实际为 " + value);
+            if (value < 0f) {
+                return DataResult.error(() -> label + "必须为非负数，实际为 " + value);
             }
             return DataResult.success(value);
         });

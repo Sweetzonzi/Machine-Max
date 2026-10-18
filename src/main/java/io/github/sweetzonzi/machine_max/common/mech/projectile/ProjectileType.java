@@ -260,7 +260,7 @@ public abstract class ProjectileType {
      * @param radius        照射半径（m）；{@link #DERIVE_RADIUS} 表示按口径折算，显式值取 {@code (0, 64]}
      * @param color         颜色，三个 {@code [0,255]} 整数
      * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
-     * @param glow          空气散射光晕的倍率（{@code [0,4]}）：同时缩放光晕的阈值半径与亮度，
+     * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
      *                      {@code 0} 表示该弹种开火只有表面光照、没有光晕
      * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
      */
@@ -290,14 +290,6 @@ public abstract class ProjectileType {
          * 同时挡住明显的笔误（例如把 {@code 255} 当成"最大亮度"）。</p>
          */
         public static final float MAX_INTENSITY = 4096f;
-
-        /**
-         * 光晕倍率上界。
-         *
-         * <p>倍率同时缩放阈值半径与亮度，超过 4 会让枪口焰的光晕盖过照明本身；下限 0 表示
-         * 关闭该弹种的光晕。</p>
-         */
-        public static final float MAX_GLOW = 4f;
 
         /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
         public static final int MIN_DURATION_TICKS = 1;
@@ -343,14 +335,19 @@ public abstract class ProjectileType {
             return DataResult.success(value);
         });
 
-        /** {@link #glow} 的校验：有限且落在 {@code [0, 4]}。 */
+        /**
+         * {@link #glow} 的校验：有限且非负，没有上界。
+         *
+         * <p>倍率没有统一的物理最大值：超过 {@code 32 m / (GlowScale·sqrt(intensity))} 后阈值半径
+         * 被半径上限截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。写多大的
+         * 倍率都是观感选择，这里只挡非有限值与负值。</p>
+         */
         private static final Codec<Float> GLOW_CODEC = Codec.FLOAT.validate(value -> {
             if (!Float.isFinite(value)) {
                 return DataResult.error(() -> "muzzle_flash.glow 必须是有限数，实际为 " + value);
             }
-            if (value < 0f || value > MAX_GLOW) {
-                return DataResult.error(() -> "muzzle_flash.glow 必须落在 [0, "
-                    + MAX_GLOW + "] 内，实际为 " + value);
+            if (value < 0f) {
+                return DataResult.error(() -> "muzzle_flash.glow 必须为非负数，实际为 " + value);
             }
             return DataResult.success(value);
         });
@@ -446,12 +443,13 @@ public abstract class ProjectileType {
          */
         Optional<Boolean> tracerLightEnabled,
         /**
-         * 曳光光源的空气散射光晕倍率（可选，默认 1.0，取值 {@code [0, 4]}）。
+         * 曳光光源的空气散射光晕倍率（可选，默认 1.0，非负、无上界）。
          * <p>
          * 倍率同时缩放光晕的阈值半径与亮度，{@code 0} 表示该弹种只有表面光照、没有光晕。
          * 阈值半径按 {@link #tracerLightIntensity} 派生（见物理化设计 §3.6），本字段只做放大：
          * 曳光的辐照度比信号弹低两三个数量级，缺省值下光晕的峰值只有千分之一量级，实际看不见。
-         * 要让曳光带可见光晕，把它写到接近上限。
+         * 要让曳光带可见光晕，把倍率写到 10 以上（7.62 mm 在 10 m 处约 0.04 的线性亮度），
+         * 倍率再大则阈值半径先撞 32 m 上限、只剩亮度增长。
          */
         double tracerGlow,
         /**
@@ -493,16 +491,19 @@ public abstract class ProjectileType {
         /** 渲染侧可接受的照射半径上界（m），与爆炸火光的字段边界取同一个量级 */
         public static final double MAX_LIGHT_RADIUS_M = 64.0;
 
-        /** {@link #tracerGlow} 的上界；超出的倍率会让光晕盖过照明本身 */
-        public static final double MAX_GLOW = 4.0;
-
-        /** {@link #tracerGlow} 的校验：有限且落在 {@code [0, 4]}。 */
+        /**
+         * {@link #tracerGlow} 的校验：有限且非负，没有上界。
+         *
+         * <p>曳光的辐照度比信号弹低两三个数量级，要让它的光晕可见就得把倍率写到远高于 4；
+         * 倍率超过 {@code 32 m / (GlowScale·sqrt(tracer_light_intensity))} 后阈值半径被半径上限
+         * 截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。</p>
+         */
         private static final Codec<Double> GLOW_CODEC = Codec.DOUBLE.validate(value -> {
             if (!Double.isFinite(value)) {
                 return DataResult.error(() -> "tracer_glow 必须是有限数，实际为 " + value);
             }
-            if (value < 0.0 || value > MAX_GLOW) {
-                return DataResult.error(() -> "tracer_glow 必须落在 [0, " + MAX_GLOW + "] 内，实际为 " + value);
+            if (value < 0.0) {
+                return DataResult.error(() -> "tracer_glow 必须为非负数，实际为 " + value);
             }
             return DataResult.success(value);
         });

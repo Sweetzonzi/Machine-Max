@@ -230,7 +230,9 @@ public final class ScreenSpaceLight {
      *
      * <p>基础强度取<b>内容强度</b>，不含时间包络、不含类别倍率与全局倍率：包络会让半径随闪烁抖动，
      * 而倍率是观感旋钮——调亮度不该顺带改变光晕的张角。倍率 {@code k} 同时缩放阈值半径与亮度，
-     * {@code 0} 关闭该光源的光晕，取值上限由内容侧的编解码钳制。</p>
+     * {@code 0} 关闭该光源的光晕。{@code k} 没有内容侧的固定上界：超过
+     * {@code 32 m / (GLOW_SCALE_M·sqrt(baseIntensity))} 后阈值半径被 {@link #MAX_GLOW_RADIUS_M}
+     * 截断、只剩亮度继续增长，而亮度由着色器的 {@code GLOW_MAX} 兜住。</p>
      *
      * @param baseIntensity  内容给出的强度（1 m 处辐照度，不含包络），{@code >= 0}
      * @param glowMultiplier 逐来源倍率 {@code k}，{@code >= 0}；{@code 1} 为标定值
