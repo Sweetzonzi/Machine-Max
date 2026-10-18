@@ -11,7 +11,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleCreatePayload;
@@ -21,13 +20,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
@@ -385,15 +382,7 @@ public class ObjectManager {
     }
 
     @SubscribeEvent
-    public static void displayCustomPackError(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() && event.getEntity() instanceof Player player) {
-            MMDynamicRes.sendErrorToPlayer(player);
-        }
-    }
-
-    @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
-        MMDynamicRes.sendErrorToConsole(event.getServer());
         serverAllVehicles.clear();
         levelVehicles.clear();
     }

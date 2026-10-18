@@ -5,7 +5,6 @@ import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.MMCommonConfig;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.registry.*;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -51,7 +50,6 @@ public class MachineMax {
         MMEntityDataSerializers.register();//注册所有自定义同步数据序列化器
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
-        MMDynamicRes.initResources();//首次启动时读取外部资源文件
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单

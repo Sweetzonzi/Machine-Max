@@ -72,7 +72,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
         // 内容包异常处理
-        this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
         this.add("error.machine_max.recipe.wrong_directory", "零件配方必须放在 recipe/part_fabricating/ 目录下");
         this.add("error.machine_max.recipe.wrong_type_directory", "recipe/part_fabricating/ 目录下的配方类型必须为 machine_max:part_fabricating");
         this.add("error.machine_max.recipe.unknown_part", "配方文件名未对应任何已注册零件");
@@ -95,11 +94,16 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
         // 组装异常处理
         this.add("error.machine_max.part.model_not_found", "未找到模型文件: %1$s");
+        this.add("error.machine_max.part.missing_textures", "零件贴图列表不能为空");
         this.add("error.machine_max.part.connector_locator_not_found", "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s");
         this.add("error.machine_max.part.invalid_connector_type", "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"");
         this.add("error.machine_max.part.duplicate_name", "部件变体 %4$s 内名称 %1$s 重复：%2$s 与 %3$s 冲突");
         this.add("error.machine_max.part.reserved_name", "部件变体 %4$s 内名称 %1$s（%3$s 的 %2$s）为信号保留地址，不得用作连接点/子系统/交互区名");
+        // 内容包资源路径
+        this.add("error.machine_max.hud_style.invalid_path", "非法的 HUD 样式路径");
+        this.add("error.machine_max.hud_layout.invalid_path", "非法的 HUD 布局路径");
+        this.add("error.machine_max.document.invalid_path", "非法的 AUI 文档路径");
         // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("machine_max.misc", "杂项");

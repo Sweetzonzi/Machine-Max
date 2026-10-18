@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.shapes.*;
@@ -127,7 +128,8 @@ public class SubPartAttr {
         this.startBone = startBone;
         this.endBones = endBones;
         this.durability = durability;
-        if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
+        if (mass <= 0) throw new PackContentException(Component.translatableWithFallback(
+                "error.machine_max.subpart.zero_mass", "Sub-part mass must be greater than zero"));
         this.mass = mass;
         this.massCenterName = massCenterName;
         this.projectedArea = projectedArea;
@@ -135,7 +137,8 @@ public class SubPartAttr {
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
 
-        if (hitBoxes.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_hit_boxes");
+        if (hitBoxes.isEmpty()) throw new PackContentException(Component.translatableWithFallback(
+                "error.machine_max.subpart.empty_hit_boxes", "Sub-part must have at least one hit-box"));
         this.hitBoxes = hitBoxes;
         this.interactBoxes = interactBoxes;
         this.connectors = connectors;
@@ -155,7 +158,8 @@ public class SubPartAttr {
             Map<String, OBone> bones = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
                     startBone, getEffectiveEndBones());
-            if (bones.isEmpty()) throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
+            if (bones.isEmpty()) throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.subpart.empty_collision_shape", "Sub-part shape cannot be empty"));
             // 获取并储存定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
@@ -258,7 +262,8 @@ public class SubPartAttr {
                 }
             }
             if (shape.countChildren() <= 0)
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
+                throw new PackContentException(Component.translatableWithFallback(
+                        "error.machine_max.subpart.empty_collision_shape", "Sub-part shape cannot be empty"));
             // 调整零件质心
             Transform massCenter;
             OLocator locator = locators.get(this.massCenterName);

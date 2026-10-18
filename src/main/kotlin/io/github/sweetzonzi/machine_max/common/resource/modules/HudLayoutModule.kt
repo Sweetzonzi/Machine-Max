@@ -1,15 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.network.chat.Component
-import java.nio.charset.StandardCharsets
 
 /**
  * HUD 布局加载模块。
@@ -38,20 +36,11 @@ class HudLayoutModule : SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (!isClientSide || !fromServer || !fileName.endsWith(".json")) return
-        val id = HudModule.contentKey(namespace, pathSegments, fileName) ?: run {
-            MMDynamicRes.errorFiles.add("[HUD Layout] $namespace/${(pathSegments + fileName).joinToString("/")}")
-            MMDynamicRes.errorMessages.add(Component.literal("非法的 HUD 布局路径"))
-            return
-        }
-        try {
-            val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-            val layout = HudLayout.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            MMDynamicRes.HUD_LAYOUTS[id] = layout
-        } catch (e: Exception) {
-            MMDynamicRes.exceptions.add(e)
-            MMDynamicRes.errorFiles.add("[HUD Layout]$id")
-            MMDynamicRes.errorMessages.add(Component.literal(e.message ?: e.toString()))
-        }
+        val id = HudModule.contentKey(namespace, pathSegments, fileName)
+            ?: SparkPackIssues.error(MMDynamicRes.text(
+                "error.machine_max.hud_layout.invalid_path", "Invalid HUD layout path"))
+        val layout = PackCodec.read(HudLayout.CODEC, content)
+        MMDynamicRes.HUD_LAYOUTS[id] = layout
     }
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {

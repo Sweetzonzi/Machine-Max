@@ -1,16 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import java.nio.charset.StandardCharsets
 
 class TemplateModule : SparkPackModule {
 
@@ -29,21 +26,11 @@ class TemplateModule : SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (fileName.endsWith(".json") && fromServer) {
-            val path = fileName.removeSuffix(".json")
-            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
-            try {
-                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-                val blueprint = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                MMDynamicRes.TEMPLATES[id] = blueprint
-            } catch (e: Exception) {
-                MMDynamicRes.exceptions.add(e)
-                MMDynamicRes.errorFiles.add("[Template]" + id)
-                MMDynamicRes.errorMessages.add(Component.literal(e.message ?: e.toString()))
-            }
-        }
+        if (!fromServer || !fileName.endsWith(".json")) return
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".json"))
+        val vehicle = PackCodec.read(VehicleData.CODEC, content)
+        MMDynamicRes.TEMPLATES[id] = vehicle
     }
-
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         MachineMax.LOGGER.info("已加载${MMDynamicRes.TEMPLATES.size}种预装配结构模板")

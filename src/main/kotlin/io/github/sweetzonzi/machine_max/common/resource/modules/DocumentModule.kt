@@ -1,11 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.ReadMode
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.sighs.apricityui.parser.HTML
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.packs.PackType
 
@@ -53,11 +55,10 @@ class DocumentModule : SparkPackModule {
         if (!isClientSide) return
 
         val key = documentKey(namespace, pathSegments, fileName) ?: return
+        // 非法路径进不了 CLIENT_PACK，按“不能进注册表 → ERROR”上报
         val location = ResourceLocation.tryParse("apricityui:apricity/$key")
-        if (location == null) {
-            MachineMax.LOGGER.warn("[AUI Document] invalid AUI path: {}", key)
-            return
-        }
+            ?: SparkPackIssues.error(MMDynamicRes.text(
+                "error.machine_max.document.invalid_path", "Invalid AUI document path"))
 
         SparkPackLoaderApplier.CLIENT_PACK.put(PackType.CLIENT_RESOURCES, location, content)
         loaded++
