@@ -116,6 +116,12 @@ public class HitBox {
         return attr.decay_dmg_mult() + (attr.dmg_mult() - attr.decay_dmg_mult()) * (float) Math.pow(durabilityRatio, attr.decay_power());
     }
 
+    /**
+     * 是否启用入射角导致的等效厚度效应。
+     * <p>
+     * 由 {@code SubPart.getRHA(BFDamageContext)} 读取：启用时等效厚度为
+     * {@code 垂直厚度 / |cosθ|}，并受 {@code ArmorUtil.MIN_ANGLE_COS} 钳制。
+     */
     public boolean hasAngleEffect() {
         return attr.angleEffect();
     }

@@ -524,7 +524,7 @@ public class CollisionHandler {
                         .hitVelocity(SparkMathKt.toVec3(contactVel))
                         .hitPoint(SparkMathKt.toVec3(worldContactPoint))
                         .hitNormal(SparkMathKt.toVec3(normal))
-                        .penetration(hitBox.modifyPiercing(source, partDamage))
+                        .penetration(partDamage)
                         .build();
                 ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                 BFDamageApi.hurt(subPart, ctx);
@@ -540,7 +540,7 @@ public class CollisionHandler {
                         .hitVelocity(SparkMathKt.toVec3(contactVel))
                         .hitPoint(SparkMathKt.toVec3(worldContactPoint))
                         .hitNormal(SparkMathKt.toVec3(normal))
-                        .penetration(hitBox.modifyPiercing(source, partDamage))
+                        .penetration(partDamage)
                         .build();
                 ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                 BFDamageApi.hurt(subPart, ctx);
@@ -628,9 +628,10 @@ public class CollisionHandler {
                     .hitVelocity(SparkMathKt.toVec3(contactVel))
                     .hitPoint(SparkMathKt.toVec3(worldContactPoint))
                     .hitNormal(SparkMathKt.toVec3(normal))
-                    .penetration(hitBox.modifyPiercing(source, partDamage))
+                    // 伤害落在 otherSubPart 上，命中框必须是对方的：装甲、材质修正与子系统路由都以它为准
+                    .penetration(partDamage)
                     .build();
-            ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+            ctx.extensions().set(MMDamageExtensions.HIT_BOX, otherHitBox);
             BFDamageApi.hurt(otherSubPart, ctx);
         }
     }
@@ -695,7 +696,7 @@ public class CollisionHandler {
                     .hitVelocity(SparkMathKt.toVec3(vel))
                     .hitPoint(SparkMathKt.toVec3(worldContactPoint))
                     .hitNormal(SparkMathKt.toVec3(normal))
-                    .penetration(hitBox.modifyPiercing(source, partDamage))
+                    .penetration(partDamage)
                     .build();
             ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
             BFDamageApi.hurt(subPart, ctx);

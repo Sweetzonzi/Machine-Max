@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.util.mechanic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.log10;
@@ -84,16 +85,49 @@ public class ArmorUtil {
     }
 
     // ==================== 等效护甲 ====================
+
     /**
-     * 考虑入射角的影响，计算不同入射角下的等效护甲水平
+     * 角度效应允许的最小入射余弦。
+     * <p>
+     * 掠射时 {@code 1/cos} 发散，超过约 78.5°（cos = 0.2）后等效厚度不再继续增大，
+     * 后续的防护由跳弹判定承担。
+     */
+    public static final float MIN_ANGLE_COS = 0.2f;
+
+    /**
+     * 计算入射角（弧度制）——速度方向与命中面法线的夹角，0 表示垂直入射。
+     * <p>
+     * 取绝对值，因此从背面命中与从正面命中得到相同的角度。
+     * 任一方量为零（例如原版伤害没有弹道信息）时返回 0，即按垂直入射处理。
+     *
+     * @param velocity 命中速度方向（世界坐标，无需归一化）
+     * @param normal   命中面法线（世界坐标，无需归一化）
+     * @return 入射角弧度，范围 [0, π/2]；缺少几何信息时为 0
+     */
+    public static float getImpactAngle(Vec3 velocity, Vec3 normal) {
+        if (velocity == null || normal == null) return 0f;
+        double velocityLenSqr = velocity.lengthSqr();
+        double normalLenSqr = normal.lengthSqr();
+        if (velocityLenSqr < 1e-12 || normalLenSqr < 1e-12) return 0f;
+        double cosTheta = Math.abs(velocity.dot(normal)) / Math.sqrt(velocityLenSqr * normalLenSqr);
+        if (Double.isNaN(cosTheta)) return 0f;
+        return (float) Math.acos(Math.clamp(cosTheta, 0.0, 1.0));
+    }
+
+    /**
+     * 考虑入射角的影响，计算不同入射角下的等效护甲水平。
+     * <p>
+     * 公式为 {@code armor / max(|cos(angle)|, }{@link #MIN_ANGLE_COS}{@code )}，
+     * 角度为 NaN 时按垂直入射处理。
      *
      * @param pArmor 基础护甲水平
      * @param pAngle 弧度制入射角(投射物速度方向与装甲法线方向的夹角)
      * @return 等效护甲水平
      */
     public static float getEquivalentArmor(float pArmor, float pAngle) {
-        if (Double.isNaN(cos(pAngle))) return Float.MAX_VALUE;
-        else return (float) (pArmor / Math.abs(cos(pAngle)));
+        double cosTheta = Math.abs(cos(pAngle));
+        if (!Double.isFinite(cosTheta)) return pArmor;
+        return (float) (pArmor / Math.max(cosTheta, MIN_ANGLE_COS));
     }
 
     /**

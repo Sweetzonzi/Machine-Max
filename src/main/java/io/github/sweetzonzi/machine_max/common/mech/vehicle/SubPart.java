@@ -40,6 +40,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
 import net.minecraft.world.phys.Vec3;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.connector.ConnectorImpactEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
@@ -440,9 +441,23 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     // ==================== BallisticsFramework 协议穿甲管线 ====================
 
+    /**
+     * 返回命中箱的等效护甲厚度（mm RHA），已计入耐久衰减与入射角。
+     * <p>
+     * 入射角只对启用了 {@code angle_effect} 的材质生效，等效厚度为
+     * {@code 垂直厚度 / |cosθ|}；缺少命中几何（速度或法线为零）时按垂直入射处理。
+     * <p>
+     * 上下文中的 {@link BFDamageContext#penetration()} 是入射前的有效穿深，
+     * 角度修正全部落在护甲侧——伤害来源不应预先按角度折减穿深，否则会对启用
+     * 角度效应的材质重复计入。
+     */
     @Override
     public float getRHA(BFDamageContext ctx) {
-        return findHitBox(ctx).getRHA(this);
+        HitBox hitBox = findHitBox(ctx);
+        float verticalRha = hitBox.getRHA(this);
+        if (!hitBox.hasAngleEffect()) return verticalRha;
+        return ArmorUtil.getEquivalentArmor(verticalRha,
+                ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
     }
 
     @Override
@@ -450,6 +465,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         return ArmorLevel.fromRha(getRHA(ctx));
     }
 
+    /**
+     * 应用命中框的穿深修正（{@code penetration_modifiers}）。
+     * <p>
+     * 这是全流程中施加该修正的唯一位置：上下文里的 {@link BFDamageContext#penetration()}
+     * 必须是未经护甲修正的原始穿深，构造上下文的调用方不要预先调用
+     * {@link HitBox#modifyPiercing}，否则修正会被乘两次。
+     * </p>
+     */
     @Override
     public float modifyPenetration(BFDamageContext ctx) {
         HitBox hitBox = findHitBox(ctx);
@@ -473,11 +496,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public PenetrationResult resolvePenetration(BFDamageContext ctx) {
-        // 计算入射角（与法线夹角，度）
-        Vec3 normal = ctx.hitNormal();
-        Vec3 velocity = ctx.hitVelocity();
-        double cosTheta = Math.abs(normal.normalize().dot(velocity.normalize()));
-        float impactAngleDeg = (float) Math.toDegrees(Math.acos(cosTheta));
+        // 计算入射角（与法线夹角，度）；缺少弹道信息时按垂直入射处理
+        float impactAngleDeg = (float) Math.toDegrees(
+                ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
 
         // 从扩展容器读取口径（mm），若未写入则回退到0（无碾压保护）
         float caliber = ctx.extensions().get(BFDamageExtensions.CALIBER);
@@ -512,7 +533,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (hitBox.hasUnpenDamage()) {
             float rha = getRHA(ctx);
             if (rha > 0) {
-                float ratio = Math.clamp(ctx.penetration() / rha, 0f, 1f);
+                float ratio = Math.clamp(modifyPenetration(ctx) / rha, 0f, 1f);
                 float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnpenPower());
                 return hitBox.modifyDamage(ctx.source(), unpenDmg);
             }
@@ -569,11 +590,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                     contactPoint.subtract(this.body.getPhysicsLocation(null)));
             return null;
         });
-        // 连接点冲击分配
-        float impactDamage = hitBox.modifyImpact(source, amount);
-        if (impactDamage > 0) {
-            distributeDamageImpactToConnectors(impactDamage, PhysicsHelperKt.toBVector3f(sourcePos));
-        }
         // 累积伤害
         accumulateDamage(amount, ctx);
         // 音效与粒子
@@ -593,6 +609,34 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             }
         });
         return true;
+    }
+
+    /**
+     * 命中后效：把冲击分配到连接点。
+     * <p>
+     * 冲击与伤害结算解耦——输入是上下文里的<b>穿甲前原始伤害</b>
+     * （{@link BFDamageContext#baseDamage()}），而不是 {@link #hurt} 收到的最终伤害，
+     * 因此未击穿与跳弹的命中同样会冲击结构。伤害被子系统拦截或被
+     * {@code SubPartDamageEvent.Pre} 取消，都不影响这条链路；要阻止某次命中扰动结构，
+     * 取消 {@link ConnectorImpactEvent.Pre}。完整性扣减与击落判定仍由连接点在主线程
+     * {@code mcTick} 中完成。
+     * </p>
+     * <p><b>调用线程：</b>命中发生线程（投射物命中为物理线程），与 {@link #hurt} 相同。</p>
+     */
+    @Override
+    public void afterHurt(BFDamageContext ctx, PenetrationResult result, float finalDamage) {
+        if (level.isClientSide()) return;
+        HitBox hitBox = findHitBox(ctx);
+        // findHitBox 声明 @NotNull，但无命中框时 findStrongestHitBox 返回 null，守卫必须保留
+        if (hitBox == null) return;
+        float impact = hitBox.modifyImpact(ctx.source(), ctx.baseDamage());
+        if (impact <= 0f) return;
+        ConnectorImpactEvent.Pre event = NeoForge.EVENT_BUS.post(
+                new ConnectorImpactEvent.Pre(this, ctx, hitBox, impact));
+        if (event.isCanceled()) return;
+        Map<AbstractConnector, Float> distribution = distributeDamageImpactToConnectors(
+                impact, PhysicsHelperKt.toBVector3f(ctx.hitPoint()));
+        NeoForge.EVENT_BUS.post(new ConnectorImpactEvent.Post(this, ctx, hitBox, impact, distribution));
     }
 
     @Override
@@ -635,15 +679,16 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>根据伤害和各连接点的距离，施加冲击力至各个连接点</p>
-     * <p>Distributes the impact to each connector based on the damage and distance to each connector</p>
+     * <p>根据冲击和各连接点的距离，把冲击分配到各个连接点</p>
+     * <p>Distributes the impact to each connector based on the distance to each connector</p>
      *
-     * @param impact      冲击
-     * @param impactPoint 冲击点
+     * @param impact      本次命中的总冲击量
+     * @param impactPoint 冲击点（世界坐标）
+     * @return 连接点 → 分配到的冲击量；没有可参与分配的连接点时为空 Map
      */
-    protected void distributeDamageImpactToConnectors(float impact, Vector3f impactPoint) {
-        // 累积冲击效果用于削减连接点结构完整性
-        Map<AbstractConnector, Float> impactWeights = new HashMap<>();
+    protected Map<AbstractConnector, Float> distributeDamageImpactToConnectors(float impact, Vector3f impactPoint) {
+        // 先按距离收集权重，归一化后就地改写为分配量，避免为 Post 事件再复制一份 Map
+        Map<AbstractConnector, Float> distribution = new HashMap<>();
         float totalImpactWeight = 0;
         // 可调节参数
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
@@ -655,14 +700,17 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
             float weight = 1.0f / (float) Math.pow(distance, DISTANCE_EXPONENT);
-            impactWeights.put(connector, weight);
+            distribution.put(connector, weight);
             totalImpactWeight += weight;
         }
+        if (totalImpactWeight <= 0f) return Map.of();
         // 分配冲击伤害
-        for (Map.Entry<AbstractConnector, Float> entry : impactWeights.entrySet()) {
-            float impactFraction = entry.getValue() / totalImpactWeight;
-            entry.getKey().accumulateImpact(impact * impactFraction);
+        for (Map.Entry<AbstractConnector, Float> entry : distribution.entrySet()) {
+            float share = impact * (entry.getValue() / totalImpactWeight);
+            entry.setValue(share);
+            entry.getKey().accumulateImpact(share);
         }
+        return distribution;
     }
 
     /**
