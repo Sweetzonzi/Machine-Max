@@ -24,6 +24,8 @@
 //      t_hit 是深度快照给出的第一个表面距离，光晕因此获得逐像素遮挡：墙前的空气没有光晕，
 //      光心在墙后则区间为空。t_hit 必须用 zfwd·L 而不是 zfwd——视空间射线是 t·(q,−1)，
 //      只有 z 分量等于前向深度，真实长度要乘 |(q,−1)| = L。
+//      **光晕不接受光源级遮挡判定**（LightOcclusion）：那是在光心投影处采一次深度，太粗；
+//      t_hit 已经逐像素给出"这段空气可不可见"，套上光源级门禁会把半露出来的光晕整片抹掉。
 //      光晕加在合成曲线**之后**：它不乘表面颜色、不受曲线压缩。天空的线性值接近 0、q ≈ β，
 //      并进 e 会被曲线吃掉。
 //      半径 Rg 与倍率 k 由 Java 侧按 Rg = GlowScale·sqrt(I_base)·k 算好上传，着色器不做 sqrt；
@@ -36,8 +38,9 @@
 //      两条臂沿屏幕 ±x / ±y：星芒是镜头成像（光圈衍射 + 传感器饱和溢出），随画幅固定，不随世界转。
 //      横向剖面是向臂尖收窄的楔形（根部按屏高取宽），沿臂用 `(1 − u)^1.5`，缓慢衰减、臂尖平滑归零，不依赖窗函数。
 //      收窄方向不能反：亮度沿臂下降本来就会让可见宽度变窄，σ 若再外扩，两者相抵就成了等宽长条。
-//      **它不按像素深度截断**：墙挡住光源时整条消失（光源自身的遮挡判定仍生效），但光源可见时
-//      星芒会压在墙与车体上——这是真实镜头的行为，也是它与第 4 项最本质的差别。
+//      **它不按像素深度截断**：墙挡住光源时整条消失（光源自身的可见性判定仍生效），但光源可见时
+//      星芒会压在墙与车体上——这是真实镜头的行为，也是它与第 4 项最本质的差别。第 4 项的遮挡来自
+//      逐像素的 t_hit，第 5 项只接受光源级的可见性门禁，两者不要互相套用。
 //      星芒与光晕共用 GLOW_MAX 的加法预算，参数完全独立：光晕是米制的阈值半径与 1/D 律，
 //      星芒是固定角度与 1/D² 律。
 //
@@ -267,23 +270,22 @@ void main() {
         }
         if (!haloIn && !glareIn) continue;
 
-        // 光源级遮挡：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
+        // 光源级可见性：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
-        // 自身的模型会把光源剔掉、光照凭空消失，太大则近处遮挡物漏光。
-        // 是否执行本判定由光源表逐盏给出：爆炸火光用“不判定”（它的光心可能不在视野内，
-        // 也可能被起爆自身的粒子与烟尘挡住，用光心深度判定会整盏误杀），曳光用 S2。
-        // 它同时是星芒的门禁：光源自身都不在画面上时没有星芒。
-        if (LightOcclusion[i] > 0.5 && zc > NEAR_Z) {
-            if (all(greaterThanEqual(lightPx, vec2(0.0))) &&
-                all(lessThan(lightPx, OutSize))) {                  // 越界按可见处理
-                float tol   = max(LightTol[i], zc * OcclusionTolRel);
-                float zHere = DepthB / (texture(MCDepthSampler, lightPx / OutSize).r + DepthA);
-                if (zHere < zc - tol) continue;                     // 光源在几何体之后
-            }
+        // 自身的模型会把光源剔掉、光照与星芒凭空消失，太大则近处遮挡物漏光。
+        // **它只门禁表面项与星芒，不门禁光晕**：光晕自己有逐像素的 t_hit 截断，比这一次采样精确，
+        // 套上这个门禁会把"光源被挡住、光晕球露出一半"的情形整片抹掉。
+        bool sourceVisible = true;
+        if (LightOcclusion[i] > 0.5 && zc > NEAR_Z
+                && all(greaterThanEqual(lightPx, vec2(0.0)))
+                && all(lessThan(lightPx, OutSize))) {               // 越界按可见处理
+            float tol   = max(LightTol[i], zc * OcclusionTolRel);
+            float zHere = DepthB / (texture(MCDepthSampler, lightPx / OutSize).r + DepthA);
+            sourceVisible = zHere >= zc - tol;
         }
 
         // 表面项：只在本像素有表面、且表面点落在照明半径内时贡献
-        if (haloIn && hasSurface) {
+        if (sourceVisible && haloIn && hasSurface) {
             float d = length(P - C);
             if (d < R) {
                 // 有限支撑窗：必须在 d = R 处严格归零且一阶导为零，否则包围剔除会在阈值处留下硬边。
@@ -330,9 +332,9 @@ void main() {
             }
         }
 
-        // 星芒项：屏幕空间的固定角度十字。不查深度、不被前景截断（镜头内的成像，不是空气里的散射），
-        // 只在光源自身可见（上面的光源级遮挡）时出现。
-        if (glareIn) {
+        // 星芒项：屏幕空间的固定角度十字。不按本像素深度截断——星芒是镜头内的成像，不是空气里的
+        // 散射，压在墙与车体上是预期行为；但它要求**光源自身在画面上可见**，光源被几何体挡住时整条消失。
+        if (sourceVisible && glareIn) {
             float ux = abs(dp.x) / thPx;
             float uy = abs(dp.y) / thPx;
             float ax = max(1.0 - ux, 0.0);

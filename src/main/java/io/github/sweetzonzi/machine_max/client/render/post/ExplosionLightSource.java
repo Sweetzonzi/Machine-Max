@@ -19,9 +19,11 @@ import java.util.List;
  * 提交的最终强度 = 内容强度 × 时间包络 × 类别倍率（本类乘） × 全局倍率（光源表统一乘一次），
  * 每项各乘一次。半径负责剔除范围与窗宽，不参与亮度。</p>
  *
- * <p><b>遮挡策略取 {@code NONE}</b>（设计文档 §8.5）：起爆点可能不在视野内、也可能被自己掀起的
- * 粒子与烟尘挡住，用“光心屏幕深度”判定会整盏误杀；这一阶段的代价是可能穿墙照亮。距离、近裁面与
- * 视锥三条几何剔除仍由光源表按影响球执行，本类不重复。</p>
+ * <p><b>遮挡策略取 {@code SOURCE_DEPTH}</b>：光心在爆点，容差取得较大（{@link #OCCLUSION_TOLERANCE_M}），
+ * 因为起爆点常常贴着地面、贴着墙角，而火球与烟尘本身就在光心附近。墙或车体明显挡在光心前面时，
+ * 表面光照与星芒整盏跳过——这时它照亮的是看不到的那一侧。**光晕不受这条判定影响**，它按着色器的
+ * 逐像素 {@code t_hit} 截断，爆心被挡住而光晕球露出一半时只画露出来的那一半。距离、近裁面与视锥
+ * 三条几何剔除仍由光源表按影响球执行，本类不重复。</p>
  *
  * <p>设计文档：{@code docs/plan/进行中/渲染-屏幕空间光照通用化设计.md} §8.2、§8.3；
  * 算子与强度语义：{@code docs/plan/进行中/渲染-屏幕空间光照物理化设计.md} §3、§4.1。</p>
@@ -35,6 +37,15 @@ public class ExplosionLightSource implements ScreenSpaceLightSource {
      * 不至于缩成一个点；真正的“爆心很亮”来自内容强度，不是来自把 {@code d_min} 调小。</p>
      */
     private static final float MIN_DISTANCE_M = 0.75f;
+
+    /**
+     * 光源级遮挡判定的绝对容差（m）。
+     *
+     * <p>起爆点常常贴地、贴墙，火球与烟尘也在光心附近；容差太小会把"爆心正好落在自己的火球里"
+     * 或"爆心贴着地面"判成被遮挡、整盏消失。墙或车体挡在光心前面时深度差是米级以上，不会被放过。
+     * 相对分量由链统一乘（{@code OcclusionTolRel}）。</p>
+     */
+    private static final float OCCLUSION_TOLERANCE_M = 1.0f;
 
     private static final ResourceLocation SOURCE_ID =
             ResourceLocation.parse("machine_max:explosion_light");
@@ -94,7 +105,7 @@ public class ExplosionLightSource implements ScreenSpaceLightSource {
             BlastProjectionUtil.toViewSpace(frame.modelViewMatrix(), frame.cameraPos(), entry.origin(), viewPos);
             colorScratch.set(lightParams.red(), lightParams.green(), lightParams.blue());
             light.setPoint(viewPos, lightParams.radius(), colorScratch, intensity,
-                    ScreenSpaceLight.OcclusionMode.NONE, 0f, 0f);
+                    ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH, OCCLUSION_TOLERANCE_M, 0f);
             light.setMinDistance(MIN_DISTANCE_M);
             // 光晕半径用内容强度（不含包络）派生：闪光在收尾时变暗，尺寸不该跟着缩小
             light.setGlow(lightParams.intensity(), lightParams.glow());

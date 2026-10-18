@@ -16,10 +16,11 @@ import java.util.List;
  * {@code 1 - u²(3 - 2u)} 刻意不同：枪口焰是"炸一下就散"，爆光是"先亮住再收"；
  * 两者都只靠一个可配的 {@code duration_ticks} 表达时长。</p>
  *
- * <p><b>遮挡策略取 {@code NONE}</b>：光心就在枪口，紧贴射手自己的炮管与车体，而且往往正对着
- * 枪口方向看——S2（在光心屏幕投影处采一次深度）会在相机位于炮管后方时把整盏光判死，可实际上
- * 这一发应该照亮炮管侧面、车体前部与地面。代价与爆炸火光相同：可能照亮被遮挡的表面，
- * 属于本阶段的已知近似。</p>
+ * <p><b>遮挡策略取 {@code SOURCE_DEPTH}</b>：光心就在枪口，紧贴射手自己的炮管与车体，所以容差取得比
+ * 曳光大（{@link #OCCLUSION_TOLERANCE_M}）——炮管侧面与炮口制退器会比枪口本身近几十厘米，容差太小
+ * 会在自己开火时把这一发判死。车体或墙挡在光心前面时，表面光照与星芒整盏跳过：这时它照亮的是看不到
+ * 的那一侧，留着就是"隔着自己的车体发光"。**光晕不受这条判定影响**，它按着色器的逐像素 {@code t_hit}
+ * 截断，光源被挡住但光晕球露出一半时仍然只画露出来的那一半。</p>
  *
  * <p>本来源不做额外剔除：它没有"光心在相机背后/投影半径过小"这类特有门禁（枪口焰永远落在
  * 枪口，投影半径过小的情形交给光源表的公共影响体剔除）。</p>
@@ -38,6 +39,15 @@ public class MuzzleFlashLightSource implements ScreenSpaceLightSource {
 
     private static final ResourceLocation SOURCE_ID =
             ResourceLocation.parse("machine_max:muzzle_flash");
+
+    /**
+     * 光源级遮挡判定的绝对容差（m）。
+     *
+     * <p>判据是"光心投影处的场景深度 < 光心深度 − 容差 → 光源自身不可见"。枪口贴着自己的炮管与
+     * 炮口制退器，沿视线看过去它们比枪口近几十厘米是常态，容差因此取得比曳光大；车体或墙挡在
+     * 光心前面时深度差是米级，不会被这条容差放过。相对分量由链统一乘（{@code OcclusionTolRel}）。</p>
+     */
+    private static final float OCCLUSION_TOLERANCE_M = 0.75f;
 
     /** 本帧待提交的光源载体与颜色 scratch，采集路径不产生与光源数成正比的分配 */
     private final ScreenSpaceLight light = new ScreenSpaceLight();
@@ -94,7 +104,7 @@ public class MuzzleFlashLightSource implements ScreenSpaceLightSource {
             BlastProjectionUtil.toViewSpace(frame.modelViewMatrix(), frame.cameraPos(), entry.origin(), viewPos);
             colorScratch.set(params.red(), params.green(), params.blue());
             light.setPoint(viewPos, params.radius(), colorScratch, intensity,
-                    ScreenSpaceLight.OcclusionMode.NONE, 0f, 0f);
+                    ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH, OCCLUSION_TOLERANCE_M, 0f);
             // 光晕半径用内容强度（不含包络）派生：包络每帧都在缩小，拿它算半径会让光晕往回缩
             light.setGlow(params.intensity(), params.glow());
             light.setGlare(params.glare());
