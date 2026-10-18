@@ -34,7 +34,8 @@
 //      臂长必须长过光晕的可见半径（信号弹 30 m 处光晕约 23°），否则星芒会缩在光晕的饱和核心里、
 //      只把中心撑成一个方块。
 //      两条臂沿屏幕 ±x / ±y：星芒是镜头成像（光圈衍射 + 传感器饱和溢出），随画幅固定，不随世界转。
-//      横向剖面是标准差随臂长外扩的楔形；沿臂用 `(1 − u)^1.5`，缓慢衰减、臂尖平滑归零，不依赖窗函数。
+//      横向剖面是向臂尖收窄的楔形（根部按屏高取宽），沿臂用 `(1 − u)^1.5`，缓慢衰减、臂尖平滑归零，不依赖窗函数。
+//      收窄方向不能反：亮度沿臂下降本来就会让可见宽度变窄，σ 若再外扩，两者相抵就成了等宽长条。
 //      **它不按像素深度截断**：墙挡住光源时整条消失（光源自身的遮挡判定仍生效），但光源可见时
 //      星芒会压在墙与车体上——这是真实镜头的行为，也是它与第 4 项最本质的差别。
 //      星芒与光晕共用 GLOW_MAX 的加法预算，参数完全独立：光晕是米制的阈值半径与 1/D 律，
@@ -95,8 +96,8 @@ const float GLARE_HALF = 0.6;       // 星芒饱和曲线的半值照度：表�
 const float GLARE_MIN_DEG = 2.0;    // 星芒最短臂长（度）：很远的闪光只剩一个点
 const float GLARE_MAX_DEG = 22.0;   // 星芒最长臂长（度）：必须长过光晕的可见半径（信号弹 30 m 约 23°）
 const float GLARE_GAIN = 2.0;       // 臂根亮度（曲线之后的线性值）：2.0 即压到接近纯白
-const float GLARE_SIGMA_REL = 0.001667; // 臂的横向标准差 = 屏高 × 它（屏高 1080 时 1.8 px）：按屏高取，改分辨率不改观感
-const float GLARE_WEDGE = 1.5;      // 楔形系数：臂尖处横向标准差 = (1 + WEDGE)·基准
+const float GLARE_SIGMA_REL = 0.0022;   // 臂根部的横向标准差 = 屏高 × 它（屏高 1080 时 2.4 px）：按屏高取，改分辨率不改观感
+const float GLARE_TAPER = 0.55;     // 收窄系数：臂尖处横向标准差 = (1 − TAPER)·根部，臂因此根粗尖细
 const float GLARE_MAX_FRACTION = 0.45; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
 const float DEG_TO_RAD = 0.01745329252; // 度 → 弧度
 
@@ -338,9 +339,9 @@ void main() {
             float ay = max(1.0 - uy, 0.0);
             ax *= sqrt(ax);                                        // (1−u)^1.5：沿臂缓慢衰减、臂尖平滑归零
             ay *= sqrt(ay);
-            float sigma = max(1.6, OutSize.y * GLARE_SIGMA_REL);   // 按屏高取宽度，换分辨率不改观感
-            float sx = sigma * (1.0 + GLARE_WEDGE * ux);           // 横臂的横向标准差随臂长外扩
-            float sy = sigma * (1.0 + GLARE_WEDGE * uy);
+            float sigma = max(1.2, OutSize.y * GLARE_SIGMA_REL);   // 根部宽度，按屏高取
+            float sx = sigma * (1.0 - GLARE_TAPER * ux);           // 向臂尖收窄：根粗尖细，不是等宽长条
+            float sy = sigma * (1.0 - GLARE_TAPER * uy);
             float armX = ax * exp(-(dp.y * dp.y) / (sx * sx));     // 沿 x 衰减、横跨 y 收窄
             float armY = ay * exp(-(dp.x * dp.x) / (sy * sy));
             // max 而不是 sum：两条臂在光心相交，相加会把那里叠成一块方块
