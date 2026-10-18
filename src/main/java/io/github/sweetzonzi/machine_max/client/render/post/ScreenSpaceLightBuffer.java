@@ -31,9 +31,16 @@ import java.util.Map;
  *
  * <p><b>提交到 GPU 的数值口径在这里统一一次</b>：颜色在写入槽位时由 sRGB 编码转成线性辐射度
  * （内容包里的 {@code [0,255]} 颜色按显示值理解；直接当线性系数用会让暖色偏冷），强度在写入时
- * 乘上全局倍率。片元的算子只有一条：逐光源 {@code color · I · o · w(d) / max(d², d_min²)} 求和
- * （{@code o} 是朝向响应，权重取全局 {@code NormalWeight}），再用合成曲线映射回显示值
- * （设计文档 §3.2、§3.3、§3.5、§4.1）。</p>
+ * 乘上全局倍率，光晕的阈值半径在写入时按 {@code Rg = GLOW_SCALE_M · sqrt(I_base) · k} 算好
+ * （着色器不做 {@code sqrt}）。片元的算子有两条：表面项逐光源
+ * {@code color · I · o · w(d) / max(d², d_min²)} 求和后经合成曲线映射回显示值
+ * （{@code o} 是朝向响应，权重取全局 {@code NormalWeight}）；空气散射光晕
+ * {@code Scatter · k · color · I · ∫1/r² dt · w(b/Rg)} 求和后加在曲线之后
+ * （设计文档 §3.2、§3.3、§3.5、§3.6、§4.1）。</p>
+ *
+ * <p><b>影响球取 {@code max(R, Rg)}</b>：光晕球可能比照明球大（内容把 {@code k} 写得较大、或
+ * {@code I} 与 {@code R} 不成标定比例时），按照明半径剔除会把光晕一起丢掉。当前标定下
+ * {@code Rg/R ≤ 0.52}，这条恒取 {@code R}，它防的是内容。</p>
  *
  * <p>渲染线程独占：本类不持有锁，也不接受物理线程写入提交记录。</p>
  */
@@ -71,6 +78,8 @@ public final class ScreenSpaceLightBuffer {
     private final float[] occlusion;
     /** 每槽 1 个：{@code 1/d²} 的奇点截断距离（m），逐来源取值 */
     private final float[] minDistance;
+    /** 每槽 2 个：光晕的阈值半径（m）、逐来源倍率 {@code k}；半径按基础强度派生，倍率由内容给出 */
+    private final float[] glow;
     /** 槽内条目的投影半径（px），只用于排序与“超限时置换最弱一个” */
     private final float[] sortRadiusPx;
     /** 槽内条目的来源优先级，只用于容量比较 */
@@ -108,6 +117,7 @@ public final class ScreenSpaceLightBuffer {
         this.sourceDepthTolerance = new float[capacity];
         this.occlusion = new float[capacity];
         this.minDistance = new float[capacity];
+        this.glow = new float[capacity * 2];
         this.sortRadiusPx = new float[capacity];
         this.slotPriority = new int[capacity];
         this.slotSourceId = new ResourceLocation[capacity];
@@ -221,6 +231,11 @@ public final class ScreenSpaceLightBuffer {
         return minDistance;
     }
 
+    /** @return 扁平数组 {@code [capacity * 2]}：每槽 {@code (Rg, k)}——光晕阈值半径（m）与逐来源倍率 */
+    public float[] glow() {
+        return glow;
+    }
+
     /**
      * 清空诊断状态：关闭效果、0 候选与退出世界时调用，避免上一帧的触顶状态漏进下一段会话。
      */
@@ -248,16 +263,19 @@ public final class ScreenSpaceLightBuffer {
         float tolerance = light.sourceDepthTolerance();
         float normalWeight = light.normalWeight();
         float minDistance = light.minDistance();
+        float baseIntensity = light.baseIntensity();
+        float glowMultiplier = light.glowMultiplier();
         if (!finite(position) || !finite(color)
                 || !Float.isFinite(radius) || !Float.isFinite(intensity)
                 || !Float.isFinite(tolerance) || !Float.isFinite(normalWeight)
-                || !Float.isFinite(minDistance)) {
+                || !Float.isFinite(minDistance)
+                || !Float.isFinite(baseIntensity) || !Float.isFinite(glowMultiplier)) {
             stats.invalid++;
             return SubmitResult.INVALID;
         }
         if (radius < 0f || intensity < 0f || tolerance < 0f
                 || normalWeight < 0f || normalWeight > 1f
-                || minDistance < 0f
+                || minDistance < 0f || baseIntensity < 0f || glowMultiplier < 0f
                 || !normalized(color)) {
             stats.invalid++;
             return SubmitResult.INVALID;
@@ -271,17 +289,21 @@ public final class ScreenSpaceLightBuffer {
             stats.unsupported++;
             return SubmitResult.UNSUPPORTED;
         }
-        if (radius == 0f || intensity == 0f) {
+        // 影响球：照明球与光晕球取较大者。光晕倍率过大时 Rg 会超过 R，按照明半径剔除会把
+        // 整圈光晕丢掉；倍率上限由内容侧钳制，这里只兜半径上限。
+        float glowRadius = glowRadius(baseIntensity, glowMultiplier);
+        float influenceRadius = Math.max(radius, glowRadius);
+        if (influenceRadius == 0f || intensity == 0f) {
             stats.culled++;
             return SubmitResult.CULLED;
         }
-        if (isOutsideInfluenceVolume(position, radius)) {
+        if (isOutsideInfluenceVolume(position, influenceRadius)) {
             stats.culled++;
             return SubmitResult.CULLED;
         }
 
         stats.candidates++;
-        float sortPx = sortRadiusPx(position, radius);
+        float sortPx = sortRadiusPx(position, influenceRadius);
         if (count < capacity) {
             write(count, light, sortPx);
             count++;
@@ -316,6 +338,9 @@ public final class ScreenSpaceLightBuffer {
         sourceDepthTolerance[slot] = light.sourceDepthTolerance();
         occlusion[slot] = encodeOcclusion(light.occlusionMode());
         minDistance[slot] = light.minDistance();
+        int glowBase = slot * 2;
+        glow[glowBase] = glowRadius(light.baseIntensity(), light.glowMultiplier());
+        glow[glowBase + 1] = light.glowMultiplier();
         sortRadiusPx[slot] = sortPx;
         slotPriority[slot] = light.priority();
         slotSourceId[slot] = light.sourceId();
@@ -373,6 +398,22 @@ public final class ScreenSpaceLightBuffer {
         float norm = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
         float center = nx * position.x + ny * position.y + nz * position.z;
         return center < -radius * norm;
+    }
+
+    /**
+     * 光晕阈值半径：{@code Rg = min(GLOW_SCALE_M · sqrt(I_base) · k, MAX_GLOW_RADIUS_M)}。
+     *
+     * <p>用基础强度而不是当前强度：包络会让半径随闪烁抖动。倍率 {@code k} 线性缩放半径（与亮度同步），
+     * {@code k = 0} 得到 0，该光源没有光晕。着色器只做积分与 {@code atan}，不做 {@code sqrt}。</p>
+     *
+     * @param baseIntensity  内容强度，不含时间包络
+     * @param glowMultiplier 逐来源倍率
+     * @return 阈值半径（m）；基础强度或倍率为 0 时为 0
+     */
+    private static float glowRadius(float baseIntensity, float glowMultiplier) {
+        if (baseIntensity <= 0f || glowMultiplier <= 0f) return 0f;
+        return Math.min(ScreenSpaceLight.GLOW_SCALE_M * (float) Math.sqrt(baseIntensity) * glowMultiplier,
+                ScreenSpaceLight.MAX_GLOW_RADIUS_M);
     }
 
     /**

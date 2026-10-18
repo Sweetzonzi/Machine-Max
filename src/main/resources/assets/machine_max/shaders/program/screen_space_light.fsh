@@ -2,7 +2,8 @@
 
 // Machine-Max: 屏幕空间光照后处理 - 片段着色器
 //
-// 每像素遍历光源数组：重建本像素的视空间表面点，按世界空间距离求辐照度，求和后**一次**映射回显示值。
+// 每像素遍历光源数组：重建本像素的视空间表面点，按世界空间距离求辐照度，求和后**一次**映射回显示值；
+// 再叠加沿视线积分出的空气散射光晕。两项都是线性量，各自钳制后相加。
 //
 // 算子（设计文档 docs/plan/进行中/渲染-屏幕空间光照物理化设计.md §3）：
 //   1. 逐光源  E_i = c_i · I_i · o_i · w(d) / max(d², d_min²)
@@ -14,27 +15,41 @@
 //      = 0 时 o_i 恒为 1（不乘法线项），中间值让掠射面保留 (1 − NormalWeight) 的底、背光面仍为 0。
 //   2. 求和得到逐通道响应 e = Σ E_i：先求和再合成，因此结果与光源遍历顺序无关。
 //   3. C_out = 1 − (1 − C)/(1 + e·q)，q = C + β(1 − C)：输出恒在 [0,1]，渐近饱和、不硬截断。
+//   4. 光晕：glow_i = Scatter · k_i · c_i · I_i · I0_i · win(b/Rg_i)，逐通道钳到 GLOW_MAX 后与
+//      C_out 线性相加。I0 是视线穿过阈值半径 Rg 的球时 ∫1/r² dt 的解析解（§3.6）：
+//        b  = 相机视线到光心的垂距（被该光源的 d_min 截断，视线正穿光心时才有界）
+//        h  = sqrt(Rg² − b²)                     弦半长
+//        t0 = max(0, tc − h)，t1 = min(tc + h, t_hit)
+//        I0 = [atan((t1 − tc)/b) − atan((t0 − tc)/b)] / b
+//      t_hit 是深度快照给出的第一个表面距离，光晕因此获得逐像素遮挡：墙前的空气没有光晕，
+//      光心在墙后则区间为空。t_hit 必须用 zfwd·L 而不是 zfwd——视空间射线是 t·(q,−1)，
+//      只有 z 分量等于前向深度，真实长度要乘 |(q,−1)| = L。
+//      光晕加在合成曲线**之后**：它不乘表面颜色、不受曲线压缩。天空的线性值接近 0、q ≈ β，
+//      并进 e 会被曲线吃掉。
+//      半径 Rg 与倍率 k 由 Java 侧按 Rg = GlowScale·sqrt(I_base)·k 算好上传，着色器不做 sqrt；
+//      I_base 是内容强度（不含时间包络），因此尺寸在闪烁期间稳定，变的是亮度。
 //
-// 未受光像素逐位不变：e 全零时直接返回 src，连解码/编码的浮点往返都不参与；某个通道 e 为零时
-// 该通道同样保持原值，因此纯蓝光不会抬红绿通道。
+// 受光修正的旁路：e 与 glow 全零时直接返回 src，连解码/编码的浮点往返都不参与；某个通道两者
+// 之和为零时该通道同样保持原值，因此纯蓝光不会抬红绿通道。天空像素只在光晕也为零时逐位不变。
 //
 // 法线由邻域深度重建（S4）：每像素在横竖两条轴上各取一个相邻像素，每条轴只用与中心深度更近的
 // 那一侧作切向，因此轮廓处不会把跨物体的深度跳变当成平面斜率。任一轴取不到可信邻居（天空、
 // 近裁面、退化三角形）时该像素回落为 o = 1——宁可少乘法线项，也不让物体轮廓变黑。
 // 法线方向统一朝相机：叉积的符号随切向取侧而变，靠 dot(N, -P) 校正。
 //
+// 天空没有表面，但没有表面不等于没有画面：天空是光晕的主要背景，因此天空像素照常进入光照循环，
+// 只是表面项恒为零。爆炸波前折射把背景视为"永不遮挡"（zScene = 1e9），与这里的方向相反，
+// 两侧不要互相照抄。
+//
 // 本文件是通用光照链的当前编码：光源表里的条目按球光（POINT）打包，遮挡策略由 LightOcclusion
 // 逐盏选择 NONE 或 SOURCE_DEPTH（S2）。锥光（SPOT）与 S3（SCREEN_RAY）在光源表提交处被报告为
 // 不支持，不会走到这里——它们的字段与分支在 P5 增加。
 //
 // 两条包围剔除缺一不可：
-//   perp2 > R*R  视线到光心的垂距超过 R —— 必要，视线完全不穿过球时球内任何点都不在此视线上
-//   d >= R       表面点到光心的距离超过 R —— 充分，真正决定贡献是否为零
+//   perp2 > Rc²  视线到光心的垂距超过 Rc —— 必要，视线完全不穿过球时球内任何点都不在此视线上
+//   d >= R       表面点到光心的距离超过 R —— 充分，真正决定表面项是否为零
 // 只留前者会漏（视线穿过球但表面点远在球外），只留后者则失去提前退出的收益。
-//
-// 天空必须排除（深度取到端点值就直接返回）：背景没有表面，被照亮就会把整片天空染色。
-// 注意这条与爆炸波前折射的语义**方向相反**——折射把背景视为"永不遮挡"（zScene = 1e9），
-// 因为没有几何体就不该发生折射。两侧不要互相照抄。
+// Rc = max(R, Rg)：光晕球可能比照明球大，垂距剔除处不能把光晕一起丢掉。
 //
 // 代价上限是常量：循环上界为槽位数 LightCount（≤ 16），与"同屏多少发"无关，
 // 多发只是让每像素的循环变长，不会造成帧率随发数崩塌。
@@ -52,6 +67,7 @@ uniform float LightColor[64];       // 每槽 4 个：线性颜色 rgb、强度�
 uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分量(m)，由来源折算
 uniform float LightOcclusion[16];   // 每槽 1 个：遮挡策略，0 = 不做遮挡判定，1 = 在光心投影处采一次深度（S2）
 uniform float LightMinDist[16];     // 每槽 1 个：1/d² 的奇点截断 d_min(m)，逐来源取值
+uniform float LightGlow[32];        // 每槽 2 个：光晕阈值半径 Rg(m)、倍率 k；k = 0 关闭该光源的光晕
 uniform float NormalWeight;         // S4 朝向响应权重：0 = 不乘法线项，1 = 完整 Lambert 项；0.5 即 wrap（0.5 + 0.5·cos）
 
 in  vec2 texCoord;
@@ -61,6 +77,8 @@ const float NEAR_Z     = 0.05;      // 原版近平面（m）：用于剔除相�
 const float DARK_BOOST = 0.03;      // β：暗部补偿常数，越大越容易把黑色材质抬灰
 const float E_MAX      = 1024.0;    // 单光源辐照度上限：兜住异常内容，避免 inf/NaN 进入求和
 const float D_MIN_FLOOR = 0.001;    // d_min 的下限（m）：d_min 配 0 且表面点正好落在光心时不留 0/0
+const float SCATTER    = 2.1e-4;    // 光晕整体强度：信号弹 30 m 处中心接近饱和的标定起点（§4.3）
+const float GLOW_MAX   = 4.0;       // 光晕逐通道上限：兜异常内容与贴脸光源
 
 // sRGB 编码的显示值 → 线性辐射度（分段函数，与光源表提交侧的换算同源）
 vec3 srgbToLinear(vec3 c) {
@@ -155,37 +173,49 @@ void main() {
     float L   = sqrt(1.0 + dot(q, q));
     vec3  dir = vec3(q, -1.0) / L;
 
-    // 深度快照 → 前向深度（m）
-    float zBuf = texture(MCDepthSampler, texCoord).r;
-    // 天空/远平面：不照亮。两个端点都判，因此不假设深度方向——标准约定下远平面是 1.0，
+    // 本像素有没有表面。深度取到端点（天空/远平面）或在近裁面之内时没有表面：
+    // 表面项与法线整段跳过，但光晕照算——天空是光晕的主要背景。
+    // 两个端点都判，因此不假设深度方向——标准约定下远平面是 1.0，
     // 反向深度（reversed-Z）约定下是 0.0；两种约定下可见几何都取不到这两个值
     // （标准约定里 0.0 只出现在近平面上，而那里的几何已被裁剪掉）。
-    if (zBuf >= 1.0 || zBuf <= 0.0) { fragColor = vec4(src.rgb, 1.0); return; }
-    float zfwd = DepthB / (zBuf + DepthA);
-    if (zfwd <= NEAR_Z) { fragColor = vec4(src.rgb, 1.0); return; }
+    float zBuf = texture(MCDepthSampler, texCoord).r;
+    bool  hasSurface = !(zBuf >= 1.0 || zBuf <= 0.0);
+    float zfwd = 0.0;
+    vec3  P    = vec3(0.0);
+    float tHit = 1.0e30;                     // 视线上第一个表面的距离；没有表面即无穷远
+    if (hasSurface) {
+        zfwd = DepthB / (zBuf + DepthA);
+        hasSurface = zfwd > NEAR_Z;
+    }
+    if (hasSurface) {
+        P    = vec3(q, -1.0) * zfwd;
+        tHit = zfwd * L;                     // 射线参数 t 对应真实距离 t·L，不是 t
+    }
 
-    // 本像素的视空间表面点：沿射线 t·vec3(q, -1)，前向深度恰为 t
-    vec3 P = vec3(q, -1.0) * zfwd;
-
-    // S4 朝向响应：从邻域深度重建本像素的表面法线。NormalWeight = 0 时整段跳过，
-    // 不发生任何额外深度采样，算子与不乘法线项时逐位一致。
+    // S4 朝向响应：从邻域深度重建本像素的表面法线。没有表面、或 NormalWeight = 0 时整段跳过，
+    // 前者没有可信平面，后者不发生任何额外深度采样、算子与不乘法线项时逐位一致。
     float nw   = clamp(NormalWeight, 0.0, 1.0);
     vec3  N    = vec3(0.0, 0.0, 1.0);
     bool  hasN = false;
-    if (nw > 0.0) hasN = viewNormal(texCoord, zfwd, N);   // 写成 if 而不是 &&，采样与否不受求值顺序影响
+    if (hasSurface && nw > 0.0) hasN = viewNormal(texCoord, zfwd, N);   // 写成 if 而不是 &&，采样与否不受求值顺序影响
 
-    // 逐通道的光照响应 e（辐照度之和）；e = 0 的通道在编码后保持原值
-    vec3 e = vec3(0.0);
+    // 逐通道响应：e 是表面辐照度之和，glow 是空气散射（线性，不进合成曲线）
+    vec3 e    = vec3(0.0);
+    vec3 glow = vec3(0.0);
+
     for (int i = 0; i < int(LightCount); i++) {
-        vec3  C = vec3(LightView[i * 4], LightView[i * 4 + 1], LightView[i * 4 + 2]);
-        float R = LightView[i * 4 + 3];
+        vec3  C  = vec3(LightView[i * 4], LightView[i * 4 + 1], LightView[i * 4 + 2]);
+        float R  = LightView[i * 4 + 3];
+        float Rg = LightGlow[i * 2];
+        float gk = LightGlow[i * 2 + 1];
         if (R <= 0.0) continue;
 
-        // 必要性：视线到光心的垂距超过 R，球内任何点都不在此视线上。
-        // 用垂距而不是"屏幕圆"，屏幕角落处同样正确。
+        // 必要性：视线到光心的垂距超过影响半径，球内任何点都不在此视线上。
+        // 用垂距而不是"屏幕圆"，屏幕角落处同样正确。光晕球可能比照明球大，取两者较大者。
         float tc    = dot(C, dir);
         float perp2 = max(dot(C, C) - tc * tc, 0.0);
-        if (perp2 > R * R) continue;
+        float Rc    = max(R, gk > 0.0 ? Rg : 0.0);
+        if (perp2 > Rc * Rc) continue;
 
         // 光源级遮挡：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
@@ -204,48 +234,71 @@ void main() {
             }
         }
 
-        // 充分性：真正决定贡献是否为零的量
-        float d = length(P - C);
-        if (d >= R) continue;
+        vec3  radiance  = vec3(LightColor[i * 4], LightColor[i * 4 + 1], LightColor[i * 4 + 2]);
+        float intensity = LightColor[i * 4 + 3];
 
-        // 有限支撑窗：必须在 d = R 处严格归零且一阶导为零，否则包围剔除会在阈值处留下硬边。
-        // (1 − (d/R)⁴)² 的中心接近 1、边缘 C¹，把 1/d² 的长尾平滑截断。
-        float x   = d / R;
-        float x2  = x * x;
-        float win = 1.0 - x2 * x2;
-        win *= win;
+        // 表面项：只在本像素有表面、且表面点落在照明半径内时贡献
+        if (hasSurface) {
+            float d = length(P - C);
+            if (d < R) {
+                // 有限支撑窗：必须在 d = R 处严格归零且一阶导为零，否则包围剔除会在阈值处留下硬边。
+                // (1 − (d/R)⁴)² 的中心接近 1、边缘 C¹，把 1/d² 的长尾平滑截断。
+                float x   = d / R;
+                float x2  = x * x;
+                float win = 1.0 - x2 * x2;
+                win *= win;
 
-        // 1/d² 在 d → 0 时发散：用逐来源的 d_min 截断，光源贴到表面上也不会出现无穷大
-        float dmin  = max(LightMinDist[i], D_MIN_FLOOR);
-        float dEff2 = max(d * d, dmin * dmin);
+                // 1/d² 在 d → 0 时发散：用逐来源的 d_min 截断，光源贴到表面上也不会出现无穷大
+                float dmin  = max(LightMinDist[i], D_MIN_FLOOR);
+                float dEff2 = max(d * d, dmin * dmin);
 
-        // 朝向响应（S4）：背向光源的表面 cos ≤ 0（连同墙后漏光一并消失），斜射按 Lambert 折减。
-        // 权重 nw 把结果在"不乘法线项"与"完整 Lambert"之间插值：(1 − nw) + nw·cos，再钳到 0。
-        // 钳零放在插值之后：nw < 1 时掠射面拿到 (1 − nw) 的底，但真正背光的面仍然为 0，
-        // 不会因为权重而凭空照亮墙的背面。法线不可信时 orient 保持 1，只损失朝向信息。
-        float orient = 1.0;
-        if (hasN && d > 1.0e-4) {
-            orient = max(mix(1.0, dot(N, (C - P) / d), nw), 0.0);
+                // 朝向响应（S4）：背向光源的表面 cos ≤ 0（连同墙后漏光一并消失），斜射按 Lambert 折减。
+                // 权重 nw 把结果在"不乘法线项"与"完整 Lambert"之间插值：(1 − nw) + nw·cos，再钳到 0。
+                // 钳零放在插值之后：nw < 1 时掠射面拿到 (1 − nw) 的底，但真正背光的面仍然为 0，
+                // 不会因为权重而凭空照亮墙的背面。法线不可信时 orient 保持 1，只损失朝向信息。
+                float orient = 1.0;
+                if (hasN && d > 1.0e-4) {
+                    orient = max(mix(1.0, dot(N, (C - P) / d), nw), 0.0);
+                }
+
+                // 逐光源钳制：曲线本身有界，但内容里的强度没有上界，先兜住异常输入
+                e += min(radiance * (intensity * win * orient / dEff2), vec3(E_MAX));
+            }
         }
 
-        float falloff = win * orient / dEff2;
-
-        // 逐光源钳制：曲线本身有界，但内容里的强度没有上界，先兜住异常输入
-        vec3 radiance = vec3(LightColor[i * 4], LightColor[i * 4 + 1], LightColor[i * 4 + 2]);
-        e += min(radiance * (LightColor[i * 4 + 3] * falloff), vec3(E_MAX));
+        // 光晕项：沿视线对 1/r² 定积分。有无表面都要算——夜空里的光晕主要画在天空上。
+        // 两条前置判断：b ≥ Rg 时弦长为虚数；t1 ≤ t0 时可见空气段为空。
+        if (gk > 0.0 && Rg > 0.0) {
+            float b = max(sqrt(perp2), max(LightMinDist[i], D_MIN_FLOOR));   // 视线正穿光心时靠 d_min 有界
+            if (b < Rg) {
+                float h  = sqrt(Rg * Rg - b * b);
+                float t0 = max(0.0, tc - h);
+                float t1 = min(tc + h, tHit);
+                if (t1 > t0) {
+                    float i0 = (atan((t1 - tc) / b) - atan((t0 - tc) / b)) / b;
+                    float x  = b / Rg;
+                    float x2 = x * x;
+                    float gw = 1.0 - x2 * x2;                            // 与表面项同一条窗，边缘 C¹
+                    gw *= gw;
+                    glow += min(radiance * (SCATTER * gk * intensity * i0 * gw), vec3(GLOW_MAX));
+                }
+            }
+        }
     }
 
-    // 没有任何通道受光：直接返回原画面，逐位不变（不解码、不编码）
-    if (e.r <= 0.0 && e.g <= 0.0 && e.b <= 0.0) { fragColor = vec4(src.rgb, 1.0); return; }
+    // 表面项与光晕都没有贡献：直接返回原画面，逐位不变（不解码、不编码）
+    vec3 added = e + glow;
+    if (all(lessThanEqual(added, vec3(0.0)))) { fragColor = vec4(src.rgb, 1.0); return; }
 
-    // 线性空间里做增量，再编码回显示值
+    // 线性空间里做增量，再编码回显示值；光晕在曲线之后叠加，不乘表面颜色、不受曲线压缩
     vec3 C   = srgbToLinear(src.rgb);
     vec3 qd  = C + DARK_BOOST * (vec3(1.0) - C);
     vec3 lit = vec3(1.0) - (vec3(1.0) - C) / (vec3(1.0) + e * qd);
+    lit += min(glow, vec3(GLOW_MAX));
     vec3 encoded = linearToSrgb(lit);
 
-    // 逐通道旁路：该通道没有光照响应时保持原始编码值，避免解码/编码的浮点往返引入 ±1 的抖动
-    encoded = mix(encoded, src.rgb, lessThanEqual(e, vec3(0.0)));
+    // 逐通道旁路：该通道既没有表面光照也没有光晕时保持原始编码值，避免解码/编码的浮点往返引入 ±1 的抖动
+    encoded = mix(encoded, src.rgb, lessThanEqual(added, vec3(0.0)));
 
     // alpha 必须强制为 1.0：链尾的 blit 会做 alpha 混合，把 alpha 留给画面内容会把天空清成黑色
     fragColor = vec4(encoded, 1.0);

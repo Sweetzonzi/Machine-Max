@@ -19,6 +19,11 @@ import javax.annotation.Nullable;
  * （归一化单位，数值越大只是在同一距离上更亮），全局倍率由光源表统一乘一次，这里放的只是
  * 内容强度与时间包络的乘积。</p>
  *
+ * <p><b>强度有两个口径</b>：{@link #intensity()} 是<b>当前</b>强度（已乘时间包络），供表面光照与
+ * 光晕亮度的求值；{@link #baseIntensity()} 是内容给出的基础强度，不带包络，只用于派生光晕的
+ * 阈值半径。两者分开是因为光晕尺寸不该随闪烁抖动：枪口焰的 {@code (1-u)²} 包络会让半径每帧缩小，
+ * 表现成"光晕在往回缩"。</p>
+ *
  * <p>渲染线程独占；来源 ID 与优先级由光源表在提交时盖上，不由调用方填写。</p>
  */
 public final class ScreenSpaceLight {
@@ -48,6 +53,19 @@ public final class ScreenSpaceLight {
      */
     public static final float DEFAULT_MIN_DISTANCE_M = 0.5f;
 
+    /**
+     * 光晕阈值半径的标定系数（m）：{@code Rg = GLOW_SCALE_M · sqrt(I_base) · k}（设计文档 §3.6）。
+     *
+     * <p>理想模型里散射光晕的阈值半径正比于光源强度；这条链的帧已经过色调映射，用 {@code sqrt}
+     * 压缩后更接近观感。当前标定下 {@code I ∝ R²}，于是 {@code sqrt(I) ∝ R}：同一组锚点与光色下
+     * {@code Rg/R} 恒定（枪口 0.32、爆炸 0.52、曳光 0.18–0.26），换锚点或光色则整体平移。
+     * 这是标定的副作用，不是"光晕半径由照明半径决定"。</p>
+     */
+    public static final float GLOW_SCALE_M = 0.32f;
+
+    /** 光晕阈值半径的上限（m）：兜住异常内容与贴脸光源 */
+    public static final float MAX_GLOW_RADIUS_M = 32f;
+
     /** 提交时由光源表盖上的来源身份，用于逐来源诊断 */
     @Nullable
     private ResourceLocation sourceId;
@@ -61,6 +79,8 @@ public final class ScreenSpaceLight {
     private final Vector3f color = new Vector3f();
     private float intensity;
     private float minDistance = DEFAULT_MIN_DISTANCE_M;
+    private float baseIntensity;
+    private float glowMultiplier = 1f;
 
     private Shape shape = Shape.POINT;
     private final Vector3f directionView = new Vector3f();
@@ -90,6 +110,8 @@ public final class ScreenSpaceLight {
         this.color.set(color);
         this.intensity = intensity;
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
+        this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
+        this.glowMultiplier = 1f;
         this.shape = Shape.POINT;
         this.directionView.set(0f, 0f, -1f);
         this.cosInner = 1f;
@@ -123,6 +145,8 @@ public final class ScreenSpaceLight {
         this.color.set(color);
         this.intensity = intensity;
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
+        this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
+        this.glowMultiplier = 1f;
         this.shape = Shape.SPOT;
         this.directionView.set(directionView);
         this.cosInner = cosInner;
@@ -196,6 +220,34 @@ public final class ScreenSpaceLight {
     /** @return {@code 1/d²} 的奇点截断距离（m） */
     public float minDistance() {
         return minDistance;
+    }
+
+    /**
+     * 写光晕参数：基础强度与逐来源倍率（设计文档 §3.6）。
+     *
+     * <p>可选，且必须在 {@link #setPoint}/{@link #setSpot} 之后调用：两者会把光晕复位成"不发光晕"，
+     * 载体逐盏复用，不复位就会把上一盏灯的倍率带过来。不调用即该光源没有光晕。</p>
+     *
+     * <p>基础强度取<b>内容强度</b>，不含时间包络、不含类别倍率与全局倍率：包络会让半径随闪烁抖动，
+     * 而倍率是观感旋钮——调亮度不该顺带改变光晕的张角。倍率 {@code k} 同时缩放阈值半径与亮度，
+     * {@code 0} 关闭该光源的光晕，取值上限由内容侧的编解码钳制。</p>
+     *
+     * @param baseIntensity  内容给出的强度（1 m 处辐照度，不含包络），{@code >= 0}
+     * @param glowMultiplier 逐来源倍率 {@code k}，{@code >= 0}；{@code 1} 为标定值
+     */
+    public void setGlow(float baseIntensity, float glowMultiplier) {
+        this.baseIntensity = baseIntensity;
+        this.glowMultiplier = glowMultiplier;
+    }
+
+    /** @return 内容给出的基础强度（不含时间包络）；只用于派生光晕阈值半径 */
+    public float baseIntensity() {
+        return baseIntensity;
+    }
+
+    /** @return 逐来源光晕倍率 {@code k}；同时缩放阈值半径与亮度，{@code 0} 表示该光源没有光晕 */
+    public float glowMultiplier() {
+        return glowMultiplier;
     }
 
     /** @return 形状 */

@@ -260,6 +260,8 @@ public abstract class ProjectileType {
      * @param radius        照射半径（m）；{@link #DERIVE_RADIUS} 表示按口径折算，显式值取 {@code (0, 64]}
      * @param color         颜色，三个 {@code [0,255]} 整数
      * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
+     * @param glow          空气散射光晕的倍率（{@code [0,4]}）：同时缩放光晕的阈值半径与亮度，
+     *                      {@code 0} 表示该弹种开火只有表面光照、没有光晕
      * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
      */
     public record MuzzleFlash(
@@ -267,6 +269,7 @@ public abstract class ProjectileType {
         double radius,
         Vec3i color,
         float intensity,
+        float glow,
         int durationTicks
     ) {
         /**
@@ -288,6 +291,14 @@ public abstract class ProjectileType {
          */
         public static final float MAX_INTENSITY = 4096f;
 
+        /**
+         * 光晕倍率上界。
+         *
+         * <p>倍率同时缩放阈值半径与亮度，超过 4 会让枪口焰的光晕盖过照明本身；下限 0 表示
+         * 关闭该弹种的光晕。</p>
+         */
+        public static final float MAX_GLOW = 4f;
+
         /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
         public static final int MIN_DURATION_TICKS = 1;
 
@@ -295,7 +306,7 @@ public abstract class ProjectileType {
         public static final int MAX_DURATION_TICKS = 40;
 
         /**
-         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、持续 6 tick（≈300 ms）。
+         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、持续 6 tick（≈300 ms）。
          *
          * <p><b>强度是绝对量</b>：90 对应 50 mm 档（缺省半径 9.5 m，参考距离 4.75 m 处把 0.10 的
          * 灰板抬到 0.30 所需的辐照度，见物理化设计 §4.2）。任何弹种都可以用它当起点，但真正
@@ -308,7 +319,7 @@ public abstract class ProjectileType {
          * "每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
          */
         public static final MuzzleFlash DEFAULT =
-            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 6);
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 6);
 
         /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
         private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
@@ -332,6 +343,18 @@ public abstract class ProjectileType {
             return DataResult.success(value);
         });
 
+        /** {@link #glow} 的校验：有限且落在 {@code [0, 4]}。 */
+        private static final Codec<Float> GLOW_CODEC = Codec.FLOAT.validate(value -> {
+            if (!Float.isFinite(value)) {
+                return DataResult.error(() -> "muzzle_flash.glow 必须是有限数，实际为 " + value);
+            }
+            if (value < 0f || value > MAX_GLOW) {
+                return DataResult.error(() -> "muzzle_flash.glow 必须落在 [0, "
+                    + MAX_GLOW + "] 内，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
         /** {@link #durationTicks} 的校验：整数且落在 {@code [1, 40]}。 */
         private static final Codec<Integer> DURATION_CODEC = Codec.INT.validate(value -> {
             if (value < MIN_DURATION_TICKS || value > MAX_DURATION_TICKS) {
@@ -350,6 +373,8 @@ public abstract class ProjectileType {
                 .forGetter(MuzzleFlash::color),
             INTENSITY_CODEC.optionalFieldOf("intensity", DEFAULT.intensity)
                 .forGetter(MuzzleFlash::intensity),
+            GLOW_CODEC.optionalFieldOf("glow", DEFAULT.glow)
+                .forGetter(MuzzleFlash::glow),
             DURATION_CODEC.optionalFieldOf("duration_ticks", DEFAULT.durationTicks)
                 .forGetter(MuzzleFlash::durationTicks)
         ).apply(instance, MuzzleFlash::new));
@@ -421,9 +446,18 @@ public abstract class ProjectileType {
          */
         Optional<Boolean> tracerLightEnabled,
         /**
+         * 曳光光源的空气散射光晕倍率（可选，默认 1.0，取值 {@code [0, 4]}）。
+         * <p>
+         * 倍率同时缩放光晕的阈值半径与亮度，{@code 0} 表示该弹种只有表面光照、没有光晕。
+         * 阈值半径按 {@link #tracerLightIntensity} 派生（见物理化设计 §3.6），本字段只做放大：
+         * 曳光的辐照度比信号弹低两三个数量级，缺省值下光晕的峰值只有千分之一量级，实际看不见。
+         * 要让曳光带可见光晕，把它写到接近上限。
+         */
+        double tracerGlow,
+        /**
          * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
          * <p>
-         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、6 tick。
+         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、光晕倍率 1、6 tick。
          * 意思是"任何有口径的弹种开火都会闪一下"，想关掉的弹种写 {@code muzzle_flash.enabled = false}。
          * <p>
          * 它按弹种而不是按发射器配置，理由与 {@code fire_particles}、{@code fire_sounds} 相同：
@@ -459,6 +493,20 @@ public abstract class ProjectileType {
         /** 渲染侧可接受的照射半径上界（m），与爆炸火光的字段边界取同一个量级 */
         public static final double MAX_LIGHT_RADIUS_M = 64.0;
 
+        /** {@link #tracerGlow} 的上界；超出的倍率会让光晕盖过照明本身 */
+        public static final double MAX_GLOW = 4.0;
+
+        /** {@link #tracerGlow} 的校验：有限且落在 {@code [0, 4]}。 */
+        private static final Codec<Double> GLOW_CODEC = Codec.DOUBLE.validate(value -> {
+            if (!Double.isFinite(value)) {
+                return DataResult.error(() -> "tracer_glow 必须是有限数，实际为 " + value);
+            }
+            if (value < 0.0 || value > MAX_GLOW) {
+                return DataResult.error(() -> "tracer_glow 必须落在 [0, " + MAX_GLOW + "] 内，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
         /**
          * {@link #tracerLightRadius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。
          */
@@ -479,6 +527,7 @@ public abstract class ProjectileType {
             DERIVE_LIGHT_RADIUS,
             Optional.empty(),
             Optional.empty(),
+            1.0,
             MuzzleFlash.DEFAULT,
             List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")),
             Optional.empty(),
@@ -502,6 +551,8 @@ public abstract class ProjectileType {
                 .forGetter(VisualProperties::tracerLightColor),
             Codec.BOOL.optionalFieldOf("tracer_light_enabled")
                 .forGetter(VisualProperties::tracerLightEnabled),
+            GLOW_CODEC.optionalFieldOf("tracer_glow", DEFAULT.tracerGlow)
+                .forGetter(VisualProperties::tracerGlow),
             MuzzleFlash.CODEC.optionalFieldOf("muzzle_flash", MuzzleFlash.DEFAULT)
                 .forGetter(VisualProperties::muzzleFlash),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)

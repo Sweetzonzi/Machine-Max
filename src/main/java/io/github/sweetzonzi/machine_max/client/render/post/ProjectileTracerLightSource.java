@@ -168,6 +168,8 @@ public class ProjectileTracerLightSource implements ScreenSpaceLightSource {
             colorScratch.set(color.getX() / 255f, color.getY() / 255f, color.getZ() / 255f);
             light.setPoint(viewPos, radius, colorScratch, intensity,
                     ScreenSpaceLight.OcclusionMode.SOURCE_DEPTH, occlusionTolerance(caliberMm), 0f);
+            // 光晕半径用内容强度（不含透明度因子与超时淡出）派生：曳光线淡出时尺寸不该跟着缩
+            light.setGlow((float) type.getTracerLightIntensity(), (float) visual.tracerGlow());
             out.submit(light);
         }
     }

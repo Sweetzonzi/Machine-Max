@@ -96,6 +96,8 @@ public class ExplosionLightSource implements ScreenSpaceLightSource {
             light.setPoint(viewPos, lightParams.radius(), colorScratch, intensity,
                     ScreenSpaceLight.OcclusionMode.NONE, 0f, 0f);
             light.setMinDistance(MIN_DISTANCE_M);
+            // 光晕半径用内容强度（不含包络）派生：闪光在收尾时变暗，尺寸不该跟着缩小
+            light.setGlow(lightParams.intensity(), lightParams.glow());
             out.submit(light);
         }
     }
