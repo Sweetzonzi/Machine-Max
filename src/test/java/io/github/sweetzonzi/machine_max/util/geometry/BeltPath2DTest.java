@@ -298,21 +298,32 @@ class BeltPath2DTest {
     }
 
     @Test
-    void nearlyCollinearInteriorEndCapStaysConvex() {
-        // 左轮是内部下标，但它的前后邻居都在右侧，轮心折线接近回折（|turn|≈π）。
-        // 它是带路的左端帽，必须绕圆弧并包在环内；不能因为 turn 的符号变成点接触。
-        List<Circle2D> circles = List.of(
-                new Circle2D(1.5, 0.8, 0.4),   // 0 主动轮，右上
-                new Circle2D(-1.0, 0.0, 0.4),  // 1 左端帽，内部下标
-                new Circle2D(0.0, 0.0, 0.4)    // 2 中间，最后一个成员
-        );
-        BeltPath2D path = BeltPath2D.build(circles);
+    void degenerateEndCapStaysConvexAcrossPoseJitter() {
+        // 前三个轮心严格共线、第四个把平面撑开：端帽处轮心折线回折，转角是 ±π。
+        // 这是“几个不可动轮在悬挂压到极限时落到一条直线上”的形态。转角符号只由
+        // 共线的哪一侧决定，微小位姿噪声会翻掉它；带路必须始终绕过该轮并包住所有轮心。
+        for (double idlerY : new double[]{-0.15, -0.05, 0.05, 0.15}) {
+            List<Circle2D> circles = List.of(
+                    new Circle2D(0.0, 0.0, 0.4),    // 0 主动轮
+                    new Circle2D(-1.45, 0.0, 0.4),  // 1 左端帽，内部下标
+                    new Circle2D(4.55, 0.0, 0.4),   // 2 回程轮
+                    new Circle2D(6.55, idlerY, 0.4) // 3 最后一个成员
+            );
+            BeltPath2D path = BeltPath2D.build(circles);
 
-        assertNotNull(arcContact(path, 1));
-        assertTrue(path.containsPoint(circles.get(0).center()));
-        assertTrue(path.containsPoint(circles.get(1).center()));
-        assertTrue(path.containsPoint(circles.get(2).center()));
-        assertFalse(selfIntersects(path.points()));
+            BeltPath2D.Vertex endCap = path.vertices().get(1);
+            assertEquals(1, endCap.wheelIndex());
+            assertEquals(BeltPath2D.VertexType.CONVEX, endCap.type(),
+                    "end cap flipped at idlerY=" + idlerY);
+            assertTrue(Math.abs(endCap.turn()) > Math.PI * 0.75,
+                    "end cap turn should be near pi at idlerY=" + idlerY);
+            assertNotNull(arcContact(path, 1), "end cap lost its arc at idlerY=" + idlerY);
+            for (Circle2D circle : circles) {
+                assertTrue(path.containsPoint(circle.center()),
+                        "wheel center left outside the loop at idlerY=" + idlerY);
+            }
+            assertFalse(selfIntersects(path.points()));
+        }
     }
 
     @Test
@@ -375,7 +386,7 @@ class BeltPath2DTest {
         BeltPath2D ccw = BeltPath2D.build(track(-0.30));
         BeltPath2D path = BeltPath2D.build(clockwise);
 
-        // 3 个及以上不再反转输入：输出方向跟随锚定顺序，反向输入得到顺时针带路。
+        // 3 个及以上不反转输入：输出方向跟随锚定顺序，反向输入得到顺时针带路。
         assertFalse(ccw.reversedFromInput());
         assertFalse(path.reversedFromInput());
         assertEquals(ccw.length(), path.length(), 1e-6);
