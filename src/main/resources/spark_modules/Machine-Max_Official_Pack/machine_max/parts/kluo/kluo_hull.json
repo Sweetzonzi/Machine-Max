@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/kluo/kluo_hull_icon.png",
-  "vehicle_durability_rate": 0.6,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.90,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:kluo.geo",
     "textures": "machine_max:textures/part/kluo/kluo.png",
@@ -19,7 +19,7 @@
           "RightBackWheel"
         ],
         "mass_center": "hull_mass_center",
-        "durability": 250.0,
+        "durability": 150,
         "mass": 400.0,
         "block_collision": "ground",
         "collision_height": 2.5,

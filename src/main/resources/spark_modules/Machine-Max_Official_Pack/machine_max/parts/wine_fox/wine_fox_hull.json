@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/wine_fox/wine_fox_hull_icon.png",
-  "vehicle_durability_rate": 0.6,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.90,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:wine_fox.geo",
     "textures": {
@@ -17,7 +17,7 @@
         "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
         "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
         "mass_center": "hull_mass_center",
-        "durability": 250.0,
+        "durability": 150,
         "mass": 400.0,
         "block_collision": "ground",
         "collision_height": 2.5,

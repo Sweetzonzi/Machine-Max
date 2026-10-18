@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动对接口上的部件滚动和转向
-  "basic_durability": 100,
+  "basic_durability": 30,
   "roll": {
     "max_drive_force": 2500.0,
     "max_brake_force": 800.0,

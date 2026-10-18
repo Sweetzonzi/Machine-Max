@@ -1,5 +1,8 @@
 {
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_wheel.png",
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0.00,
   "variants": {
     "left": {
       "model": "machine_max:sdkfz234_2.geo",
@@ -16,7 +19,7 @@
         "sub_part.machine_max.main": {
           "start_bone": "LeftWheel_1",
           "end_bones": [],
-          "durability": 100,
+          "durability": 65,
           "mass": 50,
           "projected_area": [
             -1,
@@ -59,7 +62,7 @@
         "sub_part.machine_max.main": {
           "start_bone": "RightWheel_1",
           "end_bones": [],
-          "durability": 100,
+          "durability": 65,
           "mass": 50,
           "projected_area": [
             -1,

@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/jeep/jeep_hull_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:jeep_hull.geo",
     "textures": {
@@ -15,7 +15,7 @@
     "sub_parts": {
       "sub_part.machine_max.main": {
         "end_bones": ["Back_Cover", "Back_Cover_dark"],
-        "durability": 550.0,
+        "durability": 200,
         "mass": 550.0,
         "block_collision": "ground",
         "collision_height": 2.5,

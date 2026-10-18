@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/dayun/dayun_trailer_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 0.1,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:dayun.geo",
     "textures": {
@@ -18,7 +18,7 @@
       "sub_part.machine_max.main": {
         "start_bone": "AllTrailer",
         "end_bones": ["SteelCoil", "HianQiaoGulu3", "HianQiaoGulu5", "HianQiaoGulu7"],
-        "durability": 3000.0,
+        "durability": 400,
         "mass": 6000.0,
         "mass_center": "trailer_mass_center",
         "block_collision": "ground",

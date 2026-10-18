@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_door_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 0.5,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0.00,
   "max_stack_size": 2,
   "variants": {
     "left": {

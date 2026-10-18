@@ -1,6 +1,6 @@
 {
   "type": "machine_max:regen_loader",
-  "basic_durability": 30,
+  "basic_durability": 20,
   "magazine_capacity": 1,
   "regen_per_minute": 15,
   "regen_round_by_round": true,

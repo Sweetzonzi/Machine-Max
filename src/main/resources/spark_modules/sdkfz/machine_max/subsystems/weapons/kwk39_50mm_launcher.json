@@ -1,6 +1,6 @@
 {
   "type": "machine_max:launcher",
-  "basic_durability": 100,
+  "basic_durability": 80,
   "control_inputs": [
     "weapon.gun",
     "weapon.gun.kwk39_50mm"

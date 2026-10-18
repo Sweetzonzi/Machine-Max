@@ -1,6 +1,6 @@
 {
   "type": "machine_max:launcher",
-  "basic_durability": 50,
+  "basic_durability": 20,
   "control_inputs": [
     "weapon.mg",
     "weapon.mg.pktm"

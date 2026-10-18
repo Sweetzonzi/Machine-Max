@@ -1,5 +1,8 @@
 {
   "icon": "machine_max:textures/icon/k17/k17_hull.png",
+  "vehicle_durability_rate": 0.90,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:k17.geo",
     "textures": "machine_max:textures/part/k17/k17.png",
@@ -20,7 +23,7 @@
           "RightWheel3",
           "RightWheel4"
         ],
-        "durability": 500,
+        "durability": 392,
         "mass": 10000,
         "projected_area": [
           -1,

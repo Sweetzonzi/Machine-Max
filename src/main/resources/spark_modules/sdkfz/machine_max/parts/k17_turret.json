@@ -1,5 +1,8 @@
 {
   "icon": "machine_max:textures/icon/k17/k17_turret.png",
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:k17.geo",
     "textures": "machine_max:textures/part/k17/k17.png",
@@ -12,6 +15,7 @@
       "sub_part.machine_max.main": {
         "start_bone": "Turret",
         "end_bones": [],
+        "durability": 235.2,
         "mass": 2000,
         "projected_area": [
           -1,
@@ -202,6 +206,7 @@
       "sub_part.machine_max.gun": {
         "start_bone": "2A42_All",
         "end_bones": [],
+        "durability": 29.4,
         "mass": 250,
         "projected_area": [
           -1,
@@ -240,6 +245,7 @@
       "sub_part.machine_max.left_atgm": {
         "start_bone": "ATGM_Left",
         "end_bones": [],
+        "durability": 14.7,
         "mass": 125,
         "projected_area": [
           -1,
@@ -277,6 +283,7 @@
       "sub_part.machine_max.right_atgm": {
         "start_bone": "ATGM_Right",
         "end_bones": [],
+        "durability": 14.7,
         "mass": 125,
         "projected_area": [
           -1,

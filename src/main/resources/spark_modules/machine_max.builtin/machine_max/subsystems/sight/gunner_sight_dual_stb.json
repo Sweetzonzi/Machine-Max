@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:sight",
-  "basic_durability": 50.0,
+  "basic_durability": 10,
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
   "base_zoom": 1.0,
