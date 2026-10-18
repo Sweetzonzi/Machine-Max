@@ -60,7 +60,7 @@
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext`。通用元素持有 `hud.*` 上下文，武器元素继承并增加 `weapon.*`；每个元素独立取数 |
 | [内容包 AUI 页面加载可行性调查](计划中/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 已落地，待客户端实机验收。客户端本地内容包 `documents/` 直接写 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用；`LOCAL_ONLY`，不参与服务端同步；AUI 自动重载，`onFinish` 再补一次 `HTML.scan()`；`AuiResourceService` 包装器为备选 |
-| [内容包诊断-SparkCore落地后的迁移说明](计划中/内容包诊断-SparkCore落地后的迁移说明.md) | 迁移说明；依赖 Spark-Core `docs/pack_diagnostics_plan.md`。上游诊断系统未落地，MM 侧尚未改动；落地后删除 `MMDynamicRes` 的三份错误列表与 12 个模块的 catch，改由 Spark-Core 统一收集、汇总与提示 |
+| [内容包诊断-SparkCore落地后的迁移说明](计划中/内容包诊断-SparkCore落地后的迁移说明.md) | 迁移计划；Spark-Core `e526385d`（`docs/pack_diagnostics_plan.md` v1.4）已落地诊断系统，MM 侧待实施：删除 `MMDynamicRes` 的三份错误列表与 12 个模块的 catch，配方/研发改显式 `report`，客户端提示与服务端汇总交给 Spark-Core |
 | [武器系统-武器控制器HUD样式与布局设计](计划中/武器系统-武器控制器HUD样式与布局设计.md) | 设计阶段；代码中尚无 `HudWeaponSnapshot`。定义每控制器快照与 `weapon.*` 词表；座椅当前控制组选中的 WC 全部显示，不区分主/副；控制器的 `scope` 元素绘制分划，相机元素提供基础边框 |
 | [武器系统-武器HUD信息分级与视角形态需求分析](计划中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析；定义 `minimal` / `standard` / `scope` / `full` 四款呈现、武器类型画像、第三人称/炮镜分工与装填环语义；不按主/副角色分组；尚未实现 |
 | [碰撞系统-方块碰撞伤害模型分析](计划中/碰撞系统-方块碰撞伤害模型分析.md) | 分析提案：以接触冲量重构接触能量与伤害门槛，尚未实现 |
