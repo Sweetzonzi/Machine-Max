@@ -178,6 +178,11 @@ public class MMPayloadRegistry {
                 VehicleStatusSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleStatusSyncPayload::handle)
         );
+        sync.playToClient(//同步履带列表 / 耐久 / 断带状态
+                TrackLinkSyncPayload.TYPE,
+                TrackLinkSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(TrackLinkSyncPayload::handle)
+        );
         sync.playToClient(//运动体的同步数据
                 SubPartSyncPayload.TYPE,
                 SubPartSyncPayload.STREAM_CODEC,

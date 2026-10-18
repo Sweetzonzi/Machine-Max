@@ -379,5 +379,7 @@
   "tooltip.machine_max.wrench.cant_repair": "%1$s已被摧毁，无法修复，潜行互动以解除固定便于拆除",
   "tooltip.machine_max.wrench.disassembly": "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定",
   "tooltip.machine_max.wrench.no_need_to_repair": "%1$s无需修复或固定",
-  "tooltip.machine_max.wrench.repair": "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s"
+  "tooltip.machine_max.wrench.repair": "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s",
+  "item.machine_max.test_track": "履带测试物品",
+  "tooltip.machine_max.test_track": "右键主动轮开始铺设，依次右键各负重轮，最后右键主动轮闭合；潜行右键撤销或移除"
 }

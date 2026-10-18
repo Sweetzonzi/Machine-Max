@@ -13,6 +13,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -48,6 +50,8 @@ public class VehicleData {
     public final float hpRatio;//血量比例（0~1，1 表示满血）
     public final Map<String, PartData> parts;
     public final List<ConnectionData> connections;
+    /** 履带持久状态；空列表表示没有履带。 */
+    public final List<TrackLinkData> trackLinks;
     /** 设计元信息（作者 / 时间 / 描述），只进 JSON，不参与网络传输与身份判等 */
     public final BlueprintMeta meta;
 
@@ -60,6 +64,8 @@ public class VehicleData {
             Codec.FLOAT.optionalFieldOf("hp_ratio", 1f).forGetter(VehicleData::getHpRatio),
             PartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections),
+            TrackLinkData.CODEC.listOf().optionalFieldOf("track_links", List.of())
+                    .forGetter(VehicleData::getTrackLinks),
             BlueprintMeta.CODEC.optionalFieldOf("meta", BlueprintMeta.EMPTY).forGetter(VehicleData::getMeta)
     ).apply(instance, VehicleData::new));
 
@@ -83,8 +89,10 @@ public class VehicleData {
             float hpRatio = buffer.readFloat();
             Map<String, PartData> parts = PartData.MAP_STREAM_CODEC.decode(buffer);
             List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
+            List<TrackLinkData> trackLinks = buffer.readList(TrackLinkData.STREAM_CODEC);
             // meta 不参与网络编码，跨网络时一律为空；需要时由载荷以独立字段携带
-            return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections, BlueprintMeta.EMPTY);
+            return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections,
+                    trackLinks, BlueprintMeta.EMPTY);
         }
 
         @Override
@@ -103,19 +111,27 @@ public class VehicleData {
             buffer.writeFloat(value.hpRatio);
             PartData.MAP_STREAM_CODEC.encode(buffer, value.parts);
             buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
+            buffer.writeCollection(value.trackLinks, TrackLinkData.STREAM_CODEC);
         }
     };
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections) {
-        this(name, uuid, pos, min, max, hpRatio, parts, connections, BlueprintMeta.EMPTY);
+        this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), BlueprintMeta.EMPTY);
     }
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections,
                        BlueprintMeta meta) {
+        this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), meta);
+    }
+
+    public VehicleData(String name, String uuid,
+                       Vec3 pos, Vec3 min, Vec3 max,
+                       float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections,
+                       List<TrackLinkData> trackLinks, BlueprintMeta meta) {
         this.name = name;
         this.uuid = uuid;
         this.pos = pos;
@@ -124,6 +140,7 @@ public class VehicleData {
         this.hpRatio = hpRatio;
         this.parts = parts;
         this.connections = connections;
+        this.trackLinks = trackLinks == null ? List.of() : List.copyOf(trackLinks);
         this.meta = meta != null ? meta : BlueprintMeta.EMPTY;
     }
 
@@ -145,6 +162,7 @@ public class VehicleData {
                 : 1f;
         this.parts = vehicle.getPartData();
         this.connections = vehicle.getConnectionData();
+        this.trackLinks = vehicle.trackLinkData();
         // 由载具实例构造的数据不带元信息，只有抄录 / 取出时才写入
         this.meta = BlueprintMeta.EMPTY;
     }
@@ -232,7 +250,8 @@ public class VehicleData {
                     rebasedSubParts
             ));
         }
-        return new VehicleData(name, uuid, Vec3.ZERO, min, max, hpRatio, rebasedParts, connections, meta);
+        return new VehicleData(name, uuid, Vec3.ZERO, min, max, hpRatio, rebasedParts, connections,
+                trackLinks, meta);
     }
 
     /**
@@ -245,8 +264,11 @@ public class VehicleData {
      */
     public VehicleData normalized() {
         VehicleData rebased = rebased();
+        List<TrackLinkData> normalizedTracks = rebased.trackLinks.stream()
+                .map(link -> link.normalized(TrackAttr.DEFAULT.durability()))
+                .toList();
         return new VehicleData(rebased.name, rebased.uuid, rebased.pos, rebased.min, rebased.max,
-                1f, rebased.parts, rebased.connections, rebased.meta);
+                1f, rebased.parts, rebased.connections, normalizedTracks, rebased.meta);
     }
 
     /**
@@ -359,11 +381,12 @@ public class VehicleData {
     }
 
     public VehicleData withNewName(String name) {
-        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections, meta);
+        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections, trackLinks, meta);
     }
 
     public VehicleData withNewUUID(UUID uuid) {
-        return new VehicleData(name, uuid.toString(), pos, min, max, hpRatio, parts, connections, meta);
+        return new VehicleData(name, uuid.toString(), pos, min, max, hpRatio, parts, connections,
+                trackLinks, meta);
     }
 
     /**
@@ -375,6 +398,6 @@ public class VehicleData {
      * @return 附带该元信息的新实例
      */
     public VehicleData withMeta(BlueprintMeta meta) {
-        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections, meta);
+        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections, trackLinks, meta);
     }
 }

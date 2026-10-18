@@ -163,6 +163,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
         this.add("item.machine_max.pda", "蓝图终端");
+        this.add("item.machine_max.test_track", "履带测试物品");
+        this.add("tooltip.machine_max.test_track", "右键主动轮开始铺设，依次右键各负重轮，最后右键主动轮闭合；潜行右键撤销或移除");
         // 物品音效
         this.add("subtitles.item.welding_torch.start", "焊枪启动");
         this.add("subtitles.item.welding_torch.loop", "焊接中");

@@ -163,6 +163,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
         this.add("item.machine_max.pda", "Blueprint Terminal");
+        this.add("item.machine_max.test_track", "Track Test Item");
+        this.add("tooltip.machine_max.test_track", "Right-click the sprocket to start, right-click each road wheel in order, then right-click the sprocket again to close the track; sneak-right-click to undo or remove");
         // Item sound effects
         this.add("subtitles.item.welding_torch.start", "Welding torch starts");
         this.add("subtitles.item.welding_torch.loop", "Welding torch running");

@@ -23,6 +23,8 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -178,22 +180,40 @@ public class CollisionHandler {
      * 非轮胎部位采用各向异性摩擦，轮胎部位另有滑移曲线逻辑。
      */
     private void setupFriction(HitBox hitBox, int hitBoxIndex) {
+        // 履带成员轮面：以履带属性替换 HitBox 材质参数（同一条履带下所有接触一致）
+        TrackLink track = subPart.trackLink;
+        if (track != null && !track.isDisposed() && subPart.isWheel(hitBoxIndex)) {
+            TrackAttr.Friction trackFriction = track.attr().friction();
+            applyFriction(true, trackFriction.anisotropic(), trackFriction.rolling(),
+                    trackFriction.spinning(), trackFriction.restitution());
+            return;
+        }
         Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
+        applyFriction(subPart.isWheel(hitBoxIndex), friction, hitBox.attr.rollingFriction(),
+                hitBox.attr.spinningFriction(), hitBox.attr.restitution());
+    }
+
+    private void applyFriction(boolean isWheel, Vector3f friction, float rolling, float spinning,
+                               float restitution) {
         //非轮子部件重设各向异性摩擦，轮胎另行处理
         //(1,1,1) 表示各向同性，需关闭各向异性模式；否则仅在值变化时才更新逐轴摩擦缩放，
         //避免连续相同材质接触时每 tick 在"各向异性/各向同性"间翻转
-        if (!subPart.isWheel(hitBoxIndex)) {
+        if (!isWheel) {
             if (friction.equals(Vector3f.UNIT_XYZ))
                 subPart.body.setAnisotropicFriction(Vector3f.UNIT_XYZ, AfMode.none);
             else if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
                 subPart.body.setAnisotropicFriction(friction, AfMode.basic);
+        } else if (!friction.equals(Vector3f.UNIT_XYZ)) {
+            // 履带轮面也需要各向异性（带方向摩擦），按值变化更新
+            if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
+                subPart.body.setAnisotropicFriction(friction, AfMode.basic);
         }
-        if (hitBox.attr.rollingFriction() != subPart.body.getRollingFriction())
-            subPart.body.setRollingFriction(hitBox.attr.rollingFriction());
-        if (hitBox.attr.spinningFriction() != subPart.body.getSpinningFriction())
-            subPart.body.setSpinningFriction(hitBox.attr.spinningFriction());
-        if (hitBox.attr.restitution() != subPart.body.getRestitution())
-            subPart.body.setRestitution(hitBox.attr.restitution());
+        if (rolling != subPart.body.getRollingFriction())
+            subPart.body.setRollingFriction(rolling);
+        if (spinning != subPart.body.getSpinningFriction())
+            subPart.body.setSpinningFriction(spinning);
+        if (restitution != subPart.body.getRestitution())
+            subPart.body.setRestitution(restitution);
     }
 
     // ==================== 预碰撞-方块处理 ====================

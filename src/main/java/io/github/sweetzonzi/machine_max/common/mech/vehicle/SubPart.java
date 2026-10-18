@@ -43,6 +43,7 @@ import net.minecraft.world.phys.Vec3;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.connector.ConnectorImpactEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
@@ -88,6 +89,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     //渲染与交互
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
+    /** 所属履带（可空）。装配接线写入；销毁 / 摩擦 / 伤害三条路径共用这一个查询入口。 */
+    @Nullable
+    public volatile TrackLink trackLink;
     //游戏机制
     public final Part part;
     public String name;
@@ -177,6 +181,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void destroy() {
         collisionHandler.effectManager.stopAll();
+        // 必须在刚体移出世界之前通知履带摘约束
+        TrackLink track = this.trackLink;
+        if (track != null) track.onMemberDestroyed(this);
         super.destroy();
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
@@ -453,11 +460,27 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public float getRHA(BFDamageContext ctx) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            var armor = track.attr().armor();
+            float durabilityRatio = track.maxDurability() > 0f
+                    ? Math.clamp(track.durability() / track.maxDurability(), 0f, 1f)
+                    : 1f;
+            float vertical = armor.decay_rha() + (armor.rha() - armor.decay_rha())
+                    * (float) Math.pow(durabilityRatio, armor.decay_power());
+            if (!armor.angleEffect()) return vertical;
+            return ArmorUtil.getEquivalentArmor(vertical,
+                    ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
+        }
         HitBox hitBox = findHitBox(ctx);
         float verticalRha = hitBox.getRHA(this);
         if (!hitBox.hasAngleEffect()) return verticalRha;
         return ArmorUtil.getEquivalentArmor(verticalRha,
                 ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
+    }
+
+    private static boolean hasLiveTrack(@Nullable TrackLink track) {
+        return track != null && !track.isDisposed() && !track.isBroken();
     }
 
     @Override
@@ -475,6 +498,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public float modifyPenetration(BFDamageContext ctx) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            return track.attr().armor().piercingModifiers().apply(ctx.source(), ctx.penetration());
+        }
         HitBox hitBox = findHitBox(ctx);
         return hitBox.modifyPiercing(ctx.source(), ctx.penetration());
     }
@@ -526,6 +553,24 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public float calculateFinalDamage(BFDamageContext ctx, PenetrationResult result) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            var armor = track.attr().armor();
+            if (result == PenetrationResult.PENETRATED) {
+                float dmg = armor.damageModifiers().apply(ctx.source(), ctx.baseDamage());
+                dmg = Math.max(0f, dmg - armor.dmg_resist());
+                return Math.max(0f, dmg * armor.dmg_mult());
+            }
+            if (armor.unpen_power() > 0f) {
+                float rha = getRHA(ctx);
+                if (rha > 0f) {
+                    float ratio = Math.clamp(modifyPenetration(ctx) / rha, 0f, 1f);
+                    float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, armor.unpen_power());
+                    return armor.damageModifiers().apply(ctx.source(), unpenDmg);
+                }
+            }
+            return 0f;
+        }
         HitBox hitBox = findHitBox(ctx);
         if (result == PenetrationResult.PENETRATED) {
             return hitBox.modifyDamage(ctx.source(), ctx.baseDamage());
@@ -559,6 +604,18 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (event.isCanceled()) return false;
         ctx = event.getCtx();
         amount = event.getDamageAmount(); // 以事件最终结果为准
+        // 履带存活期间由履带装甲层吸收伤害：扣履带耐久，跳过 SubPart 自身耐久 / HitBox 子系统伤害
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            SoundEvent trackHit = isArmorPenetrated(ctx)
+                    ? track.attr().sounds().hitPen()
+                    : track.attr().sounds().hitUnPen();
+            Vector3f hitPos = getPosition();
+            level.playSound(null, hitPos.x, hitPos.y, hitPos.z,
+                    trackHit, SoundSource.NEUTRAL, 1f, 1f);
+            track.damage(amount);
+            return true;
+        }
         Vec3 sourcePos = ctx.hitPoint();
         HitBox hitBox = findHitBox(ctx);
         // 击退动量 — 捕获 ctx，延迟到物理任务中决定用 IMPULSE 还是回退公式
@@ -724,6 +781,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
         if (!level.isClientSide) {
+            // 履带成员轮子的维修量优先用于履带耐久；履带不是独立刚体，破坏后由这里恢复
+            TrackLink track = this.trackLink;
+            if (track != null && !track.isDisposed() && amount > 0f
+                    && (track.isBroken() || track.durability() < track.maxDurability())) {
+                track.repair(amount);
+                part.setRenderWireframe(true);
+                return true;
+            }
             part.setRenderWireframe(true); // 尝试维修时重置为线框模式
             // 修理零件
             float repairAmount = 0f;
@@ -987,6 +1052,22 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     public float getWheelRadius(long childShapeId) {
         return attr.getWheelRadius().getOrDefault(childShapeId, 0f);
+    }
+
+    /**
+     * 返回本零件所有轮面中最大的半径。
+     *
+     * <p>一个 SubPart 可以挂多个 wheel shape；履带 GearJoint 的传动比与显示包络线
+     * 都必须使用同一个口径，这里统一取最大值。</p>
+     *
+     * @return 最大轮半径；没有轮面时为 0
+     */
+    public float getMaxWheelRadius() {
+        float max = 0f;
+        for (float radius : attr.getWheelRadius().values()) {
+            if (radius > max) max = radius;
+        }
+        return max;
     }
 
     /**

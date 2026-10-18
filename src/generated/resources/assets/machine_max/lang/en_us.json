@@ -365,5 +365,7 @@
   "tooltip.machine_max.wrench.cant_repair": "%1$s has been destroyed, cannot repair. Crouch and interact to unbolt the part",
   "tooltip.machine_max.wrench.disassembly": "Integrity: %1$s/%2$s Interact to safely unbolt %3$s",
   "tooltip.machine_max.wrench.no_need_to_repair": "%1$s is no need to repair",
-  "tooltip.machine_max.wrench.repair": "Integrity: %2$s/%3$s Durability: %4$s/%5$s Interact to repair %1$s"
+  "tooltip.machine_max.wrench.repair": "Integrity: %2$s/%3$s Durability: %4$s/%5$s Interact to repair %1$s",
+  "item.machine_max.test_track": "Track Test Item",
+  "tooltip.machine_max.test_track": "Right-click the sprocket to start, right-click each road wheel in order, then right-click the sprocket again to close the track; sneak-right-click to undo or remove"
 }

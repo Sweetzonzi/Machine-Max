@@ -17,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
+import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
@@ -39,6 +40,13 @@ object MMItems {
     val PART_ITEM = MachineMax.REGISTER.item {
         id="part"
         factory = { PartItem() }
+    }
+
+    //履带测试物品（写死，不接内容包）
+    @JvmStatic
+    val TRACK_ITEM = MachineMax.REGISTER.item {
+        id="test_track"
+        factory = { TrackItem() }
     }
 
     //装配体物品原型
