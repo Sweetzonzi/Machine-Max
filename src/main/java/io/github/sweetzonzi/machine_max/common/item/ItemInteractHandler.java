@@ -1,14 +1,17 @@
 package io.github.sweetzonzi.machine_max.common.item;
 
+import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
+import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.NameTagItem;
@@ -74,11 +77,17 @@ public class ItemInteractHandler {
         Player player = event.getEntity();
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof TrackItem)) return;
-        if (!(event.getTarget() instanceof MMPartEntity partEntity) || partEntity.subPart == null) return;
+        Entity target = event.getTarget();
+        if (!(target instanceof MMPartEntity)) return;
 
-        SubPart subPart = partEntity.subPart;
         if (!player.level().isClientSide) {
-            if (subPart.part.assembly instanceof VehicleCore vehicle) {
+            // 实体交互只作为触发入口；目标 SubPart 由 Eyesight 的物理射线决定，
+            // 这样车体等大型实体碰撞箱不会挡住后面的轮子。
+            LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+            SubPart subPart = eyesight.getWheelSubPart();
+            if (subPart == null) {
+                message(player, "履带：准星没有指向可用的轮子");
+            } else if (subPart.part.assembly instanceof VehicleCore vehicle) {
                 if (player.isShiftKeyDown()) {
                     undo(player, vehicle, subPart);
                 } else {

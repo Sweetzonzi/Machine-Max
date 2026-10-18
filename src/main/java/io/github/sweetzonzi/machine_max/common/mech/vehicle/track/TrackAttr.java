@@ -12,17 +12,35 @@ import net.minecraft.sounds.SoundEvent;
  *
  * <p>当前由测试物品直接使用 {@link #DEFAULT}，尚未接入内容包 JSON；字段划分按
  * {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §6.1 保留，后续加 Codec 即可。</p>
+ *
+ * <p>耐久按节声明：{@link #linkDurability()} 是每节耐久，整条带的节数
+ * {@code N = max(1, round(L / linkLength))} 由包络总长推导，最大耐久为
+ * {@code linkDurability × N}。因此轮组布局变化会改变整条带的血量上限。</p>
  */
 public record TrackAttr(
-        float durability,
+        float linkDurability,
+        float linkLength,
         int minEffectiveWheels,
         MaterialAttr.ArmorAttr armor,
         Friction friction,
         Tension tension,
         Sounds sounds
 ) {
+    public TrackAttr {
+        if (!(linkDurability > 0f)) {
+            throw new IllegalArgumentException("linkDurability must be > 0");
+        }
+        if (!(linkLength > 0f)) {
+            throw new IllegalArgumentException("linkLength must be > 0");
+        }
+        if (minEffectiveWheels < 2) {
+            throw new IllegalArgumentException("minEffectiveWheels must be >= 2");
+        }
+    }
+
     public static final TrackAttr DEFAULT = new TrackAttr(
-            600f,
+            20f,
+            0.2f,
             2,
             new MaterialAttr.ArmorAttr(
                     30f, true,
@@ -37,6 +55,14 @@ public record TrackAttr(
             new Tension(true, 12000f, 900f, 0f, 0.015f, 800f),
             Sounds.DEFAULT
     );
+
+    /**
+     * 整条履带的最大耐久：每节耐久 × 节数。
+     */
+    public float maxDurability(int linkCount) {
+        return linkDurability * Math.max(1, linkCount);
+    }
+
 
     public record Friction(
             Vector3f anisotropic,

@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.client.render.renderer.PartAssemblyRende
 import io.github.sweetzonzi.machine_max.client.render.renderer.LightSourceRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.DistantVehicleRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.TrackRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.VehicleInspectorRenderer
 
 object MMVisualEffects {
@@ -22,6 +23,9 @@ object MMVisualEffects {
 
     @JvmStatic
     val VEHICLE_INSPECTOR = VehicleInspectorRenderer()
+
+    @JvmStatic
+    val TRACK = TrackRenderer()
 
     @JvmStatic
     fun init() {

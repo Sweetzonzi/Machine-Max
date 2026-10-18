@@ -78,7 +78,25 @@ class TrackDataCodecTest {
         VehicleData normalized = data.normalized();
         assertEquals(1, normalized.getTrackLinks().size());
         TrackLinkData link = normalized.getTrackLinks().getFirst();
-        assertEquals(TrackAttr.DEFAULT.durability(), link.durability(), 1.0e-6f);
+        assertEquals(TrackLinkData.FULL_DURABILITY, link.durability(), 0f);
         assertTrue(!link.broken());
+    }
+
+    @Test
+    void missingTrackDurabilityDefaultsToFullSentinel() {
+        TrackMemberRef sprocket = new TrackMemberRef(UUID.randomUUID(), "sprocket");
+        TrackLinkData data = new TrackLinkData(sprocket, List.of(sprocket), 12f, false);
+
+        var encoded = TrackLinkData.CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow().getAsJsonObject();
+        encoded.remove("durability");
+        TrackLinkData decoded = TrackLinkData.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+
+        assertEquals(TrackLinkData.FULL_DURABILITY, decoded.durability(), 0f);
+    }
+
+    @Test
+    void trackAttrDerivesMaxDurabilityFromLinkCount() {
+        assertEquals(20f, TrackAttr.DEFAULT.maxDurability(1), 1.0e-6f);
+        assertEquals(1200f, TrackAttr.DEFAULT.maxDurability(60), 1.0e-6f);
     }
 }

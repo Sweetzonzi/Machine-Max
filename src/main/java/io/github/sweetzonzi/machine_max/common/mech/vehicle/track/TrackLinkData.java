@@ -15,6 +15,9 @@ import java.util.List;
  * 重建之后解析；{@code GearJoint}、{@code SubPart.trackLink} 反向引用与张力 rest 长度
  * 都是运行时对象，不进入本记录。履带没有名字：载具内的履带以列表项存在，成员引用
  * 本身就是足够的身份信息。</p>
+ *
+ * <p>{@link #durability()} 是当前绝对耐久。{@link #FULL_DURABILITY}（-1）表示
+ * 「满耐久」哨兵，只用于蓝图 / 收纳：加载时按包络推导出的最大耐久落值。</p>
  */
 public record TrackLinkData(
         TrackMemberRef sprocket,
@@ -22,10 +25,13 @@ public record TrackLinkData(
         float durability,
         boolean broken
 ) {
+    /** 满耐久哨兵：加载时解析为推导出的最大耐久。 */
+    public static final float FULL_DURABILITY = -1f;
+
     public static final Codec<TrackLinkData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             TrackMemberRef.CODEC.fieldOf("sprocket").forGetter(TrackLinkData::sprocket),
             TrackMemberRef.CODEC.listOf().fieldOf("members").forGetter(TrackLinkData::members),
-            Codec.FLOAT.optionalFieldOf("durability", TrackAttr.DEFAULT.durability())
+            Codec.FLOAT.optionalFieldOf("durability", FULL_DURABILITY)
                     .forGetter(TrackLinkData::durability),
             Codec.BOOL.optionalFieldOf("broken", false).forGetter(TrackLinkData::broken)
     ).apply(instance, TrackLinkData::new));
@@ -50,12 +56,12 @@ public record TrackLinkData(
     };
 
     /**
-     * 蓝图 / 收纳归一化：履带耐久回满、断带状态清除。
+     * 蓝图 / 收纳归一化：履带耐久置为满耐久哨兵、断带状态清除。
      *
      * <p>成员引用保留；放置时会按当前载具拓扑重新解析，失效成员由
      * {@link TrackLink#refreshMembers()} 丢弃。</p>
      */
-    public TrackLinkData normalized(float fullDurability) {
-        return new TrackLinkData(sprocket, members, fullDurability, false);
+    public TrackLinkData normalized() {
+        return new TrackLinkData(sprocket, members, FULL_DURABILITY, false);
     }
 }

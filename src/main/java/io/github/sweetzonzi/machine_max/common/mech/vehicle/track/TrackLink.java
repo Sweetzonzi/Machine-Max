@@ -17,7 +17,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * 履带：VehicleCore 级的关系 + 状态对象，没有独立刚体。
  *
- * <p>成员是载具内既有的 {@link SubPart}（主动轮 + 负重轮），所有权仍属于各自 Part。
+ * <p>成员是载具内既有的 {@link SubPart}（主动轮 + 下行程负重轮 + 上行程诱导轮 / 托带轮），
+ * 所有权仍属于各自 Part。成员顺序就是包络的锚定绕行顺序：主动轮在首位，随后是全部
+ * 下行程轮（含被顶起的），再是上行程轮。
  * 成员之间用 {@link GearJoint} 做星形角速度耦合；相邻成员之间用单边弹簧-阻尼力近似
  * 张力。履带耐久是独立于成员轮子耐久的一层。</p>
  *
@@ -38,17 +40,20 @@ public class TrackLink {
     private int retryCooldown;
 
     private volatile float durability;
+    private volatile float maxDurability;
+    private volatile int linkCount = 1;
     private volatile boolean broken;
 
     public TrackLink(VehicleCore vehicle, TrackAttr attr, float durability, boolean broken) {
         this.vehicle = vehicle;
         this.attr = attr;
-        this.durability = Math.max(0f, Math.min(durability, attr.durability()));
+        this.durability = Math.max(0f, durability);
+        this.maxDurability = attr.linkDurability();
         this.broken = broken;
     }
 
     public TrackLink(VehicleCore vehicle) {
-        this(vehicle, TrackAttr.DEFAULT, TrackAttr.DEFAULT.durability(), false);
+        this(vehicle, TrackAttr.DEFAULT, TrackAttr.DEFAULT.linkDurability(), false);
     }
 
     @Nullable
@@ -77,6 +82,12 @@ public class TrackLink {
             for (SubPart member : link.members) member.trackLink = null;
             return null;
         }
+        link.refreshEnvelope();
+        if (data.durability() == TrackLinkData.FULL_DURABILITY) {
+            link.durability = link.maxDurability;
+        } else {
+            link.durability = Math.min(link.durability, link.maxDurability);
+        }
         return link;
     }
 
@@ -87,7 +98,7 @@ public class TrackLink {
      * {@link #onAssembled()}，这样首帧同步出去的就是一条已闭合的完整履带。
      * 履带没有名字，注册进载具列表后才获得身份。</p>
      *
-     * @param wheels 按铺设顺序排列的负重轮，不含主动轮
+     * @param wheels 按铺设顺序排列的下行程轮与上行程轮（含被顶起的负重轮），不含主动轮
      */
     @NotNull
     public static TrackLink assemble(@NotNull VehicleCore vehicle,
@@ -107,12 +118,15 @@ public class TrackLink {
         link.members = List.copyOf(members);
         for (SubPart member : link.members) member.trackLink = link;
         link.rebuildTensionPairs();
+        link.refreshEnvelope();
+        link.durability = link.maxDurability;
         return link;
     }
 
     /** 注册之后调用：建立 GearJoint 并把完整状态同步给客户端。 */
     public void onAssembled() {
         if (disposed) return;
+        refreshEnvelope();
         rebuildJoints();
         sync();
     }
@@ -146,6 +160,7 @@ public class TrackLink {
         members = List.copyOf(next);
         subPart.trackLink = this;
         rebuildTensionPairs();
+        refreshEnvelope();
         rebuildJoints();
         sync();
         return true;
@@ -167,6 +182,7 @@ public class TrackLink {
             return true;
         }
         rebuildTensionPairs();
+        refreshEnvelope();
         rebuildJoints();
         sync();
         return true;
@@ -200,6 +216,7 @@ public class TrackLink {
         members = List.copyOf(valid);
         for (SubPart member : members) member.trackLink = this;
         rebuildTensionPairs();
+        refreshEnvelope();
         rebuildJoints();
         sync();
     }
@@ -355,19 +372,47 @@ public class TrackLink {
 
     // ==================== 耐久 / 状态 ====================
 
+    /**
+     * 主线程：由成员当前位姿重建包络，推导节数 N 与整条带的最大耐久。
+     *
+     * <p>只在创建 / 载入 / 成员变化时调用。运行中的悬挂行程会改变包络长度，
+     * 但 N 必须固定，否则节分布会周期性重排；长度变化由节间距吸收。</p>
+     */
+    private void refreshEnvelope() {
+        if (members.isEmpty()) {
+            linkCount = 1;
+            maxDurability = attr.maxDurability(1);
+            durability = Math.min(durability, maxDurability);
+            return;
+        }
+        TrackEnvelope2D.Result result = TrackEnvelope2D.build(members, sprocket, 1f);
+        if (result != null) {
+            linkCount = result.path().linkCount(attr.linkLength());
+            if (result.fallback()) {
+                MachineMax.LOGGER.debug("履带 {} 的轮组布局需要凸包回退", label());
+            }
+        } else {
+            // 成员缺轮半径 / 位姿尚未就绪：按成员数估一个保守节数，保证耐久上限可用
+            linkCount = Math.max(1, members.size() * 8);
+        }
+        maxDurability = attr.maxDurability(linkCount);
+        durability = Math.min(durability, maxDurability);
+    }
+
     public void damage(float amount) {
         if (amount <= 0f || broken || disposed) return;
         durability = Math.max(0f, durability - amount);
         if (durability <= 0f) {
             broken = true;
             stopJoints();
+            // 普通伤害只改服务端数值；只有断带这一刻需要全量同步
+            sync();
         }
-        sync();
     }
 
     public void repair(float amount) {
         if (amount <= 0f || disposed) return;
-        durability = Math.min(attr.durability(), durability + amount);
+        durability = Math.min(maxDurability, durability + amount);
         if (broken && durability > 0f) {
             broken = false;
             rebuildJoints();
@@ -506,7 +551,12 @@ public class TrackLink {
     }
 
     public float maxDurability() {
-        return attr.durability();
+        return maxDurability;
+    }
+
+    /** 由包络周长推导出的履带节数；创建 / 成员变化时固定。 */
+    public int linkCount() {
+        return linkCount;
     }
 
     public boolean isBroken() {

@@ -13,7 +13,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
@@ -265,7 +264,7 @@ public class VehicleData {
     public VehicleData normalized() {
         VehicleData rebased = rebased();
         List<TrackLinkData> normalizedTracks = rebased.trackLinks.stream()
-                .map(link -> link.normalized(TrackAttr.DEFAULT.durability()))
+                .map(TrackLinkData::normalized)
                 .toList();
         return new VehicleData(rebased.name, rebased.uuid, rebased.pos, rebased.min, rebased.max,
                 1f, rebased.parts, rebased.connections, normalizedTracks, rebased.meta);
