@@ -46,7 +46,7 @@
 | [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | 三个阶段均已落地：`getDisplayLabel()` / `belt_label` / 弹链指针单一载体、内容包语言键与实例 schema、AUI 正式页 `weapon_hud.html` 与 `WeaponHudOverlay` 为唯一在绘制的武器状态 HUD（`ammo_hud` 图层未注册，`AmmoHud` 类保留作回退）。待 `runClient` 进世界按 §7.2 人工验收 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
 | [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.0.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）、光照物理化（线性空间、`1/d²` + 窗、有界合成曲线、逐弹种绝对辐照度）与 S4 朝向响应已落地；实机目视按 §7 由用户完成。P4 车灯球光、P5 锥光与 S3 未实现 |
-| [渲染-屏幕空间光照物理化设计](进行中/渲染-屏幕空间光照物理化设计.md) | 阶段 A–C 与 D1 已落地：`screen_space_light.fsh` 用 `1/d²` + 四窗 + 朝向响应 + 有界合成曲线（线性空间、sRGB 解码在光源表），`LightMinDist[16]` 逐槽上传，13 个弹种与两处代码缺省写入绝对辐照度，法线由邻域深度重建、权重可配置；阶段 D2（光晕/散射）未实现。标定值为首轮锚点，实机观感待按 §4.4 复核 |
+| [渲染-屏幕空间光照物理化设计](进行中/渲染-屏幕空间光照物理化设计.md) | 阶段 A–C 与 D1 已落地：`screen_space_light.fsh` 用 `1/d²` + 四窗 + 朝向响应 + 有界合成曲线（线性空间、sRGB 解码在光源表），`LightMinDist[16]` 逐槽上传，13 个弹种与两处代码缺省写入绝对辐照度，法线由邻域深度重建、权重可配置；阶段 D2（空气散射光晕）设计完成（§3.6），未实现。标定值为首轮锚点，实机观感待按 §4.4 复核 |
 | [HUD 样式、布局与元素设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地并实机验收：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；宿主分组 `HudView`/`IHudHost` 覆盖座椅、相机/瞄具与武器控制器；2026-10-18 `runClient` 进世界加载正常，座椅与炮镜 HUD 表现符合预期。V2-b AUI 载体已落地：`AuiHudStyle`（`aui_hud`）、`HudAnchor` 与元素 `anchor`、每元素独立 `Document`、`CustomHud` 按布局顺序手动绘制，待实机验收。V2-a（`hud.*` 上下文、`data-mm-*` 绑定层）、V3（`WeaponHudElement`、`weapon.*`）、V4（玩家覆盖）未实现 |
 
 ## 计划中
