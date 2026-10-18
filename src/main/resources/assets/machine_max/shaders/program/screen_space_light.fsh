@@ -31,8 +31,10 @@
 //   5. 星芒：glare_i = GLARE_GAIN · s · g_i · c_i · max(armX, armY)，屏幕空间、固定角度。
 //      s = L/(L + GLARE_HALF) 是"相机处表观照度" L = I/max(|C|², d_min²) 的饱和曲线；臂长随 s 从
 //      GLARE_MIN_DEG 长到 GLARE_MAX_DEG，臂根亮度同时按 s 缩放，所以更近更亮的闪光是更长更亮的十字。
+//      臂长必须长过光晕的可见半径（信号弹 30 m 处光晕约 23°），否则星芒会缩在光晕的饱和核心里、
+//      只把中心撑成一个方块。
 //      两条臂沿屏幕 ±x / ±y：星芒是镜头成像（光圈衍射 + 传感器饱和溢出），随画幅固定，不随世界转。
-//      横向剖面是标准差随臂长外扩的楔形；`(1 − u)²` 让臂尖 C¹ 归零，不依赖窗函数。
+//      横向剖面是标准差随臂长外扩的楔形；沿臂用 `(1 − u)^1.5`，缓慢衰减、臂尖平滑归零，不依赖窗函数。
 //      **它不按像素深度截断**：墙挡住光源时整条消失（光源自身的遮挡判定仍生效），但光源可见时
 //      星芒会压在墙与车体上——这是真实镜头的行为，也是它与第 4 项最本质的差别。
 //      星芒与光晕共用 GLOW_MAX 的加法预算，参数完全独立：光晕是米制的阈值半径与 1/D 律，
@@ -90,12 +92,12 @@ const float D_MIN_FLOOR = 0.001;    // d_min 的下限（m）：d_min 配 0 且�
 const float SCATTER    = 2.1e-4;    // 光晕整体强度：信号弹 30 m 处中心接近饱和的标定起点（§4.3）
 const float GLOW_MAX   = 4.0;       // 光晕与星芒的逐通道上限：兜异常内容与贴脸光源
 const float GLARE_HALF = 0.6;       // 星芒饱和曲线的半值照度：表观照度等于它时臂长与亮度各取一半
-const float GLARE_MIN_DEG = 0.7;    // 星芒最短臂长（度）：很远的闪光只剩一个点
-const float GLARE_MAX_DEG = 5.0;    // 星芒最长臂长（度）：贴脸的强光源
+const float GLARE_MIN_DEG = 2.0;    // 星芒最短臂长（度）：很远的闪光只剩一个点
+const float GLARE_MAX_DEG = 22.0;   // 星芒最长臂长（度）：必须长过光晕的可见半径（信号弹 30 m 约 23°）
 const float GLARE_GAIN = 2.0;       // 臂根亮度（曲线之后的线性值）：2.0 即压到接近纯白
-const float GLARE_SIGMA_PX = 1.8;   // 臂的横向标准差下限（px）：再细就会随镜头转动逐帧闪烁
-const float GLARE_WEDGE = 2.0;      // 楔形系数：臂尖处横向标准差 = (1 + WEDGE)·GLARE_SIGMA_PX
-const float GLARE_MAX_FRACTION = 0.15; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
+const float GLARE_SIGMA_REL = 0.001667; // 臂的横向标准差 = 屏高 × 它（屏高 1080 时 1.8 px）：按屏高取，改分辨率不改观感
+const float GLARE_WEDGE = 1.5;      // 楔形系数：臂尖处横向标准差 = (1 + WEDGE)·基准
+const float GLARE_MAX_FRACTION = 0.45; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
 const float DEG_TO_RAD = 0.01745329252; // 度 → 弧度
 
 // sRGB 编码的显示值 → 线性辐射度（分段函数，与光源表提交侧的换算同源）
@@ -332,12 +334,13 @@ void main() {
         if (glareIn) {
             float ux = abs(dp.x) / thPx;
             float uy = abs(dp.y) / thPx;
-            float ax = 1.0 - ux;
-            float ay = 1.0 - uy;
-            ax *= ax;                                              // 臂尖 C¹ 归零，不留硬边
-            ay *= ay;
-            float sx = GLARE_SIGMA_PX * (1.0 + GLARE_WEDGE * ux);  // 横臂的横向标准差随臂长外扩
-            float sy = GLARE_SIGMA_PX * (1.0 + GLARE_WEDGE * uy);
+            float ax = max(1.0 - ux, 0.0);
+            float ay = max(1.0 - uy, 0.0);
+            ax *= sqrt(ax);                                        // (1−u)^1.5：沿臂缓慢衰减、臂尖平滑归零
+            ay *= sqrt(ay);
+            float sigma = max(1.6, OutSize.y * GLARE_SIGMA_REL);   // 按屏高取宽度，换分辨率不改观感
+            float sx = sigma * (1.0 + GLARE_WEDGE * ux);           // 横臂的横向标准差随臂长外扩
+            float sy = sigma * (1.0 + GLARE_WEDGE * uy);
             float armX = ax * exp(-(dp.y * dp.y) / (sx * sx));     // 沿 x 衰减、横跨 y 收窄
             float armY = ay * exp(-(dp.x * dp.x) / (sy * sy));
             // max 而不是 sum：两条臂在光心相交，相加会把那里叠成一块方块
