@@ -36,7 +36,7 @@
     "tracer_color": [255, 170, 80],
     "tracer_alpha": 180,
     "tracer_light_intensity": 7.0,
-    "muzzle_flash": { "intensity": 90.3 }
+    "muzzle_flash": { "intensity": 90.3, "glow": 4.0 }
   },
   "sounds": {
     "fire_sounds": {
