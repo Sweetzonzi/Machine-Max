@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -142,7 +143,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         updateScrollingText();
 
         // 渲染标题
-        graphics.drawString(minecraft.font, Component.translatable("gui.machine_max.fabricator.materials"),
+        graphics.drawString(minecraft.font, MMLanguageRegistry.GUI_FABRICATOR_MATERIALS.translated(),
                 getX() + 4, getY() + 5, Color.WHITE.getRGB(), false);
 
         // 计算网格布局

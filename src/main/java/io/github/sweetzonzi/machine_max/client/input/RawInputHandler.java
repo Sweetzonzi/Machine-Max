@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
@@ -321,7 +322,7 @@ public class RawInputHandler {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
                             if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() != null) {
                                 client.player.displayClientMessage(
-                                        Component.translatable("message.machine_max.leaving_vehicle",
+                                        Component.translatable(MMLanguageRegistry.MESSAGE_LEAVING_VEHICLE.tag,
                                                 KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
                                                 String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
                                         ), true
@@ -412,7 +413,7 @@ public class RawInputHandler {
                                 ? current.groups.get(nextIdx).name
                                 : current.baseGroup.name;
                         client.player.displayClientMessage(
-                                Component.translatable("message.machine_max.control_group_switched",
+                                Component.translatable(MMLanguageRegistry.MESSAGE_CONTROL_GROUP_SWITCHED.tag,
                                         Component.translatable(activeGroupName)),
                                 true
                         );

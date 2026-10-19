@@ -1,11 +1,14 @@
 package io.github.sweetzonzi.machine_max.datagen;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
+/*已经改为MMLanguageRegistry注册*/
+@Deprecated
 public class MMLanguageProviderEN_US extends LanguageProvider {
-    public MMLanguageProviderEN_US(PackOutput output, String modid, String locale) {
-        super(output, modid, locale);
+    public MMLanguageProviderEN_US(PackOutput output) {
+        super(output, MachineMax.MOD_ID, "en_us");
     }
 
     @Override

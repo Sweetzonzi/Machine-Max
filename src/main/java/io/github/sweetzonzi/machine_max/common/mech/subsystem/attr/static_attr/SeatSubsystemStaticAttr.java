@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -62,7 +63,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.blockDamage = blockDamage;
         //合法性检查
         if (!views.enableFirstPerson() && !views.enableThirdPerson())
-            throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
+            throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SEAT_SUBSYSTEM_NO_VIEW.tag);
         if (views.distanceScale() < 0)
             throw new IllegalArgumentException("error.machine_max.seat_subsystem.invalid_camera_distance");
         this.renderPassenger = renderPassenger;

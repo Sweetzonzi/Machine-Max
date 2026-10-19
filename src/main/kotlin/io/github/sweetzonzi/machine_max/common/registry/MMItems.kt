@@ -195,10 +195,11 @@ object MMItems {
     }
 
     //路基方块
-//    @JvmStatic
-//    val ROAD_BASE_BLOCK = MachineMax.REGISTER.item<BlockItem>()
-//        .id("road_base_block")
-//        .bound { BlockItem(MMBlocks.ROAD_BASE_BLOCK.get(), Item.Properties()) }
+    @JvmStatic
+    val ROAD_BASE_BLOCK_ITEM = MachineMax.REGISTER.item {
+        id="road_base"
+        factory = {BlockItem(MMBlocks.ROAD_BASE_BLOCK.get(), Item.Properties()) }
+    }
 
     @SubscribeEvent
     private fun regCustomModel(event: RegisterClientExtensionsEvent) {
@@ -222,7 +223,8 @@ object MMItems {
             CustomModelBlockEntityExtension(),
 //            FABRICATOR_BLOCK_ITEM,
             RESEARCH_TABLE_BLOCK_ITEM,
-            TOTAL_STATION_BLOCK_ITEM
+            TOTAL_STATION_BLOCK_ITEM,
+            ROAD_BASE_BLOCK_ITEM,
         )
     }
 

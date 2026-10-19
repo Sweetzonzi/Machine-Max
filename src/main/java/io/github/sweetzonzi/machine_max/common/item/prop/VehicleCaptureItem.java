@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +20,7 @@ public interface VehicleCaptureItem {
             return InteractionResultHolder.sidedSuccess(sourceStack, true);
         }
         if (!player.hasData(MMAttachments.getENTITY_EYESIGHT())) {
-            player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));
+            player.sendSystemMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_PASS.translated());
             return InteractionResultHolder.pass(sourceStack);
         }
 
@@ -27,7 +28,7 @@ public interface VehicleCaptureItem {
         SubPart subPart = eyesight.getSubPart();
         VehicleCore vehicle = subPart != null && subPart.part != null && subPart.part.assembly instanceof VehicleCore vc ? vc : null;
         if (vehicle == null || vehicle.isRemoved) {
-            player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));
+            player.sendSystemMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_PASS.translated());
             return InteractionResultHolder.pass(sourceStack);
         }
 

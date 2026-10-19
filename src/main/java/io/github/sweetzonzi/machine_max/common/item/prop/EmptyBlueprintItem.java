@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
@@ -52,7 +53,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
                 });
                 return InteractionResultHolder.consume(stack);
             } else {
-                player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));
+                player.sendSystemMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_PASS.translated());
             }
         }
         return super.use(level, player, usedHand);

@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -32,7 +33,7 @@ public class ItemModelWidget extends AbstractWidget {
     @Setter
     private boolean autoRotate = true;
     @Setter
-    private Component emptyText = Component.translatable("gui.machine_max.fabricator.no_item");
+    private Component emptyText = MMLanguageRegistry.GUI_FABRICATOR_NO_ITEM.translated();
 
     // 鼠标交互相关变量
     private boolean isDragging = false;

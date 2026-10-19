@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleDataSavedPayload;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
@@ -90,7 +91,7 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
             player.addItem(savedBlueprint);
 
             // 文件名由客户端生成随机 UUID，提示不再暴露具体文件名
-            player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_saved"));
+            player.sendSystemMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_SAVED.translated());
         }
     }
 

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.research;
 
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -149,7 +150,7 @@ public final class ResearchTreeData {
 
         String note = null;
         if (depth != null && depth.additionalPrerequisites() > 0 && unreachable == null) {
-            note = Component.translatable("gui.machine_max.research.note.additional",
+            note = Component.translatable(MMLanguageRegistry.GUI_RESEARCH_NOTE_ADDITIONAL.tag,
                     depth.additionalPrerequisites()).getString();
         }
 
@@ -208,11 +209,11 @@ public final class ResearchTreeData {
     /** 状态文案：按色调取对应的语言键 */
     public static String statusText(String tone) {
         String key = switch (tone) {
-            case TONE_OK -> "gui.machine_max.research.status.done";
-            case TONE_READY -> "gui.machine_max.research.status.available";
-            case TONE_WARN -> "gui.machine_max.research.status.insufficient";
-            case TONE_LOCKED -> "gui.machine_max.research.status.prerequisite_missing";
-            default -> "gui.machine_max.research.status.unreachable";
+            case TONE_OK -> MMLanguageRegistry.GUI_RESEARCH_STATUS_DONE.tag;
+            case TONE_READY -> MMLanguageRegistry.GUI_RESEARCH_STATUS_AVAILABLE.tag;
+            case TONE_WARN -> MMLanguageRegistry.GUI_RESEARCH_STATUS_INSUFFICIENT.tag;
+            case TONE_LOCKED -> MMLanguageRegistry.GUI_RESEARCH_STATUS_PREREQUISITE_MISSING.tag;
+            default -> MMLanguageRegistry.GUI_RESEARCH_STATUS_UNREACHABLE.tag;
         };
         return Component.translatable(key).getString();
     }

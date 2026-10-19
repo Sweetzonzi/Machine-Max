@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload.library;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -82,10 +83,10 @@ public record BlueprintExtractResultPayload(
         context.enqueueWork(() -> {
             if (packet.success()) {
                 context.player().displayClientMessage(
-                        Component.translatable("message.machine_max.blueprint_extract.success", packet.cost()), true);
+                        Component.translatable(MMLanguageRegistry.MESSAGE_BLUEPRINT_EXTRACT_SUCCESS.tag, packet.cost()), true);
             } else {
                 context.player().displayClientMessage(
-                        Component.translatable("message.machine_max.blueprint_extract.failed",
+                        Component.translatable(MMLanguageRegistry.MESSAGE_BLUEPRINT_EXTRACT_FAILED.tag,
                                 Component.translatable("message.machine_max.blueprint_extract.reason."
                                         + packet.reason().name().toLowerCase(java.util.Locale.ROOT))),
                         true);

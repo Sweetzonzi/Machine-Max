@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.research.ResearchTreeN
 import io.github.sweetzonzi.machine_max.client.render.gui.research.ResearchTreeView;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchTranscribePayload;
@@ -192,7 +193,7 @@ public class BlueprintResearchScreen extends ApricityScreen {
     private void bindSearchInput(String inputId, ResearchTreeView view) {
         Element input = auiDocument.getElementById(inputId);
         if (input == null) return;
-        input.setPlaceholder(Component.translatable("gui.machine_max.research.search_placeholder").getString());
+        input.setPlaceholder(MMLanguageRegistry.GUI_RESEARCH_SEARCH_PLACEHOLDER.translated().getString());
         input.addEventListener("input", event -> view.onSearchChanged(input.getValue()));
     }
 
@@ -244,7 +245,7 @@ public class BlueprintResearchScreen extends ApricityScreen {
         if (player == null || auiDocument == null) return;
         String html = node.kind() == ResearchTreeNode.Kind.GROUP
                 ? ResearchDetailRenderer.group(node,
-                Component.translatable("gui.machine_max.research.detail.group_hint").getString())
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_GROUP_HINT.translated().getString())
                 : ResearchDetailRenderer.research(player, researchOf(player),
                 ResearchTreeData.findGroup(researchRoots, node.id()), node);
         setDetailHtml("detail-research", html);

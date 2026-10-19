@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaSetDesignModePayload;
 import net.minecraft.network.chat.Component;
@@ -70,8 +71,8 @@ public class PdaItem extends Item implements PartAssemblyItem {
             PdaHelper.setData(stack, data.withDesignMode(next));
             PacketDistributor.sendToServer(new PdaSetDesignModePayload(usedHand, next));
             player.displayClientMessage(Component.translatable(next
-                    ? "message.machine_max.pda.design_mode.enter"
-                    : "message.machine_max.pda.design_mode.exit"), true);
+                    ? MMLanguageRegistry.MESSAGE_PDA_DESIGN_MODE_ENTER.tag
+                    : MMLanguageRegistry.MESSAGE_PDA_DESIGN_MODE_EXIT.tag), true);
             return InteractionResultHolder.success(stack);
         }
         if (PdaHelper.getData(stack).designMode()) {

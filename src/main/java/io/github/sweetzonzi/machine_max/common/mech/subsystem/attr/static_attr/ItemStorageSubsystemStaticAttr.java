@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 
 import java.util.List;
@@ -30,8 +31,8 @@ public class ItemStorageSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicSoundAttr sounds
     ) {
         super(basicAttr, sounds);
-        if (rows <= 0) throw new IllegalArgumentException("error.machine_max.item_storage_subsystem.invalid_row_num");
-        if (columns <= 0) throw new IllegalArgumentException("error.machine_max.item_storage_subsystem.invalid_column_num");
+        if (rows <= 0) throw new IllegalArgumentException(MMLanguageRegistry.ERROR_ITEM_STORAGE_SUBSYSTEM_INVALID_ROW_NUM.tag);
+        if (columns <= 0) throw new IllegalArgumentException(MMLanguageRegistry.ERROR_ITEM_STORAGE_SUBSYSTEM_INVALID_COLUMN_NUM.tag);
         this.rows = rows;
         this.columns = columns;
         this.interactInputs = interactInputs;

@@ -92,8 +92,8 @@ io.github.sweetzonzi.machine_max/
 │   └── CommentRemover.java          # 注释移除工具
 ├── datagen/                         # 数据生成器
 │   ├── MMGenerator.kt               # 入口（Kotlin）
-│   ├── MMLanguageProviderEN_US.java # 英文语言
-│   └── MMLanguageProviderZH_CN.java # 中文语言
+│   ├── MMLanguageRegistry.java      # 语言翻译器总线
+│   └── AGENTS.md                    # 翻译键智能体指南
 └── compat/create/                   # Create mod 兼容层
     ├── CreateCompat.java
     ├── CreateCollisionInfo.java

@@ -15,6 +15,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import jme3utilities.math.MyMath;
@@ -127,7 +128,7 @@ public class SubPartAttr {
         this.startBone = startBone;
         this.endBones = endBones;
         this.durability = durability;
-        if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
+        if (mass <= 0) throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SUBPART_ZERO_MASS.tag);
         this.mass = mass;
         this.massCenterName = massCenterName;
         this.projectedArea = projectedArea;
@@ -135,7 +136,7 @@ public class SubPartAttr {
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
 
-        if (hitBoxes.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_hit_boxes");
+        if (hitBoxes.isEmpty()) throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SUBPART_EMPTY_HIT_BOXES.tag);
         this.hitBoxes = hitBoxes;
         this.interactBoxes = interactBoxes;
         this.connectors = connectors;
@@ -155,7 +156,7 @@ public class SubPartAttr {
             Map<String, OBone> bones = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
                     startBone, getEffectiveEndBones());
-            if (bones.isEmpty()) throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
+            if (bones.isEmpty()) throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SUBPART_EMPTY_COLLISION_SHAPE.translated().getString());
             // 获取并储存定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
@@ -258,7 +259,7 @@ public class SubPartAttr {
                 }
             }
             if (shape.countChildren() <= 0)
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
+                throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SUBPART_EMPTY_COLLISION_SHAPE.translated().getString());
             // 调整零件质心
             Transform massCenter;
             OLocator locator = locators.get(this.massCenterName);

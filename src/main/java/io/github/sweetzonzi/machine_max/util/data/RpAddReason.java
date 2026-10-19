@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util.data;
 
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -40,15 +41,15 @@ public enum RpAddReason {
 
     public MutableComponent getTranslation() {
         return switch (this) {
-            case EXP -> Component.translatable("hud.hint.machine_max.rp_add_reason.exp");
-            case REPAIR -> Component.translatable("hud.hint.machine_max.rp_add_reason.repair");
-            case ASSEMBLY -> Component.translatable("hud.hint.machine_max.rp_add_reason.assembly");
-            case HIT -> Component.translatable("hud.hint.machine_max.rp_add_reason.hit");
-            case PART_DAMAGE -> Component.translatable("hud.hint.machine_max.rp_add_reason.part_damage");
-            case PART_DESTROY -> Component.translatable("hud.hint.machine_max.rp_add_reason.part_destroy");
-            case SUBSYSTEM_DAMAGE -> Component.translatable("hud.hint.machine_max.rp_add_reason.subsystem_damage");
-            case SUBSYSTEM_DESTROY -> Component.translatable("hud.hint.machine_max.rp_add_reason.subsystem_destroy");
-            default -> Component.translatable("hud.hint.machine_max.rp_add_reason.unknown");
+            case EXP -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_EXP.translated();
+            case REPAIR -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_REPAIR.translated();
+            case ASSEMBLY -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_ASSEMBLY.translated();
+            case HIT -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_HIT.translated();
+            case PART_DAMAGE -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_PART_DAMAGE.translated();
+            case PART_DESTROY -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_PART_DESTROY.translated();
+            case SUBSYSTEM_DAMAGE -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_SUBSYSTEM_DAMAGE.translated();
+            case SUBSYSTEM_DESTROY -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_SUBSYSTEM_DESTROY.translated();
+            default -> MMLanguageRegistry.HUD_HINT_RP_ADD_REASON_UNKNOWN.translated();
         };
     }
 

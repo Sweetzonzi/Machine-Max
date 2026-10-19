@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -139,9 +140,9 @@ public final class PdaHotbarOverlay {
 
     /** 选中蓝图名：零件配方取零件显示名，通用配方取产物名，查不到时给降级文案。 */
     private static String labelOf(Level level, @Nullable ResourceLocation recipeId) {
-        if (recipeId == null) return Component.translatable("gui.machine_max.pda.hint.empty_slot").getString();
+        if (recipeId == null) return MMLanguageRegistry.GUI_PDA_HINT_EMPTY_SLOT.translated().getString();
         RecipeHolder<FabricatingRecipe> holder = PdaHelper.recipeOf(level, recipeId);
-        if (holder == null) return Component.translatable("gui.machine_max.pda.tag.unknown").getString();
+        if (holder == null) return MMLanguageRegistry.GUI_PDA_TAG_UNKNOWN.translated().getString();
         if (holder.value() instanceof PartFabricatingRecipe partRecipe) {
             ResourceLocation partTypeId = partRecipe.getPartType();
             if (partTypeId != null) return Component.translatable(partTypeId.toLanguageKey()).getString();

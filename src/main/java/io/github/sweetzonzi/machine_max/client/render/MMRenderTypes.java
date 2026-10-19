@@ -185,4 +185,36 @@ public class MMRenderTypes {
         return ADD_SOLID_ALWAYS_VISIBLE;
     }
 
+    /**
+     * 锚点公告板 RenderType — 使用自定义核心 shader {@link #anchorShader}。
+     * <p>
+     * 关闭深度测试与混合，片段着色器丢弃透明像素并输出不透明图标色：
+     * 锚点始终满亮度、不因半透明混合变淡，且可穿过方块显示。
+     */
+    private static final Function<ResourceLocation, RenderType> ANCHOR_POINT = Util.memoize(texture ->
+            RenderType.create(
+                    "machine_max_anchor_point",
+                    DefaultVertexFormat.NEW_ENTITY,
+                    VertexFormat.Mode.QUADS,
+                    256,
+                    false,
+                    false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(new ShaderStateShard(() -> MMRenderTypes.anchorShader))
+                            .setTextureState(new TextureStateShard(texture, false, false))
+                            .setTransparencyState(NO_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .createCompositeState(false)
+            )
+    );
+
+    /** 锚点公告板核心着色器实例，在 {@link RegisterShadersEvent} 中赋值 */
+    public static volatile ShaderInstance anchorShader;
+
+    public static RenderType anchorPoint(ResourceLocation texture) {
+        return ANCHOR_POINT.apply(texture);
+    }
+
 }

@@ -8,6 +8,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -95,7 +96,7 @@ public class VariantAttr {
         this.rootSubPartName = selectRootSubPartName(subParts);
         OModel oModel = OModel.getOrEmpty(new ModelIndex("part", model));
         if (oModel.equals(OModel.Companion.getEMPTY())){
-            throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", model.toString()).getString());
+            throw new IllegalArgumentException(Component.translatable(MMLanguageRegistry.ERROR_PART_MODEL_NOT_FOUND.tag, model.toString()).getString());
         }
         if (getTextures().isEmpty()) {
             throw new IllegalArgumentException(Component.translatable("error.machine_max.part.missing_textures").getString());
@@ -153,14 +154,14 @@ public class VariantAttr {
     private void checkNameUnique(String name, String kind, String subPartName, Map<String, String> ownerByName) {
         if (RESERVED_SIGNAL_NAMES.contains(name)) {
             throw new IllegalArgumentException(Component.translatable(
-                    "error.machine_max.part.reserved_name",
+                    MMLanguageRegistry.ERROR_PART_RESERVED_NAME.tag,
                     name, kind, subPartName, model.toString()).getString());
         }
         String owner = subPartName + "/" + kind;
         String previous = ownerByName.putIfAbsent(name, owner);
         if (previous != null) {
             throw new IllegalArgumentException(Component.translatable(
-                    "error.machine_max.part.duplicate_name",
+                    MMLanguageRegistry.ERROR_PART_DUPLICATE_NAME.tag,
                     name, previous, owner, model.toString()).getString());
         }
     }

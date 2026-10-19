@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.external;
 
 import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
@@ -207,7 +208,7 @@ public class MMDynamicRes {
         for (RecipeHolder<FabricatingRecipe> holder : recipeManager.getAllRecipesFor(
                 MMResources.getFABRICATION_RECIPE_TYPE().get())) {
             if (holder.id().getPath().startsWith(PartFabricatingRecipe.DIRECTORY_PREFIX)) {
-                recordIfServer(serverSide, holder.id(), Component.translatable("error.machine_max.recipe.wrong_type_directory"));
+                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_WRONG_TYPE_DIRECTORY.translated());
                 continue;
             }
             all.put(holder.id(), holder);
@@ -218,21 +219,21 @@ public class MMDynamicRes {
                 MMResources.getPART_FABRICATION_RECIPE_TYPE().get())) {
             PartFabricatingRecipe recipe = holder.value();
             if (!holder.id().getPath().startsWith(PartFabricatingRecipe.DIRECTORY_PREFIX)) {
-                recordIfServer(serverSide, holder.id(), Component.translatable("error.machine_max.recipe.wrong_directory"));
+                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_WRONG_DIRECTORY.translated());
                 continue;
             }
             ResourceLocation partType = PartFabricatingRecipe.partTypeFromRecipeId(holder.id());
             if (!partRegistry.isEmpty() && !partRegistry.containsKey(partType)) {
-                recordIfServer(serverSide, holder.id(), Component.translatable("error.machine_max.recipe.unknown_part"));
+                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_UNKNOWN_PART.translated());
                 continue;
             }
             PartType type = partRegistry.get(partType);
             if (type != null && (recipe.getResultCount() < 1 || recipe.getResultCount() > type.getMaxStackSize())) {
-                recordIfServer(serverSide, holder.id(), Component.translatable("error.machine_max.recipe.invalid_result_count"));
+                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_INVALID_RESULT_COUNT.translated());
                 continue;
             }
             if (partByPart.containsKey(partType)) {
-                recordIfServer(serverSide, holder.id(), Component.translatable("error.machine_max.recipe.duplicate_part"));
+                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_DUPLICATE_PART.translated());
                 continue;
             }
             // 注入零件 id 与产物组件；零件缺失时无法取得堆叠上限，按保守值处理
@@ -392,18 +393,18 @@ public class MMDynamicRes {
                 String path = findCyclePath(component.get(0), new HashSet<>(component), successors);
                 if (path == null) continue;
                 recordIfServer(true, component.get(0),
-                        Component.translatable("error.machine_max.research.prerequisite_cycle", path));
+                        Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_PREREQUISITE_CYCLE.tag, path));
             }
             for (ResourceLocation id : allIds) {
                 UnreachableResearch info = UNREACHABLE_RESEARCH.get(id);
                 if (info == null) continue;
                 switch (info.cause()) {
                     case SELF_PREREQUISITE -> recordIfServer(true, id,
-                            Component.translatable("error.machine_max.research.self_prerequisite"));
+                            MMLanguageRegistry.ERROR_RESEARCH_SELF_PREREQUISITE.translated());
                     case DOWNSTREAM_OF_UNREACHABLE -> recordIfServer(true, id,
-                            Component.translatable("error.machine_max.research.unreachable_prerequisite", joinIds(info.culprits())));
+                            Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_UNREACHABLE_PREREQUISITE.tag, joinIds(info.culprits())));
                     case DANGLING_PREREQUISITE -> recordIfServer(true, id,
-                            Component.translatable("error.machine_max.research.missing_prerequisite", joinIds(info.culprits())));
+                            Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_MISSING_PREREQUISITE.tag, joinIds(info.culprits())));
                     // 环成员已由所在分量的环路径信息覆盖
                     case ON_CYCLE -> {
                     }
@@ -685,7 +686,7 @@ public class MMDynamicRes {
         for (String file : errorFiles) {
             int i = errorFiles.indexOf(file);
             MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
-            player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
+            player.sendSystemMessage(Component.translatable(MMLanguageRegistry.ERROR_LOAD.tag, file).withColor(Color.WHITE.getRGB()).append(message));
         }
     }
 
@@ -693,7 +694,7 @@ public class MMDynamicRes {
         for (String file : errorFiles) {
             int i = errorFiles.indexOf(file);
             Component message = MMDynamicRes.errorMessages.get(i);
-            server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
+            server.sendSystemMessage(Component.translatable(MMLanguageRegistry.ERROR_LOAD.tag, file).append(message).withColor(Color.red.getRGB()));
         }
     }
 

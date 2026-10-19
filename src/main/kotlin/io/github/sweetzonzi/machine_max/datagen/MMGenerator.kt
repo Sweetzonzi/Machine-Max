@@ -17,8 +17,10 @@ object MMGenerator {
         fun addServerProvider(provider: DataProvider) = generator.addProvider(event.includeServer(), provider)
         fun addClinetProvider(provider: DataProvider) = generator.addProvider(event.includeClient(), provider)
         //语言文件 Language Files
-        addClinetProvider(MMLanguageProviderZH_CN(output, MachineMax.MOD_ID, "zh_cn"))//中文
-        addClinetProvider(MMLanguageProviderEN_US(output, MachineMax.MOD_ID, "en_us"))//English
+        for (languageProvider in MMLanguageRegistry.register(output)) {
+            addClinetProvider(languageProvider)
+        }
+        MMLanguageRegistry.check() //检查是否缺少翻译
         //部件类 PartTypes
     }
 }

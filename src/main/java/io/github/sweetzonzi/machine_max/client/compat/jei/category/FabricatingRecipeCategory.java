@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScre
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -48,7 +49,7 @@ public class FabricatingRecipeCategory implements IRecipeCategory<RecipeHolder<F
 
     @Override
     public @NotNull Component getTitle() {
-        return Component.translatable("block.machine_max.fabricator");
+        return MMLanguageRegistry.BLOCK_FABRICATOR.translated();
     }
 
     @Override
@@ -92,7 +93,7 @@ public class FabricatingRecipeCategory implements IRecipeCategory<RecipeHolder<F
     @Override
     public void draw(RecipeHolder<FabricatingRecipe> recipeHolder, mezz.jei.api.gui.ingredient.IRecipeSlotsView recipeSlotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         String time = FabricatingScreen.formatTime(recipeHolder.value().getProcessingTime());
-        Component timeText = Component.translatable("gui.machine_max.fabricator.actual_time", time);
+        Component timeText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_ACTUAL_TIME.tag, time);
         graphics.drawString(Minecraft.getInstance().font, timeText, TIME_X, TIME_Y, 0xFFFFFF, true);
     }
 

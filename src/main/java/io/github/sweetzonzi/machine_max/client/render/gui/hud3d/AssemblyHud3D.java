@@ -23,6 +23,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BasicSubsystem;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
 import net.minecraft.client.player.LocalPlayer;
@@ -173,15 +174,15 @@ public class AssemblyHud3D implements IHud3DElement {
             warningMessages.clear();
             hintMessages.clear();
             if (subPart.isDestroyed()) {
-                warningMessages.add(Component.translatable("hud.warn.machine_max.subpart_destroying", decimalFormat.format(subPart.getDestroyTime() * 0.05f)));
+                warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBPART_DESTROYING.tag, decimalFormat.format(subPart.getDestroyTime() * 0.05f)));
             }
             for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
                 if (subsystem instanceof BasicSubsystem basicSubsystem && basicSubsystem.isHidden()) continue;
                 if (subsystem.isDestroyed())
-                    warningMessages.add(Component.translatable("hud.warn.machine_max.subsystem_malfunction",
+                    warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBSYSTEM_MALFUNCTION.tag,
                             Component.translatable(subsystem.name).getString()));
                 if (subsystem.getDurability() < subsystem.getMaxDurability())
-                    hintMessages.add(Component.translatable("hud.hint.machine_max.subsystem_durability",
+                    hintMessages.add(Component.translatable(MMLanguageRegistry.HUD_HINT_SUBSYSTEM_DURABILITY.tag,
                             Component.translatable(subsystem.name).getString(),
                             decimalFormat.format(subsystem.getDurability()),
                             decimalFormat.format(subsystem.getMaxDurability())));
@@ -189,10 +190,10 @@ public class AssemblyHud3D implements IHud3DElement {
             for (AbstractConnector connector : subPart.connectors.values()) {
                 if (!connector.isInternal() && connector.hasPart()) {
                     if (connector.getIntegrity() < 0.1 * connector.getBasicIntegrity())
-                        warningMessages.add(Component.translatable("hud.warn.machine_max.connector_integrity_low",
+                        warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_CONNECTOR_INTEGRITY_LOW.tag,
                                 Component.translatable(connector.name).getString()));
                     if (connector.getIntegrity() < connector.getBasicIntegrity())
-                        hintMessages.add(Component.translatable("hud.hint.machine_max.connector_integrity",
+                        hintMessages.add(Component.translatable(MMLanguageRegistry.HUD_HINT_CONNECTOR_INTEGRITY.tag,
                                 Component.translatable(connector.name).getString(),
                                 decimalFormat.format(connector.getIntegrity()),
                                 decimalFormat.format(connector.getBasicIntegrity())));
@@ -304,7 +305,7 @@ public class AssemblyHud3D implements IHud3DElement {
             }
 
             // 组装总进度条
-            ctx.drawText(part != null ? Component.translatable("hud.info.machine_max.assembling_progress") : Component.empty(), startX + PADDING, startY, TEXT_SUB);
+            ctx.drawText(part != null ? MMLanguageRegistry.HUD_INFO_ASSEMBLING_PROGRESS.translated() : Component.empty(), startX + PADDING, startY, TEXT_SUB);
             startY += TEXT_LINE_HEIGHT;
             drawAnimatedProgressBar(
                     ctx,
@@ -336,24 +337,24 @@ public class AssemblyHud3D implements IHud3DElement {
             boolean crouching = ctx.mc.player.isCrouching();
             if (ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
                 ctx.drawText(
-                        Component.translatable("hud.key.machine_max.assemble",
+                        Component.translatable(MMLanguageRegistry.HUD_KEY_ASSEMBLE.tag,
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
                 startY += TEXT_LINE_HEIGHT + 2;
-                ctx.drawText(Component.translatable("hud.key.machine_max.disassemble",
+                ctx.drawText(Component.translatable(MMLanguageRegistry.HUD_KEY_DISASSEMBLE.tag,
                                 ctx.mc.options.keyShift.getKey().getDisplayName(),
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
             } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {
                 ctx.drawText(
-                        Component.translatable("hud.key.machine_max.tear_down",
+                        Component.translatable(MMLanguageRegistry.HUD_KEY_TEAR_DOWN.tag,
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
                 startY += TEXT_LINE_HEIGHT + 2;
-                ctx.drawText(Component.translatable("hud.key.machine_max.detach",
+                ctx.drawText(Component.translatable(MMLanguageRegistry.HUD_KEY_DETACH.tag,
                                 ctx.mc.options.keyShift.getKey().getDisplayName(),
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)

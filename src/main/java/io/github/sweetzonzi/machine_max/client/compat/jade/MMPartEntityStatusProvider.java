@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.compat.jade;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import snownee.jade.api.EntityAccessor;
@@ -34,14 +35,14 @@ public enum MMPartEntityStatusProvider implements IEntityComponentProvider {
 
         // 第一行展示子部件耐久。
         tooltip.add(Component.translatable(
-                "tooltip.machine_max.jade.subpart_durability",
+                MMLanguageRegistry.TOOLTIP_JADE_SUBPART_DURABILITY.tag,
                 formatDurabilityStatus(partEntity.subPart.getDurability(), partEntity.subPart.getMaxDurability())
         ));
 
         // 第二行展示所属整车耐久（若该子部件已挂到载具上）。
         if (partEntity.subPart.part.assembly instanceof VehicleCore vehicle) {
             tooltip.add(Component.translatable(
-                    "tooltip.machine_max.jade.vehicle_durability",
+                    MMLanguageRegistry.TOOLTIP_JADE_VEHICLE_DURABILITY.tag,
                     formatDurabilityStatus(vehicle.getHp(), vehicle.getMaxHp())
             ));
         }

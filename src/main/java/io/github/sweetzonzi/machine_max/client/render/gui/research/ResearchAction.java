@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.research;
 
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -11,17 +12,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public enum ResearchAction {
     /** 研发：消耗材料完成该研发项目 */
-    RESEARCH("research", "▶", true, false, "gui.machine_max.research.action.research"),
+    RESEARCH("research", "▶", true, false, MMLanguageRegistry.GUI_RESEARCH_ACTION_RESEARCH.tag),
     /** 取出：把蓝图拿到手里；研发条目取出的是该零件的制造蓝图，蓝图库取出的是蓝图文件或内容包蓝图 */
-    TAKE("take", "↓", true, false, "gui.machine_max.research.action.take"),
+    TAKE("take", "↓", true, false, MMLanguageRegistry.GUI_RESEARCH_ACTION_TAKE.tag),
     /** 展开全部：作用于组自身 */
-    EXPAND("expand", null, false, false, "gui.machine_max.research.expand_all"),
+    EXPAND("expand", null, false, false, MMLanguageRegistry.GUI_RESEARCH_EXPAND_ALL.tag),
     /** 折叠全部：作用于组自身 */
-    COLLAPSE("collapse", null, false, false, "gui.machine_max.research.collapse_all"),
+    COLLAPSE("collapse", null, false, false, MMLanguageRegistry.GUI_RESEARCH_COLLAPSE_ALL.tag),
     /** 改名：蓝图库条目动作，只在详情面板底部出现 */
-    RENAME("rename", null, false, false, "gui.machine_max.research.action.rename"),
+    RENAME("rename", null, false, false, MMLanguageRegistry.GUI_RESEARCH_ACTION_RENAME.tag),
     /** 删除：蓝图库条目动作，只在详情面板底部出现，用危险色调 */
-    DELETE("delete", null, false, true, "gui.machine_max.research.action.delete");
+    DELETE("delete", null, false, true, MMLanguageRegistry.GUI_RESEARCH_ACTION_DELETE.tag);
 
     /** 动作键：写入 DOM 的 {@code data-act}，点击时按此值反查 */
     private final String key;

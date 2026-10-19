@@ -26,6 +26,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
@@ -444,7 +445,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
                 throw new IllegalArgumentException(
-                        Component.translatable("error.machine_max.part.connector_locator_not_found",
+                        Component.translatable(MMLanguageRegistry.ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND.tag,
                                 TextUtil.getTranslation(type.getRegistryKey()),
                                 TextUtil.getTranslation(connectorName),
                                 TextUtil.getTranslation(connectorAttr.locatorName)).getString());

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.mixin;
 
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
@@ -48,7 +49,7 @@ public abstract class ClientPacketListenerMixin {
         Entity vehicle = player.getVehicle();
         if (vehicle instanceof MMPartEntity) {
             // 返回自定义翻译消息
-            return Component.translatable("message.machine_max.leaving_vehicle",
+            return Component.translatable(MMLanguageRegistry.MESSAGE_LEAVING_VEHICLE.tag,
                     KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(), 0);
         }
         // 如果不是部件实体，返回原版消息

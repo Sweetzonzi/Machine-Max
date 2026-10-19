@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
+import io.github.sweetzonzi.machine_max.client.render.renderer.WorldRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.PartAssemblyRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.LightSourceRenderer
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer
@@ -19,6 +20,9 @@ object MMVisualEffects {
 
     @JvmStatic
     val DISTANT_VEHICLE = DistantVehicleRenderer()
+
+    @JvmStatic
+    val WORLD_RENDERER = WorldRenderer()
 
     @JvmStatic
     val VEHICLE_INSPECTOR = VehicleInspectorRenderer()
