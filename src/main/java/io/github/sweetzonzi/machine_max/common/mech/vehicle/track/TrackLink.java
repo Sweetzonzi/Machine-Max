@@ -32,6 +32,8 @@ public class TrackLink {
 
     private volatile SubPart sprocket;
     private volatile List<SubPart> members = List.of();
+    /** 创建时确定的主动轮局部 (Y,Z) 平面内顺时针绕向。 */
+    private final boolean clockwise;
     private volatile List<TensionPair> tensionPairs = List.of();
 
     private final CopyOnWriteArrayList<GearJoint> joints = new CopyOnWriteArrayList<>();
@@ -44,16 +46,14 @@ public class TrackLink {
     private volatile int linkCount = 1;
     private volatile boolean broken;
 
-    public TrackLink(VehicleCore vehicle, TrackAttr attr, float durability, boolean broken) {
+    private TrackLink(VehicleCore vehicle, TrackAttr attr, float durability, boolean broken,
+                      boolean clockwise) {
         this.vehicle = vehicle;
         this.attr = attr;
         this.durability = Math.max(0f, durability);
         this.maxDurability = attr.linkDurability();
         this.broken = broken;
-    }
-
-    public TrackLink(VehicleCore vehicle) {
-        this(vehicle, TrackAttr.DEFAULT, TrackAttr.DEFAULT.linkDurability(), false);
+        this.clockwise = clockwise;
     }
 
     @Nullable
@@ -63,7 +63,8 @@ public class TrackLink {
             MachineMax.LOGGER.warn("履带的主动轮 {} 在载具 {} 中不存在，已跳过", data.sprocket(), vehicle.getUuid());
             return null;
         }
-        TrackLink link = new TrackLink(vehicle, TrackAttr.DEFAULT, data.durability(), data.broken());
+        TrackLink link = new TrackLink(vehicle, TrackAttr.DEFAULT, data.durability(), data.broken(),
+                data.clockwise());
         link.sprocket = sprocket;
         List<SubPart> members = new ArrayList<>();
         for (TrackMemberRef ref : data.members()) {
@@ -103,8 +104,6 @@ public class TrackLink {
     @NotNull
     public static TrackLink assemble(@NotNull VehicleCore vehicle,
                                      @NotNull SubPart sprocket, @NotNull List<SubPart> wheels) {
-        TrackLink link = new TrackLink(vehicle);
-        link.sprocket = sprocket;
         List<SubPart> members = new ArrayList<>(wheels.size() + 1);
         members.add(sprocket);
         for (SubPart wheel : wheels) {
@@ -112,9 +111,14 @@ public class TrackLink {
             // 和 fromData 一样按当前载具拓扑过滤失效成员；蓝图 / 命令调用也要经过这里
             if (wheel.isDestroyed() || wheel.part.assembly != vehicle) continue;
             // 已经在别的履带里的轮子不能被静默抢走，调用方应先移出旧履带
-            if (wheel.trackLink != null && wheel.trackLink != link) continue;
+            if (wheel.trackLink != null) continue;
             members.add(wheel);
         }
+        boolean clockwise = TrackEnvelope2D.layingClockwise(members.stream()
+                .map(member -> member.getWorldPositionMatrix(1f)).toList());
+        TrackLink link = new TrackLink(vehicle, TrackAttr.DEFAULT, TrackAttr.DEFAULT.linkDurability(),
+                false, clockwise);
+        link.sprocket = sprocket;
         link.members = List.copyOf(members);
         for (SubPart member : link.members) member.trackLink = link;
         link.rebuildTensionPairs();
@@ -153,9 +157,6 @@ public class TrackLink {
         if (old != null && old != this) old.removeMember(subPart);
 
         List<SubPart> next = new ArrayList<>(members);
-        if (next.isEmpty()) {
-            sprocket = subPart;
-        }
         next.add(subPart);
         members = List.copyOf(next);
         subPart.trackLink = this;
@@ -385,7 +386,7 @@ public class TrackLink {
             durability = Math.min(durability, maxDurability);
             return;
         }
-        TrackEnvelope2D.Result result = TrackEnvelope2D.build(members, sprocket, 1f);
+        TrackEnvelope2D.Result result = envelope(1f);
         if (result != null) {
             linkCount = result.path().linkCount(attr.linkLength());
             if (result.fallback()) {
@@ -518,7 +519,13 @@ public class TrackLink {
         List<TrackMemberRef> refs = new ArrayList<>(members.size());
         for (SubPart member : members) refs.add(TrackMemberRef.of(member));
         return new TrackLinkData(sp == null ? refs.getFirst() : TrackMemberRef.of(sp),
-                refs, durability, broken);
+                refs, durability, broken, clockwise);
+    }
+
+    /** 主线程：按创建时确定的铺设绕向求当前包络。 */
+    @Nullable
+    public TrackEnvelope2D.Result envelope(float partialTick) {
+        return TrackEnvelope2D.build(members, sprocket, partialTick, clockwise);
     }
 
     /** 日志用标签：优先主动轮名；主动轮尚未解析或已清空时退回占位符。 */

@@ -4,30 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 有序轮组的履带包络（非凸 belt path）。
+ * 有序轮组的履带接触路径。铺设顺序是“主动轮 → 全部负重轮 → 顶轮 → 主动轮”。
+ * {@link #build(List, double, boolean)} 接收连接拓扑的固定绕向，各跨段由
+ * {@link OrderedBeltSolver#solve} 在全轮组公切线图中求解。
  *
- * <p>输入是 <b>有锚点的有序</b>圆列表：第一个圆是主动轮，方向是履带绕行方向。
- * 3 个及以上时按这个顺序直接构建，输出方向与输入一致（可能是顺时针，也可能是
- * 逆时针）；调用方可用 {@link #signedArea()} 的符号判断，{@link #sampleAt(double)}
- * 会按符号返回正确的外法线。</p>
+ * <p>每个铺设轮的外侧轮缘点是必经约束；实际进出线决定该处是点接触还是圆弧。
+ * 任意跨段都能增加支撑轮，同一物理轮可以在负重轮链点接触、在另一跨段圆弧接触。
+ * {@link #vertices()} 和 {@link #orderedCircles()} 表达动态接触序列，
+ * {@link #inputCircles()} 保留原成员表。全共线轮组可直接构建；3 轮及以上要求圆盘不重叠。
+ * 2 轮允许重叠或包含，路径取两圆外轮廓。</p>
  *
- * <ul>
- *   <li><b>凸角</b>（主动轮、诱导轮、比两侧低的负重轮）：相邻轮外侧外公切线 + 圆弧；</li>
- *   <li><b>凹角 / 共线</b>（被障碍抬起的负重轮、平地负重轮）：单点接触，接触长度为 0；</li>
- *   <li><b>2 个轮</b>：直接走两圆外部凸包（stadium），互相包含时退化为外圆整圆。</li>
- * </ul>
- *
- * <p>这不是对圆盘集合取凸包。抬起的负重轮会被凸包整个丢掉，而实际履带会贴住它；
- * 本类按锚定轮序保留这个凹口。锚定顺序的契约是“主动轮 → 下行程全部轮（含被顶起的）
- * → 上行程轮 → 回主动轮”，因此同一组轮心按不同顺序输入会得到不同的包络。</p>
- *
- * <p>被顶起的下行程轮如果高过回程闭合边，本类会把同一轮追加到序列末尾再接触一次：
- * 下行程是轮底的点接触，回程是轮顶的圆弧。该轮的 {@link Vertex#wheelIndex()} 会在
- * {@link #vertices()} 中出现两次，{@link #inputCircles()} 仍保持每个成员一次。</p>
- *
- * <p>纯几何、双精度、无 Minecraft / JME / JOML 依赖。{@link #reversedFromInput()}
- * 只对 2 轮布局有意义：2 轮路径会被规范化为逆时针并可能反转输入；3 个及以上不做
- * 输入反转，该标志恒为 false。</p>
+ * <p>纯几何、双精度，无 Minecraft / JME / JOML 依赖。便利入口
+ * {@link #build(List)} 以二维 Y 向上解释铺设约定，2 轮规范化为逆时针；
+ * 运行时使用带显式绕向的入口。{@link #sampleAt(double)} 根据闭环有向面积给出外法线。</p>
  */
 public final class BeltPath2D {
     private static final double EPS = 1e-9;
@@ -40,7 +29,7 @@ public final class BeltPath2D {
     }
 
     /**
-     * 轮心全共线、相邻轮心重合等无法定义闭合带路的退化布局。
+     * 相邻轮心重合等无法建立必经接触方向的布局。
      *
      * <p>与其它非法输入区分开，调用方只有对这种异常才应该回退到
      * {@link #convexFallback(List)}；支撑点落进邻轮等几何失败不应被静默抹平。</p>
@@ -52,10 +41,8 @@ public final class BeltPath2D {
     }
 
     /**
-     * 轮序顶点分类。{@code support} 是外侧角平分线与圆的交点，凹角/共线时就是接触点。
-     *
-     * <p>被顶起的下行程轮如果高过回程闭合边，回程会追加同一轮的第二个顶点，
-     * 因此同一个 {@code wheelIndex} 可能在 {@link #vertices()} 中出现两次。</p>
+     * 动态接触节点。support 是点接触位置或圆弧中点，turn 是路径转角或圆弧扫角。
+     * wheelIndex 对应原成员表，同一成员可以在接触序列中多次出现。
      */
     public record Vertex(int wheelIndex, VertexType type, double turn, Vec2 support) {
     }
@@ -96,16 +83,10 @@ public final class BeltPath2D {
     public record Sample(Vec2 point, Vec2 tangent, Vec2 normal, int edgeIndex, double arcLength) {
     }
 
-    private record InterimEdge(Vec2 start, Vec2 end, Vec2 direction) {
+private record Tangent(Vec2 tA, Vec2 tB) {
     }
 
-    private record Tangent(Vec2 tA, Vec2 tB) {
-    }
-
-    private record TangentPoint(Vec2 point, double angle, Vec2 direction) {
-    }
-
-    private final List<Circle2D> inputCircles;
+private final List<Circle2D> inputCircles;
     private final List<Circle2D> orderedCircles;
     private final List<Vertex> vertices;
     private final List<Vec2> points;
@@ -152,10 +133,26 @@ public final class BeltPath2D {
     }
 
     /**
-     * @param circles 锚定轮组：至少 2 个、半径 > 0；3 个及以上时轮心不共线
+     * @param circles 锚定轮组：至少 2 个、半径 > 0；3 个及以上时圆盘不重叠
      * @param turnEpsilon 凸/凹/共线判定阈值（弧度）
      */
     public static BeltPath2D build(List<Circle2D> circles, double turnEpsilon) {
+        validateInput(circles, turnEpsilon);
+        if (circles.size() == 2) return buildTwo(circles, 1, true);
+        return OrderedBeltSolver.solve(circles, turnEpsilon, determineClockwise(circles) ? -1 : 1);
+    }
+
+    /**
+     * @param clockwise 创建时确定的顺时针铺设绕向，随接触拓扑保存。
+     */
+    public static BeltPath2D build(List<Circle2D> circles, double turnEpsilon, boolean clockwise) {
+        validateInput(circles, turnEpsilon);
+        int sign = clockwise ? -1 : 1;
+        if (circles.size() == 2) return buildTwo(circles, sign, false);
+        return OrderedBeltSolver.solve(circles, turnEpsilon, sign);
+    }
+
+    private static void validateInput(List<Circle2D> circles, double turnEpsilon) {
         if (circles == null || circles.size() < 2) {
             throw new IllegalArgumentException("at least 2 circles are required");
         }
@@ -164,220 +161,13 @@ public final class BeltPath2D {
         }
         for (int i = 0; i < circles.size(); i++) {
             Circle2D circle = circles.get(i);
-            if (circle.radius() <= EPS) {
+            if (circle == null || circle.radius() <= EPS) {
                 throw new IllegalArgumentException("circle " + i + " radius must be > 0");
             }
         }
-        if (circles.size() == 2) {
-            return buildTwo(circles);
+        if (circles.size() > 2 && hasOverlappingWheels(circles)) {
+            throw new IllegalArgumentException("ordered wheel disks overlap");
         }
-        return buildOrdered(circles, circles, turnEpsilon, true);
-    }
-
-    /**
-     * 锚定顺序构建。{@code orderedInput} 可能比 {@code originalInput} 多一个重复轮——
-     * 被顶起的下行程轮如果高过闭合边，会在这里追加一个上行程接触。
-     */
-    private static BeltPath2D buildOrdered(List<Circle2D> orderedInput, List<Circle2D> originalInput,
-                                           double turnEpsilon, boolean allowExpansion) {
-        List<Circle2D> ordered = new ArrayList<>(orderedInput);
-        int n = ordered.size();
-        List<Circle2D> unique = uniqueCircles(originalInput);
-        double centerArea = signedArea(unique.stream().map(Circle2D::center).toList());
-        if (Math.abs(centerArea) <= EPS) {
-            throw new DegenerateLayoutException("wheel centers are collinear; belt path is undefined");
-        }
-        Vec2 centroid = centroid(unique);
-        int traversalSign = determineTraversalSign(ordered);
-
-        List<Vertex> vertices = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            Circle2D prev = ordered.get((i + n - 1) % n);
-            Circle2D cur = ordered.get(i);
-            Circle2D next = ordered.get((i + 1) % n);
-            Vec2 dPrev = cur.center().sub(prev.center()).normalized();
-            Vec2 dNext = next.center().sub(cur.center()).normalized();
-            if (dPrev.lengthSquared() <= EPS * EPS || dNext.lengthSquared() <= EPS * EPS) {
-                throw new DegenerateLayoutException("adjacent circle centers must not coincide");
-            }
-            double turn = Math.atan2(dPrev.cross(dNext), dPrev.dot(dNext));
-            Vec2 nPrev = outwardNormal(dPrev, traversalSign);
-            Vec2 nNext = outwardNormal(dNext, traversalSign);
-            Vec2 outward = nPrev.add(nNext).normalized();
-            if (outward.lengthSquared() <= EPS * EPS) {
-                outward = nNext;
-            }
-            Vec2 support = cur.center().add(outward.mul(cur.radius()));
-            VertexType type = traversalSign * turn > turnEpsilon
-                    ? VertexType.CONVEX
-                    : (traversalSign * turn < -turnEpsilon ? VertexType.CONCAVE : VertexType.STRAIGHT);
-            // 主动轮、闭合前的最后一个上行程轮，以及轮心折线接近回折的顶点都是端帽：
-            // 带子必须绕过它们。近共线布局里，端帽的转角接近 ±π，微小位姿噪声会让
-            // 符号翻转；用转角绝对值判定，结果不依赖绕行方向。
-            if (i == 0 || i == n - 1 || Math.abs(turn) > Math.PI * 0.75) {
-                type = VertexType.CONVEX;
-            }
-            int wheelIndex = originalInput.indexOf(cur);
-            if (wheelIndex < 0) {
-                wheelIndex = i;
-            }
-            vertices.add(new Vertex(wheelIndex, type, turn, support));
-        }
-
-        List<InterimEdge> interim = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            Circle2D a = ordered.get(i);
-            Circle2D b = ordered.get((i + 1) % n);
-            Vertex va = vertices.get(i);
-            Vertex vb = vertices.get((i + 1) % n);
-            Vec2 centerDir = b.center().sub(a.center()).normalized();
-            Vec2 outward = outwardNormal(centerDir, traversalSign);
-            Vec2 start;
-            Vec2 end;
-
-            if (va.type() == VertexType.CONVEX && vb.type() == VertexType.CONVEX) {
-                Tangent tangent = externalTangent(a, b, traversalSign);
-                if (tangent == null) {
-                    throw new IllegalArgumentException("no external tangent between convex wheels " + i
-                            + " and " + ((i + 1) % n));
-                }
-                start = tangent.tA();
-                end = tangent.tB();
-            } else if (va.type() != VertexType.CONVEX && vb.type() == VertexType.CONVEX) {
-                TangentPoint tangent = tangentFromPoint(va.support(), b, outward);
-                if (tangent == null) {
-                    throw new IllegalArgumentException("support point of wheel " + i
-                            + " lies inside wheel " + ((i + 1) % n));
-                }
-                start = va.support();
-                end = tangent.point();
-            } else if (va.type() == VertexType.CONVEX && vb.type() != VertexType.CONVEX) {
-                TangentPoint tangent = tangentFromPoint(vb.support(), a, outward);
-                if (tangent == null) {
-                    throw new IllegalArgumentException("support point of wheel " + ((i + 1) % n)
-                            + " lies inside wheel " + i);
-                }
-                start = tangent.point();
-                end = vb.support();
-            } else {
-                start = va.support();
-                end = vb.support();
-            }
-
-            Vec2 direction = end.sub(start).normalized();
-            if (direction.lengthSquared() <= EPS * EPS) {
-                throw new IllegalArgumentException("zero-length belt edge at wheel " + i);
-            }
-            interim.add(new InterimEdge(start, end, direction));
-        }
-
-        // 非相邻轮不能被直线段穿过。闭合边（最后成员 -> 主动轮）穿过一个下行程轮时，
-        // 说明该轮高过回程边，需要在回程上再接触一次：把同一轮追加到序列末尾，
-        // 让它以上行程凸角再出现一次。其它边穿轮属于无法表示的布局，直接报错。
-        int expandWheel = -1;
-        outer:
-        for (int i = 0; i < n; i++) {
-            InterimEdge edge = interim.get(i);
-            for (int j = 0; j < n; j++) {
-                if (j == i || j == (i + 1) % n) {
-                    continue;
-                }
-                Circle2D wheel = ordered.get(j);
-                // 同一物理轮可能在序列里出现两次（下行程点接触 + 回程圆弧）。
-                // 它已经是边的端点，不能当成“非相邻轮被穿过”。
-                if (sameCircle(wheel, ordered.get(i)) || sameCircle(wheel, ordered.get((i + 1) % n))) {
-                    continue;
-                }
-                double clearance = distancePointSegment(wheel.center(), edge.start(), edge.end())
-                        - wheel.radius();
-                if (clearance < -1e-4) {
-                    if (allowExpansion && i == n - 1 && j > 0 && j < n - 1) {
-                        expandWheel = j;
-                        break outer;
-                    }
-                    throw new IllegalArgumentException("belt edge " + i + " cuts wheel " + j
-                            + " (clearance " + clearance + ")");
-                }
-            }
-        }
-        if (expandWheel >= 0) {
-            List<Circle2D> expanded = new ArrayList<>(ordered);
-            expanded.add(ordered.get(expandWheel));
-            return buildOrdered(expanded, originalInput, turnEpsilon, false);
-        }
-
-        List<Vec2> points = new ArrayList<>();
-        List<ArcContact> arcs = new ArrayList<>();
-        List<PointContact> pointContacts = new ArrayList<>();
-
-        for (int i = 0; i < n; i++) {
-            Circle2D circle = ordered.get(i);
-            Vertex vertex = vertices.get(i);
-            InterimEdge prev = interim.get((i + n - 1) % n);
-            InterimEdge next = interim.get(i);
-            Vec2 tIn = prev.end();
-            Vec2 tOut = next.start();
-
-            if (vertex.type() != VertexType.CONVEX) {
-                addPoint(points, vertex.support());
-                pointContacts.add(new PointContact(vertex.wheelIndex(), vertex.support()));
-                addPoint(points, next.end());
-                continue;
-            }
-
-            // 圆弧必须绕过轮子的外侧。两条边的外法线求平均只能给出“短弧”一侧；
-            // 端帽处带子可能包超过半圈，此时真正的外侧是平均方向的反方向。
-            Vec2 nPrev = outwardNormal(prev.direction(), traversalSign);
-            Vec2 nNext = outwardNormal(next.direction(), traversalSign);
-            Vec2 bisector = nPrev.add(nNext).normalized();
-            if (bisector.lengthSquared() <= EPS * EPS) {
-                bisector = nNext;
-            }
-            Vec2 away = circle.center().sub(centroid);
-            Vec2 reference = away.lengthSquared() > EPS * EPS && bisector.dot(away) < 0
-                    ? bisector.negate()
-                    : bisector;
-
-            double arcStart = Math.atan2(tIn.y() - circle.y(), tIn.x() - circle.x());
-            double arcEnd = Math.atan2(tOut.y() - circle.y(), tOut.x() - circle.x());
-            double ccwSweep = normalizePositive(arcEnd - arcStart);
-            double cwSweep = ccwSweep - Math.PI * 2;
-            double referenceAngle = Math.atan2(reference.y(), reference.x());
-            double ccwDistance = angularDistance(arcStart + ccwSweep * 0.5, referenceAngle);
-            double cwDistance = angularDistance(arcStart + cwSweep * 0.5, referenceAngle);
-            double sweep = ccwDistance <= cwDistance ? ccwSweep : cwSweep;
-            if (Math.abs(sweep) <= EPS) {
-                addPoint(points, tIn);
-                arcs.add(new ArcContact(vertex.wheelIndex(), arcStart, 0, 0, List.of(tIn)));
-                addPoint(points, next.end());
-                continue;
-            }
-
-            int arcSamples = Math.max(2, (int) Math.ceil(Math.abs(sweep) / ARC_STEP));
-            List<Vec2> arcPoints = new ArrayList<>(arcSamples + 1);
-            for (int k = 0; k <= arcSamples; k++) {
-                double angle = arcStart + sweep * ((double) k / arcSamples);
-                arcPoints.add(new Vec2(
-                        circle.x() + Math.cos(angle) * circle.radius(),
-                        circle.y() + Math.sin(angle) * circle.radius()
-                ));
-            }
-            // 用几何终点收口，避免浮点误差在拼接处留下缝。
-            arcPoints.set(arcPoints.size() - 1, tOut);
-            for (Vec2 point : arcPoints) {
-                addPoint(points, point);
-            }
-            arcs.add(new ArcContact(
-                    vertex.wheelIndex(),
-                    arcStart,
-                    sweep,
-                    Math.abs(sweep) * circle.radius(),
-                    arcPoints
-            ));
-            addPoint(points, next.end());
-        }
-
-        return fromData(originalInput, ordered, vertices, points, arcs, pointContacts, false);
     }
 
     /**
@@ -397,50 +187,17 @@ public final class BeltPath2D {
         return false;
     }
 
-    private static boolean sameCircle(Circle2D a, Circle2D b) {
-        return a.center().distance(b.center()) <= EPS
-                && Math.abs(a.radius() - b.radius()) <= EPS;
-    }
-
-    private static List<Circle2D> uniqueCircles(List<Circle2D> circles) {
-        List<Circle2D> unique = new ArrayList<>(circles.size());
-        for (Circle2D circle : circles) {
-            boolean duplicate = false;
-            for (Circle2D existing : unique) {
-                if (existing.center().distance(circle.center()) <= EPS
-                        && Math.abs(existing.radius() - circle.radius()) <= EPS) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate) {
-                unique.add(circle);
-            }
-        }
-        return unique;
-    }
-
-    private static Vec2 centroid(List<Circle2D> circles) {
-        double x = 0;
-        double y = 0;
-        for (Circle2D circle : circles) {
-            x += circle.x();
-            y += circle.y();
-        }
-        return new Vec2(x / circles.size(), y / circles.size());
-    }
-
     /**
      * 由“下行程优先”的锚定顺序确定整条带路的绕行方向。
      *
      * <p>闭合边（最后一个成员 → 主动轮）属于上行程，不参与判断；在其余边里取中点
      * 最低的一条作为下行程代表，要求它的外法线朝下（主动轮局部 -Y）。这样得到的
-     * 符号用于把“轮心折线的左/右转”翻译成带路的凸/凹。轮心多边形的绕向不作为判据：
+     * 符号是便利入口的二维 Y 向上约定。轮心多边形的绕向不作为判据：
      * 在“共线三轮回中间抬起”的布局里，它与带路绕向恰好相反。</p>
      *
-     * @return +1 表示带路逆时针，-1 表示顺时针
+     * @return 是否顺时针绕行
      */
-    private static int determineTraversalSign(List<Circle2D> circles) {
+    private static boolean determineClockwise(List<Circle2D> circles) {
         int n = circles.size();
         int bestEdge = -1;
         double bestMidY = Double.POSITIVE_INFINITY;
@@ -465,47 +222,24 @@ public final class BeltPath2D {
         if (bestEdge >= 0) {
             Vec2 direction = circles.get(bestEdge + 1).center()
                     .sub(circles.get(bestEdge).center());
-            return direction.rightNormal().y() < 0 ? 1 : -1;
+            return direction.rightNormal().y() >= 0;
         }
 
-        double centerArea = signedArea(circles.stream().map(Circle2D::center).toList());
-        if (Math.abs(centerArea) <= EPS) {
-            throw new DegenerateLayoutException("wheel centers are collinear; belt path is undefined");
-        }
-        return centerArea > 0 ? 1 : -1;
-    }
-
-    private static Vec2 outwardNormal(Vec2 direction, int traversalSign) {
-        Vec2 right = direction.rightNormal();
-        return traversalSign >= 0 ? right : right.negate();
-    }
-
-    private static double normalizePositive(double angle) {
-        double value = angle % (Math.PI * 2);
-        if (value < 0) {
-            value += Math.PI * 2;
-        }
-        return value;
-    }
-
-    private static double angularDistance(double a, double b) {
-        double diff = normalizePositive(a - b);
-        return Math.min(diff, Math.PI * 2 - diff);
+        return false;
     }
 
     /**
-     * 全共线等无法定义闭合带路的退化布局的凸包回退。
+     * 重叠圆盘等无法建立有序接触路径时的凸包回退。
      *
      * <p>返回的是圆盘集合的凸包折线——没有圆弧、没有凹口，只保证
      * {@link #length()} / {@link #linkCount(double)} / {@link #sampleAt(double)}
      * 可用。调用方应记录告警，并在轮位姿恢复后重新尝试 {@link #build}。</p>
      *
-     * <p>只应在 {@link #build} 抛 {@link DegenerateLayoutException}，或
-     * {@link #hasOverlappingWheels(List)} 为 true 时调用。支撑点落进邻轮、直线段
-     * 穿过非相邻轮等几何失败在无重叠时不属于退化布局，回退会抹掉抬轮凹口。</p>
+     * <p>调用条件为 {@link #hasOverlappingWheels(List)}，或
+     * {@link DegenerateLayoutException}。非重叠轮组的几何失败应交给调用方报告，
+     * 凸包不能保留负重轮链的凹口。</p>
      *
-     * <p>与 {@link #build} 不同，本方法不要求轮心不共线，但同样要求至少 2 个圆、
-     * 半径 > 0。</p>
+     * <p>至少需要 2 个半径大于 0 的圆。</p>
      */
     public static BeltPath2D convexFallback(List<Circle2D> circles) {
         if (circles == null || circles.size() < 2) {
@@ -532,31 +266,31 @@ public final class BeltPath2D {
      * 2 轮布局：两个外离/重叠圆盘的外部凸包 = 两条外公切线 + 两段圆弧。
      * 两圆互相包含时退化为外圆整圆。
      */
-    private static BeltPath2D buildTwo(List<Circle2D> input) {
+    private static BeltPath2D buildTwo(List<Circle2D> input, int sign, boolean normalizeInput) {
         Circle2D a = input.get(0);
         Circle2D b = input.get(1);
         double distance = a.center().distance(b.center());
         if (distance <= Math.abs(a.radius() - b.radius()) + EPS) {
-            return buildContainedTwo(input);
+            return buildContainedTwo(input, sign);
         }
 
-        // 统一成左圆 -> 右圆，使输出为逆时针。
-        int firstIndex = (a.x() < b.x() || (a.x() == b.x() && a.y() < b.y())) ? 0 : 1;
+        // 显式铺设拓扑保持主动轮首位；便利入口规范化成左圆起点、逆时针。
+        int firstIndex = !normalizeInput || a.x() < b.x() || (a.x() == b.x() && a.y() < b.y()) ? 0 : 1;
         Circle2D left = input.get(firstIndex);
         Circle2D right = input.get(1 - firstIndex);
 
-        Tangent lower = externalTangent(left, right, +1);
-        Tangent upper = externalTangent(left, right, -1);
+        Tangent lower = externalTangent(left, right, sign);
+        Tangent upper = externalTangent(left, right, -sign);
         if (lower == null || upper == null) {
-            return buildContainedTwo(input);
+            return buildContainedTwo(input, sign);
         }
 
         double leftStart = angleOf(upper.tA(), left);
         double leftEnd = angleOf(lower.tA(), left);
-        double leftSweep = positiveSweep(leftStart, leftEnd);
+        double leftSweep = sign * positiveSweep(sign * leftStart, sign * leftEnd);
         double rightStart = angleOf(lower.tB(), right);
         double rightEnd = angleOf(upper.tB(), right);
-        double rightSweep = positiveSweep(rightStart, rightEnd);
+        double rightSweep = sign * positiveSweep(sign * rightStart, sign * rightEnd);
 
         List<Vec2> leftArc = sampleArc(left, leftStart, leftSweep, lower.tA());
         List<Vec2> rightArc = sampleArc(right, rightStart, rightSweep, upper.tB());
@@ -603,7 +337,7 @@ public final class BeltPath2D {
         );
     }
 
-    private static BeltPath2D buildContainedTwo(List<Circle2D> input) {
+    private static BeltPath2D buildContainedTwo(List<Circle2D> input, int sign) {
         Circle2D a = input.get(0);
         Circle2D b = input.get(1);
         int outerIndex = a.radius() >= b.radius() ? 0 : 1;
@@ -611,17 +345,17 @@ public final class BeltPath2D {
         Circle2D outer = input.get(outerIndex);
         Circle2D inner = input.get(innerIndex);
 
-        List<Vec2> fullArc = sampleArc(outer, 0, Math.PI * 2, outer.pointAt(0));
+        List<Vec2> fullArc = sampleArc(outer, 0, sign * Math.PI * 2, outer.pointAt(0));
         List<Vec2> points = new ArrayList<>(fullArc.subList(0, fullArc.size() - 1));
         List<ArcContact> arcs = List.of(new ArcContact(
                 outerIndex,
                 0,
-                Math.PI * 2,
+                sign * Math.PI * 2,
                 Math.PI * 2 * outer.radius(),
                 fullArc
         ));
         List<Vertex> vertices = List.of(
-                new Vertex(outerIndex, VertexType.CONVEX, Math.PI * 2, outer.pointAt(0)),
+                new Vertex(outerIndex, VertexType.CONVEX, sign * Math.PI * 2, outer.pointAt(0)),
                 new Vertex(innerIndex, VertexType.STRAIGHT, 0, inner.center())
         );
 
@@ -661,7 +395,7 @@ public final class BeltPath2D {
         return sweep;
     }
 
-    private static BeltPath2D fromData(
+    static BeltPath2D fromData(
             List<Circle2D> inputCircles,
             List<Circle2D> orderedCircles,
             List<Vertex> vertices,
@@ -891,29 +625,4 @@ public final class BeltPath2D {
         return new Tangent(tA, tB);
     }
 
-    /**
-     * 从点 p 到圆 c 的切线。outward 用来在两条切线里选外侧那条。
-     */
-    private static TangentPoint tangentFromPoint(Vec2 p, Circle2D c, Vec2 outward) {
-        Vec2 delta = c.center().sub(p);
-        double distance = delta.length();
-        if (distance <= c.radius() + EPS) {
-            return null;
-        }
-        // 基点必须是 C->P；切线点角度 = 基点 ± acos(r/d)。
-        double base = Math.atan2(p.y() - c.y(), p.x() - c.x());
-        double alpha = Math.acos(Math.min(1, c.radius() / distance));
-        TangentPoint best = null;
-        double bestScore = Double.NEGATIVE_INFINITY;
-        for (int sign = -1; sign <= 1; sign += 2) {
-            double angle = base + sign * alpha;
-            Vec2 point = c.pointAt(angle);
-            double score = point.sub(c.center()).dot(outward);
-            if (score > bestScore) {
-                bestScore = score;
-                best = new TangentPoint(point, angle, point.sub(p).normalized());
-            }
-        }
-        return best;
-    }
 }

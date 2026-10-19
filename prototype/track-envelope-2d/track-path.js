@@ -1,29 +1,4 @@
-/*
- * TrackPath2D — 有序轮组的履带包络（非凸）参考实现。
- *
- * 与 src/main/java/io/github/sweetzonzi/machine_max/util/geometry/BeltPath2D.java
- * 是同一套算法的两份实现：改一侧必须同步另一侧，并各自跑测试。
- *
- * 输入是锚定有序的圆列表：第一个圆是主动轮，顺序为
- * “主动轮 → 下行程全部轮（含被顶起的）→ 上行程轮 → 回主动轮”。
- * 3 个及以上按这个顺序直接构建，输出方向跟随锚定顺序（可能顺时针，也可能逆时针）；
- * 2 个轮子走两圆外部凸包（stadium，互相包含时退化为外圆整圆）。
- *
- * 顶点分类：
- *   - 凸角：相邻轮外侧外公切线 + 圆弧；
- *   - 凹角 / 共线：单点接触，接触长度为 0；
- *   - 端帽：一律凸角，带子必须绕过该轮。
- *
- * 端帽的判据是下标 0、下标 n-1，或 |turn| > 3π/4。端帽处轮心折线接近回折、
- * 转角接近 ±π，`traversalSign * turn` 的符号会被微小位姿噪声翻掉；按转角绝对值
- * 判定，结果不依赖绕行方向，包络不会在“绕过该轮”与“擦过一点”之间跳变。
- *
- * 被顶起的下行程轮如果高过回程闭合边，同一轮会被追加到序列末尾再接触一次：
- * 下行程是轮底的点接触，回程是轮顶的圆弧。该轮的 wheelIndex 会在 vertices / arcs /
- * pointContacts 中出现两次，inputCircles 仍保持每个成员一次。
- *
- * 纯几何、双精度、无第三方依赖；浏览器与 Node 共用同一份文件。
- */
+/* TrackPath2D: 铺设顺序为主动轮、负重轮、顶轮；ordered-belt-solver.js 与 OrderedBeltSolver.java#solve 对照。 */
 (function (global) {
     'use strict';
 
@@ -32,12 +7,13 @@
     const NORMALIZE_EPS = 1e-12;
     const ARC_STEP = Math.PI / 180;
     const END_CAP_TURN = Math.PI * 0.75;
-    const CUT_TOLERANCE = 1e-4;
     const OVERLAP_TOLERANCE = 1e-6;
     const FALLBACK_SEGMENTS = 128;
     const HULL_EPS = 1e-12;
+    const orderedSolver = global.OrderedBeltSolver
+        || (typeof require !== 'undefined' ? require('./ordered-belt-solver.js') : null);
 
-    /** 轮心全共线、相邻轮心重合等无法定义闭合带路的退化布局。 */
+    /** 相邻轮心重合等无法建立接触方向的布局。 */
     class DegenerateLayoutError extends Error {
         constructor(message) {
             super(message);
@@ -168,15 +144,6 @@
     }
 
     /**
-     * 一条边朝外的法线。traversalSign = +1 时带路逆时针，外法线取有向边的右侧；
-     * -1 时取左侧。
-     */
-    function outwardNormal(direction, traversalSign) {
-        const right = vec(direction.y, -direction.x);
-        return traversalSign >= 0 ? right : vec(-right.x, -right.y);
-    }
-
-    /**
      * 相邻轮的外公切线。side = +1 取有向边的右侧切点，-1 取左侧。
      * 两圆互相包含到切线不存在时返回 null。
      */
@@ -252,9 +219,9 @@
      * 的一条作为下行程代表，要求它的外法线朝下。轮心多边形的绕向不作为判据：在
      * “共线三轮回中间抬起”的布局里，它与带路绕向恰好相反。
      *
-     * @returns {number} +1 表示带路逆时针，-1 表示顺时针
+     * @returns {boolean} 是否顺时针绕行
      */
-    function determineTraversalSign(circles) {
+    function determineClockwise(circles) {
         const n = circles.length;
         let bestEdge = -1;
         let bestMidY = Infinity;
@@ -280,14 +247,10 @@
             const a = circles[bestEdge];
             const b = circles[bestEdge + 1];
             const right = vec(b.y - a.y, -(b.x - a.x));
-            return right.y < 0 ? 1 : -1;
+            return right.y >= 0;
         }
 
-        const centerArea = signedArea(circles);
-        if (Math.abs(centerArea) <= EPS) {
-            throw new DegenerateLayoutError('wheel centers are collinear; belt path is undefined');
-        }
-        return centerArea > 0 ? 1 : -1;
+        return false;
     }
 
     function buildEdges(points) {
@@ -359,225 +322,6 @@
         };
     }
 
-    /**
-     * 锚定顺序构建。orderedInput 可能比 originalInput 多一个重复轮——被顶起的
-     * 下行程轮如果高过闭合边，会在这里追加一个上行程接触。
-     */
-    function buildOrdered(orderedInput, originalInput, turnEpsilon, allowExpansion) {
-        const ordered = orderedInput.slice();
-        const n = ordered.length;
-        const unique = uniqueCircles(originalInput);
-        const centerArea = signedArea(unique);
-        if (Math.abs(centerArea) <= EPS) {
-            throw new DegenerateLayoutError('wheel centers are collinear; belt path is undefined');
-        }
-        const centroid = centroidOf(unique);
-        const traversalSign = determineTraversalSign(ordered);
-
-        const vertices = [];
-        for (let i = 0; i < n; i++) {
-            const prev = ordered[(i + n - 1) % n];
-            const cur = ordered[i];
-            const next = ordered[(i + 1) % n];
-            const dPrev = normalize(cur.x - prev.x, cur.y - prev.y);
-            const dNext = normalize(next.x - cur.x, next.y - cur.y);
-            if (lengthSq(dPrev) <= EPS * EPS || lengthSq(dNext) <= EPS * EPS) {
-                throw new DegenerateLayoutError('adjacent circle centers must not coincide');
-            }
-            const turn = Math.atan2(cross(dPrev, dNext), dot(dPrev, dNext));
-            const nPrev = outwardNormal(dPrev, traversalSign);
-            const nNext = outwardNormal(dNext, traversalSign);
-            let outward = normalize(nPrev.x + nNext.x, nPrev.y + nNext.y);
-            if (lengthSq(outward) <= EPS * EPS) {
-                outward = nNext;
-            }
-            const support = vec(cur.x + outward.x * cur.r, cur.y + outward.y * cur.r);
-            let type = traversalSign * turn > turnEpsilon
-                ? 'convex'
-                : (traversalSign * turn < -turnEpsilon ? 'concave' : 'straight');
-            // 主动轮、闭合前的最后一个上行程轮，以及轮心折线接近回折的顶点都是端帽：
-            // 带子必须绕过它们。
-            if (i === 0 || i === n - 1 || Math.abs(turn) > END_CAP_TURN) {
-                type = 'convex';
-            }
-            let wheelIndex = indexOfCircle(originalInput, cur);
-            if (wheelIndex < 0) {
-                wheelIndex = i;
-            }
-            vertices.push({
-                wheelIndex: wheelIndex,
-                type: type,
-                turn: turn,
-                support: support
-            });
-        }
-
-        const interim = [];
-        for (let i = 0; i < n; i++) {
-            const a = ordered[i];
-            const b = ordered[(i + 1) % n];
-            const va = vertices[i];
-            const vb = vertices[(i + 1) % n];
-            const centerDir = normalize(b.x - a.x, b.y - a.y);
-            const outward = outwardNormal(centerDir, traversalSign);
-            let start;
-            let end;
-
-            if (va.type === 'convex' && vb.type === 'convex') {
-                const tangent = externalTangent(a, b, traversalSign);
-                if (!tangent) {
-                    throw new RangeError('no external tangent between convex wheels ' + i
-                        + ' and ' + ((i + 1) % n));
-                }
-                start = tangent.tA;
-                end = tangent.tB;
-            } else if (va.type !== 'convex' && vb.type === 'convex') {
-                const tangent = tangentFromPoint(va.support, b, outward);
-                if (!tangent) {
-                    throw new RangeError('support point of wheel ' + i
-                        + ' lies inside wheel ' + ((i + 1) % n));
-                }
-                start = va.support;
-                end = tangent.point;
-            } else if (va.type === 'convex' && vb.type !== 'convex') {
-                const tangent = tangentFromPoint(vb.support, a, outward);
-                if (!tangent) {
-                    throw new RangeError('support point of wheel ' + ((i + 1) % n)
-                        + ' lies inside wheel ' + i);
-                }
-                start = tangent.point;
-                end = vb.support;
-            } else {
-                start = va.support;
-                end = vb.support;
-            }
-
-            const direction = normalize(end.x - start.x, end.y - start.y);
-            if (lengthSq(direction) <= EPS * EPS) {
-                throw new RangeError('zero-length belt edge at wheel ' + i);
-            }
-            interim.push({start: start, end: end, direction: direction});
-        }
-
-        // 非相邻轮不能被直线段穿过。闭合边（最后成员 → 主动轮）穿过一个下行程轮时，
-        // 说明该轮高过回程边，需要在回程上再接触一次：把同一轮追加到序列末尾，
-        // 让它以上行程凸角再出现一次。其它边穿轮属于无法表示的布局，直接报错。
-        let expandWheel = -1;
-        outer:
-        for (let i = 0; i < n; i++) {
-            const edge = interim[i];
-            for (let j = 0; j < n; j++) {
-                if (j === i || j === (i + 1) % n) {
-                    continue;
-                }
-                const wheel = ordered[j];
-                // 同一物理轮可能在序列里出现两次（下行程点接触 + 回程圆弧）。
-                // 它已经是边的端点，不能当成“非相邻轮被穿过”。
-                if (sameCircle(wheel, ordered[i]) || sameCircle(wheel, ordered[(i + 1) % n])) {
-                    continue;
-                }
-                const clearance = distancePointSegment(wheel, edge.start, edge.end) - wheel.r;
-                if (clearance < -CUT_TOLERANCE) {
-                    if (allowExpansion && i === n - 1 && j > 0 && j < n - 1) {
-                        expandWheel = j;
-                        break outer;
-                    }
-                    throw new RangeError('belt edge ' + i + ' cuts wheel ' + j
-                        + ' (clearance ' + clearance + ')');
-                }
-            }
-        }
-        if (expandWheel >= 0) {
-            const expanded = ordered.slice();
-            expanded.push(ordered[expandWheel]);
-            return buildOrdered(expanded, originalInput, turnEpsilon, false);
-        }
-
-        const points = [];
-        const arcs = [];
-        const pointContacts = [];
-
-        for (let i = 0; i < n; i++) {
-            const circle = ordered[i];
-            const vertex = vertices[i];
-            const prev = interim[(i + n - 1) % n];
-            const next = interim[i];
-            const tIn = prev.end;
-            const tOut = next.start;
-
-            if (vertex.type !== 'convex') {
-                addPoint(points, vertex.support);
-                pointContacts.push({
-                    wheelIndex: vertex.wheelIndex,
-                    wheelId: circle.id,
-                    type: 'point',
-                    point: vec(vertex.support.x, vertex.support.y),
-                    contactLength: 0,
-                    sweep: 0
-                });
-                addPoint(points, next.end);
-                continue;
-            }
-
-            // 圆弧必须绕过轮子的外侧。两条边外法线求平均只能给出“短弧”一侧；
-            // 端帽处带子可能包超过半圈，此时真正的外侧是平均方向的反方向。
-            const nPrev = outwardNormal(prev.direction, traversalSign);
-            const nNext = outwardNormal(next.direction, traversalSign);
-            let bisector = normalize(nPrev.x + nNext.x, nPrev.y + nNext.y);
-            if (lengthSq(bisector) <= EPS * EPS) {
-                bisector = nNext;
-            }
-            const away = vec(circle.x - centroid.x, circle.y - centroid.y);
-            let reference = bisector;
-            if (lengthSq(away) > EPS * EPS && dot(bisector, away) < 0) {
-                reference = vec(-bisector.x, -bisector.y);
-            }
-
-            const arcStart = Math.atan2(tIn.y - circle.y, tIn.x - circle.x);
-            const arcEnd = Math.atan2(tOut.y - circle.y, tOut.x - circle.x);
-            const ccwSweep = normalizePositive(arcEnd - arcStart);
-            const cwSweep = ccwSweep - TAU;
-            const referenceAngle = Math.atan2(reference.y, reference.x);
-            const ccwDistance = angularDistance(arcStart + ccwSweep * 0.5, referenceAngle);
-            const cwDistance = angularDistance(arcStart + cwSweep * 0.5, referenceAngle);
-            const sweep = ccwDistance <= cwDistance ? ccwSweep : cwSweep;
-
-            if (Math.abs(sweep) <= EPS) {
-                const zeroStart = points.length === 0 ? 0 : points.length - 1;
-                addPoint(points, tIn);
-                arcs.push(arcRecord(
-                    vertex.wheelIndex, circle, arcStart, 0,
-                    [vec(tIn.x, tIn.y)], zeroStart, points.length - 1
-                ));
-                addPoint(points, next.end);
-                continue;
-            }
-
-            const arcSamples = Math.max(2, Math.ceil(Math.abs(sweep) / ARC_STEP));
-            const arcPoints = [];
-            for (let k = 0; k <= arcSamples; k++) {
-                const angle = arcStart + sweep * (k / arcSamples);
-                arcPoints.push(circlePoint(circle, angle));
-            }
-            // 用几何终点收口，避免浮点误差在拼接处留下缝。
-            arcPoints[arcPoints.length - 1] = vec(tOut.x, tOut.y);
-
-            const startIndex = points.length === 0 ? 0 : points.length - 1;
-            for (const point of arcPoints) {
-                addPoint(points, point);
-            }
-            const endIndex = points.length - 1;
-
-            arcs.push(arcRecord(
-                vertex.wheelIndex, circle, arcStart, sweep,
-                arcPoints, startIndex, endIndex
-            ));
-            addPoint(points, next.end);
-        }
-
-        return fromData(originalInput, ordered, vertices, points, arcs, pointContacts, false);
-    }
-
     function sampleArc(circle, start, sweep, endPoint) {
         const samples = Math.abs(sweep) <= EPS
             ? 1
@@ -603,31 +347,31 @@
      * 2 轮布局：两个外离/重叠圆盘的外部凸包 = 两条外公切线 + 两段圆弧。
      * 两圆互相包含时退化为外圆整圆。输出规范化为逆时针，可能反转输入顺序。
      */
-    function buildTwo(input) {
+    function buildTwo(input, sign, normalizeInput) {
         const a = input[0];
         const b = input[1];
         const separation = Math.hypot(a.x - b.x, a.y - b.y);
         if (separation <= Math.abs(a.r - b.r) + EPS) {
-            return buildContainedTwo(input);
+            return buildContainedTwo(input, sign);
         }
 
         // 统一成左圆 -> 右圆，使输出为逆时针。
-        const firstIndex = (a.x < b.x || (a.x === b.x && a.y < b.y)) ? 0 : 1;
+        const firstIndex = !normalizeInput || a.x < b.x || (a.x === b.x && a.y < b.y) ? 0 : 1;
         const left = input[firstIndex];
         const right = input[1 - firstIndex];
 
-        const lower = externalTangent(left, right, +1);
-        const upper = externalTangent(left, right, -1);
+        const lower = externalTangent(left, right, sign);
+        const upper = externalTangent(left, right, -sign);
         if (!lower || !upper) {
-            return buildContainedTwo(input);
+            return buildContainedTwo(input, sign);
         }
 
         const leftStart = angleOf(upper.tA, left);
         const leftEnd = angleOf(lower.tA, left);
-        const leftSweep = positiveSweep(leftStart, leftEnd);
+        const leftSweep = sign * positiveSweep(sign * leftStart, sign * leftEnd);
         const rightStart = angleOf(lower.tB, right);
         const rightEnd = angleOf(upper.tB, right);
-        const rightSweep = positiveSweep(rightStart, rightEnd);
+        const rightSweep = sign * positiveSweep(sign * rightStart, sign * rightEnd);
 
         const leftArc = sampleArc(left, leftStart, leftSweep, lower.tA);
         const rightArc = sampleArc(right, rightStart, rightSweep, upper.tB);
@@ -668,7 +412,7 @@
         return fromData(input, [left, right], vertices, points, arcs, [], firstIndex !== 0);
     }
 
-    function buildContainedTwo(input) {
+    function buildContainedTwo(input, sign) {
         const a = input[0];
         const b = input[1];
         const outerIndex = a.r >= b.r ? 0 : 1;
@@ -676,18 +420,18 @@
         const outer = input[outerIndex];
         const inner = input[innerIndex];
 
-        const fullArc = sampleArc(outer, 0, TAU, circlePoint(outer, 0));
+        const fullArc = sampleArc(outer, 0, sign * TAU, circlePoint(outer, 0));
         const points = fullArc.slice(0, fullArc.length - 1).map(function (p) {
             return vec(p.x, p.y);
         });
         const arcs = [
-            arcRecord(outerIndex, outer, 0, TAU, fullArc, 0, points.length - 1)
+            arcRecord(outerIndex, outer, 0, sign * TAU, fullArc, 0, points.length - 1)
         ];
         const vertices = [
             {
                 wheelIndex: outerIndex,
                 type: 'convex',
-                turn: TAU,
+                turn: sign * TAU,
                 support: circlePoint(outer, 0)
             },
             {
@@ -856,7 +600,7 @@
     }
 
     /**
-     * 全共线等无法定义闭合带路的退化布局的凸包回退。
+     * 重叠轮盘等无法建立有序接触路径时的凸包回退。
      *
      * 返回的是圆盘集合的凸包折线——没有圆弧、没有凹口，只保证 length / linkCount /
      * sampleAt 可用。调用方应记录告警，并在轮位姿恢复后重新尝试 buildBeltPath。
@@ -903,7 +647,7 @@
      * @param {{x:number,y:number,r:number,id?:*}[]} circles
      *        锚定轮组：首个为主动轮，顺序为“主动轮 → 下行程 → 上行程”；
      *        2 个轮子走凸包/stadium，3 个及以上按轮序走非凸带路
-     * @param {{turnEpsilon?:number}} [options]
+     * @param {{turnEpsilon?:number,clockwise?:boolean}} [options]
      */
     function buildBeltPath(circles, options) {
         if (!Array.isArray(circles) || circles.length < 2) {
@@ -931,9 +675,12 @@
             }
         }
         if (normalized.length === 2) {
-            return buildTwo(normalized);
+            return buildTwo(normalized, options.clockwise ? -1 : 1, options.clockwise === undefined);
         }
-        return buildOrdered(normalized, normalized, turnEpsilon, true);
+        const clockwise = options.clockwise === undefined ? determineClockwise(normalized) : options.clockwise;
+        const sign = clockwise ? -1 : 1;
+        if (hasOverlappingWheels(normalized)) throw new RangeError('ordered wheel disks overlap');
+        return orderedSolver(normalized, turnEpsilon, sign, {fromData:fromData,arcRecord:arcRecord});
     }
 
     const api = {

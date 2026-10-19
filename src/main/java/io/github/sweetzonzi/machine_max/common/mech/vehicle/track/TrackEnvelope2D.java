@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Circle2D;
+import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -17,13 +18,13 @@ import java.util.List;
  *
  * <p>坐标系：主动轮刚体局部系。局部 X 是滚动轴（与 {@code GearJoint} 的轴一致），
  * 所以履带平面是 YZ 平面；每个轮心取 {@code (localY, localZ)}，半径取
- * {@link SubPart#getMaxWheelRadius()}。这与 {@link BeltPath2D} 的 2D 约定一致，
- * 渲染时再按 {@code (0, y, z)} 映射回三维。</p>
+ * {@link SubPart#getMaxWheelRadius()}。调用几何求解器时显式传入该有向平面的绕向，
+ * 渲染时按 {@code (0, y, z)} 映射回三维。</p>
  *
  * <p>输入顺序就是 {@link TrackLink#members()} 的顺序。本方法先把列表旋转到主动轮
  * 首位（保持绕行方向不变），再按“主动轮 → 下行程 → 上行程”的锚定顺序构建。</p>
  *
- * <p>轮心全共线，或轮组实际重叠导致有序点接触无解时，回退到圆盘凸包
+ * <p>轮组实际重叠或相邻轮心重合时，回退到圆盘凸包
  * （{@link Result#fallback()} 为 true），并记录告警。其它几何失败返回 null，
  * 不做静默凸包回退，避免把抬轮凹口抹平。</p>
  *
@@ -36,9 +37,9 @@ public final class TrackEnvelope2D {
     }
 
     /**
-     * @param path           锚定顺序包络，或共线退化时的凸包回退
+     * @param path           有序接触路径，或重叠轮组的凸包回退
      * @param sprocketWorld  主动轮刚体的世界位姿（局部系 → 世界）
-     * @param fallback       是否走了共线凸包回退
+     * @param fallback       是否使用凸包回退
      */
     public record Result(BeltPath2D path, Matrix4f sprocketWorld, boolean fallback) {
         public Result {
@@ -50,10 +51,12 @@ public final class TrackEnvelope2D {
      * @param members     成员表，顺序为“主动轮 → 下行程 → 上行程”
      * @param sprocket    基准轮；为 null、不在成员表中或成员不足 2 个时返回 null
      * @param partialTick 位姿插值系数
+     * @param clockwise 创建时确定的主动轮局部 (Y,Z) 平面内顺时针绕向
      * @return 包络结果；任一成员缺少轮半径或几何完全不可用时返回 null
      */
     @Nullable
-    public static Result build(List<SubPart> members, @Nullable SubPart sprocket, float partialTick) {
+    public static Result build(List<SubPart> members, @Nullable SubPart sprocket, float partialTick,
+                               boolean clockwise) {
         if (sprocket == null || members.size() < 2) {
             return null;
         }
@@ -69,10 +72,8 @@ public final class TrackEnvelope2D {
             }
         }
 
-        Matrix4f sprocketWorld = sprocket.getWorldPositionMatrix(partialTick);
-        Matrix4f worldToSprocket = new Matrix4f(sprocketWorld).invert();
-
-        List<Circle2D> circles = new ArrayList<>(ordered.size());
+        List<Matrix4f> poses = new ArrayList<>(ordered.size());
+        List<Float> radii = new ArrayList<>(ordered.size());
         for (SubPart member : ordered) {
             if (member == null || member.isDestroyed()) {
                 return null;
@@ -81,16 +82,31 @@ public final class TrackEnvelope2D {
             if (radius <= MIN_RADIUS) {
                 return null;
             }
-            Matrix4f memberLocal = new Matrix4f(worldToSprocket)
-                    .mul(member.getWorldPositionMatrix(partialTick));
-            Vector3f center = memberLocal.getTranslation(new Vector3f());
-            circles.add(new Circle2D(center.y, center.z, radius));
+            poses.add(member.getWorldPositionMatrix(partialTick));
+            radii.add(radius);
         }
+        return buildPoses(poses, radii, clockwise);
+    }
 
+    /**
+     * 主线程的位姿快照入口。二维坐标为主动轮局部 (Y,Z)，使用创建时确定的绕向。
+     */
+    public static Result buildPoses(List<Matrix4f> poses, List<Float> radii, boolean clockwise) {
+        if (poses.size() < 2 || poses.size() != radii.size()) {
+            throw new IllegalArgumentException("wheel poses and radii must have matching sizes >= 2");
+        }
+        Matrix4f sprocketWorld = poses.getFirst();
+        Matrix4f worldToSprocket = new Matrix4f(sprocketWorld).invert();
+        List<Circle2D> circles = new ArrayList<>(poses.size());
+        for (int i = 0; i < poses.size(); i++) {
+            Matrix4f memberLocal = new Matrix4f(worldToSprocket).mul(poses.get(i));
+            Vector3f center = memberLocal.getTranslation(new Vector3f());
+            circles.add(new Circle2D(center.y, center.z, radii.get(i)));
+        }
         try {
-            return new Result(BeltPath2D.build(circles), sprocketWorld, false);
+            return new Result(BeltPath2D.build(circles, 1e-9, clockwise), sprocketWorld, false);
         } catch (BeltPath2D.DegenerateLayoutException degenerate) {
-            return fallback(circles, sprocketWorld, "履带包络退化（轮心共线），回退凸包: "
+            return fallback(circles, sprocketWorld, "履带包络退化，回退凸包: "
                     + degenerate.getMessage());
         } catch (IllegalArgumentException | IllegalStateException orderedFailure) {
             if (BeltPath2D.hasOverlappingWheels(circles)) {
@@ -103,6 +119,31 @@ public final class TrackEnvelope2D {
                     orderedFailure.getMessage(), circles);
             return null;
         }
+    }
+
+    /** 主线程：在闭合铺设时，从当时的轮位姿和世界下方向确定顺时针绕向。 */
+    public static boolean layingClockwise(List<Matrix4f> poses) {
+        Matrix4f worldToSprocket = new Matrix4f(poses.getFirst()).invert();
+        List<Vec2> centers = new ArrayList<>(poses.size());
+        for (Matrix4f pose : poses) {
+            Vector3f center = new Matrix4f(worldToSprocket).mul(pose)
+                    .getTranslation(new Vector3f());
+            centers.add(new Vec2(center.y, center.z));
+        }
+        Vector3f localDown = worldToSprocket.transformDirection(new Vector3f(0, -1, 0));
+        Vec2 down = new Vec2(localDown.y, localDown.z);
+        boolean clockwise = false;
+        double lowest = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < centers.size() - 1; i++) {
+            Vec2 a = centers.get(i), b = centers.get(i + 1);
+            double side = b.sub(a).normalized().rightNormal().dot(down);
+            double height = a.add(b).mul(.5).dot(down);
+            if (Math.abs(side) > 1e-6 && height > lowest + 1e-9) {
+                lowest = height;
+                clockwise = side < 0;
+            }
+        }
+        return clockwise;
     }
 
     @Nullable

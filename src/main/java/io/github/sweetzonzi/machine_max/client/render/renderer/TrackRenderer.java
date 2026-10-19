@@ -73,7 +73,7 @@ public class TrackRenderer extends VisualEffectRenderer {
                 state.prevPhase = state.phase;
 
                 TrackEnvelope2D.Result envelope =
-                        TrackEnvelope2D.build(link.members(), link.sprocket(), 1f);
+                        link.envelope(1f);
                 if (envelope == null) {
                     if (state.linkCount == 0) state.linkCount = link.linkCount();
                     continue;
@@ -87,10 +87,9 @@ public class TrackRenderer extends VisualEffectRenderer {
                 SubPart sprocket = link.sprocket();
                 if (sprocket == null) continue;
                 float omega = relativeAngularVelocityX(link, sprocket);
-                // 正 ω 使下行程接触点向局部 -Z 移动；带路相位沿输入方向增长，
-                // 所以要用下行程切线的 +Z/-Z 符号把两者对齐。
-                double lowerRunSign = lowerRunDirectionY(envelope.path());
-                state.phase -= omega * sprocket.getMaxWheelRadius() * TICK_SECONDS * lowerRunSign;
+                // (Y,Z) 平面的正角绕轮轴 +X；闭环的有向圆弧与轮面同向运动。
+                double winding = Math.signum(envelope.path().signedArea());
+                state.phase += omega * sprocket.getMaxWheelRadius() * TICK_SECONDS * winding;
             }
         }
 
@@ -119,7 +118,7 @@ public class TrackRenderer extends VisualEffectRenderer {
             for (TrackLink link : vehicle.trackLinks) {
                 if (link.isDisposed()) continue;
                 TrackEnvelope2D.Result envelope =
-                        TrackEnvelope2D.build(link.members(), link.sprocket(), partialTick);
+                        link.envelope(partialTick);
                 if (envelope == null) continue;
 
                 SubPart sprocket = link.sprocket();
@@ -151,6 +150,7 @@ public class TrackRenderer extends VisualEffectRenderer {
                                    TrackEnvelope2D.Result envelope, int linkCount, double phase,
                                    float width) {
         double length = envelope.path().length();
+        float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
         double spacing = length / linkCount;
         float halfLength = (float) (spacing * LINK_LENGTH_RATIO * 0.5);
         float halfThickness = LINK_THICKNESS * 0.5f;
@@ -168,13 +168,13 @@ public class TrackRenderer extends VisualEffectRenderer {
             Vec2 normal = sample.normal();
 
             // 局部基：+X = 切线，+Y = 外法线，+Z = 轮轴。
-            // 切线 × 外法线 = -局部X，所以 +Z 轴取 (-1,0,0)，保持右手系。
+            // 切线 × 外法线 = -绕向 × 局部X，第三轴随绕向取值以保持右手系。
             // JOML 的 16 参构造按列主序收参：前 4 个是第 0 列，最后 4 个是平移列。
             // 2D 采样点 (y,z) 映射回主动轮局部系是 (0, y, z)。
             Matrix4f local = new Matrix4f(
                     0, (float) tangent.x(), (float) tangent.y(), 0,
                     0, (float) normal.x(), (float) normal.y(), 0,
-                    -1, 0, 0, 0,
+                    wheelAxis, 0, 0, 0,
                     0, (float) point.x(), (float) point.y(), 1
             );
             Matrix4f world = new Matrix4f(envelope.sprocketWorld()).mul(local);
@@ -259,23 +259,6 @@ public class TrackRenderer extends VisualEffectRenderer {
             return other;
         }
         return null;
-    }
-
-    /**
-     * 下行程切线的局部 Z 符号。下行程是包络中点最低的一段；它的方向决定
-     * 相位沿弧长增长时对应 +Z 还是 -Z 的带速。
-     */
-    private static double lowerRunDirectionY(BeltPath2D path) {
-        double bestY = Double.POSITIVE_INFINITY;
-        double directionY = 1;
-        for (BeltPath2D.Edge edge : path.edges()) {
-            double midY = (edge.start().y() + edge.end().y()) * 0.5;
-            if (midY < bestY - 1e-9) {
-                bestY = midY;
-                directionY = edge.direction().y();
-            }
-        }
-        return directionY >= 0 ? 1 : -1;
     }
 
     private static double lerp(double a, double b, float t) {

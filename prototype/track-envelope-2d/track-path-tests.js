@@ -7,7 +7,7 @@
  *
  * 分三层：
  *   - CASES：可视化场景，每个都渲染一张卡片；
- *   - UNIT_TESTS：与 Java 用例一一对应的纯断言；
+ *   - UNIT_TESTS：Java 几何回归的代表性布局与旋转不变量；
  *   - 自检：非法输入与退化输入。
  */
 (function (global) {
@@ -209,7 +209,7 @@
      * 退化轮序：前三个轮心严格共线，第四个把平面撑开使布局仍可定义。
      *
      * 这是“几个不可动轮在悬挂压到极限时落到一条直线上”的形态。轮心折线在
-     * 下标 1 处回折，转角是 ±π；`traversalSign * turn` 的符号只由共线的
+     * 下标 1 处回折，转角是 ±π；`sign * turn` 的符号只由共线的
      * 哪一侧决定，微小位姿噪声就会翻掉它。带路必须始终绕过该轮、把它包在环内。
      */
     function degenerateEndCapCircles(idlerY) {
@@ -499,6 +499,37 @@
 
     /** Java 侧用例的对应实现。每个用例独立，抛错即判失败。 */
     const UNIT_TESTS = [
+        {
+            id: 'global-contact-regressions',
+            title: '全轮组接触：共线、抬轮、半径、非闭合跨段、旋转',
+            run: function (check) {
+                const row = heights => heights.map((y,x)=>({id:x,x,y,r:.4}));
+                const layouts = [row([0,0,0,0,0]), row([0,0,.2,0,0]), row([0,.2,0,.2,0]),
+                    row([0,.2,.2,0,0]), row([0,0,1,0,0]), row([0,0,3,0,0]), row([0,0,10,0,0]), row([0,.2,0,-.2,0]),
+                    [{x:-1,y:0,r:.3},{x:0,y:.1,r:.6},{x:1,y:0,r:.3}],
+                    [{x:-3,y:0,r:.4},{x:-1,y:.8,r:.4},{x:1,y:.8,r:.4},{x:3,y:0,r:.4},{x:0,y:.3,r:.2}]];
+                layouts.forEach((circles,index)=>{
+                    const path=TP.buildBeltPath(circles,{clockwise:false});
+                    check('布局 '+index+' 不穿轮',minWheelClearance(path,circles)>=-1e-4);
+                    check('布局 '+index+' 包住所有轮心',circles.every(c=>path.containsPoint(c)));
+                    check('布局 '+index+' 圆弧同向',path.arcs.every(a=>a.sweep>=0));
+                });
+                const circles=row([0,0,.2,0,0]),baseline=TP.buildBeltPath(circles,{clockwise:false});
+                check('底部点接触',baseline.pointContacts.some(p=>p.wheelIndex===2));
+                check('顶部圆弧',baseline.arcs.some(a=>a.wheelIndex===2));
+                check('肩轮小包角',baseline.arcs.filter(a=>a.wheelIndex===1||a.wheelIndex===3)
+                    .every(a=>Math.abs(a.sweep)<Math.PI/4));
+                for(let degrees=0;degrees<360;degrees+=30) {
+                    const angle=degrees*Math.PI/180;
+                    const rotated=circles.map(c=>({...c,x:c.x*Math.cos(angle)-c.y*Math.sin(angle),
+                        y:c.x*Math.sin(angle)+c.y*Math.cos(angle)}));
+                    const path=TP.buildBeltPath(rotated,{clockwise:false});
+                    check('旋转 '+degrees+' 周长不变',Math.abs(path.length-baseline.length)<1e-5);
+                    check('旋转 '+degrees+' 保留双接触',path.pointContacts.some(p=>p.wheelIndex===2)
+                        &&path.arcs.some(a=>a.wheelIndex===2));
+                }
+            }
+        },
         {
             id: 'square-quarter-arcs',
             title: '正方形：四条 90° 圆弧',
@@ -886,24 +917,18 @@
         check('少于两个轮子抛错', throws(function () {
             TP.buildBeltPath([{x: 0, y: 0, r: 1}]);
         }));
-        check('共线轮心抛错', throws(function () {
+        check('重叠轮盘抛错', throws(function () {
             TP.buildBeltPath([
                 {x: 0, y: 0, r: 1},
                 {x: 1, y: 0, r: 1},
                 {x: 2, y: 0, r: 1}
             ]);
         }));
-        check('共线轮心抛 DegenerateLayoutError', (function () {
-            try {
-                TP.buildBeltPath([
-                    {x: 0, y: 0, r: 1},
-                    {x: 1, y: 0, r: 1},
-                    {x: 2, y: 0, r: 1}
-                ]);
-            } catch (error) {
-                return error instanceof TP.DegenerateLayoutError;
-            }
-            return false;
+        check('非重叠共线轮正常构建', (function () {
+            const path = TP.buildBeltPath([
+                {x: 0, y: 0, r: .4}, {x: 1, y: 0, r: .4}, {x: 2, y: 0, r: .4}
+            ]);
+            return path.arcs.length === 2 && path.pointContacts.length === 1;
         })());
         check('零半径抛错', throws(function () {
             TP.buildBeltPath([

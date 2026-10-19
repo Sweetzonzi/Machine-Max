@@ -18,12 +18,16 @@ import java.util.List;
  *
  * <p>{@link #durability()} 是当前绝对耐久。{@link #FULL_DURABILITY}（-1）表示
  * 「满耐久」哨兵，只用于蓝图 / 收纳：加载时按包络推导出的最大耐久落值。</p>
+ *
+ * <p>clockwise 表示主动轮局部 (Y,Z) 平面内的顺时针铺设绕向。
+ * 该值在创建时确定，随存档、蓝图和网络传递，轮子自转不改变它。</p>
  */
 public record TrackLinkData(
         TrackMemberRef sprocket,
         List<TrackMemberRef> members,
         float durability,
-        boolean broken
+        boolean broken,
+        boolean clockwise
 ) {
     /** 满耐久哨兵：加载时解析为推导出的最大耐久。 */
     public static final float FULL_DURABILITY = -1f;
@@ -33,7 +37,8 @@ public record TrackLinkData(
             TrackMemberRef.CODEC.listOf().fieldOf("members").forGetter(TrackLinkData::members),
             Codec.FLOAT.optionalFieldOf("durability", FULL_DURABILITY)
                     .forGetter(TrackLinkData::durability),
-            Codec.BOOL.optionalFieldOf("broken", false).forGetter(TrackLinkData::broken)
+            Codec.BOOL.optionalFieldOf("broken", false).forGetter(TrackLinkData::broken),
+            Codec.BOOL.fieldOf("clockwise").forGetter(TrackLinkData::clockwise)
     ).apply(instance, TrackLinkData::new));
 
     public static final StreamCodec<FriendlyByteBuf, TrackLinkData> STREAM_CODEC = new StreamCodec<>() {
@@ -43,7 +48,8 @@ public record TrackLinkData(
             List<TrackMemberRef> members = buffer.readList(TrackMemberRef.STREAM_CODEC);
             float durability = buffer.readFloat();
             boolean broken = buffer.readBoolean();
-            return new TrackLinkData(sprocket, members, durability, broken);
+            boolean clockwise = buffer.readBoolean();
+            return new TrackLinkData(sprocket, members, durability, broken, clockwise);
         }
 
         @Override
@@ -52,6 +58,7 @@ public record TrackLinkData(
             buffer.writeCollection(value.members(), TrackMemberRef.STREAM_CODEC);
             buffer.writeFloat(value.durability());
             buffer.writeBoolean(value.broken());
+            buffer.writeBoolean(value.clockwise());
         }
     };
 
@@ -62,6 +69,6 @@ public record TrackLinkData(
      * {@link TrackLink#refreshMembers()} 丢弃。</p>
      */
     public TrackLinkData normalized() {
-        return new TrackLinkData(sprocket, members, FULL_DURABILITY, false);
+        return new TrackLinkData(sprocket, members, FULL_DURABILITY, false, clockwise);
     }
 }

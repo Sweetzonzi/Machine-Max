@@ -120,17 +120,16 @@
             <div class="eyebrow">MACHINE-MAX / TRACK SYSTEM / NON-CONVEX ENVELOPE</div>
             <h1>非凸包络 · 有序轮组</h1>
             <p class="lede">
-                履带沿轮序走一条闭合带路；凸包基线是另一页的对照实现（index.html）。凸角（主动轮、诱导轮、
-                比两侧低的负重轮、端帽）走圆弧；凹角（被障碍抬起的负重轮）走单点接触。下面用一个正方形基准、
-                同一组五轮布局只改中间负重轮的高度，以及一组退化轮序来验证端帽的稳定性。
+                铺设顺序确定必经轮缘点，各跨段在全轮组公切线图中求路。进出线决定点接触或圆弧，
+                同一轮可以在负重轮链和上行程分别接触。这里展示正方形、五轮悬挂、三轮二次接触和端帽布局。
             </p>
         </div>
         <div id="summary" class="summary"></div>
     </header>
 
     <div class="meta">
-        <div class="meta-item"><span>算法</span><strong>有序外公切线 + 凸角圆弧 + 凹角点接触</strong></div>
-        <div class="meta-item"><span>端帽</span><strong>|转角| &gt; 3π/4 一律绕圆弧</strong></div>
+        <div class="meta-item"><span>算法</span><strong>必经接触点 + 全轮组切线可见图</strong></div>
+        <div class="meta-item"><span>校验</span><strong>穿轮 · 包围 · 自交 · 有向圆弧</strong></div>
         <div class="meta-item"><span>轮序</span><strong>TrackLink.members</strong></div>
         <div class="meta-item"><span>节长</span><strong>0.2 m</strong></div>
         <div class="meta-item"><span>每节耐久</span><strong>20</strong></div>
@@ -155,6 +154,7 @@
 </div>
 
 <script src="track-envelope.js"></script>
+<script src="ordered-belt-solver.js"></script>
 <script src="track-path.js"></script>
 <script src="track-path-tests.js"></script>
 <script src="visualize-path.js"></script>

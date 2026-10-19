@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -554,6 +555,138 @@ class BeltPath2DTest {
         return 2 * Math.sqrt(distance * distance - dr * dr)
                 + r1 * (2 * PI - 2 * phi)
                 + r2 * (2 * phi);
+    }
+
+    private static List<Circle2D> row(double... heights) {
+        List<Circle2D> circles = new ArrayList<>();
+        for (int i = 0; i < heights.length; i++) circles.add(new Circle2D(i, heights[i], 0.4));
+        return circles;
+    }
+
+    private static void assertValidLoop(BeltPath2D path) {
+        assertFalse(selfIntersects(path.points()), "belt crosses itself");
+        assertTrue(minWheelClearance(path, path.inputCircles()) >= -1e-4, "belt cuts a wheel");
+        for (Circle2D circle : path.inputCircles()) {
+            assertTrue(path.containsPoint(circle.center()), "wheel center is outside the belt: " + circle);
+        }
+        double sign = Math.signum(path.signedArea());
+        for (BeltPath2D.ArcContact arc : path.arcs()) {
+            assertTrue(sign * arc.sweep() >= 0, "arc reverses the belt direction");
+        }
+    }
+
+    @Test
+    void collinearWheelsHaveAnOrderedPathWithMiddlePointContacts() {
+        BeltPath2D path = BeltPath2D.build(row(0, 0, 0, 0, 0));
+        assertValidLoop(path);
+        assertEquals(2, path.arcs().size());
+        assertEquals(3, path.pointContacts().size());
+        assertEquals(8 + 2 * PI * .4, path.length(), 0.001);
+    }
+
+    @Test
+    void raisedMiddleOfFiveKeepsBothContactsAndShortShoulderArcs() {
+        BeltPath2D path = BeltPath2D.build(row(0, 0, .2, 0, 0));
+        assertValidLoop(path);
+        assertNotNull(pointContact(path, 2));
+        assertNotNull(arcContact(path, 2));
+        assertTrue(Math.abs(arcContact(path, 1).sweep()) < PI / 4);
+        assertTrue(Math.abs(arcContact(path, 3).sweep()) < PI / 4);
+        assertTrue(path.length() < 11);
+    }
+
+    @Test
+    void multipleRaisedWheelsSupportTheReturnRun() {
+        for (List<Circle2D> circles : List.of(row(0, .2, 0, .2, 0), row(0, .2, .2, 0, 0))) {
+            BeltPath2D path = BeltPath2D.build(circles);
+            assertValidLoop(path);
+            for (int i = 1; i < circles.size() - 1; i++) {
+                if (circles.get(i).y() > 0) {
+                    assertNotNull(pointContact(path, i));
+                    Circle2D wheel = circles.get(i);
+                    assertTrue(path.points().stream().anyMatch(p -> Math.abs(p.distance(wheel.center()) - .4) < 1e-6
+                            && p.y() >= wheel.y()));
+                }
+            }
+        }
+    }
+
+    @Test
+    void anUpperSpanBetweenTwoMembersAlsoRoutesAroundRoadWheels() {
+        List<Circle2D> circles = List.of(new Circle2D(-3, 0, .4),
+                new Circle2D(-1, .8, .4), new Circle2D(1, .8, .4),
+                new Circle2D(3, 0, .4), new Circle2D(0, .3, .2));
+        BeltPath2D path = BeltPath2D.build(circles, EPS, false);
+        assertValidLoop(path);
+        assertNotNull(pointContact(path, 1));
+        assertNotNull(pointContact(path, 2));
+        assertNotNull(arcContact(path, 1));
+        assertNotNull(arcContact(path, 2));
+    }
+
+    @Test
+    void largerRadiusDeterminesWrappingEvenWhenItsCenterIsRaised() {
+        List<Circle2D> circles = List.of(new Circle2D(-1, 0, .3),
+                new Circle2D(0, .1, .6), new Circle2D(1, 0, .3));
+        BeltPath2D path = BeltPath2D.build(circles);
+        assertValidLoop(path);
+        assertNull(pointContact(path, 1));
+        assertTrue(path.arcs().stream().filter(a -> a.wheelIndex() == 1).count() >= 2);
+    }
+
+    @Test
+    void wheelsCompletelyBeyondTheOldReturnLineStayEnclosed() {
+        for (double height : new double[]{.001, .02, .2, .6, .8, 1, 2, 3, 10}) {
+            BeltPath2D path = BeltPath2D.build(row(0, 0, height, 0, 0), EPS, false);
+            assertValidLoop(path);
+            assertNotNull(pointContact(path, 2));
+            assertNotNull(arcContact(path, 2));
+        }
+    }
+
+    @Test
+    void zeroSignedCenterAreaDoesNotMeanCollinear() {
+        BeltPath2D path = BeltPath2D.build(row(0, .2, 0, -.2, 0), EPS, false);
+        assertValidLoop(path);
+        assertNotNull(pointContact(path, 1));
+        assertNotNull(arcContact(path, 3));
+    }
+
+    @Test
+    void savedTraversalIsInvariantUnderPlaneRotationAndReflection() {
+        List<Circle2D> input = row(0, 0, .2, 0, 0);
+        BeltPath2D baseline = BeltPath2D.build(input, EPS, false);
+        for (int degrees = 0; degrees < 360; degrees += 15) {
+            double angle = Math.toRadians(degrees);
+            List<Circle2D> rotated = input.stream().map(c -> {
+                Vec2 center = c.center().rotate(angle).add(new Vec2(17, -31));
+                return new Circle2D(center.x(), center.y(), c.radius());
+            }).toList();
+            BeltPath2D path = BeltPath2D.build(rotated, EPS, false);
+            assertValidLoop(path);
+            assertEquals(baseline.length(), path.length(), 1e-5);
+            assertNotNull(pointContact(path, 2));
+            assertNotNull(arcContact(path, 2));
+        }
+        List<Circle2D> swapped = input.stream().map(c -> new Circle2D(c.y(), c.x(), c.radius())).toList();
+        BeltPath2D reflected = BeltPath2D.build(swapped, EPS, true);
+        assertValidLoop(reflected);
+        assertEquals(baseline.length(), reflected.length(), 1e-5);
+        assertNotNull(pointContact(reflected, 2));
+        assertNotNull(arcContact(reflected, 2));
+    }
+
+    @Test
+    void varyingRoadWheelRadiiAndHeightsKeepAValidOrderedLoop() {
+        Random random = new Random(0xB317);
+        for (int sample = 0; sample < 60; sample++) {
+            List<Circle2D> circles = new ArrayList<>();
+            for (int i = 0; i < 7; i++) {
+                circles.add(new Circle2D(i * 1.2, i == 0 || i == 6 ? 0 : random.nextDouble() * .6 - .2,
+                        .25 + random.nextDouble() * .2));
+            }
+            assertValidLoop(BeltPath2D.build(circles, EPS, false));
+        }
     }
 
     @Test

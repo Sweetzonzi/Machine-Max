@@ -40,7 +40,7 @@ network/
 
 ## 约定
 
-- **4 个协议组**：`input:1.0.0`（控制）、`sync:2.2.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.0.0`（GUI/制造）。`sync` 的 2.2.0 来自起爆包的爆炸火光参数：`light.glow` 与 `light.glare` 各使线格式多一个 float。
+- **5 个协议组**：`input:1.0.0`（控制）、`sync:2.3.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.1.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 以布尔值编码 clockwise 铺设绕向，载具同步与蓝图取出载荷均传输该字段。
 - **全部处理器在主线程**：使用 `MainThreadPayloadHandler`。无物理线程处理器。
 - **双向载荷**：使用 `DirectionalPayloadHandler` 分离客户端/服务端方法。
 - **增量同步**：`SubPartSyncPayload` 使用 `SynchedEntityData.DataValue` 列表 + byte `255` 终结符。
