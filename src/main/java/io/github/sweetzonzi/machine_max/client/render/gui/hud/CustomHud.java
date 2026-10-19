@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -57,9 +58,9 @@ import java.util.Set;
  * （默认由资源键解析，玩家自定义布局可直接返回保存的对象），为布局里的每个
  * {@link HudElement} 创建一个运行时元素。
  * <p>
- * 运行时元素按宿主分组，元素身份是“该宿主布局数组里的序数”。宿主集合或视角变化时
- * 整体清理并重建，不做逐元素差集；布局与样式都是内容包静态资源，这个粒度足够。
- * 内容包重载不会立刻刷新，上下车、切换视角或重连世界时随重建生效。
+ * 运行时元素按宿主分组，元素身份是“该宿主布局数组里的序数”。宿主集合、视角、
+ * 实际布局或所引用的样式变化时整体清理并重建，不做逐元素差集。每个 tick 只检查
+ * 活跃宿主的布局与布局引用的样式；内容包重载后，资源替换在下一个 tick 生效。
  * <p>
  * 宿主之间的绘制顺序由宿主集合的迭代顺序决定，不作契约：内容包负责让同一视角的
  * 元素互不遮挡。透视 HUD 由统一的外层投影管理器批量渲染（一次 flush），
@@ -69,6 +70,10 @@ import java.util.Set;
 public class CustomHud implements LayeredDraw.Layer {
     // 当前视角的宿主 → 该宿主的运行时元素；空列表表示宿主在当前视角没有 HUD
     private final Map<IHudHost, List<HudElementInstance>> huds = new LinkedHashMap<>();
+    /** 建立运行时元素时使用的实际布局，包括宿主直接返回的自定义布局。 */
+    private final Map<IHudHost, HudLayout> activeLayouts = new LinkedHashMap<>();
+    /** 当前布局引用的样式对象；null 表示该样式缺失，供后续 tick 检测补齐。 */
+    private final Map<ResourceLocation, HudStyle> activeStyles = new LinkedHashMap<>();
     /** 当前生效的视角；null 表示尚未建立任何宿主。 */
     private HudView activeView;
     /** 已经提示过的缺失样式，避免每 tick 刷屏。 */
@@ -88,7 +93,7 @@ public class CustomHud implements LayeredDraw.Layer {
     }
 
     /**
-     * 主线程，每个客户端 tick。解析当前视角的宿主集合，集合或视角变化时整体重建。
+     * 主线程，每个客户端 tick。检查当前视角的宿主、实际布局与引用样式，变化时整体重建。
      */
     public void tick() {
         Player player = Minecraft.getInstance().player;
@@ -125,9 +130,31 @@ public class CustomHud implements LayeredDraw.Layer {
         // 座椅选中的武器控制器在普通视角与炮镜视角都显示
         if (seat != null) expected.addAll(seat.getActiveWeaponControllers());
 
-        if (view != activeView || !expected.equals(huds.keySet())) {
+        if (view != activeView || !expected.equals(huds.keySet())
+                || layoutsOrStylesChanged(expected, view)) {
             rebuild(expected, view);
         }
+    }
+
+    /**
+     * 只检查活跃布局与引用样式，不扫描资源注册表。
+     * 布局按值比较，允许宿主每 tick 返回内容相同的新对象；样式按身份比较，
+     * 可检测内容包重载时的资源替换，也能发现缺失样式被补齐或已有样式被撤下。
+     */
+    private boolean layoutsOrStylesChanged(Set<IHudHost> hosts, HudView view) {
+        for (IHudHost host : hosts) {
+            if (!Objects.equals(activeLayouts.get(host), layoutFor(host, view))) return true;
+        }
+        for (Map.Entry<ResourceLocation, HudStyle> entry : activeStyles.entrySet()) {
+            if (entry.getValue() != MMDynamicRes.HUD_STYLES.get(entry.getKey())) return true;
+        }
+        return false;
+    }
+
+    /** 将“该视角没有 HUD”规范化为空布局，供检测与建立元素使用。 */
+    private static HudLayout layoutFor(IHudHost host, HudView view) {
+        HudLayout layout = host.hudLayoutFor(view);
+        return layout == null ? HudLayout.EMPTY_LAYOUT : layout;
     }
 
     /**
@@ -139,10 +166,11 @@ public class CustomHud implements LayeredDraw.Layer {
         activeView = view;
         for (IHudHost host : hosts) {
             List<HudElementInstance> elements = new ArrayList<>();
-            HudLayout layout = host.hudLayoutFor(view);
-            if (layout == null) layout = HudLayout.EMPTY_LAYOUT;
+            HudLayout layout = layoutFor(host, view);
+            activeLayouts.put(host, layout);
             for (HudElement element : layout.elements()) {
                 HudStyle style = MMDynamicRes.HUD_STYLES.get(element.style());
+                activeStyles.put(element.style(), style);
                 if (style == null) {
                     if (warnedStyles.add(element.style())) {
                         MachineMax.LOGGER.warn("HUD 样式不存在，跳过该条目: {}", element.style());
@@ -467,6 +495,8 @@ public class CustomHud implements LayeredDraw.Layer {
             for (HudElementInstance hud : elements) hud.dispose();
         }
         huds.clear();
+        activeLayouts.clear();
+        activeStyles.clear();
         activeView = null;
     }
 }

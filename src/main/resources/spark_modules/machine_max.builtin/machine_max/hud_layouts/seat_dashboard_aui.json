@@ -8,8 +8,8 @@
   },
   {
     "style": "machine_max:aui_weapon_status",
-    "anchor": "bottom_right",
-    "offset": [-16, -16, 0],
+    "anchor": "center",
+    "offset": [0, 0, 0],
     "scale": [1, 1, 1]
   }
 ]

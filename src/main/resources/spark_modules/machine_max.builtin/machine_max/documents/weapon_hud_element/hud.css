@@ -1,7 +1,8 @@
 /* ============================================================
    Machine-Max — Weapon HUD element prototypes
    ------------------------------------------------------------
-   Browser-only style sheet. Each HUD element is an independent
+   Shared styles for browser previews and AUI HUD documents.
+   Each HUD element is an independent
    HTML document; this sheet defines only the element itself.
    Screen placement belongs to the composition previews.
 
@@ -99,7 +100,8 @@ body.center {
 .el-ammo {
     width: 280px;
     padding: 8px 10px 8px 10px;
-    background: linear-gradient(90deg, rgba(3, 10, 14, 0.18), rgba(3, 10, 14, 0.64));
+    background-color: rgba(3, 10, 14, 0.72);
+    background-image: linear-gradient(90deg, rgba(3, 10, 14, 0.18), rgba(3, 10, 14, 0.64));
 }
 
 .ammo-head {

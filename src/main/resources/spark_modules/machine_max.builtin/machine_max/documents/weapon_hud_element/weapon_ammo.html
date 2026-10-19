@@ -24,9 +24,12 @@
   </div>
 </div>
 <script>
-  const params = new URLSearchParams(location.search);
-  if (params.has('embed')) document.body.classList.add('embed');
-  if (params.has('center')) document.body.classList.add('center');
+  // Query flags configure browser previews; AUI can omit browser URL globals.
+  if (typeof location !== 'undefined' && typeof URLSearchParams === 'function') {
+    const params = new URLSearchParams(location.search);
+    if (params.has('embed')) document.body.classList.add('embed');
+    if (params.has('center')) document.body.classList.add('center');
+  }
 </script>
 </body>
 </html>

@@ -4,7 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.sighs.apricityui.ApricityUI;
 import com.sighs.apricityui.element.Body;
 import com.sighs.apricityui.init.Document;
+import com.sighs.apricityui.parser.HTML;
 import com.sighs.apricityui.render.Base;
+import com.sighs.apricityui.render.GeometryQueryScope;
+import com.sighs.apricityui.render.Mask;
+import com.sighs.apricityui.viewport.ApricityViewport;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
@@ -14,6 +18,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,10 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * 在布局顺序里绘制，因此与模型元素共享同一条 HUD 提交路径；AUI 的 overlay
  * 批次按该标记跳过它。
  * <p>
- * 页面按内容高度收缩：运行时注入 {@code body.mm-hud} 规则（{@code inline-block}、
- * 无外边距、透明背景），再按 {@link HudElement#anchor()} 把元素对齐到屏幕，最后
- * 应用 {@link HudElement#offset()} 与 {@code scale.x}。元素尺寸取自 AUI 布局的
- * 测量值，首帧尚未提交布局时按 0 处理，下一帧即稳定。
+ * 页面按内容高度收缩：body 的内联样式固定为 {@code inline-block}、无外边距、
+ * 透明背景，使视口变化或 CSS 重载期间的样式缓存重建也保持载体结构；再按
+ * {@link HudElement#anchor()} 把元素对齐到屏幕，最后
+ * 应用 GUI 坐标中的 {@link HudElement#offset()} 与 {@link HudElement#scale()} 的 X/Y
+ * 两轴缩放。元素尺寸取自文档上下文内提交的 AUI 布局测量值，经过文档视口缩放后
+ * 参与锚点计算；同一组 CSS 到 GUI 映射同时用于绘制和裁剪。
  * <p>
  * <b>调用线程：</b>客户端主线程（创建、渲染、销毁）。
  */
@@ -37,36 +44,21 @@ public final class AuiHudAnimatable implements HudElementInstance {
     /** 运行时加在页面 body 上的类名。 */
     public static final String BODY_CLASS = "mm-hud";
 
-    /** 注入的页面规则：让页面按内容收缩并透出后面的世界。 */
-    private static final String HUD_STYLESHEET = """
-            body.mm-hud {
-                display: inline-block;
-                width: auto;
-                height: auto;
-                min-height: 0;
-                margin: 0;
-                background: transparent;
-            }
-            """;
-
-    /** 注入样式表的上下文路径；只用于 AUI 的规则来源标记。 */
-    private static final String STYLESHEET_CONTEXT = "machine_max:aui_hud";
-    /** 注入样式表的层叠序号，高于页面自身样式。 */
-    private static final int STYLESHEET_ORDER = 100_000;
-
     private final ResourceLocation styleId;
     private final AuiHudStyle style;
     private final HudElement element;
 
     @Nullable
     private Document document;
-    /** 已应用 {@link #BODY_CLASS} 的 body；文档刷新后 body 会换实例。 */
+    /** 已应用样式默认值的 body；文档刷新后 body 会换实例。 */
     @Nullable
     private Body styledBody;
-    /** 页面缺失或创建失败时只提示一次。 */
+    /** 每份创建失败的模板只提示一次。 */
     private boolean warned;
-    /** 创建已失败；不再逐帧重试。 */
+    /** 同一份 HTML 模板创建失败时抑制重复创建；模板内容变化后允许重试。 */
     private boolean failed;
+    @Nullable
+    private String failedTemplate;
     /** 已报告过内容尺寸的页面键；用于确认页面真的完成了布局。 */
     private static final Set<String> REPORTED_SIZES = ConcurrentHashMap.newKeySet();
 
@@ -78,19 +70,26 @@ public final class AuiHudAnimatable implements HudElementInstance {
     }
 
     private void createDocument() {
-        if (failed) return;
         if (document != null && !document.isDisposed()) return;
+        String template = HTML.getTemple(style.page());
+        if (failed && Objects.equals(template, failedTemplate)) return;
+        failed = false;
+        failedTemplate = null;
+        warned = false;
         Document created;
         try {
             created = ApricityUI.createDocument(style.page());
         } catch (RuntimeException | LinkageError failure) {
             warnOnce("AUI HUD 页面创建失败: " + style.page(), failure);
             failed = true;
-            created = null;
+            failedTemplate = template;
+            return;
         }
         if (created == null || created.isDisposed() || created.body == null) {
+            if (created != null && !created.isDisposed()) created.remove();
             warnOnce("AUI HUD 页面不存在或没有 body: " + style.page(), null);
             failed = true;
+            failedTemplate = template;
             return;
         }
         created.setManuallyRendered(true);
@@ -101,16 +100,28 @@ public final class AuiHudAnimatable implements HudElementInstance {
         applyPage(created);
     }
 
-    /** 给页面贴类名、注入收缩规则，并写入样式声明的 CSS 变量。 */
+    /** 写入样式默认值和 HUD 必需的内联结构属性；属性值相同时不提交样式写入。 */
     private void applyPage(Document target) {
         Body body = target.body;
         if (body == null) return;
         if (body != styledBody) {
-            // 刷新会重建 body 并清空样式缓存，因此换 body 时重新注册。
-            target.registerStylesheet(HUD_STYLESHEET, STYLESHEET_CONTEXT, STYLESHEET_ORDER);
-            body.getClassList().add(BODY_CLASS);
             style.defaults().forEach(body::setInlineStyleProperty);
             styledBody = body;
+        }
+        if (!body.getClassList().contains(BODY_CLASS)) body.getClassList().add(BODY_CLASS);
+        // 内联声明属于 DOM，CSS 缓存重建会保留它；每次绘制也检查现有 body，支持 JBR 热重载。
+        ensureInlineStyle(body, "display", "inline-block");
+        ensureInlineStyle(body, "width", "auto");
+        ensureInlineStyle(body, "height", "auto");
+        ensureInlineStyle(body, "min-height", "0");
+        ensureInlineStyle(body, "margin", "0");
+        ensureInlineStyle(body, "background", "transparent");
+    }
+
+    private static void ensureInlineStyle(Body body, String property, String value) {
+        if (!value.equals(body.getInlineStylePropertyValue(property))
+                || !"important".equals(body.getInlineStylePropertyPriority(property))) {
+            body.setInlineStyleProperty(property, value, "important");
         }
     }
 
@@ -129,45 +140,47 @@ public final class AuiHudAnimatable implements HudElementInstance {
             target = document;
             if (target == null) return;
         }
-        applyPage(target);
+        try (Document.ContextScope ignored = Document.withContext(target)) {
+            applyPage(target);
+            double width;
+            double height;
+            try (GeometryQueryScope geometryScope = GeometryQueryScope.open()) {
+                // 样式与布局只提交待处理工作，保证新建文档也能在绘制前取得尺寸。
+                target.commitStyleRecalc();
+                if (target.hasPendingRenderState()) target.commitRenderState();
+                Body body = target.body;
+                width = body != null ? body.getOffsetWidth() : 0.0d;
+                height = body != null ? body.getOffsetHeight() : 0.0d;
+            }
+            if (width > 0d && height > 0d && REPORTED_SIZES.add(style.page())) {
+                MachineMax.LOGGER.info("[AUI HUD] 页面 {} 完成布局，内容尺寸 {}x{}", style.page(), width, height);
+            }
 
-        Body body = target.body;
-        double rawWidth = body != null ? body.getOffsetWidth() : 0.0d;
-        double rawHeight = body != null ? body.getOffsetHeight() : 0.0d;
-        float width = (float) Math.max(0.0d, rawWidth);
-        float height = (float) Math.max(0.0d, rawHeight);
-        if (width > 0f && height > 0f && REPORTED_SIZES.add(style.page())) {
-            MachineMax.LOGGER.info("[AUI HUD] 页面 {} 完成布局，内容尺寸 {}x{}", style.page(), width, height);
+            ApricityViewport viewport = target.getViewport();
+            AuiHudPlacement placement = AuiHudPlacement.resolve(
+                    width, height, guiGraphics.guiWidth(), guiGraphics.guiHeight(), viewport.renderScale(),
+                    element.scale().x, element.scale().y, element.offset().x, element.offset().y,
+                    element.anchor().horizontal(), element.anchor().vertical());
+            target.setViewportTransform(placement.scaleX(), placement.scaleY(), placement.x(), placement.y());
+
+            PoseStack poseStack = guiGraphics.pose();
+            poseStack.pushPose();
+            try {
+                // 裁剪基底取 HUD 变换前的 pose；CSS 裁剪经相同的位移和缩放映射到 GUI。
+                Mask.pushSurfaceClip(poseStack, viewport.layoutWidth(), viewport.layoutHeight(),
+                        placement.x(), placement.y(), placement.scaleX(), placement.scaleY());
+                try {
+                    poseStack.translate(placement.x(), placement.y(), (float) element.offset().z);
+                    poseStack.scale(placement.scaleX(), placement.scaleY(), 1.0f);
+                    Base.drawEmbeddedDocument(poseStack, target, null);
+                } finally {
+                    // Surface 的入栈/出栈都会提交批次，保持与其它 HUD 元素的绘制顺序。
+                    Mask.popSurfaceClip();
+                }
+            } finally {
+                poseStack.popPose();
+            }
         }
-        float scale = (float) Math.max(0.0d, element.scale().x);
-        if (scale == 0f) scale = 1f;
-
-        float screenWidth = guiGraphics.guiWidth();
-        float screenHeight = guiGraphics.guiHeight();
-        float x = aligned(element.anchor().horizontal(), screenWidth, width * scale);
-        float y = aligned(element.anchor().vertical(), screenHeight, height * scale);
-
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        poseStack.translate(
-                x + (float) element.offset().x,
-                y + (float) element.offset().y,
-                (float) element.offset().z);
-        poseStack.scale(scale, scale, 1.0f);
-        // 先把已排队的模型几何刷掉，再让 AUI 自己成批提交，保证提交顺序与布局顺序一致。
-        Base.commitDraws();
-        Base.drawOverlayDocument(poseStack, target);
-        Base.commitDraws();
-        poseStack.popPose();
-    }
-
-    /** 锚点对齐：屏幕边到元素同侧边的距离。 */
-    private static float aligned(int alignment, float screenSize, float elementSize) {
-        return switch (alignment) {
-            case 1 -> (screenSize - elementSize) / 2f;
-            case 2 -> screenSize - elementSize;
-            default -> 0f;
-        };
     }
 
     @Override
