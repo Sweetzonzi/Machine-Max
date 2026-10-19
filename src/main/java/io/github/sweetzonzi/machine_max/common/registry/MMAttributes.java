@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -28,7 +29,7 @@ public class MMAttributes {
      */
     public static final DeferredHolder<Attribute, Attribute> GRAB_STRENGTH = ATTRIBUTES.register(
             "grab_strength",
-            () -> new RangedAttribute("attribute.machine_max.grab_strength",
+            () -> new RangedAttribute(MMLanguageRegistry.ATTRIBUTE_GRAB_STRENGTH.tag,
                     1.0,     // 默认值
                     0.0,     // 下限
                     1024.0)  // 上限

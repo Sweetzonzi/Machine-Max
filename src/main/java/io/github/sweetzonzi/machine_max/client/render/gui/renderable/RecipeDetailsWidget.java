@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
@@ -55,7 +56,7 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
 
         if (currentRecipe == null) {
             // 添加提示文本
-            Component hint = Component.translatable("gui.machine_max.fabricator.select_recipe_hint");
+            Component hint = MMLanguageRegistry.GUI_FABRICATOR_SELECT_RECIPE_HINT.translated();
             contentLines.addAll(minecraft.font.split(hint, width - SCROLLBAR_WIDTH - PADDING * 2));
             calculateContentHeight();
             return;
@@ -67,27 +68,27 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
         } else return;
 
         // 添加标题
-        MutableComponent title = Component.translatable("gui.machine_max.fabricator.recipe_details").append(": ").withStyle(ChatFormatting.BOLD);
+        MutableComponent title = MMLanguageRegistry.GUI_FABRICATOR_RECIPE_DETAILS.translated().append(": ").withStyle(ChatFormatting.BOLD);
         title.append(result.getHoverName()).withStyle(result.getRarity().getStyleModifier());
         contentLines.addAll(minecraft.font.split(title, width - SCROLLBAR_WIDTH - PADDING * 2));
 
         // 添加制造时间
         int baseTime = currentRecipe.getProcessingTime();
         int actualTime = (int) (baseTime / efficiency);
-        Component timeText = Component.translatable("gui.machine_max.fabricator.actual_time", FabricatingScreen.formatTime(actualTime));
+        Component timeText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_ACTUAL_TIME.tag, FabricatingScreen.formatTime(actualTime));
         contentLines.addAll(minecraft.font.split(timeText, width - SCROLLBAR_WIDTH - PADDING * 2));
 
         // 添加基础时间（如果效率不是1）
         if (efficiency != 1.0f) {
-            Component baseTimeText = Component.translatable("gui.machine_max.fabricator.base_time", FabricatingScreen.formatTime(baseTime));
+            Component baseTimeText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_BASE_TIME.tag, FabricatingScreen.formatTime(baseTime));
             contentLines.addAll(minecraft.font.split(baseTimeText, width - SCROLLBAR_WIDTH - PADDING * 2));
 
-            Component efficiencyText = Component.translatable("gui.machine_max.fabricator.efficiency", String.format("%.1f", efficiency));
+            Component efficiencyText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_EFFICIENCY.tag, String.format("%.1f", efficiency));
             contentLines.addAll(minecraft.font.split(efficiencyText, width - SCROLLBAR_WIDTH - PADDING * 2));
         }
 
         // 添加输出数量
-        Component outputText = Component.translatable("gui.machine_max.fabricator.output_count", result.getCount());
+        Component outputText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_OUTPUT_COUNT.tag, result.getCount());
         contentLines.addAll(minecraft.font.split(outputText, width - SCROLLBAR_WIDTH - PADDING * 2));
         //TODO: 添加配方描述
         String tip = currentRecipe.getTooltip();
@@ -103,7 +104,7 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
             );
 
             if (tooltip.size() > 2) {
-                Component descriptionTitle = Component.translatable("gui.machine_max.fabricator.item_description").withStyle(ChatFormatting.BOLD);
+                Component descriptionTitle = MMLanguageRegistry.GUI_FABRICATOR_ITEM_DESCRIPTION.translated().withStyle(ChatFormatting.BOLD);
                 contentLines.addAll(minecraft.font.split(descriptionTitle, width - SCROLLBAR_WIDTH - PADDING * 2));
 
                 // 添加描述文本（跳过物品名称），保留原有格式

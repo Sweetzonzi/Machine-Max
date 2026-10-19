@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
@@ -140,14 +141,14 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 if (hasConnection && (player.isCrouching() || !player.isCreative())) {
                     AbstractConnector targetConnector = eyesight.getAttachedConnector();
                     if (player.isCrouching() && targetConnector != null && targetConnector.hasPart() && !targetConnector.isInternal()) {
-                        player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.detach_connector",
+                        player.displayClientMessage(Component.translatable(MMLanguageRegistry.TOOLTIP_CROWBAR_DETACH_CONNECTOR.tag,
                                 Component.translatable(targetConnector.getName()), Component.translatable(targetConnector.attachedConnector.getName())), true);
                     } else {
-                        player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
+                        player.displayClientMessage(Component.translatable(MMLanguageRegistry.TOOLTIP_CROWBAR_UNSAFE_DISASSEMBLY.tag,
                                 Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
                     }
                 } else
-                    player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.safe_disassembly",
+                    player.displayClientMessage(Component.translatable(MMLanguageRegistry.TOOLTIP_CROWBAR_SAFE_DISASSEMBLY.tag,
                             Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
             } else player.displayClientMessage(Component.empty(), true);
         }

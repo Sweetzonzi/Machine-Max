@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -27,7 +28,7 @@ public class InteractHud implements LayeredDraw.Layer {
         if (interactBox != null) {
             guiGraphics.drawString(
                     minecraft.font,
-                    Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage())
+                    Component.translatable(MMLanguageRegistry.MESSAGE_WATCH_INTERACT_BOX_INFO.tag, KeyBinding.generalInteractKey.getTranslatedKeyMessage())
                             .append(Component.translatable(interactBox.name)),
                     guiGraphics.guiWidth() / 2 + 3,
                     guiGraphics.guiHeight() / 2 + 2,

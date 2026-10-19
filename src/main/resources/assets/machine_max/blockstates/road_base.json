@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "layers=1": { "model": "machine_max:block/road_base" },
+    "layers=2": { "model": "machine_max:block/road_base" },
+    "layers=3": { "model": "machine_max:block/road_base" },
+    "layers=4": { "model": "machine_max:block/road_base" }
+  }
+}

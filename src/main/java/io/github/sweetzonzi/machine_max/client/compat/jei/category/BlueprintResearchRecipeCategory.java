@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -55,7 +56,7 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
 
     @Override
     public @NotNull Component getTitle() {
-        return Component.translatable("block.machine_max.research_table");
+        return MMLanguageRegistry.BLOCK_RESEARCH_TABLE.translated();
     }
 
     @Override
@@ -107,7 +108,7 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
     @Override
     public void draw(RecipeHolder<BlueprintResearchRecipe> recipeHolder, mezz.jei.api.gui.ingredient.IRecipeSlotsView recipeSlotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         Component rpText = Component.translatable(
-                "jei.machine_max.blueprint_research.rp_cost",
+                MMLanguageRegistry.JEI_BLUEPRINT_RESEARCH_RP_COST.tag,
                 recipeHolder.value().getResearchCost()
         );
         graphics.drawString(Minecraft.getInstance().font, rpText, RP_TEXT_X, RP_TEXT_Y, 0xFFFFFF, true);

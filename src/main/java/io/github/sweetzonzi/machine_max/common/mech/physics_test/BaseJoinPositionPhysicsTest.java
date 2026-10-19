@@ -1,12 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.physics_test;
 
-import com.jme3.math.Transform;
-import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.common.registry.MMVisualEffects;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.function.Consumer;
 
@@ -19,7 +17,7 @@ public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
     /**入点：玩家面朝方向角 和 姿态栈*/
     @Setter
     @Getter
-    protected Pair<Vec3, Transform> joinPosition = null;
+    protected JoinPosition joinPosition = null;
 
     /**由运行状态管理的事件 true正在运行 false暂停，子类可以通过重写自定义逻辑*/
     @Getter
@@ -38,15 +36,23 @@ public abstract class BaseJoinPositionPhysicsTest<P> implements PhysicsTest {
     /**该测试用例正在运行*/
     private boolean playing = false;
 
+    protected boolean destroyed = false;
     public BaseJoinPositionPhysicsTest(ServerPlayer player) {
         this.level = (ServerLevel) player.level();
         this.player = player;
         joinPosition = setJoinPosition();
+        MMVisualEffects.getWORLD_RENDERER().register(joinPosition);
         p = setPhysicsTestingObject();
 
     }
 
-    public abstract Pair<Vec3, Transform> setJoinPosition();
+    @Override
+    public void onDestroy() {
+        MMVisualEffects.getWORLD_RENDERER().unregister(joinPosition);
+        destroyed = true;
+    }
+
+    public abstract JoinPosition setJoinPosition();
 
     protected abstract P setPhysicsTestingObject();
     protected P getPhysicsTestingObject() {

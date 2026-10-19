@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -38,7 +39,7 @@ public final class ResearchDetailRenderer {
     /** 空态详情 */
     public static String empty() {
         return "<div class=\"detail-empty\">"
-                + ResearchHtml.escape(Component.translatable("gui.machine_max.research.detail.empty").getString())
+                + ResearchHtml.escape(MMLanguageRegistry.GUI_RESEARCH_DETAIL_EMPTY.translated().getString())
                 + "</div>";
     }
 
@@ -56,14 +57,14 @@ public final class ResearchDetailRenderer {
 
         StringBuilder body = new StringBuilder("<div class=\"detail-body\">");
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.distribution").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_DISTRIBUTION.translated().getString(),
                 distributionHtml(names, tones, counts)));
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.description").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_DESCRIPTION.translated().getString(),
                 "<div class=\"sect-text\">" + ResearchHtml.escape(hint) + "</div>"));
         body.append("</div>");
 
-        String progress = Component.translatable("gui.machine_max.research.group.progress",
+        String progress = Component.translatable(MMLanguageRegistry.GUI_RESEARCH_GROUP_PROGRESS.tag,
                 groupNode.progressDone(), groupNode.progressTotal()).getString();
         String head = "<div class=\"detail-head\">"
                 + "<div class=\"detail-title\">" + ResearchHtml.escape(groupNode.label()) + "</div>"
@@ -106,22 +107,22 @@ public final class ResearchDetailRenderer {
         }
 
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.preview").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_PREVIEW.translated().getString(),
                 previewHtml(player, researchId, node)));
 
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.points").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_POINTS.translated().getString(),
                 "<div class=\"cost-row\"><span class=\"cost-value\">" + recipe.getResearchCost()
                         + "<span class=\"cost-unit\">RP</span></span></div>"));
 
         if (!recipe.getResearchIngredientPairs().isEmpty()) {
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.detail.materials").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_DETAIL_MATERIALS.translated().getString(),
                     materialsHtml(player, recipe.getResearchIngredientPairs())));
         }
 
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.prerequisites").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_PREREQUISITES.translated().getString(),
                 prerequisitesHtml(research, groupNode, recipe)));
 
         StringBuilder descriptionHtml = new StringBuilder("<div class=\"sect-text\">")
@@ -130,7 +131,7 @@ public final class ResearchDetailRenderer {
             descriptionHtml.append("<div class=\"sect-text\">").append(ResearchHtml.escape(node.note())).append("</div>");
         }
         body.append(ResearchHtml.section(
-                Component.translatable("gui.machine_max.research.detail.description").getString(),
+                MMLanguageRegistry.GUI_RESEARCH_DETAIL_DESCRIPTION.translated().getString(),
                 descriptionHtml.toString()));
         body.append("</div>");
 
@@ -155,7 +156,7 @@ public final class ResearchDetailRenderer {
         RecipeHolder<BlueprintResearchRecipe> blueprintResearch = MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(researchId);
         if (blueprintResearch == null) {
             return "<div class=\"preview-box\"><span class=\"pb-hint\">" + ResearchHtml.escape(
-                    Component.translatable("gui.machine_max.research.detail.no_preview").getString())
+                    MMLanguageRegistry.GUI_RESEARCH_DETAIL_NO_PREVIEW.translated().getString())
                     + "</span></div>";
         }
         ItemStack product = unlockedProduct(player, researchId);
@@ -263,13 +264,13 @@ public final class ResearchDetailRenderer {
     private static String prerequisitesHtml(BlueprintAttachment research, ResearchTreeNode groupNode, ResearchRecipe recipe) {
         if (recipe.getPrerequisites().isEmpty()) {
             return "<div class=\"sect-text\">"
-                    + ResearchHtml.escape(Component.translatable("gui.machine_max.research.detail.no_prerequisite").getString())
+                    + ResearchHtml.escape(MMLanguageRegistry.GUI_RESEARCH_DETAIL_NO_PREREQUISITE.translated().getString())
                     + "</div>";
         }
         Set<ResourceLocation> groupMembers = groupMembers(groupNode);
         String doneText = ResearchTreeData.statusText(ResearchTreeData.TONE_OK);
-        String todoText = Component.translatable("gui.machine_max.research.detail.unfinished").getString();
-        String outsideText = Component.translatable("gui.machine_max.research.detail.other_group").getString();
+        String todoText = MMLanguageRegistry.GUI_RESEARCH_DETAIL_UNFINISHED.translated().getString();
+        String outsideText = MMLanguageRegistry.GUI_RESEARCH_DETAIL_OTHER_GROUP.translated().getString();
 
         StringBuilder builder = new StringBuilder();
         for (ResourceLocation prerequisite : new LinkedHashSet<>(recipe.getPrerequisites())) {
@@ -301,7 +302,7 @@ public final class ResearchDetailRenderer {
     private static String actionsHtml(List<ResearchTreeNode.Action> actions) {
         if (actions.isEmpty()) {
             return "<span class=\"sect-text\">"
-                    + ResearchHtml.escape(Component.translatable("gui.machine_max.research.detail.no_action").getString())
+                    + ResearchHtml.escape(MMLanguageRegistry.GUI_RESEARCH_DETAIL_NO_ACTION.translated().getString())
                     + "</span>";
         }
         StringBuilder builder = new StringBuilder();
@@ -332,12 +333,12 @@ public final class ResearchDetailRenderer {
     /** 不可研发的原因文案 */
     private static String unreachableReason(MMDynamicRes.UnreachableResearch unreachable) {
         return switch (unreachable.cause()) {
-            case SELF_PREREQUISITE -> Component.translatable("error.machine_max.research.self_prerequisite").getString();
-            case ON_CYCLE -> Component.translatable("gui.machine_max.research.reason.cycle").getString();
+            case SELF_PREREQUISITE -> MMLanguageRegistry.ERROR_RESEARCH_SELF_PREREQUISITE.translated().getString();
+            case ON_CYCLE -> MMLanguageRegistry.GUI_RESEARCH_REASON_CYCLE.translated().getString();
             case DOWNSTREAM_OF_UNREACHABLE -> Component.translatable(
-                    "error.machine_max.research.unreachable_prerequisite", joinIds(unreachable.culprits())).getString();
+                    MMLanguageRegistry.ERROR_RESEARCH_UNREACHABLE_PREREQUISITE.tag, joinIds(unreachable.culprits())).getString();
             case DANGLING_PREREQUISITE -> Component.translatable(
-                    "error.machine_max.research.missing_prerequisite", joinIds(unreachable.culprits())).getString();
+                    MMLanguageRegistry.ERROR_RESEARCH_MISSING_PREREQUISITE.tag, joinIds(unreachable.culprits())).getString();
         };
     }
 
@@ -345,7 +346,7 @@ public final class ResearchDetailRenderer {
     private static String descriptionText(ResearchRecipe recipe) {
         String tooltip = recipe.getTooltip();
         if (tooltip == null || tooltip.isEmpty()) {
-            return Component.translatable("gui.machine_max.research.detail.default_description").getString();
+            return MMLanguageRegistry.GUI_RESEARCH_DETAIL_DEFAULT_DESCRIPTION.translated().getString();
         }
         return Component.translatable(tooltip).getString();
     }

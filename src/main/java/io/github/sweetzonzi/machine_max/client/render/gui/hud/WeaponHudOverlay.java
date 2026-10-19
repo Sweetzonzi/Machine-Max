@@ -16,6 +16,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenLoaderSubsyst
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem.LoaderEntry;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -89,12 +90,12 @@ public final class WeaponHudOverlay {
 
     // ——— 固定文案的语言键 ———
 
-    private static final String KEY_ROLE_TAG_PRIMARY = "gui.machine_max.weapon_hud.role.tag.primary";
-    private static final String KEY_ROLE_TAG_SECONDARY = "gui.machine_max.weapon_hud.role.tag.secondary";
-    private static final String KEY_ROLE_TITLE_PRIMARY = "gui.machine_max.weapon_hud.role.title.primary";
-    private static final String KEY_ROLE_TITLE_SECONDARY = "gui.machine_max.weapon_hud.role.title.secondary";
-    private static final String KEY_READY = "gui.machine_max.weapon_hud.ready";
-    private static final String KEY_EMPTY = "gui.machine_max.weapon_hud.empty";
+    private static final String KEY_ROLE_TAG_PRIMARY = MMLanguageRegistry.GUI_WEAPON_HUD_ROLE_TAG_PRIMARY.tag;
+    private static final String KEY_ROLE_TAG_SECONDARY = MMLanguageRegistry.GUI_WEAPON_HUD_ROLE_TAG_SECONDARY.tag;
+    private static final String KEY_ROLE_TITLE_PRIMARY = MMLanguageRegistry.GUI_WEAPON_HUD_ROLE_TITLE_PRIMARY.tag;
+    private static final String KEY_ROLE_TITLE_SECONDARY = MMLanguageRegistry.GUI_WEAPON_HUD_ROLE_TITLE_SECONDARY.tag;
+    private static final String KEY_READY = MMLanguageRegistry.GUI_WEAPON_HUD_READY.tag;
+    private static final String KEY_EMPTY = MMLanguageRegistry.GUI_WEAPON_HUD_EMPTY.tag;
 
     // ——— 状态类与占位文本 ———
 

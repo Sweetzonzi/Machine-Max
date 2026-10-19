@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.external.html.HtNode;
 import io.github.sweetzonzi.machine_max.external.html.HtmlLikeParser;
@@ -136,10 +137,10 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
                     ObjectManager.addVehicle(vehicle);
                     onPlaceSuccess(level, ctx, stack, player);
                 } else {
-                    player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
+                    player.displayClientMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_PLACE_FAILED.translated(), true);
                 }
             } catch (Exception e) {
-                player.sendSystemMessage(Component.translatable("message.machine_max.vehicle.place_failed", e.getMessage())
+                player.sendSystemMessage(Component.translatable(MMLanguageRegistry.MESSAGE_VEHICLE_PLACE_FAILED.tag, e.getMessage())
                         .withColor(Color.RED.getRGB()));
                 return InteractionResultHolder.fail(stack);
             }

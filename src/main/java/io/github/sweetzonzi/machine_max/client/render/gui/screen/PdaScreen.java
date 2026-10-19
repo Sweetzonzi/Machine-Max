@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.pda.PdaHtml;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaData;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaBindShortcutPayload;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaDepositPayload;
 import net.minecraft.client.Minecraft;
@@ -150,9 +151,9 @@ public class PdaScreen extends ApricityScreen {
         for (Integer uses : data.entries().values()) {
             if (uses != null && PdaData.isInfinite(uses)) infinite++;
         }
-        setText("pda-count-stored", PdaHtml.translatable("gui.machine_max.pda.count.stored", total));
-        setText("pda-count-infinite", PdaHtml.translatable("gui.machine_max.pda.count.infinite", infinite));
-        setText("pda-count-limited", PdaHtml.translatable("gui.machine_max.pda.count.limited", total - infinite));
+        setText("pda-count-stored", PdaHtml.translatable(MMLanguageRegistry.GUI_PDA_COUNT_STORED.tag, total));
+        setText("pda-count-infinite", PdaHtml.translatable(MMLanguageRegistry.GUI_PDA_COUNT_INFINITE.tag, infinite));
+        setText("pda-count-limited", PdaHtml.translatable(MMLanguageRegistry.GUI_PDA_COUNT_LIMITED.tag, total - infinite));
     }
 
     private void renderShortcutBar(PdaData data, Level level) {
@@ -247,7 +248,7 @@ public class PdaScreen extends ApricityScreen {
         }
         pendingEntry = recipeId;
         markPicked(recipeId);
-        setStatus(PdaHtml.translatable("gui.machine_max.pda.status.select_entry",
+        setStatus(PdaHtml.translatable(MMLanguageRegistry.GUI_PDA_STATUS_SELECT_ENTRY.tag,
                 PdaHtml.viewOf(level, id).name()));
     }
 
@@ -269,7 +270,7 @@ public class PdaScreen extends ApricityScreen {
         }
         pendingSlot = index;
         markSlotArmed(index);
-        setStatus(PdaHtml.translatable("gui.machine_max.pda.status.select_slot", index + 1));
+        setStatus(PdaHtml.translatable(MMLanguageRegistry.GUI_PDA_STATUS_SELECT_SLOT.tag, index + 1));
     }
 
     /** 解绑：清除所有引用该条目的格位。 */

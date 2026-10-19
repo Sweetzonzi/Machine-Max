@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
@@ -71,9 +72,9 @@ public class SprayCanItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart part = eyesight.getSubPart();
             if (part != null) {//提示信息
-                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
+                player.displayClientMessage(MMLanguageRegistry.TOOLTIP_SPRAY_CAN_INTERACT.translated().append(part.name), true);
             } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.subPart != null) {
-                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.subPart.name), true);
+                player.displayClientMessage(MMLanguageRegistry.TOOLTIP_SPRAY_CAN_INTERACT.translated().append(partEntity.subPart.name), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
     }

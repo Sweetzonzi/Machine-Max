@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.network;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
 import io.github.sweetzonzi.machine_max.client.render.toast.BlueprintResearchToast;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.research.FreeRpSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompletePayload;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
@@ -26,7 +27,7 @@ public class ClientResearchHandler {
             mc.execute(() -> mc.getToasts().addToast(
                     new BlueprintResearchToast(
                             payload.product(),
-                            Component.translatable("toast.machine_max.research_complete"),
+                            MMLanguageRegistry.TOAST_RESEARCH_COMPLETE.translated(),
                             payload.product().getHoverName().copy().withColor(Color.WHITE.getRGB())
                     )
             ));

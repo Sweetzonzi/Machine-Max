@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleConfigPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -57,14 +58,14 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
 
         // 确认按钮
         this.confirmButton = Button.builder(
-                Component.translatable("gui.machine_max.confirm"),
+                MMLanguageRegistry.GUI_CONFIRM.translated(),
                 button -> this.confirm()
         ).bounds(x + 20, y + 98, 60, 20).build();
         this.addRenderableWidget(this.confirmButton);
 
         // 取消按钮
         this.cancelButton = Button.builder(
-                Component.translatable("gui.machine_max.cancel"),
+                MMLanguageRegistry.GUI_CANCEL.translated(),
                 button -> this.onClose()
         ).bounds(x + 96, y + 98, 60, 20).build();
         this.addRenderableWidget(this.cancelButton);
@@ -134,10 +135,10 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
         guiGraphics.drawString(this.font,
-                Component.translatable("gui.machine_max.enter_vehicle_name").withColor(Color.WHITE.getRGB()),
+                MMLanguageRegistry.GUI_ENTER_VEHICLE_NAME.translated().withColor(Color.WHITE.getRGB()),
                 20, 15, 0x404040, false);
         guiGraphics.drawString(this.font,
-                Component.translatable("gui.machine_max.enter_vehicle_description").withColor(Color.WHITE.getRGB()),
+                MMLanguageRegistry.GUI_ENTER_VEHICLE_DESCRIPTION.translated().withColor(Color.WHITE.getRGB()),
                 20, 53, 0x404040, false);
     }
 

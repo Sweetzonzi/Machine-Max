@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlMode;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -16,7 +17,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GENERAL {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.general";
+            return MMLanguageRegistry.KEY_CATEGORY_GENERAL.tag;
         }
 
         @Override
@@ -33,7 +34,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GROUND {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ground";
+            return MMLanguageRegistry.KEY_CATEGORY_GROUND.tag;
         }
 
         @Override
@@ -51,7 +52,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     SHIP {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ship";
+            return MMLanguageRegistry.KEY_CATEGORY_SHIP.tag;
         }
 
         public boolean isActive() {
@@ -68,7 +69,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     PLANE {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.plane";
+            return MMLanguageRegistry.KEY_CATEGORY_PLANE.tag;
         }
 
         public boolean isActive() {
@@ -85,7 +86,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     MECH {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.mech";
+            return MMLanguageRegistry.KEY_CATEGORY_MECH.tag;
         }
 
         public boolean isActive() {
@@ -103,7 +104,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     ASSEMBLY {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.assembly";
+            return MMLanguageRegistry.KEY_CATEGORY_ASSEMBLY.tag;
         }
 
         public boolean isActive() {

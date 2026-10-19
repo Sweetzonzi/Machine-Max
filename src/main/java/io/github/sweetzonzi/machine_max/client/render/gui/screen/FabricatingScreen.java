@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.renderable.*;
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
@@ -59,7 +60,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
         // 搜索框
         this.searchBox = new EditBox(this.font, leftPos + 5, topPos + 5, 90, 15, Component.empty());
         this.searchBox.setMaxLength(32);
-        this.searchBox.setHint(Component.translatable("gui.machine_max.fabricator.search_hint"));
+        this.searchBox.setHint(MMLanguageRegistry.GUI_FABRICATOR_SEARCH_HINT.translated());
         this.addRenderableWidget(searchBox);
 
         // 配方列表
@@ -118,7 +119,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         // 开始生产按钮
         this.startProductionButton = Button.builder(
-                Component.translatable("gui.machine_max.fabricator.start_production"),
+                MMLanguageRegistry.GUI_FABRICATOR_START_PRODUCTION.translated(),
                 this::onStartProduction
         ).bounds(
                 leftPos + imageWidth - 49,
@@ -130,7 +131,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         // 取消选中任务按钮
         this.cancelSelectedTaskButton = Button.builder(
-                Component.translatable("gui.machine_max.fabricator.cancel_task"),
+                MMLanguageRegistry.GUI_FABRICATOR_CANCEL_TASK.translated(),
                 this::onCancelTask
         ).bounds(
                 leftPos + imageWidth - 95,
@@ -143,7 +144,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         // 领取选中任务按钮
         this.collectSelectedTaskButton = Button.builder(
-                Component.translatable("gui.machine_max.fabricator.collect_task"),
+                MMLanguageRegistry.GUI_FABRICATOR_COLLECT_TASK.translated(),
                 this::onCollectTask
         ).bounds(
                 leftPos + imageWidth - 95,
@@ -157,7 +158,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         // 领取所有任务按钮
         this.collectAllTaskButton = Button.builder(
-                Component.translatable("gui.machine_max.fabricator.collect_all_task"),
+                MMLanguageRegistry.GUI_FABRICATOR_COLLECT_ALL_TASK.translated(),
                 this::onCollectAllTask
         ).bounds(
                 leftPos + imageWidth - 95,
@@ -260,11 +261,11 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         if (!canProduce) {
             startProductionButton.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-                    Component.translatable("gui.machine_max.fabricator.insufficient_materials")
+                    MMLanguageRegistry.GUI_FABRICATOR_INSUFFICIENT_MATERIALS.translated()
             ));
         } else if (!hasFreeSlot) {
             startProductionButton.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-                    Component.translatable("gui.machine_max.fabricator.no_free_slots")
+                    MMLanguageRegistry.GUI_FABRICATOR_NO_FREE_SLOTS.translated()
             ));
         } else {
             startProductionButton.setTooltip(null);
@@ -325,18 +326,18 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
 
         int textColor = new Color(255, 255, 255, 255).getRGB();
         // 渲染标题和标签
-        graphics.drawString(this.font, Component.translatable("gui.machine_max.fabricator.tasks").withStyle(ChatFormatting.BOLD),
+        graphics.drawString(this.font, MMLanguageRegistry.GUI_FABRICATOR_TASKS.translated().withStyle(ChatFormatting.BOLD),
                 leftPos + imageWidth - 95, topPos + 8, textColor, false);
 
         // 渲染中央区域标题
-        graphics.drawString(this.font, Component.translatable("gui.machine_max.fabricator.preview").withStyle(ChatFormatting.BOLD),
+        graphics.drawString(this.font, MMLanguageRegistry.GUI_FABRICATOR_PREVIEW.translated().withStyle(ChatFormatting.BOLD),
                 leftPos + 105, topPos + 8, textColor, false);
 
         // 显示空闲任务槽信息 TODO:能量状态？
         int idleSlots = menu.getFabricatorBlockEntity().getIdleTaskCount();
         int allSlots = menu.getFabricatorBlockEntity().getMaxTaskSize();
         graphics.drawCenteredString(this.font,
-                Component.translatable("gui.machine_max.fabricator.free_slots", idleSlots, allSlots),
+                Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_FREE_SLOTS.tag, idleSlots, allSlots),
                 width / 2, topPos + 208,
                 idleSlots > 0 ? 0x55FF55 : 0xFF5555);
     }

@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.client.blueprint.BlueprintLibraryClient;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.library.BlueprintExtractLocalPayload;
 import io.github.sweetzonzi.machine_max.network.payload.library.BlueprintExtractPackPayload;
@@ -99,37 +100,37 @@ public final class BlueprintLibraryTreeData {
     public static String detail(Player player, ResearchTreeNode node) {
         if (node.kind() == ResearchTreeNode.Kind.GROUP) {
             return ResearchDetailRenderer.group(node,
-                    Component.translatable("gui.machine_max.research.library.group_hint").getString());
+                    MMLanguageRegistry.GUI_RESEARCH_LIBRARY_GROUP_HINT.translated().getString());
         }
         VehicleData data = vehicleData(node.id());
         String source = node.id().contains(":")
-                ? Component.translatable("gui.machine_max.blueprint_library.section.pack").getString()
-                : Component.translatable("gui.machine_max.blueprint_library.section.local").getString();
+                ? MMLanguageRegistry.GUI_BLUEPRINT_LIBRARY_SECTION_PACK.translated().getString()
+                : MMLanguageRegistry.GUI_BLUEPRINT_LIBRARY_SECTION_LOCAL.translated().getString();
 
         StringBuilder body = new StringBuilder("<div class=\"detail-body\">");
         // 本地条目的展示名可改：改名输入框随详情一起重建，值即当前名称
         if (!node.id().contains(":")) {
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.library.rename_label").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_LIBRARY_RENAME_LABEL.translated().getString(),
                     "<div class=\"search-box\"><input type=\"text\" id=\"library-rename\" value=\""
                             + ResearchHtml.escape(node.label()) + "\"></div>"));
         }
         if (data != null) {
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.library.attributes").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ATTRIBUTES.translated().getString(),
                     statsHtml(player, data)));
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.library.source").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_LIBRARY_SOURCE.translated().getString(),
                     sourceRows(node, data, source, templateOf(node.id()))));
             String description = data.getMeta() == null ? "" : data.getMeta().description();
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.detail.description").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_DETAIL_DESCRIPTION.translated().getString(),
                     "<div class=\"sect-text\">" + ResearchHtml.escape(description.isEmpty()
-                            ? Component.translatable("gui.machine_max.research.library.default_description").getString()
+                            ? MMLanguageRegistry.GUI_RESEARCH_LIBRARY_DEFAULT_DESCRIPTION.translated().getString()
                             : description) + "</div>"));
         } else {
             body.append(ResearchHtml.section(
-                    Component.translatable("gui.machine_max.research.detail.description").getString(),
+                    MMLanguageRegistry.GUI_RESEARCH_DETAIL_DESCRIPTION.translated().getString(),
                     "<div class=\"sect-text\">" + ResearchHtml.escape(node.statusText()) + "</div>"));
         }
         body.append("</div>");
@@ -144,7 +145,7 @@ public final class BlueprintLibraryTreeData {
         StringBuilder foot = new StringBuilder("<div class=\"detail-foot\">");
         if (node.actions().isEmpty()) {
             foot.append("<span class=\"sect-text\">")
-                    .append(ResearchHtml.escape(Component.translatable("gui.machine_max.research.detail.no_action").getString()))
+                    .append(ResearchHtml.escape(MMLanguageRegistry.GUI_RESEARCH_DETAIL_NO_ACTION.translated().getString()))
                     .append("</span>");
         } else {
             for (ResearchTreeNode.Action action : node.actions()) {
@@ -188,8 +189,8 @@ public final class BlueprintLibraryTreeData {
         int partCount = data.getParts() == null ? 0 : data.getParts().size();
         int mass = Math.round(data.computeDesignMass(player.level()));
         return "<div class=\"bp-stats\">"
-                + statCell(String.valueOf(partCount), Component.translatable("gui.machine_max.research.library.stat.parts").getString())
-                + statCell(String.valueOf(mass), Component.translatable("gui.machine_max.research.library.stat.mass").getString())
+                + statCell(String.valueOf(partCount), MMLanguageRegistry.GUI_RESEARCH_LIBRARY_STAT_PARTS.translated().getString())
+                + statCell(String.valueOf(mass), MMLanguageRegistry.GUI_RESEARCH_LIBRARY_STAT_MASS.translated().getString())
                 + "</div>";
     }
 
@@ -201,22 +202,22 @@ public final class BlueprintLibraryTreeData {
     private static String sourceRows(ResearchTreeNode node, VehicleData data, String source,
                                      @Nullable ResourceLocation template) {
         StringBuilder builder = new StringBuilder();
-        builder.append(kvRow(Component.translatable("gui.machine_max.research.library.row.source").getString(), source));
+        builder.append(kvRow(MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ROW_SOURCE.translated().getString(), source));
         if (template != null) {
-            builder.append(kvRow(Component.translatable("gui.machine_max.research.library.row.template").getString(),
+            builder.append(kvRow(MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ROW_TEMPLATE.translated().getString(),
                     template.toString()));
         }
         BlueprintMeta meta = data.getMeta();
         if (meta != null && !meta.author().isEmpty()) {
-            builder.append(kvRow(Component.translatable("gui.machine_max.research.library.row.author").getString(), meta.author()));
+            builder.append(kvRow(MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ROW_AUTHOR.translated().getString(), meta.author()));
         }
         if (meta != null && !meta.createdAt().isEmpty()) {
-            builder.append(kvRow(Component.translatable("gui.machine_max.research.library.row.created_at").getString(), meta.createdAt()));
+            builder.append(kvRow(MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ROW_CREATED_AT.translated().getString(), meta.createdAt()));
         }
-        builder.append(kvRow(Component.translatable("gui.machine_max.research.library.row.writable").getString(),
+        builder.append(kvRow(MMLanguageRegistry.GUI_RESEARCH_LIBRARY_ROW_WRITABLE.translated().getString(),
                 Component.translatable(node.id().contains(":")
-                        ? "gui.machine_max.research.library.read_only"
-                        : "gui.machine_max.research.library.read_write").getString()));
+                        ? MMLanguageRegistry.GUI_RESEARCH_LIBRARY_READ_ONLY.tag
+                        : MMLanguageRegistry.GUI_RESEARCH_LIBRARY_READ_WRITE.tag).getString()));
         return builder.toString();
     }
 

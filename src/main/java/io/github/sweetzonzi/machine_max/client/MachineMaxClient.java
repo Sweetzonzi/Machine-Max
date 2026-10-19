@@ -57,8 +57,12 @@ public class MachineMaxClient {
     }
 
     /**
-     * 注册自定义着色器：rendertype_inspector（内构查看剪影）。
-     * 着色器文件位于 assets/machine_max/shaders/core/rendertype_inspector.json/.vsh/.fsh，
+     * 注册自定义着色器：
+     * <ul>
+     *   <li>rendertype_inspector（内构查看剪影）</li>
+     *   <li>rendertype_anchor（锚点公告板，穿透方块、不透明满亮度）</li>
+     * </ul>
+     * 着色器文件位于 assets/machine_max/shaders/core/ 下，
      * 使用 {@link DefaultVertexFormat#NEW_ENTITY}（含 UV0 属性用于纹理采样做 alpha 遮罩）。
      */
     private static void onRegisterShaders(RegisterShadersEvent event) {
@@ -74,8 +78,19 @@ public class MachineMaxClient {
                     MachineMax.LOGGER.debug("rendertype_inspector 着色器注册成功");
                 }
             );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    ResourceLocation.parse("machine_max:rendertype_anchor"),
+                    DefaultVertexFormat.NEW_ENTITY
+                ),
+                shader -> {
+                    MMRenderTypes.anchorShader = shader;
+                    MachineMax.LOGGER.debug("rendertype_anchor 着色器注册成功");
+                }
+            );
         } catch (IOException e) {
-            MachineMax.LOGGER.error("无法加载 rendertype_inspector 着色器", e);
+            MachineMax.LOGGER.error("无法加载自定义核心着色器", e);
         }
     }
 }

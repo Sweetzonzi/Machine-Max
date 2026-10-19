@@ -9,6 +9,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
+import io.github.sweetzonzi.machine_max.common.mech.physics_test.JoinPosition;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -73,11 +74,10 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
     }
 
     @Override
-    public Pair<Vec3, Transform> setJoinPosition() {
+    public JoinPosition setJoinPosition() {
         // 若没有可用的连接点，则尝试直接放置零件
         Quaternionf rotation = new Quaternionf()
-                .rotationY((float) Math.toRadians(0 - player.getYRot()))
-                .rotateX((float) (Math.PI));
+                .rotationY((float) Math.toRadians(180 - player.getYRot()));
 
         Transform transform = new Transform(
                 PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -86,14 +86,14 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
                         ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
                 SparkMathKt.toBQuaternion(rotation)
         );
-        return Pair.of(player.getLookAngle(), transform);
+        return new JoinPosition(1, player.getEyePosition(), player.getLookAngle(), transform);
     }
 
     private void setState(Part part) {
-        part.setTransform(getJoinPosition().getSecond());
+        part.setTransform(getJoinPosition().getTransform());
 
         double strength = 340.0; //初速度常数
-        var lookAt = getJoinPosition().getFirst();
+        var lookAt = getJoinPosition().getLookAt();
         var velocity = new Vec3(lookAt.x * strength, lookAt.y * strength, lookAt.z * strength);
         Vector3f v = new Vector3f((float) velocity.x, (float) velocity.y, (float) velocity.z);
         part.rootSubPart.setLinearVelocity(v);
@@ -132,7 +132,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
 //        if (subPart.level.isClientSide) return;
         //冷却中不重复触发，保证幂等；冷却结束后的下一次落地仍会正常触发
         if (resetCooldown > 0) return;
-        Transform transform = getJoinPosition().getSecond();
+        Transform transform = getJoinPosition().getTransform();
         VehicleCore vehicle = getPhysicsTestingObject();
         if (vehicle.getPartMap().containsKey(subPart.getPart().uuid)) {
             subPart.body.setLinearVelocity(Vector3f.ZERO);
@@ -151,7 +151,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
 
     @Override
     public boolean isDisabled() {
-        return getPhysicsTestingObject().isDestroyed() || getPhysicsTestingObject().isRemoved();
+        return  destroyed || getPhysicsTestingObject().isDestroyed() || getPhysicsTestingObject().isRemoved();
     }
 
 }

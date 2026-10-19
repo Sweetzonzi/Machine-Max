@@ -1,15 +1,29 @@
 package io.github.sweetzonzi.machine_max.common.block.road;
 
+import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.block.total_station.TotalStationBlockEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 
-public class RoadBaseBlockEntity extends BlockEntity {
+import java.util.HashMap;
+import java.util.Map;
+
+@Getter
+public class RoadBaseBlockEntity extends BlockEntity implements IBlockEntityAnimatable<RoadBaseBlockEntity> {
+    public final AnimController animController = new AnimController(this);
+    public final ModelController modelController = new ModelController(this);
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
+
 
     protected double width = 3;//道路节点宽度
     protected double pitch = 0;//道路节点坡度(角度,在±80度之间)
@@ -74,6 +88,23 @@ public class RoadBaseBlockEntity extends BlockEntity {
         tag.putDouble("width", width);
         tag.putDouble("pitch", pitch);
         tag.putDouble("roll", roll);
+    }
+
+    @Override
+    public RoadBaseBlockEntity getAnimatable() {
+        return this;
+    }
+
+    @NotNull
+    @Override
+    public AnimController getAnimController() {
+        return this.animController;
+    }
+
+    @NotNull
+    @Override
+    public ModelController getModelController() {
+        return this.modelController;
     }
 
 }

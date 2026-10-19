@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.block.total_station;
 
+import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable;
 import com.mojang.serialization.MapCodec;
 import io.github.sweetzonzi.machine_max.common.block.research_table.ResearchTableBlock;
 import io.github.sweetzonzi.machine_max.common.block.research_table.ResearchTableBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.road.RoadBaseBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -27,7 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TotalStationBlock extends BaseEntityBlock {
+public class TotalStationBlock extends BaseEntityBlock{
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<Half> HALF = BlockStateProperties.HALF;
 

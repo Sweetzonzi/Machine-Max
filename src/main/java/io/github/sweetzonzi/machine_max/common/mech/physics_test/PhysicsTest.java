@@ -44,6 +44,8 @@ public interface PhysicsTest {
     /**可暂停、恢复该测试用例*/
     void onResume();
 
+    void onDestroy();
+
     /**
      * VehicleCore 物理tick
      * <p>由 {@link io.github.sweetzonzi.machine_max.mixin_native.VehicleCoreMixin} 在物理线程

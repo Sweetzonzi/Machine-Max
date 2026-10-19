@@ -17,7 +17,6 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.PhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
-import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.ConnectorAlignmentHelper;

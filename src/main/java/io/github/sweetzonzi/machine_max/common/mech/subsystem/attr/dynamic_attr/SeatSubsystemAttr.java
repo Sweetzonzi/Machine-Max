@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import lombok.Getter;
@@ -44,7 +45,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         super(modelName);
         this.staticAttribute = (SeatSubsystemStaticAttr) getStaticAttr();
         if (locator == null || locator.isEmpty())
-            throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");
+            throw new IllegalStateException(MMLanguageRegistry.ERROR_SEAT_SUBSYSTEM_NO_LOCATOR.tag);
         this.locator = locator;
         this.controlGroupPreset = controlGroupPreset;
         this.passengerNumSignalTargets = passengerNumSignalTargets;
@@ -62,7 +63,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         if (dismountLocators == null || dismountLocators.isEmpty()) return List.of();
         for (String name : dismountLocators) {
             if (name == null || name.isEmpty())
-                throw new IllegalStateException("error.machine_max.seat_subsystem.empty_dismount_locator");
+                throw new IllegalStateException(MMLanguageRegistry.ERROR_SEAT_SUBSYSTEM_EMPTY_DISMOUNT_LOCATOR.tag);
         }
         return List.copyOf(dismountLocators);
     }

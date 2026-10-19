@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.handler.pda;
 
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaDepositService;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.pda.PdaDepositPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,10 +21,10 @@ public final class PdaDepositHandler {
                     PdaDepositService.deposit(player, payload.hand(), payload.slots(), payload.all());
             if (result.stored() > 0) {
                 player.displayClientMessage(Component.translatable(
-                        "message.machine_max.pda.deposit.success", result.stored()), true);
+                        MMLanguageRegistry.MESSAGE_PDA_DEPOSIT_SUCCESS.tag, result.stored()), true);
             } else if (result.rejected() > 0) {
                 player.displayClientMessage(Component.translatable(
-                        "message.machine_max.pda.deposit.rejected", result.rejected()), true);
+                        MMLanguageRegistry.MESSAGE_PDA_DEPOSIT_REJECTED.tag, result.rejected()), true);
             }
         });
     }

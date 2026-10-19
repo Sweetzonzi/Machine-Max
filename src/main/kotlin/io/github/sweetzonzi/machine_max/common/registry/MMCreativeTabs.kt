@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
@@ -22,7 +23,7 @@ object MMCreativeTabs {
         id = "machine_max_tab_main"
         factory = {
             CreativeModeTab.builder()
-                .title(Component.translatable("itemGroup.machine_max.main"))
+                .title(MMLanguageRegistry.ITEM_GROUP_MAIN.translated())
                 .icon { ItemStack(MMItems.CROWBAR_ITEM) }
                 .displayItems { _, output ->
 //                    output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
@@ -53,7 +54,7 @@ object MMCreativeTabs {
         id = "machine_max_tab_assembly"
         factory = {
             CreativeModeTab.builder()
-                .title(Component.translatable("itemGroup.machine_max.assembly"))
+                .title(MMLanguageRegistry.ITEM_GROUP_ASSEMBLY.translated())
                 .icon {
                     if (MMDynamicRes.TEMPLATES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
                     else {
@@ -72,7 +73,7 @@ object MMCreativeTabs {
         id = "machine_max_tab_vehicle_blueprint"
         factory = {
             CreativeModeTab.builder()
-                .title(Component.translatable("itemGroup.machine_max.vehicle_blueprint"))
+                .title(MMLanguageRegistry.ITEM_GROUP_VEHICLE_BLUEPRINT.translated())
                 .icon {
                     if (MMDynamicRes.TEMPLATES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
                     else {
@@ -91,7 +92,7 @@ object MMCreativeTabs {
         id = "machine_max_tab_part"
         factory = {
             CreativeModeTab.builder()
-                .title(Component.translatable("itemGroup.machine_max.part"))
+                .title(MMLanguageRegistry.ITEM_GROUP_PART.translated())
                 // 动态设置图标
                 .icon {
                     if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
@@ -111,7 +112,7 @@ object MMCreativeTabs {
         id = "machine_max_tab_fabricating_blueprint"
         factory = {
             CreativeModeTab.builder()
-                .title(Component.translatable("itemGroup.machine_max.fabricating_blueprint"))
+                .title(MMLanguageRegistry.ITEM_GROUP_FABRICATING_BLUEPRINT.translated())
                 .icon {
                     if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
                     else {

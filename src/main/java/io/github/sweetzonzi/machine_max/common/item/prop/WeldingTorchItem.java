@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
@@ -96,7 +97,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
                         } else {
                             player.displayClientMessage(Component.translatable(
-                                    "message.machine_max.assembly.locked",
+                                    MMLanguageRegistry.MESSAGE_ASSEMBLY_LOCKED.tag,
                                     Component.translatable(part.getName())), true);
                         }
                         if (repaired && remainingUseDuration % 10 == 0)

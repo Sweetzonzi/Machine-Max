@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -70,7 +71,7 @@ public final class PdaHtml {
                 .append(usesText(uses)).append("</span>");
         if (bound) {
             html.append("<span class=\"row-act\" data-act=\"").append(ACT_UNBIND).append("\">")
-                    .append(escape(translatable("gui.machine_max.pda.btn.unbind"))).append("</span>");
+                    .append(escape(translatable(MMLanguageRegistry.GUI_PDA_BTN_UNBIND.tag))).append("</span>");
         }
         return html.append("</div>").toString();
     }
@@ -89,14 +90,14 @@ public final class PdaHtml {
         if (uses == null) {
             html.append("<span class=\"row-act\" data-act=\"").append(ACT_DEPOSIT)
                     .append("\" data-slot=\"").append(slot).append("\">")
-                    .append(escape(translatable("gui.machine_max.pda.btn.deposit"))).append("</span>");
+                    .append(escape(translatable(MMLanguageRegistry.GUI_PDA_BTN_DEPOSIT.tag))).append("</span>");
         } else if (PdaData.isInfinite(uses)) {
             html.append("<span class=\"row-act disabled\">")
-                    .append(escape(translatable("gui.machine_max.pda.btn.stored"))).append("</span>");
+                    .append(escape(translatable(MMLanguageRegistry.GUI_PDA_BTN_STORED.tag))).append("</span>");
         } else {
             // 蓝图物品当前不携带次数，有限次条目一律按升级为无限处理
             html.append("<span class=\"row-act\">")
-                    .append(escape(translatable("gui.machine_max.pda.btn.merge", INFINITE_SYMBOL)))
+                    .append(escape(translatable(MMLanguageRegistry.GUI_PDA_BTN_MERGE.tag, INFINITE_SYMBOL)))
                     .append("</span>");
         }
         return html.append("</div>").toString();
@@ -111,7 +112,7 @@ public final class PdaHtml {
     public static EntryView viewOf(Level level, ResourceLocation recipeId) {
         RecipeHolder<FabricatingRecipe> holder = PdaHelper.recipeOf(level, recipeId);
         if (holder == null) {
-            return new EntryView("tag-unknown", translatable("gui.machine_max.pda.tag.unknown"),
+            return new EntryView("tag-unknown", translatable(MMLanguageRegistry.GUI_PDA_TAG_UNKNOWN.tag),
                     recipeId.toString(), "");
         }
         if (holder.value() instanceof PartFabricatingRecipe partRecipe) {
@@ -119,10 +120,10 @@ public final class PdaHtml {
             String name = partTypeId != null
                     ? Component.translatable(partTypeId.toLanguageKey()).getString()
                     : holder.value().getResult().getHoverName().getString();
-            return new EntryView("tag-part", translatable("gui.machine_max.pda.tag.part"),
+            return new EntryView("tag-part", translatable(MMLanguageRegistry.GUI_PDA_TAG_PART.tag),
                     name, iconOf(level, recipeId));
         }
-        return new EntryView("tag-general", translatable("gui.machine_max.pda.tag.general"),
+        return new EntryView("tag-general", translatable(MMLanguageRegistry.GUI_PDA_TAG_GENERAL.tag),
                 holder.value().getResult().getHoverName().getString(), "");
     }
 

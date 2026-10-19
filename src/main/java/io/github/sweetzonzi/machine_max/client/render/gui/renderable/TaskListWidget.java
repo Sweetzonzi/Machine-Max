@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -139,7 +140,7 @@ public class TaskListWidget extends AbstractScrollWidget {
                     graphics.drawString(minecraft.font, timeText, getX() + 4, yPos + 35, 0xAAAAAA, false);
                 } else if (task.status == FabricatorBlockEntity.TaskStatus.COMPLETED) {
                     graphics.drawString(minecraft.font,
-                            Component.translatable("gui.machine_max.fabricator.ready_for_collection"),
+                            MMLanguageRegistry.GUI_FABRICATOR_READY_FOR_COLLECTION.translated(),
                             getX() + 4, yPos + 35, 0x55FF55, false);
                 }
             } else if (task.status == FabricatorBlockEntity.TaskStatus.QUEUED) {
@@ -165,11 +166,11 @@ public class TaskListWidget extends AbstractScrollWidget {
                 // 添加进度信息
                 if (task.status == FabricatorBlockEntity.TaskStatus.PRODUCING) {
                     int remainingTime = (int) ((task.totalTime - task.progress) / fabricator.getEfficiency());
-                    tooltip.add(Component.translatable("gui.machine_max.fabricator.remaining_time",
+                    tooltip.add(Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_REMAINING_TIME.tag,
                             formatTime(remainingTime)).withStyle(ChatFormatting.GREEN));
                 } else if (task.status == FabricatorBlockEntity.TaskStatus.QUEUED) {
                     int estimatedTime = (int) (task.totalTime / fabricator.getEfficiency());
-                    tooltip.add(Component.translatable("gui.machine_max.fabricator.estimated_time",
+                    tooltip.add(Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_ESTIMATED_TIME.tag,
                             formatTime(estimatedTime)).withStyle(ChatFormatting.GRAY));
                 }
                 graphics.renderTooltip(minecraft.font, tooltip, task.result.getTooltipImage(), mouseX, (int) (mouseY + scrollAmount()));
@@ -233,10 +234,10 @@ public class TaskListWidget extends AbstractScrollWidget {
 
     private Component getStatusText(FabricatorBlockEntity.TaskStatus status) {
         return switch (status) {
-            case QUEUED -> Component.translatable("gui.machine_max.fabricator.status.queued");
-            case PRODUCING -> Component.translatable("gui.machine_max.fabricator.status.producing");
-            case COMPLETED -> Component.translatable("gui.machine_max.fabricator.status.completed");
-            default -> Component.translatable("gui.machine_max.fabricator.status.idle");
+            case QUEUED -> MMLanguageRegistry.GUI_FABRICATOR_STATUS_QUEUED.translated();
+            case PRODUCING -> MMLanguageRegistry.GUI_FABRICATOR_STATUS_PRODUCING.translated();
+            case COMPLETED -> MMLanguageRegistry.GUI_FABRICATOR_STATUS_COMPLETED.translated();
+            default -> MMLanguageRegistry.GUI_FABRICATOR_STATUS_IDLE.translated();
         };
     }
 

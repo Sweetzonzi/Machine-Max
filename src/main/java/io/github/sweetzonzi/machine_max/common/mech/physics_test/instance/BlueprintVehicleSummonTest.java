@@ -8,6 +8,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
+import io.github.sweetzonzi.machine_max.common.mech.physics_test.JoinPosition;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -80,7 +81,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
     }
 
     @Override
-    public Pair<Vec3, Transform> setJoinPosition() {
+    public JoinPosition setJoinPosition() {
         // 若没有可用的连接点，则尝试直接放置零件
         Quaternionf rotation = new Quaternionf()
                 .rotationY((float) Math.toRadians(180 - player.getYRot()));
@@ -92,17 +93,17 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
                         ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
                 SparkMathKt.toBQuaternion(rotation)
         );
-        return Pair.of(player.getLookAngle(), transform);
+        return new JoinPosition(1, player.getEyePosition(), player.getLookAngle(), transform);
     }
 
     /**
      * 设置整车初始状态：入点变换作用于整车（所有部件保持相对姿态），再给予整车初速度与角速度
      */
     private void setVehicleState(VehicleCore vehicle) {
-        vehicle.setTransform(getJoinPosition().getSecond());
+        vehicle.setTransform(getJoinPosition().getTransform());
 
         double strength = 70.0; //初速度常数
-        var lookAt = getJoinPosition().getFirst();
+        var lookAt = getJoinPosition().getLookAt();
         var velocity = new Vec3(lookAt.x * strength, lookAt.y * strength, lookAt.z * strength);
         Vector3f v = new Vector3f((float) velocity.x, (float) velocity.y, (float) velocity.z);
 
@@ -174,7 +175,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
 
     @Override
     public boolean isDisabled() {
-        return getP() == null || getPhysicsTestingObject().isDestroyed() || getPhysicsTestingObject().isRemoved();
+        return destroyed || getP() == null || getPhysicsTestingObject().isDestroyed() || getPhysicsTestingObject().isRemoved();
     }
 
 }

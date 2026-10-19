@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -15,40 +16,40 @@ import org.lwjgl.glfw.GLFW;
 public class KeyBinding {
 
     //本地化用的按键资源路径
-    public static final String FREE_CAM_KEY = "key.machine_max.general.free_cam";
-    public static final String INTERACT_KEY = "key.machine_max.general.interact";
-    public static final String LEAVE_VEHICLE_KEY = "key.machine_max.general.leave_vehicle";
-    public static final String GENERAL_TOGGLE_LIGHT_KEY = "key.machine_max.general.toggle_light";
-    public static final String GENERAL_VEHICLE_INFO_KEY = "key.machine_max.general.vehicle_info";
-    public static final String VIEW_VEHICLE_INTERNAL_KEY = "key.machine_max.general.view_vehicle_internal";
+    public static final String FREE_CAM_KEY = MMLanguageRegistry.KEY_GENERAL_FREE_CAM.tag;
+    public static final String INTERACT_KEY = MMLanguageRegistry.KEY_GENERAL_INTERACT.tag;
+    public static final String LEAVE_VEHICLE_KEY = MMLanguageRegistry.KEY_GENERAL_LEAVE_VEHICLE.tag;
+    public static final String GENERAL_TOGGLE_LIGHT_KEY = MMLanguageRegistry.KEY_GENERAL_TOGGLE_LIGHT.tag;
+    public static final String GENERAL_VEHICLE_INFO_KEY = MMLanguageRegistry.KEY_GENERAL_VEHICLE_INFO.tag;
+    public static final String VIEW_VEHICLE_INTERNAL_KEY = MMLanguageRegistry.KEY_GENERAL_VIEW_VEHICLE_INTERNAL.tag;
 
 
-    public static final String GROUND_FORWARD_KEY = "key.machine_max.ground.forward";
-    public static final String GROUND_BACKWARD_KEY = "key.machine_max.ground.backward";
-    public static final String GROUND_LEFTWARD_KEY = "key.machine_max.ground.leftward";
-    public static final String GROUND_RIGHTWARD_KEY = "key.machine_max.ground.rightward";
-    public static final String GROUND_CLUTCH_KEY = "key.machine_max.ground.clutch";
-    public static final String GROUND_UP_SHIFT_KEY = "key.machine_max.ground.up_shift";
-    public static final String GROUND_DOWN_SHIFT_KEY = "key.machine_max.ground.down_shift";
-    public static final String GROUND_HAND_BRAKE_KEY = "key.machine_max.ground.hand_brake";
-    public static final String GROUND_TOGGLE_HAND_BRAKE_KEY = "key.machine_max.ground.toggle_hand_brake";
+    public static final String GROUND_FORWARD_KEY = MMLanguageRegistry.KEY_GROUND_FORWARD.tag;
+    public static final String GROUND_BACKWARD_KEY = MMLanguageRegistry.KEY_GROUND_BACKWARD.tag;
+    public static final String GROUND_LEFTWARD_KEY = MMLanguageRegistry.KEY_GROUND_LEFTWARD.tag;
+    public static final String GROUND_RIGHTWARD_KEY = MMLanguageRegistry.KEY_GROUND_RIGHTWARD.tag;
+    public static final String GROUND_CLUTCH_KEY = MMLanguageRegistry.KEY_GROUND_CLUTCH.tag;
+    public static final String GROUND_UP_SHIFT_KEY = MMLanguageRegistry.KEY_GROUND_UP_SHIFT.tag;
+    public static final String GROUND_DOWN_SHIFT_KEY = MMLanguageRegistry.KEY_GROUND_DOWN_SHIFT.tag;
+    public static final String GROUND_HAND_BRAKE_KEY = MMLanguageRegistry.KEY_GROUND_HAND_BRAKE.tag;
+    public static final String GROUND_TOGGLE_HAND_BRAKE_KEY = MMLanguageRegistry.KEY_GROUND_TOGGLE_HAND_BRAKE.tag;
 
-    public static final String ASSEMBLY_ADD_ATTACH_ANGLE_KEY = "key.machine_max.assembly.add_attach_angle";
-    public static final String ASSEMBLY_SUB_ATTACH_ANGLE_KEY = "key.machine_max.assembly.sub_attach_angle";
-    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
-    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
+    public static final String ASSEMBLY_ADD_ATTACH_ANGLE_KEY = MMLanguageRegistry.KEY_ASSEMBLY_ADD_ATTACH_ANGLE.tag;
+    public static final String ASSEMBLY_SUB_ATTACH_ANGLE_KEY = MMLanguageRegistry.KEY_ASSEMBLY_SUB_ATTACH_ANGLE.tag;
+    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = MMLanguageRegistry.KEY_ASSEMBLY_CYCLE_CONNECTOR.tag;
+    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = MMLanguageRegistry.KEY_ASSEMBLY_CYCLE_VARIANT.tag;
     public static final String SCRIPT_HOT_RELOAD_KEY = "key.machine_max.assembly.hot_reload";
 
-    public static final String CYCLE_CAMERA_KEY = "key.machine_max.general.cycle_camera";
-    public static final String CAMERA_ZOOM_KEY = "key.machine_max.general.camera_zoom";
-    public static final String CAMERA_ZOOM_IN_KEY = "key.machine_max.general.camera_zoom_in";
-    public static final String CAMERA_ZOOM_OUT_KEY = "key.machine_max.general.camera_zoom_out";
+    public static final String CYCLE_CAMERA_KEY = MMLanguageRegistry.KEY_GENERAL_CYCLE_CAMERA.tag;
+    public static final String CAMERA_ZOOM_KEY = MMLanguageRegistry.KEY_GENERAL_CAMERA_ZOOM.tag;
+    public static final String CAMERA_ZOOM_IN_KEY = MMLanguageRegistry.KEY_GENERAL_CAMERA_ZOOM_IN.tag;
+    public static final String CAMERA_ZOOM_OUT_KEY = MMLanguageRegistry.KEY_GENERAL_CAMERA_ZOOM_OUT.tag;
 
-    public static final String MAIN_WEAPON_FIRE_KEY = "key.machine_max.general.main_weapon_fire";
-    public static final String SECONDARY_WEAPON_FIRE_KEY = "key.machine_max.general.secondary_weapon_fire";
-    public static final String NEXT_AMMO_TYPE_KEY = "key.machine_max.general.next_ammo_type";
-    public static final String PREV_AMMO_TYPE_KEY = "key.machine_max.general.prev_ammo_type";
-    public static final String CYCLE_CONTROL_GROUP_KEY = "key.machine_max.general.cycle_control_group";
+    public static final String MAIN_WEAPON_FIRE_KEY = MMLanguageRegistry.KEY_GENERAL_MAIN_WEAPON_FIRE.tag;
+    public static final String SECONDARY_WEAPON_FIRE_KEY = MMLanguageRegistry.KEY_GENERAL_SECONDARY_WEAPON_FIRE.tag;
+    public static final String NEXT_AMMO_TYPE_KEY = MMLanguageRegistry.KEY_GENERAL_NEXT_AMMO_TYPE.tag;
+    public static final String PREV_AMMO_TYPE_KEY = MMLanguageRegistry.KEY_GENERAL_PREV_AMMO_TYPE.tag;
+    public static final String CYCLE_CONTROL_GROUP_KEY = MMLanguageRegistry.KEY_GENERAL_CYCLE_CONTROL_GROUP.tag;
     /**
      * 在此注册所有按键
      */

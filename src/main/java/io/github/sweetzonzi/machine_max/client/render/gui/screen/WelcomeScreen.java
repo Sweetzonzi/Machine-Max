@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,7 +60,7 @@ public class WelcomeScreen extends Screen {
     private Checkbox dontShowAgainCheckbox;
 
     protected WelcomeScreen() {
-        super(Component.translatable("gui.machine_max.welcome.title").withStyle(ChatFormatting.BOLD));
+        super(MMLanguageRegistry.GUI_WELCOME_TITLE.translated().withStyle(ChatFormatting.BOLD));
     }
 
     @Override
@@ -68,7 +69,7 @@ public class WelcomeScreen extends Screen {
 
         message = MultiLineLabel.create(
                 font,
-                Component.translatable("gui.machine_max.welcome.content"),
+                MMLanguageRegistry.GUI_WELCOME_CONTENT.translated(),
                 this.width - 100
         );
 
@@ -79,7 +80,7 @@ public class WelcomeScreen extends Screen {
 
         // 在按钮下方添加"不再显示"复选框
         dontShowAgainCheckbox = Checkbox.builder(
-                Component.translatable("gui.machine_max.welcome.dont_show_again"),
+                MMLanguageRegistry.GUI_WELCOME_DONT_SHOW_AGAIN.translated(),
                 font
         ).selected(false).pos(this.width / 2 - 80, baseY + BUTTON_HEIGHT + 4).build();
         addRenderableWidget(dontShowAgainCheckbox);
@@ -97,12 +98,12 @@ public class WelcomeScreen extends Screen {
             if (freezeTicks > 0) {
                 freezeTicks--;
                 proceedButton.setMessage(
-                        Component.translatable("gui.machine_max.welcome.proceed")
+                        MMLanguageRegistry.GUI_WELCOME_PROCEED.translated()
                                 .append(Component.literal(" (" + (freezeTicks + 19) / 20 + "s)"))
                 );
             } else if (!proceedButton.active) {
                 proceedButton.active = true;
-                proceedButton.setMessage(Component.translatable("gui.machine_max.welcome.proceed"));
+                proceedButton.setMessage(MMLanguageRegistry.GUI_WELCOME_PROCEED.translated());
             }
         }
     }
@@ -136,7 +137,7 @@ public class WelcomeScreen extends Screen {
      */
     private AbstractButton createProceedButton(int buttonY) {
         return Button.builder(
-                Component.translatable("gui.machine_max.welcome.proceed")
+                MMLanguageRegistry.GUI_WELCOME_PROCEED.translated()
                         .append(Component.literal(" (" + (FROZEN_TICKS + 19) / 20 + "s)")),
                 btn -> {
                     if (dontShowAgainCheckbox.selected()) {
