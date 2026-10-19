@@ -109,7 +109,7 @@ A HUD style defines the internal appearance of one HUD and contains no position,
 
 ### AUI Page Styles
 
-`machine_max:aui_hud` replaces the model with an HTML page supplied by the pack's `documents/` directory; the container is the AUI HUD overlay.
+`machine_max:aui_hud` describes a HUD with an HTML page supplied by the pack's `documents/` directory. The page can render in the GUI/HUD orthographic overlay or on a perspective plane in camera space.
 
 ```json
 {
@@ -122,7 +122,9 @@ A HUD style defines the internal appearance of one HUD and contains no position,
 - **page** (Required): AUI page key in the form `<pack namespace>/<relative path>`; the pack file `documents/weapon_hud_element/weapon_ammo.html` maps to `machine_max/weapon_hud_element/weapon_ammo.html`
 - **defaults** (Optional): CSS variables written onto the page `body`, readable through `var(...)` in the page stylesheet
 
-The page shrinks to its content: the runtime adds the `mm-hud` class to `body` and injects `inline-block`, zero margin and a transparent background. A page describes only its own content and must not position itself on screen; the layout's `anchor`, `offset` and `scale` decide where it appears. AUI pages always render in the GUI/HUD orthographic pass and never use perspective projection.
+The page shrinks to its content: the runtime adds the `mm-hud` class to `body` and sets inline rules for `inline-block`, zero margin and a transparent background. The page describes the component content; its layout controls placement and projection. Put a dark background on the component container when needed. The layout field `perspective: false` selects the orthographic overlay and `perspective: true` selects a perspective plane. The field defaults to `true`, so screen-anchored AUI elements must explicitly set it to `false`.
+
+AUI HUD pages receive no mouse input. Perspective rendering supports page geometry, text and clipping; complex screen-sampling effects such as `backdrop-filter` are not guaranteed.
 
 ## HUD Layouts (hud_layouts/)
 
@@ -144,14 +146,38 @@ A layout file is an array. Each entry is an element: one style reference plus a 
 | --- | --- | --- |
 | `style` | Yes | Style resource key pointing at a file under `huds/` |
 | `perspective` | No | Default `true`; `true` uses perspective projection, `false` uses orthographic projection |
-| `offset` | No | Offset from screen center; meters under perspective, pixels under orthographic |
-| `rotation` | No | Rotation angles in degrees |
-| `scale` | No | Scaling factor |
+| `offset` | No | Perspective: camera-space translation `(x, -y, z)`; a visible plane must be in front of the camera (normally `z < 0`). Orthographic model: pixel offset from screen center. Orthographic AUI: GUI pixel offset from the aligned `anchor` position, with `z` controlling paint depth |
+| `rotation` | No | `[x, y, z]` rotation angles in degrees; perspective AUI composes Z/Y/X rotations, while orthographic AUI ignores this field |
+| `scale` | No | Default `[1, 1, 1]`; orthographic AUI scales its two page axes independently with X/Y, while perspective AUI converts CSS pixels into camera-space units |
 | `scope_behavior` | No | Default `follow_position`; only effective in a sight layout: `screen_fixed` / `follow_position` / `follow_transform` |
 | `ignore_zoom` | No | Default `false`; when `true`, element size does not scale with sight zoom |
-| `anchor` | No | AUI carrier only: default `top_left`, one of `top_center`, `top_right`, `center_left`, `center`, `center_right`, `bottom_left`, `bottom_center`, `bottom_right`; the element's matching corner (or center) aligns with the screen's matching corner (or center) |
+| `anchor` | No | Orthographic AUI only: default `top_left`, one of `top_center`, `top_right`, `center_left`, `center`, `center_right`, `bottom_left`, `bottom_center`, `bottom_right`; the element's matching corner (or center) aligns with the screen's matching corner (or center). Models and perspective AUI ignore this field |
 
-The AUI carrier ignores `perspective`, `rotation`, `scope_behavior` and `ignore_zoom`: it always renders in the orthographic batch, rotation belongs to the page's own CSS, `offset` uses 2D logical pixels (`z` is ignored) and `scale` uses `x`. The model carrier ignores `anchor`.
+Orthographic AUI computes `anchor` alignment from the content size, then adds `offset.x/y`. The AUI viewport's CSS-to-GUI conversion factor applies equally to both axes, followed by the independent `scale.x/y` factors; for example, displayed width is `CSS width × viewport.renderScale × scale.x`. Painting and clipping share the same position and scale. The layout fields `rotation`, `scope_behavior` and `ignore_zoom` do not affect orthographic AUI; CSS can rotate content inside the page.
+
+Perspective AUI uses the page content center as its local origin and flips the downward CSS Y axis into the upward camera Y axis. Its placement matrix is `T(x, -y, z) × Rz × Ry × Rx × S(scale.x, -scale.y, scale.z)`, with rotation angles in degrees. This mode converts CSS pixels directly into camera-space units through `scale`, without the orthographic viewport's CSS-to-GUI conversion, and does not use a screen `anchor`. In a sight view, `scope_behavior` and `ignore_zoom` participate in placement; `screen_fixed` uses the camera-space origin corresponding to screen center.
+
+Save the style example in “AUI Page Styles” as `huds/aui_weapon_status.json` in the `machine_max` namespace to use this layout for a centered orthographic panel and a perspective panel in the upper right. The perspective values assume content of about `280 × 120` CSS pixels, a 70° field of view and a 16:9 frame; adjust placement for the actual content size and field of view.
+
+```json
+[
+  {
+    "style": "machine_max:aui_weapon_status",
+    "perspective": false,
+    "anchor": "center",
+    "offset": [0, 0, 0],
+    "scale": [1, 1, 1]
+  },
+  {
+    "style": "machine_max:aui_weapon_status",
+    "perspective": true,
+    "scope_behavior": "screen_fixed",
+    "offset": [95, -60, -135],
+    "rotation": [15, -25, -5],
+    "scale": [0.2, 0.2, 0.2]
+  }
+]
+```
 
 Key rule: the file path relative to the module directory without `.json`, prefixed by the pack namespace, is the resource key. `hud_layouts/seat_dashboard.json` is `machine_max:seat_dashboard`; `hud_layouts/foo/bar.json` is `machine_max:foo/bar`. Styles follow the same rule: `huds/example_hud.json` is `machine_max:example_hud`. Layouts and styles live in separate modules, so identical keys do not collide.
 

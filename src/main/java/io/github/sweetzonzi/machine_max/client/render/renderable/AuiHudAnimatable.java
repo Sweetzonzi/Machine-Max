@@ -8,15 +8,25 @@ import com.sighs.apricityui.parser.HTML;
 import com.sighs.apricityui.render.Base;
 import com.sighs.apricityui.render.GeometryQueryScope;
 import com.sighs.apricityui.render.Mask;
+import com.sighs.apricityui.render.WorldPaintDepth;
+import com.sighs.apricityui.render.WorldWindowRenderContext;
+import com.sighs.apricityui.spi.AuiRenderService;
+import com.sighs.apricityui.spi.AuiServices;
 import com.sighs.apricityui.viewport.ApricityViewport;
+import com.sighs.apricityui.world.WorldWindowDisplayPrecision;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
+import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Objects;
 import java.util.Set;
@@ -35,6 +45,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 应用 GUI 坐标中的 {@link HudElement#offset()} 与 {@link HudElement#scale()} 的 X/Y
  * 两轴缩放。元素尺寸取自文档上下文内提交的 AUI 布局测量值，经过文档视口缩放后
  * 参与锚点计算；同一组 CSS 到 GUI 映射同时用于绘制和裁剪。
+ * <p>
+ * 透视路径使用模型 HUD 的布局位移、ZYX 欧拉角与三轴缩放，CSS 像素直接作为缩放前的
+ * 局部单位，内容中心为原点、Y 轴向上。{@code anchor} 只参与正交路径。透视页面保持二维
+ * 图层语义：CSS {@code translateZ} 取 0，各绘制节点按 DOM 绘制顺序取得独立深度。
  * <p>
  * <b>调用线程：</b>客户端主线程（创建、渲染、销毁）。
  */
@@ -61,6 +75,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
     private String failedTemplate;
     /** 已报告过内容尺寸的页面键；用于确认页面真的完成了布局。 */
     private static final Set<String> REPORTED_SIZES = ConcurrentHashMap.newKeySet();
+    private static final float[] SQUARE_CLIP_RADII = {0f, 0f, 0f, 0f};
 
     public AuiHudAnimatable(ResourceLocation styleId, AuiHudStyle style, HudElement element) {
         this.styleId = styleId;
@@ -127,38 +142,72 @@ public final class AuiHudAnimatable implements HudElementInstance {
 
     @Override
     public boolean isPerspective() {
-        return false;
+        return element.perspective();
     }
 
     @Override
-    public void renderGui(GuiGraphics guiGraphics, float partialTick) {
+    public ScopeBehavior scopeBehavior() {
+        return element.scopeBehavior();
+    }
+
+    @Override
+    public boolean ignoreZoom() {
+        return element.ignoreZoom();
+    }
+
+    @Override
+    public Vector3f getOffset(float partialTick) {
+        return new Vector3f((float) element.offset().x, (float) element.offset().y, (float) element.offset().z);
+    }
+
+    @Override
+    public Quaternionf getQuaternion(float partialTick) {
+        return AuiHudPerspectiveTransform.rotation(element.rotation().x, element.rotation().y, element.rotation().z);
+    }
+
+    @Nullable
+    private Document resolveDocument() {
         Document target = document;
         if (target == null || target.isDisposed()) {
             // 文档被 AUI 刷新回收：重建一次，避免整个 HUD 永久消失。
             document = null;
             createDocument();
             target = document;
-            if (target == null) return;
         }
+        return target;
+    }
+
+    /** 调用方已进入文档上下文；只提交待处理布局工作后读取内容尺寸。 */
+    private DocumentDimensions prepareDocument(Document target) {
+        applyPage(target);
+        double width;
+        double height;
+        try (GeometryQueryScope geometryScope = GeometryQueryScope.open()) {
+            target.commitStyleRecalc();
+            if (target.hasPendingRenderState()) target.commitRenderState();
+            Body body = target.body;
+            width = body != null ? body.getOffsetWidth() : 0.0d;
+            height = body != null ? body.getOffsetHeight() : 0.0d;
+        }
+        if (width > 0d && height > 0d && REPORTED_SIZES.add(style.page())) {
+            MachineMax.LOGGER.info("[AUI HUD] 页面 {} 完成布局，内容尺寸 {}x{}", style.page(), width, height);
+        }
+        return new DocumentDimensions(width, height);
+    }
+
+    private record DocumentDimensions(double width, double height) {
+    }
+
+    @Override
+    public void renderGui(GuiGraphics guiGraphics, float partialTick) {
+        Document target = resolveDocument();
+        if (target == null) return;
         try (Document.ContextScope ignored = Document.withContext(target)) {
-            applyPage(target);
-            double width;
-            double height;
-            try (GeometryQueryScope geometryScope = GeometryQueryScope.open()) {
-                // 样式与布局只提交待处理工作，保证新建文档也能在绘制前取得尺寸。
-                target.commitStyleRecalc();
-                if (target.hasPendingRenderState()) target.commitRenderState();
-                Body body = target.body;
-                width = body != null ? body.getOffsetWidth() : 0.0d;
-                height = body != null ? body.getOffsetHeight() : 0.0d;
-            }
-            if (width > 0d && height > 0d && REPORTED_SIZES.add(style.page())) {
-                MachineMax.LOGGER.info("[AUI HUD] 页面 {} 完成布局，内容尺寸 {}x{}", style.page(), width, height);
-            }
+            DocumentDimensions dimensions = prepareDocument(target);
 
             ApricityViewport viewport = target.getViewport();
             AuiHudPlacement placement = AuiHudPlacement.resolve(
-                    width, height, guiGraphics.guiWidth(), guiGraphics.guiHeight(), viewport.renderScale(),
+                    dimensions.width(), dimensions.height(), guiGraphics.guiWidth(), guiGraphics.guiHeight(), viewport.renderScale(),
                     element.scale().x, element.scale().y, element.offset().x, element.offset().y,
                     element.anchor().horizontal(), element.anchor().vertical());
             target.setViewportTransform(placement.scaleX(), placement.scaleY(), placement.x(), placement.y());
@@ -180,6 +229,82 @@ public final class AuiHudAnimatable implements HudElementInstance {
             } finally {
                 poseStack.popPose();
             }
+        }
+    }
+
+    /**
+     * 客户端渲染线程。外层已应用布局位移；本方法在当前透视投影中绘制以内容中心为原点的页面。
+     * 根遮罩与元素 overflow 使用随三维矩阵绘制的 stencil，CSS 背景、阴影与文字保持完整精度。
+     */
+    @Override
+    public void renderContent(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
+        Document target = resolveDocument();
+        if (target == null) return;
+        try (Document.ContextScope ignored = Document.withContext(target)) {
+            DocumentDimensions dimensions = prepareDocument(target);
+            if (!(dimensions.width() > 0d) || !(dimensions.height() > 0d)) return;
+
+            // 在改变深度、遮罩与绘制后端之前提交先前的模型 HUD 批次。
+            bufferSource.endBatch();
+            Base.commitDraws();
+            AuiRenderService render = AuiServices.render();
+            AuiRenderService.RenderStateScope state = render.pushFilterRenderState();
+            if (state == null) state = AuiRenderService.RenderStateScope.NOOP;
+            poseStack.pushPose();
+            try {
+                float viewDepth = Math.abs(poseStack.last().pose().m32());
+                AuiHudPerspectiveTransform.apply(poseStack, getQuaternion(partialTick),
+                        element.scale().x, element.scale().y, element.scale().z,
+                        dimensions.width(), dimensions.height());
+                // 总深度预算取观察距离的千分之三（至少 0.003 投放单位），由节点等分。
+                float depthBudget = Math.max(0.003f, viewDepth * 0.003f);
+                // Z 基向量包含外层炮镜缩放，预算以最终投放空间的单位衡量。
+                var matrix = poseStack.last().pose();
+                float zScale = Math.max(0.0001f, (float) Math.sqrt(
+                        matrix.m20() * matrix.m20() + matrix.m21() * matrix.m21() + matrix.m22() * matrix.m22()));
+                float localBudget = depthBudget / zScale;
+                float localStep = localBudget / Math.max(1, target.getPaintList().size());
+                drawPerspectiveDocument(poseStack, target, localStep, localBudget);
+            } finally {
+                try {
+                    Base.commitDraws();
+                } finally {
+                    poseStack.popPose();
+                    state.close();
+                }
+            }
+        }
+    }
+
+    /** 三维遮罩、图层深度与物品深度遵循 AUI 的 {@code com/sighs/apricityui/world/WorldWindow.java#render}。 */
+    private static void drawPerspectiveDocument(PoseStack poseStack, Document target, float localStep, float localBudget) {
+        ApricityViewport viewport = target.getViewport();
+        float width = viewport.layoutWidth();
+        float height = viewport.layoutHeight();
+        Base.pushDepthStep(localStep);
+        Base.pushDepthMode(true);
+        Base.pushDepthTest(true);
+        Base.pushGuiItemZ(localStep * 0.25f, localStep * 0.5f);
+        Base.pushDocumentZOffset(localBudget);
+        WorldPaintDepth.pushFlatTransforms(true);
+        Mask.resetDepth(width, height);
+        Mask.pushForceStencil();
+        try {
+            Mask.pushMask(poseStack, 0f, 0f, width, height, SQUARE_CLIP_RADII, true);
+            try (WorldWindowRenderContext.Scope ignored = WorldWindowRenderContext.push(WorldWindowDisplayPrecision.FULL)) {
+                AuiServices.render().setDepthFunc(GL11.GL_LEQUAL);
+                Base.drawDocument(poseStack, target);
+            } finally {
+                Mask.popMask(poseStack, 0f, 0f, width, height, SQUARE_CLIP_RADII);
+            }
+        } finally {
+            Mask.popForceStencil();
+            WorldPaintDepth.popFlatTransforms();
+            Base.popDocumentZOffset();
+            Base.popGuiItemZ();
+            Base.popDepthTest();
+            Base.popDepthMode();
+            Base.popDepthStep();
         }
     }
 

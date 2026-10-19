@@ -40,6 +40,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -63,8 +64,8 @@ import java.util.Set;
  * 活跃宿主的布局与布局引用的样式；内容包重载后，资源替换在下一个 tick 生效。
  * <p>
  * 宿主之间的绘制顺序由宿主集合的迭代顺序决定，不作契约：内容包负责让同一视角的
- * 元素互不遮挡。透视 HUD 由统一的外层投影管理器批量渲染（一次 flush），
- * 正交 HUD 使用 Minecraft 默认 GUI 投影逐个渲染，从而避免每组件单独 flush 的性能问题。
+ * 元素互不遮挡。透视 HUD 共用外层投影，正交 HUD 使用 Minecraft 默认 GUI 投影。
+ * 投影切换和批次退出时提交顶点，AUI 文档还会在裁剪与合成边界提交自身的绘制。
  */
 @OnlyIn(Dist.CLIENT)
 public class CustomHud implements LayeredDraw.Layer {
@@ -220,7 +221,7 @@ public class CustomHud implements LayeredDraw.Layer {
             }
         }
 
-        // 第2趟：透视 HUD — 统一设置一次透视投影，渲染所有，flush一次
+        // 第2趟：透视 HUD 共用一组投影和相机空间投放规则。
         if (hasPerspective()) {
             renderPerspectiveBatch(guiGraphics, partialTick);
         }
@@ -237,53 +238,10 @@ public class CustomHud implements LayeredDraw.Layer {
     }
 
     /**
-     * 批量渲染透视 HUD（一次投影设置 + 一次 flush）。
+     * 批量渲染普通视角的透视 HUD。
      */
     private void renderPerspectiveBatch(GuiGraphics guiGraphics, float partialTick) {
-        Minecraft mc = Minecraft.getInstance();
-        // 备份当前渲染状态
-        RenderSystem.backupProjectionMatrix();
-        Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
-        Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-
-        // 设置透视投影矩阵（使用玩家 FOV 和屏幕宽高比）
-        double fov = mc.options.fov().get();
-        Matrix4f projectionMatrix = new Matrix4f().setPerspective(
-                (float) (fov * Math.PI / 180),
-                (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight(),
-                0.1F, 1000);
-        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
-        modelViewStack.set(VIEW_MATRIX);
-        RenderSystem.applyModelViewMatrix();
-
-        // 渲染所有透视 HUD
-        for (List<HudElementInstance> elements : huds.values()) {
-            for (HudElementInstance instance : elements) {
-                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
-                PoseStack poseStack = guiGraphics.pose();
-                poseStack.pushPose();
-                poseStack.setIdentity();
-                // 设置每个 HUD 对应的光照方向
-                Lighting.setupForEntityInInventory(hud.getQuaternion(partialTick));
-                // 应用透视偏移（仅位置变换，旋转/缩放由 renderContent 内部处理）
-                Vector3f offset = hud.getOffset(partialTick);
-                poseStack.translate(offset.x, -offset.y, offset.z);
-                hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
-                poseStack.popPose();
-            }
-        }
-
-        // 统一 flush
-        guiGraphics.bufferSource().endBatch();
-        // 恢复默认光照
-        Lighting.setupFor3DItems();
-        // 恢复渲染状态
-        modelViewStack.set(modelViewMatrix);
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.disableDepthTest();
-        RenderSystem.restoreProjectionMatrix();
+        renderPerspectiveInScopeBatch(guiGraphics, null, 0f, 0f, 1f, partialTick);
     }
 
     // ===== 炮镜模式渲染方法 =====
@@ -342,7 +300,7 @@ public class CustomHud implements LayeredDraw.Layer {
             }
         }
 
-        // === 第2趟：透视 UGC 元素（统一投影矩阵，批量 flush） ===
+        // === 第2趟：透视 UGC 元素共用投影矩阵 ===
         if (hasPerspective()) {
             renderPerspectiveInScopeBatch(guiGraphics,
                     scopeCameraLocal, pitchDiff, yawDiff,
@@ -412,7 +370,8 @@ public class CustomHud implements LayeredDraw.Layer {
 
     /**
      * 批量渲染透视 UGC 元素（炮镜模式）。
-     * 统一设置一次透视投影矩阵，然后对每个元素按 scope_behavior 变换后渲染，最后统一 flush。
+     * 统一设置透视投影，然后对每个元素按 scope_behavior 变换后绘制；
+     * 普通视角传入空炮镜位置、零角差和单位缩放，共用同一条投放路径。
      * <p>
      * 变换链与正交相同，区别在于原点使用摄像机局部坐标而非像素偏移。
      */
@@ -420,66 +379,68 @@ public class CustomHud implements LayeredDraw.Layer {
                                                float[] scopeCameraLocal, float pitchDiff, float yawDiff,
                                                float currentZoom, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        // 备份当前渲染状态
+        // 正交顶点必须在投影切换前提交。
+        guiGraphics.bufferSource().endBatch();
+        boolean previousDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         RenderSystem.backupProjectionMatrix();
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
-        Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrix();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
+        modelViewStack.pushMatrix();
+        try {
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(true);
+            double fov = mc.options.fov().get();
+            Matrix4f projectionMatrix = new Matrix4f().setPerspective(
+                    (float) Math.toRadians(fov),
+                    (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight(),
+                    0.1F, 1000);
+            RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
+            modelViewStack.set(VIEW_MATRIX);
+            RenderSystem.applyModelViewMatrix();
 
-        // 设置透视投影矩阵（使用玩家 FOV 和屏幕宽高比）
-        double fov = mc.options.fov().get();
-        Matrix4f projectionMatrix = new Matrix4f().setPerspective(
-                (float) (fov * Math.PI / 180),
-                (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight(),
-                0.1F, 1000);
-        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
-        modelViewStack.set(VIEW_MATRIX);
-        RenderSystem.applyModelViewMatrix();
-
-        // 渲染所有透视 HUD
-        for (List<HudElementInstance> elements : huds.values()) {
-            for (HudElementInstance instance : elements) {
-                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
-                PoseStack poseStack = guiGraphics.pose();
-                poseStack.pushPose();
-                poseStack.setIdentity();
-                Lighting.setupForEntityInInventory(hud.getQuaternion(partialTick));
-
-                ScopeBehavior behavior = hud.scopeBehavior();
-
-                // FOLLOW_* 模式：平移到 scope 摄像机局部坐标 + 缩放 + 旋转
-                if (behavior == ScopeBehavior.FOLLOW_POSITION
-                        || behavior == ScopeBehavior.FOLLOW_TRANSFORM) {
-                    if (scopeCameraLocal != null) {
-                        poseStack.translate(scopeCameraLocal[0], scopeCameraLocal[1], 0);
-                    }
-                    if (currentZoom != 1f && !hud.ignoreZoom()) {
-                        poseStack.scale(currentZoom, currentZoom, currentZoom);
-                    }
-                    if (behavior == ScopeBehavior.FOLLOW_TRANSFORM
-                            && (pitchDiff != 0 || yawDiff != 0)) {
-                        poseStack.mulPose(new Quaternionf().rotationYXZ(-yawDiff, pitchDiff, 0));
+            for (List<HudElementInstance> elements : huds.values()) {
+                for (HudElementInstance hud : elements) {
+                    if (!hud.isPerspective()) continue;
+                    PoseStack poseStack = guiGraphics.pose();
+                    poseStack.pushPose();
+                    try {
+                        poseStack.setIdentity();
+                        Lighting.setupForEntityInInventory(hud.getQuaternion(partialTick));
+                        ScopeBehavior behavior = hud.scopeBehavior();
+                        if (behavior == ScopeBehavior.FOLLOW_POSITION
+                                || behavior == ScopeBehavior.FOLLOW_TRANSFORM) {
+                            if (scopeCameraLocal != null) {
+                                poseStack.translate(scopeCameraLocal[0], scopeCameraLocal[1], 0);
+                            }
+                            if (currentZoom != 1f && !hud.ignoreZoom()) {
+                                poseStack.scale(currentZoom, currentZoom, currentZoom);
+                            }
+                            if (behavior == ScopeBehavior.FOLLOW_TRANSFORM
+                                    && (pitchDiff != 0 || yawDiff != 0)) {
+                                poseStack.mulPose(new Quaternionf().rotationYXZ(-yawDiff, pitchDiff, 0));
+                            }
+                        }
+                        Vector3f offset = hud.getOffset(partialTick);
+                        poseStack.translate(offset.x, -offset.y, offset.z);
+                        hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
+                    } finally {
+                        poseStack.popPose();
                     }
                 }
-                // SCREEN_FIXED：仅应用元素自身偏移（与普通模式一致）
-
-                Vector3f offset = hud.getOffset(partialTick);
-                poseStack.translate(offset.x, -offset.y, offset.z);
-                hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
-                poseStack.popPose();
+            }
+        } finally {
+            try {
+                guiGraphics.bufferSource().endBatch();
+            } finally {
+                Lighting.setupFor3DItems();
+                modelViewStack.popMatrix();
+                RenderSystem.applyModelViewMatrix();
+                RenderSystem.depthMask(previousDepthMask);
+                if (previousDepthTest) RenderSystem.enableDepthTest();
+                else RenderSystem.disableDepthTest();
+                RenderSystem.restoreProjectionMatrix();
             }
         }
-
-        // 统一 flush
-        guiGraphics.bufferSource().endBatch();
-        // 恢复默认光照
-        Lighting.setupFor3DItems();
-        // 恢复渲染状态
-        modelViewStack.set(modelViewMatrix);
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.disableDepthTest();
-        RenderSystem.restoreProjectionMatrix();
     }
 
     /** 当前没有任何 HUD 宿主时清理；已有状态才销毁，避免每 tick 空转。 */

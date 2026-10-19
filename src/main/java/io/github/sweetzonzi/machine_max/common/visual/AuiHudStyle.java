@@ -14,8 +14,9 @@ import java.util.Map;
  * {@code page} 是 AUI 页面键（{@code <命名空间>/<相对路径>}），由内容包
  * {@code documents/} 目录经 {@code DocumentModule} 写入客户端资源包，或由模组
  * JAR 的 {@code assets/apricityui/apricity/} 提供。运行时元素为每个条目创建一个
- * 独立 Document，按 {@link HudElement#anchor()} 与 {@link HudElement#offset()}
- * 投放到屏幕，不参与透视批次。
+ * 独立 Document。正交模式按 {@link HudElement#anchor()}、{@link HudElement#offset()}
+ * 与 {@link HudElement#scale()} 的 X/Y 分量投放到屏幕；透视模式以页面内容中心为局部原点，
+ * 按 offset、rotation 与 scale 合成相机空间平面，由 HUD 的透视投影流程绘制。
  * <p>
  * {@code defaults} 是写进页面根元素的 CSS 变量，可选；相同变量在页面样式表里
  * 重新声明时以页面为准。

@@ -11,7 +11,14 @@ import net.minecraft.world.phys.Vec3;
  * 元素内联在 {@link HudLayout} 里，不是具名资源；同一份样式可以在一个布局中出现多次，
  * 各自带不同的投放。
  * <p>
- * {@code anchor} 只对 AUI 载体生效，默认 {@link HudAnchor#TOP_LEFT}；模型载体忽略该字段。
+ * {@code perspective} 控制模型与 AUI 载体采用正交或透视投影。
+ * {@code anchor} 只对正交 AUI 载体生效，默认 {@link HudAnchor#TOP_LEFT}；
+ * 模型载体与透视 AUI 载体忽略该字段。
+ * <p>
+ * 正交 AUI 的 offset 使用 GUI 像素，scale 的 X/Y 分量分别缩放页面两轴。
+ * 透视 AUI 的局部原点是页面内容中心，CSS Y 轴转换为相机向上的 Y 轴；
+ * offset 与透视模型采用相同的相机空间位移 {@code (x, -y, z)}，
+ * rotation 使用角度制的 Z/Y/X 旋转组合，scale 将 CSS 像素缩放到相机空间单位。
  */
 public record HudElement(
         ResourceLocation style,

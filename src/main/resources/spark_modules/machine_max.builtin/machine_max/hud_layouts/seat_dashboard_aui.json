@@ -8,8 +8,17 @@
   },
   {
     "style": "machine_max:aui_weapon_status",
+    "perspective": false,
     "anchor": "center",
     "offset": [0, 0, 0],
     "scale": [1, 1, 1]
+  },
+  {
+    "style": "machine_max:aui_weapon_status",
+    "perspective": true,
+    "scope_behavior": "screen_fixed",
+    "offset": [95, -60, -135],
+    "rotation": [15, -25, -5],
+    "scale": [0.2, 0.2, 0.2]
   }
 ]

@@ -111,7 +111,7 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 
 ### AUI 页面样式
 
-`machine_max:aui_hud` 用一个 HTML 页面代替模型，页面由内容包 `documents/` 目录提供，容器是 AUI 的 HUD 叠层。
+`machine_max:aui_hud` 用一个 HTML 页面描述 HUD 外观，页面由内容包 `documents/` 目录提供，可在 GUI/HUD 正交叠层或相机空间的透视平面上绘制。
 
 ```json
 {
@@ -124,7 +124,9 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 - **page** (必需): AUI 页面键，形式为 `<内容包命名空间>/<相对路径>`，例如内容包里的 `documents/weapon_hud_element/weapon_ammo.html` 对应 `machine_max/weapon_hud_element/weapon_ammo.html`
 - **defaults** (可选): 写进页面 `body` 的 CSS 变量，页面样式表可用 `var(...)` 读取
 
-页面按内容收缩：运行时给 `body` 加上 `mm-hud` 类并注入 `inline-block`、无外边距、透明背景的规则。页面只描述自己的内容，不要写整屏定位；元素在屏幕上的位置由布局里的 `anchor`、`offset` 与 `scale` 决定。AUI 页面固定走 GUI/HUD 正交阶段，不参与透视投影。
+页面按内容收缩：运行时给 `body` 加上 `mm-hud` 类并设置 `inline-block`、无外边距、透明背景的内联规则。页面描述组件内容，布局决定投放位置与投影；需要暗底时，在组件容器上设置背景。布局的 `perspective: false` 选择正交叠层，`perspective: true` 选择透视平面；该字段默认是 `true`，屏幕锚定的 AUI 元素应显式写 `false`。
+
+AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文字与裁剪，不保证复杂 `backdrop-filter` 等屏幕采样效果。
 
 ## HUD布局（hud_layouts/）
 
@@ -146,14 +148,38 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 | --- | --- | --- |
 | `style` | 是 | 样式资源键，指向 `huds/` 下的文件 |
 | `perspective` | 否 | 默认 `true`；`true` 走透视投影，`false` 走正交投影 |
-| `offset` | 否 | 相对屏幕中心的偏移；透视下单位为米，正交下为像素 |
-| `rotation` | 否 | 旋转角度，单位为度 |
-| `scale` | 否 | 缩放比例 |
+| `offset` | 否 | 透视：相机空间位移 `(x, -y, z)`，可见平面需在相机前方（通常 `z < 0`）；正交模型：相对屏幕中心的像素偏移；正交 AUI：相对 `anchor` 对齐位置的 GUI 像素偏移，`z` 为绘制深度 |
+| `rotation` | 否 | `[x, y, z]` 旋转角度，单位为度；透视 AUI 按 Z/Y/X 合成，正交 AUI 不读取该字段 |
+| `scale` | 否 | 默认 `[1, 1, 1]`；正交 AUI 的 X/Y 分量分别缩放页面两轴，透视 AUI 将 CSS 像素缩放为相机空间单位 |
 | `scope_behavior` | 否 | 默认 `follow_position`；只在炮镜布局里生效，可选 `screen_fixed` / `follow_position` / `follow_transform` |
 | `ignore_zoom` | 否 | 默认 `false`；`true` 时元素尺寸不随炮镜变焦变化 |
-| `anchor` | 否 | 仅 AUI 载体：默认 `top_left`，可选 `top_center`、`top_right`、`center_left`、`center`、`center_right`、`bottom_left`、`bottom_center`、`bottom_right`；元素的对应角（或中心）对齐屏幕的对应角（或中心） |
+| `anchor` | 否 | 仅正交 AUI 载体：默认 `top_left`，可选 `top_center`、`top_right`、`center_left`、`center`、`center_right`、`bottom_left`、`bottom_center`、`bottom_right`；元素的对应角（或中心）对齐屏幕的对应角（或中心）；模型与透视 AUI 忽略该字段 |
 
-AUI 载体不读 `perspective`、`rotation`、`scope_behavior` 与 `ignore_zoom`：它固定进入正交批次，旋转属于页面自己的 CSS，`offset` 取二维逻辑像素（`z` 忽略），`scale` 取 `x`。模型载体忽略 `anchor`。
+正交 AUI 按内容尺寸计算 `anchor`，并在对齐后叠加 `offset.x/y`。AUI 视口的 CSS → GUI 换算比例同时作用于两轴，再分别乘 `scale.x/y`；例如实际宽度为 `CSS 宽度 × viewport.renderScale × scale.x`。绘制与裁剪使用同一组位置和缩放。正交 AUI 的布局 `rotation`、`scope_behavior` 与 `ignore_zoom` 不生效，页面内部可用 CSS 旋转。
+
+透视 AUI 以页面内容中心为局部原点，将 CSS 向下的 Y 轴翻为相机向上的 Y 轴，按 `T(x, -y, z) × Rz × Ry × Rx × S(scale.x, -scale.y, scale.z)` 投放；角度以度为单位。该模式直接把 CSS 像素经 `scale` 换算为相机空间单位，不叠加正交视口的 CSS → GUI 缩放，也不使用屏幕 `anchor`。`scope_behavior` 与 `ignore_zoom` 在炮镜视角中参与投放；`screen_fixed` 使用屏幕中心对应的相机空间原点。
+
+将“AUI 页面样式”中的样式示例保存为命名空间 `machine_max` 的 `huds/aui_weapon_status.json` 后，可用这份布局同时显示中心正交面板与右上角透视面板。透视参数按约 `280 × 120` CSS 像素的内容、70° 视场角与 16:9 画面设置，面板位置需随实际内容尺寸和视场角调整。
+
+```json
+[
+  {
+    "style": "machine_max:aui_weapon_status",
+    "perspective": false,
+    "anchor": "center",
+    "offset": [0, 0, 0],
+    "scale": [1, 1, 1]
+  },
+  {
+    "style": "machine_max:aui_weapon_status",
+    "perspective": true,
+    "scope_behavior": "screen_fixed",
+    "offset": [95, -60, -135],
+    "rotation": [15, -25, -5],
+    "scale": [0.2, 0.2, 0.2]
+  }
+]
+```
 
 键的规则：文件相对路径去掉 `.json` 就是资源键，并带上内容包命名空间。`hud_layouts/seat_dashboard.json` 的键是 `machine_max:seat_dashboard`；`hud_layouts/foo/bar.json` 的键是 `machine_max:foo/bar`。样式同理：`huds/example_hud.json` 的键是 `machine_max:example_hud`。布局与样式分属两个模块，键同名不会冲突。
 
