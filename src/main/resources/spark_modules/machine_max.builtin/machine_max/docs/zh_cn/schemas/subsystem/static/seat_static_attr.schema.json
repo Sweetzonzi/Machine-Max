@@ -47,17 +47,19 @@
     },
     "passenger_scale": {
       "$ref": "../../base/vector_3d.schema.json",
-      "default": [1, 1, 1],
+      "default": [
+        1,
+        1,
+        1
+      ],
       "description": "乘客模型的缩放比例。"
     },
     "views": {
       "$ref": "view_attr.schema.json",
       "default": {
         "enable_first_person": true,
-        "first_person_hud": [],
         "first_person_offset": 0.0,
         "enable_third_person": true,
-        "third_person_hud": [],
         "third_person_offset": 0.75,
         "follow_vehicle": true,
         "focus_on_center": true,
@@ -67,7 +69,9 @@
     },
     "view_inputs": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "default": [],
       "description": "视角切换输入信号键列表。"
     },
@@ -78,8 +82,12 @@
     },
     "interact_inputs": {
       "type": "array",
-      "items": { "type": "string" },
-      "default": ["interact"],
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "interact"
+      ],
       "description": "接受的交互输入通道列表。未指定时默认接受所有interact通道的信号。"
     },
     "sounds": {
@@ -106,7 +114,9 @@
       "description": "子系统基本音效配置。"
     }
   },
-  "required": ["type"],
+  "required": [
+    "type"
+  ],
   "additionalProperties": false,
   "examples": [
     {
@@ -119,19 +129,29 @@
       "render_passenger": true,
       "views": {
         "enable_first_person": true,
-        "first_person_hud": ["machine_max:hud/driver"],
-        "first_person_offset": [0.0, 0.2, 0.0],
+        "first_person_offset": [
+          0.0,
+          0.2,
+          0.0
+        ],
         "enable_third_person": true,
-        "third_person_hud": ["machine_max:hud/vehicle"],
-        "third_person_offset": [0.0, 0.8, 0.0],
+        "third_person_offset": [
+          0.0,
+          0.8,
+          0.0
+        ],
         "follow_vehicle": true,
         "focus_on_center": false,
         "distance_scale": 1.2,
         "min_pitch": -30,
         "max_pitch": 60,
-        "yaw_limit": 120
+        "yaw_limit": 120,
+        "first_hud_layout": "machine_max:seat_dashboard",
+        "third_hud_layout": "machine_max:seat_dashboard"
       },
-      "view_inputs": ["view_switch"],
+      "view_inputs": [
+        "view_switch"
+      ],
       "allow_use_items": true
     }
   ]

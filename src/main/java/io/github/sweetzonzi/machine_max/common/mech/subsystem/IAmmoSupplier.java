@@ -198,10 +198,13 @@ public interface IAmmoSupplier {
 
     /**
      * 供给者身份：宿主 Part 的 uuid + SubPart 名 + 子系统名。<br>
-     * 三者都随存档持久化（{@code PartData.uuid}、SubPart 名、子系统名），因此这个身份在重启、
-     * 换会话、两端之间都指同一台机器，可以直接写进 NBT，也可以直接跨端传递。
-     * SubPart 的 int id 不满足这个要求：它由会话内计数器分配，存档里不带它，
-     * 客户端那份是从载具数据包里恢复的，只够运行期定位，不能当身份用。
+     * 三者的作用域都是<b>本次会话内的这一台载具</b>：宿主 Part 的 uuid 随载具数据同步到客户端
+     * （{@code PartData.uuid}），SubPart 名与子系统名则由内容包定义，因此同一个值在两端指的是同一台
+     * 机器。载具从模板重建时 Part 的 uuid 会重新生成，所以这个身份只用于端到端的指认传递，
+     * 不作为存档地址。
+     * <p>
+     * SubPart 的 int id 不满足要求：它由会话内计数器分配，客户端那份是从载具数据包里恢复的，
+     * 只够运行期定位。
      * <p>
      * 空值用 {@link #NONE} 表达（{@code partUuid} 取 nil uuid；真实部件的 uuid 来自
      * {@link java.util.UUID#randomUUID()}，不会是 nil）。

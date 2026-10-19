@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
@@ -25,6 +26,9 @@ import net.minecraft.world.phys.Vec3;
  * /give @s machine_max:projectile_test[machine_max:projectile_type="machine_max:120mm_apfsds"]
  * </pre>
  * <p>
+ * 客户端只做表现：按弹种的 {@code visual.muzzle_flash} 登记一次枪口火光，投射物本身由服务端生成。
+ * 这条分支让它同时充当枪口火光的无载具验收载体——不必组装带发射器的载具也能看到光斑。
+ * <p>
  * 后续集成至 {@code LauncherSubsystem} 后移除或改造。
  */
 public class ProjectileTestItem extends Item {
@@ -36,7 +40,6 @@ public class ProjectileTestItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) return InteractionResultHolder.success(stack);
 
         // 获取投射物类型，默认为 20mm AP
         ResourceLocation typeKey = stack.has(MMDataComponents.getPROJECTILE_TYPE())
@@ -51,6 +54,12 @@ public class ProjectileTestItem extends Item {
         var spawnPos = player.getEyePosition().add(look.scale(1.5));
         var jmePos = PhysicsHelperKt.toBVector3f(spawnPos);
         var jmeVel = PhysicsHelperKt.toBVector3f(look).multLocal(kineticType.getBaseVelocity());
+
+        // 客户端只做表现：枪口火光按弹种参数由本机登记；投射物本身由服务端生成
+        if (level.isClientSide) {
+            MuzzleFlashLight.emit(level, spawnPos, kineticType);
+            return InteractionResultHolder.success(stack);
+        }
 
         // 创建投射物并加入世界
         kineticType.create(level, jmePos, jmeVel);

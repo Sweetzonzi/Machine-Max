@@ -1,6 +1,6 @@
 {
   "type": "machine_max:weapon_controller",
-  "basic_durability": 80,
+  "basic_durability": 20,
   "fire_mode": "RIPPLE",
   "ripple_interval": 1.0,
   "aim_tolerance_deg": 10.0,

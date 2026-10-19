@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/jeep/jeep_chassis_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.90,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:jeep_chassis.geo",
     "textures": {
@@ -14,7 +14,7 @@
     "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:jeep", "machine_max:chassis", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
-        "durability": 900.0,
+        "durability": 400,
         "mass": 950.0,
         "block_collision": "ground",
         "collision_height": 2.5,
@@ -25,10 +25,11 @@
             "thickness": 5
           },
           "collision_engine": {
+            "id": "engine",
             "type": "box",
             "subsystem": "subsystem.machine_max.engine",
-            "material": "machine_max:structural_steel",
-            "thickness": 2
+            "material": "machine_max:internal_machinery",
+            "thickness": 10
           }
         },
         "interact_boxes": {
@@ -198,6 +199,7 @@
           "connector.machine_max.hull_connection": {
             "locator": "hull",
             "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
             "signal_targets": {
               "interact_left_door": ["subsystem.machine_max.driver_seat"],
               "interact_right_door": ["subsystem.machine_max.copilot_seat"]

@@ -3,12 +3,12 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -96,10 +96,13 @@ public class VariantAttr {
         this.rootSubPartName = selectRootSubPartName(subParts);
         OModel oModel = OModel.getOrEmpty(new ModelIndex("part", model));
         if (oModel.equals(OModel.Companion.getEMPTY())){
-            throw new IllegalArgumentException(Component.translatable(MMLanguageRegistry.ERROR_PART_MODEL_NOT_FOUND.tag, model.toString()).getString());
+            throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.part.model_not_found",
+                    "Model file not found at: %1$s", model.toString()));
         }
         if (getTextures().isEmpty()) {
-            throw new IllegalArgumentException(Component.translatable("error.machine_max.part.missing_textures").getString());
+            throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.part.missing_textures", "Part textures must not be empty"));
         }
         // Part 级按名寻址（Molang local.*）要求名称在单变体内无歧义
         validateUniqueNames();
@@ -153,16 +156,18 @@ public class VariantAttr {
 
     private void checkNameUnique(String name, String kind, String subPartName, Map<String, String> ownerByName) {
         if (RESERVED_SIGNAL_NAMES.contains(name)) {
-            throw new IllegalArgumentException(Component.translatable(
-                    MMLanguageRegistry.ERROR_PART_RESERVED_NAME.tag,
-                    name, kind, subPartName, model.toString()).getString());
+            throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.part.reserved_name",
+                    "Name %1$s (%2$s of %3$s) in part variant %4$s is a reserved signal address and cannot be used for connectors/subsystems/interact boxes",
+                    name, kind, subPartName, model.toString()));
         }
         String owner = subPartName + "/" + kind;
         String previous = ownerByName.putIfAbsent(name, owner);
         if (previous != null) {
-            throw new IllegalArgumentException(Component.translatable(
-                    MMLanguageRegistry.ERROR_PART_DUPLICATE_NAME.tag,
-                    name, previous, owner, model.toString()).getString());
+            throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.part.duplicate_name",
+                    "Duplicate name %1$s in part variant %4$s: %2$s conflicts with %3$s",
+                    name, previous, owner, model.toString()));
         }
     }
 

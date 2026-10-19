@@ -69,20 +69,18 @@
       "default": 5.0,
       "description": "偏航角张角限制（度），实际范围 [center - limit/2, center + limit/2]。"
     },
-    "hud_components": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": [],
-      "description": "摄像机 HUD 组件资源地址列表，指向 hud/ 下的 GuiAnimatable 定义。"
+    "scope_hud_layout": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "炮镜视角使用的 HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示炮镜不显示该布局提供的 HUD。"
     },
     "tracking_target_inputs": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": ["tracking_target"],
+      "default": [
+        "tracking_target"
+      ],
       "description": "跟踪目标的输入频道列表。"
     },
     "discovery_inputs": {
@@ -90,7 +88,9 @@
       "items": {
         "type": "string"
       },
-      "default": ["camera_discovery"],
+      "default": [
+        "camera_discovery"
+      ],
       "description": "摄像机被发现的握手频道列表（顺序=优先级）。"
     },
     "allow_cycle": {
@@ -130,7 +130,9 @@
       "description": "摄像机基础音效配置。"
     }
   },
-  "required": ["type"],
+  "required": [
+    "type"
+  ],
   "examples": [
     {
       "type": "machine_max:camera",
@@ -138,11 +140,10 @@
       "base_fov": 40.0,
       "base_zoom": 1.0,
       "max_zoom": 5.0,
-      "hud_components": [
-        "machine_max:hud/gunner_crosshair",
-        "machine_max:hud/range_finder"
+      "discovery_inputs": [
+        "gunner_optics"
       ],
-      "discovery_inputs": ["gunner_optics"]
+      "scope_hud_layout": "machine_max:scope_gunner"
     }
   ]
 }

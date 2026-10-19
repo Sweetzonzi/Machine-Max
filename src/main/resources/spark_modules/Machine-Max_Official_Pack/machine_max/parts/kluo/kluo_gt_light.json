@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/kluo/kluo_gt_light_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-  "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
-  "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
-  "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "vehicle_durability_rate": 0.02,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 0.05,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.00,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "max_stack_size": 1,
   "variants": {//部件变体列表, 支持单值或多键值对
     "model": "machine_max:kluo.geo",
@@ -109,16 +109,12 @@
           "connector.machine_max.left": {//连接点名称
             "locator": "front_light_hull_left",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:fixed_back",
-            "overwrite": {
-              "integrity": 10.0
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.right": {//连接点名称
             "locator": "front_light_hull_right",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:fixed_back",
-            "overwrite": {
-              "integrity": 10.0
-            }
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           }
         },
         "projected_area": [0.1, 0.1, 0.1],

@@ -4,19 +4,28 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.render.gui.MMGuiManager;
+import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatable;
 import io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable;
+import io.github.sweetzonzi.machine_max.client.render.renderable.HudElementInstance;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.visual.HudAttr;
+import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
+import io.github.sweetzonzi.machine_max.common.visual.HudElement;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
+import io.github.sweetzonzi.machine_max.common.visual.HudView;
+import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
+import io.github.sweetzonzi.machine_max.common.visual.ModelHudStyle;
+import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.ScreenProjectionUtil;
 import net.minecraft.client.Camera;
-import net.minecraft.client.CameraType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,22 +41,38 @@ import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 自定义 HUD 叠加层。管理载具相关的 HUD 组件，分为透视和正交两类。
+ * 自定义 HUD 叠加层。
  * <p>
- * 透视 HUD 由统一的外层投影管理器批量渲染（一次 flush），
- * 正交 HUD 使用 Minecraft 默认 GUI 投影逐个渲染，
- * 从而避免每组件单独 flush 的性能问题。
+ * 每个客户端 tick 按当前视角收集宿主：座椅或相机/瞄具，加上座椅当前控制组选中的
+ * 武器控制器。每个宿主通过 {@link IHudHost#hudLayoutFor(HudView)} 取得实际布局
+ * （默认由资源键解析，玩家自定义布局可直接返回保存的对象），为布局里的每个
+ * {@link HudElement} 创建一个运行时元素。
+ * <p>
+ * 运行时元素按宿主分组，元素身份是“该宿主布局数组里的序数”。宿主集合或视角变化时
+ * 整体清理并重建，不做逐元素差集；布局与样式都是内容包静态资源，这个粒度足够。
+ * 内容包重载不会立刻刷新，上下车、切换视角或重连世界时随重建生效。
+ * <p>
+ * 宿主之间的绘制顺序由宿主集合的迭代顺序决定，不作契约：内容包负责让同一视角的
+ * 元素互不遮挡。透视 HUD 由统一的外层投影管理器批量渲染（一次 flush），
+ * 正交 HUD 使用 Minecraft 默认 GUI 投影逐个渲染，从而避免每组件单独 flush 的性能问题。
  */
 @OnlyIn(Dist.CLIENT)
 public class CustomHud implements LayeredDraw.Layer {
-    // 透视投影 HUD（使用自定义投影矩阵渲染 3D 模型）
-    private final ConcurrentMap<ResourceLocation, GuiAnimatable> perspectiveHuds = new ConcurrentHashMap<>();
-    // 正交投影 HUD（使用默认 GUI 正交投影）
-    private final ConcurrentMap<ResourceLocation, GuiAnimatable> orthogonalHuds = new ConcurrentHashMap<>();
+    // 当前视角的宿主 → 该宿主的运行时元素；空列表表示宿主在当前视角没有 HUD
+    private final Map<IHudHost, List<HudElementInstance>> huds = new LinkedHashMap<>();
+    /** 当前生效的视角；null 表示尚未建立任何宿主。 */
+    private HudView activeView;
+    /** 已经提示过的缺失样式，避免每 tick 刷屏。 */
+    private final Set<ResourceLocation> warnedStyles = new HashSet<>();
 
     private static final Matrix4f VIEW_MATRIX = new Matrix4f().setLookAt(
             0, 0, 0,        // 摄像机位置
@@ -62,64 +87,78 @@ public class CustomHud implements LayeredDraw.Layer {
         MMGuiManager.customHud = this;
     }
 
+    /**
+     * 主线程，每个客户端 tick。解析当前视角的宿主集合，集合或视角变化时整体重建。
+     */
     public void tick() {
         Player player = Minecraft.getInstance().player;
-        CameraType view = Minecraft.getInstance().options.getCameraType();
-        if (player != null) {
-            // 炮镜模式：加载摄像机HUD组件
-            if (CameraController.isCameraMode()) {
-                CameraSubsystem camera = CameraController.getActiveCamera();
-                if (camera != null && camera.isActive()) {
-                    syncHuds(camera.attr.staticAttribute.getHudComponents());
-                }
+        if (player == null) {
+            clearView();
+            return;
+        }
+
+        AbstractControllableSubsystem subsystem =
+                ((IEntityMixin) player).machine_Max$getControllingSubsystem();
+        SeatSubsystem seat = subsystem instanceof SeatSubsystem s ? s : null;
+
+        HudView view;
+        Set<IHudHost> expected = new LinkedHashSet<>();
+        if (CameraController.isCameraMode()) {
+            // 炮镜模式：宿主是当前激活的相机/瞄具子系统
+            CameraSubsystem camera = CameraController.getActiveCamera();
+            if (camera == null || !camera.isActive()) {
+                clearView();
                 return;
             }
-
-            AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
-            if (subsystem instanceof SeatSubsystem seat) {
-                if (view.isFirstPerson()) {
-                    syncHuds(seat.attr.staticAttribute.views.firstPersonHud());
-                } else {
-                    syncHuds(seat.attr.staticAttribute.views.thirdPersonHud());
-                }
-            } else {
-                clearAll();
+            view = HudView.SCOPE;
+            expected.add(camera);
+        } else {
+            if (seat == null) {
+                clearView();
+                return;
             }
+            view = Minecraft.getInstance().options.getCameraType().isFirstPerson()
+                    ? HudView.FIRST : HudView.THIRD;
+            expected.add(seat);
+        }
+
+        // 座椅选中的武器控制器在普通视角与炮镜视角都显示
+        if (seat != null) expected.addAll(seat.getActiveWeaponControllers());
+
+        if (view != activeView || !expected.equals(huds.keySet())) {
+            rebuild(expected, view);
         }
     }
 
     /**
-     * 根据 HUD 组件列表同步当前显示的所有 HUD，自动将组件归入透视或正交分类。
+     * 为每个宿主建立运行时元素。没有布局、布局为空或样式不可用时，该宿主保留一个空列表：
+     * 键集合必须与期望宿主集合一致，否则每 tick 都会判定为变化并反复重建。
      */
-    private void syncHuds(java.util.List<ResourceLocation> activeHuds) {
-        // 移除不在活动列表中的 HUD
-        perspectiveHuds.entrySet().removeIf(entry -> {
-            if (!activeHuds.contains(entry.getKey())) {
-                entry.getValue().destroy();
-                return true;
-            }
-            return false;
-        });
-        orthogonalHuds.entrySet().removeIf(entry -> {
-            if (!activeHuds.contains(entry.getKey())) {
-                entry.getValue().destroy();
-                return true;
-            }
-            return false;
-        });
-
-        // 添加缺少的 HUD，并按透视/正交分类
-        for (ResourceLocation path : activeHuds) {
-            if (!perspectiveHuds.containsKey(path) && !orthogonalHuds.containsKey(path)) {
-                HudAttr attr = MMDynamicRes.CUSTOM_HUD.get(path);
-                if (attr == null) continue;
-                GuiAnimatable hud = new GuiAnimatable(attr);
-                if (attr.perspective) {
-                    perspectiveHuds.put(path, hud);
-                } else {
-                    orthogonalHuds.put(path, hud);
+    private void rebuild(Set<IHudHost> hosts, HudView view) {
+        clearAll();
+        activeView = view;
+        for (IHudHost host : hosts) {
+            List<HudElementInstance> elements = new ArrayList<>();
+            HudLayout layout = host.hudLayoutFor(view);
+            if (layout == null) layout = HudLayout.EMPTY_LAYOUT;
+            for (HudElement element : layout.elements()) {
+                HudStyle style = MMDynamicRes.HUD_STYLES.get(element.style());
+                if (style == null) {
+                    if (warnedStyles.add(element.style())) {
+                        MachineMax.LOGGER.warn("HUD 样式不存在，跳过该条目: {}", element.style());
+                    }
+                    continue;
+                }
+                if (style instanceof ModelHudStyle modelStyle) {
+                    elements.add(new GuiAnimatable(element.style(), modelStyle, element));
+                } else if (style instanceof AuiHudStyle auiStyle) {
+                    elements.add(new AuiHudAnimatable(element.style(), auiStyle, element));
+                } else if (warnedStyles.add(element.style())) {
+                    MachineMax.LOGGER.warn("HUD 样式载体尚不支持，跳过该条目: {} (type={})",
+                            element.style(), style.type());
                 }
             }
+            huds.put(host, elements);
         }
     }
 
@@ -145,14 +184,28 @@ public class CustomHud implements LayeredDraw.Layer {
         }
 
         // 第1趟：正交 HUD — 使用 Minecraft 默认 GUI 正交投影逐个渲染
-        for (GuiAnimatable hud : orthogonalHuds.values()) {
-            hud.render(guiGraphics, 0, 0, partialTick);
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) {
+                if (!hud.isPerspective()) {
+                    hud.renderGui(guiGraphics, partialTick);
+                }
+            }
         }
 
         // 第2趟：透视 HUD — 统一设置一次透视投影，渲染所有，flush一次
-        if (!perspectiveHuds.isEmpty()) {
+        if (hasPerspective()) {
             renderPerspectiveBatch(guiGraphics, partialTick);
         }
+    }
+
+    /** 当前是否有透视元素；没有时跳过投影矩阵的备份/恢复。 */
+    private boolean hasPerspective() {
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) {
+                if (hud.isPerspective()) return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -178,18 +231,20 @@ public class CustomHud implements LayeredDraw.Layer {
         RenderSystem.applyModelViewMatrix();
 
         // 渲染所有透视 HUD
-        for (GuiAnimatable hud : perspectiveHuds.values()) {
-            PoseStack poseStack = guiGraphics.pose();
-            poseStack.pushPose();
-            poseStack.setIdentity();
-            // 设置每个 HUD 对应的光照方向
-            Lighting.setupForEntityInInventory(hud.getParams().getQuaternion(partialTick));
-            // 应用透视偏移（仅位置变换，旋转/缩放由 renderContent 内部处理）
-            HudAttr params = hud.getParams();
-            Vector3f offset = params.getOffset(partialTick);
-            poseStack.translate(offset.x, -offset.y, offset.z);
-            hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
-            poseStack.popPose();
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
+                PoseStack poseStack = guiGraphics.pose();
+                poseStack.pushPose();
+                poseStack.setIdentity();
+                // 设置每个 HUD 对应的光照方向
+                Lighting.setupForEntityInInventory(hud.getQuaternion(partialTick));
+                // 应用透视偏移（仅位置变换，旋转/缩放由 renderContent 内部处理）
+                Vector3f offset = hud.getOffset(partialTick);
+                poseStack.translate(offset.x, -offset.y, offset.z);
+                hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
+                poseStack.popPose();
+            }
         }
 
         // 统一 flush
@@ -245,15 +300,22 @@ public class CustomHud implements LayeredDraw.Layer {
         }
 
         // === 第1趟：正交 UGC 元素 ===
-        // 每个元素按 scope_behavior 单独设置 poseStack
-        for (GuiAnimatable hud : orthogonalHuds.values()) {
-            renderOrthogonalInScope(guiGraphics, hud, screenW, screenH,
-                    scopeCenterX, scopeCenterY, pitchDiff, yawDiff,
-                    currentZoom, partialTick);
+        // 每个元素按 scope_behavior 单独设置 poseStack；AUI 载体按自己的锚点投放
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (instance.isPerspective()) continue;
+                if (instance instanceof GuiAnimatable hud) {
+                    renderOrthogonalInScope(guiGraphics, hud, screenW, screenH,
+                            scopeCenterX, scopeCenterY, pitchDiff, yawDiff,
+                            currentZoom, partialTick);
+                } else {
+                    instance.renderGui(guiGraphics, partialTick);
+                }
+            }
         }
 
         // === 第2趟：透视 UGC 元素（统一投影矩阵，批量 flush） ===
-        if (!perspectiveHuds.isEmpty()) {
+        if (hasPerspective()) {
             renderPerspectiveInScopeBatch(guiGraphics,
                     scopeCameraLocal, pitchDiff, yawDiff,
                     currentZoom, partialTick);
@@ -280,7 +342,7 @@ public class CustomHud implements LayeredDraw.Layer {
         poseStack.pushPose();
         boolean followScope;
         boolean doRotate;
-        switch (hud.getParams().getScopeBehavior()) {
+        switch (hud.scopeBehavior()) {
             case SCREEN_FIXED:
                 followScope = false;
                 doRotate = false;
@@ -303,7 +365,7 @@ public class CustomHud implements LayeredDraw.Layer {
         }
 
         // FOV 缩放（FOLLOW_POSITION / FOLLOW_TRANSFORM，且 ignoreZoom=false 时生效）
-        if (followScope && currentZoom != 1f && !hud.getParams().isIgnoreZoom()) {
+        if (followScope && currentZoom != 1f && !hud.ignoreZoom()) {
             poseStack.scale(currentZoom, currentZoom, 1f);
         }
         // scope 旋转（FOLLOW_TRANSFORM 专属）
@@ -311,7 +373,7 @@ public class CustomHud implements LayeredDraw.Layer {
             poseStack.mulPose(new Quaternionf().rotationYXZ(-yawDiff, pitchDiff, 0));
         }
         // 元素自身位移（所有模式都有）
-        Vector3f off = hud.getParams().getOffset(partialTick);
+        Vector3f off = hud.getOffset(partialTick);
         poseStack.translate(off.x, off.y, off.z);
 
         // 委托 GuiAnimatable 渲染模型和文本内容
@@ -348,35 +410,37 @@ public class CustomHud implements LayeredDraw.Layer {
         RenderSystem.applyModelViewMatrix();
 
         // 渲染所有透视 HUD
-        for (GuiAnimatable hud : perspectiveHuds.values()) {
-            PoseStack poseStack = guiGraphics.pose();
-            poseStack.pushPose();
-            poseStack.setIdentity();
-            Lighting.setupForEntityInInventory(hud.getParams().getQuaternion(partialTick));
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance instance : elements) {
+                if (!(instance instanceof GuiAnimatable hud) || !hud.isPerspective()) continue;
+                PoseStack poseStack = guiGraphics.pose();
+                poseStack.pushPose();
+                poseStack.setIdentity();
+                Lighting.setupForEntityInInventory(hud.getQuaternion(partialTick));
 
-            HudAttr params = hud.getParams();
-            HudAttr.ScopeBehavior behavior = params.getScopeBehavior();
+                ScopeBehavior behavior = hud.scopeBehavior();
 
-            // FOLLOW_* 模式：平移到 scope 摄像机局部坐标 + 缩放 + 旋转
-            if (behavior == HudAttr.ScopeBehavior.FOLLOW_POSITION
-                    || behavior == HudAttr.ScopeBehavior.FOLLOW_TRANSFORM) {
-                if (scopeCameraLocal != null) {
-                    poseStack.translate(scopeCameraLocal[0], scopeCameraLocal[1], 0);
+                // FOLLOW_* 模式：平移到 scope 摄像机局部坐标 + 缩放 + 旋转
+                if (behavior == ScopeBehavior.FOLLOW_POSITION
+                        || behavior == ScopeBehavior.FOLLOW_TRANSFORM) {
+                    if (scopeCameraLocal != null) {
+                        poseStack.translate(scopeCameraLocal[0], scopeCameraLocal[1], 0);
+                    }
+                    if (currentZoom != 1f && !hud.ignoreZoom()) {
+                        poseStack.scale(currentZoom, currentZoom, currentZoom);
+                    }
+                    if (behavior == ScopeBehavior.FOLLOW_TRANSFORM
+                            && (pitchDiff != 0 || yawDiff != 0)) {
+                        poseStack.mulPose(new Quaternionf().rotationYXZ(-yawDiff, pitchDiff, 0));
+                    }
                 }
-                if (currentZoom != 1f && !params.isIgnoreZoom()) {
-                    poseStack.scale(currentZoom, currentZoom, currentZoom);
-                }
-                if (behavior == HudAttr.ScopeBehavior.FOLLOW_TRANSFORM
-                        && (pitchDiff != 0 || yawDiff != 0)) {
-                    poseStack.mulPose(new Quaternionf().rotationYXZ(-yawDiff, pitchDiff, 0));
-                }
+                // SCREEN_FIXED：仅应用元素自身偏移（与普通模式一致）
+
+                Vector3f offset = hud.getOffset(partialTick);
+                poseStack.translate(offset.x, -offset.y, offset.z);
+                hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
+                poseStack.popPose();
             }
-            // SCREEN_FIXED：仅应用元素自身偏移（与普通模式一致）
-
-            Vector3f offset = params.getOffset(partialTick);
-            poseStack.translate(offset.x, -offset.y, offset.z);
-            hud.renderContent(poseStack, guiGraphics.bufferSource(), partialTick);
-            poseStack.popPose();
         }
 
         // 统一 flush
@@ -390,11 +454,19 @@ public class CustomHud implements LayeredDraw.Layer {
         RenderSystem.restoreProjectionMatrix();
     }
 
-    /** 清除所有 HUD */
+    /** 当前没有任何 HUD 宿主时清理；已有状态才销毁，避免每 tick 空转。 */
+    private void clearView() {
+        if (!huds.isEmpty() || activeView != null) {
+            clearAll();
+        }
+    }
+
+    /** 清除所有运行时元素。 */
     private void clearAll() {
-        for (GuiAnimatable hud : perspectiveHuds.values()) hud.destroy();
-        for (GuiAnimatable hud : orthogonalHuds.values()) hud.destroy();
-        perspectiveHuds.clear();
-        orthogonalHuds.clear();
+        for (List<HudElementInstance> elements : huds.values()) {
+            for (HudElementInstance hud : elements) hud.dispose();
+        }
+        huds.clear();
+        activeView = null;
     }
 }

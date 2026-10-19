@@ -247,6 +247,26 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     }
 
     /**
+     * 获取指向的最近的带轮面的零件，忽略车体等没有轮半径的部件。
+     *
+     * <p>射线会返回沿线的所有命中体；即使车体先被命中，也会继续找到后面的轮子。
+     * 用于履带铺设这类“只认轮子”的选择，避免被大型碰撞箱挡住。</p>
+     *
+     * @return 线段命中的最近的、{@code getMaxWheelRadius() > 0} 的零件
+     */
+    public SubPart getWheelSubPart() {
+        if (!sortedTargetBodyCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetBodyCache) {
+                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart part
+                        && part.getMaxWheelRadius() > 0f) {
+                    return part;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * 获取命中点坐标
      *
      * @param result 射线检测结果

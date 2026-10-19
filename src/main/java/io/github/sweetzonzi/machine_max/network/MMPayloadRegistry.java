@@ -33,7 +33,10 @@ public class MMPayloadRegistry {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
-        final PayloadRegistrar sync = event.registrar("sync:1.0.0");
+        // sync 处于 2.2.0：起爆包携带爆炸火光参数（light），线格式与 1.0.0 不兼容；
+        // 2.1.0 在 light 里加入光晕倍率（glow），2.2.0 加入星芒倍率（glare），两次都改变了
+        // 线格式。版本号让不兼容的旧端在握手阶段被拒绝，而不是解出一包错位的参数集
+        final PayloadRegistrar sync = event.registrar("sync:2.2.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
@@ -174,6 +177,11 @@ public class MMPayloadRegistry {
                 VehicleStatusSyncPayload.TYPE,
                 VehicleStatusSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleStatusSyncPayload::handle)
+        );
+        sync.playToClient(//同步履带列表 / 耐久 / 断带状态
+                TrackLinkSyncPayload.TYPE,
+                TrackLinkSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(TrackLinkSyncPayload::handle)
         );
         sync.playToClient(//运动体的同步数据
                 SubPartSyncPayload.TYPE,

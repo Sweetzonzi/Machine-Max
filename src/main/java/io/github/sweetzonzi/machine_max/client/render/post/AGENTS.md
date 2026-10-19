@@ -1,27 +1,51 @@
 # client/render/post/ — 屏幕空间后处理
 
-**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、投射物曳光光照、过载黑视、失色、CRT 显像管）。
+**范围**: `PostChain` 后处理效果及其共享的世界深度通路（爆炸波前折射、通用屏幕空间光照、过载黑视、失色、CRT 显像管）。屏幕空间光照按"来源 → 光源表 → 效果"三层拆开，当前来源是投射物曳光、爆炸火光与枪口火光。
 
-**文件数**: 7 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
+**文件数**: 17 个 | 本包的坑集中在"深度什么时候还有效"与"GL 状态谁负责还原"两件事上，两者出错都不报错、只表现为画面不对。
 
 ## 结构
 
 | 文件 | 作用 |
 |------|------|
-| `PostProcessingManager.java` | 唯一的事件订阅点与次序所有者：`AFTER_LEVEL` 内先取两份世界深度快照、再提交 **曳光光照**；`RenderLevelLastEvent` 内 **折射 → 过载 → 失色**；GUI 阶段 CRT。各效果的懒加载与释放也在这里统一转发 |
+| `PostProcessingManager.java` | 唯一的事件订阅点与次序所有者：`AFTER_LEVEL` 内先取两份世界深度快照、再提交 **屏幕空间光照**；`RenderLevelLastEvent` 内 **折射 → 过载 → 失色**；GUI 阶段 CRT。各效果的懒加载与释放也在这里统一转发，光照的来源列表也在这里构造 |
 | `BlastDistortionEffect.java` | 爆炸波前折射；持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`） |
-| `TracerLightEffect.java` | 投射物曳光光照；持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`，在 `render` 内、pass 之前）。照射半径与遮挡容差都由弹种口径折算，见下 |
+| `ScreenSpaceLightEffect.java` | 通用光照效果：总开关与总倍率、按来源列表采集、持有链、数组 uniform 引用与世界深度快照（`captureWorldDepth`，在 `render` 内、pass 之前），并在加载期核验数组长度与 JSON `count` 一致（`verifyArrayCounts`） |
+| `ScreenSpaceLightSource.java` | 来源接口：稳定的来源 ID、显式优先级、`collect(frame, out)` |
+| `ProjectileTracerLightSource.java` | 曳光来源：门禁、按弹种口径折算的照射半径与遮挡容差、剩余寿命淡出；三条曳光特有剔除留在本类 |
+| `ExplosionLightSource.java` | 火光来源：按游戏时钟求年龄包络、火光类别倍率、`SOURCE_DEPTH` 遮挡策略（容差 1.0 m）；几何剔除交给光源表 |
+| `ExplosionLightState.java` | 客户端火光状态：按维度登记，每条按自己的 `duration_ticks` 独立结束，退出世界/换维度时清理；`onDetonate` 是绑定给 `ExplosionManager#setLightSink` 的入口 |
+| `MuzzleFlashLightSource.java` | 枪口火光来源：`(1-u)²` 年龄包络、枪口火光类别倍率、`SOURCE_DEPTH` 遮挡策略（容差 0.75 m）；无来源特有剔除，几何剔除交给光源表 |
+| `MuzzleFlashLightState.java` | 客户端枪口火光状态：按维度登记，每条按本机推导的 `duration_ticks` 独立结束，单维度上限 128 条（超出丢最旧），退出世界/换维度时清理；`onMuzzleFlash` 是绑定给 `MuzzleFlashLight#setSink` 的入口 |
+| `ScreenSpaceLightBuffer.java` | 光源表：数值校验、影响体剔除（距离/近裁面/视锥）、`(优先级升序, 投影半径降序)` 容量选择、扁平数组与逐来源诊断计数；不含 GL 调用 |
+| `ScreenSpaceLight.java` / `ScreenSpaceLightPriority.java` / `LightFrameContext.java` | 光源提交载体（`setPoint` / `setSpot` 一次写齐）、优先级常量、每帧只读的帧上下文 |
 | `OverloadVisionEffect.java` / `DesaturateEffect.java` / `CrtMonitorEffect.java` | 全屏颜色滤镜，不参与深度通路 |
 | `BlastProjectionUtil.java` | 共享数学：世界坐标→视空间、像素焦距、深度两点标定 |
 
 深度副本的另一份既有写法在 `client/fbo/OffscreenFbo.java`（`copyMainDepth`），与本包同源。
+
+## 屏幕空间光照：来源 → 光源表 → 效果
+
+- **来源**只提供身份、优先级与采集函数：采集不碰 GL，不保存借用的上下文，逐盏复用同一个 `ScreenSpaceLight` 载体（每盏灯新建记录会让采集分配随光源数增长）。
+- **光源表**是唯一做校验与选择的地方：排序键 `(来源优先级升序, 投影半径降序)`，同键先到先留；优先级不是保留名额，高优先级来源占满容量时低优先级来源会被整类排除。当前容量 16，与程序 JSON 的 `LightView[64]` / `LightColor[64]` / `LightTol[16]` / `LightOcclusion[16]` / `LightMinDist[16]` / `LightGlow[32]` / `LightGlare[16]` 对齐。
+- **数值口径在光源表写入槽位时统一一次**：`colorIntensity` 的前三个分量是**线性**颜色（内容包的 sRGB `[0,255]` 在 `write` 里解码），第四个分量是"1 m 处辐照度"乘全局倍率；`LightMinDist` 逐槽上传 `1/d²` 的奇点截断距离（曳光与枪口 0.5 m、爆炸 0.75 m）；`LightGlow` 逐槽上传光晕的阈值半径与倍率，半径按 `Rg = GlowScale · sqrt(I_base) · k` 在这里算好（着色器不做 `sqrt`，见下一条）；`LightGlare` 只上传逐来源倍率 `g`，臂长与亮度全在片元里算。片元算子有三条：表面项逐光源 `color · I · o · w(d) / max(d², d_min²)` 求和后经有界曲线映射回显示值（`o` 是朝向响应，见下一条），光晕与星芒各自求和、**都在曲线之后**相加。改算子要同时看 `docs/plan/进行中/渲染-屏幕空间光照物理化设计.md` §3。
+- **朝向响应（S4）在片元里一次算完**：`viewNormal` 取四邻域深度、每条轴只用与中心深度更近的一侧作切向，法线统一朝相机；取不到可信邻居（天空、近裁面、退化）时该像素回落为 `o = 1`。权重来自客户端配置 `screen_space_light_normal_weight`（缺省 0.5，取 0 即跳过全部额外采样），由 `ScreenSpaceLightEffect#render` 每帧写 `NormalWeight`。系数是 `max((1 − w) + w·cos, 0)`——插值在钳零之前，所以掠射面保留 `1 − w` 的底、真正背光的面在任何权重下都是 0。竖直的草叶面片在完整 Lambert 下 `cos ≈ 0`，会在受光地面上变成黑点，这也是缺省不给 1 的原因。它只表达朝向、不表达遮挡：车体背后的地面仍会被照亮，那是 S3，未实现。调观感动这个权重、不要先动各弹种的辐照度。
+- **光晕（D2）是沿视线的解析积分，不乘表面颜色**：`glow = Scatter · k · color · I · I0 · w(b/Rg)`，`I0` 是视线穿过阈值半径球的 `∫1/r² dt` 解析解，`b` 是相机视线到光心的垂距（被该光源的 `d_min` 截断）。**深度截断给出逐像素遮挡**：`t_hit` 是快照里第一个表面的距离，墙前的空气没有光晕、光心在墙后则区间为空。换算必须写 `t_hit = zfwd · L`（`L = sqrt(1 + |q|²)`）——视空间射线是 `t·(q,−1)`，只有 z 分量等于前向深度，漏乘 `L` 会让远处的光晕被提前截断。**天空像素必须走同一段循环**：没有表面只是表面项为 0，天空是光晕的主要背景，按表面项的天空分支提前返回会把光晕整片抹掉。半径用**基础强度**（`ScreenSpaceLight#setGlow` 的 `baseIntensity`，不含时间包络）派生，亮度用当前包络强度，所以闪烁时是变暗而不是缩小；`k` 同时缩放两者，`0` 关闭该光源的光晕，**没有内容侧上界**——`k` 超过 `32 m / (GlowScale·√I)` 后半径被 `MAX_GLOW_RADIUS_M` 封顶、只剩亮度增长，亮度再由 `GLOW_MAX` 兜住。逐光源与总和都钳到 `GLOW_MAX`。曳光的 `I` 比信号弹低两三个数量级，缺省倍率下没有可见光晕（`k` 写到 10 以上才可见），这是 `glow ∝ I` 的结果而不是缺陷。
+- **星芒（D3）是屏幕空间的四臂剖面，与光晕不共用参数**：光心投影与 `dp = px − lightPx` 都在像素空间，臂长是**固定角度**（`2°–22°`，由相机处的表观照度 `I/max(|C|², d_min²)` 的饱和曲线 `s` 决定）乘 `FocalPx`，两条臂沿屏幕 ±x/±y，横向是**向臂尖收窄**的楔形（根部宽度按屏高取，1080p 上 2.4 px，臂尖为根部的 0.45 倍），`(1−u)^1.5` 让臂尖缓慢归零、取 `max` 而不是求和。臂长必须长过光晕的可见半径，否则会缩在光晕的饱和核心里只把中心撑成方块；宽度必须沿臂收窄，否则可见宽度会被 σ 的外扩抵消成一根等宽长条。它**不按像素深度截断**——星芒是镜头内的成像，墙挡住光源时整条消失，光源可见时压在墙与车体上是预期行为；因此它也不进影响球、不复用 `Rg`，可见性靠 `|dp| ≤ thPx` 的方框剔除。`g` 同时缩放亮度（线性）与臂长（开方），臂长另有屏高 45% 的像素封顶兜住炮镜倍率。它与光晕共用 `GLOW_MAX` 的加法预算。
+- **影响体剔除按光源的影响球判定**：`distanceToCenter > renderDistance + radius`、整个球位于近裁面之后、球与视锥不相交，三条之一成立才剔除，半径取 `max(R, Rg)`。光心在相机背后或投影离屏都不是剔除理由——爆炸火光经常正好落在这些位置。视锥侧平面取自投影矩阵的 `m00` / `m11`，跟随 FOV 与视口比例。
+- **遮挡策略逐盏上传，且只否决表面项与星芒**：`LightOcclusion` 编 0（不做判定）或 1（S2），片元据此在光心投影处采一次深度；判为不可见时只跳过表面项与星芒，**光晕照算**——光晕按逐像素 `t_hit` 截断，比这一次采样精确，套上去会把"光源被挡住、光晕球露出一半"整片抹掉。三种来源都用 S2，绝对容差按来源给：曳光 `0.2 m + 2 mm×口径`、枪口 0.75 m、爆炸 1.0 m——容差为"光心旁边就是自己的炮管、地面或火球"留出余量，否则自己开火时整盏光会消失。同一帧里两种策略可以共存。
+- **阶段能力在提交处显式报告**：锥光（`Shape.SPOT`）与 S3（`OcclusionMode.SCREEN_RAY`）当前返回 `UNSUPPORTED`，不会按球光或按 S2 悄悄渲染；接入对应 GPU 编码后才放开那条判断。
+- **来源特有剔除留在来源里**：光心在相机背后、超出渲染距离、屏幕投影半径小于下限三条留在 `ProjectileTracerLightSource`。光源表的影响体剔除只会移除整球都不可能贡献的条目，因此它腾出的槽位可能让同一帧里排序更后的低优先级光源入选。
+- **诊断**按来源计提交/非法/几何剔除/候选/入选/容量拒绝/被置换；容量触顶日志限频 5 秒（短暂不触顶不重置限频），非法数据日志与容量日志分开。
+- **瞬态光源的寿命不依赖是否入选**：火光与枪口火光的年龄都由关卡游戏时钟推导（暂停即冻结），关效果、容量拒绝、换维度都不影响它推进；总开关关闭时 `ScreenSpaceLightEffect` 连采集都不做，年龄仍照常。
+- **新增一类光源** = 新增一个 `ScreenSpaceLightSource` 实现并加进 `PostProcessingManager` 的来源列表；优先级、容量与数组契约都不必改（只有改容量才要同步程序 JSON、Java 常量与 GLSL 数组长度）。新来源若需要不同的 `d_min`，在 `setPoint` 之后调 `ScreenSpaceLight#setMinDistance`，不需要改契约。
 
 ## 四条硬约束
 
 1. **每帧的世界深度快照取在 `RenderLevelStageEvent` 的 `AFTER_LEVEL`。** 更晚就没有世界几何了（见下）。
 2. **所有需要深度的 pass 都从快照采样**，都不声明 `minecraft:main:depth`。
 3. **快照目标的深度格式必须与主目标逐位相同**（本仓库基线为 `GL_DEPTH32F_STENCIL8`，带 stencil）。深度位 blit 在两侧格式不一致时按规范非法。
-4. **一帧内所有快照必须在第一个以 `minecraft:main` 为输出目标的 pass 之前取完。** 曳光光照的 pass 就挂在 `AFTER_LEVEL`、正是一个这样的 pass，所以 `PostProcessingManager` 里两个 `capture*` 都排在它的 `render()` 之前——顺序反了，后取的那份快照拿到的是被 pass 清空过的深度（常量，~0.12 m），判据会全像素命中。当前副本所有权是"每条链各声明并拷贝一份"（两份取的是同一时刻的同一份深度），因此别把两条链的取快照时机拆到不同的事件里。
+4. **一帧内所有快照必须在第一个以 `minecraft:main` 为输出目标的 pass 之前取完。** 屏幕空间光照的 pass 就挂在 `AFTER_LEVEL`、正是一个这样的 pass，所以 `PostProcessingManager` 里两个 `capture*` 都排在它的 `render()` 之前——顺序反了，后取的那份快照拿到的是被 pass 清空过的深度（常量，~0.12 m），判据会全像素命中。当前副本所有权是"每条链各声明并拷贝一份"（两份取的是同一时刻的同一份深度），因此别把两条链的取快照时机拆到不同的事件里。
 
 ## 为什么：主目标的深度什么时候还有效
 
@@ -30,13 +54,13 @@
   - Iris 会话：掩码为假（实测四个时刻均为假）→ 清除是空操作，深度原样留下。
 
   于是 `RenderLevelLastEvent` 时刻的 `minecraft:main:depth` 在无光影下不含世界几何、在光影下却完好——**同一份代码的表现随光影开关变化**，不可依赖。
-- 任何以 `minecraft:main` 为输出目标的 pass（本项目每条链末尾的 `blit → main`）在绘制前会清空自己的输出目标，把主目标深度写成常量（本项目标定下约 0.12 m）。因此**排在它后面的深度读取会全像素判为"被完全遮挡"**：曳光光照链的 pass 就挂在 `AFTER_LEVEL`，若把折射链的快照取在它之后，爆炸环会整屏消失。
+- 任何以 `minecraft:main` 为输出目标的 pass（本项目每条链末尾的 `blit → main`）在绘制前会清空自己的输出目标，把主目标深度写成常量（本项目标定下约 0.12 m）。因此**排在它后面的深度读取会全像素判为"被完全遮挡"**：屏幕空间光照链的 pass 就挂在 `AFTER_LEVEL`，若把折射链的快照取在它之后，爆炸环会整屏消失。
 - `AFTER_LEVEL` 取的快照与那一刻的世界深度**逐位相同**（实测 0 / 409920 像素不同），既不受手部清除影响，也不含手部与 HUD。
-- **曳光光照的 pass 排在手部渲染之前**，因此它那次 `blit → main` 会先一步清空主目标深度：无光影会话本来就在此处有一次生效的清除（行为不变），光影会话里手部则从"与遮挡它的世界几何做深度测试"变成"总画在最前"——只在手被更近的几何挡住时可辨，已知且接受。设计文档把它记为 §13 风险 13。
+- **屏幕空间光照的 pass 排在手部渲染之前**，因此它那次 `blit → main` 会先一步清空主目标深度：无光影会话本来就在此处有一次生效的清除（行为不变），光影会话里手部则从"与遮挡它的世界几何做深度测试"变成"总画在最前"——只在手被更近的几何挡住时可辨，已知且接受。设计文档把它记为 §13 风险 13。
 
 设计依据、两次采集的对照数据与验收判据见 `docs/plan/计划中/武器系统-投射物曳光光照设计.md` 的 §5.1、§5.2、§6.7 与 §七。
 
-## 会静默出错的五个点
+## 会静默出错的九个点
 
 | 症状 | 原因 | 处置 |
 |------|------|------|
@@ -45,13 +69,17 @@
 | 该调用之后的渲染错位、清除打到窗口上 | `RenderTarget.copyDepthFrom`、`RenderTarget.clear` / `resize`、`PostChain` 构造结束时都会把 FBO 0 绑在 DRAW 上 | 每处之后 `main.bindWrite(true)` |
 | 该清的没清，或深度被意外抹平 | `glClear` 受 `GL_DEPTH_WRITEMASK` 与剪裁框约束，与"上一次是谁清的"无关 | 需要清就临时 `_depthMask(true)`，随后还原原值 |
 | 深度采样在轮廓处出现一圈毛边 | 误以为 `use_linear_filter` 也作用于深度 | 它只改颜色纹理的过滤方式；深度恒为 NEAREST，无需处理 |
+| 光晕在远处被提前截断，或墙后的光源仍有一圈光 | 光晕积分把 `zfwd` 当作 `t_hit`：视空间射线是 `t·(q,−1)`，`t` 是前向深度而不是真实距离 | 写 `t_hit = zfwd · sqrt(1 + |q|²)`；天空没有表面时取无穷远，天空像素不能按表面项的天空分支提前返回 |
+| 星芒在远处不缩小，或亮度按 `1/D` 掉得不够快 | 把星芒接到 D2 的 `Rg` 上，或用 `I` 而没有除 `|C|²` | 臂长是固定角度（`θ · FocalPx`），亮度用 `I / max(|C|², d_min²)`；它不进影响球、不复用 `Rg` |
+| 星芒被前景切出缺口，像一块投影光 | 把光晕的 `t_hit` 截断复用给了星芒 | 星芒是镜头成像、不查深度；只有光源级遮挡是它的门禁。压在墙与车体上是预期行为 |
+| 光晕连半露的那一半一起消失 | 把 S2 的 `continue` 套在光晕上，让整盏灯一起被否决 | S2 只跳过表面项与星芒；光晕只认逐像素 `t_hit`，两种粒度不要互换 |
 
 ## uniform 与目标的三条通路
 
 | 量 | 路径 | 关键点 |
 |----|------|--------|
 | 标量 | `PostChain.setUniform(String, float)` | 只写第 0 个分量：**不要打包 `vec2` / `vec3` / 小数组**，其余分量会取到 JSON 默认值里的垃圾；**int uniform 走这条路会因 `floatValues` 为 null 而 NPE**，计数量必须是 float |
-| 数组 | `PostChainAccessor` 取 `PostPass` → `Uniform.set(float[])` | JSON 默认值只有前若干个分量有效、其余是未初始化内存 → 每帧全量写；`Uniform` 引用在链加载时取一次。**数组长度必须 ≥ JSON 声明的 `count`**：不足时 `Uniform.set` 只打一条 WARN 并整段忽略（静默失效，不崩） |
+| 数组 | `PostChainAccessor` 取 `PostPass` → `Uniform.set(float[])` | JSON 默认值只有前若干个分量有效、其余是未初始化内存 → 每帧全量写；`Uniform` 引用在链加载时取一次。**数组长度必须 ≥ JSON 声明的 `count`**：不足时 `Uniform.set` 只打一条 WARN 并整段忽略（静默失效，不崩）。通用光照链在加载期用 `Uniform#getCount()` 与 Java 数组长度对比（`ScreenSpaceLightEffect#verifyArrayCounts`），不一致时直接拒绝本链生效 |
 | 链内目标 | `PostChain.getTempTarget(name)` | 名字与链 JSON 的 `targets` 一致；只有声明尺寸等于屏幕尺寸的目标会跟随窗口 `resize`，显式声明其它尺寸的目标不会 |
 
 链 JSON 的三个加载期约束：`targets` 是**数组**（字符串项按屏幕尺寸建，对象项可给 `width` / `height`）；`auxtargets` 的 `id` 在**加载时**解析，引用未声明的目标会让整条链加载失败；每条链的目标表彼此独立——跨链共用一份副本要么注入目标表，要么把两个效果并入同一条链。
@@ -67,14 +95,16 @@
 
 ## 构建与验证
 
-- 开发客户端在运行时 `createMinecraftArtifacts` 删不掉 neoforge 的 artifact jar（报 `Unable to delete file`）→ 用 `gradlew compileJava -x createMinecraftArtifacts`。
+- 有 JVM 占用 neoforge 的 artifact jar（开发客户端、另一个 Gradle 构建）时，`createMinecraftArtifacts` 删不掉它、报 `Unable to delete file`。`-x createMinecraftArtifacts` 只排除根项目的同名任务，复合构建里 `:Spark-Core` 与 `:BallisticsFramework` 的仍会执行，因此要逐个限定：`gradlew compileJava -x createMinecraftArtifacts -x :Spark-Core:createMinecraftArtifacts -x :BallisticsFramework:createMinecraftArtifacts`。
 - 改链 JSON 或着色器后要让链**重新加载**：链在进入世界时懒加载一次、退出世界才释放，资源重载不会重建它。
+- 改**程序** JSON（`shaders/program/*.json`）里的数组声明后必须重启客户端：数组 `count` 在链加载期与 Java 数组长度比对，不一致会直接拒绝本链生效（日志里有一条 `count 与 Java 数组长度不一致`）；只改数值不重启不算生效。
+- 火光参数走内容包与网络：`common/mech/explosion/ExplosionParams` 的线格式变化要求对端同版本（registrar `sync:2.2.0`，`light.glow` 与 `light.glare` 各占一个 float），因此改这些字段时客户端与服务端必须同时更新。枪口火光参数不走网络：两端各自加载同一份弹种数据、客户端按本机数据推导，改 `visual.muzzle_flash` 不需要对端同版本。
 - **光影会话与无光影会话的渲染状态不同**（深度写掩码），深度相关改动两个都要测；`run/config/iris.properties` 会滞后于游戏内开关，判断当前状态要读运行期值。
 
 ## 反模式
 
 - 在 `RenderLevelLastEvent` 直读 `minecraft:main:depth`。
-- 把任一 `capture*`（取深度快照）排在曳光光照 `render()` 之后——那一帧的快照已经是 pass 清过的深度。
+- 把任一 `capture*`（取深度快照）排在屏幕空间光照 `render()` 之后——那一帧的快照已经是 pass 清过的深度。
 - 拿某一时刻读到的 `depthMask` 推断另一时刻的清除是否生效。
 - 用与主目标格式不一致的目标接深度 blit。
 - 在诊断代码里不做状态还原，或让它每帧重复执行。
@@ -84,6 +114,8 @@
 
 ## 参考文件
 
+- `docs/plan/进行中/渲染-屏幕空间光照通用化设计.md` — 通用光照通路的设计：提交契约、容量与优先级、诊断、爆炸火光与枪口火光、车灯的分期（P1、P2 与枪口火光已落地，P3–P5 未实现）
+- `docs/plan/计划中/渲染-屏幕空间遮挡S3设计.md` — 表面项的逐像素遮挡设计（`P→C` 步进、`raw` 深度仿射插值、两端排除区、成本口径与失败模式），未实现
 - `docs/plan/计划中/武器系统-投射物曳光光照设计.md` — 曳光光照的完整设计（S1/S2 落地形态与实测待办见 §十五）、折射的深度快照、链次序不变量与 F1 的落地/实测记录（§5.1、§5.2、§6.7、§七）
 - `docs/plan/已实现/武器系统-爆炸波前视觉设计.md` — 屏幕空间折射的完整设计（几何、剖面、色散、深度的获取与比对）
 - `client/fbo/OffscreenFbo.java` — 深度副本与离屏目标的既有写法

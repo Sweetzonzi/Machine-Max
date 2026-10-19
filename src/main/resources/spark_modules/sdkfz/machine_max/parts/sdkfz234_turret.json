@@ -1,5 +1,8 @@
 {
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_turret.png",
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "sdkfz234_2": {
       "model": "machine_max:sdkfz234_2.geo",
@@ -19,7 +22,7 @@
             "AllGun",
             "AllGunShield"
           ],
-          "durability": 1000,
+          "durability": 130,
           "mass": 1000,
           "mass_center": "turret_mass_center",
           "projected_area": [
@@ -44,7 +47,7 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 10
             },
             "TurretBackTopHitBox": {
               "id": "part",
@@ -194,7 +197,7 @@
         "sub_part.machine_max.barrel": {
           "start_bone": "AllGun",
           "end_bones": [],
-          "durability": 200,
+          "durability": 15,
           "mass": 100,
           "mass_center": "gun_mass_center",
           "projected_area": [
@@ -237,6 +240,7 @@
         "sub_part.machine_max.gun_shield": {
           "start_bone": "AllGunShield",
           "end_bones": [],
+          "durability": 25,
           "mass": 200,
           "mass_center": "gun_shield_mass_center",
           "projected_area": [
@@ -248,7 +252,8 @@
             "GunShieldHitBox": {
               "id": "part",
               "type": "box",
-              "material": "machine_max:rha"
+              "material": "machine_max:rha",
+              "thickness": 30
             }
           },
           "connectors": {

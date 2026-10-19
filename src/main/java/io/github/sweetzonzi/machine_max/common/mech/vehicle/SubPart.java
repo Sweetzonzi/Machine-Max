@@ -40,8 +40,10 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
 import net.minecraft.world.phys.Vec3;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.connector.ConnectorImpactEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
@@ -87,6 +89,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     //渲染与交互
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
+    /** 所属履带（可空）。装配接线写入；销毁 / 摩擦 / 伤害三条路径共用这一个查询入口。 */
+    @Nullable
+    public volatile TrackLink trackLink;
     //游戏机制
     public final Part part;
     public String name;
@@ -176,6 +181,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void destroy() {
         collisionHandler.effectManager.stopAll();
+        // 必须在刚体移出世界之前通知履带摘约束
+        TrackLink track = this.trackLink;
+        if (track != null) track.onMemberDestroyed(this);
         super.destroy();
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
@@ -440,9 +448,39 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     // ==================== BallisticsFramework 协议穿甲管线 ====================
 
+    /**
+     * 返回命中箱的等效护甲厚度（mm RHA），已计入耐久衰减与入射角。
+     * <p>
+     * 入射角只对启用了 {@code angle_effect} 的材质生效，等效厚度为
+     * {@code 垂直厚度 / |cosθ|}；缺少命中几何（速度或法线为零）时按垂直入射处理。
+     * <p>
+     * 上下文中的 {@link BFDamageContext#penetration()} 是入射前的有效穿深，
+     * 角度修正全部落在护甲侧——伤害来源不应预先按角度折减穿深，否则会对启用
+     * 角度效应的材质重复计入。
+     */
     @Override
     public float getRHA(BFDamageContext ctx) {
-        return findHitBox(ctx).getRHA(this);
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            var armor = track.attr().armor();
+            float durabilityRatio = track.maxDurability() > 0f
+                    ? Math.clamp(track.durability() / track.maxDurability(), 0f, 1f)
+                    : 1f;
+            float vertical = armor.decay_rha() + (armor.rha() - armor.decay_rha())
+                    * (float) Math.pow(durabilityRatio, armor.decay_power());
+            if (!armor.angleEffect()) return vertical;
+            return ArmorUtil.getEquivalentArmor(vertical,
+                    ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
+        }
+        HitBox hitBox = findHitBox(ctx);
+        float verticalRha = hitBox.getRHA(this);
+        if (!hitBox.hasAngleEffect()) return verticalRha;
+        return ArmorUtil.getEquivalentArmor(verticalRha,
+                ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
+    }
+
+    private static boolean hasLiveTrack(@Nullable TrackLink track) {
+        return track != null && !track.isDisposed() && !track.isBroken();
     }
 
     @Override
@@ -450,8 +488,20 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         return ArmorLevel.fromRha(getRHA(ctx));
     }
 
+    /**
+     * 应用命中框的穿深修正（{@code penetration_modifiers}）。
+     * <p>
+     * 这是全流程中施加该修正的唯一位置：上下文里的 {@link BFDamageContext#penetration()}
+     * 必须是未经护甲修正的原始穿深，构造上下文的调用方不要预先调用
+     * {@link HitBox#modifyPiercing}，否则修正会被乘两次。
+     * </p>
+     */
     @Override
     public float modifyPenetration(BFDamageContext ctx) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            return track.attr().armor().piercingModifiers().apply(ctx.source(), ctx.penetration());
+        }
         HitBox hitBox = findHitBox(ctx);
         return hitBox.modifyPiercing(ctx.source(), ctx.penetration());
     }
@@ -473,11 +523,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public PenetrationResult resolvePenetration(BFDamageContext ctx) {
-        // 计算入射角（与法线夹角，度）
-        Vec3 normal = ctx.hitNormal();
-        Vec3 velocity = ctx.hitVelocity();
-        double cosTheta = Math.abs(normal.normalize().dot(velocity.normalize()));
-        float impactAngleDeg = (float) Math.toDegrees(Math.acos(cosTheta));
+        // 计算入射角（与法线夹角，度）；缺少弹道信息时按垂直入射处理
+        float impactAngleDeg = (float) Math.toDegrees(
+                ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
 
         // 从扩展容器读取口径（mm），若未写入则回退到0（无碾压保护）
         float caliber = ctx.extensions().get(BFDamageExtensions.CALIBER);
@@ -505,6 +553,24 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public float calculateFinalDamage(BFDamageContext ctx, PenetrationResult result) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            var armor = track.attr().armor();
+            if (result == PenetrationResult.PENETRATED) {
+                float dmg = armor.damageModifiers().apply(ctx.source(), ctx.baseDamage());
+                dmg = Math.max(0f, dmg - armor.dmg_resist());
+                return Math.max(0f, dmg * armor.dmg_mult());
+            }
+            if (armor.unpen_power() > 0f) {
+                float rha = getRHA(ctx);
+                if (rha > 0f) {
+                    float ratio = Math.clamp(modifyPenetration(ctx) / rha, 0f, 1f);
+                    float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, armor.unpen_power());
+                    return armor.damageModifiers().apply(ctx.source(), unpenDmg);
+                }
+            }
+            return 0f;
+        }
         HitBox hitBox = findHitBox(ctx);
         if (result == PenetrationResult.PENETRATED) {
             return hitBox.modifyDamage(ctx.source(), ctx.baseDamage());
@@ -512,7 +578,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (hitBox.hasUnpenDamage()) {
             float rha = getRHA(ctx);
             if (rha > 0) {
-                float ratio = Math.clamp(ctx.penetration() / rha, 0f, 1f);
+                float ratio = Math.clamp(modifyPenetration(ctx) / rha, 0f, 1f);
                 float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnpenPower());
                 return hitBox.modifyDamage(ctx.source(), unpenDmg);
             }
@@ -538,6 +604,18 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (event.isCanceled()) return false;
         ctx = event.getCtx();
         amount = event.getDamageAmount(); // 以事件最终结果为准
+        // 履带存活期间由履带装甲层吸收伤害：扣履带耐久，跳过 SubPart 自身耐久 / HitBox 子系统伤害
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            SoundEvent trackHit = isArmorPenetrated(ctx)
+                    ? track.attr().sounds().hitPen()
+                    : track.attr().sounds().hitUnPen();
+            Vector3f hitPos = getPosition();
+            level.playSound(null, hitPos.x, hitPos.y, hitPos.z,
+                    trackHit, SoundSource.NEUTRAL, 1f, 1f);
+            track.damage(amount);
+            return true;
+        }
         Vec3 sourcePos = ctx.hitPoint();
         HitBox hitBox = findHitBox(ctx);
         // 击退动量 — 捕获 ctx，延迟到物理任务中决定用 IMPULSE 还是回退公式
@@ -569,11 +647,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                     contactPoint.subtract(this.body.getPhysicsLocation(null)));
             return null;
         });
-        // 连接点冲击分配
-        float impactDamage = hitBox.modifyImpact(source, amount);
-        if (impactDamage > 0) {
-            distributeDamageImpactToConnectors(impactDamage, PhysicsHelperKt.toBVector3f(sourcePos));
-        }
         // 累积伤害
         accumulateDamage(amount, ctx);
         // 音效与粒子
@@ -593,6 +666,34 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             }
         });
         return true;
+    }
+
+    /**
+     * 命中后效：把冲击分配到连接点。
+     * <p>
+     * 冲击与伤害结算解耦——输入是上下文里的<b>穿甲前原始伤害</b>
+     * （{@link BFDamageContext#baseDamage()}），而不是 {@link #hurt} 收到的最终伤害，
+     * 因此未击穿与跳弹的命中同样会冲击结构。伤害被子系统拦截或被
+     * {@code SubPartDamageEvent.Pre} 取消，都不影响这条链路；要阻止某次命中扰动结构，
+     * 取消 {@link ConnectorImpactEvent.Pre}。完整性扣减与击落判定仍由连接点在主线程
+     * {@code mcTick} 中完成。
+     * </p>
+     * <p><b>调用线程：</b>命中发生线程（投射物命中为物理线程），与 {@link #hurt} 相同。</p>
+     */
+    @Override
+    public void afterHurt(BFDamageContext ctx, PenetrationResult result, float finalDamage) {
+        if (level.isClientSide()) return;
+        HitBox hitBox = findHitBox(ctx);
+        // findHitBox 声明 @NotNull，但无命中框时 findStrongestHitBox 返回 null，守卫必须保留
+        if (hitBox == null) return;
+        float impact = hitBox.modifyImpact(ctx.source(), ctx.baseDamage());
+        if (impact <= 0f) return;
+        ConnectorImpactEvent.Pre event = NeoForge.EVENT_BUS.post(
+                new ConnectorImpactEvent.Pre(this, ctx, hitBox, impact));
+        if (event.isCanceled()) return;
+        Map<AbstractConnector, Float> distribution = distributeDamageImpactToConnectors(
+                impact, PhysicsHelperKt.toBVector3f(ctx.hitPoint()));
+        NeoForge.EVENT_BUS.post(new ConnectorImpactEvent.Post(this, ctx, hitBox, impact, distribution));
     }
 
     @Override
@@ -635,15 +736,16 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>根据伤害和各连接点的距离，施加冲击力至各个连接点</p>
-     * <p>Distributes the impact to each connector based on the damage and distance to each connector</p>
+     * <p>根据冲击和各连接点的距离，把冲击分配到各个连接点</p>
+     * <p>Distributes the impact to each connector based on the distance to each connector</p>
      *
-     * @param impact      冲击
-     * @param impactPoint 冲击点
+     * @param impact      本次命中的总冲击量
+     * @param impactPoint 冲击点（世界坐标）
+     * @return 连接点 → 分配到的冲击量；没有可参与分配的连接点时为空 Map
      */
-    protected void distributeDamageImpactToConnectors(float impact, Vector3f impactPoint) {
-        // 累积冲击效果用于削减连接点结构完整性
-        Map<AbstractConnector, Float> impactWeights = new HashMap<>();
+    protected Map<AbstractConnector, Float> distributeDamageImpactToConnectors(float impact, Vector3f impactPoint) {
+        // 先按距离收集权重，归一化后就地改写为分配量，避免为 Post 事件再复制一份 Map
+        Map<AbstractConnector, Float> distribution = new HashMap<>();
         float totalImpactWeight = 0;
         // 可调节参数
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
@@ -655,14 +757,17 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
             float weight = 1.0f / (float) Math.pow(distance, DISTANCE_EXPONENT);
-            impactWeights.put(connector, weight);
+            distribution.put(connector, weight);
             totalImpactWeight += weight;
         }
+        if (totalImpactWeight <= 0f) return Map.of();
         // 分配冲击伤害
-        for (Map.Entry<AbstractConnector, Float> entry : impactWeights.entrySet()) {
-            float impactFraction = entry.getValue() / totalImpactWeight;
-            entry.getKey().accumulateImpact(impact * impactFraction);
+        for (Map.Entry<AbstractConnector, Float> entry : distribution.entrySet()) {
+            float share = impact * (entry.getValue() / totalImpactWeight);
+            entry.setValue(share);
+            entry.getKey().accumulateImpact(share);
         }
+        return distribution;
     }
 
     /**
@@ -676,6 +781,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
         if (!level.isClientSide) {
+            // 履带成员轮子的维修量优先用于履带耐久；履带不是独立刚体，破坏后由这里恢复
+            TrackLink track = this.trackLink;
+            if (track != null && !track.isDisposed() && amount > 0f
+                    && (track.isBroken() || track.durability() < track.maxDurability())) {
+                track.repair(amount);
+                part.setRenderWireframe(true);
+                return true;
+            }
             part.setRenderWireframe(true); // 尝试维修时重置为线框模式
             // 修理零件
             float repairAmount = 0f;
@@ -939,6 +1052,22 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     public float getWheelRadius(long childShapeId) {
         return attr.getWheelRadius().getOrDefault(childShapeId, 0f);
+    }
+
+    /**
+     * 返回本零件所有轮面中最大的半径。
+     *
+     * <p>一个 SubPart 可以挂多个 wheel shape；履带 GearJoint 的传动比与显示包络线
+     * 都必须使用同一个口径，这里统一取最大值。</p>
+     *
+     * @return 最大轮半径；没有轮面时为 0
+     */
+    public float getMaxWheelRadius() {
+        float max = 0f;
+        for (float radius : attr.getWheelRadius().values()) {
+            if (radius > max) max = radius;
+        }
+        return max;
     }
 
     /**

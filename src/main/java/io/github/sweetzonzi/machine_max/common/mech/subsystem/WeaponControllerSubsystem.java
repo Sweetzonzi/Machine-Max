@@ -11,6 +11,9 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudView;
+import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 
 import lombok.Getter;
@@ -29,7 +32,7 @@ import java.util.*;
  * 通过握手（callback）自动发现并绑定同载具内的 TurretDriver 和 Launcher 子系统。
  */
 @Getter
-public class WeaponControllerSubsystem extends BasicSubsystem {
+public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHost {
 
     public final WeaponControllerSubsystemAttr attr;
 
@@ -966,5 +969,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public Map<String, List<String>> getTargetNames() {
         return new HashMap<>(attr.controlOutputTargets);
+    }
+
+    /**
+     * 武器控制器的按视角布局来自动态属性，因此同一份 {@code definition} 的不同实例
+     * 可以各配各的 HUD。字段缺省时取 {@link HudLayout#EMPTY}，解析结果为空。
+     */
+    @Override
+    @Nullable
+    public HudLayout hudLayoutFor(HudView view) {
+        return IHudHost.resolve(switch (view) {
+            case FIRST -> attr.getFirstHudLayout();
+            case THIRD -> attr.getThirdHudLayout();
+            case SCOPE -> attr.getScopeHudLayout();
+        });
     }
 }

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weapon HUD · Scope · 16:9</title>
+<link rel="stylesheet" href="hud.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body class="preview">
+
+<div class="preview-shell">
+  <div class="stage stage-scope" id="stage">
+    <div class="scope-horizon"></div>
+
+    <!--
+      炮镜：分划（观瞄元素）+ 装填环（武器元素）+ 紧凑弹药行。
+      环是 4 段静态弧，中心留空给分划；不与准星重复绘制。
+    -->
+    <iframe id="scope-reticle" src="./scope_reticle.html?embed=1" title="scope reticle"></iframe>
+    <iframe id="scope-ring" src="./weapon_reload_ring.html?embed=1" title="weapon reload ring"></iframe>
+    <iframe id="scope-ammo" src="./weapon_ammo_scope.html?embed=1" title="weapon ammo"></iframe>
+
+    <div class="scope-vignette"></div>
+    <div class="scope-caption">GUNNER SIGHT · 4 TUBES</div>
+    <div class="mock-note">静态原型 · 背景为示意</div>
+    <div class="stage-label">SCOPE · 16:9</div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+      stage.style.transform = 'scale(' + scale + ')';
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>

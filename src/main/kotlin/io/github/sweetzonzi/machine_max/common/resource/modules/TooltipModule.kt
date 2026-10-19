@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import java.nio.charset.StandardCharsets
 
@@ -28,19 +27,10 @@ class TooltipModule : SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (isClientSide && fromServer) {
-            try{
-                val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName)
-                val string = String(content, StandardCharsets.UTF_8)
-                MMDynamicRes.TOOLTIPS[id] = string
-            } catch (e: Exception){
-                MMDynamicRes.exceptions.add(e)
-                MMDynamicRes.errorFiles.add("[Tooltip]" + id)
-                MMDynamicRes.errorMessages.add(Component.literal(e.message))
-            }
-        }
+        if (!isClientSide || !fromServer) return
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName)
+        MMDynamicRes.TOOLTIPS[id] = String(content, StandardCharsets.UTF_8)
     }
-
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {

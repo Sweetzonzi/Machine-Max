@@ -18,13 +18,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 每 Level 单例的调度器。<b>双端各一份</b>。
  *
  * <p>服务端只做三件事：接收请求、订阅快照就绪事件、按顺序驱动活跃实例；
- * 客户端不建实例、不结算，只维护表现条目。</p>
+ * 客户端不建实例、不结算，只维护表现条目，并通过 {@link #setLightSink} 注入的实现登记屏幕空间火光。</p>
  *
  * <p>推进必须挂在快照刷新之后，即订阅 {@link PhysicsSnapshotReadyEvent}——
  * "事件即一步"，不需要待排队步数计数器，也不需要新鲜度标志。</p>
@@ -33,6 +34,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ExplosionManager {
 
     private static final Map<Level, ExplosionManager> INSTANCES = new ConcurrentHashMap<>();
+
+    /**
+     * 客户端火光登记的注入点。
+     *
+     * <p>本类属于共通代码，专用服务器同样会加载它，因此这里只持有 {@link ExplosionLightSink}：
+     * 直接引用客户端火光状态会让类校验在专用服务器上加载 {@code net.minecraft.client} 下的类而失败。
+     * 默认空实现，由客户端入口 {@code MachineMaxClient} 覆盖。</p>
+     */
+    private static ExplosionLightSink lightSink = (level, origin, params) -> {
+    };
 
     private final Level level;
 
@@ -51,6 +62,15 @@ public final class ExplosionManager {
      */
     public static ExplosionManager get(Level level) {
         return INSTANCES.computeIfAbsent(level, ExplosionManager::new);
+    }
+
+    /**
+     * 注入客户端火光登记实现。只在客户端调用，专用服务器保持默认空实现。
+     *
+     * @param sink 客户端实现
+     */
+    public static void setLightSink(ExplosionLightSink sink) {
+        lightSink = Objects.requireNonNull(sink, "lightSink");
     }
 
     /**
@@ -83,6 +103,19 @@ public final class ExplosionManager {
     /** 客户端：登记一个表现条目（由起爆包处理器调用）。 */
     public void addVisual(BlastFrontVisual visual) {
         visuals.add(visual);
+    }
+
+    /**
+     * 客户端：登记一次爆炸火光（由起爆包处理器调用）。
+     *
+     * <p>共通侧只做转发：本维度的实例把"起爆点 + 火光参数"交给注入的
+     * {@link ExplosionLightSink}。默认实现为空，因此专用服务器与未注入实现的客户端上是空操作。</p>
+     *
+     * @param origin 起爆点
+     * @param params 该次爆炸的参数集，火光参数取 {@link ExplosionParams#light()}
+     */
+    public void spawnLight(Vector3f origin, ExplosionParams params) {
+        lightSink.onDetonate(level, origin, params);
     }
 
     /** 活跃实例的只读视图，供调试与测试；调用方不应持有其中的实例。 */

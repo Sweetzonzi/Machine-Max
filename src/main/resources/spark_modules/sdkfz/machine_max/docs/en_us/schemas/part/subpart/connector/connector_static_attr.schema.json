@@ -22,7 +22,7 @@
     "integrity": {
       "type": "number",
       "minimum": 0,
-      "default": 20.0,
+      "default": 15.0,
       "description": "Basic structural integrity of the part, the part can withstand impact forces not exceeding this value without detaching, impact forces come from damage or joint stress."
     },
     "impact_reduction": {
@@ -41,7 +41,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "default": 0.5,
+      "default": 0.3,
       "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.5 means 50% of the impact will be converted to structural integrity loss."
     },
     "impact_absorption_destroyed": {

@@ -6,7 +6,11 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.element.PartModelElement;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
+import io.github.sweetzonzi.machine_max.client.render.post.ExplosionLightState;
+import io.github.sweetzonzi.machine_max.client.render.post.MuzzleFlashLightState;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -26,6 +30,10 @@ public class MachineMaxClient {
         registerAuiElements();
         // 共通物品类的客户端界面钩子
         PdaItem.setScreenOpener(PdaScreen::open);
+        // 共通起爆流程的客户端火光登记钩子
+        ExplosionManager.setLightSink(ExplosionLightState::onDetonate);
+        // 共通开火流程的客户端枪口火光登记钩子
+        MuzzleFlashLight.setSink(MuzzleFlashLightState::onMuzzleFlash);
         // 配置菜单
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         bus.addListener(MMClientConfig::onChangeConfig);

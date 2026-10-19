@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
@@ -41,6 +42,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.m
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * 发射器子系统。<br>
@@ -158,15 +160,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 本管当前供给者的<b>身份</b>（网络同步）。<br>
-     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，三者都随存档持久化，
-     * 因此同一个值在两端、在重启前后都指同一台机器，可以直接进存档也可以直接跨端传。
+     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，同一会话内两端一致。
      * <p>
-     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）与载入时的存档播种（{@link #loadData}）。
-     * 客户端在 {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
+     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）。客户端在
+     * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
      * （{@link #resolveSyncedSupplier()}），因此两端的指认由服务端单方面决定：
      * 客户端的路由不参与决策，只跟随。
      * <p>
-     * 写入存档还有一个用途：后进玩家在收到载具数据时就能拿到当前指认，不必等服务端下一次改动。
+     * <b>初值来源是补推，不是变化推送：</b>指认是"服务端每 tick 现算、载入后往往不再变化"的值，
+     * 载具在客户端建好那一刻由 {@code SubsystemController.pushAllTo(ServerPlayer)} 补一份全量快照
+     * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}）；此后只有真的换人时才走变化广播。
+     * 本字段因此不进存档。
      */
     private static final EntityDataAccessor<SupplierRef> SUPPLIER_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
@@ -183,6 +187,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 按频道分组的供给者映射。<br>
      * key = 发现频道名（对应 LauncherStaticAttr.ammo_inputs 声明顺序）。<br>
      * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
+     * <p>
+     * 内容是<b>当前拓扑的发现结果</b>，每次结构变化由
+     * {@link #onVehicleStructureChanged()} 清空后由各装弹机重新握手填回，因此不会累积历史残留。
+     * 频道键随首次登记产生，某个频道再也没有供给者时会在下一次结构变化后被移除。
      */
     private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
 
@@ -388,12 +396,32 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
+     * 结构变化：先清空登记表再让各装弹机重新握手。<br>
+     * 登记表是"当前拓扑能发现到的供给者"的缓存，<b>不是</b>历史累积：装弹机只在自己的
+     * {@link AbstractSubsystem#onAttach()} 与结构变化时广播发现，已经不再连到本管的机器不会再来声明，
+     * 不清空就会一直留着——那些机器可能已经跟着拆下来的部件换到了别的载具上。
+     * 那会让两端的集合不一致（服务端逐件组装会留下中间态的残留，客户端只看到终局拓扑），
+     * 并让已失效的供给者继续出现在 HUD 的兜底取数里。
+     * <p>
+     * 清空放在 {@code super} 之前：基类负责重建总线订阅，随后各装弹机重新握手并重新登记；
+     * 期间本管处于"无任何供给者"，路由与 HUD 的读取都在主线程的同一次结构变化之后，不会看到半程状态。
+     */
+    @Override
+    public void onVehicleStructureChanged() {
+        for (List<IAmmoSupplier> channelSuppliers : supplierChannels.values()) {
+            channelSuppliers.clear();
+        }
+        super.onVehicleStructureChanged();
+        supplierChannels.values().removeIf(List::isEmpty);
+    }
+
+    /**
      * 带频道名的供给者注册。<br>
      * 由 Loader 在 handshake 回调中调用。
      * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
      * <p>
-     * 同一台重复握手（结构变化后重新发现）不重复登记。这里不写指认：谁给本管供弹由服务端的
-     * 路由决定，登记只负责让本管知道"有哪些供给者存在"。
+     * 同一台重复握手不重复登记（一次结构变化里可能有多个装弹机广播同一条发现频道）。
+     * 这里不写指认：谁给本管供弹由服务端的路由决定，登记只负责让本管知道"有哪些供给者存在"。
      */
     @Override
     public void addSupplier(IAmmoSupplier supplier, String channelName) {
@@ -542,6 +570,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 type.playFireEffect(getLevel(), this, attr.locator);
             }
             playFireAnimation();
+            playMuzzleFlash(firedTypes.get(0));
         }
 
         // ⑥ 扣除已发射数对应的时间
@@ -861,6 +890,26 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         part.playAnim(animName);
     }
 
+    /**
+     * 客户端：为本 tick 的开火登记一次枪口火光。
+     * <p>
+     * <b>触发粒度：</b>每个 tick 至多一条，与 {@link #playFireAnimation()} 同粒度——同一 tick 内的
+     * 多发落在枪口同一点上，视觉无法区分，逐发登记只会让实际亮度随射速漂移。
+     * <p>
+     * <b>参数来源：</b>半径、颜色、强度与寿命全部由弹种的 {@code visual.muzzle_flash} 与口径在
+     * {@link MuzzleFlashLight#emit} 内部求值，本方法只提供枪口位姿与本 tick 的弹种；火光不在
+     * 服务端结算，也不经过网络。
+     * <p>
+     * <b>失败处理：</b>弹种未启用火光、强度为 0 或口径缺失时，{@code emit} 自行早退，本方法无分支。
+     * <p><b>调用线程：</b>主线程（{@link #onTick()} 客户端分支）。
+     *
+     * @param type 本 tick 发射的弹种（取首发：一 tick 内膛室只装一种弹）
+     */
+    private void playMuzzleFlash(ProjectileType type) {
+        if (!(type instanceof BallisticProjectileType ballistic)) return;
+        MuzzleFlashLight.emit(getLevel(), getMuzzleWorldPosition(), ballistic);
+    }
+
     // ——— 音效管理（仅在客户端 onTick 中调用） ———
 
     /**
@@ -1175,15 +1224,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else {
             chamberedType = null;
         }
-        // 供给者指认随载具数据一起送达（同步值只在变化时推送，所以这里补一次当前值）。
-        // 身份是 Part uuid + SubPart 名 + 子系统名，三者都在数据里持久化，重启后仍指同一台机器。
-        // 客户端解析要等本机握手完成，落空时由 onTick 重试。
-        if (data.hasUUID("supplier_part")) {
-            getSynchedData().set(SUPPLIER_ID, new SupplierRef(
-                    data.getUUID("supplier_part"),
-                    data.getString("supplier_sub_part"),
-                    data.getString("supplier_subsystem")));
-        }
     }
 
     @Override
@@ -1191,12 +1231,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.saveData(data);
         if (chamberedType != null) {
             data.putString("chambered_type", chamberedType.getRegistryKey().toString());
-        }
-        SupplierRef supplierRef = getSynchedData().get(SUPPLIER_ID);
-        if (!supplierRef.isNone()) {
-            data.putUUID("supplier_part", supplierRef.partUuid());
-            data.putString("supplier_sub_part", supplierRef.subPartName());
-            data.putString("supplier_subsystem", supplierRef.subsystemName());
         }
         return data;
     }

@@ -9,7 +9,6 @@
   "min_pitch": -80.0,
   "max_pitch": 80.0,
   "yaw_limit": 360.0,
-  "hud_components": [],
   "tracking_target_inputs": ["radar_track"],
   "discovery_inputs": ["camera_discovery"],
   "allow_cycle": true

@@ -1,16 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import java.nio.charset.StandardCharsets
 
 /**
  * SparkPackModule — 加载 projectiles/ 目录下的投射物定义 JSON 文件。
@@ -44,7 +41,6 @@ class ProjectileModule : SparkPackModule {
     /**
      * 读取并解析单个 JSON 文件。
      * 使用 ProjectileType.CODEC 反序列化，设置 registryKey 后存入全局缓存。
-     * 解析失败时将异常记录到 MMDynamicRes 的错误列表，不中断整体加载。
      */
     override fun read(
         namespace: String,
@@ -55,23 +51,14 @@ class ProjectileModule : SparkPackModule {
         isClientSide: Boolean,
         fromServer: Boolean
     ) {
-        if (fileName.endsWith(".json") && fromServer) {
-            val path = fileName.removeSuffix(".json")
-            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
-            try {
-                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-                val projectileType = ProjectileType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                projectileType.setRegistryKey(id)
-                if (isClientSide)
-                    MMDynamicRes.PROJECTILE_TYPES[id] = projectileType
-                else
-                    MMDynamicRes.SERVER_PROJECTILE_TYPES[id] = projectileType
-            } catch (e: Exception) {
-                MMDynamicRes.exceptions.add(e)
-                MMDynamicRes.errorFiles.add("[Projectile]" + id)
-                MMDynamicRes.errorMessages.add(Component.literal(e.message ?: "Unknown error"))
-            }
-        }
+        if (!fromServer || !fileName.endsWith(".json")) return
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".json"))
+        val projectileType = PackCodec.read(ProjectileType.CODEC, content)
+        projectileType.setRegistryKey(id)
+        if (isClientSide)
+            MMDynamicRes.PROJECTILE_TYPES[id] = projectileType
+        else
+            MMDynamicRes.SERVER_PROJECTILE_TYPES[id] = projectileType
     }
 
     /** 加载完成后打印统计信息 */

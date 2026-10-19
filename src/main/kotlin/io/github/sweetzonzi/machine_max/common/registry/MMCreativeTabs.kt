@@ -33,6 +33,7 @@ object MMCreativeTabs {
                     output.accept(MMItems.CROWBAR_ITEM.get())
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
+                    output.accept(MMItems.TRACK_ITEM.get())
                     output.accept(MMItems.EMPTY_BLUEPRINT.get())
                     output.accept(MMItems.ENDER_GK_RESIN_ITEM.get())
 //                    output.accept(MMItems.ENDER_SCANNER_ITEM.get())

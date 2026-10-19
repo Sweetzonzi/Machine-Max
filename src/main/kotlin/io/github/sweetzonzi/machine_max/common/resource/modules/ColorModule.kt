@@ -1,14 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
-import com.google.gson.JsonParser
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.fml.loading.FMLEnvironment
-import java.nio.charset.StandardCharsets
 
 class ColorModule : SparkPackModule {
 
@@ -28,14 +27,14 @@ class ColorModule : SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (isClientSide && fileName.endsWith(".json") && fromServer) {
-            val path = fileName.removeSuffix(".json")
-            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
-            val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-            MMDynamicRes.COLORS[id] = json
-        }
+        if (!isClientSide || !fromServer || !fileName.endsWith(".json")) return
+        val id = ResourceLocation.tryParse("$namespace:${fileName.removeSuffix(".json")}")
+            ?: SparkPackIssues.error(MMDynamicRes.text(
+                "error.machine_max.invalid_resource_location",
+                "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed."))
+        // 色板不经 codec，只保留原始 JSON 供样式系统按需取值
+        MMDynamicRes.COLORS[id] = PackCodec.parse(content)
     }
-
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {

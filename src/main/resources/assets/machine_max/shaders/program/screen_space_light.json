@@ -1,0 +1,26 @@
+{
+    "vertex": "machine_max:screen_space_light",
+    "fragment": "machine_max:screen_space_light",
+    "attributes": ["Position"],
+    "samplers": [
+        { "name": "DiffuseSampler" },
+        { "name": "MCDepthSampler" }
+    ],
+    "uniforms": [
+        { "name": "FocalPx",         "type": "float",     "count": 1,  "values": [1.0] },
+        { "name": "DepthA",          "type": "float",     "count": 1,  "values": [0.0] },
+        { "name": "DepthB",          "type": "float",     "count": 1,  "values": [1.0] },
+        { "name": "LightCount",      "type": "float",     "count": 1,  "values": [0.0] },
+        { "name": "OcclusionTolRel", "type": "float",     "count": 1,  "values": [0.0] },
+        { "name": "LightView",       "type": "float",     "count": 64, "values": [0.0] },
+        { "name": "LightColor",      "type": "float",     "count": 64, "values": [0.0] },
+        { "name": "LightTol",        "type": "float",     "count": 16, "values": [0.0] },
+        { "name": "LightOcclusion",  "type": "float",     "count": 16, "values": [0.0] },
+        { "name": "LightMinDist",    "type": "float",     "count": 16, "values": [0.5] },
+        { "name": "LightGlow",       "type": "float",     "count": 32, "values": [0.0] },
+        { "name": "LightGlare",      "type": "float",     "count": 16, "values": [1.0] },
+        { "name": "NormalWeight",    "type": "float",     "count": 1,  "values": [0.5] },
+        { "name": "ProjMat",         "type": "matrix4x4", "count": 16, "values": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
+        { "name": "OutSize",         "type": "float",     "count": 2,  "values": [1, 1] }
+    ]
+}

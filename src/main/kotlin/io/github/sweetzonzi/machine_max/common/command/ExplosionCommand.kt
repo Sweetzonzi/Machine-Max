@@ -5,6 +5,7 @@ import com.jme3.math.Vector3f
 import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.context.CommandContext
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionLightParams
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionParams
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes
@@ -75,7 +76,8 @@ class ExplosionCommand : BaseCommand("explosion", 4) {
             false,
             COMMAND_DETONATION_PARTICLES,
             COMMAND_DETONATION_PARTICLE_SCALE,
-            MMDamageTypes.BLAST
+            MMDamageTypes.BLAST,
+            ExplosionLightParams.DEFAULT
         )
         val origin = Vector3f(player.x.toFloat(), player.y.toFloat() + 1f, player.z.toFloat())
         val seed = level.random.nextLong()

@@ -1,5 +1,8 @@
 {
   "icon": "machine_max:textures/icon/k17/k17_turret.png",
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:k17.geo",
     "textures": "machine_max:textures/part/k17/k17.png",
@@ -12,6 +15,7 @@
       "sub_part.machine_max.main": {
         "start_bone": "Turret",
         "end_bones": [],
+        "durability": 235,
         "mass": 2000,
         "projected_area": [
           -1,
@@ -22,17 +26,20 @@
           "TurretHitBox": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:rha"
+            "material": "machine_max:k17_composite_armor",
+            "thickness": 30
           },
           "GunnerOpticsHitBox": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:structural_steel"
+            "material": "machine_max:structural_steel",
+            "thickness": 5
           },
           "CommanderOpticsHitBox": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:structural_steel"
+            "material": "machine_max:structural_steel",
+            "thickness": 5
           }
         },
         "connectors": {
@@ -202,6 +209,7 @@
       "sub_part.machine_max.gun": {
         "start_bone": "2A42_All",
         "end_bones": [],
+        "durability": 30,
         "mass": 250,
         "projected_area": [
           -1,
@@ -212,7 +220,8 @@
           "2A42HitBox": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:structural_steel"
+            "material": "machine_max:structural_steel",
+            "thickness": 15
           }
         },
         "connectors": {
@@ -240,6 +249,7 @@
       "sub_part.machine_max.left_atgm": {
         "start_bone": "ATGM_Left",
         "end_bones": [],
+        "durability": 15,
         "mass": 125,
         "projected_area": [
           -1,
@@ -250,7 +260,8 @@
           "LeftAtgmArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:rha"
+            "material": "machine_max:rha",
+            "thickness": 3
           }
         },
         "connectors": {
@@ -277,6 +288,7 @@
       "sub_part.machine_max.right_atgm": {
         "start_bone": "ATGM_Right",
         "end_bones": [],
+        "durability": 15,
         "mass": 125,
         "projected_area": [
           -1,
@@ -287,7 +299,8 @@
           "RightAtgmArmor": {
             "id": "part",
             "type": "box",
-            "material": "machine_max:rha"
+            "material": "machine_max:rha",
+            "thickness": 3
           }
         },
         "connectors": {

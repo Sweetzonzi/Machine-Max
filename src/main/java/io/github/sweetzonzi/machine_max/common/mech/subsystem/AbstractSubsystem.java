@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 @Getter
 abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender, SyncedDataHolder {
@@ -291,6 +292,27 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             if (list != null) {
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new SubsystemSyncPayload(getSubPart().getId(), name, list));
             }
+        }
+    }
+
+    /**
+     * 只读全量快照：按访问器声明顺序遍历本子系统全部同步值，<b>不触碰任何脏标记</b>。
+     * <p>
+     * 与 {@link #syncToClient()} 的分工：那条路是"变化广播"，只在值真的变过时发得出去，
+     * 而且是发给维度内所有玩家；本方法只取值、不发包、不改状态，供
+     * {@link SubsystemController#pushAllTo(ServerPlayer)} 给单个玩家补一份权威初值。
+     * <p>
+     * 两者都不写 {@code DataItem} 的脏标记与全局脏门：补推之后，该值若本来就是脏的，
+     * 仍会按原节奏经变化广播发给所有人。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     *
+     * @param consumer 逐个接收同步值的消费者，通常把值攒成列表
+     */
+    public void forEachSyncedValue(Consumer<SynchedEntityData.DataValue<?>> consumer) {
+        for (SynchedEntityData.DataItem<?> item : getSynchedData().itemsById) {
+            // 槽位 0 恒为空：defineId 从 1 开始分配
+            if (item != null) consumer.accept(item.value());
         }
     }
 

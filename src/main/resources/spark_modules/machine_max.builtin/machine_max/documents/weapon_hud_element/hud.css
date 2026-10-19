@@ -1,0 +1,576 @@
+/* ============================================================
+   Machine-Max — Weapon HUD element prototypes
+   ------------------------------------------------------------
+   Browser-only style sheet. Each HUD element is an independent
+   HTML document; this sheet defines only the element itself.
+   Screen placement belongs to the composition previews.
+
+   Palette: one accent (cyan), one warning (amber), one failure
+   (red). Belt/ammo types never get their own colour; the belt
+   label is the identifier.
+   ============================================================ */
+
+:root {
+    --hud-bg: #05090c;
+    --hud-text: #effdff;
+    --hud-dim: #a3c7d0;
+    --hud-faint: #65828b;
+    --hud-line: #1b3037;
+    --hud-accent: #74e6ff;
+    --hud-warn: #ffb020;
+    --hud-bad: #ff4f5f;
+    --hud-font: ui-monospace, "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    background: transparent;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--hud-bg);
+    color: var(--hud-text);
+    font-family: var(--hud-font);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Iframe embedding: the composition preview supplies the scene.
+   The element sits at the iframe's top-left so the stage can place
+   the iframe box without a hidden centering offset. */
+body.embed {
+    display: block;
+    min-height: 0;
+    height: auto;
+    background: transparent;
+}
+
+/* Gallery-only centering; the composition previews never use it. */
+body.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.el {
+    position: relative;
+    color: var(--hud-text);
+    font-family: var(--hud-font);
+    font-variant-numeric: tabular-nums;
+    /* The composition previews place these elements on a game-like scene. */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 8px rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------
+   weapon_identity
+   ------------------------------------------------------------ */
+
+.el-identity {
+    width: 360px;
+    padding-left: 12px;
+    border-left: 2px solid var(--hud-accent);
+}
+
+.id-name {
+    font-size: 21px;
+    line-height: 1.15;
+    letter-spacing: 1.5px;
+    color: var(--hud-text);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.55);
+}
+
+/* ------------------------------------------------------------
+   weapon_ammo — current belt label, count/capacity, reload state
+   ------------------------------------------------------------ */
+
+.el-ammo {
+    width: 280px;
+    padding: 8px 10px 8px 10px;
+    background: linear-gradient(90deg, rgba(3, 10, 14, 0.18), rgba(3, 10, 14, 0.64));
+}
+
+.ammo-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 1.4px;
+    color: var(--hud-dim);
+}
+
+.ammo-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ammo-state {
+    flex: none;
+    color: var(--hud-warn);
+}
+
+.ammo-num {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 2px 0 6px;
+    line-height: 0.85;
+}
+
+.ammo-num b {
+    font-size: 76px;
+    font-weight: 700;
+    letter-spacing: -4px;
+    color: var(--hud-text);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 20px rgba(116, 230, 255, 0.22);
+}
+
+.ammo-num span {
+    font-size: 20px;
+    letter-spacing: 0;
+    color: var(--hud-dim);
+}
+
+.reload-track {
+    position: relative;
+    height: 4px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.reload-track i {
+    display: block;
+    height: 100%;
+    background: var(--hud-warn);
+    box-shadow: 0 0 10px rgba(255, 176, 32, 0.55);
+}
+
+.reload-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 1.8px;
+    color: var(--hud-dim);
+}
+
+.reload-line b {
+    font-weight: 500;
+    color: var(--hud-warn);
+}
+
+.el-ammo.is-empty .ammo-num b,
+.el-ammo.is-empty .ammo-num span {
+    color: var(--hud-bad);
+}
+
+.el-ammo.is-empty .ammo-state,
+.el-ammo.is-empty .reload-line b {
+    color: var(--hud-bad);
+}
+
+.el-ammo.is-empty .reload-track i {
+    background: var(--hud-bad);
+    box-shadow: 0 0 10px rgba(255, 79, 95, 0.55);
+}
+
+/* ------------------------------------------------------------
+   weapon_belts — belt labels and selected state
+   ------------------------------------------------------------ */
+
+.el-belts {
+    width: 280px;
+}
+
+.belt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.belt {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px;
+    border-left: 2px solid transparent;
+    background: rgba(3, 10, 14, 0.32);
+    color: var(--hud-dim);
+}
+
+.belt-no {
+    flex: none;
+    width: 18px;
+    font-size: 9px;
+    color: var(--hud-faint);
+}
+
+.belt-name {
+    flex: 1;
+    overflow: hidden;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.belt-count {
+    flex: none;
+    font-size: 11px;
+    color: var(--hud-dim);
+}
+
+.belt.is-on {
+    border-left-color: var(--hud-accent);
+    background: rgba(3, 10, 14, 0.68);
+    color: var(--hud-text);
+}
+
+.belt.is-on .belt-no {
+    color: var(--hud-accent);
+}
+
+.belt.is-on .belt-count {
+    color: var(--hud-text);
+}
+
+/* ------------------------------------------------------------
+   weapon_tubes — one segment per launcher
+   ------------------------------------------------------------ */
+
+.el-tubes {
+    width: 360px;
+}
+
+.tubes-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--hud-dim);
+}
+
+.tubes-head b {
+    font-weight: 500;
+    color: var(--hud-text);
+}
+
+.tube-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 7px;
+}
+
+.tube {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 5px 5px 4px;
+    border: 1px solid var(--hud-line);
+    background: rgba(3, 10, 14, 0.42);
+}
+
+.tube span {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 9px;
+    line-height: 1;
+    color: var(--hud-dim);
+}
+
+.tube i {
+    display: block;
+    height: 4px;
+    background: var(--hud-accent);
+}
+
+.tube.is-loading {
+    border-color: rgba(255, 176, 32, 0.45);
+}
+
+.tube.is-loading span {
+    color: var(--hud-warn);
+}
+
+.tube.is-loading i {
+    background: var(--hud-warn);
+}
+
+.tube.is-empty {
+    border-color: rgba(255, 79, 95, 0.4);
+}
+
+.tube.is-empty span {
+    color: var(--hud-bad);
+}
+
+.tube.is-empty i {
+    background: var(--hud-bad);
+}
+
+/* ------------------------------------------------------------
+   weapon_ammo_scope — compact ammo row for the sight
+   ------------------------------------------------------------ */
+
+.el-ammo-scope {
+    width: 280px;
+    padding: 7px 10px 7px 10px;
+    background: linear-gradient(90deg, rgba(3, 10, 14, 0.12), rgba(3, 10, 14, 0.62));
+}
+
+.scope-ammo-row {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 1.6px;
+    color: var(--hud-dim);
+}
+
+.scope-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--hud-text);
+}
+
+.scope-count {
+    margin-left: auto;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--hud-text);
+}
+
+.scope-count span {
+    font-size: 11px;
+    color: var(--hud-dim);
+}
+
+.scope-time {
+    flex: none;
+    color: var(--hud-warn);
+}
+
+.scope-bar {
+    height: 3px;
+    margin-top: 6px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.scope-bar i {
+    display: block;
+    height: 100%;
+    background: var(--hud-warn);
+    box-shadow: 0 0 8px rgba(255, 176, 32, 0.5);
+}
+
+/* ------------------------------------------------------------
+   weapon_reload_ring — four static quadrants, one rotating hand
+   per quadrant. The geometry is static; only --p/--i change.
+   ------------------------------------------------------------ */
+
+.el-ring {
+    width: 340px;
+    height: 340px;
+}
+
+.ring-seg {
+    position: absolute;
+    inset: 0;
+    transform: rotate(calc(var(--i) * 90deg));
+}
+
+.ring-track {
+    position: absolute;
+    inset: 24px;
+    border: 2px solid transparent;
+    border-top-color: var(--hud-line);
+    border-right-color: var(--hud-line);
+    border-radius: 50%;
+}
+
+.ring-track.is-ready {
+    border-top-color: var(--hud-accent);
+    border-right-color: var(--hud-accent);
+}
+
+.ring-track.is-loading {
+    border-top-color: var(--hud-warn);
+    border-right-color: var(--hud-warn);
+}
+
+.ring-track.is-empty {
+    border-top-color: var(--hud-bad);
+    border-right-color: var(--hud-bad);
+    opacity: 0.55;
+}
+
+.ring-hand {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    width: 2px;
+    height: 12px;
+    margin-left: -1px;
+    background: var(--hud-accent);
+    transform-origin: 50% 146px;
+    transform: rotate(calc(var(--p) * 90deg));
+}
+
+.ring-hand.is-loading {
+    background: var(--hud-warn);
+}
+
+.ring-hand.is-empty,
+.ring-hand.is-ready {
+    display: none;
+}
+
+/* Small dark cuts at 0/90/180/270 make the four quadrants readable. */
+.ring-gap {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    width: 2px;
+    height: 14px;
+    margin-left: -1px;
+    background: var(--hud-bg);
+    transform-origin: 50% 148px;
+}
+
+.ring-gap.g1 { transform: rotate(90deg); }
+.ring-gap.g2 { transform: rotate(180deg); }
+.ring-gap.g3 { transform: rotate(270deg); }
+
+.ring-status {
+    position: absolute;
+    left: 50%;
+    bottom: 46px;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--hud-dim);
+}
+
+.ring-status b {
+    font-weight: 500;
+    color: var(--hud-text);
+}
+
+.ring-status .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--hud-accent);
+}
+
+/* ------------------------------------------------------------
+   scope_reticle — sight element, not a weapon-controller element
+   ------------------------------------------------------------ */
+
+.el-reticle {
+    width: 340px;
+    height: 340px;
+    color: var(--hud-text);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.85));
+}
+
+.ret-h,
+.ret-v {
+    position: absolute;
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.ret-h {
+    top: 50%;
+    width: 82px;
+    height: 1px;
+}
+
+.ret-h.left {
+    left: calc(50% - 90px);
+}
+
+.ret-h.right {
+    left: calc(50% + 8px);
+}
+
+.ret-v {
+    left: 50%;
+    width: 1px;
+    height: 82px;
+}
+
+.ret-v.top {
+    top: calc(50% - 90px);
+}
+
+.ret-v.bottom {
+    top: calc(50% + 8px);
+}
+
+.ret-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 3px;
+    margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: var(--hud-accent);
+}
+
+.ret-tick {
+    position: absolute;
+    background: currentColor;
+    opacity: 0.45;
+}
+
+.ret-tick.h {
+    top: 50%;
+    width: 7px;
+    height: 1px;
+}
+
+.ret-tick.v {
+    left: 50%;
+    width: 1px;
+    height: 7px;
+}
+
+.ret-tick.h.left-1 { left: calc(50% - 50px); }
+.ret-tick.h.left-2 { left: calc(50% - 80px); }
+.ret-tick.h.right-1 { left: calc(50% + 43px); }
+.ret-tick.h.right-2 { left: calc(50% + 73px); }
+.ret-tick.v.up-1 { top: calc(50% - 50px); }
+.ret-tick.v.up-2 { top: calc(50% - 80px); }
+.ret-tick.v.down-1 { top: calc(50% + 43px); }
+.ret-tick.v.down-2 { top: calc(50% + 73px); }

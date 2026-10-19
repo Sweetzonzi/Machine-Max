@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_ammo_scope</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!-- 独立元素：炮镜用的紧凑弹药行。不含屏幕位置。 -->
+<div class="el el-ammo-scope">
+  <div class="scope-ammo-row">
+    <span class="scope-label">APFSDS</span>
+    <b class="scope-count">24<span>/30</span></b>
+    <span class="scope-time">2.1s</span>
+  </div>
+  <div class="scope-bar"><i style="width:62%"></i></div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

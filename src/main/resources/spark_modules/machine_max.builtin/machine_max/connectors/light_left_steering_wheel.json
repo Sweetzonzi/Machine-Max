@@ -2,9 +2,9 @@
   "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
   "type": "Advanced", //连接点类型, 支持Simple和Advanced
   "direction": "xp", //连接点法线方向, 指向被连接的零件方向, 取值: xp, yp, zp, xn, yn, zn
-  "integrity": 30.0, //(可选, 默认20.0)连接点结构完整度
-  "impact_absorption": 0.15, //(可选, 默认0.2)冲击转化为结构完整性损耗的比例
-  "impact_reduction": 1.0, //(可选, 默认2.0)连接点冲击减免值
+  "integrity": 15.0, //(可选, 默认15.0)连接点结构完整度
+  "impact_absorption": 0.30, //(可选, 默认0.3)冲击转化为结构完整性损耗的比例
+  "impact_reduction": 2.0, //(可选, 默认2.0)连接点冲击减免值
   "impact_multiplier": 1.0, //(可选, 默认1.0)连接点冲击吸收率
   "required_tags": ["machine_max:direction/left"], //连接所需标签
   "joint_attrs": { //Advanced类型专属关节属性

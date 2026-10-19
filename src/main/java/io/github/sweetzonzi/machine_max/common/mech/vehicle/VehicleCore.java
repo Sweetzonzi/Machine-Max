@@ -24,6 +24,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConn
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -31,6 +33,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.TrackLinkSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleStatusSyncPayload;
 import jme3utilities.math.MyMath;
@@ -53,6 +56,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -65,6 +69,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
     public final ConcurrentMap<UUID, Part> partMap = new java.util.concurrent.ConcurrentHashMap<>();
+    /** 履带列表。履带是载具级关系 + 状态对象，没有独立刚体；列表项本身即身份。 */
+    public final CopyOnWriteArrayList<TrackLink> trackLinks = new CopyOnWriteArrayList<>();
     public String name = "Vehicle";//载具名称
     public final Level level;//载具所在世界
     @Setter
@@ -158,6 +164,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             subSystemController.initAllSubsystems();//子系统初始化
+            //履带在部件与连接关系之后重建；GearJoint 等到 onAddToLevel（刚体入世）再建
+            for (TrackLinkData linkData : savedData.trackLinks) {
+                TrackLink link = TrackLink.fromData(this, linkData);
+                if (link != null) trackLinks.add(link);
+            }
             recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);//先按新上限填满，再按保存的比例恢复
             this.setHp(getMaxHp() * savedHpRatio);
             recalculateCameraDistance();
@@ -403,6 +414,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             markDestroyed();
         }
         if (!level.isClientSide()) {
+            for (TrackLink link : new ArrayList<>(trackLinks)) link.serverTick();
             syncStatusToClient();
         }
         tickCount++;
@@ -415,6 +427,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             for (Part part : partMap.values()) {
                 part.onPrePhysicsTick();
             }
+            for (TrackLink link : new ArrayList<>(trackLinks)) link.applyTension();
         }
     }
 
@@ -692,6 +705,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 }
             }
             this.updateTotalMass();
+            refreshTrackLinks();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);
     }
 
@@ -831,6 +845,10 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         if (donorVehicle == this) return;
         if (donorVehicle.level != this.level)
             throw new IllegalArgumentException("不能合并不同维度的载具");
+
+        // 测试阶段不做履带随成员迁移：被吸收载具的履带先解散
+        for (TrackLink link : new ArrayList<>(donorVehicle.trackLinks)) link.dissolve();
+        donorVehicle.trackLinks.clear();
 
         List<Map.Entry<EndpointPair<Part>, Pair<AbstractConnector, SimpleConnector>>> donorEdges = new ArrayList<>();
         for (Pair<AbstractConnector, SimpleConnector> edge : donorVehicle.partNet.edges()) {
@@ -1017,6 +1035,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
         recalculateCameraDistance();
+        refreshTrackLinks();
     }
 
     /**
@@ -1206,6 +1225,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         // 崩溃根因已实测确认为"两运动学体间的关节"（Bullet 不支持），与加入顺序无关。
         // 此处保持先刚体后关节的顺序作为工程惯例：连接器 addToLevel 内部经 submitImmediateTask 保证刚体入世界后再 addJoint
         partMap.values().forEach(Part::addToLevel);
+        trackLinks.forEach(TrackLink::onAddToLevel);
         if (!level.isClientSide()) {
             // 服务端：召唤/加载后立即发起下方地形保活，避免地形异步构建期间载具坠落穿透
             updateVehicleTerrainHold();
@@ -1220,6 +1240,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public void onRemoveFromLevel() {
         releaseVehicleHeldChunks();
+        // 履带约束必须在部件刚体被移出世界 / 销毁之前摘掉
+        for (TrackLink link : new ArrayList<>(trackLinks)) link.dispose();
+        trackLinks.clear();
         subSystemController.destroy();
         for (Part part : partMap.values()) {
             partNet.removeNode(part);
@@ -1228,6 +1251,73 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         partMap.clear();
         ObjectManager.clientVehiclesToAdd.remove(this.uuid);
         ObjectManager.serverVehiclesToAdd.remove(this.uuid);
+    }
+
+    /**
+     * 载具的所有履带持久状态。
+     */
+    public List<TrackLinkData> trackLinkData() {
+        List<TrackLinkData> result = new ArrayList<>(trackLinks.size());
+        for (TrackLink link : trackLinks) {
+            TrackLinkData data = link.toData();
+            if (data != null) result.add(data);
+        }
+        return result;
+    }
+
+    /** 服务端：把履带全量状态同步给维度内客户端。 */
+    public void syncTrackLinks() {
+        if (level.isClientSide()) return;
+        PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                new TrackLinkSyncPayload(uuid, trackLinkData()));
+    }
+
+    /** 客户端：收到履带全量状态后重建运行时对象（不建约束）。 */
+    public void applyTrackLinkData(List<TrackLinkData> data) {
+        if (!level.isClientSide()) return;
+        for (TrackLink link : new ArrayList<>(trackLinks)) link.dispose();
+        trackLinks.clear();
+        for (TrackLinkData linkData : data) {
+            TrackLink link = TrackLink.fromData(this, linkData);
+            if (link != null) trackLinks.add(link);
+        }
+    }
+
+    public void registerTrackLink(TrackLink link) {
+        trackLinks.addIfAbsent(link);
+    }
+
+    public void removeTrackLink(TrackLink link) {
+        trackLinks.remove(link);
+    }
+
+    /**
+     * 服务端：把一次铺设的结果闭合成一条新履带。
+     *
+     * <p>铺设草稿不创建 {@link TrackLink}；只有玩家再次右键起始主动轮时到这里，
+     * 因此半条履带不参与物理、不同步、也不进入存档。履带以列表项存在，不需要名字。</p>
+     *
+     * @param wheels 按铺设顺序排列的负重轮（不含主动轮）；主动轮由 {@code sprocket}
+     *               参数补入成员表首位
+     */
+    @NotNull
+    public TrackLink createTrack(@NotNull SubPart sprocket, @NotNull List<SubPart> wheels) {
+        TrackLink link = TrackLink.assemble(this, sprocket, wheels);
+        registerTrackLink(link);
+        link.onAssembled();
+        return link;
+    }
+
+    /**
+     * 拓扑变化（销毁 / 拆卸 / 分裂）后刷新所有履带。
+     *
+     * <p>用快照迭代：失效履带会在 {@code refreshMembers()} 内部解散并从
+     * {@link #trackLinks} 移除。</p>
+     */
+    public void refreshTrackLinks() {
+        for (TrackLink link : new ArrayList<>(trackLinks)) {
+            link.refreshMembers();
+        }
     }
 
     /**

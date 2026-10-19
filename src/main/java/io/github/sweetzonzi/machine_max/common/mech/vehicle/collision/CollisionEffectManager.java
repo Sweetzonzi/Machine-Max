@@ -530,6 +530,12 @@ public class CollisionEffectManager implements ISoundSpreader {
      */
     @NotNull
     private SoundEvent getFrictionSound(boolean isWheel, BlockState blockState) {
+        if (isWheel) {
+            var track = subPart.trackLink;
+            if (track != null && !track.isDisposed()) {
+                return track.attr().sounds().roll();
+            }
+        }
         return isWheel ? getTireRollSound(blockState) : getBodyScrapeSound(blockState);
     }
 

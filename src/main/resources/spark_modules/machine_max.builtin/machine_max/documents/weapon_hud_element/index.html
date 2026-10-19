@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Machine-Max · Weapon HUD Prototypes</title>
+<link rel="stylesheet" href="hud.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body class="gallery">
+
+<header class="gallery-head">
+  <div>
+    <div class="gallery-title">WEAPON HUD · ELEMENT PROTOTYPES</div>
+    <div class="gallery-sub">独立元素 + 16:9 组合预览 · 动画与状态均为静态示例</div>
+  </div>
+  <nav class="gallery-actions">
+    <a href="./preview_third.html" target="_blank">第三人称组合 · 16:9</a>
+    <a href="./preview_scope.html" target="_blank">炮镜组合 · 16:9</a>
+  </nav>
+</header>
+
+<div class="gallery-note">
+  每个元素都是独立 HTML，可单独打开；组合预览里的位置只属于预览页，不写进元素本身。
+  浏览器建议用本地 HTTP 服务打开（例如在仓库根目录运行 <code>python -m http.server 8000</code>），
+  再访问 <code>/src/main/resources/spark_modules/machine_max.builtin/machine_max/documents/weapon_hud_element/index.html</code>；
+  <code>file://</code> 下 iframe 可能受浏览器限制。
+</div>
+
+<main class="gallery-grid">
+
+  <section class="card">
+    <div class="card-head"><b>weapon_identity</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_identity.html?embed=1&amp;center=1" title="weapon identity" loading="lazy" style="height:80px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_identity.html" target="_blank">单独打开</a>
+      <span>武器身份</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>weapon_ammo</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_ammo.html?embed=1&amp;center=1" title="weapon ammo and reload" loading="lazy" style="height:130px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_ammo.html" target="_blank">单独打开</a>
+      <span>当前弹链量 + 装填</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>weapon_belts</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_belts.html?embed=1&amp;center=1" title="weapon belts" loading="lazy" style="height:130px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_belts.html" target="_blank">单独打开</a>
+      <span>弹链标签 / 选中</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>weapon_tubes</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_tubes.html?embed=1&amp;center=1" title="weapon tubes" loading="lazy" style="height:60px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_tubes.html" target="_blank">单独打开</a>
+      <span>逐管状态 · 4 管示例</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>weapon_ammo_scope</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_ammo_scope.html?embed=1&amp;center=1" title="weapon ammo scope" loading="lazy" style="height:50px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_ammo_scope.html" target="_blank">单独打开</a>
+      <span>炮镜紧凑弹药行</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>weapon_reload_ring</b><span>ELEMENT</span></div>
+    <iframe src="./weapon_reload_ring.html?embed=1&amp;center=1" title="weapon reload ring" loading="lazy" style="height:340px"></iframe>
+    <div class="card-foot">
+      <a href="./weapon_reload_ring.html" target="_blank">单独打开</a>
+      <span>4 段静态弧 + 指针</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><b>scope_reticle</b><span>SIGHT ELEMENT</span></div>
+    <iframe src="./scope_reticle.html?embed=1&amp;center=1" title="scope reticle" loading="lazy" style="height:340px"></iframe>
+    <div class="card-foot">
+      <a href="./scope_reticle.html" target="_blank">单独打开</a>
+      <span>分划 · 非武器控制器元素</span>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

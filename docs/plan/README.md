@@ -35,28 +35,36 @@
 | [武器系统-制导组件实现备忘](已实现/武器系统-制导组件实现备忘.md) | 提交 `c1c0db71`；`GuidanceLaw`、`PurePursuitGuidance`、`AuthorityLimits` 已落地 |
 | [研究台界面-研发分组与蓝图库统一重构计划](已实现/研究台界面-研发分组与蓝图库统一重构计划.md) | 提交 `87615e1e`；研究台树形界面与研发分组已在 AUI 上实现 |
 | [蓝图库-玩家设计保存与取用设计](已实现/蓝图库-玩家设计保存与取用设计.md) | `BlueprintLibraryClient` 与客户端 `saved_blueprints/*.json` 已落地 |
-| [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | `huds/*.json` 由 `HudModule` 载入 `MMDynamicRes.CUSTOM_HUD`，客户端 `CustomHud` 渲染 |
+| [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | 分划行为与炮镜跟随语义已落地；当前的资源形态是 `huds/*.json` 样式 + `hud_layouts/*.json` 布局，由 `HudModule` / `HudLayoutModule` 载入，客户端 `CustomHud` 渲染 |
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
+| [内容包诊断-SparkCore适配实现](已实现/内容包诊断-SparkCore适配实现.md) | Spark-Core `e526385d`（v1.4）；`MMDynamicRes` 只留注册表与索引，14 个模块去 catch、JSON 解码走 `PackCodec`，配方/研发经 `SparkPackIssues.report` 上报，领域层抛 `PackContentException`；构建、`runData`、`runServer` 与坏文件探针已验证 |
 
 ## 进行中
 
 | 文档 | 当前进度 |
 | --- | --- |
+| [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、测试物品的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`link_durability` / `link_length` + 包络推导 N 与最大耐久）、关键事件同步、客户端程序化履带节渲染与 X 角速度相位已落地；履带控制（`TrackControllerSubsystem`）未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 17/17 用例 + 270/270 断言（`prototype/track-envelope-2d/`）；Java `util/geometry/BeltPath2D` 等 21 个 JUnit（含三角形 / 抬起中间轮的上行程二次接触 / 同一轮心两种锚定顺序 / 退化轮序端帽的位姿抖动稳定性）、全量 34 个 JUnit 通过 |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
 | [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | 三个阶段均已落地：`getDisplayLabel()` / `belt_label` / 弹链指针单一载体、内容包语言键与实例 schema、AUI 正式页 `weapon_hud.html` 与 `WeaponHudOverlay` 为唯一在绘制的武器状态 HUD（`ammo_hud` 图层未注册，`AmmoHud` 类保留作回退）。待 `runClient` 进世界按 §7.2 人工验收 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
+| [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.2.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）、光照物理化（线性空间、`1/d²` + 窗、有界合成曲线、逐弹种绝对辐照度）与 S4 朝向响应已落地；实机目视按 §7 由用户完成。P4 车灯球光、P5 锥光与 S3 未实现 |
+| [渲染-屏幕空间光照物理化设计](进行中/渲染-屏幕空间光照物理化设计.md) | 阶段 A–C 与 D1/D2/D3 已落地：`screen_space_light.fsh` 用 `1/d²` + 四窗 + 朝向响应 + 有界合成曲线（线性空间、sRGB 解码在光源表），`LightMinDist[16]` 逐槽上传，13 个弹种与两处代码缺省写入绝对辐照度，法线由邻域深度重建、权重可配置；D2 的空气散射光晕按 §3.6 沿视线解析积分，`LightGlow[32]` 上传阈值半径与倍率，深度快照作遮挡、天空照常受光；D3 的十字星芒按 §3.7 在屏幕空间绘制，`LightGlare[16]` 上传逐来源倍率，臂长与亮度由相机处的 `I/d²` 驱动、不被前景截断；内容字段为 `glow` 与 `glare` 各三处（枪口、曳光、爆炸），爆炸的两者使 `sync` 升到 `2.2.0`。标定值为首轮锚点，实机观感待按 §4.4 复核 |
+| [HUD 样式、布局与元素设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地并实机验收：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；宿主分组 `HudView`/`IHudHost` 覆盖座椅、相机/瞄具与武器控制器；2026-10-18 `runClient` 进世界加载正常，座椅与炮镜 HUD 表现符合预期。V2-b AUI 载体已落地：`AuiHudStyle`（`aui_hud`）、`HudAnchor` 与元素 `anchor`、每元素独立 `Document`、`CustomHud` 按布局顺序手动绘制，待实机验收。V2-a（`hud.*` 上下文、`data-mm-*` 绑定层）、V3（`WeaponHudElement`、`weapon.*`）、V4（玩家覆盖）未实现 |
 
 ## 计划中
 
 | 文档 | 现状 |
 | --- | --- |
-| [履带系统-物理实现设计文档](计划中/履带系统-物理实现设计文档.md) | 草案 v5.4；代码中尚无 `TrackLink` / `TrackAttr` |
+| [履带系统-控制与驱动子系统设计](计划中/履带系统-控制与驱动子系统设计.md) | 设计阶段；代码中尚无 `TrackControllerSubsystem` / `TrackDriveSubsystem`。定义共享控制器基类、多输入履带驱动、主/转向双传动组合、负比值与反馈口径，以及四履带横向分配 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
-| [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差改为按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |
+| [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径（1080p 两盏受光约 2.5% 纹理吞吐）与失败模式清单 |
+| [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |
 | [武器系统-投射物模型渲染设计](计划中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 已能解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放、LOD 距离与投射物动画驱动未实现 |
-| [渲染-屏幕空间光照通用化设计](计划中/渲染-屏幕空间光照通用化设计.md) | 设计待审阅；代码中尚无 `ScreenSpaceLightEffect` / `ScreenSpaceLightBuffer` / `ScreenSpaceLightSource`，现有 `TracerLightEffect` 为曳光专用的一条链 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
-| [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext` |
+| [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext`。通用元素持有 `hud.*` 上下文，武器元素继承并增加 `weapon.*`；每个元素独立取数 |
+| [内容包 AUI 页面加载可行性调查](计划中/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 已落地，待客户端实机验收。客户端本地内容包 `documents/` 直接写 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用；`LOCAL_ONLY`，不参与服务端同步；AUI 自动重载，`onFinish` 再补一次 `HTML.scan()`；`AuiResourceService` 包装器为备选 |
+| [武器系统-武器控制器HUD样式与布局设计](计划中/武器系统-武器控制器HUD样式与布局设计.md) | 设计阶段；代码中尚无 `HudWeaponSnapshot`。定义每控制器快照与 `weapon.*` 词表；座椅当前控制组选中的 WC 全部显示，不区分主/副；控制器的 `scope` 元素绘制分划，相机元素提供基础边框 |
+| [武器系统-武器HUD信息分级与视角形态需求分析](计划中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析；定义 `minimal` / `standard` / `scope` / `full` 四款呈现、武器类型画像、第三人称/炮镜分工与装填环语义；不按主/副角色分组；尚未实现 |
 | [碰撞系统-方块碰撞伤害模型分析](计划中/碰撞系统-方块碰撞伤害模型分析.md) | 分析提案：以接触冲量重构接触能量与伤害门槛，尚未实现 |
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
@@ -65,7 +73,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `docs/AUI性能边界.md` | AUI 框架能力与性能调研报告，不是计划或设计文档。调研对象为 AUI v1.1.6-dev，而项目现依赖 1.2.7，结论需复核（§8.5 的 #17、#18 两条已按 1.2.7 源码复核） |
+| `docs/AUI性能边界.md` | AUI 框架能力与性能调研报告，不是计划或设计文档。调研对象为 AUI v1.1.6-dev，而项目现依赖 1.2.7，结论需复核（§8.5 的 #3、#8、#10 三条在 1.2.7 上不成立：#3 的 Element.querySelector、#8 的 calc()/vw/vh、#10 的 ::before/::after 都已支持；#17、#18 已按 1.2.7 源码复核） |
 | `docs/glossary.md` | 自动生成的术语表 |
 | `docs/wiki/` | 用户向 Wiki 站点，由 `docs/mkdocs.yml` 的 `docs_dir: wiki` 驱动，与本目录无关 |
 

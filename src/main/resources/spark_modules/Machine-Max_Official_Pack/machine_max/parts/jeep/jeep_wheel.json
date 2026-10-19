@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/jeep/jeep_wheel_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 0.5,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0.00,
   "max_stack_size": 2,
   "variants": {
     "left": {
@@ -15,7 +15,7 @@
       "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:jeep", "machine_max:wheel", "machine_max:direction/left"],
       "sub_parts": {
         "sub_part.machine_max.main": {
-          "durability": 250.0,
+          "durability": 80,
           "mass": 45.0,
           "block_collision": "ground",
           "collision_height": 2.5,
@@ -54,7 +54,7 @@
       "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:jeep", "machine_max:wheel", "machine_max:direction/right"],
       "sub_parts": {
         "sub_part.machine_max.main": {
-          "durability": 250.0,
+          "durability": 80,
           "mass": 45.0,
           "block_collision": "ground",
           "collision_height": 2.5,

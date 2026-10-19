@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ExplosionTestItem
+import io.github.sweetzonzi.machine_max.common.item.prop.FlareTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
@@ -16,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
+import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
@@ -38,6 +40,13 @@ object MMItems {
     val PART_ITEM = MachineMax.REGISTER.item {
         id="part"
         factory = { PartItem() }
+    }
+
+    //履带测试物品（写死，不接内容包）
+    @JvmStatic
+    val TRACK_ITEM = MachineMax.REGISTER.item {
+        id="test_track"
+        factory = { TrackItem() }
     }
 
     //装配体物品原型
@@ -143,6 +152,13 @@ object MMItems {
     val EXPLOSION_TEST_ITEM = MachineMax.REGISTER.item{
         id="explosion_test"
         factory = { ExplosionTestItem() }
+    }
+
+    //测试物品：右键沿视线打出一发信号弹（照明弹），用于验收显式光源字段
+    @JvmStatic
+    val FLARE_TEST_ITEM = MachineMax.REGISTER.item{
+        id="flare_test"
+        factory = { FlareTestItem() }
     }
 
     //油漆喷罐，为部件切换贴图

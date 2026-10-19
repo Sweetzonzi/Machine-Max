@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:motorbike_controller",
-  "basic_durability": 100,
+  "basic_durability": 20,
   "min_steering_radius": 3.0,
   "lateral_acceleration": 60.0,
   "max_angle": 15.0,

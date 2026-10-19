@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -11,7 +12,7 @@ import java.util.List;
 
 /**
  * 摄像机子系统静态属性：定义摄像机光学与稳定特性的不可变配置。
- * 内容包括视场角、变焦范围、俯仰/偏航限制、稳定模式、HUD 组件等。
+ * 内容包括视场角、变焦范围、俯仰/偏航限制、稳定模式、炮镜 HUD 布局等。
  */
 @Getter
 public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
@@ -40,8 +41,8 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 偏航角张角限制（度），实际范围 [center - limit/2, center + limit/2] */
     public final float yawLimit;
 
-    /** 摄像机 HUD 组件列表（RL 指向 hud/ 下的 GuiAnimatable 定义） */
-    public final List<ResourceLocation> hudComponents;
+    /** 炮镜视角使用的 HUD 布局；缺失表示该视角不显示 HUD */
+    public final ResourceLocation scopeHudLayout;
 
     /** 跟踪目标的输入频道列表 */
     public final List<String> trackingTargetInputs;
@@ -71,8 +72,8 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     .forGetter(CameraSubsystemStaticAttr::getMaxPitch),
             Codec.FLOAT.optionalFieldOf("yaw_limit", 5.0f)
                     .forGetter(CameraSubsystemStaticAttr::getYawLimit),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("hud_components", List.of())
-                    .forGetter(CameraSubsystemStaticAttr::getHudComponents),
+            ResourceLocation.CODEC.optionalFieldOf("scope_hud_layout", HudLayout.EMPTY)
+                    .forGetter(CameraSubsystemStaticAttr::getScopeHudLayout),
             Codec.STRING.listOf()
                     .optionalFieldOf("tracking_target_inputs", List.of("tracking_target"))
                     .forGetter(CameraSubsystemStaticAttr::getTrackingTargetInputs),
@@ -93,7 +94,7 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float minPitch,
             float maxPitch,
             float yawLimit,
-            List<ResourceLocation> hudComponents,
+            ResourceLocation scopeHudLayout,
             List<String> trackingTargetInputs,
             List<String> discoveryInputs,
             boolean allowCycle
@@ -106,7 +107,7 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.minPitch = minPitch;
         this.maxPitch = maxPitch;
         this.yawLimit = yawLimit;
-        this.hudComponents = hudComponents;
+        this.scopeHudLayout = scopeHudLayout;
         this.trackingTargetInputs = trackingTargetInputs;
         this.discoveryInputs = discoveryInputs;
         this.allowCycle = allowCycle;

@@ -178,7 +178,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                             .hitVelocity(SparkMathKt.toVec3(relVel))
                             .hitPoint(SparkMathKt.toVec3(contactPoint))
                             .hitNormal(SparkMathKt.toVec3(normal))
-                            .penetration(angleCorrectedPenetration(relVel, normal, amount))
+                            .penetration(amount)
                             .build();
                     ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                 }
@@ -257,7 +257,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                                         .hitVelocity(SparkMathKt.toVec3(direction))
                                         .hitPoint(SparkMathKt.toVec3(contactPoint))
                                         .hitNormal(SparkMathKt.toVec3(normal))
-                                        .penetration(angleCorrectedPenetration(direction, normal, amount))
+                                        .penetration(amount)
                                         .build();
                                 ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                             }
@@ -270,25 +270,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
             }
             return false;//未能命中任何部件碰撞箱则不处理伤害
         } else return hurtWithoutRayTest(source, amount);
-    }
-
-    /**
-     * 计算经过入射角效应修正后的穿深值。
-     * <p>
-     * 公式为 {@code penetration = amount * cosθ}，其中 θ 为速度方向与面法线的夹角。
-     * 60° 入射时穿深为伤害的 50%；掠射时钳制到 {@code amount * 0.01f}。
-     *
-     * @param vel    命中速度方向矢量
-     * @param normal 命中面法线
-     * @param amount 原始伤害量
-     * @return 角度修正后的穿深
-     */
-    private static float angleCorrectedPenetration(Vector3f vel, Vector3f normal, float amount) {
-        float velLen = vel.length();
-        float normalLen = normal.length();
-        if (velLen < 1e-6f || normalLen < 1e-6f) return amount;
-        float cosTheta = Math.abs(vel.dot(normal)) / (velLen * normalLen);
-        return amount * Math.max(cosTheta, 0.01f);
     }
 
     /**

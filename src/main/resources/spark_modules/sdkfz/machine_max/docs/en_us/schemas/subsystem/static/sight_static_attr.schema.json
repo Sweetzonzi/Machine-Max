@@ -69,20 +69,18 @@
       "default": 5.0,
       "description": "Yaw angle span limit in degrees, the actual range is [center - limit/2, center + limit/2]."
     },
-    "hud_components": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": [],
-      "description": "List of sight HUD component resource locations, pointing to GuiAnimatable definitions under hud/."
+    "scope_hud_layout": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "炮镜视角使用的 HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示炮镜不显示该布局提供的 HUD。"
     },
     "tracking_target_inputs": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": ["tracking_target"],
+      "default": [
+        "tracking_target"
+      ],
       "description": "List of tracking target input channels."
     },
     "discovery_inputs": {
@@ -90,7 +88,9 @@
       "items": {
         "type": "string"
       },
-      "default": ["camera_discovery"],
+      "default": [
+        "camera_discovery"
+      ],
       "description": "List of sight discovery handshake channels (ordered by priority)."
     },
     "allow_cycle": {
@@ -130,7 +130,9 @@
       "description": "Basic sound configuration for the sight."
     }
   },
-  "required": ["type"],
+  "required": [
+    "type"
+  ],
   "examples": [
     {
       "type": "machine_max:sight",
@@ -138,11 +140,10 @@
       "base_fov": 40.0,
       "base_zoom": 1.0,
       "max_zoom": 5.0,
-      "hud_components": [
-        "machine_max:hud/gunner_crosshair",
-        "machine_max:hud/range_finder"
+      "discovery_inputs": [
+        "gunner_optics"
       ],
-      "discovery_inputs": ["gunner_optics"]
+      "scope_hud_layout": "machine_max:scope_gunner"
     }
   ]
 }

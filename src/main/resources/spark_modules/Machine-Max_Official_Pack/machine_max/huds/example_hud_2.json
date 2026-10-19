@@ -1,13 +1,10 @@
 {
+  "type": "machine_max:model_hud",
   "model": "machine_max:example_hud_2.geo",
   "animation": "machine_max:example_hud_2",
   "texture": "machine_max:textures/hud/example_hud_2.png",
-  "offset": [95, 45, -135], //(可选，默认[0, 0, 0]) 相对屏幕中心的偏移量，透视投影下单位为米，正交投影下单位为像素
-  "rotation": [-25, -30, 0],//(可选，默认[0, 0, 0]) 旋转角度，单位为度
-  "scale": [20, 20, 20],//(可选，默认[1, 1, 1]) 缩放比例
   "color": [255, 255, 255], //(可选，默认白色) RGB颜色
   "alpha": 255, //(可选，默认255) 透明度
-  "perspective": true,//(可选，默认true) 是否采用透视投影渲染
   "texts": {
     "0": {//骨骼与定位器名，要求骨骼和定位器名称一致
       "key": "0",//翻译键，用于翻译文本

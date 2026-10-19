@@ -49,6 +49,8 @@ io.github.sweetzonzi.machine_max/
 │   ├── attachment/                  # VehicleAssemblyAttachment, BlueprintAttachment, ControlPreference ...
 │   ├── registry/ (Java)             # MMDamageTypes, MMMenus, MMTags
 │   └── visual/                      # PartAnimatable, VehicleAnimatable, AnimatableParams,
+│                                    # HudStyle, ModelHudStyle, AuiHudStyle, HudElement,
+│                                    # HudLayout, HudAnchor, HudView, IHudHost,
 │                                    # RenderableBoundingBox, SubPartAnimatable, VisualEffectHelper
 ├── client/                          # # 客户端渲染、输入、GUI — 见 client/AGENTS.md
 │   ├── render/
@@ -120,7 +122,7 @@ io.github.sweetzonzi.machine_max/
 │   │   ├── MMResources.kt          # 资源注册
 │   │   ├── MMSounds.kt             # 音效注册
 │   │   └── MMVisualEffects.kt      # 视觉特效注册
-│   ├── resource/modules/            # 12 个内容包模块（数据驱动加载）
+│   ├── resource/modules/            # 14 个内容包模块（数据驱动加载）
 │   │   ├── PartModule.kt           # 部件模块
 │   │   ├── SubsystemModule.kt      # 子系统模块
 │   │   ├── ConnectorModule.kt      # 连接器模块
@@ -129,7 +131,9 @@ io.github.sweetzonzi.machine_max/
 │   │   ├── MaterialModule.kt       # 材质模块
 │   │   ├── ColorModule.kt          # 颜色模块
 │   │   ├── ControlGroupModule.kt   # 控制组模块
-│   │   ├── HudModule.kt            # HUD 模块
+│   │   ├── HudModule.kt            # HUD 样式模块
+│   │   ├── HudLayoutModule.kt      # HUD 布局模块
+│   │   ├── DocumentModule.kt       # AUI 文档资源模块
 │   │   ├── ProjectileModule.kt     # 投射物模块
 │   │   ├── TemplateModule.kt       # 模板模块
 │   │   └── TooltipModule.kt        # 工具提示模块

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionLightParams;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionParams;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
@@ -85,7 +86,8 @@ public class ExplosionTestItem extends Item {
                 BASE_PENETRATION, BASE_DAMAGE, BASE_IMPULSE,
                 NEAR_RADIUS, MAX_RADIUS, FRONT_SPEED,
                 DESTROY_BLOCKS, DROP_ITEMS, CAUSES_FIRE, PARTICLES, PARTICLE_SCALE,
-                MMDamageTypes.BLAST);   // 伤害类型：本项目爆炸归属
+                MMDamageTypes.BLAST,   // 伤害类型：本项目爆炸归属
+                ExplosionLightParams.DEFAULT);   // 火光：测试物品取缺省值
         long seed = level.random.nextLong();
 
         ExplosionManager.get(level).detonate(

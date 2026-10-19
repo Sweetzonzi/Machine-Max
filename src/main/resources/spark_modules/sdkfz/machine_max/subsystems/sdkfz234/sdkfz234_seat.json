@@ -6,9 +6,7 @@
   "views": {
     "enable_first_person": false,
     "enable_third_person": true,
-    "third_person_hud": [
-      "machine_max:example_hud"
-    ],
+    "third_hud_layout": "machine_max:seat_dashboard",
     "follow_vehicle": false,
     "focus_on_center": true,
     "distance_scale": 1.2,

@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.external;
 
+import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext;
+import cn.solarmoon.spark_core.pack.diagnostic.PackSeverity;
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
@@ -17,16 +19,15 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.A
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.common.visual.HudAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
+import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
@@ -36,7 +37,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +70,8 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, BlueprintData> BLUEPRINTS = new ConcurrentHashMap<>(); // 蓝图数据
     public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
-    public static ConcurrentMap<ResourceLocation, HudAttr> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
+    public static ConcurrentMap<ResourceLocation, HudStyle> HUD_STYLES = new ConcurrentHashMap<>(); // HUD 样式（huds/）
+    public static ConcurrentMap<ResourceLocation, HudLayout> HUD_LAYOUTS = new ConcurrentHashMap<>(); // HUD 布局（hud_layouts/）
     public static ConcurrentMap<ResourceLocation, ControlGroupSet> CONTROL_GROUP_PRESETS = new ConcurrentHashMap<>(); // 控制组预设
 
     // ==================== 客户端制造索引（仅客户端容器） ====================
@@ -135,18 +136,19 @@ public class MMDynamicRes {
     }
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
 
-    public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
-    public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
-    public static List<MutableComponent> errorMessages = new ArrayList<>(); // 读取过程中出现错误的提示信息
-
-    public static void reload() {
-        initResources();
-    }
-
-    public static void initResources() {
-        exceptions.clear();
-        errorFiles.clear();
-        errorMessages.clear();
+    /**
+     * 构造一条可翻译的内容包消息。
+     *
+     * <p>专用服务器不加载语言表，{@code Component.translatable} 在日志里只会输出裸键；
+     * 带 fallback 的版本在服务端日志里输出英文正文，在客户端仍按语言表渲染。</p>
+     *
+     * @param key      语言键，形如 {@code error.machine_max.*}
+     * @param fallback 语言表缺失时使用的英文文本，占位符写法与语言表一致（{@code %1$s}）
+     * @param args     占位符实参
+     * @return 可翻译消息
+     */
+    public static MutableComponent text(String key, String fallback, Object... args) {
+        return Component.translatableWithFallback(key, fallback, args);
     }
 
     // ==================== 制造索引的读取入口 ====================
@@ -208,7 +210,9 @@ public class MMDynamicRes {
         for (RecipeHolder<FabricatingRecipe> holder : recipeManager.getAllRecipesFor(
                 MMResources.getFABRICATION_RECIPE_TYPE().get())) {
             if (holder.id().getPath().startsWith(PartFabricatingRecipe.DIRECTORY_PREFIX)) {
-                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_WRONG_TYPE_DIRECTORY.translated());
+                reportIfServer(serverSide, "recipe", holder.id(), text(
+                        "error.machine_max.recipe.wrong_type_directory",
+                        "Recipes under recipe/part_fabricating/ must use type machine_max:part_fabricating"));
                 continue;
             }
             all.put(holder.id(), holder);
@@ -219,21 +223,29 @@ public class MMDynamicRes {
                 MMResources.getPART_FABRICATION_RECIPE_TYPE().get())) {
             PartFabricatingRecipe recipe = holder.value();
             if (!holder.id().getPath().startsWith(PartFabricatingRecipe.DIRECTORY_PREFIX)) {
-                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_WRONG_DIRECTORY.translated());
+                reportIfServer(serverSide, "recipe", holder.id(), text(
+                        "error.machine_max.recipe.wrong_directory",
+                        "Part recipes must be placed under recipe/part_fabricating/"));
                 continue;
             }
             ResourceLocation partType = PartFabricatingRecipe.partTypeFromRecipeId(holder.id());
             if (!partRegistry.isEmpty() && !partRegistry.containsKey(partType)) {
-                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_UNKNOWN_PART.translated());
+                reportIfServer(serverSide, "recipe", holder.id(), text(
+                        "error.machine_max.recipe.unknown_part",
+                        "The recipe file name does not match any registered part"));
                 continue;
             }
             PartType type = partRegistry.get(partType);
             if (type != null && (recipe.getResultCount() < 1 || recipe.getResultCount() > type.getMaxStackSize())) {
-                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_INVALID_RESULT_COUNT.translated());
+                reportIfServer(serverSide, "recipe", holder.id(), text(
+                        "error.machine_max.recipe.invalid_result_count",
+                        "Result count must be greater than 0 and not exceed the part's stack limit"));
                 continue;
             }
             if (partByPart.containsKey(partType)) {
-                recordIfServer(serverSide, holder.id(), MMLanguageRegistry.ERROR_RECIPE_DUPLICATE_PART.translated());
+                reportIfServer(serverSide, "recipe", holder.id(), text(
+                        "error.machine_max.recipe.duplicate_part",
+                        "A second part recipe exists for the same part"));
                 continue;
             }
             // 注入零件 id 与产物组件；零件缺失时无法取得堆叠上限，按保守值处理
@@ -253,7 +265,7 @@ public class MMDynamicRes {
      * 整体重建指定逻辑侧的研发索引与研发分组依赖索引（主线程）。
      *
      * <p>先收集研发配方，再在全局图上判定可达成性与依赖环，最后在每个组内分层。分组与依赖相关
-     * 的校验项经 {@code recordIfServer} 上报，只有服务端记录。</p>
+     * 的校验项经 {@code reportIfServer} 上报，只有服务端记录。</p>
      *
      * @param recipeManager 数据源
      * @param serverSide    true 表示重建服务端索引
@@ -392,19 +404,26 @@ public class MMDynamicRes {
                 if (component.size() < 2) continue;
                 String path = findCyclePath(component.get(0), new HashSet<>(component), successors);
                 if (path == null) continue;
-                recordIfServer(true, component.get(0),
-                        Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_PREREQUISITE_CYCLE.tag, path));
+                reportIfServer(true, "research", component.get(0), text(
+                        "error.machine_max.research.prerequisite_cycle",
+                        "Prerequisite dependency cycle, the projects on the cycle can never be researched: %1$s",
+                        path));
             }
             for (ResourceLocation id : allIds) {
                 UnreachableResearch info = UNREACHABLE_RESEARCH.get(id);
                 if (info == null) continue;
                 switch (info.cause()) {
-                    case SELF_PREREQUISITE -> recordIfServer(true, id,
-                            MMLanguageRegistry.ERROR_RESEARCH_SELF_PREREQUISITE.translated());
-                    case DOWNSTREAM_OF_UNREACHABLE -> recordIfServer(true, id,
-                            Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_UNREACHABLE_PREREQUISITE.tag, joinIds(info.culprits())));
-                    case DANGLING_PREREQUISITE -> recordIfServer(true, id,
-                            Component.translatable(MMLanguageRegistry.ERROR_RESEARCH_MISSING_PREREQUISITE.tag, joinIds(info.culprits())));
+                    case SELF_PREREQUISITE -> reportIfServer(true, "research", id, text(
+                            "error.machine_max.research.self_prerequisite",
+                            "The project lists itself as a prerequisite, so it can never be researched"));
+                    case DOWNSTREAM_OF_UNREACHABLE -> reportIfServer(true, "research", id, text(
+                            "error.machine_max.research.unreachable_prerequisite",
+                            "Depends on an unreachable research project, so it can never be researched: %1$s",
+                            joinIds(info.culprits())));
+                    case DANGLING_PREREQUISITE -> reportIfServer(true, "research", id, text(
+                            "error.machine_max.research.missing_prerequisite",
+                            "A prerequisite references an unregistered research id, that prerequisite never completes: %1$s",
+                            joinIds(info.culprits())));
                     // 环成员已由所在分量的环路径信息覆盖
                     case ON_CYCLE -> {
                     }
@@ -624,11 +643,19 @@ public class MMDynamicRes {
         return sorted;
     }
 
-    /** 只有服务端记录装载错误，避免客户端重复提示 */
-    private static void recordIfServer(boolean serverSide, ResourceLocation recipeId, Component message) {
+    /**
+     * 上报一条只在服务端记录的内容错误。
+     *
+     * <p>客户端重建索引时传 {@code false}，不产生任何记录，避免与客户端摘要重复。</p>
+     *
+     * @param serverSide true 表示当前正在重建服务端索引
+     * @param moduleId   诊断分组键：配方为 {@code "recipe"}，研发为 {@code "research"}
+     * @param location   配方或研发 id
+     * @param message    消息正文
+     */
+    private static void reportIfServer(boolean serverSide, String moduleId, ResourceLocation location, Component message) {
         if (!serverSide) return;
-        errorFiles.add(recipeId.toString());
-        errorMessages.add(message.copy());
+        SparkPackIssues.report(moduleId, location.toString(), PackSeverity.ERROR, message, null, PackLoadContext.SERVER_LOCAL);
     }
 
     @EventBusSubscriber
@@ -637,7 +664,7 @@ public class MMDynamicRes {
 
         @Override
         protected Set<FabricatingRecipe> prepare(ResourceManager manager, ProfilerFiller profiler) {
-            MMDynamicRes.reload();//异步重新读取资源
+            //内容包文件由 Spark 的加载器读取；配方与研发索引在 apply 阶段重建
             return Set.of();
         }
 
@@ -680,22 +707,6 @@ public class MMDynamicRes {
         GROUP_MEMBERS.clear();
         NODE_DEPTH.clear();
         UNREACHABLE_RESEARCH.clear();
-    }
-
-    public static void sendErrorToPlayer(Player player) {
-        for (String file : errorFiles) {
-            int i = errorFiles.indexOf(file);
-            MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
-            player.sendSystemMessage(Component.translatable(MMLanguageRegistry.ERROR_LOAD.tag, file).withColor(Color.WHITE.getRGB()).append(message));
-        }
-    }
-
-    public static void sendErrorToConsole(MinecraftServer server) {
-        for (String file : errorFiles) {
-            int i = errorFiles.indexOf(file);
-            Component message = MMDynamicRes.errorMessages.get(i);
-            server.sendSystemMessage(Component.translatable(MMLanguageRegistry.ERROR_LOAD.tag, file).append(message).withColor(Color.red.getRGB()));
-        }
     }
 
     /**

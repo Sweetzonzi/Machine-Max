@@ -43,13 +43,14 @@ vehicle/
 │   ├── BlueprintData.java      #   蓝图数据
 │   └── MMDamageExtensions.java #   弹道伤害扩展初始化
 │
-├── event/                      # 事件系统（8文件，~200行）
+├── event/                      # 事件系统（9文件，~250行）
 │   ├── VehicleEvent.java       #   载具生命周期事件基类
 │   ├── VehicleSpiltEvent.java  #   载具分裂事件
-│   └── connector/              #   连接器事件（Attach/Detach/Tick）
+│   └── connector/              #   连接器事件（Attach/Detach/Tick/Impact）
 │   │   ├── ConnectorAttachEvent.java
 │   │   ├── ConnectorDetachEvent.java
 │   │   ├── ConnectorEvent.java
+│   │   ├── ConnectorImpactEvent.java
 │   │   └── ConnectorTickEvent.java
 │   └── subpart/                #   零件事件
 │       ├── SubPartEvent.java

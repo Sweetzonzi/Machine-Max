@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/jeep/jeep_hull_icon.png",
-  "vehicle_durability_rate": 1.0,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:jeep_hull.geo",
     "textures": {
@@ -15,7 +15,7 @@
     "sub_parts": {
       "sub_part.machine_max.main": {
         "end_bones": ["Back_Cover", "Back_Cover_dark"],
-        "durability": 550.0,
+        "durability": 200,
         "mass": 550.0,
         "block_collision": "ground",
         "collision_height": 2.5,
@@ -56,6 +56,7 @@
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator",
             "definition": "machine_max:fixed_down",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
             "signal_targets": {
               "driver_occupied": ["interact.machine_max.left_front_door"],
               "copilot_occupied": ["interact.machine_max.right_front_door"]
@@ -63,35 +64,43 @@
           },
           "connector.machine_max.top_front": {
             "locator": "top_front",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_left_1": {
             "locator": "top_left_1",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_left_2": {
             "locator": "top_left_2",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_left_3": {
             "locator": "top_left_3",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right_1": {
             "locator": "top_right_1",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right_2": {
             "locator": "top_right_2",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.top_right_3": {
             "locator": "top_right_3",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_up",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
           "connector.machine_max.backup_wheel": {
             "locator": "backup_wheel",
-            "definition": "machine_max:fixed_back"
+            "definition": "machine_max:fixed_back",
+            "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           }
         },
         "hydro_priority": 0,

@@ -1,0 +1,37 @@
+{
+  "type": "ballistic",
+  "tags": ["machine_max:ammo/illumination"],
+  "max_lifetime": 20.0,
+  "external": {
+    "mass": 0.9,
+    "gravity_factor": 0.5,
+    "drag_factor": 0.3,
+    "caliber": 50.0,
+    "base_velocity": 21.0,
+    "base_accuracy_mil": 20.0
+  },
+  "terminal": {
+    "base_penetration": 0.0,
+    "base_damage": 0.0,
+    "block_damage_factor": 0.0
+  },
+  "visual": {
+    "tracer_color": [255, 190, 90],
+    "tracer_alpha": 200,
+    "tracer_width": 3.0,
+    "tracer_length": 0.06,
+    "tracer_light_enabled": true,
+    "tracer_light_radius": 40.0,
+    "tracer_light_intensity": 1524,
+    "tracer_light_color": [255, 238, 205],
+    "muzzle_flash": { "intensity": 90.3 }
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "minecraft:entity.firework_rocket.launch",
+        "range": 128.0
+      }
+    }
+  }
+}

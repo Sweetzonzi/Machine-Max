@@ -9,8 +9,12 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import lombok.Getter;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,6 +107,27 @@ public class SubsystemController implements ISignalBus {
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
         rebuildAllEnergyPaths();
         energyGrid.rebuildFrom(allSubsystems);
+    }
+
+    /**
+     * 给单个玩家补发本装配体全部子系统的同步值全量快照。<br>
+     * 用在载具刚在客户端建好之后：那些"载入后不再变化"的值走不到变化广播
+     * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}），只能由这里补一次。
+     * <p>
+     * 每个子系统一个包，载荷格式与变化广播完全相同（{@link SubsystemSyncPayload}）。<b>不改动任何
+     * 同步状态</b>：既不清脏标记，也不强制标脏，因此其他在线玩家不会因此多收包。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     *
+     * @param player 接收方
+     */
+    public void pushAllTo(ServerPlayer player) {
+        for (AbstractSubsystem subsystem : allSubsystems) {
+            List<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
+            subsystem.forEachSyncedValue(values::add);
+            PacketDistributor.sendToPlayer(player,
+                    new SubsystemSyncPayload(subsystem.getSubPart().getId(), subsystem.getName(), values));
+        }
     }
 
     public void rebuildAllEnergyPaths() {

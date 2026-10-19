@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
-import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -30,10 +30,10 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemStaticAttr::getPassengerScale),
             ViewAttr.CODEC.optionalFieldOf("views", new ViewAttr(
                     true,
-                    List.of(),
+                    HudLayout.EMPTY,
                     Vec3.ZERO,
                     true,
-                    List.of(),
+                    HudLayout.EMPTY,
                     new Vec3(0, 0.75, 0),
                     true,
                     true,
@@ -63,7 +63,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.blockDamage = blockDamage;
         //合法性检查
         if (!views.enableFirstPerson() && !views.enableThirdPerson())
-            throw new IllegalArgumentException(MMLanguageRegistry.ERROR_SEAT_SUBSYSTEM_NO_VIEW.tag);
+            throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
         if (views.distanceScale() < 0)
             throw new IllegalArgumentException("error.machine_max.seat_subsystem.invalid_camera_distance");
         this.renderPassenger = renderPassenger;
@@ -98,10 +98,12 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public record ViewAttr(
             boolean enableFirstPerson,
-            List<ResourceLocation> firstPersonHud,
+            /** 第一人称视角使用的 HUD 布局；缺失表示该视角不显示 HUD */
+            ResourceLocation firstHudLayout,
             Vec3 firstPersonOffset,
             boolean enableThirdPerson,
-            List<ResourceLocation> thirdPersonHud,
+            /** 第三人称视角使用的 HUD 布局；缺失表示该视角不显示 HUD */
+            ResourceLocation thirdHudLayout,
             Vec3 thirdPersonOffset,
             boolean followVehicle,
             boolean focusOnCenter,
@@ -128,10 +130,12 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     ) {
         public static final Codec<ViewAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("enable_first_person", true).forGetter(ViewAttr::enableFirstPerson),
-                ResourceLocation.CODEC.listOf().optionalFieldOf("first_person_hud", List.of()).forGetter(ViewAttr::firstPersonHud),
+                ResourceLocation.CODEC.optionalFieldOf("first_hud_layout", HudLayout.EMPTY)
+                        .forGetter(ViewAttr::firstHudLayout),
                 Vec3.CODEC.optionalFieldOf("first_person_offset", Vec3.ZERO).forGetter(ViewAttr::firstPersonOffset),
                 Codec.BOOL.optionalFieldOf("enable_third_person", true).forGetter(ViewAttr::enableThirdPerson),
-                ResourceLocation.CODEC.listOf().optionalFieldOf("third_person_hud", List.of()).forGetter(ViewAttr::thirdPersonHud),
+                ResourceLocation.CODEC.optionalFieldOf("third_hud_layout", HudLayout.EMPTY)
+                        .forGetter(ViewAttr::thirdHudLayout),
                 Vec3.CODEC.optionalFieldOf("third_person_offset", new Vec3(0, 0.75, 0)).forGetter(ViewAttr::thirdPersonOffset),
                 Codec.BOOL.optionalFieldOf("follow_vehicle", true).forGetter(ViewAttr::followVehicle),
                 Codec.BOOL.optionalFieldOf("focus_on_center", true).forGetter(ViewAttr::focusOnCenter),

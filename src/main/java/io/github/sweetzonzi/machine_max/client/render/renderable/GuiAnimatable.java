@@ -12,16 +12,20 @@ import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
 import cn.solarmoon.spark_core.molang.SparkMolangContext;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import com.jme3.math.Transform;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.visual.HudAttr;
+import io.github.sweetzonzi.machine_max.common.visual.HudElement;
+import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
+import io.github.sweetzonzi.machine_max.common.visual.ModelHudStyle;
+import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
-import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -30,6 +34,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -38,9 +43,9 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,35 +54,99 @@ import java.util.Map;
 
 /**
  * GUI 可渲染的 3D 模型 HUD 元素。
- * 支持透视投影和正交投影两种渲染模式。
- * 对应 JSON 定义的 HUD 组件，每个实例持有一个模型和动画控制器。
+ * <p>
+ * 一个实例只对应一份布局条目：样式（模型/动画/纹理/染色/文本槽/裁剪）来自
+ * {@link ModelHudStyle}，投放（位移/旋转/缩放/投影/炮镜行为）来自 {@link HudElement}。
+ * 同一份样式在一个布局里出现多次时，每个条目各自创建一个实例。
+ * <p>
+ * 支持透视投影和正交投影两种渲染模式。V1 的 MoLang 上下文继续使用玩家所坐座椅
+ * 所属 Part 的 {@link cn.solarmoon.spark_core.molang.SparkMolangContext}。
  */
-@Getter
 @OnlyIn(Dist.CLIENT)
-public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, Renderable {
+public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, ITickableRenderable, Renderable {
     private final Minecraft minecraft = Minecraft.getInstance();
-    protected final HudAttr params;// HUD 渲染参数
+    /** 样式资源键，仅用于诊断。 */
+    private final ResourceLocation styleId;
+    private final ModelHudStyle style;
+    private final HudElement element;
+    private final boolean perspective;
+    /** 由布局条目固定下来的投放变换；构造后不再变化。 */
+    private final Transform transform;
     private final ModelController modelController;
     private final AnimController animController;
     private final Map<String, Object> variables = HashMap.newHashMap(1);
     private final SparkMolangContext<IAnimatable<Player>> molangContext = new SparkMolangContext<>(this);
-    private final boolean perspective;//是否采用透视投影
-    private Matrix4f projectionMatrix;
-    private static final Matrix4f VIEW_MATRIX = new Matrix4f().setLookAt(
-            0, 0, 0,  // 摄像机位置 (屏幕前方0单位)
-            0, 0, -0.01f,   // 观察点 (屏幕中心)
-            0, 1, 0    // 上方向
-    );
 
-    public GuiAnimatable(HudAttr attr) {
-        if (attr == null) throw new NullPointerException("HudAttr 不能为空");
-        this.params = attr;
-        this.perspective = attr.perspective;
+    public GuiAnimatable(ResourceLocation styleId, ModelHudStyle style, HudElement element) {
+        if (style == null) throw new NullPointerException("ModelHudStyle 不能为空");
+        if (element == null) throw new NullPointerException("HudElement 不能为空");
+        this.styleId = styleId;
+        this.style = style;
+        this.element = element;
+        this.perspective = element.perspective();
+        Vector3f rot = SparkMathKt.toRadians(element.rotation()).toVector3f();
+        Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
+        this.transform = new Transform(
+                PhysicsHelperKt.toBVector3f(element.offset()),
+                SparkMathKt.toBQuaternion(quaternionf),
+                PhysicsHelperKt.toBVector3f(element.scale())
+        );
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
-        getModelController().setModel(params.modelIndex);
-        getModelController().setTextureLocation(params.texture);
+        getModelController().setModel(style.modelIndex());
+        getModelController().setTextureLocation(style.texture());
         create();
+    }
+
+    public ResourceLocation getStyleId() {
+        return styleId;
+    }
+
+    public ModelHudStyle getStyle() {
+        return style;
+    }
+
+    @Override
+    public Map<String, Object> getVariables() {
+        return variables;
+    }
+
+    public HudElement getElement() {
+        return element;
+    }
+
+    public boolean isPerspective() {
+        return perspective;
+    }
+
+    @Override
+    public void renderGui(GuiGraphics guiGraphics, float partialTick) {
+        render(guiGraphics, 0, 0, partialTick);
+    }
+
+    @Override
+    public void dispose() {
+        ITickableRenderable.super.destroy();
+    }
+
+    public ScopeBehavior scopeBehavior() {
+        return element.scopeBehavior();
+    }
+
+    public boolean ignoreZoom() {
+        return element.ignoreZoom();
+    }
+
+    public Vector3f getOffset(float partialTick) {
+        return SparkMathKt.toVector3f(transform.getTranslation());
+    }
+
+    public Quaternionf getQuaternion(float partialTick) {
+        return SparkMathKt.toQuaternionf(transform.getRotation());
+    }
+
+    public Vector3f getScale(float partialTick) {
+        return SparkMathKt.toVector3f(transform.getScale());
     }
 
     /**
@@ -97,6 +166,9 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     /**
      * 获取 Molang 上下文。如果玩家坐在载具座位上，委派给所属 Part 的上下文，
      * 否则使用自身的上下文。
+     * <p>
+     * V1 只保证座椅所属 Part 上的 {@code local.*} / {@code global.*} 查询等价；
+     * HUD 专用上下文在后续版本接入。
      */
     @Override
     public SparkMolangContext<?> getMolangContext() {
@@ -111,15 +183,16 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     public final void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         MultiBufferSource.BufferSource bufferSource = guiGraphics.bufferSource();
         PoseStack poseStack = guiGraphics.pose();
-        Lighting.setupForEntityInInventory(params.getQuaternion(partialTick));
-        if (params.scissor.enable()) {//开始裁剪
-            int centerX = guiGraphics.guiWidth() / 2 + params.scissor.x();
-            int centerY = guiGraphics.guiHeight() / 2 + params.scissor.y();
+        Lighting.setupForEntityInInventory(getQuaternion(partialTick));
+        HudStyle.ScissorParams scissor = style.scissor();
+        if (scissor.enable()) {//开始裁剪
+            int centerX = guiGraphics.guiWidth() / 2 + scissor.x();
+            int centerY = guiGraphics.guiHeight() / 2 + scissor.y();
             guiGraphics.enableScissor(
-                    centerX - params.scissor.width() / 2,
-                    centerY - params.scissor.height() / 2,
-                    centerX + params.scissor.width() / 2,
-                    centerY + params.scissor.height() / 2
+                    centerX - scissor.width() / 2,
+                    centerY - scissor.height() / 2,
+                    centerX + scissor.width() / 2,
+                    centerY + scissor.height() / 2
             );
         }
         if (perspective) {
@@ -135,7 +208,7 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
             renderContent(poseStack, bufferSource, partialTick);
             poseStack.popPose();
         }
-        if (params.scissor.enable()) guiGraphics.disableScissor();//结束裁剪
+        if (scissor.enable()) guiGraphics.disableScissor();//结束裁剪
         Lighting.setupFor3DItems();
     }
 
@@ -143,7 +216,7 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     public void render(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
         // ITickableRenderable 接口的世界空间渲染方法（不使用投影矩阵设置）
         poseStack.pushPose();
-        Vector3f offset = params.getOffset(partialTick);
+        Vector3f offset = getOffset(partialTick);
         poseStack.translate(offset.x, offset.y, offset.z);
         renderContent(poseStack, bufferSource, partialTick);
         poseStack.popPose();
@@ -154,8 +227,8 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
      */
     public void renderContent(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
         poseStack.pushPose();
-        poseStack.mulPose(params.getQuaternion(partialTick));
-        Vector3f scale = params.getScale(partialTick);
+        poseStack.mulPose(getQuaternion(partialTick));
+        Vector3f scale = getScale(partialTick);
         poseStack.scale(scale.x, scale.y, scale.z);
         renderModel(poseStack, bufferSource, partialTick);
         renderTexts(poseStack, bufferSource, partialTick);
@@ -163,13 +236,13 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     }
 
     protected void applyTransformPerspective(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-        Vector3f offset = params.getOffset(partialTick);
+        Vector3f offset = getOffset(partialTick);
         poseStack.translate(offset.x, -offset.y, offset.z);
     }
 
     protected void applyTransformOrthogonal(PoseStack poseStack, int mouseX, int mouseY, int width, int height, float partialTick) {
         poseStack.translate((float) width / 2, (float) height / 2, 0);
-        Vector3f offset = params.getOffset(partialTick);
+        Vector3f offset = getOffset(partialTick);
         poseStack.translate(offset.x, offset.y, offset.z);
     }
 
@@ -190,7 +263,7 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
                 bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
-                new Color(params.color.getX(), params.color.getY(), params.color.getZ(), params.transparency).getRGB(),
+                style.colorArgb(),
                 partialTick
         );
         poseStack.popPose();
@@ -209,9 +282,9 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
             poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
         }
         //渲染所有文本
-        for (Map.Entry<String, HudAttr.TextParams> entry : params.textAttr.entrySet()) {
+        for (Map.Entry<String, HudStyle.TextParams> entry : style.texts().entrySet()) {
             String locatorName = entry.getKey();
-            HudAttr.TextParams textParams = entry.getValue();
+            HudStyle.TextParams textParams = entry.getValue();
             Matrix4f matrix = model.getPose().getSpaceBoneLocatorMatrix(locatorName, partialTick);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
@@ -249,12 +322,12 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
             Minecraft.getInstance().font.drawInBatch(text,
                     textParams.centered() ? (-Minecraft.getInstance().font.width(text) / 2) : 0,
                     textParams.centered() ? (-Minecraft.getInstance().font.lineHeight / 2) : -Minecraft.getInstance().font.lineHeight,
-                    textParams.getColor(),
+                    textParams.colorArgb(),
                     textParams.shadow(),
                     poseStack.last().pose().scale(textParams.scale().toVector3f()),
                     bufferSource,
                     Font.DisplayMode.NORMAL,
-                    textParams.getBackgroundColor(),
+                    textParams.backgroundColorArgb(),
                     Brightness.FULL_BRIGHT.pack());
             poseStack.popPose();
             poseStack.popPose();
@@ -264,7 +337,7 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
 
     public void animTick() {
         getAnimController().tick();
-        var modelIndexForAnim = new ModelIndex(params.modelIndex.getType(), params.getAnimation());
+        var modelIndexForAnim = new ModelIndex(style.modelIndex().getType(), style.animation());
         var animSet = OAnimationSet.getORIGINS().get(modelIndexForAnim);
         if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
             for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
@@ -308,14 +381,12 @@ public class GuiAnimatable implements IAnimatable<Player>, ITickableRenderable, 
     @NotNull
     @Override
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        if (params.lastTransform == null && params.transform != null)
-            params.lastTransform = params.transform;
-        return SparkMathKt.toMatrix4f(SparkMathKt.lerp(params.lastTransform, params.transform, number.floatValue()).toTransformMatrix());
+        return SparkMathKt.toMatrix4f(transform.toTransformMatrix());
     }
 
     @NotNull
     @Override
     public ModelIndex getDefaultModelIndex() {
-        return params.modelIndex;
+        return style.modelIndex();
     }
 }

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weapon HUD · Third Person · 16:9</title>
+<link rel="stylesheet" href="hud.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body class="preview">
+
+<div class="preview-shell">
+  <div class="stage stage-third" id="stage">
+    <div class="stage-glow"></div>
+    <div class="horizon"></div>
+    <div class="floor-grid"></div>
+    <div class="scene-shade"></div>
+
+    <!-- 第三人称：身份 / 弹链 / 弹药 + 装填 / 逐管状态 -->
+    <iframe id="third-identity" src="./weapon_identity.html?embed=1" title="weapon identity"></iframe>
+    <iframe id="third-belts" src="./weapon_belts.html?embed=1" title="weapon belts"></iframe>
+    <iframe id="third-ammo" src="./weapon_ammo.html?embed=1" title="weapon ammo and reload"></iframe>
+    <iframe id="third-tubes" src="./weapon_tubes.html?embed=1" title="weapon tubes"></iframe>
+
+    <!-- 准星属于原版/座椅 HUD，不属于武器控制器元素，这里只作为场景参考 -->
+    <div class="stage-crosshair">
+      <i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i>
+    </div>
+
+    <div class="mock-note">静态原型 · 背景为示意</div>
+    <div class="stage-label">THIRD PERSON · 16:9</div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const stage = document.getElementById('stage');
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+      stage.style.transform = 'scale(' + scale + ')';
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  })();
+</script>
+</body>
+</html>

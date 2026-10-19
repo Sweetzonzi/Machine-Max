@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weapon_identity</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!-- 独立元素：只渲染主武器名字与左侧装饰线，不包含屏幕位置。 -->
+<div class="el el-identity">
+  <div class="id-name">120mm 主炮</div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

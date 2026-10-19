@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scope_reticle</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body>
+<!--
+  独立元素：炮镜分划（属于观瞄/相机元素，不是武器控制器元素）。
+  这里只做中心参考，不包含测距数字与弹道下坠刻度。
+-->
+<div class="el el-reticle">
+  <div class="ret-h left"></div>
+  <div class="ret-h right"></div>
+  <div class="ret-v top"></div>
+  <div class="ret-v bottom"></div>
+  <div class="ret-tick h left-1"></div>
+  <div class="ret-tick h left-2"></div>
+  <div class="ret-tick h right-1"></div>
+  <div class="ret-tick h right-2"></div>
+  <div class="ret-tick v up-1"></div>
+  <div class="ret-tick v up-2"></div>
+  <div class="ret-tick v down-1"></div>
+  <div class="ret-tick v down-2"></div>
+  <div class="ret-dot"></div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  if (params.has('center')) document.body.classList.add('center');
+</script>
+</body>
+</html>

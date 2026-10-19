@@ -1,0 +1,9 @@
+[
+  {
+    "style": "machine_max:gun_sight_hud",
+    "perspective": false,
+    "scope_behavior": "follow_position",
+    "ignore_zoom": true,
+    "scale": [25, 25, 25]
+  }
+]

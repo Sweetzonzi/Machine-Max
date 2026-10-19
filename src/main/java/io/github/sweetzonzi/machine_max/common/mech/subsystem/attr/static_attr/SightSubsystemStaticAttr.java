@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -35,8 +36,8 @@ public class SightSubsystemStaticAttr extends CameraSubsystemStaticAttr {
                     .forGetter(CameraSubsystemStaticAttr::getMaxPitch),
             Codec.FLOAT.optionalFieldOf("yaw_limit", 5.0f)
                     .forGetter(CameraSubsystemStaticAttr::getYawLimit),
-            ResourceLocation.CODEC.listOf().optionalFieldOf("hud_components", List.of())
-                    .forGetter(CameraSubsystemStaticAttr::getHudComponents),
+            ResourceLocation.CODEC.optionalFieldOf("scope_hud_layout", HudLayout.EMPTY)
+                    .forGetter(CameraSubsystemStaticAttr::getScopeHudLayout),
             Codec.STRING.listOf()
                     .optionalFieldOf("tracking_target_inputs", List.of("tracking_target"))
                     .forGetter(CameraSubsystemStaticAttr::getTrackingTargetInputs),
@@ -57,14 +58,14 @@ public class SightSubsystemStaticAttr extends CameraSubsystemStaticAttr {
             float minPitch,
             float maxPitch,
             float yawLimit,
-            List<ResourceLocation> hudComponents,
+            ResourceLocation scopeHudLayout,
             List<String> trackingTargetInputs,
             List<String> discoveryInputs,
             boolean allowCycle
     ) {
         super(basicAttr, soundAttr, verticalStabilized, horizontalStabilized,
                 baseZoom, maxZoom, minPitch, maxPitch, yawLimit,
-                hudComponents, trackingTargetInputs, discoveryInputs, allowCycle);
+                scopeHudLayout, trackingTargetInputs, discoveryInputs, allowCycle);
     }
 
     @Override

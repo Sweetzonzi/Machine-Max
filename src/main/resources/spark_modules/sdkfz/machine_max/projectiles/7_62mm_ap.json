@@ -18,7 +18,9 @@
   },
   "visual": {
     "tracer_color": [255, 220, 90],
-    "tracer_alpha": 220
+    "tracer_alpha": 220,
+    "tracer_light_intensity": 3.0,
+    "muzzle_flash": { "intensity": 9.9 }
   },
   "sounds": {
     "fire_sounds": {

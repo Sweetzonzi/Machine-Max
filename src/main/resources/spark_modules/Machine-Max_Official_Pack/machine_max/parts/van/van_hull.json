@@ -1,9 +1,9 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/van/van_hull_icon.png",
-  "vehicle_durability_rate": 0.6,
-  "vehicle_damage_rate": 1.0,
-  "vehicle_damage_rate_destroyed": 0.1,
+  "vehicle_durability_rate": 0.50,
+  "vehicle_damage_rate": 1.00,
+  "vehicle_damage_rate_destroyed": 0.10,
   "variants": {
     "model": "machine_max:van.geo",
     "textures": "machine_max:textures/part/van/van.png",
@@ -14,7 +14,7 @@
         "start_bone": "Hull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
         "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
         "mass_center": "hull_mass_center", //  (可选，默认取碰撞体积形心)质心位置locator名称
-        "durability": 650.0,
+        "durability": 250,
         "mass": 300.0,
         "block_collision": "ground",
         "collision_height": 2.5,
@@ -77,10 +77,7 @@
           },
           "connector.machine_max.right_front_door_lock": {
             "locator": "right_front_door_lock_hull",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 10
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_front_door_axis": {
             "locator": "left_front_door_axis_hull",
@@ -91,10 +88,7 @@
           },
           "connector.machine_max.left_front_door_lock": {
             "locator": "left_front_door_lock_hull",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 10
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_back_door_axis": {
             "locator": "right_back_door_axis_hull",
@@ -105,10 +99,7 @@
           },
           "connector.machine_max.right_back_door_lock": {
             "locator": "right_back_door_lock_hull",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 10
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_back_door_axis": {
             "locator": "left_back_door_axis_hull",
@@ -119,10 +110,7 @@
           },
           "connector.machine_max.left_back_door_lock": {
             "locator": "left_back_door_lock_hull",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 10
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.trunk_door_axis": {
             "locator": "back_door_axis_hull",
@@ -130,14 +118,12 @@
           },
           "connector.machine_max.trunk_door_lock": {
             "locator": "back_door_lock_hull",
-            "definition": "machine_max:fixed_up",
-            "overwrite": {
-              "integrity": 10
-            }
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator_hull",
-            "definition": "machine_max:fixed_down"
+            "definition": "machine_max:fixed_down",
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           }
         },
         "projected_area": [8.6, 13.9, 6.5],

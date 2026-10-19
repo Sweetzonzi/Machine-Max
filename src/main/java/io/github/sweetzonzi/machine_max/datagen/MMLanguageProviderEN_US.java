@@ -75,7 +75,6 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
         //Custom pack exception handler
-        this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
         this.add("error.machine_max.recipe.wrong_directory", "Part recipes must be placed under recipe/part_fabricating/");
         this.add("error.machine_max.recipe.wrong_type_directory", "Recipes under recipe/part_fabricating/ must use type machine_max:part_fabricating");
         this.add("error.machine_max.recipe.unknown_part", "The recipe file name does not match any registered part");
@@ -98,11 +97,16 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "The column number of item-storage subsystem must be greater than 1");
         //Part assembly exception handler
         this.add("error.machine_max.part.model_not_found", "Model file not found at: %1$s");
+        this.add("error.machine_max.part.missing_textures", "Part textures must not be empty");
         this.add("error.machine_max.part.connector_locator_not_found", "Failed to find locator %2$s's locator %3$s in the model of part %1$");
         this.add("error.machine_max.part.invalid_connector_type", "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");
         this.add("error.machine_max.part.duplicate_name", "Duplicate name %1$s in part variant %4$s: %2$s conflicts with %3$s");
         this.add("error.machine_max.part.reserved_name", "Name %1$s (%2$s of %3$s) in part variant %4$s is a reserved signal address and cannot be used for connectors/subsystems/interact boxes");
+        //Pack resource paths
+        this.add("error.machine_max.hud_style.invalid_path", "Invalid HUD style path");
+        this.add("error.machine_max.hud_layout.invalid_path", "Invalid HUD layout path");
+        this.add("error.machine_max.document.invalid_path", "Invalid AUI document path");
         //Hint messages
         this.add("toast.machine_max.research_complete", "Research Complete!");
         this.add("machine_max.misc", "Misc");
@@ -162,6 +166,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
         this.add("item.machine_max.pda", "Blueprint Terminal");
+        this.add("item.machine_max.test_track", "Track Test Item");
+        this.add("tooltip.machine_max.test_track", "Right-click the sprocket to start, right-click each road wheel in order, then right-click the sprocket again to close the track; sneak-right-click to undo or remove");
         // Item sound effects
         this.add("subtitles.item.welding_torch.start", "Welding torch starts");
         this.add("subtitles.item.welding_torch.loop", "Welding torch running");

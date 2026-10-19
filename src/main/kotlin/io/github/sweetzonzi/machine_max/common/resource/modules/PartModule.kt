@@ -1,16 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import java.nio.charset.StandardCharsets
 
 class PartModule : SparkPackModule {
 
@@ -33,25 +30,15 @@ class PartModule : SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (fileName.endsWith(".json") && fromServer) {
-            val path = fileName.removeSuffix(".json")
-            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
-            try{
-                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-                val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                partType.registryKey = id // 注册部件
-                if (isClientSide)
-                    MMDynamicRes.PART_TYPES[id] = partType
-                else
-                    MMDynamicRes.SERVER_PART_TYPES[id] = partType
-            } catch (e: Exception) {
-                MMDynamicRes.exceptions.add(e)
-                MMDynamicRes.errorFiles.add("[Part]" + id)
-                MMDynamicRes.errorMessages.add(Component.literal(e.message))
-            }
-        }
+        if (!fromServer || !fileName.endsWith(".json")) return
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".json"))
+        val partType = PackCodec.read(PartType.CODEC, content)
+        partType.registryKey = id // 注册部件
+        if (isClientSide)
+            MMDynamicRes.PART_TYPES[id] = partType
+        else
+            MMDynamicRes.SERVER_PART_TYPES[id] = partType
     }
-
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {

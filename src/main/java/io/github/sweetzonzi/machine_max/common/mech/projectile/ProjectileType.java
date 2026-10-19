@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
@@ -240,6 +241,157 @@ public abstract class ProjectileType {
     // ==================== 嵌套类（共享属性） ====================
 
     /**
+     * 枪口火光参数 — 内容包 {@code visual.muzzle_flash} 子对象。
+     * <p>
+     * 它只描述"这一发开火在枪口投射一颗多大、多亮、多久的屏幕空间光源"，不改变弹道、伤害、
+     * 音效或枪口粒子（后者仍是 {@link VisualProperties#fireParticles()}）。开火时由发射器与
+     * 调试物品在客户端登记一次，登记入口见 {@link MuzzleFlashLight}，年龄包络与遮挡策略见
+     * {@code client/render/post/MuzzleFlashLightSource}。
+     * <p>
+     * 整块可缺省：未写 {@code muzzle_flash} 时整份取 {@link #DEFAULT}，只写部分字段时逐字段回落。
+     * 颜色不是 {@link Optional}：曳光照明色要回退到 {@code tracer_color}，枪口火光没有可回退的
+     * 兄弟字段，缺省色是一个固定的暖色，因此"未配置"与"配成缺省色"不需要区分。
+     * <p>
+     * <b>它按弹种而不是按发射器配置</b>：仓库里枪口粒子与开火音效同样按弹种配置，发射器只提供
+     * locator 与开火动画名，且发射器属性里没有口径（口径只存在于 {@code external.caliber}）——
+     * 按弹种配置是唯一能按口径折算半径的落点。
+     *
+     * @param enabled       是否产生枪口火光；false 表示该弹种开火不发光，其余字段照常解析
+     * @param radius        照射半径（m）；{@link #DERIVE_RADIUS} 表示按口径折算，显式值取 {@code (0, 64]}
+     * @param color         颜色，三个 {@code [0,255]} 整数
+     * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
+     * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
+     *                      {@code 0} 表示该弹种开火只有表面光照、没有光晕
+     * @param glare         十字炫光的倍率（非负，无上界）：同时缩放臂根的亮度与臂长，
+     *                      {@code 0} 表示该弹种开火没有星芒
+     * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
+     */
+    public record MuzzleFlash(
+        boolean enabled,
+        double radius,
+        Vec3i color,
+        float intensity,
+        float glow,
+        float glare,
+        int durationTicks
+    ) {
+        /**
+         * {@link #radius} 的缺省值：按弹种口径折算。
+         * <p>
+         * 与 {@link VisualProperties#DERIVE_LIGHT_RADIUS} 同值同义（-1 = 按口径折算），
+         * 但折算式不同：枪口火光比曳光小得多，见 {@link MuzzleFlashLight#radiusFor}。
+         */
+        public static final double DERIVE_RADIUS = -1.0;
+
+        /** 显式照射半径上界（m）：与曳光显式半径、爆炸火光半径取同一量级 */
+        public static final double MAX_RADIUS_M = 64.0;
+
+        /**
+         * 辐照度上界（1 m 处）：与爆炸火光同一量纲。
+         *
+         * <p>新口径下步枪弹约 10、155 mm 炮口约 640，4 个数量级的余量留给超大口径与特效弹种，
+         * 同时挡住明显的笔误（例如把 {@code 255} 当成"最大亮度"）。</p>
+         */
+        public static final float MAX_INTENSITY = 4096f;
+
+        /** 寿命下界（tick）：1 tick 即一次主线程 tick 的闪光 */
+        public static final int MIN_DURATION_TICKS = 1;
+
+        /** 寿命上界（tick）：40 tick = 2 秒，已是"炮口焰"乃至"持续喷火"的量级上界 */
+        public static final int MAX_DURATION_TICKS = 40;
+
+        /**
+         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、星芒倍率 1、持续 6 tick（≈300 ms）。
+         *
+         * <p><b>强度是绝对量</b>：90 对应 50 mm 档（缺省半径 9.5 m，参考距离 4.75 m 处把 0.10 的
+         * 灰板抬到 0.30 所需的辐照度，见物理化设计 §4.2）。任何弹种都可以用它当起点，但真正
+         * 按装药量区分的做法是在 {@code visual.muzzle_flash.intensity} 里按本节的口径写显式值：
+         * 7.62 mm ≈ 10、20 mm ≈ 25、30 mm ≈ 42、50 mm ≈ 90、120 mm ≈ 400、155 mm ≈ 640。</p>
+         *
+         * <p><b>标定目标是"夜里打一发就看得见"</b>：6 tick 让它在画面上停留 3–4 帧（更短的值只覆盖
+         * 1–2 帧，肉眼容易漏掉），同时不至于久留成常亮。{@code (1-u)²} 包络使后半程快速变暗，
+         * 因此实际可辨时长约一半。连射时多条登记会重叠（见 {@link MuzzleFlashLight} 的
+         * "每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
+         */
+        public static final MuzzleFlash DEFAULT =
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 1f, 6);
+
+        /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
+        private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
+            if (value == DERIVE_RADIUS) return DataResult.success(value);
+            if (!Double.isFinite(value) || value <= 0.0 || value > MAX_RADIUS_M) {
+                return DataResult.error(() -> "muzzle_flash.radius 必须是 " + DERIVE_RADIUS
+                    + "（按口径折算）或 (0, " + MAX_RADIUS_M + "] m 内的正数，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
+        /** {@link #intensity} 的校验：有限且落在 {@code [0, 8]}。 */
+        private static final Codec<Float> INTENSITY_CODEC = Codec.FLOAT.validate(value -> {
+            if (!Float.isFinite(value)) {
+                return DataResult.error(() -> "muzzle_flash.intensity 必须是有限数，实际为 " + value);
+            }
+            if (value < 0f || value > MAX_INTENSITY) {
+                return DataResult.error(() -> "muzzle_flash.intensity 必须落在 [0, "
+                    + MAX_INTENSITY + "] 内，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
+        /**
+         * 非负的浮点字段：没有上界，只挡非有限值与负值。
+         *
+         * <p>光晕与星芒的倍率都只有"关闭"（{@code 0}）与"放大"两端，物理上没有统一的最大值：
+         * 光晕倍率超过 {@code 32 m / (GlowScale·sqrt(intensity))} 后阈值半径被半径上限截断、
+         * 只剩亮度继续增长；星芒的臂长超过屏高的一个固定比例后按像素封顶。两者的亮度都由
+         * 着色器的 {@code GLOW_MAX} 兜住，因此写多大的倍率都是观感选择。</p>
+         */
+        private static Codec<Float> nonNegative(String field) {
+            return Codec.FLOAT.validate(value -> {
+                if (!Float.isFinite(value)) {
+                    return DataResult.error(() -> field + " 必须是有限数，实际为 " + value);
+                }
+                if (value < 0f) {
+                    return DataResult.error(() -> field + " 必须为非负数，实际为 " + value);
+                }
+                return DataResult.success(value);
+            });
+        }
+
+        /** {@link #glow} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Float> GLOW_CODEC = nonNegative("muzzle_flash.glow");
+
+        /** {@link #glare} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Float> GLARE_CODEC = nonNegative("muzzle_flash.glare");
+
+        /** {@link #durationTicks} 的校验：整数且落在 {@code [1, 40]}。 */
+        private static final Codec<Integer> DURATION_CODEC = Codec.INT.validate(value -> {
+            if (value < MIN_DURATION_TICKS || value > MAX_DURATION_TICKS) {
+                return DataResult.error(() -> "muzzle_flash.duration_ticks 必须落在 ["
+                    + MIN_DURATION_TICKS + ", " + MAX_DURATION_TICKS + "] tick 内，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
+        public static final Codec<MuzzleFlash> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.BOOL.optionalFieldOf("enabled", DEFAULT.enabled)
+                .forGetter(MuzzleFlash::enabled),
+            RADIUS_CODEC.optionalFieldOf("radius", DEFAULT.radius)
+                .forGetter(MuzzleFlash::radius),
+            Vec3i.CODEC.optionalFieldOf("color", DEFAULT.color)
+                .forGetter(MuzzleFlash::color),
+            INTENSITY_CODEC.optionalFieldOf("intensity", DEFAULT.intensity)
+                .forGetter(MuzzleFlash::intensity),
+            GLOW_CODEC.optionalFieldOf("glow", DEFAULT.glow)
+                .forGetter(MuzzleFlash::glow),
+            GLARE_CODEC.optionalFieldOf("glare", DEFAULT.glare)
+                .forGetter(MuzzleFlash::glare),
+            DURATION_CODEC.optionalFieldOf("duration_ticks", DEFAULT.durationTicks)
+                .forGetter(MuzzleFlash::durationTicks)
+        ).apply(instance, MuzzleFlash::new));
+    }
+
+    /**
      * 视觉属性 — 决定投射物在客户端如何呈现。
      * <p>
      * 整个 {@code visual} 对象在 JSON 中是可选的，缺失时使用 {@link #DEFAULT}。
@@ -249,7 +401,7 @@ public abstract class ProjectileType {
      * 画出的线段，{@link #model} / {@link #texture} 一组的载体是 {@code ProjectileEntityRenderer}
      * 遍历骨骼画出的立体弹体。两者可以同时存在，也可以各自单独存在。
      * <p>
-     * 未来可扩展字段：枪口闪光（muzzle_flash）、命中粒子（impact_particle）、弹道烟迹（ribbon_trail）等。
+     * 未来可扩展字段：命中粒子（impact_particle）、弹道烟迹（ribbon_trail）等。
      */
     public record VisualProperties(
         /** 曳光颜色（RGB），不设置则无曳光效果 */
@@ -267,15 +419,71 @@ public abstract class ProjectileType {
          */
         double tracerLength,
         /**
-         * 曳光光源强度倍率（可选，默认 1.0）。最终强度还要乘曳光透明度与超时淡出。
+         * 曳光光源在 1 m 处的辐照度（可选，默认 3.0）。最终强度还要乘透明度因子与超时淡出。
          * <p>
-         * 光源的<b>颜色与照射半径都不在这里配置</b>：颜色取 {@link #tracerColor}（光是曳光
-         * 自己发的，没有分色的需求），半径由弹种口径折算（每毫米口径 2 cm，基准 3 m）。
-         * 强度单独成项的理由是它与 {@code tracerAlpha} 各自承担不同的量：透明度是曳光线自己的
-         * 可见度，而大口径弹种可以用较低的透明度（曳光线更暗）配更高的强度（闪光更强）。
-         * 见 {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
+         * 它是绝对量而不是叠加倍率：数值越大，同一距离上被照亮的表面越亮。缺省 3.0 约等于
+         * 7.62 mm 步枪弹（半径 3.15 m，参考距离 1.58 m 处把 0.06 的灰板抬到 0.12）；大口径弹种
+         * 写显式值，首轮值见 {@code docs/plan/进行中/渲染-屏幕空间光照物理化设计.md} §4.2。
+         * <p>
+         * 强度与透明度各自承担不同的量：透明度是曳光线自己的可见度，而大口径弹种可以用较低的
+         * 透明度（曳光线更暗）配更高的辐照度（闪光更强）。见
+         * {@code docs/plan/计划中/武器系统-投射物曳光光照设计.md} §11.1。
          */
         double tracerLightIntensity,
+        /**
+         * 曳光光源的照射半径（m，可选）。缺省 {@link #DERIVE_LIGHT_RADIUS} 表示按
+         * {@link BallisticProjectileType.ExternalProperties#caliberMm} 折算
+         * （{@code min(3 + 0.02 × 口径mm, 8)} m），既有弹种因此不必配置本字段。
+         * <p>
+         * 显式取值不受折算式的 8 m 上限约束（上限改为整条链的 {@value #MAX_LIGHT_RADIUS_M} m）：
+         * 照明弹一类需要几十米照射范围的光源正是靠它表达的。取值须为
+         * {@link #DERIVE_LIGHT_RADIUS} 或 {@code (0, }{@value #MAX_LIGHT_RADIUS_M}{@code ]} 内的正数，
+         * 越界在内容包加载期报错。
+         */
+        double tracerLightRadius,
+        /**
+         * 曳光光源颜色（可选）。缺省（{@link Optional#empty()}）回退到 {@link #tracerColor}：
+         * 光是曳光自己发的，同色是常规情形；需要"曳光线与照明颜色不同"时（暖色弹道曳光配白色照明）
+         * 才显式配置。
+         */
+        Optional<Vec3i> tracerLightColor,
+        /**
+         * 曳光光源的独立开关（可选）。缺省（{@link Optional#empty()}）沿用"曳光线可见才发光"，
+         * 即 {@code tracerAlpha > 0}。
+         * <p>
+         * 显式设为 {@code true} 后，发光不再要求曳光线可见：透明度为 0 时曳光线整条不画，但光斑
+         * 照常以 {@code tracerLightIntensity} 的完整强度照亮周围。照明弹一类"只有光、没有弹道线"
+         * 的来源用它；显式设为 {@code false} 则关掉该弹种的光而不影响它的曳光线。
+         */
+        Optional<Boolean> tracerLightEnabled,
+        /**
+         * 曳光光源的空气散射光晕倍率（可选，默认 1.0，非负、无上界）。
+         * <p>
+         * 倍率同时缩放光晕的阈值半径与亮度，{@code 0} 表示该弹种只有表面光照、没有光晕。
+         * 阈值半径按 {@link #tracerLightIntensity} 派生（见物理化设计 §3.6），本字段只做放大：
+         * 曳光的辐照度比信号弹低两三个数量级，缺省值下光晕的峰值只有千分之一量级，实际看不见。
+         * 要让曳光带可见光晕，把倍率写到 10 以上（7.62 mm 在 10 m 处约 0.04 的线性亮度），
+         * 倍率再大则阈值半径先撞 32 m 上限、只剩亮度增长。
+         */
+        double tracerGlow,
+        /**
+         * 曳光光源的十字炫光倍率（可选，默认 1.0，非负、无上界）。
+         * <p>
+         * 倍率同时缩放臂根亮度与臂长，{@code 0} 表示该弹种没有星芒。星芒的驱动量是相机处的
+         * 表观照度 {@code I/d²}，所以曳光只有在贴近相机掠过时才会画出来（10 m 处约 0.2 的线性
+         * 亮度），远距离弹道不会被画成一串星芒；嫌它吵就把本字段写成 0。
+         */
+        double tracerGlare,
+        /**
+         * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
+         * <p>
+         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、光晕倍率 1、6 tick。
+         * 意思是"任何有口径的弹种开火都会闪一下"，想关掉的弹种写 {@code muzzle_flash.enabled = false}。
+         * <p>
+         * 它按弹种而不是按发射器配置，理由与 {@code fire_particles}、{@code fire_sounds} 相同：
+         * 发射器只提供 locator，真正决定火焰大小的是装药量，而口径是它在数据里的唯一载体。
+         */
+        MuzzleFlash muzzleFlash,
         /** 开火粒子效果ID列表，在客户端依次播放枪口火焰/炮口焰等效果 */
         List<ResourceLocation> fireParticles,
         /**
@@ -294,11 +502,66 @@ public abstract class ProjectileType {
          */
         Optional<ResourceLocation> texture
     ) {
+        /**
+         * {@link #tracerLightRadius} 的缺省值：按弹种口径折算照射半径。
+         * <p>
+         * 它是一个哨兵值而不是"0 表示缺省"：0 是有意义的半径（影响球退化为一个点，实际不产生贡献），
+         * 用 0 兼任缺省会让"作者显式想关掉光"与"作者没写这个字段"无法区分。
+         */
+        public static final double DERIVE_LIGHT_RADIUS = -1.0;
+
+        /** 渲染侧可接受的照射半径上界（m），与爆炸火光的字段边界取同一个量级 */
+        public static final double MAX_LIGHT_RADIUS_M = 64.0;
+
+        /**
+         * 非负的浮点字段：没有上界，只挡非有限值与负值。
+         *
+         * <p>曳光的辐照度比信号弹低两三个数量级，要让它的光晕可见就得把倍率写到远高于 4；
+         * 倍率超过 {@code 32 m / (GlowScale·sqrt(tracer_light_intensity))} 后阈值半径被半径上限
+         * 截断，只剩亮度继续增长，而亮度又由着色器的 {@code GLOW_MAX} 兜住。星芒同理：臂长
+         * 撞到屏高比例的封顶后只剩亮度增长。</p>
+         */
+        private static Codec<Double> nonNegative(String field) {
+            return Codec.DOUBLE.validate(value -> {
+                if (!Double.isFinite(value)) {
+                    return DataResult.error(() -> field + " 必须是有限数，实际为 " + value);
+                }
+                if (value < 0.0) {
+                    return DataResult.error(() -> field + " 必须为非负数，实际为 " + value);
+                }
+                return DataResult.success(value);
+            });
+        }
+
+        /** {@link #tracerGlow} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Double> GLOW_CODEC = nonNegative("tracer_glow");
+
+        /** {@link #tracerGlare} 的校验：有限且非负，没有上界。 */
+        private static final Codec<Double> GLARE_CODEC = nonNegative("tracer_glare");
+
+        /**
+         * {@link #tracerLightRadius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。
+         */
+        private static final Codec<Double> LIGHT_RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
+            if (value == DERIVE_LIGHT_RADIUS) return DataResult.success(value);
+            if (!Double.isFinite(value) || value <= 0.0 || value > MAX_LIGHT_RADIUS_M) {
+                return DataResult.error(() -> "tracer_light_radius 必须是 " + DERIVE_LIGHT_RADIUS
+                        + "（按口径折算）或 (0, " + MAX_LIGHT_RADIUS_M + "] m 内的正数，实际为 " + value);
+            }
+            return DataResult.success(value);
+        });
+
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
             2.0, 0.02,
+            3.0,
+            DERIVE_LIGHT_RADIUS,
+            Optional.empty(),
+            Optional.empty(),
             1.0,
+            1.0,
+            MuzzleFlash.DEFAULT,
             List.of(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")),
             Optional.empty(),
             Optional.empty()
@@ -315,6 +578,18 @@ public abstract class ProjectileType {
                 .forGetter(VisualProperties::tracerLength),
             Codec.DOUBLE.optionalFieldOf("tracer_light_intensity", DEFAULT.tracerLightIntensity)
                 .forGetter(VisualProperties::tracerLightIntensity),
+            LIGHT_RADIUS_CODEC.optionalFieldOf("tracer_light_radius", DEFAULT.tracerLightRadius)
+                .forGetter(VisualProperties::tracerLightRadius),
+            Vec3i.CODEC.optionalFieldOf("tracer_light_color")
+                .forGetter(VisualProperties::tracerLightColor),
+            Codec.BOOL.optionalFieldOf("tracer_light_enabled")
+                .forGetter(VisualProperties::tracerLightEnabled),
+            GLOW_CODEC.optionalFieldOf("tracer_glow", DEFAULT.tracerGlow)
+                .forGetter(VisualProperties::tracerGlow),
+            GLARE_CODEC.optionalFieldOf("tracer_glare", DEFAULT.tracerGlare)
+                .forGetter(VisualProperties::tracerGlare),
+            MuzzleFlash.CODEC.optionalFieldOf("muzzle_flash", MuzzleFlash.DEFAULT)
+                .forGetter(VisualProperties::muzzleFlash),
             Codec.list(ResourceLocation.CODEC).optionalFieldOf("fire_particles", DEFAULT.fireParticles)
                 .forGetter(VisualProperties::fireParticles),
             ResourceLocation.CODEC.optionalFieldOf("model")

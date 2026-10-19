@@ -42,11 +42,13 @@ import java.util.*;
  * 没排上的消费者在 {@link #requestRound(IAmmoConsumer)} 中只得到"已受理"，不起计时器，
  * 下个 tick 重发请求再试，直到前一个消费者取走弹药腾出输弹线——一条输弹链一次只能移动一发。
  * {@code can_supply_multiple=true} 时所有消费者的计时器并行推进，各自拿到弹链上的下一发。<br>
- * 因此不存在等待队列：{@link #deliveryStartTicks} 里有没有本消费者，就是"轮到没轮到"。
+ * 因此不存在等待队列：{@link #deliveryLoadedTicks} 里有没有本消费者，就是"轮到没轮到"。
  * <p>
- * 输送计时器记的是<b>开始时刻</b>（本机 {@link #tickCount}）而不是剩余 tick 数：完成判定与进度
- * 都用"经过时间 ÷ 当前装填耗时"现算。装填耗时在中途变化（加速、减速）时，在途那一发按新耗时
- * 重新折算；若记剩余 tick，总耗时不等于开始时的值，{@code 1 - 剩余/总耗时} 会算出负数或超过 1。
+ * 计时器一律记<b>已消耗/剩余量</b>并只在 {@link #onTick()} 里自增自减，不记"开始时刻"：开始时刻是
+ * 本机 {@link #tickCount} 的读数，跨存档没有意义；而计数天然满足两条要求——停摆期间（未激活 /
+ * 已摧毁，{@link #onTick()} 提前返回）计时不走，恢复后接着原进度；存档直接存那个计数本身。
+ * 装填耗时在中途变化（加速、减速）时，进度按"已消耗 ÷ 当前耗时"现算，
+ * 与 {@link #batchTotalTicks()} 的现算口径一致。
  * <p>
  * 计时器与就绪位都用插入有序的普通集合：本子系统的读写全在主线程（自身 tick、武器控制器的路由、
  * HUD 刷新都在主线程），不需要并发容器。
@@ -79,10 +81,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     private float regenProgress = 0f;
 
     /**
-     * 批量再生的开始时刻（本机 {@link #tickCount}，regenRoundByRound=false 时使用）。<br>
-     * 与输送计时器同一套语义：总时长由 {@link #batchTotalTicks()} 按当前再生速率现算。
+     * 批量再生的已消耗 tick 数（regenRoundByRound=false 时使用）。<br>
+     * 按<b>已消耗量</b>记，与 {@link #deliveryLoadedTicks} 同一套记账方式；
+     * 进度与总时长都由 {@link #batchTotalTicks()} 按当前再生速率现算，因此速率中途变化对进行中的
+     * 这一批同样生效。停摆期间不自增，存档直接存这个数。
      */
-    private int batchStartTick = 0;
+    private int batchElapsedTicks = 0;
 
     /**
      * 是否正在批量冷却中
@@ -93,13 +97,6 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * 再生延迟剩余 tick，上次输送弹药后需等待此时间才恢复再生
      */
     private int regenDelayRemainingTicks = 0;
-
-    /**
-     * 上一次推进计时器的 tick。<br>
-     * 装弹机未激活（零件未组装到位）或被摧毁时 {@link #onTick()} 会提前返回、计时器停摆；
-     * 恢复时按这一格算出停摆了多久，把它从各开始时刻里扣掉，使在途的输送接着原进度走。
-     */
-    private int lastTimerTick = -1;
 
     // ——— 装填进度音效状态（仅客户端有效） ———
 
@@ -119,10 +116,14 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     // ——— 多消费者支持 ———
 
     /**
-     * 每个消费者这次输送的开始时刻（本机 {@link #tickCount}），插入有序。<br>
-     * 有键即"已轮到本消费者"；是否走完由 {@code tickCount - 开始时刻} 与当前装填耗时比较得出。
+     * 每个消费者这次输送的<b>已装填 tick 数</b>，插入有序。<br>
+     * 有键即"已轮到本消费者"；每个 {@link #onTick()} 自增 1，达到当前所需装填耗时即转入
+     * {@link #readyConsumers}。计数只增不改，停摆期间（未激活 / 已摧毁）不增长。
+     * <p>
+     * 判定对象是<b>当前</b> {@link #getReloadTimeTicks()}，不额外记录受理时的耗时：
+     * 外部属性中途改变装填耗时，对在途那一发同样生效（变快就提前完成，变慢就多等几 tick）。
      */
-    private final Map<IAmmoConsumer, Integer> deliveryStartTicks = new LinkedHashMap<>();
+    private final Map<IAmmoConsumer, Integer> deliveryLoadedTicks = new LinkedHashMap<>();
 
     /** 每个消费者的弹药是否已就绪（输送已完成、等消费者取走），插入有序 */
     private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
@@ -231,7 +232,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * 幂等性：同一 consumer 多次调用不会创建重复计时器。
      * <p>
      * {@code can_supply_multiple=false} 且已有别人在输送时，本次请求返回 true 但不启动计时器
-     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #deliveryStartTicks}
+     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #deliveryLoadedTicks}
      * 一张表表达"谁的输送在进行中"，因此不记录等待队列。
      *
      * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示弹仓无弹
@@ -256,7 +257,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     private void startDelivery(IAmmoConsumer consumer) {
         if (getReloadTimeTicks() > 0) {
-            deliveryStartTicks.put(consumer, tickCount);
+            deliveryLoadedTicks.put(consumer, 0);
         } else {
             readyConsumers.add(consumer); // 瞬时交付
         }
@@ -264,17 +265,17 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public boolean isRoundScheduled(IAmmoConsumer consumer) {
-        return deliveryStartTicks.containsKey(consumer) || readyConsumers.contains(consumer);
+        return deliveryLoadedTicks.containsKey(consumer) || readyConsumers.contains(consumer);
     }
 
     /**
-     * 这次输送已经走了多少 tick：当前 tick 减开始时刻。<br>
-     * 开始时刻在停摆恢复时已经被顺延过，所以这里不需要再扣停摆时间。
+     * 这次输送已装填多少 tick，供外部查询（{@code -1} = 未在输送）。<br>
+     * 与 {@link #onTick()} 的完成判定、{@link #getReloadProgress(IAmmoConsumer)} 的分子同源。
      */
     @Override
     public int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
-        Integer start = deliveryStartTicks.get(consumer);
-        return start == null ? -1 : tickCount - start;
+        Integer loaded = deliveryLoadedTicks.get(consumer);
+        return loaded == null ? -1 : loaded;
     }
 
     /**
@@ -283,7 +284,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public boolean hasScheduledRound() {
-        return !deliveryStartTicks.isEmpty() || !readyConsumers.isEmpty();
+        return !deliveryLoadedTicks.isEmpty() || !readyConsumers.isEmpty();
     }
 
     /**
@@ -292,7 +293,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * 使这台装弹机对后来者永久不可用；因此在 tick 里自行清理。
      */
     private void pruneGoneConsumers() {
-        deliveryStartTicks.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
+        deliveryLoadedTicks.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
         readyConsumers.removeIf(RegenLoaderSubsystem::isConsumerGone);
         lastPlayedProgressKeys.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
     }
@@ -312,7 +313,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public void cancelRound(IAmmoConsumer consumer) {
-        deliveryStartTicks.remove(consumer);
+        deliveryLoadedTicks.remove(consumer);
         readyConsumers.remove(consumer);
         lastPlayedProgressKeys.remove(consumer);
     }
@@ -321,7 +322,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     public boolean isRoundReady(IAmmoConsumer consumer) {
         if (readyConsumers.contains(consumer)) {
             return true;
-        } else if (deliveryStartTicks.containsKey(consumer)) {
+        } else if (deliveryLoadedTicks.containsKey(consumer)) {
             return false; // 输送尚未完成
         } else {
             // 未被排上（或从未请求）：顺手再请求一次，由供给者决定这次能否排上
@@ -396,7 +397,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
         if (readyConsumers.contains(consumer)) return SupplierStatus.READY;
-        if (deliveryStartTicks.containsKey(consumer)) return SupplierStatus.RELOADING;
+        if (deliveryLoadedTicks.containsKey(consumer)) return SupplierStatus.RELOADING;
         // 批量冷却：弹仓归零后整批再生，此时每个消费者都在等同一批弹药
         if (isBatchReloading) return SupplierStatus.RELOADING;
         if (getAmmoCount() <= 0) {
@@ -416,8 +417,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     }
 
     /**
-     * 装填进度（0~1）：经过时间 ÷ <b>当前</b>装填耗时。<br>
-     * 现算而不是按开始时的总耗时折算，因此加速/减速 buff 对在途那一发同样生效，进度也不会越界。
+     * 装填进度（0~1）：已消耗 tick ÷ <b>当前</b>装填耗时。<br>
+     * 分母现算而不是用请求受理时的耗时，因此加速/减速 buff 对在途那一发同样生效，进度也不会越界。
      * 未在为本消费者输送时按弹仓状态报：逐发再生模式下报<b>再生进度</b>（下一发还有多久，
      * {@code reload_time=0} 的型号没有别的进度可报），其余报"余量 / 容量"这一储备水平。
      */
@@ -426,12 +427,11 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         int cap = attr.staticAttribute.getMagazineCapacity();
         if (cap <= 0) return 0f;
         if (isBatchReloading) {
-            // 批量冷却：触发那一 tick 本身算作冷却的第一 tick（与"先自减再判零"的旧写法等价）
-            return progressOf(tickCount - batchStartTick + 1, batchTotalTicks());
+            // 批量冷却：已消耗量在当前总量里的占比
+            return progressOf(batchElapsedTicks, batchTotalTicks());
         }
-        Integer deliveryStart = deliveryStartTicks.get(consumer);
-        if (deliveryStart != null && getReloadTimeTicks() > 0) {
-            return progressOf(tickCount - deliveryStart, getReloadTimeTicks());
+        if (deliveryLoadedTicks.containsKey(consumer) && getReloadTimeTicks() > 0) {
+            return progressOf(deliveryLoadedTicks.get(consumer), getReloadTimeTicks());
         }
         // 未在为本消费者输送：逐发再生时报再生进度，其余报储备水平
         if (attr.staticAttribute.isRegenRoundByRound() && getAmmoCount() < cap) {
@@ -442,7 +442,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     /**
      * 经过 tick 数与总 tick 数折算成 0~1 的进度，并钳到区间内。<br>
-     * 钳位是必要的：总耗时在中途变化时，经过时间可能已经超过新的总耗时（那一发随即转入待取）。
+     * 钳位是必要的：所需耗时在中途变化时，已装填量可能已经超过新的所需量（那一发随即转入待取）。
      */
     private static float progressOf(int elapsedTicks, int totalTicks) {
         if (totalTicks <= 0) return 0f;
@@ -517,20 +517,18 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         // 清掉已退场的消费者，别让它们的交付占着输弹线
         pruneGoneConsumers();
 
-        // 停摆期间（未激活/已摧毁）计时器不前进：把这段空档从各开始时刻里扣掉，恢复后接着原进度走
-        int stalledTicks = lastTimerTick < 0 ? 0 : Math.max(0, tickCount - lastTimerTick - 1);
-        lastTimerTick = tickCount;
-        if (stalledTicks > 0) {
-            deliveryStartTicks.replaceAll((consumer, start) -> start + stalledTicks);
-            batchStartTick += stalledTicks;
-        }
-
-        // ① 推进输送：走满当前装填耗时的消费者转入待取
+        // ① 推进输送：本次 tick 已装填量 +1，达到当前所需装填耗时的消费者转入待取。
+        // 比较对象是当前耗时（getReloadTimeTicks()），因此外部属性中途改变装填耗时对在途那一发同样生效。
+        // 计时器只在这里自增，因此未激活/已摧毁期间（本方法提前返回）自然停摆，恢复后接着原进度走
         int deliveryTicks = getReloadTimeTicks();
-        Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = deliveryStartTicks.entrySet().iterator();
+        Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = deliveryLoadedTicks.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<IAmmoConsumer, Integer> entry = iter.next();
-            if (tickCount - entry.getValue() < deliveryTicks) continue;
+            int loaded = entry.getValue() + 1;
+            if (loaded < deliveryTicks) {
+                entry.setValue(loaded);
+                continue;
+            }
             iter.remove();
             readyConsumers.add(entry.getKey());
             lastPlayedProgressKeys.remove(entry.getKey()); // 输送完成，清理该消费者的音效追踪
@@ -612,21 +610,25 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
                 }
             }
 
-            // 冷却时长由 batchTotalTicks() 按当前再生速率现算，这里只记开始时刻
-            batchStartTick = tickCount;
+            // 冷却时长由 batchTotalTicks() 按当前再生速率现算，这里只把已消耗量归零；
+            // 本次 tick 随即计入一格（见下），因此"触发那一 tick 本身算作冷却的第一 tick"
+            batchElapsedTicks = 0;
             isBatchReloading = true;
             lastPlayedBatchProgressKey = null; // 新一批冷却开始，重置音效进度追踪
         }
 
         if (isBatchReloading) {
+            // 本次 tick 计入冷却消耗；时长逐 tick 现算，速率中途变化对进行中的这一批同样生效
+            batchElapsedTicks++;
+
             // 批量冷却进度音效（在 isBatchReloading 翻转为 false 之前检查，确保播放到"1.0"）
             if (getLevel().isClientSide()) {
                 checkBatchProgressSound();
             }
 
-            // 触发那一 tick 本身算作冷却的第一 tick，因此比较时补 1
-            if (tickCount - batchStartTick + 1 >= batchTotalTicks()) {
+            if (batchElapsedTicks >= batchTotalTicks()) {
                 isBatchReloading = false;
+                batchElapsedTicks = 0;
                 setAmmoCount(attr.staticAttribute.getMagazineCapacity());
                 lastPlayedBatchProgressKey = null;
             }
@@ -637,7 +639,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     /**
      * 处理每消费者的装填进度分段音效。<br>
-     * 遍历 {@link #deliveryStartTicks} 中的每个消费者，按当前输送进度查找匹配的
+     * 遍历 {@link #deliveryLoadedTicks} 中的每个消费者，按当前输送进度查找匹配的
      * 进度阈值key，越过新阈值时播放对应音效。
      * <p>
      * <b>调用线程：</b>主线程（{@link #onTick()}）。
@@ -650,9 +652,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         int totalTicks = getReloadTimeTicks();
         if (totalTicks <= 0) return; // 瞬时交付无需进度音效
 
-        for (Map.Entry<IAmmoConsumer, Integer> entry : deliveryStartTicks.entrySet()) {
+        for (Map.Entry<IAmmoConsumer, Integer> entry : deliveryLoadedTicks.entrySet()) {
             IAmmoConsumer consumer = entry.getKey();
-            float progress = progressOf(tickCount - entry.getValue(), totalTicks);
+            float progress = progressOf(entry.getValue(), totalTicks);
             Float lastKey = lastPlayedProgressKeys.get(consumer);
             Float matchedKey = findBestProgressKey(sounds, progress);
             // 只认"越过更高的阈值"：耗时变长时进度会回退，此时不该把已经播过的音效再播一遍
@@ -663,7 +665,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
 
         // 清理已不在输送中的消费者追踪记录
-        lastPlayedProgressKeys.keySet().removeIf(c -> !deliveryStartTicks.containsKey(c));
+        lastPlayedProgressKeys.keySet().removeIf(c -> !deliveryLoadedTicks.containsKey(c));
     }
 
     /**
@@ -678,7 +680,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         Map<String, SoundEvent> sounds = attr.staticAttribute.getProgressSounds();
         if (sounds.isEmpty()) return;
 
-        float progress = progressOf(tickCount - batchStartTick + 1, batchTotalTicks());
+        float progress = progressOf(batchElapsedTicks, batchTotalTicks());
         Float matchedKey = findBestProgressKey(sounds, progress);
         if (matchedKey != null && (lastPlayedBatchProgressKey == null || matchedKey > lastPlayedBatchProgressKey)) {
             lastPlayedBatchProgressKey = matchedKey;
@@ -765,10 +767,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         super.loadData(data);
         if (data.contains("ammo_count")) setAmmoCount(data.getInt("ammo_count"));
         if (data.contains("regen_progress")) regenProgress = data.getFloat("regen_progress");
-        // 批量冷却存的是"剩余 tick"：开始时刻是本会话内的刻度，跨存档没有意义，
-        // 因此载入时按剩余量反推本会话的开始时刻（总时长按当前速率现算）。
-        if (data.contains("batch_cooldown")) {
-            batchStartTick = tickCount - (batchTotalTicks() - data.getInt("batch_cooldown"));
+        // 批量冷却存的是"已消耗 tick 数"：本机计数量，跨存档直接可用。
+        // 旧存档写的是"剩余 tick 数"（batch_cooldown），按当前总时长换算成已消耗量读入
+        if (data.contains("batch_elapsed")) {
+            batchElapsedTicks = data.getInt("batch_elapsed");
+        } else if (data.contains("batch_cooldown")) {
+            batchElapsedTicks = Math.max(0, batchTotalTicks() - data.getInt("batch_cooldown"));
         }
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
@@ -780,8 +784,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         super.saveData(data);
         data.putInt("ammo_count", getAmmoCount());
         data.putFloat("regen_progress", regenProgress);
-        data.putInt("batch_cooldown",
-                isBatchReloading ? Math.max(0, batchTotalTicks() - (tickCount - batchStartTick + 1)) : 0);
+        data.putInt("batch_elapsed", isBatchReloading ? batchElapsedTicks : 0);
         data.putBoolean("is_batch_reloading", isBatchReloading);
         data.putInt("regen_delay_remaining", regenDelayRemainingTicks);
         data.putInt("belt_index", getSynchedData().get(BELT_INDEX));

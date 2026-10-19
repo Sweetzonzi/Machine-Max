@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:wheel_driver",
-  "basic_durability": 100,
+  "basic_durability": 30,
   "roll": {
     "max_drive_force": 2500.0,
     "max_brake_force": 1500.0,

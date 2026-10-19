@@ -1,6 +1,6 @@
 {
   "type": "machine_max:launcher",
-  "basic_durability": 60,
+  "basic_durability": 30,
   "control_inputs": [
     "weapon.atgm"
   ],

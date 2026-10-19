@@ -18,6 +18,9 @@
   },
   "visual": {
     "tracer_color": [200, 220, 255],
-    "tracer_alpha": 230
+    "tracer_alpha": 230,
+    "tracer_light_intensity": 3.85,
+    // 弹芯口径 26 mm 只能折算到 5.9 m，按 120 mm 炮口写显式半径
+    "muzzle_flash": { "radius": 20.0, "intensity": 400 }
   }
 }
