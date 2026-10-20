@@ -24,7 +24,9 @@
         "machine_max:wheel_driver",
         "machine_max:lighting",
         "machine_max:turret_driver",
-        "machine_max:weapon_controller"
+        "machine_max:weapon_controller",
+        "machine_max:track_controller",
+        "machine_max:track_drive"
       ],
       "description": "Subsystem type, determines which specific subsystem schema to use."
     }
@@ -224,6 +226,30 @@
       },
       "then": {
         "$ref": "static/weapon_controller_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/track_controller_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_drive"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/track_drive_static_attr.schema.json"
       }
     }
   ],

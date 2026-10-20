@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/track_drive_dynamic_attr.json",
+  "title": "Track Drive Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the track drive, pointing at the body-side connector of the driven wheel.",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_drive",
+      "description": "Subsystem type, must be 'machine_max:track_drive'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "connector": {
+      "type": "string",
+      "description": "Name of the body-side connector that joins the driven wheel."
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {
+        "track_speed": [
+          "local",
+          "global"
+        ]
+      },
+      "description": "Track linear speed output (m/s, forward positive). Optional."
+    },
+    "force_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {
+        "track_force": [
+          "local",
+          "global"
+        ]
+      },
+      "description": "Track drive force output (N, forward positive). Optional."
+    }
+  },
+  "required": [
+    "type",
+    "definition",
+    "connector"
+  ],
+  "examples": [
+    {
+      "type": "machine_max:track_drive",
+      "definition": "machine_max:track_drive_heavy",
+      "connector": "connector.machine_max.left_sprocket",
+      "speed_outputs": {
+        "track_speed": [
+          "local",
+          "global"
+        ]
+      },
+      "force_outputs": {
+        "track_force": [
+          "local",
+          "global"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/track_drive_static_attr.json",
+  "title": "Track Drive Subsystem Static Attributes",
+  "description": "Static attributes of the track drive: torque, brake and speed limits.",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_drive",
+      "description": "Subsystem type, must be 'machine_max:track_drive'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 40.0
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "track_control"
+      ],
+      "description": "TrackControlSignal input channels, ordered by priority."
+    },
+    "max_drive_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 30000.0,
+      "description": "Maximum drive torque at the rolling joint, in N*m."
+    },
+    "max_brake_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20000.0,
+      "description": "Maximum service brake torque, in N*m."
+    },
+    "max_hand_brake_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20000.0,
+      "description": "Maximum parking brake torque, in N*m."
+    },
+    "max_speed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 120.0,
+      "description": "Maximum driven wheel angular speed, in rad/s."
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:track_drive",
+      "basic_durability": 40,
+      "max_drive_torque": 30000,
+      "max_brake_torque": 20000,
+      "max_hand_brake_torque": 20000,
+      "max_speed": 120
+    }
+  ]
+}

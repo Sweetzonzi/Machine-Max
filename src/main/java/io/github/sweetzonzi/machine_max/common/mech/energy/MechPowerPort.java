@@ -54,6 +54,25 @@ public class MechPowerPort implements IMechPowerConsumer {
         return 0;
     }
 
+    /**
+     * 按 producer 转发反馈转速，保留多输入驱动按来源分摊的语义。
+     */
+    @Override
+    public float getFeedbackSpeed(String producerName) {
+        if (resolvedLocalConsumer != null) {
+            return resolvedLocalConsumer.getFeedbackSpeed(producerName);
+        }
+        AbstractConnector attached = owner.attachedConnector;
+        if (attached != null && attached.mechanicalEnergyPort != null) {
+            MechPowerPort targetPort = attached.mechanicalEnergyPort;
+            if (targetPort.resolvedLocalConsumer == null && targetPort.owner.attachedConnector == this.owner) {
+                return 0;
+            }
+            return targetPort.getFeedbackSpeed(producerName);
+        }
+        return 0;
+    }
+
     @Override
     public void setFeedbackSpeed(float speed) {
         if (resolvedLocalConsumer != null) {

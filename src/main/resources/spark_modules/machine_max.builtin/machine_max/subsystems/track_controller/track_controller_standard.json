@@ -1,0 +1,20 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:track_controller",
+  "basic_durability": 150,
+  "max_yaw_rate": {
+    "0": 0,
+    "10": 30,
+    "30": 18,
+    "50": 10
+  },
+  "min_turning_radius": 4.0,
+  "max_lateral_acceleration": 6.0,
+  "yaw_p": 1.0,
+  "yaw_d": 0.05,
+  "steering_smoothing": 0.1,
+  "brake_smoothing": 0.2,
+  "auto_hand_brake": true,
+  "manual_gear_shift": false,
+  "separate_throttle_brake": false
+}

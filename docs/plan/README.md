@@ -43,7 +43,8 @@
 
 | 文档 | 当前进度 |
 | --- | --- |
-| [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、测试物品的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`link_durability` / `link_length` + 包络推导 N 与最大耐久）、关键事件同步、客户端程序化履带节渲染与 X 角速度相位已落地；履带控制（`TrackControllerSubsystem`）未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 17/17 用例 + 270/270 断言（`prototype/track-envelope-2d/`）；Java `util/geometry/BeltPath2D` 等 21 个 JUnit（含三角形 / 抬起中间轮的上行程二次接触 / 同一轮心两种锚定顺序 / 退化轮序端帽的位姿抖动稳定性）、全量 34 个 JUnit 通过 |
+| [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、测试物品的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`link_durability` / `link_length` + 包络推导 N 与最大耐久）、关键事件同步、客户端程序化履带节渲染与 X 角速度相位已落地；履带控制阶段 A / B（`AbstractGroundControllerSubsystem` + `TrackControllerSubsystem` + `TrackDriveSubsystem`，单流）已落地，阶段 C / D 未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 17/17 用例 + 270/270 断言（`prototype/track-envelope-2d/`）；Java `util/geometry/BeltPath2D` 等 21 个 JUnit（含三角形 / 抬起中间轮的上行程二次接触 / 同一轮心两种锚定顺序 / 退化轮序端帽的位姿抖动稳定性）、全量 63 个 JUnit、8 个测试类通过 |
+| [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 实施中（v4）；阶段 A / B 已落地：`AbstractGroundControllerSubsystem`、`TrackControllerSubsystem`、`TrackDriveSubsystem`、`TrackControlSignal`、`TrackMath`、属性与 `MMCodecs` 注册、内容包 schema；轮式/摩托车继承基类，单流制动差速与多输入反馈分摊已接入。阶段 C / D（双流转向、四履带、HUD）未实现 |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
 | [武器系统-弹药标签与弹链显示设计](进行中/武器系统-弹药标签与弹链显示设计.md) | 三个阶段均已落地：`getDisplayLabel()` / `belt_label` / 弹链指针单一载体、内容包语言键与实例 schema、AUI 正式页 `weapon_hud.html` 与 `WeaponHudOverlay` 为唯一在绘制的武器状态 HUD（`ammo_hud` 图层未注册，`AmmoHud` 类保留作回退）。待 `runClient` 进世界按 §7.2 人工验收 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
@@ -55,7 +56,6 @@
 
 | 文档 | 现状 |
 | --- | --- |
-| [履带系统-控制与驱动子系统设计](计划中/履带系统-控制与驱动子系统设计.md) | 设计阶段；代码中尚无 `TrackControllerSubsystem` / `TrackDriveSubsystem`。定义共享控制器基类、多输入履带驱动、主/转向双传动组合、负比值与反馈口径，以及四履带横向分配 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径（1080p 两盏受光约 2.5% 纹理吞吐）与失败模式清单 |
 | [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |

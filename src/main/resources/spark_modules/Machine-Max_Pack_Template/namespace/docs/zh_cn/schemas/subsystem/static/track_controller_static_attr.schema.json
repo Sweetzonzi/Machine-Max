@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/track_controller_static_attr.json",
+  "title": "履带控制器子系统静态属性",
+  "description": "履带控制器的静态属性：横摆角速度上限、转向几何与输入偏好。",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_controller",
+      "description": "Subsystem type, must be 'machine_max:track_controller'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 40.0
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "move_input_p0",
+        "regular_input_p0",
+        "move_input_p1",
+        "regular_input_p1",
+        "move_input_p2",
+        "regular_input_p2",
+        "move_input_p3",
+        "regular_input_p3",
+        "move_input",
+        "regular_input"
+      ],
+      "description": "控制输入频道，按优先级排列。"
+    },
+    "max_yaw_rate": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ],
+      "default": {
+        "0": 0,
+        "10": 30,
+        "30": 18,
+        "50": 10
+      },
+      "description": "按车速给出的横摆角速度上限（km/h -> °/s）。单值表示全速域常量。"
+    },
+    "min_turning_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 4.0,
+      "description": "单流差速制动使用的最小转弯半径，单位米。"
+    },
+    "max_lateral_acceleration": {
+      "type": "number",
+      "minimum": 0,
+      "default": 6.0,
+      "description": "侧向加速度上限，单位 m/s²。"
+    },
+    "yaw_p": {
+      "type": "number",
+      "default": 1.0,
+      "description": "横摆 PD 控制器比例项。"
+    },
+    "yaw_d": {
+      "type": "number",
+      "default": 0.05,
+      "description": "横摆 PD 控制器微分项。"
+    },
+    "steering_smoothing": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.1,
+      "description": "每个物理 tick 的转向输入平滑系数，0..1。"
+    },
+    "brake_smoothing": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "每个物理 tick 的制动输入平滑系数，0..1。"
+    },
+    "auto_hand_brake": {
+      "type": "boolean",
+      "default": true,
+      "description": "静止且无输入时自动施加驻车制动。"
+    },
+    "manual_gear_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "关闭自动换挡。"
+    },
+    "separate_throttle_brake": {
+      "type": "boolean",
+      "default": false,
+      "description": "无玩家偏好时使用分离的油门/刹车输入。"
+    },
+    "pivot_yaw_rate": {
+      "type": "number",
+      "minimum": 0,
+      "default": 45.0,
+      "description": "双流零速中心转向的横摆角速度上限（°/s）；单流忽略。"
+    },
+    "pivot_speed_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.5,
+      "description": "双流进入中心转向的速度阈值（m/s）；单流忽略。"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:track_controller",
+      "basic_durability": 40,
+      "max_yaw_rate": {
+        "0": 0,
+        "10": 30,
+        "30": 18,
+        "50": 10
+      },
+      "min_turning_radius": 4.0
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.attachment;
 import com.mojang.serialization.Codec;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractGroundControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.CarControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
@@ -22,14 +23,14 @@ public enum ControlPreference implements StringRepresentable {
                     buf -> ControlPreference.valueOf(buf.readUtf()) // 解码：读取名称并转换
             );
 
-    public static boolean shouldAutoHandBrake(CarControllerSubsystem groundController) {
+    public static boolean shouldAutoHandBrake(AbstractGroundControllerSubsystem groundController) {
         if (groundController.getController() == null)
-            return groundController.getAttr().getStaticAttribute().isAutoHandBrake();
+            return groundController.isAutoHandBrakeEnabled();
         var data = groundController.getController().getData(MMAttachments.getCONTROL_PREFERENCE());
         return switch (data.groundHandBrakePreference) {
             case ALWAYS_ENABLED -> true;
             case ALWAYS_DISABLED -> false;
-            default -> groundController.getAttr().getStaticAttribute().isAutoHandBrake();
+            default -> groundController.isAutoHandBrakeEnabled();
         };
     }
 
@@ -52,14 +53,14 @@ public enum ControlPreference implements StringRepresentable {
         };
     }
 
-    public static boolean shouldAutoSwitchGear(CarControllerSubsystem groundController) {
+    public static boolean shouldAutoSwitchGear(AbstractGroundControllerSubsystem groundController) {
         if (groundController.getController() == null)
-            return !groundController.getAttr().getStaticAttribute().isManualGearShift();
+            return !groundController.isManualGearShift();
         var data = groundController.getController().getData(MMAttachments.getCONTROL_PREFERENCE());
         return switch (data.groundGearPreference) {
             case ALWAYS_ENABLED -> true;
             case ALWAYS_DISABLED -> false;
-            default -> !groundController.getAttr().getStaticAttribute().isManualGearShift();
+            default -> !groundController.isManualGearShift();
         };
     }
 
@@ -76,9 +77,9 @@ public enum ControlPreference implements StringRepresentable {
      * @param ctrl 车辆控制器子系统
      * @return true=分离模式, false=意图模式
      */
-    public static boolean shouldRawThrottleBrake(CarControllerSubsystem ctrl) {
+    public static boolean shouldRawThrottleBrake(AbstractGroundControllerSubsystem ctrl) {
         if (ctrl.getController() == null)
-            return false;
+            return ctrl.isSeparateThrottleBrake();
         var data = ctrl.getController().getData(MMAttachments.getCONTROL_PREFERENCE());
         return data.groundSeparateThrottleBrake;
     }

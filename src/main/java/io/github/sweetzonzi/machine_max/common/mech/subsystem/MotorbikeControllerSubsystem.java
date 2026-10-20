@@ -31,21 +31,16 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
     }
 
     @Override
-    public void onPrePhysicsTick() {
-        this.speed = -getOwner().getSubPart().getLinearVelocityLocal().z;
+    protected void onGroundControlBegin() {
         this.driftWeight = 0f;
         this.roll = SparkMathKt.toDegrees(getOwner().getSubPart().getRoll());
         this.omegaRoll = getSubPart().body.getAngularVelocityLocal(null).z;
-        if (isActive()) {
-            //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
-            if (this.moveInput != null) {
-                actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;
-            }
-            actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
-            motorbikeControl();
-            balancing();
-            distributeControlSignals();
-        } else resetSignalOutputs();
+    }
+
+    @Override
+    protected void onGroundControlAfterInput() {
+        motorbikeControl();
+        balancing();
     }
 
     private void motorbikeControl() {

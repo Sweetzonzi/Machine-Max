@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/track_controller_static_attr.json",
+  "title": "Track Controller Subsystem Static Attributes",
+  "description": "Static attributes of the track controller: yaw-rate limits, steering geometry and input preferences.",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_controller",
+      "description": "Subsystem type, must be 'machine_max:track_controller'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 40.0
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "move_input_p0",
+        "regular_input_p0",
+        "move_input_p1",
+        "regular_input_p1",
+        "move_input_p2",
+        "regular_input_p2",
+        "move_input_p3",
+        "regular_input_p3",
+        "move_input",
+        "regular_input"
+      ],
+      "description": "Control input channels, ordered by priority."
+    },
+    "max_yaw_rate": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ],
+      "default": {
+        "0": 0,
+        "10": 30,
+        "30": 18,
+        "50": 10
+      },
+      "description": "Yaw-rate limit by speed (km/h -> deg/s). A single number means a constant limit over the whole speed range."
+    },
+    "min_turning_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 4.0,
+      "description": "Minimum turning radius for single-flow differential braking, in metres."
+    },
+    "max_lateral_acceleration": {
+      "type": "number",
+      "minimum": 0,
+      "default": 6.0,
+      "description": "Lateral acceleration limit, in m/s^2."
+    },
+    "yaw_p": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Proportional gain of the yaw PD controller."
+    },
+    "yaw_d": {
+      "type": "number",
+      "default": 0.05,
+      "description": "Derivative gain of the yaw PD controller."
+    },
+    "steering_smoothing": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.1,
+      "description": "Steering input smoothing factor, 0..1 per physics tick."
+    },
+    "brake_smoothing": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "Brake input smoothing factor, 0..1 per physics tick."
+    },
+    "auto_hand_brake": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically apply the parking brake when stopped and idle."
+    },
+    "manual_gear_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable automatic gear selection."
+    },
+    "separate_throttle_brake": {
+      "type": "boolean",
+      "default": false,
+      "description": "Use separate throttle and brake inputs when no player preference is present."
+    },
+    "pivot_yaw_rate": {
+      "type": "number",
+      "minimum": 0,
+      "default": 45.0,
+      "description": "Dual-flow zero-speed pivot yaw-rate limit (deg/s); ignored by single flow."
+    },
+    "pivot_speed_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.5,
+      "description": "Dual-flow pivot speed threshold (m/s); ignored by single flow."
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:track_controller",
+      "basic_durability": 40,
+      "max_yaw_rate": {
+        "0": 0,
+        "10": 30,
+        "30": 18,
+        "50": 10
+      },
+      "min_turning_radius": 4.0
+    }
+  ]
+}

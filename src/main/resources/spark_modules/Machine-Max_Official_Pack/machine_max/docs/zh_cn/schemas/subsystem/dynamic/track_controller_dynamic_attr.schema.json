@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/track_controller_dynamic_attr.json",
+  "title": "履带控制器子系统动态属性",
+  "description": "履带控制器的动态属性，声明控制与速度信号的接线。",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_controller",
+      "description": "Subsystem type, must be 'machine_max:track_controller'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源位置，指向对应的子系统静态属性定义文件。"
+    },
+    "control_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "description": "统一控制信号输出频道与目标。发动机、电动机、变速箱与履带驱动都通过该映射发现。"
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {
+        "vehicle_speed": [
+          "local",
+          "global"
+        ]
+      },
+      "description": "车体前向速度输出。可选，默认发送到 local 与 global 的 vehicle_speed。"
+    }
+  },
+  "required": [
+    "type",
+    "definition",
+    "control_outputs"
+  ],
+  "examples": [
+    {
+      "type": "machine_max:track_controller",
+      "definition": "machine_max:track_controller_standard",
+      "control_outputs": {
+        "car_control": [
+          "subsystem.machine_max.engine",
+          "subsystem.machine_max.gearbox"
+        ],
+        "track_control": [
+          "subsystem.machine_max.left_track_drive",
+          "subsystem.machine_max.right_track_drive"
+        ]
+      }
+    }
+  ]
+}

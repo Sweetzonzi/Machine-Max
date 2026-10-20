@@ -304,7 +304,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         for (var entry : getMechPowerTargets().entrySet()) {
             var consumer = entry.getValue();
             if (consumer != null && consumer.isPowerPathConnected(getName())) {
-                result.put(entry.getKey(), consumer.getFeedbackSpeed());
+                result.put(entry.getKey(), consumer.getFeedbackSpeed(getName()));
             }
         }
         return result;
@@ -358,7 +358,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         for (var entry : getMechPowerTargets().entrySet()) {
             var consumer = entry.getValue();
             if (consumer != null && consumer.isPowerPathConnected(getName())) {
-                result.put(entry.getKey(), consumer.getFeedbackSpeed() * attr.getPowerOutputs().get(entry.getKey()));
+                result.put(entry.getKey(), consumer.getFeedbackSpeed(getName()) * attr.getPowerOutputs().get(entry.getKey()));
             }
         }
         return result;

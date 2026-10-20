@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/track_drive_dynamic_attr.json",
+  "title": "履带驱动子系统动态属性",
+  "description": "履带驱动的动态属性，指向车体侧、连接被驱动轮的连接点。",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_drive",
+      "description": "Subsystem type, must be 'machine_max:track_drive'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源位置，指向对应的子系统静态属性定义文件。"
+    },
+    "connector": {
+      "type": "string",
+      "description": "车体侧、连接被驱动轮的连接点名。"
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {
+        "track_speed": [
+          "local",
+          "global"
+        ]
+      },
+      "description": "履带线速度输出（m/s，前进为正）。可选。"
+    },
+    "force_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {
+        "track_force": [
+          "local",
+          "global"
+        ]
+      },
+      "description": "履带驱动力输出（N，前进为正）。可选。"
+    }
+  },
+  "required": [
+    "type",
+    "definition",
+    "connector"
+  ],
+  "examples": [
+    {
+      "type": "machine_max:track_drive",
+      "definition": "machine_max:track_drive_heavy",
+      "connector": "connector.machine_max.left_sprocket",
+      "speed_outputs": {
+        "track_speed": [
+          "local",
+          "global"
+        ]
+      },
+      "force_outputs": {
+        "track_force": [
+          "local",
+          "global"
+        ]
+      }
+    }
+  ]
+}

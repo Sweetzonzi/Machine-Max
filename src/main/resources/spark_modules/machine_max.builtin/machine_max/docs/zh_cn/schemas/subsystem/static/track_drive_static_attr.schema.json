@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/track_drive_static_attr.json",
+  "title": "履带驱动子系统静态属性",
+  "description": "履带驱动的静态属性：扭矩、制动与转速上限。",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:track_drive",
+      "description": "Subsystem type, must be 'machine_max:track_drive'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 40.0
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "track_control"
+      ],
+      "description": "TrackControlSignal 输入频道，按优先级排列。"
+    },
+    "max_drive_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 30000.0,
+      "description": "滚动关节的最大驱动扭矩，单位 N·m。"
+    },
+    "max_brake_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20000.0,
+      "description": "最大服务制动扭矩，单位 N·m。"
+    },
+    "max_hand_brake_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20000.0,
+      "description": "最大驻车制动扭矩，单位 N·m。"
+    },
+    "max_speed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 120.0,
+      "description": "被驱动轮的最大角速度，单位 rad/s。"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:track_drive",
+      "basic_durability": 40,
+      "max_drive_torque": 30000,
+      "max_brake_torque": 20000,
+      "max_hand_brake_torque": 20000,
+      "max_speed": 120
+    }
+  ]
+}

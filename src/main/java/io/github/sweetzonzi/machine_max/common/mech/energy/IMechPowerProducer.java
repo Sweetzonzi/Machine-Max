@@ -15,7 +15,7 @@ public interface IMechPowerProducer {
         for (var entry : getMechPowerTargets().entrySet()) {
             var consumer = entry.getValue();
             if (consumer != null && consumer.isPowerPathConnected(getName())) {
-                result.put(entry.getKey(), consumer.getFeedbackSpeed());
+                result.put(entry.getKey(), consumer.getFeedbackSpeed(getName()));
             }
         }
         return result;

@@ -25,7 +25,9 @@
         "machine_max:turret_driver",
         "machine_max:weapon_controller",
         "machine_max:launcher",
-        "machine_max:regen_loader"
+        "machine_max:regen_loader",
+        "machine_max:track_controller",
+        "machine_max:track_drive"
       ],
       "description": "子系统类型，决定使用哪个具体的子系统架构。"
     }
@@ -225,6 +227,30 @@
       },
       "then": {
         "$ref": "dynamic/regen_loader_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/track_controller_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_drive"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/track_drive_dynamic_attr.schema.json"
       }
     }
   ],
