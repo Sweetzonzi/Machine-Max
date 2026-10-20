@@ -1,8 +1,8 @@
 {
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_turret.png",
-  "vehicle_durability_rate": 0.50,
-  "vehicle_damage_rate": 1.00,
-  "vehicle_damage_rate_destroyed": 0.10,
+  "vehicle_durability_rate": 0.5,
+  "vehicle_damage_rate": 1,
+  "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "sdkfz234_2": {
       "model": "machine_max:sdkfz234_2.geo",

@@ -8,7 +8,7 @@
     "ammo_atgm"
   ],
   "barrel": {
-    "recoil_multiplier": 0.0
+    "recoil_multiplier": 0
   },
   "breech": {
     "fire_rate": 30,

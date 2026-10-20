@@ -2,8 +2,8 @@
   "type": "machine_max:weapon_controller",
   "basic_durability": 20,
   "fire_mode": "RIPPLE",
-  "ripple_interval": 1.0,
-  "aim_tolerance_deg": 10.0,
+  "ripple_interval": 1,
+  "aim_tolerance_deg": 10,
   "aim_inputs": [
     "aim_input_p0",
     "aim_input_p1",
@@ -14,6 +14,6 @@
   "fire_inputs": [
     "atgm_fire_input"
   ],
-  "fire_correction_angle_deg": 1.0,
+  "fire_correction_angle_deg": 1,
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

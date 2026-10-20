@@ -2,7 +2,7 @@
   "icon": "machine_max:textures/icon/k17/k17_wheel.png",
   "vehicle_durability_rate": 0.02,
   "vehicle_damage_rate": 0.05,
-  "vehicle_damage_rate_destroyed": 0.00,
+  "vehicle_damage_rate_destroyed": 0,
   "variants": {
     "left": {
       "model": "machine_max:k17.geo",

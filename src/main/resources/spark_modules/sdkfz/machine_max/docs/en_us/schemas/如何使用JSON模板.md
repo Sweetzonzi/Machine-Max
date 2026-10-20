@@ -25,20 +25,12 @@ JSON Schema是一种用于描述和验证JSON文档结构的规范。对于Machi
 
 ```json
 {
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/example.png",
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "vehicle_durability_rate": 1.0,
   "variants": {
-    "model": "machine_max:example.geo",
-    "textures": "machine_max:textures/part/example.png",
-    "sub_parts": {
-      "sub_part.machine_max.main": {
-        "hit_boxes": {
-          "Shape": {
-            "type": "box"
-          }
-        }
-      }
+    "default": {
+      "icon": "machine_max:textures/icon/example.png",
+      "models": "machine_max:example.geo"
     }
   }
 }
