@@ -8,7 +8,7 @@
     "$schema": {
       "type": "string",
       "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
-      "default": "../../docs/zh_cn/schemas/part_definition_schema.json"
+      "default": "../../docs/en_us/schemas/part_definition_schema.json"
     },
     "icon": {
       "$ref": "base/resource_location.schema.json",
@@ -83,11 +83,8 @@
       "functional_threshold": 0.6,
       "share_durability": true,
       "variants": {
-        "models": "machine_max:ae86_chassis_all_terrain.geo",
-        "textures": [
-          "machine_max:textures/part/ae86_all_terrain_1.png",
-          "machine_max:textures/part/ae86_all_terrain_2.png"
-        ],
+        "model": "machine_max:ae86_chassis_all_terrain.geo",
+        "textures": "machine_max:textures/part/ae86_all_terrain.png",
         "animations": "machine_max:ae86",
         "tags": [],
         "sub_parts": {
@@ -111,8 +108,8 @@
       "vehicle_durability_rate": 0.9,
       "variants": {
         "red": {
-          "models": "machine_max:car_chassis.geo",
-          "textures": ["machine_max:textures/part/car_chassis_red.png"],
+          "model": "machine_max:car_chassis.geo",
+          "textures": "machine_max:textures/part/car_chassis_red.png",
           "sub_parts": {
             "chassis": {
               "durability": 400.0,
@@ -127,8 +124,8 @@
           }
         },
         "blue": {
-          "models": "machine_max:car_chassis.geo",
-          "textures": ["machine_max:textures/part/car_chassis_blue.png"],
+          "model": "machine_max:car_chassis.geo",
+          "textures": "machine_max:textures/part/car_chassis_blue.png",
           "sub_parts": {
             "chassis": {
               "durability": 400.0,

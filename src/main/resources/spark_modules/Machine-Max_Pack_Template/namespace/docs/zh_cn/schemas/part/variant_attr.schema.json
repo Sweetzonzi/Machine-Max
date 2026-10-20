@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/variant_attr.json",
   "title": "部件变体属性",
-  "description": "定义载具部件的一个变体（Variant），包含该变体的外观、模型、子部件等配置。支持多状态（state）映射。",
+  "description": "定义载具部件的一个变体（Variant），包含该变体的模型、纹理、动画、标签与子部件。部件定义既可以内联单个变体，也可以写成变体名到变体的映射。",
   "type": "object",
   "properties": {
     "tags": {
@@ -11,43 +11,50 @@
         "$ref": "../base/resource_location.schema.json"
       },
       "default": [],
-      "description": "部件标签列表，用于连接点匹配和功能分类"
+      "description": "部件标签，用于连接点匹配（对侧连接点的 required_tags / acceptable_tags / forbidden_tags）和功能分类。"
     },
     "model": {
-      "$ref": "../base/resource_location.schema.json",
-      "description": "模型路径，无视内层文件夹架构，例如machine_max:ae86_chassis.geo会在所有内容包的models/machine_max/part的所有子目录中中寻找ae86_chassis.geo.json"
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "description": "模型路径。忽略前导文件夹：machine_max:ae86_chassis.geo 会匹配内容包 models/ 目录下任意层级的 ae86_chassis.geo.json。"
     },
     "textures": {
       "oneOf": [
         {
-          "$ref": "../base/resource_location.schema.json",
-          "default": "minecraft:missingno",
-          "description": "单一纹理，例如\"machine_max:textures/part/ae86/ae86_armor.png\"会将内容包相应路径的图像作为部件的\"default\"纹理"
+          "allOf": [
+            { "$ref": "../base/resource_location.schema.json" }
+          ],
+          "description": "单一纹理，以名字 \"default\" 注册。例如 \"machine_max:textures/part/ae86/ae86_armor.png\" 会成为部件的 \"default\" 纹理。"
         },
         {
           "type": "object",
           "additionalProperties": {
             "$ref": "../base/resource_location.schema.json"
           },
-          "default": {
-            "default": "minecraft:missingno"
-          },
-          "description": "名称到纹理列表的映射，键为纹理名称，值为纹理路径。例如：\"textures\": {\n            \"example_2\": \"machine_max:textures/part/texture_2.png\"\n          }则会将相应路径的图像作为部件的\"example_2\"纹理。"
+          "minProperties": 1,
+          "description": "名字到图像路径的映射。第一个条目是部件初始使用的纹理，按惯例命名为 \"default\"；其余条目可按名字切换，例如由喷罐涂装。"
         }
       ],
-      "default": {},
-      "description": "纹理路径配置。"
+      "default": {
+        "default": "minecraft:missingno"
+      },
+      "description": "纹理配置。最终纹理映射为空时部件加载失败。"
     },
     "animations": {
-      "$ref": "../base/resource_location.schema.json",
-      "default": {},
-      "description": "动画路径，无视内层文件夹架构，例如machine_max:ae86会在所有内容包的animations/machine_max/part/ae86中的所有动画json作为模型的可用动画"
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "动画路径。忽略前导文件夹：machine_max:ae86 会匹配内容包 animations/ 下文件夹名为 ae86 的所有动画 json，作为该模型的可用动画。"
     },
     "sub_parts": {
       "oneOf": [
         {
-          "$ref": "subpart/sub_part_attr.schema.json",
-          "description": "单一零件定义，使用默认零件名（\"sub_part.machine_max.main\"）"
+          "allOf": [
+            { "$ref": "subpart/sub_part_attr.schema.json" }
+          ],
+          "description": "单一零件，以默认名字 \"sub_part.machine_max.main\" 注册。"
         },
         {
           "type": "object",
@@ -55,10 +62,10 @@
             "$ref": "subpart/sub_part_attr.schema.json"
           },
           "minProperties": 1,
-          "description": "多零件定义，键为零件名称，值为零件配置"
+          "description": "零件名到零件配置的映射。"
         }
       ],
-      "description": "子部件（零件）定义，支持单一零件（简写）或多个零件（键值对）两种写法。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
+      "description": "子部件（零件）定义。零件是部件运动的最小单元，部件的每个可动部分都应当是一个零件。"
     }
   },
   "additionalProperties": false,
@@ -66,10 +73,7 @@
   "examples": [
     {
       "model": "machine_max:ae86_chassis_all_terrain.geo",
-      "textures": [
-        "machine_max:textures/part/ae86_all_terrain_1.png",
-        "machine_max:textures/part/ae86_all_terrain_2.png"
-      ],
+      "textures": "machine_max:textures/part/ae86_all_terrain.png",
       "animations": "machine_max:ae86",
       "tags": [],
       "sub_parts": {
@@ -78,8 +82,8 @@
           "mass": 1200.0,
           "hit_boxes": {
             "mmCollision_Box_Chassis": {
-              "name": "chassis",
               "type": "box",
+              "material": "machine_max:structural_steel",
               "thickness": 10
             }
           }
@@ -87,24 +91,12 @@
       }
     },
     {
-      "model": {
-        "default": "machine_max:tank_turret_normal.geo",
-        "broken": "machine_max:tank_turret_damaged.geo"
-      },
+      "model": "machine_max:tank_turret_normal.geo",
       "textures": {
-        "default": [
-          "machine_max:textures/part/tank_turret_1.png",
-          "machine_max:textures/part/tank_turret_2.png"
-        ],
-        "broken": [
-          "machine_max:textures/part/tank_turret_damaged_1.png",
-          "machine_max:textures/part/tank_turret_damaged_2.png"
-        ]
+        "default": "machine_max:textures/part/tank_turret_1.png",
+        "desert": "machine_max:textures/part/tank_turret_desert.png"
       },
-      "animations": {
-        "default": "machine_max:tank_turret_rotation",
-        "broken": "machine_max:tank_turret_broken"
-      },
+      "animations": "machine_max:tank_turret_rotation",
       "tags": ["machine_max:turret", "machine_max:rotatable"],
       "sub_parts": {
         "turret_base": {
@@ -112,8 +104,8 @@
           "mass": 800.0,
           "hit_boxes": {
             "mmCollision_Turret": {
-              "name": "turret",
               "type": "cylinder",
+              "material": "machine_max:rha",
               "thickness": 50
             }
           }

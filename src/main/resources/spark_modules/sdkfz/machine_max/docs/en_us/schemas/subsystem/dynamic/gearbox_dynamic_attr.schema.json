@@ -18,7 +18,9 @@
       "description": "Power output target, subsystem or part interface name."
     },
     "gear_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": { "gear": ["part", "global"] },
       "description": "Gear name output channel and targets. Optional, by default sends current gear name to the gear channel of parts and vehicles."
     }

@@ -16,7 +16,9 @@
       "properties": {
         "type": { "const": "damage_type" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "伤害类型的资源地址，例如：'minecraft:fly_into_wall'。"
         }
       },
@@ -28,7 +30,9 @@
       "properties": {
         "type": { "const": "damage_tag" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "伤害标签的资源地址，例如：'machine_max:has_pen_depth'。"
         }
       },
@@ -40,7 +44,9 @@
       "properties": {
         "type": { "const": "entity_type" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "实体类型的资源地址，例如：'minecraft:slime'。"
         }
       },
@@ -52,7 +58,9 @@
       "properties": {
         "type": { "const": "entity_tag" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "实体标签的资源地址，例如：'minecraft:skeletons'。"
         }
       },
@@ -92,7 +100,9 @@
       "properties": {
         "type": { "const": "not" },
         "condition": {
-          "$ref": "condition.schema.json",
+          "allOf": [
+            { "$ref": "condition.schema.json" }
+          ],
           "description": "子条件，不满足此条件时返回true。"
         }
       },

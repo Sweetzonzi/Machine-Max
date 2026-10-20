@@ -15,7 +15,9 @@
       "description": "Physical properties: friction, slip, elasticity, etc.",
       "properties": {
         "friction": {
-          "$ref": "vector_3d.schema.json",
+          "allOf": [
+            { "$ref": "vector_3d.schema.json" }
+          ],
           "default": [0.5, 0.5, 0.5],
           "description": "Friction coefficient vector [x, y, z]. x = lateral, y = forward, z = unused."
         },
@@ -74,15 +76,21 @@
         "decay_power": { "type": "number", "minimum": 0.0, "default": 1.5, "description": "Armor degradation curve exponent. >1 = degrades slowly at first, then rapidly near failure (brittle); =1 = linear." },
         "unpen_power": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "Damage exponent when attack fails to fully penetrate. Formula: dmg*(penetration/equivalent_armor)^unpen_power." },
         "impact_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "Condition-driven impact damage modifiers."
         },
         "penetration_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "Condition-driven penetration depth modifiers."
         },
         "damage_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "Condition-driven damage modifiers (type/entity-specific adjustments)."
         }
       },
@@ -92,12 +100,16 @@
       "type": "object",
       "properties": {
         "hit_un_pen": {
-          "$ref": "sound_event.schema.json",
+          "allOf": [
+            { "$ref": "sound_event.schema.json" }
+          ],
           "description": "Sound event when hit box is hit but not penetrated.",
           "default": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 }
         },
         "hit_pen": {
-          "$ref": "sound_event.schema.json",
+          "allOf": [
+            { "$ref": "sound_event.schema.json" }
+          ],
           "description": "Sound event when hit box is hit and penetrated.",
           "default": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
         }

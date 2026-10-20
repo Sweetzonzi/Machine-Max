@@ -18,7 +18,9 @@
       "description": "功率输出目标，可填写任意本部件内其他子系统名称、部件连接点名称，或'part'，或'global'。"
     },
     "speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "电机转速信号输出频道及目标。可选，默认将电机转速(rad/s)发至部件和载具的motor_speed频道。"
     }

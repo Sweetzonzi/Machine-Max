@@ -36,7 +36,9 @@
       "description": "质心定位器名称，用于指定模型中的同名定位器作为质心位置。若未指定或未找到定位器，则会以碰撞体积的几何中心作为质心。"
     },
     "projected_area": {
-      "$ref": "../../base/vector_3d.schema.json",
+      "allOf": [
+        { "$ref": "../../base/vector_3d.schema.json" }
+      ],
       "default": {"x": 0, "y": 0, "z": 0},
       "description": "子部件在三个轴向上的投影面积(m²)，用于计算空气阻力"
     },
@@ -110,7 +112,7 @@
     {
       "hit_boxes": {
         "mmCollision_Box_Chassis": {
-          "name": "chassis",
+          "id": "chassis",
           "type": "box"
         }
       },
@@ -122,45 +124,38 @@
       "mass_center": "hull_mass_center",
       "durability": 550.0,
       "mass": 1200.0,
-      "projected_area": {
-        "x": 1.5,
-        "y": 0.8,
-        "z": 3.2
-      },
+      "projected_area": [1.5, 0.8, 3.2],
       "block_collision": "ground",
       "collision_height": 2.5,
       "climb_assist": true,
       "hit_boxes": {
         "mmCollision_Box_Chassis": {
-          "name": "chassis",
+          "id": "chassis",
           "type": "box",
-          "block_damage_factor": 1.5,
-          "angle_effect": true,
           "thickness": 10
         },
         "mmCollision_Box_Engine": {
-          "name": "engine",
           "type": "box",
           "subsystem": "engine",
-          "block_damage_factor": 0.95,
-          "angle_effect": true,
           "thickness": 3
         }
       },
       "interact_boxes": {
         "driver_seat": {
-          "bone_name": "driver_seat",
-          "interact_type": "seat"
+          "bone": "driver_seat",
+          "signal_targets": {
+            "seat_interact": ["driver_seat"]
+          }
         }
       },
       "connectors": {
         "wheel_front_left": {
           "locator": "wheel_front_left",
-          "type": "Advanced"
+          "definition": "machine_max:light_left_wheel"
         },
         "wheel_front_right": {
           "locator": "wheel_front_right",
-          "type": "Advanced"
+          "definition": "machine_max:light_right_wheel"
         }
       },
       "subsystems": {
@@ -185,15 +180,20 @@
         },
         "car_controller": {
           "type": "machine_max:car_controller",
-          "definition": "machine_max:default_car_controller"
+          "definition": "machine_max:default_car_controller",
+          "control_outputs": {
+            "car_control": ["engine", "gearbox"]
+          }
         },
         "engine": {
           "type": "machine_max:engine",
-          "definition": "machine_max:default_engine"
+          "definition": "machine_max:default_engine",
+          "power_output": "gearbox"
         },
         "gearbox": {
           "type": "machine_max:gearbox",
-          "definition": "machine_max:default_gearbox"
+          "definition": "machine_max:default_gearbox",
+          "power_output": "wheel_front_left"
         },
         "trunk_storage": {
           "type": "machine_max:item_storage",
@@ -217,8 +217,9 @@
       "hydro_priority": 0,
       "hydrodynamics": {
         "hull_aero": {
-          "drag_coefficient": 0.3,
-          "lift_coefficient": 0.1
+          "front_drag": [0.05, 0.6],
+          "back_drag": [0.1, 0.8],
+          "y_lift": 0.2
         }
       },
       "description": "完整子部件示例，包含质心定位器、流体动力、连接点及完整的子系统配置（座位、储物、控制器、发动机、变速箱等）"

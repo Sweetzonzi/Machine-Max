@@ -112,7 +112,7 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:motor_controller"
+            "const": "machine_max:motorbike_controller"
           }
         }
       },

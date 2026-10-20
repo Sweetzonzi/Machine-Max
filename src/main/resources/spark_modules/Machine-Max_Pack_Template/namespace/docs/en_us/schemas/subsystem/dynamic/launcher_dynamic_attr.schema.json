@@ -23,7 +23,9 @@
       "description": "Animation name played on fire, keyed in the part's animation set. Defaults to 'fire'. Same-name animations restart from 0; multiple launchers on the same part must use different names to avoid interrupting each other. A missing animation triggers a single warning and disables the fire animation."
     },
     "ammo_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Remaining ammo feedback output channels and targets. Optional."
     }

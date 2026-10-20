@@ -18,7 +18,9 @@
       "description": "Name of the controlled AdvancedConnector. The turret driver controls turret rotation through this connector's New6Dof joint."
     },
     "rotation_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Current joint angle feedback output channels and targets. Optional, sends current yaw/pitch angles (radians) to specified channels."
     }

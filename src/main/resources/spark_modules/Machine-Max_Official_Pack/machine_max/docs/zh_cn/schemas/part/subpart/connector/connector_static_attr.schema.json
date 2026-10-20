@@ -16,7 +16,9 @@
       "description": "连接点类型。Simple：简单连接点；Advanced：高级连接点，支持复杂的关节属性。"
     },
     "direction": {
-      "$ref": "../../../base/axis.schema.json",
+      "allOf": [
+        { "$ref": "../../../base/axis.schema.json" }
+      ],
       "description": "连接点的法线方向，用于确定连接点的连接方向。x+为右，y+为上，z+为后。"
     },
     "integrity": {

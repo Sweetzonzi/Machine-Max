@@ -14,7 +14,9 @@
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
     "power_outputs": {
-      "$ref": "../base/power_outputs.schema.json",
+      "allOf": [
+        { "$ref": "../base/power_outputs.schema.json" }
+      ],
       "description": "动力输出目标及减速比。"
     }
   },

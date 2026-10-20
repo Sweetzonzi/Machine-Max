@@ -11,6 +11,7 @@
     },
     "definition": {
       "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
       "description": "连接点定义ID，引用预定义的连接点静态属性。例如：\"machine_max:simple_connector\"。"
     },
     "power_target": {
@@ -27,7 +28,9 @@
           "description": "连接点类型覆写。"
         },
         "direction": {
-          "$ref": "../../../base/axis.schema.json",
+          "allOf": [
+            { "$ref": "../../../base/axis.schema.json" }
+          ],
           "description": "连接点法线方向覆写。"
         },
         "integrity": {
@@ -38,7 +41,13 @@
         "impact_absorption": {
           "type": "number",
           "minimum": 0.0,
+          "maximum": 1.0,
           "description": "冲击转结构损耗比例覆写。"
+        },
+        "impact_absorption_destroyed": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "所在零件已摧毁时冲击转结构损耗比例的覆写。"
         },
         "impact_reduction": {
           "type": "number",
@@ -110,9 +119,10 @@
       "definition": "machine_max:advanced_wheel_connector",
       "overwrite": {
         "type": "Advanced",
-        "direction": "y+",
+        "direction": "xp",
         "integrity": 32.0,
         "impact_absorption": 0.15,
+        "impact_absorption_destroyed": 2.5,
         "impact_reduction": 3.0,
         "impact_multiplier": 0.8,
         "collide_between_parts": false,
@@ -140,8 +150,7 @@
       "signal_targets": {
         "wheel_control": ["wheel_driver", "local"],
         "abs_request": ["global"]
-      },
-      "internal": true
+      }
     }
   ]
 }

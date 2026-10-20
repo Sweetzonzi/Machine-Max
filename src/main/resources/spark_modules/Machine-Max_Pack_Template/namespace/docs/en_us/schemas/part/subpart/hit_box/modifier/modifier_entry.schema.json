@@ -6,7 +6,9 @@
   "type": "object",
   "properties": {
     "operation": {
-      "$ref": "../../../../base/operation.schema.json",
+      "allOf": [
+        { "$ref": "../../../../base/operation.schema.json" }
+      ],
       "description": "Operation type. add: add the value to the base value; multiply: multiply the base value by the value."
     },
     "value": {
@@ -14,7 +16,9 @@
       "description": "Value for the operation. For add operation, can be positive or negative (such as -5 means damage reduction); for multiply operation, usually a positive number (such as 0.05 means reduce to 5%)."
     },
     "condition": {
-      "$ref": "condition/condition.schema.json",
+      "allOf": [
+        { "$ref": "condition/condition.schema.json" }
+      ],
       "description": "Condition, apply this modifier when the condition is met."
     }
   },

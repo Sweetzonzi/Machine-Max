@@ -18,12 +18,16 @@
       "description": "控制的连接点名称。"
     },
     "roll_speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "滚动速度信号输出频道及目标。"
     },
     "steering_angle_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "转向角度信号输出频道及目标。"
     }

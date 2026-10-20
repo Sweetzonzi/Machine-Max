@@ -23,7 +23,9 @@
       "description": "开火时播放的动画名，对应零件动画集中的键。缺省为 'fire'。同名动画会从 0 重启；同一零件上的多个发射器需指定不同名称才能互不打断。动画缺失时告警一次并禁用开火动画。"
     },
     "ammo_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "剩余弹药反馈输出频道及目标。可选。"
     }

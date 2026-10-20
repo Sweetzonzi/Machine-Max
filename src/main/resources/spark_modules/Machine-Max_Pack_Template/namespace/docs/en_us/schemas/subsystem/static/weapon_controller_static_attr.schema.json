@@ -43,7 +43,7 @@
     },
     "ripple_interval": {
       "type": "number",
-      "minimum": 1,
+      "minimum": 0,
       "default": 0.1,
       "description": "Interval between each fire in ripple mode (in seconds). Only applicable when fire_mode is RIPPLE."
     },
@@ -65,11 +65,29 @@
       "default": [],
       "description": "List of fire command input channels. A channel counts as firing when it carries a fire signal: a main/secondary weapon fire instruction, a boolean true, or a non-zero number. Ammo-type switching instructions share these channels and are never treated as fire. Typically receives key-triggered fire signals."
     },
+    "fire_correction_angle_deg": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "Ballistic correction angle in degrees. 0 = fire exactly along the locator direction (vehicle mode); a larger value lets the shot direction be corrected toward the target by up to this angle. It is added to aim_tolerance_deg when checking whether a launcher is aimed."
+    },
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -77,7 +95,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",

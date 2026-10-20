@@ -24,12 +24,16 @@
       "description": "Resource location of the control group preset, defining the available control channel mappings for this seat. e.g. machine_max:default_driver."
     },
     "passenger_num_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Passenger count signal output channel and targets."
     },
     "camera_discovery_targets": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Camera discovery handshake configuration. Subsystems on these channels will receive handshake signals to discover available cameras on this vehicle. e.g. {\"gunner_optics\": [\"gunner_primary_sight\"]}"
     },

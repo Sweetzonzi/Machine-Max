@@ -16,7 +16,9 @@
       "description": "Connection point type. Simple: Simple connection point; Advanced: Advanced connection point, supports complex joint attributes."
     },
     "direction": {
-      "$ref": "../../../base/axis.schema.json",
+      "allOf": [
+        { "$ref": "../../../base/axis.schema.json" }
+      ],
       "description": "Normal direction of the connection point, used to determine the connection direction. X+ = right, Y+ = up, Z+ = back."
     },
     "integrity": {
@@ -85,7 +87,7 @@
   "examples": [
     {
       "type": "Simple",
-      "description": "最简连接点示例，仅包含必需字段"
+      "description": "Minimal connection point example, required fields only"
     },
     {
       "type": "Advanced",
@@ -107,7 +109,7 @@
           "damping": 20
         }
       },
-      "description": "左前轮连接点，仅允许左变体，具有垂直缓冲和转向能力，冲击吸收率较低，冲击减免较高"
+      "description": "Left front wheel connection point: left-side variants only, vertical suspension travel and steering, lower impact absorption and higher impact reduction"
     }
   ]
 }

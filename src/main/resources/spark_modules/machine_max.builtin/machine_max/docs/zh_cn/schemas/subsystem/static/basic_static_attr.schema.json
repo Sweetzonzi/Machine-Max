@@ -38,8 +38,20 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "子系统失活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "子系统被摧毁时的音效事件。",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -47,7 +59,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "子系统被激活时的音效事件。",
           "default": {
             "sound_id": "machine_max:empty_sound",

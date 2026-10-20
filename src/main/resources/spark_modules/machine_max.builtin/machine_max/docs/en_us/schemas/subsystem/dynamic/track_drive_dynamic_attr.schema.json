@@ -21,7 +21,9 @@
       "description": "Name of the body-side connector that joins the driven wheel."
     },
     "speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {
         "track_speed": [
           "local",
@@ -31,7 +33,9 @@
       "description": "Track linear speed output (m/s, forward positive). Optional."
     },
     "force_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {
         "track_force": [
           "local",

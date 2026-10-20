@@ -17,11 +17,15 @@
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "control_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "description": "Unified control signal output channel and targets. Engines, motors, gearboxes and track drives are discovered through this map."
     },
     "speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {
         "vehicle_speed": [
           "local",

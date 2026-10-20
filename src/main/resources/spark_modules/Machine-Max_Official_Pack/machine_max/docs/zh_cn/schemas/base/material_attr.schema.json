@@ -15,7 +15,9 @@
       "description": "物理属性：摩擦、滑移、弹性等物理模拟参数。",
       "properties": {
         "friction": {
-          "$ref": "vector_3d.schema.json",
+          "allOf": [
+            { "$ref": "vector_3d.schema.json" }
+          ],
           "default": [0.5, 0.5, 0.5],
           "description": "摩擦系数向量，格式为[x, y, z]。x为侧向摩擦系数，y为前向摩擦系数，z无实际意义。"
         },
@@ -77,15 +79,21 @@
         "decay_power": { "type": "number", "minimum": 0.0, "default": 1.5, "description": "装甲退化曲线指数。>1时装甲前期退化慢、临近损坏时快速失效（脆性）；=1时为线性退化。" },
         "unpen_power": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "攻击未能完全击穿护甲时的伤害指数。公式: 伤害*(穿深/等效护甲)^unpen_power。" },
         "impact_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "条件驱动的冲击修正器。"
         },
         "penetration_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "条件驱动的穿深修正器。"
         },
         "damage_modifiers": {
-          "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
+          "allOf": [
+            { "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json" }
+          ],
           "description": "条件驱动的伤害修正器（类型/实体特定调节）。"
         }
       },
@@ -95,12 +103,16 @@
       "type": "object",
       "properties": {
         "hit_un_pen": {
-          "$ref": "sound_event.schema.json",
+          "allOf": [
+            { "$ref": "sound_event.schema.json" }
+          ],
           "description": "碰撞箱被命中但未穿透时的音效事件。",
           "default": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 }
         },
         "hit_pen": {
-          "$ref": "sound_event.schema.json",
+          "allOf": [
+            { "$ref": "sound_event.schema.json" }
+          ],
           "description": "碰撞箱被命中且穿透时的音效事件。",
           "default": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
         }

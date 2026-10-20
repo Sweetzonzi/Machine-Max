@@ -14,9 +14,32 @@
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "control_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the first-person view; machine_max:empty shows no HUD."
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the third-person view; machine_max:empty shows no HUD."
+    },
+    "scope_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the scope view; machine_max:empty shows no HUD."
     }
   },
   "required": ["type", "definition"],

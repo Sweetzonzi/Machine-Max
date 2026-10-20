@@ -46,7 +46,7 @@
       "signal_targets": {
         "lever_pull": ["engine_start", "lights"]
       },
-      "interact_mode": "toggle",
+      "interact_mode": "accurate",
       "condition": "OR",
       "description": "控制杆交互箱，切换引擎和灯光状态"
     }

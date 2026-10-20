@@ -20,8 +20,15 @@
     "sounds": {
       "type": "object",
       "properties": {
-        "on_destroyed": { "$ref": "../../base/sound_event.schema.json", "description": "子系统被摧毁时的音效。", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
-        "on_activate": { "$ref": "../../base/sound_event.schema.json", "description": "子系统激活时的音效。", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } }
+        "on_destroyed": { "allOf": [
+   { "$ref": "../../base/sound_event.schema.json" }
+ ], "description": "子系统被摧毁时的音效。", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
+        "on_activate": { "allOf": [
+   { "$ref": "../../base/sound_event.schema.json" }
+ ], "description": "子系统激活时的音效。", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
+        "on_deactivate": { "allOf": [
+   { "$ref": "../../base/sound_event.schema.json" }
+ ], "description": "子系统失活时的音效。", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } }
       },
       "additionalProperties": false,
       "description": "再生装弹机子系统的音效配置。"

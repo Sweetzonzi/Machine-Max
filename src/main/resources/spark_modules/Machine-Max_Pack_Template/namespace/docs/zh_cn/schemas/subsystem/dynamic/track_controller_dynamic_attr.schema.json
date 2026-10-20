@@ -17,11 +17,15 @@
       "description": "子系统型号的资源位置，指向对应的子系统静态属性定义文件。"
     },
     "control_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "description": "统一控制信号输出频道与目标。发动机、电动机、变速箱与履带驱动都通过该映射发现。"
     },
     "speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {
         "vehicle_speed": [
           "local",

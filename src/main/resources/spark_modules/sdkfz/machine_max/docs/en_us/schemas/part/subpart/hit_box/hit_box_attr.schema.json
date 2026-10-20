@@ -2,233 +2,243 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/hit_box_attr.json",
   "title": "Hit Box Attributes",
-  "description": "Defines the physical properties, armor values, and damage modification system of part collision boxes.",
+  "description": "Defines one hit box of a sub-part: collision shape, armor thickness, the referenced hit box material and per-hit-box material overrides. Overrides use the same physics / armor / sounds groups as the material definition; every override field is optional and an omitted field keeps the material value.",
   "type": "object",
   "properties": {
     "id": {
       "type": "string",
-      "default": "part",
-      "description": "Collision shape id, same id collision volumes will not be hit by the same attack."
+      "default": "",
+      "description": "Hit box id. Hit boxes sharing an id are not hit twice by the same attack."
     },
     "type": {
       "type": "string",
       "enum": ["box", "sphere", "cylinder", "capsule", "wheel"],
-      "description": "Collision shape type. Each type works as follows:\n- box: Box collision shape, generated from cube pose and half-extents.\n- sphere: Sphere collision shape, uses cube y-direction half-length as radius.\n- cylinder: Cylinder collision shape, generated from cube pose and half-extents, cylinder axis is z-axis.\n- capsule: Capsule collision shape, generated from cube pose and half-extents, capsule axis is y-axis.\n- wheel: Special sphere collision shape, uses cube y-direction half-length as radius and x-direction size as width. During collision, checks the relative position of contact point, ignores collision if x value exceeds half-width. This type adjusts the entire rigid body's moment of inertia using cylinder formula based on cube dimensions. It is recommended that a single subpart contains only one hitbox of type wheel, with only one cube inside."
+      "description": "Collision shape type.\n- box: box generated from the cube pose and half-extents.\n- sphere: sphere using the cube y half-length as radius.\n- cylinder: cylinder generated from the cube pose and half-extents, axis is z.\n- capsule: capsule generated from the cube pose and half-extents, axis is y.\n- wheel: sphere using the cube y half-length as radius and the x size as width; contacts beyond half-width are ignored and the rigid body inertia tensor is adjusted with the cylinder formula. Prefer a single wheel hit box holding a single cube per sub-part."
     },
     "subsystem": {
       "type": "string",
       "default": "",
-      "description": "Subsystem name, used to associate this hit box with a specific subsystem, when this hit box takes damage, the associated subsystem will take equivalent damage."
+      "description": "Subsystem name. Damage taken by this hit box is applied to the named subsystem as well."
+    },
+    "module": {
+      "type": "string",
+      "default": "",
+      "description": "Module name inside the subsystem, for example \"barrel\", \"breech\", \"radiator\". An empty string applies to the subsystem as a whole."
     },
     "material": {
-      "$ref": "../../../base/resource_location.schema.json",
+      "allOf": [
+        { "$ref": "../../../base/resource_location.schema.json" }
+      ],
       "default": "machine_max:default",
-      "description": "Material registry id, used to obtain friction coefficients, damage reduction properties, sound effects, and other physical properties."
-    },
-    "angle_effect": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether equivalent armor thickness is affected by impact angle, if false, impact angle is not considered when calculating thickness."
+      "description": "Material registry id, used to obtain friction coefficients, damage reduction, hit sounds and other physical properties."
     },
     "thickness": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "Armor thickness, unit mm, reduces damage and controls energy distribution during collisions."
+      "description": "Armor thickness, unit mm. Reduces damage and controls energy distribution during collisions."
+    },
+    "condition": {
+      "type": "string",
+      "default": "true",
+      "description": "Activation condition, a molang expression deciding whether the hit box is active, for example glass losing its hit box once broken or a trailer jack losing it when deployed."
     },
     "overwrite": {
       "type": "object",
-      "description": "Hit box material override. Any provided fields override the referenced material fields.",
+      "description": "Material override applied on top of the referenced material.",
       "properties": {
-        "friction": {
-          "$ref": "../../../base/vector_3d.schema.json"
-        },
-        "slip_adaptation": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "slip_curve": {
+        "physics": {
           "type": "object",
-          "description": "Slip curve override. Supports partial override, unspecified fields inherit from material.",
+          "description": "Physics override: friction, slip, elasticity and block damage.",
           "properties": {
-            "longitudinal": {
+            "friction": {
+              "allOf": [
+                { "$ref": "../../../base/vector_3d.schema.json" }
+              ],
+              "description": "Friction coefficient vector [x, y, z]. x = lateral, y = forward, z = unused."
+            },
+            "slip_adaptation": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Slip adaptation coefficient, adjusts friction behaviour during sliding."
+            },
+            "slip_curve": {
               "type": "object",
+              "description": "Tire slip friction curve parameters.",
               "properties": {
-                "peak_slip_ratio": {
-                  "type": "number",
-                  "minimum": 0.0
+                "longitudinal": {
+                  "type": "object",
+                  "description": "Longitudinal slip-ratio curve.",
+                  "properties": {
+                    "peak_slip_ratio": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "Slip ratio at peak friction."
+                    },
+                    "base_scale": {
+                      "type": "number",
+                      "description": "Friction scale at zero slip."
+                    },
+                    "peak_scale": {
+                      "type": "number",
+                      "description": "Friction scale at peak_slip_ratio."
+                    },
+                    "kinetic_scale": {
+                      "type": "number",
+                      "description": "Friction scale in the high-slip kinetic region."
+                    }
+                  },
+                  "additionalProperties": false
                 },
-                "base_scale": {
-                  "type": "number"
-                },
-                "peak_scale": {
-                  "type": "number"
-                },
-                "kinetic_scale": {
-                  "type": "number"
+                "lateral": {
+                  "type": "object",
+                  "description": "Lateral slip-angle curve, angles in degrees.",
+                  "properties": {
+                    "peak_angle_deg": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "Slip angle at peak friction."
+                    },
+                    "kinetic_angle_deg": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "Slip angle where the kinetic plateau begins."
+                    },
+                    "base_scale": {
+                      "type": "number",
+                      "description": "Friction scale at zero slip angle."
+                    },
+                    "peak_scale": {
+                      "type": "number",
+                      "description": "Friction scale at peak_angle_deg."
+                    },
+                    "kinetic_scale": {
+                      "type": "number",
+                      "description": "Friction scale in the high-angle kinetic region."
+                    }
+                  },
+                  "additionalProperties": false
                 }
               },
               "additionalProperties": false
             },
-            "lateral": {
-              "type": "object",
-              "properties": {
-                "peak_angle_deg": {
-                  "type": "number",
-                  "minimum": 0.0,
-                  "description": "Slip-angle peak in degrees."
-                },
-                "kinetic_angle_deg": {
-                  "type": "number",
-                  "minimum": 0.0,
-                  "description": "Kinetic-region slip angle endpoint in degrees."
-                },
-                "base_scale": {
-                  "type": "number"
-                },
-                "peak_scale": {
-                  "type": "number"
-                },
-                "kinetic_scale": {
-                  "type": "number"
-                }
-              },
-              "additionalProperties": false
+            "rolling_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Rolling friction coefficient."
+            },
+            "spinning_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Spinning friction coefficient."
+            },
+            "restitution": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Restitution (elasticity); 0 = perfectly inelastic, 1 = perfectly elastic."
+            },
+            "block_damage_factor": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Block damage factor; 0 = cannot break blocks."
             }
           },
           "additionalProperties": false
         },
-        "rolling_friction": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "spinning_friction": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "restitution": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0
-        },
-        "block_damage_factor": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "rha": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "angle_effect": {
-          "type": "boolean"
-        },
-        "impact_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json"
-        },
-        "piercing_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json"
-        },
-        "damage_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json"
-        },
-        "decay_rha": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "Override RHA coefficient when durability reaches zero."
-        },
-        "decay_power": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "Override armor degradation curve exponent."
-        },
-        "unpen_power": {
-          "type": "number",
-          "minimum": 0.0
+        "armor": {
+          "type": "object",
+          "description": "Armor override: penetration resistance, damage reduction, durability decay and conditional modifiers. Pipeline: damage_modifiers -> (damage - dmg_resist) * dmg_mult.",
+          "properties": {
+            "rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Penetration resistance coefficient relative to RHA (rolled homogeneous armor)."
+            },
+            "angle_effect": {
+              "type": "boolean",
+              "description": "Whether equivalent armor thickness is affected by the impact angle."
+            },
+            "dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Linear damage reduction applied before dmg_mult, decayed by durability."
+            },
+            "dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Damage multiplier applied after dmg_resist, decayed by durability."
+            },
+            "decay_rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual RHA coefficient once durability reaches zero."
+            },
+            "decay_dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual linear damage reduction once durability reaches zero."
+            },
+            "decay_dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Residual damage multiplier once durability reaches zero."
+            },
+            "decay_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Armor degradation curve exponent; larger than 1 degrades slowly at first and quickly near failure, 1 degrades linearly."
+            },
+            "unpen_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Damage exponent used when the attack fails to fully penetrate: damage * (penetration / equivalent armor) ^ unpen_power."
+            },
+            "impact_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "Impact modifiers, converting received damage into impact applied to connection points."
+            },
+            "penetration_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "Penetration modifiers, adjusting penetration depth according to the received damage."
+            },
+            "damage_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "Damage modifiers, adjusting the received damage according to its kind."
+            }
+          },
+          "additionalProperties": false
         },
         "sounds": {
           "type": "object",
+          "description": "Hit sound override.",
           "properties": {
             "hit_un_pen": {
-              "$ref": "../../../base/sound_event.schema.json"
+              "allOf": [
+                { "$ref": "../../../base/sound_event.schema.json" }
+              ],
+              "description": "Sound event played when the hit does not penetrate."
             },
             "hit_pen": {
-              "$ref": "../../../base/sound_event.schema.json"
+              "allOf": [
+                { "$ref": "../../../base/sound_event.schema.json" }
+              ],
+              "description": "Sound event played when the hit penetrates."
             }
           },
           "additionalProperties": false
         }
       },
       "additionalProperties": false
-    },
-    "impact_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "description": "Impact modifiers, convert received damage into impact values applied to connection points according to certain rules. Default is empty list, apply as much impact as the damage caused to connection points."
-    },
-    "penetration_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "multiply",
-          "value": 0.5,
-          "condition": {
-            "type": "not",
-            "condition": {
-              "type": "damage_tag",
-              "tag": "machine_max:has_pen_depth"
-            }
-          }
-        }
-      ],
-      "description": "Penetration depth modifiers, adjust penetration depth based on received damage. If damage doesn't include penetration depth data, pass in damage value, otherwise pass in penetration depth. Default is to use 0.5 times the damage as penetration depth when the incoming damage doesn't include penetration depth."
-    },
-    "damage_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "add",
-          "value": -5.0,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:fly_into_wall"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:sweet_berry_bush"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:slime"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.1,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:magma_cube"
-          }
-        }
-      ],
-      "description": "Damage modifiers, convert received damage into damage values according to certain rules. If damage doesn't include damage data, pass in damage value, otherwise pass in damage data. Default ignores impact damage below 5, significantly reduces damage caused by slimes per tick."
-    },
-    "unpen_power": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "Damage coefficient when attack fails to fully penetrate armor, formula: attack damage * (penetration depth / equivalent armor)^unpen_power, when this value is 0.0, no damage is dealt if not penetrated."
-    },
-    "condition": {
-      "type": "string",
-      "default": "true",
-      "description": "Activation condition, uses molang expression to control whether the hit box is active. Can be used to implement features like glass losing hit detection after being broken, trailer supports, etc."
     }
   },
   "required": ["type"],
@@ -243,22 +253,27 @@
       "material": "machine_max:heavy_armor",
       "thickness": 10.0,
       "overwrite": {
-        "slip_curve": {
-          "lateral": {
-            "peak_angle_deg": 9.0
+        "physics": {
+          "slip_curve": {
+            "lateral": {
+              "peak_angle_deg": 9.0
+            }
           }
+        },
+        "armor": {
+          "angle_effect": true,
+          "dmg_mult": 0.9,
+          "damage_modifiers": [
+            {
+              "operation": "add",
+              "value": -1.0,
+              "condition": {
+                "type": "always"
+              }
+            }
+          ]
         }
       },
-      "angle_effect": true,
-      "damage_modifiers": [
-        {
-          "operation": "add",
-          "value": -1.0,
-          "condition": {
-            "type": "always"
-          }
-        }
-      ],
       "condition": "!local.has_connector('connector.machine_max.chassis_connection')"
     }
   ]

@@ -46,7 +46,7 @@
       "signal_targets": {
         "lever_pull": ["engine_start", "lights"]
       },
-      "interact_mode": "toggle",
+      "interact_mode": "accurate",
       "condition": "OR",
       "description": "Lever interaction box, toggles engine and light status"
     }

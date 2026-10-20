@@ -18,27 +18,6 @@
           "default": 10000.0,
           "description": "Maximum driving force, in newtons (N)."
         },
-        "basic_durability": {
-          "type": "number",
-          "minimum": 0,
-          "default": 20.0,
-          "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
-        },
-        "pass_damage": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
-        },
-        "limit_damage": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
-        },
-        "hidden": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
-        },
         "max_brake_force": {
           "type": "number",
           "minimum": 0,
@@ -85,6 +64,27 @@
       "const": "machine_max:wheel_driver",
       "description": "Subsystem type, must be 'machine_max:wheel_driver'."
     },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
+    },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
@@ -92,19 +92,23 @@
       "description": "List of control input signal keys."
     },
     "roll": {
-      "$ref": "#/definitions/StaticWheelRollingAxisAttr",
+      "allOf": [
+        { "$ref": "#/definitions/StaticWheelRollingAxisAttr" }
+      ],
       "default": {
         "max_drive_force": 10000.0,
-        "max_brake_force": 1500.0,
+        "max_brake_force": 3500.0,
         "max_hand_brake_force": 0.0,
         "max_rpm": 30000.0
       },
       "description": "Rolling axis attributes."
     },
     "steering": {
-      "$ref": "#/definitions/StaticWheelSteeringAxisAttr",
+      "allOf": [
+        { "$ref": "#/definitions/StaticWheelSteeringAxisAttr" }
+      ],
       "default": {
-        "max_force": 4000.0,
+        "max_force": 2000.0,
         "max_speed": 180
       },
       "description": "Steering axis attributes."
@@ -130,8 +134,20 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -139,7 +155,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -147,7 +165,9 @@
           }
         },
         "brake_on": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event for brake engagement.",
           "default": {
             "sound_id": "machine_max:subsystem.wheel_driver.brake_on",
@@ -155,7 +175,9 @@
           }
         },
         "brake_off": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event for brake disengagement.",
           "default": {
             "sound_id": "machine_max:subsystem.wheel_driver.brake_off",
@@ -177,11 +199,11 @@
       "roll": {
         "max_drive_force": 12000.0,
         "max_brake_force": 4000.0,
-        "max_speed": 2800.0
+        "max_rpm": 2800.0
       },
       "steering": {
         "max_force": 3000.0,
-        "max_speed": 2.5
+        "max_speed": 120.0
       }
     },
     {
@@ -191,11 +213,11 @@
       "roll": {
         "max_drive_force": 10000.0,
         "max_brake_force": 3500.0,
-        "max_speed": 3000.0
+        "max_rpm": 3000.0
       },
       "steering": {
         "max_force": 2500.0,
-        "max_speed": 3.0
+        "max_speed": 150.0
       },
       "abs_enabled": true,
       "abs_target_slip_ratio": 0.15,

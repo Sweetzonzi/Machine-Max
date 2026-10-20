@@ -38,7 +38,7 @@
     "min_steering_radius": {
       "type": "number",
       "minimum": 0,
-      "default": 3.0,
+      "default": 5.0,
       "description": "Minimum steering radius, in meters. Used for steering limits at low speeds and when handbrake is applied."
     },
     "lateral_acceleration": {
@@ -110,7 +110,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["move_input"],
+      "default": ["move_input_p0", "move_input_p1", "move_input_p2", "move_input_p3", "move_input"],
       "description": "List of control input signal keys, from highest to lowest priority."
     },
     "max_angle": {
@@ -137,8 +137,20 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -146,7 +158,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -188,9 +202,6 @@
         "60": 2.5
       },
       "manual_gear_shift": true,
-      "abs_enabled": true,
-      "abs_target_slip_ratio": 0.15,
-      "abs_wheel_radius": 0.3,
       "max_angle": 35.0,
       "parking_angle": -3.0,
       "correction_force_multiplier": 0.8

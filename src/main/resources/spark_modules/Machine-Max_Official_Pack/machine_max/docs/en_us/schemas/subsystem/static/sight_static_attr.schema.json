@@ -39,11 +39,6 @@
       "default": false,
       "description": "Whether horizontal stabilization is enabled (compensates for vehicle yaw)."
     },
-    "base_fov": {
-      "type": "number",
-      "default": 40.0,
-      "description": "Base field of view in degrees, i.e., the FOV at 1x zoom."
-    },
     "base_zoom": {
       "type": "number",
       "default": 1.0,
@@ -70,8 +65,11 @@
       "description": "Yaw angle span limit in degrees, the actual range is [center - limit/2, center + limit/2]."
     },
     "scope_hud_layout": {
-      "$ref": "../../base/resource_location.schema.json",
-      "description": "炮镜视角使用的 HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示炮镜不显示该布局提供的 HUD。"
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout resource location: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. When absent, the scope view shows no HUD."
     },
     "tracking_target_inputs": {
       "type": "array",
@@ -102,7 +100,9 @@
       "type": "object",
       "properties": {
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the sight is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -110,7 +110,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the sight is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -118,7 +120,9 @@
           }
         },
         "on_deactivate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the sight is deactivated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -137,7 +141,6 @@
     {
       "type": "machine_max:sight",
       "basic_durability": 15.0,
-      "base_fov": 40.0,
       "base_zoom": 1.0,
       "max_zoom": 5.0,
       "discovery_inputs": [

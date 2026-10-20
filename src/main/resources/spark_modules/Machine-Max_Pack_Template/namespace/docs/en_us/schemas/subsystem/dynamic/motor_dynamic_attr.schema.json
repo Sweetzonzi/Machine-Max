@@ -18,7 +18,9 @@
       "description": "Power output target, can be any other subsystem name within this part, part connection point name, or 'part', or 'global'."
     },
     "speed_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Motor speed signal output channel and targets. Optional, by default sends motor speed (rad/s) to the motor_speed channel of parts and vehicles."
     }

@@ -2,13 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/hit_box_attr.json",
   "title": "碰撞箱属性",
-  "description": "定义部件碰撞箱的物理属性、护甲值和伤害修正系统。",
+  "description": "定义部件的单个碰撞箱：碰撞形状、护甲厚度、引用的碰撞箱材质，以及逐碰撞箱的材质覆写。覆写沿用材质定义的 physics / armor / sounds 三组结构，每个覆写字段都是可选的，未填写的字段沿用材质值。",
   "type": "object",
   "properties": {
     "id": {
       "type": "string",
-      "default": "part",
-      "description": "碰撞形状id，同id的碰撞体积不会被同一次攻击重复命中。"
+      "default": "",
+      "description": "碰撞箱id，同id的碰撞体积不会被同一次攻击重复命中。"
     },
     "type": {
       "type": "string",
@@ -20,8 +20,15 @@
       "default": "",
       "description": "子系统名称，用于将此碰撞箱与特定子系统关联，当此碰撞箱受到伤害时，关联的子系统会受到等量伤害。"
     },
+    "module": {
+      "type": "string",
+      "default": "",
+      "description": "子系统内部模块名，例如 \"barrel\"、\"breech\"、\"radiator\"。空字符串表示作用于子系统整体。"
+    },
     "material": {
-      "$ref": "../../../base/resource_location.schema.json",
+      "allOf": [
+        { "$ref": "../../../base/resource_location.schema.json" }
+      ],
       "default": "machine_max:default",
       "description": "材料注册id，用于获取摩擦系数、减伤属性、音效等物理属性。"
     },
@@ -29,209 +36,269 @@
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况。"
-    },
-    "overwrite": {
-      "type": "object",
-      "description": "命中箱材质属性覆写。可按需覆写material引用材质中的任意字段。",
-      "properties": {
-        "friction": {
-          "$ref": "../../../base/vector_3d.schema.json",
-          "description": "摩擦系数覆写。"
-        },
-        "slip_adaptation": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "滑移适应系数覆写。"
-        },
-        "slip_curve": {
-          "type": "object",
-          "description": "滑移曲线覆写。可只覆写部分字段，其余继承材质定义。",
-          "properties": {
-            "longitudinal": {
-              "type": "object",
-              "properties": {
-                "peak_slip_ratio": {
-                  "type": "number",
-                  "minimum": 0.0
-                },
-                "base_scale": {
-                  "type": "number"
-                },
-                "peak_scale": {
-                  "type": "number"
-                },
-                "kinetic_scale": {
-                  "type": "number"
-                }
-              },
-              "additionalProperties": false
-            },
-            "lateral": {
-              "type": "object",
-              "properties": {
-                "peak_angle_deg": {
-                  "type": "number",
-                  "minimum": 0.0,
-                  "description": "侧偏角峰值，单位：度。"
-                },
-                "kinetic_angle_deg": {
-                  "type": "number",
-                  "minimum": 0.0,
-                  "description": "动摩擦终点侧偏角，单位：度。"
-                },
-                "base_scale": {
-                  "type": "number"
-                },
-                "peak_scale": {
-                  "type": "number"
-                },
-                "kinetic_scale": {
-                  "type": "number"
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "additionalProperties": false
-        },
-        "rolling_friction": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "滚动摩擦系数覆写。"
-        },
-        "spinning_friction": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "旋转摩擦系数覆写。"
-        },
-        "restitution": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0,
-          "description": "恢复系数覆写。"
-        },
-        "block_damage_factor": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "方块伤害系数覆写。"
-        },
-        "rha": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "相对RHA抗穿系数覆写。1.0表示等效RHA，0.5表示同厚度下仅50%抗穿，1.5表示1.5倍抗穿。"
-        },
-        "angle_effect": {
-          "type": "boolean",
-          "description": "角度效应覆写。"
-        },
-        "impact_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "冲击修正覆写。"
-        },
-        "piercing_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "穿深修正覆写。"
-        },
-        "damage_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "伤害修正覆写。"
-        },
-        "decay_rha": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "耐久归零时 RHA 系数覆写。"
-        },
-        "decay_power": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "装甲退化曲线指数覆写。"
-        },
-        "unpen_power": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "未击穿伤害系数覆写。"
-        },
-        "sounds": {
-          "type": "object",
-          "properties": {
-            "hit_un_pen": {
-              "$ref": "../../../base/sound_event.schema.json"
-            },
-            "hit_pen": {
-              "$ref": "../../../base/sound_event.schema.json"
-            }
-          },
-          "additionalProperties": false,
-          "description": "材质音效覆写。"
-        }
-      },
-      "additionalProperties": false
+      "description": "等效护甲厚度，单位 mm，用于减伤计算并控制碰撞时的能量分配。"
     },
     "condition": {
       "type": "string",
       "default": "true",
-      "description": "生效条件，使用molang表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后不再有命中判定、拖车撑脚等功能。"
+      "description": "生效条件，使用 molang 表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后失去命中判定、拖车撑脚放下后才有碰撞等功能。"
+    },
+    "overwrite": {
+      "type": "object",
+      "description": "在引用材质之上叠加的材质覆写。",
+      "properties": {
+        "physics": {
+          "type": "object",
+          "description": "物理属性覆写：摩擦、滑移、弹性与破坏方块能力。",
+          "properties": {
+            "friction": {
+              "allOf": [
+                { "$ref": "../../../base/vector_3d.schema.json" }
+              ],
+              "description": "摩擦系数向量 [x, y, z]。x = 侧向，y = 前进方向，z = 未使用。"
+            },
+            "slip_adaptation": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "滑移适配系数，用于调整滑动时的摩擦表现。"
+            },
+            "slip_curve": {
+              "type": "object",
+              "description": "轮胎滑移摩擦曲线参数。",
+              "properties": {
+                "longitudinal": {
+                  "type": "object",
+                  "description": "纵向滑移率曲线。",
+                  "properties": {
+                    "peak_slip_ratio": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "峰值摩擦对应的滑移率。"
+                    },
+                    "base_scale": {
+                      "type": "number",
+                      "description": "零滑移时的摩擦倍率。"
+                    },
+                    "peak_scale": {
+                      "type": "number",
+                      "description": "peak_slip_ratio 处的摩擦倍率。"
+                    },
+                    "kinetic_scale": {
+                      "type": "number",
+                      "description": "高滑移动力学区的摩擦倍率。"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "lateral": {
+                  "type": "object",
+                  "description": "侧向滑移角曲线，角度单位为度。",
+                  "properties": {
+                    "peak_angle_deg": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "峰值摩擦对应的滑移角。"
+                    },
+                    "kinetic_angle_deg": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "description": "动力学平台区起点的滑移角。"
+                    },
+                    "base_scale": {
+                      "type": "number",
+                      "description": "零滑移角时的摩擦倍率。"
+                    },
+                    "peak_scale": {
+                      "type": "number",
+                      "description": "peak_angle_deg 处的摩擦倍率。"
+                    },
+                    "kinetic_scale": {
+                      "type": "number",
+                      "description": "高角度动力学区的摩擦倍率。"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            "rolling_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "滚动摩擦系数。"
+            },
+            "spinning_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "自旋摩擦系数。"
+            },
+            "restitution": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "恢复系数（弹性），0 = 完全非弹性，1 = 完全弹性。"
+            },
+            "block_damage_factor": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "破坏方块系数，0 = 无法破坏方块。"
+            }
+          },
+          "additionalProperties": false
+        },
+        "armor": {
+          "type": "object",
+          "description": "护甲属性覆写：抗穿、减伤、耐久衰减与条件修正。结算顺序：damage_modifiers -> (伤害 - dmg_resist) * dmg_mult。",
+          "properties": {
+            "rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "相对 RHA（均质轧制装甲）的抗穿系数。"
+            },
+            "angle_effect": {
+              "type": "boolean",
+              "description": "等效护甲厚度是否受命中角度影响。"
+            },
+            "dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "在 dmg_mult 之前生效的线性减伤值，随耐久衰减。"
+            },
+            "dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "在 dmg_resist 之后生效的伤害倍率，随耐久衰减。"
+            },
+            "decay_rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "耐久归零后残留的 RHA 系数。"
+            },
+            "decay_dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "耐久归零后残留的线性减伤值。"
+            },
+            "decay_dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "耐久归零后残留的伤害倍率。"
+            },
+            "decay_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "护甲退化曲线指数；大于 1 表示前期退化慢、临近失效时快，1 表示线性退化。"
+            },
+            "unpen_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "未完全击穿时使用的伤害指数：伤害 * (穿深 / 等效护甲) ^ unpen_power。"
+            },
+            "impact_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "冲击修正，把受到的伤害按规则折算为作用于连接点的冲击。"
+            },
+            "penetration_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "穿深修正，按受到的伤害调整穿深。"
+            },
+            "damage_modifiers": {
+              "allOf": [
+                { "$ref": "modifier/damage_modifier.schema.json" }
+              ],
+              "description": "伤害修正，按伤害类型调整最终伤害。"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sounds": {
+          "type": "object",
+          "description": "命中音效覆写。",
+          "properties": {
+            "hit_un_pen": {
+              "allOf": [
+                { "$ref": "../../../base/sound_event.schema.json" }
+              ],
+              "description": "未击穿时的音效。"
+            },
+            "hit_pen": {
+              "allOf": [
+                { "$ref": "../../../base/sound_event.schema.json" }
+              ],
+              "description": "击穿时的音效。"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["type"],
   "additionalProperties": false,
   "examples": [
     {
-      "type": "box"
+      "type": "box",
+      "description": "最简碰撞箱示例，只写必需的形状类型"
     },
     {
       "id": "chassis",
       "type": "box",
-      "subsystem": "sub_part.machine_max.main",
+      "subsystem": "subsystem.machine_max.engine",
+      "module": "radiator",
       "material": "machine_max:heavy_armor",
       "thickness": 10.0,
       "overwrite": {
-        "rha": 1.35,
-        "angle_effect": true,
-        "slip_curve": {
-          "lateral": {
-            "peak_angle_deg": 9.0
-          }
-        },
-        "impact_modifiers": [
-          {
-            "operation": "multiply",
-            "value": 0.8,
-            "condition": {
-              "type": "always"
+        "physics": {
+          "block_damage_factor": 1.2,
+          "slip_curve": {
+            "lateral": {
+              "peak_angle_deg": 9.0
             }
           }
-        ],
-        "piercing_modifiers": [
-          {
-            "operation": "multiply",
-            "value": 0.9,
-            "condition": {
-              "type": "always"
-            }
-          }
-        ],
-        "damage_modifiers": [
-          {
-            "operation": "add",
-            "value": -1.0,
-            "condition": {
-              "type": "always"
-            }
-          }
-        ],
-        "decay_rha": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "耐久归零时 RHA 系数覆写。"
         },
-        "decay_power": {
-          "type": "number",
-          "minimum": 0.0,
-          "description": "装甲退化曲线指数覆写。"
+        "armor": {
+          "rha": 1.35,
+          "angle_effect": true,
+          "dmg_mult": 0.9,
+          "impact_modifiers": [
+            {
+              "operation": "multiply",
+              "value": 0.8,
+              "condition": {
+                "type": "always"
+              }
+            }
+          ],
+          "penetration_modifiers": [
+            {
+              "operation": "multiply",
+              "value": 0.9,
+              "condition": {
+                "type": "always"
+              }
+            }
+          ],
+          "damage_modifiers": [
+            {
+              "operation": "add",
+              "value": -1.0,
+              "condition": {
+                "type": "always"
+              }
+            }
+          ],
+          "decay_rha": 0.6,
+          "decay_power": 2.0,
+          "unpen_power": 0.15
         },
-        "unpen_power": 0.15,
         "sounds": {
           "hit_un_pen": {
             "sound_id": "machine_max:hit_box.hit.up_pen.metal",
@@ -243,7 +310,8 @@
           }
         }
       },
-      "condition": "!local.has_connector('connector.machine_max.chassis_connection')"
+      "condition": "!local.has_connector('connector.machine_max.chassis_connection')",
+      "description": "带材质覆写的碰撞箱示例：physics / armor / sounds 三组分别按需覆写"
     }
   ]
 }

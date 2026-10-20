@@ -25,7 +25,9 @@
       "description": "Belt name shown on the weapon status HUD belt tab. When empty the display text of the belt's first projectile is used; when set, the string is used verbatim without a language file lookup, so one pack definition shows the same name in every language. Set it when the belt holds more than one projectile type or when the automatic value is not accurate enough. It affects the belt name only: the current-round slot still reports the projectile the belt pointer points at, and the field takes no part in ammo pool grouping, so changing it never affects ammo routing or already-loaded vehicles."
     },
     "discovery_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "Ammo discovery channels and targets, used by the loader to discover the ammo consumers on the same vehicle. Optional."
     }

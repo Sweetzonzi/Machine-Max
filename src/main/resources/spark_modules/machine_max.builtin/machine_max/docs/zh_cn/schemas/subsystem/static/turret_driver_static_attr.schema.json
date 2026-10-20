@@ -55,11 +55,15 @@
       "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
     },
     "yaw": {
-      "$ref": "#/definitions/TurretAxisAttr",
+      "allOf": [
+        { "$ref": "#/definitions/TurretAxisAttr" }
+      ],
       "description": "偏航轴（方向机）配置。配置此轴后炮塔可进行水平方向回转。若省略则不启用偏航控制。"
     },
     "pitch": {
-      "$ref": "#/definitions/TurretAxisAttr",
+      "allOf": [
+        { "$ref": "#/definitions/TurretAxisAttr" }
+      ],
       "description": "俯仰轴（高低机）配置。配置此轴后炮塔可进行垂直方向俯仰。若省略则不启用俯仰控制。"
     },
     "control_inputs": {
@@ -71,8 +75,20 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "子系统失活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "子系统被摧毁时的音效事件。",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -80,7 +96,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "子系统被激活时的音效事件。",
           "default": {
             "sound_id": "machine_max:empty_sound",

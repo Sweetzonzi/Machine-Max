@@ -14,9 +14,32 @@
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
     "control_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "控制信号输出频道及目标列表。武器控制器通过这些频道向炮塔驱动和发射器发送控制信号，同时用于握手发现并绑定同载具内的下属子系统。"
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "第一人称视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "第三人称视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
+    },
+    "scope_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "炮镜视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
     }
   },
   "required": ["type", "definition"],

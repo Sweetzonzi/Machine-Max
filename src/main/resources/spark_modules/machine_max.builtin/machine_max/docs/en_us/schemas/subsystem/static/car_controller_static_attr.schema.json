@@ -135,8 +135,20 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -144,7 +156,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event when the subsystem is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -152,7 +166,9 @@
           }
         },
         "handbrake_on": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event for handbrake engagement.",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_on",
@@ -160,7 +176,9 @@
           }
         },
         "handbrake_off": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "Sound event for handbrake disengagement.",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_off",

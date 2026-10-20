@@ -6,7 +6,9 @@
   "type": "object",
   "properties": {
     "operation": {
-      "$ref": "../../../../base/operation.schema.json",
+      "allOf": [
+        { "$ref": "../../../../base/operation.schema.json" }
+      ],
       "description": "操作类型。add：将值加到基础值上；multiply：将基础值乘以该值。"
     },
     "value": {
@@ -14,7 +16,9 @@
       "description": "操作的值。对于add操作，可以是正数或负数（如-5表示减伤）；对于multiply操作，通常是正数（如0.05表示削减至5%）。"
     },
     "condition": {
-      "$ref": "condition/condition.schema.json",
+      "allOf": [
+        { "$ref": "condition/condition.schema.json" }
+      ],
       "description": "条件，当条件满足时应用此修改器。"
     }
   },

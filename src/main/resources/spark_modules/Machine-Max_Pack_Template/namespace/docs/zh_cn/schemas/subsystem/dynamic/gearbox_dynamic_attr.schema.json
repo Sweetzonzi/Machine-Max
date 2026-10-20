@@ -18,7 +18,9 @@
       "description": "功率输出目标，子系统或部件接口名。"
     },
     "gear_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": { "gear": ["part", "global"] },
       "description": "挡位名称输出频道及目标。可选，默认将当前挡位名称发至部件和载具的gear频道。"
     }

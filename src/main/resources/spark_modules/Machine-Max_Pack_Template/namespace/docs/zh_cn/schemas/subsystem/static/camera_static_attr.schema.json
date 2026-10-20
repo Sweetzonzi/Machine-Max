@@ -39,11 +39,6 @@
       "default": false,
       "description": "是否启用水平稳定（补偿车体偏航晃动）。"
     },
-    "base_fov": {
-      "type": "number",
-      "default": 40.0,
-      "description": "基准视场角（度），即 1× 变焦时的 FOV。"
-    },
     "base_zoom": {
       "type": "number",
       "default": 1.0,
@@ -70,7 +65,10 @@
       "description": "偏航角张角限制（度），实际范围 [center - limit/2, center + limit/2]。"
     },
     "scope_hud_layout": {
-      "$ref": "../../base/resource_location.schema.json",
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
       "description": "炮镜视角使用的 HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示炮镜不显示该布局提供的 HUD。"
     },
     "tracking_target_inputs": {
@@ -102,7 +100,9 @@
       "type": "object",
       "properties": {
         "on_destroyed": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "摄像机被摧毁时的音效。",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -110,7 +110,9 @@
           }
         },
         "on_activate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "摄像机被激活时的音效。",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -118,7 +120,9 @@
           }
         },
         "on_deactivate": {
-          "$ref": "../../base/sound_event.schema.json",
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
           "description": "摄像机被禁用时的音效。",
           "default": {
             "sound_id": "machine_max:empty_sound",
@@ -137,7 +141,6 @@
     {
       "type": "machine_max:camera",
       "basic_durability": 15.0,
-      "base_fov": 40.0,
       "base_zoom": 1.0,
       "max_zoom": 5.0,
       "discovery_inputs": [

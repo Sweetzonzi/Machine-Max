@@ -16,7 +16,9 @@
       "properties": {
         "type": { "const": "damage_type" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "Resource location of damage type, for example: 'minecraft:fly_into_wall'."
         }
       },
@@ -28,7 +30,9 @@
       "properties": {
         "type": { "const": "damage_tag" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "Resource location of damage tag, for example: 'machine_max:has_pen_depth'."
         }
       },
@@ -40,7 +44,9 @@
       "properties": {
         "type": { "const": "entity_type" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "Resource location of entity type, for example: 'minecraft:slime'."
         }
       },
@@ -52,7 +58,9 @@
       "properties": {
         "type": { "const": "entity_tag" },
         "id": {
-          "$ref": "../../../../../base/resource_location.schema.json",
+          "allOf": [
+            { "$ref": "../../../../../base/resource_location.schema.json" }
+          ],
           "description": "Resource location of entity tag, for example: 'minecraft:skeletons'."
         }
       },
@@ -92,7 +100,9 @@
       "properties": {
         "type": { "const": "not" },
         "condition": {
-          "$ref": "condition.schema.json",
+          "allOf": [
+            { "$ref": "condition.schema.json" }
+          ],
           "description": "Sub-condition, returns true when this condition is not satisfied."
         }
       },

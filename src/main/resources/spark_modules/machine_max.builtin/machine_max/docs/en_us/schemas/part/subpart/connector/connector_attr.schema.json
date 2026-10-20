@@ -11,6 +11,7 @@
     },
     "definition": {
       "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
       "description": "Connection point definition ID, references predefined connection point static attributes. For example: \"machine_max:simple_connector\"."
     },
     "power_target": {
@@ -27,7 +28,9 @@
           "description": "Connection point type overwrite."
         },
         "direction": {
-          "$ref": "../../../base/axis.schema.json",
+          "allOf": [
+            { "$ref": "../../../base/axis.schema.json" }
+          ],
           "description": "Connection point normal direction overwrite."
         },
         "integrity": {
@@ -38,7 +41,13 @@
         "impact_absorption": {
           "type": "number",
           "minimum": 0.0,
+          "maximum": 1.0,
           "description": "Impact to structural loss ratio overwrite."
+        },
+        "impact_absorption_destroyed": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Impact to structural loss ratio overwrite for an already destroyed sub-part."
         },
         "impact_reduction": {
           "type": "number",
@@ -110,9 +119,10 @@
       "definition": "machine_max:advanced_wheel_connector",
       "overwrite": {
         "type": "Advanced",
-        "direction": "y+",
+        "direction": "xp",
         "integrity": 32.0,
         "impact_absorption": 0.15,
+        "impact_absorption_destroyed": 2.5,
         "impact_reduction": 3.0,
         "impact_multiplier": 0.8,
         "collide_between_parts": false,
@@ -140,8 +150,7 @@
       "signal_targets": {
         "wheel_control": ["wheel_driver", "local"],
         "abs_request": ["global"]
-      },
-      "internal": true
+      }
     }
   ]
 }

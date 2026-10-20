@@ -18,7 +18,9 @@
       "description": "受控的高级连接器名称，炮塔驱动通过此连接器的New6Dof关节控制炮塔旋转。"
     },
     "rotation_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "当前关节角度反馈输出频道及目标。可选，将当前偏航/俯仰角（弧度）发送至指定频道。"
     }

@@ -17,6 +17,21 @@
       "minimum": 0,
       "default": 40.0
     },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether damage is passed to the owning sub-part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether passed damage is limited by the remaining subsystem durability."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this subsystem is hidden from HUD displays."
+    },
     "sounds": {
       "type": "object",
       "additionalProperties": true

@@ -25,12 +25,20 @@ Add a `$schema` field at the top of your JSON file, for example:
 
 ```json
 {
-  "$schema": "./docs/en_us/schemas/part_definition_schema.json",
+  "$schema": "../docs/en_us/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/example.png",
   "vehicle_durability_rate": 1.0,
   "variants": {
-    "default": {
-      "icon": "machine_max:textures/icon/example.png",
-      "models": "machine_max:example.geo"
+    "model": "machine_max:example.geo",
+    "textures": "machine_max:textures/part/example.png",
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "hit_boxes": {
+          "Shape": {
+            "type": "box"
+          }
+        }
+      }
     }
   }
 }
@@ -57,7 +65,7 @@ This is the main Schema for defining vehicle parts, containing the following key
 
 - `vehicle_durability_rate`: Vehicle durability contribution coefficient (number, between 0-1)
 - `vehicle_damage_rate`: Normal vehicle damage transmission coefficient (number)
-- `functional_threshold`: Part functional threshold (number, between 0-1, default `0.5`)
+- `functional_threshold`: Part functional threshold (number, between 0-1, default `0.3`)
 - `share_durability`: Whether parts within the component share durability (boolean)
 - `variants`: List of part variants (object)
 

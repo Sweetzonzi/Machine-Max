@@ -14,7 +14,9 @@
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "power_outputs": {
-      "$ref": "../base/power_outputs.schema.json",
+      "allOf": [
+        { "$ref": "../base/power_outputs.schema.json" }
+      ],
       "description": "Power output targets and reduction ratios."
     }
   },

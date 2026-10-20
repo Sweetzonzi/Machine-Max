@@ -24,12 +24,16 @@
       "description": "控制组预设的资源地址，定义此座椅可用的控制频道映射关系。例如 machine_max:default_driver。"
     },
     "passenger_num_outputs": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "乘客数量信号输出频道及目标。"
     },
     "camera_discovery_targets": {
-      "$ref": "../base/signal_targets.json",
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
       "default": {},
       "description": "摄像机发现握手配置。在这些频道上发送握手信号即可发现本载具上可用的摄像机。例如 {\"gunner_optics\": [\"gunner_primary_sight\"]}"
     },

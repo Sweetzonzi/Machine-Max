@@ -17,6 +17,21 @@
       "minimum": 0,
       "default": 40.0
     },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否将受到的伤害传递给所属零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否把传递的伤害限制在子系统剩余耐久度以内。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否在 HUD 等界面隐藏该子系统。"
+    },
     "sounds": {
       "type": "object",
       "additionalProperties": true

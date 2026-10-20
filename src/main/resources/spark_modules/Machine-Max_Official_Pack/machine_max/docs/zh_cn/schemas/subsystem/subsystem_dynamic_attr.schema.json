@@ -16,7 +16,6 @@
         "machine_max:gearbox",
         "machine_max:item_storage",
         "machine_max:motor",
-        "machine_max:motor_controller",
         "machine_max:seat",
         "machine_max:sight",
         "machine_max:transmission",
@@ -113,7 +112,7 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:motor_controller"
+            "const": "machine_max:motorbike_controller"
           }
         }
       },
