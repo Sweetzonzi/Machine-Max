@@ -12,9 +12,16 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.JointDriverSubsyst
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 
+/**
+ * 关节驱动子系统动态属性：指定被控连接点、旋转顺序与各轴驱动参数。
+ * <p>
+ * <b>WIP：</b>{@link SubsystemTypes#JOINT} 的 JSON 契约尚未定稿，平动轴控制仍在实现中。
+ */
+@ApiStatus.Experimental
 @Getter
 public class JointDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final JointDriverSubsystemStaticAttr staticAttribute;

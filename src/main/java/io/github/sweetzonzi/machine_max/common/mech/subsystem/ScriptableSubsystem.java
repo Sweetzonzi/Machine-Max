@@ -19,11 +19,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 
+/**
+ * 脚本子系统：把一段 JavaScript 挂到载具上，由 {@link Hook} 在 tick、碰撞、信号等生命周期节点注入逻辑。
+ * <p>
+ * <b>WIP：</b>脚本 API 与 Hook 的覆盖面仍在扩展，JSON 契约与安全边界尚未定稿。
+ */
+@ApiStatus.Experimental
 public class ScriptableSubsystem extends AbstractControllableSubsystem {
     public final ScriptableSubsystemAttr attr;
     public final String script;

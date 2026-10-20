@@ -6,8 +6,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * 电池子系统：把储能与充放电接入 {@code EnergyGrid}（实现 {@link IEnergyStorage}）。
+ * <p>
+ * <b>WIP：</b>内容包未随附该类型的定义，JSON 字段契约与充放电数值尚未定稿，
+ * 运行时行为可能随能源系统一起调整。
+ */
+@ApiStatus.Experimental
 public class BatterySubsystem extends BasicSubsystem implements IEnergyStorage {
 
     public final BatterySubsystemAttr attr;

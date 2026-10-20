@@ -9,10 +9,14 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BatterySubsystem;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
- * 电池子系统动态属性——引用静态属性中的电池型号
+ * 电池子系统动态属性——引用静态属性中的电池型号。
+ * <p>
+ * <b>WIP：</b>{@link SubsystemTypes#BATTERY} 的 JSON 契约与平衡数值尚未定稿。
  */
+@ApiStatus.Experimental
 @Getter
 public class BatterySubsystemAttr extends BasicSubsystemDynamicAttr {
     public final BatterySubsystemStaticAttr staticAttribute;

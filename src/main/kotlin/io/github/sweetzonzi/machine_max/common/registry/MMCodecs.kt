@@ -66,14 +66,14 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("track_drive")) { TrackDriveSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("battery")) { BatterySubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemAttr.CODEC}  // WIP: 类型未定稿
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("battery")) { BatterySubsystemAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("camera")) { CameraSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("sight")) { SightSubsystemAttr.CODEC}
@@ -94,14 +94,14 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("track_drive")) { TrackDriveSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("battery")) { BatterySubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("battery")) { BatterySubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("camera")) { CameraSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("sight")) { SightSubsystemStaticAttr.CODEC}

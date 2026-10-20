@@ -5,7 +5,14 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
+import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * 电池子系统静态属性：最大储能、充电功率与放电功率。
+ * <p>
+ * <b>WIP：</b>字段名与默认值尚未定稿，可能随能源系统调整。
+ */
+@ApiStatus.Experimental
 @Getter
 public class BatterySubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 最大储能 (J) */

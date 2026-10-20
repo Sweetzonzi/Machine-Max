@@ -5,12 +5,16 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 装弹机子系统静态属性。<br>
  * 定义装填模式（逐发/整体换弹匣）、弹药容量、装填耗时、多消费者支持等硬件参数。<br>
- * 弹药请求与消耗通信已改为 {@code IAmmoSupplier/IAmmoConsumer} 直接接口调用，不再走信号频道。
+ * 弹药请求与消耗走 {@code IAmmoSupplier/IAmmoConsumer} 直接接口调用，不经信号频道。
+ * <p>
+ * <b>WIP：</b>字段名与默认值尚未定稿。
  */
+@ApiStatus.Experimental
 @Getter
 public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 

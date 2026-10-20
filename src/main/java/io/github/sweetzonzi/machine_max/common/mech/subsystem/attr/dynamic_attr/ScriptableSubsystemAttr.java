@@ -10,7 +10,14 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * 脚本子系统动态属性：引用静态属性中的脚本，并对外提供脚本名。
+ * <p>
+ * <b>WIP：</b>{@link SubsystemTypes#JAVASCRIPT} 的 JSON 契约与脚本 API 尚未定稿。
+ */
+@ApiStatus.Experimental
 public class ScriptableSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final ScriptableSubsystemStaticAttr staticAttribute;
     public final String script;

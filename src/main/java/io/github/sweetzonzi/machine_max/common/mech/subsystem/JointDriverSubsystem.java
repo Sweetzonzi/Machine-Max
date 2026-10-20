@@ -16,11 +16,20 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyQuaternion;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 关节驱动子系统：驱动 {@link AdvancedConnector} 的 {@code New6Dof} 关节各轴，
+ * 按轴分配机械功率并回传速度／位置信号。
+ * <p>
+ * <b>WIP：</b>平动轴的控制信号尚未接入（见 {@code onPrePhysicsTick()} 中的 TODO），
+ * 当前只处理旋转轴；JSON 契约与数值也未定稿。
+ */
+@ApiStatus.Experimental
 public class JointDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
     public final JointDriverSubsystemAttr attr;
     public final AdvancedConnector connector;

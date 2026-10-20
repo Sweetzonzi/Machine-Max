@@ -5,7 +5,14 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
+import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * 脚本子系统静态属性：保存脚本正文或脚本文件路径。
+ * <p>
+ * <b>WIP：</b>字段语义与脚本 API 尚未定稿。
+ */
+@ApiStatus.Experimental
 public class ScriptableSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final String script;
 

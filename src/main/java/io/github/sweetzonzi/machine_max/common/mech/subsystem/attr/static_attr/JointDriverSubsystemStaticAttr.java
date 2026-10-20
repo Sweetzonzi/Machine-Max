@@ -7,9 +7,16 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 
+/**
+ * 关节驱动子系统静态属性：被控连接点、旋转顺序与各轴参数。
+ * <p>
+ * <b>WIP：</b>字段名与默认值尚未定稿。
+ */
+@ApiStatus.Experimental
 @Getter
 public class JointDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final String controlledConnector;

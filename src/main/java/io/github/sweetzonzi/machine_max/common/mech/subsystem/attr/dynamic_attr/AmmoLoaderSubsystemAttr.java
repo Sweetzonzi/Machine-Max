@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoLoaderSubsystem;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -16,8 +17,11 @@ import java.util.Map;
 /**
  * 装弹机子系统动态属性。<br>
  * 定义弹药发现频道等运行时配置。
- * 弹药通过 {@code IAmmoSupplier/IAmmoConsumer} 直接接口通信，不再使用信号频道。
+ * 弹药通过 {@code IAmmoSupplier/IAmmoConsumer} 直接接口通信，不经信号频道。
+ * <p>
+ * <b>WIP：</b>装弹机整体尚未定稿，字段与行为可能调整（见 {@link AmmoLoaderSubsystem}）。
  */
+@ApiStatus.Experimental
 @Getter
 public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final AmmoLoaderSubsystemStaticAttr staticAttribute;

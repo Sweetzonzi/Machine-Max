@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -41,6 +42,7 @@ import java.util.*;
  * （投射物类型的注册名与物品注册名不通用，取不到时落成 {@code Items.ARROW}，
  * 再取弹时因解析不出投射物类型而被丢弃）。弹药链与路由决策暂由再生装弹机承担。
  */
+@ApiStatus.Experimental
 public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
 
     public final AmmoLoaderSubsystemAttr attr;
