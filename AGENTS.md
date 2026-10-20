@@ -318,5 +318,6 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - `docs/plan/进行中/AUI载具控制面板实现计划.md` — AUI 控制面板实现计划
 - `docs/AUI性能边界.md` — AUI 性能分析
 - `docs/机娘模组企划.md` — 机娘模组企划
+- `src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench 桌面端 MCP 服务器（AI 助手操作编辑器）的安装与连接参数，英文版在同级 `en_us/Blockbench-MCP.md`
 - `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）
 
