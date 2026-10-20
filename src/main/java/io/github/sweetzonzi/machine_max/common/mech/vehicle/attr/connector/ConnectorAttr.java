@@ -58,7 +58,6 @@ public class ConnectorAttr {
      * @param acceptableTags           连接点的可接受标签
      * @param forbiddenTags            连接点的禁止标签
      * @param jointAttrs               连接点的关节属性(限制，刚性与阻尼)
-     * @param powerTarget              连接点的机械能输出目标（子系统名）
      */
     public record OverwriteAttr(
             Optional<String> type,
@@ -72,8 +71,7 @@ public class ConnectorAttr {
             Optional<List<ResourceLocation>> requiredTags,
             Optional<List<ResourceLocation>> acceptableTags,
             Optional<List<ResourceLocation>> forbiddenTags,
-            Optional<Map<String, JointAttr>> jointAttrs,
-            Optional<String> powerTarget
+            Optional<Map<String, JointAttr>> jointAttrs
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.optionalFieldOf("type").forGetter(OverwriteAttr::type),
@@ -87,8 +85,7 @@ public class ConnectorAttr {
                 ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags").forGetter(OverwriteAttr::requiredTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags").forGetter(OverwriteAttr::acceptableTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags").forGetter(OverwriteAttr::forbiddenTags),
-                JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs").forGetter(OverwriteAttr::jointAttrs),
-                Codec.STRING.optionalFieldOf("power_target").forGetter(OverwriteAttr::powerTarget)
+                JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs").forGetter(OverwriteAttr::jointAttrs)
         ).apply(instance, OverwriteAttr::new));
     }
 
