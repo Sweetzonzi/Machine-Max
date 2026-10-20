@@ -17,8 +17,8 @@ import jme3utilities.math.MyQuaternion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
@@ -26,18 +26,31 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 履带节渲染器：在轮组包络线上按固定节距放置履带节，并按主动轮转速积分相位。
+ * 履带节渲染：在轮组包络线上按固定节距放置履带节，并按主动轮转速积分相位。
  *
  * <p>几何全部是客户端本地计算：每个渲染帧用 {@code partialTick} 的轮位姿重建
  * {@link TrackEnvelope2D}，节位置 {@code s_i = (L·i/N + phase) mod L}。相位在
  * {@link #tick()}（20tps）里积分，渲染时用上一 tick / 本 tick 双值插值。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
  *
- * <p>初版用 {@link RenderType#debugQuads()} 直接画扁长方体，不依赖模型 / 贴图资产；
- * 单节模型接入后只需替换 {@link #renderLink} 的绘制部分。节数 N 在 tick 中按当前
- * 包络推导，运行中固定，避免悬挂行程导致节分布重排。</p>
+ * <p><b>挂载方式</b>：本类作为 {@link VisualEffectRenderer} 只承担每 tick 的相位积分，
+ * {@link #getRenderStage()} 不返回阶段，因此不参与 {@code RenderLevelStageEvent} 调度。
+ * 实际绘制入口是 {@link #renderTrack}，由 {@link PartEntityRenderer}（以及
+ * {@link DistantVehicleRenderer}）在主动轮所属实体的 {@code render} 中调用，使履带与零件
+ * 模型共用实体渲染管线：</p>
+ * <ul>
+ *   <li>渲染类型使用带 lightmap / overlay / normal 的实体不透明类型，节的颜色随世界光照，
+ *       并按面法线产生明暗；</li>
+ *   <li>Iris 的阴影 pass 由 {@code ShadowRenderer} 直接调用 {@code EntityRenderDispatcher}
+ *       与各实体的渲染器，不触发 {@code RenderLevelStageEvent}；只有实体管线里的几何会被
+ *       写进阴影贴图。</li>
+ * </ul>
  *
- * <p>线程：{@link #tick()} 在主线程，{@link #render} 在渲染线程；共享状态只有
+ * <p>初版不依赖模型 / 贴图资产：每节是程序化扁长方体，贴图取原版纯白纹理，所有颜色与
+ * 明暗来自顶点色、法线光照与光照图。单节模型接入后只需替换 {@link #renderLink} 的绘制
+ * 部分。</p>
+ *
+ * <p>线程：{@link #tick()} 在主线程，{@link #renderTrack} 在渲染线程；共享状态只有
  * {@link State} 的 volatile 相位 / 节数。</p>
  */
 public class TrackRenderer extends VisualEffectRenderer {
@@ -47,11 +60,20 @@ public class TrackRenderer extends VisualEffectRenderer {
     private static final float LINK_WIDTH = 0.35f;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
     private static final double LINK_LENGTH_RATIO = 0.92;
-    /** 超过该距离不画履带，避免和远处载具的位姿精度较劲。 */
-    private static final double MAX_RENDER_DISTANCE_SQR = 512.0 * 512.0;
     private static final double TICK_SECONDS = 1.0 / 20.0;
+    /** 占位贴图：原版 4×4 纯白纹理；节的基色、面间明暗与光照图在此之上调制。 */
+    private static final ResourceLocation LINK_TEXTURE =
+            ResourceLocation.withDefaultNamespace("textures/misc/white.png");
+    /**
+     * 实体不透明渲染类型：写入深度、正面剔除，带 lightmap / overlay / normal 顶点属性。
+     * 与零件模型使用同一套实体光照，同时保证阴影 pass 里可作为实体几何绘制。
+     */
+    private static final RenderType LINK_RENDER_TYPE = RenderType.entitySolid(LINK_TEXTURE);
+    /** 单节统一基色；面间明暗交给实体管线的两向光照，顶点色只承载基色。 */
+    private static final int LINK_COLOR = 0xFF9A968C;
 
-    private final Map<TrackLink, State> states = new ConcurrentHashMap<>();
+    /** 相位状态按 TrackLink 索引；tick 写入，渲染读取。 */
+    private static final Map<TrackLink, State> STATES = new ConcurrentHashMap<>();
 
     private static final class State {
         private volatile int linkCount;
@@ -66,10 +88,10 @@ public class TrackRenderer extends VisualEffectRenderer {
         for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {
             for (TrackLink link : vehicle.trackLinks) {
                 if (link.isDisposed()) {
-                    states.remove(link);
+                    STATES.remove(link);
                     continue;
                 }
-                State state = states.computeIfAbsent(link, ignored -> new State());
+                State state = STATES.computeIfAbsent(link, ignored -> new State());
                 state.prevPhase = state.phase;
 
                 TrackEnvelope2D.Result envelope =
@@ -93,7 +115,7 @@ public class TrackRenderer extends VisualEffectRenderer {
             }
         }
 
-        states.entrySet().removeIf(entry -> {
+        STATES.entrySet().removeIf(entry -> {
             TrackLink link = entry.getKey();
             return link.isDisposed() || !link.vehicle().trackLinks.contains(link);
         });
@@ -103,61 +125,48 @@ public class TrackRenderer extends VisualEffectRenderer {
     public void physTick(@NotNull PhysicsLevel physicsLevel) {
     }
 
-    @Override
-    public @NotNull RenderLevelStageEvent.Stage getRenderStage() {
-        return RenderLevelStageEvent.Stage.AFTER_ENTITIES;
+    /**
+     * 绘制 {@code subPart} 所属的整条履带；{@code subPart} 不是该履带的主动轮时直接返回。
+     *
+     * <p>由实体渲染管线调用（{@link PartEntityRenderer} / {@link DistantVehicleRenderer}），
+     * 因此 {@code poseStack} 的当前变换必须把世界原点映射到相机相对原点：
+     * {@code PartEntityRenderer} 用 {@code translate(-entityPos)} 达到，远处渲染器用
+     * {@code modelViewMatrix + translate(-camPos)} 达到。</p>
+     *
+     * @param subPart     实体对应的 SubPart；只有主动轮才会触发绘制，避免同一条履带被每个成员轮各画一遍
+     * @param poseStack   已把世界原点映射到相机相对原点的姿态栈
+     * @param packedLight 主动轮处的打包光照坐标，整条履带共用
+     * @param partialTick 帧间插值系数
+     */
+    public static void renderTrack(@NotNull SubPart subPart, @NotNull PoseStack poseStack,
+                                   @NotNull MultiBufferSource bufferSource,
+                                   float partialTick, int packedLight) {
+        TrackLink link = subPart.trackLink;
+        if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return;
+
+        TrackEnvelope2D.Result envelope = link.envelope(partialTick);
+        if (envelope == null) return;
+
+        State state = STATES.get(link);
+        int linkCount = state == null || state.linkCount <= 0
+                ? envelope.path().linkCount(link.attr().linkLength())
+                : state.linkCount;
+        if (linkCount <= 0) return;
+
+        double phase = state == null ? 0 : lerp(state.prevPhase, state.phase, partialTick);
+        renderBelt(poseStack, bufferSource, envelope, linkCount, phase, LINK_WIDTH, packedLight);
     }
 
-    @Override
-    public void render(@NotNull RenderLevelStageEvent event, @NotNull MultiBufferSource bufferSource,
-                       float partialTick) {
-        Vec3 camPos = event.getCamera().getPosition();
-        PoseStack poseStack = event.getPoseStack();
-
-        for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {
-            for (TrackLink link : vehicle.trackLinks) {
-                if (link.isDisposed()) continue;
-                TrackEnvelope2D.Result envelope =
-                        link.envelope(partialTick);
-                if (envelope == null) continue;
-
-                SubPart sprocket = link.sprocket();
-                if (sprocket == null) continue;
-                org.joml.Vector3f sprocketPos = sprocket.getWorldPositionMatrix(partialTick)
-                        .getTranslation(new org.joml.Vector3f());
-                double dx = sprocketPos.x - camPos.x;
-                double dy = sprocketPos.y - camPos.y;
-                double dz = sprocketPos.z - camPos.z;
-                if (dx * dx + dy * dy + dz * dz > MAX_RENDER_DISTANCE_SQR) continue;
-
-                double length = envelope.path().length();
-                if (!(length > 1e-6)) continue;
-                State state = states.get(link);
-                int linkCount = state == null || state.linkCount <= 0
-                        ? envelope.path().linkCount(link.attr().linkLength())
-                        : state.linkCount;
-                if (linkCount <= 0) continue;
-
-                double phase = state == null
-                        ? 0
-                        : lerp(state.prevPhase, state.phase, partialTick);
-                renderBelt(poseStack, bufferSource, camPos, envelope, linkCount, phase, LINK_WIDTH);
-            }
-        }
-    }
-
-    private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 camPos,
+    private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,
                                    TrackEnvelope2D.Result envelope, int linkCount, double phase,
-                                   float width) {
+                                   float width, int packedLight) {
         double length = envelope.path().length();
+        if (!(length > 1e-6)) return;
         float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
         double spacing = length / linkCount;
         float halfLength = (float) (spacing * LINK_LENGTH_RATIO * 0.5);
         float halfThickness = LINK_THICKNESS * 0.5f;
         float halfWidth = width * 0.5f;
-
-        poseStack.pushPose();
-        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
 
         for (int i = 0; i < linkCount; i++) {
             double arc = (length * i / linkCount + phase) % length;
@@ -181,20 +190,19 @@ public class TrackRenderer extends VisualEffectRenderer {
 
             poseStack.pushPose();
             poseStack.mulPose(world);
-            renderLink(poseStack, bufferSource, halfLength, halfThickness, halfWidth);
+            renderLink(poseStack, bufferSource, halfLength, halfThickness, halfWidth, packedLight);
             poseStack.popPose();
         }
-
-        poseStack.popPose();
     }
 
     /**
-     * 画一节扁长方体。初版无模型资产，用无贴图的彩色四边形；颜色只做面间明暗，
-     * 保证在游戏里能读出节距和运动方向。
+     * 画一节扁长方体。每个面按外法线顺序给出逆时针顶点，正面剔除下从外面可见；
+     * 明暗由 {@link RenderType#entitySolid} 的实体着色器（两向光照 + 光照图）计算。
      */
     private static void renderLink(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   float halfLength, float halfThickness, float halfWidth) {
-        VertexConsumer consumer = bufferSource.getBuffer(RenderType.debugQuads());
+                                   float halfLength, float halfThickness, float halfWidth,
+                                   int packedLight) {
+        VertexConsumer consumer = bufferSource.getBuffer(LINK_RENDER_TYPE);
         PoseStack.Pose pose = poseStack.last();
 
         float x0 = -halfLength;
@@ -204,34 +212,44 @@ public class TrackRenderer extends VisualEffectRenderer {
         float z0 = -halfWidth;
         float z1 = halfWidth;
 
-        int top = 0xFF9A968C;
-        int side = 0xFF726E66;
-        int bottom = 0xFF46433E;
-
         // +Y / -Y
-        quad(consumer, pose, top, x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1);
-        quad(consumer, pose, bottom, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
+        quad(consumer, pose, packedLight, 0, 1, 0,
+                x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0);
+        quad(consumer, pose, packedLight, 0, -1, 0,
+                x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
         // +Z / -Z
-        quad(consumer, pose, side, x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1);
-        quad(consumer, pose, side, x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0);
+        quad(consumer, pose, packedLight, 0, 0, 1,
+                x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1);
+        quad(consumer, pose, packedLight, 0, 0, -1,
+                x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0);
         // +X / -X
-        quad(consumer, pose, side, x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0);
-        quad(consumer, pose, side, x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0);
+        quad(consumer, pose, packedLight, 1, 0, 0,
+                x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1);
+        quad(consumer, pose, packedLight, -1, 0, 0,
+                x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0);
     }
 
-    private static void quad(VertexConsumer consumer, PoseStack.Pose pose, int color,
+    private static void quad(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+                             float nx, float ny, float nz,
                              float x0, float y0, float z0,
                              float x1, float y1, float z1,
                              float x2, float y2, float z2,
                              float x3, float y3, float z3) {
-        int a = (color >>> 24) & 0xFF;
-        int r = (color >>> 16) & 0xFF;
-        int g = (color >>> 8) & 0xFF;
-        int b = color & 0xFF;
-        consumer.addVertex(pose, x0, y0, z0).setColor(r, g, b, a);
-        consumer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
-        consumer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
-        consumer.addVertex(pose, x3, y3, z3).setColor(r, g, b, a);
+        vertex(consumer, pose, packedLight, nx, ny, nz, x0, y0, z0);
+        vertex(consumer, pose, packedLight, nx, ny, nz, x1, y1, z1);
+        vertex(consumer, pose, packedLight, nx, ny, nz, x2, y2, z2);
+        vertex(consumer, pose, packedLight, nx, ny, nz, x3, y3, z3);
+    }
+
+    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+                               float nx, float ny, float nz,
+                               float x, float y, float z) {
+        consumer.addVertex(pose, x, y, z)
+                .setColor(LINK_COLOR)
+                .setUv(0f, 0f)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(packedLight)
+                .setNormal(pose, nx, ny, nz);
     }
 
     /**

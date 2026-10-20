@@ -90,6 +90,10 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         poseStack.pushPose();//开始渲染
         var entityPos = entity.getPosition(partialTick);
         poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z); // 抵消实体位置带来的渲染位置偏移
+        // 履带由主动轮实体一并绘制：走实体管线，履带才能继承世界光照并进入 Iris 的阴影 pass。
+        // 此处姿态栈已把世界原点映射到相机相对原点，renderTrack 内部直接使用世界坐标。
+        TrackRenderer.renderTrack(entity.subPart, poseStack, bufferSource, partialTick,
+                LightTexture.pack(blockLight, skyLight));
         poseStack.pushPose();
         poseStack.mulPose(worldMatrix); // 直接使用刚体位姿
         int overlay = OverlayTexture.NO_OVERLAY;

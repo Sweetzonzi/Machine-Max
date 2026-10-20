@@ -46,6 +46,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 自发光骨骼（命名以 {@code ysmGlow} 为前缀或 {@code _illuminated} 为后缀，见 Spark-Core {@code OBone#shouldGlow}）
  * 在本渲染器中同样走普通纹理渲染，不做 {@link RenderType#eyes} 与全亮处理；
  * 销毁倒计时中按近距离同样逻辑黑化/淡出。不处理淡入、受击闪白、线框/组装进度等状态。</p>
+ * <p>主动轮 SubPart 还通过 {@link TrackRenderer#renderTrack} 顺带绘制整条履带，远处载具的履带
+ * 因此与车体一起显示。</p>
  */
 public class DistantVehicleRenderer extends VisualEffectRenderer {
 
@@ -109,15 +111,6 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         var modelInstance = modelController.getModel();
         if (modelInstance == null) return;
 
-        poseStack.pushPose();
-        // AFTER_LEVEL 的 PoseStack 为空，需手动乘入相机旋转矩阵，
-        // 否则渲染位置不随视角转动。
-        poseStack.mulPose(modelViewMatrix);
-        // 抵消摄像机位置，使 worldMatrix 中的世界坐标正确映射到屏幕
-        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-        // 应用 SubPart 的世界位姿（含平移和旋转）
-        poseStack.mulPose(worldMatrix);
-
         // 亮度：与近距离载具渲染（PartEntityRenderer）相同机制 — 按 SubPart 世界位置采样方块光/天空光后打包
         Level level = Minecraft.getInstance().level;
         BlockPos blockPos = BlockPos.containing(subPartPos.x, subPartPos.y, subPartPos.z);
@@ -132,6 +125,18 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
                 light = cachedLight;
             } else return;
         }
+
+        poseStack.pushPose();
+        // AFTER_LEVEL 的 PoseStack 为空，需手动乘入相机旋转矩阵，
+        // 否则渲染位置不随视角转动。
+        poseStack.mulPose(modelViewMatrix);
+        // 抵消摄像机位置，使 worldMatrix 中的世界坐标正确映射到屏幕
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        // 履带同理：主动轮实体一并绘制，姿态栈此时已把世界原点映射到相机相对原点
+        TrackRenderer.renderTrack(subPart, poseStack, bufferSource, partialTick, light);
+        // 应用 SubPart 的世界位姿（含平移和旋转）
+        poseStack.mulPose(worldMatrix);
+
         // 销毁黑化/淡出：与近距离渲染（PartEntityRenderer#renderNormal）一致，按销毁倒计时计算 alpha，
         // 配置开启时颜色渐变为黑(64,64,64)，否则保持白色仅淡出
         int color = Color.WHITE.getRGB();
