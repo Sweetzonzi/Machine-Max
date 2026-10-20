@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Machine-Max · Weapon HUD Components / 02</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css?v=3"></head>
+<body>
+<header class="mast"><a class="brand" href="./index.html"><b>M/M</b><span>MACHINE–MAX<small>HUD COMPONENT STUDIES / 02</small></span></a><span class="mast-note">单色火控 · 可组合组件</span><span class="old-link">FIELD INSTRUMENTS / 02</span></header>
+<main>
+  <div class="intro"><div><span class="eyebrow">ONE CONTROLLER, ITS OWN INSTRUMENTS</span><h1>一台主炮，三台机枪。</h1></div><p>用不同粒度显示不同武器。<br>管状态、弹链和库存，按需要组合。</p></div>
+  <nav class="page-tabs" aria-label="原型页面"><button data-view="composition" aria-pressed="true">01 / 组合效果</button><button data-view="catalog" aria-pressed="false">02 / 组件目录</button><button data-view="contract" aria-pressed="false">03 / 数据与模板</button><span>LOCAL PROTOTYPE / MOCK DATA</span></nav>
+
+  <section id="composition" class="page-panel">
+    <div class="scene-toolbar"><div class="preset-buttons" aria-label="组合预设"><button data-preset="tank" aria-pressed="true">坦克 · 炮＋三机枪</button><button data-preset="mixed" aria-pressed="false">混装 · 炮＋机枪＋多管</button><button data-preset="strip" aria-pressed="false">下缘 · 紧凑武器列</button></div><button id="focus" class="text-button">纯 HUD 预览 ↗</button></div>
+    <div class="viewport" id="viewport"><div class="stage" id="stage"><div class="scene"></div><div class="scene-meta">KV-1 / COMPOSITION TRIAL 02<span>位置与信息粒度由本页预设定义</span></div><div class="scene-cross" aria-hidden="true"></div><div id="hosts"></div><div class="frame-meta"><span id="presetLabel">01 / TANK COMPOSITION</span><span>1600 × 900 / COMPONENT MOCK</span></div></div><button class="exit-focus" id="exitFocus">退出预览 [ESC]</button></div>
+    <div class="below-stage"><span><i class="key-marker"></i> 主炮展开弹链，机枪保留紧凑弹量；不同控制器各自渲染。</span><label><input id="editLayout" type="checkbox"> 拖动调整布局</label></div>
+
+    <section class="workbench">
+      <div class="controller-list"><div class="section-label">A / 选择控制器 <span>作者为每台独立选择组件</span></div><div id="controllerButtons"></div></div>
+      <div class="inspector"><div class="section-label">B / 信息粒度 <span id="inspectorName">主炮</span></div><div class="grain-buttons"><button data-grain="compact" aria-pressed="false"><b>L0</b> 弹量<small>名称 / 库存 / 状态</small></button><button data-grain="tube" aria-pressed="false"><b>L1</b> 逐管<small>膛内 / 装填来源 / 时间</small></button><button data-grain="feed" aria-pressed="true"><b>L2</b> 弹链<small>可选供弹 / 逐管或合并进度</small></button></div><div class="module-options"><label><input id="showIdentity" type="checkbox" checked> 控制器标识</label><label><input id="showStock" type="checkbox" checked> 库存读数</label><label><input id="mergeProgress" type="checkbox" checked> 单管进度合入弹链行</label></div><p id="grainNote">单管的真实准备进度进入对应弹链行；选择箭头独立保留。</p><div class="sim-actions"><button id="fire">射击 / 点射</button><button id="reload">开始装填</button><button id="cycle">切换供弹</button><button id="restore" class="text-button">复位本控制器</button></div><div id="simStatus" class="sim-status" role="status" aria-live="polite">选择一台控制器，观察它的独立状态。</div><div class="tube-tools" id="tubeTools" hidden><label for="tubeCount">发射管数量</label><select id="tubeCount"><option>1</option><option>2</option><option>4</option><option>6</option><option>8</option></select><span>由同一条目模板展开</span></div></div>
+    </section>
+  </section>
+
+  <section id="catalog" class="page-panel" hidden><div class="catalog-intro"><h2>同一份主炮数据，三种信息粒度。</h2><p>这里的组件同步读取组合预览中的模拟状态。组件内部按模板排列，屏幕上的位置由布局决定。</p></div><div class="catalog-grid"><article class="sample-card"><header><b>L0 / 弹量条</b><span>低关注武器 · 常驻</span></header><div class="sample-surface" id="sampleCompact"></div><p>读库存和简单状态。无须展示弹链选择，也无须为每台机枪配置大卡片。</p></article><article class="sample-card"><header><b>L1 / 逐管读数</b><span>装填节奏 · 常驻</span></header><div class="sample-surface" id="sampleTube"></div><p>每管一行，填充、弹药标签和剩余时间合在同一处。</p></article><article class="sample-card"><header><b>L2 / 弹链选择</b><span>供弹选择 · 展开</span></header><div class="sample-surface" id="sampleFeed"></div><p>库存按弹链列出。单管准备进度合入实际对应行；选中箭头不会随进度消失。</p></article></div><div class="catalog-grid lower"><article class="sample-card wide"><header><b>逐管列表 / 4 → N</b><span>同一模板 · 各管独立</span></header><div class="sample-surface" id="samplePod"></div><p>同时容纳已就绪和装填中的管。库存为 0 也不会抹掉膛内已经准备好的弹。</p></article><article class="sample-card wide"><header><b>副武器 / 三个控制器</b><span>分别绑定 · 分别摆放</span></header><div class="sample-surface mg-samples" id="sampleMGs"></div><p>同轴、车体、高射只是本例名称。显示粒度由作者选择，运行时没有主副分类要求。</p></article></div></section>
+
+  <section id="contract" class="page-panel" hidden><div class="contract-grid"><article><span class="eyebrow">AUTHORING CONTRACT</span><h2>内容包写结构，绑定器填数据。</h2><p>每台控制器拥有自己的 HUD 布局。布局选择组件样式与位置；HTML/CSS 决定组件内部结构；重复器只展开这台控制器的管与弹链。</p><ol><li>库存读数使用库存口径，不与膛内发数相加。</li><li>选中供弹与实际膛内／装填来源分别表达。</li><li>混装弹链可以包含多种弹药，标签不冒充单一弹种。</li><li>逐管信息按已讨论的目标查询能力模拟。</li></ol><p class="contract-caveat">本页以浏览器适配器演示目标绑定契约，未连接游戏，也未实现完整 MoLang。<code>demo.*</code> 是本页的派生显示值，具体游戏查询名需要与词表对齐。</p><a href="./README.md">完整说明与校验记录 ↗</a></article><article><h3>可选弹链：同级重复区域</h3><pre><code>&lt;div class="belts"&gt;
+  &lt;div data-mm-repeat="weapon.belts"
+       data-mm-index="belt"&gt;
+    &lt;span data-mm-text="weapon.belt_label(variable.belt)"&gt;&lt;/span&gt;
+    &lt;b data-mm-text="weapon.belt_remaining(variable.belt)"&gt;&lt;/b&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre><h3>逐管读数：状态与时间共用一行</h3><pre><code>&lt;div data-mm-repeat="weapon.tubes"
+     data-mm-index="tube"&gt;
+  &lt;span data-mm-text="weapon.tube_round_label(variable.tube)"&gt;&lt;/span&gt;
+  &lt;b data-mm-text="weapon.tube_reload_text(variable.tube)"&gt;&lt;/b&gt;
+  &lt;i data-mm-num="weapon.tube_fill(variable.tube)"
+     data-mm-var="--fill" data-mm-unit="%"&gt;&lt;/i&gt;
+&lt;/div&gt;</code></pre></article></div></section>
+
+  <section class="appearance"><div><span class="section-label">DISPLAY / 显示调节</span><div class="swatches"><button data-color="#a4ff80" style="--swatch:#a4ff80" aria-label="荧光绿" aria-pressed="true"></button><button data-color="#fff5c4" style="--swatch:#fff5c4" aria-label="象牙白" aria-pressed="false"></button><button data-color="#ffc16b" style="--swatch:#ffc16b" aria-label="琥珀" aria-pressed="false"></button><input id="customColor" type="color" value="#a4ff80" aria-label="自定义颜色"></div></div><label for="brightness">场景亮度 <output id="brightnessValue">85%</output><input id="brightness" type="range" min="40" max="115" value="85"></label><label for="opacity">底板浓度 <output id="opacityValue">48%</output><input id="opacity" type="range" min="0" max="85" value="48"></label><div class="appearance-checks"><label><input id="neutral" type="checkbox"> 暗色检视背景</label><label><input id="pause" type="checkbox"> 暂停模拟时间</label><button id="resetLayout" class="text-button">重置预设布局</button></div></section>
+  <footer><span>视觉与组合原型 / 字模和场景资源随附 / 无网络依赖</span><span>主炮与副武器为示例命名；多控制器遮挡由作者布局处理。</span></footer>
+</main>
+
+<div id="patterns" hidden>
+  <div data-pattern="identity" class="identity module"><span class="station-id" data-mm-text="demo.station"></span><b data-mm-text="weapon.name"></b></div>
+  <div data-pattern="compact" class="compact module" data-mm-class="weapon.state"><div><span data-mm-text="demo.short"></span><b data-mm-text="weapon.ammo_remaining"></b></div><div class="compact-foot"><span data-mm-text="demo.stock_caption"></span><i data-mm-text="demo.compact_status"></i></div></div>
+  <div data-pattern="stock" class="stock module"><span data-mm-text="demo.stock_caption"></span><b data-mm-text="weapon.ammo_remaining"></b><span class="stock-capacity" data-mm-text="demo.capacity_text"></span></div>
+  <div data-pattern="tubes" class="tubes module"><div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-index="tube" data-mm-class="weapon.tube_state(variable.tube)"><i class="row-fill" data-mm-num="weapon.tube_fill(variable.tube)" data-mm-var="--fill" data-mm-unit="%"></i><span class="tube-number" data-mm-text="demo.tube_number(variable.tube)"></span><span class="round-label" data-mm-text="weapon.tube_round_label(variable.tube)"></span><b class="row-time" data-mm-text="weapon.tube_reload_text(variable.tube)"></b></div></div>
+  <div data-pattern="belts" class="belts module"><div class="belt-row" data-mm-repeat="weapon.belts" data-mm-index="belt" data-mm-class="weapon.belt_selected(variable.belt)"><i class="row-fill" data-mm-num="demo.belt_fill(variable.belt)" data-mm-var="--fill" data-mm-unit="%"></i><span class="selection-pointer" data-mm-text="demo.belt_pointer(variable.belt)"></span><span class="belt-label" data-mm-text="weapon.belt_label(variable.belt)"></span><b class="belt-status" data-mm-text="demo.belt_status(variable.belt)"></b><span class="belt-stock" data-mm-text="weapon.belt_remaining(variable.belt)"></span></div></div>
+  <div data-pattern="note" class="chamber-note module" data-mm-class="demo.has_note"><span data-mm-text="demo.chamber_note"></span></div>
+  <div data-pattern="feed-caption" class="feed-caption module"><span>FEED / STORE</span><span data-mm-text="demo.feed_hint"></span></div>
+</div>
+<script src="mock-data.js?v=3"></script><script src="app.js?v=3"></script>
+</body></html>

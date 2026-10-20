@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Machine-Max / 野战火控 · HUD 风格实验</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./index.html"><span class="brand-mark">M/M</span><span>MACHINE–MAX<small>INTERFACE STUDIES / 01</small></span></a>
+    <div class="edition">野战火控 <span>HUD STYLE LAB</span></div>
+    <span class="prototype-tag">本地交互原型</span>
+  </header>
+
+  <main>
+    <div class="intro"><div><span class="eyebrow">MONOCHROME / PIXEL / FIELD INSTRUMENTS</span><h1>把信息，做成仪表。</h1></div><p>单色荧光、位图字形、反白标记。<br>三种结构，共用一组武器数据与可调配色。</p></div>
+
+    <div class="switchbar">
+      <nav class="directions" aria-label="HUD 设计方向">
+        <button data-mode="field" aria-pressed="true"><span>01</span> 野战仪表 <small>FIELD</small></button>
+        <button data-mode="terminal" aria-pressed="false"><span>02</span> 火控终端 <small>TERMINAL</small></button>
+        <button data-mode="sight" aria-pressed="false"><span>03</span> 观瞄分划 <small>SIGHT</small></button>
+      </nav>
+      <button id="focusButton" class="quiet">纯 HUD 预览 ↗</button>
+    </div>
+
+    <section class="viewport" aria-label="16 比 9 游戏场景中的 HUD 原型">
+      <div class="stage" id="stage" data-mode="field" data-state="ready">
+        <div class="scene" id="scene"></div>
+        <div class="scene-caption">KV-1 / FIELD TRIAL 07<span>场景与数据为风格示例</span></div>
+        <div class="hud" id="hud">
+          <div class="bearing"><span>240</span><i></i><span>255</span><i></i><b>270</b><i></i><span>285</span><i></i><span>300</span><em>W</em></div>
+          <div class="field-only armor instrument">
+            <div class="instrument-head"><strong>ARMOR</strong><span>[MAIN HULL INTEGRITY]</span></div>
+            <div class="micro">STATUS / LAYERS</div>
+            <div class="armor-fill"><b>10 / 10</b><span>STRUCTURAL LAYERS</span></div>
+            <div class="armor-feet"><span>HULL STABLE</span><span>POWER 95%</span></div>
+          </div>
+
+          <div class="field-only field-stack">
+            <section class="weapon instrument">
+              <div class="instrument-head"><span>[FIRE CONTROL SYSTEM]</span><b>01 / MAIN</b></div>
+              <div class="weapon-name" data-weapon-name>76.2 MM ZIS-5 CANNON</div>
+              <div class="weapon-diagram" aria-hidden="true">
+                <svg viewBox="0 0 340 70" fill="none" stroke="currentColor" stroke-width="2" shape-rendering="crispEdges"><path d="M12 27H218V21H246L254 13H284V21H306V27H328V47H306V53H284V61H254L246 53H218V47H12ZM18 32H218M18 42H218M35 27V47M83 27V47M131 27V47M179 27V47M218 21V53M230 21V53M246 21V53M254 13V61M284 21V53M306 27V47M260 22H278V48H260Z"/><path d="M233 18L250 8H291V15M233 56L250 66H291V59"/></svg>
+              </div>
+              <div class="ammo-grid"><div><div class="micro">ROUNDS / FEED</div><div class="ammo-value"><b data-ammo>024</b><span>/ 030</span></div></div><div class="feed"><div class="micro">AMMO FEED</div><div class="feed-segments" id="feedSegments"></div></div></div>
+              <div class="status-band"><span data-status>+ READY TO FIRE</span><b data-time>STANDBY</b></div>
+              <div class="reload-track"><i data-progress></i></div>
+              <div class="belt-options"><button data-belt="0" aria-pressed="true"><span>01</span><b>APHE</b><span>024</span></button><button data-belt="1" aria-pressed="false"><span>02</span><b>HE-FRAG</b><span>012</span></button><button data-belt="2" aria-pressed="false"><span>03</span><b>SMOKE</b><span>006</span></button></div>
+              <div class="instrument-foot"><span>[B] SELECT FEED</span><span data-feed>APHE / BR-350B</span></div>
+            </section>
+            <section class="counter instrument"><div class="instrument-head"><span>[COUNTERMEASURES]</span><b>08 / 10</b></div><div class="counter-cells" aria-label="10 个烟幕发射管，8 个就绪"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="spent"></i><i class="spent"></i></div><div class="instrument-foot"><span>SMOKE / SALVO</span><span>[G] ARM</span></div></section>
+          </div>
+
+          <section class="terminal-only terminal-panel instrument">
+            <div class="terminal-title"><b>FCS-04</b><span>FIRE CONTROL</span><span>ONLINE</span></div>
+            <div class="terminal-rule">[01] PRIMARY ARMAMENT</div>
+            <h2 data-weapon-name>76.2 MM ZIS-5 CANNON</h2>
+            <div class="terminal-readout"><span data-ammo>024</span><div>ROUNDS / 030<br><b data-status>+ READY TO FIRE</b></div></div>
+            <table><thead><tr><th>FEED</th><th>TYPE</th><th>STOCK</th><th>SELECT</th></tr></thead><tbody><tr><td>01</td><td>APHE</td><td data-stock="0">024</td><td data-select="0">&gt;</td></tr><tr><td>02</td><td>HE-FRAG</td><td data-stock="1">012</td><td data-select="1">-</td></tr><tr><td>03</td><td>SMOKE</td><td data-stock="2">006</td><td data-select="2">-</td></tr></tbody></table>
+            <div class="terminal-rule terminal-load"><span data-feed>APHE / BR-350B</span><b data-time>STANDBY</b></div>
+            <div class="reload-track"><i data-progress></i></div>
+            <div class="terminal-log"><span>BUS 01...OK / BREECH...OK</span><span id="terminalEvent">&gt; FIRE CONTROL READY_</span></div>
+            <div class="terminal-command">[SPACE] FIRE <span>[R] RELOAD</span> [B] FEED</div>
+          </section>
+          <div class="terminal-only terminal-hull"><span>HULL [==========] 100%</span><span>PWR  [=========.] 095%</span><span>SMK  [||||||||..] 08/10</span></div>
+
+          <div class="reticle" aria-hidden="true"><svg viewBox="0 0 400 340" fill="none" stroke="currentColor" shape-rendering="crispEdges"><path d="M20 170H180M220 170H380M200 12V150M200 190V320M100 162V178M140 165V175M260 165V175M300 162V178M192 70H208M195 110H205M192 270H208M195 230H205"/><path d="M190 178L200 168L210 178" stroke-width="2"/><path d="M130 220H150M120 240H150M110 260H150M100 280H150M150 220V280"/></svg><div class="sight-only reticle-label">800 M <span>ZERO / 400</span></div></div>
+          <div class="sight-only range-readout"><span>RANGE / MANUAL</span><b>00800 <small>M</small></b><span>AZ 270 / EL +02.4</span></div>
+          <section class="sight-only sight-weapon instrument"><div class="instrument-head"><span>[01 / MAIN GUN]</span><b data-feed>APHE / BR-350B</b></div><div class="sight-ammo"><strong data-ammo>024</strong><span>/ 030</span><b data-status>+ READY TO FIRE</b></div><div class="reload-track"><i data-progress></i></div><div class="instrument-foot"><span data-weapon-name>76.2 MM ZIS-5 CANNON</span><b data-time>STANDBY</b></div></section>
+          <div class="sight-only elevation"><span>+10</span><i></i><span>+05</span><i></i><b>&gt; +02</b><i></i><span>000</span><i></i><span>-05</span></div>
+          <div class="vehicle-data"><b>KV-1 / MODEL 1942</b><span>SPD 00 KM/H <i>SYS NOMINAL</i></span></div>
+        </div>
+        <div class="scanlines" aria-hidden="true"></div>
+        <div class="frame-meta"><span id="frameLabel">01 / FIELD INSTRUMENT</span><span>16:9 · LIVE MOCK DATA</span></div>
+      </div>
+      <button class="exit-focus quiet" id="exitFocus">退出纯 HUD 预览 [ESC]</button>
+    </section>
+
+    <section class="controls" aria-label="原型调节">
+      <div class="control-group palette"><label>01 / 荧光配色</label><div class="color-options"><button data-color="#a4ff80" class="swatch green" aria-label="荧光绿" aria-pressed="true"></button><button data-color="#fff5c4" class="swatch ivory" aria-label="象牙白" aria-pressed="false"></button><button data-color="#ffc16b" class="swatch amber" aria-label="琥珀色" aria-pressed="false"></button><button data-color="#a0edff" class="swatch ice" aria-label="冰蓝色" aria-pressed="false"></button><input type="color" id="customColor" value="#a4ff80" aria-label="自定义 HUD 颜色"><span id="colorLabel">PHOSPHOR GREEN</span></div></div>
+      <div class="control-group"><label for="brightness">02 / 场景亮度 <output id="brightnessValue">85%</output></label><input id="brightness" type="range" min="35" max="115" value="85"><label class="check"><input type="checkbox" id="neutral"> 暗色检视背景</label></div>
+      <div class="control-group"><label for="panelOpacity">03 / 底板浓度 <output id="opacityValue">36%</output></label><input id="panelOpacity" type="range" min="0" max="85" value="36"><div class="check-row"><label class="check"><input type="checkbox" id="glow"> 微辉光</label><label class="check"><input type="checkbox" id="scanlines"> 扫描线</label></div></div>
+      <div class="control-group state-controls"><label for="stateSelect">04 / 武器状态</label><div class="state-line"><select id="stateSelect"><option value="ready">就绪 READY</option><option value="loading">装填 RELOADING</option><option value="empty">耗尽 EMPTY</option><option value="fault">故障 FAULT</option></select><button id="reset" class="quiet">复位</button></div><label class="check"><input type="checkbox" id="longName"> 长武器名称压力测试</label></div>
+    </section>
+
+    <section class="bottom-strip"><div class="demo-actions"><button id="fire">射击 <kbd>SPACE</kbd></button><button id="reload">装填 <kbd>R</kbd></button><button id="switchFeed">切换弹链 <kbd>B</kbd></button><span id="actionStatus" role="status" aria-live="polite">示例数据 · 可交互</span></div><span>字体为本原型自绘 5×7 字模 · 资源随附 · 无外部依赖</span></section>
+
+    <section class="design-note"><div><span class="eyebrow" id="noteIndex">DIRECTION 01</span><h2 id="noteTitle">野战仪表 / Field instrument</h2><p id="noteText">最接近参考图一。用反白标题、机械线框与逐格指示，让武器状态像设备上的读数；留给游戏场景的空间，由薄底板和局部边框共同控制。</p></div><dl><div><dt>看什么</dt><dd id="noteFocus">武器轮廓 / 弹药大字 / 分段供弹</dd></div><div><dt>用在哪里</dt><dd id="noteUse">第三人称 · 载具与机甲的常驻武器 HUD</dd></div><div><dt>配色逻辑</dt><dd>主色可调；装填用“斜纹 + 时间”，故障用“叉号 + 文本”识别。</dd></div></dl></section>
+    <footer>视觉探索 / 浏览器模拟数据，未连接游戏。观瞄分划与车体信息用于组合示意。<a href="./design-notes.md">风格分析与实现边界 ↗</a></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
