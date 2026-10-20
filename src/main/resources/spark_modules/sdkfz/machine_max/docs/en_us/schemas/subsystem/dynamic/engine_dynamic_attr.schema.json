@@ -31,7 +31,7 @@
       "type": "machine_max:engine",
       "definition": "machine_max:ae86at_engine",
       "power_output": "gearbox",
-      "speed_outputs": { "engine_speed": ["part", "global"] }
+      "speed_outputs": { "engine_speed": ["local", "global"] }
     }
   ]
 }

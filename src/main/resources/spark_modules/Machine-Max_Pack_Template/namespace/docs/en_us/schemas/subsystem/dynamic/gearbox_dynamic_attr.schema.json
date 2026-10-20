@@ -21,7 +21,7 @@
       "allOf": [
         { "$ref": "../base/signal_targets.json" }
       ],
-      "default": { "gear": ["part", "global"] },
+      "default": { "gear": ["local", "global"] },
       "description": "Gear name output channel and targets. Optional, by default sends current gear name to the gear channel of parts and vehicles."
     }
   },
@@ -31,7 +31,7 @@
       "type": "machine_max:gearbox",
       "definition": "machine_max:ae86at_gearbox",
       "power_output": "transmission",
-      "gear_outputs": { "gear": ["part", "global"] }
+      "gear_outputs": { "gear": ["local", "global"] }
     }
   ]
 }

@@ -21,7 +21,7 @@
       "allOf": [
         { "$ref": "../base/signal_targets.json" }
       ],
-      "default": { "gear": ["part", "global"] },
+      "default": { "gear": ["local", "global"] },
       "description": "挡位名称输出频道及目标。可选，默认将当前挡位名称发至部件和载具的gear频道。"
     }
   },
@@ -31,7 +31,7 @@
       "type": "machine_max:gearbox",
       "definition": "machine_max:ae86at_gearbox",
       "power_output": "transmission",
-      "gear_outputs": { "gear": ["part", "global"] }
+      "gear_outputs": { "gear": ["local", "global"] }
     }
   ]
 }

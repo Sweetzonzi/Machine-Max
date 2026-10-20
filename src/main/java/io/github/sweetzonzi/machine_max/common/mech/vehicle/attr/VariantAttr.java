@@ -34,8 +34,8 @@ public class VariantAttr {
     public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
     public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
 
-    /** 信号保留地址：不得用作连接点 / 子系统 / 交互区名 */
-    private static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global", "subpart", "vehicle");
+    /** 信号保留地址（{@code "local"} = Part、{@code "global"} = 装配体）：不得用作连接点 / 子系统 / 交互区名 */
+    private static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global");
 
     public static final Codec<Map<String, ResourceLocation>> TEXTURES_CODEC = Codec.either(
             ResourceLocation.CODEC,
