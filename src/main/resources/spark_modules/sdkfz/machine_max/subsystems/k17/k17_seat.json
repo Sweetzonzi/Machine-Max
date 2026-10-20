@@ -6,7 +6,7 @@
   "views": {
     "enable_first_person": false,
     "enable_third_person": true,
-    "third_hud_layout": "machine_max:seat_dashboard",
+    "third_hud_layout": "machine_max:k17_weapon_preview",
     "follow_vehicle": false,
     "focus_on_center": true,
     "distance_scale": 1.2,

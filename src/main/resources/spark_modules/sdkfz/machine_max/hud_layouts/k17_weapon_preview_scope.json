@@ -1,0 +1,16 @@
+[
+  {
+    "style": "machine_max:gun_sight_hud",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "scale": [25, 25, 25]
+  },
+  {
+    "style": "machine_max:k17_weapon_preview",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -52, 0],
+    "scale": [1, 1, 1]
+  }
+]

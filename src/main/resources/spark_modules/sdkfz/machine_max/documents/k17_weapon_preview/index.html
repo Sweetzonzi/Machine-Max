@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>K17 static weapon HUD preview</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="weapon-stack">
+    <div class="hud-panel grain-feed">
+      <div class="identity"><span class="station-id">01</span><b>30 MM 2A42</b></div>
+      <div class="feed-caption"><span>FEED / STORE</span><span>MIXED BELT</span></div>
+      <div class="belt-row is-selected">
+        <i class="row-fill" style="width:100%"></i>
+        <span class="selection-pointer">&gt;</span><span class="belt-label">AP/HE</span>
+        <span class="belt-status">READY</span><span class="belt-stock">278</span>
+      </div>
+      <div class="chamber-note">CHAMBER 30 MM AP</div>
+      <div class="scanlines" aria-hidden="true"></div>
+    </div>
+
+    <div class="hud-panel grain-tube">
+      <div class="identity"><span class="station-id">02</span><b>9M133 KORNET</b></div>
+      <div class="feed-caption"><span>TUBES / 02 OF 04 READY</span><span>STORE 0</span></div>
+      <div class="tube-grid">
+        <div class="tube-row is-ready">
+          <i class="row-fill" style="width:100%"></i>
+          <span class="tube-number">01</span><span class="round-label">KORNET</span><span class="row-time">READY</span>
+        </div>
+        <div class="tube-row is-ready">
+          <i class="row-fill" style="width:100%"></i>
+          <span class="tube-number">02</span><span class="round-label">KORNET</span><span class="row-time">READY</span>
+        </div>
+        <div class="tube-row is-loading">
+          <i class="row-fill" style="width:58%"></i>
+          <span class="tube-number">03</span><span class="round-label">KORNET</span><span class="row-time">4.8S</span>
+        </div>
+        <div class="tube-row is-loading">
+          <i class="row-fill" style="width:27%"></i>
+          <span class="tube-number">04</span><span class="round-label">KORNET</span><span class="row-time">8.2S</span>
+        </div>
+      </div>
+      <div class="scanlines" aria-hidden="true"></div>
+    </div>
+
+    <div class="hud-panel grain-compact">
+      <div class="compact-head"><span>PKTM / COAX</span><b>1864</b></div>
+      <div class="compact-foot"><span>STORE / AP-TRACER</span><span>READY</span></div>
+      <div class="scanlines" aria-hidden="true"></div>
+    </div>
+  </div>
+</body>
+</html>

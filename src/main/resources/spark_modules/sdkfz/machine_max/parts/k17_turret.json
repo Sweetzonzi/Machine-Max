@@ -196,12 +196,12 @@
           },
           "gunner_optics": {
             "type": "machine_max:sight",
-            "definition": "machine_max:gunner_sight_dual_stb",
+            "definition": "machine_max:k17_gunner_sight_preview",
             "locator": "gunner_optics"
           },
           "commander_optics": {
             "type": "machine_max:sight",
-            "definition": "machine_max:commander_sight_dual_stb",
+            "definition": "machine_max:k17_commander_sight_preview",
             "locator": "commander_optics"
           }
         }

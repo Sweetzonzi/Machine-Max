@@ -1,9 +1,9 @@
 # HUD 专用 MoLang 上下文设计
 
-> 版本 1.5 · 2026-10-18
+> 版本 1.7 · 2026-10-21
 > **状态**：计划中。代码中尚无 `HudMolangContext` / `WeaponHudMolangContext`；V1 的模型 HUD 元素由 `client/render/renderable/GuiAnimatable.java` 持有样式与布局元素，上下文仍委派给玩家所坐座椅所属 Part 的 `SparkMolangContext`，由 `client/render/gui/hud/CustomHud.java` 驱动。
 >
-> 本文定义通用 HUD 元素的 `hud.*` 与武器控制器 HUD 元素的 `weapon.*`。样式、布局、元素、玩家覆盖及 AUI 页面绑定见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；武器状态字段口径见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
+> 本文定义通用 HUD 元素的 `hud.*` 与武器控制器 HUD 元素的 `weapon.*`，以及当前发射管/弹链作用域的 `tube.*` / `belt.*`。样式、布局、元素、玩家覆盖及 AUI 页面绑定见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；武器状态字段口径见《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》。
 
 ## 一、对象与上下文的边界
 
@@ -17,6 +17,7 @@
 运行时武器 HUD 元素（继承通用元素，直接持有所属武器控制器）
   └─ WeaponHudMolangContext（继承 HudMolangContext）
                                        → hud.* + weapon.*
+       └─ 逐数据槽安装的当前项作用域      → tube.* 或 belt.*
 ```
 
 `SparkMolangContext<T>` 要求 `T extends IAnimatable<?>`。因此上下文以实现 `IAnimatable<HudElement>` 的 HUD 元素为关联对象，元素的 `getAnimatable()` 返回自身；宿主是元素上的独立引用，不要求座椅或武器控制器实现 `IAnimatable`。`HudMolangContext` 应直接继承 `SparkMolangContext`，而非继承现有 `MechMolangContext`：后者的泛型绑定到 `IAnimatable<Part>`，不能直接用 HUD 元素调用其 `reset`。可行的类型形态是 `HudMolangContext<E extends HudElement> extends SparkMolangContext<E>`，再由 `WeaponHudMolangContext extends HudMolangContext<WeaponHudElement>` 特化；具体类名在实现时确定。
@@ -27,7 +28,7 @@
 
 现有 `MMGuiManager#onAnimTick` 与 `#onPhysicsTick` 分别在客户端主线程和物理线程推进 HUD 动画；Spark 的 `JSMolangValue` 会对返回的上下文执行 `reset(holder, animTime)`。因此同一元素的可变上下文也不能在两条线程上同时求值。实现时按元素、按消费线程缓存上下文实例，两份实例读取同一份原子发布的不可变视角/布局及武器快照；`getMolangContext()` 返回当前求值线程对应的实例。文本与 AUI 在客户端主线程求值，物理线程上的动画表达式只读已发布快照。该规则不产生第二套 HUD 元素或武器控制器。
 
-载具 HP、能量和通用信号属于 `global.*` / `local.*` 的长期查询面：现有官方 HUD 已用 `global.get('vehicle_speed')`。HUD 上下文须显式关联所属 Part 与装配体，并转发这两组查询，或把公共查询实现抽取为多个上下文共用的代码；跨物理/主线程读取时须采用已发布的数据，不能直接读取另一线程正在修改的 Part 状态。该能力不能靠继承 `MechMolangContext` 自动获得。`math.*` 是 Spark 的通用词表；新增的 HUD 专用查询只建立 `hud.*` 和 `weapon.*` 两个前缀。
+载具 HP、能量和通用信号属于 `global.*` / `local.*` 的长期查询面：现有官方 HUD 已用 `global.get('vehicle_speed')`。HUD 上下文须显式关联所属 Part 与装配体，并转发这两组查询，或把公共查询实现抽取为多个上下文共用的代码；跨物理/主线程读取时须采用已发布的数据，不能直接读取另一线程正在修改的 Part 状态。该能力不能靠继承 `MechMolangContext` 自动获得。`math.*` 是 Spark 的通用词表；HUD 查询按职责使用 `hud.*`、`weapon.*`，当前发射管/弹链分别使用 `tube.*` / `belt.*`。后二者要求绑定器显式安装当前项作用域，不表示 MoLang 任意对象别名。
 
 ## 二、`hud.*`：所有 HUD 元素共有
 
@@ -54,7 +55,7 @@
 
 只有武器控制器持有的 HUD 元素使用 `WeaponHudMolangContext`。它直接引用自己的 `WeaponControllerSubsystem`，按每客户端 tick 的武器显示快照提供名称、状态、弹药、发射管与弹链。具体字段和取数口径在《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》§二、§三定义。
 
-武器业务查询统一收在 `weapon.*` 下：单值如 `weapon.ammo_remaining`，列表项如 `weapon.tube_fill(i)`、`weapon.belt_remaining(i)`。无参查询优先写成属性，带索引或距离的查询写成函数。普通 HUD 元素不编译武器表达式；绑定层应提示作者把武器表达式放在武器控制器的 HUD 样式中，避免未绑定查询静默退回 0。
+整台控制器与显式索引查询收在 `weapon.*` 下，如 `weapon.ammo_remaining`、`weapon.tube_fill(i)`、`weapon.belt_remaining(i)`。当前项查询位于 `tube.*` / `belt.*`，例如 `tube.fill`、`belt.remaining`；词表及返回口径见武器文档 §三、§3.2。无参值写成属性，带索引或距离的值写成函数。普通 HUD 元素不编译武器表达式；绑定层须给出可定位诊断，避免未绑定查询静默退回 0。
 
 ### 3.1 炮镜下的分划
 
@@ -71,28 +72,62 @@
 
 `weapon.bdc_hold_rad` 返回弹道角，具体样式如何把角度标定为分划模型的骨骼位置由该样式决定；通用 `hud.*` 不提供模型坐标换算查询。
 
-同一武器元素也可以在炮镜视角显示弹药文本；相机边框元素只有 `hud.*`，不读取 `weapon.*`。若两台控制器都为 `scope` 组配置分划，它们各自显示自己的元素；是否同时显示由座椅选中集合、布局与控制器激活规则决定。
+同一武器元素也可以在炮镜视角显示弹药文本；相机边框元素只有 `hud.*`，不读取 `weapon.*`。若两台控制器都为 `scope` 组配置分划，它们各自显示自己的元素；是否提交绘制由当前座椅的候选集合、当前视角布局及条目的 `selection_visibility` 决定；控制器启用状态不是隐含的显示过滤条件。
+
+### 3.2 观察者选中状态与条目显隐
+
+`weapon.selected` 返回所属控制器是否属于当前观察座椅 base + 当前子组选中集合，取 0/1。它与启用、开火、独占控制权及 `belt.selected` 无关。观察者选中状态与本轮业务快照形成元素的不可变求值帧，不写入控制器的全局字段；多座椅引用同一控制器时分别取值。
+
+`selection_visibility` 属于 `HudElement`，取 `selected_only`（缺省）或 `always`，适用于同一候选控制器在当前视角的各个布局条目。公共 HUD 调度在模型与 AUI 的绘制入口之前统一判定显隐，不以 DOM、CSS 或表达式绑定作为必要条件。未选中常驻条目可以继续读取 `weapon.selected` 来调整样式。候选并集来自当前座椅的全部控制组，离开座椅不继续显示；切组不销毁候选元素及其 Document。完整条件与生命周期见框架文档 §4.2、§4.3、§6.1。
+
+### 3.3 Java 无参查询的当前项作用域
+
+无参查询不从调用次数、DOM 顺序或全局计数器推断管序号。绑定器为每个数据槽登记所属重复项的集合类型与稳定身份键；条目根和后代的数据槽都继承该项身份。每次求值先固定元素求值帧，再从该帧的不可变业务快照按身份键解析当前项及其下标，安装到本元素、本消费线程的上下文。以下是待实现机制示意，方法名不代表已有 API：
+
+```java
+context.reset(element, animationTime);
+try (var scope = context.enterTube(evaluationFrame, tubeKey)) {
+    value = expression.evaluate(context);
+}
+
+@QueryBinding(value = "fill", namespace = "tube")
+public double tubeFill() {
+    return requireTubeScope().tube().fill();
+}
+```
+
+同一编译表达式 `tube.fill` 可复用于所有管；每次上下文安装的成员不同，Java 查询读取的对象就不同。绑定器缓存身份，不永久缓存创建节点时的序号或 `TubeSnapshot`；快照排序或数据变化后须解析本轮成员，`tube.index` / `belt.index` 返回本轮下标。`weapon.*` 的整台控制器含义在作用域内保持一致。
+
+作用域结束或表达式异常时必须通过 `finally` / `AutoCloseable` 恢复先前状态及可选下标变量。下标别名由上下文局部覆盖层提供，读取优先于原变量容器，不能修改 Part 或动画体共享变量容器。`reset` 在安装当前项前执行，作用域不跨线程、元素、数据槽或刷新代数保留。同轮列表求值固定同一份武器与观察者快照，不在槽位之间切换。首版不支持嵌套重复区域；保存/恢复仍是异常隔离的必要条件。
+
+区域外或类型不匹配时访问 `tube.*` / `belt.*`，绑定层须给出页面/模板/槽位坐标的诊断并使该槽位降级，不默认第零项。模型 HUD 的骨骼与文本槽没有 DOM 重复作用域，使用 `weapon.tube_fill(i)` 等显式接口；未来若提供模型槽位的成员绑定声明，可复用相同作用域机制，首版不根据骨骼名隐式绑定。
+
+**编译器边界**：`../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/runtime/MolangCompilingVisitor.java#compileQueryBindingCall` 对省略实参填零，`MolangCompilingVisitor.java#findQueryCallMethodOnType` / `#findStringQueryCallMethodOnType` 按命名空间和名字查找而不按实参数量分派。因此当前项查询使用 `tube.fill` 等独立无参名字，不能靠省略 `weapon.tube_fill(i)` 的参数或注册同名多签名绑定实现。属性访问与无参 Java 方法绑定的路径见 `MolangCompilingVisitor.java#findQueryMethodOnType` / `#findStringQueryMethodOnType`；编译缓存依据见 `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/MolangContextRegistry.java#compile`。
+
+页面语法中 `data-mm-index` 可选；声明时提供与当前项下标一致的 `variable.<名字>` / `v.<名字>`，并按本节的作用域恢复规则处理。默认无参写法不需要声明下标变量，完整作者语法见框架文档 §8.5、§8.6。
 
 ## 四、填充与求值时机
 
 | 时机 | 动作 |
 | --- | --- |
 | 创建运行时元素 | 确定宿主和有效元素，创建当前消费线程的上下文；绑定所属 Part/装配体 |
-| 每客户端 tick | 武器元素更新本控制器显示快照；AUI 页面按该元素上下文更新武器数据槽 |
+| 每客户端 tick | 发布候选、选中状态和本控制器业务快照；元素求值帧固定观察者数据，AUI 页面按对应上下文更新数据槽 |
+| 每个重复项数据槽求值 | 按身份键从本轮快照解析当前项，安装类型作用域和可选下标变量；求值结束或异常时恢复 |
+| 各载体提交绘制前 | 公共 HUD 调度依据当前视角、候选成员及 `selection_visibility` 判定显隐，覆盖模型和 AUI 路径 |
 | 每渲染帧采样后、消费 `hud.*` 的表达式求值前 | 发布该帧的相机视角与视口快照；当前线程上下文按 Spark 契约 `reset` 后读取已发布快照 |
 | 每次模型文本渲染前 | 将客户端主线程上下文 `reset` 到当前元素，读取该渲染帧的视角快照，再计算 `molang_args` |
 | 玩家布局修改、视角切换或内容包热重载 | 更新有效布局或重建受影响元素，再按新的上下文/样式编译或取缓存 |
 
-逐帧视角快照必须早于消费 `hud.*` 的表达式求值。现有物理 tick 与 GUI 渲染的先后顺序不足以保证骨骼表达式使用本次渲染的 `partialTick` 值；实现时须让依赖实时航向的 HUD 骨骼表达式在渲染阶段求值，或接受并验证上一份快照的延迟。AUI 的“按发射管数量自动生成多段界面”属于页面绑定层，和 `weapon.tube_fill(i)` 的索引传递另在框架文档 §八说明，不改变上下文类层次。
+逐帧视角快照必须早于消费 `hud.*` 的表达式求值。现有物理 tick 与 GUI 渲染的先后顺序不足以保证骨骼表达式使用本次渲染的 `partialTick` 值；实现时须让依赖实时航向的 HUD 骨骼表达式在渲染阶段求值，或接受并验证上一份快照的延迟。AUI 的“按发射管数量自动生成多段界面”属于页面绑定层，当前项作用域按 §3.3 安装；显式索引查询不依赖 DOM。两种取值方式共享业务快照，不要求每个重复项创建上下文类或 HUD 元素。
 
 ## 五、实施与验收
 
 1. 建立通用/武器 HUD 元素和对应上下文类，先让现有模型 HUD 的 `molang_args` 使用每元素上下文；让 `local.*` / `global.*` 在 HUD 上下文中保持可用。
-2. 建立武器显示快照与 `weapon.*` 查询；炮镜边框由相机布局提供，分划由武器控制器布局的 `scope` 组提供。
-3. AUI 绑定层按元素关联对应上下文；页面重复条目的具体索引规则在 AUI 实现阶段确定。
+2. 建立武器业务快照、观察者选中状态、`weapon.*` 与当前项查询；候选控制器来自座椅全部组，公共调度以条目策略控制模型和 AUI 显隐。炮镜边框由相机布局提供，分划由武器控制器的 `scope` 布局提供。
+3. AUI 绑定层按元素关联上下文，以 `data-mm-repeat="weapon.tubes"` / `"weapon.belts"` 安装当前项类型作用域，默认使用 `tube.*` / `belt.*` 无参查询；`data-mm-index` 为可选别名。每次槽位求值按 §3.3 解析身份、安装并恢复作用域，不写入动画体共享变量。完整语法、CSS 内部排布和生命周期见《[HUD 样式、布局与元素设计](../进行中/界面-HUD样式挂载与布局设计.md)》§8.5、§8.6。
 4. 采集并发布渲染帧视角快照，校验模型与 AUI 两种载体、视角切换和热重载。
 
-验收至少覆盖：同一座位下两台控制器的分划/弹药互不串值；炮镜边框无武器查询；电子罗盘跟随渲染帧视线平滑转动且不误读车体朝向；第三人称坐标取实际镜头位置；模型骨骼和文字各在线程实例上读取同一元素发布的快照；现有官方 HUD 的 `global.get('vehicle_speed')` 仍能求值。本文是设计文档，代码尚未实现，因此不以现有运行结果宣称这些用例通过。
+验收至少覆盖：模型与 AUI 的条目显隐一致；同一 WC 的常驻面板和仅选中分划分别显隐；切组保留元素/Document；多观察者选中状态隔离；当前项在数据槽之间及异常后不泄漏，排序后按身份取值；无作用域/类型错误被诊断；模型显式索引查询不依赖 DOM；同一座位下两台控制器的分划/弹药互不串值；炮镜边框无武器查询；电子罗盘跟随渲染帧视线平滑转动且不误读车体朝向；第三人称坐标取实际镜头位置；模型骨骼和文字各在线程实例上读取同一元素发布的快照；现有官方 HUD 的 `global.get('vehicle_speed')` 仍能求值。本文是设计文档，代码尚未实现，因此不以现有运行结果宣称这些用例通过。
 
 ## 六、相关代码
 
@@ -103,7 +138,7 @@
 | `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/MolangContextRegistry.java#getOrCreateEngine` | 无参原型与按上下文类缓存编译结果 |
 | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/molang/MechMolangContext.java#localGet` | Part 上下文的现有 `local.*` / `global.*` 查询 |
 | `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/GuiAnimatable.java#getMolangContext` | 当前模型 HUD 读取 Part 上下文的路径 |
-| `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#syncHuds` | 当前模型 HUD 的创建与同步 |
+| `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` | 当前 HUD 宿主集合的选择、布局比较与元素重建调度 |
 
 ## 七、修订记录
 
@@ -115,3 +150,5 @@
 | 1.3 | 2026-10-17 | 按实际显示需求收缩 `hud.*` 至视角与视口查询；载具仪表沿用 `global.*`，分划骨骼换算由样式负责 |
 | 1.4 | 2026-10-17 | 运行时对象表述改为布局条目；布局与元素的术语对齐框架文档 |
 | 1.5 | 2026-10-18 | 武器分划的可见性补座椅选中集合；与无主/副的 HUD 可见性规则对齐 |
+| 1.6 | 2026-10-20 | 关联已定的重复项索引语法与作用域保存/恢复规则；绑定层尚未实现 |
+| 1.7 | 2026-10-21 | 定义观察者选中状态、载体通用条目显隐及 Java 当前项作用域；说明无参方法取数、身份解析、异常恢复和显式索引接口边界 |

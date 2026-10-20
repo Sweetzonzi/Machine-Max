@@ -1,0 +1,16 @@
+[
+  {
+    "style": "machine_max:example_hud",
+    "perspective": true,
+    "offset": [95, 55, -135],
+    "rotation": [-25, -30, 0],
+    "scale": [15, 15, 15]
+  },
+  {
+    "style": "machine_max:k17_weapon_preview",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -52, 0],
+    "scale": [1, 1, 1]
+  }
+]
