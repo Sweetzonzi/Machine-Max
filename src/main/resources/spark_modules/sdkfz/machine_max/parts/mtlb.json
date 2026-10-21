@@ -662,11 +662,9 @@
               "required_tags": [],
               "joint_attrs": {
                 "y": {
-                  "lower_limit": -0.05,
-                  "upper_limit": 0.05,
-                  "equilibrium": 0,
-                  "stiffness": 120000,
-                  "damping": 6000
+                  "lower_limit": 0.0,
+                  "upper_limit": 0.0,
+                  "equilibrium": 0
                 },
                 "xr": {
                   "lower_limit": 1,
@@ -683,11 +681,9 @@
               "required_tags": [],
               "joint_attrs": {
                 "y": {
-                  "lower_limit": -0.05,
-                  "upper_limit": 0.05,
-                  "equilibrium": 0,
-                  "stiffness": 120000,
-                  "damping": 6000
+                  "lower_limit": 0.0,
+                  "upper_limit": 0.0,
+                  "equilibrium": 0
                 },
                 "xr": {
                   "lower_limit": 1,

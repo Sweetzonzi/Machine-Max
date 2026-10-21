@@ -1,0 +1,4 @@
+# Preserve bundled snapshots byte-for-byte for bundle-manifest.json hashes.
+assets/plugins/*.js -text
+# Upstream schemas include CRLF and final blank lines; keep those in snapshots.
+references/schemas/** -text whitespace=cr-at-eol,-blank-at-eof

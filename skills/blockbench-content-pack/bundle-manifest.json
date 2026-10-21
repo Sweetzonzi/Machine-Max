@@ -1,0 +1,359 @@
+{
+  "format_version": 1,
+  "bundled_on": "2026-10-21",
+  "schemas": {
+    "repository": "https://github.com/Sweetzonzi/Machine-Max",
+    "revision": "707e98632179113f62415828b27d8bd7ac4c81c1",
+    "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
+    "locale": "zh_cn",
+    "selection": "all JSON files, unchanged bytes and relative paths",
+    "file_count": 67,
+    "files": [
+      {
+        "path": "references/schemas/base/axis.schema.json",
+        "bytes": 563,
+        "sha256": "a7a7269b446597ae6c50bebf1ac3256768853d1867d815b7291c157a0b260ad8"
+      },
+      {
+        "path": "references/schemas/base/material_attr.schema.json",
+        "bytes": 7623,
+        "sha256": "2cba450576d6e7cc635e3e881f80aefdc2ccadbb3d201aa273fda92b6a07d331"
+      },
+      {
+        "path": "references/schemas/base/operation.schema.json",
+        "bytes": 332,
+        "sha256": "42e6291b73d55a25851739ab966390ab2f7d72653f4596a711f64a90ccec0cb0"
+      },
+      {
+        "path": "references/schemas/base/resource_location.schema.json",
+        "bytes": 485,
+        "sha256": "676637cd8967c0f713144a8bfd803b71bd882c100d9b9aa53ab774064a4dd3f6"
+      },
+      {
+        "path": "references/schemas/base/sound_event.schema.json",
+        "bytes": 958,
+        "sha256": "82aba094901117fc09e7a40c2dffbf6e351fe18439c3c48870e00cfa3169441f"
+      },
+      {
+        "path": "references/schemas/base/vector_3d.schema.json",
+        "bytes": 399,
+        "sha256": "3bf025f03cbf527a334a64545a7a7a9f7277a77cfab44437e939dbef02d65841"
+      },
+      {
+        "path": "references/schemas/part/subpart/connector/connector_attr.schema.json",
+        "bytes": 5879,
+        "sha256": "f390fadc8d08cc9728a96561c1dab0ffafc53d8505d6a28126332a2a0bb3925d"
+      },
+      {
+        "path": "references/schemas/part/subpart/connector/connector_static_attr.schema.json",
+        "bytes": 4918,
+        "sha256": "765071be88acd489c8c5b84ea008782fbcc1e83f4d481f9288ae9d17a42386f0"
+      },
+      {
+        "path": "references/schemas/part/subpart/connector/joint_attr.schema.json",
+        "bytes": 2530,
+        "sha256": "3a336bf6bc4b8b29142df539a3f24dae6a9b41214b190a0ea41c6e7939f16b1b"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/hit_box_attr.schema.json",
+        "bytes": 12276,
+        "sha256": "3afb200dfe3917710ace42599c9dc9975eed18893a7e13dc39129b413295b624"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition.schema.json",
+        "bytes": 340,
+        "sha256": "ccdf26d54f2da2a0c87f758cb43eca1637e524dadf1c6cc472c9d04809608f79"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition_base.schema.json",
+        "bytes": 1521,
+        "sha256": "4e3465c1cc709260704da644a5610b4530186f142b91b6a878deece1dd2ff181"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition_types.schema.json",
+        "bytes": 3865,
+        "sha256": "3f714889351a3ae3be5508aa1c3f2cbe5c576d1158f64e67bb3d6ba5b9c5a565"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/modifier/damage_modifier.schema.json",
+        "bytes": 831,
+        "sha256": "40e8fa5bfea6b336a4c1e616dec3a0e8a864e813edea77312112077333f3e091"
+      },
+      {
+        "path": "references/schemas/part/subpart/hit_box/modifier/modifier_entry.schema.json",
+        "bytes": 1573,
+        "sha256": "7367ff8d33093c054cfcd4be783dd8b26d7c3e62922f57b83fa1617f69871fcd"
+      },
+      {
+        "path": "references/schemas/part/subpart/hydrodynamic_attr.schema.json",
+        "bytes": 8228,
+        "sha256": "622bd6d1f83648f6906e2a38451d1a95da09a19a962180b9ce2d6740d196dbba"
+      },
+      {
+        "path": "references/schemas/part/subpart/interact_box_attr.schema.json",
+        "bytes": 2159,
+        "sha256": "5dcee9739214fdd09a0e6c5bd40217d4a5b61d6a3083cc529bcf8b2d243cf0d1"
+      },
+      {
+        "path": "references/schemas/part/subpart/sub_part_attr.schema.json",
+        "bytes": 8505,
+        "sha256": "be651ca53f89f81ee520fb6873826d948875469927456eb77f442c857ab86798"
+      },
+      {
+        "path": "references/schemas/part/variant_attr.schema.json",
+        "bytes": 4294,
+        "sha256": "8c330fe14f595ce3c4d6d2e52aa63a7fe2c78f637620282cc78698f900a84858"
+      },
+      {
+        "path": "references/schemas/part_definition_schema.json",
+        "bytes": 5313,
+        "sha256": "449d37d464f5b8fb0865ab0db59de94bc79ed90973cd17e7b9bc04d451c654d0"
+      },
+      {
+        "path": "references/schemas/recipe/blueprint_research_recipe.schema.json",
+        "bytes": 2678,
+        "sha256": "72a983811a3a8dac8efaee7778688417edbc40f430e8489d3f642384dc80a803"
+      },
+      {
+        "path": "references/schemas/recipe/fabricating_recipe.schema.json",
+        "bytes": 2619,
+        "sha256": "5030b52ec3cc41b5d8658bf436553cdd2be109d261786f2296a0eedd4cd30696"
+      },
+      {
+        "path": "references/schemas/recipe/part_fabricating_recipe.schema.json",
+        "bytes": 3338,
+        "sha256": "76fc5ee20fbc3a89adb6fbc080a5814f78a9b32fa425ca10647ce3e52d58fc24"
+      },
+      {
+        "path": "references/schemas/recipe/research_recipe.schema.json",
+        "bytes": 2577,
+        "sha256": "0f6baeb85fbe1a57a3be02c783ee1f7e6f6e9be6b375ee7faf6d2145af3acde9"
+      },
+      {
+        "path": "references/schemas/subsystem/base/power_outputs.schema.json",
+        "bytes": 687,
+        "sha256": "4a317530b814538fe631c7498b247f03748e8771aef3f051552ed8e1b2869a9b"
+      },
+      {
+        "path": "references/schemas/subsystem/base/signal_targets.json",
+        "bytes": 649,
+        "sha256": "42e6edf06f0e0498a970d39fb1902aedb6b71742dc732b6545245f138812f0bd"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/basic_dynamic_attr.schema.json",
+        "bytes": 796,
+        "sha256": "0d7b348853ab9e63169f4bd5463b6c3690467a5bd7afc6c5d73feafc21ab8e4e"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/camera_dynamic_attr.schema.json",
+        "bytes": 1001,
+        "sha256": "cd3d3e618a9edeb0fa977cc42d15b1bd92ba1540d2e84d152f24be24263e757f"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/car_controller_dynamic_attr.schema.json",
+        "bytes": 3092,
+        "sha256": "b16ee9dcd1f41ef4bc7d91bc513dfb3979265c3aed1b82461956cb114b75baaa"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/engine_dynamic_attr.schema.json",
+        "bytes": 1394,
+        "sha256": "dc0caebd6af7033ae473beff6f7898d81b4529014470fba9dcf341247c7f1e0e"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/gearbox_dynamic_attr.schema.json",
+        "bytes": 1343,
+        "sha256": "4ee86ae756e6b9f5447ca62c6dc1296aa3a41d284413b6bf2d4aa6cca41151a2"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/item_storage_dynamic_attr.schema.json",
+        "bytes": 815,
+        "sha256": "2dc1b0953afaa1b5f94d3bfce163758348ce1b428d138cd0f4445b7dfe0c9118"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
+        "bytes": 1677,
+        "sha256": "63ce95d087ea451b4616f9e3ad843d5cfef9e73dfdefe5e2db82b82dccd49a03"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
+        "bytes": 1035,
+        "sha256": "d9b18b0c2cd99a750cfe4eeba4bfe977957e14852cf9c4d678d7fb2607a6d8be"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/motor_dynamic_attr.schema.json",
+        "bytes": 1394,
+        "sha256": "788d75233731183852484870f1f18da1f064b2149c1df980294b1c3f75a1e8ed"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/motorbike_controller_dynamic_attr.schema.json",
+        "bytes": 2994,
+        "sha256": "cb44588dd3ee1be2593913d671f06a649ddcaf2aaa3ff8db545182bb09c6e99d"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/regen_loader_dynamic_attr.schema.json",
+        "bytes": 3033,
+        "sha256": "27617c997213cca6d89da215d0ec09792d5d4ca755a2d4756ba6ff3f26c5fd50"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
+        "bytes": 2202,
+        "sha256": "d89982a7307a1fe25cc9ac677e2cd4391ea1bc1e50b64cb18081613cadb7da10"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json",
+        "bytes": 996,
+        "sha256": "9987aea09f38f4b9946eb448730e7ba56ffa82617482f2eeaffca867b6aa14b8"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/track_controller_dynamic_attr.schema.json",
+        "bytes": 1837,
+        "sha256": "bc40c7fdae72aba8e39a9340fe1334d2340c4ed033b9cbb9d7e1595d6ce283ec"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/track_drive_dynamic_attr.schema.json",
+        "bytes": 1922,
+        "sha256": "3fcc9d00abcb8d794ee5da23ae006e1ab055bc1ba02ba6b9130a9492756e77d9"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/transmission_dynamic_attr.schema.json",
+        "bytes": 1230,
+        "sha256": "c8d39b282a84ecd5f38030f65d2e4d60a873dae85ed33a347290b2e4da9922ba"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/turret_driver_dynamic_attr.schema.json",
+        "bytes": 1463,
+        "sha256": "31dd67e877f46c5e0ba0b42cb4f10646dc5e3a7f9a25f6a7c96571cd559ab4a8"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json",
+        "bytes": 2294,
+        "sha256": "624093a654484f741a366099d01c168ced59bd4c662ad88d3ba02458d59bcf65"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.schema.json",
+        "bytes": 1550,
+        "sha256": "dc7f802825042894d6461bc636fc4971cc28425204269f969067ed92d6f68606"
+      },
+      {
+        "path": "references/schemas/subsystem/static/basic_static_attr.schema.json",
+        "bytes": 3369,
+        "sha256": "8336068ffca2bcf124a1e3fca00771bf82a1f2a457ad6040975bdceca0509d99"
+      },
+      {
+        "path": "references/schemas/subsystem/static/camera_static_attr.schema.json",
+        "bytes": 4696,
+        "sha256": "851228985316a78812c33a5b2ced71f8505f92127363a8d73cc25b20a026bb4d"
+      },
+      {
+        "path": "references/schemas/subsystem/static/car_controller_static_attr.schema.json",
+        "bytes": 8366,
+        "sha256": "37554c9659d68c0bdcf04f408480f80b45f0e2094e69028cb4a3fcc7c10698a3"
+      },
+      {
+        "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
+        "bytes": 5759,
+        "sha256": "0eecac2980bd42b2c303a3c89e2ffa6a586058069d3a5fc848db8a47c4aa3579"
+      },
+      {
+        "path": "references/schemas/subsystem/static/gearbox_static_attr.schema.json",
+        "bytes": 5707,
+        "sha256": "b67fe367ce957bff24326b953f00d6b747007a565127648e6191df2448ff1d51"
+      },
+      {
+        "path": "references/schemas/subsystem/static/item_storage_static_attr.schema.json",
+        "bytes": 3464,
+        "sha256": "c86147cc33dcb3bb8746e65d706bd48cf36390a6f2f936ae4bc9087d77d370f3"
+      },
+      {
+        "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
+        "bytes": 9563,
+        "sha256": "fe3a31b304480be72e31a5fa044947eaa150a22bd26bf071e568e24847da6c15"
+      },
+      {
+        "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
+        "bytes": 3737,
+        "sha256": "21cd718f8b6330fd33579f39934680623a714f5d28cd3cfde993f1eb65fd8d41"
+      },
+      {
+        "path": "references/schemas/subsystem/static/motor_static_attr.schema.json",
+        "bytes": 5347,
+        "sha256": "12506625653f2bbfe1c2f362a7a69dc5013d361912e08500df7001e371d3dd9f"
+      },
+      {
+        "path": "references/schemas/subsystem/static/motorbike_controller_static_attr.schema.json",
+        "bytes": 7258,
+        "sha256": "670ea69eb271b6bd02e1845c07506eef49b1f5762563565277141a9b414f9486"
+      },
+      {
+        "path": "references/schemas/subsystem/static/regen_loader_static_attr.schema.json",
+        "bytes": 4827,
+        "sha256": "9246e0e899d1b2d0c9e556deb935eade4de2f8cbcd608393d2630000df8ae24c"
+      },
+      {
+        "path": "references/schemas/subsystem/static/seat_static_attr.schema.json",
+        "bytes": 5316,
+        "sha256": "7dc994918cd4c88d7c11663d36ce946fad20e447667d2d4dc5aff1205b3fa1c8"
+      },
+      {
+        "path": "references/schemas/subsystem/static/sight_static_attr.schema.json",
+        "bytes": 4883,
+        "sha256": "5b9c2281638788158e38ed77446250997d37274755ca8ddf8d4ea28a67fa9d18"
+      },
+      {
+        "path": "references/schemas/subsystem/static/track_controller_static_attr.schema.json",
+        "bytes": 4443,
+        "sha256": "8c63bbd17e57bd027aaaae0e1c8efbfa8ff4e557ca9589932ff99a72b38b557f"
+      },
+      {
+        "path": "references/schemas/subsystem/static/track_drive_static_attr.schema.json",
+        "bytes": 2451,
+        "sha256": "9e7ee7923ad32a4e1b777499a5f96ec649ec09c43bc70d73ec48812b04f3dbf7"
+      },
+      {
+        "path": "references/schemas/subsystem/static/transmission_static_attr.schema.json",
+        "bytes": 4180,
+        "sha256": "f2ae93c44d98052b4a8c72a6b748a5b24789434d6d5fffc57534c59fa7351db2"
+      },
+      {
+        "path": "references/schemas/subsystem/static/turret_driver_static_attr.schema.json",
+        "bytes": 5249,
+        "sha256": "85417bf7c2b6ed4eee4da48e6fa58a57ece00941e0d5f76a219a8098a70c90fb"
+      },
+      {
+        "path": "references/schemas/subsystem/static/view_attr.schema.json",
+        "bytes": 3811,
+        "sha256": "015c687e2893437ba4e0e100ef639e3e7f92760e00aff6480ee7d3079eccf45b"
+      },
+      {
+        "path": "references/schemas/subsystem/static/weapon_controller_static_attr.schema.json",
+        "bytes": 5535,
+        "sha256": "511180a8eb5b2c51cf2b206f5cbdf5a35d54e611abe5912fe04d3e371b04b697"
+      },
+      {
+        "path": "references/schemas/subsystem/static/wheel_driver_static_attr.schema.json",
+        "bytes": 7019,
+        "sha256": "2b336f4c8727a217583a3ef27039c3d067e257bd9e8b02525c49a9035bfccd95"
+      },
+      {
+        "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",
+        "bytes": 6386,
+        "sha256": "3bea043b24d1e607deef5aa840747e52128691180e117d27c016e303e6398c66"
+      },
+      {
+        "path": "references/schemas/subsystem/subsystem_static_attr.schema.json",
+        "bytes": 6135,
+        "sha256": "492292c5929109340c7ce7c77936a0b9c4f9c76484359d11f8109d69c0f145bf"
+      }
+    ]
+  },
+  "plugin": {
+    "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
+    "revision": "3d090afdd7431cfea39ee69a3a78d008eef0994b",
+    "source_path": "dist/machine_max_bb_plugin.js",
+    "artifact_kind": "existing compiled artifact; copied without rebuilding",
+    "version": "0.4.0",
+    "path": "assets/plugins/machine_max_bb_plugin.js",
+    "bytes": 1765318,
+    "sha256": "b2c721197f6c9622bed88ff79089b22b0d593a6c82313ba353fe07c8d0624bcd"
+  }
+}
