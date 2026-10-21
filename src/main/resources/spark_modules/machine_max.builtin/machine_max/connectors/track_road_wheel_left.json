@@ -1,0 +1,22 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //负重轮安装座，带悬挂行程，并保留绕 X 轴的滚动自由度
+  "direction": "xp", //连接点法线方向，指向左侧负重轮
+  "integrity": 15.0, //内部连接点恒不可破坏，此值仅作为外部复用时的基线
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0,
+  "joint_attrs": {
+    "y": {
+      "lower_limit": -0.16, //悬挂行程下限(m)，总行程 0.32 m
+      "upper_limit": 0.16, //悬挂行程上限(m)，总行程 0.32 m
+      "equilibrium": -0.1, //轮心相对车体的平衡位置下移，抬高车体并保留压缩余量
+      "stiffness": 50000,
+      "damping": 4000
+    },
+    "xr": {
+      "lower_limit": 1, //下限高于上限表示绕 X 轴自由滚动
+      "upper_limit": -1
+    }
+  }
+}

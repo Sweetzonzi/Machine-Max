@@ -1,10 +1,10 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:track_drive",
-  "basic_durability": 120,
+  "basic_durability": 30,
   "max_drive_torque": 30000,
   "max_brake_torque": 20000,
   "max_hand_brake_torque": 20000,
   "max_speed": 120,
-  "control_inputs": ["track_control"]
+  "control_inputs": ["car_control"]
 }

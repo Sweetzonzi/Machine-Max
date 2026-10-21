@@ -1,0 +1,22 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //诱导轮安装座，带小幅张紧行程，并保留绕 X 轴的滚动自由度
+  "direction": "xn", //连接点法线方向，指向右侧诱导轮
+  "integrity": 15.0, //内部连接点恒不可破坏，此值仅作为外部复用时的基线
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0,
+  "joint_attrs": {
+    "y": {
+      "lower_limit": -0.08, //张紧行程下限(m)
+      "upper_limit": 0.08, //张紧行程上限(m)
+      "equilibrium": 0,
+      "stiffness": 90000,
+      "damping": 5500
+    },
+    "xr": {
+      "lower_limit": 1, //下限高于上限表示绕 X 轴自由滚动
+      "upper_limit": -1
+    }
+  }
+}

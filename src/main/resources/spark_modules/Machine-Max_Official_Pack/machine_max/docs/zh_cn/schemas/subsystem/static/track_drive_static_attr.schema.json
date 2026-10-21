@@ -42,7 +42,7 @@
         "type": "string"
       },
       "default": [
-        "track_control"
+        "car_control"
       ],
       "description": "TrackControlSignal 输入频道，按优先级排列。"
     },

@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-10-21",
+  "bundled_on": "2026-10-22",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "5ec7fc93e7c5eba6e34c8421e5442e8c906b77db",
+    "revision": "53024908bedf1f203356b1a6ae2f90a276e81455",
     "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -206,8 +206,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/track_controller_dynamic_attr.schema.json",
-        "bytes": 1778,
-        "sha256": "5db758998784976a6fefed515830023e339cef050aa0bd800d224fab69c07495"
+        "bytes": 1741,
+        "sha256": "5b95a92a8fb342633549cb9036ef3e83f082d6d594bc9c232c31d7802d8869f6"
       },
       {
         "path": "references/schemas/subsystem/dynamic/track_drive_dynamic_attr.schema.json",
@@ -306,8 +306,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/track_drive_static_attr.schema.json",
-        "bytes": 2363,
-        "sha256": "9a215630ee16fb4ff7263c11416935ad780b923dd0e3ed644348770689c23058"
+        "bytes": 2361,
+        "sha256": "039d3fd385c53a3374f5688fefc7809cdc789b0e1a3f04b68006a5ab29916535"
       },
       {
         "path": "references/schemas/subsystem/static/transmission_static_attr.schema.json",

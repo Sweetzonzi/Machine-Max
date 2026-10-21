@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:track_controller",
-  "basic_durability": 150,
+  "basic_durability": 20,
   "max_yaw_rate": {
     "0": 0,
     "10": 30,

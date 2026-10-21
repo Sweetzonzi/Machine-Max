@@ -1,0 +1,20 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //主动轮安装座，轴向固定，仅保留绕 X 轴的滚动自由度
+  "direction": "xp", //连接点法线方向，指向左侧主动轮
+  "integrity": 15.0, //内部连接点恒不可破坏，此值仅作为外部复用时的基线
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0,
+  "joint_attrs": {
+    "y": {
+      "lower_limit": 0, //主动轮不参与悬挂，轴向位置固定
+      "upper_limit": 0,
+      "equilibrium": 0
+    },
+    "xr": {
+      "lower_limit": 1, //下限高于上限表示绕 X 轴自由滚动
+      "upper_limit": -1
+    }
+  }
+}

@@ -42,7 +42,7 @@
         "type": "string"
       },
       "default": [
-        "track_control"
+        "car_control"
       ],
       "description": "TrackControlSignal input channels, ordered by priority."
     },

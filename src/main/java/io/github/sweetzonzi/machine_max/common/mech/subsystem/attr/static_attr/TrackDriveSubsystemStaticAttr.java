@@ -24,7 +24,7 @@ public class TrackDriveSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT)
                     .forGetter(BasicSubsystemStaticAttr::getSoundAttr),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("track_control"))
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control"))
                     .forGetter(TrackDriveSubsystemStaticAttr::getControlInputKeys),
             Codec.FLOAT.optionalFieldOf("max_drive_torque", 30000f)
                     .forGetter(TrackDriveSubsystemStaticAttr::getMaxDriveTorque),
