@@ -358,12 +358,12 @@
   },
   "plugin": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
-    "revision": "3d090afdd7431cfea39ee69a3a78d008eef0994b",
+    "revision": "6c996992b7089d672ed6cfcd002a5f1c1044ca4f",
     "source_path": "dist/machine_max_bb_plugin.js",
     "artifact_kind": "existing compiled artifact; copied without rebuilding",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1765318,
-    "sha256": "b2c721197f6c9622bed88ff79089b22b0d593a6c82313ba353fe07c8d0624bcd"
+    "bytes": 1863189,
+    "sha256": "354bb013be9471c6921dfcfb2444e670198f04983e22a78e6343efc2a3412148"
   }
 }

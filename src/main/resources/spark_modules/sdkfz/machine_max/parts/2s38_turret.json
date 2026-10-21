@@ -85,6 +85,8 @@
             "subsystem.machine_max.main_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
+              "first_hud_layout": "machine_max:weapon_live",
+              "scope_hud_layout": "machine_max:weapon_live",
               "control_outputs": {
                 "weapon_control": [
                   "global"
