@@ -1,0 +1,438 @@
+// 内容包 schema 同步。
+//
+// builtin 内容包的 docs/<lang>/schemas 是唯一手改点；其余副本由本脚本生成：
+//
+//   ./gradlew syncSchemas            生成 / 覆盖所有副本，并重写 bundle-manifest.json
+//   ./gradlew syncSchemas -PdryRun   只报告将要发生的变更，不写盘
+//   ./gradlew checkSchemas           只读校验（check 依赖它，CI 的 build 因此也会跑）
+//
+// 规则：
+//  - 只同步 *.json。schemas/ 下的 .md 是各内容包自己的示例文档（示例里的 $schema 相对路径
+//    随包内层级不同），按包保留，不参与同步。
+//  - 逐语言同步：en_us 只写 en_us，zh_cn 只写 zh_cn。两套 schema 的 title/description 是
+//    译文，部分 $schema 默认值还带语言路径，不能跨语言复制。
+//  - 写盘统一 LF；比较前把 CRLF 归一化，因此在任何 core.autocrlf 设置下判定一致。
+//  - sdkfz 不参与同步：它的 schema 供插件编码器在包内做编辑器提示，整包重写会覆盖这些文件。
+//  - skills 快照取 builtin 的 zh_cn，只含 *.json；bundle-manifest.json 的 schemas 块记录
+//    文件清单与 sha256（按 LF 字节计算）。
+
+import groovy.io.FileType
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+import java.time.LocalDate
+
+def schemaSourcePack = 'machine_max.builtin'
+def schemaSourceNamespace = 'machine_max'
+def schemaLanguages = ['en_us', 'zh_cn']
+def schemaRepoFallback = 'https://github.com/Sweetzonzi/Machine-Max'
+
+// pack / namespace 都相对于 src/main/resources/spark_modules
+def syncTargets = [
+        [pack: 'Machine-Max_Official_Pack', namespace: 'machine_max'],
+        [pack: 'Machine-Max_Pack_Template', namespace: 'namespace'],
+]
+
+// 有意不参与同步的副本：checkSchemas 既不校验也不报警
+def excludedPacks = [
+        [pack: 'sdkfz', namespace: 'machine_max'],
+]
+
+def skillsRoot = new File(projectDir, 'skills/blockbench-content-pack/references/schemas')
+def manifestFile = new File(projectDir, 'skills/blockbench-content-pack/bundle-manifest.json')
+def manifestSourcePath = 'src/main/resources/spark_modules/' + schemaSourcePack + '/' +
+        schemaSourceNamespace + '/docs/zh_cn/schemas'
+def manifestSelection = 'all JSON files, relative paths preserved, LF line endings'
+
+def sparkModulesDir = new File(projectDir, 'src/main/resources/spark_modules')
+
+def schemasDir = { String pack, String namespace, String lang ->
+    new File(sparkModulesDir, pack + '/' + namespace + '/docs/' + lang + '/schemas')
+}
+
+// 归一到 LF：写盘与比较都用它
+def toLf = { byte[] bytes ->
+    def out = new ByteArrayOutputStream(bytes.length)
+    for (int i = 0; i < bytes.length; i++) {
+        byte b = bytes[i]
+        if (b == (byte) 0x0D && i + 1 < bytes.length && bytes[i + 1] == (byte) 0x0A) {
+            continue
+        }
+        out.write(b as int)
+    }
+    out.toByteArray()
+}
+
+def sha256Hex = { byte[] bytes ->
+    MessageDigest.getInstance('SHA-256').digest(bytes).collect {
+        String.format('%02x', it & 0xff)
+    }.join()
+}
+
+// 目录下所有 *.json 的相对路径（正斜杠，字典序）
+def collectJson = { File root ->
+    def result = []
+    if (root.isDirectory()) {
+        root.eachFileRecurse(FileType.FILES) { File file ->
+            if (file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                def relative = root.toPath().relativize(file.toPath()).toString()
+                result << relative.replace(File.separatorChar, '/' as char)
+            }
+        }
+    }
+    result.sort()
+    result
+}
+
+// 比较一份副本：缺文件、多文件、内容不一致（CRLF 归一化后比较）
+def compareCopy = { File sourceRoot, File targetRoot ->
+    def wanted = collectJson(sourceRoot)
+    def present = collectJson(targetRoot)
+    def presentSet = present as Set
+    def wantedSet = wanted as Set
+    def missing = wanted.findAll { !presentSet.contains(it) }
+    def extra = present.findAll { !wantedSet.contains(it) }
+    def stale = []
+    wanted.each { String relative ->
+        if (presentSet.contains(relative)) {
+            byte[] fromSource = toLf(new File(sourceRoot, relative).bytes)
+            byte[] inTarget = toLf(new File(targetRoot, relative).bytes)
+            if (!Arrays.equals(fromSource, inTarget)) {
+                stale << relative
+            }
+        }
+    }
+    [wanted: wanted, missing: missing, extra: extra, stale: stale]
+}
+
+def printList = { String prefix, List<String> files, int cap = 20 ->
+    files.take(cap).each { logger.quiet(prefix + it) }
+    if (files.size() > cap) {
+        logger.quiet(prefix + '… 还有 ' + (files.size() - cap) + ' 个')
+    }
+}
+
+// 把一个目录对齐成 sourceRoot 的 LF 副本；返回 [written, removed]
+def mirrorJson = { File sourceRoot, File targetRoot, boolean dryRun ->
+    def wanted = collectJson(sourceRoot)
+    def targetPresent = collectJson(targetRoot)
+    def written = []
+    def removed = []
+    wanted.each { String relative ->
+        File target = new File(targetRoot, relative)
+        byte[] expected = toLf(new File(sourceRoot, relative).bytes)
+        boolean needsWrite = !target.isFile() || !Arrays.equals(target.bytes, expected)
+        if (needsWrite) {
+            written << relative
+            if (!dryRun) {
+                target.parentFile.mkdirs()
+                target.bytes = expected
+            }
+        }
+    }
+    targetPresent.findAll { !wanted.contains(it) }.each { String relative ->
+        removed << relative
+        if (!dryRun) {
+            new File(targetRoot, relative).delete()
+        }
+    }
+    [written: written, removed: removed]
+}
+
+// 读取 builtin zh_cn 快照，生成 bundle-manifest.json 的 schemas 块
+def buildManifestSchemas = { String revision, String repository ->
+    def files = collectJson(skillsRoot).collect { String relative ->
+        byte[] bytes = new File(skillsRoot, relative).bytes
+        [path: 'references/schemas/' + relative, bytes: bytes.length, sha256: sha256Hex(bytes)]
+    }
+    [
+            repository      : repository,
+            revision        : revision,
+            source_directory: manifestSourcePath,
+            locale          : 'zh_cn',
+            selection       : manifestSelection,
+            file_count      : files.size(),
+            files           : files
+    ]
+}
+
+def gitHead = {
+    try {
+        def process = new ProcessBuilder('git', 'rev-parse', 'HEAD')
+                .directory(projectDir)
+                .redirectErrorStream(true)
+                .start()
+        def text = process.inputStream.getText('UTF-8')
+        if (process.waitFor() == 0) {
+            def head = text.trim()
+            if (head ==~ /[0-9a-f]{40}/) {
+                return head
+            }
+        }
+        return null
+    } catch (Exception ignored) {
+        return null
+    }
+}
+
+// 手写确定性的 JSON 输出：两级缩进、键顺序保持插入顺序，与仓库现有 manifest 排版一致
+def jsonQuote = { String text ->
+    def out = new StringBuilder('"')
+    text.each { String ch ->
+        switch (ch) {
+            case '"': out.append('\\"'); break
+            case '\\': out.append('\\\\'); break
+            case '\n': out.append('\\n'); break
+            case '\r': out.append('\\r'); break
+            case '\t': out.append('\\t'); break
+            default:
+                if (ch.codePointAt(0) < 0x20) {
+                    out.append(String.format('\\u%04x', ch.codePointAt(0)))
+                } else {
+                    out.append(ch)
+                }
+        }
+    }
+    out.append('"')
+    out.toString()
+}
+
+def jsonWrite
+jsonWrite = { Object value, int depth, StringBuilder out ->
+    String pad = '  ' * depth
+    String padInner = '  ' * (depth + 1)
+    if (value == null) {
+        out.append('null')
+    } else if (value instanceof Map) {
+        if (value.isEmpty()) {
+            out.append('{}')
+        } else {
+            out.append('{\n')
+            def entries = value.entrySet().toList()
+            entries.eachWithIndex { entry, index ->
+                out.append(padInner).append(jsonQuote(entry.key.toString())).append(': ')
+                jsonWrite(entry.value, depth + 1, out)
+                if (index < entries.size() - 1) {
+                    out.append(',')
+                }
+                out.append('\n')
+            }
+            out.append(pad).append('}')
+        }
+    } else if (value instanceof List) {
+        if (value.isEmpty()) {
+            out.append('[]')
+        } else {
+            out.append('[\n')
+            value.eachWithIndex { item, index ->
+                out.append(padInner)
+                jsonWrite(item, depth + 1, out)
+                if (index < value.size() - 1) {
+                    out.append(',')
+                }
+                out.append('\n')
+            }
+            out.append(pad).append(']')
+        }
+    } else if (value instanceof Number || value instanceof Boolean) {
+        out.append(value.toString())
+    } else {
+        out.append(jsonQuote(value.toString()))
+    }
+}
+
+def readManifest = {
+    if (!manifestFile.isFile()) {
+        return null
+    }
+    new JsonSlurper().parse(manifestFile, 'UTF-8') as Map
+}
+
+tasks.register('syncSchemas') {
+    group = 'content'
+    description = '从 builtin 内容包同步 schema 副本、技能快照与 bundle-manifest.json'
+    doLast {
+        boolean dryRun = project.hasProperty('dryRun')
+        if (schemaLanguages.every { !schemasDir(schemaSourcePack, schemaSourceNamespace, it).isDirectory() }) {
+            throw new GradleException('未找到 schema 源目录：src/main/resources/spark_modules/' +
+                    schemaSourcePack + '/' + schemaSourceNamespace + '/docs/<lang>/schemas')
+        }
+
+        logger.quiet(dryRun ? '【dryRun】schema 同步预演' : 'schema 同步')
+        logger.quiet('源：src/main/resources/spark_modules/' + schemaSourcePack + '/' +
+                schemaSourceNamespace + '/docs/<lang>/schemas')
+
+        syncTargets.each { target ->
+            schemaLanguages.each { lang ->
+                File sourceRoot = schemasDir(schemaSourcePack, schemaSourceNamespace, lang)
+                File targetRoot = schemasDir(target.pack, target.namespace, lang)
+                String label = target.pack + '/' + target.namespace + '/docs/' + lang + '/schemas'
+                if (!sourceRoot.isDirectory()) {
+                    logger.quiet('  跳过 ' + label + '：源目录不存在')
+                    return
+                }
+                def result = mirrorJson(sourceRoot, targetRoot, dryRun)
+                logger.quiet('  ' + label + '：写入 ' + result.written.size() + '，删除 ' + result.removed.size())
+                printList('    + ', result.written)
+                printList('    - ', result.removed)
+            }
+        }
+
+        File snapshotSource = schemasDir(schemaSourcePack, schemaSourceNamespace, 'zh_cn')
+        if (snapshotSource.isDirectory()) {
+            def result = mirrorJson(snapshotSource, skillsRoot, dryRun)
+            logger.quiet('  skills/blockbench-content-pack/references/schemas：写入 ' +
+                    result.written.size() + '，删除 ' + result.removed.size())
+            printList('    + ', result.written)
+            printList('    - ', result.removed)
+        }
+
+        excludedPacks.each { target ->
+            String label = target.pack + '/' + target.namespace + '/docs/<lang>/schemas'
+            logger.quiet('  跳过 ' + label + '：该副本不参与同步')
+        }
+
+        // 清单在快照写完之后生成：盘上内容就是清单记录的内容
+        if (dryRun) {
+            logger.quiet('  bundle-manifest.json：dryRun 下不重写')
+            return
+        }
+
+        Map existing = readManifest()
+        def repository = existing?.schemas?.repository ?: schemaRepoFallback
+        def revision = gitHead() ?: (existing?.schemas?.revision ?: 'unknown')
+        Map manifest = existing instanceof Map ? new LinkedHashMap(existing) : new LinkedHashMap()
+        manifest.format_version = manifest.format_version ?: 1
+        manifest.bundled_on = LocalDate.now().toString()
+        manifest.schemas = buildManifestSchemas(revision, repository)
+
+        def out = new StringBuilder()
+        jsonWrite(manifest, 0, out)
+        out.append('\n')
+        byte[] text = out.toString().getBytes('UTF-8')
+        // 比较前归一化：checkout 时行尾可能被改成 CRLF，只有内容变化才算需要重写
+        if (!manifestFile.isFile() || !Arrays.equals(toLf(manifestFile.bytes), toLf(text))) {
+            manifestFile.parentFile.mkdirs()
+            manifestFile.bytes = text
+            logger.quiet('  bundle-manifest.json：已重写（' + ((Map) manifest.schemas).file_count +
+                    ' 个文件，revision ' + revision + '）')
+        } else {
+            logger.quiet('  bundle-manifest.json：无变化')
+        }
+    }
+}
+
+tasks.register('checkSchemas') {
+    group = 'content'
+    description = '校验 schema 副本、技能快照与 bundle-manifest.json 是否与 builtin 一致'
+    doLast {
+        def problems = []
+        def lines = new StringBuilder()
+
+        syncTargets.each { target ->
+            schemaLanguages.each { lang ->
+                File sourceRoot = schemasDir(schemaSourcePack, schemaSourceNamespace, lang)
+                File targetRoot = schemasDir(target.pack, target.namespace, lang)
+                String label = target.pack + '/' + target.namespace + '/docs/' + lang + '/schemas'
+                if (!sourceRoot.isDirectory()) {
+                    problems << label + '：源目录不存在'
+                    return
+                }
+                def result = compareCopy(sourceRoot, targetRoot)
+                if (result.missing || result.extra || result.stale) {
+                    problems << label + '：缺 ' + result.missing.size() + '，多 ' + result.extra.size() +
+                            '，内容不一致 ' + result.stale.size()
+                    result.missing.each { lines.append('    缺失  ').append(target.pack).append('/').append(lang).append('/').append(it).append('\n') }
+                    result.extra.each { lines.append('    多余  ').append(target.pack).append('/').append(lang).append('/').append(it).append('\n') }
+                    result.stale.each { lines.append('    不一致 ').append(target.pack).append('/').append(lang).append('/').append(it).append('\n') }
+                } else {
+                    logger.quiet('  ok  ' + label + '（' + result.wanted.size() + ' 个文件）')
+                }
+            }
+        }
+
+        // 技能快照
+        File snapshotSource = schemasDir(schemaSourcePack, schemaSourceNamespace, 'zh_cn')
+        if (snapshotSource.isDirectory()) {
+            def result = compareCopy(snapshotSource, skillsRoot)
+            if (result.missing || result.extra || result.stale) {
+                problems << 'skills/blockbench-content-pack/references/schemas：缺 ' + result.missing.size() +
+                        '，多 ' + result.extra.size() + '，内容不一致 ' + result.stale.size()
+                result.missing.each { lines.append('    缺失  skills/references/schemas/').append(it).append('\n') }
+                result.extra.each { lines.append('    多余  skills/references/schemas/').append(it).append('\n') }
+                result.stale.each { lines.append('    不一致 skills/references/schemas/').append(it).append('\n') }
+            } else {
+                logger.quiet('  ok  skills/blockbench-content-pack/references/schemas（' +
+                        result.wanted.size() + ' 个文件）')
+            }
+        }
+
+        // 清单：bundled_on 与 revision 是生成时的记录，不参与比较
+        Map existing = readManifest()
+        if (existing == null) {
+            problems << 'skills/blockbench-content-pack/bundle-manifest.json：缺失或无法解析'
+        } else {
+            def repository = existing?.schemas?.repository ?: schemaRepoFallback
+            Map expected = buildManifestSchemas('(ignored)', repository)
+            Map actual = (existing.schemas instanceof Map) ? (Map) existing.schemas : [:]
+            def differingFields = (['repository', 'source_directory', 'locale', 'selection', 'file_count'] as List)
+                    .findAll { expected[it] != actual[it] }
+            def expectedFiles = (List) expected.files
+            def actualFiles = (actual.files instanceof List) ? (List) actual.files : []
+            def actualByPath = actualFiles.collectEntries { [(it.path): it] }
+            def expectedByPath = expectedFiles.collectEntries { [(it.path): it] }
+            def missingEntries = expectedFiles.findAll { !actualByPath.containsKey(it.path) }
+            def extraEntries = actualFiles.findAll { !expectedByPath.containsKey(it.path) }
+            def staleEntries = expectedFiles.findAll { Map entry ->
+                Map other = actualByPath[entry.path]
+                other != null && (other.bytes != entry.bytes || other.sha256 != entry.sha256)
+            }
+            if (differingFields || missingEntries || extraEntries || staleEntries) {
+                problems << 'skills/blockbench-content-pack/bundle-manifest.json：与快照不一致（字段 ' +
+                        (differingFields ? differingFields.join('/') : '无') + '，清单缺 ' + missingEntries.size() +
+                        '，清单多 ' + extraEntries.size() + '，哈希不符 ' + staleEntries.size() + '）'
+                missingEntries.each { lines.append('    清单缺 ').append(it.path).append('\n') }
+                extraEntries.each { lines.append('    清单多 ').append(it.path).append('\n') }
+                staleEntries.each { lines.append('    哈希不符 ').append(it.path).append('\n') }
+            } else {
+                logger.quiet('  ok  bundle-manifest.json（' + actual.file_count + ' 个文件）')
+            }
+        }
+
+        // 未托管的副本：新增内容包自带 docs/<lang>/schemas 却没登记，会重新变成静默漂移源
+        def managed = ([schemaSourcePack + '/' + schemaSourceNamespace] +
+                (syncTargets + excludedPacks).collect { it.pack + '/' + it.namespace }) as Set
+        if (sparkModulesDir.isDirectory()) {
+            sparkModulesDir.eachDir { File packDir ->
+                packDir.eachDir { File namespaceDir ->
+                    schemaLanguages.each { lang ->
+                        File candidate = new File(namespaceDir, 'docs/' + lang + '/schemas')
+                        if (candidate.isDirectory()) {
+                            String key = packDir.name + '/' + namespaceDir.name
+                            if (!managed.contains(key)) {
+                                logger.quiet('  提示  未登记副本 ' + key + '/docs/' + lang +
+                                        '/schemas：若它应跟随 builtin，请加进 schema-sync.gradle 的 syncTargets；' +
+                                        '若它独立维护，请加进 excludedPacks')
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        excludedPacks.each { target ->
+            logger.quiet('  跳过 ' + target.pack + '/' + target.namespace + '/docs/<lang>/schemas：不参与同步')
+        }
+
+        if (problems) {
+            def details = lines.toString().readLines().join('\n')
+            throw new GradleException('schema 副本与 builtin 不一致：\n  ' + problems.join('\n  ') +
+                    (details ? '\n' + details : '') +
+                    '\n运行 ./gradlew syncSchemas 重新生成。')
+        }
+        logger.quiet('schema 同步检查通过。')
+    }
+}
+
+if (tasks.findByName('check') != null) {
+    tasks.named('check').configure { dependsOn tasks.named('checkSchemas') }
+}

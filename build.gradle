@@ -147,6 +147,11 @@ if (rootProject.file('repositories.gradle').exists()) {
     apply from: rootProject.file('repositories.gradle')
 }
 
+// 内容包 schema 同步：syncSchemas / checkSchemas，见 schema-sync.gradle
+if (rootProject.file('schema-sync.gradle').exists()) {
+    apply from: rootProject.file('schema-sync.gradle')
+}
+
 dependencies {
     // 纯物理测试：不启动 Minecraft / GameTestServer，只用 Spark-Core 内嵌的 jme3 Bullet
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'

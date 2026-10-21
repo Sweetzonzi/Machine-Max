@@ -1,4 +1,5 @@
 # Preserve bundled snapshots byte-for-byte for bundle-manifest.json hashes.
 assets/plugins/*.js -text
-# Upstream schemas include CRLF and final blank lines; keep those in snapshots.
-references/schemas/** -text whitespace=cr-at-eol,-blank-at-eof
+# Schema 快照由 ./gradlew syncSchemas 从 builtin 生成，写盘统一 LF；清单里的 sha256 按 LF 字节计算。
+references/schemas/** text eol=lf
+bundle-manifest.json text eol=lf

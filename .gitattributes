@@ -3,3 +3,6 @@
 # are changed when only line endings change.
 src/generated/**/.cache/cache text eol=lf
 src/generated/**/*.json text eol=lf
+
+# 内容包 schema 副本由 ./gradlew syncSchemas 从 builtin 生成，写盘统一 LF
+src/main/resources/spark_modules/**/docs/**/schemas/** text eol=lf

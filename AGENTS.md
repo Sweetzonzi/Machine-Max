@@ -175,6 +175,8 @@ io.github.sweetzonzi.machine_max/
 ./gradlew runServer          # 启动专用服务器
 ./gradlew runGameTestServer  # 运行 NeoForge 游戏测试
 ./gradlew runData            # 重新生成 src/generated/resources/
+./gradlew syncSchemas        # 从 builtin 同步内容包 schema 副本（见「内容包 schema 同步」）
+./gradlew checkSchemas       # 校验内容包 schema 副本（check 依赖它）
 ```
 
 ### 开发期 mod 目录（两个）
@@ -196,6 +198,29 @@ io.github.sweetzonzi.machine_max/
   GeckoLib 已由本项目与 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<geckolib_version>` 提供，不需要 jar。Spark 的模块来自 Spark-Core：那份构建脚本用 `implementation(files(fileTree("mods")))` 声明 `mods/spark-1.10.124-neoforge.jar`，它作为 root component 进入 Spark-Core 的 `runtimeElements`，于是出现在每个消费方的 `runtimeClasspath` 上（本项目 `gradlew runClient` 的 Mod List 里就有 `spark 1.10.124`）；本地再放一份同名模块就会撞包。两份 jar 都放在 `mods-disabled/`（`mods-disabled/` 不参与任何 run）。
 - 顺序要求：两个私有配置必须在 `build.gradle` 里先声明（`repositories.gradle` 由 `apply from` 在本文件之后执行，那里只填内容）。
 - 核对办法：`run/logs/latest.log` 里 `ModDiscoverer` 打出的 Mod List 是最终生效的 mod 集合；`build/moddev/{client,server,data,gameTestServer}LegacyClasspath.txt` 只是 MC-BOOTSTRAP 模块层的清单（由 `gradlew write<Run>LegacyClasspath` 刷新），其中出现某个 jar 不代表它会被当成 mod 载入。
+
+## 内容包 schema 同步
+
+内容包的 `docs/<lang>/schemas/` 带部件、子系统、配方的 JSON Schema，供作者在编辑器里补全与校验。**手写的只有 builtin 那一份**，其余由 `./gradlew syncSchemas` 生成：
+
+| 角色 | 路径 | 内容 |
+|------|------|------|
+| 源 | `src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/{en_us,zh_cn}/schemas/` | 手写 |
+| 副本 | `Machine-Max_Official_Pack`、`Machine-Max_Pack_Template` 的同名路径 | 逐语言字节复制 |
+| 技能快照 | `skills/blockbench-content-pack/references/schemas/` | 取 builtin 的 `zh_cn`，只含 `.json` |
+| 清单 | `skills/blockbench-content-pack/bundle-manifest.json` 的 `schemas` 块 | 文件清单、字节数、`sha256` |
+
+```bash
+./gradlew syncSchemas            # 写盘：副本 + 技能快照 + 清单
+./gradlew syncSchemas -PdryRun   # 只列出将变更的文件
+./gradlew checkSchemas           # 只读校验；check 依赖它，CI 的 build 因此也会跑
+```
+
+- **改 schema 只改 builtin**，然后跑 `./gradlew syncSchemas`，把生成的副本与自己的改动放在同一个提交里。副本与 builtin 不一致时 `checkSchemas` 让 `check` 失败，漏同步会在本地构建阶段暴露。
+- **写盘统一 LF**：`.gitattributes` 对 `src/main/resources/spark_modules/**/docs/**/schemas/**` 与技能快照声明 `text eol=lf`；比较前把 CRLF 归一化，所以判定结果与 `core.autocrlf` 无关。技能快照的 `sha256` 按 LF 字节计算。
+- **只同步 `*.json`**。`schemas/` 下的 `.md`（`How_to_Use_JSON_Schema.md`、`如何使用JSON模板.md`）是各内容包自己的示例文档，按包保留。
+- **sdkfz 不参与同步**：它的 schema 供插件编码器在包内做编辑器提示，整包重写会覆盖这些文件。同步范围与不参与同步的包都写在 `schema-sync.gradle` 顶部的 `syncTargets` / `excludedPacks`。
+- **新内容包自带 `docs/<lang>/schemas` 时**，按上一条把它登记进 `syncTargets` 或 `excludedPacks`；漏登记的副本由 `checkSchemas` 打提示，不判失败。
 
 ## 约定
 
