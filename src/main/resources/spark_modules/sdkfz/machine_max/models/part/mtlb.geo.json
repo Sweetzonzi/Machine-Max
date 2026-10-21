@@ -3,7 +3,7 @@
 	"minecraft:geometry": [
 		{
 			"description": {
-				"identifier": "geometry.geometry.mtlb",
+				"identifier": "geometry.mtlb",
 				"texture_width": 512,
 				"texture_height": 512,
 				"visible_bounds_width": 10,
@@ -15517,7 +15517,7 @@
 					"parent": "AllHull",
 					"pivot": [0, 20, -5],
 					"locators": {
-						"mass_center": [0, 16, -8],
+						"mass_center": [0, 16, 5],
 						"hull_left_sprocket": [24.6, 12.73, -47],
 						"hull_left_idler": [23.8, 12.73, 56.73],
 						"hull_left_roadwheel_1": [24.6, 8.22, -32.03],

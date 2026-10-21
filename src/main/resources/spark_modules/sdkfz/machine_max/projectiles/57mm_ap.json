@@ -1,0 +1,49 @@
+{
+  "type": "ballistic",
+  "tags": ["machine_max:caliber/57mm", "machine_max:ammo/ap", "machine_max:ammo/apcbc"],
+  "max_lifetime": 12.0,
+  "external": {
+    "mass": 2.7,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0006,
+    "caliber": 57.0,
+    "base_velocity": 1000,
+    "base_accuracy_mil": 1.2
+  },
+  "terminal": {
+    "base_penetration": 130,
+    "base_damage": 120,
+    "penetration_velocity_coefficient": 1.2,
+    "damage_velocity_coefficient": 0.6,
+    "stable_distance": 0,
+    "unstable_pen_factor": 0.3
+  },
+  "visual": {
+    "tracer_color": [255, 200, 80],
+    "tracer_alpha": 220,
+    "tracer_light_intensity": 6.0,
+    "muzzle_flash": { "intensity": 120.0, "glow": 5.0 }
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.large",
+        "range": 200.0
+      }
+    },
+    "cease_fire_sound": {
+      "sound_id": "machine_max:projectile.fire.mg34_release",
+      "range": 200.0
+    },
+    "shell_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "300.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    }
+  }
+}
