@@ -104,6 +104,9 @@ public class SubsystemController implements ISignalBus {
     public void onVehicleStructureChanged() {
         // 重建总线订阅
         rebuildSubscriptions();
+        // 两阶段：先让所有子系统清空由拓扑推导的缓存，再统一重新握手。
+        // 合成一趟时遍历顺序决定成败——后清空的子系统会把先握手得到的结果抹掉。
+        allSubsystems.forEach(AbstractSubsystem::onVehicleStructurePreChanged);
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
         rebuildAllEnergyPaths();
         energyGrid.rebuildFrom(allSubsystems);

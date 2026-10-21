@@ -189,7 +189,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
      * <p>
      * 内容是<b>当前拓扑的发现结果</b>，每次结构变化由
-     * {@link #onVehicleStructureChanged()} 清空后由各装弹机重新握手填回，因此不会累积历史残留。
+     * {@link #onVehicleStructurePreChanged()} 清空、再由各装弹机重新握手填回，因此不会累积历史残留。
      * 频道键随首次登记产生，某个频道再也没有供给者时会在下一次结构变化后被移除。
      */
     private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
@@ -396,22 +396,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 结构变化：先清空登记表再让各装弹机重新握手。<br>
+     * 结构变化的第一阶段：清空供给者登记表。<br>
      * 登记表是"当前拓扑能发现到的供给者"的缓存，<b>不是</b>历史累积：装弹机只在自己的
      * {@link AbstractSubsystem#onAttach()} 与结构变化时广播发现，已经不再连到本管的机器不会再来声明，
      * 不清空就会一直留着——那些机器可能已经跟着拆下来的部件换到了别的载具上。
      * 那会让两端的集合不一致（服务端逐件组装会留下中间态的残留，客户端只看到终局拓扑），
      * 并让已失效的供给者继续出现在 HUD 的兜底取数里。
      * <p>
-     * 清空放在 {@code super} 之前：基类负责重建总线订阅，随后各装弹机重新握手并重新登记；
-     * 期间本管处于"无任何供给者"，路由与 HUD 的读取都在主线程的同一次结构变化之后，不会看到半程状态。
+     * 清空写在第一阶段而不是 {@link #onVehicleStructureChanged()}：后者是装弹机重新广播发现的阶段，
+     * 两者若挤在同一趟遍历里，本管排在装弹机之后就等于把本轮发现结果清掉。
+     * <p>
+     * <b>调用线程：</b>主线程。
      */
     @Override
-    public void onVehicleStructureChanged() {
+    public void onVehicleStructurePreChanged() {
         for (List<IAmmoSupplier> channelSuppliers : supplierChannels.values()) {
             channelSuppliers.clear();
         }
-        super.onVehicleStructureChanged();
         supplierChannels.values().removeIf(List::isEmpty);
     }
 

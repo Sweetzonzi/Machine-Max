@@ -227,6 +227,27 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         return SignalResult.PASS;
     }
 
+    /**
+     * 载具结构变化的第一阶段：清空由拓扑推导出来的缓存。<br>
+     * {@link SubsystemController#onVehicleStructureChanged()} 先对所有子系统调用本方法，再统一调用
+     * {@link #onVehicleStructureChanged()} 让它们重新握手。两个阶段分开是必要的：某个子系统的清空
+     * （例如发射器丢掉旧的供给者登记表）若落在另一个子系统的握手之后，本轮刚发现的结果会被清掉，
+     * 并一直保持为空到下一次结构变化。
+     * <p>
+     * 默认空实现。只有持有"结构变化后必须重建的发现结果"的子系统才覆写本方法。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    public void onVehicleStructurePreChanged() {
+    }
+
+    /**
+     * 载具结构变化的第二阶段：重建总线订阅之后让子系统重新握手。<br>
+     * 由 {@link #onVehicleStructurePreChanged()} 先清空缓存，因此本方法里可以安全地重新发现拓扑；
+     * 需要清理的缓存应写在那一个方法里，本方法只负责重新建立关系。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
     public void onVehicleStructureChanged() {
         this.clearCallbackChannel();
     }

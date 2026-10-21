@@ -18,8 +18,12 @@ import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -124,6 +128,23 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             Comparator.comparing(belt -> belt.isEmpty() ? "" : belt.getFirst().toString());
 
     /**
+     * 选中弹链的同步镜像（服务端 → 客户端）。<br>
+     * 值是按顺序拼接的弹种注册键（{@code id1,id2,...}），空串表示当前没有可选的弹链。
+     * 选择本身只在服务端决定：客户端读到的 {@link #selectedBelt} 来自本条同步值，
+     * 因此 HUD 高亮的选项卡与实际供弹的弹链总是同一条。
+     */
+    private static final EntityDataAccessor<String> SELECTED_BELT =
+            SynchedEntityData.defineId(WeaponControllerSubsystem.class, EntityDataSerializers.STRING);
+
+    /**
+     * 客户端收到选择、但弹药池还没建起来时暂存的键串。<br>
+     * 建池依赖装弹机握手，握手与同步值谁先到不确定；暂存后在 {@link #onTick()} 里重试落地，
+     * 不因为一次"池里还没有这条链"就把选择丢掉。
+     */
+    @Nullable
+    private String pendingSelectedBelt = null;
+
+    /**
      * 聚合弹药池快照。<br>
      * key = 弹链（展平的不可变列表），value = 提供该弹链的所有 Loader 条目（按装填速度升序）。
      * 载具结构变化时由 onVehicleStructureChanged 触发完整重建，volatile 保证跨线程可见。
@@ -160,6 +181,31 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         this.attr = attr;
     }
 
+    // ==================== 同步数据 ====================
+
+    /**
+     * 定义选中弹链的同步项。<br>
+     * 与基类的耐久/激活/摧毁位合并成同一张表，由基类每 tick 打包推送；载具刚在客户端建好时
+     * 由 {@code SubsystemController.pushAllTo} 补一份全量快照。
+     */
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SELECTED_BELT, "");
+    }
+
+    /**
+     * 同步值落地（客户端）。<br>
+     * 只跟随服务端的选择，不自行改选：池里还没有这条链时先暂存，由 {@link #onTick()} 重试。
+     */
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
+        super.onSyncedDataUpdated(dataAccessor);
+        if (getLevel().isClientSide() && dataAccessor.equals(SELECTED_BELT)) {
+            applySyncedBelt(getSynchedData().get(SELECTED_BELT));
+        }
+    }
+
     @Override
     public void onTick() {
         super.onTick();
@@ -168,6 +214,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (needsAmmoPoolUpdate) {
             rebuildAmmoPool();
             needsAmmoPoolUpdate = false;
+        } else if (ammoPool.isEmpty() && tickCount % 20 == 0) {
+            // 兜底：池为空说明本控制器没看到任何带弹链的供给者。装弹机的握手是异步完成的，
+            // 若某次建池早于它（新部件刚接上、结构变化刚结束），一次空结果不能锁死整个会话——
+            // 定期重试，握手一到位池就建起来。
+            rebuildAmmoPool();
+        }
+
+        // 客户端：选择值可能先于弹药池到达（建池要等装弹机握手），池建好后把暂存的键串落地
+        if (getLevel().isClientSide() && pendingSelectedBelt != null) {
+            applySyncedBelt(pendingSelectedBelt);
         }
 
         readInputSignals();
@@ -356,6 +412,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private void selectDefaultBelt() {
         if (ammoPool.isEmpty() || ammoPool.containsKey(selectedBelt)) return;
         selectedBelt = ammoPool.keySet().stream().min(BELT_ORDER).orElse(null);
+        pushSyncedBelt();
     }
 
     /**
@@ -398,16 +455,72 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         List<List<ResourceLocation>> belts = getAvailableBelts();
         if (belts.isEmpty()) {
             selectedBelt = null;
+        } else {
+            int idx = belts.indexOf(selectedBelt);
+            if (idx < 0) {
+                // 未选中，或选中的链已不在池里：从第一条开始
+                selectedBelt = belts.getFirst();
+            } else {
+                int step = reverse ? -1 : 1;
+                selectedBelt = belts.get(Math.floorMod(idx + step, belts.size()));
+            }
+        }
+        pushSyncedBelt();
+    }
+
+    /**
+     * 把服务端的选择写进同步值（仅服务端）。<br>
+     * 客户端读到后经 {@link #applySyncedBelt(String)} 落到本机的 {@link #selectedBelt}。
+     */
+    private void pushSyncedBelt() {
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(SELECTED_BELT, encodeBelt(selectedBelt));
+    }
+
+    /**
+     * 客户端落地服务端的选择。<br>
+     * 池里已经有这条链就改选；还没有（同步值先于握手到达）就暂存，等 {@link #onTick()} 重试。
+     */
+    private void applySyncedBelt(String encoded) {
+        if (encoded.isEmpty()) {
+            selectedBelt = null;
+            pendingSelectedBelt = null;
             return;
         }
-        int idx = belts.indexOf(selectedBelt);
-        if (idx < 0) {
-            // 未选中，或选中的链已不在池里：从第一条开始
-            selectedBelt = belts.getFirst();
-            return;
+        List<ResourceLocation> matched = findBeltByKey(encoded);
+        if (matched != null) {
+            selectedBelt = matched;
+            pendingSelectedBelt = null;
+        } else {
+            pendingSelectedBelt = encoded;
         }
-        int step = reverse ? -1 : 1;
-        selectedBelt = belts.get(Math.floorMod(idx + step, belts.size()));
+    }
+
+    /**
+     * 在弹药池里按稳定键串找弹链。
+     *
+     * @return 对应的弹链；池里还没有这条链时返回 null
+     */
+    @Nullable
+    private List<ResourceLocation> findBeltByKey(String encoded) {
+        for (List<ResourceLocation> belt : ammoPool.keySet()) {
+            if (encodeBelt(belt).equals(encoded)) return belt;
+        }
+        return null;
+    }
+
+    /**
+     * 弹链的稳定键串：按顺序拼接弹种注册键，空表编码为空串。<br>
+     * 用作同步值而不是下标——结构变化会改变池里弹链的顺序，键串只随弹链本身变化。
+     */
+    private static String encodeBelt(@Nullable List<ResourceLocation> belt) {
+        if (belt == null || belt.isEmpty()) return "";
+        StringBuilder builder = new StringBuilder();
+        for (ResourceLocation id : belt) {
+            if (!builder.isEmpty()) builder.append(',');
+            builder.append(id);
+        }
+        return builder.toString();
     }
 
     /**
@@ -516,7 +629,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * <p>
      * 兜底还有一个前提：<b>选中弹链上确实没有能接这活的供给者</b>。弹链上有人、只是暂时没弹时应当
      * 等它，而不是跑去用别的弹链——否则每 tick 都会在两条弹链之间来回换（换人 → 取消在途交付 →
-     * 下个 tick 又换回来），一发都装不上。
+     * 下个 tick 又换回来），一发都装不上。守住当前供给者时同样要求它位于选中弹链上：选中链
+     * 暂时空着就等它再生，不从别的链借弹，打出去的弹种因此总是选项卡上写的那一种。
      * <p>
      * 每条路都按"已轮到本管 → 空闲 → 被别人占着"排序，同档内再按装填耗时、最后按供给者身份
      * 排序。前两档让 N 根管自动落到 N 台装弹机上（前一根管选走一台后，那台对后一根管就降档成
@@ -543,9 +657,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             }
         }
         if (usable.isEmpty()) {
-            // 没有更该选的：只要当前供给者还能供弹就守住它
+            // 没有更该选的：当前供给者要同时满足"还能供弹"和"在选中弹链上"才守住它。
+            // 只判前者会在切到一条暂时空着的链后继续从旧链取弹，打出去的弹种和选项卡对不上。
             IAmmoSupplier current = launcher.getCurrentSupplier();
-            return supplyTypeAccepted(current, launcher) ? current : null;
+            if (current == null || !supplyTypeAccepted(current, launcher)) return null;
+            boolean onSelectedBelt = selectedBelt == null
+                    || beltSuppliers(this, selectedBelt).contains(current);
+            return onSelectedBelt ? current : null;
         }
         usable.sort(Comparator
                 .comparingInt((IAmmoSupplier supplier) -> occupancyTier(supplier, launcher))
