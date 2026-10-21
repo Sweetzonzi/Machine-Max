@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -175,11 +177,23 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 获取当前激活控制组对应的 WeaponController 列表（HUD 显示用）。<br>
-     * 合并 baseGroup 和当前激活子组的 WeaponController，去重。
-     *
-     * @return 当前应显示的 WeaponController 列表
+     * 按 base、子组配置顺序收集当前座椅全部组发现的 HUD 候选，按控制器实例去重。
      */
+    public List<WeaponControllerSubsystem> getHudWeaponCandidates() {
+        Set<WeaponControllerSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<WeaponControllerSubsystem> result = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
+        keys.add("base");
+        for (ControlGroup group : controlGroupSet.groups) keys.add(group.name);
+        for (String key : keys) {
+            for (WeaponControllerSubsystem controller : weaponControllersByGroup.getOrDefault(key, List.of())) {
+                if (seen.add(controller)) result.add(controller);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    /** 当前选中集合为 base 与当前子组的控制器并集。 */
     public List<WeaponControllerSubsystem> getActiveWeaponControllers() {
         List<WeaponControllerSubsystem> base =
                 weaponControllersByGroup.getOrDefault("base", List.of());
@@ -477,7 +491,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Override
     public void loadData(CompoundTag data) {
         super.loadData(data);
-        // TODO: 暂不允许自定义控制组，禁用 NBT 加载，改为每次从注册表读取预设
+        // TODO: 控制组仅从注册表读取预设，自定义控制组的 NBT 加载处于禁用状态
 //        if (data.contains("control_group_set", CompoundTag.TAG_COMPOUND)) {
 //            ControlGroupSet.CODEC.parse(NbtOps.INSTANCE, data.get("control_group_set"))
 //                    .resultOrPartial(e -> MachineMax.LOGGER.warn("无法加载控制组数据: {}", e))

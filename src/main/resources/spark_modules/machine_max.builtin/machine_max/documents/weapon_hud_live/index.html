@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    .weapon { width: 260px; padding: 12px; color: white; background: #142027df; font-size: 14px; }
+    .head, .belt { display: flex; gap: 8px; justify-content: space-between; }
+    .tubes, .belts { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .track { height: 3px; background: #ffffff30; }
+    .track i { display: block; height: 3px; width: var(--fill); background: #a7e5fa; }
+    .is-empty { opacity: 0.45; }
+  </style>
+</head>
+<body>
+  <div class="weapon" data-mm-class="weapon.state">
+    <div class="head"><b data-mm-text="weapon.name"></b><span data-mm-text="weapon.ammo_text"></span></div>
+    <div data-mm-text="weapon.round_label"></div>
+    <div data-mm-text="weapon.reload_text"></div>
+    <div class="tubes">
+      <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
+        <div class="head"><span data-mm-text="tube.round_label"></span><span data-mm-text="tube.reload_text"></span></div>
+        <div class="track"><i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i></div>
+      </div>
+    </div>
+    <div class="belts">
+      <div class="belt" data-mm-repeat="weapon.belts">
+        <span data-mm-text="belt.label"></span><span data-mm-text="belt.remaining"></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

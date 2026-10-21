@@ -6,6 +6,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.*;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.client.render.gui.MMGuiManager;
 import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatable;
 import io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable;
@@ -54,7 +57,7 @@ import java.util.Set;
 /**
  * 自定义 HUD 叠加层。
  * <p>
- * 每个客户端 tick 按当前视角收集宿主：座椅或相机/瞄具，加上座椅当前控制组选中的
+ * 每个客户端 tick 按当前视角收集宿主：座椅或相机/瞄具，加上座椅全部控制组发现的
  * 武器控制器。每个宿主通过 {@link IHudHost#hudLayoutFor(HudView)} 取得实际布局
  * （默认由资源键解析，玩家自定义布局可直接返回保存的对象），为布局里的每个
  * {@link HudElement} 创建一个运行时元素。
@@ -128,12 +131,32 @@ public class CustomHud implements LayeredDraw.Layer {
             expected.add(seat);
         }
 
-        // 座椅选中的武器控制器在普通视角与炮镜视角都显示
-        if (seat != null) expected.addAll(seat.getActiveWeaponControllers());
+        // 候选保持元素身份；当前组的选中集合只影响求值帧与条目显隐。
+        if (seat != null) expected.addAll(seat.getHudWeaponCandidates());
 
         if (view != activeView || !expected.equals(huds.keySet())
                 || layoutsOrStylesChanged(expected, view)) {
             rebuild(expected, view);
+        }
+        Set<WeaponControllerSubsystem> selected = seat == null ? Set.of()
+                : new java.util.HashSet<>(seat.getActiveWeaponControllers());
+        var parts = new java.util.IdentityHashMap<io.github.sweetzonzi.machine_max.common.mech.vehicle.Part, HudPartSnapshot>();
+        for (var entry : huds.entrySet()) {
+            var part = entry.getKey() instanceof AbstractSubsystem source ? source.getSubPart().part : null;
+            var partSnapshot = part == null ? HudPartSnapshot.EMPTY : parts.computeIfAbsent(part, HudPartSnapshot::capture);
+            var weapon = entry.getKey() instanceof WeaponControllerSubsystem wc ? HudWeaponSnapshot.capture(wc) : HudWeaponSnapshot.EMPTY;
+            HudBallisticTable table = null;
+            for (var carrier : entry.getValue()) {
+                var runtime = carrier.runtime();
+                runtime.publish(partSnapshot, weapon, selected.contains(entry.getKey()));
+                if (runtime instanceof WeaponHudElement weaponElement) {
+                    if (table == null) {
+                        weaponElement.updateBallistics(weapon);
+                        table = weaponElement.ballistics();
+                    } else weaponElement.setBallistics(table);
+                }
+                if (carrier instanceof AuiHudAnimatable aui && runtime.visible()) aui.tickBindings();
+            }
         }
     }
 
@@ -178,10 +201,12 @@ public class CustomHud implements LayeredDraw.Layer {
                     }
                     continue;
                 }
+                HudRuntimeElement runtime = host instanceof WeaponControllerSubsystem wc
+                        ? new WeaponHudElement(wc, element) : new HudRuntimeElement(host, element);
                 if (style instanceof ModelHudStyle modelStyle) {
-                    elements.add(new GuiAnimatable(element.style(), modelStyle, element));
+                    elements.add(new GuiAnimatable(element.style(), modelStyle, element, runtime));
                 } else if (style instanceof AuiHudStyle auiStyle) {
-                    elements.add(new AuiHudAnimatable(element.style(), auiStyle, element));
+                    elements.add(new AuiHudAnimatable(element.style(), auiStyle, element, runtime));
                 } else if (warnedStyles.add(element.style())) {
                     MachineMax.LOGGER.warn("HUD 样式载体尚不支持，跳过该条目: {} (type={})",
                             element.style(), style.type());
@@ -197,6 +222,14 @@ public class CustomHud implements LayeredDraw.Layer {
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         if (Minecraft.getInstance().options.hideGui) return;
+        var mc = Minecraft.getInstance();
+        var renderCamera = mc.gameRenderer.getMainCamera();
+        var position = renderCamera.getPosition();
+        var view = HudViewSnapshot.fromCamera(position.x, position.y, position.z,
+                renderCamera.getLookVector(), renderCamera.getUpVector(), HudCameraEvents.worldFov(),
+                CameraController.isCameraMode() ? CameraController.getCurrentZoom() : 1,
+                guiGraphics.guiWidth(), guiGraphics.guiHeight()).withRoll(HudCameraEvents.roll());
+        for (var elements : huds.values()) for (var carrier : elements) carrier.runtime().publishView(view);
         // 必须用 mc.getTimer() 而非 deltaTracker.getGameTimeDeltaTicks()：
         // deltaTracker 的 partialTick 在构造时固化，到此处可能已轻微过期，导致
         // getLerpedLocatorWorldTransform 插值错位，炮镜 UGC 元素产生严重抖振。
@@ -215,7 +248,7 @@ public class CustomHud implements LayeredDraw.Layer {
         // 第1趟：正交 HUD — 使用 Minecraft 默认 GUI 正交投影逐个渲染
         for (List<HudElementInstance> elements : huds.values()) {
             for (HudElementInstance hud : elements) {
-                if (!hud.isPerspective()) {
+                if (hud.runtime().visible() && !hud.isPerspective()) {
                     hud.renderGui(guiGraphics, partialTick);
                 }
             }
@@ -231,7 +264,7 @@ public class CustomHud implements LayeredDraw.Layer {
     private boolean hasPerspective() {
         for (List<HudElementInstance> elements : huds.values()) {
             for (HudElementInstance hud : elements) {
-                if (hud.isPerspective()) return true;
+                if (hud.runtime().visible() && hud.isPerspective()) return true;
             }
         }
         return false;
@@ -289,7 +322,7 @@ public class CustomHud implements LayeredDraw.Layer {
         // 每个元素按 scope_behavior 单独设置 poseStack；AUI 载体按自己的锚点投放
         for (List<HudElementInstance> elements : huds.values()) {
             for (HudElementInstance instance : elements) {
-                if (instance.isPerspective()) continue;
+                if (!instance.runtime().visible() || instance.isPerspective()) continue;
                 if (instance instanceof GuiAnimatable hud) {
                     renderOrthogonalInScope(guiGraphics, hud, screenW, screenH,
                             scopeCenterX, scopeCenterY, pitchDiff, yawDiff,
@@ -400,7 +433,7 @@ public class CustomHud implements LayeredDraw.Layer {
 
             for (List<HudElementInstance> elements : huds.values()) {
                 for (HudElementInstance hud : elements) {
-                    if (!hud.isPerspective()) continue;
+                    if (!hud.runtime().visible() || !hud.isPerspective()) continue;
                     PoseStack poseStack = guiGraphics.pose();
                     poseStack.pushPose();
                     try {

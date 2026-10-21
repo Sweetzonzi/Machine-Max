@@ -1,7 +1,10 @@
 package io.github.sweetzonzi.machine_max.client.render.renderable;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudMolangContext;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudExpression;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
@@ -11,21 +14,16 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
-import cn.solarmoon.spark_core.molang.SparkMolangContext;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.HudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.ModelHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
-import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,19 +34,15 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,12 +53,11 @@ import java.util.Map;
  * {@link ModelHudStyle}，投放（位移/旋转/缩放/投影/炮镜行为）来自 {@link HudElement}。
  * 同一份样式在一个布局里出现多次时，每个条目各自创建一个实例。
  * <p>
- * 支持透视投影和正交投影两种渲染模式。V1 的 MoLang 上下文继续使用玩家所坐座椅
- * 所属 Part 的 {@link cn.solarmoon.spark_core.molang.SparkMolangContext}。
+ * 本元素的 {@link HudRuntimeElement} 提供按消费线程隔离的上下文。
+ * 物理线程混合骨骼，客户端主线程发布姿态，渲染帧插值并求值文本。
  */
 @OnlyIn(Dist.CLIENT)
-public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, ITickableRenderable, Renderable {
-    private final Minecraft minecraft = Minecraft.getInstance();
+public class GuiAnimatable implements HudElementInstance, ITickableRenderable, Renderable {
     /** 样式资源键，仅用于诊断。 */
     private final ResourceLocation styleId;
     private final ModelHudStyle style;
@@ -74,12 +67,20 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
     private final Transform transform;
     private final ModelController modelController;
     private final AnimController animController;
-    private final Map<String, Object> variables = HashMap.newHashMap(1);
-    private final SparkMolangContext<IAnimatable<Player>> molangContext = new SparkMolangContext<>(this);
+    private final HudRuntimeElement runtime;
+    private final java.util.Set<String> expressionWarnings = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.Set<OAnimation> rejectedAnimations = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private volatile boolean disposed;
 
     public GuiAnimatable(ResourceLocation styleId, ModelHudStyle style, HudElement element) {
+        this(styleId, style, element, new HudRuntimeElement(null, element));
+    }
+
+    public GuiAnimatable(ResourceLocation styleId, ModelHudStyle style, HudElement element, HudRuntimeElement runtime) {
+        this.runtime = runtime;
         if (style == null) throw new NullPointerException("ModelHudStyle 不能为空");
         if (element == null) throw new NullPointerException("HudElement 不能为空");
+        runtime.setModelIndex(style.modelIndex());
         this.styleId = styleId;
         this.style = style;
         this.element = element;
@@ -91,8 +92,8 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
                 SparkMathKt.toBQuaternion(quaternionf),
                 PhysicsHelperKt.toBVector3f(element.scale())
         );
-        this.modelController = new ModelController(this);
-        this.animController = new AnimController(this);
+        this.modelController = runtime.getModelController();
+        this.animController = runtime.getAnimController();
         getModelController().setModel(style.modelIndex());
         getModelController().setTextureLocation(style.texture());
         create();
@@ -106,9 +107,8 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
         return style;
     }
 
-    @Override
     public Map<String, Object> getVariables() {
-        return variables;
+        return runtime.getVariables();
     }
 
     public HudElement getElement() {
@@ -126,6 +126,7 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
 
     @Override
     public void dispose() {
+        disposed = true;
         ITickableRenderable.super.destroy();
     }
 
@@ -149,35 +150,10 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
         return SparkMathKt.toVector3f(transform.getScale());
     }
 
-    /**
-     * 若玩家坐在载具座位上，返回座位对应的 SubPart。
-     */
-    @Nullable
-    private SubPart getRidingSubPart() {
-        Player player = getAnimatable();
-        if (player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
-                && seat.getOwner() instanceof ISubsystemHost host) {
-            return host.getSubPart();
-        }
-        return null;
-    }
-
-    /**
-     * 获取 Molang 上下文。如果玩家坐在载具座位上，委派给所属 Part 的上下文，
-     * 否则使用自身的上下文。
-     * <p>
-     * V1 只保证座椅所属 Part 上的 {@code local.*} / {@code global.*} 查询等价；
-     * HUD 专用上下文在后续版本接入。
-     */
     @Override
-    public SparkMolangContext<?> getMolangContext() {
-        SubPart sp = getRidingSubPart();
-        if (sp != null) {
-            return sp.part.getSparkMolangContext();  // 内部 reset 到当前 Part 状态
-        }
-        return molangContext;
-    }
+    public HudRuntimeElement runtime() { return runtime; }
+
+    public HudMolangContext getMolangContext() { return runtime.getMolangContext(); }
 
     @Override
     public final void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -298,7 +274,9 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
             //利用Mocha引擎解析molang表达式
             for (String arg : textParams.molangArgs()) {
                 try {
-                    Object value = MolangContextRegistry.evalAsObject(arg, getMolangContext());
+                    HudMolangContext context = getMolangContext();
+                    HudExpression.validate(arg, context, null);
+                    Object value = MolangContextRegistry.evalAsObject(arg, context);
                     switch (value) {
                         case String s -> args.add(s);
                         case Number n -> args.add(df.format(n.doubleValue()));
@@ -306,7 +284,11 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
                         default -> args.add("null");
                     }
                 } catch (Exception e) {
-                    args.add("MOLANG_ERROR" + e);
+                    args.add("MOLANG_ERROR");
+                    if (expressionWarnings.add(locatorName + ":" + arg)) {
+                        io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn(
+                                "HUD 表达式失败 (style={}, locator={}, expression={}): {}", styleId, locatorName, arg, e.toString());
+                    }
                 }
             }
             String text;
@@ -336,57 +318,39 @@ public class GuiAnimatable implements HudElementInstance, IAnimatable<Player>, I
     }
 
     public void animTick() {
+        var level = runtime.getAnimLevel();
+        if (disposed || level == null || SparkLevel.getPhysicsLevelOrNull(level) == null) return;
         getAnimController().tick();
         var modelIndexForAnim = new ModelIndex(style.modelIndex().getType(), style.animation());
         var animSet = OAnimationSet.getORIGINS().get(modelIndexForAnim);
         if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
             for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                 String name = entry.getKey();
-                var animInstance = new AnimInstance(this, new AnimIndex(modelIndexForAnim, name));
+                if (rejectedAnimations.contains(entry.getValue())) continue;
+                try {
+                    io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudAnimationExpressions.validate(entry.getValue(), getMolangContext());
+                } catch (RuntimeException failure) {
+                    rejectedAnimations.add(entry.getValue());
+                    io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn("HUD 动画绑定失败 (style={}, animation={}): {}", styleId, name, failure.toString());
+                    continue;
+                }
+                var animInstance = new AnimInstance(runtime, new AnimIndex(modelIndexForAnim, name));
                 animInstance.enter();
             }
         }
     }
 
     public void physicsTick() {
-        getAnimController().physTick();
+        if (disposed || runtime.getAnimLevel() == null) return;
+        try (var ignored = runtime.pinFrame()) {
+            getAnimController().physTick();
+        } catch (RuntimeException failure) {
+            if (expressionWarnings.add("animation-physics")) {
+                io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn("HUD 动画物理步失败 (style={}): {}", styleId, failure.toString());
+            }
+        }
     }
 
-    @Nullable
-    @Override
-    public Player getAnimatable() {
-        if (Minecraft.getInstance().player instanceof Player player) return player;
-        else return null;
-    }
-
-    @Override
-    public Level getAnimLevel() {
-        if (Minecraft.getInstance().level != null) {
-            return Minecraft.getInstance().level;
-        } else return null;
-    }
-
-    @NotNull
-    @Override
-    public AnimController getAnimController() {
-        return animController;
-    }
-
-    @NotNull
-    @Override
-    public ModelController getModelController() {
-        return this.modelController;
-    }
-
-    @NotNull
-    @Override
-    public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        return SparkMathKt.toMatrix4f(transform.toTransformMatrix());
-    }
-
-    @NotNull
-    @Override
-    public ModelIndex getDefaultModelIndex() {
-        return style.modelIndex();
-    }
+    public AnimController getAnimController() { return animController; }
+    public ModelController getModelController() { return modelController; }
 }

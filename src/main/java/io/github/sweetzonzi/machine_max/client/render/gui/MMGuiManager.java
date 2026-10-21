@@ -111,6 +111,7 @@ public class MMGuiManager {
 
     @SubscribeEvent
     private static void onPhysicsTick(PhysicsLevelTickEvent.Post event) {
+        if (!event.getLevel().getMcLevel().isClientSide()) return;
         try {
             if (customHud != null) customHud.physicsTick();
             WeakReference<ITickableRenderable> ref;
@@ -122,6 +123,8 @@ public class MMGuiManager {
             for (WeakReference<ITickableRenderable> widget : animatableWidgets) {
                 ITickableRenderable animatable = widget.get();
                 if (animatable != null) {
+                    if (animatable instanceof io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable hud
+                            && hud.runtime().getAnimLevel() != event.getLevel().getMcLevel()) continue;
                     animatable.physicsTick();
                 }
             }

@@ -1,0 +1,10 @@
+[
+  {
+    "style": "machine_max:aui_weapon_live",
+    "perspective": false,
+    "anchor": "bottom_right",
+    "offset": [-16, -96, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "selected_only"
+  }
+]

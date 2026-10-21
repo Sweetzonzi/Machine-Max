@@ -15,34 +15,45 @@
     },
     "control_outputs": {
       "allOf": [
-        { "$ref": "../base/signal_targets.json" }
+        {
+          "$ref": "../base/signal_targets.json"
+        }
       ],
       "default": {},
       "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."
     },
     "first_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "HUD layout used by the first-person view; machine_max:empty shows no HUD."
     },
     "third_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "HUD layout used by the third-person view; machine_max:empty shows no HUD."
     },
     "scope_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "HUD layout used by the scope view; machine_max:empty shows no HUD."
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:weapon_controller",
@@ -53,7 +64,9 @@
           "subsystem.machine_max.barrel_elevation",
           "subsystem.machine_max.main_launcher"
         ]
-      }
+      },
+      "first_hud_layout": "machine_max:weapon_live",
+      "scope_hud_layout": "machine_max:weapon_live"
     }
   ]
 }

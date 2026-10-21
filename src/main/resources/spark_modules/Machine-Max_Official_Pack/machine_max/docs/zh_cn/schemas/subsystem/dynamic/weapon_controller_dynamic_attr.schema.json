@@ -15,34 +15,45 @@
     },
     "control_outputs": {
       "allOf": [
-        { "$ref": "../base/signal_targets.json" }
+        {
+          "$ref": "../base/signal_targets.json"
+        }
       ],
       "default": {},
       "description": "控制信号输出频道及目标列表。武器控制器通过这些频道向炮塔驱动和发射器发送控制信号，同时用于握手发现并绑定同载具内的下属子系统。"
     },
     "first_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "第一人称视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
     },
     "third_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "第三人称视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
     },
     "scope_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "炮镜视角使用的 HUD 布局；machine_max:empty 表示该视角不显示 HUD。"
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:weapon_controller",
@@ -53,7 +64,9 @@
           "subsystem.machine_max.barrel_elevation",
           "subsystem.machine_max.main_launcher"
         ]
-      }
+      },
+      "first_hud_layout": "machine_max:weapon_live",
+      "scope_hud_layout": "machine_max:weapon_live"
     }
   ]
 }

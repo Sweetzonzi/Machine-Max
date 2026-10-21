@@ -3,11 +3,11 @@
   "bundled_on": "2026-10-22",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "53024908bedf1f203356b1a6ae2f90a276e81455",
+    "revision": "031b23d56b7ff6d618a934326ef96b4ce745dc91",
     "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 67,
+    "file_count": 69,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -38,6 +38,16 @@
         "path": "references/schemas/base/vector_3d.schema.json",
         "bytes": 383,
         "sha256": "bf7ef0d5b0084d555c97d628dc9e35ff6186c21052f5606ec669a140a3aafaed"
+      },
+      {
+        "path": "references/schemas/hud/hud_element.schema.json",
+        "bytes": 1579,
+        "sha256": "5b1fb462fb7c89fec6174a5c4360e69b909efff073bd2c8f3e610938a2a99d22"
+      },
+      {
+        "path": "references/schemas/hud/hud_layout.schema.json",
+        "bytes": 222,
+        "sha256": "b048a3ba3c4cc06399dfff70fb6cf143d11965eee98320b46ecb296d20d956cb"
       },
       {
         "path": "references/schemas/part/subpart/connector/connector_attr.schema.json",
@@ -226,8 +236,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json",
-        "bytes": 2235,
-        "sha256": "b35348802e8739c8d114fe925e77249c628c88c4ab1a118aaa64b64d5e053b05"
+        "bytes": 2425,
+        "sha256": "836b5010d89d6479bdd686da423ff9c4e7fb1d3145ba6f40da71361f73e24600"
       },
       {
         "path": "references/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.schema.json",

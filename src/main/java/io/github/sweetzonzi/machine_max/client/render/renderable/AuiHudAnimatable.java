@@ -61,6 +61,8 @@ public final class AuiHudAnimatable implements HudElementInstance {
     private final ResourceLocation styleId;
     private final AuiHudStyle style;
     private final HudElement element;
+    private final io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime;
+    private io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudPageBinding binding;
 
     @Nullable
     private Document document;
@@ -78,6 +80,12 @@ public final class AuiHudAnimatable implements HudElementInstance {
     private static final float[] SQUARE_CLIP_RADII = {0f, 0f, 0f, 0f};
 
     public AuiHudAnimatable(ResourceLocation styleId, AuiHudStyle style, HudElement element) {
+        this(styleId, style, element, new io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement(null, element));
+    }
+
+    public AuiHudAnimatable(ResourceLocation styleId, AuiHudStyle style, HudElement element,
+                            io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime) {
+        this.runtime = runtime;
         this.styleId = styleId;
         this.style = style;
         this.element = element;
@@ -110,7 +118,9 @@ public final class AuiHudAnimatable implements HudElementInstance {
         created.setManuallyRendered(true);
         // HUD 页面随 /reload 刷新，方便内容包迭代；刷新后 body 换实例，下面会重新贴类名。
         created.setReloadPersistent(false);
+        if (binding != null) binding.close();
         this.document = created;
+        this.binding = new io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudPageBinding(created, runtime, styleId.toString());
         this.styledBody = null;
         applyPage(created);
     }
@@ -137,6 +147,16 @@ public final class AuiHudAnimatable implements HudElementInstance {
         if (!value.equals(body.getInlineStylePropertyValue(property))
                 || !"important".equals(body.getInlineStylePropertyPriority(property))) {
             body.setInlineStyleProperty(property, value, "important");
+        }
+    }
+
+    @Override
+    public io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime() { return runtime; }
+
+    public void tickBindings() {
+        Document target = resolveDocument();
+        if (target != null) {
+            try (Document.ContextScope ignored = Document.withContext(target)) { binding.refresh(); }
         }
     }
 
@@ -180,6 +200,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
     /** 调用方已进入文档上下文；只提交待处理布局工作后读取内容尺寸。 */
     private DocumentDimensions prepareDocument(Document target) {
         applyPage(target);
+        binding.refresh();
         double width;
         double height;
         try (GeometryQueryScope geometryScope = GeometryQueryScope.open()) {
@@ -310,6 +331,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
 
     @Override
     public void dispose() {
+        if (binding != null) { binding.close(); binding = null; }
         Document target = document;
         document = null;
         styledBody = null;

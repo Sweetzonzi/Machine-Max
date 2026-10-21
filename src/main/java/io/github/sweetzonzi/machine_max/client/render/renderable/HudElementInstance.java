@@ -22,6 +22,8 @@ import org.joml.Vector3f;
 @OnlyIn(Dist.CLIENT)
 public interface HudElementInstance {
 
+    io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime();
+
     /** 该元素是否进入透视批次。 */
     boolean isPerspective();
 

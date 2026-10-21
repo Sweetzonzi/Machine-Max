@@ -120,12 +120,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private List<ResourceLocation> selectedBelt = null;
 
     /**
-     * 弹链的排序顺序：按第一发弹种的资源地址升序。<br>
+     * 弹链按完整资源键序列的字典序排列，公共前缀相同时短序列在前。<br>
      * 默认选中（{@link #rebuildAmmoPool()} 建池后）、轮切（{@link #cycleSelectedBelt(boolean)}）
      * 与 HUD 列表（{@link #getAvailableBelts()}）共用它，三者因此总是指向同一条链。
      */
-    private static final Comparator<List<ResourceLocation>> BELT_ORDER =
-            Comparator.comparing(belt -> belt.isEmpty() ? "" : belt.getFirst().toString());
+    private static final Comparator<List<ResourceLocation>> BELT_ORDER = WeaponControllerSubsystem::compareBelts;
+
+    public static int compareBelts(List<ResourceLocation> left, List<ResourceLocation> right) {
+        for (int i = 0; i < Math.min(left.size(), right.size()); i++) {
+            int order = left.get(i).toString().compareTo(right.get(i).toString());
+            if (order != 0) return order;
+        }
+        return Integer.compare(left.size(), right.size());
+    }
 
     /**
      * 选中弹链的同步镜像（服务端 → 客户端）。<br>

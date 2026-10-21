@@ -1,7 +1,7 @@
 # HUD 样式、布局与元素设计
 
-> 版本 3.6 · 2026-10-21
-> **状态**：进行中。V1（模型载体的样式 / 布局 / 元素、座椅与相机/瞄具宿主、内容包迁移）已落地并实机验收。V2 的 AUI 载体已落地：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、按布局顺序手动绘制；`data-mm-*` 绑定层与 `hud.*` 上下文未实现。V3 的武器控制器宿主字段及选中集合接入已实现；候选宿主并集、通用条目显隐、武器业务快照和查询尚未实现。V4（玩家覆盖与编辑页）未实现。`selection_visibility`、`weapon.selected` 与当前项 `tube.*` / `belt.*` 为待实现契约。
+> 版本 3.8 · 2026-10-22
+> **状态**：进行中。模型/AUI 载体、通用与武器上下文、候选并集、公共条目显隐及 `data-mm-*` 绑定已进入代码。离线构建与自动化验证范围、物理步推进和主线程发布的模型动画方案、示例及实机待验收清单见《[HUD 上下文实现与验收](HUD上下文实现与验收.md)》。V4（玩家覆盖与编辑页）未实现。
 
 ***
 
@@ -15,7 +15,7 @@
 | HUD 布局 | `hud_layouts/*.json`（4 份：`seat_dashboard`、`seat_dashboard_2`、`scope_gunner`、`scope_gunner_fixed`），由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`；文件内容是裸元素数组，键为 `<命名空间>:<相对路径>` |
 | 相机/瞄具宿主 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段）：一个 `ResourceLocation` |
 | 座椅宿主 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout`：各一个 `ResourceLocation` |
-| 武器控制器宿主 | 无（武器状态 HUD 由 `WeaponHudOverlay` 单独实现，V3 接入） |
+| 武器控制器宿主 | `IHudHost` 提供三个视角布局，候选并集与观察者选中状态由 `CustomHud` 协调；`WeaponHudOverlay` 具有独立面板路径 |
 | 玩家参与 | 无（V4） |
 
 这套结构解决三件事：
@@ -53,7 +53,7 @@
 | --- | --- |
 | **样式（HudStyle）** | 一份 HUD 的内部：模型载体的 `model`/`animation`/`texture`/`color`/`alpha`/`scissor`/`texts`，或 AUI 载体的 `page` |
 | **布局（HudLayout）** | 一份有序的 `HudElement` 数组；命名资源 `hud_layouts/*.json`；键为 `<命名空间>:<相对路径>`；不含视角分组 |
-| **元素（HudElement）** | 布局中的一个条目：`style` RL + 完整投放值 + `selection_visibility`；内联，不单独注册。选中可见性字段待实现，模型与 AUI 通用 |
+| **元素（HudElement）** | 布局中的一个条目：`style` RL + 完整投放值 + `selection_visibility`；内联，不单独注册。选中可见性字段由模型与 AUI 共用 |
 | **宿主（host）** | 声明"哪个视角用哪份布局"的子系统：座椅、相机/瞄具、武器控制器 |
 | **视角字段（view field）** | `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`；字段名决定视角 |
 | **玩家覆盖** | 玩家本地按宿主键保存的每视角元素数组，优先于内容包预设（V4） |
@@ -141,7 +141,7 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 ## 四、HudElement：样式 + 投放 + 可见性
 
 ```jsonc
-// hud_layouts/gunner_scope.json 中的一个条目（selection_visibility 为待实现字段）
+// hud_layouts/gunner_scope.json 中的一个条目（含条目显隐策略）
 {
   "style": "machine_max:gun_sight_hud",
   "selection_visibility": "selected_only",
@@ -157,7 +157,7 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 | 字段 | 模型载体 | AUI 载体 |
 | --- | --- | --- |
 | `style` | 必填：`HudStyle` 的 RL | 必填：`HudStyle` 的 RL |
-| `selection_visibility` | 读：`selected_only`（缺省）或 `always`，仅 WC 宿主应用选中条件，见 §4.3；待实现 | 与模型相同，由公共调度判断，不依赖 CSS；待实现 |
+| `selection_visibility` | 读：`selected_only`（缺省）或 `always`，仅 WC 宿主应用选中条件，见 §4.3 | 与模型相同，由公共调度判断，不依赖 CSS |
 | `perspective` | 读 | 不适用：AUI 页面固定在 GUI/HUD 正交阶段渲染；写 `true` 也按 `false` 处理 |
 | `scope_behavior` / `ignore_zoom` | 读；仅当布局被宿主的 `scope` 字段引用时生效 | 忽略（提示警告） |
 | `anchor` | 忽略 | 读：`top_left` … `bottom_right` / `center` |
@@ -187,9 +187,9 @@ AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标�
 
 宿主、视角、实际布局或样式资源变化可触发重建；仅切换当前子组时，候选集合及布局不变，只更新选中状态和条目显隐，保留模型元素及 AUI Document。隐藏不等于从布局或候选集合注销，恢复显示前须刷新该条目数据。没有布局的候选宿主保留空列表，避免每 tick 把空布局判为宿主变化。
 
-**当前代码与目标的边界**：`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 已比较宿主、视角、布局及样式，武器宿主只取当前组选中集合；候选并集、选中状态更新与条目显隐待实现。目标实现不因选中集合变化重建候选元素。
+**代码入口**：`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 比较候选宿主、视角、布局及样式，并独立发布选中状态。纯选中集合变化保留候选元素。
 
-### 4.3 选中可见性（已定、待实现，模型与 AUI 通用）
+### 4.3 选中可见性（模型与 AUI 通用）
 
 `selection_visibility` 是布局条目字段，由公共 HUD 调度在载体绘制入口前判断；不是 `HudStyle` 字段，也不是 AUI 专属属性。
 
@@ -329,7 +329,7 @@ public record HudLayout(List<HudElement> elements) {
 
 ### 6.2 数据上下文由持有者决定
 
-每个被引用的布局条目在运行时生成自己的 HUD 元素，元素缓存自己的 MoLang 上下文。所有元素可读 `hud.*`（当前渲染视角与视口）；武器控制器元素继承通用元素，并提供整台控制器的 `weapon.*` 与显式安装当前项后可读的 `tube.*` / `belt.*`。`math.*` 属于 Spark 通用词表；载具 HP、能量与信号等继续从 `local.*` / `global.*` 读取，HUD 元素通过所属 Part/装配体关联它们。类层次和查询口径见《[观瞄系统-HUD专用MoLang上下文设计](../计划中/观瞄系统-HUD专用MoLang上下文设计.md)》。V1 尚未实现元素级上下文，模型元素继续沿用座椅 Part 的上下文，边界见 §8.1。
+每个被引用的布局条目在运行时生成自己的 HUD 元素，元素缓存自己的 MoLang 上下文。所有元素可读 `hud.*`（当前渲染视角与视口）；武器控制器元素继承通用元素，并提供整台控制器的 `weapon.*` 与显式安装当前项后可读的 `tube.*` / `belt.*`。`math.*` 属于 Spark 通用词表；载具 HP、能量与信号等继续从 `local.*` / `global.*` 读取，HUD 元素通过所属 Part/装配体关联它们。类层次和查询口径见《[观瞄系统-HUD专用MoLang上下文设计](../计划中/观瞄系统-HUD专用MoLang上下文设计.md)》。运行时身份 `HudRuntimeElement` 为两种载体提供元素级上下文，线程方案见实现记录。
 
 | 持有者 | 自有数据与炮镜职责 |
 | --- | --- |
@@ -392,11 +392,11 @@ public record HudLayout(List<HudElement> elements) {
 
 ### 8.1 上下文与编译
 
-Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译结果，并用上下文类的无参构造创建编译原型。通用 HUD 元素实现 `IAnimatable` 并持有 `HudMolangContext`；武器 HUD 元素继承通用元素并持有 `WeaponHudMolangContext`。后者继承前者的 `hud.*` 查询并增加 `weapon.*`。**上下文按元素隔离**，相同类型元素可共享编译结果；物理线程与客户端主线程分别缓存求值实例，读取同一不可变快照，避免并发修改 `reset` 状态。现有 `MechMolangContext` 绑定 `IAnimatable<Part>`，不能直接把 HUD 元素传给它的 `reset`；`local.*` / `global.*` 查询需按通用上下文文档显式转发。
+Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译结果，并用上下文类的无参构造创建编译原型。通用 HUD 元素实现 `IAnimatable` 并持有 `HudMolangContext`；武器 HUD 元素继承通用元素并持有 `WeaponHudMolangContext`。后者继承前者的 `hud.*` 查询并增加 `weapon.*`。**上下文按元素隔离**，相同类型元素可共享编译结果；上下文按消费线程缓存并读取不可变快照，避免并发修改 `reset` 状态；模型动画在客户端物理线程消费按步固定的快照，文本与页面由客户端主线程消费，见实现记录。现有 `MechMolangContext` 绑定 `IAnimatable<Part>`，不能直接把 HUD 元素传给它的 `reset`；`local.*` / `global.*` 查询需按通用上下文文档显式转发。
 
 模型载体的动画与文本槽使用元素的 `getMolangContext()`；AUI 页面绑定层给该元素的页面区域关联同一上下文。一个 AUI `Document` 可以包含多个元素区域，内部按运行时元素路由求值；内容包作者写单元素样式时不必声明“查哪台控制器”。武器元素从自己持有的控制器构造快照，不经座椅选控制器。
 
-**V1 的上下文边界**：模型 HUD 元素由 `GuiAnimatable` 委派到“玩家所坐座椅所属 Part”的 `SparkMolangContext`，`local.*` / `global.*` 的查询对象分别是该 Part 与其所属装配体；相机/瞄具宿主下的 `local.*` 读到的是座椅所在部件。`hud.*` 与按宿主解析 Part 属于 V2 的 `HudMolangContext`，V1 的样式只使用静态文本或现有上下文能求值的表达式。
+**当前上下文边界**：`GuiAnimatable` 与 `AuiHudAnimatable` 各自持有运行时元素，`local.*` 读取该宿主 Part 的快照，`global.*` 读取其所属装配体快照。模型动画与页面均使用该元素上下文；相机和武器元素的 Part 由各自宿主决定。
 
 | API | 作用 |
 | --- | --- |
@@ -407,7 +407,7 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 
 ### 8.2 页面数据标记
 
-下表是**拟由 Machine-Max 实现**的 AUI 绑定层属性，不是 AUI 自带的 HTML 或 MoLang 语法。它让内容包作者在页面元素上写表达式，不要求编写 JavaScript。
+下表是 **Machine-Max 的 `HudPageBinding` 实现**的 AUI 绑定层属性，不是 AUI 自带的 HTML 或 MoLang 语法。它让内容包作者在页面元素上写表达式，不要求编写 JavaScript。
 
 | 属性 | 作用 |
 | --- | --- |
@@ -417,7 +417,7 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 | `data-mm-repeat` | 集合标识；绑定层按集合条目实例化标记所在元素及其完整子树，规则见 §8.5 |
 | `data-mm-index` | 可选下标变量别名；在重复项及其后代提供 `variable.<名字>`，从 0 开始；默认使用 `tube.index` / `belt.index` |
 
-四根发射管的页面只需定义一份条目模板，绑定层按身份生成四项，为各数据槽安装对应管的当前项作用域；同一条 `tube.fill` 表达式分别读取四根管。**`data-mm-*` 绑定层尚未实现**；本文的语法和示例是实现契约，不代表当前页面已能执行绑定。模型载体的骨骼槽位固定，可在确定管数的样式中显式写下标。
+四根发射管的页面只需定义一份条目模板，绑定层按身份生成四项，为各数据槽安装对应管的当前项作用域；同一条 `tube.fill` 表达式分别读取四根管。`HudPageBinding#refresh` 实现这些标记，自动化验证范围见实现记录。模型载体的骨骼槽位固定，可在确定管数的样式中显式写下标。
 
 **实现载体（已定）**：绑定层由本模组实现，`data-mm-*` 由绑定层扫描页面属性识别；AUI 不承担武器集合和重复标记的解析。模板实例化使用的 AUI 节点能力与前置验证见 §8.6。依据三条：
 
@@ -456,7 +456,7 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 
 MoLang 不提供可靠的字符串拼接；`weapon.ammo_text` 等组合文本由查询返回，或由模型文本槽的本地化键和 `molang_args` 组装。普通元素使用 `weapon.*`、表达式语法错误或求值失败时，绑定层应标明出错槽位并记录一次可定位诊断，其他槽位继续刷新。
 
-### 8.5 动态列表与内部排布（已定、待实现）
+### 8.5 动态列表与内部排布
 
 内容包作者定义一项的 HTML/CSS，绑定层根据集合实例化这份模板。Java 业务代码提供数据与身份键，通用绑定器维护节点；武器业务代码不硬编码标签树、类名或排版。重复项是同一 Document 内的 DOM 子树，不各自创建 HUD 元素、Document、控制器或发射器。
 
@@ -549,9 +549,9 @@ MoLang 不提供可靠的字符串拼接；`weapon.ammo_text` 等组合文本由
 | `../AUI/common/src/main/java/com/sighs/apricityui/layout/Flex.java#resolveMainAxisGap`、`../AUI/common/src/main/java/com/sighs/apricityui/layout/Grid.java#resolveAssignedSize`、`../AUI/common/src/main/java/com/sighs/apricityui/style/Style.java#resolveVarReferences` | 提供 Flex 间距、Grid 排布与 CSS 变量解析；逐项位置属于 CSS |
 | `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/runtime/MolangContext.java#getVariableStorage`、`../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/runtime/MolangCompilingVisitor.java#visitAccess` | 编译后的 `variable.*` 从本次上下文读取；索引可作为求值输入，不必改变编译表达式 |
 | `../Spark-Core/src/main/java/cn/solarmoon/spark_core/molang/MolangContextRegistry.java#compile` | 按上下文类与表达式共享编译结果 |
-| `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#prepareDocument` | 当前内容测量入口；实现绑定层时须在测量、绘制之前完成首次展开与换代重绑 |
+| `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#prepareDocument` | 内容测量入口；`HudPageBinding#refresh` 在测量、绘制之前完成首次展开与换代重绑 |
 
-**实现前置项**：模板实例化须保证属性及必要子树就绪后才执行一次性 DOM 初始化。实现可以在 Machine-Max 内按 AUI 解析顺序建立通用模板实例；若直接采用 AUI 的 `cloneNode`，须先修复其初始化顺序并验证特殊标签。两条路径都必须通过普通文本/图片、Canvas 尺寸和行内事件属性的初始化用例，不能仅凭普通 `div/span` 克隆通过就宣布任意模板可用。该技术选型不改变 §8.5 的页面语法。
+**实现路径**：模板实例化调用 `Document.createHTML` 走 AUI 解析管线，使属性及必要子树就绪后执行一次性 DOM 初始化，不调用 `cloneNode`。普通文本/图片、Canvas 尺寸与行内事件监听已有初始化测试，代码及验证边界见实现记录。
 
 动态列表验收至少覆盖：0/1/多项、发射管和弹链两个区域同时存在、数量相同但身份更换、排序变化、耗尽弹链保留、进度变化期间节点身份保持、默认无参查询与可选下标别名一致、当前项及变量在其他行/其他 HUD/其他线程中不泄漏、异常后恢复、无作用域和类型不匹配诊断、模型显式索引不依赖 DOM、非法模板的区域级诊断、资源刷新后重新绑定、Flex/Grid 排布以及按下标写 CSS 变量的定位。
 
@@ -610,7 +610,7 @@ V1 的内容包迁移已完成，当前形态：
 | `huds/gun_sight_hud.json` | 一份样式；两个布局 `hud_layouts/scope_gunner.json`（`follow_position`）与 `hud_layouts/scope_gunner_fixed.json`（`screen_fixed`）共用它 |
 | `subsystems/*/*_seat.json` | `views.first_hud_layout` / `third_hud_layout` 各一个 RL；空列表的视角直接省略字段 |
 | 相机/瞄具子系统 | `scope_hud_layout` 一个 RL；没有布局时省略字段 |
-| 武器控制器 | 动态属性已有 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`，默认省略即无 HUD；内容包尚无使用这些字段的示例 |
+| 武器控制器 | 动态属性已有 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`，默认省略即无 HUD；内置 `weapon_live` 布局和双语武器 schema 提供接入示例 |
 | `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 座椅、相机/瞄具的 schema 已含对应视角字段；武器控制器动态属性的 schema 尚未补三个 HUD 字段；`hud.md` 按"样式 / 布局 / 元素"三部分组织 |
 
 当前代码只读取新字段：`first_person_hud`、`third_person_hud`、`hud_components` 没有对应的解码字段，写进 JSON 会被忽略。
@@ -627,7 +627,7 @@ V1 的内容包迁移已完成，当前形态：
 | `common/visual/HudAnchor.java` | 九宫格锚点枚举，`anchor` 字段的序列化取值 |
 | `common/visual/HudElement.java` | `style` RL + 投放值；`perspective`、`scope_behavior`、`ignore_zoom`、`offset`、`rotation`、`scale`、`anchor` |
 | `common/visual/HudLayout.java` | 裸元素数组的 codec；`EMPTY` 是无布局的哨兵 RL，`EMPTY_LAYOUT` 是空布局对象 |
-| `client/render/renderable/GuiAnimatable.java` | 模型元素：每个实例绑定一份 `ModelHudStyle` + 一个 `HudElement`；上下文仍委派给玩家所坐座椅的 Part |
+| `client/render/renderable/GuiAnimatable.java` | 模型元素：每个实例绑定一份 `ModelHudStyle` + 一个 `HudElement`；上下文来自该实例持有的 `HudRuntimeElement`，Part 由实际宿主决定 |
 | `client/render/renderable/HudElementInstance.java` | 两种载体共用的运行时接口：`isPerspective` / `renderGui` / `dispose` |
 | `client/render/renderable/AuiHudAnimatable.java` | AUI 元素：每个条目创建一个 `Document`，标记 `manuallyRendered`，按 `anchor` / `offset` / `scale.x` 投放；`body` 加 `mm-hud` 类并注入收缩规则；`/reload` 后重新贴类名 |
 | `client/render/gui/hud/CustomHud.java` | 按宿主分组：`LinkedHashMap<IHudHost, List<HudElementInstance>>`；每 tick 解析当前视角的宿主集合，集合或视角变化时整体重建；向宿主取 `hudLayoutFor`，为 `null` 时按空布局处理；每个宿主保留一个可能为空的列表，空列表也占键；渲染按宿主顺序，透视/正交用 `isPerspective()` 分趟；AUI 元素在正交趟按布局顺序手动绘制并刷新 AUI 批次；炮镜的 `scope_behavior` 变换链不变 |
@@ -640,7 +640,7 @@ V1 的内容包迁移已完成，当前形态：
 | `common/mech/subsystem/attr/static_attr/SeatSubsystemStaticAttr.java` | `first_hud_layout` / `third_hud_layout` 各一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 | `CameraSubsystemStaticAttr.java` / `SightSubsystemStaticAttr.java` | `scope_hud_layout` 一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 
-尚未实现：`HudMolangContext` / `WeaponHudMolangContext`、AUI 绑定层（`data-mm-*`）、武器控制器 HUD 的内容包示例与 schema、玩家布局管理器与编辑页。AUI 载体的页面渲染已接入，语法的取值通道仍待绑定层。
+已实现元素上下文、AUI 绑定和武器快照/查询，并提供 `weapon_live` 内容包示例与 HUD schema；代码入口见实现记录。玩家布局管理器与编辑页属于 V4，未实现。
 
 RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样式目录是 `huds/`、布局目录是 `hud_layouts/`，因此两者的键可以同名而互不冲突；不额外加 `layout/` 前缀，也不在键里写目录名。
 
@@ -671,7 +671,7 @@ RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样
 | 贴镜头的 3D 元素（分划随动、透视偏移、忽略变焦） | 强 | 不支持真正的透视投影：AUI HUD 页面固定在 GUI/HUD 正交阶段，只能做屏幕空间近似（反向缩放、投影点换算），不能表现深度与透视形变 |
 | 世界内 HTML 面板（铭牌、显示屏） | 不支持 | `WorldWindow` 支持，但属于世界内面板，不在本文的 HUD 宿主范围（§1.3）；默认客户端本地，AUI 不负责同步，若随载具同步则对其他玩家可见 |
 | 逐帧数据槽 | 有（`molang_args`） | 有（`data-mm-*` + 词表） |
-| 动态条数（几根发射管 / 几条弹链） | 模型骨骼槽位固定，已知数量可显式写下标；不隐式安装当前项 | `data-mm-repeat` + 当前项 `tube.*` / `belt.*`；`data-mm-index` 可选，语法见 §8.5；绑定层待实现 |
+| 动态条数（几根发射管 / 几条弹链） | 模型骨骼槽位固定，已知数量可显式写下标；不隐式安装当前项 | `data-mm-repeat` + 当前项 `tube.*` / `belt.*`；`data-mm-index` 可选，语法见 §8.5；绑定层为 `HudPageBinding` |
 | 内容包投递 | 模型/动画/纹理（美术工具链） | HTML/CSS（§九 的页面资源管线） |
 
 ### 11.3 AUI 边界（按 1.2.7 发布提交 `fd60a433` 核对）
@@ -703,11 +703,11 @@ RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样
 | --- | --- | --- |
 | **V1（已实现）** | `HudStyle` / `HudElement` / `HudLayout` 与两张资源表；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
 | **V2-b（进行中）** | AUI 载体：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、`body.mm-hud` 收缩规则、按布局顺序手动绘制；`DocumentModule` 与客户端资源包注入 | AUI 页面作为 HUD 元素渲染；内容包页面可创建 |
-| **V2-a（后做）** | 通用 `HudMolangContext`（`hud.*`）、AUI 绑定层（`data-mm-*`）、`local.*` / `global.*` 在 HUD 上下文中的转发 | AUI 页面显示数值；`hud.*` 查询可用；内容包页面按表达式刷新 |
-| **V3（按需）** | 武器控制器宿主的三个 `*_hud_layout` 字段与宿主选择已入代码；剩余候选并集、载体通用 `selection_visibility`、观察者选中状态、`WeaponHudElement`、`WeaponHudMolangContext`、业务快照、`weapon.*` 与当前项查询、`scope` 分划、内容包示例及 schema | 候选 WC 按当前视角布局逐条选择常驻/仅选中显示；切组保留元素；各作用域数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
+| **V2-a（代码已实现、待实机验收）** | 通用 `HudMolangContext`（`hud.*`）、AUI 绑定层（`data-mm-*`）、`local.*` / `global.*` 在 HUD 上下文中的转发 | AUI 页面显示数值；`hud.*` 查询可用；内容包页面按表达式刷新 |
+| **V3（代码已实现、待实机验收）** | 武器控制器三个 `*_hud_layout` 字段、候选并集、载体通用 `selection_visibility`、观察者选中状态、`WeaponHudElement`、`WeaponHudMolangContext`、业务快照、`weapon.*` 与当前项查询、`scope` 分划、内容包示例及 schema | 候选 WC 按当前视角布局逐条选择常驻/仅选中显示；切组保留元素；各作用域数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
-V1 已落地并通过 `gradlew compileJava compileKotlin`，`runClient` 进世界的表现验收见 §十三。宿主分组与武器控制器宿主的集合选择也已落地：座椅、相机/瞄具、武器控制器都实现 `IHudHost`，`CustomHud` 按宿主集合重建；武器控制器没有布局字段时不产生元素。V1 刻意不包含 `HudMolangContext`、`WeaponHudMolangContext`、AUI 绑定与玩家覆盖。座椅 HUD 的 `global.get('vehicle_speed')` 继续走 Part 的 `MechMolangContext`；相机/瞄具的模型 HUD 只要求静态文本或现有上下文能求值的表达式。V2-a 起提供 `hud.*`，V3 起提供 `weapon.*`。`WeaponHudOverlay` 继续作为武器状态面板。AUI 载体已在 V2-b 接入 `CustomHud`：页面由 `AuiHudAnimatable` 持有并绘制，静态内容不依赖 `hud.*`，表达式绑定等 V2-a。
+V1 的实机表现验收见 §十三。当前模型与 AUI 载体均由 `CustomHud` 管理，每个布局条目持有独立 `HudRuntimeElement`；上下文、快照、查询、绑定和公共显隐已经接入。`WeaponHudOverlay` 有自己的独立面板路径。模型 HUD 使用客户端物理步混合、主线程 tick 发布及渲染 partialTick 插值，当前实现边界、自动化验证和待实机验收项见《[HUD 上下文实现与验收](HUD上下文实现与验收.md)》。
 
 渲染顺序契约只覆盖提交顺序：同一宿主内按布局数组顺序提交，宿主之间按宿主集合的迭代顺序提交。宿主顺序不构成契约，内容包负责让同一视角的元素互不遮挡；两个投影批次之间的先后由渲染器固定，不要求布局表达跨投影顺序。同批次半透明几何按深度重排的风险已接受，验收只断言提交顺序。
 
@@ -752,7 +752,7 @@ V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世
 2. **元素级复用与部分覆盖**：当前布局是复用单位，元素按完整投放值定义；如果将来需要跨布局共享一个元素，再加显式引用，不做部分覆盖。
 3. **`scissor` 的归属**：V1 把它留在样式里，且 x/y 是相对屏幕中心的屏幕坐标，与"样式只描述内部"的边界冲突。后续应移到元素、使用元素局部坐标，或明确接受这个例外。
 4. **玩家自定义命名布局**：v1 只保存每宿主一份覆盖，命名多套布局留待后续。
-5. **AUI 模板实例化路径**：页面语法、索引、身份与换代行为由 §8.5、§8.6 定义；实现前须验证属性依赖型标签与行内事件的初始化，选择 Machine-Max 通用模板实例化器或经修复的 AUI 克隆路径。嵌套、分页/过滤属性与自定义集合属于后续扩展，不阻塞首版。
+5. **AUI 重复区域扩展**：首版通过 `Document.createHTML` 实例化，特殊标签的初始化测试见实现记录；嵌套、分页/过滤属性与自定义集合属于后续扩展。
 6. **AUI 世界内面板与 HUD 的关系**：`WorldWindow` 能用关卡投影矩阵做透视，但它有世界坐标、遮挡、交互与显示距离，语义与屏幕空间 HUD 不同。`WorldWindow` 默认只在创建它的客户端本地渲染，AUI 不提供窗口的网络同步；若将来把载具面板同步给其他客户端并由各客户端重建窗口，它就属于世界可见内容，私人 HUD 只适用于未同步的本地窗口。实现前必须定义 per-viewer 与 world-visible 两种可见性，以及同步、距离与性能边界；不复用 `HudElement.perspective`。
 
 ***
@@ -783,3 +783,7 @@ V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世
 | 3.4 | 2026-10-18 | AUI 载体落地：`AuiHudStyle`（`aui_hud`，`page` + `defaults`）、`HudAnchor` 与元素 `anchor` 字段、`HudElementInstance`；`AuiHudAnimatable` 为每个条目创建 `manuallyRendered` Document，按锚点/偏移/缩放投放并注入 `body.mm-hud` 收缩规则；`CustomHud` 改用 `List<HudElementInstance>`，正交趟按布局顺序绘制 AUI 文档并刷新 AUI 批次；内容包示例与 `hud.md` 同步。`data-mm-*` 绑定层与 `hud.*` 上下文留待 V2-a |
 | 3.5 | 2026-10-20 | 定义 `data-mm-repeat` / `data-mm-index`、发射管与可选弹链集合、作用域变量、CSS 内部排布、按身份维护 DOM 及页面换代契约；记录 AUI 克隆初始化前置验证，绑定层尚未实现 |
 | 3.6 | 2026-10-21 | 定义模型/AUI 通用 `selection_visibility`、座椅候选并集与独立选中状态；定义当前项无参查询、可选下标别名、按身份安装/恢复作用域及验收要求 |
+
+| 3.7 | 2026-10-22 | 落实上下文、候选显隐、武器快照与页面绑定，接入主线程模型动画采样及内置动态示例；代码与验证范围见实现记录 |
+
+| 3.8 | 2026-10-22 | 模型动画沿用物理步推进、主线程发布和渲染插值，绑定宿主 Level 并隔离客户端物理事件，逐物理步固定求值帧 |

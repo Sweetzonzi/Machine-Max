@@ -1,7 +1,7 @@
 # 武器控制器 HUD 词表与宿主接入设计
 
-> 版本 1.7 · 2026-10-21
-> **状态**：计划中。当前武器状态由 `client/render/gui/hud/WeaponHudOverlay.java` 从座椅取激活控制器、创建一块 AUI 面板并逐 tick 写入。宿主接入已落地：`WeaponControllerSubsystemAttr` 的三个以 `HudLayout.EMPTY` 为缺省值的 `*_hud_layout` 字段、`WeaponControllerSubsystem` 的 `IHudHost` 实现、`CustomHud` 按宿主集合选择；武器专用元素、`HudWeaponSnapshot`、查询绑定、候选宿主与布局条目可见性策略尚未实现；本文的 `selection_visibility`、`weapon.selected`、`tube.*` / `belt.*` 是待实现契约。
+> 版本 1.8 · 2026-10-22
+> **状态**：控制器宿主、业务快照、查询绑定、候选并集、条目显隐和重复列表已实现；实机验收待完成。代码坐标、示例、弹道标定边界与验证范围见《[HUD 上下文实现与验收](../进行中/HUD上下文实现与验收.md)》。独立面板 `WeaponHudOverlay` 具有自己的显示路径。
 >
 > 本文定义每台武器控制器自己的 HUD 元素、显示快照、`weapon.*` 查询及重复项的 `tube.*` / `belt.*` 查询。通用元素的 `hud.*` 与上下文继承见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》；样式、布局、元素及玩家覆盖见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；信息量分级、武器类型画像与炮镜装填环见《[武器系统-武器HUD信息分级与视角形态需求分析](武器系统-武器HUD信息分级与视角形态需求分析.md)》。
 
@@ -40,7 +40,7 @@
 
 `weapon.selected` 为相对于当前观察座椅的 0/1 查询；同一控制器被多个座椅发现时，各观察者可得到不同结果。选中状态与本轮武器快照一起提供给元素上下文，但不写入控制器的全局状态或供所有观察者共用的业务快照。作者可将该值用于未选中面板的亮度、边框或详细信息；`belt.selected` 则表示供弹弹链选择，两者语义独立。
 
-**代码边界**：当前 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 仅把选中 WC 加入宿主集合；候选并集、`selection_visibility` 与 `weapon.selected` 均待实现。
+**代码入口**：`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 收集候选并集并发布观察者选中状态；各绘制入口检查 `HudRuntimeElement#visible`。
 
 ## 二、每台控制器的显示快照
 
@@ -71,7 +71,7 @@ public record TubeSnapshot(
 ) {}
 ```
 
-这是待实现的快照形态。`TubeKey` 用发射器所属 Part UUID、SubPart 名和子系统名定位实例，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamberedAmmoLabel` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
+这是业务结构示意。实际类型为 `HudWeaponSnapshot` 及其嵌套 `Tube` / `Belt`；`activeAmmo` 使用注册键字符串，管身份复用 `IAmmoSupplier.SupplierRef`。`TubeKey` 用发射器所属 Part UUID、SubPart 名和子系统名定位实例，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamberedAmmoLabel` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
 
 身份口径可对照 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#SupplierRef` 的三段坐标与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#getLabel` 的显示名约束；弹链集合来自 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#getAvailableBelts`。
 
@@ -89,7 +89,7 @@ public record TubeSnapshot(
 
 发射器数和可选弹链数来自该控制器关联的载具结构。弹链耗尽时保留条目并切换状态；控制器被摧毁或未激活时，只要其引用属于当前座椅的候选集合，就保留宿主与布局条目；条目按 `selection_visibility` 判定显隐。
 
-稳定排序的实现要求：`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#BELT_ORDER` 当前只比较第一发弹种的资源键；首弹相同的不同弹链可能同序。落地动态列表时须在该共用排序规则中按完整弹链资源键序列作字典序决胜，逐项相同的前缀以短序列在前，确保默认选择、轮切和 HUD 共用一个确定顺序；不能只在 HUD 副本中另排一次。
+稳定排序的代码入口是 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#compareBelts`：完整弹链资源键序列按字典序比较，公共前缀相同时短序列在前；`BELT_ORDER` 引用该方法，默认选择、轮切和 HUD 共用同一顺序。
 
 ## 三、武器与当前项词表
 
@@ -127,7 +127,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 
 ### 3.1 炮镜分划
 
-武器控制器的 `scope_hud_layout` 可以挂分划模型。`weapon.bdc_hold_rad(distance_m)` 是按所属控制器当前弹药求出的候选查询，返回给定距离的 hold-over 角（弧度）。分划样式自行标定角度与骨骼位移的关系；通用 `hud.*` 不承担模型坐标换算。
+武器控制器的 `scope_hud_layout` 可以挂分划模型。`weapon.bdc_hold_rad(distance_m)` 按所属控制器当前弹药读取已缓存的标准标定表，返回给定距离的 hold-over 角（弧度）。分划样式自行标定角度与骨骼位移的关系；通用 `hud.*` 不承担模型坐标换算。
 
 相机无需识别“服务哪台武器”。弹道缓存的输入与无弹时的降级见通用上下文文档 §三.1。多台控制器各读自己的弹药；各自的 `scope_hud_layout` 提供分划条目，再由该条目的 `selection_visibility` 决定是否提交绘制。
 
@@ -156,7 +156,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 
 首批武器样式可提供 `standard`（完整状态）、`minimal`（名称/余量/状态）与 `full`（完整状态及火控预留槽）。它们只定义内部模型或页面，位置与炮镜行为由不同布局条目决定。
 
-以下是**单管** AUI 页面示例。`data-mm-text` 与 `data-mm-num` 属于计划中的 Machine-Max 绑定层，并非 AUI 已有的原生属性：
+以下是**单管** AUI 页面示例。`data-mm-text` 与 `data-mm-num` 由 Machine-Max 的 `HudPageBinding` 实现，不属于 AUI 原生属性：
 
 ```html
 <div class="mm-weapon">
@@ -166,7 +166,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 </div>
 ```
 
-### 4.1 发射管与可选弹链列表（已定、待实现）
+### 4.1 发射管与可选弹链列表
 
 内容包定义“一项”的元素和完整子树，在条目根声明 `data-mm-repeat`。绑定器按稳定身份键维护同一 Document 内的重复项，根及后代默认读取当前项无参查询；`data-mm-index` 是可选的下标变量别名。集合标识不是 MoLang 表达式，业务数据来自 §二 的不可变快照。
 
@@ -197,11 +197,11 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 
 框架文档 §十二的 V3 阶段接入武器显示快照、查询及候选宿主策略。可从 `WeaponHudOverlay` 抽出单控制器快照，让模型和 AUI 武器元素消费同一口径。内容包与玩家的 `*_hud_layout` 采用框架文档 §六、§七的解析规则，公共显隐调度采用 §4.3。
 
-验收至少覆盖：候选并集仅来自当前座椅、包含未选中组且按实例去重；同一控制器的常驻面板与仅选中分划分别显隐；模型与 AUI 使用相同规则；切组更新 `weapon.selected` 且保留运行时元素/Document；不同座椅观察同一控制器时选中值隔离；多台数据互不串值；停用/受损不自动剔除候选；无布局时为空；膛内弹药、实际装填弹链和当前选中弹链能同时区分；无参项查询、显式索引、排序变化和异常恢复均取到正确数据；无作用域查询给出诊断；玩家覆盖及重置保留条目显隐策略。上述契约尚未实现，不以静态原型的游戏验证代替动态查询和显隐验收。
+验收至少覆盖：候选并集仅来自当前座椅、包含未选中组且按实例去重；同一控制器的常驻面板与仅选中分划分别显隐；模型与 AUI 使用相同规则；切组更新 `weapon.selected` 且保留运行时元素/Document；不同座椅观察同一控制器时选中值隔离；多台数据互不串值；停用/受损不自动剔除候选；无布局时为空；膛内弹药、实际装填弹链和当前选中弹链能同时区分；无参项查询、显式索引、排序变化和异常恢复均取到正确数据；无作用域查询给出诊断；玩家覆盖及重置保留条目显隐策略。代码和自动化测试已覆盖的项目见实现记录；实机交互与画面效果需按本清单验收，玩家布局覆盖属于框架 V4。
 
 ## 六、待决事项
 
-1. **模板实例化技术路径**：§4.1 的集合、身份、下标与 CSS 契约已定义；实现前须按框架文档 §8.6 验证属性依赖型标签和行内事件，选择通用模板实例化器或经修复的 AUI 克隆路径。该选型不改变作者页面语法。
+1. **模板实例化技术路径**：§4.1 的集合、身份、下标与 CSS 契约已定义；实现使用 `Document.createHTML` 的解析管线；普通文本/图片、Canvas 属性和行内事件监听的初始化已有测试，见实现记录。
 2. **缺失弹道数据**：`weapon.bdc_hold_rad` 目前以 0 降级；样式如需区分“零修正”与“无数据”，可增加单独的可用性查询。
 3. **武器样式来源**：内置三套样式使用 `machine_max` 命名空间；内容包按框架资源规则提供自己的样式。
 
@@ -217,3 +217,5 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 | 1.5 | 2026-10-18 | 宿主接入落地：三个 `*_hud_layout` 进入动态属性，`WeaponControllerSubsystem` 实现 `IHudHost`，`CustomHud` 按宿主集合选择；武器专用元素、快照与 `weapon.*` 仍未实现 |
 | 1.6 | 2026-10-20 | 定义发射管/可选弹链的重复标记与索引、快照身份键和 CSS 内部排布；关联通用绑定器生命周期与 AUI 初始化验证，动态列表尚未实现 |
 | 1.7 | 2026-10-21 | 定义座椅候选并集、观察者选中状态与模型/AUI 通用条目显隐；定义当前项无参查询、实际膛内/装填来源及显式索引并存契约 |
+
+| 1.8 | 2026-10-22 | 落实快照、查询、候选显隐与 AUI 列表；提供内置动态页面和标准弹道标定缓存，实机验收待完成 |

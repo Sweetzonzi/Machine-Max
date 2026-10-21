@@ -28,8 +28,15 @@ public record HudElement(
         Vec3 offset,
         Vec3 rotation,
         Vec3 scale,
-        HudAnchor anchor
+        HudAnchor anchor,
+        HudSelectionVisibility selectionVisibility
 ) {
+
+    public HudElement(ResourceLocation style, boolean perspective, ScopeBehavior scopeBehavior,
+                      boolean ignoreZoom, Vec3 offset, Vec3 rotation, Vec3 scale, HudAnchor anchor) {
+        this(style, perspective, scopeBehavior, ignoreZoom, offset, rotation, scale, anchor,
+                HudSelectionVisibility.SELECTED_ONLY);
+    }
 
     public static final Codec<HudElement> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("style").forGetter(HudElement::style),
@@ -39,6 +46,8 @@ public record HudElement(
             Vec3.CODEC.optionalFieldOf("offset", Vec3.ZERO).forGetter(HudElement::offset),
             Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter(HudElement::rotation),
             Vec3.CODEC.optionalFieldOf("scale", new Vec3(1, 1, 1)).forGetter(HudElement::scale),
-            HudAnchor.CODEC.optionalFieldOf("anchor", HudAnchor.TOP_LEFT).forGetter(HudElement::anchor)
+            HudAnchor.CODEC.optionalFieldOf("anchor", HudAnchor.TOP_LEFT).forGetter(HudElement::anchor),
+            HudSelectionVisibility.CODEC.optionalFieldOf("selection_visibility", HudSelectionVisibility.SELECTED_ONLY)
+                    .forGetter(HudElement::selectionVisibility)
     ).apply(instance, HudElement::new));
 }

@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/hud/hud_layout.json",
+  "title": "HUD 布局",
+  "type": "array",
+  "items": {
+    "$ref": "hud_element.schema.json"
+  }
+}
