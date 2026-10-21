@@ -1,0 +1,321 @@
+{
+  "icon": "machine_max:textures/icon/2s38/2s38_addon_armor.png",
+  "vehicle_durability_rate": 0.06,
+  "vehicle_damage_rate": 0.095,
+  "vehicle_damage_rate_destroyed": 0.015,
+  "variants": {
+    "left_1": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/left_1"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Left_1",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_left_1_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Left_1_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_left_1_hull": {
+              "locator": "skirt_left_1_mount",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right_1": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/right_1"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Right_1",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_right_1_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Right_1_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_right_1_hull": {
+              "locator": "skirt_right_1_mount",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "left_2": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/left_2"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Left_2",
+          "end_bones": [],
+          "durability": 90,
+          "mass": 120,
+          "mass_center": "skirt_left_2_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Left_2_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_left_2_hull": {
+              "locator": "skirt_left_2_mount",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right_2": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/right_2"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Right_2",
+          "end_bones": [],
+          "durability": 90,
+          "mass": 120,
+          "mass_center": "skirt_right_2_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Right_2_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_right_2_hull": {
+              "locator": "skirt_right_2_mount",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "left_3": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/left_3"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Left_3",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_left_3_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Left_3_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_left_3_hull": {
+              "locator": "skirt_left_3_mount",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right_3": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/right_3"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Right_3",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_right_3_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Right_3_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_right_3_hull": {
+              "locator": "skirt_right_3_mount",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "left_4": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/left_4"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Left_4",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_left_4_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Left_4_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_left_4_hull": {
+              "locator": "skirt_left_4_mount",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right_4": {
+      "model": "machine_max:2s38.geo",
+      "textures": "machine_max:textures/part/2s38/2s38.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:addon_armor/right_4"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "Skirt_Right_4",
+          "end_bones": [],
+          "durability": 70,
+          "mass": 120,
+          "mass_center": "skirt_right_4_mount",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "Skirt_Right_4_HitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.machine_max.skirt_right_4_hull": {
+              "locator": "skirt_right_4_mount",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

@@ -1,9 +1,6 @@
 {
   "icon": "machine_max:textures/icon/2s38/2s38_turret.png",
   "vehicle_durability_rate": 0.5,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
-  "share_durability": true,
   "variants": {
     "2s38": {
       "model": "machine_max:2s38.geo",
@@ -69,6 +66,12 @@
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
               "overwrite": {}
+            },
+            "connector.machine_max.turret_pktm_axis": {
+              "locator": "turret_pktm_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {}
             }
           },
           "subsystems": {
@@ -85,8 +88,6 @@
             "subsystem.machine_max.main_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
-              "first_hud_layout": "machine_max:weapon_live",
-              "scope_hud_layout": "machine_max:weapon_live",
               "control_outputs": {
                 "weapon_control": [
                   "global"
@@ -94,7 +95,9 @@
                 "weapon.autocannon": [
                   "global"
                 ]
-              }
+              },
+              "first_hud_layout": "machine_max:weapon_live",
+              "scope_hud_layout": "machine_max:weapon_live"
             },
             "subsystem.machine_max.secondary_weapon": {
               "type": "machine_max:weapon_controller",
@@ -131,25 +134,6 @@
                 ]
               }
             },
-            "subsystem.machine_max.pktm_ammo_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:pktm_regen_loader",
-              "projectile_types": {
-                "machine_max:7_62mm_ap": 3,
-                "machine_max:7_62mm_tracer": 1
-              },
-              "belt_label": "AP/曳光",
-              "discovery_outputs": {
-                "ammo_pktm": [
-                  "global"
-                ]
-              }
-            },
-            "subsystem.machine_max.pktm": {
-              "type": "machine_max:launcher",
-              "definition": "machine_max:pktm_launcher",
-              "locator": "pktm_muzzle"
-            },
             "subsystem.machine_max.gunner_sight": {
               "type": "machine_max:sight",
               "definition": "machine_max:gunner_sight",
@@ -159,6 +143,11 @@
               "type": "machine_max:sight",
               "definition": "machine_max:commander_sight_dual_stb",
               "locator": "commander_sight"
+            },
+            "subsystem.machine_max.pktm_elevation_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "machine_max:basic_elevation_driver",
+              "connector": "connector.machine_max.turret_pktm_axis"
             }
           }
         },
@@ -194,6 +183,63 @@
               "type": "machine_max:launcher",
               "definition": "machine_max:2a90_launcher",
               "locator": "main_gun_muzzle"
+            }
+          }
+        },
+        "sub_part.machine_max.mg": {
+          "start_bone": "PKTM",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 40,
+          "mass_center": "pktm_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "PKTMHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 20,
+              "subsystem": "subsystem.machine_max.pktm"
+            },
+            "PKTMAmmoBoxHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.machine_max.pktm_ammo_loader"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.pktm_turret_lock": {
+              "locator": "pktm_trunnion_lock",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.pktm": {
+              "type": "machine_max:launcher",
+              "definition": "machine_max:pktm_launcher",
+              "locator": "pktm_muzzle"
+            },
+            "subsystem.machine_max.pktm_ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "machine_max:pktm_regen_loader",
+              "projectile_types": {
+                "machine_max:7_62mm_ap": 3,
+                "machine_max:7_62mm_tracer": 1
+              },
+              "belt_label": "AP/曳光",
+              "discovery_outputs": {
+                "ammo_pktm": [
+                  "global"
+                ]
+              }
             }
           }
         }

@@ -236,16 +236,17 @@
   "machine_max.57mm_he": "57mm HE",
   "subsystem.machine_max.commander_sight": "Commander Sight",
   "subsystem.machine_max.2a90": "2a90",
-  "machine_max.2s38_skirt_1": "2s38 Skirt 1",
   "connector.machine_max.skirt_left_1_hull": "Skirt Left 1 Hull",
   "connector.machine_max.skirt_right_1_hull": "Skirt Right 1 Hull",
-  "machine_max.2s38_skirt_2": "2s38 Skirt 2",
   "connector.machine_max.skirt_left_2_hull": "Skirt Left 2 Hull",
   "connector.machine_max.skirt_right_2_hull": "Skirt Right 2 Hull",
-  "machine_max.2s38_skirt_3": "2s38 Skirt 3",
   "connector.machine_max.skirt_left_3_hull": "Skirt Left 3 Hull",
   "connector.machine_max.skirt_right_3_hull": "Skirt Right 3 Hull",
-  "machine_max.2s38_skirt_4": "2s38 Skirt 4",
   "connector.machine_max.skirt_left_4_hull": "Skirt Left 4 Hull",
-  "connector.machine_max.skirt_right_4_hull": "Skirt Right 4 Hull"
+  "connector.machine_max.skirt_right_4_hull": "Skirt Right 4 Hull",
+  "connector.machine_max.turret_pktm_axis": "Turret MG Axis",
+  "subsystem.machine_max.pktm_elevation_driver": "MG Elevation Driver",
+  "sub_part.machine_max.mg": "MG Weapon Station",
+  "connector.machine_max.pktm_turret_lock": "MG Turret Lock",
+  "machine_max.2s38_addon_armor": "Skirt Add-on Armor"
 }

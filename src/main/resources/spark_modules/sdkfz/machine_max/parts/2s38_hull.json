@@ -1,9 +1,6 @@
 {
   "icon": "machine_max:textures/icon/2s38/2s38_hull.png",
   "vehicle_durability_rate": 0.9,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
-  "share_durability": true,
   "variants": {
     "2s38": {
       "model": "machine_max:2s38.geo",
@@ -196,42 +193,82 @@
             "connector.machine_max.hull_skirt_left_1": {
               "locator": "hull_skirt_left_1",
               "definition": "machine_max:fixed_right",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/left_1"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_left_2": {
               "locator": "hull_skirt_left_2",
               "definition": "machine_max:fixed_right",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/left_2"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_left_3": {
               "locator": "hull_skirt_left_3",
               "definition": "machine_max:fixed_right",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/left_3"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_left_4": {
               "locator": "hull_skirt_left_4",
               "definition": "machine_max:fixed_right",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/left_4"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_right_1": {
               "locator": "hull_skirt_right_1",
               "definition": "machine_max:fixed_left",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/right_1"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_right_2": {
               "locator": "hull_skirt_right_2",
               "definition": "machine_max:fixed_left",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/right_2"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_right_3": {
               "locator": "hull_skirt_right_3",
               "definition": "machine_max:fixed_left",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/right_3"
+                ]
+              }
             },
             "connector.machine_max.hull_skirt_right_4": {
               "locator": "hull_skirt_right_4",
               "definition": "machine_max:fixed_left",
-              "overwrite": {}
+              "overwrite": {
+                "type": "Simple",
+                "required_tags": [
+                  "machine_max:addon_armor/right_4"
+                ]
+              }
             }
           },
           "subsystems": {
