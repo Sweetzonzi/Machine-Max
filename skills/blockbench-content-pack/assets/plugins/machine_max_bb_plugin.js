@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.5.0
+// MachineMax Blockbench Plugin v0.5.2
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -16410,7 +16410,7 @@
         try {
           ensureDir(dir);
           const filePath = path.join(dir, filename);
-          fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+          fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
           log2.debug("writeJSONFile: \u5DF2\u5199\u5165 " + filePath);
           return filePath;
         } catch (e) {
@@ -16450,8 +16450,19 @@
         log2.debug("fileExists: " + filePath + " \u2192 " + exists);
         return exists;
       }
+      function isSameFile(a, b) {
+        if (!a || !b) return false;
+        var ra = path.resolve(String(a));
+        var rb = path.resolve(String(b));
+        var looksWindows = /^[A-Za-z]:[\\/]/.test(ra) || ra.indexOf("\\") >= 0;
+        if (looksWindows) {
+          return ra.toLowerCase() === rb.toLowerCase();
+        }
+        return ra === rb;
+      }
       function _deletePermanent(filePath) {
-        if (process.platform === "win32") {
+        var isWindows = typeof process !== "undefined" && process.platform === "win32";
+        if (isWindows) {
           try {
             var cp = __require("child_process");
             var psCmd = 'try { [System.IO.File]::Delete("' + filePath.replace(/\\/g, "\\\\") + '") } catch {}';
@@ -16507,7 +16518,7 @@
           }
         }
         try {
-          fs.writeFileSync(filePath, JSON.stringify(existing, null, 2), "utf-8");
+          fs.writeFileSync(filePath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
           log2.debug("mergeJSONFile: \u5DF2\u5408\u5E76\u5199\u5165 " + filePath + "\uFF08\u65B0\u589E " + Object.keys(newData).length + " \u6761\uFF0C\u5DF2\u6709 " + Object.keys(existing).length + " \u6761\uFF09");
           return filePath;
         } catch (e) {
@@ -16516,7 +16527,7 @@
         }
       }
       if (typeof module !== "undefined" && module.exports) {
-        module.exports = { ensureDir, writeJSONFile, writeTextFile, readJSONFile, fileExists, deleteFile, extractResourceLocation, mergeJSONFile, stripJsonComments };
+        module.exports = { ensureDir, writeJSONFile, writeTextFile, readJSONFile, fileExists, isSameFile, deleteFile, extractResourceLocation, mergeJSONFile, stripJsonComments };
       }
     }
   });
@@ -18618,12 +18629,16 @@
           var fileName = files[i];
           if (!fileName.endsWith(".json")) continue;
           var srcFile = path.join(srcDir, fileName);
+          var id = fileName.slice(0, -5);
+          var loc = fileWriter.extractResourceLocation(id, ns);
+          var tDir = resolveTarget(targetDir, loc.path, flat);
+          if (fileWriter.isSameFile(path.join(tDir, loc.path + ".json"), srcFile)) {
+            count++;
+            continue;
+          }
           try {
             var raw = fs.readFileSync(srcFile, "utf8");
             var content = JSON.parse(fileWriter.stripJsonComments(raw));
-            var id = fileName.slice(0, -5);
-            var loc = fileWriter.extractResourceLocation(id, ns);
-            var tDir = resolveTarget(targetDir, loc.path, flat);
             fileWriter.writeJSONFile(tDir, loc.path + ".json", content);
             count++;
           } catch (e) {
@@ -18670,12 +18685,16 @@
           var fileName = files[i];
           if (!fileName.endsWith(".json")) continue;
           var srcFile = path.join(srcDir, fileName);
+          var id = fileName.slice(0, -5);
+          var loc = fileWriter.extractResourceLocation(id, ns);
+          var tDir = resolveTarget(targetDir, loc.path, flat);
+          if (fileWriter.isSameFile(path.join(tDir, loc.path + ".json"), srcFile)) {
+            count++;
+            continue;
+          }
           try {
             var raw = fs.readFileSync(srcFile, "utf8");
             var content = JSON.parse(fileWriter.stripJsonComments(raw));
-            var id = fileName.slice(0, -5);
-            var loc = fileWriter.extractResourceLocation(id, ns);
-            var tDir = resolveTarget(targetDir, loc.path, flat);
             fileWriter.writeJSONFile(tDir, loc.path + ".json", content);
             count++;
           } catch (e) {
@@ -18717,11 +18736,15 @@
           var fileName = files[i];
           if (!fileName.endsWith(".json")) continue;
           var srcFile = path.join(srcDir, fileName);
+          var id = fileName.slice(0, -5);
+          var loc = fileWriter.extractResourceLocation(id, ns);
+          if (fileWriter.isSameFile(path.join(targetDir, loc.path + ".json"), srcFile)) {
+            count++;
+            continue;
+          }
           try {
             var raw = fs.readFileSync(srcFile, "utf8");
             var content = JSON.parse(fileWriter.stripJsonComments(raw));
-            var id = fileName.slice(0, -5);
-            var loc = fileWriter.extractResourceLocation(id, ns);
             fileWriter.writeJSONFile(targetDir, loc.path + ".json", content);
             count++;
           } catch (e) {
@@ -18746,13 +18769,137 @@
       init_define_BUILTIN_PACK_META();
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
+      var fs = __require("fs");
+      var path = __require("path");
       var { createLogger: createLogger2 } = require_logger();
       var fileWriter = require_file_writer();
       var { assertSafePartIds } = require_safe_part_ids();
       var log2 = createLogger2("ExportPipeline");
+      function setSchemaRef(raw, schemaPath) {
+        if (typeof raw !== "string") return null;
+        var EOL = raw.indexOf("\r\n") >= 0 ? "\r\n" : "\n";
+        var valuePattern = /("\$schema"\s*:\s*)"(?:[^"\\]|\\.)*"/;
+        if (valuePattern.test(raw)) {
+          return raw.replace(valuePattern, function(_match, prefix) {
+            return prefix + '"' + schemaPath + '"';
+          });
+        }
+        var open = raw.indexOf("{");
+        if (open < 0) return null;
+        var head = raw.slice(0, open + 1);
+        var tail = raw.slice(open + 1);
+        if (tail.trim().charAt(0) === "}") {
+          return head + EOL + '  "$schema": "' + schemaPath + '"' + EOL + tail;
+        }
+        return head + EOL + '  "$schema": "' + schemaPath + '",' + tail;
+      }
+      function getSchemaLocale() {
+        var lang = "";
+        if (typeof navigator !== "undefined" && navigator.language) {
+          lang = navigator.language;
+        } else if (typeof Blockbench !== "undefined" && Blockbench.locale) {
+          lang = Blockbench.locale;
+        }
+        return lang.indexOf("zh") === 0 ? "zh_cn" : "en_us";
+      }
+      function writeSchemasFromConstant(destBaseDir) {
+        var stats = { written: 0, kept: 0 };
+        var schemasRaw = typeof define_SCHEMAS_default !== "undefined" ? define_SCHEMAS_default : null;
+        if (!schemasRaw) {
+          log2.warn("writeSchemasFromConstant: __SCHEMAS__ \u672A\u6CE8\u5165\u6216\u4E3A\u7A7A\uFF0CSchema \u6587\u4EF6\u5C06\u4E0D\u4F1A\u5199\u5165");
+          return stats;
+        }
+        var schemas = typeof schemasRaw === "string" ? JSON.parse(schemasRaw) : schemasRaw;
+        var keys = Object.keys(schemas);
+        var hasExisting = false;
+        try {
+          hasExisting = fs.existsSync(destBaseDir) && fs.readdirSync(destBaseDir).length > 0;
+        } catch (_e) {
+          hasExisting = false;
+        }
+        if (hasExisting) {
+          stats.kept = keys.length;
+          log2.info("writeSchemasFromConstant: docs \u5DF2\u6709\u5185\u5BB9\uFF0C\u8DF3\u8FC7\u5199\u5165\uFF08\u5185\u7F6E " + stats.kept + " \u4E2A\u526F\u672C\u4FDD\u6301\u4E0D\u5199\uFF0C\u5305\u5185\u73B0\u6709\u6587\u4EF6\u539F\u6837\u4FDD\u7559\uFF09");
+          return stats;
+        }
+        for (var i = 0; i < keys.length; i++) {
+          var relPath = keys[i];
+          var destPath = path.join(destBaseDir, relPath);
+          fileWriter.ensureDir(path.dirname(destPath));
+          fs.writeFileSync(destPath, schemas[relPath], "utf-8");
+          stats.written++;
+        }
+        log2.info("writeSchemasFromConstant: \u65B0\u5305\uFF0C\u5199\u5165 " + stats.written + " \u4E2A schema \u6587\u4EF6");
+        return stats;
+      }
+      function injectSchemaReferences(nsDir) {
+        var schemaLocale = getSchemaLocale();
+        var schemaMap = {
+          parts: "docs/" + schemaLocale + "/schemas/part_definition_schema.json",
+          connectors: "docs/" + schemaLocale + "/schemas/part/subpart/connector/connector_static_attr.schema.json",
+          subsystems: "docs/" + schemaLocale + "/schemas/subsystem/subsystem_static_attr.schema.json",
+          materials: "docs/" + schemaLocale + "/schemas/base/material_attr.schema.json"
+        };
+        var recipeSchemaMap = {
+          "machine_max:research": "docs/" + schemaLocale + "/schemas/recipe/research_recipe.schema.json",
+          "machine_max:fabricating": "docs/" + schemaLocale + "/schemas/recipe/fabricating_recipe.schema.json",
+          "machine_max:part_fabricating": "docs/" + schemaLocale + "/schemas/recipe/part_fabricating_recipe.schema.json",
+          "machine_max:blueprint_research": "docs/" + schemaLocale + "/schemas/recipe/blueprint_research_recipe.schema.json"
+        };
+        var stats = { injected: 0, unchanged: 0, skipped: 0, failed: 0 };
+        var dirs = ["parts", "connectors", "subsystems", "materials", "recipe"];
+        for (var d = 0; d < dirs.length; d++) {
+          var typeDir = path.join(nsDir, dirs[d]);
+          if (!fs.existsSync(typeDir)) continue;
+          walkAndInject(typeDir, nsDir, dirs[d], schemaMap, recipeSchemaMap, stats);
+        }
+        log2.info("\u6CE8\u5165 $schema: \u6539\u5199 " + stats.injected + "\uFF0C\u5DF2\u6B63\u786E " + stats.unchanged + "\uFF0C\u8DF3\u8FC7 " + stats.skipped + "\uFF0C\u5931\u8D25 " + stats.failed);
+        return stats;
+      }
+      function walkAndInject(currentDir, nsDir, typeName, schemaMap, recipeSchemaMap, stats) {
+        var entries = fs.readdirSync(currentDir);
+        for (var e = 0; e < entries.length; e++) {
+          var fullPath = path.join(currentDir, entries[e]);
+          var stat = fs.statSync(fullPath);
+          if (stat.isDirectory()) {
+            walkAndInject(fullPath, nsDir, typeName, schemaMap, recipeSchemaMap, stats);
+          } else if (entries[e].endsWith(".json")) {
+            try {
+              var rawContent = fs.readFileSync(fullPath, "utf8");
+              var schemaRel;
+              if (typeName === "recipe") {
+                var content = JSON.parse(fileWriter.stripJsonComments(rawContent));
+                schemaRel = recipeSchemaMap[content.type];
+              } else {
+                schemaRel = schemaMap[typeName];
+              }
+              if (!schemaRel) {
+                stats.skipped++;
+                log2.debug("\u8DF3\u8FC7 $schema \u6CE8\u5165\uFF08\u672A\u8BC6\u522B\u7684\u7C7B\u578B\uFF09: " + fullPath);
+                continue;
+              }
+              var relDir = path.relative(path.dirname(fullPath), nsDir);
+              var schemaPath = path.join(relDir, schemaRel).replace(/\\/g, "/");
+              var next = setSchemaRef(rawContent, schemaPath);
+              if (next === null) {
+                stats.failed++;
+                log2.warn("\u6CE8\u5165 $schema \u5931\u8D25\uFF08\u65E0\u6CD5\u5B9A\u4F4D\u63D2\u5165\u70B9\uFF09: " + fullPath);
+                continue;
+              }
+              if (next === rawContent) {
+                stats.unchanged++;
+                continue;
+              }
+              fs.writeFileSync(fullPath, next, "utf8");
+              stats.injected++;
+            } catch (_err) {
+              stats.failed++;
+              log2.warn("\u6CE8\u5165 $schema \u5931\u8D25: " + fullPath, _err);
+            }
+          }
+        }
+      }
       function executeExport(config, packMeta, exportDir, packFolderName) {
-        var fs = __require("fs");
-        var path = __require("path");
         assertSafePartIds(config);
         if (!fs.existsSync(exportDir)) {
           fs.mkdirSync(exportDir, { recursive: true });
@@ -18768,79 +18915,6 @@
           if (flat) return baseDir;
           var seg = id.split("_")[0];
           return seg && seg.length > 0 ? path.join(baseDir, seg) : baseDir;
-        }
-        function _writeSchemasFromConstant(destBaseDir) {
-          var schemasRaw = typeof define_SCHEMAS_default !== "undefined" ? define_SCHEMAS_default : null;
-          if (!schemasRaw) {
-            log2.warn("_writeSchemasFromConstant: __SCHEMAS__ \u672A\u6CE8\u5165\u6216\u4E3A\u7A7A\uFF0CSchema \u6587\u4EF6\u5C06\u4E0D\u4F1A\u5199\u5165");
-            return;
-          }
-          var schemas = typeof schemasRaw === "string" ? JSON.parse(schemasRaw) : schemasRaw;
-          var keys = Object.keys(schemas);
-          for (var i = 0; i < keys.length; i++) {
-            var relPath = keys[i];
-            var destPath = path.join(destBaseDir, relPath);
-            fileWriter.ensureDir(path.dirname(destPath));
-            fs.writeFileSync(destPath, schemas[relPath], "utf-8");
-          }
-          log2.info("_writeSchemasFromConstant: \u5DF2\u5199\u5165 " + keys.length + " \u4E2A schema \u6587\u4EF6");
-        }
-        function _getSchemaLocale() {
-          var lang = "";
-          if (typeof navigator !== "undefined" && navigator.language) {
-            lang = navigator.language;
-          } else if (typeof Blockbench !== "undefined" && Blockbench.locale) {
-            lang = Blockbench.locale;
-          }
-          return lang.indexOf("zh") === 0 ? "zh_cn" : "en_us";
-        }
-        function _injectSchemaReferences(nsDir) {
-          var schemaLocale = _getSchemaLocale();
-          var schemaMap = {
-            parts: "docs/" + schemaLocale + "/schemas/part_definition_schema.json",
-            connectors: "docs/" + schemaLocale + "/schemas/part/subpart/connector/connector_static_attr.schema.json",
-            subsystems: "docs/" + schemaLocale + "/schemas/subsystem/subsystem_static_attr.schema.json",
-            materials: "docs/" + schemaLocale + "/schemas/base/material_attr.schema.json"
-          };
-          var recipeSchemaMap = {
-            "machine_max:research": "docs/" + schemaLocale + "/schemas/recipe/research_recipe.schema.json",
-            "machine_max:fabricating": "docs/" + schemaLocale + "/schemas/recipe/fabricating_recipe.schema.json",
-            "machine_max:blueprint_research": "docs/" + schemaLocale + "/schemas/recipe/blueprint_research_recipe.schema.json"
-          };
-          var dirs = ["parts", "connectors", "subsystems", "materials", "recipe"];
-          for (var d = 0; d < dirs.length; d++) {
-            var typeDir = path.join(nsDir, dirs[d]);
-            if (!fs.existsSync(typeDir)) continue;
-            _walkAndInject(typeDir, nsDir, dirs[d], schemaMap, recipeSchemaMap);
-          }
-        }
-        function _walkAndInject(currentDir, nsDir, typeName, schemaMap, recipeSchemaMap) {
-          var entries = fs.readdirSync(currentDir);
-          for (var e = 0; e < entries.length; e++) {
-            var fullPath = path.join(currentDir, entries[e]);
-            var stat = fs.statSync(fullPath);
-            if (stat.isDirectory()) {
-              _walkAndInject(fullPath, nsDir, typeName, schemaMap, recipeSchemaMap);
-            } else if (entries[e].endsWith(".json")) {
-              try {
-                var rawContent = fs.readFileSync(fullPath, "utf8");
-                var content = JSON.parse(fileWriter.stripJsonComments(rawContent));
-                var schemaRel;
-                if (typeName === "recipe") {
-                  schemaRel = recipeSchemaMap[content.type] || "docs/schemas/recipe/research_recipe.schema.json";
-                } else {
-                  schemaRel = schemaMap[typeName];
-                }
-                if (!schemaRel) continue;
-                var relDir = path.relative(path.dirname(fullPath), nsDir);
-                var schemaPath = path.join(relDir, schemaRel).replace(/\\/g, "/");
-                content["$schema"] = schemaPath;
-                fs.writeFileSync(fullPath, JSON.stringify(content, null, 2), "utf8");
-              } catch (_err) {
-                log2.warn("\u6CE8\u5165 $schema \u5931\u8D25: " + fullPath, _err);
-              }
-            }
-          }
         }
         var genMeta = require_meta_generator();
         var savedPackMeta = config.packMeta;
@@ -18866,7 +18940,7 @@
         for (var _ei = 0; _ei < _emptyDirs.length; _ei++) {
           fileWriter.ensureDir(path.join(_nsDir, _emptyDirs[_ei]));
         }
-        _writeSchemasFromConstant(path.join(_nsDir, "docs"));
+        writeSchemasFromConstant(path.join(_nsDir, "docs"));
         try {
           if (typeof Codecs !== "undefined" && Codecs.bedrock && Project) {
             var modelDir = path.join(packRoot, ns, "models", "part");
@@ -18936,13 +19010,17 @@
         } else {
           log2.warn("\u5185\u5BB9\u5305\u76EE\u5F55\u672A\u8BBE\u7F6E\u6216\u4E0D\u5B58\u5728\uFF0C\u8DF3\u8FC7\u8FDE\u63A5\u70B9/\u5B50\u7CFB\u7EDF/\u6750\u6599\u590D\u5236: " + packDir);
         }
-        _injectSchemaReferences(_nsDir);
-        log2.info("\u5BFC\u51FA\u5B8C\u6210, \u96F6\u4EF6=" + stats.parts + ", \u8FDE\u63A5\u70B9=" + stats.connectors + ", \u5B50\u7CFB\u7EDF=" + stats.subsystems + ", \u6750\u6599=" + stats.materials + ", \u8BED\u8A00=" + stats.langs);
+        var schemaStats = injectSchemaReferences(_nsDir);
+        log2.info("\u5BFC\u51FA\u5B8C\u6210, \u96F6\u4EF6=" + stats.parts + ", \u8FDE\u63A5\u70B9=" + stats.connectors + ", \u5B50\u7CFB\u7EDF=" + stats.subsystems + ", \u6750\u6599=" + stats.materials + ", \u8BED\u8A00=" + stats.langs + ", \u6539\u5199 $schema=" + schemaStats.injected + "\uFF08\u5DF2\u6B63\u786E " + schemaStats.unchanged + "\uFF0C\u8DF3\u8FC7 " + schemaStats.skipped + "\uFF09");
         return stats;
       }
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
-          executeExport
+          executeExport,
+          // 以下为可独立测试的写盘单元：只碰传入的目录，不读 Project / config
+          setSchemaRef,
+          writeSchemasFromConstant,
+          injectSchemaReferences
         };
       }
     }
@@ -34906,7 +34984,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.5.0";
+  var PLUGIN_VERSION = "0.5.2";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
