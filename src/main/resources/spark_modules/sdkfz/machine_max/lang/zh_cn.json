@@ -68,6 +68,9 @@
   "right_atgm_elevation_driver": "右反坦克导弹俯仰驱动",
   "sub_part.machine_max.gun": "火炮",
   "connector.machine_max.gun_turret_lock": "火炮炮塔锁扣",
+  "connector.machine_max.pkt_hull_axis": "机枪塔车体轴",
+  "connector.machine_max.pkt_gun_axis": "机枪塔机枪轴",
+  "connector.machine_max.pkt_gun_lock": "机枪枪塔锁扣",
   "subsystem.machine_max.2a42": "2A42 机关炮",
   "sub_part.machine_max.left_atgm": "左反坦克导弹发射器",
   "connector.machine_max.left_atgm_turret": "左反坦克导弹炮塔挂点",
@@ -78,6 +81,9 @@
   "gunner_optics": "炮手瞄具",
   "commander_optics": "车长瞄具",
   "subsystem.machine_max.pktm": "PKTM 机枪",
+  "subsystem.machine_max.pkt": "PKT 机枪",
+  "subsystem.machine_max.pkt_ammo_loader": "PKT 装弹机",
+  "subsystem.machine_max.weapon": "武器控制器",
   "subsystem.machine_max.left_atgm_tube_1": "左反坦克导弹管1",
   "subsystem.machine_max.left_atgm_tube_2": "左反坦克导弹管2",
   "subsystem.machine_max.right_atgm_tube_1": "右反坦克导弹管1",
@@ -99,6 +105,7 @@
   "machine_max.7_92mm_tracer": "曳光",
   "machine_max.9m133_kornet": "ATGM",
   "machine_max.mtlb": "MT-LB 装甲运输车",
+  "connector.machine_max.hull_pkt_axis": "车体机枪塔轴",
   "sub_part.machine_max.left_sprocket": "Left Sprocket",
   "connector.machine_max.wheel_left_sprocket": "Wheel Left Sprocket",
   "sub_part.machine_max.right_sprocket": "Right Sprocket",
@@ -273,5 +280,9 @@
   "machine_max.research.sdkfz234_wheel": "Sd.Kfz.234 车轮",
   "research.machine_max.sdkfz234_wheel_blueprint.desc": "Sd.Kfz.234 的车轮：两侧各四只，按对制造。",
   "machine_max.fitting.2s38_track": "2S38 履带",
-  "machine_max.fitting.mtlb_track": "MT-LB 履带"
+  "machine_max.fitting.mtlb_track": "MT-LB 履带",
+  "machine_max.pkt_turret": "PKT 机枪塔",
+  "machine_max.misc": "杂项",
+  "machine_max.research.pkt_turret": "PKT 机枪塔",
+  "research.machine_max.pkt_turret_blueprint.desc": "可换装到多种载具上的 PKT 机枪塔：座圈、机枪与装弹机自成一件，由乘员操控。"
 }

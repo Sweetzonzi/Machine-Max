@@ -1,0 +1,123 @@
+{
+  "icon": "machine_max:textures/icon/pkt_turret.png",
+  "vehicle_durability_rate": 0.6,
+  "variants": {
+    "model": "machine_max:mtlb.geo",
+    "textures": "machine_max:textures/part/mtlb/mtlb.png",
+    "tags": [
+      "machine_max:category/weapon",
+      "machine_max:type/land"
+    ],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "PKTTurret",
+        "end_bones": [
+          "PKT_"
+        ],
+        "durability": 40,
+        "mass": 90,
+        "mass_center": "pkt_mass_center",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "hit_boxes": {
+          "PKTTurretHitBox": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:structural_steel",
+            "thickness": 10
+          }
+        },
+        "connectors": {
+          "connector.machine_max.pkt_hull_axis": {
+            "locator": "pkt_hull_axis",
+            "definition": "machine_max:turret_azimuth_axis",
+            "overwrite": {}
+          },
+          "connector.machine_max.pkt_gun_axis": {
+            "locator": "pkt_gun_axis",
+            "definition": "machine_max:turret_elevation_axis",
+            "internal": true,
+            "overwrite": {}
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.azimuth_driver": {
+            "type": "machine_max:turret_driver",
+            "definition": "machine_max:basic_azimuth_driver",
+            "connector": "connector.machine_max.pkt_hull_axis"
+          },
+          "subsystem.machine_max.elevation_driver": {
+            "type": "machine_max:turret_driver",
+            "definition": "machine_max:basic_elevation_driver",
+            "connector": "connector.machine_max.pkt_gun_axis"
+          },
+          "subsystem.machine_max.weapon": {
+            "type": "machine_max:weapon_controller",
+            "definition": "machine_max:main_weapon_controller",
+            "control_outputs": {
+              "weapon_control": [
+                "global"
+              ],
+              "weapon.mg": [
+                "global"
+              ]
+            }
+          }
+        }
+      },
+      "sub_part.machine_max.gun": {
+        "start_bone": "PKT_",
+        "end_bones": [],
+        "mass": 12,
+        "mass_center": "pkt_gun_mass_center",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "hit_boxes": {
+          "PKTGunHitBox": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:structural_steel",
+            "thickness": 8,
+            "subsystem": "subsystem.machine_max.pkt"
+          }
+        },
+        "connectors": {
+          "connector.machine_max.pkt_gun_lock": {
+            "locator": "pkt_gun_lock",
+            "definition": "machine_max:fixed_back",
+            "internal": true,
+            "overwrite": {}
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.pkt": {
+            "type": "machine_max:launcher",
+            "definition": "machine_max:pktm_launcher",
+            "locator": "pkt_muzzle"
+          },
+          "subsystem.machine_max.pkt_ammo_loader": {
+            "type": "machine_max:regen_loader",
+            "definition": "machine_max:pktm_regen_loader",
+            "projectile_types": {
+              "machine_max:7_62mm_ap": 3,
+              "machine_max:7_62mm_tracer": 1
+            },
+            "belt_label": "AP/曳光",
+            "discovery_outputs": {
+              "ammo_pktm": [
+                "global"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

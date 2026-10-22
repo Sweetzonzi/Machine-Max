@@ -68,6 +68,9 @@
   "right_atgm_elevation_driver": "Right Atgm Elevation Driver",
   "sub_part.machine_max.gun": "Gun",
   "connector.machine_max.gun_turret_lock": "Gun Turret Lock",
+  "connector.machine_max.pkt_hull_axis": "MG Mount Hull Axis",
+  "connector.machine_max.pkt_gun_axis": "MG Mount Gun Axis",
+  "connector.machine_max.pkt_gun_lock": "MG Trunnion Lock",
   "subsystem.machine_max.2a42": "2a42",
   "sub_part.machine_max.left_atgm": "Left Atgm",
   "connector.machine_max.left_atgm_turret": "Left Atgm Turret",
@@ -78,6 +81,9 @@
   "gunner_optics": "Gunner Optics",
   "commander_optics": "Commander Optics",
   "subsystem.machine_max.pktm": "Pktm",
+  "subsystem.machine_max.pkt": "PKT Machine Gun",
+  "subsystem.machine_max.pkt_ammo_loader": "PKT Ammo Loader",
+  "subsystem.machine_max.weapon": "Weapon Controller",
   "subsystem.machine_max.left_atgm_tube_1": "Left Atgm Tube 1",
   "subsystem.machine_max.left_atgm_tube_2": "Left Atgm Tube 2",
   "subsystem.machine_max.right_atgm_tube_1": "Right Atgm Tube 1",
@@ -99,6 +105,7 @@
   "machine_max.7_92mm_tracer": "TRACER",
   "machine_max.9m133_kornet": "ATGM",
   "machine_max.mtlb": "MT-LB",
+  "connector.machine_max.hull_pkt_axis": "Hull MG Mount Axis",
   "sub_part.machine_max.left_sprocket": "Left Sprocket",
   "connector.machine_max.wheel_left_sprocket": "Wheel Left Sprocket",
   "sub_part.machine_max.right_sprocket": "Right Sprocket",
@@ -273,5 +280,9 @@
   "machine_max.research.sdkfz234_wheel": "Sd.Kfz.234 Wheel",
   "research.machine_max.sdkfz234_wheel_blueprint.desc": "Wheel of the Sd.Kfz.234, four per side; crafted in pairs.",
   "machine_max.fitting.2s38_track": "2S38 Track",
-  "machine_max.fitting.mtlb_track": "MT-LB Track"
+  "machine_max.fitting.mtlb_track": "MT-LB Track",
+  "machine_max.pkt_turret": "PKT Machine Gun Turret",
+  "machine_max.misc": "Misc",
+  "machine_max.research.pkt_turret": "PKT Machine Gun Turret",
+  "research.machine_max.pkt_turret_blueprint.desc": "A PKT machine gun turret that fits any vehicle with a matching ring mount; the ring, gun and loader are one part."
 }

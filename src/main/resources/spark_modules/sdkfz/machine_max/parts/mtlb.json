@@ -738,6 +738,11 @@
             "locator": "hull_right_idler",
             "definition": "machine_max:track_idler_right",
             "internal": true
+          },
+          "connector.machine_max.hull_pkt_axis": {
+            "locator": "hull_pkt_axis",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {}
           }
         },
         "subsystems": {

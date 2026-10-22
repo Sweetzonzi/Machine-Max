@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research", // 蓝图研发：产出零件制造蓝图，解锁对应零件配方
+  "research_cost": 250,
+  "icon": "machine_max:textures/icon/pkt_turret.png",
+  "description": "research.machine_max.pkt_turret_blueprint.desc",
+  "unlock_recipe": "machine_max:part_fabricating/pkt_turret"
+}
