@@ -4,9 +4,9 @@
     "perspective": false,
     "scope_behavior": "screen_fixed",
     "ignore_zoom": true,
-    "anchor": "bottom_right",
+    "anchor": "bottom_center",
     "offset": [
-      -8,
+      0,
       -52,
       0
     ],

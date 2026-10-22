@@ -1,7 +1,7 @@
 # 武器控制器 HUD 词表与宿主接入设计
 
 > 版本 1.8 · 2026-10-22
-> **状态**：控制器宿主、业务快照、查询绑定、候选并集、条目显隐和重复列表已实现；实机验收待完成。代码坐标、示例、弹道标定边界与验证范围见《[HUD 上下文实现与验收](../进行中/HUD上下文实现与验收.md)》。独立面板 `WeaponHudOverlay` 具有自己的显示路径。
+> **状态**：控制器宿主、业务快照、查询绑定、候选并集、条目显隐和重复列表已实现；实机验收待完成。运行期模型与 AUI 武器元素由 `CustomHud` 按 WC 布局统一调度。代码坐标、示例、弹道标定边界与验证范围见《[HUD 上下文实现与验收](../进行中/HUD上下文实现与验收.md)》。
 >
 > 本文定义每台武器控制器自己的 HUD 元素、显示快照、`weapon.*` 查询及重复项的 `tube.*` / `belt.*` 查询。通用元素的 `hud.*` 与上下文继承见《[观瞄系统-HUD专用MoLang上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》；样式、布局、元素及玩家覆盖见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；信息量分级、武器类型画像与炮镜装填环见《[武器系统-武器HUD信息分级与视角形态需求分析](武器系统-武器HUD信息分级与视角形态需求分析.md)》。
 
@@ -75,7 +75,7 @@ public record TubeSnapshot(
 
 身份口径可对照 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#SupplierRef` 的三段坐标与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#getLabel` 的显示名约束；弹链集合来自 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#getAvailableBelts`。
 
-现有 `WeaponHudOverlay` 的取数规则在**单台控制器内部**继续适用：
+单台控制器的取数规则由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudWeaponSnapshot.java#capture` 实现：
 
 | 量 | 口径 |
 | --- | --- |
@@ -195,7 +195,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 
 ## 五、实施与验收
 
-框架文档 §十二的 V3 阶段接入武器显示快照、查询及候选宿主策略。可从 `WeaponHudOverlay` 抽出单控制器快照，让模型和 AUI 武器元素消费同一口径。内容包与玩家的 `*_hud_layout` 采用框架文档 §六、§七的解析规则，公共显隐调度采用 §4.3。
+框架文档 §十二的 V3 阶段接入武器显示快照、查询及候选宿主策略。单控制器快照由 `HudWeaponSnapshot#capture` 提供，模型和 AUI 武器元素消费同一口径；其源码路径见第二章的取数规则。内容包与玩家的 `*_hud_layout` 采用框架文档 §六、§七的解析规则，公共显隐调度采用 §4.3。
 
 验收至少覆盖：候选并集仅来自当前座椅、包含未选中组且按实例去重；同一控制器的常驻面板与仅选中分划分别显隐；模型与 AUI 使用相同规则；切组更新 `weapon.selected` 且保留运行时元素/Document；不同座椅观察同一控制器时选中值隔离；多台数据互不串值；停用/受损不自动剔除候选；无布局时为空；膛内弹药、实际装填弹链和当前选中弹链能同时区分；无参项查询、显式索引、排序变化和异常恢复均取到正确数据；无作用域查询给出诊断；玩家覆盖及重置保留条目显隐策略。代码和自动化测试已覆盖的项目见实现记录；实机交互与画面效果需按本清单验收，玩家布局覆盖属于框架 V4。
 

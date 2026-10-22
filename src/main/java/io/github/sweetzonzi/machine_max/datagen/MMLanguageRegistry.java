@@ -965,22 +965,6 @@ public enum MMLanguageRegistry {
             en_us, "Exit"
     )),
     // 武器状态 HUD
-    GUI_WEAPON_HUD_ROLE_TAG_PRIMARY("gui.machine_max.weapon_hud.role.tag.primary", ImmutableMap.of(
-            zh_cn, "主",
-            en_us, "PRI"
-    )),
-    GUI_WEAPON_HUD_ROLE_TAG_SECONDARY("gui.machine_max.weapon_hud.role.tag.secondary", ImmutableMap.of(
-            zh_cn, "副",
-            en_us, "SEC"
-    )),
-    GUI_WEAPON_HUD_ROLE_TITLE_PRIMARY("gui.machine_max.weapon_hud.role.title.primary", ImmutableMap.of(
-            zh_cn, "主武器",
-            en_us, "Main Weapon"
-    )),
-    GUI_WEAPON_HUD_ROLE_TITLE_SECONDARY("gui.machine_max.weapon_hud.role.title.secondary", ImmutableMap.of(
-            zh_cn, "副武器",
-            en_us, "Secondary Weapon"
-    )),
     GUI_WEAPON_HUD_READY("gui.machine_max.weapon_hud.ready", ImmutableMap.of(
             zh_cn, "就绪",
             en_us, "READY"

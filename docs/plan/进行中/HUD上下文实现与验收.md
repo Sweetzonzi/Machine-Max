@@ -42,7 +42,9 @@ HUD 模型沿用 Spark 的物理动画管线。`src/main/java/io/github/sweetzon
 }
 ```
 
-这两项是动态属性的片段；同一对象还需要既有的 `type`、`definition` 和控制布线。没有布局引用的控制器不生成 HUD。多台武器共用该示例布局时位置会重叠，内容包应各自定义投放位置。专用武器面板 `WeaponHudOverlay` 有独立显示路径，内容包布局不隐式关闭它。
+这两项是动态属性的片段；同一对象还需要既有的 `type`、`definition` 和控制布线。没有布局引用的控制器不生成 HUD。多台武器共用该示例布局时位置会重叠，内容包应各自定义投放位置。运行期武器 HUD 由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 统一调度，各 WC 的三个视角布局是武器读数的接入入口。
+
+K17 使用三种内置动态组件分别显示弹链、逐管与紧凑读数，挂载与静态对照方法见 [K17 动态武器 HUD 组件接入](K17动态武器HUD组件接入.md)。
 
 `hud/hud_element.schema.json` 与 `hud/hud_layout.schema.json` 位于 builtin 的双语 schema 源目录；武器控制器 schema 带接入示例。副本与技能快照通过 `gradlew --offline syncSchemas` 生成。
 

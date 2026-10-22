@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
-/*已经改为MMLanguageRegistry注册*/
+/* 历史语言提供器；当前数据生成入口为 MMLanguageRegistry#register。 */
 @Deprecated
 public class MMLanguageProviderZH_CN extends LanguageProvider {
     public MMLanguageProviderZH_CN(PackOutput output) {
@@ -286,10 +286,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.pda.action.place", "放置零件");
         this.add("gui.machine_max.pda.action.exit", "退出");
         // 武器状态 HUD
-        this.add("gui.machine_max.weapon_hud.role.tag.primary", "主");
-        this.add("gui.machine_max.weapon_hud.role.tag.secondary", "副");
-        this.add("gui.machine_max.weapon_hud.role.title.primary", "主武器");
-        this.add("gui.machine_max.weapon_hud.role.title.secondary", "副武器");
         this.add("gui.machine_max.weapon_hud.ready", "就绪");
         this.add("gui.machine_max.weapon_hud.empty", "空弹");
         // 蓝图库标签页

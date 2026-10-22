@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,6 +44,10 @@ class WeaponHudComponentsTest {
     }
 
     private Page create(String kind) throws Exception {
+        return create(kind, Map.of());
+    }
+
+    private Page create(String kind, Map<String, String> defaults) throws Exception {
         Size.setViewportOverride(1920, 1080);
         var directory = BUILTIN.resolve("documents/weapon_hud_components");
         String css = Files.readString(directory.resolve("hud.css"));
@@ -52,13 +57,13 @@ class WeaponHudComponentsTest {
         HTML.putTemple(path, html);
         var element = HudMolangContextTest.element();
         var runtime = new WeaponHudElement(null, element);
-        var hud = new AuiHudAnimatable(element.style(), new AuiHudStyle(path, Map.of()), element, runtime);
+        var hud = new AuiHudAnimatable(element.style(), new AuiHudStyle(path, defaults), element, runtime);
         instances.add(hud);
         return new Page(runtime, hud, Document.get(path).getFirst());
     }
 
     private static HudWeaponSnapshot.Belt belt(String key, int remaining, boolean selected) {
-        return new HudWeaponSnapshot.Belt(List.of(ResourceLocation.parse("test:" + key)), key, remaining, selected);
+        return new HudWeaponSnapshot.Belt(List.of(ResourceLocation.parse("test:" + key.toLowerCase(Locale.ROOT).replace('/', '_'))), key, remaining, selected);
     }
 
     private static HudWeaponSnapshot.Tube tube(int key, boolean ready, double fill) {
@@ -154,6 +159,65 @@ class WeaponHudComponentsTest {
         assertEquals("he", second.document().querySelector(".stock-label span").getTextContent());
         assertNoBindingErrors(first.document());
         assertNoBindingErrors(second.document());
+    }
+
+    @Test void authorDefaultsControlWidthPaletteModulesAndColumns() throws Exception {
+        var page = create("tubes", Map.of("--panel-width", "360px", "--phosphor", "#ffc16b",
+                "--scanline-opacity", "0", "--identity-display", "none", "--tube-columns", "1fr"));
+        page.publish(snapshot(0, false, List.of(tube(1, true, 100), tube(2, false, 35)), List.of()), true);
+        var document = page.document();
+        Document.runWithContext(document, () -> {
+            assertEquals(360, document.body.getOffsetWidth(), 0.1);
+            assertEquals(0xffffc16b, Box.of(document.querySelector(".hud-panel")).getBorderLeftSide().color().getValue());
+            assertEquals("none", document.querySelector(".identity").getComputedStyle().display);
+            assertEquals("0", document.querySelector(".scanlines").getComputedStyle().opacity);
+            assertTrue(document.querySelector(".tube-row").getOffsetWidth() > 300);
+        });
+        assertNoBindingErrors(document);
+    }
+
+    @Test void emptyThenReadyDataRepopulatesWithoutPlaceholderErrors() throws Exception {
+        var page = create("feed");
+        page.publish(HudWeaponSnapshot.EMPTY, false);
+        assertTrue(page.document().querySelectorAll(".tube-row, .belt-row").isEmpty());
+        assertNoBindingErrors(page.document());
+        page.publish(snapshot(1, false, List.of(tube(1, true, 100)), List.of(belt("ap", 1, true))), true);
+        assertEquals(1, page.document().querySelectorAll(".tube-row").size());
+        assertEquals(1, page.document().querySelectorAll(".belt-row").size());
+        assertNoBindingErrors(page.document());
+    }
+
+    @Test void compositionExportsBoundDocumentsForVisualReview() throws Exception {
+        var feed = create("feed");
+        var tubes = create("tubes");
+        var compact = create("compact");
+        feed.publish(new HudWeaponSnapshot("30 MM / 2A42", "ready", 54, 500, false, "54/500",
+                "30 MM AP", true, "RDY", "test:ap", List.of(tube(1, true, 100)),
+                List.of(belt("AP", 12, false), belt("HE", 54, true))), true);
+        tubes.publish(new HudWeaponSnapshot("9M133 / KORNET", "reloading", 0, 4, false, "0/4",
+                "9M133", false, "2.0s", "test:kornet",
+                List.of(tube(1, true, 100), tube(2, true, 100), tube(3, false, 58), tube(4, false, 27)).stream()
+                        .map(t -> new HudWeaponSnapshot.Tube(t.key(), "9M133", t.state(), t.fill(), t.reloadRemaining(),
+                                t.reloadText(), t.state().equals("ready") ? "9M133" : "", t.state().equals("reloading") ? "KORNET" : "")).toList(),
+                List.of(belt("KORNET", 0, true))), false);
+        compact.publish(new HudWeaponSnapshot("PKTM / COAX", "ready", 382, 2000, false, "382/2000",
+                "7.62 MM", false, "RDY", "test:pktm", List.of(tube(1, true, 100)),
+                List.of(belt("AP/TRACER", 382, true))), true);
+        for (var page : List.of(feed, tubes, compact)) assertNoBindingErrors(page.document());
+        var directory = Path.of("build/reports/hud-components");
+        Files.createDirectories(directory);
+        String css = Files.readString(BUILTIN.resolve("documents/weapon_hud_components/hud.css"));
+        String html = "<!doctype html><html><head><meta charset='utf-8'><title>K17 weapon HUD / bound DOM preview</title>"
+                + "<style>" + css + "html,body{width:100%;height:100%;display:block;background:#17231a}"
+                + ".stage{position:relative;width:1600px;height:900px;background:linear-gradient(145deg,#334831,#101c17)}"
+                + ".preview{position:absolute}.feed{right:16px;bottom:104px}.tubes-panel{left:16px;bottom:104px}"
+                + ".compact{left:585px;bottom:104px}.notice{position:absolute;top:20px;left:20px;color:#b6c7ad;font:16px sans-serif}"
+                + "</style></head><body><main class='stage'><div class='notice'>K17 / AUI-bound fixture data / browser preview</div>"
+                + "<div class='preview feed'>" + feed.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
+                + "<div class='preview tubes-panel'>" + tubes.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
+                + "<div class='preview compact'>" + compact.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
+                + "</main></body></html>";
+        Files.writeString(directory.resolve("index.html"), html);
     }
 
     @Test void k17UsesThreeControllerLayoutsAndRetainsStaticComparisonResources() throws Exception {

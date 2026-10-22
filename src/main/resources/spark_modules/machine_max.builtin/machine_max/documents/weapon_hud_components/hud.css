@@ -13,16 +13,17 @@ body { display: inline-block; }
   line-height: 20px;
   text-shadow: 1px 1px 0 #091207;
 }
-.identity { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.identity { display: var(--identity-display, flex); align-items: center; gap: 10px; margin-bottom: 8px; }
 .identity b { font-size: 24px; line-height: 28px; font-weight: 400; }
 .level { border: 1px solid var(--phosphor, #a4ff80); padding: 1px 3px; font-size: 12px; }
 .is-unselected .identity { opacity: 0.65; }
+.is-unselected .compact-head > span { opacity: 0.65; }
 .caption, .compact-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; opacity: 0.75; }
 .caption { margin-bottom: 6px; }
 .stock-label { display: flex; gap: 5px; }
 .stock-label.is-unselected { display: none; }
 .tubes { display: flex; flex-direction: column; gap: 6px; }
-.grain-tube .tubes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grain-tube .tubes { display: grid; grid-template-columns: var(--tube-columns, 1fr 1fr); gap: 6px; }
 .selected-stock { margin-bottom: 6px; font-size: 12px; line-height: 16px; opacity: 0.75; }
 .tube-row, .belt-row { position: relative; border: 1px solid var(--phosphor, #a4ff80); }
 .tube-row { overflow: hidden; }
@@ -38,7 +39,7 @@ body { display: inline-block; }
 .tube-row.is-reloading .loading-source { display: flex; }
 .grain-feed { border-top: 1px solid var(--phosphor, #a4ff80); }
 .grain-feed .identity { padding-bottom: 7px; border-bottom: 1px solid var(--phosphor, #a4ff80); }
-.belts { margin-top: 8px; }
+.belts { display: var(--belts-display, block); margin-top: 8px; }
 .belt-row { border-color: transparent; }
 .belt-row.is-selected { border-color: var(--phosphor, #a4ff80); }
 .selection-pointer { width: 12px; opacity: 0; }

@@ -52,7 +52,6 @@ public class MMGuiManager {
         event.registerAboveAll(id("interact_hud"), new InteractHud());
         event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
         event.registerAboveAll(id("sight_hud"), new SightHud());
-        // 武器状态 HUD 是 AUI overlay 文档，由 WeaponHudOverlay 自行创建与刷新，不经过图层注册
 //        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
     }

@@ -15,7 +15,7 @@
 | HUD 布局 | `hud_layouts/*.json`（4 份：`seat_dashboard`、`seat_dashboard_2`、`scope_gunner`、`scope_gunner_fixed`），由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`；文件内容是裸元素数组，键为 `<命名空间>:<相对路径>` |
 | 相机/瞄具宿主 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段）：一个 `ResourceLocation` |
 | 座椅宿主 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout`：各一个 `ResourceLocation` |
-| 武器控制器宿主 | `IHudHost` 提供三个视角布局，候选并集与观察者选中状态由 `CustomHud` 协调；`WeaponHudOverlay` 具有独立面板路径 |
+| 武器控制器宿主 | `IHudHost` 提供三个视角布局，候选并集、观察者选中状态与模型/AUI 武器元素由 `CustomHud` 统一协调 |
 | 玩家参与 | 无（V4） |
 
 这套结构解决三件事：
@@ -707,7 +707,7 @@ RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样
 | **V3（代码已实现、待实机验收）** | 武器控制器三个 `*_hud_layout` 字段、候选并集、载体通用 `selection_visibility`、观察者选中状态、`WeaponHudElement`、`WeaponHudMolangContext`、业务快照、`weapon.*` 与当前项查询、`scope` 分划、内容包示例及 schema | 候选 WC 按当前视角布局逐条选择常驻/仅选中显示；切组保留元素；各作用域数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |
 
-V1 的实机表现验收见 §十三。当前模型与 AUI 载体均由 `CustomHud` 管理，每个布局条目持有独立 `HudRuntimeElement`；上下文、快照、查询、绑定和公共显隐已经接入。`WeaponHudOverlay` 有自己的独立面板路径。模型 HUD 使用客户端物理步混合、主线程 tick 发布及渲染 partialTick 插值，当前实现边界、自动化验证和待实机验收项见《[HUD 上下文实现与验收](HUD上下文实现与验收.md)》。
+V1 的实机表现验收见 §十三。当前模型与 AUI 载体均由 `CustomHud` 管理，每个布局条目持有独立 `HudRuntimeElement`；上下文、快照、查询、绑定和公共显隐已经接入，WC 武器读数按各自布局提交。模型 HUD 使用客户端物理步混合、主线程 tick 发布及渲染 partialTick 插值，当前实现边界、自动化验证和待实机验收项见《[HUD 上下文实现与验收](HUD上下文实现与验收.md)》。
 
 渲染顺序契约只覆盖提交顺序：同一宿主内按布局数组顺序提交，宿主之间按宿主集合的迭代顺序提交。宿主顺序不构成契约，内容包负责让同一视角的元素互不遮挡；两个投影批次之间的先后由渲染器固定，不要求布局表达跨投影顺序。同批次半透明几何按深度重排的风险已接受，验收只断言提交顺序。
 

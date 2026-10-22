@@ -20,8 +20,8 @@
 
 - 一个座位（`SeatSubsystem`）在一个时刻可激活多台武器控制器：基础组始终参与，另加当前选中的子控制组。这些 WC 就是该座椅的“选中集合”，其 HUD 全部显示。选中集合由 `getActiveWeaponControllers()` 给出，来源是控制组频道经 connector 转发或 `global` 广播的发现回调。本设计不使用主/副角色分类。
 - 一台武器控制器（下称“武器组”）可以下挂多根发射管（`LauncherSubsystem`）和多台装弹机（`AmmoLoaderSubsystem` / `RegenLoaderSubsystem`），并拥有多条可选弹链。弹链是**有序弹种序列**，不是单一弹种。
-- 现有 `WeaponHudOverlay` 用一块 AUI 面板显示所有激活武器组，按主/副分组，含弹种、计数、装填段、弹链选项卡；这是当前实现。目标形态是每台选中的 WC 各自显示布局；炮镜模式同样显示选中 WC 的 `scope` 元素。`AmmoHud` 是未注册图层的回退实现。`SightHud` 只在炮镜中心画一个参考圆环，十字线绘制代码当前注释停用。
-- 每台控制器的按视角 `*_hud_layout` 字段已加入动态属性，默认省略即无 HUD；`HudStyle` / `HudElement` / `HudLayout` 与 `HudView` / `IHudHost` 已存在，`CustomHud` 按宿主集合渲染。武器控制器尚无使用这些字段的内容包示例；武器专用元素、快照与 `weapon.*` 仍未实现。
+- 运行期武器 HUD 由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 按 WC 布局独立创建模型与 AUI 元素，条目的 `selection_visibility` 决定常驻或仅选中显示，炮镜也走同一条路径。`AmmoHud` 是未注册图层的回退实现。`SightHud` 只在炮镜中心画一个参考圆环，十字线绘制代码当前注释停用。
+- 每台控制器的按视角 `*_hud_layout` 字段定义在 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/WeaponControllerSubsystemAttr.java#CODEC`，默认省略即无 HUD。武器元素、业务快照和 `weapon.*` 查询均有实现；K17 的动态组件与对照资源见《[K17 动态武器 HUD 组件接入](../进行中/K17动态武器HUD组件接入.md)》。本文的信息分级与炮镜环是呈现层需求，具体完成范围以该接入记录为准。
 
 ### 2.2 本文回答的问题
 

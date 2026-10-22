@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
-/*已经改为MMLanguageRegistry注册*/
+/* 历史语言提供器；当前数据生成入口为 MMLanguageRegistry#register。 */
 @Deprecated
 public class MMLanguageProviderEN_US extends LanguageProvider {
     public MMLanguageProviderEN_US(PackOutput output) {
@@ -271,10 +271,6 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.pda.action.place", "Place Part");
         this.add("gui.machine_max.pda.action.exit", "Exit");
         // Weapon status HUD
-        this.add("gui.machine_max.weapon_hud.role.tag.primary", "PRI");
-        this.add("gui.machine_max.weapon_hud.role.tag.secondary", "SEC");
-        this.add("gui.machine_max.weapon_hud.role.title.primary", "Main Weapon");
-        this.add("gui.machine_max.weapon_hud.role.title.secondary", "Secondary Weapon");
         this.add("gui.machine_max.weapon_hud.ready", "READY");
         this.add("gui.machine_max.weapon_hud.empty", "EMPTY");
         // Blueprint library tab
