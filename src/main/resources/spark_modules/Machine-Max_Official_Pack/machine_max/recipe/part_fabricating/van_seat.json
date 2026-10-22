@@ -1,29 +1,29 @@
 {
   "$schema": "../../docs/zh_cn/schemas/recipe/part_fabricating_recipe.schema.json",
   "type": "machine_max:part_fabricating",
+  // 面包车内饰共四张座椅（左右 × 前后），max_stack_size 为 4，因此一次造满一车
   "ingredients": [
     {
       "ingredient": {
-        "item": "machine_max:electronic_component_1"
+        "item": "machine_max:mechanic_component_1"
       },
-      "count": 2
+      "count": 2 // 前排两张的滑轨与靠背调节
     },
     {
       "ingredient": {
         "item": "machine_max:structural_component_1"
       },
-      "count": 4
+      "count": 8 // 骨架，每张 2 份
     },
     {
       "ingredient": {
-        "item": "minecraft:glass_pane"
+        "item": "minecraft:leather"
       },
-      "count": 8
+      "count": 8 // 人造革座面与靠背，每张 2 份
     }
   ],
   "result": {
-    "count": 1
+    "count": 4
   },
-  "time": 100
+  "time": 160
 }
-
