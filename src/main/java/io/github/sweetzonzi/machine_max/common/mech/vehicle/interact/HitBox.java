@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import lombok.Getter;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
@@ -83,9 +84,7 @@ public class HitBox {
      * @return 等效护甲厚度
      */
     public float getRHA(SubPart subPart) {
-        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
-        float rhaCoeff = attr.decay_rha() + (attr.rha() - attr.decay_rha()) * (float) Math.pow(durabilityRatio, attr.decay_power());
-        return attr.thickness * rhaCoeff;
+        return ArmorUtil.rha(attr.getEffectiveMaterial().armor(), attr.thickness, durabilityRatio(subPart));
     }
 
     /**
@@ -98,8 +97,7 @@ public class HitBox {
      * @return 有效线性减伤值
      */
     public float getEffectiveDmgResist(SubPart subPart) {
-        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
-        return attr.decay_dmg_resist() + (attr.dmg_resist() - attr.decay_dmg_resist()) * (float) Math.pow(durabilityRatio, attr.decay_power());
+        return ArmorUtil.resist(attr.getEffectiveMaterial().armor(), durabilityRatio(subPart));
     }
 
     /**
@@ -112,8 +110,12 @@ public class HitBox {
      * @return 有效伤害乘数（1.0=无变化，0.5=一半伤害）
      */
     public float getEffectiveDmgMult(SubPart subPart) {
-        float durabilityRatio = subPart.getDurability() / subPart.getMaxDurability();
-        return attr.decay_dmg_mult() + (attr.dmg_mult() - attr.decay_dmg_mult()) * (float) Math.pow(durabilityRatio, attr.decay_power());
+        return ArmorUtil.mult(attr.getEffectiveMaterial().armor(), durabilityRatio(subPart));
+    }
+
+    private static float durabilityRatio(SubPart subPart) {
+        float maxDurability = subPart.getMaxDurability();
+        return maxDurability > 0f ? Math.clamp(subPart.getDurability() / maxDurability, 0f, 1f) : 1f;
     }
 
     /**

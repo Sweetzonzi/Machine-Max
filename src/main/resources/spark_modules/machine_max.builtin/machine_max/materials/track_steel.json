@@ -1,0 +1,26 @@
+{
+  "$schema": "../docs/zh_cn/schemas/base/material_attr.schema.json",
+  "physics": {
+    "friction": [
+      0.9,
+      0.9,
+      1.0
+    ],
+    "slip_adaptation": 0.5,
+    "rolling_friction": 0.05,
+    "spinning_friction": 0.0,
+    "restitution": 0.0,
+    "block_damage_factor": 1.0
+  },
+  "armor": {
+    "rha": 0.6,
+    "angle_effect": true,
+    "dmg_resist": 1.0,
+    "dmg_mult": 0.95,
+    "decay_rha": 0.3,
+    "decay_dmg_resist": 0.0,
+    "decay_dmg_mult": 1.0,
+    "decay_power": 1.5,
+    "unpen_power": 0.6
+  }
+}

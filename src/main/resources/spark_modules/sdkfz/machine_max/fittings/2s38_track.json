@@ -1,0 +1,30 @@
+{
+  "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
+  "type": "track",
+  "material": "machine_max:track_steel",
+  "thickness_mm": 50.0,
+  "durability_per_link": 20.0,
+  "length_per_link": 0.2,
+  "tension": {
+    "enabled": true,
+    "stiffness": 12000.0,
+    "damping": 900.0,
+    "preload": 0.0,
+    "slack": 0.015,
+    "max_force": 800.0
+  },
+  "sounds": {
+    "hit_un_pen": {
+      "sound_id": "machine_max:part.collision.terrain.hard_metal",
+      "range": 64
+    },
+    "hit_pen": {
+      "sound_id": "machine_max:part.collision.terrain.hard_metal",
+      "range": 64
+    }
+  },
+  "visual": {
+    "model": "sdkfz:2s38_track.geo",
+    "texture": "sdkfz:textures/part/2s38/2s38.png"
+  }
+}

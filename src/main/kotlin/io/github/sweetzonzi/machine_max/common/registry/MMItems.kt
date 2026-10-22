@@ -42,7 +42,14 @@ object MMItems {
         factory = { PartItem() }
     }
 
-    //履带测试物品（写死，不接内容包）
+    //履带正式物品：型号由 machine_max:fitting_type 组件给出，缺省回落 machine_max:default
+    @JvmStatic
+    val TRACK = MachineMax.REGISTER.item {
+        id="track"
+        factory = { TrackItem() }
+    }
+
+    //履带测试物品（写死型号，不接内容包）
     @JvmStatic
     val TRACK_ITEM = MachineMax.REGISTER.item {
         id="test_track"

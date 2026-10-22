@@ -30,6 +30,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemControlle
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HydrodynamicAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionHandler;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -460,23 +461,83 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public float getRHA(BFDamageContext ctx) {
-        TrackLink track = this.trackLink;
-        if (hasLiveTrack(track)) {
-            var armor = track.attr().armor();
-            float durabilityRatio = track.maxDurability() > 0f
-                    ? Math.clamp(track.durability() / track.maxDurability(), 0f, 1f)
-                    : 1f;
-            float vertical = armor.decay_rha() + (armor.rha() - armor.decay_rha())
-                    * (float) Math.pow(durabilityRatio, armor.decay_power());
-            if (!armor.angleEffect()) return vertical;
-            return ArmorUtil.getEquivalentArmor(vertical,
-                    ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
-        }
         HitBox hitBox = findHitBox(ctx);
-        float verticalRha = hitBox.getRHA(this);
-        if (!hitBox.hasAngleEffect()) return verticalRha;
+        float verticalRha = getRHA(hitBox);
+        if (!armorMaterial(hitBox).armor().angleEffect()) return verticalRha;
         return ArmorUtil.getEquivalentArmor(verticalRha,
                 ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
+    }
+
+    /**
+     * 该 SubPart 的垂直等效装甲厚度（mm RHA），已计入耐久衰减，不含入射角修正。
+     *
+     * @param hitBox 命中的碰撞箱；为 {@code null} 时只可能走履带装甲层
+     */
+    public float getRHA(@Nullable HitBox hitBox) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) {
+            return ArmorUtil.rha(track.attr().armor(), track.attr().thicknessMm(),
+                    track.durabilityRatio());
+        }
+        return hitBox == null ? 0f : hitBox.getRHA(this);
+    }
+
+    /**
+     * 履带接触的唯一判据：履带存活，且命中的是本零件轮的轮面。
+     *
+     * <p>{@code setupFriction} 与 {@code setupContactFriction} 共用该判定；非轮面的
+     * 碰撞箱（车体、悬挂等）仍走自身材料。</p>
+     *
+     * @param hitBoxIndex 碰撞点索引
+     */
+    public boolean isTrackContact(int hitBoxIndex) {
+        TrackLink track = this.trackLink;
+        return track != null && !track.isDisposed()
+                && isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex);
+    }
+
+    /**
+     * 接触物理使用的材料：履带轮面用履带材料，其余用碰撞箱的有效材料。
+     *
+     * @param hitBoxIndex 碰撞点索引
+     * @param hitBox      命中的碰撞箱
+     */
+    public MaterialAttr contactMaterial(int hitBoxIndex, HitBox hitBox) {
+        if (isTrackContact(hitBoxIndex)) return trackLink.attr().material();
+        return hitBox.attr.getEffectiveMaterial();
+    }
+
+    /**
+     * 命中结算使用的材料：履带存活时整条履带包住轮组，成员 SubPart 的所有命中都先用
+     * 履带装甲层；断带后回退到命中碰撞箱自身的材料。
+     *
+     * @param hitBox 命中的碰撞箱；缺失时回退默认材质
+     */
+    public MaterialAttr armorMaterial(@Nullable HitBox hitBox) {
+        TrackLink track = this.trackLink;
+        if (hasLiveTrack(track)) return track.attr().material();
+        return hitBox == null ? MaterialAttr.DEFAULT : hitBox.attr.getEffectiveMaterial();
+    }
+
+    /**
+     * 装甲伤害修正：条件化修改器 → 线性减伤 → 百分比乘算。
+     *
+     * <p>与 {@link HitBox#modifyDamage} 同构；材料取自 {@link #armorMaterial}，
+     * 耐久比例取自履带（存活时）或本 SubPart。</p>
+     *
+     * @param hitBox 命中的碰撞箱
+     * @param source 伤害来源
+     * @param amount 原始伤害量
+     * @return 修正后的伤害量
+     */
+    public float modifyArmorDamage(@Nullable HitBox hitBox, DamageSource source, float amount) {
+        MaterialAttr.ArmorAttr armor = armorMaterial(hitBox).armor();
+        float ratio = hasLiveTrack(trackLink)
+                ? trackLink.durabilityRatio()
+                : getMaxDurability() > 0f ? Math.clamp(getDurability() / getMaxDurability(), 0f, 1f) : 1f;
+        float dmg = armor.damageModifiers().apply(source, amount);
+        dmg = Math.max(0f, dmg - ArmorUtil.resist(armor, ratio));
+        return dmg * ArmorUtil.mult(armor, ratio);
     }
 
     private static boolean hasLiveTrack(@Nullable TrackLink track) {
@@ -554,24 +615,22 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public float calculateFinalDamage(BFDamageContext ctx, PenetrationResult result) {
         TrackLink track = this.trackLink;
+        HitBox hitBox = findHitBox(ctx);
         if (hasLiveTrack(track)) {
             var armor = track.attr().armor();
             if (result == PenetrationResult.PENETRATED) {
-                float dmg = armor.damageModifiers().apply(ctx.source(), ctx.baseDamage());
-                dmg = Math.max(0f, dmg - armor.dmg_resist());
-                return Math.max(0f, dmg * armor.dmg_mult());
+                return modifyArmorDamage(hitBox, ctx.source(), ctx.baseDamage());
             }
             if (armor.unpen_power() > 0f) {
                 float rha = getRHA(ctx);
                 if (rha > 0f) {
                     float ratio = Math.clamp(modifyPenetration(ctx) / rha, 0f, 1f);
                     float unpenDmg = ctx.baseDamage() * (float) Math.pow(ratio, armor.unpen_power());
-                    return armor.damageModifiers().apply(ctx.source(), unpenDmg);
+                    return modifyArmorDamage(hitBox, ctx.source(), unpenDmg);
                 }
             }
             return 0f;
         }
-        HitBox hitBox = findHitBox(ctx);
         if (result == PenetrationResult.PENETRATED) {
             return hitBox.modifyDamage(ctx.source(), ctx.baseDamage());
         }
@@ -608,8 +667,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         TrackLink track = this.trackLink;
         if (hasLiveTrack(track)) {
             SoundEvent trackHit = isArmorPenetrated(ctx)
-                    ? track.attr().sounds().hitPen()
-                    : track.attr().sounds().hitUnPen();
+                    ? track.attr().sounds().onHitPen()
+                    : track.attr().sounds().onHitUnPen();
             Vector3f hitPos = getPosition();
             level.playSound(null, hitPos.x, hitPos.y, hitPos.z,
                     trackHit, SoundSource.NEUTRAL, 1f, 1f);

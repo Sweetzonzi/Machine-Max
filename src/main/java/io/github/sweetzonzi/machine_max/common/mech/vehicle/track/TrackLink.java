@@ -7,6 +7,11 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,12 +28,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 成员之间用 {@link GearJoint} 做星形角速度耦合；相邻成员之间用单边弹簧-阻尼力近似
  * 张力。履带耐久是独立于成员轮子耐久的一层。</p>
  *
+ * <p>型号（{@link TrackType}）只在创建 / 载入时解析一次；履带同时保留原始型号 id
+ * {@link #typeId()}，客户端缺型号时回退默认型号的视觉，但存档与同步仍写回原始 id。</p>
+ *
  * <p>线程：主线程负责成员表 / 耐久 / 状态；{@code GearJoint} 的增删与启停、
  * 张力施力都在物理线程执行。</p>
  */
 public class TrackLink {
+    /**
+     * 结构下限：主动轮 + 至少 1 个负重轮。
+     *
+     * <p>成员低于该值时履带解散；型号不提供可调下限。</p>
+     */
+    public static final int MIN_MEMBERS = 2;
+
     private final VehicleCore vehicle;
-    private final TrackAttr attr;
+    private final TrackType type;
+    private final ResourceLocation typeId;
 
     private volatile SubPart sprocket;
     private volatile List<SubPart> members = List.of();
@@ -46,24 +62,41 @@ public class TrackLink {
     private volatile int linkCount = 1;
     private volatile boolean broken;
 
-    private TrackLink(VehicleCore vehicle, TrackAttr attr, float durability, boolean broken,
-                      boolean clockwise) {
+    private TrackLink(VehicleCore vehicle, TrackType type, ResourceLocation typeId,
+                      float durability, boolean broken, boolean clockwise) {
         this.vehicle = vehicle;
-        this.attr = attr;
+        this.type = type;
+        this.typeId = typeId;
         this.durability = Math.max(0f, durability);
-        this.maxDurability = attr.linkDurability();
+        this.maxDurability = type.attr().durabilityPerLink();
         this.broken = broken;
         this.clockwise = clockwise;
     }
 
+    /**
+     * 从持久状态重建履带（存档加载 / 客户端应用同步）。
+     *
+     * @param fallbackToDefault 型号缺失时是否回退默认型号：服务端存档加载传 {@code false}
+     *                          （缺型号就丢弃该条履带），客户端同步传 {@code true}
+     *                          （缺型号只影响本地表现，保留原始型号 id）
+     */
     @Nullable
-    public static TrackLink fromData(@NotNull VehicleCore vehicle, @NotNull TrackLinkData data) {
+    public static TrackLink fromData(@NotNull VehicleCore vehicle, @NotNull TrackLinkData data,
+                                     boolean fallbackToDefault) {
+        TrackType type = resolveTrackType(vehicle.level, data.trackType());
+        if (type == null && fallbackToDefault) {
+            type = resolveTrackType(vehicle.level, TrackLinkData.DEFAULT_TYPE);
+        }
+        if (type == null) {
+            MachineMax.LOGGER.warn("履带型号 {} 不存在或不是履带类型，已跳过", data.trackType());
+            return null;
+        }
         SubPart sprocket = resolve(vehicle, data.sprocket());
         if (sprocket == null) {
             MachineMax.LOGGER.warn("履带的主动轮 {} 在载具 {} 中不存在，已跳过", data.sprocket(), vehicle.getUuid());
             return null;
         }
-        TrackLink link = new TrackLink(vehicle, TrackAttr.DEFAULT, data.durability(), data.broken(),
+        TrackLink link = new TrackLink(vehicle, type, data.trackType(), data.durability(), data.broken(),
                 data.clockwise());
         link.sprocket = sprocket;
         List<SubPart> members = new ArrayList<>();
@@ -76,13 +109,12 @@ public class TrackLink {
         members.remove(sprocket);
         members.add(0, sprocket);
         link.members = List.copyOf(members);
-        for (SubPart member : link.members) member.trackLink = link;
-        link.rebuildTensionPairs();
-        if (link.members.size() < link.attr.minEffectiveWheels()) {
-            // 存档时的有效成员不足，直接视为解散；不在加载阶段留下半条履带
-            for (SubPart member : link.members) member.trackLink = null;
+        if (link.members.size() < MIN_MEMBERS || !validateThickness(link, link.members)) {
+            // 存档时的有效成员不足或厚度不成形，直接视为解散；不在加载阶段留下半条履带
             return null;
         }
+        for (SubPart member : link.members) member.trackLink = link;
+        link.rebuildTensionPairs();
         link.refreshEnvelope();
         if (data.durability() == TrackLinkData.FULL_DURABILITY) {
             link.durability = link.maxDurability;
@@ -100,10 +132,12 @@ public class TrackLink {
      * 履带没有名字，注册进载具列表后才获得身份。</p>
      *
      * @param wheels 按铺设顺序排列的下行程轮与上行程轮（含被顶起的负重轮），不含主动轮
+     * @return 成员不足 {@link #MIN_MEMBERS} 或厚度不小于任一成员轮半径时返回 {@code null}
      */
-    @NotNull
+    @Nullable
     public static TrackLink assemble(@NotNull VehicleCore vehicle,
-                                     @NotNull SubPart sprocket, @NotNull List<SubPart> wheels) {
+                                     @NotNull SubPart sprocket, @NotNull List<SubPart> wheels,
+                                     @NotNull TrackType type) {
         List<SubPart> members = new ArrayList<>(wheels.size() + 1);
         members.add(sprocket);
         for (SubPart wheel : wheels) {
@@ -114,11 +148,13 @@ public class TrackLink {
             if (wheel.trackLink != null) continue;
             members.add(wheel);
         }
-        boolean clockwise = TrackEnvelope2D.layingClockwise(members.stream()
-                .map(member -> member.getWorldPositionMatrix(1f)).toList());
-        TrackLink link = new TrackLink(vehicle, TrackAttr.DEFAULT, TrackAttr.DEFAULT.linkDurability(),
-                false, clockwise);
+        if (members.size() < MIN_MEMBERS) return null;
+        ResourceLocation typeId = type.getRegistryKey();
+        TrackLink link = new TrackLink(vehicle, type, typeId, type.attr().durabilityPerLink(), false,
+                TrackEnvelope2D.layingClockwise(members.stream()
+                        .map(member -> member.getWorldPositionMatrix(1f)).toList()));
         link.sprocket = sprocket;
+        if (!validateThickness(link, members)) return null;
         link.members = List.copyOf(members);
         for (SubPart member : link.members) member.trackLink = link;
         link.rebuildTensionPairs();
@@ -133,6 +169,36 @@ public class TrackLink {
         refreshEnvelope();
         rebuildJoints();
         sync();
+    }
+
+    /**
+     * 查对应侧注册表里的履带型号。
+     *
+     * @return 型号不存在或不是履带类型时返回 {@code null}
+     */
+    @Nullable
+    private static TrackType resolveTrackType(Level level, ResourceLocation id) {
+        FittingType type = MMDynamicRes.getFittingType(level, id);
+        return type instanceof TrackType trackType ? trackType : null;
+    }
+
+    /**
+     * 校验厚度小于每个成员轮的有效半径。
+     *
+     * <p>厚度来自型号的 {@code thickness_mm}，包络求解按「轮心距减去厚度的一半」扣半径；
+     * 厚度不小于轮半径时包络退化成自交折线，因此在装配与载入阶段直接拒绝。</p>
+     */
+    private static boolean validateThickness(TrackLink link, List<SubPart> members) {
+        float thickness = link.attr().thicknessMeters();
+        for (SubPart member : members) {
+            float radius = member.getMaxWheelRadius();
+            if (radius > 0f && thickness >= radius) {
+                MachineMax.LOGGER.warn("履带厚度 {} m 不小于成员 {} 的轮半径 {} m，拒绝闭合",
+                        thickness, member.name, radius);
+                return false;
+            }
+        }
+        return true;
     }
 
     @Nullable
@@ -178,7 +244,7 @@ public class TrackLink {
         next.remove(subPart);
         members = List.copyOf(next);
         if (subPart.trackLink == this) subPart.trackLink = null;
-        if (members.size() < attr.minEffectiveWheels()) {
+        if (members.size() < MIN_MEMBERS) {
             dissolve();
             return true;
         }
@@ -192,8 +258,8 @@ public class TrackLink {
     /**
      * 成员归属变化（销毁 / 拆卸 / 分裂）后的统一刷新入口。
      *
-     * <p>离开本装配体的成员视为失效；主动轮失效或有效成员不足
-     * {@link TrackAttr#minEffectiveWheels()} 时整条履带解散。</p>
+     * <p>离开本装配体的成员视为失效；主动轮失效或有效成员不足 {@link #MIN_MEMBERS}
+     * 时整条履带解散。</p>
      */
     public void refreshMembers() {
         if (disposed) return;
@@ -207,7 +273,7 @@ public class TrackLink {
         }
         SubPart sp = sprocket;
         if (sp == null || sp.isDestroyed() || sp.part.assembly != vehicle
-                || valid.size() < attr.minEffectiveWheels()) {
+                || valid.size() < MIN_MEMBERS) {
             dissolve();
             return;
         }
@@ -232,7 +298,7 @@ public class TrackLink {
             List<SubPart> next = new ArrayList<>(members);
             next.remove(subPart);
             members = List.copyOf(next);
-            if (subPart == sprocket || members.size() < attr.minEffectiveWheels()) {
+            if (subPart == sprocket || members.size() < MIN_MEMBERS) {
                 disposeClient();
             }
             return;
@@ -338,7 +404,7 @@ public class TrackLink {
      * <p>只拉不推，作用点在轮心，不产生扭矩；断带 / 解散 / 任一成员失效时跳过。</p>
      */
     public void applyTension() {
-        TrackAttr.Tension tension = attr.tension();
+        TrackAttr.Tension tension = attr().tension();
         if (!tension.enabled() || broken || disposed || vehicle.level.isClientSide()) return;
         List<TensionPair> pairs = tensionPairs;
         if (pairs.isEmpty()) return;
@@ -382,13 +448,13 @@ public class TrackLink {
     private void refreshEnvelope() {
         if (members.isEmpty()) {
             linkCount = 1;
-            maxDurability = attr.maxDurability(1);
+            maxDurability = attr().maxDurability(1);
             durability = Math.min(durability, maxDurability);
             return;
         }
         TrackEnvelope2D.Result result = envelope(1f);
         if (result != null) {
-            linkCount = result.path().linkCount(attr.linkLength());
+            linkCount = result.path().linkCount(attr().lengthPerLink());
             if (result.fallback()) {
                 MachineMax.LOGGER.debug("履带 {} 的轮组布局需要凸包回退", label());
             }
@@ -396,7 +462,7 @@ public class TrackLink {
             // 成员缺轮半径 / 位姿尚未就绪：按成员数估一个保守节数，保证耐久上限可用
             linkCount = Math.max(1, members.size() * 8);
         }
-        maxDurability = attr.maxDurability(linkCount);
+        maxDurability = attr().maxDurability(linkCount);
         durability = Math.min(durability, maxDurability);
     }
 
@@ -519,13 +585,13 @@ public class TrackLink {
         List<TrackMemberRef> refs = new ArrayList<>(members.size());
         for (SubPart member : members) refs.add(TrackMemberRef.of(member));
         return new TrackLinkData(sp == null ? refs.getFirst() : TrackMemberRef.of(sp),
-                refs, durability, broken, clockwise);
+                refs, durability, broken, clockwise, typeId);
     }
 
     /** 主线程：按创建时确定的铺设绕向求当前包络。 */
     @Nullable
     public TrackEnvelope2D.Result envelope(float partialTick) {
-        return TrackEnvelope2D.build(members, sprocket, partialTick, attr.linkThickness(), clockwise);
+        return TrackEnvelope2D.build(members, sprocket, partialTick, attr().thicknessMeters(), clockwise);
     }
 
     /** 日志用标签：优先主动轮名；主动轮尚未解析或已清空时退回占位符。 */
@@ -540,8 +606,18 @@ public class TrackLink {
         return vehicle;
     }
 
+    /** 履带型号；客户端缺型号时是回退得到的默认型号。 */
+    public TrackType type() {
+        return type;
+    }
+
+    /** 原始型号 id：存档、同步与蓝图写回这个值，不回写回退得到的默认 id。 */
+    public ResourceLocation typeId() {
+        return typeId;
+    }
+
     public TrackAttr attr() {
-        return attr;
+        return type.attr();
     }
 
     @Nullable
@@ -559,6 +635,11 @@ public class TrackLink {
 
     public float maxDurability() {
         return maxDurability;
+    }
+
+    /** 当前耐久比例，供履带装甲的 RHA / 减伤 / 伤害乘数衰减使用。 */
+    public float durabilityRatio() {
+        return maxDurability > 0f ? Math.clamp(durability / maxDurability, 0f, 1f) : 1f;
     }
 
     /** 由包络周长推导出的履带节数；创建 / 成员变化时固定。 */

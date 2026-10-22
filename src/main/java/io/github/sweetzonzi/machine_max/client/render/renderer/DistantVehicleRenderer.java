@@ -133,7 +133,8 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         // 抵消摄像机位置，使 worldMatrix 中的世界坐标正确映射到屏幕
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
         // 履带同理：主动轮实体一并绘制，姿态栈此时已把世界原点映射到相机相对原点
-        TrackRenderer.renderTrack(subPart, poseStack, bufferSource, partialTick, light);
+        TrackRenderer.renderTrack(subPart, poseStack, bufferSource, partialTick, light,
+                TrackRenderer.TrackRenderMode.PROCEDURAL);
         // 应用 SubPart 的世界位姿（含平移和旋转）
         poseStack.mulPose(worldMatrix);
 

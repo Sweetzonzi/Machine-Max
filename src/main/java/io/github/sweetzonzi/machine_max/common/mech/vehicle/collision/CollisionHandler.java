@@ -21,10 +21,9 @@ import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -177,20 +176,25 @@ public class CollisionHandler {
 
     /**
      * 根据碰撞箱属性重设刚体的摩擦系数。
-     * 非轮胎部位采用各向异性摩擦，轮胎部位另有滑移曲线逻辑。
+     *
+     * <p>履带轮面用履带材料的物理参数；非轮胎部位采用各向异性摩擦，轮胎部位另有滑移曲线逻辑。</p>
      */
     private void setupFriction(HitBox hitBox, int hitBoxIndex) {
-        // 履带成员轮面：以履带属性替换 HitBox 材质参数（同一条履带下所有接触一致）
-        TrackLink track = subPart.trackLink;
-        if (track != null && !track.isDisposed() && subPart.isWheel(hitBoxIndex)) {
-            TrackAttr.Friction trackFriction = track.attr().friction();
-            applyFriction(true, trackFriction.anisotropic(), trackFriction.rolling(),
-                    trackFriction.spinning(), trackFriction.restitution());
+        // 履带成员轮面：以履带材料替换 HitBox 材质参数（同一条履带下所有接触一致）
+        if (subPart.isTrackContact(hitBoxIndex)) {
+            MaterialAttr.PhysicsAttr physics = subPart.trackLink.attr().physics();
+            applyFriction(true, PhysicsHelperKt.toBVector3f(physics.friction()), physics.rollingFriction(),
+                    physics.spinningFriction(), physics.restitution());
             return;
         }
         Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
         applyFriction(subPart.isWheel(hitBoxIndex), friction, hitBox.attr.rollingFriction(),
                 hitBox.attr.spinningFriction(), hitBox.attr.restitution());
+    }
+
+    /** 方块破坏能量系数：履带轮面用履带材料，其余用碰撞箱材质。 */
+    private float contactBlockDamageFactor(int hitBoxIndex, HitBox hitBox) {
+        return subPart.contactMaterial(hitBoxIndex, hitBox).physics().blockDamageFactor();
     }
 
     private void applyFriction(boolean isWheel, Vector3f friction, float rolling, float spinning,
@@ -361,9 +365,10 @@ public class CollisionHandler {
 
         //方块破坏与碰撞伤害
         if (MMServerConfig.shouldDestroyBlocks()
-                && hitBox.attr.blockDamageFactor() > 0
+                && contactBlockDamageFactor(hitBoxIndex, hitBox) > 0
                 && blockState.getDestroySpeed(level, BlockPos.ZERO) >= 0) {
-            applyBlockDamage(other, terrain, blockPos, blockState, hitBox, normal, worldContactPoint,
+            applyBlockDamage(other, terrain, blockPos, blockState, hitBox, hitBoxIndex,
+                    normal, worldContactPoint,
                     contactVel, partMass, blockRestitution, slipRatio, manifoldPointId);
         }
 
@@ -462,10 +467,18 @@ public class CollisionHandler {
 
         //服务端才写入摩擦（客户端物理仅供表现）
         if (!subPart.getLevel().isClientSide()) {
-            //湿滑衰减
-            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation());
+            //湿滑衰减：履带轮面读履带材料的 slip_adaptation，其余读碰撞箱材质
+            MaterialAttr.PhysicsAttr contactPhysics =
+                    subPart.contactMaterial(hitBoxIndex, hitBox).physics();
+            float effectiveSlip = blockSlip * (1f - contactPhysics.slipAdaptation());
             float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f);
-            if (subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex)) {
+            if (subPart.isTrackContact(hitBoxIndex)) {
+                //履带：前向/侧向摩擦由 body 的各向异性摩擦承担，这里只写合成摩擦标量
+                ManifoldPoints.setCombinedFriction(manifoldPointId,
+                        Math.max(0.001f, subPart.body.getFriction() * blockFriction * wetFactor));
+                ManifoldPoints.setFlags(manifoldPointId,
+                        ManifoldPoints.getFlags(manifoldPointId) & ~ContactPointFlag.LATERAL_FRICTION);
+            } else if (subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex)) {
                 //轮胎：滑移曲线 + 摩擦椭圆 + 单一合成方向
                 applyWheelFriction(hitBox, slipAngle, slipRatio, slipVel,
                         manifoldPointId, blockFriction, wetFactor);
@@ -493,12 +506,14 @@ public class CollisionHandler {
      */
     private void applyBlockDamage(PhysicsRigidBody other, PhysicsChunkSection terrain,
                                   BlockPos blockPos, BlockState blockState, HitBox hitBox,
+                                  int hitBoxIndex,
                                   Vector3f normal, Vector3f worldContactPoint, Vector3f contactVel,
                                   float partMass, float blockRestitution, float slipRatio,
                                   long manifoldPointId) {
         Level level = subPart.getLevel();
         float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
-        float subPartArmor = hitBox.getRHA(subPart);
+        float subPartArmor = subPart.getRHA(hitBox);
+        float blockDamageFactor = subPart.contactMaterial(hitBoxIndex, hitBox).physics().blockDamageFactor();
         double contactNormalSpeed = Math.abs(contactVel.dot(normal));
 //                + ManifoldPoints.getAppliedImpulse(manifoldPointId) / subPart.body.getMass();
         float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
@@ -518,10 +533,10 @@ public class CollisionHandler {
         double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);
         double partEnergy = contactEnergy - blockEnergy;
 
-        if (hitBox.attr.blockDamageFactor() * blockEnergy > 250 * blockDurability) {
+        if (blockDamageFactor * blockEnergy > 250 * blockDurability) {
             //能量足够，直接摧毁方块
             terrain.markRemoved(blockPos);
-            double blockDropRate = Math.exp(1 - (hitBox.attr.blockDamageFactor() * blockEnergy / (250 * blockDurability)));
+            double blockDropRate = Math.exp(1 - (blockDamageFactor * blockEnergy / (250 * blockDurability)));
             if (!level.isClientSide()) {
                 SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
                         () -> level.destroyBlock(blockPos, Math.random() < blockDropRate));
@@ -537,7 +552,7 @@ public class CollisionHandler {
             subPart.body.applyImpulse(impulse, offset);
             float partDamage = (float) (finalActualPartEnergy / 250);
             DamageSource source = level.damageSources().flyIntoWall();
-            if (hitBox.modifyDamage(source, partDamage) > 1) {
+            if (subPart.modifyArmorDamage(hitBox, source, partDamage) > 1) {
                 BFDamageContext ctx = BFDamageContext.builder()
                         .source(source)
                         .baseDamage(partDamage)
@@ -553,7 +568,7 @@ public class CollisionHandler {
             //能量不足，部件吸收部分伤害
             float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
             DamageSource source = level.damageSources().flyIntoWall();
-            if (hitBox.modifyDamage(source, partDamage) > 1) {
+            if (subPart.modifyArmorDamage(hitBox, source, partDamage) > 1) {
                 BFDamageContext ctx = BFDamageContext.builder()
                         .source(source)
                         .baseDamage(partDamage)

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util.mechanic;
 
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -137,5 +138,63 @@ public class ArmorUtil {
      */
     public static float getBlockArmor(Level level, BlockState blockState, BlockPos blockPos) {
         return (float) (100f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.001+blockState.getDestroySpeed(level, blockPos)))));
+    }
+
+    // ==================== 材质装甲系数 ====================
+
+    /**
+     * 耐久衰减后的抗穿系数：
+     * {@code decay_rha + (rha − decay_rha) × ratio^decay_power}。
+     *
+     * <p>{@code rha} 与 {@code decay_rha} 都是相对厚度的系数，毫米数由调用方的厚度提供
+     * （碰撞箱用 {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr#thickness}，
+     * 履带用 {@code thickness_mm}）。</p>
+     *
+     * @param armor 材质装甲属性
+     * @param ratio 当前耐久比例，0~1
+     * @return 抗穿系数
+     */
+    public static float rhaCoeff(MaterialAttr.ArmorAttr armor, float ratio) {
+        float clamped = Math.clamp(ratio, 0f, 1f);
+        return armor.decay_rha() + (armor.rha() - armor.decay_rha())
+                * (float) Math.pow(clamped, armor.decay_power());
+    }
+
+    /**
+     * 等效护甲厚度（mm RHA）：{@code thicknessMm × rhaCoeff(ratio)}。
+     *
+     * @param armor       材质装甲属性
+     * @param thicknessMm 装甲厚度（毫米）
+     * @param ratio       当前耐久比例，0~1
+     * @return 等效护甲厚度
+     */
+    public static float rha(MaterialAttr.ArmorAttr armor, float thicknessMm, float ratio) {
+        return thicknessMm * rhaCoeff(armor, ratio);
+    }
+
+    /**
+     * 耐久衰减后的线性减伤：{@code decay_dmg_resist + (dmg_resist − decay_dmg_resist) × ratio^decay_power}。
+     *
+     * @param armor 材质装甲属性
+     * @param ratio 当前耐久比例，0~1
+     * @return 线性减伤值
+     */
+    public static float resist(MaterialAttr.ArmorAttr armor, float ratio) {
+        float clamped = Math.clamp(ratio, 0f, 1f);
+        return armor.decay_dmg_resist() + (armor.dmg_resist() - armor.decay_dmg_resist())
+                * (float) Math.pow(clamped, armor.decay_power());
+    }
+
+    /**
+     * 耐久衰减后的伤害乘数：{@code decay_dmg_mult + (dmg_mult − decay_dmg_mult) × ratio^decay_power}。
+     *
+     * @param armor 材质装甲属性
+     * @param ratio 当前耐久比例，0~1
+     * @return 伤害乘数
+     */
+    public static float mult(MaterialAttr.ArmorAttr armor, float ratio) {
+        float clamped = Math.clamp(ratio, 0f, 1f);
+        return armor.decay_dmg_mult() + (armor.dmg_mult() - armor.decay_dmg_mult())
+                * (float) Math.pow(clamped, armor.decay_power());
     }
 }

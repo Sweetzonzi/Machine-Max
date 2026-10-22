@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorStaticAttr;
@@ -64,6 +65,10 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, ProjectileType> PROJECTILE_TYPES = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, ProjectileType> SERVER_PROJECTILE_TYPES = new ConcurrentHashMap<>();
+    /** 载具挂件型号（fittings/）：客户端注册表，供渲染与反序列化。 */
+    public static ConcurrentMap<ResourceLocation, FittingType> FITTING_TYPES = new ConcurrentHashMap<>();
+    /** 载具挂件型号（fittings/）：服务端注册表，供物理与持久化。 */
+    public static ConcurrentMap<ResourceLocation, FittingType> SERVER_FITTING_TYPES = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> SERVER_STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, VehicleData> TEMPLATES = new ConcurrentHashMap<>(); // 已组装的结构数据
@@ -176,6 +181,21 @@ public class MMDynamicRes {
     @Nullable
     public static RecipeHolder<PartFabricatingRecipe> getPartRecipe(Level level, ResourceLocation partType) {
         return level.isClientSide() ? PART_RECIPES.get(partType) : SERVER_PART_RECIPES.get(partType);
+    }
+
+    /**
+     * 按型号 id 取本侧的载具挂件型号。
+     *
+     * <p>客户端用 {@link #FITTING_TYPES}，服务端用 {@link #SERVER_FITTING_TYPES}；两侧各自
+     * 加载同一份内容包。型号缺失时返回 {@code null}，由调用方决定丢弃还是回退默认型号。</p>
+     *
+     * @param level 用于判定逻辑侧
+     * @param id    型号 id（{@code fittings/} 下的文件名）
+     * @return 型号；不存在时返回 {@code null}
+     */
+    @Nullable
+    public static FittingType getFittingType(Level level, ResourceLocation id) {
+        return (level.isClientSide() ? FITTING_TYPES : SERVER_FITTING_TYPES).get(id);
     }
 
     // ==================== 制造索引的构建 ====================

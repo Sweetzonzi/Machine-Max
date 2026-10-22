@@ -1,14 +1,22 @@
 package io.github.sweetzonzi.machine_max.client.render.renderer;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
+import cn.solarmoon.spark_core.animation.model.ModelPose;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisual;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
@@ -20,9 +28,12 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,50 +44,74 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link #tick()}（20tps）里积分，渲染时用上一 tick / 本 tick 双值插值。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
  *
+ * <p><b>两条绘制路径</b>：</p>
+ * <ul>
+ *   <li>{@link TrackRenderMode#MODEL}：近处实体渲染。型号的 {@code visual.model} 解析成
+ *       {@link OModel} 后逐节绘制同一份单节模型；模型缺失时回退程序化。</li>
+ *   <li>{@link TrackRenderMode#PROCEDURAL}：远处渲染。始终画程序化扁长方体，不加载内容包模型。</li>
+ * </ul>
+ *
  * <p><b>挂载方式</b>：本类作为 {@link VisualEffectRenderer} 只承担每 tick 的相位积分，
  * {@link #getRenderStage()} 不返回阶段，因此不参与 {@code RenderLevelStageEvent} 调度。
  * 实际绘制入口是 {@link #renderTrack}，由 {@link PartEntityRenderer}（以及
  * {@link DistantVehicleRenderer}）在主动轮所属实体的 {@code render} 中调用，使履带与零件
  * 模型共用实体渲染管线：</p>
  * <ul>
- *   <li>渲染类型使用带 lightmap / overlay / normal 的实体不透明类型，节的颜色随世界光照，
- *       并按面法线产生明暗；</li>
+ *   <li>渲染类型使用带 lightmap / overlay / normal 的实体类型，节的颜色随世界光照；</li>
  *   <li>Iris 的阴影 pass 由 {@code ShadowRenderer} 直接调用 {@code EntityRenderDispatcher}
  *       与各实体的渲染器，不触发 {@code RenderLevelStageEvent}；只有实体管线里的几何会被
  *       写进阴影贴图。</li>
  * </ul>
  *
- * <p>初版不依赖模型 / 贴图资产：每节是程序化扁长方体，贴图取原版纯白纹理，所有颜色与
- * 明暗来自顶点色、法线光照与光照图。单节模型接入后只需替换 {@link #renderLink} 的绘制
- * 部分。</p>
- *
  * <p>线程：{@link #tick()} 在主线程，{@link #renderTrack} 在渲染线程；共享状态只有
- * {@link State} 的 volatile 相位 / 节数。</p>
+ * {@link State} 的 volatile 相位 / 节数，以及按型号缓存的模型与渲染类型。</p>
  */
 public class TrackRenderer extends VisualEffectRenderer {
-    /** 单节宽度（米）的占位值；接入单节模型后以模型横向尺寸为准。 */
+    /** 绘制路径：近处用型号的单节模型，远处用程序化扁长方体。 */
+    public enum TrackRenderMode {
+        MODEL,
+        PROCEDURAL
+    }
+
+    /** 程序化回退的单节宽度（米）；模型路径以模型横向尺寸为准。 */
     private static final float LINK_WIDTH = 0.35f;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
     private static final double LINK_LENGTH_RATIO = 0.92;
     private static final double TICK_SECONDS = 1.0 / 20.0;
-    /** 占位贴图：原版 4×4 纯白纹理；节的基色、面间明暗与光照图在此之上调制。 */
+    /** 程序化回退的贴图：原版 4×4 纯白纹理。 */
     private static final ResourceLocation LINK_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     /**
-     * 实体不透明渲染类型：写入深度、正面剔除，带 lightmap / overlay / normal 顶点属性。
-     * 与零件模型使用同一套实体光照，同时保证阴影 pass 里可作为实体几何绘制。
+     * 程序化回退的实体不透明渲染类型：写入深度、正面剔除，带 lightmap / overlay / normal
+     * 顶点属性。与零件模型使用同一套实体光照，同时保证阴影 pass 里可作为实体几何绘制。
      */
     private static final RenderType LINK_RENDER_TYPE = RenderType.entitySolid(LINK_TEXTURE);
-    /** 单节统一基色；面间明暗交给实体管线的两向光照，顶点色只承载基色。 */
+    /** 程序化回退的单节统一基色。 */
     private static final int LINK_COLOR = 0xFF9A968C;
+    /** 模型路径的顶点色：不额外着色，明暗交给实体管线的两向光照。 */
+    private static final int MODEL_COLOR = 0xFFFFFFFF;
 
     /** 相位状态按 TrackLink 索引；tick 写入，渲染读取。 */
     private static final Map<TrackLink, State> STATES = new ConcurrentHashMap<>();
+    /** 单节模型的渲染资源按型号 id 缓存，避免每帧新建 {@link ModelPose} 与渲染类型。 */
+    private static final Map<ResourceLocation, LinkVisual> VISUALS = new ConcurrentHashMap<>();
+    /** 已经报过「模型缺失」的型号，避免每帧刷日志。 */
+    private static final Set<ResourceLocation> MISSING_MODELS = ConcurrentHashMap.newKeySet();
 
     private static final class State {
         private volatile int linkCount;
         private volatile double phase;
         private volatile double prevPhase;
+    }
+
+    /**
+     * 一个型号的单节渲染资源。
+     *
+     * @param renderType 该型号贴图的实体渲染类型
+     * @param pose       静态姿态（单节模型没有动画）
+     * @param bones      模型骨骼，按模型定义顺序
+     */
+    private record LinkVisual(RenderType renderType, ModelPose pose, List<OBone> bones) {
     }
 
     @Override
@@ -98,7 +133,7 @@ public class TrackRenderer extends VisualEffectRenderer {
                     if (state.linkCount == 0) state.linkCount = link.linkCount();
                     continue;
                 }
-                int linkCount = envelope.path().linkCount(link.attr().linkLength());
+                int linkCount = envelope.path().linkCount(link.attr().lengthPerLink());
                 if (state.linkCount == 0) {
                     state.linkCount = linkCount;
                 }
@@ -135,10 +170,12 @@ public class TrackRenderer extends VisualEffectRenderer {
      * @param poseStack   已把世界原点映射到相机相对原点的姿态栈
      * @param packedLight 主动轮处的打包光照坐标，整条履带共用
      * @param partialTick 帧间插值系数
+     * @param mode        绘制路径：近处 {@code MODEL}，远处 {@code PROCEDURAL}
      */
     public static void renderTrack(@NotNull SubPart subPart, @NotNull PoseStack poseStack,
                                    @NotNull MultiBufferSource bufferSource,
-                                   float partialTick, int packedLight) {
+                                   float partialTick, int packedLight,
+                                   @NotNull TrackRenderMode mode) {
         TrackLink link = subPart.trackLink;
         if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return;
 
@@ -147,50 +184,86 @@ public class TrackRenderer extends VisualEffectRenderer {
 
         State state = STATES.get(link);
         int linkCount = state == null || state.linkCount <= 0
-                ? envelope.path().linkCount(link.attr().linkLength())
+                ? envelope.path().linkCount(link.attr().lengthPerLink())
                 : state.linkCount;
         if (linkCount <= 0) return;
 
         double phase = state == null ? 0 : lerp(state.prevPhase, state.phase, partialTick);
-        renderBelt(poseStack, bufferSource, envelope, linkCount, phase,
-                LINK_WIDTH, link.attr().linkThickness(), packedLight);
+        LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
+        renderBelt(poseStack, bufferSource, envelope, linkCount, phase, link, visual, packedLight);
     }
 
     private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,
                                    TrackEnvelope2D.Result envelope, int linkCount, double phase,
-                                   float width, float thickness, int packedLight) {
+                                   TrackLink link, @Nullable LinkVisual visual, int packedLight) {
         double length = envelope.path().length();
         if (!(length > 1e-6)) return;
         float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
         double spacing = length / linkCount;
+        float thickness = link.attr().thicknessMeters();
         float halfLength = (float) (spacing * LINK_LENGTH_RATIO * 0.5);
         float halfThickness = thickness * 0.5f;
-        float halfWidth = width * 0.5f;
+        float halfWidth = LINK_WIDTH * 0.5f;
 
         for (int i = 0; i < linkCount; i++) {
             double arc = (length * i / linkCount + phase) % length;
             if (arc < 0) arc += length;
             BeltPath2D.Sample sample = envelope.path().sampleAt(arc);
-            Vec2 point = sample.point().add(sample.normal().mul(halfThickness));
+            Vec2 point = sample.point();
             Vec2 tangent = sample.tangent();
             Vec2 normal = sample.normal();
 
-            // 局部基：+X = 切线，+Y = 外法线，+Z = 轮轴。
-            // 切线 × 外法线 = -绕向 × 局部X，第三轴随绕向取值以保持右手系。
-            // JOML 的 16 参构造按列主序收参：前 4 个是第 0 列，最后 4 个是平移列。
-            // 2D 采样点 (y,z) 映射回主动轮局部系是 (0, y, z)。
-            Matrix4f local = new Matrix4f(
-                    0, (float) tangent.x(), (float) tangent.y(), 0,
-                    0, (float) normal.x(), (float) normal.y(), 0,
-                    wheelAxis, 0, 0, 0,
-                    0, (float) point.x(), (float) point.y(), 1
-            );
-            Matrix4f world = new Matrix4f(envelope.sprocketWorld()).mul(local);
-
+            // 节局部基：程序化路径 +X = 切线 / +Y = 外法线 / +Z = 轮轴，模型路径
+            // +X = 轮轴 / +Y = 内法线 / +Z = 切线；两条矩阵都是右手系。
             poseStack.pushPose();
-            poseStack.mulPose(world);
-            renderLink(poseStack, bufferSource, halfLength, halfThickness, halfWidth, packedLight);
+            if (visual != null) {
+                poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
+                        .mul(TrackLinkPose.model(tangent, normal, point, wheelAxis, thickness)));
+                renderModelLink(poseStack, bufferSource, visual, packedLight);
+            } else {
+                poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
+                        .mul(TrackLinkPose.procedural(tangent, normal, point, wheelAxis, halfThickness)));
+                renderProceduralLink(poseStack, bufferSource, halfLength, halfThickness, halfWidth, packedLight);
+            }
             poseStack.popPose();
+        }
+    }
+
+    /**
+     * 取型号的单节模型渲染资源；模型缺失时返回 {@code null}，调用方回退程序化。
+     */
+    @Nullable
+    private static LinkVisual visualFor(TrackLink link, SubPart sprocket) {
+        FittingVisual visual = link.type().visual();
+        ResourceLocation key = link.typeId();
+        LinkVisual cached = VISUALS.get(key);
+        if (cached != null) return cached;
+
+        ModelIndex index = new ModelIndex("fitting", visual.model());
+        OModel model = OModel.getOrEmpty(index);
+        if (model.getBones().isEmpty()) {
+            if (MISSING_MODELS.add(key)) {
+                MachineMax.LOGGER.warn("履带型号 {} 的模型 {} 不存在或为空，改用程序化履带", key, visual.model());
+            }
+            return null;
+        }
+        ModelInstance instance = new ModelInstance(sprocket.part, index);
+        LinkVisual created = new LinkVisual(
+                RenderType.entityCutout(visual.texture()),
+                instance.getPose(),
+                List.copyOf(model.getBones().values())
+        );
+        VISUALS.put(key, created);
+        return created;
+    }
+
+    /** 逐骨骼绘制一份单节模型；明暗交给实体管线的两向光照。 */
+    private static void renderModelLink(PoseStack poseStack, MultiBufferSource bufferSource,
+                                        LinkVisual visual, int packedLight) {
+        VertexConsumer consumer = bufferSource.getBuffer(visual.renderType());
+        for (OBone bone : visual.bones()) {
+            ModelRenderHelperKt.render(bone, visual.pose(), poseStack, consumer,
+                    packedLight, OverlayTexture.NO_OVERLAY, MODEL_COLOR, 1f, false);
         }
     }
 
@@ -198,9 +271,9 @@ public class TrackRenderer extends VisualEffectRenderer {
      * 画一节扁长方体。每个面按外法线顺序给出逆时针顶点，正面剔除下从外面可见；
      * 明暗由 {@link RenderType#entitySolid} 的实体着色器（两向光照 + 光照图）计算。
      */
-    private static void renderLink(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   float halfLength, float halfThickness, float halfWidth,
-                                   int packedLight) {
+    private static void renderProceduralLink(PoseStack poseStack, MultiBufferSource bufferSource,
+                                             float halfLength, float halfThickness, float halfWidth,
+                                             int packedLight) {
         VertexConsumer consumer = bufferSource.getBuffer(LINK_RENDER_TYPE);
         PoseStack.Pose pose = poseStack.last();
 

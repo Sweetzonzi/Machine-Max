@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
@@ -194,13 +195,33 @@ public class HitBoxAttr {
     /**
      * 获取有效的材质属性，合并基础材质和覆写属性。
      *
+     * <p>材料缺失时回退 {@link MaterialAttr#DEFAULT} 并打 warn：碰撞箱的容错行为。
+     * 需要区分「材料不存在」的调用方（如履带型号）用 {@link #resolve}。</p>
+     *
      * @return 合并后的材质属性
      */
     public MaterialAttr getEffectiveMaterial() {
-        MaterialAttr baseMaterial = getMaterial(material);
-        if (overwrite == null) {
-            return baseMaterial;
-        }
+        MaterialAttr materialAttr = resolve(material, overwrite);
+        if (materialAttr != null) return materialAttr;
+        MachineMax.LOGGER.warn("材质 {} 不存在，碰撞箱改用默认材质", material);
+        return MaterialAttr.DEFAULT;
+    }
+
+    /**
+     * 解析材料并按覆写合并；材料 id 不在材料表时返回 {@code null}。
+     *
+     * <p>履带型号与碰撞箱共用这一套合并规则：physics / armor 字段级覆写，sounds 整体覆写。
+     * 材料缺失由调用方决定是回退默认材质还是拒绝注册。</p>
+     *
+     * @param material  材料 id
+     * @param overwrite 覆写，可为 {@code null}
+     * @return 合并后的材质；材料不存在时返回 {@code null}
+     */
+    @Nullable
+    public static MaterialAttr resolve(ResourceLocation material, @Nullable OverwriteAttr overwrite) {
+        MaterialAttr baseMaterial = MMDynamicRes.MATERIALS.get(material);
+        if (baseMaterial == null) return null;
+        if (overwrite == null) return baseMaterial;
         return new MaterialAttr(
                 mergePhysics(baseMaterial.physics(), overwrite.physics().orElse(null)),
                 mergeArmor(baseMaterial.armor(), overwrite.armor().orElse(null)),

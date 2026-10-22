@@ -15,6 +15,7 @@ object MMPackModuleRegistries {
         event.register(SubsystemModule())//子系统型号
         event.register(ConnectorModule())//连接点类型
         event.register(MaterialModule())//材料类型
+        event.register(FittingModule())//载具配件型号（履带）；依赖材料表，必须排在材料之后
         event.register(PartModule())//自定义部件
         event.register(TemplateModule())//预装配结构体模板
         event.register(BlueprintModule())//自定义蓝图

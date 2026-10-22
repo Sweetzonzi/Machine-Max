@@ -1,111 +1,191 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 
-import com.jme3.math.Vector3f;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
- * 履带属性。
+ * 履带属性：型号 JSON 顶层与几何 / 装甲 / 接触 / 音效有关的字段。
  *
- * <p>当前由测试物品直接使用 {@link #DEFAULT}，尚未接入内容包 JSON；字段划分按
- * {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §6.1 保留，后续加 Codec 即可。</p>
+ * <p>字段划分与单位见 {@code docs/plan/进行中/履带系统-数据模型设计.md} §3。材料在构造时
+ * 由 {@link HitBoxAttr#resolve} 解析成 {@link MaterialAttr} 并缓存：材料是型号的硬依赖，
+ * 缺失时构造直接失败，由内容包加载器记为内容包错误。</p>
  *
- * <p>耐久按节声明：{@link #linkDurability()} 是每节耐久，整条带的节数
- * {@code N = max(1, round(L / linkLength))} 由包络总长推导，最大耐久为
- * {@code linkDurability × N}。因此轮组布局变化会改变整条带的血量上限。</p>
- *
- * @param linkThickness 几何厚度（米），供两端内表面包络扣半径与客户端节几何共用；
- *                      半径关系见 {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §2.4
+ * <p>耐久按节声明：{@link #durabilityPerLink()} 是每节耐久，整条带的节数 {@code N} 由包络
+ * 总长与 {@link #lengthPerLink()} 推导，最大耐久为 {@code durabilityPerLink × max(1, N)}。</p>
  */
-public record TrackAttr(
-        float linkDurability,
-        float linkLength,
-        float linkThickness,
-        int minEffectiveWheels,
-        MaterialAttr.ArmorAttr armor,
-        Friction friction,
-        Tension tension,
-        Sounds sounds
-) {
-    public TrackAttr {
-        if (!(linkDurability > 0f)) {
-            throw new IllegalArgumentException("linkDurability must be > 0");
+public final class TrackAttr {
+    private final float durabilityPerLink;
+    private final float lengthPerLink;
+    private final float thicknessMm;
+    private final ResourceLocation materialId;
+    private final Optional<HitBoxAttr.OverwriteAttr> overwrite;
+    private final MaterialAttr.MaterialSoundAttr sounds;
+    private final Tension tension;
+    /** 构造时由 {@link #materialId} + {@link #overwrite} 解析出的有效材料。 */
+    private final MaterialAttr resolved;
+
+    public TrackAttr(float durabilityPerLink,
+                     float lengthPerLink,
+                     float thicknessMm,
+                     ResourceLocation materialId,
+                     Optional<HitBoxAttr.OverwriteAttr> overwrite,
+                     MaterialAttr.MaterialSoundAttr sounds,
+                     Tension tension) {
+        if (!Float.isFinite(durabilityPerLink) || !(durabilityPerLink > 0f)) {
+            throw new IllegalArgumentException("durability_per_link 必须是有限正数: " + durabilityPerLink);
         }
-        if (!(linkLength > 0f)) {
-            throw new IllegalArgumentException("linkLength must be > 0");
+        if (!Float.isFinite(lengthPerLink) || !(lengthPerLink > 0f)) {
+            throw new IllegalArgumentException("length_per_link 必须是有限正数: " + lengthPerLink);
         }
-        if (!Float.isFinite(linkThickness) || !(linkThickness > 0f)) {
-            throw new IllegalArgumentException("linkThickness must be finite and > 0");
+        if (!Float.isFinite(thicknessMm) || !(thicknessMm > 0f)) {
+            throw new IllegalArgumentException("thickness_mm 必须是有限正数: " + thicknessMm);
         }
-        if (minEffectiveWheels < 2) {
-            throw new IllegalArgumentException("minEffectiveWheels must be >= 2");
+        MaterialAttr material = HitBoxAttr.resolve(materialId, overwrite.orElse(null));
+        if (material == null) {
+            throw new IllegalArgumentException("履带材料不存在: " + materialId);
         }
+        this.durabilityPerLink = durabilityPerLink;
+        this.lengthPerLink = lengthPerLink;
+        this.thicknessMm = thicknessMm;
+        this.materialId = materialId;
+        this.overwrite = overwrite;
+        this.sounds = sounds;
+        this.tension = tension;
+        this.resolved = material;
     }
 
-    public static final TrackAttr DEFAULT = new TrackAttr(
-            20f,
-            0.2f,
-            0.05f,
-            2,
-            new MaterialAttr.ArmorAttr(
-                    30f, true,
-                    1f, 0.95f,
-                    0.5f, 0f, 1f, 1.5f,
-                    0.6f,
-                    DamageModifier.DEFAULT_DAMAGE_MODIFIERS,
-                    DamageModifier.DEFAULT_PEN_DEPTH_MODIFIERS,
-                    DamageModifier.DEFAULT_DAMAGE_MODIFIERS
-            ),
-            new Friction(new Vector3f(0.9f, 0.9f, 1f), 0.05f, 0f, 0f),
-            new Tension(true, 12000f, 900f, 0f, 0.015f, 800f),
-            Sounds.DEFAULT
+    public float durabilityPerLink() {
+        return durabilityPerLink;
+    }
+
+    public float lengthPerLink() {
+        return lengthPerLink;
+    }
+
+    public float thicknessMm() {
+        return thicknessMm;
+    }
+
+    /** 几何厚度（米），供包络扣半径与客户端节几何共用。 */
+    public float thicknessMeters() {
+        return thicknessMm * 0.001f;
+    }
+
+    public ResourceLocation materialId() {
+        return materialId;
+    }
+
+    /** 材料覆写；空表示完全沿用 {@link #materialId()} 的材料。 */
+    public Optional<HitBoxAttr.OverwriteAttr> overwrite() {
+        return overwrite;
+    }
+
+    public MaterialAttr material() {
+        return resolved;
+    }
+
+    public MaterialAttr.ArmorAttr armor() {
+        return resolved.armor();
+    }
+
+    public MaterialAttr.PhysicsAttr physics() {
+        return resolved.physics();
+    }
+
+    public MaterialAttr.MaterialSoundAttr sounds() {
+        return sounds;
+    }
+
+    public Tension tension() {
+        return tension;
+    }
+
+    /** 整条履带的最大耐久：每节耐久 × 节数，节数至少按 1 计。 */
+    public float maxDurability(int linkCount) {
+        return durabilityPerLink * Math.max(1, linkCount);
+    }
+
+    /**
+     * 省略 {@code sounds} 时使用的默认命中音：两个固定范围（64 格）的硬金属碰撞事件。
+     *
+     * <p>与 {@link MaterialAttr.MaterialSoundAttr#DEFAULT}（碰撞箱的 {@code hit_box.hit.*}）
+     * 不同：履带命中音默认落在 {@code part.collision.terrain.hard_metal}。</p>
+     */
+    public static final MaterialAttr.MaterialSoundAttr TRACK_DEFAULT_SOUNDS = new MaterialAttr.MaterialSoundAttr(
+            createFixedRangeSound("part.collision.terrain.hard_metal"),
+            createFixedRangeSound("part.collision.terrain.hard_metal")
     );
 
-    /**
-     * 整条履带的最大耐久：每节耐久 × 节数。
-     */
-    public float maxDurability(int linkCount) {
-        return linkDurability * Math.max(1, linkCount);
+    private static SoundEvent createFixedRangeSound(String path) {
+        return SoundEvent.createFixedRangeEvent(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path), 64f);
     }
 
-
-    public record Friction(
-            Vector3f anisotropic,
-            float rolling,
-            float spinning,
-            float restitution
-    ) {
-    }
-
-    public record Tension(
-            boolean enabled,
-            float stiffness,
-            float damping,
-            float preload,
-            float slack,
-            float maxForce
-    ) {
-    }
+    public static final MapCodec<TrackAttr> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("durability_per_link", 20f).forGetter(TrackAttr::durabilityPerLink),
+            Codec.FLOAT.optionalFieldOf("length_per_link", 0.2f).forGetter(TrackAttr::lengthPerLink),
+            Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
+            ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),
+            HitBoxAttr.OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(TrackAttr::overwrite),
+            MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds", TRACK_DEFAULT_SOUNDS)
+                    .forGetter(TrackAttr::sounds),
+            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension)
+    ).apply(instance, TrackAttr::new));
 
     /**
-     * 履带音效覆盖：滚动持续音 + 命中音。
+     * 相邻成员轮之间的单边弹簧-阻尼参数。
      *
-     * <p>初版单音效，不按地面材质细分；音源复用已有的轮胎/金属碰撞资源，
-     * 等正式履带音效资源接入后再替换。</p>
+     * <p>{@code rest} 不在这里声明：装配 / 载入时按相邻轮心距采样。</p>
      */
-    public record Sounds(SoundEvent roll, SoundEvent hitUnPen, SoundEvent hitPen) {
-        public static final Sounds DEFAULT = new Sounds(
-                create("part.collision.terrain.tire_metal"),
-                create("part.collision.terrain.hard_metal"),
-                create("part.collision.terrain.hard_metal")
-        );
+    public record Tension(boolean enabled, float stiffness, float damping,
+                          float preload, float slack, float maxForce) {
+        public static final Tension DEFAULT = new Tension(true, 12000f, 900f, 0f, 0.015f, 800f);
 
-        private static SoundEvent create(String path) {
-            return SoundEvent.createFixedRangeEvent(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path), 64f);
+        public Tension {
+            requireNonNegative("stiffness", stiffness);
+            requireNonNegative("damping", damping);
+            requireNonNegative("preload", preload);
+            requireNonNegative("slack", slack);
+            requireNonNegative("max_force", maxForce);
         }
+
+        public static final MapCodec<Tension> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.BOOL.optionalFieldOf("enabled", true).forGetter(Tension::enabled),
+                Codec.FLOAT.optionalFieldOf("stiffness", 12000f).forGetter(Tension::stiffness),
+                Codec.FLOAT.optionalFieldOf("damping", 900f).forGetter(Tension::damping),
+                Codec.FLOAT.optionalFieldOf("preload", 0f).forGetter(Tension::preload),
+                Codec.FLOAT.optionalFieldOf("slack", 0.015f).forGetter(Tension::slack),
+                Codec.FLOAT.optionalFieldOf("max_force", 800f).forGetter(Tension::maxForce)
+        ).apply(instance, Tension::new));
+
+        public static final Codec<Tension> CODEC = MAP_CODEC.codec();
+
+        private static void requireNonNegative(String name, float value) {
+            if (!Float.isFinite(value) || value < 0f) {
+                throw new IllegalArgumentException(name + " 必须是有限非负数: " + value);
+            }
+        }
+    }
+
+    /** 便捷构造：不带覆写、不带音效覆盖，用于测试与夹具。 */
+    public static TrackAttr of(ResourceLocation material, float thicknessMm) {
+        return new TrackAttr(20f, 0.2f, thicknessMm, material, Optional.empty(),
+                TRACK_DEFAULT_SOUNDS, Tension.DEFAULT);
+    }
+
+    /** 便捷构造：显式给出全部字段，用于测试与夹具。 */
+    public static TrackAttr of(float durabilityPerLink, float lengthPerLink, float thicknessMm,
+                               ResourceLocation material, @Nullable MaterialAttr.MaterialSoundAttr sounds) {
+        return new TrackAttr(durabilityPerLink, lengthPerLink, thicknessMm, material, Optional.empty(),
+                sounds == null ? TRACK_DEFAULT_SOUNDS : sounds, Tension.DEFAULT);
     }
 }

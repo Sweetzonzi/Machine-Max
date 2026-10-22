@@ -527,13 +527,16 @@ public class CollisionEffectManager implements ISoundSpreader {
 
     /**
      * 根据轮胎/车体和碰撞方块查询对应的持续性摩擦音效。
+     *
+     * <p>履带成员轮面固定使用硬金属滚动音（{@link #TIRE_METAL}）：滚动音不提供数据字段，
+     * 也不按地面材质细分。断带后仍是金属滚动音，只是装甲层回退到轮子材质。</p>
      */
     @NotNull
     private SoundEvent getFrictionSound(boolean isWheel, BlockState blockState) {
         if (isWheel) {
             var track = subPart.trackLink;
             if (track != null && !track.isDisposed()) {
-                return track.attr().sounds().roll();
+                return TIRE_METAL;
             }
         }
         return isWheel ? getTireRollSound(blockState) : getBodyScrapeSound(blockState);

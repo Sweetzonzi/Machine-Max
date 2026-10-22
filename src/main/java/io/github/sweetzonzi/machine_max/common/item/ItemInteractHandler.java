@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import net.minecraft.core.component.DataComponents;
@@ -110,10 +110,16 @@ public class ItemInteractHandler {
      * 再次右键起始主动轮则闭合成一条履带。
      */
     private static void advance(Player player, VehicleCore vehicle, SubPart subPart) {
+        ItemStack stack = player.getMainHandItem();
         TrackDraft draft = currentDraft(player);
         if (draft == null) {
             if (!canJoin(player, vehicle, subPart)) return;
-            TRACK_DRAFTS.put(player.getUUID(), new TrackDraft(vehicle, subPart));
+            TrackType type = TrackItem.resolveType(player.level(), stack);
+            if (type == null) {
+                message(player, "履带：物品没有有效的履带型号");
+                return;
+            }
+            TRACK_DRAFTS.put(player.getUUID(), new TrackDraft(vehicle, subPart, type));
             message(player, "履带：主动轮 " + subPart.name + "，依次右键负重轮，最后右键主动轮闭合");
             return;
         }
@@ -122,12 +128,16 @@ public class ItemInteractHandler {
             return;
         }
         if (subPart == draft.sprocket()) {
-            int minWheels = TrackAttr.DEFAULT.minEffectiveWheels();
-            if (draft.wheels().size() + 1 < minWheels) {
-                message(player, "履带：至少需要 " + minWheels + " 个轮子（含主动轮）");
+            if (draft.wheels().size() + 1 < TrackLink.MIN_MEMBERS) {
+                message(player, "履带：至少需要 " + TrackLink.MIN_MEMBERS + " 个轮子（含主动轮）");
                 return;
             }
-            TrackLink link = vehicle.createTrack(draft.sprocket(), draft.wheels());
+            TrackLink link = vehicle.createTrack(draft.sprocket(), draft.wheels(), draft.type());
+            if (link == null) {
+                // 装配被拒绝（厚度不成形等）：保留草稿，玩家可以补轮或换型号后再闭合
+                message(player, "履带：闭合失败，检查轮组与履带厚度");
+                return;
+            }
             TRACK_DRAFTS.remove(player.getUUID());
             message(player, "履带闭合：" + link.members().size() + " 个轮子");
             return;
@@ -199,15 +209,17 @@ public class ItemInteractHandler {
         player.displayClientMessage(Component.literal(text), true);
     }
 
-    /** 服务端单线程访问；草稿只持有 SubPart 引用，不持有刚体或约束。 */
+    /** 服务端单线程访问；草稿只持有 SubPart 引用与型号，不持有刚体或约束。 */
     private static final class TrackDraft {
         private final VehicleCore vehicle;
         private final SubPart sprocket;
+        private final TrackType type;
         private final List<SubPart> wheels = new ArrayList<>();
 
-        private TrackDraft(VehicleCore vehicle, SubPart sprocket) {
+        private TrackDraft(VehicleCore vehicle, SubPart sprocket, TrackType type) {
             this.vehicle = vehicle;
             this.sprocket = sprocket;
+            this.type = type;
         }
 
         private boolean isValid() {
@@ -241,6 +253,10 @@ public class ItemInteractHandler {
 
         private SubPart sprocket() {
             return sprocket;
+        }
+
+        private TrackType type() {
+            return type;
         }
 
         private List<SubPart> wheels() {

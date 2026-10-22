@@ -65,6 +65,16 @@ public class MMDataComponents {
                     .build()
     );
 
+    /** 保存在履带物品上的配件型号 id；缺失时回落 machine_max:default */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> FITTING_TYPE = COMPONENTS.register(
+            "fitting_type",
+            () -> DataComponentType.<ResourceLocation>builder()
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(ResourceLocation.STREAM_CODEC)
+                    .cacheEncoding()
+                    .build()
+    );
+
     /** 保存在蓝图物品上的蓝图资源路径，用于重建载具 */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> VEHICLE_BLUEPRINT_PATH = COMPONENTS.register(
             "vehicle_blueprint_path",
@@ -141,6 +151,7 @@ public class MMDataComponents {
     public static DeferredHolder<DataComponentType<?>, DataComponentType<String>> getDESIGNER() { return DESIGNER; }
     public static DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> getPART_TYPE() { return PART_TYPE; }
     public static DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> getPROJECTILE_TYPE() { return PROJECTILE_TYPE; }
+    public static DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> getFITTING_TYPE() { return FITTING_TYPE; }
     public static DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> getVEHICLE_BLUEPRINT_PATH() { return VEHICLE_BLUEPRINT_PATH; }
     public static DeferredHolder<DataComponentType<?>, DataComponentType<BlueprintData>> getBLUEPRINT_DATA() { return BLUEPRINT_DATA; }
     public static DeferredHolder<DataComponentType<?>, DataComponentType<VehicleData>> getVEHICLE_DATA() { return VEHICLE_DATA; }

@@ -40,7 +40,7 @@ network/
 
 ## 约定
 
-- **5 个协议组**：`input:1.0.0`（控制）、`sync:2.3.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.1.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 以布尔值编码 clockwise 铺设绕向，载具同步与蓝图取出载荷均传输该字段。
+- **5 个协议组**：`input:1.0.0`（控制）、`sync:2.4.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.2.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 依次编码 clockwise 铺设绕向与 `track_type` 型号 id，载具同步与蓝图取出载荷均传输这两个字段。
 - **全部处理器在主线程**：使用 `MainThreadPayloadHandler`。无物理线程处理器。
 - **双向载荷**：使用 `DirectionalPayloadHandler` 分离客户端/服务端方法。
 - **增量同步**：`SubPartSyncPayload` 使用 `SynchedEntityData.DataValue` 列表 + byte `255` 终结符。

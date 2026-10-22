@@ -24,6 +24,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConn
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
@@ -52,8 +53,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -166,7 +167,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             subSystemController.initAllSubsystems();//子系统初始化
             //履带在部件与连接关系之后重建；GearJoint 等到 onAddToLevel（刚体入世）再建
             for (TrackLinkData linkData : savedData.trackLinks) {
-                TrackLink link = TrackLink.fromData(this, linkData);
+                // 存档加载：型号缺失即丢弃该条履带，不回退默认型号
+                TrackLink link = TrackLink.fromData(this, linkData, false);
                 if (link != null) trackLinks.add(link);
             }
             recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);//先按新上限填满，再按保存的比例恢复
@@ -1278,7 +1280,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         for (TrackLink link : new ArrayList<>(trackLinks)) link.dispose();
         trackLinks.clear();
         for (TrackLinkData linkData : data) {
-            TrackLink link = TrackLink.fromData(this, linkData);
+            // 客户端：缺型号只影响本地表现，回退默认型号的视觉与属性，保留原始 typeId
+            TrackLink link = TrackLink.fromData(this, linkData, true);
             if (link != null) trackLinks.add(link);
         }
     }
@@ -1299,10 +1302,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      *
      * @param wheels 按铺设顺序排列的负重轮（不含主动轮）；主动轮由 {@code sprocket}
      *               参数补入成员表首位
+     * @return 成员不足 {@link TrackLink#MIN_MEMBERS} 或厚度不小于成员轮半径时返回
+     *         {@code null}；调用方据此保留草稿并提示，不要读成员表
      */
-    @NotNull
-    public TrackLink createTrack(@NotNull SubPart sprocket, @NotNull List<SubPart> wheels) {
-        TrackLink link = TrackLink.assemble(this, sprocket, wheels);
+    @Nullable
+    public TrackLink createTrack(@NotNull SubPart sprocket, @NotNull List<SubPart> wheels,
+                                 @NotNull TrackType type) {
+        TrackLink link = TrackLink.assemble(this, sprocket, wheels, type);
+        if (link == null) return null;
         registerTrackLink(link);
         link.onAssembled();
         return link;
