@@ -136,7 +136,7 @@
               "machine_max:7_62mm_ap": 3,
               "machine_max:7_62mm_tracer": 1
             },
-            "belt_label": "AP/曳光",
+            "belt_label": "AP/AP-T",
             "discovery_outputs": {
               "ammo_pktm": [
                 "global"

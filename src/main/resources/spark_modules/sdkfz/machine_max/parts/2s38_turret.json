@@ -1,4 +1,5 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/2s38/2s38_turret.png",
   "vehicle_durability_rate": 0.5,
   "variants": {
@@ -103,14 +104,14 @@
             "subsystem.machine_max.secondary_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:secondary_weapon_controller",
-              "first_hud_layout": "machine_max:2s38_weapon_compact",
-              "third_hud_layout": "machine_max:2s38_weapon_compact",
-              "scope_hud_layout": "machine_max:2s38_weapon_compact",
               "control_outputs": {
                 "weapon.mg": [
                   "global"
                 ]
-              }
+              },
+              "first_hud_layout": "machine_max:2s38_weapon_compact",
+              "third_hud_layout": "machine_max:2s38_weapon_compact",
+              "scope_hud_layout": "machine_max:2s38_weapon_compact"
             },
             "subsystem.machine_max.2a90_ap_loader": {
               "type": "machine_max:regen_loader",
@@ -238,7 +239,7 @@
                 "machine_max:7_62mm_ap": 3,
                 "machine_max:7_62mm_tracer": 1
               },
-              "belt_label": "AP/曳光",
+              "belt_label": "AP/AP-T",
               "discovery_outputs": {
                 "ammo_pktm": [
                   "global"
@@ -249,6 +250,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

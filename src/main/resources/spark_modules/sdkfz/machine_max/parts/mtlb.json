@@ -1,4 +1,5 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/mtlb/mtlb.png",
   "vehicle_durability_rate": 0.9,
   "variants": {
@@ -961,6 +962,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

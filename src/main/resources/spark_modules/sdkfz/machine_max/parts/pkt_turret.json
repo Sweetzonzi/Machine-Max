@@ -1,4 +1,5 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/pkt_turret.png",
   "vehicle_durability_rate": 0.6,
   "variants": {
@@ -108,7 +109,7 @@
               "machine_max:7_62mm_ap": 3,
               "machine_max:7_62mm_tracer": 1
             },
-            "belt_label": "AP/曳光",
+            "belt_label": "AP/AP-T",
             "discovery_outputs": {
               "ammo_pktm": [
                 "global"
@@ -118,6 +119,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

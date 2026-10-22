@@ -1,9 +1,10 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/2s38/2s38_addon_armor.png",
   "vehicle_durability_rate": 0.06,
-  "max_stack_size": 4,
   "vehicle_damage_rate": 0.095,
   "vehicle_damage_rate_destroyed": 0.015,
+  "max_stack_size": 4,
   "variants": {
     "left_1": {
       "model": "machine_max:2s38.geo",
@@ -317,6 +318,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }
