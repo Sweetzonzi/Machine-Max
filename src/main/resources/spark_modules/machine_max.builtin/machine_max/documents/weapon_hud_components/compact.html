@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Weapon HUD / compact</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
+    <div class="hud-panel grain-compact" data-mm-class="weapon.state">
+    <div class="compact-head"><span data-mm-text="weapon.name"></span><b data-mm-text="weapon.ammo_remaining"></b></div>
+    <div class="compact-foot"><div><span>STORE</span><span class="stock-label" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'"><span data-mm-text="belt.label"></span></span></div><span data-mm-text="weapon.reload_text"></span></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -91,6 +91,9 @@
           "subsystem.machine_max.main_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:main_weapon_controller",
+            "first_hud_layout": "machine_max:k17_weapon_feed",
+            "third_hud_layout": "machine_max:k17_weapon_feed",
+            "scope_hud_layout": "machine_max:k17_weapon_feed",
             "control_outputs": {
               "weapon_control": [
                 "global"
@@ -103,6 +106,9 @@
           "subsystem.machine_max.secondary_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:secondary_weapon_controller",
+            "first_hud_layout": "machine_max:k17_weapon_compact",
+            "third_hud_layout": "machine_max:k17_weapon_compact",
+            "scope_hud_layout": "machine_max:k17_weapon_compact",
             "control_outputs": {
               "weapon.mg": [
                 "global"
@@ -140,6 +146,9 @@
           "subsystem.machine_max.atgm_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:atgm_weapon_controller",
+            "first_hud_layout": "machine_max:k17_weapon_tubes",
+            "third_hud_layout": "machine_max:k17_weapon_tubes",
+            "scope_hud_layout": "machine_max:k17_weapon_tubes",
             "control_outputs": {
               "weapon.atgm": [
                 "global"

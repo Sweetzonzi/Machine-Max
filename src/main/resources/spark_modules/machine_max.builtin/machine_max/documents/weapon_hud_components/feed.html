@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Weapon HUD / feed</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
+    <div class="hud-panel grain-feed" data-mm-class="weapon.state">
+    <div class="identity"><span class="level">L2</span><b data-mm-text="weapon.name"></b></div>
+    <div class="caption"><div class="stock-label"><span>STORE</span><b data-mm-text="weapon.ammo_text"></b></div><span data-mm-text="weapon.reload_text"></span></div>
+    <div class="selected-stock"><div class="stock-label" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'"><span>FEED /</span><span data-mm-text="belt.label"></span></div></div>
+    <div class="tubes">
+      <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
+        <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
+        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></b></div>
+        <div class="loading-source"><span>LOADING /</span><span data-mm-text="tube.loading_belt_label"></span></div>
+      </div>
+    </div>
+    <div class="belts">
+      <div class="belt-row" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'">
+        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="belt.label"></span><span class="belt-stock" data-mm-text="belt.remaining"></span></div>
+      </div>
+    </div>
+    <div class="chamber-note" data-mm-class="weapon.round_mismatch ? 'mismatch' : 'matched'"><span>CHAMBER /</span><span data-mm-text="weapon.round_label"></span></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    </div>
+  </div>
+</body>
+</html>

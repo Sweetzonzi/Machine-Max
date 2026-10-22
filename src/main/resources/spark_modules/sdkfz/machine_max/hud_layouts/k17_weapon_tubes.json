@@ -1,0 +1,20 @@
+[
+  {
+    "style": "machine_max:aui_weapon_tubes",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_left",
+    "offset": [
+      8,
+      -52,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  }
+]

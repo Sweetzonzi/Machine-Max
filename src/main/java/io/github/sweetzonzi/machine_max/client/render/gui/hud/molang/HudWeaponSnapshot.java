@@ -85,7 +85,7 @@ public record HudWeaponSnapshot(String name, String state, int ammoRemaining, in
         String tail = reloading ? reloadText(remaining, progress)
                 : Component.translatable("gui.machine_max.weapon_hud." + state).getString();
         ResourceLocation chamberKey = chambered == null ? null : chambered.getRegistryKey();
-        return new HudWeaponSnapshot(controller.getName(), state, total.remaining(), total.capacity(),
+        return new HudWeaponSnapshot(Component.translatable(controller.getName()).getString(), state, total.remaining(), total.capacity(),
                 total.infinite(), total.remaining() + "/" + (total.infinite() ? "∞" : total.capacity()),
                 label, chamberKey != null && !selected.isEmpty() && !selected.contains(chamberKey), tail,
                 active == null || active.getRegistryKey() == null ? "" : active.getRegistryKey().toString(), tubes, belts);
