@@ -54,8 +54,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link State} 的 volatile 相位 / 节数。</p>
  */
 public class TrackRenderer extends VisualEffectRenderer {
-    /** 单节厚度（米），也是节中心相对包络线的外移量。这是纯渲染尺寸。 */
-    private static final float LINK_THICKNESS = 0.05f;
     /** 单节宽度（米）的占位值；接入单节模型后以模型横向尺寸为准。 */
     private static final float LINK_WIDTH = 0.35f;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
@@ -154,18 +152,19 @@ public class TrackRenderer extends VisualEffectRenderer {
         if (linkCount <= 0) return;
 
         double phase = state == null ? 0 : lerp(state.prevPhase, state.phase, partialTick);
-        renderBelt(poseStack, bufferSource, envelope, linkCount, phase, LINK_WIDTH, packedLight);
+        renderBelt(poseStack, bufferSource, envelope, linkCount, phase,
+                LINK_WIDTH, link.attr().linkThickness(), packedLight);
     }
 
     private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,
                                    TrackEnvelope2D.Result envelope, int linkCount, double phase,
-                                   float width, int packedLight) {
+                                   float width, float thickness, int packedLight) {
         double length = envelope.path().length();
         if (!(length > 1e-6)) return;
         float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
         double spacing = length / linkCount;
         float halfLength = (float) (spacing * LINK_LENGTH_RATIO * 0.5);
-        float halfThickness = LINK_THICKNESS * 0.5f;
+        float halfThickness = thickness * 0.5f;
         float halfWidth = width * 0.5f;
 
         for (int i = 0; i < linkCount; i++) {

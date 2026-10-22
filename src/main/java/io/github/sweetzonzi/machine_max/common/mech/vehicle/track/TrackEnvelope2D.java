@@ -18,7 +18,10 @@ import java.util.List;
  *
  * <p>坐标系：主动轮刚体局部系。局部 X 是滚动轴（与 {@code GearJoint} 的轴一致），
  * 所以履带平面是 YZ 平面；每个轮心取 {@code (localY, localZ)}，半径取
- * {@link SubPart#getMaxWheelRadius()}。调用几何求解器时显式传入该有向平面的绕向，
+ * {@link SubPart#getMaxWheelRadius()} 减去履带几何厚度，表示履带内表面。
+ * 传动与带速使用的碰撞半径保持原值。尺寸契约见
+ * {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §2.4。
+ * 调用几何求解器时显式传入该有向平面的绕向，
  * 渲染时按 {@code (0, y, z)} 映射回三维。</p>
  *
  * <p>输入顺序就是 {@link TrackLink#members()} 的顺序。本方法先把列表旋转到主动轮
@@ -51,12 +54,13 @@ public final class TrackEnvelope2D {
      * @param members     成员表，顺序为“主动轮 → 下行程 → 上行程”
      * @param sprocket    基准轮；为 null、不在成员表中或成员不足 2 个时返回 null
      * @param partialTick 位姿插值系数
+     * @param linkThickness 履带几何厚度（米），从成员碰撞半径中扣除
      * @param clockwise 创建时确定的主动轮局部 (Y,Z) 平面内顺时针绕向
      * @return 包络结果；任一成员缺少轮半径或几何完全不可用时返回 null
      */
     @Nullable
     public static Result build(List<SubPart> members, @Nullable SubPart sprocket, float partialTick,
-                               boolean clockwise) {
+                               float linkThickness, boolean clockwise) {
         if (sprocket == null || members.size() < 2) {
             return null;
         }
@@ -85,23 +89,42 @@ public final class TrackEnvelope2D {
             poses.add(member.getWorldPositionMatrix(partialTick));
             radii.add(radius);
         }
-        return buildPoses(poses, radii, clockwise);
+        try {
+            return buildPoses(poses, radii, linkThickness, clockwise);
+        } catch (IllegalArgumentException invalidInput) {
+            MachineMax.LOGGER.warn("履带包络尺寸不可用：{}；碰撞半径={}，履带厚度={}",
+                    invalidInput.getMessage(), radii, linkThickness);
+            return null;
+        }
     }
 
     /**
      * 主线程的位姿快照入口。二维坐标为主动轮局部 (Y,Z)，使用创建时确定的绕向。
+     *
+     * @param collisionRadii 轮面碰撞半径；内表面包络半径为该值减去 linkThickness
+     * @param linkThickness 履带几何厚度（米），必须有限且大于 0
+     * @throws IllegalArgumentException 厚度非法，或扣厚度后的半径非有限或不大于数值阈值
      */
-    public static Result buildPoses(List<Matrix4f> poses, List<Float> radii, boolean clockwise) {
-        if (poses.size() < 2 || poses.size() != radii.size()) {
+    public static Result buildPoses(List<Matrix4f> poses, List<Float> collisionRadii,
+                                    float linkThickness, boolean clockwise) {
+        if (poses.size() < 2 || poses.size() != collisionRadii.size()) {
             throw new IllegalArgumentException("wheel poses and radii must have matching sizes >= 2");
+        }
+        if (!Float.isFinite(linkThickness) || !(linkThickness > 0f)) {
+            throw new IllegalArgumentException("link thickness must be finite and > 0");
         }
         Matrix4f sprocketWorld = poses.getFirst();
         Matrix4f worldToSprocket = new Matrix4f(sprocketWorld).invert();
         List<Circle2D> circles = new ArrayList<>(poses.size());
         for (int i = 0; i < poses.size(); i++) {
+            double radius = (double) collisionRadii.get(i) - linkThickness;
+            if (!Double.isFinite(radius) || radius <= MIN_RADIUS) {
+                throw new IllegalArgumentException("wheel " + i
+                        + " collision radius minus link thickness must be finite and > " + MIN_RADIUS);
+            }
             Matrix4f memberLocal = new Matrix4f(worldToSprocket).mul(poses.get(i));
             Vector3f center = memberLocal.getTranslation(new Vector3f());
-            circles.add(new Circle2D(center.y, center.z, radii.get(i)));
+            circles.add(new Circle2D(center.y, center.z, radius));
         }
         try {
             return new Result(BeltPath2D.build(circles, 1e-9, clockwise), sprocketWorld, false);

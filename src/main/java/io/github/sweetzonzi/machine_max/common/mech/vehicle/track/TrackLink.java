@@ -525,7 +525,7 @@ public class TrackLink {
     /** 主线程：按创建时确定的铺设绕向求当前包络。 */
     @Nullable
     public TrackEnvelope2D.Result envelope(float partialTick) {
-        return TrackEnvelope2D.build(members, sprocket, partialTick, clockwise);
+        return TrackEnvelope2D.build(members, sprocket, partialTick, attr.linkThickness(), clockwise);
     }
 
     /** 日志用标签：优先主动轮名；主动轮尚未解析或已清空时退回占位符。 */

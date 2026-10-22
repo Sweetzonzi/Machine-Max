@@ -1057,8 +1057,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /**
      * 返回本零件所有轮面中最大的半径。
      *
-     * <p>一个 SubPart 可以挂多个 wheel shape；履带 GearJoint 的传动比与显示包络线
-     * 都必须使用同一个口径，这里统一取最大值。</p>
+     * <p>一个 SubPart 可以挂多个 wheel shape，这里统一取最大的碰撞半径 R。
+     * 履带 GearJoint 与动画带速使用 R；内表面包络在此值上扣除履带厚度 t，使用 R-t。
+     * 尺寸约定见 {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §2.4。</p>
      *
      * @return 最大轮半径；没有轮面时为 0
      */

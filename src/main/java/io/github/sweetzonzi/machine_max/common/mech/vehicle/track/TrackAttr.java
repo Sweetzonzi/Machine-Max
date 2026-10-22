@@ -16,10 +16,14 @@ import net.minecraft.sounds.SoundEvent;
  * <p>耐久按节声明：{@link #linkDurability()} 是每节耐久，整条带的节数
  * {@code N = max(1, round(L / linkLength))} 由包络总长推导，最大耐久为
  * {@code linkDurability × N}。因此轮组布局变化会改变整条带的血量上限。</p>
+ *
+ * @param linkThickness 几何厚度（米），供两端内表面包络扣半径与客户端节几何共用；
+ *                      半径关系见 {@code docs/plan/进行中/履带系统-物理实现设计文档.md} §2.4
  */
 public record TrackAttr(
         float linkDurability,
         float linkLength,
+        float linkThickness,
         int minEffectiveWheels,
         MaterialAttr.ArmorAttr armor,
         Friction friction,
@@ -33,6 +37,9 @@ public record TrackAttr(
         if (!(linkLength > 0f)) {
             throw new IllegalArgumentException("linkLength must be > 0");
         }
+        if (!Float.isFinite(linkThickness) || !(linkThickness > 0f)) {
+            throw new IllegalArgumentException("linkThickness must be finite and > 0");
+        }
         if (minEffectiveWheels < 2) {
             throw new IllegalArgumentException("minEffectiveWheels must be >= 2");
         }
@@ -41,6 +48,7 @@ public record TrackAttr(
     public static final TrackAttr DEFAULT = new TrackAttr(
             20f,
             0.2f,
+            0.05f,
             2,
             new MaterialAttr.ArmorAttr(
                     30f, true,
