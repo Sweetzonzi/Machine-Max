@@ -46,33 +46,6 @@ class TrackMathTest {
     }
 
     @Test
-    void singleFlowBrakesInnerTrackAndLeavesOuterFree() {
-        assertEquals(5f, TrackMath.singleFlowAchieved(8f, 5f), 1e-5f);
-        assertEquals(2f, TrackMath.singleFlowAchieved(2f, 5f), 1e-5f);
-        assertEquals(1f, TrackMath.singleFlowBrake(5f, 0f, 0f), 1e-5f);
-        assertEquals(0f, TrackMath.singleFlowBrake(5f, 5f, 0f), 1e-5f);
-        assertEquals(0.8f, TrackMath.singleFlowBrake(5f, 1f, 0.4f), 1e-5f);
-    }
-
-    @Test
-    void reverseSingleFlowClampsBetweenBaseAndZero() {
-        assertEquals(-5f, TrackMath.singleFlowAchieved(-8f, -5f), 1e-5f);
-        assertEquals(-2f, TrackMath.singleFlowAchieved(-2f, -5f), 1e-5f);
-        assertEquals(1f, TrackMath.singleFlowBrake(-5f, 0f, 0f), 1e-5f);
-    }
-
-    @Test
-    void yawRateIsLimitedBySpeedTableLateralAccelerationAndRadius() {
-        float limited = TrackMath.maxYawRate(1.0f, 6f, 4f, 20f);
-        assertEquals(6f / 20f, limited, 1e-5f);
-
-        float radiusLimited = TrackMath.maxYawRate(1.0f, 100f, 4f, 2f);
-        assertEquals(0.5f, radiusLimited, 1e-5f);
-
-        assertEquals(0f, TrackMath.maxYawRate(1.0f, 6f, 4f, 0f), 1e-5f);
-    }
-
-    @Test
     void controlSignalClampsAllFields() {
         TrackControlSignal signal = new TrackControlSignal(2f, -1f, 0.5f);
         assertEquals(1f, signal.brakeControl(), 1e-5f);

@@ -102,7 +102,7 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
             return;
         }
 
-        float omega = 0f;
+        float omega = inputSpeed();
         float torque = 0f;
         for (Map.Entry<String, MechPower> entry : received.entrySet()) {
             if (!isPowerPathConnected(entry.getKey())) continue;
@@ -110,26 +110,22 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
             if (power == null || power.isEmpty()) continue;
             float speed = power.speed();
             if (!Float.isFinite(speed)) continue;
-            omega += speed;
             torque += TrackMath.torqueFromPower(power.power(), speed, MIN_SPEED_FOR_TORQUE);
         }
 
         torque = Math.clamp(torque, -MAX_DRIVE_TORQUE, MAX_DRIVE_TORQUE)
                 * Math.clamp(control.clutchEngagement(), 0f, 1f);
-        this.driveTorque = torque;
-
-        float brakeTorque = Math.clamp(control.brakeControl(), 0f, 1f) * MAX_BRAKE_TORQUE;
-        float handBrakeTorque = Math.clamp(control.handBrakeControl(), 0f, 1f) * MAX_HAND_BRAKE_TORQUE;
-        torque -= brakeTorque + handBrakeTorque;
-
-        rollingMotor.setMotorEnabled(true);
-        rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
-        if (torque > 0) {
-            rollingMotor.set(MotorParam.TargetVelocity,
-                    -Math.clamp(omega, -MAX_SPEED, MAX_SPEED));
-        } else {
-            rollingMotor.set(MotorParam.TargetVelocity, 0f);
-        }
+        float brakeTorque = control.brakeControl() > 0.01f ? control.brakeControl() * MAX_BRAKE_TORQUE : 0f;
+        float handBrakeTorque = control.handBrakeControl() > 0.01f
+                ? control.handBrakeControl() * MAX_HAND_BRAKE_TORQUE : 0f;
+        float targetOmega = Float.isFinite(control.targetSpeed()) ? control.targetSpeed() / radius() : Float.NaN;
+        TrackMath.MotorCommand command = TrackMath.singleFlowMotor(
+                Math.clamp(omega, -MAX_SPEED, MAX_SPEED), torque, -getRelativeAngularVel().x,
+                targetOmega, brakeTorque + handBrakeTorque, MAX_BRAKE_TORQUE);
+        this.driveTorque = command.driveTorque();
+        rollingMotor.setMotorEnabled(command.maxTorque() > 0f);
+        rollingMotor.set(MotorParam.MaxMotorForce, command.maxTorque());
+        rollingMotor.set(MotorParam.TargetVelocity, -command.speed());
     }
 
     @Override
@@ -241,6 +237,17 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
 
     public float linearSpeed() {
         return feedbackSpeed * radius();
+    }
+
+    /** 物理线程：动力链折算到主动轮的输入转速，符号包含倒挡。 */
+    public float inputSpeed() {
+        float speed = 0f;
+        for (Map.Entry<String, MechPower> entry : received.entrySet()) {
+            if (!isPowerPathConnected(entry.getKey())) continue;
+            MechPower power = entry.getValue();
+            if (power != null && !power.isEmpty() && Float.isFinite(power.speed())) speed += power.speed();
+        }
+        return speed;
     }
 
     public float linearMaxSpeed() {

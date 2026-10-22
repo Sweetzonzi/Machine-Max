@@ -70,7 +70,7 @@
         }
       ],
       "default": {
-        "0": 0,
+        "0": 45,
         "10": 30,
         "30": 18,
         "50": 10
@@ -81,7 +81,7 @@
       "type": "number",
       "minimum": 0,
       "default": 4.0,
-      "description": "单流差速制动使用的最小转弯半径，单位米。"
+      "description": "纵向意图占优时车体中心的最小转弯半径，单位米；纯转向允许绕停止侧履带附近转动。"
     },
     "max_lateral_acceleration": {
       "type": "number",
@@ -150,7 +150,7 @@
       "type": "machine_max:track_controller",
       "basic_durability": 40,
       "max_yaw_rate": {
-        "0": 0,
+        "0": 45,
         "10": 30,
         "30": 18,
         "50": 10

@@ -128,6 +128,11 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     protected void onGroundControlAfterInput() {
     }
 
+    /** 意图模式的纵向动力请求；履带可把转向输入计入动力需求。物理线程调用。 */
+    protected float resolveDriveIntent(float longitudinalInput) {
+        return longitudinalInput;
+    }
+
     // ===== 生命周期 =====
 
     @Override
@@ -445,8 +450,8 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
                 autoShiftAll(avgEngineSpeed, direction);
                 distributeDriveControl();
             } else {
-                float throttleInput = moveInput[2] / 100f;
-                float brakeInput = moveInputConflict[2] / 100f;
+                float throttleInput = resolveDriveIntent(moveInput[2] / 100f);
+                float brakeInput = resolveDriveIntent(moveInputConflict[2] / 100f);
 
                 float targetThrottle;
                 float targetBrake;

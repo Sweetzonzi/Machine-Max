@@ -3,7 +3,7 @@
   "bundled_on": "2026-10-22",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "031b23d56b7ff6d618a934326ef96b4ce745dc91",
+    "revision": "1bf0f973eeacb247bb22009bbc501daa382b4ed4",
     "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -311,8 +311,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/track_controller_static_attr.schema.json",
-        "bytes": 4282,
-        "sha256": "305c8f1bca96a5f4c4cc75c609b02684ff89ecbef8f03a1098990a098383d4b1"
+        "bytes": 4341,
+        "sha256": "8d68f8e20d5d3e851835be01b729a327f7b21b4c5e33a8b1ec5733dee07e7066"
       },
       {
         "path": "references/schemas/subsystem/static/track_drive_static_attr.schema.json",

@@ -16,6 +16,82 @@ public final class TrackMath {
         return Math.max(min, Math.min(max, value));
     }
 
+    /** 意图模式：转向也请求动力；无纵向输入时采用前进支点转向。 */
+    public static float singleFlowDriveIntent(float longitudinal, float steering) {
+        float magnitude = Math.max(Math.abs(longitudinal), Math.abs(steering));
+        if (magnitude < 0.01f) return 0f;
+        return Math.copySign(Math.min(magnitude, 1f), longitudinal < -0.01f ? -1f : 1f);
+    }
+
+    /** 八方向与摇杆共用的差速比例：纯转向为 1，等量纵向与转向输入为 1/2。 */
+    public static float singleFlowTurnRatio(float longitudinal, float steering) {
+        float sum = Math.abs(longitudinal) + Math.abs(steering);
+        return sum < 0.01f ? 0f : steering / sum;
+    }
+
+    /** 动力方向取主动轮输入轴的符号（包含倒挡）；无输入转速时依次使用车速和动力意图。 */
+    public static float singleFlowDirection(float inputSpeed, float bodySpeed, float driveIntent) {
+        if (Math.abs(inputSpeed) > 0.01f) return Math.signum(inputSpeed);
+        if (Math.abs(bodySpeed) > 0.1f) return Math.signum(bodySpeed);
+        return driveIntent < -0.01f ? -1f : 1f;
+    }
+
+    /** 外侧锚定的带速比例；turnRatio 表示实际偏航方向（正左转），direction 表示动力方向。 */
+    public static float singleFlowSpeedRatio(float x, float minX, float maxX,
+                                              float turnRatio, float direction) {
+        float width = maxX - minX;
+        if (width < 0.1f) return 1f;
+        float inward = turnRatio * direction >= 0f ? (maxX - x) / width : (x - minX) / width;
+        return clamp(1f - Math.abs(turnRatio) * inward, 0f, 1f);
+    }
+
+    /**
+     * 单流差速比例上限。outerSpeed 是外侧带速，bodySpeed 用于侧向加速度约束。
+     * 支点转向的几何半径是 width/2；纵向意图占优时使用配置的车体中心最小半径。
+     */
+    public static float singleFlowTurnLimit(float outerSpeed, float bodySpeed, float width,
+                                            float tableYawRate, float maxLateralAcceleration,
+                                            float minTurningRadius, float pivotWeight) {
+        if (width < 0.1f) return 0f;
+        float referenceSpeed = Math.max(Math.abs(outerSpeed), 0.5f);
+        float radius = Math.max(width / 2f, minTurningRadius);
+        radius += (width / 2f - radius) * clamp(pivotWeight, 0f, 1f);
+        float yawLimit = Math.min(Math.max(tableYawRate, 0f),
+                Math.max(maxLateralAcceleration, 0f) / Math.max(Math.abs(bodySpeed), 0.5f));
+        return clamp(Math.min(width * yawLimit / referenceSpeed, width / (radius + width / 2f)), 0f, 1f);
+    }
+
+    /** 关节速度伺服的目标与扭矩预算；driveTorque 是有符号的驱动力矩输出。 */
+    public record MotorCommand(float speed, float maxTorque, float driveTorque) {
+    }
+
+    /**
+     * 单流主动轮伺服（角速度单位 rad/s，前进为正）。制动优先于驱动；
+     * 转向限速超速时仅使用制动预算，低于目标时仅使用动力链预算。
+     */
+    public static MotorCommand singleFlowMotor(float sourceSpeed, float sourceTorque, float actualSpeed,
+                                               float speedLimit, float brakeTorque, float steeringBrakeTorque) {
+        float engineBrake = Math.max(-sourceTorque, 0f);
+        if (brakeTorque > 0f || engineBrake > 0f) {
+            return new MotorCommand(0f, brakeTorque + engineBrake, 0f);
+        }
+        if (Float.isFinite(speedLimit)) {
+            if (Math.abs(speedLimit) < EPSILON) {
+                return new MotorCommand(0f, Math.max(steeringBrakeTorque, 0f), 0f);
+            }
+            float direction = Math.signum(speedLimit);
+            float target = direction * Math.min(Math.abs(speedLimit),
+                    sourceSpeed * direction > 0f ? Math.abs(sourceSpeed) : 0f);
+            if (actualSpeed * direction > Math.abs(speedLimit)) {
+                return new MotorCommand(speedLimit, Math.max(steeringBrakeTorque, 0f), 0f);
+            }
+            return new MotorCommand(target, Math.max(sourceTorque, 0f),
+                    Math.signum(target) * Math.max(sourceTorque, 0f));
+        }
+        return new MotorCommand(sourceSpeed, Math.max(sourceTorque, 0f),
+                Math.signum(sourceSpeed) * Math.max(sourceTorque, 0f));
+    }
+
     /**
      * 多输入驱动的反馈分摊：实测总转速按各 producer 最近一次输入转速的比例分配。
      *
@@ -57,42 +133,4 @@ public final class TrackMath {
         return power / Math.max(Math.abs(speed), Math.max(minSpeedForTorque, EPSILON));
     }
 
-    /**
-     * 单流制动差速：外侧保持基础速度，内侧按未达到的目标速度差制动。
-     *
-     * @param vBase       基础线速度
-     * @param achieved    钳位后的可实现线速度
-     * @param actualBrake 驾驶员制动量
-     */
-    public static float singleFlowBrake(float vBase, float achieved, float actualBrake) {
-        float difference = Math.abs(vBase - achieved) / Math.max(Math.abs(vBase), 0.5f);
-        return clamp(Math.max(actualBrake, difference), 0f, 1f);
-    }
-
-    /**
-     * 单流线速度钳位。
-     */
-    public static float singleFlowAchieved(float desired, float vBase) {
-        return vBase >= 0f
-                ? clamp(desired, 0f, vBase)
-                : clamp(desired, vBase, 0f);
-    }
-
-    /**
-     * 横摆角速度上限：速度表、侧向加速度、最小转弯半径三者取小。
-     *
-     * @param tableYawRate          速度表给出的上限（rad/s）
-     * @param maxLateralAcceleration 侧向加速度上限（m/s²）
-     * @param minTurningRadius      最小转弯半径（m）
-     * @param vBase                 基础线速度（m/s）
-     */
-    public static float maxYawRate(float tableYawRate,
-                                   float maxLateralAcceleration,
-                                   float minTurningRadius,
-                                   float vBase) {
-        float absBase = Math.abs(vBase);
-        float lateralLimit = maxLateralAcceleration / Math.max(absBase, 0.5f);
-        float radiusLimit = absBase / Math.max(minTurningRadius, EPSILON);
-        return Math.max(0f, Math.min(tableYawRate, Math.min(lateralLimit, radiusLimit)));
-    }
 }

@@ -12,6 +12,7 @@ import com.jme3.bullet.util.NativeLibrary;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackMath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -199,9 +200,20 @@ class GearJointPhysicsTest {
     }
 
     private static New6Dof freeRollingJoint(PhysicsRigidBody chassis, PhysicsRigidBody wheel, float pivotX) {
+        return freeRollingJoint(chassis, wheel, pivotX, new Matrix3f(), RotationOrder.XYZ);
+    }
+
+    private static New6Dof trackRollingJoint(PhysicsRigidBody chassis, PhysicsRigidBody wheel, float pivotX) {
+        // AbstractConnector#attachJoint 的关节框架绕 Y 转 180°；滚动轴方向必须与生产接线一致。
+        Matrix3f frame = new Quaternion().fromAngles(0f, (float) Math.PI, 0f).toRotationMatrix();
+        return freeRollingJoint(chassis, wheel, pivotX, frame, RotationOrder.XZY);
+    }
+
+    private static New6Dof freeRollingJoint(PhysicsRigidBody chassis, PhysicsRigidBody wheel, float pivotX,
+                                           Matrix3f frame, RotationOrder order) {
         New6Dof joint = new New6Dof(chassis, wheel,
                 new Vector3f(pivotX, 0f, 0f), Vector3f.ZERO,
-                new Matrix3f(), new Matrix3f(), RotationOrder.XYZ);
+                frame, frame, order);
         // Spring2 默认各轴自由；显式锁死平移与偏航/侧倾，只放行滚动轴（dof 3）
         for (int i = 0; i < 6; i++) {
             joint.set(MotorParam.LowerLimit, i, 0f);
@@ -211,6 +223,65 @@ class GearJointPhysicsTest {
         joint.set(MotorParam.LowerLimit, 3, 1f);
         joint.set(MotorParam.UpperLimit, 3, -1f);
         return joint;
+    }
+
+    @Test
+    void singleFlowInnerTrackConvergesToHalfOuterSpeedInBothDirections() {
+        for (float gearRatio : new float[]{2f, -2f}) {
+            float sourceSpeed = 24f / gearRatio;
+            float sign = TrackMath.singleFlowDirection(sourceSpeed, 0f, 1f);
+            float yawRatio = TrackMath.singleFlowTurnRatio(1f, -1f) * sign;
+            float rightRatio = TrackMath.singleFlowSpeedRatio(1f, -1f, 1f, yawRatio, sign);
+            assertEquals(.5f, rightRatio, 1e-5f);
+            try (Harness h = new Harness()) {
+                PhysicsRigidBody chassis = h.body(0f, .5f, 0f);
+                PhysicsRigidBody outer = h.body(-2f, .4f, 50f);
+                PhysicsRigidBody inner = h.body(2f, .4f, 50f);
+                New6Dof outerJoint = trackRollingJoint(chassis, outer, -2f);
+                New6Dof innerJoint = trackRollingJoint(chassis, inner, 2f);
+                h.space.addJoint(outerJoint);
+                h.space.addJoint(innerJoint);
+                inner.setAngularVelocity(new Vector3f(-8f * sign, 0f, 0f));
+                for (int i = 0; i < 300; i++) {
+                    applyTrackMotor(outerJoint, TrackMath.singleFlowMotor(sourceSpeed, 2000f,
+                            -outer.getAngularVelocity(null).x, Float.NaN, 0f, 200f));
+                    float target = -rightRatio * outer.getAngularVelocity(null).x;
+                    applyTrackMotor(innerJoint, TrackMath.singleFlowMotor(sourceSpeed, 2000f,
+                            -inner.getAngularVelocity(null).x, target, 0f, 200f));
+                    h.step(1);
+                }
+                assertEquals(12f * sign, -outer.getAngularVelocity(null).x, .05f);
+                assertEquals(6f * sign, -inner.getAngularVelocity(null).x, .05f);
+                float yaw = (outer.getAngularVelocity(null).x - inner.getAngularVelocity(null).x) / 2f;
+                assertEquals(-3f * sign, yaw, .05f, "右带减速时，倒挡自然反转运动学偏航方向");
+            }
+        }
+    }
+
+    @Test
+    void singleFlowBrakeStopsWheelEvenWhenEngineTorqueExceedsBrakeCapacity() {
+        for (float sign : new float[]{1f, -1f}) {
+            try (Harness h = new Harness()) {
+                PhysicsRigidBody chassis = h.body(0f, .5f, 0f);
+                PhysicsRigidBody wheel = h.body(2f, .4f, 50f);
+                New6Dof joint = trackRollingJoint(chassis, wheel, 2f);
+                h.space.addJoint(joint);
+                wheel.setAngularVelocity(new Vector3f(-8f * sign, 0f, 0f));
+                for (int i = 0; i < 300; i++) {
+                    applyTrackMotor(joint, TrackMath.singleFlowMotor(20f * sign, 100_000f,
+                            -wheel.getAngularVelocity(null).x, 0f, 0f, 200f));
+                    h.step(1);
+                }
+                assertEquals(0f, wheel.getAngularVelocity(null).x, .01f);
+            }
+        }
+    }
+
+    private static void applyTrackMotor(New6Dof joint, TrackMath.MotorCommand command) {
+        var motor = joint.getRotationMotor(0);
+        motor.setMotorEnabled(command.maxTorque() > 0f);
+        motor.set(MotorParam.MaxMotorForce, command.maxTorque());
+        motor.set(MotorParam.TargetVelocity, -command.speed());
     }
 
     /** 一个独立物理空间 + 一组无接触、零重力的测试刚体。 */

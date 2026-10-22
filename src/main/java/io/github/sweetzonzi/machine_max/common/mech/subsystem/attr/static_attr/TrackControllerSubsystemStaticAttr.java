@@ -141,7 +141,7 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
 
     public static TreeMap<Float, Float> createDefaultYawRateMap() {
         TreeMap<Float, Float> map = new TreeMap<>();
-        map.put(0.0f, 0.0f);
+        map.put(0.0f, 45.0f);
         map.put(10.0f, 30.0f);
         map.put(30.0f, 18.0f);
         map.put(50.0f, 10.0f);
