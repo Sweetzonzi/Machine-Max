@@ -1,0 +1,42 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/part_fabricating_recipe.schema.json",
+  "type": "machine_max:part_fabricating", // 零件配方：产物由本文件名决定
+  // ingredients 的顺序就是材料层序：表头最内层（最后丢），表尾最外层（最先丢）
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 2 // 能源组件：限流使用，只有带发电或电传动设计的零件才放
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 8 // 机械零件：发动机、变速箱、传动与行走机构
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 6 // 电子元件：观瞄、席位与控制单元
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 30 // 结构件：装甲与车体结构，按体量摊
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 8 // 干海带：轮胎与履带胶垫，表尾最先磨掉
+    }
+  ],
+  // 15 t 履带车体：发动机、变速箱、传动与两侧履带总成各计 2 份机械件，16 只负重轮的胶面折成 8 份干海带压在表尾
+  "result": {
+    "count": 1
+  },
+  "time": 480
+}

@@ -1,0 +1,10 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:sdkfz234"],
+  "research_cost": 120,
+  "prerequisites": ["machine_max:research/sdkfz234_hull"],
+  "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_wheel.png",
+  "description": "research.machine_max.sdkfz234_wheel_blueprint.desc",
+  "unlock_recipe": "machine_max:part_fabricating/sdkfz234_wheel"
+}

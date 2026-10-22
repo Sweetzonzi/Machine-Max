@@ -1,6 +1,7 @@
 {
   "icon": "machine_max:textures/icon/2s38/2s38_addon_armor.png",
   "vehicle_durability_rate": 0.06,
+  "max_stack_size": 4,
   "vehicle_damage_rate": 0.095,
   "vehicle_damage_rate_destroyed": 0.015,
   "variants": {

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:k17"],
+  "research_cost": 450,
+  "icon": "machine_max:textures/icon/k17/k17_hull.png",
+  "description": "research.machine_max.k17_hull_blueprint.desc",
+  "unlock_recipe": "machine_max:part_fabricating/k17_hull"
+}

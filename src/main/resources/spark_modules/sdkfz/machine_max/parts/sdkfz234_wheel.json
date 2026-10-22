@@ -1,6 +1,7 @@
 {
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_wheel.png",
   "vehicle_durability_rate": 0.02,
+  "max_stack_size": 4,
   "vehicle_damage_rate": 0.05,
   "vehicle_damage_rate_destroyed": 0,
   "variants": {
