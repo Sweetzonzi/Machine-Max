@@ -97,16 +97,12 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
         // 组装异常处理
         this.add("error.machine_max.part.model_not_found", "未找到模型文件: %1$s");
-        this.add("error.machine_max.part.missing_textures", "零件贴图列表不能为空");
         this.add("error.machine_max.part.connector_locator_not_found", "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s");
         this.add("error.machine_max.part.invalid_connector_type", "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"");
         this.add("error.machine_max.part.duplicate_name", "部件变体 %4$s 内名称 %1$s 重复：%2$s 与 %3$s 冲突");
         this.add("error.machine_max.part.reserved_name", "部件变体 %4$s 内名称 %1$s（%3$s 的 %2$s）为信号保留地址，不得用作连接点/子系统/交互区名");
         // 内容包资源路径
-        this.add("error.machine_max.hud_style.invalid_path", "非法的 HUD 样式路径");
-        this.add("error.machine_max.hud_layout.invalid_path", "非法的 HUD 布局路径");
-        this.add("error.machine_max.document.invalid_path", "非法的 AUI 文档路径");
         // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("machine_max.misc", "杂项");
@@ -166,8 +162,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
         this.add("item.machine_max.pda", "蓝图终端");
-        this.add("item.machine_max.test_track", "履带测试物品");
-        this.add("tooltip.machine_max.test_track", "右键主动轮开始铺设，依次右键各负重轮，最后右键主动轮闭合；潜行右键撤销或移除");
         // 物品音效
         this.add("subtitles.item.welding_torch.start", "焊枪启动");
         this.add("subtitles.item.welding_torch.loop", "焊接中");

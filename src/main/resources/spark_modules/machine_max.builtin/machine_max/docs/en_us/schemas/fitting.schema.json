@@ -225,19 +225,25 @@
     },
     "visual": {
       "type": "object",
-      "description": "Single-link model and texture. Both fields are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\"fitting\", model).",
+      "description": "Single-link model, model texture and inventory icon. model and texture are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\"fitting\", model).",
       "properties": {
         "model": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "Single-link model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix)."
+          "description": "Single-link model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix). The namespace is the pack's namespace directory name, not the pack name."
         },
         "texture": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "Full texture path for the model, e.g. machine_max:textures/part/track_link.png."
+          "description": "Full texture path for the model, e.g. machine_max:textures/part/track_link.png; the namespace is likewise the namespace directory name."
+        },
+        "icon": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Inventory 2D icon texture, e.g. machine_max:textures/icon/track_link.png; 128×128 with a transparent background is recommended. When omitted, the item and creative tab render the single-link 3D model instead."
         }
       },
       "required": ["model", "texture"],
@@ -267,7 +273,8 @@
       },
       "visual": {
         "model": "machine_max:track_link.geo",
-        "texture": "machine_max:textures/part/track_link.png"
+        "texture": "machine_max:textures/part/track_link.png",
+        "icon": "machine_max:textures/icon/track_link.png"
       }
     }
   ]

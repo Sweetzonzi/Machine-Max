@@ -280,6 +280,18 @@ public enum MMLanguageRegistry {
             zh_cn, "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符",
             en_us, "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed."
     )),
+    ERROR_DOCUMENT_INVALID_PATH("error.machine_max.document.invalid_path", ImmutableMap.of(
+            zh_cn, "非法的 AUI 文档路径",
+            en_us, "Invalid AUI document path"
+    )),
+    ERROR_HUD_LAYOUT_INVALID_PATH("error.machine_max.hud_layout.invalid_path", ImmutableMap.of(
+            zh_cn, "非法的 HUD 布局路径",
+            en_us, "Invalid HUD layout path"
+    )),
+    ERROR_HUD_STYLE_INVALID_PATH("error.machine_max.hud_style.invalid_path", ImmutableMap.of(
+            zh_cn, "非法的 HUD 样式路径",
+            en_us, "Invalid HUD style path"
+    )),
     ERROR_SUBPART_ZERO_MASS("error.machine_max.subpart.zero_mass", ImmutableMap.of(
             zh_cn, "零件质量必须大于零",
             en_us, "Sub-part mass must be greater than zero"
@@ -324,6 +336,10 @@ public enum MMLanguageRegistry {
     ERROR_PART_MODEL_NOT_FOUND("error.machine_max.part.model_not_found", ImmutableMap.of(
             zh_cn, "未找到模型文件: %1$s",
             en_us, "Model file not found at: %1$s"
+    )),
+    ERROR_PART_MISSING_TEXTURES("error.machine_max.part.missing_textures", ImmutableMap.of(
+            zh_cn, "零件贴图列表不能为空",
+            en_us, "Part textures must not be empty"
     )),
     ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND("error.machine_max.part.connector_locator_not_found", ImmutableMap.of(
             zh_cn, "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s",
@@ -491,6 +507,10 @@ public enum MMLanguageRegistry {
     ITEM_GROUP_PART("itemGroup.machine_max.part", ImmutableMap.of(
             zh_cn, "MachineMax: 零部件",
             en_us, "MachineMax: Parts"
+    )),
+    ITEM_GROUP_FITTING("itemGroup.machine_max.fitting", ImmutableMap.of(
+            zh_cn, "MachineMax: 配件",
+            en_us, "MachineMax: Fittings"
     )),
     ITEM_GROUP_VEHICLE_BLUEPRINT("itemGroup.machine_max.vehicle_blueprint", ImmutableMap.of(
             zh_cn, "MachineMax: 载具设计图",

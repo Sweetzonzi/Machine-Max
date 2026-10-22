@@ -18,6 +18,7 @@
   "error.machine_max.invalid_resource_location": "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符",
   "error.machine_max.item_storage_subsystem.invalid_column_num": "储物子系统储物空间列数必须大于1之间",
   "error.machine_max.item_storage_subsystem.invalid_row_num": "储物子系统储物空间行数必须大于1之间",
+  "error.machine_max.load": "加载外部包文件: %1$s 时出错，原因: ",
   "error.machine_max.part.connector_locator_not_found": "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s",
   "error.machine_max.part.duplicate_name": "部件变体 %4$s 内名称 %1$s 重复：%2$s 与 %3$s 冲突",
   "error.machine_max.part.invalid_connector_type": "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"",
@@ -210,6 +211,7 @@
   "item.machine_max.welding_torch": "焊枪",
   "itemGroup.machine_max.assembly": "MachineMax: 装配体",
   "itemGroup.machine_max.fabricating_blueprint": "MachineMax: 制造蓝图",
+  "itemGroup.machine_max.fitting": "MachineMax: 配件",
   "itemGroup.machine_max.main": "MachineMax: 工具与材料",
   "itemGroup.machine_max.part": "MachineMax: 零部件",
   "itemGroup.machine_max.vehicle_blueprint": "MachineMax: 载具设计图",
@@ -375,7 +377,5 @@
   "tooltip.machine_max.wrench.cant_repair": "%1$s已被摧毁，无法修复，潜行互动以解除固定便于拆除",
   "tooltip.machine_max.wrench.disassembly": "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定",
   "tooltip.machine_max.wrench.no_need_to_repair": "%1$s无需修复或固定",
-  "tooltip.machine_max.wrench.repair": "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s",
-  "item.machine_max.test_track": "履带测试物品",
-  "tooltip.machine_max.test_track": "右键主动轮开始铺设，依次右键各负重轮，最后右键主动轮闭合；潜行右键撤销或移除"
+  "tooltip.machine_max.wrench.repair": "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s"
 }

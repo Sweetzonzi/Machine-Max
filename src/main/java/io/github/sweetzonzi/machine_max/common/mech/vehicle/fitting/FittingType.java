@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting;
 
 import com.mojang.serialization.Codec;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -16,6 +17,14 @@ import net.minecraft.resources.ResourceLocation;
  * 记为内容包错误。</p>
  */
 public abstract class FittingType {
+    /**
+     * 缺省型号 id：内容包 fixture {@code fittings/default.json}。
+     *
+     * <p>物品缺少 {@code machine_max:fitting_type} 组件、旧存档缺少型号字段时都回落到它。</p>
+     */
+    public static final ResourceLocation DEFAULT_ID =
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "default");
+
     private final FittingVisual visual;
     private ResourceLocation registryKey;
 
@@ -25,6 +34,25 @@ public abstract class FittingType {
 
     /** JSON {@code "type"} 的取值，也是 dispatch 的路由键。 */
     public abstract String getSerializedName();
+
+    /**
+     * 型号 id 对应的名称翻译键。
+     *
+     * <p>格式是 {@code <命名空间>.fitting.<型号名>}，例如 {@code machine_max:2s38_track}
+     * 对应 {@code machine_max.fitting.2s38_track}。内容包在自己的 {@code lang/} 里提供，
+     * 物品名与创造栏条目都取这个键。</p>
+     *
+     * @param id 型号 id
+     * @return 翻译键
+     */
+    public static String nameKey(ResourceLocation id) {
+        return id.getNamespace() + ".fitting." + id.getPath().replace('/', '.');
+    }
+
+    /** 本型号的名称翻译键。 */
+    public String nameKey() {
+        return nameKey(getRegistryKey());
+    }
 
     public FittingVisual visual() {
         return visual;

@@ -271,5 +271,7 @@
   "machine_max.research.sdkfz234_turret": "Sd.Kfz.234 Turret",
   "research.machine_max.sdkfz234_turret_blueprint.desc": "Open-topped turret of the Sd.Kfz.234 with the 50mm gun, MG34 and gun shield.",
   "machine_max.research.sdkfz234_wheel": "Sd.Kfz.234 Wheel",
-  "research.machine_max.sdkfz234_wheel_blueprint.desc": "Wheel of the Sd.Kfz.234, four per side; crafted in pairs."
+  "research.machine_max.sdkfz234_wheel_blueprint.desc": "Wheel of the Sd.Kfz.234, four per side; crafted in pairs.",
+  "machine_max.fitting.2s38_track": "2S38 Track",
+  "machine_max.fitting.mtlb_track": "MT-LB Track"
 }

@@ -5,6 +5,7 @@ import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisual;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
@@ -177,6 +178,39 @@ class TrackDataCodecTest {
         assertEquals(ResourceLocation.parse("machine_max:track_link.geo"), track.visual().model());
         assertEquals(ResourceLocation.parse("machine_max:textures/part/track_link.png"),
                 track.visual().texture());
+        assertEquals(FittingVisual.NO_ICON, track.visual().icon());
+        assertFalse(track.visual().hasIcon());
+    }
+
+    @Test
+    void fittingVisualIconIsOptionalAndRoundTrips() {
+        var withoutIcon = JsonParser.parseString("""
+                {
+                  "model": "machine_max:track_link.geo",
+                  "texture": "machine_max:textures/part/track_link.png"
+                }
+                """);
+        FittingVisual plain = FittingVisual.CODEC.parse(JsonOps.INSTANCE, withoutIcon).getOrThrow();
+        assertEquals(FittingVisual.NO_ICON, plain.icon());
+        assertFalse(plain.hasIcon());
+
+        FittingVisual icon = new FittingVisual(
+                ResourceLocation.parse("machine_max:track_link.geo"),
+                ResourceLocation.parse("machine_max:textures/part/track_link.png"),
+                ResourceLocation.parse("machine_max:textures/icon/track_link.png"));
+        assertTrue(icon.hasIcon());
+        var encoded = FittingVisual.CODEC.encodeStart(JsonOps.INSTANCE, icon).getOrThrow();
+        assertEquals(icon, FittingVisual.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+    }
+
+    @Test
+    void fittingNameKeyUsesNamespaceAndFittingSegment() {
+        assertEquals("machine_max.fitting.2s38_track",
+                FittingType.nameKey(ResourceLocation.parse("machine_max:2s38_track")));
+        assertEquals("sdkfz.fitting.mtlb_track",
+                FittingType.nameKey(ResourceLocation.parse("sdkfz:mtlb_track")));
+        assertEquals("machine_max.fitting.tracks.wide",
+                FittingType.nameKey(ResourceLocation.parse("machine_max:tracks/wide")));
     }
 
     @Test

@@ -24,7 +24,8 @@
     }
   },
   "visual": {
-    "model": "sdkfz:mtlb_track.geo",
-    "texture": "sdkfz:textures/part/mtlb/mtlb.png"
+    "model": "machine_max:mtlb_track.geo",
+    "texture": "machine_max:textures/part/mtlb/mtlb.png",
+    "icon": "machine_max:textures/icon/mtlb/mtlb_track.png"
   }
 }

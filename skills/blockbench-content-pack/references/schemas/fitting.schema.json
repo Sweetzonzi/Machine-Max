@@ -225,19 +225,25 @@
     },
     "visual": {
       "type": "object",
-      "description": "单节履带模型与贴图。两个字段都必填；模型放在内容包的 models/fitting/ 下，按 ModelIndex(\"fitting\", model) 加载。",
+      "description": "单节履带模型、模型贴图与物品图标。model 与 texture 必填；模型放在内容包的 models/fitting/ 下，按 ModelIndex(\"fitting\", model) 加载。",
       "properties": {
         "model": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "单节模型 id，如 machine_max:track_link.geo（对应 models/fitting/track_link.geo.json，文件名含 .geo）。"
+          "description": "单节模型 id，如 machine_max:track_link.geo（对应 models/fitting/track_link.geo.json，文件名含 .geo）。命名空间是内容包里的命名空间目录名，不是内容包名。"
         },
         "texture": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "模型贴图的完整路径，如 machine_max:textures/part/track_link.png。"
+          "description": "模型贴图的完整路径，如 machine_max:textures/part/track_link.png；命名空间同样取命名空间目录名。"
+        },
+        "icon": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "物品栏 2D 图标贴图，如 machine_max:textures/icon/track_link.png，建议 128×128、透明背景。省略时物品与创造栏直接渲染单节 3D 模型。"
         }
       },
       "required": ["model", "texture"],
@@ -267,7 +273,8 @@
       },
       "visual": {
         "model": "machine_max:track_link.geo",
-        "texture": "machine_max:textures/part/track_link.png"
+        "texture": "machine_max:textures/part/track_link.png",
+        "icon": "machine_max:textures/icon/track_link.png"
       }
     }
   ]

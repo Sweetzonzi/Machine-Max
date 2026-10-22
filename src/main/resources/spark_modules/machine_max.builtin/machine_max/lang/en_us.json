@@ -4,5 +4,6 @@
   "machine_max.ammo.heat": "HEAT",
   "machine_max.ammo.he": "HE",
   "machine_max.ammo.tracer": "TRACER",
-  "machine_max.ammo.atgm": "ATGM"
+  "machine_max.ammo.atgm": "ATGM",
+  "machine_max.fitting.default": "Track"
 }

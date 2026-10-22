@@ -139,7 +139,9 @@ public class ItemInteractHandler {
                 return;
             }
             TRACK_DRAFTS.remove(player.getUUID());
-            message(player, "履带闭合：" + link.members().size() + " 个轮子");
+            // 节数由包络周长推导，是这条履带的实际用料；当前只报告，不消耗物品
+            message(player, "履带闭合：" + link.members().size() + " 个轮子，"
+                    + link.linkCount() + " 节");
             return;
         }
         if (draft.contains(subPart)) {

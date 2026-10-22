@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.item.FittingItems
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
@@ -33,7 +34,6 @@ object MMCreativeTabs {
                     output.accept(MMItems.CROWBAR_ITEM.get())
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
-                    output.accept(MMItems.TRACK_ITEM.get())
                     output.accept(MMItems.EMPTY_BLUEPRINT.get())
                     output.accept(MMItems.ENDER_GK_RESIN_ITEM.get())
 //                    output.accept(MMItems.ENDER_SCANNER_ITEM.get())
@@ -108,6 +108,23 @@ object MMCreativeTabs {
     }
 
     @JvmStatic
+    val MACHINE_MAX_FITTING_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_fitting"
+        factory = {
+            CreativeModeTab.builder()
+                .title(MMLanguageRegistry.ITEM_GROUP_FITTING.translated())
+                .icon {
+                    // 用字典序第一个型号做图标；注册表为空时退回一个不带型号的履带物品
+                    val first = MMDynamicRes.FITTING_TYPES.entries.minByOrNull { it.key.toString() }
+                    val stack = ItemStack(MMItems.TRACK)
+                    if (first != null) stack.set(MMDataComponents.FITTING_TYPE, first.key)
+                    stack
+                }
+                .build()
+        }
+    }
+
+    @JvmStatic
     val MACHINE_MAX_FABRICATING_BLUEPRINT_TAB = MachineMax.REGISTER.creativeModeTab {
         id = "machine_max_tab_fabricating_blueprint"
         factory = {
@@ -141,6 +158,17 @@ object MMCreativeTabs {
                     externalParts.add(itemStack)
                 }
                 externalParts.forEach { event.accept(it) }
+            }
+            MACHINE_MAX_FITTING_TAB.get() -> {
+                MachineMax.LOGGER.info("Putting fittings into creative tab...")
+                val externalFittings = ArrayList<ItemStack>(1)//将所有外部包配件型号加入创造物品栏
+                MMDynamicRes.FITTING_TYPES.entries.sortedBy { it.key.toString() }.forEach { (loc, type) ->
+                    val item = FittingItems.itemFor(type) ?: return@forEach
+                    val itemStack = ItemStack(item)
+                    itemStack.set(MMDataComponents.FITTING_TYPE, loc)
+                    externalFittings.add(itemStack)
+                }
+                externalFittings.forEach { event.accept(it) }
             }
             MACHINE_MAX_ASSEMBLY_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting assemblies into creative tab...")

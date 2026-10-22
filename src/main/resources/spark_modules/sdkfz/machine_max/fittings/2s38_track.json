@@ -24,7 +24,8 @@
     }
   },
   "visual": {
-    "model": "sdkfz:2s38_track.geo",
-    "texture": "sdkfz:textures/part/2s38/2s38.png"
+    "model": "machine_max:2s38_track.geo",
+    "texture": "machine_max:textures/part/2s38/2s38.png",
+    "icon": "machine_max:textures/icon/2s38/2s38_track.png"
   }
 }

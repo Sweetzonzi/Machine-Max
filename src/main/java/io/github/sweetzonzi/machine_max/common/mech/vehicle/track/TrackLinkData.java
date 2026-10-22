@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
@@ -39,8 +39,7 @@ public record TrackLinkData(
     public static final float FULL_DURABILITY = -1f;
 
     /** 缺省型号 id：内容包 fixture {@code fittings/default.json}。 */
-    public static final ResourceLocation DEFAULT_TYPE =
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "default");
+    public static final ResourceLocation DEFAULT_TYPE = FittingType.DEFAULT_ID;
 
     public static final Codec<TrackLinkData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             TrackMemberRef.CODEC.fieldOf("sprocket").forGetter(TrackLinkData::sprocket),

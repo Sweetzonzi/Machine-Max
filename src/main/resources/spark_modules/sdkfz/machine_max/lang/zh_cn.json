@@ -271,5 +271,7 @@
   "machine_max.research.sdkfz234_turret": "Sd.Kfz.234 炮塔",
   "research.machine_max.sdkfz234_turret_blueprint.desc": "Sd.Kfz.234 的敞顶炮塔：50mm 火炮、MG34 机枪与火炮防盾。",
   "machine_max.research.sdkfz234_wheel": "Sd.Kfz.234 车轮",
-  "research.machine_max.sdkfz234_wheel_blueprint.desc": "Sd.Kfz.234 的车轮：两侧各四只，按对制造。"
+  "research.machine_max.sdkfz234_wheel_blueprint.desc": "Sd.Kfz.234 的车轮：两侧各四只，按对制造。",
+  "machine_max.fitting.2s38_track": "2S38 履带",
+  "machine_max.fitting.mtlb_track": "MT-LB 履带"
 }

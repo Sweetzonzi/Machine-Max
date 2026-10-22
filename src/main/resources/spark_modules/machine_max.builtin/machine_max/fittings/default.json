@@ -25,6 +25,7 @@
   },
   "visual": {
     "model": "machine_max:track_link.geo",
-    "texture": "machine_max:textures/part/track_link.png"
+    "texture": "machine_max:textures/part/track_link.png",
+    "icon": "machine_max:textures/icon/track_link.png"
   }
 }

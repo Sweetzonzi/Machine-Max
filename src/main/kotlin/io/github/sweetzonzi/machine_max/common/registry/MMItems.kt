@@ -49,13 +49,6 @@ object MMItems {
         factory = { TrackItem() }
     }
 
-    //履带测试物品（写死型号，不接内容包）
-    @JvmStatic
-    val TRACK_ITEM = MachineMax.REGISTER.item {
-        id="test_track"
-        factory = { TrackItem() }
-    }
-
     //装配体物品原型
     @JvmStatic
     val ASSEMBLY_ITEM = MachineMax.REGISTER.item {
@@ -234,6 +227,7 @@ object MMItems {
             SPRAY_CAN_ITEM,
             WELDING_TORCH_ITEM,
             PART_ITEM,
+            TRACK,
             FABRICATING_BLUEPRINT,
             PART_FABRICATING_BLUEPRINT,
             VEHICLE_BLUEPRINT,

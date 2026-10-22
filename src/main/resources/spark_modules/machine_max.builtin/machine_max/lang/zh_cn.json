@@ -4,5 +4,6 @@
   "machine_max.ammo.heat": "破甲",
   "machine_max.ammo.he": "HE",
   "machine_max.ammo.tracer": "曳光",
-  "machine_max.ammo.atgm": "ATGM"
+  "machine_max.ammo.atgm": "ATGM",
+  "machine_max.fitting.default": "履带"
 }
