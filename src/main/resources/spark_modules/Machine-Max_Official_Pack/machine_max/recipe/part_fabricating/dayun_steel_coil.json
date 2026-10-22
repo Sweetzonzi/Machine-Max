@@ -4,15 +4,15 @@
   "ingredients": [
     {
       "ingredient": {
-        "item": "minecraft:iron_block"
-      },
-      "count": 32
-    },
-    {
-      "ingredient": {
         "item": "machine_max:weapon_component_1"
       },
       "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:iron_block"
+      },
+      "count": 32
     }
   ],
   "result": {

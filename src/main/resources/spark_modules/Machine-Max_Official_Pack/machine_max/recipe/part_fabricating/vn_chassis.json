@@ -4,18 +4,6 @@
   "ingredients": [
     {
       "ingredient": {
-        "item": "machine_max:structural_component_1"
-      },
-      "count": 8
-    },
-    {
-      "ingredient": {
-        "item": "machine_max:electronic_component_1"
-      },
-      "count": 4
-    },
-    {
-      "ingredient": {
         "item": "machine_max:power_component_1"
       },
       "count": 3
@@ -25,6 +13,18 @@
         "item": "machine_max:mechanic_component_1"
       },
       "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 8
     }
   ],
   "result": {

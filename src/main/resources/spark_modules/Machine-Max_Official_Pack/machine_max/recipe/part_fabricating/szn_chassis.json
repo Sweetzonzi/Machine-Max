@@ -4,15 +4,15 @@
   "ingredients": [
     {
       "ingredient": {
-        "item": "machine_max:structural_component_1"
-      },
-      "count": 64
-    },
-    {
-      "ingredient": {
         "item": "machine_max:power_component_1"
       },
       "count": 24
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 16
     },
     {
       "ingredient": {
@@ -22,9 +22,9 @@
     },
     {
       "ingredient": {
-        "item": "machine_max:mechanic_component_1"
+        "item": "machine_max:structural_component_1"
       },
-      "count": 16
+      "count": 64
     }
   ],
   "result": {

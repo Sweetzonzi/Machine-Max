@@ -4,9 +4,9 @@
   "ingredients": [
     {
       "ingredient": {
-        "item": "machine_max:structural_component_1"
+        "item": "machine_max:mechanic_component_1"
       },
-      "count": 4
+      "count": 2
     },
     {
       "ingredient": {
@@ -16,9 +16,9 @@
     },
     {
       "ingredient": {
-        "item": "machine_max:mechanic_component_1"
+        "item": "machine_max:structural_component_1"
       },
-      "count": 2
+      "count": 4
     }
   ],
   "result": {
