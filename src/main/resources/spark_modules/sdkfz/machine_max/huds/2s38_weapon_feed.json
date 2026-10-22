@@ -1,0 +1,10 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "machine_max/weapon_hud_components/2s38_feed.html",
+  "defaults": {
+    "--phosphor": "#a4ff80",
+    "--panel-bg": "rgba(6, 13, 4, 0.48)",
+    "--scanline-opacity": "0.18",
+    "--stack-bottom": "112px"
+  }
+}

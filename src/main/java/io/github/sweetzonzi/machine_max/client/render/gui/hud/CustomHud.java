@@ -67,8 +67,9 @@ import java.util.Set;
  * 活跃宿主的布局与布局引用的样式；内容包重载后，资源替换在下一个 tick 生效。
  * <p>
  * 宿主之间的绘制顺序由宿主集合的迭代顺序决定，不作契约：内容包负责让同一视角的
- * 元素互不遮挡。透视 HUD 共用外层投影，正交 HUD 使用 Minecraft 默认 GUI 投影。
- * 投影切换和批次退出时提交顶点，AUI 文档还会在裁剪与合成边界提交自身的绘制。
+ * 元素互不遮挡。普通和炮镜视角均先绘制透视 HUD，再绘制正交 HUD，使屏幕读数位于
+ * 透视模型和页面上方。透视批次进入、退出时提交顶点并清空深度，隔离两种投影的深度值；
+ * 正交 HUD 使用 Minecraft 默认 GUI 投影。AUI 文档在裁剪与合成边界提交自身的绘制。
  */
 @OnlyIn(Dist.CLIENT)
 public class CustomHud implements LayeredDraw.Layer {
@@ -245,18 +246,18 @@ public class CustomHud implements LayeredDraw.Layer {
             return; // 炮镜下不渲染座椅HUD
         }
 
-        // 第1趟：正交 HUD — 使用 Minecraft 默认 GUI 正交投影逐个渲染
+        // 第1趟：透视 HUD；退出批次时恢复 GUI 投影并清空透视深度。
+        if (hasPerspective()) {
+            renderPerspectiveBatch(guiGraphics, partialTick);
+        }
+
+        // 第2趟：正交 HUD，覆盖透视内容。
         for (List<HudElementInstance> elements : huds.values()) {
             for (HudElementInstance hud : elements) {
                 if (hud.runtime().visible() && !hud.isPerspective()) {
                     hud.renderGui(guiGraphics, partialTick);
                 }
             }
-        }
-
-        // 第2趟：透视 HUD 共用一组投影和相机空间投放规则。
-        if (hasPerspective()) {
-            renderPerspectiveBatch(guiGraphics, partialTick);
         }
     }
 
@@ -282,7 +283,7 @@ public class CustomHud implements LayeredDraw.Layer {
     /**
      * 炮镜模式下按 scope_behavior 分派渲染所有 UGC 元素。
      * 计算 scope 基准数据（投影中心、旋转角差、相机局部坐标），
-     * 然后分正交和透视两趟渲染。
+     * 然后按透视、正交两趟渲染。
      */
     private void renderInScopeMode(GuiGraphics guiGraphics, CameraSubsystem camera, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
@@ -318,7 +319,14 @@ public class CustomHud implements LayeredDraw.Layer {
             scopeCameraLocal = ScreenProjectionUtil.worldToCameraLocal(barrelAimPoint, mcCam);
         }
 
-        // === 第1趟：正交 UGC 元素 ===
+        // 第1趟：透视 UGC 元素共用投影矩阵。
+        if (hasPerspective()) {
+            renderPerspectiveInScopeBatch(guiGraphics,
+                    scopeCameraLocal, pitchDiff, yawDiff,
+                    currentZoom, partialTick);
+        }
+
+        // 第2趟：正交 UGC 元素，屏幕分划与读数覆盖透视内容。
         // 每个元素按 scope_behavior 单独设置 poseStack；AUI 载体按自己的锚点投放
         for (List<HudElementInstance> elements : huds.values()) {
             for (HudElementInstance instance : elements) {
@@ -331,13 +339,6 @@ public class CustomHud implements LayeredDraw.Layer {
                     instance.renderGui(guiGraphics, partialTick);
                 }
             }
-        }
-
-        // === 第2趟：透视 UGC 元素共用投影矩阵 ===
-        if (hasPerspective()) {
-            renderPerspectiveInScopeBatch(guiGraphics,
-                    scopeCameraLocal, pitchDiff, yawDiff,
-                    currentZoom, partialTick);
         }
     }
 
@@ -412,7 +413,7 @@ public class CustomHud implements LayeredDraw.Layer {
                                                float[] scopeCameraLocal, float pitchDiff, float yawDiff,
                                                float currentZoom, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        // 正交顶点必须在投影切换前提交。
+        // GUI 中已排队的顶点必须在投影切换前提交。
         guiGraphics.bufferSource().endBatch();
         boolean previousDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
@@ -422,6 +423,8 @@ public class CustomHud implements LayeredDraw.Layer {
         try {
             RenderSystem.enableDepthTest();
             RenderSystem.depthMask(true);
+            // 透视 HUD 的内部遮挡使用独立于此前 GUI 内容的深度。
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
             double fov = mc.options.fov().get();
             Matrix4f projectionMatrix = new Matrix4f().setPerspective(
                     (float) Math.toRadians(fov),
@@ -465,6 +468,9 @@ public class CustomHud implements LayeredDraw.Layer {
             try {
                 guiGraphics.bufferSource().endBatch();
             } finally {
+                // 两种投影的深度值不能直接比较；保留颜色，释放正交 HUD 的深度。
+                RenderSystem.depthMask(true);
+                RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
                 Lighting.setupFor3DItems();
                 modelViewStack.popMatrix();
                 RenderSystem.applyModelViewMatrix();

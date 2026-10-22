@@ -1,7 +1,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: transparent; }
 body { display: inline-block; }
-.weapon-component { display: inline-block; width: var(--panel-width, 430px); }
+.weapon-component { display: inline-block; width: var(--panel-width, 430px); padding-bottom: var(--stack-bottom, 0px); }
 .hud-panel {
   position: relative;
   width: var(--panel-width, 430px);

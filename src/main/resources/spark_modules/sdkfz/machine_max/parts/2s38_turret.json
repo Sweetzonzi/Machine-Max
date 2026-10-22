@@ -96,12 +96,16 @@
                   "global"
                 ]
               },
-              "first_hud_layout": "machine_max:weapon_live",
-              "scope_hud_layout": "machine_max:weapon_live"
+              "first_hud_layout": "machine_max:2s38_weapon_feed",
+              "third_hud_layout": "machine_max:2s38_weapon_feed",
+              "scope_hud_layout": "machine_max:2s38_weapon_feed"
             },
             "subsystem.machine_max.secondary_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:secondary_weapon_controller",
+              "first_hud_layout": "machine_max:2s38_weapon_compact",
+              "third_hud_layout": "machine_max:2s38_weapon_compact",
+              "scope_hud_layout": "machine_max:2s38_weapon_compact",
               "control_outputs": {
                 "weapon.mg": [
                   "global"

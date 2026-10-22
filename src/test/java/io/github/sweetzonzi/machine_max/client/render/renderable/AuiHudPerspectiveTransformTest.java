@@ -1,13 +1,15 @@
 package io.github.sweetzonzi.machine_max.client.render.renderable;
 
-import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.serialization.JsonOps;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.layout.Size;
 import com.sighs.apricityui.parser.HTML;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
+import io.github.sweetzonzi.machine_max.common.visual.HudAnchor;
+import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,15 +36,10 @@ class AuiHudPerspectiveTransformTest {
 
     @Test
     void prototypeAmmoProjectsFullyInsideTheUpperRightAtBothWindowSizes() throws Exception {
-        var elements = HudElement.CODEC.listOf().parse(JsonOps.INSTANCE,
-                JsonParser.parseString(Files.readString(PACK.resolve("hud_layouts/seat_dashboard_aui.json"))))
-                .getOrThrow();
-        HudElement element = elements.stream()
-                .filter(candidate -> candidate.style().getPath().equals("aui_weapon_status") && candidate.perspective())
-                .findFirst().orElseThrow();
-        AuiHudStyle style = AuiHudStyle.CODEC.codec().parse(JsonOps.INSTANCE,
-                JsonParser.parseString(Files.readString(PACK.resolve("huds/aui_weapon_status.json"))))
-                .getOrThrow();
+        HudElement element = new HudElement(ResourceLocation.parse("test:perspective_ammo"),
+                true, ScopeBehavior.SCREEN_FIXED, false, new Vec3(95, -60, -135),
+                new Vec3(15, -25, -5), new Vec3(0.2, 0.2, 0.2), HudAnchor.CENTER);
+        AuiHudStyle style = new AuiHudStyle("test://perspective-ammo.html", Map.of());
         Path page = PACK.resolve("documents/weapon_hud_element/weapon_ammo.html");
         String css = Files.readString(page.resolveSibling("hud.css"));
         HTML.putTemple(style.page(), Files.readString(page)
