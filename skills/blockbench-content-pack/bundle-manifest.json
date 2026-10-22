@@ -3,11 +3,11 @@
   "bundled_on": "2026-10-22",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "1bf0f973eeacb247bb22009bbc501daa382b4ed4",
+    "revision": "a0c28af3eb9022b326dc08a121d889153a51d8bf",
     "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 69,
+    "file_count": 70,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -38,6 +38,11 @@
         "path": "references/schemas/base/vector_3d.schema.json",
         "bytes": 383,
         "sha256": "bf7ef0d5b0084d555c97d628dc9e35ff6186c21052f5606ec669a140a3aafaed"
+      },
+      {
+        "path": "references/schemas/fitting.schema.json",
+        "bytes": 10169,
+        "sha256": "c91062eb2139652407283654a25d7e1dc8ba6ee951903b291916512686cee805"
       },
       {
         "path": "references/schemas/hud/hud_element.schema.json",
