@@ -60,6 +60,7 @@
       "allOf": [
         { "$ref": "view_attr.schema.json" }
       ],
+      "description": "Default view settings of the seat model. first_hud_layout / third_hud_layout may be overridden per installation with the same-named dynamic attributes; the remaining camera parameters are decided by the model definition only.",
       "default": {
         "enable_first_person": true,
         "first_person_offset": 0.0,
@@ -82,7 +83,7 @@
     "allow_use_items": {
       "type": "boolean",
       "default": false,
-      "description": "Whether to allow passengers to use items (such as weapons, tools)."
+      "description": "Whether to allow passengers to use items (such as weapons, tools). A seat instance may override it with the dynamic attribute allow_use_items."
     },
     "interact_inputs": {
       "type": "array",

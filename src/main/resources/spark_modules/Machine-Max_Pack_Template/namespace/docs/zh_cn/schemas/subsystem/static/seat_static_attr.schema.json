@@ -60,6 +60,7 @@
       "allOf": [
         { "$ref": "view_attr.schema.json" }
       ],
+      "description": "座位的型号默认视图；其中 first_hud_layout / third_hud_layout 可按安装位用动态属性同名键覆盖，其余相机参数只由型号定义决定。",
       "default": {
         "enable_first_person": true,
         "first_person_offset": 0.0,
@@ -82,7 +83,7 @@
     "allow_use_items": {
       "type": "boolean",
       "default": false,
-      "description": "是否允许乘客使用物品（如武器、工具）。"
+      "description": "是否允许乘客使用物品（如武器、工具）；零件实例可在动态属性中用 allow_use_items 覆盖。"
     },
     "interact_inputs": {
       "type": "array",

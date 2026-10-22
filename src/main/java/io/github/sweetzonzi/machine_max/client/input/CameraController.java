@@ -476,7 +476,7 @@ public class CameraController {
     public static void onRenderArm(RenderHandEvent event) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            if (!seat.attr.staticAttribute.allowUseItems || isCameraMode()) event.setCanceled(true);
+            if (!seat.attr.isAllowUseItems() || isCameraMode()) event.setCanceled(true);
             PoseStack poseStack = event.getPoseStack();
             float partialTicks = event.getPartialTick();
             float f3 = Mth.lerp(partialTicks, player.yBobO, player.yBob);

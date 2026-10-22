@@ -18,8 +18,13 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final boolean blockDamage; //是否无视命中情况转嫁乘客伤害到部件
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
+    /** 型号默认值：乘员能否使用物品；零件实例可用动态属性 {@code allow_use_items} 覆盖 */
     public final boolean allowUseItems;
     public final List<String> interactInputs;
+    /**
+     * 型号默认视图。其中 {@code first_hud_layout} / {@code third_hud_layout} 可按安装位用
+     * 动态属性同名键覆盖；相机几何（视角开关、偏移、限位、跟随）只由型号定义决定。
+     */
     public final ViewAttr views;
     public final Set<String> viewInputs;
 
@@ -98,11 +103,11 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public record ViewAttr(
             boolean enableFirstPerson,
-            /** 第一人称视角使用的 HUD 布局；缺失表示该视角不显示 HUD */
+            /** 第一人称视角使用的 HUD 布局默认值；实例可用动态属性 {@code first_hud_layout} 覆盖 */
             ResourceLocation firstHudLayout,
             Vec3 firstPersonOffset,
             boolean enableThirdPerson,
-            /** 第三人称视角使用的 HUD 布局；缺失表示该视角不显示 HUD */
+            /** 第三人称视角使用的 HUD 布局默认值；实例可用动态属性 {@code third_hud_layout} 覆盖 */
             ResourceLocation thirdHudLayout,
             Vec3 thirdPersonOffset,
             boolean followVehicle,

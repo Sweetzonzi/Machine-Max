@@ -15,7 +15,7 @@
         { "$ref": "../../base/resource_location.schema.json" }
       ],
       "default": "machine_max:empty",
-      "description": "HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示该视角不显示 HUD。"
+      "description": "HUD 布局默认值：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；零件实例可用动态属性里的同名字段覆盖；缺失表示该视角不显示 HUD。"
     },
     "first_person_offset": {
       "allOf": [
@@ -38,7 +38,7 @@
         { "$ref": "../../base/resource_location.schema.json" }
       ],
       "default": "machine_max:empty",
-      "description": "HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示该视角不显示 HUD。"
+      "description": "HUD 布局默认值：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；零件实例可用动态属性里的同名字段覆盖；缺失表示该视角不显示 HUD。"
     },
     "third_person_offset": {
       "allOf": [

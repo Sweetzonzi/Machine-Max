@@ -773,7 +773,7 @@
           },
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_seat",
+            "definition": "machine_max:default_3rd_seat",
             "locator": "driver_seat",
             "control_group_preset": "machine_max:default_driver",
             "passenger_num_outputs": {
@@ -786,7 +786,7 @@
           },
           "subsystem.machine_max.commander_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_seat",
+            "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
             "control_group_preset": "machine_max:default_commander",
             "passenger_num_outputs": {
@@ -799,7 +799,7 @@
           },
           "subsystem.machine_max.passenger_seat_1": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_1",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -812,7 +812,7 @@
           },
           "subsystem.machine_max.passenger_seat_2": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_2",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -825,7 +825,7 @@
           },
           "subsystem.machine_max.passenger_seat_3": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_3",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -838,7 +838,7 @@
           },
           "subsystem.machine_max.passenger_seat_4": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_4",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -851,7 +851,7 @@
           },
           "subsystem.machine_max.passenger_seat_5": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_5",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -864,7 +864,7 @@
           },
           "subsystem.machine_max.passenger_seat_6": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_6",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -877,7 +877,7 @@
           },
           "subsystem.machine_max.passenger_seat_7": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_7",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
@@ -890,7 +890,7 @@
           },
           "subsystem.machine_max.passenger_seat_8": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_passenger_seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_8",
             "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {

@@ -241,8 +241,12 @@ class WeaponHudComponentsTest {
             String page = style.get("page").getAsString().substring("machine_max/".length());
             assertTrue(Files.isRegularFile(BUILTIN.resolve("documents/" + page)));
         }
-        var seat = JsonParser.parseString(Files.readString(SDKFZ.resolve("subsystems/k17/k17_seat.json"))).getAsJsonObject();
-        assertEquals("machine_max:k17_vehicle_hud", seat.getAsJsonObject("views").get("third_hud_layout").getAsString());
+        var hull = JsonParser.parseString(Files.readString(SDKFZ.resolve("parts/k17_hull.json"))).getAsJsonObject();
+        var driverSeat = hull.getAsJsonObject("variants")
+                .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main")
+                .getAsJsonObject("subsystems").getAsJsonObject("driver_seat");
+        assertEquals("machine_max:default_3rd_seat", driverSeat.get("definition").getAsString());
+        assertEquals("machine_max:k17_vehicle_hud", driverSeat.get("third_hud_layout").getAsString());
         for (String sight : List.of("gunner", "commander")) {
             var definition = JsonParser.parseString(Files.readString(SDKFZ.resolve("subsystems/k17/k17_" + sight + "_sight_preview.json"))).getAsJsonObject();
             assertEquals("machine_max:k17_scope_hud", definition.get("scope_hud_layout").getAsString());

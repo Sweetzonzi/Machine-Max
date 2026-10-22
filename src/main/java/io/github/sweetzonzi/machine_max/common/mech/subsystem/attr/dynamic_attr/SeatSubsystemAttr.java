@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
@@ -25,6 +26,16 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final Map<String, List<String>> cameraDiscoveryTargets;
     /** 下车 locator 名称列表，顺序即优先级；空列表表示该座位未声明下车点 */
     public final List<String> dismountLocators;
+    /**
+     * 第一人称 HUD 布局的安装级覆盖；空表示沿用子系统型号定义里的默认值。
+     * <p>显式写 {@code machine_max:empty} 表示这个安装位在该视角不显示 HUD，
+     * 与"没写"（沿用定义）区分开。</p>
+     */
+    public final Optional<ResourceLocation> firstHudLayoutOverride;
+    /** 第三人称 HUD 布局的安装级覆盖；语义同 {@link #firstHudLayoutOverride} */
+    public final Optional<ResourceLocation> thirdHudLayoutOverride;
+    /** 是否允许乘员使用物品的安装级覆盖；空表示沿用型号定义里的默认值 */
+    public final Optional<Boolean> allowUseItemsOverride;
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
@@ -32,7 +43,10 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             ResourceLocation.CODEC.optionalFieldOf("control_group_preset", NO_CONTROL_GROUP_PRESET).forGetter(SeatSubsystemAttr::getControlGroupPreset),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("camera_discovery_targets", Map.of()).forGetter(SeatSubsystemAttr::getCameraDiscoveryTargets),
-            Codec.STRING.listOf().optionalFieldOf("dismount_locators", List.of()).forGetter(SeatSubsystemAttr::getDismountLocators)
+            Codec.STRING.listOf().optionalFieldOf("dismount_locators", List.of()).forGetter(SeatSubsystemAttr::getDismountLocators),
+            ResourceLocation.CODEC.optionalFieldOf("first_hud_layout").forGetter(SeatSubsystemAttr::getFirstHudLayoutOverride),
+            ResourceLocation.CODEC.optionalFieldOf("third_hud_layout").forGetter(SeatSubsystemAttr::getThirdHudLayoutOverride),
+            Codec.BOOL.optionalFieldOf("allow_use_items").forGetter(SeatSubsystemAttr::getAllowUseItemsOverride)
     ).apply(instance, SeatSubsystemAttr::new));
 
     public SeatSubsystemAttr(
@@ -41,7 +55,10 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             ResourceLocation controlGroupPreset,
             Map<String, List<String>> passengerNumSignalTargets,
             Map<String, List<String>> cameraDiscoveryTargets,
-            List<String> dismountLocators) {
+            List<String> dismountLocators,
+            Optional<ResourceLocation> firstHudLayoutOverride,
+            Optional<ResourceLocation> thirdHudLayoutOverride,
+            Optional<Boolean> allowUseItemsOverride) {
         super(modelName);
         this.staticAttribute = (SeatSubsystemStaticAttr) getStaticAttr();
         if (locator == null || locator.isEmpty())
@@ -51,6 +68,24 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.passengerNumSignalTargets = passengerNumSignalTargets;
         this.cameraDiscoveryTargets = cameraDiscoveryTargets;
         this.dismountLocators = checkDismountLocators(dismountLocators);
+        this.firstHudLayoutOverride = firstHudLayoutOverride;
+        this.thirdHudLayoutOverride = thirdHudLayoutOverride;
+        this.allowUseItemsOverride = allowUseItemsOverride;
+    }
+
+    /** 该视角实际使用的 HUD 布局键：安装级覆盖优先，缺省取型号定义。 */
+    public ResourceLocation getFirstHudLayout() {
+        return firstHudLayoutOverride.orElse(staticAttribute.getViews().firstHudLayout());
+    }
+
+    /** 该视角实际使用的 HUD 布局键：安装级覆盖优先，缺省取型号定义。 */
+    public ResourceLocation getThirdHudLayout() {
+        return thirdHudLayoutOverride.orElse(staticAttribute.getViews().thirdHudLayout());
+    }
+
+    /** 乘员能否使用物品：安装级覆盖优先，缺省取型号定义。 */
+    public boolean isAllowUseItems() {
+        return allowUseItemsOverride.orElse(staticAttribute.isAllowUseItems());
     }
 
     /**

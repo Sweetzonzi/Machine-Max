@@ -54,7 +54,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
                 MachineMax.LOGGER.warn("控制组预设 {} 未找到，使用空控制组", attr.controlGroupPreset);
             }
         }
-        this.disableVanillaActions = !this.attr.staticAttribute.allowUseItems;
+        this.disableVanillaActions = !this.attr.isAllowUseItems();
     }
 
     @Override
@@ -199,13 +199,15 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     /**
      * 座椅只有第一/第三人称布局；炮镜视角的基础元素由相机/瞄具的
      * {@code scope_hud_layout} 提供，武器分划由武器控制器提供，座椅在该视角返回 {@code null}。
+     * <p>布局键取 {@link SeatSubsystemAttr#getFirstHudLayout()} / {@link SeatSubsystemAttr#getThirdHudLayout()}：
+     * 零件实例可以按安装位覆盖型号定义里的默认布局。</p>
      */
     @Override
     @Nullable
     public HudLayout hudLayoutFor(HudView view) {
         return IHudHost.resolve(switch (view) {
-            case FIRST -> attr.staticAttribute.views.firstHudLayout();
-            case THIRD -> attr.staticAttribute.views.thirdHudLayout();
+            case FIRST -> attr.getFirstHudLayout();
+            case THIRD -> attr.getThirdHudLayout();
             case SCOPE -> HudLayout.EMPTY;
         });
     }

@@ -147,7 +147,7 @@ public class MMGuiManager {
         // 普通座椅模式：allowUseItems = false 时隐藏热栏
         if (player instanceof IEntityMixin passenger
                 && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
-                && !seat.attr.staticAttribute.allowUseItems) {
+                && !seat.attr.isAllowUseItems()) {
             if (event.getName() == VanillaGuiLayers.HOTBAR) event.setCanceled(true);
         }
 

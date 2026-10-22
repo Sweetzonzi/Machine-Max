@@ -20,7 +20,7 @@
 
 这套结构解决三件事：
 
-1. **投放可复用**：`machine_max:seat_dashboard` 被 7 个座椅文件的第一/第三人称共 11 处引用，`seat_dashboard_2` 被 `dayun` 的两处引用；投放只在布局里写一次，样式文件只保留外观。
+1. **投放可复用**：`machine_max:seat_dashboard` 被 `default_seat`、`vn`、`senna_gtr`、`golden_closestool` 四个座椅型号的第一/第三人称共 8 处引用，`seat_dashboard_2` 被 `dayun` 的两处引用；投放只在布局里写一次，样式文件只保留外观。
 2. **宿主同形**：座椅与相机/瞄具的每个视角字段都是一个 `ResourceLocation`，视角由字段名决定；武器控制器在 V3 沿用同一形态。
 3. **样式与行为分离**：`gun_sight_hud` 与 `scope_gunner_fixed` 共用同一份样式，差异只由布局里的 `scope_behavior` 表达。
 
@@ -274,7 +274,7 @@ public record HudLayout(List<HudElement> elements) {
 
 ### 5.1 为什么布局是具名资源
 
-`machine_max:seat_dashboard` 被 `default_seat`、`default_3rd_seat`、`vn`、`senna_gtr`、`golden_closestool`、`k17`、`sdkfz234` 七个座椅文件以第一/第三人称共 11 处引用，`machine_max:seat_dashboard_2` 被 `dayun` 的第一/第三人称引用。若投放内联在宿主里，同一组数要抄 13 遍，改一次仪表盘布局要改 8 个文件。具名布局让"一处定义、多处引用"成立：
+`machine_max:seat_dashboard` 被 `default_seat`、`vn`、`senna_gtr`、`golden_closestool` 四个座椅型号以第一/第三人称共 8 处引用，`machine_max:seat_dashboard_2` 被 `dayun` 的第一/第三人称引用。若投放内联在宿主里，同一组数要在每个座椅型号里各抄一遍；具名布局让"一处定义、多处引用"成立：
 
 - 多个座椅可以引用同一份 `machine_max:seat_dashboard`；
 - 同一份布局可以被第一人称和第三人称同时引用；
@@ -289,19 +289,22 @@ public record HudLayout(List<HudElement> elements) {
 | 宿主 | 字段 | 视角 | 玩家覆盖键（V4） |
 | --- | --- | --- | --- |
 | 相机/瞄具 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段） | `scope` | `camera:<子系统名>` |
-| 座椅 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout` | `first` / `third`（`THIRD_PERSON_FRONT` 归 `third`） | `seat:<子系统名>` |
+| 座椅 | 型号定义 `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout`，零件实例的动态属性同名键覆盖 | `first` / `third`（`THIRD_PERSON_FRONT` 归 `third`） | `seat:<子系统名>` |
 | 武器控制器 | 动态属性 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`（`WeaponControllerSubsystemAttr`） | `first` / `third` / `scope` | `wc:<子系统名>` |
 
 每个字段是一个 `ResourceLocation`，指向一份 `HudLayout`。字段名决定视角，宿主不读取其它视角的字段。三类宿主的字段都已按此形态落地；武器控制器的内容包示例待补。目标 `CustomHud` 每个客户端 tick 协调当前视角的候选宿主集合（座椅或相机/瞄具，加上座椅全部控制组发现的 WC 并集）和独立选中状态，宿主/视角/布局/样式变化触发重建，纯选中切换保留元素；随后向宿主取实际布局（`hudLayoutFor`），宿主内部用 `IHudHost.resolve` 把内容包 RL 解析成对象，缺失时提示一次。没有布局时按空布局处理，样式 RL 查不到时跳过该条目并提示一次。没有布局的宿主保留一个空列表，使宿主集合与键集合一致。
 
 ```jsonc
-// 座椅
+// 座椅型号定义（默认值）
 "views": {
   "first_hud_layout": "machine_max:seat_dashboard",
   "third_hud_layout": "machine_max:seat_dashboard",
   "enable_first_person": true,
   ...
 }
+
+// 零件实例（可选，按安装位覆盖型号默认值）
+"third_hud_layout": "machine_max:k17_vehicle_hud"
 ```
 
 ```jsonc
@@ -321,7 +324,7 @@ public record HudLayout(List<HudElement> elements) {
 }
 ```
 
-字段缺失表示该视角没有 HUD。武器控制器可以使用三个视角字段；座椅只有第一/第三人称；相机/瞄具只有炮镜。座椅没有 `scope_hud_layout`：炮镜态下要显示的基础元素由该炮镜自己的 `scope_hud_layout` 提供，武器分划与弹药由武器控制器的 `scope_hud_layout` 提供。
+字段缺失表示该视角没有 HUD。武器控制器可以使用三个视角字段；座椅只有第一/第三人称；相机/瞄具只有炮镜。座椅没有 `scope_hud_layout`：炮镜态下要显示的基础元素由该炮镜自己的 `scope_hud_layout` 提供，武器分划与弹药由武器控制器的 `scope_hud_layout` 提供。座椅的两个布局键可以在零件实例里覆盖，省略时回退到型号定义；相机/瞄具与武器控制器没有安装级覆盖。
 
 武器控制器的 HUD 不由座椅聚合弹药数据。目标实现从当前座椅所有控制组发现的 WC 并集建立候选宿主；数据源是 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractControllableSubsystem.java#weaponControllersByGroup`。按 base、控制组配置顺序遍历并按控制器实例去重，不直接依赖并发 Map 的迭代顺序；不扫描整辆装配体上未被该座椅发现的武器。选中状态由同一文件的 `#getActiveWeaponControllers` 提供，即 base + 当前子组并集；`#weaponControllerDiscoveryHandshake` 在控制组配置或结构变化时刷新缓存，纯切组无需重新发现。
 
@@ -608,7 +611,7 @@ V1 的内容包迁移已完成，当前形态：
 | --- | --- |
 | `huds/example_hud.json`、`example_hud_2.json` | 各一份样式，只含 `type`/`model`/`animation`/`texture`/`color`/`alpha`/`texts`/`scissor`；投放分别在 `hud_layouts/seat_dashboard.json` 与 `hud_layouts/seat_dashboard_2.json` |
 | `huds/gun_sight_hud.json` | 一份样式；两个布局 `hud_layouts/scope_gunner.json`（`follow_position`）与 `hud_layouts/scope_gunner_fixed.json`（`screen_fixed`）共用它 |
-| `subsystems/*/*_seat.json` | `views.first_hud_layout` / `third_hud_layout` 各一个 RL；空列表的视角直接省略字段 |
+| `subsystems/*/*_seat.json` | `views.first_hud_layout` / `third_hud_layout` 各一个 RL，作为型号默认值；零件实例可用同名动态属性覆盖 |
 | 相机/瞄具子系统 | `scope_hud_layout` 一个 RL；没有布局时省略字段 |
 | 武器控制器 | 动态属性已有 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`，默认省略即无 HUD；内置 `weapon_live` 布局和双语武器 schema 提供接入示例 |
 | `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 座椅、相机/瞄具的 schema 已含对应视角字段；武器控制器动态属性的 schema 尚未补三个 HUD 字段；`hud.md` 按"样式 / 布局 / 元素"三部分组织 |
@@ -634,10 +637,11 @@ V1 的内容包迁移已完成，当前形态：
 | `external/MMDynamicRes.java` | `HUD_STYLES` 与 `HUD_LAYOUTS` 两张表 |
 | `common/resource/modules/HudModule.kt` / `HudLayoutModule.kt` | 按 `<命名空间>:<相对路径>` 拼键，子目录参与键；分别解码样式与布局 |
 | `common/registry/MMPackModuleRegistries.kt` | 注册 `huds` 与 `hud_layouts` 两个内容包模块 |
-| `common/mech/subsystem/SeatSubsystem.java` | 实现 `IHudHost`：`first` / `third` 读静态属性，`scope` 取 `HudLayout.EMPTY`，三者都经 `IHudHost.resolve` 解析 |
+| `common/mech/subsystem/SeatSubsystem.java` | 实现 `IHudHost`：`first` / `third` 读 `SeatSubsystemAttr` 的解析结果（实例覆盖优先，缺省取型号定义），`scope` 取 `HudLayout.EMPTY`，三者都经 `IHudHost.resolve` 解析 |
 | `CameraSubsystem.java` / `SightSubsystem.java` | 实现/继承 `IHudHost`：`scope` 读静态属性，其余视角取 `HudLayout.EMPTY`，都经 `IHudHost.resolve` |
 | `WeaponControllerSubsystem.java` / `WeaponControllerSubsystemAttr.java` | 实现 `IHudHost`：三个视角读动态属性，字段缺省时取 `HudLayout.EMPTY`，都经 `IHudHost.resolve` |
-| `common/mech/subsystem/attr/static_attr/SeatSubsystemStaticAttr.java` | `first_hud_layout` / `third_hud_layout` 各一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
+| `common/mech/subsystem/attr/static_attr/SeatSubsystemStaticAttr.java` | `first_hud_layout` / `third_hud_layout` 各一个 `ResourceLocation`，作为型号默认值，codec 缺省值为 `HudLayout.EMPTY` |
+| `common/mech/subsystem/attr/dynamic_attr/SeatSubsystemAttr.java` | `first_hud_layout` / `third_hud_layout` / `allow_use_items` 为可选安装级覆盖；省略时分别回退到型号定义的同名值 |
 | `CameraSubsystemStaticAttr.java` / `SightSubsystemStaticAttr.java` | `scope_hud_layout` 一个 `ResourceLocation`，codec 缺省值为 `HudLayout.EMPTY` |
 
 已实现元素上下文、AUI 绑定和武器快照/查询，并提供 `weapon_live` 内容包示例与 HUD schema；代码入口见实现记录。玩家布局管理器与编辑页属于 V4，未实现。
@@ -787,3 +791,5 @@ V1 已通过 `gradlew compileJava compileKotlin`。2026-10-18 `runClient` 进世
 | 3.7 | 2026-10-22 | 落实上下文、候选显隐、武器快照与页面绑定，接入主线程模型动画采样及内置动态示例；代码与验证范围见实现记录 |
 
 | 3.8 | 2026-10-22 | 模型动画沿用物理步推进、主线程发布和渲染插值，绑定宿主 Level 并隔离客户端物理事件，逐物理步固定求值帧 |
+
+| 3.9 | 2026-10-23 | 座椅 HUD 布局支持安装级覆盖：动态属性新增 `first_hud_layout` / `third_hud_layout` / `allow_use_items`，省略时回退型号定义；`default_3rd_seat` / `default_3rd_passenger_seat` 改为封闭载具乘员/乘客座，sdkfz 各载具的座位改用这两个型号，并按安装位覆盖仪表盘与用物品权限 |

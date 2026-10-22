@@ -211,8 +211,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
-        "bytes": 2147,
-        "sha256": "1971be425f8f936d018c56199f090e8555aba64505b9c1623264b6d89233896f"
+        "bytes": 3131,
+        "sha256": "df229a615b2bf5afd44ffa6cfe03ef360dcae195c627de5a903277f0d20dd689"
       },
       {
         "path": "references/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json",
@@ -306,8 +306,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/seat_static_attr.schema.json",
-        "bytes": 5140,
-        "sha256": "abbe6c4290218d264c006cd8aa34e114a5633ebf7973ada920f5f6978c5b48dd"
+        "bytes": 5393,
+        "sha256": "9f9caf99bfcf493cec1d3ee165d4f7d2cd0cd50e61df1053543555c4069293a4"
       },
       {
         "path": "references/schemas/subsystem/static/sight_static_attr.schema.json",
@@ -336,8 +336,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/view_attr.schema.json",
-        "bytes": 3693,
-        "sha256": "10d6152d59b7e95bae6f077eed1a593e818ddeab96ccf76ae9bcf16a6f33c7f8"
+        "bytes": 3801,
+        "sha256": "6794ac0498396b88fc6939ba41eca5d7eb10fdedbb116dd918579a7d1387a1bf"
       },
       {
         "path": "references/schemas/subsystem/static/weapon_controller_static_attr.schema.json",
@@ -365,10 +365,10 @@
     "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
     "revision": "6c996992b7089d672ed6cfcd002a5f1c1044ca4f",
     "source_path": "dist/machine_max_bb_plugin.js",
-    "artifact_kind": "existing compiled artifact; copied without rebuilding",
+    "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
     "version": "0.5.0",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1863189,
-    "sha256": "354bb013be9471c6921dfcfb2444e670198f04983e22a78e6343efc2a3412148"
+    "bytes": 1896187,
+    "sha256": "359fb6f19fe58cd27217d7cd1b469d30b1bcba8f456de712e971354075140363"
   }
 }

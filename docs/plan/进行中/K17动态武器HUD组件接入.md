@@ -56,7 +56,7 @@ WC 配置位于 `src/main/resources/spark_modules/sdkfz/machine_max/parts/k17_tu
 - 样式 `machine_max:k17_weapon_preview`；
 - 布局 `machine_max:k17_weapon_preview` 与 `machine_max:k17_weapon_preview_scope`。
 
-需要游戏内对照时，把三个 WC 的三项视角布局设为 `machine_max:empty`；把 `subsystems/k17/k17_seat.json` 的 `views.third_hud_layout` 指向静态布局，把两个 `subsystems/k17/k17_*_sight_preview.json` 的 `scope_hud_layout` 指向静态炮镜布局。以上相对路径均位于 `src/main/resources/spark_modules/sdkfz/machine_max/`。
+需要游戏内对照时，把三个 WC 的三项视角布局设为 `machine_max:empty`；把 `parts/k17_hull.json` 三个座位的 `third_hud_layout` 指向静态布局，把两个 `subsystems/k17/k17_*_sight_preview.json` 的 `scope_hud_layout` 指向静态炮镜布局。以上相对路径均位于 `src/main/resources/spark_modules/sdkfz/machine_max/`。
 
 ## 验证边界
 

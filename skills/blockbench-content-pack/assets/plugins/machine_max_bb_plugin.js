@@ -39,7 +39,7 @@
   var define_BUILTIN_MATERIALS_default;
   var init_define_BUILTIN_MATERIALS = __esm({
     "<define:__BUILTIN_MATERIALS__>"() {
-      define_BUILTIN_MATERIALS_default = { "5083_aluminum_alloy": { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.6, rolling_friction: 0.02, spinning_friction: 0.5, restitution: 0.4, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.4, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.15, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, "7035_aluminum_alloy": { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.66, rolling_friction: 0.01, spinning_friction: 0.43, restitution: 0.55, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.45, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.18, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, depleted_uranium_armor: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.3, rolling_friction: 0.01, spinning_friction: 0.4, restitution: 0.2, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 1.65, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.55, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, drifting_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.4, 1.5, 1], slip_adaptation: 0.4, slip_curve: { longitudinal: { peak_slip_ratio: 0.16, peak_scale: 1.2, kinetic_scale: 0.6 }, lateral: { peak_angle_deg: 7, kinetic_angle_deg: 90, peak_scale: 1.3, kinetic_scale: 0.1 } }, rolling_friction: 0.01, spinning_friction: 0.8, restitution: 0.65, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.04, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.01, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, glass: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.65, 0.65, 0.5], slip_adaptation: 0.15, rolling_friction: 1e-3, spinning_friction: 0.4, restitution: 0.6, block_damage_factor: 0.6 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }, { operation: "add", value: -10, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -10, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.03, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.03, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.12, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.04, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.glass", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.glass", range: 48 } } }, hardwood: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.65, 0.65, 0.5], slip_adaptation: 0.4, rolling_friction: 0.15, spinning_friction: 0.015, restitution: 0.2, block_damage_factor: 0.6 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }, { operation: "add", value: -4, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -3, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.03, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.03, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.1, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.03, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.wood_hard", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.wood_hard", range: 48 } } }, ice: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.15, 0.15, 0.5], slip_adaptation: 0.05, rolling_friction: 1e-3, spinning_friction: 0.05, restitution: 0.05, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.02, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, internal_machinery: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.45, 0.45, 0.5], slip_adaptation: 0.55, rolling_friction: 0.22, spinning_friction: 0, restitution: 0.12, block_damage_factor: 1.1 }, armor: { angle_effect: false, unpen_power: 1, impact_modifiers: [{ operation: "multiply", value: 0.6, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -9, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.09, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.09, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.55, dmg_resist: 0, dmg_mult: 1, decay_rha: 0.5, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, normal_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.4, 1.5, 1], slip_adaptation: 0.4, slip_curve: { longitudinal: { peak_slip_ratio: 0.2, peak_scale: 1.4, kinetic_scale: 0.9 }, lateral: { peak_angle_deg: 12, peak_scale: 1.3, kinetic_scale: 0.8 } }, rolling_friction: 0.01, spinning_friction: 0.8, restitution: 0.65, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.04, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.01, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, off_road_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.2, 1.5, 1], slip_adaptation: 0.8, rolling_friction: 0.2, spinning_friction: 0.7, restitution: 0.6, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.06, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, paper: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.9, rolling_friction: 0.05, spinning_friction: 0.3, restitution: 0.01, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.01, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, pvc: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.38, rolling_friction: 0.018, spinning_friction: 0.38, restitution: 0.55, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.06, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, racing_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [3, 3, 1], slip_adaptation: 0.3, slip_curve: { longitudinal: { peak_slip_ratio: 0.2, peak_scale: 1.4, kinetic_scale: 0.9 }, lateral: { peak_angle_deg: 25, peak_scale: 1.4, kinetic_scale: 0.9 } }, rolling_friction: 0.015, spinning_friction: 1.3, restitution: 0.4, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.05, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, rha: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.35, 0.35, 0.5], slip_adaptation: 0.65, rolling_friction: 0.28, spinning_friction: 0, restitution: 0.07, block_damage_factor: 1.3 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.55, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -9, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.09, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.09, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 1, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.3, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, softwood: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.7, 0.7, 0.5], slip_adaptation: 0.35, rolling_friction: 0.12, spinning_friction: 0.02, restitution: 0.25, block_damage_factor: 0.4 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.9, condition: { type: "always" } }, { operation: "add", value: -3, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -2, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.02, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.02, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.05, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.wood", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.wood", range: 48 } } }, structural_steel: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.45, 0.45, 0.5], slip_adaptation: 0.55, rolling_friction: 0.22, spinning_friction: 0, restitution: 0.12, block_damage_factor: 1.1 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -6, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.06, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.06, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.85, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.28, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } } };
+      define_BUILTIN_MATERIALS_default = { "5083_aluminum_alloy": { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.6, rolling_friction: 0.02, spinning_friction: 0.5, restitution: 0.4, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.4, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.15, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, "7035_aluminum_alloy": { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.66, rolling_friction: 0.01, spinning_friction: 0.43, restitution: 0.55, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.45, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.18, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, depleted_uranium_armor: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.3, rolling_friction: 0.01, spinning_friction: 0.4, restitution: 0.2, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 1.65, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.55, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, drifting_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.4, 1.5, 1], slip_adaptation: 0.4, slip_curve: { longitudinal: { peak_slip_ratio: 0.16, peak_scale: 1.2, kinetic_scale: 0.6 }, lateral: { peak_angle_deg: 7, kinetic_angle_deg: 90, peak_scale: 1.3, kinetic_scale: 0.1 } }, rolling_friction: 0.01, spinning_friction: 0.8, restitution: 0.65, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.04, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.01, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, glass: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.65, 0.65, 0.5], slip_adaptation: 0.15, rolling_friction: 1e-3, spinning_friction: 0.4, restitution: 0.6, block_damage_factor: 0.6 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }, { operation: "add", value: -10, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -10, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.03, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.03, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.12, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.04, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.glass", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.glass", range: 48 } } }, hardwood: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.65, 0.65, 0.5], slip_adaptation: 0.4, rolling_friction: 0.15, spinning_friction: 0.015, restitution: 0.2, block_damage_factor: 0.6 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }, { operation: "add", value: -4, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -3, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.03, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.03, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.1, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.03, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.wood_hard", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.wood_hard", range: 48 } } }, ice: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.15, 0.15, 0.5], slip_adaptation: 0.05, rolling_friction: 1e-3, spinning_friction: 0.05, restitution: 0.05, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.02, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, internal_machinery: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.45, 0.45, 0.5], slip_adaptation: 0.55, rolling_friction: 0.22, spinning_friction: 0, restitution: 0.12, block_damage_factor: 1.1 }, armor: { angle_effect: false, unpen_power: 1, impact_modifiers: [{ operation: "multiply", value: 0.6, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -9, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.09, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.09, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.55, dmg_resist: 0, dmg_mult: 1, decay_rha: 0.5, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, normal_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.4, 1.5, 1], slip_adaptation: 0.4, slip_curve: { longitudinal: { peak_slip_ratio: 0.2, peak_scale: 1.4, kinetic_scale: 0.9 }, lateral: { peak_angle_deg: 12, peak_scale: 1.3, kinetic_scale: 0.8 } }, rolling_friction: 0.01, spinning_friction: 0.8, restitution: 0.65, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.04, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.01, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, off_road_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [1.2, 1.5, 1], slip_adaptation: 0.8, rolling_friction: 0.2, spinning_friction: 0.7, restitution: 0.6, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.06, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, paper: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.9, rolling_friction: 0.05, spinning_friction: 0.3, restitution: 0.01, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.01, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, pvc: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.55, 0.55, 0.5], slip_adaptation: 0.38, rolling_friction: 0.018, spinning_friction: 0.38, restitution: 0.55, block_damage_factor: 0.7 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.85, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -4, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.04, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.04, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.06, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, racing_tire: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [3, 3, 1], slip_adaptation: 0.3, slip_curve: { longitudinal: { peak_slip_ratio: 0.2, peak_scale: 1.4, kinetic_scale: 0.9 }, lateral: { peak_angle_deg: 25, peak_scale: 1.4, kinetic_scale: 0.9 } }, rolling_friction: 0.015, spinning_friction: 1.3, restitution: 0.4, block_damage_factor: 0.05 }, armor: { impact_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "multiply", value: 0.1, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "add", value: -2, condition: { type: "damage_tag", id: "c:is_impact" } }, { operation: "multiply", value: 0.05, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.05, condition: { type: "entity_type", id: "minecraft:slime" } }, { operation: "multiply", value: 0.1, condition: { type: "entity_type", id: "minecraft:magma_cube" } }], rha: 0.05, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, unpen_power: 0, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: {} }, rha: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.35, 0.35, 0.5], slip_adaptation: 0.65, rolling_friction: 0.28, spinning_friction: 0, restitution: 0.07, block_damage_factor: 1.3 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.55, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -9, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.09, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.09, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 1, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.3, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, softwood: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.7, 0.7, 0.5], slip_adaptation: 0.35, rolling_friction: 0.12, spinning_friction: 0.02, restitution: 0.25, block_damage_factor: 0.4 }, armor: { angle_effect: false, unpen_power: 0, impact_modifiers: [{ operation: "multiply", value: 0.9, condition: { type: "always" } }, { operation: "add", value: -3, condition: { type: "always" } }], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -2, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.02, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.02, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.05, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.02, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.wood", range: 48 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.wood", range: 48 } } }, structural_steel: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.45, 0.45, 0.5], slip_adaptation: 0.55, rolling_friction: 0.22, spinning_friction: 0, restitution: 0.12, block_damage_factor: 1.1 }, armor: { angle_effect: true, unpen_power: 0, impact_modifiers: [], penetration_modifiers: [], damage_modifiers: [{ operation: "add", value: -6, condition: { type: "damage_type", id: "minecraft:fly_into_wall" } }, { operation: "multiply", value: 0.06, condition: { type: "damage_type", id: "minecraft:sweet_berry_bush" } }, { operation: "multiply", value: 0.06, condition: { type: "entity_type", id: "minecraft:slime" } }], rha: 0.85, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.28, decay_power: 1.5, decay_dmg_resist: 0, decay_dmg_mult: 1 }, sounds: { hit_un_pen: { sound_id: "machine_max:hit_box.hit.up_pen.metal", range: 64 }, hit_pen: { sound_id: "machine_max:hit_box.hit.pen.metal", range: 64 } } }, track_steel: { $schema: "../docs/zh_cn/schemas/base/material_attr.schema.json", physics: { friction: [0.9, 0.9, 1], slip_adaptation: 0.5, rolling_friction: 0.05, spinning_friction: 0, restitution: 0, block_damage_factor: 1 }, armor: { rha: 0.6, angle_effect: true, dmg_resist: 1, dmg_mult: 0.95, decay_rha: 0.3, decay_dmg_resist: 0, decay_dmg_mult: 1, decay_power: 1.5, unpen_power: 0.6 } } };
     }
   });
 
@@ -55,7 +55,7 @@
   var define_BUILTIN_SUBSYSTEMS_default;
   var init_define_BUILTIN_SUBSYSTEMS = __esm({
     "<define:__BUILTIN_SUBSYSTEMS__>"() {
-      define_BUILTIN_SUBSYSTEMS_default = { default_glass: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:basic", basic_durability: 2, pass_damage: false, limit_damage: false, sounds: { on_destroyed: { sound_id: "machine_max:subsystem.baisc.glass.break", range: 32 } }, hidden: true }, targeting_pod: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:camera", basic_durability: 8, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 16.7, min_pitch: -80, max_pitch: 80, yaw_limit: 360, tracking_target_inputs: [], discovery_inputs: ["targeting_pod_sight"], allow_cycle: true }, default_car_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:car_controller", basic_durability: 150, min_steering_radius: 5, lateral_acceleration: 50, max_drift_angular_velocity: 2, manual_gear_shift: false, auto_hand_brake: true, drift_assist: true }, light_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 80, max_power: 8e4, max_torque: 175, idle_rpm: 850, max_torque_rpm: 4e3, red_line_rpm: 6300, red_line_torque_ratio: 0.75, inertia: 10, cylinder: 4, damping_factors: [2, 0.03, 2e-5] }, medium_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 150, max_power: 18e4, max_torque: 380, idle_rpm: 750, max_torque_rpm: 4e3, red_line_rpm: 6e3, red_line_torque_ratio: 0.65, inertia: 15, cylinder: 6, damping_factors: [2, 0.03, 2e-5] }, motorcycle_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 30, max_power: 6e3, max_torque: 9, idle_rpm: 500, max_torque_rpm: 7e3, red_line_rpm: 9500, red_line_torque_ratio: 0.7, inertia: 2, cylinder: 1, damping_factors: [1, 0.02, 1e-5] }, sport_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 100, max_power: 45e4, max_torque: 700, idle_rpm: 500, max_torque_rpm: 5500, red_line_rpm: 9e3, red_line_torque_ratio: 0.9, inertia: 20, cylinder: 8, damping_factors: [2, 0.03, 2e-5] }, truck_diesel_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 400, max_power: 37e4, max_torque: 2500, idle_rpm: 550, max_torque_rpm: 1500, red_line_rpm: 2200, red_line_torque_ratio: 0.9, inertia: 50, cylinder: 6, damping_factors: [5, 0.05, 1e-5] }, light_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 80, final_ratio: 8, ratios: [-3.5, 3.5, 2.5, 1.75, 1.4, 1.15, 0.85], switch_time: 0.2 }, medium_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 150, final_ratio: 10, ratios: [-3.3, 4.71, 3.14, 2.1, 1.6, 1.29, 1.1, 0.88, 0.67], switch_time: 0.2 }, motorcycle_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 40, final_ratio: 15, ratios: [-3.5, 3.5, 2.8, 2, 1.4], switch_time: 0.15 }, simple_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 60, final_ratio: 8, ratios: [2, 1.3], switch_time: 0.1 }, sport_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 80, final_ratio: 10, ratios: [-3.5, 3.5, 2.5, 1.8, 1.4, 1, 0.7, 0.5], switch_time: 0.05 }, truck_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 500, final_ratio: 3.7, ratios: [-12.3, 12.1, 9.41, 7.31, 5.71, 4.46, 3.4, 2.7, 2.11, 1.84, 1.3, 1, 0.78], switch_time: 0.3 }, default_trunk: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:item_storage", basic_durability: 100, rows: 6, columns: 9 }, glove_box: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:item_storage", basic_durability: 50, rows: 2, columns: 3 }, basic_launcher: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:launcher", basic_durability: 80, control_inputs: ["weapon_control"], breech: { fire_rate: 600 } }, beam_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "beam", range: 16, color: [255, 245, 210], intensity: 0.5, beam_angle: 24 }, dummy_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "point", range: 0, intensity: 0 }, point_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "point", range: 1, color: [255, 235, 180], intensity: 0.55, beam_angle: 24 }, high_power_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 120, max_power: 15e4, max_torque: 350, red_line_rpm: 15e3, red_line_power_ratio: 0.75, inertia: 8, damping_factors: [10, 0.1, 5e-5], generator_efficiency: 0.9 }, medium_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 80, max_power: 5e4, max_torque: 250, red_line_rpm: 1e4, red_line_power_ratio: 0.8, inertia: 5, damping_factors: [10, 0.1, 1e-4], generator_efficiency: 0.85 }, small_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 50, max_power: 2e4, max_torque: 85, red_line_rpm: 12e3, red_line_power_ratio: 0.8, inertia: 3, damping_factors: [5, 0.05, 5e-5], generator_efficiency: 0.85 }, default_motorbike_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motorbike_controller", basic_durability: 60, min_steering_radius: 3.5, lateral_acceleration: 20, max_drift_angular_velocity: 1.8, max_angle: 35, parking_angle: 5, correction_force_multiplier: 1 }, default_3rd_passenger_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: false, views: { enable_first_person: false, enable_third_person: true, follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, third_person_offset: [0, 2, 0], min_pitch: -90, max_pitch: 90, yaw_limit: 360 }, allow_use_items: true }, default_3rd_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: false, views: { enable_first_person: false, enable_third_person: true, third_hud_layout: "machine_max:seat_dashboard", follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, third_person_offset: [0, 2, 0], min_pitch: -70, max_pitch: 45, yaw_limit: 270 }, allow_use_items: false }, default_passenger_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: true, passenger_scale: [1, 1, 1], views: { enable_first_person: true, enable_third_person: true, follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, min_pitch: -90, max_pitch: 90, yaw_limit: 360 }, allow_use_items: true }, default_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: true, passenger_scale: [1, 1, 1], views: { enable_first_person: true, first_hud_layout: "machine_max:seat_dashboard_aui", enable_third_person: true, third_hud_layout: "machine_max:seat_dashboard", follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, min_pitch: -70, max_pitch: 45, yaw_limit: 270 }, allow_use_items: false }, commander_sight_dual_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: false, horizontal_stabilized: false, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight_dual_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner_fixed", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight_vert_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 50, vertical_stabilized: true, horizontal_stabilized: false, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner_fixed", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, track_controller_standard: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:track_controller", basic_durability: 20, max_yaw_rate: { "0": 0, "10": 30, "30": 18, "50": 10 }, min_turning_radius: 4, max_lateral_acceleration: 6, yaw_p: 1, yaw_d: 0.05, steering_smoothing: 0.1, brake_smoothing: 0.2, auto_hand_brake: true, manual_gear_shift: false, separate_throttle_brake: false }, track_drive_heavy: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:track_drive", basic_durability: 30, max_drive_torque: 3e4, max_brake_torque: 2e4, max_hand_brake_torque: 2e4, max_speed: 120, control_inputs: ["car_control"] }, heavy_duty_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 800, diff_lock: "auto", diff_lock_sensitivity: 1, auto_diff_lock_threshold: 15 }, locked_differential: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 400, diff_lock: "true", diff_lock_sensitivity: 1 }, open_differential: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 200, diff_lock: "false", diff_lock_sensitivity: 0.85 }, sport_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 200, diff_lock: "auto", diff_lock_sensitivity: 1.5, auto_diff_lock_threshold: 5 }, standard_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 300, diff_lock: "auto", diff_lock_sensitivity: 1, auto_diff_lock_threshold: 10 }, basic_azimuth_driver: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:turret_driver", basic_durability: 30, yaw: { max_force: 8e4, max_speed: 90 }, control_inputs: ["weapon_control"] }, basic_elevation_driver: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:turret_driver", basic_durability: 30, pitch: { max_force: 35e3, max_speed: 30 }, control_inputs: ["weapon_control"] }, main_weapon_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:weapon_controller", basic_durability: 20, fire_mode: "SALVO", aim_inputs: ["aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input"], fire_inputs: ["fire_input_p0", "fire_input_p1", "fire_input_p2", "fire_input_p3", "fire_input"], aim_tolerance_deg: 60 }, secondary_weapon_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:weapon_controller", basic_durability: 20, fire_mode: "SALVO", aim_inputs: ["aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input"], fire_inputs: ["secondary_fire_input_p0", "secondary_fire_input_p1", "secondary_fire_input_p2", "secondary_fire_input_p3", "secondary_fire_input"], aim_tolerance_deg: 60 }, light_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 0, max_brake_force: 800, max_hand_brake_force: 0, max_rpm: 2500 }, steering: { max_force: 2e3, max_speed: 180 }, abs_enabled: true, abs_wheel_radius: 0.35 }, light_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 1500, max_brake_force: 800, max_hand_brake_force: 1e3, max_speed: 2500 }, abs_enabled: true, abs_wheel_radius: 0.35 }, motorcycle_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 0, max_brake_force: 600, max_hand_brake_force: 0, max_speed: 2500 }, steering: { max_force: 500, max_speed: 3.14 }, abs_enabled: true, abs_wheel_radius: 0.3 }, motorcycle_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 2500, max_brake_force: 300, max_hand_brake_force: 200, max_speed: 2500 }, abs_enabled: true, abs_wheel_radius: 0.3 }, sport_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 150, roll: { max_drive_force: 0, max_brake_force: 2e3, max_hand_brake_force: 0, max_speed: 3e3 }, steering: { max_force: 5e3, max_speed: 6.28 }, abs_enabled: true, abs_target_slip_ratio: 0.15, abs_wheel_radius: 0.4 }, sport_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 150, roll: { max_drive_force: 5e3, max_brake_force: 2e3, max_hand_brake_force: 3e3, max_speed: 3e3 }, abs_enabled: true, abs_target_slip_ratio: 0.15, abs_wheel_radius: 0.4 }, standard_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 200, roll: { max_drive_force: 0, max_brake_force: 1500, max_hand_brake_force: 0, max_speed: 2500 }, steering: { max_force: 4e3, max_speed: 3.14 }, abs_enabled: false, abs_wheel_radius: 0.4 }, standard_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 200, roll: { max_drive_force: 2500, max_brake_force: 1500, max_hand_brake_force: 2500, max_speed: 2500 }, abs_enabled: false, abs_wheel_radius: 0.4 }, truck_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 600, roll: { max_drive_force: 0, max_brake_force: 2e4, max_hand_brake_force: 0, max_speed: 1e3 }, steering: { max_force: 5e3, max_speed: 1.5 }, abs_enabled: true, abs_wheel_radius: 0.5 }, truck_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 600, roll: { max_drive_force: 28e3, max_brake_force: 2e4, max_hand_brake_force: 35e3, max_speed: 1e3 }, abs_enabled: true, abs_wheel_radius: 0.5 } };
+      define_BUILTIN_SUBSYSTEMS_default = { default_glass: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:basic", basic_durability: 2, pass_damage: false, limit_damage: false, sounds: { on_destroyed: { sound_id: "machine_max:subsystem.baisc.glass.break", range: 32 } }, hidden: true }, targeting_pod: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:camera", basic_durability: 8, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 16.7, min_pitch: -80, max_pitch: 80, yaw_limit: 360, tracking_target_inputs: [], discovery_inputs: ["targeting_pod_sight"], allow_cycle: true }, default_car_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:car_controller", basic_durability: 150, min_steering_radius: 5, lateral_acceleration: 50, max_drift_angular_velocity: 2, manual_gear_shift: false, auto_hand_brake: true, drift_assist: true }, light_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 80, max_power: 8e4, max_torque: 175, idle_rpm: 850, max_torque_rpm: 4e3, red_line_rpm: 6300, red_line_torque_ratio: 0.75, inertia: 10, cylinder: 4, damping_factors: [2, 0.03, 2e-5] }, medium_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 150, max_power: 18e4, max_torque: 380, idle_rpm: 750, max_torque_rpm: 4e3, red_line_rpm: 6e3, red_line_torque_ratio: 0.65, inertia: 15, cylinder: 6, damping_factors: [2, 0.03, 2e-5] }, motorcycle_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 30, max_power: 6e3, max_torque: 9, idle_rpm: 500, max_torque_rpm: 7e3, red_line_rpm: 9500, red_line_torque_ratio: 0.7, inertia: 2, cylinder: 1, damping_factors: [1, 0.02, 1e-5] }, sport_car_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 100, max_power: 45e4, max_torque: 700, idle_rpm: 500, max_torque_rpm: 5500, red_line_rpm: 9e3, red_line_torque_ratio: 0.9, inertia: 20, cylinder: 8, damping_factors: [2, 0.03, 2e-5] }, truck_diesel_engine: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:engine", basic_durability: 400, max_power: 37e4, max_torque: 2500, idle_rpm: 550, max_torque_rpm: 1500, red_line_rpm: 2200, red_line_torque_ratio: 0.9, inertia: 50, cylinder: 6, damping_factors: [5, 0.05, 1e-5] }, light_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 80, final_ratio: 8, ratios: [-3.5, 3.5, 2.5, 1.75, 1.4, 1.15, 0.85], switch_time: 0.2 }, medium_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 150, final_ratio: 10, ratios: [-3.3, 4.71, 3.14, 2.1, 1.6, 1.29, 1.1, 0.88, 0.67], switch_time: 0.2 }, motorcycle_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 40, final_ratio: 15, ratios: [-3.5, 3.5, 2.8, 2, 1.4], switch_time: 0.15 }, simple_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 60, final_ratio: 8, ratios: [2, 1.3], switch_time: 0.1 }, sport_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 80, final_ratio: 10, ratios: [-3.5, 3.5, 2.5, 1.8, 1.4, 1, 0.7, 0.5], switch_time: 0.05 }, truck_gearbox: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:gearbox", basic_durability: 500, final_ratio: 3.7, ratios: [-12.3, 12.1, 9.41, 7.31, 5.71, 4.46, 3.4, 2.7, 2.11, 1.84, 1.3, 1, 0.78], switch_time: 0.3 }, default_trunk: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:item_storage", basic_durability: 100, rows: 6, columns: 9 }, glove_box: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:item_storage", basic_durability: 50, rows: 2, columns: 3 }, basic_launcher: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:launcher", basic_durability: 80, control_inputs: ["weapon_control"], breech: { fire_rate: 600 } }, beam_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "beam", range: 16, color: [255, 245, 210], intensity: 0.5, beam_angle: 24 }, dummy_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "point", range: 0, intensity: 0 }, point_light: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:lighting", basic_durability: 2, hidden: true, light_type: "point", range: 1, color: [255, 235, 180], intensity: 0.55, beam_angle: 24 }, high_power_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 120, max_power: 15e4, max_torque: 350, red_line_rpm: 15e3, red_line_power_ratio: 0.75, inertia: 8, damping_factors: [10, 0.1, 5e-5], generator_efficiency: 0.9 }, medium_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 80, max_power: 5e4, max_torque: 250, red_line_rpm: 1e4, red_line_power_ratio: 0.8, inertia: 5, damping_factors: [10, 0.1, 1e-4], generator_efficiency: 0.85 }, small_motor: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motor", basic_durability: 50, max_power: 2e4, max_torque: 85, red_line_rpm: 12e3, red_line_power_ratio: 0.8, inertia: 3, damping_factors: [5, 0.05, 5e-5], generator_efficiency: 0.85 }, default_motorbike_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:motorbike_controller", basic_durability: 60, min_steering_radius: 3.5, lateral_acceleration: 20, max_drift_angular_velocity: 1.8, max_angle: 35, parking_angle: 5, correction_force_multiplier: 1 }, default_3rd_passenger_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: true, render_passenger: false, views: { enable_first_person: false, enable_third_person: true, follow_vehicle: true, focus_on_center: true, distance_scale: 0.8, third_person_offset: [0, 1, 0], min_pitch: -90, max_pitch: 90, yaw_limit: 360 }, allow_use_items: true }, default_3rd_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: true, render_passenger: false, views: { enable_first_person: false, enable_third_person: true, follow_vehicle: false, focus_on_center: true, distance_scale: 1.2, third_person_offset: [0, 2, 0], min_pitch: -90, max_pitch: 90, yaw_limit: 360 }, allow_use_items: false }, default_passenger_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: true, passenger_scale: [1, 1, 1], views: { enable_first_person: true, enable_third_person: true, follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, min_pitch: -90, max_pitch: 90, yaw_limit: 360 }, allow_use_items: true }, default_seat: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:seat", block_damage: false, render_passenger: true, passenger_scale: [1, 1, 1], views: { enable_first_person: true, first_hud_layout: "machine_max:seat_dashboard", enable_third_person: true, third_hud_layout: "machine_max:seat_dashboard", follow_vehicle: true, focus_on_center: true, distance_scale: 1.2, min_pitch: -70, max_pitch: 45, yaw_limit: 270 }, allow_use_items: false }, commander_sight_dual_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: false, horizontal_stabilized: false, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight_dual_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 10, vertical_stabilized: true, horizontal_stabilized: true, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner_fixed", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, gunner_sight_vert_stb: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:sight", basic_durability: 50, vertical_stabilized: true, horizontal_stabilized: false, base_zoom: 1, max_zoom: 8, min_pitch: -15, max_pitch: 15, yaw_limit: 30, scope_hud_layout: "machine_max:scope_gunner_fixed", tracking_target_inputs: [], discovery_inputs: ["gunner_sight"], allow_cycle: true }, track_controller_standard: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:track_controller", basic_durability: 20, max_yaw_rate: { "0": 45, "10": 30, "30": 18, "50": 10 }, min_turning_radius: 4, max_lateral_acceleration: 6, yaw_p: 1, yaw_d: 0.05, steering_smoothing: 0.1, brake_smoothing: 0.2, auto_hand_brake: true, manual_gear_shift: false, separate_throttle_brake: false }, track_drive_heavy: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:track_drive", basic_durability: 30, max_drive_torque: 3e4, max_brake_torque: 2e4, max_hand_brake_torque: 2e4, max_speed: 120, control_inputs: ["car_control"] }, heavy_duty_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 800, diff_lock: "auto", diff_lock_sensitivity: 1, auto_diff_lock_threshold: 15 }, locked_differential: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 400, diff_lock: "true", diff_lock_sensitivity: 1 }, open_differential: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 200, diff_lock: "false", diff_lock_sensitivity: 0.85 }, sport_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 200, diff_lock: "auto", diff_lock_sensitivity: 1.5, auto_diff_lock_threshold: 5 }, standard_transmission: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:transmission", basic_durability: 300, diff_lock: "auto", diff_lock_sensitivity: 1, auto_diff_lock_threshold: 10 }, basic_azimuth_driver: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:turret_driver", basic_durability: 30, yaw: { max_force: 8e4, max_speed: 90 }, control_inputs: ["weapon_control"] }, basic_elevation_driver: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:turret_driver", basic_durability: 30, pitch: { max_force: 35e3, max_speed: 30 }, control_inputs: ["weapon_control"] }, main_weapon_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:weapon_controller", basic_durability: 20, fire_mode: "SALVO", aim_inputs: ["aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input"], fire_inputs: ["fire_input_p0", "fire_input_p1", "fire_input_p2", "fire_input_p3", "fire_input"], aim_tolerance_deg: 60 }, secondary_weapon_controller: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:weapon_controller", basic_durability: 20, fire_mode: "SALVO", aim_inputs: ["aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input"], fire_inputs: ["secondary_fire_input_p0", "secondary_fire_input_p1", "secondary_fire_input_p2", "secondary_fire_input_p3", "secondary_fire_input"], aim_tolerance_deg: 60 }, light_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 0, max_brake_force: 800, max_hand_brake_force: 0, max_rpm: 2500 }, steering: { max_force: 2e3, max_speed: 180 }, abs_enabled: true, abs_wheel_radius: 0.35 }, light_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 1500, max_brake_force: 800, max_hand_brake_force: 1e3, max_speed: 2500 }, abs_enabled: true, abs_wheel_radius: 0.35 }, motorcycle_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 0, max_brake_force: 600, max_hand_brake_force: 0, max_speed: 2500 }, steering: { max_force: 500, max_speed: 3.14 }, abs_enabled: true, abs_wheel_radius: 0.3 }, motorcycle_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 60, roll: { max_drive_force: 2500, max_brake_force: 300, max_hand_brake_force: 200, max_speed: 2500 }, abs_enabled: true, abs_wheel_radius: 0.3 }, sport_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 150, roll: { max_drive_force: 0, max_brake_force: 2e3, max_hand_brake_force: 0, max_speed: 3e3 }, steering: { max_force: 5e3, max_speed: 6.28 }, abs_enabled: true, abs_target_slip_ratio: 0.15, abs_wheel_radius: 0.4 }, sport_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 150, roll: { max_drive_force: 5e3, max_brake_force: 2e3, max_hand_brake_force: 3e3, max_speed: 3e3 }, abs_enabled: true, abs_target_slip_ratio: 0.15, abs_wheel_radius: 0.4 }, standard_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 200, roll: { max_drive_force: 0, max_brake_force: 1500, max_hand_brake_force: 0, max_speed: 2500 }, steering: { max_force: 4e3, max_speed: 3.14 }, abs_enabled: false, abs_wheel_radius: 0.4 }, standard_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 200, roll: { max_drive_force: 2500, max_brake_force: 1500, max_hand_brake_force: 2500, max_speed: 2500 }, abs_enabled: false, abs_wheel_radius: 0.4 }, truck_front_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 600, roll: { max_drive_force: 0, max_brake_force: 2e4, max_hand_brake_force: 0, max_speed: 1e3 }, steering: { max_force: 5e3, max_speed: 1.5 }, abs_enabled: true, abs_wheel_radius: 0.5 }, truck_rear_wheel: { $schema: "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json", type: "machine_max:wheel_driver", basic_durability: 600, roll: { max_drive_force: 28e3, max_brake_force: 2e4, max_hand_brake_force: 35e3, max_speed: 1e3 }, abs_enabled: true, abs_wheel_radius: 0.5 } };
     }
   });
 
@@ -108,7 +108,287 @@
       "range": 8\r
     }\r
   ]\r
-}`, "en_us/schemas/base/vector_3d.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/base/vector_3d.json",\r\n  "title": "3D Vector",\r\n  "description": "Represents a vector in 3D space",\r\n  "type": "array",\r\n  "items": {\r\n    "type": "number"\r\n  },\r\n  "minItems": 3,\r\n  "maxItems": 3,\r\n  "default": [0.5, 0.5, 0.5],\r\n  "examples": [\r\n    [0.5, 0.5, 0.5],\r\n    [1.0, 0.0, 0.0]\r\n  ]\r\n}', "en_us/schemas/How_to_Use_JSON_Schema.md": '# Application Guide for JSON Schema in Machine-Max Content Pack Creation\r\n\r\n## What is JSON Schema?\r\n\r\nJSON Schema is a specification used to describe and validate the structure of JSON documents. For Machine-Max content pack creation, JSON Schema can help you:\r\n\r\n- **Validate configuration format**: Ensure your JSON configuration files have the correct format\r\n- **Provide intelligent suggestions**: Display attribute descriptions and type requirements in supported editors\r\n- **Reduce errors**: Identify configuration errors early, avoiding issues in-game\r\n\r\n## Why Should Content Pack Creators Care About JSON Schema?\r\n\r\nEven if you have no programming experience, JSON Schema can make your content pack creation process smoother:\r\n\r\n1. **Auto-completion**: Modern editors (like VSCode) can provide attribute name auto-completion based on Schema\r\n2. **Error notifications**: Get immediate notifications of configuration errors instead of discovering them only when in-game\r\n3. **Attribute descriptions**: View specific meanings and usage methods of each configuration item\r\n4. **Type checking**: Ensure your input data types are correct (numbers, strings, booleans, etc.)\r\n\r\n## How to Use JSON Schema?\r\n\r\n### 1. Configure Editor Support\r\n\r\nAdd a `$schema` field at the top of your JSON file, for example:\r\n\r\n```json\r\n{\r\n  "$schema": "../docs/en_us/schemas/part_definition_schema.json",\r\n  "icon": "machine_max:textures/icon/example.png",\r\n  "vehicle_durability_rate": 1.0,\r\n  "variants": {\r\n    "model": "machine_max:example.geo",\r\n    "textures": "machine_max:textures/part/example.png",\r\n    "sub_parts": {\r\n      "sub_part.machine_max.main": {\r\n        "hit_boxes": {\r\n          "Shape": {\r\n            "type": "box"\r\n          }\r\n        }\r\n      }\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n### 2. Recommended Editors\r\n\r\n- **VSCode**: Install the "JSON" extension, which automatically supports JSON Schema\r\n- **Sublime Text**: Install relevant plugins to support Schema\r\n- **Atom**: Use relevant packages to provide Schema support\r\n\r\n### 3. Enable JSON Schema Validation in VSCode\r\n\r\n1. Open VSCode settings (Ctrl/Cmd + ,)\r\n2. Search for "json schemas"\r\n3. Add the Machine-Max Schema path\r\n4. Or directly use the `$schema` field in the JSON file\r\n\r\n## Machine-Max Schema Structure\r\n\r\n### Part Definition Schema (part_definition_schema.json)\r\n\r\nThis is the main Schema for defining vehicle parts, containing the following key fields:\r\n\r\n- `vehicle_durability_rate`: Vehicle durability contribution coefficient (number, between 0-1)\r\n- `vehicle_damage_rate`: Normal vehicle damage transmission coefficient (number)\r\n- `functional_threshold`: Part functional threshold (number, between 0-1, default `0.3`)\r\n- `share_durability`: Whether parts within the component share durability (boolean)\r\n- `variants`: List of part variants (object)\r\n\r\n### Sub-part Schema\r\n\r\nIn the `schemas/part/` directory, detailed definitions for various sub-parts are included:\r\n\r\n- `variant_attr.schema.json`: Variant attribute definitions\r\n- `subpart/`: Sub-part related Schema\r\n  - `sub_part_attr.schema.json`: Sub-part general attributes\r\n  - `hit_box_attr.schema.json`: Hit box attributes\r\n  - `interact_box_attr.schema.json`: Interaction area attributes\r\n  - `connector/`: Connector related attributes\r\n\r\n### Subsystem Schema\r\n\r\nIn the `schemas/subsystem/` directory, configuration structures for vehicle subsystems (such as engine, transmission, etc.) are defined.\r\n\r\n## Practical Application Examples\r\n\r\n### Step 1: Create New Part\r\n\r\n1. Copy an existing part JSON file as a template\r\n2. Add `$schema` reference at the beginning of the file\r\n3. Add configuration items according to the editor\'s intelligent suggestions\r\n\r\n### Step 2: Validate Configuration\r\n\r\n1. Check if the editor displays errors after saving the file\r\n2. Correct configuration format issues according to the prompts\r\n3. Test if the content pack works properly in-game\r\n\r\n### Step 3: Debug Issues\r\n\r\nIf the content pack doesn\'t work in-game, check:\r\n\r\n1. Whether the JSON format is correct (using Schema validation)\r\n2. Whether all required fields are filled in\r\n3. Whether data types match (number vs string, etc.)\r\n\r\n## Common Issues and Solutions\r\n\r\n### Q: Editor shows errors, but the configuration looks correct?\r\nA: Check:\r\n- Whether JSON syntax is correct (commas, brackets, etc.)\r\n- Whether field names are spelled correctly\r\n- Whether data types match (e.g., requiring a number but inputting a string)\r\n\r\n### Q: How do I know which fields are required?\r\nA: Check the `required` field in the Schema file, or there will be corresponding suggestions in supported editors.\r\n\r\n### Q: How do I find the correct resource path?\r\nA: Schema files usually include descriptions of path formats, such as `namespace:path` format.\r\n\r\n## Efficiency Tips\r\n\r\n1. **Use templates**: Create new configurations based on existing working configurations\r\n2. **Add incrementally**: First add basic configurations, verify they work, then add advanced options\r\n3. **Refer to examples**: Check example configuration files in the official pack\r\n4. **Real-time validation**: View validation results in the editor in real-time\r\n\r\n## Summary\r\n\r\nJSON Schema is a powerful auxiliary tool for content pack creation, helping you create correctly formatted and structurally complete configuration files. Even without programming experience, using Schema-supported editors can significantly improve production efficiency and accuracy.\r\n\r\nWhen starting out, it\'s recommended to begin with simple configurations and gradually familiarize yourself with the various functions provided by Schema. As your experience accumulates, you\'ll find that creating content packs becomes simpler and more reliable.', "en_us/schemas/part/subpart/connector/connector_attr.schema.json": `{\r
+}`, "en_us/schemas/base/vector_3d.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/base/vector_3d.json",\r\n  "title": "3D Vector",\r\n  "description": "Represents a vector in 3D space",\r\n  "type": "array",\r\n  "items": {\r\n    "type": "number"\r\n  },\r\n  "minItems": 3,\r\n  "maxItems": 3,\r\n  "default": [0.5, 0.5, 0.5],\r\n  "examples": [\r\n    [0.5, 0.5, 0.5],\r\n    [1.0, 0.0, 0.0]\r\n  ]\r\n}', "en_us/schemas/fitting.schema.json": `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/fitting.json",
+  "title": "Vehicle Fitting Type",
+  "description": "One fitting type under fittings/. The first release only ships tracks (\\"type\\": \\"track\\"): the type id is the file name, fields are flat at the top level, and the visual is a sibling object. Material is a hard dependency: a missing or unknown material keeps the type out of the registry.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference used by editors for completion and validation.",
+      "default": "../docs/en_us/schemas/fitting.schema.json"
+    },
+    "type": {
+      "const": "track",
+      "description": "Fitting kind. The first release only accepts \\"track\\"; any other value is a content pack error and the type is not registered."
+    },
+    "material": {
+      "allOf": [
+        { "$ref": "base/resource_location.schema.json" }
+      ],
+      "description": "Track material id; it must exist in the material registry (builtin ships machine_max:track_steel). It drives armor, contact friction, slip adaptation and block damage. A missing material keeps the type out of the registry."
+    },
+    "thickness_mm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 50.0,
+      "description": "Link thickness in millimeters. It feeds armor RHA (thickness_mm x RHA coefficient) and the envelope offset; assembly requires it to stay below every member wheel radius."
+    },
+    "durability_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 20.0,
+      "description": "Durability per link (points). The whole belt's maximum durability is durability_per_link x link count."
+    },
+    "length_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 0.2,
+      "description": "Link length in meters. It derives the link count from the envelope perimeter and sets the spacing used when placing links while rendering."
+    },
+    "overwrite": {
+      "type": "object",
+      "description": "Material overwrite layered on top of material, merged with the same rules as hit boxes. Tracks only read physics and armor; overwrite.sounds has no effect on tracks (hit sounds come from this type's sounds).",
+      "properties": {
+        "physics": {
+          "type": "object",
+          "description": "Physics overwrite: friction, slip, restitution and block damage.",
+          "properties": {
+            "friction": {
+              "allOf": [
+                { "$ref": "base/vector_3d.schema.json" }
+              ],
+              "description": "Anisotropic friction vector [x, y, z]. x = lateral, y = forward, z unused."
+            },
+            "slip_adaptation": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Wet slip adaptation used by the track contact wetFactor."
+            },
+            "slip_curve": {
+              "type": "object",
+              "description": "Tire slip curve overwrite. Tracks ignore this field.",
+              "additionalProperties": true
+            },
+            "rolling_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Rolling friction coefficient."
+            },
+            "spinning_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Spinning friction coefficient."
+            },
+            "restitution": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Restitution (bounciness)."
+            },
+            "block_damage_factor": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Block damage energy factor; 0 means blocks cannot be destroyed."
+            }
+          },
+          "additionalProperties": false
+        },
+        "armor": {
+          "type": "object",
+          "description": "Armor overwrite: penetration resistance, damage reduction, durability decay and conditional modifiers.",
+          "properties": {
+            "rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "RHA coefficient relative to rolled homogeneous armor."
+            },
+            "angle_effect": {
+              "type": "boolean",
+              "description": "Whether effective thickness depends on the hit angle."
+            },
+            "dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Linear damage reduction, decaying with durability."
+            },
+            "dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Damage multiplier, decaying with durability."
+            },
+            "decay_rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual RHA coefficient at zero durability."
+            },
+            "decay_dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual linear damage reduction at zero durability."
+            },
+            "decay_dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Residual damage multiplier at zero durability."
+            },
+            "decay_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Armor decay curve exponent."
+            },
+            "unpen_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Damage exponent used when the hit does not penetrate."
+            },
+            "impact_modifiers": {
+              "type": "array",
+              "description": "Impact modifier list."
+            },
+            "penetration_modifiers": {
+              "type": "array",
+              "description": "Penetration modifier list."
+            },
+            "damage_modifiers": {
+              "type": "array",
+              "description": "Damage modifier list."
+            }
+          },
+          "additionalProperties": false
+        },
+        "sounds": {
+          "type": "object",
+          "description": "Hit sound overwrite. No effect on tracks; track hit sounds come from this type's sounds.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "sounds": {
+      "type": "object",
+      "description": "Track hit sounds. Omitting the field uses two fixed-range hard_metal events; an empty object {} falls back to the hit box defaults hit_box.hit.*.",
+      "properties": {
+        "hit_un_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "Sound played when the hit does not penetrate.",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        },
+        "hit_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "Sound played when the hit penetrates.",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tension": {
+      "type": "object",
+      "description": "One-sided spring-damper between adjacent member wheels. rest is sampled from the wheel centre distance at assembly / load time and is not declared here.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether tension is applied."
+        },
+        "stiffness": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 12000.0,
+          "description": "Spring stiffness in N/m."
+        },
+        "damping": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 900.0,
+          "description": "Damping coefficient in N*s/m."
+        },
+        "preload": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.0,
+          "description": "Preload in meters, subtracted from rest."
+        },
+        "slack": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.015,
+          "description": "Slack in meters, added to rest; stretching below it applies no force."
+        },
+        "max_force": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 800.0,
+          "description": "Maximum tension per pair in N."
+        }
+      },
+      "additionalProperties": false
+    },
+    "visual": {
+      "type": "object",
+      "description": "Single-link model, model texture and inventory icon. model and texture are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\\"fitting\\", model).",
+      "properties": {
+        "model": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Single-link model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix). The namespace is the pack's namespace directory name, not the pack name."
+        },
+        "texture": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Full texture path for the model, e.g. machine_max:textures/part/track_link.png; the namespace is likewise the namespace directory name."
+        },
+        "icon": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Inventory 2D icon texture, e.g. machine_max:textures/icon/track_link.png; 128\xD7128 with a transparent background is recommended. When omitted, the item and creative tab render the single-link 3D model instead."
+        }
+      },
+      "required": ["model", "texture"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["type", "material", "visual"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "track",
+      "material": "machine_max:track_steel",
+      "thickness_mm": 50.0,
+      "durability_per_link": 20.0,
+      "length_per_link": 0.2,
+      "tension": {
+        "enabled": true,
+        "stiffness": 12000.0,
+        "damping": 900.0,
+        "preload": 0.0,
+        "slack": 0.015,
+        "max_force": 800.0
+      },
+      "sounds": {
+        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },
+        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+      },
+      "visual": {
+        "model": "machine_max:track_link.geo",
+        "texture": "machine_max:textures/part/track_link.png",
+        "icon": "machine_max:textures/icon/track_link.png"
+      }
+    }
+  ]
+}`, "en_us/schemas/How_to_Use_JSON_Schema.md": '# Application Guide for JSON Schema in Machine-Max Content Pack Creation\r\n\r\n## What is JSON Schema?\r\n\r\nJSON Schema is a specification used to describe and validate the structure of JSON documents. For Machine-Max content pack creation, JSON Schema can help you:\r\n\r\n- **Validate configuration format**: Ensure your JSON configuration files have the correct format\r\n- **Provide intelligent suggestions**: Display attribute descriptions and type requirements in supported editors\r\n- **Reduce errors**: Identify configuration errors early, avoiding issues in-game\r\n\r\n## Why Should Content Pack Creators Care About JSON Schema?\r\n\r\nEven if you have no programming experience, JSON Schema can make your content pack creation process smoother:\r\n\r\n1. **Auto-completion**: Modern editors (like VSCode) can provide attribute name auto-completion based on Schema\r\n2. **Error notifications**: Get immediate notifications of configuration errors instead of discovering them only when in-game\r\n3. **Attribute descriptions**: View specific meanings and usage methods of each configuration item\r\n4. **Type checking**: Ensure your input data types are correct (numbers, strings, booleans, etc.)\r\n\r\n## How to Use JSON Schema?\r\n\r\n### 1. Configure Editor Support\r\n\r\nAdd a `$schema` field at the top of your JSON file, for example:\r\n\r\n```json\r\n{\r\n  "$schema": "../docs/en_us/schemas/part_definition_schema.json",\r\n  "icon": "machine_max:textures/icon/example.png",\r\n  "vehicle_durability_rate": 1.0,\r\n  "variants": {\r\n    "model": "machine_max:example.geo",\r\n    "textures": "machine_max:textures/part/example.png",\r\n    "sub_parts": {\r\n      "sub_part.machine_max.main": {\r\n        "hit_boxes": {\r\n          "Shape": {\r\n            "type": "box"\r\n          }\r\n        }\r\n      }\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n### 2. Recommended Editors\r\n\r\n- **VSCode**: Install the "JSON" extension, which automatically supports JSON Schema\r\n- **Sublime Text**: Install relevant plugins to support Schema\r\n- **Atom**: Use relevant packages to provide Schema support\r\n\r\n### 3. Enable JSON Schema Validation in VSCode\r\n\r\n1. Open VSCode settings (Ctrl/Cmd + ,)\r\n2. Search for "json schemas"\r\n3. Add the Machine-Max Schema path\r\n4. Or directly use the `$schema` field in the JSON file\r\n\r\n## Machine-Max Schema Structure\r\n\r\n### Part Definition Schema (part_definition_schema.json)\r\n\r\nThis is the main Schema for defining vehicle parts, containing the following key fields:\r\n\r\n- `vehicle_durability_rate`: Vehicle durability contribution coefficient (number, between 0-1)\r\n- `vehicle_damage_rate`: Normal vehicle damage transmission coefficient (number)\r\n- `functional_threshold`: Part functional threshold (number, between 0-1, default `0.3`)\r\n- `share_durability`: Whether parts within the component share durability (boolean)\r\n- `variants`: List of part variants (object)\r\n\r\n### Sub-part Schema\r\n\r\nIn the `schemas/part/` directory, detailed definitions for various sub-parts are included:\r\n\r\n- `variant_attr.schema.json`: Variant attribute definitions\r\n- `subpart/`: Sub-part related Schema\r\n  - `sub_part_attr.schema.json`: Sub-part general attributes\r\n  - `hit_box_attr.schema.json`: Hit box attributes\r\n  - `interact_box_attr.schema.json`: Interaction area attributes\r\n  - `connector/`: Connector related attributes\r\n\r\n### Subsystem Schema\r\n\r\nIn the `schemas/subsystem/` directory, configuration structures for vehicle subsystems (such as engine, transmission, etc.) are defined.\r\n\r\n## Practical Application Examples\r\n\r\n### Step 1: Create New Part\r\n\r\n1. Copy an existing part JSON file as a template\r\n2. Add `$schema` reference at the beginning of the file\r\n3. Add configuration items according to the editor\'s intelligent suggestions\r\n\r\n### Step 2: Validate Configuration\r\n\r\n1. Check if the editor displays errors after saving the file\r\n2. Correct configuration format issues according to the prompts\r\n3. Test if the content pack works properly in-game\r\n\r\n### Step 3: Debug Issues\r\n\r\nIf the content pack doesn\'t work in-game, check:\r\n\r\n1. Whether the JSON format is correct (using Schema validation)\r\n2. Whether all required fields are filled in\r\n3. Whether data types match (number vs string, etc.)\r\n\r\n## Common Issues and Solutions\r\n\r\n### Q: Editor shows errors, but the configuration looks correct?\r\nA: Check:\r\n- Whether JSON syntax is correct (commas, brackets, etc.)\r\n- Whether field names are spelled correctly\r\n- Whether data types match (e.g., requiring a number but inputting a string)\r\n\r\n### Q: How do I know which fields are required?\r\nA: Check the `required` field in the Schema file, or there will be corresponding suggestions in supported editors.\r\n\r\n### Q: How do I find the correct resource path?\r\nA: Schema files usually include descriptions of path formats, such as `namespace:path` format.\r\n\r\n## Efficiency Tips\r\n\r\n1. **Use templates**: Create new configurations based on existing working configurations\r\n2. **Add incrementally**: First add basic configurations, verify they work, then add advanced options\r\n3. **Refer to examples**: Check example configuration files in the official pack\r\n4. **Real-time validation**: View validation results in the editor in real-time\r\n\r\n## Summary\r\n\r\nJSON Schema is a powerful auxiliary tool for content pack creation, helping you create correctly formatted and structurally complete configuration files. Even without programming experience, using Schema-supported editors can significantly improve production efficiency and accuracy.\r\n\r\nWhen starting out, it\'s recommended to begin with simple configurations and gradually familiarize yourself with the various functions provided by Schema. As your experience accumulates, you\'ll find that creating content packs becomes simpler and more reliable.', "en_us/schemas/hud/hud_element.schema.json": '{\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "$id": "https://machine_max.io/schemas/hud/hud_element.json",\n  "title": "HUD element",\n  "type": "object",\n  "properties": {\n    "style": {\n      "$ref": "../base/resource_location.schema.json"\n    },\n    "perspective": {\n      "type": "boolean",\n      "default": true\n    },\n    "scope_behavior": {\n      "enum": [\n        "screen_fixed",\n        "follow_position",\n        "follow_transform"\n      ],\n      "default": "follow_position"\n    },\n    "ignore_zoom": {\n      "type": "boolean",\n      "default": false\n    },\n    "offset": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        0,\n        0,\n        0\n      ]\n    },\n    "rotation": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        0,\n        0,\n        0\n      ]\n    },\n    "scale": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        1,\n        1,\n        1\n      ]\n    },\n    "anchor": {\n      "enum": [\n        "top_left",\n        "top_center",\n        "top_right",\n        "center_left",\n        "center",\n        "center_right",\n        "bottom_left",\n        "bottom_center",\n        "bottom_right"\n      ],\n      "default": "top_left"\n    },\n    "selection_visibility": {\n      "enum": [\n        "selected_only",\n        "always"\n      ],\n      "default": "selected_only",\n      "description": "Weapon elements use the observing seat selection. Ordinary seat and camera elements are unaffected."\n    }\n  },\n  "required": [\n    "style"\n  ],\n  "additionalProperties": false\n}', "en_us/schemas/hud/hud_layout.schema.json": '{\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "$id": "https://machine_max.io/schemas/hud/hud_layout.json",\n  "title": "HUD layout",\n  "type": "array",\n  "items": {\n    "$ref": "hud_element.schema.json"\n  }\n}', "en_us/schemas/part/subpart/connector/connector_attr.schema.json": `{\r
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",\r
   "title": "Connection Point Attributes",\r
@@ -1730,61 +2010,79 @@
       }\r
     }\r
   ]\r
-}`, "en_us/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json": `{\r
-  "$schema": "http://json-schema.org/draft-07/schema#",\r
-  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",\r
-  "title": "Seat Subsystem Dynamic Attributes",\r
-  "description": "Dynamic attributes of the seat, defining seat position, signal transmission targets, etc.",\r
-  "properties": {\r
-    "type": {\r
-      "type": "string",\r
-      "const": "machine_max:seat",\r
-      "description": "Subsystem type, must be 'machine_max:seat'."\r
-    },\r
-    "definition": {\r
-      "type": "string",\r
-      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."\r
-    },\r
-    "locator": {\r
-      "type": "string",\r
-      "default": "",\r
-      "description": "Seat point locator name, bones in the model will serve as seat position. If empty, use the default locator defined by the subsystem."\r
-    },\r
-    "control_group_preset": {\r
-      "type": "string",\r
-      "default": "machine_max:empty",\r
-      "description": "Resource location of the control group preset, defining the available control channel mappings for this seat. e.g. machine_max:default_driver."\r
-    },\r
-    "passenger_num_outputs": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "Passenger count signal output channel and targets."\r
-    },\r
-    "camera_discovery_targets": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "Camera discovery handshake configuration. Subsystems on these channels will receive handshake signals to discover available cameras on this vehicle. e.g. {\\"gunner_optics\\": [\\"gunner_primary_sight\\"]}"\r
-    },\r
-    "dismount_locators": {\r
-      "type": "array",\r
-      "items": { "type": "string" },\r
-      "default": [],\r
-      "description": "Ordered list of dismount locator names; the list order is the priority for dismount attempts. Every name must exist in the model locators; an empty list means this seat declares no dismount point."\r
-    }\r
-  },\r
-  "required": ["type", "definition"],\r
-  "examples": [\r
-    {\r
-      "type": "machine_max:seat",\r
-      "definition": "machine_max:driver_seat",\r
-      "locator": "DriverSeat",\r
-      "control_group_preset": "machine_max:default_driver"\r
-    }\r
-  ]\r
+}`, "en_us/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json": `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "Seat Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the seat: seat position, signal transmission targets, and per-installation overrides of presentation settings declared by the model definition.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "Subsystem type, must be 'machine_max:seat'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "Seat point locator name, bones in the model will serve as seat position. If empty, use the default locator defined by the subsystem."
+    },
+    "control_group_preset": {
+      "type": "string",
+      "default": "machine_max:empty",
+      "description": "Resource location of the control group preset, defining the available control channel mappings for this seat. e.g. machine_max:default_driver."
+    },
+    "passenger_num_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Passenger count signal output channel and targets."
+    },
+    "camera_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Camera discovery handshake configuration. Subsystems on these channels will receive handshake signals to discover available cameras on this vehicle. e.g. {\\"gunner_optics\\": [\\"gunner_primary_sight\\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Ordered list of dismount locator names; the list order is the priority for dismount attempts. Every name must exist in the model locators; an empty list means this seat declares no dismount point."
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "Per-installation override of the first-person HUD layout. Omit to keep the model definition's views.first_hud_layout; write machine_max:empty to show no HUD in first person at this seat."
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "Per-installation override of the third-person HUD layout. Omit to keep the model definition's views.third_hud_layout; write machine_max:empty to show no HUD in third person at this seat."
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "description": "Per-installation override of whether the occupant may use items. Omit to keep the model definition's allow_use_items."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "third_hud_layout": "machine_max:k17_vehicle_hud",
+      "allow_use_items": true
+    }
+  ]
 }`, "en_us/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json": `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/sight_dynamic_attr.json",
@@ -2014,64 +2312,77 @@
       }\r
     }\r
   ]\r
-}`, "en_us/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json": `{\r
-  "$schema": "http://json-schema.org/draft-07/schema#",\r
-  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",\r
-  "title": "Weapon Controller Subsystem Dynamic Attributes",\r
-  "description": "Dynamic attributes of the weapon controller subsystem, defining control signal output channels and other runtime configuration.",\r
-  "properties": {\r
-    "type": {\r
-      "type": "string",\r
-      "const": "machine_max:weapon_controller",\r
-      "description": "Subsystem type, must be 'machine_max:weapon_controller'."\r
-    },\r
-    "definition": {\r
-      "type": "string",\r
-      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."\r
-    },\r
-    "control_outputs": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."\r
-    },\r
-    "first_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "HUD layout used by the first-person view; machine_max:empty shows no HUD."\r
-    },\r
-    "third_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "HUD layout used by the third-person view; machine_max:empty shows no HUD."\r
-    },\r
-    "scope_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "HUD layout used by the scope view; machine_max:empty shows no HUD."\r
-    }\r
-  },\r
-  "required": ["type", "definition"],\r
-  "examples": [\r
-    {\r
-      "type": "machine_max:weapon_controller",\r
-      "definition": "machine_max:basic_weapon_controller",\r
-      "control_outputs": {\r
-        "weapon_control": [\r
-          "subsystem.machine_max.turret_base",\r
-          "subsystem.machine_max.barrel_elevation",\r
-          "subsystem.machine_max.main_launcher"\r
-        ]\r
-      }\r
-    }\r
-  ]\r
+}`, "en_us/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json": `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",
+  "title": "Weapon Controller Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the weapon controller subsystem, defining control signal output channels and other runtime configuration.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "Subsystem type, must be 'machine_max:weapon_controller'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "control_outputs": {
+      "allOf": [
+        {
+          "$ref": "../base/signal_targets.json"
+        }
+      ],
+      "default": {},
+      "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."
+    },
+    "first_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the first-person view; machine_max:empty shows no HUD."
+    },
+    "third_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the third-person view; machine_max:empty shows no HUD."
+    },
+    "scope_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "HUD layout used by the scope view; machine_max:empty shows no HUD."
+    }
+  },
+  "required": [
+    "type",
+    "definition"
+  ],
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "definition": "machine_max:basic_weapon_controller",
+      "control_outputs": {
+        "weapon_control": [
+          "subsystem.machine_max.turret_base",
+          "subsystem.machine_max.barrel_elevation",
+          "subsystem.machine_max.main_launcher"
+        ]
+      },
+      "first_hud_layout": "machine_max:weapon_live",
+      "scope_hud_layout": "machine_max:weapon_live"
+    }
+  ]
 }`, "en_us/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.schema.json": `{\r
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.json",\r
@@ -3942,6 +4253,7 @@
       "allOf": [\r
         { "$ref": "view_attr.schema.json" }\r
       ],\r
+      "description": "Default view settings of the seat model. first_hud_layout / third_hud_layout may be overridden per installation with the same-named dynamic attributes; the remaining camera parameters are decided by the model definition only.",\r
       "default": {\r
         "enable_first_person": true,\r
         "first_person_offset": 0.0,\r
@@ -3964,7 +4276,7 @@
     "allow_use_items": {\r
       "type": "boolean",\r
       "default": false,\r
-      "description": "Whether to allow passengers to use items (such as weapons, tools)."\r
+      "description": "Whether to allow passengers to use items (such as weapons, tools). A seat instance may override it with the dynamic attribute allow_use_items."\r
     },\r
     "interact_inputs": {\r
       "type": "array",\r
@@ -4278,7 +4590,7 @@
         }\r
       ],\r
       "default": {\r
-        "0": 0,\r
+        "0": 45,\r
         "10": 30,\r
         "30": 18,\r
         "50": 10\r
@@ -4289,7 +4601,7 @@
       "type": "number",\r
       "minimum": 0,\r
       "default": 4.0,\r
-      "description": "Minimum turning radius for single-flow differential braking, in metres."\r
+      "description": "Minimum radius of the chassis center when longitudinal intent dominates, in meters. Pure steering permits a turn about the stopped track."\r
     },\r
     "max_lateral_acceleration": {\r
       "type": "number",\r
@@ -4358,7 +4670,7 @@
       "type": "machine_max:track_controller",\r
       "basic_durability": 40,\r
       "max_yaw_rate": {\r
-        "0": 0,\r
+        "0": 45,\r
         "10": 30,\r
         "30": 18,\r
         "50": 10\r
@@ -4734,7 +5046,7 @@
         { "$ref": "../../base/resource_location.schema.json" }\r
       ],\r
       "default": "machine_max:empty",\r
-      "description": "HUD layout resource location: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. When absent, this view shows no HUD."\r
+      "description": "Default HUD layout: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. A seat instance may override it with the same-named dynamic attribute; when absent, this view shows no HUD."\r
     },\r
     "first_person_offset": {\r
       "allOf": [\r
@@ -4757,7 +5069,7 @@
         { "$ref": "../../base/resource_location.schema.json" }\r
       ],\r
       "default": "machine_max:empty",\r
-      "description": "HUD layout resource location: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. When absent, this view shows no HUD."\r
+      "description": "Default HUD layout: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. A seat instance may override it with the same-named dynamic attribute; when absent, this view shows no HUD."\r
     },\r
     "third_person_offset": {\r
       "allOf": [\r
@@ -5243,7 +5555,7 @@
       "range": 8\r
     }\r
   ]\r
-}`, "zh_cn/schemas/base/vector_3d.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/base/vector_3d.json",\r\n  "title": "\u4E09\u7EF4\u5411\u91CF",\r\n  "description": "\u8868\u793A\u4E09\u7EF4\u7A7A\u95F4\u4E2D\u7684\u5411\u91CF",\r\n  "type": "array",\r\n  "items": {\r\n    "type": "number"\r\n  },\r\n  "minItems": 3,\r\n  "maxItems": 3,\r\n  "default": [0.5, 0.5, 0.5],\r\n  "examples": [\r\n    [0.5, 0.5, 0.5],\r\n    [1.0, 0.0, 0.0]\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/connector/connector_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",\r\n  "title": "\u8FDE\u63A5\u70B9\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u90E8\u4EF6\u8FDE\u63A5\u70B9\u7684\u5C5E\u6027\uFF0C\u5305\u62EC\u4F4D\u7F6E\u3001\u5B9A\u4E49ID\u3001\u4FE1\u53F7\u4F20\u8F93\u7B49\u3002\u8FDE\u63A5\u70B9\u7528\u4E8E\u90E8\u4EF6\u4E4B\u95F4\u7684\u7269\u7406\u8FDE\u63A5\u548C\u4FE1\u53F7\u4F20\u9012\u3002\u9759\u6001\u5C5E\u6027\u901A\u8FC7definition\u5B57\u6BB5\u5F15\u7528\u9884\u5B9A\u4E49\u7684\u8FDE\u63A5\u70B9\u7C7B\u578B\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "locator": {\r\n      "type": "string",\r\n      "description": "\u8FDE\u63A5\u70B9\u5BF9\u5E94\u7684Locator\u540D\u79F0\uFF0C\u4F1A\u5BFB\u627E\u540D\u79F0\u5339\u914D\u7684Locator\uFF0C\u4EE5\u5176\u4F4D\u7F6E\u4E0E\u59FF\u6001\u4F5C\u4E3A\u8FDE\u63A5\u70B9\u7684\u4F4D\u7F6E\u548C\u59FF\u6001\u3002"\r\n    },\r\n    "definition": {\r\n      "type": "string",\r\n      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",\r\n      "description": "\u8FDE\u63A5\u70B9\u5B9A\u4E49ID\uFF0C\u5F15\u7528\u9884\u5B9A\u4E49\u7684\u8FDE\u63A5\u70B9\u9759\u6001\u5C5E\u6027\u3002\u4F8B\u5982\uFF1A\\"machine_max:simple_connector\\"\u3002"\r\n    },\r\n    "power_target": {\r\n      "type": "string",\r\n      "description": "\u5BF9\u4FA7\u8FDE\u63A5\u5668\u4F20\u5165\u7684\u673A\u68B0\u80FD\u5728\u672C\u96F6\u4EF6\u5185\u7684\u63A5\u6536\u76EE\u6807\uFF08\u5B50\u7CFB\u7EDF\u540D\u6216\u8FDE\u63A5\u70B9\u540D\uFF09\u3002\u8BBE\u7F6E\u540E\u8BE5\u8FDE\u63A5\u70B9\u53EF\u4F5C\u4E3A\u673A\u68B0\u80FD\u4F20\u8F93\u901A\u9053\uFF0C\u5C06\u5BF9\u4FA7\u4F20\u5165\u7684\u673A\u68B0\u80FD\u8F6C\u53D1\u81F3\u672C\u96F6\u4EF6\u5185\u7684\u76EE\u6807\u3002\u4F8B\u5982\uFF1A\\"subsystem.machine_max.engine\\"\u3002"\r\n    },\r\n    "overwrite": {\r\n      "type": "object",\r\n      "description": "\u8FDE\u63A5\u70B9\u5C5E\u6027\u8986\u5199\u3002\u53EF\u6309\u9700\u8986\u5199definition\u6307\u5411\u7684\u9759\u6001\u8FDE\u63A5\u70B9\u5C5E\u6027\u3002",\r\n      "properties": {\r\n        "type": {\r\n          "type": "string",\r\n          "enum": ["Simple", "simple", "advanced", "Advanced"],\r\n          "description": "\u8FDE\u63A5\u70B9\u7C7B\u578B\u8986\u5199\u3002"\r\n        },\r\n        "direction": {\r\n          "allOf": [\r\n            { "$ref": "../../../base/axis.schema.json" }\r\n          ],\r\n          "description": "\u8FDE\u63A5\u70B9\u6CD5\u7EBF\u65B9\u5411\u8986\u5199\u3002"\r\n        },\r\n        "integrity": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u7ED3\u6784\u5B8C\u6574\u6027\u8986\u5199\u3002"\r\n        },\r\n        "impact_absorption": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "maximum": 1.0,\r\n          "description": "\u51B2\u51FB\u8F6C\u7ED3\u6784\u635F\u8017\u6BD4\u4F8B\u8986\u5199\u3002"\r\n        },\r\n        "impact_absorption_destroyed": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u6240\u5728\u96F6\u4EF6\u5DF2\u6467\u6BC1\u65F6\u51B2\u51FB\u8F6C\u7ED3\u6784\u635F\u8017\u6BD4\u4F8B\u7684\u8986\u5199\u3002"\r\n        },\r\n        "impact_reduction": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u51B2\u51FB\u51CF\u514D\u503C\u8986\u5199\u3002"\r\n        },\r\n        "impact_multiplier": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u51B2\u51FB\u500D\u7387\u8986\u5199\u3002"\r\n        },\r\n        "collide_between_parts": {\r\n          "type": "boolean",\r\n          "description": "\u662F\u5426\u5141\u8BB8\u90E8\u4EF6\u95F4\u78B0\u649E\u8986\u5199\u3002"\r\n        },\r\n        "required_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u5FC5\u9700\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "acceptable_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u53EF\u63A5\u53D7\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "forbidden_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u7981\u6B62\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "joint_attrs": {\r\n          "type": "object",\r\n          "additionalProperties": { "$ref": "joint_attr.schema.json" },\r\n          "description": "\u5173\u8282\u5C5E\u6027\u8986\u5199\u3002"\r\n        }\r\n      },\r\n      "additionalProperties": false\r\n    },\r\n    "signal_translations": {\r\n      "type": "object",\r\n      "additionalProperties": { "type": "string" },\r\n      "default": {},\r\n      "description": "\u4ECE\u5BF9\u4FA7\u8FDE\u63A5\u70B9\u63A5\u6536\u5230\u7684\u4FE1\u53F7\u9891\u9053\u8F6C\u8BD1\u89C4\u5219\uFF0C\u4F8B\u5982\uFF1A{\\"channel_a\\": \\"channel_c\\"}\u8868\u793A\u5C06channel_a\u4FE1\u53F7\u8F6C\u8BD1\u4E3Achannel_c\u3002"\r\n    },\r\n    "signal_targets": {\r\n      "type": "object",\r\n      "additionalProperties": {\r\n        "type": "array",\r\n        "items": { "type": "string" }\r\n      },\r\n      "default": {},\r\n      "description": "\u8FDE\u63A5\u70B9\u5728\u672C\u96F6\u4EF6\u5185\u7684\u63A7\u5236\u4FE1\u53F7\u4F20\u8F93\u76EE\u6807\uFF0C\u952E\u4E3A\u4FE1\u53F7\u9891\u9053\uFF0C\u503C\u4E3A\u76EE\u6807\u5217\u8868\uFF08\u5B50\u7CFB\u7EDF/\u8FDE\u63A5\u70B9\u540D/part/global\uFF09\u3002\u4F8B\u5982\uFF1A{\\"move_input\\": [\\"car_controller\\", \\"engine\\"]}\u3002"\r\n    },\r\n    "internal": {\r\n      "type": "boolean",\r\n      "default": false,\r\n      "description": "\u662F\u5426\u4E3A\u90E8\u4EF6\u5185\u90E8\u8FDE\u63A5\u70B9\u3002\u4E3Atrue\u65F6\u4EC5\u7528\u4E8E\u540C\u4E00Part\u5185\u90E8\u81EA\u52A8\u8FDE\u63A5\uFF0C\u4E0D\u53C2\u4E0E\u5BF9\u5916\u62FC\u88C5\u3002"\r\n    }\r\n  },\r\n  "required": ["locator", "definition"],\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "locator": "Hull",\r\n      "definition": "machine_max:simple_connector"\r\n    },\r\n    {\r\n      "locator": "LeftFrontWheel",\r\n      "definition": "machine_max:advanced_wheel_connector",\r\n      "overwrite": {\r\n        "type": "Advanced",\r\n        "direction": "xp",\r\n        "integrity": 32.0,\r\n        "impact_absorption": 0.15,\r\n        "impact_absorption_destroyed": 2.5,\r\n        "impact_reduction": 3.0,\r\n        "impact_multiplier": 0.8,\r\n        "collide_between_parts": false,\r\n        "required_tags": ["machine_max:direction/left"],\r\n        "acceptable_tags": ["machine_max:wheel", "machine_max:suspension"],\r\n        "forbidden_tags": ["machine_max:broken_only"],\r\n        "joint_attrs": {\r\n          "y": {\r\n            "lower_limit": -0.2,\r\n            "upper_limit": 0.25,\r\n            "stiffness": 30000,\r\n            "damping": 1600\r\n          },\r\n          "yr": {\r\n            "lower_limit": -35.0,\r\n            "upper_limit": 35.0,\r\n            "stiffness": 4500,\r\n            "damping": 24\r\n          }\r\n        }\r\n      },\r\n      "signal_translations": {\r\n        "steering": "wheel_control"\r\n      },\r\n      "signal_targets": {\r\n        "wheel_control": ["wheel_driver", "local"],\r\n        "abs_request": ["global"]\r\n      }\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/connector/connector_static_attr.schema.json",\r\n  "title": "\u8FDE\u63A5\u70B9\u9759\u6001\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u8FDE\u63A5\u70B9\u7684\u9759\u6001\u5C5E\u6027\uFF0C\u5305\u62EC\u7C7B\u578B\u3001\u65B9\u5411\u3001\u7ED3\u6784\u5B8C\u6574\u6027\u3001\u51B2\u51FB\u5904\u7406\u7B49\u3002\u8FD9\u4E9B\u5C5E\u6027\u901A\u8FC7\u5B9A\u4E49ID\u5F15\u7528\uFF0C\u907F\u514D\u5728\u6BCF\u4E2A\u96F6\u4EF6\u5B9A\u4E49\u4E2D\u91CD\u590D\u5B9A\u4E49\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "$schema": {\r\n      "type": "string",\r\n      "description": "JSON Schema\u5F15\u7528\u8DEF\u5F84\uFF0C\u7528\u4E8E\u7F16\u8F91\u5668\u667A\u80FD\u63D0\u793A\u548C\u9A8C\u8BC1",\r\n      "default": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json"\r\n    },\r\n    "type": {\r\n      "type": "string",\r\n      "enum": ["Simple", "simple", "advanced", "Advanced"],\r\n      "description": "\u8FDE\u63A5\u70B9\u7C7B\u578B\u3002Simple\uFF1A\u7B80\u5355\u8FDE\u63A5\u70B9\uFF1BAdvanced\uFF1A\u9AD8\u7EA7\u8FDE\u63A5\u70B9\uFF0C\u652F\u6301\u590D\u6742\u7684\u5173\u8282\u5C5E\u6027\u3002"\r\n    },\r\n    "direction": {\r\n      "allOf": [\r\n        { "$ref": "../../../base/axis.schema.json" }\r\n      ],\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u6CD5\u7EBF\u65B9\u5411\uFF0C\u7528\u4E8E\u786E\u5B9A\u8FDE\u63A5\u70B9\u7684\u8FDE\u63A5\u65B9\u5411\u3002x+\u4E3A\u53F3\uFF0Cy+\u4E3A\u4E0A\uFF0Cz+\u4E3A\u540E\u3002"\r\n    },\r\n    "integrity": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 15.0,\r\n      "description": "\u90E8\u4EF6\u57FA\u7840\u7ED3\u6784\u5B8C\u6574\u5EA6\uFF0C\u90E8\u4EF6\u53EF\u627F\u53D7\u4E0D\u9AD8\u4E8E\u6B64\u6570\u503C\u7684\u51B2\u51FB\u529B\u800C\u4E0D\u8131\u843D\uFF0C\u51B2\u51FB\u529B\u6765\u81EA\u4F24\u5BB3\u6216\u5173\u8282\u5E94\u529B\u3002"\r\n    },\r\n    "impact_reduction": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 2.0,\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u51B2\u51FB\u51CF\u514D\u503C\uFF0C\u5728\u8BA1\u7B97\u90E8\u4EF6\u51FB\u843D\u524D\u5E94\u7528\uFF0C\u53EF\u5C06\u51B2\u51FB\u524A\u51CF\u81F30\u4EE5\u5B8C\u5168\u907F\u514D\u5BF9\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u5F71\u54CD\u3002"\r\n    },\r\n    "impact_multiplier": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 1.0,\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u51B2\u51FB\u5438\u6536\u7387\uFF0C\u5728\u8BA1\u7B97\u90E8\u4EF6\u51FB\u843D\u524D\uFF0C\u5E94\u7528\u51B2\u51FB\u51CF\u514D\u540E\u5E94\u7528\uFF0C\u5927\u4E8E1\u5C06\u4F7F\u8FDE\u63A5\u70B9\u66F4\u5BB9\u6613\u65AD\u5F00\u3002"\r\n    },\r\n    "impact_absorption": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "maximum": 1,\r\n      "default": 0.3,\r\n      "description": "\u8FDE\u63A5\u70B9\u53D7\u5230\u51B2\u51FB\u4F46\u672A\u88AB\u51FB\u843D\u65F6\uFF0C\u51B2\u51FB\u8F6C\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u635F\u8017\u7684\u6BD4\u4F8B\u3002\u4F8B\u59820.5\u8868\u793A50%\u7684\u51B2\u51FB\u4F1A\u8F6C\u5316\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u635F\u8017\u3002"\r\n    },\r\n    "impact_absorption_destroyed": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 2.0,\r\n      "description": "SubPart\u5DF2\u6467\u6BC1\u65F6\uFF0C\u51B2\u51FB\u8F6C\u4E3A\u8FDE\u63A5\u70B9\u5B8C\u6574\u6027\u635F\u8017\u7684\u6BD4\u4F8B\u3002\u4F8B\u59822.0\u8868\u793A200%\u7684\u51B2\u51FB\u4F1A\u8F6C\u5316\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u635F\u8017\uFF08\u7528\u4E8E\u6B8B\u9AB8\u5FEB\u901F\u89E3\u4F53\uFF09\u3002"\r\n    },\r\n    "required_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u5FC5\u987B\u5168\u90E8\u62E5\u6709\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:left\\"]\u8868\u793A\u5FC5\u987B\u5305\u542B\u5DE6\u53D8\u4F53\u6807\u7B7E\u3002"\r\n    },\r\n    "acceptable_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u5FC5\u987B\u81F3\u5C11\u62E5\u6709\u5176\u4E2D\u4E00\u4E2A\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:door\\", \\"machine_max:hatch\\"]\u8868\u793A\u5FC5\u987B\u5305\u542B\u95E8\u6216\u8231\u53E3\u6807\u7B7E\u4E4B\u4E00\u3002"\r\n    },\r\n    "forbidden_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u4E0D\u53EF\u5305\u542B\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:explosive\\"]\u8868\u793A\u4E0D\u80FD\u5305\u542B\u7206\u70B8\u7269\u6807\u7B7E\u3002"\r\n    },\r\n    "joint_attrs": {\r\n      "type": "object",\r\n      "additionalProperties": { "$ref": "joint_attr.schema.json"},\r\n      "default": {},\r\n      "description": "\u5173\u8282\u5C5E\u6027\uFF0C\u76EE\u524D\u4EC5\u5728\u5173\u8282\u7C7B\u578B\u4E3AAdvanced\u65F6\u751F\u6548\u3002\u952E\u4E3Ax\u3001y\u3001z\u3001xr\u3001yr\u3001zr\uFF0C\u5206\u522B\u4EE3\u8868x\u3001y\u3001z\u8F74\u7684\u5E73\u52A8\u548Cx\u3001y\u3001z\u8F74\u7684\u65CB\u8F6C\u3002"\r\n    },\r\n    "collide_between_parts": {\r\n      "type": "boolean",\r\n      "default": false,\r\n      "description": "\u8FDE\u63A5\u70B9\u662F\u5426\u5141\u8BB8\u90E8\u4EF6\u95F4\u78B0\u649E\u3002\u901A\u5E38\u8BBE\u7F6E\u4E3Afalse\u4EE5\u907F\u514D\u8FDE\u63A5\u70B9\u4E4B\u95F4\u7684\u7A7F\u900F\u95EE\u9898\u3002"\r\n    }\r\n  },\r\n  "required": ["type"],\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "type": "Simple",\r\n      "description": "\u6700\u7B80\u8FDE\u63A5\u70B9\u793A\u4F8B\uFF0C\u4EC5\u5305\u542B\u5FC5\u9700\u5B57\u6BB5"\r\n    },\r\n    {\r\n      "type": "Advanced",\r\n      "required_tags": ["machine_max:direction/left"],\r\n      "impact_absorption": 0.1,\r\n      "impact_reduction": 3.0,\r\n      "impact_multiplier": 0.5,\r\n      "joint_attrs": {\r\n        "y": {\r\n          "lower_limit": -0.5,\r\n          "upper_limit": 1.0,\r\n          "stiffness": 28000,\r\n          "damping": 1500\r\n        },\r\n        "yr": {\r\n          "lower_limit": -45.0,\r\n          "upper_limit": 45.0,\r\n          "stiffness": 4000,\r\n          "damping": 20\r\n        }\r\n      },\r\n      "description": "\u5DE6\u524D\u8F6E\u8FDE\u63A5\u70B9\uFF0C\u4EC5\u5141\u8BB8\u5DE6\u53D8\u4F53\uFF0C\u5177\u6709\u5782\u76F4\u7F13\u51B2\u548C\u8F6C\u5411\u80FD\u529B\uFF0C\u51B2\u51FB\u5438\u6536\u7387\u8F83\u4F4E\uFF0C\u51B2\u51FB\u51CF\u514D\u8F83\u9AD8"\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/connector/joint_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/joint/joint_attr.schema.json",\r\n  "title": "\u5173\u8282\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u5173\u8282\u7684\u7269\u7406\u5C5E\u6027\uFF0C\u5305\u62EC\u9650\u5236\u3001\u521A\u5EA6\u3001\u963B\u5C3C\u7B49\u3002\u6BCF\u4E2A\u5173\u8282\u5C5E\u6027\u5BF9\u5E94\u4E00\u4E2A\u81EA\u7531\u5EA6\uFF08\u5E73\u52A8\u6216\u65CB\u8F6C\uFF09\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "lower_limit": {\r\n      "type": "number",\r\n      "description": "\u5173\u8282\u4F4D\u7F6E\u4E0B\u9650\uFF0C\u5BF9\u4E8E\u5E73\u52A8\u8F74\u5355\u4F4D\u4E3Am\uFF0C\u5BF9\u4E8E\u65CB\u8F6C\u8F74\u5355\u4F4D\u4E3A\u5EA6\u3002\u5F53\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u81EA\u7531\u6D3B\u52A8\uFF1B\u4E0B\u9650\u4F4E\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u9650\u5B9A\u4E8E\u533A\u95F4\u5185\u6D3B\u52A8\uFF1B\u4E0B\u9650\u7B49\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u56FA\u5B9A\u6B7B\u3002"\r\n    },\r\n    "upper_limit": {\r\n      "type": "number",\r\n      "description": "\u5173\u8282\u4F4D\u7F6E\u4E0A\u9650\uFF0C\u5BF9\u4E8E\u5E73\u52A8\u8F74\u5355\u4F4D\u4E3Am\uFF0C\u5BF9\u4E8E\u65CB\u8F6C\u8F74\u5355\u4F4D\u4E3A\u5EA6\u3002\u5F53\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u81EA\u7531\u6D3B\u52A8\uFF1B\u4E0B\u9650\u4F4E\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u9650\u5B9A\u4E8E\u533A\u95F4\u5185\u6D3B\u52A8\uFF1B\u4E0B\u9650\u7B49\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u56FA\u5B9A\u6B7B\u3002"\r\n    },\r\n    "equilibrium": {\r\n      "type": "number",\r\n      "description": "\u5E73\u8861\u4F4D\u7F6E\uFF0C\u5173\u8282\u5728\u65E0\u5916\u529B\u4F5C\u7528\u65F6\u8D8B\u5411\u7684\u4F4D\u7F6E\u3002"\r\n    },\r\n    "stiffness": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "description": "\u521A\u5EA6\u7CFB\u6570(N/m\u6216N\xB7m/\u5EA6)\uFF0C\u8868\u793A\u5173\u8282\u62B5\u6297\u53D8\u5F62\u7684\u80FD\u529B\u3002"\r\n    },\r\n    "damping": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "description": "\u963B\u5C3C\u7CFB\u6570(N/(m/s)\u6216N\xB7m\xB7s/\u5EA6)\uFF0C\u8868\u793A\u5173\u8282\u8FD0\u52A8\u65F6\u7684\u80FD\u91CF\u8017\u6563\u3002"\r\n    }\r\n  },\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "lower_limit": -45.0,\r\n      "upper_limit": 45.0,\r\n      "stiffness": 229000,\r\n      "damping": 1150,\r\n      "description": "\u65CB\u8F6C\u5173\u8282\uFF0C\u9650\u5236\u5728-45\xB0\u523045\xB0\u4E4B\u95F4\uFF0C\u5177\u6709\u4E2D\u7B49\u521A\u5EA6\u548C\u963B\u5C3C"\r\n    },\r\n    {\r\n      "lower_limit": 1.0,\r\n      "upper_limit": -1.0,\r\n      "description": "\u81EA\u7531\u6D3B\u52A8\u7684\u5173\u8282\uFF08\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\uFF09"\r\n    },\r\n    {\r\n      "lower_limit": 0.0,\r\n      "upper_limit": 0.0,\r\n      "stiffness": 5730000,\r\n      "damping": 57300,\r\n      "description": "\u56FA\u5B9A\u5173\u8282\uFF08\u4E0A\u4E0B\u9650\u76F8\u540C\uFF09"\r\n    },\r\n    {\r\n      "lower_limit": -0.2,\r\n      "upper_limit": 0.2,\r\n      "stiffness": 2865000,\r\n      "damping": 11500,\r\n      "description": "\u7F13\u51B2\u5173\u8282\uFF0C\u5141\u8BB8\u5C0F\u8303\u56F4\u4F4D\u79FB\uFF0C\u7528\u4E8E\u51CF\u9707\u5668"\r\n    },\r\n    {\r\n      "lower_limit": -90.0,\r\n      "upper_limit": 90.0,\r\n      "equilibrium": 0.0,\r\n      "stiffness": 57000,\r\n      "damping": 2900,\r\n      "description": "\u94F0\u94FE\u5173\u8282\uFF0C\u5141\u8BB8\u5927\u89D2\u5EA6\u65CB\u8F6C\uFF0C\u7528\u4E8E\u95E8\u6216\u8231\u76D6"\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/hit_box/hit_box_attr.schema.json": `{
+}`, "zh_cn/schemas/base/vector_3d.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/base/vector_3d.json",\r\n  "title": "\u4E09\u7EF4\u5411\u91CF",\r\n  "description": "\u8868\u793A\u4E09\u7EF4\u7A7A\u95F4\u4E2D\u7684\u5411\u91CF",\r\n  "type": "array",\r\n  "items": {\r\n    "type": "number"\r\n  },\r\n  "minItems": 3,\r\n  "maxItems": 3,\r\n  "default": [0.5, 0.5, 0.5],\r\n  "examples": [\r\n    [0.5, 0.5, 0.5],\r\n    [1.0, 0.0, 0.0]\r\n  ]\r\n}', "zh_cn/schemas/fitting.schema.json": '{\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "$id": "https://machine_max.io/schemas/fitting.json",\n  "title": "\u8F7D\u5177\u914D\u4EF6\u578B\u53F7",\n  "description": "\u8F7D\u5177\u914D\u4EF6\uFF08fittings/\uFF09\u7684\u4E00\u6761\u578B\u53F7\u5B9A\u4E49\u3002\u9996\u7248\u53EA\u6709\u5C65\u5E26\uFF08\\"type\\": \\"track\\"\uFF09\uFF1A\u578B\u53F7 id \u5C31\u662F\u6587\u4EF6\u540D\uFF0C\u5B57\u6BB5\u5E73\u94FA\u5728\u9876\u5C42\uFF0C\u5916\u89C2\u662F\u540C\u5C42\u7684 visual \u5BF9\u8C61\u3002\u6750\u6599\u662F\u786C\u4F9D\u8D56\uFF1Amaterial \u7F3A\u5931\u6216\u4E0D\u5728\u6750\u6599\u8868\u65F6\u8BE5\u578B\u53F7\u4E0D\u6CE8\u518C\u3002",\n  "type": "object",\n  "properties": {\n    "$schema": {\n      "type": "string",\n      "description": "JSON Schema \u5F15\u7528\u8DEF\u5F84\uFF0C\u7528\u4E8E\u7F16\u8F91\u5668\u667A\u80FD\u63D0\u793A\u548C\u9A8C\u8BC1\u3002",\n      "default": "../docs/zh_cn/schemas/fitting.schema.json"\n    },\n    "type": {\n      "const": "track",\n      "description": "\u914D\u4EF6\u79CD\u7C7B\u3002\u9996\u7248\u53EA\u6709 \\"track\\"\uFF1B\u672A\u77E5\u53D6\u503C\u8BB0\u4E3A\u5185\u5BB9\u5305\u9519\u8BEF\uFF0C\u8BE5\u578B\u53F7\u4E0D\u6CE8\u518C\u3002"\n    },\n    "material": {\n      "allOf": [\n        { "$ref": "base/resource_location.schema.json" }\n      ],\n      "description": "\u5C65\u5E26\u6750\u6599 id\uFF0C\u5FC5\u987B\u5B58\u5728\u4E8E\u672C\u6750\u6599\u7684\u6CE8\u518C\u8868\uFF08builtin \u63D0\u4F9B machine_max:track_steel\uFF09\u3002\u51B3\u5B9A\u88C5\u7532\u3001\u63A5\u89E6\u6469\u64E6\u3001\u6E7F\u6ED1\u9002\u5E94\u4E0E\u65B9\u5757\u4F24\u5BB3\u7CFB\u6570\uFF1B\u7F3A\u5931\u65F6\u8BE5\u578B\u53F7\u4E0D\u6CE8\u518C\u3002"\n    },\n    "thickness_mm": {\n      "type": "number",\n      "exclusiveMinimum": 0,\n      "default": 50.0,\n      "description": "\u8282\u539A\uFF0C\u5355\u4F4D\u6BEB\u7C73\u3002\u540C\u65F6\u7528\u4E8E\u88C5\u7532 RHA\uFF08thickness_mm \xD7 RHA \u7CFB\u6570\uFF09\u4E0E\u51E0\u4F55\u5305\u7EDC\u6263\u534A\u5F84\uFF1B\u88C5\u914D\u65F6\u8981\u6C42\u5B83\u5C0F\u4E8E\u6BCF\u4E2A\u6210\u5458\u8F6E\u7684\u6709\u6548\u534A\u5F84\u3002"\n    },\n    "durability_per_link": {\n      "type": "number",\n      "exclusiveMinimum": 0,\n      "default": 20.0,\n      "description": "\u6BCF\u8282\u8010\u4E45\uFF08\u70B9\uFF09\u3002\u6574\u6761\u5E26\u7684\u6700\u5927\u8010\u4E45 = durability_per_link \xD7 \u8282\u6570\u3002"\n    },\n    "length_per_link": {\n      "type": "number",\n      "exclusiveMinimum": 0,\n      "default": 0.2,\n      "description": "\u8282\u957F\uFF0C\u5355\u4F4D\u7C73\u3002\u7528\u4E8E\u7531\u5305\u7EDC\u5468\u957F\u63A8\u5BFC\u8282\u6570 N\uFF0C\u5E76\u51B3\u5B9A\u6E32\u67D3\u65F6\u8282\u7684\u6392\u5E03\u95F4\u8DDD\u3002"\n    },\n    "overwrite": {\n      "type": "object",\n      "description": "\u5728 material \u4E4B\u4E0A\u53E0\u52A0\u7684\u6750\u8D28\u8986\u5199\uFF0C\u4E0E\u78B0\u649E\u7BB1\u4F7F\u7528\u540C\u4E00\u5957\u5408\u5E76\u89C4\u5219\u3002\u5C65\u5E26\u53EA\u8BFB\u53D6 physics \u4E0E armor\uFF1Boverwrite.sounds \u5BF9\u5C65\u5E26\u4E0D\u751F\u6548\uFF08\u547D\u4E2D\u97F3\u7531\u672C\u578B\u53F7\u7684 sounds \u51B3\u5B9A\uFF09\u3002",\n      "properties": {\n        "physics": {\n          "type": "object",\n          "description": "\u7269\u7406\u5C5E\u6027\u8986\u5199\uFF1A\u6469\u64E6\u3001\u6ED1\u79FB\u3001\u5F39\u6027\u4E0E\u7834\u574F\u65B9\u5757\u80FD\u529B\u3002",\n          "properties": {\n            "friction": {\n              "allOf": [\n                { "$ref": "base/vector_3d.schema.json" }\n              ],\n              "description": "\u5404\u5411\u5F02\u6027\u6469\u64E6\u5411\u91CF [x, y, z]\u3002x = \u4FA7\u5411\uFF0Cy = \u524D\u8FDB\u65B9\u5411\uFF0Cz \u672A\u4F7F\u7528\u3002"\n            },\n            "slip_adaptation": {\n              "type": "number",\n              "minimum": 0.0,\n              "maximum": 1.0,\n              "description": "\u6E7F\u6ED1\u9002\u5E94\u7CFB\u6570\uFF0C\u53C2\u4E0E\u5C65\u5E26\u63A5\u89E6\u7684 wetFactor\u3002"\n            },\n            "slip_curve": {\n              "type": "object",\n              "description": "\u8F6E\u80CE\u6ED1\u79FB\u66F2\u7EBF\u8986\u5199\u3002\u5C65\u5E26\u4E0D\u8BFB\u8BE5\u5B57\u6BB5\u3002",\n              "additionalProperties": true\n            },\n            "rolling_friction": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u6EDA\u52A8\u6469\u64E6\u7CFB\u6570\u3002"\n            },\n            "spinning_friction": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u81EA\u65CB\u6469\u64E6\u7CFB\u6570\u3002"\n            },\n            "restitution": {\n              "type": "number",\n              "minimum": 0.0,\n              "maximum": 1.0,\n              "description": "\u6062\u590D\u7CFB\u6570\uFF08\u5F39\u6027\uFF09\u3002"\n            },\n            "block_damage_factor": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u65B9\u5757\u7834\u574F\u80FD\u91CF\u7CFB\u6570\uFF0C0 \u8868\u793A\u65E0\u6CD5\u7834\u574F\u65B9\u5757\u3002"\n            }\n          },\n          "additionalProperties": false\n        },\n        "armor": {\n          "type": "object",\n          "description": "\u88C5\u7532\u5C5E\u6027\u8986\u5199\uFF1A\u6297\u7A7F\u3001\u51CF\u4F24\u3001\u8010\u4E45\u8870\u51CF\u4E0E\u6761\u4EF6\u4FEE\u6B63\u3002",\n          "properties": {\n            "rha": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u76F8\u5BF9 RHA\uFF08\u5747\u8D28\u8F67\u5236\u88C5\u7532\uFF09\u7684\u6297\u7A7F\u7CFB\u6570\u3002"\n            },\n            "angle_effect": {\n              "type": "boolean",\n              "description": "\u7B49\u6548\u62A4\u7532\u539A\u5EA6\u662F\u5426\u53D7\u547D\u4E2D\u89D2\u5EA6\u5F71\u54CD\u3002"\n            },\n            "dmg_resist": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u7EBF\u6027\u51CF\u4F24\u503C\uFF0C\u968F\u8010\u4E45\u8870\u51CF\u3002"\n            },\n            "dmg_mult": {\n              "type": "number",\n              "minimum": 0.0,\n              "maximum": 1.0,\n              "description": "\u4F24\u5BB3\u500D\u7387\uFF0C\u968F\u8010\u4E45\u8870\u51CF\u3002"\n            },\n            "decay_rha": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u8010\u4E45\u5F52\u96F6\u540E\u6B8B\u7559\u7684 RHA \u7CFB\u6570\u3002"\n            },\n            "decay_dmg_resist": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u8010\u4E45\u5F52\u96F6\u540E\u6B8B\u7559\u7684\u7EBF\u6027\u51CF\u4F24\u503C\u3002"\n            },\n            "decay_dmg_mult": {\n              "type": "number",\n              "minimum": 0.0,\n              "maximum": 1.0,\n              "description": "\u8010\u4E45\u5F52\u96F6\u540E\u6B8B\u7559\u7684\u4F24\u5BB3\u500D\u7387\u3002"\n            },\n            "decay_power": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u62A4\u7532\u9000\u5316\u66F2\u7EBF\u6307\u6570\u3002"\n            },\n            "unpen_power": {\n              "type": "number",\n              "minimum": 0.0,\n              "description": "\u672A\u51FB\u7A7F\u65F6\u7684\u4F24\u5BB3\u6307\u6570\u3002"\n            },\n            "impact_modifiers": {\n              "type": "array",\n              "description": "\u51B2\u51FB\u4FEE\u6B63\u5668\u5217\u8868\u3002"\n            },\n            "penetration_modifiers": {\n              "type": "array",\n              "description": "\u7A7F\u6DF1\u4FEE\u6B63\u5668\u5217\u8868\u3002"\n            },\n            "damage_modifiers": {\n              "type": "array",\n              "description": "\u4F24\u5BB3\u4FEE\u6B63\u5668\u5217\u8868\u3002"\n            }\n          },\n          "additionalProperties": false\n        },\n        "sounds": {\n          "type": "object",\n          "description": "\u547D\u4E2D\u97F3\u6548\u8986\u5199\u3002\u5BF9\u5C65\u5E26\u4E0D\u751F\u6548\uFF1B\u5C65\u5E26\u547D\u4E2D\u97F3\u7531\u672C\u578B\u53F7\u7684 sounds \u51B3\u5B9A\u3002",\n          "additionalProperties": true\n        }\n      },\n      "additionalProperties": false\n    },\n    "sounds": {\n      "type": "object",\n      "description": "\u5C65\u5E26\u547D\u4E2D\u97F3\u6548\u3002\u7701\u7565\u65F6\u4F7F\u7528\u4E24\u4E2A hard_metal \u56FA\u5B9A\u8303\u56F4\u4E8B\u4EF6\uFF1B\u5199\u7A7A\u5BF9\u8C61 {} \u4F1A\u843D\u56DE\u78B0\u649E\u7BB1\u7684 hit_box.hit.* \u9ED8\u8BA4\u503C\u3002",\n      "properties": {\n        "hit_un_pen": {\n          "allOf": [\n            { "$ref": "base/sound_event.schema.json" }\n          ],\n          "description": "\u672A\u51FB\u7A7F\u65F6\u7684\u97F3\u6548\u3002",\n          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }\n        },\n        "hit_pen": {\n          "allOf": [\n            { "$ref": "base/sound_event.schema.json" }\n          ],\n          "description": "\u51FB\u7A7F\u65F6\u7684\u97F3\u6548\u3002",\n          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }\n        }\n      },\n      "additionalProperties": false\n    },\n    "tension": {\n      "type": "object",\n      "description": "\u76F8\u90BB\u6210\u5458\u8F6E\u4E4B\u95F4\u7684\u5355\u8FB9\u5F39\u7C27-\u963B\u5C3C\u53C2\u6570\u3002rest \u7531\u76F8\u90BB\u8F6E\u5FC3\u8DDD\u5728\u88C5\u914D / \u8F7D\u5165\u65F6\u91C7\u6837\uFF0C\u4E0D\u5728 JSON \u4E2D\u58F0\u660E\u3002",\n      "properties": {\n        "enabled": {\n          "type": "boolean",\n          "default": true,\n          "description": "\u662F\u5426\u542F\u7528\u5F20\u529B\u3002"\n        },\n        "stiffness": {\n          "type": "number",\n          "minimum": 0.0,\n          "default": 12000.0,\n          "description": "\u5F39\u7C27\u521A\u5EA6\uFF0C\u5355\u4F4D N/m\u3002"\n        },\n        "damping": {\n          "type": "number",\n          "minimum": 0.0,\n          "default": 900.0,\n          "description": "\u963B\u5C3C\u7CFB\u6570\uFF0C\u5355\u4F4D N\xB7s/m\u3002"\n        },\n        "preload": {\n          "type": "number",\n          "minimum": 0.0,\n          "default": 0.0,\n          "description": "\u9884\u7D27\u91CF\uFF0C\u5355\u4F4D\u7C73\uFF0C\u4ECE rest \u4E2D\u6263\u9664\u3002"\n        },\n        "slack": {\n          "type": "number",\n          "minimum": 0.0,\n          "default": 0.015,\n          "description": "\u677E\u5F1B\u91CF\uFF0C\u5355\u4F4D\u7C73\uFF0C\u52A0\u5230 rest \u4E0A\uFF0C\u5C0F\u4E8E\u8BE5\u4F38\u957F\u91CF\u4E0D\u65BD\u529B\u3002"\n        },\n        "max_force": {\n          "type": "number",\n          "minimum": 0.0,\n          "default": 800.0,\n          "description": "\u5355\u5BF9\u6210\u5458\u7684\u6700\u5927\u5F20\u529B\uFF0C\u5355\u4F4D N\u3002"\n        }\n      },\n      "additionalProperties": false\n    },\n    "visual": {\n      "type": "object",\n      "description": "\u5355\u8282\u5C65\u5E26\u6A21\u578B\u3001\u6A21\u578B\u8D34\u56FE\u4E0E\u7269\u54C1\u56FE\u6807\u3002model \u4E0E texture \u5FC5\u586B\uFF1B\u6A21\u578B\u653E\u5728\u5185\u5BB9\u5305\u7684 models/fitting/ \u4E0B\uFF0C\u6309 ModelIndex(\\"fitting\\", model) \u52A0\u8F7D\u3002",\n      "properties": {\n        "model": {\n          "allOf": [\n            { "$ref": "base/resource_location.schema.json" }\n          ],\n          "description": "\u5355\u8282\u6A21\u578B id\uFF0C\u5982 machine_max:track_link.geo\uFF08\u5BF9\u5E94 models/fitting/track_link.geo.json\uFF0C\u6587\u4EF6\u540D\u542B .geo\uFF09\u3002\u547D\u540D\u7A7A\u95F4\u662F\u5185\u5BB9\u5305\u91CC\u7684\u547D\u540D\u7A7A\u95F4\u76EE\u5F55\u540D\uFF0C\u4E0D\u662F\u5185\u5BB9\u5305\u540D\u3002"\n        },\n        "texture": {\n          "allOf": [\n            { "$ref": "base/resource_location.schema.json" }\n          ],\n          "description": "\u6A21\u578B\u8D34\u56FE\u7684\u5B8C\u6574\u8DEF\u5F84\uFF0C\u5982 machine_max:textures/part/track_link.png\uFF1B\u547D\u540D\u7A7A\u95F4\u540C\u6837\u53D6\u547D\u540D\u7A7A\u95F4\u76EE\u5F55\u540D\u3002"\n        },\n        "icon": {\n          "allOf": [\n            { "$ref": "base/resource_location.schema.json" }\n          ],\n          "description": "\u7269\u54C1\u680F 2D \u56FE\u6807\u8D34\u56FE\uFF0C\u5982 machine_max:textures/icon/track_link.png\uFF0C\u5EFA\u8BAE 128\xD7128\u3001\u900F\u660E\u80CC\u666F\u3002\u7701\u7565\u65F6\u7269\u54C1\u4E0E\u521B\u9020\u680F\u76F4\u63A5\u6E32\u67D3\u5355\u8282 3D \u6A21\u578B\u3002"\n        }\n      },\n      "required": ["model", "texture"],\n      "additionalProperties": false\n    }\n  },\n  "required": ["type", "material", "visual"],\n  "additionalProperties": false,\n  "examples": [\n    {\n      "type": "track",\n      "material": "machine_max:track_steel",\n      "thickness_mm": 50.0,\n      "durability_per_link": 20.0,\n      "length_per_link": 0.2,\n      "tension": {\n        "enabled": true,\n        "stiffness": 12000.0,\n        "damping": 900.0,\n        "preload": 0.0,\n        "slack": 0.015,\n        "max_force": 800.0\n      },\n      "sounds": {\n        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },\n        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }\n      },\n      "visual": {\n        "model": "machine_max:track_link.geo",\n        "texture": "machine_max:textures/part/track_link.png",\n        "icon": "machine_max:textures/icon/track_link.png"\n      }\n    }\n  ]\n}', "zh_cn/schemas/hud/hud_element.schema.json": '{\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "$id": "https://machine_max.io/schemas/hud/hud_element.json",\n  "title": "HUD \u5143\u7D20",\n  "type": "object",\n  "properties": {\n    "style": {\n      "$ref": "../base/resource_location.schema.json"\n    },\n    "perspective": {\n      "type": "boolean",\n      "default": true\n    },\n    "scope_behavior": {\n      "enum": [\n        "screen_fixed",\n        "follow_position",\n        "follow_transform"\n      ],\n      "default": "follow_position"\n    },\n    "ignore_zoom": {\n      "type": "boolean",\n      "default": false\n    },\n    "offset": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        0,\n        0,\n        0\n      ]\n    },\n    "rotation": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        0,\n        0,\n        0\n      ]\n    },\n    "scale": {\n      "$ref": "../base/vector_3d.schema.json",\n      "default": [\n        1,\n        1,\n        1\n      ]\n    },\n    "anchor": {\n      "enum": [\n        "top_left",\n        "top_center",\n        "top_right",\n        "center_left",\n        "center",\n        "center_right",\n        "bottom_left",\n        "bottom_center",\n        "bottom_right"\n      ],\n      "default": "top_left"\n    },\n    "selection_visibility": {\n      "enum": [\n        "selected_only",\n        "always"\n      ],\n      "default": "selected_only",\n      "description": "\u6B66\u5668\u5143\u7D20\u6309\u89C2\u5BDF\u5EA7\u6905\u9009\u4E2D\u72B6\u6001\u663E\u9690\uFF1B\u666E\u901A\u5EA7\u6905\u548C\u76F8\u673A\u5143\u7D20\u4E0D\u53D7\u9009\u4E2D\u6761\u4EF6\u5F71\u54CD\u3002"\n    }\n  },\n  "required": [\n    "style"\n  ],\n  "additionalProperties": false\n}', "zh_cn/schemas/hud/hud_layout.schema.json": '{\n  "$schema": "http://json-schema.org/draft-07/schema#",\n  "$id": "https://machine_max.io/schemas/hud/hud_layout.json",\n  "title": "HUD \u5E03\u5C40",\n  "type": "array",\n  "items": {\n    "$ref": "hud_element.schema.json"\n  }\n}', "zh_cn/schemas/part/subpart/connector/connector_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",\r\n  "title": "\u8FDE\u63A5\u70B9\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u90E8\u4EF6\u8FDE\u63A5\u70B9\u7684\u5C5E\u6027\uFF0C\u5305\u62EC\u4F4D\u7F6E\u3001\u5B9A\u4E49ID\u3001\u4FE1\u53F7\u4F20\u8F93\u7B49\u3002\u8FDE\u63A5\u70B9\u7528\u4E8E\u90E8\u4EF6\u4E4B\u95F4\u7684\u7269\u7406\u8FDE\u63A5\u548C\u4FE1\u53F7\u4F20\u9012\u3002\u9759\u6001\u5C5E\u6027\u901A\u8FC7definition\u5B57\u6BB5\u5F15\u7528\u9884\u5B9A\u4E49\u7684\u8FDE\u63A5\u70B9\u7C7B\u578B\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "locator": {\r\n      "type": "string",\r\n      "description": "\u8FDE\u63A5\u70B9\u5BF9\u5E94\u7684Locator\u540D\u79F0\uFF0C\u4F1A\u5BFB\u627E\u540D\u79F0\u5339\u914D\u7684Locator\uFF0C\u4EE5\u5176\u4F4D\u7F6E\u4E0E\u59FF\u6001\u4F5C\u4E3A\u8FDE\u63A5\u70B9\u7684\u4F4D\u7F6E\u548C\u59FF\u6001\u3002"\r\n    },\r\n    "definition": {\r\n      "type": "string",\r\n      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",\r\n      "description": "\u8FDE\u63A5\u70B9\u5B9A\u4E49ID\uFF0C\u5F15\u7528\u9884\u5B9A\u4E49\u7684\u8FDE\u63A5\u70B9\u9759\u6001\u5C5E\u6027\u3002\u4F8B\u5982\uFF1A\\"machine_max:simple_connector\\"\u3002"\r\n    },\r\n    "power_target": {\r\n      "type": "string",\r\n      "description": "\u5BF9\u4FA7\u8FDE\u63A5\u5668\u4F20\u5165\u7684\u673A\u68B0\u80FD\u5728\u672C\u96F6\u4EF6\u5185\u7684\u63A5\u6536\u76EE\u6807\uFF08\u5B50\u7CFB\u7EDF\u540D\u6216\u8FDE\u63A5\u70B9\u540D\uFF09\u3002\u8BBE\u7F6E\u540E\u8BE5\u8FDE\u63A5\u70B9\u53EF\u4F5C\u4E3A\u673A\u68B0\u80FD\u4F20\u8F93\u901A\u9053\uFF0C\u5C06\u5BF9\u4FA7\u4F20\u5165\u7684\u673A\u68B0\u80FD\u8F6C\u53D1\u81F3\u672C\u96F6\u4EF6\u5185\u7684\u76EE\u6807\u3002\u4F8B\u5982\uFF1A\\"subsystem.machine_max.engine\\"\u3002"\r\n    },\r\n    "overwrite": {\r\n      "type": "object",\r\n      "description": "\u8FDE\u63A5\u70B9\u5C5E\u6027\u8986\u5199\u3002\u53EF\u6309\u9700\u8986\u5199definition\u6307\u5411\u7684\u9759\u6001\u8FDE\u63A5\u70B9\u5C5E\u6027\u3002",\r\n      "properties": {\r\n        "type": {\r\n          "type": "string",\r\n          "enum": ["Simple", "simple", "advanced", "Advanced"],\r\n          "description": "\u8FDE\u63A5\u70B9\u7C7B\u578B\u8986\u5199\u3002"\r\n        },\r\n        "direction": {\r\n          "allOf": [\r\n            { "$ref": "../../../base/axis.schema.json" }\r\n          ],\r\n          "description": "\u8FDE\u63A5\u70B9\u6CD5\u7EBF\u65B9\u5411\u8986\u5199\u3002"\r\n        },\r\n        "integrity": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u7ED3\u6784\u5B8C\u6574\u6027\u8986\u5199\u3002"\r\n        },\r\n        "impact_absorption": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "maximum": 1.0,\r\n          "description": "\u51B2\u51FB\u8F6C\u7ED3\u6784\u635F\u8017\u6BD4\u4F8B\u8986\u5199\u3002"\r\n        },\r\n        "impact_absorption_destroyed": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u6240\u5728\u96F6\u4EF6\u5DF2\u6467\u6BC1\u65F6\u51B2\u51FB\u8F6C\u7ED3\u6784\u635F\u8017\u6BD4\u4F8B\u7684\u8986\u5199\u3002"\r\n        },\r\n        "impact_reduction": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u51B2\u51FB\u51CF\u514D\u503C\u8986\u5199\u3002"\r\n        },\r\n        "impact_multiplier": {\r\n          "type": "number",\r\n          "minimum": 0.0,\r\n          "description": "\u51B2\u51FB\u500D\u7387\u8986\u5199\u3002"\r\n        },\r\n        "collide_between_parts": {\r\n          "type": "boolean",\r\n          "description": "\u662F\u5426\u5141\u8BB8\u90E8\u4EF6\u95F4\u78B0\u649E\u8986\u5199\u3002"\r\n        },\r\n        "required_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u5FC5\u9700\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "acceptable_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u53EF\u63A5\u53D7\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "forbidden_tags": {\r\n          "type": "array",\r\n          "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n          "description": "\u7981\u6B62\u6807\u7B7E\u8986\u5199\u3002"\r\n        },\r\n        "joint_attrs": {\r\n          "type": "object",\r\n          "additionalProperties": { "$ref": "joint_attr.schema.json" },\r\n          "description": "\u5173\u8282\u5C5E\u6027\u8986\u5199\u3002"\r\n        }\r\n      },\r\n      "additionalProperties": false\r\n    },\r\n    "signal_translations": {\r\n      "type": "object",\r\n      "additionalProperties": { "type": "string" },\r\n      "default": {},\r\n      "description": "\u4ECE\u5BF9\u4FA7\u8FDE\u63A5\u70B9\u63A5\u6536\u5230\u7684\u4FE1\u53F7\u9891\u9053\u8F6C\u8BD1\u89C4\u5219\uFF0C\u4F8B\u5982\uFF1A{\\"channel_a\\": \\"channel_c\\"}\u8868\u793A\u5C06channel_a\u4FE1\u53F7\u8F6C\u8BD1\u4E3Achannel_c\u3002"\r\n    },\r\n    "signal_targets": {\r\n      "type": "object",\r\n      "additionalProperties": {\r\n        "type": "array",\r\n        "items": { "type": "string" }\r\n      },\r\n      "default": {},\r\n      "description": "\u8FDE\u63A5\u70B9\u5728\u672C\u96F6\u4EF6\u5185\u7684\u63A7\u5236\u4FE1\u53F7\u4F20\u8F93\u76EE\u6807\uFF0C\u952E\u4E3A\u4FE1\u53F7\u9891\u9053\uFF0C\u503C\u4E3A\u76EE\u6807\u5217\u8868\uFF08\u5B50\u7CFB\u7EDF/\u8FDE\u63A5\u70B9\u540D/part/global\uFF09\u3002\u4F8B\u5982\uFF1A{\\"move_input\\": [\\"car_controller\\", \\"engine\\"]}\u3002"\r\n    },\r\n    "internal": {\r\n      "type": "boolean",\r\n      "default": false,\r\n      "description": "\u662F\u5426\u4E3A\u90E8\u4EF6\u5185\u90E8\u8FDE\u63A5\u70B9\u3002\u4E3Atrue\u65F6\u4EC5\u7528\u4E8E\u540C\u4E00Part\u5185\u90E8\u81EA\u52A8\u8FDE\u63A5\uFF0C\u4E0D\u53C2\u4E0E\u5BF9\u5916\u62FC\u88C5\u3002"\r\n    }\r\n  },\r\n  "required": ["locator", "definition"],\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "locator": "Hull",\r\n      "definition": "machine_max:simple_connector"\r\n    },\r\n    {\r\n      "locator": "LeftFrontWheel",\r\n      "definition": "machine_max:advanced_wheel_connector",\r\n      "overwrite": {\r\n        "type": "Advanced",\r\n        "direction": "xp",\r\n        "integrity": 32.0,\r\n        "impact_absorption": 0.15,\r\n        "impact_absorption_destroyed": 2.5,\r\n        "impact_reduction": 3.0,\r\n        "impact_multiplier": 0.8,\r\n        "collide_between_parts": false,\r\n        "required_tags": ["machine_max:direction/left"],\r\n        "acceptable_tags": ["machine_max:wheel", "machine_max:suspension"],\r\n        "forbidden_tags": ["machine_max:broken_only"],\r\n        "joint_attrs": {\r\n          "y": {\r\n            "lower_limit": -0.2,\r\n            "upper_limit": 0.25,\r\n            "stiffness": 30000,\r\n            "damping": 1600\r\n          },\r\n          "yr": {\r\n            "lower_limit": -35.0,\r\n            "upper_limit": 35.0,\r\n            "stiffness": 4500,\r\n            "damping": 24\r\n          }\r\n        }\r\n      },\r\n      "signal_translations": {\r\n        "steering": "wheel_control"\r\n      },\r\n      "signal_targets": {\r\n        "wheel_control": ["wheel_driver", "local"],\r\n        "abs_request": ["global"]\r\n      }\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/connector/connector_static_attr.schema.json",\r\n  "title": "\u8FDE\u63A5\u70B9\u9759\u6001\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u8FDE\u63A5\u70B9\u7684\u9759\u6001\u5C5E\u6027\uFF0C\u5305\u62EC\u7C7B\u578B\u3001\u65B9\u5411\u3001\u7ED3\u6784\u5B8C\u6574\u6027\u3001\u51B2\u51FB\u5904\u7406\u7B49\u3002\u8FD9\u4E9B\u5C5E\u6027\u901A\u8FC7\u5B9A\u4E49ID\u5F15\u7528\uFF0C\u907F\u514D\u5728\u6BCF\u4E2A\u96F6\u4EF6\u5B9A\u4E49\u4E2D\u91CD\u590D\u5B9A\u4E49\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "$schema": {\r\n      "type": "string",\r\n      "description": "JSON Schema\u5F15\u7528\u8DEF\u5F84\uFF0C\u7528\u4E8E\u7F16\u8F91\u5668\u667A\u80FD\u63D0\u793A\u548C\u9A8C\u8BC1",\r\n      "default": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json"\r\n    },\r\n    "type": {\r\n      "type": "string",\r\n      "enum": ["Simple", "simple", "advanced", "Advanced"],\r\n      "description": "\u8FDE\u63A5\u70B9\u7C7B\u578B\u3002Simple\uFF1A\u7B80\u5355\u8FDE\u63A5\u70B9\uFF1BAdvanced\uFF1A\u9AD8\u7EA7\u8FDE\u63A5\u70B9\uFF0C\u652F\u6301\u590D\u6742\u7684\u5173\u8282\u5C5E\u6027\u3002"\r\n    },\r\n    "direction": {\r\n      "allOf": [\r\n        { "$ref": "../../../base/axis.schema.json" }\r\n      ],\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u6CD5\u7EBF\u65B9\u5411\uFF0C\u7528\u4E8E\u786E\u5B9A\u8FDE\u63A5\u70B9\u7684\u8FDE\u63A5\u65B9\u5411\u3002x+\u4E3A\u53F3\uFF0Cy+\u4E3A\u4E0A\uFF0Cz+\u4E3A\u540E\u3002"\r\n    },\r\n    "integrity": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 15.0,\r\n      "description": "\u90E8\u4EF6\u57FA\u7840\u7ED3\u6784\u5B8C\u6574\u5EA6\uFF0C\u90E8\u4EF6\u53EF\u627F\u53D7\u4E0D\u9AD8\u4E8E\u6B64\u6570\u503C\u7684\u51B2\u51FB\u529B\u800C\u4E0D\u8131\u843D\uFF0C\u51B2\u51FB\u529B\u6765\u81EA\u4F24\u5BB3\u6216\u5173\u8282\u5E94\u529B\u3002"\r\n    },\r\n    "impact_reduction": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 2.0,\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u51B2\u51FB\u51CF\u514D\u503C\uFF0C\u5728\u8BA1\u7B97\u90E8\u4EF6\u51FB\u843D\u524D\u5E94\u7528\uFF0C\u53EF\u5C06\u51B2\u51FB\u524A\u51CF\u81F30\u4EE5\u5B8C\u5168\u907F\u514D\u5BF9\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u5F71\u54CD\u3002"\r\n    },\r\n    "impact_multiplier": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 1.0,\r\n      "description": "\u8FDE\u63A5\u70B9\u7684\u51B2\u51FB\u5438\u6536\u7387\uFF0C\u5728\u8BA1\u7B97\u90E8\u4EF6\u51FB\u843D\u524D\uFF0C\u5E94\u7528\u51B2\u51FB\u51CF\u514D\u540E\u5E94\u7528\uFF0C\u5927\u4E8E1\u5C06\u4F7F\u8FDE\u63A5\u70B9\u66F4\u5BB9\u6613\u65AD\u5F00\u3002"\r\n    },\r\n    "impact_absorption": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "maximum": 1,\r\n      "default": 0.3,\r\n      "description": "\u8FDE\u63A5\u70B9\u53D7\u5230\u51B2\u51FB\u4F46\u672A\u88AB\u51FB\u843D\u65F6\uFF0C\u51B2\u51FB\u8F6C\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u635F\u8017\u7684\u6BD4\u4F8B\u3002\u4F8B\u59820.5\u8868\u793A50%\u7684\u51B2\u51FB\u4F1A\u8F6C\u5316\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u635F\u8017\u3002"\r\n    },\r\n    "impact_absorption_destroyed": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 2.0,\r\n      "description": "SubPart\u5DF2\u6467\u6BC1\u65F6\uFF0C\u51B2\u51FB\u8F6C\u4E3A\u8FDE\u63A5\u70B9\u5B8C\u6574\u6027\u635F\u8017\u7684\u6BD4\u4F8B\u3002\u4F8B\u59822.0\u8868\u793A200%\u7684\u51B2\u51FB\u4F1A\u8F6C\u5316\u4E3A\u7ED3\u6784\u5B8C\u6574\u6027\u7684\u635F\u8017\uFF08\u7528\u4E8E\u6B8B\u9AB8\u5FEB\u901F\u89E3\u4F53\uFF09\u3002"\r\n    },\r\n    "required_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u5FC5\u987B\u5168\u90E8\u62E5\u6709\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:left\\"]\u8868\u793A\u5FC5\u987B\u5305\u542B\u5DE6\u53D8\u4F53\u6807\u7B7E\u3002"\r\n    },\r\n    "acceptable_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u5FC5\u987B\u81F3\u5C11\u62E5\u6709\u5176\u4E2D\u4E00\u4E2A\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:door\\", \\"machine_max:hatch\\"]\u8868\u793A\u5FC5\u987B\u5305\u542B\u95E8\u6216\u8231\u53E3\u6807\u7B7E\u4E4B\u4E00\u3002"\r\n    },\r\n    "forbidden_tags": {\r\n      "type": "array",\r\n      "items": { "$ref": "../../../base/resource_location.schema.json" },\r\n      "default": [],\r\n      "description": "\u8FDE\u63A5\u90E8\u4EF6\u4E0D\u53EF\u5305\u542B\u7684\u6807\u7B7E\uFF0C\u7559\u7A7A\u4EE5\u5141\u8BB8\u4EFB\u610F\u6807\u7B7E\u3002\u4F8B\u5982\uFF1A[\\"machine_max:explosive\\"]\u8868\u793A\u4E0D\u80FD\u5305\u542B\u7206\u70B8\u7269\u6807\u7B7E\u3002"\r\n    },\r\n    "joint_attrs": {\r\n      "type": "object",\r\n      "additionalProperties": { "$ref": "joint_attr.schema.json"},\r\n      "default": {},\r\n      "description": "\u5173\u8282\u5C5E\u6027\uFF0C\u76EE\u524D\u4EC5\u5728\u5173\u8282\u7C7B\u578B\u4E3AAdvanced\u65F6\u751F\u6548\u3002\u952E\u4E3Ax\u3001y\u3001z\u3001xr\u3001yr\u3001zr\uFF0C\u5206\u522B\u4EE3\u8868x\u3001y\u3001z\u8F74\u7684\u5E73\u52A8\u548Cx\u3001y\u3001z\u8F74\u7684\u65CB\u8F6C\u3002"\r\n    },\r\n    "collide_between_parts": {\r\n      "type": "boolean",\r\n      "default": false,\r\n      "description": "\u8FDE\u63A5\u70B9\u662F\u5426\u5141\u8BB8\u90E8\u4EF6\u95F4\u78B0\u649E\u3002\u901A\u5E38\u8BBE\u7F6E\u4E3Afalse\u4EE5\u907F\u514D\u8FDE\u63A5\u70B9\u4E4B\u95F4\u7684\u7A7F\u900F\u95EE\u9898\u3002"\r\n    }\r\n  },\r\n  "required": ["type"],\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "type": "Simple",\r\n      "description": "\u6700\u7B80\u8FDE\u63A5\u70B9\u793A\u4F8B\uFF0C\u4EC5\u5305\u542B\u5FC5\u9700\u5B57\u6BB5"\r\n    },\r\n    {\r\n      "type": "Advanced",\r\n      "required_tags": ["machine_max:direction/left"],\r\n      "impact_absorption": 0.1,\r\n      "impact_reduction": 3.0,\r\n      "impact_multiplier": 0.5,\r\n      "joint_attrs": {\r\n        "y": {\r\n          "lower_limit": -0.5,\r\n          "upper_limit": 1.0,\r\n          "stiffness": 28000,\r\n          "damping": 1500\r\n        },\r\n        "yr": {\r\n          "lower_limit": -45.0,\r\n          "upper_limit": 45.0,\r\n          "stiffness": 4000,\r\n          "damping": 20\r\n        }\r\n      },\r\n      "description": "\u5DE6\u524D\u8F6E\u8FDE\u63A5\u70B9\uFF0C\u4EC5\u5141\u8BB8\u5DE6\u53D8\u4F53\uFF0C\u5177\u6709\u5782\u76F4\u7F13\u51B2\u548C\u8F6C\u5411\u80FD\u529B\uFF0C\u51B2\u51FB\u5438\u6536\u7387\u8F83\u4F4E\uFF0C\u51B2\u51FB\u51CF\u514D\u8F83\u9AD8"\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/connector/joint_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/joint/joint_attr.schema.json",\r\n  "title": "\u5173\u8282\u5C5E\u6027",\r\n  "description": "\u5B9A\u4E49\u5173\u8282\u7684\u7269\u7406\u5C5E\u6027\uFF0C\u5305\u62EC\u9650\u5236\u3001\u521A\u5EA6\u3001\u963B\u5C3C\u7B49\u3002\u6BCF\u4E2A\u5173\u8282\u5C5E\u6027\u5BF9\u5E94\u4E00\u4E2A\u81EA\u7531\u5EA6\uFF08\u5E73\u52A8\u6216\u65CB\u8F6C\uFF09\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "lower_limit": {\r\n      "type": "number",\r\n      "description": "\u5173\u8282\u4F4D\u7F6E\u4E0B\u9650\uFF0C\u5BF9\u4E8E\u5E73\u52A8\u8F74\u5355\u4F4D\u4E3Am\uFF0C\u5BF9\u4E8E\u65CB\u8F6C\u8F74\u5355\u4F4D\u4E3A\u5EA6\u3002\u5F53\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u81EA\u7531\u6D3B\u52A8\uFF1B\u4E0B\u9650\u4F4E\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u9650\u5B9A\u4E8E\u533A\u95F4\u5185\u6D3B\u52A8\uFF1B\u4E0B\u9650\u7B49\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u56FA\u5B9A\u6B7B\u3002"\r\n    },\r\n    "upper_limit": {\r\n      "type": "number",\r\n      "description": "\u5173\u8282\u4F4D\u7F6E\u4E0A\u9650\uFF0C\u5BF9\u4E8E\u5E73\u52A8\u8F74\u5355\u4F4D\u4E3Am\uFF0C\u5BF9\u4E8E\u65CB\u8F6C\u8F74\u5355\u4F4D\u4E3A\u5EA6\u3002\u5F53\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u81EA\u7531\u6D3B\u52A8\uFF1B\u4E0B\u9650\u4F4E\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u9650\u5B9A\u4E8E\u533A\u95F4\u5185\u6D3B\u52A8\uFF1B\u4E0B\u9650\u7B49\u4E8E\u4E0A\u9650\u65F6\uFF0C\u6307\u5B9A\u7684\u8F74\u88AB\u56FA\u5B9A\u6B7B\u3002"\r\n    },\r\n    "equilibrium": {\r\n      "type": "number",\r\n      "description": "\u5E73\u8861\u4F4D\u7F6E\uFF0C\u5173\u8282\u5728\u65E0\u5916\u529B\u4F5C\u7528\u65F6\u8D8B\u5411\u7684\u4F4D\u7F6E\u3002"\r\n    },\r\n    "stiffness": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "description": "\u521A\u5EA6\u7CFB\u6570(N/m\u6216N\xB7m/\u5EA6)\uFF0C\u8868\u793A\u5173\u8282\u62B5\u6297\u53D8\u5F62\u7684\u80FD\u529B\u3002"\r\n    },\r\n    "damping": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "description": "\u963B\u5C3C\u7CFB\u6570(N/(m/s)\u6216N\xB7m\xB7s/\u5EA6)\uFF0C\u8868\u793A\u5173\u8282\u8FD0\u52A8\u65F6\u7684\u80FD\u91CF\u8017\u6563\u3002"\r\n    }\r\n  },\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "lower_limit": -45.0,\r\n      "upper_limit": 45.0,\r\n      "stiffness": 229000,\r\n      "damping": 1150,\r\n      "description": "\u65CB\u8F6C\u5173\u8282\uFF0C\u9650\u5236\u5728-45\xB0\u523045\xB0\u4E4B\u95F4\uFF0C\u5177\u6709\u4E2D\u7B49\u521A\u5EA6\u548C\u963B\u5C3C"\r\n    },\r\n    {\r\n      "lower_limit": 1.0,\r\n      "upper_limit": -1.0,\r\n      "description": "\u81EA\u7531\u6D3B\u52A8\u7684\u5173\u8282\uFF08\u4E0B\u9650\u9AD8\u4E8E\u4E0A\u9650\uFF09"\r\n    },\r\n    {\r\n      "lower_limit": 0.0,\r\n      "upper_limit": 0.0,\r\n      "stiffness": 5730000,\r\n      "damping": 57300,\r\n      "description": "\u56FA\u5B9A\u5173\u8282\uFF08\u4E0A\u4E0B\u9650\u76F8\u540C\uFF09"\r\n    },\r\n    {\r\n      "lower_limit": -0.2,\r\n      "upper_limit": 0.2,\r\n      "stiffness": 2865000,\r\n      "damping": 11500,\r\n      "description": "\u7F13\u51B2\u5173\u8282\uFF0C\u5141\u8BB8\u5C0F\u8303\u56F4\u4F4D\u79FB\uFF0C\u7528\u4E8E\u51CF\u9707\u5668"\r\n    },\r\n    {\r\n      "lower_limit": -90.0,\r\n      "upper_limit": 90.0,\r\n      "equilibrium": 0.0,\r\n      "stiffness": 57000,\r\n      "damping": 2900,\r\n      "description": "\u94F0\u94FE\u5173\u8282\uFF0C\u5141\u8BB8\u5927\u89D2\u5EA6\u65CB\u8F6C\uFF0C\u7528\u4E8E\u95E8\u6216\u8231\u76D6"\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/part/subpart/hit_box/hit_box_attr.schema.json": `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/hit_box_attr.json",
   "title": "\u78B0\u649E\u7BB1\u5C5E\u6027",
@@ -6174,61 +6486,79 @@
       }\r
     }\r
   ]\r
-}`, "zh_cn/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json": `{\r
-  "$schema": "http://json-schema.org/draft-07/schema#",\r
-  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",\r
-  "title": "\u5EA7\u6905\u5B50\u7CFB\u7EDF\u52A8\u6001\u5C5E\u6027",\r
-  "description": "\u5EA7\u6905\u7684\u52A8\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u5EA7\u6905\u4F4D\u7F6E\u3001\u4FE1\u53F7\u4F20\u8F93\u76EE\u6807\u7B49\u3002",\r
-  "properties": {\r
-    "type": {\r
-      "type": "string",\r
-      "const": "machine_max:seat",\r
-      "description": "\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF0C\u5FC5\u987B\u4E3A'machine_max:seat'\u3002"\r
-    },\r
-    "definition": {\r
-      "type": "string",\r
-      "description": "\u5B50\u7CFB\u7EDF\u578B\u53F7\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u6307\u5411\u5BF9\u5E94\u7684\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027\u5B9A\u4E49\u6587\u4EF6\u3002"\r
-    },\r
-    "locator": {\r
-      "type": "string",\r
-      "default": "",\r
-      "description": "\u5EA7\u6905\u70B9\u5B9A\u4F4D\u5668\u540D\u79F0\uFF0C\u6A21\u578B\u4E2D\u7684\u9AA8\u9ABC\u5C06\u4F5C\u4E3A\u5EA7\u6905\u4F4D\u7F6E\u3002\u82E5\u4E3A\u7A7A\uFF0C\u5219\u4F7F\u7528\u5B50\u7CFB\u7EDF\u5B9A\u4E49\u7684\u9ED8\u8BA4\u5B9A\u4F4D\u5668\u3002"\r
-    },\r
-    "control_group_preset": {\r
-      "type": "string",\r
-      "default": "machine_max:empty",\r
-      "description": "\u63A7\u5236\u7EC4\u9884\u8BBE\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u5B9A\u4E49\u6B64\u5EA7\u6905\u53EF\u7528\u7684\u63A7\u5236\u9891\u9053\u6620\u5C04\u5173\u7CFB\u3002\u4F8B\u5982 machine_max:default_driver\u3002"\r
-    },\r
-    "passenger_num_outputs": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "\u4E58\u5BA2\u6570\u91CF\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u53CA\u76EE\u6807\u3002"\r
-    },\r
-    "camera_discovery_targets": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "\u6444\u50CF\u673A\u53D1\u73B0\u63E1\u624B\u914D\u7F6E\u3002\u5728\u8FD9\u4E9B\u9891\u9053\u4E0A\u53D1\u9001\u63E1\u624B\u4FE1\u53F7\u5373\u53EF\u53D1\u73B0\u672C\u8F7D\u5177\u4E0A\u53EF\u7528\u7684\u6444\u50CF\u673A\u3002\u4F8B\u5982 {\\"gunner_optics\\": [\\"gunner_primary_sight\\"]}"\r
-    },\r
-    "dismount_locators": {\r
-      "type": "array",\r
-      "items": { "type": "string" },\r
-      "default": [],\r
-      "description": "\u4E0B\u8F66\u70B9\u5B9A\u4F4D\u5668\u540D\u79F0\u5217\u8868\uFF0C\u5217\u8868\u987A\u5E8F\u5373\u4E0B\u8F66\u5C1D\u8BD5\u7684\u4F18\u5148\u7EA7\u3002\u6BCF\u4E2A\u540D\u79F0\u90FD\u5FC5\u987B\u5728\u6A21\u578B locators \u4E2D\u5B58\u5728\uFF1B\u7559\u7A7A\u8868\u793A\u8BE5\u5EA7\u4F4D\u4E0D\u58F0\u660E\u4E0B\u8F66\u70B9\u3002"\r
-    }\r
-  },\r
-  "required": ["type", "definition"],\r
-  "examples": [\r
-    {\r
-      "type": "machine_max:seat",\r
-      "definition": "machine_max:driver_seat",\r
-      "locator": "DriverSeat",\r
-      "control_group_preset": "machine_max:default_driver"\r
-    }\r
-  ]\r
+}`, "zh_cn/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json": `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "\u5EA7\u6905\u5B50\u7CFB\u7EDF\u52A8\u6001\u5C5E\u6027",
+  "description": "\u5EA7\u6905\u7684\u52A8\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u5EA7\u6905\u4F4D\u7F6E\u3001\u4FE1\u53F7\u4F20\u8F93\u76EE\u6807\uFF0C\u4EE5\u53CA\u6309\u5B89\u88C5\u4F4D\u8986\u76D6\u578B\u53F7\u5B9A\u4E49\u7684\u8868\u73B0\u914D\u7F6E\u3002",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF0C\u5FC5\u987B\u4E3A'machine_max:seat'\u3002"
+    },
+    "definition": {
+      "type": "string",
+      "description": "\u5B50\u7CFB\u7EDF\u578B\u53F7\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u6307\u5411\u5BF9\u5E94\u7684\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027\u5B9A\u4E49\u6587\u4EF6\u3002"
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "\u5EA7\u6905\u70B9\u5B9A\u4F4D\u5668\u540D\u79F0\uFF0C\u6A21\u578B\u4E2D\u7684\u9AA8\u9ABC\u5C06\u4F5C\u4E3A\u5EA7\u6905\u4F4D\u7F6E\u3002\u82E5\u4E3A\u7A7A\uFF0C\u5219\u4F7F\u7528\u5B50\u7CFB\u7EDF\u5B9A\u4E49\u7684\u9ED8\u8BA4\u5B9A\u4F4D\u5668\u3002"
+    },
+    "control_group_preset": {
+      "type": "string",
+      "default": "machine_max:empty",
+      "description": "\u63A7\u5236\u7EC4\u9884\u8BBE\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u5B9A\u4E49\u6B64\u5EA7\u6905\u53EF\u7528\u7684\u63A7\u5236\u9891\u9053\u6620\u5C04\u5173\u7CFB\u3002\u4F8B\u5982 machine_max:default_driver\u3002"
+    },
+    "passenger_num_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "\u4E58\u5BA2\u6570\u91CF\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u53CA\u76EE\u6807\u3002"
+    },
+    "camera_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "\u6444\u50CF\u673A\u53D1\u73B0\u63E1\u624B\u914D\u7F6E\u3002\u5728\u8FD9\u4E9B\u9891\u9053\u4E0A\u53D1\u9001\u63E1\u624B\u4FE1\u53F7\u5373\u53EF\u53D1\u73B0\u672C\u8F7D\u5177\u4E0A\u53EF\u7528\u7684\u6444\u50CF\u673A\u3002\u4F8B\u5982 {\\"gunner_optics\\": [\\"gunner_primary_sight\\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "\u4E0B\u8F66\u70B9\u5B9A\u4F4D\u5668\u540D\u79F0\u5217\u8868\uFF0C\u5217\u8868\u987A\u5E8F\u5373\u4E0B\u8F66\u5C1D\u8BD5\u7684\u4F18\u5148\u7EA7\u3002\u6BCF\u4E2A\u540D\u79F0\u90FD\u5FC5\u987B\u5728\u6A21\u578B locators \u4E2D\u5B58\u5728\uFF1B\u7559\u7A7A\u8868\u793A\u8BE5\u5EA7\u4F4D\u4E0D\u58F0\u660E\u4E0B\u8F66\u70B9\u3002"
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "\u7B2C\u4E00\u4EBA\u79F0 HUD \u5E03\u5C40\u7684\u5B89\u88C5\u7EA7\u8986\u76D6\u3002\u7701\u7565\u8868\u793A\u6CBF\u7528\u578B\u53F7\u5B9A\u4E49\u91CC\u7684 views.first_hud_layout\uFF1B\u5199\u6210 machine_max:empty \u8868\u793A\u8FD9\u4E2A\u5B89\u88C5\u4F4D\u5728\u7B2C\u4E00\u4EBA\u79F0\u4E0D\u663E\u793A HUD\u3002"
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "\u7B2C\u4E09\u4EBA\u79F0 HUD \u5E03\u5C40\u7684\u5B89\u88C5\u7EA7\u8986\u76D6\u3002\u7701\u7565\u8868\u793A\u6CBF\u7528\u578B\u53F7\u5B9A\u4E49\u91CC\u7684 views.third_hud_layout\uFF1B\u5199\u6210 machine_max:empty \u8868\u793A\u8FD9\u4E2A\u5B89\u88C5\u4F4D\u5728\u7B2C\u4E09\u4EBA\u79F0\u4E0D\u663E\u793A HUD\u3002"
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "description": "\u4E58\u5458\u80FD\u5426\u4F7F\u7528\u7269\u54C1\u7684\u5B89\u88C5\u7EA7\u8986\u76D6\u3002\u7701\u7565\u8868\u793A\u6CBF\u7528\u578B\u53F7\u5B9A\u4E49\u91CC\u7684 allow_use_items\u3002"
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "third_hud_layout": "machine_max:k17_vehicle_hud",
+      "allow_use_items": true
+    }
+  ]
 }`, "zh_cn/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json": `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/sight_dynamic_attr.json",
@@ -6458,64 +6788,77 @@
       }\r
     }\r
   ]\r
-}`, "zh_cn/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json": `{\r
-  "$schema": "http://json-schema.org/draft-07/schema#",\r
-  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",\r
-  "title": "\u6B66\u5668\u63A7\u5236\u5668\u5B50\u7CFB\u7EDF\u52A8\u6001\u5C5E\u6027",\r
-  "description": "\u6B66\u5668\u63A7\u5236\u5668\u5B50\u7CFB\u7EDF\u7684\u52A8\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u63A7\u5236\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u7B49\u8FD0\u884C\u65F6\u914D\u7F6E\u3002",\r
-  "properties": {\r
-    "type": {\r
-      "type": "string",\r
-      "const": "machine_max:weapon_controller",\r
-      "description": "\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF0C\u5FC5\u987B\u4E3A'machine_max:weapon_controller'\u3002"\r
-    },\r
-    "definition": {\r
-      "type": "string",\r
-      "description": "\u5B50\u7CFB\u7EDF\u578B\u53F7\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u6307\u5411\u5BF9\u5E94\u7684\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027\u5B9A\u4E49\u6587\u4EF6\u3002"\r
-    },\r
-    "control_outputs": {\r
-      "allOf": [\r
-        { "$ref": "../base/signal_targets.json" }\r
-      ],\r
-      "default": {},\r
-      "description": "\u63A7\u5236\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u53CA\u76EE\u6807\u5217\u8868\u3002\u6B66\u5668\u63A7\u5236\u5668\u901A\u8FC7\u8FD9\u4E9B\u9891\u9053\u5411\u70AE\u5854\u9A71\u52A8\u548C\u53D1\u5C04\u5668\u53D1\u9001\u63A7\u5236\u4FE1\u53F7\uFF0C\u540C\u65F6\u7528\u4E8E\u63E1\u624B\u53D1\u73B0\u5E76\u7ED1\u5B9A\u540C\u8F7D\u5177\u5185\u7684\u4E0B\u5C5E\u5B50\u7CFB\u7EDF\u3002"\r
-    },\r
-    "first_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r
-    },\r
-    "third_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r
-    },\r
-    "scope_hud_layout": {\r
-      "allOf": [\r
-        { "$ref": "../../base/resource_location.schema.json" }\r
-      ],\r
-      "default": "machine_max:empty",\r
-      "description": "\u70AE\u955C\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r
-    }\r
-  },\r
-  "required": ["type", "definition"],\r
-  "examples": [\r
-    {\r
-      "type": "machine_max:weapon_controller",\r
-      "definition": "machine_max:basic_weapon_controller",\r
-      "control_outputs": {\r
-        "weapon_control": [\r
-          "subsystem.machine_max.turret_base",\r
-          "subsystem.machine_max.barrel_elevation",\r
-          "subsystem.machine_max.main_launcher"\r
-        ]\r
-      }\r
-    }\r
-  ]\r
+}`, "zh_cn/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json": `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",
+  "title": "\u6B66\u5668\u63A7\u5236\u5668\u5B50\u7CFB\u7EDF\u52A8\u6001\u5C5E\u6027",
+  "description": "\u6B66\u5668\u63A7\u5236\u5668\u5B50\u7CFB\u7EDF\u7684\u52A8\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u63A7\u5236\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u7B49\u8FD0\u884C\u65F6\u914D\u7F6E\u3002",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF0C\u5FC5\u987B\u4E3A'machine_max:weapon_controller'\u3002"
+    },
+    "definition": {
+      "type": "string",
+      "description": "\u5B50\u7CFB\u7EDF\u578B\u53F7\u7684\u8D44\u6E90\u5730\u5740\uFF0C\u6307\u5411\u5BF9\u5E94\u7684\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027\u5B9A\u4E49\u6587\u4EF6\u3002"
+    },
+    "control_outputs": {
+      "allOf": [
+        {
+          "$ref": "../base/signal_targets.json"
+        }
+      ],
+      "default": {},
+      "description": "\u63A7\u5236\u4FE1\u53F7\u8F93\u51FA\u9891\u9053\u53CA\u76EE\u6807\u5217\u8868\u3002\u6B66\u5668\u63A7\u5236\u5668\u901A\u8FC7\u8FD9\u4E9B\u9891\u9053\u5411\u70AE\u5854\u9A71\u52A8\u548C\u53D1\u5C04\u5668\u53D1\u9001\u63A7\u5236\u4FE1\u53F7\uFF0C\u540C\u65F6\u7528\u4E8E\u63E1\u624B\u53D1\u73B0\u5E76\u7ED1\u5B9A\u540C\u8F7D\u5177\u5185\u7684\u4E0B\u5C5E\u5B50\u7CFB\u7EDF\u3002"
+    },
+    "first_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"
+    },
+    "third_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"
+    },
+    "scope_hud_layout": {
+      "allOf": [
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
+      ],
+      "default": "machine_max:empty",
+      "description": "\u70AE\u955C\u89C6\u89D2\u4F7F\u7528\u7684 HUD \u5E03\u5C40\uFF1Bmachine_max:empty \u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"
+    }
+  },
+  "required": [
+    "type",
+    "definition"
+  ],
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "definition": "machine_max:basic_weapon_controller",
+      "control_outputs": {
+        "weapon_control": [
+          "subsystem.machine_max.turret_base",
+          "subsystem.machine_max.barrel_elevation",
+          "subsystem.machine_max.main_launcher"
+        ]
+      },
+      "first_hud_layout": "machine_max:weapon_live",
+      "scope_hud_layout": "machine_max:weapon_live"
+    }
+  ]
 }`, "zh_cn/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.schema.json": `{\r
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.json",\r
@@ -8355,6 +8698,7 @@
       "allOf": [\r
         { "$ref": "view_attr.schema.json" }\r
       ],\r
+      "description": "\u5EA7\u4F4D\u7684\u578B\u53F7\u9ED8\u8BA4\u89C6\u56FE\uFF1B\u5176\u4E2D first_hud_layout / third_hud_layout \u53EF\u6309\u5B89\u88C5\u4F4D\u7528\u52A8\u6001\u5C5E\u6027\u540C\u540D\u952E\u8986\u76D6\uFF0C\u5176\u4F59\u76F8\u673A\u53C2\u6570\u53EA\u7531\u578B\u53F7\u5B9A\u4E49\u51B3\u5B9A\u3002",\r
       "default": {\r
         "enable_first_person": true,\r
         "first_person_offset": 0.0,\r
@@ -8377,7 +8721,7 @@
     "allow_use_items": {\r
       "type": "boolean",\r
       "default": false,\r
-      "description": "\u662F\u5426\u5141\u8BB8\u4E58\u5BA2\u4F7F\u7528\u7269\u54C1\uFF08\u5982\u6B66\u5668\u3001\u5DE5\u5177\uFF09\u3002"\r
+      "description": "\u662F\u5426\u5141\u8BB8\u4E58\u5BA2\u4F7F\u7528\u7269\u54C1\uFF08\u5982\u6B66\u5668\u3001\u5DE5\u5177\uFF09\uFF1B\u96F6\u4EF6\u5B9E\u4F8B\u53EF\u5728\u52A8\u6001\u5C5E\u6027\u4E2D\u7528 allow_use_items \u8986\u76D6\u3002"\r
     },\r
     "interact_inputs": {\r
       "type": "array",\r
@@ -8691,7 +9035,7 @@
         }\r
       ],\r
       "default": {\r
-        "0": 0,\r
+        "0": 45,\r
         "10": 30,\r
         "30": 18,\r
         "50": 10\r
@@ -8702,7 +9046,7 @@
       "type": "number",\r
       "minimum": 0,\r
       "default": 4.0,\r
-      "description": "\u5355\u6D41\u5DEE\u901F\u5236\u52A8\u4F7F\u7528\u7684\u6700\u5C0F\u8F6C\u5F2F\u534A\u5F84\uFF0C\u5355\u4F4D\u7C73\u3002"\r
+      "description": "\u7EB5\u5411\u610F\u56FE\u5360\u4F18\u65F6\u8F66\u4F53\u4E2D\u5FC3\u7684\u6700\u5C0F\u8F6C\u5F2F\u534A\u5F84\uFF0C\u5355\u4F4D\u7C73\uFF1B\u7EAF\u8F6C\u5411\u5141\u8BB8\u7ED5\u505C\u6B62\u4FA7\u5C65\u5E26\u9644\u8FD1\u8F6C\u52A8\u3002"\r
     },\r
     "max_lateral_acceleration": {\r
       "type": "number",\r
@@ -8771,7 +9115,7 @@
       "type": "machine_max:track_controller",\r
       "basic_durability": 40,\r
       "max_yaw_rate": {\r
-        "0": 0,\r
+        "0": 45,\r
         "10": 30,\r
         "30": 18,\r
         "50": 10\r
@@ -9130,7 +9474,7 @@
       "description": "\u5B8C\u6574\u793A\u4F8B - \u53CC\u8F74\u914D\u7F6E\uFF0C\u652F\u6301\u591A\u4E2A\u63A7\u5236\u4FE1\u53F7\u6E90"\r
     }\r
   ]\r
-}`, "zh_cn/schemas/subsystem/static/view_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/subsystem/static/view_attr.json",\r\n  "title": "\u89C6\u56FE\u5C5E\u6027",\r\n  "description": "\u5EA7\u6905\u5B50\u7CFB\u7EDF\u7684\u89C6\u56FE\u5C5E\u6027\uFF0C\u5B9A\u4E49\u7B2C\u4E00\u4EBA\u79F0\u548C\u7B2C\u4E09\u4EBA\u79F0\u6444\u50CF\u673A\u8BBE\u7F6E\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "enable_first_person": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u542F\u7528\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u3002"\r\n    },\r\n    "first_hud_layout": {\r\n      "allOf": [\r\n        { "$ref": "../../base/resource_location.schema.json" }\r\n      ],\r\n      "default": "machine_max:empty",\r\n      "description": "HUD \u5E03\u5C40\u8D44\u6E90\u5730\u5740\uFF1A\u5185\u5BB9\u5305 hud_layouts/ \u4E0B\u7684\u6587\u4EF6\uFF0C\u952E\u4E3A <\u547D\u540D\u7A7A\u95F4>:<\u76F8\u5BF9\u8DEF\u5F84>\uFF1B\u7F3A\u5931\u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r\n    },\r\n    "first_person_offset": {\r\n      "allOf": [\r\n        { "$ref": "../../base/vector_3d.schema.json" }\r\n      ],\r\n      "default": [\r\n        0.0,\r\n        0.0,\r\n        0.0\r\n      ],\r\n      "description": "\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u7684\u4E09\u7EF4\u504F\u79FB\uFF0C\u4EE5\u5B50\u7CFB\u7EDF\u9644\u7740\u7684\u96F6\u4EF6\u59FF\u6001\u4E3A\u57FA\u51C6\uFF0Cx+\u53F3\uFF0Cy+\u4E0A\uFF0Cz+\u540E\uFF0C\u5355\u4F4D\u7C73\u3002"\r\n    },\r\n    "enable_third_person": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u542F\u7528\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u3002"\r\n    },\r\n    "third_hud_layout": {\r\n      "allOf": [\r\n        { "$ref": "../../base/resource_location.schema.json" }\r\n      ],\r\n      "default": "machine_max:empty",\r\n      "description": "HUD \u5E03\u5C40\u8D44\u6E90\u5730\u5740\uFF1A\u5185\u5BB9\u5305 hud_layouts/ \u4E0B\u7684\u6587\u4EF6\uFF0C\u952E\u4E3A <\u547D\u540D\u7A7A\u95F4>:<\u76F8\u5BF9\u8DEF\u5F84>\uFF1B\u7F3A\u5931\u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r\n    },\r\n    "third_person_offset": {\r\n      "allOf": [\r\n        { "$ref": "../../base/vector_3d.schema.json" }\r\n      ],\r\n      "default": [\r\n        0.0,\r\n        0.75,\r\n        0.0\r\n      ],\r\n      "description": "\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u7684\u4E09\u7EF4\u504F\u79FB\uFF0C\u4EE5\u5B50\u7CFB\u7EDF\u9644\u7740\u7684\u96F6\u4EF6\u59FF\u6001\u4E3A\u57FA\u51C6\uFF0Cx+\u53F3\uFF0Cy+\u4E0A\uFF0Cz+\u540E\uFF0C\u5355\u4F4D\u7C73\u3002"\r\n    },\r\n    "follow_vehicle": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u6444\u50CF\u673A\u662F\u5426\u8DDF\u968F\u8F66\u8F86\u8FD0\u52A8\u3002"\r\n    },\r\n    "focus_on_center": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u805A\u7126\u4E8E\u8F66\u8F86\u4E2D\u5FC3\u3002"\r\n    },\r\n    "distance_scale": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 1.1,\r\n      "description": "\u6444\u50CF\u673A\u8DDD\u79BB\u7F29\u653E\u7CFB\u6570\u3002"\r\n    },\r\n    "min_pitch": {\r\n      "type": "number",\r\n      "minimum": -90,\r\n      "maximum": 90,\r\n      "default": -70,\r\n      "description": "\u6700\u5C0F\u4FEF\u4EF0\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u96F6\u5EA6\u5BF9\u5E94\u6C34\u5E73\u65B9\u5411\u3002\u4F8B\u5982\uFF0Cmin_pitch=-30\u8868\u793A\u6700\u591A\u5411\u4E0B\u770B30\u5EA6\u3002"\r\n    },\r\n    "max_pitch": {\r\n      "type": "number",\r\n      "minimum": -90,\r\n      "maximum": 90,\r\n      "default": 45,\r\n      "description": "\u6700\u5927\u4FEF\u4EF0\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u96F6\u5EA6\u5BF9\u5E94\u6C34\u5E73\u65B9\u5411\u3002\u4F8B\u5982\uFF0Cmax_pitch=60\u8868\u793A\u6700\u591A\u5411\u4E0A\u770B60\u5EA6\u3002"\r\n    },\r\n    "yaw_limit": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "maximum": 360,\r\n      "default": 90,\r\n      "description": "\u504F\u822A\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u6B64\u503C\u8868\u793A\u603B\u89D2\u5EA6\u8303\u56F4\uFF0C\u56E0\u6B64\u5B9E\u9645\u504F\u822A\u89D2\u8303\u56F4\u4E3A[180 - yaw_limit/2, 180 + yaw_limit/2]\u3002\u4F8B\u5982\uFF0Cyaw_limit=90\u8868\u793A\u6C34\u5E73\u65B9\u5411\xB145\u5EA6\u7684\u79FB\u52A8\u8303\u56F4\u3002"\r\n    }\r\n  },\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "enable_first_person": true,\r\n      "first_person_offset": [\r\n        0.0,\r\n        0.3,\r\n        0.0\r\n      ],\r\n      "enable_third_person": true,\r\n      "distance_scale": 1.2,\r\n      "first_hud_layout": "machine_max:seat_dashboard"\r\n    },\r\n    {\r\n      "enable_first_person": true,\r\n      "first_person_offset": [\r\n        0.0,\r\n        0.2,\r\n        0.0\r\n      ],\r\n      "enable_third_person": false,\r\n      "min_pitch": -30,\r\n      "max_pitch": 60,\r\n      "yaw_limit": 120\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/subsystem/static/weapon_controller_static_attr.schema.json": `{\r
+}`, "zh_cn/schemas/subsystem/static/view_attr.schema.json": '{\r\n  "$schema": "http://json-schema.org/draft-07/schema#",\r\n  "$id": "https://machine_max.io/schemas/subsystem/static/view_attr.json",\r\n  "title": "\u89C6\u56FE\u5C5E\u6027",\r\n  "description": "\u5EA7\u6905\u5B50\u7CFB\u7EDF\u7684\u89C6\u56FE\u5C5E\u6027\uFF0C\u5B9A\u4E49\u7B2C\u4E00\u4EBA\u79F0\u548C\u7B2C\u4E09\u4EBA\u79F0\u6444\u50CF\u673A\u8BBE\u7F6E\u3002",\r\n  "type": "object",\r\n  "properties": {\r\n    "enable_first_person": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u542F\u7528\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u3002"\r\n    },\r\n    "first_hud_layout": {\r\n      "allOf": [\r\n        { "$ref": "../../base/resource_location.schema.json" }\r\n      ],\r\n      "default": "machine_max:empty",\r\n      "description": "HUD \u5E03\u5C40\u9ED8\u8BA4\u503C\uFF1A\u5185\u5BB9\u5305 hud_layouts/ \u4E0B\u7684\u6587\u4EF6\uFF0C\u952E\u4E3A <\u547D\u540D\u7A7A\u95F4>:<\u76F8\u5BF9\u8DEF\u5F84>\uFF1B\u96F6\u4EF6\u5B9E\u4F8B\u53EF\u7528\u52A8\u6001\u5C5E\u6027\u91CC\u7684\u540C\u540D\u5B57\u6BB5\u8986\u76D6\uFF1B\u7F3A\u5931\u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r\n    },\r\n    "first_person_offset": {\r\n      "allOf": [\r\n        { "$ref": "../../base/vector_3d.schema.json" }\r\n      ],\r\n      "default": [\r\n        0.0,\r\n        0.0,\r\n        0.0\r\n      ],\r\n      "description": "\u7B2C\u4E00\u4EBA\u79F0\u89C6\u89D2\u7684\u4E09\u7EF4\u504F\u79FB\uFF0C\u4EE5\u5B50\u7CFB\u7EDF\u9644\u7740\u7684\u96F6\u4EF6\u59FF\u6001\u4E3A\u57FA\u51C6\uFF0Cx+\u53F3\uFF0Cy+\u4E0A\uFF0Cz+\u540E\uFF0C\u5355\u4F4D\u7C73\u3002"\r\n    },\r\n    "enable_third_person": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u542F\u7528\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u3002"\r\n    },\r\n    "third_hud_layout": {\r\n      "allOf": [\r\n        { "$ref": "../../base/resource_location.schema.json" }\r\n      ],\r\n      "default": "machine_max:empty",\r\n      "description": "HUD \u5E03\u5C40\u9ED8\u8BA4\u503C\uFF1A\u5185\u5BB9\u5305 hud_layouts/ \u4E0B\u7684\u6587\u4EF6\uFF0C\u952E\u4E3A <\u547D\u540D\u7A7A\u95F4>:<\u76F8\u5BF9\u8DEF\u5F84>\uFF1B\u96F6\u4EF6\u5B9E\u4F8B\u53EF\u7528\u52A8\u6001\u5C5E\u6027\u91CC\u7684\u540C\u540D\u5B57\u6BB5\u8986\u76D6\uFF1B\u7F3A\u5931\u8868\u793A\u8BE5\u89C6\u89D2\u4E0D\u663E\u793A HUD\u3002"\r\n    },\r\n    "third_person_offset": {\r\n      "allOf": [\r\n        { "$ref": "../../base/vector_3d.schema.json" }\r\n      ],\r\n      "default": [\r\n        0.0,\r\n        0.75,\r\n        0.0\r\n      ],\r\n      "description": "\u7B2C\u4E09\u4EBA\u79F0\u89C6\u89D2\u7684\u4E09\u7EF4\u504F\u79FB\uFF0C\u4EE5\u5B50\u7CFB\u7EDF\u9644\u7740\u7684\u96F6\u4EF6\u59FF\u6001\u4E3A\u57FA\u51C6\uFF0Cx+\u53F3\uFF0Cy+\u4E0A\uFF0Cz+\u540E\uFF0C\u5355\u4F4D\u7C73\u3002"\r\n    },\r\n    "follow_vehicle": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u6444\u50CF\u673A\u662F\u5426\u8DDF\u968F\u8F66\u8F86\u8FD0\u52A8\u3002"\r\n    },\r\n    "focus_on_center": {\r\n      "type": "boolean",\r\n      "default": true,\r\n      "description": "\u662F\u5426\u805A\u7126\u4E8E\u8F66\u8F86\u4E2D\u5FC3\u3002"\r\n    },\r\n    "distance_scale": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "default": 1.1,\r\n      "description": "\u6444\u50CF\u673A\u8DDD\u79BB\u7F29\u653E\u7CFB\u6570\u3002"\r\n    },\r\n    "min_pitch": {\r\n      "type": "number",\r\n      "minimum": -90,\r\n      "maximum": 90,\r\n      "default": -70,\r\n      "description": "\u6700\u5C0F\u4FEF\u4EF0\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u96F6\u5EA6\u5BF9\u5E94\u6C34\u5E73\u65B9\u5411\u3002\u4F8B\u5982\uFF0Cmin_pitch=-30\u8868\u793A\u6700\u591A\u5411\u4E0B\u770B30\u5EA6\u3002"\r\n    },\r\n    "max_pitch": {\r\n      "type": "number",\r\n      "minimum": -90,\r\n      "maximum": 90,\r\n      "default": 45,\r\n      "description": "\u6700\u5927\u4FEF\u4EF0\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u96F6\u5EA6\u5BF9\u5E94\u6C34\u5E73\u65B9\u5411\u3002\u4F8B\u5982\uFF0Cmax_pitch=60\u8868\u793A\u6700\u591A\u5411\u4E0A\u770B60\u5EA6\u3002"\r\n    },\r\n    "yaw_limit": {\r\n      "type": "number",\r\n      "minimum": 0,\r\n      "maximum": 360,\r\n      "default": 90,\r\n      "description": "\u504F\u822A\u89D2\u9650\u5236\uFF08\u5355\u4F4D\uFF1A\u5EA6\uFF09\u3002\u6B64\u503C\u8868\u793A\u603B\u89D2\u5EA6\u8303\u56F4\uFF0C\u56E0\u6B64\u5B9E\u9645\u504F\u822A\u89D2\u8303\u56F4\u4E3A[180 - yaw_limit/2, 180 + yaw_limit/2]\u3002\u4F8B\u5982\uFF0Cyaw_limit=90\u8868\u793A\u6C34\u5E73\u65B9\u5411\xB145\u5EA6\u7684\u79FB\u52A8\u8303\u56F4\u3002"\r\n    }\r\n  },\r\n  "additionalProperties": false,\r\n  "examples": [\r\n    {\r\n      "enable_first_person": true,\r\n      "first_person_offset": [\r\n        0.0,\r\n        0.3,\r\n        0.0\r\n      ],\r\n      "enable_third_person": true,\r\n      "distance_scale": 1.2,\r\n      "first_hud_layout": "machine_max:seat_dashboard"\r\n    },\r\n    {\r\n      "enable_first_person": true,\r\n      "first_person_offset": [\r\n        0.0,\r\n        0.2,\r\n        0.0\r\n      ],\r\n      "enable_third_person": false,\r\n      "min_pitch": -30,\r\n      "max_pitch": 60,\r\n      "yaw_limit": 120\r\n    }\r\n  ]\r\n}', "zh_cn/schemas/subsystem/static/weapon_controller_static_attr.schema.json": `{\r
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/subsystem/static/weapon_controller_static_attr.json",\r
   "title": "\u6B66\u5668\u63A7\u5236\u5668\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027",\r

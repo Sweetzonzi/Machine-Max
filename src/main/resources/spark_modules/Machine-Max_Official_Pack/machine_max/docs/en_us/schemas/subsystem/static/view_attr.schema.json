@@ -15,7 +15,7 @@
         { "$ref": "../../base/resource_location.schema.json" }
       ],
       "default": "machine_max:empty",
-      "description": "HUD layout resource location: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. When absent, this view shows no HUD."
+      "description": "Default HUD layout: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. A seat instance may override it with the same-named dynamic attribute; when absent, this view shows no HUD."
     },
     "first_person_offset": {
       "allOf": [
@@ -38,7 +38,7 @@
         { "$ref": "../../base/resource_location.schema.json" }
       ],
       "default": "machine_max:empty",
-      "description": "HUD layout resource location: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. When absent, this view shows no HUD."
+      "description": "Default HUD layout: a file under the content pack's hud_layouts/ directory, keyed as <namespace>:<relative path>. A seat instance may override it with the same-named dynamic attribute; when absent, this view shows no HUD."
     },
     "third_person_offset": {
       "allOf": [

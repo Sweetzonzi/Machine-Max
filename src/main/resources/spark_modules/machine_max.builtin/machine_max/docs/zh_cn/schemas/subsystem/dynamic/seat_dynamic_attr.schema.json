@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
   "title": "座椅子系统动态属性",
-  "description": "座椅的动态属性，定义座椅位置、信号传输目标等。",
+  "description": "座椅的动态属性，定义座椅位置、信号传输目标，以及按安装位覆盖型号定义的表现配置。",
   "properties": {
     "type": {
       "type": "string",
@@ -42,15 +42,33 @@
       "items": { "type": "string" },
       "default": [],
       "description": "下车点定位器名称列表，列表顺序即下车尝试的优先级。每个名称都必须在模型 locators 中存在；留空表示该座位不声明下车点。"
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "第一人称 HUD 布局的安装级覆盖。省略表示沿用型号定义里的 views.first_hud_layout；写成 machine_max:empty 表示这个安装位在第一人称不显示 HUD。"
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "第三人称 HUD 布局的安装级覆盖。省略表示沿用型号定义里的 views.third_hud_layout；写成 machine_max:empty 表示这个安装位在第三人称不显示 HUD。"
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "description": "乘员能否使用物品的安装级覆盖。省略表示沿用型号定义里的 allow_use_items。"
     }
   },
   "required": ["type", "definition"],
   "examples": [
     {
       "type": "machine_max:seat",
-      "definition": "machine_max:driver_seat",
-      "locator": "DriverSeat",
-      "control_group_preset": "machine_max:default_driver"
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "third_hud_layout": "machine_max:k17_vehicle_hud",
+      "allow_use_items": true
     }
   ]
 }
