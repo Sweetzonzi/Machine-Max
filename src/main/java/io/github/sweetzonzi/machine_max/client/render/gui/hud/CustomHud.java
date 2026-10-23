@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -141,7 +142,7 @@ public class CustomHud implements LayeredDraw.Layer {
         }
         Set<WeaponControllerSubsystem> selected = seat == null ? Set.of()
                 : new java.util.HashSet<>(seat.getActiveWeaponControllers());
-        var parts = new java.util.IdentityHashMap<io.github.sweetzonzi.machine_max.common.mech.vehicle.Part, HudPartSnapshot>();
+        var parts = new java.util.IdentityHashMap<AbstractPart<?>, HudPartSnapshot>();
         for (var entry : huds.entrySet()) {
             var part = entry.getKey() instanceof AbstractSubsystem source ? source.getSubPart().part : null;
             var partSnapshot = part == null ? HudPartSnapshot.EMPTY : parts.computeIfAbsent(part, HudPartSnapshot::capture);

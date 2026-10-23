@@ -11,11 +11,11 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import jme3utilities.math.MyMath;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -88,8 +88,8 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
     public void update(VehicleData vehicleData) {
         subParts.clear();
         this.vehicleData = vehicleData;
-        for (PartData partData : vehicleData.parts.values()) {
-            PartType type = level.isClientSide()
+        for (RegularPartData partData : vehicleData.parts.values()) {
+            RegularPartType type = level.isClientSide()
                     ? MMDynamicRes.PART_TYPES.get(partData.registryKey)
                     : MMDynamicRes.SERVER_PART_TYPES.get(partData.registryKey);
             if (type == null) continue;

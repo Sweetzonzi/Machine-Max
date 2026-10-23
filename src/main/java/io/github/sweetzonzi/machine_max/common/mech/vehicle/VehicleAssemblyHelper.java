@@ -68,7 +68,7 @@ public class VehicleAssemblyHelper {
 
     /** 手持物品解析出的部件类型 */
     @Nullable
-    private PartType partType = null;
+    private RegularPartType partType = null;
     @Nullable
     private Iterator<String> variantIterator = null;
     /** 当前选中的变体 */
@@ -118,7 +118,7 @@ public class VehicleAssemblyHelper {
             return;
         }
         helper.hand = hand;
-        PartType newPartType = PartAssemblyItem.partTypeOf(stack, player.level());
+        RegularPartType newPartType = PartAssemblyItem.partTypeOf(stack, player.level());
         helper.setPartType(newPartType);
         if (newPartType == null) return;
         // 自动过滤：视线对准的接口不接受当前变体时，自动切换到可用变体
@@ -153,7 +153,7 @@ public class VehicleAssemblyHelper {
      * @param stack  本次解析出的手持装配物品
      */
     private void updatePreview(LocalPlayer player, ItemStack stack) {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null) return;
         VariantAttr variantAttr = getVariant();
         String variantName = getVariantName();
@@ -233,9 +233,9 @@ public class VehicleAssemblyHelper {
      */
     private boolean canFillAssemblyProgress(Level level, ItemStack stack, SubPart targetSubPart) {
         if (!(stack.getItem() instanceof PartItem)) return false;
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null) return false;
-        Part targetPart = targetSubPart.part;
+        if (!(targetSubPart.part instanceof RegularPart targetPart)) return false;
         if (!targetPart.type.getRegistryKey().equals(partType.getRegistryKey())) return false;
         if (!Objects.equals(getVariantName(), targetPart.variantName)) return false;
         if (targetPart.getAssemblingProgress() != 0 || targetPart.getMaterialProgress() != 0) return false;
@@ -252,7 +252,7 @@ public class VehicleAssemblyHelper {
      *
      * @param newPartType 新的部件类型，{@code null} 表示清空状态
      */
-    public void setPartType(@Nullable PartType newPartType) {
+    public void setPartType(@Nullable RegularPartType newPartType) {
         if (newPartType != null) {
             if (this.partType == null || !this.partType.equals(newPartType)) {
                 this.partType = newPartType;
@@ -278,14 +278,14 @@ public class VehicleAssemblyHelper {
     /**
      * 目标接口是否接受给定变体（公共纯逻辑，等价于 {@link AbstractConnector#conditionCheck}）。
      */
-    public static boolean connectorMatches(AbstractConnector target, PartType type, String variant) {
+    public static boolean connectorMatches(AbstractConnector target, RegularPartType type, String variant) {
         return target.conditionCheck(type, variant);
     }
 
     /**
      * 部件对外连接点是否可与目标接口配对（简单接口 + 双方条件校验）。
      */
-    public static boolean partConnectorMatches(ConnectorAttr attr, AbstractConnector target, PartType type, String variant) {
+    public static boolean partConnectorMatches(ConnectorAttr attr, AbstractConnector target, RegularPartType type, String variant) {
         if (!(target instanceof SimpleConnector || attr.isSimpleConnector())) return false;
         return target.conditionCheck(type, variant) && attr.conditionCheck(type, variant);
     }
@@ -306,7 +306,7 @@ public class VehicleAssemblyHelper {
      * <p>未瞄准可用接口时仅轮换到下一个连接点。</p>
      */
     public void cycleConnectors() {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         VariantAttr variantAttr = getVariant();
         if (partType == null || variantAttr == null) return;
         AbstractConnector targetConnector = getClientEmptyConnector();
@@ -331,7 +331,7 @@ public class VehicleAssemblyHelper {
      * 循环选择变体，直到找到目标接口可接受的变体或达到迭代次数上限，随后再寻找可行的连接点。
      */
     public void cycleVariants() {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null) return;
         AbstractConnector targetConnector = getClientEmptyConnector();
         int i = partType.getVariants().size();
@@ -352,14 +352,14 @@ public class VehicleAssemblyHelper {
 
     @Nullable
     public VariantAttr getVariant() {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null || variantName == null) return null;
         return partType.getVariant(variantName);
     }
 
     @Nullable
     public VariantAttr getNextVariant() {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null) return null;
         // 若当前变体迭代器为空或已遍历完所有变体，则重新从头遍历
         if (variantIterator == null || !variantIterator.hasNext()) this.variantIterator = partType.getVariantIterator();
@@ -425,10 +425,10 @@ public class VehicleAssemblyHelper {
      */
     @Nullable
     public PartAssemblyRequestPayload buildRequest(Player player, InteractionHand hand, ItemStack stack) {
-        PartType partType = getPartType();
+        RegularPartType partType = getPartType();
         if (partType == null || variantName == null) return null;
         // 校验本地状态与本次使用的手持物品一致，避免主/副手或物品切换导致的错位
-        PartType usedType = PartAssemblyItem.partTypeOf(stack, player.level());
+        RegularPartType usedType = PartAssemblyItem.partTypeOf(stack, player.level());
         if (usedType == null || !usedType.getRegistryKey().equals(partType.getRegistryKey())) return null;
         ConnectorAttr connectorAttr = getConnector();
         boolean attachToTarget = false;

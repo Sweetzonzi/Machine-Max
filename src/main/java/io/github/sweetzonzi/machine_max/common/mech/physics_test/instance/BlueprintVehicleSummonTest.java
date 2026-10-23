@@ -1,15 +1,15 @@
 package io.github.sweetzonzi.machine_max.common.mech.physics_test.instance;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.JoinPosition;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
@@ -75,7 +75,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
             return null;
         }
         // readAdditionalData=true：读取模板保存的组装进度/纹理/耐久等附加数据，否则部件会以未组装（线框无材质）状态出现
-        VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
+        VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), PartRestoreMode.FULL_STATE);
         setVehicleState(vehicle);
         return vehicle;
     }
@@ -109,7 +109,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
 
         Vector3f v2 = new Vector3f(0f, 0f, 0f);
 
-        for (Part part : vehicle.getPartMap().values()) {
+        for (RegularPart part : vehicle.getPartMap().values()) {
             PhysicsRigidBody partBody = part.rootSubPart.body;
             part.rootSubPart.setLinearVelocity(v);
             partBody.setLinearVelocity(v);
@@ -129,7 +129,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
         // todo在下面实现你的受力
 
 //        int index = 0;
-//        for (Part part : core.getPartMap().values()) {
+//        for (RegularPart part : core.getPartMap().values()) {
 //            if (index == 16) {
 //                part.rootSubPart.body.applyCentralForce(
 //                        MMMath.localVectorToWorldVector(new Vector3f(0,0, -12122).divideLocal(part.rootSubPart.body.getMass()), part.rootSubPart.body));
@@ -156,7 +156,7 @@ public class BlueprintVehicleSummonTest extends BaseJoinPositionPhysicsTest<Vehi
         VehicleCore vehicle = getPhysicsTestingObject();
         if (vehicle != null && vehicle.getPartMap().containsKey(subPart.getPart().uuid)) {
             //整车复位：清零所有部件的速度与受力，再整体回到入点姿态
-            for (Part part : vehicle.getPartMap().values()) {
+            for (RegularPart part : vehicle.getPartMap().values()) {
                 part.rootSubPart.setLinearVelocity(Vector3f.ZERO);
                 part.rootSubPart.body.setLinearVelocity(Vector3f.ZERO);
                 part.rootSubPart.setAngularVelocity(Vector3f.ZERO);

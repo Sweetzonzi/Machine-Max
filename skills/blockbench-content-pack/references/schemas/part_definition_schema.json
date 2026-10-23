@@ -10,6 +10,12 @@
       "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
       "default": "../../docs/zh_cn/schemas/part_definition_schema.json"
     },
+    "type": {
+      "type": "string",
+      "const": "regular",
+      "default": "regular",
+      "description": "部件类型；省略时使用普通机械部件 regular。扩展类型使用扩展模组提供的 Schema。"
+    },
     "icon": {
       "$ref": "base/resource_location.schema.json",
       "description": "部件图标路径，用于UI显示。若留空会使用紫黑缺省图标作为图标",

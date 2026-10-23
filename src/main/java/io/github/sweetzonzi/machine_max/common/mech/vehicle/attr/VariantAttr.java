@@ -34,7 +34,7 @@ public class VariantAttr {
     public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
     public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
 
-    /** 信号保留地址（{@code "local"} = Part、{@code "global"} = 装配体）：不得用作连接点 / 子系统 / 交互区名 */
+    /** 信号保留地址（{@code "local"} = RegularPart、{@code "global"} = 装配体）：不得用作连接点 / 子系统 / 交互区名 */
     private static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global");
 
     public static final Codec<Map<String, ResourceLocation>> TEXTURES_CODEC = Codec.either(
@@ -104,7 +104,7 @@ public class VariantAttr {
             throw new PackContentException(Component.translatableWithFallback(
                     "error.machine_max.part.missing_textures", "Part textures must not be empty"));
         }
-        // Part 级按名寻址（Molang local.*）要求名称在单变体内无歧义
+        // RegularPart 级按名寻址（Molang local.*）要求名称在单变体内无歧义
         validateUniqueNames();
         // 为每个子部件计算"自动排除骨骼"（其所有后代子部件的 start_bone），
         // 使嵌套子部件的骨骼不会被多个子部件重复宣称。需在构建碰撞体积之前完成，
@@ -137,7 +137,7 @@ public class VariantAttr {
 
     /**
      * 校验单个变体内「连接点 / 子系统 / 交互区」名称唯一，且不使用信号保留地址。
-     * <p>三者共用信号命名空间；Part 级按名寻址（Molang {@code local.*}）必须无歧义。
+     * <p>三者共用信号命名空间；RegularPart 级按名寻址（Molang {@code local.*}）必须无歧义。
      * 作用域是单变体的 {@code sub_parts} 集合（不是 part 类型全局，避免多变体复用同名被误判）。</p>
      */
     private void validateUniqueNames() {

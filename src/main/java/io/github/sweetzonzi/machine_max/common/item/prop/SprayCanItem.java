@@ -52,7 +52,7 @@ public class SprayCanItem extends Item implements ICustomModelItem {
                     textureName = iterator.next();
                 if (iterator.hasNext()) textureName = iterator.next();
                 else textureName = part.part.variant.getTextures().keySet().stream().toList().getFirst();
-                // 涂装为 Part 级：本地应用后由调用方广播（Part.applyTexture 不广播）
+                // 涂装为 RegularPart 级：本地应用后由调用方广播（RegularPart.applyTexture 不广播）
                 part.part.applyTexture(textureName);
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                         new PartPaintPayload(part.getId(), textureName));

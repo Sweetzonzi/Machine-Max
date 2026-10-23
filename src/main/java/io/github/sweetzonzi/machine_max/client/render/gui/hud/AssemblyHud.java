@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -86,9 +86,9 @@ public class AssemblyHud implements LayeredDraw.Layer {
 
         LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
         SubPart subPart = eyesight.getSubPart();
-        if (subPart == null) return;
+        if (subPart == null || !(subPart.part instanceof RegularPart)) return;
 
-        renderPartHud(subPart.part, g, player, delta.getRealtimeDeltaTicks());
+        renderPartHud((RegularPart) subPart.part, g, player, delta.getRealtimeDeltaTicks());
     }
 
     /* ================== 主 HUD 渲染 ================== */
@@ -97,7 +97,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
      * 渲染零部件装配 HUD（高度随材料数量自适应）
      */
     private void renderPartHud(
-            Part part,
+            RegularPart part,
             GuiGraphics g,
             LocalPlayer player,
             float deltaTicks
@@ -271,7 +271,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
      */
     private List<MaterialStatus> buildMaterialStatus(
             PartFabricatingRecipe recipe,
-            Part part,
+            RegularPart part,
             LocalPlayer player
     ) {
         List<MaterialStatus> list = new ArrayList<>();

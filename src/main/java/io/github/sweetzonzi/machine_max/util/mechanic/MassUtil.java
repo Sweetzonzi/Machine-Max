@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -50,7 +50,7 @@ public class MassUtil {
     public static Vector3f getVehicleInverseInertiaAboutCentroid(VehicleCore vehicle) {
         float totalMass = 0f;
         Vector3f weightedSum = new Vector3f();
-        for (Part part : vehicle.partMap.values()) {
+        for (RegularPart part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 float mass = subPart.body.getMass();
                 if (mass <= EPSILON) continue;
@@ -91,7 +91,7 @@ public class MassUtil {
         float iyy = 0f;
         float izz = 0f;
 
-        for (Part part : vehicle.partMap.values()) {
+        for (RegularPart part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 float mass = subPart.body.getMass();
                 if (mass <= EPSILON) continue;

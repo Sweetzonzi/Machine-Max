@@ -6,7 +6,7 @@ import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaData;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -157,7 +157,7 @@ public final class PdaHotbarOverlay {
         if (holder == null) return "";
         ResourceLocation partTypeId = holder.value().getPartType();
         if (partTypeId == null) return "";
-        PartType partType = PartType.get(level, partTypeId);
+        RegularPartType partType = RegularPartType.get(level, partTypeId);
         return partType == null ? "" : partType.getDefaultIcon().toString();
     }
 

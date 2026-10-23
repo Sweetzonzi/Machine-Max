@@ -1,4 +1,6 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle;
+package io.github.sweetzonzi.machine_max.common.mech.part;
+
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.*;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
@@ -30,7 +32,6 @@ import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
-import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -40,32 +41,21 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractCo
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.ConnectorAlignmentHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
+
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyProgressSyncPayload;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.Container;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,33 +63,31 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * <p>组装与UGC创作的最小单元</p>
- * <p>同时是动画体（{@link IAnimatable}）：模型、动画、Molang 变量与涂装均为 Part 级，
+ * <p>同时是动画体（{@link IAnimatable}）：模型、动画、Molang 变量与涂装均为 AbstractPart 级，
  * 子零件（{@link SubPart}）仅保留物理、骨骼切分与渲染视图职责。</p>
  */
 @Getter
-public class Part implements IAnimatable<Part>, ISignalReceiver {
+public abstract class AbstractPart<T extends AbstractPartType> implements IAnimatable<AbstractPart<?>>, ISignalReceiver {
     //常规属性 General attributes
     /**
      * 所属的装配体（VehicleCore、MechUnit 等）
      */
     public volatile IPartAssembly assembly;
     public String name;
-    public final PartType type;
+    public final T type;
     public final Level level;
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
-    public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
-    public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
-    public boolean renderWireframe = true; // 是否渲染线框（用于维修可视化状态机）
-    public final SubPart rootSubPart;
+    public SubPart rootSubPart;
+    public final boolean crowbarRemovable;
     public float totalMass;
     public boolean destroyed = false;
-    //模型、动画与渲染（动画体上移到 Part，纹理与 Molang 亦为 Part 级）
-    public final ModelController modelController;
-    public final AnimController animController;
-    /** Part 级 Molang 求值上下文（同时供动画、HitBox 条件与 HUD 使用） */
-    private final MechMolangContext molangContext;
+    // 部件模型、动画、纹理与 MoLang 上下文
+    public ModelController modelController;
+    public AnimController animController;
+    /** AbstractPart 级 Molang 求值上下文（同时供动画、HitBox 条件与 HUD 使用） */
+    private MechMolangContext molangContext;
     /** 当前使用的纹理索引（用于切换纹理） */
     public String textureName;
     /** 部件级信号存储，同时作为 Molang 变量表（{@link #getVariables()}） */
@@ -109,83 +97,51 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
-    /** Part 级按名索引：连接点名 → 连接点（用于 Molang 按名寻址） */
+    /** AbstractPart 级按名索引：连接点名 → 连接点（用于 Molang 按名寻址） */
     public final Map<String, AbstractConnector> connectorsByName = HashMap.newHashMap(1);
-    /** Part 级按名索引：子系统名 → 子系统（用于 Molang 按名寻址） */
+    /** AbstractPart 级按名索引：子系统名 → 子系统（用于 Molang 按名寻址） */
     public final Map<String, AbstractSubsystem> subsystemsByName = HashMap.newHashMap(1);
 
-    /**
-     * <p>创建新部件，使用指定变体</p>
-     * <p>仅应在服务端新建部件时使用</p>
-     *
-     * @param partType    部件类型
-     * @param variantName 部件变体类型
-     * @param level       部件被加入的世界
-     */
-    public Part(PartType partType, @Nullable String variantName, Level level) {
-        if (variantName == null) variantName = "default";
-        this.name = partType.getRegistryKey().toLanguageKey();
-        this.type = partType;
-        this.variantName = variantName;
-        this.variant = partType.getVariants().get(variantName);
+    protected AbstractPart(T type, String variantName, Level level, UUID uuid, String name,
+                           PartCreationContext context) {
+        this.type = PartDefinitions.requireCurrent(level.isClientSide(), Objects.requireNonNull(type));
+        this.variantName = variantName == null ? "default" : variantName;
+        this.variant = Objects.requireNonNull(type.getVariant(this.variantName), "Unknown variant: " + this.variantName);
         this.level = level;
-        this.uuid = UUID.randomUUID();
-        // 动画体相关成员必须先于 createSubParts() 初始化：
-        // ModelController 构造即读取 defaultModelIndex；HitBox 构造期即需 Part 级 Molang 上下文
-        this.modelController = new ModelController(this);
-        this.animController = new AnimController(this);
+        this.uuid = uuid;
+        this.name = name;
+        this.crowbarRemovable = context.crowbarRemovable();
         this.molangContext = new MechMolangContext(this);
-        this.getModelController().setModel(new ModelIndex("part", variant.getModel()));
         this.textureName = variant.getTextures().keySet().iterator().next();
-        this.getModelController().setTextureLocation(variant.getTexture(textureName));
-        this.rootSubPart = createSubParts(variant.getSubParts());//创建子部件并指定根子部件
-        updateMass();
     }
 
-    /**
-     * <p>创建新部件，使用默认变体</p>
-     * <p>仅应在服务端新建部件时使用</p>
-     *
-     * @param partType 部件类型
-     * @param level    部件被加入的世界
-     */
-    public Part(PartType partType, Level level) {
-        this(partType, "default", level);
-    }
-
-
-    /**
-     * <p>从保存或网络传输的数据中重建部件</p>
-     *
-     * @param data               保存或网络传输的数据
-     * @param level              部件所在的世界
-     * @param readAdditionalData 是否从保存的数据中读取额外数据，否则使用默认数据
-     */
-    public Part(PartData data, Level level, boolean readAdditionalData) {
-        this.name = data.name;
-        this.type = PartType.get(level, data.registryKey);
-        if (this.type == null) {//部件类型不存在（如内容包缺失或存档引用已删除部件），保留明确错误信息而非 NPE
-            throw new IllegalArgumentException("Unknown part type: " + data.registryKey);
+    /** Called by the concrete constructor after its own state is initialized. */
+    protected final void initializeStructure() {
+        if (modelController != null) throw new IllegalStateException("Structure already initialized");
+        try {
+            modelController = new ModelController(this);
+            animController = new AnimController(this);
+            modelController.setModel(new ModelIndex("part", variant.getModel()));
+            modelController.setTextureLocation(variant.getTexture(textureName));
+            rootSubPart = createSubParts(variant.getSubParts());
+            updateMass();
+        } catch (RuntimeException | Error failure) {
+            abortConstruction();
+            throw failure;
         }
-        this.level = level;
-        this.variantName = data.variant;
-        this.variant = type.getVariants().get(variantName);
-        this.uuid = UUID.fromString(data.uuid);
-        this.renderWireframe = !readAdditionalData || data.renderWireframe;
-        this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
-        this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
-        // 动画体相关成员必须先于 createSubParts() 初始化（同上）
-        this.modelController = new ModelController(this);
-        this.animController = new AnimController(this);
-        this.molangContext = new MechMolangContext(this);
-        this.getModelController().setModel(new ModelIndex("part", variant.getModel()));
-        // 涂装：PartData 携带纹理名；旧存档缺失或纹理已移除时回落首个纹理
-        String savedTexture = readAdditionalData ? data.textureName : null;
-        this.textureName = savedTexture != null && variant.getTextures().containsKey(savedTexture)
-                ? savedTexture
-                : variant.getTextures().keySet().iterator().next();
-        this.getModelController().setTextureLocation(variant.getTexture(textureName));
-        this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
+    }
+
+    /** Bind an extended query context after subclass initialization and before building hit boxes. */
+    protected final void bindMolangContext(MechMolangContext context) {
+        if (rootSubPart != null || !subParts.isEmpty()) throw new IllegalStateException("Structure already initialized");
+        molangContext = Objects.requireNonNull(context);
+    }
+
+    protected final void restoreState(AbstractPartData data, PartRestoreMode mode) {
+        if (mode == PartRestoreMode.FULL_STATE && variant.getTextures().containsKey(data.textureName)) {
+            textureName = data.textureName;
+            modelController.setTextureLocation(variant.getTexture(textureName));
+        }
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
             String subPartName = entry.getKey();
@@ -210,12 +166,12 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                 subPart.destroy();
             }
         }
-        if (readAdditionalData) {
+        if (mode == PartRestoreMode.FULL_STATE) {
             //加载子系统储存的数据
             for (Map.Entry<String, SubPartData> entry : data.subParts.entrySet()) {
                 SubPart subPart = subParts.get(entry.getKey());
                 if (subPart == null) continue;
-                // 共享耐久的部件在循环结束后按 Part 级比例统一恢复，避免逐个写入相互覆盖
+                // 共享耐久的部件在循环结束后按 AbstractPart 级比例统一恢复，避免逐个写入相互覆盖
                 if (!type.shareDurability) {
                     subPart.setDurability(entry.getValue().durabilityRatio * subPart.getMaxDurability());
                 }
@@ -224,32 +180,51 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                     CompoundTag connectorTagData = connectorData.getValue();
                     AbstractConnector connector = subPart.connectors.get(connectorName);
                     if (connector != null)
-                        connector.loadData(connectorTagData);
+                        connector.loadData(connectorTagData.copy());
                 }
                 for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().subsystemData.entrySet()) {
                     String subSystemName = subsystemData.getKey();
                     CompoundTag subsystemTagData = subsystemData.getValue();
                     AbstractSubsystem subsystem = subPart.subsystems.get(subSystemName);
                     if (subsystem != null)
-                        subsystem.loadData(subsystemTagData);
+                        subsystem.loadData(subsystemTagData.copy());
                 }
             }
-            // 共享耐久：按 Part 级比例一次性写入全部 SubPart
+            // 共享耐久：按 AbstractPart 级比例一次性写入全部 SubPart
             if (type.shareDurability) {
                 setSharedDurability(data.sharedDurabilityRatio * getSharedMaxDurability());
             }
         }
-        updateMass();//更新部件总质量
     }
+
+    public abstract AbstractPartData save();
+    public abstract boolean permitsSubsystemWork();
+    public abstract float durabilityLimitRatio();
+    public abstract float repairLimitRatio();
+    public abstract boolean permitsRepair();
+    public abstract float assemblyDamage(float amount, float remaining, boolean destroyed);
+    public boolean usesFullGravity() { return true; }
+
+    protected final void abortConstruction() {
+        subParts.values().forEach(SubPart::abortConstruction);
+    }
+
+    /** Batch restoration cleanup before any body is added to the world. */
+    public final void discardUnattached() {
+        if (subParts.values().stream().anyMatch(child -> child.body.isInWorld())) {
+            throw new IllegalStateException("Cannot discard an attached part");
+        }
+        abortConstruction();
+    }
+    public void onDurabilityChanged() {}
+    public void onRepairAttempt() {}
+    public boolean shouldRenderWireframe() { return false; }
 
     /**
      * 主线程每 tick 调用（由 VehicleCore 在区块加载时驱动）。
      * <p>发布共享动画姿态（唯一发布者），并在客户端自动播放循环动画。</p>
      */
     public void onTick() {
-        if (shouldRenderWireframe() && getAssemblingProgress() > type.getFunctionalThreshold()) {
-            setRenderWireframe(false);
-        }
         boolean shouldDestroy = true;
         for (SubPart subPart : subParts.values()) {
             if (subPart.getDestroyTime() > 0) shouldDestroy = false;
@@ -287,7 +262,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
      * 播放指定名称的动画（仅客户端）。
      * <p>动画取自变体自身的动画集，播放于 {@link AnimGroups#ACTION} 动作覆盖层。</p>
      * <p><b>重触发粒度：</b>仅退出 ACTION 层中<b>同名</b>的旧实例后再进入，
-     * 而非清空整层。这样同一零件上的多个事件动画（如一门机炮 + 一挺机枪共用同一 Part）
+     * 而非清空整层。这样同一零件上的多个事件动画（如一门机炮 + 一挺机枪共用同一 AbstractPart）
      * 只要动画名不同即可同时播放、互不打断；同名则从 0 重启。</p>
      * <p>循环行为由动画自身的 {@code loop} 设置决定：缺省 ONCE 播完自停；
      * 作者写 {@code loop:true} 则持续循环，需自行负责停止。</p>
@@ -300,7 +275,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         OAnimationSet set = OAnimationSet.getOrEmpty(index);
         OAnimation target = set.getAnimation(animName);
         if (target == null) {
-            MachineMax.LOGGER.warn("[Part {}-{}] 未找到动画 {}", name, uuid, animName);
+            MachineMax.LOGGER.warn("[AbstractPart {}-{}] 未找到动画 {}", name, uuid, animName);
             return;
         }
         // 按名精确退出：只打断同一动画的旧实例，保留同层其他事件动画
@@ -384,23 +359,20 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
 
     /**
      * <p>设置共享耐久值：写入本部件全部 SubPart 的原始耐久值。</p>
-     * <p>统一钳制到 [0, 共享上限 × max(组装进度, 0.05)]，与
+     * <p>统一钳制到 [0, 共享上限 × 类型提供的耐久许可比例]，与
      * {@link SubPart#setRawDurability(float)} 的钳制口径保持一致。</p>
      *
      * @param durability 目标共享耐久值
      */
     public void setSharedDurability(float durability) {
         if (!type.shareDurability || subParts.isEmpty()) return;
-        float cap = getSharedMaxDurability() * Math.max(getAssemblingProgress(), 0.05f);
+        float cap = getSharedMaxDurability() * durabilityLimitRatio();
         float value = Math.clamp(durability, 0f, cap);
         for (SubPart subPart : subParts.values()) {
             subPart.setRawDurability(value);
         }
     }
 
-    public float getVehicleDurabilityContribution() {
-        return getSharedMaxDurability() * Math.max(0f, this.type.vehicleDurabilityRate);
-    }
 
     private void createSubsystems(
             SubPart subPart,
@@ -411,7 +383,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
             AbstractSubsystemAttr attr = entry.getValue();
             AbstractSubsystem subsystem = attr.createSubsystem(subPart, name);
             subPart.subsystems.put(name, subsystem);//部件内的子系统
-            subsystemsByName.put(name, subsystem);//Part 级按名索引
+            subsystemsByName.put(name, subsystem);//AbstractPart 级按名索引
         }
     }
 
@@ -440,7 +412,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
                     );
                 }
                 subPart.connectors.put(connectorName, connector);
-                this.connectorsByName.put(connectorName, connector);//Part 级按名索引
+                this.connectorsByName.put(connectorName, connector);//AbstractPart 级按名索引
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
@@ -694,184 +666,6 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         return subPart.attr.computeGlobalMassCenter(model);
     }
 
-    /**
-     * <p>每被调用一次，尝试增加组装进度，并消耗材料</p>
-     * <p>Attempts to increase assembling progress, and consumes materials.</p>
-     *
-     * @param container 消耗材料的容器 Material container
-     * @param progress  增加的进度 (tick) Progress to be increased
-     * @return 是否成功改变进度 Whether the progress is successfully changed
-     */
-    public boolean assemble(Container container, float progress) {
-        boolean ignoreMaterial = level.isClientSide();
-        if (!level.isClientSide() && container instanceof Inventory inventory) {
-            ignoreMaterial = inventory.player.hasInfiniteMaterials();
-        }
-        PartFabricatingRecipe recipe = getRecipe();
-        // 未找到零件配方则每progress对应0.01组装进度
-        if (recipe != null) {
-            int totalTime = recipe.getProcessingTime();
-            float step = progress / totalTime;
-            float newProgress = Math.clamp(assemblingProgress + step, 0f, 1f);
-
-            // 计算新的组装进度对应的材料需求
-            List<Ingredient> manualAssembleList = recipe.getManualAssembleIngredientList();
-            int totalMaterials = manualAssembleList.size(); // 手动组装总材料数量（ceil折算后）
-            if (totalMaterials <= 0) {
-                if (newProgress != assemblingProgress) {
-                    setAssemblingProgress(newProgress);
-                    return true;
-                }
-                return false;
-            }
-            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
-            int targetMaterialProgress = (int) Math.ceil(newProgress * totalMaterials);
-
-            // 尝试提升材料进度
-            if (targetMaterialProgress > materialProgress) {
-                if (ignoreMaterial) { // 创造模式无视材料需求
-                    materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
-                } else { // 检查材料是否足够，如果不够则组装进度最多提升至材料供给进度的值
-                    for (int i = materialProgress; i < targetMaterialProgress; i++) {
-                        // 获取下一个需要消耗的材料
-                        if (i < totalMaterials) {
-                            Ingredient requiredIngredient = manualAssembleList.get(i);
-
-                            // 在容器中查找匹配的物品
-                            boolean found = false;
-                            for (int slot = 0; slot < container.getContainerSize(); slot++) {
-                                ItemStack stack = container.getItem(slot);
-                                if (!stack.isEmpty() && requiredIngredient.test(stack)) {
-                                    // 消耗一个物品
-                                    stack.shrink(1);
-                                    if (stack.isEmpty()) {
-                                        container.setItem(slot, ItemStack.EMPTY);
-                                    }
-                                    materialProgress++;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            // 如果某个材料不足，停止组装
-                            if (!found) {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Clamp进度并设置
-            newProgress = Math.min(newProgress, (float) materialProgress / totalMaterials);
-            if (newProgress != assemblingProgress) {
-                setAssemblingProgress(newProgress);
-                return true;
-            }
-        } else if (recipe == null && getAssemblingProgress() < 1f) {
-            // 无制造配方（无材料需求）的零件直接涨进度
-            setAssemblingProgress(getAssemblingProgress() + progress * 0.01f);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * <p>每被调用一次，尝试降低组装进度，并返还材料</p>
-     * <p>Attempts to decrease assembling progress, and returns materials.</p>
-     *
-     * @param container 返还材料的容器 Material container
-     * @param progress  降低的进度 Progress to be decreased
-     * @return 是否成功改变进度 Whether the progress is successfully changed
-     */
-    public boolean disassemble(Container container, float progress) {
-        progress = Math.max(progress, 0f);
-        boolean ignoreMaterial = level.isClientSide();
-        if (!level.isClientSide() && container instanceof Inventory inventory) {
-            ignoreMaterial = inventory.player.hasInfiniteMaterials();
-        }
-        PartFabricatingRecipe recipe = getRecipe();
-        // 未找到零件配方则不改变组装进度
-        if (recipe != null) {
-            int totalTime = recipe.getProcessingTime();
-            float step = progress / totalTime;
-            float newProgress = Math.clamp(assemblingProgress - step, 0f, 1f);
-
-            // 计算新的组装进度对应的材料需求
-            List<Ingredient> manualDisassembleList = recipe.getManualDisassembleIngredientList();
-            int totalMaterials = manualDisassembleList.size(); // 手动拆除总返还材料数量（floor折算后）
-            if (totalMaterials <= 0) {
-                materialProgress = 0;
-                if (newProgress != assemblingProgress) {
-                    setAssemblingProgress(newProgress);
-                    return true;
-                }
-                return false;
-            }
-            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
-            int targetMaterialProgress = (int) Math.floor(newProgress * totalMaterials);
-
-            // 检查是否需要返还材料
-            if (targetMaterialProgress < materialProgress) {
-                if (ignoreMaterial) { // 创造模式不返还材料
-                    materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
-                } else {
-                    materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
-                    int materialsToReturn = materialProgress - targetMaterialProgress;
-                    // 从后往前返还材料（后消耗的先返还）
-                    for (int i = 0; i < materialsToReturn; i++) {
-                        if (materialProgress > 0) {
-                            materialProgress--;
-                            Ingredient ingredientToReturn = manualDisassembleList.get(materialProgress);
-
-                            // 创建要返还的物品（取第一个匹配项）
-                            ItemStack[] matchingStacks = ingredientToReturn.getItems();
-                            if (matchingStacks.length > 0) {
-                                ItemStack returnStack = matchingStacks[0].copy();
-                                returnStack.setCount(1);
-
-                                // 尝试放入容器
-                                boolean added = false;
-                                for (int slot = 0; slot < container.getContainerSize(); slot++) {
-                                    ItemStack stack = container.getItem(slot);
-                                    if (stack.isEmpty()) {
-                                        container.setItem(slot, returnStack);
-                                        added = true;
-                                        break;
-                                    } else if (ItemStack.isSameItemSameComponents(stack, returnStack) &&
-                                            stack.getCount() < stack.getMaxStackSize()) {
-                                        stack.grow(1);
-                                        added = true;
-                                        break;
-                                    }
-                                }
-
-                                // 容器已满，掉落物品
-                                if (!added && !level.isClientSide()) {
-                                    // 在部件位置掉落物品
-                                    net.minecraft.world.entity.item.ItemEntity itemEntity =
-                                            new net.minecraft.world.entity.item.ItemEntity(
-                                                    level,
-                                                    rootSubPart.getPosition().x,
-                                                    rootSubPart.getPosition().y,
-                                                    rootSubPart.getPosition().z,
-                                                    returnStack
-                                            );
-                                    level.addFreshEntity(itemEntity);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // Clamp进度并设置
-            newProgress = Math.max(newProgress, 0f);
-            if (newProgress != assemblingProgress) {
-                setAssemblingProgress(newProgress);
-                return true;
-            }
-        }
-        return false;
-    }
 
     /**
      * <p>获取本零件的零件配方，无则返回null</p>
@@ -881,135 +675,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
      * @return 零件配方，包含使用材料，时间等信息；无零件配方时返回 {@code null}
      */
     @Nullable
-    public PartFabricatingRecipe getRecipe() {
-        RecipeHolder<PartFabricatingRecipe> holder = MMDynamicRes.getPartRecipe(level, type.getRegistryKey());
-        return holder == null ? null : holder.value();
-    }
 
-    /**
-     * <p>设置部件的材料进度，用于计算组装状态，不存在配方时无效</p>
-     *
-     * @param progress 材料进度，0~材料总量
-     */
-    public void setMaterialProgress(int progress) {
-        PartFabricatingRecipe recipe = getRecipe();
-        if (recipe != null) {
-            materialProgress = Math.clamp(progress, 0, recipe.getManualAssembleIngredientList().size());
-        } else materialProgress = Math.max(0, progress);
-    }
-
-    /**
-     * <p>获取部件组装进度</p>
-     *
-     * @return 组装进度，0~1f
-     */
-    public float getAssemblingProgress() {
-        return Math.clamp(assemblingProgress, 0f, 1f);
-    }
-
-    /**
-     * <p>根据子部件耐久度重新计算部件组装进度和材料进度上限。</p>
-     * <p>有手动配方时，材料进度仅会被下调；无手动配方时，不限制材料进度。</p>
-     *
-     * @return 是否发生变化
-     */
-    public boolean recomputeAssemblyFromDurability() {
-        if (level.isClientSide()) return false;
-        float oldProgress = this.assemblingProgress;
-        int oldMaterialProgress = this.materialProgress;
-
-        float durabilityRatio = 0f;
-        for (SubPart subPart : subParts.values()) {
-            float maxDurability = subPart.getMaxDurability();
-            if (maxDurability <= 0f) continue;
-            float ratio = Math.clamp(subPart.getDurability() / maxDurability, 0f, 1f);
-            durabilityRatio = Math.max(durabilityRatio, ratio);
-        }
-
-        PartFabricatingRecipe recipe = getRecipe();
-        int totalMaterials = recipe != null ? recipe.getManualAssembleIngredientList().size() : 0;
-
-        if (recipe == null || totalMaterials == 0) {
-            setAssemblingProgress(durabilityRatio);
-        } else {
-            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
-            int durabilityTier = getMaterialTierByDurabilityRatio(durabilityRatio, totalMaterials);
-            materialProgress = Math.min(materialProgress, durabilityTier);
-            float materialCap = (float) materialProgress / totalMaterials;
-            setAssemblingProgress(Math.min(durabilityRatio, materialCap));
-        }
-
-        if (oldMaterialProgress != materialProgress && oldProgress == this.assemblingProgress) {
-            syncAssemblyProgressToClient();
-        }
-        return oldProgress != this.assemblingProgress || oldMaterialProgress != this.materialProgress;
-    }
-
-    private static int getMaterialTierByDurabilityRatio(float ratio, int totalMaterials) {
-        if (totalMaterials <= 0) return 0;
-        if (ratio <= 0f) return 0;
-        return Math.min(totalMaterials, (int) Math.floor(Math.clamp(ratio, 0f, 1f) * totalMaterials) + 1);
-    }
-
-    /**
-     * <p>设置部件的组装进度，影响最大耐久和重力，不改变刚体质量</p>
-     * <p>进度为0时重力降为正常的10%；进度>0时重力恢复正常并激活刚体。</p>
-     * <p>进度达到{@link PartType#functionalThreshold}时自动关闭线框渲染。</p>
-     * <p>Sets the assembling progress of the part, which affects the maximum durability and gravity, but does not change the rigid body mass.</p>
-     * <p>When progress is 0, gravity is reduced to 10% of normal; when progress > 0, gravity is restored and the body is activated.</p>
-     *
-     * @param progress 组装进度，0~1
-     */
-    public void setAssemblingProgress(float progress) {
-        progress = Math.clamp(progress, 0f, 1f);
-        if (progress != this.assemblingProgress) {
-            float oldProgress = this.assemblingProgress;
-            this.assemblingProgress = progress;
-            float finalProgress = progress;
-            SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
-                for (SubPart subPart : subParts.values()) {
-                    if (finalProgress == 0 && renderWireframe) {
-                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
-                    } else {
-                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
-                        subPart.body.activate();
-                    }
-                }
-                updateMass();
-                return null;
-            });
-            float functionalThreshold = type.getFunctionalThreshold();
-            if (!level.isClientSide() && renderWireframe
-                    && oldProgress < functionalThreshold
-                    && progress >= functionalThreshold) {
-                renderWireframe = false;
-            }
-            syncAssemblyProgressToClient();
-        }
-    }
-
-    public boolean shouldRenderWireframe() {
-        return renderWireframe;
-    }
-
-    public void setRenderWireframe(boolean renderWireframe) {
-        if (this.renderWireframe != renderWireframe) {
-            this.renderWireframe = renderWireframe;
-            syncAssemblyProgressToClient();
-        }
-    }
-
-    private void syncAssemblyProgressToClient() {
-        if (!level.isClientSide() && assembly != null && assembly.isInLevel()) {
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                    assembly.getAssemblyId(),
-                    uuid,
-                    assemblingProgress,
-                    materialProgress,
-                    renderWireframe
-            ));
-        }
-    }
 
     public void updateMass() {
         float totalMass = 0;
@@ -1075,10 +741,10 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
         }
     }
 
-    // ======================== IAnimatable<Part> 实现 ========================
+    // ======================== IAnimatable<AbstractPart<?>> 实现 ========================
 
     @Override
-    public Part getAnimatable() {
+    public AbstractPart<?> getAnimatable() {
         return this;
     }
 
@@ -1088,7 +754,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     @Override
-    public ModelIndex getDefaultModelIndex() {
+    public final ModelIndex getDefaultModelIndex() {
         return new ModelIndex("part", variant.getModel());
     }
 
@@ -1101,7 +767,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     /**
-     * 获取 Part 级 Molang 上下文（不做 reset，供编译器获取原型）。
+     * 获取 AbstractPart 级 Molang 上下文（不做 reset，供编译器获取原型）。
      */
     @Override
     public @NotNull MechMolangContext getMolangContext() {
@@ -1109,9 +775,9 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
     }
 
     /**
-     * 获取已 reset 到当前 Part 状态的 Molang 上下文，用于表达式求值。
+     * 获取已 reset 到当前 AbstractPart 状态的 Molang 上下文，用于表达式求值。
      */
-    public SparkMolangContext<IAnimatable<Part>> getSparkMolangContext() {
+    public SparkMolangContext<IAnimatable<AbstractPart<?>>> getSparkMolangContext() {
         molangContext.reset(this, 0);
         return molangContext;
     }
@@ -1133,7 +799,7 @@ public class Part implements IAnimatable<Part>, ISignalReceiver {
 
     // ======================== ISignalReceiver 实现 ========================
 
-    /** Part 在信号路由中的保留地址：{@code "local"} 表示当前动画体（Part） */
+    /** AbstractPart 在信号路由中的保留地址：{@code "local"} 表示当前动画体（AbstractPart） */
     @Override
     public String getSignalAddress() {
         return "local";

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -36,7 +37,7 @@ public record VehicleCreatePayload(
 
     public static void handle(VehicleCreatePayload payload, IPayloadContext context) {
         if(payload.dimension == context.player().level().dimension()){
-            ObjectManager.addVehicle(new VehicleCore(context.player().level(), payload.vehicle, true));
+            ObjectManager.addVehicle(new VehicleCore(context.player().level(), payload.vehicle, PartRestoreMode.FULL_STATE));
         } else MachineMax.LOGGER.error("从错误的维度收到载具创建请求: {}", payload.dimension);
     }
 }

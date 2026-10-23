@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
@@ -11,28 +12,16 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.MODEL;
 import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.TEXTURE;
@@ -68,8 +57,8 @@ public class VehicleBlueprintItem extends BaseVehicleItem {
 
     /** 蓝图：放置产出骨架（进度归零、不读耐久 / 连接器 / 子系统数据） */
     @Override
-    protected boolean restoreFullState() {
-        return false;
+    public PartRestoreMode restoreMode() {
+        return PartRestoreMode.STRUCTURE_ONLY;
     }
 
     @Override

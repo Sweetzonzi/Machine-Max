@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -54,9 +55,9 @@ public final class VehicleAssemblyServerHelper {
         Level level = player.level();
         ItemStack stack = player.getItemInHand(request.hand());
         // 校验1：请求部件类型必须与手持物品解析结果一致（防作弊换物品）
-        PartType heldType = PartAssemblyItem.partTypeOf(stack, level);
+        RegularPartType heldType = PartAssemblyItem.partTypeOf(stack, level);
         if (heldType == null || !heldType.getRegistryKey().equals(request.registryKey())) return;
-        PartType partType = PartType.get(level, request.registryKey());
+        RegularPartType partType = RegularPartType.get(level, request.registryKey());
         if (partType == null) return;
         // 校验2：变体必须属于该部件类型
         if (!partType.getVariants().containsKey(request.variant())) return;
@@ -74,7 +75,7 @@ public final class VehicleAssemblyServerHelper {
         if (attachRotation < 0) attachRotation += 360f;
         try {
             // 部件构造：复刻原 PartItem.use / FabricatingBlueprintItem.use 的构造流程
-            Part part = new Part(partType, request.variant(), level);
+            RegularPart part = PartFactory.createRegular(partType, request.variant(), level);
             if (stack.getItem() instanceof PartItem) {
                 restoreAssemblyStateFromDamage(stack, part);
             } else {
@@ -98,11 +99,11 @@ public final class VehicleAssemblyServerHelper {
      *
      * @return 是否已按蓝图意图处理（已处理则不再进入放置分支）
      */
-    private static boolean tryBlueprintIntent(Player player, Level level, ItemStack stack, Part part) {
+    private static boolean tryBlueprintIntent(Player player, Level level, ItemStack stack, RegularPart part) {
         if (!player.hasData(MMAttachments.getENTITY_EYESIGHT())) return false;
         SubPart targetSubPart = player.getData(MMAttachments.getENTITY_EYESIGHT()).getSubPart();
         if (targetSubPart == null) return false;
-        Part targetPart = targetSubPart.part;
+        if (!(targetSubPart.part instanceof RegularPart targetPart)) return false;
         // 目标必须是同类型且尚未组装的部件
         if (!targetPart.type.getRegistryKey().equals(part.type.getRegistryKey())) return false;
         if (targetPart.getAssemblingProgress() != 0 || targetPart.getMaterialProgress() != 0) return false;
@@ -127,7 +128,7 @@ public final class VehicleAssemblyServerHelper {
     /**
      * 安装到目标连接点：仅做占用 + 交互距离 + 条件校验，不做射线复核。
      */
-    private static void attachToTarget(Player player, Level level, ItemStack stack, Part part,
+    private static void attachToTarget(Player player, Level level, ItemStack stack, RegularPart part,
                                        @Nullable Pair<String, String> partConnectorKey,
                                        @Nullable ConnectorAttr partConnectorAttr,
                                        PartAssemblyRequestPayload request, float attachRotation) {
@@ -154,7 +155,7 @@ public final class VehicleAssemblyServerHelper {
     /**
      * 凭空放置悬浮零件：位置由服务端 {@link Level#clip} 在交互范围内计算，方向随安装角。
      */
-    private static void placeInAir(Player player, Level level, ItemStack stack, Part part, float attachRotation) {
+    private static void placeInAir(Player player, Level level, ItemStack stack, RegularPart part, float attachRotation) {
         Quaternionf rotation = new Quaternionf().rotationY((float) Math.toRadians(attachRotation - player.getYRot()));
         Transform transform = new Transform(
                 PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -192,7 +193,7 @@ public final class VehicleAssemblyServerHelper {
     /**
      * 从物品耐久组件反推材料 / 装配进度（原 {@code PartItem.restoreAssemblyStateFromDamage}）。
      */
-    public static void restoreAssemblyStateFromDamage(ItemStack stack, Part part) {
+    public static void restoreAssemblyStateFromDamage(ItemStack stack, RegularPart part) {
         if (!stack.has(net.minecraft.core.component.DataComponents.MAX_DAMAGE)) return;
         int cap = stack.getMaxDamage();
         if (cap <= 0) return;

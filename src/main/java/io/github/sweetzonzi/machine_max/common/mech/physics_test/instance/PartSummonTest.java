@@ -1,17 +1,17 @@
 package io.github.sweetzonzi.machine_max.common.mech.physics_test.instance;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.BaseJoinPositionPhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.JoinPosition;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -67,8 +67,8 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
     @Override
     protected VehicleCore setPhysicsTestingObject() {
         ResourceLocation partId = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "wine_fox_gt_spoiler");
-        PartType partType = PartType.get(level, partId);
-        Part part = new Part(partType, level);
+        RegularPartType partType = RegularPartType.get(level, partId);
+        RegularPart part = PartFactory.createRegular(partType, "default", level);
         setState(part);
         return new VehicleCore(level, part);
     }
@@ -89,7 +89,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
         return new JoinPosition(1, player.getEyePosition(), player.getLookAngle(), transform);
     }
 
-    private void setState(Part part) {
+    private void setState(RegularPart part) {
         part.setTransform(getJoinPosition().getTransform());
 
         double strength = 340.0; //初速度常数
@@ -115,7 +115,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
         if (resetCooldown > 0) resetCooldown--;
 
 
-        for (Part part : core.getPartMap().values()) {
+        for (RegularPart part : core.getPartMap().values()) {
             part.rootSubPart.body.applyCentralForce(
                     MMMath.localVectorToWorldVector(new Vector3f(0, 0, -233.3f), part.rootSubPart.body));
             //每物理刻对部件正前方施加单位推力（正前方即部件局部 -Z 轴，随部件旋转）
@@ -139,7 +139,7 @@ public class PartSummonTest extends BaseJoinPositionPhysicsTest<VehicleCore> {
             subPart.body.setAngularVelocity(Vector3f.ZERO);
             subPart.body.clearForces();
             subPart.body.setPhysicsTransform(transform);
-            setState(subPart.getPart());
+            if (subPart.part instanceof RegularPart regular) setState(regular);
             resetCooldown = RESET_COOLDOWN_TICKS;
         }
     }

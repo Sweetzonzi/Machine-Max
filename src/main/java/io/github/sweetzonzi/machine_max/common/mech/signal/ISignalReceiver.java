@@ -12,7 +12,7 @@ public interface ISignalReceiver {
     /**
      * 返回此接收者在信号路由中的寻址名（目标名）。
      * <p>与身份名区分：身份名仅用于日志 / 翻译，不参与任何路由；路由一律使用本方法。
-     * 保留地址：{@code "local"}（Part）、{@code "global"}（装配体）。</p>
+     * 保留地址：{@code "local"}（RegularPart）、{@code "global"}（装配体）。</p>
      */
     String getSignalAddress();
 

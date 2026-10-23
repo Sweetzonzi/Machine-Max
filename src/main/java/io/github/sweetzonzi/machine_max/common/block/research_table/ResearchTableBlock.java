@@ -36,9 +36,9 @@ public class ResearchTableBlock extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<Half> HALF = BlockStateProperties.HALF;
-    public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
+    public static final EnumProperty<RegularPart> PART = EnumProperty.create("part", RegularPart.class);
 
-    public enum Part implements StringRepresentable {
+    public enum RegularPart implements StringRepresentable {
         MAIN,
         EXTENSION;
 
@@ -54,7 +54,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
                 stateDefinition.any()
                         .setValue(FACING, Direction.NORTH)
                         .setValue(HALF, Half.BOTTOM)
-                        .setValue(PART, Part.MAIN)
+                        .setValue(PART, RegularPart.MAIN)
         );
     }
 
@@ -66,7 +66,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, BlockState state) {
-        if (state.getValue(PART) == Part.MAIN
+        if (state.getValue(PART) == RegularPart.MAIN
                 && state.getValue(HALF) == Half.BOTTOM) {
             return new ResearchTableBlockEntity(pos, state);
         }
@@ -90,7 +90,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
         return defaultBlockState()
                 .setValue(FACING, facing)
                 .setValue(HALF, Half.BOTTOM)
-                .setValue(PART, Part.MAIN);
+                .setValue(PART, RegularPart.MAIN);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
         BlockPos upExt = up.relative(facing.getClockWise());
 
         level.setBlock(ext,
-                state.setValue(PART, Part.EXTENSION),
+                state.setValue(PART, RegularPart.EXTENSION),
                 3);
 
         level.setBlock(up,
@@ -112,7 +112,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
                 3);
 
         level.setBlock(upExt,
-                state.setValue(HALF, Half.TOP).setValue(PART, Part.EXTENSION),
+                state.setValue(HALF, Half.TOP).setValue(PART, RegularPart.EXTENSION),
                 3);
     }
 
@@ -170,7 +170,7 @@ public class ResearchTableBlock extends BaseEntityBlock {
                 ? pos.below()
                 : pos;
 
-        return state.getValue(PART) == Part.MAIN
+        return state.getValue(PART) == RegularPart.MAIN
                 ? base
                 : base.relative(state.getValue(FACING).getClockWise().getOpposite());
     }

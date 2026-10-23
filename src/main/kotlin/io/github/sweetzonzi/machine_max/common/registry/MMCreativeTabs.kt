@@ -131,11 +131,11 @@ object MMCreativeTabs {
             CreativeModeTab.builder()
                 .title(MMLanguageRegistry.ITEM_GROUP_FABRICATING_BLUEPRINT.translated())
                 .icon {
-                    if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    if (fabricatingParts().isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
                     else {
-                        val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random()
+                        val randomIndex = (0 until fabricatingParts().size).random()
                         val item = ItemStack(MMItems.PART_FABRICATING_BLUEPRINT)
-                        val partId = MMDynamicRes.PART_TYPES.keys.toList()[randomIndex]
+                        val partId = fabricatingParts().keys.toList()[randomIndex]
                         item.set(MMDataComponents.PART_TYPE, partId)
                         item.set(MMDataComponents.RECIPE_TYPE, PartFabricatingRecipe.recipeIdFromPartType(partId))
                         item
@@ -144,6 +144,8 @@ object MMCreativeTabs {
                 .build()
         }
     }
+
+    private fun fabricatingParts() = MMDynamicRes.PART_TYPES.filterKeys { MMDynamicRes.PART_RECIPES.containsKey(it) }
 
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
@@ -193,7 +195,7 @@ object MMCreativeTabs {
             MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
                 val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包零件制造蓝图加入创造物品栏
-                MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
+                fabricatingParts().forEach { (loc, _) ->
                     val itemStack = ItemStack(MMItems.PART_FABRICATING_BLUEPRINT)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     itemStack.set(MMDataComponents.RECIPE_TYPE, PartFabricatingRecipe.recipeIdFromPartType(loc))

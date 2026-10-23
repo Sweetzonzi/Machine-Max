@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -76,11 +76,11 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             SubPart subPart = eyesight.getSubPart();
             Entity entity = eyesight.getEntity();
             if (subPart != null) {
+                if (!(subPart.part instanceof RegularPart part)) return;
                 if (!level.isClientSide()) { // 服务端负责实际数值的更新
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
                     if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
                         return;
-                    Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
                         float repairStep = 5;
                         boolean repaired = subPart.repair(
@@ -213,7 +213,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                 }
             }
         if (!shouldPlayEffect)
-            shouldPlayEffect = subPart.part.getAssemblingProgress() < 1;
+            shouldPlayEffect = subPart.part instanceof RegularPart regular && regular.getAssemblingProgress() < 1;
         return shouldPlayEffect;
     }
 

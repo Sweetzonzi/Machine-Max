@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +17,7 @@ public record HudPartSnapshot(Map<String, Double> numbers, Map<String, String> s
     public double number(String key) { return numbers.getOrDefault(key, 0.0); }
     public String string(String key) { return strings.get(key); }
 
-    public static HudPartSnapshot capture(Part part) {
+    public static HudPartSnapshot capture(AbstractPart<?> part) {
         if (part == null) return EMPTY;
         Map<String, Double> n = new HashMap<>();
         Map<String, String> s = new HashMap<>();

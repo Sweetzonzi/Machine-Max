@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.*;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -22,7 +23,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedCo
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.ConnectorAlignmentHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
@@ -67,9 +68,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//约1e-4°以内视为方向对齐（locator 严格对齐场景）
 
     //存储所有部件与连接关系
-    public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
+    public final MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
-    public final ConcurrentMap<UUID, Part> partMap = new java.util.concurrent.ConcurrentHashMap<>();
+    public final ConcurrentMap<UUID, RegularPart> partMap = new java.util.concurrent.ConcurrentHashMap<>();
     /** 履带列表。履带是载具级关系 + 状态对象，没有独立刚体；列表项本身即身份。 */
     public final CopyOnWriteArrayList<TrackLink> trackLinks = new CopyOnWriteArrayList<>();
     public String name = "Vehicle";//载具名称
@@ -123,7 +124,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     //渲染
     public float cameraDistance = 4f;//相机距离
 
-    public VehicleCore(Level level, Part rootPart) {
+    public VehicleCore(Level level, RegularPart rootPart) {
         this.level = level;
         this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
@@ -134,7 +135,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);
     }
 
-    public VehicleCore(Level level, VehicleData savedData, boolean readAdditionalData) {
+    public VehicleCore(Level level, VehicleData savedData, PartRestoreMode restoreMode) {
         this.level = level;
         this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
@@ -144,16 +145,27 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.position = savedData.pos;
         this.oldPosition = savedData.pos;
         this.name = savedData.name;
+        Map<UUID, RegularPartData> pending = new HashMap<>();
+        for (RegularPartData data : savedData.parts.values()) {
+            if (!(PartFactory.validateRestore(data, level.isClientSide()) instanceof RegularPartType)) {
+                throw new IllegalArgumentException("Invalid regular part in vehicle: " + data.registryKey);
+            }
+            if (pending.putIfAbsent(UUID.fromString(data.uuid), data) != null) throw new IllegalArgumentException("Duplicate part UUID: " + data.uuid);
+        }
+        for (ConnectionData connection : savedData.connections) {
+            validateSavedConnector(level, pending, connection.partUuidA, connection.subPartNameA, connection.advConnectorName);
+            validateSavedConnector(level, pending, connection.partUuidS, connection.subPartNameS, connection.simpleConnectorName);
+        }
         ObjectManager.initVehicle(this);
         try {
             //重建部件
-            for (PartData partData : savedData.parts.values()) {
-                this.addPart(new Part(partData, level, readAdditionalData));
+            for (RegularPartData partData : savedData.parts.values()) {
+                this.addPart(PartFactory.restoreRegular(partData, level, restoreMode));
             }
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
-                Part partA = partMap.get(UUID.fromString(connectionData.partUuidA));
-                Part partB = partMap.get(UUID.fromString(connectionData.partUuidS));
+                RegularPart partA = partMap.get(UUID.fromString(connectionData.partUuidA));
+                RegularPart partB = partMap.get(UUID.fromString(connectionData.partUuidS));
                 if (partA != null && partB != null) {
                     AbstractConnector advConnector = partA.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.getAdvConnectorName());
                     AbstractConnector simpleConnector = partB.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.getSimpleConnectorName());
@@ -164,7 +176,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                     } else MachineMax.LOGGER.error("Connector {} not found in vehicle {}.", connectionData, this.name);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
-            subSystemController.initAllSubsystems();//子系统初始化
             //履带在部件与连接关系之后重建；GearJoint 等到 onAddToLevel（刚体入世）再建
             for (TrackLinkData linkData : savedData.trackLinks) {
                 // 存档加载：型号缺失即丢弃该条履带，不回退默认型号
@@ -174,11 +185,32 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);//先按新上限填满，再按保存的比例恢复
             this.setHp(getMaxHp() * savedHpRatio);
             recalculateCameraDistance();
+            subSystemController.initAllSubsystems();
         } catch (Exception e) {
-            onRemoveFromLevel(); // 移除数据出错的载具
+            trackLinks.forEach(TrackLink::dispose);
+            subSystemController.discardUninitialized();
+            for (RegularPart part : partMap.values()) {
+                part.assembly = null;
+                part.discardUnattached();
+            }
+            partMap.clear();
+            ObjectManager.clientVehiclesToAdd.remove(uuid, this);
+            ObjectManager.serverVehiclesToAdd.remove(uuid, this);
             throw e;
         }
     }
+
+    private static void validateSavedConnector(Level level, Map<UUID, RegularPartData> parts,
+                                               String uuid, String child, String connector) {
+        RegularPartData data = parts.get(UUID.fromString(uuid));
+        if (data == null || !data.subParts.containsKey(child)) throw new IllegalArgumentException("Missing connected part: " + uuid + "/" + child);
+        var attr = PartFactory.resolve(level.isClientSide(), data.registryKey).getVariant(data.variant).subParts.get(child);
+        if (attr == null || !attr.connectors.containsKey(connector)) throw new IllegalArgumentException("Missing connected connector: " + uuid + "/" + child + "/" + connector);
+    }
+
+    @Override public boolean acceptsPartType(AbstractPartType type) { return type instanceof RegularPartType; }
+    @Override public boolean usesMMPartEntities() { return true; }
+    @Override public RegularPart findPart(UUID id) { return partMap.get(id); }
 
     /** IPartAssembly 接口要求的 getSubsystemController()，Lombok @Getter 生成的是 getSubSystemController()（大写S），需要显式声明 */
     @Override
@@ -194,7 +226,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * @param partNet    新载具的拓扑结构 Structure of the new Vehicle
      * @param oldVehicle 被分裂的载具 The vehicle that was split
      */
-    public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet, VehicleCore oldVehicle) {
+    public VehicleCore(Level level, UUID uuid, MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> partNet, VehicleCore oldVehicle) {
         this.level = level;
         this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
@@ -202,7 +234,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.name = oldVehicle.name;
         this.position = oldVehicle.position;
         this.synchedData.set(DATA_HP_ID, 0f);
-        for (Part part : partNet.nodes()) {
+        for (RegularPart part : partNet.nodes()) {
             Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
             oldVehicle.subSystemController.removeSubsystems(subsystems, true);
             oldVehicle.partMap.remove(part.uuid);
@@ -213,7 +245,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             this.subSystemController.addSubsystems(subsystems);
         }
         for (Pair<AbstractConnector, SimpleConnector> edge : partNet.edges()) {
-            EndpointPair<Part> connectedParts = partNet.incidentNodes(edge);
+            EndpointPair<RegularPart> connectedParts = partNet.incidentNodes(edge);
             this.partNet.addEdge(connectedParts, edge);
         }
         this.updateTotalMass();
@@ -271,7 +303,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     private float calculateMaxHpFromParts() {
         float result = 0f;
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             result += Math.max(0f, part.getVehicleDurabilityContribution());
         }
         if (result <= 0 && !partMap.isEmpty()) { // 回退取第一个部件的最大耐久度
@@ -307,7 +339,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private void markDestroyed() {
         this.synchedData.set(DATA_DESTROYED_ID, true);
         setHp(0f);
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 if (!subPart.isDestroyed()) {
                     subPart.setDestroyed();
@@ -382,7 +414,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
         int count = 0;
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             if (part.isDestroyed()) {
                 removePart(part);
                 continue;
@@ -426,7 +458,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         subSystemController.prePhysicsTick();
         // 动画物理刻与主线程 tick 必须同门控：否则物理线程持续写入共享 pose 而主线程不发布，导致渲染冻结
         if (inLoadedChunk && !isRemoved) {
-            for (Part part : partMap.values()) {
+            for (RegularPart part : partMap.values()) {
                 part.onPrePhysicsTick();
             }
             for (TrackLink link : new ArrayList<>(trackLinks)) link.applyTension();
@@ -436,7 +468,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public void postPhysicsTick() {
         if (!level.isClientSide && statusSyncCountDown > 0) statusSyncCountDown--;
         subSystemController.postPhysicsTick();
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             part.onPostPhysicsTick();
         }
     }
@@ -446,7 +478,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      */
     public void activate() {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
+            for (RegularPart part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
     }
@@ -457,7 +489,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             if (physicsFrozen) return;
             physicsFrozen = true;
             SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                for (Part part : partMap.values()) {
+                for (RegularPart part : partMap.values()) {
                     for (SubPart subPart : part.subParts.values()) {
                         var body = subPart.body;
                         if (!body.isInWorld()) continue;
@@ -474,7 +506,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         if (testInstance != null) {
             physicsFrozen = false;
             SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                for (Part part : partMap.values()) {
+                for (RegularPart part : partMap.values()) {
                     for (SubPart subPart : part.subParts.values()) {
                         var body = subPart.body;
                         if (!body.isInWorld()) continue;
@@ -495,7 +527,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private void freezePhysicsForTerrainWait() {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             Vector3f zero = new Vector3f(0f, 0f, 0f);
-            for (Part part : partMap.values()) {
+            for (RegularPart part : partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) {
                     PhysicsRigidBody body = subPart.body;
                     if (!body.isInWorld()) continue;
@@ -519,7 +551,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             Vector3f unit = new Vector3f(1f, 1f, 1f);
             Vector3f zero = new Vector3f(0f, 0f, 0f);
-            for (Part part : partMap.values()) {
+            for (RegularPart part : partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) {
                     PhysicsRigidBody body = subPart.body;
                     if (!body.isInWorld()) continue;
@@ -626,7 +658,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public void updateTotalMass() {
         this.totalMass = 0;
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             this.totalMass += part.totalMass;
         }
     }
@@ -638,7 +670,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * @param part 新部件
      * @see VehicleCore#attachConnector
      */
-    public void addPart(Part part) {
+    public void addPart(AbstractPart<?> candidate) {
+        if (!(candidate instanceof RegularPart part)) throw new IllegalArgumentException("Vehicle requires RegularPart");
         part.assembly = this;
         for (AbstractSubsystem subSystem : part.getAllSubsystems()) {//连接部件内子系统的信号传输关系
             subSystem.setTargetFromNames();
@@ -660,11 +693,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.updateTotalMass();
     }
 
-    public void removePart(Part part) {
+    public void removePart(AbstractPart<?> candidate) {
+        if (!(candidate instanceof RegularPart part)) throw new IllegalArgumentException("Vehicle requires RegularPart");
         removePart(part, Map.of());
     }
 
-    public void removePart(Part part, Map<UUID, UUID> spiltVehicles) {
+    public void removePart(RegularPart part, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsValue(part)) {
             UUID partUuid = part.getUuid();
             float hpBeforeSplit = getHp();
@@ -713,7 +747,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public void removePart(UUID uuid, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsKey(uuid)) {
-            Part part = partMap.get(uuid);
+            RegularPart part = partMap.get(uuid);
             this.removePart(part, spiltVehicles);
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, uuid.toString());
     }
@@ -726,7 +760,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * @param connector2 接口2
      * @param newPart    新安装的部件，可为null
      */
-    public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
+    public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable RegularPart newPart) {
         IPartAssembly assembly1 = connector1.subPart.part.assembly;
         IPartAssembly assembly2 = connector2.subPart.part.assembly;
         if (assembly1 == null && assembly2 == null) {
@@ -750,6 +784,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             advancedConnector = connector2;
         } else throw new UnsupportedOperationException("连接点之一必须是SimpleConnector类型");
 
+        requireRegular(advancedConnector.subPart.part);
+        requireRegular(simpleConnector.subPart.part);
         IPartAssembly advAssembly = advancedConnector.subPart.part.assembly;
         IPartAssembly simpAssembly = simpleConnector.subPart.part.assembly;
 
@@ -774,7 +810,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         }
     }
 
-    private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable Part newPart) {
+    private static RegularPart requireRegular(AbstractPart<?> part) {
+        if (!(part instanceof RegularPart regular)) throw new IllegalArgumentException("Vehicle requires RegularPart");
+        return regular;
+    }
+
+    private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable RegularPart newPart) {
         if (newPart != null && !partMap.containsKey(newPart.uuid) && (advancedConnector.subPart.part == newPart || simpleConnector.subPart.part == newPart)) {
             this.addPart(newPart);
             recalculateMaxHp(HpRecalcMode.GROW_WITH_MAX_DELTA);
@@ -784,8 +825,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         if (!attached) return;
 
         this.partNet.addEdge(//添加连接关系
-                advancedConnector.subPart.part,
-                simpleConnector.subPart.part,
+                requireRegular(advancedConnector.subPart.part),
+                requireRegular(simpleConnector.subPart.part),
                 Pair.of(advancedConnector, simpleConnector)
         );
         if (newPart != null) {
@@ -804,7 +845,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                         this.uuid,
                         comboList,
                         newPart != null,
-                        newPart == null ? null : new PartData(newPart)
+                        newPart == null ? null : new RegularPartData(newPart)
                 ));
             }
         }
@@ -817,8 +858,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         float mergedHp = this.getHp() + donorVehicle.getHp();
         this.absorbVehicle(donorVehicle);
         this.partNet.addEdge(
-                advancedConnector.subPart.part,
-                simpleConnector.subPart.part,
+                requireRegular(advancedConnector.subPart.part),
+                requireRegular(simpleConnector.subPart.part),
                 Pair.of(advancedConnector, simpleConnector)
         );
         this.recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
@@ -852,12 +893,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         for (TrackLink link : new ArrayList<>(donorVehicle.trackLinks)) link.dissolve();
         donorVehicle.trackLinks.clear();
 
-        List<Map.Entry<EndpointPair<Part>, Pair<AbstractConnector, SimpleConnector>>> donorEdges = new ArrayList<>();
+        List<Map.Entry<EndpointPair<RegularPart>, Pair<AbstractConnector, SimpleConnector>>> donorEdges = new ArrayList<>();
         for (Pair<AbstractConnector, SimpleConnector> edge : donorVehicle.partNet.edges()) {
             donorEdges.add(Map.entry(donorVehicle.partNet.incidentNodes(edge), edge));
         }
 
-        for (Part part : new ArrayList<>(donorVehicle.partMap.values())) {
+        for (RegularPart part : new ArrayList<>(donorVehicle.partMap.values())) {
             Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
             donorVehicle.subSystemController.removeSubsystems(subsystems, true);
             donorVehicle.partMap.remove(part.uuid);
@@ -868,8 +909,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             this.subSystemController.addSubsystems(subsystems);
         }
 
-        for (Map.Entry<EndpointPair<Part>, Pair<AbstractConnector, SimpleConnector>> edgeEntry : donorEdges) {
-            EndpointPair<Part> connectedParts = edgeEntry.getKey();
+        for (Map.Entry<EndpointPair<RegularPart>, Pair<AbstractConnector, SimpleConnector>> edgeEntry : donorEdges) {
+            EndpointPair<RegularPart> connectedParts = edgeEntry.getKey();
             this.partNet.addEdge(connectedParts.nodeU(), connectedParts.nodeV(), edgeEntry.getValue());
         }
         donorVehicle.updateTotalMass();
@@ -904,8 +945,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     @Nullable
     private Pair<AbstractConnector, SimpleConnector> connectionDataToConnectorPair(ConnectionData connection) {
         try {
-            Part partA = this.partMap.get(UUID.fromString(connection.partUuidA));
-            Part partB = this.partMap.get(UUID.fromString(connection.partUuidS));
+            RegularPart partA = this.partMap.get(UUID.fromString(connection.partUuidA));
+            RegularPart partB = this.partMap.get(UUID.fromString(connection.partUuidS));
             if (partA == null || partB == null) {
                 MachineMax.LOGGER.error("载具{}中未找到连接关系对应部件: {}", this.uuid, connection);
                 return null;
@@ -929,12 +970,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * @param newPart 新安装的部件
      * @return 新增的连接关系列表
      */
-    private List<ConnectionData> comboAttachConnector(Part newPart) {
+    private List<ConnectionData> comboAttachConnector(RegularPart newPart) {
         List<ConnectionData> result = new java.util.ArrayList<>();
         for (SubPart newSubPart : newPart.subParts.values()) {//遍历新安装部件的零件
             for (AbstractConnector connector1 : newSubPart.connectors.values()) {//遍历新安装部件内的接口
                 if (!connector1.internal && !connector1.hasPart()) {//若无连接零件且不为内部零件，则尝试连接载具已有其他接口
-                    for (Part part : partNet.nodes()) {//遍历载具内所有部件
+                    for (RegularPart part : partNet.nodes()) {//遍历载具内所有部件
                         if (part == newPart) continue;//跳过新安装的部件
                         for (SubPart subPart : part.subParts.values()) {//遍历所有部件部件内的所有零件
                             for (AbstractConnector connector2 : subPart.connectors.values()) {
@@ -958,8 +999,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                                     boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
                                     if (attached) {
                                         this.partNet.addEdge(//添加连接关系
-                                                advancedConnector.subPart.part,
-                                                simpleConnector.subPart.part,
+                                                requireRegular(advancedConnector.subPart.part),
+                                                requireRegular(simpleConnector.subPart.part),
                                                 Pair.of(advancedConnector, simpleConnector)
                                         );
                                         result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
@@ -1046,12 +1087,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * @param spiltPartNets 连通性检查得出的所有子网络集合
      * @return 发送给客户端的同步 Map (子网络中某个部件的 UUID -> 新载具 UUID)
      */
-    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, float sourceHp) {
+    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, float sourceHp) {
         synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
             if (spiltPartNets.size() <= 1) return Map.of();
 
             // 1. 将子网络转为列表并按总质量降序排序
-            List<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> sortedNets = new ArrayList<>(spiltPartNets);
+            List<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> sortedNets = new ArrayList<>(spiltPartNets);
             sortedNets.sort((net1, net2) -> {
                 float mass1 = calculateNetworkMass(net1);
                 float mass2 = calculateNetworkMass(net2);
@@ -1064,14 +1105,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             // 2. 索引为 0 的网络（质量最大者）保留当前载具身份，不进行处理。
             // 3. 从索引 1 开始，将较小的部分剥离并创建新载具。
             for (int i = 1; i < sortedNets.size(); i++) {
-                MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network = sortedNets.get(i);
+                MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> network = sortedNets.get(i);
                 UUID newVehicleUuid = UUID.randomUUID();
 
                 // 获取该网络中任意一个部件的 UUID，用于客户端识别是哪一部分分裂了
                 UUID referencePartUuid = network.nodes().iterator().next().uuid;
 
                 // 调用分裂构造函数：
-                // 该构造函数内部会从当前载具 (this) 中移除对应的 Part 和子系统
+                // 该构造函数内部会从当前载具 (this) 中移除对应的 RegularPart 和子系统
                 VehicleCore newVehicle = new VehicleCore(level, newVehicleUuid, network, this);
                 ObjectManager.addSpiltVehicle(newVehicle);
                 createdVehicles.add(newVehicle);
@@ -1088,18 +1129,18 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     /**
      * 辅助方法：计算一个子网络中所有部件的总质量
      */
-    private float calculateNetworkMass(MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network) {
+    private float calculateNetworkMass(MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> network) {
         float total = 0;
-        for (Part part : network.nodes()) {
+        for (RegularPart part : network.nodes()) {
             total += part.totalMass;
         }
         return total;
     }
 
-    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles, float sourceHp) {
+    private void clientHandleSpilt(Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles, float sourceHp) {
         List<VehicleCore> createdVehicles = new ArrayList<>();
         for (Map.Entry<UUID, UUID> entry : spiltVehicles.entrySet()) {
-            Part part = partMap.get(entry.getKey());
+            RegularPart part = partMap.get(entry.getKey());
             if (part == null) continue;
             UUID spiltVehicleUUID = entry.getValue();
             for (var vehicle : spiltPartNets) {
@@ -1125,18 +1166,18 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      *
      * @return 连通子图集合 Subgraph set
      */
-    public Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> partNetSpiltCheck() {
+    public Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> partNetSpiltCheck() {
         synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
             if (partNet.nodes().isEmpty()) return Set.of();
 
-            Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
-            Set<Part> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
+            Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
+            Set<RegularPart> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
 
             while (!unvisited.isEmpty()) {
                 // 1. 开启一个新的连通子图搜索
-                Part startPart = unvisited.iterator().next();
-                Set<Part> componentNodes = new HashSet<>();
-                Queue<Part> queue = new LinkedList<>();
+                RegularPart startPart = unvisited.iterator().next();
+                Set<RegularPart> componentNodes = new HashSet<>();
+                Queue<RegularPart> queue = new LinkedList<>();
 
                 queue.add(startPart);
                 componentNodes.add(startPart);
@@ -1144,8 +1185,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
                 // 2. BFS 搜索所有连通的节点
                 while (!queue.isEmpty()) {
-                    Part current = queue.poll();
-                    for (Part neighbor : partNet.adjacentNodes(current)) {
+                    RegularPart current = queue.poll();
+                    for (RegularPart neighbor : partNet.adjacentNodes(current)) {
                         if (unvisited.contains(neighbor)) {
                             unvisited.remove(neighbor);
                             componentNodes.add(neighbor);
@@ -1155,14 +1196,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                 }
 
                 // 3. 为这个连通分量构建一个新的 Network 实例
-                MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
+                MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
                         NetworkBuilder.undirected().allowsParallelEdges(true).build();
 
-                for (Part node : componentNodes) {
+                for (RegularPart node : componentNodes) {
                     splitPartNet.addNode(node);
                     // 将该节点的所有边加入新网络
                     for (Pair<AbstractConnector, SimpleConnector> edge : partNet.incidentEdges(node)) {
-                        EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
+                        EndpointPair<RegularPart> incidentNodes = partNet.incidentNodes(edge);
                         splitPartNet.addEdge(incidentNodes.nodeU(), incidentNodes.nodeV(), edge);
                     }
                 }
@@ -1184,7 +1225,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     private void moveRelatively(Vector3f delta) {
         Transform transform = new Transform();
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             part.rootSubPart.body.getTransform(transform);
             transform.setTranslation(transform.getTranslation().add(delta));
             part.setTransform(transform);
@@ -1194,7 +1235,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     /**
      * 主线程 Main thread
      * <p>设置整个载具的姿态（位置+旋转），所有部件保持相对位置与相对姿态不变。</p>
-     * <p>载具由多个 Part 组成，入点变换应作用于整车，不能逐个应用到每个部件，否则多部件会叠在同一姿态上。</p>
+     * <p>载具由多个 RegularPart 组成，入点变换应作用于整车，不能逐个应用到每个部件，否则多部件会叠在同一姿态上。</p>
      */
     public void setTransform(Transform transform) {
         if (!inLevel) applyTransform(transform);
@@ -1209,7 +1250,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private void applyTransform(Transform transform) {
         Transform inverse = null;
         Transform partWorld = new Transform();
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             part.rootSubPart.body.getTransform(partWorld);
             if (inverse == null) {
                 // 以第一个部件的根零件当前世界姿态作为整车参考姿态
@@ -1226,7 +1267,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public void onAddToLevel() {
         // 崩溃根因已实测确认为"两运动学体间的关节"（Bullet 不支持），与加入顺序无关。
         // 此处保持先刚体后关节的顺序作为工程惯例：连接器 addToLevel 内部经 submitImmediateTask 保证刚体入世界后再 addJoint
-        partMap.values().forEach(Part::addToLevel);
+        partMap.values().forEach(RegularPart::addToLevel);
         trackLinks.forEach(TrackLink::onAddToLevel);
         if (!level.isClientSide()) {
             // 服务端：召唤/加载后立即发起下方地形保活，避免地形异步构建期间载具坠落穿透
@@ -1246,7 +1287,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         for (TrackLink link : new ArrayList<>(trackLinks)) link.dispose();
         trackLinks.clear();
         subSystemController.destroy();
-        for (Part part : partMap.values()) {
+        for (RegularPart part : partMap.values()) {
             partNet.removeNode(part);
             part.destroy();
         }
@@ -1332,9 +1373,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      *
      * @return resourceType:部件UUID，value:部件数据
      */
-    public Map<String, PartData> getPartData() {
-        Map<String, PartData> result = new HashMap<>();
-        partNet.nodes().forEach(part -> result.put(part.uuid.toString(), new PartData(part)));
+    public Map<String, RegularPartData> getPartData() {
+        Map<String, RegularPartData> result = new HashMap<>();
+        partNet.nodes().forEach(part -> result.put(part.uuid.toString(), new RegularPartData(part)));
         return result;
     }
 
@@ -1358,7 +1399,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         float zMax = -Float.MAX_VALUE;
         Vector3f min = new Vector3f();
         Vector3f max = new Vector3f();
-        for (Part part : this.partMap.values()) {
+        for (RegularPart part : this.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox().getMin(min);
                 PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox().getMax(max);
@@ -1376,7 +1417,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public void recalculateCameraDistance() {
         Vector3f center = PhysicsHelperKt.toBVector3f(this.position);
         float maxDistance = 4f;
-        for (Part part : this.partMap.values()) {
+        for (RegularPart part : this.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 float distance = center.distance(subPart.getPosition());
                 float radius = subPart.collisionShape.maxRadius() + distance;
@@ -1411,12 +1452,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     }
 
     @Override
-    public void onPartDamage(Part part, float damage) {
+    public void onPartDamage(AbstractPart<?> part, float damage) {
         this.applyVehicleDamage(damage);
     }
 
     @Override
-    public void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
+    public void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable AbstractPart<?> candidate) {
+        if (candidate != null && !(candidate instanceof RegularPart)) throw new IllegalArgumentException("Vehicle requires RegularPart");
+        RegularPart newPart = (RegularPart) candidate;
         this.attachConnector(connector1, connector2, newPart);
     }
 

@@ -14,7 +14,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
@@ -382,7 +382,7 @@ public class BlueprintAttachment {
      * @param part   目标部件
      * @return 允许推进时返回 true
      */
-    public boolean canAdvanceAssembly(Player player, Part part) {
+    public boolean canAdvanceAssembly(Player player, RegularPart part) {
         if (player.isCreative()) return true;
         // 无零件配方零件走 assemble 的慢速兜底分支，必须放行
         if (part.getRecipe() == null) return true;

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -75,12 +76,9 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return null;
     }
 
-    /**
-     * 放置后是否恢复完整状态（进度 / 耐久 / 连接器 / 子系统）。
-     * <p>{@code true} = 原样搬运（收纳物品）；{@code false} = 产出骨架（蓝图）。</p>
-     */
-    protected boolean restoreFullState() {
-        return false;
+    /** 放置时应用的状态策略；蓝图使用骨架，收纳物品使用完整状态。 */
+    public PartRestoreMode restoreMode() {
+        return PartRestoreMode.STRUCTURE_ONLY;
     }
 
     /**
@@ -98,8 +96,8 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return stack.get(MMDataComponents.getVEHICLE_DATA());
     }
 
-    protected VehicleCore createVehicle(Level level, VehicleData vehicleData) {
-        return new VehicleCore(level, vehicleData, restoreFullState());
+    public VehicleCore createVehicle(Level level, VehicleData vehicleData) {
+        return new VehicleCore(level, vehicleData, restoreMode());
     }
 
     protected String getNameTranslationKey(ItemStack stack) {

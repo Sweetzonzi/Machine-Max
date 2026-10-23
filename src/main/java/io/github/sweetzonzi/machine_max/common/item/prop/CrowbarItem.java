@@ -14,8 +14,8 @@ import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import net.minecraft.core.component.DataComponents;
@@ -60,8 +60,9 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {
-                Part part = subPart.part;
-                PartType partType = part.type;
+                if (!(subPart.part instanceof RegularPart part) || !part.crowbarRemovable)
+                    return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+                RegularPartType partType = part.type;
                 boolean hasConnection = false;
                 for (AbstractConnector connector : part.externalConnectors.values()) {
                     if (connector.hasPart()) {
@@ -130,7 +131,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
-                Part part = subPart.part;
+                if (!(subPart.part instanceof RegularPart part) || !part.crowbarRemovable) return;
                 boolean hasConnection = false;
                 for (AbstractConnector connector : part.externalConnectors.values()) {
                     if (connector.hasPart()) {
@@ -217,14 +218,14 @@ public class CrowbarItem extends Item implements ICustomModelItem {
     }
 
     /** 生成零件物品：只带 {@code part_type} 与堆叠上限，不写配方组件（配方由装配侧索引按零件 id 求出） */
-    private static ItemStack createPartItemStack(PartType partType) {
+    private static ItemStack createPartItemStack(RegularPartType partType) {
         ItemStack stack = new ItemStack(MMItems.getPART_ITEM());
         stack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
         stack.set(DataComponents.MAX_STACK_SIZE, partType.getMaxStackSize());
         return stack;
     }
 
-    private static ItemStack createDamagedPartItemStack(PartType partType, int materialCap, int materialGap) {
+    private static ItemStack createDamagedPartItemStack(RegularPartType partType, int materialCap, int materialGap) {
         ItemStack stack = createPartItemStack(partType);
         int clampedCap = Math.max(materialCap, 0);
         int clampedGap = Math.clamp(materialGap, 0, clampedCap);

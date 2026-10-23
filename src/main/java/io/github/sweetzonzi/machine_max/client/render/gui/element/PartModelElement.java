@@ -14,7 +14,7 @@ import com.sighs.apricityui.layout.Size;
 import com.sighs.apricityui.render.Base;
 import com.sighs.apricityui.render.Rect;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.SubPartAnimatable;
 import net.minecraft.Util;
@@ -39,8 +39,8 @@ import java.util.Map;
  * 在 AUI 页面里渲染一个部件 3D 模型的扩展元素（标签名 {@value #TAG_NAME}）。
  *
  * <p>用途是验证「AUI 自定义元素 + Spark-Core 模型渲染」这条链路是否可行：
- * 元素初始化时用硬编码的 {@link ResourceLocation} 取出 {@link PartType}，
- * 据此构造独立的 {@link PartAnimatable}（不需要 {@code Part} 实例，也不需要 {@code VehicleCore}），
+ * 元素初始化时用硬编码的 {@link ResourceLocation} 取出 {@link RegularPartType}，
+ * 据此构造独立的 {@link PartAnimatable}（不需要 {@code RegularPart} 实例，也不需要 {@code VehicleCore}），
  * 再在绘制钩子里按 {@link ModelRenderHelperKt#render} 的调用约定逐骨骼渲染。</p>
  *
  * <p>绘制走 AUI 的 {@code drawPhase(BODY)} 路径，所在上下文是 Minecraft 的 GUI 渲染管线，
@@ -73,7 +73,7 @@ public class PartModelElement extends Element {
     /** 硬编码的测试部件类型：内容包中 parts/wine_fox/wine_fox_hull.json 的注册名 */
     private static final ResourceLocation TEST_PART_ID =
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "wine_fox_hull");
-    /** 单值 variants 形式的部件在 PartType 中的变体键名固定为 default */
+    /** 单值 variants 形式的部件在 RegularPartType 中的变体键名固定为 default */
     private static final String TEST_VARIANT = "default";
 
     private static final float DEFAULT_FILL = 0.9f;
@@ -142,7 +142,7 @@ public class PartModelElement extends Element {
           抛出会中断 Document 的建立，表现为「页面没被解析」。
         */
         try {
-            PartType partType = PartType.get(level, TEST_PART_ID);
+            RegularPartType partType = RegularPartType.get(level, TEST_PART_ID);
             if (partType == null) {
                 LOGGER.warn("[AUI 测试] 未找到部件类型 {}，请确认内容包已加载", TEST_PART_ID);
                 return;

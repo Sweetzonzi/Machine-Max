@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.util;
 
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +29,7 @@ public final class TextUtil {
         return Component.translatable(key.toLanguageKey()).getString();
     }
 
-    public static List<ResourceLocation> getDistinctSortedTags(@Nullable PartType partType) {
+    public static List<ResourceLocation> getDistinctSortedTags(@Nullable RegularPartType partType) {
         if (partType == null) return List.of();
         return partType.getVariants().values().stream()
                 .flatMap(variant -> variant.getTags().stream())
@@ -44,7 +44,7 @@ public final class TextUtil {
         return translated.equals(raw) ? raw : translated;
     }
 
-    public static Set<String> collectSearchTexts(@Nullable PartType partType) {
+    public static Set<String> collectSearchTexts(@Nullable RegularPartType partType) {
         Set<String> result = new LinkedHashSet<>();
         for (ResourceLocation tag : getDistinctSortedTags(partType)) {
             String raw = tag.toLanguageKey();
@@ -60,7 +60,7 @@ public final class TextUtil {
     }
 
     @Nullable
-    public static PartType resolvePartTypeForTooltip(ItemStack stack) {
+    public static RegularPartType resolvePartTypeForTooltip(ItemStack stack) {
         ResourceLocation partTypeId = stack.get(MMDataComponents.getPART_TYPE());
         if (partTypeId != null) {
             return MMDynamicRes.PART_TYPES.get(partTypeId);

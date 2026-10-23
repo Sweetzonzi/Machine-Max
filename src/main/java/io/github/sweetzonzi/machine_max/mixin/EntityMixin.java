@@ -142,7 +142,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             if (group != CollisionGroups.PHYSICS_BODY) continue;
 
             if (!(PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart)) continue;
-            if (subPart.part.getAssemblingProgress() <= 0.25f) continue; // 未组装时不检测碰撞
+            if (subPart.part instanceof io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart regular && regular.getAssemblingProgress() <= 0.25f) continue; // 未组装时不检测碰撞
             HitBox hitBox = subPart.getHitBox(result.triangleIndex());
             if (hitBox == null || !hitBox.isActive())
                 continue; // 无效碰撞或未激活时忽略

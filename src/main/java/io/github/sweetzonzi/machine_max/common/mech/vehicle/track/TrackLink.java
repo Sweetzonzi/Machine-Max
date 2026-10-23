@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 履带：VehicleCore 级的关系 + 状态对象，没有独立刚体。
  *
  * <p>成员是载具内既有的 {@link SubPart}（主动轮 + 下行程负重轮 + 上行程诱导轮 / 托带轮），
- * 所有权仍属于各自 Part。成员顺序就是包络的锚定绕行顺序：主动轮在首位，随后是全部
+ * 所有权仍属于各自 RegularPart。成员顺序就是包络的锚定绕行顺序：主动轮在首位，随后是全部
  * 下行程轮（含被顶起的），再是上行程轮。
  * 成员之间用 {@link GearJoint} 做星形角速度耦合；相邻成员之间用单边弹簧-阻尼力近似
  * 张力。履带耐久是独立于成员轮子耐久的一层。</p>
@@ -498,7 +498,7 @@ public class TrackLink {
 
     // ==================== 生命周期 ====================
 
-    /** 载具入世 / 载入存档后调用；刚体已由 Part 的 addToLevel 入队。 */
+    /** 载具入世 / 载入存档后调用；刚体已由 RegularPart 的 addToLevel 入队。 */
     public void onAddToLevel() {
         if (disposed) return;
         if (vehicle.level.isClientSide()) return;

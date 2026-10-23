@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPartType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
@@ -125,7 +125,7 @@ public class ConnectorAttr {
         return result;
     }
 
-    public boolean conditionCheck(PartType partType, String variant) {
+    public boolean conditionCheck(AbstractPartType partType, String variant) {
         if (MMServerConfig.ignoreAssemblyTagRequirements()) return true; // 检查服务端配置，视情况忽略配方要求
         Set<ResourceLocation> tags = new HashSet<>(partType.getVariant(variant).getTags());
         var effectiveAttr = getEffectiveAttr();

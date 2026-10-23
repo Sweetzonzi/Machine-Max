@@ -9,9 +9,9 @@
 ```
 vehicle/
 ├── VehicleCore.java            # 聚合根（1233行），实现 IPartAssembly
-├── Part.java                   # 部件聚合 + 动画体（IAnimatable<Part>），持有 ModelController/AnimController/Molang 与 SubPart 清单
+├── RegularPart.java                   # 部件聚合 + 动画体（IAnimatable<Part>），持有 ModelController/AnimController/Molang 与 SubPart 清单
 ├── SubPart.java                # 零件实体（刚体 + 骨骼切分 + 渲染视图），实现 ISubsystemHost
-├── PartType.java               # 部件类型数据（JSON Codec + StreamCodec）
+├── RegularPartType.java               # 部件类型数据（JSON Codec + StreamCodec）
 ├── IPartAssembly.java          # 装配体顶层接口（解耦 Part↔VehicleCore）
 ├── SubPartHitDamage.java       # 单次命中的结算记录，随批次通告交给装配体
 ├── DamageModifier.java         # 数据驱动的伤害修改器
@@ -36,7 +36,7 @@ vehicle/
 │
 ├── data/                       # 数据序列化（7文件，~700行）
 │   ├── VehicleData.java        #   载具整体数据
-│   ├── PartData.java           #   部件数据
+│   ├── RegularPartData.java           #   部件数据
 │   ├── SubPartData.java        #   零件数据
 │   ├── ConnectionData.java     #   连接关系数据
 │   ├── AssemblyData.java       #   装配体数据
@@ -73,8 +73,8 @@ vehicle/
 | 修改载具生命周期 | `VehicleCore.java` | 聚合根：创建、销毁、合并、分裂、物理世界注册 |
 | 修改拓扑图 | `VehicleCore.java` | `partNet`（Guava MutableNetwork），图连通性检测 |
 | 修改零件物理体 | `SubPart.java` | 刚体、碰撞形状、空气阻力、浮力 |
-| 修改装配/耐久 | `Part.java` | SubPart 容器、制造进度条、耐久度传递 |
-| 修改部件类型数据 | `PartType.java` | JSON Codec + StreamCodec，注册名→数据查找 |
+| 修改装配/耐久 | `RegularPart.java` | SubPart 容器、制造进度条、耐久度传递 |
+| 修改部件类型数据 | `RegularPartType.java` | JSON Codec + StreamCodec，注册名→数据查找 |
 | 新增连接器类型 | `connector/AbstractConnector.java` | 继承、实现关节类型和信号端口 |
 | 修改碰撞逻辑 | `collision/CollisionHandler.java` | 地形高度场、实体碰撞、Create 兼容 |
 | 修改碰撞特效 | `collision/CollisionEffectManager.java` | 火花/声音/轮子快照 |
@@ -108,7 +108,7 @@ VehicleCore (IPartAssembly)
 - **伤害传递链**：外部伤害 → SubPart → Part（折算）→ VehicleCore（累计）。
 - **连接器对偶性**：一次连接涉及 2 个 Connector（同类型配对），每个 SubPart 持有一组。
 - **序列化**：使用 Mojang Codec（JSON） + StreamCodec（网络）。`data/` 包处理全量序列化。
-- **动画体归属**：`Part implements IAnimatable<Part>`，独占共享 `ModelPose`；由 `VehicleCore` 驱动 `Part.onTick()`（主线程发布）/ `Part.onPrePhysicsTick()`（物理线程混合），双端运行且两侧同门控（`inLoadedChunk`）。`setChanged()` 唯一发布者。
+- **公共动画体归属**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`，独占共享 `ModelPose`；由 `VehicleCore` 驱动 `AbstractPart.onTick()`（主线程发布）/ `AbstractPart.onPrePhysicsTick()`（物理线程混合），双端运行且两侧同门控（`inLoadedChunk`）。`setChanged()` 唯一发布者。
 - **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，`getName()` 仅身份/日志。保留地址 `"local"` = Part、`"global"` = 装配体。
 - **Molang 命名空间**：`local.*` = Part（耐久取 `rootSubPart`、按名寻址连接点/子系统），`global.*` = 装配体（HP/能源/信号存储）。
 - **涂装 Part 级统一**：`Part.applyTexture()` 只做本地状态变更，广播由调用方负责（`SprayCanItem` / `PartPaintPayload`）。
@@ -126,3 +126,9 @@ VehicleCore (IPartAssembly)
 
 - **运动学刚体接约束入世后步进 = 崩溃**（`VehicleCore.java`）。关节两端都是运动学刚体时，多线程构建下一次步进即崩在物理线程的岛屿划分阶段（根因：归岛用的并查集按定义跳过运动学体、其 island tag 恒为 `-1`，而该值被无保护地当作下标用；碰撞检测本身不受影响，只有关节归岛会拿到 `-1`；单线程构建不编译该管理器，故不崩）。规制：**不要用运动学模式冻结参与关节的刚体**——需要停住刚体时用 `setLinearFactor` / `setAngularFactor` 归零（刚体保持动态）；另**加约束时两端应当已在碰撞世界中，移出刚体前先摘掉引用它的约束**。症状、根因与其他可能路径见仓库根 `AGENTS.md` 及 `docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，轮子停止时振荡。
+
+## 公共部件 API
+
+公共机械基础位于 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/part/AbstractPart.java#AbstractPart`；RegularPart 持有普通部件的材料、制造和载具专属规则。VehicleCore 的拓扑只接受 RegularPart，SubPart 与公共子系统通过公共行为契约访问部件。
+
+类型注册、完整／骨架恢复、暂存校验发布、宿主代理及测试方式见 `docs/部件公共基础接入.md`。该路径以仓库根为基准。动画由装配体安排，每个主线程发布相位和物理混合步各执行一次。

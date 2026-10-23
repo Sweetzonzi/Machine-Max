@@ -8,7 +8,6 @@ import io.github.sweetzonzi.machine_max.common.mech.control.BindingAction;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -104,12 +103,13 @@ public class RawInputHandler {
         if (client.player != null &&
                 ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
                 seat.owner instanceof SubPart subPart) {
-            Part part = subPart.part;
+            var part = subPart.part;
             int subPartId = subPart.getId();
             String subSystemName = seat.name;
             MMJoystickHandler.refreshState();
 
-            switch (((VehicleCore) part.assembly).mode) {
+            if (!(part.assembly instanceof VehicleCore vehicle)) return;
+            switch (vehicle.mode) {
                 case GROUND -> {
                     boolean forward = KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover();
                     boolean backWard = KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();

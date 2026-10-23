@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.signal;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import org.jetbrains.annotations.Nullable;
@@ -132,7 +131,7 @@ public interface ISignalSender {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                // 存储写入由接收者自述（Part / SubsystemController 覆写 getSignalStorage）
+                // 存储写入由接收者自述（RegularPart / SubsystemController 覆写 getSignalStorage）
                 Map<String, Object> storage = signalReceiver.getSignalStorage();
                 if (storage != null) storage.put(signalChannel, signalValue);
                 // 先让接收者自主决定是否回传 callback，再触发 onSignalUpdated

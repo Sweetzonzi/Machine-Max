@@ -9,7 +9,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
@@ -47,7 +47,7 @@ public class VehicleData {
     public final Vec3 min;
     public final Vec3 max;
     public final float hpRatio;//血量比例（0~1，1 表示满血）
-    public final Map<String, PartData> parts;
+    public final Map<String, RegularPartData> parts;
     public final List<ConnectionData> connections;
     /** 履带持久状态；空列表表示没有履带。 */
     public final List<TrackLinkData> trackLinks;
@@ -61,7 +61,7 @@ public class VehicleData {
             Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),
             Vec3.CODEC.optionalFieldOf("max", Vec3.ZERO).forGetter(VehicleData::getMax),
             Codec.FLOAT.optionalFieldOf("hp_ratio", 1f).forGetter(VehicleData::getHpRatio),
-            PartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
+            RegularPartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections),
             TrackLinkData.CODEC.listOf().optionalFieldOf("track_links", List.of())
                     .forGetter(VehicleData::getTrackLinks),
@@ -86,7 +86,7 @@ public class VehicleData {
             double maxZ = buffer.readFloat();
             Vec3 max = new Vec3(maxX, maxY, maxZ);
             float hpRatio = buffer.readFloat();
-            Map<String, PartData> parts = PartData.MAP_STREAM_CODEC.decode(buffer);
+            Map<String, RegularPartData> parts = RegularPartData.MAP_STREAM_CODEC.decode(buffer);
             List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
             List<TrackLinkData> trackLinks = buffer.readList(TrackLinkData.STREAM_CODEC);
             // meta 不参与网络编码，跨网络时一律为空；需要时由载荷以独立字段携带
@@ -108,7 +108,7 @@ public class VehicleData {
             buffer.writeFloat((float) value.max.y);
             buffer.writeFloat((float) value.max.z);
             buffer.writeFloat(value.hpRatio);
-            PartData.MAP_STREAM_CODEC.encode(buffer, value.parts);
+            RegularPartData.MAP_STREAM_CODEC.encode(buffer, value.parts);
             buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
             buffer.writeCollection(value.trackLinks, TrackLinkData.STREAM_CODEC);
         }
@@ -116,20 +116,20 @@ public class VehicleData {
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
-                       float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections) {
+                       float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections) {
         this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), BlueprintMeta.EMPTY);
     }
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
-                       float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections,
+                       float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections,
                        BlueprintMeta meta) {
         this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), meta);
     }
 
     public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
-                       float hpRatio, Map<String, PartData> parts, List<ConnectionData> connections,
+                       float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections,
                        List<TrackLinkData> trackLinks, BlueprintMeta meta) {
         this.name = name;
         this.uuid = uuid;
@@ -215,9 +215,9 @@ public class VehicleData {
      */
     public VehicleData rebased() {
         Vector3f offset = PhysicsHelperKt.toBVector3f(pos);
-        Map<String, PartData> rebasedParts = new HashMap<>(parts.size());
-        for (Map.Entry<String, PartData> entry : parts.entrySet()) {
-            PartData part = entry.getValue();
+        Map<String, RegularPartData> rebasedParts = new HashMap<>(parts.size());
+        for (Map.Entry<String, RegularPartData> entry : parts.entrySet()) {
+            RegularPartData part = entry.getValue();
             // 子零件坐标平移 + 速度归零（放出来的载具不应带残余动量）
             Map<String, SubPartData> rebasedSubParts = new HashMap<>(part.subParts.size());
             for (Map.Entry<String, SubPartData> subEntry : part.subParts.entrySet()) {
@@ -236,7 +236,7 @@ public class VehicleData {
                         sub.getSubsystemData()
                 ));
             }
-            rebasedParts.put(entry.getKey(), new PartData(
+            rebasedParts.put(entry.getKey(), new RegularPartData(
                     part.registryKey,
                     part.name,
                     part.uuid,
@@ -273,7 +273,7 @@ public class VehicleData {
     /**
      * 现场统计设计质量（满配口径，不含进度折算）。
      *
-     * <p>按 {@code PartData.registryKey + variant} 查 {@link PartType} → {@link VariantAttr}，
+     * <p>按 {@code RegularPartData.registryKey + variant} 查 {@link RegularPartType} → {@link VariantAttr}，
      * 遍历其子零件累加 {@link SubPartAttr#getMass()}。纯查表，<b>不实例化物理体</b>，服务端可用。</p>
      *
      * @param level 用于区分客户端 / 服务端注册表
@@ -281,8 +281,8 @@ public class VehicleData {
      */
     public float computeDesignMass(Level level) {
         float mass = 0f;
-        for (PartData part : parts.values()) {
-            PartType partType = PartType.get(level, part.registryKey);
+        for (RegularPartData part : parts.values()) {
+            RegularPartType partType = RegularPartType.get(level, part.registryKey);
             if (partType == null) continue;
             VariantAttr variant = partType.getVariant(part.variant);
             if (variant == null) continue;
@@ -317,8 +317,8 @@ public class VehicleData {
         checkFiniteVec(problems, "max", max);
 
         Set<String> partUuids = new HashSet<>(parts.size());
-        for (Map.Entry<String, PartData> entry : parts.entrySet()) {
-            PartData part = entry.getValue();
+        for (Map.Entry<String, RegularPartData> entry : parts.entrySet()) {
+            RegularPartData part = entry.getValue();
             partUuids.add(part.uuid);
 
             // UUID 可解析
@@ -329,7 +329,7 @@ public class VehicleData {
             }
 
             // 注册表：零件类型与变体必须存在
-            PartType partType = PartType.get(level, part.registryKey);
+            RegularPartType partType = RegularPartType.get(level, part.registryKey);
             if (partType == null) {
                 problems.add(BlueprintProblem.missingPartType(part.registryKey.toString()));
                 continue;

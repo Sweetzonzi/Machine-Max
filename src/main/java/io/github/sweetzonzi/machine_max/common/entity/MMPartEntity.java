@@ -18,7 +18,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
@@ -669,7 +669,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
     private void updatePart() {
         VehicleCore vehicle = ObjectManager.clientAllVehicles.get(vehicleUUID);
         if (vehicle != null && vehicle.level == this.level()) {
-            Part part = vehicle.partMap.get(partUUID);
+            RegularPart part = vehicle.partMap.get(partUUID);
             if (part != null) {
                 this.subPart = part.getSubParts().get(subPartName);//设置实体对应的部件
                 if (subPart != null) {

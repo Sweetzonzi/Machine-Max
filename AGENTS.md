@@ -230,7 +230,7 @@ io.github.sweetzonzi.machine_max/
 - **内容包一切**：部件、子系统、连接器、配方、蓝图全在 JSON 中定义，位于 `spark_modules/` 下。
 - **双数学库**：物理使用 JME（`com.jme3.math.*`），渲染使用 JOML（`org.joml.*`）。通过 `SparkMathKt.*` 转换。
 - **控制绑定管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。
-- **动画体在 Part**：`Part implements IAnimatable<Part>`（共享 `ModelPose`、`local.*` Molang、涂装）；`SubPart` 只负责刚体与骨骼子树渲染，`MMPartEntity` 仅作渲染入口/原版交互点。
+- **动画体在公共部件**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`（共享 `ModelPose`、`local.*` Molang、涂装）；`SubPart` 只负责刚体与骨骼子树渲染，`MMPartEntity` 仅作渲染入口/原版交互点。
 - **信号寻址**：路由用 `ISignalReceiver.getSignalAddress()`，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。
 
 ## 文档编辑规范
@@ -317,7 +317,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 ## 补充说明
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
-- **无自动化测试**：无 `src/test/` 目录，也没有游戏测试函数——`runGameTestServer` 因此会走到专用服务器启动的最后一刻，再由 `GameTestServer.create` 抛 `IllegalArgumentException: No test functions were given!` 中止。可用的运行期验证通道是 `runServer`（启动到 `Done`，可验证注册、内容包解码、配方加载）与 `runClient`（进世界验证玩法）。
+- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartFoundationGameTest.java#fullStateAndBlueprintSkeleton` 与 `#externalFactoryAndVehicleBoundary`。两条 GameTest 验证真实服务端的部件构造、恢复和类型边界；客户端画面通过 runClient 验收。公共 API、模板和覆盖边界见 `docs/部件公共基础接入.md` 的“验证方式”。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
@@ -346,3 +346,9 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - `src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench 桌面端 MCP 服务器（AI 助手操作编辑器）的安装与连接参数，英文版在同级 `en_us/Blockbench-MCP.md`
 - `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）
 
+
+## 公共部件 API
+
+公共机械基础位于 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/part/AbstractPart.java#AbstractPart`；RegularPart 持有普通部件的材料、制造和载具专属规则。VehicleCore 的拓扑只接受 RegularPart，SubPart 与公共子系统通过公共行为契约访问部件。
+
+类型注册、完整／骨架恢复、暂存校验发布、宿主代理及测试方式见 `docs/部件公共基础接入.md`。该路径以仓库根为基准。动画由装配体安排，每个主线程发布相位和物理混合步各执行一次。

@@ -31,7 +31,7 @@ common/mech/
 |------|------|------|
 | 修改载具拓扑 | `vehicle/VehicleCore.java` | partNet（MutableNetwork），merge/split 逻辑 |
 | 修改物理体 | `vehicle/SubPart.java` | 刚体、碰撞、空气动力学、BallisticsFramework |
-| 修改组装/配方 | `vehicle/Part.java` | SubPart 容器、材料进度、耐久度；同时是动画体（模型/动画/Molang/涂装） |
+| 修改组装/配方 | `vehicle/RegularPart.java` | SubPart 容器、材料进度、耐久度；同时是动画体（模型/动画/Molang/涂装） |
 | 新增连接器类型 | `vehicle/connector/AbstractConnector.java` | 关节（New6Dof）、信号端口、完整性 |
 | 修改碰撞 | `vehicle/collision/CollisionHandler.java` | 地形、实体、载具-载具、Create 兼容 |
 | 新增信号类型 | `signal/Signal.java` | 继承基础类，注册到 ISignalReceiver/Sender |
@@ -50,7 +50,7 @@ common/mech/
 - **SignalChannel extends ConcurrentHashMap**：通过继承实现线程安全。
 - **EnergyGrid**：生产/消费者用 `CopyOnWriteArraySet`；供应比例用 `ConcurrentMap`。
 - **机械功率流**：Engine/Motor → Gearbox → Transmission → WheelDriver/JointDriver，通过连接器上的 MechPowerPort 传递。
-- **动画体归属**：`Part implements IAnimatable<Part>`（共享 `ModelPose`），`SubPart` 只负责刚体与骨骼子树渲染；动画 tick 由 `VehicleCore` 驱动、双端且两侧同门控。
+- **公共动画体归属**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`（共享 `ModelPose`），`SubPart` 只负责刚体与骨骼子树渲染；动画 tick 由 `VehicleCore` 驱动、双端且两侧同门控。
 - **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。
 
 ## 反模式
@@ -59,3 +59,9 @@ common/mech/
 - **严禁在 `partNet` 之外使用 `synchronized`**：仅 VehicleCore 中有 2 处（行 893, 972）。其余全部使用并发集合。
 - **严禁混用 JME 和 JOML**：始终通过 `SparkMathKt.*` 转换。
 - **严禁忽略 `DestroyableRigidObject.updateLock`**：服务端→同步数据期间置 `true`，防止反馈循环。
+
+## 公共部件 API
+
+公共机械基础位于 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/part/AbstractPart.java#AbstractPart`；RegularPart 持有普通部件的材料、制造和载具专属规则。VehicleCore 的拓扑只接受 RegularPart，SubPart 与公共子系统通过公共行为契约访问部件。
+
+类型注册、完整／骨架恢复、暂存校验发布、宿主代理及测试方式见 `docs/部件公共基础接入.md`。该路径以仓库根为基准。动画由装配体安排，每个主线程发布相位和物理混合步各执行一次。

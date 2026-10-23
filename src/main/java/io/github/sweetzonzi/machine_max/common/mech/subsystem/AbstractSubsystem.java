@@ -256,7 +256,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         return synchedData.get(DATA_ACTIVE_ID)
                 && !this.isDestroyed()
                 && !getOwner().getSubPart().isDestroyed()
-                && getSubPart().part.getAssemblingProgress() >= getSubPart().part.type.getFunctionalThreshold();
+                && getSubPart().part.permitsSubsystemWork();
     }
 
     public void setActive(boolean active) {

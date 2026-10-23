@@ -17,7 +17,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -108,7 +108,7 @@ public class AssemblyHud3D implements IHud3DElement {
     private final AnimatedFloat animatedHudWidth = new AnimatedFloat(0).easing(Easing::easeInOut);
     private final AnimatedQuaternion projectionRot = new AnimatedQuaternion(new Quaternionf()).easing(Easing::easeInOut);
     private final AnimatedFloat projectionScale = new AnimatedFloat(1).easing(Easing::easeInOut);
-    private Part part;
+    private RegularPart part;
     private final ViewOrientationResolver projectionResolver = new ViewOrientationResolver();
     private final List<Component> warningMessages = new ArrayList<>();
     private final List<Component> hintMessages = new ArrayList<>();
@@ -154,7 +154,8 @@ public class AssemblyHud3D implements IHud3DElement {
             if (animatedHudWidth.getTarget() != HUD_WIDTH)
                 animatedHudWidth.animateTo(HUD_WIDTH, 0.25f, currentTime);
             if (part != subPart.part) {
-                part = subPart.part;
+                part = subPart.part instanceof RegularPart regular ? regular : null;
+                if (part == null) return;
                 animatedProgressFloat.setImmediate(part.getAssemblingProgress());
                 animatedDurabilityFloat.setImmediate(subPart.getDurability() / subPart.getMaxDurability());
                 updateViewOrientation(subPart, ctx);
@@ -313,9 +314,9 @@ public class AssemblyHud3D implements IHud3DElement {
                     startY,
                     Math.max(animatedHudWidth.get() - PADDING * 2, 0),
                     10f,
-                    subPart != null ? subPart.part.getAssemblingProgress() : 0f,
+                    part != null ? part.getAssemblingProgress() : 0f,
                     ROW_BG_ASSEMBLY,
-                    subPart != null ? subPart.part.type.getFunctionalThreshold() : -1f,
+                    part != null ? part.type.getFunctionalThreshold() : -1f,
                     currentTime,
                     false
             );
@@ -694,7 +695,7 @@ public class AssemblyHud3D implements IHud3DElement {
 
     private List<MaterialStatus> buildMaterialStatus(
             PartFabricatingRecipe recipe,
-            Part part,
+            RegularPart part,
             LocalPlayer player
     ) {
         List<MaterialStatus> list = new ArrayList<>();

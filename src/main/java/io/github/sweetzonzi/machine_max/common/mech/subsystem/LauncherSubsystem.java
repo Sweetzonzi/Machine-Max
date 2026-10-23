@@ -16,7 +16,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
@@ -160,7 +160,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 本管当前供给者的<b>身份</b>（网络同步）。<br>
-     * 身份由 {@link SupplierRef} 表达：宿主 Part uuid + SubPart 名 + 子系统名，同一会话内两端一致。
+     * 身份由 {@link SupplierRef} 表达：宿主 RegularPart uuid + SubPart 名 + 子系统名，同一会话内两端一致。
      * <p>
      * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）。客户端在
      * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
@@ -347,7 +347,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 按 {@link #SUPPLIER_ID} 里的身份在本机已发现的供给者中找出实例并指认。<br>
-     * 身份是"宿主 Part uuid + SubPart 名 + 子系统名"，同一台机器在两端、在重启前后都是这个值，
+     * 身份是"宿主 RegularPart uuid + SubPart 名 + 子系统名"，同一台机器在两端、在重启前后都是这个值，
      * 因此不需要跨端传对象引用，也不需要额外的查表。客户端在刚载入时（还没收到任何推送）用它把
      * 存档带回来的指认落地，服务端同样用它把存档里的指认在握手完成后落地。
      * <p>
@@ -870,7 +870,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 客户端：为本 tick 的射击触发开火动画。
      * <p>动画名取自 {@code attr.fireAnimation}（缺省 {@code "fire"}），
-     * 由 {@link Part#playAnim(String)} 播放于 ACTION 覆盖层。</p>
+     * 由 {@link RegularPart#playAnim(String)} 播放于 ACTION 覆盖层。</p>
      * <p><b>触发粒度：</b>每个 tick 至多触发一次。同一 tick 内的多发在视觉上无法区分，
      * 且 {@code enter()} 是异步提交到物理线程，重复调用会创建多个实例。</p>
      * <p><b>缺失处理：</b>动画集中不存在该名称时告警一次并永久禁用，避免高射速下刷屏。</p>
@@ -880,7 +880,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (fireAnimUnavailable) return;
         String animName = attr.fireAnimation;
         if (animName == null || animName.isEmpty()) return;
-        Part part = getSubPart().part;
+        var part = getSubPart().part;
         if (part == null) return;
         if (!part.hasAnim(animName)) {
             fireAnimUnavailable = true;

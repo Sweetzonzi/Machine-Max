@@ -9,10 +9,10 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 @Getter
 public class PartAnimatable implements IAnimatable<PartAnimatable> {
-    public final PartType partType;
+    public final RegularPartType partType;
     public final Level level;
     public final Map<String, SubPartAnimatable> subParts = new HashMap<>();
     public VariantAttr variantAttr;
@@ -36,13 +36,13 @@ public class PartAnimatable implements IAnimatable<PartAnimatable> {
     public final AnimController animController = new AnimController(this);
     public final ModelController modelController = new ModelController(this);
 
-    public PartAnimatable(Level level, PartType partType, String variant) {
+    public PartAnimatable(Level level, RegularPartType partType, String variant) {
         this.level = level;
         this.partType = partType;
         this.setVariant(variant);
     }
 
-    public PartAnimatable(Level level, PartData partData) {
+    public PartAnimatable(Level level, RegularPartData partData) {
         this(level,
                 level.isClientSide() ?
                         MMDynamicRes.PART_TYPES.get(partData.getRegistryKey()) :
@@ -58,7 +58,7 @@ public class PartAnimatable implements IAnimatable<PartAnimatable> {
             rootSubPart = null;
             // 加载模型，用于还原各子部件在模型空间中的相对质心位置
             OModel model = OModel.getOrEmpty(new ModelIndex("part", variantAttr.getModel()));
-            // 与实体 Part 共用同一根子部件判定（质量最大者），保证布放/预览锚点一致
+            // 与实体 RegularPart 共用同一根子部件判定（质量最大者），保证布放/预览锚点一致
             String rootName = variantAttr.getRootSubPartName();
             SubPartAttr rootAttr = rootName == null ? null : variantAttr.subParts.get(rootName);
             Vector3f rootMassCenter = rootAttr == null ? new Vector3f() : rootAttr.computeGlobalMassCenter(model);
@@ -71,7 +71,7 @@ public class PartAnimatable implements IAnimatable<PartAnimatable> {
                     rootSubPart = subPart;
                 } else {
                     // 其余子部件按“相对根的质心偏移”摆放，
-                    // 与 Part.positionSubPartsForInternalAttach 的布放算法保持一致
+                    // 与 RegularPart.positionSubPartsForInternalAttach 的布放算法保持一致
                     subPart.setTransform(new Transform(
                             attr.computeGlobalMassCenter(model).subtract(rootMassCenter), Quaternion.IDENTITY));
                 }

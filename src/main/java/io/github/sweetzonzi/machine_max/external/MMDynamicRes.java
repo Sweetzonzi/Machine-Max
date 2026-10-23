@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
@@ -61,8 +61,8 @@ import java.util.concurrent.ConcurrentMap;
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, MaterialAttr> MATERIALS = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, ConnectorStaticAttr> CONNECTORS = new ConcurrentHashMap<>();
-    public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static final Map<ResourceLocation, RegularPartType> PART_TYPES = io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions.regularView(true); // 客户端已发布 Regular 定义的只读视图
+    public static final Map<ResourceLocation, RegularPartType> SERVER_PART_TYPES = io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions.regularView(false); // 服务端已发布 Regular 定义的只读视图
     public static ConcurrentMap<ResourceLocation, ProjectileType> PROJECTILE_TYPES = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, ProjectileType> SERVER_PROJECTILE_TYPES = new ConcurrentHashMap<>();
     /** 载具挂件型号（fittings/）：客户端注册表，供渲染与反序列化。 */
@@ -108,6 +108,23 @@ public class MMDynamicRes {
     public static Map<ResourceLocation, Map<ResourceLocation, NodeDepth>> NODE_DEPTH = new LinkedHashMap<>();
     /** 不可达的研发 id -> 原因；不在表中的条目即全局可达 */
     public static Map<ResourceLocation, UnreachableResearch> UNREACHABLE_RESEARCH = new LinkedHashMap<>();
+
+    private static RecipeManager clientPartRecipes;
+    private static RecipeManager serverPartRecipes;
+
+    public static void invalidatePartIndexes(boolean clientSide) {
+        if (clientSide) {
+            ALL_FABRICATING_RECIPES.clear();
+            ALL_PART_FABRICATING_RECIPES.clear();
+            PART_RECIPES.clear();
+        } else {
+            SERVER_ALL_FABRICATING_RECIPES.clear();
+            SERVER_ALL_PART_FABRICATING_RECIPES.clear();
+            SERVER_PART_RECIPES.clear();
+            SERVER_RESEARCH_BY_PART.clear();
+            SERVER_RESEARCH_BY_FABRICATING_RECIPE.clear();
+        }
+    }
 
     /**
      * 一个研发条目在某个组内的依赖层级。
@@ -180,6 +197,7 @@ public class MMDynamicRes {
      */
     @Nullable
     public static RecipeHolder<PartFabricatingRecipe> getPartRecipe(Level level, ResourceLocation partType) {
+        if (RegularPartType.get(level, partType) == null) return null;
         return level.isClientSide() ? PART_RECIPES.get(partType) : SERVER_PART_RECIPES.get(partType);
     }
 
@@ -200,6 +218,14 @@ public class MMDynamicRes {
 
     // ==================== 制造索引的构建 ====================
 
+    public static void onPartsPublished(boolean clientSide) {
+        RecipeManager manager = clientSide ? clientPartRecipes : serverPartRecipes;
+        if (manager != null) {
+            rebuildFabricatingIndex(manager, !clientSide);
+            rebuildResearchIndex(manager, !clientSide);
+        }
+    }
+
     /**
      * 整体重建指定逻辑侧的制造索引（主线程）。
      *
@@ -207,24 +233,26 @@ public class MMDynamicRes {
      * 装载期校验、{@code part_type} 注入与产物组件补齐。校验失败的零件配方不进入任何容器，其产物停留在
      * 占位形态。</p>
      *
-     * <p>零件存在性与产物数量上限依赖零件类型注册表，因此需要传入本侧的注册表；注册表为空时跳过
-     * 「零件存在性」校验（该情形只出现在装载顺序未就绪的窗口内）。</p>
+     * <p>定义处于暂存校验阶段时仅保存配方管理器并清空索引，等待 onPartsPublished 触发重建。
+     * 定义发布后按有效的 Regular 集合检查零件存在性和产物数量。</p>
      *
      * @param recipeManager 数据源
      * @param serverSide    true 表示重建服务端容器，false 表示重建客户端容器
      */
     public static void rebuildFabricatingIndex(RecipeManager recipeManager, boolean serverSide) {
+        if (serverSide) serverPartRecipes = recipeManager; else clientPartRecipes = recipeManager;
         Map<ResourceLocation, RecipeHolder<FabricatingRecipe>> all = serverSide
                 ? SERVER_ALL_FABRICATING_RECIPES : ALL_FABRICATING_RECIPES;
         Map<ResourceLocation, RecipeHolder<PartFabricatingRecipe>> allPart = serverSide
                 ? SERVER_ALL_PART_FABRICATING_RECIPES : ALL_PART_FABRICATING_RECIPES;
         Map<ResourceLocation, RecipeHolder<PartFabricatingRecipe>> partByPart = serverSide
                 ? SERVER_PART_RECIPES : PART_RECIPES;
-        ConcurrentMap<ResourceLocation, PartType> partRegistry = serverSide ? SERVER_PART_TYPES : PART_TYPES;
+        Map<ResourceLocation, RegularPartType> partRegistry = serverSide ? SERVER_PART_TYPES : PART_TYPES;
 
         all.clear();
         allPart.clear();
         partByPart.clear();
+        if (!io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions.isReady(!serverSide)) return;
 
         // 通用制造配方：目录不限，但不得占用零件配方的目录
         for (RecipeHolder<FabricatingRecipe> holder : recipeManager.getAllRecipesFor(
@@ -249,13 +277,13 @@ public class MMDynamicRes {
                 continue;
             }
             ResourceLocation partType = PartFabricatingRecipe.partTypeFromRecipeId(holder.id());
-            if (!partRegistry.isEmpty() && !partRegistry.containsKey(partType)) {
+            if (!partRegistry.containsKey(partType)) {
                 reportIfServer(serverSide, "recipe", holder.id(), text(
                         "error.machine_max.recipe.unknown_part",
                         "The recipe file name does not match any registered part"));
                 continue;
             }
-            PartType type = partRegistry.get(partType);
+            RegularPartType type = partRegistry.get(partType);
             if (type != null && (recipe.getResultCount() < 1 || recipe.getResultCount() > type.getMaxStackSize())) {
                 reportIfServer(serverSide, "recipe", holder.id(), text(
                         "error.machine_max.recipe.invalid_result_count",
@@ -711,6 +739,7 @@ public class MMDynamicRes {
      * @param serverSide true 清服务端容器
      */
     public static void clearRecipeIndex(boolean serverSide) {
+        if (serverSide) serverPartRecipes = null; else clientPartRecipes = null;
         if (serverSide) {
             SERVER_ALL_FABRICATING_RECIPES.clear();
             SERVER_ALL_PART_FABRICATING_RECIPES.clear();

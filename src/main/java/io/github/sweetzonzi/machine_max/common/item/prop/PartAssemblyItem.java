@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import net.minecraft.ChatFormatting;
@@ -37,16 +37,16 @@ public interface PartAssemblyItem {
      * @return 零件类型；无法解析时返回 {@code null}
      */
     @Nullable
-    default PartType getPartType(ItemStack stack, Level level) {
+    default RegularPartType getPartType(ItemStack stack, Level level) {
         ResourceLocation partTypeId = stack.get(MMDataComponents.getPART_TYPE());
         if (partTypeId != null) {
-            PartType partType = PartType.get(level, partTypeId);
+            RegularPartType partType = RegularPartType.get(level, partTypeId);
             if (partType != null) return partType;
         }
         RecipeHolder<PartFabricatingRecipe> holder = getRecipeHolder(stack, level);
         if (holder == null) return null;
         ResourceLocation resolved = holder.value().getPartType();
-        return resolved == null ? null : PartType.get(level, resolved);
+        return resolved == null ? null : RegularPartType.get(level, resolved);
     }
 
     /**
@@ -57,7 +57,7 @@ public interface PartAssemblyItem {
      * @return 零件类型；物品未实现 {@link PartAssemblyItem}、或物品自身解析不出时返回 {@code null}
      */
     @Nullable
-    static PartType partTypeOf(ItemStack stack, Level level) {
+    static RegularPartType partTypeOf(ItemStack stack, Level level) {
         if (stack.getItem() instanceof PartAssemblyItem item) {
             return item.getPartType(stack, level);
         }
@@ -88,7 +88,7 @@ public interface PartAssemblyItem {
     }
 
     default void appendPartTags(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        PartType partType = TextUtil.resolvePartTypeForTooltip(stack);
+        RegularPartType partType = TextUtil.resolvePartTypeForTooltip(stack);
         if (partType == null) return;
         List<ResourceLocation> tags = TextUtil.getDistinctSortedTags(partType);
         if (tags.isEmpty()) return;

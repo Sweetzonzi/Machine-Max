@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -91,7 +91,7 @@ public class PdaItem extends Item implements PartAssemblyItem {
      * {@code null}，对外不可区分——消费方一律按"该物品此刻不提供零件来源"处理。</p>
      */
     @Override
-    public @Nullable PartType getPartType(ItemStack stack, Level level) {
+    public @Nullable RegularPartType getPartType(ItemStack stack, Level level) {
         PdaData data = PdaHelper.getData(stack);
         if (!data.designMode()) return null;
         ResourceLocation recipeId = data.shortcutAt(data.selected());
@@ -99,6 +99,6 @@ public class PdaItem extends Item implements PartAssemblyItem {
         RecipeHolder<PartFabricatingRecipe> holder = PdaHelper.partRecipeOf(level, recipeId);
         if (holder == null) return null;
         ResourceLocation partTypeId = holder.value().getPartType();
-        return partTypeId == null ? null : PartType.get(level, partTypeId);
+        return partTypeId == null ? null : RegularPartType.get(level, partTypeId);
     }
 }

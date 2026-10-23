@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
@@ -197,10 +197,10 @@ public interface IAmmoSupplier {
     boolean returnRound(ProjectileType type);
 
     /**
-     * 供给者身份：宿主 Part 的 uuid + SubPart 名 + 子系统名。<br>
-     * 三者的作用域都是<b>本次会话内的这一台载具</b>：宿主 Part 的 uuid 随载具数据同步到客户端
-     * （{@code PartData.uuid}），SubPart 名与子系统名则由内容包定义，因此同一个值在两端指的是同一台
-     * 机器。载具从模板重建时 Part 的 uuid 会重新生成，所以这个身份只用于端到端的指认传递，
+     * 供给者身份：宿主 RegularPart 的 uuid + SubPart 名 + 子系统名。<br>
+     * 三者的作用域都是<b>本次会话内的这一台载具</b>：宿主 RegularPart 的 uuid 随载具数据同步到客户端
+     * （{@code RegularPartData.uuid}），SubPart 名与子系统名则由内容包定义，因此同一个值在两端指的是同一台
+     * 机器。载具从模板重建时 RegularPart 的 uuid 会重新生成，所以这个身份只用于端到端的指认传递，
      * 不作为存档地址。
      * <p>
      * SubPart 的 int id 不满足要求：它由会话内计数器分配，客户端那份是从载具数据包里恢复的，
@@ -231,12 +231,12 @@ public interface IAmmoSupplier {
 
         /**
          * 取某台供给者的身份。<br>
-         * 供给者不是子系统、或拿不到宿主 Part 时返回 {@link #NONE}。
+         * 供给者不是子系统、或拿不到宿主 RegularPart 时返回 {@link #NONE}。
          */
         public static SupplierRef of(@Nullable IAmmoSupplier supplier) {
             if (supplier instanceof AbstractSubsystem sub) {
                 SubPart subPart = sub.getSubPart();
-                Part part = subPart.part;
+                var part = subPart.part;
                 if (part != null) {
                     return new SupplierRef(part.uuid, subPart.name, sub.getName());
                 }
@@ -245,7 +245,7 @@ public interface IAmmoSupplier {
         }
 
         /**
-         * 先按宿主 Part uuid、再按 SubPart 名与子系统名的全序。
+         * 先按宿主 RegularPart uuid、再按 SubPart 名与子系统名的全序。
          */
         @Override
         public int compareTo(SupplierRef other) {

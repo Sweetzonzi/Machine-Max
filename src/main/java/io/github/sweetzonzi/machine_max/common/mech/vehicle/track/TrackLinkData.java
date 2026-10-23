@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 履带的持久状态。
  *
- * <p>{@link TrackMemberRef} 使用「Part UUID + SubPart 名」，加载存档时在部件与连接关系
+ * <p>{@link TrackMemberRef} 使用「RegularPart UUID + SubPart 名」，加载存档时在部件与连接关系
  * 重建之后解析；{@code GearJoint}、{@code SubPart.trackLink} 反向引用与张力 rest 长度
  * 都是运行时对象，不进入本记录。履带没有名字：载具内的履带以列表项存在，成员引用
  * 本身就是足够的身份信息。</p>

@@ -9,7 +9,6 @@ import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -18,7 +17,7 @@ import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -62,7 +61,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         }
 
         var helper = VehicleAssemblyHelper.getInstance();
-        if (helper.getPartType() instanceof PartType type) {
+        if (helper.getPartType() instanceof RegularPartType type) {
             VariantAttr variantAttr = helper.getVariant();
             if (variantAttr == null) {
                 VisualEffectHelper.partToPlace = null;
@@ -104,7 +103,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         var helper = VehicleAssemblyHelper.getInstance();
-        if (helper.getPartType() instanceof PartType partType) {
+        if (helper.getPartType() instanceof RegularPartType partType) {
             String variant = helper.getVariantName();
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
             renderPart(camPos, poseStack, bufferSource, partialTick);
@@ -140,7 +139,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         }
     }
 
-    public void renderAttachPoints(PartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+    public void renderAttachPoints(RegularPartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         Iterator<Map.Entry<AbstractConnector, PhysicsRigidBody>> iterator = VisualEffectHelper.attachPoints.entrySet().iterator();
         while (iterator.hasNext()) {

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import com.jme3.math.Transform;
@@ -10,7 +11,6 @@ import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -50,8 +50,8 @@ public class AssemblyItem extends BaseVehicleItem {
 
     /** 收纳物品：放置时原样恢复进度 / 耐久 / 连接器 / 子系统 */
     @Override
-    protected boolean restoreFullState() {
-        return true;
+    public PartRestoreMode restoreMode() {
+        return PartRestoreMode.FULL_STATE;
     }
 
     @Override

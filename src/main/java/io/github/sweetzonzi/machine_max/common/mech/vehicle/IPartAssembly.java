@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPartType;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import net.minecraft.world.level.Level;
@@ -8,16 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * 零件装配体顶层接口
- * <p>
- * 表示"由 Part 通过 Connector 组装而成的集合体"——如一辆载具（VehicleCore）或一具机甲素体（MechUnit）。
- * 所有 Part / SubPart / Connector 中对 vehicle 的直接引用均改为通过此接口访问，
- * 从而解耦 Part 与 VehicleCore 的双向绑定。
- * </p>
- *
- * @see VehicleCore
- */
+/** Mechanical assembly contract for vehicles and externally owned body assemblies. */
 public interface IPartAssembly {
 
     // ========================================
@@ -33,6 +26,14 @@ public interface IPartAssembly {
     /** 是否已加入物理世界 */
     boolean isInLevel();
 
+    /** Whether this assembly accepts the definition before allocation or graph mutation. */
+    boolean acceptsPartType(AbstractPartType type);
+
+    /** Entity ownership belongs to the assembly, including Regular equipment. */
+    default boolean usesMMPartEntities() { return false; }
+
+    default AbstractPart<?> findPart(UUID id) { return null; }
+
     // ========================================
     // 基本属性
     // ========================================
@@ -42,7 +43,7 @@ public interface IPartAssembly {
 
     void setAssemblyName(String name);
 
-    /** 所有 Part 的总质量 */
+    /** 所有 AbstractPart<?> 的总质量 */
     float getTotalMass();
 
     /**
@@ -65,11 +66,11 @@ public interface IPartAssembly {
     // 零件管理
     // ========================================
 
-    /** 将 Part 加入装配体，初始化信号路由、注册子系统 */
-    void addPart(Part part);
+    /** 将 AbstractPart<?> 加入装配体，初始化信号路由、注册子系统 */
+    void addPart(AbstractPart<?> part);
 
-    /** 从装配体中移除 Part */
-    void removePart(Part part);
+    /** 从装配体中移除 AbstractPart<?> */
+    void removePart(AbstractPart<?> part);
 
     // ========================================
     // 拓扑操作 —— 替代 VehicleCore 的 attachConnector / detachConnector
@@ -80,9 +81,9 @@ public interface IPartAssembly {
      *
      * @param connector1 连接点1
      * @param connector2 连接点2（其一必须是 SimpleConnector）
-     * @param newPart    新导入的 Part，可为 null
+     * @param newPart    新导入的 AbstractPart<?>，可为 null
      */
-    void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart);
+    void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable AbstractPart<?> newPart);
 
     /** 断开指定 Connector，触发图分裂检测 */
     void disconnect(AbstractConnector connector);
@@ -98,22 +99,22 @@ public interface IPartAssembly {
     // 伤害传递
     // ========================================
 
-    /** Part 受到伤害后向装配体顶层上报，由实现者决定如何折算到装配体的 HP */
-    void onPartDamage(Part part, float damage);
+    /** AbstractPart<?> 受到伤害后向装配体顶层上报，由实现者决定如何折算到装配体的 HP */
+    void onPartDamage(AbstractPart<?> part, float damage);
 
     /**
      * 一次结算的通告：携带本零件本次结算产生的全部命中记录。
      * <p>
-     * 与 {@link #onPartDamage(Part, float)} 的差别只在粒度——后者只有一个折算后的总量，
+     * 与 {@link #onPartDamage(AbstractPart, float)} 的差别只在粒度——后者只有一个折算后的总量，
      * 前者还带有逐次命中的金额与协议上下文（伤害来源、命中几何），
      * 供需要把伤害继续投递给承载实体的装配体使用。
      * 记录里的零件字段让"把多个零件的记录汇总成一个扁平列表"的场景自带来源信息。
      * 通告发生在结算过程中（{@code LevelTickEvent.Post} 内），若实现要把伤害投递给承载实体，
      * 必须自行推迟到全部零件结算之后。
      * </p>
-     * <p>默认实现把记录折算为总量后调用 {@link #onPartDamage(Part, float)}，因此只实现该重载的装配体照常工作。</p>
+     * <p>默认实现把记录折算为总量后调用 {@link #onPartDamage(AbstractPart, float)}，因此只实现该重载的装配体照常工作。</p>
      */
-    default void onPartDamage(Part part, List<SubPartHitDamage> hits) {
+    default void onPartDamage(AbstractPart<?> part, List<SubPartHitDamage> hits) {
         float total = 0f;
         for (SubPartHitDamage hit : hits) {
             total += hit.vehicleDamage();

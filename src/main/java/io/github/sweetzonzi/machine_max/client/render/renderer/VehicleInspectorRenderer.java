@@ -13,7 +13,7 @@ import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BasicSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
@@ -127,7 +127,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
         mc.renderBuffers().bufferSource().endBatch();
         fbo.bindInput();
         boolean renderedAnything = false;
-        for (Part part : vehicle.partMap.values()) {
+        for (RegularPart part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 if (subPart.isRemoved() || subPart.isDestroyed()) continue;
                 // tickCount < 15 的新部件继续播放淡入，不进入 inspector mask
@@ -149,7 +149,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
         // ══════ Loop 2：子系统 HitBox + 连接点 → 主缓冲 ══════
         poseStack.pushPose();
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-        for (Part part : vehicle.partMap.values()) {
+        for (RegularPart part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
                 if (subPart.isRemoved() || subPart.isDestroyed()) continue;
                 var modelInstance = subPart.part.getModelController().getModel();

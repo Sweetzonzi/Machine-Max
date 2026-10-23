@@ -10,6 +10,12 @@
       "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
       "default": "../../docs/en_us/schemas/part_definition_schema.json"
     },
+    "type": {
+      "type": "string",
+      "const": "regular",
+      "default": "regular",
+      "description": "Part kind; omitted means regular. Use the extension mod schema for other kinds."
+    },
     "icon": {
       "$ref": "base/resource_location.schema.json",
       "description": "Part icon path, used for UI display. If left empty, a purple-black default icon will be used as the icon",

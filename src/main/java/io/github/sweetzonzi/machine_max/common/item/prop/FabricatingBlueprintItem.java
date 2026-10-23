@@ -7,7 +7,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -75,7 +75,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem {
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         ResourceLocation partTypeId = itemStack.get(MMDataComponents.getPART_TYPE());
-        PartType partType = partTypeId == null ? null : PartType.get(level, partTypeId);
+        RegularPartType partType = partTypeId == null ? null : RegularPartType.get(level, partTypeId);
         HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());

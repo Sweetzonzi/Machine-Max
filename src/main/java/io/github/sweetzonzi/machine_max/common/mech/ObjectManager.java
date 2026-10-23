@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
@@ -366,7 +367,7 @@ public class ObjectManager {
             try {
                 for (VehicleData savedVehicleData : savedVehicles) {
                     try {
-                        VehicleCore vehicle = new VehicleCore(level, savedVehicleData, true);
+                        VehicleCore vehicle = new VehicleCore(level, savedVehicleData, PartRestoreMode.FULL_STATE);
                         vehicle.loadFromSavedData = true;
                         addVehicle(vehicle);
                         i++;

@@ -9,7 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import net.minecraft.client.Camera;
@@ -79,7 +79,7 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
 
         for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {;
 
-            for (Part part : vehicle.partMap.values()) {
+            for (RegularPart part : vehicle.partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) {
                     try {
                         Matrix4f worldMatrix = subPart.getRenderWorldPositionMatrix(partialTick);

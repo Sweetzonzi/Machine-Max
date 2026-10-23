@@ -1,11 +1,13 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
+import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -21,7 +23,7 @@ public record ConnectorAttachPayload(
         UUID vehicleUuid,
         List<ConnectionData> connections,
         boolean hasNewPart,
-        @Nullable PartData partData
+        @Nullable RegularPartData partData
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ConnectorAttachPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "connector_attach_payload")
@@ -33,8 +35,8 @@ public record ConnectorAttachPayload(
             UUID vehicleUuid = buffer.readUUID();
             List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
             boolean hasNewPart = buffer.readBoolean();
-            PartData partData = null;
-            if (hasNewPart) partData = buffer.readJsonWithCodec(PartData.CODEC);
+            RegularPartData partData = null;
+            if (hasNewPart) partData = buffer.readJsonWithCodec(RegularPartData.CODEC);
             return new ConnectorAttachPayload(vehicleUuid, connections, hasNewPart, partData);
         }
 
@@ -43,7 +45,7 @@ public record ConnectorAttachPayload(
             buffer.writeUUID(value.vehicleUuid);
             buffer.writeJsonWithCodec(ConnectionData.CODEC.listOf(), value.connections);
             buffer.writeBoolean(value.hasNewPart);
-            if (value.hasNewPart && value.partData != null) buffer.writeJsonWithCodec(PartData.CODEC, value.partData);
+            if (value.hasNewPart && value.partData != null) buffer.writeJsonWithCodec(RegularPartData.CODEC, value.partData);
         }
     };
 
@@ -57,7 +59,7 @@ public record ConnectorAttachPayload(
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
         if (payload.hasNewPart) {
             if (payload.partData == null) throw new IllegalStateException("载具" + vehicle.name + "应有新部件，但数据包中没有提供新部件数据");
-            Part newPart = new Part(payload.partData, vehicle.level, true);
+            RegularPart newPart = PartFactory.restoreRegular(payload.partData, vehicle.level, PartRestoreMode.FULL_STATE);
             vehicle.addPart(newPart);
             vehicle.refreshMaxHp();
             newPart.addToLevel();

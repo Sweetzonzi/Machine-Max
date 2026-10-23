@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.connector;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPartType;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -23,8 +25,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPowerPort;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalPort;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.JointAttr;
@@ -562,7 +563,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * @param part 要检查的待安装部件
      * @return 给定零件是否满足当前连接点安装条件
      */
-    public boolean conditionCheck(Part part) {
+    public boolean conditionCheck(AbstractPart<?> part) {
         return conditionCheck(part.type, part.variantName);
     }
 
@@ -573,7 +574,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * @param variant  要检查的待安装部件的变体类型
      * @return 给定零件是否满足当前连接点安装条件
      */
-    public boolean conditionCheck(PartType partType, String variant) {
+    public boolean conditionCheck(AbstractPartType partType, String variant) {
         if (!this.hasPart()) {
             return attr.conditionCheck(partType, variant);
         } else return false;

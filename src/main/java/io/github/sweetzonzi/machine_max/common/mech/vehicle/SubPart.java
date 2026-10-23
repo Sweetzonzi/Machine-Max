@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
@@ -27,7 +28,6 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
-import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
@@ -94,7 +94,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Nullable
     public volatile TrackLink trackLink;
     //游戏机制
-    public final Part part;
+    public final AbstractPart<?> part;
     public String name;
     public final SubPartAttr attr;
     public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
@@ -124,7 +124,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /** 上次重建高度场时的中心方块Z坐标 */
     private int lastHFBlockZ = Integer.MIN_VALUE;
 
-    public SubPart(String name, Part part, SubPartAttr attr) {
+    public SubPart(String name, AbstractPart<?> part, SubPartAttr attr) {
         super(part.level, attr.getCollisionShape(part.variant), attr.mass);
         this.part = part;
         this.name = name;
@@ -181,16 +181,24 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     @Override
     public void destroy() {
+        destroy(true);
+    }
+
+    public void abortConstruction() {
+        destroy(false);
+    }
+
+    private void destroy(boolean notifySubsystems) {
         collisionHandler.effectManager.stopAll();
         // 必须在刚体移出世界之前通知履带摘约束
         TrackLink track = this.trackLink;
         if (track != null) track.onMemberDestroyed(this);
-        super.destroy();
-        subsystems.forEach((name, subsystem) -> subsystem.onDetach());
-        subsystems.clear();
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
         }
+        super.destroy();
+        if (notifySubsystems) subsystems.forEach((name, subsystem) -> subsystem.onDetach());
+        subsystems.clear();
         if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
             interactBoxes.destroy();
@@ -203,6 +211,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     public void refreshPartEntity() {
+        if (part.assembly == null || !part.assembly.usesMMPartEntities()) return;
         this.entity = new MMPartEntity(getLevel(), this);
         getLevel().addFreshEntity(this.entity);
     }
@@ -253,8 +262,16 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void preTick() {
         super.preTick();
-        if (part.assemblingProgress >= 1f && tickCount == 10) {
-            body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
+        if (entity != null && (part.assembly == null || !part.assembly.usesMMPartEntities())) {
+            entity.subPart = null;
+            entity.discard();
+            entity = null;
+        }
+        if (part.usesFullGravity() && tickCount == 10) {
+            getPhysicsLevel().submitImmediateTask(cn.solarmoon.spark_core.util.PPhase.PRE, () -> {
+                body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
+                return null;
+            });
         }
     }
 
@@ -839,30 +856,23 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * @return 是否成功修理
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide && part.permitsRepair()) {
             // 履带成员轮子的维修量优先用于履带耐久；履带不是独立刚体，破坏后由这里恢复
             TrackLink track = this.trackLink;
             if (track != null && !track.isDisposed() && amount > 0f
                     && (track.isBroken() || track.durability() < track.maxDurability())) {
                 track.repair(amount);
-                part.setRenderWireframe(true);
+                part.onRepairAttempt();
                 return true;
             }
-            part.setRenderWireframe(true); // 尝试维修时重置为线框模式
+            part.onRepairAttempt(); // 尝试维修时重置为线框模式
             // 修理零件
             float repairAmount = 0f;
             float requestedRepairAmount = Math.max(amount, 0f);
             float maxDurability = getMaxDurability();
             float currentDurability = getDurability();
             if (requestedRepairAmount > 0f && maxDurability > 0f && currentDurability < maxDurability) {
-                float maxRepairRatio = 1f;
-                PartFabricatingRecipe recipe = part.getRecipe();
-                if (recipe != null) {
-                    int totalMaterials = recipe.getManualAssembleIngredientList().size();
-                    if (totalMaterials > 0) {
-                        maxRepairRatio = Math.clamp((float) part.getMaterialProgress() / totalMaterials, 0f, 1f);
-                    }
-                }
+                float maxRepairRatio = part.repairLimitRatio();
                 float currentRatio = Math.clamp(currentDurability / maxDurability, 0f, 1f);
                 float repairDeltaRatio = requestedRepairAmount / maxDurability;
                 float targetRatio = Math.min(currentRatio + repairDeltaRatio, maxRepairRatio);
@@ -907,7 +917,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                     connectorsRepairAmount -= connectorRepairAmount;
                 }
             }
-            part.recomputeAssemblyFromDurability();
+            part.onDurabilityChanged();
             syncToClient();
             return !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount && connectorAmount == connectorsRepairAmount);
         } else return false;
@@ -944,19 +954,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             if (effective <= 0f) continue;
             // 本次命中开始前的剩余耐久：用于把本次伤害拆成"零件承受"与"溢出摧毁"两段
             float leftBefore = Math.max(0f, remaining - drained);
-            float vehicleDamage;
-            if (isDestroyed()) {
-                // 零件已处于摧毁状态：本次伤害全部按摧毁传导率传导
-                vehicleDamage = effective * part.type.vehicleDamageRateDestroyed;
-            } else if (effective > leftBefore) {
-                // 零件未摧毁但本次伤害足以打空耐久：
-                // 承受住的部分（≤剩余耐久）按正常传导率，超出而摧毁零件的那部分按摧毁传导率
-                vehicleDamage = part.type.vehicleDamageRate * leftBefore
-                        + part.type.vehicleDamageRateDestroyed * (effective - leftBefore);
-            } else {
-                // 零件未摧毁且耐久足以承受：全额按正常传导率传导
-                vehicleDamage = effective * part.type.vehicleDamageRate;
-            }
+            float vehicleDamage = part.assemblyDamage(effective, leftBefore, isDestroyed());
             drained += effective;
             if (vehicleDamage > 0f) {
                 hits.add(new SubPartHitDamage(effective, vehicleDamage, ctx, part));
@@ -964,7 +962,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         }
         if (drained > 0f) {
             setDurability(Math.clamp(getDurability() - drained, 0, getMaxDurability()));
-            part.recomputeAssemblyFromDurability();
+            part.onDurabilityChanged();
             if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
                 int extraAdvance = Math.round(drained * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
                 if (extraAdvance > 0) {
@@ -1262,7 +1260,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     @Override
     public void setDurability(float durability) {
-        // 共享耐久：写入 Part 持有的单一值并广播到本部件所有 SubPart
+        // 共享耐久：写入 AbstractPart<?> 持有的单一值并广播到本部件所有 SubPart
         if (part.type.shareDurability) {
             part.setSharedDurability(durability);
             return;
@@ -1271,12 +1269,12 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>直接写入本子零件的原始耐久值（不经过共享耐久委托），供 Part 广播共享耐久使用。</p>
+     * <p>直接写入本子零件的原始耐久值（不经过共享耐久委托），供 AbstractPart<?> 广播共享耐久使用。</p>
      * <p>Directly writes this sub-part's raw durability, bypassing shared-durability delegation.
-     * Used by {@link Part#setSharedDurability(float)} to broadcast the shared value.</p>
+     * Used by {@link AbstractPart<?>#setSharedDurability(float)} to broadcast the shared value.</p>
      */
     public void setRawDurability(float durability) {
-        float durabilityCap = this.getMaxDurability() * Math.max(part.getAssemblingProgress(), 0.05f);
+        float durabilityCap = this.getMaxDurability() * part.durabilityLimitRatio();
         this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0F, durabilityCap));
     }
 

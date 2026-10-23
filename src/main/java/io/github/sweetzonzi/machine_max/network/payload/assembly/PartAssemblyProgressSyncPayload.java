@@ -1,9 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
+import io.github.sweetzonzi.machine_max.common.mech.part.PartAssemblyLookup;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -50,10 +49,9 @@ public record PartAssemblyProgressSyncPayload(
     }
 
     public static void handle(PartAssemblyProgressSyncPayload payload, IPayloadContext context) {
-        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
+        var vehicle = PartAssemblyLookup.findClient(context.player().level(), payload.vehicleUUID);
         if (vehicle != null) {
-            Part part = vehicle.partMap.get(payload.partUUID);
-            if (part != null) {
+            if (vehicle.findPart(payload.partUUID) instanceof RegularPart part) {
                 context.enqueueWork(()->{
                    part.setAssemblingProgress(payload.assemblingProgress);
                    part.setMaterialProgress(payload.materialProgress);

@@ -29,7 +29,7 @@ object MMEntityDataSerializers {
     }
 
     /**
-     * 供给者指认：宿主 Part uuid + SubPart 名 + 子系统名。
+     * 供给者指认：宿主 RegularPart uuid + SubPart 名 + 子系统名。
      *
      * 传输开销为 16 字节 uuid + 两个 UTF-8 名；空值用 [IAmmoSupplier.SupplierRef.NONE] 表达。
      * 换用这三项而不是 SubPart 的 int id，是因为 int id 由会话内计数器分配、不进存档，

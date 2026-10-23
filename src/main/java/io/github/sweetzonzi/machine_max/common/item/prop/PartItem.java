@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
@@ -80,7 +80,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
         // GUI上下文：使用2D图标模型
         if (context == ItemDisplayContext.GUI) {
             var animatable = new ItemAnimatable(itemStack, level);
-            PartType partType = PartAssemblyItem.partTypeOf(itemStack, level);//获取物品保存的部件类型
+            RegularPartType partType = PartAssemblyItem.partTypeOf(itemStack, level);//获取物品保存的部件类型
             if (partType == null) return animatable;
             String variant = partType.getVariantIterator().next();
             HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
@@ -97,7 +97,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
             return animatable;
         } else {
             // 非GUI上下文（第一人称、第三人称等）：使用PartAnimatable以支持按零件渲染
-            PartType partType = PartAssemblyItem.partTypeOf(itemStack, level);
+            RegularPartType partType = PartAssemblyItem.partTypeOf(itemStack, level);
             if (partType == null) {
                 // 无法获取部件类型，回退到ItemAnimatable
                 return new ItemAnimatable(itemStack, level);

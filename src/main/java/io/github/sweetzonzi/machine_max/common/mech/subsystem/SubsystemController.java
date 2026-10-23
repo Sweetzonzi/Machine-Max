@@ -227,6 +227,11 @@ public class SubsystemController implements ISignalBus {
 
     public void destroy() {
         allSubsystems.forEach(AbstractSubsystem::onDetach);
+        discardUninitialized();
+    }
+
+    /** Releases construction-local state without gameplay detach effects such as inventory drops. */
+    public void discardUninitialized() {
         allSubsystems.clear();
         busSubscribers.clear();
         channels.clear();

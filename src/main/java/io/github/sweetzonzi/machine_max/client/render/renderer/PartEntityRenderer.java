@@ -78,8 +78,8 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
 
-        float assemblingProgress = entity.subPart.part.getAssemblingProgress();
-        float functionalThreshold = entity.subPart.part.type.getFunctionalThreshold();
+        float assemblingProgress = entity.subPart.part instanceof io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart regular ? regular.getAssemblingProgress() : 1f;
+        float functionalThreshold = entity.subPart.part instanceof io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart regular ? regular.type.functionalThreshold : 0f;
         boolean useWireframe = entity.subPart.part.shouldRenderWireframe() && assemblingProgress < functionalThreshold;
         var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         var pos = entity.subPart.transform.getTranslation();
