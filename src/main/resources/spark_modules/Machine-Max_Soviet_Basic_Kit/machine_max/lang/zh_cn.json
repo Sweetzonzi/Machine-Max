@@ -3,8 +3,8 @@
   "subsystem.machine_max.pktm": "PKTM 机枪",
   "machine_max.30mm_ap": "AP",
   "machine_max.30mm_he": "HE",
-  "machine_max.7_62mm_ap": "AP",
-  "machine_max.7_62mm_tracer": "曳光",
+  "machine_max.7_62x54r_ap": "AP",
+  "machine_max.7_62x54r_t": "曳光",
   "machine_max.9m133_kornet": "ATGM",
   "machine_max.57mm_ap": "57mm 穿甲弹",
   "machine_max.57mm_he": "57mm 高爆弹"

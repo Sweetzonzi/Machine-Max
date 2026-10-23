@@ -1,6 +1,6 @@
 {
   "machine_max.50mm_pzgr39": "AP",
   "machine_max.50mm_sprgr38": "HE",
-  "machine_max.7_92mm_smk": "AP",
-  "machine_max.7_92mm_tracer": "曳光"
+  "machine_max.7_92x57_ap": "AP",
+  "machine_max.7_92x57_t": "曳光"
 }

@@ -1,6 +1,6 @@
 {
   "type": "ballistic",
-  "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/ap", "machine_max:ammo/api"],
+  "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/ap"],
   "max_lifetime": 2.5,
   "external": {
     "mass": 0.0096,

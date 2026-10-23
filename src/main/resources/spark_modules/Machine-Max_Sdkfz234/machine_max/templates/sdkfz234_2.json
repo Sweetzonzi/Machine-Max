@@ -325,7 +325,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.mg34": {
-              "chambered_type": "machine_max:7_92mm_smk",
+              "chambered_type": "machine_max:7_92x57_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,

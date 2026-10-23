@@ -236,10 +236,10 @@
               "type": "machine_max:regen_loader",
               "definition": "machine_max:pktm_regen_loader",
               "projectile_types": {
-                "machine_max:7_62mm_ap": 3,
-                "machine_max:7_62mm_tracer": 1
+                "machine_max:7_62x54r_ap": 3,
+                "machine_max:7_62x54r_t": 1
               },
-              "belt_label": "AP/AP-T",
+              "belt_label": "AP/T",
               "discovery_outputs": {
                 "ammo_pktm": [
                   "global"

@@ -545,7 +545,7 @@
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.pktm": {
-              "chambered_type": "machine_max:7_62mm_ap",
+              "chambered_type": "machine_max:7_62x54r_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,

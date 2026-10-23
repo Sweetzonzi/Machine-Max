@@ -185,9 +185,10 @@
               "type": "machine_max:regen_loader",
               "definition": "machine_max:mg34_regen_loader",
               "projectile_types": {
-                "machine_max:7_92mm_smk": 3,
-                "machine_max:7_92mm_tracer": 1
+                "machine_max:7_92x57_ap": 3,
+                "machine_max:7_92x57_t": 1
               },
+              "belt_label": "AP/T",
               "discovery_outputs": {
                 "ammo_7_92mm": [
                   "global"
