@@ -60,7 +60,7 @@
   "sounds": {
     "fire_sounds": {
       "0.0": {
-        "sound_id": "machine_max:projectile.fire.huge",
+        "sound_id": "machine_max:projectile.fire.atgm_9m133",
         "range": 200.0
       }
     }

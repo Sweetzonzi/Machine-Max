@@ -25,17 +25,9 @@
   "sounds": {
     "fire_sounds": {
       "0.0": {
-        "sound_id": "machine_max:projectile.fire.small",
-        "range": 128.0
-      },
-      "750.0": {
-        "sound_id": "machine_max:projectile.fire.mg34_loop",
+        "sound_id": "machine_max:projectile.fire.7_62x54r_pktm",
         "range": 128.0
       }
-    },
-    "cease_fire_sound": {
-      "sound_id": "machine_max:projectile.fire.mg34_release",
-      "range": 128.0
     },
     "shell_sounds": {
       "0.0": {

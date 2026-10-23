@@ -1,0 +1,67 @@
+{
+  "projectile.fire.7_62x54r_pktm": {
+    "sounds": [
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_1",
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_2",
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_3",
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_4",
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_5",
+      "machine_max:projectile/fire/7_62x54r_pktm/7_62x54r_pktm_6"
+    ]
+  },
+  "projectile.fire.30mm_2a42": {
+    "sounds": [
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_shot_1",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_shot_2",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_shot_3",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_shot_4"
+    ]
+  },
+  "projectile.fire.30mm_2a42_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_interior_1",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_interior_2",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_interior_3"
+    ]
+  },
+  "projectile.fire.30mm_2a42_loop": {
+    "sounds": [
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_loop"
+    ]
+  },
+  "projectile.fire.30mm_2a42_loop_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_loop_interior"
+    ]
+  },
+  "projectile.fire.30mm_2a42_tail": {
+    "sounds": [
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_tail_1",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_tail_2",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_tail_3",
+      "machine_max:projectile/fire/30mm_2a42/30mm_2a42_tail_4"
+    ]
+  },
+  "projectile.fire.57mm_zis4": {
+    "sounds": [
+      "machine_max:projectile/fire/57mm_zis4/57mm_zis4_shot_1",
+      "machine_max:projectile/fire/57mm_zis4/57mm_zis4_shot_2",
+      "machine_max:projectile/fire/57mm_zis4/57mm_zis4_shot_3"
+    ]
+  },
+  "projectile.fire.125mm_2a46": {
+    "sounds": [
+      "machine_max:projectile/fire/125mm_2a46/125mm_2a46_shot_1",
+      "machine_max:projectile/fire/125mm_2a46/125mm_2a46_shot_2",
+      "machine_max:projectile/fire/125mm_2a46/125mm_2a46_shot_3"
+    ]
+  },
+  "projectile.fire.atgm_9m133": {
+    "sounds": [
+      "machine_max:projectile/fire/atgm_9m133/atgm_9m133_launch_1",
+      "machine_max:projectile/fire/atgm_9m133/atgm_9m133_launch_2",
+      "machine_max:projectile/fire/atgm_9m133/atgm_9m133_launch_3",
+      "machine_max:projectile/fire/atgm_9m133/atgm_9m133_launch_4"
+    ]
+  }
+}
