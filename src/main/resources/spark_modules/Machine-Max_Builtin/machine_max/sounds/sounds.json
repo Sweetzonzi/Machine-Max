@@ -380,6 +380,21 @@
       "machine_max:subsystem/loader/reload_shell_2"
     ]
   },
+  "subsystem.loader.smallcalibre_eject": {
+    "sounds": [
+      "machine_max:subsystem/loader/smallcalibre_eject"
+    ]
+  },
+  "subsystem.loader.smallcalibre_reload": {
+    "sounds": [
+      "machine_max:subsystem/loader/smallcalibre_reload"
+    ]
+  },
+  "subsystem.loader.smallcalibre_bolt": {
+    "sounds": [
+      "machine_max:subsystem/loader/smallcalibre_bolt"
+    ]
+  },
   "projectile.fire.mini": {
     "sounds": [
       "machine_max:projectile/fire/fire_mini"
@@ -403,36 +418,6 @@
   "projectile.fire.huge": {
     "sounds": [
       "machine_max:projectile/fire/fire_huge"
-    ]
-  },
-  "projectile.fire.mg34_loop": {
-    "sounds": [
-      "machine_max:projectile/fire/mg34_loop"
-    ]
-  },
-  "projectile.fire.mg34_loop_interior": {
-    "sounds": [
-      "machine_max:projectile/fire/mg34_loop_interior"
-    ]
-  },
-  "projectile.fire.mg34_release": {
-    "sounds": [
-      "machine_max:projectile/fire/mg34_release"
-    ]
-  },
-  "projectile.fire.mg34_release_interior": {
-    "sounds": [
-      "machine_max:projectile/fire/mg34_release_interior"
-    ]
-  },
-  "projectile.fire.50mm_kwk": {
-    "sounds": [
-      "machine_max:projectile/fire/50mm_kwk"
-    ]
-  },
-  "projectile.fire.50mm_kwk_interior": {
-    "sounds": [
-      "machine_max:projectile/fire/50mm_kwk_interior"
     ]
   },
   "projectile.shell.fall_interior": {

@@ -1,0 +1,32 @@
+{
+  "projectile.fire.mg34_loop": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_loop"
+    ]
+  },
+  "projectile.fire.mg34_loop_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_loop_interior"
+    ]
+  },
+  "projectile.fire.mg34_release": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_release"
+    ]
+  },
+  "projectile.fire.mg34_release_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_release_interior"
+    ]
+  },
+  "projectile.fire.50mm_kwk": {
+    "sounds": [
+      "machine_max:projectile/fire/50mm_kwk"
+    ]
+  },
+  "projectile.fire.50mm_kwk_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/50mm_kwk_interior"
+    ]
+  }
+}
