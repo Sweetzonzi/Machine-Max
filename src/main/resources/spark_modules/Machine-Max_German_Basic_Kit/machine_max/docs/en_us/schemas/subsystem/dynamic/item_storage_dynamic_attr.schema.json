@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/item_storage_dynamic_attr.json",
+  "title": "Item Storage Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the item storage container, only need to specify the model.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:item_storage",
+      "description": "Subsystem type, must be 'machine_max:item_storage'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:item_storage",
+      "definition": "machine_max:default_trunk"
+    }
+  ]
+}

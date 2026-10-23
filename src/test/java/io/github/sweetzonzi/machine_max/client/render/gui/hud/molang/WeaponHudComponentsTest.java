@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WeaponHudComponentsTest {
     private static final Path PACKS = Path.of("src/main/resources/spark_modules");
-    private static final Path BUILTIN = PACKS.resolve("machine_max.builtin/machine_max");
-    private static final Path SDKFZ = PACKS.resolve("sdkfz/machine_max");
+    private static final Path BUILTIN = PACKS.resolve("Machine-Max_Builtin/machine_max");
+    private static final Path K17 = PACKS.resolve("Machine-Max_K17/machine_max");
     private final List<AuiHudAnimatable> instances = new ArrayList<>();
     private record Page(WeaponHudElement runtime, AuiHudAnimatable hud, Document document) {
         void publish(HudWeaponSnapshot snapshot, boolean selected) {
@@ -221,7 +221,7 @@ class WeaponHudComponentsTest {
     }
 
     @Test void k17UsesThreeControllerLayoutsAndRetainsStaticComparisonResources() throws Exception {
-        var part = JsonParser.parseString(Files.readString(SDKFZ.resolve("parts/k17_turret.json"))).getAsJsonObject();
+        var part = JsonParser.parseString(Files.readString(K17.resolve("parts/k17_turret.json"))).getAsJsonObject();
         var subsystems = part.getAsJsonObject("variants")
                 .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main").getAsJsonObject("subsystems");
         var kinds = Map.of("main_weapon", "feed", "secondary_weapon", "compact", "atgm_weapon", "tubes");
@@ -231,7 +231,7 @@ class WeaponHudComponentsTest {
             for (String field : List.of("first_hud_layout", "third_hud_layout", "scope_hud_layout")) {
                 assertEquals("machine_max:" + layoutKey, wc.get(field).getAsString());
             }
-            var layout = JsonParser.parseString(Files.readString(SDKFZ.resolve("hud_layouts/" + layoutKey + ".json")))
+            var layout = JsonParser.parseString(Files.readString(K17.resolve("hud_layouts/" + layoutKey + ".json")))
                     .getAsJsonArray().get(0).getAsJsonObject();
             assertEquals("always", layout.get("selection_visibility").getAsString());
             assertEquals("screen_fixed", layout.get("scope_behavior").getAsString());
@@ -241,19 +241,19 @@ class WeaponHudComponentsTest {
             String page = style.get("page").getAsString().substring("machine_max/".length());
             assertTrue(Files.isRegularFile(BUILTIN.resolve("documents/" + page)));
         }
-        var hull = JsonParser.parseString(Files.readString(SDKFZ.resolve("parts/k17_hull.json"))).getAsJsonObject();
+        var hull = JsonParser.parseString(Files.readString(K17.resolve("parts/k17_hull.json"))).getAsJsonObject();
         var driverSeat = hull.getAsJsonObject("variants")
                 .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main")
                 .getAsJsonObject("subsystems").getAsJsonObject("driver_seat");
         assertEquals("machine_max:default_3rd_seat", driverSeat.get("definition").getAsString());
         assertEquals("machine_max:k17_vehicle_hud", driverSeat.get("third_hud_layout").getAsString());
         for (String sight : List.of("gunner", "commander")) {
-            var definition = JsonParser.parseString(Files.readString(SDKFZ.resolve("subsystems/k17/k17_" + sight + "_sight_preview.json"))).getAsJsonObject();
+            var definition = JsonParser.parseString(Files.readString(K17.resolve("subsystems/k17/k17_" + sight + "_sight_preview.json"))).getAsJsonObject();
             assertEquals("machine_max:k17_scope_hud", definition.get("scope_hud_layout").getAsString());
         }
         for (String path : List.of("hud_layouts/k17_weapon_preview.json", "hud_layouts/k17_weapon_preview_scope.json",
                 "huds/k17_weapon_preview.json", "documents/k17_weapon_preview/index.html", "documents/k17_weapon_preview/hud.css")) {
-            assertTrue(Files.isRegularFile(SDKFZ.resolve(path)));
+            assertTrue(Files.isRegularFile(K17.resolve(path)));
         }
     }
 }

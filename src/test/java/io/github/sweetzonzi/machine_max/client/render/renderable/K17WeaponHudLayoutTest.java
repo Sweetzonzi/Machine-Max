@@ -26,7 +26,7 @@ class K17WeaponHudLayoutTest {
 
     @Test void configuredPanelsFitAndDoNotOverlapAcrossGuiSizes() throws Exception {
         var packs = Path.of("src/main/resources/spark_modules");
-        var pages = packs.resolve("machine_max.builtin/machine_max/documents/weapon_hud_components");
+        var pages = packs.resolve("Machine-Max_Builtin/machine_max/documents/weapon_hud_components");
         List<AuiHudAnimatable> instances = new ArrayList<>();
         List<Panel> panels = new ArrayList<>();
         Size.setViewportOverride(1920, 1080);
@@ -62,7 +62,7 @@ class K17WeaponHudLayoutTest {
                 });
                 assertTrue(size[0] > 0 && size[1] > 0);
                 var layout = JsonParser.parseString(Files.readString(packs.resolve(
-                        "sdkfz/machine_max/hud_layouts/k17_weapon_" + kind + ".json")))
+                        "Machine-Max_K17/machine_max/hud_layouts/k17_weapon_" + kind + ".json")))
                         .getAsJsonArray().get(0).getAsJsonObject();
                 var offset = layout.getAsJsonArray("offset");
                 panels.add(new Panel(size[0], size[1], offset.get(0).getAsDouble(), offset.get(1).getAsDouble(),

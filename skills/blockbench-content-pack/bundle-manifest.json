@@ -3,8 +3,8 @@
   "bundled_on": "2026-10-23",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "0aa43e7824d08823f798b7116bdc6858a40bb5d6",
-    "source_directory": "src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/schemas",
+    "revision": "55e6e5b3ee5bd5f1c185ef97704c74e06d73567f",
+    "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
     "file_count": 70,

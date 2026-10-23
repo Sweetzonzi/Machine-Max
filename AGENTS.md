@@ -156,7 +156,7 @@ io.github.sweetzonzi.machine_max/
 | 新增网络包      | `network/payload/` + `MMPayloadRegistry.java`  | 按功能子目录归类                                  |
 | 新增 GUI/HUD | `client/render/gui/`                           | Screen、HUD、hud3d、panel                    |
 | 新增物品/方块/实体 | `common/registry/`（Kotlin）                     | MMItems.kt, MMBlocks.kt, MMEntities.kt    |
-| 新增内容包数据    | `src/main/resources/spark_modules/`            | Official\_Pack / builtin / sdkfz          |
+| 新增内容包数据    | `src/main/resources/spark_modules/`            | `Machine-Max_*` 九个第一方包，见「内容包分层」 |
 | 新增配方       | `common/recipe/` + `spark_modules/.../recipe/` | 两部分配合                                     |
 | 修复渲染       | `client/render/renderer/`                      | PartEntityRenderer 是主载具渲染器                |
 | 修复碰撞       | `common/mech/vehicle/collision/`               | CollisionHandler + CollisionEffectManager |
@@ -199,14 +199,33 @@ io.github.sweetzonzi.machine_max/
 - 顺序要求：两个私有配置必须在 `build.gradle` 里先声明（`repositories.gradle` 由 `apply from` 在本文件之后执行，那里只填内容）。
 - 核对办法：`run/logs/latest.log` 里 `ModDiscoverer` 打出的 Mod List 是最终生效的 mod 集合；`build/moddev/{client,server,data,gameTestServer}LegacyClasspath.txt` 只是 MC-BOOTSTRAP 模块层的清单（由 `gradlew write<Run>LegacyClasspath` 刷新），其中出现某个 jar 不代表它会被当成 mod 载入。
 
+## 内容包分层
+
+`src/main/resources/spark_modules/` 下是九个第一方内容包。目录名统一 `Machine-Max_` 前缀，包内内容目录统一 `machine_max/`，包 id 是 `machine_max:<小写名>`：
+
+| 层 | 目录 | id | 承担 |
+| --- | --- | --- | --- |
+| L0 | `Machine-Max_Builtin` | `machine_max:builtin` | 引擎基元、子系统 / 连接器 / 材质 / 音效 / 粒子 / HUD、新人货架，以及货箱、黄金马桶等题材无关的独立成品件 |
+| L1 | `Machine-Max_Soviet_Basic_Kit` | `machine_max:soviet_basic_kit` | 苏系共用型谱：2A42 / 2A90 机关炮、9M133 反坦克导弹、PKTM 机枪与配套弹种 |
+| L1 | `Machine-Max_German_Basic_Kit` | `machine_max:german_basic_kit` | 德系共用型谱：KwK39 50mm 火炮、MG34 机枪与配套弹种 |
+| L1 | `Machine-Max_Civilian` | `machine_max:civilian` | 13 款民用载具（集合包，不单独建 kit） |
+| L2 | `Machine-Max_2S38`、`_K17`、`_MTLB`、`_Sdkfz234` | `machine_max:2s38` 等 | 单车 / 车族：几何、挂点、接线、装配体、蓝图、模板、配方、HUD |
+| — | `Machine-Max_Pack_Template` | `machine_max:template` | 空骨架，供作者复制 |
+
+依赖链是 `车包 → kit → builtin`：载具包只声明最具体的那一册，链上的定义自动带入。跨包引用（车包直接用 builtin 的座椅、某个车包用兄弟车包的加装件）靠「所有包先读完再统一注册」成立，`dependencies` 只决定加载顺序与同 id 覆盖。
+
+内容 id 由 `<namespace>/<文件名>` 决定，与所在包无关，所以搬动文件不改 id，存档、蓝图、研发进度都不受影响。
+
+目录名不带版本号：`SparkPackResourceLoader` 用目录名生成 `spark_modules/<目录名>.zip`，一旦改名，旧 zip 会留下并与新 zip 指向同一个 id，实际生效的那份取决于目录遍历顺序。退役名的副本由 `MMRetiredPackCleanup` 在启动时删除。
+
 ## 内容包 schema 同步
 
-内容包的 `docs/<lang>/schemas/` 带部件、子系统、配方的 JSON Schema，供作者在编辑器里补全与校验。**手写的只有 builtin 那一份**，其余由 `./gradlew syncSchemas` 生成：
+内容包的 `docs/<lang>/schemas/` 带部件、子系统、配方的 JSON Schema，供作者在编辑器里补全与校验。**手写的只有 `Machine-Max_Builtin` 那一份**，其余由 `./gradlew syncSchemas` 生成：
 
 | 角色 | 路径 | 内容 |
 |------|------|------|
-| 源 | `src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/{en_us,zh_cn}/schemas/` | 手写 |
-| 副本 | `Machine-Max_Official_Pack`、`Machine-Max_Pack_Template` 的同名路径 | 逐语言字节复制 |
+| 源 | `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/{en_us,zh_cn}/schemas/` | 手写 |
+| 副本 | 其余第一方包的同名路径（`Machine-Max_Pack_Template` 的 namespace 是 `namespace`） | 逐语言字节复制 |
 | 技能快照 | `skills/blockbench-content-pack/references/schemas/` | 取 builtin 的 `zh_cn`，只含 `.json` |
 | 清单 | `skills/blockbench-content-pack/bundle-manifest.json` 的 `schemas` 块 | 文件清单、字节数、`sha256` |
 
@@ -219,8 +238,8 @@ io.github.sweetzonzi.machine_max/
 - **改 schema 只改 builtin**，然后跑 `./gradlew syncSchemas`，把生成的副本与自己的改动放在同一个提交里。副本与 builtin 不一致时 `checkSchemas` 让 `check` 失败，漏同步会在本地构建阶段暴露。
 - **写盘统一 LF**：`.gitattributes` 对 `src/main/resources/spark_modules/**/docs/**/schemas/**` 与技能快照声明 `text eol=lf`；比较前把 CRLF 归一化，所以判定结果与 `core.autocrlf` 无关。技能快照的 `sha256` 按 LF 字节计算。
 - **只同步 `*.json`**。`schemas/` 下的 `.md`（`How_to_Use_JSON_Schema.md`、`如何使用JSON模板.md`）是各内容包自己的示例文档，按包保留。
-- **sdkfz 不参与同步**：它的 schema 供插件编码器在包内做编辑器提示，整包重写会覆盖这些文件。同步范围与不参与同步的包都写在 `schema-sync.gradle` 顶部的 `syncTargets` / `excludedPacks`。
-- **新内容包自带 `docs/<lang>/schemas` 时**，按上一条把它登记进 `syncTargets` 或 `excludedPacks`；漏登记的副本由 `checkSchemas` 打提示，不判失败。
+- **每个第一方包自带一份副本**：包内 JSON 的 `$schema` 是指向本包 `docs/` 的相对路径（`parts/x.json` 用 `../docs/…`，`subsystems/<组>/x.json` 用 `../../docs/…`），所以只要包内层级不变，迁移文件时不必改写 `$schema`。同步范围写在 `schema-sync.gradle` 顶部的 `syncTargets`。
+- **新内容包自带 `docs/<lang>/schemas` 时**，把它登记进 `syncTargets`；漏登记的副本由 `checkSchemas` 打提示，不判失败。
 
 ## 约定
 
@@ -331,7 +350,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
   - **现行做法**：服务端等待地形期间用平动/转动系数归零把刚体原地钉住（`VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()`），**刚体保持动态、照常参与岛屿构建并保有 tag**——这正是它能避开本崩溃的理由。要停住刚体就用这对方法，或遵守「禁止以运动学模式制动刚体，使用 `speedFactor`」既有纪律。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
-- **打包说明**：部分内容包（如 sdkfz/）属于外部项目示例，打包时可能需要分离。
+- **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。九个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。
 
 ## 参考文件
 
@@ -343,7 +362,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - `docs/plan/进行中/AUI载具控制面板实现计划.md` — AUI 控制面板实现计划
 - `docs/AUI性能边界.md` — AUI 性能分析
 - `docs/机娘模组企划.md` — 机娘模组企划
-- `src/main/resources/spark_modules/machine_max.builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench 桌面端 MCP 服务器（AI 助手操作编辑器）的安装与连接参数，英文版在同级 `en_us/Blockbench-MCP.md`
+- `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench 桌面端 MCP 服务器（AI 助手操作编辑器）的安装与连接参数，英文版在同级 `en_us/Blockbench-MCP.md`
 - `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）
 
 

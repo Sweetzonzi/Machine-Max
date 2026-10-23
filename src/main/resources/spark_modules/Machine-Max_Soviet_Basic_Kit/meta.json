@@ -1,0 +1,13 @@
+{
+  "id": "machine_max:soviet_basic_kit",
+  "version": "1.0",
+  "author": "作者",
+  "description": "苏系载具共用的型谱：2A42 / 2A90 机关炮、9M133 反坦克导弹发射装置、PKTM 机枪与配套弹种、复合装甲材质、弹体模型；含苏联与俄罗斯继承型号，不含具体载具。",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    }
+  ],
+  "enable_auto_pack": true
+}

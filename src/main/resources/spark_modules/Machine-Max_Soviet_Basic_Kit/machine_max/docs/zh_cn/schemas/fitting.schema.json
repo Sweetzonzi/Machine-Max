@@ -1,0 +1,281 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/fitting.json",
+  "title": "载具配件型号",
+  "description": "载具配件（fittings/）的一条型号定义。首版只有履带（\"type\": \"track\"）：型号 id 就是文件名，字段平铺在顶层，外观是同层的 visual 对象。材料是硬依赖：material 缺失或不在材料表时该型号不注册。",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径，用于编辑器智能提示和验证。",
+      "default": "../docs/zh_cn/schemas/fitting.schema.json"
+    },
+    "type": {
+      "const": "track",
+      "description": "配件种类。首版只有 \"track\"；未知取值记为内容包错误，该型号不注册。"
+    },
+    "material": {
+      "allOf": [
+        { "$ref": "base/resource_location.schema.json" }
+      ],
+      "description": "履带材料 id，必须存在于本材料的注册表（builtin 提供 machine_max:track_steel）。决定装甲、接触摩擦、湿滑适应与方块伤害系数；缺失时该型号不注册。"
+    },
+    "thickness_mm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 50.0,
+      "description": "节厚，单位毫米。同时用于装甲 RHA（thickness_mm × RHA 系数）与几何包络扣半径；装配时要求它小于每个成员轮的有效半径。"
+    },
+    "durability_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 20.0,
+      "description": "每节耐久（点）。整条带的最大耐久 = durability_per_link × 节数。"
+    },
+    "length_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 0.2,
+      "description": "节长，单位米。用于由包络周长推导节数 N，并决定渲染时节的排布间距。"
+    },
+    "overwrite": {
+      "type": "object",
+      "description": "在 material 之上叠加的材质覆写，与碰撞箱使用同一套合并规则。履带只读取 physics 与 armor；overwrite.sounds 对履带不生效（命中音由本型号的 sounds 决定）。",
+      "properties": {
+        "physics": {
+          "type": "object",
+          "description": "物理属性覆写：摩擦、滑移、弹性与破坏方块能力。",
+          "properties": {
+            "friction": {
+              "allOf": [
+                { "$ref": "base/vector_3d.schema.json" }
+              ],
+              "description": "各向异性摩擦向量 [x, y, z]。x = 侧向，y = 前进方向，z 未使用。"
+            },
+            "slip_adaptation": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "湿滑适应系数，参与履带接触的 wetFactor。"
+            },
+            "slip_curve": {
+              "type": "object",
+              "description": "轮胎滑移曲线覆写。履带不读该字段。",
+              "additionalProperties": true
+            },
+            "rolling_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "滚动摩擦系数。"
+            },
+            "spinning_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "自旋摩擦系数。"
+            },
+            "restitution": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "恢复系数（弹性）。"
+            },
+            "block_damage_factor": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "方块破坏能量系数，0 表示无法破坏方块。"
+            }
+          },
+          "additionalProperties": false
+        },
+        "armor": {
+          "type": "object",
+          "description": "装甲属性覆写：抗穿、减伤、耐久衰减与条件修正。",
+          "properties": {
+            "rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "相对 RHA（均质轧制装甲）的抗穿系数。"
+            },
+            "angle_effect": {
+              "type": "boolean",
+              "description": "等效护甲厚度是否受命中角度影响。"
+            },
+            "dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "线性减伤值，随耐久衰减。"
+            },
+            "dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "伤害倍率，随耐久衰减。"
+            },
+            "decay_rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "耐久归零后残留的 RHA 系数。"
+            },
+            "decay_dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "耐久归零后残留的线性减伤值。"
+            },
+            "decay_dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "耐久归零后残留的伤害倍率。"
+            },
+            "decay_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "护甲退化曲线指数。"
+            },
+            "unpen_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "未击穿时的伤害指数。"
+            },
+            "impact_modifiers": {
+              "type": "array",
+              "description": "冲击修正器列表。"
+            },
+            "penetration_modifiers": {
+              "type": "array",
+              "description": "穿深修正器列表。"
+            },
+            "damage_modifiers": {
+              "type": "array",
+              "description": "伤害修正器列表。"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sounds": {
+          "type": "object",
+          "description": "命中音效覆写。对履带不生效；履带命中音由本型号的 sounds 决定。",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "sounds": {
+      "type": "object",
+      "description": "履带命中音效。省略时使用两个 hard_metal 固定范围事件；写空对象 {} 会落回碰撞箱的 hit_box.hit.* 默认值。",
+      "properties": {
+        "hit_un_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "未击穿时的音效。",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        },
+        "hit_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "击穿时的音效。",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tension": {
+      "type": "object",
+      "description": "相邻成员轮之间的单边弹簧-阻尼参数。rest 由相邻轮心距在装配 / 载入时采样，不在 JSON 中声明。",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否启用张力。"
+        },
+        "stiffness": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 12000.0,
+          "description": "弹簧刚度，单位 N/m。"
+        },
+        "damping": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 900.0,
+          "description": "阻尼系数，单位 N·s/m。"
+        },
+        "preload": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.0,
+          "description": "预紧量，单位米，从 rest 中扣除。"
+        },
+        "slack": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.015,
+          "description": "松弛量，单位米，加到 rest 上，小于该伸长量不施力。"
+        },
+        "max_force": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 800.0,
+          "description": "单对成员的最大张力，单位 N。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "visual": {
+      "type": "object",
+      "description": "单节履带模型、模型贴图与物品图标。model 与 texture 必填；模型放在内容包的 models/fitting/ 下，按 ModelIndex(\"fitting\", model) 加载。",
+      "properties": {
+        "model": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "单节模型 id，如 machine_max:track_link.geo（对应 models/fitting/track_link.geo.json，文件名含 .geo）。命名空间是内容包里的命名空间目录名，不是内容包名。"
+        },
+        "texture": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "模型贴图的完整路径，如 machine_max:textures/part/track_link.png；命名空间同样取命名空间目录名。"
+        },
+        "icon": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "物品栏 2D 图标贴图，如 machine_max:textures/icon/track_link.png，建议 128×128、透明背景。省略时物品与创造栏直接渲染单节 3D 模型。"
+        }
+      },
+      "required": ["model", "texture"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["type", "material", "visual"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "track",
+      "material": "machine_max:track_steel",
+      "thickness_mm": 50.0,
+      "durability_per_link": 20.0,
+      "length_per_link": 0.2,
+      "tension": {
+        "enabled": true,
+        "stiffness": 12000.0,
+        "damping": 900.0,
+        "preload": 0.0,
+        "slack": 0.015,
+        "max_force": 800.0
+      },
+      "sounds": {
+        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },
+        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+      },
+      "visual": {
+        "model": "machine_max:track_link.geo",
+        "texture": "machine_max:textures/part/track_link.png",
+        "icon": "machine_max:textures/icon/track_link.png"
+      }
+    }
+  ]
+}

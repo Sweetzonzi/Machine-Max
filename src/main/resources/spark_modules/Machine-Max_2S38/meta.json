@@ -1,0 +1,12 @@
+{
+  "id": "machine_max:2s38",
+  "version": "1.0",
+  "author": "作者",
+  "description": "2S38 自行高炮：车体、炮塔、附加装甲三种零件与配套动力总成、履带配件、武器 HUD 与配方。",
+  "dependencies": [
+    {
+      "id": "machine_max:soviet_basic_kit",
+      "type": "hard"
+    }
+  ]
+}

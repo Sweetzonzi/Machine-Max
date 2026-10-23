@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TwoS38WeaponHudLayoutTest {
     private static final Path PACKS = Path.of("src/main/resources/spark_modules");
-    private static final Path SDKFZ = PACKS.resolve("sdkfz/machine_max");
-    private static final Path BUILTIN = PACKS.resolve("machine_max.builtin/machine_max");
+    private static final Path TWO_S38 = PACKS.resolve("Machine-Max_2S38/machine_max");
+    private static final Path BUILTIN = PACKS.resolve("Machine-Max_Builtin/machine_max");
     private record Page(AuiHudAnimatable hud, WeaponHudElement runtime, Document document, HudElement element) {}
     private record Bounds(double width, double height, double panelHeight) {}
 
@@ -33,7 +33,7 @@ class TwoS38WeaponHudLayoutTest {
         var pages = new ArrayList<Page>();
         Size.setViewportOverride(1920, 1080);
         try {
-            var part = json(SDKFZ.resolve("parts/2s38_turret.json"));
+            var part = json(TWO_S38.resolve("parts/2s38_turret.json"));
             var controllers = part.getAsJsonObject("variants").getAsJsonObject("2s38")
                     .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main").getAsJsonObject("subsystems");
             for (String role : List.of("main_weapon", "secondary_weapon")) {
@@ -80,7 +80,7 @@ class TwoS38WeaponHudLayoutTest {
     }
 
     private static Page create(String key) throws Exception {
-        var layout = JsonParser.parseString(Files.readString(SDKFZ.resolve("hud_layouts/" + key.split(":")[1] + ".json")))
+        var layout = JsonParser.parseString(Files.readString(TWO_S38.resolve("hud_layouts/" + key.split(":")[1] + ".json")))
                 .getAsJsonArray().get(0).getAsJsonObject();
         assertFalse(layout.get("perspective").getAsBoolean());
         assertTrue(layout.get("ignore_zoom").getAsBoolean());
@@ -88,12 +88,12 @@ class TwoS38WeaponHudLayoutTest {
         assertEquals("always", layout.get("selection_visibility").getAsString());
         var styleKey = ResourceLocation.parse(layout.get("style").getAsString());
         String file = "huds/" + styleKey.getPath() + ".json";
-        var style = json(Files.exists(SDKFZ.resolve(file)) ? SDKFZ.resolve(file) : BUILTIN.resolve(file));
+        var style = json(Files.exists(TWO_S38.resolve(file)) ? TWO_S38.resolve(file) : BUILTIN.resolve(file));
         assertEquals("machine_max:aui_hud", style.get("type").getAsString());
         var defaults = new HashMap<String, String>();
         style.getAsJsonObject("defaults").entrySet().forEach(e -> defaults.put(e.getKey(), e.getValue().getAsString()));
         String pageFile = "documents/" + style.get("page").getAsString().substring("machine_max/".length());
-        var htmlPath = Files.exists(SDKFZ.resolve(pageFile)) ? SDKFZ.resolve(pageFile) : BUILTIN.resolve(pageFile);
+        var htmlPath = Files.exists(TWO_S38.resolve(pageFile)) ? TWO_S38.resolve(pageFile) : BUILTIN.resolve(pageFile);
         var cssPath = BUILTIN.resolve("documents/weapon_hud_components/hud.css");
         String html = Files.readString(htmlPath).replace("<link rel=\"stylesheet\" href=\"hud.css\">",
                 "<style>" + Files.readString(cssPath) + "</style>");

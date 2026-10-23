@@ -1,0 +1,11 @@
+{
+  "subsystem.machine_max.pktm_ammo_loader": "Pktm Ammo Loader",
+  "subsystem.machine_max.pktm": "Pktm",
+  "machine_max.30mm_ap": "AP",
+  "machine_max.30mm_he": "HE",
+  "machine_max.7_62mm_ap": "AP",
+  "machine_max.7_62mm_tracer": "TRACER",
+  "machine_max.9m133_kornet": "ATGM",
+  "machine_max.57mm_ap": "57mm AP",
+  "machine_max.57mm_he": "57mm HE"
+}

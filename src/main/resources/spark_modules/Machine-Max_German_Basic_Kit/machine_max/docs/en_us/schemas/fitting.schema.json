@@ -1,0 +1,281 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/fitting.json",
+  "title": "Vehicle Fitting Type",
+  "description": "One fitting type under fittings/. The first release only ships tracks (\"type\": \"track\"): the type id is the file name, fields are flat at the top level, and the visual is a sibling object. Material is a hard dependency: a missing or unknown material keeps the type out of the registry.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference used by editors for completion and validation.",
+      "default": "../docs/en_us/schemas/fitting.schema.json"
+    },
+    "type": {
+      "const": "track",
+      "description": "Fitting kind. The first release only accepts \"track\"; any other value is a content pack error and the type is not registered."
+    },
+    "material": {
+      "allOf": [
+        { "$ref": "base/resource_location.schema.json" }
+      ],
+      "description": "Track material id; it must exist in the material registry (builtin ships machine_max:track_steel). It drives armor, contact friction, slip adaptation and block damage. A missing material keeps the type out of the registry."
+    },
+    "thickness_mm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 50.0,
+      "description": "Link thickness in millimeters. It feeds armor RHA (thickness_mm x RHA coefficient) and the envelope offset; assembly requires it to stay below every member wheel radius."
+    },
+    "durability_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 20.0,
+      "description": "Durability per link (points). The whole belt's maximum durability is durability_per_link x link count."
+    },
+    "length_per_link": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 0.2,
+      "description": "Link length in meters. It derives the link count from the envelope perimeter and sets the spacing used when placing links while rendering."
+    },
+    "overwrite": {
+      "type": "object",
+      "description": "Material overwrite layered on top of material, merged with the same rules as hit boxes. Tracks only read physics and armor; overwrite.sounds has no effect on tracks (hit sounds come from this type's sounds).",
+      "properties": {
+        "physics": {
+          "type": "object",
+          "description": "Physics overwrite: friction, slip, restitution and block damage.",
+          "properties": {
+            "friction": {
+              "allOf": [
+                { "$ref": "base/vector_3d.schema.json" }
+              ],
+              "description": "Anisotropic friction vector [x, y, z]. x = lateral, y = forward, z unused."
+            },
+            "slip_adaptation": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Wet slip adaptation used by the track contact wetFactor."
+            },
+            "slip_curve": {
+              "type": "object",
+              "description": "Tire slip curve overwrite. Tracks ignore this field.",
+              "additionalProperties": true
+            },
+            "rolling_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Rolling friction coefficient."
+            },
+            "spinning_friction": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Spinning friction coefficient."
+            },
+            "restitution": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Restitution (bounciness)."
+            },
+            "block_damage_factor": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Block damage energy factor; 0 means blocks cannot be destroyed."
+            }
+          },
+          "additionalProperties": false
+        },
+        "armor": {
+          "type": "object",
+          "description": "Armor overwrite: penetration resistance, damage reduction, durability decay and conditional modifiers.",
+          "properties": {
+            "rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "RHA coefficient relative to rolled homogeneous armor."
+            },
+            "angle_effect": {
+              "type": "boolean",
+              "description": "Whether effective thickness depends on the hit angle."
+            },
+            "dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Linear damage reduction, decaying with durability."
+            },
+            "dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Damage multiplier, decaying with durability."
+            },
+            "decay_rha": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual RHA coefficient at zero durability."
+            },
+            "decay_dmg_resist": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Residual linear damage reduction at zero durability."
+            },
+            "decay_dmg_mult": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "description": "Residual damage multiplier at zero durability."
+            },
+            "decay_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Armor decay curve exponent."
+            },
+            "unpen_power": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Damage exponent used when the hit does not penetrate."
+            },
+            "impact_modifiers": {
+              "type": "array",
+              "description": "Impact modifier list."
+            },
+            "penetration_modifiers": {
+              "type": "array",
+              "description": "Penetration modifier list."
+            },
+            "damage_modifiers": {
+              "type": "array",
+              "description": "Damage modifier list."
+            }
+          },
+          "additionalProperties": false
+        },
+        "sounds": {
+          "type": "object",
+          "description": "Hit sound overwrite. No effect on tracks; track hit sounds come from this type's sounds.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "sounds": {
+      "type": "object",
+      "description": "Track hit sounds. Omitting the field uses two fixed-range hard_metal events; an empty object {} falls back to the hit box defaults hit_box.hit.*.",
+      "properties": {
+        "hit_un_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "Sound played when the hit does not penetrate.",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        },
+        "hit_pen": {
+          "allOf": [
+            { "$ref": "base/sound_event.schema.json" }
+          ],
+          "description": "Sound played when the hit penetrates.",
+          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tension": {
+      "type": "object",
+      "description": "One-sided spring-damper between adjacent member wheels. rest is sampled from the wheel centre distance at assembly / load time and is not declared here.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether tension is applied."
+        },
+        "stiffness": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 12000.0,
+          "description": "Spring stiffness in N/m."
+        },
+        "damping": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 900.0,
+          "description": "Damping coefficient in N*s/m."
+        },
+        "preload": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.0,
+          "description": "Preload in meters, subtracted from rest."
+        },
+        "slack": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.015,
+          "description": "Slack in meters, added to rest; stretching below it applies no force."
+        },
+        "max_force": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 800.0,
+          "description": "Maximum tension per pair in N."
+        }
+      },
+      "additionalProperties": false
+    },
+    "visual": {
+      "type": "object",
+      "description": "Single-link model, model texture and inventory icon. model and texture are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\"fitting\", model).",
+      "properties": {
+        "model": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Single-link model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix). The namespace is the pack's namespace directory name, not the pack name."
+        },
+        "texture": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Full texture path for the model, e.g. machine_max:textures/part/track_link.png; the namespace is likewise the namespace directory name."
+        },
+        "icon": {
+          "allOf": [
+            { "$ref": "base/resource_location.schema.json" }
+          ],
+          "description": "Inventory 2D icon texture, e.g. machine_max:textures/icon/track_link.png; 128×128 with a transparent background is recommended. When omitted, the item and creative tab render the single-link 3D model instead."
+        }
+      },
+      "required": ["model", "texture"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["type", "material", "visual"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "track",
+      "material": "machine_max:track_steel",
+      "thickness_mm": 50.0,
+      "durability_per_link": 20.0,
+      "length_per_link": 0.2,
+      "tension": {
+        "enabled": true,
+        "stiffness": 12000.0,
+        "damping": 900.0,
+        "preload": 0.0,
+        "slack": 0.015,
+        "max_force": 800.0
+      },
+      "sounds": {
+        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },
+        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
+      },
+      "visual": {
+        "model": "machine_max:track_link.geo",
+        "texture": "machine_max:textures/part/track_link.png",
+        "icon": "machine_max:textures/icon/track_link.png"
+      }
+    }
+  ]
+}

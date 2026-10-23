@@ -597,7 +597,7 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 
 这条管线同时服务两个载体：模型载体的模型/动画/纹理由内容包提供，AUI 载体也能自带页面。`hud_layouts/*.json` 由 Spark 内容包模块读取，不经过这条资源管线。
 
-页面来源有两条：模组 JAR 的 `assets/apricityui/apricity/machine_max/...`，以及内容包 `documents/` 经 `DocumentModule` 写入 `CLIENT_PACK` 的页面。`machine_max.builtin` 的 `documents/weapon_hud_element/index.html` 是内容包页面的现成实例。HUD 样式引用页面（`machine_max:aui_hud`）与 `data-mm-*` 绑定层属于 V2。
+页面来源有两条：模组 JAR 的 `assets/apricityui/apricity/machine_max/...`，以及内容包 `documents/` 经 `DocumentModule` 写入 `CLIENT_PACK` 的页面。`Machine-Max_Builtin` 的 `documents/weapon_hud_element/index.html` 是内容包页面的现成实例。HUD 样式引用页面（`machine_max:aui_hud`）与 `data-mm-*` 绑定层属于 V2。
 
 ***
 

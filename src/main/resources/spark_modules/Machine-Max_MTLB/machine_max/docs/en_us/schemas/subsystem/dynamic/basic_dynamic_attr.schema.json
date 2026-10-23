@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/basic_dynamic_attr.json",
+  "title": "Basic Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes for basic subsystems, specifying only the model is required.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:basic",
+      "description": "Subsystem type, must be 'machine_max:basic'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding static attribute definition file."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:basic",
+      "definition": "machine_max:default_trunk"
+    }
+  ]
+}

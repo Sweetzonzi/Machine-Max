@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/variant_attr.json",
+  "title": "Part Variant Attributes",
+  "description": "Defines one variant of a vehicle part: its model, textures, animations, tags and sub-parts. A part definition either holds a single variant written inline or a map of named variants.",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "../base/resource_location.schema.json"
+      },
+      "default": [],
+      "description": "Part tags, used for connector matching (required_tags / acceptable_tags / forbidden_tags of the opposite connector) and functional classification."
+    },
+    "model": {
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "description": "Model path. Leading folders are ignored: machine_max:ae86_chassis.geo matches ae86_chassis.geo.json anywhere under models/ in the content pack."
+    },
+    "textures": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "../base/resource_location.schema.json" }
+          ],
+          "description": "Single texture, registered under the name \"default\". For example \"machine_max:textures/part/ae86/ae86_armor.png\" becomes the part's \"default\" texture."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "../base/resource_location.schema.json"
+          },
+          "minProperties": 1,
+          "description": "Map of texture name to image path. The first entry is the texture the part starts with, by convention named \"default\"; another entry is selected by name, e.g. by a spray can."
+        }
+      ],
+      "default": {
+        "default": "minecraft:missingno"
+      },
+      "description": "Texture configuration. The part fails to load when the resulting texture map is empty."
+    },
+    "animations": {
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "default": "machine_max:empty",
+      "description": "Animation path. Leading folders are ignored: machine_max:ae86 matches every animation json under animations/ in the content pack whose folder is named ae86, and exposes them as available animations of the model."
+    },
+    "sub_parts": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "subpart/sub_part_attr.schema.json" }
+          ],
+          "description": "Single sub-part, registered under the default name \"sub_part.machine_max.main\"."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "subpart/sub_part_attr.schema.json"
+          },
+          "minProperties": 1,
+          "description": "Map of sub-part name to sub-part configuration."
+        }
+      ],
+      "description": "Sub-part definition. A sub-part is the smallest unit of part movement, so every movable part of the model is a sub-part."
+    }
+  },
+  "additionalProperties": false,
+  "required": ["model", "sub_parts"],
+  "examples": [
+    {
+      "model": "machine_max:ae86_chassis_all_terrain.geo",
+      "textures": "machine_max:textures/part/ae86_all_terrain.png",
+      "animations": "machine_max:ae86",
+      "tags": [],
+      "sub_parts": {
+        "ae86_chassis_all_terrain": {
+          "durability": 550.0,
+          "mass": 1200.0,
+          "hit_boxes": {
+            "mmCollision_Box_Chassis": {
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "machine_max:tank_turret_normal.geo",
+      "textures": {
+        "default": "machine_max:textures/part/tank_turret_1.png",
+        "desert": "machine_max:textures/part/tank_turret_desert.png"
+      },
+      "animations": "machine_max:tank_turret_rotation",
+      "tags": ["machine_max:turret", "machine_max:rotatable"],
+      "sub_parts": {
+        "turret_base": {
+          "durability": 300.0,
+          "mass": 800.0,
+          "hit_boxes": {
+            "mmCollision_Turret": {
+              "type": "cylinder",
+              "material": "machine_max:rha",
+              "thickness": 50
+            }
+          }
+        }
+      }
+    }
+  ]
+}

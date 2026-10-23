@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/sight_dynamic_attr.json",
+  "title": "Sight Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the sight, defining the mounting position. Signal routing is handled by control groups.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:sight",
+      "description": "Subsystem type, must be 'machine_max:sight'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "Sight mount locator name, the bone in the model serves as the sight position."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:sight",
+      "definition": "machine_max:sight/tank_gunners_sight",
+      "locator": "gunner_sight"
+    }
+  ]
+}

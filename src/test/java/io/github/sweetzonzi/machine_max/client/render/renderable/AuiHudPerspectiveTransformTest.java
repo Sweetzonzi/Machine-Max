@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuiHudPerspectiveTransformTest {
-    private static final Path PACK = Path.of("src/main/resources/spark_modules/machine_max.builtin/machine_max");
+    private static final Path PACK = Path.of("src/main/resources/spark_modules/Machine-Max_Builtin/machine_max");
     private AuiHudAnimatable hud;
 
     @AfterEach

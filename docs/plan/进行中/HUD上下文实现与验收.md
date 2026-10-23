@@ -33,7 +33,7 @@ HUD 模型沿用 Spark 的物理动画管线。`src/main/java/io/github/sweetzon
 
 ## 内容包接入
 
-内置布局 `machine_max:weapon_live` 使用样式 `machine_max:aui_weapon_live`，页面位于 `src/main/resources/spark_modules/machine_max.builtin/machine_max/documents/weapon_hud_live/index.html`。在武器控制器动态属性中配置：
+内置布局 `machine_max:weapon_live` 使用样式 `machine_max:aui_weapon_live`，页面位于 `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/documents/weapon_hud_live/index.html`。在武器控制器动态属性中配置：
 
 ```json
 {

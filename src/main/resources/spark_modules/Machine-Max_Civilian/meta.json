@@ -1,0 +1,12 @@
+{
+  "id": "machine_max:civilian",
+  "version": "1.0",
+  "author": "作者",
+  "description": "民用载具：13 款民用车的零件、连接器、子系统、配方、模型、贴图、HUD、装配体、蓝图与模板。",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    }
+  ]
+}

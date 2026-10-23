@@ -1,0 +1,12 @@
+{
+  "id": "machine_max:mtlb",
+  "version": "1.0",
+  "author": "作者",
+  "description": "MT-LB 履带式装甲牵引车：整车零件与 PKT 机枪塔加装件、动力总成、履带配件与配方。",
+  "dependencies": [
+    {
+      "id": "machine_max:soviet_basic_kit",
+      "type": "hard"
+    }
+  ]
+}

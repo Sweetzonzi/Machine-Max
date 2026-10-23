@@ -10,13 +10,13 @@ K17 的武器读数由三个 WC 分别提供。每个 WC 的第一人称、第�
 | `subsystem.machine_max.atgm_weapon` | `machine_max:aui_weapon_tubes` | `machine_max:k17_weapon_tubes` | 左下，offset `[8,-52,0]` |
 | `subsystem.machine_max.secondary_weapon` | `machine_max:aui_weapon_compact` | `machine_max:k17_weapon_compact` | 下方居中，offset `[0,-52,0]` |
 
-WC 配置位于 `src/main/resources/spark_modules/sdkfz/machine_max/parts/k17_turret.json` 的 `variants.sub_parts.sub_part.machine_max.main.subsystems`。座位引用 `machine_max:k17_vehicle_hud` 保留透视仪表；炮手和车长瞄具引用 `machine_max:k17_scope_hud` 保留分划。WC 面板为正交投放，使用 `screen_fixed` 和 `ignore_zoom: true`。
+WC 配置位于 `src/main/resources/spark_modules/Machine-Max_K17/machine_max/parts/k17_turret.json` 的 `variants.sub_parts.sub_part.machine_max.main.subsystems`。座位引用 `machine_max:k17_vehicle_hud` 保留透视仪表；炮手和车长瞄具引用 `machine_max:k17_scope_hud` 保留分划。WC 面板为正交投放，使用 `screen_fixed` 和 `ignore_zoom: true`。
 
 运行期的武器读数统一由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 调度。每台 WC 的三个视角布局独立决定是否显示；没有布局引用的视角不产生武器 HUD。
 
 ## 组件契约
 
-共享页面目录为 `src/main/resources/spark_modules/machine_max.builtin/machine_max/documents/weapon_hud_components/`。
+共享页面目录为 `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/documents/weapon_hud_components/`。
 
 | 页面 | 提供的信息 |
 | --- | --- |
@@ -52,11 +52,11 @@ WC 配置位于 `src/main/resources/spark_modules/sdkfz/machine_max/parts/k17_tu
 
 以下资源保留独立的静态武器面板：
 
-- `src/main/resources/spark_modules/sdkfz/machine_max/documents/k17_weapon_preview/index.html` 与同目录 `hud.css`；
+- `src/main/resources/spark_modules/Machine-Max_K17/machine_max/documents/k17_weapon_preview/index.html` 与同目录 `hud.css`；
 - 样式 `machine_max:k17_weapon_preview`；
 - 布局 `machine_max:k17_weapon_preview` 与 `machine_max:k17_weapon_preview_scope`。
 
-需要游戏内对照时，把三个 WC 的三项视角布局设为 `machine_max:empty`；把 `parts/k17_hull.json` 三个座位的 `third_hud_layout` 指向静态布局，把两个 `subsystems/k17/k17_*_sight_preview.json` 的 `scope_hud_layout` 指向静态炮镜布局。以上相对路径均位于 `src/main/resources/spark_modules/sdkfz/machine_max/`。
+需要游戏内对照时，把三个 WC 的三项视角布局设为 `machine_max:empty`；把 `parts/k17_hull.json` 三个座位的 `third_hud_layout` 指向静态布局，把两个 `subsystems/k17/k17_*_sight_preview.json` 的 `scope_hud_layout` 指向静态炮镜布局。以上相对路径均位于 `src/main/resources/spark_modules/Machine-Max_K17/machine_max/`。
 
 ## 验证边界
 

@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/recipe/part_fabricating_recipe.schema.json",
+  "title": "Machine-Max Part Fabricating Recipe",
+  "description": "Schema for machine_max:part_fabricating recipes. A part recipe must live under the pack's recipe/part_fabricating/ directory (sub-directories are allowed); only the last path segment of the file name is used and must equal the part id's path, and the file's namespace must equal the part id's namespace. The product part is derived from the file name, so the JSON only declares the result count.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path for editor validation."
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:part_fabricating"
+    },
+    "manual": {
+      "type": "boolean",
+      "default": true,
+      "description": "Optional, defaults to true. true means assembling consumes the recipe ingredients (the assemble list folds each ingredient by ceil(count / result.count) and the disassemble list by floor); false means assembling consumes a single finished product of this recipe, so the material list always has length 1."
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ingredient_count_pair"
+      }
+    },
+    "result": {
+      "$ref": "#/definitions/result_count"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 100,
+      "description": "Crafting time for manual assembly or the fabricator, in ticks (20 ticks = 1 second)."
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "type",
+    "ingredients"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "ingredient_selector": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "tag": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["item"] }, { "required": ["tag"] }],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "neoforge:ingredient_type": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["type"] }, { "required": ["neoforge:ingredient_type"] }],
+          "additionalProperties": true
+        }
+      ]
+    },
+    "ingredient_count_pair": {
+      "type": "object",
+      "properties": {
+        "ingredient": {
+          "$ref": "#/definitions/ingredient_selector"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "ingredient",
+        "count"
+      ],
+      "additionalProperties": false
+    },
+    "result_count": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "additionalProperties": false,
+      "description": "Result count, optional, defaults to 1. The product part is derived from the recipe file name; only the count is declared here. The count must be greater than 0 and must not exceed the part's stack limit."
+    }
+  }
+}

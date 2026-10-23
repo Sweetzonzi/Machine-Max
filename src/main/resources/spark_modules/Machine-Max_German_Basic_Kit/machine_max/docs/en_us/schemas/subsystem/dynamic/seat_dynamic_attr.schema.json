@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "Seat Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the seat: seat position, signal transmission targets, and per-installation overrides of presentation settings declared by the model definition.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "Subsystem type, must be 'machine_max:seat'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "Seat point locator name, bones in the model will serve as seat position. If empty, use the default locator defined by the subsystem."
+    },
+    "control_group_preset": {
+      "type": "string",
+      "default": "machine_max:empty",
+      "description": "Resource location of the control group preset, defining the available control channel mappings for this seat. e.g. machine_max:default_driver."
+    },
+    "passenger_num_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Passenger count signal output channel and targets."
+    },
+    "camera_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Camera discovery handshake configuration. Subsystems on these channels will receive handshake signals to discover available cameras on this vehicle. e.g. {\"gunner_optics\": [\"gunner_primary_sight\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Ordered list of dismount locator names; the list order is the priority for dismount attempts. Every name must exist in the model locators; an empty list means this seat declares no dismount point."
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "Per-installation override of the first-person HUD layout. Omit to keep the model definition's views.first_hud_layout; write machine_max:empty to show no HUD in first person at this seat."
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "Per-installation override of the third-person HUD layout. Omit to keep the model definition's views.third_hud_layout; write machine_max:empty to show no HUD in third person at this seat."
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "description": "Per-installation override of whether the occupant may use items. Omit to keep the model definition's allow_use_items."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "third_hud_layout": "machine_max:k17_vehicle_hud",
+      "allow_use_items": true
+    }
+  ]
+}

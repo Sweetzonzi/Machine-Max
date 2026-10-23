@@ -1,0 +1,13 @@
+{
+  "id": "machine_max:german_basic_kit",
+  "version": "1.0",
+  "author": "作者",
+  "description": "德系载具共用的型谱：KwK39 50mm 火炮、MG34 机枪与配套弹种；不含具体载具。",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    }
+  ],
+  "enable_auto_pack": true
+}

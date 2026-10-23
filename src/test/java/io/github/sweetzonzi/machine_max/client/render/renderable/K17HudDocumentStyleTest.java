@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class K17HudDocumentStyleTest {
     private static final Path PAGE_DIRECTORY = Path.of("src/main/resources/spark_modules/"
-            + "sdkfz/machine_max/documents/k17_weapon_preview");
+            + "Machine-Max_K17/machine_max/documents/k17_weapon_preview");
     private AuiHudAnimatable hud;
 
     @AfterEach

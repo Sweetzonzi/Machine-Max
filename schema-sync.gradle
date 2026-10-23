@@ -1,6 +1,6 @@
 // 内容包 schema 同步。
 //
-// builtin 内容包的 docs/<lang>/schemas 是唯一手改点；其余副本由本脚本生成：
+// machine_max.builtin 的 docs/<lang>/schemas 是唯一手改点；其余第一方内容包的副本由本脚本生成：
 //
 //   ./gradlew syncSchemas            生成 / 覆盖所有副本，并重写 bundle-manifest.json
 //   ./gradlew syncSchemas -PdryRun   只报告将要发生的变更，不写盘
@@ -12,7 +12,8 @@
 //  - 逐语言同步：en_us 只写 en_us，zh_cn 只写 zh_cn。两套 schema 的 title/description 是
 //    译文，部分 $schema 默认值还带语言路径，不能跨语言复制。
 //  - 写盘统一 LF；比较前把 CRLF 归一化，因此在任何 core.autocrlf 设置下判定一致。
-//  - sdkfz 不参与同步：它的 schema 供插件编码器在包内做编辑器提示，整包重写会覆盖这些文件。
+//  - 每个第一方包自带 docs/<lang>/schemas 副本，包内 JSON 的 $schema 用相对路径指向它，
+//    所以迁移文件时只要包内层级不变，$schema 就不必改写。
 //  - skills 快照取 builtin 的 zh_cn，只含 *.json；bundle-manifest.json 的 schemas 块记录
 //    文件清单与 sha256（按 LF 字节计算）。
 
@@ -21,21 +22,25 @@ import groovy.json.JsonSlurper
 import java.security.MessageDigest
 import java.time.LocalDate
 
-def schemaSourcePack = 'machine_max.builtin'
+def schemaSourcePack = 'Machine-Max_Builtin'
 def schemaSourceNamespace = 'machine_max'
 def schemaLanguages = ['en_us', 'zh_cn']
 def schemaRepoFallback = 'https://github.com/Sweetzonzi/Machine-Max'
 
 // pack / namespace 都相对于 src/main/resources/spark_modules
 def syncTargets = [
-        [pack: 'Machine-Max_Official_Pack', namespace: 'machine_max'],
+        [pack: 'Machine-Max_Civilian', namespace: 'machine_max'],
+        [pack: 'Machine-Max_Soviet_Basic_Kit', namespace: 'machine_max'],
+        [pack: 'Machine-Max_German_Basic_Kit', namespace: 'machine_max'],
+        [pack: 'Machine-Max_2S38', namespace: 'machine_max'],
+        [pack: 'Machine-Max_K17', namespace: 'machine_max'],
+        [pack: 'Machine-Max_MTLB', namespace: 'machine_max'],
+        [pack: 'Machine-Max_Sdkfz234', namespace: 'machine_max'],
         [pack: 'Machine-Max_Pack_Template', namespace: 'namespace'],
 ]
 
 // 有意不参与同步的副本：checkSchemas 既不校验也不报警
-def excludedPacks = [
-        [pack: 'sdkfz', namespace: 'machine_max'],
-]
+def excludedPacks = []
 
 def skillsRoot = new File(projectDir, 'skills/blockbench-content-pack/references/schemas')
 def manifestFile = new File(projectDir, 'skills/blockbench-content-pack/bundle-manifest.json')

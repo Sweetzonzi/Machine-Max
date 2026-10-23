@@ -207,8 +207,8 @@ class TrackDataCodecTest {
     void fittingNameKeyUsesNamespaceAndFittingSegment() {
         assertEquals("machine_max.fitting.2s38_track",
                 FittingType.nameKey(ResourceLocation.parse("machine_max:2s38_track")));
-        assertEquals("sdkfz.fitting.mtlb_track",
-                FittingType.nameKey(ResourceLocation.parse("sdkfz:mtlb_track")));
+        assertEquals("machine_max.fitting.mtlb_track",
+                FittingType.nameKey(ResourceLocation.parse("machine_max:mtlb_track")));
         assertEquals("machine_max.fitting.tracks.wide",
                 FittingType.nameKey(ResourceLocation.parse("machine_max:tracks/wide")));
     }
