@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Modern Optics / Speed</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="mm-speed" role="group" aria-label="速度 34 公里每小时，转速 1840，四挡">
+    <div class="mm-speed-line">
+      <em class="mm-speed-label">SPD</em>
+      <b class="mm-speed-digits"><span data-mm-text="math.floor((math.abs(global.get('vehicle_speed')??0.0)) * 3.6 / 100)">0</span><span data-mm-text="math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)">3</span><span data-mm-text="math.floor(math.mod((math.abs(global.get('vehicle_speed')??0.0)) * 3.6, 10))">4</span></b>
+      <i class="mm-speed-unit">KM/H</i>
+    </div>
+    <div class="mm-speed-line">
+      <em class="mm-speed-label">RPM</em>
+      <b data-mm-text="math.floor(math.abs(global.get('engine_speed')??0) * 30 / math.pi)">1840</b>
+    </div>
+    <div class="mm-speed-line">
+      <em class="mm-speed-label">GEAR</em>
+      <b data-mm-text="global.get_str('gear')??'N'">D4</b>
+    </div>
+  </div>
+</body>
+</html>

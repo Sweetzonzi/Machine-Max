@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Modern Optics / Durability</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="mm-durability" role="img" aria-label="车体耐久 100%">
+    <span class="mm-dur-label">HULL</span>
+    <div class="mm-dur-bar" aria-hidden="true">
+      <div class="mm-dur-track">
+        <div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div>
+        <div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div>
+        <div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div><div class="mm-dur-seg"></div>
+      </div>
+      <!-- AUI 的标签扫描在第一个 > 处截断，data-mm 表达式里不要写 >。 -->
+      <div class="mm-dur-fill" data-mm-num="math.clamp(global.hp / global.max_hp * 100, 0, 100)" data-mm-var="--dur" data-mm-unit="%"><span class="mm-dur-probe" data-mm-text="math.floor(global.hp / global.max_hp * 1000)" aria-hidden="true">1000</span></div>
+    </div>
+    <span class="mm-dur-value"><span data-mm-text="math.floor(math.clamp(global.hp / global.max_hp * 100, 0, 100))">100</span><span>%</span></span>
+  </div>
+</body>
+</html>

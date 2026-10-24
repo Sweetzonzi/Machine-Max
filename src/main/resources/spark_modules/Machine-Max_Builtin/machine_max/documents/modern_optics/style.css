@@ -1,0 +1,221 @@
+:root {
+  --accent: #a4ff80;
+  --page-bg: #0e110e;
+  --page-ink: #dfe5d7;
+  --page-muted: #7f8976;
+  --page-line: #2b3326;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--page-bg); }
+
+body {
+  min-width: 1500px;
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-ink);
+  font: 14px/1.6 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+.page-head {
+  width: 1440px;
+  height: 70px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--page-line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 16px Consolas, monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  border: 1px solid #8fa27a;
+  padding: 4px 8px;
+  color: #c2d0ae;
+  font-size: 18px;
+}
+
+.brand small {
+  display: block;
+  margin-top: 2px;
+  color: var(--page-muted);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+.page-title {
+  font-size: 14px;
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+
+.page-title span {
+  margin-left: 14px;
+  color: var(--page-muted);
+  font: 10px Consolas, monospace;
+  letter-spacing: 1.5px;
+}
+
+.page-meta {
+  color: var(--page-muted);
+  font: 10px Consolas, monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+main {
+  width: 1440px;
+  margin: 0 auto;
+  padding: 26px 0 34px;
+}
+
+/* ------------------------------------------------------------
+   Composite stage for checking the standalone elements
+   ------------------------------------------------------------ */
+
+.sight-preview {
+  position: relative;
+  width: 1440px;
+  height: 810px;
+  overflow: hidden;
+  border: 1px solid #2f3928;
+  background: linear-gradient(180deg, #050a05 0%, #1a2611 44%, #46542c 57.8%, #46542c 100%);
+}
+
+.terrain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 58%;
+  bottom: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #2a381c 0%, #12190d 44%, #070b06 100%);
+}
+
+.ground::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: rgba(190, 255, 150, 0.18);
+}
+
+.ground::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -64px;
+  height: 64px;
+  background: linear-gradient(0deg, rgba(180, 255, 140, 0.075), transparent);
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(0, 0, 0, 0.28) 88%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.hud-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.slot {
+  position: absolute;
+  display: block;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.slot-sight {
+  left: 37px;
+  top: 37px;
+  width: 132px;
+  height: 30px;
+}
+
+.slot-speed {
+  left: 37px;
+  top: 64px;
+  width: 195px;
+  height: 100px;
+}
+
+.slot-compass {
+  left: 446px;
+  top: 35px;
+  width: 552px;
+  height: 112px;
+}
+
+.slot-reticle {
+  left: 511px;
+  top: 196px;
+  width: 420px;
+  height: 420px;
+}
+
+.slot-durability {
+  left: 504px;
+  top: 734px;
+  width: 436px;
+  height: 34px;
+}
+
+/* ------------------------------------------------------------
+   Page footer
+   ------------------------------------------------------------ */
+
+.element-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--page-line);
+  font: 11px/1.6 Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.element-list a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(164, 255, 128, 0.45);
+}
+
+.element-list span {
+  color: var(--page-muted);
+}
+
+.note {
+  margin: 14px 0 0;
+  color: var(--page-muted);
+  font-size: 11px;
+  line-height: 1.8;
+}

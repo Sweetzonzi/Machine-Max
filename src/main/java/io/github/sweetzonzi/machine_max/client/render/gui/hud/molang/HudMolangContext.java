@@ -6,6 +6,8 @@ import cn.solarmoon.spark_core.molang.runtime.binding.StringQueryBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.MutableObjectBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.ObjectProperty;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 
@@ -53,6 +55,22 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     @QueryBinding(value = "view_heading_deg", namespace = "hud")
     public double hud_view_heading_deg() { return frame.view().heading(); }
 
+    @StringQueryBinding(value = "view_heading_cardinal", namespace = "hud")
+    public String hud_view_heading_cardinal() {
+        double heading = ((frame.view().heading() % 360) + 360) % 360;
+        int sector = (int) Math.floor((heading + 22.5) / 45) % 8;
+        return switch (sector) {
+            case 0 -> "N";
+            case 1 -> "NE";
+            case 2 -> "E";
+            case 3 -> "SE";
+            case 4 -> "S";
+            case 5 -> "SW";
+            case 6 -> "W";
+            default -> "NW";
+        };
+    }
+
     @QueryBinding(value = "view_pitch_deg", namespace = "hud")
     public double hud_view_pitch_deg() { return frame.view().pitch(); }
 
@@ -64,6 +82,18 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
 
     @QueryBinding(value = "current_zoom", namespace = "hud")
     public double hud_current_zoom() { return frame.view().zoom(); }
+
+    /** 当前 HUD 宿主（子系统）的本地化名称；失败时返回可定位的占位文本。 */
+    @StringQueryBinding(value = "host_name", namespace = "hud")
+    public String hud_host_name() {
+        HudRuntimeElement entity = getEntity();
+        if (entity == null) return "NO HOST";
+        if (!(entity.host() instanceof AbstractSubsystem subsystem)) return "NO SUBSYSTEM";
+        String key = subsystem.getName();
+        if (key == null || key.isBlank()) return "NO NAME";
+        String text = Component.translatable(key).getString();
+        return text.isBlank() ? "EMPTY NAME" : text;
+    }
 
     @QueryBinding(value = "screen_width", namespace = "hud")
     public double hud_screen_width() { return frame.view().width(); }

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Machine-Max / Modern Optics Elements</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="page-head">
+    <div class="brand">
+      <span class="brand-mark">M/M</span>
+      <span>MACHINE–MAX<small>INTERFACE STUDIES / MODERN OPTICS</small></span>
+    </div>
+    <div class="page-title">现代观瞄 <span>ELEMENT PREVIEW</span></div>
+    <div class="page-meta">1440×810</div>
+  </header>
+
+  <main>
+    <div class="sight-preview" role="img" aria-label="现代观瞄 HUD 元素组合预览：GUNNER，速度 34，转速 1840，四挡，方位 127，倍率 4.0，耐久 100%">
+      <svg class="terrain" viewBox="0 0 1440 810" preserveAspectRatio="none" aria-hidden="true">
+        <g transform="translate(0 -80)">
+          <path d="M0 530C80 520 140 528 210 520C300 510 350 526 430 519C520 511 590 491 680 497C770 503 840 523 930 516C1030 508 1100 488 1190 496C1290 505 1360 516 1440 510L1440 590L0 590Z" fill="#1e2a14"></path>
+          <path d="M0 543C90 534 160 542 250 536C350 529 430 545 530 539C640 533 710 518 810 524C910 530 980 548 1080 541C1180 534 1250 523 1340 530C1390 534 1415 539 1440 537L1440 590L0 590Z" fill="#151f0e"></path>
+          <path d="M0 553C120 545 200 553 310 547C430 540 520 557 640 551C760 545 840 532 960 538C1080 544 1160 558 1280 552C1360 548 1410 552 1440 550L1440 600L0 600Z" fill="#0c1409"></path>
+        </g>
+      </svg>
+      <div class="ground" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <div class="hud-layer">
+        <iframe class="slot slot-sight" src="sight_name.html" title="观瞄子系统名称" scrolling="no"></iframe>
+        <iframe class="slot slot-speed" src="speed.html" title="速度、转速与挡位" scrolling="no"></iframe>
+        <iframe class="slot slot-compass" src="compass.html" title="罗盘" scrolling="no"></iframe>
+        <iframe class="slot slot-reticle" src="reticle.html" title="准星与放大倍率" scrolling="no"></iframe>
+        <iframe class="slot slot-durability" src="durability.html" title="车体耐久" scrolling="no"></iframe>
+      </div>
+    </div>
+
+    <div class="element-list">
+      <a href="compass.html">compass.html</a><span>罗盘</span>
+      <a href="sight_name.html">sight_name.html</a><span>观瞄名称</span>
+      <a href="speed.html">speed.html</a><span>速度 / 转速 / 挡位</span>
+      <a href="reticle.html">reticle.html</a><span>准星 / 倍率</span>
+      <a href="durability.html">durability.html</a><span>车体耐久</span>
+    </div>
+
+    <p class="note">每个组件都是透明背景的独立 HTML，预览页只负责摆放。浏览器里使用的是页面内的静态回退值；游戏内同一页面由 data-mm-* 绑定读取 Molang，数值会在运行时覆盖。</p>
+  </main>
+</body>
+</html>

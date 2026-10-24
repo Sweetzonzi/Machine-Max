@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Modern Optics / Compass</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="mm-compass" role="img" aria-label="罗盘：方位 127，东南">
+    <div class="mm-compass-window" aria-hidden="true">
+      <!-- 三个完整 0–360° 循环，窗口只露出中间约 137°；--tape-x 由 Molang 按航向取余后平移。 -->
+      <div class="mm-compass-tape" data-mm-num="274 - 1440 - math.mod(hud.view_heading_deg + 360, 360) * 4" data-mm-var="--tape-x" data-mm-unit="px">
+        <div class="mm-compass-ticks"></div>
+
+        <div class="mm-compass-major" style="left:0px"></div>
+        <div class="mm-compass-major" style="left:120px"></div>
+        <div class="mm-compass-major" style="left:240px"></div>
+        <div class="mm-compass-major" style="left:360px"></div>
+        <div class="mm-compass-major" style="left:480px"></div>
+        <div class="mm-compass-major" style="left:600px"></div>
+        <div class="mm-compass-major" style="left:720px"></div>
+        <div class="mm-compass-major" style="left:840px"></div>
+        <div class="mm-compass-major" style="left:960px"></div>
+        <div class="mm-compass-major" style="left:1080px"></div>
+        <div class="mm-compass-major" style="left:1200px"></div>
+        <div class="mm-compass-major" style="left:1320px"></div>
+        <div class="mm-compass-major" style="left:1440px"></div>
+        <div class="mm-compass-major" style="left:1560px"></div>
+        <div class="mm-compass-major" style="left:1680px"></div>
+        <div class="mm-compass-major" style="left:1800px"></div>
+        <div class="mm-compass-major" style="left:1920px"></div>
+        <div class="mm-compass-major" style="left:2040px"></div>
+        <div class="mm-compass-major" style="left:2160px"></div>
+        <div class="mm-compass-major" style="left:2280px"></div>
+        <div class="mm-compass-major" style="left:2400px"></div>
+        <div class="mm-compass-major" style="left:2520px"></div>
+        <div class="mm-compass-major" style="left:2640px"></div>
+        <div class="mm-compass-major" style="left:2760px"></div>
+        <div class="mm-compass-major" style="left:2880px"></div>
+        <div class="mm-compass-major" style="left:3000px"></div>
+        <div class="mm-compass-major" style="left:3120px"></div>
+        <div class="mm-compass-major" style="left:3240px"></div>
+        <div class="mm-compass-major" style="left:3360px"></div>
+        <div class="mm-compass-major" style="left:3480px"></div>
+        <div class="mm-compass-major" style="left:3600px"></div>
+        <div class="mm-compass-major" style="left:3720px"></div>
+        <div class="mm-compass-major" style="left:3840px"></div>
+        <div class="mm-compass-major" style="left:3960px"></div>
+        <div class="mm-compass-major" style="left:4080px"></div>
+        <div class="mm-compass-major" style="left:4200px"></div>
+
+        <span class="mm-compass-label is-cardinal" style="left:0px">N</span>
+        <span class="mm-compass-label" style="left:120px">030</span>
+        <span class="mm-compass-label" style="left:240px">060</span>
+        <span class="mm-compass-label is-cardinal" style="left:360px">E</span>
+        <span class="mm-compass-label" style="left:480px">120</span>
+        <span class="mm-compass-label" style="left:600px">150</span>
+        <span class="mm-compass-label is-cardinal" style="left:720px">S</span>
+        <span class="mm-compass-label" style="left:840px">210</span>
+        <span class="mm-compass-label" style="left:960px">240</span>
+        <span class="mm-compass-label is-cardinal" style="left:1080px">W</span>
+        <span class="mm-compass-label" style="left:1200px">300</span>
+        <span class="mm-compass-label" style="left:1320px">330</span>
+        <span class="mm-compass-label is-cardinal" style="left:1440px">N</span>
+        <span class="mm-compass-label" style="left:1560px">030</span>
+        <span class="mm-compass-label" style="left:1680px">060</span>
+        <span class="mm-compass-label is-cardinal" style="left:1800px">E</span>
+        <span class="mm-compass-label" style="left:1920px">120</span>
+        <span class="mm-compass-label" style="left:2040px">150</span>
+        <span class="mm-compass-label is-cardinal" style="left:2160px">S</span>
+        <span class="mm-compass-label" style="left:2280px">210</span>
+        <span class="mm-compass-label" style="left:2400px">240</span>
+        <span class="mm-compass-label is-cardinal" style="left:2520px">W</span>
+        <span class="mm-compass-label" style="left:2640px">300</span>
+        <span class="mm-compass-label" style="left:2760px">330</span>
+        <span class="mm-compass-label is-cardinal" style="left:2880px">N</span>
+        <span class="mm-compass-label" style="left:3000px">030</span>
+        <span class="mm-compass-label" style="left:3120px">060</span>
+        <span class="mm-compass-label is-cardinal" style="left:3240px">E</span>
+        <span class="mm-compass-label" style="left:3360px">120</span>
+        <span class="mm-compass-label" style="left:3480px">150</span>
+        <span class="mm-compass-label is-cardinal" style="left:3600px">S</span>
+        <span class="mm-compass-label" style="left:3720px">210</span>
+        <span class="mm-compass-label" style="left:3840px">240</span>
+        <span class="mm-compass-label is-cardinal" style="left:3960px">W</span>
+        <span class="mm-compass-label" style="left:4080px">300</span>
+        <span class="mm-compass-label" style="left:4200px">330</span>
+        <span class="mm-compass-probe" data-mm-text="math.floor(hud.view_heading_deg * 100)" aria-hidden="true">-1</span>
+      </div>
+
+      <div class="mm-compass-caret"></div>
+      <div class="mm-compass-centerline"></div>
+      <div class="mm-compass-baseline"></div>
+    </div>
+
+    <div class="mm-bearing" aria-hidden="true">
+      <span class="mm-bearing-label">HDG</span>
+      <b><span data-mm-text="math.floor(math.mod(hud.view_heading_deg + 360, 360) / 100)">1</span><span data-mm-text="math.floor(math.mod(math.mod(hud.view_heading_deg + 360, 360), 100) / 10)">2</span><span data-mm-text="math.floor(math.mod(math.mod(hud.view_heading_deg + 360, 360), 10))">7</span></b>
+      <span class="mm-bearing-card" data-mm-text="hud.view_heading_cardinal">SE</span>
+    </div>
+  </div>
+</body>
+</html>

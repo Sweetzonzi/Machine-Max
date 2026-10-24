@@ -5,7 +5,7 @@
   "horizontal_stabilized": true,
   "base_zoom": 1,
   "max_zoom": 8,
-  "scope_hud_layout": "machine_max:k17_scope_hud",
+  "scope_hud_layout": "machine_max:modern_optics",
   "discovery_inputs": [
     "gunner_sight"
   ],

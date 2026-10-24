@@ -1,0 +1,52 @@
+[
+  {
+    "style": "machine_max:modern_optics_compass",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_center",
+    "offset": [0, 21, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "machine_max:modern_optics_sight_name",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_left",
+    "offset": [22, 22, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "machine_max:modern_optics_speed",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_left",
+    "offset": [22, 38, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "machine_max:modern_optics_reticle",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "center",
+    "offset": [0, 0, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "machine_max:modern_optics_durability",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_center",
+    "offset": [0, -30, 0],
+    "scale": [1, 1, 1],
+    "selection_visibility": "always"
+  }
+]

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Modern Optics / Reticle</title>
+  <link rel="stylesheet" href="hud.css">
+</head>
+<body>
+  <div class="mm-reticle" role="img" aria-label="炮手准星，放大倍率 4.0 倍">
+    <div class="mm-ret-line mm-ret-h-left"></div>
+    <div class="mm-ret-line mm-ret-h-right"></div>
+    <div class="mm-ret-line mm-ret-v-top"></div>
+    <div class="mm-ret-line mm-ret-v-bottom"></div>
+
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:88px;top:199px;height:20px"></div>
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:128px;top:202px;height:14px"></div>
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:158px;top:204px;height:10px"></div>
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:258px;top:204px;height:10px"></div>
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:288px;top:202px;height:14px"></div>
+    <div class="mm-ret-tick mm-ret-tick-h" style="left:328px;top:199px;height:20px"></div>
+
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:199px;top:88px;width:20px"></div>
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:202px;top:128px;width:14px"></div>
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:204px;top:158px;width:10px"></div>
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:204px;top:258px;width:10px"></div>
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:202px;top:288px;width:14px"></div>
+    <div class="mm-ret-tick mm-ret-tick-v" style="left:199px;top:328px;width:20px"></div>
+
+    <div class="mm-ret-ring"></div>
+    <div class="mm-ret-dot"></div>
+
+    <div class="mm-mag" aria-hidden="true">
+      <span class="mm-mag-label">MAG</span>
+      <b class="mm-mag-value"><span data-mm-text="math.floor(math.round(hud.current_zoom * 10) / 10)">4</span><span>.</span><span data-mm-text="math.mod(math.round(hud.current_zoom * 10), 10)">0</span><span>X</span></b>
+    </div>
+  </div>
+</body>
+</html>

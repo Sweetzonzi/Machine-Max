@@ -5,6 +5,7 @@
   "horizontal_stabilized": true,
   "base_zoom": 1,
   "max_zoom": 8,
+  "scope_hud_layout": "machine_max:modern_optics",
   "min_pitch": -15,
   "max_pitch": 15,
   "yaw_limit": 30,

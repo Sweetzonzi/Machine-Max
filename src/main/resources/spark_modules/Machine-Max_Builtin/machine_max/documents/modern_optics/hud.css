@@ -1,0 +1,373 @@
+@font-face {
+  font-family: MMField;
+  src: url('./assets/mm-field.ttf') format('truetype');
+  font-display: block;
+}
+
+:root {
+  --mm-accent: #a4ff80;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body {
+  display: inline-block;
+  color: var(--mm-accent);
+  font-family: MMField, monospace;
+  font-synthesis: none;
+  -webkit-font-smoothing: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+b,
+em,
+i {
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* ------------------------------------------------------------
+   Sight name
+   ------------------------------------------------------------ */
+
+.mm-sight-name {
+  padding: 2px 0;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  opacity: 0.65;
+}
+
+/* ------------------------------------------------------------
+   Speed / RPM / gear
+   ------------------------------------------------------------ */
+
+.mm-speed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mm-speed-line {
+  display: grid;
+  grid-template-columns: 66px max-content max-content;
+  column-gap: 6px;
+  align-items: baseline;
+  font-size: 22px;
+  line-height: 1.28;
+}
+
+.mm-speed-label,
+.mm-speed-unit {
+  opacity: 0.55;
+}
+
+.mm-speed-digits {
+  display: inline-flex;
+}
+
+/* ------------------------------------------------------------
+   Compass
+   ------------------------------------------------------------ */
+
+.mm-compass {
+  width: 548px;
+  text-align: center;
+}
+
+.mm-compass-window {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  overflow: hidden;
+}
+
+/* 4px/deg：一圈 1440px，三圈 4320px；窗口中心 274px。
+   --tape-x = 274 - 1440 - heading * 4，航向取余后平移，越过 0/360° 时整圈跳变。 */
+.mm-compass-tape {
+  position: absolute;
+  left: var(--tape-x, -1674px);
+  top: 0;
+  width: 4320px;
+  height: 64px;
+}
+
+.mm-compass-ticks {
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  width: 4320px;
+  height: 6px;
+  background-image: repeating-linear-gradient(90deg, var(--mm-accent) 0px, var(--mm-accent) 1px, transparent 1px, transparent 18px);
+  opacity: 0.45;
+}
+
+.mm-compass-major {
+  position: absolute;
+  bottom: 8px;
+  width: 1px;
+  height: 11px;
+  background-color: var(--mm-accent);
+  opacity: 0.9;
+}
+
+.mm-compass-major.is-center {
+  height: 14px;
+  opacity: 0.85;
+}
+
+.mm-compass-label {
+  position: absolute;
+  top: 17px;
+  transform: translateX(-50%);
+  color: var(--mm-accent);
+  font-family: MMField, monospace;
+  font-size: 15px;
+  line-height: 18px;
+  opacity: 0.9;
+}
+
+.mm-compass-label.is-cardinal {
+  font-size: 18px;
+  opacity: 1;
+}
+
+.mm-compass-caret {
+  position: absolute;
+  left: 269px;
+  top: 0;
+  width: 10px;
+  height: 7px;
+  background-color: var(--mm-accent);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.mm-compass-centerline {
+  position: absolute;
+  left: 274px;
+  top: 7px;
+  width: 1px;
+  height: 34px;
+  background-color: var(--mm-accent);
+  opacity: 0.22;
+}
+
+.mm-compass-baseline {
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  width: 548px;
+  height: 1px;
+  background-color: var(--mm-accent);
+  opacity: 0.18;
+}
+
+/* 文本变化会触发 AUI 的布局失效；用来带动父级 left 的重新布局。 */
+.mm-compass-probe {
+  display: block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 0;
+}
+
+.mm-bearing {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1px;
+  line-height: 1;
+}
+
+.mm-bearing-label {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  opacity: 0.5;
+}
+
+.mm-bearing b {
+  font-size: 32px;
+  letter-spacing: 0.04em;
+}
+
+.mm-bearing-card {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+/* ------------------------------------------------------------
+   Reticle + magnification
+   ------------------------------------------------------------ */
+
+.mm-reticle {
+  position: relative;
+  width: 418px;
+  height: 418px;
+  color: var(--mm-accent);
+}
+
+.mm-ret-line,
+.mm-ret-tick,
+.mm-ret-ring,
+.mm-ret-dot {
+  position: absolute;
+}
+
+.mm-ret-line {
+  background-color: var(--mm-accent);
+  opacity: 0.85;
+}
+
+.mm-ret-h-left {
+  left: 39px;
+  top: 208px;
+  width: 152px;
+  height: 2px;
+}
+
+.mm-ret-h-right {
+  left: 227px;
+  top: 208px;
+  width: 152px;
+  height: 2px;
+}
+
+.mm-ret-v-top {
+  left: 208px;
+  top: 39px;
+  width: 2px;
+  height: 152px;
+}
+
+.mm-ret-v-bottom {
+  left: 208px;
+  top: 227px;
+  width: 2px;
+  height: 152px;
+}
+
+.mm-ret-tick {
+  background-color: var(--mm-accent);
+  opacity: 0.58;
+}
+
+.mm-ret-tick-h { width: 2px; }
+.mm-ret-tick-v { height: 2px; }
+
+.mm-ret-ring {
+  left: 202px;
+  top: 202px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--mm-accent);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.mm-ret-dot {
+  left: 206px;
+  top: 206px;
+  width: 6px;
+  height: 6px;
+  background-color: var(--mm-accent);
+  border-radius: 50%;
+}
+
+.mm-mag {
+  position: absolute;
+  left: calc(50% + 112px);
+  top: calc(50% - 124px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1;
+}
+
+.mm-mag-label {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+}
+
+.mm-mag-value {
+  font-size: 26px;
+}
+
+/* ------------------------------------------------------------
+   Vehicle durability
+   ------------------------------------------------------------ */
+
+.mm-durability {
+  width: 432px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mm-dur-label,
+.mm-dur-value {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+}
+
+.mm-dur-label { opacity: 0.6; }
+
+.mm-dur-value {
+  min-width: 50px;
+  text-align: right;
+}
+
+/* 12 段 × 22px + 11 个间隙 × 3px = 297px；填充条用同一周期切出分段。 */
+.mm-dur-bar {
+  position: relative;
+  flex: 0 0 297px;
+  width: 297px;
+  height: 8px;
+}
+
+.mm-dur-track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  height: 8px;
+}
+
+.mm-dur-seg {
+  flex: 1 1 0;
+  height: 8px;
+  background-color: var(--mm-accent);
+  opacity: 0.18;
+}
+
+.mm-dur-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dur, 100%);
+  height: 8px;
+  background-image: repeating-linear-gradient(90deg, var(--mm-accent) 0px, var(--mm-accent) 22px, transparent 22px, transparent 25px);
+  opacity: 0.9;
+}
+
+/* 同罗盘：用子节点文本变化把填充条的宽度变化推进布局。 */
+.mm-dur-probe {
+  display: block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 0;
+}
