@@ -19,11 +19,14 @@
       "description": "瞄准镜挂载定位器名称，模型中的骨骼作为瞄准镜位置。"
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:sight",
-      "definition": "machine_max:sight/tank_gunners_sight",
+      "definition": "machine_max:gunner_sight",
       "locator": "gunner_sight"
     }
   ]

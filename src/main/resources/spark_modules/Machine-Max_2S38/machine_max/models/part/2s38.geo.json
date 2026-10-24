@@ -1415,6 +1415,7 @@
 						}
 					],
 					"locators": {
+						"gunner_sight": [13.41, 39.785, -16.932],
 						"gun_trunnion_lock": [0, 41.176, -3.09],
 						"gun_mass_center": [0, 41.176, -40.682],
 						"main_gun_muzzle": [0, 42.27, -85.55]
@@ -1727,10 +1728,7 @@
 								"down": {"uv": [270, 284.5], "uv_size": [3, -3.5]}
 							}
 						}
-					],
-					"locators": {
-						"gunner_sight": [13.41, 39.785, -16.932]
-					}
+					]
 				},
 				{
 					"name": "PKTM",

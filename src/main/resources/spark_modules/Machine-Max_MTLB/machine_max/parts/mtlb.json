@@ -779,7 +779,7 @@
           },
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_3rd_seat",
+            "definition": "machine_max:default_3rd_driver_seat",
             "locator": "driver_seat",
             "control_group_preset": "machine_max:default_driver",
             "passenger_num_outputs": {

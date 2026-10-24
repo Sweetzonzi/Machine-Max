@@ -15,9 +15,9 @@ import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatabl
 import io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable;
 import io.github.sweetzonzi.machine_max.client.render.renderable.HudElementInstance;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractViewpointSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractViewpointSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
@@ -116,7 +116,7 @@ public class CustomHud implements LayeredDraw.Layer {
         Set<IHudHost> expected = new LinkedHashSet<>();
         if (CameraController.isCameraMode()) {
             // 炮镜模式：宿主是当前激活的相机/瞄具子系统
-            CameraSubsystem camera = CameraController.getActiveCamera();
+            AbstractViewpointSubsystem camera = CameraController.getActiveCamera();
             if (camera == null || !camera.isActive()) {
                 clearView();
                 return;
@@ -240,7 +240,7 @@ public class CustomHud implements LayeredDraw.Layer {
 
         // 炮镜模式：按 scope_behavior 分派 UGC 元素渲染
         if (CameraController.isCameraMode()) {
-            CameraSubsystem camera = CameraController.getActiveCamera();
+            AbstractViewpointSubsystem camera = CameraController.getActiveCamera();
             if (camera != null && camera.isActive()) {
                 renderInScopeMode(guiGraphics, camera, partialTick);
             }
@@ -286,12 +286,12 @@ public class CustomHud implements LayeredDraw.Layer {
      * 计算 scope 基准数据（投影中心、旋转角差、相机局部坐标），
      * 然后按透视、正交两趟渲染。
      */
-    private void renderInScopeMode(GuiGraphics guiGraphics, CameraSubsystem camera, float partialTick) {
+    private void renderInScopeMode(GuiGraphics guiGraphics, AbstractViewpointSubsystem camera, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         int screenW = guiGraphics.guiWidth();
         int screenH = guiGraphics.guiHeight();
         Camera mcCam = mc.gameRenderer.getMainCamera();
-        float vFov = CameraSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom();
+        float vFov = AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom();
         float currentZoom = CameraController.getCurrentZoom();
 
         // === 计算 scope 基准数据 ===

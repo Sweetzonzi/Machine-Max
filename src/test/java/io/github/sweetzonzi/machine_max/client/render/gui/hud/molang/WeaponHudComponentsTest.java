@@ -245,11 +245,15 @@ class WeaponHudComponentsTest {
         var driverSeat = hull.getAsJsonObject("variants")
                 .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main")
                 .getAsJsonObject("subsystems").getAsJsonObject("driver_seat");
-        assertEquals("machine_max:default_3rd_seat", driverSeat.get("definition").getAsString());
+        assertEquals("machine_max:default_3rd_driver_seat", driverSeat.get("definition").getAsString());
         assertEquals("machine_max:k17_vehicle_hud", driverSeat.get("third_hud_layout").getAsString());
         for (String sight : List.of("gunner", "commander")) {
             var definition = JsonParser.parseString(Files.readString(K17.resolve("subsystems/k17/k17_" + sight + "_sight_preview.json"))).getAsJsonObject();
-            assertEquals("machine_max:k17_scope_hud", definition.get("scope_hud_layout").getAsString());
+            if (sight.equals("gunner")) {
+                assertEquals("machine_max:k17_scope_hud", definition.get("scope_hud_layout").getAsString());
+            } else {
+                assertFalse(definition.has("scope_hud_layout"), "车长镜使用空设备布局，炮镜黑边只属于炮手镜");
+            }
         }
         for (String path : List.of("hud_layouts/k17_weapon_preview.json", "hud_layouts/k17_weapon_preview_scope.json",
                 "huds/k17_weapon_preview.json", "documents/k17_weapon_preview/index.html", "documents/k17_weapon_preview/hud.css")) {

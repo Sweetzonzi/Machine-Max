@@ -1,31 +1,25 @@
 package io.github.sweetzonzi.machine_max.common.mech.signal;
 
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimTargetState;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 视角输入信号，携带瞄准点世界坐标 + 分轴稳定/偏移信息。<p>
- * 由 CameraSubsystem onTick 根据客户端注入的瞄准点和自身 staticAttribute 的稳定标志构造。
- * WeaponController 消费时按每个轴是稳定→位置控制还是无稳→增量偏移来分轴驱动炮塔。
+ * 主线程按控制组发送的完整瞄准目标，物理线程按值覆盖。
+ * 世界点使用双精度；relativeAim 是无稳轴的绝对相对角，弧度，x=俯仰、y=偏航。
  */
-public class ViewInputSignal extends Signal<Vec3> {
-    /** 世界空间瞄准点坐标（稳定轴使用） */
+public final class ViewInputSignal extends Signal<Vec3> {
+    /** 世界目标点，同时作为 Signal 的值供世界点接收者读取。 */
     public final Vec3 aimPoint;
-    /** 本 tick 俯仰鼠标增量（度），无稳轴且鼠标有移动时非零 */
-    public final float pitchOffsetDeg;
-    /** 本 tick 偏航鼠标增量（度），无稳轴且鼠标有移动时非零 */
-    public final float yawOffsetDeg;
-    /** 俯仰轴是否稳定（来自摄像机 staticAttribute） */
-    public final boolean pitchStabilized;
-    /** 偏航轴是否稳定（来自摄像机 staticAttribute） */
-    public final boolean yawStabilized;
+    /** 无稳轴保持的绝对相对角；重复读取不能累计成增量。 */
+    public final Vec2 relativeAim;
+    /** 指定哪些轴使用世界点求解，哪些轴使用 relativeAim。 */
+    public final AimTargetState.Mode mode;
 
-    public ViewInputSignal(Vec3 aimPoint, float pitchOffsetDeg, float yawOffsetDeg,
-                           boolean pitchStabilized, boolean yawStabilized) {
-        super(aimPoint);
-        this.aimPoint = aimPoint;
-        this.pitchOffsetDeg = pitchOffsetDeg;
-        this.yawOffsetDeg = yawOffsetDeg;
-        this.pitchStabilized = pitchStabilized;
-        this.yawStabilized = yawStabilized;
+    public ViewInputSignal(Vec3 point, Vec2 relativeAim, AimTargetState.Mode mode) {
+        super(point);
+        this.aimPoint = point;
+        this.relativeAim = relativeAim;
+        this.mode = mode;
     }
 }

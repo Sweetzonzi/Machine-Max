@@ -2,11 +2,10 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractViewpointSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SightSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractViewpointSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.util.ScreenProjectionUtil;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,12 +17,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
-/**
- * 瞄准镜 HUD：仅在炮镜模式且当前激活的摄像机为 SightSubsystem 时渲染。<p>
- * 准星不绘制于屏幕中心，而是获取炮管世界瞄准点（locator 前方远处一点），
- * 通过 {@link ScreenProjectionUtil#worldToScreenOffset} 投影到屏幕空间，
- * 反映炮管在画面中的真实位置。稳定器和非稳定器模式均适用。
- */
+/** 固定炮镜的实际光轴分划与期望目标圆圈。渲染只读取已发布的预测目标。 */
 @OnlyIn(Dist.CLIENT)
 public class SightHud implements LayeredDraw.Layer {
     // ===== 炮管十字线参数 =====
@@ -47,42 +41,59 @@ public class SightHud implements LayeredDraw.Layer {
     private static final float COLOR_A = 1.0f;
     /** 十字线颜色（白色） */
     private static final int COLOR_WHITE = 0xFFFFFFFF;
-    /** 准星距离屏幕边缘的最小边距（像素），超出 FOV 时贴边显示 */
-    private static final int EDGE_MARGIN = 16;
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.options.hideGui) return;
+        if (mc.options.hideGui) {
+            return;
+        }
 
         // 仅在炮镜模式且激活的摄像机是 SightSubsystem 时渲染
-        if (!CameraController.isCameraMode()) return;
-        CameraSubsystem camera = CameraController.getActiveCamera();
-        if (!(camera instanceof SightSubsystem)) return;
+        if (!CameraController.isCameraMode()) {
+            return;
+        }
+        AbstractViewpointSubsystem camera = CameraController.getActiveCamera();
+        if (!(camera instanceof SightSubsystem sight)) {
+            return;
+        }
 
         int screenW = guiGraphics.guiWidth();
         int screenH = guiGraphics.guiHeight();
         int centerX = screenW / 2;
         int centerY = screenH / 2;
 
-        // 屏幕中心绘制圆环（视角参考点），炮管位置绘制十字线
-        renderCenterRing(guiGraphics, centerX, centerY);
-//        // 获取炮管世界瞄准点（唯一真相源），投影到屏幕空间
-//        float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
-//        Vec3 barrelAimPoint = CameraController.getCameraAimPointWorld(partialTick);
-//        if (barrelAimPoint == null) return;
-//
-//        Camera mcCam = mc.gameRenderer.getMainCamera();
-//        float vFov = CameraSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom();
-//
-//        float[] offset = ScreenProjectionUtil.worldToScreenOffset(
-//                barrelAimPoint, mcCam, vFov, screenW, screenH);
-//        if (offset == null) return;
-//
-//        int crossX = Math.clamp(centerX + Math.round(offset[0]), EDGE_MARGIN, screenW - EDGE_MARGIN);
-//        int crossY = Math.clamp(centerY + Math.round(offset[1]), EDGE_MARGIN, screenH - EDGE_MARGIN);
-//
-//        renderCrosshair(guiGraphics, crossX, crossY);
+        // 分划固定在真实光轴中心，目标圆圈独立投影，表现机构追赶误差。
+        renderCrosshair(guiGraphics, centerX, centerY);
+        Vec3 target = CameraController.getExpectedAimPointWorld();
+        if (target == null) {
+            return;
+        }
+        float[] offset = ScreenProjectionUtil.worldToScreenOffset(target, mc.gameRenderer.getMainCamera(),
+                AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom(), screenW, screenH);
+        var settings = sight.sightAttr.staticAttribute;
+        if (!settings.horizontalStabilized || !settings.verticalStabilized) {
+            Vec3 relative = CameraController.getRelativeAimPointWorld();
+            float[] relativeOffset = relative == null ? null : ScreenProjectionUtil.worldToScreenOffset(relative,
+                    mc.gameRenderer.getMainCamera(), AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV
+                            / CameraController.getCurrentZoom(), screenW, screenH);
+            if (relativeOffset == null || (offset == null && (settings.horizontalStabilized || settings.verticalStabilized))) {
+                return;
+            }
+            // 无稳轴显示累计后尚未被机构追上的偏差；稳定轴显示保持世界点的投影。
+            offset = new float[]{settings.horizontalStabilized ? offset[0] : relativeOffset[0],
+                    settings.verticalStabilized ? offset[1] : relativeOffset[1]};
+        }
+        if (offset == null) {
+            return;
+        }
+        int x = centerX + Math.round(offset[0]);
+        int y = centerY + Math.round(offset[1]);
+        if (x < CENTER_RING_OUTER_RADIUS || y < CENTER_RING_OUTER_RADIUS
+                || x > screenW - CENTER_RING_OUTER_RADIUS || y > screenH - CENTER_RING_OUTER_RADIUS) {
+            return;
+        }
+        renderCenterRing(guiGraphics, x, y);
     }
 
     private void renderCrosshair(GuiGraphics guiGraphics, int cx, int cy) {
@@ -114,7 +125,7 @@ public class SightHud implements LayeredDraw.Layer {
     }
 
     /**
-     * 在指定位置用三角网格绘制圆环（视角中心参考）。
+     * 在期望目标的屏幕投影位置用三角网格绘制圆环。
      * 通过 {@code bufferSource} 直接提交浮点精度顶点，消除扫描线 fill 的锯齿问题。
      * <p>
      * 圆环由 {@link #RING_SEGMENTS} 个四边形拼接而成，

@@ -15,6 +15,7 @@ import jme3utilities.math.MyMath;
 import org.jetbrains.annotations.Nullable;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -97,21 +98,20 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         }
     }
 
+    public boolean hasYawAxis() { return hasYaw; }
+    public boolean hasPitchAxis() { return hasPitch; }
+
     @Override
     public void onTick() {
         super.onTick();
-        if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            // 固定旋转顺序：Yaw(偏航) → Pitch(俯仰)，保证方向机不受高低机影响
-            if (RotationOrder.YXZ != joint.getRotationOrder()) {
-                joint.setRotationOrder(RotationOrder.YXZ);
-            }
-        }
+
     }
 
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
         if (this.connector == null || !(this.connector.joint instanceof New6Dof joint)) return;
+        if (joint.getRotationOrder() != RotationOrder.YXZ) joint.setRotationOrder(RotationOrder.YXZ);
 
         if (this.isActive() && !isDestroyed()) {
             // 物理关节轴映射：
@@ -195,6 +195,19 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         data.putFloat("brake_pitch", angle.x);
         data.putFloat("brake_yaw", angle.y);
         return data;
+    }
+
+    /**
+     * 物理线程将操作者累计的语义角转换为本机绝对伺服角。<br>
+     * 偏航原生符号与向右的输入相反；双轴一体与独立高低机的俯仰原生符号相反。
+     * 连续偏航只在电机边界归约圈数，输入状态保留累计值。
+     *
+     * @param relativeAim 绝对相对目标，弧度，x=俯仰、y=偏航
+     * @return 本机原生 (pitch, yaw, roll) 目标，roll 固定为零
+     */
+    public Vector3f computeAimAngles(Vec2 relativeAim) {
+        return new Vector3f(hasYaw && hasPitch ? -relativeAim.x : relativeAim.x,
+                (float) Math.IEEEremainder(-relativeAim.y, 2 * Math.PI), 0);
     }
 
     /**

@@ -24,14 +24,16 @@ class AimMathTest {
                         rotation(new Vector3f(0, 0, 1), Math.toRadians(roll)));
                 var b = rig(root, split);
                 var q = deg(10, 20);
-                var relative = new AimTargetState(AimTargetState.Mode.RELATIVE, AimMath.buildAimPoint(b,q), q,b);
-                var world = new AimTargetState(AimTargetState.Mode.WORLD, AimMath.buildAimPoint(b,q), q,b);
-                for (int i=0; i<100; i++) {
+                var relative = q;
+                var worldPoint = AimMath.buildAimPoint(b, q);
+                for (int i = 0; i < 100; i++) {
                     var input = deg(.03, .05);
-                    relative.applyMouse(b,input); world.applyMouse(b,input);
-                    same(relative.update(b),world.update(b),1e-5);
+                    relative = AimMath.advanceRelativeAim(b, relative, input);
+                    Vec2 before = AimMath.solveAim(b, worldPoint, relative).angles();
+                    worldPoint = AimMath.buildAimPoint(b, AimMath.advanceRelativeAim(b, before, input));
+                    same(relative, AimMath.solveAim(b, worldPoint, relative).angles(), 1e-5);
                 }
-                same(deg(13, 25), relative.update(b),1e-6);
+                same(deg(13, 25), relative, 1e-6);
                 for (var target : new Vec2[]{deg(-25, 35),deg(35, 179),deg(-5, -175)}) {
                     var branch = new Vec2((float) (target.x+.03), (float) (target.y-.05));
                     var solved = AimMath.solveAim(b,AimMath.buildAimPoint(b,target),branch);
@@ -51,12 +53,9 @@ class AimMathTest {
 
     @Test void t5BaseMotionPreservesWorldOrRelativeIntent() {
         var b=rig(AimPose.IDENTITY,true); var q=deg(10, 20); var p=AimMath.buildAimPoint(b,q);
-        var r=new AimTargetState(AimTargetState.Mode.RELATIVE,p,q,b);
-        var s=new AimTargetState(AimTargetState.Mode.WORLD,p,q,b);
-        var moved=rig(new AimPose(new Vec3(10,0,0),rotation(new Vector3f(0,-1,0),.2)),true);
-        same(q,r.update(moved),0);
-        assertEquals(p,s.snapshot(moved).worldPoint());
-        assertTrue(s.update(moved).y<q.y);
+        var moved = rig(new AimPose(new Vec3(10, 0, 0), rotation(new Vector3f(0, -1, 0), .2)), true);
+        same(q, AimMath.advanceRelativeAim(moved, q, Vec2.ZERO), 0);
+        assertTrue(AimMath.solveAim(moved, p, q).angles().y < q.y);
     }
 
     @Test void t6ContinuousAndBoundedAxesRespectOrderedInput() {
@@ -76,10 +75,8 @@ class AimMathTest {
             assertEquals(yaw ? initial.x : initial.y,yaw ? solved.angles().x : solved.angles().y,0);
             double before=angle(moved.forward(initial).forward(),p.subtract(moved.forward(initial).position()));
             assertTrue(solved.errorRadians()<before*.5);
-            var mode=yaw ? AimTargetState.Mode.YAW_STABLE : AimTargetState.Mode.PITCH_STABLE;
-            var state=new AimTargetState(mode,p,initial,b);
-            state.applyMouse(b,yaw ? deg(2, 0) : deg(0, 2));
-            assertNotEquals(p,state.snapshot(b).worldPoint());
+            Vec2 after = AimMath.advanceRelativeAim(b, initial, yaw ? deg(2, 0) : deg(0, 2));
+            assertNotEquals(p, AimMath.buildAimPoint(b, after));
         }
     }
 
@@ -102,12 +99,6 @@ class AimMathTest {
         assertEquals(0,AimMath.filterLead(.1,Math.toRadians(40),0,l));
         assertEquals(-.1,AimMath.filterLead(-.1,Math.toRadians(40),0,l));
         assertEquals(.1,AimMath.filterLead(.1,l,Math.toRadians(10),l));
-        var b=rig(AimPose.IDENTITY,true); var q=deg(10, 20);
-        for(var mode:AimTargetState.Mode.values()) {
-            var p=AimMath.buildAimPoint(b,q); var state=new AimTargetState(mode,p,q,b);
-            state.applyMouse(b,Vec2.ZERO);
-            assertEquals(p,state.snapshot(b).worldPoint());
-        }
     }
 
     @Test void mouseScalingAndSignsAreShared() {

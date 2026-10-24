@@ -1,13 +1,13 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
+import com.jme3.math.Quaternion;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimAxisLimit;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimMath;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimPose;
+import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
 import lombok.Getter;
 import net.minecraft.world.phys.Vec2;
-
 import net.minecraft.world.phys.Vec3;
-import com.jme3.math.Quaternion;
-
-import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
-import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
 
 /**
  * 第三人称虚拟视点的客户端会话状态，由客户端主线程持有和推进。
@@ -17,7 +17,9 @@ import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
 public final class ThirdPersonViewpoint {
     @Getter
     private boolean following;
+    /** 跟随模式的相对观察角，安装参考转动时保持该值。 */
     private Vec2 look = Vec2.ZERO;
+    /** 自由模式保持的有限世界点，同时供视点切换继承。 */
     private Vec3 worldPoint;
 
     /** 客户端主线程切入视点时继承期望目标，并换算当前乘坐参考中的观察角。 */
@@ -26,13 +28,17 @@ public final class ThirdPersonViewpoint {
         worldPoint = inherited;
         look = ViewMath.inherit(reference, origin, inherited);
     }
+
     /** 客户端主线程每次逻辑更新推进观察状态；零输入时也处理乘坐参考和观察位置变化。 */
     public ViewMath.Snapshot update(Quaternion reference, Vec3 origin, Vec2 input,
-                                    AimAxisLimit yawLimit, AimAxisLimit pitchLimit) {
-        if (worldPoint == null) enter(following, reference, origin,
-                origin.add(new AimPose(Vec3.ZERO, reference).forward().scale(AimMath.AIM_DISTANCE_METERS)));
+                                     AimAxisLimit yawLimit, AimAxisLimit pitchLimit) {
+        if (worldPoint == null) {
+            enter(following, reference, origin,
+                    origin.add(new AimPose(Vec3.ZERO, reference).forward().scale(AimMath.AIM_DISTANCE_METERS)));
+        }
         if (following) {
-            look = new Vec2((float) (pitchLimit.apply(look.x+input.x)), (float) (yawLimit.apply(look.y+input.y)));
+            look = new Vec2((float) pitchLimit.apply(look.x + input.x),
+                    (float) yawLimit.apply(look.y + input.y));
             ViewMath.Snapshot result = ViewMath.follow(reference, look, origin);
             worldPoint = result.worldPoint();
             return result;
@@ -41,6 +47,16 @@ public final class ThirdPersonViewpoint {
         return ViewMath.free(worldPoint, origin);
     }
 
-    public Vec3 worldPoint() { return worldPoint; }
-    public Vec2 relativeLook() { return look; }
+    /** 主线程／渲染线程只读采样，不改变保存的相对角或世界点。 */
+    public ViewMath.Snapshot sample(Quaternion reference, Vec3 origin) {
+        return following ? ViewMath.follow(reference, look, origin) : ViewMath.free(worldPoint, origin);
+    }
+
+    public Vec3 worldPoint() {
+        return worldPoint;
+    }
+
+    public Vec2 relativeLook() {
+        return look;
+    }
 }

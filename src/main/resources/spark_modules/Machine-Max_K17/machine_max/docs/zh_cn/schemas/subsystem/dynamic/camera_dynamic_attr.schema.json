@@ -19,11 +19,14 @@
       "description": "摄像机挂载定位器名称，模型中的骨骼作为摄像机位置。"
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:camera",
-      "definition": "machine_max:camera/tank_gunners_sight",
+      "definition": "machine_max:targeting_pod",
       "locator": "optics_mount"
     }
   ]

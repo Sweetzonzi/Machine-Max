@@ -54,7 +54,8 @@ public record ControlGroupSetEditPayload(
             DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
             if (object instanceof SubPart subPart) {
                 AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
-                if (subsystem instanceof AbstractControllableSubsystem controllable) {
+                if (subsystem instanceof AbstractControllableSubsystem controllable
+                        && ((io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin) context.player()).machine_Max$getControllingSubsystem() == controllable) {
                     controllable.setControlGroupSet(payload.controlGroupSet());
                 } else {
                     MachineMax.LOGGER.warn("收到ControlGroupSetEditPayload但子系统 {} 不存在于 SubPart(id={})",

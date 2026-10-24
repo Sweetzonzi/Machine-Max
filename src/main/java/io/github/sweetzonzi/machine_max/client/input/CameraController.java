@@ -1,39 +1,26 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
-import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
-import io.github.sweetzonzi.machine_max.network.payload.PlayerLookAtPayload;
-import io.github.sweetzonzi.machine_max.util.environment.EnvironmentSettings;
-import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
-import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
+import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.*;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractViewpointSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.ViewInputPayload;
-import io.github.sweetzonzi.machine_max.util.MMMath;
-import jme3utilities.math.MyMath;
 import lombok.Getter;
-import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.*;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -41,874 +28,591 @@ import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
-
+import org.joml.Vector3f;
 import java.util.List;
 
+/**
+ * 客户端主线程的视角路由、输入交付和显示效果。观察状态由第三人称或逐设备实例持有。
+ * 固定炮镜显示真实光轴，鼠标更新独立的武器期望目标；渲染方法只读这些状态。
+ */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
-public class CameraController {
-    private static Minecraft client;
-    /**
-     * 玩家乘坐载具的刚体变换，用于基于部件坐标系额外旋转视角
-     */
-    private static Transform extraTransform = new Transform();
-    /**
-     * 玩家乘坐载具的上一tick刚体变换，用于插值
-     */
-    private static Transform oldExtraTransform = new Transform();
-    private static boolean onBoard = false;
-    private static boolean justLeft = false;
-    private static float targetViewPitch = 0;
-    private static float targetViewYaw = 0;
-    private static float targetViewRoll = 0;
-    private static float aimPitch = 0;
-    private static float aimYaw = 0;
-    private static float aimRoll = 0;
-    private static float pitch = 0;
-    private static float yaw = 0;
-    private static float roll = 0;
-    public static Vec3 aimDirection = new Vec3(1, 0, 0);
-    private static float speedDistanceFactor = 0.0f;
-    private static boolean anglesInitialized = false;
-    private static Vec3 lastSentAimPoint = null;
-    private static final double AIM_MAX_DISTANCE = 64.0;
-    private static final double AIM_POINT_THRESHOLD_SQ = 0.0001;
+public final class CameraController {
+    private static final Minecraft CLIENT = Minecraft.getInstance();
 
-    // ===== 炮镜模式状态 =====
-    /**
-     * 当前激活的摄像机（null=普通座椅视角）
-     */
+    /** 座椅正常观察与临时自由观察各自保存状态，临时观察不改写武器目标。 */
+    private static final ThirdPersonViewpoint SEAT_VIEW = new ThirdPersonViewpoint();
+    private static final ThirdPersonViewpoint FREE_LOOK = new ThirdPersonViewpoint();
+
+    /** 以下逻辑状态均由客户端主线程持有；离座或换世界时由 clearWorld 释放。 */
+    private static SeatSubsystem controllingSeat;
     @Getter
-    private static CameraSubsystem activeCamera = null;
-    /**
-     * 世界空间瞄准点（唯一真相源，稳定轴使用）。鼠标不动则此点不动
-     */
-    private static Vec3 aimPoint = null;
-    /**
-     * 无稳轴鼠标意图偏移（度），turnCamera 累加，鼠标不动则不变。代表玩家期望的观察方向
-     */
-    private static float localPitchOffsetDeg = 0f;
-    /**
-     * 无稳轴鼠标意图偏移（度），turnCamera 累加，鼠标不动则不变。代表玩家期望的观察方向
-     */
-    private static float localYawOffsetDeg = 0f;
-    /**
-     * aimLocal 追赶 local 的最大角速度（度/秒），模拟炮塔恒定转速上限。
-     * 30 ≈ 0.5°/frame@60fps，小差值一步到位，大差值匀速追赶
-     */
-    private static final float AIM_LOCAL_MAX_SPEED_DEG = 60f;
-    /**
-     * 追赶 localPitchOffsetDeg 的延迟瞄准偏移（度），每帧固定角速度追赶
-     */
-    private static float aimLocalPitchOffsetDeg = 0f;
-    /**
-     * 追赶 localYawOffsetDeg 的延迟瞄准偏移（度），每帧固定角速度追赶
-     */
-    private static float aimLocalYawOffsetDeg = 0f;
-    private static float pendingLocalPitchOffsetDeg = 0f;
-    private static float pendingLocalYawOffsetDeg = 0f;
-    /**
-     * 上一次 aimLocal 更新的纳秒时间戳，用于帧率无关的 dt 计算
-     */
-    private static long lastAimLocalUpdateNanos = 0;
-    /**
-     * 变焦目标倍率（toggleZoom/adjustZoom 修改此值），currentZoom 在渲染帧中逐渐追上
-     */
-    private static float targetZoom = 1f;
-    /**
-     * 当前变焦倍率（平滑过渡值），驱动 FOV 和灵敏度
-     */
+    private static AbstractViewpointSubsystem activeCamera;
+    /** 当前炮镜输入目标及其主 WC；切入时由机构实际角初始化，离座时释放。 */
+    private static AimTargetState aimTarget;
+    private static SightSubsystem fixedSight;
+    private static WeaponControllerSubsystem fixedController;
+    /** 逻辑观察结果与本帧显示位姿分开保存，显示抖动只写入后者的应用结果。 */
+    private static ViewMath.Snapshot logicalView;
+    private static AimPose renderPose;
+    /** 发往 WC、供 HUD 投影的有限世界目标点。 */
+    private static Vec3 expectedPoint;
+    private static Vec3 freeLookControlPoint;
+    private static boolean wasFreeLook;
+    private static boolean seatFollowing;
+    private static boolean seatFirstPerson;
+    /** 切入设备前的原版视角，退出时恢复。 */
+    private static CameraType seatCameraType;
+
+    /** 速度对第三人称距离的平滑修正，每逻辑 tick 更新一次。 */
+    private static float speedDistanceFactor;
+    private static float targetZoom = 1;
     @Getter
-    private static float currentZoom = 1f;
-    /**
-     * 变焦过渡速度（exp衰减系数），值越大越快。10≈0.3s内达95%
-     */
-    private static final float ZOOM_SPEED = 10.0f;
-    /**
-     * 上次变焦 lerp 的纳秒时间戳，用于帧率无关平滑
-     */
-    private static long lastZoomLerpNanos = 0;
+    private static float currentZoom = 1;
+    /** 显示变焦按真实经过时间平滑，单位为纳秒；零表示尚未采样。 */
+    private static long lastZoomNanos;
+    /** 当前逻辑观察方向，供交互与内容查询使用，不包含显示抖动。 */
+    public static Vec3 aimDirection = new Vec3(0, 0, -1);
 
     public static boolean isCameraMode() {
         return activeCamera != null;
     }
 
-    /** @return 玩家当前是否乘坐载具（座椅模式） */
     public static boolean isOnBoard() {
-        return onBoard;
+        return controllingSeat != null;
     }
 
-    /**
-     * 获取炮管在世界空间中指向的远处瞄准点（唯一真相源）。<p>
-     * 从相机子系统 locator（与炮管随动）的前方 Z- 方向投射 1000 米，
-     * 得到世界坐标点。该点可通过 {@code ScreenProjectionUtil.worldToScreenOffset}
-     * 投影到屏幕坐标系中显示炮管准星。<br>
-     * 适用于稳定器模式和非稳定器模式，因为始终基于 locator 的实际世界位姿计算。
-     *
-     * @param partialTick 插值因子（0~1），用于 locator 平滑插值
-     * @return 炮管前方远处一点的世界坐标，摄像机未激活时返回 {@code null}
-     */
+    /** 主线程／HUD 读取当前期望目标；尚未进入有效控制来源时为 null。 */
+    @Nullable
+    public static Vec3 getExpectedAimPointWorld() {
+        return expectedPoint;
+    }
+
+    /** HUD 读取无稳轴累计偏差所对应的机构正解点；采样未就绪时不绘制目标圈。 */
+    @Nullable
+    public static Vec3 getRelativeAimPointWorld() {
+        AimGeometrySnapshot geometry = fixedSight == null ? null : fixedSight.getAimGeometry();
+        if (aimTarget == null || geometry == null) {
+            return null;
+        }
+        Vec3 target = aimTarget.relativePoint(geometry);
+        AimPose actual = geometry.forward(geometry.actualAngles());
+        AimPose displayed = renderPose != null ? renderPose : fixedSight.samplePose(1);
+        // 机构采样提供目标相对实际光轴的偏差，本帧光轴提供显示参考。
+        // 重基准可消除物理采样与渲染插值的时差；追到目标后，车体运动不会把圈推离中心。
+        Vec3 offset = target.subtract(actual.position());
+        Vector3f direction = new Vector3f((float) offset.x, (float) offset.y, (float) offset.z);
+        SparkMathKt.toQuaternionf(actual.rotation()).conjugate().transform(direction);
+        SparkMathKt.toQuaternionf(displayed.rotation()).transform(direction);
+        return displayed.position().add(direction.x, direction.y, direction.z);
+    }
+
+    /** 渲染线程读取实际光轴的前方点，供内容分划的空间投影使用。 */
     @Nullable
     public static Vec3 getCameraAimPointWorld(float partialTick) {
-        if (activeCamera == null) return null;
-
-        Transform locator = activeCamera.getLerpedLocatorWorldTransform(partialTick);
-
-        // 炮管在世界空间中的前方指向（locator Z- 即炮管指向）
-        Vector3f barrelForward = new Vector3f(0, 0, -1);
-        locator.getRotation().toRotationMatrix().mult(barrelForward, barrelForward);
-        barrelForward.normalize();
-
-        // 炮管前方远处一点（世界坐标）
-        return SparkMathKt.toVec3(locator.getTranslation().add(barrelForward.mult(1000)));
-    }
-
-    @SubscribeEvent
-    public static void updateCameraPos(ComputeCameraPosEvent event) {
-        if (client == null) client = Minecraft.getInstance();
-        Camera camera = event.getCamera();
-        float partialTick = (float) event.getPartialTick();
-        CameraType type = client.options.getCameraType();
-        Entity entity = camera.getEntity();
-
-        // 炮镜模式：相机固定在 locator 位置，不应用任何抖动/惯性效果
-        if (activeCamera != null && activeCamera.isActive()) {
-            Transform locator = activeCamera.getLerpedLocatorWorldTransform(partialTick);
-            event.setCameraPos(SparkMathKt.toVec3(locator.getTranslation()));
-            return;
+        if (activeCamera == null) {
+            return null;
         }
-
-        // 计算理想相机位置（idealPos = 无抖动/惯性偏移时的相机位置）
-        Vec3 idealPos = null;
-
-        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            Quaternionf seatRot = new Quaternionf();
-            seat.getSubPart().getWorldPositionMatrix(partialTick).getNormalizedRotation(seatRot);
-            if (!type.isFirstPerson() && seat.attr.staticAttribute.views.focusOnCenter()) {
-                if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
-                    idealPos = vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
-                            .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
-                                    PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.thirdPersonOffset()),
-                                    SparkMathKt.toBQuaternion(seatRot))));
-                }
-            } else {
-                Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
-                idealPos = SparkMathKt.toVec3(transform.getTranslation())
-                        .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
-                                PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.firstPersonOffset()),
-                                SparkMathKt.toBQuaternion(seatRot))));
-            }
-
-            // System B：载具相机惯性追赶 —— 暂已关闭（弹簧阻尼效果一般，临时移除，保留调用可随时恢复）
-            // if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
-            //     float maxOffset = computeVehicleMaxOffset(vehicle);
-            //     CameraShakeController.onVehicleCameraChase(idealPos, maxOffset);
-            // }
-        }
-
-        // 非载具模式下以当前相机位置作为基准
-        if (idealPos == null) {
-            idealPos = camera.getPosition();
-        }
-
-        // System B：应用载具惯性追赶偏移 —— 暂已关闭（与上方 onVehicleCameraChase 一并移除）
-        // Vec3 chaseOff = CameraShakeController.getVehicleChaseOffset();
-        // if (chaseOff.lengthSqr() > 1e-8) {
-        //     float fpScale = type.isFirstPerson() ? CameraShakeController.getFpVehicleScale() : 1.0f;
-        //     idealPos = idealPos.add(chaseOff.scale(fpScale));
-        // }
-
-        // System A：应用位置抖动偏移（仅第三人称非炮镜模式）
-        float posScale = CameraShakeController.getPositionShakeFactor();
-        if (posScale > 0) {
-            Vec3 posOff = CameraShakeController.getPositionOffset();
-            if (posOff.lengthSqr() > 1e-8) {
-                idealPos = idealPos.add(posOff.scale(posScale));
-            }
-        }
-
-        event.setCameraPos(idealPos);
-    }
-
-    @SubscribeEvent
-    public static void updateCameraDistance(CalculateDetachedCameraDistanceEvent event) {
-        Camera camera = event.getCamera();
-        Entity entity = camera.getEntity();
-        if (activeCamera != null && activeCamera.isActive()) {
-            event.setDistance(0f);
-            return;
-        }
-        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
-                speedDistanceFactor = 0.8f * speedDistanceFactor + 0.2f * (float) (2 * MMMath.sigmoid(0.1 * vehicle.getVelocity().length()) - 1);
-                float newDistance = (float) ((seat.attr.staticAttribute.views.distanceScale() + 0.4 * speedDistanceFactor) * vehicle.cameraDistance);
-                event.setDistance(newDistance);
-            }
-        }
-    }
-
-    private static final Transform tmpViewTransform = Transform.IDENTITY.clone();
-
-    @SubscribeEvent
-    public static void updateCameraRot(ViewportEvent.ComputeCameraAngles event) {
-        if (client == null) client = Minecraft.getInstance();
-        LocalPlayer player = client.player;
-        if (player == null) return;
-
-        Camera camera = event.getCamera();
-        CameraType type = client.options.getCameraType();
-        Entity entity = camera.getEntity();
-        float partialTick = (float) event.getPartialTick();
-
-        // ===== 镜头抖动控制器本帧更新（System A + B 弹簧积分） =====
-        CameraShakeController.tick((int) client.level.getGameTime(), partialTick);
-
-        if (!anglesInitialized) {
-            initializeAngles(entity, partialTick);
-        }
-
-        // 炮镜模式（强制第一人称已在 tickCameraMode 中处理）
-        if (activeCamera != null && activeCamera.isActive()) {
-            updateCameraRotCameraMode(event, partialTick);
-            // 炮镜模式：旋转偏移 × CAMERA_MODE_ROTATION_SCALE，位置偏移禁用
-            applyShakeRotation(event, CameraShakeController.CAMERA_MODE_ROTATION_SCALE);
-            return;
-        }
-
-        AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if (subsystem instanceof SeatSubsystem seat) {
-            updateCameraRotSeatMode(event, seat, type, partialTick);
-        } else {
-            updateCameraRotDefault(event, entity, partialTick);
-        }
-        // 第一人称 × FIRST_PERSON_ROTATION_SCALE，第三人称 × THIRD_PERSON_ROTATION_SCALE
-        applyShakeRotation(event, type.isFirstPerson()
-                ? CameraShakeController.FIRST_PERSON_ROTATION_SCALE
-                : CameraShakeController.THIRD_PERSON_ROTATION_SCALE);
-    }
-
-    private static void initializeAngles(Entity entity, float partialTick) {
-        aimPitch = entity.getViewXRot(partialTick);
-        aimYaw = entity.getViewYRot(partialTick);
-        aimRoll = 0F;
-        targetViewPitch = aimPitch;
-        targetViewYaw = aimYaw;
-        targetViewRoll = aimRoll;
-        pitch = aimPitch;
-        yaw = aimYaw;
-        roll = aimRoll;
-        anglesInitialized = true;
+        AimPose pose = activeCamera.samplePose(partialTick);
+        return pose.position().add(pose.forward().scale(AimMath.AIM_DISTANCE_METERS));
     }
 
     /**
-     * 炮镜模式每渲染帧的相机旋转计算（60fps+）。<p>
-     * 分轴处理：稳定轴从 locator→aimPoint 反算局部角（补偿车体晃动），
-     * 无稳轴用 local-aimLocal 差值（意图与炮塔的滞后差），aimLocal 在本方法内每帧 EMA 平滑逼近 local。<p>
-     * 瞄准参考方向与视角方向分离：视角用 local-aimLocal，aimPoint 用 aimLocal，避免反馈环。
+     * 客户端主线程每 tick 更新活动来源、逻辑观察和完整瞄准目标。<br>
+     * 设备自己的转轴在子系统 tick 推进；此处负责读取结果并上报，渲染不进入该更新链。
      */
-    private static void updateCameraRotCameraMode(ViewportEvent.ComputeCameraAngles event, float partialTick) {
-        CameraSubsystem camera = activeCamera;
-        Transform locator = camera.getLerpedLocatorWorldTransform(partialTick);
-        var sa = camera.attr.staticAttribute;
-
-        // === 每帧更新 aimLocal（固定角速度追赶，帧率无关）===
-        long now = System.nanoTime();
-        if (lastAimLocalUpdateNanos == 0) lastAimLocalUpdateNanos = now;
-        float dt = (now - lastAimLocalUpdateNanos) / 1_000_000_000f;
-        lastAimLocalUpdateNanos = now;
-        if (dt > 0 && dt < 0.5f) {
-            float maxStep = AIM_LOCAL_MAX_SPEED_DEG * dt;
-            float pitchDiff = localPitchOffsetDeg - aimLocalPitchOffsetDeg;
-            float yawDiff = localYawOffsetDeg - aimLocalYawOffsetDeg;
-            // 小差值（≤ 一帧最大步长）直接 snap，避免指数逼近在小差值下绝对速度过慢
-            if (Math.abs(pitchDiff) <= maxStep) {
-                aimLocalPitchOffsetDeg = localPitchOffsetDeg;
-            } else {
-                aimLocalPitchOffsetDeg += Math.signum(pitchDiff) * maxStep;
-            }
-            if (Math.abs(yawDiff) <= maxStep) {
-                aimLocalYawOffsetDeg = localYawOffsetDeg;
-            } else {
-                aimLocalYawOffsetDeg += Math.signum(yawDiff) * maxStep;
-            }
-        }
-        // ================================================================
-
-        // 若尚无瞄准点，从摄像机正前方 100 米处初始化一个
-        if (aimPoint == null) {
-            Vector3f forward = new Vector3f(0, 0, -1);
-            locator.getRotation().toRotationMatrix().mult(forward, forward);
-            aimPoint = SparkMathKt.toVec3(locator.getTranslation().add(forward.mult(100)));
-        }
-
-        // 分轴计算摄像机内部偏转角（用于视角显示）：
-        //   稳定轴 → 从 locator→aimPoint 反算局部角（补偿 mount 运动）
-        //   无稳轴 → rad(local - aimLocal)，即意图与炮塔实际指向的差值。
-        //            鼠标不动时 local 不变，炮塔追赶中 aimLocal→local，差值收敛到 0，
-        //            相机稳定在意图世界方向不动（不被拉回炮管朝向）。
-        float localPitch = sa.isVerticalStabilized() ?
-                computeLocalPitchToPoint(locator, aimPoint) : (float) Math.toRadians(localPitchOffsetDeg - aimLocalPitchOffsetDeg);
-        float localYaw = sa.isHorizontalStabilized() ?
-                computeLocalYawToPoint(locator, aimPoint) : (float) Math.toRadians(localYawOffsetDeg - aimLocalYawOffsetDeg);
-
-        // 分轴计算瞄准参考方向（用于 aimPoint 反算，不用于视角显示）：
-        //   稳定轴 → 从 aimPoint 反算（补偿晃动）
-        //   无稳轴 → 0°
-        float aimLocalPitch = sa.isVerticalStabilized() ?
-                computeLocalPitchToPoint(locator, aimPoint) : 0;
-        float aimLocalYaw = sa.isHorizontalStabilized() ?
-                computeLocalYawToPoint(locator, aimPoint) : 0;
-
-        // 从 localPitch/localYaw + locator 构建视角世界方向（驱动相机旋转）
-        Matrix3f camMat = new Quaternion().fromAngles(localPitch, localYaw, 0).toRotationMatrix();
-        Vector3f dir = new Vector3f(0, 0, -1);
-        camMat.mult(dir, dir);
-        locator.getRotation().toRotationMatrix().mult(dir, dir);
-        Vec3 aimDir;
-        if (dir.lengthSquared() < 0.000001f) {
-            Vector3f forward = new Vector3f(0, 0, -1);
-            locator.getRotation().toRotationMatrix().mult(forward, forward);
-            aimDir = SparkMathKt.toVec3(forward);
-        } else {
-            aimDir = SparkMathKt.toVec3(dir.normalize());
-        }
-
-        double pitchDeg = -Math.toDegrees(Math.asin(Math.clamp(aimDir.y, -1.0, 1.0)));
-        double yawDeg = -Math.toDegrees(Math.atan2(aimDir.x, aimDir.z));
-
-        event.setPitch((float) pitchDeg);
-        event.setYaw((float) yawDeg);
-        // 从定位器世界旋转中提取 roll 角度，使车体倾斜时视角随之倾斜
-        Quaternionf locatorJoml = SparkMathKt.toQuaternionf(locator.getRotation());
-        org.joml.Vector3f euler = new org.joml.Vector3f();
-        locatorJoml.getEulerAnglesYXZ(euler);
-        event.setRoll((float) Math.toDegrees(-euler.z));
-
-        // 每帧用瞄准参考方向（而非视角方向）重算 aimPoint，保持距离。
-        // 稳定轴：aimRef 指向 aimPoint → aimPoint 不变；
-        // 无稳轴：0° → aimPoint 始终在 mount 正前方（炮口实际指向）。
-        Matrix3f aimRefMat = new Quaternion().fromAngles(aimLocalPitch, aimLocalYaw, 0).toRotationMatrix();
-        Vector3f aimRef = new Vector3f(0, 0, -1);
-        aimRefMat.mult(aimRef, aimRef);
-        locator.getRotation().toRotationMatrix().mult(aimRef, aimRef);
-        aimPoint = SparkMathKt.toVec3(locator.getTranslation().add(aimRef.mult(1000)));
-        aimDirection = aimDir;
-    }
-
-    /**
-     * 座椅模式下的相机旋转计算（保留现有逻辑）
-     */
-    private static void updateCameraRotSeatMode(ViewportEvent.ComputeCameraAngles event, SeatSubsystem seat, CameraType type, float partialTick) {
-        float lerp = 0.25f;
-        pitch = (1 - lerp) * pitch + lerp * targetViewPitch;
-        yaw = (1 - lerp) * yaw + lerp * targetViewYaw;
-        roll = (1 - lerp) * roll + lerp * targetViewRoll;
-
-        if (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat)) {
-            Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
-            MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                            (float) Math.toRadians(roll),
-                            (float) Math.toRadians(-yaw),
-                            (float) Math.toRadians(pitch)))),
-                    extra, tmpViewTransform);
-            org.joml.Vector3f rot = new org.joml.Vector3f();
-            SparkMathKt.toQuaternionf(tmpViewTransform.getRotation()).getEulerAnglesYXZ(rot);
-            aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), -Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
-            rot.mul((float) (180 / Math.PI));
-            event.setPitch(rot.x);
-            event.setYaw(-rot.y);
-            event.setRoll(rot.z);
-        } else {
-            event.setPitch(pitch);
-            event.setYaw(yaw);
-            event.setRoll(roll);
-            double pitchRad = -Math.toRadians(aimPitch);
-            double yawRad   = -Math.toRadians(aimYaw);
-            aimDirection = new Vec3(Math.cos(pitchRad) * Math.sin(yawRad), Math.sin(pitchRad), Math.cos(pitchRad) * Math.cos(yawRad));
-        }
-
-        if (!RawInputHandler.freeCam) {
-            if (!onBoard) {
-                onBoard = true;
-                justLeft = false;
-                aimYaw = 180;
-                targetViewYaw = 180;
-            }
-            if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
-                event.getCamera().getEntity().setXRot(aimPitch);
-                event.getCamera().getEntity().setYRot(aimYaw + 180 + partEntity.getYRot());
-            }
-            if (justLeft) {
-                targetViewPitch = aimPitch;
-                targetViewYaw = aimYaw;
-                targetViewRoll = aimRoll;
-                pitch = aimPitch;
-                yaw = aimYaw;
-                roll = aimRoll;
-            } else {
-                targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
-                targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
-                targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
-            }
-        }
-    }
-
-    /**
-     * 默认（非载具）相机旋转
-     */
-    private static void updateCameraRotDefault(ViewportEvent.ComputeCameraAngles event, Entity entity, float partialTick) {
-        if (onBoard) {
-            onBoard = false;
-            justLeft = true;
-            anglesInitialized = false;
-            // 离开载具时清空惯性追赶状态，防止下次上车时残留 offset 导致瞬跳
-            CameraShakeController.onLeaveVehicle();
-        }
-        event.setPitch(entity.getViewXRot(partialTick));
-        event.setYaw(entity.getViewYRot(partialTick));
-        event.setRoll(0F);
-        aimDirection = new Vec3(Math.cos(aimPitch) * Math.sin(aimYaw), Math.sin(aimPitch), Math.cos(aimPitch) * Math.cos(aimYaw));
-    }
-
-    /**
-     * 避免手臂位置跳变，取消手臂随动旋转
-     */
-    @SubscribeEvent
-    public static void onRenderArm(RenderHandEvent event) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player instanceof IEntityMixin passenger && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            if (!seat.attr.isAllowUseItems() || isCameraMode()) event.setCanceled(true);
-            PoseStack poseStack = event.getPoseStack();
-            float partialTicks = event.getPartialTick();
-            float f3 = Mth.lerp(partialTicks, player.yBobO, player.yBob);
-            poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTicks) - f3) * -0.1F));
-        }
-    }
-
-    @SubscribeEvent
-    public static void updateCameraScale(ViewportEvent.ComputeFov event) {
-        if (activeCamera != null && activeCamera.isActive()) {
-            // 渲染帧级变焦平滑过渡（FPS 无关指数衰减）
-            long now = System.nanoTime();
-            if (lastZoomLerpNanos == 0) lastZoomLerpNanos = now;
-            float dt = (now - lastZoomLerpNanos) / 1_000_000_000f;
-            lastZoomLerpNanos = now;
-            if (dt > 0 && dt < 1f) {
-                float factor = 1.0f - (float) Math.exp(-ZOOM_SPEED * dt);
-                currentZoom += (targetZoom - currentZoom) * factor;
-            }
-
-            double fov = CameraSubsystemStaticAttr.REFERENCE_FOV / currentZoom;
-            event.setFOV(fov);
-            return;
-        }
-        double scale = 1.0;
-        double rawFov = event.getFOV();
-        event.setFOV(rawFov / scale);
-    }
-
-    /**
-     * 炮镜模式下鼠标与摄像机交互的核心方法。<p>
-     * 分轴处理：稳定轴 → 在世界空间沿摄像机 localRight/localUp 平移 aimPoint；<br>
-     * 无稳轴 → 累积鼠标增量到 localPitch/YawOffsetDeg（每 tick 清零发包）。
-     */
-    public static void turnCamera(double yRot, double xRot) {
-        float f = (float) xRot * 0.15F; // 俯仰，鼠标垂直移动，xRot>0表示鼠标下移
-        float f1 = (float) yRot * 0.15F; // 偏航，鼠标水平移动，yRot>0表示鼠标右移
-        LocalPlayer player = client.player;
-        if (player == null) return;
-
-        // 炮镜模式：按稳定/无稳分轴处理
-        if (activeCamera != null && activeCamera.isActive()) {
-            var sa = activeCamera.attr.staticAttribute;
-            boolean vertStab = sa.isVerticalStabilized();
-            boolean horStab = sa.isHorizontalStabilized();
-
-            // 变焦越高灵敏度越低：8×时鼠标量降为 1/8
-            float sens = 0.15F / Math.max(currentZoom, 0.1f);
-            f = (float) xRot * sens;
-            f1 = (float) yRot * sens;
-
-            // 稳定轴：在世界空间沿摄像机局部 right/up 平移 aimPoint
-            if (horStab || vertStab) {
-                if (aimPoint == null) return;
-                Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
-                Vector3f camPos = locator.getTranslation();
-                Vector3f aimPos = PhysicsHelperKt.toBVector3f(aimPoint);
-                float dist = aimPos.subtract(camPos).length();
-                if (dist < 1f) dist = 1f;
-
-                // 取摄像机局部坐标系的 right / up 轴（转到世界空间）
-                Vector3f localRight = new Vector3f(1, 0, 0);
-                locator.getRotation().toRotationMatrix().mult(localRight, localRight);
-                Vector3f localUp = new Vector3f(0, 1, 0);
-                locator.getRotation().toRotationMatrix().mult(localUp, localUp);
-
-                float yawAngle = (float) Math.toRadians(f1);
-                float pitchAngle = (float) Math.toRadians(f);
-                float moveX = (float) Math.tan(yawAngle) * dist;
-                float moveY = (float) Math.tan(pitchAngle) * dist;
-
-                double dx = 0, dy = 0, dz = 0;
-                if (horStab) {
-                    dx += localRight.x * moveX;
-                    dy += localRight.y * moveX;
-                    dz += localRight.z * moveX;
-                }
-                if (vertStab) {
-                    dx -= localUp.x * moveY;
-                    dy -= localUp.y * moveY;
-                    dz -= localUp.z * moveY;
-                }
-                aimPoint = aimPoint.add(dx, dy, dz);
-            }
-
-            // 无稳轴：累积鼠标意图偏移（纯累加，不衰减，鼠标不动则意图不变）。
-            // 限制相对于 aimLocal（炮塔当前位置），而非 mount 中心 0°：
-            // 炮塔转走后仍可在其基础上继续往同方向看 limit 度。
-            if (!vertStab) { // 负为上正为下，因此需要反转
-                localPitchOffsetDeg = Math.clamp(localPitchOffsetDeg - f,
-                        aimLocalPitchOffsetDeg - sa.getMaxPitch(), aimLocalPitchOffsetDeg - sa.getMinPitch());
-                pendingLocalPitchOffsetDeg -= f;
-            }
-            if (!horStab) {
-                float yawHalf = sa.getYawLimit() / 2f;
-                localYawOffsetDeg = Math.clamp(localYawOffsetDeg - f1,
-                        aimLocalYawOffsetDeg - yawHalf, aimLocalYawOffsetDeg + yawHalf);
-                pendingLocalYawOffsetDeg -= f1;
-            }
-            return;
-        }
-
-        AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
-        if (subsystem instanceof SeatSubsystem seat) {
-            if (!RawInputHandler.freeCam) {
-                float minPitch = -seat.attr.staticAttribute.views.minPitch();
-                float maxPitch = -seat.attr.staticAttribute.views.maxPitch();
-                float yawLimit = seat.attr.staticAttribute.views.yawLimit() / 2;
-                float minYaw = 180 - yawLimit;
-                float maxYaw = 180 + yawLimit;
-                if (ControlPreference.shouldFollowPose(seat) || client.options.getCameraType().isFirstPerson()) {
-                    targetViewPitch = Math.clamp(targetViewPitch + f, maxPitch, minPitch);
-                    targetViewYaw = Math.clamp(targetViewYaw + f1, minYaw, maxYaw);
-                    aimPitch = Math.clamp(aimPitch + f, maxPitch, minPitch);
-                    aimYaw = Math.clamp(aimYaw + f1, minYaw, maxYaw);
-                } else {
-                    targetViewPitch = targetViewPitch + f;
-                    targetViewYaw = targetViewYaw + f1;
-                    aimPitch = aimPitch + f;
-                    aimYaw = aimYaw + f1;
-                }
-            } else {
-                targetViewPitch += f;
-                targetViewYaw += f1;
-            }
-        }
-    }
-
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
-        if (client == null) client = Minecraft.getInstance();
-        if (client.player == null) return;
-
-        AbstractControllableSubsystem subsystem =
-                ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
-
-        if (subsystem instanceof SeatSubsystem seat) {
-            // 验证当前摄像机仍然有效
-            if (activeCamera != null) {
-                if (!activeCamera.isActive() || activeCamera.isDestroyed()) {
-                    exitCameraMode();
-                }
-            }
-
-            // 炮镜模式
-            if (activeCamera != null) {
-                tickCameraMode(seat);
+        // 世界引用失效时先释放旧座椅输出，避免高优先级信号滞留。
+        if (CLIENT.player == null || CLIENT.level == null) {
+            clearWorld();
+            return;
+        }
+        SeatSubsystem seat = ((IEntityMixin) CLIENT.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem s ? s : null;
+        // 同一装配体内换座继承操作者目标；离座或换载具建立独立的累计状态。
+        // 必须先保存继承值再清理旧来源，清理会释放全部控制组输出。
+        if (seat != controllingSeat) {
+            Vec3 inherited = controllingSeat != null && seat != null
+                    && controllingSeat.getSubPart().getPart().assembly == seat.getSubPart().getPart().assembly ? expectedPoint : null;
+            AimTargetState inheritedTarget = inherited != null ? aimTarget : null;
+            clearWorld();
+            controllingSeat = seat;
+            aimTarget = inheritedTarget;
+            if (seat == null) {
                 return;
             }
-
-            // 普通座椅视角
-            tickSeatMode(seat);
-        } else {
+            enterSeat(inherited);
+        }
+        if (seat == null) {
+            aimDirection = CLIENT.player.getLookAngle();
+            return;
+        }
+        // 发现关系、激活或耐久状态失效时退回座椅观察，让失效设备退出输入来源。
+        if (activeCamera != null && (!seat.getDiscoveredCameras().contains(activeCamera)
+                || !activeCamera.isActive() || activeCamera.isDestroyed())) {
             exitCameraMode();
-            lastSentAimPoint = null;
         }
-    }
-
-    /**
-     * 炮镜模式每 tick（20tps）：<p>
-     * 强制第一人称视角，发送 aimLocal 增量到服务端驱动炮塔。<br>
-     * EMA 更新已移至 updateCameraRotCameraMode（每帧），此处只做视角强制和网络发送。
-     */
-    private static void tickCameraMode(SeatSubsystem seat) {
-        CameraSubsystem camera = activeCamera;
-        if (aimPoint == null) return;
-
-        // 炮镜模式下强制第一人称——每 tick 执行一次而非每渲染帧
-        if (!client.options.getCameraType().isFirstPerson()) {
-            client.options.setCameraType(CameraType.FIRST_PERSON);
-            client.gameRenderer.checkEntityPostEffect(client.getCameraEntity());
-            client.levelRenderer.needsUpdate();
+        if (seat.getSubPart().getPart().assembly instanceof VehicleCore vehicle) {
+            speedDistanceFactor = .8f * speedDistanceFactor
+                    + .2f * (float) (2 * MMMath.sigmoid(.1 * vehicle.getVelocity().length()) - 1);
         }
-
-        // 服务端 WeaponController 对无稳轴使用增量累加（targetAngle += rad(offset)）
-        // 稳定标志从 camera staticAttr 读取，随网络包发往服务端
-        var sa = camera.attr.staticAttribute;
-
-        // 客户端本地派发：驱动 WeaponController 播放特效（炮口焰等）
-        seat.setViewInputSignal(aimPoint,
-                pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg,
-                sa.isVerticalStabilized(), sa.isHorizontalStabilized());
-
-        // 发包到服务端驱动实际武器逻辑
-        PacketDistributor.sendToServer(new ViewInputPayload(
-                seat.getOwner().getSubPart().getId(), seat.getName(),
-                aimPoint.x, aimPoint.y, aimPoint.z,
-                pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg,
-                sa.isVerticalStabilized(), sa.isHorizontalStabilized()));
-
-        // 清空待发送旋转量
-        pendingLocalPitchOffsetDeg = 0;
-        pendingLocalYawOffsetDeg = 0;
-
-        lastSentAimPoint = aimPoint;
-    }
-
-    /**
-     * 座椅模式每 tick。<br>
-     * 同时向服务端发包（驱动实际武器逻辑）和客户端本地派发瞄准点信号（驱动特效播放）。
-     */
-    private static void tickSeatMode(SeatSubsystem seat) {
-        while ((!seat.attr.staticAttribute.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
-                (!seat.attr.staticAttribute.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK
-                        || client.options.getCameraType() == CameraType.THIRD_PERSON_FRONT))) {
-            boolean wasFirstPerson = client.options.getCameraType().isFirstPerson();
-            client.options.setCameraType(client.options.getCameraType().cycle());
-            if (wasFirstPerson != client.options.getCameraType().isFirstPerson()) {
-                client.gameRenderer.checkEntityPostEffect(
-                        client.options.getCameraType().isFirstPerson() ? client.getCameraEntity() : null);
+        // 逻辑更新分三路：座椅推进虚拟观察，可转镜头读取自身转轴，炮镜读取真实挂点。
+        // 视角约束先执行，使座椅初始化使用最终的第一／第三人称设置。
+        enforcePerspective(seat);
+        if (activeCamera == null) {
+            boolean following = CLIENT.options.getCameraType().isFirstPerson() || ControlPreference.shouldFollowPose(seat);
+            if (following != seatFollowing || seatFirstPerson != CLIENT.options.getCameraType().isFirstPerson()) {
+                enterSeat(expectedPoint);
             }
-            client.levelRenderer.needsUpdate();
-        }
-        oldExtraTransform = extraTransform;
-        Transform newExtraTransform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
-        extraTransform = SparkMathKt.lerp(extraTransform, newExtraTransform, 0.15f);
-
-        Camera mcCamera = client.gameRenderer.getMainCamera();
-        Vec3 cameraPos = mcCamera.getPosition();
-        Vec3 aimPoint = cameraPos.add(
-                aimDirection.x * AIM_MAX_DISTANCE,
-                aimDirection.y * AIM_MAX_DISTANCE,
-                aimDirection.z * AIM_MAX_DISTANCE
-        );
-
-        // 向客户端本地子系统派发瞄准点信号，驱动 WeaponController 等收到信号以播放特效
-        seat.setViewInputSignal(aimPoint,
-                0, 0,
-                true, true);
-
-        if (lastSentAimPoint == null || aimPoint.distanceToSqr(lastSentAimPoint) > AIM_POINT_THRESHOLD_SQ) {
-            lastSentAimPoint = aimPoint;
-            SubPart ownerSubPart = seat.getOwner().getSubPart();
-            PacketDistributor.sendToServer(new ViewInputPayload(
-                    ownerSubPart.getId(),
-                    seat.getName(),
-                    aimPoint.x, aimPoint.y, aimPoint.z,
-                    0f, 0f, true, true));
-        }
-    }
-
-    // ===== 炮镜辅助方法 =====
-
-    /**
-     * 从 locator 到世界瞄准点计算局部坐标系下的俯仰角（弧度）。
-     * 稳定轴使用——用于补偿 mount 运动，使摄像机保持看向同一世界点。
-     */
-    private static float computeLocalPitchToPoint(Transform locator, Vec3 worldPoint) {
-        Vector3f toTarget = PhysicsHelperKt.toBVector3f(worldPoint).subtract(locator.getTranslation());
-        locator.getRotation().mult(new Quaternion().fromAngles(0, (float) Math.PI, 0)).inverse().toRotationMatrix().mult(toTarget, toTarget);
-        return (float) Math.asin(Math.clamp(toTarget.normalize().y, -1.0, 1.0));
-    }
-
-    /**
-     * 从 locator 到世界瞄准点计算局部坐标系下的偏航角（弧度）。
-     * 稳定轴使用——用于补偿 mount 运动，使摄像机保持看向同一世界点。
-     */
-    private static float computeLocalYawToPoint(Transform locator, Vec3 worldPoint) {
-        Vector3f toTarget = PhysicsHelperKt.toBVector3f(worldPoint).subtract(locator.getTranslation());
-        locator.getRotation().mult(new Quaternion().fromAngles(0, (float) Math.PI, 0)).inverse().toRotationMatrix().mult(toTarget, toTarget);
-        return (float) Math.atan2(toTarget.x, toTarget.z);
-    }
-
-    /**
-     * 按方向切换摄像机
-     */
-    public static void switchCamera(int direction) {
-        if (client == null || client.player == null) return;
-
-        AbstractControllableSubsystem subsystem =
-                ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
-        if (!(subsystem instanceof SeatSubsystem seat)) return;
-
-        List<CameraSubsystem> cameras = seat.getDiscoveredCameras()
-                .stream()
-                .filter(c -> c.isActive() && !c.isDestroyed()
-                        && !c.attr.locator.isEmpty()
-                        && c.attr.staticAttribute.isAllowCycle())
-                .toList();
-        if (cameras.isEmpty()) return;
-
-        if (activeCamera == null || direction == 0) {
-            activeCamera = cameras.getFirst();
-        } else if (direction > 0) {
-            int idx = cameras.indexOf(activeCamera);
-            if (idx >= cameras.size() - 1) {
-                // 超出最后一个炮镜 → 回到座椅原始视角
-                exitCameraMode();
-                return;
-            } else {
-                activeCamera = cameras.get(idx + 1);
-            }
+            updateSeat(Vec2.ZERO);
+        } else if (activeCamera instanceof CameraSubsystem) {
+            publishDevice();
         } else {
-            int idx = cameras.indexOf(activeCamera);
-            if (idx <= 0) {
-                exitCameraMode();
-                return;
-            } else {
-                activeCamera = cameras.get(idx - 1);
+            updateFixed();
+        }
+        send();
+        // 交互方向与当前逻辑光轴一致；临时自由观察期间保留武器与玩家控制方向。
+        if (!RawInputHandler.freeCam && logicalView != null) {
+            Vec2 angles = ViewMath.directionAngles(logicalView.pose().forward());
+            CLIENT.player.setXRot((float) -Math.toDegrees(angles.x));
+            CLIENT.player.setYRot((float) Math.toDegrees(angles.y) + 180);
+        }
+    }
+
+    /** 客户端主线程逐采样累计俯仰／偏航输入；每 tick 发送完整目标值。 */
+    public static void turnCamera(double right, double down) {
+        if (controllingSeat == null) {
+            return;
+        }
+        // 上游已处理原版灵敏度与反转设置，这里只转换单位并按设备倍率缩放。
+        Vec2 delta = AimMath.mouse(right, down, activeCamera == null ? 1 : currentZoom);
+        if (activeCamera instanceof SightSubsystem) {
+            // 光学参考解释稳定轴输入；主 WC 的物理采样提供无稳轴实际角和正解几何。
+            updateFixed();
+            AimGeometrySnapshot geometry = fixedSight.getAimGeometry();
+            if (aimTarget != null && (mode() == AimTargetState.Mode.WORLD || geometry != null)) {
+                aimTarget.applyMouse(fixedSight.samplePose(1), geometry, delta);
+                expectedPoint = aimTarget.getWorldPoint();
+            }
+        } else if (activeCamera instanceof CameraSubsystem camera) {
+            camera.turnView(delta);
+        } else {
+            updateSeat(delta);
+        }
+    }
+
+    /** 固定炮镜的稳定配置描述武器目标；第三人称与可转镜头统一发布世界点。 */
+    private static AimTargetState.Mode mode() {
+        return activeCamera instanceof SightSubsystem sight
+                ? AimTargetState.Mode.of(sight.sightAttr.staticAttribute.horizontalStabilized, sight.sightAttr.staticAttribute.verticalStabilized)
+                : AimTargetState.Mode.WORLD;
+    }
+
+    /** 客户端主线程每 tick 上报完整目标；鼠标增量只在本地累计。 */
+    private static void send() {
+        if (expectedPoint == null || (activeCamera == null && RawInputHandler.freeCam)
+                || (activeCamera instanceof SightSubsystem && aimTarget == null)) {
+            return;
+        }
+        // 座椅和可转镜头始终按世界点联动武器；只有固定炮镜使用累计相对角。
+        // 无稳目标从当前主 WC 的实际角初始化，之后只发送累计后的完整值。
+        Vec2 relativeAim = activeCamera instanceof SightSubsystem ? aimTarget.getRelativeAim() : Vec2.ZERO;
+        int viewPart = activeCamera == null ? -1 : activeCamera.getSubPart().getId();
+        String viewName = activeCamera == null ? "seat" : activeCamera.getName();
+        // 本地信号与上行载荷使用同一完整值，服务端再校验座椅、设备和活动控制组。
+        // 重复发送只覆盖状态，不会让每个物理子步再次累计鼠标增量。
+        controllingSeat.setViewInputSignal(new ViewInputSignal(expectedPoint, relativeAim, mode()), viewPart, viewName);
+        PacketDistributor.sendToServer(new ViewInputPayload(controllingSeat.getSubPart().getId(), controllingSeat.getName(),
+                viewPart, viewName, controllingSeat.getControlGroupSet().getActiveIndex(), expectedPoint, relativeAim));
+    }
+
+    /** 主线程维护固定炮镜的输入来源，并单独发布实际观察光轴。 */
+    private static void updateFixed() {
+        SightSubsystem sight = (SightSubsystem) activeCamera;
+        AimPose actual = sight.samplePose(1);
+        WeaponControllerSubsystem controller = controllingSeat.getActiveMainWeaponController();
+        sight.setAimController(controller);
+        if (fixedSight != sight || fixedController != controller) {
+            if (fixedSight != null && fixedSight != sight) {
+                fixedSight.setAimController(null);
+            }
+            // 换视点或主 WC 时释放旧输出，使用新机构实际角建立输入初值。
+            controllingSeat.clearInputSignals();
+            aimTarget = null;
+            fixedSight = sight;
+            fixedController = controller;
+        }
+        AimGeometrySnapshot geometry = sight.getAimGeometry();
+        if (mode() != AimTargetState.Mode.WORLD && geometry == null) {
+            // 物理线程尚未发布当前机构时，画面可用，但不发送错误零位目标。
+            if (aimTarget != null) {
+                controllingSeat.clearInputSignals();
+            }
+            aimTarget = null;
+            logicalView = new ViewMath.Snapshot(actual, point(actual));
+            aimDirection = actual.forward();
+            return;
+        }
+        if (aimTarget == null) {
+            Vec3 inherited = expectedPoint != null ? expectedPoint : point(actual);
+            aimTarget = new AimTargetState(mode(), inherited, geometry == null ? Vec2.ZERO : geometry.actualAngles());
+        }
+        if (geometry != null) {
+            aimTarget.updateGeometry(geometry);
+        }
+
+        // 逻辑目标供输入与 HUD 使用；画面始终来自真实挂点，不能用目标角旋转画面。
+        expectedPoint = aimTarget.getWorldPoint();
+        logicalView = new ViewMath.Snapshot(actual, expectedPoint);
+        aimDirection = actual.forward();
+    }
+
+    /** 主线程以可转镜头当前实际观察角生成瞄准点，不采用尚未追到的期望角。 */
+    private static void publishDevice() {
+        AimPose pose = activeCamera.samplePose(1);
+        expectedPoint = point(pose);
+        logicalView = new ViewMath.Snapshot(pose, expectedPoint);
+        aimDirection = pose.forward();
+    }
+
+    private static Vec3 point(AimPose pose) {
+        return pose.position().add(pose.forward().scale(AimMath.AIM_DISTANCE_METERS));
+    }
+
+    /** 主线程切入座椅观察，按跟随设置转换继承目标，并清理固定炮镜来源。 */
+    private static void enterSeat(Vec3 inherited) {
+        if (controllingSeat == null) {
+            return;
+        }
+        // 第一人称固定跟随座椅；第三人称按玩家覆盖或座椅默认值选择跟随／自由。
+        seatFirstPerson = CLIENT.options.getCameraType().isFirstPerson();
+        seatFollowing = seatFirstPerson || ControlPreference.shouldFollowPose(controllingSeat);
+        AimPose mount = seatMount(1);
+        if (inherited == null) {
+            inherited = point(mount);
+        }
+        // 座椅观察继承世界点；退出炮镜时解除机构采样引用。
+        SEAT_VIEW.enter(seatFollowing, mount.rotation(), mount.position(), inherited);
+        if (fixedSight != null) {
+            fixedSight.setAimController(null);
+        }
+        fixedSight = null;
+        fixedController = null;
+        wasFreeLook = false;
+        updateSeat(Vec2.ZERO);
+    }
+
+    /**
+     * 主线程按座椅挂点更新普通观察或临时自由观察。<br>
+     * 临时观察只改变画面；进入时保存控制目标，退出时恢复该目标的指向。
+     *
+     * @param input 本次鼠标俯仰／偏航增量，弧度，零值也更新乘坐随动
+     */
+    private static void updateSeat(Vec2 input) {
+        AimPose mount = seatMount(1);
+        // 自由观察保留独立状态，不能让临时查看方向变成新的武器指向。
+        if (RawInputHandler.freeCam && !wasFreeLook) {
+            freeLookControlPoint = expectedPoint;
+            FREE_LOOK.enter(false, mount.rotation(), mount.position(), expectedPoint != null ? expectedPoint : point(mount));
+        } else if (!RawInputHandler.freeCam && wasFreeLook && freeLookControlPoint != null) {
+            SEAT_VIEW.enter(seatFollowing, mount.rotation(), mount.position(), freeLookControlPoint);
+        }
+        wasFreeLook = RawInputHandler.freeCam;
+        // 两套观察状态独立，只有普通观察可以更新待发送的武器世界点。
+        ThirdPersonViewpoint view = wasFreeLook ? FREE_LOOK : SEAT_VIEW;
+        // 此处限位只属于座椅观察范围，与武器的机械行程无关。
+        AimAxisLimit pitch = new AimAxisLimit(false, Math.toRadians(controllingSeat.attr.staticAttribute.views.minPitch()),
+                Math.toRadians(controllingSeat.attr.staticAttribute.views.maxPitch()));
+        float yaw = controllingSeat.attr.staticAttribute.views.yawLimit();
+        AimAxisLimit yawLimit = yaw >= 360 ? AimAxisLimit.CONTINUOUS : new AimAxisLimit(false, Math.toRadians(-yaw / 2), Math.toRadians(yaw / 2));
+        Vec3 origin = seatOrigin(view, mount, 1);
+        logicalView = view.update(mount.rotation(), origin, input, yawLimit, pitch);
+        if (!wasFreeLook) {
+            expectedPoint = logicalView.worldPoint();
+        }
+        aimDirection = logicalView.pose().forward();
+    }
+
+    private static AimPose seatMount(float partialTick) {
+        var mount = controllingSeat.getSubPart().getLerpedLocatorWorldTransform(controllingSeat.attr.locator, partialTick);
+        return new AimPose(SparkMathKt.toVec3(mount.getTranslation()), mount.getRotation());
+    }
+
+    /** 位置轨道取座椅／装配体中心，姿态参考始终只取座椅挂点。 */
+    private static Vec3 seatOrigin(ThirdPersonViewpoint view, AimPose mount, float partialTick) {
+        // 挂点旋转决定局部偏移的世界方向；中心跟随只改变环绕位置的支点。
+        var settings = controllingSeat.attr.staticAttribute.views;
+        boolean first = CLIENT.options.getCameraType().isFirstPerson();
+        Quaternionf reference = SparkMathKt.toQuaternionf(mount.rotation());
+        Vec3 offset = first ? settings.firstPersonOffset() : settings.thirdPersonOffset();
+        Vector3f localOffset = new Vector3f((float) offset.x, (float) offset.y, (float) offset.z);
+        reference.transform(localOffset);
+        Vec3 pivot = mount.position();
+        if (!first && settings.focusOnCenter()
+                && controllingSeat.getSubPart().getPart().assembly instanceof VehicleCore vehicle) {
+            pivot = vehicle.getOldPosition().scale(1 - partialTick).add(vehicle.getPosition().scale(partialTick));
+        } else {
+            Vector3f eye = reference.transform(new Vector3f(0, 1.1f, 0));
+            pivot = pivot.add(eye.x, eye.y, eye.z);
+        }
+        pivot = pivot.add(localOffset.x, localOffset.y, localOffset.z);
+        if (first) {
+            return pivot;
+        }
+        // 第三人称沿当前逻辑视线后退，前置视角反转距离，观察目标本身保持独立。
+        double distance = (settings.distanceScale() + .4 * speedDistanceFactor)
+                * (controllingSeat.getSubPart().getPart().assembly instanceof VehicleCore vehicle ? vehicle.cameraDistance : 4);
+        Vec3 forward = view.sample(mount.rotation(), pivot).pose().forward();
+        if (CLIENT.options.getCameraType() == CameraType.THIRD_PERSON_FRONT) {
+            distance = -distance;
+        }
+        Vec3 destination = pivot.subtract(forward.scale(distance));
+        // 用相机小包围盒的八个角探测遮挡，距离缩短只影响显示位置。
+        double fraction = 1;
+        for (int i = 0; i < 8; i++) {
+            Vec3 corner = new Vec3((i & 1) == 0 ? -.1 : .1, (i & 2) == 0 ? -.1 : .1, (i & 4) == 0 ? -.1 : .1);
+            BlockHitResult hit = CLIENT.level.clip(new ClipContext(pivot.add(corner), destination.add(corner),
+                    ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, CLIENT.player));
+            if (hit.getType() != HitResult.Type.MISS && Math.abs(distance) > 1e-6) {
+                fraction = Math.min(fraction, hit.getLocation().distanceTo(pivot.add(corner)) / Math.abs(distance));
             }
         }
-
-        // 进入炮镜模式：通知子系统当前激活的摄像机，信号由 onTick 统一发送
-        seat.setActiveCamera(activeCamera);
-
-        // 初始化瞄准点：从摄像机正前方 100 米处投射
-        Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
-        Vector3f forward = new Vector3f(0, 0, -1);
-        locator.getRotation().toRotationMatrix().mult(forward, forward);
-        aimPoint = SparkMathKt.toVec3(locator.getTranslation().add(forward.mult(100)));
-
-        resetCameraModeState();
+        return pivot.add(destination.subtract(pivot).scale(fraction));
     }
 
-    /**
-     * 退出炮镜模式，并将常态视角转向炮镜最后瞄准的方向。
-     */
-    public static void exitCameraMode() {
-        // 在清除 activeCamera 之前，将炮镜瞄准方向同步到常态视角变量
-        if (activeCamera != null && activeCamera.isActive()) {
-            syncViewAnglesFromCamera();
-        }
-
-        // 通知子系统退出炮镜，回到座椅直发模式
-        if (client.player != null
-                && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem()
-                    instanceof AbstractControllableSubsystem controllable) {
-            controllable.setActiveCamera(null);
-        }
-        activeCamera = null;
-        aimPoint = null;
-        localPitchOffsetDeg = 0f;
-        localYawOffsetDeg = 0f;
-        aimLocalPitchOffsetDeg = 0f;
-        aimLocalYawOffsetDeg = 0f;
-        lastAimLocalUpdateNanos = 0;
-        targetZoom = 1f;
-        currentZoom = 1f;
-        lastZoomLerpNanos = 0;
-    }
-
-    /**
-     * 将炮镜模式缓存的 {@link #aimDirection} 转换为视角角度，同步到常态视角变量，<br>
-     * 使退出炮镜后视角无缝转向最后瞄准的方向。<br>
-     * aimDirection 由 {@link #updateCameraRotCameraMode} 每渲染帧更新，tick 时直接使用即可。
-     */
-    private static void syncViewAnglesFromCamera() {
-        float pitchDeg = (float) -Math.toDegrees(Math.asin(Math.clamp(aimDirection.y, -1.0, 1.0)));
-        float yawDeg = (float) -Math.toDegrees(Math.atan2(aimDirection.x, aimDirection.z));
-
-        // 同步到常态视角变量，使 updateCameraRotSeatMode 从炮镜方向开始
-        aimPitch = pitchDeg;
-        aimYaw = yawDeg;
-        aimRoll = 0f;
-        targetViewPitch = pitchDeg;
-        targetViewYaw = yawDeg;
-        targetViewRoll = 0f;
-        pitch = pitchDeg;
-        yaw = yawDeg;
-        roll = 0f;
-    }
-
-    /**
-     * 重置炮镜模式状态（切换摄像机时调用）
-     */
-    private static void resetCameraModeState() {
-        localPitchOffsetDeg = 0f;
-        localYawOffsetDeg = 0f;
-        aimLocalPitchOffsetDeg = 0f;
-        aimLocalYawOffsetDeg = 0f;
-        lastAimLocalUpdateNanos = 0;
+    /** 主线程执行设备第一人称和座椅允许视角的限制。 */
+    private static void enforcePerspective(SeatSubsystem seat) {
         if (activeCamera != null) {
-            var sa = activeCamera.attr.staticAttribute;
-            targetZoom = sa.getBaseZoom();
-            currentZoom = sa.getBaseZoom();
-            lastZoomLerpNanos = 0;
+            if (!CLIENT.options.getCameraType().isFirstPerson()) {
+                setPerspective(CameraType.FIRST_PERSON);
+            }
+            return;
+        }
+        for (int i = 0; i < 3; i++) {
+            CameraType type = CLIENT.options.getCameraType();
+            if (type.isFirstPerson() ? seat.attr.staticAttribute.views.enableFirstPerson()
+                    : seat.attr.staticAttribute.views.enableThirdPerson()) {
+                break;
+            }
+            setPerspective(type.cycle());
         }
     }
 
-    /**
-     * 一键切换缩放
-     */
-    public static void toggleZoom() {
-        if (activeCamera == null) return;
-        var sa = activeCamera.attr.staticAttribute;
-        if (currentZoom <= sa.getBaseZoom() + 0.2f) {
-            targetZoom = sa.getMaxZoom();
+    /** 主线程切换原版视角，并同步刷新后处理与场景可见性。 */
+    private static void setPerspective(CameraType type) {
+        if (CLIENT.options.getCameraType() == type) {
+            return;
+        }
+        CLIENT.options.setCameraType(type);
+        CLIENT.gameRenderer.checkEntityPostEffect(type.isFirstPerson() ? CLIENT.getCameraEntity() : null);
+        CLIENT.levelRenderer.needsUpdate();
+    }
+
+    /** 主线程按发现顺序切换设备，继承当前期望目标。 */
+    public static void switchCamera(int direction) {
+        if (controllingSeat == null) {
+            return;
+        }
+        // 发现顺序决定循环顺序；仅允许有效且启用循环切换的设备进入列表。
+        List<AbstractViewpointSubsystem> devices = controllingSeat.getDiscoveredCameras().stream()
+                .filter(c -> c.isActive() && !c.isDestroyed() && c.attr.staticAttribute.allowCycle).toList();
+        if (devices.isEmpty()) {
+            return;
+        }
+        // 越过设备列表边界即回到座椅，切出炮镜前先保留其最新世界目标。
+        int index = activeCamera == null || direction == 0 ? 0 : devices.indexOf(activeCamera) + Integer.signum(direction);
+        if (index < 0 || index >= devices.size()) {
+            exitCameraMode();
+            return;
+        }
+        if (activeCamera instanceof SightSubsystem) {
+            updateFixed();
+        }
+        if (activeCamera == null) {
+            seatCameraType = CLIENT.options.getCameraType();
+        }
+        // 可转镜头继承世界点；固定炮镜的无稳轴由当前主 WC 实际角初始化。
+        activeCamera = devices.get(index);
+        controllingSeat.setActiveCamera(activeCamera);
+        if (activeCamera instanceof CameraSubsystem camera) {
+            camera.enterView(expectedPoint);
+            if (fixedSight != null) {
+                fixedSight.setAimController(null);
+            }
+            fixedSight = null;
+            fixedController = null;
+            publishDevice();
         } else {
-            targetZoom = sa.getBaseZoom();
+            updateFixed();
+        }
+        // 倍率与平滑计时属于设备显示状态，切换时使用新设备的基础倍率。
+        targetZoom = currentZoom = activeCamera.attr.staticAttribute.baseZoom;
+        lastZoomNanos = 0;
+        send();
+    }
+
+    /** 主线程退出实体视点，恢复切入前的原版视角并继承当前期望目标。 */
+    public static void exitCameraMode() {
+        if (activeCamera == null) {
+            return;
+        }
+        if (activeCamera instanceof SightSubsystem) {
+            updateFixed();
+        }
+        // 先解除实体设备来源，再恢复切入前的原版视角和座椅观察状态。
+        activeCamera = null;
+        if (seatCameraType != null) {
+            setPerspective(seatCameraType);
+        }
+        if (controllingSeat != null) {
+            controllingSeat.setActiveCamera(null);
+        }
+        targetZoom = currentZoom = 1;
+        enterSeat(expectedPoint);
+    }
+
+    /** 主线程离座或换世界时释放信号及客户端引用，防止目标留在高优先级频道。 */
+    private static void clearWorld() {
+        // 输出释放必须先于引用清空，否则失去旧座椅后无法撤销其频道占用。
+        if (controllingSeat != null) {
+            controllingSeat.clearInputSignals();
+            controllingSeat.setActiveCamera(null);
+        }
+        if (fixedSight != null) {
+            fixedSight.setAimController(null);
+        }
+        controllingSeat = null;
+        activeCamera = null;
+        aimTarget = null;
+        fixedSight = null;
+        fixedController = null;
+        logicalView = null;
+        renderPose = null;
+        expectedPoint = null;
+        targetZoom = currentZoom = 1;
+        speedDistanceFactor = 0;
+        wasFreeLook = false;
+        CameraShakeController.onLeaveVehicle();
+    }
+
+    /** 渲染阶段应用本帧已采样的显示位置，显示位置抖动不写回逻辑目标。 */
+    @SubscribeEvent
+    public static void updateCameraPos(ComputeCameraPosEvent event) {
+        if (controllingSeat == null || renderPose == null) {
+            event.setCameraPos(event.getCameraPos().add(CameraShakeController.getPositionOffset()
+                    .scale(CameraShakeController.getPositionShakeFactor())));
+            return;
+        }
+        // Camera.setup 先触发旋转事件，再设置位置并触发本事件；两处共用旋转事件采样的位姿。
+        // 此处重新采样会让位置与朝向分别读取物理线程发布的不同状态。
+        // 实体炮镜保持挂点位置；座椅位置抖动仅叠加到本次显示结果。
+        Vec3 position = renderPose.position();
+        if (activeCamera == null) {
+            position = position.add(CameraShakeController.getPositionOffset()
+                    .scale(CameraShakeController.getPositionShakeFactor()));
+        }
+        event.setCameraPos(position);
+    }
+
+    /** 载具视点的距离与碰撞轨道已由 seatOrigin 处理，原版距离设为零。 */
+    @SubscribeEvent
+    public static void updateCameraDistance(CalculateDetachedCameraDistanceEvent event) {
+        if (controllingSeat != null) {
+            event.setDistance(0);
         }
     }
 
-    /**
-     * 连续变焦
-     */
-    public static void adjustZoom(float delta) {
-        if (activeCamera == null) return;
-        var sa = activeCamera.attr.staticAttribute;
-        targetZoom = Math.clamp(targetZoom + delta, sa.getBaseZoom(), sa.getMaxZoom());
+    /** 渲染阶段按刻内比例采样本帧位姿并应用旋转；步行时使用原版基础旋转。 */
+    @SubscribeEvent
+    public static void updateCameraRot(ViewportEvent.ComputeCameraAngles event) {
+        if (CLIENT.level == null) {
+            return;
+        }
+        CameraShakeController.tick((int) CLIENT.level.getGameTime(), (float) event.getPartialTick());
+        // Camera.setup 中旋转事件早于位置事件，必须在这里生成本帧位姿。
+        // 挂点的位置与四元数旋转由 samplePose／seatMount 按 partial 插值；
+        // 可转摄像头按本帧挂点与世界目标求方向，并使用刻内时间限制可达转角。
+        if (controllingSeat != null && logicalView != null) {
+            float partial = (float) event.getPartialTick();
+            if (activeCamera != null) {
+                renderPose = activeCamera.samplePose(partial);
+            } else {
+                AimPose mount = seatMount(partial);
+                ThirdPersonViewpoint view = wasFreeLook ? FREE_LOOK : SEAT_VIEW;
+                // 鼠标观察角已逐帧累计，只与插值后的挂点合成，不推进逻辑或重复累计输入。
+                // 环绕位置与朝向在此一起采样，位置事件仅应用这份结果。
+                renderPose = view.sample(mount.rotation(), seatOrigin(view, mount, partial)).pose();
+            }
+            // 在渲染边界转换为原版角度符号，欧拉角仅用于事件输出。
+            Quaternionf rotation = SparkMathKt.toQuaternionf(renderPose.rotation());
+            Vector3f euler = rotation.getEulerAnglesYXZ(new Vector3f());
+            event.setPitch((float) -Math.toDegrees(euler.x));
+            event.setYaw(180 - (float) Math.toDegrees(euler.y));
+            event.setRoll((float) -Math.toDegrees(euler.z));
+        } else {
+            renderPose = null;
+        }
+        // 显示抖动最后合成，不能参与世界目标累计或网络输入。
+        Vec3 shake = CameraShakeController.getRotationOffset();
+        float scale = activeCamera != null ? CameraShakeController.CAMERA_MODE_ROTATION_SCALE
+                : CLIENT.options.getCameraType().isFirstPerson() ? CameraShakeController.FIRST_PERSON_ROTATION_SCALE
+                : CameraShakeController.THIRD_PERSON_ROTATION_SCALE;
+        event.setPitch(event.getPitch() + (float) shake.x * scale);
+        event.setYaw(event.getYaw() + (float) shake.y * scale);
+        event.setRoll(event.getRoll() + (float) shake.z * scale);
     }
 
+    /** 渲染阶段按经过秒数平滑显示变焦，输入只读取当前倍率。 */
+    @SubscribeEvent
+    public static void updateCameraScale(ViewportEvent.ComputeFov event) {
+        if (activeCamera == null) {
+            return;
+        }
+        // 使用实际经过秒数做指数平滑，避免不同渲染帧率改变变焦过渡速度。
+        long now = System.nanoTime();
+        if (lastZoomNanos != 0) {
+            double seconds = Math.min((now - lastZoomNanos) / 1e9, .5);
+            currentZoom += (targetZoom - currentZoom) * (float) (1 - Math.exp(-10 * seconds));
+        }
+        lastZoomNanos = now;
+        event.setFOV(AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV / currentZoom);
+    }
+
+    /** 主线程在设备的基础倍率与最大倍率之间切换。 */
+    public static void toggleZoom() {
+        if (activeCamera == null) {
+            return;
+        }
+        var attr = activeCamera.attr.staticAttribute;
+        targetZoom = targetZoom <= attr.baseZoom + .2f ? attr.maxZoom : attr.baseZoom;
+    }
+
+    /** 主线程按倍率增量调整变焦，并限制在设备允许范围内。 */
+    public static void adjustZoom(float delta) {
+        if (activeCamera != null) {
+            targetZoom = Math.clamp(targetZoom + delta,
+                    activeCamera.attr.staticAttribute.baseZoom, activeCamera.attr.staticAttribute.maxZoom);
+        }
+    }
+
+    /** 临时自由观察沿用较低的鼠标灵敏度。 */
     @SubscribeEvent
     public static void modifySensitivity(CalculatePlayerTurnEvent event) {
-        double raw = event.getMouseSensitivity();
-        if (RawInputHandler.freeCam) raw *= 0.5;
-        event.setMouseSensitivity(raw);
-    }
-
-    /**
-     * 根据载具相机距离计算最大滞后距离。大载具允许更大的弹簧阻尼滞后。
-     *
-     * @param vehicle 当前乘坐的载具
-     * @return 最大滞后距离（格），范围 0.5~4.0
-     */
-    private static float computeVehicleMaxOffset(VehicleCore vehicle) {
-        return (float) Mth.clamp(vehicle.cameraDistance * 0.6, 0.5, 4.0);
-    }
-
-    /**
-     * 应用弹簧阻尼系统产生的旋转偏移（System A 投射物抖屏）。
-     * 偏移量已通过 {@link CameraShakeController#onProjectileHit} 中的视角/载具/炮镜因子缩放，
-     * 此处仅按当前视角模式做最终倍率调节。
-     *
-     * @param event 视角事件
-     * @param scale 当前视角模式倍率（第一人称 0.4，第三人称 1.0，炮镜 0.3）
-     */
-    private static void applyShakeRotation(ViewportEvent.ComputeCameraAngles event, float scale) {
-        var rotOff = CameraShakeController.getRotationOffset();
-        if (rotOff.lengthSqr() > 1e-8) {
-            event.setPitch(event.getPitch() + (float) rotOff.x * scale);
-            event.setYaw(event.getYaw() + (float) rotOff.y * scale);
-            event.setRoll(event.getRoll() + (float) rotOff.z * scale);
+        if (RawInputHandler.freeCam) {
+            event.setMouseSensitivity(event.getMouseSensitivity() * .5);
         }
+    }
+
+    /** 渲染阶段按座椅权限隐藏手部；允许显示时应用与观察方向对应的摆动。 */
+    @SubscribeEvent
+    public static void onRenderArm(RenderHandEvent event) {
+        if (controllingSeat == null || CLIENT.player == null) {
+            return;
+        }
+        if (!controllingSeat.attr.isAllowUseItems() || isCameraMode()) {
+            event.setCanceled(true);
+        }
+        PoseStack stack = event.getPoseStack();
+        float bob = Mth.lerp(event.getPartialTick(), CLIENT.player.yBobO, CLIENT.player.yBob);
+        stack.mulPose(Axis.YP.rotationDegrees((CLIENT.player.getViewYRot(event.getPartialTick()) - bob) * -.1f));
     }
 }

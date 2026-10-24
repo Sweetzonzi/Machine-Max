@@ -19,11 +19,14 @@
       "description": "Camera mount locator name, the bone in the model serves as the camera position."
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:camera",
-      "definition": "machine_max:camera/tank_gunners_sight",
+      "definition": "machine_max:targeting_pod",
       "locator": "optics_mount"
     }
   ]

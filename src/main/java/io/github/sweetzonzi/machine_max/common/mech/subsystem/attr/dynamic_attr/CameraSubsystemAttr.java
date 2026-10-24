@@ -11,16 +11,11 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * 摄像机子系统动态属性：定义摄像机在载具上的挂载位置等实例级配置。<br>
- * 不再包含 aimOutputTargets —— 信号发送由 AbstractControllableSubsystem 通过控制组统一处理。
- */
+/** 可转摄像头的安装配置，观察转轴状态由客户端逐设备持有。 */
 @Getter
-public class CameraSubsystemAttr extends BasicSubsystemDynamicAttr {
+public class CameraSubsystemAttr extends AbstractViewpointSubsystemAttr {
     public final CameraSubsystemStaticAttr staticAttribute;
 
-    /** 摄像机挂载 locator 名称 */
-    public final String locator;
 
     public static final MapCodec<CameraSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition")
@@ -32,9 +27,8 @@ public class CameraSubsystemAttr extends BasicSubsystemDynamicAttr {
     public CameraSubsystemAttr(
             ResourceLocation modelName,
             String locator) {
-        super(modelName);
+        super(modelName, locator);
         this.staticAttribute = (CameraSubsystemStaticAttr) getStaticAttr();
-        this.locator = locator;
     }
 
     @Override

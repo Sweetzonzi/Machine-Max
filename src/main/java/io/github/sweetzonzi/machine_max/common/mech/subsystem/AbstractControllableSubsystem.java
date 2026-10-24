@@ -19,7 +19,6 @@ import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -36,10 +35,56 @@ import java.util.concurrent.CopyOnWriteArrayList;
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Getter
     protected ControlGroupSet controlGroupSet = ControlGroupSet.EMPTY;
+    /** 主线程记录当前实体视点，-1 表示座椅虚拟视点；失效后释放全部控制组输出。 */
+    private int viewSourcePart = -1;
+    private String viewSourceName = "";
+
 
     protected AbstractControllableSubsystem(ISubsystemHost owner, String name, BasicSubsystemDynamicAttr attr) {
         super(owner, name, attr);
     }
+
+    /** 主线程检查正在输出的实体视点是否有效，防止失效设备保留高频道信号。 */
+    @Override
+    public void onTick() {
+        super.onTick();
+        if (viewSourcePart >= 0 && discoveredCameras.stream().noneMatch(view ->
+                view.getSubPart().getId() == viewSourcePart && view.getName().equals(viewSourceName)
+                        && view.isActive() && !view.isDestroyed() && !view.getSubPart().isRemoved
+                        && view.getSubPart().getPart().assembly == getSubPart().getPart().assembly)) {
+            clearInputSignals();
+        }
+    }
+    @Override
+    public void onActive() {
+        super.onActive();
+        clearInputSignals();
+    }
+
+    @Override
+    public void onDisabled() {
+        super.onDisabled();
+        clearInputSignals();
+    }
+
+    @Override
+    public void onDestroyed() {
+        super.onDestroyed();
+        clearInputSignals();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        clearInputSignals();
+    }
+
+    @Override
+    public void onVehicleStructurePreChanged() {
+        super.onVehicleStructurePreChanged();
+        clearInputSignals();
+    }
+
 
     // ===== 摄像机发现 =====
 
@@ -48,11 +93,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
      * 返回握手发现的摄像机列表
      */
     @Getter
-    protected final List<CameraSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
+    protected final List<AbstractViewpointSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
 
     /** 当前激活的摄像机（炮镜模式时设置），null 表示座椅直发模式 */
     @Nullable
-    protected CameraSubsystem activeCamera = null;
+    protected AbstractViewpointSubsystem activeCamera = null;
 
     /**
      * 摄像机发现握手配置 {频道名 → [目标接收者名列表]}。
@@ -62,7 +107,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     /**
      * 摄像机发现握手，向 cameraDiscoveryTargets 配置的每个频道发送空信号（带回调），
-     * CameraSubsystem 收到后通过 callback 回复，座椅在 onSignalUpdated 中缓存。
+     * AbstractViewpointSubsystem 收到后通过 callback 回复，座椅在 onSignalUpdated 中缓存。
      */
     protected void cameraDiscoveryHandshake() {
         for (String signalChannel : cameraDiscoveryTargets.keySet()) {
@@ -160,6 +205,23 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         return result;
     }
 
+    /**
+     * 主线程按当前主武器输出频道取得有效 WC，供炮镜选择机构参考。<br>
+     * 候选来自控制组握手发现表，并以主武器开火频道区分同组的主／副控制器。
+     * 选择与座椅安装在哪个刚体上无关；多个匹配时使用发现列表中的第一个。
+     */
+    @Nullable
+    public WeaponControllerSubsystem getActiveMainWeaponController() {
+        Set<String> channels = controlGroupSet.getMergedMainWeaponTargets().keySet();
+        for (WeaponControllerSubsystem controller : getActiveWeaponControllers()) {
+            if (controller.isActive() && !controller.isDestroyed() && !controller.getSubPart().isRemoved
+                    && controller.attr.staticAttribute.getFireInputs().stream().anyMatch(channels::contains)) {
+                return controller;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void onAttach() {
         super.onAttach();
@@ -169,13 +231,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         weaponControllerDiscoveryHandshake();
     }
 
-    /**
-     * 设置当前激活的摄像机（炮镜模式切换时由 CameraController 调用）。
-     * 客户端侧用于读取稳定标志构造网络包；服务端侧暂无用途（信号由 handler 直接发送）。
-     *
-     * @param camera 激活的摄像机，null 表示退出炮镜回到座椅直发模式
-     */
-    public void setActiveCamera(@Nullable CameraSubsystem camera) {
+    /** 主线程记录活动实体视点；null 表示座椅虚拟视点。输入模式按载荷所指设备解析。 */
+    public void setActiveCamera(@Nullable AbstractViewpointSubsystem camera) {
         this.activeCamera = camera;
     }
 
@@ -209,7 +266,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        if (channelName.equals("callback") && sender instanceof CameraSubsystem camera) {
+        if (channelName.equals("callback") && sender instanceof AbstractViewpointSubsystem camera) {
             if (camera.getOwner().getSubPart().getPart().assembly
                     == this.getOwner().getSubPart().getPart().assembly) {
                 if (!discoveredCameras.contains(camera)) {
@@ -247,12 +304,14 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
      * 切换控制组时必须调用，防止上一组的高优先级信号残留。
      */
     public void clearInputSignals() {
+        viewSourcePart = -1;
+        viewSourceName = "";
         Map<String, List<String>> all = new HashMap<>();
-        all.putAll(controlGroupSet.getMergedMoveTargets());
-        all.putAll(controlGroupSet.getMergedRegularTargets());
-        all.putAll(controlGroupSet.getMergedViewTargets());
-        all.putAll(controlGroupSet.getMergedMainWeaponTargets());
-        all.putAll(controlGroupSet.getMergedSecondaryWeaponTargets());
+        all.putAll(controlGroupSet.getAllMoveTargets());
+        all.putAll(controlGroupSet.getAllRegularTargets());
+        all.putAll(controlGroupSet.getAllViewTargets());
+        all.putAll(controlGroupSet.getAllMainWeaponTargets());
+        all.putAll(controlGroupSet.getAllSecondaryWeaponTargets());
         for (String signalKey : all.keySet()) {
             this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
         }
@@ -286,35 +345,18 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         }
     }
 
-    /**
-     * 设置视角输入信号（携带无稳轴鼠标增量偏移）。<br>
-     * 炮镜模式下由 onTick 从 activeCamera volatile 字段直接读取后调用。
-     *
-     * @param aimPoint         玩家瞄准点的世界坐标，null 表示无有效瞄准目标
-     * @param pitchOffsetDeg   本 tick 俯仰鼠标增量（度）
-     * @param yawOffsetDeg     本 tick 偏航鼠标增量（度）
-     * @param pitchStabilized  俯仰轴是否稳定
-     * @param yawStabilized    偏航轴是否稳定
-     */
-    public void setViewInputSignal(@Nullable Vec3 aimPoint,
-                                    float pitchOffsetDeg, float yawOffsetDeg,
-                                    boolean pitchStabilized, boolean yawStabilized) {
-        Map<String, List<String>> targets = controlGroupSet.getMergedViewTargets();
-        if (!targets.isEmpty() && this.isActive()) {
-            for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey,
-                        aimPoint != null
-                                ? new ViewInputSignal(aimPoint, pitchOffsetDeg, yawOffsetDeg, pitchStabilized, yawStabilized)
-                                : EmptySignal.INSTANCE);
-            }
-            if (aimPoint != null) {
-                this.getOwner().getSubPart().part.assembly.activatePhysics();
-            }
-        } else {
-            for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
-            }
+    /** 主线程记录当前视点，并经控制组派发完整目标。 */
+    public boolean setViewInputSignal(ViewInputSignal input, int sourcePart, String sourceName) {
+        if (!isActive() || isDestroyed()) {
+            return false;
         }
+        viewSourcePart = sourcePart;
+        viewSourceName = sourceName;
+        for (String channel : controlGroupSet.getMergedViewTargets().keySet()) {
+            sendSignalToAllTargets(channel, input);
+        }
+        getSubPart().getPart().assembly.activatePhysics();
+        return true;
     }
 
     /**
@@ -407,7 +449,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         if (!rl.equals(AbstractSubsystemAttr.NO_CONTROL_GROUP_PRESET)) {
             ControlGroupSet preset = MMDynamicRes.CONTROL_GROUP_PRESETS.get(rl);
             if (preset != null) {
-                setControlGroupSet(preset);
+                setControlGroupSet(new ControlGroupSet(preset.baseGroup, preset.groups, preset.getGuiActions(), preset.getActiveIndex()));
             }
         }
     }

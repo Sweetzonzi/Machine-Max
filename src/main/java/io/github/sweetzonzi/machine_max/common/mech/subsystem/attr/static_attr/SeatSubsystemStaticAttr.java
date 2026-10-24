@@ -127,8 +127,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float maxPitch,
             /**
              * 偏航角张角限制（单位：度）
-             * 由于底层坐标系限制，零位（正前方）对应180度
-             * 因此实际限制范围为 [180 - yawLimit/2, 180 + yawLimit/2]
+             * 零位为座椅挂点的局部前方，实际范围为 [-yawLimit/2, yawLimit/2]
              * 例如：yawLimit=90表示水平方向±45度的移动范围
              */
             float yawLimit

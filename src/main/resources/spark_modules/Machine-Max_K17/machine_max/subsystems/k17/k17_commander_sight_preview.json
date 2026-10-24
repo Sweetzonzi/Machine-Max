@@ -1,5 +1,5 @@
 {
-  "type": "machine_max:sight",
+  "type": "machine_max:camera",
   "basic_durability": 10,
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
@@ -8,11 +8,12 @@
   "min_pitch": -15,
   "max_pitch": 15,
   "yaw_limit": 30,
-  "scope_hud_layout": "machine_max:k17_scope_hud",
   "tracking_target_inputs": [],
   "discovery_inputs": [
     "gunner_sight"
   ],
   "allow_cycle": true,
-  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "pitch_speed": 90,
+  "yaw_speed": 90
 }

@@ -18,7 +18,7 @@ public enum SubsystemTypes {
     SEAT,//座椅子系统，可指定乘坐位置、信号输出等
     SIGNAL_CONVERT,//WIP 信号转换器子系统，可将指定名称的输入信号转换为其他名称，此外可将收到的信号进行延迟处理（无实现类）
     CAMERA,//摄像头子系统，可提供视角
-    SIGHT,//瞄准镜子系统，继承CameraSubsystem，提供炮镜标尺
+    SIGHT,//固定炮镜，按绑定机构的实际光轴提供观察位姿
     JAVASCRIPT,//WIP 自定义脚本子系统，脚本 API 与 Hook 覆盖面仍在扩展
     BATTERY,//WIP 电池子系统，储存电力，可充放电
     LIGHTING,//照明子系统，提供客户端体积光视觉效果

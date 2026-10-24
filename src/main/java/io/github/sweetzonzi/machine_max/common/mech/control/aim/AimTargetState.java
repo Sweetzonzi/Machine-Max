@@ -1,77 +1,115 @@
 package io.github.sweetzonzi.machine_max.common.mech.control.aim;
 
+import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
+import lombok.Getter;
 import net.minecraft.world.phys.Vec2;
-
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 /**
- * 由单一线程持有的瞄准目标累计状态。
- * 服务端实例由物理线程推进，客户端预测实例由主线程独立推进；同一实例不能跨线程修改。
- * 角度使用弧度，Vec2 的 x 为俯仰、y 为偏航。
+ * 操作者持有的瞄准输入状态，由客户端主线程更新。<br>
+ * 世界点供稳定轴求角，相对角从主 WC 的实际机构角初始化，再累计鼠标输入。
+ * 无稳轴的累计目标最多领先／落后实际角 60°；机械行程交给执行器。
+ * 角度使用弧度，x=俯仰、y=偏航；连续偏航保留累计圈数。
  */
+@Getter
 public final class AimTargetState {
+    public static final double MAX_RELATIVE_OFFSET_RAD = Math.toRadians(60);
+    /** 每个轴选择世界点求角或绝对相对角控制。 */
     public enum Mode {
-        RELATIVE(false, false), WORLD(true, true), YAW_STABLE(true, false), PITCH_STABLE(false, true);
+        RELATIVE(false, false),
+        WORLD(true, true),
+        YAW_STABLE(true, false),
+        PITCH_STABLE(false, true);
+
         public final boolean yawStable;
         public final boolean pitchStable;
-        Mode(boolean yawStable, boolean pitchStable) { this.yawStable = yawStable; this.pitchStable = pitchStable; }
+
+        Mode(boolean yawStable, boolean pitchStable) {
+            this.yawStable = yawStable;
+            this.pitchStable = pitchStable;
+        }
+
         public static Mode of(boolean yaw, boolean pitch) {
             return yaw ? (pitch ? WORLD : YAW_STABLE) : (pitch ? PITCH_STABLE : RELATIVE);
         }
     }
-    /** 供跨线程发布的目标快照：保持模式、世界点、相对保持角与本次机构执行目标。 */
-    public record Snapshot(Mode mode, Vec3 worldPoint, Vec2 held, Vec2 command) {}
-    private final Mode mode;
-    private Vec3 worldPoint;
-    private Vec2 held;
-    private Vec2 command;
 
-    public AimTargetState(Mode mode, Vec3 point, Vec2 initialRelative, AimGeometrySnapshot b) {
+    private Mode mode;
+    /** 稳定轴保持的有限世界点；全无稳模式按累计机构目标的正解刷新。 */
+    private Vec3 worldPoint;
+    /** 机构参考中的累计目标；稳定轴分量不用于电机控制。 */
+    private Vec2 relativeAim;
+
+    public AimTargetState(Mode mode, Vec3 worldPoint, Vec2 relativeAim) {
+        setTarget(mode, worldPoint, relativeAim);
+    }
+
+    /** 所属线程覆盖完整值；相同输入重复设置不会累计。 */
+    public void setTarget(Mode mode, Vec3 worldPoint, Vec2 relativeAim) {
         this.mode = Objects.requireNonNull(mode);
-        worldPoint = Objects.requireNonNull(point);
-        held = b.constrain(Objects.requireNonNull(initialRelative));
-        command = held;
-        update(b);
+        this.worldPoint = Objects.requireNonNull(worldPoint);
+        this.relativeAim = Objects.requireNonNull(relativeAim);
+    }
+
+    /** 主线程更新全无稳目标的世界位置，使其随机构基座运动，而非固定在世界中。 */
+    public void updateGeometry(AimGeometrySnapshot geometry) {
+        if (mode == Mode.RELATIVE) {
+            worldPoint = AimMath.buildAimPoint(geometry, relativeAim);
+        }
     }
 
     /**
-     * 所属线程消费已通过领先限幅的鼠标增量，返回机械行程裁剪后实际接受的增量。
-     * 零增量保持保存的世界点；稳定轴和无稳轴共用相同的输入累计规则。
+     * 主线程读取无稳轴累计目标的正解点，供瞄准圈对应的屏幕轴投影。<br>
+     * 稳定轴使用本次实际角，使该点只表达无稳轴尚未追到的偏差。
      */
-    public Vec2 applyMouse(AimGeometrySnapshot b, Vec2 accepted) {
-        Vec2 before = update(b);
-        Vec2 after = AimMath.advanceRelativeAim(b, before, accepted);
-        Vec2 effective = new Vec2((float) (after.x-before.x), (float) (after.y-before.y));
-        if ((effective.x == 0 && effective.y == 0)) return effective;
-        held = new Vec2((float) (mode.pitchStable ? held.x : after.x), (float) (mode.yawStable ? held.y : after.y));
-        if (mode != Mode.RELATIVE) worldPoint = AimMath.buildAimPoint(b, after);
-        command = after;
-        return effective;
+    public Vec3 relativePoint(AimGeometrySnapshot geometry) {
+        Vec2 actual = geometry.actualAngles();
+        return AimMath.buildAimPoint(geometry, new Vec2(mode.pitchStable ? actual.x : relativeAim.x,
+                mode.yawStable ? actual.y : relativeAim.y));
     }
 
-    /** 所属线程消费一份输入：稳定轴采用输入世界点，只有无稳轴累计角增量。 */
-    public void applyCommand(Vec3 point, Vec2 delta, AimGeometrySnapshot b) {
-        if (mode != Mode.RELATIVE) worldPoint = Objects.requireNonNull(point);
-        held = b.constrain(new Vec2((float) (held.x+(mode.pitchStable ? 0 : delta.x)), (float) (held.y+(mode.yawStable ? 0 : delta.y))));
-        update(b);
-    }
+    /**
+     * 主线程在炮镜观察参考内应用水平偏航、垂直俯仰输入。<br>
+     * 稳定轴按目标相对光轴的偏角过滤输入；无稳轴限制累计目标相对机构实际角的偏差。
+     * 到达输入边界时只拒绝继续扩大的增量，反向输入立即生效。
+     *
+     * @param sight 本次实际光轴位姿，仅用于解释鼠标方向和世界点投影
+     * @param geometry 主 WC 的机构采样；全稳定模式可以为 null
+     * @param delta 本次角增量，弧度，x=俯仰、y=偏航
+     * @return 本次接受的角增量，零值表示目标保持原值
+     */
+    public Vec2 applyMouse(AimPose sight, @Nullable AimGeometrySnapshot geometry, Vec2 delta) {
+        if (delta.x == 0 && delta.y == 0) {
+            return Vec2.ZERO;
+        }
 
-    /** 所属线程按当前机构几何求执行目标，保持世界点与无稳轴相对目标。 */
-    public Vec2 update(AimGeometrySnapshot b) {
-        command = switch (mode) {
-            case RELATIVE -> held;
-            case WORLD -> AimMath.solveAim(b, worldPoint, command).angles();
-            case YAW_STABLE -> AimMath.solveSingleAxisAim(b, worldPoint, held, true, command).angles();
-            case PITCH_STABLE -> AimMath.solveSingleAxisAim(b, worldPoint, held, false, command).angles();
-        };
-        return command;
-    }
+        // 目标方向只在光轴局部空间表达，水平与垂直各处理一个输入分量。
+        Vec2 offset = ViewMath.inherit(sight.rotation(), sight.position(), worldPoint);
+        Vec2 limited = AimMath.filterLead(delta, offset, Vec2.ZERO);
+        if (mode != Mode.WORLD && geometry == null) {
+            throw new IllegalArgumentException("无稳轴输入需要主 WC 的机构采样");
+        }
+        Vec2 actual = geometry == null ? Vec2.ZERO : geometry.actualAngles();
+        // native 偏航在 ±π 处换支；把实际角放回累计目标附近，跨周不产生整圈误差。
+        double actualYaw = relativeAim.y + Math.IEEEremainder(actual.y - relativeAim.y, 2 * Math.PI);
+        Vec2 accepted = new Vec2(mode.pitchStable ? limited.x
+                : (float) AimMath.filterLead(delta.x, relativeAim.x, actual.x, MAX_RELATIVE_OFFSET_RAD),
+                mode.yawStable ? limited.y
+                : (float) AimMath.filterLead(delta.y, relativeAim.y, actualYaw, MAX_RELATIVE_OFFSET_RAD));
+        if (accepted.x == 0 && accepted.y == 0) {
+            return Vec2.ZERO;
+        }
 
-    /** 所属线程先求本次执行目标，再生成可交付其他线程读取的快照。 */
-    public Snapshot snapshot(AimGeometrySnapshot b) {
-        update(b);
-        return new Snapshot(mode, mode == Mode.RELATIVE ? AimMath.buildAimPoint(b, held) : worldPoint, held, command);
+        // 无稳控制传完整累计值；重发和物理子步只读取，不重复消费鼠标增量。
+        relativeAim = relativeAim.add(accepted);
+        Vec2 next = new Vec2(offset.x + accepted.x, offset.y + accepted.y);
+        worldPoint = ViewMath.follow(sight.rotation(), next, sight.position()).worldPoint();
+        if (geometry != null) {
+            updateGeometry(geometry);
+        }
+        return accepted;
     }
 }

@@ -109,6 +109,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
             for (String channel : attr.passengerNumSignalTargets.keySet()) {
                 sendSignalToAllTargets(channel, 1f);
             }
+            clearInputSignals();
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
             // 上报乘客体重作为额外质量

@@ -1,6 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import com.jme3.math.Vector3f;
+import com.jme3.bullet.joints.New6Dof;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
+import net.minecraft.world.phys.Vec2;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
@@ -43,20 +47,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     /**
      * 通过握手发现的炮塔驱动子系统及其对应的控制频道名
      */
-    private final Map<TurretDriverSubsystem, String> turrets = new HashMap<>();
+    private final Map<TurretDriverSubsystem, String> turrets = new ConcurrentHashMap<>();
     /**
      * 通过握手发现的发射器子系统及其对应的控制频道名
      */
-    private final Map<LauncherSubsystem, String> launchers = new HashMap<>();
+    private final Map<LauncherSubsystem, String> launchers = new ConcurrentHashMap<>();
 
     /**
-     * 从 ViewInputSignal 读到的目标世界坐标
+     * 物理线程按有效来源求出的世界目标，主线程读取用于 HUD 与持久数据
      */
     private volatile Vec3 targetPosition = null;
-    /**
-     * 完整的视角输入信号（含分轴稳定/偏移信息）
-     */
-    private volatile ViewInputSignal currentViewSignal = null;
     /**
      * 当前是否有开火指令。<br>
      * 写点在 {@link #readInputSignals()} 与 {@link #updateRegularInputs()}（都在主线程的
@@ -264,61 +264,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
 
-        // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
-        ViewInputSignal vis = this.currentViewSignal;
-        Vec3 target = this.targetPosition;
-        if (!isActive() || isDestroyed()) {
+        ViewInputSignal input = selectAimInput();
+        Vec3 target = input == null ? (debugAutoFire ? targetPosition : null) : input.aimPoint;
+        targetPosition = target;
+        if (!isActive() || isDestroyed() || target == null) {
             pushGuidanceTargets(null);
             releaseAllControl();
             return;
         }
-        if (vis == null || target == null) {
-            // 无目标时释放所有控制权
-            pushGuidanceTargets(null);
-            releaseAllControl();
-            return;
-        }
-
         var staticAttr = attr.staticAttribute;
         float tolDeg = staticAttr.getAimToleranceDeg();
-
-        // ① 分轴驱动每个炮塔：稳定轴位置控制(aimPoint)，无稳轴增量偏移(turret current + offset)
-        for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
-            TurretDriverSubsystem turret = entry.getKey();
-            String channel = entry.getValue();
-            if (turret.isDestroyed() || !turret.isActive()) {
-                turret.setTargetAngle(channel, null);
-                continue;
-            }
-
-            Vector3f targetAngle = new Vector3f(turret.getRelativeAngle());
-            boolean computed = false;
-            Vector3f aimAngles = null;
-
-            // 俯仰轴（x）
-            if (vis.pitchStabilized) {
-                aimAngles = turret.computeAimAngles(target);
-                computed = true;
-                targetAngle.x = aimAngles.x;
-            } else if (vis.pitchOffsetDeg != 0) {
-                targetAngle.x += (float) Math.toRadians(vis.pitchOffsetDeg);
-            }
-            // 无稳且 offset=0 → targetAngle.x 保持当前角度（炮塔锁死）
-
-            // 偏航轴（y）
-            if (vis.yawStabilized) {
-                if (!computed) {
-                    aimAngles = turret.computeAimAngles(target);
-                }
-                targetAngle.y = aimAngles.y;
-            } else if (vis.yawOffsetDeg != 0) {
-                targetAngle.y += (float) Math.toRadians(vis.yawOffsetDeg);
-            }
-            // 无稳且 offset=0 → targetAngle.y 保持当前角度（炮塔锁死）
-
-            // 直接调用替代 sendCallbackToListener + RotationSignal
-            turret.setTargetAngle(channel, targetAngle);
-        }
+        driveAim(input == null ? new ViewInputSignal(target, Vec2.ZERO, AimTargetState.Mode.WORLD) : input);
 
         // ② 筛选瞄准目标的发射器
         List<LauncherSubsystem> aimedLaunchers = new ArrayList<>();
@@ -618,7 +574,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (current.isRoundScheduled(launcher) && current.isRoundReady(launcher)) return true;
         // 窗口已关：这一发算承诺给它的，等它装完；-1 表示根本没在为本管输送，没有承诺。
         // 阈值取字面量 1（经过时间 > 1 才关门）：装弹机可能在本 tick 先步进计时器、武器控制器后判定，
-        // 读到的 1 其实还是刚起步的那一发，取 0 会让换人彻底没有机会。
+        // elapsed=1 可表示本 tick 刚开始交付；阈值为 0 会使供给者失去切换窗口。
         if (current.getDeliveryElapsedTicks(launcher) > 1) return true;
         int currentTier = occupancyTier(current, launcher);
         int candidateTier = occupancyTier(candidate, launcher);
@@ -830,34 +786,95 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
     }
 
-    // ==================== 输入信号 ====================
-
-    /**
-     * 从输入信号频道读取目标坐标和开火指令
-     */
-    private void readInputSignals() {
-        // 读取目标坐标：优先尝试 ViewInputSignal（完整的分轴信息），否则 fallback 到 Vec3
-        ViewInputSignal newVis = null;
-        Vec3 pos = null;
-        aim: for (String signalKey : attr.staticAttribute.getAimInputs()) {
-            SignalChannel channel = getSignalChannel(signalKey);
-            for (Object signal : channel.values()) {
-                if (signal instanceof ViewInputSignal vis) {
-                    newVis = vis;
-                    pos = vis.aimPoint;
-                    break aim;
-                } else if (signal instanceof Vec3 vec3) {
-                    pos = vec3;
-                    break aim;
-                } else if (signal instanceof Vector3f jmeVec) {
-                    pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
-                    break aim;
+    /** 物理线程按 aim_inputs 顺序读取当前有效来源，信号本身保存完整目标。 */
+    @Nullable
+    private ViewInputSignal selectAimInput() {
+        for (String channel : attr.staticAttribute.getAimInputs()) {
+            for (var entry : getSignalChannel(channel).entrySet()) {
+                if (entry.getKey() instanceof AbstractSubsystem source
+                        && (!source.isActive() || source.isDestroyed() || source.getSubPart().isRemoved)) {
+                    continue;
+                }
+                Object value = entry.getValue();
+                if (value instanceof ViewInputSignal view) {
+                    return view;
+                }
+                if (value instanceof Vec3 point) {
+                    return new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD);
+                }
+                if (value instanceof Vector3f point) {
+                    return new ViewInputSignal(new Vec3(point.x, point.y, point.z), Vec2.ZERO, AimTargetState.Mode.WORLD);
                 }
             }
         }
-        this.targetPosition = pos;
-        this.currentViewSignal = newVis;
+        return null;
+    }
 
+    /**
+     * 物理线程分别驱动全部 control_outputs 握手执行器。<br>
+     * 稳定轴使用各自的枢轴与参考对世界点求角；无稳轴直接采用绝对目标，
+     * 不从实际角继续累计，也不把某个炮管的执行角复制给其他机构。
+     *
+     * @param input 本步选中的完整目标，角度以弧度表示
+     */
+    private void driveAim(ViewInputSignal input) {
+        for (var entry : turrets.entrySet()) {
+            TurretDriverSubsystem driver = entry.getKey();
+            if (!driver.isActive() || driver.isDestroyed()) {
+                driver.setTargetAngle(entry.getValue(), null);
+                continue;
+            }
+            boolean solve = (input.mode.yawStable && driver.hasYawAxis())
+                    || (input.mode.pitchStable && driver.hasPitchAxis());
+            Vector3f angle = solve ? driver.computeAimAngles(input.aimPoint) : new Vector3f();
+            Vector3f relative = driver.computeAimAngles(input.relativeAim);
+            // 只覆盖无稳轴；稳定轴已经包含世界点解算结果，不能重复叠加输入角。
+            if (!input.mode.pitchStable) {
+                angle.x = relative.x;
+            }
+            if (!input.mode.yawStable) {
+                angle.y = relative.y;
+            }
+            driver.setTargetAngle(entry.getValue(), angle);
+        }
+    }
+
+    /**
+     * 物理线程从既有 control_outputs 握手结果采样炮镜所用的机构。<br>
+     * 优先选择直接驱动炮镜宿主的高低机，再匹配支承同一炮塔的方向机；
+     * 带后坐子部件等间接挂载使用同 WC 的首套有效机构。一体驱动器同时提供两轴。
+     * 该选择仅服务输入初始化与 HUD，WC 的执行分发仍遍历全部握手驱动器。
+     */
+    @Nullable
+    public AimGeometrySnapshot sampleAimGeometry(SightSubsystem sight) {
+        List<TurretDriverSubsystem> drivers = turrets.keySet().stream()
+                .filter(driver -> driver.isActive() && !driver.isDestroyed() && !driver.getSubPart().isRemoved
+                        && driver.connector != null && driver.connector.joint instanceof New6Dof)
+                .sorted(Comparator.comparing(TurretDriverSubsystem::getName)).toList();
+        TurretDriverSubsystem pitch = drivers.stream().filter(TurretDriverSubsystem::hasPitchAxis)
+                .min(Comparator.comparingInt(driver -> {
+                    New6Dof joint = (New6Dof) driver.connector.joint;
+                    return (driver.hasYawAxis() ? joint.getBodyA() : joint.getBodyB()) == sight.getSubPart().body ? 0 : 1;
+                })).orElse(null);
+        New6Dof pitchJoint = pitch == null ? null : (New6Dof) pitch.connector.joint;
+        New6Dof yawJoint = pitch != null && pitch.hasYawAxis() ? pitchJoint : drivers.stream()
+                .filter(TurretDriverSubsystem::hasYawAxis)
+                .map(driver -> (New6Dof) driver.connector.joint)
+                .filter(joint -> pitchJoint == null || joint.getBodyA() == pitchJoint.getBodyA())
+                .findFirst().orElse(null);
+        if (yawJoint == null && pitchJoint == null) {
+            return null;
+        }
+        return JointAimGeometry.sample(yawJoint, pitchJoint,
+                sight.getSubPart().getLocatorWorldTransform(sight.sightAttr.locator));
+    }
+
+    // ==================== 输入信号 ====================
+
+    /**
+     * 主线程读取开火、弹药切换和调试开关；物理线程直接读取频道中的完整瞄准目标
+     */
+    private void readInputSignals() {
         // 读取开火指令：频道里只有表达"开火"的信号才算开火，判据见 isFireSignal。
         // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 fire_input_*），它不算开火，
         // 因此不能按"频道里有东西"来判，否则按一次切换弹种键就会打出一发。
@@ -890,10 +907,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 Vector3f subPartPos = getOwner().getSubPart().getPosition();
                 this.targetPosition = new Vec3(subPartPos.x, subPartPos.y + 20, subPartPos.z - 30);
             }
-            // 设置默认 ViewInputSignal，使 onPrePhysicsTick 通过 vis 非空校验并执行瞄准/开火
-            if (this.currentViewSignal == null) {
-                this.currentViewSignal = new ViewInputSignal(this.targetPosition, 0, 0, true, true);
-            }
+
         }
     }
 
@@ -1048,8 +1062,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 握手：发送空信号到所有控制输出频道，根据回调发现并绑定下属子系统。<br>
-     * Handshake: send empty signals to all control output channels,
-     * discover and bind sub-subsystems via callbacks.<br>
      * 回调自动由 ISignalSender.sendSignalToTarget 基础设施处理。
      */
     protected void handShake() {
@@ -1061,13 +1073,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     /**
      * 处理回调信号：<br>
      * - "callback" 频道且值为 String（控制频道名），根据发送者类型存入对应集合<br>
-     * - 同载具外的子系统（通过连接点穿透）会被过滤移除
+     * - 不同装配体的回调不会登记到发现表
      */
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
+            if (sender instanceof AbstractSubsystem subsystem
+                    && subsystem.getSubPart().getPart().assembly != getSubPart().getPart().assembly) {
+                return SignalResult.PASS;
+            }
             if (sender instanceof TurretDriverSubsystem turret) {
                 turrets.put(turret, controlChannel);
                 addCallbackTarget(controlChannel, turret);

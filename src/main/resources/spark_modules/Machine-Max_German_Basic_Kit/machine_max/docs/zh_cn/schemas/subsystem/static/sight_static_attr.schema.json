@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/sight_static_attr.json",
   "title": "Sight Subsystem Static Attributes",
-  "description": "Sight-specific static attributes defining optical characteristics, stabilization, zoom range, and tracking capabilities.",
+  "description": "固定炮镜的光学与武器瞄准稳定配置；设备自身没有独立观察转轴。",
   "properties": {
     "type": {
       "type": "string",
@@ -32,12 +32,12 @@
     "vertical_stabilized": {
       "type": "boolean",
       "default": false,
-      "description": "Whether vertical stabilization is enabled (compensates for vehicle pitch)."
+      "description": "武器期望目标的对应轴按世界点保持。"
     },
     "horizontal_stabilized": {
       "type": "boolean",
       "default": false,
-      "description": "Whether horizontal stabilization is enabled (compensates for vehicle yaw)."
+      "description": "武器期望目标的对应轴按世界点保持。"
     },
     "base_zoom": {
       "type": "number",
@@ -49,37 +49,14 @@
       "default": 1.0,
       "description": "Maximum zoom multiplier (e.g., 8.0 for 8x)."
     },
-    "min_pitch": {
-      "type": "number",
-      "default": -10.0,
-      "description": "Minimum pitch angle limit in degrees, positive = looking up, negative = looking down."
-    },
-    "max_pitch": {
-      "type": "number",
-      "default": 10.0,
-      "description": "Maximum pitch angle limit in degrees."
-    },
-    "yaw_limit": {
-      "type": "number",
-      "default": 5.0,
-      "description": "Yaw angle span limit in degrees, the actual range is [center - limit/2, center + limit/2]."
-    },
     "scope_hud_layout": {
       "allOf": [
-        { "$ref": "../../base/resource_location.schema.json" }
+        {
+          "$ref": "../../base/resource_location.schema.json"
+        }
       ],
       "default": "machine_max:empty",
       "description": "炮镜视角使用的 HUD 布局资源地址：内容包 hud_layouts/ 下的文件，键为 <命名空间>:<相对路径>；缺失表示炮镜不显示该布局提供的 HUD。"
-    },
-    "tracking_target_inputs": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": [
-        "tracking_target"
-      ],
-      "description": "List of tracking target input channels."
     },
     "discovery_inputs": {
       "type": "array",
@@ -87,7 +64,7 @@
         "type": "string"
       },
       "default": [
-        "camera_discovery"
+        "camera_sight"
       ],
       "description": "List of sight discovery handshake channels (ordered by priority)."
     },
@@ -101,7 +78,9 @@
       "properties": {
         "on_destroyed": {
           "allOf": [
-            { "$ref": "../../base/sound_event.schema.json" }
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
           ],
           "description": "Sound event when the sight is destroyed.",
           "default": {
@@ -111,7 +90,9 @@
         },
         "on_activate": {
           "allOf": [
-            { "$ref": "../../base/sound_event.schema.json" }
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
           ],
           "description": "Sound event when the sight is activated.",
           "default": {
@@ -121,7 +102,9 @@
         },
         "on_deactivate": {
           "allOf": [
-            { "$ref": "../../base/sound_event.schema.json" }
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
           ],
           "description": "Sound event when the sight is deactivated.",
           "default": {

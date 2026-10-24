@@ -203,13 +203,8 @@
               ]
             }
           },
-          "gunner_optics": {
-            "type": "machine_max:sight",
-            "definition": "machine_max:k17_gunner_sight_preview",
-            "locator": "gunner_optics"
-          },
           "commander_optics": {
-            "type": "machine_max:sight",
+            "type": "machine_max:camera",
             "definition": "machine_max:k17_commander_sight_preview",
             "locator": "commander_optics"
           }
@@ -242,6 +237,11 @@
           }
         },
         "subsystems": {
+          "gunner_optics": {
+            "type": "machine_max:sight",
+            "definition": "machine_max:k17_gunner_sight_preview",
+            "locator": "gunner_optics"
+          },
           "subsystem.machine_max.2a42": {
             "type": "machine_max:launcher",
             "definition": "machine_max:2a42_launcher",

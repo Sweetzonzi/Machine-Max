@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-10-23",
+  "bundled_on": "2026-10-24",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "2d3a34d3c22d8ca00a575069391b516fe6e56a6f",
+    "revision": "fcc377a3d9005818a616c5959f65042f2ddf61b4",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -162,7 +162,7 @@
       {
         "path": "references/schemas/subsystem/dynamic/camera_dynamic_attr.schema.json",
         "bytes": 1001,
-        "sha256": "cd3d3e618a9edeb0fa977cc42d15b1bd92ba1540d2e84d152f24be24263e757f"
+        "sha256": "1c3a462946e6728f4a99aaf38a2d1dfd7d60e66cff611b970f588aaecc8bfc7f"
       },
       {
         "path": "references/schemas/subsystem/dynamic/car_controller_dynamic_attr.schema.json",
@@ -217,7 +217,7 @@
       {
         "path": "references/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json",
         "bytes": 996,
-        "sha256": "9987aea09f38f4b9946eb448730e7ba56ffa82617482f2eeaffca867b6aa14b8"
+        "sha256": "a6cdda44a8b729ae892c69fdf0f3d4e50b2452c8ac6b46d5fe65312f71558bb6"
       },
       {
         "path": "references/schemas/subsystem/dynamic/track_controller_dynamic_attr.schema.json",
@@ -256,8 +256,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/camera_static_attr.schema.json",
-        "bytes": 4544,
-        "sha256": "56402361d30459dcebeee8e82d2bc96b2c50ce5fc480b1ddec0117350aadd78e"
+        "bytes": 4934,
+        "sha256": "2580efb7d54554da55de3ea8ce6272293700bf8f7e0fedbb4a859f784fe5e18e"
       },
       {
         "path": "references/schemas/subsystem/static/car_controller_static_attr.schema.json",
@@ -311,8 +311,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/sight_static_attr.schema.json",
-        "bytes": 4731,
-        "sha256": "824fd1bba7e5537453922eaf81bb672d99f2964bfd64c915b81bda3f8dd614f9"
+        "bytes": 4014,
+        "sha256": "ba3b8bf52998175174b4529ee18cfa0a5a6aa7dbf7241ab1851cea4434aefa3e"
       },
       {
         "path": "references/schemas/subsystem/static/track_controller_static_attr.schema.json",

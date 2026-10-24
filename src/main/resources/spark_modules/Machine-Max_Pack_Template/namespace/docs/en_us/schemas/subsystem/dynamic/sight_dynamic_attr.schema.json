@@ -19,11 +19,14 @@
       "description": "Sight mount locator name, the bone in the model serves as the sight position."
     }
   },
-  "required": ["type", "definition"],
+  "required": [
+    "type",
+    "definition"
+  ],
   "examples": [
     {
       "type": "machine_max:sight",
-      "definition": "machine_max:sight/tank_gunners_sight",
+      "definition": "machine_max:gunner_sight",
       "locator": "gunner_sight"
     }
   ]

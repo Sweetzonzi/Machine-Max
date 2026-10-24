@@ -12,11 +12,12 @@ import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 瞄准镜子系统动态属性：定义炮镜在载具上的挂载位置、瞄准点输出目标等实例级配置。
- * 目前字段与 CameraSubsystemAttr 一致。
+ * 固定炮镜的安装属性。<br>
+ * 宿主子部件由子系统所在的配置节点确定，locator 同时提供位置和旋转；
+ * 光轴随宿主刚体运动，输入路由由操作者的控制组负责。
  */
 @Getter
-public class SightSubsystemAttr extends CameraSubsystemAttr {
+public class SightSubsystemAttr extends AbstractViewpointSubsystemAttr {
     public final SightSubsystemStaticAttr staticAttribute;
 
     public static final MapCodec<SightSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
