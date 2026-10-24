@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.5.3
+// MachineMax Blockbench Plugin v0.5.4
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -9963,6 +9963,7 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var CONFIG_VERSION = 4;
+      var BUILTIN_PACK_ID = "machine_max:builtin";
       var SIGNAL_CHANNEL_HINTS = [
         // 运动 / 常规控制
         "move_input",
@@ -10003,7 +10004,7 @@
         "interact_custom"
       ];
       if (typeof module !== "undefined" && module.exports) {
-        module.exports = { CONFIG_VERSION, SIGNAL_CHANNEL_HINTS };
+        module.exports = { CONFIG_VERSION, BUILTIN_PACK_ID, SIGNAL_CHANNEL_HINTS };
       }
     }
   });
@@ -11658,13 +11659,7 @@
       function getMarkersForVariant(projectConfig, partId, variantName) {
         const part = getOrCreatePartConfig(projectConfig, partId);
         if (!part || !part.element_markers) return {};
-        var markers = part.element_markers[variantName] || {};
-        log2.debug("getMarkersForVariant: \u83B7\u53D6\u53D8\u4F53\u6807\u8BB0", {
-          partId,
-          variant: variantName,
-          count: Object.keys(markers).length
-        });
-        return markers;
+        return part.element_markers[variantName] || {};
       }
       function clearMarkerScope(projectConfig, cleanup) {
         var removed = 0;
@@ -16820,6 +16815,7 @@
       var fs = __require("fs");
       var path = __require("path");
       var { createLogger: createLogger2 } = require_logger();
+      var { BUILTIN_PACK_ID } = require_constants();
       var {
         ensureDir,
         writeJSONFile,
@@ -16972,6 +16968,12 @@
         }
         return meta;
       }
+      function isBuiltinPackPath(packPath) {
+        var meta;
+        if (!packPath || typeof packPath !== "string") return false;
+        meta = readPackMeta(packPath);
+        return !!(meta && meta.id === BUILTIN_PACK_ID);
+      }
       function writePackMeta(dirPath, meta) {
         try {
           writeJSONFile(dirPath, "meta.json", meta);
@@ -17104,6 +17106,7 @@
         module.exports = {
           resolveNamespace,
           readPackMeta,
+          isBuiltinPackPath,
           writePackMeta,
           createContentPack,
           openContentPack,
@@ -17653,6 +17656,7 @@
       init_define_SCHEMAS();
       var content_pack = require_content_pack();
       var builtin_pack = require_builtin_pack();
+      var { BUILTIN_PACK_ID } = require_constants();
       var { createLogger: createLogger2 } = require_logger();
       var log2 = createLogger2("ContentPackManager");
       var hasOwn = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
@@ -17663,6 +17667,17 @@
         control_groups: null,
         projectiles: null
       };
+      function computeSourceKey(config) {
+        var packPath, depPaths, deps, i;
+        if (!config) return "";
+        packPath = typeof config.contentPackPath === "string" ? config.contentPackPath : "";
+        depPaths = Array.isArray(config.dependencyPaths) ? config.dependencyPaths : [];
+        deps = [];
+        for (i = 0; i < depPaths.length; i++) {
+          if (typeof depPaths[i] === "string") deps.push(depPaths[i]);
+        }
+        return packPath + "\0" + deps.join("\0");
+      }
       function loadMergedDefs(config, type) {
         var emptyResult;
         var defs;
@@ -17682,14 +17697,21 @@
         var curKey;
         var result;
         var defCount;
-        if (_cache[type]) {
+        var sourceKey;
+        var cached;
+        sourceKey = computeSourceKey(config);
+        cached = _cache[type];
+        if (cached && cached.sourceKey === sourceKey) {
           log2.debug("loadMergedDefs: \u7F13\u5B58\u547D\u4E2D " + type);
-          return _cache[type];
+          return cached;
+        }
+        if (cached) {
+          log2.debug("loadMergedDefs: \u5185\u5BB9\u5305\u6765\u6E90\u5DF2\u53D8\u5316\uFF0C\u4E22\u5F03 " + type + " \u7684\u65E7\u7F13\u5B58");
         }
         if (!config) {
           log2.warn("loadMergedDefs: config \u4E3A\u7A7A\uFF0C\u8FD4\u56DE\u7A7A\u7ED3\u679C");
           emptyResult = { defs: {}, sources: {} };
-          _cache[type] = emptyResult;
+          _cache[type] = { sourceKey, defs: emptyResult.defs, sources: emptyResult.sources };
           return emptyResult;
         }
         defs = {};
@@ -17732,6 +17754,10 @@
                 namespace: openResult.namespace,
                 metaId: openResult.meta ? openResult.meta.id : null
               });
+              if (openResult.meta && openResult.meta.id === BUILTIN_PACK_ID) {
+                log2.info("loadMergedDefs: \u8DF3\u8FC7\u5185\u7F6E\u5305\u8DEF\u5F84\u4F9D\u8D56 " + depPath + "\uFF08\u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF09");
+                continue;
+              }
               depDefs = content_pack.readAllDefs(depPath, openResult.namespace, type);
               for (depKey in depDefs) {
                 if (hasOwn(depDefs, depKey)) {
@@ -17765,24 +17791,28 @@
                 namespace: curOpenResult.namespace,
                 metaId: curOpenResult.meta ? curOpenResult.meta.id : null
               });
-              curDefs = content_pack.readAllDefs(currentPath, curOpenResult.namespace, type);
-              for (curKey in curDefs) {
-                if (hasOwn(curDefs, curKey)) {
-                  var namespacedCurKey = curOpenResult.namespace + ":" + curKey;
-                  var prevSource = sources[namespacedCurKey];
-                  defs[namespacedCurKey] = curDefs[curKey];
-                  sources[namespacedCurKey] = "current";
-                  log2.info("loadMergedDefs: \u5F53\u524D\u5305\u6DFB\u52A0 " + namespacedCurKey + " (source=current, \u8986\u76D6\u524D=" + (prevSource || "\u65E0") + ")");
+              if (curOpenResult.meta && curOpenResult.meta.id === BUILTIN_PACK_ID) {
+                log2.warn("loadMergedDefs: \u5F53\u524D\u5185\u5BB9\u5305\u6307\u5411\u5185\u7F6E\u5305 " + currentPath + "\uFF0C\u8DF3\u8FC7 current \u5C42");
+              } else {
+                curDefs = content_pack.readAllDefs(currentPath, curOpenResult.namespace, type);
+                for (curKey in curDefs) {
+                  if (hasOwn(curDefs, curKey)) {
+                    var namespacedCurKey = curOpenResult.namespace + ":" + curKey;
+                    var prevSource = sources[namespacedCurKey];
+                    defs[namespacedCurKey] = curDefs[curKey];
+                    sources[namespacedCurKey] = "current";
+                    log2.info("loadMergedDefs: \u5F53\u524D\u5305\u6DFB\u52A0 " + namespacedCurKey + " (source=current, \u8986\u76D6\u524D=" + (prevSource || "\u65E0") + ")");
+                  }
                 }
+                log2.info("loadMergedDefs: \u5F53\u524D\u5305 " + currentPath + " " + type + " \u52A0\u8F7D\u5B8C\u6210\uFF0C\u5171 " + Object.keys(curDefs).length + " \u4E2A\u5B9A\u4E49");
               }
-              log2.info("loadMergedDefs: \u5F53\u524D\u5305 " + currentPath + " " + type + " \u52A0\u8F7D\u5B8C\u6210\uFF0C\u5171 " + Object.keys(curDefs).length + " \u4E2A\u5B9A\u4E49");
             }
           } catch (e) {
             log2.error("loadMergedDefs: \u5F53\u524D\u5185\u5BB9\u5305\u52A0\u8F7D\u5931\u8D25: " + currentPath, e);
           }
         }
         result = { defs, sources };
-        _cache[type] = result;
+        _cache[type] = { sourceKey, defs, sources };
         defCount = Object.keys(defs).length;
         log2.info("loadMergedDefs: " + type + " \u5408\u5E76\u5B8C\u6210\uFF0C\u5171 " + defCount + " \u4E2A\u5B9A\u4E49");
         log2.debug("loadMergedDefs: \u6700\u7EC8 sources", sources);
@@ -22272,7 +22302,22 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var { runConfigEdit } = require_undo();
+      var content_pack = require_content_pack();
+      var content_pack_manager = require_content_pack_manager();
       var shared = require_shared();
+      function invalidateDefsCache() {
+        content_pack_manager.invalidateCache();
+      }
+      function stripBuiltinDeps(paths) {
+        var result = [];
+        var i;
+        if (!Array.isArray(paths)) return result;
+        for (i = 0; i < paths.length; i++) {
+          if (typeof paths[i] !== "string" || !paths[i]) continue;
+          if (!content_pack.isBuiltinPackPath(paths[i])) result.push(paths[i]);
+        }
+        return result;
+      }
       function setContentPack(config, options) {
         options = options || {};
         config = shared.configOrNull(config);
@@ -22297,6 +22342,7 @@
           config.contentPackPath = path;
           config.namespace = namespace;
           config.packMeta = meta;
+          invalidateDefsCache();
         }, { coalesce: false });
         return shared.ok({ changed: true });
       }
@@ -22305,6 +22351,7 @@
         if (!config) return shared.fail("\u914D\u7F6E\u4E0D\u53EF\u7528\uFF0C\u8BF7\u5148\u6253\u5F00\u9879\u76EE");
         runConfigEdit("\u4FEE\u6539\u5185\u5BB9\u5305\u8DEF\u5F84", function() {
           config.contentPackPath = path || "";
+          invalidateDefsCache();
         }, { coalesce: false });
         return shared.ok({ changed: true });
       }
@@ -22332,12 +22379,20 @@
         var changed = false;
         var paths = [];
         runConfigEdit("\u7F16\u8F91\u4F9D\u8D56\u5305", function() {
+          var existing;
+          var cleaned;
+          var i;
           if (Array.isArray(replace)) {
-            config.dependencyPaths = replace.slice();
+            config.dependencyPaths = stripBuiltinDeps(replace);
             changed = true;
           } else {
+            existing = Array.isArray(config.dependencyPaths) ? config.dependencyPaths : [];
+            cleaned = stripBuiltinDeps(existing);
+            if (cleaned.length !== existing.length) {
+              config.dependencyPaths = cleaned;
+              changed = true;
+            }
             if (!Array.isArray(config.dependencyPaths)) config.dependencyPaths = [];
-            var i;
             for (i = 0; i < remove.length; i++) {
               var idx = config.dependencyPaths.indexOf(remove[i]);
               if (idx !== -1) {
@@ -22353,6 +22408,7 @@
             }
           }
           paths = config.dependencyPaths.slice();
+          invalidateDefsCache();
         }, { coalesce: false });
         return shared.ok({ changed, dependencyPaths: paths });
       }
@@ -22523,6 +22579,7 @@
       var fs = __require("fs");
       var path = __require("path");
       var content_pack = require_content_pack();
+      var { BUILTIN_PACK_ID } = require_constants();
       var { createLogger: createLogger2 } = require_logger();
       var log2 = createLogger2("PackService");
       function createPack(dirPath, meta) {
@@ -22533,6 +22590,19 @@
       }
       function readPackMeta(packPath) {
         return content_pack.readPackMeta(packPath);
+      }
+      function isBuiltinPackPath(packPath) {
+        return content_pack.isBuiltinPackPath(packPath);
+      }
+      function filterBuiltinDeps(deps) {
+        var result = [];
+        var i;
+        if (!Array.isArray(deps)) return result;
+        for (i = 0; i < deps.length; i++) {
+          if (typeof deps[i] !== "string" || !deps[i]) continue;
+          if (!isBuiltinPackPath(deps[i])) result.push(deps[i]);
+        }
+        return result;
       }
       function findPackInSiblings(parentDir, packId) {
         if (!packId || !parentDir || !fs.existsSync(parentDir)) return null;
@@ -22551,13 +22621,13 @@
           }
           if (stat.isDirectory()) {
             meta = content_pack.readPackMeta(fullPath);
-            if (meta && meta.id === packId) {
+            if (meta && meta.id === packId && meta.id !== BUILTIN_PACK_ID) {
               return fullPath;
             }
           }
           if (stat.isFile() && fullPath.toLowerCase().endsWith(".zip")) {
             meta = content_pack.readPackMeta(fullPath);
-            if (meta && meta.id === packId) {
+            if (meta && meta.id === packId && meta.id !== BUILTIN_PACK_ID) {
               return fullPath;
             }
           }
@@ -22582,6 +22652,10 @@
           for (j = 0; j < depDeps.length; j++) {
             depDep = depDeps[j];
             depId = depDep.id || depDep;
+            if (depId === BUILTIN_PACK_ID) {
+              log2.info('\u94FE\u5F0F\u89E3\u6790: \u8DF3\u8FC7\u5185\u7F6E\u5305 "' + depId + '"\uFF08\u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF0C\u65E0\u9700\u672C\u5730\u4F9D\u8D56\uFF09');
+              continue;
+            }
             found = findPackInSiblings(parentDir, depId);
             if (found && !processed[found]) {
               processed[found] = true;
@@ -22603,6 +22677,8 @@
         createPack,
         openPack,
         readPackMeta,
+        isBuiltinPackPath,
+        filterBuiltinDeps,
         findPackInSiblings,
         resolveChainDependencies
       };
@@ -22632,7 +22708,9 @@
         }
         var opts = options || {};
         var defaultKeepAdding = opts.defaultKeepAdding !== false;
-        var selected = existingDeps ? existingDeps.slice() : [];
+        var selected = (existingDeps ? existingDeps : []).filter(function(d) {
+          return d && d.path && !packService.isBuiltinPackPath(d.path);
+        });
         var stepNum = selected.length + 1;
         function _buildDepListHtml() {
           if (selected.length === 0) return "\uFF08\u6682\u65E0\u4F9D\u8D56\uFF09";
@@ -22724,6 +22802,13 @@
                     _showOneStep();
                     return;
                   }
+                  if (packService.isBuiltinPackPath(depPath)) {
+                    showToast2("machine_max:builtin \u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF0C\u65E0\u9700\u6DFB\u52A0\u4E3A\u672C\u5730\u4F9D\u8D56", "info");
+                    stepNum++;
+                    this.hide();
+                    _showOneStep();
+                    return;
+                  }
                   var dup = false;
                   for (var k = 0; k < selected.length; k++) {
                     if (selected[k].path === depPath) {
@@ -22750,9 +22835,6 @@
                 var resolved = { direct: selected, indirect: [] };
                 if (selected.length > 0 && contextParentDir) {
                   resolved = packService.resolveChainDependencies(selected, contextParentDir);
-                  for (var j = 0; j < resolved.indirect.length; j++) {
-                    selected.push(resolved.indirect[j]);
-                  }
                 }
                 if (typeof onComplete === "function") onComplete(resolved);
               },
@@ -22778,9 +22860,18 @@
           showToast2("\u914D\u7F6E\u4E0D\u53EF\u7528\uFF0C\u8BF7\u5148\u6253\u5F00\u9879\u76EE", "warning");
           return;
         }
-        var deps = config.dependencyPaths || [];
+        var rawDeps = config.dependencyPaths || [];
+        var deps = [];
+        var builtinDeps = [];
         var depsHtml = "";
         var i;
+        for (i = 0; i < rawDeps.length; i++) {
+          if (packService.isBuiltinPackPath(rawDeps[i])) {
+            builtinDeps.push(rawDeps[i]);
+          } else if (rawDeps[i]) {
+            deps.push(rawDeps[i]);
+          }
+        }
         if (deps.length === 0) {
           depsHtml = "\uFF08\u6682\u65E0\u4F9D\u8D56\u5305\uFF09";
         } else {
@@ -22789,6 +22880,9 @@
             depsHtml += "<li><code>" + deps[i] + "</code></li>";
           }
           depsHtml += "</ol>";
+        }
+        if (builtinDeps.length > 0) {
+          depsHtml += '<div style="margin-top:4px;color:#c9a227;font-size:11px">\u5DF2\u5FFD\u7565 ' + builtinDeps.length + " \u4E2A\u5185\u7F6E\u5305\u8DEF\u5F84\uFF08machine_max:builtin \u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF0C\u4E0D\u662F\u672C\u5730\u4F9D\u8D56\uFF09\u3002\u4E0B\u6B21\u7F16\u8F91\u4F9D\u8D56\u65F6\u4F1A\u81EA\u52A8\u4ECE\u914D\u7F6E\u4E2D\u79FB\u9664\u3002</div>";
         }
         try {
           new Dialog({
@@ -22832,6 +22926,10 @@
               }
               if (formData.newDepPath && formData.newDepPath.trim()) {
                 addPath = formData.newDepPath.trim();
+                if (packService.isBuiltinPackPath(addPath)) {
+                  showToast2("machine_max:builtin \u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF0C\u65E0\u9700\u6DFB\u52A0\u4E3A\u672C\u5730\u4F9D\u8D56", "info");
+                  return false;
+                }
                 res = ops.updateDependencyPaths(config, { add: [addPath] });
                 if (!res.ok) {
                   showToast2(res.error, "error");
@@ -22848,6 +22946,13 @@
                 persistence.scheduleSave();
                 showToast2("\u4F9D\u8D56\u5305\u5DF2\u66F4\u65B0", "positive");
                 if (typeof onSave === "function") onSave(config);
+              } else if (builtinDeps.length > 0) {
+                res = ops.updateDependencyPaths(config, { replace: deps });
+                if (res.ok) {
+                  persistence.scheduleSave();
+                  showToast2("\u5DF2\u79FB\u9664\u5185\u7F6E\u5305\u8DEF\u5F84\uFF08machine_max:builtin \u7531\u63D2\u4EF6\u5185\u7F6E\u63D0\u4F9B\uFF09", "positive");
+                  if (typeof onSave === "function") onSave(config);
+                }
               } else if (!formData.depPathToRemove || !formData.depPathToRemove.trim()) {
                 showToast2("\u672A\u505A\u4EFB\u4F55\u66F4\u6539", "info");
               }
@@ -35029,7 +35134,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.5.3";
+  var PLUGIN_VERSION = "0.5.4";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
