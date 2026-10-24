@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-10-24",
+  "bundled_on": "2026-10-25",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
     "revision": "fcc377a3d9005818a616c5959f65042f2ddf61b4",
@@ -363,12 +363,12 @@
   },
   "plugin": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
-    "revision": "4a6cf1589ddd9dca45f9d5f4f4a29732b19b5e6a",
+    "revision": "cf5a01525538b8dda940bf4f7075ab266284233f",
     "source_path": "dist/machine_max_bb_plugin.js",
     "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1899717,
-    "sha256": "0f10cd265b067736df3a6b2273a8d0983a58352e0ce57af93d76e39403a85ab1"
+    "bytes": 1900226,
+    "sha256": "78e5016a2cc5cc19b2d8dbc754a1d4096354df69f13414b32043a55ed6314871"
   }
 }

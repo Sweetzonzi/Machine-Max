@@ -13,7 +13,7 @@ description: 将现成的 Blockbench 模型（.bbmodel）适配为 MachineMax �
 
 - [references/model-adaptation.md](references/model-adaptation.md)：调整骨骼、碰撞箱、定位器、轮与履带时按需读取；含量测脚本用法与 MTLB 案例。
 - [references/schemas/part_definition_schema.json](references/schemas/part_definition_schema.json)：部件定义入口。`references/schemas/` 是 builtin 中文目录中全部 67 个 JSON 的快照，保持内部目录与引用关系。
-- [assets/plugins/machine_max_bb_plugin.js](assets/plugins/machine_max_bb_plugin.js)：可加载到 Blockbench 的 MachineMax 单文件编译产物，版本 `0.5.0`，含零件与装配体图标自动生成。
+- [assets/plugins/machine_max_bb_plugin.js](assets/plugins/machine_max_bb_plugin.js)：可加载到 Blockbench 的 MachineMax 单文件编译产物，版本 `0.5.3`，含零件与装配体图标自动生成。
 - [bundle-manifest.json](bundle-manifest.json)：schema 与插件的来源仓库、提交、文件清单和 SHA-256。随包插件来自已有构建产物；版本与来源只描述本次快照，兼容性需在用户环境确认。
 
 使用本技能不要求克隆 Machine-Max 或插件源码仓库。schema 是字段与结构参考；可用定义由用户实际安装的内容包决定。
