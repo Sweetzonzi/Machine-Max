@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemType
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.JointDriverSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.JointDriverSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -47,6 +48,12 @@ public class JointDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.controlledConnector = controlledConnector;
         this.rotationOrder = rotationOrder;
         this.axisParams = axisParams;
+    }
+
+    /** JSON 字段名沿用 {@code locator}，值是被控连接点名；必须存在且为高级连接点。 */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        requireAdvancedConnector(variant, subPartName, subsystemName, controlledConnector);
     }
 
     @Override

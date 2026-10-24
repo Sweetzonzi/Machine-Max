@@ -18,6 +18,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import jme3utilities.math.MyMath;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -257,8 +258,10 @@ public class SubPartAttr {
                             throw new IllegalArgumentException(error);
                     }
                 } else {
-                    String error = "未找到碰撞形状骨骼 " + hitBoxEntry.getKey();
-                    throw new IllegalArgumentException(error);
+                    throw new PackContentException(Component.translatableWithFallback(
+                            "error.machine_max.part.hitbox_bone_not_found",
+                            "Hit-box %2$s has no bone in this sub-part's interval of model %1$s",
+                            modelLocation.toString(), hitBoxEntry.getKey()));
                 }
             }
             if (shape.countChildren() <= 0)
@@ -454,6 +457,50 @@ public class SubPartAttr {
      */
     void setAutoEndBones(List<String> autoEndBones) {
         this.autoEndBones = autoEndBones == null ? List.of() : autoEndBones;
+    }
+
+    /**
+     * 装载期检查：本子部件内的连接点、命中框、交互框与子系统，以及流体动力计算点。
+     *
+     * <p>连接点的定位器必须落在本子部件区间内，命中框引用的子系统、交互框的骨骼同理；
+     * 这些引用在各自的属性类里由 {@code validate} 继续校验。</p>
+     *
+     * <p>流体动力计算点解析失败时运行时退回刚体原点（质心），不会报错，但气动作用点偏离作者意图，
+     * 因此只记警告、不阻断装载。空键表示使用质心，属合法写法。</p>
+     *
+     * @param variant     本子部件所属变体
+     * @param subPartName 本子部件名称，用于错误信息与告警
+     * @throws PackContentException 任一引用解析失败时抛出
+     */
+    public void validate(VariantAttr variant, String subPartName) {
+        for (Map.Entry<String, ConnectorAttr> connectorEntry : connectors.entrySet()) {
+            String connectorName = connectorEntry.getKey();
+            ConnectorAttr connector = connectorEntry.getValue();
+            String locatorName = connector.getLocatorName();
+            if (!locatorTransforms.containsKey(locatorName)) {
+                throw new PackContentException(
+                        MMLanguageRegistry.ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND.component(
+                                variant.getModel().toString(), connectorName, locatorName));
+            }
+            connector.validate(variant, subPartName, connectorName);
+        }
+        for (Map.Entry<String, HitBoxAttr> hitBoxEntry : hitBoxes.entrySet()) {
+            hitBoxEntry.getValue().validate(variant, subPartName, hitBoxEntry.getKey());
+        }
+        for (Map.Entry<String, InteractBoxAttr> interactBoxEntry : interactBoxes.entrySet()) {
+            interactBoxEntry.getValue().validate(variant, subPartName, interactBoxEntry.getKey());
+        }
+        for (Map.Entry<String, AbstractSubsystemAttr> subsystemEntry : subsystems.entrySet()) {
+            subsystemEntry.getValue().validate(variant, subPartName, subsystemEntry.getKey());
+        }
+        if (hydrodynamics.isEmpty()) return;
+        Map<String, OBone> bones = getBones(variant);
+        for (String key : hydrodynamics.keySet()) {
+            if (key.isEmpty() || bones.containsKey(key) || locatorTransforms.containsKey(key)) continue;
+            MachineMax.LOGGER.warn(
+                    "子部件 {}（模型 {}）的 hydrodynamics 计算点 {} 既不是区间内的骨骼也不是定位器，运行时将退回刚体原点",
+                    subPartName, variant.getModel(), key);
+        }
     }
 
     /**

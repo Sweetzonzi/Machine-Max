@@ -3,9 +3,11 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
@@ -103,6 +105,24 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         return List.copyOf(dismountLocators);
     }
 
+
+    /**
+     * 座位安装点必须落在宿主子部件区间内；下车点缺失不阻断装载——下车流程本身会跳过该候选点并告警。
+     *
+     * <p>{@code locator} 在构造器里已拒绝空值，因此这里只需处理名字解析不到的情况。</p>
+     */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        if (!hasLocator(variant, subPartName, locator)) {
+            throw locatorNotFound(variant, subPartName, subsystemName, locator);
+        }
+        for (String dismountLocator : dismountLocators) {
+            if (hasLocator(variant, subPartName, dismountLocator)) continue;
+            MachineMax.LOGGER.warn(
+                    "座位子系统 {} 声明了下车定位器 {}，但它不在子部件 {}（模型 {}）的区间内；下车流程会跳过该候选点",
+                    subsystemName, dismountLocator, subPartName, variant.getModel());
+        }
+    }
 
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {

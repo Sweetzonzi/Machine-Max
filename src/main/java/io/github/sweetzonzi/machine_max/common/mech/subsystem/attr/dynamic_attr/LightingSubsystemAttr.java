@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LightingSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LightingSubsystem;
 import lombok.Getter;
@@ -25,6 +26,18 @@ public class LightingSubsystemAttr extends BasicSubsystemDynamicAttr {
         super(modelName);
         this.staticAttribute = (LightingSubsystemStaticAttr) getStaticAttr();
         this.lightLocator = lightLocator == null ? "" : lightLocator;
+    }
+
+    /**
+     * 只有会实际发光的型号才要求定位器：范围为 0 或强度为 0 的定义（如 dummy_light）本身不渲染，
+     * 缺定位器不会造成观感错误。会发光的型号没有回退，名字解析不到时灯光整盏不出现。
+     */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        if (staticAttribute.getRange() <= 0f || staticAttribute.getIntensity() <= 0f) return;
+        if (!hasLocator(variant, subPartName, lightLocator)) {
+            throw locatorNotFound(variant, subPartName, subsystemName, lightLocator);
+        }
     }
 
     @Override

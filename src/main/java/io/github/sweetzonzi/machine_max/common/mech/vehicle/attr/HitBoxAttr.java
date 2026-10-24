@@ -1,24 +1,30 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Getter
 public class HitBoxAttr {
+    /** 当前支持的碰撞形状类型，与 {@link SubPartAttr#getCollisionShape(VariantAttr)} 的形状分支一一对应 */
+    public static final Set<String> SHAPE_TYPES = Set.of("box", "sphere", "cylinder", "capsule", "wheel");
     /** 碰撞箱id，同id的碰撞箱不会被同一次攻击重复命中 */
     public final String id;
-    /** 形状类型，目前支持cube、cylinder、sphere, capsule, wheel */
+    /** 形状类型，取值见 {@link #SHAPE_TYPES}（box/sphere/cylinder/capsule/wheel） */
     public final String shapeType;
     /** 子系统名称，受到伤害时会将伤害等量地传递给子系统 */
     public final String subsystem;
@@ -38,7 +44,10 @@ public class HitBoxAttr {
 
     public HitBoxAttr(String id, String shapeType, String subsystem, String module, ResourceLocation material, float thickness, String condition, @Nullable OverwriteAttr overwrite) {
         this.id = id;
-        this.shapeType = shapeType;
+        String normalizedShape = shapeType == null ? "" : shapeType.toLowerCase(Locale.ROOT);
+        if (!SHAPE_TYPES.contains(normalizedShape)) throw new PackContentException(
+                MMLanguageRegistry.ERROR_PART_HITBOX_UNSUPPORTED_SHAPE.component(shapeType));
+        this.shapeType = normalizedShape;
         this.subsystem = subsystem;
         this.module = module;
         this.material = material;
@@ -46,6 +55,27 @@ public class HitBoxAttr {
         this.condition = condition;
         this.overwrite = overwrite;
         this.effectiveMaterial = getEffectiveMaterial();
+    }
+
+    /**
+     * 装载期检查：命中框引用的子系统必须属于同一子部件。
+     *
+     * <p>{@link io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox} 按名称在
+     * <em>宿主子部件</em>的子系统表里解析，跨子部件的名字永远解析不到；这里提前把拼错或挂错位置拦下来，
+     * 避免伤害静默地不传递给任何子系统。</p>
+     *
+     * @param variant     命中框所属变体
+     * @param subPartName 宿主子部件名称
+     * @param hitBoxName  命中框名称，仅用于错误信息
+     */
+    public void validate(VariantAttr variant, String subPartName, String hitBoxName) {
+        if (subsystem == null || subsystem.isEmpty()) return;
+        SubPartAttr subPart = variant.getSubParts().get(subPartName);
+        if (subPart != null && !subPart.getSubsystems().containsKey(subsystem)) {
+            throw new PackContentException(
+                    MMLanguageRegistry.ERROR_PART_HITBOX_SUBSYSTEM_NOT_FOUND.component(
+                            variant.getModel().toString(), subPartName, hitBoxName, subsystem));
+        }
     }
 
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(

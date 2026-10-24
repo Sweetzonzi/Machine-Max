@@ -543,10 +543,11 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
                 throw new IllegalArgumentException(
-                        Component.translatable(MMLanguageRegistry.ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND.tag,
-                                TextUtil.getTranslation(type.getRegistryKey()),
-                                TextUtil.getTranslation(connectorName),
-                                TextUtil.getTranslation(connectorAttr.locatorName)).getString());
+                        MMLanguageRegistry.ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND
+                                .component(variant.getModel().toString(),
+                                        TextUtil.getTranslation(connectorName),
+                                        TextUtil.getTranslation(connectorAttr.locatorName))
+                                .getString());
         }
     }
 

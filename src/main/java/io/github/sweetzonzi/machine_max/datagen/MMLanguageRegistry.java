@@ -342,12 +342,12 @@ public enum MMLanguageRegistry {
             en_us, "Part textures must not be empty"
     )),
     ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND("error.machine_max.part.connector_locator_not_found", ImmutableMap.of(
-            zh_cn, "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s",
-            en_us, "Failed to find locator %2$s's locator %3$s in the model of part %1$"
+            zh_cn, "模型 %1$s 中未找到连接点 %2$s 的定位器 %3$s",
+            en_us, "Failed to find locator %3$s of connector %2$s in model %1$s"
     )),
     ERROR_PART_INVALID_CONNECTOR_TYPE("error.machine_max.part.invalid_connector_type", ImmutableMap.of(
-            zh_cn, "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"",
-            en_us, "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\""
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的类型 %4$s 非法，只能是 simple 或 advanced",
+            en_us, "Connector %3$s in sub-part %2$s of model %1$s declares type %4$s; expected simple or advanced"
     )),
     ERROR_PART_INVALID_INTERNAL_CONNECTOR_CONNECTION("error.machine_max.part.invalid_internal_connector_connection", ImmutableMap.of(
             zh_cn, "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"",
@@ -360,6 +360,55 @@ public enum MMLanguageRegistry {
     ERROR_PART_RESERVED_NAME("error.machine_max.part.reserved_name", ImmutableMap.of(
             zh_cn, "部件变体 %4$s 内名称 %1$s（%3$s 的 %2$s）为信号保留地址，不得用作连接点/子系统/交互区名",
             en_us, "Name %1$s (%2$s of %3$s) in part variant %4$s is a reserved signal address and cannot be used for connectors/subsystems/interact boxes"
+    )),
+    // 装载期跨引用检查
+    ERROR_PART_EMPTY_SUB_PARTS("error.machine_max.part.empty_sub_parts", ImmutableMap.of(
+            zh_cn, "变体 %1$s 的模型 %2$s 没有声明任何子部件",
+            en_us, "Variant %1$s declares no sub-part in model %2$s"
+    )),
+    ERROR_PART_SUBSYSTEM_LOCATOR_NOT_FOUND("error.machine_max.part.subsystem_locator_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，子系统 %3$s 引用的定位器 %4$s 不存在",
+            en_us, "Locator %4$s referenced by subsystem %3$s was not found in sub-part %2$s of model %1$s"
+    )),
+    ERROR_PART_HITBOX_BONE_NOT_FOUND("error.machine_max.part.hitbox_bone_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 中找不到碰撞箱 %2$s 对应的骨骼，或该骨骼不属于本子部件区间",
+            en_us, "No bone for hit-box %2$s in model %1$s, or the bone is outside this sub-part's interval"
+    )),
+    ERROR_PART_HITBOX_UNSUPPORTED_SHAPE("error.machine_max.part.hitbox_unsupported_shape", ImmutableMap.of(
+            zh_cn, "碰撞箱形状 %1$s 不受支持，可选 box/sphere/cylinder/capsule/wheel",
+            en_us, "Unsupported hit-box shape %1$s; expected box/sphere/cylinder/capsule/wheel"
+    )),
+    ERROR_PART_HITBOX_SUBSYSTEM_NOT_FOUND("error.machine_max.part.hitbox_subsystem_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，碰撞箱 %3$s 引用的子系统 %4$s 不存在",
+            en_us, "Hit-box %3$s in sub-part %2$s of model %1$s references missing subsystem %4$s"
+    )),
+    ERROR_PART_INTERACTBOX_BONE_NOT_FOUND("error.machine_max.part.interactbox_bone_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，交互区 %3$s 的骨骼 %4$s 不在本子部件区间内",
+            en_us, "Bone %4$s of interact box %3$s is outside the interval of sub-part %2$s in model %1$s"
+    )),
+    ERROR_PART_INTERACTBOX_UNSUPPORTED_MODE("error.machine_max.part.interactbox_unsupported_mode", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，交互区 %3$s 的交互模式 %4$s 不受支持，可选 fast/accurate",
+            en_us, "Unsupported interact mode %4$s for interact box %3$s in sub-part %2$s of model %1$s; expected fast/accurate"
+    )),
+    ERROR_PART_SUBSYSTEM_CONNECTOR_NOT_FOUND("error.machine_max.part.subsystem_connector_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，子系统 %3$s 受控的连接点 %4$s 不存在",
+            en_us, "Connector %4$s controlled by subsystem %3$s was not found in sub-part %2$s of model %1$s"
+    )),
+    ERROR_PART_SUBSYSTEM_CONNECTOR_NOT_ADVANCED("error.machine_max.part.subsystem_connector_not_advanced", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，子系统 %3$s 受控的连接点 %4$s 不是高级连接点",
+            en_us, "Connector %4$s controlled by subsystem %3$s in sub-part %2$s of model %1$s is not an advanced connector"
+    )),
+    ERROR_PART_CONNECTOR_INVALID_JOINT_AXIS("error.machine_max.part.connector_invalid_joint_axis", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的 joint_attrs 轴名 %4$s 非法，只能是 X、Y、Z、XR、YR、ZR",
+            en_us, "joint_attrs axis %4$s of connector %3$s in sub-part %2$s of model %1$s is invalid; expected X, Y, Z, XR, YR or ZR"
+    )),
+    ERROR_PART_CONNECTOR_POWER_TARGET_NOT_FOUND("error.machine_max.part.connector_power_target_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的 power_target %4$s 既不是本子部件的子系统也不是连接点",
+            en_us, "power_target %4$s of connector %3$s in sub-part %2$s of model %1$s is neither a subsystem nor a connector of that sub-part"
+    )),
+    ERROR_PART_CONNECTOR_SIGNAL_TARGET_NOT_FOUND("error.machine_max.part.connector_signal_target_not_found", ImmutableMap.of(
+            zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的 signal_targets 把频道 %4$s 指向了不存在于本子部件的 %5$s",
+            en_us, "signal_targets of connector %3$s in sub-part %2$s of model %1$s routes channel %4$s to %5$s, which is not a subsystem, interact box or connector of that sub-part"
     )),
     // 提示信息
     TOAST_RESEARCH_COMPLETE("toast.machine_max.research_complete", ImmutableMap.of(
@@ -1563,6 +1612,20 @@ public enum MMLanguageRegistry {
 
     public MutableComponent translated() {
         return Component.translatable(tag);
+    }
+
+    /**
+     * 带英文兜底的可翻译组件，用于内容包装载期抛出的诊断。
+     *
+     * <p>装载发生在语言表加载之前，纯 {@link Component#translatable} 在日志里只会渲染出键名、
+     * 参数全部丢失；这里以 {@code en_us} 文案为兜底，参数照常格式化，日志因此能读到具体是哪个
+     * 模型、变体或名字出错。语言表可用时（客户端）仍走正常翻译。</p>
+     *
+     * @param args 翻译参数，按 {@code %1$s}、{@code %2$s} 顺序填入
+     * @return 可翻译组件，键缺失时退化为英文文案
+     */
+    public MutableComponent component(Object... args) {
+        return Component.translatableWithFallback(tag, content.getOrDefault(Locale.en_us, tag), args);
     }
 
     public static List<LanguageProvider> register(PackOutput output) {

@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackDriveSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TrackDriveSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -44,6 +45,12 @@ public class TrackDriveSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.controlledConnector = controlledConnector;
         this.speedOutputs = speedOutputs;
         this.forceOutputs = forceOutputs;
+    }
+
+    /** 受控连接点必须存在且为高级连接点，否则履带驱动在握手时静默失效。 */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        requireAdvancedConnector(variant, subPartName, subsystemName, controlledConnector);
     }
 
     @Override

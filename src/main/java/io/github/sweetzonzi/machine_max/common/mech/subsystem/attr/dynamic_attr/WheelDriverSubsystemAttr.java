@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemType
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.WheelDriverSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WheelDriverSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -39,6 +40,12 @@ public class WheelDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.controlledConnector = controlledConnector;
         this.rollingSpeedOutputs = rollingSpeedOutputs;
         this.steeringAngleOutputs = steeringAngleOutputs;
+    }
+
+    /** 受控连接点必须存在且为高级连接点，否则轮胎驱动在握手时静默失效。 */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        requireAdvancedConnector(variant, subPartName, subsystemName, controlledConnector);
     }
 
     @Override

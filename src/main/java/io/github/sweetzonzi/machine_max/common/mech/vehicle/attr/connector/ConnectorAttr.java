@@ -1,9 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector;
 
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
@@ -180,6 +185,74 @@ public class ConnectorAttr {
                 overwrite.forbiddenTags().isPresent() ? overwrite.forbiddenTags().get() : baseAttr.forbiddenTags(),
                 overwrite.jointAttrs().isPresent() ? overwrite.jointAttrs().get() : baseAttr.jointAttrs()
         );
+    }
+
+    /**
+     * 关节属性允许的轴名：平动 X/Y/Z 与转动 XR/YR/ZR。
+     *
+     * <p>{@link Axis#getValue(String)} 还接受 XP/YP/ZP/XN/YN/ZN，但那些名字映射到 10~12 与 -10~-12，
+     * 而 {@code adjustJoint} 把它们直接当作 Bullet 六自由度关节的轴下标使用，只有 0~5 有效。</p>
+     */
+    private static final Set<String> JOINT_AXES = Set.of("X", "Y", "Z", "XR", "YR", "ZR");
+
+    /**
+     * 装载期检查：连接点自身的引用字段必须能解析，且取值都在合法集合内。
+     *
+     * <p>这些字段在运行时失败的方式都是静默的：类型名写错只会让连接点退化成另一种连接器，
+     * {@code joint_attrs} 的轴名要等到关节建立时才抛 {@link IllegalArgumentException}，
+     * {@code power_target} 与 {@code signal_targets} 解析不到时会被直接丢弃。
+     * 把问题提前到装载期，错误信息才能带上模型、子部件与连接点名。</p>
+     *
+     * @param variant       连接点所属变体
+     * @param subPartName   宿主子部件名称，仅用于错误信息
+     * @param connectorName 连接点名称，仅用于错误信息
+     * @throws PackContentException 类型名非法、关节轴名非法、电力或信号目标解析不到时抛出
+     */
+    public void validate(VariantAttr variant, String subPartName, String connectorName) {
+        String model = variant.getModel().toString();
+        // 类型名：isSimpleConnector() 只认 "simple"，其余取值一律按 AdvancedConnector 处理
+        if (!isSimpleConnector() && !attr.type().equalsIgnoreCase("advanced")) {
+            throw new PackContentException(
+                    MMLanguageRegistry.ERROR_PART_INVALID_CONNECTOR_TYPE.component(
+                            model, subPartName, connectorName, attr.type()));
+        }
+        if (!attr.jointAttrs().isEmpty()) {
+            for (String axis : attr.jointAttrs().keySet()) {
+                if (!JOINT_AXES.contains(axis.toUpperCase(Locale.ROOT))) {
+                    throw new PackContentException(
+                            MMLanguageRegistry.ERROR_PART_CONNECTOR_INVALID_JOINT_AXIS.component(
+                                    model, subPartName, connectorName, axis));
+                }
+            }
+            // 关节属性只在 AdvancedConnector 上生效，写在简单连接点上是无操作的配置
+            if (isSimpleConnector()) {
+                MachineMax.LOGGER.warn(
+                        "子部件 {}（模型 {}）的连接点 {} 是 simple 类型，其 joint_attrs 不会被应用",
+                        subPartName, variant.getModel(), connectorName);
+            }
+        }
+        SubPartAttr subPart = variant.getSubParts().get(subPartName);
+        if (subPart == null) return;
+        if (!powerTarget.isEmpty()
+                && !subPart.getSubsystems().containsKey(powerTarget)
+                && !subPart.getConnectors().containsKey(powerTarget)) {
+            throw new PackContentException(
+                    MMLanguageRegistry.ERROR_PART_CONNECTOR_POWER_TARGET_NOT_FOUND.component(
+                            model, subPartName, connectorName, powerTarget));
+        }
+        for (Map.Entry<String, List<String>> entry : signalTargets.entrySet()) {
+            if (entry.getKey().isEmpty()) continue;// 空频道名在运行时被跳过
+            for (String target : entry.getValue()) {
+                if (VariantAttr.RESERVED_SIGNAL_NAMES.contains(target)) continue;
+                if (!subPart.getSubsystems().containsKey(target)
+                        && !subPart.getConnectors().containsKey(target)
+                        && !subPart.getInteractBoxes().containsKey(target)) {
+                    throw new PackContentException(
+                            MMLanguageRegistry.ERROR_PART_CONNECTOR_SIGNAL_TARGET_NOT_FOUND.component(
+                                    model, subPartName, connectorName, entry.getKey(), target));
+                }
+            }
+        }
     }
 
     public String getType() {

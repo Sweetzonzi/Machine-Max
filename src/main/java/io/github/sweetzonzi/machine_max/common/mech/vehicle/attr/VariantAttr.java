@@ -10,6 +10,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -34,8 +35,8 @@ public class VariantAttr {
     public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
     public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
 
-    /** 信号保留地址（{@code "local"} = RegularPart、{@code "global"} = 装配体）：不得用作连接点 / 子系统 / 交互区名 */
-    private static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global");
+    /** 信号保留地址（{@code "local"} = RegularPart、{@code "global"} = 装配体）：不得用作连接点 / 子系统 / 交互区名，可作为 signal_targets 的目标 */
+    public static final Set<String> RESERVED_SIGNAL_NAMES = Set.of("local", "global");
 
     public static final Codec<Map<String, ResourceLocation>> TEXTURES_CODEC = Codec.either(
             ResourceLocation.CODEC,
@@ -198,6 +199,26 @@ public class VariantAttr {
                 if (isDescendant) auto.add(otherStart);
             }
             subPart.setAutoEndBones(auto);
+        }
+    }
+
+    /**
+     * 装载期检查：本变体必须声明至少一个子部件，并把后续检查分派给各子部件。
+     *
+     * <p>子部件的跨引用检查依赖模型与区间，不能在属性构造器里做——{@code SubPartAttr} 与其中的
+     * 子系统/命中框/交互框都在变体解码过程中构造，此时同级 {@code model} 尚未解码、
+     * {@code start_bone}/{@code end_bones} 区间也未计算。</p>
+     *
+     * @param variantName 本变体的名称，仅用于错误信息
+     * @throws PackContentException 变体没有子部件，或任一子部件检查失败时抛出
+     */
+    public void validate(String variantName) {
+        if (subParts.isEmpty()) {
+            throw new PackContentException(
+                    MMLanguageRegistry.ERROR_PART_EMPTY_SUB_PARTS.component(variantName, model.toString()));
+        }
+        for (Map.Entry<String, SubPartAttr> subPartEntry : subParts.entrySet()) {
+            subPartEntry.getValue().validate(this, subPartEntry.getKey());
         }
     }
 

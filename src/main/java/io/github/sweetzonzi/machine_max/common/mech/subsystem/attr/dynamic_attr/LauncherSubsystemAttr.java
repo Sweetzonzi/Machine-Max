@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemType
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -43,6 +44,17 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.locator = locator;
         this.fireAnimation = fireAnimation;
         this.ammoCountOutputs = ammoCountOutputs;
+    }
+
+    /**
+     * 发射点必须落在宿主子部件区间内。`locator` 是没有默认值的必填字段，缺字段在解码阶段
+     * 就被 codec 拒绝，这里只需处理名字解析不到的情况。
+     */
+    @Override
+    public void validate(VariantAttr variant, String subPartName, String subsystemName) {
+        if (!hasLocator(variant, subPartName, locator)) {
+            throw locatorNotFound(variant, subPartName, subsystemName, locator);
+        }
     }
 
     @Override
