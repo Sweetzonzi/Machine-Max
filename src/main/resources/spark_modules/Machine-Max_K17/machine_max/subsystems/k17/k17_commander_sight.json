@@ -1,14 +1,20 @@
 {
-  "type": "machine_max:sight",
+  "type": "machine_max:camera",
   "basic_durability": 10,
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
   "base_zoom": 1,
   "max_zoom": 8,
   "scope_hud_layout": "machine_max:modern_optics",
+  "min_pitch": -15,
+  "max_pitch": 75,
+  "yaw_limit": 120,
+  "tracking_target_inputs": [],
   "discovery_inputs": [
     "gunner_sight"
   ],
   "allow_cycle": true,
-  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "pitch_speed": 180,
+  "yaw_speed": 180
 }

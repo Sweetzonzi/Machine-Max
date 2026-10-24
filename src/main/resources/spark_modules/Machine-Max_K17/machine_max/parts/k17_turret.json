@@ -1,16 +1,15 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/k17/k17_turret.png",
   "vehicle_durability_rate": 0.5,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:k17.geo",
     "textures": "machine_max:textures/part/k17/k17.png",
+    "animations": "machine_max:k17",
     "tags": [
       "machine_max:category/weapon",
       "machine_max:type/land"
     ],
-    "animations": "machine_max:k17",
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "Turret",
@@ -70,12 +69,12 @@
         "subsystems": {
           "subsystem.machine_max.azimuth_driver": {
             "type": "machine_max:turret_driver",
-            "definition": "machine_max:basic_azimuth_driver",
+            "definition": "machine_max:k17_azimuth_driver",
             "connector": "connector.machine_max.turret_hull_axis"
           },
-          "subsystem.machine_max.gun_elevation_driver": {
+          "subsystem.machine_max.elevation_driver": {
             "type": "machine_max:turret_driver",
-            "definition": "machine_max:basic_elevation_driver",
+            "definition": "machine_max:k17_elevation_driver",
             "connector": "connector.machine_max.turret_gun_axis"
           },
           "left_atgm_elevation_driver": {
@@ -91,9 +90,6 @@
           "subsystem.machine_max.main_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:main_weapon_controller",
-            "first_hud_layout": "machine_max:k17_weapon_feed",
-            "third_hud_layout": "machine_max:k17_weapon_feed",
-            "scope_hud_layout": "machine_max:k17_weapon_feed",
             "control_outputs": {
               "weapon_control": [
                 "global"
@@ -101,19 +97,22 @@
               "weapon.autocannon": [
                 "global"
               ]
-            }
+            },
+            "first_hud_layout": "machine_max:k17_weapon_feed",
+            "third_hud_layout": "machine_max:k17_weapon_feed",
+            "scope_hud_layout": "machine_max:k17_weapon_feed"
           },
           "subsystem.machine_max.secondary_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:secondary_weapon_controller",
-            "first_hud_layout": "machine_max:k17_weapon_compact",
-            "third_hud_layout": "machine_max:k17_weapon_compact",
-            "scope_hud_layout": "machine_max:k17_weapon_compact",
             "control_outputs": {
               "weapon.mg": [
                 "global"
               ]
-            }
+            },
+            "first_hud_layout": "machine_max:k17_weapon_compact",
+            "third_hud_layout": "machine_max:k17_weapon_compact",
+            "scope_hud_layout": "machine_max:k17_weapon_compact"
           },
           "subsystem.machine_max.2a42_ammo_loader": {
             "type": "machine_max:regen_loader",
@@ -146,14 +145,14 @@
           "subsystem.machine_max.atgm_weapon": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:atgm_weapon_controller",
-            "first_hud_layout": "machine_max:k17_weapon_tubes",
-            "third_hud_layout": "machine_max:k17_weapon_tubes",
-            "scope_hud_layout": "machine_max:k17_weapon_tubes",
             "control_outputs": {
               "weapon.atgm": [
                 "global"
               ]
-            }
+            },
+            "first_hud_layout": "machine_max:k17_weapon_tubes",
+            "third_hud_layout": "machine_max:k17_weapon_tubes",
+            "scope_hud_layout": "machine_max:k17_weapon_tubes"
           },
           "subsystem.machine_max.atgm_ammo_loader_1": {
             "type": "machine_max:regen_loader",
@@ -205,8 +204,13 @@
           },
           "commander_optics": {
             "type": "machine_max:camera",
-            "definition": "machine_max:k17_commander_sight_preview",
+            "definition": "machine_max:k17_commander_sight",
             "locator": "commander_optics"
+          },
+          "gunner_optics": {
+            "type": "machine_max:camera",
+            "definition": "machine_max:k17_gunner_sight",
+            "locator": "gunner_optics"
           }
         }
       },
@@ -237,11 +241,6 @@
           }
         },
         "subsystems": {
-          "gunner_optics": {
-            "type": "machine_max:sight",
-            "definition": "machine_max:k17_gunner_sight_preview",
-            "locator": "gunner_optics"
-          },
           "subsystem.machine_max.2a42": {
             "type": "machine_max:launcher",
             "definition": "machine_max:2a42_launcher",
@@ -334,6 +333,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

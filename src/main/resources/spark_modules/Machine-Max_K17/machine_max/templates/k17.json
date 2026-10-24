@@ -408,7 +408,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.machine_max.gun_elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "brake_yaw": 7.512365E-6,
               "brake_pitch": 0.039648905,
               "durability_ratio": 1.0

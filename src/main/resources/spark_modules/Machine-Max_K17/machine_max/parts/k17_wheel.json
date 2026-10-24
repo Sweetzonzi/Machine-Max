@@ -1,9 +1,10 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/k17/k17_wheel.png",
   "vehicle_durability_rate": 0.02,
-  "max_stack_size": 4,
   "vehicle_damage_rate": 0.05,
   "vehicle_damage_rate_destroyed": 0,
+  "max_stack_size": 4,
   "variants": {
     "left": {
       "model": "machine_max:k17.geo",
@@ -85,6 +86,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

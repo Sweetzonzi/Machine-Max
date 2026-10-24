@@ -20,6 +20,7 @@ import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.*;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SightSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
@@ -58,8 +59,7 @@ public final class ViewpointGameTest {
                         fixed++;
                         helper.assertTrue(sight.getSubPart().hasLocator(sight.sightAttr.locator),
                                 "炮镜 locator 必须属于其宿主 SubPart");
-                        String expectedBone = name.equals("2s38_turret") ? "2A90"
-                                : name.equals("k17_turret") ? "2A42_All" : "AllGunShield";
+                        String expectedBone = name.equals("2s38_turret") ? "2A90" : "AllGunShield";
                         helper.assertTrue(sight.getSubPart().attr.startBone.equalsIgnoreCase(expectedBone),
                                 "固定炮镜必须直接安装到随炮管俯仰的子部件：" + name);
                     } else if (view instanceof CameraSubsystem camera) {
@@ -67,8 +67,11 @@ public final class ViewpointGameTest {
                         verifyCameraState(helper, camera);
                     }
                 }
-                helper.assertTrue(fixed == 1, "每个样例应有一台固定炮手镜：" + name);
-                helper.assertTrue(rotatable == (name.equals("sdkfz234_turret") ? 0 : 1), "车长镜应属于可转式分支：" + name);
+                int expectedFixed = name.equals("k17_turret") ? 0 : 1;
+                int expectedRotatable = name.equals("k17_turret") ? 2
+                        : name.equals("sdkfz234_turret") ? 0 : 1;
+                helper.assertTrue(fixed == expectedFixed, "样例的固定炮镜数量必须与安装配置一致：" + name);
+                helper.assertTrue(rotatable == expectedRotatable, "样例的可转镜头数量必须与安装配置一致：" + name);
             } finally {
                 part.discardUnattached();
             }
@@ -98,8 +101,10 @@ public final class ViewpointGameTest {
                         + "\"locator\":\"probe\",\"control_group_preset\":\"machine_max:default_gunner\"}")).getOrThrow();
         var insideSeat = new SeatSubsystem(main, "probe_inside_seat", seatAttr);
         var secondary = (WeaponControllerSubsystem) main.subsystems.get("subsystem.machine_max.secondary_weapon");
-        var fixedSight = part.getAllSubsystems().stream().filter(SightSubsystem.class::isInstance)
-                .map(SightSubsystem.class::cast).findFirst().orElseThrow();
+        var gun = part.subParts.get("sub_part.machine_max.gun");
+        // K17 的两台瞄具都是可转镜头；机构采样用一台挂在炮管上的探针固定炮镜验证。
+        var fixedSight = new SightSubsystem(gun, "probe_fixed_sight",
+                new SightSubsystemAttr(ResourceLocation.parse("machine_max:gunner_sight"), "gun_turret_lock"));
         // 不同宿主模拟座椅安装位置差异；发现列表包含主／副 WC，选择必须依据主武器频道。
         var otherSeat = new SeatSubsystem(fixedSight.getOwner(), "probe_other_seat", insideSeat.attr);
         for (SeatSubsystem seat : List.of(insideSeat, otherSeat)) {

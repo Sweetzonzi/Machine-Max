@@ -25,6 +25,7 @@
 					"parent": "AllTurret",
 					"pivot": [-1.58442, 36.50688, 21.16507],
 					"locators": {
+						"gunner_optics": [-7.692, 45.0963, -1.2856],
 						"commander_optics": [15.6334, 54.2193, 9.8837]
 					}
 				},
@@ -33,7 +34,6 @@
 					"parent": "Turret",
 					"pivot": [-1.6147, 46.16586, 18.35679],
 					"locators": {
-						"gunner_optics": [-7.692, 45.0963, -1.2856],
 						"gun_turret_lock": [-1.6147, 46.1659, 18.3568],
 						"mg_launch_point": [1.0948, 46.1656, 10.0289]
 					}
@@ -29057,6 +29057,14 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "polygon_12",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "polygon_12",
+					"pivot": [0, 0, 0]
 				}
 			]
 		}

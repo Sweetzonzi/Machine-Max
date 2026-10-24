@@ -1,8 +1,7 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/k17/k17_hull.png",
   "vehicle_durability_rate": 0.9,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:k17.geo",
     "textures": "machine_max:textures/part/k17/k17.png",
@@ -267,22 +266,21 @@
             "definition": "machine_max:default_3rd_driver_seat",
             "locator": "driver_seat",
             "control_group_preset": "machine_max:default_driver",
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
-            "allow_use_items": true,
             "passenger_num_outputs": {
               "passenger_num": [
                 "local",
                 "global"
               ]
-            }
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "allow_use_items": true
           },
           "commander_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
             "control_group_preset": "machine_max:default_commander",
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
-            "allow_use_items": true,
             "passenger_num_outputs": {
               "passenger_num": [
                 "local",
@@ -293,15 +291,16 @@
               "gunner_sight": [
                 "global"
               ]
-            }
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "allow_use_items": true
           },
           "gunner_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "gunner_seat",
             "control_group_preset": "machine_max:k17_gunner",
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
-            "allow_use_items": true,
             "passenger_num_outputs": {
               "passenger_num": [
                 "local",
@@ -312,11 +311,13 @@
               "gunner_sight": [
                 "global"
               ]
-            }
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "allow_use_items": true
           }
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }
