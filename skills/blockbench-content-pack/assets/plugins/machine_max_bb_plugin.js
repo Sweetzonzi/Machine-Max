@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.5.4
+// MachineMax Blockbench Plugin v0.5.6
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -14136,6 +14136,18 @@
         while (out.length > 0 && out.charAt(out.length - 1) === ".") out = out.slice(0, -1);
         return out;
       }
+      function reservePartId(base, used) {
+        if (!isSafePartId(base)) {
+          throw new TypeError('reservePartId: base \u5FC5\u987B\u662F\u5B89\u5168\u7684 partId\uFF0C\u6536\u5230 "' + base + '"');
+        }
+        if (!used || !used.has(base)) return base;
+        for (var n = 1; n < 1e4; n++) {
+          var suffix = "_" + n;
+          var candidate = truncateNameForSuffix(base, suffix) + suffix;
+          if (isSafePartId(candidate) && !used.has(candidate)) return candidate;
+        }
+        throw new Error('reservePartId: "' + base + '" \u7684\u5019\u9009\u7528\u5C3D\uFF089999\uFF09');
+      }
       function uniqueSubPartKey(candidate, usedKeys, usedNames) {
         usedKeys = usedKeys || [];
         usedNames = usedNames || [];
@@ -14294,6 +14306,9 @@
         canonicalSubPartKey,
         uniqueSubPartKey,
         nextLegacyName,
+        truncateNameForSuffix,
+        // partId 预留（导入改名 / 批内重名）
+        reservePartId,
         // 递归
         validateKeys
       };
@@ -17852,11 +17867,6 @@
         _cache.control_groups = null;
         _cache.projectiles = null;
         log2.debug("invalidateCache: \u7F13\u5B58\u5DF2\u6E05\u9664");
-        try {
-          throw new Error("invalidateCache \u8C03\u7528\u6808");
-        } catch (e) {
-          log2.debug("invalidateCache: \u8C03\u7528\u8005", e.stack);
-        }
       }
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
@@ -22326,6 +22336,7 @@
         var namespace = options.namespace || "";
         var meta = options.meta || {};
         var label = options.label || "\u5207\u6362\u5185\u5BB9\u5305";
+        var depPaths = options.dependencyPaths;
         if (namespace) {
           var keys = require_keys();
           if (!keys.isValidNamespace(namespace)) {
@@ -22342,6 +22353,9 @@
           config.contentPackPath = path;
           config.namespace = namespace;
           config.packMeta = meta;
+          if (Array.isArray(depPaths)) {
+            config.dependencyPaths = stripBuiltinDeps(depPaths);
+          }
           invalidateDefsCache();
         }, { coalesce: false });
         return shared.ok({ changed: true });
@@ -22532,40 +22546,6 @@
     }
   });
 
-  // src/ui/dialogs/pack_common.js
-  var require_pack_common = __commonJS({
-    "src/ui/dialogs/pack_common.js"(exports, module) {
-      init_define_BUILTIN_CONNECTORS();
-      init_define_BUILTIN_CONTROL_GROUPS();
-      init_define_BUILTIN_MATERIALS();
-      init_define_BUILTIN_PACK_META();
-      init_define_BUILTIN_SUBSYSTEMS();
-      init_define_SCHEMAS();
-      var DEP_TYPES = ["hard", "soft", "override", "conflict"];
-      var DEP_TYPE_LABELS = {
-        hard: "\u786C\u4F9D\u8D56 (\u5FC5\u9700)",
-        soft: "\u8F6F\u4F9D\u8D56 (\u53EF\u9009)",
-        override: "\u8986\u76D6 (\u66FF\u6362)",
-        conflict: "\u51B2\u7A81 (\u4E0D\u517C\u5BB9)"
-      };
-      function isConfigValid(config) {
-        return config && typeof config === "object";
-      }
-      function sanitizeFolderName(name) {
-        if (!name) return "";
-        return String(name).replace(/[<>:"/\\|?*\s]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").substring(0, 64);
-      }
-      if (typeof module !== "undefined" && module.exports) {
-        module.exports = {
-          DEP_TYPES,
-          DEP_TYPE_LABELS,
-          isConfigValid,
-          sanitizeFolderName
-        };
-      }
-    }
-  });
-
   // src/services/pack.js
   var require_pack2 = __commonJS({
     "src/services/pack.js"(exports, module) {
@@ -22636,6 +22616,7 @@
       }
       function resolveChainDependencies(directDeps, parentDir) {
         var indirect = [];
+        var unresolved = [];
         var processed = {};
         var i, j, dep, depMeta, depDeps, depDep, depId, found;
         for (i = 0; i < directDeps.length; i++) {
@@ -22665,12 +22646,68 @@
                 isIndirect: true
               });
               log2.info('\u94FE\u5F0F\u89E3\u6790: \u53D1\u73B0\u95F4\u63A5\u4F9D\u8D56 "' + depId + '" \u2192 ' + found);
+            } else if (!found) {
+              unresolved.push({
+                id: depId,
+                type: depDep.type || "hard",
+                source: dep.path
+              });
             }
           }
         }
         return {
           direct: directDeps,
-          indirect
+          indirect,
+          unresolved
+        };
+      }
+      function resolveDeclaredDependencies(declaredDeps, parentDir, options) {
+        options = options || {};
+        var direct = [];
+        var unresolved = [];
+        var seen = {};
+        var chain;
+        var paths = [];
+        var declaredCount = 0;
+        if (!Array.isArray(declaredDeps) || !parentDir) {
+          return {
+            direct,
+            indirect: [],
+            unresolved,
+            paths,
+            declaredCount: 0
+          };
+        }
+        var i, entry, depId, depType, found;
+        for (i = 0; i < declaredDeps.length; i++) {
+          entry = declaredDeps[i];
+          if (!entry) continue;
+          depId = typeof entry === "string" ? entry : entry.id || "";
+          depType = typeof entry === "object" && entry.type || "hard";
+          if (!depId || seen[depId]) continue;
+          seen[depId] = true;
+          if (depId === BUILTIN_PACK_ID) continue;
+          if (options.selfId && depId === options.selfId) continue;
+          declaredCount++;
+          found = findPackInSiblings(parentDir, depId);
+          if (found && options.selfPath && path.resolve(found) === path.resolve(options.selfPath)) {
+            found = null;
+          }
+          if (!found) {
+            unresolved.push({ id: depId, type: depType, source: "direct" });
+            continue;
+          }
+          direct.push({ path: found, type: depType });
+        }
+        chain = resolveChainDependencies(direct, parentDir);
+        for (i = 0; i < direct.length; i++) paths.push(direct[i].path);
+        for (i = 0; i < chain.indirect.length; i++) paths.push(chain.indirect[i].path);
+        return {
+          direct,
+          indirect: chain.indirect,
+          unresolved: unresolved.concat(chain.unresolved),
+          paths,
+          declaredCount
         };
       }
       module.exports = {
@@ -22680,8 +22717,125 @@
         isBuiltinPackPath,
         filterBuiltinDeps,
         findPackInSiblings,
-        resolveChainDependencies
+        resolveChainDependencies,
+        resolveDeclaredDependencies
       };
+    }
+  });
+
+  // src/ui/dialogs/pack_common.js
+  var require_pack_common = __commonJS({
+    "src/ui/dialogs/pack_common.js"(exports, module) {
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var path = __require("path");
+      var packService = require_pack2();
+      var ops = require_ops();
+      var DEP_TYPES = ["hard", "soft", "override", "conflict"];
+      var DEP_TYPE_LABELS = {
+        hard: "\u786C\u4F9D\u8D56 (\u5FC5\u9700)",
+        soft: "\u8F6F\u4F9D\u8D56 (\u53EF\u9009)",
+        override: "\u8986\u76D6 (\u66FF\u6362)",
+        conflict: "\u51B2\u7A81 (\u4E0D\u517C\u5BB9)"
+      };
+      function isConfigValid(config) {
+        return config && typeof config === "object";
+      }
+      function sanitizeFolderName(name) {
+        if (!name) return "";
+        return String(name).replace(/[<>:"/\\|?*\s]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").substring(0, 64);
+      }
+      var MAX_LISTED_UNRESOLVED = 5;
+      function buildUnresolvedMessage(unresolved, searchedDir) {
+        var ids = [];
+        var listed;
+        var i;
+        for (i = 0; i < unresolved.length && i < MAX_LISTED_UNRESOLVED; i++) {
+          if (unresolved[i] && unresolved[i].id) ids.push(unresolved[i].id);
+        }
+        listed = ids.join("\u3001");
+        if (unresolved.length > ids.length) {
+          listed += " \u7B49 " + unresolved.length + " \u4E2A";
+        }
+        return "\u6709 " + unresolved.length + ' \u4E2A\u4F9D\u8D56\u672A\u80FD\u5728 "' + searchedDir + '" \u4E0B\u627E\u5230\uFF1A' + listed + "\u3002\u8BF7\u5148\u653E\u5165\u540C\u7EA7\u76EE\u5F55\uFF0C\u6216\u5728 MachineMax \u83DC\u5355 \u2192 \u5185\u5BB9\u5305\u8BBE\u7F6E \u2192 \u7BA1\u7406\u4F9D\u8D56\u5305 \u4E2D\u624B\u52A8\u9009\u62E9\u3002";
+      }
+      function dependencyPathsFor(resolution) {
+        if (!resolution) return void 0;
+        if (resolution.declaredCount === 0) return [];
+        if (resolution.paths.length > 0) return resolution.paths;
+        return void 0;
+      }
+      function applyPackPath(config, dirPath, options) {
+        options = options || {};
+        var label = options.label || "\u6253\u5F00\u5185\u5BB9\u5305";
+        var targetPath = dirPath ? String(dirPath).trim() : "";
+        var empty = {
+          ok: true,
+          valid: false,
+          error: null,
+          meta: null,
+          namespace: "",
+          parentDir: "",
+          resolution: null,
+          dependencyPaths: void 0
+        };
+        if (!targetPath) {
+          ops.setContentPackPath(config, "");
+          return empty;
+        }
+        var opened = packService.openPack(targetPath);
+        if (!opened.valid) {
+          if (options.strict) {
+            empty.ok = false;
+            empty.error = opened.error || null;
+            return empty;
+          }
+          ops.setContentPackPath(config, targetPath);
+          empty.error = opened.error || null;
+          return empty;
+        }
+        var meta = opened.meta || {};
+        var parentDir = path.dirname(path.resolve(targetPath));
+        var resolution = packService.resolveDeclaredDependencies(
+          meta.dependencies || [],
+          parentDir,
+          { selfId: meta.id, selfPath: targetPath }
+        );
+        var depPaths = dependencyPathsFor(resolution);
+        var result = ops.setContentPack(config, {
+          path: targetPath,
+          namespace: opened.namespace || "",
+          meta,
+          dependencyPaths: depPaths,
+          label
+        });
+        return {
+          ok: !!(result && result.ok),
+          valid: true,
+          error: result && result.error || null,
+          meta,
+          namespace: opened.namespace || "",
+          parentDir,
+          resolution,
+          dependencyPaths: depPaths
+        };
+      }
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+          DEP_TYPES,
+          DEP_TYPE_LABELS,
+          isConfigValid,
+          sanitizeFolderName,
+          MAX_LISTED_UNRESOLVED,
+          buildUnresolvedMessage,
+          dependencyPathsFor,
+          applyPackPath
+        };
+      }
     }
   });
 
@@ -23128,12 +23282,10 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var path = __require("path");
-      var packService = require_pack2();
       var persistence = require_persistence();
       var { showToast: showToast2 } = require_notify();
       var { createLogger: createLogger2 } = require_logger();
-      var { isConfigValid } = require_pack_common();
-      var ops = require_ops();
+      var { isConfigValid, applyPackPath, buildUnresolvedMessage } = require_pack_common();
       var log2 = createLogger2("PackOpen");
       function showOpenPackDialog(config, onSave) {
         if (!isConfigValid(config)) {
@@ -23154,7 +23306,7 @@
               },
               depNote: {
                 type: "info",
-                text: '<span style="color:#888;font-size:11px">\u63D0\u793A\uFF1A\u6253\u5F00\u5185\u5BB9\u5305\u540E\uFF0C\u53EF\u5728 MachineMax \u83DC\u5355 \u2192 "\u7F16\u8F91\u5185\u5BB9\u5305\u4FE1\u606F"\u4E2D\u4FEE\u6539\u5143\u6570\u636E\uFF0C\u6216\u901A\u8FC7\u83DC\u5355\u9879\u7BA1\u7406\u672C\u5730\u4F9D\u8D56\u8DEF\u5F84\u3002</span>'
+                text: '<span style="color:#888;font-size:11px">\u63D0\u793A\uFF1A\u6253\u5F00\u540E\u4F1A\u6309 meta.json \u58F0\u660E\u7684\u4F9D\u8D56\uFF0C\u5728\u5185\u5BB9\u5305\u540C\u7EA7\u76EE\u5F55\u81EA\u52A8\u67E5\u627E\u5BF9\u5E94\u5185\u5BB9\u5305\uFF1B\u6CA1\u627E\u5230\u7684\u4F9D\u8D56\u4F1A\u5728\u52A0\u8F7D\u540E\u63D0\u793A\uFF0C\u53EF\u5728 MachineMax \u83DC\u5355 \u2192 \u5185\u5BB9\u5305\u8BBE\u7F6E \u2192 \u7BA1\u7406\u4F9D\u8D56\u5305 \u4E2D\u624B\u52A8\u9009\u62E9\u3002</span>'
               }
             },
             onConfirm: function(formData) {
@@ -23163,12 +23315,12 @@
                 return false;
               }
               var dirPath = formData.packDir.trim();
-              var result = packService.openPack(dirPath);
-              if (!result.valid) {
-                showToast2("\u5185\u5BB9\u5305\u65E0\u6548: " + (result.error || "\u76EE\u5F55\u4E2D\u7F3A\u5C11 meta.json \u6216\u5FC5\u8981\u5B50\u76EE\u5F55"), "error");
+              var applied = applyPackPath(config, dirPath, { strict: true, label: "\u6253\u5F00\u5185\u5BB9\u5305" });
+              if (!applied.ok) {
+                showToast2("\u5185\u5BB9\u5305\u65E0\u6548: " + (applied.error || "\u76EE\u5F55\u4E2D\u7F3A\u5C11 meta.json \u6216\u5FC5\u8981\u5B50\u76EE\u5F55"), "error");
                 return false;
               }
-              var meta = result.meta || {};
+              var meta = applied.meta || {};
               log2.debug("showOpenPackDialog: \u6253\u5F00\u5185\u5BB9\u5305\u7ED3\u679C", {
                 metaType: typeof meta,
                 metaKeys: Object.keys(meta),
@@ -23176,17 +23328,8 @@
                 descType: typeof meta.description,
                 nameExists: "name" in meta,
                 metaJSON: JSON.stringify(meta).substring(0, 500),
-                namespace: result.namespace
+                namespace: applied.namespace
               });
-              var opResult = ops.setContentPack(config, {
-                path: dirPath,
-                namespace: result.namespace || "",
-                meta
-              });
-              if (!opResult.ok) {
-                showToast2(opResult.error, "error");
-                return false;
-              }
               log2.debug("showOpenPackDialog: packMeta \u5DF2\u8BBE\u7F6E", {
                 packMetaType: typeof config.packMeta,
                 packMetaKeys: Object.keys(config.packMeta),
@@ -23195,10 +23338,35 @@
                 description: config.packMeta.description,
                 full: JSON.stringify(config.packMeta).substring(0, 500)
               });
+              log2.info("showOpenPackDialog: \u4F9D\u8D56\u89E3\u6790\u7ED3\u679C", {
+                parentDir: applied.parentDir,
+                direct: applied.resolution.direct.length,
+                indirect: applied.resolution.indirect.length,
+                unresolved: applied.resolution.unresolved.map(function(u) {
+                  return u.id;
+                }),
+                dependencyPaths: applied.dependencyPaths
+              });
               persistence.scheduleSave();
-              var displayName = path.basename(dirPath) || result.namespace || "";
-              showToast2("\u5185\u5BB9\u5305 " + displayName + " \u5DF2\u52A0\u8F7D", "positive", 5e3);
-              log2.info("\u5185\u5BB9\u5305\u5DF2\u6253\u5F00", { path: dirPath, namespace: result.namespace, id: meta.id });
+              var displayName = path.basename(dirPath) || applied.namespace || "";
+              var loadedMsg = "\u5185\u5BB9\u5305 " + displayName + " \u5DF2\u52A0\u8F7D";
+              if (applied.resolution.direct.length > 0 || applied.resolution.indirect.length > 0) {
+                loadedMsg += "\uFF0C\u5DF2\u89E3\u6790 " + applied.resolution.direct.length + " \u4E2A\u76F4\u63A5\u4F9D\u8D56";
+                if (applied.resolution.indirect.length > 0) {
+                  loadedMsg += "\u3001" + applied.resolution.indirect.length + " \u4E2A\u95F4\u63A5\u4F9D\u8D56";
+                }
+              } else if (applied.dependencyPaths && applied.dependencyPaths.length === 0) {
+                loadedMsg += "\uFF0C\u8BE5\u5305\u672A\u58F0\u660E\u4F9D\u8D56\uFF0C\u5DF2\u6E05\u7A7A\u672C\u5730\u4F9D\u8D56\u8DEF\u5F84";
+              }
+              showToast2(loadedMsg, "positive", 5e3);
+              if (applied.resolution.unresolved.length > 0) {
+                showToast2(
+                  buildUnresolvedMessage(applied.resolution.unresolved, applied.parentDir),
+                  "warning",
+                  12e3
+                );
+              }
+              log2.info("\u5185\u5BB9\u5305\u5DF2\u6253\u5F00", { path: dirPath, namespace: applied.namespace, id: meta.id });
               if (typeof onSave === "function") onSave(config);
               this.hide();
             }
@@ -25860,31 +26028,42 @@
       init_define_SCHEMAS();
       var { createLogger: createLogger2 } = require_logger();
       var log2 = createLogger2("ConflictDialog");
+      function previewIds(ids) {
+        if (ids.length <= 2) return ids.join("\u3001");
+        return ids.slice(0, 2).join("\u3001") + " \u7B49 " + ids.length + " \u4E2A";
+      }
       function showConflictDialog(options, onResolve) {
+        options = options || {};
         var typeLabel = options.typeLabel || "\u5B9A\u4E49";
-        var defId = options.defId || "\u672A\u77E5";
-        var isBatch = options.isBatch || false;
-        var selectOptions = {
-          overwrite: "\u8986\u76D6\u5DF2\u6709" + typeLabel + "\uFF08\u66FF\u6362\u5F53\u524D\u6570\u636E\uFF09",
-          skip: "\u8DF3\u8FC7\uFF08\u4FDD\u7559\u5DF2\u6709" + typeLabel + "\uFF09",
-          rename: "\u91CD\u547D\u540D\u5BFC\u5165\uFF08\u81EA\u52A8\u8FFD\u52A0 _1 \u540E\u7F00\uFF09"
-        };
+        var ids = Array.isArray(options.conflictIds) ? options.conflictIds.slice() : [];
+        if (!ids.length && options.defId) ids = [String(options.defId)];
+        if (!ids.length) ids = ["\u672A\u77E5"];
+        var isBatch = options.isBatch === true || ids.length > 1;
+        var selectOptions;
         if (isBatch) {
-          selectOptions.overwrite_all = "\u5168\u90E8\u8986\u76D6\uFF08\u540E\u7EED\u51B2\u7A81\u4E0D\u518D\u8BE2\u95EE\uFF09";
-          selectOptions.skip_all = "\u5168\u90E8\u8DF3\u8FC7\uFF08\u540E\u7EED\u51B2\u7A81\u4E0D\u518D\u8BE2\u95EE\uFF09";
+          selectOptions = {
+            overwrite: "\u5168\u90E8\u8986\u76D6\u5DF2\u6709" + typeLabel + "\uFF08\u66FF\u6362\u5F53\u524D\u6570\u636E\uFF09",
+            skip: "\u8DF3\u8FC7\u51B2\u7A81\u9879\uFF08\u5176\u4F59\u6587\u4EF6\u7167\u5E38\u5BFC\u5165\uFF09",
+            rename: "\u5168\u90E8\u81EA\u52A8\u91CD\u547D\u540D\uFF08\u4F9D\u6B21\u8FFD\u52A0 _1\u3001_2\u2026\uFF0C\u8DF3\u8FC7\u672C\u6279\u5176\u5B83\u6587\u4EF6\u53CA\u5185\u5BB9\u5305\u91CC\u5DF2\u5360\u7528\u7684\u540D\u79F0\uFF09"
+          };
+        } else {
+          selectOptions = {
+            overwrite: "\u8986\u76D6\u5DF2\u6709" + typeLabel + "\uFF08\u66FF\u6362\u5F53\u524D\u6570\u636E\uFF09",
+            skip: "\u8DF3\u8FC7\uFF08\u4FDD\u7559\u5DF2\u6709" + typeLabel + "\uFF09",
+            rename: "\u91CD\u547D\u540D\u5BFC\u5165\uFF08\u81EA\u52A8\u8FFD\u52A0 _1 \u540E\u7F00\uFF09"
+          };
         }
         log2.info("showConflictDialog: \u663E\u793A\u51B2\u7A81\u5BF9\u8BDD\u6846", {
           typeLabel,
-          defId,
+          conflictIds: ids,
           isBatch
         });
+        var question = isBatch ? typeLabel + " <b>" + previewIds(ids) + "</b> \u5DF2\u5B58\u5728\uFF0C\u8BF7\u9009\u62E9\u5BF9\u6574\u6279\u7684\u5904\u7406\u65B9\u5F0F\uFF1A" : typeLabel + " <b>" + ids[0] + "</b> \u5DF2\u5B58\u5728\uFF0C\u8BF7\u9009\u62E9\u5904\u7406\u65B9\u5F0F\uFF1A";
         new Dialog({
           id: "mm_import_conflict",
-          title: "\u5BFC\u5165\u51B2\u7A81",
+          title: isBatch ? "\u6279\u91CF\u5BFC\u5165\u51B2\u7A81\uFF08" + ids.length + " \u4E2A" + typeLabel + "\u5DF2\u5B58\u5728\uFF09" : "\u5BFC\u5165\u51B2\u7A81",
           width: 480,
-          lines: [
-            typeLabel + " <b>" + defId + "</b> \u5DF2\u5B58\u5728\uFF0C\u8BF7\u9009\u62E9\u5904\u7406\u65B9\u5F0F\uFF1A"
-          ],
+          lines: [question],
           form: {
             action: {
               type: "select",
@@ -25899,8 +26078,8 @@
             onResolve(action);
           },
           onCancel: function() {
-            log2.info("showConflictDialog: \u7528\u6237\u53D6\u6D88\uFF08\u9ED8\u8BA4\u8DF3\u8FC7\uFF09");
-            onResolve("skip");
+            log2.info("showConflictDialog: \u7528\u6237\u53D6\u6D88\uFF08\u653E\u5F03\u6574\u6279\uFF09");
+            onResolve("cancel");
           }
         }).show();
       }
@@ -25910,9 +26089,9 @@
     }
   });
 
-  // src/services/import.js
-  var require_import = __commonJS({
-    "src/services/import.js"(exports, module) {
+  // src/lib/json_text.js
+  var require_json_text = __commonJS({
+    "src/lib/json_text.js"(exports, module) {
       "use strict";
       init_define_BUILTIN_CONNECTORS();
       init_define_BUILTIN_CONTROL_GROUPS();
@@ -25920,8 +26099,7 @@
       init_define_BUILTIN_PACK_META();
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
-      var fs = __require("fs");
-      function parseJSONWithComments(content) {
+      function stripComments(content) {
         if (content && content.charCodeAt(0) === 65279) {
           content = content.slice(1);
         }
@@ -25946,18 +26124,220 @@
           }
           result.push(line);
         }
-        return JSON.parse(result.join("\n"));
+        return result.join("\n");
       }
+      function parseJSONWithComments(content) {
+        return JSON.parse(stripComments(content));
+      }
+      module.exports = {
+        stripComments,
+        parseJSONWithComments
+      };
+    }
+  });
+
+  // src/services/import.js
+  var require_import = __commonJS({
+    "src/services/import.js"(exports, module) {
+      "use strict";
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var fs = __require("fs");
+      var jsonText = require_json_text();
       function readTextFile(filePath) {
         return fs.readFileSync(filePath, "utf-8");
       }
       function readJsonFile(filePath) {
-        return parseJSONWithComments(readTextFile(filePath));
+        return jsonText.parseJSONWithComments(readTextFile(filePath));
       }
       module.exports = {
-        parseJSONWithComments,
+        stripComments: jsonText.stripComments,
+        parseJSONWithComments: jsonText.parseJSONWithComments,
         readTextFile,
         readJsonFile
+      };
+    }
+  });
+
+  // src/services/import_plan.js
+  var require_import_plan = __commonJS({
+    "src/services/import_plan.js"(exports, module) {
+      "use strict";
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var jsonText = require_json_text();
+      var keys = require_keys();
+      var PartCodec = require_part_codec().PartCodec;
+      var JSON_SUFFIX_RE = /\.json$/i;
+      function basenameOf(filePath) {
+        if (!filePath) return "";
+        var s = String(filePath);
+        var slash = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+        return slash >= 0 ? s.slice(slash + 1) : s;
+      }
+      function hasVariants(partConfig) {
+        var variants = partConfig && partConfig.variants;
+        if (!variants || typeof variants !== "object" || Array.isArray(variants)) return false;
+        return Object.keys(variants).length > 0;
+      }
+      function planImports(inputs, existingParts) {
+        var parts = existingParts || {};
+        var entries = [];
+        var failures = [];
+        var existingIds = [];
+        var duplicateIds = [];
+        var existingSeen = /* @__PURE__ */ new Set();
+        var leaderOf = /* @__PURE__ */ new Map();
+        var list = Array.isArray(inputs) ? inputs : [];
+        for (var i = 0; i < list.length; i++) {
+          var input = list[i] || {};
+          var fileName = input.name ? String(input.name) : basenameOf(input.path);
+          if (!fileName) {
+            failures.push({ fileName: "", reason: "read_failed", detail: "\u7F3A\u5C11\u6587\u4EF6\u540D\u4E0E\u8DEF\u5F84" });
+            continue;
+          }
+          if (typeof input.content !== "string") {
+            failures.push({ fileName, reason: "read_failed", detail: "\u5185\u5BB9\u4E0D\u662F\u5B57\u7B26\u4E32" });
+            continue;
+          }
+          if (input.content.trim() === "") {
+            failures.push({ fileName, reason: "empty_content" });
+            continue;
+          }
+          var raw;
+          try {
+            raw = jsonText.parseJSONWithComments(input.content);
+          } catch (err) {
+            failures.push({
+              fileName,
+              reason: "bad_json",
+              detail: err && err.message ? err.message : String(err)
+            });
+            continue;
+          }
+          var partConfig;
+          try {
+            partConfig = PartCodec.decode(raw);
+          } catch (err) {
+            failures.push({
+              fileName,
+              reason: "bad_part",
+              detail: err && err.message ? err.message : String(err)
+            });
+            continue;
+          }
+          if (!hasVariants(partConfig)) {
+            failures.push({ fileName, reason: "bad_part", detail: "\u6CA1\u6709\u5B9A\u4E49\u53D8\u4F53" });
+            continue;
+          }
+          var partId = fileName.replace(JSON_SUFFIX_RE, "");
+          if (!keys.isSafePartId(partId)) {
+            failures.push({ fileName, reason: "bad_part_id", detail: partId });
+            continue;
+          }
+          var state;
+          var leaderIndex = null;
+          var hasLeader = leaderOf.has(partId);
+          if (hasLeader) {
+            state = "duplicate";
+            leaderIndex = leaderOf.get(partId);
+            if (duplicateIds.indexOf(partId) < 0) duplicateIds.push(partId);
+          } else if (Object.prototype.hasOwnProperty.call(parts, partId)) {
+            state = "existing";
+            if (!existingSeen.has(partId)) {
+              existingSeen.add(partId);
+              existingIds.push(partId);
+            }
+          } else {
+            state = "new";
+          }
+          if (!hasLeader) leaderOf.set(partId, entries.length);
+          entries.push({
+            fileName,
+            partId,
+            partConfig,
+            state,
+            leaderIndex
+          });
+        }
+        return {
+          entries,
+          failures,
+          existingIds,
+          duplicateIds,
+          takenIds: Object.keys(parts)
+        };
+      }
+      function resolvePlan(plan, action) {
+        var entries = plan.entries || [];
+        var resolved = entries.map(function(e2) {
+          return {
+            fileName: e2.fileName,
+            partId: e2.partId,
+            partConfig: e2.partConfig,
+            state: e2.state,
+            leaderIndex: e2.leaderIndex,
+            action: null,
+            finalId: null
+          };
+        });
+        if (action === "cancel") {
+          for (var c = 0; c < resolved.length; c++) resolved[c].action = "cancel";
+          return { entries: resolved, cancelled: true };
+        }
+        if (action !== "overwrite" && action !== "skip" && action !== "rename") {
+          throw new TypeError('resolvePlan: \u672A\u77E5\u7684 action "' + action + '"');
+        }
+        var used = new Set(plan.takenIds || []);
+        for (var i = 0; i < resolved.length; i++) {
+          var e = resolved[i];
+          if (e.state !== "new") continue;
+          e.action = "create";
+          e.finalId = e.partId;
+          used.add(e.finalId);
+        }
+        for (var j = 0; j < resolved.length; j++) {
+          var cur = resolved[j];
+          if (cur.state === "new") continue;
+          if (cur.state === "duplicate") {
+            var leader = resolved[cur.leaderIndex];
+            if (!leader || leader.action === null) {
+              throw new Error("resolvePlan: duplicate \u6761\u76EE\u7684 leader \u5C1A\u672A\u51B3\u8BAE");
+            }
+            if (leader.action === "skip" || leader.action === "cancel") {
+              cur.action = leader.action;
+              continue;
+            }
+            cur.action = "rename";
+            cur.finalId = keys.reservePartId(cur.partId, used);
+            used.add(cur.finalId);
+            continue;
+          }
+          if (action === "overwrite") {
+            cur.action = "overwrite";
+            cur.finalId = cur.partId;
+          } else if (action === "skip") {
+            cur.action = "skip";
+            cur.finalId = cur.partId;
+          } else {
+            cur.action = "rename";
+            cur.finalId = keys.reservePartId(cur.partId, used);
+            used.add(cur.finalId);
+          }
+        }
+        return { entries: resolved, cancelled: false };
+      }
+      module.exports = {
+        planImports,
+        resolvePlan
       };
     }
   });
@@ -25972,215 +26352,235 @@
       init_define_BUILTIN_PACK_META();
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
-      var path = __require("path");
       var { createLogger: createLogger2 } = require_logger();
       var { showToast: showToast2 } = require_notify();
-      var { getConfig, saveConfig } = require_persistence();
-      var { PartCodec } = require_part_codec();
+      var { getConfig, flushSave } = require_persistence();
       var { resolveBoneReferences } = require_bone_resolver();
       var { showConflictDialog } = require_conflict_dialog();
-      var keys = require_keys();
       var undo = require_undo();
       var importService = require_import();
+      var importPlan = require_import_plan();
+      var ops = require_session();
       var log2 = createLogger2("DragImport");
       var MODE_ID = "machine_max_part";
+      var JSON_EXT_RE = /\.json$/i;
+      var WRITABLE_ACTIONS = { create: true, overwrite: true, rename: true };
       var _dragoverHandler = null;
       var _dropHandler = null;
-      function generateUniqueId(baseId, existingParts) {
-        if (!existingParts || !existingParts[baseId]) {
-          return baseId;
-        }
-        var counter = 1;
-        var candidate;
-        do {
-          candidate = baseId + "_" + counter;
-          counter++;
-        } while (existingParts[candidate]);
-        return candidate;
+      var _importing = false;
+      function basenameOf(filePath) {
+        if (!filePath) return "";
+        var s = String(filePath);
+        var slash = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+        return slash >= 0 ? s.slice(slash + 1) : s;
       }
-      function importSingleFile(filePath, fileName, rawContent, batchAction) {
-        var json;
-        try {
-          json = importService.parseJSONWithComments(rawContent);
-        } catch (e) {
-          log2.warn("importSingleFile: JSON \u89E3\u6790\u5931\u8D25", { fileName, error: e.message });
-          showToast2("\u6587\u4EF6 " + fileName + " \u4E0D\u662F\u6709\u6548\u7684 JSON", "error");
-          return { imported: false, partId: null, action: "error", unresolvedCount: 0 };
-        }
-        var partConfig;
-        try {
-          partConfig = PartCodec.decode(json);
-        } catch (e) {
-          log2.warn("importSingleFile: PartCodec.decode \u5931\u8D25", { fileName, error: e.message });
-          showToast2("\u6587\u4EF6 " + fileName + " \u65E0\u6CD5\u8BC6\u522B\u4E3A\u96F6\u4EF6\u5B9A\u4E49", "error");
-          return { imported: false, partId: null, action: "error", unresolvedCount: 0 };
-        }
-        var partId = fileName.replace(/\.json$/i, "");
-        if (!keys.isSafePartId(partId)) {
-          log2.warn("importSingleFile: partId \u4E0D\u5408\u6CD5\uFF0C\u62D2\u7EDD\u5BFC\u5165", { partId });
-          showToast2('\u96F6\u4EF6 ID "' + partId + '" \u4E0D\u5408\u6CD5\uFF1A\u53EA\u5141\u8BB8\u5C0F\u5199\u5B57\u6BCD/\u6570\u5B57/._-\uFF0C\u4E14\u4E0D\u80FD\u662F . / .. / Windows \u8BBE\u5907\u540D', "error");
-          return { imported: false, partId, action: "invalid_format", unresolvedCount: 0 };
-        }
-        log2.info("importSingleFile: \u89E3\u6790\u6210\u529F", {
-          fileName,
-          partId,
-          variantCount: partConfig.variants ? Object.keys(partConfig.variants).length : 0
-        });
-        var config = getConfig();
-        if (!config) {
-          showToast2("\u8BF7\u5148\u6253\u5F00\u9879\u76EE", "warning");
-          return { imported: false, partId, action: "no_project", unresolvedCount: 0 };
-        }
-        if (!config.parts) {
-          config.parts = {};
-        }
-        var existingParts = config.parts;
-        var isConflict = !!existingParts[partId];
-        if (isConflict && !batchAction) {
-          log2.info("importSingleFile: \u96F6\u4EF6 ID \u51B2\u7A81\uFF0C\u7B49\u5F85\u7528\u6237\u9009\u62E9", { partId });
-          showConflictDialog(
-            { typeLabel: "\u96F6\u4EF6", defId: partId, isBatch: false },
-            function(action2) {
-              _applyImport(partId, partConfig, config, action2, fileName);
-            }
-          );
-          return { imported: true, partId, action: "pending", unresolvedCount: 0 };
-        }
-        var action = "overwrite";
-        if (isConflict && batchAction) {
-          action = batchAction;
-          if (action === "skip_all") {
-            log2.info("importSingleFile: \u6279\u91CF\u8DF3\u8FC7", { partId });
-            return { imported: false, partId, action: "skip", unresolvedCount: 0 };
-          }
-        }
-        if (isConflict && action === "overwrite_all") {
-          action = "overwrite";
-        }
-        return _applyImport(partId, partConfig, config, action, fileName);
+      function listFileNames(failures) {
+        var names = [];
+        for (var i = 0; i < failures.length; i++) names.push(failures[i].fileName || "(\u672A\u547D\u540D)");
+        if (names.length <= 3) return names.join("\u3001");
+        return names.slice(0, 3).join("\u3001") + " \u7B49 " + names.length + " \u4E2A";
       }
-      function _applyImport(partId, partConfig, config, action, fileName) {
-        if (action === "skip") {
-          log2.info("_applyImport: \u8DF3\u8FC7", { partId });
-          return { imported: false, partId, action: "skip", unresolvedCount: 0 };
+      function summaryText(info) {
+        info = info || {};
+        var written = info.written || 0;
+        var skipped = info.skipped || 0;
+        var failures = info.failures || [];
+        var ignored = info.ignored || 0;
+        var unresolved = info.unresolved || 0;
+        if (written === 0 && skipped > 0) {
+          var skipNotes = [];
+          if (failures.length) skipNotes.push("\u5931\u8D25 " + failures.length + "\uFF1A" + listFileNames(failures));
+          if (ignored) skipNotes.push("\u5FFD\u7565 " + ignored + " \u4E2A\u975E JSON");
+          return "\u5DF2\u8DF3\u8FC7 " + skipped + " \u4E2A\u96F6\u4EF6" + (skipNotes.length ? "\uFF08" + skipNotes.join("\uFF1B") + "\uFF09" : "");
         }
-        if (action === "rename") {
-          var newId = generateUniqueId(partId, config.parts);
-          log2.info("_applyImport: \u91CD\u547D\u540D", { from: partId, to: newId });
-          partId = newId;
+        if (written === 0) {
+          if (failures.length) return "\u65E0\u6CD5\u5BFC\u5165\uFF1A" + failures.length + " \u4E2A\u6587\u4EF6\u89E3\u6790\u5931\u8D25";
+          return "\u672A\u5BFC\u5165\u4EFB\u4F55\u96F6\u4EF6";
         }
-        undo.runConfigEdit("\u5BFC\u5165\u96F6\u4EF6 " + partId, function() {
-          config.parts[partId] = partConfig;
-          resolveBoneReferences(config, partId);
-        });
-        try {
-          saveConfig();
-        } catch (e) {
-          log2.error("_applyImport: saveConfig \u5931\u8D25", e);
-        }
-        var unresolvedCount = partConfig._unresolved_bones ? partConfig._unresolved_bones.length : 0;
-        try {
-          var icons = require_icons();
-          icons.refreshOutlinerIcons();
-        } catch (e) {
-          log2.debug("_applyImport: refreshOutlinerIcons \u4E0D\u53EF\u7528\uFF08\u53EF\u80FD\u4E0D\u5728\u96F6\u4EF6\u5B9A\u4E49\u6A21\u5F0F\uFF09", e.message);
-        }
-        if (unresolvedCount > 0) {
-          showToast2(
-            '\u5DF2\u5BFC\u5165\u96F6\u4EF6 "' + partId + '"\uFF08' + unresolvedCount + " \u4E2A\u9AA8\u9ABC\u672A\u5728\u5927\u7EB2\u6811\u4E2D\u627E\u5230\uFF09",
-            "warning",
-            5e3
-          );
-        } else {
-          showToast2('\u5DF2\u5BFC\u5165\u96F6\u4EF6 "' + partId + '"', "positive");
-        }
-        log2.info("_applyImport: \u5BFC\u5165\u5B8C\u6210", {
-          partId,
-          unresolvedBones: unresolvedCount
-        });
-        return { imported: true, partId, action: "overwrite", unresolvedCount };
+        var notes = [];
+        if (failures.length) notes.push("\u5931\u8D25 " + failures.length + "\uFF1A" + listFileNames(failures));
+        if (ignored) notes.push("\u5FFD\u7565 " + ignored + " \u4E2A\u975E JSON");
+        if (skipped) notes.push("\u8DF3\u8FC7 " + skipped);
+        if (unresolved) notes.push(unresolved + " \u4E2A\u9AA8\u9ABC\u672A\u5728\u5927\u7EB2\u6811\u4E2D\u627E\u5230");
+        return "\u5DF2\u5BFC\u5165 " + written + " \u4E2A\u96F6\u4EF6" + (notes.length ? "\uFF08" + notes.join("\uFF1B") + "\uFF09" : "");
       }
-      function importMultipleFiles(files) {
-        var config = getConfig();
-        if (!config) {
-          showToast2("\u8BF7\u5148\u6253\u5F00\u9879\u76EE", "warning");
-          return;
-        }
-        var jsonFiles = [];
-        for (var i = 0; i < files.length; i++) {
-          if (files[i].name.toLowerCase().endsWith(".json")) {
-            jsonFiles.push(files[i]);
+      function normalizeInputs(files) {
+        var list = Array.isArray(files) ? files : [];
+        var inputs = [];
+        var failures = [];
+        var ignored = 0;
+        for (var i = 0; i < list.length; i++) {
+          var file = list[i] || {};
+          var name = file.name ? String(file.name) : basenameOf(file.path);
+          if (!name) {
+            failures.push({ fileName: "", reason: "read_failed" });
+            continue;
           }
-        }
-        if (jsonFiles.length === 0) return;
-        log2.info("importMultipleFiles: \u6279\u91CF\u5BFC\u5165 " + jsonFiles.length + " \u4E2A\u6587\u4EF6");
-        var conflictIds = [];
-        if (!config.parts) config.parts = {};
-        for (var j = 0; j < jsonFiles.length; j++) {
-          var pid = jsonFiles[j].name.replace(/\.json$/i, "");
-          if (config.parts[pid]) {
-            conflictIds.push(pid);
+          if (!JSON_EXT_RE.test(name)) {
+            ignored++;
+            continue;
           }
-        }
-        if (conflictIds.length === 0) {
-          var imported = 0;
-          var unresolvedTotal = 0;
-          for (var k = 0; k < jsonFiles.length; k++) {
-            var raw;
-            try {
-              raw = importService.readTextFile(jsonFiles[k].path);
-            } catch (e) {
-              log2.warn("importMultipleFiles: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path: jsonFiles[k].path, error: e.message });
+          var path = file.path ? String(file.path) : "";
+          var content = typeof file.content === "string" ? file.content : null;
+          if (content === null) {
+            if (!path) {
+              failures.push({ fileName: name, reason: "read_failed" });
               continue;
             }
-            var result = importSingleFile(jsonFiles[k].path, jsonFiles[k].name, raw, null);
-            if (result.imported) imported++;
-            unresolvedTotal += result.unresolvedCount;
+            try {
+              content = importService.readTextFile(path);
+            } catch (err) {
+              log2.warn("normalizeInputs: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path, error: err.message });
+              failures.push({ fileName: name, reason: "read_failed" });
+              continue;
+            }
           }
-          showToast2("\u5DF2\u5BFC\u5165 " + imported + " \u4E2A\u96F6\u4EF6", "positive");
+          if (content.trim() === "") {
+            failures.push({ fileName: name, reason: "empty_content" });
+            continue;
+          }
+          inputs.push({ name, path, content });
+        }
+        return { inputs, ignored, failures };
+      }
+      function importParts(files) {
+        if (_importing) {
+          showToast2("\u5DF2\u6709\u5BFC\u5165\u6D41\u7A0B\u5728\u8FDB\u884C\u4E2D\uFF0C\u8BF7\u5148\u5B8C\u6210\u6216\u53D6\u6D88", "warning");
           return;
         }
-        var conflictList = conflictIds.join(", ");
-        showConflictDialog(
-          {
-            typeLabel: "\u96F6\u4EF6",
-            defId: conflictList + "\uFF08\u5171 " + conflictIds.length + " \u4E2A\uFF09",
-            isBatch: true
-          },
-          function(action) {
-            var importedCount = 0;
-            var unresolvedTotal2 = 0;
-            for (var m = 0; m < jsonFiles.length; m++) {
-              var rawContent;
-              try {
-                rawContent = importService.readTextFile(jsonFiles[m].path);
-              } catch (e) {
-                log2.warn("importMultipleFiles: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path: jsonFiles[m].path, error: e.message });
-                continue;
-              }
-              var res = importSingleFile(
-                jsonFiles[m].path,
-                jsonFiles[m].name,
-                rawContent,
-                action
-              );
-              if (res.imported) importedCount++;
-              unresolvedTotal2 += res.unresolvedCount;
-            }
-            showToast2("\u5DF2\u5BFC\u5165 " + importedCount + " / " + jsonFiles.length + " \u4E2A\u96F6\u4EF6", "positive");
+        _importing = true;
+        try {
+          var config = getConfig();
+          if (!config) {
+            _importing = false;
+            showToast2("\u8BF7\u5148\u6253\u5F00\u9879\u76EE", "warning");
+            return;
           }
-        );
+          var norm = normalizeInputs(files);
+          if (!norm.inputs.length) {
+            _importing = false;
+            if (norm.failures.length) {
+              log2.warn("importParts: \u6CA1\u6709\u53EF\u5BFC\u5165\u7684\u6761\u76EE", { failures: norm.failures });
+              showToast2(summaryText({ failures: norm.failures, ignored: norm.ignored }), "error", 5e3);
+            }
+            return;
+          }
+          var plan = importPlan.planImports(norm.inputs, config.parts || {});
+          if (!plan.entries.length) {
+            _importing = false;
+            var allFailures = norm.failures.concat(plan.failures);
+            log2.warn("importParts: \u6240\u6709\u6587\u4EF6\u90FD\u89E3\u6790\u5931\u8D25", { failures: allFailures });
+            showToast2(summaryText({ failures: allFailures, ignored: norm.ignored }), "error", 5e3);
+            return;
+          }
+          if (plan.existingIds.length) {
+            var conflictIds = plan.existingIds;
+            log2.info("importParts: \u7B49\u5F85\u51B2\u7A81\u51B3\u8BAE", {
+              conflictIds,
+              entryCount: plan.entries.length
+            });
+            showConflictDialog({
+              typeLabel: "\u96F6\u4EF6",
+              conflictIds,
+              isBatch: plan.entries.length > 1 || conflictIds.length > 1,
+              entryCount: plan.entries.length
+            }, function(action) {
+              applyPlan(norm.inputs, norm.failures, action, config, norm.ignored);
+            });
+            return;
+          }
+          applyPlan(norm.inputs, norm.failures, "overwrite", config, norm.ignored);
+        } catch (err) {
+          _importing = false;
+          throw err;
+        }
+      }
+      function applyPlan(inputs, normFailures, action, entryConfig, ignored) {
+        try {
+          if (action === "cancel") {
+            log2.info("applyPlan: \u7528\u6237\u53D6\u6D88\u5BFC\u5165");
+            showToast2("\u5DF2\u53D6\u6D88\u5BFC\u5165");
+            return;
+          }
+          var config = getConfig();
+          if (!config) {
+            showToast2("\u9879\u76EE\u5DF2\u5173\u95ED\uFF0C\u5BFC\u5165\u53D6\u6D88", "warning");
+            return;
+          }
+          if (config !== entryConfig) {
+            showToast2("\u9879\u76EE\u5DF2\u5207\u6362\uFF0C\u5BFC\u5165\u53D6\u6D88", "warning");
+            return;
+          }
+          var plan = importPlan.planImports(inputs, config.parts || {});
+          var failures = (normFailures || []).concat(plan.failures);
+          var resolved = importPlan.resolvePlan(plan, action);
+          var writable = [];
+          for (var i = 0; i < resolved.entries.length; i++) {
+            var entry = resolved.entries[i];
+            if (WRITABLE_ACTIONS[entry.action]) writable.push(entry);
+          }
+          if (!writable.length) {
+            log2.info("applyPlan: \u5168\u90E8\u8DF3\u8FC7", { skipped: resolved.entries.length, action });
+            showToast2(summaryText({
+              skipped: resolved.entries.length,
+              failures,
+              ignored
+            }), "info", 4e3);
+            return;
+          }
+          if (typeof undo.isEditInProgress === "function" && undo.isEditInProgress()) {
+            showToast2("\u7F16\u8F91\u5668\u6709\u672A\u5B8C\u6210\u7684\u64CD\u4F5C\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5", "warning");
+            return;
+          }
+          var unresolvedTotal = 0;
+          try {
+            undo.runConfigEdit("\u5BFC\u5165 " + writable.length + " \u4E2A\u96F6\u4EF6", function() {
+              if (!config.parts) config.parts = {};
+              for (var k = 0; k < writable.length; k++) {
+                var item = writable[k];
+                config.parts[item.finalId] = item.partConfig;
+                resolveBoneReferences(config, item.finalId);
+                unresolvedTotal += (item.partConfig._unresolved_bones || []).length;
+              }
+            });
+          } catch (err) {
+            log2.error("applyPlan: \u6279\u91CF\u5BFC\u5165\u5931\u8D25", err);
+            showToast2("\u5BFC\u5165\u5931\u8D25\uFF1A" + (err && err.message ? err.message : "\u672A\u77E5\u9519\u8BEF") + "\uFF08\u82E5\u672A\u81EA\u52A8\u56DE\u6EDA\uFF0C\u8BF7 Ctrl+Z \u6216\u91CD\u65B0\u6253\u5F00\u9879\u76EE\uFF09", "error", 5e3);
+            return;
+          }
+          var activeId = config._uiState && config._uiState.activePartId;
+          if (!activeId || !config.parts[activeId]) {
+            var setResult = ops.setActive(config, { partId: writable[0].finalId, source: "import" });
+            if (setResult && setResult.ok === false) {
+              log2.debug("applyPlan: \u5207\u6362\u6D3B\u52A8\u96F6\u4EF6\u5931\u8D25", setResult.error);
+            }
+          }
+          flushSave();
+          try {
+            require_icons().refreshOutlinerIcons();
+          } catch (e) {
+            log2.debug("applyPlan: refreshOutlinerIcons \u4E0D\u53EF\u7528", e && e.message);
+          }
+          if (failures.length) log2.warn("applyPlan: \u90E8\u5206\u6587\u4EF6\u672A\u5BFC\u5165", { failures });
+          showToast2(summaryText({
+            written: writable.length,
+            skipped: resolved.entries.length - writable.length,
+            failures,
+            ignored,
+            unresolved: unresolvedTotal
+          }), failures.length || unresolvedTotal ? "warning" : "positive", 5e3);
+        } finally {
+          _importing = false;
+        }
       }
       var BB_DRAG_HANDLER_ID = "machine_max_part_import";
       var _bbDragHandler = null;
       function registerDragImport2() {
-        console.log("[MM][DragImport] registerDragImport() \u88AB\u8C03\u7528");
         if (_bbDragHandler || _dragoverHandler) {
           log2.info("registerDragImport: \u62D6\u62FD\u4E8B\u4EF6\u5DF2\u6CE8\u518C\uFF0C\u8DF3\u8FC7");
           return;
         }
         if (typeof Blockbench !== "undefined" && typeof Blockbench.addDragHandler === "function") {
-          log2.info("registerDragImport: \u4F7F\u7528 Blockbench.addDragHandler API");
           _bbDragHandler = Blockbench.addDragHandler(
             BB_DRAG_HANDLER_ID,
             {
@@ -26188,115 +26588,47 @@
               condition: { modes: [MODE_ID] },
               readtype: "text"
             },
-            function(files, event) {
-              console.log(
-                "[MM][DragImport][BBDrag] \u56DE\u8C03\u89E6\u53D1\uFF01\uFF01\uFF01",
-                { fileCount: files ? files.length : 0 }
-              );
+            function(files) {
               if (!files || files.length === 0) return;
-              var jsonFiles = [];
-              for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-                log2.debug(
-                  "registerDragImport: [BB-API] \u5904\u7406\u6587\u4EF6",
-                  { name: file.name, hasPath: !!file.path, hasContent: typeof file.content === "string" }
-                );
-                if (!file.name || !file.name.toLowerCase().endsWith(".json")) continue;
-                var rawContent = typeof file.content === "string" ? file.content : "";
-                if (!rawContent && file.path) {
-                  try {
-                    rawContent = importService.readTextFile(file.path);
-                  } catch (e) {
-                    log2.warn("registerDragImport: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path: file.path, error: e.message });
-                    continue;
-                  }
-                }
-                if (!rawContent) {
-                  log2.warn("registerDragImport: \u65E0\u6CD5\u83B7\u53D6\u6587\u4EF6\u5185\u5BB9", { name: file.name });
-                  continue;
-                }
-                jsonFiles.push({
+              importParts(files.map(function(file) {
+                return {
+                  name: file.name || "",
                   path: file.path || "",
-                  name: file.name,
-                  content: rawContent
-                });
-              }
-              if (jsonFiles.length === 0) return;
-              log2.info("registerDragImport: \u68C0\u6D4B\u5230 " + jsonFiles.length + " \u4E2A JSON \u6587\u4EF6\u62D6\u5165");
-              if (jsonFiles.length === 1) {
-                importSingleFile(jsonFiles[0].path, jsonFiles[0].name, jsonFiles[0].content, null);
-              } else {
-                undo.runConfigEdit("\u6279\u91CF\u5BFC\u5165\u96F6\u4EF6", function() {
-                  importMultipleFiles(jsonFiles);
-                });
-              }
+                  content: typeof file.content === "string" ? file.content : void 0
+                };
+              }));
             }
           );
-          var allIds = [];
-          try {
-            if (typeof Filesystem !== "undefined" && Filesystem.drag_handlers) {
-              allIds = Object.keys(Filesystem.drag_handlers);
-            }
-          } catch (e) {
-          }
-          log2.info(
-            "registerDragImport: \u5DF2\u901A\u8FC7 Blockbench.addDragHandler \u6CE8\u518C",
-            { ourId: BB_DRAG_HANDLER_ID, allDragHandlerIds: allIds, modeId: MODE_ID }
-          );
+          log2.info("registerDragImport: \u5DF2\u901A\u8FC7 Blockbench.addDragHandler \u6CE8\u518C", { modeId: MODE_ID });
           return;
         }
         log2.info("registerDragImport: Blockbench.addDragHandler \u4E0D\u53EF\u7528\uFF0C\u56DE\u9000\u5230 DOM \u4E8B\u4EF6");
         _dragoverHandler = function(e) {
-          console.log(
-            "[MM][DragImport][DOM] dragover \u89E6\u53D1",
-            { modeId: Modes ? Modes.id : "undefined" }
-          );
           if (typeof Modes === "undefined" || !Modes || Modes.id !== MODE_ID) return;
           e.preventDefault();
           e.stopPropagation();
         };
         _dropHandler = function(e) {
-          console.log(
-            "[MM][DragImport][DOM] drop \u89E6\u53D1\uFF01\uFF01\uFF01",
-            { modeId: Modes ? Modes.id : "undefined", fileCount: e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files.length : 0 }
-          );
           if (typeof Modes === "undefined" || !Modes || Modes.id !== MODE_ID) {
-            log2.debug("registerDragImport: [DOM] \u6A21\u5F0F\u4E0D\u5339\u914D\uFF0C\u5FFD\u7565", { current: Modes ? Modes.id : "undefined", expected: MODE_ID });
+            log2.debug("registerDragImport: [DOM] \u6A21\u5F0F\u4E0D\u5339\u914D\uFF0C\u5FFD\u7565", {
+              current: Modes ? Modes.id : "undefined",
+              expected: MODE_ID
+            });
             return;
           }
           e.preventDefault();
           e.stopPropagation();
-          if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) {
-            return;
-          }
+          if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
           var droppedFiles = e.dataTransfer.files;
-          var jsonFiles = [];
-          for (var j = 0; j < droppedFiles.length; j++) {
-            var domFile = droppedFiles[j];
-            if (!domFile.name || !domFile.name.toLowerCase().endsWith(".json")) continue;
-            var domFilePath = domFile.path;
-            if (!domFilePath) {
-              log2.warn("registerDragImport: \u6587\u4EF6\u8DEF\u5F84\u4E0D\u53EF\u7528\uFF08\u53EF\u80FD\u662F Electron \u5B89\u5168\u9650\u5236\uFF09", { name: domFile.name });
-              continue;
-            }
-            var domRawContent;
-            try {
-              domRawContent = importService.readTextFile(domFilePath);
-            } catch (readErr) {
-              log2.warn("registerDragImport: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path: domFilePath, error: readErr.message });
-              continue;
-            }
-            jsonFiles.push({ path: domFilePath, name: domFile.name, content: domRawContent });
+          var files = [];
+          for (var i = 0; i < droppedFiles.length; i++) {
+            var domFile = droppedFiles[i];
+            if (!domFile.name || !JSON_EXT_RE.test(domFile.name)) continue;
+            files.push({ name: domFile.name, path: domFile.path || "", content: void 0 });
           }
-          if (jsonFiles.length === 0) return;
-          log2.info("registerDragImport: \u68C0\u6D4B\u5230 " + jsonFiles.length + " \u4E2A JSON \u6587\u4EF6\u62D6\u5165");
-          if (jsonFiles.length === 1) {
-            importSingleFile(jsonFiles[0].path, jsonFiles[0].name, jsonFiles[0].content, null);
-          } else {
-            undo.runConfigEdit("\u6279\u91CF\u5BFC\u5165\u96F6\u4EF6", function() {
-              importMultipleFiles(jsonFiles);
-            });
-          }
+          if (files.length === 0) return;
+          log2.info("registerDragImport: \u68C0\u6D4B\u5230 " + files.length + " \u4E2A JSON \u6587\u4EF6\u62D6\u5165");
+          importParts(files);
         };
         document.addEventListener("dragover", _dragoverHandler);
         document.addEventListener("drop", _dropHandler);
@@ -26320,28 +26652,11 @@
         }
         log2.info("unregisterDragImport: DOM \u4E8B\u4EF6\u5DF2\u6CE8\u9500");
       }
-      function importPartFromPath(filePath) {
-        var fileName = path.basename(filePath);
-        if (!fileName.toLowerCase().endsWith(".json")) {
-          showToast2("\u8BF7\u9009\u62E9 .json \u6587\u4EF6", "warning");
-          return;
-        }
-        var rawContent;
-        try {
-          rawContent = importService.readTextFile(filePath);
-        } catch (e) {
-          log2.error("importPartFromPath: \u8BFB\u53D6\u6587\u4EF6\u5931\u8D25", { path: filePath, error: e.message });
-          showToast2("\u65E0\u6CD5\u8BFB\u53D6\u6587\u4EF6: " + fileName, "error");
-          return;
-        }
-        importSingleFile(filePath, fileName, rawContent, null);
-      }
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
           registerDragImport: registerDragImport2,
           unregisterDragImport: unregisterDragImport2,
-          importPartFromPath,
-          importSingleFile
+          importParts
         };
       }
     }
@@ -26975,46 +27290,25 @@
                 showToast2("\u8BF7\u5148\u6253\u5F00\u9879\u76EE", "warning");
                 return;
               }
-              var remote;
-              try {
-                remote = __require("electron").remote;
-              } catch (e) {
-                remote = null;
-              }
-              if (remote && remote.dialog) {
-                remote.dialog.showOpenDialog({
-                  title: "\u9009\u62E9\u96F6\u4EF6\u5B9A\u4E49 JSON \u6587\u4EF6",
-                  filters: [{ name: "JSON \u6587\u4EF6", extensions: ["json"] }],
-                  properties: ["openFile", "multiSelections"]
-                }).then(function(result) {
-                  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-                    log2.debug("\u83DC\u5355\u5BFC\u5165: \u7528\u6237\u53D6\u6D88\u9009\u62E9");
-                    return;
-                  }
-                  var dragImport = require_drag_import();
-                  for (var i = 0; i < result.filePaths.length; i++) {
-                    dragImport.importPartFromPath(result.filePaths[i]);
-                  }
-                }).catch(function(err) {
-                  log2.error("\u83DC\u5355\u5BFC\u5165: \u6587\u4EF6\u9009\u62E9\u5931\u8D25", err);
-                  showToast2("\u6587\u4EF6\u9009\u62E9\u5931\u8D25", "error");
-                });
-              } else {
-                Blockbench.import({
-                  extensions: ["json"],
-                  type: "JSON \u6587\u4EF6",
-                  read_mode: "text"
-                }, function(files) {
-                  if (!files || files.length === 0) return;
-                  var dragImport = require_drag_import();
-                  for (var i = 0; i < files.length; i++) {
-                    var filePath = files[i].path || files[i].name;
-                    if (filePath) {
-                      dragImport.importPartFromPath(filePath);
-                    }
-                  }
-                });
-              }
+              Blockbench.import({
+                type: "JSON \u6587\u4EF6",
+                extensions: ["json"],
+                multiple: true,
+                readtype: "text",
+                resource_id: "mm_part_import"
+              }, function(files) {
+                if (!files || files.length === 0) return;
+                var inputs = [];
+                for (var i = 0; i < files.length; i++) {
+                  inputs.push({
+                    name: files[i].name || "",
+                    path: files[i].path || "",
+                    // 非字符串（如某些版本给 Buffer）不兜成 ''，交给 normalizeInputs 用 path 回退
+                    content: typeof files[i].content === "string" ? files[i].content : void 0
+                  });
+                }
+                require_drag_import().importParts(inputs);
+              });
             }
           },
           "_",
@@ -27233,6 +27527,7 @@
       var { scheduleSave } = require_persistence();
       var { createLogger: createLogger2 } = require_logger();
       var { refreshOutlinerIcons } = require_icons();
+      var { applyPackPath, buildUnresolvedMessage } = require_pack_common();
       var log2 = createLogger2("PartDialogs");
       function showNewPartDialog(config, onCreated) {
         try {
@@ -27273,7 +27568,7 @@
                 type: "text",
                 label: "\u5185\u5BB9\u5305\u8DEF\u5F84",
                 value: config.contentPackPath || "",
-                description: "MachineMax \u5185\u5BB9\u5305\u7684\u6839\u76EE\u5F55\u8DEF\u5F84"
+                description: "MachineMax \u5185\u5BB9\u5305\u7684\u6839\u76EE\u5F55\u8DEF\u5F84\uFF1B\u4FDD\u5B58\u65F6\u6309 meta.json \u7684\u4F9D\u8D56\u5728\u540C\u7EA7\u76EE\u5F55\u81EA\u52A8\u89E3\u6790"
               },
               info: {
                 type: "display",
@@ -27286,14 +27581,44 @@
               }
             },
             onConfirm: function(formData) {
-              var result = ops.setContentPackPath(config, formData.contentPackPath);
-              if (!result.ok) {
-                showToast2(result.error, "error");
+              var newPath = (formData.contentPackPath || "").trim();
+              var applied = applyPackPath(config, newPath, {
+                strict: false,
+                label: "\u4FEE\u6539\u5185\u5BB9\u5305\u8DEF\u5F84"
+              });
+              if (!applied.ok) {
+                showToast2(applied.error || "\u65E0\u6CD5\u5199\u5165\u5185\u5BB9\u5305\u8DEF\u5F84", "error");
                 return false;
               }
-              log2.info("\u9879\u76EE\u7BA1\u7406: \u5185\u5BB9\u5305\u8DEF\u5F84\u5DF2\u66F4\u65B0", { contentPackPath: formData.contentPackPath });
+              log2.info("\u9879\u76EE\u7BA1\u7406: \u5185\u5BB9\u5305\u8DEF\u5F84\u5DF2\u66F4\u65B0", {
+                contentPackPath: newPath,
+                valid: applied.valid,
+                dependencyPaths: applied.dependencyPaths
+              });
               scheduleSave();
-              showToast2("\u5185\u5BB9\u5305\u8DEF\u5F84\u5DF2\u66F4\u65B0", "positive");
+              if (!applied.valid) {
+                showToast2(newPath ? "\u8DEF\u5F84\u5DF2\u5199\u5165\uFF0C\u4F46\u8BE5\u76EE\u5F55\u8FD8\u6CA1\u6709\u6709\u6548\u7684 meta.json\uFF0C\u5185\u5BB9\u5305\u5F53\u524D\u65E0\u6548" : "\u5185\u5BB9\u5305\u8DEF\u5F84\u5DF2\u6E05\u7A7A", "warning", 6e3);
+                if (typeof onSaved === "function") onSaved(config);
+                this.hide();
+                return;
+              }
+              var msg = "\u5185\u5BB9\u5305\u5DF2\u5207\u6362";
+              if (applied.resolution.direct.length > 0 || applied.resolution.indirect.length > 0) {
+                msg += "\uFF0C\u5DF2\u89E3\u6790 " + applied.resolution.direct.length + " \u4E2A\u76F4\u63A5\u4F9D\u8D56";
+                if (applied.resolution.indirect.length > 0) {
+                  msg += "\u3001" + applied.resolution.indirect.length + " \u4E2A\u95F4\u63A5\u4F9D\u8D56";
+                }
+              } else if (applied.dependencyPaths && applied.dependencyPaths.length === 0) {
+                msg += "\uFF0C\u8BE5\u5305\u672A\u58F0\u660E\u4F9D\u8D56\uFF0C\u5DF2\u6E05\u7A7A\u672C\u5730\u4F9D\u8D56\u8DEF\u5F84";
+              }
+              showToast2(msg, "positive", 5e3);
+              if (applied.resolution.unresolved.length > 0) {
+                showToast2(
+                  buildUnresolvedMessage(applied.resolution.unresolved, applied.parentDir),
+                  "warning",
+                  12e3
+                );
+              }
               if (typeof onSaved === "function") onSaved(config);
               this.hide();
             }
@@ -35134,7 +35459,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.5.4";
+  var PLUGIN_VERSION = "0.5.6";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
