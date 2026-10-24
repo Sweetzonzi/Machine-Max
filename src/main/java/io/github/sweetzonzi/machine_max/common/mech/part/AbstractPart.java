@@ -54,7 +54,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.util.*;
@@ -62,13 +61,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * <p>组装与UGC创作的最小单元</p>
- * <p>同时是动画体（{@link IAnimatable}）：模型、动画、Molang 变量与涂装均为 AbstractPart 级，
- * 子零件（{@link SubPart}）仅保留物理、骨骼切分与渲染视图职责。</p>
+ * 部件实例的公共机械与动画基础。
+ *
+ * <p>一个部件拥有一组 {@link SubPart}、连接器、子系统以及一套模型、动画和 MoLang 上下文。
+ * 材料进度、工作许可、维修上限及伤害折算由具体种类实现；装配体决定是否接受该种类以及是否创建
+ * MM 子零件代理实体。公共基础不假设实例一定属于载具。</p>
+ * <p><b>构造顺序：</b>基类构造器只保存公共字段；子类先初始化自身状态，按需绑定查询上下文，
+ * 再调用一次 {@link #initializeStructure()}，恢复路径随后调用 {@link #restoreState(AbstractPartData, PartRestoreMode)}。
+ * 结构构造会查询虚方法提供的耐久和工作策略，因此不能提前到子类字段初始化之前。</p>
+ * <p><b>线程约定：</b>入世前的独占构造阶段可以直接设置刚体；入世后的刚体变更须在物理线程执行。
+ * 宿主在主线程驱动 {@link #onTick()} 发布姿态，在物理线程驱动 {@link #onPrePhysicsTick()} 混合动画，
+ * 每个相位只驱动一次。并发映射只保护其自身操作，不使整个部件状态成为线程安全事务。</p>
+ *
+ * @param <T> 本种类的静态定义类型
  */
 @Getter
 public abstract class AbstractPart<T extends AbstractPartType> implements IAnimatable<AbstractPart<?>>, ISignalReceiver {
-    //常规属性 General attributes
+    // 身份、归属与公共运行状态
     /**
      * 所属的装配体（VehicleCore、MechUnit 等）
      */
@@ -80,6 +89,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     public final VariantAttr variant;
     public final UUID uuid;
     public SubPart rootSubPart;
+    /**
+     * 构造路径授予的撬棍拆卸权限，整个实例生命周期固定；不从定义或存档读取。
+     * <p>权限只约束撬棍交互，不阻止伤害销毁或宿主主动拆离。</p>
+     */
     public final boolean crowbarRemovable;
     public float totalMass;
     public boolean destroyed = false;
@@ -93,7 +106,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     /** 部件级信号存储，同时作为 Molang 变量表（{@link #getVariables()}） */
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
-    //模块化属性 Modular attributes
+    // 子零件、连接器与子系统索引
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
@@ -102,6 +115,18 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     /** AbstractPart 级按名索引：子系统名 → 子系统（用于 Molang 按名寻址） */
     public final Map<String, AbstractSubsystem> subsystemsByName = HashMap.newHashMap(1);
 
+    /**
+     * 绑定当前定义、变体、身份和实例权限，建立默认 MoLang 上下文。
+     *
+     * <p>此时尚未创建模型控制器、子零件或连接器；子类必须在自身字段初始化后显式构造结构。</p>
+     *
+     * @param type 当前逻辑端已发布的定义，过期引用会被拒绝
+     * @param variantName 变体名；{@code null} 使用 {@code default}
+     * @param level 所在世界
+     * @param uuid 本实例身份；新建路径随机生成，恢复路径使用存档 UUID
+     * @param name 本实例显示名称
+     * @param context 构造路径授予的权限
+     */
     protected AbstractPart(T type, String variantName, Level level, UUID uuid, String name,
                            PartCreationContext context) {
         this.type = PartDefinitions.requireCurrent(level.isClientSide(), Objects.requireNonNull(type));
@@ -115,7 +140,14 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         this.textureName = variant.getTextures().keySet().iterator().next();
     }
 
-    /** Called by the concrete constructor after its own state is initialized. */
+    /**
+     * 在子类字段就绪后构造一次模型、动画、子零件及内部连接。
+     *
+     * <p>只能在尚未入世的独占构造阶段调用。子零件创建期间可能读取种类提供的虚方法，
+     * 因此本方法不能由基类构造器提前执行。创建过程中发生运行时异常或错误时，会清理已记录的子零件后重抛。</p>
+     *
+     * @throws IllegalStateException 模型控制器已经初始化时抛出
+     */
     protected final void initializeStructure() {
         if (modelController != null) throw new IllegalStateException("Structure already initialized");
         try {
@@ -131,12 +163,32 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         }
     }
 
-    /** Bind an extended query context after subclass initialization and before building hit boxes. */
+    /**
+     * 在结构构造前绑定扩展查询上下文。
+     *
+     * <p>命中框等表达式在结构构造时取得上下文，子类必须先完成所需字段初始化，再绑定上下文，
+     * 最后调用 {@link #initializeStructure()}。本方法不负责把基类默认上下文中的值迁移到新上下文。</p>
+     *
+     * @param context 面向当前部件的非空查询上下文
+     * @throws IllegalStateException 子零件结构已经开始建立时抛出
+     */
     protected final void bindMolangContext(MechMolangContext context) {
         if (rootSubPart != null || !subParts.isEmpty()) throw new IllegalStateException("Structure already initialized");
         molangContext = Objects.requireNonNull(context);
     }
 
+    /**
+     * 向已经构造的结构应用公共存档状态；仅在刚体尚未入世时调用。
+     *
+     * <p>两种模式均恢复子零件位姿、速度及客户端同步 ID，缺少存档的子零件会执行销毁流程。
+     * 完整模式还恢复有效涂装、耐久、连接点 NBT 与子系统 NBT；骨架模式保留新建时的默认运行状态。
+     * 普通部件的制造与材料进度由子类构造器单独按模式处理。</p>
+     * <p>NBT 先复制后加载，不改变输入 DTO。独立耐久逐子零件恢复；共享耐久在全部加载后统一按比例写入，
+     * 避免逐个子零件覆盖同一耐久池。调用失败后的清理由具体构造器负责。</p>
+     *
+     * @param data 已通过工厂预检的存档
+     * @param mode 显式恢复策略；调用者必须保证非空
+     */
     protected final void restoreState(AbstractPartData data, PartRestoreMode mode) {
         if (mode == PartRestoreMode.FULL_STATE && variant.getTextures().containsKey(data.textureName)) {
             textureName = data.textureName;
@@ -197,28 +249,89 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         }
     }
 
+    /**
+     * 导出本种类的动态存档，返回值必须匹配注册的存档类和 Codec。
+     * <p>调用者负责安排一致的存档阶段；实现不得把构造权限当作可从存档恢复的状态。</p>
+     */
     public abstract AbstractPartData save();
+    /**
+     * 判断当前实例是否允许子系统工作。
+     * <p>由子系统工作判据读取，适合表达组装进度、身体状态等种类规则，不应在查询中改变状态。</p>
+     */
     public abstract boolean permitsSubsystemWork();
+    /**
+     * 返回写入耐久时相对于设计上限的许可比例。
+     * <p>子零件原始耐久和共享耐久写入均使用此值钳制上限；具体种类应返回非负、有限的比例。</p>
+     */
     public abstract float durabilityLimitRatio();
+    /**
+     * 返回维修目标相对于设计耐久上限的最大比例。
+     * <p>它决定本次维修最多能恢复到哪里，与所有耐久写入均受约束的 {@link #durabilityLimitRatio()} 分开。
+     * 材料进度可以限制维修，但不必成为其他种类的公共状态。</p>
+     */
     public abstract float repairLimitRatio();
+    /**
+     * 判断 MM 子零件维修入口能否作用于本部件；拒绝时也跳过子系统维修和连接点加固。
+     */
     public abstract boolean permitsRepair();
+    /**
+     * 把子零件本次结算伤害折算为上报装配体的数值，不在此直接扣除装配体 HP。
+     *
+     * @param amount 本次经过零件伤害处理后的有效伤害量
+     * @param remaining 本次扣除前的剩余耐久，用于区分可吸收部分与溢出部分
+     * @param destroyed 结算时子零件是否已处于摧毁状态
+     * @return 向装配体上报的非负伤害量；返回零表示本次不传递
+     */
     public abstract float assemblyDamage(float amount, float remaining, boolean destroyed);
-    public boolean usesFullGravity() { return true; }
+    /**
+     * 判断子零件的延迟重力初始化是否恢复世界正常重力；默认允许。
+     * <p>该查询本身不修改刚体，具体种类需自行安排后续状态变化引起的重力更新。</p>
+     */
+    public boolean usesFullGravity() {
+        return true;
+    }
 
+    /**
+     * 清理已创建子零件的物理与连接资源，跳过子系统正常拆离通知。
+     * <p>仅用于构造失败；跳过拆离通知可避免将尚未正式投入使用的库存作为掉落返还。</p>
+     */
     protected final void abortConstruction() {
         subParts.values().forEach(SubPart::abortConstruction);
     }
 
-    /** Batch restoration cleanup before any body is added to the world. */
+    /**
+     * 在批量恢复中清理尚未加入物理世界的部件。
+     *
+     * <p>调用者须先解除装配体引用并处理自己的注册项。本方法只释放构造资源，不走正常拆卸或掉落流程。</p>
+     *
+     * @throws IllegalStateException 任一子零件刚体已入世时抛出，防止误用构造期清理路径
+     */
     public final void discardUnattached() {
         if (subParts.values().stream().anyMatch(child -> child.body.isInWorld())) {
             throw new IllegalStateException("Cannot discard an attached part");
         }
         abortConstruction();
     }
-    public void onDurabilityChanged() {}
-    public void onRepairAttempt() {}
-    public boolean shouldRenderWireframe() { return false; }
+
+    /**
+     * 子零件伤害或维修结算后的种类回调，默认无操作。
+     * <p>由主线程结算路径调用；普通部件在这里重算制造进度，其他种类可更新自身派生状态。</p>
+     */
+    public void onDurabilityChanged() {
+    }
+
+    /**
+     * 服务端进入允许的维修分支时调用，即使实际维修量为零也可能触发；默认无操作。
+     */
+    public void onRepairAttempt() {
+    }
+
+    /**
+     * 决定是否显示组装线框；公共基础默认关闭，具体种类提供自身表现策略。
+     */
+    public boolean shouldRenderWireframe() {
+        return false;
+    }
 
     /**
      * 主线程每 tick 调用（由 VehicleCore 在区块加载时驱动）。
@@ -317,14 +430,16 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         this.getModelController().setTextureLocation(variant.getTexture(name));
     }
 
+    /**
+     * 物理步结束后的扩展钩子；公共基础默认无操作，由装配体按物理生命周期调用。
+     */
     public void onPostPhysicsTick() {
     }
 
     /**
-     * <p>获取部件所有零件持有的子系统</p>
-     * <p>Gets all subsystems held by all parts</p>
+     * 汇总所有子零件当前持有的子系统，返回独立的去重集合。
      *
-     * @return 所有子系统的不重复集合 Set of all subsystems
+     * @return 集合结构与内部索引分离；其中的子系统对象仍为运行时实例
      */
     public Set<AbstractSubsystem> getAllSubsystems() {
         HashSet<AbstractSubsystem> subsystems = new HashSet<>();
@@ -334,6 +449,9 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         return subsystems;
     }
 
+    /**
+     * 汇总各子零件对共享耐久上限的贡献；未启用共享耐久或没有子零件时返回零。
+     */
     public float getSharedMaxDurability() {
         float result = 0;
         if (type.shareDurability && !subParts.isEmpty()) {
@@ -374,6 +492,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
 
+    /**
+     * 构造指定子零件的子系统，并同时建立部件级按名查询索引。
+     * <p>仅在结构构造期间执行；同名索引按写入顺序覆盖，调用方应避免跨子零件重名。</p>
+     */
     private void createSubsystems(
             SubPart subPart,
             Map<String, AbstractSubsystemAttr> subSystemAttrMap
@@ -387,6 +509,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         }
     }
 
+    /**
+     * 按定位器构造连接器，填充子零件表、部件全量表、外部表及按名索引。
+     * <p>缺少配置要求的定位器时立即抛出异常，由结构构造入口清理已分配资源。</p>
+     */
     private void createConnectors(
             SubPart subPart,
             SubPartAttr subPartAttr
@@ -425,13 +551,12 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
-     * <p>计算零件三轴投影面积，用于阻力计算以及RCS计算</p>
-     * <p>Calculates the projection area of the part in three axes, which is used for force calculation.</p>
-     * <p>首选零件属性指定的投影面积，否则使用碰撞体积估算</p>
-     * <p>First, the projected area specified in the part attribute is used, otherwise, the estimated volume of the collision shape is used.</p>
+     * 计算子零件沿三轴的投影面积，供阻力等计算使用。
      *
-     * @param subPart 零件
-     * @return 投影面积 projection area (m^2)
+     * <p>逐轴优先使用配置的正数面积；缺省轴由碰撞形状的轴对齐包围盒估算。</p>
+     *
+     * @param subPart 要测量的子零件
+     * @return X、Y、Z 三个方向的投影面积，单位为平方米
      */
     public Vec3 calculateProjectedArea(SubPart subPart) {
         //计算零件三轴投影面积，用于阻力计算
@@ -449,10 +574,18 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         return new Vec3(xArea, yArea, zArea);
     }
 
+    /**
+     * 生成包含子零件名和连接点名的诊断键，供内部连接失败日志定位。
+     */
     private static String toConnectorKey(AbstractConnector connector) {
         return connector.subPart.name + "." + connector.name;
     }
 
+    /**
+     * 在尚未入世的结构中匹配并连接内部连接点。
+     * <p>候选必须是一对高级与简单连接器，来自不同子零件，且双向条件和几何对齐均通过。
+     * 一个连接点命中多个候选时跳过所有涉及它的配对，并记录冲突；无匹配与连接失败也记日志。</p>
+     */
     private void autoAttachInternalConnectors() {
         List<AbstractConnector> internalConnectors = new ArrayList<>();
         for (SubPart subPart : subParts.values()) {
@@ -560,6 +693,12 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         }
     }
 
+    /**
+     * 构造子零件、连接器、子系统和命中框，再布放并连接内部关节。
+     * <p>依赖有效且非空的变体定义。先选根子零件作为相对布放锚点，初始化根耐久，再设置其他子零件耐久；
+     * 这期间会调用具体种类的耐久策略，子类字段必须已经就绪。</p>
+     * @return 建成结构的根子零件
+     */
     private SubPart createSubParts(Map<String, SubPartAttr> subPartAttrMap) {
         //创建零件
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
@@ -668,15 +807,11 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
 
 
     /**
-     * <p>获取本零件的零件配方，无则返回null</p>
-     * <p>配方由装配侧索引按零件 id 一次求出：索引未命中（该零件没有零件配方，或索引尚未重建）时返回
-     * {@code null}，此时组装走无材料需求的兜底分支。</p>
+     * 按所选变体的子零件配置汇总部件设计质量。
      *
-     * @return 零件配方，包含使用材料，时间等信息；无零件配方时返回 {@code null}
+     * <p>结果写入 {@link #totalMass}；本方法不修改刚体质量，也不按制造进度缩放质量。
+     * 装配体总质量需要由宿主自己的汇总流程更新。</p>
      */
-    @Nullable
-
-
     public void updateMass() {
         float totalMass = 0;
         for (SubPartAttr subPart : type.getVariants().get(variantName).getSubParts().values()) {
@@ -686,23 +821,29 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
-     * 主线程 Main thread
-     * <p>将部件的所有零件添加到物理世界，开始物理运算</p>
-     * <p>Adds all sub-parts of the part to the physical world and starts the physical calculation.</p>
+     * 将各子零件加入世界，开始参与物理运算。
+     *
+     * <p>由主线程的宿主入世流程调用；要求结构已初始化并已设置装配体归属，具体物理任务由子零件入世流程安排。</p>
      */
     public void addToLevel() {
         for (SubPart subPart : subParts.values()) subPart.addToLevel();
     }
 
     /**
-     * 主线程 Main thread
-     * <p>部件实例被销毁时调用，清除所有子零件、子系统、实体、碰撞箱等</p>
-     * <p>Called when the part instance is destroyed, clears all sub-parts, sub-systems, entities, hit boxes, etc.</p>
+     * 执行全部子零件的正常销毁流程，处理子系统拆离与关联资源。
+     *
+     * <p>由主线程生命周期调用。构造失败应使用 {@link #discardUnattached()}，避免触发正常拆离的库存掉落等副作用。
+     * 装配体注册表及部件拓扑的移除由宿主管理。</p>
      */
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
     }
 
+    /**
+     * 以目标根位姿整体移动部件，保留各子零件相对根的布局。
+     * <p>尚未归属装配体或装配体未入世时直接执行；入世后提交到 PRE 物理阶段。
+     * 该方法更新物理位姿及插值缓存，不负责改变线速度或角速度。</p>
+     */
     public void setTransform(Transform transform) {
         if (assembly == null || !assembly.isInLevel()) {
             setTransformRaw(transform);
@@ -712,6 +853,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         });
     }
 
+    /**
+     * 在独占构造期或物理线程应用根位姿，按根的相对变换更新其他子零件。
+     * <p>物理变换强制单位缩放，避免复合碰撞形状拒绝浮点运算产生的非单位比例。</p>
+     */
     private void setTransformRaw(Transform transform) {
         Transform rootTransform = rootSubPart.body.getTransform(null).invert();
         rootSubPart.setPosition(transform.getTranslation());
@@ -743,16 +888,25 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
 
     // ======================== IAnimatable<AbstractPart<?>> 实现 ========================
 
+    /**
+     * 返回当前部件自身，作为模型与动画控制器共同持有的动画对象。
+     */
     @Override
     public AbstractPart<?> getAnimatable() {
         return this;
     }
 
+    /**
+     * 返回动画与物理实例共用的所属世界。
+     */
     @Override
     public Level getAnimLevel() {
         return level;
     }
 
+    /**
+     * 按当前变体模型资源名构造动画引擎使用的模型索引，固定属于 part 模型类型。
+     */
     @Override
     public final ModelIndex getDefaultModelIndex() {
         return new ModelIndex("part", variant.getModel());
@@ -782,16 +936,25 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         return molangContext;
     }
 
+    /**
+     * 返回部件级信号存储作为动画变量表；与信号接收入口共用同一个并发映射。
+     */
     @Override
     public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
         return signalStorage;
     }
 
+    /**
+     * 以根子零件的插值位姿作为整个部件的世界矩阵；要求结构已初始化。
+     */
     @Override
     public Matrix4f getWorldPositionMatrix(@NotNull Number partialTicks) {
         return rootSubPart.getWorldPositionMatrix(partialTicks);
     }
 
+    /**
+     * 返回根子零件在给定插值时刻的渲染位置；要求结构已初始化。
+     */
     @Override
     public Vec3 getRenderPosition(Number partialTicks) {
         return rootSubPart.getRenderPosition(partialTicks);
@@ -805,6 +968,9 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         return "local";
     }
 
+    /**
+     * 返回部件级信号值映射，与动画变量表共享存储。
+     */
     @Override
     public ConcurrentMap<String, Object> getSignalStorage() {
         return signalStorage;

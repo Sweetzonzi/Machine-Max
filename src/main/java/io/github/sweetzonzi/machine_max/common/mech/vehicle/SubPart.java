@@ -184,6 +184,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         destroy(true);
     }
 
+    /**
+     * 清理尚未完成构造的子零件，跳过子系统正常拆离通知。
+     * <p>部件工厂或批量恢复失败时调用，避免把模板加载出的库存作为拆卸掉落。
+     * 已入世实例的正常销毁应使用 {@link #destroy()}。</p>
+     */
     public void abortConstruction() {
         destroy(false);
     }
@@ -1269,7 +1274,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>直接写入本子零件的原始耐久值（不经过共享耐久委托），供 AbstractPart<?> 广播共享耐久使用。</p>
+     * <p>直接写入本子零件的原始耐久值（不经过共享耐久委托），供 {@code AbstractPart<?>} 广播共享耐久使用。</p>
      * <p>Directly writes this sub-part's raw durability, bypassing shared-durability delegation.
      * Used by {@link AbstractPart<?>#setSharedDurability(float)} to broadcast the shared value.</p>
      */

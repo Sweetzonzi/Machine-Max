@@ -135,6 +135,19 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);
     }
 
+    /**
+     * 从普通部件存档批量恢复载具，先预检引用，再分配实例。
+     *
+     * <p>预检全部部件的定义、变体、数据类型与 UUID，并核对连接引用能在存档集合及静态定义中找到目标。
+     * 部件映射以 DTO 内的 UUID 建立，拒绝重复身份；输入映射的字符串键不用于连接寻址。</p>
+     * <p>预检通过后注册待加入载具，按模式恢复部件，再建立连接、履带、HP 与子系统。
+     * 构造阶段捕获到异常时释放已创建的履带和未入世部件，并撤销待加入注册，跳过正常拆离掉落。</p>
+     *
+     * @param level 恢复目标世界
+     * @param savedData 已准备好位置基准的载具存档，本构造器不负责坐标归一化
+     * @param restoreMode 部件状态恢复策略；收纳物品用完整模式，蓝图用骨架模式
+     * @throws IllegalArgumentException 存档型号、身份或连接引用预检失败时抛出
+     */
     public VehicleCore(Level level, VehicleData savedData, PartRestoreMode restoreMode) {
         this.level = level;
         this.subSystemController = new SubsystemController(this);
@@ -200,6 +213,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         }
     }
 
+    /**
+     * 不分配实例地校验一端连接引用。
+     * <p>按存档内部 UUID 查部件，再核对保存的子零件集合和当前变体定义中的连接点名称；
+     * 只校验路径存在，实际连接器配对与几何关系由后续连接流程检查。</p>
+     */
     private static void validateSavedConnector(Level level, Map<UUID, RegularPartData> parts,
                                                String uuid, String child, String connector) {
         RegularPartData data = parts.get(UUID.fromString(uuid));
@@ -208,8 +226,17 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         if (attr == null || !attr.connectors.containsKey(connector)) throw new IllegalArgumentException("Missing connected connector: " + uuid + "/" + child + "/" + connector);
     }
 
+    /**
+     * 载具拓扑仅接受普通部件定义，其他种类在实例分配或拓扑变更前拒绝。
+     */
     @Override public boolean acceptsPartType(AbstractPartType type) { return type instanceof RegularPartType; }
+    /**
+     * 载具使用 MM 子零件代理实体承担实体交互与跟踪。
+     */
     @Override public boolean usesMMPartEntities() { return true; }
+    /**
+     * 按实例 UUID 查询载具当前持有的普通部件；未命中返回 null。
+     */
     @Override public RegularPart findPart(UUID id) { return partMap.get(id); }
 
     /** IPartAssembly 接口要求的 getSubsystemController()，Lombok @Getter 生成的是 getSubSystemController()（大写S），需要显式声明 */
@@ -667,7 +694,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      * 将部件添加到载具中
      * 已有载具应使用{@link VehicleCore#attachConnector}方法添加部件并连接部件接口
      *
-     * @param part 新部件
+     * @param candidate 待接纳的公共部件实例，必须是普通部件
      * @see VehicleCore#attachConnector
      */
     public void addPart(AbstractPart<?> candidate) {
@@ -810,6 +837,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         }
     }
 
+    /**
+     * 在公共连接入口收窄普通部件类型；其他种类直接拒绝，避免进入载具专用拓扑逻辑。
+     */
     private static RegularPart requireRegular(AbstractPart<?> part) {
         if (!(part instanceof RegularPart regular)) throw new IllegalArgumentException("Vehicle requires RegularPart");
         return regular;

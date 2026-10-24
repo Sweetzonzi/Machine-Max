@@ -10,7 +10,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 
-/** Mechanical assembly contract for vehicles and externally owned body assemblies. */
+/**
+ * 载具与外部身体装配体共用的部件宿主契约。
+ *
+ * <p>宿主负责部件生命周期、拓扑、子系统和动画调度。部件种类的接纳规则与是否创建 MM 代理实体
+ * 是两个独立选择：身体宿主可以接纳普通装备，同时让所有子零件由自己的实体体系承载。</p>
+ * <p>使用前先检查接纳规则，再分配实例或改变拓扑；网络查询通过装配体 UUID 和部件 UUID 寻址，
+ * 因此宿主应保持身份稳定并实现部件查询。</p>
+ */
 public interface IPartAssembly {
 
     // ========================================
@@ -26,12 +33,30 @@ public interface IPartAssembly {
     /** 是否已加入物理世界 */
     boolean isInLevel();
 
-    /** Whether this assembly accepts the definition before allocation or graph mutation. */
+    /**
+     * 判断宿主是否允许接纳该静态部件种类，不修改任何运行状态。
+     *
+     * <p>创建前用于避免分配无效资源；添加部件、连接拓扑等变更入口也应重复执行必要的类型检查。
+     * 载具只接受普通部件，外部宿主可定义自己的允许范围。</p>
+     */
     boolean acceptsPartType(AbstractPartType type);
 
-    /** Entity ownership belongs to the assembly, including Regular equipment. */
+    /**
+     * 声明宿主是否使用 MM 子零件代理实体，默认关闭。
+     *
+     * <p>这是整个装配体的实体所有权策略，普通装备装到外部宿主上时也服从该策略；
+     * 不能仅按部件是否为普通种类推断。关闭后子零件入世流程不创建 MM 代理。</p>
+     */
     default boolean usesMMPartEntities() { return false; }
 
+    /**
+     * 按运行时 UUID 查找本装配体已持有的部件。
+     *
+     * <p>制造进度等网络回包使用该入口，不能在查询中创建部件。默认返回空，提供同步能力的宿主须覆盖。</p>
+     *
+     * @param id 部件实例 UUID，不是型号注册名
+     * @return 已持有部件；未命中时返回 {@code null}
+     */
     default AbstractPart<?> findPart(UUID id) { return null; }
 
     // ========================================
@@ -41,9 +66,12 @@ public interface IPartAssembly {
     /** 装配体名称 */
     String getAssemblyName();
 
+    /**
+     * 修改装配体显示名称；具体实现负责需要的同步和持久化。
+     */
     void setAssemblyName(String name);
 
-    /** 所有 AbstractPart<?> 的总质量 */
+    /** 返回所有部件的总质量，供控制与物理规则查询。 */
     float getTotalMass();
 
     /**
@@ -66,10 +94,10 @@ public interface IPartAssembly {
     // 零件管理
     // ========================================
 
-    /** 将 AbstractPart<?> 加入装配体，初始化信号路由、注册子系统 */
+    /** 接纳部件并建立宿主归属、信号路由与子系统索引；实现应拒绝不接受的部件种类。 */
     void addPart(AbstractPart<?> part);
 
-    /** 从装配体中移除 AbstractPart<?> */
+    /** 从装配体解除部件归属并更新相关索引；具体销毁或转移规则由宿主实现决定。 */
     void removePart(AbstractPart<?> part);
 
     // ========================================
@@ -81,7 +109,7 @@ public interface IPartAssembly {
      *
      * @param connector1 连接点1
      * @param connector2 连接点2（其一必须是 SimpleConnector）
-     * @param newPart    新导入的 AbstractPart<?>，可为 null
+     * @param newPart    本次导入的部件实例；仅连接已有部件时可为 null
      */
     void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable AbstractPart<?> newPart);
 
@@ -99,7 +127,7 @@ public interface IPartAssembly {
     // 伤害传递
     // ========================================
 
-    /** AbstractPart<?> 受到伤害后向装配体顶层上报，由实现者决定如何折算到装配体的 HP */
+    /** 接收种类策略折算后的部件伤害，由宿主决定是否以及如何扣除装配体 HP。 */
     void onPartDamage(AbstractPart<?> part, float damage);
 
     /**
