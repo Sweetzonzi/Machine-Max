@@ -74,7 +74,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `docs/AUI性能边界.md` | AUI 框架能力与性能调研报告，不是计划或设计文档。调研对象为 AUI v1.1.6-dev，而项目现依赖 1.2.7，结论需复核（§8.5 的 #3、#8、#10 三条在 1.2.7 上不成立：#3 的 Element.querySelector、#8 的 calc()/vw/vh、#10 的 ::before/::after 都已支持；#17、#18 已按 1.2.7 源码复核） |
+| `docs/AUI性能边界.md` | AUI 框架能力与性能调研报告，不是计划或设计文档。调研对象为 AUI v1.1.6-dev，项目当前依赖 1.2.8，结论需复核（§8.5 的 #3、#8、#10 在 1.2.7 上已不成立：#3 的 Element.querySelector、#8 的 calc()/vw/vh、#10 的 ::before/::after 都已支持；#17、#18 按 1.2.7 源码复核；这些核对尚未按 1.2.8 重做） |
 | `docs/glossary.md` | 自动生成的术语表 |
 | `docs/wiki/` | 用户向 Wiki 站点，由 `docs/mkdocs.yml` 的 `docs_dir: wiki` 驱动，与本目录无关 |
 

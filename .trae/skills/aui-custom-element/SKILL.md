@@ -9,9 +9,9 @@ description: 向 ApricityUI 注册自定义 HTML 标签，并在页面里渲染�
 
 ## 版本与现状
 
-依赖版本看 `gradle.properties` 的 `aui_version`（当前 1.2.5），AUI 源码在同级 `../AUI`。
+依赖版本看 `gradle.properties` 的 `aui_version`（当前 1.2.8），AUI 源码在同级 `../AUI`。
 
-**1.2.5 的现状：注解注册对本模组无效。** AUI 作者的意图是 `@ElementRegister`，但实现顺序让依赖方模组用不上它，详见「为什么注解不生效」。因此本模组统一走 `Element.register`。
+**当前 AUI 1.2.8 的现状：注解注册对本模组无效。** AUI 作者的意图是 `@ElementRegister`，但实现顺序让依赖方模组用不上它，详见「为什么注解不生效」。因此本模组统一走 `Element.register`。
 
 ## 注册方式
 

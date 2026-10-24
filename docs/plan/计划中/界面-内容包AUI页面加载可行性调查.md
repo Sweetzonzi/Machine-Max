@@ -1,6 +1,8 @@
 # 界面-内容包 AUI 页面与资源加载可行性调查
 
 > **状态**：`DocumentModule` 已落地，待客户端实机验收。结论：内容包提供 AUI 页面与资源可行，且不需要修改 AUI。`DocumentModule` 像 `TextureModule` 一样，在客户端把内容包 `documents/` 直接写进 Spark-Core 已有的虚拟客户端资源包 `CLIENT_PACK`，路径为 `apricityui:apricity/<key>`，由 AUI 的 `ResourceManager` 分支读取；AUI 的资源扫描/自动重载负责发现 HTML。HUD、载具手册、PDA、研究页共用这一条通用管线。第一阶段只使用模组 JAR 内的 `assets/apricityui/apricity/` 页面。
+>
+> **版本基准**：本文的 AUI 接口核对基于 1.2.7。项目当前构建依赖 1.2.8，下列入口与路径尚未按 1.2.8 逐项复核。
 
 ## 一、问题
 
@@ -26,7 +28,7 @@ AUI 页面不只服务 HUD：载具说明手册、PDA 页面、研究页、控�
 | 第一阶段可不做 | 只使用模组 JAR 的 `assets/apricityui/apricity/machine_max/...` 页面即可；现有页面已经按这条链工作 |
 | 不需要 AUI 分支 | AUI 公开 API 与 Spark 虚拟资源包足够；代价是接受资源包与模板表的生命周期约束 |
 
-本文以 AUI 1.2.7 为准。已用依赖 JAR 的 `javap` 核对 `putTemple` / `getTemple` / `scan` / `setResources` / `invalidateStaticResourceCache` 均存在。项目当前的 `neoforge.mods.toml` 声明 `apricityui` 版本范围从 1.2.5 起；这些入口在 1.2.5 上是否同样存在尚未核对。落地时把最低版本提到 1.2.7，或在客户端启动时探测这些入口并给出可定位的缺失日志。
+本文的接口核对基准是 AUI 1.2.7。已用依赖 JAR 的 `javap` 核对 `putTemple` / `getTemple` / `scan` / `setResources` / `invalidateStaticResourceCache` 均存在。项目构建依赖与 `neoforge.mods.toml` 的最低版本均为 1.2.8；这些入口在 1.2.8 上尚未逐项复核，运行时应在客户端启动阶段探测并给出可定位的缺失日志。
 
 ## 三、AUI 的页面与资源解析链
 

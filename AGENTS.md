@@ -13,7 +13,7 @@
 | ------------------------------------------------------------------------ | ------------- | -------------------- |
 | [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1029      | Bullet 物理引擎封装、实体注册框架 |
 | [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API        |
-| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.7         | 载具控制面板 Web UI 框架     |
+| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.8         | 载具控制面板 Web UI 框架     |
 
 构建时也依赖 GraalVM 24.2.2（JS 引擎）、JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
 
