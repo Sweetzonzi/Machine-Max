@@ -86,6 +86,20 @@ public final class AimGeometrySnapshot {
         return actualAngles;
     }
 
+    /**
+     * 以指定基座和光轴重建同一采样时刻的几何与实际角，仅进行数学运算。<br>
+     * 关节零位与轴向使用已复制的物理采样；基座和光轴可由同一 partialTick 的挂点插值提供。
+     * 用于观察输入和 HUD，避免将离散物理角误差直接叠加到平滑渲染光轴上。
+     */
+    public AimGeometrySnapshot atPose(AimPose base, AimPose optic) {
+        var geometry = new AimGeometrySnapshot(base, yawFrame, yawAxis, pitchFrame, pitchAxis,
+                opticFrame, yawLimit, pitchLimit, actualAngles);
+        var point = optic.position().add(optic.forward().scale(AimMath.AIM_DISTANCE_METERS));
+        Vec2 actual = AimMath.solveAim(geometry, point, actualAngles).angles();
+        return new AimGeometrySnapshot(base, yawFrame, yawAxis, pitchFrame, pitchAxis,
+                opticFrame, yawLimit, pitchLimit, actual);
+    }
+
     /** 将绝对目标限制在机械行程内；连续轴保留角度分支。 */
     public Vec2 constrain(Vec2 q) {
         return new Vec2((float) (pitchLimit.apply(q.x)), (float) (yawLimit.apply(q.y)));

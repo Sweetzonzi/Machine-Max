@@ -273,6 +273,68 @@ public final class ViewpointGameTest {
         return result;
     }
 
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 200)
+    public static void reticleGeometryUsesTheInterpolatedBaseAndOptic(GameTestHelper helper) {
+        var turretType = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var hullType = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_hull"));
+        RegularPart turret = PartFactory.createRegular(turretType, "sdkfz234_2", helper.getLevel());
+        RegularPart hull = PartFactory.createRegular(hullType, hullType.variants.keySet().iterator().next(), helper.getLevel());
+        var main = turret.subParts.get("sub_part.machine_max.main");
+        var original = (WeaponControllerSubsystem) main.subsystems.get("subsystem.machine_max.main_weapon");
+        var drivers = main.subsystems.values().stream().filter(TurretDriverSubsystem.class::isInstance)
+                .map(TurretDriverSubsystem.class::cast).toList();
+        var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(),
+                Map.of("weapon_control", drivers.stream().map(TurretDriverSubsystem::getName).toList()),
+                original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
+        var controller = new WeaponControllerSubsystem(main, "probe_render_controller", attr);
+        controller.setTargetFromNames();
+        controller.onAttach();
+        var sight = (SightSubsystem) turret.subParts.get("sub_part.machine_max.gun_shield")
+                .subsystems.get("subsystem.machine_max.gunner_sight");
+        sight.setAimController(controller);
+        CompletableFuture<Void> result = physics(controller, () -> {
+            var baseBody = hull.rootSubPart.body;
+            for (var driver : drivers) {
+                if (driver.connector.joint == null) {
+                    driver.connector.joint = new New6Dof(driver.getSubPart().body, baseBody,
+                            Vector3f.ZERO, Vector3f.ZERO, Matrix3f.IDENTITY, Matrix3f.IDENTITY, RotationOrder.YXZ);
+                }
+            }
+            // 缓存端点供主线程式采样读取；测试不把刚体加入物理世界或运行求解器。
+            for (var subPart : turret.subParts.values()) {
+                PhysicsBodyExtensionKt.stateOf(subPart.body).update();
+            }
+            var baseState = PhysicsBodyExtensionKt.stateOf(baseBody);
+            baseState.update();
+            baseBody.setPhysicsRotation(new Quaternion().fromAngles(0, (float) Math.toRadians(1), 0)
+                    .mult(baseBody.getPhysicsRotation(null)));
+            baseState.update();
+            sight.onPostPhysicsTick();
+            var physical = sight.getAimGeometry();
+            helper.assertTrue(physical != null, "测试须发布物理机构采样");
+            Vec2 physicalAngles = physical.actualAngles();
+            Vec2 first = controller.sampleAimGeometry(sight, 0).actualAngles();
+            Vec2 last = controller.sampleAimGeometry(sight, 1).actualAngles();
+            helper.assertTrue(Math.abs(first.y - last.y) > .005, "显示实际角必须随基座插值变化");
+            for (float partial : new float[]{0, .25f, .5f, .75f, 1}) {
+                var geometry = controller.sampleAimGeometry(sight, partial);
+                AimPose optic = sight.samplePose(partial);
+                helper.assertTrue(geometry != null && geometry.forward(geometry.actualAngles()).forward()
+                        .distanceTo(optic.forward()) < 1e-4, "同一 partial 的机构角须重建可视光轴");
+            }
+            helper.assertTrue(physicalAngles.equals(physical.actualAngles()), "显示采样不能写物理实际角");
+        });
+        helper.succeedWhen(() -> {
+            helper.assertTrue(result.isDone(), "等待可视机构采样验证完成");
+            try {
+                result.join();
+            } finally {
+                turret.discardUnattached();
+                hull.discardUnattached();
+            }
+        });
+    }
+
     private static void verifyServo(GameTestHelper helper, TurretDriverSubsystem driver, Vector3f expected) {
         driver.onPrePhysicsTick();
         var joint = (New6Dof) driver.connector.joint;

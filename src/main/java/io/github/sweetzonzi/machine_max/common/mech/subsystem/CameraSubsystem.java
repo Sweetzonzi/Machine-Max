@@ -156,6 +156,22 @@ public class CameraSubsystem extends AbstractViewpointSubsystem {
                 approach(viewAngles.y, desired.y, attr.staticAttribute.yawSpeed, seconds)));
     }
 
+    /**
+     * 主线程／渲染线程读取操作者的观察目标，供 HUD 表达目标与实际光轴的偏移。<br>
+     * 双稳保持世界点；含无稳轴时，在本帧挂点中求解目标角，随安装体运动。
+     * 此处不施加转速预算，也不推进观察状态；武器输出使用 samplePose 的实际光轴。
+     *
+     * @param partialTick 与画面相机一致的刻内插值比例
+     */
+    @Nullable
+    public Vec3 sampleViewTarget(float partialTick) {
+        if (viewTarget == null || (attr.staticAttribute.horizontalStabilized && attr.staticAttribute.verticalStabilized)) {
+            return viewTarget;
+        }
+        AimGeometrySnapshot geometry = viewGeometry(super.samplePose(partialTick));
+        return AimMath.buildAimPoint(geometry, resolveViewTarget(geometry));
+    }
+
     /** 按度／秒配置限制本步弧度变化量，不把显示帧率作为转速依据。 */
     private static float approach(float actual, float desired, float speed, float seconds) {
         float step = (float) Math.toRadians(speed) * seconds;

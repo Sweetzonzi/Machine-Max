@@ -132,6 +132,32 @@ public final class CameraViewGameTest {
         helper.succeed();
     }
 
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void reticleTargetLeadsTheActualViewAndFollowsItsStabilizationMode(GameTestHelper helper) {
+        for (boolean yawStable : new boolean[]{true, false}) {
+            for (boolean pitchStable : new boolean[]{true, false}) {
+                var camera = camera(yawStable, pitchStable);
+                camera.enterView(TARGET);
+                camera.turnView(deg(0, 12));
+                // 90°/s 的镜头一刻只能转 4.5°，目标圈应保留尚未追上的 7.5°。
+                assertYaw(helper, 4.5, camera.samplePose(1));
+                Vec3 target = camera.sampleViewTarget(1);
+                helper.assertTrue(target != null, "有效观察必须提供目标圈位置");
+                assertNear(helper, 12, Math.toDegrees(ViewMath.directionAngles(target.normalize()).y), 2e-4);
+                camera.publishMount(ViewMath.lookRotation(deg(0, 4)));
+                Vec2 committed = camera.getViewAngles();
+                for (float partial : new float[]{.25f, .75f, .5f, 1}) {
+                    Vec3 point = camera.sampleViewTarget(partial);
+                    helper.assertTrue(point != null, "帧内目标采样必须有效");
+                    double expectedYaw = yawStable ? 12 : 12 + 4 * partial;
+                    assertNear(helper, expectedYaw, Math.toDegrees(ViewMath.directionAngles(point.normalize()).y), 2e-4);
+                }
+                helper.assertTrue(committed.equals(camera.getViewAngles()), "目标圈采样不能推进实际观察角");
+            }
+        }
+        helper.succeed();
+    }
+
     private static Vec2 deg(double pitch, double yaw) {
         return new Vec2((float) Math.toRadians(pitch), (float) Math.toRadians(yaw));
     }

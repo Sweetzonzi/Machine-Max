@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Vector3f;
 import com.jme3.bullet.joints.New6Dof;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
@@ -15,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import io.github.sweetzonzi.machine_max.common.visual.HudView;
 import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
@@ -847,6 +850,35 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     @Nullable
     public AimGeometrySnapshot sampleAimGeometry(SightSubsystem sight) {
+        New6Dof[] joints = aimJoints(sight);
+        return joints == null ? null : JointAimGeometry.sample(joints[0], joints[1],
+                sight.getSubPart().getLocatorWorldTransform(sight.sightAttr.locator));
+    }
+
+    /**
+     * 主线程／渲染线程读取同一帧的机构几何与实际角。<br>
+     * getBodyA/B 和 owner 只读取 Java 对象身份；基座、炮镜位姿均来自已发布挂点的插值，
+     * 不读取 native 变换或关节角。返回值仅供输入限幅与绘制，不写电机目标。
+     */
+    @Nullable
+    public AimGeometrySnapshot sampleAimGeometry(SightSubsystem sight, float partialTick) {
+        AimGeometrySnapshot geometry = sight.getAimGeometry();
+        New6Dof[] joints = geometry == null ? null : aimJoints(sight);
+        if (joints == null) {
+            return null;
+        }
+        var rootBody = joints[0] != null ? joints[0].getBodyB() : joints[1].getBodyA();
+        if (!(PhysicsBodyExtensionKt.getOwner(rootBody) instanceof SubPart base)) {
+            return null;
+        }
+        var mount = base.getLerpedLocatorWorldTransform("", partialTick);
+        return geometry.atPose(new AimPose(SparkMathKt.toVec3(mount.getTranslation()), mount.getRotation()),
+                sight.samplePose(partialTick));
+    }
+
+    /** 按已有握手和宿主关系选择关节；数组依次为方向机、高低机，缺失轴为 null。 */
+    @Nullable
+    private New6Dof[] aimJoints(SightSubsystem sight) {
         List<TurretDriverSubsystem> drivers = turrets.keySet().stream()
                 .filter(driver -> driver.isActive() && !driver.isDestroyed() && !driver.getSubPart().isRemoved
                         && driver.connector != null && driver.connector.joint instanceof New6Dof)
@@ -865,8 +897,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (yawJoint == null && pitchJoint == null) {
             return null;
         }
-        return JointAimGeometry.sample(yawJoint, pitchJoint,
-                sight.getSubPart().getLocatorWorldTransform(sight.sightAttr.locator));
+        return new New6Dof[]{yawJoint, pitchJoint};
     }
 
     // ==================== 输入信号 ====================

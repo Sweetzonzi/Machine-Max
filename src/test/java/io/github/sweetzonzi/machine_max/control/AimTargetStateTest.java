@@ -87,6 +87,42 @@ class AimTargetStateTest {
     }
 
     @Test
+    void stableLeadAtTheLimitUsesTheSameOpticalTimeAsItsScreenProjection() {
+        for (boolean yaw : new boolean[]{true, false}) {
+            for (int direction : new int[]{-1, 1}) {
+                // 90°/s 的机构每 tick 转 4.5°，120 fps 每 tick 采样六次。
+                // tick 末光轴限幅、帧内光轴投影会产生 3.75°锯齿；同一帧参考应保持 30°。
+                assertEquals(3.75, stableLeadSpan(yaw, direction, false), 1e-4);
+                assertEquals(0, stableLeadSpan(yaw, direction, true), 1e-4);
+            }
+        }
+    }
+
+    private static double stableLeadSpan(boolean yaw, int direction, boolean visibleReference) {
+        Vec2 limit = yaw ? deg(0, direction * 30) : deg(direction * 30, 0);
+        Vec3 point = ViewMath.follow(Quaternion.IDENTITY, limit, Vec3.ZERO).worldPoint();
+        var state = new AimTargetState(AimTargetState.Mode.WORLD, point, Vec2.ZERO);
+        double minimum = Double.POSITIVE_INFINITY;
+        double maximum = Double.NEGATIVE_INFINITY;
+        for (int tick = 1; tick <= 4; tick++) {
+            for (int frame = 1; frame <= 6; frame++) {
+                double visibleAngle = direction * 4.5 * (tick - 1 + frame / 6.0);
+                double inputAngle = visibleReference ? visibleAngle : direction * 4.5 * tick;
+                AimPose visible = ViewMath.follow(Quaternion.IDENTITY,
+                        yaw ? deg(0, visibleAngle) : deg(visibleAngle, 0), Vec3.ZERO).pose();
+                AimPose input = ViewMath.follow(Quaternion.IDENTITY,
+                        yaw ? deg(0, inputAngle) : deg(inputAngle, 0), Vec3.ZERO).pose();
+                state.applyMouse(input, null, yaw ? deg(0, direction * 10) : deg(direction * 10, 0));
+                Vec2 offset = ViewMath.inherit(visible.rotation(), visible.position(), state.getWorldPoint());
+                double lead = Math.toDegrees(yaw ? offset.y : offset.x) * direction;
+                minimum = Math.min(minimum, lead);
+                maximum = Math.max(maximum, lead);
+            }
+        }
+        return maximum - minimum;
+    }
+
+    @Test
     void relativeAxesAccumulateWithoutInferringMechanicalLimitsFromOpticalError() {
         Vec3 distant = ViewMath.follow(Quaternion.IDENTITY, deg(50, 120), Vec3.ZERO).worldPoint();
         for (AimTargetState.Mode mode : AimTargetState.Mode.values()) {
@@ -163,5 +199,47 @@ class AimTargetStateTest {
         assertEquals(AimMath.buildAimPoint(sample, deg(15, 60)), state.relativePoint(sample));
         var caughtUp = geometry(SIGHT, deg(15, 80));
         assertEquals(AimMath.buildAimPoint(caughtUp, caughtUp.actualAngles()), state.relativePoint(caughtUp));
+    }
+
+    @Test
+    void relativeReticleFollowsInterpolatedMechanismInsteadOfDiscretePhysicsError() {
+        var state = new AimTargetState(AimTargetState.Mode.RELATIVE, FORWARD_POINT, deg(0, 30));
+        for (int tick = 1; tick <= 4; tick++) {
+            AimPose physicalBase = new AimPose(new Vec3(20_000_000 + tick, 2, 0),
+                    ViewMath.lookRotation(deg(0, tick * 2)));
+            var physical = geometry(physicalBase, deg(0, tick * 4.5));
+            for (int frame = 1; frame <= 6; frame++) {
+                double time = tick - 1 + frame / 6.0;
+                AimPose base = new AimPose(new Vec3(20_000_000 + time, 2, 0),
+                        ViewMath.lookRotation(deg(0, time * 2)));
+                Vec2 actual = deg(0, time * 4.5);
+                AimPose optic = geometry(base, actual).forward(actual);
+                var rendered = physical.atPose(base, optic);
+                assertAngles(actual, rendered.actualAngles());
+                Vec3 point = state.relativePoint(rendered);
+                Vec2 offset = ViewMath.inherit(optic.rotation(), optic.position(), point);
+                assertEquals(30 - time * 4.5, Math.toDegrees(offset.y), 1e-4);
+
+                // 同一帧参考同时用于 60°输入限幅和圈的绘制，触限时偏差保持恒定。
+                var capped = new AimTargetState(AimTargetState.Mode.RELATIVE, FORWARD_POINT, actual);
+                capped.applyMouse(optic, rendered, deg(0, 100));
+                Vec2 cappedOffset = ViewMath.inherit(optic.rotation(), optic.position(), capped.relativePoint(rendered));
+                assertEquals(60, Math.toDegrees(cappedOffset.y), 1e-4);
+            }
+        }
+        assertAngles(deg(0, 30), state.getRelativeAim());
+    }
+
+    @Test
+    void mixedReticleUsesTheRenderedActualAngleForItsStableAxis() {
+        AimPose base = new AimPose(new Vec3(10, 2, -4), ViewMath.lookRotation(deg(4, 8)));
+        Vec2 actual = deg(3, 7.5);
+        AimPose optic = geometry(base, actual).forward(actual);
+        var physical = geometry(SIGHT, deg(4, 8));
+        var rendered = physical.atPose(base, optic);
+        var state = new AimTargetState(AimTargetState.Mode.YAW_STABLE, FORWARD_POINT, deg(15, 20));
+        assertEquals(0, state.relativePoint(rendered)
+                .distanceTo(AimMath.buildAimPoint(geometry(base, actual), deg(15, 7.5))), .001);
+        assertEquals(FORWARD_POINT, state.getWorldPoint());
     }
 }

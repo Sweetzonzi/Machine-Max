@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * 客户端主线程的视角路由、输入交付和显示效果。观察状态由第三人称或逐设备实例持有。
- * 固定炮镜显示真实光轴，鼠标更新独立的武器期望目标；渲染方法只读这些状态。
+ * 固定炮镜显示真实光轴，鼠标更新独立的武器期望目标；渲染只读取逻辑状态，仅推进显示过渡。
  */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public final class CameraController {
@@ -54,6 +54,8 @@ public final class CameraController {
     /** 逻辑观察结果与本帧显示位姿分开保存，显示抖动只写入后者的应用结果。 */
     private static ViewMath.Snapshot logicalView;
     private static AimPose renderPose;
+    /** 本帧座椅控制目标，与回正中的显示朝向分别缓存，供瞄准环投影。 */
+    private static Vec3 renderedSeatAimPoint;
     /** 发往 WC、供 HUD 投影的有限世界目标点。 */
     private static Vec3 expectedPoint;
     private static Vec3 freeLookControlPoint;
@@ -68,6 +70,9 @@ public final class CameraController {
     private static float targetZoom = 1;
     @Getter
     private static float currentZoom = 1;
+    /** 当前画面的垂直视场角，供实体镜头与座椅观察共用屏幕投影。 */
+    @Getter
+    private static float currentFov = AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV;
     /** 显示变焦按真实经过时间平滑，单位为纳秒；零表示尚未采样。 */
     private static long lastZoomNanos;
     /** 当前逻辑观察方向，供交互与内容查询使用，不包含显示抖动。 */
@@ -87,23 +92,31 @@ public final class CameraController {
         return expectedPoint;
     }
 
+    /**
+     * HUD 读取本帧座椅观察的控制目标；跟随模式按正常观察参考合成，避免 tick 末角度造成跳动。
+     * 自由观察保持世界点；临时自由观察保留武器目标，因此圆环可以偏离画面中心。
+     * 回正期间缓存的是正常控制目标，独立于平滑后的画面朝向。
+     */
+    @Nullable
+    public static Vec3 getRenderedSeatAimPointWorld() {
+        if (controllingSeat == null || activeCamera != null || expectedPoint == null) {
+            return null;
+        }
+        return renderedSeatAimPoint != null ? renderedSeatAimPoint : expectedPoint;
+    }
+
     /** HUD 读取无稳轴累计偏差所对应的机构正解点；采样未就绪时不绘制目标圈。 */
     @Nullable
     public static Vec3 getRelativeAimPointWorld() {
-        AimGeometrySnapshot geometry = fixedSight == null ? null : fixedSight.getAimGeometry();
+        float partial = CLIENT.gameRenderer.getMainCamera().getPartialTickTime();
+        AimGeometrySnapshot geometry = fixedSight == null || fixedController == null ? null
+                : fixedController.sampleAimGeometry(fixedSight, partial);
         if (aimTarget == null || geometry == null) {
             return null;
         }
-        Vec3 target = aimTarget.relativePoint(geometry);
-        AimPose actual = geometry.forward(geometry.actualAngles());
-        AimPose displayed = renderPose != null ? renderPose : fixedSight.samplePose(1);
-        // 机构采样提供目标相对实际光轴的偏差，本帧光轴提供显示参考。
-        // 重基准可消除物理采样与渲染插值的时差；追到目标后，车体运动不会把圈推离中心。
-        Vec3 offset = target.subtract(actual.position());
-        Vector3f direction = new Vector3f((float) offset.x, (float) offset.y, (float) offset.z);
-        SparkMathKt.toQuaternionf(actual.rotation()).conjugate().transform(direction);
-        SparkMathKt.toQuaternionf(displayed.rotation()).transform(direction);
-        return displayed.position().add(direction.x, direction.y, direction.z);
+        // 累计目标在插值基座中正解，再投影到本帧真实炮镜。
+        // 同一帧的实际角只填充稳定轴；无稳轴直接使用操作者累计角。
+        return aimTarget.relativePoint(geometry);
     }
 
     /** 渲染线程读取实际光轴的前方点，供内容分划的空间投影使用。 */
@@ -188,10 +201,20 @@ public final class CameraController {
         if (activeCamera instanceof SightSubsystem) {
             // 光学参考解释稳定轴输入；主 WC 的物理采样提供无稳轴实际角和正解几何。
             updateFixed();
-            AimGeometrySnapshot geometry = fixedSight.getAimGeometry();
-            if (aimTarget != null && (mode() == AimTargetState.Mode.WORLD || geometry != null)) {
-                aimTarget.applyMouse(fixedSight.samplePose(1), geometry, delta);
-                expectedPoint = aimTarget.getWorldPoint();
+            if (aimTarget != null) {
+                // 光学领先量与圈的屏幕投影使用同一帧参考。tick 末光轴先于可视光轴，
+                // 用它限幅会让触限目标跟随每 tick 的角度台阶，圈相对平滑画面反复跳动。
+                // partial 的冻结规则与 GameRenderer.renderLevel 中 Camera.setup 的入参一致。
+                float partial = CLIENT.getCameraEntity() != null && CLIENT.level.tickRateManager()
+                        .isEntityFrozen(CLIENT.getCameraEntity()) ? 1
+                        : CLIENT.getTimer().getGameTimeDeltaPartialTick(true);
+                // 无稳轴的 60°偏差也相对于这帧实际机构角限幅，避免触限时混入物理采样台阶。
+                AimGeometrySnapshot geometry = mode() == AimTargetState.Mode.WORLD || fixedController == null
+                        ? null : fixedController.sampleAimGeometry(fixedSight, partial);
+                if (mode() == AimTargetState.Mode.WORLD || geometry != null) {
+                    aimTarget.applyMouse(fixedSight.samplePose(partial), geometry, delta);
+                    expectedPoint = aimTarget.getWorldPoint();
+                }
             }
         } else if (activeCamera instanceof CameraSubsystem camera) {
             camera.turnView(delta);
@@ -312,9 +335,15 @@ public final class CameraController {
         // 自由观察保留独立状态，不能让临时查看方向变成新的武器指向。
         if (RawInputHandler.freeCam && !wasFreeLook) {
             freeLookControlPoint = expectedPoint;
-            FREE_LOOK.enter(false, mount.rotation(), mount.position(), expectedPoint != null ? expectedPoint : point(mount));
+            // 回正中再次观察时从当前显示方向接管，避免跳到未平滑的控制方向。
+            Vec3 observed = renderPose != null ? point(renderPose) : expectedPoint != null ? expectedPoint : point(mount);
+            FREE_LOOK.enter(false, mount.rotation(), renderPose != null ? renderPose.position() : mount.position(), observed);
+            SEAT_VIEW.cancelReturn();
         } else if (!RawInputHandler.freeCam && wasFreeLook && freeLookControlPoint != null) {
             SEAT_VIEW.enter(seatFollowing, mount.rotation(), mount.position(), freeLookControlPoint);
+            if (renderPose != null) {
+                SEAT_VIEW.beginReturn(SparkMathKt.toQuaternionf(renderPose.rotation()));
+            }
         }
         wasFreeLook = RawInputHandler.freeCam;
         // 两套观察状态独立，只有普通观察可以更新待发送的武器世界点。
@@ -337,8 +366,14 @@ public final class CameraController {
         return new AimPose(SparkMathKt.toVec3(mount.getTranslation()), mount.getRotation());
     }
 
-    /** 位置轨道取座椅／装配体中心，姿态参考始终只取座椅挂点。 */
+    /** 逻辑更新按正常观察方向计算轨道，显示回正不参与控制目标生成。 */
     private static Vec3 seatOrigin(ThirdPersonViewpoint view, AimPose mount, float partialTick) {
+        Vec3 pivot = seatPivot(mount, partialTick);
+        return seatOrigin(pivot, view.sample(mount.rotation(), pivot).pose().forward());
+    }
+
+    /** 位置轨道取座椅／装配体中心，姿态参考始终只取座椅挂点。 */
+    private static Vec3 seatPivot(AimPose mount, float partialTick) {
         // 挂点旋转决定局部偏移的世界方向；中心跟随只改变环绕位置的支点。
         var settings = controllingSeat.attr.staticAttribute.views;
         boolean first = CLIENT.options.getCameraType().isFirstPerson();
@@ -354,14 +389,18 @@ public final class CameraController {
             Vector3f eye = reference.transform(new Vector3f(0, 1.1f, 0));
             pivot = pivot.add(eye.x, eye.y, eye.z);
         }
-        pivot = pivot.add(localOffset.x, localOffset.y, localOffset.z);
-        if (first) {
+        return pivot.add(localOffset.x, localOffset.y, localOffset.z);
+    }
+
+    /** 沿指定观察方向后退并处理碰撞；渲染传入平滑方向，使轨道和朝向一起回正。 */
+    private static Vec3 seatOrigin(Vec3 pivot, Vec3 forward) {
+        var settings = controllingSeat.attr.staticAttribute.views;
+        if (CLIENT.options.getCameraType().isFirstPerson()) {
             return pivot;
         }
-        // 第三人称沿当前逻辑视线后退，前置视角反转距离，观察目标本身保持独立。
+        // 第三人称沿指定视线后退，前置视角反转距离，观察目标本身保持独立。
         double distance = (settings.distanceScale() + .4 * speedDistanceFactor)
                 * (controllingSeat.getSubPart().getPart().assembly instanceof VehicleCore vehicle ? vehicle.cameraDistance : 4);
-        Vec3 forward = view.sample(mount.rotation(), pivot).pose().forward();
         if (CLIENT.options.getCameraType() == CameraType.THIRD_PERSON_FRONT) {
             distance = -distance;
         }
@@ -487,6 +526,9 @@ public final class CameraController {
         fixedController = null;
         logicalView = null;
         renderPose = null;
+        renderedSeatAimPoint = null;
+        SEAT_VIEW.cancelReturn();
+        FREE_LOOK.cancelReturn();
         expectedPoint = null;
         targetZoom = currentZoom = 1;
         speedDistanceFactor = 0;
@@ -535,12 +577,20 @@ public final class CameraController {
             float partial = (float) event.getPartialTick();
             if (activeCamera != null) {
                 renderPose = activeCamera.samplePose(partial);
+                renderedSeatAimPoint = null;
             } else {
                 AimPose mount = seatMount(partial);
                 ThirdPersonViewpoint view = wasFreeLook ? FREE_LOOK : SEAT_VIEW;
                 // 鼠标观察角已逐帧累计，只与插值后的挂点合成，不推进逻辑或重复累计输入。
                 // 环绕位置与朝向在此一起采样，位置事件仅应用这份结果。
-                renderPose = view.sample(mount.rotation(), seatOrigin(view, mount, partial)).pose();
+                Vec3 pivot = seatPivot(mount, partial);
+                Quaternionf desired = SparkMathKt.toQuaternionf(view.sample(mount.rotation(), pivot).pose().rotation());
+                Quaternionf displayed = wasFreeLook ? desired : view.sampleDisplayRotation(desired, System.nanoTime());
+                Vector3f forward = displayed.transform(new Vector3f(0, 0, -1));
+                Vec3 origin = seatOrigin(pivot, new Vec3(forward.x, forward.y, forward.z));
+                // 圈使用正常控制方向；画面使用回正方向，两者的偏移在过渡结束时自然消失。
+                renderedSeatAimPoint = wasFreeLook ? expectedPoint : SEAT_VIEW.sample(mount.rotation(), origin).worldPoint();
+                renderPose = new AimPose(origin, SparkMathKt.toBQuaternion(displayed));
             }
             // 在渲染边界转换为原版角度符号，欧拉角仅用于事件输出。
             Quaternionf rotation = SparkMathKt.toQuaternionf(renderPose.rotation());
@@ -550,6 +600,7 @@ public final class CameraController {
             event.setRoll((float) -Math.toDegrees(euler.z));
         } else {
             renderPose = null;
+            renderedSeatAimPoint = null;
         }
         // 显示抖动最后合成，不能参与世界目标累计或网络输入。
         Vec3 shake = CameraShakeController.getRotationOffset();
@@ -565,6 +616,10 @@ public final class CameraController {
     @SubscribeEvent
     public static void updateCameraScale(ViewportEvent.ComputeFov event) {
         if (activeCamera == null) {
+            // 手持物还会单独计算一次固定 FOV，HUD 只使用世界画面的视场角。
+            if (event.usedConfiguredFov()) {
+                currentFov = (float) event.getFOV();
+            }
             return;
         }
         // 使用实际经过秒数做指数平滑，避免不同渲染帧率改变变焦过渡速度。
@@ -574,7 +629,8 @@ public final class CameraController {
             currentZoom += (targetZoom - currentZoom) * (float) (1 - Math.exp(-10 * seconds));
         }
         lastZoomNanos = now;
-        event.setFOV(AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV / currentZoom);
+        currentFov = AbstractViewpointSubsystemStaticAttr.REFERENCE_FOV / currentZoom;
+        event.setFOV(currentFov);
     }
 
     /** 主线程在设备的基础倍率与最大倍率之间切换。 */
