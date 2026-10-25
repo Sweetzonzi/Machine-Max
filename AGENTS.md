@@ -13,7 +13,7 @@
 | ------------------------------------------------------------------------ | ------------- | -------------------- |
 | [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1029      | Bullet 物理引擎封装、实体注册框架 |
 | [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API        |
-| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.8         | 载具控制面板 Web UI 框架     |
+| [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.8         | 载具控制面板 Web UI 框架，经 `jarJar` 内嵌进发布 jar |
 
 构建时也依赖 GraalVM 24.2.2（JS 引擎）、JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
 
@@ -335,7 +335,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 ## 补充说明
 
-- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
+- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`），并以 `jarJar` 内嵌进发布的 jar（`META-INF/jarjar/`，`metadata.json` 声明 `[1.2.8,)`），玩家无需单独安装。玩家另装了独立 AUI 时，FML 跳过内嵌副本、直接采用已装的那份并打 warning（`JarSelector` 的 source 过滤只按 mod id 判断，不比较版本），因此独立 AUI 低于 1.2.8 会挡住内嵌的新版，使 `[1.2.8,)` 依赖不满足。
 - **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartFoundationGameTest.java#fullStateAndBlueprintSkeleton` 与 `#externalFactoryAndVehicleBoundary`；同目录 `PartAssemblyProgressGameTest.java#routesBySubPartIdWithoutVehicleRegistry` 验证通过子零件 ID 更新制造状态及注销后的处理。公共部件用例验证真实服务端的构造、恢复、类型边界和对象表路由；客户端画面通过 runClient 验收。公共 API、模板和覆盖边界见 `docs/部件公共基础接入.md` 的“验证方式”。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
