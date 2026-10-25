@@ -4,6 +4,7 @@ import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.DensityFunction;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.ThrustProfile;
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
@@ -73,6 +74,12 @@ public final class TerrainPreload {
     /** {@code hold} 的余量（s）：吸收两次重算之间的过期抖动与登记延迟。 */
     public static final float HOLD_MARGIN_SECONDS = 0.1f;
 
+    /** 待就绪条目的容量上限：超过就整体丢弃，宁可少一个样本也不让表无界增长。 */
+    private static final int PENDING_BUILD_LIMIT = 4096;
+
+    /** 待就绪条目的最长等待（物理步）：与票的存活期同量级，超时说明它已被过期释放。 */
+    private static final long PENDING_BUILD_TTL_STEPS = 2400L;
+
     /** 一段航迹的接收者，由 {@link #walk} 逐段交出 */
     @FunctionalInterface
     public interface SegmentSink {
@@ -116,6 +123,27 @@ public final class TerrainPreload {
     /** 单轮内的临时累加器，走完就丢；跨 tick 不保留任何计划 */
     private final Map<Long, Window> windows = new HashMap<>();
     private final List<Window> ordered = new ArrayList<>();
+
+    /** 累计指标，读走即清零 */
+    private final Stats stats = new Stats();
+
+    /** 尚未就绪的区块：首次预约的物理步 + 该轮提交的 Y 窗口，用于量构建延迟 */
+    private final Map<Long, PendingBuild> pendingBuild = new HashMap<>();
+
+    /** 惰性解析的物理世界（只用来读物理步计数） */
+    private PhysicsLevel physicsLevel;
+
+    /**
+     * 一个等待构建完成的区块。
+     *
+     * @param chunkX    区块 X
+     * @param chunkZ    区块 Z
+     * @param firstTick 首次登记时的物理步计数
+     * @param yLo      该轮提交的 Y 窗口下界（方块 Y）
+     * @param yHi      该轮提交的 Y 窗口上界（方块 Y）
+     */
+    private record PendingBuild(int chunkX, int chunkZ, long firstTick, int yLo, int yHi) {
+    }
 
     public TerrainPreload(Level level, DensityFunction density) {
         this.level = level;
@@ -221,7 +249,7 @@ public final class TerrainPreload {
     }
 
     /**
-     * 走一遍视界并提交预约。开火瞬间的首段与每 tick 的重算都调这一个入口。
+     * 走一遍视界并提交预约。
      *
      * @param cfg       弹道参数
      * @param thrust    推力剖面
@@ -234,17 +262,42 @@ public final class TerrainPreload {
      * @param vy        起点速度 Y
      * @param vz        起点速度 Z
      * @param burnTime  起点已燃烧时长（s）
+     * @return 本次提交的区块条目数
      */
-    public void reserve(BallisticConfig cfg, ThrustProfile thrust, float radius, int tps,
-                        float px, float py, float pz,
-                        float vx, float vy, float vz, float burnTime) {
+    public int reserve(BallisticConfig cfg, ThrustProfile thrust, float radius, int tps,
+                       float px, float py, float pz,
+                       float vx, float vy, float vz, float burnTime) {
+        int submitted = run(cfg, thrust, radius, tps, px, py, pz, vx, vy, vz, burnTime);
+        stats.replans++;
+        stats.chunks += submitted;
+        return submitted;
+    }
+
+    /**
+     * 开火瞬间的首段预约：与 {@link #reserve} 同一轮视界，只分开计数。
+     *
+     * @return 本次提交的区块条目数
+     */
+    public int seed(BallisticConfig cfg, ThrustProfile thrust, float radius, int tps,
+                    float px, float py, float pz,
+                    float vx, float vy, float vz, float burnTime) {
+        int submitted = run(cfg, thrust, radius, tps, px, py, pz, vx, vy, vz, burnTime);
+        stats.seeds++;
+        stats.seedChunks += submitted;
+        stats.chunks += submitted;
+        return submitted;
+    }
+
+    private int run(BallisticConfig cfg, ThrustProfile thrust, float radius, int tps,
+                    float px, float py, float pz,
+                    float vx, float vy, float vz, float burnTime) {
         windows.clear();
         ordered.clear();
         try {
             walk(cfg, thrust, density, px, py, pz, vx, vy, vz, burnTime, radius,
                     (ax, ay, az, bx, by, bz, yLo, yHi, lead) ->
                             submitSegment(radius, ax, az, bx, bz, yLo, yHi, lead));
-            flush(tps);
+            return flush(tps);
         } finally {
             windows.clear();
             ordered.clear();
@@ -259,14 +312,23 @@ public final class TerrainPreload {
         int minBuildHeight = level.getMinBuildHeight();
         int maxBuildHeightExclusive = level.getMaxBuildHeight();
         // 越界样本取“跳过”而不是终止：世界上下界之外没有地形，整条视界继续
-        if (yHi < minBuildHeight || yLo >= maxBuildHeightExclusive) return;
+        if (yHi < minBuildHeight || yLo >= maxBuildHeightExclusive) {
+            stats.outOfWorld++;
+            return;
+        }
 
         ChunkCoverage.cellsCrossedBySegment(ax, az, bx, bz, radius, (chunkX, chunkZ) -> {
             ChunkPos cp = new ChunkPos(chunkX, chunkZ);
             short[] intervals = SparkLevel.getSolidIntervals(level, cp);
-            if (intervals == null) return;                       // 无索引：不预约，不为它触发生成
+            if (intervals == null) {                             // 无索引：不预约，不为它触发生成
+                stats.noIndex++;
+                return;
+            }
             int[] hit = ElevationFilter.intersect(intervals, yLo, yHi);
-            if (hit == null) return;                             // 有索引但确定空中：不预约
+            if (hit == null) {                                   // 有索引但确定空中：不预约
+                stats.airborne++;
+                return;
+            }
             windows.computeIfAbsent(cp.toLong(), k -> new Window(chunkX, chunkZ))
                     .merge(hit[0], hit[1], leadSeconds);
         });
@@ -277,9 +339,11 @@ public final class TerrainPreload {
      * <p>
      * 这只决定同一个游戏 tick 内的登记次序，与构建顺序无关——{@code pendingBuildRequests}
      * 是并发映射、消费时还要再复制一遍，沿航迹的调用顺序不会变成构建顺序。
+     *
+     * @return 提交的区块条目数
      */
-    private void flush(int tps) {
-        if (windows.isEmpty()) return;
+    private int flush(int tps) {
+        if (windows.isEmpty()) return 0;
 
         ordered.addAll(windows.values());
         ordered.sort(Comparator.comparingDouble(w -> w.leadSeconds));
@@ -287,6 +351,74 @@ public final class TerrainPreload {
         for (Window w : ordered) {
             SparkLevel.scheduleChunkLoad(level, new ChunkPos(w.chunkX, w.chunkZ),
                     w.yLo, w.yHi, 0, holdSteps(w.leadSeconds, tps));
+            // 首次为某区块登记时记下它的就绪计时起点；续期不重置
+            if (pendingBuild.size() > PENDING_BUILD_LIMIT) pendingBuild.clear();
+            pendingBuild.putIfAbsent(ChunkPos.asLong(w.chunkX, w.chunkZ),
+                    new PendingBuild(w.chunkX, w.chunkZ, physics().getTickCount(), w.yLo, w.yHi));
+        }
+        return ordered.size();
+    }
+
+    /**
+     * 采样一遍“首次预约 → 该 section 的刚体进入世界”的耗时，单位是<b>物理步</b>。
+     * <p>
+     * 续期不算：同一区块只在第一次登记时记起点，之后每轮重新预约都不会重置它。
+     * 久等不就绪的条目在超过 {@link #PENDING_BUILD_TTL_STEPS} 后丢弃——那时它已经被过期释放，
+     * 再等下去只会把一个不可达的样本拖成离群值。
+     *
+     * @param onReady 收到一个样本（物理步数）
+     */
+    public void pollBuildLatency(java.util.function.LongConsumer onReady) {
+        if (pendingBuild.isEmpty()) return;
+        long now = physics().getTickCount();
+        var iterator = pendingBuild.values().iterator();
+        while (iterator.hasNext()) {
+            PendingBuild p = iterator.next();
+            ChunkPos cp = new ChunkPos(p.chunkX(), p.chunkZ());
+            if (SparkLevel.isChunkTerrainReady(level, cp, p.yLo(), p.yHi())) {
+                onReady.accept(now - p.firstTick());
+                iterator.remove();
+            } else if (now - p.firstTick() > PENDING_BUILD_TTL_STEPS) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /** 累计指标 */
+    public Stats stats() {
+        return stats;
+    }
+
+    private PhysicsLevel physics() {
+        PhysicsLevel p = physicsLevel;
+        if (p == null) {
+            physicsLevel = p = SparkLevel.getPhysicsLevel(level);
+        }
+        return p;
+    }
+
+    /**
+     * 累计指标。单轮、跨轮都只是计数，读走即清零。
+     */
+    public static final class Stats {
+        /** 首段预约的次数（每发一次） */
+        public int seeds;
+        /** 首段预约提交的区块条目数（每发一次，不计续期） */
+        public int seedChunks;
+        /** 视界行走的总次数 */
+        public int replans;
+        /** 累计提交的（区块, 轮次）条目数——随轮次线性增长，不要读成不同区块数 */
+        public int chunks;
+        /** 因无索引而跳过的（区块, 线段）对数 */
+        public int noIndex;
+        /** 因确定空中而跳过的（区块, 线段）对数 */
+        public int airborne;
+        /** 整条线段落出世界上下界的样本数 */
+        public int outOfWorld;
+
+        public void reset() {
+            seeds = seedChunks = replans = chunks = 0;
+            noIndex = airborne = outOfWorld = 0;
         }
     }
 }

@@ -12,6 +12,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.DensityFunction;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectContext;
@@ -47,6 +48,7 @@ import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -327,6 +329,17 @@ public class ProjectileManager {
 
     /** 上一轮已经预载过的物理步计数；物理线程没推进时整轮跳过（{@code requestStep} 早退的那一拍） */
     private long lastPreloadTick = -1L;
+
+    /** 预载指标：上报周期（游戏 tick）与统计期内的计数 */
+    private static final int PRELOAD_METRICS_PERIOD_TICKS = 1200;
+    private static final int PRELOAD_LATENCY_SAMPLES = 256;
+
+    private final int[] buildLatencySteps = new int[PRELOAD_LATENCY_SAMPLES];
+    private int buildLatencyCount;
+    private int preloadRounds;
+    private int preloadSkipped;
+    private int preloadStarved;
+    private int preloadMetricsCountdown = PRELOAD_METRICS_PERIOD_TICKS;
 
     /** 地形预载（仅服务端使用，主线程） */
     private final TerrainPreload terrainPreload;
@@ -1019,15 +1032,82 @@ public class ProjectileManager {
      * 只读快照表，不碰 SoA 数组：{@code swapRemove}、扩容与半写状态都与预载无关。
      */
     private void preloadProjectileTerrain() {
-        SnapshotTable table = snapshots;
-        if (table.tickCount() == lastPreloadTick) return;
-        lastPreloadTick = table.tickCount();
+        terrainPreload.pollBuildLatency(this::recordBuildLatency);
 
-        int tps = SparkLevel.getPhysicsLevel(level).getTps();
-        for (Snapshot s : table.entries()) {
-            reserveFor(s.type(), tps, s.px(), s.py(), s.pz(),
-                    s.vx(), s.vy(), s.vz(), s.burnTime());
+        SnapshotTable table = snapshots;
+        if (table.tickCount() == lastPreloadTick) {
+            // 物理线程仍在跑 → 这一拍的 requestStep 会整轮早退，消费与激活都顺延
+            preloadSkipped++;
+        } else {
+            lastPreloadTick = table.tickCount();
+            int tps = SparkLevel.getPhysicsLevel(level).getTps();
+            for (Snapshot s : table.entries()) {
+                preloadRounds++;
+                reserveFor(s.type(), tps, s.px(), s.py(), s.pz(),
+                        s.vx(), s.vy(), s.vz(), s.burnTime());
+                if (!isTerrainReadyAt(s)) preloadStarved++;
+            }
         }
+
+        if (--preloadMetricsCountdown <= 0) {
+            preloadMetricsCountdown = PRELOAD_METRICS_PERIOD_TICKS;
+            reportPreloadMetrics();
+        }
+    }
+
+    /**
+     * 弹丸所在区块的地形是否就绪。
+     * <p>
+     * 判据是 {@code SparkLevel#isChunkTerrainReady}（{@code isActive && physicsBody.isInWorld()}），
+     * 与预约走同一组包装函数、同一个方块 Y 窗口口径。窗口取弹丸所在的那一层——
+     * 它正在飞的地方本来就该是空的，这个查询回答的是“它的区块有没有被建起来”，
+     * 而不是“它脚下的方块实不实”。
+     */
+    private boolean isTerrainReadyAt(Snapshot s) {
+        ChunkPos cp = new ChunkPos(BlockPos.containing(s.px(), s.py(), s.pz()));
+        return SparkLevel.isChunkTerrainReady(level, cp, s.py() - 1, s.py() + 1);
+    }
+
+    /** 收一个构建延迟样本（物理步） */
+    private void recordBuildLatency(long steps) {
+        if (buildLatencyCount >= buildLatencySteps.length) return;
+        buildLatencySteps[buildLatencyCount++] = (int) Math.min(Integer.MAX_VALUE, Math.max(0L, steps));
+    }
+
+    /**
+     * 上报一轮预载指标。
+     * <p>
+     * 时基有三种，必须各自标出：视界几何以米计、预载步长以秒计、{@code hold} 与构建延迟以
+     * <b>物理步</b>计。写错一个单位就复刻了旧实现里 {@code 1/tps} 与游戏 tick 混用的坑。
+     * <p>
+     * {@code reactivations} 不在这条线里：它要 Spark 侧对“被 terrain 持有的区块上、
+     * 落在 terrain 窗口内的 section”做停用-启用计数，本仓库给不出来。
+     */
+    private void reportPreloadMetrics() {
+        TerrainPreload.Stats stats = terrainPreload.stats();
+        MachineMax.LOGGER.info(
+                "projectile preload: rounds={} seeds={} seedChunks={} replans={} chunks={} "
+                        + "noIndex={} airborne={} outOfWorld={} buildLatency(p50/p95)={}/{} physicsSteps "
+                        + "starved={} skipped={}",
+                preloadRounds, stats.seeds, stats.seedChunks, stats.replans, stats.chunks,
+                stats.noIndex, stats.airborne, stats.outOfWorld,
+                buildLatencyPercentile(0.50), buildLatencyPercentile(0.95),
+                preloadStarved, preloadSkipped);
+
+        stats.reset();
+        preloadRounds = 0;
+        preloadSkipped = 0;
+        preloadStarved = 0;
+        buildLatencyCount = 0;
+    }
+
+    /** 构建延迟的样本分位（物理步），无样本时为 0 */
+    private int buildLatencyPercentile(double q) {
+        if (buildLatencyCount == 0) return 0;
+        int[] sorted = Arrays.copyOf(buildLatencySteps, buildLatencyCount);
+        Arrays.sort(sorted);
+        int index = (int) Math.round(q * (sorted.length - 1));
+        return sorted[index];
     }
 
     /**
@@ -1053,11 +1133,13 @@ public class ProjectileManager {
                                    float px, float py, float pz,
                                    float vx, float vy, float vz) {
         if (level.isClientSide()) return;
-        reserveFor(type, SparkLevel.getPhysicsLevel(level).getTps(),
-                px, py, pz, vx, vy, vz, 0f);
+        int tps = SparkLevel.getPhysicsLevel(level).getTps();
+        float lead = TerrainPreload.LEAD_SECONDS + TerrainPreload.REPLAN_SECONDS;
+        terrainPreload.seed(type.getBallisticConfig(), type.getThrustProfile(),
+                type.getPreloadSweepRadius(lead), tps, px, py, pz, vx, vy, vz, 0f);
     }
 
-    /** 一轮视界：首段与每 tick 重算共用，参数只在这里组装一次 */
+    /** 一轮重算：参数只在这里组装一次 */
     private void reserveFor(BallisticProjectileType type, int tps,
                             float px, float py, float pz,
                             float vx, float vy, float vz, float burnTime) {

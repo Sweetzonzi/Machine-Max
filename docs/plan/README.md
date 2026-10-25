@@ -39,6 +39,7 @@
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
 | [内容包诊断-SparkCore适配实现](已实现/内容包诊断-SparkCore适配实现.md) | Spark-Core `e526385d`（v1.4）；`MMDynamicRes` 只留注册表与索引，14 个模块去 catch、JSON 解码走 `PackCodec`，配方/研发经 `SparkPackIssues.report` 上报，领域层抛 `PackContentException`；构建、`runData`、`runServer` 与坏文件探针已验证 |
 | [内容包分层与命名](已实现/内容包分层与命名.md) | `spark_modules/` 下九个第一方包按 `builtin → kit → 车包` 三层划分并统一 `Machine-Max_` 目录名；`sdkfz` 拆成六个包、`official` 改名 `civilian`、5 件独立道具并入 builtin、每个包自带 schema 副本；`runServer` 加载的部件与子系统数量与拆分前一致 |
+| [武器系统-投射物弹道预测与区块预载设计](已实现/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`；`common/mech/trajectory/` 下 `TrajectoryStep`（唯一步进，趟一与客户端外推共用）、`ChunkCoverage`（按到格子的距离判，含角点与外扩）、`ElevationFilter`、`TerrainPreload`（视界 `W = v(L+Δ)+16`、逐区块 Y 并集、按区块 `hold`），接进 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段；物理线程每步末发布快照表；`preloadTrajectoryTerrain` 已删除；四组纯 JUnit。未做 `needsReplan`（Δ = 1 tick 下空转），`reactivations` 与两条 GameTest 待验证 |
 
 ## 进行中
 
@@ -61,7 +62,6 @@
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径（1080p 两盏受光约 2.5% 纹理吞吐）与失败模式清单 |
 | [武器系统-投射物曳光光照设计](计划中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）与 S2（光源级遮挡）已落地，待游戏内实测标定；S3/S4 未实现。照射半径与遮挡容差按弹种口径折算，内容包无需改动。文中的 F1（爆炸波前折射的遮挡修复）已落地并实测 |
 | [武器系统-投射物模型渲染设计](计划中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 已能解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放、LOD 距离与投射物动画驱动未实现 |
-| [武器系统-投射物弹道预测与区块预载设计](计划中/武器系统-投射物弹道预测与区块预载设计.md) | 设计定稿、未实现；代码中尚无 `common/mech/trajectory/` 包。现行实现只在发射瞬间预测一次：视野为寿命的 1/5、预约时刻按 5 倍偏晚、制导弹走直线降级、越界 `break` 砍掉高抛弹道的末端，且高程索引零调用。目标形态为“开火瞬间的首段预约 + 每 tick 一轮的视界行走 + 高程索引过滤”，按发预约、不做驻留；视界含重算间隔（`W = v(L+Δ)+16`，`Δ` 取 1 个游戏 tick），预约经 `SparkLevel#scheduleChunkLoad` 以方块 Y 提交（section 换算在包装层），单 tick 新增区块上限 8 个（反过来定出 `Δ`），同一区块的范围按多来源取并集、过期取最晚、激活目标集只由 `updateActivation` 决定；打地形的残余盲距按“热 / 冷区块”分列，且只是构建队列空载时的值（积压时每 tick 再加 `v/20`）；Spark-Core 侧的地形接口改造（范围累积、就绪双条件、票释放带 `forceTicks`）已落地，剩本仓库接线 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [观瞄系统-HUD专用MoLang上下文设计](计划中/观瞄系统-HUD专用MoLang上下文设计.md) | 设计阶段；代码中尚无 `HudMolangContext`。通用元素持有 `hud.*` 上下文，武器元素继承并增加 `weapon.*`；每个元素独立取数 |
 | [内容包 AUI 页面加载可行性调查](计划中/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 已落地，待客户端实机验收。客户端本地内容包 `documents/` 直接写 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用；`LOCAL_ONLY`，不参与服务端同步；AUI 自动重载，`onFinish` 再补一次 `HTML.scan()`；`AuiResourceService` 包装器为备选 |
