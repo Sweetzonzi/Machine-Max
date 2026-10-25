@@ -85,7 +85,8 @@ class TerrainPreloadTest {
     @Test
     @DisplayName("单轮新进视界的区块数由 Δ 决定，1 tick 才落在上限内")
     void newChunksPerRoundBindDelta() {
-        // 三个快弹种在 Δ = 1 tick 时都在 8 以内
+        // v·Δ/16 是**轴向**下界：斜穿实测 APFSDS 峰值 9、压格线时 12。
+        // 这条用例守的是“Δ 的选取判据”（Δ ≤ 16N/v），不是“实测区块数 ≤ 8”。
         for (float speed : new float[]{1650f, 950f, 855f}) {
             float newChunks = speed * DT_GAME_TICK / 16f;
             Assertions.assertTrue(newChunks <= MAX_NEW_CHUNKS_PER_ROUND,

@@ -1073,7 +1073,9 @@ public class ProjectileManager {
      */
     private boolean isTerrainReadyAt(Snapshot s) {
         ChunkPos cp = new ChunkPos(BlockPos.containing(s.px(), s.py(), s.pz()));
-        return SparkLevel.isChunkTerrainReady(level, cp, s.py() - 1, s.py() + 1);
+        // 传整数方块 Y：包装层用 (int) 向零截断做 section 换算，传小数会让负数偏一格
+        int layer = (int) Math.floor(s.py());
+        return SparkLevel.isChunkTerrainReady(level, cp, layer - 1, layer + 1);
     }
 
     /**
