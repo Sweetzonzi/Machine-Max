@@ -39,7 +39,7 @@
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
 | [内容包诊断-SparkCore适配实现](已实现/内容包诊断-SparkCore适配实现.md) | Spark-Core `e526385d`（v1.4）；`MMDynamicRes` 只留注册表与索引，14 个模块去 catch、JSON 解码走 `PackCodec`，配方/研发经 `SparkPackIssues.report` 上报，领域层抛 `PackContentException`；构建、`runData`、`runServer` 与坏文件探针已验证 |
 | [内容包分层与命名](已实现/内容包分层与命名.md) | `spark_modules/` 下九个第一方包按 `builtin → kit → 车包` 三层划分并统一 `Machine-Max_` 目录名；`sdkfz` 拆成六个包、`official` 改名 `civilian`、5 件独立道具并入 builtin、每个包自带 schema 副本；`runServer` 加载的部件与子系统数量与拆分前一致 |
-| [武器系统-投射物弹道预测与区块预载设计](已实现/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`；`common/mech/trajectory/` 下 `TrajectoryStep`（唯一步进，趟一与客户端外推共用）、`ChunkCoverage`（按到格子的距离判，含角点与外扩）、`ElevationFilter`、`TerrainPreload`（视界 `W = v(L+Δ)+16`、逐区块 Y 并集、按区块 `hold`），接进 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段；物理线程每步末发布快照表；`preloadTrajectoryTerrain` 已删除；四组纯 JUnit。未做 `needsReplan`（Δ = 1 tick 下空转），`reactivations` 与两条 GameTest 待验证 |
+| [武器系统-投射物弹道预测与区块预载设计](已实现/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`、`db503f23`；`common/mech/trajectory/` 下 `TrajectoryStep`（唯一步进，趟一与客户端外推共用）、`ChunkCoverage`（按到格子的距离判，含角点与外扩）、`ElevationFilter`、`TerrainPreload`（视界 `W = v(L+Δ)+16`、逐区块 Y 并集、按区块 `hold`），接进 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段；物理线程每步末发布快照表；四组纯 JUnit。未做 `needsReplan`（Δ = 1 tick 下空转），`reactivations` 与两条 GameTest 待验证 |
 
 ## 进行中
 

@@ -2,18 +2,20 @@
 
 **范围**: 投射物类型定义、SoA 管理器、弹道投射物、运动学触发体、制导与战斗部组件、BallisticsFramework 弹道集成。
 
-**文件数**: 13 个 | **总行数**: 4963 行
+**文件数**: 15 个 | **总行数**: 5803 行
 
 ## 结构
 
 ```
 projectile/
-├── BallisticProjectile.java          # 弹道投射物（1132行）：SoA 运动 + 命中解析 + 伤害发起/伤害目标
-├── ProjectileManager.java            # SoA 管理器（2291行），三趟主循环
+├── BallisticProjectile.java          # 弹道投射物（1144行）：SoA 运动 + 命中解析 + 伤害发起/伤害目标
+├── ProjectileManager.java            # SoA 管理器（2460行），三趟主循环 + 地形预载入口
 ├── ProjectileHitBox.java             # 运动学触发体宿主（125行）：PhysicsHost + BFHitResolver
-├── ProjectileType.java               # 投射物类型抽象基类（294行），JSON Codec dispatch
+├── ProjectileType.java               # 投射物类型抽象基类（660行），JSON Codec dispatch
+├── MuzzleFlashLight.java             # 枪口火光参数（155行）：按弹种配置 + 口径折算
+├── MuzzleFlashSink.java              # 枪口火光登记出口（30行），由客户端实现注入
 ├── type/
-│   └── BallisticProjectileType.java  # 飞行弹丸类型（552行）：外弹道 / 终点效应 / 受击 / 命中检测 / 制导 / 战斗部
+│   └── BallisticProjectileType.java  # 飞行弹丸类型（661行）：外弹道 / 终点效应 / 受击 / 命中检测 / 制导 / 战斗部
 └── component/
     ├── effect/                       # 战斗部世界效果（WorldEffect / ExplosionWorldEffect ...）
     └── guidance/                     # 制导律（GuidanceLaw / PurePursuitGuidance ...）
@@ -59,16 +61,21 @@ int[] typeIndex;               // 投射物类型索引
 物理线程（Bullet 步进，100Hz）：
   ProjectileManager.prePhysicsTick(physicsLevel)
     ├── forEachPrePhysicsTick()          # 各投射物 prePhysicsTick()
-    └── updateProjectiles(physicsLevel)  # 仅服务端，三趟
-          ├── 趟一 推进：死条目清扫 → 暂停恢复 → 运动积分（重力/阻力/推力/制导）→ 写回 SoA
-          ├── 趟二 同步：把持有触发体的条目按 SoA 位姿刷新物理体积
-          └── 趟三 判定：命中查询（rayTest / sweepTest）→ 归一化 HitEntry → 排序 → 分派
+    ├── updateProjectiles(physicsLevel)  # 仅服务端，三趟
+    │     ├── 趟一 推进：死条目清扫 → 暂停恢复 → 运动积分（重力/阻力/推力/制导）→ 写回 SoA
+    │     ├── 趟二 同步：把持有触发体的条目按 SoA 位姿刷新物理体积
+    │     └── 趟三 判定：命中查询（rayTest / sweepTest）→ 归一化 HitEntry → 排序 → 分派
+    └── publishSnapshots(physicsLevel)   # 每步末原子替换一张只读快照表（弹种/位置/速度/burnTime/tickCount）
 
 主线程（20tps）：
   ProjectileManager.preTick()
     ├── tickAndPreTick()      # 寿命递减 + 各投射物 preTick()；寿命到期同样经 destroy() 出列
     ├── tryRecreateEntities() # 重建因区块卸载丢失的 MMProjectileEntity
-    └── clientExtrapolate()   # 仅客户端：死条目清理扫描（保留一次供渲染）+ 5 子步自主外推
+    └── 分端：
+          ├── 客户端 → clientExtrapolate()       # 死条目清理扫描（保留一次供渲染）+ 5 子步自主外推
+          └── 服务端 → preloadProjectileTerrain() # 读快照表，走一轮弹道视界并预约地形
+                                                 #（实现在 common/mech/trajectory/TerrainPreload，见
+                                                 # docs/plan/已实现/武器系统-投射物弹道预测与区块预载设计.md）
   ProjectileManager.postTick()
     ├── cleanOrphanedEntities()      # 延迟清理代理实体
     ├── flushProjectileEntities()    # 生成包（ProjectilesSpawnPayload）
