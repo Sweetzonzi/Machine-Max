@@ -277,7 +277,7 @@
               ]
             },
             "dismount_locators": [],
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "third_hud_layout": "machine_max:morden_ground_basic",
             "allow_use_items": true
           },
           "commander_seat": {
@@ -297,7 +297,7 @@
               ]
             },
             "dismount_locators": [],
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "third_hud_layout": "machine_max:morden_ground_basic",
             "allow_use_items": true
           },
           "gunner_seat": {
@@ -317,7 +317,7 @@
               ]
             },
             "dismount_locators": [],
-            "third_hud_layout": "machine_max:k17_vehicle_hud",
+            "third_hud_layout": "machine_max:morden_ground_basic",
             "allow_use_items": true
           }
         }

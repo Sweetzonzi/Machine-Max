@@ -1,0 +1,20 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:camera",
+  "basic_durability": 10,
+  "vertical_stabilized": true,
+  "horizontal_stabilized": true,
+  "base_zoom": 1.0,
+  "max_zoom": 8.0,
+  "scope_hud_layout": "machine_max:modern_optics",
+  "min_pitch": -15.0,
+  "max_pitch": 75.0,
+  "yaw_limit": 120.0,
+  "tracking_target_inputs": [],
+  "discovery_inputs": [
+    "gunner_sight"
+  ],
+  "allow_cycle": true,
+  "pitch_speed": 90,
+  "yaw_speed": 90
+}

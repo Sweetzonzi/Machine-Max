@@ -55,6 +55,7 @@
   "subsystem.machine_max.2a90_ap_loader": "2A90 AP Loader",
   "subsystem.machine_max.2a90_he_loader": "2A90 HE Loader",
   "subsystem.machine_max.commander_sight": "Commander Sight",
+  "subsystem.machine_max.gunner_sight": "Gunner Sight",
   "subsystem.machine_max.2a90": "2a90",
   "connector.machine_max.skirt_left_1_hull": "Skirt Left 1 Hull",
   "connector.machine_max.skirt_right_1_hull": "Skirt Right 1 Hull",

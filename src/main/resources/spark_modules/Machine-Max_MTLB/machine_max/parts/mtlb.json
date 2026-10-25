@@ -792,7 +792,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.commander_seat": {
             "type": "machine_max:seat",
@@ -805,7 +806,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_1": {
             "type": "machine_max:seat",
@@ -818,7 +820,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_2": {
             "type": "machine_max:seat",
@@ -831,7 +834,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_3": {
             "type": "machine_max:seat",
@@ -844,7 +848,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_4": {
             "type": "machine_max:seat",
@@ -857,7 +862,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_5": {
             "type": "machine_max:seat",
@@ -870,7 +876,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_6": {
             "type": "machine_max:seat",
@@ -883,7 +890,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_7": {
             "type": "machine_max:seat",
@@ -896,7 +904,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.passenger_seat_8": {
             "type": "machine_max:seat",
@@ -909,7 +918,8 @@
                 "global"
               ]
             },
-            "dismount_locators": []
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "subsystem.machine_max.track_controller": {
             "type": "machine_max:track_controller",

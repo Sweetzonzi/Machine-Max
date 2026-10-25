@@ -141,7 +141,7 @@
             },
             "subsystem.machine_max.commander_sight": {
               "type": "machine_max:camera",
-              "definition": "machine_max:commander_sight_dual_stb",
+              "definition": "machine_max:2s38_commander_sight",
               "locator": "commander_sight"
             },
             "subsystem.machine_max.pktm_elevation_driver": {
@@ -181,7 +181,7 @@
           "subsystems": {
             "subsystem.machine_max.gunner_sight": {
               "type": "machine_max:sight",
-              "definition": "machine_max:gunner_sight",
+              "definition": "machine_max:2s38_gunner_sight",
               "locator": "gunner_sight"
             },
             "subsystem.machine_max.2a90": {
