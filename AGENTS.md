@@ -336,7 +336,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 ## 补充说明
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`）。
-- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartFoundationGameTest.java#fullStateAndBlueprintSkeleton` 与 `#externalFactoryAndVehicleBoundary`。两条 GameTest 验证真实服务端的部件构造、恢复和类型边界；客户端画面通过 runClient 验收。公共 API、模板和覆盖边界见 `docs/部件公共基础接入.md` 的“验证方式”。
+- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartFoundationGameTest.java#fullStateAndBlueprintSkeleton` 与 `#externalFactoryAndVehicleBoundary`；同目录 `PartAssemblyProgressGameTest.java#routesBySubPartIdWithoutVehicleRegistry` 验证通过子零件 ID 更新制造状态及注销后的处理。公共部件用例验证真实服务端的构造、恢复、类型边界和对象表路由；客户端画面通过 runClient 验收。公共 API、模板和覆盖边界见 `docs/部件公共基础接入.md` 的“验证方式”。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。

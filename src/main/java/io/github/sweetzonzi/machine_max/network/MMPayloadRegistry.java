@@ -35,7 +35,8 @@ public class MMPayloadRegistry {
         final PayloadRegistrar input = event.registrar("input:2.1.0");
         // TrackLinkData#STREAM_CODEC 携带 clockwise 布尔绕向与 track_type 型号 id，VehicleData 的同步和蓝图载荷使用该格式。
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。
-        final PayloadRegistrar sync = event.registrar("sync:2.5.0");
+        // PartAssemblyProgressSyncPayload 通过单个 SubPart ID 寻址普通部件，编码长度为 13 字节。
+        final PayloadRegistrar sync = event.registrar("sync:2.6.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.2.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
@@ -157,7 +158,7 @@ public class MMPayloadRegistry {
                 PartPaintPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartPaintPayload::handle)
         );
-        sync.playToClient(//通知客户端部件组转进度改变
+        sync.playToClient(//通知客户端部件组装进度改变
                 PartAssemblyProgressSyncPayload.TYPE,
                 PartAssemblyProgressSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartAssemblyProgressSyncPayload::handle)

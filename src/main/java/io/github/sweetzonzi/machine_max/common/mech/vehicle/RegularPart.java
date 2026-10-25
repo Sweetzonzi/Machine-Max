@@ -19,6 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.*;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 
 /**
  * MM 普通部件实例，在公共机械基础上实现材料组装、维修与载具伤害规则。
@@ -490,17 +491,18 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
 
     /**
      * 向本维度玩家广播组装、材料和线框状态。
-     * <p>仅服务端且部件已归属入世装配体时发送；构造期与客户端本地状态更新不发包。</p>
+     * <p>仅服务端且部件已归属入世装配体时发送。选择一个仍在对象表内的子零件作为地址，
+     * 客户端通过该子零件取得部件；不要求宿主进入载具注册表。没有有效子零件时不发送。</p>
      */
     private void syncAssemblyProgressToClient() {
         if (!level.isClientSide() && assembly != null && assembly.isInLevel()) {
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                    assembly.getAssemblyId(),
-                    uuid,
-                    assemblingProgress,
-                    materialProgress,
-                    renderWireframe
-            ));
+            // 根子零件可能已销毁；任一仍注册的子零件都可以定位整个部件。
+            for (SubPart child : subParts.values()) {
+                if (ObjectManager.getDestroyableObject(level, child.getId()) != child) continue;
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
+                        child.getId(), assemblingProgress, materialProgress, renderWireframe));
+                break;
+            }
         }
     }
 
