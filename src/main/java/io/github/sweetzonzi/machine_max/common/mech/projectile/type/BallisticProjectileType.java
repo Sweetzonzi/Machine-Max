@@ -5,11 +5,15 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.ThrustProfile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceLaw;
+import io.github.sweetzonzi.machine_max.common.mech.trajectory.TrajectoryStep;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -86,6 +90,14 @@ public class BallisticProjectileType extends ProjectileType {
 
     /** 静态扩展数据缓存（口径、质量等不变信息），惰性初始化，命中时 copy 后追加动态值 */
     private volatile BFDamageExtensions baseExtensions;
+
+    /** 弹道参数缓存，见 {@link #getBallisticConfig()}；惰性初始化后不再变化 */
+    @Getter(AccessLevel.NONE)
+    private BallisticConfig ballisticConfig;
+
+    /** 推力剖面缓存，见 {@link #getThrustProfile()}；惰性初始化后不再变化 */
+    @Getter(AccessLevel.NONE)
+    private ThrustProfile thrustProfile;
 
     // ==================== CODEC（11 字段，远低于 16 上限） ====================
 
@@ -184,6 +196,78 @@ public class BallisticProjectileType extends ProjectileType {
     public ExternalProperties.ThrustProperties getThrust() { return external.thrust(); }
     /** 是否配置了有效推进段 */
     public boolean hasThrust() { return external.thrust().isActive(); }
+
+    /**
+     * 此弹种的弹道解算参数，供 {@link TrajectoryStep#step} 使用。
+     * <p>
+     * 弹种字段在装配后不变，因此按弹种缓存一次，避免每发、每物理步重建记录。
+     * 惰性写竞争是良性的：两个线程各自构造出等值记录，读到的引用指向完整构造的对象
+     * （record 的字段全是 final，最终字段语义保证其可见性）。
+     * <p>
+     * {@code timeStep} 写死为 1 个游戏 tick（0.05 s），与物理线程的实际步长无关——
+     * {@code TrajectoryStep#step} 的步长由显式 {@code dt} 给出。这个字段只对
+     * {@code RealisticTrajectory#forwardSolve} 有意义；{@code maxSteps} 同理，
+     * 取弹种寿命的游戏 tick 数，与 0.05 s 的步长配合才等于实际飞行时长。
+     *
+     * @return 本弹种的弹道参数（同一实例）
+     */
+    public BallisticConfig getBallisticConfig() {
+        BallisticConfig cfg = ballisticConfig;
+        if (cfg == null) {
+            cfg = new BallisticConfig(
+                    getDragFactor(),                                          // Cd
+                    getMass(),                                                // 质量 kg
+                    (float) (Math.PI * getRadius() * getRadius()),             // A = π·r² (m²)
+                    getGravityFactor() * 9.81f,                               // 重力加速度 (m/s²)
+                    1f / 20f,                                                 // 1 个游戏 tick
+                    getMaxLifetimeTicks());
+            ballisticConfig = cfg;
+        }
+        return cfg;
+    }
+
+    /**
+     * 此弹种的推力剖面，时间窗用公制秒表达、自发射瞬间起算。
+     * <p>
+     * {@link ExternalProperties.ThrustProperties} 以 {@code (force, duration, ignitionDelay)}
+     * 表达推进段，{@link ThrustProfile} 以 {@code (force, start, end)} 表达，两者一一对应：
+     * {@code start = ignitionDelay}、{@code end = ignitionDelay + duration}。无推进段时返回
+     * {@link ThrustProfile#NONE}。
+     *
+     * @return 本弹种的推力剖面（同一实例）
+     */
+    public ThrustProfile getThrustProfile() {
+        ThrustProfile profile = thrustProfile;
+        if (profile == null) {
+            ExternalProperties.ThrustProperties thrust = getThrust();
+            profile = thrust.isActive()
+                    ? new ThrustProfile(thrust.force(), thrust.ignitionDelay(), thrust.burnEnd())
+                    : ThrustProfile.NONE;
+            thrustProfile = profile;
+        }
+        return profile;
+    }
+
+    /**
+     * 地形预载的视界外扩半径（m）：弹体半径与制导可达量的较大者。
+     * <p>
+     * 预约是提前 {@code leadSeconds} 做出的，之后方向还能被制导拉偏，所以预约必须覆盖整个提前期内的
+     * 可达集。指令加速度的上界取 {@code structural_limit_g}（结构上限）——制导律的指令上限不高于它，
+     * 于是横向可达是 {@code ½·a_max·lead²}：15 g、0.2 s 时约 2.9 m。
+     * <p>
+     * 非制导弹种没有这一项，只按弹体半径外扩；{@code sweep} 判定的半径与弹体半径同源。
+     *
+     * @param leadSeconds 预约的提前量（s），即 {@code L + Δ}
+     * @return 外扩半径（方块 / m）
+     */
+    public float getPreloadSweepRadius(float leadSeconds) {
+        float reach = 0f;
+        if (guidance != null && leadSeconds > 0f) {
+            float maxAccel = guidance.limits().structuralLimitG() * 9.81f;
+            reach = 0.5f * maxAccel * leadSeconds * leadSeconds;
+        }
+        return Math.max(getRadius(), reach);
+    }
 
     /**
      * 获取此投射物类型的静态扩展数据缓存（口径、质量等不变字段）。

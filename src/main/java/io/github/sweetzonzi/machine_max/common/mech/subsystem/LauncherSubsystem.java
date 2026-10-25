@@ -480,7 +480,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *   <li>若停止开火 → 处理停火音效，{@code fireAccumulator = 0}，防止蓄力</li>
      *   <li>刚按下开火键的首帧 → 预填充 accumulator 为 {@code intervalSec}，保证立即发射</li>
      *   <li>后续帧 → 正常 {@code fireAccumulator += 0.05s}，计算应发射数 {@code N}</li>
-     *   <li>弹药消费循环（最多 N 发）：取弹 → 兼容校验 → 膛内 → 入队 {@link #pendingFires} → 装填下一发</li>
+     *   <li>弹药消费循环（最多 N 发）：取弹 → 兼容校验 → 膛内 → 入队 {@link #pendingFires}
+     *       → 提交地形首段预约（服务端） → 装填下一发</li>
      *   <li>客户端音效处理：遍历 pendingFires，首发射击用单发音效，后续连射启动/维持循环音效</li>
      *   <li>扣除已发射数对应的时间：{@code fireAccumulator -= N × intervalSec}</li>
      * </ol>
@@ -553,6 +554,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
             // ③ 入队 pendingFires（物理线程将消费）
             pendingFires.add(chamberedType);
+            // ③.① 首段地形预约：赶在本 tick 的 requestStep 之前登记，
+            //      否则开火后第一个游戏 tick 的飞行段没有任何预约（投射物自己的 preTick 在下一个 tick）
+            if (!getLevel().isClientSide()) {
+                seedTrajectoryTerrain(chamberedType);
+            }
             firedTypes.add(chamberedType);
             firedCount++;
             chamberedType = null;
@@ -673,7 +679,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * <p>
      * 逻辑：
      * <ol>
-     *   <li>读取刚体实时 {@link #getMuzzleWorldTransform()} 获取枪口位姿（与物理体同步）</li>
+     *   <li>经 {@link #computeMuzzleState} 读刚体实时 {@link #getMuzzleWorldTransform()}，
+     *       取枪口位姿、发射方向与出膛速率（与物理体同步）</li>
      *   <li>散布 + 最终初速计算</li>
      *   <li>继承发射平台速度</li>
      *   <li>调用 {@link ProjectileType#create} 创建投射物（内部进入 SoA 写入）</li>
@@ -681,46 +688,24 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * </ol>
      */
     private void fireSingle(BallisticProjectileType type) {
-        // ① 枪口位姿
-        Transform muzzleTransform = getMuzzleWorldTransform();
-        Vector3f jmePos = muzzleTransform.getTranslation();
-        Quaternion jmeRot = muzzleTransform.getRotation();
+        MuzzleState muzzle = computeMuzzleState(type);
 
-        // ② 计算发射方向：按优先级使用火控指令中的期望方向和修正角
-        Vector3f locatorForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null).normalize();
-        Vector3f direction;
-        FireCommand cmd = getActiveFireCommand();
-        if (cmd != null && cmd.direction() != null && cmd.correctionAngleDeg() > 0.001f) {
-            direction = clampToCone(locatorForward, cmd.direction(), cmd.correctionAngleDeg());
-        } else {
-            direction = locatorForward;
-        }
-
-        // ③ 客户端：不创建投射物，音效已在 onTick() 中处理
+        // ① 客户端：不创建投射物，音效已在 onTick() 中处理
         if (getLevel().isClientSide()) {
             return;
         }
 
-        // ④ 服务端：开火——ProjectileType 内部处理 bullet_num、散布、速度
-        // 计算炮管模块对散布和初速的衰减乘数
-        float spreadMult = 1.0f;
-        float velMult = attr.staticAttribute.getBarrel().velocityMultiplier();
-        SubModule barrelModule = getModule("barrel");
-        if (barrelModule != null) {
-            BarrelModuleAttr barrelAttr = (BarrelModuleAttr) barrelModule.getAttr();
-            spreadMult = barrelAttr.getSpreadMultiplier(barrelModule.getDurabilityRatio());
-            velMult *= barrelAttr.getMuzzleVelocityMultiplier(barrelModule.getDurabilityRatio());
-        }
+        // ② 服务端：开火——ProjectileType 内部处理 bullet_num、散布、速度
         List<BallisticProjectile> projectiles = type.fire(
-            getLevel(), jmePos, direction,
-            velMult,
+            getLevel(), muzzle.position(), muzzle.direction(),
+            muzzle.velocityMultiplier(),
             attr.staticAttribute.getBarrel().velocityBonus(),
-            attr.staticAttribute.getBarrel().horizontalAccuracyMultiplier() * spreadMult,
-            attr.staticAttribute.getBarrel().verticalAccuracyMultiplier() * spreadMult,
+            attr.staticAttribute.getBarrel().horizontalAccuracyMultiplier() * muzzle.spreadMultiplier(),
+            attr.staticAttribute.getBarrel().verticalAccuracyMultiplier() * muzzle.spreadMultiplier(),
             getSubPart().getLinearVelocity()
         );
 
-        // ⑤ 制导弹登记：记住 objId 以便后续每物理步推送目标，并装订初始目标
+        // ③ 制导弹登记：记住 objId 以便后续每物理步推送目标，并装订初始目标
         if (type.hasGuidance()) {
             ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(getLevel());
             Vec3 target = this.guidanceTarget;
@@ -735,20 +720,102 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             }
         }
 
-        // ⑥ 自身排除：把本发射器零件的命中框预先登记为"已穿透"，使新弹从出膛起忽略本零件
+        // ④ 自身排除：把本发射器零件的命中框预先登记为"已穿透"，使新弹从出膛起忽略本零件
         registerSelfExclusion(projectiles);
 
-        // ⑦ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
-        float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getBarrel().velocityMultiplier()
-                         + attr.staticAttribute.getBarrel().velocityBonus();
+        // ⑤ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
+        float finalSpeed = muzzle.speed();
         float totalMass = type.getMass() * projectiles.size();
         float recoilImpulse = totalMass * finalSpeed * attr.staticAttribute.getBarrel().recoilMultiplier();
         if (recoilImpulse > 1e-6f) {
-            Vector3f impulseWorld = direction.mult(-recoilImpulse);
+            Vector3f impulseWorld = muzzle.direction().mult(-recoilImpulse);
             var body = getSubPart().getBody();
             Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
-            body.applyImpulse(impulseWorld, jmePos.subtract(bodyWorldPos));
+            body.applyImpulse(impulseWorld, muzzle.position().subtract(bodyWorldPos));
         }
+    }
+
+    /**
+     * 枪口位姿与出膛状态：位置、方向、出膛速率、炮管两项乘子。
+     * <p>
+     * 开火（物理线程）与首段预约（主线程）共用这一份读法，两边因此读到同一套
+     * “刚体实时变换 + 火控修正 + 炮管状态”，不会各自复制一份口径。
+     *
+     * @param position           枪口世界坐标（JME），是刚体变换里的实时值
+     * @param direction          出膛方向（JME 单位向量，未含散布）
+     * @param speed              出膛速率（m/s，未含散布与平台速度）
+     * @param velocityMultiplier 炮管对初速的乘子（含耐久衰减）
+     * @param spreadMultiplier   炮管对散布的乘子（含耐久衰减）
+     */
+    private record MuzzleState(Vector3f position, Vector3f direction,
+                               float speed, float velocityMultiplier, float spreadMultiplier) {
+    }
+
+    /**
+     * 读一次枪口状态。
+     * <p>
+     * 方向的优先级与既有开火一致：活跃 {@link FireCommand} 的期望方向 + 修正角生效时用
+     * {@link #clampToCone} 修正后的方向，否则用 locator 朝向。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link #fireSingle}）与主线程（{@link #onTick} 的首段预约）。
+     * 读的是刚体实时变换，与 HUD 的 {@link #getMuzzleWorldPosition()} 同一读法。
+     *
+     * @param type 即将出膛的弹种（提供基础初速）
+     * @return 枪口状态
+     */
+    private MuzzleState computeMuzzleState(BallisticProjectileType type) {
+        Transform muzzleTransform = getMuzzleWorldTransform();
+        Vector3f jmePos = muzzleTransform.getTranslation();
+        Quaternion jmeRot = muzzleTransform.getRotation();
+
+        Vector3f locatorForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null).normalize();
+        Vector3f direction;
+        FireCommand cmd = getActiveFireCommand();
+        if (cmd != null && cmd.direction() != null && cmd.correctionAngleDeg() > 0.001f) {
+            direction = clampToCone(locatorForward, cmd.direction(), cmd.correctionAngleDeg());
+        } else {
+            direction = locatorForward;
+        }
+
+        float spreadMult = 1.0f;
+        float velMult = attr.staticAttribute.getBarrel().velocityMultiplier();
+        SubModule barrelModule = getModule("barrel");
+        if (barrelModule != null) {
+            BarrelModuleAttr barrelAttr = (BarrelModuleAttr) barrelModule.getAttr();
+            spreadMult = barrelAttr.getSpreadMultiplier(barrelModule.getDurabilityRatio());
+            velMult *= barrelAttr.getMuzzleVelocityMultiplier(barrelModule.getDurabilityRatio());
+        }
+
+        float speed = type.getBaseVelocity() * velMult + attr.staticAttribute.getBarrel().velocityBonus();
+        return new MuzzleState(jmePos, direction, speed, velMult, spreadMult);
+    }
+
+    /**
+     * 开火瞬间的地形首段预约。
+     * <p>
+     * 深度与每 tick 的视界行走相同（{@code Δ = 1/20 s} 时 {@code W₀ = W}），差别只在时刻：
+     * 这里赶在同一个游戏 tick 的即时队列消费之前登记，比投射物自己的第一次 {@code preTick}
+     * 早整整一个 tick。少了这一段，开火后第一个 tick 的飞段永远进不了预约。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #onTick()} 的服务端分支）。
+     *
+     * @param type 即将出膛的弹种
+     */
+    private void seedTrajectoryTerrain(BallisticProjectileType type) {
+        if (getOwner() == null) return;
+
+        MuzzleState muzzle = computeMuzzleState(type);
+        Vector3f muzzlePos = muzzle.position();
+        Vector3f dir = muzzle.direction();
+        float speed = muzzle.speed();
+        // 平台速度按既有出膛口径叠加：真实初速是“方向 × 出膛速率 + 载具速度”
+        Vector3f platformVelocity = getSubPart().getLinearVelocity();
+
+        ObjectManager.getOrCreateProjectileManager(getLevel()).seedTerrainPreload(type,
+                muzzlePos.x, muzzlePos.y, muzzlePos.z,
+                dir.x * speed + platformVelocity.x,
+                dir.y * speed + platformVelocity.y,
+                dir.z * speed + platformVelocity.z);
     }
 
     /**

@@ -11,11 +11,7 @@ import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
-import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.DensityFunction;
-import io.github.sweetzonzi.ballistics_framework.api.trajectory.RealisticTrajectory;
-import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectoryResult;
-import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectorySample;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectContext;
@@ -23,6 +19,8 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceContext;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.trajectory.TerrainPreload;
+import io.github.sweetzonzi.machine_max.common.mech.trajectory.TrajectoryStep;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
@@ -49,7 +47,6 @@ import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -95,7 +92,7 @@ public class ProjectileManager {
      * <p>
      * 使用归一化指数衰减模型：ρ(y) = exp(-(y - 62) / 8500)。
      * 海平面(Y=62)密度 = 1.0，与现有 dragFactor 配平值兼容。
-     * 与 {@link RealisticTrajectory#forwardSolve} 共享同一函数，确保预测与模拟一致。
+     * 与 {@link TrajectoryStep#step} 共用这一条曲线，模拟、客户端外推与地形预载因此不会分家。
      */
     private final DensityFunction densityFunction;
 
@@ -311,10 +308,61 @@ public class ProjectileManager {
     private final Vector3f hitNormalJme = new Vector3f();
     /** 制导解算的输出缓冲（复用，避免热路径分配），仅物理线程使用 */
     private final Vector3f guidanceAccel = new Vector3f();
+    /**
+     * {@link TrajectoryStep#step} 的输出缓冲（复用，避免热路径分配）。
+     * <p>
+     * 一个实例只绑定一个 {@link Level}：服务端维度只跑趟一（物理线程），客户端维度只跑
+     * {@link #clientExtrapolate()}（主线程），两者不会同时使用同一个缓冲；即使同时发生，
+     * 每次调用都完整覆盖 6 个槽位、不读旧值，也无从互相污染。
+     */
+    private final float[] stepOut = new float[TrajectoryStep.OUT_LENGTH];
+
+    /**
+     * 物理线程每步末发布的投射物状态快照，主线程的地形预载只读它。
+     * <p>
+     * 整表原子替换：主线程永远看到某一步末的完整一致状态，不会读到“位置是这一步、速度是下一步”，
+     * 也不需要知道 {@code count} 或 SoA 数组的存在。
+     */
+    private volatile SnapshotTable snapshots = SnapshotTable.EMPTY;
+
+    /** 上一轮已经预载过的物理步计数；物理线程没推进时整轮跳过（{@code requestStep} 早退的那一拍） */
+    private long lastPreloadTick = -1L;
+
+    /** 地形预载（仅服务端使用，主线程） */
+    private final TerrainPreload terrainPreload;
+
+    /**
+     * 一个投射物在某个物理步末的不可变状态。
+     *
+     * @param type      弹种，同一条快照里带上是为避免主线程再去读 {@code typeCache}
+     * @param px        位置 X
+     * @param py        位置 Y
+     * @param pz        位置 Z
+     * @param vx        速度 X（m/s）
+     * @param vy        速度 Y
+     * @param vz        速度 Z
+     * @param burnTime  已燃烧时长（s）
+     */
+    private record Snapshot(BallisticProjectileType type,
+                            float px, float py, float pz,
+                            float vx, float vy, float vz,
+                            float burnTime) {
+    }
+
+    /**
+     * 一次物理步末的整体快照。
+     *
+     * @param tickCount 发布时的物理步计数，用于识别“物理线程没有推进”
+     * @param entries   条目，顺序与 SoA 无关
+     */
+    private record SnapshotTable(long tickCount, Snapshot[] entries) {
+        static final SnapshotTable EMPTY = new SnapshotTable(-1L, new Snapshot[0]);
+    }
 
     public ProjectileManager(Level level) {
         this.level = level;
         this.densityFunction = createDensityFunction();
+        this.terrainPreload = new TerrainPreload(level, densityFunction);
         posX = new float[capacity];
         posY = new float[capacity];
         posZ = new float[capacity];
@@ -346,7 +394,7 @@ public class ProjectileManager {
      * <p>
      * 使用指数衰减模型：ρ(y) = exp(-(y - 62) / 8500)。
      * 海平面(Y=62)密度归一化为 1.0，高空逐渐衰减。
-     * 与 {@link RealisticTrajectory#forwardSolve} 共享同一函数，确保预测与模拟一致。
+     * 与 {@link TrajectoryStep#step} 共用这一条曲线，模拟、客户端外推与地形预载因此不会分家。
      * <p>
      * 选用归一化模型而非 {@link DensityFunction#MC_OVERWORLD}（ρ₀=1.225），
      * 是为了保持现有投射物的 dragFactor 配平值不变（dragFactor 在 ρ≈1 的环境下调试）。
@@ -420,14 +468,14 @@ public class ProjectileManager {
         count = i + 1;
 
         // 服务端：入队快照（炮口位置和初速，cloned 防止后续物理积分覆盖）
-        // 由主线程 flushProjectileEntities 统一处理 Entity 创建和发包
+        // 由主线程 flushProjectileEntities 统一处理 Entity 创建和发包。
+        // 地形预载不在这里发起：从物理线程投递的即时任务最早只能被 LevelTickEvent.Post 取出，
+        // 那一 tick 的 requestStep 已经过去，比 LauncherSubsystem 在开火瞬间交出的首段晚整整一个 tick
         if (!level.isClientSide()) {
             pendingProjectiles.add(new PendingSpawn(id,
                     proj.getProjectileType().getRegistryKey(),
                     pos.clone(),   // ★ 必须 clone：Vector3f 会被后续物理积分修改
                     vel.clone()));
-            // 预测弹道路径上的区块，预约地形刚体加载，确保投射物能检测到地形碰撞
-            preloadTrajectoryTerrain(pos, vel, proj.getProjectileType());
         }
     }
 
@@ -951,10 +999,72 @@ public class ProjectileManager {
     public void preTick() {
         tickAndPreTick();
         tryRecreateEntities();
-        // 客户端：主线程自主外推，消除物理线程与渲染线程的 SoA 并发读写竞争
         if (level.isClientSide()) {
+            // 客户端：主线程自主外推，消除物理线程与渲染线程的 SoA 并发读写竞争
             clientExtrapolate();
+        } else {
+            preloadProjectileTerrain();
         }
+    }
+
+    /**
+     * 主线程：按物理线程发布的快照走一遍弹道视界，把可能撞到的地形预约上来。
+     * <p>
+     * 排在 {@link ObjectManager#onPreTick} 的链条里，比 Spark 的
+     * {@code PhysicsLevelApplier}（{@code LevelTickEvent.Pre} 的 {@code HIGH}）早一个优先级，
+     * 所以这里投递的即时任务会在同一个 tick 的 {@code processTasks(ALL)} 里被取出、
+     * 紧接着的 {@code requestStep} 就消费它——这是 {@code L} 的一部分，改动 handler 的优先级
+     * 等于改动 {@code L}。
+     * <p>
+     * 只读快照表，不碰 SoA 数组：{@code swapRemove}、扩容与半写状态都与预载无关。
+     */
+    private void preloadProjectileTerrain() {
+        SnapshotTable table = snapshots;
+        if (table.tickCount() == lastPreloadTick) return;
+        lastPreloadTick = table.tickCount();
+
+        int tps = SparkLevel.getPhysicsLevel(level).getTps();
+        for (Snapshot s : table.entries()) {
+            reserveFor(s.type(), tps, s.px(), s.py(), s.pz(),
+                    s.vx(), s.vy(), s.vz(), s.burnTime());
+        }
+    }
+
+    /**
+     * 主线程：开火瞬间的首段地形预约。
+     * <p>
+     * 走的是与每 tick 重算完全相同的一轮视界——{@code Δ = 1/20 s} 时首段深度 {@code W₀} 与
+     * {@code W} 相等，差别只在时刻：这一段赶在同一个 tick 的即时队列消费之前登记，
+     * 而投射物自己的第一次 {@code preTick} 要等到下一个游戏 tick。
+     * 少了它，开火后第一个游戏 tick 的飞行段永远进不了预约。
+     * <p>
+     * 位姿由发射器给出（刚体实时变换 + 火控修正 + 炮管状态），与一个游戏 tick 后的真实出膛
+     * 相差不超过载具当 tick 的位移与转向，落在 {@code 16 m} 的栅格余量内。
+     *
+     * @param type 即将出膛的弹种
+     * @param px   枪口 X
+     * @param py   枪口 Y
+     * @param pz   枪口 Z
+     * @param vx   出膛速度 X（m/s，含平台速度）
+     * @param vy   出膛速度 Y
+     * @param vz   出膛速度 Z
+     */
+    public void seedTerrainPreload(BallisticProjectileType type,
+                                   float px, float py, float pz,
+                                   float vx, float vy, float vz) {
+        if (level.isClientSide()) return;
+        reserveFor(type, SparkLevel.getPhysicsLevel(level).getTps(),
+                px, py, pz, vx, vy, vz, 0f);
+    }
+
+    /** 一轮视界：首段与每 tick 重算共用，参数只在这里组装一次 */
+    private void reserveFor(BallisticProjectileType type, int tps,
+                            float px, float py, float pz,
+                            float vx, float vy, float vz, float burnTime) {
+        float lead = TerrainPreload.LEAD_SECONDS + TerrainPreload.REPLAN_SECONDS;
+        terrainPreload.reserve(type.getBallisticConfig(), type.getThrustProfile(),
+                type.getPreloadSweepRadius(lead), tps,
+                px, py, pz, vx, vy, vz, burnTime);
     }
 
     /**
@@ -1088,48 +1198,22 @@ public class ProjectileManager {
                     continue;
                 }
 
-                float mass = type.getMass();
-                float gravityFactor = type.getGravityFactor();
-                float dragFactor = type.getDragFactor();
-                float radius = type.getRadius();
-                float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
-
-                float gravityAccY = -gravityFactor * 9.81f;
-                float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
-                if (dragFactor > 1e-8f && speed > 1e-8f) {
-                    float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
-                    // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
-                    float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
-                    float dragAcc = dragForce / mass;
-                    float invSpeed = 1f / speed;
-                    dragAccX = dragAcc * (-velX[i] * invSpeed);
-                    dragAccY = dragAcc * (-velY[i] * invSpeed);
-                    dragAccZ = dragAcc * (-velZ[i] * invSpeed);
-                }
-
-                // ——— 推进段：与服务端 updateProjectiles 同一燃烧窗口，保证两端外推一致 ———
-                float thrustAccX = 0, thrustAccY = 0, thrustAccZ = 0;
-                var thrust = type.getThrust();
-                if (thrust.isActive() && speed > 1e-6f) {
-                    float burnElapsed = burnTime[i];
-                    if (burnElapsed >= thrust.ignitionDelay() && burnElapsed < thrust.burnEnd()) {
-                        float thrustAcc = thrust.force() / mass;
-                        float invThrustSpeed = 1f / speed;
-                        thrustAccX = thrustAcc * velX[i] * invThrustSpeed;
-                        thrustAccY = thrustAcc * velY[i] * invThrustSpeed;
-                        thrustAccZ = thrustAcc * velZ[i] * invThrustSpeed;
-                    }
-                }
+                // ——— 推进：与服务端趟一共用同一步进定义（客户端不给制导指令），
+                //     同一燃烧窗口，保证两端外推轨迹一致 ———
+                TrajectoryStep.step(
+                        posX[i], posY[i], posZ[i],
+                        velX[i], velY[i], velZ[i],
+                        burnTime[i],
+                        type.getBallisticConfig(), type.getThrustProfile(), densityFunction,
+                        0f, 0f, 0f,
+                        dt, stepOut);
                 burnTime[i] += dt;
-
-                // Semi-implicit Euler：先更新速度，再用新速度更新位置
-                velX[i] += (dragAccX + thrustAccX) * dt;
-                velY[i] += (gravityAccY + dragAccY + thrustAccY) * dt;
-                velZ[i] += (dragAccZ + thrustAccZ) * dt;
-
-                posX[i] += velX[i] * dt;
-                posY[i] += velY[i] * dt;
-                posZ[i] += velZ[i] * dt;
+                posX[i] = stepOut[TrajectoryStep.OUT_PX];
+                posY[i] = stepOut[TrajectoryStep.OUT_PY];
+                posZ[i] = stepOut[TrajectoryStep.OUT_PZ];
+                velX[i] = stepOut[TrajectoryStep.OUT_VX];
+                velY[i] = stepOut[TrajectoryStep.OUT_VY];
+                velZ[i] = stepOut[TrajectoryStep.OUT_VZ];
             }
         }
     }
@@ -1174,7 +1258,11 @@ public class ProjectileManager {
                 swapRemove(i);
             }
         }
-        if (count == 0) return;
+        if (count == 0) {
+            // 没有存活条目时也要发布：否则主线程会一直读到上一批的快照，为已死条目继续预约
+            publishSnapshots(physicsLevel);
+            return;
+        }
 
         var world = physicsLevel.getWorld();
         float dt = 1.0f / physicsLevel.getTps();
@@ -1239,19 +1327,13 @@ public class ProjectileManager {
             // 从类型缓存读取弹道参数
             BallisticProjectileType type = types[typeIndex[i]];
             float mass = type.getMass();
-            float gravityFactor = type.getGravityFactor();
-            float dragFactor = type.getDragFactor();
             float radius = type.getRadius();
-            float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
-
-            // 空气密度按需计算一次（阻力与制导共用同一 ρ(h)）
-            float rho = Float.NaN;
 
             // ——— 制导项：在 Euler 积分前追加一个指令加速度，不改变既有积分结构 ———
             // 目标无效（NaN）→ 本步不给指令，交回纯弹道
             float guideAccX = 0f, guideAccY = 0f, guideAccZ = 0f;
             if (type.hasGuidance() && !Float.isNaN(targetX[i])) {
-                rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
                 GuidanceContext guidanceCtx = new GuidanceContext(
                         posX[i], posY[i], posZ[i],
                         velX[i], velY[i], velZ[i],
@@ -1264,43 +1346,21 @@ public class ProjectileManager {
                 }
             }
 
-            // ——— 推进段：单段恒推力，沿速度矢量施加（只增速率、不改方向）———
-            // 燃烧窗口 [ignition_delay, ignition_delay + duration)；计时用 burnTime（见字段注释）
-            float thrustAccX = 0f, thrustAccY = 0f, thrustAccZ = 0f;
-            var thrust = type.getThrust();
-            if (thrust.isActive() && speed > 1e-6f) {
-                float burnElapsed = burnTime[i];
-                if (burnElapsed >= thrust.ignitionDelay() && burnElapsed < thrust.burnEnd()) {
-                    float thrustAcc = thrust.force() / mass;
-                    float invThrustSpeed = 1f / speed;
-                    thrustAccX = thrustAcc * velX[i] * invThrustSpeed;
-                    thrustAccY = thrustAcc * velY[i] * invThrustSpeed;
-                    thrustAccZ = thrustAcc * velZ[i] * invThrustSpeed;
-                }
-            }
+            // ——— 推进：阻力 + 重力 + 推力 + 指令加速度，与客户端外推、地形预载共用同一步进 ———
+            TrajectoryStep.step(
+                    posX[i], posY[i], posZ[i],
+                    velX[i], velY[i], velZ[i],
+                    burnTime[i],
+                    type.getBallisticConfig(), type.getThrustProfile(), densityFunction,
+                    guideAccX, guideAccY, guideAccZ,
+                    dt, stepOut);
             burnTime[i] += dt;
-
-            // 半隐式 Euler 积分
-            float gravityAccY = -gravityFactor * 9.81f;
-            float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
-            if (dragFactor > 1e-8f && speed > 1e-8f) {
-                if (Float.isNaN(rho)) rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
-                // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
-                float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
-                float dragAcc = dragForce / mass;
-                float invSpeed = 1f / speed;
-                dragAccX = dragAcc * (-velX[i] * invSpeed);
-                dragAccY = dragAcc * (-velY[i] * invSpeed);
-                dragAccZ = dragAcc * (-velZ[i] * invSpeed);
-            }
-
-            velX[i] += (dragAccX + guideAccX + thrustAccX) * dt;
-            velY[i] += (gravityAccY + dragAccY + guideAccY + thrustAccY) * dt;
-            velZ[i] += (dragAccZ + guideAccZ + thrustAccZ) * dt;
-
-            posX[i] += velX[i] * dt;
-            posY[i] += velY[i] * dt;
-            posZ[i] += velZ[i] * dt;
+            posX[i] = stepOut[TrajectoryStep.OUT_PX];
+            posY[i] = stepOut[TrajectoryStep.OUT_PY];
+            posZ[i] = stepOut[TrajectoryStep.OUT_PZ];
+            velX[i] = stepOut[TrajectoryStep.OUT_VX];
+            velY[i] = stepOut[TrajectoryStep.OUT_VY];
+            velZ[i] = stepOut[TrajectoryStep.OUT_VZ];
         }
 
         // ============================================================
@@ -1529,6 +1589,32 @@ public class ProjectileManager {
                 swapRemove(i);
             }
         }
+
+        // 发布本步末的状态快照：主线程的地形预载从这里读，不碰 SoA 数组
+        publishSnapshots(physicsLevel);
+    }
+
+    /**
+     * 物理线程：把本步末的 SoA 状态发布成不可变快照。
+     * <p>
+     * 整表原子替换，读者要么看到上一步的快照、要么看到这一步的，不会看到拼接态。代价是每步
+     * 一次数组加 N 个小记录——相对物理步本身的开销可以忽略，换来的是预载侧不需要任何锁。
+     * <p>
+     * 不复用下标：快照里带上弹种引用，主线程因此也不用读会增长的 {@code typeCache}。
+     *
+     * @param physicsLevel 当前物理世界，用于取物理步计数
+     */
+    private void publishSnapshots(PhysicsLevel physicsLevel) {
+        int n = count;
+        Snapshot[] entries = new Snapshot[n];
+        BallisticProjectileType[] types = this.typeCache;
+        for (int i = 0; i < n; i++) {
+            entries[i] = new Snapshot(types[typeIndex[i]],
+                    posX[i], posY[i], posZ[i],
+                    velX[i], velY[i], velZ[i],
+                    burnTime[i]);
+        }
+        snapshots = new SnapshotTable(physicsLevel.getTickCount(), entries);
     }
 
     /**
@@ -1850,103 +1936,6 @@ public class ProjectileManager {
         if (entries.isEmpty()) return;
 
         ProjectilesGuidedStatePayload.broadcast(serverLevel, entries);
-    }
-
-    /**
-     * 在发射时预测投射物弹道经过的区块，并预约地形刚体加载。
-     * <p>
-     * 使用 {@link RealisticTrajectory#forwardSolve} 进行弹道正解，
-     * 物理模型与 {@link #updateProjectiles} 统一（相同的阻力公式+密度函数），
-     * 确保预测轨迹与实际飞行轨迹一致。
-     * <p>
-     * 预测长度 = 投射物最大寿命（{@link ProjectileType#getMaxLifetimeTicks}），
-     * 遍历所有采样点，按 {@link ChunkPos} 分组收集 Y 范围，
-     * 对每个唯一区块调用 {@link SparkLevel#scheduleChunkLoad} 预约地形加载。
-     * <p>
-     * 性能：单次发射约 200~600 次浮点运算（取决于寿命），
-     * 最多预加载 200 个区块，去重后通常远小于此值。
-     * <p>
-     * <b>制导弹降级：</b>制导弹会拐弯，弹道正解不等于实际航迹，因此对
-     * {@link BallisticProjectileType#hasGuidance()} 的弹种改为"沿<b>出膛方向</b>直线推进"预测
-     * （出膛方向通常已大致指向瞄准点，早期飞行覆盖率足够）。滚动重算见备忘 §十四。
-     *
-     * @param startPos 发射位置（JME 世界坐标，米）
-     * @param startVel 初速度（m/s，JME）
-     * @param type     投射物类型（提供质量、阻力系数、重力等物理参数）
-     */
-    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, BallisticProjectileType type) {
-        // ProjectileType 与 BallisticConfig 1:1 映射（阻力公式统一为 ½·ρ·Cd·A·v²）
-        // dragFactor = Cd, π·r² = A, gravityFactor·9.81 = g
-        BallisticConfig config = new BallisticConfig(
-                type.getDragFactor(),                                    // Cd（阻力系数）
-                type.getMass(),                                          // 质量 (kg)
-                (float) (Math.PI * type.getRadius() * type.getRadius()), // A = π·r² (m²)
-                type.getGravityFactor() * 9.81f,                         // 重力加速度 (m/s²)
-                1f / SparkLevel.getPhysicsLevel(getLevel()).getTps(),    // 时间步长 = 1 物理 tick
-                type.getMaxLifetimeTicks()                               // 预测长度 = 投射物寿命
-        );
-
-        // JME Vector3f → MC Vec3（坐标轴一致，都是米制右手系 Y-up）
-        Vec3 startMc = new Vec3(startPos.x, startPos.y, startPos.z);
-        Vec3 velMc = new Vec3(startVel.x, startVel.y, startVel.z);
-
-        // 预测航迹点序列（下标即到达 tick）
-        List<Vec3> path = new ArrayList<>();
-        if (type.hasGuidance()) {
-            float step = 1f / SparkLevel.getPhysicsLevel(getLevel()).getTps();
-            int steps = type.getMaxLifetimeTicks();
-            for (int t = 1; t <= steps; t++) {
-                path.add(new Vec3(
-                        startMc.x + velMc.x * step * t,
-                        startMc.y + velMc.y * step * t,
-                        startMc.z + velMc.z * step * t));
-            }
-        } else {
-            // 弹道正解（使用与 updateProjectiles 相同的密度函数）
-            TrajectoryResult result = RealisticTrajectory.forwardSolve(startMc, velMc, config, densityFunction);
-            for (TrajectorySample sample : result.samples()) {
-                path.add(sample.position());
-            }
-        }
-
-        // 按 ChunkPos 分组，收集每个区块的到达 tick 和 Y 范围
-        LinkedHashMap<ChunkPos, int[]> chunkInfo = new LinkedHashMap<>(); // int[3]: [arrivalTick, minY, maxY]
-        int maxChunks = 200; // 最多预加载 200 个区块，防止极端情况
-
-        for (int tick = 0; tick < path.size(); tick++) {
-            Vec3 p = path.get(tick);
-
-            // 出界检查：超出 MC 世界 Y 范围则停止预测
-            if (p.y < -64 || p.y > 320) break;
-
-            ChunkPos cp = new ChunkPos((int) Math.floor(p.x) >> 4, (int) Math.floor(p.z) >> 4);
-            int y = (int) p.y;
-
-            chunkInfo.merge(cp, new int[]{tick, y, y}, (old, cur) -> {
-                old[0] = Math.min(old[0], cur[0]); // 最早到达 tick
-                old[1] = Math.min(old[1], cur[1]); // 最低 Y
-                old[2] = Math.max(old[2], cur[2]); // 最高 Y
-                return old;
-            });
-
-            if (chunkInfo.size() >= maxChunks) break;
-        }
-
-        // 为每个预测区块预约地形加载
-        int yPadding = 8;   // Y 方向扩展，覆盖预测偏差和弹道弧度
-        int leadTicks = 20;  // 提前 1 秒开始加载，留足异步碰撞形状构建时间
-        int holdTicks = 60;  // 加载后保持 3 秒，覆盖穿透/跳弹后的残余飞行
-
-        for (var entry : chunkInfo.entrySet()) {
-            ChunkPos cp = entry.getKey();
-            int[] info = entry.getValue();
-            int arrivalTick = info[0];
-            int minY = info[1] - yPadding;
-            int maxY = info[2] + yPadding;
-
-            int delayTicks = Math.max(0, arrivalTick - leadTicks);
-            SparkLevel.scheduleChunkLoad(level, cp, minY, maxY, delayTicks, holdTicks);
-        }
     }
 
     /**
