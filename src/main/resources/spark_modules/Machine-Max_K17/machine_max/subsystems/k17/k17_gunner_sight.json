@@ -16,5 +16,5 @@
   "allow_cycle": true,
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "pitch_speed": 90,
-  "yaw_speed": 95
+  "yaw_speed": 90
 }
