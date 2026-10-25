@@ -211,8 +211,9 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         SignalResult result = ISignalReceiver.super.onSignalUpdated(channelName, sender);
         Object signal = getSignalValueFrom(channelName, sender);
         if (signal instanceof InteractSignal interactSignal) {
-            onInteract(interactSignal.getEntity());
-            return SignalResult.CONSUME;
+            // 交互结果原样回传给交互区：CONSUME 表示已接管，PASS/FAIL 表示本次未能接管（如座位被占），
+            // 交互区据此决定是否继续尝试下一个目标。
+            return onInteract(interactSignal.getEntity());
         }
         return result;
     }

@@ -276,9 +276,7 @@
                 "global"
               ]
             },
-            "dismount_locators": [],
-            "third_hud_layout": "machine_max:morden_ground_basic",
-            "allow_use_items": true
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "commander_seat": {
             "type": "machine_max:seat",
@@ -296,9 +294,7 @@
                 "global"
               ]
             },
-            "dismount_locators": [],
-            "third_hud_layout": "machine_max:morden_ground_basic",
-            "allow_use_items": true
+            "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "gunner_seat": {
             "type": "machine_max:seat",
@@ -316,9 +312,7 @@
                 "global"
               ]
             },
-            "dismount_locators": [],
-            "third_hud_layout": "machine_max:morden_ground_basic",
-            "allow_use_items": true
+            "third_hud_layout": "machine_max:morden_ground_basic"
           }
         }
       }

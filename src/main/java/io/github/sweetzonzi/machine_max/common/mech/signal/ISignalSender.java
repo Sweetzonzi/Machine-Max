@@ -195,7 +195,9 @@ public interface ISignalSender {
             Map<String, SignalPort> ports = new HashMap<>();
             getSubPart().connectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
-                Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
+                // 保序：接收者列表的顺序就是 getTargetNames() 里声明的顺序。交互区按此顺序逐个尝试目标，
+                // 座位一类的多目标交互区（同一扇门通往多个座位）依赖它决定先坐哪一个。
+                Map<String, ISignalReceiver> signalReceivers = new LinkedHashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
                 getReceiversFromNames(entry.getValue(), getSubPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getSignalAddress(), receiver));
                 getTargets().put(entry.getKey(), signalReceivers);

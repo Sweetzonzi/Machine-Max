@@ -7,6 +7,7 @@ import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,7 +19,7 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     public final String name;
     public final InteractBoxAttr attr;
     public final Map<String, List<String>> targetNames;
-    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
+    public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();//信号频道名->接收者名称->接收者（保序，顺序即目标声明顺序）
     public final Map<String, Set<ISignalReceiver>> callbackTargets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final SubPart subPart;
@@ -141,13 +142,23 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     }
 
 
+    /**
+     * 按 {@code signal_targets} 中的声明顺序逐个尝试接收者，由第一个真正接管交互的目标结束本次交互。
+     * <p>
+     * 只有 {@link SignalResult#CONSUME} 结束遍历；{@link SignalResult#PASS}（目标不处理）与
+     * {@link SignalResult#FAIL}（目标应处理但当前接不了，如座位已被占用）都继续试下一个目标。
+     * 同一交互区列出多个座位的场景（一扇门通往车长位与炮手位、后门通往整排载员位）依赖这条规则：
+     * 从列表第一个空位开始坐，前排被占也不影响后排。
+     * <p>
+     * 顺序由 {@link ISignalSender#setTargetFromNames()} 保序写入的接收者表保证，不能依赖 Map 的哈希顺序。
+     */
     public void interact(LivingEntity entity) {
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()) {
             String channelName = entry.getKey();
             Map<String, ISignalReceiver> receivers = entry.getValue();
             for (ISignalReceiver receiver : receivers.values()) {
                 SignalResult result = sendSignalToTarget(channelName, receiver.getSignalAddress(), new InteractSignal(entity));
-                if (result == SignalResult.CONSUME || result == SignalResult.FAIL) {
+                if (result == SignalResult.CONSUME) {
                     return;
                 }
             }
