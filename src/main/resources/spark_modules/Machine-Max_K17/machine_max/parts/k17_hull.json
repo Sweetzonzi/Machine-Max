@@ -93,7 +93,11 @@
           "connector.machine_max.hull_turret_axis": {
             "locator": "hull_turret_axis",
             "definition": "machine_max:fixed_up",
-            "overwrite": {}
+            "overwrite": {
+              "integrity": 100.0,
+              "impact_absorption": 0.1,
+              "impact_reduction": 8.0
+            }
           },
           "connector.machine_max.hull_right_wheel_1": {
             "locator": "hull_right_wheel_1",

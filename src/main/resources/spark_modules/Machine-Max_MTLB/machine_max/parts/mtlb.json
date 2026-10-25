@@ -743,7 +743,11 @@
           "connector.machine_max.hull_pkt_axis": {
             "locator": "hull_pkt_axis",
             "definition": "machine_max:fixed_up",
-            "overwrite": {}
+            "overwrite": {
+              "integrity": 100.0,
+              "impact_absorption": 0.1,
+              "impact_reduction": 8.0
+            }
           }
         },
         "subsystems": {
