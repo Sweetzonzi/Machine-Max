@@ -1030,19 +1030,22 @@ public class ProjectileManager {
      * 等于改动 {@code L}。
      * <p>
      * 只读快照表，不碰 SoA 数组：{@code swapRemove}、扩容与半写状态都与预载无关。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #preTick()} 的服务端分支）。
      */
     private void preloadProjectileTerrain() {
         terrainPreload.pollBuildLatency(this::recordBuildLatency);
 
         SnapshotTable table = snapshots;
         if (table.tickCount() == lastPreloadTick) {
-            // 物理线程仍在跑 → 这一拍的 requestStep 会整轮早退，消费与激活都顺延
+            // 快照的物理步计数没变 = 这一拍没有任何物理步完成，弹丸状态与上一轮逐位相同，
+            // 重走只会得到同一条视界；同时这一拍的 requestStep 也会整轮早退
             preloadSkipped++;
         } else {
             lastPreloadTick = table.tickCount();
             int tps = SparkLevel.getPhysicsLevel(level).getTps();
+            preloadRounds++;
             for (Snapshot s : table.entries()) {
-                preloadRounds++;
                 reserveFor(s.type(), tps, s.px(), s.py(), s.pz(),
                         s.vx(), s.vy(), s.vz(), s.burnTime());
                 if (!isTerrainReadyAt(s)) preloadStarved++;
@@ -1062,13 +1065,22 @@ public class ProjectileManager {
      * 与预约走同一组包装函数、同一个方块 Y 窗口口径。窗口取弹丸所在的那一层——
      * 它正在飞的地方本来就该是空的，这个查询回答的是“它的区块有没有被建起来”，
      * 而不是“它脚下的方块实不实”。
+     * <p>
+     * 由于不含碰撞方块的 section 恒判就绪，飞在空域的弹丸恒算就绪；这个计数只抓“区块根本没
+     * 被建起来”这一种情形，不能当“快进未就绪区块”的证据。
+     * <p>
+     * <b>调用线程：</b>主线程。
      */
     private boolean isTerrainReadyAt(Snapshot s) {
         ChunkPos cp = new ChunkPos(BlockPos.containing(s.px(), s.py(), s.pz()));
         return SparkLevel.isChunkTerrainReady(level, cp, s.py() - 1, s.py() + 1);
     }
 
-    /** 收一个构建延迟样本（物理步） */
+    /**
+     * 收一个构建延迟样本（物理步）。
+     * <p>
+     * <b>调用线程：</b>主线程（{@code TerrainPreload#pollBuildLatency} 的回调）。
+     */
     private void recordBuildLatency(long steps) {
         if (buildLatencyCount >= buildLatencySteps.length) return;
         buildLatencySteps[buildLatencyCount++] = (int) Math.min(Integer.MAX_VALUE, Math.max(0L, steps));
@@ -1082,6 +1094,8 @@ public class ProjectileManager {
      * <p>
      * {@code reactivations} 不在这条线里：它要 Spark 侧对“被 terrain 持有的区块上、
      * 落在 terrain 窗口内的 section”做停用-启用计数，本仓库给不出来。
+     * <p>
+     * <b>调用线程：</b>主线程。
      */
     private void reportPreloadMetrics() {
         TerrainPreload.Stats stats = terrainPreload.stats();
@@ -1118,8 +1132,12 @@ public class ProjectileManager {
      * 而投射物自己的第一次 {@code preTick} 要等到下一个游戏 tick。
      * 少了它，开火后第一个游戏 tick 的飞行段永远进不了预约。
      * <p>
-     * 位姿由发射器给出（刚体实时变换 + 火控修正 + 炮管状态），与一个游戏 tick 后的真实出膛
-     * 相差不超过载具当 tick 的位移与转向，落在 {@code 16 m} 的栅格余量内。
+     * 位姿由发射器给出（刚体实时变换 + 火控修正 + 炮管状态）。真正的开火在**同一个游戏
+     * tick** 的第一次物理步里执行、读同一份实时变换，所以位置与初速没有时差；会旧的是瞄准
+     * 方向——{@code FireCommand} 每物理步重写一次，预约可能读到上一批的最后一次。首段只需
+     * 覆盖第一个 tick 的飞行距离 {@code v/20}（2.5~82.5 m），`4.5°/tick` 的炮塔转速在这个
+     * 距离上折成横向约 `v/20 · tan(Δθ)`（APFSDS 上 6.5 m），足以把首段远端指偏一格；下一轮
+     * 重算立刻用真实位姿重走，代价是那一格少约一个 tick 的提前量。
      *
      * @param type 即将出膛的弹种
      * @param px   枪口 X
@@ -1128,6 +1146,9 @@ public class ProjectileManager {
      * @param vx   出膛速度 X（m/s，含平台速度）
      * @param vy   出膛速度 Y
      * @param vz   出膛速度 Z
+     *             <p>
+     *             <b>调用线程：</b>主线程（{@code LauncherSubsystem#onTick} 的服务端分支，
+     *             经 {@link ObjectManager#onPreTick} 的 {@code HIGHEST} 阶段）。
      */
     public void seedTerrainPreload(BallisticProjectileType type,
                                    float px, float py, float pz,
@@ -1197,11 +1218,22 @@ public class ProjectileManager {
      * 调用各投射物的 {@code prePhysicsTick()}，服务端执行投射物批量积分+碰撞检测。
      * <p>
      * 客户端的外推在主线程 {@link #preTick()} 中执行。
+     * <p>
+     * 快照发布放在 {@code finally}：本步里的任何异常都不能让快照停在上一步，否则主线程的
+     * {@code tickCount} 门会把地形预载永久卡在 {@code skipped} 上。异常时发布的是被截断的
+     * 一步状态，对预载（只是近似航迹）无害，比静默停摆好。
      */
     public void prePhysicsTick(PhysicsLevel physicsLevel) {
-        forEachPrePhysicsTick();
-        if (!level.isClientSide()) {
-            updateProjectiles(physicsLevel);
+        boolean server = !level.isClientSide();
+        try {
+            forEachPrePhysicsTick();
+            if (server) {
+                updateProjectiles(physicsLevel);
+            }
+        } finally {
+            if (server) {
+                publishSnapshots(physicsLevel);
+            }
         }
     }
 
@@ -1341,8 +1373,7 @@ public class ProjectileManager {
             }
         }
         if (count == 0) {
-            // 没有存活条目时也要发布：否则主线程会一直读到上一批的快照，为已死条目继续预约
-            publishSnapshots(physicsLevel);
+            // 没有存活条目也要发布：否则主线程会一直读到上一批的快照，为已死条目继续预约
             return;
         }
 
@@ -1671,9 +1702,6 @@ public class ProjectileManager {
                 swapRemove(i);
             }
         }
-
-        // 发布本步末的状态快照：主线程的地形预载从这里读，不碰 SoA 数组
-        publishSnapshots(physicsLevel);
     }
 
     /**

@@ -65,9 +65,9 @@ public final class TerrainPreload {
     /**
      * 单轮最多推进的样本数。
      * <p>
-     * 最长的视界是 APFSDS 的 346 m，按 8 m 一步是 44 步。速度很低时（低于约 13 m/s）
-     * 样本的时间跨度被 {@link #SAMPLE_SECONDS} 卡住、空间跨度只剩几厘米，64 步覆盖不到视界；
-     * 这类弹丸的到达时刻以秒计，远超 {@code L}，不必走满。
+     * 最长的视界是 APFSDS 的 346 m，按 8 m 一步是 44 步。慢弹的样本数由
+     * {@code 20 + 1600 / v} 给出（{@link #SAMPLE_SECONDS} 卡住时间跨度、空间跨度随之缩短），
+     * 于是在大约 36 m/s 以下 64 步覆盖不到视界；这类弹丸的到达时刻以秒计，远超 {@code L}，不必走满。
      */
     public static final int MAX_SAMPLES = 64;
 
@@ -76,9 +76,6 @@ public final class TerrainPreload {
 
     /** 待就绪条目的容量上限：超过就整体丢弃，宁可少一个样本也不让表无界增长。 */
     private static final int PENDING_BUILD_LIMIT = 4096;
-
-    /** 待就绪条目的最长等待（物理步）：与票的存活期同量级，超时说明它已被过期释放。 */
-    private static final long PENDING_BUILD_TTL_STEPS = 2400L;
 
     /** 一段航迹的接收者，由 {@link #walk} 逐段交出 */
     @FunctionalInterface
@@ -135,6 +132,9 @@ public final class TerrainPreload {
 
     /**
      * 一个等待构建完成的区块。
+     * <p>
+     * {@code deadline} 跟着每轮重新预约一起后移，与票的到期时刻对齐：过了它，这个区块已经不归
+     * 本系统持有，之后再就绪也不能记成本次的构建延迟。
      *
      * @param chunkX    区块 X
      * @param chunkZ    区块 Z
@@ -142,7 +142,23 @@ public final class TerrainPreload {
      * @param yLo      该轮提交的 Y 窗口下界（方块 Y）
      * @param yHi      该轮提交的 Y 窗口上界（方块 Y）
      */
-    private record PendingBuild(int chunkX, int chunkZ, long firstTick, int yLo, int yHi) {
+    private static final class PendingBuild {
+        final int chunkX;
+        final int chunkZ;
+        final long firstTick;
+        final int yLo;
+        final int yHi;
+        /** 票的到期步：每轮登记都后移，越界即丢样本 */
+        long deadline;
+
+        PendingBuild(int chunkX, int chunkZ, long firstTick, int yLo, int yHi, long deadline) {
+            this.chunkX = chunkX;
+            this.chunkZ = chunkZ;
+            this.firstTick = firstTick;
+            this.yLo = yLo;
+            this.yHi = yHi;
+            this.deadline = deadline;
+        }
     }
 
     public TerrainPreload(Level level, DensityFunction density) {
@@ -348,13 +364,21 @@ public final class TerrainPreload {
         ordered.addAll(windows.values());
         ordered.sort(Comparator.comparingDouble(w -> w.leadSeconds));
 
+        long now = physics().getTickCount();
         for (Window w : ordered) {
+            int hold = holdSteps(w.leadSeconds, tps);
             SparkLevel.scheduleChunkLoad(level, new ChunkPos(w.chunkX, w.chunkZ),
-                    w.yLo, w.yHi, 0, holdSteps(w.leadSeconds, tps));
-            // 首次为某区块登记时记下它的就绪计时起点；续期不重置
-            if (pendingBuild.size() > PENDING_BUILD_LIMIT) pendingBuild.clear();
-            pendingBuild.putIfAbsent(ChunkPos.asLong(w.chunkX, w.chunkZ),
-                    new PendingBuild(w.chunkX, w.chunkZ, physics().getTickCount(), w.yLo, w.yHi));
+                    w.yLo, w.yHi, 0, hold);
+            // 首次为某区块登记时记下它的就绪计时起点；续期不重置起点，只后移到期步
+            long key = ChunkPos.asLong(w.chunkX, w.chunkZ);
+            long deadline = now + hold;
+            PendingBuild pending = pendingBuild.get(key);
+            if (pending == null) {
+                if (pendingBuild.size() >= PENDING_BUILD_LIMIT) pendingBuild.clear();
+                pendingBuild.put(key, new PendingBuild(w.chunkX, w.chunkZ, now, w.yLo, w.yHi, deadline));
+            } else {
+                pending.deadline = deadline;
+            }
         }
         return ordered.size();
     }
@@ -363,8 +387,8 @@ public final class TerrainPreload {
      * 采样一遍“首次预约 → 该 section 的刚体进入世界”的耗时，单位是<b>物理步</b>。
      * <p>
      * 续期不算：同一区块只在第一次登记时记起点，之后每轮重新预约都不会重置它。
-     * 久等不就绪的条目在超过 {@link #PENDING_BUILD_TTL_STEPS} 后丢弃——那时它已经被过期释放，
-     * 再等下去只会把一个不可达的样本拖成离群值。
+     * 已过到期步的条目直接丢弃——那时票已被过期释放，之后再就绪是别人的功劳，
+     * 收下只会把一个与本系统无关的延迟拖进分位。
      *
      * @param onReady 收到一个样本（物理步数）
      */
@@ -374,11 +398,12 @@ public final class TerrainPreload {
         var iterator = pendingBuild.values().iterator();
         while (iterator.hasNext()) {
             PendingBuild p = iterator.next();
-            ChunkPos cp = new ChunkPos(p.chunkX(), p.chunkZ());
-            if (SparkLevel.isChunkTerrainReady(level, cp, p.yLo(), p.yHi())) {
-                onReady.accept(now - p.firstTick());
+            if (now > p.deadline) {
                 iterator.remove();
-            } else if (now - p.firstTick() > PENDING_BUILD_TTL_STEPS) {
+                continue;
+            }
+            if (SparkLevel.isChunkTerrainReady(level, new ChunkPos(p.chunkX, p.chunkZ), p.yLo, p.yHi)) {
+                onReady.accept(now - p.firstTick);
                 iterator.remove();
             }
         }

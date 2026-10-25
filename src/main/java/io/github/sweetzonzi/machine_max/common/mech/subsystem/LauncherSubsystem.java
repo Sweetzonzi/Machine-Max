@@ -552,13 +552,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 }
             }
 
-            // ③ 入队 pendingFires（物理线程将消费）
-            pendingFires.add(chamberedType);
-            // ③.① 首段地形预约：赶在本 tick 的 requestStep 之前登记，
-            //      否则开火后第一个游戏 tick 的飞行段没有任何预约（投射物自己的 preTick 在下一个 tick）
+            // ③ 首段地形预约：必须先于入队。入队后物理线程在过载时可能在同一个游戏 tick 内就
+            //     poll 到这一发（它的物理步与我们交错），预约再登记就落在开火之后了。
+            //     本行在主线程，登记经即时队列由本 tick 的 requestStep 消费。
             if (!getLevel().isClientSide()) {
                 seedTrajectoryTerrain(chamberedType);
             }
+            // ③.① 入队 pendingFires（物理线程将消费）
+            pendingFires.add(chamberedType);
             firedTypes.add(chamberedType);
             firedCount++;
             chamberedType = null;
@@ -724,6 +725,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         registerSelfExclusion(projectiles);
 
         // ⑤ 后坐力——总弹丸动量 × 后坐力倍率（默认 1.5≈弹丸+火药燃气贡献）
+        //    初速取 muzzle.speed()，即实际出膛速率（含炮管耐久衰减），不取弹种基础初速
         float finalSpeed = muzzle.speed();
         float totalMass = type.getMass() * projectiles.size();
         float recoilImpulse = totalMass * finalSpeed * attr.staticAttribute.getBarrel().recoilMultiplier();
@@ -743,7 +745,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *
      * @param position           枪口世界坐标（JME），是刚体变换里的实时值
      * @param direction          出膛方向（JME 单位向量，未含散布）
-     * @param speed              出膛速率（m/s，未含散布与平台速度）
+     * @param speed              出膛速率（m/s，含炮管耐久衰减、未含散布与平台速度），
+     *                           后坐力按它算而不按弹种基础初速算——炮管受损时弹丸确实更慢
      * @param velocityMultiplier 炮管对初速的乘子（含耐久衰减）
      * @param spreadMultiplier   炮管对散布的乘子（含耐久衰减）
      */
