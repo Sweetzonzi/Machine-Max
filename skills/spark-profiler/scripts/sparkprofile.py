@@ -1160,6 +1160,9 @@ def _self_map(profile):
 
 def write(out, text):
     if out:
+        parent = os.path.dirname(os.path.abspath(out))
+        if parent and not os.path.isdir(parent):
+            os.makedirs(parent, exist_ok=True)
         with io.open(out, 'w', encoding='utf-8', newline='\n') as fh:
             fh.write(text + '\n')
         sys.stderr.write('written: %s\n' % out)

@@ -41,3 +41,8 @@ Machine-Max.code-workspace
 /mods/*.jar
 /mods-client/*.jar
 /mods-disabled/*.jar
+
+# spark 性能分析产物（skills/spark-profiler 生成，非源码）
+/spark-report-*.md
+/spark-reports/
+/spark.json

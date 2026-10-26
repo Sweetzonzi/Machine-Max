@@ -60,14 +60,16 @@ python --version || py -3 --version || python3 --version
 $PY $TOOL info <报告文件>
 
 # 步骤 2：整体报告（最常用）
-$PY $TOOL report <报告文件> --thread "Server thread" --no-idle -o spark-report.md
+$PY $TOOL report <报告文件> --thread "Server thread" --no-idle -o spark-reports/spark-report.md
 
 # 步骤 3：针对可疑线程展开调用树
 $PY $TOOL tree <报告文件> --thread "Server thread" --depth 14 --min-pct 1
 
 # 步骤 4：需要精确数字或二次加工时导出 JSON
-$PY $TOOL json <报告文件> --slim -o spark.json
+$PY $TOOL json <报告文件> --slim -o spark-reports/spark.json
 ```
+
+产物写在 `spark-reports/` 之类的独立目录并保持在版本库外：报告是一次性分析输出，且包含本机类名与线程快照，不适合入库。
 
 **服务端/客户端 profile 强烈建议加 `--thread` + `--no-idle`。** 不加时，线程池的 `park` / `await` 会占掉 70% 以上，把真实热点淹没。
 

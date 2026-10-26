@@ -167,7 +167,7 @@ $PY <技能目录>/scripts/sparkprofile.py tree <报告文件> --depth 0 --top 1
 
 ```bash
 python <技能目录>/scripts/sparkprofile.py report <报告文件> \
-  --thread "Server thread" --no-idle -o spark-report.md
+  --thread "Server thread" --no-idle -o spark-reports/spark-report.md
 ```
 
 ## 生成指令时的规则
