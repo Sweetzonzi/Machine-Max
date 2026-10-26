@@ -10,7 +10,6 @@ import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -37,8 +36,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.Objects;
 
 public class WeldingTorchItem extends Item implements ICustomModelItem {
     public static final float ASSEMBLY_PER_TICK = 1f;
@@ -238,18 +235,11 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
 
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
         animatable.getModelController().setModel(
                 new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "welding_torch")));
         animatable.getModelController().setTextureLocation(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/welding_torch.png"));
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
+        cacheAnimatable(itemStack, context, animatable);
         return animatable;
     }
 

@@ -20,8 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Objects;
 
 /**
  * 通用制造蓝图：生存模式下代表某个通用制造配方的凭证物品。
@@ -76,10 +74,6 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem {
         var animatable = new ItemAnimatable(itemStack, level);
         ResourceLocation partTypeId = itemStack.get(MMDataComponents.getPART_TYPE());
         RegularPartType partType = partTypeId == null ? null : RegularPartType.get(level, partTypeId);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI && partType != null) {
             animatable.getModelController().setModel(new ModelIndex(
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
@@ -90,10 +84,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem {
             animatable.getModelController().setTextureLocation(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
+        cacheAnimatable(itemStack, context, animatable);
         return animatable;
     }
 

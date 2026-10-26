@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import com.mojang.serialization.Codec;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.item.CustomItemModelCache;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
@@ -125,12 +126,11 @@ public class MMDataComponents {
                     .build()
     );
 
-    /** 自定义物品模型（用于喷漆） */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    /** 自定义物品模型 */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<HashMap<ItemDisplayContext, IAnimatable<?>>>> CUSTOM_ITEM_MODEL = COMPONENTS.register(
             "custom_item_model",
-            () -> DataComponentType.builder()
-                    .persistent((Codec) Codec.unit(new HashMap<>(6)))
+            () -> DataComponentType.<HashMap<ItemDisplayContext, IAnimatable<?>>>builder()
+                    .persistent(CustomItemModelCache.CODEC)
                     .cacheEncoding()
                     .build()
     );

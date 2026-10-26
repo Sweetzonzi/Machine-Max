@@ -25,9 +25,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem {
     public PartItem() {
@@ -83,17 +81,10 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
             RegularPartType partType = PartAssemblyItem.partTypeOf(itemStack, level);//获取物品保存的部件类型
             if (partType == null) return animatable;
             String variant = partType.getVariantIterator().next();
-            HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-                customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-            else customModels = new HashMap<>();
             animatable.getModelController().setModel(new ModelIndex(
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
-            if (customModels != null) {
-                customModels.put(context, animatable);
-                itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-            }
+            cacheAnimatable(itemStack, context, animatable);
             return animatable;
         } else {
             // 非GUI上下文（第一人称、第三人称等）：使用PartAnimatable以支持按零件渲染
@@ -108,15 +99,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
             PartAnimatable partAnimatable = new PartAnimatable(level, partType, variant);
             // 设置部件的基础变换为单位变换，渲染器会应用偏移、旋转、缩放
             partAnimatable.setTransform(new com.jme3.math.Transform());
-            // 缓存到物品组件，遵循现有模式
-            HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-                customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-            else customModels = new HashMap<>();
-            if (customModels != null) {
-                customModels.put(context, partAnimatable);
-                itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-            }
+            cacheAnimatable(itemStack, context, partAnimatable);
             return partAnimatable;
         }
     }

@@ -10,7 +10,6 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
-import cn.solarmoon.spark_core.animation.IAnimatable;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
@@ -36,7 +35,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
@@ -217,20 +215,6 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
             }
         }
         return cache;
-    }
-
-    protected void cacheAnimatable(ItemStack itemStack, ItemDisplayContext context, IAnimatable<?> animatable) {
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) &&
-            !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty()) {
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        } else {
-            customModels = new HashMap<>();
-        }
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
     }
 
     private PlacementContext calculatePlacement(Level level, Player player, VehicleData vehicleData) {

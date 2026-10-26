@@ -10,7 +10,6 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import net.minecraft.network.chat.Component;
@@ -30,9 +29,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Objects;
 
 public class SprayCanItem extends Item implements ICustomModelItem {
     public SprayCanItem() {
@@ -81,18 +78,11 @@ public class SprayCanItem extends Item implements ICustomModelItem {
 
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
         animatable.getModelController().setModel(
                 new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can")));
         animatable.getModelController().setTextureLocation(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"));
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
+        cacheAnimatable(itemStack, context, animatable);
         return animatable;
     }
 

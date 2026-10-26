@@ -19,8 +19,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-
 /**
  * 载具配件物品：一件物品表示一个配件，具体型号由 {@code machine_max:fitting_type} 组件给出。
  *
@@ -103,7 +101,7 @@ public class FittingItem extends Item implements ICustomModelItem {
             animatable.getModelController().setModel(new ModelIndex("fitting", visual.model()));
             animatable.getModelController().setTextureLocation(visual.texture());
         }
-        cache(stack, context, animatable);
+        cacheAnimatable(stack, context, animatable);
         return animatable;
     }
 
@@ -119,13 +117,5 @@ public class FittingItem extends Item implements ICustomModelItem {
         if (use2dModel(stack, level, displayContext)) return MMMath.ONE;
         float scale = displayContext == ItemDisplayContext.GUI ? MODEL_SCALE_GUI : MODEL_SCALE_HAND;
         return new Vector3f(scale);
-    }
-
-    /** 把动画体缓存进物品组件，避免每帧重建模型实例；与零件物品的缓存方式一致。 */
-    private static void cache(ItemStack stack, ItemDisplayContext context, IAnimatable<?> animatable) {
-        HashMap<ItemDisplayContext, IAnimatable<?>> models = stack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        if (models == null) models = new HashMap<>();
-        models.put(context, animatable);
-        stack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), models);
     }
 }

@@ -1,8 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -10,8 +8,6 @@ import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public interface ICustomModelItem {
     /**
@@ -24,9 +20,7 @@ public interface ICustomModelItem {
      */
     default IAnimatable<?> getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context){
         try {
-            Map<ItemDisplayContext, IAnimatable<?>> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-            if (customModels == null) customModels = new HashMap<>();
-            IAnimatable<?> animatable = customModels.get(context);
+            IAnimatable<?> animatable = CustomItemModelCache.get(itemStack, context);
             if (animatable == null || animatable.getAnimLevel() != level)
                 animatable = createItemAnimatable(itemStack, level, context);
             return animatable;
@@ -36,6 +30,11 @@ public interface ICustomModelItem {
     }
 
     IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context);
+
+    /** 客户端主线程：通过公共缓存写入动画体，物品实现负责选择模型与贴图。 */
+    default void cacheAnimatable(ItemStack itemStack, ItemDisplayContext context, IAnimatable<?> animatable) {
+        CustomItemModelCache.put(itemStack, context, animatable);
+    }
 
     /**
      * <p>是否在特定情况下使用2D模型，例如物品栏、掉落物等场景</p>

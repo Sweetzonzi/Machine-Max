@@ -42,8 +42,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.Objects;
 
 public class CrowbarItem extends Item implements ICustomModelItem {
     public CrowbarItem() {
@@ -179,10 +177,6 @@ public class CrowbarItem extends Item implements ICustomModelItem {
 
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
         if (context.firstPerson()) {
             animatable.getModelController().setModel(new ModelIndex(
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar_first_person")));
@@ -192,10 +186,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar")));
             animatable.getModelController().setTextureLocation(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"));
         }
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
+        cacheAnimatable(itemStack, context, animatable);
         return animatable;
     }
 

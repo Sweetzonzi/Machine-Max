@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -17,8 +16,6 @@ import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Objects;
 
 public class EnderScannerItem extends Item implements ICustomModelItem, VehicleCaptureItem {
     private static final ModelIndex MODEL = new ModelIndex(
@@ -37,16 +34,9 @@ public class EnderScannerItem extends Item implements ICustomModelItem, VehicleC
     @Override
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
         animatable.getModelController().setModel(MODEL);
         animatable.getModelController().setTextureLocation(TEXTURE);
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
+        cacheAnimatable(itemStack, context, animatable);
         return animatable;
     }
 
