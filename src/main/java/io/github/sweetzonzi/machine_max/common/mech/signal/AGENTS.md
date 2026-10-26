@@ -95,4 +95,4 @@ ISignalBus（SubsystemController 实现）
 
 ## 参考文件
 
-- `docs/信号回调机制重构设计.md` — 直送模式代替绕圈回调的重构设计
+- 直送模式（替代绕圈回调）的现行实现见 `ISignalSender` / `SignalChannel`，接线约定见仓库根 `AGENTS.md` 的「独特风格」与「反模式」两节。

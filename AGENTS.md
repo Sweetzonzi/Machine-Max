@@ -335,35 +335,25 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 ## 补充说明
 
-- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework` 两个本地源码项目。本地目录不存在时回退到 Maven jar。AUI 由 Maven 坐标 `com.sighs:ApricityUI-neoforge-1.21.1` 提供（`maven.sighs.cc`），并以 `jarJar` 内嵌进发布的 jar（`META-INF/jarjar/`，`metadata.json` 声明 `[1.2.8,)`），玩家无需单独安装。玩家另装了独立 AUI 时，FML 跳过内嵌副本、直接采用已装的那份并打 warning（`JarSelector` 的 source 过滤只按 mod id 判断，不比较版本），因此独立 AUI 低于 1.2.8 会挡住内嵌的新版，使 `[1.2.8,)` 依赖不满足。
-- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartFoundationGameTest.java#fullStateAndBlueprintSkeleton` 与 `#externalFactoryAndVehicleBoundary`；同目录 `PartAssemblyProgressGameTest.java#routesBySubPartIdWithoutVehicleRegistry` 验证通过子零件 ID 更新制造状态及注销后的处理。公共部件用例验证真实服务端的构造、恢复、类型边界和对象表路由；客户端画面通过 runClient 验收。公共 API、模板和覆盖边界见 `docs/部件公共基础接入.md` 的“验证方式”。
+- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework`，本地缺失时回退 Maven jar。AUI 走 `maven.sighs.cc` 的 `com.sighs:ApricityUI-neoforge-1.21.1` 并以 `jarJar` 内嵌进发布 jar，`metadata.json` 声明 `[1.2.8,)`；玩家另装独立 AUI 时 FML 直接采用已装那份（只按 mod id 判断、不比较版本），低于 1.2.8 会让内嵌版失效。
+- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的 `PartFoundationGameTest`、`PartAssemblyProgressGameTest`（服务端的构造、恢复、类型边界与对象表路由）。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
-- **运动学刚体接约束入世后步进 = 物理线程崩溃（已定位）**：崩溃表现是 `hs_err` 里 `EXCEPTION_ACCESS_VIOLATION` 落在 `bulletjme.dll`，栈顶为 `PhysicsSpace.stepSimulation`，线程是 `Server PhysicsThread`。**症状、根因、其他可能路径与上游 issue 草稿见 [`docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`](docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md)。**
-  - **症状**：已加入碰撞世界的刚体被切成运动学模式后，若它被关节连接，多线程构建下一次步进即崩；与关节数量、接触数、刚体总数无关。**"两端都是运动学"是最稳的复现形态。**
-  - **根因**：归岛用的并查集按定义跳过静态/运动学刚体（`btUnionFind.h:24` 的 `STATIC_SIMULATION_ISLAND_OPTIMIZATION` 默认开；`btSimulationIslandManager.cpp:109-113` 把这类体的 `m_islandTag1` 写成 `-1`）。于是两端 tag 均为负 → `btGetConstraintIslandId1()` 返回 `-1` → `btSimulationIslandManagerMt::addConstraintsToIslands()` 在 release 下无保护地用它索引 `m_lookupIslandFromId`（元素 8 字节 → 故障地址 `-8`）。该函数在 bullet3 master 上仍未修。
-  - **为什么只有多线程构建会崩**：`addConstraintsToIslands()` 是 `btSimulationIslandManagerMt` 独有的成员，单线程的 `btSimulationIslandManager` 没有对应函数——单线程路径把零散片段攒进队列一次解掉，从不需要回答"这条约束属于哪个岛"。多线程管理器必须把约束与流形散进各岛才能分派给求解线程池，于是"无岛可归"的约束在这里成了问题。详见文档 §2.3。
-  - **放大镜**：`btSimulationIslandManagerMt` 只被 `btDiscreteDynamicsWorldMt` 实例化，非 `BT_THREADSAFE` 构建根本不编译它。`run/logs/latest.log` 里的 `物理 native: bullet_dpmt（Dp + Mt，2 求解线程）` 与 `threadSafe:true` 即确认当前正走这条路径。
-  - **其他可能触发路径（机制上到同一中间量，未逐一验证）**：两端都是静态刚体；刚体从未加入碰撞世界；加入后被移出（`removeCollisionObject` 只清 `m_worldArrayIndex`、不清 island tag，这条**未闭合**，判别数据自相矛盾）。缓冲区非空时故障形态变成越界读+越界写（垃圾岛指针），比读到空指针更严重。
-  - **硬性纪律**：**不要用运动学模式冻结参与关节的刚体**；要停住刚体用平动/转动系数归零。另外，**约束加入世界时两端刚体应当已在碰撞世界中，移出刚体前应先摘掉引用它的约束**——Spark-Core 的 `PhysicsSpace.addJoint()` 对未入世界的刚体只打 WARNING 不阻断；`removePhysicsBody()` 也不摘约束，调用侧必须自己保证。
-  - **现行做法**：服务端等待地形期间用平动/转动系数归零把刚体原地钉住（`VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()`），**刚体保持动态、照常参与岛屿构建并保有 tag**——这正是它能避开本崩溃的理由。要停住刚体就用这对方法，或遵守「禁止以运动学模式制动刚体，使用 `speedFactor`」既有纪律。
+- **运动学刚体接约束入世后步进 = 物理线程崩溃（已定位）**：已入碰撞世界的刚体被切成运动学模式后若被关节连接，多线程构建的下一次步进即崩在 `btSimulationIslandManagerMt` 的归岛阶段（`EXCEPTION_ACCESS_VIOLATION` in `bulletjme.dll`，线程 `Server PhysicsThread`）。根因是归岛用并查集按定义跳过静态/运动学刚体，其 island tag 为 `-1` 而被无保护地当作下标。**纪律**：不要用运动学模式冻结参与关节的刚体，改用 `VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()` 或平动/转动系数归零；加约束时两端刚体应已在碰撞世界中，移出刚体前先摘掉引用它的约束（Spark-Core 的 `addJoint()` 只打 WARNING、`removePhysicsBody()` 不摘约束）。症状、根因推导、其他触发路径与上游 issue 草稿见 [`docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`](docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md)。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
 - **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。九个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。
 
 ## 参考文件
 
-- `docs/glossary.md` — 自动生成的术语表（287 行，中英对照）
-- `docs/wiki/4-物理与战斗机制/4.7-投射物.md` — 投射物系统现行说明（阶段一/二已实现）
-- `docs/wiki/3-子系统详解/3.8-武器系统.md` — 武器子系统与弹药供给/装填
-- `docs/观瞄系统-CameraSubsystem详细设计.md` — 摄像机子系统设计文档
-- `docs/信号回调机制重构设计.md` — 信号系统重构设计
-- `docs/plan/进行中/AUI载具控制面板实现计划.md` — AUI 控制面板实现计划
-- `docs/AUI性能边界.md` — AUI 性能分析
-- `docs/机娘模组企划.md` — 机娘模组企划
-- `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench 桌面端 MCP 服务器（AI 助手操作编辑器）的安装与连接参数，英文版在同级 `en_us/Blockbench-MCP.md`
-- `docs/wiki/` — MkDocs Wiki 文档站点（快速上手、载具系统完全指南、子系统详解等）
+- `docs/plan/README.md` — 计划与设计文档索引，按已实现／进行中／计划中三态划分
+- `docs/部件公共基础接入.md` — 公共部件 API、类型注册、恢复与验证方式
+- `docs/武器系统-弹药命名规范.md` — 内容包弹种的推荐命名标准
+- `docs/glossary.md` — 自动生成的术语表
+- `docs/wiki/` — MkDocs Wiki 站点（快速上手、载具系统指南、子系统详解、物理与战斗机制、内容包制作）
+- `docs/AUI性能边界.md` — AUI 能力与性能调研（基于 1.1.6-dev，结论需按当前 1.2.8 复核）
+- `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/Blockbench-MCP.md` — Blockbench MCP 服务器的安装与连接参数（英文版在同级 `en_us/`）
 
 
 ## 公共部件 API
