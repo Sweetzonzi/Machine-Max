@@ -1,28 +1,24 @@
 package io.github.sweetzonzi.machine_max.mixin_native;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.PhysicsTestBus;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionHandler;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * 针对 {@link CollisionHandler#handleTerrainCollision} 的 AOP 织入。
+ * 针对 {@link CollisionHandler} 的 AOP 织入：把物理线程的地形碰撞事件转发给 {@link PhysicsTestBus}。
  * <p>
- * SubPart 的碰撞回调在构造函数中通过 Lambda 注册给 CollisionHandler（无独立方法可注入），
- * 因此将注入点选在此处：SubPart 与原版区块方块发生碰撞时，`handleTerrainCollision` 在物理线程
- * 被调用，通过 HEAD 注入将事件记录到 {@link PhysicsTestBus}。
+ * SubPart 的碰撞回调在构造函数中以 Lambda 注册给 CollisionHandler（没有独立方法可注入），
+ * 因此注入点选在 `handleTerrainCollision`：SubPart 与原版区块方块发生碰撞时它在物理线程被调用。
  * <p>
- * 注意：该方法在物理线程调用，禁止在此直接调用测试用例（测试用例可能执行增删载具等
- * 主线程级操作）。事件由 {@link PhysicsTestBus#recordTerrainCollision} /
- * {@link PhysicsTestBus#recordDestroyBlock} 记录，主线程在 LevelTickEvent 中消费并回调。
+ * 注意：这两个方法都在物理线程执行，禁止在此直接运行测试用例（用例可能增删载具等主线程操作）。
+ * 事件只做记录，由主线程在 LevelTickEvent 中消费并回调。
  */
 @Mixin(CollisionHandler.class)
 public abstract class CollisionHandlerMixin {
@@ -36,11 +32,14 @@ public abstract class CollisionHandlerMixin {
         PhysicsTestBus.subpart$onTerrainCollision(subPart);
     }
 
-    @Inject(method = "applyBlockDamage", at = @At("HEAD"))
-    private void native$onDestroyBlock(CallbackInfo ci,
-                                       @Local BlockPos blockPos,
-                                       @Local BlockState blockState) {
-
+    /**
+     * 撞击允许破坏方块时的回调。
+     *
+     * <p>注入点选在单点即时撞碎入口：它只在“破坏总开关开启、材质允许破坏、目标硬度非负”时被调用，
+     * 与原先的方块伤害入口条件一致。Post 聚合破坏由结算器直接排入删除任务，不经过本织入点。</p>
+     */
+    @Inject(method = "tryInstantBreak", at = @At("HEAD"))
+    private void native$onDestroyBlock(CallbackInfoReturnable<Boolean> cir) {
         PhysicsTestBus.subpart$onDestroyBlock(subPart);
     }
 }

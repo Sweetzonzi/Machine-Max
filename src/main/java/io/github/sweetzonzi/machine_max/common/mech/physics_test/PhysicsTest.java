@@ -59,7 +59,7 @@ public interface PhysicsTest {
     void subpart$onTerrainCollision(SubPart subPart);
 
     /**
-     * SubPart 破坏方块前回调。
+     * SubPart 撞击触发即时撞碎分支前回调；Post 聚合破坏由结算器直接排入删除任务，不经过该钩子。
      * <p>由 {@link io.github.sweetzonzi.machine_max.mixin_native.CollisionHandlerMixin} 在物理线程
      */
     void subpart$onDestroyBlock(SubPart subPart);

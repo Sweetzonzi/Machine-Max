@@ -360,12 +360,18 @@ public class CollisionHandler {
             }
         }
 
-        //单点即时撞碎：只有预测足以破坏目标才在本步禁用接触（§5.3）
-        boolean instantBroken = MMServerConfig.shouldDestroyBlocks()
+        //求解前恢复系数：与是否允许破坏无关，但沿用原有作用范围（允许破坏的接触才写入方块弹性）
+        boolean destructible = MMServerConfig.shouldDestroyBlocks()
                 && contactBlockDamageFactor(hitBoxIndex, hitBox) > 0
-                && blockState.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) >= 0
-                && tryInstantBreak(terrain, hitBox, hitBoxIndex, normal, worldContactPoint,
-                contactVel, blockRestitution, manifoldPointId);
+                && blockState.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) >= 0;
+        boolean instantBroken = false;
+        if (destructible) {
+            float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
+            ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
+            //单点即时撞碎：预测足以破坏目标时本步禁用接触并让方块失效（§5.3）
+            instantBroken = tryInstantBreak(terrain, hitBox, hitBoxIndex, normal, worldContactPoint,
+                    contactVel, restitution, manifoldPointId);
+        }
 
         //撞击资格登记（材质门），由 Post 阶段统一聚合与投递
         if (!instantBroken) {
@@ -534,7 +540,7 @@ public class CollisionHandler {
      */
     private boolean tryInstantBreak(PhysicsChunkSection terrain, HitBox hitBox, int hitBoxIndex,
                                     Vector3f normal, Vector3f worldContactPoint, Vector3f contactVel,
-                                    float blockRestitution, long manifoldPointId) {
+                                    float restitution, long manifoldPointId) {
         Level level = subPart.getLevel();
         float approach = CollisionImpactModel.approachSpeed(contactVel, normal);
         if (!CollisionImpactModel.exceedsEpsilon(approach, MMServerConfig.collisionApproachEpsilon())) {
@@ -546,7 +552,6 @@ public class CollisionHandler {
         if (snapshot == null) return false;
         BlockState blockState = snapshot.getState();
 
-        float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
         Vector3f lever = worldContactPoint.subtract(subPart.body.getPhysicsLocation(null));
         float effectiveMass = CollisionImpactModel.normalEffectiveMass(
                 subPart.body.getMass(), lever, normal,
