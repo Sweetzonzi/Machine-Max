@@ -21,6 +21,12 @@ public class MMServerConfig {
     private static final ModConfigSpec.DoubleValue EXPLOSION_INTERACTION_CUTOFF;
     private static final ModConfigSpec.DoubleValue EXPLOSION_ARMOR_K;
 
+    // ==================== 碰撞撞击 ====================
+
+    private static final ModConfigSpec.DoubleValue COLLISION_APPROACH_EPSILON;
+    private static final ModConfigSpec.DoubleValue COLLISION_IMPULSE_PER_DURABILITY;
+    private static final ModConfigSpec.DoubleValue COLLISION_DAMAGE_PER_IMPULSE;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -73,6 +79,20 @@ public class MMServerConfig {
         EXPLOSION_ARMOR_K = builder
                 .comment("Scale factor converting the material factor of ArmorUtil.getBlockArmor into blast block armor A_block. Calibration target: stone blocks a medium charge, dirt is penetrated.")
                 .defineInRange("explosion_armor_k", 0.4, 0.0, 10.0);
+
+        // ==================== 碰撞撞击 ====================
+
+        COLLISION_APPROACH_EPSILON = builder
+                .comment("Lower bound of the normal-approach speed (m/s) used as the impact gate, and the sole speed threshold of the single-point instant-break branch. Below this, a contact counts as resting.")
+                .defineInRange("collision_approach_epsilon", 0.05, 0.0, 10.0);
+
+        COLLISION_IMPULSE_PER_DURABILITY = builder
+                .comment("C_J: normal impulse (N*s) needed to break one point of block durability. Derived from reference vehicles, not from the legacy energy constant 250.")
+                .defineInRange("collision_impulse_per_durability", 100.0, 0.0001, 1.0e6);
+
+        COLLISION_DAMAGE_PER_IMPULSE = builder
+                .comment("C_D: collision damage (HP) per N*s of the part's own impulse share in ordinary impacts. Linear first version.")
+                .defineInRange("collision_damage_per_impulse", 0.003, 0.0, 10.0);
 
         SERVER_SPEC = builder.build();
     }
@@ -131,5 +151,22 @@ public class MMServerConfig {
     /** 方块护甲系数 k_armor（材料因子 → 方块护甲）。 */
     public static float explosionArmorK() {
         return EXPLOSION_ARMOR_K.get().floatValue();
+    }
+
+    // ==================== 碰撞撞击 ====================
+
+    /** 撞击资格门的下限与即时破坏的唯一速度门槛（m/s）。 */
+    public static float collisionApproachEpsilon() {
+        return COLLISION_APPROACH_EPSILON.get().floatValue();
+    }
+
+    /** C_J：每点方块耐久的法向冲量门槛（N·s / 耐久点）。 */
+    public static float collisionImpulsePerDurability() {
+        return COLLISION_IMPULSE_PER_DURABILITY.get().floatValue();
+    }
+
+    /** C_D：部件自承冲量到碰撞伤害的换算（HP / (N·s)）。 */
+    public static float collisionDamagePerImpulse() {
+        return COLLISION_DAMAGE_PER_IMPULSE.get().floatValue();
     }
 }

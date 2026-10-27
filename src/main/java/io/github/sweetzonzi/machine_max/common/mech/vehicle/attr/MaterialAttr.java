@@ -45,7 +45,9 @@ public record MaterialAttr(
             float rollingFriction,
             float spinningFriction,
             float restitution,
-            float blockDamageFactor
+            float blockDamageFactor,
+            /** 撞击资格门：普通撞击把本材质接触登记为候选所需的最小接近速度（m/s） */
+            float impactMinSpeed
     ) {
         public static final PhysicsAttr DEFAULT = new PhysicsAttr(
                 new Vec3(0.5, 0.5, 0.5),
@@ -54,7 +56,8 @@ public record MaterialAttr(
                 0.2f,
                 0f,
                 0.1f,
-                1.0f
+                1.0f,
+                2.0f            // impact_min_speed
         );
 
         public static final Codec<PhysicsAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -64,7 +67,8 @@ public record MaterialAttr(
                 Codec.FLOAT.optionalFieldOf("rolling_friction", DEFAULT.rollingFriction()).forGetter(PhysicsAttr::rollingFriction),
                 Codec.FLOAT.optionalFieldOf("spinning_friction", DEFAULT.spinningFriction()).forGetter(PhysicsAttr::spinningFriction),
                 Codec.FLOAT.optionalFieldOf("restitution", DEFAULT.restitution()).forGetter(PhysicsAttr::restitution),
-                Codec.FLOAT.optionalFieldOf("block_damage_factor", DEFAULT.blockDamageFactor()).forGetter(PhysicsAttr::blockDamageFactor)
+                Codec.FLOAT.optionalFieldOf("block_damage_factor", DEFAULT.blockDamageFactor()).forGetter(PhysicsAttr::blockDamageFactor),
+                Codec.FLOAT.optionalFieldOf("impact_min_speed", DEFAULT.impactMinSpeed()).forGetter(PhysicsAttr::impactMinSpeed)
         ).apply(instance, PhysicsAttr::new));
 
         public record SlipCurveAttr(

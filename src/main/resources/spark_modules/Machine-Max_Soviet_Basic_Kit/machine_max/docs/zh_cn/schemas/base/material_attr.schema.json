@@ -61,7 +61,8 @@
         "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "滚动摩擦系数。" },
         "spinning_friction": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "旋转摩擦系数。" },
         "restitution": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.1, "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。" },
-        "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "方块破坏系数，0为无法破坏方块。" }
+        "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "方块破坏系数，0为无法破坏方块。" },
+        "impact_min_speed": { "type": "number", "minimum": 0.0, "default": 2.0, "description": "普通撞击把本材质的接触登记为候选所需的最小接近速度（m/s）。它只决定撞碎资格的判定速度，不改变材质自身的抗性与防护；零件与零件相撞时取双方材质中较小者。" }
       },
       "additionalProperties": false
     },

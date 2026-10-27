@@ -251,6 +251,17 @@ public class HitBoxAttr {
     public static MaterialAttr resolve(ResourceLocation material, @Nullable OverwriteAttr overwrite) {
         MaterialAttr baseMaterial = MMDynamicRes.MATERIALS.get(material);
         if (baseMaterial == null) return null;
+        return mergeWithOverwrite(baseMaterial, overwrite);
+    }
+
+    /**
+     * 把碰撞箱覆写合并到已有材质上，不查材质表。
+     *
+     * @param baseMaterial 基础材质
+     * @param overwrite    覆写，可为 {@code null}
+     * @return 合并后的材质
+     */
+    static MaterialAttr mergeWithOverwrite(MaterialAttr baseMaterial, @Nullable OverwriteAttr overwrite) {
         if (overwrite == null) return baseMaterial;
         return new MaterialAttr(
                 mergePhysics(baseMaterial.physics(), overwrite.physics().orElse(null)),
@@ -272,7 +283,9 @@ public class HitBoxAttr {
                 ow.rollingFriction().orElse(base.rollingFriction()),
                 ow.spinningFriction().orElse(base.spinningFriction()),
                 ow.restitution().orElse(base.restitution()),
-                ow.blockDamageFactor().orElse(base.blockDamageFactor())
+                ow.blockDamageFactor().orElse(base.blockDamageFactor()),
+                // 撞击资格门只由材质定义，碰撞箱覆写不提供该字段
+                base.impactMinSpeed()
         );
     }
 
@@ -341,6 +354,7 @@ public class HitBoxAttr {
     public float spinningFriction() { return effectiveMaterial.physics().spinningFriction(); }
     public float restitution() { return effectiveMaterial.physics().restitution(); }
     public float blockDamageFactor() { return effectiveMaterial.physics().blockDamageFactor(); }
+    public float impactMinSpeed() { return effectiveMaterial.physics().impactMinSpeed(); }
 
     // -- ArmorAttr 委托 --
 

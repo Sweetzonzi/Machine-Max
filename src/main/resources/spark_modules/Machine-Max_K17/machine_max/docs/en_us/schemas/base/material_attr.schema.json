@@ -58,7 +58,8 @@
         "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "Rolling friction coefficient." },
         "spinning_friction": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "Spinning friction coefficient." },
         "restitution": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.1, "description": "Restitution (elasticity), 0 = perfectly inelastic, 1 = perfectly elastic." },
-        "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "Block damage factor, 0 = cannot break blocks." }
+        "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "Block damage factor, 0 = cannot break blocks." },
+        "impact_min_speed": { "type": "number", "minimum": 0.0, "default": 2.0, "description": "Minimum normal-approach speed (m/s) for an ordinary impact to register contacts of this material. It only sets the qualification speed of block breaking; it does not change the material's resistance or protection. Part-to-part contacts use the smaller of both materials." }
       },
       "additionalProperties": false
     },
