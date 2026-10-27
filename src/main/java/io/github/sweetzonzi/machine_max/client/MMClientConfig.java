@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client;
 
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchFeedback;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.network.payload.ControlPreferencePayload;
 import net.minecraft.client.Minecraft;
@@ -62,6 +63,20 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
     private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
+
+    // ---- 座位图 ----
+    private static final ModConfigSpec.EnumValue<SeatMapMode> SEAT_MAP_MODE;
+    private static final ModConfigSpec.BooleanValue SEAT_MAP_DAMAGE_LAYER;
+
+    /** 座位图的显示档位 */
+    public enum SeatMapMode {
+        /** 在座位上时常驻 */
+        ALWAYS,
+        /** 只在换座请求发出后与成功后的短暂窗口里显示 */
+        AFTER_SWITCH,
+        /** 不显示；循环换座键仍然工作，结果走 actionbar */
+        OFF
+    }
 
     public static final ModConfigSpec.DoubleValue SHIP_FULL_STEERING_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_POWER_TIME;
@@ -188,6 +203,21 @@ public class MMClientConfig {
         RENDER_FORCE_TRANSLUCENT_PARTS = builder
                 .comment("Whether to replace cutout part rendering with translucent entity rendering.\nOff by default because translucent rendering often causes incorrect z-sorting and object culling.")
                 .define("render_force_translucent_parts", false);
+
+        builder.pop();
+
+        builder.push("seat_map");
+
+        SEAT_MAP_MODE = builder
+                .comment("When to show the seat map panel while seated.\n"
+                        + "ALWAYS = whenever you are in a seat (and the vehicle has more than one seat).\n"
+                        + "AFTER_SWITCH = only for a short window after a seat switch request or result.\n"
+                        + "OFF = never; the cycle-seat key still works and reports through the action bar.")
+                .defineEnum("mode", SeatMapMode.ALWAYS);
+
+        SEAT_MAP_DAMAGE_LAYER = builder
+                .comment("Tint damaged sub-parts in the seat map (only below 50% durability or destroyed).\nDefault: true")
+                .define("damage_layer", true);
 
         builder.pop();
 
@@ -440,6 +470,29 @@ public class MMClientConfig {
      */
     public static boolean getRenderForceTranslucentParts() {
         return RENDER_FORCE_TRANSLUCENT_PARTS.get();
+    }
+
+    /**
+     * 座位图此刻是否应当显示。
+     *
+     * <p>调用方已经确认玩家在座位控制下、没开界面、没隐藏 GUI、不在摄像机模式。这里只回答
+     * 配置档位的问题：常驻、只在换座窗口、或关闭。关闭时循环换座键仍然工作，结果走 actionbar。</p>
+     */
+    public static boolean isSeatMapVisible() {
+        return switch (SEAT_MAP_MODE.get()) {
+            case ALWAYS -> true;
+            case AFTER_SWITCH -> SeatSwitchFeedback.isPending() || SeatSwitchFeedback.pulseTicks() > 0;
+            case OFF -> false;
+        };
+    }
+
+    /**
+     * 座位图是否给受损零件着色。
+     *
+     * @return true 表示低于 50% 耐久或已毁坏的零件会按色带染色
+     */
+    public static boolean isSeatMapDamageLayerEnabled() {
+        return SEAT_MAP_DAMAGE_LAYER.get();
     }
 
     /**

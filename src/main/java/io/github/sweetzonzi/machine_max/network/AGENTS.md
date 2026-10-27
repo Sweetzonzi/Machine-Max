@@ -40,7 +40,7 @@ network/
 
 ## 约定
 
-- **5 个协议组**：`input:2.1.0`（控制）、`sync:2.6.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.2.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 依次编码 clockwise 铺设绕向与 `track_type` 型号 id，载具同步与蓝图取出载荷均传输这两个字段。
+- **5 个协议组**：`input:2.2.0`（控制）、`sync:2.6.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.2.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 依次编码 clockwise 铺设绕向与 `track_type` 型号 id，载具同步与蓝图取出载荷均传输这两个字段。
 - **全部处理器在主线程**：使用 `MainThreadPayloadHandler`。无物理线程处理器。
 - **双向载荷**：使用 `DirectionalPayloadHandler` 分离客户端/服务端方法。
 - **普通部件制造状态**：`network/payload/assembly/PartAssemblyProgressSyncPayload.java#STREAM_CODEC` 通过一个 SubPart ID 定位所属部件；ID、组装比例、材料项数、线框标志共 13 字节，接收时通过 `common/mech/ObjectManager.java#getDestroyableObject` 查对象。这里的源码路径均以 `src/main/java/io/github/sweetzonzi/machine_max/` 为基准。

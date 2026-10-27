@@ -6,8 +6,10 @@ import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.ResearchPointHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.SeatMapHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.SightHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
+import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.ItemStorageSubsystemScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleNamingScreen;
@@ -15,6 +17,8 @@ import io.github.sweetzonzi.machine_max.client.render.renderable.ITickableRender
 import io.github.sweetzonzi.machine_max.client.render.renderer.Hud3DRenderer;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaHelper;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchFeedback;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -52,8 +56,19 @@ public class MMGuiManager {
         event.registerAboveAll(id("interact_hud"), new InteractHud());
         event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
         event.registerAboveAll(id("sight_hud"), new SightHud());
+        event.registerAboveAll(id("seat_map_hud"), new SeatMapHud());
 //        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
+    }
+
+    /**
+     * 结构变化只置脏，下一个 tick 再重算：一次结构变化只重算一次，避免在子系统握手与物理激活
+     * 中途递归进来。事件双端都发，这里只关心客户端实例。
+     */
+    @SubscribeEvent
+    private static void onVehicleStructureChanged(VehicleStructureChangeEvent event) {
+        if (event.getVehicle() == null || !event.getVehicle().getLevel().isClientSide()) return;
+        SeatMapLayout.markDirty();
     }
 
     private static ResourceLocation id(String path){
@@ -91,6 +106,7 @@ public class MMGuiManager {
         if (!event.getLevel().isClientSide()) return;
         try {
             if (customHud != null) customHud.tick();
+            tickSeatMap();
             WeakReference<ITickableRenderable> ref;
             while ((ref = (WeakReference<ITickableRenderable>) referenceQueue.poll()) != null) {
                 // 从集合中移除已经失效的弱引用
@@ -106,6 +122,16 @@ public class MMGuiManager {
         } catch (Exception e) {
             MachineMax.LOGGER.warn("Error while ticking widget at main thread: ", e);
         }
+    }
+
+    /** 座位图的客户端 tick：推进换座反馈的计时，并在离座时丢掉快照 */
+    private static void tickSeatMap() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        SeatSubsystem seat = player != null
+                && ((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem current
+                ? current : null;
+        SeatSwitchFeedback.tick(seat);
+        if (seat == null) SeatMapLayout.reset();
     }
 
     @SubscribeEvent

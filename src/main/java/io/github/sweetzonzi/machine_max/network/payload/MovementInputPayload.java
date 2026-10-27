@@ -64,12 +64,17 @@ public record MovementInputPayload(
     public static void serverHandler(final MovementInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
         DestroyableObject object = ObjectManager.getDestroyableObject(player.level(), payload.subPartId());
-        boolean success = false;
-        if (object instanceof SubPart subPart) {
-            success = handler(subPart, payload);
+        if (!(object instanceof SubPart subPart)) return;
+        if (!(subPart.subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem)) {
+            MachineMax.LOGGER.warn("收到移动输入但子系统 {} 不存在于 SubPart(id={})",
+                    payload.subSystemName(), payload.subPartId());
+            return;
         }
-        if (success)
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
+        // 来源校验必须在广播之前：否则换座后到达的旧座位油门会被整包广播回所有客户端重放，
+        // 并且把旧座位刚清掉的移动信号写回去（信号保持到下一次写入才被覆盖）
+        if (!AbstractControllableSubsystem.isControlledBy(subSystem, player)) return;
+        subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
+        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
     }
 
     public static boolean handler(SubPart subPart, final MovementInputPayload payload) {

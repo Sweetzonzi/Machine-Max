@@ -20,8 +20,12 @@ import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -33,7 +37,15 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public LivingEntity passenger;
+    /**
+     * 座位是否已被占用。服务端是权威端，客户端靠同步值跟随；座位图与换座目标筛选都读它，
+     * 不读 {@link #passenger}（后者只有服务端有值）。
+     */
     public boolean occupied;
+
+    /** 占用状态的同步值：变化极少，每 tick 的脏数据推送即可覆盖 */
+    private static final EntityDataAccessor<Boolean> DATA_OCCUPIED_ID =
+            SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.BOOLEAN);
     /**
      * 该座位的上车点，表达为所在 SubPart 刚体的局部坐标；null 表示本座位尚无车外登入记录。
      * <p>只在「从车外登入」时采样覆盖，或在「同一装配体内换座」时由旧座位经世界坐标换算交接过来；
@@ -93,6 +105,24 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         return occupied ? SignalResult.FAIL : result;
     }
 
+    @Override
+    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_OCCUPIED_ID, false);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> accessor) {
+        super.onSyncedDataUpdated(accessor);
+        if (accessor == DATA_OCCUPIED_ID) this.occupied = synchedData.get(DATA_OCCUPIED_ID);
+    }
+
+    /** 占用状态的唯一写入口：服务端同时更新同步值，客户端只跟随本地字段 */
+    private void setOccupied(boolean value) {
+        this.occupied = value;
+        if (!getLevel().isClientSide()) synchedData.set(DATA_OCCUPIED_ID, value);
+    }
+
     public void setPassenger(LivingEntity passenger) {
         if (owner.getSubPart() != null && owner.getSubPart().entity != null) {
             updateBoardingOffset(passenger);
@@ -105,7 +135,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
             if (!getOwner().getLevel().isClientSide) {
                 passenger.startRiding(owner.getSubPart().entity, true);
             }
-            occupied = true;
+            setOccupied(true);
             for (String channel : attr.passengerNumSignalTargets.keySet()) {
                 sendSignalToAllTargets(channel, 1f);
             }
@@ -118,7 +148,67 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
             if (getOwner().getSubPart().getPart().assembly instanceof VehicleCore vc) {
                 vc.recalculateCameraDistance();
             }
+            // 落座后把活动控制组复位到该座位预设的默认值，避免继承上一个乘客留下的子组
+            resetControlGroupToPreset();
         }
+    }
+
+    /**
+     * 车内换座的旧座位侧：与 {@link #removePassenger} 清同样的字段，但不 {@code stopRiding}、
+     * 不加冲量——骑乘关系由换座路径自己处理（同子零件时根本不变）。
+     */
+    public void detachForSwitch(LivingEntity passenger) {
+        if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() == this) {
+            ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(null);
+        }
+        clearSeatState();
+    }
+
+    /**
+     * 车内换座的新座位侧：与 {@link #setPassenger} 写同样的字段，但不重复移除旧座位、
+     * 也不调用 {@code startRiding}——同子零件路径不需要挂载，跨子零件路径由调用方先挂载成功。
+     */
+    public void attachForSwitch(LivingEntity passenger) {
+        setOccupied(true);
+        for (String channel : attr.passengerNumSignalTargets.keySet()) {
+            sendSignalToAllTargets(channel, 1f);
+        }
+        clearInputSignals();
+        this.passenger = passenger;
+        ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
+        setExtraMass((float) MassUtil.getEntityMass(passenger));
+        getOwner().getSubPart().getPart().assembly.activatePhysics();
+        if (getOwner().getSubPart().getPart().assembly instanceof VehicleCore vc) {
+            vc.recalculateCameraDistance();
+        }
+        resetControlGroupToPreset();
+    }
+
+    /** 客户端的旧座位清理：只改本地显示字段，骑乘关系由原版包负责 */
+    public void clientClearSeat() {
+        this.passenger = null;
+        setOccupied(false);
+        setExtraMass(0f);
+    }
+
+    /**
+     * 客户端的新座位接管。{@code controlGroup} 直接照抄结果包里的值，
+     * 不重查预设——两端各自查表得到的相等依赖两个注册表都加载成功且内容包一致。
+     */
+    public void clientAttachSeat(LivingEntity passenger, int controlGroup) {
+        setOccupied(true);
+        this.passenger = passenger;
+        ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
+        setExtraMass((float) MassUtil.getEntityMass(passenger));
+        applyControlGroupIndex(controlGroup);
+    }
+
+    /** 把活动子组写成给定索引；越界也照写，语义与服务端一致（{@code getActiveGroup()} 返回 null 退化为 base） */
+    public void applyControlGroupIndex(int index) {
+        ControlGroupSet current = getControlGroupSet();
+        if (current == null || current == ControlGroupSet.EMPTY) return;
+        if (current.getActiveIndex() == index) return;
+        setControlGroupSet(new ControlGroupSet(current.baseGroup, current.groups, current.getGuiActions(), index));
     }
 
     /**
@@ -133,7 +223,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
      *
      * @param passenger 本次登入的乘客
      */
-    private void updateBoardingOffset(LivingEntity passenger) {
+    void updateBoardingOffset(LivingEntity passenger) {
         SubPart host = owner.getSubPart();
         if (host == null || host.body == null) return;
         if (passenger.getVehicle() == null) {
@@ -163,9 +253,14 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
                 if ((passenger.level().isClientSide() && passenger instanceof Player) || (!(passenger instanceof Player) && !passenger.level().isClientSide()))
                     CollisionManager.addImpulse(passenger, SparkMathKt.toVec3(getSubPart().getLinearVelocity().add(0,1,0).mult(0.05f)));
             }
-            passenger = null;
         }
-        occupied = false;
+        clearSeatState();
+    }
+
+    /** 座位侧的状态清理：乘客、占用、额外质量、乘客计数信号与输入信号 */
+    private void clearSeatState() {
+        passenger = null;
+        setOccupied(false);
         // 乘客离去，清除额外质量
         setExtraMass(0f);
         for (String channel : attr.passengerNumSignalTargets.keySet()) {

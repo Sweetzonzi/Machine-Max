@@ -57,11 +57,13 @@ public record ControlBindingPayload(
             DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
             if (object instanceof SubPart subPart) {
                 AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
-                if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
+                // 来源校验：换座后到达的旧座位按键包必须被丢弃，否则会把刚清掉的信号重新写回旧座位
+                if (subsystem instanceof AbstractControllableSubsystem controllable
+                        && AbstractControllableSubsystem.isControlledBy(controllable, context.player())) {
                     controllable.sendBindingSignal(payload.bindingIndex(), payload.eventType());
                 } else {
-                    MachineMax.LOGGER.warn("收到ControlBindingPayload但子系统 {} 不存在于 SubPart(id={})",
-                            payload.subSystemName(), payload.subPartId());
+                    MachineMax.LOGGER.debug("丢弃控制绑定包：子系统 {} (SubPart id={}) 不在玩家 {} 的控制下",
+                            payload.subSystemName(), payload.subPartId(), context.player().getName().getString());
                 }
             } else {
                 MachineMax.LOGGER.warn("收到ControlBindingPayload但维度 {} 中不存在 SubPart(id={})",

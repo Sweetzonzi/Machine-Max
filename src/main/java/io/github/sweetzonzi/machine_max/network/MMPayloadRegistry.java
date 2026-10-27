@@ -32,7 +32,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 public class MMPayloadRegistry {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar input = event.registrar("input:2.1.0");
+        final PayloadRegistrar input = event.registrar("input:2.2.0");
         // TrackLinkData#STREAM_CODEC 携带 clockwise 布尔绕向与 track_type 型号 id，VehicleData 的同步和蓝图载荷使用该格式。
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。
         // PartAssemblyProgressSyncPayload 通过单个 SubPart ID 寻址普通部件，编码长度为 13 字节。
@@ -102,6 +102,16 @@ public class MMPayloadRegistry {
                 ControlBindingPayload.TYPE,
                 ControlBindingPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ControlBindingPayload::serverHandler)
+        );
+        input.playToServer(//换座请求（携带目标座位，服务端只校验不排序）
+                SeatSwitchPayload.TYPE,
+                SeatSwitchPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(SeatSwitchPayload::serverHandler)
+        );
+        input.playToClient(//换座结果（纯状态包，成功时广播维度）
+                SeatSwitchResultPayload.TYPE,
+                SeatSwitchResultPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(SeatSwitchResultPayload::clientHandler)
         );
         input.playToServer(//开始抓取（只携带意图，服务端重算目标与参数）
                 GrabStartPayload.TYPE,

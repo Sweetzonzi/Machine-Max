@@ -25,6 +25,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConn
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
@@ -52,6 +53,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -276,15 +278,52 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             this.partNet.addEdge(connectedParts, edge);
         }
         this.updateTotalMass();
-        this.subSystemController.onVehicleStructureChanged();
-        recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+        this.onStructureChanged(VehicleStructureChangeEvent.Reason.SPLIT);
+    }
+
+    /**
+     * 拓扑变化后的统一收尾：质量、HP 上限、相机距离、子系统握手与结构事件。
+     *
+     * <p>这四件事总是成组出现且顺序敏感——{@code setHp} 用当前 {@code maxHp} 夹紧，
+     * 而 {@code maxHp} 只由 {@code recalculateMaxHp} 更新，所以合并路径必须先在写 HP 之前
+     * 重算上限。把它们收进一个方法，调用点只需声明“发生了什么”。</p>
+     *
+     * @param reason 触发场景，决定 HP 上限的重算方式，也随事件发给订阅方
+     */
+    public void onStructureChanged(VehicleStructureChangeEvent.Reason reason) {
+        onStructureChanged(reason, modeFor(reason));
+    }
+
+    /**
+     * 同 {@link #onStructureChanged(VehicleStructureChangeEvent.Reason)}，但由调用方指定
+     * HP 上限的重算方式：分裂时上限已由 {@code distributeSplitHp} 与分裂出的新载具负责，
+     * 这里既不能增长也不能夹紧。
+     */
+    private void onStructureChanged(VehicleStructureChangeEvent.Reason reason, HpRecalcMode mode) {
+        updateTotalMass();
+        recalculateMaxHp(mode);
         recalculateCameraDistance();
+        subSystemController.onVehicleStructureChanged();
+        if (isInLevel()) {
+            // 双端都发：只挂服务端会让专用服务器上的客户端永远收不到，单机同 JVM 又看起来正常
+            NeoForge.EVENT_BUS.post(new VehicleStructureChangeEvent(this, reason));
+        }
+    }
+
+    private static HpRecalcMode modeFor(VehicleStructureChangeEvent.Reason reason) {
+        return switch (reason) {
+            case ADD -> HpRecalcMode.GROW_WITH_MAX_DELTA;
+            case SPLIT -> HpRecalcMode.NONE;
+            default -> HpRecalcMode.CLAMP_ONLY;
+        };
     }
 
     private enum HpRecalcMode {
         INIT_TO_MAX,
         GROW_WITH_MAX_DELTA,
-        CLAMP_ONLY
+        CLAMP_ONLY,
+        /** 只重算上限，不动当前 HP */
+        NONE
     }
 
     private SynchedEntityData createSynchedData() {
@@ -351,6 +390,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             case INIT_TO_MAX -> setHp(newMaxHp);
             case GROW_WITH_MAX_DELTA -> setHp(getHp() + Math.max(0f, newMaxHp - oldMaxHp));
             case CLAMP_ONLY -> setHp(getHp());
+            case NONE -> {
+                // 只更新上限；当前 HP 由分裂分配或既有状态决定
+            }
         }
     }
 
@@ -751,15 +793,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                     clientHandleSpilt(spiltPartNets, spiltVehicles, hpBeforeSplit);
                 }
             }
-            if (spiltPartNets.size() <= 1) {
-                recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
-            }
+            boolean split = spiltPartNets.size() > 1;
             if (partMap.values().isEmpty() && !level.isClientSide())
                 ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
-                this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-                recalculateCameraDistance();
+                // 分裂时上限由 distributeSplitHp 与分裂出的新载具负责
+                onStructureChanged(VehicleStructureChangeEvent.Reason.REMOVE,
+                        split ? HpRecalcMode.NONE : HpRecalcMode.CLAMP_ONLY);
                 for (SubPart subPart : part.subParts.values()) {
                     if (subPart.interactBoxes != null)
                         for (InteractBox interactBox : subPart.interactBoxes.values()) {
@@ -767,7 +808,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                         }
                 }
             }
-            this.updateTotalMass();
             refreshTrackLinks();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);
     }
@@ -865,8 +905,10 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         }
         if (isInLevel()) {
             advancedConnector.addToLevel();//将关节约束加入到世界
-            this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-            recalculateCameraDistance();
+            // 新部件的 HP 增量在本方法前半段已按 GROW 记入，这里再算一次得到的是零增量
+            onStructureChanged(newPart != null
+                    ? VehicleStructureChangeEvent.Reason.ADD
+                    : VehicleStructureChangeEvent.Reason.ATTACH);
             this.activate();
             if (!level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(advancedConnector, simpleConnector));//特殊连接点在前面，以保证连接点属性得到正确应用
@@ -896,10 +938,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         this.setHp(mergedHp);
 
         if (isInLevel()) advancedConnector.addToLevel();
-        this.subSystemController.onVehicleStructureChanged();
-        recalculateCameraDistance();
+        onStructureChanged(VehicleStructureChangeEvent.Reason.MERGE);
         this.activate();
-        this.updateTotalMass();
 
         List<ConnectionData> newConnections = List.of(new ConnectionData(advancedConnector, simpleConnector));
         if (!level.isClientSide()) {
@@ -963,8 +1003,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
             this.attachConnector(connectorPair.getFirst(), connectorPair.getSecond(), null);
         }
         if (newConnections.isEmpty()) {
-            this.subSystemController.onVehicleStructureChanged();
-            recalculateCameraDistance();
+            onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
             this.activate();
         }
         if (!ObjectManager.removeMergedVehicle(donorVehicle)) {
@@ -1102,12 +1141,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         } else {//客户端行为，仅应被载具断开连接的网络包调用
             clientHandleSpilt(spiltPartNets, spiltVehicles, hpBeforeSplit);
         }
-        if (spiltPartNets.size() <= 1) {
-            recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
-        }
-        this.updateTotalMass();
-        this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-        recalculateCameraDistance();
+        boolean split = spiltPartNets.size() > 1;
+        onStructureChanged(split
+                        ? VehicleStructureChangeEvent.Reason.SPLIT
+                        : VehicleStructureChangeEvent.Reason.DETACH,
+                split ? HpRecalcMode.NONE : HpRecalcMode.CLAMP_ONLY);
         refreshTrackLinks();
     }
 

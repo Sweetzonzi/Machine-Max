@@ -50,6 +50,7 @@ public class KeyBinding {
     public static final String NEXT_AMMO_TYPE_KEY = MMLanguageRegistry.KEY_GENERAL_NEXT_AMMO_TYPE.tag;
     public static final String PREV_AMMO_TYPE_KEY = MMLanguageRegistry.KEY_GENERAL_PREV_AMMO_TYPE.tag;
     public static final String CYCLE_CONTROL_GROUP_KEY = MMLanguageRegistry.KEY_GENERAL_CYCLE_CONTROL_GROUP.tag;
+    public static final String CYCLE_SEAT_KEY = MMLanguageRegistry.KEY_GENERAL_CYCLE_SEAT.tag;
     /**
      * 在此注册所有按键
      */
@@ -96,6 +97,7 @@ public class KeyBinding {
         event.register(KeyBinding.generalNextAmmoTypeKey);//下一个弹种
         event.register(KeyBinding.generalPrevAmmoTypeKey);//上一个弹种
         event.register(KeyBinding.generalCycleControlGroupKey);//轮换控制组
+        event.register(KeyBinding.generalCycleSeatKey);//循环换座
 
     }
 
@@ -278,6 +280,14 @@ public class KeyBinding {
             KeyCategory.GENERAL,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_TAB,
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    /** 循环换座：按几何顺序切到下一个可用座位，默认 X 键 */
+    public static KeyMapping generalCycleSeatKey = new KeyMapping(CYCLE_SEAT_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
             KeyCategory.GENERAL.getCategory()
     );
 

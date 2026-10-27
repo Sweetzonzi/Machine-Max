@@ -62,6 +62,37 @@ public class MMRenderTypes {
     );
 
     /**
+     * 半透明纯色几何体（双面、不测也不写深度、输出到主目标）。
+     * <p>
+     * 与 {@link #SOLID_ALWAYS_VISIBLE} 的状态只差输出目标：那条走 {@code ITEM_ENTITY_TARGET}，
+     * 是给世界渲染通道里的 3D HUD 用的；GUI 图层不在那条通道里，输出到主目标才不会依赖
+     * 世界渲染器的重定向。几何本身一样：所有面都参与混合，累积出“看穿外壳”的透视感。
+     * <p>
+     * 叠加次序由提交顺序决定，所以调用方必须先提交外壳、再提交内构，内构颜色才压得住外壳。
+     * <p>
+     * 适用于：
+     * - 透视剪影（座位图）
+     * - GUI 里的半透明全息层
+     */
+    public static final RenderType SOLID_XRAY = RenderType.create(
+            "machine_max_solid_xray",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            true,
+            RenderType.CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setLayeringState(NO_LAYERING)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setOutputState(MAIN_TARGET)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(NO_DEPTH_TEST)
+                    .createCompositeState(false)
+    );
+
+    /**
      * 加法混合的纯色几何体（有深度测试）
      * 适用于：
      * - 世界中的能量体
@@ -175,6 +206,11 @@ public class MMRenderTypes {
 
     public static RenderType alwaysVisibleSolid() {
         return SOLID_ALWAYS_VISIBLE;
+    }
+
+    /** 半透明纯色透视几何体，见 {@link #SOLID_XRAY} */
+    public static RenderType solidXray() {
+        return SOLID_XRAY;
     }
 
     public static RenderType additiveSolidDepth() {

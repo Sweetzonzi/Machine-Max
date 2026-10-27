@@ -92,14 +92,6 @@ public class AssemblyHud3D implements IHud3DElement {
     private static final Color BAR_HP_0 = new Color(255, 0, 0, 200);
     private static final Color BAR_HP_DESTROYED = new Color(50, 50, 50, 200);
 
-    private static final Color SUBSYSTEM_HP_FULL = new Color(100, 255, 100, 64);
-    private static final Color SUBSYSTEM_HP_80 = new Color(255, 255, 64, 64);
-    private static final Color SUBSYSTEM_HP_60 = new Color(255, 255, 0, 64);
-    private static final Color SUBSYSTEM_HP_40 = new Color(255, 128, 0, 64);
-    private static final Color SUBSYSTEM_HP_20 = new Color(255, 64, 0, 64);
-    private static final Color SUBSYSTEM_HP_0 = new Color(255, 0, 0, 64);
-    private static final Color SUBSYSTEM_HP_DESTROYED = new Color(50, 50, 50, 128);
-
     /* ================== 动画状态 ================== */
 
     private final AnimatedFloat animatedDurabilityFloat = new AnimatedFloat(0).easing(Easing::easeInOut);
@@ -782,20 +774,8 @@ public class AssemblyHud3D implements IHud3DElement {
     }
 
     private int getSubsystemColorByDurability(float durability, float maxDurability) {
-        float ratio = Math.clamp(durability / maxDurability, 0.0f, 1.0f);
-        if (ratio >= 1.0f) {
-            return SUBSYSTEM_HP_FULL.getRGB();
-        } else if (ratio >= 0.8f) {
-            return SUBSYSTEM_HP_80.getRGB();
-        } else if (ratio >= 0.6f) {
-            return SUBSYSTEM_HP_60.getRGB();
-        } else if (ratio >= 0.4f) {
-            return SUBSYSTEM_HP_40.getRGB();
-        } else if (ratio >= 0.2f) {
-            return SUBSYSTEM_HP_20.getRGB();
-        } else if (ratio > 0.0f) {
-            return SUBSYSTEM_HP_0.getRGB();
-        } else return SUBSYSTEM_HP_DESTROYED.getRGB();
+        return io.github.sweetzonzi.machine_max.client.render.gui.hud.SubsystemDurabilityColors
+                .colorFor(durability, maxDurability);
     }
 
     private int getSubPartColorByDurability(float durability, float maxDurability) {

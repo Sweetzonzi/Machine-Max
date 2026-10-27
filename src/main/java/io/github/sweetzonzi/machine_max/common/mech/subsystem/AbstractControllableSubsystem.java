@@ -14,11 +14,13 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -452,6 +454,58 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                 setControlGroupSet(new ControlGroupSet(preset.baseGroup, preset.groups, preset.getGuiActions(), preset.getActiveIndex()));
             }
         }
+    }
+
+    /**
+     * 把活动子组复位到该子系统预设的默认值，返回复位后的索引。
+     *
+     * <p>目标值取预设自身的 {@code active_index}，与 {@link #restoreControlGroupPreset()} 同源：
+     * 内容包里的常量决定，两端读同一份数据，所以可以直接当作复位目标，不需要同步。
+     * 没有预设时目标为 {@code -1}（base 组，等价于“组列表为空”：{@code getActiveGroup()} 返回 null，
+     * {@code getMerged*} 回退 base 组）。</p>
+     *
+     * <p>用新实例而不是就地 {@code activate(target)}：构造器可能把注册表里的预设实例直接存进来，
+     * 就地改会波及共用同一预设的其它座位；{@code activate} 还会拒绝越界索引，
+     * 而玩家用面板编辑过的组列表可能比预设短。{@code setControlGroupSet} 会先用旧集合的
+     * 全部频道清一遍输入信号，正是“别留着上一位乘客的信号”。</p>
+     *
+     * <p>幂等：当前值已经等于目标时直接返回，不重建集合、不重复清信号。</p>
+     */
+    public int resetControlGroupToPreset() {
+        ControlGroupSet current = getControlGroupSet();
+        if (current == null || current == ControlGroupSet.EMPTY) return -1;
+
+        int target = -1;
+        ResourceLocation rl = this.attr.getControlGroupPresetRl();
+        if (!rl.equals(AbstractSubsystemAttr.NO_CONTROL_GROUP_PRESET)) {
+            ControlGroupSet preset = MMDynamicRes.CONTROL_GROUP_PRESETS.get(rl);
+            if (preset != null) target = preset.getActiveIndex();
+            else MachineMax.LOGGER.debug("控制组预设 {} 未找到，活动组复位为 -1", rl);
+        }
+        if (current.getActiveIndex() == target) return target;
+
+        setControlGroupSet(new ControlGroupSet(current.baseGroup, current.groups, current.getGuiActions(), target));
+        return target;
+    }
+
+    /**
+     * 输入来源校验：该玩家此刻是否仍“在这个子系统上”。
+     *
+     * <p>换座请求发出到结果包到达之间，客户端仍按旧座位注册着按键；服务端处理完换座之后
+     * 才收到这些包时，会把刚清掉的信号重新写回旧座位。判据与 {@code ViewInputPayload}
+     * 的来源校验一致：控制关系指向本子系统，且（对座位而言）乘客、可骑乘实体、实际载具三者
+     * 都必须仍然成立。</p>
+     */
+    public static boolean isControlledBy(AbstractControllableSubsystem subsystem, Player player) {
+        if (subsystem == null || player == null) return false;
+        if (!subsystem.isActive() || subsystem.isDestroyed()) return false;
+        if (((IEntityMixin) player).machine_Max$getControllingSubsystem() != subsystem) return false;
+        if (subsystem instanceof SeatSubsystem seat) {
+            if (seat.passenger != player) return false;
+            if (seat.getSubPart() == null || seat.getSubPart().getEntity() == null) return false;
+            if (player.getVehicle() != seat.getSubPart().getEntity()) return false;
+        }
+        return true;
     }
 
     @Override

@@ -181,6 +181,10 @@ public enum MMLanguageRegistry {
             zh_cn, "查看内构",
             en_us, "Inspect Internal"
     )),
+    KEY_GENERAL_CYCLE_SEAT("key.machine_max.general.cycle_seat", ImmutableMap.of(
+            zh_cn, "循环换座",
+            en_us, "Cycle Seat"
+    )),
     // 按键名称-地面载具
     KEY_GROUND_FORWARD("key.machine_max.ground.forward", ImmutableMap.of(
             zh_cn, "前进",
@@ -422,6 +426,62 @@ public enum MMLanguageRegistry {
     MESSAGE_CONTROL_GROUP_SWITCHED("message.machine_max.control_group_switched", ImmutableMap.of(
             zh_cn, "已切换控制组：%s",
             en_us, "Control Group: %s"
+    )),
+    MESSAGE_SEAT_SWITCHED("message.machine_max.seat.switched", ImmutableMap.of(
+            zh_cn, "%1$s/%2$s · %3$s",
+            en_us, "%1$s/%2$s · %3$s"
+    )),
+    MESSAGE_SEAT_FULL("message.machine_max.seat.full", ImmutableMap.of(
+            zh_cn, "没有其它可用座位",
+            en_us, "No other seat available"
+    )),
+    MESSAGE_SEAT_NOT_SEATED("message.machine_max.seat.not_seated", ImmutableMap.of(
+            zh_cn, "当前不在座位上",
+            en_us, "You are not seated"
+    )),
+    MESSAGE_SEAT_SAME_SEAT("message.machine_max.seat.same_seat", ImmutableMap.of(
+            zh_cn, "已经在这个座位上",
+            en_us, "Already in that seat"
+    )),
+    MESSAGE_SEAT_OCCUPIED("message.machine_max.seat.occupied", ImmutableMap.of(
+            zh_cn, "该座位已被占用",
+            en_us, "That seat is occupied"
+    )),
+    MESSAGE_SEAT_UNAVAILABLE("message.machine_max.seat.unavailable", ImmutableMap.of(
+            zh_cn, "该座位不可用",
+            en_us, "That seat is unavailable"
+    )),
+    MESSAGE_SEAT_DIFFERENT_ASSEMBLY("message.machine_max.seat.different_assembly", ImmutableMap.of(
+            zh_cn, "该座位不属于当前载具",
+            en_us, "That seat belongs to another vehicle"
+    )),
+    MESSAGE_SEAT_NO_ENTITY("message.machine_max.seat.no_entity", ImmutableMap.of(
+            zh_cn, "该座位所在的零件尚未就绪",
+            en_us, "That seat's part is not ready yet"
+    )),
+    MESSAGE_SEAT_MOUNT_FAILED("message.machine_max.seat.mount_failed", ImmutableMap.of(
+            zh_cn, "无法就座",
+            en_us, "Could not take that seat"
+    )),
+    MESSAGE_SEAT_RATE_LIMITED("message.machine_max.seat.rate_limited", ImmutableMap.of(
+            zh_cn, "换座过于频繁",
+            en_us, "Switching seats too quickly"
+    )),
+    SEAT_MAP_LEGEND_YOU("seat_map.legend.you", ImmutableMap.of(
+            zh_cn, "你",
+            en_us, "YOU"
+    )),
+    SEAT_MAP_LEGEND_NEXT("seat_map.legend.next", ImmutableMap.of(
+            zh_cn, "下一个",
+            en_us, "NEXT"
+    )),
+    SEAT_MAP_LEGEND_EMPTY("seat_map.legend.empty", ImmutableMap.of(
+            zh_cn, "空",
+            en_us, "EMPTY"
+    )),
+    SEAT_MAP_LEGEND_BUSY("seat_map.legend.busy", ImmutableMap.of(
+            zh_cn, "占用",
+            en_us, "BUSY"
     )),
     MESSAGE_LEAVING_VEHICLE("message.machine_max.leaving_vehicle", ImmutableMap.of(
             zh_cn, "长按[%1$s]键%2$s/0.50秒以离开载具",

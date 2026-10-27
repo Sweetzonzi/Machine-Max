@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSwitchHelper;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -561,6 +562,9 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
 
     @Override
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
+        // 车内换座：跨子零件换座靠 startRiding 摘除旧骑乘，而旧座位此时仍宣称着这名乘客，
+        // findOccupiedSeat 会真的去算一个车外落点并把玩家挪过去。换座标记期间直接返回当前位置。
+        if (SeatSwitchHelper.isSwitching(passenger)) return passenger.position();
         if (subPart == null) return super.getDismountLocationForPassenger(passenger);
         SeatSubsystem seat = findOccupiedSeat(passenger);
         List<Pose> poses = passenger.getDismountPoses();
