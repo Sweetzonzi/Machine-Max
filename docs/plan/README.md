@@ -54,6 +54,7 @@
 
 | 文档 | 当前进度 |
 | --- | --- |
+| [控制分配-作动器wrench分配设计](进行中/控制分配-作动器wrench分配设计.md) | `util/WrenchAllocator` 批量阻尼伪逆／批量钉界基线已实现，14 项数学、8 项上下文与 4 项裸 Bullet 测试、86 组 NumPy SVD 对照通过；内核微基准覆盖 16／32／64 器件，输入与求解缓冲统一在 Workspace，动态更新方向后的填充求解实测 0 B/步。完整飞控、响应与游戏接线未完成，结果与范围见该文 §11.5 |
 | [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、`FittingItem` / `TrackItem` 的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`durabilityPerLink` / `lengthPerLink` + 包络推导 N 与最大耐久）、关键事件同步、客户端履带节渲染与 X 角速度相位已落地；履带型号已数据驱动（`fittings/` + `FittingModule` / `FittingType` / `TrackType`），近处逐节绘制型号的单节模型、远处与模型缺失回退程序化；型号 → 物品由 `FittingItems` 派发，物品栏优先 `visual.icon` 的 2D 图标、缺图标回退单节 3D 模型，独立配件创造栏按型号生成条目；用料按节数记录（`TrackLink.linkCount()`），暂不消耗物品；履带控制阶段 A / B（`AbstractGroundControllerSubsystem` + `TrackControllerSubsystem` + `TrackDriveSubsystem`，单流）已落地，阶段 C / D 未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 17/17 用例 + 270/270 断言（`prototype/track-envelope-2d/`）；`gradlew check` 通过（含 `checkSchemas` 与全量 JUnit） |
 | [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 实施中（v5）；单流八方向意图、外侧锚定的带速上限、驱动/制动预算选择与正反向关节物理回归已接入。共享基类、属性注册与内容包 schema 已落地；阶段 C / D（双流转向、多履带实机验收、HUD）未实现 |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
