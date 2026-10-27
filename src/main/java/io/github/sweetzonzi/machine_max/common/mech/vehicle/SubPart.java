@@ -566,6 +566,12 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         return track != null && !track.isDisposed() && !track.isBroken();
     }
 
+    /** 本次伤害是否由普通碰撞发起（见 {@link MMDamageExtensions#COLLISION_IMPACT}）。 */
+    private static boolean isCollisionImpact(BFDamageContext ctx) {
+        Boolean flag = ctx.extensions().get(MMDamageExtensions.COLLISION_IMPACT);
+        return flag != null && flag;
+    }
+
     @Override
     public ArmorLevel getArmorLevel(BFDamageContext ctx) {
         return ArmorLevel.fromRha(getRHA(ctx));
@@ -606,6 +612,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public PenetrationResult resolvePenetration(BFDamageContext ctx) {
+        // 普通碰撞不是弹道命中：不掷跳弹随机数，也没有穿深概念
+        if (isCollisionImpact(ctx)) return PenetrationResult.BLOCKED;
+
         // 计算入射角（与法线夹角，度）；缺少弹道信息时按垂直入射处理
         float impactAngleDeg = (float) Math.toDegrees(
                 ArmorUtil.getImpactAngle(ctx.hitVelocity(), ctx.hitNormal()));
@@ -638,6 +647,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public float calculateFinalDamage(BFDamageContext ctx, PenetrationResult result) {
         TrackLink track = this.trackLink;
         HitBox hitBox = findHitBox(ctx);
+        if (isCollisionImpact(ctx)) {
+            // 碰撞伤害的 baseDamage 已按双方防护分配完毕，这里只走材质修正；
+            // 忽略 unpen_power 与穿深比例，避免把 HP 伪装成毫米穿深
+            return modifyArmorDamage(hitBox, ctx.source(), ctx.baseDamage());
+        }
         if (hasLiveTrack(track)) {
             var armor = track.attr().armor();
             if (result == PenetrationResult.PENETRATED) {

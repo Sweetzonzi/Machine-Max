@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionPostSettlement;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ClientRequestVehicleDataPayload;
@@ -43,6 +44,8 @@ public class ObjectManager {
     public static final Map<Level, Map<UUID, VehicleCore>> levelVehicles = new ConcurrentHashMap<>();
     public static final Map<Level, Map<Integer, DestroyableObject>> levelDestroyableObjects = new ConcurrentHashMap<>();
     public static final Map<Level, ProjectileManager> levelProjectileManagers = new ConcurrentHashMap<>();
+    /** 每 Level 的碰撞 Post 结算器；物理线程独占，主线程只在卸载时移除。 */
+    public static final Map<Level, CollisionPostSettlement> levelCollisionSettlements = new ConcurrentHashMap<>();
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> serverVehiclesToAdd = new HashMap<>();
@@ -55,6 +58,16 @@ public class ObjectManager {
 
     public static ProjectileManager getOrCreateProjectileManager(Level level) {
         return levelProjectileManagers.computeIfAbsent(level, ProjectileManager::new);
+    }
+
+    /**
+     * 取（必要时创建）该 Level 的碰撞 Post 结算器。
+     *
+     * @param level 目标维度
+     * @return 该维度的结算器；同一维度始终返回同一实例
+     */
+    public static CollisionPostSettlement collisionSettlement(Level level) {
+        return levelCollisionSettlements.computeIfAbsent(level, CollisionPostSettlement::new);
     }
 
     public static void removeDestroyableObject(DestroyableObject object) {
@@ -281,6 +294,9 @@ public class ObjectManager {
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
         Level mcLevel = event.getLevel().getMcLevel();
+        // 碰撞结算器必须先开始新子步，再执行各载具的物理业务
+        collisionSettlement(mcLevel).beginStep(
+                event.getLevel().getTps() > 0 ? 1f / event.getLevel().getTps() : 0f);
         levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::prePhysicsTick);
         ProjectileManager pm = levelProjectileManagers.get(mcLevel);
         // 非投射物的 DestroyableObject prePhysicsTick（投射物已由 pm.prePhysicsTick 处理）
@@ -297,6 +313,8 @@ public class ObjectManager {
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
         Level mcLevel = event.getLevel().getMcLevel();
+        // 先结算本子步碰撞，再让载具/子系统消费结果
+        collisionSettlement(mcLevel).settle(event.getLevel().getWorld());
         levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::postPhysicsTick);
         ProjectileManager pm = levelProjectileManagers.get(mcLevel);
         // 非投射物的 DestroyableObject postPhysicsTick（投射物已由 pm.postPhysicsTick 处理）
@@ -429,6 +447,7 @@ public class ObjectManager {
     public static void unloadVehicleData(LevelEvent.Unload event) {
         Level level = (Level) event.getLevel();
         levelProjectileManagers.remove(level);
+        levelCollisionSettlements.remove(level);
         if (level.isClientSide()) {
             VisualEffectHelper.attachPoints.clear();
             VisualEffectHelper.boundingBox = null;

@@ -29,4 +29,15 @@ public final class MMDamageExtensions {
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_physical_thickness"),
                     Float.class, () -> 0f);
 
+    /**
+     * 标记这是一次普通碰撞（撞地/撞块）伤害，而非弹道命中。
+     *
+     * <p>为 true 时穿甲管线跳过跳弹与穿深判定，直接按已分配的 baseDamage 走材料伤害修正；
+     * 弹丸上下文不写该标记，继续执行弹道规则。默认 false。</p>
+     */
+    public static final BFDamageExtensionKey<Boolean> COLLISION_IMPACT =
+            BFDamageExtensions.register(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "collision_impact"),
+                    Boolean.class, () -> false);
+
 }

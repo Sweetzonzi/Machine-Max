@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -136,7 +136,7 @@ public class ArmorUtil {
      *
      * @return 给定方块的护甲水平
      */
-    public static float getBlockArmor(Level level, BlockState blockState, BlockPos blockPos) {
+    public static float getBlockArmor(BlockGetter level, BlockState blockState, BlockPos blockPos) {
         return (float) (100f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.001+blockState.getDestroySpeed(level, blockPos)))));
     }
 

@@ -14,11 +14,13 @@ import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCollisionResolver;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCompat;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
@@ -27,12 +29,10 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -88,8 +88,7 @@ public class CollisionHandler {
         point1.getPositionWorld(worldContactPoint);
         //无效接触点（超出轮胎宽度的碰撞等）直接忽略
         if (!subPart.isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            disableContact(manifoldPointId);
             return false;
         }
         point2.getNormalWorld(normal);
@@ -130,8 +129,7 @@ public class CollisionHandler {
         point2.getLocalPoint(otherLocalContactPoint);
         //有效性检验
         if (!subPart.isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            disableContact(manifoldPointId);
             return;
         }
         point2.getNormalWorld(normal);
@@ -293,12 +291,12 @@ public class CollisionHandler {
         BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
         if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
                 relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            disableContact(manifoldPointId);
             return;
         }
         SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
         if (block == null || terrain.isRemoved(blockPos)) {
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            disableContact(manifoldPointId);
             return;
         }
         //获取方块物理属性
@@ -307,7 +305,6 @@ public class CollisionHandler {
         float blockRollingFriction = block.getRollingFriction();
         float blockRestitution = block.getRestitution();
         float blockSlip = block.getSlip(); // 湿滑系数，0~1
-        float partMass = subPart.getEquivalentMass();
 
         //保存原始接触法线（攀爬分支内会将其覆写为 UNIT_Y / 高度场法线）
         Vector3f rawNormal = new Vector3f(normal);
@@ -357,19 +354,22 @@ public class CollisionHandler {
                     subPart.body, other, blockPos, blockState, contactVel, normal,
                     worldContactPoint, impactAngle, hitBox, manifoldPointId);
             if (terrain.isRemoved(blockPos)) {
-                ManifoldPoints.setDistance1(manifoldPointId, 500);
+                disableContact(manifoldPointId);
                 recordEffect(hitBoxIndex, blockState, contactVel, normal, worldContactPoint, slipRatio);
                 return;
             }
         }
 
-        //方块破坏与碰撞伤害
-        if (MMServerConfig.shouldDestroyBlocks()
+        //单点即时撞碎：只有预测足以破坏目标才在本步禁用接触（§5.3）
+        boolean instantBroken = MMServerConfig.shouldDestroyBlocks()
                 && contactBlockDamageFactor(hitBoxIndex, hitBox) > 0
-                && blockState.getDestroySpeed(level, BlockPos.ZERO) >= 0) {
-            applyBlockDamage(other, terrain, blockPos, blockState, hitBox, hitBoxIndex,
-                    normal, worldContactPoint,
-                    contactVel, partMass, blockRestitution, slipRatio, manifoldPointId);
+                && blockState.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) >= 0
+                && tryInstantBreak(terrain, hitBox, hitBoxIndex, normal, worldContactPoint,
+                contactVel, blockRestitution, manifoldPointId);
+
+        //撞击资格登记（材质门），由 Post 阶段统一聚合与投递
+        if (!instantBroken) {
+            registerTerrainImpact(other, terrain, hitBox, hitBoxIndex, normal, worldContactPoint, contactVel);
         }
 
         //记录碰撞效果供主线程 EffectManager 消费
@@ -496,91 +496,90 @@ public class CollisionHandler {
     }
 
     /**
-     * 计算碰撞对方块造成的破坏以及对部件自身的伤害。
-     * <p>逻辑：</p>
-     * <ul>
-     *   <li>考虑双方护甲分配碰撞能量</li>
-     *   <li>能量超过方块耐久时直接摧毁并施加反冲，否则累积部分伤害</li>
-     *   <li>被摧毁的方块有一定概率掉落</li>
-     * </ul>
+     * 按材质门登记本步的地形撞击组。
+     *
+     * <p>接近速度取自含 {@code ω × r} 的接触点相对速度，门为
+     * {@code max(approachEpsilon, 材质 impact_min_speed)}。同组后续点不再重复判门，
+     * 由 Post 阶段一次性收集本步冲量。</p>
+     *
+     * <p>调用线程：物理线程。</p>
      */
-    private void applyBlockDamage(PhysicsRigidBody other, PhysicsChunkSection terrain,
-                                  BlockPos blockPos, BlockState blockState, HitBox hitBox,
-                                  int hitBoxIndex,
-                                  Vector3f normal, Vector3f worldContactPoint, Vector3f contactVel,
-                                  float partMass, float blockRestitution, float slipRatio,
-                                  long manifoldPointId) {
+    private void registerTerrainImpact(PhysicsRigidBody other, PhysicsChunkSection terrain, HitBox hitBox,
+                                       int hitBoxIndex, Vector3f normal, Vector3f worldContactPoint,
+                                       Vector3f contactVel) {
         Level level = subPart.getLevel();
-        float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
-        float subPartArmor = subPart.getRHA(hitBox);
-        float blockDamageFactor = subPart.contactMaterial(hitBoxIndex, hitBox).physics().blockDamageFactor();
-        double contactNormalSpeed = Math.abs(contactVel.dot(normal));
-//                + ManifoldPoints.getAppliedImpulse(manifoldPointId) / subPart.body.getMass();
-        float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
-        ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
-        double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);
-        double blockDurability = DamageUtil.getMaxBlockDurability(
-                EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
-        //方块的支撑物强化其耐久度
-        Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(
-                SparkMathKt.toVec3(normal.mult(-1)));
-        SectionSnapshot.BlockSnapshot supportBlock = subPart.getPhysicsLevel()
-                .getTerrainManager().getBlockSnapshotAt(blockPos.offset(supportBlockPos));
-        if (supportBlock != null) {
-            blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(
-                    EmptyBlockGetter.INSTANCE, supportBlock.getState(), BlockPos.ZERO);
+        if (level.isClientSide()) return;
+        float gate = CollisionImpactModel.impactGate(
+                MMServerConfig.collisionApproachEpsilon(),
+                subPart.contactMaterial(hitBoxIndex, hitBox).physics().impactMinSpeed());
+        if (!CollisionImpactModel.reachesGate(
+                CollisionImpactModel.approachSpeed(contactVel, normal), gate)) {
+            return;
         }
-        double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);
-        double partEnergy = contactEnergy - blockEnergy;
+        CollisionPostSettlement.TargetBlockKey target = CollisionPostSettlement.resolveVanillaTarget(
+                other.nativeId(), terrain, worldContactPoint, normal);
+        if (target == null) return;
+        ObjectManager.collisionSettlement(level)
+                .registerTerrainImpact(subPart.body.nativeId(), hitBoxIndex, target);
+    }
 
-        if (blockDamageFactor * blockEnergy > 250 * blockDurability) {
-            //能量足够，直接摧毁方块
-            terrain.markRemoved(blockPos);
-            double blockDropRate = Math.exp(1 - (blockDamageFactor * blockEnergy / (250 * blockDurability)));
-            if (!level.isClientSide()) {
-                SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
-                        () -> level.destroyBlock(blockPos, Math.random() < blockDropRate));
-            }
-            //剩余能量折算为部件的反冲和伤害
-            double actualPartEnergy = 0.2 * partEnergy * ((250 * blockDurability) / blockEnergy);
-            if (actualPartEnergy < 0 || Double.isNaN(actualPartEnergy)) actualPartEnergy = 0;
-            double finalActualPartEnergy = actualPartEnergy;
-            ManifoldPoints.setDistance1(manifoldPointId, 500f);
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-            Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * subPart.body.getMass())));
-            Vector3f offset = worldContactPoint.subtract(subPart.body.getPhysicsLocation(null));
-            subPart.body.applyImpulse(impulse, offset);
-            float partDamage = (float) (finalActualPartEnergy / 250);
-            DamageSource source = level.damageSources().flyIntoWall();
-            if (subPart.modifyArmorDamage(hitBox, source, partDamage) > 1) {
-                BFDamageContext ctx = BFDamageContext.builder()
-                        .source(source)
-                        .baseDamage(partDamage)
-                        .hitVelocity(SparkMathKt.toVec3(contactVel))
-                        .hitPoint(SparkMathKt.toVec3(worldContactPoint))
-                        .hitNormal(SparkMathKt.toVec3(normal))
-                        .penetration(partDamage)
-                        .build();
-                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
-                BFDamageApi.hurt(subPart, ctx);
-            }
-        } else {
-            //能量不足，部件吸收部分伤害
-            float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
-            DamageSource source = level.damageSources().flyIntoWall();
-            if (subPart.modifyArmorDamage(hitBox, source, partDamage) > 1) {
-                BFDamageContext ctx = BFDamageContext.builder()
-                        .source(source)
-                        .baseDamage(partDamage)
-                        .hitVelocity(SparkMathKt.toVec3(contactVel))
-                        .hitPoint(SparkMathKt.toVec3(worldContactPoint))
-                        .hitNormal(SparkMathKt.toVec3(normal))
-                        .penetration(partDamage)
-                        .build();
-                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
-                BFDamageApi.hurt(subPart, ctx);
-            }
+    /**
+     * 单点即时撞碎：求解前按方向有效质量预测冲量，够破坏目标就本步禁用接触。
+     *
+     * <p>本分支不受材质门限制，只要求 {@code u > approachEpsilon}；预测不足时保留正常求解，
+     * 由 Post 按实际冲量聚合判定。破坏成功时对部件默认零伤害：约束已被禁用，
+     * 不能拿“假如没碎会承受的冲量”伤害自身。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private boolean tryInstantBreak(PhysicsChunkSection terrain, HitBox hitBox, int hitBoxIndex,
+                                    Vector3f normal, Vector3f worldContactPoint, Vector3f contactVel,
+                                    float blockRestitution, long manifoldPointId) {
+        Level level = subPart.getLevel();
+        float approach = CollisionImpactModel.approachSpeed(contactVel, normal);
+        if (!CollisionImpactModel.exceedsEpsilon(approach, MMServerConfig.collisionApproachEpsilon())) {
+            return false;
         }
+        BlockPos blockPos = CollisionPostSettlement.resolveVanillaBlockPos(terrain, worldContactPoint, normal);
+        if (blockPos == null) return false;
+        SectionSnapshot.BlockSnapshot snapshot = terrain.getBlockSnapshot(blockPos);
+        if (snapshot == null) return false;
+        BlockState blockState = snapshot.getState();
+
+        float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
+        Vector3f lever = worldContactPoint.subtract(subPart.body.getPhysicsLocation(null));
+        float effectiveMass = CollisionImpactModel.normalEffectiveMass(
+                subPart.body.getMass(), lever, normal,
+                subPart.body.getInverseInertiaWorld(new Matrix3f()));
+        float predicted = CollisionImpactModel.predictedImpulse(effectiveMass, approach, restitution);
+        float share = CollisionImpactModel.blockShare(subPart.getRHA(hitBox),
+                CollisionPostSettlement.blockArmorOf(blockState));
+        float blockImpulse = CollisionImpactModel.blockContribution(
+                contactBlockDamageFactor(hitBoxIndex, hitBox), share, predicted);
+        float durability = CollisionPostSettlement.supportedDurabilityAt(
+                level, blockPos, normal, CollisionPostSettlement.blockDurabilityOf(blockState));
+        float threshold = CollisionImpactModel.breakImpulse(
+                MMServerConfig.collisionImpulsePerDurability(), durability);
+        if (!CollisionImpactModel.meetsBreakThreshold(blockImpulse, threshold)) return false;
+
+        // 目标在本步求解中立即失效，并同步禁用本点；后续同块回调在入口处按已移除处理
+        terrain.markRemoved(blockPos);
+        disableContact(manifoldPointId);
+        CollisionPostSettlement.scheduleBlockRemoval(level, blockPos, blockState,
+                CollisionPostSettlement.dropChance(blockImpulse, threshold));
+        return true;
+    }
+
+    /**
+     * 统一禁用接触点：写入距离哨兵并清零法向与两个切向缓存冲量。
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private static void disableContact(long manifoldPointId) {
+        ManifoldPoints.setDistance1(manifoldPointId, CollisionPostSettlement.DISABLED_DISTANCE);
+        ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+        ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+        ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
     }
 
     /**

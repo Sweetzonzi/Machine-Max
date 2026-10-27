@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.mech.collision;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionImpactModel;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionPostSettlement;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -136,14 +137,6 @@ class CollisionImpactModelTest {
     }
 
     @Test
-    void partPairGateTakesTheSmallerMaterialGate() {
-        assertEquals(2.0f, CollisionImpactModel.pairImpactGate(2.0f, 3.0f), 1e-6f);
-        assertEquals(3.0f, CollisionImpactModel.pairImpactGate(5.0f, 3.0f), 1e-6f);
-        // 实际调用传入的是各侧 impactGate 结果，非法值按 0 参与比较
-        assertEquals(0f, CollisionImpactModel.pairImpactGate(-4f, 1.0f), 1e-6f);
-    }
-
-    @Test
     void ordinaryImpactQualifiesAtOrAboveTheGate() {
         assertTrue(CollisionImpactModel.reachesGate(2.0f, 2.0f));
         assertFalse(CollisionImpactModel.reachesGate(1.999f, 2.0f));
@@ -266,6 +259,28 @@ class CollisionImpactModelTest {
         float dirtImpulse = requiredImpulse(DIRT_ARMOR, DIRT_DURABILITY);
         float stoneImpulse = requiredImpulse(STONE_ARMOR, STONE_DURABILITY);
         assertTrue(stoneImpulse > dirtImpulse * 2f);
+    }
+
+    @Test
+    void aggregatedDecisionMatchesTheCalibrationTable() {
+        // 15 t 车体以 1 m/s 落地撞泥土：单步冲量 15 000 N·s，方块侧贡献超过 15 300 的门槛
+        float share = CollisionImpactModel.blockShare(HULL_RHA, DIRT_ARMOR);
+        float atOne = CollisionImpactModel.blockContribution(
+                RHA_BLOCK_DAMAGE_FACTOR, share, HULL_MASS * 1f);
+        float atHalf = CollisionImpactModel.blockContribution(
+                RHA_BLOCK_DAMAGE_FACTOR, share, HULL_MASS * 0.5f);
+        float dirtBreak = CollisionImpactModel.breakImpulse(C_J, DIRT_DURABILITY);
+        assertTrue(CollisionImpactModel.meetsBreakThreshold(atOne, dirtBreak));
+        assertFalse(CollisionImpactModel.meetsBreakThreshold(atHalf, dirtBreak));
+    }
+
+    @Test
+    void dropChanceFallsAsContributionExceedsTheThreshold() {
+        assertEquals(1f, CollisionPostSettlement.dropChance(15_300f, 15_300f), 1e-5f);
+        assertEquals((float) Math.exp(-1d), CollisionPostSettlement.dropChance(30_600f, 15_300f), 1e-5f);
+        assertEquals(1f, CollisionPostSettlement.dropChance(20_000f, Float.POSITIVE_INFINITY), 1e-5f);
+        assertTrue(CollisionPostSettlement.dropChance(45_900f, 15_300f)
+                < CollisionPostSettlement.dropChance(30_600f, 15_300f));
     }
 
     /**

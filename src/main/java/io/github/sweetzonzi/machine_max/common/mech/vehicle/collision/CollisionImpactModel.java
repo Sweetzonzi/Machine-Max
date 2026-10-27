@@ -104,19 +104,6 @@ public final class CollisionImpactModel {
     }
 
     /**
-     * 零件—零件接触的资格速度门：取双方材质门中较小者。
-     *
-     * <p>一侧材质更“敏感”就足以让该组进入候选；双方都缺少有效门槛时结果为 0。</p>
-     *
-     * @param firstGate  先登记一侧的材质门（m/s）
-     * @param secondGate 另一侧的材质门（m/s）
-     * @return 该组的速度门（m/s），非负
-     */
-    public static float pairImpactGate(float firstGate, float secondGate) {
-        return Math.min(nonNegative(firstGate), nonNegative(secondGate));
-    }
-
-    /**
      * 普通撞击资格判定：{@code u >= gate}。
      */
     public static boolean reachesGate(float approachSpeed, float gate) {
