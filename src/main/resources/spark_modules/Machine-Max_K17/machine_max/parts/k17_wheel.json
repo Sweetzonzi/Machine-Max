@@ -39,7 +39,7 @@
           "connectors": {
             "connector.machine_max.left_wheel_hull": {
               "locator": "left_wheel_hull",
-              "definition": "machine_max:fixed_right",
+              "definition": "machine_max:k17_wheel_hub_left",
               "overwrite": {}
             }
           }
@@ -79,7 +79,7 @@
           "connectors": {
             "connector.machine_max.right_wheel_hull": {
               "locator": "right_wheel_hull",
-              "definition": "machine_max:fixed_left",
+              "definition": "machine_max:k17_wheel_hub_right",
               "overwrite": {}
             }
           }

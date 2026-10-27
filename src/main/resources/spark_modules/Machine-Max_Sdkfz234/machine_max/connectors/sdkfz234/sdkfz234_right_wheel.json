@@ -2,10 +2,10 @@
   "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
   "type": "Advanced",
   "direction": "xp",
-  "integrity": 15,
+  "integrity": 40,
   "impact_absorption": 0.3,
-  "impact_reduction": 2,
-  "impact_multiplier": 1,
+  "impact_reduction": 3,
+  "impact_multiplier": 0.8,
   "required_tags": [
     "machine_max:direction/right"
   ],
