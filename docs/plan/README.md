@@ -49,6 +49,7 @@
 | [武器系统-弹药标签与弹链显示设计](已实现/武器系统-弹药标签与弹链显示设计.md) | 历史快照（基线 `4c74444b`）；弹药标签判定在 `BreechModuleAttr.isAmmoCompatible`，弹链在 `WeaponControllerSubsystem#beltOf`；运行期读取由 `CustomHud` 接管 |
 | [HUD上下文实现与验收](已实现/HUD上下文实现与验收.md) | 上下文、快照、绑定与物理步推进已进入代码，`gradlew --offline build` 含 81 项单测通过；进世界画面与控制组交互的实机验收另行跟踪 |
 | [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
+| [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册；实机验收通过，P3–P4 未实现 |
 
 ## 进行中
 
@@ -78,7 +79,6 @@
 | [碰撞系统-撞碎与压溃实现计划](计划中/碰撞系统-方块碰撞伤害模型分析.md) | 待实现：Processed 单点即时撞碎、每 Level 每子步一轮 Post 接触聚合与部件伤害、专用子系统压溃；含源码坐标、数据键、实施阶段和验收条件 |
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 未实现；`TrackRenderer` 中没有下垂/悬链求解代码 |
-| [界面-车内换座与座位布局HUD调研](计划中/界面-车内换座与座位布局HUD调研.md) | 已实现 P0–P2（客户端画面待实机验收）：循环键 `X` + 常驻俯视座位图 HUD（半透明透视车体、子系统耐久染色、纯编号标记）；服务端只校验目标座位、不排序 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
 
 ## 未纳入本目录
