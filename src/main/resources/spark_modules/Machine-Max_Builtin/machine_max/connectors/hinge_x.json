@@ -1,0 +1,16 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", // 通用水平轴铰链，用于舱盖、后备箱门等绕 X 轴开合的部件
+  "direction": "yp", // 默认法线方向，按实际安装方向用 overwrite.direction 覆写
+  "integrity": 15.0,
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0,
+  "joint_attrs": {
+    "xr": {
+      "lower_limit": -90.0, // 默认向下开合 -90°–0°；向上开的舱盖用 overwrite 改为 0°–90°
+      "upper_limit": 0.0,
+      "damping": 1.736319
+    }
+  }
+}
