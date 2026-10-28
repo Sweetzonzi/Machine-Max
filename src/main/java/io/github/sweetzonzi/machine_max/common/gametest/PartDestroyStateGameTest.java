@@ -19,6 +19,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -40,11 +41,19 @@ public final class PartDestroyStateGameTest {
     }
 
     /** 挑选一个具有多个子零件的普通部件，使「部分子零件死亡」可表达。 */
+    /**
+     * 挑选一个具有多个子零件的普通部件，使「部分子零件死亡」可表达。
+     *
+     * <p>候选按注册名与变体名排序后取第一个：定义表是哈希映射，遍历顺序随机，
+     * 不排序会让用例在不同启动间校验到不同部件，断言随之抖动。</p>
+     */
     private static Selection multiSubPart(GameTestHelper helper) {
         return PartDefinitions.regular(false).values().stream()
                 .flatMap(type -> type.variants.entrySet().stream()
                         .filter(entry -> entry.getValue().subParts.size() > 1)
                         .map(entry -> new Selection(type, entry.getKey())))
+                .sorted(Comparator.comparing((Selection selection) -> selection.type().getRegistryKey().toString())
+                        .thenComparing(Selection::variant))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("需要具有多个子零件的普通部件定义"));
     }
