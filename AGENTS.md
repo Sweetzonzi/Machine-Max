@@ -15,7 +15,7 @@
 | [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.6 | 终端/外部弹道计算 API        |
 | [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.8         | 载具控制面板 Web UI 框架，经 `jarJar` 内嵌进发布 jar |
 
-构建时也依赖 GraalVM 24.2.2（JS 引擎）、JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
+构建时也依赖 JEI、Jade、KotlinForForge、AzureLib、GeckoLib、Create（兼容层）。
 
 ## 项目结构
 
@@ -87,7 +87,7 @@ io.github.sweetzonzi.machine_max/
 ├── util/                            # PD/PID 控制器、地形（LocalHeightField）、MMMath
 ├── external/                        # 外部资源与嵌入式引擎
 │   ├── html/                        # HTML 解析器（HtNode, HtmlLikeParser）
-│   ├── js/                          # GraalVM JS 引擎集成（InputSignalProvider, JSUtils）
+│   ├── js/                          # JS 桥接（早期 Rhino 实现，当前整体注释停用）
 │   │   └── hook/                    # AxisHook, EventToJS, KeyHooks
 │   ├── style/                       # 样式/色彩系统（ColorPalette, StyleProvider）
 │   ├── MMDynamicRes.java            # Spark-Core 资源加载

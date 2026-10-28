@@ -27,8 +27,6 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js（通过 KubeJS 的 Rhino fork 统一提供）
     implementation "maven.modrinth:rhino:${rhino_version}"
-    // GraalVM polyglot（Spark-Core 通过 jarJar 嵌入，运行时由 Spark-Core 提供，此处仅编译需要）
-    compileOnly "org.graalvm.polyglot:polyglot:${graalvm_version}"
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 加速渲染
@@ -57,11 +55,6 @@ dependencies {
 repositories {
     mavenLocal()
     mavenCentral()
-    // GraalVM 仓库（仅从 Maven Central 拉取 org.graalvm.* 包）
-    exclusiveContent {
-        forRepository { mavenCentral() }
-        filter { includeGroupByRegex("org\\.graalvm(\\..*)?") }
-    }
     maven {
         name = "Progwml6 maven"
         url = "https://dvs1.progwml6.com/files/maven/"

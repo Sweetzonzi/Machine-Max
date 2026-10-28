@@ -257,7 +257,7 @@
 ### Molang & Scripting（动画表达式与脚本系统）
 
 - **职责**：提供动画表达式绑定与 JavaScript 扩展能力
-- **描述**：`MechMolangContext` 将载具运行时数据暴露给 Molang 动画表达式引擎（`local.*` = Part、`global.*` = 装配体），支持数据驱动的动画。`ScriptableSubsystem` 集成 GraalJS JavaScript 引擎，允许 UGC 作者编写自定义子系统逻辑。
+- **描述**：`MechMolangContext` 将载具运行时数据暴露给 Molang 动画表达式引擎（`local.*` = Part、`global.*` = 装配体），支持数据驱动的动画。`ScriptableSubsystem` 预留了 JavaScript 脚本子系统接口，脚本引擎桥接（早期 Rhino 实现）目前整体停用。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext` — Part 级 Molang 上下文（local.* / global.*）
   - `io.github.sweetzonzi.machine_max.common.mech.subsystem.ScriptableSubsystem` — JavaScript 脚本子系统
