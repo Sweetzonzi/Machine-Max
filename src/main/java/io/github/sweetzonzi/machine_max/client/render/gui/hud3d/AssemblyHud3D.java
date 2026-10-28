@@ -167,7 +167,14 @@ public class AssemblyHud3D implements IHud3DElement {
             warningMessages.clear();
             hintMessages.clear();
             if (subPart.isDestroyed()) {
-                warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBPART_DESTROYING.tag, decimalFormat.format(subPart.getDestroyTime() * 0.05f)));
+                // 倒计时属于部件：部件进入倒计时后显示剩余秒数，仅子零件被打掉时只报已损毁
+                int partDestroyTime = subPart.part.getDestroyTime();
+                if (subPart.part.isDestroyed() && partDestroyTime > 0) {
+                    warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBPART_DESTROYING.tag,
+                            decimalFormat.format(partDestroyTime * 0.05f)));
+                } else {
+                    warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBPART_DESTROYED.tag));
+                }
             }
             for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
                 if (subsystem instanceof BasicSubsystem basicSubsystem && basicSubsystem.isHidden()) continue;

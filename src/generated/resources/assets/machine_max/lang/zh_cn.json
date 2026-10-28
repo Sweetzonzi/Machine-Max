@@ -205,6 +205,7 @@
   "hud.key.machine_max.repair_without_assemble": "[%1$s] 修复&加固",
   "hud.key.machine_max.tear_down": "[%1$s] 拆除部件",
   "hud.warn.machine_max.connector_integrity_low": "❌ %1$s结构完整性极低，存在脱落风险",
+  "hud.warn.machine_max.subpart_destroyed": "❌ 零件已损毁",
   "hud.warn.machine_max.subpart_destroying": "❌ 零件已损毁，销毁倒计时: %1$s秒",
   "hud.warn.machine_max.subsystem_malfunction": "❌ %1$s瘫痪",
   "item.machine_max.crowbar": "撬棍",

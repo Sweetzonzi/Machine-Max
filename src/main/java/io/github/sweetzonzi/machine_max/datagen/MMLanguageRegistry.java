@@ -1188,6 +1188,10 @@ public enum MMLanguageRegistry {
             zh_cn, "❌ 零件已损毁，销毁倒计时: %1$s秒",
             en_us, "❌ DESTROYED, DESTRUCT IN: %1$ss"
     )),
+    HUD_WARN_SUBPART_DESTROYED("hud.warn.machine_max.subpart_destroyed", ImmutableMap.of(
+            zh_cn, "❌ 零件已损毁",
+            en_us, "❌ PART DESTROYED"
+    )),
     HUD_WARN_SUBSYSTEM_MALFUNCTION("hud.warn.machine_max.subsystem_malfunction", ImmutableMap.of(
             zh_cn, "❌ %1$s瘫痪",
             en_us, "❌ %1$s MALFUNCTION"

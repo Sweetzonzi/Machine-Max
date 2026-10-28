@@ -191,6 +191,7 @@
   "hud.key.machine_max.repair_without_assemble": "[%1$s] Repair & Reinforce",
   "hud.key.machine_max.tear_down": "[%1$s] Remove part",
   "hud.warn.machine_max.connector_integrity_low": "❌ %1$s INTEGRITY LOW",
+  "hud.warn.machine_max.subpart_destroyed": "❌ PART DESTROYED",
   "hud.warn.machine_max.subpart_destroying": "❌ DESTROYED, DESTRUCT IN: %1$ss",
   "hud.warn.machine_max.subsystem_malfunction": "❌ %1$s MALFUNCTION",
   "item.machine_max.crowbar": "Crowbar",
