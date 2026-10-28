@@ -38,16 +38,22 @@ public final class SeatOrderGameTest {
     private record Selection(RegularPartType type, String variant) {
     }
 
-    /** 找一个带座椅子系统的普通部件型号，用于构造最小装配体 */
+    /**
+     * 找一个**恰好一个座位**的普通部件型号，用于构造最小装配体。
+     *
+     * <p>必须按座位数量过滤：定义表是哈希映射，遍历顺序随机；选到双座型号时
+     * {@code SeatOrder.seats} 的第一个座位不一定是布局首位，单座断言会随机失败。</p>
+     */
     private static Selection seatPart() {
         return PartDefinitions.regular(false).values().stream()
                 .flatMap(type -> type.variants.entrySet().stream()
                         .filter(entry -> entry.getValue().subParts.values().stream()
-                                .anyMatch(sub -> sub.subsystems.values().stream()
-                                        .anyMatch(attr -> attr instanceof SeatSubsystemAttr)))
+                                .flatMap(sub -> sub.subsystems.values().stream())
+                                .filter(attr -> attr instanceof SeatSubsystemAttr)
+                                .count() == 1)
                         .map(entry -> new Selection(type, entry.getKey())))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("内容包里没有带座椅子系统的普通部件"));
+                .orElseThrow(() -> new IllegalStateException("内容包里没有恰好带一个座椅子系统的普通部件"));
     }
 
     @GameTest(template = "part_foundation", batch = "mmSeatOrder", timeoutTicks = 100)
