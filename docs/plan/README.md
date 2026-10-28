@@ -47,6 +47,7 @@
 | [履带系统-数据模型设计](已实现/履带系统-数据模型设计.md) | `TrackAttr`、`FittingVisual` 的字段与 Codec 已落地，材料复用 `track_steel`，接触与装甲口径、单节模型渲染同前条 |
 | [渲染-屏幕空间光照物理化设计](已实现/渲染-屏幕空间光照物理化设计.md) | `screen_space_light.fsh` 含线性空间 `1/d²` + 四窗 + 朝向响应 + 有界合成曲线、沿视线积分的空气散射光晕与屏幕空间星芒；`LightMinDist[16]`、`LightGlow[32]`、`LightGlare[16]` 逐槽上传；标定值为首轮锚点，实机观感待按 §4.4 复核 |
 | [武器系统-弹药标签与弹链显示设计](已实现/武器系统-弹药标签与弹链显示设计.md) | 历史快照（基线 `4c74444b`）；弹药标签判定在 `BreechModuleAttr.isAmmoCompatible`，弹链在 `WeaponControllerSubsystem#beltOf`；运行期读取由 `CustomHud` 接管 |
+| [载具系统-部件摧毁状态与组装重力重构计划](已实现/载具系统-部件摧毁状态与组装重力重构计划.md) | 提交 `e90f2e42`、`2d7c4da9`、`b1d667e4`；`AbstractPart` 持有 `destroyTime` / `tickDestroyState` / `applyGravity`，`RegularPart` 以 `assembling` 命名，`RegularPartData` 含 `destroyed` / `destroy_time`，协议升到 `sync:2.7.0` / `misc:1.3.0`；24 个 GameTest 全绿，实机画面与玩法验收待完成 |
 | [HUD上下文实现与验收](已实现/HUD上下文实现与验收.md) | 上下文、快照、绑定与物理步推进已进入代码，`gradlew --offline build` 含 81 项单测通过；进世界画面与控制组交互的实机验收另行跟踪 |
 | [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
 | [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册；实机验收通过，P3–P4 未实现 |
@@ -80,7 +81,6 @@
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 未实现；`TrackRenderer` 中没有下垂/悬链求解代码 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
-| [载具系统-部件摧毁状态与组装重力重构计划](计划中/载具系统-部件摧毁状态与组装重力重构计划.md) | 设计完成、未实现；代码中尚无部件级倒计时（`AbstractPart.tickDestroyState`），`RegularPart` 仍以 `renderWireframe` 命名，`RegularPartData` 不含 `destroyed` / `destroy_time` |
 
 ## 未纳入本目录
 
