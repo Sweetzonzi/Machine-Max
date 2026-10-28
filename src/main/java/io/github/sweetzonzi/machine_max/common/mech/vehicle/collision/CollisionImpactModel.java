@@ -31,6 +31,58 @@ public final class CollisionImpactModel {
     }
 
     /**
+     * 把 Bullet 的 {@code m_normalWorldOnB} 折算成“由对方指向零件”的接触法线。
+     *
+     * <p>{@code m_normalWorldOnB} 由 B 指向 A（{@code addContactPoint} 把 A 侧点算成
+     * {@code pointB + n·depth}，depth 为负表示侵入）。本模型的 {@link #approachSpeed(Vector3f, Vector3f)}
+     * 要求法线由对方指向零件，因此零件是 B 侧时要取反；零件是 A 侧时已经是本方向。</p>
+     *
+     * <p>{@code store} 可以与 {@code normalWorldOnB} 是同一个向量（原地折算）。</p>
+     *
+     * @param partIsA        零件是否为本次接触的 A 侧
+     * @param normalWorldOnB Bullet 的法线（B 指向 A，世界坐标，单位向量）
+     * @param store          结果容器；{@code null} 时新建
+     * @return “由对方指向零件”的单位法线（世界坐标），非法输入为零向量
+     */
+    public static Vector3f normalOnPart(boolean partIsA, Vector3f normalWorldOnB, Vector3f store) {
+        Vector3f result = (store == null) ? new Vector3f() : store;
+        if (normalWorldOnB == null || !isFinite(normalWorldOnB)) {
+            return result.set(0f, 0f, 0f);
+        }
+        result.set(normalWorldOnB);
+        if (!partIsA) result.negateLocal();
+        return result;
+    }
+
+    /**
+     * 接触点的世界线速度：{@code v_p = v + ω × r}。
+     *
+     * <p>{@code r} 是刚体原点（Bullet 即质心）指向接触点的世界向量，{@code ω} 是世界系角速度
+     * （rad/s）。叉乘顺序固定为 {@code ω × r}：写成 {@code r × ω} 会让转动贡献整体反号，
+     * 滚动轮的最低点不再静止、最高点变成零速度。</p>
+     *
+     * <p>纯平动（{@code ω = 0}）、纯转动（{@code v = 0}）与两者叠加共用本式。任一分量为
+     * {@code NaN}／无穷时返回零向量，调用方据此不产生作用量。</p>
+     *
+     * @param linearVelocity     刚体原点的世界线速度（m/s）
+     * @param angularVelocity    刚体世界系角速度（rad/s）
+     * @param fromCenterOfMass   刚体原点指向接触点的向量（世界坐标，m）
+     * @return 接触点的世界线速度（m/s），非法输入为零向量
+     */
+    public static Vector3f pointVelocity(Vector3f linearVelocity, Vector3f angularVelocity,
+                                         Vector3f fromCenterOfMass) {
+        if (linearVelocity == null || angularVelocity == null || fromCenterOfMass == null) {
+            return new Vector3f();
+        }
+        if (!isFinite(linearVelocity) || !isFinite(angularVelocity) || !isFinite(fromCenterOfMass)) {
+            return new Vector3f();
+        }
+        Vector3f rotational = new Vector3f();
+        angularVelocity.cross(fromCenterOfMass, rotational);
+        return rotational.addLocal(linearVelocity);
+    }
+
+    /**
      * 接近速度：{@code u = max(0, -dot(v_rel, n))}。
      *
      * <p>法线由对方指向零件，因此只有沿法线反向的运动算作接近。分离、静止与非法值都返回 0。
@@ -44,6 +96,28 @@ public final class CollisionImpactModel {
         if (relativeVelocity == null || normalOnPart == null) return 0f;
         float dot = relativeVelocity.dot(normalOnPart);
         return Float.isFinite(dot) ? -Math.min(dot, 0f) : 0f;
+    }
+
+    /**
+     * 地面上（法线接近竖直）的接近速度：只取刚体原点速度的竖直分速，
+     * {@code u = max(0, -v.y · sign(n.y))}。
+     *
+     * <p>与 {@link #approachSpeed(Vector3f, Vector3f)} 的区别是输入取刚体原点速度而不是接触点速度。
+     * 接触点速度含 {@code ω × r}：滚动轮胎在接触点有一个纯由转动带来的向下分量，20 m/s 时实测
+     * 约 2 m/s，与车是否真在坠落无关。地面上真正的撞击是“落下来”，沿地面平移不是，所以横向分量
+     * 同样不参与。</p>
+     *
+     * <p>地形是静态刚体，因此这里的 {@code bodyVelocity} 就是接触点相对速度的无转动部分；
+     * 对方不是静态刚体时调用方应先扣掉对方速度。非法输入与分离方向都返回 0。</p>
+     *
+     * @param bodyVelocity 零件刚体原点的世界线速度（m/s）
+     * @param normalOnPart 由对方指向零件的单位法线
+     * @return 接近速度，单位 m/s，非负
+     */
+    public static float verticalApproachSpeed(Vector3f bodyVelocity, Vector3f normalOnPart) {
+        if (bodyVelocity == null || normalOnPart == null) return 0f;
+        float sign = normalOnPart.y >= 0f ? 1f : -1f;
+        return nonNegative(-bodyVelocity.y * sign);
     }
 
     /**

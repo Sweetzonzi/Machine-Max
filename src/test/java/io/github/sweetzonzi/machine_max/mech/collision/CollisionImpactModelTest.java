@@ -73,6 +73,39 @@ class CollisionImpactModelTest {
         assertEquals(1f, CollisionImpactModel.approachSpeed(pointVelocity, new Vector3f(0f, 1f, 0f)), 1e-6f);
     }
 
+    /**
+     * 地面口径只吃刚体原点的竖直分速：转动与横向分量都不算。
+     *
+     * <p>数值取自 K17 平地上 23 m/s 直行的实测：地形 section 棱边接触上轮子刚体竖直分速
+     * 0.00–0.02 m/s，而接触点速度的竖直分量有 1.5–2.5 m/s（全部来自滚动 {@code ω × r}）。
+     * 用接触点速度判会把这些点读成 2–3 m/s 的撞击，用刚体分速判则是 0。</p>
+     */
+    @Test
+    void verticalApproachSpeedIgnoresRollingAndTangentialMotion() {
+        Vector3f up = new Vector3f(0f, 1f, 0f);
+        assertEquals(2.5f, CollisionImpactModel.verticalApproachSpeed(new Vector3f(20f, -2.5f, 3f), up), 1e-6f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(new Vector3f(20f, 0.02f, 3f), up), 1e-6f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(new Vector3f(20f, 2.5f, 0f), up), 1e-6f);
+    }
+
+    @Test
+    void verticalApproachSpeedKeepsTheNormalSignConvention() {
+        Vector3f velocity = new Vector3f(1f, -4f, 0f);
+        Vector3f downward = new Vector3f(-0.05f, -0.99f, 0f);
+        // 法线朝下时，零件向上运动才是接近
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(velocity, downward), 1e-6f);
+        assertEquals(4f, CollisionImpactModel.verticalApproachSpeed(velocity, downward.negate()), 1e-6f);
+    }
+
+    @Test
+    void verticalApproachSpeedDegeneratesForInvalidInput() {
+        Vector3f up = new Vector3f(0f, 1f, 0f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(null, up), 0f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(up, null), 0f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(new Vector3f(0f, Float.NaN, 0f), up), 0f);
+        assertEquals(0f, CollisionImpactModel.verticalApproachSpeed(new Vector3f(0f, Float.NEGATIVE_INFINITY, 0f), up), 0f);
+    }
+
     // ==================== 方向有效质量 ====================
 
     @Test

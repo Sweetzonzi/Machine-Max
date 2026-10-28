@@ -40,6 +40,7 @@ import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+
 import static io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil.calculateSlipScale;
 
 /**
@@ -54,6 +55,31 @@ public class CollisionHandler {
 
     private final SubPart subPart;
     public final CollisionEffectManager effectManager;
+
+    /**
+     * 承载面判据：地形指向零件的法线竖直分量不低于该值即视为能承担重量（约 45°）。
+     *
+     * <p>见 {@link #isSupportingTerrainContact(Vector3f)}。</p>
+     */
+    private static final float CLIMB_SUPPORT_NORMAL_Y = 0.7f;
+
+    /**
+     * 地面撞击判据：接触法线的竖直分量不低于该值（约 18°）时，撞击接近速度改取**刚体原点**的
+     * 竖直分速，而不是接触点速度。见 {@link CollisionImpactModel#verticalApproachSpeed}。
+     *
+     * <p>实测依据：地形 section 交界与合并盒棱边上的接触拿到的是棱边角平分线，倾斜 5.2°–9.6°，
+     * 上面挂着的轮子刚体是平动的（竖直分速 0.00–0.02 m/s），但接触点速度的竖直分量有 1.5–2.5 m/s
+     * ——全部由轮胎滚动 {@code ω × r} 贡献。按接触点速度判，这些点会被读成 2–3 m/s 的撞击；
+     * 按刚体分速判则是 0。整车真落地的点刚体竖直分速在 4 m/s 以上，两种口径都给过门。</p>
+     *
+     * <p>改口径还不够：悬挂对轮子的下压加速度（K17 合计约 260 m/s²）在一个 10 ms 子步里就是 2.6 m/s，
+     * 轮子丢掉一个子步支撑再回来时，刚体竖直分速本身就压着这个量级。所以轮胎材质的
+     * {@code impact_min_speed} 取 5.0 m/s，理由与实测见计划文档 §2.3。</p>
+     *
+     * <p>上限压到 18° 而不是 45°：30°–45° 的坡面按接触点速度判才对——车是斜着撞上去的，
+     * 竖直分速本来就接近 0。</p>
+     */
+    private static final float GROUND_IMPACT_NORMAL_Y = 0.95f;
 
     //方向向量缓存，避免每 tick 分配
     private final Vector3f tmpFront = new Vector3f();
@@ -241,9 +267,12 @@ public class CollisionHandler {
                 else if (subPart.isWheelSurface(hitBoxIndex))
                     radius = subPart.getWheelRadius(hitBoxIndex);
                 var result = subPart.heightField.solveContact(pos, radius, worldContactPoint);
-                if (result.penetration() > 0 && result.normal().y < 0.999f) {
-                    return true;
-                } else return !(result.penetration() <= 0) || !Float.isFinite(result.penetration());
+                //高度场只能用来决定“要不要改写这个接触”，不能用来决定“有没有接触”：
+                //两者相差 1 µm 时高度场读数就已经是未侵入，而支撑力恰恰是靠这段近接触间隙
+                //传递的（容差见 Spark-Core/tools/native/README.md）。所以承载面一律放行，
+                //只有非承载面（撞在台阶立面上）才交给攀爬辅助跳过。
+                if (isSupportingTerrainContact(normal)) return true;
+                return !Float.isFinite(result.penetration()) || result.penetration() > 0;
             } else return true;
         } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
             return true;
@@ -286,16 +315,13 @@ public class CollisionHandler {
         other.shouldShowDebugBoxWhenNonColldeWith = true;
 
         var hitBox = subPart.getHitBox(hitBoxIndex);
-        BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
-        //验证接触点是否在本区块范围内
-        BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
-        if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
-                relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
-            disableContact(manifoldPointId);
+        BlockPos blockPos = resolveContactBlock(terrain, worldContactPoint, normal);
+        SectionSnapshot.BlockSnapshot block = blockPos == null ? null : terrain.getBlockSnapshot(blockPos);
+        if (block == null) {
+            // 接触点落在 section 之外或没有快照：保留接触，只跳过与方块有关的统计与破坏
             return;
         }
-        SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
-        if (block == null || terrain.isRemoved(blockPos)) {
+        if (terrain.isRemoved(blockPos)) {
             disableContact(manifoldPointId);
             return;
         }
@@ -311,11 +337,6 @@ public class CollisionHandler {
 
         //攀爬辅助处理
         if (subPart.climbableBlocks.contains(blockPos)) {
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-            ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
-            ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-            normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
-            ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
             Vector3f pos = subPart.body.getPhysicsLocation(null);
             float radius = 0;
             if (!subPart.attr.climbAssist)
@@ -323,8 +344,16 @@ public class CollisionHandler {
             else if (subPart.isWheelSurface(hitBoxIndex))
                 radius = subPart.getWheelRadius(hitBoxIndex);
             var result = subPart.heightField.solveContact(pos, radius, worldContactPoint);
-            if (result.penetration() > 0 && result.normal().y < 0.999f) {
+            // 高度场在区块交界、相邻 section 缺快照、空列处会给出 ±∞ 的侵入深度。
+            // 只有真正要接管这个接触（滑上坡面、或高度场判定未接触）时才改写它的法线、
+            // 接触点与缓存冲量；平地上高度场与 Bullet 一致，什么都不改，
+            // 尤其不要清 warm-start 冲量——否则求解器每个子步都要从零重建支撑力。
+            if (Float.isFinite(result.penetration())
+                    && result.penetration() > 0 && result.normal().y < 0.999f) {
                 //修正碰撞法线和接触点，使车辆能爬上高度场 (JME负深度代表侵入)
+                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
                 ManifoldPoints.setDistance1(manifoldPointId, Math.min(-result.penetration(), -0.01f));
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId,
                         point1.getIndex() == 0 ? result.normal() : result.normal().negate());
@@ -335,8 +364,13 @@ public class CollisionHandler {
                 setupContactFriction(manifoldPointId, result.normal(), contactVel, localContactPoint,
                         hitBox, hitBoxIndex, blockFriction, blockRollingFriction, blockSlip);
                 return;
-            } else if (result.penetration() <= 0 && Float.isFinite(result.penetration())) {
-                //尚未接触高度场，跳过碰撞
+            } else if (Float.isFinite(result.penetration()) && result.penetration() <= 0
+                    && !isSupportingTerrainContact(normal)) {
+                //尚未接触高度场，且接触面不是承载面：这是撞在台阶立面上，跳过接触让车爬上去。
+                //承载面不能走这条：高度场未侵入只说明间隙为正，正间隙的近接触仍要承重。
+                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
                 ManifoldPoints.setDistance1(manifoldPointId, 5000f);
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
                 ManifoldPoints.setCombinedFriction(manifoldPointId, 0f);
@@ -360,22 +394,29 @@ public class CollisionHandler {
             }
         }
 
+        //撞击判定用的法线口径："由对方指向零件"。这是 approachSpeed、resolveVanillaBlockPos
+        //与 supportedDurabilityAt 的共同入参约定，也与 Post 阶段（collectTerrainPoint）同源。
+        //point1 恒为零件侧，其 getNormalWorld() 是外法线（零件→对方），方向相反。
+        Vector3f normalOnPart = resolveNormalOnPart(manifoldPointId, point1.getIndex(), new Vector3f());
+
         //求解前恢复系数：与是否允许破坏无关，但沿用原有作用范围（允许破坏的接触才写入方块弹性）
         boolean destructible = MMServerConfig.shouldDestroyBlocks()
                 && contactBlockDamageFactor(hitBoxIndex, hitBox) > 0
                 && blockState.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) >= 0;
         boolean instantBroken = false;
+        //撞击判定只认够深的侵入：section 棱边上的擦碰会在 0.1 mm 侵入上把横向车速读成接近速度。
+        boolean penetrating = isImpactContact(manifoldPointId);
         if (destructible) {
             float restitution = Math.clamp(subPart.body.getRestitution() * blockRestitution, 0f, 1f);
             ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
             //单点即时撞碎：预测足以破坏目标时本步禁用接触并让方块失效（§5.3）
-            instantBroken = tryInstantBreak(terrain, hitBox, hitBoxIndex, normal, worldContactPoint,
+            instantBroken = penetrating && tryInstantBreak(terrain, hitBox, hitBoxIndex, normalOnPart, worldContactPoint,
                     contactVel, restitution, manifoldPointId);
         }
 
         //撞击资格登记（材质门），由 Post 阶段统一聚合与投递
-        if (!instantBroken) {
-            registerTerrainImpact(other, terrain, hitBox, hitBoxIndex, normal, worldContactPoint, contactVel);
+        if (!instantBroken && penetrating) {
+            registerTerrainImpact(other, terrain, hitBox, hitBoxIndex, normalOnPart, worldContactPoint, contactVel);
         }
 
         //记录碰撞效果供主线程 EffectManager 消费
@@ -502,28 +543,52 @@ public class CollisionHandler {
     }
 
     /**
+     * 取“由对方指向零件”的接触法线，供撞击判定使用。
+     *
+     * <p>Bullet 的 {@code m_normalWorldOnB} 由 B 指向 A（{@code addContactPoint} 把 A 侧点算成
+     * {@code pointB + n·depth}，depth 为负表示侵入），而事件里的 {@code o1Point} 恒为零件侧：
+     * 零件是 A 时它已经是本方向，零件是 B 时需要取反。{@link ManifoldPoint#getNormalWorld()}
+     * 返回的是外法线（零件→对方），与本方向相反，只能用于需要外法线的场合。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private static Vector3f resolveNormalOnPart(long manifoldPointId, int partIndex, Vector3f store) {
+        ManifoldPoints.getNormalWorldOnB(manifoldPointId, store);
+        return CollisionImpactModel.normalOnPart(partIndex == 0, store, store);
+    }
+
+    /**
      * 按材质门登记本步的地形撞击组。
      *
-     * <p>接近速度取自含 {@code ω × r} 的接触点相对速度，门为
-     * {@code max(approachEpsilon, 材质 impact_min_speed)}。同组后续点不再重复判门，
+     * <p>只有侵入够深（{@code distance1 <= -0.002}）的点才会走到本方法，判据见 {@link #isImpactContact(long)}。
+     * 接近速度分两套口径：近竖直的地面接触取刚体原点的竖直分速
+     * （{@link CollisionImpactModel#verticalApproachSpeed}，理由见 {@link #GROUND_IMPACT_NORMAL_Y}），
+     * 立面接触取含 {@code ω × r} 的接触点相对速度投射到“由对方指向零件”的法线上。
+     * 门为 {@code max(approachEpsilon, 材质 impact_min_speed)}。同组后续点不再重复判门，
      * 由 Post 阶段一次性收集本步冲量。</p>
      *
      * <p>调用线程：物理线程。</p>
      */
     private void registerTerrainImpact(PhysicsRigidBody other, PhysicsChunkSection terrain, HitBox hitBox,
-                                       int hitBoxIndex, Vector3f normal, Vector3f worldContactPoint,
+                                       int hitBoxIndex, Vector3f normalOnPart, Vector3f worldContactPoint,
                                        Vector3f contactVel) {
         Level level = subPart.getLevel();
         if (level.isClientSide()) return;
         float gate = CollisionImpactModel.impactGate(
                 MMServerConfig.collisionApproachEpsilon(),
                 subPart.contactMaterial(hitBoxIndex, hitBox).physics().impactMinSpeed());
-        if (!CollisionImpactModel.reachesGate(
-                CollisionImpactModel.approachSpeed(contactVel, normal), gate)) {
+        float pointApproach = CollisionImpactModel.approachSpeed(contactVel, normalOnPart);
+        Vector3f bodyVel = subPart.body.getLinearVelocity(null);
+        // 地面接触按刚体原点的竖直分速判（口径见 GROUND_IMPACT_NORMAL_Y）；立面接触仍按接触点
+        // 速度判——那里的横向分量就是真实迎击速度，不能丢。
+        float approach = isGroundImpactContact(normalOnPart)
+                ? CollisionImpactModel.verticalApproachSpeed(bodyVel, normalOnPart)
+                : pointApproach;
+        if (!CollisionImpactModel.reachesGate(approach, gate)) {
             return;
         }
         CollisionPostSettlement.TargetBlockKey target = CollisionPostSettlement.resolveVanillaTarget(
-                other.nativeId(), terrain, worldContactPoint, normal);
+                other.nativeId(), terrain, worldContactPoint, normalOnPart);
         if (target == null) return;
         ObjectManager.collisionSettlement(level)
                 .registerTerrainImpact(subPart.body.nativeId(), hitBoxIndex, target);
@@ -536,17 +601,18 @@ public class CollisionHandler {
      * 由 Post 按实际冲量聚合判定。破坏成功时对部件默认零伤害：约束已被禁用，
      * 不能拿“假如没碎会承受的冲量”伤害自身。</p>
      *
-     * <p>调用线程：物理线程。</p>
+     * <p>{@code normalOnPart} 必须是“由对方指向零件”，破块目标与背撑都靠它反向压入几何。
+     * 调用线程：物理线程。</p>
      */
     private boolean tryInstantBreak(PhysicsChunkSection terrain, HitBox hitBox, int hitBoxIndex,
-                                    Vector3f normal, Vector3f worldContactPoint, Vector3f contactVel,
+                                    Vector3f normalOnPart, Vector3f worldContactPoint, Vector3f contactVel,
                                     float restitution, long manifoldPointId) {
         Level level = subPart.getLevel();
-        float approach = CollisionImpactModel.approachSpeed(contactVel, normal);
+        float approach = CollisionImpactModel.approachSpeed(contactVel, normalOnPart);
         if (!CollisionImpactModel.exceedsEpsilon(approach, MMServerConfig.collisionApproachEpsilon())) {
             return false;
         }
-        BlockPos blockPos = CollisionPostSettlement.resolveVanillaBlockPos(terrain, worldContactPoint, normal);
+        BlockPos blockPos = CollisionPostSettlement.resolveVanillaBlockPos(terrain, worldContactPoint, normalOnPart);
         if (blockPos == null) return false;
         SectionSnapshot.BlockSnapshot snapshot = terrain.getBlockSnapshot(blockPos);
         if (snapshot == null) return false;
@@ -554,7 +620,7 @@ public class CollisionHandler {
 
         Vector3f lever = worldContactPoint.subtract(subPart.body.getPhysicsLocation(null));
         float effectiveMass = CollisionImpactModel.normalEffectiveMass(
-                subPart.body.getMass(), lever, normal,
+                subPart.body.getMass(), lever, normalOnPart,
                 subPart.body.getInverseInertiaWorld(new Matrix3f()));
         float predicted = CollisionImpactModel.predictedImpulse(effectiveMass, approach, restitution);
         float share = CollisionImpactModel.blockShare(subPart.getRHA(hitBox),
@@ -562,7 +628,7 @@ public class CollisionHandler {
         float blockImpulse = CollisionImpactModel.blockContribution(
                 contactBlockDamageFactor(hitBoxIndex, hitBox), share, predicted);
         float durability = CollisionPostSettlement.supportedDurabilityAt(
-                level, blockPos, normal, CollisionPostSettlement.blockDurabilityOf(blockState));
+                level, blockPos, normalOnPart, CollisionPostSettlement.blockDurabilityOf(blockState));
         float threshold = CollisionImpactModel.breakImpulse(
                 MMServerConfig.collisionImpulsePerDurability(), durability);
         if (!CollisionImpactModel.meetsBreakThreshold(blockImpulse, threshold)) return false;
@@ -576,6 +642,50 @@ public class CollisionHandler {
     }
 
     /**
+     * 接触面是否在承重（法线竖直分量足够大）。
+     *
+     * <p>判据是法线的竖直分量 {@code |n.y| >= 0.7}（约 45°），对符号不敏感：法线的口径在
+     * 两侧交换时会整体取反，这里只关心它是否竖直。攀爬辅助只该丢弃撞在台阶立面上的接触
+     * （{@code n.y ≈ 0}）；承载面的接触即使尚未侵入也必须保留，它是近接触承重的唯一来源。</p>
+     *
+     * @param normal 接触法线，方向可以是“地形→零件”或反向
+     */
+    private static boolean isSupportingTerrainContact(Vector3f normal) {
+        return normal != null && Math.abs(normal.y) >= CLIMB_SUPPORT_NORMAL_Y;
+    }
+
+    /**
+     * 这个接触算不算“地面接触”（法线接近竖直），判据见 {@link #GROUND_IMPACT_NORMAL_Y}。
+     *
+     * @param normal 接触法线，方向可以是“地形→零件”或反向
+     */
+    private static boolean isGroundImpactContact(Vector3f normal) {
+        return normal != null && Math.abs(normal.y) >= GROUND_IMPACT_NORMAL_Y;
+    }
+
+    /**
+     * 把接触点解析成方块位置，必要时沿法线反方向退入地形后再取一次。
+     *
+     * <p>接触点位于零件表面上：轮子略微离开地面（接触距离为正）时，它的 y 会高于地形顶面，
+     * 直接取整会落到上方相邻 section，令接触被判成本 section 之外。这里先按原位置取，
+     * 落到 section 外就朝地形内部退 2 cm、6 cm 再取；仍取不到时返回 null，
+     * 调用方跳过与方块有关的统计，但保留接触本身。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private static BlockPos resolveContactBlock(PhysicsChunkSection terrain, Vector3f point, Vector3f normal) {
+        for (float depth : new float[]{0f, -0.02f, -0.06f}) {
+            BlockPos pos = terrain.getBlockPosFromContactPoint(point, normal, depth);
+            BlockPos rel = pos.subtract(terrain.getSectionPos().origin());
+            if (rel.getX() >= 0 && rel.getY() >= 0 && rel.getZ() >= 0
+                    && rel.getX() <= 15 && rel.getY() <= 15 && rel.getZ() <= 15) {
+                return pos;
+            }
+        }
+        return null;
+    }
+
+    /**
      * 统一禁用接触点：写入距离哨兵并清零法向与两个切向缓存冲量。
      *
      * <p>调用线程：物理线程。</p>
@@ -585,6 +695,31 @@ public class CollisionHandler {
         ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
         ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
         ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
+    }
+
+    /**
+     * 判撞击所需的侵入深度下限（米）。
+     *
+     * <p>实测三档：地形 section 棱边上的擦碰 {@code distance1 ≈ -0.0001}（0.1 mm）、
+     * 轮子承重时的稳态侵入 {@code -0.006 … -0.009}（6–9 mm，但速度门读数为 0）、
+     * 真正撞上 0.3 m 台阶时 {@code -0.018}（10 m/s）与 {@code -0.054}（15 m/s）。
+     * 2 mm 把擦碰挡在外面，同时离真实撞击还差一个数量级。</p>
+     */
+    private static final float MIN_PENETRATION = 0.002f;
+
+    /**
+     * 这个 manifold 点算不算一次撞击：侵入至少要达到 {@link #MIN_PENETRATION}。
+     *
+     * <p>Bullet 会把"还差一点"的点也留在 manifold 里（{@code distance1} 为正，最大到接触破裂阈值）。
+     * 这类点在地形 section 交界处给出的是相邻盒顶面棱边的斜法线，横向车速被投成接近速度
+     * {@code u = v·sinθ}：台架上 10 m/s 滚过接缝读 2.07 m/s、15 m/s 读 3.62 m/s，
+     * 游戏里 19 m/s 在 0.1 mm 侵入上读 2.43 m/s，而轮心是平稳滚过去的。
+     * 撞击判定因此要求真侵入，且深到不是棱边擦碰。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private static boolean isImpactContact(long manifoldPointId) {
+        return ManifoldPoints.getDistance1(manifoldPointId) <= -MIN_PENETRATION;
     }
 
     /**
@@ -655,6 +790,9 @@ public class CollisionHandler {
                 subPart.body.getRestitution() * other.getRestitution());
         ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
 
+        //未达到侵入深度的点不结算伤害（口径见 isImpactContact）
+        if (!isImpactContact(manifoldPointId)) return;
+
         float deltaVel = (1 + restitution) * contactNormalVel * subPart.getEquivalentMass()
                 / (subPart.getEquivalentMass() + otherSubPart.getEquivalentMass());
         //基于能量对对方部件造成伤害，伤害仅作用于对方
@@ -708,6 +846,9 @@ public class CollisionHandler {
         //忽略相对速度过小的碰撞
         if (contactVel.subtract(PhysicsHelperKt.toBVector3f(livingEntity.getDeltaMovement().scale(20)))
                 .length() < 2f) return;
+
+        //未达到侵入深度的点不结算撞击（口径见 isImpactContact）
+        if (!isImpactContact(manifoldPointId)) return;
 
         float contactNormalSpeed = vel.dot(normal);
         //计算等效质量（含连接部件影响）

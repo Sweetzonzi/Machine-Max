@@ -779,8 +779,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public void afterHurt(BFDamageContext ctx, PenetrationResult result, float finalDamage) {
         if (level.isClientSide()) return;
         HitBox hitBox = findHitBox(ctx);
-        // findHitBox 声明 @NotNull，但无命中框时 findStrongestHitBox 返回 null，守卫必须保留
-        if (hitBox == null) return;
         float impact = hitBox.modifyImpact(ctx.source(), ctx.baseDamage());
         if (impact <= 0f) return;
         ConnectorImpactEvent.Pre event = NeoForge.EVENT_BUS.post(
@@ -960,7 +958,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             // 构造事件后直接交给命中判定所属的子系统，不经事件总线
             SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
             HitBox hitBox = findHitBox(ctx);
-            // findHitBox 声明 @NotNull，但无命中框时 findStrongestHitBox 返回 null，守卫必须保留
             if (hitBox.getSubsystem() != null) {
                 hitBox.getSubsystem().onHurt(event);
             }

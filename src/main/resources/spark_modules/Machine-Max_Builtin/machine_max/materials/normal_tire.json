@@ -22,7 +22,8 @@
     "rolling_friction": 0.01,
     "spinning_friction": 0.8,
     "restitution": 0.65,
-    "block_damage_factor": 0.05
+    "block_damage_factor": 0.05,
+    "impact_min_speed": 5.0
   },
   "armor": {
     "impact_modifiers": [

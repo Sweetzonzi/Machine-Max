@@ -317,7 +317,8 @@ public final class CollisionPostSettlement {
     /** 接触点的世界速度：零件平动 + 角速度在接触点的切向贡献（地形侧视为静止）。 */
     private static Vector3f contactVelocity(PhysicsRigidBody body, Vector3f point) {
         Vector3f lever = point.subtract(body.getPhysicsLocation(null));
-        return body.getLinearVelocity(null).add(body.getAngularVelocity(null).cross(lever));
+        return CollisionImpactModel.pointVelocity(
+                body.getLinearVelocity(null), body.getAngularVelocity(null), lever);
     }
 
     // ==================== 判定与投递 ====================
