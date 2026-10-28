@@ -43,7 +43,7 @@ public final class PartFoundationGameTest {
         try {
             source.assemblingProgress = 0.6f;
             source.setMaterialProgress(7);
-            source.renderWireframe = false;
+            source.assembling = false;
             String defaultTexture = source.textureName;
             String paint = source.variant.textures.keySet().stream().filter(name -> !name.equals(defaultTexture)).findFirst().orElseThrow();
             source.applyTexture(paint);
@@ -66,9 +66,9 @@ public final class PartFoundationGameTest {
             skeleton = skeletonVehicle.findPart(source.uuid);
             helper.assertTrue(full.uuid.equals(source.uuid) && skeleton.uuid.equals(source.uuid), "Both restoration modes preserve structural identity");
             helper.assertTrue(full.assemblingProgress == 0.6f && full.materialProgress == source.materialProgress, "Full state restores manufacturing progress");
-            helper.assertTrue(full.textureName.equals(paint) && !full.renderWireframe, "Full state restores paint and wireframe");
+            helper.assertTrue(full.textureName.equals(paint) && !full.assembling, "Full state restores paint and assembly state");
             helper.assertTrue(Math.abs(fullVehicle.getMaxHp() - full.getVehicleDurabilityContribution()) < 0.01f, "Regular HP contribution is preserved");
-            helper.assertTrue(skeleton.assemblingProgress == 0f && skeleton.materialProgress == 0 && skeleton.renderWireframe, "Blueprint is an unassembled skeleton");
+            helper.assertTrue(skeleton.assemblingProgress == 0f && skeleton.materialProgress == 0 && skeleton.assembling, "Blueprint is an unassembled skeleton");
             helper.assertTrue(skeleton.textureName.equals(defaultTexture), "Blueprint uses default paint");
             helper.assertTrue(full.subParts.keySet().equals(source.subParts.keySet()) && skeleton.subParts.keySet().equals(source.subParts.keySet()), "Both modes preserve SubPart structure");
             helper.assertTrue(countSticks(full) == countSticks(source) && countSticks(full) > 0, "Full state restores storage resources");

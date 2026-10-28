@@ -8,7 +8,6 @@
   "parts": {
     "d4df3d84-b5e8-4131-af19-4a9e0d4e968b": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -51,7 +50,6 @@
     },
     "12177e2b-5fd4-4edf-87b2-64c0f02c1446": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -94,7 +92,6 @@
     },
     "d273a1d9-a479-434f-80db-96dd79603903": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -137,7 +134,6 @@
     },
     "a4dba1be-c739-408e-9c5d-1ae3c58a0c07": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -180,7 +176,6 @@
     },
     "88b3aa04-f5c8-47be-8258-e8efc0daf02d": {
       "material_assembling_progress": 14,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.white",

@@ -8,7 +8,6 @@
   "parts": {
     "ae379755-9e25-42cb-bb53-b9abcaabcb48": {
       "material_assembling_progress": 14,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.ae86.1",
@@ -70,7 +69,6 @@
     },
     "a0f755df-70dc-4382-8b0b-7a70673e639f": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -113,7 +111,6 @@
     },
     "b2c7057f-dc09-4f3e-bb56-e1e39b2f4f43": {
       "material_assembling_progress": 8,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -164,7 +161,6 @@
     },
     "25ef2d56-fa15-4462-95fa-c2c971a355c4": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -207,7 +203,6 @@
     },
     "64cfb167-fedb-47d8-a30f-10b22f2a1004": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -255,7 +250,6 @@
     },
     "ecbc97d3-2f7a-4600-97ae-5399e317148d": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -298,7 +292,6 @@
     },
     "94a5e83d-ca23-44ac-9cb5-3cae720663cb": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -346,7 +339,6 @@
     },
     "6c3c6ef6-ae66-4238-ac2a-be2dfb418bc5": {
       "material_assembling_progress": 13,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.white",
@@ -437,7 +429,6 @@
     },
     "3385f601-980c-4152-92c4-b7ecb279d1df": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {

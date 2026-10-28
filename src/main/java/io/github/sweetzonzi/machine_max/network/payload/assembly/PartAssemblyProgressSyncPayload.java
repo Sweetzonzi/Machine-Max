@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 服务端下发普通部件的组装、材料供给与线框状态。
+ * 服务端下发普通部件的组装、材料供给与组装形态。
  *
  * <p>以该部件任一已注册子零件的运行时 ID 寻址，由对象表取得子零件后访问所属部件。
  * 这条路径不要求装配体注册为载具，也不依赖代理实体；子零件的 ID 由创建数据同步到客户端。</p>
@@ -20,19 +20,19 @@ import org.jetbrains.annotations.NotNull;
  * @param subPartId 目标部件中一个仍在对象表内的子零件 ID
  * @param assemblingProgress 组装完成比例
  * @param materialProgress 已供给的材料项数
- * @param renderWireframe 是否显示组装线框
+ * @param assembling 是否仍处于组装形态
  */
 public record PartAssemblyProgressSyncPayload(
         int subPartId,
         float assemblingProgress,
         int materialProgress,
-        boolean renderWireframe
+        boolean assembling
 ) implements CustomPacketPayload {
     public static final Type<PartAssemblyProgressSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_assembly_progress_sync_payload")
     );
 
-    /** 固定编码顺序为子零件 ID、组装比例、材料项数、线框标志，共 13 字节。 */
+    /** 固定编码顺序为子零件 ID、组装比例、材料项数、组装形态，共 13 字节。 */
     public static final StreamCodec<FriendlyByteBuf, PartAssemblyProgressSyncPayload> STREAM_CODEC = new StreamCodec<>() {
         /** 按固定字段顺序读取一次普通部件状态更新。 */
         @Override
@@ -40,8 +40,8 @@ public record PartAssemblyProgressSyncPayload(
             int subPartId = buffer.readInt();
             float assemblingProgress = buffer.readFloat();
             int materialProgress = buffer.readInt();
-            boolean renderWireframe = buffer.readBoolean();
-            return new PartAssemblyProgressSyncPayload(subPartId, assemblingProgress, materialProgress, renderWireframe);
+            boolean assembling = buffer.readBoolean();
+            return new PartAssemblyProgressSyncPayload(subPartId, assemblingProgress, materialProgress, assembling);
         }
 
         /** 写出子零件寻址信息与制造状态，字段顺序与解码器一致。 */
@@ -50,7 +50,7 @@ public record PartAssemblyProgressSyncPayload(
             buffer.writeInt(value.subPartId());
             buffer.writeFloat(value.assemblingProgress());
             buffer.writeInt(value.materialProgress());
-            buffer.writeBoolean(value.renderWireframe());
+            buffer.writeBoolean(value.assembling());
         }
     };
 
@@ -73,7 +73,7 @@ public record PartAssemblyProgressSyncPayload(
             if (object instanceof SubPart subPart && subPart.part instanceof RegularPart part) {
                 part.setAssemblingProgress(payload.assemblingProgress());
                 part.setMaterialProgress(payload.materialProgress());
-                part.setRenderWireframe(payload.renderWireframe());
+                part.setAssembling(payload.assembling());
             } else {
                 MachineMax.LOGGER.warn("维度{}中的子零件(id={})不存在或不属于普通部件，忽略组装状态同步。",
                         level.dimension().location(), payload.subPartId());

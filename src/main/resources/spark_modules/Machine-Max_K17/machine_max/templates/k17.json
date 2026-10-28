@@ -1,7 +1,6 @@
 {
   "parts": {
     "0bfce524-9651-40d9-bb7a-37c89ceaa8dd": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -203,7 +202,6 @@
       "name": "machine_max.k17_hull"
     },
     "7e3aac88-a1d1-4d6c-9a8f-9efbbf4d26b8": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -244,7 +242,6 @@
       "name": "machine_max.k17_wheel"
     },
     "a30dd424-06f7-4969-8b7a-89ad83357946": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -285,7 +282,6 @@
       "name": "machine_max.k17_wheel"
     },
     "4035ede9-8625-46b4-be71-03ae31fbe63c": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -326,7 +322,6 @@
       "name": "machine_max.k17_wheel"
     },
     "b7e65aec-be19-4556-b050-ede734a3325d": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -367,7 +362,6 @@
       "name": "machine_max.k17_wheel"
     },
     "47ae02c5-534a-4b23-8c30-adf4becaa1b1": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -631,7 +625,6 @@
       "name": "machine_max.k17_turret"
     },
     "b93169ff-5421-4e79-8319-1f13cb69a7c2": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -672,7 +665,6 @@
       "name": "machine_max.k17_wheel"
     },
     "261a2654-bd2f-4470-bde3-7a82a9b96daa": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -716,7 +708,6 @@
       "name": "machine_max.k17_wheel"
     },
     "88c33b8e-84bd-4595-9bff-436a4c103fa6": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -760,7 +751,6 @@
       "name": "machine_max.k17_wheel"
     },
     "3a633c99-0c10-46fa-ba45-dff9287a0a43": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {

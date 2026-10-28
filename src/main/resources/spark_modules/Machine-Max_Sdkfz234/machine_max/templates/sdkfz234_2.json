@@ -1,7 +1,6 @@
 {
   "parts": {
     "720da790-0156-4f87-8e45-03349b463b3a": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -42,7 +41,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "9637eec5-da9d-42ae-bd22-3c28eb8ee3e9": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -83,7 +81,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "f67ad9a2-b9ef-4f75-91fb-f20d63dce939": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -352,7 +349,6 @@
       "name": "machine_max.sdkfz234_turret"
     },
     "92610814-fbf0-4d0a-bfdf-04c6f094784d": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -489,7 +485,6 @@
       "name": "machine_max.sdkfz234_hull"
     },
     "8919fcd4-3b51-47ca-8c43-47940b478a1f": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -530,7 +525,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "e80b211f-128d-497c-ad20-6511af273194": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -571,7 +565,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "6e096252-9044-4e8a-9841-019e6e4ea96e": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -612,7 +605,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "b564a9f4-d80e-46cd-8547-9d5647795331": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -653,7 +645,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "53471c64-35fc-46cd-aeaf-22841940919d": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
@@ -694,7 +685,6 @@
       "name": "machine_max.sdkfz234_wheel"
     },
     "85d8a55f-3198-41c4-ad52-4aba5ae31c22": {
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {

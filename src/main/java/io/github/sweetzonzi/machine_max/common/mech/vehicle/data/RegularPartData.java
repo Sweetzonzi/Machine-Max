@@ -25,7 +25,7 @@ import java.util.Map;
 public class RegularPartData extends AbstractPartData {
     public final float assemblingProgress;//部件的组装进度
     public final int materialAssemblingProgress;//部件的材料供给进度
-    public final boolean renderWireframe;//部件是否渲染线框
+    public final boolean assembling;//部件是否仍处于组装形态（骨架）
 
     /**
      * 普通部件 JSON 存档 Codec，保留可选制造与涂装字段的默认值。
@@ -39,7 +39,7 @@ public class RegularPartData extends AbstractPartData {
             Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(RegularPartData::getAssemblingProgress),
             Codec.FLOAT.optionalFieldOf("shared_durability_ratio", 1f).forGetter(RegularPartData::getSharedDurabilityRatio),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(RegularPartData::getMaterialAssemblingProgress),
-            Codec.BOOL.optionalFieldOf("render_wireframe", true).forGetter(RegularPartData::isRenderWireframe),
+            Codec.BOOL.optionalFieldOf("assembling", false).forGetter(RegularPartData::isAssembling),
             Codec.STRING.optionalFieldOf("texture_name", "default").forGetter(RegularPartData::getTextureName),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(RegularPartData::getSubParts)
     ).apply(instance, RegularPartData::new));
@@ -66,10 +66,10 @@ public class RegularPartData extends AbstractPartData {
             float assemblingProgress = buffer.readFloat();
             float sharedDurabilityRatio = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
-            boolean renderWireframe = buffer.readBoolean();
+            boolean assembling = buffer.readBoolean();
             String textureName = buffer.readUtf();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, renderWireframe, textureName, subParts);
+            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, assembling, textureName, subParts);
         }
 
         /**
@@ -84,7 +84,7 @@ public class RegularPartData extends AbstractPartData {
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeFloat(value.sharedDurabilityRatio);
             buffer.writeInt(value.materialAssemblingProgress);
-            buffer.writeBoolean(value.renderWireframe);
+            buffer.writeBoolean(value.assembling);
             buffer.writeUtf(value.textureName);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
         }
@@ -136,23 +136,23 @@ public class RegularPartData extends AbstractPartData {
             float assemblingProgress,
             float sharedDurabilityRatio,
             int materialAssemblingProgress,
-            boolean renderWireframe,
+            boolean assembling,
             String textureName,
             Map<String, SubPartData> subParts) {
         super(registryKey, name, uuid, variant, sharedDurabilityRatio, textureName, subParts);
         this.assemblingProgress = assemblingProgress;
         this.materialAssemblingProgress = materialAssemblingProgress;
-        this.renderWireframe = renderWireframe;
+        this.assembling = assembling;
     }
 
     /**
-     * 从普通部件采集公共动态状态、组装比例、材料进度和线框标志。
+     * 从普通部件采集公共动态状态、组装比例、材料进度和组装形态。
      * <p>调用者应在宿主安排的存档阶段采集；骨架恢复所需的清空策略不在保存阶段执行。</p>
      */
     public RegularPartData(RegularPart part) {
         super(part);
         this.assemblingProgress = part.assemblingProgress;
         this.materialAssemblingProgress = part.materialProgress;
-        this.renderWireframe = part.renderWireframe;
+        this.assembling = part.assembling;
     }
 }

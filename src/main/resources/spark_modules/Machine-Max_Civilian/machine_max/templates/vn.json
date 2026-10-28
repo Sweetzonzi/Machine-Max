@@ -8,7 +8,6 @@
   "parts": {
     "b36c0361-82ca-4793-894b-9886c5b0ef8f": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -51,7 +50,6 @@
     },
     "e3ec5a28-5fe1-4675-a536-4ff72fd98b64": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -117,7 +115,6 @@
     },
     "3a333bd0-d7af-4ffc-92fe-6292e9909c5d": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {

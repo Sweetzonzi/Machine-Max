@@ -8,7 +8,6 @@
   "parts": {
     "4de1be17-3a00-44ba-8bc6-c634424b0872": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -54,7 +53,6 @@
     },
     "143dd0bc-ee43-4ea3-9680-db3bd591a8b1": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -97,7 +95,6 @@
     },
     "e4960091-dcb5-4994-b2d7-332d6b12de48": {
       "material_assembling_progress": 3,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -143,7 +140,6 @@
     },
     "ae768d10-d985-481a-be73-73feaa7e72a3": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -189,7 +185,6 @@
     },
     "8fd82d9f-c872-4de0-90ac-afb2ca71006b": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -235,7 +230,6 @@
     },
     "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba": {
       "material_assembling_progress": 14,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -408,7 +402,6 @@
     },
     "5cc038d1-646a-44cb-98cd-57ece852b432": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -476,7 +469,6 @@
     },
     "f3918c00-b274-4814-9215-d02c637f0bc6": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -519,7 +511,6 @@
     },
     "51d1d26b-5d63-410f-a117-7147b5e7fb12": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -573,7 +564,6 @@
     },
     "80ec2ecf-5919-4355-861c-9ad48b4e7752": {
       "material_assembling_progress": 4,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -627,7 +617,6 @@
     },
     "309a94cb-7d44-418e-91e4-e1f4392d3f00": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -670,7 +659,6 @@
     },
     "19a87773-101e-43fd-b748-2339374c8a0b": {
       "material_assembling_progress": 5,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -713,7 +701,6 @@
     },
     "92d7ab8b-153e-4434-8f2d-aa8cba662c2e": {
       "material_assembling_progress": 3,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {

@@ -40,9 +40,12 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
      */
     public int materialProgress = Integer.MAX_VALUE;
     /**
-     * 是否显示组装线框；与组装进度共同决定零进度部件的低重力处理。
+     * 是否处于组装形态（骨架）；与组装进度共同决定零进度部件的折减重力处理。
+     * <p>构造期默认 {@code true}：新建部件以进度 1 出生，由 {@link #onTick()} 在越过工作阈值后关闭，
+     * 而「构造后立刻置进度 0」的路径（零件物品放置、骨架恢复、维修尝试）需要在同一 tick 内保留组装态，
+     * 以便取得折减重力。存档键 {@code assembling} 的缺省值则是 {@code false}，两者服务不同时点。</p>
      */
-    public boolean renderWireframe = true;
+    public boolean assembling = true;
 
     /**
      * 新建完整普通部件，生成随机 UUID 并按变体创建结构。
@@ -56,7 +59,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     /**
      * 从存档恢复普通部件，先确定制造状态，再构造结构和加载公共动态状态。
      *
-     * <p>完整模式采用保存的材料、组装进度和线框状态；骨架模式将两项进度置零并开启线框。
+     * <p>完整模式采用保存的材料、组装进度和组装形态；骨架模式将两项进度置零并进入组装形态。
      * 结构构造后由 {@link #restoreState} 应用模式允许的状态。失败时清理构造资源，不触发正常拆离掉落。</p>
      *
      * @param data 工厂已预检的普通部件存档；不会修改输入
@@ -68,13 +71,13 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     public RegularPart(RegularPartData data, RegularPartType type, Level level,
                        PartRestoreMode mode, PartCreationContext context) {
         super(type, data.variant, level, UUID.fromString(data.uuid), data.name, context);
-        renderWireframe = mode == PartRestoreMode.STRUCTURE_ONLY || data.renderWireframe;
+        assembling = mode == PartRestoreMode.STRUCTURE_ONLY || data.assembling;
         setMaterialProgress(mode == PartRestoreMode.FULL_STATE ? data.materialAssemblingProgress : 0);
         assemblingProgress = mode == PartRestoreMode.FULL_STATE ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
         initializeStructure();
         try {
             restoreState(data, mode);
-            if (assemblingProgress == 0f && renderWireframe) {
+            if (assemblingProgress == 0f && assembling) {
                 for (SubPart child : subParts.values()) {
                     child.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
                 }
@@ -86,7 +89,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 采集普通部件的公共状态、材料供给、组装进度和线框标志。
+     * 采集普通部件的公共状态、材料供给、组装进度和组装形态。
      */
     @Override
     public RegularPartData save() {
@@ -155,19 +158,19 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 维修尝试进入时开启线框，并按需要向客户端同步；不表示此次一定恢复了耐久。
+     * 维修尝试进入时开启组装形态，并按需要向客户端同步；不表示此次一定恢复了耐久。
      */
     @Override
     public void onRepairAttempt() {
-        setRenderWireframe(true);
+        setAssembling(true);
     }
 
     /**
-     * 在主线程更新线框自动隐藏条件，再推进公共动画发布与存活检查。
+     * 在主线程更新组装形态的自动关闭条件，再推进公共动画发布与存活检查。
      */
     @Override
     public void onTick() {
-        if (renderWireframe && getAssemblingProgress() > type.functionalThreshold) setRenderWireframe(false);
+        if (assembling && getAssemblingProgress() > type.functionalThreshold) setAssembling(false);
         super.onTick();
     }
 
@@ -438,9 +441,9 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
      * 主线程设置 [0, 1] 组装进度，并安排重力与客户端同步更新。
      *
      * <p>进度影响后续耐久写入的上限，本方法不直接重设现有耐久。重力任务按部件 UUID 去重并在 PRE
-     * 物理阶段执行：进度为零且开启线框时使用世界重力的 10%，其他情况恢复正常重力并激活刚体。
+     * 物理阶段执行：进度为零且处于组装形态时使用世界重力的 10%，其他情况恢复正常重力并激活刚体。
      * 设计质量不按进度缩放。</p>
-     * <p>服务端进度从阈值下方达到工作阈值时关闭线框；状态变化按需向所在维度广播。</p>
+     * <p>服务端进度从阈值下方达到工作阈值时关闭组装形态；状态变化按需向所在维度广播。</p>
      *
      * @param progress 目标组装完成比例
      */
@@ -452,7 +455,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
             float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
-                    if (finalProgress == 0 && renderWireframe) {
+                    if (finalProgress == 0 && assembling) {
                         subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
                     } else {
                         subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
@@ -463,34 +466,35 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
                 return null;
             });
             float functionalThreshold = type.getFunctionalThreshold();
-            if (!level.isClientSide() && renderWireframe
+            if (!level.isClientSide() && assembling
                     && oldProgress < functionalThreshold
                     && progress >= functionalThreshold) {
-                renderWireframe = false;
+                assembling = false;
             }
             syncAssemblyProgressToClient();
         }
     }
 
     /**
-     * 返回当前组装线框开关，供子零件渲染入口查询。
+     * 返回当前组装形态，供渲染入口与重力策略查询。
      */
-    public boolean shouldRenderWireframe() {
-        return renderWireframe;
+    @Override
+    public boolean isAssembling() {
+        return assembling;
     }
 
     /**
-     * 设置组装线框标志；值变化时由服务端向所在维度同步制造状态。
+     * 设置组装形态；值变化时由服务端向所在维度同步制造状态。
      */
-    public void setRenderWireframe(boolean renderWireframe) {
-        if (this.renderWireframe != renderWireframe) {
-            this.renderWireframe = renderWireframe;
+    public void setAssembling(boolean assembling) {
+        if (this.assembling != assembling) {
+            this.assembling = assembling;
             syncAssemblyProgressToClient();
         }
     }
 
     /**
-     * 向本维度玩家广播组装、材料和线框状态。
+     * 向本维度玩家广播组装、材料和组装形态。
      * <p>仅服务端且部件已归属入世装配体时发送。选择一个仍在对象表内的子零件作为地址，
      * 客户端通过该子零件取得部件；不要求宿主进入载具注册表。没有有效子零件时不发送。</p>
      */
@@ -500,7 +504,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
             for (SubPart child : subParts.values()) {
                 if (ObjectManager.getDestroyableObject(level, child.getId()) != child) continue;
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                        child.getId(), assemblingProgress, materialProgress, renderWireframe));
+                        child.getId(), assemblingProgress, materialProgress, assembling));
                 break;
             }
         }

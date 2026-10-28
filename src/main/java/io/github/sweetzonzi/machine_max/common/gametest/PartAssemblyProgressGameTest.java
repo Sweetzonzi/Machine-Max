@@ -50,7 +50,7 @@ public final class PartAssemblyProgressGameTest {
                     "目标只注册子零件对象，不提供装配体或载具查询入口");
             target.assemblingProgress = 0.8f;
             target.materialProgress = 7;
-            target.renderWireframe = false;
+            target.assembling = false;
             ArrayDeque<Runnable> tasks = new ArrayDeque<>();
             IPayloadContext context = queuedContext(helper.makeMockPlayer(GameType.SURVIVAL), tasks);
 
@@ -59,7 +59,7 @@ public final class PartAssemblyProgressGameTest {
             helper.assertTrue(target.assemblingProgress == 0.8f && tasks.size() == 1,
                     "查询和写入必须等待主线程任务执行");
             tasks.removeFirst().run();
-            helper.assertTrue(target.assemblingProgress == 0.25f && target.materialProgress == 0 && target.renderWireframe,
+            helper.assertTrue(target.assemblingProgress == 0.25f && target.materialProgress == 0 && target.assembling,
                     "非根子零件 ID 应更新所属部件的全部制造状态");
             helper.assertTrue(other.assemblingProgress == 1f && other.materialProgress == Integer.MAX_VALUE,
                     "其他已注册部件不应被更新");
@@ -68,7 +68,7 @@ public final class PartAssemblyProgressGameTest {
                     new PartAssemblyProgressSyncPayload(address.getId(), 0.6f, 0, false), context);
             ObjectManager.removeDestroyableObject(address);
             tasks.removeFirst().run();
-            helper.assertTrue(target.assemblingProgress == 0.25f && target.renderWireframe,
+            helper.assertTrue(target.assemblingProgress == 0.25f && target.assembling,
                     "执行前已注销的子零件不得通过收包时缓存的部件引用继续更新");
             helper.succeed();
         } finally {

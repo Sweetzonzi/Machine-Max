@@ -244,7 +244,7 @@ public class VehicleData {
                     part.assemblingProgress,
                     part.sharedDurabilityRatio,
                     part.materialAssemblingProgress,
-                    part.renderWireframe,
+                    part.assembling,
                     part.textureName,
                     rebasedSubParts
             ));

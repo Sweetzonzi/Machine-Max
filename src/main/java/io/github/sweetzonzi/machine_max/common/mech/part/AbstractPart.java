@@ -327,9 +327,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
-     * 决定是否显示组装线框；公共基础默认关闭，具体种类提供自身表现策略。
+     * 判断本部件是否仍处于组装形态（骨架）；公共基础默认不是，具体种类提供自身状态位。
+     * <p>渲染器据此决定是否画线框，重力策略据此决定是否使用折减重力。</p>
      */
-    public boolean shouldRenderWireframe() {
+    public boolean isAssembling() {
         return false;
     }
 

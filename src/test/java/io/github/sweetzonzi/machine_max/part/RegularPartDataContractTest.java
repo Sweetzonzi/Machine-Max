@@ -38,7 +38,7 @@ class RegularPartDataContractTest {
         assertEquals(1f, saved.assemblingProgress);
         assertEquals(1f, saved.sharedDurabilityRatio);
         assertEquals(99999, saved.materialAssemblingProgress);
-        assertTrue(saved.renderWireframe);
+        assertFalse(saved.assembling);
         assertEquals("default", saved.textureName);
     }
 
@@ -57,7 +57,7 @@ class RegularPartDataContractTest {
             assertEquals(original.assemblingProgress, buffer.readFloat());
             assertEquals(original.sharedDurabilityRatio, buffer.readFloat());
             assertEquals(original.materialAssemblingProgress, buffer.readInt());
-            assertEquals(original.renderWireframe, buffer.readBoolean());
+            assertEquals(original.assembling, buffer.readBoolean());
             assertEquals(original.textureName, buffer.readUtf());
             assertEquals(original.subParts.get("main").subsystemData,
                     SubPartData.MAP_STREAM_CODEC.decode(buffer).get("main").subsystemData);

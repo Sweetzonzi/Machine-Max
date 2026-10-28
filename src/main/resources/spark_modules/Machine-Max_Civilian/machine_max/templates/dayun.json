@@ -8,7 +8,6 @@
   "parts": {
     "86344c64-9881-4f46-a81a-7b9a5e8f311f": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -51,7 +50,6 @@
     },
     "f846ab86-1e32-40c6-b9a4-552890f711cc": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -94,7 +92,6 @@
     },
     "7537a0c8-c3e0-4fdb-9070-a33613260a0e": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.dayun.1",
@@ -152,7 +149,6 @@
     },
     "6a3543a1-b431-417b-92e2-8a6ed2c865b1": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -195,7 +191,6 @@
     },
     "049cf5e7-b802-4743-958d-c5f45e97cb67": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -238,7 +233,6 @@
     },
     "fd37eec4-98ee-4f85-9975-fb93657dd407": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -281,7 +275,6 @@
     },
     "17b32ff0-60e3-48e3-9d31-e2d17e1f91f0": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -324,7 +317,6 @@
     },
     "e16ed018-bd1a-4b63-979f-68401021c6b9": {
       "material_assembling_progress": 2147483647,
-      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.dayun.1",
