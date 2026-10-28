@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticPro
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
 import io.github.sweetzonzi.machine_max.util.SpringDamper;
+import io.github.sweetzonzi.machine_max.util.NonFiniteDiagnostics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -163,6 +164,9 @@ public class CameraShakeController {
         double normalLen = hitDir.length();
         if (normalLen < 1e-8) return;
         hitDir = hitDir.scale(1.0 / normalLen);
+        if (!Float.isFinite(intensity) || !NonFiniteDiagnostics.finite(hitDir)) {
+            return;
+        }
 
         // ⑨ 应用冲量
         rotationDamper.applyImpulse(hitDir.scale(intensity));

@@ -132,12 +132,20 @@ public class ArmorUtil {
     }
 
     /**
-     * 获取方块护甲水平，护甲公式为：100*lg(0.1+爆炸抗性)*(0.1+方块硬度)
+     * 方块护甲为 {@code 100 × log10(抗爆性 + 1) × log10(硬度 + 1.001)}。
+     * 硬度小于零表示不可破坏；不可破坏或属性非有限／为负时返回 {@link Float#MAX_VALUE}。
+     * 该有限哨兵值阻止弹丸穿透，也允许爆炸侧安全地乘以零倍率。
      *
      * @return 给定方块的护甲水平
      */
     public static float getBlockArmor(BlockGetter level, BlockState blockState, BlockPos blockPos) {
-        return (float) (100f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.001+blockState.getDestroySpeed(level, blockPos)))));
+        float hardness = blockState.getDestroySpeed(level, blockPos);
+        float resistance = blockState.getBlock().getExplosionResistance();
+        if (!Float.isFinite(hardness) || hardness < 0f
+                || !Float.isFinite(resistance) || resistance < 0f) {
+            return Float.MAX_VALUE;
+        }
+        return (float) (100f * log10(resistance + 1.0) * log10(1.001 + hardness));
     }
 
     // ==================== 材质装甲系数 ====================

@@ -29,6 +29,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensi
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
+import io.github.sweetzonzi.machine_max.util.NonFiniteDiagnostics;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -99,7 +100,8 @@ public class BallisticProjectile extends DestroyableObject
 
         /** 穿过后以指定保留率继续飞行 */
         public static AfterHitResult passThrough(float speedRetention, Vector3f currentVelocity) {
-            return new AfterHitResult(false, new Vector3f(currentVelocity).multLocal(speedRetention));
+            if (!Float.isFinite(speedRetention) || speedRetention <= 0f) return DESTROYED;
+            return continuing(new Vector3f(currentVelocity).multLocal(speedRetention));
         }
 
         /** 跳弹：按法线反射后乘以能量保持率 */
@@ -109,7 +111,11 @@ public class BallisticProjectile extends DestroyableObject
             Vector3f correction = new Vector3f(normal).multLocal(2 * dot);
             reflected.subtractLocal(correction);
             reflected.multLocal(retention);
-            return new AfterHitResult(false, reflected);
+            return continuing(reflected);
+        }
+
+        private static AfterHitResult continuing(Vector3f velocity) {
+            return NonFiniteDiagnostics.finite(velocity) ? new AfterHitResult(false, velocity) : DESTROYED;
         }
     }
 
@@ -563,12 +569,16 @@ public class BallisticProjectile extends DestroyableObject
      * @return 穿透后的新速率；动能不足以穿透时返回 0
      */
     private static float speedAfterPenetration(float currentSpeed, float currentPen, float targetArmor, float penCoeff) {
-        if (Math.abs(penCoeff) < 1e-6f) return currentSpeed; // k=0 不损失能量
-        float ratio = targetArmor / Math.max(currentPen, 1e-6f);
-        float vThreshold = currentSpeed * (float) Math.pow(ratio, 1.0f / penCoeff);
-        float vNewSq = currentSpeed * currentSpeed - vThreshold * vThreshold;
-        if (vNewSq <= 0) return 0;
-        return (float) Math.sqrt(vNewSq);
+        if (!Float.isFinite(currentSpeed) || currentSpeed < 0f || !Float.isFinite(currentPen) || currentPen < 0f
+                || !Float.isFinite(targetArmor) || targetArmor < 0f || !Float.isFinite(penCoeff) || penCoeff < 0f) {
+            return 0f;
+        }
+        if (targetArmor == 0f) return currentSpeed;
+        if (currentPen <= targetArmor) return 0f;
+        if (penCoeff < 1e-6f) return currentSpeed; // k=0 不损失能量
+        double ratio = (double) targetArmor / currentPen;
+        double energyRetention = 1.0 - Math.pow(ratio, 2.0 / penCoeff);
+        return (float) (currentSpeed * Math.sqrt(Math.max(0.0, energyRetention)));
     }
 
     // ==================== 命中结果桥接（回调 ↔ Manager） ====================
@@ -735,12 +745,13 @@ public class BallisticProjectile extends DestroyableObject
         Vec3 hitPoint, Vec3 hitNormal
     ) {
         // 获取方块等效护甲（mm RHA）
-        float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
+        float blockArmor = ArmorUtil.getBlockArmor(level, blockState, blockPos);
 
         if (currentPenetration > blockArmor) {
             // 穿透：计算穿透后速度
             float penCoeff = getPenetrationVelocityCoefficient();
             float newSpeed = speedAfterPenetration(currentSpeed, currentPenetration, blockArmor, penCoeff);
+            if (!Float.isFinite(newSpeed) || newSpeed <= 0f) return AfterHitResult.DESTROYED;
             float velocityRetention = newSpeed / Math.max(currentSpeed, 0.001f);
 
             // 方块破坏判定（服务端）

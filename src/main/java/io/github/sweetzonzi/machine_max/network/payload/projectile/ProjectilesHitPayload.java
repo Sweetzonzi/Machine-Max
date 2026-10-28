@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import io.github.sweetzonzi.machine_max.util.NonFiniteDiagnostics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -57,7 +58,14 @@ public record ProjectilesHitPayload(
             boolean destroyed,
             double newVelX, double newVelY, double newVelZ,
             @Nullable Long hitBlockPos
-    ) {}
+    ) {
+        /** 命中几何与速度必须可安全写入 float32 弹道数组。 */
+        public boolean isFinite() {
+            return Float.isFinite((float) hitX) && Float.isFinite((float) hitY) && Float.isFinite((float) hitZ)
+                    && Float.isFinite((float) normalX) && Float.isFinite((float) normalY) && Float.isFinite((float) normalZ)
+                    && Float.isFinite((float) newVelX) && Float.isFinite((float) newVelY) && Float.isFinite((float) newVelZ);
+        }
+    }
 
     public static final Type<ProjectilesHitPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectiles_hit"));
@@ -134,6 +142,11 @@ public record ProjectilesHitPayload(
             if (pm == null) return;
 
             for (HitEntry e : payload.entries) {
+                if (!e.isFinite()) {
+                    NonFiniteDiagnostics.reportOnce("projectile-hit-payload/" + e.objId,
+                            () -> NonFiniteDiagnostics.world(level) + " rejectedHit=" + e);
+                    continue;
+                }
                 Vec3 hitPoint = new Vec3(e.hitX, e.hitY, e.hitZ);
                 Vec3 hitNormal = new Vec3(e.normalX, e.normalY, e.normalZ);
 
