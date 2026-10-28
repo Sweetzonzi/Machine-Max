@@ -97,6 +97,21 @@ public class ObjectManager {
     }
 
     /**
+     * 丢弃客户端侧的全部载具实例，包括尚未挂入维度的暂存实例。
+     *
+     * <p>客户端载具完全由服务端网络包驱动重建（创建载荷与维度载具数据载荷）：进入世界或维度时先整体清空，
+     * 再按收到的数据重建。远程载具渲染器直接遍历 {@link #clientAllVehicles} 且不按 Level 过滤，
+     * 残留实例会继续以旧世界的坐标被绘制，直到玩家进入远程渲染阈值以内、该渲染器停止绘制，
+     * 而新世界里又没有对应的 {@code MMPartEntity} 代理实体接替，于是在画面上消失。</p>
+     *
+     * <p>调用线程：主线程（客户端）。</p>
+     */
+    public static void clearClientVehicleCache() {
+        clientAllVehicles.clear();
+        clientVehiclesToAdd.clear();
+    }
+
+    /**
      * 注册VehicleCore到载具管理器中
      * 并将载具添加到相应维度
      *
@@ -376,7 +391,7 @@ public class ObjectManager {
         levelVehicles.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).clear();
         if (level.isClientSide()) {//客户端清空可能的已有载具数据，从服务器获取新维度的载具数据
             MachineMax.LOGGER.info("客户端进入维度{}，清理维度载具数据", level.dimension().location());
-            clientAllVehicles.clear();
+            clearClientVehicleCache();
         }
         Set<VehicleData> savedVehicles = level.getData(MMAttachments.getLEVEL_VEHICLES());
         if (!savedVehicles.isEmpty()) {
@@ -404,6 +419,26 @@ public class ObjectManager {
     public static void onServerStart(ServerAboutToStartEvent event) {
         serverAllVehicles.clear();
         levelVehicles.clear();
+    }
+
+    /**
+     * 客户端进入新世界或新维度时，丢弃上一世界残留的载具缓存。
+     *
+     * <p>本事件在 {@code ClientLevel} 的构造器里触发，早于客户端发出维度载具数据请求，
+     * 也早于任何维度载具数据包被处理，是把清空时机提前到的最早位置。</p>
+     *
+     * <p>清空不能只挂在维度载具数据包的收齐分支（{@link #loadVehicles}）上：服务端在目标维度
+     * 没有任何载具时不会发出任何数据包（分包数量为 0），客户端因此根本不会执行那次清空，
+     * 上一世界的载具实例会一直留在 {@link #clientAllVehicles} 里，被远程载具渲染器按旧坐标绘制。</p>
+     *
+     * <p>调用线程：主线程（客户端）。</p>
+     */
+    @SubscribeEvent
+    public static void clearClientVehiclesOnLevelLoad(LevelEvent.Load event) {
+        Level level = (Level) event.getLevel();
+        if (!level.isClientSide()) return;
+        MachineMax.LOGGER.info("客户端进入维度{}，清理上一世界的载具缓存", level.dimension().location());
+        clearClientVehicleCache();
     }
 
     @SubscribeEvent//加载服务端世界时加载载具核心数据
@@ -443,12 +478,25 @@ public class ObjectManager {
         }
     }
 
+    /**
+     * 卸载世界时清除该维度持有的运行期数据。
+     *
+     * <p>客户端额外丢弃该维度的载具表与可破坏对象表，并清空全部客户端载具实例：
+     * 这是 {@link #clearClientVehiclesOnLevelLoad} 之外的兜底。退回标题或断开连接后，
+     * 要到下次进入世界才会有新的 {@code LevelEvent.Load}；不在这里丢弃的话，
+     * 这些实例会一直持有已经卸载的 {@code ClientLevel}。</p>
+     *
+     * <p>调用线程：主线程。</p>
+     */
     @SubscribeEvent//卸载服务端世界时清除相关数据
     public static void unloadVehicleData(LevelEvent.Unload event) {
         Level level = (Level) event.getLevel();
         levelProjectileManagers.remove(level);
         levelCollisionSettlements.remove(level);
         if (level.isClientSide()) {
+            levelVehicles.remove(level);
+            levelDestroyableObjects.remove(level);
+            clearClientVehicleCache();
             VisualEffectHelper.attachPoints.clear();
             VisualEffectHelper.boundingBox = null;
             VisualEffectHelper.partToPlace = null;
