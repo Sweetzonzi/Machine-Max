@@ -30,8 +30,10 @@ import org.joml.Quaternionf;
  *
  * <p><b>粒子</b>：由 {@link ExplosionParams#particles()} 逐个指定，每个 id 都在起爆点触发一次
  * Spark-Core 的基岩版粒子效果；列表为空时该爆炸不产生起爆粒子。
- * {@link ExplosionParams#particleScale()} 作为发射器变换的缩放一并传入，放大的是形状半径与飞散距离，
- * 单个烟团的贴图尺寸不随之变化。</p>
+ * {@link ExplosionParams#particleScale()} 作为发射器变换的缩放一并传入，同时影响出生偏移、初始速度与粒子尺寸。
+ * 世界空间粒子的尺寸倍率在出生时烘焙，billboard 宽高求值时使用；上游实现见
+ * {@code ../Spark-Core/src/main/java/cn/solarmoon/spark_core/particle/common/ParticleEmitterInstance.java#emitParticles}
+ * 与 {@code ../Spark-Core/src/main/java/cn/solarmoon/spark_core/particle/client/ParticleComponentRuntimes.java#createAppearanceBillboard}。</p>
  */
 public final class BlastDetonationEffects {
 
@@ -50,7 +52,7 @@ public final class BlastDetonationEffects {
         if (!level.isClientSide()) return;
         // 每个 id 独立建一个发射器实例；定义缺失时 Spark-Core 只记一条警告并跳过该 id
         Vec3 pos = SparkMathKt.toVec3(origin);
-        // 起爆特效不旋转，局部轴即世界轴；scale 走发射器变换，由 Spark-Core 作用在生成瞬间的偏移与初速上
+        // 起爆特效不旋转，局部轴即世界轴；发射器 scale 影响出生偏移、初速与尺寸
         float s = params.particleScale();
         Quaternionf rotation = new Quaternionf();
         Vec3 scale = new Vec3(s, s, s);

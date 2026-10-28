@@ -40,10 +40,12 @@ import java.util.List;
  *                        按 Spark-Core 内容包的粒子定义解析，因此可写 {@code machine_max:blast_medium}
  *                        这类标识符；列表为空即该爆炸不起爆粒子。构造时会复制为不可变列表。
  * @param particleScale   {@code particles} 的整体缩放系数（默认 1.0，下界 1e-3）。
- *                        <b>它缩放的是散布而不是贴图尺寸</b>：Spark-Core 只在粒子生成瞬间把发射器变换
- *                        作用在局部偏移与初始速度上，因此形状半径与飞散距离按此系数等比放大，
- *                        而 {@code particle_appearance_billboard.size} 决定的单个烟团大小不变；
- *                        模拟随后回到世界空间，重力与浮力加速度也不随此系数放大。
+ *                        Spark-Core 在世界空间粒子出生时将发射器缩放应用于局部偏移与初始速度，
+ *                        并烘焙尺寸倍率；billboard 宽高的 MoLang 求值结果会乘上该倍率。
+ *                        局部空间粒子的尺寸缩放由渲染期父矩阵承担，不重复烘焙。
+ *                        上游实现见 {@code ../Spark-Core/src/main/java/cn/solarmoon/spark_core/particle/common/ParticleEmitterInstance.java#emitParticles}
+ *                        与 {@code ../Spark-Core/src/main/java/cn/solarmoon/spark_core/particle/client/ParticleComponentRuntimes.java#createAppearanceBillboard}。
+ *                        世界空间模拟的重力与浮力加速度不随此系数放大。
  * @param damageType      本次爆炸造成的伤害类型（{@link DamageType} 资源键），默认
  *                        {@link MMDamageTypes#BLAST}。{@link ExplosionManager#detonate}
  *                        用它构造 {@code DamageSource}，因此它决定该次爆炸伤害落入
