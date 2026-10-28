@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
-import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
@@ -272,11 +271,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             entity.discard();
             entity = null;
         }
-        if (part.usesFullGravity() && tickCount == 10) {
-            getPhysicsLevel().submitImmediateTask(cn.solarmoon.spark_core.util.PPhase.PRE, () -> {
-                body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
-                return null;
-            });
+        // 入世次序兜底：关节与地形就绪后再统一写一次重力，避免部件在构造期被重力拉走。
+        // 按部件去重，因此同一部件下多个子零件在第 10 tick 只产生一次重力写入。
+        if (tickCount == 10) {
+            part.submitGravityUpdate();
         }
     }
 
@@ -979,11 +977,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (drained > 0f) {
             setDurability(Math.clamp(getDurability() - drained, 0, getMaxDurability()));
             part.onDurabilityChanged();
-            if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
+            // 部件已进入倒计时时，追加伤害加速部件级倒计时；最后 1 秒不再缩减
+            if (part.isDestroyed()) {
                 int extraAdvance = Math.round(drained * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
-                if (extraAdvance > 0) {
-                    tickDestroyTimer(Math.min(extraAdvance, getDestroyTime() - 20));
-                }
+                part.advanceDestroyTimer(extraAdvance);
             }
         }
         // 通告晚于耐久写入：装配体可以据此读取零件的最新状态
@@ -993,7 +990,15 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         // 同步包由基类 postTick 在结算之后统一发送，本方法内不发送
     }
 
-    protected void setDestroyed() {
+    /**
+     * 标记本子零件摧毁：停用全部子系统并置摧毁标记。
+     *
+     * <p>倒计时不属于子零件——它由所属部件统一持有并写入本对象的 {@code DESTROY_TIME_ID} 作为网络镜像；
+     * 摧毁音效也只由部件在进入倒计时时播放一次。刚体、关节、碰撞与代理实体全部保留，
+     * 子零件随部件整体移除时才销毁。</p>
+     */
+    @Override
+    public void setDestroyed() {
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
@@ -1003,13 +1008,17 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
             }
         }
-        if (level.isClientSide && !isDestroyed()) {
-            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"), 64f);
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getPosition()), Vec3.ZERO,
-                    (float) (1f + 0.2f * (Math.random() - 0.5f)),
-                    1f);
-        }
-        super.setDestroyed();
+        markDestroyed();
+        // 最后一个子零件被摧毁时，部件在同一 tick 内进入倒计时；未全部摧毁时该调用无副作用
+        if (!level.isClientSide()) part.startDestroyCountdown();
+    }
+
+    /**
+     * 子零件不自行移除：倒计时归零后的移除由部件整体执行。
+     */
+    @Override
+    protected boolean removesOnCountdownExpiry() {
+        return false;
     }
 
     public float getEquivalentMass() {

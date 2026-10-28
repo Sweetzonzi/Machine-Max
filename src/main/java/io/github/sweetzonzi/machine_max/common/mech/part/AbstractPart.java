@@ -28,6 +28,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -51,6 +52,9 @@ import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -95,7 +99,14 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      */
     public final boolean crowbarRemovable;
     public float totalMass;
-    public boolean destroyed = false;
+    /**
+     * 剩余摧毁倒计时，单位为 tick；仅在服务端推进，客户端读取根子零件的网络镜像。
+     */
+    protected int destroyTime;
+    /**
+     * 是否已经进入摧毁倒计时；首次进入时写初值并播放一次部件摧毁音效。
+     */
+    protected boolean destroyCountdownStarted;
     // 部件模型、动画、纹理与 MoLang 上下文
     public ModelController modelController;
     public AnimController animController;
@@ -284,11 +295,171 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      */
     public abstract float assemblyDamage(float amount, float remaining, boolean destroyed);
     /**
-     * 判断子零件的延迟重力初始化是否恢复世界正常重力；默认允许。
-     * <p>该查询本身不修改刚体，具体种类需自行安排后续状态变化引起的重力更新。</p>
+     * 判断本部件是否使用折减重力；公共基础默认不使用，具体种类提供自身状态位。
+     * <p>该查询本身不修改刚体，由 {@link #applyGravity()} 统一写入。</p>
      */
-    public boolean usesFullGravity() {
+    public boolean usesReducedGravity() {
+        return false;
+    }
+
+    /**
+     * 把当前应得的重力写入全部子零件，并让使用正常重力的刚体重回激活状态。
+     *
+     * <p>子零件在构造时关闭了世界重力来源（{@code setProtectGravity(true)}），因此每个分支都必须显式写入，
+     * 不存在「不写」的路径。构造期（尚未入世）可直接调用；入世后的调用必须经
+     * {@link #submitGravityUpdate()} 提交到物理线程。</p>
+     */
+    public final void applyGravity() {
+        boolean reduced = usesReducedGravity();
+        float scale = reduced ? 0.1f : 1f;
+        for (SubPart subPart : subParts.values()) {
+            subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(scale));
+            if (!reduced) subPart.body.activate();
+        }
+    }
+
+    /**
+     * 在 PRE 物理阶段应用一次重力更新，并顺带刷新设计质量。
+     * <p>按部件 UUID 合并同一阶段的多次请求，因此子零件可以各自盲目提交。</p>
+     */
+    public final void submitGravityUpdate() {
+        SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("applyGravity_" + uuid, PPhase.PRE, () -> {
+            applyGravity();
+            updateMass();
+            return null;
+        });
+    }
+
+    /**
+     * 判断本部件是否已摧毁，即全部子零件都已摧毁。
+     * <p>子零件被逐个打掉时部件仍然存活；空子零件集合返回 {@code false}，避免构造期空表被读成已摧毁。</p>
+     */
+    public boolean isDestroyed() {
+        return allSubPartsDestroyed();
+    }
+
+    /**
+     * 判断是否全部子零件都已摧毁；空集合返回 {@code false}。
+     */
+    public boolean allSubPartsDestroyed() {
+        if (subParts.isEmpty()) return false;
+        for (SubPart subPart : subParts.values()) {
+            if (!subPart.isDestroyed()) return false;
+        }
         return true;
+    }
+
+    /**
+     * 返回剩余摧毁倒计时，单位为 tick。
+     * <p>服务端返回权威字段；客户端不推进计时，读取根子零件上的网络镜像，两者由同一套写入保持相等。</p>
+     */
+    public int getDestroyTime() {
+        if (level.isClientSide()) return rootSubPart == null ? 0 : rootSubPart.getDestroyTime();
+        return destroyTime;
+    }
+
+    /**
+     * 汇总全部子零件对共享耐久上限的贡献，作为摧毁倒计时初值的设计上限。
+     * <p>共享耐久的部件下该值等于 {@link #getSharedMaxDurability()}；非共享耐久的部件同样有确定口径。</p>
+     */
+    public float getTotalMaxDurability() {
+        float total = 0f;
+        for (SubPart subPart : subParts.values()) {
+            total += subPart.getSharedMaxDurability();
+        }
+        return total;
+    }
+
+    /**
+     * 按设计耐久上限换算摧毁倒计时初值，不低于配置的最小 tick 数。
+     */
+    protected int getInitialDestroyTicks() {
+        int ticksByDurability = Math.round(getTotalMaxDurability() * MMServerConfig.getSubPartDestroyTicksPerDurability());
+        return Math.max(ticksByDurability, MMServerConfig.getSubPartDestroyMinTicks());
+    }
+
+    /**
+     * 服务端每 tick 推进摧毁倒计时（主线程，由装配体在部件循环里调用）。
+     *
+     * <p>首次调用只写入初值、播放一次音效并把剩余时间镜像给全部子零件，当 tick 不扣减；此后每 tick 减一。
+     * 本方法不负责移除部件：归零后由装配体决定何时把它摘出拓扑。</p>
+     */
+    public void tickDestroyState() {
+        if (level.isClientSide() || !isDestroyed()) return;
+        if (!destroyCountdownStarted) {
+            startDestroyCountdown();
+            return;
+        }
+        if (destroyTime > 0) destroyTime--;
+        mirrorDestroyTime();
+    }
+
+    /**
+     * 服务端启动摧毁倒计时：写初值、播一次部件摧毁音效并把剩余时间镜像给全部子零件。
+     * <p>已启动或未摧毁时不做任何事。在部件刚被整件标记摧毁的同一 tick 调用，可让首个同步包就带上倒计时。</p>
+     */
+    public void startDestroyCountdown() {
+        if (level.isClientSide() || destroyCountdownStarted || !isDestroyed()) return;
+        destroyCountdownStarted = true;
+        destroyTime = getInitialDestroyTicks();
+        playDestroySound();
+        mirrorDestroyTime();
+    }
+
+    /**
+     * 服务端按追加伤害推进倒计时，保留最后 20 tick 的下限。
+     *
+     * @param ticks 期望推进的 tick 数；非正值忽略
+     */
+    public void advanceDestroyTimer(int ticks) {
+        if (level.isClientSide() || ticks <= 0 || !destroyCountdownStarted) return;
+        if (destroyTime <= 20) return;
+        destroyTime = Math.max(20, destroyTime - ticks);
+        mirrorDestroyTime();
+    }
+
+    /**
+     * 把服务端权威倒计时写入全部子零件的网络镜像。
+     */
+    private void mirrorDestroyTime() {
+        for (SubPart subPart : subParts.values()) {
+            subPart.setDestroyTime(destroyTime);
+        }
+    }
+
+    /**
+     * 播放一次部件摧毁音效；只应由服务端倒计时启动分支调用。
+     */
+    private void playDestroySound() {
+        if (rootSubPart == null) return;
+        SoundEvent sound = SoundEvent.createFixedRangeEvent(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"), 64f);
+        Vector3f position = rootSubPart.getPosition();
+        level.playSound(null, position.x, position.y, position.z, sound, SoundSource.NEUTRAL,
+                1f, 1f + 0.2f * (float) (Math.random() - 0.5f));
+    }
+
+    /**
+     * 应用存档中的摧毁状态：标记全部子零件、写入剩余倒计时并镜像给子零件。
+     *
+     * <p>只在完整恢复路径调用，且必须在 {@link #restoreState(AbstractPartData, PartRestoreMode)} 之后，
+     * 因为初值上限依赖已经写好的耐久上限；停用子系统依赖结构已经构造（子系统在结构构造期创建）。
+     * 剩余值钳制到 {@code [0, getInitialDestroyTicks()]}，倒计时恰好归零时保存的存档会在载入后的第一次
+     * {@link #tickDestroyState()} 里被移除。</p>
+     *
+     * @param destroyed 存档记录的摧毁标记
+     * @param remainingTicks 存档记录的剩余 tick
+     */
+    protected final void applyRestoredDestroyState(boolean destroyed, int remainingTicks) {
+        destroyCountdownStarted = false;
+        destroyTime = 0;
+        if (!destroyed) return;
+        destroyCountdownStarted = true;
+        destroyTime = Math.clamp(remainingTicks, 0, getInitialDestroyTicks());
+        for (SubPart subPart : subParts.values()) {
+            if (!subPart.isDestroyed()) subPart.setDestroyed();
+            subPart.setDestroyTime(destroyTime);
+        }
     }
 
     /**
@@ -339,12 +510,6 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      * <p>发布共享动画姿态（唯一发布者），并在客户端自动播放循环动画。</p>
      */
     public void onTick() {
-        boolean shouldDestroy = true;
-        for (SubPart subPart : subParts.values()) {
-            if (subPart.getDestroyTime() > 0) shouldDestroy = false;
-            break;
-        }
-        if (shouldDestroy) this.destroyed = true;
         // 发布共享 pose（唯一 setChanged 调用点）
         animController.tick();
         if (level.isClientSide()) autoPlayLoopAnimations();

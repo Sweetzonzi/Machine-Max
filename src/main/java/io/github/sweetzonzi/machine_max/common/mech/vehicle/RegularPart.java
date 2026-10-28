@@ -1,7 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -77,11 +75,13 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
         initializeStructure();
         try {
             restoreState(data, mode);
-            if (assemblingProgress == 0f && assembling) {
-                for (SubPart child : subParts.values()) {
-                    child.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
-                }
+            // 摧毁状态只在完整恢复中生效；骨架恢复不读取，保持未摧毁
+            if (mode == PartRestoreMode.FULL_STATE) {
+                applyRestoredDestroyState(data.destroyed, data.destroyTime);
+            } else {
+                applyRestoredDestroyState(false, 0);
             }
+            applyGravity();
         } catch (RuntimeException | Error failure) {
             abortConstruction();
             throw failure;
@@ -121,11 +121,12 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 完全组装后允许子零件的延迟重力初始化恢复正常重力。
+     * 只有「仍在组装形态且进度为零、且未摧毁」的骨架使用折减重力。
+     * <p>部分进度、完整与已摧毁的部件都按世界重力下落，避免残骸悬空。</p>
      */
     @Override
-    public boolean usesFullGravity() {
-        return getAssemblingProgress() >= 1f;
+    public boolean usesReducedGravity() {
+        return assembling && getAssemblingProgress() == 0f && !isDestroyed();
     }
 
     /**
@@ -440,9 +441,8 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     /**
      * 主线程设置 [0, 1] 组装进度，并安排重力与客户端同步更新。
      *
-     * <p>进度影响后续耐久写入的上限，本方法不直接重设现有耐久。重力任务按部件 UUID 去重并在 PRE
-     * 物理阶段执行：进度为零且处于组装形态时使用世界重力的 10%，其他情况恢复正常重力并激活刚体。
-     * 设计质量不按进度缩放。</p>
+     * <p>进度影响后续耐久写入的上限，本方法不直接重设现有耐久。重力更新提交到 PRE 物理阶段并按部件 UUID
+     * 去重：骨架使用世界重力的 10%，其他情况恢复正常重力并激活刚体。设计质量不按进度缩放。</p>
      * <p>服务端进度从阈值下方达到工作阈值时关闭组装形态；状态变化按需向所在维度广播。</p>
      *
      * @param progress 目标组装完成比例
@@ -452,19 +452,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
         if (progress != this.assemblingProgress) {
             float oldProgress = this.assemblingProgress;
             this.assemblingProgress = progress;
-            float finalProgress = progress;
-            SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
-                for (SubPart subPart : subParts.values()) {
-                    if (finalProgress == 0 && assembling) {
-                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
-                    } else {
-                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
-                        subPart.body.activate();
-                    }
-                }
-                updateMass();
-                return null;
-            });
+            submitGravityUpdate();
             float functionalThreshold = type.getFunctionalThreshold();
             if (!level.isClientSide() && assembling
                     && oldProgress < functionalThreshold
@@ -484,11 +472,12 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 设置组装形态；值变化时由服务端向所在维度同步制造状态。
+     * 设置组装形态；值变化时重算重力并由服务端向所在维度同步制造状态。
      */
     public void setAssembling(boolean assembling) {
         if (this.assembling != assembling) {
             this.assembling = assembling;
+            submitGravityUpdate();
             syncAssemblyProgressToClient();
         }
     }

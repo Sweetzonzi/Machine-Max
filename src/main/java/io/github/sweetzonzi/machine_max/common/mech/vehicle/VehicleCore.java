@@ -414,6 +414,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
                     subPart.setDestroyed();
                 }
             }
+            // 同一 tick 内启动部件级倒计时，使首个同步包就带上剩余时间；已有倒计时的部件不受影响
+            part.startDestroyCountdown();
         }
     }
 
@@ -484,9 +486,13 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         Vec3 newVel = new Vec3(0, 0, 0);
         int count = 0;
         for (RegularPart part : partMap.values()) {
-            if (part.isDestroyed()) {
-                removePart(part);
-                continue;
+            // 摧毁状态只有服务端有权威：客户端通过子零件同步标志推导，移除统一由 PartRemovePayload 驱动
+            if (!level.isClientSide()) {
+                part.tickDestroyState();
+                if (part.isDestroyed() && part.getDestroyTime() <= 0) {
+                    removePart(part);
+                    continue;
+                }
             }
             Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.getPosition());
             Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.getLinearVelocity());

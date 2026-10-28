@@ -26,6 +26,8 @@ public class RegularPartData extends AbstractPartData {
     public final float assemblingProgress;//部件的组装进度
     public final int materialAssemblingProgress;//部件的材料供给进度
     public final boolean assembling;//部件是否仍处于组装形态（骨架）
+    public final boolean destroyed;//部件是否处于摧毁倒计时
+    public final int destroyTime;//剩余摧毁倒计时（tick）
 
     /**
      * 普通部件 JSON 存档 Codec，保留可选制造与涂装字段的默认值。
@@ -40,6 +42,8 @@ public class RegularPartData extends AbstractPartData {
             Codec.FLOAT.optionalFieldOf("shared_durability_ratio", 1f).forGetter(RegularPartData::getSharedDurabilityRatio),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(RegularPartData::getMaterialAssemblingProgress),
             Codec.BOOL.optionalFieldOf("assembling", false).forGetter(RegularPartData::isAssembling),
+            Codec.BOOL.optionalFieldOf("destroyed", false).forGetter(RegularPartData::isDestroyed),
+            Codec.INT.optionalFieldOf("destroy_time", 0).forGetter(RegularPartData::getDestroyTime),
             Codec.STRING.optionalFieldOf("texture_name", "default").forGetter(RegularPartData::getTextureName),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(RegularPartData::getSubParts)
     ).apply(instance, RegularPartData::new));
@@ -67,9 +71,11 @@ public class RegularPartData extends AbstractPartData {
             float sharedDurabilityRatio = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
             boolean assembling = buffer.readBoolean();
+            boolean destroyed = buffer.readBoolean();
+            int destroyTime = buffer.readInt();
             String textureName = buffer.readUtf();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, assembling, textureName, subParts);
+            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, assembling, destroyed, destroyTime, textureName, subParts);
         }
 
         /**
@@ -85,6 +91,8 @@ public class RegularPartData extends AbstractPartData {
             buffer.writeFloat(value.sharedDurabilityRatio);
             buffer.writeInt(value.materialAssemblingProgress);
             buffer.writeBoolean(value.assembling);
+            buffer.writeBoolean(value.destroyed);
+            buffer.writeInt(value.destroyTime);
             buffer.writeUtf(value.textureName);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
         }
@@ -137,22 +145,29 @@ public class RegularPartData extends AbstractPartData {
             float sharedDurabilityRatio,
             int materialAssemblingProgress,
             boolean assembling,
+            boolean destroyed,
+            int destroyTime,
             String textureName,
             Map<String, SubPartData> subParts) {
         super(registryKey, name, uuid, variant, sharedDurabilityRatio, textureName, subParts);
         this.assemblingProgress = assemblingProgress;
         this.materialAssemblingProgress = materialAssemblingProgress;
         this.assembling = assembling;
+        this.destroyed = destroyed;
+        this.destroyTime = destroyTime;
     }
 
     /**
-     * 从普通部件采集公共动态状态、组装比例、材料进度和组装形态。
-     * <p>调用者应在宿主安排的存档阶段采集；骨架恢复所需的清空策略不在保存阶段执行。</p>
+     * 从普通部件采集公共动态状态、组装比例、材料进度、组装形态与摧毁状态。
+     * <p>调用者应在宿主安排的存档阶段采集；骨架恢复所需的清空策略不在保存阶段执行。
+     * 服务端采到的倒计时是权威值，未进入倒计时的部件写零。</p>
      */
     public RegularPartData(RegularPart part) {
         super(part);
         this.assemblingProgress = part.assemblingProgress;
         this.materialAssemblingProgress = part.materialProgress;
         this.assembling = part.assembling;
+        this.destroyed = part.isDestroyed();
+        this.destroyTime = part.getDestroyTime();
     }
 }

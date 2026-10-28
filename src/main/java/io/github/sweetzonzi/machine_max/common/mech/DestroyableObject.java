@@ -66,7 +66,7 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
         syncheddata$builder.define(DATA_DESTROYED_ID, false);
-        syncheddata$builder.define(DESTROY_TIME_ID, MMServerConfig.getSubPartDestroyMinTicks());
+        syncheddata$builder.define(DESTROY_TIME_ID, 0);
         this.defineSyncedData(syncheddata$builder);
         this.syncedData = syncheddata$builder.build();
     }
@@ -86,12 +86,22 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
             settleAccumulatedDamage(); // 结算各线程造成的伤害
             //判定摧毁：紧跟结算，否则本 tick 打到 0 的耐久要等下一 tick 才被标记
             if (checkDestroyed()) setDestroyed();
-            if (isDestroyed()) { //物体已被摧毁，倒计时结束后移除
+            if (removesOnCountdownExpiry() && isDestroyed()) { //物体已被摧毁，倒计时结束后移除
                 tickDestroyTimer(1);
             }
             syncToClient(); // 同步数据至客户端；晚于结算，使本次耐久变化在同一 tick 内可见
         }
-        if (isDestroyed() && getDestroyTime() <= 0) this.destroy();
+        if (removesOnCountdownExpiry() && isDestroyed() && getDestroyTime() <= 0) this.destroy();
+    }
+
+    /**
+     * 判断倒计时归零时是否由本对象自行移除。
+     *
+     * <p>子零件返回 {@code false}：它的倒计时是所属部件的网络镜像，移除时机由部件整体决定。
+     * 其他对象保持默认的自行移除行为。</p>
+     */
+    protected boolean removesOnCountdownExpiry() {
+        return true;
     }
 
     /***
@@ -133,10 +143,22 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
         return Math.max(ticksByDurability, MMServerConfig.getSubPartDestroyMinTicks());
     }
 
+    /**
+     * 标记为已摧毁；服务端首次标记时同时写入本对象自己的倒计时初值。
+     *
+     * <p>子零件覆写本方法：它的倒计时由所属部件统一写入，因此只置标记、不写自身初值。</p>
+     */
     protected void setDestroyed() {
         if (!level.isClientSide() && !isDestroyed()) {
             setDestroyTime(getInitialDestroyTimeTicks());
         }
+        markDestroyed();
+    }
+
+    /**
+     * 只置摧毁标记，不改动倒计时。
+     */
+    protected final void markDestroyed() {
         getSyncedData().set(DATA_DESTROYED_ID, true);
     }
 

@@ -131,7 +131,7 @@ class PartDefinitionContractTest {
         var definition = type("core", true);
         PartDefinitions.validateAndPublish(false, Map.of(id("core"), definition));
         var state = new RegularPartData(id("core"), "saved", UUID.randomUUID().toString(), "default",
-                0.7f, 0.4f, 3, false, "paint", Map.of());
+                0.7f, 0.4f, 3, false, false, 0, "paint", Map.of());
         var json = PartFactory.encodeData(false, JsonOps.INSTANCE, state).getOrThrow();
         assertFalse(json.getAsJsonObject().has("type"));
         var restored = PartFactory.decodeData(false, JsonOps.INSTANCE, json).getOrThrow();

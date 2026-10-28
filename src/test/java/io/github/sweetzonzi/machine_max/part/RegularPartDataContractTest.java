@@ -26,7 +26,7 @@ class RegularPartDataContractTest {
                 new PosRotVelVel(new Vector3f(1, 2, 3), new Quaternionf(), new Vector3f(4, 5, 6), new Vector3f()),
                 Map.of("joint", connector), Map.of("battery", resources));
         return new RegularPartData(ResourceLocation.parse("test:old_regular"), "legacy", "00000000-0000-0000-0000-000000000001",
-                "alternate", 0.6f, 0.3f, 7, false, "paint", Map.of("main", subPart));
+                "alternate", 0.6f, 0.3f, 7, true, true, 1234, "paint", Map.of("main", subPart));
     }
 
     @Test void legacyMissingFieldsRetainHistoricalDefaults() {
@@ -39,6 +39,8 @@ class RegularPartDataContractTest {
         assertEquals(1f, saved.sharedDurabilityRatio);
         assertEquals(99999, saved.materialAssemblingProgress);
         assertFalse(saved.assembling);
+        assertFalse(saved.destroyed);
+        assertEquals(0, saved.destroyTime);
         assertEquals("default", saved.textureName);
     }
 
@@ -58,6 +60,8 @@ class RegularPartDataContractTest {
             assertEquals(original.sharedDurabilityRatio, buffer.readFloat());
             assertEquals(original.materialAssemblingProgress, buffer.readInt());
             assertEquals(original.assembling, buffer.readBoolean());
+            assertEquals(original.destroyed, buffer.readBoolean());
+            assertEquals(original.destroyTime, buffer.readInt());
             assertEquals(original.textureName, buffer.readUtf());
             assertEquals(original.subParts.get("main").subsystemData,
                     SubPartData.MAP_STREAM_CODEC.decode(buffer).get("main").subsystemData);
@@ -79,6 +83,8 @@ class RegularPartDataContractTest {
         assertEquals(saved.materialAssemblingProgress, result.materialAssemblingProgress);
         assertEquals(saved.assemblingProgress, result.assemblingProgress);
         assertEquals(saved.textureName, result.textureName);
+        assertEquals(saved.destroyed, result.destroyed);
+        assertEquals(saved.destroyTime, result.destroyTime);
         assertEquals(saved.subParts.get("main").subsystemData, result.subParts.get("main").subsystemData);
         assertEquals(originalJson, RegularPartData.CODEC.encodeStart(JsonOps.INSTANCE, saved).getOrThrow());
     }
