@@ -94,9 +94,9 @@
             "locator": "hull_turret_axis",
             "definition": "machine_max:fixed_up",
             "overwrite": {
-              "integrity": 100.0,
+              "integrity": 100,
               "impact_absorption": 0.1,
-              "impact_reduction": 8.0
+              "impact_reduction": 8
             }
           },
           "connector.machine_max.hull_right_wheel_1": {
@@ -276,6 +276,7 @@
                 "global"
               ]
             },
+            "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "commander_seat": {
@@ -294,6 +295,7 @@
                 "global"
               ]
             },
+            "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic"
           },
           "gunner_seat": {
@@ -312,6 +314,7 @@
                 "global"
               ]
             },
+            "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic"
           }
         }

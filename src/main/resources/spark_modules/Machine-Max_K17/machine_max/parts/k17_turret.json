@@ -39,6 +39,20 @@
             "type": "box",
             "material": "machine_max:structural_steel",
             "thickness": 5
+          },
+          "TurretAxisHitBox": {
+            "id": "azimuth_driver",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 12,
+            "subsystem": "subsystem.machine_max.azimuth_driver"
+          },
+          "Ammo30mmHitBox": {
+            "id": "2a42_ammo",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 12,
+            "subsystem": "subsystem.machine_max.2a42_ammo_loader"
           }
         },
         "connectors": {
@@ -229,7 +243,8 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:structural_steel",
-            "thickness": 15
+            "thickness": 15,
+            "subsystem": "subsystem.machine_max.2a42"
           }
         },
         "connectors": {
