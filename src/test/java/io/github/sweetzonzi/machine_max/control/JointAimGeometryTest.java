@@ -16,7 +16,12 @@ import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimAxisLimit;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimTargetState;
 import jme3utilities.math.MyMath;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,13 +37,28 @@ class JointAimGeometryTest {
             NativeLibrary.isThreadSafe();
             return;
         } catch (UnsatisfiedLinkError ignored) {
-            // 测试进程尚未加载 native 时，使用复合构建内的同一份库。
+            // 测试进程尚未加载 native 时，从 Spark-Core 的 classpath 资源里取同一份库。
         }
-        String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         String platform = os.contains("win") ? "windows" : os.contains("mac") ? "macos" : "linux";
         String file = os.contains("win") ? "bulletjme.dll" : os.contains("mac") ? "libbulletjme.dylib" : "libbulletjme.so";
-        String arch = System.getProperty("os.arch").contains("aarch64") ? "arm64" : "x86_64";
-        System.load(Path.of("../Spark-Core/src/main/resources/natives/bullet_dpmt", platform, arch, file).toAbsolutePath().normalize().toString());
+        String arch = System.getProperty("os.arch").matches("aarch64|arm64") ? "arm64" : "x86_64";
+        // 资源来自 Spark-Core（本仓库把它作为工程依赖；CI 里由复合构建提供），
+        // 不再假设兄弟目录叫 ../Spark-Core——那条路径只在本地同目录布局下成立。
+        for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
+            String resource = "natives/" + variant + "/" + platform + "/" + arch + "/" + file;
+            try (InputStream input = JointAimGeometryTest.class.getClassLoader().getResourceAsStream(resource)) {
+                if (input == null) continue;
+                Path temporary = Files.createTempFile("joint-aim-", file.substring(file.lastIndexOf('.')));
+                Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
+                temporary.toFile().deleteOnExit();
+                System.load(temporary.toAbsolutePath().toString());
+                return;
+            } catch (IOException e) {
+                throw new IllegalStateException("无法加载测试用 native: " + resource, e);
+            }
+        }
+        throw new IllegalStateException("找不到 Spark-Core 的 Bullet native 资源: natives/bullet_dpmt|bullet_dp/" + platform + "/" + arch);
     }
 
     @Test
