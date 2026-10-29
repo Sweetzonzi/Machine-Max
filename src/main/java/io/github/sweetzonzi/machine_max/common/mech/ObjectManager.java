@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPartImpulse;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionPostSettlement;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
@@ -46,6 +47,14 @@ public class ObjectManager {
     public static final Map<Level, ProjectileManager> levelProjectileManagers = new ConcurrentHashMap<>();
     /** 每 Level 的碰撞 Post 结算器；物理线程独占，主线程只在卸载时移除。 */
     public static final Map<Level, CollisionPostSettlement> levelCollisionSettlements = new ConcurrentHashMap<>();
+    /**
+     * 每 Level 本轮零件结算累积的物理冲量命令。
+     *
+     * <p>只由主线程写入与清空；同一 Level 的全部零件结算完成后取出不可变快照并以
+     * {@code PPhase.PRE} 统一发布。失效约束的 {@code PPhase.ALL} 移除任务在结算过程中已先提交，
+     * 物理侧在受控边界按 {@code ALL → PRE} 承接本批命令。</p>
+     */
+    private static final Map<Level, List<SubPartImpulse>> levelImpulses = new ConcurrentHashMap<>();
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> serverVehiclesToAdd = new HashMap<>();
@@ -304,6 +313,47 @@ public class ObjectManager {
         if (pm != null) {
             pm.postTick();
         }
+        // 本 Level 全部零件结算完成后统一发布本批物理冲量：A 零件产生冲量、B 零件随后打断连接时，
+        // A 的冲量也要等 B 完成；失效约束的 ALL 任务已在结算过程中先提交
+        publishImpulses(mcLevel);
+    }
+
+    /**
+     * 把一条物理冲量命令收进本 Level 的主线程待发布列表。
+     *
+     * <p>调用方是零件统一结算阶段；本方法只登记，不投递物理任务。同一 Level 的全部零件结算完成后
+     * 由 {@link #publishImpulses(Level)} 统一发布。</p>
+     *
+     * <p><b>调用线程：</b>主线程。</p>
+     *
+     * @param level    零件所在维度
+     * @param impulse 本次命中产生的冲量命令
+     */
+    public static void queueImpulse(Level level, SubPartImpulse impulse) {
+        levelImpulses.computeIfAbsent(level, k -> new ArrayList<>()).add(impulse);
+    }
+
+    /**
+     * 统一发布本 Level 本轮结算累积的物理冲量。
+     *
+     * <p>取出待发布列表的不可变快照并清空主线程列表，然后把整批命令以单个 {@code PPhase.PRE}
+     * 任务提交给物理侧。失效约束的移除任务是 {@code PPhase.ALL}，在结算过程中已经提交；
+     * 物理侧在受控边界先处理 {@code ALL} 再处理 {@code PRE}，因此本批冲量不会推动已经失效的约束。</p>
+     *
+     * <p><b>调用线程：</b>主线程。物理线程只读取发布后的不可变快照。</p>
+     *
+     * @param level 目标维度
+     */
+    private static void publishImpulses(Level level) {
+        List<SubPartImpulse> batch = levelImpulses.remove(level);
+        if (batch == null || batch.isEmpty()) return;
+        List<SubPartImpulse> snapshot = List.copyOf(batch);
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            for (SubPartImpulse impulse : snapshot) {
+                impulse.apply();
+            }
+            return null;
+        });
     }
 
     @SubscribeEvent
@@ -493,6 +543,7 @@ public class ObjectManager {
         Level level = (Level) event.getLevel();
         levelProjectileManagers.remove(level);
         levelCollisionSettlements.remove(level);
+        levelImpulses.remove(level);
         if (level.isClientSide()) {
             levelVehicles.remove(level);
             levelDestroyableObjects.remove(level);

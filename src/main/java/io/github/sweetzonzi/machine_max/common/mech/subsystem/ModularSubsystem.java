@@ -117,6 +117,10 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
     /**
      * 伤害处理：先检查 passDamage/limitDamage，然后将伤害路由到模块。
      * 不调用 super.onHurt()——伤害已由子模块消费，避免二次扣耐久。
+     * <p>
+     * 模块化子系统的耐久是各模块的聚合值，因此最近有效受击由本方法自行记录：
+     * 在 {@link #routeDamage} 前后比较聚合耐久，实际下降时才保存定稿事件与命中的命中箱。
+     * 降低到零的那一次自然成为最后一条记录，零耐久后的追加命中不再降低聚合耐久，不会覆盖它。
      */
     @Override
     public void onHurt(SubPartDamageEvent.Pre event) {
@@ -133,7 +137,11 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         // 从伤害上下文中获取命中的 HitBox，提取模块名进行精确路由
         HitBox hitBox = event.getCtx().extensions().get(MMDamageExtensions.HIT_BOX);
         String moduleName = (hitBox != null) ? hitBox.getAttr().getModule() : null;
+        float durabilityBefore = getDurability();
         routeDamage(moduleName, event.getDamageAmount());
+        if (getDurability() < durabilityBefore) {
+            recordLastDamage(event);
+        }
         // 不调用 super.onHurt() —— 伤害已由子模块消费
     }
 

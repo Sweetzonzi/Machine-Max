@@ -79,7 +79,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                         float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), subPart.entity, damageSource, damage);
                         for (AbstractConnector connector : part.externalConnectors.values()) {
                             if (connector.hasPart()) {
-                                connector.accumulateImpact(finalDamage * scale * 2);
+                                connector.applyImpact(finalDamage * scale * 2);
                             }
                         }
                         SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {

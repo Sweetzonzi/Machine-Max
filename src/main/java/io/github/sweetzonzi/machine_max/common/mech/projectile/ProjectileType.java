@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffContribution;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -25,7 +26,8 @@ import java.util.Optional;
  * 对应一个 {@code projectiles/*.json} 文件，使用 Mojang Codec 从 JSON 反序列化。
  * 本类只承载**所有投射物运动模型共有**的字段（{@link #getTags() 弹药标签}、
  * {@link #getMaxLifetime() 寿命}、{@link #getBulletNum() 弹丸数}、
- * {@link #getVisual() 视觉}、{@link #getSounds() 音效}），并按 JSON 中的
+ * {@link #getVisual() 视觉}、{@link #getSounds() 音效}、
+ * {@link #getCookoff() 发射药殉爆贡献}），并按 JSON 中的
  * {@code "type"} 字段经 {@link #CODEC dispatch} 分派到具体子类。
  * <p>
  * 运动模型专属字段（外弹道、终点效应等）下沉到子类，见 {@link BallisticProjectileType}。
@@ -64,6 +66,16 @@ public abstract class ProjectileType {
     /** 音效属性 — 开火、停火、弹壳等音效 */
     private final ProjectileSoundAttr sounds;
 
+    /**
+     * 发射药殉爆贡献 — 每整发库存弹药被诱爆时的贡献（不含 {@code warheads} 内的战斗部）。
+     * <p>
+     * 本字段属于弹药根对象：它在 JSON 中与 {@code type} 平级，整块可选，缺省
+     * {@link CookoffContribution#ZERO}。它独立于 {@code terminal} 的动能终效与战斗部的正常引爆
+     * 参数，不从 {@code base_penetration} / {@code base_damage} 等字段继承任何值。
+     * 飞行中被击毁的弹药发射药已经用于发射，不计入殉爆。
+     */
+    private final CookoffContribution cookoff;
+
     /** 注册键，由 {@link ProjectileModule} 加载时赋值（服务端与客户端各自持有独立实例） */
     private ResourceLocation registryKey;
 
@@ -74,13 +86,15 @@ public abstract class ProjectileType {
         float maxLifetime,
         int bulletNum,
         VisualProperties visual,
-        ProjectileSoundAttr sounds
+        ProjectileSoundAttr sounds,
+        CookoffContribution cookoff
     ) {
         this.tags = tags;
         this.maxLifetime = maxLifetime;
         this.bulletNum = bulletNum;
         this.visual = visual;
         this.sounds = sounds;
+        this.cookoff = cookoff == null ? CookoffContribution.ZERO : cookoff;
     }
 
     // ==================== 类型分派 ====================

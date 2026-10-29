@@ -27,6 +27,7 @@ import io.github.sweetzonzi.machine_max.common.mech.energy.MechPowerPort;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalPort;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.JointAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.connector.ConnectorAttachEvent;
@@ -46,6 +47,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -58,7 +60,6 @@ import org.joml.Quaternionf;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 @Getter
@@ -73,8 +74,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public final MechPowerPort mechanicalEnergyPort;//连接点机械能传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
-    protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
-    protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
     @Setter
     public AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -124,6 +123,15 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         NeoForge.EVENT_BUS.post(new ConnectorTickEvent.PostPhys(this));
     }
 
+    /**
+     * 连接点的每 tick 生命周期：同步数据与客户端表现。
+     *
+     * <p>结构冲击与完整性变更不在这里结算——它们已经由主线程入口
+     * {@link #applyImpact(float)} 与 {@link #changeIntegrity(float)} 即时应用，
+     * 连接点不维护待处理队列。</p>
+     *
+     * <p><b>调用线程：</b>主线程（服务端与客户端）。</p>
+     */
     public void mcTick() {
         NeoForge.EVENT_BUS.post(new ConnectorTickEvent.Pre(this));
         if (subPart.level.isClientSide() && body != null) {
@@ -134,84 +142,91 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             }
         }
         if (!subPart.level.isClientSide()) {
-            handleAccumulatedIntegrityChange();
-            handleAccumulatedImpact();
             syncToClient();
         }
         NeoForge.EVENT_BUS.post(new ConnectorTickEvent.Post(this));
     }
 
     /**
-     * <p>线程安全地改变连接点结构完整性，会被在主线程统一处理，参见 {@link #handleAccumulatedIntegrityChange()}</p>
-     * <p>Thread-safe change of the interface structure integrity, which will be handled in the main thread, see {@link #handleAccumulatedIntegrityChange()}</p>
+     * 主线程即时改变连接点结构完整性（维修 / 加固）。
      *
-     * @param integrity 结构完整性改变量，可小于0 delta of the structure integrity, can be negative
-     */
-    public void addIntegrity(float integrity) {
-        if (!subPart.level.isClientSide()) {
-            accumulatedIntegrityChange.add(integrity);
-        }
-    }
-
-    /**
-     * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedImpact()}</p>
-     * <p>Accumulates impact to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedImpact()}</p>
+     * <p>跨线程投递由零件命中记录承担；需要从其它线程变更完整性时，应先把数据交给主线程。</p>
      *
-     * @param impact 伤害值 impact value
+     * <p><b>调用线程：</b>主线程。非主线程调用会被拒绝并记录错误。</p>
+     *
+     * @param delta 结构完整性改变量，可小于 0
      */
-    public void accumulateImpact(float impact) {
-        if (!subPart.level.isClientSide() && impact > 0) {
-            accumulatedImpact.add(impact);
-        }
+    public void changeIntegrity(float delta) {
+        if (subPart.level.isClientSide() || delta == 0f) return;
+        if (!checkMainThread("changeIntegrity")) return;
+        setIntegrityInternal(Math.clamp(getIntegrity() + delta, 0f, getBasicIntegrity()));
     }
 
     /**
-     * <p>处理各线程连接点造成的完整性改变量，在主线程中统一处理，参见 {@link #mcTick()}</p>
-     * <p>Handles the integrity change caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
+     * 主线程即时应用一次命中分配到的结构冲击。
+     *
+     * <p>每次应用都独立完成减免、倍率、完整性更新与断开判定（逐次命中规则），
+     * 不按 tick 合并多笔冲击。冲击量达到当前完整性且连接有效时走
+     * {@link IPartAssembly#disconnect} 的正常拆分流程；失效物理关节的移除由
+     * {@link #detachJoint()} 投递的 {@code PPhase.ALL} 任务落地，主线程不直接操作关节。</p>
+     *
+     * <p><b>调用线程：</b>主线程。非主线程调用会被拒绝并记录错误。</p>
+     *
+     * @param impact 本次命中分配到本连接点的结构冲击量（尚未减免与乘倍率）
+     * @return 实际生效的冲击量（减免与倍率之后）；未应用时为 0
      */
-    protected void handleAccumulatedIntegrityChange() {
-        if (!subPart.level.isClientSide() && !accumulatedIntegrityChange.isEmpty()) {
-            float totalChange = 0;
-            while (!accumulatedIntegrityChange.isEmpty()) {
-                totalChange += accumulatedIntegrityChange.poll();
-            }
-            if (totalChange != 0) {
-                setIntegrityInternal(Math.clamp(getIntegrity() + totalChange, 0, getBasicIntegrity()));
-            }
+    public float applyImpact(float impact) {
+        if (subPart.level.isClientSide() || internal || impact <= 0f) return 0f;
+        if (!checkMainThread("applyImpact")) return 0f;
+        // 与冲击分配表一致：倍率必须为正，倍率为 0 或负的连接点不参与结构损伤
+        if (attr.getImpactMultiplier() < 0f) return 0f;
+        float applied = (impact - attr.getImpactReduction()) * attr.getImpactMultiplier();
+        if (applied <= 0f) return 0f;
+        if (applied >= getIntegrity() && hasPart()) {
+            // 强冲击：立即击落部件，走正常拆分流程（拓扑分裂、HP 分配、信号与网络同步都由装配体负责）
+            subPart.part.assembly.disconnect(this);
+            playTornApartSound(impactAbsorption() * applied);
         }
+        // 削减连接的完整性，使用对应状态下的冲击吸收比例
+        setIntegrityInternal(Math.clamp(getIntegrity() - impactAbsorption() * applied, 0f, getBasicIntegrity()));
+        return applied;
+    }
+
+    /** 当前状态下有效冲击的吸收比例（零件已摧毁时用摧毁态配置）。 */
+    private float impactAbsorption() {
+        return subPart.isDestroyed() ? attr.getImpactAbsorptionDestroyed() : attr.getImpactAbsorption();
+    }
+
+    /** 击落部件的撕裂音效；只播放声音，不操作物理关节。 */
+    private void playTornApartSound(float finalImpact) {
+        float basic = getBasicIntegrity();
+        if (basic <= 0f) return;
+        float soundImpact = Math.min(basic, finalImpact);
+        SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
+            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
+            SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
+                    (float) ((2 - soundImpact / basic) * (1f + 0.2f * (Math.random() - 0.5f))),
+                    0.2f + 0.8f * soundImpact / basic);
+        });
     }
 
     /**
-     * <p>处理各线程对连接点造成的冲击，在主线程中统一处理，参见 {@link #mcTick()}</p>
-     * <p>Handles the impact caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
+     * 主线程入口检查：结构冲击与完整性变更只允许在主线程应用。
+     *
+     * <p>单线程物理模式下物理步进也在主线程执行，因此该检查放行；多线程物理模式下
+     * 物理线程的调用会被拒绝，以免跨线程改动拓扑与同步数据。</p>
+     *
+     * @param operation 操作名，仅用于错误日志
+     * @return true 表示当前线程可以安全应用
      */
-    protected void handleAccumulatedImpact() {
-        if (!subPart.level.isClientSide() && !this.isInternal()) {
-            float totalImpact = 0;
-            if (attr.getImpactMultiplier() >= 0 && !accumulatedImpact.isEmpty()) {
-                while (!accumulatedImpact.isEmpty()) {
-                    totalImpact += accumulatedImpact.poll();
-                }
-                totalImpact -= attr.getImpactReduction();
-                totalImpact *= attr.getImpactMultiplier();
-                if (totalImpact > 0) {
-                    if (totalImpact >= getIntegrity() && hasPart()) {
-                        //强冲击，立即击落部件
-                        subPart.part.assembly.disconnect(this);
-                        float finalImpact = (subPart.isDestroyed() ? attr.getImpactAbsorptionDestroyed() * totalImpact : attr.getImpactAbsorption() * totalImpact);
-                        SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
-                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
-                            SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
-                                    (float) ((2 - Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity()) * (1f + 0.2f * (Math.random() - 0.5f))),
-                                    0.2f + 0.8f * Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity());
-                        });
-                    }
-                    //削减连接的完整性, 使用对应状态下的冲击吸收比例
-                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.isDestroyed() ? attr.getImpactAbsorptionDestroyed() * totalImpact : attr.getImpactAbsorption() * totalImpact), 0, getBasicIntegrity()));
-                }
-                accumulatedImpact.clear();
-            }
+    private boolean checkMainThread(String operation) {
+        MinecraftServer server = subPart.level.getServer();
+        if (server != null && !server.isSameThread()) {
+            MachineMax.LOGGER.error("连接点 {}({}) 的 {} 被非主线程调用，已忽略；跨线程命中必须经零件命中记录",
+                    getName(), subPart.name, operation);
+            return false;
         }
+        return true;
     }
 
     /**

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -9,6 +10,7 @@ import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import lombok.Getter;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class HitBox {
@@ -22,10 +24,25 @@ public class HitBox {
      */
     private final MolangExpression hitBoxCondition;
 
-    public HitBox(SubPart subPart, HitBoxAttr attr) {
+    /**
+     * 本碰撞箱的几何代表中心，位于<b>宿主 SubPart 刚体质心坐标系</b>，不是世界坐标。
+     * <p>
+     * 由 {@code SubPartAttr#getCollisionShape} 在模型几何构建阶段按 cube 体积加权求出、
+     * 经完整质心逆变换（含旋转）后缓存，构造时拷入本实例。起爆定位时按宿主发布位姿
+     * {@code worldOrigin = hostPosition + hostRotation × localCenter} 转成世界坐标。
+     * <p>
+     * 单 cube、多 cube 与旋转质心差异见设计文档 §4.1.2；同一 HitBox 的多个物理代理
+     * （{@code wheel} 的球体与圆柱体）只计一次。取不到几何来源时为零向量，此时定位应回退到宿主质心。
+     * <p>
+     * <b>只读：</b>本向量是本实例自己的副本，调用方不得修改。
+     */
+    private final Vector3f localCenter;
+
+    public HitBox(SubPart subPart, HitBoxAttr attr, @Nullable Vector3f localCenter) {
         this.subPart = subPart;
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
+        this.localCenter = localCenter == null ? new Vector3f() : localCenter.clone();
         alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
         this.hitBoxCondition = alwaysActive ? null : MolangContextRegistry.compile(attr.condition, subPart.part.getSparkMolangContext());
     }

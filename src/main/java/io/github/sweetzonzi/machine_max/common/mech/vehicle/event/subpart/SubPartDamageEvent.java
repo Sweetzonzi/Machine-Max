@@ -16,6 +16,12 @@ public abstract class SubPartDamageEvent extends SubPartEvent {
     }
 
     public static class Pre extends SubPartDamageEvent implements ICancellableEvent {
+        /**
+         * 入口履带吸收标记：本次耐久伤害已由履带装甲层吸收，结算时不再走零件耐久与子系统伤害。
+         * <p>只用于命中记录的跨线程传递，不表示事件取消；结构冲击与物理冲量仍按各自通道处理。</p>
+         */
+        private boolean trackAbsorbed;
+
         public Pre(SubPart subPart, BFDamageContext ctx, float amount) {
             super(subPart, ctx, amount);
         }
@@ -26,6 +32,14 @@ public abstract class SubPartDamageEvent extends SubPartEvent {
 
         public void setDamageAmount(float amount) {
             this.damageAmount = amount;
+        }
+
+        public void setTrackAbsorbed(boolean trackAbsorbed) {
+            this.trackAbsorbed = trackAbsorbed;
+        }
+
+        public boolean isTrackAbsorbed() {
+            return trackAbsorbed;
         }
 
     }

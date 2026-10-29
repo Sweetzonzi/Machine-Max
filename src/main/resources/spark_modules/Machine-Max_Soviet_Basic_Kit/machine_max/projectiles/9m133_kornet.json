@@ -22,6 +22,11 @@
     "damage_velocity_coefficient": 0.2,
     "block_damage_factor": 1.0
   },
+  "cookoff": {
+    "penetration": 0.0,
+    "damage": 3.0,
+    "impulse": 8.0
+  },
   "guidance": {
     "type": "machine_max:pure_pursuit",
     "turn_gain": 3.0,
@@ -36,6 +41,11 @@
   "warheads": [
     {
       "type": "machine_max:blast",
+      "cookoff": {
+        "penetration": 60.0,
+        "damage": 30.0,
+        "impulse": 20.0
+      },
       "base_penetration": 60.0,
       "base_damage": 120.0,
       "base_impulse": 300.0,

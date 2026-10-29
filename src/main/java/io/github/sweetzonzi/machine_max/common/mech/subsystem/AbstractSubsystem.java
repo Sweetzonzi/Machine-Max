@@ -3,8 +3,10 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyProducer;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -16,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
+import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -29,6 +32,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +63,27 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     /** 当前子系统为其宿主贡献的额外质量（kg），由子类通过 setExtraMass 管理 */
     private float extraMass = 0f;
 
+    /**
+     * 最近一次<b>有效</b>受击的定稿事件：本次伤害确实减少了本子系统耐久时才写入。
+     * <p>
+     * 有效受击以"本次应用确实减少了自身耐久"为准，不以伤害是否继续传导给零件为准。
+     * 每次有效受击都更新它，导致耐久归零的那一次自然成为最后一条；零耐久后的追加命中
+     * 不再减少耐久，因此不会覆盖它。
+     * <p>
+     * 保存的是<b>定稿副本</b>：金额、上下文与取消标志在写入后不再变化，供 tick 判毁后的
+     * 起爆定位使用。新实例初值为 {@code null}，不从存档恢复事件对象引用；脱离生命周期清除。
+     */
+    @Nullable
+    private SubPartDamageEvent.Pre lastDamageEvent;
+
+    /**
+     * 与 {@link #lastDamageEvent} 配套的命中箱：优先取事件上下文里的 {@code HIT_BOX} 扩展，
+     * 没有该扩展时保存 SubPart 回退解析（最厚命中箱）的结果。起爆定位用它读取
+     * {@link HitBox#getLocalCenter()}；为 {@code null} 时回退宿主质心。
+     */
+    @Nullable
+    private HitBox lastDamageHitBox;
+
     public int tickCount = 0;
     public int physicsTickCount = 0;
 
@@ -86,14 +111,18 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onTick() {
         tickCount++;
         if (!getLevel().isClientSide()) {
+            SubPart host = getOwner().getSubPart();
+            boolean hostGone = host == null || host.isDestroyed();
             boolean dataDestroyed = synchedData.get(DATA_DESTROYED_ID);
-            if (!dataDestroyed && shouldDestroy()) {
-                // 摧毁判定通过 → 标记摧毁并触发回调
+            if (!dataDestroyed && shouldDestroy() && !hostGone) {
+                // 摧毁判定通过 → 标记摧毁并触发回调。
+                // 宿主已销毁/已被标记摧毁时不补发 onDestroyed：宿主销毁、卸载与脱离只走各自生命周期
                 synchedData.set(DATA_DESTROYED_ID, true);
                 onDestroyed();
-            } else if (dataDestroyed && !getOwner().getSubPart().isDestroyed()
+            } else if (dataDestroyed && !hostGone
                        && !shouldDestroy() && shouldRecover()) {
-                // 已摧毁但已满足恢复条件 → 标记恢复并触发回调
+                // 已摧毁但已满足恢复条件 → 清理上一生命周期的受击记录，再标记恢复并触发回调
+                clearLastDamageRecord();
                 synchedData.set(DATA_DESTROYED_ID, false);
                 onRecovered();
             }
@@ -186,6 +215,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             if (this instanceof IEnergyProducer p) grid.unregisterProducer(p);
             if (this instanceof IEnergyConsumer c) grid.unregisterConsumer(c);
         }
+        clearLastDamageRecord();
     }
 
     public void onDisabled() {
@@ -194,8 +224,125 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onActive() {
     }
 
+    /**
+     * 默认受击处理：直接扣减自身耐久；只有本次确实减少了耐久时才记为最近有效受击。
+     * <p>
+     * 记录供 tick 判毁后的起爆定位使用（见 {@link #getLastDamageEvent()} 与
+     * {@link #getLastDamageOrigin()}）。{@link BasicSubsystem} 覆写后调用本实现，
+     * 因此同样走这条记录；{@link ModularSubsystem} 自行路由伤害，另行比较聚合耐久后记录。
+     * <p>
+     * <b>调用线程：</b>主线程（命中统一结算阶段）。
+     *
+     * @param event 本次命中的入口事件，可被子类修改金额或取消
+     */
     public void onHurt(SubPartDamageEvent.Pre event) {
-        setDurability(Math.clamp(getDurability() - event.getDamageAmount(), 0, getMaxDurability()));
+        float before = getDurability();
+        setDurability(Math.clamp(before - event.getDamageAmount(), 0, getMaxDurability()));
+        if (getDurability() < before) {
+            recordLastDamage(event);
+        }
+    }
+
+    /**
+     * 记录一次最近有效受击：保存定稿事件副本与本次实际指认的命中箱。
+     * <p>
+     * 事件在记录前已定稿（金额、上下文与取消标志），保存后不再修改；调用方无需、也不应
+     * 再回写原事件。命中箱优先取上下文里的 {@code HIT_BOX} 扩展；入口没有该扩展时，
+     * 复现 SubPart 的回退判定（最厚命中箱），保证与当次实际结算的目标一致。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     *
+     * @param event 本次已定稿的入口事件
+     */
+    protected void recordLastDamage(SubPartDamageEvent.Pre event) {
+        SubPartDamageEvent.Pre finalized = new SubPartDamageEvent.Pre(
+                getSubPart(), event.getCtx(), event.getDamageAmount());
+        if (event.isCanceled()) finalized.setCanceled(true);
+        this.lastDamageEvent = finalized;
+        this.lastDamageHitBox = resolveEventHitBox(event);
+    }
+
+    /**
+     * 解析本次事件实际使用的命中箱：优先取上下文扩展，缺省回退到宿主的最厚命中箱。
+     *
+     * @param event 本次命中事件
+     * @return 命中箱；宿主没有命中箱时为 {@code null}
+     */
+    @Nullable
+    private HitBox resolveEventHitBox(SubPartDamageEvent.Pre event) {
+        if (event.getCtx() == null) return null;
+        HitBox hitBox = event.getCtx().extensions().get(MMDamageExtensions.HIT_BOX);
+        if (hitBox != null) return hitBox;
+        return getSubPart().findStrongestHitBox();
+    }
+
+    /**
+     * 最近一次有效受击的定稿事件；从未有效受击或已清理时为 {@code null}。
+     *
+     * @return 事件副本，只读使用
+     */
+    @Nullable
+    public SubPartDamageEvent.Pre getLastDamageEvent() {
+        return lastDamageEvent;
+    }
+
+    /**
+     * 最近一次有效受击指认的命中箱；无有效来源时为 {@code null}。
+     *
+     * @return 命中箱，只读使用
+     */
+    @Nullable
+    public HitBox getLastDamageHitBox() {
+        return lastDamageHitBox;
+    }
+
+    /**
+     * 清除最近有效受击记录（恢复与脱离生命周期）。
+     */
+    protected void clearLastDamageRecord() {
+        this.lastDamageEvent = null;
+        this.lastDamageHitBox = null;
+    }
+
+    /**
+     * 起爆定位用的世界坐标：按最近有效受击指认的命中箱局部形心与宿主<b>已发布的</b>位姿换算。
+     * <p>
+     * 换算式 {@code worldOrigin = hostPosition + hostRotation × hitBox.localCenter}，
+     * 其中位姿取宿主 {@code DestroyableObject#transform}（主线程可读的已发布快照），
+     * 不直接读取正在步进的物理刚体。
+     * <p>
+     * 以下情况回退宿主质心（即 {@code hostPosition}）：
+     * 没有最近有效事件、事件没有有效命中箱、命中箱已被替换/不属于当前宿主几何，
+     * 或宿主当前位姿不可用。首期没有延迟殉爆请求队列，因此起爆当时固定该坐标。
+     * <p>
+     * <b>调用线程：</b>主线程（子系统 tick 的摧毁边沿）。
+     *
+     * @return 世界坐标（新实例）；宿主位姿不可用时为零向量
+     */
+    public Vector3f getLastDamageOrigin() {
+        SubPart host = getSubPart();
+        if (host == null) return new Vector3f();
+        Transform hostPose = host.transform;
+        HitBox hitBox = lastDamageHitBox;
+        if (hitBox != null && isHitBoxUsable(hitBox)) {
+            Vector3f localCenter = hitBox.getLocalCenter();
+            Vector3f origin = hostPose.getRotation() == null
+                    ? localCenter.clone()
+                    : MyQuaternion.rotate(hostPose.getRotation(), localCenter, new Vector3f());
+            return origin.addLocal(hostPose.getTranslation());
+        }
+        return hostPose.getTranslation().clone();
+    }
+
+    /**
+     * 命中箱的几何身份是否仍然有效：属于当前宿主，且仍是该宿主登记过的命中箱之一。
+     *
+     * @param hitBox 候选命中箱
+     * @return true 表示可以按其局部形心定位
+     */
+    private boolean isHitBoxUsable(HitBox hitBox) {
+        SubPart host = getSubPart();
+        return host != null && hitBox.getSubPart() == host && host.hitBoxes.containsValue(hitBox);
     }
 
     public void onDestroyed() {

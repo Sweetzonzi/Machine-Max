@@ -7,6 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.ThrustProfile;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffContribution;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
@@ -99,7 +100,7 @@ public class BallisticProjectileType extends ProjectileType {
     @Getter(AccessLevel.NONE)
     private ThrustProfile thrustProfile;
 
-    // ==================== CODEC（11 字段，远低于 16 上限） ====================
+    // ==================== CODEC（12 字段，远低于 16 上限） ====================
 
     /**
      * Mojang MapCodec：将 JSON 反序列化为 {@link BallisticProjectileType}。
@@ -115,6 +116,9 @@ public class BallisticProjectileType extends ProjectileType {
             .forGetter(BallisticProjectileType::getExternal),
         TerminalProperties.CODEC.fieldOf("terminal")
             .forGetter(BallisticProjectileType::getTerminal),
+        // 发射药殉爆贡献：整块可选，缺省零贡献；不从 terminal / warheads 继承任何字段
+        CookoffContribution.CODEC.optionalFieldOf("cookoff", CookoffContribution.ZERO)
+            .forGetter(ProjectileType::getCookoff),
         // 可选受击配置。Optional 必须留在 codec 组内、由 apply 回调解包——
         // 若用 xmap 把它映射成 null，null 会穿过 DFU 的 DataResult 触发 NPE（见 TurretDriverSubsystemStaticAttr 同款写法）
         VulnerabilityProperties.CODEC.optionalFieldOf("vulnerability")
@@ -130,8 +134,8 @@ public class BallisticProjectileType extends ProjectileType {
             .forGetter(ProjectileType::getVisual),
         ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
             .forGetter(ProjectileType::getSounds)
-    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, vulnerability, hitDetection, guidance, warheads, visual, sounds) ->
-        new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal,
+    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, cookoff, vulnerability, hitDetection, guidance, warheads, visual, sounds) ->
+        new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal, cookoff,
             vulnerability.orElse(null), hitDetection, guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
@@ -142,6 +146,7 @@ public class BallisticProjectileType extends ProjectileType {
         int bulletNum,
         ExternalProperties external,
         TerminalProperties terminal,
+        CookoffContribution cookoff,
         @Nullable VulnerabilityProperties vulnerability,
         HitDetection hitDetection,
         @Nullable GuidanceLaw guidance,
@@ -149,7 +154,7 @@ public class BallisticProjectileType extends ProjectileType {
         VisualProperties visual,
         ProjectileSoundAttr sounds
     ) {
-        super(tags, maxLifetime, bulletNum, visual, sounds);
+        super(tags, maxLifetime, bulletNum, visual, sounds, cookoff);
         this.external = external;
         this.terminal = terminal;
         this.vulnerability = vulnerability;

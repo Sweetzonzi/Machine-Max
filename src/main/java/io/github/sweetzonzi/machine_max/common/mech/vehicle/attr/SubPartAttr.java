@@ -20,6 +20,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.Conne
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import jme3utilities.math.MyMath;
+import jme3utilities.math.MyQuaternion;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -74,6 +75,18 @@ public class SubPartAttr {
     public final ConcurrentMap<String, Transform> locatorTransforms = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Set<String>> hydrodynamicLocators = new ConcurrentHashMap<>();
     public final Transform massCenterTransform = new Transform();
+
+    /**
+     * 运行时缓存：每个碰撞箱在<b>宿主刚体质心坐标系</b>中的几何代表中心（m）。
+     * <p>
+     * 由 {@link #getCollisionShape(VariantAttr)} 在模型几何构建阶段一次性算出，键是碰撞箱名
+     * （即 HitBoxAttr 的骨骼名）。值已按完整质心逆变换（含旋转）换基，可在起爆定位时直接
+     * 与宿主发布位姿相乘得到世界坐标。
+     * <p>
+     * 只通过 {@link #getHitBoxLocalCenter(String)} 对外返回副本，不把这里的可变向量引用暴露给调用方。
+     */
+    @Getter(AccessLevel.NONE)
+    private final Map<String, Vector3f> hitBoxLocalCenters = new ConcurrentHashMap<>();
 
     /**
      * 运行时缓存：模型根空间 → start_bone 空间的换基矩阵，即 start_bone 父链静态变换的逆。
@@ -166,12 +179,16 @@ public class SubPartAttr {
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
             addLocator(locators, bones.get(startBone));
 
+            // 各碰撞箱在 start_bone 空间中的几何代表中心，等质心确定后统一换基到质心坐标系
+            Map<String, Vector3f> centersInStartBone = LinkedHashMap.newLinkedHashMap(this.hitBoxes.size());
+
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
                     String hitBoxName = hitBoxEntry.getKey();
                     OBone bone = bones.get(hitBoxName);
                     Matrix4f pose = new Matrix4f();
                     bone.applyTransformToLocal(pose, bones.get(startBone));
+                    centersInStartBone.put(hitBoxName, cubeCenterInStartBone(bone, pose, modelLocation, hitBoxName));
                     switch (hitBoxEntry.getValue().shapeType) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
@@ -295,12 +312,84 @@ public class SubPartAttr {
             // 缓存质心位置
             this.massCenterTransform.fromTransformMatrix(massCenter.toTransformMatrix());
 
+            // 把 start_bone 空间的代表中心换基到刚体质心坐标系：完整逆变换，含旋转。
+            // 物理体自身的局部原点就是质心（correctAxes 已把所有子形状按同一逆变换重定位），
+            // 因此这里用 massCenter 的逆变换即可，不需要再叠加其他修正。
+            Transform inverseMassCenter = massCenter.invert();
+            for (Map.Entry<String, Vector3f> centerEntry : centersInStartBone.entrySet()) {
+                Vector3f startBoneSpace = centerEntry.getValue();
+                Vector3f localCenter = MyQuaternion.rotate(
+                        inverseMassCenter.getRotation(), startBoneSpace, new Vector3f());
+                localCenter.addLocal(inverseMassCenter.getTranslation());
+                hitBoxLocalCenters.put(centerEntry.getKey(), localCenter);
+            }
+
             // 构建气动计算点缓存
             buildHydrodynamicLocatorsCache(bones);
             
             hitBoxShape = shape;
         }
         return hitBoxShape;
+    }
+
+    /**
+     * 取得某个碰撞箱在宿主刚体质心坐标系中的几何代表中心。
+     * <p>
+     * 缓存由 {@link #getCollisionShape(VariantAttr)} 在模型几何构建阶段写入；返回的是副本，
+     * 调用方不得依赖修改它来影响缓存。撞箱名不存在或几何尚未构建时返回 {@code null}。
+     *
+     * @param hitBoxName 碰撞箱名（{@link #hitBoxes} 的键，即 HitBoxAttr 的骨骼名）
+     * @return 质心坐标系中的代表中心（新实例），或 {@code null}
+     */
+    public Vector3f getHitBoxLocalCenter(String hitBoxName) {
+        Vector3f center = hitBoxLocalCenters.get(hitBoxName);
+        return center == null ? null : center.clone();
+    }
+
+    /**
+     * 单个碰撞箱在 start_bone 空间中的几何代表中心：按模型 cube 的绝对体积加权。
+     * <p>
+     * 计算约定见设计文档 §4.1.2：
+     * <ul>
+     *   <li>单个 cube 直接取其中心；多个 cube 按绝对体积加权；体积权重全为零时退回算术平均；</li>
+     *   <li>同一 cube 派生的多个物理代理（{@code wheel} 的球体 + 圆柱体）只计一次：
+     *       本方法只遍历 {@link OBone#getCubes()}，不对碰撞形状子代理计数；</li>
+     *   <li>该值用于起爆定位，不要求求解重叠实体的精确并集形心。</li>
+     * </ul>
+     *
+     * @param bone        碰撞箱所在骨骼
+     * @param pose        骨骼 → start_bone 空间的静态变换
+     * @param modelLocation 所属模型（仅用于内容错误信息）
+     * @param hitBoxName  碰撞箱名（仅用于内容错误信息）
+     * @return start_bone 空间中的代表中心
+     * @throws PackContentException 该骨骼没有任何模型 cube，无法给出代表中心
+     */
+    private static Vector3f cubeCenterInStartBone(OBone bone, Matrix4f pose, ResourceLocation modelLocation, String hitBoxName) {
+        List<OCube> cubes = bone.getCubes();
+        if (cubes.isEmpty()) {
+            throw new PackContentException(Component.translatableWithFallback(
+                    "error.machine_max.part.hitbox_bone_without_cube",
+                    "Hit-box %2$s on model %1$s has a bone without any cube, cannot derive its representative center",
+                    modelLocation.toString(), hitBoxName));
+        }
+        double totalWeight = 0.0;
+        Vector3f weighted = new Vector3f();
+        for (OCube cube : cubes) {
+            Vec3 size = cube.getSize();
+            double volume = Math.abs(size.x * size.y * size.z);
+            Vector3f center = PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose));
+            weighted.addLocal(center.mult((float) volume));
+            totalWeight += volume;
+        }
+        if (totalWeight <= 1.0e-12) {
+            // 体积权重全为零（含零尺寸 cube）：退回 cube 中心的算术平均
+            Vector3f sum = new Vector3f();
+            for (OCube cube : cubes) {
+                sum.addLocal(PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)));
+            }
+            return sum.multLocal(1f / cubes.size());
+        }
+        return weighted.multLocal((float) (1.0 / totalWeight));
     }
 
     /**

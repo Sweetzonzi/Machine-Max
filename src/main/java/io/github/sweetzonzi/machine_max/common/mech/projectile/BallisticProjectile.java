@@ -349,7 +349,9 @@ public class BallisticProjectile extends DestroyableObject
      * 结算伤害队列（主线程，由 {@link #preTick()} 调用）。
      * <p>
      * 伤害由任意线程经 {@link #accumulateDamage} 入队，此处是唯一消费点。
-     * 结构血量归零时在最后一次命中的命中点执行战斗部，
+     * 结构血量归零时在最后一次命中的命中点提交一次诱爆合成请求
+     * （{@code ProjectileManager#enqueueWarheadCookoff}）：飞行中被击毁只把各战斗部的
+     * 殉爆贡献合成为一份普通爆炸，不执行正常引信的世界效果。
      * 随后的 {@link #checkDestroyed()} 会因耐久归零而标记销毁。
      */
     @Override
@@ -365,10 +367,10 @@ public class BallisticProjectile extends DestroyableObject
         setDurability(getDurability() - total);
         if (getDurability() > 0f) return;
 
-        // 结构耗尽：在命中点执行战斗部
+        // 结构耗尽：这是"受伤摧毁"而非正常引信，发射药已用于发射，只合成各战斗部的诱爆贡献
         Vec3 hitPoint = last != null ? last.hitPoint()
                 : new Vec3(getPosition().x, getPosition().y, getPosition().z);
-        ObjectManager.getOrCreateProjectileManager(level).enqueueWarheadDetonation(this, hitPoint);
+        ObjectManager.getOrCreateProjectileManager(level).enqueueWarheadCookoff(this, hitPoint);
         markHit();
     }
 

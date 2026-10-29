@@ -16,6 +16,11 @@
     "penetration_velocity_coefficient": 0,
     "damage_velocity_coefficient": 0.3
   },
+  "cookoff": {
+    "penetration": 0.0,
+    "damage": 8.0,
+    "impulse": 12.0
+  },
   "vulnerability": {
     "rha": 12.0,
     "durability": 30.0
@@ -23,6 +28,11 @@
   "warheads": [
     {
       "type": "machine_max:blast",
+      "cookoff": {
+        "penetration": 40.0,
+        "damage": 40.0,
+        "impulse": 18.0
+      },
       "base_penetration": 80.0,
       "base_damage": 40.0,
       "base_impulse": 3000.0,

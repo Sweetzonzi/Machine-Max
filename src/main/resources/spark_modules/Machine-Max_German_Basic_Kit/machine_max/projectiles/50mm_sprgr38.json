@@ -17,9 +17,19 @@
     "damage_velocity_coefficient": 0.5,
     "block_damage_factor": 1.5
   },
+  "cookoff": {
+    "penetration": 0.0,
+    "damage": 1.0,
+    "impulse": 3.5
+  },
   "warheads": [
     {
       "type": "machine_max:blast",
+      "cookoff": {
+        "penetration": 20.0,
+        "damage": 3.0,
+        "impulse": 5.0
+      },
       "base_penetration": 25.0,
       "base_damage": 22.0,
       "base_impulse": 800.0,

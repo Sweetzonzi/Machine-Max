@@ -15,8 +15,11 @@ import io.github.sweetzonzi.ballistics_framework.api.trajectory.DensityFunction;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectContext;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.EffectExecutor;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.ExplosionWorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.GuidanceContext;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
@@ -300,6 +303,18 @@ public class ProjectileManager {
      * 顺序上头一条命中只会入队一次。
      */
     private final ConcurrentLinkedQueue<PendingDetonation> pendingDetonations = new ConcurrentLinkedQueue<>();
+
+    /**
+     * 待主线程合成的"飞行中被击毁"战斗部诱爆请求队列。
+     * <p>
+     * <b>生产者：</b>主线程自身的伤害结算（{@link BallisticProjectile#settleAccumulatedDamage()}
+     * 在耐久归零后入队）。<br>
+     * <b>消费者：</b>主线程（{@link #flushPendingDetonations()}）。<br>
+     * 与 {@link #pendingDetonations} 分开：命中触发的<b>正常</b>引信执行各战斗部自身的世界效果，
+     * 而受伤摧毁只把各战斗部的 {@link ExplosionWorldEffect#cookoff()} 合成为一份普通爆炸参数，
+     * 不执行正常效果。
+     */
+    private final ConcurrentLinkedQueue<PendingCookoff> pendingCookoffs = new ConcurrentLinkedQueue<>();
 
     /**
      * 复用 Vector3f 避免热路径中重复分配
@@ -959,16 +974,45 @@ public class ProjectileManager {
     }
 
     /**
+     * 入队一次"飞行中被击毁"的战斗部诱爆合成请求。
+     * <p>
+     * 与 {@link #enqueueWarheadDetonation} 的区别是<b>不执行正常世界效果</b>：飞行中弹药被敌方
+     * 伤害摧毁时，发射药已经用于发射，只有各战斗部的 {@code cookoff} 贡献参与合成；
+     * 合成结果是一份普通爆炸参数，由主线程冲刷时交给 {@link ExplosionManager#detonate}。
+     * 正常引信命中仍走 {@link #enqueueWarheadDetonation}。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link BallisticProjectile#settleAccumulatedDamage()}）。
+     *
+     * @param projectile 被摧毁的投射物（读取其战斗部列表）
+     * @param origin     被摧毁时最后一次命中的命中点（世界坐标，MC Vec3）
+     */
+    public void enqueueWarheadCookoff(BallisticProjectile projectile, Vec3 origin) {
+        List<WorldEffect> warheads = projectile.getWarheads();
+        if (warheads.isEmpty()) return;
+        pendingCookoffs.add(new PendingCookoff(origin, warheads));
+    }
+
+    /**
      * 清空 {@link #pendingDetonations} 队列，在主线程逐条执行战斗部效果。
      * <p>
      * 每条请求构造一个展平的 {@link EffectContext}（首期只填 {@code level / origin}，
      * owner 归属字段一律为 null），交由 {@link EffectExecutor} 按
      * {@code warheads} 列表顺序执行。
      * <p>
+     * 随后清空 {@link #pendingCookoffs}：逐条把各战斗部的 {@code cookoff} 累积成一个
+     * {@link CookoffComposition}，非空时在请求位置起爆一份普通爆炸参数。零贡献与空合成
+     * 不构造爆炸。
+     * <p>
      * <b>调用线程：</b>仅主线程（在 {@link #postTick()} 中
      * {@link #flushPendingHitSyncs()} 之后调用）。
      */
     private void flushPendingDetonations() {
+        flushNormalDetonations();
+        flushCookoffDetonations();
+    }
+
+    /** 命中触发的正常引信：逐个执行战斗部自身的世界效果。 */
+    private void flushNormalDetonations() {
         if (pendingDetonations.isEmpty()) return;
         // 客户端不参与起爆：服务端才是权威，客户端只收起爆包建表现
         if (level.isClientSide()) {
@@ -983,6 +1027,29 @@ public class ProjectileManager {
                     null, null, null,
                     null, null, null);
             EffectExecutor.executeAll(d.warheads(), context);
+        }
+    }
+
+    /** 飞行中被击毁：只合成各战斗部被诱爆贡献，一次起爆，不执行正常效果。 */
+    private void flushCookoffDetonations() {
+        if (pendingCookoffs.isEmpty()) return;
+        if (level.isClientSide()) {
+            pendingCookoffs.clear();
+            return;
+        }
+
+        PendingCookoff c;
+        while ((c = pendingCookoffs.poll()) != null) {
+            CookoffComposition composition = new CookoffComposition();
+            composition.addWarheads(c.warheads(), 1);
+            // 纯穿深贡献或全零贡献不构造爆炸
+            if (composition.isEmpty()) continue;
+
+            Vec3 origin = c.origin();
+            ExplosionManager.get(level).detonate(
+                    new Vector3f((float) origin.x, (float) origin.y, (float) origin.z),
+                    composition.toExplosionParams(),
+                    level.random.nextLong());
         }
     }
 
@@ -2168,6 +2235,20 @@ public class ProjectileManager {
      */
     private record PendingDetonation(
             Vec3 hitPoint,
+            List<WorldEffect> warheads
+    ) {}
+
+    /**
+     * 物理线程/主线程捕获的"飞行中被击毁"诱爆合成请求。
+     * <p>
+     * 只固化"摧毁位置 + 战斗部列表"两项，主线程冲刷时按各战斗部的
+     * {@link ExplosionWorldEffect#cookoff()} 合成并起爆；起爆种子在主线程生成。
+     *
+     * @param origin   被摧毁时最后一次命中的命中点（世界坐标，MC Vec3，不可变值类型）
+     * @param warheads 该弹种的战斗部效果列表（内容包加载后只读，可安全跨线程共享）
+     */
+    private record PendingCookoff(
+            Vec3 origin,
             List<WorldEffect> warheads
     ) {}
 

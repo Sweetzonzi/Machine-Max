@@ -208,45 +208,61 @@ public final class ExplosionInstance {
         if (allDead) finished = true;
     }
 
-    /** 单条射线推进一步：登记本 tick 推进段内的全部命中，顺次消费并决定终止/折减。 */
+    /**
+     * 单条射线推进一步：登记本 tick 推进段内的全部命中，顺次消费并决定终止/折减。
+     *
+     * <p>推进距离先裁剪到剩余可用距离 {@code max_radius - d_r}：末段不足一个完整步长时按剩余距离
+     * 结算，先完成地形、刚体与实体的命中检测，到达硬截断半径后才结束射线。剩余距离非正时直接结束；
+     * 末段无命中、或射线已停止交互时也正常结束，避免空段重复推进。</p>
+     */
     private void stepRay(BlastRay ray, float step) {
-        float ox = ray.x(), oy = ray.y(), oz = ray.z();
-        float ex = ox + ray.dirX() * step;
-        float ey = oy + ray.dirY() * step;
-        float ez = oz + ray.dirZ() * step;
-
-        ray.moveTo(ex, ey, ez, step);
-        if (ray.distance() > params.maxRadius()) {
+        float remaining = params.maxRadius() - ray.distance();
+        if (remaining <= 0f) {
             ray.kill();
             return;
         }
+        // 裁剪本步有效步长：终点、体素遍历、刚体／实体检测与穿透消耗都使用同一个有效步长
+        float effectiveStep = Math.min(step, remaining);
+        float ox = ray.x(), oy = ray.y(), oz = ray.z();
+        float ex = ox + ray.dirX() * effectiveStep;
+        float ey = oy + ray.dirY() * effectiveStep;
+        float ez = oz + ray.dirZ() * effectiveStep;
+
+        ray.moveTo(ex, ey, ez, effectiveStep);
         if (!ray.isInteracting()) {
-            return; // 纯推进，无 DDA、无 rayTest
+            // 纯推进，无 DDA、无 rayTest；到达硬截断半径时正常结束
+            if (ray.distance() >= params.maxRadius()) {
+                ray.kill();
+            }
+            return;
         }
 
         hits.clear();
         // ① 地形：3D DDA 逐体素
-        walkVoxels(ray, ox, oy, oz, step);
+        walkVoxels(ray, ox, oy, oz, effectiveStep);
         // ② 快照刚体：裁剪到本 tick 推进段，每 tick 每射线一次
         rayTestRigid(ray, ox, oy, oz, ex, ey, ez);
         // ③ 一般实体：AABB 求交，取进入 t
         entitiesAlong(ray, ox, oy, oz, ex, ey, ez);
 
-        if (hits.isEmpty()) {
-            return;
+        if (!hits.isEmpty()) {
+            // 三条通道合并成同一条按 hitFraction 升序的序列（保序是这一段的全部意义）
+            hits.sort(Comparator.comparingDouble(h -> h.fraction));
+
+            float baseDistance = ray.distance() - effectiveStep;
+            for (Hit hit : hits) {
+                if (!ray.isAlive()) break;
+                consume(ray, hit, baseDistance, effectiveStep);
+            }
+
+            if (ray.isAlive() && ray.energy() < MMServerConfig.explosionInteractionCutoff()) {
+                ray.stopInteracting();
+            }
         }
 
-        // 三条通道合并成同一条按 hitFraction 升序的序列（保序是这一段的全部意义）
-        hits.sort(Comparator.comparingDouble(h -> h.fraction));
-
-        float baseDistance = ray.distance() - step;
-        for (Hit hit : hits) {
-            if (!ray.isAlive()) break;
-            consume(ray, hit, baseDistance, step);
-        }
-
-        if (ray.isAlive() && ray.energy() < MMServerConfig.explosionInteractionCutoff()) {
-            ray.stopInteracting();
+        // 本步已到硬截断半径：结算完成后正常结束，不再有后续推进段
+        if (ray.isAlive() && ray.distance() >= params.maxRadius()) {
+            ray.kill();
         }
     }
 

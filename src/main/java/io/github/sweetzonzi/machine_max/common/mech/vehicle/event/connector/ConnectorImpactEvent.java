@@ -22,8 +22,8 @@ import java.util.Map;
  * 要阻止某次命中扰动结构，应取消 {@link Pre}。
  * </p>
  * <p>
- * <b>调用线程：</b>命中发生线程（投射物命中为物理线程），
- * 与 {@code SubPartDamageEvent.Pre} 相同。监听方不得在此直接操作物理体。
+ * <b>调用线程：</b>主线程（零件统一结算阶段，每个 Level 的全部零件结算完成后才发布本批冲量）。
+ * 事件本身的处理不得直接操作物理体。
  * </p>
  */
 @Getter
@@ -61,10 +61,11 @@ public abstract class ConnectorImpactEvent extends SubPartEvent {
     }
 
     /**
-     * 冲击已分配并进入各连接点的待处理队列后触发。
+     * 冲击已实际应用后触发。
      * <p>
-     * 此时只完成了按距离分配；连接点自身的冲击减免、倍率、完整性扣减与击落判定
-     * 仍会在主线程的 {@code mcTick} 中发生。
+     * 触发前已先取得本次命中的完整分配表，再逐连接点即时完成减免、倍率、完整性更新与断开判定；
+     * 因此 {@link #getDistribution()} 表示本次各连接点实际收到的冲击量，而不是待处理队列。
+     * 失效物理关节的移除任务已投递到 {@code PPhase.ALL}，本批零件冲量随后以 {@code PPhase.PRE} 统一发布。
      * </p>
      */
     public static class Post extends ConnectorImpactEvent {

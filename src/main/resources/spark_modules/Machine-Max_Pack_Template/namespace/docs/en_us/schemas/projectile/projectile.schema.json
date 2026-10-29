@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/projectile/projectile.json",
+  "title": "Projectile Definition",
+  "description": "Top-level structure of a projectile type definition (projectiles/*.json). type selects the motion model; currently only ballistic (SoA integration + ray hit detection) exists. external describes exterior ballistics, terminal describes kinetic terminal effects, and warheads lists the world effects executed after a hit. cookoff describes the contribution of a round to cook-off synthesis: cookoff on the projectile root is the propellant contribution of one stored round, while cookoff on a machine_max:blast warhead is that warhead's contribution when sympathetically detonated. Both are calibrated at the 1 m reference radius, default to zero, and inherit nothing from base_* / near_radius.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../docs/en_us/schemas/projectile/projectile.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "ballistic",
+      "description": "Motion model type. The only current value is 'ballistic': integrated over SoA arrays and hitting targets with ray or convex sweep tests."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "$ref": "../base/resource_location.schema.json" },
+      "default": [],
+      "description": "Ammo tag list used against launcher required_tags / acceptable_tags / forbidden_tags, e.g. machine_max:caliber/7_62mm, machine_max:ammo/ap. Tags are only for compatibility matching and author-side classification, never for display text."
+    },
+    "max_lifetime": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "Maximum lifetime in seconds (SI). Multiplied by 20 internally to get ticks; expiry also goes through the destruction path."
+    },
+    "bullet_num": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Number of projectiles per shot (default 1), used for shotgun-like rounds that fire several pellets at once."
+    },
+    "external": {
+      "type": "object",
+      "properties": {
+        "mass": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Projectile mass (kg)."
+        },
+        "gravity_factor": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Gravity factor: 1.0 = standard gravity, 0 = weightless."
+        },
+        "drag_factor": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "Air drag coefficient (proportional to velocity squared); 0 = no drag."
+        },
+        "caliber": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 50.0,
+          "description": "Caliber (mm). Converted to a radius (caliber/2000 m) that feeds both the drag cross-section and the ray hit test; for sub-caliber rounds (e.g. an APFSDS penetrator) write the penetrator diameter."
+        },
+        "base_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Reference velocity (m/s), the base speed of the velocity-damage model."
+        },
+        "base_accuracy_mil": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "Base accuracy (mil / milliradian), the 1-sigma dispersion angle, added to the launcher's accuracy multiplier."
+        },
+        "thrust": {
+          "type": "object",
+          "properties": {
+            "force": { "type": "number", "minimum": 0, "default": 0, "description": "Thrust (N)." },
+            "duration": { "type": "number", "minimum": 0, "default": 0, "description": "Burn duration (s)." },
+            "ignition_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Ignition delay (s) measured from launch; 0 = ignites on leaving the barrel." }
+          },
+          "additionalProperties": false,
+          "default": { "force": 0, "duration": 0, "ignition_delay": 0 },
+          "description": "Thrust phase (single constant-thrust segment applied along the velocity vector). The whole block may be omitted, defaulting to no thrust."
+        }
+      },
+      "required": ["mass", "base_velocity"],
+      "additionalProperties": false,
+      "description": "Exterior ballistics — determines how the projectile flies. All values are SI units."
+    },
+    "terminal": {
+      "type": "object",
+      "properties": {
+        "base_penetration": {
+          "type": "number",
+          "description": "Penetration at reference velocity (mm RHA). Required."
+        },
+        "base_damage": {
+          "type": "number",
+          "description": "Damage at reference velocity. Required."
+        },
+        "penetration_velocity_coefficient": {
+          "type": "number",
+          "default": 0,
+          "description": "Penetration velocity coefficient: 0 = independent of velocity, about 1.43 = classic de Marre formula."
+        },
+        "damage_velocity_coefficient": {
+          "type": "number",
+          "default": 0,
+          "description": "Damage velocity coefficient: 0 = independent of velocity."
+        },
+        "block_damage_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0,
+          "description": "Block damage factor (0~1). When penetrating a block, kinetic energy times this factor is compared against block durability to decide whether the block is actually destroyed; 0 = never destroys blocks."
+        },
+        "stable_distance": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "Stable distance (mm): the longest path a warhead keeps oriented flight inside a material; 0 = unlimited stability (e.g. APFSDS long rod)."
+        },
+        "unstable_pen_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1,
+          "description": "Retained penetration factor after instability (0~1); effective penetration after tumbling = current penetration times this factor."
+        },
+        "damage_type": {
+          "$ref": "../base/resource_location.schema.json",
+          "default": "machine_max:projectile",
+          "description": "Damage type dealt by this round (DamageType resource key). Determines which type-dispatched behaviors the damage falls into."
+        }
+      },
+      "required": ["base_penetration", "base_damage"],
+      "additionalProperties": false,
+      "description": "Terminal effects — what happens on impact: penetration checks, damage calculation and block destruction."
+    },
+    "cookoff": {
+      "$ref": "#/$defs/cookoff",
+      "description": "Propellant cook-off contribution: one contribution per stored round when it is sympathetically detonated, excluding warheads inside warheads. The whole block may be omitted, defaulting to zero; it inherits nothing from the kinetic terminal fields. Propellant is already spent on launch, so an in-flight round destroyed by damage contributes no propellant cook-off."
+    },
+    "warheads": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "const": "machine_max:blast", "description": "Warhead effect type. Must be 'machine_max:blast'." },
+              "base_penetration": { "type": "number", "description": "Normal-detonation penetration at the reference radius (mm). Required." },
+              "base_damage": { "type": "number", "description": "Normal-detonation damage per unit frontal area at the reference radius. Required." },
+              "base_impulse": { "type": "number", "description": "Normal-detonation impulse per unit frontal area at the reference radius. Required." },
+              "near_radius": { "type": "number", "minimum": 0.1, "default": 3.0, "description": "Normal-detonation reference distance (m): the common reference point of the three base_* values and the near-field plateau radius." },
+              "max_radius": { "type": "number", "minimum": 0.1, "description": "Normal-detonation hard cutoff radius (m), the ray travel endpoint. Required." },
+              "cookoff": {
+                "$ref": "#/$defs/cookoff",
+                "description": "This warhead's contribution when sympathetically detonated. The whole block may be omitted, defaulting to zero; it is evaluated separately from the normal-detonation base_* / near_radius / max_radius on the same object and inherits nothing from them."
+              }
+            },
+            "required": ["type", "base_penetration", "base_damage", "base_impulse", "max_radius"],
+            "additionalProperties": true,
+            "description": "Parameterized blast warhead. Besides the fields above it accepts normal-detonation presentation fields such as front_speed, destroy_blocks, drop_items, causes_fire, particles, particle_scale, damage_type and light."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "description": "Warhead effect type dispatched by registry name, e.g. machine_max:blast." }
+            },
+            "required": ["type"],
+            "additionalProperties": true,
+            "description": "Any other world effect type; its fields are defined by that effect's own Codec and are not constrained here."
+          }
+        ]
+      },
+      "description": "Warhead effect list — world effects executed in order after hit detection. An empty list means a pure kinetic round (only the direct kinetic hit applies)."
+    },
+    "vulnerability": {
+      "type": "object",
+      "properties": {
+        "rha": { "type": "number", "minimum": 0, "description": "Perpendicular equivalent thickness used for hit resolution (mm). This is a hard gate: without penetration the default final damage is 0." },
+        "durability": { "type": "number", "exclusiveMinimum": 0, "description": "Structural hit points; the projectile is destroyed once accumulated damage reaches this value." }
+      },
+      "required": ["rha", "durability"],
+      "additionalProperties": false,
+      "description": "Vulnerability — armor and structural hit points of this round as a target. The whole block may be omitted, meaning the round cannot be destroyed (it holds no kinematic trigger body)."
+    },
+    "hit_detection": {
+      "type": "string",
+      "enum": ["ray", "sweep"],
+      "default": "ray",
+      "description": "Hit detection primitive — how this round finds targets as an attacker. ray = centroid ray (hit threshold is target radius only); sweep = convex sweep of its own radius (threshold = attacker radius + target radius)."
+    },
+    "guidance": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "Guidance law type dispatched by registry name, e.g. machine_max:pure_pursuit." }
+      },
+      "required": ["type"],
+      "additionalProperties": true,
+      "description": "Guidance component — self-contained algorithm parameters and limits. The whole block may be omitted, defaulting to pure ballistic flight; fields are defined by that law's own Codec."
+    },
+    "visual": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Visual properties — tracer (tracer_color / tracer_alpha / tracer_width / tracer_length / tracer_light_*), muzzle flash (muzzle_flash), fire particles (fire_particles), projectile model and texture (model / texture). The whole block may be omitted and falls back to built-in defaults. See ProjectileType.VisualProperties Codec for field details."
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Sound properties — fire sounds (fire_sounds), cease-fire tail (cease_fire_sound) and shell sounds (shell_sounds); keys are RPM threshold strings and values are sound events. The whole block may be omitted and falls back to built-in defaults."
+    }
+  },
+  "$defs": {
+    "cookoff": {
+      "type": "object",
+      "properties": {
+        "penetration": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "Cook-off penetration at the 1 m reference distance (mm), the p term of the synthesis. A zero-damage contribution does not participate in the damage-weighted penetration average."
+        },
+        "damage": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "Cook-off damage calibration per unit frontal area at the 1 m reference distance, the d term of the synthesis. Contributions sum linearly into base_damage."
+        },
+        "impulse": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "Cook-off impulse calibration per unit frontal area at the 1 m reference distance (N*s/m^2), the j term of the synthesis. Contributions are squared and summed first, then a single square root gives base_impulse."
+        }
+      },
+      "additionalProperties": false,
+      "description": "One cook-off contribution. All three fields are calibrated at the 1 m reference radius. The object and each field may be omitted, defaulting to zero; explicit negative values, NaN or Infinity are content errors."
+    }
+  },
+  "required": ["type", "external", "terminal"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "$schema": "../docs/en_us/schemas/projectile/projectile.schema.json",
+      "type": "ballistic",
+      "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/ap"],
+      "max_lifetime": 2.5,
+      "external": { "mass": 0.0096, "caliber": 7.62, "base_velocity": 855, "base_accuracy_mil": 3.0 },
+      "terminal": { "base_penetration": 8, "base_damage": 10, "penetration_velocity_coefficient": 1.0, "damage_velocity_coefficient": 0.5 },
+      "cookoff": { "penetration": 0.0, "damage": 0.1, "impulse": 1.0 },
+      "description": "Machine-gun round — only a propellant cook-off contribution, no warhead"
+    },
+    {
+      "$schema": "../docs/en_us/schemas/projectile/projectile.schema.json",
+      "type": "ballistic",
+      "external": { "mass": 45, "caliber": 155.0, "base_velocity": 600, "base_accuracy_mil": 12.0 },
+      "terminal": { "base_penetration": 80, "base_damage": 500, "penetration_velocity_coefficient": 0, "damage_velocity_coefficient": 0.3 },
+      "cookoff": { "penetration": 0.0, "damage": 8.0, "impulse": 12.0 },
+      "warheads": [
+        {
+          "type": "machine_max:blast",
+          "base_penetration": 80.0, "base_damage": 40.0, "base_impulse": 3000.0,
+          "near_radius": 3.0, "max_radius": 14.0,
+          "cookoff": { "penetration": 40.0, "damage": 40.0, "impulse": 18.0 }
+        }
+      ],
+      "description": "HE shell — the propellant contribution lives on the root object, the warhead's sympathetic-detonation contribution on the machine_max:blast inside warheads"
+    }
+  ]
+}

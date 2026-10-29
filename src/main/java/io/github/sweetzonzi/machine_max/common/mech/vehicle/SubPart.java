@@ -16,11 +16,11 @@ import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IModularSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
@@ -82,6 +82,7 @@ import org.joml.Matrix4f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @EventBusSubscriber
 @Getter
@@ -102,6 +103,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     /** 子系统额外质量映射表（子系统名称 → 额外质量值 kg），由 ISubsystemHost.updateExtraMass() 管理 */
     private final ConcurrentHashMap<String, Float> extraMassMap = new ConcurrentHashMap<>();
+    /**
+     * 待结算命中事件：命中发生线程（主线程或物理线程）入队，主线程统一结算阶段清空。
+     * <p>事件携带耐久伤害、结构冲击与物理冲量所需的数据；履带吸收标记是入口附加的一位状态。</p>
+     */
+    private final ConcurrentLinkedQueue<SubPartDamageEvent.Pre> accumulatedHits = new ConcurrentLinkedQueue<>();
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
@@ -679,6 +685,20 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         return 0f;
     }
 
+    /**
+     * 零件命中入口：登记一条完整命中记录，耐久、结构冲击与物理冲量由主线程按各自许可结算。
+     *
+     * <p>本方法是命中数据唯一的收集点：同一次命中的目标、伤害来源、协议上下文、目标命中箱、
+     * 入口事件取消标志、金额、结构冲击量与命中几何在这里一次构造并入队，随后不再回读可变上下文。
+     * 履带吸收耐久、击退回退公式与命中音效仍在本方法内即时处理，保持既有的耐久与击退语义。</p>
+     *
+     * <p><b>调用线程：</b>命中发生线程（主线程或物理线程），与 {@link BFDamageApi#hurt} 的调用线程相同。
+     * 本方法不操作物理体：需要物理副作用的命令一律投递到 PPhase 队列。</p>
+     *
+     * @param source 伤害来源
+     * @param amount 本次调用收到的伤害量
+     * @return 是否接受了本次命中
+     */
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (level.isClientSide()) return true;
@@ -692,14 +712,18 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             // 仍不在协议管线内，丢弃伤害
             return false;
         }
-        // 触发伤害事件
+        // 触发伤害事件：取消标志随命中记录传递，不提前返回，结构冲击仍有自己的许可通道
         SubPartDamageEvent.Pre event = NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Pre(this, ctx, amount));
-        if (event.isCanceled()) return false;
         ctx = event.getCtx();
         amount = event.getDamageAmount(); // 以事件最终结果为准
         // 履带存活期间由履带装甲层吸收伤害：扣履带耐久，跳过 SubPart 自身耐久 / HitBox 子系统伤害
         TrackLink track = this.trackLink;
-        if (hasLiveTrack(track)) {
+        boolean trackAbsorbed = !event.isCanceled() && hasLiveTrack(track);
+        // 一次构造入口事件；零伤害、入口取消与履带吸收的命中同样入队，三条通道分别判定
+        HitBox hitBox = findHitBox(ctx);
+        accumulateHit(event, trackAbsorbed);
+        if (event.isCanceled()) return false;
+        if (trackAbsorbed) {
             SoundEvent trackHit = isArmorPenetrated(ctx)
                     ? track.attr().sounds().onHitPen()
                     : track.attr().sounds().onHitUnPen();
@@ -710,39 +734,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             return true;
         }
         Vec3 sourcePos = ctx.hitPoint();
-        HitBox hitBox = findHitBox(ctx);
-        // 击退动量 — 捕获 ctx，延迟到物理任务中决定用 IMPULSE 还是回退公式
-        final BFDamageContext capCtx = ctx;
-        final DamageSource capSource = source;
-        final float capAmount = amount;
-        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            float knockBack;
-            if (capCtx.extensions().contains(BFDamageExtensions.IMPULSE)) {
-                // 弹道框架显式提供了冲量（N·s），直接取用（可能为 0 表示明确不击退）
-                knockBack = capCtx.extensions().get(BFDamageExtensions.IMPULSE);
-            } else if (!capSource.is(MMDamageTypes.PART_COLLISION)) {
-                // 未提供 IMPULSE：回退到伤害基公式
-                Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(capCtx.hitVelocity());
-                if (contactSpeed.lengthSquared() <= 1e-6f) return null;
-                knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(capAmount / getMaxDurability()))) * 250f);
-                if (capSource.getDirectEntity() != null && capSource.getWeaponItem() != null) {
-                    knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, capSource.getWeaponItem(), capSource.getDirectEntity(), capSource, 1.0f);
-                }
-                if (capSource.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
-            } else { // 一般碰撞伤害不需要额外冲量，物理引擎负责处理
-                return null;
-            }
-            if (knockBack <= 1e-6f) return null;
-            Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(capCtx.hitVelocity());
-            part.assembly.activatePhysics();
-            Vector3f contactPoint = PhysicsHelperKt.toBVector3f(capCtx.hitPoint());
-            this.body.applyImpulse(contactSpeed.normalize().mult(knockBack),
-                    contactPoint.subtract(this.body.getPhysicsLocation(null)));
-            return null;
-        });
-        // 累积伤害
-        accumulateDamage(amount, ctx);
-        // 音效与粒子
+        // 音效与粒子（物理冲量与结构冲击在主线程结算阶段处理，这里只表现本 tick 的命中反馈）
         Vector3f normal = PhysicsHelperKt.toBVector3f(ctx.hitNormal());
         BFDamageContext finalCtx = ctx;
         SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
@@ -762,29 +754,19 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * 命中后效：把冲击分配到连接点。
-     * <p>
-     * 冲击与伤害结算解耦——输入是上下文里的<b>穿甲前原始伤害</b>
-     * （{@link BFDamageContext#baseDamage()}），而不是 {@link #hurt} 收到的最终伤害，
-     * 因此未击穿与跳弹的命中同样会冲击结构。伤害被子系统拦截或被
-     * {@code SubPartDamageEvent.Pre} 取消，都不影响这条链路；要阻止某次命中扰动结构，
-     * 取消 {@link ConnectorImpactEvent.Pre}。完整性扣减与击落判定仍由连接点在主线程
-     * {@code mcTick} 中完成。
-     * </p>
-     * <p><b>调用线程：</b>命中发生线程（投射物命中为物理线程），与 {@link #hurt} 相同。</p>
+     * 把一条入口命中事件入队，等待主线程统一结算。
+     * <p><b>调用线程：</b>命中发生线程（主线程或物理线程）。</p>
+     *
+     * @param event         本次命中的入口事件
+     * @param trackAbsorbed 履带装甲层是否已吸收本次耐久伤害
      */
-    @Override
-    public void afterHurt(BFDamageContext ctx, PenetrationResult result, float finalDamage) {
-        if (level.isClientSide()) return;
-        HitBox hitBox = findHitBox(ctx);
-        float impact = hitBox.modifyImpact(ctx.source(), ctx.baseDamage());
-        if (impact <= 0f) return;
-        ConnectorImpactEvent.Pre event = NeoForge.EVENT_BUS.post(
-                new ConnectorImpactEvent.Pre(this, ctx, hitBox, impact));
-        if (event.isCanceled()) return;
-        Map<AbstractConnector, Float> distribution = distributeDamageImpactToConnectors(
-                impact, PhysicsHelperKt.toBVector3f(ctx.hitPoint()));
-        NeoForge.EVENT_BUS.post(new ConnectorImpactEvent.Post(this, ctx, hitBox, impact, distribution));
+    private void accumulateHit(SubPartDamageEvent.Pre event, boolean trackAbsorbed) {
+        event.setTrackAbsorbed(trackAbsorbed);
+        // 只为实际入账的零件耐久伤害设置受击反馈时间：入口取消与履带吸收都不在零件耐久入账
+        if (!event.isCanceled() && !trackAbsorbed && event.getDamageAmount() > 0f) {
+            hurtTime = hurtDuration;
+        }
+        accumulatedHits.add(event);
     }
 
     @Override
@@ -829,6 +811,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /**
      * <p>根据冲击和各连接点的距离，把冲击分配到各个连接点</p>
      * <p>Distributes the impact to each connector based on the distance to each connector</p>
+     * <p>本方法只计算分配表，不应用冲击：调用方先取得完整的分配表，再逐项应用，
+     * 避免同一笔冲击在分配过程中因连接断开而重新归一化。</p>
      *
      * @param impact      本次命中的总冲击量
      * @param impactPoint 冲击点（世界坐标）
@@ -854,9 +838,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (totalImpactWeight <= 0f) return Map.of();
         // 分配冲击伤害
         for (Map.Entry<AbstractConnector, Float> entry : distribution.entrySet()) {
-            float share = impact * (entry.getValue() / totalImpactWeight);
-            entry.setValue(share);
-            entry.getKey().accumulateImpact(share);
+            entry.setValue(impact * (entry.getValue() / totalImpactWeight));
         }
         return distribution;
     }
@@ -922,13 +904,13 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 if (connectorsRepairAmount <= 0) break;
                 if (connector.getIntegrity() < connector.getBasicIntegrity()) {
                     float connectorRepairAmount = Math.min(connectorsRepairAmount, connector.getBasicIntegrity() - connector.getIntegrity());
-                    connector.addIntegrity(connectorRepairAmount);
+                    connector.changeIntegrity(connectorRepairAmount);
                     connectorsRepairAmount -= connectorRepairAmount;
                 }
                 if (connector.hasPart() && connector.attachedConnector.getIntegrity() < connector.attachedConnector.getBasicIntegrity()) {
                     float connectorRepairAmount = Math.min(connectorsRepairAmount,
                             connector.attachedConnector.getBasicIntegrity() - connector.attachedConnector.getIntegrity());
-                    connector.attachedConnector.addIntegrity(connectorRepairAmount);
+                    connector.attachedConnector.changeIntegrity(connectorRepairAmount);
                     connectorsRepairAmount -= connectorRepairAmount;
                 }
             }
@@ -939,29 +921,40 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * <p>结算本次批次内的每一次命中：逐次折算载具伤害，批次结束后统一扣减耐久并通告装配体，在主线程中统一处理，参见 {@link DestroyableObject#postTick()}</p>
-     * <p>Settles each hit of the batch, then applies the durability loss and notifies the assembly, handled in the main thread, see {@link DestroyableObject#postTick()}</p>
+     * <p>结算本次批次内的每一条命中事件：逐次应用结构冲击与耐久伤害，批次结束后统一扣减耐久并通告装配体，在主线程中统一处理，参见 {@link DestroyableObject#postTick()}</p>
+     * <p>Settles each hit event of the batch, then applies the durability loss and notifies the assembly, handled in the main thread, see {@link DestroyableObject#postTick()}</p>
+     *
+     * <p>三条效果通道独立结算：结构冲击按连接点自己的许可处理，不被入口取消或零耐久伤害跳过；
+     * 耐久伤害在入口取消、履带吸收与非正金额时不入账；物理冲量由 Level 级主线程列表统一发布，
+     * 本方法不直接投递冲量。</p>
+     *
+     * <p><b>调用线程：</b>主线程（每个 Level 在本轮全部零件结算完成后统一发布冲量）。</p>
      */
     @Override
     protected void settleAccumulatedDamage() {
-        if (level.isClientSide() || accumulatedDamage.isEmpty()) return;
+        if (level.isClientSide() || accumulatedHits.isEmpty()) return;
         float remaining = Math.max(0f, getDurability()); // 本批开始前读取一次，批内沿用该值
         float drained = 0f;                              // 本批此前已结算的量（取自子系统事件的最终金额）
         List<SubPartHitDamage> hits = new ArrayList<>();
-        while (!accumulatedDamage.isEmpty()) {
-            Pair<Float, BFDamageContext> pair = accumulatedDamage.poll();
-            float damage = pair.getFirst();
-            BFDamageContext ctx = pair.getSecond();
-            if (damage <= 0f) continue; // 非正伤害不入账
-            // 构造事件后直接交给命中判定所属的子系统，不经事件总线
-            SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
+        while (!accumulatedHits.isEmpty()) {
+            SubPartDamageEvent.Pre event = accumulatedHits.poll();
+            if (event == null) continue;
+            BFDamageContext ctx = event.getCtx();
+            // 结构冲击：独立通道，入口取消、履带吸收与零耐久伤害都不跳过它
+            applyStructuralImpact(event);
+            // 物理冲量：同样独立于耐久分支，子系统取消耐久不影响它；只收进 Level 级列表，不在此发布
+            queuePhysicsImpulse(event);
+            if (event.isCanceled() || event.isTrackAbsorbed()) continue; // 入口取消 / 履带吸收不产生零件耐久记账
+            float entryDamage = event.getDamageAmount();
+            if (entryDamage <= 0f) continue; // 非正伤害不入账
+            // 事件随记录带到主线程，直接交给命中判定所属的子系统，不经事件总线
             HitBox hitBox = findHitBox(ctx);
-            if (hitBox.getSubsystem() != null) {
+            if (hitBox != null && hitBox.getSubsystem() != null) {
                 hitBox.getSubsystem().onHurt(event);
             }
             if (event.isCanceled()) continue; // 被子系统取消的命中不产生记录，也不扣耐久
             // 广播事件：金额与上下文沿用入队原值，供第三方记账
-            NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, ctx, damage));
+            NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, ctx, entryDamage));
 
             // 子系统可以下调本次金额：事件最终金额是零件耐久与载具伤害的唯一输入
             float effective = Math.max(0f, event.getDamageAmount());
@@ -988,6 +981,81 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             part.assembly.onPartDamage(part, List.copyOf(hits));
         }
         // 同步包由基类 postTick 在结算之后统一发送，本方法内不发送
+    }
+
+    /**
+     * 应用一次命中的结构冲击：先算完整分配表，再逐连接点即时应用，最后发出已应用事件。
+     *
+     * <p>分配与伤害结算解耦——输入是记录里定稿的<b>穿甲前原始伤害</b>
+     * （{@link BFDamageContext#baseDamage()}）与命中箱冲击修正，而不是调用方收到的最终伤害，
+     * 因此未击穿与跳弹的命中同样会冲击结构。耐久分支的取消不跳过它；
+     * 要阻止某次命中扰动结构，取消 {@link ConnectorImpactEvent.Pre}。</p>
+     *
+     * <p><b>调用线程：</b>主线程（统一结算阶段）。</p>
+     *
+     * @param entryEvent 本次命中的入口事件
+     */
+    protected void applyStructuralImpact(SubPartDamageEvent.Pre entryEvent) {
+        BFDamageContext ctx = entryEvent.getCtx();
+        HitBox hitBox = findHitBox(ctx);
+        float impact = hitBox != null ? hitBox.modifyImpact(ctx.source(), ctx.baseDamage()) : 0f;
+        if (impact <= 0f) return;
+        ConnectorImpactEvent.Pre event = NeoForge.EVENT_BUS.post(
+                new ConnectorImpactEvent.Pre(this, ctx, hitBox, impact));
+        if (event.isCanceled()) return;
+        // 先算完整分配表：同一笔冲击不能在分配过程中因断开连接而重新归一化
+        Map<AbstractConnector, Float> distribution = distributeDamageImpactToConnectors(
+                impact, PhysicsHelperKt.toBVector3f(ctx.hitPoint()));
+        // 逐项即时应用：减免、倍率、完整性更新与断开判定都在连接点内完成
+        for (Map.Entry<AbstractConnector, Float> entry : distribution.entrySet()) {
+            entry.getKey().applyImpact(entry.getValue());
+        }
+        NeoForge.EVENT_BUS.post(new ConnectorImpactEvent.Post(this, ctx, hitBox, impact, distribution));
+    }
+
+    /**
+     * 把一次命中的物理冲量收进 Level 级主线程列表。
+     *
+     * <p>显式提供 {@code BFDamageExtensions.IMPULSE}（包括显式 0）时按该值处理，不进入击退回退公式；
+     * 未提供时按零件公共击退回退规则计算；普通碰撞（{@link MMDamageTypes#PART_COLLISION}）不施加额外冲量，
+     * 由物理引擎自身的接触响应负责。入口取消与履带吸收的命中不施加冲量。</p>
+     *
+     * <p>冲量方向取命中速度方向，作用点取命中点，两者一起表达线冲量与角冲量。命令在物理线程的
+     * {@code PPhase.PRE} 阶段统一应用，主线程不直接操作刚体。</p>
+     *
+     * <p><b>调用线程：</b>主线程（统一结算阶段）。</p>
+     *
+     * @param event 本次命中的入口事件
+     */
+    private void queuePhysicsImpulse(SubPartDamageEvent.Pre event) {
+        BFDamageContext ctx = event.getCtx();
+        if (event.isCanceled() || event.isTrackAbsorbed()) return;
+        DamageSource source = ctx.source();
+        boolean impulseProvided = ctx.extensions().contains(BFDamageExtensions.IMPULSE);
+        float knockBack;
+        if (impulseProvided) {
+            // 弹道框架显式提供了冲量（N·s），直接取用（可能为 0 表示明确不击退）
+            knockBack = ctx.extensions().get(BFDamageExtensions.IMPULSE);
+        } else if (!source.is(MMDamageTypes.PART_COLLISION)) {
+            // 未提供 IMPULSE：回退到伤害基公式
+            Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
+            if (contactSpeed.lengthSquared() <= 1e-6f) return;
+            if (getMaxDurability() <= 0f) return;
+            knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(event.getDamageAmount() / getMaxDurability()))) * 250f);
+            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {
+                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+            }
+            if (source.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
+        } else {
+            // 一般碰撞伤害不需要额外冲量，物理引擎负责处理
+            return;
+        }
+        if (!Float.isFinite(knockBack) || knockBack <= 1e-6f) return;
+        Vector3f direction = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
+        if (direction.lengthSquared() <= 1e-6f) return;
+        Vector3f impulse = direction.normalize().mult(knockBack);
+        if (part.assembly != null) part.assembly.activatePhysics();
+        ObjectManager.queueImpulse(level, new SubPartImpulse(this, impulse, PhysicsHelperKt.toBVector3f(ctx.hitPoint())));
     }
 
     /**

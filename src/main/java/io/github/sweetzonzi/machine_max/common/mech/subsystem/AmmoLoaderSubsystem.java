@@ -1,5 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
@@ -404,28 +407,48 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     @Override
     public void onDestroyed() {
         super.onDestroyed();
-        popItems();
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        popItems();
+        if (getLevel().isClientSide() || getSubPart().isDestroyed()) return;
+        detonateStoredAmmo();
     }
 
     /**
-     * 被摧毁或拆卸时爆出容器中所有物品。
+     * 库存殉爆：按物品容器里的实际弹药合成一次普通爆炸，并实际清空容器。
+     * <p>
+     * 每格按 {@code stack.getCount()} 计入该弹种的发射药贡献与各战斗部的被诱爆贡献；
+     * 解析不出投射物类型的物品不产生贡献，但一旦判定需要起爆，容器整体清空（含这些物品），
+     * 不产生掉落物。{@code P、D、J} 全为零时不消耗库存、不起爆。
+     * <p>
+     * <b>调用线程：</b>主线程（子系统摧毁边沿）。
      */
-    private void popItems() {
+    private void detonateStoredAmmo() {
+        if (getAmmoCount() <= 0) return;
+
+        CookoffComposition composition = new CookoffComposition();
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
-            if (!stack.isEmpty()) {
-                var pos = getOwner().getSubPart().getPosition();
-                var vec3 = new net.minecraft.world.phys.Vec3(pos.x, pos.y, pos.z);
-                var item = new net.minecraft.world.entity.item.ItemEntity(getOwner().getLevel(), vec3.x, vec3.y, vec3.z, stack);
-                getOwner().getLevel().addFreshEntity(item);
-            }
+            if (stack.isEmpty()) continue;
+            ProjectileType type = getProjectileTypeFromItem(stack);
+            composition.addStoredRound(type, stack.getCount());
         }
+        if (composition.isEmpty()) return;
+
+        // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
+        Vector3f origin = getLastDamageOrigin();
+        // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
+        consumeAllStoredAmmo();
+        ExplosionManager.get(getLevel()).detonate(
+                origin, composition.toExplosionParams(), getLevel().random.nextLong());
+    }
+
+    /**
+     * 起爆消耗：实际清空物品容器并清掉所有在途与待取的输送承诺。
+     */
+    private void consumeAllStoredAmmo() {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            container.setItem(i, ItemStack.EMPTY);
+        }
+        reloadTimers.clear();
+        readyConsumers.clear();
     }
 
     // ==================== 信号 ====================

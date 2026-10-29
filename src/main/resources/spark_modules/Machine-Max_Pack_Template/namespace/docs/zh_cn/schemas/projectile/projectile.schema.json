@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/projectile/projectile.json",
+  "title": "投射物定义",
+  "description": "弹种定义文件（projectiles/*.json）的顶层结构。type 决定运动模型，当前只有 ballistic（SoA 积分 + 射线检测）；external 描述外弹道，terminal 描述动能终效，warheads 描述命中后依次执行的世界效果。cookoff 描述弹药被诱爆时对殉爆合成的贡献：弹药根对象上的 cookoff 是每整发弹药的发射药贡献，warheads 内 machine_max:blast 上的 cookoff 是该战斗部被诱爆时的贡献，两处按 1 m 参考半径标定、缺省零贡献，且不从 base_* / near_radius 继承。",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径，用于编辑器智能提示和校验",
+      "default": "../docs/zh_cn/schemas/projectile/projectile.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "ballistic",
+      "description": "运动模型类型。当前唯一取值 'ballistic'：按 SoA 数组积分飞行，以射线或凸体扫掠判定命中。"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "$ref": "../base/resource_location.schema.json" },
+      "default": [],
+      "description": "弹药标签列表，用于与发射器的 required_tags / acceptable_tags / forbidden_tags 匹配，例如 machine_max:caliber/7_62mm、machine_max:ammo/ap。标签只用于兼容性匹配与作者侧分类，不用于显示文本。"
+    },
+    "max_lifetime": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "最大存活时间（秒，SI 单位）。内部使用时乘以 20 换算为 tick；寿命耗尽同样走销毁流程。"
+    },
+    "bullet_num": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "单发弹头数（默认 1），用于霰弹一类一次射出多个弹丸的弹种。"
+    },
+    "external": {
+      "type": "object",
+      "properties": {
+        "mass": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "弹体质量（kg）。"
+        },
+        "gravity_factor": {
+          "type": "number",
+          "default": 1.0,
+          "description": "重力系数，1.0 = 标准重力，0 = 无重力。"
+        },
+        "drag_factor": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "空气阻力系数（与速度²成正比），0 = 无阻力。"
+        },
+        "caliber": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 50.0,
+          "description": "口径（mm）。换算为半径（口径/2000 m）后同时用于风阻截面积与射线命中判定；次口径弹（如 APFSDS 弹芯）写弹芯直径。"
+        },
+        "base_velocity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "参考速度（m/s），速度-伤害模型的基准速度。"
+        },
+        "base_accuracy_mil": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "基础精度（密位/千分弧度），表示 1σ 散布角，与发射器的精度乘子叠加。"
+        },
+        "thrust": {
+          "type": "object",
+          "properties": {
+            "force": { "type": "number", "minimum": 0, "default": 0, "description": "推力（N）。" },
+            "duration": { "type": "number", "minimum": 0, "default": 0, "description": "燃烧时长（s）。" },
+            "ignition_delay": { "type": "number", "minimum": 0, "default": 0, "description": "点火延迟（s），从发射瞬间起算；0 = 出膛即点火。" }
+          },
+          "additionalProperties": false,
+          "default": { "force": 0, "duration": 0, "ignition_delay": 0 },
+          "description": "推进段（单段恒推力，沿速度矢量施加）。整块可省略，缺省无推力。"
+        }
+      },
+      "required": ["mass", "base_velocity"],
+      "additionalProperties": false,
+      "description": "外弹道属性 — 决定投射物如何飞行。全部为 SI 单位。"
+    },
+    "terminal": {
+      "type": "object",
+      "properties": {
+        "base_penetration": {
+          "type": "number",
+          "description": "参考速度下的穿深（mm RHA），必填。"
+        },
+        "base_damage": {
+          "type": "number",
+          "description": "参考速度下的伤害值，必填。"
+        },
+        "penetration_velocity_coefficient": {
+          "type": "number",
+          "default": 0,
+          "description": "穿深速度系数。0 = 与速度无关，约 1.43 = 经典德马尔公式。"
+        },
+        "damage_velocity_coefficient": {
+          "type": "number",
+          "default": 0,
+          "description": "伤害速度系数。0 = 与速度无关。"
+        },
+        "block_damage_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0,
+          "description": "方块破坏因子（0~1）。穿透方块时，动能乘以此因子与方块耐久比较，决定是否实际破坏方块；0 = 只穿透不破坏。"
+        },
+        "stable_distance": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "稳定距离（mm），弹头在材料中保持定向飞行的最大距离；0 = 无限稳定（如 APFSDS 长杆弹）。"
+        },
+        "unstable_pen_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1,
+          "description": "失稳后穿深保留因子（0~1），失稳后有效穿深 = 当前穿深 × 此因子。"
+        },
+        "damage_type": {
+          "$ref": "../base/resource_location.schema.json",
+          "default": "machine_max:projectile",
+          "description": "本弹种造成的伤害类型（DamageType 资源键）。决定该伤害落入哪些按类型分派的行为。"
+        }
+      },
+      "required": ["base_penetration", "base_damage"],
+      "additionalProperties": false,
+      "description": "终点效应属性 — 决定投射物命中后发生什么：穿透判定、伤害计算和方块破坏。"
+    },
+    "cookoff": {
+      "$ref": "#/$defs/cookoff",
+      "description": "发射药殉爆贡献：每整发库存弹药被诱爆时的一份贡献，不含 warheads 内的战斗部。整块可省略，缺省零贡献；不从 terminal 的动能终效字段继承任何值。飞行中被击毁的弹药发射药已经用于发射，不计入殉爆。"
+    },
+    "warheads": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "const": "machine_max:blast", "description": "战斗部效果类型，必须为 'machine_max:blast'。" },
+              "base_penetration": { "type": "number", "description": "正常引爆时参考半径处的穿深（mm），必填。" },
+              "base_damage": { "type": "number", "description": "正常引爆时参考半径处单位迎流面积的伤害，必填。" },
+              "base_impulse": { "type": "number", "description": "正常引爆时参考半径处单位迎流面积的冲量，必填。" },
+              "near_radius": { "type": "number", "minimum": 0.1, "default": 3.0, "description": "正常引爆的参考距离（m），三个 base_* 的公共参考点，同时是近场平台半径。" },
+              "max_radius": { "type": "number", "minimum": 0.1, "description": "正常引爆的硬截断半径（m），射线推进终点，必填。" },
+              "cookoff": {
+                "$ref": "#/$defs/cookoff",
+                "description": "该战斗部被诱爆时的一份贡献。整块可省略，缺省零贡献；与同一对象上正常引爆的 base_* / near_radius / max_radius 分别求值，不互相继承。"
+              }
+            },
+            "required": ["type", "base_penetration", "base_damage", "base_impulse", "max_radius"],
+            "additionalProperties": true,
+            "description": "参数化爆炸战斗部。除上述字段外还接受 front_speed、destroy_blocks、drop_items、causes_fire、particles、particle_scale、damage_type、light 等正常引爆表现字段。"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "description": "战斗部效果类型，按注册表名分派，例如 machine_max:blast。" }
+            },
+            "required": ["type"],
+            "additionalProperties": true,
+            "description": "其它世界效果类型；字段由该效果自己的 Codec 决定，本 schema 不约束。"
+          }
+        ]
+      },
+      "description": "战斗部效果列表 — 命中判定完成后依次执行的世界效果。空列表表示纯动能弹（仅执行直接动能命中）。"
+    },
+    "vulnerability": {
+      "type": "object",
+      "properties": {
+        "rha": { "type": "number", "minimum": 0, "description": "命中判定用的垂直等效厚度（mm）。这是硬门槛：未击穿时默认最终伤害为 0。" },
+        "durability": { "type": "number", "exclusiveMinimum": 0, "description": "结构血量（点），累计伤害达到该值即损毁。" }
+      },
+      "required": ["rha", "durability"],
+      "additionalProperties": false,
+      "description": "受击属性 — 本弹种作为目标被命中的护甲与结构血量。整块可省略，缺省不可被击毁（不持有触发体）。"
+    },
+    "hit_detection": {
+      "type": "string",
+      "enum": ["ray", "sweep"],
+      "default": "ray",
+      "description": "命中检测原语 — 本弹种作为攻击者时用哪种查询发现目标。ray = 质心射线（命中阈值只有目标半径）；sweep = 自身半径的凸体扫掠（阈值 = 攻击弹半径 + 目标半径）。"
+    },
+    "guidance": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "制导律类型，按注册表名分派，例如 machine_max:pure_pursuit。" }
+      },
+      "required": ["type"],
+      "additionalProperties": true,
+      "description": "制导组件 — 自含算法参数与限幅配置；整块可省略，缺省为纯弹道。字段由该制导律自己的 Codec 决定。"
+    },
+    "visual": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "视觉属性 — 曳光（tracer_color / tracer_alpha / tracer_width / tracer_length / tracer_light_*）、枪口火光（muzzle_flash）、开火粒子（fire_particles）、弹体模型与贴图（model / texture）。整块可省略，缺省使用内置默认值。字段细节见 ProjectileType.VisualProperties 的 Codec。"
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "音效属性 — 开火音效（fire_sounds）、停火尾音（cease_fire_sound）与弹壳音效（shell_sounds），key 为 RPM 阈值字符串，value 为音效事件。整块可省略，缺省使用内置默认值。"
+    }
+  },
+  "$defs": {
+    "cookoff": {
+      "type": "object",
+      "properties": {
+        "penetration": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "参考距离（1 m）处的殉爆穿深（mm），对应合成式里的 p。零伤害贡献不参与合成穿深的加权平均。"
+        },
+        "damage": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "参考距离（1 m）处单位迎流面积的殉爆伤害标定量，对应合成式里的 d。库存里各份 d 线性累加成 base_damage。"
+        },
+        "impulse": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "参考距离（1 m）处单位迎流面积的殉爆冲量标定量（N·s/m²），对应合成式里的 j。库存里各份 j 先平方累加、最后开一次平方根得到 base_impulse。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "一份殉爆贡献，三个字段都以 1 m 参考半径标定。对象与单个字段均可省略，省略值为零；显式负数、NaN 或 Infinity 属于内容错误。"
+    }
+  },
+  "required": ["type", "external", "terminal"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "$schema": "../docs/zh_cn/schemas/projectile/projectile.schema.json",
+      "type": "ballistic",
+      "tags": ["machine_max:caliber/7_62mm", "machine_max:ammo/ap"],
+      "max_lifetime": 2.5,
+      "external": { "mass": 0.0096, "caliber": 7.62, "base_velocity": 855, "base_accuracy_mil": 3.0 },
+      "terminal": { "base_penetration": 8, "base_damage": 10, "penetration_velocity_coefficient": 1.0, "damage_velocity_coefficient": 0.5 },
+      "cookoff": { "penetration": 0.0, "damage": 0.1, "impulse": 1.0 },
+      "description": "机枪弹示例——只有发射药殉爆贡献，没有战斗部"
+    },
+    {
+      "$schema": "../docs/zh_cn/schemas/projectile/projectile.schema.json",
+      "type": "ballistic",
+      "external": { "mass": 45, "caliber": 155.0, "base_velocity": 600, "base_accuracy_mil": 12.0 },
+      "terminal": { "base_penetration": 80, "base_damage": 500, "penetration_velocity_coefficient": 0, "damage_velocity_coefficient": 0.3 },
+      "cookoff": { "penetration": 0.0, "damage": 8.0, "impulse": 12.0 },
+      "warheads": [
+        {
+          "type": "machine_max:blast",
+          "base_penetration": 80.0, "base_damage": 40.0, "base_impulse": 3000.0,
+          "near_radius": 3.0, "max_radius": 14.0,
+          "cookoff": { "penetration": 40.0, "damage": 40.0, "impulse": 18.0 }
+        }
+      ],
+      "description": "榴弹示例——发射药贡献在根对象，战斗部被诱爆贡献在 warheads 内的 machine_max:blast 上"
+    }
+  ]
+}

@@ -6,7 +6,10 @@ import cn.solarmoon.spark_core.sound.ISpreadingSoundPlayer;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
@@ -379,6 +382,79 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
 
         return type;
+    }
+
+    // ==================== 殉爆 ====================
+
+    /**
+     * 摧毁边沿：按<b>实际库存</b>合成一次殉爆。
+     * <p>
+     * 触发点是框架的子系统摧毁边沿（{@link AbstractSubsystem#onTick()}），此时同步数据有效、
+     * 弹药计数尚未被本次起爆消耗。宿主销毁、卸载与脱离不补发本回调：{@link AbstractSubsystem#onTick()}
+     * 已按宿主状态拦下摧毁边沿，这里再检查一次以免被独立调用误触发。
+     * <p>
+     * 客户端也会收到 {@code DATA_DESTROYED_ID} 的同步并回调本方法，但起爆只在服务端发生：
+     * 客户端首行即返回，只保留基类的音效等表现。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    @Override
+    public void onDestroyed() {
+        super.onDestroyed();
+        if (getLevel().isClientSide() || getSubPart().isDestroyed()) return;
+        detonateStoredAmmo();
+    }
+
+    /**
+     * 库存殉爆：读取当前弹链构成、合成贡献、清空库存并提交一次普通爆炸。
+     * <p>
+     * 合成范围是这一个库存单元：从当前 {@code BELT_INDEX} 起按完整循环加尾段统计实际发数，
+     * 混装弹种全部合成一次。每发弹药计入发射药贡献（弹药根对象的 {@code cookoff}）与各战斗部的
+     * 被诱爆贡献；零贡献弹种照样计入库存总数，但不改变 D、S、W。
+     * <p>
+     * {@code P、D、J} 全为零时没有可生成爆炸的贡献，不消耗库存、不起爆。
+     * 一旦判定需要起爆，本次快照的全部剩余弹药都被消耗（含零贡献弹种），
+     * 弹药计数归零且不产生掉落物。
+     * <p>
+     * <b>调用线程：</b>主线程（子系统摧毁边沿）。
+     */
+    private void detonateStoredAmmo() {
+        int ammoCount = getAmmoCount();
+        if (ammoCount <= 0 || attr.projectileTypes.isEmpty()) return;
+
+        // 弹仓是计数而不是物品容器：实际构成按当前弹链指针起算，统计完整循环与不足一轮的尾段
+        int beltSize = attr.projectileTypes.size();
+        int beltIndex = normalizedBeltIndex();
+        Map<ResourceLocation, Integer> roundsByType = new LinkedHashMap<>();
+        for (int i = 0; i < ammoCount; i++) {
+            ResourceLocation typeId = attr.projectileTypes.get((beltIndex + i) % beltSize);
+            roundsByType.merge(typeId, 1, Integer::sum);
+        }
+
+        CookoffComposition composition = new CookoffComposition();
+        for (Map.Entry<ResourceLocation, Integer> entry : roundsByType.entrySet()) {
+            ProjectileType type = ProjectileType.get(getLevel(), entry.getKey());
+            composition.addStoredRound(type, entry.getValue());
+        }
+        if (composition.isEmpty()) return;
+
+        // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
+        Vector3f origin = getLastDamageOrigin();
+        // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
+        consumeAllStoredAmmo();
+        ExplosionManager.get(getLevel()).detonate(
+                origin, composition.toExplosionParams(), getLevel().random.nextLong());
+    }
+
+    /**
+     * 起爆消耗：实际弹药计数归零，并清空所有在途与待取的输送承诺，
+     * 防止起爆后仍有消费者取走已被烧掉的弹药。
+     */
+    private void consumeAllStoredAmmo() {
+        setAmmoCount(0);
+        deliveryLoadedTicks.clear();
+        readyConsumers.clear();
+        lastPlayedProgressKeys.clear();
     }
 
     @Override
