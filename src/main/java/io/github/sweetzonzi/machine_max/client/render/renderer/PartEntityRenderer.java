@@ -65,7 +65,8 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
             if (sqrDist > renderDistance * renderDistance) {
                 return false;
             } else {
-                AABB aabb = entity.getBoundingBox();
+                // 剔除盒：普通部件取完整刚体 AABB；履带主动轮并入整条履带的保守包络
+                AABB aabb = TrackRenderer.cullingAabb(entity.subPart, entity.getBoundingBoxForCulling());
                 return camera.isVisible(aabb);
             }
         } else return false;

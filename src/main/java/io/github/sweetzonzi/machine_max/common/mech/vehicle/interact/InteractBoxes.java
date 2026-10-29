@@ -6,12 +6,14 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
+import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.InteractBoxAttr;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +66,23 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
             MachineMax.LOGGER.error("No matching child shape of interact box {}-{} found for contact point id: {}", subPart.part.name, subPart.name, contactPointIndex);
             return this.values().iterator().next();
         }
+    }
+
+    /**
+     * 按子形状索引查找交互判定区。
+     *
+     * <p>严格按索引映射，不退回首个元素：索引越界或该形状未登记交互判定区时返回
+     * {@code null}。启用状态由调用方从返回的交互判定区读取。</p>
+     *
+     * @param childIndex 子形状索引（物理射线结果的 {@code triangleIndex}）
+     * @return 对应的交互判定区；映射无效时返回 null
+     */
+    @Nullable
+    public InteractBox findInteractBox(int childIndex) {
+        if (childIndex < 0) return null;
+        ChildCollisionShape[] children = interactBoxShape.listChildren();
+        if (childIndex >= children.length) return null;
+        return getInteractBox(children[childIndex].getShape().nativeId());
     }
 
     public void destroy() {

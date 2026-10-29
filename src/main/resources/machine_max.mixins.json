@@ -8,6 +8,7 @@
     "EntityMixin",
     "PlayerMixin",
     "ProjectileMixin",
+    "ProjectileUtilMixin",
     "RepairItemRecipeMixin",
     "ServerEntityMixin"
   ],

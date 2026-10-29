@@ -103,16 +103,13 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                             && !EYESIGHT_IGNORED_GROUPS.contains(body.getCollisionGroup())
                             && PhysicsBodyExtensionKt.getOwner(body) != null
                             && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
-                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
-                            if(subPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
-                            var hitBox = subPart.getHitBox(result.triangleIndex());
-                            if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
-                        }
+                        // 子形状过滤与拾取共用同一套规则：跳过轮胎辅助球体与未激活碰撞箱，索引严格校验
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart
+                                && subPart.findPickableHitBox(result.triangleIndex()) == null) continue;
                         eyesight.targetBodies.put(body, result);//将射线命中物体和相应信息存入targets列表
                         eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
-                            int interactBoxIndex = result.triangleIndex();
-                            InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
+                            InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
                             if (interactBox != null
                                     && interactBox.interactMode == InteractBox.InteractMode.ACCURATE
                                     && interactBox.isEnabled())

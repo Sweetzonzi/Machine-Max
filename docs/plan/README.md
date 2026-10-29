@@ -69,12 +69,12 @@
 | [武器系统-投射物模型渲染设计](进行中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 可解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放（`model_scale` / `model_rotation` / `model_lod_distance`）与投射物动画驱动未实现 |
 | [界面-内容包AUI页面加载可行性调查](进行中/界面-内容包AUI页面加载可行性调查.md) | 结论已落地：`DocumentModule` 在客户端把内容包 `documents/` 写入 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`。待客户端实机验收；`AuiResourceService` 包装器为备选 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；压溃与零件间、生物路径迁移不排期 |
+| [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
 
 ## 计划中
 
 | 文档 | 现状 |
 | --- | --- |
-| [交互-部件精确准星拾取与渲染包围盒设计](计划中/交互-部件精确准星拾取与渲染包围盒设计.md) | 方案阶段；保留实体可选中与完整 AABB，Eyesight、ProjectileUtil、PartHitHandler 共用射线逻辑；double/float 重载统一精确求交并返回普通 EntityHitResult，Handler 在实际命中时取得伤害几何；含单次分发、近战、履带剔除与验收矩阵 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |

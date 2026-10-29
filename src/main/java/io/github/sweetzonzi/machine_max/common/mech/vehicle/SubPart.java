@@ -1117,6 +1117,33 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
+     * 返回子形状对应的可拾取碰撞箱。
+     *
+     * <p>严格按索引映射，不退回首个元素：索引越界、形状未登记碰撞箱、碰撞箱未激活，
+     * 或该子形状是轮胎辅助球体时返回 {@code null}。轮胎辅助球体指同一 wheel 碰撞箱
+     * 附加在地形接触链上的球体，它同时登记在 {@code isWheelSurface} 与
+     * {@code wheelHalfWidths} 中；一般判定用的圆柱只登记在 {@code isWheelSurface}，
+     * 仍参与拾取。</p>
+     *
+     * @param childIndex 子形状索引（物理射线结果的 {@code triangleIndex}）
+     * @return 可拾取的碰撞箱；该子形状不参与拾取时返回 null
+     */
+    @Nullable
+    public HitBox findPickableHitBox(int childIndex) {
+        if (childIndex < 0) return null;
+        ChildCollisionShape[] children = collisionShape.listChildren();
+        if (childIndex >= children.length) return null;
+        long shapeId = children[childIndex].getShape().nativeId();
+        String hitBoxName = attr.getHitBoxNames().get(shapeId);
+        if (hitBoxName == null) return null;
+        HitBox hitBox = hitBoxes.get(hitBoxName);
+        if (hitBox == null || !hitBox.isActive()) return null;
+        boolean auxiliaryWheelSurface = attr.getIsWheelSurface().containsKey(shapeId)
+                && attr.getWheelHalfWidths().containsKey(shapeId);
+        return auxiliaryWheelSurface ? null : hitBox;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * 将三角形索引（碰撞检测结果）映射到对应的 HitBox id。

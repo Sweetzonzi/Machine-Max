@@ -17,9 +17,11 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisual;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
+import io.github.sweetzonzi.machine_max.util.geometry.Circle2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.client.Minecraft;
@@ -27,6 +29,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -191,6 +194,174 @@ public class TrackRenderer extends VisualEffectRenderer {
         double phase = state == null ? 0 : lerp(state.prevPhase, state.phase, partialTick);
         LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
         renderBelt(poseStack, bufferSource, envelope, linkCount, phase, link, visual, packedLight);
+    }
+
+    /**
+     * 计算实体剔除使用的世界 AABB。
+     *
+     * <p>非履带主动轮直接返回实体自身的完整刚体盒。履带主动轮额外并入整条履带的包络：
+     * 包络在主动轮局部 (Y, Z) 平面给出，按单节几何的局部伸入量与履带厚度外扩，
+     * 再用主动轮当前世界位姿把角点变换到世界空间，得到包住整条履带的保守 AABB。
+     * 包络由轮组当前位姿求解，因此主动轮变更、成员变化、断带与解散在下次求值时就体现；
+     * 这里不保留跨帧的履带范围缓存。</p>
+     *
+     * @param subPart 实体对应的子零件，可为 null
+     * @param ownBox  实体自身的完整刚体 AABB
+     * @return 剔除用 AABB；非主动轮或包络不可用时原样返回 {@code ownBox}
+     */
+    public static AABB cullingAabb(@Nullable SubPart subPart, AABB ownBox) {
+        if (subPart == null || ownBox == null) return ownBox;
+        TrackLink link = subPart.trackLink;
+        if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return ownBox;
+
+        TrackEnvelope2D.Result envelope = link.envelope(1f);
+        if (envelope == null) return ownBox;
+
+        double spacing = envelope.path().length() / Math.max(1, link.linkCount());
+        LocalBounds bounds = localBounds(link, subPart, spacing);
+        if (!bounds.isFinite()) return ownBox;
+        // 履带外表面比包络半径多一个厚度；单节几何在 (Y, Z) 平面内的伸入量按两轴绝对值相加保守估计
+        double radialMargin = link.attr().thicknessMeters()
+                + Math.max(Math.abs(bounds.minY()), Math.abs(bounds.maxY()))
+                + Math.max(Math.abs(bounds.minZ()), Math.abs(bounds.maxZ()));
+        double halfAxis = Math.max(Math.abs(bounds.minX()), Math.abs(bounds.maxX()));
+
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (Vec2 point : envelope.path().points()) {
+            minY = Math.min(minY, point.x());
+            maxY = Math.max(maxY, point.x());
+            minZ = Math.min(minZ, point.y());
+            maxZ = Math.max(maxZ, point.y());
+        }
+        // 圆弧可能超出顶点连线，按每个输入圆的外接方框保守覆盖
+        for (Circle2D circle : envelope.path().inputCircles()) {
+            minY = Math.min(minY, circle.x() - circle.radius());
+            maxY = Math.max(maxY, circle.x() + circle.radius());
+            minZ = Math.min(minZ, circle.y() - circle.radius());
+            maxZ = Math.max(maxZ, circle.y() + circle.radius());
+        }
+        if (!(minY <= maxY) || !(minZ <= maxZ)) return ownBox;
+        minY -= radialMargin;
+        maxY += radialMargin;
+        minZ -= radialMargin;
+        maxZ += radialMargin;
+
+        Matrix4f world = envelope.sprocketWorld();
+        double minX = Double.POSITIVE_INFINITY;
+        double worldMaxX = Double.NEGATIVE_INFINITY;
+        double worldMinY = Double.POSITIVE_INFINITY;
+        double worldMaxY = Double.NEGATIVE_INFINITY;
+        double worldMinZ = Double.POSITIVE_INFINITY;
+        double worldMaxZ = Double.NEGATIVE_INFINITY;
+        for (int sx = -1; sx <= 1; sx += 2) {
+            for (int sy = -1; sy <= 1; sy += 2) {
+                for (int sz = -1; sz <= 1; sz += 2) {
+                    double lx = sx * halfAxis;
+                    double ly = sy > 0 ? maxY : minY;
+                    double lz = sz > 0 ? maxZ : minZ;
+                    double wx = world.m00() * lx + world.m10() * ly + world.m20() * lz + world.m30();
+                    double wy = world.m01() * lx + world.m11() * ly + world.m21() * lz + world.m31();
+                    double wz = world.m02() * lx + world.m12() * ly + world.m22() * lz + world.m32();
+                    minX = Math.min(minX, wx);
+                    worldMaxX = Math.max(worldMaxX, wx);
+                    worldMinY = Math.min(worldMinY, wy);
+                    worldMaxY = Math.max(worldMaxY, wy);
+                    worldMinZ = Math.min(worldMinZ, wz);
+                    worldMaxZ = Math.max(worldMaxZ, wz);
+                }
+            }
+        }
+        return new AABB(
+                Math.min(ownBox.minX, minX), Math.min(ownBox.minY, worldMinY), Math.min(ownBox.minZ, worldMinZ),
+                Math.max(ownBox.maxX, worldMaxX), Math.max(ownBox.maxY, worldMaxY), Math.max(ownBox.maxZ, worldMaxZ)
+        );
+    }
+
+    /**
+     * 单节几何在履带局部坐标中的静态包围盒：X 为轮轴（宽度），Y 为内法向（厚度），Z 为切线（节长）。
+     */
+    private record LocalBounds(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+        /** 模型数据异常时整盒不可用，调用方回退到实体自身盒而不是用 NaN 参与视锥判定。 */
+        boolean isFinite() {
+            return Float.isFinite(minX) && Float.isFinite(minY) && Float.isFinite(minZ)
+                    && Float.isFinite(maxX) && Float.isFinite(maxY) && Float.isFinite(maxZ);
+        }
+
+        LocalBounds union(LocalBounds other) {
+            return new LocalBounds(
+                    Math.min(minX, other.minX),
+                    Math.min(minY, other.minY),
+                    Math.min(minZ, other.minZ),
+                    Math.max(maxX, other.maxX),
+                    Math.max(maxY, other.maxY),
+                    Math.max(maxZ, other.maxZ)
+            );
+        }
+    }
+
+    /**
+     * 履带单节的局部包围盒：型号模型存在时取模型骨骼立方体的真实外伸，并与程序化回退几何取并集，
+     * 保证两条绘制路径任意一条都不被剔除。
+     *
+     * @param spacing 当前包络下的实际节距（路径长度 / 节数），用于覆盖节距与型号标称值的偏差
+     */
+    private static LocalBounds localBounds(TrackLink link, SubPart sprocket, double spacing) {
+        LocalBounds bounds = proceduralBounds(link.attr(), spacing);
+        LinkVisual visual = visualFor(link, sprocket);
+        if (visual == null) return bounds;
+        LocalBounds model = modelBounds(visual.pose(), visual.bones());
+        return model == null ? bounds : model.union(bounds);
+    }
+
+    /**
+     * 程序化回退单节的局部包围盒（与 {@link #renderProceduralLink} 的尺寸一致）。
+     *
+     * @param spacing 当前包络下的实际节距；节长取标称节距与实际节距中的较大者
+     */
+    private static LocalBounds proceduralBounds(TrackAttr attr, double spacing) {
+        float halfWidth = LINK_WIDTH * 0.5f;
+        float halfThickness = attr.thicknessMeters() * 0.5f;
+        float halfLength = (float) (Math.max(attr.lengthPerLink(), spacing) * LINK_LENGTH_RATIO * 0.5);
+        return new LocalBounds(-halfWidth, -halfThickness, -halfLength, halfWidth, halfThickness, halfLength);
+    }
+
+    /**
+     * 按单节模型的骨骼层级与立方体顶点求模型空间包围盒。
+     *
+     * @return 模型没有骨骼立方体时返回 {@code null}
+     */
+    @Nullable
+    private static LocalBounds modelBounds(ModelPose pose, List<OBone> bones) {
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        boolean any = false;
+        Matrix4f boneMatrix = new Matrix4f();
+        for (OBone bone : bones) {
+            boneMatrix.identity();
+            bone.applyTransformWithParents(pose, boneMatrix, 1f);
+            for (var cube : bone.getCubes()) {
+                // getTransformedVertices 会就地向传入矩阵叠加立方体自身的 pivot/rotation，每个立方体用独立副本
+                for (var vertex : cube.getTransformedVertices(new Matrix4f(boneMatrix))) {
+                    any = true;
+                    minX = Math.min(minX, vertex.x);
+                    minY = Math.min(minY, vertex.y);
+                    minZ = Math.min(minZ, vertex.z);
+                    maxX = Math.max(maxX, vertex.x);
+                    maxY = Math.max(maxY, vertex.y);
+                    maxZ = Math.max(maxZ, vertex.z);
+                }
+            }
+        }
+        if (!any) return null;
+        return new LocalBounds((float) minX, (float) minY, (float) minZ,
+                (float) maxX, (float) maxY, (float) maxZ);
     }
 
     private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,

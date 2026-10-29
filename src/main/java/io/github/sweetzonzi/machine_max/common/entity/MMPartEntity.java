@@ -75,9 +75,10 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
     /** 水平采样环的方向数 */
     private static final int RING_DIRECTIONS = 8;
     /**
-     * 缓存1倍尺寸的AABB，供 getBoundingBoxForCulling 使用，避免每帧创建
+     * 完整刚体世界 AABB；{@link #makeBoundingBox()} 与 {@link #getBoundingBoxForCulling()} 共用，
+     * 避免每 tick / 每帧重复创建
      */
-    private AABB cachedCullingAabb;
+    private AABB cachedWorldAabb;
 
     /**
      * 不应被使用！
@@ -312,21 +313,16 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                 Vec3 offset = SparkMathKt.toVec3(boundingBoxCenter.subtract(bodyCenter));
                 Vec3 center = position().add(offset);
 
-                // 缓存1倍尺寸的AABB用于渲染剔除，避免 getBoundingBoxForCulling 每帧创建
+                // 完整刚体世界 AABB：实体空间查询、原版交互距离校验与渲染剔除共用同一份，
+                // 避免 makeBoundingBox 每 tick 重复创建
                 double ex = bb.getXExtent();
                 double ey = bb.getYExtent();
                 double ez = bb.getZExtent();
-                cachedCullingAabb = new AABB(
+                cachedWorldAabb = new AABB(
                         center.x - ex, center.y - ey, center.z - ez,
                         center.x + ex, center.y + ey, center.z + ez
                 );
-
-                // 交互碰撞箱使用0.7倍缩小，减少阻挡方块挖掘
-                double scale = 0.7;
-                return new AABB(
-                        center.x - ex * scale, center.y - ey * scale, center.z - ez * scale,
-                        center.x + ex * scale, center.y + ey * scale, center.z + ez * scale
-                );
+                return cachedWorldAabb;
             }
         }
         return super.makeBoundingBox();
@@ -644,12 +640,13 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
     }
 
     /**
-     * 渲染剔除包围盒，直接使用 makeBoundingBox 时缓存的1倍AABB，避免每帧创建
+     * 渲染剔除包围盒，使用 {@link #makeBoundingBox()} 缓存的完整刚体世界 AABB，避免每帧创建。
+     * 主动轮的履带合并范围由渲染器在剔除时另行并入，不改写本实体盒。
      */
     @Override
     public @NotNull AABB getBoundingBoxForCulling() {
-        if (cachedCullingAabb != null) {
-            return cachedCullingAabb;
+        if (cachedWorldAabb != null) {
+            return cachedWorldAabb;
         }
         return super.getBoundingBoxForCulling();
     }
