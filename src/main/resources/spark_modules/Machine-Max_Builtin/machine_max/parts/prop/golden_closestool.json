@@ -26,13 +26,13 @@
           "interact.machine_max.golden.seat": {
             "bone": "interact",
             "signal_targets": {
-              "interact": ["subsystem.machinemax.seat"]
+              "interact": ["subsystem.machine_max.seat"]
             },
             "interact_mode": "accurate" 
           }
         },
         "subsystems": {
-          "subsystem.machinemax.seat": {
+          "subsystem.machine_max.seat": {
             "type": "machine_max:seat", 
             "definition": "machine_max:golden_closestool",
             "locator": "sit_point",
@@ -43,7 +43,7 @@
           }
         },
         "connectors": {
-          "connector.machinemax.chassis_connection": {
+          "connector.machine_max.chassis_connection": {
             "locator": "golden_closestool_connect",
             "definition": "machine_max:fixed_down",
             "signal_translations": {
@@ -55,7 +55,7 @@
               "interact_right_back_door": "interact"
             },
             "signal_targets": {
-              "interact": ["subsystem.machinemax.seat"]
+              "interact": ["subsystem.machine_max.seat"]
             }
           }
         },

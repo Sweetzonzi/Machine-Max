@@ -2,6 +2,7 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:track_controller",
   "basic_durability": 20,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "max_yaw_rate": {
     "0": 45,
     "10": 30,

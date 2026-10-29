@@ -75,7 +75,7 @@
             "bone": "DriverHatchInteract",
             "signal_targets": {
               "interact": [
-                "driver_seat"
+                "subsystem.machine_max.driver_seat"
               ]
             }
           },
@@ -83,8 +83,8 @@
             "bone": "BackHatchInteract",
             "signal_targets": {
               "interact": [
-                "commander_seat",
-                "gunner_seat"
+                "subsystem.machine_max.commander_seat",
+                "subsystem.machine_max.gunner_seat"
               ]
             }
           }
@@ -265,7 +265,7 @@
             "definition": "machine_max:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_4"
           },
-          "driver_seat": {
+          "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_driver_seat",
             "locator": "driver_seat",
@@ -279,7 +279,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic"
           },
-          "commander_seat": {
+          "subsystem.machine_max.commander_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
@@ -298,7 +298,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic"
           },
-          "gunner_seat": {
+          "subsystem.machine_max.gunner_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "gunner_seat",

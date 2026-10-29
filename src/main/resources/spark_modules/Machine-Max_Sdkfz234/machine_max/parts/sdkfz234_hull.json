@@ -238,7 +238,7 @@
             },
             "subsystem.machine_max.item_storage": {
               "type": "machine_max:item_storage",
-              "definition": "machine_max:default_trunk"
+              "definition": "machine_max:sdkfz234_trunk"
             },
             "subsystem.machine_max.left_wheel_2": {
               "type": "machine_max:wheel_driver",

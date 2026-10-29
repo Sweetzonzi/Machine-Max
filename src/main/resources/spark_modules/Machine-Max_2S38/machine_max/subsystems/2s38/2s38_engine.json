@@ -2,6 +2,7 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:engine",
   "basic_durability": 60,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "max_power": 370000,
   "max_torque": 2500,
   "idle_rpm": 550,

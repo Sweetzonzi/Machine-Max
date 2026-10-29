@@ -91,12 +91,12 @@
             "definition": "machine_max:k17_elevation_driver",
             "connector": "connector.machine_max.turret_gun_axis"
           },
-          "left_atgm_elevation_driver": {
+          "subsystem.machine_max.left_atgm_elevation_driver": {
             "type": "machine_max:turret_driver",
             "definition": "machine_max:basic_elevation_driver",
             "connector": "connector.machine_max.turret_left_atgm_axis"
           },
-          "right_atgm_elevation_driver": {
+          "subsystem.machine_max.right_atgm_elevation_driver": {
             "type": "machine_max:turret_driver",
             "definition": "machine_max:basic_elevation_driver",
             "connector": "connector.machine_max.turret_right_atgm_axis"
@@ -216,12 +216,12 @@
               ]
             }
           },
-          "commander_optics": {
+          "subsystem.machine_max.commander_optics": {
             "type": "machine_max:camera",
             "definition": "machine_max:k17_commander_sight",
             "locator": "commander_optics"
           },
-          "gunner_optics": {
+          "subsystem.machine_max.gunner_optics": {
             "type": "machine_max:camera",
             "definition": "machine_max:k17_gunner_sight",
             "locator": "gunner_optics"

@@ -1,6 +1,7 @@
 {
   "type": "machine_max:regen_loader",
   "basic_durability": 20,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "magazine_capacity": 150,
   "regen_per_minute": 800,
   "regen_delay": 1,

@@ -1,6 +1,7 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:seat", //子系统类型
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "block_damage": true, //(可选,默认false)是否无条件阻拦乘客受到伤害
   "render_passenger": false, //(可选,默认true)是否渲染乘客；封闭载具没有内构，乘员模型会穿透车壳
   "views": {

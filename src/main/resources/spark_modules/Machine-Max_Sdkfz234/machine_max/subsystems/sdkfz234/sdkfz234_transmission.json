@@ -2,6 +2,7 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:transmission",
   "basic_durability": 40,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "diff_lock": "auto",
   "diff_lock_sensitivity": 2,
   "auto_diff_lock_threshold": 5,

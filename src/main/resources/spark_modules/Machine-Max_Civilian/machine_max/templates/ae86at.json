@@ -347,7 +347,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.machinemax.seat": {
+            "subsystem.machine_max.seat": {
               "durability_ratio": 1.0
             }
           },
@@ -437,7 +437,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.machinemax.seat": {
+            "subsystem.machine_max.seat": {
               "durability_ratio": 1.0
             }
           },

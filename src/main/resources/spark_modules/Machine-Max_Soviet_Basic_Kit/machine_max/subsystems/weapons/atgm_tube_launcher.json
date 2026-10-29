@@ -1,6 +1,7 @@
 {
   "type": "machine_max:launcher",
   "basic_durability": 30,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "control_inputs": [
     "weapon.atgm"
   ],

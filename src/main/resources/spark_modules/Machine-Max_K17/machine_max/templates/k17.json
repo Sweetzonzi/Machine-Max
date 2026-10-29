@@ -56,7 +56,7 @@
             }
           },
           "subsystem_data": {
-            "gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "control_group_set": {
                 "base_group": {
                   "view_targets": {
@@ -79,7 +79,7 @@
               },
               "durability_ratio": 1.0
             },
-            "driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "control_group_set": {
                 "base_group": {
                   "name": "controlGroup.machine_max.base",
@@ -131,7 +131,7 @@
             "subsystem.machine_max.right_wheel_3": {
               "durability_ratio": 1.0
             },
-            "commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "control_group_set": {
                 "base_group": {
                   "name": "controlGroup.machine_max.base",
@@ -407,10 +407,10 @@
               "brake_pitch": 0.039648905,
               "durability_ratio": 1.0
             },
-            "gunner_optics": {
+            "subsystem.machine_max.gunner_optics": {
               "durability_ratio": 1.0
             },
-            "commander_optics": {
+            "subsystem.machine_max.commander_optics": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.secondary_weapon": {
@@ -428,7 +428,7 @@
             "subsystem.machine_max.main_weapon": {
               "durability_ratio": 1.0
             },
-            "left_atgm_elevation_driver": {
+            "subsystem.machine_max.left_atgm_elevation_driver": {
               "brake_yaw": -3.188298E-7,
               "brake_pitch": 0.044628497,
               "durability_ratio": 1.0
@@ -486,7 +486,7 @@
               "brake_pitch": 1.5945652E-6,
               "durability_ratio": 1.0
             },
-            "right_atgm_elevation_driver": {
+            "subsystem.machine_max.right_atgm_elevation_driver": {
               "brake_yaw": 2.1068833E-7,
               "brake_pitch": 0.044589054,
               "durability_ratio": 1.0

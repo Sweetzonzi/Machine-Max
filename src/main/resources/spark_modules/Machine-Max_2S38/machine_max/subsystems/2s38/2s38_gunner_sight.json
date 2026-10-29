@@ -2,6 +2,7 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:camera",
   "basic_durability": 10,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
   "base_zoom": 1.0,

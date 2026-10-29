@@ -2,6 +2,7 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:turret_driver",
   "basic_durability": 30,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "yaw": {
     "max_force": 80000,
     "max_speed": 90.0
