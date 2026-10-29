@@ -626,6 +626,11 @@ public class ProjectileManager {
      * <p>
      * 非地形目标（零件、实体）的通用去重入口，与地形去重共用同一张表。
      * 同一密钥既可能来自"上一次命中已穿透"，也可能来自"发射时预先排除的发射者"。
+     * <p>
+     * 查这一处的时机有两个：收集命中条目时先做一次廉价过滤，派发前再查一次。
+     * 后者是必需的——同一物理步内的条目全部先收集后派发，收集期写入的密钥在
+     * 当次派发中还不存在，只有派发期按 {@code hitFraction} 顺序复查才能保证
+     * 同一穿透区（同一子部件的同一 {@code HitBoxAttr.id}）在一发内只结算一次。
      *
      * @param projectileId 投射物的 DestroyableObject ID
      * @param key          穿透密钥（{@link PenetrationKey}）
@@ -1707,12 +1712,17 @@ public class ProjectileManager {
                         break;
                     }
 
+                    PenetrationKey pk = entry.penKey();
+                    // 本发已与同一穿透区交互过：整条处理一并跳过
+                    if (pk != null && hasPenetrated(objId[i], pk)) {
+                        continue;
+                    }
+
                     float currentPen = projectile.calculateCurrentPenetration();
                     float currentDmg = projectile.calculateCurrentDamage();
                     int triangleIndex = entry.triangleIndex();
                     Vec3 hp = entry.hitPoint();
                     Vec3 hn = entry.hitNormal();
-                    PenetrationKey pk = entry.penKey();
                     Object owner = entry.owner();
 
                     // 泛化解析：触发体→投射物、SubPart→零件、协议实体→其自身。
