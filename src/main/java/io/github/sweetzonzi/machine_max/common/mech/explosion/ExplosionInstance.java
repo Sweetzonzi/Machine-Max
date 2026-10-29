@@ -65,10 +65,12 @@ import java.util.UUID;
 public final class ExplosionInstance {
 
     /**
-     * 方块破坏倍率。爆炸本身没有弹种，投影物接入（阶段 K）后会由投射物类型提供；
-     * 在此之前取 1.0，即基准伤害直接与方块耐久阈值比较。
+     * 方块的参考迎流面积（m²）：一个满方块面，即 {@code base_damage} 标定口径里的 1 m²。
+     * <p>近场钳制把它当作方块伤害的上界，因此内半径以内的方块伤害恒为
+     * {@code base_damage × 1 m²}（不再随 1/d² 增长），这是弹坑半径 ≈ {@code near_radius} 的直接原因，
+     * 也是 {@code explosion_block_damage_factor} 必须存在的原因（见 {@link #settleBlock}）。
      */
-    private static final float BLOCK_DAMAGE_FACTOR = 1.0f;
+    private static final float BLOCK_REFERENCE_AREA = 1.0f;
 
     // ==================== 标识与年龄 ====================
 
@@ -540,7 +542,7 @@ public final class ExplosionInstance {
     /** 聚合后每个 HitBox 每 tick 只 hurt 一次；代表穿深取本键最大的 A_pen。 */
     private void settleSubPart(BlastAccum acc) {
         if (acc.subPart == null) return;
-        float damage = BlastField.damage(acc.deltaE, params);
+        float damage = BlastField.damage(acc.deltaE, params, partReferenceArea(acc.subPart));
         float impulse = BlastField.impulse(acc.sumFootprintSqrtI, params);
         Vec3 normal = averagedNormal(acc);
         Vec3 point = averagedPoint(acc);
@@ -558,14 +560,24 @@ public final class ExplosionInstance {
         BFDamageApi.hurt(acc.subPart, ctx);
     }
 
-    /** 方块看伤害不看能量；只标记，由 execute 统一摧毁。 */
+    /**
+     * 方块看伤害不看能量；只标记，由 execute 统一摧毁。
+     *
+     * <p>参考迎流面积取 {@link #BLOCK_REFERENCE_AREA}：一个满方块面的标定口径。近场钳制生效后，
+     * 参考半径以内的方块恒收到 {@code base_damage} 点伤害（不再随 1/d² 放大），
+     * 而 {@code DamageUtil.getMaxBlockDurability} 的一般方块阈值量级为
+     * {@code 100 × (0.01 + 硬度)}（石头 ≈ 151、泥土 ≈ 102）。因此
+     * {@code explosion_block_damage_factor} 必须让 {@code base_damage × k} 超过目标材质阈值，
+     * 否则装药再近也炸不动地形。缺省 8.0 对应"base_damage 20 一级的装药可在近场破碎石头"，
+     * 此时弹坑半径 ≈ near_radius。
+     */
     private void settleBlock(BlockPos pos, BlastAccum acc) {
         if (acc.deltaE <= 0f) return;
         if (!params.destroyBlocks()) return;
         if (!MMServerConfig.explosionBlockDamage()) return;
 
-        float damage = BlastField.damage(acc.deltaE, params)
-                * BLOCK_DAMAGE_FACTOR * MMServerConfig.explosionTerrainDamageMultiplier();
+        float damage = BlastField.damage(acc.deltaE, params, BLOCK_REFERENCE_AREA)
+                * MMServerConfig.explosionBlockDamageFactor() * MMServerConfig.explosionTerrainDamageMultiplier();
         if (damage <= 0f) return;
 
         BlockState state = level.getBlockState(pos);
@@ -579,7 +591,7 @@ public final class ExplosionInstance {
     /** 实体伤害交 BF/原版链条；击退沿推离爆心方向，按 {@link KnockbackUtil} 折算质量与每 tick 速度。 */
     private void settleEntity(Entity entity, BlastAccum acc) {
         if (entity.isRemoved()) return;
-        float damage = BlastField.damage(acc.deltaE, params);
+        float damage = BlastField.damage(acc.deltaE, params, entityReferenceArea(entity));
         float impulse = BlastField.impulse(acc.sumFootprintSqrtI, params);
         Vec3 normal = averagedNormal(acc);
         Vec3 point = averagedPoint(acc);
@@ -602,9 +614,37 @@ public final class ExplosionInstance {
         }
     }
 
+    /**
+     * 一般实体的参考迎流面积（m²）：取 AABB 的迎流截面 {@code bbWidth × bbHeight}。
+     *
+     * <p>它与朝向无关，是"这个生物能挡住多大一片爆压"的量级估计：玩家 0.6×1.8 ≈ 1.08 m²、
+     * 小体型生物 0.3–0.5 m²、大型生物按体型自然放大。非有限或非正值退回 1 m² 标定面，
+     * 保证钳制永远有界。</p>
+     */
+    private static float entityReferenceArea(Entity entity) {
+        float area = (float) (entity.getBbWidth() * entity.getBbHeight());
+        return Float.isFinite(area) && area > 0f ? area : BLOCK_REFERENCE_AREA;
+    }
+
+    /**
+     * 零件的参考迎流面积（m²）：取其装车包围盒的最大截面。
+     *
+     * <p>命中框没有自有面积，且一个零件上可有多个命中框；用零件包围盒的<b>最大</b>截面作为上界，
+     * 保证"钳制不会削减远场伤害"（远场 {@code ΔE/Φ₀} 恒不超过该零件的真实迎流面积），
+     * 而在近场它把伤害压到零件尺度。取最大面而非投影面是刻意的：投影面依赖爆点方位，
+     * 会让同一零件的上限随爆点方位跳变。</p>
+     */
+    private static float partReferenceArea(SubPart subPart) {
+        AABB bb = subPart.entity == null ? null : subPart.entity.getBoundingBox();
+        if (bb == null) return BLOCK_REFERENCE_AREA;
+        double dx = bb.getXsize(), dy = bb.getYsize(), dz = bb.getZsize();
+        if (!Double.isFinite(dx) || !Double.isFinite(dy) || !Double.isFinite(dz)) return BLOCK_REFERENCE_AREA;
+        double area = Math.max(Math.max(dx * dy, dx * dz), dy * dz);
+        return Double.isFinite(area) && area > 0 ? (float) area : BLOCK_REFERENCE_AREA;
+    }
+
     /** 能量加权法线均值（朝爆心）；无命中时为 (0,1,0) 兜底。 */
-    private static Vec3 averagedNormal(BlastAccum acc) {
-        if (acc.weightSum <= 0f) return new Vec3(0, 1, 0);
+    private static Vec3 averagedNormal(BlastAccum acc) {        if (acc.weightSum <= 0f) return new Vec3(0, 1, 0);
         Vec3 v = new Vec3(acc.wNx, acc.wNy, acc.wNz);
         return v.lengthSqr() < 1e-9 ? new Vec3(0, 1, 0) : v.normalize();
     }
@@ -642,7 +682,9 @@ public final class ExplosionInstance {
      * 本 tick 对<b>一个去重键</b>的累积。
      *
      * <p>两个求和范围不同，这是设计口径的直接体现，不可混用：
-     * {@link #deltaE} 只累加<b>被击穿</b>的射线（实体键按"到达"计）；
+     * {@link #deltaE} 只累加<b>被击穿</b>的射线（实体键按"到达"计），是伤害分子的<b>原始能量和</b>
+     * ——近场钳制不在这里做，而在 {@link #settle} 阶段按目标参考面积收口（见
+     * {@link BlastField#damage(float, ExplosionParams, float)}）；
      * {@link #sumFootprintSqrtI} 与权重累加<b>全部命中</b>的射线。</p>
      */
     private static final class BlastAccum {

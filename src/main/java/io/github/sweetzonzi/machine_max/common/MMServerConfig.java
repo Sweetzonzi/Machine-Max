@@ -20,6 +20,7 @@ public class MMServerConfig {
     private static final ModConfigSpec.DoubleValue EXPLOSION_FRONT_SPEED_DEFAULT;
     private static final ModConfigSpec.DoubleValue EXPLOSION_INTERACTION_CUTOFF;
     private static final ModConfigSpec.DoubleValue EXPLOSION_ARMOR_K;
+    private static final ModConfigSpec.DoubleValue EXPLOSION_BLOCK_DAMAGE_FACTOR;
 
     // ==================== 碰撞撞击 ====================
 
@@ -79,6 +80,13 @@ public class MMServerConfig {
         EXPLOSION_ARMOR_K = builder
                 .comment("Scale factor converting the material factor of ArmorUtil.getBlockArmor into blast block armor A_block. Calibration target: stone blocks a medium charge, dirt is penetrated.")
                 .defineInRange("explosion_armor_k", 0.4, 0.0, 10.0);
+
+        EXPLOSION_BLOCK_DAMAGE_FACTOR = builder
+                .comment("Converts explosion damage points into block durability units when judging terrain destruction.",
+                        "Blast damage is clamped inside near_radius, so a 1 m^2 block face always receives base_damage points at point blank; block thresholds are DamageUtil.getMaxBlockDurability (general blocks: 100 * (0.01 + hardness), i.e. stone ~151, dirt ~102).",
+                        "Therefore base_damage * factor must exceed the material threshold for craters to form; with this factor the crater radius is approximately near_radius.",
+                        "Default 8.0 lets a base_damage ~20 charge shatter stone at point blank.")
+                .defineInRange("explosion_block_damage_factor", 8.0, 0.0, 1000.0);
 
         // ==================== 碰撞撞击 ====================
 
@@ -151,6 +159,11 @@ public class MMServerConfig {
     /** 方块护甲系数 k_armor（材料因子 → 方块护甲）。 */
     public static float explosionArmorK() {
         return EXPLOSION_ARMOR_K.get().floatValue();
+    }
+
+    /** 伤害点数 → 方块耐久单位的换算系数（决定弹坑半径 ≈ near_radius）。 */
+    public static float explosionBlockDamageFactor() {
+        return EXPLOSION_BLOCK_DAMAGE_FACTOR.get().floatValue();
     }
 
     // ==================== 碰撞撞击 ====================
