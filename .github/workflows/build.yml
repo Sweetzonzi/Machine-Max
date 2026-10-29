@@ -5,12 +5,36 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # CI 里没有 ../Spark-Core、../BallisticsFramework 这两个兄弟目录，所以把两个仓库
+      # 检出到 _deps/ 下，再用 settings.gradle 读的同名属性指过去——等价于本地的复合构建，
+      # 这样 CI 编译的是兄弟仓库源码，而不是 gradle.properties 里钉住的发布版。
+      ORG_GRADLE_PROJECT_spark_core_dir: ${{ github.workspace }}/_deps/Spark-Core
+      ORG_GRADLE_PROJECT_ballistics_framework_dir: ${{ github.workspace }}/_deps/BallisticsFramework
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      # 分支名写死：Spark-Core 的开发分支是 1.21.1-neoforge-reloadlistener，
+      # BallisticsFramework 是 1.21.1-neoforge。改了分支记得同步这里。
+      - name: Checkout Spark-Core
+        uses: actions/checkout@v4
+        with:
+          repository: SolarMoonQAQ/Spark-Core
+          ref: 1.21.1-neoforge-reloadlistener
+          path: _deps/Spark-Core
+          fetch-depth: 1
+
+      - name: Checkout BallisticsFramework
+        uses: actions/checkout@v4
+        with:
+          repository: Sweetzonzi/BallisticsFramework
+          ref: 1.21.1-neoforge
+          path: _deps/BallisticsFramework
+          fetch-depth: 1
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4

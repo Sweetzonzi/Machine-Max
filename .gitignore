@@ -42,6 +42,9 @@ Machine-Max.code-workspace
 /mods-client/*.jar
 /mods-disabled/*.jar
 
+# CI / 本地模拟复合构建时检出的兄弟仓库（见 .github/workflows/build.yml）
+/_deps/
+
 # spark 性能分析产物（skills/spark-profiler 生成，非源码）
 /spark-report-*.md
 /spark-reports/
