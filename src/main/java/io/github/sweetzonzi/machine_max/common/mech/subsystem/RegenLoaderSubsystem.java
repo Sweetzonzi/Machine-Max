@@ -402,7 +402,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public void onDestroyed() {
         super.onDestroyed();
-        if (getLevel().isClientSide() || getSubPart().isDestroyed()) return;
+        if (getLevel().isClientSide()) return;
         detonateStoredAmmo();
     }
 

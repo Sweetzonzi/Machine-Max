@@ -113,16 +113,12 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onTick() {
         tickCount++;
         if (!getLevel().isClientSide()) {
-            SubPart host = getOwner().getSubPart();
-            boolean hostGone = host == null || host.isDestroyed();
             boolean dataDestroyed = synchedData.get(DATA_DESTROYED_ID);
-            if (!dataDestroyed && shouldDestroy() && !hostGone) {
+            if (!dataDestroyed && shouldDestroy()) {
                 // 摧毁判定通过 → 标记摧毁并触发回调。
-                // 宿主已销毁/已被标记摧毁时不补发 onDestroyed：宿主销毁、卸载与脱离只走各自生命周期
                 synchedData.set(DATA_DESTROYED_ID, true);
                 onDestroyed();
-            } else if (dataDestroyed && !hostGone
-                       && !shouldDestroy() && shouldRecover()) {
+            } else if (dataDestroyed && !shouldDestroy() && shouldRecover()) {
                 // 已摧毁但已满足恢复条件 → 清理上一生命周期的受击记录，再标记恢复并触发回调
                 clearLastDamageRecord();
                 synchedData.set(DATA_DESTROYED_ID, false);
