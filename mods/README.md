@@ -16,8 +16,9 @@
 
 **不要放的东西**：
 
-- **GeckoLib**：本项目与 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<geckolib_version>`
-  已经提供它，再放一份 jar 会让同一个包被两个模块导出，ModLauncher 在模块解析阶段直接中止。
+- **GeckoLib**：由 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<version>`
+  （版本见 Spark-Core 的 `gradle.properties`）经复合构建传递进来，再放一份 jar 会让同一个包被两个模块导出，
+  ModLauncher 在模块解析阶段直接中止。
 - **Spark**：Spark-Core 的构建脚本用 `implementation(files(fileTree("mods")))` 把它带进了本项目的运行期类路径，
   本地再放一份同名模块就会撞包。
 - **仅客户端的 mod**（DistantHorizons、Iris、Sodium）：放 `../mods-client/`。它们会让 `runServer` /

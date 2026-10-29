@@ -5,7 +5,7 @@
 
 | jar | 为什么只能停在这里 |
 |-----|--------------|
-| `geckolib-neoforge-1.21.1-4.8.4.jar` | 与 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<geckolib_version>` 的同名模块撞包 |
+| `geckolib-neoforge-1.21.1-4.8.4.jar` | 与 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<version>` 的同名模块撞包 |
 | `spark-1.10.124-neoforge.jar` | Spark-Core 的 `implementation(files(fileTree("mods")))` 已经把它带进运行期类路径，本地再放一份就撞包 |
 
 两者撞包的后果都是 `java.lang.module.ResolutionException`：同一个包被两个模块导出，ModLauncher 在模块解析阶段
