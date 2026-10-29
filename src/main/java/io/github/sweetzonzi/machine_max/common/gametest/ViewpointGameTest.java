@@ -12,6 +12,8 @@ import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimPose;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimTargetState;
 import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
@@ -40,6 +42,51 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class ViewpointGameTest {
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void everyActiveMainWeaponIsSelectedOnce(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:k17_turret"));
+        RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
+        try {
+            var main = part.subParts.get("sub_part.machine_max.main");
+            var original = (WeaponControllerSubsystem) main.subsystems.get("subsystem.machine_max.main_weapon");
+            var secondary = (WeaponControllerSubsystem) main.subsystems.get("subsystem.machine_max.secondary_weapon");
+            var extra = new WeaponControllerSubsystem(main, "probe_extra_main", original.attr);
+            var other = new WeaponControllerSubsystem(main, "probe_other_group", original.attr);
+            var disabled = new WeaponControllerSubsystem(main, "probe_disabled_main", original.attr);
+            disabled.setActive(false);
+            var seatAttr = SeatSubsystemAttr.CODEC.codec().parse(com.mojang.serialization.JsonOps.INSTANCE,
+                    com.google.gson.JsonParser.parseString("{\"definition\":\"machine_max:default_3rd_seat\","
+                            + "\"locator\":\"probe\"}")).getOrThrow();
+            var seat = new SeatSubsystem(main, "probe_selection_seat", seatAttr);
+            var base = new ControlGroup("base", null, Map.of(), Map.of(), Map.of(),
+                    Map.of(original.attr.staticAttribute.getFireInputs().getFirst(), List.of("global")), Map.of(), List.of());
+            var first = new ControlGroup("first", null, List.of());
+            var second = new ControlGroup("second", null, List.of());
+            var groups = new ControlGroupSet(base, List.of(first, second), List.of(), 0);
+            seat.setControlGroupSet(groups);
+            seat.getWeaponControllersByGroup().put("base", List.of(secondary, original, disabled));
+            seat.getWeaponControllersByGroup().put("first", List.of(original, extra));
+            seat.getWeaponControllersByGroup().put("second", List.of(other));
+            helper.assertTrue(seat.getActiveMainWeaponControllers().equals(List.of(original, extra)),
+                    "必须收集 base 与当前子组的全部主 WC，去掉重复、副武器、停用和未选组");
+            helper.assertTrue(seat.getActiveMainWeaponController() == original,
+                    "炮镜机构选择必须使用发现顺序中的第一台主 WC");
+            groups.activate(1);
+            helper.assertTrue(seat.getActiveMainWeaponControllers().equals(List.of(original, other)),
+                    "切组后主 WC 集合必须即时跟随");
+            groups.activate(-1);
+            helper.assertTrue(seat.getActiveMainWeaponControllers().equals(List.of(original)),
+                    "无子组时只显示 base 主武器");
+            seat.setControlGroupSet(ControlGroupSet.EMPTY);
+            helper.assertTrue(seat.getActiveMainWeaponControllers().isEmpty()
+                            && seat.getActiveMainWeaponController() == null,
+                    "没有主武器输出时集合必须为空");
+        } finally {
+            part.discardUnattached();
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
     public static void deviceTypesAndOpticalSources(GameTestHelper helper) {
         for (String name : List.of("2s38_turret", "k17_turret", "sdkfz234_turret")) {

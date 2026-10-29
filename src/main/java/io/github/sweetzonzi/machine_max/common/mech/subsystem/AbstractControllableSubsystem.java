@@ -208,20 +208,27 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 主线程按当前主武器输出频道取得有效 WC，供炮镜选择机构参考。<br>
-     * 候选来自控制组握手发现表，并以主武器开火频道区分同组的主／副控制器。
-     * 选择与座椅安装在哪个刚体上无关；多个匹配时使用发现列表中的第一个。
+     * 主线程／渲染线程按当前主武器输出频道取得全部有效 WC。<br>
+     * 候选来自 {@link #getActiveWeaponControllers()}，以主武器开火频道区分主／副控制器，
+     * 保留发现顺序，同一控制器在 base 和当前子组中出现时只返回一次。
      */
-    @Nullable
-    public WeaponControllerSubsystem getActiveMainWeaponController() {
+    public List<WeaponControllerSubsystem> getActiveMainWeaponControllers() {
         Set<String> channels = controlGroupSet.getMergedMainWeaponTargets().keySet();
+        List<WeaponControllerSubsystem> result = new ArrayList<>();
         for (WeaponControllerSubsystem controller : getActiveWeaponControllers()) {
             if (controller.isActive() && !controller.isDestroyed() && !controller.getSubPart().isRemoved
                     && controller.attr.staticAttribute.getFireInputs().stream().anyMatch(channels::contains)) {
-                return controller;
+                result.add(controller);
             }
         }
-        return null;
+        return result;
+    }
+
+    /** 主线程取发现顺序中的第一台有效主 WC，供炮镜选择机构参考；无匹配时返回 null。 */
+    @Nullable
+    public WeaponControllerSubsystem getActiveMainWeaponController() {
+        List<WeaponControllerSubsystem> controllers = getActiveMainWeaponControllers();
+        return controllers.isEmpty() ? null : controllers.getFirst();
     }
 
     @Override

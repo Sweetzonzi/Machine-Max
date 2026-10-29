@@ -31,8 +31,17 @@ public final class ScreenProjectionUtil {
      */
     public static float @Nullable [] worldToScreenOffset(Vec3 worldPoint, Camera camera,
                                                          float vFov, int screenWidth, int screenHeight) {
-        Vec3 camPos = camera.getPosition();
+        return worldDirectionToScreenOffset(worldPoint.subtract(camera.getPosition()), camera,
+                vFov, screenWidth, screenHeight);
+    }
 
+    /**
+     * 将世界方向投影为相对屏幕中心的 GUI 偏移，不含相机与发射点之间的位置视差。<br>
+     * 方向无需归一化；相机后方、零向量及无法产生有限投影的输入返回 null。
+     */
+    public static float @Nullable [] worldDirectionToScreenOffset(Vec3 direction, Camera camera,
+                                                                  float vFov, int screenWidth, int screenHeight) {
+        if (!(vFov > 0f && vFov < 180f) || screenWidth <= 0 || screenHeight <= 0) return null;
         // 摄像机局部坐标系基向量（世界空间）
         Vector3f camForward = new Vector3f(0, 0, -1);
         camera.rotation().transform(camForward);
@@ -41,18 +50,13 @@ public final class ScreenProjectionUtil {
         Vector3f camUp = new Vector3f(0, 1, 0);
         camera.rotation().transform(camUp);
 
-        // 摄像机 → 目标点的向量
-        double dx = worldPoint.x - camPos.x;
-        double dy = worldPoint.y - camPos.y;
-        double dz = worldPoint.z - camPos.z;
-
         // 投影到摄像机局部坐标系
-        float localX = (float) (camRight.x * dx + camRight.y * dy + camRight.z * dz);
-        float localY = (float) (camUp.x * dx + camUp.y * dy + camUp.z * dz);
-        float localZ = (float) (camForward.x * dx + camForward.y * dy + camForward.z * dz);
+        double localX = camRight.x * direction.x + camRight.y * direction.y + camRight.z * direction.z;
+        double localY = camUp.x * direction.x + camUp.y * direction.y + camUp.z * direction.z;
+        double localZ = camForward.x * direction.x + camForward.y * direction.y + camForward.z * direction.z;
 
         // 目标点在摄像机后方，不可见
-        if (localZ <= 0f) return null;
+        if (!(localZ > 0d)) return null;
 
         // 透视投影：焦距（像素）= 半屏高 / tan(半FOV)
         float vFovHalfRad = (float) Math.toRadians(vFov / 2f);
@@ -60,8 +64,9 @@ public final class ScreenProjectionUtil {
 
         // 屏幕偏移 = 焦距 × (横向分量 / 深度)，无需 atan→tan 来回转换
         // GUI Y 轴向下，故 vertical 取反
-        float offsetX = focalLengthPx * (localX / localZ);
-        float offsetY = -focalLengthPx * (localY / localZ);
+        float offsetX = (float) (focalLengthPx * (localX / localZ));
+        float offsetY = (float) (-focalLengthPx * (localY / localZ));
+        if (!Float.isFinite(offsetX) || !Float.isFinite(offsetY)) return null;
 
         return new float[]{offsetX, offsetY};
     }

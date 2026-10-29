@@ -44,6 +44,7 @@ public final class CameraController {
     private static final ThirdPersonViewpoint FREE_LOOK = new ThirdPersonViewpoint();
 
     /** 以下逻辑状态均由客户端主线程持有；离座或换世界时由 clearWorld 释放。 */
+    @Getter
     private static SeatSubsystem controllingSeat;
     @Getter
     private static AbstractViewpointSubsystem activeCamera;
