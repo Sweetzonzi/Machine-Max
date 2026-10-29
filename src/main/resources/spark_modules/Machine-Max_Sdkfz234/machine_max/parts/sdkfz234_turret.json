@@ -1,8 +1,7 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_turret.png",
   "vehicle_durability_rate": 0.5,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "sdkfz234_2": {
       "model": "machine_max:sdkfz234_2.geo",
@@ -54,6 +53,27 @@
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 5
+            },
+            "TurretAxisHitBox": {
+              "id": "azimuth_driver",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.azimuth_driver"
+            },
+            "Loader50mmAPHitBox": {
+              "id": "ap_ammo_loader",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 10,
+              "subsystem": "subsystem.machine_max.50mm_ammo_loader"
+            },
+            "Loader50mmHEHitBox": {
+              "id": "he_ammo_loader",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 10,
+              "subsystem": "subsystem.machine_max.50mm_he_ammo_loader"
             }
           },
           "interact_boxes": {
@@ -95,7 +115,6 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "machine_max:default_gunner",
-              "allow_use_items": true,
               "passenger_num_outputs": {
                 "passenger_num": [
                   "local",
@@ -113,7 +132,6 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
               "control_group_preset": "machine_max:default_commander",
-              "allow_use_items": true,
               "passenger_num_outputs": {
                 "passenger_num": [
                   "local",
@@ -288,6 +306,5 @@
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

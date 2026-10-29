@@ -1,8 +1,7 @@
 {
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/sdkfz234/sdkfz234_hull.png",
   "vehicle_durability_rate": 0.9,
-  "vehicle_damage_rate": 1,
-  "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "sdkfz234_2": {
       "model": "machine_max:sdkfz234_2.geo",
@@ -58,6 +57,13 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 2
+            },
+            "EngineHitBox": {
+              "id": "engine",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.engine"
             }
           },
           "interact_boxes": {
@@ -279,7 +285,8 @@
                   "local",
                   "global"
                 ]
-              }
+              },
+              "dismount_locators": []
             },
             "subsystem.machine_max.radio_seat": {
               "type": "machine_max:seat",
@@ -291,12 +298,12 @@
                   "local",
                   "global"
                 ]
-              }
+              },
+              "dismount_locators": []
             }
           }
         }
       }
     }
-  },
-  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+  }
 }

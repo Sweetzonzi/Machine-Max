@@ -5,8 +5,13 @@
   "description": "Sd.Kfz.234 八轮装甲车：车体、炮塔、车轮三种零件与配套连接器、动力总成、装配体、蓝图、模板与配方。",
   "dependencies": [
     {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    },
+    {
       "id": "machine_max:german_basic_kit",
       "type": "hard"
     }
-  ]
+  ],
+  "enable_auto_pack": true
 }
