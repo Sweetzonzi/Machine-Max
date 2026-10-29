@@ -62,6 +62,35 @@ public enum MMLanguageRegistry {
             zh_cn, "杂项",
             en_us, "Misc"
     )),
+    // 创造栏零部件筛选（两张零部件创造页的侧栏、系列按钮、弹层与零结果提示）
+    CREATIVE_CATEGORY_ALL("gui.machine_max.creative.category.all", ImmutableMap.of(
+            zh_cn, "全部",
+            en_us, "All"
+    )),
+    CREATIVE_CATEGORY_UNCLASSIFIED("gui.machine_max.creative.category.unclassified", ImmutableMap.of(
+            zh_cn, "未分类",
+            en_us, "Unclassified"
+    )),
+    CREATIVE_ALL_SERIES("gui.machine_max.creative.all_series", ImmutableMap.of(
+            zh_cn, "全部系列",
+            en_us, "All series"
+    )),
+    CREATIVE_SERIES_SEARCH("gui.machine_max.creative.series_search", ImmutableMap.of(
+            zh_cn, "搜索系列",
+            en_us, "Search series"
+    )),
+    CREATIVE_RESET("gui.machine_max.creative.reset", ImmutableMap.of(
+            zh_cn, "清除全部筛选",
+            en_us, "Clear all filters"
+    )),
+    CREATIVE_NO_RESULT("gui.machine_max.creative.no_result", ImmutableMap.of(
+            zh_cn, "无匹配结果",
+            en_us, "No matches"
+    )),
+    CREATIVE_MATCH_COUNT("gui.machine_max.creative.match_count", ImmutableMap.of(
+            zh_cn, "匹配 %1$s / %2$s",
+            en_us, "%1$s of %2$s match"
+    )),
     TYPE_LAND("machine_max.type.land", ImmutableMap.of(
             zh_cn, "陆地",
             en_us, "Land"

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.event;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.render.gui.creative.CreativePartBrowser;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -27,10 +28,13 @@ public class ClientRecipeIndexHandler {
     public static void onRecipesUpdated(RecipesUpdatedEvent event) {
         MMDynamicRes.rebuildFabricatingIndex(event.getRecipeManager(), false);
         MMDynamicRes.rebuildResearchIndex(event.getRecipeManager(), false);
+        // 创造目录里「零件制造蓝图」页的成员由零件配方索引决定；索引换了以后要让原版目录重建。
+        CreativePartBrowser.markContentsDirty();
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         MMDynamicRes.clearRecipeIndex(false);
+        CreativePartBrowser.clearSession();
     }
 }

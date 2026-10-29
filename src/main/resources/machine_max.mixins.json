@@ -24,6 +24,8 @@
     "LevelRendererMixin",
     "LivingEntityRendererMixin",
     "MouseHandlerMixin",
-    "PostChainAccessor"
+    "PostChainAccessor",
+    "CreativeModeInventoryScreenMixin",
+    "CreativeModeTabsMixin"
   ]
 }

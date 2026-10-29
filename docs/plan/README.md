@@ -51,6 +51,7 @@
 | [HUD上下文实现与验收](已实现/HUD上下文实现与验收.md) | 上下文、快照、绑定与物理步推进已进入代码，`gradlew --offline build` 含 81 项单测通过；进世界画面与控制组交互的实机验收另行跟踪 |
 | [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
 | [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册；实机验收通过，P3–P4 未实现 |
+| [界面-创造栏零部件筛选实施计划](已实现/界面-创造栏零部件筛选实施计划.md) | `client/render/gui/creative/` 下 `CreativePartBrowser`、`SeriesPickerWidget` 与 `CreativeModeInventoryScreenMixin`、`CreativeModeTabsMixin` 已落地，两个目标创造页启用搜索栏与外侧筛选控件；68 份零件定义/106 个变体写入 series 标签，30 条系列译名与 7 条界面文本已生成；T01—T05 通过。实机验收 U01—U15 待执行，结果与偏差见该文 §12 |
 
 ## 进行中
 
@@ -76,7 +77,6 @@
 
 | 文档 | 现状 |
 | --- | --- |
-| [界面-创造栏零部件筛选实施计划](计划中/界面-创造栏零部件筛选实施计划.md) | 尚未实现；定义 series 下拉、category 侧栏、联合搜索、闭屏与装载就绪门控；列出待标注的 68 个型号/106 个变体及 30 条系列译名，含 T01—T05 / U01—U15 验收 |
 | [武器系统-装弹机模块化损伤实施计划](计划中/武器系统-装弹机模块化损伤实施计划.md) | 实施指导，尚未接入：再生装弹机拆分 `feed` / `magazine`，弹仓为唯一关键模块；定义实时供给门控、弹仓殉爆定位、旧存档迁移、模块同步、内容接线与 T01—T22 验收；普通装弹机仅做公共接口适配 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |

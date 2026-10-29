@@ -13,6 +13,15 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent
 
+/**
+ * 零部件创造页与零部件制造蓝图创造页的注册名。
+ *
+ * <p>写成文件级常量而不是 [MMCreativeTabs] 的成员：客户端按注册名识别这两页，
+ * 直接读常量不会触发 [MMCreativeTabs] 的初始化。</p>
+ */
+const val PART_TAB_NAME = "machine_max_tab_part"
+const val FABRICATING_BLUEPRINT_TAB_NAME = "machine_max_tab_fabricating_blueprint"
+
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 object MMCreativeTabs {
     @JvmStatic
@@ -89,7 +98,7 @@ object MMCreativeTabs {
 
     @JvmStatic
     val MACHINE_MAX_PART_TAB = MachineMax.REGISTER.creativeModeTab {
-        id = "machine_max_tab_part"
+        id = PART_TAB_NAME
         factory = {
             CreativeModeTab.builder()
                 .title(MMLanguageRegistry.ITEM_GROUP_PART.translated())
@@ -103,6 +112,9 @@ object MMCreativeTabs {
                         item
                     }
                 }
+                // 零部件页带筛选控件：启用原版搜索框与搜索版背景，并让出标题行给系列按钮。
+                .withSearchBar()
+                .hideTitle()
                 .build()
         }
     }
@@ -126,7 +138,7 @@ object MMCreativeTabs {
 
     @JvmStatic
     val MACHINE_MAX_FABRICATING_BLUEPRINT_TAB = MachineMax.REGISTER.creativeModeTab {
-        id = "machine_max_tab_fabricating_blueprint"
+        id = FABRICATING_BLUEPRINT_TAB_NAME
         factory = {
             CreativeModeTab.builder()
                 .title(MMLanguageRegistry.ITEM_GROUP_FABRICATING_BLUEPRINT.translated())
@@ -141,6 +153,9 @@ object MMCreativeTabs {
                         item
                     }
                 }
+                // 制造蓝图页与零部件页共用同一套筛选控件。
+                .withSearchBar()
+                .hideTitle()
                 .build()
         }
     }
@@ -153,7 +168,8 @@ object MMCreativeTabs {
             MACHINE_MAX_PART_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting parts into creative tab...")
                 val externalParts = ArrayList<ItemStack>(1)//将所有外部包部件加入创造物品栏
-                MMDynamicRes.PART_TYPES.forEach { (loc, type) ->
+                // 底层发布快照是无序 Map，这里按完整型号 ID 排序后输出，保证目录顺序稳定。
+                MMDynamicRes.PART_TYPES.entries.sortedBy { it.key.toString() }.forEach { (loc, type) ->
                     val itemStack = ItemStack(MMItems.PART_ITEM)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     itemStack.set(DataComponents.MAX_STACK_SIZE, type.maxStackSize)
@@ -195,7 +211,8 @@ object MMCreativeTabs {
             MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
                 val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包零件制造蓝图加入创造物品栏
-                fabricatingParts().forEach { (loc, _) ->
+                // 与零部件页同序：按完整型号 ID 排序，避免无序快照导致的目录抖动。
+                fabricatingParts().entries.sortedBy { it.key.toString() }.forEach { (loc, _) ->
                     val itemStack = ItemStack(MMItems.PART_FABRICATING_BLUEPRINT)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     itemStack.set(MMDataComponents.RECIPE_TYPE, PartFabricatingRecipe.recipeIdFromPartType(loc))
