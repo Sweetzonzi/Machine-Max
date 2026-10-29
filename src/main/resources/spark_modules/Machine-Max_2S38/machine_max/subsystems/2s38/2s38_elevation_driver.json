@@ -1,0 +1,10 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:turret_driver",
+  "basic_durability": 35,
+  "pitch": {
+    "max_force": 70000,
+    "max_speed": 30.0
+  },
+  "control_inputs": ["weapon_control"]
+}

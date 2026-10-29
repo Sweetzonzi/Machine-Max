@@ -54,6 +54,27 @@
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 20
+            },
+            "TurretAxisHitBox": {
+              "id": "azimuth_driver",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.azimuth_driver"
+            },
+            "AutoloaderAPHitBox": {
+              "id": "2a90_ap_ammo",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.2a90_ap_loader"
+            },
+            "AutoloaderHEHitBox": {
+              "id": "2a90_he_ammo",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.2a90_he_loader"
             }
           },
           "connectors": {
@@ -78,12 +99,12 @@
           "subsystems": {
             "subsystem.machine_max.azimuth_driver": {
               "type": "machine_max:turret_driver",
-              "definition": "machine_max:basic_azimuth_driver",
+              "definition": "machine_max:2s38_azimuth_driver",
               "connector": "connector.machine_max.turret_hull_axis"
             },
             "subsystem.machine_max.gun_elevation_driver": {
               "type": "machine_max:turret_driver",
-              "definition": "machine_max:basic_elevation_driver",
+              "definition": "machine_max:2s38_elevation_driver",
               "connector": "connector.machine_max.turret_gun_axis"
             },
             "subsystem.machine_max.main_weapon": {
@@ -148,6 +169,11 @@
               "type": "machine_max:turret_driver",
               "definition": "machine_max:basic_elevation_driver",
               "connector": "connector.machine_max.turret_pktm_axis"
+            },
+            "subsystem.machine_max.gunner_sight": {
+              "type": "machine_max:camera",
+              "definition": "machine_max:2s38_gunner_sight",
+              "locator": "gunner_sight"
             }
           }
         },
@@ -167,7 +193,8 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:structural_steel",
-              "thickness": 20
+              "thickness": 20,
+              "subsystem": "subsystem.machine_max.2a90"
             }
           },
           "connectors": {
@@ -179,11 +206,6 @@
             }
           },
           "subsystems": {
-            "subsystem.machine_max.gunner_sight": {
-              "type": "machine_max:sight",
-              "definition": "machine_max:2s38_gunner_sight",
-              "locator": "gunner_sight"
-            },
             "subsystem.machine_max.2a90": {
               "type": "machine_max:launcher",
               "definition": "machine_max:2a90_launcher",
