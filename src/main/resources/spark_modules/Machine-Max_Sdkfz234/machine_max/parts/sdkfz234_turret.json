@@ -12,7 +12,8 @@
       "tags": [
         "machine_max:category/structural",
         "machine_max:category/weapon",
-        "machine_max:type/land"
+        "machine_max:type/land",
+        "machine_max:series/sdkfz234"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {

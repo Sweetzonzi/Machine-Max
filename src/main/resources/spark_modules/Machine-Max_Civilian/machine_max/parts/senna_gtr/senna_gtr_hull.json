@@ -9,7 +9,7 @@
       "model": "machine_max:senna_gtr_front_hull.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:senna_gtr",
-      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:hull", "machine_max:senna_gtr", "machine_max:direction/front"],
+      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:hull", "machine_max:direction/front", "machine_max:series/senna_gtr"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 75,
@@ -53,7 +53,7 @@
       "model": "machine_max:senna_gtr_back_hull.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:senna_gtr",
-      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:hull", "machine_max:senna_gtr", "machine_max:direction/back"],
+      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:hull", "machine_max:direction/back", "machine_max:series/senna_gtr"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 75,

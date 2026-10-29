@@ -9,7 +9,8 @@
       "tags": [
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:hull"
+        "machine_max:hull",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {

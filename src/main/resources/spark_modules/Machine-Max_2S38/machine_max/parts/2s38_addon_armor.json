@@ -13,7 +13,8 @@
         "machine_max:direction/left",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_1"
+        "machine_max:addon_armor/left_1",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -52,7 +53,8 @@
         "machine_max:direction/right",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_1"
+        "machine_max:addon_armor/right_1",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -91,7 +93,8 @@
         "machine_max:direction/left",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_2"
+        "machine_max:addon_armor/left_2",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -130,7 +133,8 @@
         "machine_max:direction/right",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_2"
+        "machine_max:addon_armor/right_2",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -169,7 +173,8 @@
         "machine_max:direction/left",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_3"
+        "machine_max:addon_armor/left_3",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -208,7 +213,8 @@
         "machine_max:direction/right",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_3"
+        "machine_max:addon_armor/right_3",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -247,7 +253,8 @@
         "machine_max:direction/left",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_4"
+        "machine_max:addon_armor/left_4",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -286,7 +293,8 @@
         "machine_max:direction/right",
         "machine_max:category/structural",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_4"
+        "machine_max:addon_armor/right_4",
+        "machine_max:series/2s38"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {

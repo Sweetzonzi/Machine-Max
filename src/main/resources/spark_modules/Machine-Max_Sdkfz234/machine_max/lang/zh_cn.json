@@ -20,6 +20,7 @@
   "connector.machine_max.shield_turret_axis": "防盾炮塔轴",
   "sub_part.machine_max.barrel": "炮管",
   "machine_max.sdkfz234": "Sd.Kfz.234",
+  "machine_max.series.sdkfz234": "Sd.Kfz.234",
   "machine_max.research.sdkfz234_hull": "Sd.Kfz.234 车体",
   "research.machine_max.sdkfz234_hull_blueprint.desc": "Sd.Kfz.234 的 8×8 车体：发动机、传动、四轮驱动总成与储物箱。",
   "machine_max.research.sdkfz234_turret": "Sd.Kfz.234 炮塔",

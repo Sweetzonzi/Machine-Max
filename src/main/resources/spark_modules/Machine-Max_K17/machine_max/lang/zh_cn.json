@@ -27,6 +27,7 @@
   "controlGroup.machine_max.autocannon_control": "机关炮",
   "controlGroup.machine_max.atgm_control": "反坦克导弹",
   "machine_max.k17": "K-17",
+  "machine_max.series.k17": "K-17",
   "machine_max.research.k17_hull": "K-17 车体",
   "research.machine_max.k17_hull_blueprint.desc": "K-17 的 8×8 轮式车体：复合装甲、四轮驱动总成与载员舱。",
   "machine_max.research.k17_turret": "K-17 炮塔",

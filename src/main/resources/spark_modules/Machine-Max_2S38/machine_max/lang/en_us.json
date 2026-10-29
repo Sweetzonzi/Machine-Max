@@ -71,6 +71,7 @@
   "connector.machine_max.pktm_turret_lock": "MG Turret Lock",
   "machine_max.2s38_addon_armor": "Skirt Add-on Armor",
   "machine_max.2s38": "2S38",
+  "machine_max.series.2s38": "2S38",
   "machine_max.research.2s38_hull": "2S38 Hull",
   "research.machine_max.2s38_hull_blueprint.desc": "Tracked hull of the 2S38, carrying the engine, transmission and both track assemblies.",
   "machine_max.research.2s38_turret": "2S38 Turret",

@@ -27,6 +27,7 @@
   "controlGroup.machine_max.autocannon_control": "Autocannon",
   "controlGroup.machine_max.atgm_control": "ATGM",
   "machine_max.k17": "K-17",
+  "machine_max.series.k17": "K-17",
   "machine_max.research.k17_hull": "K-17 Hull",
   "research.machine_max.k17_hull_blueprint.desc": "8x8 hull of the K-17 with composite armor, four driven axles and the troop compartment.",
   "machine_max.research.k17_turret": "K-17 Turret",

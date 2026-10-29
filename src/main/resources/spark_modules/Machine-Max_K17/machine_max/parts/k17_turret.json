@@ -8,7 +8,8 @@
     "animations": "machine_max:k17",
     "tags": [
       "machine_max:category/weapon",
-      "machine_max:type/land"
+      "machine_max:type/land",
+      "machine_max:series/k17"
     ],
     "sub_parts": {
       "sub_part.machine_max.main": {

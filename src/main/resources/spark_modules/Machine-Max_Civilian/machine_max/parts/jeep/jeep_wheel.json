@@ -12,7 +12,7 @@
         "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
         "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
       },
-      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:jeep", "machine_max:wheel", "machine_max:direction/left"],
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:direction/left", "machine_max:series/jeep"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80,
@@ -51,7 +51,7 @@
         "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
         "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
       },
-      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:jeep", "machine_max:wheel", "machine_max:direction/right"],
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:direction/right", "machine_max:series/jeep"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80,

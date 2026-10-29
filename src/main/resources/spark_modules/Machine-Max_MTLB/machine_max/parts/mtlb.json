@@ -5,7 +5,7 @@
   "variants": {
     "model": "machine_max:mtlb.geo",
     "textures": "machine_max:textures/part/mtlb/mtlb.png",
-    "tags": [],
+    "tags": ["machine_max:series/mtlb"],
     "sub_parts": {
       "sub_part.machine_max.left_sprocket": {
         "start_bone": "SprocketWheel_Left",

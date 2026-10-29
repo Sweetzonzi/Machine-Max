@@ -71,6 +71,7 @@
   "connector.machine_max.pktm_turret_lock": "机枪炮塔锁扣",
   "machine_max.2s38_addon_armor": "2S38 侧裙附加装甲",
   "machine_max.2s38": "2S38",
+  "machine_max.series.2s38": "2S38",
   "machine_max.research.2s38_hull": "2S38 车体",
   "research.machine_max.2s38_hull_blueprint.desc": "2S38 的履带式车体：容纳发动机、变速箱与两侧履带总成，并承载炮塔。",
   "machine_max.research.2s38_turret": "2S38 炮塔",

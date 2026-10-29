@@ -12,7 +12,8 @@
       "tags": [
         "machine_max:direction/left",
         "machine_max:category/mobility",
-        "machine_max:type/land"
+        "machine_max:type/land",
+        "machine_max:series/k17"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -52,7 +53,8 @@
       "tags": [
         "machine_max:direction/right",
         "machine_max:category/mobility",
-        "machine_max:type/land"
+        "machine_max:type/land",
+        "machine_max:series/k17"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {

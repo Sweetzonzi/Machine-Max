@@ -7,7 +7,8 @@
     "textures": "machine_max:textures/part/k17/k17.png",
     "tags": [
       "machine_max:category/structural",
-      "machine_max:type/land"
+      "machine_max:type/land",
+      "machine_max:series/k17"
     ],
     "sub_parts": {
       "sub_part.machine_max.main": {
