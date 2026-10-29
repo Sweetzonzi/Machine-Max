@@ -241,6 +241,22 @@ io.github.sweetzonzi.machine_max/
 - **每个第一方包自带一份副本**：包内 JSON 的 `$schema` 是指向本包 `docs/` 的相对路径（`parts/x.json` 用 `../docs/…`，`subsystems/<组>/x.json` 用 `../../docs/…`），所以只要包内层级不变，迁移文件时不必改写 `$schema`。同步范围写在 `schema-sync.gradle` 顶部的 `syncTargets`。
 - **新内容包自带 `docs/<lang>/schemas` 时**，把它登记进 `syncTargets`；漏登记的副本由 `checkSchemas` 打提示，不判失败。
 
+### 随包 Blockbench 插件
+
+`skills/blockbench-content-pack/assets/plugins/machine_max_bb_plugin.js` 是插件仓库
+`dist/machine_max_bb_plugin.js` 的随包副本。`bundle-manifest.json` 的 `plugin` 块记录来源
+revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N 个 JSON”文案需与清单一致。
+
+- **该资产不由 `syncSchemas` 生成**。插件发布后，在插件仓库运行
+  `node scripts/sync-skill-bundle.js --apply`（默认写本仓库的
+  `skills/blockbench-content-pack`），或对照插件 `dist` 更新同样字段。
+- **提交固定只含三个文件**：`assets/plugins/machine_max_bb_plugin.js`、
+  `bundle-manifest.json`、`SKILL.md`；提交信息沿用
+  `chore(skill): 随包 Blockbench 插件更新至 <version>`。
+- **与 schema 快照是两条独立链路**：插件资产跟随插件发布，`references/schemas/` 跟随
+  `./gradlew syncSchemas`；不要用一次提交顺手覆盖另一边来掩盖漏跑。
+- 上游存在他人未提交改动时先与插件维护者确认，不要把无关改动卷进该提交。
+
 ## 约定
 
 - **Kotlin 声明，Java 逻辑**：注册表文件（MM\*.kt）、数据生成器、资源模块用 Kotlin；载具核心、物理、网络、渲染用 Java。
