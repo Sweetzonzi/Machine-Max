@@ -70,6 +70,7 @@
 | [界面-内容包AUI页面加载可行性调查](进行中/界面-内容包AUI页面加载可行性调查.md) | 结论已落地：`DocumentModule` 在客户端把内容包 `documents/` 写入 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`。待客户端实机验收；`AuiResourceService` 包装器为备选 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；压溃与零件间、生物路径迁移不排期 |
 | [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
+| [载具系统-殉爆机制设计](进行中/载具系统-殉爆机制设计.md) | 第十版；`cookoff` 贡献字段与 Codec、装弹机摧毁触发、实际库存合成、命中事件化结算、连接点主线程应用、Level 级冲量统一发布与波前末段裁剪均已接入；`CookoffComposition` / `CookoffContribution` 附单元测试；剩余数值标定与运行期验收见 §8 |
 
 ## 计划中
 
@@ -82,7 +83,6 @@
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 未实现；`TrackRenderer` 中没有下垂/悬链求解代码 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
-| [载具系统-殉爆机制设计](计划中/载具系统-殉爆机制设计.md) | 设计建议（第九版）；射线数按截断半径 1 条/m² 采样，1500 发 7.62×54R 弹链锚定 10 m；代码中尚无殉爆触发与贡献字段（`cookoff`），公共命中结算改造与波前末段裁剪（§4.7）也未实施；数值标定与验收清单见 §8 |
 
 ## 未纳入本目录
 
