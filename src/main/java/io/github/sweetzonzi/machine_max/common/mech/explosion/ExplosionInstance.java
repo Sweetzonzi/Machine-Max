@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -95,6 +96,17 @@ public final class ExplosionInstance {
     /** 立体角份额 λ_r = 1/rayCount */
     private final float lambda;
 
+    /**
+     * 起爆即视为"已穿透"的穿透键集合（通常只有起爆源自身的命中箱）。
+     *
+     * <p>起爆点常常落在自身几何内部：殉爆取的是被击毁子系统命中箱的局部形心，射线自该点出发后，
+     * 第一次命中的就是包含爆点的那个命中箱，命中距离仍落在近场平台内（{@code d < near_radius}），
+     * 因此 {@code I ≈ 1}、穿深按近场满值结算——要么把射线拦死，要么按 η 吃掉相当比例的能量，
+     * 表现为爆炸被自身外壳"挡在肚子里"。把这些键在构造时预置进每条射线的去重集合，
+     * 即可令其在判定阶段被直接跳过。</p>
+     */
+    private final Set<PenetrationKey> ignoredKeys;
+
     // ==================== 累计与待摧毁 ====================
 
     /** 本 tick 的累积表，settle 后清空。用插入序容器保证确定性。 */
@@ -120,13 +132,15 @@ public final class ExplosionInstance {
     private final List<Hit> hits = new ArrayList<>();
 
     /**
-     * @param level  所在世界
-     * @param origin 起爆点
-     * @param params 参数集
-     * @param source 伤害源
-     * @param seed   起爆种子
+     * @param level       所在世界
+     * @param origin      起爆点
+     * @param params      参数集
+     * @param source      伤害源
+     * @param seed        起爆种子
+     * @param ignoredKeys 起爆即视为已穿透的穿透键；{@code null} 或空集表示不豁免任何目标
      */
-    ExplosionInstance(Level level, Vector3f origin, ExplosionParams params, DamageSource source, long seed) {
+    ExplosionInstance(Level level, Vector3f origin, ExplosionParams params, DamageSource source, long seed,
+                      @Nullable Set<PenetrationKey> ignoredKeys) {
         this.level = level;
         this.origin = origin.clone();
         this.params = params;
@@ -135,6 +149,15 @@ public final class ExplosionInstance {
         this.rayCount = BlastRayGenerator.adaptiveRayCount(params.nearRadius());
         this.lambda = 1.0f / rayCount;
         this.rays = BlastRayGenerator.generate(this.origin, seed, rayCount);
+        this.ignoredKeys = ignoredKeys == null || ignoredKeys.isEmpty() ? Set.of() : Set.copyOf(ignoredKeys);
+        if (!this.ignoredKeys.isEmpty()) {
+            // 射线集合在此构造完成，一次性预置：此后 consume 里的 markStruck 对这些键恒返回 false
+            for (BlastRay ray : rays) {
+                for (PenetrationKey key : this.ignoredKeys) {
+                    ray.ignoreKey(key);
+                }
+            }
+        }
         this.worldSnapshot = resolveSnapshot(level);
     }
 

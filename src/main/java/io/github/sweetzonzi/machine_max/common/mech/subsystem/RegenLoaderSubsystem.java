@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.sound.ISpreadingSoundPlayer;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
@@ -440,10 +441,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
         // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
         Vector3f origin = getLastDamageOrigin();
+        // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
+        Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
         consumeAllStoredAmmo();
         ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong());
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
     }
 
     /**

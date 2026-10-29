@@ -140,4 +140,18 @@ public final class BlastRay {
     public boolean markStruck(Object key) {
         return struck.add(key);
     }
+
+    /**
+     * 预置一个"视同已判定"的去重键，使该键在射线整个生命周期内不被判定。
+     *
+     * <p>与 {@link #markStruck(Object)} 共用同一集合，因此效果是<b>视同已穿透</b>：
+     * 命中该键时不结算穿透、不折减能量、不登记累积。用于殉爆这类"起爆点位于自身几何内部"
+     * 的场合——起爆源自身的命中箱会在近场平台内（{@code d < near_radius}，故 {@code I ≈ 1}）
+     * 以满值穿深吃掉整发爆炸的能量。</p>
+     *
+     * @param key {@code PenetrationKey} / {@code BlockPos} / {@code Entity} 三类之一
+     */
+    public void ignoreKey(Object key) {
+        struck.add(key);
+    }
 }

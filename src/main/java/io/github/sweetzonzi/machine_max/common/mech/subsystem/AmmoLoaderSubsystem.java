@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
@@ -434,10 +435,12 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
         // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
         Vector3f origin = getLastDamageOrigin();
+        // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
+        Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
         consumeAllStoredAmmo();
         ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong());
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
     }
 
     /**

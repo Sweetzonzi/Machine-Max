@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
@@ -35,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -343,6 +345,40 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     private boolean isHitBoxUsable(HitBox hitBox) {
         SubPart host = getSubPart();
         return host != null && hitBox.getSubPart() == host && host.hitBoxes.containsValue(hitBox);
+    }
+
+    /**
+     * 殉爆起爆时应被豁免的穿透键：起爆点所在的那个<b>自身</b>命中箱。
+     *
+     * <p>起爆点由 {@link #getLastDamageOrigin()} 给出，取的是命中箱的局部形心，因此几何上必然
+     * 落在该命中箱内部。普通爆炸的射线自该点出发后第一次命中的就是同一个命中箱，命中距离仍在近场
+     * 平台内（{@code d < near_radius}，故 {@code I ≈ 1}），穿深按近场满值结算，要么直接把射线拦死、
+     * 要么按 η 吃掉相当比例的能量，表现为爆炸威力被自身外壳挡掉。把键交给
+     * {@code ExplosionManager#detonate} 的豁免重载即可跳过它。</p>
+     *
+     * <p>只豁免定位所依据的那一个命中箱：同一零件其余的装甲命中箱仍正常参与穿透与伤害结算，
+     * 即"弹从自己肚子里炸开"不额外吃亏，但爆炸仍须穿透其余结构才能外传。</p>
+     *
+     * <p>命中箱来源无效（无最近有效事件、命中箱已失效）时，起爆点回退宿主质心，此时无法确定
+     * 落在哪个命中箱内，故豁免宿主登记的全部命中箱。</p>
+     *
+     * <p><b>调用线程：</b>主线程（与起爆调用同一处）。</p>
+     *
+     * @return 不可变豁免键集合；宿主不存在时为空集
+     */
+    @NotNull
+    public Set<PenetrationKey> getCookoffIgnoredKeys() {
+        SubPart host = getSubPart();
+        if (host == null || host.hitBoxes.isEmpty()) return Set.of();
+        HitBox hitBox = lastDamageHitBox;
+        if (hitBox != null && isHitBoxUsable(hitBox)) {
+            return Set.of(new PenetrationKey(host, hitBox.getAttr().getId()));
+        }
+        Set<PenetrationKey> keys = new LinkedHashSet<>();
+        for (HitBox box : host.hitBoxes.values()) {
+            keys.add(new PenetrationKey(host, box.getAttr().getId()));
+        }
+        return Set.copyOf(keys);
     }
 
     public void onDestroyed() {

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.explosion;
 
 import cn.solarmoon.spark_core.event.PhysicsSnapshotReadyEvent;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
@@ -12,6 +13,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -87,6 +90,31 @@ public final class ExplosionManager {
      * @param seed   起爆种子，双端必须一致
      */
     public void detonate(Vector3f origin, ExplosionParams params, long seed) {
+        detonate(origin, params, seed, null);
+    }
+
+    /**
+     * 带穿透键豁免的起爆重载。
+     *
+     * <p>用于起爆点<b>落在自身几何内部</b>的场合（典型是弹药库存子系统的殉爆：爆点取的是被击毁
+     * 子系统命中箱的局部形心）。射线自该点出发后第一次命中的就是包含爆点的那个命中箱，命中距离仍在
+     * 近场平台内（{@code d < near_radius}），故 {@code I ≈ 1}，近场满值穿深要么把射线直接拦死、
+     * 要么按 η 吃掉大部分能量，表现为爆炸被自身外壳挡在内部。把该命中箱的
+     * {@link PenetrationKey} 交给本重载即可豁免。</p>
+     *
+     * <p>豁免语义是"视同已穿透"：命中该键不结算、不折减能量、不登记累积，射线照常继续传播。
+     * 只豁免显式给出的键，因此同一零件的装甲命中箱仍会正常参与穿透与伤害结算。</p>
+     *
+     * <p>豁免集合只作用于服务端实例，不进入 {@link ExplosionDetonatePayload}：客户端只据
+     * "起爆点 + 种子 + 参数集"建立表现条目，不重建实例，因此协议无需变更。</p>
+     *
+     * @param origin      起爆点
+     * @param params      参数集
+     * @param seed        起爆种子，双端必须一致
+     * @param ignoredKeys 起爆即视为已穿透的穿透键；{@code null} 或空集等同于 {@link #detonate(Vector3f, ExplosionParams, long)}
+     */
+    public void detonate(Vector3f origin, ExplosionParams params, long seed,
+                         @Nullable Set<PenetrationKey> ignoredKeys) {
         if (level.isClientSide()) return;
         // 殉爆环路保护：限制每维度同时活跃的实例数
         if (active.size() >= MMServerConfig.explosionMaxActiveInstances()) {
@@ -97,7 +125,7 @@ public final class ExplosionManager {
         DamageSource source = level.damageSources().source(params.damageType());
         PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                 new ExplosionDetonatePayload(level.dimension(), origin, seed, params));
-        active.add(new ExplosionInstance(level, origin, params, source, seed));
+        active.add(new ExplosionInstance(level, origin, params, source, seed, ignoredKeys));
     }
 
     /** 客户端：登记一个表现条目（由起爆包处理器调用）。 */
