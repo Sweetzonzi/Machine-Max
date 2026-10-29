@@ -17,9 +17,9 @@
     "damage_velocity_coefficient": 0.3
   },
   "cookoff": {
-    "penetration": 0.0,
-    "damage": 8.0,
-    "impulse": 12.0
+    "penetration": 18.8,
+    "damage": 62.7,
+    "impulse": 2508.0
   },
   "vulnerability": {
     "rha": 12.0,
@@ -29,9 +29,9 @@
     {
       "type": "machine_max:blast",
       "cookoff": {
-        "penetration": 40.0,
+        "penetration": 80.0,
         "damage": 40.0,
-        "impulse": 18.0
+        "impulse": 3000.0
       },
       "base_penetration": 80.0,
       "base_damage": 40.0,

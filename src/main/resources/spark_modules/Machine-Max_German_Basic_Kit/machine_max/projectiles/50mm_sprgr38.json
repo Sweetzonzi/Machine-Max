@@ -18,19 +18,19 @@
     "block_damage_factor": 1.5
   },
   "cookoff": {
-    "penetration": 0.0,
-    "damage": 1.0,
-    "impulse": 3.5
+    "penetration": 3.0,
+    "damage": 10.0,
+    "impulse": 400
   },
   "warheads": [
     {
       "type": "machine_max:blast",
       "cookoff": {
-        "penetration": 20.0,
-        "damage": 3.0,
-        "impulse": 5.0
+        "penetration": 10.0,
+        "damage": 22.0,
+        "impulse": 800.0
       },
-      "base_penetration": 25.0,
+      "base_penetration": 10.0,
       "base_damage": 22.0,
       "base_impulse": 800.0,
       "near_radius": 1.5,

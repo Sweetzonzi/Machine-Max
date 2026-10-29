@@ -23,9 +23,9 @@
     "block_damage_factor": 1.0
   },
   "cookoff": {
-    "penetration": 0.0,
-    "damage": 3.0,
-    "impulse": 8.0
+    "penetration": 2.5,
+    "damage": 8.3,
+    "impulse": 332.0
   },
   "guidance": {
     "type": "machine_max:pure_pursuit",
@@ -43,8 +43,8 @@
       "type": "machine_max:blast",
       "cookoff": {
         "penetration": 60.0,
-        "damage": 30.0,
-        "impulse": 20.0
+        "damage": 120.0,
+        "impulse": 300.0
       },
       "base_penetration": 60.0,
       "base_damage": 120.0,
