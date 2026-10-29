@@ -902,7 +902,7 @@ PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload
 
 文字里出现的座位名只有一个来源：`SeatSubsystem.name` 经 `Component.translatable` 的翻译结果。内容包把名字写成翻译键，玩家看到的就是作者给的本地化文本；键不存在时按 `Component.translatable` 的默认行为显示键本身，补键即可，不改代码。
 
-- 名字的正确性由内容包负责：`SeatSubsystem.name` 是子系统在零件 JSON 里的 key，K17 用 `driver_seat` / `commander_seat` / `gunner_seat` 这类短键并在 lang 里给了同名键，MTLB 用 `subsystem.machine_max.passenger_seat_1` 这类完整键。
+- 名字的正确性由内容包负责：`SeatSubsystem.name` 是子系统在零件 JSON 里的 key，四个军用包统一用它作为语言键（K17 写 `subsystem.machine_max.driver_seat` / `commander_seat` / `gunner_seat` 并在 lang 里给同名键，MTLB 写 `subsystem.machine_max.passenger_seat_1` 这类完整键）。
 - 变体名、`locator`、子系统名的末段都不参与取名：这些字段能凑出一个像样的名字，但玩家自行组装的载具没有命名约定，凑出来的名字与实际座位对不上，比原样显示键更容易误导。
 
 分工：

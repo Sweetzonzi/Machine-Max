@@ -41,9 +41,9 @@ class K17TurretContentTest {
         assertEquals(pitchSpeed, gunner.get("pitch_speed").getAsFloat(), 1e-4f);
 
         assertEquals("machine_max:k17_commander_sight",
-                subsystems.getAsJsonObject("commander_optics").get("definition").getAsString());
+                subsystems.getAsJsonObject("subsystem.machine_max.commander_optics").get("definition").getAsString());
         assertEquals("machine_max:k17_gunner_sight",
-                subsystems.getAsJsonObject("gunner_optics").get("definition").getAsString());
+                subsystems.getAsJsonObject("subsystem.machine_max.gunner_optics").get("definition").getAsString());
         assertFalse(Files.exists(SUBSYSTEMS.resolve("k17_commander_sight_preview.json")));
         assertFalse(Files.exists(SUBSYSTEMS.resolve("k17_gunner_sight_preview.json")));
     }

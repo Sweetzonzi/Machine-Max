@@ -244,7 +244,7 @@ class WeaponHudComponentsTest {
         var hull = JsonParser.parseString(Files.readString(K17.resolve("parts/k17_hull.json"))).getAsJsonObject();
         var driverSeat = hull.getAsJsonObject("variants")
                 .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main")
-                .getAsJsonObject("subsystems").getAsJsonObject("driver_seat");
+                .getAsJsonObject("subsystems").getAsJsonObject("subsystem.machine_max.driver_seat");
         assertEquals("machine_max:default_3rd_driver_seat", driverSeat.get("definition").getAsString());
         assertEquals("machine_max:morden_ground_basic", driverSeat.get("third_hud_layout").getAsString());
         assertTrue(Files.isRegularFile(BUILTIN.resolve("hud_layouts/morden_ground_basic.json")));
