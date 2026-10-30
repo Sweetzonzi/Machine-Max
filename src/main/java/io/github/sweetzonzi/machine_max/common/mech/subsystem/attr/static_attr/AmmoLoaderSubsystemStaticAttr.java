@@ -22,6 +22,11 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * 装填是否为逐发模式。<br>
      * {@code true}=逐发压入（火炮、霰弹枪），此时 {@link #reloadTime} 表示装填一发耗时；<br>
      * {@code false}=整体换弹匣（机炮），此时 {@link #reloadTime} 表示换弹匣总耗时。
+     * <p>
+     * <b>本字段当前不参与任何判定：</b>交付路径对每一发都计时，换弹匣语义还没有实现，
+     * 因此 {@code IAmmoSupplier#isReloadRoundByRound()} 对本实现恒为 {@code true}。
+     * 写 {@code false} 不会得到整匣装填，只会在字段上留下一个尚未生效的意图。
+     * </p>
      */
     private final boolean roundByRound;
 

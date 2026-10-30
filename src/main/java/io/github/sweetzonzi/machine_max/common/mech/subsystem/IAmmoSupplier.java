@@ -9,6 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -63,8 +64,12 @@ public interface IAmmoSupplier {
     /** 当前将提供的弹药类型，null = 无弹药 */
     @Nullable ProjectileType getSuppliedType();
 
-    /** 是否为逐发装填模式 */
-    boolean isRoundByRound();
+    /**
+     * 输弹粒度：{@code true} 时每一发都付 {@link #getReloadTimeTicks()}，
+     * {@code false} 时只在对接那一次付，之后瞬时送达。<br>
+     * 与回充粒度（{@code magazine.regen_round_by_round}，「一次回充补几发」）正交。
+     */
+    boolean isReloadRoundByRound();
 
     /** 装填耗时（tick） */
     int getReloadTimeTicks();
@@ -105,6 +110,23 @@ public interface IAmmoSupplier {
     default boolean hasScheduledRound() {
         return false;
     }
+
+    /**
+     * 当前绑着本机的消费者集合（认领）。<br>
+     * 只在主线程由服务端路由写入：路由为某根管选中本机时把该管加进来，发射器释放绑定时
+     * （{@code LauncherSubsystem#assignSupplier}）把自己移除。不入存档、不同步——读档后第一次路由
+     * 按名字序重建，因此旧存档里"两根管指向同一台独占机器"会在第一次路由里消解。
+     * <p>
+     * 用集合而不是单个字段，是因为 {@link #canSupplyMultiple()} 为真的机器合法地同时绑定多根管；
+     * 独占只是"集合里最多一条有效认领"这一条判据，两种形态共用同一份存储。
+     * <p>
+     * 有效认领 = 持有者未摧毁、未失能，且它的 {@code currentSupplier} 仍指向本机。
+     * 集合里可能残留无效条目（持有者的控制器先被摧毁），读取方按这条规则过滤，
+     * 供给者在 {@code onTick} 里自行剔除。
+     *
+     * @return 可直接增删的集合，仅在主线程有意义
+     */
+    Set<IAmmoConsumer> getBoundConsumers();
 
     /**
      * 取消该消费者在本供给者处<b>进行中或尚未取走</b>的交付，让那发重新可被分配。<br>
@@ -199,6 +221,28 @@ public interface IAmmoSupplier {
      */
     default int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
         return -1;
+    }
+
+    /**
+     * 为这个消费者拿到下一发还要多少 tick，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
+     * 分档：已为本管备好一发（就绪待取）= {@code 0}；正为本管输弹 = 剩余 tick；
+     * 有余弹但还没起送 = 整段 {@link #getReloadTimeTicks()}；无余弹或本机不可交付 =
+     * {@link Integer#MAX_VALUE}。最后两档合起来表达「现货优先」——空匣的机器即使下一 tick 就会
+     * 回充出一发也报 {@code MAX_VALUE}，因为一发撑不起续航，此刻换到有现货的候选才划算。
+     * <p>
+     * 方法无副作用：{@link #isRoundReady(IAmmoConsumer)} 只在已经排上的分支里调用，
+     * 不会顺手替消费者发起新请求。整匣模式「已对接、后续瞬时」那一档由实现自己补上。
+     *
+     * @param consumer 请求查询的消费者
+     * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
+     */
+    default int getTicksToNextRound(IAmmoConsumer consumer) {
+        if (!isSupplyOperational()) return Integer.MAX_VALUE;
+        if (isRoundScheduled(consumer) && isRoundReady(consumer)) return 0;
+        if (!hasAmmo()) return Integer.MAX_VALUE;
+        int elapsed = getDeliveryElapsedTicks(consumer);
+        if (elapsed < 0) return Math.max(0, getReloadTimeTicks());
+        return Math.max(0, getReloadTimeTicks() - elapsed);
     }
 
     /**

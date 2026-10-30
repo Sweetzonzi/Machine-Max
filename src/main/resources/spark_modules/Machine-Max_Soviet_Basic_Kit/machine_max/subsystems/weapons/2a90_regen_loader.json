@@ -2,15 +2,20 @@
   "type": "machine_max:regen_loader",
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
-  "magazine_capacity": 74,
-  "regen_per_minute": 120,
-  "regen_round_by_round": true,
-  "energy_cost_per_round": 0,
-  "reload_time": 0.45,
-  "can_supply_multiple": false,
-  "regen_delay": 0.3,
-  "feed": { "durability_weight": 1.0 }, //(可选, 默认1.0)输弹机构：非关键，归零只停供弹
-  "magazine": { "durability_weight": 1.0 }, //(可选, 默认1.0)弹仓：唯一关键，归零即殉爆
+  "feed": {
+    "durability_weight": 1.0, //(可选, 默认1.0)输弹机构：非关键，归零只停供弹
+    "reload_time": 0.45, //(必填, 秒)把一个装填单位送进膛的时间
+    "reload_round_by_round": true, //(可选, 默认true)true=每发都付 reload_time；false=只在对接时付一次
+    "can_supply_multiple": false //(可选, 默认false)false=独占绑定，同一时刻最多一根管
+  },
+  "magazine": {
+    "durability_weight": 1.0, //(可选, 默认1.0)弹仓：唯一关键，归零即殉爆
+    "capacity": 74, //(必填)存量上限
+    "regen_per_minute": 120, //(可选, 默认0)每分钟产出数量
+    "regen_round_by_round": true, //(可选, 默认true)true=随打随产；false=打空后整批回满
+    "energy_cost_per_round": 0, //(可选, 默认0)每产出一发的取电
+    "regen_delay": 0.3 //(可选, 默认0, 秒)取走一发后暂停产出的时间
+  },
   "sounds": {
     "progress_sounds": {
       "0.0": {

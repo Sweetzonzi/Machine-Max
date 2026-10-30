@@ -17,6 +17,8 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.FeedModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.MagazineModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -44,10 +46,13 @@ import java.util.*;
  * 弹链机制：维护一个有序的循环弹种序列，consumeReadyRound 时逐发推进指针。
  * 单一弹种退化为长度为 1 的弹链。
  * <p>
- * 多消费者：{@code can_supply_multiple=false} 时整台装弹机同一时刻只推进一个消费者的输送计时器，
- * 没排上的消费者在 {@link #requestRound(IAmmoConsumer)} 中只得到"已受理"，不起计时器，
- * 下个 tick 重发请求再试，直到前一个消费者取走弹药腾出输弹线——一条输弹链一次只能移动一发。
- * {@code can_supply_multiple=true} 时所有消费者的计时器并行推进，各自拿到弹链上的下一发。<br>
+ * 两种输弹粒度由 {@code feed.reload_round_by_round} 决定：逐发模式每一发都付
+ * {@code feed.reload_time}；整匣模式只在对接（第一次成功取弹）时付一次，之后瞬时送达，
+ * 对接状态记在 {@link #dockedConsumers} 里。<br>
+ * 多消费者：{@code feed.can_supply_multiple=false} 的机器由武器控制器独占绑定，同一时刻只有一根管绑在
+ * 它上面；{@code true} 的机器允许多根管同时绑定，各自计时、各自取弹，库存共同消耗。
+ * 独占机器若仍收到第二个消费者的请求（旧存档里两根管指向同一台），本次只得到"已受理"而不起计时器，
+ * 下个 tick 重发请求再试，直到前一条交付取走腾出输弹线——一条输弹链一次只能移动一发。<br>
  * 因此不存在等待队列：{@link #deliveryLoadedTicks} 里有没有本消费者，就是"轮到没轮到"。
  * <p>
  * 计时器一律记<b>已消耗/剩余量</b>并只在 {@link #onTick()} 里自增自减，不记"开始时刻"：开始时刻是
@@ -138,6 +143,27 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     /** 每个消费者的弹药是否已就绪（输送已完成、等消费者取走），插入有序 */
     private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
 
+    /**
+     * 已经付过对接代价的消费者，插入有序。<br>
+     * 只在整匣模式（{@code reload_round_by_round=false}）下有内容：首次取走成功后置位，
+     * 之后每次请求都直接进入 {@link #readyConsumers}，不再计时。
+     * <p>
+     * 不变量：<b>已对接 ⇔ 本次绑定成功送达过至少一发</b>。因此本集合只表达「这次绑定付过对接」，
+     * 不表达弹仓里还有没有弹——打空再回充仍是同一个匣，标记保持。
+     * 容器不是弹匣内容，所以 {@link #clearDeliveries()}（机构损坏、整机停用、殉爆消耗）与
+     * {@link #clearRegenState()}（弹仓判毁）都不动它；只有 {@link #cancelRound(IAmmoConsumer)}
+     * 这条「换供给者 / 供给者被摘除」的路径清除它。读档后为空，所有消费者重新对接。
+     * </p>
+     */
+    private final Set<IAmmoConsumer> dockedConsumers = new LinkedHashSet<>();
+
+    /**
+     * 当前绑着本机的消费者集合（认领），由服务端路由在选中本机时写入、发射器释放绑定时移除。<br>
+     * 不入存档也不同步：读档后第一次路由按名字序重建。独占机器（{@code feed.can_supply_multiple=false}）
+     * 的有效认领最多一条，控制器据此把它从别人的候选里排除。
+     */
+    private final Set<IAmmoConsumer> boundConsumers = new LinkedHashSet<>();
+
     public RegenLoaderSubsystem(ISubsystemHost owner, String name, RegenLoaderSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -166,6 +192,16 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         return defs;
     }
 
+    /** 输弹机构模块：一次输弹付多少时间、移动几发、允许几根管同时接。 */
+    private FeedModuleAttr feed() {
+        return attr.staticAttribute.getFeed();
+    }
+
+    /** 弹仓模块：存量上限、回充速率与粒度、每发取电与取走后的暂停。 */
+    private MagazineModuleAttr magazine() {
+        return attr.staticAttribute.getMagazine();
+    }
+
     /**
      * 获取当前弹药计数
      */
@@ -181,6 +217,11 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     }
 
     // ==================== IAmmoSupplier 实现 ====================
+
+    @Override
+    public Set<IAmmoConsumer> getBoundConsumers() {
+        return boundConsumers;
+    }
 
     @Override
     public boolean hasAmmo() {
@@ -215,19 +256,24 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         return ProjectileType.get(getLevel(), attr.projectileTypes.get(normalizedBeltIndex()));
     }
 
+    /**
+     * 输弹粒度：一次输弹移动一发还是一个弹匣。<br>
+     * 与静态属性里的 {@code magazine.regen_round_by_round} 正交——那个是「一次回充补几发」，
+     * 这个是「一次输弹送几发」。两个字段只差前缀，问的是不同的事。
+     */
     @Override
-    public boolean isRoundByRound() {
-        return attr.staticAttribute.getReloadTime() > 0;
+    public boolean isReloadRoundByRound() {
+        return feed().reloadRoundByRound();
     }
 
     @Override
     public int getReloadTimeTicks() {
-        return (int) (attr.staticAttribute.getReloadTime() * 20f); // 秒 → tick
+        return (int) (feed().reloadTime() * 20f); // 秒 → tick
     }
 
     @Override
     public boolean canSupplyMultiple() {
-        return attr.staticAttribute.isCanSupplyMultiple();
+        return feed().canSupplyMultiple();
     }
 
     @Override
@@ -273,8 +319,9 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
      * 请求一发弹药，启动非阻塞输送计时器。<br>
      * 幂等性：同一 consumer 多次调用不会创建重复计时器。
      * <p>
-     * {@code can_supply_multiple=false} 且已有别人在输送时，本次请求返回 true 但不启动计时器
-     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #deliveryLoadedTicks}
+     * {@code feed.can_supply_multiple=false} 且已有别人在输送时，本次请求返回 true 但不启动计时器
+     * ——它没有被排上，下个 tick 重发请求即可再试。独占绑定由控制器在认领阶段保证，这条判定是同一
+     * 不变量在供给者侧的兜底（旧存档可能留下一台机器绑两根管）。整个流程只需 {@link #deliveryLoadedTicks}
      * 一张表表达"谁的输送在进行中"，因此不记录等待队列。
      *
      * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示弹仓无弹
@@ -298,10 +345,12 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     }
 
     /**
-     * 启动该消费者的输送计时器；{@code reload_time=0} 时直接转入待取。
+     * 启动该消费者的输送计时器；{@code reload_time=0} 时直接转入待取。<br>
+     * 整匣模式下已经对接过的消费者不再计时——它的弹匣已经插上，后续每一发都是瞬时交付。
      */
     private void startDelivery(IAmmoConsumer consumer) {
-        if (getReloadTimeTicks() > 0) {
+        boolean needDock = isReloadRoundByRound() || !dockedConsumers.contains(consumer);
+        if (needDock && getReloadTimeTicks() > 0) {
             deliveryLoadedTicks.put(consumer, 0);
         } else {
             readyConsumers.add(consumer); // 瞬时交付
@@ -341,6 +390,8 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         deliveryLoadedTicks.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
         readyConsumers.removeIf(RegenLoaderSubsystem::isConsumerGone);
         lastPlayedProgressKeys.keySet().removeIf(RegenLoaderSubsystem::isConsumerGone);
+        dockedConsumers.removeIf(RegenLoaderSubsystem::isConsumerGone);
+        boundConsumers.removeIf(RegenLoaderSubsystem::isConsumerGone);
     }
 
     /**
@@ -361,6 +412,19 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         deliveryLoadedTicks.remove(consumer);
         readyConsumers.remove(consumer);
         lastPlayedProgressKeys.remove(consumer);
+        // 绑定被释放即失去对接：新绑定要重新付一次 reload_time
+        dockedConsumers.remove(consumer);
+    }
+
+    /**
+     * 为该消费者拿到下一发还要多少 tick。<br>
+     * 已对接的整匣机器对绑定的那根管是瞬时交付，因此直接报 0；其余情形交给接口默认实现
+     * （就绪 0、在途报剩余、有余弹未起送报整段耗时、无弹或不可用报 {@link Integer#MAX_VALUE}）。
+     */
+    @Override
+    public int getTicksToNextRound(IAmmoConsumer consumer) {
+        if (!isReloadRoundByRound() && dockedConsumers.contains(consumer) && hasAmmo()) return 0;
+        return IAmmoSupplier.super.getTicksToNextRound(consumer);
     }
 
     @Override
@@ -394,7 +458,12 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         readyConsumers.remove(consumer);
         lastPlayedProgressKeys.remove(consumer); // 弹药已消费，清理该消费者的音效追踪
 
-        return takeRoundFromMagazine();
+        ProjectileType round = takeRoundFromMagazine();
+        // 整匣模式：那一发真被取走才算对接完成，供给者打空后回充仍算同一个匣
+        if (round != null && !isReloadRoundByRound()) {
+            dockedConsumers.add(consumer);
+        }
+        return round;
     }
 
     /**
@@ -418,7 +487,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         getSynchedData().set(BELT_INDEX, (beltIndex + 1) % attr.projectileTypes.size());
 
         // 弹药已输送，启动再生延迟计时器（若 regenDelay > 0）
-        float delay = attr.staticAttribute.getRegenDelay();
+        float delay = magazine().regenDelay();
         if (delay > 0f) {
             regenDelayRemainingTicks = (int) (delay * 20f); // 秒 → tick
             // 延迟刷新时重置再生进度；但弹药已为0时保留已有进度（避免空仓丢进度）
@@ -571,7 +640,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
 
     @Override
     public int getCapacity() {
-        return attr.staticAttribute.getMagazineCapacity();
+        return magazine().capacity();
     }
 
     /**
@@ -603,7 +672,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
      * 都成立，但"零进度"在界面上本来就是全暗的一格，不需要额外区分。
      */
     private boolean isRegenerating() {
-        return attr.staticAttribute.isRegenRoundByRound() && regenProgress > 0f;
+        return magazine().regenRoundByRound() && regenProgress > 0f;
     }
 
     /**
@@ -616,7 +685,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     public float getReloadProgress(IAmmoConsumer consumer) {
         // 失效机构没有在推进的交付，进度按 0 报，不留受损前的读数
         if (!isSupplyOperational()) return 0f;
-        int cap = attr.staticAttribute.getMagazineCapacity();
+        int cap = magazine().capacity();
         if (cap <= 0) return 0f;
         if (isBatchReloading) {
             // 批量冷却：已消耗量在当前总量里的占比
@@ -626,7 +695,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
             return progressOf(deliveryLoadedTicks.get(consumer), getReloadTimeTicks());
         }
         // 未在为本消费者输送：逐发再生时报再生进度，其余报储备水平
-        if (attr.staticAttribute.isRegenRoundByRound() && getAmmoCount() < cap) {
+        if (magazine().regenRoundByRound() && getAmmoCount() < cap) {
             return Math.clamp(regenProgress, 0f, 1f);
         }
         return (float) getAmmoCount() / cap;
@@ -660,7 +729,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         // 弹仓不可储存时不收退弹，否则等于向坏弹仓灌弹药
         if (!isModuleWorking(getModule("magazine"))) return false;
         if (!isOnBelt(type)) return false;
-        if (getAmmoCount() >= attr.staticAttribute.getMagazineCapacity()) return false;
+        if (getAmmoCount() >= magazine().capacity()) return false;
         if (!getLevel().isClientSide()) setAmmoCount(getAmmoCount() + 1);
         return true;
     }
@@ -739,7 +808,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
 
         // ③ 弹药再生（延迟计时未结束时暂停再生）
         if (regenDelayRemainingTicks <= 0) {
-            if (attr.staticAttribute.isRegenRoundByRound()) {
+            if (magazine().regenRoundByRound()) {
                 // 随打随产模式
                 tickRegenRoundByRound();
             } else {
@@ -775,16 +844,16 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
      * 随打随产模式：每 tick 累积再生进度，达到 1.0 时产出一发。
      */
     private void tickRegenRoundByRound() {
-        float regenPerMinute = attr.staticAttribute.getRegenPerMinute();
+        float regenPerMinute = magazine().regenPerMinute();
         if (regenPerMinute <= 0f) return;
 
-        if (getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
+        if (getAmmoCount() < magazine().capacity()) {
             // 20 tick/s × 60 s = 1200 tick/min
             regenProgress += regenPerMinute / 1200f;
 
-            while (regenProgress >= 1.0f && getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
+            while (regenProgress >= 1.0f && getAmmoCount() < magazine().capacity()) {
                 // 尝试消耗能量
-                float energyCost = attr.staticAttribute.getEnergyCostPerRound();
+                float energyCost = magazine().energyCostPerRound();
                 if (energyCost > 0f) {
                     if (!tryConsumeEnergy(energyCost)) {
                         break; // 能量不足，暂停再生
@@ -803,9 +872,9 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
      * 公式为 弹仓容量 ÷ 每分钟再生次数 × 1200 tick（1200 = 20 tick/s × 60 s）。
      */
     private int batchTotalTicks() {
-        float regenPerMinute = attr.staticAttribute.getRegenPerMinute();
+        float regenPerMinute = magazine().regenPerMinute();
         if (regenPerMinute <= 0f) return 1;
-        return Math.max(1, (int) (attr.staticAttribute.getMagazineCapacity() / regenPerMinute * 1200));
+        return Math.max(1, (int) (magazine().capacity() / regenPerMinute * 1200));
     }
 
     /**
@@ -814,11 +883,11 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     private void tickBatchReload() {
         if (getAmmoCount() == 0 && !isBatchReloading) {
             // 触发批量再生
-            float regenPerMinute = attr.staticAttribute.getRegenPerMinute();
+            float regenPerMinute = magazine().regenPerMinute();
             if (regenPerMinute <= 0f) return;
 
             // 扣除整批能量
-            float totalEnergy = attr.staticAttribute.getMagazineCapacity() * attr.staticAttribute.getEnergyCostPerRound();
+            float totalEnergy = magazine().capacity() * magazine().energyCostPerRound();
             if (totalEnergy > 0f) {
                 if (!tryConsumeEnergy(totalEnergy)) {
                     return; // 能量不够整批，等下一 tick 再试
@@ -844,7 +913,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
             if (batchElapsedTicks >= batchTotalTicks()) {
                 isBatchReloading = false;
                 batchElapsedTicks = 0;
-                setAmmoCount(attr.staticAttribute.getMagazineCapacity());
+                setAmmoCount(magazine().capacity());
                 lastPlayedBatchProgressKey = null;
             }
         }

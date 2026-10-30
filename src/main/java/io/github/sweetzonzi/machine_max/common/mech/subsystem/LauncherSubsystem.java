@@ -295,8 +295,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 设置当前供给者，由 WeaponController 的服务端路由调用。<br>
      * 引用发生变化时顺带取消旧供给者那边尚未取走的交付
-     * （{@link IAmmoSupplier#cancelRound(IAmmoConsumer)}）：那条交付是"点名给本管的"，
-     * 本管一走它就无人认领，旧装弹机会一直把输弹线占着，弹仓里那发既不会被取走也不会给别人。
+     * （{@link IAmmoSupplier#cancelRound(IAmmoConsumer)}）并把自己从它的认领集合里摘掉：
+     * 那条交付是"点名给本管的"，本管一走它就无人认领，旧装弹机会一直把输弹线占着，
+     * 弹仓里那发既不会被取走也不会给别人；独占机器还会因此永远无法被别的管选中。
      * 清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
      * <p>
      * 指认随之写入 {@link #SUPPLIER_ID} 推给客户端。客户端不调用本方法：它的指认由同步值经
@@ -315,7 +316,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 把指认落到本机字段上，并取消旧供给者的待交付。<br>
+     * 把指认落到本机字段上，取消旧供给者的待交付并释放它的认领。<br>
      * 不含任何同步动作，也不动膛内那发：换指认只影响<b>后续</b>装填，膛内已经压好的那发照打
      * （它属于哪条弹链由玩家的显式退膛操作决定，不在这里替玩家丢）。服务端由
      * {@link #setCurrentSupplier} 追加写入同步值，客户端由 {@link #applySyncedSupplier()}
@@ -325,7 +326,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         IAmmoSupplier previous = this.currentSupplier;
         if (previous == supplier) return;
         this.currentSupplier = supplier;
-        if (previous != null) previous.cancelRound(this);
+        if (previous != null) {
+            previous.cancelRound(this);
+            previous.getBoundConsumers().remove(this);
+        }
     }
 
     /**

@@ -20,8 +20,6 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.RegenLoaderSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.FeedModuleAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.MagazineModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -55,8 +53,8 @@ import java.util.Set;
  *   <li>弹仓归零作废进行中的再生：判毁边沿清一次，锁存态读档再清一次；机构单独损坏不清。</li>
  *   <li>退弹只看弹仓是否可储存：机构损坏照收，弹仓归零或停在恢复锁存时拒收，满仓拒收。</li>
  *   <li>库存殉爆的定位与豁免只认弹仓模块自己的最近有效受击；宿主零件被摧毁后弹仓归零仍起爆。</li>
- *   <li>{@code feed}/{@code magazine} 可省略并落到默认实例，权重与 {@code basic_durability}
- *       的非法取值在属性边界报错。</li>
+ *   <li>{@code feed}/{@code magazine} 两个块必填，输弹参数归前者、存量与回充参数归后者；
+ *       权重、{@code basic_durability}、耗时与回充数值的非法取值在属性边界报错。</li>
  *   <li>旧存档只有一个 {@code durability_ratio}：写入整机耐久时按缺失容量分摊进模块，
  *       聚合仍等于旧比例；非有限比例按满耐久载入。</li>
  * </ul>
@@ -696,46 +694,82 @@ public final class ModularDamageGameTest {
         }
     }
 
-    /** 两个模块字段可省略、权重可显式、非法取值在属性边界报错。 */
+    /** 两个模块块必填、字段按归属解码、非法取值在属性边界报错（T01、T02）。 */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
-    public static void moduleFieldsDecodeWithDefaultsAndValidation(GameTestHelper helper) {
-        RegenLoaderSubsystemStaticAttr defaults =
-                decodeAttribute("{ \"magazine_capacity\": 10, \"reload_time\": 0 }").getOrThrow();
-        helper.assertTrue(defaults.getFeed() == FeedModuleAttr.DEFAULT
-                        && defaults.getMagazine() == MagazineModuleAttr.DEFAULT,
-                "省略的模块字段应落到默认实例");
-        helper.assertTrue(!defaults.getFeed().critical(), "机构是非关键模块");
-        helper.assertTrue(defaults.getMagazine().critical(), "弹仓是唯一关键模块");
-
-        RegenLoaderSubsystemStaticAttr weighted = decodeAttribute("""
+    public static void moduleBlocksAreRequiredAndValidated(GameTestHelper helper) {
+        RegenLoaderSubsystemStaticAttr full = decodeAttribute("""
                 {
-                  "magazine_capacity": 30,
-                  "reload_time": 1.5,
                   "basic_durability": 60,
-                  "feed": { "durability_weight": 3.0, "critical": true },
-                  "magazine": { "durability_weight": 1.0 }
+                  "feed": {
+                    "durability_weight": 3.0,
+                    "reload_time": 0.45,
+                    "reload_round_by_round": false,
+                    "can_supply_multiple": true
+                  },
+                  "magazine": {
+                    "durability_weight": 1.0,
+                    "capacity": 30,
+                    "regen_per_minute": 120,
+                    "regen_round_by_round": false,
+                    "energy_cost_per_round": 2.5,
+                    "regen_delay": 0.3
+                  }
                 }
                 """).getOrThrow();
-        helper.assertTrue(weighted.getFeed().durabilityWeight() == 3.0f
-                        && weighted.getMagazine().durabilityWeight() == 1.0f,
+        helper.assertTrue(full.getFeed().durabilityWeight() == 3.0f
+                        && full.getMagazine().durabilityWeight() == 1.0f,
                 "显式权重应被保留");
-        helper.assertTrue(!weighted.getFeed().critical(), "critical 不开放 JSON 配置，机构恒为非关键");
+        helper.assertTrue(full.getFeed().reloadTime() == 0.45f, "reload_time 归 feed");
+        helper.assertTrue(!full.getFeed().reloadRoundByRound(), "reload_round_by_round 归 feed");
+        helper.assertTrue(full.getFeed().canSupplyMultiple(), "can_supply_multiple 归 feed");
+        helper.assertTrue(full.getMagazine().capacity() == 30, "capacity 归 magazine");
+        helper.assertTrue(full.getMagazine().regenPerMinute() == 120f, "regen_per_minute 归 magazine");
+        helper.assertTrue(!full.getMagazine().regenRoundByRound(), "regen_round_by_round 归 magazine");
+        helper.assertTrue(full.getMagazine().energyCostPerRound() == 2.5f, "energy_cost_per_round 归 magazine");
+        helper.assertTrue(full.getMagazine().regenDelay() == 0.3f, "regen_delay 归 magazine");
+        helper.assertTrue(!full.getFeed().critical(), "机构是非关键模块");
+        helper.assertTrue(full.getMagazine().critical(), "弹仓是唯一关键模块");
 
-        helper.assertTrue(decodeAttribute("{ \"magazine_capacity\": 10, \"reload_time\": 0, \"feed\": { \"durability_weight\": 0 } }")
+        // 缺块即解码失败：两个块都是字段落点，缺一个就有一组数值没有归属
+        helper.assertTrue(decodeAttribute("{ \"magazine\": { \"capacity\": 10 } }").error().isPresent(),
+                "省略 feed 应解码失败");
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 } }").error().isPresent(),
+                "省略 magazine 应解码失败");
+
+        // 只给必填项时，其余字段落默认值
+        RegenLoaderSubsystemStaticAttr minimal = decodeAttribute("""
+                { "feed": { "reload_time": 0 }, "magazine": { "capacity": 10 } }
+                """).getOrThrow();
+        helper.assertTrue(minimal.getFeed().reloadRoundByRound() && !minimal.getFeed().canSupplyMultiple(),
+                "feed 的可选字段落默认（逐发、独占）");
+        helper.assertTrue(minimal.getMagazine().regenPerMinute() == 0f
+                        && minimal.getMagazine().regenRoundByRound()
+                        && minimal.getMagazine().energyCostPerRound() == 0f
+                        && minimal.getMagazine().regenDelay() == 0f,
+                "magazine 的可选字段落默认（不回充、逐发回充粒度、免费、无延迟）");
+
+        // 非法取值
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0, \"durability_weight\": 0 }, \"magazine\": { \"capacity\": 10 } }")
                 .error().isPresent(), "零权重应被拒绝");
-        helper.assertTrue(decodeAttribute("{ \"magazine_capacity\": 10, \"reload_time\": 0, \"magazine\": { \"durability_weight\": -1.0 } }")
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 10, \"durability_weight\": -1.0 } }")
                 .error().isPresent(), "负权重应被拒绝");
-        helper.assertTrue(decodeAttribute("{ \"magazine_capacity\": 10, \"reload_time\": 0, \"magazine\": { \"durability_weight\": \"NaN\" } }")
-                .error().isPresent(), "非有限权重应被拒绝");
-        helper.assertTrue(decodeAttribute("{ \"magazine_capacity\": 10, \"reload_time\": 0, \"basic_durability\": 0 }")
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": -1 }, \"magazine\": { \"capacity\": 10 } }")
+                .error().isPresent(), "负 reload_time 应被拒绝");
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 0 } }")
+                .error().isPresent(), "零容量应被拒绝");
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 10, \"regen_per_minute\": -1 } }")
+                .error().isPresent(), "负回充速率应被拒绝");
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 10, \"energy_cost_per_round\": -1 } }")
+                .error().isPresent(), "负取电应被拒绝");
+        helper.assertTrue(decodeAttribute("{ \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 10, \"regen_delay\": -0.1 } }")
+                .error().isPresent(), "负 regen_delay 应被拒绝");
+        helper.assertTrue(decodeAttribute("{ \"basic_durability\": 0, \"feed\": { \"reload_time\": 0 }, \"magazine\": { \"capacity\": 10 } }")
                 .error().isPresent(), "非正的 basic_durability 应被拒绝");
         // 两个权重各自有限为正，合计仍可溢出到正无穷，那会让模块最大耐久全部塌成 0
         helper.assertTrue(decodeAttribute("""
                 {
-                  "magazine_capacity": 10,
-                  "reload_time": 0,
-                  "feed": { "durability_weight": 3.4e38 },
-                  "magazine": { "durability_weight": 3.4e38 }
+                  "feed": { "reload_time": 0, "durability_weight": 3.4e38 },
+                  "magazine": { "capacity": 10, "durability_weight": 3.4e38 }
                 }
                 """).error().isPresent(), "权重合计溢出应被拒绝");
         helper.succeed();

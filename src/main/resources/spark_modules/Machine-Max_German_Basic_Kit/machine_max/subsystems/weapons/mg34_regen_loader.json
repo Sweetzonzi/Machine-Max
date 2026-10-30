@@ -2,12 +2,17 @@
   "type": "machine_max:regen_loader",
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
-  "magazine_capacity": 150,
-  "regen_per_minute": 800,
-  "regen_delay": 1,
-  "regen_round_by_round": true,
-  "energy_cost_per_round": 0,
-  "reload_time": 0,
-  "can_supply_multiple": false,
+  "feed": {
+    "reload_time": 0,
+    "reload_round_by_round": true,
+    "can_supply_multiple": false
+  },
+  "magazine": {
+    "capacity": 150,
+    "regen_per_minute": 800,
+    "regen_round_by_round": true,
+    "energy_cost_per_round": 0,
+    "regen_delay": 1
+  },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

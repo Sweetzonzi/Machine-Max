@@ -60,6 +60,9 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     /** 每个消费者弹药是否已就绪（交付已完成、等消费者取走），插入有序 */
     private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
 
+    /** 当前绑着本机的消费者集合（认领），由服务端路由与发射器释放绑定维护，见接口注释 */
+    private final Set<IAmmoConsumer> boundConsumers = new LinkedHashSet<>();
+
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -67,6 +70,11 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     // ==================== IAmmoSupplier 实现 ====================
+
+    @Override
+    public Set<IAmmoConsumer> getBoundConsumers() {
+        return boundConsumers;
+    }
 
     @Override
     public boolean hasAmmo() {
@@ -100,9 +108,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return null;
     }
 
+    /**
+     * 普通装弹机恒为逐发：交付路径对每一发都计时。<br>
+     * 静态属性里的 {@code round_by_round} 不参与判定——换匣模式在本实现里还没有落地，
+     * 写 {@code false} 不会得到整匣语义。
+     */
     @Override
-    public boolean isRoundByRound() {
-        return attr.staticAttribute.isRoundByRound();
+    public boolean isReloadRoundByRound() {
+        return true;
     }
 
     @Override
@@ -183,6 +196,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     private void pruneGoneConsumers() {
         reloadTimers.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
         readyConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
+        boundConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
     }
 
     /**
