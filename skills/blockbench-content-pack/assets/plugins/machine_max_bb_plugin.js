@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.5.10
+// MachineMax Blockbench Plugin v0.5.11
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -35299,6 +35299,9 @@
             key: z.string().optional(),
             definition: z.any().optional()
           }),
+          clear_cube_uv: z.object({
+            cubes: z.array(z.string()).optional()
+          }),
           list_defs: z.object({
             type: z.enum(DEF_TYPE),
             search: z.string().optional(),
@@ -35318,6 +35321,175 @@
         MARKER_TYPE,
         DEF_TYPE,
         DEF_SOURCE
+      };
+    }
+  });
+
+  // src/services/cube_uv.js
+  var require_cube_uv = __commonJS({
+    "src/services/cube_uv.js"(exports, module) {
+      "use strict";
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var { createLogger: createLogger2 } = require_logger();
+      var log2 = createLogger2("CubeUV");
+      var FACE_KEYS = ["north", "east", "south", "west", "up", "down"];
+      function globalCubes() {
+        return typeof Cube !== "undefined" && Cube && Array.isArray(Cube.all) ? Cube.all.slice() : [];
+      }
+      function selectedCubes() {
+        if (typeof Cube !== "undefined" && Cube && Array.isArray(Cube.selected) && Cube.selected.length) {
+          return Cube.selected.slice();
+        }
+        if (typeof Outliner !== "undefined" && Outliner && Array.isArray(Outliner.selected)) {
+          return Outliner.selected.filter(function(el) {
+            return el && el.faces && typeof el.faces === "object";
+          });
+        }
+        return [];
+      }
+      function collectCubes(elements, out) {
+        (elements || []).forEach(function(el) {
+          if (!el) return;
+          if (el.faces && typeof el.faces === "object") {
+            out.push(el);
+            return;
+          }
+          if (Array.isArray(el.children)) collectCubes(el.children, out);
+        });
+        return out;
+      }
+      function uniqueCubes(list) {
+        var seen = {};
+        var out = [];
+        list.forEach(function(cube) {
+          if (!cube || seen[cube.uuid]) return;
+          seen[cube.uuid] = true;
+          out.push(cube);
+        });
+        return out;
+      }
+      function resolveCubes(ids) {
+        var wanted = (ids || []).filter(function(id) {
+          return typeof id === "string" && id.trim() !== "";
+        });
+        if (!wanted.length) {
+          var fromSelection = uniqueCubes(collectCubes(selectedCubes(), []));
+          if (!fromSelection.length) {
+            return {
+              ok: false,
+              error: "\u6CA1\u6709\u6307\u5B9A\u65B9\u5757\uFF0C\u5F53\u524D\u9009\u62E9\u91CC\u4E5F\u6CA1\u6709\u65B9\u5757",
+              errors: [makeError([], "not_found", "\u65B9\u5757 uuid\u3001\u552F\u4E00\u65B9\u5757\u540D\u6216\u5DF2\u9009\u4E2D\u7684\u7EC4", "", "\u5148\u5728\u89C6\u53E3\u91CC\u9009\u4E2D\u547D\u4E2D\u7BB1\u7EC4\uFF0C\u6216\u663E\u5F0F\u4F20 cubes")]
+            };
+          }
+          return { ok: true, cubes: fromSelection, source: "selection" };
+        }
+        var all = globalCubes();
+        var cubes = [];
+        var errors = [];
+        wanted.forEach(function(id) {
+          var byUuid = all.filter(function(c) {
+            return c.uuid === id;
+          });
+          if (byUuid.length === 1) {
+            cubes.push(byUuid[0]);
+            return;
+          }
+          var byName = all.filter(function(c) {
+            return c.name === id;
+          });
+          if (byName.length === 1) {
+            cubes.push(byName[0]);
+            return;
+          }
+          if (byName.length > 1) {
+            errors.push(makeError(
+              [],
+              "ambiguous_name",
+              "\u552F\u4E00\u7684\u65B9\u5757\u540D\u6216 uuid",
+              id,
+              "\u540C\u540D\u65B9\u5757\u6709 " + byName.length + " \u4E2A\uFF0C\u6539\u7528 uuid\uFF1A" + byName.slice(0, 5).map(function(c) {
+                return c.uuid;
+              }).join(", ")
+            ));
+            return;
+          }
+          errors.push(makeError([], "not_found", "\u5DF2\u5B58\u5728\u7684\u65B9\u5757", id, "\u4F20\u65B9\u5757 uuid\uFF0C\u6216\u5148\u9009\u4E2D\u5B83\u518D\u7701\u7565 cubes"));
+        });
+        if (errors.length) return { ok: false, error: "\u6709\u65B9\u5757\u627E\u4E0D\u5230", errors };
+        return { ok: true, cubes: uniqueCubes(cubes), source: "ids" };
+      }
+      function makeError(path, code, expected, got, hint) {
+        return { path, code, expected, got, hint: hint || "" };
+      }
+      function isZeroUv(uv) {
+        return Array.isArray(uv) && uv.length === 4 && uv[0] === 0 && uv[1] === 0 && uv[2] === 0 && uv[3] === 0;
+      }
+      function clearCubeUv(cubes) {
+        var list = uniqueCubes((cubes || []).filter(function(c) {
+          return c && c.faces;
+        }));
+        if (!list.length) {
+          return {
+            ok: false,
+            error: "\u6CA1\u6709\u53EF\u6E05\u7A7A UV \u7684\u65B9\u5757",
+            errors: [makeError([], "not_found", "\u65B9\u5757\u5B9E\u4F8B", "", "\u5148\u89E3\u6790\u51FA\u65B9\u5757\uFF0C\u518D\u6E05\u7A7A UV")]
+          };
+        }
+        var undo = typeof Undo !== "undefined" && Undo ? Undo : null;
+        if (undo && typeof undo.initEdit === "function") undo.initEdit({ elements: list, uv_only: true });
+        var clearedFaces = 0;
+        var refreshFailed = [];
+        var perCube = [];
+        list.forEach(function(cube) {
+          var faces = 0;
+          FACE_KEYS.forEach(function(key) {
+            var face = cube.faces[key];
+            if (!face) return;
+            if (face.texture === null && isZeroUv(face.uv)) return;
+            face.uv = [0, 0, 0, 0];
+            face.texture = null;
+            faces++;
+          });
+          clearedFaces += faces;
+          perCube.push({ uuid: cube.uuid, name: cube.name, cleared_faces: faces });
+          if (cube.preview_controller && typeof cube.preview_controller.updateFaces === "function") {
+            try {
+              cube.preview_controller.updateFaces(cube);
+            } catch (e) {
+              refreshFailed.push({ uuid: cube.uuid, name: cube.name, error: e && e.message ? e.message : String(e) });
+            }
+          }
+        });
+        if (undo && typeof undo.finishEdit === "function") undo.finishEdit("\u6E05\u7A7A\u65B9\u5757 UV");
+        if (typeof Canvas !== "undefined" && Canvas && typeof Canvas.updateSelectedFaces === "function") {
+          try {
+            Canvas.updateSelectedFaces();
+          } catch (e) {
+            log2.debug("updateSelectedFaces \u5931\u8D25\uFF08\u5FFD\u7565\uFF09: " + (e && e.message));
+          }
+        }
+        if (refreshFailed.length) {
+          log2.warn("\u6709\u65B9\u5757\u7684\u7F51\u683C\u6CA1\u6709\u5237\u65B0\uFF1A" + refreshFailed.map(function(f) {
+            return f.name || f.uuid;
+          }).join(", "));
+        }
+        return {
+          ok: true,
+          changed: clearedFaces > 0,
+          cleared_faces: clearedFaces,
+          cubes: perCube,
+          refresh_failed: refreshFailed
+        };
+      }
+      module.exports = {
+        clearCubeUv,
+        resolveCubes,
+        _internals: { collectCubes, isZeroUv, FACE_KEYS }
       };
     }
   });
@@ -35412,6 +35584,7 @@
       var params = require_params();
       var { collectIssues } = require_validate2();
       var { canExport } = require_export();
+      var cubeUv = require_cube_uv();
       var result = require_result();
       var DEF_TYPE = params.DEF_TYPE;
       var ROOT_FIELDS = {
@@ -35939,6 +36112,18 @@
           key: r && r.key
         });
       }
+      function clearCubeUv(args) {
+        var resolved = cubeUv.resolveCubes(args.cubes);
+        if (!resolved.ok) return result.error(resolved.error, resolved.errors);
+        var r = cubeUv.clearCubeUv(resolved.cubes);
+        if (!r.ok) return result.error(r.error, r.errors);
+        return result.from(r, {
+          source: resolved.source,
+          cubes: r.cubes,
+          cleared_faces: r.cleared_faces,
+          refresh_failed: r.refresh_failed
+        });
+      }
       function summarizeDef(type, def) {
         var out = {};
         if (!isObject(def)) return out;
@@ -36159,6 +36344,13 @@
           name: "add_instance",
           description: "Create one small instance (hit_box / interact_box / connector) under a sub_part. Requires an existing Group/Locator; config_ref is bound automatically.",
           run: addInstance
+        },
+        {
+          name: "clear_cube_uv",
+          description: 'Clear the six-face UV of cubes (texture=null, uv=[0,0,0,0]) so the Bedrock export writes "uv": {} and the geometry stays invisible in game; also rebuilds the viewport mesh. Target cube UUIDs or unique cube names, or select Groups and their cubes are used; omit cubes to use the current selection.',
+          // 模型编辑工具：只在“零件定义”模式之外也常用（编辑 / UV / 绘制都可能改碰撞盒），不限模式
+          condition: { project: true },
+          run: clearCubeUv
         }
       ];
       var BY_NAME = {};
@@ -36297,7 +36489,8 @@
             description: tool.description,
             // MCP 1.10.1 读取的是 `parameters`（zod schema），不是 `params`
             parameters: schemas[tool.name],
-            condition: CONDITION,
+            // 工具可以自带 condition（几何类工具不限模式）；缺省锁定零件定义模式
+            condition: tool.condition || CONDITION,
             execute: function(args) {
               return tools.execute(tool.name, args, mcp);
             }
@@ -36372,7 +36565,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.5.10";
+  var PLUGIN_VERSION = "0.5.11";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
