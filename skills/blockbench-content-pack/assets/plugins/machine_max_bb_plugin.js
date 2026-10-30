@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.5.7
+// MachineMax Blockbench Plugin v0.5.8
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -4556,7 +4556,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",\r
   "title": "Regen Loader Subsystem Static Attributes",\r
-  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen).Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",\r
+  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen). Durability is split into a feed (non-critical) and a magazine (the only critical) module: the magazine reaching zero destroys the whole subsystem and cooks off the stored rounds, while the feed reaching zero only stops further loading. Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",\r
   "properties": {\r
     "$schema": {\r
       "type": "string",\r
@@ -4568,8 +4568,8 @@
       "const": "machine_max:regen_loader",\r
       "description": "Subsystem type, must be 'machine_max:regen_loader'."\r
     },\r
-    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "Subsystem basic durability. Becomes paralyzed at 0, restores functionality when repaired to 30%." },\r
-    "pass_damage": { "type": "boolean", "default": true, "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem is transferred to the part." },\r
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "Subsystem basic durability, distributed to the two modules by their feed / magazine durability_weight. The subsystem durability is the sum of both modules; the magazine reaching zero destroys the whole subsystem, and either module must be repaired to 30% of its own maximum to leave the destroyed state." },\r
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether to pass damage to the subsystem holder. First-party definitions write false: hit damage is absorbed by the feed / magazine modules and never reaches the part or vehicle." },\r
     "limit_damage": { "type": "boolean", "default": false, "description": "Whether to limit damage transfer to remaining durability. e.g. 40 damage, 20 remaining, only 20 transfers." },\r
     "hidden": { "type": "boolean", "default": false, "description": "Whether to hide the subsystem in HUD, commonly used for non-functional parts that only provide damage differentiation." },\r
     "magazine_capacity": { "type": "integer", "minimum": 1, "description": "Magazine capacity, maximum number of rounds that can be stored." },\r
@@ -4583,6 +4583,32 @@
     },\r
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "Whether multiple consumers can receive ammo from this loader simultaneously." },\r
     "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Delay (in seconds) after delivering a round before regeneration starts. 0 = regen starts immediately (produce while supply)." },\r
+    "feed": {\r
+      "type": "object",\r
+      "properties": {\r
+        "durability_weight": {\r
+          "type": "number",\r
+          "exclusiveMinimum": 0,\r
+          "default": 1.0,\r
+          "description": "Module durability weight. Module max durability = basic_durability x this weight / the sum of both module weights; must be a finite positive number."\r
+        }\r
+      },\r
+      "additionalProperties": false,\r
+      "description": "Feed module attributes - non-critical, weight defaults to 1.0 when omitted. Reaching zero only stops further loading: stock, belt pointer and rounds already chambered in the launcher are untouched, and the subsystem is not destroyed; the feed works again only after being repaired to 30% of its own maximum durability."\r
+    },\r
+    "magazine": {\r
+      "type": "object",\r
+      "properties": {\r
+        "durability_weight": {\r
+          "type": "number",\r
+          "exclusiveMinimum": 0,\r
+          "default": 1.0,\r
+          "description": "Module durability weight. Module max durability = basic_durability x this weight / the sum of both module weights; must be a finite positive number."\r
+        }\r
+      },\r
+      "additionalProperties": false,\r
+      "description": "Magazine module attributes - the only critical module, weight defaults to 1.0 when omitted. Reaching zero destroys the whole subsystem: the stored rounds cook off once and any in-progress regeneration batch is discarded (pre-paid energy is not refunded); the magazine stores and regenerates again only after being repaired to 30% of its own maximum durability. Set a hitbox module to magazine to charge that hitbox's damage to this module."\r
+    },\r
     "sounds": {\r
       "type": "object",\r
       "properties": {\r
@@ -4628,6 +4654,15 @@
       "reload_time": 2.0,\r
       "can_supply_multiple": false,\r
       "description": "Slow regen example - 50mm cannon, 40 rounds, 10 rounds/min, with reload time delay"\r
+    },\r
+    {\r
+      "type": "machine_max:regen_loader",\r
+      "basic_durability": 30,\r
+      "magazine_capacity": 60,\r
+      "reload_time": 1.0,\r
+      "feed": { "durability_weight": 1.0 },\r
+      "magazine": { "durability_weight": 2.0 },\r
+      "description": "Module weight example - 30 total durability, feed takes 1/3 (10) and magazine takes 2/3 (20)"\r
     }\r
   ]\r
 }`, "en_us/schemas/subsystem/static/seat_static_attr.schema.json": `{\r
@@ -9314,12 +9349,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",\r
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",\r
   "title": "\u518D\u751F\u88C5\u5F39\u673A\u5B50\u7CFB\u7EDF\u9759\u6001\u5C5E\u6027",\r
-  "description": "\u518D\u751F\u88C5\u5F39\u673A\u5B50\u7CFB\u7EDF\u7684\u9759\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u5F39\u4ED3\u5BB9\u91CF\u3001\u518D\u751F\u901F\u7387\u3001\u6BCF\u53D1\u80FD\u8017\u548C\u5F39\u836F\u4F9B\u7ED9\u884C\u4E3A\u3002\u7528\u4E8E\u80FD\u91CF\u6B66\u5668\uFF08\u6FC0\u5149\u3001\u7206\u80FD\u675F\uFF09\u548C\u8857\u673A\u98CE\u683C\u518D\u751F\u6B66\u5668\uFF08\u5BFC\u5F39\u51B7\u5374\u518D\u751F\uFF09\u3002\u5F39\u94FE\u6784\u6210\uFF08projectile_types\uFF09\u4E0E\u5F39\u94FE\u540D\uFF08belt_label\uFF09\u662F\u9010\u5B9E\u4F8B\u5B57\u6BB5\uFF0C\u5199\u5728\u90E8\u4EF6 JSON \u7684\u5B50\u7CFB\u7EDF\u5B9E\u4F8B\u5757\u91CC\uFF0C\u89C1 subsystem/dynamic/regen_loader_dynamic_attr.schema.json\uFF0C\u4E0D\u5199\u5728\u672C\u6587\u4EF6\u3002",\r
+  "description": "\u518D\u751F\u88C5\u5F39\u673A\u5B50\u7CFB\u7EDF\u7684\u9759\u6001\u5C5E\u6027\uFF0C\u5B9A\u4E49\u5F39\u4ED3\u5BB9\u91CF\u3001\u518D\u751F\u901F\u7387\u3001\u6BCF\u53D1\u80FD\u8017\u548C\u5F39\u836F\u4F9B\u7ED9\u884C\u4E3A\u3002\u7528\u4E8E\u80FD\u91CF\u6B66\u5668\uFF08\u6FC0\u5149\u3001\u7206\u80FD\u675F\uFF09\u548C\u8857\u673A\u98CE\u683C\u518D\u751F\u6B66\u5668\uFF08\u5BFC\u5F39\u51B7\u5374\u518D\u751F\uFF09\u3002\u8010\u4E45\u62C6\u6210\u8F93\u5F39\u673A\u6784\uFF08feed\uFF0C\u975E\u5173\u952E\uFF09\u4E0E\u5F39\u4ED3\uFF08magazine\uFF0C\u552F\u4E00\u5173\u952E\uFF09\u4E24\u4E2A\u6A21\u5757\uFF1A\u5F39\u4ED3\u5F52\u96F6\u5373\u6574\u673A\u5224\u6BC1\u5E76\u6B89\u7206\uFF0C\u673A\u6784\u5F52\u96F6\u53EA\u4E2D\u65AD\u540E\u7EED\u88C5\u586B\u3002\u5F39\u94FE\u6784\u6210\uFF08projectile_types\uFF09\u4E0E\u5F39\u94FE\u540D\uFF08belt_label\uFF09\u662F\u9010\u5B9E\u4F8B\u5B57\u6BB5\uFF0C\u5199\u5728\u90E8\u4EF6 JSON \u7684\u5B50\u7CFB\u7EDF\u5B9E\u4F8B\u5757\u91CC\uFF0C\u89C1 subsystem/dynamic/regen_loader_dynamic_attr.schema.json\uFF0C\u4E0D\u5199\u5728\u672C\u6587\u4EF6\u3002",\r
   "properties": {\r
     "$schema": { "type": "string", "description": "JSON Schema \u5F15\u7528\u8DEF\u5F84\uFF0C\u7528\u4E8E\u7F16\u8F91\u5668\u7684\u667A\u80FD\u63D0\u793A\u548C\u6821\u9A8C", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },\r
     "type": { "type": "string", "const": "machine_max:regen_loader", "description": "\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF0C\u5FC5\u987B\u4E3A 'machine_max:regen_loader'\u3002" },\r
-    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "\u5B50\u7CFB\u7EDF\u57FA\u7840\u8010\u4E45\u5EA6\u3002\u964D\u4E3A 0 \u65F6\u762B\u75EA\uFF0C\u4FEE\u590D\u81F3 30% \u65F6\u6062\u590D\u529F\u80FD\u3002" },\r
-    "pass_damage": { "type": "boolean", "default": true, "description": "\u662F\u5426\u5C06\u4F24\u5BB3\u4F20\u9012\u7ED9\u5B50\u7CFB\u7EDF\u6301\u6709\u8005\u3002\u4E3A true \u65F6\u5B50\u7CFB\u7EDF\u53D7\u5230\u7684\u4F24\u5BB3\u4F1A\u4F20\u9012\u7ED9\u96F6\u4EF6\u3002" },\r
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "\u5B50\u7CFB\u7EDF\u57FA\u7840\u8010\u4E45\u5EA6\uFF0C\u6309 feed / magazine \u7684 durability_weight \u5206\u914D\u7ED9\u4E24\u4E2A\u6A21\u5757\u3002\u6574\u673A\u8010\u4E45\u662F\u4E24\u6A21\u5757\u4E4B\u548C\uFF1B\u5F39\u4ED3\u5F52\u96F6\u5373\u6574\u673A\u5224\u6BC1\uFF0C\u4EFB\u4E00\u6A21\u5757\u90FD\u8981\u4FEE\u5230\u81EA\u8EAB 30% \u624D\u8131\u79BB\u6467\u6BC1\u3002" },\r
+    "pass_damage": { "type": "boolean", "default": true, "description": "\u662F\u5426\u5C06\u4F24\u5BB3\u4F20\u9012\u7ED9\u5B50\u7CFB\u7EDF\u6301\u6709\u8005\u3002\u7B2C\u4E00\u65B9\u5B9A\u4E49\u5199 false\uFF1A\u547D\u4E2D\u4F24\u5BB3\u7531 feed / magazine \u6A21\u5757\u5438\u6536\uFF0C\u4E0D\u4F20\u7ED9\u96F6\u4EF6\u4E0E\u8F7D\u5177\u3002" },\r
     "limit_damage": { "type": "boolean", "default": false, "description": "\u662F\u5426\u9650\u5236\u4F24\u5BB3\u4F20\u9012\u503C\u4E0D\u8D85\u8FC7\u5B50\u7CFB\u7EDF\u5269\u4F59\u8010\u4E45\u5EA6\u3002\u4F8B\u5982 40 \u4F24\u5BB3\u3001\u5269\u4F59 20\uFF0C\u5219\u53EA\u4F20\u9012 20\u3002" },\r
     "hidden": { "type": "boolean", "default": false, "description": "\u662F\u5426\u5728 HUD \u4E2D\u9690\u85CF\u8BE5\u5B50\u7CFB\u7EDF\uFF0C\u5E38\u7528\u4E8E\u4EC5\u63D0\u4F9B\u6A21\u578B\u96F6\u4EF6\u4F24\u5BB3\u533A\u5206\u7684\u975E\u529F\u80FD\u5B50\u7CFB\u7EDF\u3002" },\r
     "magazine_capacity": { "type": "integer", "minimum": 1, "description": "\u5F39\u4ED3\u5BB9\u91CF\uFF0C\u6700\u5927\u53EF\u5B58\u50A8\u7684\u5F39\u836F\u6570\u91CF\u3002" },\r
@@ -9329,6 +9364,32 @@
     "reload_time": { "type": "number", "minimum": 0, "description": "\u8F93\u9001\u4E00\u53D1\u5F39\u836F\u7ED9\u6D88\u8D39\u8005\u6240\u9700\u65F6\u95F4\uFF08\u79D2\uFF09\u3002\u518D\u751F\u6A21\u5F0F\u4E0B\u4E3A\u5F39\u836F\u8BDE\u751F\u5230\u53EF\u7528\u7684\u5EF6\u8FDF\u3002" },\r
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "\u662F\u5426\u5141\u8BB8\u591A\u4E2A\u6D88\u8D39\u8005\u540C\u65F6\u4ECE\u6B64\u88C5\u5F39\u673A\u63A5\u6536\u5F39\u836F\u3002" },\r
     "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "\u8F93\u9001\u5F39\u836F\u540E\u7684\u518D\u751F\u542F\u52A8\u5EF6\u8FDF\uFF08\u79D2\uFF09\u30020 = \u8FB9\u4EA7\u8FB9\u4F9B\uFF0C\u65E0\u5EF6\u8FDF\u3002" },\r
+    "feed": {\r
+      "type": "object",\r
+      "properties": {\r
+        "durability_weight": {\r
+          "type": "number",\r
+          "exclusiveMinimum": 0,\r
+          "default": 1.0,\r
+          "description": "\u6A21\u5757\u8010\u4E45\u6743\u91CD\u3002\u6A21\u5757\u6700\u5927\u8010\u4E45 = basic_durability \xD7 \u672C\u6743\u91CD / \u4E24\u4E2A\u6A21\u5757\u6743\u91CD\u4E4B\u548C\uFF0C\u5FC5\u987B\u4E3A\u6709\u9650\u6B63\u6570\u3002"\r
+        }\r
+      },\r
+      "additionalProperties": false,\r
+      "description": "\u8F93\u5F39\u673A\u6784\u6A21\u5757\u5C5E\u6027\u2014\u2014\u975E\u5173\u952E\u6A21\u5757\uFF0C\u7701\u7565\u65F6\u53D6\u6743\u91CD 1.0\u3002\u8010\u4E45\u5F52\u96F6\u53EA\u4E2D\u65AD\u540E\u7EED\u88C5\u586B\uFF1A\u5E93\u5B58\u3001\u5F39\u94FE\u6307\u9488\u4E0E\u5DF2\u8FDB\u5165\u53D1\u5C04\u5668\u7684\u5F39\u90FD\u4E0D\u53D7\u5F71\u54CD\uFF0C\u6574\u673A\u4E0D\u56E0\u6B64\u5224\u6BC1\uFF1B\u4FEE\u5230\u81EA\u8EAB\u6700\u5927\u8010\u4E45\u7684 30% \u624D\u6062\u590D\u8F93\u9001\u3002"\r
+    },\r
+    "magazine": {\r
+      "type": "object",\r
+      "properties": {\r
+        "durability_weight": {\r
+          "type": "number",\r
+          "exclusiveMinimum": 0,\r
+          "default": 1.0,\r
+          "description": "\u6A21\u5757\u8010\u4E45\u6743\u91CD\u3002\u6A21\u5757\u6700\u5927\u8010\u4E45 = basic_durability \xD7 \u672C\u6743\u91CD / \u4E24\u4E2A\u6A21\u5757\u6743\u91CD\u4E4B\u548C\uFF0C\u5FC5\u987B\u4E3A\u6709\u9650\u6B63\u6570\u3002"\r
+        }\r
+      },\r
+      "additionalProperties": false,\r
+      "description": "\u5F39\u4ED3\u6A21\u5757\u5C5E\u6027\u2014\u2014\u552F\u4E00\u5173\u952E\u6A21\u5757\uFF0C\u7701\u7565\u65F6\u53D6\u6743\u91CD 1.0\u3002\u8010\u4E45\u5F52\u96F6\u5373\u6574\u673A\u5224\u6BC1\uFF1A\u6309\u5B9E\u9645\u5E93\u5B58\u5408\u6210\u4E00\u6B21\u6B89\u7206\uFF0C\u5E76\u4F5C\u5E9F\u8FDB\u884C\u4E2D\u7684\u518D\u751F\u6279\u6B21\uFF08\u5DF2\u9884\u6263\u80FD\u91CF\u4E0D\u9000\u6B3E\uFF09\uFF1B\u4FEE\u5230\u81EA\u8EAB\u6700\u5927\u8010\u4E45\u7684 30% \u624D\u6062\u590D\u50A8\u5B58\u4E0E\u518D\u751F\u3002\u547D\u4E2D\u7BB1\u7684 module \u5199 magazine \u5373\u628A\u8BE5\u5904\u4F24\u5BB3\u8BB0\u5230\u672C\u6A21\u5757\u3002"\r
+    },\r
     "sounds": {\r
       "type": "object",\r
       "properties": {\r
@@ -9353,7 +9414,8 @@
       "description": "\u6700\u7B80\u793A\u4F8B\u2014\u2014\u4EC5\u5FC5\u9700\u5B57\u6BB5"\r
     },\r
     { "type": "machine_max:regen_loader", "basic_durability": 40, "magazine_capacity": 150, "regen_per_minute": 800, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 0, "can_supply_multiple": false, "regen_delay": 0.5, "description": "\u968F\u6253\u968F\u4EA7\u793A\u4F8B\u2014\u2014MG34 \u673A\u67AA\uFF0C150 \u53D1\u5F39\u4ED3\uFF0C800 \u53D1/\u5206\u949F\uFF0C0.5 \u79D2\u518D\u751F\u5EF6\u8FDF" },\r
-    { "type": "machine_max:regen_loader", "basic_durability": 80, "magazine_capacity": 40, "regen_per_minute": 10, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 2.0, "can_supply_multiple": false, "description": "\u6162\u901F\u518D\u751F\u793A\u4F8B\u2014\u201450mm \u706B\u70AE\uFF0C40 \u53D1\uFF0C10 \u53D1/\u5206\u949F\uFF0C\u5E26\u8F93\u9001\u5EF6\u8FDF" }\r
+    { "type": "machine_max:regen_loader", "basic_durability": 80, "magazine_capacity": 40, "regen_per_minute": 10, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 2.0, "can_supply_multiple": false, "description": "\u6162\u901F\u518D\u751F\u793A\u4F8B\u2014\u201450mm \u706B\u70AE\uFF0C40 \u53D1\uFF0C10 \u53D1/\u5206\u949F\uFF0C\u5E26\u8F93\u9001\u5EF6\u8FDF" },\r
+    { "type": "machine_max:regen_loader", "basic_durability": 30, "magazine_capacity": 60, "reload_time": 1.0, "feed": { "durability_weight": 1.0 }, "magazine": { "durability_weight": 2.0 }, "description": "\u6A21\u5757\u6743\u91CD\u793A\u4F8B\u2014\u2014\u603B\u8010\u4E45 30 \u70B9\uFF0C\u673A\u6784\u5360 1/3\uFF0810 \u70B9\uFF09\u3001\u5F39\u4ED3\u5360 2/3\uFF0820 \u70B9\uFF09" }\r
   ]\r
 }`, "zh_cn/schemas/subsystem/static/seat_static_attr.schema.json": `{\r
   "$schema": "http://json-schema.org/draft-07/schema#",\r
@@ -12749,9 +12811,9 @@
         "generator_version": 1,
         "source_locale": "en_us",
         "source_root": "src/builtin/builtin/machine_max/docs/en_us/schemas",
-        "source_revision": "06ba3627",
+        "source_revision": "002885fd",
         "source_files": 71,
-        "source_sha256": "0fbf9c6826af3eb0a7768873c47a82bc41a55b0c7dd07493408946911a558662",
+        "source_sha256": "c31c7874b8f111b2e45589a8e919f6e5b6fa932d4d0f9cf67d049626722ec2a8",
         "generated_from": "machine_max builtin JSON Schema"
       };
       var SPECS = {
@@ -18068,6 +18130,12 @@
           id: "machine_max:launcher",
           displayName: "\u53D1\u5C04\u5668",
           category: "experimental",
+          // 炮管 / 炮闩是定义里的固定模块，电容由型号自行声明（laser 类才有）
+          modules: [
+            { name: "barrel", label: "\u70AE\u7BA1", critical: false, optional: false },
+            { name: "breech", label: "\u70AE\u95E9", critical: true, optional: false },
+            { name: "capacitor", label: "\u7535\u5BB9", critical: false, optional: true }
+          ],
           dynamicFields: [
             { field: "definition", label: "\u578B\u53F7\u5B9A\u4E49", editor: "definition_selector", required: true, defaultValue: "" },
             { field: "locator", label: "\u53D1\u5C04\u70B9\u5B9A\u4F4D\u5668", editor: "locator_selector", required: true, defaultValue: "" },
@@ -18088,6 +18156,11 @@
           id: "machine_max:regen_loader",
           displayName: "\u518D\u751F\u88C5\u5F39\u673A",
           category: "experimental",
+          // 两个模块都可由型号省略并落到默认权重，因此 optional 均为 true
+          modules: [
+            { name: "feed", label: "\u8F93\u5F39\u673A\u6784", critical: false, optional: true },
+            { name: "magazine", label: "\u5F39\u4ED3", critical: true, optional: true }
+          ],
           dynamicFields: [
             { field: "definition", label: "\u578B\u53F7\u5B9A\u4E49", editor: "definition_selector", required: true, defaultValue: "" },
             { field: "projectile_types", label: "\u5F39\u94FE\u6784\u6210", editor: "projectile_belt_editor", required: true, defaultValue: {} },
@@ -18126,6 +18199,22 @@
       function getDynamicFields(typeId) {
         var meta = TYPE_MAP[typeId];
         return meta ? meta.dynamicFields.slice() : [];
+      }
+      function getModules(typeId) {
+        var meta = TYPE_MAP[typeId];
+        return meta && meta.modules ? meta.modules.slice() : [];
+      }
+      function hasModule(typeId, name) {
+        var modules = getModules(typeId);
+        for (var i = 0; i < modules.length; i++) {
+          if (modules[i].name === name) return true;
+        }
+        return false;
+      }
+      function getModuleNames(typeId) {
+        return getModules(typeId).map(function(m) {
+          return m.name;
+        });
       }
       function getTypeDefaults(typeId) {
         var fields = getDynamicFields(typeId);
@@ -18213,6 +18302,9 @@
           getTypesByCategory,
           getTypesGroupedByCategory,
           getDynamicFields,
+          getModules,
+          hasModule,
+          getModuleNames,
           getTypeDefaults,
           getTypeSpecificFields,
           needsLocator,
@@ -18593,8 +18685,12 @@
         // 碰撞箱 material 未配置（空串/null/undefined）
         MATERIAL_REF_MISSING: "material_ref_missing",
         // 碰撞箱 material 引用的材质不存在（machine_max:default 为内置兜底，不查表）
-        HIT_BOX_KEY_NOT_UUID: "hit_box_key_not_uuid"
+        HIT_BOX_KEY_NOT_UUID: "hit_box_key_not_uuid",
         // hit_boxes 的 key 不是骨骼 UUID（内部树只认 UUID）
+        HIT_BOX_MODULE_UNKNOWN: "hit_box_module_unknown",
+        // 碰撞箱 module 不是关联子系统类型声明的模块（含该类型没有模块划分）
+        HIT_BOX_MODULE_WITHOUT_SUBSYSTEM: "hit_box_module_without_subsystem"
+        // 碰撞箱填了 module 但没关联子系统
       };
       var SCOPE_ITEM_BUCKET = {
         subsystem: "subsystems",
@@ -18841,6 +18937,41 @@
           ));
         });
       }
+      function _collectModuleIssue(partId, vName, spKey, hbKey, hb, subsystems, problems) {
+        var moduleName = hb.module;
+        if (isMissingValue(moduleName)) return;
+        var where = '\u96F6\u4EF6 "' + partId + '"/' + vName + ' \u5B50\u96F6\u4EF6 "' + spKey + '" \u78B0\u649E\u7BB1 "' + hbKey + '"';
+        var owner = hb.subsystem ? subsystems[hb.subsystem] : null;
+        if (!owner) {
+          problems.push(_makeProblem(
+            "warning",
+            CODES.HIT_BOX_MODULE_WITHOUT_SUBSYSTEM,
+            where + '\uFF1A\u586B\u4E86\u6A21\u5757\u540D "' + moduleName + '" \u4F46\u6CA1\u6709\u5173\u8054\u5B50\u7CFB\u7EDF\uFF1B\u6A21\u5757\u540D\u53EA\u5728\u5173\u8054\u6A21\u5757\u5316\u5B50\u7CFB\u7EDF\u65F6\u751F\u6548',
+            _mkPath("hit_box", partId, vName, spKey, hbKey, hbKey, "module")
+          ));
+          return;
+        }
+        var typeMeta = ssTypes.getTypeMeta(owner.type);
+        if (!typeMeta) return;
+        var available = ssTypes.getModuleNames(owner.type);
+        if (available.length === 0) {
+          problems.push(_makeProblem(
+            "warning",
+            CODES.HIT_BOX_MODULE_UNKNOWN,
+            where + '\uFF1A\u5B50\u7CFB\u7EDF "' + hb.subsystem + '"\uFF08' + typeMeta.displayName + '\uFF09\u6CA1\u6709\u6A21\u5757\u5212\u5206\uFF0C\u6A21\u5757\u540D "' + moduleName + '" \u4F1A\u88AB\u5FFD\u7565',
+            _mkPath("hit_box", partId, vName, spKey, hbKey, hbKey, "module")
+          ));
+          return;
+        }
+        if (available.indexOf(moduleName) === -1) {
+          problems.push(_makeProblem(
+            "warning",
+            CODES.HIT_BOX_MODULE_UNKNOWN,
+            where + '\uFF1A\u5B50\u7CFB\u7EDF "' + hb.subsystem + '"\uFF08' + typeMeta.displayName + '\uFF09\u6CA1\u6709\u6A21\u5757 "' + moduleName + '"\uFF1B\u53EF\u7528 ' + available.join(" / ") + "\uFF0C\u6A21\u7EC4\u4FA7\u4F1A\u6309\u6A21\u5757\u6700\u5927\u8010\u4E45\u6BD4\u4F8B\u5206\u644A\u8FD9\u6B21\u547D\u4E2D",
+            _mkPath("hit_box", partId, vName, spKey, hbKey, hbKey, "module")
+          ));
+        }
+      }
       function collectIssues(config) {
         var problems = [];
         var parts = config && config.parts || {};
@@ -18912,6 +19043,7 @@
                   _mkPath("subpart", partId, vName, spKey, null, null, "mass")
                 ));
               }
+              var subsystems = sp.subsystems || {};
               var hitBoxes = sp.hit_boxes || {};
               for (var hbKey in hitBoxes) {
                 var hb = hitBoxes[hbKey] || {};
@@ -18938,9 +19070,9 @@
                     _mkPath("hit_box", partId, vName, spKey, hbKey, hbKey, "material")
                   ));
                 }
+                _collectModuleIssue(partId, vName, spKey, hbKey, hb, subsystems, problems);
               }
               _collectDanglingRefs(config, partId, vName, spKey, problems);
-              var subsystems = sp.subsystems || {};
               for (var ssName in subsystems) {
                 var ss = subsystems[ssName];
                 var meta = ssTypes.getTypeMeta(ss.type);
@@ -29787,6 +29919,8 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var fieldIssues = require_field_issues();
+      var ssTypes = require_subsystem_types();
+      var MODULE_LIST_SEQ = 0;
       var OVERWRITE_GROUPS = {
         block_damage_factor: "physics",
         rha: "armor",
@@ -29858,9 +29992,16 @@
                 <option v-for="(label, key) in subsystemOptions" :key="key" :value="key">{{ label }}</option>
             </select>
         </div>
-        <div class="mm-field">
-            <label title="\u5B50\u7CFB\u7EDF\u5185\u6A21\u5757\u540D\uFF0C\u4F8B\u5982 barrel / breech / radiator\uFF1B\u4E3A\u7A7A\u8868\u793A\u6574\u4E2A\u5B50\u7CFB\u7EDF">\u6A21\u5757\u540D</label>
-            <input type="text" class="mm-input" :value="config.module || ''" @change="onFieldChange('module', $event.target.value)" placeholder="\uFF08\u6574\u4E2A\u5B50\u7CFB\u7EDF\uFF09" />
+        <div class="mm-field" :class="fieldClass('module')">
+            <label title="\u5B50\u7CFB\u7EDF\u5185\u6A21\u5757\u540D\uFF0C\u4F8B\u5982 barrel / breech / feed / magazine\uFF1B\u4E3A\u7A7A\u8868\u793A\u6574\u4E2A\u5B50\u7CFB\u7EDF">\u6A21\u5757\u540D</label>
+            <input type="text" class="mm-input" :list="moduleListId"
+                   :value="config.module || ''" @change="onFieldChange('module', $event.target.value)"
+                   :placeholder="modulePlaceholder" />
+            <datalist :id="moduleListId">
+                <option v-for="m in moduleOptions" :key="m.name" :value="m.name">
+                    {{ m.label }}{{ m.critical ? '\uFF08\u5173\u952E\u6A21\u5757\uFF09' : '' }}
+                </option>
+            </datalist>
         </div>
         <div class="mm-field">
             <label title="Molang\u6761\u4EF6\u8868\u8FBE\u5F0F\uFF0C\u4E3A\u7A7A\u5219\u59CB\u7EC8\u751F\u6548">\u6761\u4EF6\u8868\u8FBE\u5F0F</label>
@@ -29922,7 +30063,9 @@
         },
         data: function() {
           return {
-            overwriteExpanded: false
+            overwriteExpanded: false,
+            /** 本实例的模块候选 datalist id（模板里 input[list] 与 datalist[id] 共用） */
+            moduleListId: "mm-hitbox-modules-" + ++MODULE_LIST_SEQ
           };
         },
         computed: {
@@ -29944,6 +30087,24 @@
               }
             }
             return options;
+          },
+          /**
+           * 关联子系统的模块候选：只有模块化子系统（发射器、再生装弹机）才有。
+           * 来源是关联实例的 type，因此改关联子系统时候选跟着变；
+           * 非模块化类型返回空数组，模块名输入就退化成普通文本框。
+           */
+          moduleOptions: function() {
+            var name = this.config && this.config.subsystem;
+            if (!name) return [];
+            var target = this.parentSubsystems[name];
+            return target ? ssTypes.getModules(target.type) : [];
+          },
+          /** 模块名占位提示：列出该子系统类型的模块名，没有模块时提示"整个子系统" */
+          modulePlaceholder: function() {
+            var names = this.moduleOptions.map(function(m) {
+              return m.name;
+            });
+            return names.length ? "\u6574\u4E2A\u5B50\u7CFB\u7EDF\uFF0C\u6216 " + names.join(" / ") : "\uFF08\u6574\u4E2A\u5B50\u7CFB\u7EDF\uFF09";
           },
           /**
            * 材质缺失 / 引用了不存在的材质时标红下拉框（不显示原因文案）。
@@ -36138,7 +36299,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.5.7";
+  var PLUGIN_VERSION = "0.5.8";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
