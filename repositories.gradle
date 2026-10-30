@@ -27,8 +27,8 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js（通过 KubeJS 的 Rhino fork 统一提供）
     implementation "maven.modrinth:rhino:${rhino_version}"
-    // 状态机
-    implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
+    // 状态机由 Spark-Core 打进自己的 jar，本模组不直接引用 ru.nsk.kstatemachine，
+    // 不再单独声明；两份不同版本的接口会让动画状态机在运行时抛 AbstractMethodError。
     // 加速渲染
     implementation("curse.maven:accelerated-rendering-1314021:8366742")
     // AUI渲染引擎（jarJar 内嵌进本模组 jar，玩家无需单独安装）
