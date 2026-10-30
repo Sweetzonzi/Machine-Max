@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenLoaderSubsystem;
@@ -54,13 +55,19 @@ public final class RegenLoaderFillingGameTest {
     private record Selection(RegularPartType type, String variant) {
     }
 
-    /** 同时具备再生装弹机与发射器的变体：装弹机是断言对象，发射器是真实消费者。 */
+    /**
+     * 同时具备逐发送弹的再生装弹机与发射器的变体：装弹机是断言对象，发射器是真实消费者。<br>
+     * 只认逐发送弹的那一型——整匣输弹的型号由一个确定的计时器主导，逐发时序断言要靠合成型号构造。
+     */
     private static boolean hasLoaderAndLauncher(VariantAttr variant) {
         boolean loader = false;
         boolean launcher = false;
         for (SubPartAttr subPart : variant.subParts.values()) {
             for (AbstractSubsystemAttr attr : subPart.subsystems.values()) {
-                if (attr instanceof RegenLoaderSubsystemAttr) loader = true;
+                if (attr instanceof RegenLoaderSubsystemAttr regenLoader
+                        && regenLoader.getStaticAttribute().getFeed().reloadRoundByRound()) {
+                    loader = true;
+                }
                 if (attr instanceof LauncherSubsystemAttr) launcher = true;
             }
         }
@@ -84,19 +91,22 @@ public final class RegenLoaderFillingGameTest {
         part.assemblingProgress = 1f;
     }
 
+    /** 逐发送弹的装弹机，按名字取最小的那台：集合遍历顺序不定，不排序会让用例换个型号跑。 */
     private static RegenLoaderSubsystem loader(RegularPart part) {
         return part.getAllSubsystems().stream()
                 .filter(RegenLoaderSubsystem.class::isInstance)
                 .map(RegenLoaderSubsystem.class::cast)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("部件定义声明了再生装弹机，实例表中却没有"));
+                .filter(RegenLoaderSubsystem::isReloadRoundByRound)
+                .min(Comparator.comparing(AbstractSubsystem::getName))
+                .orElseThrow(() -> new IllegalStateException("部件里没有逐发送弹的再生装弹机"));
     }
 
+    /** 按名字取最小的发射器，与 {@link #loader(RegularPart)} 的选择口径一致。 */
     private static LauncherSubsystem launcher(RegularPart part) {
         return part.getAllSubsystems().stream()
                 .filter(LauncherSubsystem.class::isInstance)
                 .map(LauncherSubsystem.class::cast)
-                .findFirst()
+                .min(Comparator.comparing(AbstractSubsystem::getName))
                 .orElseThrow(() -> new IllegalStateException("部件定义声明了发射器，实例表中却没有"));
     }
 
