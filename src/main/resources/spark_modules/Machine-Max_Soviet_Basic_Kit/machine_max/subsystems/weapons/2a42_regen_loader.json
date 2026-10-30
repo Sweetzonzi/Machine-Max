@@ -3,8 +3,9 @@
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "feed": {
-    "reload_time": 0,
-    "reload_round_by_round": true,
+    // 弹匣供弹：换弹匣（对接）4 秒，之后每一发瞬时送达
+    "reload_time": 4,
+    "reload_round_by_round": false,
     "can_supply_multiple": false
   },
   "magazine": {

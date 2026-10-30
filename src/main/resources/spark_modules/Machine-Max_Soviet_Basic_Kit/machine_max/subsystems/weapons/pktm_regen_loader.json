@@ -3,16 +3,18 @@
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "feed": {
-    "reload_time": 0,
-    "reload_round_by_round": true,
+    // 弹链供弹：换弹链（对接）3 秒，之后每一发瞬时送达
+    "reload_time": 3,
+    "reload_round_by_round": false,
     "can_supply_multiple": false
   },
   "magazine": {
     "capacity": 2000,
-    "regen_per_minute": 700,
-    "regen_round_by_round": true,
+    // 打空后整批回满：2000 发 ÷ 12000 发每分 = 10 秒
+    "regen_per_minute": 12000,
+    "regen_round_by_round": false,
     "energy_cost_per_round": 0,
-    "regen_delay": 0.5
+    "regen_delay": 0
   },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }
