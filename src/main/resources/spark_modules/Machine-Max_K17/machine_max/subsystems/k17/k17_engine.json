@@ -4,9 +4,9 @@
   "basic_durability": 60,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "max_power": 551620,
-  "max_torque": 800,
+  "max_torque": 1200,
   "idle_rpm": 250,
-  "idle_rpm_torque_ratio": 0.4,
+  "idle_rpm_torque_ratio": 0.8,
   "max_torque_rpm": 2000,
   "red_line_rpm": 3000,
   "red_line_torque_ratio": 0.8,
