@@ -126,7 +126,7 @@ public record TubeSnapshot(
 
 `i` 从 0 开始，按快照中的稳定顺序取值；越界时数值返回 0、字符串返回空。整台控制器与显式索引查询位于 `weapon.*`；当前项查询位于 §3.2 的 `tube.*` / `belt.*`。`math.*` 是 Spark 通用词表；`local.*` / `global.*` 持续提供 Part 与装配体的通用数据，HUD 视角与视口查询使用 `hud.*`。
 
-MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。它也没有可用的字符串相等：`==` / `!=` 会把两边转成数字比较，任意两个非数字字符串都算相等，状态判断用 `tube.ready` / `tube.empty` 这类数值布尔，或交给 `data-mm-class`。
+MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。`==` / `!=` 在任一侧是字符串时按文本比较，两侧都是数值时按 double 比较，字符串与数字混比时数字按其文本形式参与，因此 `tube.state == 'ready'` 能得到预期结果；状态判断仍以 `tube.ready` / `tube.empty` 这类数值布尔或 `data-mm-class` 为主，避免为一次判断多走一次字符串比较。
 
 ### 3.1 炮镜分划
 

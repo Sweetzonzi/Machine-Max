@@ -76,7 +76,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 
 ## 4. 武器查询
 
-表中数值布尔值使用 1/0；字符串状态使用 ready、reloading、empty，装填阶段使用 loading、regenerating、refilling、idle。这些是机器可读值，页面文案可以由作者选择。Molang 的 `==` / `!=` 会把两边按数字比较，任意两个非数字字符串都被算成相等（`'a' == 'b'` 为真），因此**不要**用 `tube.state == 'ready'` 判断状态：文字读数用 `tube.ready` / `tube.empty`，样式用 `data-mm-class="tube.state"`。
+表中数值布尔值使用 1/0；字符串状态使用 ready、reloading、empty，装填阶段使用 loading、regenerating、refilling、idle。这些是机器可读值，页面文案可以由作者选择。MoLang 的 `==` / `!=` 在任一侧是字符串（字符串字面量、字符串查询、`??` 兜底或字符串三元）时按文本比较，两侧都是数值时按 double 比较；字符串与数字混比时数字按 `1.0` 这样的文本参与比较，所以 `'1' == 1` 为假。行内状态判断用 `tube.ready` / `tube.empty` 这类数值布尔更直接：结果只有 0/1，不经过文本比较；样式切换用 `data-mm-class="tube.state"`。
 
 | 查询 | 类型与口径 |
 | --- | --- |
@@ -94,7 +94,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | weapon.round_mismatch | 数值布尔，任一根膛内弹不包含在选中弹链序列中；为真时 weapon.round_label 显示那发 |
 | tube.index / belt.index | 数值，本轮当前项的零基下标 |
 | tube.state | 字符串，该管的准备状态 |
-| tube.ready / tube.empty | 数值布尔，该管是否已备好一发 / 是否无弹；判断文字请用这两个，不要比较 tube.state |
+| tube.ready / tube.empty | 数值布尔，该管是否已备好一发 / 是否无弹；按状态选文字时用这两个 |
 | tube.phase | 字符串，该管的装填阶段：loading 正在输弹、regenerating 逐发再生、refilling 整批回充、idle 没有进行中的装填 |
 | tube.has_source | 数值布尔，该管是否已有供给者；0 表示路由没摊到装弹机，与"有机器但打空"不同 |
 | tube.fill | 数值，该管 0～100 的准备进度；输弹、再生、整批回充三种阶段各自的口径，用 tube.phase 区分 |
