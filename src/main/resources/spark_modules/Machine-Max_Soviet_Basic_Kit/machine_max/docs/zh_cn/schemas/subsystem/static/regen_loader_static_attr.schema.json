@@ -2,12 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "再生装弹机子系统静态属性",
-  "description": "再生装弹机子系统的静态属性，定义弹仓容量、再生速率、每发能耗和弹药供给行为。用于能量武器（激光、爆能束）和街机风格再生武器（导弹冷却再生）。弹链构成（projectile_types）与弹链名（belt_label）是逐实例字段，写在部件 JSON 的子系统实例块里，见 subsystem/dynamic/regen_loader_dynamic_attr.schema.json，不写在本文件。",
+  "description": "再生装弹机子系统的静态属性，定义弹仓容量、再生速率、每发能耗和弹药供给行为。用于能量武器（激光、爆能束）和街机风格再生武器（导弹冷却再生）。耐久拆成输弹机构（feed，非关键）与弹仓（magazine，唯一关键）两个模块：弹仓归零即整机判毁并殉爆，机构归零只中断后续装填。弹链构成（projectile_types）与弹链名（belt_label）是逐实例字段，写在部件 JSON 的子系统实例块里，见 subsystem/dynamic/regen_loader_dynamic_attr.schema.json，不写在本文件。",
   "properties": {
     "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
     "type": { "type": "string", "const": "machine_max:regen_loader", "description": "子系统类型，必须为 'machine_max:regen_loader'。" },
-    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "子系统基础耐久度。降为 0 时瘫痪，修复至 30% 时恢复功能。" },
-    "pass_damage": { "type": "boolean", "default": true, "description": "是否将伤害传递给子系统持有者。为 true 时子系统受到的伤害会传递给零件。" },
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "子系统基础耐久度，按 feed / magazine 的 durability_weight 分配给两个模块。整机耐久是两模块之和；弹仓归零即整机判毁，任一模块都要修到自身 30% 才脱离摧毁。" },
+    "pass_damage": { "type": "boolean", "default": true, "description": "是否将伤害传递给子系统持有者。第一方定义写 false：命中伤害由 feed / magazine 模块吸收，不传给零件与载具。" },
     "limit_damage": { "type": "boolean", "default": false, "description": "是否限制伤害传递值不超过子系统剩余耐久度。例如 40 伤害、剩余 20，则只传递 20。" },
     "hidden": { "type": "boolean", "default": false, "description": "是否在 HUD 中隐藏该子系统，常用于仅提供模型零件伤害区分的非功能子系统。" },
     "magazine_capacity": { "type": "integer", "minimum": 1, "description": "弹仓容量，最大可存储的弹药数量。" },
@@ -17,6 +17,32 @@
     "reload_time": { "type": "number", "minimum": 0, "description": "输送一发弹药给消费者所需时间（秒）。再生模式下为弹药诞生到可用的延迟。" },
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "是否允许多个消费者同时从此装弹机接收弹药。" },
     "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "输送弹药后的再生启动延迟（秒）。0 = 边产边供，无延迟。" },
+    "feed": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。模块最大耐久 = basic_durability × 本权重 / 两个模块权重之和，必须为有限正数。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "输弹机构模块属性——非关键模块，省略时取权重 1.0。耐久归零只中断后续装填：库存、弹链指针与已进入发射器的弹都不受影响，整机不因此判毁；修到自身最大耐久的 30% 才恢复输送。"
+    },
+    "magazine": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。模块最大耐久 = basic_durability × 本权重 / 两个模块权重之和，必须为有限正数。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "弹仓模块属性——唯一关键模块，省略时取权重 1.0。耐久归零即整机判毁：按实际库存合成一次殉爆，并作废进行中的再生批次（已预扣能量不退款）；修到自身最大耐久的 30% 才恢复储存与再生。命中箱的 module 写 magazine 即把该处伤害记到本模块。"
+    },
     "sounds": {
       "type": "object",
       "properties": {
@@ -41,6 +67,7 @@
       "description": "最简示例——仅必需字段"
     },
     { "type": "machine_max:regen_loader", "basic_durability": 40, "magazine_capacity": 150, "regen_per_minute": 800, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 0, "can_supply_multiple": false, "regen_delay": 0.5, "description": "随打随产示例——MG34 机枪，150 发弹仓，800 发/分钟，0.5 秒再生延迟" },
-    { "type": "machine_max:regen_loader", "basic_durability": 80, "magazine_capacity": 40, "regen_per_minute": 10, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 2.0, "can_supply_multiple": false, "description": "慢速再生示例——50mm 火炮，40 发，10 发/分钟，带输送延迟" }
+    { "type": "machine_max:regen_loader", "basic_durability": 80, "magazine_capacity": 40, "regen_per_minute": 10, "regen_round_by_round": true, "energy_cost_per_round": 0, "reload_time": 2.0, "can_supply_multiple": false, "description": "慢速再生示例——50mm 火炮，40 发，10 发/分钟，带输送延迟" },
+    { "type": "machine_max:regen_loader", "basic_durability": 30, "magazine_capacity": 60, "reload_time": 1.0, "feed": { "durability_weight": 1.0 }, "magazine": { "durability_weight": 2.0 }, "description": "模块权重示例——总耐久 30 点，机构占 1/3（10 点）、弹仓占 2/3（20 点）" }
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "Regen Loader Subsystem Static Attributes",
-  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen).Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",
+  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen). Durability is split into a feed (non-critical) and a magazine (the only critical) module: the magazine reaching zero destroys the whole subsystem and cooks off the stored rounds, while the feed reaching zero only stops further loading. Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",
   "properties": {
     "$schema": {
       "type": "string",
@@ -14,8 +14,8 @@
       "const": "machine_max:regen_loader",
       "description": "Subsystem type, must be 'machine_max:regen_loader'."
     },
-    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "Subsystem basic durability. Becomes paralyzed at 0, restores functionality when repaired to 30%." },
-    "pass_damage": { "type": "boolean", "default": true, "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem is transferred to the part." },
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "Subsystem basic durability, distributed to the two modules by their feed / magazine durability_weight. The subsystem durability is the sum of both modules; the magazine reaching zero destroys the whole subsystem, and either module must be repaired to 30% of its own maximum to leave the destroyed state." },
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether to pass damage to the subsystem holder. First-party definitions write false: hit damage is absorbed by the feed / magazine modules and never reaches the part or vehicle." },
     "limit_damage": { "type": "boolean", "default": false, "description": "Whether to limit damage transfer to remaining durability. e.g. 40 damage, 20 remaining, only 20 transfers." },
     "hidden": { "type": "boolean", "default": false, "description": "Whether to hide the subsystem in HUD, commonly used for non-functional parts that only provide damage differentiation." },
     "magazine_capacity": { "type": "integer", "minimum": 1, "description": "Magazine capacity, maximum number of rounds that can be stored." },
@@ -29,6 +29,32 @@
     },
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "Whether multiple consumers can receive ammo from this loader simultaneously." },
     "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Delay (in seconds) after delivering a round before regeneration starts. 0 = regen starts immediately (produce while supply)." },
+    "feed": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0,
+          "description": "Module durability weight. Module max durability = basic_durability x this weight / the sum of both module weights; must be a finite positive number."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Feed module attributes - non-critical, weight defaults to 1.0 when omitted. Reaching zero only stops further loading: stock, belt pointer and rounds already chambered in the launcher are untouched, and the subsystem is not destroyed; the feed works again only after being repaired to 30% of its own maximum durability."
+    },
+    "magazine": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0,
+          "description": "Module durability weight. Module max durability = basic_durability x this weight / the sum of both module weights; must be a finite positive number."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Magazine module attributes - the only critical module, weight defaults to 1.0 when omitted. Reaching zero destroys the whole subsystem: the stored rounds cook off once and any in-progress regeneration batch is discarded (pre-paid energy is not refunded); the magazine stores and regenerates again only after being repaired to 30% of its own maximum durability. Set a hitbox module to magazine to charge that hitbox's damage to this module."
+    },
     "sounds": {
       "type": "object",
       "properties": {
@@ -74,6 +100,15 @@
       "reload_time": 2.0,
       "can_supply_multiple": false,
       "description": "Slow regen example - 50mm cannon, 40 rounds, 10 rounds/min, with reload time delay"
+    },
+    {
+      "type": "machine_max:regen_loader",
+      "basic_durability": 30,
+      "magazine_capacity": 60,
+      "reload_time": 1.0,
+      "feed": { "durability_weight": 1.0 },
+      "magazine": { "durability_weight": 2.0 },
+      "description": "Module weight example - 30 total durability, feed takes 1/3 (10) and magazine takes 2/3 (20)"
     }
   ]
 }

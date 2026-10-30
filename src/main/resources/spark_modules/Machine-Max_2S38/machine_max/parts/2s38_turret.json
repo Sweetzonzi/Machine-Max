@@ -63,19 +63,44 @@
               "thickness": 5,
               "subsystem": "subsystem.machine_max.azimuth_driver"
             },
-            "AutoloaderAPHitBox": {
+            "LeftAmmoStorageHitBox": {
               "id": "2a90_ap_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_ap_loader"
+              "subsystem": "subsystem.machine_max.2a90_ap_loader",
+              "module": "magazine"
             },
-            "AutoloaderHEHitBox": {
+            "RightAmmoStorageHitBox": {
               "id": "2a90_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_he_loader"
+              "subsystem": "subsystem.machine_max.2a90_he_loader",
+              "module": "magazine"
+            },
+            "LeftAutoloaderHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.2a90_ap_loader",
+              "module": "feed"
+            },
+            "RightAutoloaderHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.2a90_he_loader",
+              "module": "feed"
+            },
+            "GunAzimDriverHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.azimuth_driver"
             }
           },
           "connectors": {
@@ -196,6 +221,10 @@
               "material": "machine_max:structural_steel",
               "thickness": 20,
               "subsystem": "subsystem.machine_max.2a90"
+            },
+            "GunBreechHitBox": {
+              "id": "part",
+              "type": "box"
             }
           },
           "connectors": {

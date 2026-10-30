@@ -9,6 +9,8 @@
   "reload_time": 0.45,
   "can_supply_multiple": false,
   "regen_delay": 0.3,
+  "feed": { "durability_weight": 1.0 }, //(可选, 默认1.0)输弹机构：非关键，归零只停供弹
+  "magazine": { "durability_weight": 1.0 }, //(可选, 默认1.0)弹仓：唯一关键，归零即殉爆
   "sounds": {
     "progress_sounds": {
       "0.0": {

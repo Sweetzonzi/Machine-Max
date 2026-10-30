@@ -1421,13 +1421,32 @@
 					}
 				},
 				{
-					"name": "GunBarrelHitBox",
+					"name": "GunHitBoxes",
 					"parent": "2A90",
+					"pivot": [0.05439, 41.17617, -3.08976]
+				},
+				{
+					"name": "GunBarrelHitBox",
+					"parent": "GunHitBoxes",
 					"pivot": [0.78187, 44.08414, -15.94952],
 					"cubes": [
 						{
 							"origin": [-0.85812, 40.89664, -84.79952],
 							"size": [2, 2.25, 76.97],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "GunBreechHitBox",
+					"parent": "GunHitBoxes",
+					"pivot": [0.05439, 41.17617, -3.08976],
+					"cubes": [
+						{
+							"origin": [-0.99767, 33.90291, -5.3675],
+							"size": [4.0291, 18.5464, 4.55545],
+							"pivot": [0.01688, 41.17611, -3.08977],
+							"rotation": [-90, 0, -90],
 							"uv": {}
 						}
 					]
@@ -4018,7 +4037,7 @@
 					]
 				},
 				{
-					"name": "AutoloaderAPHitBox",
+					"name": "LeftAmmoStorageHitBox",
 					"parent": "TurretHitBoxes",
 					"pivot": [5.5, 16.25, -2.75],
 					"cubes": [
@@ -4037,7 +4056,7 @@
 					]
 				},
 				{
-					"name": "AutoloaderHEHitBox",
+					"name": "RightAmmoStorageHitBox",
 					"parent": "TurretHitBoxes",
 					"pivot": [-5.5, 16.25, -2.75],
 					"cubes": [
@@ -4052,6 +4071,79 @@
 								"up": {"uv": [1, 1], "uv_size": [-1, -1]},
 								"down": {"uv": [1, 1], "uv_size": [-1, -1]}
 							}
+						}
+					]
+				},
+				{
+					"name": "LeftAutoloaderHitBox",
+					"parent": "TurretHitBoxes",
+					"pivot": [0.054, 33.967, -2.827],
+					"cubes": [
+						{
+							"origin": [0, 20, -5],
+							"size": [5, 23.5, 4.5],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [1, 1]},
+								"east": {"uv": [0, 0], "uv_size": [1, 1]},
+								"south": {"uv": [0, 0], "uv_size": [1, 1]},
+								"west": {"uv": [0, 0], "uv_size": [1, 1]},
+								"up": {"uv": [1, 1], "uv_size": [-1, -1]},
+								"down": {"uv": [1, 1], "uv_size": [-1, -1]}
+							}
+						}
+					]
+				},
+				{
+					"name": "RightAutoloaderHitBox",
+					"parent": "TurretHitBoxes",
+					"pivot": [-0.054, 33.967, -2.827],
+					"cubes": [
+						{
+							"origin": [-5, 20, -5],
+							"size": [5, 23.5, 4.5],
+							"uv": {
+								"north": {"uv": [1, 0], "uv_size": [-1, 1]},
+								"east": {"uv": [1, 0], "uv_size": [-1, 1]},
+								"south": {"uv": [1, 0], "uv_size": [-1, 1]},
+								"west": {"uv": [1, 0], "uv_size": [-1, 1]},
+								"up": {"uv": [0, 1], "uv_size": [1, -1]},
+								"down": {"uv": [0, 1], "uv_size": [1, -1]}
+							}
+						}
+					]
+				},
+				{
+					"name": "GunAzimDriverHitBox",
+					"parent": "TurretHitBoxes",
+					"pivot": [0.78187, 44.08414, -15.94952],
+					"cubes": [
+						{
+							"origin": [-2.99767, 33.90291, -6.3675],
+							"size": [6.0291, 14.5464, 6.55545],
+							"pivot": [0.01688, 41.17611, -3.08977],
+							"rotation": [0, 90, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-2.99767, 33.90291, -6.3675],
+							"size": [6.0291, 14.5464, 6.55545],
+							"pivot": [0.01688, 41.17611, -3.08977],
+							"rotation": [-90, -45, -90],
+							"uv": {}
+						},
+						{
+							"origin": [-2.99767, 33.90291, -6.3675],
+							"size": [6.0291, 14.5464, 6.55545],
+							"pivot": [0.01688, 41.17611, -3.08977],
+							"rotation": [90, -45, 90],
+							"uv": {}
+						},
+						{
+							"origin": [-2.99767, 33.90291, -6.3675],
+							"size": [6.0291, 14.5464, 6.55545],
+							"pivot": [0.01688, 41.17611, -3.08977],
+							"rotation": [-90, 0, -90],
+							"uv": {}
 						}
 					]
 				},
