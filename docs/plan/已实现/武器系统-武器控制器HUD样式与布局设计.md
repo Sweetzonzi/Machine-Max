@@ -99,31 +99,34 @@ public record TubeSnapshot(
 | --- | --- | --- |
 | `weapon.name` | string | 所属控制器的子系统名 |
 | `weapon.selected` | 0/1 | 所属控制器是否属于当前观察座椅的 base + 当前子组选中集合；与启用/开火/控制权无关 |
-| `weapon.state` | string | `ready` / `reloading` / `empty` |
+| `weapon.state` | string | `ready`（至少一根管已备好一发）/ `reloading`（没有就绪管但至少一根在装填）/ `empty`（全部无弹或无供给者） |
 | `weapon.ammo_remaining` | number | 供弹弹链余量合计 |
 | `weapon.ammo_capacity` | number | 容量合计；负数表示无容量概念 |
 | `weapon.ammo_infinite` | 0/1 | 是否存在无容量概念的装弹机 |
-| `weapon.ammo_text` | string | 如 `27/120`、`27/∞` |
-| `weapon.round_label` | string | 弹种槽文本 |
-| `weapon.round_mismatch` | 0/1 | 膛内弹种不在供弹弹链上 |
+| `weapon.ammo_text` | string | 如 `27/120`；容量无上限时只写 `∞` |
+| `weapon.round_label` | string | 弹种槽文本；弹链不匹配时显示那发不匹配的膛内弹 |
+| `weapon.round_mismatch` | 0/1 | 任一根管的膛内弹不在供弹弹链上 |
 | `weapon.reload_text` | string | 剩余时间或进度的显示文本 |
-| `weapon.active_ammo` | string | 当前弹药注册键；没有时为空 |
+| `weapon.active_ammo` | string | 弹道解所用的弹种注册键（首根有膛内弹的管，否则取首个供给者的弹种）；没有时为空 |
 | `weapon.tube_count` | number | 有效发射管数 |
 | `weapon.belt_count` | number | 可选弹链数 |
 | `weapon.tube_state(i)` | string | 第 i 根管的状态 |
+| `weapon.tube_ready(i)` / `weapon.tube_empty(i)` | 0/1 | 第 i 根管是否已备好一发 / 是否无弹 |
+| `weapon.tube_phase(i)` | string | 第 i 根管的装填阶段：`loading` / `regenerating` / `refilling` / `idle` |
+| `weapon.tube_has_source(i)` | 0/1 | 第 i 根管是否已有供给者 |
 | `weapon.tube_fill(i)` | number | 第 i 根管的填充比例，0～100 |
 | `weapon.tube_round_label(i)` | string | 第 i 根管的弹种或供给者指针态文本 |
 | `weapon.tube_reload_text(i)` | string | 第 i 根管的装填时间或进度 |
-| `weapon.tube_reload_remaining(i)` | number | 第 i 根管剩余装填秒数；非装填为 0，装填中未知为 -1 |
+| `weapon.tube_reload_remaining(i)` | number | 第 i 根管当前阶段的剩余秒数（输弹、逐发再生或整批回充）；非装填为 0，无法折算为 -1 |
 | `weapon.tube_chambered_ammo_label(i)` | string | 第 i 根管的真实膛内弹药标签；空膛为空 |
-| `weapon.tube_loading_belt_label(i)` | string | 第 i 根管实际正在装填的弹链标签；不是控制器当前选中弹链的别名 |
+| `weapon.tube_loading_belt_label(i)` | string | 第 i 根管正在输弹的来源标签；只有 `tube_phase` 为 `loading` 时非空 |
 | `weapon.belt_label(i)` | string | 第 i 条弹链的名称 |
 | `weapon.belt_remaining(i)` | number | 第 i 条弹链的余量 |
 | `weapon.belt_selected(i)` | 0/1 | 第 i 条是否为当前供弹弹链 |
 
 `i` 从 0 开始，按快照中的稳定顺序取值；越界时数值返回 0、字符串返回空。整台控制器与显式索引查询位于 `weapon.*`；当前项查询位于 §3.2 的 `tube.*` / `belt.*`。`math.*` 是 Spark 通用词表；`local.*` / `global.*` 持续提供 Part 与装配体的通用数据，HUD 视角与视口查询使用 `hud.*`。
 
-MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。
+MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。它也没有可用的字符串相等：`==` / `!=` 会把两边转成数字比较，任意两个非数字字符串都算相等，状态判断用 `tube.ready` / `tube.empty` 这类数值布尔，或交给 `data-mm-class`。
 
 ### 3.1 炮镜分划
 
@@ -137,12 +140,15 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 | --- | --- | --- |
 | `tube.index` | 无 | 当前发射管在本轮快照中的下标，从 0 开始；不是身份键 |
 | `tube.state` | `weapon.tube_state(i)` | 当前管状态 |
+| `tube.ready` / `tube.empty` | `weapon.tube_ready(i)` / `weapon.tube_empty(i)` | 当前管是否已备好一发 / 是否无弹；判断文字用它们，不要比较 `tube.state` |
+| `tube.phase` | `weapon.tube_phase(i)` | 当前管的装填阶段：`loading` / `regenerating` / `refilling` / `idle` |
+| `tube.has_source` | `weapon.tube_has_source(i)` | 当前管是否已有供给者 |
 | `tube.fill` | `weapon.tube_fill(i)` | 当前管填充百分比，0～100 |
 | `tube.round_label` | `weapon.tube_round_label(i)` | 当前管的行显示文本 |
 | `tube.reload_text` | `weapon.tube_reload_text(i)` | 当前管的装填时间或进度文本 |
-| `tube.reload_remaining` | `weapon.tube_reload_remaining(i)` | 当前管剩余装填秒数，含义见 §二 |
+| `tube.reload_remaining` | `weapon.tube_reload_remaining(i)` | 当前管当前阶段的剩余秒数，含义见 §二 |
 | `tube.chambered_ammo_label` | `weapon.tube_chambered_ammo_label(i)` | 当前管的真实膛内弹药标签 |
-| `tube.loading_belt_label` | `weapon.tube_loading_belt_label(i)` | 当前管实际正在装填的供弹来源标签 |
+| `tube.loading_belt_label` | `weapon.tube_loading_belt_label(i)` | 当前管正在输弹的供弹来源标签；只有 `tube.phase` 为 `loading` 时非空 |
 | `belt.index` | 无 | 当前弹链在本轮快照中的下标，从 0 开始 |
 | `belt.label` | `weapon.belt_label(i)` | 当前弹链标签 |
 | `belt.remaining` | `weapon.belt_remaining(i)` | 当前弹链库存余量 |

@@ -15,8 +15,8 @@
     <div class="tubes">
       <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
         <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
-        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></b></div>
-        <div class="loading-source"><span>LOADING /</span><span data-mm-text="tube.loading_belt_label"></span></div>
+        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><b class="row-time" data-mm-text="tube.ready ? 'RDY' : (tube.empty ? 'EMPTY' : tube.reload_text)"></b></div>
+        <div class="loading-source" data-mm-class="tube.phase"><span>LOADING /</span><span data-mm-text="tube.loading_belt_label"></span></div>
       </div>
     </div>
     <div class="scanlines" aria-hidden="true"></div>

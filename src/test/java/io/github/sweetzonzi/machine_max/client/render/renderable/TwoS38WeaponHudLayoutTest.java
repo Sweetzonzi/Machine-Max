@@ -115,8 +115,9 @@ class TwoS38WeaponHudLayoutTest {
         var he = ResourceLocation.parse("machine_max:57mm_he");
         boolean ready = state.equals("ready"), reloading = state.equals("reloading");
         var tubes = List.of(new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, main ? 1 : 2), "gun", "launcher"),
-                "AP", state, ready ? 100 : reloading ? 35 : 0, reloading ? 2 : 0, reloading ? "2.0s" : "",
-                ready ? "AP" : "", reloading ? "AP" : ""));
+                "AP", state, ready ? "idle" : reloading ? "loading" : "idle",
+                ready ? 100 : reloading ? 35 : 0, reloading ? 2 : 0, reloading ? "2.0s" : "",
+                ready ? "AP" : "", reloading ? "AP" : "", true));
         var belts = main ? List.of(new HudWeaponSnapshot.Belt(List.of(ap), "AP", 12, false),
                 new HudWeaponSnapshot.Belt(List.of(he), "HE", 8, true))
                 : List.of(new HudWeaponSnapshot.Belt(List.of(ap), "AP/曳光", 382, true));

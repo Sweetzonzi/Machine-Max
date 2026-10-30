@@ -24,7 +24,7 @@ class HudMolangContextTest {
 
     static HudWeaponSnapshot.Tube tube(int key, double fill) {
         return new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, key), "barrel", "launcher"),
-                "AP", "reloading", fill, 2, "2.0s", "", "HE belt");
+                "AP", "reloading", "loading", fill, 2, "2.0s", "", "HE belt", true);
     }
 
     static HudWeaponSnapshot snapshot(List<HudWeaponSnapshot.Tube> tubes) {
@@ -81,6 +81,31 @@ class HudMolangContextTest {
             assertEquals(0, number("tube.index", next));
             assertEquals(75, number("tube.fill", next));
         }
+    }
+
+    @Test void tubePhaseAndSourceAreReadableInsideAndOutsideTheScope() {
+        var element = new WeaponHudElement(null, element());
+        var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 7), "barrel", "launcher"),
+                "AP", "reloading", "regenerating", 40, 12, "12.0s", "", "", true);
+        var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 8), "barrel", "launcher"),
+                "HE", "empty", "idle", 0, 0, "", "", "", false);
+        element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(stalled, orphan)), true);
+        var context = (WeaponHudMolangContext) element.getMolangContext();
+        try (var ignored = context.enterItem("weapon.tubes", stalled.key(), null)) {
+            assertEquals("reloading", MolangContextRegistry.compileString("tube.state", context).evaluate(context));
+            assertEquals("regenerating", MolangContextRegistry.compileString("tube.phase", context).evaluate(context));
+            assertEquals(1, number("tube.has_source", context));
+            assertEquals(0, number("tube.ready", context));
+            assertEquals(0, number("tube.empty", context));
+        }
+        assertEquals("regenerating", MolangContextRegistry.compileString("weapon.tube_phase(0)", context).evaluate(context));
+        assertEquals("idle", MolangContextRegistry.compileString("weapon.tube_phase(1)", context).evaluate(context));
+        assertEquals(1, number("weapon.tube_has_source(0)", context));
+        assertEquals(0, number("weapon.tube_has_source(1)", context));
+        assertEquals(0, number("weapon.tube_ready(0)", context));
+        assertEquals(1, number("weapon.tube_empty(1)", context));
+        assertEquals("", MolangContextRegistry.compileString("weapon.tube_phase(5)", context).evaluate(context));
+        assertEquals(0, number("weapon.tube_has_source(5)", context));
     }
 
     @Test void invalidQueriesAreDiagnosedBeforeEngineFallback() {

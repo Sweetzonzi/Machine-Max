@@ -63,7 +63,7 @@ ExamplePack/
         <div class="line">
           <span data-mm-text="tube.index + 1"></span>
           <span data-mm-text="tube.round_label"></span>
-          <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></span>
+          <span data-mm-text="tube.ready ? 'RDY' : (tube.empty ? 'EMPTY' : tube.reload_text)"></span>
         </div>
         <div class="track">
           <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>

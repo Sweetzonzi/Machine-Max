@@ -45,8 +45,9 @@ class K17WeaponHudLayoutTest {
                 List<HudWeaponSnapshot.Tube> tubes = new ArrayList<>();
                 for (int i = 0; i < (kind.equals("tubes") ? 4 : 1); i++) {
                     tubes.add(new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, i), "gun", "launcher"),
-                            "9M133 KORNET", i < 2 ? "ready" : "reloading", i < 2 ? 100 : 30, 2, "2.0s",
-                            i < 2 ? "9M133 KORNET" : "", i < 2 ? "" : "KORNET"));
+                            "9M133 KORNET", i < 2 ? "ready" : "reloading", i < 2 ? "idle" : "loading",
+                            i < 2 ? 100 : 30, 2, "2.0s",
+                            i < 2 ? "9M133 KORNET" : "", i < 2 ? "" : "KORNET", true));
                 }
                 runtime.publish(HudPartSnapshot.EMPTY, new HudWeaponSnapshot("Weapon controller", "ready", 12, 30,
                         false, "12/30", "AP", true, "RDY", "test:ap", tubes,

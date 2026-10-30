@@ -7,6 +7,7 @@ import com.sighs.apricityui.layout.Size;
 import com.sighs.apricityui.parser.HTML;
 import com.sighs.apricityui.style.Text;
 import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatable;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
@@ -69,7 +70,8 @@ class WeaponHudComponentsTest {
     private static HudWeaponSnapshot.Tube tube(int key, boolean ready, double fill) {
         var base = HudMolangContextTest.tube(key, fill);
         return new HudWeaponSnapshot.Tube(base.key(), ready ? "AP" : "HE", ready ? "ready" : "reloading",
-                ready ? 100 : fill, ready ? 0 : 2, ready ? "" : "2.0s", ready ? "AP" : "", ready ? "" : "HE");
+                ready ? "idle" : "loading", ready ? 100 : fill, ready ? 0 : 2, ready ? "" : "2.0s",
+                ready ? "AP" : "", ready ? "" : "HE", true);
     }
 
     private static HudWeaponSnapshot snapshot(int remaining, boolean mismatch,
@@ -148,6 +150,26 @@ class WeaponHudComponentsTest {
         assertNoBindingErrors(document);
     }
 
+    @Test void regeneratingRowKeepsItsCountdownButHidesTheLoadingSource() throws Exception {
+        var page = create("tubes");
+        var regen = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 9), "gun", "launcher"),
+                "9M133", "reloading", "regenerating", 50, 15, "15.0s", "", "", true);
+        page.publish(snapshot(0, false, List.of(regen), List.of(belt("kornet", 0, true))), true);
+        var document = page.document();
+        assertEquals("15.0s", document.querySelector(".row-time").getTextContent());
+        assertEquals("50%", document.querySelector(".row-fill").getInlineStylePropertyValue("--fill"));
+        Document.runWithContext(document, () -> {
+            assertEquals("none", document.querySelector(".loading-source").getComputedStyle().display);
+            assertTrue(document.querySelector(".loading-source").getClassList().contains("is-regenerating"));
+        });
+
+        var empty = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 10), "gun", "launcher"),
+                "AP", "empty", "idle", 0, 0, "", "", "", true);
+        page.publish(snapshot(0, false, List.of(empty), List.of()), true);
+        assertEquals("EMPTY", document.querySelector(".row-time").getTextContent());
+        assertNoBindingErrors(document);
+    }
+
     @Test void compactInstancesKeepTheirOwnStockAndSelectedFeed() throws Exception {
         var first = create("compact");
         var second = create("compact");
@@ -197,8 +219,8 @@ class WeaponHudComponentsTest {
         tubes.publish(new HudWeaponSnapshot("9M133 / KORNET", "reloading", 0, 4, false, "0/4",
                 "9M133", false, "2.0s", "test:kornet",
                 List.of(tube(1, true, 100), tube(2, true, 100), tube(3, false, 58), tube(4, false, 27)).stream()
-                        .map(t -> new HudWeaponSnapshot.Tube(t.key(), "9M133", t.state(), t.fill(), t.reloadRemaining(),
-                                t.reloadText(), t.state().equals("ready") ? "9M133" : "", t.state().equals("reloading") ? "KORNET" : "")).toList(),
+                        .map(t -> new HudWeaponSnapshot.Tube(t.key(), "9M133", t.state(), t.phase(), t.fill(), t.reloadRemaining(),
+                                t.reloadText(), t.state().equals("ready") ? "9M133" : "", t.state().equals("reloading") ? "KORNET" : "", true)).toList(),
                 List.of(belt("KORNET", 0, true))), false);
         compact.publish(new HudWeaponSnapshot("PKTM / COAX", "ready", 382, 2000, false, "382/2000",
                 "7.62 MM", false, "RDY", "test:pktm", List.of(tube(1, true, 100)),
