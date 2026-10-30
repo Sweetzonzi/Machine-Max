@@ -235,11 +235,13 @@ Using Molang parameters for dynamic content:
 ```json
 "gear": {
   "key": "hud.machine_max.default_1.gear",
-  "molang_args": ["global.get('gear')??'NO GBX'"],
+  "molang_args": ["global.get_str('gear')??'NO GBX'"],
   "centered": true,
   "shadow": true
 }
 ```
+
+Gear is a string signal (R1 / N / 1–8) read with `global.get_str`; `global.get` only returns a number, so a string fallback after it never shows up.
 
 ## Molang in HUD Applications
 
@@ -345,7 +347,7 @@ This is a fully functional vehicle dashboard style that can simultaneously displ
       "key": "hud.machine_max.default_1.gear",
       "centered": true,
       "shadow": true,
-      "molang_args": ["global.get('gear')??'NO GBX'"]
+      "molang_args": ["global.get_str('gear')??'NO GBX'"]
     }
   }
 }

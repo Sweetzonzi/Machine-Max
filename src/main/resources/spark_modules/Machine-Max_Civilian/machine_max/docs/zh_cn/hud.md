@@ -239,11 +239,13 @@ HUD模型使用标准的Minecraft Bedrock格式，需要包含以下元素：
 ```json
 "gear": {
   "key": "hud.machine_max.default_1.gear",
-  "molang_args": ["global.get('gear')??'NO GBX'"],
+  "molang_args": ["global.get_str('gear')??'NO GBX'"],
   "centered": true,
   "shadow": true
 }
 ```
+
+挡位是字符串信号（R1 / N / 1～8），用 `global.get_str` 读取；`global.get` 只返回数值，后面接字符串兜底时兜底值不会出现。
 
 ## Molang在HUD中的应用
 
@@ -349,7 +351,7 @@ HUD 通过宿主的视角字段与特定座位或瞄具关联：座椅使用 `fi
       "key": "hud.machine_max.default_1.gear",
       "centered": true,
       "shadow": true,
-      "molang_args": ["global.get('gear')??'NO GBX'"]
+      "molang_args": ["global.get_str('gear')??'NO GBX'"]
     }
   }
 }
