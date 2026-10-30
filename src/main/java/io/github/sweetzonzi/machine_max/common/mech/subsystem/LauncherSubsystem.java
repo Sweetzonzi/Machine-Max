@@ -11,6 +11,8 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
+import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
@@ -38,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BreechModuleAttr;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +55,10 @@ import java.util.function.Consumer;
  * 投射物类型由当前供给者提供，而非静态属性直接指定。<br>
  * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
  * Launcher 仅执行 currentSupplier 上的装填和发射。
+ * <p>
+ * <b>膛内那发是独立的一份库存单元：</b>炮闩（唯一的关键模块）归零时，膛内那发按自己的发射药与
+ * 战斗部 {@code cookoff} 贡献合成一次普通爆炸并被消耗，见 {@link #onDestroyed()}。它已经从供给者
+ * 的弹仓里扣掉，因此与装弹机的库存殉爆互不重复计数。
  * <p>
  * <b>供给者指认的双端口径：</b>"本管由哪台机器供弹"是服务端的决定，经 {@link #SUPPLIER_ID}
  * 同步给客户端；客户端据此解析出本机的供给者实例，挑选只发生在服务端。指认变化时旧供给者那边
@@ -474,6 +481,76 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return round;
     }
 
+    // ==================== 殉爆 ====================
+
+    /**
+     * 摧毁边沿：膛内那发随炮闩一起殉爆。
+     * <p>
+     * 触发点是框架的子系统摧毁边沿（{@link AbstractSubsystem#onTick()}）。炮闩是发射器唯一的关键模块
+     * （{@link BreechModuleAttr}），因此"摧毁"总意味着炮闩归零：膛内那发按
+     * {@link CookoffComposition#addStoredRound} 计入自己的发射药与各战斗部贡献，合成一次普通爆炸。
+     * 这与装弹机库存殉爆是同一条口径——残骸上的炮闩照样起爆，宿主零件整体移除后子系统不再 tick，
+     * 自然不起爆。
+     * <p>
+     * 客户端也会收到 {@code DATA_DESTROYED_ID} 的同步并回调本方法，但起爆只在服务端发生：客户端首行
+     * 即返回，只保留基类的音效等表现。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    @Override
+    public void onDestroyed() {
+        super.onDestroyed();
+        if (getLevel().isClientSide()) return;
+        detonateChamberedRound();
+    }
+
+    /**
+     * 膛内单发殉爆：按当前弹种合成贡献、清空膛室并提交一次普通爆炸。
+     * <p>
+     * 合成范围只有这一个库存单元——膛内至多一发，混装、弹链与再生都不参与；它已经从供给者的弹仓
+     * 扣掉（{@link IAmmoSupplier#consumeReadyRound}），所以炮闩殉爆与装弹机库存殉爆不会把同一发
+     * 算两次。
+     * <p>
+     * {@code P、D、J} 全为零时没有可生成爆炸的贡献，不消耗膛内那发、不起爆；发射器已毁，那发也
+     * 打不出去，修好炮闩后仍在膛内。
+     * <p>
+     * <b>调用线程：</b>主线程（子系统摧毁边沿）。
+     */
+    private void detonateChamberedRound() {
+        BallisticProjectileType round = chamberedType;
+        if (round == null) return;
+
+        CookoffComposition composition = new CookoffComposition();
+        composition.addStoredRound(round, 1);
+        if (composition.isEmpty()) return;
+
+        // 起爆位置：炮闩模块最近一次有效受击的 HitBox 局部形心；无来源回退宿主质心
+        Vector3f origin = getLastDamageOrigin();
+        // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
+        Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
+        // 先消耗膛内那发再交给普通爆炸服务：本次起爆后本管不再持有这发弹药
+        chamberedType = null;
+        ExplosionManager.get(getLevel()).detonate(
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
+    }
+
+    /**
+     * 起爆定位与豁免只看炮闩模块自己的最近有效受击。
+     * <p>
+     * 膛内那发躺在炮闩里，而炮闩正是发射器唯一的关键模块，因此"打到本子系统"与"打到这发弹药"
+     * 在本管上是同一件事；按模块读与装弹机按 {@code magazine} 模块读是同一套口径。模块记录只在
+     * 炮闩自己的耐久下降时更新，未标注模块的命中按比例分摊时同样会记到炮闩上。
+     *
+     * @return 命中箱；炮闩没受过有效击、或已从摧毁中恢复时为 {@code null}，
+     *         此时起爆点回退宿主质心、且不豁免任何命中箱
+     */
+    @Override
+    @Nullable
+    public HitBox getLastHitBox() {
+        SubModule breech = getModule("breech");
+        return breech == null ? null : resolveHitBox(breech.getLastHitEvent());
+    }
+
     /**
      * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires + 客户端音效管理。
      * <p>
@@ -496,8 +573,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 指认的种子：本机字段还空着时（刚载入、握手尚未完成）按同步值里的身份认一次。
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
         if (currentSupplier == null) resolveSyncedSupplier();
-        // 若膛内无弹，尝试从供给者取弹
-        if (chamberedType == null) tryLoadChamber();
+        // 若膛内无弹且本管可工作，尝试从供给者取弹。取弹要先过 isActive()：摧毁/停用/待组装的本管
+        // 既不该占住供给者的输弹线，也不该在殉爆清空膛室后立刻补一发回膛（见 #detonateChamberedRound）。
+        if (chamberedType == null && isActive()) tryLoadChamber();
 
         if (!isActive() || isDestroyed()) {
             // ★ 仅在"存在进行中的连射/未收尾的循环音效"时执行一次停火处理。

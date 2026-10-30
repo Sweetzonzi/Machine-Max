@@ -16,6 +16,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenLoaderSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubModule;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
@@ -488,6 +489,88 @@ public final class ModularDamageGameTest {
         } finally {
             part.discardUnattached();
         }
+    }
+
+    /**
+     * 膛内那发随炮闩殉爆（§4.1）：炮闩是发射器唯一的关键模块，归零即整机判毁并起爆膛内那发。
+     *
+     * <p>四条固定：</p>
+     * <ol>
+     *   <li>起爆定位读炮闩模块自己的最近有效受击，豁免的正是打到炮闩的那个命中箱；</li>
+     *   <li>判毁边沿提交一次殉爆并清空膛室——那发已经从供给者弹仓扣掉，不会与装弹机重复计数；</li>
+     *   <li>炮闩修到恢复门槛后整机脱离摧毁；</li>
+     *   <li>空膛再判毁不再起爆。</li>
+     * </ol>
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void chamberedRoundDetonatesWithTheBreech(GameTestHelper helper) {
+        Selection selected = loaderPart();
+        RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
+        try {
+            markAssembled(part);
+            LauncherSubsystem launcher = chamberedLauncher(helper, part);
+            helper.assertTrue(launcher.getChamberedType() != null, "前置：膛内应压入一发有殉爆贡献的弹药");
+
+            HitBox breechProbe = registerProbe(launcher, "mm_gametest_breech", "breech");
+            launcher.onHurt(hitEvent(helper, launcher, breechProbe, Float.MAX_VALUE));
+            helper.assertTrue(launcher.getModule("breech").isDestroyed(), "炮闩应被这一击打爆");
+            assertZone(helper, launcher.getCookoffIgnoredKeys(), "mm_gametest_breech", "爆点应来自炮闩命中箱");
+
+            ExplosionManager explosions = ExplosionManager.get(helper.getLevel());
+            int before = explosions.activeInstances().size();
+            launcher.onTick(); // 判毁边沿
+
+            helper.assertTrue(launcher.isDestroyed(), "炮闩归零后整机应判毁");
+            helper.assertTrue(launcher.getChamberedType() == null, "膛内那发应在殉爆中被消耗");
+            helper.assertTrue(explosions.activeInstances().size() == before + 1,
+                    "炮闩归零应提交一次殉爆，活跃实例 " + before + " → " + explosions.activeInstances().size());
+
+            // 修到恢复门槛：整机脱离摧毁，膛内仍是空的
+            SubModule breech = launcher.getModule("breech");
+            launcher.routeRepair("breech", breech.getMaxDurability() * AbstractSubsystem.RECOVERY_RATIO);
+            launcher.onTick();
+            helper.assertTrue(!launcher.isDestroyed(), "炮闩修到恢复门槛后整机应脱离摧毁");
+
+            int afterRecovery = explosions.activeInstances().size();
+            launcher.routeDamage("breech", Float.MAX_VALUE);
+            launcher.onTick();
+            helper.assertTrue(launcher.isDestroyed(), "空膛的发射器同样走判毁边沿");
+            helper.assertTrue(explosions.activeInstances().size() == afterRecovery, "空膛判毁不得起爆");
+            helper.succeed();
+        } finally {
+            part.discardUnattached();
+        }
+    }
+
+    /**
+     * 找一根已经压入"炮闩能接收、且殉爆贡献非零"弹药的管。
+     *
+     * <p>候选来自本部件上所有装弹机的弹链，按子系统名排序后逐个试：本用例只需要"膛里有发能炸的弹"
+     * 这一前提，不绑定具体车型或弹种，换部件定义也不会让用例失效。零贡献弹种不会起爆，
+     * 因此只接受发射药伤害或冲量非零的弹种。</p>
+     */
+    private static LauncherSubsystem chamberedLauncher(GameTestHelper helper, RegularPart part) {
+        for (LauncherSubsystem launcher : part.getAllSubsystems().stream()
+                .filter(LauncherSubsystem.class::isInstance)
+                .map(LauncherSubsystem.class::cast)
+                .sorted(Comparator.comparing(LauncherSubsystem::getName))
+                .toList()) {
+            for (RegenLoaderSubsystem loader : part.getAllSubsystems().stream()
+                    .filter(RegenLoaderSubsystem.class::isInstance)
+                    .map(RegenLoaderSubsystem.class::cast)
+                    .sorted(Comparator.comparing(RegenLoaderSubsystem::getName))
+                    .toList()) {
+                for (ProjectileType type : loader.getProjectileTypes().stream()
+                        .map(id -> ProjectileType.get(helper.getLevel(), id))
+                        .toList()) {
+                    if (!(type instanceof BallisticProjectileType ballistic)) continue;
+                    if (!launcher.canAccept(type)) continue;
+                    if (ballistic.getCookoff().damage() <= 0 && ballistic.getCookoff().impulse() <= 0) continue;
+                    if (launcher.loadRound(type)) return launcher;
+                }
+            }
+        }
+        throw new IllegalStateException("需要一个膛内能压入非零殉爆弹药的发射器");
     }
 
     /**
