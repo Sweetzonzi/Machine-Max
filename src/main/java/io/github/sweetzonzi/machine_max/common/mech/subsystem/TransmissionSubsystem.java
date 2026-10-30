@@ -33,10 +33,9 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
      */
     private static final float LOCK_SLIP_DEADBAND = 2f;
     /**
-     * 开放差速公共扭矩分配分母的下限系数(× |ω_in|)：静止或极低速时各输出端反馈转速趋近 0，
-     * 分母直接取 Σ|ω_fb · r| 会使公共扭矩被放大数百倍，故以输入轴转速为基准设下限。
+     * 输入轴转速的数值下限(rad/s)：低于该值时功率链视为没有确定的扭矩，直接下发空功率。
      */
-    private static final float OPEN_TORQUE_FLOOR = 0.2f;
+    private static final float MIN_INPUT_SPEED = 1e-6f;
 
     public TransmissionSubsystem(ISubsystemHost owner, String name, TransmissionSubsystemAttr attr) {
         super(owner, name, attr);
@@ -191,7 +190,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
 
         // 输入扭矩 τ_in = P_in / |ω_in|
         float absInputSpeed = Math.abs(inputSpeed);
-        if (absInputSpeed < 1e-6f) {
+        if (absInputSpeed < MIN_INPUT_SPEED) {
             pushMechPower(MechPower.EMPTY);
             return;
         }
@@ -251,10 +250,14 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     /**
      * 差速器模式功率分配：各输出端驱动扭矩相等，转速允许自由差速
      * <p>
-     * 公共输入扭矩 τ_in = P_in / max(Σ|ω_fb_i × r_i|, {@link #OPEN_TORQUE_FLOOR} × |ω_in|)，
-     * 分母下限用于避免静止或极低速时扭矩被无限放大。
-     * 各输出端下发相同的驱动扭矩 τ_in × r_i；目标转速由
-     * {@link #computeTargetSpeed(float, float, float)} 给出（gain 取 0，不做拖曳）。
+     * 输入轴扭矩 {@code τ_in = P_in / |ω_in|}（{@code ω_in} 是本级的同步转速，变速箱已折算过总减速比），
+     * 均分到每个参与驱动的输出端并按该端的减速比放大：{@code τ_i = τ_in × r_i / N}。
+     * 扭矩只由传动比决定，与轮端实际转速无关——某个轮子打滑不会把公共扭矩抢走，
+     * 传动比也不会因为输出端转速之和偏小而失效。
+     * <p>
+     * 目标转速由 {@link #computeTargetSpeed(float, float, float)} 给出（gain 取 0，不做拖曳），
+     * 下发的功率按 {@code P_i = τ_i × |ω_target_i|} 折算，使车轮端按 {@code P / |ω|} 还原出的
+     * 扭矩正好是 {@code τ_i}。
      *
      * @param totalPower 输入功率
      * @param inputSpeed 输入转速
@@ -266,20 +269,22 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
             return;
         }
         float absInputSpeed = Math.abs(inputSpeed);
-        //各输出端反馈转速绝对值之和（折算至输入端坐标系）
-        float receiverTotalSpeed = 0f;
-        for (var entry : feedbacks.entrySet()) {
-            Float gearRatio = attr.getPowerOutputs().get(entry.getKey());
-            if (gearRatio == null) continue;
-            receiverTotalSpeed += Math.abs(entry.getValue() * gearRatio);
-        }
-        //分母下限：静止时 Σ 反馈转速趋近 0，直接相除会使公共扭矩被放大数百倍
-        float denominator = Math.max(receiverTotalSpeed, OPEN_TORQUE_FLOOR * absInputSpeed);
-        if (denominator < 1e-6f) {
+        if (absInputSpeed < MIN_INPUT_SPEED) {
             pushMechPower(MechPower.EMPTY);
             return;
         }
-        float torque = totalPower / denominator;//公共输入扭矩，各输出端扭矩相等
+        //参与驱动的输出端数量（减速比为 0 或缺失的端口不参与分配）
+        int receiverCount = 0;
+        for (var entry : feedbacks.entrySet()) {
+            Float gearRatio = attr.getPowerOutputs().get(entry.getKey());
+            if (gearRatio != null && gearRatio != 0f) receiverCount++;
+        }
+        if (receiverCount == 0) {
+            pushMechPower(MechPower.EMPTY);
+            return;
+        }
+        float tauIn = totalPower / absInputSpeed;//输入轴扭矩
+        float torquePerReceiver = tauIn / receiverCount;//各输出端扭矩相等
 
         Map<String, MechPower> outputs = new HashMap<>();
         for (var entry : feedbacks.entrySet()) {
@@ -288,7 +293,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
             if (gearRatio == null || gearRatio == 0f) continue;
             float refSpeed = inputSpeed / gearRatio;
             float targetSpeed = computeTargetSpeed(refSpeed, entry.getValue(), 0f);
-            float power = torque * gearRatio * Math.abs(targetSpeed);
+            float power = torquePerReceiver * gearRatio * Math.abs(targetSpeed);
             outputs.put(name, new MechPower(power, targetSpeed));
         }
         pushMechPower(outputs);
