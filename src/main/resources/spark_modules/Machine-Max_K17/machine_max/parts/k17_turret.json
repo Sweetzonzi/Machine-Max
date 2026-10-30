@@ -250,6 +250,22 @@
             "type": "box",
             "material": "machine_max:rha",
             "thickness": 3
+          },
+          "LeftAtgm1HitBox": {
+            "id": "left_atgm_tube_1",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 2,
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_atgm_tube_1')",
+            "subsystem": "subsystem.machine_max.left_atgm_tube_1"
+          },
+          "LeftAtgm2HitBox": {
+            "id": "left_atgm_tube_2",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 2,
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_atgm_tube_2')",
+            "subsystem": "subsystem.machine_max.left_atgm_tube_2"
           }
         },
         "connectors": {
@@ -289,6 +305,22 @@
             "type": "box",
             "material": "machine_max:rha",
             "thickness": 3
+          },
+          "RightAtgm1HitBox": {
+            "id": "right_atgm_tube_1",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 2,
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_atgm_tube_1')",
+            "subsystem": "subsystem.machine_max.right_atgm_tube_1"
+          },
+          "RightAtgm2HitBox": {
+            "id": "right_atgm_tube_2",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 2,
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_atgm_tube_2')",
+            "subsystem": "subsystem.machine_max.right_atgm_tube_2"
           }
         },
         "connectors": {
