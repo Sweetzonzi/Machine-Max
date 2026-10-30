@@ -73,6 +73,15 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return getAmmoCount() > 0;
     }
 
+    /**
+     * 供给能力仍按整机判定：这台装弹机没有拆出模块，机构故障的表达留给后续模块化。
+     * 与 {@link #hasAmmo()} 的分工见接口注释——空仓不等于不能交付，满仓也不等于能交付。
+     */
+    @Override
+    public boolean isSupplyOperational() {
+        return isActive();
+    }
+
     @Override
     public int getRemainingCount() {
         return getAmmoCount();

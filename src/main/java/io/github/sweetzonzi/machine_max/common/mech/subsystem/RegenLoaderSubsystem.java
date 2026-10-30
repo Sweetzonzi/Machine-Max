@@ -16,6 +16,8 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -58,8 +60,12 @@ import java.util.*;
  * HUD 刷新都在主线程），不需要并发容器。
  * <p>
  * 能量消耗通过 {@link EnergyGrid#consumeEnergy(float)} 瞬时抽取，不实现 {@code IEnergyConsumer} 接口。
+ * <p>
+ * 耐久拆为 {@code feed}（输弹机构）与 {@code magazine}（弹仓）两个模块：机构归零只中断后续装填，
+ * 弹仓归零才触发整机摧毁与库存殉爆。子系统自身写 {@code pass_damage=false}，命中伤害由模块吸收，
+ * 不传到零件与载具。
  */
-public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, ISoundSpreader {
+public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSupplier, ISoundSpreader {
 
     public final RegenLoaderSubsystemAttr attr;
 
@@ -139,9 +145,25 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
+        super.defineSynchedData(builder); // ModularSubsystem 在此注册模块快照访问器
         builder.define(AMMO_COUNT_ID, 0);
         builder.define(BELT_INDEX, 0);
+    }
+
+    // ==================== 模块 ====================
+
+    /**
+     * 声明装弹机的两个固定模块：{@code feed}（输弹机构，非关键）与
+     * {@code magazine}（弹仓，唯一关键模块）。<br>
+     * 模块名是内容包与存档契约，顺序固定为机构在前、弹仓在后；模块耐久按
+     * {@code basic_durability × 权重 / 权重合计} 分配，默认两者各占一半。
+     */
+    @Override
+    protected Map<String, ? extends AbstractModuleAttr> defineModules() {
+        Map<String, AbstractModuleAttr> defs = new LinkedHashMap<>();
+        defs.put("feed", attr.staticAttribute.getFeed());
+        defs.put("magazine", attr.staticAttribute.getMagazine());
+        return defs;
     }
 
     /**
@@ -163,6 +185,22 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public boolean hasAmmo() {
         return getAmmoCount() > 0;
+    }
+
+    /**
+     * 供给能力：基类判定（启用、未摧毁、宿主可工作）成立，且机构与弹仓都有正耐久、均未被摧毁。<br>
+     * 不要求弹仓有弹——空仓但健康的再生装弹机照常再生。基类的 {@code isActive()} 已包含恢复锁存、
+     * 宿主状态与组装许可，因此这里不覆写它来表达机构故障。
+     */
+    @Override
+    public boolean isSupplyOperational() {
+        if (!isActive()) return false;
+        return isModuleWorking(getModule("feed")) && isModuleWorking(getModule("magazine"));
+    }
+
+    /** 模块为二元判定：有正耐久且未摧毁才算可工作；30% 是整机恢复的门槛，不是单个模块的门槛。 */
+    private static boolean isModuleWorking(@Nullable SubModule module) {
+        return module != null && !module.isDestroyed() && module.getDurability() > 0f;
     }
 
     @Override
@@ -243,6 +281,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public boolean requestRound(IAmmoConsumer consumer) {
+        // 机构或弹仓失效：不受理，也不创建计时器或就绪位
+        if (!isSupplyOperational()) return false;
+
         // 已在输送中（计时中或待取）→ 幂等返回
         if (isRoundScheduled(consumer)) return true;
 
@@ -324,6 +365,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public boolean isRoundReady(IAmmoConsumer consumer) {
+        // 失效机构不交付，也不替消费者重新请求
+        if (!isSupplyOperational()) return false;
         if (readyConsumers.contains(consumer)) {
             return true;
         } else if (deliveryLoadedTicks.containsKey(consumer)) {
@@ -345,6 +388,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     @Nullable
     public ProjectileType consumeReadyRound(IAmmoConsumer consumer) {
+        // 失效机构不扣库存、不推进弹链指针；同 tick 被打坏后的取弹也走这里
+        if (!isSupplyOperational()) return null;
         if (!readyConsumers.contains(consumer)) return null;
         readyConsumers.remove(consumer);
         lastPlayedProgressKeys.remove(consumer); // 弹药已消费，清理该消费者的音效追踪
@@ -388,11 +433,14 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     // ==================== 殉爆 ====================
 
     /**
-     * 摧毁边沿：按<b>实际库存</b>合成一次殉爆。
+     * 摧毁边沿：先作废进行中的再生，再按<b>实际库存</b>合成一次殉爆。
      * <p>
      * 触发点是框架的子系统摧毁边沿（{@link AbstractSubsystem#onTick()}），此时同步数据有效、
-     * 弹药计数尚未被本次起爆消耗。宿主销毁、卸载与脱离不补发本回调：{@link AbstractSubsystem#onTick()}
-     * 已按宿主状态拦下摧毁边沿，这里再检查一次以免被独立调用误触发。
+     * 弹药计数尚未被本次起爆消耗。该边沿不看宿主状态：残骸上的弹仓归零照常起爆
+     * （{@link #detonateStoredAmmo()} 只判库存与合成贡献），零件整体移除后子系统不再 tick，
+     * 自然不会起爆。
+     * <p>
+     * 弹仓是唯一关键模块，因此本回调等价于"弹仓归零"：进行中的那批产出随之作废（{@link #clearRegenState()}）。
      * <p>
      * 客户端也会收到 {@code DATA_DESTROYED_ID} 的同步并回调本方法，但起爆只在服务端发生：
      * 客户端首行即返回，只保留基类的音效等表现。
@@ -402,6 +450,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public void onDestroyed() {
         super.onDestroyed();
+        clearRegenState();
         if (getLevel().isClientSide()) return;
         detonateStoredAmmo();
     }
@@ -439,7 +488,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
         if (composition.isEmpty()) return;
 
-        // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
+        // 起爆位置：弹仓模块最近一次有效受击指认的 HitBox 局部形心；无来源回退宿主质心
         Vector3f origin = getLastDamageOrigin();
         // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
         Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
@@ -450,14 +499,74 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     }
 
     /**
+     * 起爆定位与豁免只看弹仓模块自己的最近有效受击。
+     * <p>
+     * 不读子系统级记录：同一批次里先打爆弹仓、再打伤机构时，子系统级记录已经被机构那次覆盖，
+     * 用它定位会把殉爆放到机构的命中箱上。模块记录只在弹仓自己的耐久下降时更新，
+     * 零耐久的追加命中也不会改写它。
+     *
+     * @return 命中箱；弹仓没受过有效击、已从摧毁中恢复或读档后为 {@code null}，
+     *         此时起爆点回退宿主质心、且不豁免任何命中箱
+     */
+    @Override
+    @Nullable
+    public HitBox getLastHitBox() {
+        SubModule magazine = getModule("magazine");
+        return magazine == null ? null : resolveHitBox(magazine.getLastHitEvent());
+    }
+
+    /**
      * 起爆消耗：实际弹药计数归零，并清空所有在途与待取的输送承诺，
      * 防止起爆后仍有消费者取走已被烧掉的弹药。
      */
     private void consumeAllStoredAmmo() {
         setAmmoCount(0);
+        clearDeliveries();
+    }
+
+    /**
+     * 清空所有尚未取走的交付承诺（输送计时中与已就绪待取）。<br>
+     * 承诺阶段没有扣出库存——扣减只发生在 {@link #takeRoundFromMagazine()}——因此这里不补弹、
+     * 不推进弹链指针；已经进入发射器膛内的弹不受影响。损坏处理、殉爆消耗与客户端失效表现都复用它。
+     */
+    private void clearDeliveries() {
         deliveryLoadedTicks.clear();
         readyConsumers.clear();
         lastPlayedProgressKeys.clear();
+    }
+
+    // ==================== 模块损伤与失效 ====================
+
+    /**
+     * 模块快照落地后，若供给者已失去交付能力，清掉本机的交付表现。<br>
+     * 客户端同样跑 {@code requestRound → consumeReadyRound} 链（只驱动装填进度与音效），
+     * 因此它必须和服务端停在同一结论上：机构坏了就不再显示"正在输送"。
+     *
+     * @param dataAccessor 发生变化的同步访问器
+     */
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> dataAccessor) {
+        super.onSyncedDataUpdated(dataAccessor);
+        if (getLevel().isClientSide() && dataAccessor.equals(DATA_MODULES_ID) && !isSupplyOperational()) {
+            clearDeliveries();
+        }
+    }
+
+    /**
+     * 模块伤害入口：投递伤害后，若机构或弹仓因本次伤害从可工作变为失效，立刻释放全部交付承诺。<br>
+     * 比较投递前后的 {@link #isSupplyOperational()} 而不是只看耐久，是因为"失效"包含模块被摧毁标志：
+     * 已摧毁的模块不会再接收伤害，零耐久后的追加命中也不该重复触发清理。
+     * <p>
+     * 事件路径（{@code ModularSubsystem#onHurt}）与直接调用都经过本方法，因此损坏清理只此一处；
+     * 正常启停（{@code setActive}）造成的暂停不经过它，两种停摆互不混淆。
+     * <p>
+     * <b>调用线程：</b>主线程（伤害在主线程结算）。
+     */
+    @Override
+    public void routeDamage(@Nullable String moduleName, float amount) {
+        boolean wasOperational = isSupplyOperational();
+        super.routeDamage(moduleName, amount);
+        if (wasOperational && !isSupplyOperational()) clearDeliveries();
     }
 
     @Override
@@ -475,6 +584,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
+        // 无交付能力的供给者不表达 READY/RELOADING：它连一发都送不出去
+        if (!isSupplyOperational()) return SupplierStatus.EMPTY;
         if (readyConsumers.contains(consumer)) return SupplierStatus.READY;
         if (deliveryLoadedTicks.containsKey(consumer)) return SupplierStatus.RELOADING;
         // 批量冷却：弹仓归零后整批再生，此时每个消费者都在等同一批弹药
@@ -503,6 +614,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public float getReloadProgress(IAmmoConsumer consumer) {
+        // 失效机构没有在推进的交付，进度按 0 报，不留受损前的读数
+        if (!isSupplyOperational()) return 0f;
         int cap = attr.staticAttribute.getMagazineCapacity();
         if (cap <= 0) return 0f;
         if (isBatchReloading) {
@@ -530,8 +643,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     /**
      * 接收一发退还的弹药。<br>
-     * 收下条件有两条，都由本机自己判：① 弹种在本机弹链上——弹链之外的弹种收进来也发不出去，
-     * 只会让弹仓计数与实际供给能力脱节；② 弹仓还有空位。两条都满足才计数 +1。
+     * 收下条件有三条，都由本机自己判：① 弹仓可储存——弹仓模块未被摧毁；恢复锁存期间模块保持摧毁
+     * 标志，因此这一条同时覆盖"弹仓归零"与"修到 30% 之前"；② 弹种在本机弹链上——弹链之外的弹种
+     * 收进来也发不出去，只会让弹仓计数与实际供给能力脱节；③ 弹仓还有空位。三条都满足才计数 +1。
+     * <p>
+     * 启停开关与机构状态不参与判定：退弹按"已被取走的一发重新记入储备"处理，不模拟逆向输弹机械，
+     * 因此机构损坏或整机被停用时仍可退还。
      * <p>
      * 计数只在服务端递增（客户端跟随服务端推送）。
      *
@@ -540,6 +657,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      */
     @Override
     public boolean returnRound(ProjectileType type) {
+        // 弹仓不可储存时不收退弹，否则等于向坏弹仓灌弹药
+        if (!isModuleWorking(getModule("magazine"))) return false;
         if (!isOnBelt(type)) return false;
         if (getAmmoCount() >= attr.staticAttribute.getMagazineCapacity()) return false;
         if (!getLevel().isClientSide()) setAmmoCount(getAmmoCount() + 1);
@@ -633,6 +752,23 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (getLevel().isClientSide()) {
             tickProgressSounds();
         }
+    }
+
+    /**
+     * 作废弹仓里进行中的那一批产出：清零逐发进度、批量冷却、再生延迟与批量音效标记。<br>
+     * 四个字段都表示"弹仓内正在做的一批弹药"，弹仓归零后它们不再有意义——留着会让修复后的
+     * 第一个 tick 直接完成受损前那一批。批量模式已预扣的能量不退款，修复后按新批次重新计费。
+     * <p>
+     * 机构单独损坏不走这里：它只清交付承诺（{@link #clearDeliveries()}），再生照常推进。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    private void clearRegenState() {
+        regenProgress = 0f;
+        batchElapsedTicks = 0;
+        isBatchReloading = false;
+        regenDelayRemainingTicks = 0;
+        lastPlayedBatchProgressKey = null;
     }
 
     /**
@@ -856,6 +992,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
         if (data.contains("belt_index")) getSynchedData().set(BELT_INDEX, data.getInt("belt_index"));
+        // 恢复锁存下不把上一段生命周期的那批产出带进来：存档可能写在弹仓归零的同一 tick
+        // （那时摧毁边沿还没走，onDestroyed 的清理来不及发生），读档也不会补发摧毁回调
+        if (isDestroyed()) clearRegenState();
     }
 
     @Override

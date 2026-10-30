@@ -500,12 +500,15 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 供给者是否仍算这根管的合法供给者：运行中、正在供的弹种炮闩能吃。<br>
+     * 供给者是否仍算这根管的合法供给者：此刻具备交付能力，且正在供的弹种炮闩能吃。<br>
      * 与 {@link #canSupplyTo} 的区别是不要求"此刻有余弹"——装填中的装弹机弹仓里
      * 那一发已被认领，余弹数可能已经归零，但它仍在为这根管服务，不该被判为失效。
+     * <p>
+     * 能力判定读 {@link IAmmoSupplier#isSupplyOperational()} 的实时结果，不用弹药池里的快照：
+     * 机构在这一 tick 被打坏时就该立刻换人，等到下一次池刷新会有最多 10 tick 的窗口继续向坏机构要弹。
      */
     private static boolean supplyTypeAccepted(IAmmoSupplier supplier, LauncherSubsystem launcher) {
-        if (!(supplier instanceof AbstractSubsystem sub) || !sub.isActive() || sub.isDestroyed()) return false;
+        if (!supplier.isSupplyOperational()) return false;
         ProjectileType offered = supplier.getSuppliedType();
         return offered == null || launcher.canAccept(offered);
     }

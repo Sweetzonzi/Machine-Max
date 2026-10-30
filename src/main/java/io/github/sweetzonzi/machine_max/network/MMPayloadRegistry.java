@@ -37,7 +37,9 @@ public class MMPayloadRegistry {
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。
         // PartAssemblyProgressSyncPayload 通过单个 SubPart ID 寻址普通部件，编码长度为 13 字节。
         // sync 与 misc 的版本随 RegularPartData.STREAM_CODEC 的字段扩展一起升级（新增 destroyed 与 destroy_time）。
-        final PayloadRegistrar sync = event.registrar("sync:2.7.0");
+        // 2.8.0 对应再生装弹机改为 ModularSubsystem：继承链多注册一个模块访问器，子系统自身的访问器编号整体后移，
+        // 两端必须同版本才可解码同一份 SubsystemSyncPayload。
+        final PayloadRegistrar sync = event.registrar("sync:2.8.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.3.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

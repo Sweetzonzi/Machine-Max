@@ -30,7 +30,11 @@ public interface IAmmoSupplier {
     enum SupplierStatus {
         /** 正常可用，有弹药待交付 */
         READY,
-        /** 弹药耗尽 */
+        /**
+         * 该消费者当前无可交付弹药。<br>
+         * 包含两种情况：弹仓真的空了，或供给者此刻不具备交付能力（{@link #isSupplyOperational()} 为 false）。
+         * 因此<b>不要</b>用它反推库存为零——要问库存请用 {@link #hasAmmo()} 或 {@link #getRemainingCount()}。
+         */
         EMPTY,
         /** 装填或冷却中 */
         RELOADING
@@ -38,6 +42,20 @@ public interface IAmmoSupplier {
 
     /** 当前是否有可用弹药 */
     boolean hasAmmo();
+
+    /**
+     * 供给者此刻是否具备交付能力：机构、储存结构、宿主与自身状态都允许交付。<br>
+     * 这是"能不能送"的实时判断，与"有没有弹"（{@link #hasAmmo()}）是两件事：
+     * 空仓但机构健康为 true（它照常再生），满仓但机构损坏为 false。
+     * <p>
+     * 不启动计时、不修改库存，因此可以在每个 tick 的路由里调用。修理完成后无需重新握手，
+     * 调用方下次判定即看到 true。
+     * <p>
+     * 武器控制器用它在选取、保持与回退供给者时实时过滤；供给者自己也要用它在
+     * {@code requestRound} / {@code isRoundReady} / {@code consumeReadyRound} 三个交付入口挡下请求，
+     * 否则绕过控制器的直接请求仍能取走弹药。
+     */
+    boolean isSupplyOperational();
 
     /** 剩余弹药计数。-1 表示无计数概念（如再生装弹机） */
     int getRemainingCount();
@@ -185,14 +203,15 @@ public interface IAmmoSupplier {
 
     /**
      * 接收一发退还的弹药。<br>
-     * <b>收不收由供给者自己判</b>——弹种是不是自己这条弹链上的、弹仓还有没有位置，
-     * 都是供给者内部的规则，消费者不该替它做判断，因此本方法返回是否收下。
+     * <b>收不收由供给者自己判</b>——弹种是不是自己这条弹链上的、弹仓当前能不能储存
+     * （坏掉的弹仓不收，否则等于往里灌弹药）、弹仓还有没有位置，都是供给者内部的规则，
+     * 消费者不该替它做判断，因此本方法返回是否收下。
      * <p>
-     * 典型调用点是发射器退膛：退膛的弹想还给供给者，被拒（弹种不符或已满）时由消费者
-     * 自行处置（例如掉成物品）。
+     * 典型调用点是发射器退膛：退膛的弹想还给供给者，被拒（弹种不符、弹仓不可储存或已满）时
+     * 由消费者自行处置（例如掉成物品）。
      *
      * @param type 退还的弹药类型
-     * @return true 表示已收下；false 表示未接收（弹种不符或无空位）
+     * @return true 表示已收下；false 表示未接收（弹种不符、弹仓不可储存或无空位）
      */
     boolean returnRound(ProjectileType type);
 

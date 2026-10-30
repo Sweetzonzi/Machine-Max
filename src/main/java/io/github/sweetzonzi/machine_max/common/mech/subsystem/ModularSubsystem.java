@@ -79,9 +79,11 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
     protected boolean shouldRecover() {
         tryInitModules();
         if (modules.isEmpty()) return super.shouldRecover();
+        // 模块自己按 RECOVERY_RATIO 决定是否脱离摧毁，因此这里只需确认关键模块都已恢复；
+        // 非关键模块坏着不阻挡整机恢复（关键模块才是整机能力的必要条件）
         return modules.values().stream()
                 .filter(m -> m.getAttr().critical())
-                .noneMatch(m -> m.isDestroyed() || m.getDurabilityRatio() < 0.3f);
+                .noneMatch(SubModule::isDestroyed);
     }
 
     /**
@@ -110,13 +112,55 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         return modules.isEmpty() ? super.getDurability() : getAggregatedDurability();
     }
 
+    /**
+     * 按比例把整机耐久分摊到各模块，模块之和因此恒等于请求值（超出上限时按上限）。
+     * <p>
+     * 这是模块耐久的唯一整机写入入口：{@link AbstractSubsystem#loadData} 恢复 {@code durability_ratio}
+     * 就经过它，因此旧存档（只有单一耐久、没有 {@code modules} 标签）读进来时，两个模块按缺失容量
+     * 分到同一比例，聚合仍等于旧比例，而不是两个满耐久模块。
+     * <p>
+     * 分摊方向决定权重：向上修按缺失容量（已满的模块拿不到份额，已摧毁的模块才能被补回来），
+     * 向下修按现有耐久（零耐久的模块不再挨刀）。这与 {@link #routeRepair} / {@link #routeDamage}
+     * 的分摊口径一致。摧毁标志由 {@link SubModule#setDurability} 按恢复门槛归一。
+     */
+    @Override
+    public void setDurability(float durability) {
+        tryInitModules();
+        if (modules.isEmpty()) {
+            super.setDurability(durability);
+            return;
+        }
+        float target = Math.clamp(durability, 0f, getMaxDurability());
+        float delta = target - getAggregatedDurability();
+        if (delta > 0f) {
+            float missing = 0f;
+            for (SubModule m : modules.values()) missing += m.getMaxDurability() - m.getDurability();
+            if (missing <= 0f) return;
+            for (SubModule m : modules.values()) {
+                float share = m.getMaxDurability() - m.getDurability();
+                if (share > 0f) m.setDurability(m.getDurability() + delta * (share / missing));
+            }
+        } else if (delta < 0f) {
+            float present = getAggregatedDurability();
+            if (present <= 0f) return;
+            for (SubModule m : modules.values()) {
+                if (m.getDurability() > 0f) m.setDurability(m.getDurability() + delta * (m.getDurability() / present));
+            }
+        }
+        refreshModuleSync();
+    }
+
     // getMaxDurability() 无需覆写：模块最大耐久按权重从 basicDurability 分配，聚合后数学上恒等于 basicDurability
 
     // ==================== onHurt ====================
 
     /**
-     * 伤害处理：先检查 passDamage/limitDamage，然后将伤害路由到模块。
+     * 伤害处理：先按 {@code pass_damage} / {@code limit_damage} 处理事件，然后将伤害路由到模块。
      * 不调用 super.onHurt()——伤害已由子模块消费，避免二次扣耐久。
+     * <p>
+     * {@code pass_damage=false} 表达的是“取消向下传递、伤害由本子系统承担”，与非模块化基类的口径一致：
+     * 事件照常取消（零件与载具不扣耐久），但取消之后仍要执行模块路由，否则模块化子系统命中时
+     * 既不伤零件也不伤模块。{@code pass_damage=true} 时事件不取消，剩余金额按既有规则传给零件。
      * <p>
      * 模块化子系统的耐久是各模块的聚合值，因此最近有效受击由本方法自行记录：
      * 在 {@link #routeDamage} 前后比较聚合耐久，实际下降时才保存定稿事件与命中的命中箱。
@@ -127,7 +171,6 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         tryInitModules();
         if (!attr.getStaticAttribute().getBasicAttr().passDamage()) {
             event.setCanceled(true);
-            return;
         }
         if (event.getDamageAmount() > getDurability()
                 && attr.getStaticAttribute().getBasicAttr().limitDamage()) {
@@ -138,7 +181,7 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         HitBox hitBox = event.getCtx().extensions().get(MMDamageExtensions.HIT_BOX);
         String moduleName = (hitBox != null) ? hitBox.getAttr().getModule() : null;
         float durabilityBefore = getDurability();
-        routeDamage(moduleName, event.getDamageAmount());
+        routeDamage(moduleName, event.getDamageAmount(), event);
         if (getDurability() < durabilityBefore) {
             recordLastDamage(event);
         }
@@ -149,13 +192,22 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
 
     @Override
     public void routeDamage(@Nullable String moduleName, float amount) {
+        routeDamage(moduleName, amount, null);
+    }
+
+    /**
+     * 伤害路由的完整形态。{@code event} 非空时，把这一击记录到耐久确实下降的模块上，
+     * 供该模块自己的起爆定位使用（装弹机读弹仓模块的来源）；直接调用两参版本的
+     * 无上下文伤害没有事件可记，模块的来源保持原值。
+     */
+    private void routeDamage(@Nullable String moduleName, float amount, @Nullable SubPartDamageEvent.Pre event) {
         tryInitModules();
         if (modules.isEmpty()) return;
         if (moduleName != null && !moduleName.isEmpty()) {
             SubModule target = modules.get(moduleName);
             if (target != null) {
-                target.applyDamage(amount);
-                markModulesDirty();
+                if (target.applyDamage(amount) > 0f && event != null) target.recordHit(event);
+                refreshModuleSync();
                 return;
             }
             MachineMax.LOGGER.warn("模块 '{}' 不存在于子系统 '{}'，回退按比例分摊", moduleName, getName());
@@ -167,10 +219,10 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
         for (SubModule m : modules.values()) {
             if (!m.isDestroyed()) {
                 float share = amount * (m.getMaxDurability() / totalMax);
-                m.applyDamage(share);
+                if (m.applyDamage(share) > 0f && event != null) m.recordHit(event);
             }
         }
-        markModulesDirty();
+        refreshModuleSync();
     }
 
     @Override
@@ -181,7 +233,7 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
             SubModule target = modules.get(moduleName);
             if (target != null) {
                 target.applyRepair(amount);
-                markModulesDirty();
+                refreshModuleSync();
                 return;
             }
         }
@@ -194,7 +246,7 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
             float lost = m.getMaxDurability() - m.getDurability();
             if (lost > 0) m.applyRepair(amount * (lost / totalLost));
         }
-        markModulesDirty();
+        refreshModuleSync();
     }
 
     @Override
@@ -234,19 +286,17 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
     /**
      * 保存模块状态到 NBT。格式为 {@code { "modules": { "barrel": { durability, destroyed }, ... } }}。
      * <p>
-     * 调用父类 saveData 以保存基础字段（durability、active、destroyed）。
+     * 整机的 {@code durability_ratio}、{@code destroyed} 由父类写出，其中 {@code destroyed} 在这里删掉：
+     * 模块化子系统的摧毁状态是各模块 {@code destroyed} 的汇总，{@code modules} 已经完整表达了它，
+     * 再存一份整机标志只会多出一个可能与模块分叉的来源。
      */
     @Override
     public CompoundTag saveData(CompoundTag data) {
         tryInitModules();
-        CompoundTag modulesTag = new CompoundTag();
-        for (var entry : modules.entrySet()) {
-            CompoundTag moduleTag = new CompoundTag();
-            entry.getValue().save(moduleTag);
-            modulesTag.put(entry.getKey(), moduleTag);
-        }
-        data.put(TAG_MODULES, modulesTag);
-        return super.saveData(data);
+        data.put(TAG_MODULES, serializeModules());
+        super.saveData(data);
+        data.remove(TAG_DESTROYED);
+        return data;
     }
 
     /**
@@ -254,6 +304,12 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
      * 然后遍历 modules 标签反序列化到各模块实例。
      * <p>
      * 耐久值被钳制到 [0, maxDurability] 范围（由 SubModule.load 内部处理）。
+     * 恢复完成后把最终模块状态写进同步快照：载入的损伤不会自己变成脏值，
+     * 不写这一笔的话客户端只能收到访问器的空初值（{@code defineSynchedData} 里的空 CompoundTag），
+     * 于是"载入后不再变化的损坏子系统"在客户端显示为满耐久。
+     * <p>
+     * 摧毁状态在模块读到之后再算一次：基类执行 {@link #restoreDestroyed} 时模块还是满耐久，
+     * 判断不出"弹仓已毁"。
      */
     @Override
     public void loadData(CompoundTag data) {
@@ -268,25 +324,64 @@ public abstract class ModularSubsystem extends BasicSubsystem implements IModula
                 MachineMax.LOGGER.warn("子系统 '{}' 的 NBT 包含未知模块 '{}'，已忽略", getName(), key);
             }
         }
+        if (modules.isEmpty()) return;
+        // 缺失的模块条目保留父类按 durability_ratio 分摊出的耐久（旧存档与部分模块标签都走这条路）
+        for (String key : modules.keySet()) {
+            if (!modulesTag.contains(key)) {
+                MachineMax.LOGGER.warn("子系统 '{}' 的存档缺少模块 '{}'，按整机耐久比例分摊其耐久", getName(), key);
+            }
+        }
+        refreshModuleSync();
+        restoreDestroyed(data);
+    }
+
+    /**
+     * 模块化子系统的摧毁状态完全由模块推导：任一关键模块处于摧毁（含修到 0%—30% 之间的恢复锁存）即整机摧毁。
+     * <p>
+     * 子系统的存档里没有整机摧毁键可供读取，模块状态是唯一来源；没有声明模块时退回基类规则。
+     * 两个调用点：基类 {@link #loadData} 在模块读入前调用一次（模块此时满耐久，结果为未摧毁），
+     * 本类 {@link #loadData} 在模块落地后再算一次，覆盖前一次。
+     */
+    @Override
+    protected void restoreDestroyed(CompoundTag data) {
+        tryInitModules();
+        if (modules.isEmpty()) {
+            super.restoreDestroyed(data);
+            return;
+        }
+        synchedData.set(DATA_DESTROYED_ID, shouldDestroy());
     }
 
     // ==================== 网络同步 ====================
 
-    /**
-     * 将模块状态打包为 CompoundTag 并标记同步。
-     * <p>
-     * 在 routeDamage / routeRepair 等模块状态变更后调用，
-     * 数据将通过 {@link #syncToClient()} → {@code SubsystemSyncPayload} 广播到客户端。
-     */
-    protected void markModulesDirty() {
-        if (modules.isEmpty()) return;
+    /** 全部模块状态打包成 {@code { 模块名: { durability, destroyed }, ... }}，供存档与同步共用。 */
+    private CompoundTag serializeModules() {
         CompoundTag tag = new CompoundTag();
         for (var entry : modules.entrySet()) {
             CompoundTag moduleTag = new CompoundTag();
             entry.getValue().save(moduleTag);
             tag.put(entry.getKey(), moduleTag);
         }
-        synchedData.set(DATA_MODULES_ID, tag);
+        return tag;
+    }
+
+    /**
+     * 模块状态变更后刷新两个同步值：模块快照，以及基类耐久访问器上的总耐久镜像。<br>
+     * 调用点覆盖 {@link #routeDamage}、{@link #routeRepair} 与 {@link #loadData}，每条模块写入路径都经过它。
+     * <p>
+     * 总耐久的事实来源是模块之和，{@code DATA_DURABILITY_ID} 只是它的镜像：基类的
+     * {@code AbstractSubsystem#getDurability} 被覆写为聚合值，因此这里不扣总耐久，只把
+     * {@code getAggregatedDurability()} 的当前结果写进去，让直接读该访问器的代码
+     * （全量补推快照、只认同步字段的集成方）看到与 {@code getDurability()} 相同的数字。
+     * 不刷新时它永远停在构造初值，两类读法会给出互相矛盾的结果。
+     * <p>
+     * 数据仍经 {@link #syncToClient()} → {@code SubsystemSyncPayload} 广播；同一 tick 的多次模块变更
+     * 只产生一份脏值，因此不会因为多写一个访问器而多发包。
+     */
+    protected void refreshModuleSync() {
+        if (modules.isEmpty()) return;
+        synchedData.set(DATA_MODULES_ID, serializeModules());
+        synchedData.set(DATA_DURABILITY_ID, getAggregatedDurability());
     }
 
     /**
