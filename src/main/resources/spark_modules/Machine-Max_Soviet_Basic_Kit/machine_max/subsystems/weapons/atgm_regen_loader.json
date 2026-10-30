@@ -3,16 +3,34 @@
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "feed": {
-    "reload_time": 0,
-    "reload_round_by_round": true,
-    "can_supply_multiple": false
+    "durability_weight": 1.0, //(可选, 默认1.0)输弹机构：非关键，归零只停供弹
+    "reload_time": 10, //(必填, 秒)把一个装填单位送进膛的时间
+    "reload_round_by_round": true, //(可选, 默认true)true=每发都付 reload_time；false=只在对接时付一次
+    "can_supply_multiple": true //(可选, 默认false)true=可同时供多根管，各管独立计时、库存共用
   },
   "magazine": {
-    "capacity": 1,
-    "regen_per_minute": 15,
-    "regen_round_by_round": true,
-    "energy_cost_per_round": 0,
-    "regen_delay": 0
+    "durability_weight": 1.0, //(可选, 默认1.0)弹仓：唯一关键，归零即殉爆
+    "capacity": 4, //(必填)存量上限
+    "regen_per_minute": 2, //(可选, 默认0)每分钟产出数量：单发生成耗时 30 秒
+    "regen_round_by_round": true, //(可选, 默认true)true=随打随产；false=打空后整批回满
+    "energy_cost_per_round": 0, //(可选, 默认0)每产出一发的取电
+    "regen_delay": 0 //(可选, 默认0, 秒)取走一发后暂停产出的时间
+  },
+  "sounds": {
+    "progress_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:subsystem.loader.reload_start",
+        "range": 16
+      },
+      "0.5": {
+        "sound_id": "machine_max:subsystem.loader.reload_shell",
+        "range": 16
+      },
+      "0.9": {
+        "sound_id": "machine_max:subsystem.loader.reload_close",
+        "range": 16
+      }
+    }
   },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

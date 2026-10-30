@@ -169,43 +169,7 @@
             "third_hud_layout": "machine_max:k17_weapon_tubes",
             "scope_hud_layout": "machine_max:k17_weapon_tubes"
           },
-          "subsystem.machine_max.atgm_ammo_loader_1": {
-            "type": "machine_max:regen_loader",
-            "definition": "machine_max:atgm_regen_loader",
-            "projectile_types": {
-              "machine_max:9m133_kornet": 1
-            },
-            "discovery_outputs": {
-              "ammo_atgm": [
-                "global"
-              ]
-            }
-          },
-          "subsystem.machine_max.atgm_ammo_loader_2": {
-            "type": "machine_max:regen_loader",
-            "definition": "machine_max:atgm_regen_loader",
-            "projectile_types": {
-              "machine_max:9m133_kornet": 1
-            },
-            "discovery_outputs": {
-              "ammo_atgm": [
-                "global"
-              ]
-            }
-          },
-          "subsystem.machine_max.atgm_ammo_loader_3": {
-            "type": "machine_max:regen_loader",
-            "definition": "machine_max:atgm_regen_loader",
-            "projectile_types": {
-              "machine_max:9m133_kornet": 1
-            },
-            "discovery_outputs": {
-              "ammo_atgm": [
-                "global"
-              ]
-            }
-          },
-          "subsystem.machine_max.atgm_ammo_loader_4": {
+          "subsystem.machine_max.atgm_ammo_loader": {
             "type": "machine_max:regen_loader",
             "definition": "machine_max:atgm_regen_loader",
             "projectile_types": {

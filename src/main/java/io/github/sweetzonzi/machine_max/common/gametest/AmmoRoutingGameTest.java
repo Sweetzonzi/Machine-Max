@@ -28,15 +28,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 武器控制器的供给绑定决策（T07—T11、T14、T15、T18、T19），不进入物理世界。
+ * 武器控制器的供给绑定决策（T07—T11、T14、T15、T18、T19、T20），不进入物理世界。
  *
- * <p>三条契约：</p>
+ * <p>四条契约：</p>
  * <ul>
  *   <li>独占机器的有效认领最多一条：被别的活跃管认领的机器根本不进候选，两管一台时会摊成
  *       一管有供给、一管为 {@code null}，不进入逐 tick 轮抢。</li>
  *   <li>绑定只在两种情况下换人：当前供给者不再合法（机构坏了、弹种不被炮闩接受、不在选中弹链上），
  *       或候选严格更早拿到下一发（{@code getTicksToNextRound} 更小）。打空但无替代时保持绑定。</li>
  *   <li>换绑不动膛内那发；整匣已对接的机器（下一发 0 tick）从不被迁移。</li>
+ *   <li>可多供的机器（{@code feed.can_supply_multiple=true}）同时绑定多根管，各管独立计时、
+ *       库存共用；K17 炮塔的四根导弹管就是这样共用一台装弹机。</li>
  * </ul>
  *
  * <p>夹具用 2S38 炮塔：真实的 2A90 发射器与 57mm 弹链装弹机，再按同一弹链登记所需机型的合成装弹机。
@@ -461,6 +463,48 @@ public final class AmmoRoutingGameTest {
         } finally {
             MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.remove(definitionId);
             part.discardUnattached();
+        }
+    }
+
+    /** 可多供的机器：两根管同时绑上，各管独立计时、库存共用（T20）。 */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void sharedMachineServesEveryLauncher(GameTestHelper helper) {
+        RegularPart a = turret(helper);
+        RegularPart b = turret(helper);
+        ResourceLocation definitionId = definitionId("gametest_shared");
+        try {
+            WeaponControllerSubsystem controller = controller(a);
+            LauncherSubsystem first = launcher(a, LAUNCHER);
+            LauncherSubsystem second = launcher(b, LAUNCHER);
+            RegenLoaderSubsystem shared = syntheticLoader(a, definitionId,
+                    new FeedModuleAttr(1f, 0.5f, true, true),
+                    new MagazineModuleAttr(1f, 4, 0f, true, 0f, 0f));
+            fill(helper, shared, 4);
+            first.addSupplier(shared, CHANNEL);
+            second.addSupplier(shared, CHANNEL);
+            register(controller, first);
+            register(controller, second);
+
+            controller.onTick();
+            helper.assertTrue(first.getCurrentSupplier() == shared && second.getCurrentSupplier() == shared,
+                    "可多供的机器应同时绑上两根管");
+            helper.assertTrue(shared.getBoundConsumers().size() == 2,
+                    "认领集合应记两根管，实际 " + shared.getBoundConsumers().size());
+
+            helper.assertTrue(shared.requestRound(first), "第一根管应受理");
+            helper.assertTrue(shared.requestRound(second), "第二根管也应受理");
+            helper.assertTrue(shared.isRoundScheduled(first) && shared.isRoundScheduled(second),
+                    "两管各自计时，不互相排队");
+            for (int i = 0; i < shared.getReloadTimeTicks(); i++) shared.onTick();
+            helper.assertTrue(shared.consumeReadyRound(first) != null, "第一根管取走一发");
+            helper.assertTrue(shared.consumeReadyRound(second) != null, "第二根管取走一发");
+            helper.assertTrue(shared.getRemainingCount() == 2,
+                    "库存共用：取走两发后应剩 2，实际 " + shared.getRemainingCount());
+            helper.succeed();
+        } finally {
+            MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.remove(definitionId);
+            b.discardUnattached();
+            a.discardUnattached();
         }
     }
 }
