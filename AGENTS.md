@@ -11,7 +11,7 @@
 
 | 项目                                                                       | 版本            | 用途                   |
 | ------------------------------------------------------------------------ | ------------- | -------------------- |
-| [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1035      | Bullet 物理引擎封装、实体注册框架 |
+| [Spark-Core](https://github.com/SolarMoonQAQ/Spark-Core)                 | 1.0.1036      | Bullet 物理引擎封装、实体注册框架 |
 | [BallisticsFramework](https://github.com/Sweetzonzi/BallisticsFramework) | 1.0.0.alpha.14 | 终端/外部弹道计算 API        |
 | [ApricityUI (AUI)](https://github.com/Sweetzonzi/AUI)                    | 1.2.8         | 载具控制面板 Web UI 框架，经 `jarJar` 内嵌进发布 jar |
 
