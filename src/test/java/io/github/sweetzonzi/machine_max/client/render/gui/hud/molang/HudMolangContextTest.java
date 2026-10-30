@@ -95,15 +95,11 @@ class HudMolangContextTest {
             assertEquals("reloading", MolangContextRegistry.compileString("tube.state", context).evaluate(context));
             assertEquals("regenerating", MolangContextRegistry.compileString("tube.phase", context).evaluate(context));
             assertEquals(1, number("tube.has_source", context));
-            assertEquals(0, number("tube.ready", context));
-            assertEquals(0, number("tube.empty", context));
         }
         assertEquals("regenerating", MolangContextRegistry.compileString("weapon.tube_phase(0)", context).evaluate(context));
         assertEquals("idle", MolangContextRegistry.compileString("weapon.tube_phase(1)", context).evaluate(context));
         assertEquals(1, number("weapon.tube_has_source(0)", context));
         assertEquals(0, number("weapon.tube_has_source(1)", context));
-        assertEquals(0, number("weapon.tube_ready(0)", context));
-        assertEquals(1, number("weapon.tube_empty(1)", context));
         assertEquals("", MolangContextRegistry.compileString("weapon.tube_phase(5)", context).evaluate(context));
         assertEquals(0, number("weapon.tube_has_source(5)", context));
     }

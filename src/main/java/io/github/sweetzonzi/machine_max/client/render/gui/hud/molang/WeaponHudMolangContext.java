@@ -110,18 +110,6 @@ public class WeaponHudMolangContext extends HudMolangContext {
     @StringQueryBinding(value = "state", namespace = "tube")
     public String tube_state() { return requireTube().state(); }
 
-    @QueryBinding(value = "ready", namespace = "tube")
-    public double tube_ready() { return requireTube().state().equals("ready") ? 1 : 0; }
-
-    @QueryBinding(value = "empty", namespace = "tube")
-    public double tube_empty() { return requireTube().state().equals("empty") ? 1 : 0; }
-
-    @QueryBinding(value = "tube_ready", namespace = "weapon")
-    public double weapon_tube_ready(double index) { var value = tube(index); return value != null && value.state().equals("ready") ? 1 : 0; }
-
-    @QueryBinding(value = "tube_empty", namespace = "weapon")
-    public double weapon_tube_empty(double index) { var value = tube(index); return value != null && value.state().equals("empty") ? 1 : 0; }
-
     @QueryBinding(value = "tube_fill", namespace = "weapon")
     public double weapon_tube_fill(double index) { var value = tube(index); return value == null ? 0 : value.fill(); }
 
