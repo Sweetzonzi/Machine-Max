@@ -41,6 +41,22 @@ public interface IAmmoSupplier {
         RELOADING
     }
 
+    /**
+     * 装填阶段：该消费者当前卡在哪一段。<br>
+     * 与 {@link SupplierStatus} 正交——状态只说"还没准备好"，阶段说清是输弹、逐发再生还是整批回充。
+     * 显示层据此选择进度口径与文案；路由判据仍用 {@link #getTicksToNextRound}。
+     */
+    enum ReloadPhase {
+        /** 没有进行中的装填或再生 */
+        IDLE,
+        /** 正在把弹药送进膛室（整匣模式的首次对接也在这里） */
+        LOADING,
+        /** 弹仓补货中：按速率逐发再生下一发 */
+        REGENERATING,
+        /** 弹仓补货中：打空后的整批回充冷却 */
+        REFILLING
+    }
+
     /** 当前是否有可用弹药 */
     boolean hasAmmo();
 
@@ -242,6 +258,35 @@ public interface IAmmoSupplier {
         if (!hasAmmo()) return Integer.MAX_VALUE;
         int elapsed = getDeliveryElapsedTicks(consumer);
         if (elapsed < 0) return Math.max(0, getReloadTimeTicks());
+        return Math.max(0, getReloadTimeTicks() - elapsed);
+    }
+
+    /**
+     * 该消费者当前所处的装填阶段。<br>
+     * 默认只区分"已排上输弹"与"没有进行中的装填"：不按再生态细分的实现无需覆写。
+     * 本方法无副作用——{@link #isRoundReady(IAmmoConsumer)} 带副作用的实现（未排上时会顺手补请求）
+     * 由 {@link #getRemainingReloadTicks} 先用 {@link #isRoundScheduled} 挡住。
+     *
+     * @param consumer 请求查询的消费者
+     * @return 当前阶段
+     */
+    default ReloadPhase getReloadPhase(IAmmoConsumer consumer) {
+        return isRoundScheduled(consumer) ? ReloadPhase.LOADING : ReloadPhase.IDLE;
+    }
+
+    /**
+     * 当前阶段的剩余 tick 数：输弹计时、逐发再生或整批回充还剩多久。<br>
+     * 与 {@link #getTicksToNextRound} 的分工：那个回答"值不值得换供给者"（无弹报
+     * {@link Integer#MAX_VALUE}），本方法回答"这一格还要等多久"，让显示层把秒数算在正确的阶段上。
+     * 不启动计时、不修改状态。
+     *
+     * @param consumer 请求查询的消费者
+     * @return 剩余 tick；没有进行中的阶段时为 0
+     */
+    default int getRemainingReloadTicks(IAmmoConsumer consumer) {
+        if (getReloadPhase(consumer) != ReloadPhase.LOADING) return 0;
+        if (isRoundScheduled(consumer) && isRoundReady(consumer)) return 0;
+        int elapsed = Math.max(0, getDeliveryElapsedTicks(consumer));
         return Math.max(0, getReloadTimeTicks() - elapsed);
     }
 

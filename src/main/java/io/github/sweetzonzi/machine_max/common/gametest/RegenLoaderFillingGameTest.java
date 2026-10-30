@@ -39,6 +39,7 @@ import java.util.Map;
  *   <li>整匣模式：首次取弹（对接）付一次 {@code reload_time}，之后每一发瞬时送达；
  *       换供给者、机构被打坏、读档都让对接作废，需要重新对接；打空回充不作废。</li>
  *   <li>回充与交付互斥：整批回充期间请求被拒、状态与进度报回充；回充完成后的首次取弹仍是瞬时的。</li>
+ *   <li>装填阶段与阶段剩余时间分开报：输弹、逐发再生、整批回充各自有一格，显示层据此计时。</li>
  * </ul>
  *
  * <p>整匣与整批回充的第一方内容没有消费方，因此这几个用例把定义直接登记进静态属性表，
@@ -401,6 +402,70 @@ public final class RegenLoaderFillingGameTest {
             helper.succeed();
         } finally {
             MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.remove(definitionId);
+            part.discardUnattached();
+        }
+    }
+
+    /** 装填阶段与阶段剩余时间：输弹、逐发再生、整批回充各自报自己那一格（T21）。 */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void reloadPhaseTracksFeedingRegenAndRefill(GameTestHelper helper) {
+        Selection selected = loaderPart();
+        RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
+        ResourceLocation regenId = definitionId("gametest_phase_regen");
+        ResourceLocation batchId = definitionId("gametest_phase_batch");
+        try {
+            markAssembled(part);
+            LauncherSubsystem launcher = launcher(part);
+            ProjectileType round = firstRound(helper, loader(part));
+
+            // 容量 1、逐发再生 600 发每分 = 2 tick 一发：交付期间弹仓是满的，不会偷偷再生
+            RegenLoaderSubsystem regen = syntheticLoader(part, regenId,
+                    new FeedModuleAttr(1f, 0.5f, true, false),
+                    new MagazineModuleAttr(1f, 1, 600f, true, 0f, 0f));
+            helper.assertTrue(regen.returnRound(round), "空弹仓应接受退弹");
+            helper.assertTrue(regen.requestRound(launcher), "有余弹时应受理请求");
+            helper.assertTrue(regen.getReloadPhase(launcher) == IAmmoSupplier.ReloadPhase.LOADING,
+                    "输弹计时应报 LOADING");
+            helper.assertTrue(regen.getRemainingReloadTicks(launcher) == regen.getReloadTimeTicks(),
+                    "刚受理时应剩余整段耗时");
+            regen.onTick();
+            helper.assertTrue(regen.getRemainingReloadTicks(launcher) == regen.getReloadTimeTicks() - 1,
+                    "输弹剩余应逐 tick 递减");
+            tick(regen, regen.getReloadTimeTicks());
+            helper.assertTrue(regen.consumeReadyRound(launcher) != null, "走满耗时应能取走");
+
+            regen.onTick();
+            helper.assertTrue(regen.getReloadPhase(launcher) == IAmmoSupplier.ReloadPhase.REGENERATING,
+                    "打空且速率大于零应报 REGENERATING，实际 " + regen.getReloadPhase(launcher));
+            int regenRemaining = regen.getRemainingReloadTicks(launcher);
+            helper.assertTrue(regenRemaining > 0 && regenRemaining <= 2,
+                    "再生剩余应落在一发的耗时内，实际 " + regenRemaining);
+            tick(regen, 2);
+            helper.assertTrue(regen.getReloadPhase(launcher) == IAmmoSupplier.ReloadPhase.IDLE,
+                    "再生完成、弹仓有货时应回到 IDLE，实际 " + regen.getReloadPhase(launcher));
+
+            // 整批回充：容量 1 ÷ 600 发每分 = 2 tick
+            RegenLoaderSubsystem batch = syntheticLoader(part, batchId,
+                    new FeedModuleAttr(1f, 0.5f, true, false),
+                    new MagazineModuleAttr(1f, 1, 600f, false, 0f, 0f));
+            helper.assertTrue(batch.returnRound(round), "空弹仓应接受退弹");
+            helper.assertTrue(batch.requestRound(launcher), "整批型号也应受理请求");
+            tick(batch, batch.getReloadTimeTicks());
+            helper.assertTrue(batch.consumeReadyRound(launcher) != null, "整批型号走满后应能取走");
+
+            batch.onTick();
+            helper.assertTrue(batch.getReloadPhase(launcher) == IAmmoSupplier.ReloadPhase.REFILLING,
+                    "打空且整批冷却应报 REFILLING，实际 " + batch.getReloadPhase(launcher));
+            int batchRemaining = batch.getRemainingReloadTicks(launcher);
+            helper.assertTrue(batchRemaining > 0 && batchRemaining <= 2,
+                    "整批剩余应落在冷却时长内，实际 " + batchRemaining);
+            tick(batch, 2);
+            helper.assertTrue(batch.getReloadPhase(launcher) == IAmmoSupplier.ReloadPhase.IDLE,
+                    "整批回满后应回到 IDLE，实际 " + batch.getReloadPhase(launcher));
+            helper.succeed();
+        } finally {
+            MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.remove(batchId);
+            MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.remove(regenId);
             part.discardUnattached();
         }
     }

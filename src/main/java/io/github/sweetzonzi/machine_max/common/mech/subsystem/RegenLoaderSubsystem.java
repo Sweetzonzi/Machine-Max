@@ -427,6 +427,46 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         return IAmmoSupplier.super.getTicksToNextRound(consumer);
     }
 
+    /**
+     * 装填阶段：输弹计时、逐发再生或整批回充。<br>
+     * 弹仓有货但没在为本管输弹时不算再生——那一档报 {@link ReloadPhase#IDLE}，状态是 READY。
+     * 判据与 {@link #getStatus} 同源：机构不可交付时一律 {@code IDLE}。
+     */
+    @Override
+    public ReloadPhase getReloadPhase(IAmmoConsumer consumer) {
+        if (!isSupplyOperational()) return ReloadPhase.IDLE;
+        if (isRoundScheduled(consumer)) return ReloadPhase.LOADING;
+        if (isBatchReloading) return ReloadPhase.REFILLING;
+        if (isRegenerating()) return ReloadPhase.REGENERATING;
+        return ReloadPhase.IDLE;
+    }
+
+    /**
+     * 当前阶段的剩余 tick：输弹、整批冷却或逐发再生各自的那一格。<br>
+     * 逐发再生的剩余按"这一发已积累的比例"折算到当前速率上，再生延迟计入其中。
+     */
+    @Override
+    public int getRemainingReloadTicks(IAmmoConsumer consumer) {
+        return switch (getReloadPhase(consumer)) {
+            case LOADING -> IAmmoSupplier.super.getRemainingReloadTicks(consumer);
+            case REFILLING -> Math.max(0, batchTotalTicks() - batchElapsedTicks);
+            case REGENERATING -> regeneratingRemainingTicks();
+            case IDLE -> 0;
+        };
+    }
+
+    /**
+     * 逐发再生还差多少 tick：再生延迟 + 按当前速率补完这一发。<br>
+     * 速率中途变化时按新速率折算剩余，与 {@link #getReloadProgress} 的进度口径同源。
+     */
+    private int regeneratingRemainingTicks() {
+        float perMinute = magazine().regenPerMinute();
+        if (perMinute <= 0f) return 0;
+        int roundTicks = Math.max(1, (int) Math.ceil(1200f / perMinute));
+        float remaining = Math.clamp(1f - regenProgress, 0f, 1f);
+        return regenDelayRemainingTicks + (int) Math.ceil(remaining * roundTicks);
+    }
+
     @Override
     public boolean isRoundReady(IAmmoConsumer consumer) {
         // 失效机构不交付，也不替消费者重新请求
@@ -666,13 +706,13 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     }
 
     /**
-     * 是否正在逐发再生中：逐发再生模式、且已经累积了一点再生进度。
-     * <p>
-     * 只看进度不看速率：速率大于 0 而进度仍为 0 时（刚被取走那一 tick）报 EMPTY 与报 RELOADING
-     * 都成立，但"零进度"在界面上本来就是全暗的一格，不需要额外区分。
+     * 是否处于逐发再生中：逐发再生模式、速率大于零，且弹仓没满。<br>
+     * 不看进度是否已经涨过零：刚取走那一 tick 的零进度也是"再生中"，否则阶段与倒计时会在
+     * 打空后的第一格显示成 EMPTY。
      */
     private boolean isRegenerating() {
-        return magazine().regenRoundByRound() && regenProgress > 0f;
+        return magazine().regenRoundByRound() && magazine().regenPerMinute() > 0f
+                && getAmmoCount() < magazine().capacity();
     }
 
     /**
@@ -913,7 +953,8 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
             if (batchElapsedTicks >= batchTotalTicks()) {
                 isBatchReloading = false;
                 batchElapsedTicks = 0;
-                setAmmoCount(magazine().capacity());
+                // 库存计数只有服务端写：客户端等下一次同步，避免把权威值改在本地
+                if (!getLevel().isClientSide()) setAmmoCount(magazine().capacity());
                 lastPlayedBatchProgressKey = null;
             }
         }
