@@ -36,7 +36,7 @@
             "LeftWheelHitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:sdkfz234_tire",
               "thickness": 10
             }
           },
@@ -80,7 +80,7 @@
             "RightWheelHitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:sdkfz234_tire",
               "thickness": 10
             }
           },

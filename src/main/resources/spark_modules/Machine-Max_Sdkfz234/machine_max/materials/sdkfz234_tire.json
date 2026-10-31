@@ -1,0 +1,89 @@
+{
+  "$schema": "../docs/zh_cn/schemas/base/material_attr.schema.json",
+  "physics": {
+    "friction": [
+      1.25,
+      1.45,
+      1.0
+    ],
+    "slip_adaptation": 0.8,
+    "rolling_friction": 0.02,
+    "spinning_friction": 0.7,
+    "restitution": 0.6,
+    "block_damage_factor": 0.05,
+    "impact_min_speed": 5.0
+  },
+  "armor": {
+    "impact_modifiers": [
+      {
+        "operation": "multiply",
+        "value": 0.1,
+        "condition": {
+          "type": "damage_tag",
+          "id": "c:is_impact"
+        }
+      },
+      {
+        "operation": "add",
+        "value": -2.0,
+        "condition": {
+          "type": "damage_tag",
+          "id": "c:is_impact"
+        }
+      }
+    ],
+    "penetration_modifiers": [],
+    "damage_modifiers": [
+      {
+        "operation": "multiply",
+        "value": 0.1,
+        "condition": {
+          "type": "damage_tag",
+          "id": "c:is_impact"
+        }
+      },
+      {
+        "operation": "add",
+        "value": -2.0,
+        "condition": {
+          "type": "damage_tag",
+          "id": "c:is_impact"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.05,
+        "condition": {
+          "type": "damage_type",
+          "id": "minecraft:sweet_berry_bush"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.05,
+        "condition": {
+          "type": "entity_type",
+          "id": "minecraft:slime"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.1,
+        "condition": {
+          "type": "entity_type",
+          "id": "minecraft:magma_cube"
+        }
+      }
+    ],
+    "rha": 0.06,
+    "angle_effect": true,
+    "dmg_resist": 1.0,
+    "dmg_mult": 0.95,
+    "decay_rha": 0.02,
+    "decay_power": 1.5,
+    "unpen_power": 0.0,
+    "decay_dmg_resist": 0.0,
+    "decay_dmg_mult": 1.0
+  },
+  "sounds": {}
+}

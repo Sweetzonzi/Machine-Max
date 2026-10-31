@@ -4,8 +4,8 @@
   "basic_durability": 30,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "roll": {
-    "max_drive_force": 8000,
-    "max_brake_force": 9000,
+    "max_drive_force": 17000,
+    "max_brake_force": 15000,
     "max_hand_brake_force": 1200,
     "max_rpm": 30000
   },

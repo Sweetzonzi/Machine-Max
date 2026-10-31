@@ -4,8 +4,8 @@
   "basic_durability": 30,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "roll": {
-    "max_drive_force": 4000,
-    "max_brake_force": 3500,
+    "max_drive_force": 7300,
+    "max_brake_force": 9400,
     "max_hand_brake_force": 500,
     "max_rpm": 30000
   },
@@ -15,7 +15,7 @@
   },
   "abs_enabled": true,
   "abs_target_slip_ratio": 0.15,
-  "abs_wheel_radius": 0.672,
+  "abs_wheel_radius": 0.5625,
   "control_inputs": [
     "car_control"
   ]
