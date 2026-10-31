@@ -8,7 +8,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-from .constants import BLOCK_FRICTION, BLOCK_ROLLING, CD, G, KMH, RHO
+from .constants import BLOCK_FRICTION, BLOCK_ROLLING, G, KMH, RHO
+from .aero import DEFAULT_QUADRATIC, drag_area
 from .driveline import Material, Transmission
 from .geometry import hitbox_boxes, silhouette_area, sub_part_area, wheel_radii
 from .source import PowerCurve
@@ -26,6 +27,8 @@ class Solution:
     max_drive_force: float
     area: tuple
     area_sum: tuple
+    cd_area: float
+    aero_source: str
     c_rr: float
     mu: float
     gears: list
@@ -41,7 +44,8 @@ class Solution:
 
 def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
           n_total_wheels: int, material: Material, area_override=None,
-          transmission: Transmission | None = None, occupant_mass: float = 60.0) -> Solution:
+          transmission: Transmission | None = None, occupant_mass: float = 60.0,
+          cd_area_override: float | None = None) -> Solution:
     mass = vehicle.mass + occupant_mass
     wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
     if not wheel_subs:
@@ -92,6 +96,18 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
     c_rr = material.c_rr * BLOCK_ROLLING    # 地面方块倍数
     grip = mu * mass * G * n_driven / n_total
 
+    # 气动：逐子零件按包内气动点求前向 Cd·A；未声明气动点的零件按默认系数 1.0 计入。
+    aero = drag_area(vehicle)
+    if cd_area_override is not None:
+        cd_area = float(cd_area_override)
+        aero_source = "override"
+    else:
+        cd_area = aero["total"]
+        aero_source = "pack"
+    if aero["default"]:
+        notes.append(f"{aero['default']} 个子零件未声明 hydrodynamics，"
+                     f"前向二阶系数按默认 {DEFAULT_QUADRATIC:g} 计入")
+
     forward = gearbox.forward()
     gears = []
     for index, ratio in enumerate(forward, start=1):
@@ -117,9 +133,9 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
         tau_w = tau * total_ratio / n_driven
         return sum(min(tau_w, limit) for limit in drive_limits) / r
 
-    def solve_top(front_area: float) -> dict:
+    def solve_top(drag: float) -> dict:
         def resistance(v: float) -> float:
-            return 0.5 * RHO * CD * front_area * v * v + c_rr * mass * G
+            return 0.5 * RHO * drag * v * v + c_rr * mass * G
 
         best = (0.0, 0, 0.0)
         for index, ratio in enumerate(forward, start=1):
@@ -148,13 +164,13 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
             bound="红线" if abs(v - red_top) < 0.05 else "功率",
             forces=dict(
                 traction=traction(v, total_ratio),
-                aero=0.5 * RHO * CD * front_area * v * v,
+                aero=0.5 * RHO * drag * v * v,
                 rolling=c_rr * mass * G,
                 damping=source.damping_torque(rpm) * total_ratio / r,
             ))
 
-    top = solve_top(area[2])
-    top_upper = solve_top(area_sum[2])
+    top = solve_top(cd_area)
+    top_upper = top
 
     peak = source.peak_power()
     rated = peak[0]
@@ -169,6 +185,7 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
     return Solution(curb_mass=vehicle.mass, occupant_mass=occupant_mass, mass=mass,
                     r=r, n_driven=n_driven, n_total=n_total, max_drive_force=mdf_max,
                     area=area, area_sum=tuple(area_sum),
+                    cd_area=cd_area, aero_source=aero_source,
                     c_rr=c_rr, mu=mu, gears=gears, top=top, top_upper=top_upper,
                     peak_power=peak, power_util=util, rated_power=rated,
                     transmission=transmission, transmission_ratio=trans_ratio, notes=notes)

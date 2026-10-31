@@ -83,8 +83,8 @@ class K17Test(unittest.TestCase):
 
     def test_mass_and_geometry(self):
         vehicle = self.data["vehicle"]
-        self.assertAlmostEqual(vehicle["mass"], 12900.0, places=1)
-        self.assertAlmostEqual(vehicle["operating_mass"], 12960.0, places=1)
+        self.assertAlmostEqual(vehicle["mass"], 22000.0, places=1)
+        self.assertAlmostEqual(vehicle["operating_mass"], 22060.0, places=1)
         self.assertAlmostEqual(vehicle["occupant_mass"], 60.0, places=1)
         self.assertAlmostEqual(vehicle["power_to_weight_kw_per_t"],
                                self.data["power_source"]["peak_power"] / vehicle["operating_mass"])
@@ -100,26 +100,32 @@ class K17Test(unittest.TestCase):
     def test_engine(self):
         source = self.data["power_source"]
         self.assertEqual(source["kind"], "内燃机")
-        self.assertAlmostEqual(source["peak_power"], 301592.9, delta=200.0)
-        self.assertAlmostEqual(source["peak_rpm"], 3000.0, places=0)
-        self.assertAlmostEqual(source["power_util"], 0.975, delta=0.01)
+        self.assertAlmostEqual(source["peak_power"], 551521.0, delta=200.0)
+        self.assertAlmostEqual(source["peak_rpm"], 2401.0, places=0)
+        self.assertAlmostEqual(source["power_util"], 0.992, delta=0.01)
+        # max_power 是硬上限，必须与曲线峰值一致（≤1%）
+        self.assertLess(abs(source["max_power"] - source["peak_power"]) / source["max_power"], 0.01)
 
     def test_gears(self):
         gears_data = self.data["gearbox"]["gears"]
         self.assertEqual(len(gears_data), 7)
         self.assertAlmostEqual(gears_data[0]["ratio"], 51.81, places=2)
-        self.assertAlmostEqual(gears_data[-1]["ratio"], 8.80, places=2)
-        self.assertAlmostEqual(gears_data[0]["force"] / 1000, 73.69, delta=0.02)
+        self.assertAlmostEqual(gears_data[-1]["ratio"], 9.54, places=2)
+        self.assertAlmostEqual(gears_data[0]["force"] / 1000, 157.20, delta=0.05)
         self.assertTrue(all(g["bound"] == "动力源" for g in gears_data))
 
     def test_top_speed(self):
         top = self.data["top_speed"]["top"]
-        upper = self.data["top_speed"]["upper"]
-        self.assertAlmostEqual(top["red_kmh"], 108.4, delta=0.2)
-        self.assertAlmostEqual(top["kmh"], 93.2, delta=0.5)
-        self.assertAlmostEqual(upper["kmh"], 79.0, delta=0.5)
+        self.assertAlmostEqual(top["red_kmh"], 100.1, delta=0.2)
+        self.assertAlmostEqual(top["kmh"], 97.7, delta=0.2)
         self.assertEqual(top["bound"], "功率")
         self.assertEqual(top["gear"], 7)
+
+    def test_aero_defaults_to_unit_coefficient(self):
+        # 军事包没有写 hydrodynamics，游戏按默认 [0.1, 1.0] 计，Cd·A 等于逐零件前向面积和
+        vehicle = self.data["vehicle"]
+        self.assertEqual(vehicle["aero_source"], "pack")
+        self.assertAlmostEqual(vehicle["cd_area"], vehicle["area_sum"]["z"], places=2)
 
     def test_empty_vehicle_uses_empty_mass_in_physics(self):
         empty = run_json(calibrate, ["--pack", "Machine-Max_K17",
@@ -128,6 +134,7 @@ class K17Test(unittest.TestCase):
         self.assertEqual(empty["vehicle"]["operating_mass"], empty["vehicle"]["mass"])
         self.assertGreater(empty["gearbox"]["gears"][0]["accel"],
                            self.data["gearbox"]["gears"][0]["accel"])
+        # 质量只通过滚阻与加速影响极速，减重后极速略升
         self.assertGreater(empty["top_speed"]["top"]["kmh"],
                            self.data["top_speed"]["top"]["kmh"])
         self.assertIn("## 摘要", self.text)
@@ -173,14 +180,14 @@ class TransmissionTest(unittest.TestCase):
 
     def test_mini_ev_top_speed(self):
         top = self.mini["top_speed"]["top"]
-        self.assertAlmostEqual(top["kmh"], 66.1, delta=0.5)
+        self.assertAlmostEqual(top["kmh"], 80.8, delta=0.5)
         self.assertAlmostEqual(top["red_kmh"], 162.7, delta=0.5)
         self.assertEqual(top["bound"], "功率")
 
     def test_k17_ratio_is_one(self):
         self.assertEqual(self.k17["transmission"]["ratio"], 1.0)
-        # 7 档 = 0.8 × final_ratio 11 × r_trans 1
-        self.assertEqual(self.k17["gearbox"]["gears"][-1]["ratio"], 8.80)
+        # 7 档 = 0.867 × final_ratio 11 × r_trans 1
+        self.assertAlmostEqual(self.k17["gearbox"]["gears"][-1]["ratio"], 9.54, places=2)
 
     def test_missing_gearbox_keeps_transmission(self):
         """没有变速箱时挡位退化为 1.00，传动箱减速比照常生效。"""
@@ -224,18 +231,19 @@ class CurveTest(unittest.TestCase):
                                   "--pack-root", str(PACK_ROOT), "--json"])
 
     def test_engine_shape(self):
-        self.assertAlmostEqual(self.k17["curve_peak"], 301592.9, delta=200.0)
-        self.assertAlmostEqual(self.k17["torque_peak"], 1200.0, places=3)
+        self.assertAlmostEqual(self.k17["curve_peak"], 551520.9, delta=200.0)
+        self.assertAlmostEqual(self.k17["torque_peak"], 2560.0, places=3)
         self.assertAlmostEqual(self.k17["torque_peak_rpm"], 2000.0, places=0)
         self.assertIsNone(self.k17["cap_onset_rpm"])
 
     def test_max_power_deviation(self):
-        self.assertGreater(self.k17["max_power_deviation"], 0.4)
+        # max_power 与曲线峰值必须对上，硬上限才真正生效
+        self.assertLess(abs(self.k17["max_power_deviation"]), 0.01)
 
-    def test_power_band_is_narrow_on_diesel(self):
+    def test_power_band_covers_upper_rpm(self):
         band = self.k17["power_band"]
-        self.assertLess(band["high"] - band["low"], 1000.0)
-        self.assertGreaterEqual(band["low"], 2000.0)
+        self.assertAlmostEqual(band["high"], 3000.0, delta=1.0)
+        self.assertGreater(band["high"] - band["low"], 1000.0)
 
     def test_motor_by_subsystem(self):
         self.assertEqual(self.ev["kind"], "电机")
@@ -261,20 +269,22 @@ class DragTest(unittest.TestCase):
 
     def test_rolling(self):
         self.assertAlmostEqual(self.data["c_rr"], 0.04, places=4)
-        self.assertAlmostEqual(self.data["operating_mass"], 12960.0)
+        self.assertAlmostEqual(self.data["operating_mass"], 22060.0)
         self.assertAlmostEqual(self.data["rolling_force"],
                                self.data["c_rr"] * self.data["operating_mass"] * mmcal.G)
 
     def test_areas(self):
-        self.assertAlmostEqual(self.data["area"]["z"], 13.40, delta=0.2)
-        self.assertAlmostEqual(self.data["area_sum"]["z"], 21.94, delta=0.2)
-        self.assertGreater(self.data["area_sum"]["z"], self.data["area"]["z"])
+        # 未声明气动点时按默认系数 1.0，Cd·A 等于逐零件前向面积和
+        self.assertAlmostEqual(self.data["front_area_sum"], 21.94, delta=0.2)
+        self.assertAlmostEqual(self.data["cd_area"], 21.94, delta=0.3)
 
     def test_parts_sum_to_total(self):
         self.assertAlmostEqual(sum(p["mass"] for p in self.data["parts"]),
                                self.data["mass"], places=1)
-        self.assertAlmostEqual(sum(p["z"] for p in self.data["parts"]),
-                               self.data["area_sum"]["z"], places=2)
+        self.assertAlmostEqual(sum(p["area"] for p in self.data["parts"]),
+                               self.data["front_area_sum"], places=2)
+        self.assertAlmostEqual(sum(p["cd_area"] for p in self.data["parts"]),
+                               self.data["cd_area"], places=2)
 
     def test_hull_is_largest(self):
         self.assertEqual(self.data["parts"][0]["name"].split("/")[0], "k17_hull")
@@ -298,8 +308,8 @@ class GearsTest(unittest.TestCase):
     def test_k17_chain(self):
         self.assertEqual(self.k17["transmission"]["ratio"], 1.0)
         self.assertEqual(len(self.k17["gears"]), 7)
-        self.assertAlmostEqual(self.k17["gears"][-1]["ratio"], 8.80, places=2)
-        self.assertAlmostEqual(self.k17["gears"][-1]["red_kmh"], 108.4, delta=0.2)
+        self.assertAlmostEqual(self.k17["gears"][-1]["ratio"], 9.54, places=2)
+        self.assertAlmostEqual(self.k17["gears"][-1]["red_kmh"], 100.1, delta=0.2)
 
     def test_k17_steps(self):
         self.assertAlmostEqual(self.k17["gears"][0]["step"], 51.81 / 34.54, places=3)

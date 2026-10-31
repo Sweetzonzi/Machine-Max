@@ -32,7 +32,7 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     push("## 摘要")
     push("| 指标 | 数值 |")
     push("|---|---|")
-    push(f"| 估算极速 | {sol.top_upper['kmh']:.1f} / {sol.top['kmh']:.1f} km/h（逐件相加 / 轮廓面积） |")
+    push(f"| 估算极速 | {sol.top['kmh']:.1f} km/h（{sol.top['bound']}绑定） |")
     push(f"| 曲线峰值功率 | {sol.rated_power / 1000:.1f} kW @ {sol.peak_power[1]:.0f} rpm |")
     push(f"| 整备质量（空车） | {fmt(sol.curb_mass, 0)} kg |")
     push(f"| {mass_label} | {fmt(sol.mass, 0)} kg（乘员 {sol.occupant_mass:g} kg） |")
@@ -46,7 +46,11 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     push(f"| 驱动轮数 | {sol.n_driven} / {sol.n_total} |")
     push(f"| 轮端力矩上限 | {sol.max_drive_force:,.0f} N·m |")
     push(f"| 轮半径 | {sol.r:.5f} m（模型轮面球） |")
-    push(f"| 气动面积 X/Y/Z（轮廓） | {sol.area[0]:.2f} / {sol.area[1]:.2f} / {sol.area[2]:.2f} m² |")
+    source_label = {"override": "`--cd-area` 指定",
+                    "pack": "按各子零件气动点求和"}[sol.aero_source]
+    push(f"| 前向气动面积 `Cd·A` | {sol.cd_area:.2f} m²（{source_label}） |")
+    push(f"| 气动面积 X/Y/Z（包围盒并集） | {sol.area[0]:.2f} / {sol.area[1]:.2f} / "
+         f"{sol.area[2]:.2f} m² |")
     push(f"| 气动面积（逐零件相加） | {sol.area_sum[0]:.2f} / {sol.area_sum[1]:.2f} / "
          f"{sol.area_sum[2]:.2f} m² |")
     push(f"| 轮胎材质 | `C_rr` {sol.c_rr:.4f}，纵向 μ {sol.mu:.3f} |")
@@ -101,17 +105,18 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     push("| 项 | 值 |")
     push("|---|---|")
     push(f"| 红线极速 | {sol.top['red_kmh']:.1f} km/h |")
-    push(f"| 估算极速（轮廓面积） | {sol.top['kmh']:.1f} km/h"
+    push(f"| 估算极速 | {sol.top['kmh']:.1f} km/h"
          f"（{sol.top['gear']} 档 {sol.top['rpm']:.0f} rpm，{sol.top['bound']}绑定） |")
-    push(f"| 估算极速（逐件相加面积） | {sol.top_upper['kmh']:.1f} km/h"
-         f"（{sol.top_upper['gear']} 档 {sol.top_upper['rpm']:.0f} rpm） |")
     forces = sol.top["forces"]
     push(f"| 极速处牵引力 | {forces['traction'] / 1000:.2f} kN |")
     push(f"| 极速处阻力 | 气动 {forces['aero'] / 1000:.2f} + 滚阻 "
          f"{forces['rolling'] / 1000:.2f} + 内阻 {forces['damping'] / 1000:.2f} kN |")
     push("")
-    push("逐零件相加不含遮挡；轮廓面积来自包围盒并集。两者是不同的静态估算，"
-         "不能保证游戏实测极速夹在两值之间；可用 `--area` 指定实测正投影面积。")
+    if sol.aero_source == "override":
+        push(f"气动项用 `--cd-area` 指定的 `Cd·A` = {sol.cd_area:.2f} m²。")
+    else:
+        push(f"气动项按各子零件气动点求和，`Cd·A` = {sol.cd_area:.2f} m²；"
+             "不含遮挡，是阻力的上界。")
     if reqs:
         push("## 残差")
         push("| 约束 | 需求 | 可用 | 残差 | 结论 |")
@@ -142,6 +147,7 @@ def report_json(vehicle, source, gearbox, material, sol, reqs) -> str:
                      driven=sol.n_driven, wheels=sol.n_total, radius=sol.r,
                      area=dict(x=sol.area[0], y=sol.area[1], z=sol.area[2]),
                      area_sum=dict(x=sol.area_sum[0], y=sol.area_sum[1], z=sol.area_sum[2]),
+                     cd_area=sol.cd_area, aero_source=sol.aero_source,
                      c_rr=sol.c_rr, mu=sol.mu),
         power_source=dict(kind=source.kind, max_power=source.max_power,
                           max_torque=source.max_torque,

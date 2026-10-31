@@ -41,7 +41,7 @@ def requirements(args, source, gearbox, sol) -> list:
         target = args.top_speed / KMH
         top_ratio = sol.gears[-1]["ratio"]
         rpm = target * top_ratio / sol.r * 30 / math.pi
-        resistance = (0.5 * RHO * CD * sol.area[2] * target * target + sol.c_rr * sol.mass * G
+        resistance = (0.5 * RHO * sol.cd_area * target * target + sol.c_rr * sol.mass * G
                       + source.damping_torque(rpm) * top_ratio / sol.r)
         need = resistance * target / 0.85
         recommended = source.red_line_rpm * math.pi / 30 * sol.r / (target * 1.03)

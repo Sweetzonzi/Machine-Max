@@ -18,15 +18,41 @@ from .jsonc import load_jsonc
 
 
 def load_geo(path: Path) -> dict:
-    """返回 bone 名 -> [cube(dict)]。"""
+    """返回 bone 名 -> {"cubes": [cube(dict)], "locators": [定位器名]}。"""
     data = load_jsonc(path)
     geometries = data.get("minecraft:geometry") or []
     if not geometries:
         raise SystemExit(f"{path}: 没有 minecraft:geometry")
     bones = {}
     for bone in geometries[0].get("bones", []):
-        bones[bone.get("name", "")] = bone.get("cubes", [])
+        locators = bone.get("locators") or {}
+        bones[bone.get("name", "")] = {
+            "cubes": bone.get("cubes", []),
+            "locators": sorted(locators.keys()) if isinstance(locators, dict) else [],
+        }
     return bones
+
+
+def bone_cubes(geo: dict, name: str) -> list:
+    """某骨骼下的 cube 列表；缺失时为空。"""
+    bone = geo.get(name)
+    if not bone:
+        return []
+    return (bone.get("cubes") or []) if isinstance(bone, dict) else bone
+
+
+def bone_locator_count(geo: dict, name: str) -> int:
+    """一个气动键实际展开成几个气动计算点。
+
+    配置的键若是骨骼名，则展开为该骨骼下的全部定位器；否则键本身就是定位器名，
+    空串按子零件原点算一个点。数量决定同一份系数施加几遍。
+    """
+    if not name:
+        return 1
+    bone = geo.get(name)
+    if not isinstance(bone, dict):
+        return 1
+    return max(1, len(bone.get("locators") or []))
 
 
 def rotate_point(point, pivot, rotation) -> tuple:
@@ -84,7 +110,7 @@ def hitbox_boxes(sub_part) -> list:
     """子零件各碰撞箱的包围盒（格）；轮子按碰撞球折算成等高的方盒。"""
     boxes = []
     for name, hitbox in sub_part.hitboxes.items():
-        cubes = sub_part.geo.get(name) or []
+        cubes = bone_cubes(sub_part.geo, name)
         kind = hitbox.get("type")
         for cube in cubes:
             if kind == "wheel":
@@ -122,7 +148,7 @@ def wheel_radii(sub_part) -> list:
     for name, hitbox in sub_part.hitboxes.items():
         if hitbox.get("type") != "wheel":
             continue
-        for cube in sub_part.geo.get(name) or []:
+        for cube in bone_cubes(sub_part.geo, name):
             size = cube.get("size") or [0, 0, 0]
             radii.append(abs(size[1]) / 32.0)
     return radii

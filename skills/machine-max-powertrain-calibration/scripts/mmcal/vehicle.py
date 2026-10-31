@@ -19,6 +19,7 @@ class SubPartSpec:
     hitboxes: dict
     subsystems: dict
     geo: dict
+    hydro: dict
 
 
 @dataclass
@@ -109,7 +110,8 @@ def build_vehicle(registry: Registry, entry: Entry) -> Vehicle:
             sub_parts.append(SubPartSpec(
                 part_id, variant_name, sp_name,
                 float(sp.get("mass", 0.0)), tuple(projected),
-                sp.get("hit_boxes") or {}, sp.get("subsystems") or {}, geo))
+                sp.get("hit_boxes") or {}, sp.get("subsystems") or {}, geo,
+                sp.get("hydrodynamics") or {}))
     if not sub_parts:
         raise SystemExit(f"{entry.path}: 没有解析出任何子零件")
     return Vehicle(entry.path.stem, entry.path, sub_parts)

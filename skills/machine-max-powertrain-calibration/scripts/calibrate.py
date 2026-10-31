@@ -37,7 +37,9 @@ def add_arguments(parser):
     parser.add_argument("--accel", help="加速需求，形如 50:3.0（0→50 km/h 用 3 秒）")
     parser.add_argument("--grade", type=float, help="最大爬坡度（角度，度）")
     parser.add_argument("--gears", type=int, help="给定档位数，校验换挡收益")
-    parser.add_argument("--area", help="覆盖气动面积，形如 10 或 5,8,10（X,Y,Z，m²）")
+    parser.add_argument("--area", help="覆盖包围盒气动面积，形如 10 或 5,8,10（X,Y,Z，m²）")
+    parser.add_argument("--cd-area", type=float,
+                        help="直接指定前向 Cd·A（m²），覆盖包内气动点")
     parser.add_argument("--occupant-mass", type=float, default=60.0,
                         help="一名乘员的质量 kg，默认 60；空车用 0")
 
@@ -105,7 +107,7 @@ def main(argv=None):
 
     n_total_wheels = len(wheel_subs) or len(wheel_defs)
     sol = solve(vehicle, source, gearbox, wheel_defs, n_total_wheels, material, area_override,
-                transmission, args.occupant_mass)
+                transmission, args.occupant_mass, args.cd_area)
     reqs = requirements(args, source, gearbox, sol)
 
     print(report_json(vehicle, source, gearbox, material, sol, reqs) if args.json

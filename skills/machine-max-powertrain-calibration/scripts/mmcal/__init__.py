@@ -16,10 +16,12 @@
 
 from __future__ import annotations
 
+from .aero import drag_area
 from .constants import BLOCK_FRICTION, BLOCK_ROLLING, CD, G, KMH, PS, RHO
 from .driveline import Gearbox, Material, Transmission, Wheel
-from .geometry import (box_areas, cube_box, hitbox_boxes, load_geo, rotate_point,
-                       silhouette_area, sub_part_area, union, wheel_material, wheel_radii)
+from .geometry import (bone_cubes, bone_locator_count, box_areas, cube_box, hitbox_boxes,
+                       load_geo, rotate_point, silhouette_area, sub_part_area, union,
+                       wheel_material, wheel_radii)
 from .jsonc import load_jsonc, strip_jsonc
 from .pack import Entry, Pack, Registry, default_pack_root, model_path
 from .requirements import parse_accel, parse_power, requirements
@@ -31,7 +33,8 @@ __all__ = [
     "BLOCK_FRICTION", "BLOCK_ROLLING", "CD", "G", "KMH", "PS", "RHO",
     "Engine", "Entry", "Gearbox", "Material", "Motor", "Pack", "PowerCurve",
     "Registry", "Solution", "SubPartSpec", "Transmission", "Vehicle", "Wheel",
-    "box_areas", "build_vehicle", "cube_box", "default_pack_root", "hitbox_boxes",
+    "box_areas", "build_vehicle", "bone_cubes", "bone_locator_count", "cube_box", "default_pack_root",
+    "drag_area", "hitbox_boxes",
     "load_geo", "load_jsonc", "model_path", "parse_accel", "parse_power",
     "requirements", "resolve_vehicle", "rotate_point", "silhouette_area", "solve",
     "strip_jsonc", "sub_part_area", "union", "wheel_material", "wheel_radii",
