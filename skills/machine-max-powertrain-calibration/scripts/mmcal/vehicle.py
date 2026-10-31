@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .driveline import DriveEnd
-from .geometry import load_geo, wheel_radii
+from .driveline import DriveEnd, Material
+from .geometry import load_geo, wheel_material, wheel_radii
 from .pack import Entry, Pack, Registry, model_path
 
 
@@ -28,6 +28,7 @@ class Vehicle:
     name: str
     template_path: Path
     sub_parts: list
+    track_types: tuple = ()
 
     @property
     def mass(self) -> float:
@@ -115,7 +116,10 @@ def build_vehicle(registry: Registry, entry: Entry) -> Vehicle:
                 sp.get("hydrodynamics") or {}))
     if not sub_parts:
         raise SystemExit(f"{entry.path}: 没有解析出任何子零件")
-    return Vehicle(entry.path.stem, entry.path, sub_parts)
+    track_types = tuple(sorted({str(link.get("track_type"))
+                                for link in (data.get("track_links") or [])
+                                if link.get("track_type")}))
+    return Vehicle(entry.path.stem, entry.path, sub_parts, track_types)
 
 
 def drive_system(vehicle: Vehicle, registry: Registry) -> dict:
@@ -162,8 +166,34 @@ def drive_system(vehicle: Vehicle, registry: Registry) -> dict:
     radii = sorted(set(radii))
     if len(radii) > 1:
         notes.append(f"两条履带的主动轮半径不一致 {radii}，按最大者 {radii[-1]:.5f} 计算")
+    notes.append(f"履带 {len(ends)} 条、成员轮 {len([sp for sp in vehicle.sub_parts if wheel_radii(sp)])} 个"
+                 f"全部走履带材质的滚阻与摩擦，与轮面碰撞箱的材质无关")
     return dict(kind="track", ends=ends, radius=radii[-1], radii=radii,
                 total=len(ends), notes=notes)
+
+
+def contact_material(vehicle: Vehicle, registry: Registry, drive: dict):
+    """接地材质：轮式取轮面碰撞箱，履带取履带配件的材质。
+
+    `CollisionHandler.setupFriction` 对履带成员（主动轮、负重轮、诱导轮，**无论有没有
+    轮驱子系统**）统一换成 track 配件的材质，滚阻与摩擦都来自它；轮面碰撞箱上写的
+    `off_road_tire` 只在断带后或非履带覆盖的接触上用。所以履带车的 `C_rr` 与 `μ` 必须
+    读 `track_type` → 配件 `material`，不能读轮子。
+    """
+    if drive["kind"] == "track":
+        ids = {mat for mat in (registry.need("fittings", fitting, "履带配件").data.get("material")
+                               for fitting in vehicle.track_types) if mat}
+        where = "履带配件"
+    else:
+        ids = {wheel_material(sp) for sp in vehicle.sub_parts if wheel_material(sp)}
+        where = "轮面碰撞箱"
+    if not ids:
+        raise SystemExit(f"找不到{where}的接地材质")
+    if len(ids) > 1:
+        registry.warnings.append(
+            f"接地材质不唯一 {sorted(ids)}，按 {sorted(ids)[0]} 计算滚阻与附着")
+    return Material.from_entry(registry.need("materials", sorted(ids)[0], where))
+
 
 
 def _driven_wheel(vehicle: Vehicle, connector_name: str, where: str):

@@ -380,11 +380,20 @@ class TrackTest(unittest.TestCase):
         self.assertAlmostEqual(source["peak_rpm"], 2600.0, places=0)
         self.assertLess(abs(source["max_power"] - source["peak_power"]) / source["max_power"], 0.01)
 
+    def test_contact_material_is_track_link(self):
+        """滚阻与摩擦读履带配件的 `track_steel`，不是轮面碰撞箱的 `off_road_tire`。"""
+        for data in (self.two, self.mtlb):
+            self.assertAlmostEqual(data["vehicle"]["c_rr"], 0.05, places=4)
+            self.assertAlmostEqual(data["vehicle"]["mu"], 0.9 * 0.7, places=4)
+
     def test_mtlb_mass_and_top_speed(self):
         self.assertAlmostEqual(self.mtlb["vehicle"]["mass"], 11920.0, places=1)
         top = self.mtlb["top_speed"]["top"]
         self.assertAlmostEqual(top["red_kmh"], 61.5, delta=0.2)
         self.assertEqual(top["bound"], "红线")
+        # 6 档能到红线：牵引力在低转速拉不动，零点有两个，必须取高的那个
+        self.assertEqual(top["gear"], 6)
+        self.assertAlmostEqual(top["rpm"], 2100.0, delta=1.0)
 
     def test_pkt_keeps_chassis_calibration(self):
         """加装机枪塔只改质量与气动，动力链与极速不变。"""
@@ -392,8 +401,8 @@ class TrackTest(unittest.TestCase):
                                places=1)
         self.assertEqual([g["ratio"] for g in self.pkt["gearbox"]["gears"]],
                          [g["ratio"] for g in self.mtlb["gearbox"]["gears"]])
-        self.assertEqual([g["force"] for g in self.pkt["gearbox"]["gears"]],
-                         [g["force"] for g in self.mtlb["gearbox"]["gears"]])
+        self.assertEqual([g["bound"] for g in self.pkt["gearbox"]["gears"]],
+                         [g["bound"] for g in self.mtlb["gearbox"]["gears"]])
         self.assertAlmostEqual(self.pkt["top_speed"]["top"]["kmh"],
                                self.mtlb["top_speed"]["top"]["kmh"], delta=0.1)
         self.assertGreater(self.pkt["vehicle"]["cd_area"], self.mtlb["vehicle"]["cd_area"])

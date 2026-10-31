@@ -21,8 +21,8 @@ import math
 import sys
 from pathlib import Path
 
-from mmcal import (Engine, Gearbox, Material, Motor, Transmission, drive_system,
-                   requirements, resolve_vehicle, solve, wheel_material, wheel_radii)
+from mmcal import (Engine, Gearbox, Motor, Transmission, contact_material, drive_system,
+                   requirements, resolve_vehicle, solve)
 from mmcal.cli import add_common, flush_warnings, load_pack, pick_template
 from mmcal.report import report_json, report_text
 
@@ -79,15 +79,7 @@ def main(argv=None):
         registry.warnings.append("整车没有 gearbox，挡位固定为 1.00")
     transmission = Transmission.from_ref(transmission_ref[2]) if transmission_ref else None
 
-    wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
-    material_ids = {wheel_material(sp) for sp in wheel_subs if wheel_material(sp)}
-    if not material_ids:
-        raise SystemExit("找不到轮面材质")
-    if len(material_ids) > 1:
-        registry.warnings.append(
-            f"前后轮用了不同材质 {sorted(material_ids)}，按 {sorted(material_ids)[0]} 计算滚阻与附着")
-    material = Material.from_entry(registry.need("materials", sorted(material_ids)[0], "轮面碰撞箱"))
-
+    material = contact_material(vehicle, registry, drive)
     area_override = None
     if args.area:
         parts = [float(x) for x in args.area.split(",")]

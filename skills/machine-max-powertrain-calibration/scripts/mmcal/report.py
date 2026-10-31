@@ -56,7 +56,8 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
          f"{sol.area[2]:.2f} m² |")
     push(f"| 气动面积（逐零件相加） | {sol.area_sum[0]:.2f} / {sol.area_sum[1]:.2f} / "
          f"{sol.area_sum[2]:.2f} m² |")
-    push(f"| 轮胎材质 | `C_rr` {sol.c_rr:.4f}，纵向 μ {sol.mu:.3f} |")
+    contact_label = "履带接触材质" if sol.drive_kind == "track" else "轮胎材质"
+    push(f"| {contact_label} | `C_rr` {sol.c_rr:.4f}，纵向 μ {sol.mu:.3f} |")
     push(f"| 功重比（运行质量） | {sol.rated_power / sol.mass:.1f} kW/t |")
     push("")
     push("## 动力源")

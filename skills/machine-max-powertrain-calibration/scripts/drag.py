@@ -22,8 +22,8 @@ import math
 import sys
 from pathlib import Path
 
-from mmcal import (BLOCK_ROLLING, G, KMH, RHO, Material, drag_area, resolve_vehicle,
-                   wheel_material)
+from mmcal import (BLOCK_ROLLING, G, KMH, RHO, contact_material, drag_area, drive_system,
+                   resolve_vehicle)
 from mmcal.aero import DEFAULT_QUADRATIC
 from mmcal.cli import add_common, flush_warnings, load_pack, pick_template
 
@@ -71,7 +71,7 @@ def report_text(vehicle, material, speeds, cd_override, occupant_mass=60.0):
     push("|---|---|")
     push(f"| 整备质量（空车） | {vehicle.mass:,.0f} kg |")
     push(f"| {mass_label} | {mass:,.0f} kg（乘员 {occupant_mass:g} kg） |")
-    push(f"| 轮胎材质 | `{material.source}`，`C_rr` {c_rr:.4f} |")
+    push(f"| 接触材质 | `{material.source}`，`C_rr` {c_rr:.4f} |")
     push(f"| 滚阻 | {c_rr:.4f} × {mass:,.0f} × 9.81 = {f_roll / 1000:.2f} kN |")
     push(f"| 前向 `Cd·A` | {cd_declared:.2f} m² |")
     push(f"| 未声明气动系数的子零件 | {aero_info['default']} / {len(parts)}"
@@ -139,13 +139,8 @@ def main(argv=None):
         return 0
     vehicle = resolve_vehicle(registry, pack, pick_template(args, pack))
 
-    material_ids = {wheel_material(sp) for sp in vehicle.sub_parts if wheel_material(sp)}
-    if not material_ids:
-        raise SystemExit("找不到轮面材质")
-    if len(material_ids) > 1:
-        registry.warnings.append(
-            f"前后轮用了不同材质 {sorted(material_ids)}，按 {sorted(material_ids)[0]} 计算滚阻")
-    material = Material.from_entry(registry.need("materials", sorted(material_ids)[0], "轮面碰撞箱"))
+    drive = drive_system(vehicle, registry)
+    material = contact_material(vehicle, registry, drive)
 
     try:
         speeds = [float(x) for x in args.speeds.split(",") if x.strip()]

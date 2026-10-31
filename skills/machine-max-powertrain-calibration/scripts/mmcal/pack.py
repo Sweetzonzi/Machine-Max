@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .jsonc import load_jsonc
 
-KINDS = ("parts", "subsystems", "materials", "templates", "connectors")
+KINDS = ("parts", "subsystems", "materials", "templates", "connectors", "fittings")
 
 
 @dataclass

@@ -27,13 +27,15 @@ from .pack import Entry, Pack, Registry, default_pack_root, model_path
 from .requirements import parse_accel, parse_power, requirements
 from .solve import Solution, solve
 from .source import Engine, Motor, PowerCurve
-from .vehicle import SubPartSpec, Vehicle, build_vehicle, drive_system, resolve_vehicle
+from .vehicle import (SubPartSpec, Vehicle, build_vehicle, contact_material, drive_system,
+                      resolve_vehicle)
 
 __all__ = [
     "BLOCK_FRICTION", "BLOCK_ROLLING", "CD", "G", "KMH", "PS", "RHO",
     "DriveEnd", "Engine", "Entry", "Gearbox", "Material", "Motor", "Pack", "PowerCurve",
     "Registry", "Solution", "SubPartSpec", "Transmission", "Vehicle",
-    "box_areas", "build_vehicle", "bone_cubes", "bone_locator_count", "cube_box", "default_pack_root",
+    "box_areas", "build_vehicle", "bone_cubes", "bone_locator_count", "contact_material",
+    "cube_box", "default_pack_root",
     "drag_area", "drive_system", "hitbox_boxes",
     "load_geo", "load_jsonc", "model_path", "parse_accel", "parse_power",
     "requirements", "resolve_vehicle", "rotate_point", "silhouette_area", "solve",

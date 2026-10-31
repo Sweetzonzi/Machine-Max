@@ -129,7 +129,8 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, drive: dict,
                           force=force, accel=force / mass, bound=bound))
 
     def traction(v: float, total_ratio: float) -> float:
-        rpm = v * total_ratio / r * 30 / math.pi
+        # 红线以上不再给扭矩；求解只在 v ≤ v_red 取点，夹住转速只为消掉浮点边界
+        rpm = min(v * total_ratio / r * 30 / math.pi, source.red_line_rpm)
         tau = source.net_torque(rpm)
         if tau <= 0:
             return 0.0
@@ -140,23 +141,36 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, drive: dict,
         def resistance(v: float) -> float:
             return 0.5 * RHO * drag * v * v + c_rr * mass * G
 
+        def feasible(v: float, total_ratio: float) -> bool:
+            return traction(v, total_ratio) >= resistance(v)
+
+        # 牵引力随转速先升后降，阻力随车速单调升，所以 F−R 可能有两个零点：
+        # 高档位在低转速下拉不动（第一个零点以下跑不起来），真正要的是**最高**那个。
+        # 从红线往低扫，找到最高的可行采样点，再在它与上一个采样点之间二分。
+        steps = 200
         best = (0.0, 0, 0.0)
         for index, ratio in enumerate(forward, start=1):
             total_ratio = ratio * stage_ratio
             v_red = source.red_line_rpm * math.pi / 30 * r / total_ratio
-            if traction(v_red, total_ratio) >= resistance(v_red):
-                v = v_red
-            else:
-                lo, hi = 0.0, v_red
-                for _ in range(60):
-                    mid = (lo + hi) / 2
-                    if traction(mid, total_ratio) >= resistance(mid):
-                        lo = mid
-                    else:
-                        hi = mid
-                v = lo
+            v = 0.0
+            for i in range(steps, -1, -1):
+                x = v_red * i / steps
+                if feasible(x, total_ratio):
+                    if i == steps:
+                        v = v_red
+                        break
+                    lo, hi = x, v_red * (i + 1) / steps
+                    for _ in range(60):
+                        mid = (lo + hi) / 2
+                        if feasible(mid, total_ratio):
+                            lo = mid
+                        else:
+                            hi = mid
+                    v = lo
+                    break
             if v > best[0]:
                 best = (v, index, v * total_ratio / r * 30 / math.pi)
+
 
         v, gear, rpm = best
         total_ratio = gears[gear - 1]["ratio"]
