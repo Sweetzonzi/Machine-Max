@@ -19,7 +19,7 @@
           "start_bone": "AllHull",
           "end_bones": [],
           "durability": 335,
-          "mass": 9440,
+          "mass": 9600,
           "mass_center": "hull_mass_center",
           "projected_area": [
             -1,

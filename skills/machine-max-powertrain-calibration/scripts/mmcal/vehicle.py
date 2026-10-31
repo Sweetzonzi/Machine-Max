@@ -21,6 +21,7 @@ class SubPartSpec:
     subsystems: dict
     geo: dict
     hydro: dict
+    connectors: dict
 
 
 @dataclass
@@ -113,7 +114,7 @@ def build_vehicle(registry: Registry, entry: Entry) -> Vehicle:
                 part_id, variant_name, sp_name,
                 float(sp.get("mass", 0.0)), tuple(projected),
                 sp.get("hit_boxes") or {}, sp.get("subsystems") or {}, geo,
-                sp.get("hydrodynamics") or {}))
+                sp.get("hydrodynamics") or {}, sp.get("connectors") or {}))
     if not sub_parts:
         raise SystemExit(f"{entry.path}: 没有解析出任何子零件")
     track_types = tuple(sorted({str(link.get("track_type"))

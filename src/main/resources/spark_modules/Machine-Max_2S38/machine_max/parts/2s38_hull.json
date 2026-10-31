@@ -17,7 +17,7 @@
           "start_bone": "HullRoot",
           "end_bones": [],
           "durability": 320,
-          "mass": 14180,
+          "mass": 15280,
           "projected_area": [
             -1,
             -1,
@@ -123,32 +123,32 @@
             },
             "connector.machine_max.hull_left_wheel_2": {
               "locator": "hull_left_wheel_2",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_3": {
               "locator": "hull_left_wheel_3",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_4": {
               "locator": "hull_left_wheel_4",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_5": {
               "locator": "hull_left_wheel_5",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_6": {
               "locator": "hull_left_wheel_6",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_7": {
               "locator": "hull_left_wheel_7",
-              "definition": "machine_max:track_road_wheel_left",
+              "definition": "machine_max:2s38_track_road_wheel_left",
               "internal": true
             },
             "connector.machine_max.hull_left_wheel_8": {
@@ -163,32 +163,32 @@
             },
             "connector.machine_max.hull_right_wheel_2": {
               "locator": "hull_right_wheel_2",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_3": {
               "locator": "hull_right_wheel_3",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_4": {
               "locator": "hull_right_wheel_4",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_5": {
               "locator": "hull_right_wheel_5",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_6": {
               "locator": "hull_right_wheel_6",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_7": {
               "locator": "hull_right_wheel_7",
-              "definition": "machine_max:track_road_wheel_right",
+              "definition": "machine_max:2s38_track_road_wheel_right",
               "internal": true
             },
             "connector.machine_max.hull_right_wheel_8": {
@@ -418,7 +418,7 @@
           "start_bone": "LeftWheel_1",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 40,
           "mass_center": "left_wheel_1_hub",
           "projected_area": [
             -1,
@@ -451,7 +451,7 @@
           "start_bone": "LeftWheel_2",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_2_hub",
           "projected_area": [
             -1,
@@ -484,7 +484,7 @@
           "start_bone": "LeftWheel_3",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_3_hub",
           "projected_area": [
             -1,
@@ -517,7 +517,7 @@
           "start_bone": "LeftWheel_4",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_4_hub",
           "projected_area": [
             -1,
@@ -550,7 +550,7 @@
           "start_bone": "LeftWheel_5",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_5_hub",
           "projected_area": [
             -1,
@@ -583,7 +583,7 @@
           "start_bone": "LeftWheel_6",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_6_hub",
           "projected_area": [
             -1,
@@ -616,7 +616,7 @@
           "start_bone": "LeftWheel_7",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "left_wheel_7_hub",
           "projected_area": [
             -1,
@@ -649,7 +649,7 @@
           "start_bone": "LeftWheel_8",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 70,
           "mass_center": "left_wheel_8_hub",
           "projected_area": [
             -1,
@@ -682,7 +682,7 @@
           "start_bone": "RightWheel_1",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 40,
           "mass_center": "right_wheel_1_hub",
           "projected_area": [
             -1,
@@ -715,7 +715,7 @@
           "start_bone": "RightWheel_2",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_2_hub",
           "projected_area": [
             -1,
@@ -748,7 +748,7 @@
           "start_bone": "RightWheel_3",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_3_hub",
           "projected_area": [
             -1,
@@ -781,7 +781,7 @@
           "start_bone": "RightWheel_4",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_4_hub",
           "projected_area": [
             -1,
@@ -814,7 +814,7 @@
           "start_bone": "RightWheel_5",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_5_hub",
           "projected_area": [
             -1,
@@ -847,7 +847,7 @@
           "start_bone": "RightWheel_6",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_6_hub",
           "projected_area": [
             -1,
@@ -880,7 +880,7 @@
           "start_bone": "RightWheel_7",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 50,
           "mass_center": "right_wheel_7_hub",
           "projected_area": [
             -1,
@@ -913,7 +913,7 @@
           "start_bone": "RightWheel_8",
           "end_bones": [],
           "durability": 2.5,
-          "mass": 120,
+          "mass": 70,
           "mass_center": "right_wheel_8_hub",
           "projected_area": [
             -1,

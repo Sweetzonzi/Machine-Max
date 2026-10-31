@@ -27,6 +27,7 @@ from .pack import Entry, Pack, Registry, default_pack_root, model_path
 from .requirements import parse_accel, parse_power, requirements
 from .solve import Solution, solve
 from .source import Engine, Motor, PowerCurve
+from .suspension import clamp_limits, required_size, suspensions
 from .vehicle import (SubPartSpec, Vehicle, build_vehicle, contact_material, drive_system,
                       resolve_vehicle)
 
@@ -38,6 +39,7 @@ __all__ = [
     "cube_box", "default_pack_root",
     "drag_area", "drive_system", "hitbox_boxes",
     "load_geo", "load_jsonc", "model_path", "parse_accel", "parse_power",
-    "requirements", "resolve_vehicle", "rotate_point", "silhouette_area", "solve",
+    "required_size", "requirements", "resolve_vehicle", "rotate_point",
+    "silhouette_area", "solve", "suspensions",
     "strip_jsonc", "sub_part_area", "union", "wheel_material", "wheel_radii",
 ]

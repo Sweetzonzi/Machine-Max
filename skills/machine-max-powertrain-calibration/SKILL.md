@@ -1,6 +1,6 @@
 ---
 name: machine-max-powertrain-calibration
-description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和行驶阻力；从 JSON 估算极速与牵引力，检查给定的功率、加速或爬坡目标，并定位参数瓶颈。适用于新载具配动力链和性能回归；换挡顿挫、档位振荡及油门迟滞需另查控制逻辑。
+description: 标定 Machine-Max 内容包载具的动力源、传动、车轮、悬挂和行驶阻力；从 JSON 估算极速、牵引力与悬挂钳位余量，检查给定的功率、加速、爬坡或极速目标，并定位参数瓶颈。适用于新载具配动力链、悬挂与性能回归；换挡顿挫、档位振荡及油门迟滞需另查控制逻辑。
 ---
 
 # Machine-Max 动力系统标定
@@ -15,7 +15,7 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 
 - 新载具首次配动力链，或从别的载具复制参数后调整。
 - 症状：极速明显低于预期、起步或加速发肉、爬坡无力、驱动轮空转、刹车感远强于加速感、HUD 标称马力与实际观感不符。
-- 内容包改动了 `*_engine.json`、`*_motor.json`、`*_gearbox.json`、`*_transmission.json`、`*_wheel_driver.json`、`*_track_drive.json`、部件质量或轮胎材质之后。
+- 内容包改动了 `*_engine.json`、`*_motor.json`、`*_gearbox.json`、`*_transmission.json`、`*_wheel_driver.json`、`*_track_drive.json`、部件质量、悬挂 `joint_attrs`（连接点 JSON）或轮胎材质之后。
 
 换挡顿挫、高低档来回跳和油门响应迟滞先查控制逻辑。松油门拖拽感还可能涉及动力源内阻参数，需结合滑行测试判断。
 
@@ -88,6 +88,19 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 - 履带车读的是 `max_drive_torque`、`max_brake_torque` 与 `max_speed`：前两者同样是轴端力矩，`max_speed` 是主动轮角速度上限（rad/s），乘主动轮半径后是一条独立的极速上限。两条履带都驱动，附着按全车重量计。
 - 气动、滚阻和动力源内阻分别建模；`Cd·A` 由各子零件的前向二阶系数与投影面积求和，未复现游戏内遮挡。阻力公式与默认值见[工程模型 §三](references/engineering-model.md)。
 
+## 悬挂：轮重与弹簧是耦合的
+
+弹簧的刚度/阻尼在装配时被 `adjustJoint()` 钳一次，上限只取决于**轮子自己的质量**：`m_eff` 是两体质量的调和平均，车体再重也只等于轮重。所以「把车体拆散件」不会放宽它，能动的只有轮重本身。
+
+| 项 | 结论 |
+|---|---|
+| 轮重下限 | `m_轮 ≥ ζ·ω_n·m_簧上/100`；ζ=0.4、静挠度 10 cm 时约为每轮簧上质量的 4% |
+| 现实对照 | 真实簧下比 6~15%，所以正常调校下这条约束比现实更宽松 |
+| 何时撞墙 | 短行程高阻尼（赛道、硬派军用）；转动轴（外倾、转向）用惯量、预算小 `r²` 量级，最容易撞 |
+| 症状 | 车压得很低、过坎没有行程：`equilibrium + m_簧上·g/k` 越过了行程限位 |
+
+轮重同时按 `0.5·Σm` 计入加速的等效质量（履带靠星形 GearJoint 与主动轮锁成刚性带，轮式直接滚动），改轮重会同时改加速与钳位余量。推导见[工程模型 §十一](references/engineering-model.md)，逐连接点读数用 `suspension.py`。
+
 ## 验收阈值
 
 下表是设计参考阈值；没有给目标时应标明采用了哪些假设。离线结果只验静态参数，游戏内实测用于验收动态表现。
@@ -101,6 +114,9 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 | 驱动加速度 / 制动减速度的比值 | 0.7 ~ 1.0（参考） | 两者严重不对称时查轮端力矩限幅 |
 | 极速 | 相对目标 ±5% | 最高档总传动比，其次 `Cd·A` |
 | `0→x` 加速时间 | 相对目标 ±10% | 比功率不足，或一档之后的级比过大 |
+| 悬挂阻尼比 ζ | 0.2 ~ 0.5（参考） | 偏低查阻尼；被钳位时先看轮重够不够 |
+| 轮重 / 钳位下限 | ≥ 1.2（参考） | 低于此值调阻尼会被静默压低 |
+| 静平衡位置 | 落在行程限位内且留有余量 | 越限说明整车压在限位上，弹簧不承重 |
 
 平地加速受驱动轮附着限制；两驱车不能按全车四轮的附着量设加速目标。均分载荷下的估算公式见[工程模型 §四](references/engineering-model.md)。
 
@@ -126,7 +142,7 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 
 `scripts/` 下的工具直接读内容包 JSON，把上面这些量算出来。只要 Python 3.9+，无第三方依赖，不需要游戏。
 
-四个入口各管一个侧面。按需只跑其中一个即可，不必为了看曲线而跑整车标定：
+五个入口各管一个侧面。按需只跑其中一个即可，不必为了看曲线而跑整车标定：
 
 | 入口 | 回答什么 | 什么时候用 |
 |---|---|---|
@@ -134,6 +150,7 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 | `curve.py` | 扭矩/功率曲线的形状：峰值落点、功率带宽度、`max_power` 削不削扭矩 | 只调引擎或电机，不看车 |
 | `drag.py` | 逐子零件前向面积、阻力系数与 `Cd·A`，各速度点的阻力与所需功率 | 极速不够、判断哪块最吃风 |
 | `gears.py` | 挡位 × 终传比 × 传动箱减速比，以及各档红线车速 | 只调传动，动力源还没定 |
+| `suspension.py` | 静挠度、行程占用、关节钳位下限与 ζ | 改悬挂、换轮子质量、车压得太低或过坎发跳 |
 
 ```bash
 python scripts/calibrate.py --list                          # 有哪些包与模板
@@ -142,6 +159,7 @@ python scripts/curve.py --pack Machine-Max_K17              # 该车动力源的
 python scripts/curve.py --pack Machine-Max_K17 --csv        # 逐 rpm 全表，可直接画图
 python scripts/drag.py --pack Machine-Max_K17 --speeds 30,60,90
 python scripts/gears.py --pack Machine-Max_Civilian --template mini_ev
+python scripts/suspension.py --pack Machine-Max_2S38          # 悬挂钳位与静挠度
 ```
 
 Windows 上 `python` 有时是应用商店的占位程序（直接退出、无输出），改用 `py -3` 或 `python3`。
@@ -170,7 +188,7 @@ python scripts/calibrate.py --pack Machine-Max_K17 \
 | `--occupant-mass` | 单名乘员质量，默认 60 kg；空车用 0 |
 | `--json` / `--strict` | 输出 JSON；有残差为负时退出码 1（可进 CI） |
 
-`drag.py` 与 `calibrate.py` 都认 `--cd-area`，`drag.py` 另有 `--speeds` 给速度点，`--occupant-mass` 与整车标定同口径；`curve.py` 的 `--points` 控制采样点数、`--step` 控制 CSV 的转速步长。四个入口都认 `--json` 与 `--list`。
+`drag.py` 与 `calibrate.py` 都认 `--cd-area`，`drag.py` 另有 `--speeds` 给速度点，`--occupant-mass` 与整车标定同口径；`curve.py` 的 `--points` 控制采样点数、`--step` 控制 CSV 的转速步长。`suspension.py` 的 `--load-members` 覆盖「承重成员数」的推断（缺省按 `equilibrium < 0` 的连接点计），`--strict` 在任一行被钳位、坐限位或余量不足时退出码 1。五个入口都认 `--json` 与 `--list`。
 
 JSON 的 `power_source.power_util` 是 `peak_net_power / peak_curve_power`，只衡量动力源内阻；它不代表轮端功率利用率或传动效率。
 
@@ -185,8 +203,9 @@ JSON 的 `power_source.power_util` 是 `peak_net_power / peak_curve_power`，只
 | 内燃机与电机两种曲线、功率带、削扭矩起点 | 混动：两者同时存在时只取内燃机 |
 | 轮式与履带两种驱动端：车轮按占比折附着，履带按全车重量 | 履带接地压力分布与滑转：牵引力按均分估算 |
 | 变速箱挡位 × 终传比 × 传动箱减速比，以及没有变速箱的单速车 | 各输出端减速比不一致时的转速/扭矩分化：按均值折算并点名 |
+| 悬挂静挠度、行程占用、钳位下限与 ζ | 游戏内实际车高，以及过坎、落地的动态行程 |
 
-自检：`python scripts/test_scripts.py`，用 K17、2S38、MTLB 与 mini_ev 的真实数据做回归基线。
+自检：`python scripts/test_scripts.py`，用 K17、2S38、MTLB、SdKfz234 与 mini_ev 的真实数据做回归基线，含 2S38 独立悬挂与 ae86 外倾弹簧被钳的用例。
 
 整车报告默认直接输出到对话。先给摘要：估算极速与绑定约束、曲线峰值功率、整备质量、单人运行质量、运行质量口径的功重比；再给约束残差、主要瓶颈和必要的明细。只有作者要把参数作为长期回归基线、交付内容包说明或团队协作记录时，才把完整标定卡片保存为文档；[标定卡片](references/calibration-card.md) 是可选模板。
 

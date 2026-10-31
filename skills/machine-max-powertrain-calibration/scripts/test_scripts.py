@@ -22,6 +22,7 @@ import curve  # noqa: E402
 import drag  # noqa: E402
 import gears  # noqa: E402
 import mmcal  # noqa: E402
+import suspension  # noqa: E402
 
 PACK_ROOT = Path(__file__).resolve().parents[3] / "src/main/resources/spark_modules"
 
@@ -504,6 +505,77 @@ class RequirementTest(unittest.TestCase):
         self.assertFalse(grip["ok"])
 
 
+class SuspensionTest(unittest.TestCase):
+    """悬挂：钳位下限、静挠度与行程占用。"""
+
+    @classmethod
+    def setUpClass(cls):
+        need_packs(cls)
+        cls.two = run_json(suspension, ["--pack", "Machine-Max_2S38",
+                                        "--pack-root", str(PACK_ROOT), "--json"])
+        cls.mtlb = run_json(suspension, ["--pack", "Machine-Max_MTLB", "--template", "mtlb",
+                                         "--pack-root", str(PACK_ROOT), "--json"])
+        cls.ae86 = run_json(suspension, ["--pack", "Machine-Max_Civilian", "--template", "ae86",
+                                         "--pack-root", str(PACK_ROOT), "--json"])
+
+    def test_2s38_has_own_suspension(self):
+        """2S38 负重轮走自己的连接点：120 kN/m、7.2 kN·s/m，钳位下限 41 kg。"""
+        rows = [r for r in self.two["rows"]
+                if r["connector"] == "machine_max:2s38_track_road_wheel_left"]
+        self.assertEqual(len(rows), 6)
+        for row in rows:
+            self.assertAlmostEqual(row["stiffness"], 120000.0, places=1)
+            self.assertAlmostEqual(row["damping"], 7200.0, places=1)
+            self.assertAlmostEqual(row["floor"], 41.0, delta=1.0)
+            self.assertGreater(row["margin"], 1.2)
+            self.assertEqual(row["flags"], [])
+            self.assertAlmostEqual(row["static"], 0.041, delta=0.002)
+            self.assertAlmostEqual(row["zeta"], 0.25, delta=0.01)
+
+    def test_2s38_carries_on_twelve_members(self):
+        """诱导轮写 `equilibrium: 0`，不算承重成员；12 个负重轮均分簧上质量。"""
+        self.assertEqual(self.two["members"], 12)
+        self.assertAlmostEqual(self.two["sprung_per_member"], 1723.3, delta=1.0)
+        self.assertEqual(self.two["flags"], [])
+
+    def test_mtlb_keeps_generic_mount_and_clears_clamp(self):
+        row = next(r for r in self.mtlb["rows"]
+                   if r["connector"] == "machine_max:track_road_wheel_left")
+        self.assertAlmostEqual(row["floor"], 22.3, delta=0.5)
+        self.assertGreater(row["margin"], 1.7)
+        self.assertAlmostEqual(row["sag"], 0.183, delta=0.002)
+
+    def test_ae86_camber_spring_is_clamped(self):
+        """ae86 的外倾弹簧（zr）撑不住：刚度、阻尼都被钳，钳位下限 6.5 kg·m²。"""
+        zr = [r for r in self.ae86["rows"] if r["axis"] == "zr"]
+        self.assertTrue(zr)
+        for row in zr:
+            self.assertIn("刚度被钳", row["flags"])
+            self.assertIn("阻尼被钳", row["flags"])
+            self.assertLess(row["margin"], 0.25)
+
+    def test_strict_exit_code(self):
+        code, _ = run_cli(suspension, ["--pack", "Machine-Max_Civilian", "--template", "ae86",
+                                       "--pack-root", str(PACK_ROOT), "--strict"])
+        self.assertEqual(code, 1)
+        code, _ = run_cli(suspension, ["--pack", "Machine-Max_2S38",
+                                       "--pack-root", str(PACK_ROOT), "--strict"])
+        self.assertEqual(code, 0)
+
+    def test_clamp_limits_match_adjust_joint(self):
+        """同 `AbstractConnector.adjustJoint`：0.95·(4−s)/2·m·tps，s = k/(tps²·m)。"""
+        mass, tps, stiffness = 50.0, 100.0, 120000.0
+        _, c_max = mmcal.clamp_limits(stiffness, mass, tps)
+        s = stiffness / (tps * tps * mass)
+        self.assertAlmostEqual(c_max, 0.95 * (4 - s) / 2 * mass * tps, places=6)
+
+    def test_required_size_round_trips(self):
+        floor = mmcal.required_size(120000.0, 7200.0)
+        self.assertAlmostEqual(floor, 41.0, delta=1.0)
+        _, at_floor = mmcal.clamp_limits(120000.0, floor)
+        self.assertAlmostEqual(at_floor, 7200.0, delta=5.0)
+
+
 class CliTest(unittest.TestCase):
     def test_list(self):
         code, text = run_cli(calibrate, ["--pack-root", str(PACK_ROOT), "--list"])
@@ -515,7 +587,7 @@ class CliTest(unittest.TestCase):
             run_cli(calibrate, ["--pack", "no-such-pack", "--pack-root", str(PACK_ROOT)])
 
     def test_every_entry_point_lists(self):
-        for module in (calibrate, curve, drag, gears):
+        for module in (calibrate, curve, drag, gears, suspension):
             code, text = run_cli(module, ["--pack-root", str(PACK_ROOT), "--list"])
             self.assertEqual(code, 0)
             self.assertIn("模板：", text)
