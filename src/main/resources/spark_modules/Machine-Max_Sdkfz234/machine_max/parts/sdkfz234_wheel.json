@@ -23,7 +23,7 @@
           "start_bone": "LeftWheel_1",
           "end_bones": [],
           "durability": 65,
-          "mass": 50,
+          "mass": 120,
           "projected_area": [
             -1,
             -1,
@@ -67,7 +67,7 @@
           "start_bone": "RightWheel_1",
           "end_bones": [],
           "durability": 65,
-          "mass": 50,
+          "mass": 120,
           "projected_area": [
             -1,
             -1,
