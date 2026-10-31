@@ -512,6 +512,9 @@ public class CollisionHandler {
         float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
         float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f);
 
+        //滚阻力臂：轮面半径；非轮面为 0，表示该接触不产生滚阻
+        float rollingLever = subPart.getWheelRadius(hitBoxIndex);
+
         //服务端才写入摩擦（客户端物理仅供表现）
         if (!subPart.getLevel().isClientSide()) {
             //湿滑衰减：履带轮面读履带材料的 slip_adaptation，其余读碰撞箱材质
@@ -536,8 +539,19 @@ public class CollisionHandler {
                 ManifoldPoints.setFlags(manifoldPointId,
                         ManifoldPoints.getFlags(manifoldPointId) & ~ContactPointFlag.LATERAL_FRICTION);
             }
-            ManifoldPoints.setCombinedRollingFriction(manifoldPointId,
-                    Math.max(0f, subPart.body.getRollingFriction() * blockRollingFriction));
+            //滚动摩擦的求解器上限是角冲量（N·m·s），而材质里的 rolling_friction 是常规滚阻系数 C_rr。
+            //按 τ = C_rr·N·r 反推每步的角冲量上限：J = C_rr·J_n·r，J_n 取同一接触点本步的法向冲量。
+            //求解器把上限钳成 min(J·J_n, J)，载具的 J_n 远大于 1，第二项恒成立，于是
+            //τ = J/Δt = C_rr·(J_n/Δt)·r = C_rr·N·r —— 与载荷成正比、与步长无关，即常规定义。
+            //力臂取轮面半径；非轮面没有滚动半径，不产生滚阻（车体蹭地由摩擦系数负责）。
+            if (rollingLever > 0f) {
+                ManifoldPoints.setCombinedRollingFriction(manifoldPointId,
+                        Math.max(0f, subPart.body.getRollingFriction() * blockRollingFriction)
+                                * ManifoldPoints.getAppliedImpulse(manifoldPointId)
+                                * rollingLever);
+            } else {
+                ManifoldPoints.setCombinedRollingFriction(manifoldPointId, 0f);
+            }
         }
         return slipRatio;
     }

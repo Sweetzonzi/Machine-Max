@@ -58,7 +58,7 @@
           },
           "additionalProperties": false
         },
-        "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "滚动摩擦系数。" },
+        "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.02, "description": "无量纲滚动阻力系数 C_rr。只有轮面（type 为 wheel 的球形接触面）参与计算：阻力为 C_rr × 法向载荷，力矩再由轮面半径换算，与物理步长无关。非轮面接触不使用该值。" },
         "spinning_friction": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "旋转摩擦系数。" },
         "restitution": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.1, "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。" },
         "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "方块破坏系数，0为无法破坏方块。" },

@@ -249,7 +249,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             result = rotSpeed / IDLE_SPEED * MAX_TORQUE * attr.getStaticAttribute().getIdleRpmTorqueRatio();
         } else if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速，在怠速扭矩和最大扭矩之间线性插值
             double k = (rotSpeed - IDLE_SPEED) / (MAX_TORQUE_SPEED - IDLE_SPEED);
-            result = k * MAX_TORQUE + (1 - k) * MAX_TORQUE * attr.getStaticAttribute().getRedLineRpmTorqueRatio();
+            result = k * MAX_TORQUE + (1 - k) * MAX_TORQUE * attr.getStaticAttribute().getIdleRpmTorqueRatio();
         } else if (rotSpeed <= RED_LINE_SPEED) {//平台段：最大扭矩转速 -> 红线转速，在最大扭矩和全功率扭矩之间线性插值
             double k = (rotSpeed - MAX_TORQUE_SPEED) / (RED_LINE_SPEED - MAX_TORQUE_SPEED);
             result = k * MAX_TORQUE * attr.getStaticAttribute().getRedLineRpmTorqueRatio() + (1 - k) * MAX_TORQUE;

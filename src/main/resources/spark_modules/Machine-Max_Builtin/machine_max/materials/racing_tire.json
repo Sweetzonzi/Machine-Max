@@ -19,7 +19,7 @@
         "kinetic_scale": 0.9
       }
     },
-    "rolling_friction": 0.015,
+    "rolling_friction": 0.01,
     "spinning_friction": 1.3,
     "restitution": 0.4,
     "block_damage_factor": 0.05,

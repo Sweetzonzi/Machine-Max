@@ -669,14 +669,14 @@
             }
           },
           "id": 23,
-          "durability_ratio": 0.97907615
+          "durability_ratio": 1.0
         }
       },
-      "shared_durability_ratio": 0.97907615,
+      "shared_durability_ratio": 1.0,
       "material_assembling_progress": 2147483647,
       "uuid": "261a2654-bd2f-4470-bde3-7a82a9b96daa",
       "variant": "left",
-      "assembling_progress": 0.97907615,
+      "assembling_progress": 1.0,
       "registry_key": "machine_max:k17_wheel",
       "name": "machine_max.k17_wheel"
     },
@@ -712,14 +712,14 @@
             }
           },
           "id": 29,
-          "durability_ratio": 0.2826147
+          "durability_ratio": 1.0
         }
       },
-      "shared_durability_ratio": 0.2826147,
+      "shared_durability_ratio": 1.0,
       "material_assembling_progress": 2147483647,
       "uuid": "88c33b8e-84bd-4595-9bff-436a4c103fa6",
       "variant": "right",
-      "assembling_progress": 0.2826147,
+      "assembling_progress": 1.0,
       "registry_key": "machine_max:k17_wheel",
       "name": "machine_max.k17_wheel"
     },
@@ -755,14 +755,14 @@
             }
           },
           "id": 31,
-          "durability_ratio": 0.35148004
+          "durability_ratio": 1.0
         }
       },
-      "shared_durability_ratio": 0.35148004,
+      "shared_durability_ratio": 1.0,
       "material_assembling_progress": 2147483647,
       "uuid": "3a633c99-0c10-46fa-ba45-dff9287a0a43",
       "variant": "right",
-      "assembling_progress": 0.35148004,
+      "assembling_progress": 1.0,
       "registry_key": "machine_max:k17_wheel",
       "name": "machine_max.k17_wheel"
     }

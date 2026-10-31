@@ -7,7 +7,7 @@
       1.0
     ],
     "slip_adaptation": 0.8,
-    "rolling_friction": 0.2,
+    "rolling_friction": 0.04,
     "spinning_friction": 0.7,
     "restitution": 0.6,
     "block_damage_factor": 0.05,

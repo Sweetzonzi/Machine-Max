@@ -53,7 +53,7 @@ public record MaterialAttr(
                 new Vec3(0.5, 0.5, 0.5),
                 0.5f,
                 SlipCurveAttr.DEFAULT,
-                0.2f,
+                0.02f,
                 0f,
                 0.1f,
                 1.0f,
