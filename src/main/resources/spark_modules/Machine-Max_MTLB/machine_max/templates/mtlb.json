@@ -1,0 +1,872 @@
+{
+  "connections": [],
+  "track_links": [
+    {
+      "clockwise": true,
+      "track_type": "machine_max:mtlb_track",
+      "sprocket": {
+        "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+        "sub_part": "sub_part.machine_max.left_sprocket"
+      },
+      "members": [
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_sprocket"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_1"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_2"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_4"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_3"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_6"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_roadwheel_5"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.left_idler"
+        }
+      ]
+    },
+    {
+      "clockwise": true,
+      "track_type": "machine_max:mtlb_track",
+      "sprocket": {
+        "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+        "sub_part": "sub_part.machine_max.right_sprocket"
+      },
+      "members": [
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_sprocket"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_1"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_2"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_4"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_3"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_6"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_roadwheel_5"
+        },
+        {
+          "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
+          "sub_part": "sub_part.machine_max.right_idler"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "author": "Dev",
+    "created_at": "2026-10-31T09:57:59.873070300+08:00"
+  },
+  "parts": {
+    "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0": {
+      "sub_parts": {
+        "sub_part.machine_max.right_idler": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.387207,
+              -0.21324539,
+              -3.27771
+            ],
+            "rotation": [
+              -2.6814034E-4,
+              0.99988157,
+              -4.0493105E-6,
+              0.015387654
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_idler": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 96
+        },
+        "sub_part.machine_max.right_roadwheel_6": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.493042,
+              -0.41500092,
+              -1.4610596
+            ],
+            "rotation": [
+              -2.7819394E-4,
+              0.9998775,
+              -0.0029363546,
+              0.015370424
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_6": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 94
+        },
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              -2.8032626E-4,
+              0.99988127,
+              7.706973E-4,
+              0.015387415
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.hull_right_roadwheel_6": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_idler": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_idler": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_pkt_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_sprocket": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_6": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_5": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_sprocket": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_2": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_1": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_4": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_roadwheel_1": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_roadwheel_3": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_roadwheel_2": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_roadwheel_3": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_roadwheel_4": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_roadwheel_5": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.passenger_seat_8": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_6": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_7": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_4": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_5": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.engine": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.track_left": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.transmission": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.track_controller": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.commander_seat": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base",
+                  "regular_targets": {
+                    "regular_input": [
+                      "global"
+                    ]
+                  },
+                  "move_targets": {
+                    "move_input": [
+                      "global"
+                    ]
+                  },
+                  "control_mode": "ground"
+                },
+                "groups": [
+                  {
+                    "view_targets": {
+                      "aim_input": [
+                        "global"
+                      ]
+                    },
+                    "name": "controlGroup.machine_max.backup_fire_control",
+                    "main_weapon_targets": {
+                      "fire_input": [
+                        "global"
+                      ]
+                    },
+                    "secondary_weapon_targets": {
+                      "secondary_fire_input": [
+                        "global"
+                      ]
+                    }
+                  },
+                  {
+                    "view_targets": {
+                      "aim_input_p1": [
+                        "global"
+                      ]
+                    },
+                    "name": "controlGroup.machine_max.commander_override",
+                    "main_weapon_targets": {
+                      "fire_input_p1": [
+                        "global"
+                      ]
+                    },
+                    "secondary_weapon_targets": {
+                      "secondary_fire_input_p1": [
+                        "global"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_2": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_3": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.passenger_seat_1": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base",
+                  "regular_targets": {
+                    "regular_input_p1": [
+                      "global"
+                    ]
+                  },
+                  "move_targets": {
+                    "move_input_p1": [
+                      "global"
+                    ]
+                  },
+                  "control_mode": "ground"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.track_right": {
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 97
+        },
+        "sub_part.machine_max.right_roadwheel_5": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.4638672,
+              -0.41496658,
+              -2.4086914
+            ],
+            "rotation": [
+              -2.5903128E-4,
+              0.9998756,
+              -0.0035276064,
+              0.015369857
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_5": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 92
+        },
+        "sub_part.machine_max.left_roadwheel_4": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.5231018,
+              -0.41503143,
+              0.4970703
+            ],
+            "rotation": [
+              -1.7392845E-4,
+              0.9998769,
+              -0.0031399634,
+              0.015369038
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_4": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 89
+        },
+        "sub_part.machine_max.left_roadwheel_5": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.6096802,
+              -0.41492462,
+              -2.314087
+            ],
+            "rotation": [
+              -2.8175354E-4,
+              0.9998752,
+              -0.0036534534,
+              0.015369689
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_5": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 91
+        },
+        "sub_part.machine_max.left_roadwheel_2": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.4949341,
+              -0.41506577,
+              1.4122314
+            ],
+            "rotation": [
+              -2.488625E-4,
+              0.99987787,
+              0.0028305606,
+              0.015367664
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_2": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 85
+        },
+        "sub_part.machine_max.left_roadwheel_3": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.5523376,
+              -0.4149971,
+              -0.45056152
+            ],
+            "rotation": [
+              -2.896822E-4,
+              0.9998731,
+              -0.0041710148,
+              0.0153724635
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_3": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 87
+        },
+        "sub_part.machine_max.right_roadwheel_2": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.5785828,
+              -0.41510773,
+              1.317627
+            ],
+            "rotation": [
+              -3.7718768E-4,
+              0.9998743,
+              0.0038860491,
+              0.0153683135
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_2": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 86
+        },
+        "sub_part.machine_max.left_roadwheel_1": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.4657898,
+              -0.4151039,
+              2.3599854
+            ],
+            "rotation": [
+              -2.715752E-4,
+              0.9998746,
+              -0.0037918736,
+              0.015372316
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_1": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 83
+        },
+        "sub_part.machine_max.right_roadwheel_1": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.6077576,
+              -0.41514206,
+              2.2653809
+            ],
+            "rotation": [
+              -2.6219137E-4,
+              0.9998736,
+              -0.0040625767,
+              0.015372457
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_1": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 84
+        },
+        "sub_part.machine_max.left_sprocket": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.4368591,
+              -0.20858765,
+              3.2954102
+            ],
+            "rotation": [
+              -2.8018779E-4,
+              0.99988127,
+              7.705083E-4,
+              0.015387449
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_sprocket": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 81
+        },
+        "sub_part.machine_max.right_roadwheel_4": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.550415,
+              -0.4150734,
+              0.40246582
+            ],
+            "rotation": [
+              -2.775816E-4,
+              0.99987733,
+              -0.0030035023,
+              0.015370985
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_4": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 90
+        },
+        "sub_part.machine_max.right_roadwheel_3": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.5212402,
+              -0.41503525,
+              -0.545166
+            ],
+            "rotation": [
+              -2.6181777E-4,
+              0.9998752,
+              -0.0036501528,
+              0.015369437
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_roadwheel_3": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 88
+        },
+        "sub_part.machine_max.right_sprocket": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.6366577,
+              -0.21023941,
+              3.2008057
+            ],
+            "rotation": [
+              -2.8009372E-4,
+              0.99988127,
+              7.706898E-4,
+              0.015387438
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_right_sprocket": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 82
+        },
+        "sub_part.machine_max.left_idler": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.5863953,
+              -0.21165085,
+              -3.1861572
+            ],
+            "rotation": [
+              -2.68171E-4,
+              0.99988157,
+              -4.049778E-6,
+              0.01538765
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_idler": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 95
+        },
+        "sub_part.machine_max.left_roadwheel_6": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.5805054,
+              -0.41496277,
+              -1.3664551
+            ],
+            "rotation": [
+              -2.9130673E-4,
+              0.9998773,
+              -0.0029987167,
+              0.015372109
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.wheel_left_roadwheel_6": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 93
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "default",
+      "registry_key": "machine_max:mtlb",
+      "name": "machine_max.mtlb",
+      "uuid": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0"
+    }
+  },
+  "pos": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "min": [
+    -2.097930908203125,
+    -0.8949241638183594,
+    -3.837890625
+  ],
+  "max": [
+    2.0999755859375,
+    1.0216445922851562,
+    4.214599609375
+  ],
+  "name": "mtlb",
+  "uuid": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0"
+}

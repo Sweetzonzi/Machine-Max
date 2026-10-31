@@ -17,7 +17,7 @@
           "start_bone": "HullRoot",
           "end_bones": [],
           "durability": 320,
-          "mass": 15000,
+          "mass": 14180,
           "projected_area": [
             -1,
             -1,
@@ -328,7 +328,7 @@
             },
             "subsystem.machine_max.track_left": {
               "type": "machine_max:track_drive",
-              "definition": "machine_max:track_drive_heavy",
+              "definition": "machine_max:2s38_track_drive",
               "connector": "connector.machine_max.hull_left_wheel_8",
               "speed_outputs": {
                 "track_speed": [
@@ -345,7 +345,7 @@
             },
             "subsystem.machine_max.track_right": {
               "type": "machine_max:track_drive",
-              "definition": "machine_max:track_drive_heavy",
+              "definition": "machine_max:2s38_track_drive",
               "connector": "connector.machine_max.hull_right_wheel_8",
               "speed_outputs": {
                 "track_speed": [

@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:track_drive",
+  "basic_durability": 30,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "max_drive_torque": 28000, //21.5 t 车重按 35° 爬坡要 ~128 kN 牵引力，左右各 28 kN·m 在主动轮半径 0.384 m 上给到 146 kN
+  "max_brake_torque": 28000, //与驱动同值：约 0.69 g 加减速度，驱动/制动比 1.0
+  "max_hand_brake_torque": 20000,
+  "max_speed": 60, //主动轮角速度上限 (rad/s)，0.384 m 半径折合 83 km/h，高于红线车速 70 km/h
+  "control_inputs": ["car_control"]
+}

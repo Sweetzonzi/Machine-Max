@@ -8,6 +8,7 @@
   "idle_rpm": 500,
   "max_torque_rpm": 1500,
   "red_line_rpm": 2100,
+  "red_line_torque_ratio": 0.909,
   "inertia": 50,
   "cylinder": 8
 }

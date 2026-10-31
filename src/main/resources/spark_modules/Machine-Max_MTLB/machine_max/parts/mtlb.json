@@ -941,7 +941,7 @@
           },
           "subsystem.machine_max.track_left": {
             "type": "machine_max:track_drive",
-            "definition": "machine_max:track_drive_heavy",
+            "definition": "machine_max:mtlb_track_drive",
             "connector": "connector.machine_max.hull_left_sprocket",
             "speed_outputs": {
               "track_speed": [
@@ -958,7 +958,7 @@
           },
           "subsystem.machine_max.track_right": {
             "type": "machine_max:track_drive",
-            "definition": "machine_max:track_drive_heavy",
+            "definition": "machine_max:mtlb_track_drive",
             "connector": "connector.machine_max.hull_right_sprocket",
             "speed_outputs": {
               "track_speed": [

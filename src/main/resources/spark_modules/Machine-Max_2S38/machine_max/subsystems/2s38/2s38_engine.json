@@ -3,12 +3,12 @@
   "type": "machine_max:engine",
   "basic_durability": 60,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
-  "max_power": 370000,
-  "max_torque": 2500,
+  "max_power": 368000,
+  "max_torque": 1500,
   "idle_rpm": 550,
-  "max_torque_rpm": 1500,
-  "red_line_rpm": 2200,
-  "red_line_torque_ratio": 0.9,
+  "max_torque_rpm": 1600,
+  "red_line_rpm": 2600,
+  "red_line_torque_ratio": 0.901,
   "inertia": 50,
   "cylinder": 6,
   "damping_factors": [
