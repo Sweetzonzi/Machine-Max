@@ -17,6 +17,8 @@ from .vehicle import Vehicle
 
 @dataclass
 class Solution:
+    curb_mass: float
+    occupant_mass: float
     mass: float
     r: float
     n_driven: int
@@ -39,8 +41,8 @@ class Solution:
 
 def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
           n_total_wheels: int, material: Material, area_override=None,
-          transmission: Transmission | None = None) -> Solution:
-    mass = vehicle.mass
+          transmission: Transmission | None = None, occupant_mass: float = 60.0) -> Solution:
+    mass = vehicle.mass + occupant_mass
     wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
     if not wheel_subs:
         raise SystemExit("整车没有任何 type=wheel 的碰撞箱，无法取轮半径")
@@ -95,11 +97,13 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
     for index, ratio in enumerate(forward, start=1):
         total_ratio = ratio * stage_ratio
         tau_w = source.max_torque * total_ratio / n_driven
-        force = source.max_torque * total_ratio / r
-        if tau_w > mdf_max:
-            bound = "轮端夹紧"
-        elif force > grip:
+        source_force = source.max_torque * total_ratio / r
+        motor_force = sum(min(tau_w, limit) for limit in drive_limits) / r
+        force = min(motor_force, grip)
+        if grip < motor_force:
             bound = "附着"
+        elif motor_force < source_force:
+            bound = "轮端夹紧"
         else:
             bound = "动力源"
         gears.append(dict(gear=index, ratio=total_ratio, tau_w=tau_w,
@@ -162,7 +166,8 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
             f"max_power 字段 {source.max_power:.0f} W 与曲线峰值 {rated:.0f} W 偏差 "
             f"{abs(rated - source.max_power) / source.max_power * 100:.1f}% > 1%")
 
-    return Solution(mass=mass, r=r, n_driven=n_driven, n_total=n_total, max_drive_force=mdf_max,
+    return Solution(curb_mass=vehicle.mass, occupant_mass=occupant_mass, mass=mass,
+                    r=r, n_driven=n_driven, n_total=n_total, max_drive_force=mdf_max,
                     area=area, area_sum=tuple(area_sum),
                     c_rr=c_rr, mu=mu, gears=gears, top=top, top_upper=top_upper,
                     peak_power=peak, power_util=util, rated_power=rated,

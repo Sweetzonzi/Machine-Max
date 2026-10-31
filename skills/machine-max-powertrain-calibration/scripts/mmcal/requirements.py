@@ -69,13 +69,15 @@ def requirements(args, source, gearbox, sol) -> list:
         first = sol.gears[0]
         need = sol.mass * G * (math.sin(theta) + sol.c_rr * math.cos(theta))
         add(f"{args.grade:g}° 爬坡牵引力", need, first["force"], "N", "一档满扭矩牵引力")
-        add(f"{args.grade:g}° 坡面附着", first["force"], sol.mu * sol.mass * G * math.cos(theta), "N",
-            "驱动轮合计附着上限")
+        driven_grip = (sol.mu * sol.mass * G * math.cos(theta)
+                       * sol.n_driven / sol.n_total)
+        add(f"{args.grade:g}° 坡面附着", need, driven_grip, "N",
+            "按驱动轮占比与各轮均分载荷估算")
 
     if args.gears:
         spread = sol.gears[0]["ratio"] / sol.gears[-1]["ratio"]
         limit = 1 + math.log(spread) / math.log(1.176) if spread > 1 else 0
         add("档数", args.gears, limit, "档",
-            f"一档到最高档跨 {spread:.1f} 倍，按 15% 换挡收益最多放 {limit:.1f} 档")
+            f"一档到最高档跨 {spread:.1f} 倍，按相邻档总传动比差至少 15% 最多放 {limit:.1f} 档")
 
     return rows

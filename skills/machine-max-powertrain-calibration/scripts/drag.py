@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -43,23 +44,25 @@ def part_rows(vehicle) -> list:
     return sorted(rows, key=lambda r: r["z"], reverse=True)
 
 
-def report_text(vehicle, material, speeds, area_override, total_boxes):
+def report_text(vehicle, material, speeds, area_override, total_boxes, occupant_mass=60.0):
     parts = part_rows(vehicle)
     area_sum = [sum(r[k] for r in parts) for k in "xyz"]
     silhouette = tuple(silhouette_area(total_boxes, axis) for axis in (0, 1, 2))
     area = tuple(float(x) for x in area_override) if area_override else silhouette
     c_rr = material.c_rr * BLOCK_ROLLING
-    mass = vehicle.mass
+    mass = vehicle.mass + occupant_mass
     f_roll = rolling(c_rr, mass)
 
     lines = []
     push = lines.append
+    mass_label = "空车运行质量" if occupant_mass == 0 else "单人运行质量"
     push(f"# {vehicle.name} 阻力分解")
     push("")
     push("## 整车")
     push("| 项 | 值 |")
     push("|---|---|")
-    push(f"| 整备质量 | {mass:,.0f} kg |")
+    push(f"| 整备质量（空车） | {vehicle.mass:,.0f} kg |")
+    push(f"| {mass_label} | {mass:,.0f} kg（乘员 {occupant_mass:g} kg） |")
     push(f"| 轮胎材质 | `{material.source}`，`C_rr` {c_rr:.4f} |")
     push(f"| 滚阻 | {c_rr:.4f} × {mass:,.0f} × 9.81 = {f_roll / 1000:.2f} kN |")
     push(f"| 气动面积 X/Y/Z（轮廓） | {area[0]:.2f} / {area[1]:.2f} / {area[2]:.2f} m² |")
@@ -72,10 +75,10 @@ def report_text(vehicle, material, speeds, area_override, total_boxes):
     for row in parts:
         push(f"| {row['name']} | {row['mass']:,.0f} | {row['x']:.2f} | {row['y']:.2f} | "
              f"{row['z']:.2f} | {aero(row['z'], 100 / KMH):.0f} |")
-    push(f"| **合计（相加）** | {mass:,.0f} | {area_sum[0]:.2f} | {area_sum[1]:.2f} | "
+    push(f"| **合计（相加）** | {vehicle.mass:,.0f} | {area_sum[0]:.2f} | {area_sum[1]:.2f} | "
          f"{area_sum[2]:.2f} | {aero(area_sum[2], 100 / KMH):.0f} |")
     push("")
-    push("> 逐零件相加不含遮挡，是上限；轮廓是包围盒投影的并集。真实值落在两者之间。")
+    push("> 逐零件相加不含遮挡；轮廓是包围盒投影的并集。游戏内遮挡与气动点会改变有效阻力，两者不是严格上下界。")
     push("")
     push("## 阻力 @ 速度")
     push("| v (km/h) | 气动（轮廓） | 气动（相加） | 滚阻 | 合计（轮廓） | 轮端功率（轮廓） |")
@@ -90,7 +93,8 @@ def report_text(vehicle, material, speeds, area_override, total_boxes):
     push("")
     push("轮端功率是匀速维持该车速所需的功率；折算成曲轴功率要除以传动效率。")
     return "\n".join(lines), dict(
-        vehicle=vehicle.name, mass=mass, c_rr=c_rr, rolling_force=f_roll,
+        vehicle=vehicle.name, mass=vehicle.mass, operating_mass=mass,
+        occupant_mass=occupant_mass, c_rr=c_rr, rolling_force=f_roll,
         area=dict(x=area[0], y=area[1], z=area[2]),
         area_sum=dict(x=area_sum[0], y=area_sum[1], z=area_sum[2]),
         parts=parts,
@@ -110,7 +114,11 @@ def main(argv=None):
                         help=f"速度点 km/h，逗号分隔，默认 {','.join(map(str, DEFAULT_SPEEDS))}")
     parser.add_argument("--area", help="覆盖迎风面积，形如 13.4 或 28,42,13")
     parser.add_argument("--json", action="store_true", help="输出 JSON 而不是 Markdown")
+    parser.add_argument("--occupant-mass", type=float, default=60.0,
+                        help="一名乘员的质量 kg，默认 60；空车用 0")
     args = parser.parse_args(argv)
+    if not math.isfinite(args.occupant_mass) or args.occupant_mass < 0:
+        parser.error("--occupant-mass 必须是非负有限数")
 
     script_dir = Path(__file__).resolve().parent
     _, registry, pack = load_pack(args, script_dir)
@@ -136,7 +144,8 @@ def main(argv=None):
         area_override = parts if len(parts) == 3 else [parts[0]] * 3
 
     text, data = report_text(vehicle, material, speeds, area_override,
-                             [b for sp in vehicle.sub_parts for b in hitbox_boxes(sp)])
+                             [b for sp in vehicle.sub_parts for b in hitbox_boxes(sp)],
+                             args.occupant_mass)
     print(json.dumps(data, ensure_ascii=False, indent=2) if args.json else text)
     flush_warnings(registry)
     return 0

@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -37,12 +38,16 @@ def add_arguments(parser):
     parser.add_argument("--grade", type=float, help="最大爬坡度（角度，度）")
     parser.add_argument("--gears", type=int, help="给定档位数，校验换挡收益")
     parser.add_argument("--area", help="覆盖气动面积，形如 10 或 5,8,10（X,Y,Z，m²）")
+    parser.add_argument("--occupant-mass", type=float, default=60.0,
+                        help="一名乘员的质量 kg，默认 60；空车用 0")
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Machine-Max 动力链静态标定器")
     add_arguments(parser)
     args = parser.parse_args(argv)
+    if not math.isfinite(args.occupant_mass) or args.occupant_mass < 0:
+        parser.error("--occupant-mass 必须是非负有限数")
 
     script_dir = Path(__file__).resolve().parent
     _, registry, pack = load_pack(args, script_dir)
@@ -100,7 +105,7 @@ def main(argv=None):
 
     n_total_wheels = len(wheel_subs) or len(wheel_defs)
     sol = solve(vehicle, source, gearbox, wheel_defs, n_total_wheels, material, area_override,
-                transmission)
+                transmission, args.occupant_mass)
     reqs = requirements(args, source, gearbox, sol)
 
     print(report_json(vehicle, source, gearbox, material, sol, reqs) if args.json

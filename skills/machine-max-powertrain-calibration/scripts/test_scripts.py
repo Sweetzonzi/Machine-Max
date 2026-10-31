@@ -84,6 +84,10 @@ class K17Test(unittest.TestCase):
     def test_mass_and_geometry(self):
         vehicle = self.data["vehicle"]
         self.assertAlmostEqual(vehicle["mass"], 12900.0, places=1)
+        self.assertAlmostEqual(vehicle["operating_mass"], 12960.0, places=1)
+        self.assertAlmostEqual(vehicle["occupant_mass"], 60.0, places=1)
+        self.assertAlmostEqual(vehicle["power_to_weight_kw_per_t"],
+                               self.data["power_source"]["peak_power"] / vehicle["operating_mass"])
         self.assertEqual(vehicle["wheels"], 8)
         self.assertAlmostEqual(vehicle["radius"], 0.84375, places=5)
         # 面积必须来自模型包围盒，不能等于 JSON 里的 -1
@@ -116,6 +120,32 @@ class K17Test(unittest.TestCase):
         self.assertAlmostEqual(upper["kmh"], 79.0, delta=0.5)
         self.assertEqual(top["bound"], "功率")
         self.assertEqual(top["gear"], 7)
+
+    def test_empty_vehicle_uses_empty_mass_in_physics(self):
+        empty = run_json(calibrate, ["--pack", "Machine-Max_K17",
+                                     "--pack-root", str(PACK_ROOT),
+                                     "--occupant-mass", "0", "--json"])
+        self.assertEqual(empty["vehicle"]["operating_mass"], empty["vehicle"]["mass"])
+        self.assertGreater(empty["gearbox"]["gears"][0]["accel"],
+                           self.data["gearbox"]["gears"][0]["accel"])
+        self.assertGreater(empty["top_speed"]["top"]["kmh"],
+                           self.data["top_speed"]["top"]["kmh"])
+        self.assertIn("## 摘要", self.text)
+
+    def test_wheel_torque_limit_caps_gear_force(self):
+        registry = mmcal.Registry()
+        registry.load_root(PACK_ROOT)
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:k17"], "k17")
+        source = mmcal.Engine.from_entry(registry.need("subsystems", "machine_max:k17_engine", "test"))
+        gearbox = mmcal.Gearbox.from_entry(
+            registry.need("subsystems", "machine_max:k17_gearbox", "test"))
+        material = mmcal.Material.from_entry(
+            registry.need("materials", "machine_max:off_road_tire", "test"))
+        wheels = [mmcal.Wheel(str(i), 100.0, 0.0, 0.0, "test") for i in range(8)]
+        sol = mmcal.solve(vehicle, source, gearbox, wheels, 8, material)
+        self.assertEqual(sol.gears[0]["bound"], "轮端夹紧")
+        self.assertAlmostEqual(sol.gears[0]["force"], 800.0 / sol.r)
+        self.assertAlmostEqual(sol.gears[0]["accel"], sol.gears[0]["force"] / sol.mass)
 
 
 class TransmissionTest(unittest.TestCase):
@@ -231,7 +261,9 @@ class DragTest(unittest.TestCase):
 
     def test_rolling(self):
         self.assertAlmostEqual(self.data["c_rr"], 0.04, places=4)
-        self.assertAlmostEqual(self.data["rolling_force"] / 1000, 5.06, delta=0.01)
+        self.assertAlmostEqual(self.data["operating_mass"], 12960.0)
+        self.assertAlmostEqual(self.data["rolling_force"],
+                               self.data["c_rr"] * self.data["operating_mass"] * mmcal.G)
 
     def test_areas(self):
         self.assertAlmostEqual(self.data["area"]["z"], 13.40, delta=0.2)
@@ -321,6 +353,16 @@ class RequirementTest(unittest.TestCase):
     def test_strict_exit(self):
         self.assertEqual(self.strict_code, 1)
         self.assertEqual(self.code, 0)
+
+    def test_partial_drive_grip_uses_driven_wheel_load(self):
+        data = run_json(calibrate, ["--pack", "Machine-Max_Civilian",
+                                    "--template", "mini_ev", "--pack-root", str(PACK_ROOT),
+                                    "--grade", "35", "--json"])
+        grip = next(row for row in data["residuals"] if row["name"] == "35° 坡面附着")
+        self.assertAlmostEqual(grip["avail"],
+                               data["vehicle"]["mu"] * data["vehicle"]["operating_mass"]
+                               * mmcal.G * math.cos(math.radians(35)) * 2 / 4)
+        self.assertFalse(grip["ok"])
 
 
 class CliTest(unittest.TestCase):
