@@ -19,8 +19,8 @@
       "lower_limit": -1,
       "upper_limit": 2,
       "equilibrium": -0.1,
-      "stiffness": 260000,
-      "damping": 19000
+      "stiffness": 156000,
+      "damping": 11500
     },
     "xr": {
       "lower_limit": 1,

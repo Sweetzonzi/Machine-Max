@@ -434,6 +434,36 @@ class TrackTest(unittest.TestCase):
         self.assertAlmostEqual(data["gears"][-1]["red_kmh"], 61.5, delta=0.2)
 
 
+class SdkfzTest(unittest.TestCase):
+    """重装八轮装甲车：11.7 t / 210 hp / 80 km/h，自定义公路胎。"""
+
+    @classmethod
+    def setUpClass(cls):
+        need_packs(cls)
+        cls.data = run_json(calibrate, ["--pack", "Machine-Max_Sdkfz234",
+                                        "--pack-root", str(PACK_ROOT), "--json"])
+
+    def test_mass(self):
+        self.assertAlmostEqual(self.data["vehicle"]["mass"], 11700.0, places=1)
+        self.assertAlmostEqual(self.data["vehicle"]["power_to_weight_kw_per_t"], 13.3, delta=0.1)
+        self.assertEqual(self.data["vehicle"]["wheels"], 8)
+
+    def test_tire_material(self):
+        self.assertAlmostEqual(self.data["vehicle"]["c_rr"], 0.02, places=4)
+        self.assertAlmostEqual(self.data["vehicle"]["mu"], 1.45 * 0.7, places=4)
+
+    def test_top_speed_is_red_line_bound(self):
+        top = self.data["top_speed"]["top"]
+        self.assertAlmostEqual(top["red_kmh"], 80.0, delta=0.2)
+        self.assertAlmostEqual(top["kmh"], 80.0, delta=0.2)
+        self.assertEqual(top["bound"], "红线")
+        self.assertEqual(top["gear"], 7)
+
+    def test_ratio_chain(self):
+        self.assertAlmostEqual(self.data["gearbox"]["gears"][-1]["ratio"], 7.95, places=2)
+        self.assertEqual(len(self.data["gearbox"]["gears"]), 7)
+
+
 class RequirementTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
