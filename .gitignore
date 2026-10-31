@@ -49,3 +49,7 @@ Machine-Max.code-workspace
 /spark-report-*.md
 /spark-reports/
 /spark.json
+
+# 本地技能注册：.agents/skills 是指向 skills/ 的目录联接，由 DSH 的 project-agents
+# 扫描根按需读取，不入库（克隆后如需注册，重建一次链接即可）
+/.agents/

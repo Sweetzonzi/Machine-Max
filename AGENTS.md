@@ -257,6 +257,29 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
   `./gradlew syncSchemas`；不要用一次提交顺手覆盖另一边来掩盖漏跑。
 - 上游存在他人未提交改动时先与插件维护者确认，不要把无关改动卷进该提交。
 
+## 技能包（`skills/`）
+
+`skills/` 下的四个技能同时服务两类使用者——内容包作者与项目开发本身：`blockbench-content-pack`（模型适配与导出校验）、`machine-max-aui-hud`（AUI HUD 与 MoLang）、`machine-max-powertrain-calibration`（动力链标定与性能回归）、`spark-profiler`（sparkprofile 解析与热点定位）。每个技能一个目录，入口是该目录的 `SKILL.md`，frontmatter 的 `name` 必须与目录名一致；脚本、引用文档都放在同一目录下。
+
+- **唯一来源是 `skills/<name>/`**，随仓库入库。仓库内外都不放第二份副本——副本必然在下一次改进后漂移。
+- **注册是本地目录联接，不入库**。DSH 扫描的项目技能根是 `<项目根>/.dsh/skills` 与 `<项目根>/.agents/skills`，本仓库用后者，一条联接把整个 `skills/` 挂上去：
+
+  ```powershell
+  New-Item -ItemType Directory .agents -Force
+  New-Item -ItemType Junction -Path .agents\skills -Target .\skills
+  ```
+
+  ```bash
+  # 等效的 cmd 写法（Git Bash 里用双斜杠转义）
+  cmd //c "mkdir .agents 2>nul & mklink /J .agents\skills .\skills"
+  ```
+
+  目录联接不需要管理员权限或开发者模式，`.gitignore` 忽略 `/.agents/`。克隆之后重建这一条即可；`git clean -xdf` 会把它一并删掉，删掉后技能只是暂时不可见，内容不受影响。
+- **不提交链接**：目录联接是机器本地的重解析点，git 存不成链接，提交 `.agents/skills` 只会把 `skills/` 的每个文件再复制进索引。改用文件符号链接能入库，但要求 `core.symlinks=true` 与符号链接权限，未开开发者模式的 Windows 会把它检出成普通文本文件，整棵树静默失效。内容已经全部在 `skills/` 里，需要借仓库传递的只有这一步注册动作，因此写在这里。
+- **新增技能**：建 `skills/<name>/SKILL.md` 并写好 frontmatter，联接会自动列出它，不需要改其它配置。
+- **别的 agent 目录不是来源**：`~/.codex/skills`、`~/.workbuddy/skills` 之类的个人链接只服务那些 agent。DSH 侧能否看到它们取决于本机 `@michengai/dsh-skills-manager` 的来源开关，不是本仓库的注册方式。
+- 核对：`ls .agents/skills` 列出的目录应与 `skills/` 一致，且 `git check-ignore -v .agents/skills` 有命中。
+
 ## 约定
 
 - **Kotlin 声明，Java 逻辑**：注册表文件（MM\*.kt）、数据生成器、资源模块用 Kotlin；载具核心、物理、网络、渲染用 Java。
