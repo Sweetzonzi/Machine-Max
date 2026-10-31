@@ -71,15 +71,16 @@
 | [界面-内容包AUI页面加载可行性调查](进行中/界面-内容包AUI页面加载可行性调查.md) | 结论已落地：`DocumentModule` 在客户端把内容包 `documents/` 写入 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`。待客户端实机验收；`AuiResourceService` 包装器为备选 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；压溃与零件间、生物路径迁移不排期 |
 | [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
-| [载具系统-殉爆机制设计](进行中/载具系统-殉爆机制设计.md) | 第十版；`cookoff` 贡献字段与 Codec、装弹机摧毁触发、实际库存合成、命中事件化结算、连接点主线程应用、Level 级冲量统一发布与波前末段裁剪均已接入；`CookoffComposition` / `CookoffContribution` 附单元测试；剩余数值标定与运行期验收见 §8 |
+| [载具系统-殉爆机制设计](进行中/载具系统-殉爆机制设计.md) | 第十三版；`cookoff` 贡献字段与 Codec、装弹机库存与发射器膛内单发的摧毁触发、实际库存合成、命中事件化结算、连接点主线程应用、Level 级冲量统一发布与波前末段裁剪均已接入；`CookoffComposition` / `CookoffContribution` 附单元测试，模块伤害与膛内单发殉爆走 GameTest；剩余数值标定与运行期验收见 §8 |
 
 ## 计划中
 
 | 文档 | 现状 |
 | --- | --- |
+| [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
 | [武器系统-装弹机模块化损伤实施计划](计划中/武器系统-装弹机模块化损伤实施计划.md) | 实施指导；P1、P2、P4 已接入（`feed` / `magazine` 两个模块与模块恢复门槛、`pass_damage=false` 时模块伤害落地的入口修正、实时供给门控与交付清理、旧存档比例分摊进模块、世界同步协议升到 `sync:2.8.0`），弹仓受击来源已下沉到模块、殉爆定位就位，P3 剩余再生与退弹门控、弹仓损坏清理与起爆入口，P5 待做命中箱标注与 T01—T23 验收；普通装弹机仅做公共接口适配 |
-| [武器系统-装弹机装填语义与供给绑定重构计划](计划中/武器系统-装弹机装填语义与供给绑定重构计划.md) | 设计定稿、未实施；`feed` / `magazine` 分块、`reload_round_by_round`、对接状态机与控制器独占绑定均未落地，代码仍是该文 §2 描述的现状 |
+| [武器系统-装弹机装填语义与供给绑定重构计划](计划中/武器系统-装弹机装填语义与供给绑定重构计划.md) | 已实施、待实机验收；`feed` / `magazine` 分块（含 `reload_round_by_round`）、对接状态机与控制器独占绑定均已落地，T01—T19 的服务端用例通过，客户端画面与 HUD 进度环待 runClient 核对 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
