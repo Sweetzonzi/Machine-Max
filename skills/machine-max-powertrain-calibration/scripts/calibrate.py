@@ -21,8 +21,8 @@ import math
 import sys
 from pathlib import Path
 
-from mmcal import (Engine, Gearbox, Material, Motor, Transmission, Wheel, requirements,
-                   resolve_vehicle, solve, wheel_material, wheel_radii)
+from mmcal import (Engine, Gearbox, Material, Motor, Transmission, drive_system,
+                   requirements, resolve_vehicle, solve, wheel_material, wheel_radii)
 from mmcal.cli import add_common, flush_warnings, load_pack, pick_template
 from mmcal.report import report_json, report_text
 
@@ -68,9 +68,7 @@ def main(argv=None):
 
     gearbox_ref = next(vehicle.subsystem_refs(":gearbox"), None)
     transmission_ref = next(vehicle.subsystem_refs(":transmission"), None)
-    wheel_refs = list(vehicle.subsystem_refs(":wheel_driver"))
-    if not wheel_refs:
-        raise SystemExit("整车没有 machine_max:wheel_driver 子系统")
+    drive = drive_system(vehicle, registry)
 
     if gearbox_ref:
         gearbox = Gearbox.from_entry(
@@ -80,16 +78,6 @@ def main(argv=None):
         gearbox = Gearbox(1.0, [1.0], 0.0, "")
         registry.warnings.append("整车没有 gearbox，挡位固定为 1.00")
     transmission = Transmission.from_ref(transmission_ref[2]) if transmission_ref else None
-
-    wheel_defs = []
-    for sub_part_ref, wheel_name, wheel_ref in wheel_refs:
-        definition = wheel_ref.get("definition")
-        if not definition:
-            continue
-        wheel_defs.append(Wheel.from_entry(
-            registry.need("subsystems", definition, sub_part_ref.part_id), wheel_name))
-    if not wheel_defs:
-        raise SystemExit("车轮子系统都没有 definition")
 
     wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
     material_ids = {wheel_material(sp) for sp in wheel_subs if wheel_material(sp)}
@@ -105,8 +93,7 @@ def main(argv=None):
         parts = [float(x) for x in args.area.split(",")]
         area_override = parts if len(parts) == 3 else [parts[0]] * 3
 
-    n_total_wheels = len(wheel_subs) or len(wheel_defs)
-    sol = solve(vehicle, source, gearbox, wheel_defs, n_total_wheels, material, area_override,
+    sol = solve(vehicle, source, gearbox, drive, material, area_override,
                 transmission, args.occupant_mass, args.cd_area)
     reqs = requirements(args, source, gearbox, sol)
 

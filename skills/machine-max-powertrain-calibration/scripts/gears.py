@@ -18,17 +18,16 @@ import math
 import sys
 from pathlib import Path
 
-from mmcal import (KMH, Engine, Gearbox, Motor, Transmission, resolve_vehicle, wheel_radii)
+from mmcal import (KMH, Engine, Gearbox, Motor, Transmission, drive_system,
+                   resolve_vehicle)
 from mmcal.cli import add_common, flush_warnings, load_pack, pick_template
 
 
 def collect_drive(vehicle, registry) -> dict:
-    """取传动三段与轮半径；动力源缺失时 source 为 None。"""
+    """取传动三段与驱动半径；动力源缺失时 source 为 None。"""
     gearbox_ref = next(vehicle.subsystem_refs(":gearbox"), None)
     transmission_ref = next(vehicle.subsystem_refs(":transmission"), None)
-    wheel_refs = list(vehicle.subsystem_refs(":wheel_driver"))
-    if not wheel_refs:
-        raise SystemExit("整车没有 machine_max:wheel_driver 子系统")
+    drive = drive_system(vehicle, registry)
 
     if gearbox_ref:
         gearbox = Gearbox.from_entry(
@@ -39,22 +38,10 @@ def collect_drive(vehicle, registry) -> dict:
         registry.warnings.append("整车没有 gearbox，挡位固定为 1.00")
     transmission = Transmission.from_ref(transmission_ref[2]) if transmission_ref else None
 
-    # 驱动端：max_drive_force > 0 的轮子；没有传动箱时无法从 power_outputs 区分
-    driven_names, wheel_names = [], []
-    for _, name, ref in wheel_refs:
-        definition = ref.get("definition")
-        if not definition:
-            continue
-        wheel_names.append(name)
-        roll = registry.need("subsystems", definition, "车轮子系统").data.get("roll") or {}
-        if float(roll.get("max_drive_force", 10000.0)) > 0:
-            driven_names.append(name)
-    notes = []
+    # 驱动端：力矩上限 > 0 的那几个；没有传动箱时无法从 power_outputs 区分
+    driven_names = [e.name for e in drive["ends"] if e.max_drive_torque > 0]
+    notes = list(drive["notes"])
     trans_ratio = transmission.driven_ratio(set(driven_names), notes) if transmission else 1.0
-
-    radii = sorted({round(r, 5) for sp in vehicle.sub_parts for r in wheel_radii(sp)})
-    if not radii:
-        raise SystemExit("整车没有任何 type=wheel 的碰撞箱，无法取轮半径")
 
     source = None
     kind, ref, _ = vehicle.power_source_ref()
@@ -64,8 +51,8 @@ def collect_drive(vehicle, registry) -> dict:
         source = (Engine if kind == "engine" else Motor).from_entry(entry)
 
     return dict(gearbox=gearbox, transmission=transmission, trans_ratio=trans_ratio,
-                driven=driven_names, total_wheels=len(wheel_names),
-                radius=radii[-1], radii=radii, source=source, notes=notes)
+                kind=drive["kind"], driven=driven_names, total_wheels=drive["total"],
+                radius=drive["radius"], radii=drive["radii"], source=source, notes=notes)
 
 
 def red_line_speed(source, radius: float, total_ratio: float) -> float:
@@ -97,11 +84,15 @@ def report_text(vehicle, drive) -> tuple:
         push(f"| 传动箱减速比 | {drive['trans_ratio']:g} |")
         push(f"| 挡位之后的固定减速 | {gearbox.final_ratio:g} × {drive['trans_ratio']:g} = "
              f"{fixed:g} |")
-    push(f"| 轮半径 | {drive['radius']:.5f} m（模型轮面球） |")
-    push(f"| 驱动轮 | {len(drive['driven'])} / {drive['total_wheels']} |")
+    push(f"| 驱动半径 | {drive['radius']:.5f} m（"
+         f"{'主动轮' if drive['kind'] == 'track' else '轮面'}碰撞球） |")
+    if drive["kind"] == "track":
+        push(f"| 驱动方式 | 履带 {len(drive['driven'])} 条（左右各一） |")
+    else:
+        push(f"| 驱动轮 | {len(drive['driven'])} / {drive['total_wheels']} |")
     if len(drive["radii"]) > 1:
         others = ", ".join(f"{r:.5f}" for r in drive["radii"][:-1])
-        push(f"| 其他轮半径 | {others} m（按最大者折算） |")
+        push(f"| 其他半径 | {others} m（按最大者折算） |")
     push("")
     push("## 档位")
     head = "| 档 | 挡位传动比 | 总传动比 | 级比 | 换挡收益 |"
@@ -139,6 +130,7 @@ def report_text(vehicle, drive) -> tuple:
         transmission=dict(source=drive["transmission"].source if drive["transmission"] else None,
                           ratio=drive["trans_ratio"]),
         radius=drive["radius"], driven=len(drive["driven"]), wheels=drive["total_wheels"],
+        drive_kind=drive["kind"],
         gears=[dict(gear=i + 1, ratio=total,
                     step=(ratios[i] / ratios[i + 1]) if i + 1 < len(ratios) else None,
                     red_kmh=(red_line_speed(source, drive["radius"], total)

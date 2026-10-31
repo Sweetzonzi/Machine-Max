@@ -43,9 +43,12 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     push("|---|---|")
     push(f"| 整备质量（空车） | {fmt(sol.curb_mass, 0)} kg |")
     push(f"| {mass_label} | {fmt(sol.mass, 0)} kg（乘员 {sol.occupant_mass:g} kg） |")
-    push(f"| 驱动轮数 | {sol.n_driven} / {sol.n_total} |")
-    push(f"| 轮端力矩上限 | {sol.max_drive_force:,.0f} N·m |")
-    push(f"| 轮半径 | {sol.r:.5f} m（模型轮面球） |")
+    if sol.drive_kind == "track":
+        push(f"| 驱动方式 | 履带 {sol.n_driven} 条（左右各一） |")
+    else:
+        push(f"| 驱动轮数 | {sol.n_driven} / {sol.n_total} |")
+    push(f"| 驱动端力矩上限 | {sol.max_drive_torque:,.0f} N·m |")
+    push(f"| 驱动半径 | {sol.r:.5f} m（{'主动轮' if sol.drive_kind == 'track' else '轮面'}碰撞球） |")
     source_label = {"override": "`--cd-area` 指定",
                     "pack": "按各子零件气动点求和"}[sol.aero_source]
     push(f"| 前向气动面积 `Cd·A` | {sol.cd_area:.2f} m²（{source_label}） |")
@@ -79,7 +82,7 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     else:
         outputs = len(sol.transmission.ratios)
         push(f"| 传动箱 | `{sol.transmission.source}` |")
-        push(f"| 输出端 / 驱动轮 | {outputs} / {sol.n_driven} |")
+        push(f"| 输出端 / 驱动端 | {outputs} / {sol.n_driven} |")
         push(f"| 传动箱减速比 | {sol.transmission_ratio:g} |")
         push(f"| 挡位之后的固定减速 | {gearbox.final_ratio:g} × {sol.transmission_ratio:g} = "
              f"{gearbox.final_ratio * sol.transmission_ratio:g} |")
@@ -99,7 +102,12 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
     else:
         push(f"单档，总传动比 {ratios[0]:.2f}，无换挡损失")
     push("")
-    push("档位表按峰值扭矩和各轮均分载荷估算，牵引力已受轮端力矩与附着上限约束；加速度未扣行驶阻力。")
+    if sol.drive_kind == "track":
+        push("档位表按峰值扭矩与左右履带平分估算，牵引力已受履带驱动力矩与附着上限约束；"
+             "加速度未扣行驶阻力。")
+    else:
+        push("档位表按峰值扭矩和各轮均分载荷估算，牵引力已受轮端力矩与附着上限约束；"
+             "加速度未扣行驶阻力。")
     push("")
     push("## 极速")
     push("| 项 | 值 |")
@@ -144,6 +152,7 @@ def report_json(vehicle, source, gearbox, material, sol, reqs) -> str:
                      mass=sol.curb_mass, operating_mass=sol.mass,
                      occupant_mass=sol.occupant_mass,
                      power_to_weight_kw_per_t=sol.rated_power / sol.mass,
+                     drive_kind=sol.drive_kind,
                      driven=sol.n_driven, wheels=sol.n_total, radius=sol.r,
                      area=dict(x=sol.area[0], y=sol.area[1], z=sol.area[2]),
                      area_sum=dict(x=sol.area_sum[0], y=sol.area_sum[1], z=sol.area_sum[2]),
@@ -159,8 +168,8 @@ def report_json(vehicle, source, gearbox, material, sol, reqs) -> str:
         transmission=dict(source=sol.transmission.source if sol.transmission else None,
                           ratio=sol.transmission_ratio,
                           outputs=sol.transmission.ratios if sol.transmission else {}),
-        wheel=dict(max_drive_force=sol.max_drive_force, driven=sol.n_driven,
-                   total=sol.n_total),
+        wheel=dict(kind=sol.drive_kind, max_drive_torque=sol.max_drive_torque,
+                   driven=sol.n_driven, total=sol.n_total, radius=sol.r),
         material=dict(source=material.source, c_rr=material.c_rr,
                       friction=list(material.friction_xy)),
         top_speed=dict(top=sol.top, upper=sol.top_upper),

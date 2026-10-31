@@ -15,7 +15,7 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 
 - 新载具首次配动力链，或从别的载具复制参数后调整。
 - 症状：极速明显低于预期、起步或加速发肉、爬坡无力、驱动轮空转、刹车感远强于加速感、HUD 标称马力与实际观感不符。
-- 内容包改动了 `*_engine.json`、`*_motor.json`、`*_gearbox.json`、`*_transmission.json`、`*_wheel_driver.json`、部件质量或轮胎材质之后。
+- 内容包改动了 `*_engine.json`、`*_motor.json`、`*_gearbox.json`、`*_transmission.json`、`*_wheel_driver.json`、`*_track_drive.json`、部件质量或轮胎材质之后。
 
 换挡顿挫、高低档来回跳和油门响应迟滞先查控制逻辑。松油门拖拽感还可能涉及动力源内阻参数，需结合滑行测试判断。
 
@@ -51,8 +51,8 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 | 量 | 来源 | 影响 |
 |---|---|---|
 | 整备质量 `M_0`、运行质量 `M` | 各部件 `mass` 之和；`M = M_0 +` 乘员质量 | 加速、爬坡、附着极限、功重比 |
-| 轮半径 `r` | **模型**：`type: "wheel"` 的 cube 在 y 向尺寸的一半 | `i_top`、牵引力换算、`max_drive_force` 折成牛顿 |
-| 驱动轮数 `N` | 接在传动上的轮 | 单轮力矩分配 |
+| 轮半径 `r` | **模型**：`type: "wheel"` 的 cube 在 y 向尺寸的一半；履带车取**主动轮**那颗球 | `i_top`、牵引力换算、`max_drive_force` 折成牛顿 |
+| 驱动轮数 `N` | 接在传动上的轮；履带车是左右两个驱动端 | 单轮力矩分配 |
 | 传动箱减速比 `r_trans` | 传动箱 `power_outputs` 里该端的分值 | `i_top`；漏算会把极速算低 |
 | 前向阻力面积 `Cd·A` | 各子零件 `hydrodynamics` 的前向二阶系数 × 前向投影面积，求和 | 极速处的气动阻力 |
 | `C_rr` | 轮胎材质的 `rolling_friction` | 滚阻、滑行减速 |
@@ -61,6 +61,8 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 `Cd·A` 不能只按模型量：每个子零件都有一个气动点，`hydrodynamics` 没写时按默认系数 `[0.1, 1.0]` 计，所以「车壳 + 轮子 + 车门各算一遍」才是游戏里的阻力口径。写了系数的零件按自己的值替换，遮挡会把实际阻力再压低一档，脚本不复现遮挡，给出的 `Cd·A` 因此是上界。
 
 `r` 没有对应的 JSON 字段，只能从模型读：轮子的碰撞球半径就是模型 cube 的 y 尺寸一半。轮子画大一圈，`i_top` 与 `max_drive_force` 的换算会一起变，所以改模型之后必须重算 `i_top`，并在报告中记录新的 `r`。
+
+履带车的 `r` 取主动轮那颗球，不取最大的负重轮：`TrackDriveSubsystem.radius()` 读的是被驱动子零件的碰撞球，负重轮再大也只承重不换算车速。主动轮在模板里没有显式指向，脚本按 `track_drive` 的 `connector` 名去掉前缀去匹配子零件名（`hull_left_sprocket` → `left_sprocket`），因此主动轮子零件要按这个名字命。
 
 `r_trans` 同样不在变速箱里：它在部件的 `subsystem_data` 下，是传动箱子系统自己的一张「输出端 → 减速比」表，键是子系统名，值是减速比。单速车（只有电机、没有变速箱）全靠这张表，`r_trans = 1` 时动力源转速就等于轮速换算值。
 
@@ -81,6 +83,7 @@ description: 标定 Machine-Max 内容包载具的动力源、传动、车轮和
 
 - 内燃机的 `max_power`（W）会限制实际扭矩；它应与限幅后曲线的峰值功率相符。电机的 `max_power`（W）与 `max_torque`（N·m）共同决定基速，`red_line_power_ratio` 决定高转功率衰减。曲线形状、端点与转速换算见[工程模型 §六](references/engineering-model.md)。
 - `max_drive_force`、`max_brake_force` 是轮端力矩（N·m），牵引力还要除以模型轮半径。传动比包含挡位、终传比和传动箱输出端；两驱车的附着上限只计驱动轮载荷。完整驱动力链与单位表见[工程模型 §一、§二与单位速查](references/engineering-model.md)。
+- 履带车读的是 `max_drive_torque`、`max_brake_torque` 与 `max_speed`：前两者同样是轴端力矩，`max_speed` 是主动轮角速度上限（rad/s），乘主动轮半径后是一条独立的极速上限。两条履带都驱动，附着按全车重量计。
 - 气动、滚阻和动力源内阻分别建模；`Cd·A` 由各子零件的前向二阶系数与投影面积求和，未复现游戏内遮挡。阻力公式与默认值见[工程模型 §三](references/engineering-model.md)。
 
 ## 验收阈值
@@ -178,9 +181,10 @@ JSON 的 `power_source.power_util` 是 `peak_net_power / peak_curve_power`，只
 | 逐档 `τ_w`、牵引力、加速度、绑定约束 | 游戏内实测 |
 | 极速（红线 + 功率平衡）、动力源净功率比 | 轮端峰值功率及真实传动效率 |
 | 内燃机与电机两种曲线、功率带、削扭矩起点 | 混动：两者同时存在时只取内燃机 |
+| 轮式与履带两种驱动端：车轮按占比折附着，履带按全车重量 | 履带接地压力分布与滑转：牵引力按均分估算 |
 | 变速箱挡位 × 终传比 × 传动箱减速比，以及没有变速箱的单速车 | 各输出端减速比不一致时的转速/扭矩分化：按均值折算并点名 |
 
-自检：`python scripts/test_scripts.py`，用 K17 与 mini_ev 的真实数据做回归基线。
+自检：`python scripts/test_scripts.py`，用 K17、2S38、MTLB 与 mini_ev 的真实数据做回归基线。
 
 整车报告默认直接输出到对话。先给摘要：估算极速与绑定约束、曲线峰值功率、整备质量、单人运行质量、运行质量口径的功重比；再给约束残差、主要瓶颈和必要的明细。只有作者要把参数作为长期回归基线、交付内容包说明或团队协作记录时，才把完整标定卡片保存为文档；[标定卡片](references/calibration-card.md) 是可选模板。
 

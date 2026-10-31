@@ -148,8 +148,9 @@ class K17Test(unittest.TestCase):
             registry.need("subsystems", "machine_max:k17_gearbox", "test"))
         material = mmcal.Material.from_entry(
             registry.need("materials", "machine_max:off_road_tire", "test"))
-        wheels = [mmcal.Wheel(str(i), 100.0, 0.0, 0.0, "test") for i in range(8)]
-        sol = mmcal.solve(vehicle, source, gearbox, wheels, 8, material)
+        drive = mmcal.drive_system(vehicle, registry)
+        drive["ends"] = [mmcal.DriveEnd(str(i), 100.0, 0.0, 0.0, "test") for i in range(8)]
+        sol = mmcal.solve(vehicle, source, gearbox, drive, material)
         self.assertEqual(sol.gears[0]["bound"], "轮端夹紧")
         self.assertAlmostEqual(sol.gears[0]["force"], 800.0 / sol.r)
         self.assertAlmostEqual(sol.gears[0]["accel"], sol.gears[0]["force"] / sol.mass)
@@ -333,6 +334,95 @@ class GearsTest(unittest.TestCase):
         self.assertEqual(len(data["gears"]), 7)
         self.assertIsNone(data["gears"][0]["red_kmh"])
         self.assertAlmostEqual(data["gears"][0]["ratio"], 51.81, places=2)
+
+
+class TrackTest(unittest.TestCase):
+    """履带驱动：驱动端是主动轮，半径取主动轮碰撞球而不是最大的负重轮。"""
+
+    @classmethod
+    def setUpClass(cls):
+        need_packs(cls)
+        cls.two = run_json(calibrate, ["--pack", "Machine-Max_2S38",
+                                       "--pack-root", str(PACK_ROOT), "--json"])
+        cls.mtlb = run_json(calibrate, ["--pack", "Machine-Max_MTLB", "--template", "mtlb",
+                                        "--pack-root", str(PACK_ROOT), "--json"])
+        cls.pkt = run_json(calibrate, ["--pack", "Machine-Max_MTLB", "--template", "mtlb_pkt",
+                                       "--pack-root", str(PACK_ROOT), "--json"])
+
+    def test_drive_is_track(self):
+        vehicle = self.two["vehicle"]
+        self.assertEqual(vehicle["drive_kind"], "track")
+        self.assertAlmostEqual(vehicle["mass"], 21500.0, places=1)
+        # 主动轮 0.38378 m；车上最大的轮面是负重轮 0.34891 m，两者不能混
+        self.assertAlmostEqual(vehicle["radius"], 0.38378, places=5)
+        self.assertAlmostEqual(self.two["wheel"]["max_drive_torque"], 28000.0, places=1)
+
+    def test_drive_system_skips_roadwheels(self):
+        registry = mmcal.Registry()
+        registry.load_root(PACK_ROOT)
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
+        drive = mmcal.drive_system(vehicle, registry)
+        self.assertEqual(drive["kind"], "track")
+        self.assertEqual(len(drive["ends"]), 2)
+        self.assertEqual(drive["total"], 2)          # 两条履带都驱动，附着按全车重量
+        self.assertAlmostEqual(drive["radius"], 0.33094, places=5)
+
+    def test_2s38_top_speed_is_red_line_bound(self):
+        top = self.two["top_speed"]["top"]
+        self.assertAlmostEqual(top["red_kmh"], 70.1, delta=0.2)
+        self.assertAlmostEqual(top["kmh"], 70.1, delta=0.2)
+        self.assertEqual(top["bound"], "红线")
+        self.assertEqual(top["gear"], 12)
+
+    def test_2s38_engine_matches_rated_power(self):
+        source = self.two["power_source"]
+        self.assertAlmostEqual(source["peak_power"], 368000.0, delta=200.0)
+        self.assertAlmostEqual(source["peak_rpm"], 2600.0, places=0)
+        self.assertLess(abs(source["max_power"] - source["peak_power"]) / source["max_power"], 0.01)
+
+    def test_mtlb_mass_and_top_speed(self):
+        self.assertAlmostEqual(self.mtlb["vehicle"]["mass"], 11920.0, places=1)
+        top = self.mtlb["top_speed"]["top"]
+        self.assertAlmostEqual(top["red_kmh"], 61.5, delta=0.2)
+        self.assertEqual(top["bound"], "红线")
+
+    def test_pkt_keeps_chassis_calibration(self):
+        """加装机枪塔只改质量与气动，动力链与极速不变。"""
+        self.assertAlmostEqual(self.pkt["vehicle"]["mass"] - self.mtlb["vehicle"]["mass"], 102.0,
+                               places=1)
+        self.assertEqual([g["ratio"] for g in self.pkt["gearbox"]["gears"]],
+                         [g["ratio"] for g in self.mtlb["gearbox"]["gears"]])
+        self.assertEqual([g["force"] for g in self.pkt["gearbox"]["gears"]],
+                         [g["force"] for g in self.mtlb["gearbox"]["gears"]])
+        self.assertAlmostEqual(self.pkt["top_speed"]["top"]["kmh"],
+                               self.mtlb["top_speed"]["top"]["kmh"], delta=0.1)
+        self.assertGreater(self.pkt["vehicle"]["cd_area"], self.mtlb["vehicle"]["cd_area"])
+
+    def test_track_speed_cap_binds_before_red_line(self):
+        """履带主动轮的角速度上限是一条独立的极速上限。"""
+        registry = mmcal.Registry()
+        registry.load_root(PACK_ROOT)
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
+        source = mmcal.Engine.from_entry(
+            registry.need("subsystems", "machine_max:mtlb_engine", "test"))
+        gearbox = mmcal.Gearbox.from_entry(
+            registry.need("subsystems", "machine_max:mtlb_gearbox", "test"))
+        material = mmcal.Material.from_entry(
+            registry.need("materials", "machine_max:off_road_tire", "test"))
+        drive = mmcal.drive_system(vehicle, registry)
+        for end in drive["ends"]:
+            end.max_speed = 20.0
+        sol = mmcal.solve(vehicle, source, gearbox, drive, material)
+        self.assertEqual(sol.top["bound"], "履带转速")
+        self.assertAlmostEqual(sol.top["kmh"], 20.0 * sol.r * mmcal.KMH, delta=0.05)
+
+    def test_gears_accepts_track_vehicle(self):
+        data = run_json(gears, ["--pack", "Machine-Max_MTLB", "--template", "mtlb",
+                                "--pack-root", str(PACK_ROOT), "--json"])
+        self.assertEqual(data["drive_kind"], "track")
+        self.assertEqual(len(data["gears"]), 6)
+        self.assertAlmostEqual(data["gears"][-1]["ratio"], 4.26, places=2)
+        self.assertAlmostEqual(data["gears"][-1]["red_kmh"], 61.5, delta=0.2)
 
 
 class RequirementTest(unittest.TestCase):

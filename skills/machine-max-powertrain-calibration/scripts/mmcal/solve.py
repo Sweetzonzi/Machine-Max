@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from .constants import BLOCK_FRICTION, BLOCK_ROLLING, G, KMH, RHO
 from .aero import DEFAULT_QUADRATIC, drag_area
 from .driveline import Material, Transmission
-from .geometry import hitbox_boxes, silhouette_area, sub_part_area, wheel_radii
+from .geometry import hitbox_boxes, silhouette_area, sub_part_area
 from .source import PowerCurve
 from .vehicle import Vehicle
 
@@ -22,9 +22,10 @@ class Solution:
     occupant_mass: float
     mass: float
     r: float
+    drive_kind: str
     n_driven: int
     n_total: int
-    max_drive_force: float
+    max_drive_torque: float
     area: tuple
     area_sum: tuple
     cd_area: float
@@ -42,35 +43,37 @@ class Solution:
     notes: list = field(default_factory=list)
 
 
-def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
-          n_total_wheels: int, material: Material, area_override=None,
+def solve(vehicle: Vehicle, source: PowerCurve, gearbox, drive: dict,
+          material: Material, area_override=None,
           transmission: Transmission | None = None, occupant_mass: float = 60.0,
           cd_area_override: float | None = None) -> Solution:
     mass = vehicle.mass + occupant_mass
-    wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
-    if not wheel_subs:
-        raise SystemExit("整车没有任何 type=wheel 的碰撞箱，无法取轮半径")
-    radii = sorted({round(r, 5) for sp in wheel_subs for r in wheel_radii(sp)})
-    r = max(radii)
-    notes = []
-    if len(radii) > 1:
+    r = float(drive["radius"])
+    notes = list(drive["notes"])
+    radii = list(drive["radii"])
+    if drive["kind"] == "wheel" and len(radii) > 1:
         notes.append(f"轮面半径不唯一 {radii}，按最大者 {r:.5f} 计算")
 
-    # 只有 max_drive_force > 0 的车轮被驱动；其余是随动轮，只分担质量。
-    driven = [w for w in wheel_defs if w.max_drive_force > 0] or wheel_defs
+    # 只有 max_drive_torque > 0 的驱动端被驱动；其余是随动轮，只分担质量。
+    ends = drive["ends"]
+    driven = [e for e in ends if e.max_drive_torque > 0] or ends
     n_driven = len(driven)
-    n_total = max(n_total_wheels, len(wheel_defs), n_driven)
-    drive_limits = [w.max_drive_force for w in driven]
+    n_total = max(int(drive["total"]), len(ends), n_driven)
+    drive_limits = [e.max_drive_torque for e in driven]
     mdf_max = max(drive_limits)
     if len({round(x, 3) for x in drive_limits}) > 1:
-        notes.append(f"驱动轮力矩上限不一致 {sorted({round(x, 1) for x in drive_limits})}，"
+        notes.append(f"驱动端力矩上限不一致 {sorted({round(x, 1) for x in drive_limits})}，"
                      f"按各自上限夹紧")
     if n_driven < n_total:
         notes.append(f"{n_total} 个车轮里 {n_driven} 个被驱动，"
                      f"附着上限按驱动轮占比 {n_driven / n_total:.2f} 折算")
 
+    # 最高档能跑多快还有一条独立上限：履带主动轮的角速度上限。
+    speed_caps = [e.max_speed * r for e in driven if e.max_speed is not None]
+    v_cap = min(speed_caps) if speed_caps else None
+
     # 挡位之后的固定减速：变速箱终传比 × 传动箱减速比。
-    trans_ratio = transmission.driven_ratio({w.name for w in driven}, notes) \
+    trans_ratio = transmission.driven_ratio({e.name for e in driven}, notes) \
         if transmission is not None else 1.0
     stage_ratio = gearbox.final_ratio * trans_ratio
 
@@ -158,10 +161,14 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
         v, gear, rpm = best
         total_ratio = gears[gear - 1]["ratio"]
         red_top = source.red_line_rpm * math.pi / 30 * r / total_ratio
+        bound = "红线" if abs(v - red_top) < 0.05 else "功率"
+        if v_cap is not None and v >= v_cap - 1e-6:
+            v, bound = v_cap, "履带转速"
+            rpm = v * total_ratio / r * 30 / math.pi
         return dict(
             kmh=v * KMH, gear=gear, rpm=rpm,
             red_kmh=red_top * KMH,
-            bound="红线" if abs(v - red_top) < 0.05 else "功率",
+            bound=bound,
             forces=dict(
                 traction=traction(v, total_ratio),
                 aero=0.5 * RHO * drag * v * v,
@@ -183,7 +190,8 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, wheel_defs: list,
             f"{abs(rated - source.max_power) / source.max_power * 100:.1f}% > 1%")
 
     return Solution(curb_mass=vehicle.mass, occupant_mass=occupant_mass, mass=mass,
-                    r=r, n_driven=n_driven, n_total=n_total, max_drive_force=mdf_max,
+                    r=r, drive_kind=drive["kind"],
+                    n_driven=n_driven, n_total=n_total, max_drive_torque=mdf_max,
                     area=area, area_sum=tuple(area_sum),
                     cd_area=cd_area, aero_source=aero_source,
                     c_rr=c_rr, mu=mu, gears=gears, top=top, top_upper=top_upper,

@@ -16,6 +16,8 @@
 | `switch_time` | 变速箱 | s | 换挡断流时长 |
 | `power_outputs` | 传动箱的部件 JSON | 无量纲 | 各输出端固定减速比 |
 | `max_drive_force` / `max_brake_force` / `max_hand_brake_force` | 车轮 | N·m | 轮端力矩上限，牵引力须再除轮半径 |
+| `max_drive_torque` / `max_brake_torque` / `max_hand_brake_torque` | 履带驱动 | N·m | 主动轮端力矩上限，语义与车轮那组相同 |
+| `max_speed` | 履带驱动 | rad/s | 主动轮角速度上限，折成车速要多乘主动轮半径 |
 | `abs_wheel_radius` | 车轮 | m | 只用于滑移率估算，不用于牵引力换算 |
 | `rolling_friction` | 轮胎材质 | 无量纲 | 滚阻系数 `C_rr` |
 | `friction` | 材质 | 无量纲三元组 | 各轴摩擦系数 |
@@ -60,6 +62,8 @@ F_grip   = μ · N_wheel                  // 单轮法向载荷
 
 > 传动在锁止分支下按输入转速换算扭矩，开放分支按传动比直接分发；两支共用 `τ_in / N` 作为基准，轮速不同的轮子不会互相偷扭矩。
 
+履带车把 `wheel_driver` 换成 `track_drive`，左右两条各是一个驱动端：`N` 取驱动端数（通常是 2），`r_wheel` 换成主动轮半径，`max_drive_force` 换成 `max_drive_torque`。附着项不再按占比折算——两条履带都是驱动的，法向载荷摊在整条履带接地上，`F_grip = μ·M·g`。
+
 ## 二、轮端执行
 
 车轮子系统从动力链收到的是功率与目标转速，反推成轮端力矩：
@@ -76,6 +80,17 @@ rollingMotor.set(MotorParam.TargetVelocity, torque > 0 ? -clamp(speed, ±MAX_SPE
 - `MIN_SPEED_FOR_TORQUE = 0.25 rad/s` 是除法保护，决定了停车瞬间的扭矩上限；它同时是一个标定量，不能当实现细节。
 - 刹车不带宽矩上限之外的夹紧：制动扭矩在驱动夹紧之后相减，因此 `max_brake_force` 可以大于 `max_drive_force`。
 - 制动与驱动的伺服目标相反：驱动跟随动力链下发的转速，制动把目标转速压到 0。
+
+履带驱动走同一套算式，只是作用在主动轮的滚动轴上（`TrackDriveSubsystem.onPrePhysicsTick`）：
+
+```java
+torque = Σ TrackMath.torqueFromPower(power, speed, 0.25f);   // 多路功率汇合
+torque = clamp(torque, ±MAX_DRIVE_TORQUE) * clutchEngagement;
+targetOmega = control.targetSpeed() / radius();               // radius = 被驱动子零件的碰撞球半径
+TrackMath.singleFlowMotor(clamp(omega, ±MAX_SPEED), torque, ...);
+```
+
+因此 `max_speed` 是主动轮的角速度上限，折成车速要乘主动轮半径。它与红线车速是两条独立的上限，谁先到谁绑定极速；脚本把这一条单独标为「履带转速」绑定。
 
 ## 三、行驶阻力
 

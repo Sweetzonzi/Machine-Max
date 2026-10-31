@@ -1,10 +1,10 @@
-"""传动与车轮侧的定义：变速箱、传动箱、车轮、轮胎材质。"""
+"""传动与驱动端侧的定义：变速箱、传动箱、驱动端、轮胎材质。"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .constants import DEFAULT_GEARBOX, DEFAULT_WHEEL
+from .constants import DEFAULT_GEARBOX, DEFAULT_TRACK, DEFAULT_WHEEL
 from .pack import Entry
 
 
@@ -66,21 +66,43 @@ class Transmission:
 
 
 @dataclass
-class Wheel:
+class DriveEnd:
+    """一个驱动端：一个车轮，或一条履带的主动轮。
+
+    两种驱动的数值语义相同——该端能施加的驱动力矩（N·m），只用来夹紧轮端输出；
+    `kind` 只影响报告措辞。履带另有 `max_speed`：主动轮角速度上限（rad/s），
+    会变成一条独立的极速上限；车轮没有这个上限，取 `None`。
+    """
+
     name: str
-    max_drive_force: float
-    max_brake_force: float
-    max_hand_brake_force: float
+    max_drive_torque: float
+    max_brake_torque: float
+    max_hand_brake_torque: float
     source: str
+    kind: str = "wheel"
+    max_speed: float | None = None
 
     @classmethod
-    def from_entry(cls, entry: Entry, name: str) -> "Wheel":
+    def from_wheel_entry(cls, entry: Entry, name: str) -> "DriveEnd":
+        """车轮驱动：力矩上限写在 `roll` 下，字段沿用 `*_force` 的名字。"""
         roll = entry.data.get("roll") or {}
         return cls(name,
                    float(roll.get("max_drive_force", DEFAULT_WHEEL["max_drive_force"])),
                    float(roll.get("max_brake_force", DEFAULT_WHEEL["max_brake_force"])),
                    float(roll.get("max_hand_brake_force", DEFAULT_WHEEL["max_hand_brake_force"])),
                    f"{entry.pack.namespace}:{entry.path.stem}")
+
+    @classmethod
+    def from_track_entry(cls, entry: Entry, name: str) -> "DriveEnd":
+        data = entry.data
+        return cls(name,
+                   float(data.get("max_drive_torque", DEFAULT_TRACK["max_drive_torque"])),
+                   float(data.get("max_brake_torque", DEFAULT_TRACK["max_brake_torque"])),
+                   float(data.get("max_hand_brake_torque",
+                                  DEFAULT_TRACK["max_hand_brake_torque"])),
+                   f"{entry.pack.namespace}:{entry.path.stem}",
+                   kind="track",
+                   max_speed=float(data.get("max_speed", DEFAULT_TRACK["max_speed"])))
 
 
 @dataclass

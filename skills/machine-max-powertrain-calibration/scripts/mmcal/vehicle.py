@@ -1,11 +1,12 @@
-"""整车：模板 → 子零件列表。"""
+"""整车：模板 → 子零件列表，以及驱动端解析。"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 
-from .geometry import load_geo
+from .driveline import DriveEnd
+from .geometry import load_geo, wheel_radii
 from .pack import Entry, Pack, Registry, model_path
 
 
@@ -115,3 +116,69 @@ def build_vehicle(registry: Registry, entry: Entry) -> Vehicle:
     if not sub_parts:
         raise SystemExit(f"{entry.path}: 没有解析出任何子零件")
     return Vehicle(entry.path.stem, entry.path, sub_parts)
+
+
+def drive_system(vehicle: Vehicle, registry: Registry) -> dict:
+    """驱动端：车轮或履带主动轮，以及折算车速用的半径。
+
+    返回 `kind` / `ends` / `radius` / `radii` / `total` / `notes`。`total` 是参与附着
+    分摊的轮位数：轮式取整车全部轮子（含备胎、随动轮），履带取驱动端数——履带把
+    车重摊在整条履带接地上，没有"只有两个轮子吃力"这回事。
+
+    履带的半径取主动轮，不取最大轮面：`TrackDriveSubsystem.radius()` 读的是被驱动
+    那个子零件的碰撞球，负重轮半径再大也不参与车速换算。主动轮在模板里没有显式
+    指向，按 `track_drive` 的 `connector` 名去掉前缀后与子零件名精确匹配。
+    """
+    wheel_refs = list(vehicle.subsystem_refs(":wheel_driver"))
+    if wheel_refs:
+        ends = []
+        for sub_part, name, ref in wheel_refs:
+            definition = ref.get("definition")
+            if not definition:
+                continue
+            entry = registry.need("subsystems", definition, sub_part.part_id)
+            ends.append(DriveEnd.from_wheel_entry(entry, name))
+        if not ends:
+            raise SystemExit("车轮子系统都没有 definition")
+        wheel_subs = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
+        if not wheel_subs:
+            raise SystemExit("整车没有任何 type=wheel 的碰撞箱，无法取轮半径")
+        radii = sorted({round(r, 5) for sp in wheel_subs for r in wheel_radii(sp)})
+        return dict(kind="wheel", ends=ends, radius=radii[-1], radii=radii,
+                    total=len(wheel_subs), notes=[])
+
+    track_refs = list(vehicle.subsystem_refs(":track_drive"))
+    if not track_refs:
+        raise SystemExit("整车没有 machine_max:wheel_driver 或 machine_max:track_drive 子系统")
+    ends, notes, radii = [], [], []
+    for sub_part, name, ref in track_refs:
+        definition = ref.get("definition")
+        if not definition:
+            raise SystemExit(f"履带子系统 {name} 没有 definition")
+        ends.append(DriveEnd.from_track_entry(
+            registry.need("subsystems", definition, sub_part.part_id), name))
+        driven = _driven_wheel(vehicle, str(ref.get("connector") or ""), name)
+        radii.append(round(max(wheel_radii(driven)), 5))
+    radii = sorted(set(radii))
+    if len(radii) > 1:
+        notes.append(f"两条履带的主动轮半径不一致 {radii}，按最大者 {radii[-1]:.5f} 计算")
+    return dict(kind="track", ends=ends, radius=radii[-1], radii=radii,
+                total=len(ends), notes=notes)
+
+
+def _driven_wheel(vehicle: Vehicle, connector_name: str, where: str):
+    """履带 drive 连接点对应的被驱动子零件。
+
+    `connector.machine_max.hull_left_sprocket` → 子零件 `left_sprocket`：从连接点名
+    逐段去掉前缀，取第一个能唯一定位到某个轮类子零件的后缀。
+    """
+    tokens = connector_name.split(".")[-1].split("_")
+    wheels = [sp for sp in vehicle.sub_parts if wheel_radii(sp)]
+    for start in range(1, len(tokens)):
+        suffix = "_".join(tokens[start:])
+        hits = [sp for sp in wheels if sp.name.split(".")[-1] == suffix]
+        if len(hits) == 1:
+            return hits[0]
+    raise SystemExit(f"履带子系统 {where} 的连接点 {connector_name} 找不到同名主动轮子零件；"
+                     f"主动轮子零件需以连接点名去掉 hull_ 之类前缀后的名字命名")
+

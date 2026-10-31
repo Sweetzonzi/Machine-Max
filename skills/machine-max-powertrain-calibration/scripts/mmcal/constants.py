@@ -16,3 +16,5 @@ DEFAULT_ENGINE = dict(idle_rpm=500.0, idle_rpm_torque_ratio=1 / 3, max_torque_rp
                       damping_factors=[20.0, 0.1, 0.00005])
 DEFAULT_GEARBOX = dict(final_ratio=10.0, ratios=[-3.5, 3.5, 2.5, 1.7, 1.4, 1.1], switch_time=0.3)
 DEFAULT_WHEEL = dict(max_drive_force=10000.0, max_brake_force=3500.0, max_hand_brake_force=0.0)
+DEFAULT_TRACK = dict(max_drive_torque=30000.0, max_brake_torque=20000.0,
+                     max_hand_brake_torque=20000.0, max_speed=120.0)
