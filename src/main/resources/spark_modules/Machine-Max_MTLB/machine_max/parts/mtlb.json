@@ -1,6 +1,6 @@
 {
   "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/mtlb/mtlb.png",
+  "icon": "machine_max:textures/icon/mtlb/mtlb_hull.png",
   "vehicle_durability_rate": 0.9,
   "variants": {
     "model": "machine_max:mtlb.geo",

@@ -3,7 +3,7 @@
   "type": "machine_max:blueprint_research",
   "groups": ["machine_max:mtlb"],
   "research_cost": 420,
-  "icon": "machine_max:textures/icon/mtlb/mtlb.png",
+  "icon": "machine_max:textures/icon/mtlb/mtlb_hull.png",
   "description": "research.machine_max.mtlb_blueprint.desc",
   "unlock_recipe": "machine_max:part_fabricating/mtlb"
 }
