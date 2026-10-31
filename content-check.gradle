@@ -1,0 +1,264 @@
+// 内容包引用检查。
+//
+//   ./gradlew checkContent    只读校验（check 依赖它，CI 的 build 因此也会跑）
+//
+// 两类问题都只能靠读 JSON 发现，编译期不会报：
+//
+//  1. 装配体 / 载具蓝图与模板对齐。创造栏的两个页签按模板 id 生成物品，物品里存的是
+//     模板 id，读取时再拿它去 assemblies/、blueprints/ 查同名条目。文件名与模板不同名、
+//     template 字段多带了后缀、或者整条缺失，物品都在但放不出车。
+//  2. JSON 里引用的资源可达。图标少写一层目录、图标改名后引用没跟上、模型改名漏同步，
+//     在游戏里只表现为紫黑格子或空模型，不报错。
+//
+// 口径：
+//  - 只扫各包的 <namespace>/ 目录，跳过 docs/（schema 副本由 checkSchemas 管）。
+//  - `.png` 按内容目录内的相对路径精确匹配；`.geo` 按文件名在 models/ 下递归找（各包
+//    的 models 子目录布局不一致，有 models/part、models/fitting，也有平铺的）。
+//  - `.html` 只做汇总提示、不判失败：tooltips/ 各包目前都是空的，蓝图没有说明文字不影响
+//    放置。
+//  - 内容 id 是 <namespace>/<文件名>，与所在包无关，所以跨包引用（车包用 kit 的件）也
+//    能落到文件。
+
+import groovy.io.FileType
+import groovy.json.JsonSlurper
+
+def sparkModulesDir = new File(projectDir, 'src/main/resources/spark_modules')
+
+// 去注释与尾逗号：内容包 JSON 是 JSONC。字符串内的 // 不能被当成注释，所以要逐字符扫。
+def stripJsonc = { String text ->
+    String body = text.startsWith('\uFEFF') ? text.substring(1) : text
+    StringBuilder out = new StringBuilder(body.length())
+    boolean inString = false
+    boolean escaped = false
+    int i = 0
+    int n = body.length()
+    while (i < n) {
+        char c = body.charAt(i)
+        if (inString) {
+            out.append(c)
+            if (escaped) {
+                escaped = false
+            } else if (c == ('\\' as char)) {
+                escaped = true
+            } else if (c == ('"' as char)) {
+                inString = false
+            }
+            i++
+            continue
+        }
+        if (c == ('"' as char)) {
+            inString = true
+            out.append(c)
+            i++
+            continue
+        }
+        if (c == ('/' as char) && i + 1 < n && body.charAt(i + 1) == ('/' as char)) {
+            while (i < n && body.charAt(i) != ('\n' as char)) {
+                i++
+            }
+            continue
+        }
+        if (c == ('/' as char) && i + 1 < n && body.charAt(i + 1) == ('*' as char)) {
+            i += 2
+            while (i + 1 < n && !(body.charAt(i) == ('*' as char) && body.charAt(i + 1) == ('/' as char))) {
+                i++
+            }
+            i = Math.min(i + 2, n)
+            continue
+        }
+        out.append(c)
+        i++
+    }
+    out.toString().replaceAll(',(\\s*[}\\]])', '$1')
+}
+
+// 闭包自引用需要先声明
+def walkStrings
+walkStrings = { Object node, Closure onString ->
+    if (node instanceof Map) {
+        node.values().each { walkStrings(it, onString) }
+    } else if (node instanceof List) {
+        node.each { walkStrings(it, onString) }
+    } else if (node instanceof CharSequence) {
+        onString(node.toString())
+    }
+}
+
+def readJsonc = { File file ->
+    new JsonSlurper().parseText(stripJsonc(file.getText('UTF-8')))
+}
+
+// 包目录 → 内容目录（meta.json 的 id 前缀就是 namespace）
+def packs = []
+if (sparkModulesDir.isDirectory()) {
+    sparkModulesDir.eachDir { File packDir ->
+        File meta = new File(packDir, 'meta.json')
+        if (!meta.isFile()) {
+            return
+        }
+        String packId = (String) readJsonc(meta).get('id')
+        String namespace = packId.contains(':') ? packId.substring(0, packId.indexOf(':')) : packId
+        File contentDir = new File(packDir, namespace)
+        if (contentDir.isDirectory()) {
+            packs << [name: packDir.name, namespace: namespace, dir: contentDir]
+        }
+    }
+}
+packs.sort { it.name }
+
+tasks.register('checkContent') {
+    group = 'content'
+    description = '校验装配体 / 载具蓝图与模板对齐，以及 JSON 引用的图标与模型可达'
+    doLast {
+        def problems = []
+        def details = new StringBuilder()
+        def pendingTooltips = []
+
+        // 资源索引：内容 id 是 <namespace>/<路径>，与所在包无关，所以所有包合成一份。
+        // 跨包引用（车包用 kit 的件、车包用 builtin 的贴图）必须能落到文件。
+        Set<String> resourceFiles = new HashSet<>()
+        Set<String> geoModels = new HashSet<>()
+        packs.each { pack ->
+            pack.dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.toPath().any { it.toString() == 'docs' }) {
+                    return
+                }
+                String relative = pack.dir.toPath().relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+                resourceFiles << relative
+                if (relative.startsWith('models/') && relative.endsWith('.geo.json')) {
+                    // 模型引用写成 `machine_max:k17.geo`，文件名是 `k17.geo.json`：存去掉 .json 的名字
+                    geoModels << file.name.substring(0, file.name.length() - '.json'.length())
+                }
+            }
+        }
+
+        // 模板 / 装配体 / 载具蓝图：id → 定义
+        def templates = [:]
+        def assemblies = [:]
+        def blueprints = [:]
+        packs.each { pack ->
+            [templates: templates, assemblies: assemblies, blueprints: blueprints].each { String kind, Map bucket ->
+                File dir = new File(pack.dir, kind)
+                if (!dir.isDirectory()) {
+                    return
+                }
+                dir.eachFileRecurse(FileType.FILES) { File file ->
+                    if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                        return
+                    }
+                    String stem = file.name.substring(0, file.name.length() - '.json'.length())
+                    bucket[pack.namespace + ':' + stem] = [pack: pack.name, file: file]
+                }
+            }
+        }
+
+        // 1. 模板 ↔ 装配体 ↔ 载具蓝图
+        templates.keySet().sort().each { String id ->
+            [assemblies: '装配体', blueprints: '载具蓝图'].each { String kind, String label ->
+                def entry = (kind == 'assemblies' ? assemblies : blueprints)[id]
+                if (entry == null) {
+                    problems << '模板 ' + id + ' 缺' + label + '（' + kind + '/' +
+                            id.substring(id.indexOf(':') + 1) + '.json）'
+                }
+            }
+        }
+        [assemblies: '装配体', blueprints: '载具蓝图'].each { String kind, String label ->
+            Map bucket = (kind == 'assemblies' ? assemblies : blueprints)
+            bucket.each { String id, Map entry ->
+                Object data
+                try {
+                    data = readJsonc((File) entry.file)
+                } catch (Exception exception) {
+                    problems << entry.pack + '/' + kind + '/' + ((File) entry.file).name +
+                            '：解析失败（' + exception.message + '）'
+                    return
+                }
+                Object declared = data instanceof Map ? data.get('template') : null
+                String template = declared == null ? null : declared.toString()
+                if (template == null) {
+                    problems << entry.pack + '/' + kind + '/' + ((File) entry.file).name + '：缺 template 字段'
+                } else if (!templates.containsKey(template)) {
+                    problems << entry.pack + '/' + kind + '/' + ((File) entry.file).name +
+                            '：template ' + template + ' 找不到对应模板'
+                    details.append('    引用  ').append(entry.pack).append('/').append(kind).append('/')
+                            .append(((File) entry.file).name).append(' → ').append(template).append('\n')
+                } else if (template != id) {
+                    problems << entry.pack + '/' + kind + '/' + ((File) entry.file).name +
+                            '：id ' + id + ' 与 template ' + template + ' 不同名，创造栏按模板 id 取的正是同名条目'
+                }
+            }
+        }
+
+        // 2. JSON 里的资源引用
+        int referenceCount = 0
+        def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo|html))$/
+        packs.each { pack ->
+            pack.dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                if (file.toPath().any { it.toString() == 'docs' }) {
+                    return
+                }
+                Object data
+                try {
+                    data = readJsonc(file)
+                } catch (Exception exception) {
+                    return
+                }
+                String label = pack.name + '/machine_max/' +
+                        pack.dir.toPath().relativize(file.toPath()).toString()
+                                .replace(File.separatorChar, '/' as char)
+                walkStrings(data) { String value ->
+                    def matcher = referencePattern.matcher(value)
+                    if (!matcher.matches()) {
+                        return
+                    }
+                    referenceCount++
+                    String namespace = matcher.group(1)
+                    String relative = matcher.group(2)
+                    String extension = matcher.group(3)
+                    if (extension == 'html') {
+                        if (!resourceFiles.contains(relative)) {
+                            pendingTooltips << label
+                        }
+                        return
+                    }
+                    boolean reachable = extension == 'png'
+                            ? resourceFiles.contains(relative)
+                            : geoModels.contains(relative.substring(relative.lastIndexOf('/') + 1))
+                    if (!reachable) {
+                        problems << label + '：引用 ' + namespace + ':' + relative + ' 找不到文件'
+                        details.append('    缺失  ').append(label).append(' → ')
+                                .append(namespace).append(':').append(relative).append('\n')
+                    }
+                }
+            }
+        }
+
+        packs.each { pack ->
+            int ownTemplates = templates.values().count { it.pack == pack.name }
+            int ownAssemblies = assemblies.values().count { it.pack == pack.name }
+            int ownBlueprints = blueprints.values().count { it.pack == pack.name }
+            logger.quiet('  ok  ' + pack.name + '/machine_max：模板 ' + ownTemplates +
+                    '，装配体 ' + ownAssemblies + '，载具蓝图 ' + ownBlueprints)
+        }
+        if (pendingTooltips) {
+            logger.quiet('  提示 ' + pendingTooltips.size() + ' 处 tooltip 引用的 html 还没有文件' +
+                    '（tooltips/ 各包目前都是空的，缺了只是蓝图没有说明文字，不影响放置）')
+        }
+
+        if (problems) {
+            def text = details.toString().readLines().join('\n')
+            throw new GradleException('内容包引用检查未通过：\n  ' + problems.join('\n  ') +
+                    (text ? '\n' + text : ''))
+        }
+        logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
+                ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用）。')
+    }
+}
+
+if (tasks.findByName('check') != null) {
+    tasks.named('check').configure { dependsOn tasks.named('checkContent') }
+}

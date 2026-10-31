@@ -177,6 +177,7 @@ io.github.sweetzonzi.machine_max/
 ./gradlew runData            # 重新生成 src/generated/resources/
 ./gradlew syncSchemas        # 从 builtin 同步内容包 schema 副本（见「内容包 schema 同步」）
 ./gradlew checkSchemas       # 校验内容包 schema 副本（check 依赖它）
+./gradlew checkContent       # 校验装配体/蓝图对齐与资源引用（check 依赖它，见「内容包引用检查」）
 ```
 
 ### 开发期 mod 目录（两个）
@@ -256,6 +257,24 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 - **与 schema 快照是两条独立链路**：插件资产跟随插件发布，`references/schemas/` 跟随
   `./gradlew syncSchemas`；不要用一次提交顺手覆盖另一边来掩盖漏跑。
 - 上游存在他人未提交改动时先与插件维护者确认，不要把无关改动卷进该提交。
+
+## 内容包引用检查
+
+```bash
+./gradlew checkContent     # 只读校验；check 依赖它，CI 的 build 因此也会跑
+```
+
+读各包的 JSON，查两类编译期发现不了、进游戏才表现为「物品在但放不出车」或「紫黑格子 / 空模型」的问题：
+
+| 检查 | 判据 |
+|------|------|
+| 模板 ↔ 装配体 ↔ 载具蓝图 | 每份 `templates/*.json` 都要有同名装配体与蓝图；每份装配体 / 蓝图的 `template` 指向存在的模板，且与自身文件名同名 |
+| JSON 里的资源引用 | `machine_max:…png` 按内容目录内的相对路径精确匹配，`machine_max:…geo` 按文件名在 `models/` 下递归找 |
+
+- **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。
+- **索引按所有包合并**：内容 id 是 `<namespace>/<路径>`，与所在包无关，车包引用 kit 或 builtin 的贴图、模型是正常用法。按包隔离会把这些引用判成缺失。
+- **`tooltips/` 下的 html 只做汇总提示、不判失败**：各包目前都还没有这些文件，蓝图缺说明文字不影响放置。要补时往 `tooltips/` 放同名文件即可。
+- **跳过 `docs/`**：schema 副本由 `checkSchemas` 管。
 
 ## 技能包（`skills/`）
 
