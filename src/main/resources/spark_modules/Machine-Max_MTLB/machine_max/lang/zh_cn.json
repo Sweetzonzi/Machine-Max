@@ -6,6 +6,7 @@
   "subsystem.machine_max.pkt_ammo_loader": "PKT 装弹机",
   "subsystem.machine_max.weapon": "武器控制器",
   "machine_max.mtlb": "MT-LB 装甲运输车",
+  "machine_max.mtlb_pkt": "MT-LB 装甲运输车（PKT 机枪塔）",
   "machine_max.series.mtlb": "MT-LB 装甲运输车",
   "connector.machine_max.hull_pkt_axis": "车体机枪塔轴",
   "sub_part.machine_max.left_sprocket": "Left Sprocket",

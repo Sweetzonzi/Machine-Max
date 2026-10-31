@@ -6,6 +6,7 @@
   "subsystem.machine_max.pkt_ammo_loader": "PKT Ammo Loader",
   "subsystem.machine_max.weapon": "Weapon Controller",
   "machine_max.mtlb": "MT-LB",
+  "machine_max.mtlb_pkt": "MT-LB (PKT MG Mount)",
   "machine_max.series.mtlb": "MT-LB",
   "connector.machine_max.hull_pkt_axis": "Hull MG Mount Axis",
   "sub_part.machine_max.left_sprocket": "Left Sprocket",
