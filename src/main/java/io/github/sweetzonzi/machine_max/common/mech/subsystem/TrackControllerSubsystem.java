@@ -187,6 +187,16 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
         List<TrackBinding> all = trackBindings;
         float[] targets = new float[all.size()];
+        // 内侧指令锚在动力链给出的带速上，不是当前实际带速。传动箱对每个输出端加了驱动偏置
+        // （{@code TransmissionSubsystem.LOCK_DRIVE_BIAS}），伺服目标本来就高于实际带速；拿实际带速
+        // 当基准会让内侧指令退化成「保持当前速度」，于是内侧每一步都被判成超速，用
+        // {@code max_brake_torque} 把整车锁在当前车速上。
+        float driveAnchor = 0f;
+        for (TrackBinding binding : bindings) {
+            float driveSpeed = Math.abs(binding.drive().inputSpeed() * binding.radius());
+            if (Float.isFinite(driveSpeed)) driveAnchor = Math.max(driveAnchor, driveSpeed);
+        }
+        float anchor = Math.max(driveAnchor, Math.abs(vBase));
         for (int i = 0; i < all.size(); i++) {
             TrackBinding binding = all.get(i);
             if (!binding.drive().isDriveUsable()) {
@@ -199,7 +209,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
                     * Math.max(Math.abs(longitudinal), Math.abs(steering)));
             float outerLimit = maxSpeed + (pivotSpeed - maxSpeed) * pivotWeight;
             float target = ratio < 1f - TrackMath.EPSILON
-                    ? direction * Math.min(Math.abs(vBase), outerLimit) * ratio
+                    ? direction * Math.min(anchor, outerLimit) * ratio
                     : (pivotWeight > 0f && width >= 0.1f ? direction * outerLimit : Float.NaN);
             targets[i] = target;
             sendCallbackToListener(binding.channel(), binding.drive(),
@@ -222,13 +232,15 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
     }
 
     /**
-     * 追加单流基准、横摆指令与每条履带的五元组：本步下发的带速指令、动力链折算到主动轮的
-     * 输入带速、履带实际带速、下发给滚动轴电机的驱动扭矩、主动轮半径。
+     * 追加单流基准、横摆指令与每条履带的五元组：本步下发的带速指令、传动箱给出的伺服目标带速、
+     * 履带实际带速、下发给滚动轴电机的驱动扭矩、主动轮半径。
      *
      * <p>伺服目标取 {@code min(_cmd, _in)}（同向时），所以两者的较小值才是这一步真正追的转速。
-     * {@code _in} 长期低于 {@code _cmd} 说明瓶颈在动力链一侧（转速由引擎经传动决定）；
-     * {@code _trq} 长期贴着 {@code max_drive_torque} 而 {@code _spd} 追不上目标，说明接触面
-     * 吃不下这份力矩（打滑或扭矩不足）。{@code _cmd} 为 NaN 表示该侧被外侧锚定、本步不主动驱动。</p>
+     * {@code _in} 是传动箱输出目标，等于「动力链折算到主动轮的转速 + {@code LOCK_DRIVE_BIAS}」，
+     * 与 {@code _spd} 的差就是速度伺服在这一步的误差：差值大说明电机在饱和推，差值接近零说明
+     * 两侧速度已经对齐、推力只剩阻力那一份。{@code _trq} 贴着 {@code max_drive_torque} 而
+     * {@code _spd} 追不上目标，说明接触面吃不下这份力矩。{@code _cmd} 为 NaN 表示该侧锚定到
+     * {@code _in}，本步不做比例限速。</p>
      */
     @Override
     protected void appendTelemetrySample(StringBuilder row) {

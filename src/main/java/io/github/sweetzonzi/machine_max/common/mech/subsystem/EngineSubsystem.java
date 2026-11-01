@@ -93,10 +93,14 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     @Override
     public void onPrePhysicsTick() {
         Map<String, Float> feedbacks = collectFeedbackSpeeds();
-        if (feedbacks.isEmpty()) {
+        // 油门按驾驶输入取：离合器分离时没有反馈，但油门照样有效，否则空挡轰不到转速。
+        updateThrottleInput();
+        if (throttleInput < 0) {
+            // 没有任何油门信号（没人驾驶、控制器没接管）时保持怠速
             throttleInput = MIN_IDLE_THROTTLE;
-        } else {
-            updateThrottleInput();
+        } else if (isShifting()) {
+            // 换挡的无动力窗口里主动断油，与变速箱的 switch_time 对齐
+            throttleInput = MIN_IDLE_THROTTLE;
         }
         double rotSpeed = getRotSpeed();
         if (rotSpeed / IDLE_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
@@ -295,6 +299,21 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             }
         }
         throttleInput = powerControlInput;
+    }
+
+    /**
+     * 相连的变速箱里是否有正在换挡的。
+     *
+     * <p>换挡窗口内动力链被主动断开、也没有反馈，油门应当切到怠速；司机自己踩下离合器
+     * 则不属于换挡，油门保持有效。</p>
+     */
+    private boolean isShifting() {
+        for (IMechPowerConsumer consumer : getMechPowerTargets().values()) {
+            if (consumer instanceof GearboxSubsystem gearbox && gearbox.isShifting()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public double getRotSpeed() {

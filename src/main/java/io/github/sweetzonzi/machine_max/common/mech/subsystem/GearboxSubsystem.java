@@ -176,6 +176,16 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
         this.getSynchedData().set(CLUTCHED_ID, clutched);
     }
 
+    /**
+     * 是否处在换挡的无动力窗口内。
+     *
+     * <p>与"离合是否接合"是两个概念：司机自己踩下离合器时这里为 {@code false}，动力源仍应按
+     * 油门自由升速；只有换挡倒计时期间才是主动断油的无动力段。</p>
+     */
+    public boolean isShifting() {
+        return remainingSwitchTime > 0.0f;
+    }
+
     private void distributePower() {
         if (!isClutched() || remainingSwitchTime > 0.0f) {
             pushMechPower(MechPower.EMPTY);
