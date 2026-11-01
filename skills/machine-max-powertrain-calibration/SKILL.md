@@ -145,8 +145,8 @@ m_转子 = I · i₁² / r²          a₁ ≈ (τ_max / I) · r / i₁
 静态方法覆盖不了起步扭矩爬升、换挡断流、档位振荡与轮胎滑移等过程。这些要在游戏内观测记录：
 
 - 换挡断流可粗估为 `t_0→X ≈ t_静态 + n_次换挡 × switch_time`，实际时间仍要量测。
-- 起步、振荡和滑移在游戏内记录，不写入静态结论。记录用 `/mm debug telemetry start|stop` 抓服务端 CSV，按工程模型 §十 的列口径读：先看 `wall_ms` 与 `t_s` 是否同步，再看两条履带的 `_trq` 是否同时非零——只有一侧在推时，整车推力只有一侧的份额。
-- 指令平稳而车体在抖时，`speed_mps` 这一列不够用（它来自 20 Hz 同步快照）。改用同一批行里的 `b_vz` 逐物理步求加速度，再用 `aero_fwd` / `tension_n` / `pitch_rate` 分辨是阻力在抖、带在松紧，还是姿态模态在给纵向加速度做功。判据见工程模型 §十。
+- 起步、振荡和滑移在游戏内记录，不写入静态结论。记录用 `/mm debug telemetry start|stop` 抓服务端 CSV，按[行车记录仪](references/telemetry-recorder.md)的列口径读：先看 `wall_ms` 与 `t_s` 是否同步，再看两条履带的 `_trq` 是否同时非零——只有一侧在推时，整车推力只有一侧的份额。
+- 指令平稳而车体在抖时，`speed_mps` 这一列不够用（它来自 20 Hz 同步快照）。改用同一批行里的 `b_vz` 逐物理步求加速度，再用 `aero_fwd` / `tension_n` / `pitch_rate` 分辨是阻力在抖、带在松紧，还是姿态模态在给纵向加速度做功。判据见[行车记录仪](references/telemetry-recorder.md)。
 
 不要为动态性能另写一套积分模型：一旦脚本与游戏物理不一致，排查成本会超过收益，而且无法判断哪一方错。
 
@@ -234,5 +234,6 @@ JSON 的 `power_source.power_util` 是 `peak_net_power / peak_curve_power`，只
 ## 参考
 
 - [工程模型](references/engineering-model.md) — 公式、约束求解与残差、默认值、代码位置。
+- [行车记录仪](references/telemetry-recorder.md) — 服务端 CSV 的开关、逐列口径、四个先看的量与抖动判别。
 - [标定卡片](references/calibration-card.md) — 卡片模板、K17 算例、反推示例与验收清单。
 - [标定脚本](scripts/calibrate.py) — 整车离线读数与求解，`--json` 便于二次处理。
