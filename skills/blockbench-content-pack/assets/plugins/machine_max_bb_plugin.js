@@ -12860,7 +12860,7 @@
         "generator_version": 1,
         "source_locale": "en_us",
         "source_root": "src/builtin/builtin/machine_max/docs/en_us/schemas",
-        "source_revision": "52745d74",
+        "source_revision": "8fd4b519",
         "source_files": 71,
         "source_sha256": "9fbab6ff2e61f915c9b649be62808301fdd897280606b8c25863772173128e3b",
         "generated_from": "machine_max builtin JSON Schema"
