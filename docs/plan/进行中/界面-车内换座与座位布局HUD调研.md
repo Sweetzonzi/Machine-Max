@@ -1,7 +1,7 @@
 # 车内换座与座位布局 HUD 调研
 
 > **版本** 2.12 · 2026-10-28
-> **状态**：P0–P2 已实现并通过实机验收；P3–P4 未实现。
+> **状态**：进行中。P0–P2 已实现并通过实机验收；P3–P4 未实现。
 > **基线**：NeoForge 21.1.219 / Minecraft 1.21.1；内容包 `Machine-Max_K17`、`Machine-Max_MTLB`、`Machine-Max_2S38`、`Machine-Max_Civilian`。
 > **结论**：不建议给每个座位补交互区。推荐**一个循环换座键**加**常驻的俯视座位图 HUD**：换座只按一个键，跳到排序中的下一个空位；座位图在车内常驻，画出载具模型与座位位置，标出自己在哪、哪些被占、下一个是谁。客户端算出下一个目标座位后发给服务端，服务端只校验目标是否可用；同一条载荷也能承载将来的点击选座。座位图可以顺带按耐久给车体零件着色，作为现有 O 键内构查看的总览补充。
 
@@ -308,7 +308,7 @@ Vector3f drawPos = seat.getSubPart()
 
 #### 5.2.2 车体参考系
 
-座位图只需要一个偏航角：把载具摆正、车头朝上。参考零件要满足三件事——**稳定**（不随炮塔转动、不随部件增删换人）、**和车体同一个刚体**、**朝向可解释**（它的局部轴就是车头轴）。
+座位图只需要车体自身的坐标系：沿参考零件的上轴俯视，把载具摆正、车头朝上。参考零件要满足三件事——**稳定**（不随炮塔转动、不随部件增删换人）、**和车体同一个刚体**、**朝向可解释**（它的局部轴就是车头轴）。
 
 “用面积还是用质量”都是在猜哪个像车体；更直接的是先回答“哪些零件和车体焊死在一起”。连接点属性已经给了答案，但**只有 Advanced 一侧的配置有效**。
 
@@ -352,16 +352,15 @@ for (RegularPart part : vehicle.partNet.nodes())
 簇内取质量最大的零件，`SubPart.projectedArea.y` 作第二排序键。
 
 ```java
-// 参考系每帧求一次：ref 是缓存下来的参考 SubPart，frontLocal 是它在自身刚体坐标系下的前向轴
-// （符号在缓存时按驾驶员偏移定好），这里只做“采样 + 只取偏航”。
+// 参考系每帧求一次：ref 是缓存下来的参考 SubPart，车头轴是项目约定的局部 -Z
+// （与 DestroyableObject#getFrontVector() 一致），这里只做“采样 + 沿零件自身三轴投影”。
 Matrix4f refM = ref.getWorldPositionMatrix(partialTick);           // 平移与旋转都插值
 Vector3f origin = refM.getTranslation(new Vector3f());
-Vector3f front = refM.transformDirection(new Vector3f(frontLocal));
-front.y = 0;                                                        // 爬坡/翻车不影响地图
-if (front.lengthSquared() < 1e-4) front.set(0, 0, -1); else front.normalize();
+Vector3f front = refM.transformDirection(new Vector3f(0, 0, -1)).normalize();
+Vector3f up = refM.transformDirection(new Vector3f(0, 1, 0)).normalize();
+Vector3f right = new Vector3f(front).cross(up).normalize();
 
-Vector3f right = new Vector3f(front).cross(new Vector3f(0, 1, 0)).normalize();
-// 参考系里的相对坐标对平移与偏航都不变，所以排序、重叠判定与 fit 都能缓存
+// 参考零件局部坐标里的相对位置：平移、偏航、俯仰、侧倾都不改变它
 Vector3f rel = SparkMathKt.toVector3f(sortWorld).sub(origin);       // sortWorld 取 locator 的插值世界坐标
 float sx = rel.dot(right);
 float sy = -rel.dot(front);
@@ -374,15 +373,15 @@ float sy = -rel.dot(front);
 - **质量是主键**：质量是静态内容数据，不随耐久、姿态、炮塔转动变化。炮塔比车体重意味着重心过高，现实设计不会这么配；即使配了，簇规则也会先把它排除，不依赖这个物理假设。
 - **`projectedArea.y` 是什么**：`SubPart.projectedArea` 在零件构造时算好（`AbstractPart.java:718`），三轴分别是 X/Y/Z 方向的投影面积，`.y` 就是竖直方向看下去的面积；内容是 `-1` 时用局部碰撞盒的 `4 * xExtent * zExtent` 回退（`AbstractPart.java:562-575`）。
 - **它不是实时投影**：数值来自零件**自身**的局部包围盒（或内容手写的 `projected_area`），不随炮塔转动、炮管俯仰、载具姿态变化。细长炮管斜着摆时，局部 AABB 仍是“长 × 直径”，不会被世界 AABB 的 √2 膨胀放大。内容若手写 `projected_area` 调气动，数值不一定等于真实占地，所以只做 tie-break。
-- **缓存与重算**：按装配体 uuid 缓存**参考 SubPart、局部前向轴 `frontLocal`（含符号）、`fit`、排好序的座位引用**；进入座位时算一次，常驻期间只等 `VehicleStructureChangeEvent`（§5.7.6），收到才重算。**原点与偏航不进缓存**：它们随车辆平移与转向每帧变化，绘制时按同一个 `partialTick` 从参考 SubPart 的 `getWorldPositionMatrix(partialTick)` 现取。选中的零件被打爆也继续用它（位姿仍在），否则地图会在战斗中突然转 90°。
-- **只取偏航**：参考零件每帧的世界矩阵把局部前向轴转到世界，再把 Y 归零；载具爬坡/翻车不影响地图。原点取参考零件自身的**插值世界位置**（`getWorldPositionMatrix(partialTick)` 的平移分量）：同一刚性簇内相对位置固定，炮塔转动、悬挂行程、加装拆件都不会让地图平移——但车辆行驶会，所以它必须逐帧取。`vehicle.getPosition()` 不用作原点——它是全部零件 `rootSubPart` 位置的平均值（`VehicleCore.java:441-459`），不是质心，且零件增删会移动它。
-- **正负号**：前向轴指向 +Z 还是 -Z 取决于模型作者；用驾驶员座位的纵向偏移判断（驾驶员座位按“名字含 driver → 控制组最多的座位 → 当前座位”找），`|along| ≤ 0.5` 时视为居中，退回当前座位，再退回世界 `-Z`。**符号只在缓存参考系时定一次**，结果保存为 `frontLocal`，之后每帧只做旋转采样。客户端 `seat_map_flip_front` 与内容 `map_front` 可覆盖。座椅 locator 自带旋转时也能用它判断正负，但不同内容的朝向约定不一致，位置偏移更稳。
+- **缓存与重算**：按装配体 uuid 缓存**参考 SubPart、`fit`、排好序的座位引用**；进入座位时算一次，常驻期间只等 `VehicleStructureChangeEvent`（§5.7.6），收到才重算。**原点与旋转不进缓存**：它们随车辆平移、转向、爬坡每帧变化，绘制时按同一个 `partialTick` 从参考 SubPart 的 `getWorldPositionMatrix(partialTick)` 现取。选中的零件被打爆也继续用它（位姿仍在），否则地图会在战斗中突然转 90°。
+- **沿零件自身的上轴俯视**：参考零件每帧的世界矩阵给出三个局部轴，车体按这三个轴投影，所以平移、偏航、俯仰、侧倾都不改变二维位置——投影方向是零件自身的上轴。原点取参考零件自身的**插值世界位置**（`getWorldPositionMatrix(partialTick)` 的平移分量）：同一刚性簇内相对位置固定，炮塔转动、悬挂行程、加装拆件都不会让地图平移——但车辆行驶会，所以它必须逐帧取。`vehicle.getPosition()` 不用作原点——它是全部零件 `rootSubPart` 位置的平均值（`VehicleCore.java:441-459`），不是质心，且零件增删会移动它。
+- **前向轴取约定，不从座位推断**：项目内所有带模型的对象都以局部 `-Z` 为前向（`DestroyableObject#getFrontVector()`、地面控制器的姿态遥测、投射物姿态都取它，内容包按 `-Z` 建模即正面朝前），座位图直接用参考零件的局部 `-Z`。座位位置与参考零件原点的相对关系判断不出车头：原点是刚体位姿（随引擎、装甲等质心偏移），驾驶座完全可能落在它后面；把座位当探针还会让同一台车换个座位就翻转朝向。
 - **退化**：全可动载具（机械臂、全关节结构）没有刚性簇，退化成单零件簇，按质量选；再退到当前座位。
 - **不用主轴拟合 / 速度 / 相机**：PCA 在近方形足迹上轴不稳定，且只给轴不给前后；速度在静止与倒车时退化；相机朝向会让地图随视线转，失去“车头朝上”的意义。
 - `right = front × up`：车头朝北（`-Z`）时，`right` 是东（`+X`），符合“屏幕右侧 = 车体右侧”。
 - 屏幕 `y = -dot(rel, front)`，使车头在屏幕上方。
 - 这条链整段用 JOML：`getWorldPositionMatrix` 返回的已经是 `org.joml.Matrix4f`，与绘制侧的 `PoseStack`、`Matrix4f` 同库，只有座位 locator 的世界位置需要从 JME `Transform` 转一次（`SparkMathKt.toVector3f`）。布局与绘制因此共用同一套向量，不存在 JME/JOML 混算。
-- §5.2.4 的推荐路径把同一个偏航直接烘进 `PoseStack`（先 `Axis.XP.rotationDegrees(-90)` 再 `Axis.YP.rotationDegrees(180 - headingDeg)`，`heading = atan2(front.x, front.z)`）；这里的 `(right, front)` 用于排序、重叠判定和兜底矩形。两条路径读同一个 `frontLocal`、同一个 `partialTick`，否则标记与模型会对不齐。
+- §5.2.4 的推荐路径把同一个参考零件烘进 `PoseStack`：先 `Axis.XP.rotationDegrees(-90)`，再乘参考零件世界旋转的逆（局部 `-Z` 就是车头，不需要额外的符号修正）；这里的 `(right, front)` 用于排序、重叠判定和兜底矩形。两条路径读同一个参考零件、同一个 `partialTick`，否则标记与模型会对不齐。
 
 #### 5.2.3 排序、编号与“下一个”
 
@@ -449,7 +448,7 @@ public class SeatMapHud implements LayeredDraw.Layer {
         PoseStack ps = g.pose();
         ps.pushPose();
         ps.mulPose(SeatMapLayout.mapMatrix(snap.fit(), snap.centerSx(), snap.centerSy(),
-                mapCenterX, mapCenterY, origin, headingDeg));  // 见下方“变换顺序”
+                mapCenterX, mapCenterY, origin, worldToReference));  // 见下方“变换顺序”
         // 无纹理、不测深度的纯色几何：外壳与内构都走这一条，靠半透明叠加出透视
         var buffer = g.bufferSource().getBuffer(MMRenderTypes.solidXray());
         // 第一遍：外壳（很淡）
@@ -501,19 +500,20 @@ public class SeatMapHud implements LayeredDraw.Layer {
 }
 ```
 
-- **变换顺序**：`PoseStack.mulPose` 右乘，后调用的先作用到顶点。俯视必须先 `X(-90)`（把世界纵轴换成屏幕纵轴），再绕世界 Y 偏航 `180 - heading`。写成“先偏航再俯视”时，偏航作用的是一张已经躺倒的图：屏幕纵轴恒等于世界 z，偏航只把**世界高度**混进横轴——`heading = 45°` 时车头落在 `(0.50, 0.71)`，`heading = 90°` 时退化到 `(0, 0)`，只有正南正北碰巧正确。验收判据：任意朝向都应有 `front → (0, -1)`、`right → (+1, 0)`（GUI 坐标 y 向下）。
+- **变换顺序**：`PoseStack.mulPose` 右乘，后调用的先作用到顶点。矩阵链是「面板中心 → 居中偏移（像素）→ 适配缩放 → 俯视 `X(-90)` → 参考零件世界旋转的逆 → 平移 `-origin`」。逆旋转必须先把世界方向换成零件的局部方向，之后才是 `X(-90)`：反过来的写法拿世界轴当局部轴用，车身一俯仰、一侧倾，车顶就沿世界 Y 斜切进平面位置，车越高偏得越多。局部 `-Z` 就是车头，所以不需要额外的符号修正。验收判据：任意偏航、俯仰、侧倾下都应有 `front → (0, -1)`、`right → (+1, 0)`、`up → (0, 0, +1)`（GUI 坐标 y 向下、z 朝观察者）。
 - **深度取反**：GUI 的 `+z` 朝向观察者，而 `X(-90)` 把世界 `+y` 映到 `-z`。透视渲染不测也不写深度，所以这个取反对当前画面没有可见影响（`NO_CULL` 下绕向也看不见）；保留它是为了矩阵本身仍然表达“从上看下去”的语义——将来换回测深度的 render type 时不会又变成仰视图。
 - **居中偏移按像素算**：包围盒中心的平移必须叠在缩放之后（矩阵链更左侧的 `translate(-centerSx * fit, -centerSy * fit)`）。写在旋转之后时它是世界坐标里的位移，与车体朝向无关，转向后车体就偏出面板中心。
-- **没有相机偏航**：GUI 图层是屏幕固定的正交空间，车头朝上只差一个偏航角，不需要 3D HUD 那套 `cameraYaw` 抵消、`PIXEL_SCALE` 换算或 Z 压扁。
+- **不依赖相机与车身姿态**：GUI 图层是屏幕固定的正交空间，车头朝上只需参考零件自身的逆旋转，不需要 3D HUD 那套 `cameraYaw` 抵消、`PIXEL_SCALE` 换算或 Z 压扁；上坡、侧倾只改变逆旋转的取值，不改变任何平面位置。
 - **模型用实时的 `SubPart`**：`getRenderWorldPositionMatrix`、`getBones`、`getDurability` 都是现成的，不需要 `VehicleAnimatable`，也没有 `new VehicleData(vehicle)` 的拷贝成本。取骨骼前必须先判 `getModel() == null`：`SubPartAttr.getBones` 直接解引用 `OModel.getORIGINS()`（`SubPartAttr.java:357-363`），资源重载期间会 NPE；`PartEntityRenderer` 也是在取到模型后立刻返回（`PartEntityRenderer.java:77-79`）。
 - **两层 + 无纹理**：外壳用 `MMRenderTypes.solidXray()`——`POSITION_COLOR`、双面、不测也不写深度、输出主目标。所有面都参与混合，外壳越淡越能看穿；内构层随后用同一批顶点再画一遍，接近不透明，于是“外壳半透明 + 内构实色”。纯色 shader 不读 `Lighting`，不必像 `GuiAnimatable` 那样成对调用 `setupForEntityInInventory` / `setupFor3DItems`。双面是必需的：俯视图的几何朝向取决于载具姿态，不能依赖绕向。
 - **两遍而不是一遍**：内构骨骼必须在**全部**外壳之后提交。按零件混在一遍里会被后面零件的外壳压暗，于是“靠近镜头的那几个零件的子系统特别亮”这种与结构无关的亮度差就出现了。
 - **标记位置逐帧算**：快照只存座位引用与布局，世界坐标每帧用 `getLerpedLocatorWorldTransform(..., partialTick)` 现取。`getTranslation()` 返回的是变换内部的向量，`mapMatrix.transformPosition` 会就地改写它，必须传副本；把世界坐标写进只在结构变化时重建的快照，会让标记在行驶时留在原地。
-- **原点与偏航也逐帧**：快照只存参考 SubPart 引用与局部前向轴 `frontLocal`（含符号），不存 `origin`/`headingDeg`。它们随车辆平移与转向每帧变化；缓存住会出现两种错位：车开走时地图按旧原点平移，而座位点用新的世界坐标，标记整体漂出面板；转向后车头不再朝上，模型转了而标记没转。
-- **`fit` 在座位快照重建时算一次**：先用 `fit = 1` 投出各 SubPart 包围盒的 8 个角点，投影时按车体坐标（偏航归零）做，所以所得缩放对行驶与转向都不变；再按面板可用尺寸求 `min(panelW / 宽, panelH / 高)`。炮塔转动只改变角点在车体坐标里的位置，需要时跟着结构事件一起重算。
+- **原点与旋转也逐帧**：快照只存参考 SubPart 引用，不存 `origin`/`worldToReference`。它们随车辆平移、转向、爬坡每帧变化；缓存住会出现两种错位：车开走时地图按旧原点平移，而座位点用新的世界坐标，标记整体漂出面板；转向后车头不再朝上，模型转了而标记没转。
+- **`fit` 在座位快照重建时算一次**：先用 `fit = 1` 投出各 SubPart 包围盒的 8 个角点，投影时按参考零件的局部坐标做（三个轴都取零件自身，俯仰与侧倾也不进入），所以所得缩放对行驶、转向、爬坡都不变；再按面板可用尺寸求 `min(panelW / 宽, panelH / 高)`。炮塔转动只改变角点在局部坐标里的位置，需要时跟着结构事件一起重算。
 - **批次与顺序**：模型提交后 `g.flush()` 再画标记。透视渲染不写深度，所以不需要关深度测试、也不需要清深度缓冲；要守的只有提交顺序——外壳 → 内构 → 标记。
 - **外壳色**：`modelColor(sub)` 是低透明度基色，健康零件不传白色（纯色几何里白色就是一块亮斑）；零件低于 50% 或已毁坏时同一层偏红。
-- **裁剪与位置**：面板外 `g.enableScissor(...)`；面板放屏幕左下，避开准星、热栏和右下弹药 HUD；常驻显示时面板尺寸收小，默认不覆盖驾驶视线中心与准星。
+- **裁剪与位置**：面板放屏幕左下，避开准星、热栏和右下弹药 HUD；车体按 `fit` 收进地图区域，座位标记按地图区域外扩 8px 预筛，超出面板的标记直接不画，所以不需要额外裁剪。
+- **整体缩放**：面板布局（`PANEL_W`/`PANEL_H`、间距、`fit`）都按未缩放单位算，`SeatMapHud.render` 在绘制前 `translate((1-s)·left, (1-s)·(top+PANEL_H))` 再 `scale(s)`，面板、车体、标记与文字一起缩到 `s = 0.5`，常驻时占用面积约为原来的四分之一。锚点取面板左下角：缩放后底部与热栏的间距不变，收掉的是上方的高度；`GuiGraphics` 的 `fill`/`drawString` 与模型顶点都走同一个 `PoseStack`，所以一个系数就统一了全部元素。文字随之下到约 4.5px，是这套缩放下最小的可读尺寸。
 
 **不采用：把座位图做成 3D HUD 元素。**
 
@@ -856,8 +856,8 @@ PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload
 
 #### 5.7.6 缓存、线程与重算窗口
 
-- 座位图快照只存**不随帧变化**的东西：参考 SubPart 引用、局部前向轴 `frontLocal`（含符号）、`fit`、排好序的座位引用、子零件列表。**世界坐标、原点、偏航都不进快照**：绘制时按同一个 `partialTick` 从参考 SubPart 的 `getWorldPositionMatrix(partialTick)` 取平移与旋转（§5.2.4）。模型逐帧直接用实时 `SubPart`，不做数据拷贝。
-- 把原点或偏航缓存起来会立刻错位：车辆平移后地图仍按旧原点平移，而座位点用的是实时世界坐标，标记会整体漂出面板；车辆转向后模型转了、偏航还是旧值，车头不再朝上。
+- 座位图快照只存**不随帧变化**的东西：参考 SubPart 引用、`fit`、排好序的座位引用、子零件列表。**世界坐标、原点、旋转都不进快照**：绘制时按同一个 `partialTick` 从参考 SubPart 的 `getWorldPositionMatrix(partialTick)` 取平移与旋转（§5.2.4）。模型逐帧直接用实时 `SubPart`，不做数据拷贝。
+- 把原点或旋转缓存起来会立刻错位：车辆平移后地图仍按旧原点平移，而座位点用的是实时世界坐标，标记会整体漂出面板；车辆转向、爬坡后模型转了、旋转还是旧值，车头不再朝上。
 - 客户端 tick 与 HUD 渲染在同一个线程（都是主线程），不存在“发布给渲染线程”的问题；tick 里只更新占用与当前座位，重建快照走下面的事件窗口。
 - 座位标记的屏幕坐标逐帧由 `mapMatrix` 变换：座位世界坐标 → 减去原点的相对坐标 → 屏幕坐标，只做 3–10 次点变换，不需要缓存。
 - 渲染时不需要访问物理世界：`getLerpedLocatorWorldTransform` 与 `getRenderWorldPositionMatrix` 都是客户端可用的纯读取，模型渲染用 `-origin` 平移到载具相对空间。
@@ -962,7 +962,7 @@ T+1   客户端   原版包重建 passengers（幂等）；座位图 tick 读到
 - **`controllingSubsystem` 每个客户端各一份**：结果包必须写到所有客户端，漏掉哪一份，那边的乘客就被 `getPassengerAttachmentPoint` 摆到实体原点。
 - **`activeIndex` 两端各写一次同一个值**：它平时只有上行通道（客户端切组时发 `ControlGroupSetEditPayload`），服务端不回推；而 `ViewInputPayload` 用 `payload.controlGroup != seat.getControlGroupSet().getActiveIndex()` 丢掉过期输入（`ViewInputPayload.java:88-94`）。所以换座时服务端在 ⑤ 里复位，客户端按结果包的 `controlGroup` 字段照抄。只改一侧的后果是视角包被静默丢弃、绑定索引错位——具体写法与取值见 §5.11。
 
-HUD 侧的数据依赖分三层：快照（参考 SubPart、局部前向轴、`fit`、排序）只在进入座位与结构事件后重建；原点与偏航逐帧从参考 SubPart 的插值世界矩阵取，座位世界坐标也逐帧取；占用与当前座位每 tick 读实时值。这样炮塔转动、悬挂起伏、占用变化都不触发重建，而行驶与转向时地图始终跟着车（§5.7.6）。
+HUD 侧的数据依赖分三层：快照（参考 SubPart、局部前向轴、`fit`、排序）只在进入座位与结构事件后重建；原点与三轴姿态逐帧从参考 SubPart 的插值世界矩阵取，座位世界坐标也逐帧取；占用与当前座位每 tick 读实时值。这样炮塔转动、悬挂起伏、占用变化都不触发重建，而行驶、转向与爬坡时地图始终跟着车（§5.7.6）。
 
 ### 5.11 控制组复位：两端在同一刻落到同一个值
 
@@ -1083,7 +1083,7 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 | --- | --- | --- |
 | 布局 | 新增 `client/render/gui/seat/SeatMapLayout.java` | 座位标记的屏幕布局：重叠错开、载具包围盒与适配缩放（`fit`）；参考系与排序来自 common 的 `SeatOrder`；标记世界坐标每帧现取 |
 | 重算 | `SeatMapLayout.java` | 订阅 `VehicleStructureChangeEvent` 置脏；进入座位时算一次，脏了下一 tick 重算；装配体 uuid 变了无条件重建 |
-| HUD | 新增 `client/render/gui/hud/SeatMapHud.java` | 常驻条件、面板、GUI 内半透明透视车体（先 `X(-90)` 再 `Y(180-heading)`、外壳 + 内构两遍、空模型守卫）、座位标记与“下一个”、标题与键位提示里的座位名、图例、反馈 |
+| HUD | 新增 `client/render/gui/hud/SeatMapHud.java` | 常驻条件、面板、GUI 内半透明透视车体（沿参考零件自身三轴俯视、外壳 + 内构两遍、空模型守卫）、座位标记与“下一个”、标题与键位提示里的座位名、图例、反馈 |
 | 注册 | `client/render/gui/MMGuiManager.java` | `registerAboveAll`；客户端 tick 更新占用与当前座位 |
 | 配置 | `client/MMClientConfig.java` | 显示模式（常驻/仅换座后/关闭）、损伤层开关 |
 
@@ -1146,7 +1146,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 控制组复位 | K17 炮手预设（`active_index: 0`）登入后为 `0`；手动切到 `1` 再离座，第二人登入仍回到 `0`；换座后旧座位保持原值；连续调用两次不重建集合、不重复清信号；座位设成越界索引时 `getActiveGroup()` 为 null 且两端同值 |
 | 换座后的旧座位输入 | 换座成功后发旧座位的 `ControlBindingPayload` 与 `MovementInputPayload` → 都被拒绝，旧座位的按键/移动信号保持空、移动包不广播；同一 tick 内发新座位的包 → 生效 |
 | 合并 HP | 两台满血载具合并 → HP 为两者之和（覆盖 `:895` 在 `setHp(mergedHp)` 之前这条顺序约束） |
-| 俯视变换 | 8 个朝向 → `front` 恒为 `(0, -1)`、`right` 恒为 `(+1, 0)`；`heading = 45°` 时不得出现 `(0.50, 0.71)` |
+| 俯视变换 | 任意偏航/俯仰/侧倾 → `front` 恒为 `(0, -1)`、`right` 恒为 `(+1, 0)`、`up` 恒为 `(0, 0, +1)`；沿局部上轴的偏移不产生任何平面位移 |
 
 ### 客户端实机
 
@@ -1161,6 +1161,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 常驻 | 进入座位后 HUD 自动出现；下车后消失；打开 AUI/炮镜/F1 时隐藏；不阻挡准星 |
 | 行驶中 | HUD 常驻时 WASD/镜头仍可用；车辆不停车；帧时间可接受 |
 | 行驶/转向对齐 | 直行一段距离，标记与模型不漂出面板；边转向边看，车头始终朝上、标记跟着车体转；斜向（约 45°）时车头也朝上 |
+| 上坡/侧倾 | 停在斜坡上（车头朝坡上、斜停、一侧压上坡沿）：车体始终是俯视图，不出现车顶斜切进横轴的重影；缩放与居中和平地一致 |
 | GUI scale | 1x/2x/3x 下文字与标记不重叠、不溢出 |
 
 ### 性能
@@ -1177,7 +1178,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | --- | --- | --- |
 | 参考零件启发式 | 全可动载具没有刚性簇；拖挂与牵引车各自成簇时得靠座位判定 | 含驾驶位的簇优先；客户端 `seat_map_flip_front`；官方四车实测 |
 | 刚性簇漏掉部件内部连接 | 只用 `partNet.edges()` 时，同一部件内的多个 SubPart 互不相连，簇退化成单零件，参考零件可能选到座椅腿 | 从 `connector.attachedConnector` 建 SubPart 图（只认 Advanced 侧去重），覆盖部件内与部件间；自组装多 SubPart 部件实测 |
-| HUD 参考系漂移 | 原点或偏航若跟快照一起缓存，行驶后地图按旧原点平移、转向后车头不再朝上，而座位点用的是实时世界坐标 | 快照只存参考 SubPart 与 `frontLocal`；原点/偏航逐帧从 `getWorldPositionMatrix(partialTick)` 取；实机用例覆盖直行与约 45° 转向 |
+| HUD 参考系漂移 | 原点或旋转若跟快照一起缓存，行驶后地图按旧原点平移、转向或爬坡后车头不再朝上，而座位点用的是实时世界坐标 | 快照只存参考 SubPart；原点与三轴姿态逐帧从 `getWorldPositionMatrix(partialTick)` 取；实机用例覆盖直行、约 45° 转向与斜坡停车 |
 | 客户端目标过期 | 客户端算目标是基于已同步的占用；服务端数据更新时，那个座位可能刚被占 | 服务端 `OCCUPIED` 拒绝，客户端按结果包刷新占用；再按一次会跳过它 |
 | 跨 SubPart 下车搜索 | `startRiding` 触发 `dismountVehicle`，可能把玩家放到车外 | 换座标记 + `getDismountLocationForPassenger` 返回当前位置；Van 实测 |
 | 同实体多乘客 | 原版 `canAddPassenger` 默认只允许 1 人；`SeatSubsystem.setPassenger` 用 `force=true` 绕过 | 换座继续使用 `force=true`；非 force 的 `startRiding` 会受 `canAddPassenger`/`boardingCooldown` 限制；建议后续给 `MMPartEntity` 显式覆写 `canAddPassenger` 以增强健壮性 |
@@ -1185,7 +1186,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 协议版本 | 新增 `input` 载荷 | 按项目约定提升 `input` 版本；两端同版本发布 |
 | 炮塔旋转 | 炮塔上的座位会相对车体移动 | 标记逐帧用 `mapMatrix` 投影；排序在进入/结构变化时缓存 |
 | GUI 层渲染模型 | 模型与 GUI 的批次/光照/深度混用，可能盖住标记或发黑 | 照 `GuiAnimatable`/`CustomModelItemRenderer`：`g.flush()` 后再画标记（车体不写深度，标记天然在上）；异常时退回兜底形态 |
-| 常驻模型渲染 | 只要在车内，每帧都多一遍整车模型（K17 约 2000 个方块） | 座位 ≤ 1 不渲染；面板小 + scissor；配置可切到“仅换座后”或关闭；兜底走 AABB 或 `OffscreenFbo` 缓存 |
+| 常驻模型渲染 | 只要在车内，每帧都多一遍整车模型（K17 约 2000 个方块） | 座位 ≤ 1 不渲染；面板整体缩到 0.5、标记按地图区域预筛；配置可切到“仅换座后”或关闭；兜底走 AABB 或 `OffscreenFbo` 缓存 |
 | 与现有 HUD 重叠 | 屏幕左下角与热栏、聊天行共用同一块区域 | 面板贴左下、底部留 24px 让开热栏；配置位置/缩放/透明度；提供“仅换座后显示”模式；打开界面时整体隐藏 |
 | 新键位冲突 | `X` 可能被其他模组或内容包控制绑定占用 | 键位可配置；只在座位控制时生效；不与热栏数字键冲突 |
 | 控制组继承 | 新座位可能保留上一个乘客的子组 | 复位到座位预设的 `active_index`（K17 炮手预设是 `0`；固定 `-1` 会让炮手落座后没有开火线路）；用新实例替换而不是就地 `activate`，避开共享预设实例与越界索引（§5.11.2） |
@@ -1317,3 +1318,6 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 2.10 | 2026-10-27 | 座位名直取 `SeatSubsystem.name` 的翻译键：面板标题、键位提示、actionbar 都显示 `Component.translatable(name)`，名字按像素宽度截断；标记仍只写编号；不引入从变体名/locator 反推名字的解析（§5.8）；`message.machine_max.seat.indexed` 随解析器一起删除，`seat.switched` 恢复第三个占位符 |
 | 2.11 | 2026-10-27 | 面板贴到屏幕左下角：底边距 24px（热栏高 22px，留 2px 间隙），右边缘停在准星与驾驶视线中心之外；聊天行与面板同处左下角，面板画在聊天层之上 |
 | 2.12 | 2026-10-28 | P0–P2 实机验收通过；文档移入 `docs/plan/已实现/`，索引改列为已实现 |
+| 2.13 | 2026-11-01 | 俯视投影改为沿参考零件自身的上轴：`X(-90)` 之后乘前向轴归一（`frontLocal` 为 `+Z` 时一次 `Y(180)`）与参考零件世界旋转的逆，足迹与居中也在该零件的局部坐标里量，缩放与平面位置对偏航、俯仰、侧倾完全不变（沿世界 Y 投影会让上坡的车顶斜切进横轴）；`mapMatrix` 的偏航角参数换成 `frontLocal + worldToReference`，投影用例改为逐个姿态（含俯仰、侧倾与前向轴两种符号）断言 `front → (0,-1)`、`right → (+1,0)`、`up → (0,0,+1)` |
+| 2.14 | 2026-11-01 | 面板整体缩到 0.5：布局仍按未缩放单位算，绘制时以面板左下角为锚点 `translate + scale`，面板、车体、标记与文字一起缩，常驻占用面积约为原来的四分之一；文字同时下到约 4.5px 高。同时把“面板外 `enableScissor`”的表述改成实现里实际使用的预筛（车体按 `fit` 收进地图、标记按地图区域外扩 8px 剔除） |
+| 2.15 | 2026-11-01 | 车头轴改为项目约定而不是从座位推断：局部 `-Z` 就是车头（`DestroyableObject#getFrontVector()`、地面控制器遥测、投射物姿态同一约定，内容包按 `-Z` 建模），`SeatOrder` 删掉按驾驶员座位纵向偏移判断符号的 `pickFrontAxis`、`Reference` 记录与 `groupCount`，`Layout`/`order`/`layout` 不再接收当前座位；座位图的 `mapMatrix` 去掉前向轴参数与归一半圈。据此修正同一台车换座位后俯视图朝向翻转（旧逻辑把当前座位也当探针），以及驾驶座落在刚体原点（随质心偏移）之后时车头朝下（例如 mini_ev 的驾驶座在引擎之后）。投影用例改为固定 `-Z` 车头、逐姿态断言 |

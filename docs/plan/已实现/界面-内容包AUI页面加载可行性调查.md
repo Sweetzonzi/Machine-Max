@@ -1,6 +1,6 @@
 # 界面-内容包 AUI 页面与资源加载可行性调查
 
-> **状态**：`DocumentModule` 已落地，待客户端实机验收。结论：内容包提供 AUI 页面与资源可行，且不需要修改 AUI。`DocumentModule` 像 `TextureModule` 一样，在客户端把内容包 `documents/` 直接写进 Spark-Core 已有的虚拟客户端资源包 `CLIENT_PACK`，路径为 `apricityui:apricity/<key>`，由 AUI 的 `ResourceManager` 分支读取；AUI 的资源扫描/自动重载负责发现 HTML。HUD、载具手册、PDA、研究页共用这一条通用管线。第一阶段只使用模组 JAR 内的 `assets/apricityui/apricity/` 页面。
+> **状态**：已实现，实机验收待完成。结论：内容包提供 AUI 页面与资源可行，且不需要修改 AUI。`DocumentModule` 像 `TextureModule` 一样，在客户端把内容包 `documents/` 直接写进 Spark-Core 已有的虚拟客户端资源包 `CLIENT_PACK`，路径为 `apricityui:apricity/<key>`，由 AUI 的 `ResourceManager` 分支读取；AUI 的资源扫描/自动重载负责发现 HTML。HUD、载具手册、PDA、研究页共用这一条通用管线。页面来源有两类：模组 JAR 内的 `assets/apricityui/apricity/` 内置页面，以及内容包 `documents/` 经 `CLIENT_PACK` 注入的页面。
 >
 > **版本基准**：本文的 AUI 接口核对基于 1.2.7。项目当前构建依赖 1.2.8，下列入口与路径尚未按 1.2.8 逐项复核。
 
@@ -156,7 +156,7 @@ AuiServices.setResources(new PackAwareResourceService(AuiServices.resources()));
 
 | 层 | 位置 | 职责 |
 | --- | --- | --- |
-| 通用页面模块 | `common/resource/modules/DocumentModule.kt` | 读取客户端本地 `documents/`，规范化成 `namespace/path` 后直接写 `CLIENT_PACK`；不引用 AUI 类 |
+| 通用页面模块 | `common/resource/modules/DocumentModule.kt` | 读取客户端本地 `documents/`，规范化成 `namespace/path` 后直接写 `CLIENT_PACK`；只依赖 AUI 的 `HTML.scan()` 触发一次重扫，不引用其它 AUI 类 |
 
 `DocumentModule` 像 `TextureModule` 一样直接引用 Spark 的 `CLIENT_PACK`，因此不需要共通桥、客户端接收器或额外安装钩子。它只在 `isClientSide` 时写入；专用服务器加载该类时不会触碰 AUI 客户端类。
 
@@ -198,7 +198,7 @@ AuiServices.setResources(new PackAwareResourceService(AuiServices.resources()));
 - 文档来自客户端本地的 `spark_modules`，安装内容包的人就是信任来源；服务端不参与这条管线。
 - 这条管线是通用的，页面不只影响 HUD，还能影响手册、PDA、研究页等所有 AUI 页面。
 
-第一阶段只使用 JAR 内页面，没有这个问题。第二阶段开启内容包页面后，脚本、远程 CSS/图片和 `<iframe>` 按客户端本地代码的信任级别处理；若将来改成服务端下发，需要重新定义信任策略。
+模组 JAR 内的内置页面不存在这个问题；内容包页面开启后，脚本、远程 CSS/图片和 `<iframe>` 按客户端本地代码的信任级别处理；若将来改成服务端下发，需要重新定义信任策略。
 
 ### 7.2 命名空间种子
 

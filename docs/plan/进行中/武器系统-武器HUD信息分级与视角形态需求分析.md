@@ -1,7 +1,7 @@
 # 武器 HUD 信息分级与视角形态需求分析
 
 > 版本 2.0 · 2026-10-18
-> **状态**：需求分析（计划中，未实现）。本文回答“武器 HUD 该向玩家显示什么、按什么信息量分级、第三人称与炮镜如何分工”，不定义具体 AUI 页面结构，也不替代数据层设计。
+> **状态**：进行中（需求分析，部分落地）。逐管读数、弹链余量、装填阶段与三视角布局字段已进入代码；四款具名呈现、可用总数含膛内、逐管“等待供弹”、炮镜装填环与 full 技术面板未实现。本文回答“武器 HUD 该向玩家显示什么、按什么信息量分级、第三人称与炮镜如何分工”，不定义具体 AUI 页面结构，也不替代数据层设计。
 >
 > 相关文档：数据快照与 `weapon.*` 查询见《[武器系统-武器控制器HUD样式与布局设计](../已实现/武器系统-武器控制器HUD样式与布局设计.md)》；样式、布局、元素与视角字段见《[界面-HUD样式挂载与布局设计](../进行中/界面-HUD样式挂载与布局设计.md)》；炮镜分划的投影与行为见《[观瞄系统-炮镜HUD自定义分划设计](../已实现/观瞄系统-炮镜HUD自定义分划设计.md)》。
 
@@ -20,7 +20,7 @@
 
 - 一个座位（`SeatSubsystem`）在一个时刻可激活多台武器控制器：基础组始终参与，另加当前选中的子控制组。这些 WC 就是该座椅的“选中集合”，其 HUD 全部显示。选中集合由 `getActiveWeaponControllers()` 给出，来源是控制组频道经 connector 转发或 `global` 广播的发现回调。本设计不使用主/副角色分类。
 - 一台武器控制器（下称“武器组”）可以下挂多根发射管（`LauncherSubsystem`）和多台装弹机（`AmmoLoaderSubsystem` / `RegenLoaderSubsystem`），并拥有多条可选弹链。弹链是**有序弹种序列**，不是单一弹种。
-- 运行期武器 HUD 由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 按 WC 布局独立创建模型与 AUI 元素，条目的 `selection_visibility` 决定常驻或仅选中显示，炮镜也走同一条路径。`AmmoHud` 是未注册图层的回退实现。`SightHud` 只在炮镜中心画一个参考圆环，十字线绘制代码当前注释停用。
+- 运行期武器 HUD 由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#tick` 按 WC 布局独立创建模型与 AUI 元素，条目的 `selection_visibility` 决定常驻或仅选中显示，炮镜也走同一条路径。`AmmoHud` 是未注册图层的回退实现。`SightHud` 在炮镜层绘制期望目标大环与每个有效发射器的管轴小环。
 - 每台控制器的按视角 `*_hud_layout` 字段定义在 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/dynamic_attr/WeaponControllerSubsystemAttr.java#CODEC`，默认省略即无 HUD。武器元素、业务快照和 `weapon.*` 查询均有实现；K17 的动态组件与对照资源见《[K17 动态武器 HUD 组件接入](../已实现/K17动态武器HUD组件接入.md)》。本文的信息分级与炮镜环是呈现层需求，具体完成范围以该接入记录为准。
 
 ### 2.2 本文回答的问题
@@ -459,7 +459,7 @@
 - 再生：模式（逐发/批量）、进度、剩余时间、能量成本；
 - 弹种：展示名、注册键、口径、初速、穿深、制导等可选属性。
 
-现有 `HudWeaponSnapshot` 草案已经覆盖大部分字段，需要补的是：膛内计数、逐管“等待供弹”状态、再生模式与批量剩余时间。快照按 WC 各自持有，不包含座椅、角色或焦点。
+现有 `HudWeaponSnapshot` 已覆盖逐管读数、弹链余量、装填阶段（`loading` / `regenerating` / `refilling`）与分阶段剩余时间；需要补的是：可用总数含膛内、逐管“等待供弹”状态。快照按 WC 各自持有，不包含座椅、角色或焦点。
 
 ### 9.2 计数与去重
 

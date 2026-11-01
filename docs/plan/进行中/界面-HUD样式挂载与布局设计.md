@@ -11,8 +11,8 @@
 
 | 环节 | 现状 |
 | --- | --- |
-| HUD 样式 | `huds/*.json`（3 份：`example_hud`、`example_hud_2`、`gun_sight_hud`），由 `HudModule` 读入 `MMDynamicRes.HUD_STYLES`；`type` 字段判别载体，V1 只有 `machine_max:model_hud`。样式只描述模型、动画、纹理、染色、文本槽与 `scissor` |
-| HUD 布局 | `hud_layouts/*.json`（4 份：`seat_dashboard`、`seat_dashboard_2`、`scope_gunner`、`scope_gunner_fixed`），由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`；文件内容是裸元素数组，键为 `<命名空间>:<相对路径>` |
+| HUD 样式 | `huds/*.json`（当前 15 份：3 份 `machine_max:model_hud` 与 12 份 `machine_max:aui_hud`），由 `HudModule` 读入 `MMDynamicRes.HUD_STYLES`；`type` 字段判别载体。模型载体描述模型、动画、纹理、染色、文本槽与 `scissor`，AUI 载体描述页面、锚点与配色 |
+| HUD 布局 | `hud_layouts/*.json`（当前 15 份），由 `HudLayoutModule` 读入 `MMDynamicRes.HUD_LAYOUTS`；文件内容是裸元素数组，键为 `<命名空间>:<相对路径>` |
 | 相机/瞄具宿主 | `CameraSubsystemStaticAttr.scope_hud_layout`（`SightSubsystemStaticAttr` 提供同名字段）：一个 `ResourceLocation` |
 | 座椅宿主 | `SeatSubsystemStaticAttr.ViewAttr.first_hud_layout` / `third_hud_layout`：各一个 `ResourceLocation` |
 | 武器控制器宿主 | `IHudHost` 提供三个视角布局，候选并集、观察者选中状态与模型/AUI 武器元素由 `CustomHud` 统一协调 |
@@ -593,7 +593,7 @@ SparkPackLoaderApplier.CLIENT_PACK.put(
 
 `DocumentModule` 使用 `ReadMode.LOCAL_ONLY`：客户端读取本地 `spark_modules`，服务端不向客户端发送文档。文档属于客户端表现资源，不参与游戏性同步；客户端调试页面也可以放在 `<gamedir>/apricity/` 或模组 JAR 的 `assets/apricityui/apricity/`。
 
-备选方案是 `AuiServices.setResources(AuiResourceService)` 包装器 + `HTML.putTemple`：不依赖资源包命名空间，但要实现六个委托方法并额外维护模板注入。两种方案的比较、命名空间种子细节与验证计划见 [内容包 AUI 页面加载可行性调查](./界面-内容包AUI页面加载可行性调查.md)。
+备选方案是 `AuiServices.setResources(AuiResourceService)` 包装器 + `HTML.putTemple`：不依赖资源包命名空间，但要实现六个委托方法并额外维护模板注入。两种方案的比较、命名空间种子细节与验证计划见 [内容包 AUI 页面加载可行性调查](../已实现/界面-内容包AUI页面加载可行性调查.md)。
 
 这条管线同时服务两个载体：模型载体的模型/动画/纹理由内容包提供，AUI 载体也能自带页面。`hud_layouts/*.json` 由 Spark 内容包模块读取，不经过这条资源管线。
 
@@ -614,7 +614,7 @@ V1 的内容包迁移已完成，当前形态：
 | `subsystems/*/*_seat.json` | `views.first_hud_layout` / `third_hud_layout` 各一个 RL，作为型号默认值；零件实例可用同名动态属性覆盖 |
 | 相机/瞄具子系统 | `scope_hud_layout` 一个 RL；没有布局时省略字段 |
 | 武器控制器 | 动态属性已有 `first_hud_layout` / `third_hud_layout` / `scope_hud_layout`，默认省略即无 HUD；内置 `weapon_live` 布局和双语武器 schema 提供接入示例 |
-| `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 座椅、相机/瞄具的 schema 已含对应视角字段；武器控制器动态属性的 schema 尚未补三个 HUD 字段；`hud.md` 按"样式 / 布局 / 元素"三部分组织 |
+| `docs/{zh_cn,en_us}/schemas/**` 与 `hud.md` | 座椅、相机/瞄具与武器控制器动态属性的 schema 均已含对应视角字段；`hud.md` 按"样式 / 布局 / 元素"三部分组织 |
 
 当前代码只读取新字段：`first_person_hud`、`third_person_hud`、`hud_components` 没有对应的解码字段，写进 JSON 会被忽略。
 
@@ -706,7 +706,7 @@ RL 命名约定：样式与布局都使用 `<命名空间>:<相对路径>`，样
 | 阶段 | 内容 | 产出 |
 | --- | --- | --- |
 | **V1（已实现）** | `HudStyle` / `HudElement` / `HudLayout` 与两张资源表；座椅、相机/瞄具切到按视角的 `*_hud_layout`；`CustomHud` 按布局数组创建、排序与渲染模型元素；内容包迁移；沿用现有 `GuiAnimatable` 与 Part 的 `MechMolangContext` | 现有座椅/相机/瞄具 HUD 表现等价；一份布局被多个座椅/视角引用；模型载体的元素-布局体系跑通 |
-| **V2-b（进行中）** | AUI 载体：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、`body.mm-hud` 收缩规则、按布局顺序手动绘制；`DocumentModule` 与客户端资源包注入 | AUI 页面作为 HUD 元素渲染；内容包页面可创建 |
+| **V2-b（代码已实现、待实机验收）** | AUI 载体：`machine_max:aui_hud` 样式、`anchor` 投放、每个元素独立 Document、`body.mm-hud` 收缩规则、按布局顺序手动绘制；`DocumentModule` 与客户端资源包注入 | AUI 页面作为 HUD 元素渲染；内容包页面可创建 |
 | **V2-a（代码已实现、待实机验收）** | 通用 `HudMolangContext`（`hud.*`）、AUI 绑定层（`data-mm-*`）、`local.*` / `global.*` 在 HUD 上下文中的转发 | AUI 页面显示数值；`hud.*` 查询可用；内容包页面按表达式刷新 |
 | **V3（代码已实现、待实机验收）** | 武器控制器三个 `*_hud_layout` 字段、候选并集、载体通用 `selection_visibility`、观察者选中状态、`WeaponHudElement`、`WeaponHudMolangContext`、业务快照、`weapon.*` 与当前项查询、`scope` 分划、内容包示例及 schema | 候选 WC 按当前视角布局逐条选择常驻/仅选中显示；切组保留元素；各作用域数据不串；炮镜分划读取本控制器弹药；多台重叠由内容包布局决定 |
 | **V4（后做）** | 玩家覆盖与编辑页 | `HudLayoutManager`、按视角覆盖/重置、`VehicleControlScreen` 的"HUD 布局"页 |

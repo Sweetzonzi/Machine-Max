@@ -1,5 +1,7 @@
 # 主武器管轴 HUD
 
+> **状态**：已实现，实机画面验收待完成。
+
 `client/render/gui/hud/SightHud.java#render` 在同一个 `sight_hud` 层绘制两类圆环：操作者的期望目标使用大环，当前主武器每个有效发射器的实际管轴使用小环。实体相机、固定炮镜和座椅第三人称观察均适用；普通座椅第一人称采用原版界面。隐藏 GUI、离座、座椅停用或宿主零件离场时不绘制。
 
 本文的 Java 源码短路径均相对 `src/main/java/io/github/sweetzonzi/machine_max/`。

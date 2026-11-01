@@ -1,6 +1,6 @@
 # 计划与设计文档索引
 
-本目录存放 Machine-Max 的计划与设计文档，按**实现状态**分为三个子目录。每份文档的头部都有一行 `**状态**`，与本索引一致；判定依据写在每行的「判定依据」列，可逐条回代码复核。
+本目录存放 Machine-Max 的计划与设计文档，按**实现状态**分为三个子目录。每份文档的头部都有一行状态声明（`**状态**`、`**文档状态**` 或 `> 状态：`），与本索引一致；判定依据写在每行的「判定依据」列，可逐条回代码复核。
 
 ## 判据
 
@@ -10,7 +10,7 @@
 | `进行中/` | 部分落地，或只到原型/骨架阶段 | 一半的类已存在，或只有资源原型而无逻辑接入 |
 | `计划中/` | 尚未实现，或为分析提案、上游问题记录 | 代码中不存在文档描述的类型 |
 
-三类的划分只看代码现状，与文档的写作完备程度无关：`已实现/` 里的文档同样可能留有待办小节。实机画面与玩法的验收结论不进本判据，`已实现/` 的文档可以在状态行里单独标注「实机验收待完成」。
+三类的划分只看代码现状，与文档的写作完备程度无关。实机画面与玩法的验收结论不进本判据，`已实现/` 的文档可以在状态行里单独标注「实机验收待完成」。文档只要还有未实现的阶段、字段或交付项，就放在 `进行中/`；`已实现/` 只保留全部交付项已落地、仅剩实机验收的文档。
 
 ## 已实现
 
@@ -21,25 +21,23 @@
 | [伤害结算相位与装配体投递修改计划](已实现/伤害结算相位与装配体投递修改计划.md) | 提交 `20355f6a`；`settleAccumulatedDamage` 移至 `postTick`，`SubPartHitDamage` 携带完整批次 |
 | [制造蓝图-配方与物品拆分设计](已实现/制造蓝图-配方与物品拆分设计.md) | 零件配方与通用制造配方已拆分，两类蓝图物品与装配侧清单均已落地 |
 | [动画系统-Part作为动画体重构设计](已实现/动画系统-Part作为动画体重构设计.md) | `Part implements IAnimatable<Part>`；模型/动画/Pose 控制器已上移到 `Part` |
-| [动画系统-事件触发动画设计](已实现/动画系统-事件触发动画设计.md) | 事件触发动画的第一版接口已落地，Spark-Core 状态机侧已接入 |
-| [子系统-模块化损坏与子模块设计](已实现/子系统-模块化损坏与子模块设计.md) | `ModularSubsystem`、`SubModule`、`AbstractModuleAttr` 已落地；首期接入火炮的 `BarrelModuleAttr` / `BreechModuleAttr` / `CapacitorModuleAttr` |
 | [抓取系统-详细设计文档](已实现/抓取系统-详细设计文档.md) | `common/mech/grab/` 下 `GrabManager`、`GrabConstraint`、`GrabPhysics` 已落地 |
 | [抓取系统-接口设计文档](已实现/抓取系统-接口设计文档.md) | `common/mech/grab/` 已落地；分层与职责边界按本文实现，方法签名见代码 |
 | [手动零件组装客户端权威重构计划](已实现/手动零件组装客户端权威重构计划.md) | 装配预览与选择状态存于客户端；服务端只在放置时收包校验 |
 | [相机系统-镜头抖动重构设计](已实现/相机系统-镜头抖动重构设计.md) | `CameraShakeController` 承担抖动求解，`DesaturateEffect` 走后期处理管线 |
 | [武器系统-投射物拦截与受击判定计划](已实现/武器系统-投射物拦截与受击判定计划.md) | 四阶段各自一个提交（`cbe211dc`、`1467d475`、`f67044a3`、`a7153e82`） |
-| [武器系统-爆炸波前视觉设计](已实现/武器系统-爆炸波前视觉设计.md) | 第一期的屏幕空间折射已落地（`blast_distortion` 着色器 + `BlastDistortionEffect`）；第二期的世界内薄壳辉光未实现 |
 | [武器系统-爆炸系统接口设计](已实现/武器系统-爆炸系统接口设计.md) | `common/mech/explosion/` 的类与签名按本文口径实现 |
-| [武器系统-爆炸系统详细设计](已实现/武器系统-爆炸系统详细设计.md) | §十七 阶段 A–J 已落地；阶段 K/L 待上游通用 Effect 体系 |
 | [武器系统-碰炸引信与爆炸战斗部实现备忘](已实现/武器系统-碰炸引信与爆炸战斗部实现备忘.md) | 提交 `90fd8fef`；`warheads` 字段与固定碰炸引信已落地 |
 | [武器系统-制导组件实现备忘](已实现/武器系统-制导组件实现备忘.md) | 提交 `c1c0db71`；`GuidanceLaw`、`PurePursuitGuidance`、`AuthorityLimits` 已落地 |
+| [武器系统-装弹机装填语义与供给绑定重构计划](已实现/武器系统-装弹机装填语义与供给绑定重构计划.md) | `feed` / `magazine` 分块（含 `reload_round_by_round`）、`dockedConsumers` 对接状态机与 `claimedByOther` 控制器独占绑定均已落地，T01—T20 服务端用例通过；客户端画面与 HUD 进度环的实机验收待完成 |
 | [研究台界面-研发分组与蓝图库统一重构计划](已实现/研究台界面-研发分组与蓝图库统一重构计划.md) | 提交 `87615e1e`；研究台树形界面与研发分组已在 AUI 上实现 |
 | [蓝图库-玩家设计保存与取用设计](已实现/蓝图库-玩家设计保存与取用设计.md) | `BlueprintLibraryClient` 与客户端 `saved_blueprints/*.json` 已落地 |
 | [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | 分划行为与炮镜跟随语义已落地；资源形态为 `huds/*.json` 样式 + `hud_layouts/*.json` 布局，由 `HudModule` / `HudLayoutModule` 载入，客户端 `CustomHud` 渲染 |
+| [观瞄系统-主武器管轴HUD](已实现/观瞄系统-主武器管轴HUD.md) | `SightHud#render` 在 `sight_hud` 层绘制期望目标大环与每个有效发射器的管轴小环；`ScreenProjectionUtil#worldDirectionToScreenOffset` 按当前相机与视场投影；JUnit 与 `ViewpointGameTest` 的相关用例通过，实机画面验收待完成 |
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
 | [内容包诊断-SparkCore适配实现](已实现/内容包诊断-SparkCore适配实现.md) | Spark-Core `e526385d`（v1.4）；`MMDynamicRes` 只留注册表与索引，14 个模块去 catch、JSON 解码走 `PackCodec`，配方/研发经 `SparkPackIssues.report` 上报，领域层抛 `PackContentException`；构建、`runData`、`runServer` 与坏文件探针已验证 |
+| [界面-内容包AUI页面加载可行性调查](已实现/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 在客户端把内容包 `documents/` 写入 `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`；客户端实机验收待完成 |
 | [内容包分层与命名](已实现/内容包分层与命名.md) | `spark_modules/` 下九个第一方包按 `builtin → kit → 车包` 三层划分并统一 `Machine-Max_` 目录名；`sdkfz` 拆成六个包、`official` 改名 `civilian`、5 件独立道具并入 builtin、每个包自带 schema 副本；`runServer` 加载的部件与子系统数量与拆分前一致 |
-| [武器系统-投射物弹道预测与区块预载设计](已实现/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`、`db503f23`；`common/mech/trajectory/` 下 `TrajectoryStep`（唯一步进，趟一与客户端外推共用）、`ChunkCoverage`（按到格子的距离判，含角点与外扩）、`ElevationFilter`、`TerrainPreload`（视界 `W = v(L+Δ)+16`、逐区块 Y 并集、按区块 `hold`），接进 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段；物理线程每步末发布快照表；四组纯 JUnit。未做 `needsReplan`（Δ = 1 tick 下空转），`reactivations` 与两条 GameTest 待验证 |
 | [观瞄系统-HUD专用MoLang上下文设计](已实现/观瞄系统-HUD专用MoLang上下文设计.md) | `client/render/gui/hud/molang/` 下 `HudMolangContext`、`WeaponHudMolangContext`、`HudRuntimeElement`、`HudBallisticTable`、`HudPageBinding` 与 `HudAnimationExpressions.kt` 均已落地，由 `CustomHud#tick` 调度 |
 | [武器系统-武器控制器HUD样式与布局设计](已实现/武器系统-武器控制器HUD样式与布局设计.md) | `HudWeaponSnapshot`、`WeaponHudElement` 已落地；控制器宿主、候选并集与 `selection_visibility` 显隐在 `CustomHud` |
 | [部件系统-公共基础抽象实施计划](已实现/部件系统-公共基础抽象实施计划.md) | `common/mech/part/` 下 `AbstractPart`、`AbstractPartType`、`PartKind(s)`、`PartFactory`、`PartDefinitions`、`PartCreationContext` 与 `vehicle/RegularPart`、`RegularPartType`、`RegularPartData` 齐备；现状 API 见 `docs/部件公共基础接入.md`；§1.3 的 BodyPart 等条目属 ARMS-Core 后续任务 |
@@ -50,7 +48,6 @@
 | [载具系统-部件摧毁状态与组装重力重构计划](已实现/载具系统-部件摧毁状态与组装重力重构计划.md) | 提交 `e90f2e42`、`2d7c4da9`、`b1d667e4`；`AbstractPart` 持有 `destroyTime` / `tickDestroyState` / `applyGravity`，`RegularPart` 以 `assembling` 命名，`RegularPartData` 含 `destroyed` / `destroy_time`，协议升到 `sync:2.7.0` / `misc:1.3.0`；GameTest 全绿，五条实机验收已于 2026-10-29 通过 |
 | [HUD上下文实现与验收](已实现/HUD上下文实现与验收.md) | 上下文、快照、绑定与物理步推进已进入代码，`gradlew --offline build` 含 81 项单测通过；进世界画面与控制组交互的实机验收另行跟踪 |
 | [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
-| [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册；实机验收通过，P3–P4 未实现 |
 | [界面-创造栏零部件筛选实施计划](已实现/界面-创造栏零部件筛选实施计划.md) | `client/render/gui/creative/` 下 `CreativePartBrowser`、`SeriesPickerWidget` 与 `CreativeModeInventoryScreenMixin`、`CreativeModeTabsMixin` 已落地，两个目标创造页启用搜索栏与外侧筛选控件；68 份零件定义/106 个变体写入 series 标签，30 条系列译名与 7 条界面文本已生成；T01—T05 通过。实机验收 U01—U15 待执行，结果与偏差见该文 §12 |
 
 ## 进行中
@@ -58,20 +55,27 @@
 | 文档 | 当前进度 |
 | --- | --- |
 | [控制分配-作动器wrench分配设计](进行中/控制分配-作动器wrench分配设计.md) | `util/WrenchAllocator` 批量阻尼伪逆／批量钉界基线已实现，14 项数学、8 项上下文与 4 项裸 Bullet 测试、86 组 NumPy SVD 对照通过；内核微基准覆盖 16／32／64 器件，输入与求解缓冲统一在 Workspace，动态更新方向后的填充求解实测 0 B/步。完整飞控、响应与游戏接线未完成，结果与范围见该文 §11.5 |
-| [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、`FittingItem` / `TrackItem` 的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`durabilityPerLink` / `lengthPerLink` + 包络推导 N 与最大耐久）、关键事件同步、客户端履带节渲染与 X 角速度相位已落地；履带型号已数据驱动（`fittings/` + `FittingModule` / `FittingType` / `TrackType`），近处逐节绘制型号的单节模型、远处与模型缺失回退程序化；型号 → 物品由 `FittingItems` 派发，物品栏优先 `visual.icon` 的 2D 图标、缺图标回退单节 3D 模型，独立配件创造栏按型号生成条目；用料按节数记录（`TrackLink.linkCount()`），暂不消耗物品；履带控制阶段 A / B（`AbstractGroundControllerSubsystem` + `TrackControllerSubsystem` + `TrackDriveSubsystem`，单流）已落地，阶段 C / D 未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 17/17 用例 + 270/270 断言（`prototype/track-envelope-2d/`）；`gradlew check` 通过（含 `checkSchemas` 与全量 JUnit） |
-| [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 实施中（v5）；单流八方向意图、外侧锚定的带速上限、驱动/制动预算选择与正反向关节物理回归已接入。共享基类、属性注册与内容包 schema 已落地；阶段 C / D（双流转向、多履带实机验收、HUD）未实现 |
+| [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、`FittingItem` / `TrackItem` 的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`durabilityPerLink` / `lengthPerLink` + 包络推导 N 与最大耐久）、关键事件同步、客户端履带节渲染与 X 角速度相位已落地；履带型号已数据驱动（`fittings/` + `FittingModule` / `FittingType` / `TrackType`），近处逐节绘制型号的单节模型、远处与模型缺失回退程序化；型号 → 物品由 `FittingItems` 派发，物品栏优先 `visual.icon` 的 2D 图标、缺图标回退单节 3D 模型，独立配件创造栏按型号生成条目；用料按节数记录（`TrackLink.linkCount()`），暂不消耗物品；履带控制阶段 A / B（`AbstractGroundControllerSubsystem` + `TrackControllerSubsystem` + `TrackDriveSubsystem`，单流）已落地，阶段 C / D 未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 18/18 用例 + 321/321 断言（`prototype/track-envelope-2d/`）；`gradlew check` 通过（含 `checkSchemas` 与全量 JUnit） |
+| [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 进行中（v5）；单流八方向意图、外侧锚定的带速上限、驱动/制动预算选择与正反向关节物理回归已接入。共享基类、属性注册与内容包 schema 已落地；阶段 C / D（双流转向、多履带实机验收、HUD）未实现 |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
-| [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据，未接真实控制组 |
+| [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 与面板控件已就位；`ControlDataAccessor` 优先读取当前座椅的真实 `ControlGroupSet`，无真实数据时回退 `FOR_GUI_TEST`。`RawInputHandler` 中的打开入口整段注释（Tab 已改绑控制组轮换），面板当前无法从游戏内打开 |
 | [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.2.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）已落地；P4 车灯球光、P5 锥光与 S3 未实现 |
-| [界面-HUD样式挂载与布局设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地并实机验收：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；宿主分组 `HudView`/`IHudHost` 覆盖座椅、相机/瞄具与武器控制器。V2-b AUI 载体已落地：`AuiHudStyle`（`aui_hud`）、`HudAnchor` 与元素 `anchor`、每元素独立 `Document`、`CustomHud` 按布局顺序手动绘制，待实机验收。V2-a（`hud.*` 上下文、`data-mm-*` 绑定层）、V3（`WeaponHudElement`、`weapon.*`）、V4（玩家覆盖）未实现 |
+| [界面-HUD样式挂载与布局设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地并实机验收：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；宿主分组 `HudView`/`IHudHost` 覆盖座椅、相机/瞄具与武器控制器。V2-b AUI 载体已落地：`AuiHudStyle`（`aui_hud`）、`HudAnchor` 与元素 `anchor`、每元素独立 `Document`、`CustomHud` 按布局顺序手动绘制，待实机验收。V2-a（`hud.*` 上下文、`data-mm-*` 绑定，`HudPageBinding`）与 V3（`WeaponHudElement`、`weapon.*`）已落地并在 `CustomHud` 接线；V4（玩家覆盖与编辑页）未实现 |
 | [观瞄系统-视点与瞄准控制实施记录](进行中/观瞄系统-视点与瞄准控制实施记录.md) | P0–P6 的实现面均已接入并跑通自动化用例：实体视点、第三人称跟随/自由、固定炮镜期望目标、完整目标上报、WC 持久目标、机构适配与相机路由。剩余：设备模型骨骼读取观察角的接线、多人一致观察角同步（明确为后续 TODO）、客户端与多人实机验收 |
 | [观瞄系统-视点与瞄准控制重构方案](进行中/观瞄系统-视点与瞄准控制重构方案.md) | `AbstractViewpointSubsystem`、`ThirdPersonViewpoint`、`SightSubsystem`/`CameraSubsystem` 平级重构与第一方内容接线均已落地；模型骨骼接线与客户端动态体验未完成，进度细节见上一行的实施记录 |
 | [武器系统-投射物曳光光照设计](进行中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）、S2（光源级遮挡）与 S4（法线响应，随共享着色器）已落地；S3 未实现，待游戏内实测标定。F1（爆炸波前折射的遮挡修复）已落地并实测通过；曳光链已并入通用 `screen_space_light` 通路 |
-| [武器系统-投射物模型渲染设计](进行中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 可解析到 sdkfz 包的弹体模型，待游戏内验收）；朝向修正、缩放（`model_scale` / `model_rotation` / `model_lod_distance`）与投射物动画驱动未实现 |
-| [界面-内容包AUI页面加载可行性调查](进行中/界面-内容包AUI页面加载可行性调查.md) | 结论已落地：`DocumentModule` 在客户端把内容包 `documents/` 写入 Spark `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`。待客户端实机验收；`AuiResourceService` 包装器为备选 |
+| [武器系统-投射物模型渲染设计](进行中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 解析到 `Machine-Max_Soviet_Basic_Kit` 的弹体模型 `models/projectile/9m133.geo.json`，待游戏内验收）；朝向修正、缩放（`model_scale` / `model_rotation` / `model_lod_distance`）与投射物动画驱动未实现 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；压溃与零件间、生物路径迁移不排期 |
 | [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
 | [载具系统-殉爆机制设计](进行中/载具系统-殉爆机制设计.md) | 第十三版；`cookoff` 贡献字段与 Codec、装弹机库存与发射器膛内单发的摧毁触发、实际库存合成、命中事件化结算、连接点主线程应用、Level 级冲量统一发布与波前末段裁剪均已接入；`CookoffComposition` / `CookoffContribution` 附单元测试，模块伤害与膛内单发殉爆走 GameTest；剩余数值标定与运行期验收见 §8 |
+| [动画系统-事件触发动画设计](进行中/动画系统-事件触发动画设计.md) | 事件触发动画的当前接口已落地，Spark-Core 状态机侧已接入；§6 的后续待办未实现 |
+| [子系统-模块化损坏与子模块设计](进行中/子系统-模块化损坏与子模块设计.md) | `ModularSubsystem`、`SubModule`、`AbstractModuleAttr` 已落地；首期仅火炮接入 `BarrelModuleAttr` / `BreechModuleAttr` / `CapacitorModuleAttr`，其余子系统的模块化接入与后续阶段未实现 |
+| [武器系统-爆炸波前视觉设计](进行中/武器系统-爆炸波前视觉设计.md) | 第一期的屏幕空间折射已落地（`blast_distortion` 着色器 + `BlastDistortionEffect`）；第二期的世界内薄壳辉光未实现 |
+| [武器系统-爆炸系统详细设计](进行中/武器系统-爆炸系统详细设计.md) | §十七 阶段 A–J 已落地；阶段 K/L 待上游通用 Effect 体系 |
+| [武器系统-投射物弹道预测与区块预载设计](进行中/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`、`db503f23`；`common/mech/trajectory/` 下 `TrajectoryStep`、`ChunkCoverage`、`ElevationFilter`、`TerrainPreload` 已接入 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段，四组纯 JUnit 通过；未做 `needsReplan`，`reactivations` 未接入，两条 GameTest 待落地 |
+| [界面-车内换座与座位布局HUD调研](进行中/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册，P0–P2 实机验收通过；P3–P4 未实现 |
+| [武器系统-装弹机模块化损伤实施计划](进行中/武器系统-装弹机模块化损伤实施计划.md) | P1–P4 已接入：`feed` / `magazine` 两个模块与模块恢复门槛、`pass_damage=false` 时模块伤害落地的入口修正、实时供给门控与交付清理、再生门控、退弹边界、库存殉爆入口与弹仓受击定位、旧存档比例分摊、`sync:2.8.0`。P5 部分完成：2S38 的 `magazine` / `feed` 命中箱标注与 builtin schema、各包副本已落地，其余第一方载具待标注；P6 实机与标定验收待做；普通装弹机仅做公共接口适配 |
+| [武器系统-武器HUD信息分级与视角形态需求分析](进行中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析，部分落地：逐管读数、弹链余量、装填阶段与三视角布局字段已进入代码；四款具名呈现（`minimal` / `standard` / `scope` / `full`）、可用总数含膛内、逐管「等待供弹」、炮镜装填环与 full 技术面板未实现 |
 
 ## 计划中
 
@@ -79,15 +83,13 @@
 | --- | --- |
 | [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
-| [武器系统-装弹机模块化损伤实施计划](计划中/武器系统-装弹机模块化损伤实施计划.md) | 实施指导；P1、P2、P4 已接入（`feed` / `magazine` 两个模块与模块恢复门槛、`pass_damage=false` 时模块伤害落地的入口修正、实时供给门控与交付清理、旧存档比例分摊进模块、世界同步协议升到 `sync:2.8.0`），弹仓受击来源已下沉到模块、殉爆定位就位，P3 剩余再生与退弹门控、弹仓损坏清理与起爆入口，P5 待做命中箱标注与 T01—T23 验收；普通装弹机仅做公共接口适配 |
-| [武器系统-装弹机装填语义与供给绑定重构计划](计划中/武器系统-装弹机装填语义与供给绑定重构计划.md) | 已实施、待实机验收；`feed` / `magazine` 分块（含 `reload_round_by_round`）、对接状态机与控制器独占绑定均已落地，T01—T19 的服务端用例通过，客户端画面与 HUD 进度环待 runClient 核对 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
 | [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
-| [武器系统-武器HUD信息分级与视角形态需求分析](计划中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析；定义 `minimal` / `standard` / `scope` / `full` 四款呈现、武器类型画像、第三人称/炮镜分工与装填环语义；内容包中尚无对应的四款布局 |
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 未实现；`TrackRenderer` 中没有下垂/悬链求解代码 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
+| [武器系统-推力分段与变质量计划](计划中/武器系统-推力分段与变质量计划.md) | 设计定稿、未实施；推进段在内容包侧是一个单段对象、在弹道库侧是一个时间窗，本文定义段表、装药按段记录与燃烧期质量；指令触发、推力曲线与分级分离明确不做 |
 
 ## 未纳入本目录
 

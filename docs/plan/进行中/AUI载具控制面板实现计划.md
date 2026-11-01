@@ -1,7 +1,7 @@
 # AUI 载具控制面板 — 实现计划
 
 **版本**：1.2（AUI 能力重调研）\
-**状态**：进行中（`vehicle_control.html` 已就位；面板数据源 `ControlDataAccessor` 当前走 `FOR_GUI_TEST` 测试数据）
+**状态**：进行中（`vehicle_control.html` 与 Tab 01–03 页面已就位；`ControlDataAccessor` 优先读取当前座椅的真实 `ControlGroupSet`、无真实数据时回退 `FOR_GUI_TEST`；`RawInputHandler` 的打开入口整段注释，面板当前无法从游戏内打开）
 **日期**：2026-05-28\
 **目标**：使用 AUI（ApricityUI）实现 Machine-Max 的载具信息查看与控制系统可视化编辑
 
@@ -14,9 +14,9 @@
 | 组件            | 文件                                                                                                                                                                                 | 状态                      |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | AUI 集成        | 已作为 NeoForge 依赖引入                                                                                                                                                                  | ✅ 就绪                    |
-| 控制面板管理器       | [`VehicleInfoPanelManager.java`](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/VehicleInfoPanelManager.java) | ⚠️ 概念验证阶段，使用 mock 数据    |
-| AUI 模板        | [`vehicle_info_panel.html`](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_info_panel.html)                  | ⚠️ 仅实现单页：控制组卡片列表 + 简版编辑 |
-| 按键绑定          | `RawInputHandler.java:335` — Tab 键打开/关闭面板                                                                                                                                          | ✅ 就绪                    |
+| 控制面板管理器       | [`VehicleInfoPanelManager.java`](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/VehicleInfoPanelManager.java) | ⚠️ 真实数据优先，Mock 回退           |
+| AUI 模板        | [`vehicle_control/`](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control/vehicle_control.html)                  | ✅ 主页面 + Tab 01–03 页面与样式 |
+| 按键绑定          | `RawInputHandler.java` — 打开/关闭面板的回调整段注释（Tab 已改绑控制组轮换）                                                                                                                                          | ⚠️ 入口停用                    |
 | 控制系统数据模型      | `common/mech/control/` 全部类（ControlGroupSet / ControlGroup / ControlBinding / AbstractGuiAction 等）                                                                                  | ✅ 就绪                    |
 | 网络同步          | `ControlBindingPayload`、`ControlGroupSet.STREAM_CODEC`                                                                                                                             | ✅ 就绪                    |
 | 3D HUD 渲染基础设施 | `Hud3DContext` / `AssemblyHud3D`（零部件投影渲染）                                                                                                                                          | ✅ 就绪（可复用投影逻辑）           |
@@ -25,7 +25,7 @@
 
 - **走轻量 AUI 模式**：POC 阶段通过 `ApricityUI.openScreen(path)` 打开纯 AUI 窗口，`Client.java` 全局事件订阅自动处理输入与渲染。**正式方案将替换为自定义 Screen**
 - **纯 Java DOM 操作**：HTML 模板只有布局骨架 + CSS，所有卡片和数据通过 `Document.createElement()` / `querySelector()` / `innerText` / `addEventListener()` 动态构建
-- **使用 mock 数据**：`FOR_GUI_TEST` 字段持有硬编码的测试 `ControlGroupSet`
+- **真实数据优先**：`ControlDataAccessor.getCurrentControlSet` 在玩家控制子系统时返回真实 `ControlGroupSet`；没有真实数据时回退 `FOR_GUI_TEST` 中硬编码的测试数据
 - **交互方式**：AUI 的 `mousedown` / `mousemove` / `mouseup` 事件，不需要转发
 
 ### 1.3 技术结论
@@ -1317,7 +1317,8 @@ document.getElementById("id");         // ✅ 按 ID 查找（最快）
 | 阶段 2b — PanelOverview      | ✅ 基本完成 | 状态条 + 列标题 + 控制模式信息，缺失 3D 预览                                                     |
 | 阶段 2c — PanelDeviceControl | ✅ 基本完成 | PULSE/TOGGLE/SLIDER 控件渲染，缺失 3D 预览                                               |
 | 阶段 4 — Tab 04 库存           | ✅ 占位   | 空 div 占位，按钮禁用                                                                   |
-| Mock 数据                    | ✅ 完成   | `ControlDataAccessor` 使用 `VehicleInfoPanelManager` 中的丰富 Mock 数据（4 组 + 6 GUI 控件） |
+| 阶段 0.5 — 网络包            | ✅ 完成   | `ControlGroupSetEditPayload`、`GuiActionPayload` 已在 `MMPayloadRegistry` 注册并由面板发送 |
+| 数据源                      | ✅ 完成   | `ControlDataAccessor` 优先读真实 `ControlGroupSet`，无真实数据时回退 `FOR_GUI_TEST`（4 组 + 6 GUI 控件） |
 
 ### 13.2 进行中的阶段
 
@@ -1330,9 +1331,9 @@ document.getElementById("id");         // ✅ 按 ID 查找（最快）
 | 阶段                 | 优先级  | 说明                                                                         |
 | ------------------ | ---- | -------------------------------------------------------------------------- |
 | 阶段 2 — 3D 预览       | 🟡 中 | 需实现 `VehicleControlScreen.render3dPreview()`，复用 `VehicleAnimatable`        |
-| 阶段 3 — Tab 03 编辑配置 | 🔴 高 | 三栏布局框架已就绪，但 `PanelConfigEditor.render()` 当前为空实现，需填充 CRUD 逻辑                |
-| 阶段 0.5 — 网络包       | 🟡 中 | `ControlGroupSetEditPayload` + `GuiActionPayload` + `MMPayloadRegistry` 注册 |
-| 阶段 5 — 真实数据接入      | 🟢 低 | 当前使用 Mock 数据，需切换到真实子系统数据                                                   |
+| 阶段 3 — Tab 03 编辑配置 | 🔴 高 | 三栏布局与 `PanelConfigEditor.render()` 已实现，CRUD 与服务端保存链路待补齐                |
+| 阶段 5 — 真实数据接入      | 🟢 低 | `ControlDataAccessor` 已优先真实数据、Mock 回退；编辑保存后的回读与多座位核对待做                                                   |
+| 游戏内打开入口          | 🔴 高 | `RawInputHandler` 中打开 `VehicleControlScreen` 的回调整段注释，需重新绑定按键并恢复入口 |
 
 ### 13.4 已修复的已知问题
 
