@@ -40,7 +40,7 @@
     },
     "overwrite": {
       "type": "object",
-      "description": "在 material 之上叠加的材质覆写，与碰撞箱使用同一套合并规则。履带只读取 physics 与 armor；overwrite.sounds 对履带不生效（命中音由本型号的 sounds 决定）。",
+      "description": "在 material 之上叠加的材质覆写，与碰撞箱使用同一套合并规则。履带读取 physics、armor 与 sounds，命中音取覆写后的材料。",
       "properties": {
         "physics": {
           "type": "object",
@@ -154,29 +154,8 @@
         },
         "sounds": {
           "type": "object",
-          "description": "命中音效覆写。对履带不生效；履带命中音由本型号的 sounds 决定。",
+          "description": "命中音效覆写。履带命中音取覆写后的材料，这里的值对履带生效。",
           "additionalProperties": true
-        }
-      },
-      "additionalProperties": false
-    },
-    "sounds": {
-      "type": "object",
-      "description": "履带命中音效。省略时使用两个 hard_metal 固定范围事件；写空对象 {} 会落回碰撞箱的 hit_box.hit.* 默认值。",
-      "properties": {
-        "hit_un_pen": {
-          "allOf": [
-            { "$ref": "base/sound_event.schema.json" }
-          ],
-          "description": "未击穿时的音效。",
-          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
-        },
-        "hit_pen": {
-          "allOf": [
-            { "$ref": "base/sound_event.schema.json" }
-          ],
-          "description": "击穿时的音效。",
-          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
         }
       },
       "additionalProperties": false
@@ -266,10 +245,6 @@
         "preload": 0.0,
         "slack": 0.015,
         "max_force": 800.0
-      },
-      "sounds": {
-        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },
-        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
       },
       "visual": {
         "model": "machine_max:track_link.geo",

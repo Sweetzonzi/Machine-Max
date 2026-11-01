@@ -40,7 +40,7 @@
     },
     "overwrite": {
       "type": "object",
-      "description": "Material overwrite layered on top of material, merged with the same rules as hit boxes. Tracks only read physics and armor; overwrite.sounds has no effect on tracks (hit sounds come from this type's sounds).",
+      "description": "Material overwrite layered on top of material, merged with the same rules as hit boxes. Tracks read physics, armor and sounds; track hit sounds come from the merged material.",
       "properties": {
         "physics": {
           "type": "object",
@@ -154,29 +154,8 @@
         },
         "sounds": {
           "type": "object",
-          "description": "Hit sound overwrite. No effect on tracks; track hit sounds come from this type's sounds.",
+          "description": "Hit sound overwrite. Track hit sounds come from the merged material, so values written here apply to tracks.",
           "additionalProperties": true
-        }
-      },
-      "additionalProperties": false
-    },
-    "sounds": {
-      "type": "object",
-      "description": "Track hit sounds. Omitting the field uses two fixed-range hard_metal events; an empty object {} falls back to the hit box defaults hit_box.hit.*.",
-      "properties": {
-        "hit_un_pen": {
-          "allOf": [
-            { "$ref": "base/sound_event.schema.json" }
-          ],
-          "description": "Sound played when the hit does not penetrate.",
-          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
-        },
-        "hit_pen": {
-          "allOf": [
-            { "$ref": "base/sound_event.schema.json" }
-          ],
-          "description": "Sound played when the hit penetrates.",
-          "default": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
         }
       },
       "additionalProperties": false
@@ -266,10 +245,6 @@
         "preload": 0.0,
         "slack": 0.015,
         "max_force": 800.0
-      },
-      "sounds": {
-        "hit_un_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 },
-        "hit_pen": { "sound_id": "machine_max:part.collision.terrain.hard_metal", "range": 64 }
       },
       "visual": {
         "model": "machine_max:track_link.geo",

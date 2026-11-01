@@ -3,12 +3,9 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -28,7 +25,6 @@ public final class TrackAttr {
     private final float thicknessMm;
     private final ResourceLocation materialId;
     private final Optional<HitBoxAttr.OverwriteAttr> overwrite;
-    private final MaterialAttr.MaterialSoundAttr sounds;
     private final Tension tension;
     /** 构造时由 {@link #materialId} + {@link #overwrite} 解析出的有效材料。 */
     private final MaterialAttr resolved;
@@ -38,7 +34,6 @@ public final class TrackAttr {
                      float thicknessMm,
                      ResourceLocation materialId,
                      Optional<HitBoxAttr.OverwriteAttr> overwrite,
-                     MaterialAttr.MaterialSoundAttr sounds,
                      Tension tension) {
         if (!Float.isFinite(durabilityPerLink) || !(durabilityPerLink > 0f)) {
             throw new IllegalArgumentException("durability_per_link 必须是有限正数: " + durabilityPerLink);
@@ -58,7 +53,6 @@ public final class TrackAttr {
         this.thicknessMm = thicknessMm;
         this.materialId = materialId;
         this.overwrite = overwrite;
-        this.sounds = sounds;
         this.tension = tension;
         this.resolved = material;
     }
@@ -101,8 +95,14 @@ public final class TrackAttr {
         return resolved.physics();
     }
 
+    /**
+     * 命中音效：取解析后的材料的 {@code sounds}，与同材料的碰撞箱命中同一套。
+     *
+     * <p>履带没有自己的命中音字段。要改音效就改材料，或在型号里用
+     * {@code overwrite.sounds} 覆写——覆写会随材料一起解析进 {@code resolved}。</p>
+     */
     public MaterialAttr.MaterialSoundAttr sounds() {
-        return sounds;
+        return resolved.sounds();
     }
 
     public Tension tension() {
@@ -114,30 +114,12 @@ public final class TrackAttr {
         return durabilityPerLink * Math.max(1, linkCount);
     }
 
-    /**
-     * 省略 {@code sounds} 时使用的默认命中音：两个固定范围（64 格）的硬金属碰撞事件。
-     *
-     * <p>与 {@link MaterialAttr.MaterialSoundAttr#DEFAULT}（碰撞箱的 {@code hit_box.hit.*}）
-     * 不同：履带命中音默认落在 {@code part.collision.terrain.hard_metal}。</p>
-     */
-    public static final MaterialAttr.MaterialSoundAttr TRACK_DEFAULT_SOUNDS = new MaterialAttr.MaterialSoundAttr(
-            createFixedRangeSound("part.collision.terrain.hard_metal"),
-            createFixedRangeSound("part.collision.terrain.hard_metal")
-    );
-
-    private static SoundEvent createFixedRangeSound(String path) {
-        return SoundEvent.createFixedRangeEvent(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path), 64f);
-    }
-
     public static final MapCodec<TrackAttr> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("durability_per_link", 20f).forGetter(TrackAttr::durabilityPerLink),
             Codec.FLOAT.optionalFieldOf("length_per_link", 0.2f).forGetter(TrackAttr::lengthPerLink),
             Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
             ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),
             HitBoxAttr.OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(TrackAttr::overwrite),
-            MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds", TRACK_DEFAULT_SOUNDS)
-                    .forGetter(TrackAttr::sounds),
             Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension)
     ).apply(instance, TrackAttr::new));
 
@@ -176,16 +158,4 @@ public final class TrackAttr {
         }
     }
 
-    /** 便捷构造：不带覆写、不带音效覆盖，用于测试与夹具。 */
-    public static TrackAttr of(ResourceLocation material, float thicknessMm) {
-        return new TrackAttr(20f, 0.2f, thicknessMm, material, Optional.empty(),
-                TRACK_DEFAULT_SOUNDS, Tension.DEFAULT);
-    }
-
-    /** 便捷构造：显式给出全部字段，用于测试与夹具。 */
-    public static TrackAttr of(float durabilityPerLink, float lengthPerLink, float thicknessMm,
-                               ResourceLocation material, @Nullable MaterialAttr.MaterialSoundAttr sounds) {
-        return new TrackAttr(durabilityPerLink, lengthPerLink, thicknessMm, material, Optional.empty(),
-                sounds == null ? TRACK_DEFAULT_SOUNDS : sounds, Tension.DEFAULT);
-    }
 }

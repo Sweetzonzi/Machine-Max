@@ -121,7 +121,7 @@ class TrackDataCodecTest {
         assertEquals(50f, attr.thicknessMm(), 1.0e-6f);
         assertEquals(0.05f, attr.thicknessMeters(), 1.0e-6f);
         assertEquals(TrackAttr.Tension.DEFAULT, attr.tension());
-        assertEquals(TrackAttr.TRACK_DEFAULT_SOUNDS, attr.sounds());
+        assertEquals(MaterialAttr.MaterialSoundAttr.DEFAULT, attr.sounds());
         assertEquals(20f, attr.maxDurability(1), 1.0e-6f);
         assertEquals(1200f, attr.maxDurability(60), 1.0e-6f);
     }

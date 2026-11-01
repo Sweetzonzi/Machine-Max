@@ -13,16 +13,6 @@
     "slack": 0.015,
     "max_force": 800.0
   },
-  "sounds": {
-    "hit_un_pen": {
-      "sound_id": "machine_max:part.collision.terrain.hard_metal",
-      "range": 64
-    },
-    "hit_pen": {
-      "sound_id": "machine_max:part.collision.terrain.hard_metal",
-      "range": 64
-    }
-  },
   "visual": {
     "model": "machine_max:track_link.geo",
     "texture": "machine_max:textures/part/track_link.png",
