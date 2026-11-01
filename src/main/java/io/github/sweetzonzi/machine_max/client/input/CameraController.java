@@ -1,10 +1,12 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import com.jme3.math.Quaternion;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import io.github.sweetzonzi.machine_max.util.RotationDamper;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
@@ -65,6 +67,11 @@ public final class CameraController {
     private static boolean seatFirstPerson;
     /** 切入设备前的原版视角，退出时恢复。 */
     private static CameraType seatCameraType;
+
+    /** 第三人称跟随参考姿态的时间常数（秒）：朝向按指数衰减追上座椅挂点，鼠标偏角不经此路径。 */
+    private static final double FOLLOW_SECONDS = .12;
+    /** 跟随低通只在 tick 推进，渲染按刻内比例采样两次结果。 */
+    private static final RotationDamper followRotation = new RotationDamper(FOLLOW_SECONDS);
 
     /** 速度对第三人称距离的平滑修正，每逻辑 tick 更新一次。 */
     private static float speedDistanceFactor;
@@ -177,6 +184,7 @@ public final class CameraController {
             if (following != seatFollowing || seatFirstPerson != CLIENT.options.getCameraType().isFirstPerson()) {
                 enterSeat(expectedPoint);
             }
+            advanceSeatFollow();
             updateSeat(Vec2.ZERO);
         } else if (activeCamera instanceof CameraSubsystem) {
             publishDevice();
@@ -314,8 +322,11 @@ public final class CameraController {
         if (inherited == null) {
             inherited = point(mount);
         }
+        // 以当前挂点姿态重建跟随低通，清除既有的滞后残差。
+        followRotation.reset(SparkMathKt.toQuaternionf(mount.rotation()), System.nanoTime());
+        Quaternion reference = seatReference(mount.rotation(), 1);
         // 座椅观察继承世界点；退出炮镜时解除机构采样引用。
-        SEAT_VIEW.enter(seatFollowing, mount.rotation(), mount.position(), inherited);
+        SEAT_VIEW.enter(seatFollowing, reference, mount.position(), inherited);
         if (fixedSight != null) {
             fixedSight.setAimController(null);
         }
@@ -333,15 +344,17 @@ public final class CameraController {
      */
     private static void updateSeat(Vec2 input) {
         AimPose mount = seatMount(1);
+        // 参考姿态经跟随低通；鼠标偏角在其上叠加，因此输入本身不做平滑。
+        Quaternion reference = seatReference(mount.rotation(), 1);
         // 自由观察保留独立状态，不能让临时查看方向变成新的武器指向。
         if (RawInputHandler.freeCam && !wasFreeLook) {
             freeLookControlPoint = expectedPoint;
             // 回正中再次观察时从当前显示方向接管，避免跳到未平滑的控制方向。
             Vec3 observed = renderPose != null ? point(renderPose) : expectedPoint != null ? expectedPoint : point(mount);
-            FREE_LOOK.enter(false, mount.rotation(), renderPose != null ? renderPose.position() : mount.position(), observed);
+            FREE_LOOK.enter(false, reference, renderPose != null ? renderPose.position() : mount.position(), observed);
             SEAT_VIEW.cancelReturn();
         } else if (!RawInputHandler.freeCam && wasFreeLook && freeLookControlPoint != null) {
-            SEAT_VIEW.enter(seatFollowing, mount.rotation(), mount.position(), freeLookControlPoint);
+            SEAT_VIEW.enter(seatFollowing, reference, mount.position(), freeLookControlPoint);
             if (renderPose != null) {
                 SEAT_VIEW.beginReturn(SparkMathKt.toQuaternionf(renderPose.rotation()));
             }
@@ -354,12 +367,31 @@ public final class CameraController {
                 Math.toRadians(controllingSeat.attr.staticAttribute.views.maxPitch()));
         float yaw = controllingSeat.attr.staticAttribute.views.yawLimit();
         AimAxisLimit yawLimit = yaw >= 360 ? AimAxisLimit.CONTINUOUS : new AimAxisLimit(false, Math.toRadians(-yaw / 2), Math.toRadians(yaw / 2));
-        Vec3 origin = seatOrigin(view, mount, 1);
-        logicalView = view.update(mount.rotation(), origin, input, yawLimit, pitch);
+        Vec3 origin = seatOrigin(view, mount, reference, 1);
+        logicalView = view.update(reference, origin, input, yawLimit, pitch);
         if (!wasFreeLook) {
             expectedPoint = logicalView.worldPoint();
         }
         aimDirection = logicalView.pose().forward();
+    }
+
+    /**
+     * 主线程按本 tick 的座椅挂点姿态推进跟随低通。<br>
+     * 逻辑观察与渲染采样都读取这份结果；渲染只在两次推进之间插值，自身不推进状态。
+     */
+    private static void advanceSeatFollow() {
+        followRotation.advance(SparkMathKt.toQuaternionf(seatMount(1).rotation()), System.nanoTime());
+    }
+
+    /**
+     * 座椅观察的参考姿态。第一人称贴合舱内固定件，直接取挂点姿态；
+     * 第三人称跟随取低通结果，视角因此滞后于车体转动。
+     *
+     * @param mountRotation 本帧挂点姿态
+     * @param partialTick   刻内采样比例，逻辑更新传 1
+     */
+    private static Quaternion seatReference(Quaternion mountRotation, float partialTick) {
+        return seatFirstPerson ? mountRotation : SparkMathKt.toBQuaternion(followRotation.sample(partialTick));
     }
 
     private static AimPose seatMount(float partialTick) {
@@ -368,26 +400,26 @@ public final class CameraController {
     }
 
     /** 逻辑更新按正常观察方向计算轨道，显示回正不参与控制目标生成。 */
-    private static Vec3 seatOrigin(ThirdPersonViewpoint view, AimPose mount, float partialTick) {
-        Vec3 pivot = seatPivot(mount, partialTick);
-        return seatOrigin(pivot, view.sample(mount.rotation(), pivot).pose().forward());
+    private static Vec3 seatOrigin(ThirdPersonViewpoint view, AimPose mount, Quaternion reference, float partialTick) {
+        Vec3 pivot = seatPivot(mount, reference, partialTick);
+        return seatOrigin(pivot, view.sample(reference, pivot).pose().forward());
     }
 
-    /** 位置轨道取座椅／装配体中心，姿态参考始终只取座椅挂点。 */
-    private static Vec3 seatPivot(AimPose mount, float partialTick) {
-        // 挂点旋转决定局部偏移的世界方向；中心跟随只改变环绕位置的支点。
+    /** 位置轨道取座椅／装配体中心；局部偏移的世界方向取同一份观察参考姿态。 */
+    private static Vec3 seatPivot(AimPose mount, Quaternion reference, float partialTick) {
+        // 参考姿态决定局部偏移的世界方向；中心跟随只改变环绕位置的支点。
         var settings = controllingSeat.attr.staticAttribute.views;
         boolean first = CLIENT.options.getCameraType().isFirstPerson();
-        Quaternionf reference = SparkMathKt.toQuaternionf(mount.rotation());
+        Quaternionf rotation = SparkMathKt.toQuaternionf(reference);
         Vec3 offset = first ? settings.firstPersonOffset() : settings.thirdPersonOffset();
         Vector3f localOffset = new Vector3f((float) offset.x, (float) offset.y, (float) offset.z);
-        reference.transform(localOffset);
+        rotation.transform(localOffset);
         Vec3 pivot = mount.position();
         if (!first && settings.focusOnCenter()
                 && controllingSeat.getSubPart().getPart().assembly instanceof VehicleCore vehicle) {
             pivot = vehicle.getOldPosition().scale(1 - partialTick).add(vehicle.getPosition().scale(partialTick));
         } else {
-            Vector3f eye = reference.transform(new Vector3f(0, 1.1f, 0));
+            Vector3f eye = rotation.transform(new Vector3f(0, 1.1f, 0));
             pivot = pivot.add(eye.x, eye.y, eye.z);
         }
         return pivot.add(localOffset.x, localOffset.y, localOffset.z);
@@ -582,15 +614,17 @@ public final class CameraController {
             } else {
                 AimPose mount = seatMount(partial);
                 ThirdPersonViewpoint view = wasFreeLook ? FREE_LOOK : SEAT_VIEW;
-                // 鼠标观察角已逐帧累计，只与插值后的挂点合成，不推进逻辑或重复累计输入。
+                // 参考姿态由跟随低通在两次 tick 结果之间插值，鼠标观察角按本帧值合成。
+                Quaternion reference = seatReference(mount.rotation(), partial);
+                // 鼠标观察角已逐帧累计，只与参考姿态合成，不推进逻辑或重复累计输入。
                 // 环绕位置与朝向在此一起采样，位置事件仅应用这份结果。
-                Vec3 pivot = seatPivot(mount, partial);
-                Quaternionf desired = SparkMathKt.toQuaternionf(view.sample(mount.rotation(), pivot).pose().rotation());
+                Vec3 pivot = seatPivot(mount, reference, partial);
+                Quaternionf desired = SparkMathKt.toQuaternionf(view.sample(reference, pivot).pose().rotation());
                 Quaternionf displayed = wasFreeLook ? desired : view.sampleDisplayRotation(desired, System.nanoTime());
                 Vector3f forward = displayed.transform(new Vector3f(0, 0, -1));
                 Vec3 origin = seatOrigin(pivot, new Vec3(forward.x, forward.y, forward.z));
                 // 圈使用正常控制方向；画面使用回正方向，两者的偏移在过渡结束时自然消失。
-                renderedSeatAimPoint = wasFreeLook ? expectedPoint : SEAT_VIEW.sample(mount.rotation(), origin).worldPoint();
+                renderedSeatAimPoint = wasFreeLook ? expectedPoint : SEAT_VIEW.sample(reference, origin).worldPoint();
                 renderPose = new AimPose(origin, SparkMathKt.toBQuaternion(displayed));
             }
             // 在渲染边界转换为原版角度符号，欧拉角仅用于事件输出。

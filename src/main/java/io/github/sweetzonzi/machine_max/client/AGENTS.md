@@ -56,7 +56,7 @@ client/
 │   └── MMRenderTypes.java        # 自定义渲染类型
 ├── input/
 │   ├── RawInputHandler.java      # 键盘/鼠标 → 网络载荷
-│   ├── CameraController.java     # 基于座位的摄像机，偏航/俯仰夹持
+│   ├── CameraController.java     # 基于座位的摄像机，偏航/俯仰夹持、第三人称跟随转动低通
 │   ├── KeyBinding.java           # 按键绑定
 │   ├── MMKeyMapping.java         # 按键映射
 │   └── MouseButtonMapping.java   # 鼠标按键映射
@@ -80,7 +80,7 @@ client/
 | 修复 GUI 屏幕 | `render/gui/screen/*.java` | FabricatingScreen, BlueprintResearchScreen 等 |
 | 修复 HUD 叠加层 | `render/gui/hud/*.java` | AssemblyHud, CustomHud, InteractHud |
 | 修复输入处理 | `input/RawInputHandler.java` | 键盘/鼠标 → 网络载荷 |
-| 修复摄像头 | `input/CameraController.java` | 座位摄像机、分轴稳定、FOV 过渡 |
+| 修复摄像头 | `input/CameraController.java` | 座位摄像机、分轴稳定、FOV 过渡、跟随转动低通 |
 | 新增渲染类型 | `render/MMRenderTypes.java` | LINES_ALWAYS_VISIBLE, SOLID_ALWAYS_VISIBLE |
 | 修复后处理 / 深度问题 | `render/post/` | 先读 `render/post/AGENTS.md`：深度快照时机、链目标格式、GL 状态还原 |
 | 修复方块实体渲染 | `render/renderer/block/*.java` | Fabricator, ResearchTable, TotalStation |
