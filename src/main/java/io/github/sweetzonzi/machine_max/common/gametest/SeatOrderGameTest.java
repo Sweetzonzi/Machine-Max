@@ -68,11 +68,11 @@ public final class SeatOrderGameTest {
             helper.assertTrue(!seats.isEmpty(), "装配体里应当至少有一个座位");
             SeatSubsystem seat = seats.getFirst();
 
-            helper.assertTrue(SeatOrder.layout(vehicle, seat).indexOf(seat) == 0,
+            helper.assertTrue(SeatOrder.layout(vehicle).indexOf(seat) == 0,
                     "只有一个座位时它自己排在第一位");
             helper.assertTrue(SeatOrder.next(vehicle, seat, true) == null,
                     "只有一个座位时没有下一个可换的座位");
-            helper.assertTrue(SeatOrder.order(vehicle, seat).size() == seats.size(),
+            helper.assertTrue(SeatOrder.order(vehicle).size() == seats.size(),
                     "排序不丢座位");
             // 部件未入世 → 没有代理实体 → 任何座位都不可换入
             helper.assertTrue(!SeatOrder.available(seat),

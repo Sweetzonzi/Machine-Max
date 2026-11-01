@@ -28,9 +28,9 @@ import java.util.Map;
  * 不是方向或序号。</p>
  *
  * <p>参考系：装配体里的子零件按“刚性连接”聚类，取含驾驶员座位（否则质量最大、排除轮子簇）
- * 的簇内质量最大的子零件作为参考。参考系只保留两个量供逐帧采样：参考子零件本身与
- * 其局部坐标系下的前向轴 {@code frontLocal}（±Z，符号由驾驶员座位的纵向偏移决定）。
- * 原点与偏航随车辆行驶、转向每帧变化，因此不进任何缓存。</p>
+ * 的簇内质量最大的子零件作为参考。参考系只缓存参考子零件本身；原点与旋转随车辆行驶、转向
+ * 每帧变化，因此不进任何缓存。车头轴按项目约定取该零件局部坐标系的 {@code -Z}
+ * （与 {@code DestroyableObject#getFrontVector()}、地面控制器与投射物的前向一致）。</p>
  *
  * <p>线程：主线程。读取的位姿字段都是双端可用的同步值。</p>
  */
@@ -38,28 +38,23 @@ public final class SeatOrder {
 
     /** 排序坐标的量化步长，减少两端浮点误差导致的顺序翻转 */
     private static final double COORD_QUANTUM = 0.05;
-    /** 驾驶员座位纵向偏移小于该值时视为居中，改用下一个候选判断车头方向 */
-    private static final float FRONT_SIGN_MIN_OFFSET = 0.5f;
+    /**
+     * 车头轴：模型与刚体的局部 {@code -Z}。项目内所有前向判定都取这个轴
+     * （{@code DestroyableObject#getFrontVector()}、地面控制器的姿态遥测、投射物姿态），
+     * 内容包按 -Z 建模即正面朝前，因此它不依赖座位位置，也不随座次变化。
+     */
+    private static final Vector3f FRONT_AXIS = new Vector3f(0f, 0f, -1f);
 
     private SeatOrder() {
     }
 
     /**
-     * 车体参考系。
-     *
-     * @param ref        参考子零件；它的世界位姿就是地图的原点与偏航来源
-     * @param frontLocal 参考子零件局部坐标系下的前向轴，只可能是 (0,0,1) 或 (0,0,-1)
-     */
-    public record Reference(SubPart ref, Vector3f frontLocal) {
-    }
-
-    /**
      * 一次布局计算的结果。
      *
-     * @param reference 车体参考系，绘制时逐帧采样；装配体还没有子零件时为 null
+     * @param reference 车体参考子零件，绘制时逐帧采样；装配体还没有子零件时为 null
      * @param seats     按几何顺序排好的座位，下标即显示编号减一
      */
-    public record Layout(@Nullable Reference reference, List<SeatSubsystem> seats) {
+    public record Layout(@Nullable SubPart reference, List<SeatSubsystem> seats) {
 
         /** 当前座位在顺序里的下标；不在其中时返回 -1 */
         public int indexOf(@Nullable SeatSubsystem seat) {
@@ -86,21 +81,19 @@ public final class SeatOrder {
      * 计算参考系与排序。
      *
      * @param vehicle 装配体
-     * @param current 当前座位，用于车头朝向的回退判定；可为 null
      */
-    public static Layout layout(VehicleCore vehicle, @Nullable SeatSubsystem current) {
+    public static Layout layout(VehicleCore vehicle) {
         List<SeatSubsystem> all = seats(vehicle);
         SubPart ref = pickReference(vehicle);
         if (ref == null) return new Layout(null, List.of());
-        Reference reference = new Reference(ref, pickFrontAxis(ref, all, current));
-        return new Layout(reference, order(all, reference));
+        return new Layout(ref, order(all, ref));
     }
 
     /**
      * 只算排序，不保留参考系。按键路径用这个，HUD 用 {@link #layout} 缓存参考系。
      */
-    public static List<SeatSubsystem> order(VehicleCore vehicle, @Nullable SeatSubsystem current) {
-        return layout(vehicle, current).seats();
+    public static List<SeatSubsystem> order(VehicleCore vehicle) {
+        return layout(vehicle).seats();
     }
 
     /**
@@ -113,7 +106,7 @@ public final class SeatOrder {
      */
     @Nullable
     public static SeatSubsystem next(VehicleCore vehicle, SeatSubsystem from, boolean forward) {
-        List<SeatSubsystem> order = order(vehicle, from);
+        List<SeatSubsystem> order = order(vehicle);
         int index = order.indexOf(from);
         if (index < 0 || order.size() < 2) return null;
         int direction = forward ? 1 : -1;
@@ -242,61 +235,18 @@ public final class SeatOrder {
         return name != null && name.toLowerCase(Locale.ROOT).contains("driver");
     }
 
-    /**
-     * 前向轴：模型作者可能把车头放在 +Z 或 -Z。用驾驶员座位相对参考子零件的纵向偏移判断；
-     * 驾驶员座位居中（|along| ≤ 0.5）时退回控制组最多的座位，再退回当前座位；
-     * 都判不出来时用世界 -Z 在参考系里的方向。
-     */
-    private static Vector3f pickFrontAxis(SubPart ref, List<SeatSubsystem> seats, @Nullable SeatSubsystem current) {
-        SeatSubsystem driver = null;
-        SeatSubsystem richest = null;
-        for (SeatSubsystem seat : seats) {
-            if (driver == null && isDriverName(seat.getName())) driver = seat;
-            if (richest == null || groupCount(seat) > groupCount(richest)) richest = seat;
-        }
-        List<SeatSubsystem> probes = new ArrayList<>(3);
-        if (driver != null) probes.add(driver);
-        if (richest != null) probes.add(richest);
-        if (current != null) probes.add(current);
-
-        Matrix4f refMatrix = ref.getWorldPositionMatrix(1f);
-        Vector3f refOrigin = refMatrix.getTranslation(new Vector3f());
-        Vector3f refForward = refMatrix.transformDirection(new Vector3f(0f, 0f, 1f));
-        for (SeatSubsystem probe : probes) {
-            Transform seatTransform = probe.getSeatPointWorldTransform();
-            if (seatTransform == null) continue;
-            com.jme3.math.Vector3f seatPos = seatTransform.getTranslation();
-            float along = (seatPos.x - refOrigin.x) * refForward.x
-                    + (seatPos.y - refOrigin.y) * refForward.y
-                    + (seatPos.z - refOrigin.z) * refForward.z;
-            if (Math.abs(along) <= FRONT_SIGN_MIN_OFFSET) continue;
-            return along > 0f ? new Vector3f(0f, 0f, 1f) : new Vector3f(0f, 0f, -1f);
-        }
-
-        // 兜底：世界 -Z 就是车头。把世界方向转进参考子零件的局部坐标系，只保留偏航
-        Vector3f local = new Matrix4f(refMatrix).invert()
-                .transformDirection(new Vector3f(0f, 0f, -1f));
-        local.y = 0f;
-        if (local.lengthSquared() < 1e-6f) return new Vector3f(0f, 0f, -1f);
-        return local.z >= 0f ? new Vector3f(0f, 0f, 1f) : new Vector3f(0f, 0f, -1f);
-    }
-
-    private static int groupCount(SeatSubsystem seat) {
-        var set = seat.getControlGroupSet();
-        return set == null ? 0 : set.getGroups().size();
-    }
-
     // ===== 排序 =====
 
     /**
      * 排序键 {@code (sy, sx, seatName, subPartId)} 升序：先上后下、先左后右，名字与宿主 id 做稳定 tie-break。
-     * <p>用非插值的 locator 世界位姿，同一 tick 内取到稳定值；插值版本只用于标记的逐帧位置。</p>
+     * <p>用非插值的 locator 世界位姿，同一 tick 内取到稳定值；插值版本只用于标记的逐帧位置。
+     * 坐标按水平面投影，坡度只压缩前后间距、不改变先后次序，所以同一台车的编号在整个行程里稳定。</p>
      */
-    private static List<SeatSubsystem> order(List<SeatSubsystem> seats, Reference reference) {
+    private static List<SeatSubsystem> order(List<SeatSubsystem> seats, SubPart ref) {
         if (seats.size() < 2) return List.copyOf(seats);
-        Matrix4f refMatrix = reference.ref().getWorldPositionMatrix(1f);
+        Matrix4f refMatrix = ref.getWorldPositionMatrix(1f);
         Vector3f origin = refMatrix.getTranslation(new Vector3f());
-        Vector3f front = refMatrix.transformDirection(new Vector3f(reference.frontLocal()));
+        Vector3f front = refMatrix.transformDirection(new Vector3f(FRONT_AXIS));
         front.y = 0f;
         if (front.lengthSquared() < 1e-6f) front.set(0f, 0f, -1f);
         front.normalize();

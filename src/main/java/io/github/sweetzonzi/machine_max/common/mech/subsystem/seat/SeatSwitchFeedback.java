@@ -152,7 +152,7 @@ public final class SeatSwitchFeedback {
     }
 
     private static LayoutIndex indexOf(VehicleCore vehicle, SeatSubsystem seat) {
-        List<SeatSubsystem> order = SeatOrder.order(vehicle, seat);
+        List<SeatSubsystem> order = SeatOrder.order(vehicle);
         int index = order.indexOf(seat);
         return new LayoutIndex(index < 0 ? 1 : index + 1, Math.max(1, order.size()));
     }

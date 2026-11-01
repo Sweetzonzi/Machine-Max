@@ -31,6 +31,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Brightness;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -45,8 +46,9 @@ import java.util.Map;
  *
  * <p>车体按 <strong>GUI 正交空间</strong>渲染：{@code LayeredDraw.Layer} 的 pose 单位就是 GUI 像素，
  * {@code GuiGraphics} 自带 bufferSource，所以模型可以直接画进这一层，不需要世界空间、相机或投影矩阵。
- * 变换顺序固定为「先俯视 {@code X(-90)}、再绕世界 Y 偏航 {@code 180-heading}」——反过来写会把世界高度
- * 混进横轴。参考系的原点与偏航逐帧从参考子零件的插值世界矩阵取，快照只提供参考子零件与局部前向轴。</p>
+ * 投影沿参考零件自身的上轴看下去，车头取该零件局部坐标系的 {@code -Z}（项目约定），俯仰与侧倾只改变
+ * 参考旋转，不会把车顶斜切进平面位置。参考系的原点与三轴姿态逐帧从参考子零件的插值世界矩阵取，
+ * 快照只提供参考子零件、适配缩放与车体足迹。</p>
  */
 public class SeatMapHud implements LayeredDraw.Layer {
 
@@ -65,6 +67,12 @@ public class SeatMapHud implements LayeredDraw.Layer {
     /** 标记半边长（GUI 像素）：一位数编号要 10px，两位数 12px */
     private static final int MARKER_RADIUS = 5;
     private static final int MARKER_RADIUS_WIDE = 6;
+    /**
+     * 面板整体缩放：布局、间距与文字仍按 {@link SeatMapLayout} 的未缩放尺寸计算，绘制时以面板
+     * 左下角为锚点统一乘这个系数。常驻显示时面板会长期占住左下角视野，缩到 0.5 后面积约为原来的
+     * 四分之一，文字约 4.5px 高。
+     */
+    private static final float PANEL_SCALE = 0.5f;
     /** 面板与屏幕底边的距离：热栏高 22px，留 2px 间隙 */
     private static final int BOTTOM_MARGIN = 24;
 
@@ -101,21 +109,31 @@ public class SeatMapHud implements LayeredDraw.Layer {
         int mapCenterX = mapX + mapW / 2;
         int mapCenterY = mapY + mapH / 2;
 
-        drawPanel(graphics, left, top, snapshot, current);
+        // 整体缩放：以面板左下角为锚点，面板、车体与文字一起缩，坐标仍用未缩放的面板单位
+        PoseStack pose = graphics.pose();
+        pose.pushPose();
+        pose.translate((1f - PANEL_SCALE) * left,
+                (1f - PANEL_SCALE) * (top + SeatMapLayout.PANEL_H), 0f);
+        pose.scale(PANEL_SCALE, PANEL_SCALE, 1f);
+        try {
+            drawPanel(graphics, left, top, snapshot, current);
 
-        // 地图区域背景，让车体有个底
-        graphics.fill(mapX, mapY, mapX + mapW, mapY + mapH, 0x40000000);
-        graphics.drawString(minecraft.font, "▲", mapCenterX - 3, mapY + 1, TEXT_DIM, false);
+            // 地图区域背景，让车体有个底
+            graphics.fill(mapX, mapY, mapX + mapW, mapY + mapH, 0x40000000);
+            graphics.drawString(minecraft.font, "▲", mapCenterX - 3, mapY + 1, TEXT_DIM, false);
 
-        Matrix4f mapMatrix = buildMapMatrix(snapshot, partialTick, mapCenterX, mapCenterY);
-        drawModel(graphics, snapshot, partialTick, mapMatrix);
+            Matrix4f mapMatrix = buildMapMatrix(snapshot, partialTick, mapCenterX, mapCenterY);
+            drawModel(graphics, snapshot, partialTick, mapMatrix);
 
-        // 透视靠半透明叠加，顺序即层次：模型必须先提交，标记再画在上面
-        graphics.flush();
-        drawMarkers(graphics, minecraft.font, snapshot, current, partialTick, mapMatrix,
-                mapX, mapY, mapW, mapH);
+            // 透视靠半透明叠加，顺序即层次：模型必须先提交，标记再画在上面
+            graphics.flush();
+            drawMarkers(graphics, minecraft.font, snapshot, current, partialTick, mapMatrix,
+                    mapX, mapY, mapW, mapH);
 
-        drawFooter(graphics, minecraft, left, top, snapshot, current);
+            drawFooter(graphics, minecraft, left, top, snapshot, current);
+        } finally {
+            pose.popPose();
+        }
     }
 
     // ===== 面板 =====
@@ -146,19 +164,17 @@ public class SeatMapHud implements LayeredDraw.Layer {
     /**
      * 构造“世界坐标 → GUI 像素”的矩阵，车体与标记共用。
      *
-     * <p>参考系逐帧采样：车辆一平移、一转向，原点和偏航都变。变换链本身在
+     * <p>参考系逐帧采样：车辆一平移、一转向、一上坡，原点与三轴姿态都变。变换链本身在
      * {@link SeatMapLayout#mapMatrix} 里，便于用纯数学用例守住“车头朝上”的判据。</p>
      */
     private Matrix4f buildMapMatrix(SeatMapLayout.Snapshot snapshot, float partialTick,
                                     int mapCenterX, int mapCenterY) {
-        Matrix4f refMatrix = snapshot.reference().ref().getWorldPositionMatrix(partialTick);
+        Matrix4f refMatrix = snapshot.reference().getWorldPositionMatrix(partialTick);
         Vector3f origin = refMatrix.getTranslation(new Vector3f());
-        Vector3f front = refMatrix.transformDirection(new Vector3f(snapshot.reference().frontLocal()));
-        front.y = 0f;
-        if (front.lengthSquared() < 1e-6f) front.set(0f, 0f, -1f);
-        float headingDeg = (float) Math.toDegrees(Math.atan2(front.x, front.z));
+        // 取世界旋转的逆：局部轴在这一步对齐到 GUI 的横/纵/纵深轴，俯仰与侧倾因此不进入平面位置
+        Quaternionf worldToReference = refMatrix.getNormalizedRotation(new Quaternionf()).conjugate();
         return SeatMapLayout.mapMatrix(snapshot.fit(), snapshot.centerSx(), snapshot.centerSy(),
-                mapCenterX, mapCenterY, origin, headingDeg);
+                mapCenterX, mapCenterY, origin, worldToReference);
     }
 
     // ===== 车体 =====
