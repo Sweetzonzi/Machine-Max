@@ -152,7 +152,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
-        } else if (attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        } else if (attr.blockCollision.usesGroundHeightField()) {
             GROUND_COLLISION_ONLY = true;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
         } else {
@@ -401,7 +401,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (!level.isClientSide() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (!level.isClientSide() && attr.blockCollision.usesGroundHeightField()) {
             // 获取刚体旋转，用于判断是否需要重新计算 getShapeMinY
             Quaternion currentRot = body.getPhysicsRotation(null);
             // 旋转变化时重新计算相对偏移量（相对偏移量仅受旋转影响，平动不影响）

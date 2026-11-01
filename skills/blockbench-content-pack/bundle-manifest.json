@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-01",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "43909a2360495f965af2187ab62faf225675d684",
+    "revision": "1c6bd3ab9e6901ad6882f83409d4351669ced4eb",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -111,8 +111,8 @@
       },
       {
         "path": "references/schemas/part/subpart/sub_part_attr.schema.json",
-        "bytes": 8277,
-        "sha256": "7308c970697de00e516d4f77cc49008a4d273ebbf7f2076843967da305d6c41f"
+        "bytes": 8481,
+        "sha256": "7f031a84c0eba24a3137b6e64fbdb24c8868e01550d85397d42d84e72bbe0bc3"
       },
       {
         "path": "references/schemas/part/variant_attr.schema.json",
@@ -368,12 +368,12 @@
   },
   "plugin": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
-    "revision": "733a9206ddbdd9bec5976e22396a15d5ab18a7b9",
+    "revision": "132dfe9ce396374ee5967881c72ba59a0bedc3ec",
     "source_path": "dist/machine_max_bb_plugin.js",
     "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
-    "version": "0.5.11",
+    "version": "0.5.12",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1977214,
-    "sha256": "3f4b5abca5c9f58286b4eef70e0006a34a5f8481e2c5567551931f6445f4d7f8"
+    "bytes": 1978198,
+    "sha256": "15c8a90c165ff64c40e418b4b5ff9dd94a50dbe06c3b8c7dcac7bca9ff470748"
   }
 }

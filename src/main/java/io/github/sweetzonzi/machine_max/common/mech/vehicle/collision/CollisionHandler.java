@@ -24,6 +24,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
@@ -57,13 +58,6 @@ public class CollisionHandler {
     public final CollisionEffectManager effectManager;
 
     /**
-     * 承载面判据：地形指向零件的法线竖直分量不低于该值即视为能承担重量（约 45°）。
-     *
-     * <p>见 {@link #isSupportingTerrainContact(Vector3f)}。</p>
-     */
-    private static final float CLIMB_SUPPORT_NORMAL_Y = 0.7f;
-
-    /**
      * 地面撞击判据：接触法线的竖直分量不低于该值（约 18°）时，撞击接近速度改取**刚体原点**的
      * 竖直分速，而不是接触点速度。见 {@link CollisionImpactModel#verticalApproachSpeed}。
      *
@@ -80,6 +74,12 @@ public class CollisionHandler {
      * 竖直分速本来就接近 0。</p>
      */
     private static final float GROUND_IMPACT_NORMAL_Y = 0.95f;
+
+    /**
+     * 承载面判据：地形指向零件的法线竖直分量不低于该值（约 45°）时，接触面能承担重量。
+     * 见 {@link #isSupportingTerrainContact(Vector3f)}。
+     */
+    private static final float CLIMB_SUPPORT_NORMAL_Y = 0.7f;
 
     //方向向量缓存，避免每 tick 分配
     private final Vector3f tmpFront = new Vector3f();
@@ -256,6 +256,9 @@ public class CollisionHandler {
                                              Vector3f worldContactPoint, int hitBoxIndex) {
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
+            //轮胎的圆柱是拾取/命中判定用的辅助形状：它整颗都在同一 hitbox 的球体内，只在侧壁
+            //突出约 1 cm。地形接触由球体负责，圆柱的地形接触只会给出侧壁方向的额外法线，直接跳过。
+            if (subPart.isWheel(hitBoxIndex) && !subPart.isWheelSurface(hitBoxIndex)) return false;
             other.shouldShowDebugBoxWhenNonColldeWith = true;
             BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
             //若该方块属于攀爬辅助列表，使用高度场进行碰撞修正
@@ -267,11 +270,11 @@ public class CollisionHandler {
                 else if (subPart.isWheelSurface(hitBoxIndex))
                     radius = subPart.getWheelRadius(hitBoxIndex);
                 var result = subPart.heightField.solveContact(pos, radius, worldContactPoint);
-                //高度场只能用来决定“要不要改写这个接触”，不能用来决定“有没有接触”：
-                //两者相差 1 µm 时高度场读数就已经是未侵入，而支撑力恰恰是靠这段近接触间隙
-                //传递的（容差见 Spark-Core/tools/native/README.md）。所以承载面一律放行，
-                //只有非承载面（撞在台阶立面上）才交给攀爬辅助跳过。
-                if (isSupportingTerrainContact(normal)) return true;
+                //ground_hard 保留承载面的近接触：高度场判定未侵入只说明间隙为正，支撑力正是
+                //靠这段近接触间隙传递的，取消它部件会陷进平滑面。ground 只按高度场的侵入量
+                //判定，避免原始接触法线（台阶立面水平、承载面竖直）把同一个台阶判成相反结论。
+                if (subPart.attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND_HARD
+                        && isSupportingTerrainContact(normal)) return true;
                 return !Float.isFinite(result.penetration()) || result.penetration() > 0;
             } else return true;
         } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
@@ -344,30 +347,48 @@ public class CollisionHandler {
             else if (subPart.isWheelSurface(hitBoxIndex))
                 radius = subPart.getWheelRadius(hitBoxIndex);
             var result = subPart.heightField.solveContact(pos, radius, worldContactPoint);
-            // 高度场在区块交界、相邻 section 缺快照、空列处会给出 ±∞ 的侵入深度。
-            // 只有真正要接管这个接触（滑上坡面、或高度场判定未接触）时才改写它的法线、
-            // 接触点与缓存冲量；平地上高度场与 Bullet 一致，什么都不改，
-            // 尤其不要清 warm-start 冲量——否则求解器每个子步都要从零重建支撑力。
-            if (Float.isFinite(result.penetration())
-                    && result.penetration() > 0 && result.normal().y < 0.999f) {
-                //修正碰撞法线和接触点，使车辆能爬上高度场 (JME负深度代表侵入)
-                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
-                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-                ManifoldPoints.setDistance1(manifoldPointId, Math.min(-result.penetration(), -0.01f));
+            boolean hard = subPart.attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND_HARD;
+            if (Float.isFinite(result.penetration()) && result.penetration() > 0
+                    && (!hard || result.normal().y < 0.999f)) {
+                //高度场判定部件已经侵入平滑面：把接触点、法线与侵入深度都换成高度场的结果，
+                //部件因此沿平滑面走。法线竖直时只把侵入量换成向上位移，不套用 -0.01 的下限，
+                //否则平地上每个子步都会被多推 1 cm 而抖动；法线被换成坡面或竖直方向时，
+                //旧法线上的缓存冲量已经无效，需要清零。ground_hard 的立面接触（高度场法线
+                //竖直、原始法线水平）不在这里改写，留给下面的抬升分支。
+                boolean sloped = result.normal().y < 0.999f;
+                if (sloped || Math.abs(normal.x) + Math.abs(normal.z) > 0.01f) {
+                    ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+                    ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+                    ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
+                }
+                ManifoldPoints.setDistance1(manifoldPointId,
+                        sloped ? Math.min(-result.penetration(), -0.01f) : -result.penetration());
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId,
                         point1.getIndex() == 0 ? result.normal() : result.normal().negate());
                 ManifoldPoints.setPositionWorldOnA(manifoldPointId, result.contact());
                 ManifoldPoints.setPositionWorldOnB(manifoldPointId, result.contact());
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
-                //用坡面法线重算滑移摩擦，保证摩擦方向/大小与修正后的接触面自洽
+                //用高度场法线重算滑移摩擦，保证摩擦方向/大小与修正后的接触面自洽
                 setupContactFriction(manifoldPointId, result.normal(), contactVel, localContactPoint,
                         hitBox, hitBoxIndex, blockFriction, blockRollingFriction, blockSlip);
                 return;
+            } else if (hard
+                    && Float.isFinite(result.penetration()) && result.penetration() > 0
+                    && !isSupportingTerrainContact(normal)
+                    && ManifoldPoints.getDistance1(manifoldPointId) < 0f) {
+                //ground_hard 的立面接触：高度场法线竖直、原始法线水平，上面的改写分支不接管。
+                //保留 Bullet 给出的侵入深度，只把法线换成竖直方向，这部分侧面侵入就变成
+                //向上位移，部件因此踩上台阶，而不是停在平滑面坡面以下被水平顶回去。
+                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
+                ManifoldPoints.setNormalWorldOnB(manifoldPointId,
+                        point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate());
+                return;
             } else if (Float.isFinite(result.penetration()) && result.penetration() <= 0
-                    && !isSupportingTerrainContact(normal)) {
-                //尚未接触高度场，且接触面不是承载面：这是撞在台阶立面上，跳过接触让车爬上去。
-                //承载面不能走这条：高度场未侵入只说明间隙为正，正间隙的近接触仍要承重。
+                    && (!hard || !isSupportingTerrainContact(normal))) {
+                //高度场判定未侵入：这个接触不是平滑面上的接触（台阶立面、棱边），跳过它让车爬上去。
+                //ground_hard 的承载面近接触除外——支撑力靠这段间隙传递，取消它部件会陷进平滑面。
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
@@ -656,11 +677,10 @@ public class CollisionHandler {
     }
 
     /**
-     * 接触面是否在承重（法线竖直分量足够大）。
+     * 接触面是否在承载（法线竖直分量足够大，判据见 {@link #CLIMB_SUPPORT_NORMAL_Y}）。
      *
-     * <p>判据是法线的竖直分量 {@code |n.y| >= 0.7}（约 45°），对符号不敏感：法线的口径在
-     * 两侧交换时会整体取反，这里只关心它是否竖直。攀爬辅助只该丢弃撞在台阶立面上的接触
-     * （{@code n.y ≈ 0}）；承载面的接触即使尚未侵入也必须保留，它是近接触承重的唯一来源。</p>
+     * <p>ground_hard 的攀爬辅助用它区分台阶立面（{@code n.y ≈ 0}：抬升或跳过）与承载面（近接触也要
+     * 保留，否则部件会陷进平滑面）；ground 的攀爬判定只认高度场，不用这个判据。</p>
      *
      * @param normal 接触法线，方向可以是“地形→零件”或反向
      */

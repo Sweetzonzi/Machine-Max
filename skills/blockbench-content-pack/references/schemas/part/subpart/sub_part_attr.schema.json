@@ -44,14 +44,14 @@
     },
     "block_collision": {
       "type": "string",
-      "enum": ["true", "false", "ground"],
+      "enum": ["true", "false", "ground", "ground_hard"],
       "default": "true",
-      "description": "地形碰撞模式：true（默认，与所有方块碰撞），ground（仅与部件之下的地面方块碰撞），false（不与任何方块碰撞）"
+      "description": "地形碰撞模式：true（默认，与所有方块碰撞），ground（仅与部件之下的地面方块碰撞，接触跟随平滑高度场），ground_hard（在 ground 基础上把台阶立面的侧面侵入按竖直法线抬升到障碍上，而不是沿平滑高度场滑过去），false（不与任何方块碰撞）"
     },
     "collision_height": {
       "type": "number",
       "default": -1.0,
-      "description": "碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞（方块碰撞模式需要为ground）。默认-1.0表示所有障碍均碰撞"
+      "description": "碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞（方块碰撞模式需要为 ground 或 ground_hard）。默认-1.0表示所有障碍均碰撞"
     },
     "climb_assist": {
       "type": "boolean",

@@ -96,7 +96,14 @@ public class SubPartAttr {
     private Matrix4f modelToStartBone = null;
 
     public enum BlockCollisionType {
-        TRUE, FALSE, GROUND
+        TRUE, FALSE, GROUND, GROUND_HARD;
+
+        /**
+         * 是否走“只与脚下地面碰撞 + 局部高度场”的链路（{@link #GROUND} 与 {@link #GROUND_HARD}）。
+         */
+        public boolean usesGroundHeightField() {
+            return this == GROUND || this == GROUND_HARD;
+        }
     }
 
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -147,7 +154,7 @@ public class SubPartAttr {
         this.mass = mass;
         this.massCenterName = massCenterName;
         this.projectedArea = projectedArea;
-        this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
+        this.blockCollision = BlockCollisionType.valueOf(blockCollision.replace('-', '_').toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
 
