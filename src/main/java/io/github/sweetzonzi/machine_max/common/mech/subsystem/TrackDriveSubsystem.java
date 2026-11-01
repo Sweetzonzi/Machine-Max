@@ -51,6 +51,8 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
     private final Map<String, MechPower> received = new ConcurrentHashMap<>();
 
     private volatile float feedbackSpeed = 0f;
+    /** 上一物理步下发给滚动轴电机的驱动扭矩（N·m）；物理线程写，行车记录仪读。 */
+    @Getter
     private volatile float driveTorque = 0f;
 
     public TrackDriveSubsystem(ISubsystemHost owner, String name, TrackDriveSubsystemAttr attr) {

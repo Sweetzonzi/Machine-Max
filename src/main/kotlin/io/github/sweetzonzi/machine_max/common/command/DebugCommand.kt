@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.command
 import cn.solarmoon.spark_core.command.BaseCommand
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.context.CommandContext
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractGroundControllerSubsystem
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin
@@ -14,6 +15,11 @@ import net.minecraft.world.entity.player.Player
 
 class DebugCommand : BaseCommand("debug", 4) {
     override fun putExecution(context: CommandBuildContext) {
+        builder.then(
+            Commands.literal("telemetry")
+                .then(Commands.literal("start").executes { setTelemetry(it, true) })
+                .then(Commands.literal("stop").executes { setTelemetry(it, false) })
+        )
         builder.then(
             Commands.literal("autofire")
                 .then(Commands.literal("stop").executes { stopAutoFire(it) })
@@ -87,6 +93,53 @@ class DebugCommand : BaseCommand("debug", 4) {
         weaponController.setDebugAutoFire(false)
         source.sendSuccess(
             { Component.literal("Debug auto-fire STOPPED.") },
+            false
+        )
+        return 1
+    }
+
+    /**
+     * 开/停服务端行车记录仪：把车上每个地面控制器的物理步采样写成 CSV。
+     *
+     * <p>只写服务端文件，客户端不参与；没装录像的载具会收到失败提示。</p>
+     */
+    private fun setTelemetry(ctx: CommandContext<CommandSourceStack>, recording: Boolean): Int {
+        val source = ctx.source
+        val player = source.player ?: run {
+            source.sendFailure(Component.literal("This command can only be executed by a player."))
+            return 0
+        }
+        val vehicle = getPlayerVehicle(player) ?: run {
+            source.sendFailure(Component.literal("You are not riding a vehicle."))
+            return 0
+        }
+
+        val controllers = vehicle.subsystemController.allSubsystems
+            .filterIsInstance<AbstractGroundControllerSubsystem>()
+        if (controllers.isEmpty()) {
+            source.sendFailure(Component.literal("No ground controller subsystem found on this vehicle."))
+            return 0
+        }
+
+        if (!recording) {
+            val summaries = controllers.mapNotNull { it.stopTelemetry() }
+            if (summaries.isEmpty()) {
+                source.sendFailure(Component.literal("Telemetry is not recording."))
+                return 0
+            }
+            for (summary in summaries) {
+                source.sendSuccess({ Component.literal("Telemetry written: $summary") }, false)
+            }
+            return 1
+        }
+
+        val started = controllers.count { it.startTelemetry() }
+        if (started == 0) {
+            source.sendFailure(Component.literal("Telemetry is already recording, or this side is the client."))
+            return 0
+        }
+        source.sendSuccess(
+            { Component.literal("Telemetry STARTED on $started controller(s): logs/machine_max/") },
             false
         )
         return 1

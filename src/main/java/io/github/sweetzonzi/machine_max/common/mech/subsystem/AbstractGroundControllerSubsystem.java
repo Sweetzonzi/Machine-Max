@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -9,11 +10,15 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,6 +46,12 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     public float actualSteering = 0f;
 
     protected final ConcurrentMap<ISignalReceiver, Float> overrideCountDown = new ConcurrentHashMap<>();
+
+    /** 服务端行车记录仪；null = 未录制。主线程开闭，物理线程只提交采样。 */
+    @Nullable
+    private volatile DriveTelemetry telemetry;
+    /** 上一物理步的车速，用于算纵向加速度；仅物理线程读写。 */
+    private float telemetryPreviousSpeed = Float.NaN;
 
     protected final Map<EngineSubsystem, String> engines = new HashMap<>();
     protected final Map<MotorSubsystem, String> motors = new HashMap<>();
@@ -138,6 +149,7 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
+        flushTelemetry();
         for (Map.Entry<String, List<String>> entry : getSpeedOutputTargets().entrySet()) {
             String signalChannel = entry.getKey();
             for (String targetName : entry.getValue()) {
@@ -172,6 +184,7 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         } else {
             resetSignalOutputs();
         }
+        sampleTelemetry();
     }
 
     @Override
@@ -201,6 +214,151 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     public void onAttach() {
         super.onAttach();
         handShake();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        stopTelemetry();
+    }
+
+    // ===== 行车记录仪 =====
+
+    /**
+     * 主线程：开始把本控制器的每一个物理步写成 CSV，落在 {@code <gamedir>/logs/machine_max/}。
+     *
+     * <p>只在服务端开录：客户端调用直接返回 false，因此客户端既不建文件也不做逐 tick 采样。</p>
+     *
+     * @return 是否新开了一份录制；已在录制或当前是客户端时为 false
+     */
+    public boolean startTelemetry() {
+        if (telemetry != null || getLevel().isClientSide()) {
+            return false;
+        }
+        IPartAssembly assembly = getOwner().getSubPart().getPart().assembly;
+        String subject = (assembly == null ? "vehicle" : assembly.getAssemblyName()) + "-" + getName();
+        try {
+            DriveTelemetry recorder = DriveTelemetry.open(subject, telemetryHeader());
+            telemetryPreviousSpeed = Float.NaN;
+            telemetry = recorder;
+            MachineMax.LOGGER.info("行车记录仪开始: {}", recorder.path());
+            return true;
+        } catch (IOException e) {
+            MachineMax.LOGGER.error("行车记录仪创建失败: {}", e.toString());
+            return false;
+        }
+    }
+
+    /**
+     * 主线程：结束录制，写完剩余行并关闭文件。
+     *
+     * @return 本次录制的文件与行数摘要；未在录制时返回 null
+     */
+    @Nullable
+    public String stopTelemetry() {
+        DriveTelemetry recorder = telemetry;
+        if (recorder == null) {
+            return null;
+        }
+        telemetry = null;
+        recorder.close();
+        String summary = recorder.path() + "（" + recorder.samples() + " 行）";
+        MachineMax.LOGGER.info("行车记录仪结束: {}", summary);
+        return summary;
+    }
+
+    public boolean isTelemetryActive() {
+        return telemetry != null;
+    }
+
+    /** 主线程：排空物理线程攒下的行。未录制时只做一次空指针判断。 */
+    private void flushTelemetry() {
+        DriveTelemetry recorder = telemetry;
+        if (recorder != null) {
+            recorder.flush();
+        }
+    }
+
+    /**
+     * 物理线程：把本步的控制量与反馈量合成一行。
+     *
+     * <p>采样点在 {@code distributeControlSignals()} 之后，因此 {@code throttle}、挡位与履带指令
+     * 都是本步实际下发的那一份；{@code rpm} 是引擎上一物理步算出的转速，滞后一步。
+     * {@code accel} 由相邻两步的车速差按名义步长 {@code 1/tps} 折算，与 {@code wall_ms} 一起
+     * 可以区分"仿真里的加速度"和"真实时间的加速度"（物理掉步时两者不同）。</p>
+     */
+    private void sampleTelemetry() {
+        DriveTelemetry recorder = telemetry;
+        if (recorder == null) {
+            return;
+        }
+        float tps = getPhysicsLevel().getTps();
+        float dt = tps > 0f ? 1f / tps : 0.05f;
+        float accel = Float.isNaN(telemetryPreviousSpeed) ? 0f : (speed - telemetryPreviousSpeed) / dt;
+        telemetryPreviousSpeed = speed;
+
+        StringBuilder row = new StringBuilder(192);
+        row.append(String.format(Locale.ROOT, "%.3f,%d,%.4f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f,%d,%d,%d,%.0f",
+                physicsTickCount * dt, recorder.elapsedMillis(), speed, speed * 3.6f, accel,
+                actualThrottle, actualBrake, actualHandBrake, actualSteering,
+                averagePowerRpm(), firstGear(), firstClutched(), isActive() ? 1 : 0, totalMass()));
+        appendTelemetrySample(row);
+        recorder.offer(row.toString());
+    }
+
+    /**
+     * 采样行的列名。子类追加的列必须与 {@link #appendTelemetrySample} 追加的数值一一对应，
+     * 且录制期间列数保持不变（起录后再改组拓扑会让后续行错位）。
+     */
+    protected String telemetryHeader() {
+        return "t_s,wall_ms,speed_mps,speed_kmh,accel_mps2,throttle,brake,handbrake,steering,"
+                + "rpm,gear,clutched,active,mass_kg" + telemetryExtraColumns();
+    }
+
+    /** 子类追加的列名，含前导逗号；默认无额外列。 */
+    protected String telemetryExtraColumns() {
+        return "";
+    }
+
+    /** 子类追加的数值，含前导逗号；默认无额外数值。 */
+    protected void appendTelemetrySample(StringBuilder row) {
+    }
+
+    /** 引擎与电动机的平均转速（rpm）；都没有时为 0。物理线程调用。 */
+    private float averagePowerRpm() {
+        float rpm = 0f;
+        int count = 0;
+        for (EngineSubsystem engine : engines.keySet()) {
+            rpm += (float) (engine.getRotSpeed() * 30.0 / Math.PI);
+            count++;
+        }
+        for (MotorSubsystem motor : motors.keySet()) {
+            rpm += (float) (motor.getRotSpeed() * 30.0 / Math.PI);
+            count++;
+        }
+        return count > 0 ? rpm / count : 0f;
+    }
+
+    /** 首个变速箱的挡位索引；没有变速箱时为 -1。多变速箱的车按遍历顺序取第一个。 */
+    private int firstGear() {
+        for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+            return gearbox.getCurrentGear();
+        }
+        return -1;
+    }
+
+    /** 首个变速箱的离合状态，1 = 接合；没有变速箱时为 -1。 */
+    private int firstClutched() {
+        for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+            return gearbox.isClutched() ? 1 : 0;
+        }
+        return -1;
+    }
+
+    /** 装配体总质量（kg），供把轮端扭矩折算成加速度；没有装配体时为 0。物理线程调用。 */
+    private float totalMass() {
+        IPartAssembly assembly = getOwner().getSubPart().getPart().assembly;
+        return assembly != null ? assembly.getTotalMass() : 0f;
     }
 
     @Override

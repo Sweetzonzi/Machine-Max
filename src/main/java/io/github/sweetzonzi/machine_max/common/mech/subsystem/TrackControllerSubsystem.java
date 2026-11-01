@@ -11,9 +11,11 @@ import io.github.sweetzonzi.machine_max.util.MMMath;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,6 +33,8 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
     private final Map<TrackDriveSubsystem, String> tracks = new HashMap<>();
     private volatile List<TrackBinding> trackBindings = List.of();
+    /** 上一物理步下发给各条履带的带速指令（m/s），下标与 {@link #trackBindings} 对齐；物理线程独占。 */
+    private float[] trackTargets = new float[0];
 
     private float yawRateCmd = 0f;
     private float baseSpeed = 0f;
@@ -72,6 +76,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         super.clearActuatorBindings();
         tracks.clear();
         trackBindings = List.of();
+        trackTargets = new float[0];
     }
 
     @Override
@@ -98,6 +103,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
         if (raw.isEmpty()) {
             trackBindings = List.of();
+            trackTargets = new float[0];
             previousYawRate = Float.NaN;
             return;
         }
@@ -113,6 +119,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         }
         centered.sort(Comparator.comparingDouble(TrackBinding::x));
         trackBindings = List.copyOf(centered);
+        trackTargets = new float[centered.size()];
         previousYawRate = Float.NaN;
     }
 
@@ -142,6 +149,8 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         if (bindings.isEmpty()) {
             baseSpeed = 0f;
             yawRateCmd = 0f;
+            trackTargets = new float[trackBindings.size()];
+            Arrays.fill(trackTargets, Float.NaN);
             return;
         }
 
@@ -176,7 +185,14 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         float turnRatio = Math.clamp(turnIntent + correction, -turnLimit, turnLimit);
         this.yawRateCmd = width < 0.1f ? 0f : turnRatio * Math.abs(vBase) / width;
 
-        for (TrackBinding binding : bindings) {
+        List<TrackBinding> all = trackBindings;
+        float[] targets = new float[all.size()];
+        for (int i = 0; i < all.size(); i++) {
+            TrackBinding binding = all.get(i);
+            if (!binding.drive().isDriveUsable()) {
+                targets[i] = Float.NaN;
+                continue;
+            }
             float ratio = TrackMath.singleFlowSpeedRatio(binding.x(), minX, maxX, turnRatio, direction);
             float maxSpeed = binding.drive().linearMaxSpeed();
             float pivotSpeed = Math.min(maxSpeed, Math.max(tableYawRate, 0f) * Math.max(width, 0f)
@@ -185,8 +201,51 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
             float target = ratio < 1f - TrackMath.EPSILON
                     ? direction * Math.min(Math.abs(vBase), outerLimit) * ratio
                     : (pivotWeight > 0f && width >= 0.1f ? direction * outerLimit : Float.NaN);
+            targets[i] = target;
             sendCallbackToListener(binding.channel(), binding.drive(),
                     new TrackControlSignal(actualBrake, actualHandBrake, 1f, target));
+        }
+        this.trackTargets = targets;
+    }
+
+    @Override
+    protected String telemetryExtraColumns() {
+        StringBuilder columns = new StringBuilder(",base_mps,yaw_cmd,yaw_act");
+        for (int i = 0; i < trackBindings.size(); i++) {
+            columns.append(",t").append(i).append("_cmd")
+                    .append(",t").append(i).append("_in")
+                    .append(",t").append(i).append("_spd")
+                    .append(",t").append(i).append("_trq")
+                    .append(",t").append(i).append("_r");
+        }
+        return columns.toString();
+    }
+
+    /**
+     * 追加单流基准、横摆指令与每条履带的五元组：本步下发的带速指令、动力链折算到主动轮的
+     * 输入带速、履带实际带速、下发给滚动轴电机的驱动扭矩、主动轮半径。
+     *
+     * <p>伺服目标取 {@code min(_cmd, _in)}（同向时），所以两者的较小值才是这一步真正追的转速。
+     * {@code _in} 长期低于 {@code _cmd} 说明瓶颈在动力链一侧（转速由引擎经传动决定）；
+     * {@code _trq} 长期贴着 {@code max_drive_torque} 而 {@code _spd} 追不上目标，说明接触面
+     * 吃不下这份力矩（打滑或扭矩不足）。{@code _cmd} 为 NaN 表示该侧被外侧锚定、本步不主动驱动。</p>
+     */
+    @Override
+    protected void appendTelemetrySample(StringBuilder row) {
+        float yawRate = getSubPart().body.getAngularVelocityLocal(null).y;
+        row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f", baseSpeed, yawRateCmd, yawRate));
+        List<TrackBinding> all = trackBindings;
+        float[] targets = trackTargets;
+        for (int i = 0; i < all.size(); i++) {
+            TrackDriveSubsystem drive = all.get(i).drive();
+            if (!drive.isDriveUsable()) {
+                row.append(",NaN,NaN,NaN,NaN,NaN");
+                continue;
+            }
+            float target = i < targets.length ? targets[i] : Float.NaN;
+            row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f,%.1f,%.3f",
+                    target, drive.inputSpeed() * drive.radius(), drive.linearSpeed(),
+                    drive.getDriveTorque(), drive.radius()));
         }
     }
 

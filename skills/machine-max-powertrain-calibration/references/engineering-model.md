@@ -314,6 +314,7 @@ n_peak = clamp( (b − r·a) / (2(1 − r)),  a, b )
 | 轮端速度伺服（目标转速 = 动力链转速） | `common/mech/subsystem/WheelDriverSubsystem.java` `onPrePhysicsTick` |
 | 履带速度伺服与功率反推扭矩 | `common/mech/subsystem/TrackDriveSubsystem.java` + `vehicle/track/TrackMath.java` `singleFlowMotor` |
 | 动力源转速积分（`inertia` 在这里） | `common/mech/subsystem/EngineSubsystem.java` `onPrePhysicsTick` |
+| 行车记录仪（服务端 CSV 采样） | `common/mech/subsystem/DriveTelemetry.java` + `AbstractGroundControllerSubsystem#sampleTelemetry` |
 
 ## 九、易错点
 
@@ -346,6 +347,44 @@ n_peak = clamp( (b − r·a) / (2(1 − r)),  a, b )
 
 - **以物理步计时。** `PhysicsLevel` 每步 `0.01 s`，与主线程 20 tps 不同步，同一段游戏时间对应的物理步数会浮动。滑行距离、减速度、换挡延迟都按物理步换算，不拿游戏 tick 当秒。
 - **先确认在滚。** 滚阻的减速度是 `C_rr·g` 量级（硬地 0.1~0.4 m/s²），滑动摩擦是 `μg` 量级（数 m/s²），两者差一个数量级以上。量滑行减速前先看轮速与车速是否满足 `v = ω·r`；不满足时量到的是滑动摩擦，与滚阻无关。
+
+### 行车记录仪
+
+地面控制器自带一个服务端 CSV 记录仪，每个物理步写一行（名义 100 Hz），不需要额外 mod：
+
+```text
+/mm debug telemetry start      # 坐在车上执行
+/mm debug telemetry stop       # 结束，聊天栏回显文件与行数
+```
+
+文件落在 `<gamedir>/logs/machine_max/<载具名>-<控制器名>-<时间戳>.csv`，首行列名，一次录制一个文件。写盘只在服务端发生：客户端不采样、不建文件。
+
+| 列 | 含义 |
+|---|---|
+| `t_s` / `wall_ms` | 仿真时间（物理步数 × 0.01 s）与真实毫秒 |
+| `speed_mps` / `speed_kmh` | 车体局部前向速度 |
+| `accel_mps2` | 相邻两步的车速差 ÷ 0.01 s |
+| `throttle` / `brake` / `handbrake` / `steering` | 平滑后的执行器指令（0~1，转向 −1~1） |
+| `rpm` | 引擎与电机的平均转速 |
+| `gear` / `clutched` | 首个变速箱的挡位索引与离合；`clutched = 0` 即换挡断流中 |
+| `active` | 控制器是否在接管（`0` 时 `throttle` 停在最后一次的值，读的时候先看这一列） |
+| `mass_kg` | 装配体总质量 |
+| `base_mps` / `yaw_cmd` / `yaw_act` | 履带：单流基准带速、横摆率指令、车体实际横摆率（rad/s） |
+| `t{i}_cmd` | 本步下发给该侧履带的带速指令（m/s）；`NaN` = 该侧被外侧锚定、不主动驱动 |
+| `t{i}_in` | 动力链折算到主动轮的带速（输入角速度 × 半径） |
+| `t{i}_spd` | 履带实际带速 |
+| `t{i}_trq` / `t{i}_r` | 下发给滚动轴电机的驱动扭矩（N·m）与主动轮半径 |
+
+`t0` / `t1` 按车体局部 x 从小到大排序，不是按左右命名。
+
+四个先看的量：
+
+1. **`wall_ms` 与 `t_s` 是否同步。** 物理欠载时 `PhysicsLevel.dynamicRepeat` 从 5 步降到 1~4 步，仿真时间慢于真实时间；两者对不上时，手感上的加速与 `accel_mps2` 不是同一个量，先按 `t_s` 读。
+2. **瓶颈在动力链还是在接触面。** 伺服目标是 `min(_cmd, _in)`（同向时）。`_in < _cmd` 表示转速由动力链给出，这一侧的快慢由动力源转速爬升速度决定（§十二）；`_trq` 贴着 `max_drive_torque` 而 `_spd` 追不上目标，表示接触面吃不下这份力矩。
+3. **接触面的力是否等于模型算的。** `F = Σ t{i}_trq / t{i}_r`，再用 `mass_kg` 与 `accel_mps2` 反算 `F − m·a` 即当步阻力。与档位表的牵引力对照，差得多说明差在阻力项或质量。
+4. **引擎转速是否与车速同相。** 理论上 `rpm = speed_mps·i_gear·60/(2π·r)`。实测 `rpm` 明显低于这个值而 `_in` 也跟着低，说明引擎被拖住（转子惯量、`couple_torque` 或换挡断流）。
+
+换挡过程直接读 `gear` 的跳变与 `clutched` 的行数：`clutched = 0` 的行数 × 0.01 s 就是该次断流时长，明显超过 `switch_time` 说明自动换挡在振荡。
 
 ## 十一、悬挂与关节钳位
 
