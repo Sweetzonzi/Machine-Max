@@ -434,6 +434,7 @@ public class TrackLink {
             Vector3f impulse = normal.mult(force);
             a.body.applyCentralForce(impulse);
             b.body.applyCentralForce(impulse.negate());
+            vehicle.accumulateTrackTension(force);
         }
     }
 

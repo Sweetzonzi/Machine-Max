@@ -1,5 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
@@ -11,6 +14,8 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +57,17 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     private volatile DriveTelemetry telemetry;
     /** 上一物理步的车速，用于算纵向加速度；仅物理线程读写。 */
     private float telemetryPreviousSpeed = Float.NaN;
+    /**
+     * 行车记录仪取姿态用的缓存：机身旋转、一个中转轴、三根机身轴（前/上/右）、线速度与角速度。
+     * 仅物理线程读写。
+     */
+    private final Quaternion telemetryRotation = new Quaternion();
+    private final Vector3f telemetryAxis = new Vector3f();
+    private final Vector3f telemetryForward = new Vector3f();
+    private final Vector3f telemetryUp = new Vector3f();
+    private final Vector3f telemetryRight = new Vector3f();
+    private final Vector3f telemetryVelocity = new Vector3f();
+    private final Vector3f telemetryAngular = new Vector3f();
 
     protected final Map<EngineSubsystem, String> engines = new HashMap<>();
     protected final Map<MotorSubsystem, String> motors = new HashMap<>();
@@ -302,8 +318,54 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
                 physicsTickCount * dt, recorder.elapsedMillis(), speed, speed * 3.6f, accel,
                 actualThrottle, actualBrake, actualHandBrake, actualSteering,
                 averagePowerRpm(), firstGear(), firstClutched(), isActive() ? 1 : 0, totalMass()));
+        appendMotionSample(row);
         appendTelemetrySample(row);
         recorder.offer(row.toString());
+    }
+
+    /**
+     * 物理线程：追加姿态与合力取样列。
+     *
+     * <p>读的是刚体上的实时量，不是 {@code SynchedEntityData} 里 20 Hz 的快照：{@code speed_mps}
+     * 来自同步值，每 5 个物理步才更新一次，用它分辨不出周期一秒量级的抖动；{@code b_vx/b_vy/b_vz}
+     * 是同一步的实时值。</p>
+     *
+     * <p>气动与张力取的是装配体上一步的合计（见 {@code VehicleCore#prePhysicsTick()}），
+     * 比其它列晚一个物理步；{@code aero_fwd} 按本零件机身前向投影，正值表示气动力推着车往前。</p>
+     */
+    private void appendMotionSample(StringBuilder row) {
+        PhysicsRigidBody body = getOwner().getSubPart().body;
+        body.getPhysicsRotation(telemetryRotation);
+        body.getLinearVelocity(telemetryVelocity);
+        MyQuaternion.rotateInverse(telemetryRotation, telemetryVelocity, telemetryVelocity);
+        body.getAngularVelocityLocal(telemetryAngular);
+
+        telemetryAxis.set(0f, 0f, -1f);
+        MyQuaternion.rotate(telemetryRotation, telemetryAxis, telemetryForward);
+        telemetryAxis.set(0f, 1f, 0f);
+        MyQuaternion.rotate(telemetryRotation, telemetryAxis, telemetryUp);
+        telemetryAxis.set(1f, 0f, 0f);
+        MyQuaternion.rotate(telemetryRotation, telemetryAxis, telemetryRight);
+
+        float pitch = (float) Math.toDegrees(Math.asin(Math.clamp(telemetryForward.y, -1f, 1f)));
+        float roll = (float) -Math.toDegrees(Math.asin(Math.clamp(telemetryRight.y, -1f, 1f)));
+        float pitchRate = (float) Math.toDegrees(telemetryAngular.x);
+        float rollRate = (float) Math.toDegrees(telemetryAngular.z);
+
+        float aeroForward = 0f;
+        float aeroUp = 0f;
+        float trackTension = 0f;
+        IPartAssembly assembly = getOwner().getSubPart().getPart().assembly;
+        if (assembly instanceof VehicleCore vehicle) {
+            Vector3f aero = vehicle.getAeroForceLastStep();
+            aeroForward = aero.dot(telemetryForward);
+            aeroUp = aero.dot(telemetryUp);
+            trackTension = vehicle.getTrackTensionLastStep();
+        }
+
+        row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f,%.2f,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f",
+                telemetryVelocity.x, telemetryVelocity.y, telemetryVelocity.z,
+                pitch, roll, pitchRate, rollRate, aeroForward, aeroUp, trackTension));
     }
 
     /**
@@ -312,7 +374,9 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
      */
     protected String telemetryHeader() {
         return "t_s,wall_ms,speed_mps,speed_kmh,accel_mps2,throttle,brake,handbrake,steering,"
-                + "rpm,gear,clutched,active,mass_kg" + telemetryExtraColumns();
+                + "rpm,gear,clutched,active,mass_kg"
+                + ",b_vx,b_vy,b_vz,pitch,roll,pitch_rate,roll_rate,aero_fwd,aero_up,tension_n"
+                + telemetryExtraColumns();
     }
 
     /** 子类追加的列名，含前导逗号；默认无额外列。 */

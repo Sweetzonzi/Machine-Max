@@ -387,10 +387,15 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                     MyQuaternion.rotateInverse(hydroCenterRot, tmpLocalAeroForce, tmpRigidAeroForce);
 
                     // === 应用到世界 ===
+                    Vector3f worldAeroForce = MMMath.localVectorToWorldVector(tmpRigidAeroForce, this.body);
                     this.body.applyForce(
-                            MMMath.localVectorToWorldVector(tmpRigidAeroForce, this.body),
+                            worldAeroForce,
                             MMMath.localVectorToWorldVector(hydroCenterPos, this.body)
                     );
+                    // 行车记录仪：整车气动合力按装配体累加，不参与物理
+                    if (this.part.assembly instanceof VehicleCore vehicle) {
+                        vehicle.accumulateAeroForce(worldAeroForce.x, worldAeroForce.y, worldAeroForce.z);
+                    }
                 }
             }
         }

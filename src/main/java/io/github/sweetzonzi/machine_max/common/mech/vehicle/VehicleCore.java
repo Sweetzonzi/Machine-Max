@@ -75,6 +75,20 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     public final ConcurrentMap<UUID, RegularPart> partMap = new java.util.concurrent.ConcurrentHashMap<>();
     /** 履带列表。履带是载具级关系 + 状态对象，没有独立刚体；列表项本身即身份。 */
     public final CopyOnWriteArrayList<TrackLink> trackLinks = new CopyOnWriteArrayList<>();
+    /**
+     * 本物理步累加中的气动合力（世界坐标，N）。物理线程独占：子零件在
+     * {@code SubPart.prePhysicsTick()} 里累加，下一步开头换进 {@link #aeroForceLastStep}。
+     */
+    private final Vector3f aeroForceStep = new Vector3f();
+    /**
+     * 上一个物理步的气动合力合计（世界坐标，N）。物理线程独占，只服务行车记录仪。
+     * 取到的是内部复用向量，只读、不要留存。
+     */
+    private final Vector3f aeroForceLastStep = new Vector3f();
+    /** 本物理步累加中的履带张力大小合计（N，各条履带相加）；物理线程独占。 */
+    private float trackTensionStep;
+    /** 上一个物理步的履带张力大小合计（N）；物理线程独占，只服务行车记录仪。 */
+    private float trackTensionLastStep;
     public String name = "Vehicle";//载具名称
     public final Level level;//载具所在世界
     @Setter
@@ -530,6 +544,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     }
 
     public void prePhysicsTick() {
+        // 诊断合计换到"上一步"：控制器的采样就在下面这步开头，读到的因此是本步之前的完整合计，
+        // 不含采样点之后才施加的气动与张力
+        aeroForceLastStep.set(aeroForceStep);
+        aeroForceStep.set(0f, 0f, 0f);
+        trackTensionLastStep = trackTensionStep;
+        trackTensionStep = 0f;
         subSystemController.prePhysicsTick();
         // 动画物理刻与主线程 tick 必须同门控：否则物理线程持续写入共享 pose 而主线程不发布，导致渲染冻结
         if (inLoadedChunk && !isRemoved) {
@@ -546,6 +566,33 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         for (RegularPart part : partMap.values()) {
             part.onPostPhysicsTick();
         }
+    }
+
+    /**
+     * 物理线程：子零件把本步受到的气动力累加进本步合计。
+     *
+     * <p>只服务行车记录仪——用它的分量变化区分"推力在抖"和"阻力在抖"。不参与物理计算，
+     * 也不被任何物理量读回。读取上一步的完整合计用 {@link #getAeroForceLastStep()}，
+     * 本步正在累加的这份在采样点还没累完。</p>
+     *
+     * @param x 世界坐标 x 分量（N）
+     * @param y 世界坐标 y 分量（N）
+     * @param z 世界坐标 z 分量（N）
+     */
+    public void accumulateAeroForce(float x, float y, float z) {
+        aeroForceStep.addLocal(x, y, z);
+    }
+
+    /**
+     * 物理线程：履带把本步施加的张力累加进本步合计。
+     *
+     * <p>取大小而不是分量：张力沿包络抓轮，方向绕一圈各不相同，分量合计会互相抵消；
+     * 大小合计随带内张力水平单调变化，正好用来判断带是不是在周期性松紧。</p>
+     *
+     * @param forceMagnitude 一对相邻成员之间的张力大小（N）
+     */
+    public void accumulateTrackTension(float forceMagnitude) {
+        trackTensionStep += forceMagnitude;
     }
 
     /**
