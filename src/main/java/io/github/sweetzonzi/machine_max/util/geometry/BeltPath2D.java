@@ -244,6 +244,11 @@ private final List<Circle2D> inputCircles;
      * <p>至少需要 2 个半径大于 0 的圆。</p>
      */
     public static BeltPath2D convexFallback(List<Circle2D> circles) {
+        return convexFallback(circles, false);
+    }
+
+    /** 凸包回退使用铺设绕向，供运行时保持节序方向。 */
+    public static BeltPath2D convexFallback(List<Circle2D> circles, boolean clockwise) {
         if (circles == null || circles.size() < 2) {
             throw new IllegalArgumentException("at least 2 circles are required");
         }
@@ -253,7 +258,8 @@ private final List<Circle2D> inputCircles;
                 throw new IllegalArgumentException("circle " + i + " radius must be > 0");
             }
         }
-        List<Vec2> hull = ConvexHull2D.hullOfCircles(circles, 128);
+        List<Vec2> hull = new ArrayList<>(ConvexHull2D.hullOfCircles(circles, 128));
+        if (clockwise) java.util.Collections.reverse(hull);
         if (hull.size() < 3) {
             throw new IllegalArgumentException("degenerate circle hull");
         }
@@ -451,6 +457,37 @@ private final List<Circle2D> inputCircles;
         return arcs;
     }
 
+    /** 指定轮的包裹段；凸包折线按轮缘点恢复接触来源，轮被包络遮住时返回 null。 */
+    public ArcContact wheelContact(int wheelIndex) {
+        for (ArcContact arc : arcs) if (arc.wheelIndex() == wheelIndex) return arc;
+        Circle2D wheel = inputCircles.get(wheelIndex);
+        int bestStart = -1, bestCount = 0;
+        for (int i = 0; i < points.size(); i++) {
+            int count = 0;
+            while (count < points.size()) {
+                Vec2 a = points.get((i + count) % points.size());
+                Vec2 b = points.get((i + count + 1) % points.size());
+                if (Math.abs(a.distance(wheel.center()) - wheel.radius()) > 1e-7
+                        || Math.abs(b.distance(wheel.center()) - wheel.radius()) > 1e-7) break;
+                count++;
+            }
+            if (count > bestCount) { bestStart = i; bestCount = count; }
+        }
+        if (bestCount == 0) return null;
+        List<Vec2> samples = new ArrayList<>();
+        double sweep = 0;
+        for (int i = 0; i <= bestCount; i++) {
+            Vec2 point = points.get((bestStart + i) % points.size());
+            if (!samples.isEmpty()) {
+                Vec2 prev = samples.getLast().sub(wheel.center()), next = point.sub(wheel.center());
+                sweep += Math.atan2(prev.cross(next), prev.dot(next));
+            }
+            samples.add(point);
+        }
+        return new ArcContact(wheelIndex, samples.getFirst().sub(wheel.center()).angle(),
+                sweep, Math.abs(sweep) * wheel.radius(), samples);
+    }
+
     public List<PointContact> pointContacts() {
         return pointContacts;
     }
@@ -511,6 +548,20 @@ private final List<Circle2D> inputCircles;
                 ? new Vec2(tangent.y(), -tangent.x())
                 : new Vec2(-tangent.y(), tangent.x());
         return new Sample(edge.pointAt(t), tangent, normal, lo, u);
+    }
+
+    /** 路径点在折线上的弧长坐标，供接触段端点定位使用。 */
+    public double distanceAt(Vec2 point) {
+        double best = Double.POSITIVE_INFINITY, distance = 0;
+        for (Edge edge : edges) {
+            double along = Math.max(0, Math.min(edge.length(), point.sub(edge.start()).dot(edge.direction())));
+            double error = point.distance(edge.start().add(edge.direction().mul(along)));
+            if (error < best) {
+                best = error;
+                distance = edge.startDistance() + along;
+            }
+        }
+        return distance;
     }
 
     /**

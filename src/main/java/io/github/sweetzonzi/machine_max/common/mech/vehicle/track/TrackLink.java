@@ -625,7 +625,7 @@ public class TrackLink {
     /**
      * 主线程 / 客户端：一个接地成员把自己上报给履带。
      *
-     * <p>轮面音由履带合成，成员不再各自放音。同一 tick 内的多条上报合并成
+     * <p>轮面音由履带合成，成员只上报接触快照。同一 tick 内的多条上报合并成
      * 「最大带速偏差 + 接触点形心」，整条履带的判定在 {@link #clientTick()} 做。</p>
      *
      * <p>成员是在主线程 tick 的收尾阶段收到接触快照的，比 {@link VehicleCore#preTick()}
@@ -653,8 +653,8 @@ public class TrackLink {
      * 主线程：主动轮相对车体的局部 X 角速度（rad/s）。
      *
      * <p>与车体做差去掉俯仰 / 侧倾角速度，再转到主动轮自身坐标系取 X 轴分量；
-     * 取不到车体一端时退回主动轮自身的局部角速度。渲染的履带相位与音效的带速
-     * 都读这一个量，两者因此永远同源。</p>
+     * 取不到车体一端时退回主动轮自身的局部角速度。音效带速使用此量，
+     * 渲染相位用实际轮位姿，并用此量预测角度展开的跨圈方向。</p>
      */
     public float sprocketOmegaX() {
         SubPart sp = sprocket;
@@ -667,6 +667,13 @@ public class TrackLink {
         Vector3f local = new Vector3f();
         MyQuaternion.rotateInverse(sp.getRotation(), relative, local);
         return local.x;
+    }
+
+    /** 主线程 / 渲染线程：轮位姿的安装参考系；无安装对象时使用世界系。 */
+    public org.joml.Matrix4f sprocketReferencePose(float partialTick) {
+        SubPart sp = sprocket;
+        SubPart chassis = sp == null ? null : findChassis(sp);
+        return chassis == null ? new org.joml.Matrix4f() : chassis.getWorldPositionMatrix(partialTick);
     }
 
     /** 主线程：履带带速（m/s，取绝对值）。同一 tick 内重复调用只读一次刚体。 */

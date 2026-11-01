@@ -37,11 +37,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 履带节渲染：在轮组包络线上按固定节距放置履带节，并按主动轮转速积分相位。
+ * 履带节渲染：主动轮包裹段锁定角节距，其余路径吸收包络长度变化。
  *
  * <p>几何全部是客户端本地计算：每个渲染帧用 {@code partialTick} 的轮位姿重建
- * {@link TrackEnvelope2D}，节位置 {@code s_i = (L·i/N + phase) mod L}。相位在
- * {@link #tick()}（20tps）里积分，渲染时用上一 tick / 本 tick 双值插值。
+ * {@link TrackEnvelope2D}；{@link TrackBeltLayout} 按连续节序映射位置。
+ * {@link #tick()}（20tps）按实际轮位姿展开角度，{@link TrackBeltPhase} 在渲染时对齐当帧位姿。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
  *
  * <p><b>两条绘制路径</b>：</p>
@@ -64,7 +64,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ul>
  *
  * <p>线程：{@link #tick()} 在主线程，{@link #renderTrack} 在渲染线程；共享状态只有
- * {@link State} 的 volatile 相位 / 节数，以及按型号缓存的模型与渲染类型。</p>
+ * {@link State} 的 volatile 相位快照 / 节数 / 节距，以及按型号缓存的模型与渲染类型。</p>
  */
 public class TrackRenderer extends VisualEffectRenderer {
     /** 绘制路径：近处用型号的单节模型，远处用程序化扁长方体。 */
@@ -91,17 +91,25 @@ public class TrackRenderer extends VisualEffectRenderer {
     /** 模型路径的顶点色：不额外着色，明暗交给实体管线的两向光照。 */
     private static final int MODEL_COLOR = 0xFFFFFFFF;
 
-    /** 相位状态按 TrackLink 索引；tick 写入，渲染读取。 */
-    private static final Map<TrackLink, State> STATES = new ConcurrentHashMap<>();
+    /** 按安装拓扑保留相位；全量同步重建 TrackLink 时，断带和修复承接相同状态。 */
+    private static final Map<TrackKey, State> STATES = new ConcurrentHashMap<>();
     /** 单节模型的渲染资源按型号 id 缓存，避免每帧新建 {@link ModelPose} 与渲染类型。 */
     private static final Map<ResourceLocation, LinkVisual> VISUALS = new ConcurrentHashMap<>();
     /** 已经报过「模型缺失」的型号，避免每帧刷日志。 */
     private static final Set<ResourceLocation> MISSING_MODELS = ConcurrentHashMap.newKeySet();
 
+    private record TrackKey(VehicleCore vehicle, SubPart sprocket, List<SubPart> members, ResourceLocation type) {
+        TrackKey(TrackLink link) {
+            this(link.vehicle(), link.sprocket(), link.members(), link.typeId());
+        }
+    }
+
     private static final class State {
         private volatile int linkCount;
-        private volatile double phase;
-        private volatile double prevPhase;
+        private volatile double pitch;
+        private volatile TrackBeltPhase phase;
+        private long sampleTick;
+        private boolean warned;
     }
 
     /**
@@ -121,36 +129,42 @@ public class TrackRenderer extends VisualEffectRenderer {
         for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {
             for (TrackLink link : vehicle.trackLinks) {
                 if (link.isDisposed()) {
-                    STATES.remove(link);
                     continue;
                 }
-                State state = STATES.computeIfAbsent(link, ignored -> new State());
-                state.prevPhase = state.phase;
+                State state = STATES.computeIfAbsent(new TrackKey(link), ignored -> new State());
 
                 TrackEnvelope2D.Result envelope =
                         link.envelope(1f);
                 if (envelope == null) {
-                    if (state.linkCount == 0) state.linkCount = link.linkCount();
                     continue;
                 }
                 int linkCount = envelope.path().linkCount(link.attr().lengthPerLink());
                 if (state.linkCount == 0) {
                     state.linkCount = linkCount;
+                    state.pitch = envelope.path().length() / linkCount;
                 }
-                if (link.isBroken()) continue;
-
-                SubPart sprocket = link.sprocket();
-                if (sprocket == null) continue;
-                float omega = link.sprocketOmegaX();
-                // (Y,Z) 平面的正角绕轮轴 +X；闭环的有向圆弧与轮面同向运动。
-                double winding = Math.signum(envelope.path().signedArea());
-                state.phase += omega * sprocket.getMaxWheelRadius() * TICK_SECONDS * winding;
+                var contact = envelope.path().wheelContact(0);
+                if (contact == null || !new TrackBeltLayout(envelope.path(), contact,
+                        state.linkCount, state.pitch, 0).isValid()) {
+                    if (!state.warned) MachineMax.LOGGER.warn("履带主动轮无有效啮合段，暂缓绘制：{}", link.typeId());
+                    state.warned = true;
+                    continue;
+                }
+                state.warned = false;
+                double wheel = wheelAngle(link, envelope, 1f);
+                long now = vehicle.level.getGameTime();
+                double elapsed = state.phase == null ? TICK_SECONDS : (now - state.sampleTick) * TICK_SECONDS;
+                TrackBeltPhase next = state.phase == null ? new TrackBeltPhase() : new TrackBeltPhase(state.phase);
+                next.advance(wheel, contact.startAngle() + wheel,
+                        link.sprocketOmegaX() * elapsed, link.isBroken());
+                state.sampleTick = now;
+                state.phase = next;
             }
         }
 
         STATES.entrySet().removeIf(entry -> {
-            TrackLink link = entry.getKey();
-            return link.isDisposed() || !link.vehicle().trackLinks.contains(link);
+            TrackLink link = entry.getKey().sprocket().trackLink;
+            return link == null || link.isDisposed() || !entry.getKey().equals(new TrackKey(link));
         });
     }
 
@@ -182,15 +196,22 @@ public class TrackRenderer extends VisualEffectRenderer {
         TrackEnvelope2D.Result envelope = link.envelope(partialTick);
         if (envelope == null) return;
 
-        State state = STATES.get(link);
-        int linkCount = state == null || state.linkCount <= 0
-                ? envelope.path().linkCount(link.attr().lengthPerLink())
-                : state.linkCount;
-        if (linkCount <= 0) return;
-
-        double phase = state == null ? 0 : lerp(state.prevPhase, state.phase, partialTick);
+        State state = STATES.get(new TrackKey(link));
+        if (state == null || state.phase == null) return;
+        var contact = envelope.path().wheelContact(0);
+        if (contact == null) return;
+        double wheel = wheelAngle(link, envelope, partialTick);
+        double label = state.phase.label(wheel, contact.startAngle() + wheel, partialTick,
+                envelope.path().inputCircles().getFirst().radius() / state.pitch, Math.signum(contact.sweep()));
+        TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, state.linkCount, state.pitch, label);
+        if (!layout.isValid()) return;
         LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
-        renderBelt(poseStack, bufferSource, envelope, linkCount, phase, link, visual, packedLight);
+        renderBelt(poseStack, bufferSource, envelope, state.linkCount, layout, link, visual, packedLight);
+    }
+
+    private static double wheelAngle(TrackLink link, TrackEnvelope2D.Result envelope, float partialTick) {
+        Matrix4f relative = link.sprocketReferencePose(partialTick).invert().mul(envelope.sprocketWorld());
+        return Math.atan2(relative.m12(), relative.m11());
     }
 
     /**
@@ -215,6 +236,12 @@ public class TrackRenderer extends VisualEffectRenderer {
         if (envelope == null) return ownBox;
 
         double spacing = envelope.path().length() / Math.max(1, link.linkCount());
+        State state = STATES.get(new TrackKey(link));
+        var contact = envelope.path().wheelContact(0);
+        if (state != null && state.pitch > 0 && contact != null) {
+            TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, state.linkCount, state.pitch, 0);
+            if (layout.isValid()) spacing = Math.max(spacing, layout.spacing());
+        }
         LocalBounds bounds = localBounds(link, subPart, spacing);
         if (!bounds.isFinite()) return ownBox;
         // 履带外表面比包络半径多一个厚度；单节几何在 (Y, Z) 平面内的伸入量按两轴绝对值相加保守估计
@@ -362,21 +389,18 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   TrackEnvelope2D.Result envelope, int linkCount, double phase,
+                                   TrackEnvelope2D.Result envelope, int linkCount, TrackBeltLayout layout,
                                    TrackLink link, @Nullable LinkVisual visual, int packedLight) {
         double length = envelope.path().length();
         if (!(length > 1e-6)) return;
         float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
-        double spacing = length / linkCount;
         float thickness = link.attr().thicknessMeters();
-        float halfLength = (float) (spacing * LINK_LENGTH_RATIO * 0.5);
         float halfThickness = thickness * 0.5f;
         float halfWidth = LINK_WIDTH * 0.5f;
 
         for (int i = 0; i < linkCount; i++) {
-            double arc = (length * i / linkCount + phase) % length;
-            if (arc < 0) arc += length;
-            BeltPath2D.Sample sample = envelope.path().sampleAt(arc);
+            BeltPath2D.Sample sample = layout.sample(i);
+            float halfLength = (float) (layout.spacing(sample) * LINK_LENGTH_RATIO * 0.5);
             Vec2 point = sample.point();
             Vec2 tangent = sample.tangent();
             Vec2 normal = sample.normal();
@@ -492,7 +516,4 @@ public class TrackRenderer extends VisualEffectRenderer {
                 .setNormal(pose, nx, ny, nz);
     }
 
-    private static double lerp(double a, double b, float t) {
-        return a + (b - a) * t;
-    }
 }

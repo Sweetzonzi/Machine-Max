@@ -129,13 +129,13 @@ public final class TrackEnvelope2D {
         try {
             return new Result(BeltPath2D.build(circles, 1e-9, clockwise), sprocketWorld, false);
         } catch (BeltPath2D.DegenerateLayoutException degenerate) {
-            return fallback(circles, sprocketWorld, "履带包络退化，回退凸包: "
+            return fallback(circles, sprocketWorld, clockwise, "履带包络退化，回退凸包: "
                     + degenerate.getMessage());
         } catch (IllegalArgumentException | IllegalStateException orderedFailure) {
             if (BeltPath2D.hasOverlappingWheels(circles)) {
                 // 悬挂压缩导致轮子互相嵌入时，有序点接触模型可能无解。回退凸包
                 // 会丢掉抬轮凹口，但比整条履带消失更接近可见结果；日志保留原因。
-                return fallback(circles, sprocketWorld, "履带轮组重叠，包络回退凸包: "
+                return fallback(circles, sprocketWorld, clockwise, "履带轮组重叠，包络回退凸包: "
                         + orderedFailure.getMessage());
             }
             MachineMax.LOGGER.warn("履带包络构建失败，跳过该履带：{}；成员圆={}",
@@ -170,10 +170,10 @@ public final class TrackEnvelope2D {
     }
 
     @Nullable
-    private static Result fallback(List<Circle2D> circles, Matrix4f sprocketWorld, String reason) {
+    private static Result fallback(List<Circle2D> circles, Matrix4f sprocketWorld, boolean clockwise, String reason) {
         try {
             MachineMax.LOGGER.warn("{}；成员圆={}", reason, circles);
-            return new Result(BeltPath2D.convexFallback(circles), sprocketWorld, true);
+            return new Result(BeltPath2D.convexFallback(circles, clockwise), sprocketWorld, true);
         } catch (IllegalArgumentException | IllegalStateException fallbackFailure) {
             MachineMax.LOGGER.warn("履带包络凸包回退失败：{}；成员圆={}",
                     fallbackFailure.getMessage(), circles);
