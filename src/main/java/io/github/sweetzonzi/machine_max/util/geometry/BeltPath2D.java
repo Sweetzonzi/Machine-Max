@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 有序轮组的履带接触路径。铺设顺序是“主动轮 → 全部负重轮 → 顶轮 → 主动轮”。
+ * 有序轮组的履带接触路径。铺设顺序是“主动轮 → 全部负重轮 → 顶轮 → 主动轮”，
+ * 弧长零点取主动轮的首个接触处，{@link #sampleAt(double)} 在 {@code 0} 处落在主动轮
+ * 包裹段的起点（两轮布局与凸包回退取折线自身的首点）。
  * {@link #build(List, double, boolean)} 接收连接拓扑的固定绕向，各跨段由
  * {@link OrderedBeltSolver#solve} 在全轮组公切线图中求解。
  *

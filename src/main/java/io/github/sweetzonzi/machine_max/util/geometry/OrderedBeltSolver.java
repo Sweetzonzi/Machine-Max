@@ -297,9 +297,15 @@ final class OrderedBeltSolver {
         List<BeltPath2D.PointContact> contacts = new ArrayList<>();
         List<BeltPath2D.Vertex> vertices = new ArrayList<>();
         List<Circle2D> ordered = new ArrayList<>();
+        // 每个顶点由哪一段产生，以及每段起点落在 points 的哪个下标；两者用于确定
+        // 弧长零点的几何位置。
+        List<Integer> vertexPiece = new ArrayList<>();
+        List<Integer> pieceStart = new ArrayList<>();
         for (int i = 0; i < pieces.size(); i++) {
             Piece piece = pieces.get(i);
+            int before = points.size();
             addPoint(points, piece.start);
+            pieceStart.add(Math.min(before, points.size() - 1));
             if (piece.arc()) {
                 Circle2D circle = circles.get(piece.fromWheel);
                 int count = Math.max(2, (int) Math.ceil(Math.abs(piece.sweep) / ARC_STEP));
@@ -315,6 +321,7 @@ final class OrderedBeltSolver {
                 vertices.add(new BeltPath2D.Vertex(piece.fromWheel, BeltPath2D.VertexType.CONVEX,
                         piece.sweep, circle.pointAt(piece.startAngle + piece.sweep * .5)));
                 ordered.add(circle);
+                vertexPiece.add(i);
             } else {
                 Piece next = pieces.get((i + 1) % pieces.size());
                 addPoint(points, piece.end);
@@ -327,6 +334,7 @@ final class OrderedBeltSolver {
                             Math.abs(turn) <= turnEpsilon ? BeltPath2D.VertexType.STRAIGHT
                                     : BeltPath2D.VertexType.CONCAVE, turn, piece.end));
                     ordered.add(circles.get(piece.toWheel));
+                    vertexPiece.add(i);
                 }
             }
         }
@@ -339,6 +347,14 @@ final class OrderedBeltSolver {
         if (first > 0) {
             Collections.rotate(vertices, -first);
             Collections.rotate(ordered, -first);
+        }
+        // 弧长零点同样取主动轮的首个接触处。铺带顺序由求解器的分段顺序决定，
+        // 起点段随接触拓扑变化，若直接拿它当零点，整条履带会在主动轮锁死时平移。
+        if (first >= 0 && points.size() > 1) {
+            int anchor = pieceStart.get(vertexPiece.get(first)) % points.size();
+            if (anchor > 0) {
+                Collections.rotate(points, -anchor);
+            }
         }
         return BeltPath2D.fromData(circles, ordered, vertices, points, arcs, contacts, false);
     }

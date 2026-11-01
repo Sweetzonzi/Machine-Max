@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.track;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
+import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
@@ -141,9 +142,27 @@ class TrackEnvelope2DTest {
         overlapping.path().inputCircles().forEach(circle -> assertEquals(.5, circle.radius(), 1e-6));
     }
 
+    /**
+     * 弧长零点必须落在主动轮的包裹段起点：渲染的节位置是 {@code (L·i/N + phase) mod L}，
+     * 零点若随铺带顺序漂移，主动轮锁死时整条履带仍会沿着轮组平移若干节距。
+     */
     @Test
-    void invalidThicknessOrNonPositiveInnerRadiusIsRejected() {
-        List<Matrix4f> poses = List.of(new Matrix4f(), new Matrix4f().translation(0, 0, 2));
+    void arcLengthZeroIsTheSprocketContactStart() {
+        for (int direction : new int[]{-1, 1}) {
+            var poses = poses(0, direction);
+            boolean clockwise = TrackEnvelope2D.layingClockwise(poses);
+            var result = TrackEnvelope2D.buildPoses(poses, RADII, THICKNESS, clockwise);
+            assertNotNull(result);
+            var arc = result.path().arcs().stream()
+                    .filter(a -> a.wheelIndex() == 0).findFirst().orElseThrow();
+            Vec2 start = result.path().sampleAt(0).point();
+            assertEquals(arc.contactPoints().getFirst().distance(start), 0d, 1e-9);
+            assertEquals(RADII.get(0) - THICKNESS, start.distance(Vec2.ZERO), 1e-6);
+        }
+    }
+
+    @Test
+    void invalidThicknessOrNonPositiveInnerRadiusIsRejected() {        List<Matrix4f> poses = List.of(new Matrix4f(), new Matrix4f().translation(0, 0, 2));
         for (float thickness : new float[]{0, -.05f, Float.NaN, Float.POSITIVE_INFINITY}) {
             assertThrows(IllegalArgumentException.class,
                     () -> TrackEnvelope2D.buildPoses(poses, List.of(.55f, .8f), thickness, false));
