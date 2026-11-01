@@ -11,7 +11,7 @@
   "yaw_limit": 30.0,
   "tracking_target_inputs": [],
   "discovery_inputs": [
-    "gunner_sight"
+    "commander_sight"
   ],
   "allow_cycle": true,
   "pitch_speed": 90,

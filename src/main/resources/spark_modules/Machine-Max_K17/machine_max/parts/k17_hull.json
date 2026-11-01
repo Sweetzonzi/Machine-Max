@@ -294,6 +294,9 @@
             "camera_discovery_targets": {
               "gunner_sight": [
                 "global"
+              ],
+              "commander_sight": [
+                "global"
               ]
             },
             "dismount_locators": [],

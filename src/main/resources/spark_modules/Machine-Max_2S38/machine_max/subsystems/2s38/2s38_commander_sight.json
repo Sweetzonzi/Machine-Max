@@ -12,7 +12,7 @@
   "max_pitch": 75.0,
   "yaw_limit": 120.0,
   "discovery_inputs": [
-    "gunner_sight"
+    "commander_sight"
   ],
   "allow_cycle": true,
   "pitch_speed": 90,
