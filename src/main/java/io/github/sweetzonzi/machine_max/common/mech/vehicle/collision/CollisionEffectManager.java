@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -36,6 +37,9 @@ import java.util.UUID;
  *   <li><b>轮胎类</b>（isWheel=true）：轮胎与地面的摩擦/尖叫声</li>
  *   <li><b>车体类</b>（isWheel=false）：车体刮擦地面/障碍物的声音</li>
  * </ul>
+ *
+ * <p>履带成员的轮胎类音效不在这里播放：它们只把接地与对地速度上报给
+ * {@link TrackLink}，由履带合成一条滚动音与一条滑移音；断带或解散后回到本类的轮胎类路径。</p>
  *
  * <p>每类音效持有各自的 UUID 和材质标识键。当地面材质切换时，
  * 通过 transitionSound 进行交叉淡入淡出。无碰撞时通过 fadeSound 淡出。</p>
@@ -197,16 +201,21 @@ public class CollisionEffectManager implements ISoundSpreader {
 
         if (wheelSnap != null) {
             spawnCollisionParticles(wheelSnap);
-            updateContinuousSound(wheelSnap, true);
 
             // 漂移音效同样需要有效速度守卫：静止时不应维持循环音效
             float effectiveSpeed = getEffectiveSpeed(wheelSnap);
-            if (effectiveSpeed >= 0.5f && wheelSnap.slipRatio() > 0.4f) {
-                updateSlipSound(level, wheelSnap);
-                spawnDriftSmoke(level, wheelSnap);
-            } else {
+            boolean slipping = effectiveSpeed >= 0.5f && wheelSnap.slipRatio() > 0.4f;
+            if (isTrackOwned()) {
+                // 履带成员不自带轮面音：只上报接地与对地速度，由履带合成一条音效
+                subPart.trackLink.reportWheelContact(horizontalSpeed(), wheelSnap.worldContactPoint());
+                fadeOutWheelSoundIfNeeded(level);
                 fadeOutSlipSoundIfNeeded(level);
+            } else {
+                updateContinuousSound(wheelSnap, true);
+                if (slipping) updateSlipSound(level, wheelSnap);
+                else fadeOutSlipSoundIfNeeded(level);
             }
+            if (slipping) spawnDriftSmoke(level, wheelSnap);
         } else {
             fadeOutWheelSoundIfNeeded(level);
             fadeOutSlipSoundIfNeeded(level);
@@ -319,6 +328,28 @@ public class CollisionEffectManager implements ISoundSpreader {
         float bodyTangentialSpeed = tmpBodyTangential.length() * 0.1f;
 
         return Math.max(slipSpeed, bodyTangentialSpeed);
+    }
+
+    /**
+     * 本零件的轮面音是否由履带接管。
+     *
+     * <p>健康履带的轮面音由 {@link TrackLink} 合成一条；断带、解散或没有履带的零件
+     * 仍按一般轮子各自放音。</p>
+     */
+    private boolean isTrackOwned() {
+        TrackLink track = subPart.trackLink;
+        return track != null && !track.isDisposed() && !track.isBroken();
+    }
+
+    /**
+     * 零件相对地面的水平速度（m/s），由履带与带速比较得出滑移。
+     *
+     * <p>取水平分量而非投影到前向：转弯时内外侧轮子的地速本来就不同，横摆率
+     * 又会给轮子额外的横向分量，投影会漏掉后者。</p>
+     */
+    private float horizontalSpeed() {
+        Vector3f velocity = subPart.getLinearVelocity();
+        return (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     }
 
     /**
@@ -528,17 +559,10 @@ public class CollisionEffectManager implements ISoundSpreader {
     /**
      * 根据轮胎/车体和碰撞方块查询对应的持续性摩擦音效。
      *
-     * <p>履带成员轮面固定使用硬金属滚动音（{@link #TIRE_METAL}）：滚动音不提供数据字段，
-     * 也不按地面材质细分。断带后仍是金属滚动音，只是装甲层回退到轮子材质。</p>
+     * <p>轮面音按地面材质选；履带成员的轮面音不经过这里，见 {@link #isTrackOwned()}。</p>
      */
     @NotNull
     private SoundEvent getFrictionSound(boolean isWheel, BlockState blockState) {
-        if (isWheel) {
-            var track = subPart.trackLink;
-            if (track != null && !track.isDisposed()) {
-                return TIRE_METAL;
-            }
-        }
         return isWheel ? getTireRollSound(blockState) : getBodyScrapeSound(blockState);
     }
 

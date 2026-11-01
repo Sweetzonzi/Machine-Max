@@ -8,14 +8,12 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
-import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisual;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
@@ -23,7 +21,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Circle2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
-import jme3utilities.math.MyQuaternion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -144,7 +141,7 @@ public class TrackRenderer extends VisualEffectRenderer {
 
                 SubPart sprocket = link.sprocket();
                 if (sprocket == null) continue;
-                float omega = relativeAngularVelocityX(link, sprocket);
+                float omega = link.sprocketOmegaX();
                 // (Y,Z) 平面的正角绕轮轴 +X；闭环的有向圆弧与轮面同向运动。
                 double winding = Math.signum(envelope.path().signedArea());
                 state.phase += omega * sprocket.getMaxWheelRadius() * TICK_SECONDS * winding;
@@ -493,33 +490,6 @@ public class TrackRenderer extends VisualEffectRenderer {
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(packedLight)
                 .setNormal(pose, nx, ny, nz);
-    }
-
-    /**
-     * 主动轮相对其车体连接轮的局部 X 角速度。
-     *
-     * <p>优先用连接器另一端的 SubPart 做差，去掉车体俯仰 / 侧倾角速度；取不到
-     * 连接时退回主动轮自身的局部角速度（车体角速度会混进来，但不会静止）。</p>
-     */
-    private static float relativeAngularVelocityX(TrackLink link, SubPart sprocket) {
-        SubPart chassis = findChassis(link, sprocket);
-        Vector3f relative = chassis == null
-                ? sprocket.getAngularVelocity()
-                : sprocket.getAngularVelocity().subtract(chassis.getAngularVelocity());
-        Vector3f local = new Vector3f();
-        MyQuaternion.rotateInverse(sprocket.getRotation(), relative, local);
-        return local.x;
-    }
-
-    private static SubPart findChassis(TrackLink link, SubPart sprocket) {
-        for (AbstractConnector connector : sprocket.connectors.values()) {
-            AbstractConnector attached = connector.attachedConnector;
-            if (attached == null || attached.subPart == null) continue;
-            SubPart other = attached.subPart;
-            if (other == sprocket || link.members().contains(other)) continue;
-            return other;
-        }
-        return null;
     }
 
     private static double lerp(double a, double b, float t) {

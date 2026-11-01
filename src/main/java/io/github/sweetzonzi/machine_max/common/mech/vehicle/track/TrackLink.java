@@ -7,9 +7,11 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import jme3utilities.math.MyQuaternion;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +63,21 @@ public class TrackLink {
     private volatile float maxDurability;
     private volatile int linkCount = 1;
     private volatile boolean broken;
+
+    // ===== 轮面音效状态，仅客户端主线程读写 =====
+    /** 接地报告的容差：连续两 tick 没有报告才算脱离。 */
+    private static final int CONTACT_GRACE_TICKS = 2;
+    /** 最近一次收到接地报告时的载具端游戏时间；-1 表示从未收到。 */
+    private long contactTick = -1;
+    /** 该 tick 全部接地成员里，带速与对地速度之差的最大值（m/s）。 */
+    private float contactSlip;
+    private final Vector3f contactCentroidSum = new Vector3f();
+    private int contactCount;
+    /** 带速缓存的归属游戏时间：同一 tick 内多条上报共用一次刚体读数。 */
+    private long beltTick = -1;
+    private float beltCache;
+    @Nullable
+    private TrackAudio audio;
 
     private TrackLink(VehicleCore vehicle, TrackType type, ResourceLocation typeId,
                       float durability, boolean broken, boolean clockwise) {
@@ -533,6 +550,7 @@ public class TrackLink {
     public void dispose() {
         if (disposed) return;
         disposed = true;
+        stopAudio();
         if (!vehicle.level.isClientSide()) {
             SparkLevel.getPhysicsLevel(vehicle.level).submitImmediateTask(PPhase.PRE, () -> {
                 removeJointsNow();
@@ -549,6 +567,7 @@ public class TrackLink {
 
     private void disposeClient() {
         disposed = true;
+        stopAudio();
         for (SubPart member : members) {
             if (member.trackLink == this) member.trackLink = null;
         }
@@ -599,6 +618,113 @@ public class TrackLink {
     private String label() {
         SubPart sp = sprocket;
         return sp == null ? "?" : sp.name;
+    }
+
+    // ==================== 轮面音效 ====================
+
+    /**
+     * 主线程 / 客户端：一个接地成员把自己上报给履带。
+     *
+     * <p>轮面音由履带合成，成员不再各自放音。同一 tick 内的多条上报合并成
+     * 「最大带速偏差 + 接触点形心」，整条履带的判定在 {@link #clientTick()} 做。</p>
+     *
+     * <p>成员是在主线程 tick 的收尾阶段收到接触快照的，比 {@link VehicleCore#preTick()}
+     * 晚一个 tick，所以这里只打时间戳，判定留给 {@link #CONTACT_GRACE_TICKS} 的容差。</p>
+     *
+     * @param memberSpeed       该成员相对地面的水平速度（m/s）
+     * @param worldContactPoint 世界坐标接触点
+     */
+    public void reportWheelContact(float memberSpeed, @NotNull Vector3f worldContactPoint) {
+        long now = vehicle.level.getGameTime();
+        float slip = Math.abs(beltSpeed() - memberSpeed);
+        if (now != contactTick) {
+            contactTick = now;
+            contactSlip = slip;
+            contactCentroidSum.set(worldContactPoint);
+            contactCount = 1;
+        } else {
+            if (slip > contactSlip) contactSlip = slip;
+            contactCentroidSum.addLocal(worldContactPoint);
+            contactCount++;
+        }
+    }
+
+    /**
+     * 主线程：主动轮相对车体的局部 X 角速度（rad/s）。
+     *
+     * <p>与车体做差去掉俯仰 / 侧倾角速度，再转到主动轮自身坐标系取 X 轴分量；
+     * 取不到车体一端时退回主动轮自身的局部角速度。渲染的履带相位与音效的带速
+     * 都读这一个量，两者因此永远同源。</p>
+     */
+    public float sprocketOmegaX() {
+        SubPart sp = sprocket;
+        if (sp == null) return 0f;
+        Vector3f relative = sp.getAngularVelocity();
+        SubPart chassis = findChassis(sp);
+        if (chassis != null) {
+            relative.subtractLocal(chassis.getAngularVelocity());
+        }
+        Vector3f local = new Vector3f();
+        MyQuaternion.rotateInverse(sp.getRotation(), relative, local);
+        return local.x;
+    }
+
+    /** 主线程：履带带速（m/s，取绝对值）。同一 tick 内重复调用只读一次刚体。 */
+    public float beltSpeed() {
+        long now = vehicle.level.getGameTime();
+        if (now != beltTick) {
+            beltTick = now;
+            beltCache = measureBeltSpeed();
+        }
+        return beltCache;
+    }
+
+    private float measureBeltSpeed() {
+        SubPart sp = sprocket;
+        if (sp == null) return 0f;
+        float radius = sp.getMaxWheelRadius();
+        if (!Float.isFinite(radius) || radius <= 0f) return 0f;
+        float omega = sprocketOmegaX();
+        return Float.isFinite(omega) ? Math.abs(omega) * radius : 0f;
+    }
+
+    /**
+     * 主线程 / 客户端：每 tick 决策一次本条履带的轮面音。
+     *
+     * <p>断带、解散或主动轮消失时停止；其余情况把「是否有接地、带速、最大偏差、
+     * 接触点形心」交给 {@link #audio}。</p>
+     */
+    public void clientTick() {
+        if (!vehicle.level.isClientSide()) return;
+        if (disposed || broken || sprocket == null) {
+            stopAudio();
+            return;
+        }
+        Level level = vehicle.level;
+        long now = level.getGameTime();
+        boolean contact = contactTick >= 0 && now - contactTick <= CONTACT_GRACE_TICKS;
+        if (audio == null) audio = new TrackAudio();
+        float inv = contactCount > 0 ? 1f / contactCount : 0f;
+        audio.tick(level, contact, beltSpeed(), contactSlip,
+                contactCentroidSum.x * inv, contactCentroidSum.y * inv, contactCentroidSum.z * inv);
+    }
+
+    private void stopAudio() {
+        TrackAudio current = audio;
+        if (current != null) current.stop(vehicle.level);
+    }
+
+    /** 主动轮在车体上的对偶：本履带成员之外的第一个连接对象。 */
+    @Nullable
+    private SubPart findChassis(SubPart sp) {
+        for (AbstractConnector connector : sp.connectors.values()) {
+            AbstractConnector attached = connector.attachedConnector;
+            if (attached == null || attached.subPart == null) continue;
+            SubPart other = attached.subPart;
+            if (other == sp || members.contains(other)) continue;
+            return other;
+        }
+        return null;
     }
 
     // ==================== 查询 ====================

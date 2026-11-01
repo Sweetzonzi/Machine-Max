@@ -539,6 +539,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
         if (!level.isClientSide()) {
             for (TrackLink link : new ArrayList<>(trackLinks)) link.serverTick();
             syncStatusToClient();
+        } else {
+            for (TrackLink link : new ArrayList<>(trackLinks)) link.clientTick();
         }
         tickCount++;
     }
