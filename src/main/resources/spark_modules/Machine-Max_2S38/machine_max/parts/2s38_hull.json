@@ -26,6 +26,14 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydro_priority": 10,
+          "hydrodynamics": {
+            // 车体+裙板外廓，碰撞箱即整车正面投影
+            "": {
+              "front_drag": [0.0, 0.75],
+              "back_drag": [0.0, 0.75]
+            }
+          },
           "hit_boxes": {
             "HullFrontUpperArmor": {
               "id": "part",
@@ -428,6 +436,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_1_HitBox": {
               "id": "part",
@@ -461,6 +476,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_2_HitBox": {
               "id": "part",
@@ -494,6 +516,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_3_HitBox": {
               "id": "part",
@@ -527,6 +556,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_4_HitBox": {
               "id": "part",
@@ -560,6 +596,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_5_HitBox": {
               "id": "part",
@@ -593,6 +636,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_6_HitBox": {
               "id": "part",
@@ -626,6 +676,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_7_HitBox": {
               "id": "part",
@@ -659,6 +716,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "LeftWheel_8_HitBox": {
               "id": "part",
@@ -692,6 +756,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_1_HitBox": {
               "id": "part",
@@ -725,6 +796,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_2_HitBox": {
               "id": "part",
@@ -758,6 +836,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_3_HitBox": {
               "id": "part",
@@ -791,6 +876,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_4_HitBox": {
               "id": "part",
@@ -824,6 +916,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_5_HitBox": {
               "id": "part",
@@ -857,6 +956,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_6_HitBox": {
               "id": "part",
@@ -890,6 +996,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_7_HitBox": {
               "id": "part",
@@ -923,6 +1036,13 @@
           "block_collision": "ground",
           "collision_height": 2.5,
           "climb_assist": true,
+          "hydrodynamics": {
+            // 负重轮在裙板内，只留很小的迎风面
+            "": {
+              "front_drag": [0.0, 0.05],
+              "back_drag": [0.0, 0.05]
+            }
+          },
           "hit_boxes": {
             "RightWheel_8_HitBox": {
               "id": "part",

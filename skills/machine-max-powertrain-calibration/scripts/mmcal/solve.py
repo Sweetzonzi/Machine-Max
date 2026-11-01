@@ -35,6 +35,7 @@ class Solution:
     gears: list
     top: dict
     top_upper: dict
+    launch: dict | None
     peak_power: tuple
     power_util: float
     rated_power: float
@@ -128,6 +129,21 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, drive: dict,
         gears.append(dict(gear=index, ratio=total_ratio, tau_w=tau_w,
                           force=force, accel=force / mass, bound=bound))
 
+    # 动力源转子按一挡总传动比折到轮上的等效平动质量：这一项与整车质量无关，
+    # 只在低挡位存在，静态档位表看不见它（见 references/engineering-model.md §十二）。
+    launch = None
+    inertia = float(getattr(source, "inertia", 0.0) or 0.0)
+    if inertia > 0 and gears:
+        equivalent = inertia * gears[0]["ratio"] ** 2 / (r * r)
+        launch = dict(inertia=inertia, equivalent_mass=equivalent,
+                      multiple=equivalent / mass,
+                      accel=source.max_torque / inertia * r / gears[0]["ratio"])
+        if equivalent > 3 * mass:
+            notes.append(
+                f"一挡折算惯量 {equivalent / 1000:,.0f} t = {equivalent / mass:.1f} 倍运行质量"
+                f"（I {inertia:g} kg·m² × i₁²/r²）：起步段实际加速约 "
+                f"{launch['accel']:.2f} m/s²，档位表的 {gears[0]['accel']:.2f} m/s² 是接触面上限")
+
     def traction(v: float, total_ratio: float) -> float:
         # 红线以上不再给扭矩；求解只在 v ≤ v_red 取点，夹住转速只为消掉浮点边界
         rpm = min(v * total_ratio / r * 30 / math.pi, source.red_line_rpm)
@@ -208,6 +224,6 @@ def solve(vehicle: Vehicle, source: PowerCurve, gearbox, drive: dict,
                     n_driven=n_driven, n_total=n_total, max_drive_torque=mdf_max,
                     area=area, area_sum=tuple(area_sum),
                     cd_area=cd_area, aero_source=aero_source,
-                    c_rr=c_rr, mu=mu, gears=gears, top=top, top_upper=top_upper,
+                    c_rr=c_rr, mu=mu, gears=gears, top=top, top_upper=top_upper, launch=launch,
                     peak_power=peak, power_util=util, rated_power=rated,
                     transmission=transmission, transmission_ratio=trans_ratio, notes=notes)

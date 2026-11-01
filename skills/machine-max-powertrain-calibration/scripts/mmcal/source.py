@@ -66,6 +66,8 @@ class Engine(PowerCurve):
     """与 `EngineSubsystem.getTorqueAtSpeed` 同口径的四段折线 + 功率上限。"""
 
     kind = "内燃机"
+    # JSON 的 inertia（kg·m²），由 from_entry 覆盖；只用于折算起步等效质量
+    inertia = 10.0
 
     def __init__(self, max_power: float, max_torque: float, idle_rpm: float, idle_ratio: float,
                  max_torque_rpm: float, red_line_rpm: float, red_ratio: float,
@@ -87,7 +89,7 @@ class Engine(PowerCurve):
             raise SystemExit(f"{entry.path}: 缺 max_power（必填字段）")
         if "max_torque" not in data:
             raise SystemExit(f"{entry.path}: 缺 max_torque（必填字段）")
-        return cls(
+        engine = cls(
             float(data["max_power"]), float(data["max_torque"]),
             float(data.get("idle_rpm", DEFAULT_ENGINE["idle_rpm"])),
             float(data.get("idle_rpm_torque_ratio", DEFAULT_ENGINE["idle_rpm_torque_ratio"])),
@@ -96,6 +98,8 @@ class Engine(PowerCurve):
             float(data.get("red_line_torque_ratio", DEFAULT_ENGINE["red_line_torque_ratio"])),
             [float(x) for x in data.get("damping_factors", DEFAULT_ENGINE["damping_factors"])],
             f"{entry.pack.namespace}:{entry.path.stem}")
+        engine.inertia = float(data.get("inertia", DEFAULT_ENGINE.get("inertia", 10.0)) or 10.0)
+        return engine
 
     def raw_torque(self, rpm: float) -> float:
         """折线部分的扭矩，不含 `max_power` 封顶；红线以上为 0。"""
@@ -147,6 +151,7 @@ class Motor(PowerCurve):
     """与 `MotorSubsystem.getTorqueAtSpeed` 同口径：基速以下恒扭矩，以上按功率衰减。"""
 
     kind = "电机"
+    inertia = 10.0
 
     def __init__(self, max_power: float, max_torque: float, red_line_rpm: float,
                  red_line_power_ratio: float, damping: list, source: str):
@@ -162,13 +167,15 @@ class Motor(PowerCurve):
         data = entry.data
         if "max_power" not in data:
             raise SystemExit(f"{entry.path}: 缺 max_power（必填字段）")
-        return cls(
+        motor = cls(
             float(data["max_power"]),
             float(data.get("max_torque", 100.0)),
             float(data.get("red_line_rpm", 10000.0)),
             float(data.get("red_line_power_ratio", 0.8)),
             [float(x) for x in data.get("damping_factors", [10.0, 0.1, 0.00005])],
             f"{entry.pack.namespace}:{entry.path.stem}")
+        motor.inertia = float(data.get("inertia", 10.0) or 10.0)
+        return motor
 
     @property
     def base_rpm(self) -> float:

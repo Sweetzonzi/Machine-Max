@@ -49,6 +49,10 @@ def report_text(vehicle, source, gearbox, material, sol, reqs) -> str:
         push(f"| 驱动轮数 | {sol.n_driven} / {sol.n_total} |")
     push(f"| 驱动端力矩上限 | {sol.max_drive_torque:,.0f} N·m |")
     push(f"| 驱动半径 | {sol.r:.5f} m（{'主动轮' if sol.drive_kind == 'track' else '轮面'}碰撞球） |")
+    if sol.launch:
+        push(f"| 一挡折算惯量（动力源转子） | {sol.launch['equivalent_mass'] / 1000:,.0f} t = "
+             f"{sol.launch['multiple']:.1f} 倍运行质量"
+             f"（I {sol.launch['inertia']:g} kg·m² × i₁²/r²） |")
     source_label = {"override": "`--cd-area` 指定",
                     "pack": "按各子零件气动点求和"}[sol.aero_source]
     push(f"| 前向气动面积 `Cd·A` | {sol.cd_area:.2f} m²（{source_label}） |")
@@ -174,5 +178,6 @@ def report_json(vehicle, source, gearbox, material, sol, reqs) -> str:
         material=dict(source=material.source, c_rr=material.c_rr,
                       friction=list(material.friction_xy)),
         top_speed=dict(top=sol.top, upper=sol.top_upper),
+        launch=sol.launch,
         residuals=reqs, notes=sol.notes,
     ), ensure_ascii=False, indent=2)

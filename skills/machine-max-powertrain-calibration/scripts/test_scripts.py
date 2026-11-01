@@ -384,7 +384,7 @@ class TrackTest(unittest.TestCase):
     def test_contact_material_is_track_link(self):
         """滚阻与摩擦读履带配件的 `track_steel`，不是轮面碰撞箱的 `off_road_tire`。"""
         for data in (self.two, self.mtlb):
-            self.assertAlmostEqual(data["vehicle"]["c_rr"], 0.05, places=4)
+            self.assertAlmostEqual(data["vehicle"]["c_rr"], 0.04, places=4)
             self.assertAlmostEqual(data["vehicle"]["mu"], 0.9 * 0.7, places=4)
 
     def test_mtlb_mass_and_top_speed(self):
@@ -574,6 +574,40 @@ class SuspensionTest(unittest.TestCase):
         self.assertAlmostEqual(floor, 41.0, delta=1.0)
         _, at_floor = mmcal.clamp_limits(120000.0, floor)
         self.assertAlmostEqual(at_floor, 7200.0, delta=5.0)
+
+
+class LaunchInertiaTest(unittest.TestCase):
+    """动力源转子折到轮上的等效质量：一挡起步受它限制，档位表看不出来。"""
+
+    @classmethod
+    def setUpClass(cls):
+        need_packs(cls)
+        cls.code, cls.text = run_cli(calibrate, ["--pack", "Machine-Max_2S38",
+                                                 "--pack-root", str(PACK_ROOT)])
+        cls.two = run_json(calibrate, ["--pack", "Machine-Max_2S38",
+                                       "--pack-root", str(PACK_ROOT), "--json"])
+        cls.k17 = run_json(calibrate, ["--pack", "Machine-Max_K17",
+                                       "--pack-root", str(PACK_ROOT), "--json"])
+
+    def test_equivalent_mass_is_rotor_times_ratio_squared(self):
+        launch = self.two["launch"]
+        ratio = self.two["gearbox"]["gears"][0]["ratio"]
+        radius = self.two["vehicle"]["radius"]
+        self.assertAlmostEqual(launch["equivalent_mass"],
+                               launch["inertia"] * ratio ** 2 / radius ** 2, delta=1.0)
+        self.assertAlmostEqual(launch["multiple"],
+                               launch["equivalent_mass"] / self.two["vehicle"]["operating_mass"],
+                               places=3)
+
+    def test_2s38_reports_launch_limit(self):
+        self.assertAlmostEqual(self.two["launch"]["multiple"], 6.3, delta=0.1)
+        self.assertAlmostEqual(self.two["launch"]["accel"], 1.29, delta=0.02)
+        self.assertTrue(any("折算惯量" in note for note in self.two["notes"]))
+        self.assertIn("一挡折算惯量", self.text)
+
+    def test_k17_stays_below_threshold(self):
+        self.assertLess(self.k17["launch"]["multiple"], 3)
+        self.assertFalse(any("折算惯量" in note for note in self.k17["notes"]))
 
 
 class CliTest(unittest.TestCase):

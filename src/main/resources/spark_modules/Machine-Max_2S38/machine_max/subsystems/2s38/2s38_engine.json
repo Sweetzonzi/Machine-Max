@@ -9,7 +9,7 @@
   "max_torque_rpm": 1600,
   "red_line_rpm": 2600,
   "red_line_torque_ratio": 0.901,
-  "inertia": 50,
+  "inertia": 10, // 500 hp 柴油机曲轴+飞轮实车 2~3 kg·m²；取 10 与 light_car_engine 同档
   "cylinder": 6,
   "damping_factors": [
     5,

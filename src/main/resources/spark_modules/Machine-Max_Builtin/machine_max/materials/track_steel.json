@@ -7,7 +7,7 @@
       1.0
     ],
     "slip_adaptation": 0.5,
-    "rolling_friction": 0.05,
+    "rolling_friction": 0.04, //钢制履带硬地 0.03~0.05、软土 0.05~0.08；地形方块不另设倍率，这里取硬地值
     "spinning_friction": 0.0,
     "restitution": 0.0,
     "block_damage_factor": 1.0

@@ -9,6 +9,6 @@
   "max_torque_rpm": 1500,
   "red_line_rpm": 2100,
   "red_line_torque_ratio": 0.909,
-  "inertia": 50,
+  "inertia": 10, // 曲轴+飞轮实车 1~3 kg·m²；30.96:1 的一挡下 50 会折成 437 t 等效质量
   "cylinder": 8
 }

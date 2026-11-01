@@ -28,6 +28,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Left_1_HitBox": {
               "id": "part",
@@ -68,6 +75,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Right_1_HitBox": {
               "id": "part",
@@ -108,6 +122,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Left_2_HitBox": {
               "id": "part",
@@ -148,6 +169,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Right_2_HitBox": {
               "id": "part",
@@ -188,6 +216,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Left_3_HitBox": {
               "id": "part",
@@ -228,6 +263,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Right_3_HitBox": {
               "id": "part",
@@ -268,6 +310,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Left_4_HitBox": {
               "id": "part",
@@ -308,6 +357,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 附加装甲贴着车体，正面投影已由车体计入
+            "": {
+              "front_drag": [0.0, 0.1],
+              "back_drag": [0.0, 0.1]
+            }
+          },
           "hit_boxes": {
             "Skirt_Right_4_HitBox": {
               "id": "part",

@@ -25,6 +25,14 @@
             -1,
             -1
           ],
+          "hydro_priority": 10,
+          "hydrodynamics": {
+            // 碰撞箱含弹仓/装填机内部箱体，7.1 m² 约为外廓三倍，系数按 Cd·A≈2.1 折算
+            "": {
+              "front_drag": [0.0, 0.3],
+              "back_drag": [0.0, 0.3]
+            }
+          },
           "hit_boxes": {
             "TurretFrontArmor": {
               "id": "part",
@@ -214,6 +222,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 身管细长，迎风面远小于包围箱
+            "": {
+              "front_drag": [0.0, 0.2],
+              "back_drag": [0.0, 0.2]
+            }
+          },
           "hit_boxes": {
             "GunBarrelHitBox": {
               "id": "part",
@@ -254,6 +269,13 @@
             -1,
             -1
           ],
+          "hydrodynamics": {
+            // 身管细长，迎风面远小于包围箱
+            "": {
+              "front_drag": [0.0, 0.2],
+              "back_drag": [0.0, 0.2]
+            }
+          },
           "hit_boxes": {
             "PKTMHitBox": {
               "id": "part",
