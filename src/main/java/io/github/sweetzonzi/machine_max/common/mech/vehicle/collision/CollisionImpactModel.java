@@ -20,6 +20,16 @@ public final class CollisionImpactModel {
     /** 数值守卫的统一下限：小于该值的和式按零处理。 */
     public static final float NUMERIC_EPSILON = 1.0e-6f;
 
+    /**
+     * 投递门槛：护甲修正后的最终伤害不高于该值时，这次撞击不投递、也不发命中音。
+     *
+     * <p>三条投递路径共用这一个门槛：地形（{@code CollisionPostSettlement#deliverPartDamage}）、
+     * 部件对撞与实体对撞（{@code CollisionHandler}）。原始冲量与最终伤害差好几个数量级——
+     * 材质自带的 {@code dmg_resist} 本身就是线性扣减，1 点以下的撞击在耐久上看不出变化，
+     * 却会让每一次接触都发一条命中音。</p>
+     */
+    public static final float MIN_DELIVERED_DAMAGE = 1f;
+
     private CollisionImpactModel() {
     }
 

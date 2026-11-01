@@ -360,6 +360,11 @@ public final class CollisionPostSettlement {
         for (PartTotal total : parts.values()) {
             float baseDamage = CollisionImpactModel.collisionDamage(coefficient, total.impulse);
             if (!(baseDamage > 0f) || !Float.isFinite(baseDamage)) continue;
+            // 先走一次护甲算最终伤害：这就是 SubPart.calculateFinalDamage 对碰撞伤害
+            // （COLLISION_IMPACT）会返回的那个值。低于门槛的撞击不投递——既不扣耐久
+            // 也不发命中音，与另外两条投递路径同口径。
+            float finalDamage = total.part.modifyArmorDamage(total.hitBox, source, baseDamage);
+            if (!(finalDamage > CollisionImpactModel.MIN_DELIVERED_DAMAGE)) continue;
             BFDamageContext ctx = BFDamageContext.builder()
                     .source(source)
                     .baseDamage(baseDamage)

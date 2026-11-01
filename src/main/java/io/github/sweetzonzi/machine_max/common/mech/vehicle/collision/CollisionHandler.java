@@ -812,7 +812,7 @@ public class CollisionHandler {
         //基于能量对对方部件造成伤害，伤害仅作用于对方
         float partDamage = 0.0005f * deltaVel * deltaVel * subPart.body.getMass();
         DamageSource source = level.damageSources().source(MMDamageTypes.PART_COLLISION);
-        if (otherHitBox.modifyDamage(source, partDamage) > 1) {
+        if (otherHitBox.modifyDamage(source, partDamage) > CollisionImpactModel.MIN_DELIVERED_DAMAGE) {
             BFDamageContext ctx = BFDamageContext.builder()
                     .source(source)
                     .baseDamage(partDamage)
@@ -883,7 +883,7 @@ public class CollisionHandler {
         //对部件造成伤害
         float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
         DamageSource source = level.damageSources().flyIntoWall();
-        if (hitBox.modifyDamage(source, partDamage) > 1) {
+        if (hitBox.modifyDamage(source, partDamage) > CollisionImpactModel.MIN_DELIVERED_DAMAGE) {
             BFDamageContext ctx = BFDamageContext.builder()
                     .source(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity))
                     .baseDamage(partDamage)
