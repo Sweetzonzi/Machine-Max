@@ -55,7 +55,7 @@
           },
           "additionalProperties": false
         },
-        "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.2, "description": "Rolling friction coefficient." },
+        "rolling_friction": { "type": "number", "minimum": 0.0, "default": 0.02, "description": "Dimensionless rolling resistance coefficient C_rr. Only wheel faces (sphere contacts whose type is wheel) take part: drag equals C_rr × normal load, torque is converted by the wheel-face radius, independent of the physics step. Non-wheel contacts ignore this value." },
         "spinning_friction": { "type": "number", "minimum": 0.0, "default": 0.0, "description": "Spinning friction coefficient." },
         "restitution": { "type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.1, "description": "Restitution (elasticity), 0 = perfectly inelastic, 1 = perfectly elastic." },
         "block_damage_factor": { "type": "number", "minimum": 0.0, "default": 1.0, "description": "Block damage factor, 0 = cannot break blocks." },

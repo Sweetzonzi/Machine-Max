@@ -85,7 +85,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 360,
-      "default": 180,
+      "default": 90,
       "description": "Yaw angle limit in degrees. This represents the total angular range, so the actual yaw range will be [180 - yaw_limit/2, 180 + yaw_limit/2]. For example, yaw_limit=90 means ±45 degrees of horizontal movement."
     }
   },
