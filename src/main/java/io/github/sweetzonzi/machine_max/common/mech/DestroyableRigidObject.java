@@ -52,6 +52,11 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
                 getSyncedData().set(IS_ACTIVE_ID, true);
                 updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
             } else if (!body.isActive()) { // 更新休眠状态
+                // 休眠后刚体不再步进，同步值会停在最后一次活跃时的读数上。速度必须显式清零：
+                // 客户端把这份残值当成本帧速度写给运动学刚体，履带相位、轮面接触音与控制器
+                // 的车速反馈都读它，于是停车后轮子看着停了、履带还在转、摩擦声还在响。
+                setLinearVelocity(Vector3f.ZERO);
+                setAngularVelocity(Vector3f.ZERO);
                 getSyncedData().set(IS_ACTIVE_ID, false);
             }
         }
