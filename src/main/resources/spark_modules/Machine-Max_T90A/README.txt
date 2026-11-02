@@ -11,6 +11,16 @@
 
 ------------------------------------------------------------
 
+0.1.18 附加装甲使用变体
+
+车体与炮塔的附加装甲各是一个零件类型：t90a_hull_era 用 front / left / right 三个变体覆盖首上、左侧、右侧，t90a_turret_era 用 left / right 覆盖炮塔两侧。模板放置七个零件实例；uuid、坐标、碰撞箱、质量、连接点与标签沿用模板既有值，registry_key、name 与 variant 指向合并后的类型。首上变体沿用 t90a:armor/hull_era_front 标签，车体首上挂点的 required_tags 据此匹配，不需要新增标签。合并后的零件与研发条目共用一张中性图标（t90a_hull_era.png、t90a_turret_era.png）。
+
+制造配方、研发条目和中英文名称各一份，费用与耗时 120。首上与左右两侧的附加装甲共用一份配方与研发，因为三块当前费用相同；若以后需要单独调整首上费用，再拆出独立类型。
+
+迁移：零件类型 id 由 t90a_hull_era_front / t90a_hull_era_left / t90a_hull_era_right 改为 t90a_hull_era，由 t90a_turret_era_left / t90a_turret_era_right 改为 t90a_turret_era。旧装配体与按旧 id 记录的研发进度需要重新生成整车并重新研发；蓝图引用模板，不受影响。模型、贴图与几何未改。
+
+历史版本说明
+
 0.1.17 车长镜开启水平稳定
 
 按用户要求，将 TKN-4S 车长日间镜的 horizontal_stabilized 设为 true，保留 vertical_stabilized=true，启用双轴稳定。这是本次游戏操控配置调整。

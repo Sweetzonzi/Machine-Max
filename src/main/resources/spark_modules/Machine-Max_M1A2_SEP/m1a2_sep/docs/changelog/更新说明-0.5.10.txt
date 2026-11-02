@@ -1,0 +1,7 @@
+0.5.10 附加装甲使用变体
+
+车体与炮塔的附加装甲各是一个零件类型，用 left / right 两个变体区分左右。模板放置六个零件实例；uuid、坐标、碰撞箱、质量、连接点与标签保持原值，registry_key、name 与 variant 指向合并后的类型。合并后的零件与研发条目共用一张中性图标（m1a2_hull_armor.png、m1a2_turret_armor.png）。
+
+制造配方、研发条目和中英文名称各一份，费用与耗时分别为车体 150、炮塔 75。
+
+迁移：零件类型 id 由 m1a2_hull_armor_left / m1a2_hull_armor_right 改为 m1a2_hull_armor，由 m1a2_turret_armor_left / m1a2_turret_armor_right 改为 m1a2_turret_armor。旧装配体与按旧 id 记录的研发进度需要重新生成整车并重新研发；蓝图引用模板，不受影响。模型、贴图与几何未改。

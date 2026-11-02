@@ -886,10 +886,10 @@
       }
     },
     "6e79b1a2-1200-4a21-9e65-202610270003": {
-      "registry_key": "m1a2_sep:m1a2_hull_armor_left",
-      "name": "part.m1a2_sep.m1a2_hull_armor_left",
+      "registry_key": "m1a2_sep:m1a2_hull_armor",
+      "name": "part.m1a2_sep.m1a2_hull_armor",
       "uuid": "6e79b1a2-1200-4a21-9e65-202610270003",
-      "variant": "desert",
+      "variant": "left",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -928,10 +928,10 @@
       }
     },
     "6e79b1a2-1200-4a21-9e65-202610270004": {
-      "registry_key": "m1a2_sep:m1a2_hull_armor_right",
-      "name": "part.m1a2_sep.m1a2_hull_armor_right",
+      "registry_key": "m1a2_sep:m1a2_hull_armor",
+      "name": "part.m1a2_sep.m1a2_hull_armor",
       "uuid": "6e79b1a2-1200-4a21-9e65-202610270004",
-      "variant": "desert",
+      "variant": "right",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -970,10 +970,10 @@
       }
     },
     "6e79b1a2-1200-4a21-9e65-202610270005": {
-      "registry_key": "m1a2_sep:m1a2_turret_armor_left",
-      "name": "part.m1a2_sep.m1a2_turret_armor_left",
+      "registry_key": "m1a2_sep:m1a2_turret_armor",
+      "name": "part.m1a2_sep.m1a2_turret_armor",
       "uuid": "6e79b1a2-1200-4a21-9e65-202610270005",
-      "variant": "desert",
+      "variant": "left",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -1012,10 +1012,10 @@
       }
     },
     "6e79b1a2-1200-4a21-9e65-202610270006": {
-      "registry_key": "m1a2_sep:m1a2_turret_armor_right",
-      "name": "part.m1a2_sep.m1a2_turret_armor_right",
+      "registry_key": "m1a2_sep:m1a2_turret_armor",
+      "name": "part.m1a2_sep.m1a2_turret_armor",
       "uuid": "6e79b1a2-1200-4a21-9e65-202610270006",
-      "variant": "desert",
+      "variant": "right",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,

@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": [
+    "m1a2_sep:m1a2_hull_armor"
+  ],
+  "research_cost": 150,
+  "icon": "m1a2_sep:textures/icon/m1a2_hull_armor.png",
+  "description": "research.m1a2_sep.m1a2_hull_armor.desc",
+  "unlock_recipe": "m1a2_sep:part_fabricating/m1a2_hull_armor"
+}

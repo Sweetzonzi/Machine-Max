@@ -105,9 +105,9 @@ class CreativeContentTagsTest {
         }
 
         assertTrue(problems.isEmpty(), String.join("\n", problems));
-        assertEquals(87, definitionCount, "零件定义份数");
+        assertEquals(82, definitionCount, "零件定义份数");
         assertEquals(125, variantCount, "变体总数");
-        assertEquals(81, taggedDefinitions, "待标定义份数");
+        assertEquals(76, taggedDefinitions, "待标定义份数");
         assertEquals(119, taggedVariants, "待标变体数");
         assertEquals(17, series.size(), "系列数：" + series);
     }

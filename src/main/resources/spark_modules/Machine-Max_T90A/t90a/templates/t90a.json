@@ -525,10 +525,10 @@
       }
     },
     "b090a100-2026-4028-9000-000000000002": {
-      "registry_key": "t90a:t90a_hull_era_front",
-      "name": "part.t90a.t90a_hull_era_front",
+      "registry_key": "t90a:t90a_hull_era",
+      "name": "part.t90a.t90a_hull_era",
       "uuid": "b090a100-2026-4028-9000-000000000002",
-      "variant": "standard",
+      "variant": "front",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -567,10 +567,10 @@
       }
     },
     "b090a100-2026-4028-9000-000000000003": {
-      "registry_key": "t90a:t90a_hull_era_left",
-      "name": "part.t90a.t90a_hull_era_left",
+      "registry_key": "t90a:t90a_hull_era",
+      "name": "part.t90a.t90a_hull_era",
       "uuid": "b090a100-2026-4028-9000-000000000003",
-      "variant": "standard",
+      "variant": "left",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -609,10 +609,10 @@
       }
     },
     "b090a100-2026-4028-9000-000000000004": {
-      "registry_key": "t90a:t90a_hull_era_right",
-      "name": "part.t90a.t90a_hull_era_right",
+      "registry_key": "t90a:t90a_hull_era",
+      "name": "part.t90a.t90a_hull_era",
       "uuid": "b090a100-2026-4028-9000-000000000004",
-      "variant": "standard",
+      "variant": "right",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -809,10 +809,10 @@
       }
     },
     "b090a100-2026-4028-9000-000000000006": {
-      "registry_key": "t90a:t90a_turret_era_left",
-      "name": "part.t90a.t90a_turret_era_left",
+      "registry_key": "t90a:t90a_turret_era",
+      "name": "part.t90a.t90a_turret_era",
       "uuid": "b090a100-2026-4028-9000-000000000006",
-      "variant": "standard",
+      "variant": "left",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
@@ -851,10 +851,10 @@
       }
     },
     "b090a100-2026-4028-9000-000000000007": {
-      "registry_key": "t90a:t90a_turret_era_right",
-      "name": "part.t90a.t90a_turret_era_right",
+      "registry_key": "t90a:t90a_turret_era",
+      "name": "part.t90a.t90a_turret_era",
       "uuid": "b090a100-2026-4028-9000-000000000007",
-      "variant": "standard",
+      "variant": "right",
       "assembling_progress": 1,
       "material_assembling_progress": 99999,
       "render_wireframe": false,
