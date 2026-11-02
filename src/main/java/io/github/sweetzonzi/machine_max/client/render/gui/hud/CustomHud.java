@@ -147,16 +147,9 @@ public class CustomHud implements LayeredDraw.Layer {
             var part = entry.getKey() instanceof AbstractSubsystem source ? source.getSubPart().part : null;
             var partSnapshot = part == null ? HudPartSnapshot.EMPTY : parts.computeIfAbsent(part, HudPartSnapshot::capture);
             var weapon = entry.getKey() instanceof WeaponControllerSubsystem wc ? HudWeaponSnapshot.capture(wc) : HudWeaponSnapshot.EMPTY;
-            HudBallisticTable table = null;
             for (var carrier : entry.getValue()) {
                 var runtime = carrier.runtime();
                 runtime.publish(partSnapshot, weapon, selected.contains(entry.getKey()));
-                if (runtime instanceof WeaponHudElement weaponElement) {
-                    if (table == null) {
-                        weaponElement.updateBallistics(weapon);
-                        table = weaponElement.ballistics();
-                    } else weaponElement.setBallistics(table);
-                }
                 if (carrier instanceof AuiHudAnimatable aui && runtime.visible()) aui.tickBindings();
             }
         }

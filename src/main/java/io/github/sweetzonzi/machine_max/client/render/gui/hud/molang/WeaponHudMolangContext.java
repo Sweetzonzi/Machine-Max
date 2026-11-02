@@ -178,6 +178,6 @@ public class WeaponHudMolangContext extends HudMolangContext {
 
     @QueryBinding(value = "bdc_hold_rad", namespace = "weapon")
     public double hold(double distance) {
-        return frame.ballistics().hold(distance);
+        return getEntity() instanceof WeaponHudElement weapon ? weapon.ballistics().hold(distance) : 0;
     }
 }

@@ -18,12 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** 一个布局条目的数据与动画身份；模型和 AUI 载体都持有此对象。 */
 public class HudRuntimeElement implements IAnimatable<HudElement> {
-    public record Frame(HudViewSnapshot view, HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected,
-                        HudBallisticTable ballistics) {
-        public Frame(HudViewSnapshot view, HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected) {
-            this(view, part, weapon, selected, HudBallisticTable.EMPTY);
-        }
-    }
+    public record Frame(HudViewSnapshot view, HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected) {}
     private final IHudHost host;
     private final HudElement element;
     private final @Nullable Level level;
@@ -68,17 +63,12 @@ public class HudRuntimeElement implements IAnimatable<HudElement> {
     }
 
     public void publish(HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected) {
-        frame = new Frame(frame.view(), part, weapon, selected, frame.ballistics());
+        frame = new Frame(frame.view(), part, weapon, selected);
     }
 
     public void publishView(HudViewSnapshot view) {
         Frame previous = frame;
-        frame = new Frame(view, previous.part(), previous.weapon(), previous.selected(), previous.ballistics());
-    }
-
-    public void setBallistics(HudBallisticTable table) {
-        var previous = frame;
-        frame = new Frame(previous.view(), previous.part(), previous.weapon(), previous.selected(), table);
+        frame = new Frame(view, previous.part(), previous.weapon(), previous.selected());
     }
 
     public boolean visible() { return element.selectionVisibility().visible(this instanceof WeaponHudElement, frame.selected()); }
