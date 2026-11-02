@@ -20,13 +20,7 @@ import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
-import io.github.sweetzonzi.machine_max.external.html.HtNode;
-import io.github.sweetzonzi.machine_max.external.html.HtmlLikeParser;
-import io.github.sweetzonzi.machine_max.external.html.TagHtNode;
-import io.github.sweetzonzi.machine_max.external.html.TextHtNode;
-import io.github.sweetzonzi.machine_max.external.style.StyleProvider;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -36,7 +30,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -68,9 +61,15 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return null;
     }
 
-    /** 物品指向的工具提示键 id；无则 {@code null} */
+    /**
+     * 物品指向的描述页面 id；无则 {@code null}。
+     *
+     * <p>{@code namespace:tooltips/demo.html} 对应内容包的
+     * {@code documents/tooltips/demo.html}，由客户端 {@code AuiTooltipRenderer} 实例化。
+     * 页面缺失时物品回退为原版 tooltip。</p>
+     */
     @Nullable
-    protected ResourceLocation getTooltipId(ItemStack stack) {
+    public ResourceLocation getTooltipId(ItemStack stack) {
         return null;
     }
 
@@ -103,13 +102,6 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         if (path != null) return path.toLanguageKey().replace("/", ".");
         VehicleData vehicleData = getVehicleData(stack);
         return vehicleData != null ? vehicleData.getName() : "machine_max:unreadable_blueprint";
-    }
-
-    @Nullable
-    protected String getTooltipContent(ItemStack stack) {
-        ResourceLocation tooltipId = getTooltipId(stack);
-        if (tooltipId == null) return null;
-        return MMDynamicRes.TOOLTIPS.get(tooltipId) instanceof String content ? content : null;
     }
 
     @Override
@@ -165,56 +157,6 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
         return Component.translatable(getNameTranslationKey(stack));
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        String tip = getTooltipContent(stack);
-        if (tip == null) return;
-
-        String[] regexList = {"\r\n", "\n"};
-        boolean contains = false;
-        for (String regex : regexList) {
-            contains = tip.contains(regex);
-            if (contains) {
-                for (String span : tip.split(regex)) {
-                    MutableComponent component = Component.empty();
-                    try {
-                        List<TextHtNode> nodeQueue = loadTree(HtmlLikeParser.parse(span), new ArrayList<>());
-                        for (TextHtNode text : nodeQueue) {
-                            MutableComponent newComp = Component.translatable(text.getText());
-                            if (text.getEnclosingTags() instanceof List<String> list) {
-                                for (String tag : list) {
-                                    newComp = StyleProvider.styleFactory(tag, newComp);
-                                }
-                            }
-                            component = component.append(newComp);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("富文本解析失败: " + e.getMessage());
-                    }
-                    tooltipComponents.add(component);
-                }
-                break;
-            }
-        }
-        if (!contains) {
-            tooltipComponents.add(Component.translatable(tip));
-        }
-    }
-
-    private static List<TextHtNode> loadTree(HtNode htNode, List<TextHtNode> cache) {
-        if (htNode.isText()) {
-            TextHtNode textNode = (TextHtNode) htNode;
-            cache.add(textNode);
-        } else {
-            TagHtNode tagNode = (TagHtNode) htNode;
-            for (HtNode child : tagNode.getChildren()) {
-                loadTree(child, cache);
-            }
-        }
-        return cache;
     }
 
     private PlacementContext calculatePlacement(Level level, Player player, VehicleData vehicleData) {

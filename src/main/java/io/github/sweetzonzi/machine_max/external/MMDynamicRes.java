@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.external;
 import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext;
 import cn.solarmoon.spark_core.pack.diagnostic.PackSeverity;
 import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
-import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
@@ -74,7 +73,6 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, VehicleData> TEMPLATES = new ConcurrentHashMap<>(); // 已组装的结构数据
     public static ConcurrentMap<ResourceLocation, BlueprintData> BLUEPRINTS = new ConcurrentHashMap<>(); // 蓝图数据
     public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
-    public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
     public static ConcurrentMap<ResourceLocation, HudStyle> HUD_STYLES = new ConcurrentHashMap<>(); // HUD 样式（huds/）
     public static ConcurrentMap<ResourceLocation, HudLayout> HUD_LAYOUTS = new ConcurrentHashMap<>(); // HUD 布局（hud_layouts/）
     public static ConcurrentMap<ResourceLocation, ControlGroupSet> CONTROL_GROUP_PRESETS = new ConcurrentHashMap<>(); // 控制组预设
@@ -156,7 +154,6 @@ public class MMDynamicRes {
      */
     public record UnreachableResearch(UnreachableCause cause, List<ResourceLocation> culprits) {
     }
-    public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
 
     /**
      * 构造一条可翻译的内容包消息。

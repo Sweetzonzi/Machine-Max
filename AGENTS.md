@@ -60,6 +60,7 @@ io.github.sweetzonzi.machine_max/
 │   │   │   ├── hud/                 # AssemblyHud, CustomHud, InteractHud
 │   │   │   ├── hud3d/               # AssemblyHud3D 等 3D HUD
 │   │   │   ├── panel/               # 载具信息面板等
+│   │   │   ├── tooltip/             # AuiTooltipRenderer：蓝图/装配体的 AUI 悬浮说明
 │   │   │   └── animation/           # GUI 动画工具
 │   │   ├── renderable/              # ModelAnimatable, GuiAnimatable
 │   │   └── MMRenderTypes.java       # 自定义渲染类型
@@ -86,10 +87,8 @@ io.github.sweetzonzi.machine_max/
 ├── mixin_interface/                  # 3 个 Mixin 接口（IClientLevelMixin, IEntityMixin, IProjectileMixin）
 ├── util/                            # PD/PID 控制器、地形（LocalHeightField）、MMMath
 ├── external/                        # 外部资源与嵌入式引擎
-│   ├── html/                        # HTML 解析器（HtNode, HtmlLikeParser）
 │   ├── js/                          # JS 桥接（早期 Rhino 实现，当前整体注释停用）
 │   │   └── hook/                    # AxisHook, EventToJS, KeyHooks
-│   ├── style/                       # 样式/色彩系统（ColorPalette, StyleProvider）
 │   ├── MMDynamicRes.java            # Spark-Core 资源加载
 │   └── CommentRemover.java          # 注释移除工具
 ├── datagen/                         # 数据生成器
@@ -122,21 +121,20 @@ io.github.sweetzonzi.machine_max/
 │   │   ├── MMResources.kt          # 资源注册
 │   │   ├── MMSounds.kt             # 音效注册
 │   │   └── MMVisualEffects.kt      # 视觉特效注册
-│   ├── resource/modules/            # 14 个内容包模块（数据驱动加载）
+│   ├── resource/modules/            # 13 个内容包模块（数据驱动加载）
 │   │   ├── PartModule.kt           # 部件模块
 │   │   ├── SubsystemModule.kt      # 子系统模块
 │   │   ├── ConnectorModule.kt      # 连接器模块
 │   │   ├── AssemblyModule.kt       # 装配体模块
 │   │   ├── BlueprintModule.kt      # 蓝图模块
 │   │   ├── MaterialModule.kt       # 材质模块
-│   │   ├── ColorModule.kt          # 颜色模块
 │   │   ├── ControlGroupModule.kt   # 控制组模块
 │   │   ├── HudModule.kt            # HUD 样式模块
 │   │   ├── HudLayoutModule.kt      # HUD 布局模块
-│   │   ├── DocumentModule.kt       # AUI 文档资源模块
+│   │   ├── DocumentModule.kt       # AUI 文档资源模块（含物品描述页面）
+│   │   ├── FittingModule.kt        # 载具配件型号模块
 │   │   ├── ProjectileModule.kt     # 投射物模块
-│   │   ├── TemplateModule.kt       # 模板模块
-│   │   └── TooltipModule.kt        # 工具提示模块
+│   │   └── TemplateModule.kt       # 模板模块
 │   ├── command/                     # 2 个命令文件
 │   │   ├── ResearchCommand.kt
 │   │   └── VehicleCommand.kt
@@ -273,7 +271,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 
 - **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。
 - **索引按所有包合并**：内容 id 是 `<namespace>/<路径>`，与所在包无关，车包引用 kit 或 builtin 的贴图、模型是正常用法。按包隔离会把这些引用判成缺失。
-- **`tooltips/` 下的 html 只做汇总提示、不判失败**：各包目前都还没有这些文件，蓝图缺说明文字不影响放置。要补时往 `tooltips/` 放同名文件即可。
+- **描述页面缺失不判失败**：蓝图 / 装配体的 `tooltip` 指向 `documents/tooltips/` 下的 AUI 页面，文件缺失只影响悬浮说明（回退为原版 tooltip），不影响放置；缺失会在客户端日志留下 `[AUI Tooltip]` 警告。
 - **跳过 `docs/`**：schema 副本由 `checkSchemas` 管。
 
 ## 技能包（`skills/`）

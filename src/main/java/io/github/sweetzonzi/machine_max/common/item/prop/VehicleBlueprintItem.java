@@ -51,7 +51,7 @@ public class VehicleBlueprintItem extends BaseVehicleItem {
 
     @Nullable
     @Override
-    protected ResourceLocation getTooltipId(ItemStack stack) {
+    public ResourceLocation getTooltipId(ItemStack stack) {
         return getBlueprintData(stack).getTooltip();
     }
 

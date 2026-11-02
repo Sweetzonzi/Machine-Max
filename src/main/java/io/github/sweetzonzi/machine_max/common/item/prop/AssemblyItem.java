@@ -44,7 +44,7 @@ public class AssemblyItem extends BaseVehicleItem {
 
     @Nullable
     @Override
-    protected ResourceLocation getTooltipId(ItemStack stack) {
+    public ResourceLocation getTooltipId(ItemStack stack) {
         return getAssemblyData(stack).getTooltip();
     }
 

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -13,7 +12,6 @@ import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -90,11 +88,6 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
         // 添加输出数量
         Component outputText = Component.translatable(MMLanguageRegistry.GUI_FABRICATOR_OUTPUT_COUNT.tag, result.getCount());
         contentLines.addAll(minecraft.font.split(outputText, width - SCROLLBAR_WIDTH - PADDING * 2));
-        //TODO: 添加配方描述
-        String tip = currentRecipe.getTooltip();
-        if (!tip.isEmpty() && MMDynamicRes.TOOLTIPS.get(ResourceLocation.parse(tip)) instanceof String content) {
-            tip = content;
-        }
         // 添加物品描述
         if (minecraft.player != null) {
             List<Component> tooltip = result.getTooltipLines(
