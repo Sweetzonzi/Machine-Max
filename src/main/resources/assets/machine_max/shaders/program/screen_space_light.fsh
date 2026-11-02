@@ -109,7 +109,7 @@ const float GLARE_TAPER = 0.55;     // 收窄系数：臂尖处横向标准差 =
 const float GLARE_MAX_FRACTION = 0.45; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
 const float DEG_TO_RAD = 0.01745329252; // 度 → 弧度
 
-// S3 屏幕空间遮挡（docs/plan/计划中/渲染-屏幕空间遮挡S3设计.md §4）
+// S3 屏幕空间遮挡（docs/plan/已实现/渲染-屏幕空间遮挡S3设计.md §4）
 const int   OCCL_STEPS     = 8;      // 线段分段数；实际采样 from..to（默认 1..7，共 7 个内部点）；0 = 关闭步进（A/B）
 const float OCCL_NEAR_SKIP = 0.06;   // 近端排除比例：压掠射地面的自遮挡条纹
 const float OCCL_FAR_SKIP  = 0.12;   // 灯端排除比例：压光源自身几何的误判
