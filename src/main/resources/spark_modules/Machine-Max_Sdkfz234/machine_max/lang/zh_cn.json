@@ -20,6 +20,7 @@
   "connector.machine_max.shield_turret_axis": "防盾炮塔轴",
   "sub_part.machine_max.barrel": "炮管",
   "machine_max.sdkfz234": "Sd.Kfz.234",
+  "machine_max.sdkfz234_2": "Sd.Kfz.234/2",
   "machine_max.series.sdkfz234": "Sd.Kfz.234",
   "machine_max.research.sdkfz234_hull": "Sd.Kfz.234 车体",
   "research.machine_max.sdkfz234_hull_blueprint.desc": "Sd.Kfz.234 的 8×8 车体：发动机、传动、四轮驱动总成与储物箱。",
@@ -59,5 +60,9 @@
   "subsystem.machine_max.elevation_driver": "Elevation Driver",
   "subsystem.machine_max.main_weapon": "Main Weapon",
   "subsystem.machine_max.secondary_weapon": "Secondary Weapon",
-  "subsystem.machine_max.gunner_sight": "Gunner Sight"
+  "subsystem.machine_max.gunner_sight": "Gunner Sight",
+  "title.machine_max.blueprint.sdkfz234_2": "Sd.Kfz. 234/2「美洲狮」重型装甲侦察车",
+  "description.machine_max.blueprint.sdkfz234_2": "德国 Büssing-NAG 于 1943 年投产的八轮重型装甲侦察车。全轮驱动、全轮转向，公路时速可达 90 km/h；炮塔内一门 50mm KwK 39/1 L/60 火炮配 MG34 同轴机枪，正面装甲 30mm。到 1944 年 9 月停产时共制造 101 辆，主要装备东线与西线的装甲侦察营。",
+  "notes.machine_max.blueprint.sdkfz234_2": "军事载具蓝图",
+  "author.machine_max.blueprint.sdkfz234_2": "待补充"
 }

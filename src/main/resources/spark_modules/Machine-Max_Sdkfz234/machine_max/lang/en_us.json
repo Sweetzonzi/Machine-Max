@@ -20,6 +20,7 @@
   "connector.machine_max.shield_turret_axis": "Shield Turret Axis",
   "sub_part.machine_max.barrel": "Barrel",
   "machine_max.sdkfz234": "Sd.Kfz.234",
+  "machine_max.sdkfz234_2": "Sd.Kfz.234/2",
   "machine_max.series.sdkfz234": "Sd.Kfz.234",
   "machine_max.research.sdkfz234_hull": "Sd.Kfz.234 Hull",
   "research.machine_max.sdkfz234_hull_blueprint.desc": "8x8 hull of the Sd.Kfz.234 with engine, transmission, four driven wheels and stowage.",
@@ -59,5 +60,9 @@
   "subsystem.machine_max.elevation_driver": "Elevation Driver",
   "subsystem.machine_max.main_weapon": "Main Weapon",
   "subsystem.machine_max.secondary_weapon": "Secondary Weapon",
-  "subsystem.machine_max.gunner_sight": "Gunner Sight"
+  "subsystem.machine_max.gunner_sight": "Gunner Sight",
+  "title.machine_max.blueprint.sdkfz234_2": "Sd.Kfz. 234/2 “Puma” Heavy Armoured Car",
+  "description.machine_max.blueprint.sdkfz234_2": "German eight-wheeled heavy armoured reconnaissance car built by Büssing-NAG from 1943. All-wheel drive and all-wheel steering give it a 90 km/h road speed; the turret mounts a 50 mm KwK 39/1 L/60 with a coaxial MG 34 behind 30 mm of frontal armour. Only 101 were built before production ended in September 1944, serving mainly with armoured reconnaissance battalions on both fronts.",
+  "notes.machine_max.blueprint.sdkfz234_2": "Military Vehicle Blueprint",
+  "author.machine_max.blueprint.sdkfz234_2": "TBD"
 }

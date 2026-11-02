@@ -89,5 +89,13 @@
   "machine_max.fitting.mtlb_track": "MT-LB 履带",
   "machine_max.pkt_turret": "PKT 机枪塔",
   "machine_max.research.pkt_turret": "PKT 机枪塔",
-  "research.machine_max.pkt_turret_blueprint.desc": "可换装到多种载具上的 PKT 机枪塔：座圈、机枪与装弹机自成一件，由乘员操控。"
+  "research.machine_max.pkt_turret_blueprint.desc": "可换装到多种载具上的 PKT 机枪塔：座圈、机枪与装弹机自成一件，由乘员操控。",
+  "title.machine_max.blueprint.mtlb": "MT-LB 多用途履带式装甲运输车",
+  "description.machine_max.blueprint.mtlb": "苏联 1964 年列装的轻型履带式装甲车，乘员 2 人，可搭载约 10 名步兵，或装运 2 吨货物、牵引 6.5 吨火炮。装甲仅 7~14mm，只能抵御枪弹与炮弹破片；靠履带划水浮渡。造价低、越野好、可靠性高，长期同时担任炮兵牵引车与人员输送车，衍生型号极多。",
+  "notes.machine_max.blueprint.mtlb": "军事载具蓝图",
+  "author.machine_max.blueprint.mtlb": "待补充",
+  "title.machine_max.blueprint.mtlb_pkt": "MT-LB 装甲运输车（PKT 机枪塔）",
+  "description.machine_max.blueprint.mtlb_pkt": "在 MT-LB 车体右前方加装 PKT 机枪塔的武装型。塔内一挺 7.62mm PKT 机枪，可 360° 手动回旋、俯仰 -5°~+30°，备弹 2500 发，用于压制步兵和轻目标。加装炮塔后仍保留载员与牵引能力，是 MT-LB 最常见的前线配置之一。",
+  "notes.machine_max.blueprint.mtlb_pkt": "军事载具蓝图",
+  "author.machine_max.blueprint.mtlb_pkt": "待补充"
 }

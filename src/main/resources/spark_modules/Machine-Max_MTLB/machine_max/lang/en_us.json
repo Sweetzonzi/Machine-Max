@@ -89,5 +89,13 @@
   "machine_max.fitting.mtlb_track": "MT-LB Track",
   "machine_max.pkt_turret": "PKT Machine Gun Turret",
   "machine_max.research.pkt_turret": "PKT Machine Gun Turret",
-  "research.machine_max.pkt_turret_blueprint.desc": "A PKT machine gun turret that fits any vehicle with a matching ring mount; the ring, gun and loader are one part."
+  "research.machine_max.pkt_turret_blueprint.desc": "A PKT machine gun turret that fits any vehicle with a matching ring mount; the ring, gun and loader are one part.",
+  "title.machine_max.blueprint.mtlb": "MT-LB Multipurpose Tracked Armoured Carrier",
+  "description.machine_max.blueprint.mtlb": "Soviet light tracked armoured carrier introduced in 1964. Two crew plus about ten infantry, or 2 t of cargo, and it can tow 6.5 t of artillery. Armour is only 7-14 mm, enough for small arms and shell splinters, and the vehicle swims by turning its tracks. Cheap, reliable and highly mobile off-road, it served as both prime mover and APC and spawned a very large family of variants.",
+  "notes.machine_max.blueprint.mtlb": "Military Vehicle Blueprint",
+  "author.machine_max.blueprint.mtlb": "TBD",
+  "title.machine_max.blueprint.mtlb_pkt": "MT-LB Armoured Carrier (PKT Turret)",
+  "description.machine_max.blueprint.mtlb_pkt": "An MT-LB fitted with a PKT machine gun turret at the right front of the hull. The 7.62 mm PKT traverses a full 360 degrees by hand and elevates from -5 to +30 degrees, with 2,500 rounds for suppressing infantry and light targets. Troop carrying and towing capacity are retained, making this one of the most common frontline MT-LB configurations.",
+  "notes.machine_max.blueprint.mtlb_pkt": "Military Vehicle Blueprint",
+  "author.machine_max.blueprint.mtlb_pkt": "TBD"
 }
