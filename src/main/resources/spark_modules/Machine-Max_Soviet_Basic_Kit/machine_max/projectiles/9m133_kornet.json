@@ -9,11 +9,13 @@
     "caliber": 152.0,
     "base_velocity": 50,
     "base_accuracy_mil": 8.0,
-    "thrust": {
-      "force": 2600.0,
-      "duration": 2.5,
-      "ignition_delay": 0.1
-    }
+    "thrust": [
+      {
+        "force": 2600.0,
+        "start": 0.1,
+        "duration": 2.5
+      }
+    ]
   },
   "terminal": {
     "base_penetration": 1200,

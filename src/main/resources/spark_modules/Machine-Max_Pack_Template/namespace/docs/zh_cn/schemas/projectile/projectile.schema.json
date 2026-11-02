@@ -70,15 +70,19 @@
           "description": "基础精度（密位/千分弧度），表示 1σ 散布角，与发射器的精度乘子叠加。"
         },
         "thrust": {
-          "type": "object",
-          "properties": {
-            "force": { "type": "number", "minimum": 0, "default": 0, "description": "推力（N）。" },
-            "duration": { "type": "number", "minimum": 0, "default": 0, "description": "燃烧时长（s）。" },
-            "ignition_delay": { "type": "number", "minimum": 0, "default": 0, "description": "点火延迟（s），从发射瞬间起算；0 = 出膛即点火。" }
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "force": { "type": "number", "minimum": 0, "default": 0, "description": "推力（N）。" },
+              "start": { "type": "number", "minimum": 0, "default": 0, "description": "点火时刻（s），从发射瞬间起算；0 = 出膛即点火。" },
+              "duration": { "type": "number", "minimum": 0, "default": 0, "description": "燃烧时长（s）；窗口为 [start, start + duration)。" }
+            },
+            "additionalProperties": false,
+            "description": "一个推进段（恒推力，沿速度矢量施加）。"
           },
-          "additionalProperties": false,
-          "default": { "force": 0, "duration": 0, "ignition_delay": 0 },
-          "description": "推进段（单段恒推力，沿速度矢量施加）。整块可省略，缺省无推力。"
+          "default": [],
+          "description": "推进段表 — 多段推力。整块可省略或写空数组，均表示无推力。当前实现只施加首段，第二段起不生效。"
         }
       },
       "required": ["mass", "base_velocity"],

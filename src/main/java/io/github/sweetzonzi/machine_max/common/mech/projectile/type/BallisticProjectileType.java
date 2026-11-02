@@ -7,6 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.ThrustProfile;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffContribution;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
@@ -169,6 +170,26 @@ public class BallisticProjectileType extends ProjectileType {
     }
 
     /**
+     * 注册键落地时自检推进段表：多于一段即告警。
+     * <p>
+     * 段表已按多段形态解码，但积分侧只施加首段，多余段静默失效会让内容作者误以为第二段
+     * 已生效。告警放在这里而非构造函数，是因为段表在构造期解码、注册键在构造之后才赋值，
+     * 只有到这一刻才能把告警指到具体弹种。
+     * TODO(推力分段)：段表接线后删除本方法与 {@link MachineMax#LOGGER} 的引用。
+     */
+    @Override
+    public void setRegistryKey(ResourceLocation registryKey) {
+        super.setRegistryKey(registryKey);
+        List<ExternalProperties.ThrustSegment> segments = external.thrust();
+        if (segments.size() > 1) {
+            MachineMax.LOGGER.warn(
+                    "弹种 {} 的 external.thrust 配置了 {} 段，当前实现只施加首段，其余段不生效；"
+                            + "多段积分见 docs/plan/进行中/武器系统-推力分段与变质量计划.md",
+                    registryKey, segments.size());
+        }
+    }
+
+    /**
      * 本弹种是否受制导。
      *
      * @return true 表示配置了 guidance 组件
@@ -197,10 +218,26 @@ public class BallisticProjectileType extends ProjectileType {
     public float getRadius() { return external.caliberMm() / 2000f; }
     public float getBaseVelocity() { return external.baseVelocity(); }
     public float getBaseAccuracyMil() { return external.baseAccuracyMil(); }
-    /** 推进段配置（缺省 {@link ExternalProperties.ThrustProperties#NONE}，即无推力） */
-    public ExternalProperties.ThrustProperties getThrust() { return external.thrust(); }
-    /** 是否配置了有效推进段 */
-    public boolean hasThrust() { return external.thrust().isActive(); }
+    /**
+     * 推进段表（缺省空表，即无推力）。
+     * <p>
+     * 段表是多段推进的数据形态；当前积分侧只施加<b>首段</b>，其余段在注册期告警后忽略。
+     * TODO(推力分段)：段表接线后改为整表消费，见
+     * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §5.3。
+     */
+    public List<ExternalProperties.ThrustSegment> getThrustSegments() { return external.thrust(); }
+
+    /**
+     * 是否配置了<b>当前实现会实际施加</b>的推力。
+     * <p>
+     * 判据是「段表非空且首段有效」，与 {@link #getThrustProfile()} 的取值口径一致——
+     * 只按「表非空」判定会让首段无效、次段有效的配置出现「有推力」却积分不到的情形。
+     * TODO(推力分段)：段表接线后改为「表中存在任一有效段」。
+     */
+    public boolean hasThrust() {
+        List<ExternalProperties.ThrustSegment> segments = external.thrust();
+        return !segments.isEmpty() && segments.get(0).isActive();
+    }
 
     /**
      * 此弹种的弹道解算参数，供 {@link TrajectoryStep#step} 使用。
@@ -234,19 +271,23 @@ public class BallisticProjectileType extends ProjectileType {
     /**
      * 此弹种的推力剖面，时间窗用公制秒表达、自发射瞬间起算。
      * <p>
-     * {@link ExternalProperties.ThrustProperties} 以 {@code (force, duration, ignitionDelay)}
-     * 表达推进段，{@link ThrustProfile} 以 {@code (force, start, end)} 表达，两者一一对应：
-     * {@code start = ignitionDelay}、{@code end = ignitionDelay + duration}。无推进段时返回
-     * {@link ThrustProfile#NONE}。
+     * 段表<b>首段</b>按 {@code (force, start, start + duration)} 折算为弹道库的单窗口
+     * {@link ThrustProfile}；无段或首段无效时返回 {@link ThrustProfile#NONE}。
+     * <p>
+     * <b>TODO(推力分段)：只取首段是过渡态。</b>弹道库的 {@link ThrustProfile} 仍是一次点火、
+     * 恒力、恒质量的单窗口形态，尚不接受段表，因此这里丢弃第二段起的全部配置（注册期
+     * {@link #setRegistryKey} 会对这种配置告警）。目标形态是整表折算，含段间空隙与燃烧期
+     * 变质量，见 {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §4—§5。
      *
      * @return 本弹种的推力剖面（同一实例）
      */
     public ThrustProfile getThrustProfile() {
         ThrustProfile profile = thrustProfile;
         if (profile == null) {
-            ExternalProperties.ThrustProperties thrust = getThrust();
-            profile = thrust.isActive()
-                    ? new ThrustProfile(thrust.force(), thrust.ignitionDelay(), thrust.burnEnd())
+            List<ExternalProperties.ThrustSegment> segments = external.thrust();
+            ExternalProperties.ThrustSegment first = segments.isEmpty() ? null : segments.get(0);
+            profile = (first != null && first.isActive())
+                    ? new ThrustProfile(first.force(), first.start(), first.end())
                     : ThrustProfile.NONE;
             thrustProfile = profile;
         }
@@ -550,8 +591,14 @@ public class BallisticProjectileType extends ProjectileType {
          * 默认 5.0 密位 ≈ 每公里 5 米散布。
          */
         float baseAccuracyMil,
-        /** 推进段配置，缺省 {@link ThrustProperties#NONE}（无推力，纯弹道） */
-        ThrustProperties thrust
+        /**
+         * 推进段表，缺省空表（无推力，纯弹道）。
+         * <p>
+         * 形态即多段：数组元素各自带点火时刻与时长，段间允许空隙（空隙即无推力滑行）。
+         * <b>但积分侧当前只施加首段</b>——段表是先行落地的数据契约，用于避免内容包
+         * 作者日后的形态迁移；多段积分与燃烧期变质量尚未接线。详见 {@link ThrustSegment}。
+         */
+        List<ThrustSegment> thrust
     ) {
         public static final Codec<ExternalProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.fieldOf("mass").forGetter(ExternalProperties::mass),
@@ -560,7 +607,7 @@ public class BallisticProjectileType extends ProjectileType {
             Codec.FLOAT.optionalFieldOf("caliber", 50.0f).forGetter(ExternalProperties::caliberMm),
             Codec.FLOAT.fieldOf("base_velocity").forGetter(ExternalProperties::baseVelocity),
             Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil),
-            ThrustProperties.CODEC.optionalFieldOf("thrust", ThrustProperties.NONE)
+            Codec.list(ThrustSegment.CODEC).optionalFieldOf("thrust", List.of())
                 .forGetter(ExternalProperties::thrust)
         ).apply(instance, ExternalProperties::new));
 
@@ -568,38 +615,42 @@ public class BallisticProjectileType extends ProjectileType {
          * 推进段 — 单段恒推力，沿<b>速度矢量</b>施加（无姿态质点弹的合理近似：弹轴 ≈ 速度）。
          * <p>
          * 只增速率、不改方向，与制导/阻力/重力共用同一套半隐式 Euler 积分。
-         * 推力段内加速度为 {@code F / m}，燃烧窗口为 {@code [ignition_delay, ignition_delay + duration)}。
-         * 首期只支持单段点火（多段 / 推力曲线见《武器系统-制导组件实现备忘》§十四）。
+         * 推力段内加速度为 {@code F / m}，燃烧窗口为 {@code [start, start + duration)}。
+         * <p>
+         * <b>只接受数组形态。</b>{@code external.thrust} 的旧写法（单对象）不再兼容，会在
+         * 解码期以「期望列表」失败——有意如此，错误要响亮而非静默降级。
          * <p>
          * <b>两端一致：</b>服务端 {@code updateProjectiles} 与客户端 {@code clientExtrapolate}
          * 均按同一窗口施加推力，保证客户端外推轨迹与服务端一致。
+         * <p>
+         * <b>本段的落地边界（TODO(推力分段)）：</b>数组可容纳多段，但当前只有首段进入积分；
+         * 第二段起被忽略并在注册期告警。字段集中不含 {@code propellant_mass}——燃烧期
+         * 质量流失尚未实现，加字段留到积分侧能消费它的时候。完整目标见
+         * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §三。
          *
-         * @param force         推力（N）
-         * @param duration      燃烧时长（s）
-         * @param ignitionDelay 点火延迟（s），从发射瞬间起算；0 = 出膛即点火
+         * @param force    推力（N）
+         * @param start    点火时刻（s），自发射瞬间起算；0 = 出膛即点火
+         * @param duration 燃烧时长（s），必须为正才生效
          */
-        public record ThrustProperties(
+        public record ThrustSegment(
             float force,
-            float duration,
-            float ignitionDelay
+            float start,
+            float duration
         ) {
-            /** 无推力（缺省），等价于纯弹道 */
-            public static final ThrustProperties NONE = new ThrustProperties(0f, 0f, 0f);
+            public static final Codec<ThrustSegment> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.FLOAT.optionalFieldOf("force", 0f).forGetter(ThrustSegment::force),
+                Codec.FLOAT.optionalFieldOf("start", 0f).forGetter(ThrustSegment::start),
+                Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustSegment::duration)
+            ).apply(instance, ThrustSegment::new));
 
-            public static final Codec<ThrustProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.FLOAT.optionalFieldOf("force", 0f).forGetter(ThrustProperties::force),
-                Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustProperties::duration),
-                Codec.FLOAT.optionalFieldOf("ignition_delay", 0f).forGetter(ThrustProperties::ignitionDelay)
-            ).apply(instance, ThrustProperties::new));
-
-            /** 是否配置了有效推进段（推力和燃时均 &gt; 0） */
+            /** 本段是否会实际施加推力（推力与燃时均 &gt; 0） */
             public boolean isActive() {
                 return force > 0f && duration > 0f;
             }
 
-            /** 燃烧窗口结束时刻（s，从发射瞬间起算） */
-            public float burnEnd() {
-                return ignitionDelay + duration;
+            /** 熄火时刻（s，从发射瞬间起算） */
+            public float end() {
+                return start + duration;
             }
         }
     }

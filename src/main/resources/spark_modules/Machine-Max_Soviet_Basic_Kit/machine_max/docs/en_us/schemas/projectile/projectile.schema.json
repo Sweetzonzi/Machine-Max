@@ -70,15 +70,19 @@
           "description": "Base accuracy (mil / milliradian), the 1-sigma dispersion angle, added to the launcher's accuracy multiplier."
         },
         "thrust": {
-          "type": "object",
-          "properties": {
-            "force": { "type": "number", "minimum": 0, "default": 0, "description": "Thrust (N)." },
-            "duration": { "type": "number", "minimum": 0, "default": 0, "description": "Burn duration (s)." },
-            "ignition_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Ignition delay (s) measured from launch; 0 = ignites on leaving the barrel." }
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "force": { "type": "number", "minimum": 0, "default": 0, "description": "Thrust (N)." },
+              "start": { "type": "number", "minimum": 0, "default": 0, "description": "Ignition time (s) measured from launch; 0 = ignites on leaving the barrel." },
+              "duration": { "type": "number", "minimum": 0, "default": 0, "description": "Burn duration (s); the window is [start, start + duration)." }
+            },
+            "additionalProperties": false,
+            "description": "One thrust segment (constant thrust applied along the velocity vector)."
           },
-          "additionalProperties": false,
-          "default": { "force": 0, "duration": 0, "ignition_delay": 0 },
-          "description": "Thrust phase (single constant-thrust segment applied along the velocity vector). The whole block may be omitted, defaulting to no thrust."
+          "default": [],
+          "description": "Thrust segment table — multi-stage thrust. The whole block may be omitted, or given as an empty array, meaning no thrust. Only the first segment is applied by the current implementation; later segments have no effect."
         }
       },
       "required": ["mass", "base_velocity"],
