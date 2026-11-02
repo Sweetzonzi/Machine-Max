@@ -1,0 +1,75 @@
+M1A2 SEP 0.3.6 — 战雷参考的 MachineMax 基甲分区近似
+
+满耐久法向值，命中角度另算。复合区为合并代理，并非 WT 保护分析；材料退化与命中几何仍遵循 MachineMax。
+
+MM_HullCore: 12.7 mm RHA; machine_max:rha
+  参考/映射：Interior collision fallback; not a separate composite layer.
+MM_HullDeck: 20 mm RHA; machine_max:rha
+  参考/映射：superstructure_top_dm
+MM_HullFrontUpper: 38.1 mm RHA; machine_max:rha
+  参考/映射：superstructure_front_dm; cast/rolled class difference simplified.
+MM_HullFrontLower: 268 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：xray armorArrayHull: steel display 32 + NERA 360*0.375 + steel display 101; collapsed normal-incidence proxy.
+MM_HullNose: 268 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：xray armorArrayHull: steel display 32 + NERA 360*0.375 + steel display 101; collapsed normal-incidence proxy.
+MM_HullRear: 31.75 mm RHA; machine_max:rha
+  参考/映射：superstructure_back_dm; variable thickness simplified.
+MM_SideLeft: 35 mm RHA; machine_max:rha
+  参考/映射：body_side_dm
+MM_SideRight: 35 mm RHA; machine_max:rha
+  参考/映射：body_side_dm
+MM_HullBottom: 12.7 mm RHA; machine_max:rha
+  参考/映射：body_bottom_dm; variable thickness simplified.
+MM_TurretCore: 30 mm RHA; machine_max:rha
+  参考/映射：Interior/ring fallback, not additional composite protection.
+MM_TurretFrontLeft: 609 mm RHA; m1a2_sep:m1a2_du_composite
+  参考/映射：armorArrayTurretFrontL: steel display 38 + NERA 800*0.635 + steel display 63.
+MM_TurretFrontRight: 657.8 mm RHA; m1a2_sep:m1a2_du_composite
+  参考/映射：armorArrayTurretFrontR: steel display 38 + NERA 800*0.696 + steel display 63.
+MM_TurretRear: 20 mm RHA; machine_max:rha
+  参考/映射：turret_04_back_dm; one representative rear plate.
+MM_TurretRoof: 25.4 mm RHA; machine_max:rha
+  参考/映射：turret_top_dm; one representative roof plate, cast/rolled class difference simplified.
+MM_TurretRoofFront: 25.4 mm RHA; machine_max:rha
+  参考/映射：turret_top_dm; one representative roof plate, cast/rolled class difference simplified.
+MM_TurretBustleRoof: 12.7 mm RHA; machine_max:rha
+  参考/映射：turret_04_top_dm; representative bustle roof.
+MM_TurretSideLeft: 472 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：armorArrayTurretSideL: steel display 19 + NERA 300*1.3 + steel display 63.
+MM_TurretSideRight: 472 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：armorArrayTurretSideR: steel display 19 + NERA 300*1.3 + steel display 63.
+MM_TurretBustleLeft: 47.05 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：armorArrayTurretSideBackL: steel display 6 + NERA 350*0.083 + steel display 12.
+MM_TurretBustleRight: 47.05 mm RHA; m1a2_sep:m1a2_composite
+  参考/映射：armorArrayTurretSideBackR: steel display 6 + NERA 350*0.083 + steel display 12.
+
+炮盾 150 mm RHA，炮管 25 mm structural_steel（不是 25 mm RHA），其它机枪配置保留。
+四块附甲保留：车体 78 mm RHA，炮塔 66 mm RHA。
+
+基甲与附加装甲
+
+基甲参考 War Thunder 2.59.0.90 的 M1A2 SEP（不是 SEP v2/v3），固定提交 e64d287d6223eba19fb9c8c02324090b25e533f2。
+下面是 MachineMax 满耐久、未计入射角的法向 RHA 近似值，不是实车数据，也不是战雷保护分析结果。
+车体：首部复合区 268 mm；首上 38.1 mm 并按模型倾角结算；侧面 35 mm；后部 31.75 mm；甲板 20 mm；底部 12.7 mm。
+炮塔：左正面 609 mm、右正面 657.8 mm；乘员舱侧面 472 mm；尾舱侧面 47.05 mm；后部 20 mm；前部/乘员舱顶部 25.4 mm、尾舱顶部 12.7 mm；炮盾仍为 150 mm。
+首部和炮塔复合区采用“外钢板显示厚度 + 伤害模型复合层厚度×动能系数 + 背板显示厚度”的一阶近似。没有把 135 mm 的车体复合层单独当作完整车首。
+战雷 X-ray 的复合层显示厚度与 DamageParts 的计算厚度存在差异；这里明确使用后者计算复合层，并用 X-ray 给出的钢板层序/显示厚度作为适配参考。可变厚度、材料角度曲线、弹型差异和战雷网格均未复现，不能将这些数字视作战雷精确等效。
+保持本模型原有首部倾角，因此本包 280 mm AP 可能击穿新版首下/首部，炮塔两颊仍明显更强。不要以这组近似值推断任意弹药或角度都能被拦截。
+顶部有独立薄甲覆盖，炮塔侧面区分乘员舱与尾舱；内部核心盒只作低厚度兜底。基甲盒共享 id=part，不把相互重叠的区域重复叠加为多层装甲。
+四块附加装甲保持此前设定：车体左右各 78 mm RHA、炮塔左右各 66 mm，独立承伤并随耐久衰减；这部分没有改成战雷 ARAT 精确模型。
+ARAT 的爆炸伤害系数仍为 0.55，没有逐砖起爆、HEAT 射流或串联判定；战雷的 450 mm 破甲防护不能直接作为 HE 爆炸防护。
+完整分区、计算口径和固定来源见 armor-parameters.txt、armor-barrel036-report.json。
+
+座圈与独立炮管
+
+车体—炮塔连接按 2S38：integrity=100、impact_absorption=0.1、impact_reduction=8、impact_multiplier=1；保留普通受击断开行为，没有损毁前锁定。这与上一版座圈的有效数值一致。
+主炮炮管 bone13 是独立 SubPart，350 kg；炮盾/炮架保留 550 kg，合计 900 kg，组合质心保持不变。两者使用配对的内部固定连接，炮塔俯仰仍驱动炮架。
+炮管命中箱关联主炮发射器，发射器基础耐久 100；发射器损毁会使主炮停火。炮镜、同轴副武器留在炮架，炮口定位器随炮管。
+炮塔仍沿用 2S38 默认的共享结构耐久；炮管 55、炮架 145 是对共享总耐久的贡献，不代表两个独立结构血条。独立失效通过主炮发射器自己的耐久实现。
+内部结构已变化，升级后重新生成完整装配体；不需要更新模组 JAR。
+
+
+固定来源：
+https://github.com/gszabi99/War-Thunder-Datamine/blob/e64d287d6223eba19fb9c8c02324090b25e533f2/aces.vromfs.bin_u/gamedata/units/tankmodels/us_m1a2_sep_abrams.blkx
+
+钢板参考来自 xray_viewer_data 的 armorArrayText 与 DamageParts；复合层来自 DamageParts.hull_turret_spaced_armor。

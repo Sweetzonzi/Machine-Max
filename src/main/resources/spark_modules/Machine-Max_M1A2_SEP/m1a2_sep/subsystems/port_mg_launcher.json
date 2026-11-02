@@ -1,0 +1,21 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:launcher",
+  "basic_durability": 20,
+  "control_inputs": [
+    "weapon.mg.port_mg"
+  ],
+  "ammo_inputs": [
+    "ammo_port_mg"
+  ],
+  "barrel": {
+    "horizontal_accuracy_multiplier": 2,
+    "vertical_accuracy_multiplier": 2
+  },
+  "breech": {
+    "fire_rate": 750,
+    "required_tags": [
+      "m1a2_sep:caliber/7_62mm"
+    ]
+  }
+}

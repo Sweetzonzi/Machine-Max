@@ -1,0 +1,588 @@
+{
+  "version": "0.3.1",
+  "geometry": {
+    "root_cause": "Omitted zero rotation and pivot defaults retained a stale 180-degree transform during restoration.",
+    "restored_nodes": 62,
+    "changed_elements": [
+      {
+        "name": "M2-3",
+        "uuid": "2c80dfa0-b718-3c50-84c5-b1457bd23bfe",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "6cc62392-4f54-188b-ebb7-913d4e6db13d",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "fe579886-2d4c-7dcf-451a-91262aa4a172",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "3ed5618a-d7d5-e481-c161-4895338d77f2",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "a5da252b-f5d5-b66e-28dd-992b2a5b019d",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "34078b5e-f530-09dd-3534-cdd9c8abc6bb",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "aff76996-f3fa-398b-4269-e9763da0967d",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "fc2c1773-f8a5-d5ef-c1f6-a51788db6425",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "8328dd11-b0c6-2b05-0d60-db5072aea1ff",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "3b39868a-9f07-b81b-7460-84ed10326de8",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "f15d2101-c947-d46f-365d-52a14686911e",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "c0d633f5-83b1-2890-9510-c985cb23ad8e",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "28d448a5-95e9-ef83-07d2-5e717f55f0fa",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "e7dbd08c-0ce0-3a31-1773-c6b20d4eab45",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "905c16a5-4060-63c1-b2a8-1a5ecec8b24e",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "M2-3",
+        "uuid": "03132a74-7152-96f5-cc37-f3f8cae3136a",
+        "before": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            0.8047,
+            0,
+            -17.3127
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "MM_Hit_aft_mg_pitch_cube",
+        "uuid": "6d869dac-7a4a-57db-61b4-0257931b15de",
+        "before": {
+          "origin": [
+            10.9547,
+            51.9,
+            -12.5627
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            10.9547,
+            51.9,
+            -12.5627
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "MM_Hit_aft_mg_yaw_cube",
+        "uuid": "7a75ddd0-66c3-f487-8655-b9e40c9c3d79",
+        "before": {
+          "origin": [
+            11,
+            52.15,
+            -0.2
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            11,
+            52.15,
+            -0.2
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "name": "MM_Interact_aft_mg_cube",
+        "uuid": "f54d4852-b32a-8dad-dd87-7fba550e8394",
+        "before": {
+          "origin": [
+            11,
+            52.5,
+            0
+          ],
+          "rotation": [
+            180,
+            0,
+            180
+          ]
+        },
+        "after": {
+          "origin": [
+            11,
+            52.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    ],
+    "clearance": {
+      "method": "Static oriented cube geometry overlap, 0.02 BB tolerance; sampled angles, not in-game simulation",
+      "posePairs": 4680,
+      "collisions": []
+    }
+  },
+  "sight": {
+    "root_cause": "AUI 1.2.8 CssLength.parseCalcTerms supports additive length terms, not the multiplication expressions used in 0.3.0; zero-size filtered parent also removed.",
+    "reticle_canvas": [
+      200,
+      80
+    ],
+    "static_center_dot": [
+      2,
+      2
+    ],
+    "base_zoom": 3,
+    "max_zoom": 10,
+    "calibrated_mil_scale": false,
+    "crt_included": false
+  },
+  "validation": {
+    "game_tested": false,
+    "audit": {
+      "ok": true,
+      "unchanged_configuration_files": 50,
+      "stable_geometry_bones": [
+        "bone8",
+        "MM_AftMG_Pitch",
+        "MM_Hit_aft_mg_yaw",
+        "MM_Hit_aft_mg_pitch",
+        "MM_Interact_aft_mg"
+      ],
+      "reticle_css_compatible_subset": true,
+      "geometry_pose_pairs": 4680,
+      "errors": [],
+      "game_tested": false,
+      "crt_included": false
+    },
+    "plugin": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    }
+  }
+}

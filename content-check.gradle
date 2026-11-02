@@ -14,8 +14,8 @@
 //  - 只扫各包的 <namespace>/ 目录，跳过 docs/（schema 副本由 checkSchemas 管）。
 //  - `.png` 按内容目录内的相对路径精确匹配；`.geo` 按文件名在 models/ 下递归找（各包
 //    的 models 子目录布局不一致，有 models/part、models/fitting，也有平铺的）。
-//  - `.html` 只做汇总提示、不判失败：tooltips/ 各包目前都是空的，蓝图没有说明文字不影响
-//    放置。
+//  - `.html` 按 AUI 文档根解析（namespace:tooltips/x.html → <namespace>/documents/tooltips/x.html），
+//    缺页面只做汇总提示、不判失败：蓝图没有说明文字不影响放置。
 //  - 内容 id 是 <namespace>/<文件名>，与所在包无关，所以跨包引用（车包用 kit 的件）也
 //    能落到文件。
 
@@ -192,7 +192,10 @@ tasks.register('checkContent') {
 
         // 2. JSON 里的资源引用
         int referenceCount = 0
-        def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo|html))$/
+        // 贴图 / 模型只校验内置与模板命名空间，外部命名空间留给对应 mod 自己管
+        def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo))$/
+        // 说明页面按 AUI 文档根解析：namespace:tooltips/x.html → <包>/<namespace>/documents/tooltips/x.html
+        def tooltipPattern = ~/^([a-z0-9_.-]+):([A-Za-z0-9_.\/-]+\.html)$/
         packs.each { pack ->
             pack.dir.eachFileRecurse(FileType.FILES) { File file ->
                 if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
@@ -207,10 +210,25 @@ tasks.register('checkContent') {
                 } catch (Exception exception) {
                     return
                 }
-                String label = pack.name + '/machine_max/' +
+                String label = pack.name + '/' + pack.namespace + '/' +
                         pack.dir.toPath().relativize(file.toPath()).toString()
                                 .replace(File.separatorChar, '/' as char)
                 walkStrings(data) { String value ->
+                    def tooltipMatcher = tooltipPattern.matcher(value)
+                    if (tooltipMatcher.matches()) {
+                        String namespace = tooltipMatcher.group(1)
+                        String relative = tooltipMatcher.group(2)
+                        boolean reachable = new File(pack.dir, 'documents/' + relative).isFile() ||
+                                (sparkModulesDir.listFiles() ?: new File[0]).any {
+                                    new File(it, namespace + '/documents/' + relative).isFile()
+                                }
+                        if (!reachable) {
+                            pendingTooltips << label
+                            details.append('    缺页面  ').append(label).append(' → ')
+                                    .append(value).append('\n')
+                        }
+                        return
+                    }
                     def matcher = referencePattern.matcher(value)
                     if (!matcher.matches()) {
                         return
@@ -219,12 +237,6 @@ tasks.register('checkContent') {
                     String namespace = matcher.group(1)
                     String relative = matcher.group(2)
                     String extension = matcher.group(3)
-                    if (extension == 'html') {
-                        if (!resourceFiles.contains(relative)) {
-                            pendingTooltips << label
-                        }
-                        return
-                    }
                     boolean reachable = extension == 'png'
                             ? resourceFiles.contains(relative)
                             : geoModels.contains(relative.substring(relative.lastIndexOf('/') + 1))
@@ -241,12 +253,15 @@ tasks.register('checkContent') {
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
             int ownBlueprints = blueprints.values().count { it.pack == pack.name }
-            logger.quiet('  ok  ' + pack.name + '/machine_max：模板 ' + ownTemplates +
+            logger.quiet('  ok  ' + pack.name + '/' + pack.namespace + '：模板 ' + ownTemplates +
                     '，装配体 ' + ownAssemblies + '，载具蓝图 ' + ownBlueprints)
         }
         if (pendingTooltips) {
             logger.quiet('  提示 ' + pendingTooltips.size() + ' 处 tooltip 引用的 html 还没有文件' +
-                    '（tooltips/ 各包目前都是空的，缺了只是蓝图没有说明文字，不影响放置）')
+                    '（缺了只是蓝图没有说明文字，不影响放置）：')
+            details.toString().readLines()
+                    .findAll { it.startsWith('    缺页面') }
+                    .each { logger.quiet(it) }
         }
 
         if (problems) {

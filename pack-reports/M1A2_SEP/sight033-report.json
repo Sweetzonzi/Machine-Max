@@ -1,0 +1,74 @@
+{
+  "version": "0.3.3",
+  "visual_reference": {
+    "url": "https://wtliker.com/resources/3365/",
+    "title": "M1系列通用瞄具",
+    "uploader": "赤色长空",
+    "original_post": "https://live.warthunder.com/post/889646/en/",
+    "original_account": "shangxiang",
+    "use": "Public preview as geometric layout reference; freshly authored AUI HTML/CSS."
+  },
+  "secondary_resource": {
+    "url": "https://wtliker.com/resources/3716/",
+    "title": "M1SEP瞄具，顶级房所有的载具都通用",
+    "uploader": "YNnjr",
+    "archive_obtained": false,
+    "reason": "Download requires login."
+  },
+  "implementation": {
+    "reticle": "Green circular center, inner square, permanent center dot, separated horizontal marks.",
+    "fixed_display_size": true,
+    "reticle_pixels": [
+      320,
+      112
+    ],
+    "center_in_page": [
+      320,
+      220
+    ],
+    "calibrated_mil_scale": false,
+    "zoom": [
+      3,
+      10
+    ],
+    "crt": false,
+    "new_client_component": false,
+    "redistributed_community_files": false
+  },
+  "validation": {
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 52,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 146,
+        "locators": 94,
+        "subparts": 31,
+        "collision_shapes": 48,
+        "wheels": 18,
+        "interactions": 6,
+        "internal_connector_pairs": 25,
+        "external_connections": 5,
+        "subsystems": 38,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "existing_data_bindings_unchanged": true,
+    "weapon_status_html_unchanged": true,
+    "weapon_css_unchanged": true,
+    "unchanged_vehicle_resource_files": 84,
+    "assembly_physics_unchanged": true,
+    "browser_preview": "previews/m1a2-gps-preview.png",
+    "preview_contains_labelled_sample_data": true,
+    "game_tested": false,
+    "installed_into_game": false
+  }
+}

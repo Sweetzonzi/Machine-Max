@@ -1,0 +1,31 @@
+{
+  "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
+  "type": "track",
+  "material": "machine_max:track_steel",
+  "thickness_mm": 65.625,
+  "durability_per_link": 20,
+  "length_per_link": 0.1875,
+  "tension": {
+    "enabled": true,
+    "stiffness": 12000,
+    "damping": 900,
+    "preload": 0,
+    "slack": 0.015,
+    "max_force": 800
+  },
+  "visual": {
+    "model": "t90a:t90a_track.geo",
+    "texture": "t90a:textures/part/t90a.png",
+    "icon": "t90a:textures/icon/t90a_track.png"
+  },
+  "sounds": {
+    "hit_un_pen": {
+      "sound_id": "machine_max:part.collision.terrain.hard_metal",
+      "range": 64
+    },
+    "hit_pen": {
+      "sound_id": "machine_max:part.collision.terrain.hard_metal",
+      "range": 64
+    }
+  }
+}

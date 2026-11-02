@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "version": "0.1.14",
+  "status": "ESSA visual placeholder only, awaiting thermal implementation",
+  "placeholder": {
+    "group": {
+      "name": "MM_ESSA_Placeholder",
+      "uuid": "e8b57b99-248b-48d9-a5c9-7b2b62b0c6e2",
+      "parent": "T90Up"
+    },
+    "locator": {
+      "name": "essa_thermal_placeholder",
+      "uuid": "062ab606-6d60-5092-a202-33f07dc54cbe",
+      "position": [
+        -14.125,
+        43.3215,
+        27.20615
+      ],
+      "parent": "MM_ESSA_Placeholder"
+    },
+    "head": {
+      "uuid": "6a8583ca-467c-6b08-3ab4-54932fb23259",
+      "parent": "MM_ESSA_Placeholder"
+    },
+    "external_geometry_preserved": true,
+    "subsystem_created": false,
+    "camera_discovery_created": false
+  },
+  "thermal_subsystem": false,
+  "thermal_camera_discovery": false,
+  "thermal_hud": false,
+  "thermal_control_group": false,
+  "all_part_subsystem_control_and_hud_definitions_bytewise_unchanged": true,
+  "all_existing_elements_uvs_textures_and_groups_preserved": true,
+  "active_optics_unchanged": [
+    "1G46 gunner daylight",
+    "TKN-4S commander daylight"
+  ],
+  "native_validation": {
+    "ok": true,
+    "count": 0,
+    "issues": [],
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "game_tested": false,
+  "mod_jars_edited": false
+}

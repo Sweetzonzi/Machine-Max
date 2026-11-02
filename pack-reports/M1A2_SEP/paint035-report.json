@@ -1,0 +1,69 @@
+{
+  "version": "0.3.5",
+  "paint": {
+    "id": "olive",
+    "resource": "m1a2_sep:textures/part/m1a2_sep_olive.png",
+    "source": "Original user-supplied BB model second embedded texture",
+    "source_uuid": "9d636e57-5e6e-3c71-c745-ba8490dbfbff",
+    "original_png_bytes_preserved": true,
+    "sha256": "bb5f9f127d87116ad2a6b92cf6304a7e6a962383233aebc6713686b5efbe3c22",
+    "dimensions": [
+      1024,
+      1024
+    ],
+    "parts": [
+      "m1a2_hull",
+      "m1a2_hull_armor_left",
+      "m1a2_hull_armor_right",
+      "m1a2_turret",
+      "m1a2_turret_armor_left",
+      "m1a2_turret_armor_right"
+    ],
+    "order": [
+      "default",
+      "olive"
+    ],
+    "scope": "Spray can changes one independent Part per use; repeat to return to default."
+  },
+  "validation": {
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 52,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 146,
+        "locators": 94,
+        "subparts": 31,
+        "collision_shapes": 48,
+        "wheels": 18,
+        "interactions": 6,
+        "internal_connector_pairs": 25,
+        "external_connections": 5,
+        "subsystems": 38,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "unchanged_support_files": 80,
+    "bb_geometry_unchanged": true,
+    "original_textures_unchanged": true,
+    "game_tested": false,
+    "installed_into_game": false,
+    "mod_jar_changed": false
+  }
+}

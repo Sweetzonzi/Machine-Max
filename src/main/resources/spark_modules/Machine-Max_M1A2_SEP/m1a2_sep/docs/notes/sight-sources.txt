@@ -1,0 +1,22 @@
+M1A2 GPS sight — community visual references, 0.3.3
+
+Public reference: https://wtliker.com/resources/3365/
+Title: M1系列通用瞄具
+WTLIKER uploader: 赤色长空 (repost)
+Original post: https://live.warthunder.com/post/889646/en/
+Original post account: shangxiang
+Observed reference: green circular center with an inner square and separated horizontal marks.
+
+Also located: https://wtliker.com/resources/3716/
+Title: M1SEP瞄具，顶级房所有的载具都通用
+Uploader: YNnjr. File listed as ZIP. Its normal download route requires login; source archive was not obtained or used.
+
+Discovery index: https://wtliker.com/resources/categories/22/
+Historical collection considered: https://wtliker.com/resources/7706/
+
+Implementation: newly written HTML/CSS for MachineMax AUI, using simple geometric marks observed in the public M1 preview. No community archive, screenshot, texture, or BLK code is redistributed in this pack. This is not a conversion of the original War Thunder files or a certified historical reproduction.
+Reticle remains fixed in display size; marks are not a calibrated mil or ballistic scale. Zoom, heading, pitch, chambered ammunition, loading state and reserve ammunition use existing MachineMax data bindings. War Thunder range, PLGR, target coordinates and FTL labels are not supplied by this UI.
+No CRT, thermal imaging, rangefinder, or separate client addon is included.
+Reference checked: 2026-10-28.
+
+0.3.4 correction: removed the circular War Thunder aiming overlay mistakenly used as part of the reference reticle. The bottom-center field is reserved for range (currently ---- / NO RANGE); left and right fields show actual gun and feed status. There is no range query in the current HudMolangContext/HudViewSnapshot.

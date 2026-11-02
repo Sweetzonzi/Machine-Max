@@ -1,0 +1,6 @@
+{
+  "template": "t90a:t90a",
+  "tooltip": "t90a:tooltips/t90a.html",
+  "icon": "t90a:textures/icon/t90a.png",
+  "render_background": true
+}

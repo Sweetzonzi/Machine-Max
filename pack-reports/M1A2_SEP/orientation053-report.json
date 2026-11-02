@@ -1,0 +1,441 @@
+{
+  "version": "0.5.3",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\tools/../backups/0.5.2-before-turret-up",
+  "semantics": "Gun fixed up; hull rotates by positive joint yaw in CSS coordinates. Numeric L/R remains turret relative to hull.",
+  "cause": "Installed AUI observeStyleMask returns 0 when only a transform custom variable changes; a literal transform change returns mask 17 and invalidates the transform cache.",
+  "fix": "Choose a literal CSS rotation class from the live joint yaw using a balanced MoLang selector.",
+  "angle_step_deg": 1,
+  "max_rounding_error_deg": 0.5,
+  "css_classes": 360,
+  "expression_depth_max": 9,
+  "unchanged_seats": 7,
+  "unchanged_cameras": 3,
+  "unchanged_magazines": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "verification": {
+    "native_plugin": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 58,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 155,
+        "locators": 103,
+        "subparts": 33,
+        "collision_shapes": 55,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 45,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "orientation": {
+      "ok": true,
+      "version": "0.5.3",
+      "actual_installed_aui_parser": {
+        "ok": true,
+        "actual_installed_aui_tokenizer": true,
+        "binding_attributes": 4,
+        "tokens": 54
+      },
+      "decoded_bindings_match": true,
+      "actual_installed_spark_compiler": {
+        "ok": true,
+        "actual_installed_spark_compiler": true,
+        "reused_compiled_expression": true,
+        "changing_input_cases": 5762,
+        "host_parts": 2,
+        "class_count": 360,
+        "angular_step_deg": 1
+      },
+      "actual_installed_aui_style_observer": {
+        "ok": true,
+        "actual_installed_aui_style_observer": true,
+        "variable_transform_dirty_mask": 0,
+        "literal_transform_dirty_mask": 17,
+        "literal_change_invalidates_transform": true
+      },
+      "literal_angle_styles": 360,
+      "gun_fixed_up": true,
+      "hull_rotation_sign": "Positive joint yaw as CSS clockwise rotation; the hull points opposite the turret’s relative direction.",
+      "angular_resolution_deg": 1,
+      "max_rounding_error_deg": 0.5,
+      "visual": {
+        "ok": true,
+        "visual_only": true,
+        "runtime_data_bound": false,
+        "same_element_reused": true,
+        "frames": [
+          {
+            "angle": 0,
+            "hull": "matrix(1, 0, 0, 1, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 44,
+            "hull": "matrix(0.71934, 0.694658, -0.694658, 0.71934, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 90,
+            "hull": "matrix(0, 1, -1, 0, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 135,
+            "hull": "matrix(-0.707107, 0.707107, -0.707107, -0.707107, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 179,
+            "hull": "matrix(-0.999848, 0.0174524, -0.0174524, -0.999848, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 181,
+            "hull": "matrix(-0.999848, -0.0174524, 0.0174524, -0.999848, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 225,
+            "hull": "matrix(-0.707107, -0.707107, 0.707107, -0.707107, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 270,
+            "hull": "matrix(0, -1, 1, 0, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 316,
+            "hull": "matrix(0.71934, -0.694658, 0.694658, 0.71934, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 359,
+            "hull": "matrix(0.999848, -0.0174524, 0.0174524, 0.999848, 0, 0)",
+            "cannon": "none"
+          },
+          {
+            "angle": 0,
+            "hull": "matrix(1, 0, 0, 1, 0, 0)",
+            "cannon": "none"
+          }
+        ]
+      },
+      "all_parts_subsystems_weapons_and_magazines_unchanged": true,
+      "all_native_geometry_and_textures_unchanged": true,
+      "runtime_mod_sha256": "e05149ac88f31429a162a2d3df2f078c83595faff2ff20d093a01d7d0ae14c92",
+      "spark_sha256": "acfe972b82937ab2ad3cbaf82b7869b3cef5751464bd310be162298c871b7613",
+      "game_tested": false,
+      "mod_jar_changed": false
+    },
+    "weapons_regression": {
+      "ok": true,
+      "states": [
+        {
+          "role": "gunner",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.gunner_main_only",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.gunner_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.gunner_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.commander_observe",
+          "main_fire": [],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.commander_override_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.commander_override_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        }
+      ],
+      "transitions": [
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        }
+      ],
+      "state_count": 6,
+      "transition_count": 18,
+      "distinct_mg_fire_and_aim_channels": true,
+      "one_launcher_per_mg_controller": true,
+      "commander_driving_and_citv_preserved": true,
+      "main_scope_controller_preserved": true,
+      "selected_only_huds": true,
+      "scope": "Offline state and route model based on cached target tables, merged active channel keys, and clearInputSignals on group changes. No Minecraft runtime test."
+    },
+    "prior_files_unchanged": 312,
+    "changed_prior_files": [
+      "README.txt",
+      "m1a2_sep/documents/orientation/indicator.css",
+      "m1a2_sep/documents/orientation/indicator.html",
+      "meta.json"
+    ],
+    "new_files": [
+      "orientation053-report.json",
+      "更新说明-0.5.3.txt"
+    ],
+    "native_export_matches_canonical_parts_and_geometry": true
+  },
+  "limitations": [
+    "Native AUI style invalidation, parser and Spark compiler tested offline; no Minecraft rendering/input acceptance.",
+    "Hull orientation is quantized to 1 degree; number readout keeps the existing rounded relative turret angle."
+  ]
+}

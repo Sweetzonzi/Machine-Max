@@ -1,0 +1,57 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "t90a:textures/icon/t90a_hull_era_left.png",
+  "vehicle_durability_rate": 0.06,
+  "functional_threshold": 0.6,
+  "variants": {
+    "standard": {
+      "model": "t90a:t90a.geo",
+      "textures": {
+        "default": "t90a:textures/part/t90a.png",
+        "green": "t90a:textures/part/t90a_green.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/decoration",
+        "machine_max:addon_armor",
+        "t90a:armor/hull_era_left",
+        "machine_max:series/t90a"
+      ],
+      "sub_parts": {
+        "sub_part.t90a.hull_era_left": {
+          "start_bone": "MM_hull_era_left",
+          "end_bones": [],
+          "durability": 85,
+          "mass": 250,
+          "mass_center": "hull_era_left_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_hull_era_left": {
+              "id": "part",
+              "type": "box",
+              "material": "t90a:kontakt5",
+              "thickness": 60
+            }
+          },
+          "connectors": {
+            "connector.t90a.hull_era_left_host": {
+              "locator": "hull_era_left_mount",
+              "definition": "t90a:armor_right",
+              "overwrite": {
+                "direction": "xp",
+                "required_tags": [
+                  "t90a:hull"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

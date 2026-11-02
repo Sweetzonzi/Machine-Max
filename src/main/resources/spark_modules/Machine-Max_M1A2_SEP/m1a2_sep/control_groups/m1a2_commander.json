@@ -1,0 +1,68 @@
+{
+  "base_group": {
+    "name": "controlGroup.m1a2_sep.commander_observe",
+    "control_mode": "ground",
+    "view_targets": {
+      "aim_citv": [
+        "global"
+      ]
+    },
+    "move_targets": {
+      "move_input": [
+        "global"
+      ]
+    },
+    "regular_targets": {
+      "regular_input": [
+        "global"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "name": "controlGroup.m1a2_sep.commander_override_coax762",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_input_p1": [
+          "subsystem.m1a2_sep.main_weapon"
+        ],
+        "aim_coax762_p1": [
+          "subsystem.m1a2_sep.coax_762_controller"
+        ]
+      },
+      "main_weapon_targets": {
+        "fire_input_p1": [
+          "subsystem.m1a2_sep.main_weapon"
+        ]
+      },
+      "secondary_weapon_targets": {
+        "fire_coax762_p1": [
+          "subsystem.m1a2_sep.coax_762_controller"
+        ]
+      }
+    },
+    {
+      "name": "controlGroup.m1a2_sep.commander_override_csamm",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_input_p1": [
+          "subsystem.m1a2_sep.main_weapon"
+        ],
+        "aim_csamm_p1": [
+          "subsystem.m1a2_sep.coax_controller"
+        ]
+      },
+      "main_weapon_targets": {
+        "fire_input_p1": [
+          "subsystem.m1a2_sep.main_weapon"
+        ]
+      },
+      "secondary_weapon_targets": {
+        "fire_csamm_p1": [
+          "subsystem.m1a2_sep.coax_controller"
+        ]
+      }
+    }
+  ],
+  "active_index": -1
+}

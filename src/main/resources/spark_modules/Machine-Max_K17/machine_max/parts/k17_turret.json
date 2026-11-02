@@ -7,6 +7,7 @@
     "textures": "machine_max:textures/part/k17/k17.png",
     "animations": "machine_max:k17",
     "tags": [
+      "machine_max:category/structural",
       "machine_max:category/weapon",
       "machine_max:type/land",
       "machine_max:series/k17"

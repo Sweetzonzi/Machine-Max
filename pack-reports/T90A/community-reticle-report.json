@@ -1,0 +1,10 @@
+{
+  "source_page": "https://wtliker.com/resources/7706/",
+  "download_author_page": "https://live.warthunder.com/post/1146121/en/",
+  "source_file": "Usersights/ussr_t_80u/1g46_realistic.blk",
+  "source_sha256": "54a6d3594412d5afef622734b56509190dde76b292b4e1fd9622b4863474cc83",
+  "line_segments": 1960,
+  "conversion": "SVG path with source coordinates; static reticle geometry only; original WT ballistics/movement excluded",
+  "reason": "Matching 1G46 daylight channel already identified from real T-90A photos; archive T-90A folder instead offers Sosna-day and ESSA variants",
+  "game_ballistics_calibrated": false
+}

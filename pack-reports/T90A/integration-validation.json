@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "errors": [],
+  "seats": 4,
+  "visible_open_seats": 1,
+  "mg_scope": false,
+  "weapons": 3,
+  "ready_round_capacity": 22,
+  "main_reload_seconds": 7.5,
+  "sight": "1G46 daylight 2.7x–12x; Steel Witness line geometry",
+  "commander_sight": "TKN-4S day 1x–8x; photo-based engraving",
+  "external_joint_types_verified": 6,
+  "turret_era_independent_parts": 2,
+  "game_tested": false
+}

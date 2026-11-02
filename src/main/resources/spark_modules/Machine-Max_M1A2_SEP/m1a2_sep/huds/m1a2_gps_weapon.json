@@ -1,0 +1,7 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "m1a2_sep/m1a2_gps/weapon.html",
+  "defaults": {
+    "--display": "#b4ff81"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "version": "0.3.2",
+  "boarding": {
+    "cause": "Accurate interaction was enclosed by the rear M2 yaw collision box, so the solid box intercepted the interaction ray.",
+    "bone": "MM_Interact_aft_mg",
+    "old_cube": {
+      "origin": [
+        -15,
+        49,
+        -4
+      ],
+      "size": [
+        8,
+        7,
+        8
+      ],
+      "uv": {}
+    },
+    "new_cube": {
+      "origin": [
+        -21.5,
+        45,
+        -10.5
+      ],
+      "size": [
+        21,
+        15,
+        20.6
+      ],
+      "uv": {}
+    },
+    "outside_hitbox_margin_bb": {
+      "min_faces": [
+        1.5,
+        1,
+        1.5
+      ],
+      "max_faces": [
+        1.5,
+        1.6999999999999993,
+        1.5
+      ]
+    },
+    "parent": "bone8",
+    "interaction": "Aim at rear M2 shield upper rim or outer sides and press the configured interact key."
+  },
+  "external_mg_views": {
+    "removed_sights": [
+      "aft_mg_sight",
+      "port_mg_sight"
+    ],
+    "seat_camera_discovery": {},
+    "first_person": true,
+    "third_person": true,
+    "aim_fire_controls_unchanged": true
+  },
+  "checks": {
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 52,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 146,
+        "locators": 94,
+        "subparts": 31,
+        "collision_shapes": 48,
+        "wheels": 18,
+        "interactions": 6,
+        "internal_connector_pairs": 25,
+        "external_connections": 5,
+        "subsystems": 38,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "only_changed_geometry_bone": [
+      "MM_Interact_aft_mg"
+    ],
+    "unchanged_support_files": 61,
+    "six_seats": true,
+    "template_physics_and_tracks_unchanged": true,
+    "game_tested": false,
+    "installed_into_game": false,
+    "mod_jar_changed": false
+  }
+}

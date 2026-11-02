@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "version": "0.1.17",
+  "subsystem": "subsystem.t90a.commander_day_sight",
+  "horizontal_stabilized": true,
+  "vertical_stabilized": true,
+  "runtime_change": "Enable commander day camera horizontal stabilization at user request",
+  "all_other_runtime_fields_and_hud_assets_unchanged": true,
+  "all_model_geometry_and_markers_unchanged": true,
+  "native_validation": {
+    "ok": true,
+    "count": 0,
+    "issues": [],
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "game_tested": false,
+  "mod_jars_edited": false
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "style": "m1a2_sep:m1a2_coax_762_feed",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_left",
+    "offset": [
+      8,
+      -52,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "selected_only"
+  }
+]

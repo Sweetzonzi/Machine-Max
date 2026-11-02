@@ -36,6 +36,8 @@ def syncTargets = [
         [pack: 'Machine-Max_K17', namespace: 'machine_max'],
         [pack: 'Machine-Max_MTLB', namespace: 'machine_max'],
         [pack: 'Machine-Max_Sdkfz234', namespace: 'machine_max'],
+        [pack: 'Machine-Max_M1A2_SEP', namespace: 'm1a2_sep'],
+        [pack: 'Machine-Max_T90A', namespace: 't90a'],
         [pack: 'Machine-Max_Pack_Template', namespace: 'namespace'],
 ]
 

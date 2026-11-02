@@ -1,0 +1,70 @@
+{
+  "version": "0.4.1",
+  "problem": "yr JSON limits are negated and exchanged by MachineMax. Prior audit checked joint angle but did not compare final body yaw, allowing the mirrored sector toward M240.",
+  "config_yr": {
+    "lower_limit": 65,
+    "upper_limit": 242.5,
+    "damping": 1.82771
+  },
+  "actual_bb_yaw_deg": [
+    -242.5,
+    -65
+  ],
+  "yaw_span_deg": 177.5,
+  "initial_yaw_deg": -155,
+  "geometry_changed": false,
+  "seat_and_entry_positions_changed": false,
+  "other_weapon_ranges_changed": false,
+  "validation": {
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "candidate_pose_pairs": 1925561,
+    "selected_aft_poses": 1440,
+    "visible_m240_or_rws_intersections": 0,
+    "selected_new_fixed_decor_intersections": 0,
+    "real_installed_bullet_body_direction_check": "Dp_Mt_Libbulletjme version 23.1.0 initializing\r\nactual_body_sector -242.500 -65.000\r\ntarget 205.00 body_yaw -155.000 expected -155.000\r\ntarget 180.00 body_yaw -180.000 expected -180.000\r\ntarget 155.00 body_yaw -205.000 expected -205.000\r\ntarget 130.00 body_yaw -230.000 expected -230.000\r\ntarget 115.00 body_yaw -242.500 expected -242.500\r\ntarget 110.00 body_yaw -242.500 expected -242.500\r\ntarget 115.00 body_yaw -242.500 expected -242.500\r\ntarget 180.00 body_yaw -180.000 expected -180.000\r\ntarget 240.00 body_yaw -120.000 expected -120.000\r\ntarget 280.00 body_yaw -80.000 expected -80.000\r\ntarget 290.00 body_yaw -70.000 expected -70.000\r\ntarget 295.00 body_yaw -65.000 expected -65.000\r\ntarget 300.00 body_yaw -65.000 expected -65.000\r\ntarget 290.00 body_yaw -70.000 expected -70.000\r\ntarget 240.00 body_yaw -120.000 expected -120.000\r\ntarget 180.00 body_yaw -180.000 expected -180.000\r\ntarget 120.00 body_yaw -240.000 expected -240.000\r\ntarget 280.00 body_yaw -80.000 expected -80.000\r\ntarget 120.00 body_yaw -240.000 expected -240.000\r\ntarget 280.00 body_yaw -80.000 expected -80.000\r\ntarget 205.00 body_yaw -155.000 expected -155.000\r\ntarget 0.00 body_yaw -65.000 expected -65.000\r\ntarget 205.00 body_yaw -155.000 expected -155.000\r\n",
+    "source_reference": "AbstractConnector.adjustJoint: yr engine lower=-JSON upper, engine upper=-JSON lower; body yaw compared directly using its quaternion.",
+    "proxy_note": "Some coarse hit-box envelopes overlap at extreme poses. Existing SubPart.onPreCollision disables collision among SubParts in the same assembly.",
+    "known_original_geometry_note": "At high elevation aft M2 receiver intersects the original hatch ring; antenna clipping remains allowed by user.",
+    "game_tested": false,
+    "mod_jar_changed": false,
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 53,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 152,
+        "locators": 99,
+        "subparts": 32,
+        "collision_shapes": 53,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 26,
+        "external_connections": 5,
+        "subsystems": 40,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "visible_geometry_identical_to_040": true,
+    "prior_pack_files_unchanged": 279,
+    "changed_prior_files": [
+      "meta.json",
+      "README.txt",
+      "m1a2_sep/parts/m1a2_turret.json"
+    ]
+  }
+}

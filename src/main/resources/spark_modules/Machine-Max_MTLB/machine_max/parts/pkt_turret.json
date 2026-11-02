@@ -6,6 +6,7 @@
     "model": "machine_max:mtlb.geo",
     "textures": "machine_max:textures/part/mtlb/mtlb.png",
     "tags": [
+      "machine_max:category/structural",
       "machine_max:category/weapon",
       "machine_max:type/land"
     ],

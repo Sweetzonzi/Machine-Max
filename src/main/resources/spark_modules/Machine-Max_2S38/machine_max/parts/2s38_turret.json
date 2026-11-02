@@ -7,6 +7,7 @@
       "model": "machine_max:2s38.geo",
       "textures": "machine_max:textures/part/2s38/2s38.png",
       "tags": [
+        "machine_max:category/structural",
         "machine_max:category/weapon",
         "machine_max:type/land",
         "machine_max:series/2s38"
@@ -25,6 +26,8 @@
             -1,
             -1
           ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
           "hydro_priority": 10,
           "hydrodynamics": {
             // 碰撞箱含弹仓/装填机内部箱体，7.1 m² 约为外廓三倍，系数按 Cd·A≈2.1 折算

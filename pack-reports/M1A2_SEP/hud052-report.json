@@ -1,0 +1,487 @@
+{
+  "version": "0.5.2",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\tools/../backups/0.5.1-before-hud-magazines",
+  "cause": "AUI 1.2.8 tokenizer ends tags at raw >, even inside quoted attributes. Root class and L/R text expressions were truncated; unlinked default hides the needle.",
+  "fix": "Encode HTML attribute comparisons as &gt; and &lt;; verify decoded expressions with the installed AUI tokenizer.",
+  "magazines": [
+    {
+      "name": "rws_loader",
+      "capacity": 100,
+      "seconds": 8,
+      "rpm": 550,
+      "regen_per_minute": 750
+    },
+    {
+      "name": "aft_mg_loader",
+      "capacity": 100,
+      "seconds": 8,
+      "rpm": 550,
+      "regen_per_minute": 750
+    },
+    {
+      "name": "port_mg_loader",
+      "capacity": 200,
+      "seconds": 6,
+      "rpm": 750,
+      "regen_per_minute": 2000
+    }
+  ],
+  "unchanged_coax": [
+    "coax_loader",
+    "coax_762_loader"
+  ],
+  "automatic_empty_only": true,
+  "manual_reload_key": false,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "verification": {
+    "native_plugin": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 58,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 155,
+        "locators": 103,
+        "subparts": 33,
+        "collision_shapes": 55,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 45,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "hud_and_magazines": {
+      "ok": true,
+      "version": "0.5.2",
+      "actual_aui_parser_probes": [
+        {
+          "page": "orientation/indicator.html",
+          "ok": true,
+          "actual_installed_aui_tokenizer": true,
+          "binding_attributes": 6,
+          "tokens": 54,
+          "all_decoded_attributes_match_standard_html_parser": true
+        },
+        {
+          "page": "weapon_hud_components/m1a2_m2_feed.html",
+          "ok": true,
+          "actual_installed_aui_tokenizer": true,
+          "binding_attributes": 19,
+          "tokens": 115,
+          "all_decoded_attributes_match_standard_html_parser": true
+        },
+        {
+          "page": "weapon_hud_components/m1a2_m240_feed.html",
+          "ok": true,
+          "actual_installed_aui_tokenizer": true,
+          "binding_attributes": 19,
+          "tokens": 115,
+          "all_decoded_attributes_match_standard_html_parser": true
+        }
+      ],
+      "old_truncation_reproduced": true,
+      "expressions_unchanged_after_entity_decode": true,
+      "runtime_mod_sha256": "e05149ac88f31429a162a2d3df2f078c83595faff2ff20d093a01d7d0ae14c92",
+      "nested_aui_sha256": "7636ae43311b5401b13776799fb79cf4122b23db7fe4ae6ca03a94b14acbc0f6",
+      "magazines": [
+        {
+          "name": "rws_loader",
+          "capacity": 100,
+          "seconds": 8,
+          "rpm": 550,
+          "regen_per_minute": 750,
+          "reload_ticks": 160,
+          "no_partial_magazine_regeneration": true,
+          "empty_waits_until_full_reload": true,
+          "scope": "Offline state model with timing formula confirmed in installed runtime bytecode."
+        },
+        {
+          "name": "aft_mg_loader",
+          "capacity": 100,
+          "seconds": 8,
+          "rpm": 550,
+          "regen_per_minute": 750,
+          "reload_ticks": 160,
+          "no_partial_magazine_regeneration": true,
+          "empty_waits_until_full_reload": true,
+          "scope": "Offline state model with timing formula confirmed in installed runtime bytecode."
+        },
+        {
+          "name": "port_mg_loader",
+          "capacity": 200,
+          "seconds": 6,
+          "rpm": 750,
+          "regen_per_minute": 2000,
+          "reload_ticks": 120,
+          "no_partial_magazine_regeneration": true,
+          "empty_waits_until_full_reload": true,
+          "scope": "Offline state model with timing formula confirmed in installed runtime bytecode."
+        }
+      ],
+      "installed_loader_timing_formula_confirmed": true,
+      "both_coax_loaders_unchanged": true,
+      "all_part_definitions_unchanged": true,
+      "all_native_geometry_and_textures_unchanged": true,
+      "game_tested": false,
+      "mod_jar_changed": false
+    },
+    "control_routes": {
+      "ok": true,
+      "pack": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\Machine-Max_M1A2_SEP",
+      "checked_routes": 46,
+      "errors": [],
+      "citv_chain": {
+        "seat_owner": "sub_part.m1a2_sep.turret",
+        "controller_owner": "sub_part.m1a2_sep.citv_yaw",
+        "seat_targets": [
+          "global"
+        ],
+        "bus_aim_citv_subscribers": [
+          "subsystem.m1a2_sep.citv_controller"
+        ],
+        "controller_driver_same_subpart": true,
+        "driver_channel_accepted": true,
+        "fire_inputs": []
+      },
+      "scope": "Offline receiver-name scope and dedicated-channel subscription audit, following ISignalSender.setTargetFromNames and ISignalBus.broadcast. Not a Minecraft runtime test."
+    },
+    "weapons_regression": {
+      "ok": true,
+      "states": [
+        {
+          "role": "gunner",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.gunner_main_only",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.gunner_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.gunner_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.commander_observe",
+          "main_fire": [],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.commander_override_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.commander_override_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        }
+      ],
+      "transitions": [
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        }
+      ],
+      "state_count": 6,
+      "transition_count": 18,
+      "distinct_mg_fire_and_aim_channels": true,
+      "one_launcher_per_mg_controller": true,
+      "commander_driving_and_citv_preserved": true,
+      "main_scope_controller_preserved": true,
+      "selected_only_huds": true,
+      "scope": "Offline state and route model based on cached target tables, merged active channel keys, and clearInputSignals on group changes. No Minecraft runtime test."
+    },
+    "magazine_hud_layout": {
+      "ok": true,
+      "panels": [
+        {
+          "width": 430,
+          "inside": true,
+          "captions": [
+            "550 RPM | BASE DMG 24 | PEN 16",
+            "100 RD BOX | AUTO RELOAD 8 S"
+          ]
+        },
+        {
+          "width": 430,
+          "inside": true,
+          "captions": [
+            "750 RPM | BASE DMG 10 | PEN 8",
+            "200 RD BOX | AUTO RELOAD 6 S"
+          ]
+        }
+      ],
+      "visual_only": true,
+      "runtime_data_bound": false
+    },
+    "prior_files_unchanged": 304,
+    "changed_prior_files": [
+      "README.txt",
+      "m1a2_sep/documents/orientation/indicator.html",
+      "m1a2_sep/documents/weapon_hud_components/hud.css",
+      "m1a2_sep/documents/weapon_hud_components/m1a2_m240_feed.html",
+      "m1a2_sep/documents/weapon_hud_components/m1a2_m2_feed.html",
+      "m1a2_sep/subsystems/aft_mg_loader.json",
+      "m1a2_sep/subsystems/port_mg_loader.json",
+      "m1a2_sep/subsystems/rws_loader.json",
+      "meta.json",
+      "weapon-parameters.txt"
+    ],
+    "new_files": [
+      "hud052-report.json",
+      "更新说明-0.5.2.txt"
+    ],
+    "native_export_matches_canonical_parts_and_geometry": true,
+    "both_coax_weapons_controls_physics_armor_and_paints_preserved": true
+  },
+  "limitations": [
+    "Native AUI tokenizer checked offline; no Minecraft rendering or input acceptance.",
+    "Magazine changes use automatic empty-only batch reload, without a new manual reload key.",
+    "Magazine stock excludes any chambered round."
+  ]
+}

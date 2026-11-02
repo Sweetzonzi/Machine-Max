@@ -1,0 +1,1057 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "m1a2_sep:textures/icon/m1a2_turret.png",
+  "vehicle_durability_rate": 0.5,
+  "functional_threshold": 0.6,
+  "variants": {
+    "desert": {
+      "model": "m1a2_sep:m1a2_sep.geo",
+      "textures": {
+        "default": "m1a2_sep:textures/part/m1a2_sep.png",
+        "olive": "m1a2_sep:textures/part/m1a2_sep_olive.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:category/weapon",
+        "m1a2_sep:turret",
+        "machine_max:series/m1a2"
+      ],
+      "sub_parts": {
+        "sub_part.m1a2_sep.turret": {
+          "start_bone": "PaoTa",
+          "end_bones": [
+            "HuoPao",
+            "MM_RWS_Yaw",
+            "MM_PortMG_Yaw",
+            "bone8",
+            "MM_TurretArmorLeft",
+            "MM_TurretArmorRight",
+            "MM_CITV_Yaw"
+          ],
+          "durability": 440,
+          "mass": 2850,
+          "mass_center": "turret_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_TurretCore": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_TurretFrontLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_du_composite",
+              "thickness": 609,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.3333333333333333
+                }
+              }
+            },
+            "MM_TurretFrontRight": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_du_composite",
+              "thickness": 657.8,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.3333333333333333
+                }
+              }
+            },
+            "MM_TurretRear": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            },
+            "MM_TurretRoof": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 25.4
+            },
+            "MM_TurretSideLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_composite",
+              "thickness": 472,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.2777777777777778
+                }
+              }
+            },
+            "MM_TurretSideRight": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_composite",
+              "thickness": 472,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.2777777777777778
+                }
+              }
+            },
+            "MM_TurretRoofFront": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 25.4
+            },
+            "MM_TurretBustleRoof": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 12.7
+            },
+            "MM_TurretBustleLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_composite",
+              "thickness": 47.05,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.2777777777777778
+                }
+              }
+            },
+            "MM_TurretBustleRight": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_composite",
+              "thickness": 47.05,
+              "overwrite": {
+                "armor": {
+                  "rha": 1,
+                  "decay_rha": 0.2777777777777778
+                }
+              }
+            }
+          },
+          "interact_boxes": {
+            "interact.m1a2_sep.gunner": {
+              "bone": "MM_Interact_gunner",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.gunner_seat"
+                ]
+              }
+            },
+            "interact.m1a2_sep.commander": {
+              "bone": "MM_Interact_commander",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.commander_seat"
+                ]
+              }
+            },
+            "interact.m1a2_sep.loader": {
+              "bone": "MM_Interact_loader",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.loader_seat"
+                ]
+              }
+            },
+            "interact.m1a2_sep.port_mg": {
+              "bone": "MM_Interact_port_mg",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.port_mg_seat"
+                ]
+              }
+            },
+            "interact.m1a2_sep.rws": {
+              "bone": "MM_Interact_rws",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.rws_seat"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.turret_hull": {
+              "locator": "turret_hull_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {
+                "required_tags": [
+                  "m1a2_sep:hull"
+                ],
+                "integrity": 100,
+                "impact_absorption": 0.1,
+                "impact_reduction": 8,
+                "impact_multiplier": 1
+              }
+            },
+            "connector.m1a2_sep.turret_gun": {
+              "locator": "turret_gun_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -10,
+                    "upper_limit": 22,
+                    "damping": 2
+                  }
+                }
+              }
+            },
+            "connector.m1a2_sep.turret_rws": {
+              "locator": "turret_rws_mount",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.m1a2_sep.turret_port_mg": {
+              "locator": "turret_port_mg_mount",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.m1a2_sep.turret_aft_mg": {
+              "locator": "turret_aft_mg_mount",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.m1a2_sep.turret_armor_left": {
+              "locator": "turret_armor_left_socket",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {
+                "required_tags": [
+                  "m1a2_sep:armor/turret_left"
+                ],
+                "integrity": 60,
+                "impact_absorption": 0.1,
+                "impact_reduction": 8
+              }
+            },
+            "connector.m1a2_sep.turret_armor_right": {
+              "locator": "turret_armor_right_socket",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {
+                "required_tags": [
+                  "m1a2_sep:armor/turret_right"
+                ],
+                "integrity": 60,
+                "impact_absorption": 0.1,
+                "impact_reduction": 8
+              }
+            },
+            "connector.m1a2_sep.turret_citv": {
+              "locator": "turret_citv_mount",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.gunner_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "gunner_seat",
+              "control_group_preset": "m1a2_sep:m1a2_gunner",
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "subsystem.m1a2_sep.gunner_sight",
+                  "subsystem.m1a2_sep.gunner_sight_medium",
+                  "subsystem.m1a2_sep.gunner_sight_high"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+            },
+            "subsystem.m1a2_sep.commander_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "commander_seat",
+              "control_group_preset": "m1a2_sep:m1a2_commander",
+              "camera_discovery_targets": {
+                "commander_citv": [
+                  "global"
+                ],
+                "gunner_sight": [
+                  "subsystem.m1a2_sep.gunner_sight",
+                  "subsystem.m1a2_sep.gunner_sight_medium",
+                  "subsystem.m1a2_sep.gunner_sight_high"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+            },
+            "subsystem.m1a2_sep.loader_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "loader_seat",
+              "control_group_preset": "machine_max:empty",
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+            },
+            "subsystem.m1a2_sep.azimuth_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:m1a2_azimuth",
+              "connector": "connector.m1a2_sep.turret_hull"
+            },
+            "subsystem.m1a2_sep.elevation_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:m1a2_elevation",
+              "connector": "connector.m1a2_sep.turret_gun"
+            },
+            "subsystem.m1a2_sep.main_weapon": {
+              "type": "machine_max:weapon_controller",
+              "definition": "machine_max:main_weapon_controller",
+              "control_outputs": {
+                "weapon_control": [
+                  "subsystem.m1a2_sep.azimuth_driver",
+                  "subsystem.m1a2_sep.elevation_driver"
+                ],
+                "weapon.gun": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_gun_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_gun_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_gps_weapon"
+            },
+            "subsystem.m1a2_sep.ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:m1a2_loader",
+              "projectile_types": {
+                "m1a2_sep:m1a2_120mm_ap": 1
+              },
+              "belt_label": "AP",
+              "discovery_outputs": {
+                "ammo_m1a2": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.coax_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:coax_controller",
+              "control_outputs": {
+                "weapon.mg.coax": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_coax_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_coax_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_coax_feed"
+            },
+            "subsystem.m1a2_sep.coax_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:coax_loader",
+              "projectile_types": {
+                "m1a2_sep:mg_12_7_ap": 1
+              },
+              "belt_label": "12.7 AP",
+              "discovery_outputs": {
+                "ammo_coax": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.port_mg_seat": {
+              "type": "machine_max:seat",
+              "definition": "m1a2_sep:external_mg_seat",
+              "locator": "port_mg_seat",
+              "control_group_preset": "m1a2_sep:m1a2_port_mg",
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "allow_use_items": false
+            },
+            "subsystem.m1a2_sep.ammo_loader_he": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:m1a2_he_loader",
+              "projectile_types": {
+                "m1a2_sep:m1a2_120mm_he": 1
+              },
+              "belt_label": "HE",
+              "discovery_outputs": {
+                "ammo_m1a2": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.rws_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "rws_seat",
+              "control_group_preset": "m1a2_sep:m1a2_rws",
+              "camera_discovery_targets": {
+                "sight_rws": [
+                  "global"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+            },
+            "subsystem.m1a2_sep.coax_762_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:coax_762_controller",
+              "control_outputs": {
+                "weapon.mg.coax_762": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_coax_762_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_coax_762_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_coax_762_feed"
+            },
+            "subsystem.m1a2_sep.coax_762_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:coax_762_loader",
+              "projectile_types": {
+                "m1a2_sep:mg_7_62_ap": 1
+              },
+              "belt_label": "7.62 AP",
+              "discovery_outputs": {
+                "ammo_coax_762": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.gunner_sight": {
+              "type": "machine_max:camera",
+              "definition": "m1a2_sep:m1a2_gunner_sight",
+              "locator": "gunner_optic"
+            },
+            "subsystem.m1a2_sep.gunner_sight_medium": {
+              "type": "machine_max:camera",
+              "definition": "m1a2_sep:m1a2_gunner_sight_medium",
+              "locator": "gunner_optic"
+            },
+            "subsystem.m1a2_sep.gunner_sight_high": {
+              "type": "machine_max:camera",
+              "definition": "m1a2_sep:m1a2_gunner_sight_high",
+              "locator": "gunner_optic"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.gun": {
+          "start_bone": "HuoPao",
+          "end_bones": [
+            "bone13"
+          ],
+          "durability": 145,
+          "mass": 550,
+          "mass_center": "gun_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunMantlet": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 150
+            },
+            "MM_CoaxReceiverHit": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.coax_launcher"
+            },
+            "MM_CoaxBarrelHit": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.coax_launcher"
+            },
+            "MM_Coax762Hit": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.coax_762_launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.gun_turret": {
+              "locator": "gun_turret_axis",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.m1a2_sep.mount_barrel": {
+              "locator": "mount_barrel",
+              "definition": "machine_max:fixed_front",
+              "internal": true,
+              "overwrite": {
+                "type": "Advanced"
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.coax_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:coax_launcher",
+              "locator": "coax_muzzle"
+            },
+            "subsystem.m1a2_sep.coax_762_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:coax_762_launcher",
+              "locator": "coax_762_muzzle"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.rws_yaw": {
+          "start_bone": "MM_RWS_Yaw",
+          "end_bones": [
+            "MM_RWS_Pitch"
+          ],
+          "mass": 40,
+          "mass_center": "rws_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_rws_yaw": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.rws_turret": {
+              "locator": "rws_turret_mount",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": -127.5,
+                    "upper_limit": 137.5,
+                    "damping": 1.82771
+                  }
+                }
+              }
+            },
+            "connector.m1a2_sep.rws_elevation": {
+              "locator": "rws_elevation",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -20,
+                    "upper_limit": 55,
+                    "damping": 1.52309
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.rws_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:rws_yaw_driver",
+              "connector": "connector.m1a2_sep.rws_turret"
+            },
+            "subsystem.m1a2_sep.rws_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:rws_pitch_driver",
+              "connector": "connector.m1a2_sep.rws_elevation"
+            },
+            "subsystem.m1a2_sep.rws_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:rws_controller",
+              "control_outputs": {
+                "aim_drive_rws": [
+                  "subsystem.m1a2_sep.rws_yaw_driver",
+                  "subsystem.m1a2_sep.rws_pitch_driver"
+                ],
+                "weapon.mg.rws": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
+            },
+            "subsystem.m1a2_sep.rws_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:rws_loader",
+              "projectile_types": {
+                "m1a2_sep:mg_12_7_ap": 1
+              },
+              "belt_label": "12.7 AP",
+              "discovery_outputs": {
+                "ammo_rws": [
+                  "global"
+                ]
+              }
+            }
+          }
+        },
+        "sub_part.m1a2_sep.rws_pitch": {
+          "start_bone": "MM_RWS_Pitch",
+          "end_bones": [],
+          "mass": 40,
+          "mass_center": "rws_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_rws_pitch": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.rws_launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.rws_pitch_lock": {
+              "locator": "rws_pitch_lock",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.rws_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:rws_launcher",
+              "locator": "rws_muzzle"
+            },
+            "subsystem.m1a2_sep.rws_sight": {
+              "type": "machine_max:sight",
+              "definition": "m1a2_sep:rws_sight",
+              "locator": "rws_optic"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.port_mg_yaw": {
+          "start_bone": "MM_PortMG_Yaw",
+          "end_bones": [
+            "MM_PortMG_Pitch"
+          ],
+          "mass": 40,
+          "mass_center": "port_mg_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_port_mg_yaw": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.port_mg_turret": {
+              "locator": "port_mg_turret_mount",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": -110,
+                    "upper_limit": 110,
+                    "damping": 1.82771
+                  }
+                }
+              }
+            },
+            "connector.m1a2_sep.port_mg_elevation": {
+              "locator": "port_mg_elevation",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -12,
+                    "upper_limit": 55,
+                    "damping": 1.52309
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.port_mg_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:port_mg_yaw_driver",
+              "connector": "connector.m1a2_sep.port_mg_turret"
+            },
+            "subsystem.m1a2_sep.port_mg_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:port_mg_pitch_driver",
+              "connector": "connector.m1a2_sep.port_mg_elevation"
+            },
+            "subsystem.m1a2_sep.port_mg_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:port_mg_controller",
+              "control_outputs": {
+                "aim_drive_port_mg": [
+                  "subsystem.m1a2_sep.port_mg_yaw_driver",
+                  "subsystem.m1a2_sep.port_mg_pitch_driver"
+                ],
+                "weapon.mg.port_mg": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_m240_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_m240_feed"
+            },
+            "subsystem.m1a2_sep.port_mg_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:port_mg_loader",
+              "projectile_types": {
+                "m1a2_sep:mg_7_62_ap": 1
+              },
+              "belt_label": "7.62 AP",
+              "discovery_outputs": {
+                "ammo_port_mg": [
+                  "global"
+                ]
+              }
+            }
+          }
+        },
+        "sub_part.m1a2_sep.port_mg_pitch": {
+          "start_bone": "MM_PortMG_Pitch",
+          "end_bones": [],
+          "mass": 40,
+          "mass_center": "port_mg_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_port_mg_pitch": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.port_mg_launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.port_mg_pitch_lock": {
+              "locator": "port_mg_pitch_lock",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.port_mg_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:port_mg_launcher",
+              "locator": "port_mg_muzzle"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.aft_mg_yaw": {
+          "start_bone": "bone8",
+          "end_bones": [
+            "MM_AftMG_Pitch"
+          ],
+          "mass": 40,
+          "mass_center": "aft_mg_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_aft_mg_yaw": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "interact_boxes": {
+            "interact.m1a2_sep.aft_mg": {
+              "bone": "MM_Interact_aft_mg",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.m1a2_sep.aft_mg_seat"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.aft_mg_turret": {
+              "locator": "aft_mg_turret_mount",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": 65,
+                    "upper_limit": 242.5,
+                    "damping": 1.82771
+                  }
+                }
+              }
+            },
+            "connector.m1a2_sep.aft_mg_elevation": {
+              "locator": "aft_mg_elevation",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -12,
+                    "upper_limit": 45,
+                    "damping": 1.52309
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.aft_mg_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:aft_mg_yaw_driver",
+              "connector": "connector.m1a2_sep.aft_mg_turret"
+            },
+            "subsystem.m1a2_sep.aft_mg_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:aft_mg_pitch_driver",
+              "connector": "connector.m1a2_sep.aft_mg_elevation"
+            },
+            "subsystem.m1a2_sep.aft_mg_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:aft_mg_controller",
+              "control_outputs": {
+                "aim_drive_aft_mg": [
+                  "subsystem.m1a2_sep.aft_mg_yaw_driver",
+                  "subsystem.m1a2_sep.aft_mg_pitch_driver"
+                ],
+                "weapon.mg.aft_mg": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_m2_feed"
+            },
+            "subsystem.m1a2_sep.aft_mg_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "m1a2_sep:aft_mg_loader",
+              "projectile_types": {
+                "m1a2_sep:mg_12_7_ap": 1
+              },
+              "belt_label": "12.7 AP",
+              "discovery_outputs": {
+                "ammo_aft_mg": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.aft_mg_seat": {
+              "type": "machine_max:seat",
+              "definition": "m1a2_sep:external_mg_seat",
+              "locator": "aft_mg_seat",
+              "control_group_preset": "m1a2_sep:m1a2_aft_mg",
+              "camera_discovery_targets": {
+                "sight_aft_mg": [
+                  "global"
+                ]
+              },
+              "dismount_locators": [
+                "aft_mg_exit_left",
+                "aft_mg_exit_right"
+              ],
+              "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "allow_use_items": false
+            }
+          }
+        },
+        "sub_part.m1a2_sep.aft_mg_pitch": {
+          "start_bone": "MM_AftMG_Pitch",
+          "end_bones": [],
+          "mass": 40,
+          "mass_center": "aft_mg_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_aft_mg_pitch": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.aft_mg_launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.aft_mg_pitch_lock": {
+              "locator": "aft_mg_pitch_lock",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.aft_mg_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:aft_mg_launcher",
+              "locator": "aft_mg_muzzle"
+            },
+            "subsystem.m1a2_sep.aft_mg_sight": {
+              "type": "machine_max:sight",
+              "definition": "m1a2_sep:aft_mg_sight",
+              "locator": "aft_mg_optic"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.gun_barrel": {
+          "start_bone": "bone13",
+          "end_bones": [],
+          "durability": 55,
+          "mass": 350,
+          "mass_center": "barrel_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunBarrel": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 25,
+              "subsystem": "subsystem.m1a2_sep.launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.barrel_mount": {
+              "locator": "barrel_mount",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.launcher": {
+              "type": "machine_max:launcher",
+              "definition": "m1a2_sep:m1a2_launcher",
+              "locator": "main_gun_muzzle"
+            }
+          }
+        },
+        "sub_part.m1a2_sep.citv_yaw": {
+          "start_bone": "MM_CITV_Yaw",
+          "end_bones": [],
+          "mass": 10,
+          "mass_center": "citv_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_citv_yaw": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.commander_citv"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.citv_turret": {
+              "locator": "citv_turret_mount",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": 1,
+                    "upper_limit": -1,
+                    "damping": 0.1
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.commander_citv": {
+              "type": "machine_max:camera",
+              "definition": "m1a2_sep:m1a2_commander_citv",
+              "locator": "commander_optic"
+            },
+            "subsystem.m1a2_sep.citv_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:citv_yaw_driver",
+              "connector": "connector.m1a2_sep.citv_turret"
+            },
+            "subsystem.m1a2_sep.citv_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:citv_controller",
+              "control_outputs": {
+                "aim_drive_citv": [
+                  "subsystem.m1a2_sep.citv_yaw_driver"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

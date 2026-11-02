@@ -1,0 +1,47 @@
+T-90A 实车与 1G46 参照记录（2026-10-28）
+
+1. T-90A - TankBiathlon2013-12.jpg
+作者：Vitaly V. Kuzmin；拍摄日期：2013-08-17；CC BY-SA 4.0。
+页面：https://commons.wikimedia.org/wiki/File:T-90A_-_TankBiathlon2013-12.jpg
+本地：t90a-biathlon-2013.jpg，原图未改动。
+用途：确认车长机枪相对右侧乘员舱口的位置、低矮炮塔轮廓、六负重轮和侧裙/附加装甲关系。
+许可证：https://creativecommons.org/licenses/by-sa/4.0/
+
+2. T-90A front Army-2016.jpg
+作者：Boevaya mashina；拍摄日期：2016-09-07；CC BY-SA 4.0。
+页面：https://commons.wikimedia.org/wiki/File:T-90A_front_Army-2016.jpg
+本地：t90a-front-2016.jpg，原图未改动。
+用途：确认驾驶员位于车首中央、炮盾两侧 Shtora 外观、观瞄窗口和首上装甲布局。
+许可证：https://creativecommons.org/licenses/by-sa/4.0/
+
+3. 1G46 实拍分划和说明图
+作者/网站：Stefan Kotsch，Das Panzerdetail。
+页面：https://kotsch88.de/f_1g46.htm
+图像链接由该页面取得：
+https://kotsch88.de/Feuerleit/1g46/1G46_010.jpg （带 www.kotsch.org 水印的视野照片）
+https://kotsch88.de/Feuerleit/1g46/1G46_003.jpg （分划示意图）
+本地：1g46-reticle-photo-full.jpg、1g46-reticle-diagram.jpg；只用于工作资料，未装入游戏内容包。
+用途：中央尖角、横向刻线、上部 Б/О/К 刻度布局、下方 П 标记和底部指示区的外观参照。
+0.1.0/0.1.1 使用 CSS 手工绘制；0.1.2 分划线段来源见条目 6，没有将这两张照片直接贴入炮镜。准确分划标定和真实火控功能未复现。
+
+4. 观瞄位置对照
+https://kotsch88.de/f_t-90A.htm
+用于识别 1G46 与 ESSA 为不同观瞄通道，避免把 T-90M 的 Sosna-U 界面当作 T-90A 昼间炮镜。
+
+5. T-90A 使用说明的公开转录
+https://studylib.net/doc/27972381/1.-ie--t-90a
+仅核对下方弹种指示及绿色“就绪”灯的描述；未复制操作流程或作为游戏性能参数来源。
+
+参考图片、原模型与新适配配置的权利各归对应作者。本地工作资料没有授予用户原模型新的分发许可。
+
+6. 社区 1G46 分划（0.1.2）
+WTLIKER：https://wtliker.com/resources/7706/
+作者公开原帖：https://live.warthunder.com/post/1146121/en/
+合集作者/整理：Da_SongSong；作者声明贡献者包括 Rastmust、RideR2、Caff_、PotatoChips、MLRS、Shangxiang、MAR1989 等；原帖没有逐文件署名映射。
+下载版本：SongSong's Usersights 2026.10.20.zip。本次文件：Usersights/ussr_t_80u/1g46_realistic.blk。车型文件夹不等于设备型号；使用与实拍 1G46 对应的设备分划，未将 T-90A 文件夹内 Sosna-day / ESSA 模板冒充 1G46。
+改动：将 1,960 条静态线段转换为 AUI SVG（reticle.svg）；保留既有 MMX 状态绑定，未移植 WT 弹道逻辑。资源权利归原作者。完整下载包只存于工作参考目录，不随游戏 ZIP 分发。
+
+7. 0.1.4 装甲游戏数据
+https://github.com/gszabi99/War-Thunder-Datamine/blob/1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f/aces.vromfs.bin_u/gamedata/units/tankmodels/ussr_t_90a.blkx
+War Thunder 2.59.0.91；固定提交与 SHA-256 见 armor-update-report.json。DamageParts 为标称碰撞材料数据，xrayTextThickness 为显示层序；本包把它们映射为标量近似，不把单层厚度×系数冒充完整区域防护。
+官方概览：https://wiki.warthunder.com/unit/ussr_t_90a （页面版本 2.59.0.86，仅交叉核对车型，数值实施使用上述固定 2.59.0.91 文件）。

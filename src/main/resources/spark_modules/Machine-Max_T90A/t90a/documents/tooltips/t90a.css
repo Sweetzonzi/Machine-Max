@@ -1,0 +1,94 @@
+/* 蓝图 / 装配体描述页面：半透明毛玻璃面板（写法参考 AUI 官方 tooltip 示例）。
+   显隐由 AuiTooltipRenderer 控制：body 上的 shown / hiding 类名触发淡入淡出，
+   #tooltip 的 left / top 由模组写入行内样式，页面只负责外观。
+   本文件只服务 Machine-Max_T90A 的说明页面；AUI 文档路径按 namespace 归并，
+   同一 namespace 下的页面必须使用不同的样式表文件名，否则同名样式表会互相覆盖。 */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body {
+  opacity: 0;
+  pointer-events: none;
+  font-family: "default";
+  font-size: 10px;
+  line-height: 15px;
+  color: #dcdfe4;
+}
+
+body.shown {
+  animation: tooltip-fade-in 0.16s ease-out forwards;
+}
+
+body.hiding {
+  animation: tooltip-fade-out 0.16s ease forwards;
+}
+
+@keyframes tooltip-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes tooltip-fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 面板必须写确定的 width，不要只写 max-width。
+   实测：只给 max-width 时，长段落的换行正常，但面板高度会停在中途，后面的文字画到面板外；
+   给出确定宽度后高度正常。AUI 的 max-width 是在容器尺寸算完之后才钳制的，怀疑与此有关。 */
+#tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 320px;
+  min-height: 31px;
+  padding: 4px 8px 6px;
+  background-color: rgba(71, 83, 96, 0.4);
+  backdrop-filter: blur(28px);
+  border: 1px solid rgba(151, 157, 168, 0.55);
+  color: #dcdfe4;
+}
+
+#tooltip .tip-title,
+#tooltip .tip-line {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+#tooltip .tip-title {
+  margin-bottom: 3px;
+  padding: 1px 5px;
+  background-color: rgba(88, 149, 88, 0.55);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+#tooltip .tip-line {
+  padding: 1px 3px;
+}
+
+#tooltip .tip-warn {
+  color: #ff9b9b;
+}
+
+#tooltip .tip-notes {
+  color: #b9bfc9;
+  font-style: italic;
+}
+
+#tooltip .tip-author {
+  color: #e6e9ee;
+}

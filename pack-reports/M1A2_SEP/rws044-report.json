@@ -1,0 +1,62 @@
+{
+  "version": "0.4.4",
+  "requested_actual_model_yaw_deg": [
+    -137.5,
+    127.5
+  ],
+  "span_deg": 265,
+  "json_yr": {
+    "lower_limit": -127.5,
+    "upper_limit": 137.5,
+    "damping": 1.82771
+  },
+  "native_validation": {
+    "ok": true,
+    "count": 0,
+    "issues": [],
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "installed_bullet_body_direction_check": "Dp_Mt_Libbulletjme version 23.1.0 initializing\r\nRWS265 target 0.000 actual_body 0.000 expected 0.000\r\nRWS265 target 90.000 actual_body 90.000 expected 90.000\r\nRWS265 target 127.500 actual_body 127.500 expected 127.500\r\nRWS265 target 150.000 actual_body 127.500 expected 127.500\r\nRWS265 target 0.000 actual_body 0.000 expected 0.000\r\nRWS265 target 262.500 actual_body -97.500 expected -97.500\r\nRWS265 target 222.500 actual_body -137.500 expected -137.500\r\nRWS265 target 200.000 actual_body -137.500 expected -137.500\r\nRWS265 target 0.000 actual_body -0.000 expected 0.000\r\nRWS265 target 60.000 actual_body 60.000 expected 60.000\r\nRWS265 target 0.000 actual_body 0.000 expected 0.000\r\n",
+  "only_part_change": "RWS yaw limits",
+  "geometry_changed": false,
+  "citv_routing_fix_preserved": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "clearance_limit": "The requested sector is wider than the all-pose clearance envelope used in 0.4.2. Historical sampled extreme depression and simultaneous adjacent-gun rotations include intersections in this wider sector. This release applies the user-requested range and does not guarantee all-pose clearance.",
+  "offline_validation": {
+    "ok": true,
+    "checks": {
+      "schema_documents": 55,
+      "registered_schema_uris": 202,
+      "parts": 6,
+      "bones": 154,
+      "locators": 102,
+      "subparts": 33,
+      "collision_shapes": 54,
+      "wheels": 18,
+      "interactions": 7,
+      "internal_connector_pairs": 27,
+      "external_connections": 5,
+      "subsystems": 42,
+      "tracks": 2,
+      "texture_dimensions": [
+        1024,
+        1024
+      ]
+    },
+    "errors": [],
+    "game_tested": false,
+    "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+  },
+  "prior_files_unchanged": 287,
+  "changed_prior_files": [
+    "meta.json",
+    "README.txt",
+    "m1a2_sep/parts/m1a2_turret.json"
+  ],
+  "preserved_editor_only_animations": [
+    "animation.m1a2_sep.new"
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "style": "m1a2_sep:m1a2_m240_feed",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_right",
+    "offset": [
+      -8,
+      -52,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  }
+]

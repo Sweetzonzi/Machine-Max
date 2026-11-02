@@ -1,0 +1,45 @@
+{
+  "ok": true,
+  "checks": {
+    "schema_documents": 51,
+    "registered_schema_uris": 202,
+    "parts": 7,
+    "bones": 130,
+    "locators": 78,
+    "subparts": 27,
+    "collision_shapes": 83,
+    "wheels": 16,
+    "interactions": 4,
+    "internal_connector_pairs": 20,
+    "external_connections": 6,
+    "subsystems": 26,
+    "tracks": 2,
+    "texture_dimensions": [
+      512,
+      512
+    ]
+  },
+  "errors": [],
+  "game_tested": false,
+  "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms.",
+  "commander_dual_axis_stabilization": {
+    "ok": true,
+    "version": "0.1.17",
+    "subsystem": "subsystem.t90a.commander_day_sight",
+    "horizontal_stabilized": true,
+    "vertical_stabilized": true,
+    "runtime_change": "Enable commander day camera horizontal stabilization at user request",
+    "all_other_runtime_fields_and_hud_assets_unchanged": true,
+    "all_model_geometry_and_markers_unchanged": true,
+    "native_validation": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "game_tested": false,
+    "mod_jars_edited": false
+  }
+}

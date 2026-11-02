@@ -1,0 +1,184 @@
+{
+  "version": "0.5.7",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\backups\\0.5.6-before-gps-aim-ring",
+  "ring_diameter_css_px": 16,
+  "ring_border_css_px": 2,
+  "reticle_center_css_px": [
+    320,
+    220
+  ],
+  "color": "#ffd83d",
+  "hud_only": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "verification": {
+    "layout": {
+      "ok": true,
+      "checks": [
+        {
+          "size": [
+            640,
+            440
+          ],
+          "dot_center": [
+            320,
+            220
+          ],
+          "reticle": {
+            "x": 160,
+            "y": 172,
+            "w": 320,
+            "h": 96
+          },
+          "range": "----",
+          "lines": [
+            {
+              "class": "line left-outer",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-upper",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-inner",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-lower",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-inner",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-upper",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-lower",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-outer",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line upper-post",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line upper-stem",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line lower-stem",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line lower-post",
+              "color": "rgb(255, 216, 61)"
+            }
+          ],
+          "ready": {
+            "x": 212,
+            "y": 355,
+            "w": 18,
+            "h": 18
+          },
+          "ring": {
+            "x": 312,
+            "y": 212,
+            "w": 16,
+            "h": 16,
+            "color": "rgb(255, 216, 61)",
+            "radius": "50%"
+          },
+          "overflow": false
+        },
+        {
+          "size": [
+            640,
+            440
+          ],
+          "dot_center": [
+            320,
+            220
+          ],
+          "reticle": {
+            "x": 160,
+            "y": 172,
+            "w": 320,
+            "h": 96
+          },
+          "range": "----",
+          "lines": [
+            {
+              "class": "line left-outer",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-upper",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-inner",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-lower",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-inner",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-upper",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-lower",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-outer",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line upper-post",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line upper-stem",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line lower-stem",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line lower-post",
+              "color": "rgb(180, 255, 129)"
+            }
+          ],
+          "ready": null,
+          "ring": null,
+          "overflow": false
+        }
+      ],
+      "visual_only": true,
+      "runtime_data_bound": false
+    },
+    "changed_previous_files": [
+      "README.txt",
+      "m1a2_sep/documents/m1a2_gps/sight.css",
+      "m1a2_sep/documents/m1a2_gps/sight.html",
+      "meta.json"
+    ],
+    "other_previous_files_unchanged": true,
+    "all_dynamic_bindings_unchanged": true,
+    "zip_contents_verified": true
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "ok": true,
+  "version": "0.1.13",
+  "changed_pack_files": [
+    "meta.json",
+    "t90a/documents/tkn4s/direct-reticle.svg",
+    "t90a/documents/tkn4s/sight.css",
+    "t90a/documents/tkn4s/sight.html",
+    "t90a/documents/weapon_hud_components/aa_feed.html",
+    "t90a/documents/weapon_hud_components/coax_feed.html",
+    "t90a/hud_layouts/tkn4s_day.json",
+    "t90a/lang/en_us.json",
+    "t90a/lang/zh_cn.json",
+    "t90a/models/part/t90a.geo.json",
+    "t90a/projectiles/mg_12_7_ap.json",
+    "t90a/projectiles/mg_7_62_ap.json",
+    "t90a/subsystems/coax_loader.json"
+  ],
+  "native_validation": {
+    "ok": true,
+    "count": 0,
+    "issues": [],
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "all_cube_dimensions_uvs_textures_and_other_locators_preserved": true,
+  "one_optical_head_reparented_with_world_transform_preserved": true,
+  "gunner_viewpoint": {
+    "window": "1G46 narrow inboard head, behind the open protective hood",
+    "glass_cube": "ff557362-7840-32f1-0650-17b503991706",
+    "position": [
+      -9,
+      41.7715,
+      19.20615
+    ],
+    "parent": "Bt",
+    "pitch_follow_preserved": true
+  },
+  "commander_viewpoint": {
+    "window": "TKN-4S large head immediately beneath roof gun mounting",
+    "glass_cube": "e8ff7f9b-19d5-1806-e158-6f6a1c512618",
+    "position": [
+      12.05555414988054,
+      43.13731714936654,
+      30.104047058089503
+    ],
+    "parent": "MainBattery",
+    "previous_wrong_window": "outboard ESSA thermal sight head"
+  },
+  "machine_guns": {
+    "coax": "PKTM 7.62x54R",
+    "roof": "6P49 Kord 12.7x108",
+    "cyclic_rate_rpm": [
+      800,
+      700
+    ],
+    "vehicle_ammunition_rounds": [
+      2000,
+      300
+    ],
+    "projectiles": [
+      {
+        "projectile": "mg_7_62_ap",
+        "mass_kg": 0.01039,
+        "catalogue_reference_v0_m_s": 808,
+        "game_base_penetration_mm": 10.1,
+        "reference_distance_m": 200,
+        "reference_plate_mm": 10,
+        "approx_game_penetration_at_reference_mm": 10.095567891906619,
+        "damage_unchanged": true,
+        "drag_and_accuracy_unchanged": true
+      },
+      {
+        "projectile": "mg_12_7_ap",
+        "mass_kg": 0.0482,
+        "catalogue_reference_v0_m_s": 818,
+        "game_base_penetration_mm": 20.1,
+        "reference_distance_m": 100,
+        "reference_plate_mm": 20,
+        "approx_game_penetration_at_reference_mm": 20.097358881955895,
+        "damage_unchanged": true,
+        "drag_and_accuracy_unchanged": true
+      }
+    ],
+    "capacity_is_vehicle_supply_pool_not_single_belt": true,
+    "automatic_regeneration_is_existing_gameplay_abstraction": true,
+    "catalogue_velocity_is_not_a_T90A_specific_chronograph_measurement": true
+  },
+  "one_power_reticle": "SGUGiT 2019 p113 Fig3.33b: rectangle, central cross and four field-limit strokes",
+  "high_power_reticle_unchanged": true,
+  "orientation": {
+    "inset": "inside scope viewport at top left, above direct aperture",
+    "normal_scale": 0.75,
+    "ultrawide_scale": 0.5,
+    "canonical_live_yaw_bindings_preserved": true,
+    "duplicate_outer_widget_removed": true
+  },
+  "runtime": {
+    "ok": true,
+    "layout_and_transition_cases": 30,
+    "native_svg_assets": 4,
+    "game_tested": false,
+    "runtime_mod_sha256": "9320e6a2a773b507143d1687c6d7c68076b18ce136c235f55eae29f29739c951",
+    "runtime_spark_sha256": "575b425231dbca5eea74ac89e905f4ec74ea3472d507be73d9d2cca905831775"
+  },
+  "browser_layouts": [
+    {
+      "name": "audit024-day-8x",
+      "width": 1600,
+      "height": 900,
+      "zoom": 8,
+      "preview_only": true,
+      "boxes": {
+        "instrument": {
+          "x": 20,
+          "y": 20,
+          "width": 126,
+          "height": 153
+        },
+        "one_power_opening_top": 267.63157894736844,
+        "instrument_clears_opening": true
+      }
+    },
+    {
+      "name": "audit024-day-1x",
+      "width": 1600,
+      "height": 900,
+      "zoom": 1,
+      "preview_only": true,
+      "boxes": {
+        "instrument": {
+          "x": 20,
+          "y": 20,
+          "width": 126,
+          "height": 153
+        },
+        "one_power_opening_top": 267.63157894736844,
+        "instrument_clears_opening": true
+      }
+    },
+    {
+      "name": "audit024-day-4x",
+      "width": 1200,
+      "height": 900,
+      "zoom": 4,
+      "preview_only": true,
+      "boxes": {
+        "instrument": {
+          "x": 15,
+          "y": 15,
+          "width": 94.5,
+          "height": 114.75
+        },
+        "one_power_opening_top": 307.8947368421052,
+        "instrument_clears_opening": true
+      }
+    },
+    {
+      "name": "audit024-day-1x-ultrawide",
+      "width": 2560,
+      "height": 720,
+      "zoom": 1,
+      "preview_only": true,
+      "boxes": {
+        "instrument": {
+          "x": 32,
+          "y": 32,
+          "width": 134.40000915527344,
+          "height": 163.1999969482422
+        },
+        "one_power_opening_top": 214.10526315789474,
+        "instrument_clears_opening": true
+      }
+    }
+  ],
+  "source_record": "references/audit024/sources.json",
+  "game_tested": false,
+  "mod_jars_edited": false,
+  "camera_discovery_regression": {
+    "ok": true,
+    "old_local_reproduces_empty_camera_list": true,
+    "configured_direct_target_resolves_camera": true,
+    "real_seat_camera_callback_passed": true,
+    "repeat_handshake_deduplicated": true,
+    "camera_class_source": "file:/F:/1.21.1%20MAX/.minecraft/mods/MachineMax-1.21.1-1.0.3-beta.6.jar",
+    "game_tested": false
+  }
+}

@@ -1,0 +1,71 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.t90a_track",
+				"texture_width": 512,
+				"texture_height": 512,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2,
+				"visible_bounds_offset": [0, 0, 0]
+			},
+			"bones": [
+				{
+					"name": "TrackLink",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-6, 0.25, -1.475],
+							"size": [12, 0.8, 2.95],
+							"uv": {
+								"north": {"uv": [378, 289], "uv_size": [12, 1]},
+								"east": {"uv": [336, 368], "uv_size": [2, 1]},
+								"south": {"uv": [378, 319], "uv_size": [12, 1]},
+								"west": {"uv": [375, 248], "uv_size": [2, 1]},
+								"up": {"uv": [372, 94], "uv_size": [-12, -2]},
+								"down": {"uv": [372, 204], "uv_size": [-12, -2]}
+							}
+						},
+						{
+							"origin": [0.6, 0, -1.25],
+							"size": [5, 0.25, 2.5],
+							"uv": {
+								"north": {"uv": [396, 261], "uv_size": [5, 1]},
+								"east": {"uv": [320, 342], "uv_size": [2, 1]},
+								"south": {"uv": [396, 263], "uv_size": [5, 1]},
+								"west": {"uv": [162, 349], "uv_size": [2, 1]},
+								"up": {"uv": [388, 110], "uv_size": [-5, -2]},
+								"down": {"uv": [388, 118], "uv_size": [-5, -2]}
+							}
+						},
+						{
+							"origin": [-5.6, 0, -1.25],
+							"size": [5, 0.25, 2.5],
+							"uv": {
+								"north": {"uv": [396, 261], "uv_size": [5, 1]},
+								"east": {"uv": [320, 342], "uv_size": [2, 1]},
+								"south": {"uv": [396, 263], "uv_size": [5, 1]},
+								"west": {"uv": [162, 349], "uv_size": [2, 1]},
+								"up": {"uv": [388, 110], "uv_size": [-5, -2]},
+								"down": {"uv": [388, 118], "uv_size": [-5, -2]}
+							}
+						},
+						{
+							"origin": [-0.5, 1.05, -0.6],
+							"size": [1, 1.15, 1.2],
+							"uv": {
+								"north": {"uv": [378, 289], "uv_size": [12, 1]},
+								"east": {"uv": [336, 368], "uv_size": [2, 1]},
+								"south": {"uv": [378, 319], "uv_size": [12, 1]},
+								"west": {"uv": [375, 248], "uv_size": [2, 1]},
+								"up": {"uv": [360, 92], "uv_size": [12, 2]},
+								"down": {"uv": [360, 204], "uv_size": [12, -2]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

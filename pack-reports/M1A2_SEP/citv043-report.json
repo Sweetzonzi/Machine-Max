@@ -1,0 +1,117 @@
+{
+  "version": "0.4.3",
+  "evidence": {
+    "source": "F:/1.21.1 MAX/.minecraft/logs/latest.log",
+    "observed_errors": [
+      "[2910��2026 15:29:44.481] [Server PhysicsThread/ERROR] [MachineMax/]: δ�ڲ������ҵ�Ŀ��˿ڡ���ϵͳ�򽻻���: subsystem.m1a2_sep.citv_controller",
+      "[2910��2026 15:29:48.656] [Render thread/ERROR] [MachineMax/]: δ�ڲ������ҵ�Ŀ��˿ڡ���ϵͳ�򽻻���: subsystem.m1a2_sep.citv_controller"
+    ],
+    "reason": "The commander seat belongs to turret SubPart, while citv_controller belongs to citv_yaw SubPart. Explicit named receivers are resolved only inside the sender SubPart.",
+    "fix": "aim_citv -> global assembly bus -> sole aim_citv subscriber -> local aim_drive_citv -> citv_yaw_driver",
+    "override_checked": "main_weapon and coax_controller both share the turret SubPart with commander_seat; their explicit routes are valid and preserved."
+  },
+  "change": {
+    "file": "m1a2_sep/control_groups/m1a2_commander.json",
+    "path": "base_group.view_targets.aim_citv",
+    "before": [
+      "subsystem.m1a2_sep.citv_controller"
+    ],
+    "after": [
+      "global"
+    ]
+  },
+  "verification": {
+    "old_routes": {
+      "ok": false,
+      "pack": "backups\\0.4.2-before-citv-routing\\Machine-Max_M1A2_SEP",
+      "checked_routes": 37,
+      "errors": [
+        {
+          "sender_subpart": "sub_part.m1a2_sep.turret",
+          "where": "subsystem.m1a2_sep.commander_seat/controlGroup.m1a2_sep.commander_base/view_targets",
+          "channel": "aim_citv",
+          "target": "subsystem.m1a2_sep.citv_controller",
+          "valid": false
+        }
+      ],
+      "citv_chain": {
+        "seat_owner": "sub_part.m1a2_sep.turret",
+        "controller_owner": "sub_part.m1a2_sep.citv_yaw",
+        "seat_targets": [
+          "subsystem.m1a2_sep.citv_controller"
+        ],
+        "bus_aim_citv_subscribers": [
+          "subsystem.m1a2_sep.citv_controller"
+        ],
+        "controller_driver_same_subpart": true,
+        "driver_channel_accepted": true,
+        "fire_inputs": []
+      },
+      "scope": "Offline receiver-name scope and dedicated-channel subscription audit, following ISignalSender.setTargetFromNames and ISignalBus.broadcast. Not a Minecraft runtime test."
+    },
+    "new_routes": {
+      "ok": true,
+      "pack": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\Machine-Max_M1A2_SEP",
+      "checked_routes": 37,
+      "errors": [],
+      "citv_chain": {
+        "seat_owner": "sub_part.m1a2_sep.turret",
+        "controller_owner": "sub_part.m1a2_sep.citv_yaw",
+        "seat_targets": [
+          "global"
+        ],
+        "bus_aim_citv_subscribers": [
+          "subsystem.m1a2_sep.citv_controller"
+        ],
+        "controller_driver_same_subpart": true,
+        "driver_channel_accepted": true,
+        "fire_inputs": []
+      },
+      "scope": "Offline receiver-name scope and dedicated-channel subscription audit, following ISignalSender.setTargetFromNames and ISignalBus.broadcast. Not a Minecraft runtime test."
+    },
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 55,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 154,
+        "locators": 102,
+        "subparts": 33,
+        "collision_shapes": 54,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 42,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "geometry_and_joint_parameters_unchanged": true,
+    "commander_override_routes_valid_and_unchanged": true,
+    "prior_pack_files_unchanged": 285,
+    "changed_prior_files": [
+      "meta.json",
+      "README.txt",
+      "m1a2_sep/control_groups/m1a2_commander.json"
+    ],
+    "game_tested": false,
+    "mod_jar_changed": false
+  },
+  "limitation": "The prior game log proves failure to resolve the old named receiver. This release has offline route regression checks and native configuration checks; actual post-fix motion has not been observed in Minecraft."
+}

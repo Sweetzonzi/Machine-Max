@@ -1,0 +1,565 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "t90a:textures/icon/t90a_turret.png",
+  "vehicle_durability_rate": 0.9,
+  "functional_threshold": 0.6,
+  "variants": {
+    "standard": {
+      "model": "t90a:t90a.geo",
+      "textures": {
+        "default": "t90a:textures/part/t90a.png",
+        "green": "t90a:textures/part/t90a_green.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:category/weapon",
+        "t90a:turret",
+        "machine_max:series/t90a"
+      ],
+      "sub_parts": {
+        "sub_part.t90a.turret": {
+          "start_bone": "MainBattery",
+          "end_bones": [
+            "Bt",
+            "MM_MGYaw",
+            "MM_turret_era_left",
+            "MM_turret_era_right"
+          ],
+          "durability": 650,
+          "mass": 3200,
+          "mass_center": "turret_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_TurretFloor": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_TurretCore": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            },
+            "MM_TurretFrontLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "t90a:turret_cheek_array",
+              "thickness": 610
+            },
+            "MM_TurretFrontRight": {
+              "id": "part",
+              "type": "box",
+              "material": "t90a:turret_cheek_array",
+              "thickness": 610
+            },
+            "MM_TurretSideLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 80
+            },
+            "MM_TurretSideRight": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 80
+            },
+            "MM_TurretRear": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 55
+            },
+            "MM_TurretRoof": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 45
+            },
+            "MM_TurretCheekSideLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 80
+            },
+            "MM_TurretCheekTopLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 45
+            },
+            "MM_TurretSideRearLeft": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 60
+            },
+            "MM_TurretCheekSideRight": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 80
+            },
+            "MM_TurretCheekTopRight": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 45
+            },
+            "MM_TurretSideRearRight": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 60
+            }
+          },
+          "interact_boxes": {
+            "interact.t90a.gunner": {
+              "bone": "MM_Interact_gunner",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.t90a.gunner_seat"
+                ]
+              }
+            },
+            "interact.t90a.commander": {
+              "bone": "MM_Interact_commander",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.t90a.commander_seat"
+                ]
+              }
+            },
+            "interact.t90a.external_commander": {
+              "bone": "MM_Interact_external_commander",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.t90a.external_commander_seat"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.t90a.turret_hull": {
+              "locator": "turret_hull_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {
+                "required_tags": [
+                  "t90a:hull"
+                ],
+                "integrity": 100,
+                "impact_absorption": 0.1,
+                "impact_reduction": 8,
+                "impact_multiplier": 1
+              }
+            },
+            "connector.t90a.turret_gun": {
+              "locator": "turret_gun_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -6,
+                    "upper_limit": 14,
+                    "damping": 2
+                  }
+                }
+              }
+            },
+            "connector.t90a.turret_aa": {
+              "locator": "turret_mg_axis",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.t90a.turret_era_left": {
+              "locator": "turret_era_left_socket",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {
+                "required_tags": [
+                  "t90a:armor/turret_era_left"
+                ],
+                "integrity": 60
+              }
+            },
+            "connector.t90a.turret_era_right": {
+              "locator": "turret_era_right_socket",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {
+                "required_tags": [
+                  "t90a:armor/turret_era_right"
+                ],
+                "integrity": 60
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.t90a.gunner_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "gunner_seat",
+              "control_group_preset": "t90a:t90a_gunner",
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "global"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "t90a:t90a_orientation",
+              "third_hud_layout": "t90a:t90a_ground_orientation"
+            },
+            "subsystem.t90a.commander_seat": {
+              "type": "machine_max:seat",
+              "definition": "t90a:open_roof_seat",
+              "locator": "commander_seat",
+              "control_group_preset": "t90a:t90a_aa",
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "t90a:t90a_orientation",
+              "third_hud_layout": "t90a:t90a_orientation"
+            },
+            "subsystem.t90a.azimuth_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "t90a:t90a_azimuth",
+              "connector": "connector.t90a.turret_hull"
+            },
+            "subsystem.t90a.elevation_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "t90a:t90a_elevation",
+              "connector": "connector.t90a.turret_gun"
+            },
+            "subsystem.t90a.main_weapon": {
+              "type": "machine_max:weapon_controller",
+              "definition": "machine_max:main_weapon_controller",
+              "control_outputs": {
+                "weapon_control": [
+                  "subsystem.t90a.azimuth_driver",
+                  "subsystem.t90a.elevation_driver"
+                ],
+                "weapon.gun": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "t90a:main_feed",
+              "third_hud_layout": "t90a:main_feed",
+              "scope_hud_layout": "t90a:scope_main_feed"
+            },
+            "subsystem.t90a.ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "t90a:t90a_loader",
+              "projectile_types": {
+                "t90a:t90a_125mm_ap": 1
+              },
+              "belt_label": "AP",
+              "discovery_outputs": {
+                "ammo_t90a": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.t90a.ammo_loader_he": {
+              "type": "machine_max:regen_loader",
+              "definition": "t90a:t90a_he_loader",
+              "projectile_types": {
+                "t90a:t90a_125mm_he": 1
+              },
+              "belt_label": "HE",
+              "discovery_outputs": {
+                "ammo_t90a": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.t90a.coax_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "t90a:coax_controller",
+              "control_outputs": {
+                "weapon.mg.coax": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "t90a:coax_feed",
+              "third_hud_layout": "t90a:coax_feed"
+            },
+            "subsystem.t90a.coax_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "t90a:coax_loader",
+              "projectile_types": {
+                "t90a:mg_7_62_ap": 1
+              },
+              "belt_label": "PKT 7.62",
+              "discovery_outputs": {
+                "ammo_coax": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.t90a.external_commander_seat": {
+              "type": "machine_max:seat",
+              "definition": "t90a:closed_commander_seat",
+              "locator": "external_commander_seat",
+              "control_group_preset": "t90a:t90a_observer",
+              "camera_discovery_targets": {
+                "commander_day_sight": [
+                  "subsystem.t90a.commander_day_sight"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "t90a:t90a_orientation",
+              "third_hud_layout": "t90a:t90a_ground_orientation",
+              "allow_use_items": false
+            },
+            "subsystem.t90a.commander_day_sight": {
+              "type": "machine_max:camera",
+              "definition": "t90a:t90a_commander_day_sight",
+              "locator": "commander_day_optic"
+            }
+          }
+        },
+        "sub_part.t90a.gun": {
+          "start_bone": "Bt",
+          "end_bones": [
+            "MM_MainGunBarrel"
+          ],
+          "durability": 125,
+          "mass": 550,
+          "mass_center": "gun_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunMantlet": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 50
+            },
+            "MM_GunTrunnion": {
+              "id": "gun_trunnion",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 150
+            }
+          },
+          "connectors": {
+            "connector.t90a.gun_turret": {
+              "locator": "gun_turret_axis",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.t90a.cradle_barrel": {
+              "locator": "cradle_barrel_mount",
+              "definition": "t90a:barrel_mount",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.t90a.coax_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "t90a:coax_launcher",
+              "locator": "coax_muzzle"
+            },
+            "subsystem.t90a.gunner_sight": {
+              "type": "machine_max:sight",
+              "definition": "t90a:t90a_gunner_sight",
+              "locator": "gunner_optic"
+            }
+          }
+        },
+        "sub_part.t90a.aa_yaw": {
+          "start_bone": "MM_MGYaw",
+          "end_bones": [
+            "MM_MGPitch"
+          ],
+          "durability": 50,
+          "mass": 40,
+          "mass_center": "mg_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_MGMount": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.t90a.aa_turret": {
+              "locator": "mg_turret_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": -110,
+                    "upper_limit": 110,
+                    "damping": 1.8
+                  }
+                }
+              }
+            },
+            "connector.t90a.aa_elevation": {
+              "locator": "mg_pitch_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -5,
+                    "upper_limit": 60,
+                    "damping": 1.5
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.t90a.aa_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "t90a:aa_yaw_driver",
+              "connector": "connector.t90a.aa_turret"
+            },
+            "subsystem.t90a.aa_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "t90a:aa_pitch_driver",
+              "connector": "connector.t90a.aa_elevation"
+            },
+            "subsystem.t90a.aa_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "t90a:aa_controller",
+              "control_outputs": {
+                "aim_drive_aa": [
+                  "subsystem.t90a.aa_yaw_driver",
+                  "subsystem.t90a.aa_pitch_driver"
+                ],
+                "weapon.mg.aa": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "t90a:aa_feed",
+              "third_hud_layout": "t90a:aa_feed"
+            },
+            "subsystem.t90a.aa_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "t90a:aa_loader",
+              "projectile_types": {
+                "t90a:mg_12_7_ap": 1
+              },
+              "belt_label": "12.7",
+              "discovery_outputs": {
+                "ammo_aa": [
+                  "global"
+                ]
+              }
+            }
+          }
+        },
+        "sub_part.t90a.aa_pitch": {
+          "start_bone": "MM_MGPitch",
+          "end_bones": [],
+          "durability": 50,
+          "mass": 40,
+          "mass_center": "mg_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_MGReceiver": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            },
+            "MM_MGBarrel": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 5
+            }
+          },
+          "connectors": {
+            "connector.t90a.aa_pitch_lock": {
+              "locator": "mg_yaw_axis",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.t90a.aa_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "t90a:aa_launcher",
+              "locator": "mg_muzzle"
+            }
+          }
+        },
+        "sub_part.t90a.barrel": {
+          "start_bone": "MM_MainGunBarrel",
+          "end_bones": [],
+          "durability": 55,
+          "mass": 150,
+          "mass_center": "barrel_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunBarrel": {
+              "id": "barrel",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 35,
+              "subsystem": "subsystem.t90a.launcher"
+            }
+          },
+          "connectors": {
+            "connector.t90a.barrel_cradle": {
+              "locator": "barrel_cradle_mount",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.t90a.launcher": {
+              "type": "machine_max:launcher",
+              "definition": "t90a:t90a_launcher",
+              "locator": "main_muzzle"
+            }
+          }
+        }
+      }
+    }
+  }
+}

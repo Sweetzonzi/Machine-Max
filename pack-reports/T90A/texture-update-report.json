@@ -1,0 +1,26 @@
+{
+  "version": "0.1.3",
+  "source": "俄罗斯_T90A1.6.bbmodel",
+  "default_source_index": 0,
+  "spray_source_index": 1,
+  "excluded_source_name": "Z",
+  "texture_order": [
+    "default",
+    "green"
+  ],
+  "paintable_parts": 7,
+  "texture_dimensions": [
+    512,
+    512
+  ],
+  "source_pixels_preserved": true,
+  "geometry_and_uv_preserved": true,
+  "gameplay_config_preserved": true,
+  "vehicle_introduction_preserved": true,
+  "track_texture": "default",
+  "blockbench_previews": [
+    "previews/texture-default-preview-1.png",
+    "previews/texture-green-preview-0.png"
+  ],
+  "game_spray_tested": false
+}

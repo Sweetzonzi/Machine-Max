@@ -1,0 +1,377 @@
+{
+  "version": "0.3.7",
+  "base_damage_before": 240,
+  "base_damage": 1200,
+  "base_penetration_mm": 280,
+  "vehicle_max_hp": 1840.4,
+  "calculation": "SubPart.calculateFinalDamage + HitBox.modifyDamage + RegularPart.assemblyDamage; one isolated, normal-incidence rear-plate hit per shot; full initial health; no ERA, connectors, or extra internal hits included.",
+  "cases": [
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 240,
+      "speed_ratio": 1,
+      "hits_to_destroy_part": 7,
+      "hits": [
+        {
+          "effective_damage": 227.05,
+          "part_hp_after": 1372.95,
+          "vehicle_hp_after": 1613.35
+        },
+        {
+          "effective_damage": 229.698,
+          "part_hp_after": 1143.252,
+          "vehicle_hp_after": 1383.652
+        },
+        {
+          "effective_damage": 232.166,
+          "part_hp_after": 911.086,
+          "vehicle_hp_after": 1151.486
+        },
+        {
+          "effective_damage": 234.423,
+          "part_hp_after": 676.662,
+          "vehicle_hp_after": 917.062
+        },
+        {
+          "effective_damage": 236.428,
+          "part_hp_after": 440.234,
+          "vehicle_hp_after": 680.634
+        },
+        {
+          "effective_damage": 238.125,
+          "part_hp_after": 202.109,
+          "vehicle_hp_after": 442.509
+        },
+        {
+          "effective_damage": 239.416,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 236.669
+        }
+      ]
+    },
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 240,
+      "speed_ratio": 0.8,
+      "hits_to_destroy_part": 8,
+      "hits": [
+        {
+          "effective_damage": 198.479,
+          "part_hp_after": 1401.521,
+          "vehicle_hp_after": 1641.921
+        },
+        {
+          "effective_damage": 200.534,
+          "part_hp_after": 1200.987,
+          "vehicle_hp_after": 1441.387
+        },
+        {
+          "effective_damage": 202.47,
+          "part_hp_after": 998.516,
+          "vehicle_hp_after": 1238.916
+        },
+        {
+          "effective_damage": 204.27,
+          "part_hp_after": 794.246,
+          "vehicle_hp_after": 1034.646
+        },
+        {
+          "effective_damage": 205.911,
+          "part_hp_after": 588.335,
+          "vehicle_hp_after": 828.735
+        },
+        {
+          "effective_damage": 207.365,
+          "part_hp_after": 380.971,
+          "vehicle_hp_after": 621.371
+        },
+        {
+          "effective_damage": 208.59,
+          "part_hp_after": 172.38,
+          "vehicle_hp_after": 412.78
+        },
+        {
+          "effective_damage": 209.519,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 236.686
+        }
+      ]
+    },
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 240,
+      "speed_ratio": 0.6,
+      "hits_to_destroy_part": 10,
+      "hits": [
+        {
+          "effective_damage": 166.863,
+          "part_hp_after": 1433.137,
+          "vehicle_hp_after": 1673.537
+        },
+        {
+          "effective_damage": 168.346,
+          "part_hp_after": 1264.791,
+          "vehicle_hp_after": 1505.191
+        },
+        {
+          "effective_damage": 169.76,
+          "part_hp_after": 1095.031,
+          "vehicle_hp_after": 1335.431
+        },
+        {
+          "effective_damage": 171.094,
+          "part_hp_after": 923.937,
+          "vehicle_hp_after": 1164.337
+        },
+        {
+          "effective_damage": 172.34,
+          "part_hp_after": 751.596,
+          "vehicle_hp_after": 991.996
+        },
+        {
+          "effective_damage": 173.485,
+          "part_hp_after": 578.112,
+          "vehicle_hp_after": 818.512
+        },
+        {
+          "effective_damage": 174.512,
+          "part_hp_after": 403.599,
+          "vehicle_hp_after": 643.999
+        },
+        {
+          "effective_damage": 175.4,
+          "part_hp_after": 228.199,
+          "vehicle_hp_after": 468.599
+        },
+        {
+          "effective_damage": 176.116,
+          "part_hp_after": 52.083,
+          "vehicle_hp_after": 292.483
+        },
+        {
+          "effective_damage": 176.588,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 227.95
+        }
+      ]
+    },
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 1200,
+      "speed_ratio": 1,
+      "hits_to_destroy_part": 2,
+      "hits": [
+        {
+          "effective_damage": 1139.05,
+          "part_hp_after": 460.95,
+          "vehicle_hp_after": 701.35
+        },
+        {
+          "effective_damage": 1190.569,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 167.438
+        }
+      ]
+    },
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 1200,
+      "speed_ratio": 0.8,
+      "hits_to_destroy_part": 2,
+      "hits": [
+        {
+          "effective_damage": 996.196,
+          "part_hp_after": 603.804,
+          "vehicle_hp_after": 844.204
+        },
+        {
+          "effective_damage": 1037.232,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 197.057
+        }
+      ]
+    },
+    {
+      "part": "hull",
+      "part_max_hp": 1600,
+      "base_damage": 1200,
+      "speed_ratio": 0.6,
+      "hits_to_destroy_part": 2,
+      "hits": [
+        {
+          "effective_damage": 838.115,
+          "part_hp_after": 761.885,
+          "vehicle_hp_after": 1002.285
+        },
+        {
+          "effective_damage": 868.392,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 229.749
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 240,
+      "speed_ratio": 1,
+      "hits_to_destroy_part": 4,
+      "hits": [
+        {
+          "effective_damage": 227.05,
+          "part_hp_after": 532.95,
+          "vehicle_hp_after": 1613.35
+        },
+        {
+          "effective_damage": 232.383,
+          "part_hp_after": 300.567,
+          "vehicle_hp_after": 1380.967
+        },
+        {
+          "effective_damage": 236.77,
+          "part_hp_after": 63.797,
+          "vehicle_hp_after": 1144.197
+        },
+        {
+          "effective_damage": 239.684,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1062.811
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 240,
+      "speed_ratio": 0.8,
+      "hits_to_destroy_part": 4,
+      "hits": [
+        {
+          "effective_damage": 198.479,
+          "part_hp_after": 561.521,
+          "vehicle_hp_after": 1641.921
+        },
+        {
+          "effective_damage": 202.645,
+          "part_hp_after": 358.876,
+          "vehicle_hp_after": 1439.276
+        },
+        {
+          "effective_damage": 206.2,
+          "part_hp_after": 152.676,
+          "vehicle_hp_after": 1233.076
+        },
+        {
+          "effective_damage": 208.891,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1074.778
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 240,
+      "speed_ratio": 0.6,
+      "hits_to_destroy_part": 5,
+      "hits": [
+        {
+          "effective_damage": 166.863,
+          "part_hp_after": 593.137,
+          "vehicle_hp_after": 1673.537
+        },
+        {
+          "effective_damage": 169.89,
+          "part_hp_after": 423.247,
+          "vehicle_hp_after": 1503.647
+        },
+        {
+          "effective_damage": 172.568,
+          "part_hp_after": 250.679,
+          "vehicle_hp_after": 1331.079
+        },
+        {
+          "effective_damage": 174.784,
+          "part_hp_after": 75.895,
+          "vehicle_hp_after": 1156.295
+        },
+        {
+          "effective_damage": 176.335,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1070.356
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 1200,
+      "speed_ratio": 1,
+      "hits_to_destroy_part": 1,
+      "hits": [
+        {
+          "effective_damage": 1139.05,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1042.495
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 1200,
+      "speed_ratio": 0.8,
+      "hits_to_destroy_part": 1,
+      "hits": [
+        {
+          "effective_damage": 996.196,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1056.78
+        }
+      ]
+    },
+    {
+      "part": "turret",
+      "part_max_hp": 760,
+      "base_damage": 1200,
+      "speed_ratio": 0.6,
+      "hits_to_destroy_part": 1,
+      "hits": [
+        {
+          "effective_damage": 838.115,
+          "part_hp_after": 0,
+          "vehicle_hp_after": 1072.589
+        }
+      ]
+    }
+  ],
+  "strongest_armor": [
+    {
+      "hit_box": "MM_TurretFrontLeft",
+      "full_health_normal_rha_mm": 609,
+      "ap_penetration_mm": 280,
+      "blocked_structure_hp_damage": 0
+    },
+    {
+      "hit_box": "MM_TurretFrontRight",
+      "full_health_normal_rha_mm": 657.8,
+      "ap_penetration_mm": 280,
+      "blocked_structure_hp_damage": 0
+    }
+  ],
+  "limitations": [
+    "Part destruction and vehicle HP reaching zero are different outcomes. These are deterministic estimates, not a kill probability.",
+    "Subparts share Part HP. Barrel or MG structure hits can therefore damage the shared turret structure; this update does not implement separate crew/ammunition compartments.",
+    "Connector impact uses base damage even for a blocked/ricochet hit. AP impact also increases fivefold; the requested breakable 2S38-style joints can separate without armor penetration.",
+    "HE and machine-gun projectile definitions, armor, part health and damage transfer rates are byte-identical to the prior release."
+  ],
+  "source": "https://wiki.warthunder.com/weapon/2544-tank-ammunition",
+  "source_use": "Qualitative APFSDS critical-component damage reference; 1200 is a MachineMax gameplay value, not a War Thunder damage stat.",
+  "game_tested": false,
+  "mod_jar_changed": false
+}

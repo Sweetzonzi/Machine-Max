@@ -1,0 +1,18 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:regen_loader",
+  "basic_durability": 50,
+  "pass_damage": false,
+  "feed": {
+    "reload_time": 5,
+    "reload_round_by_round": true,
+    "can_supply_multiple": false
+  },
+  "magazine": {
+    "capacity": 24,
+    "regen_per_minute": 5,
+    "regen_round_by_round": true,
+    "energy_cost_per_round": 0,
+    "regen_delay": 0
+  }
+}

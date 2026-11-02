@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "version": "0.1.11",
+  "native": {
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "runtime": {
+    "ok": true,
+    "layout_and_transition_cases": 25,
+    "native_svg_assets": 4,
+    "game_tested": false,
+    "runtime_mod_sha256": "6f653bd7eaf078d4b0b5c884a8eccea97f4e503c4a136bfebf0497b0dd8455fe",
+    "runtime_spark_sha256": "575b425231dbca5eea74ac89e905f4ec74ea3472d507be73d9d2cca905831775"
+  },
+  "camera_locator_bb": [
+    -14.125,
+    43.3215,
+    27.2
+  ],
+  "exported_locator": [
+    14.125,
+    43.3215,
+    27.2
+  ],
+  "camera_type": "machine_max:camera",
+  "zoom": [
+    1,
+    8
+  ],
+  "day_only": true,
+  "low_power_direct_window_aspect": 3.8,
+  "high_power_photo_based_engraving": true,
+  "zoom_size_classes": 141,
+  "all_prior_geometry_textures_and_other_part_fields_preserved": true,
+  "closed_commander_driver_and_override_groups_preserved": true,
+  "mg_seat_unchanged": true,
+  "shared_main_weapon_status_moved_out_of_optical_field": true,
+  "ballistic_scale_calibrated": false,
+  "game_tested": false,
+  "mod_jar_changed": false
+}

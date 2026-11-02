@@ -1,0 +1,42 @@
+@font-face{font-family:MMField;src:url('mm-field.ttf') format('truetype');font-display:block}
+html{font-size:0;line-height:0}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent}body{display:inline-block;color:var(--display,#b4ff81);font-family:MMField,monospace;font-size:20px;line-height:1;white-space:nowrap;text-shadow:1px 1px 0 #152015}b,i{font-style:normal;font-weight:400}
+.gps{position:relative;width:640px;height:440px}
+.top-line{position:absolute;top:8px;left:22px;width:596px;display:flex;justify-content:space-between;font-size:18px}
+.range-panel{position:absolute;left:240px;top:350px;width:160px;height:62px;text-align:center}
+.range-value{font-size:28px;line-height:32px;letter-spacing:4px}.range-unavailable{font-size:11px;line-height:20px;opacity:.8}
+.reticle{position:absolute;left:160px;top:172px;width:320px;height:96px}
+.line{position:absolute;background-color:var(--reticle,#ffd83d);box-shadow:1px 1px 0 #152015}
+.left-outer{left:0;top:47px;width:40px;height:2px}
+.left-upper{left:80px;top:31px;width:40px;height:2px}
+.left-inner{left:120px;top:47px;width:32px;height:2px}
+.left-lower{left:80px;top:63px;width:40px;height:2px}
+.right-inner{left:168px;top:47px;width:32px;height:2px}
+.right-upper{left:200px;top:31px;width:40px;height:2px}
+.right-lower{left:200px;top:63px;width:40px;height:2px}
+.right-outer{left:280px;top:47px;width:40px;height:2px}
+.upper-post{left:159px;top:0;width:2px;height:16px}
+.upper-stem{left:159px;top:32px;width:2px;height:10px}
+.lower-stem{left:159px;top:54px;width:2px;height:10px}
+.lower-post{left:159px;top:80px;width:2px;height:16px}
+.aim-dot{position:absolute;left:159px;top:47px;width:2px;height:2px;background-color:var(--reticle,#ffd83d);box-shadow:1px 1px 0 #152015}
+.weapon-status{position:relative;width:640px;height:440px}
+.gun-status{position:absolute;left:22px;top:324px;width:190px}
+.feed-status{position:absolute;left:428px;top:324px;width:190px}
+.status-label{font-size:14px;line-height:22px;opacity:.8}
+.status-row{display:flex;gap:12px;align-items:center;min-height:24px;font-size:18px}
+.status-state{font-size:17px;line-height:24px}
+.progress{height:2px;width:170px;background-color:#b4ff8120;margin-top:8px}.progress i{display:block;height:2px;width:var(--fill,0%);background-color:var(--display,#b4ff81)}
+.feed{display:flex;gap:8px;min-height:24px;font-size:17px;opacity:.5}.feed.is-selected{opacity:1}.feed.is-unselected .selector{visibility:hidden}
+.pending{position:absolute;left:190px;top:426px;width:260px;text-align:center;font-size:11px;color:#ffd48a}.pending.is-hide{display:none}
+
+.ready-cue{display:none;position:absolute;left:212px;top:355px;width:18px;height:18px;border:2px solid var(--display,#b4ff81)}.ready-cue.is-ready{display:block}
+
+.aim-ring{position:absolute;left:152px;top:40px;width:16px;height:16px;border:2px solid var(--reticle,#ffd83d);border-radius:50%;box-shadow:1px 1px 0 #152015}
+
+.search-frame{display:none;position:absolute;left:-20px;top:-50px;width:360px;height:196px}.search-corner{position:absolute;width:24px;height:24px;border:2px solid var(--reticle,#ffd83d)}.nw{left:0;top:0;border-width:2px 0 0 2px}.ne{right:0;top:0;border-width:2px 2px 0 0}.sw{left:0;bottom:0;border-width:0 0 2px 2px}.se{right:0;bottom:0;border-width:0 2px 2px 0}
+.gps.is-wide .line{display:none}.gps.is-wide .left-inner,.gps.is-wide .right-inner,.gps.is-wide .upper-stem,.gps.is-wide .lower-stem{display:block}.gps.is-wide .search-frame{display:block}
+.gps.is-narrow .lower-post{display:none}
+.bdc{display:none;position:absolute;left:0;top:0;width:640px;height:440px;color:var(--reticle,#ffd83d);font-size:11px;line-height:12px}.bdc.is-valid{display:block}.bdc-mark{position:absolute;left:292px;top:calc(220px + var(--drop,0px));width:56px;height:1px;background-color:var(--reticle,#ffd83d)}.bdc-mark b{position:absolute;left:65px;top:-5px;font-size:11px;line-height:12px}.bdc-legend{position:absolute;left:434px;top:286px;font-size:11px;line-height:14px}.bdc-mark .notch{position:absolute;left:27px;top:-3px;width:1px;height:7px;background-color:var(--reticle,#ffd83d)}
+
+.gps.is-narrow .range-panel{left:430px;top:230px;width:160px}

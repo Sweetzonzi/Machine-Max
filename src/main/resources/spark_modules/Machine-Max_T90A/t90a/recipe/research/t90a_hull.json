@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": [
+    "t90a:t90a_hull"
+  ],
+  "research_cost": 480,
+  "icon": "t90a:textures/icon/t90a_hull.png",
+  "description": "research.t90a.t90a_hull.desc",
+  "unlock_recipe": "t90a:part_fabricating/t90a_hull"
+}

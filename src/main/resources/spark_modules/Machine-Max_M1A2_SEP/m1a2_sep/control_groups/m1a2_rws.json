@@ -1,0 +1,20 @@
+{
+  "base_group": {
+    "name": "controlGroup.m1a2_sep.m1a2_rws",
+    "control_mode": "inherit",
+    "move_targets": {},
+    "regular_targets": {},
+    "bindings": [],
+    "view_targets": {
+      "aim_rws": [
+        "global"
+      ]
+    },
+    "main_weapon_targets": {
+      "fire_rws": [
+        "global"
+      ]
+    },
+    "secondary_weapon_targets": {}
+  }
+}

@@ -30,12 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 第一方内容包的 series 标签与系列译名。
  *
- * <p>递归盘点 {@code src/main/resources/spark_modules/**&#47;parts/**&#47;*.json}：64 份定义之外的 6 份
- * （Builtin 的五个独立物件与 MTLB 的通用 PKT 机枪塔）不写系列，其余每份的每个变体都要带本系列的
+ * <p>递归盘点 {@code src/main/resources/spark_modules/**&#47;parts/**&#47;*.json}，不限定内容命名空间：
+ * 除 Builtin 的五个独立物件与 MTLB 的通用 PKT 机枪塔这六份不写系列外，每份定义的每个变体都要带本系列的
  * {@code machine_max:series/&lt;系列&gt;} 标签。车族只由该标签表达，零件上不写裸车族标签
  * （{@code machine_max:&lt;系列&gt;}）；裸名保留为研发组译名键，供研发树按组 id 显示组名。系列译名取自各包
- * {@code machine_max/lang} 的 {@code machine_max.series.<系列>}，值必须与本包已有的研究组译名
- * {@code machine_max.<系列>} 一致。</p>
+ * 内容命名空间下 {@code lang} 的 {@code machine_max.series.<系列>}；包内同时存在研发组译名
+ * {@code machine_max.<系列>} 时，两者取值必须一致（M1A2 SEP 与 T-90A 用零件级研发组，没有裸名键）。</p>
  *
  * <p>用例只读资源文件，不启动 Minecraft 注册表与语言服务。</p>
  */
@@ -63,8 +63,10 @@ class CreativeContentTagsTest {
                 "ae86", "dayun", "jeep", "kluo", "mini_ev", "r700",
                 "senna_gtr", "szn", "van", "vn", "wine_fox"));
         SERIES_BY_PACK.put("Machine-Max_K17", List.of("k17"));
+        SERIES_BY_PACK.put("Machine-Max_M1A2_SEP", List.of("m1a2"));
         SERIES_BY_PACK.put("Machine-Max_MTLB", List.of("mtlb"));
         SERIES_BY_PACK.put("Machine-Max_Sdkfz234", List.of("sdkfz234"));
+        SERIES_BY_PACK.put("Machine-Max_T90A", List.of("t90a"));
     }
 
     @Test
@@ -103,31 +105,27 @@ class CreativeContentTagsTest {
         }
 
         assertTrue(problems.isEmpty(), String.join("\n", problems));
-        assertEquals(74, definitionCount, "零件定义份数");
-        assertEquals(112, variantCount, "变体总数");
-        assertEquals(68, taggedDefinitions, "待标定义份数");
-        assertEquals(106, taggedVariants, "待标变体数");
-        assertEquals(15, series.size(), "系列数：" + series);
+        assertEquals(87, definitionCount, "零件定义份数");
+        assertEquals(125, variantCount, "变体总数");
+        assertEquals(81, taggedDefinitions, "待标定义份数");
+        assertEquals(119, taggedVariants, "待标变体数");
+        assertEquals(17, series.size(), "系列数：" + series);
     }
 
     @Test
-    void seriesTranslationsCopyTheExistingResearchGroupNames() throws IOException {
+    void seriesTranslationsMatchResearchGroupNamesWhenPresent() throws IOException {
         int entries = 0;
         List<String> problems = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : SERIES_BY_PACK.entrySet()) {
             for (String language : List.of("zh_cn", "en_us")) {
-                Path path = PARTS_ROOT.resolve(entry.getKey())
-                        .resolve("machine_max").resolve("lang").resolve(language + ".json");
+                Path path = contentDir(entry.getKey()).resolve("lang").resolve(language + ".json");
                 JsonObject lang = readJson(path).getAsJsonObject();
                 for (String suffix : entry.getValue()) {
                     String groupKey = "machine_max." + suffix;
                     String seriesKey = "machine_max.series." + suffix;
-                    assertTrue(lang.has(groupKey), path + " misses " + groupKey);
-                    if (!lang.has(seriesKey)) {
-                        problems.add(path + " misses " + seriesKey);
-                        continue;
-                    }
-                    if (!lang.get(groupKey).getAsString().equals(lang.get(seriesKey).getAsString())) {
+                    assertTrue(lang.has(seriesKey), path + " misses " + seriesKey);
+                    if (lang.has(groupKey)
+                            && !lang.get(groupKey).getAsString().equals(lang.get(seriesKey).getAsString())) {
                         problems.add(path + ": " + seriesKey + " != " + groupKey);
                     }
                     entries++;
@@ -135,7 +133,7 @@ class CreativeContentTagsTest {
             }
         }
         assertTrue(problems.isEmpty(), String.join("\n", problems));
-        assertEquals(30, entries, "系列译名条数");
+        assertEquals(34, entries, "系列译名条数");
     }
 
     @Test
@@ -144,7 +142,7 @@ class CreativeContentTagsTest {
         for (List<String> suffixes : SERIES_BY_PACK.values()) {
             for (String suffix : suffixes) bare.add(MachineMax.MOD_ID + ":" + suffix);
         }
-        assertEquals(15, bare.size(), "车族裸名数量");
+        assertEquals(17, bare.size(), "车族裸名数量");
 
         List<String> problems = new ArrayList<>();
         for (Path file : partFiles()) {
@@ -164,7 +162,7 @@ class CreativeContentTagsTest {
             String expected = expectedSeries(file.toString().replace('\\', '/'));
             if (expected != null) series.add(SERIES_PREFIX + expected);
         }
-        assertEquals(15, series.size());
+        assertEquals(17, series.size());
         for (String tag : series) {
             assertTrue(CreativePartBrowser.isSeriesTag(
                     net.minecraft.resources.ResourceLocation.parse(tag)), tag);
@@ -174,15 +172,30 @@ class CreativeContentTagsTest {
 
     // ==================== 资源读取 ====================
 
-    /** 递归收集 parts 目录下的全部零件定义。 */
+    /** 递归收集 parts 目录下的全部零件定义，不限内容命名空间。 */
     private static List<Path> partFiles() throws IOException {
         try (Stream<Path> stream = Files.walk(PARTS_ROOT)) {
             return stream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
-                    .filter(path -> path.toString().replace('\\', '/').contains("/machine_max/parts/"))
+                    .filter(path -> path.toString().replace('\\', '/').contains("/parts/"))
                     .sorted()
                     .toList();
+        }
+    }
+
+    /**
+     * 内容命名空间目录：包内直接带 {@code lang/} 的那一层。
+     *
+     * <p>多数包用 {@code machine_max}，M1A2 SEP 与 T-90A 分别用自己的 {@code m1a2_sep}、{@code t90a}。</p>
+     */
+    private static Path contentDir(String pack) throws IOException {
+        try (Stream<Path> stream = Files.list(PARTS_ROOT.resolve(pack))) {
+            return stream
+                    .filter(Files::isDirectory)
+                    .filter(dir -> Files.isRegularFile(dir.resolve("lang").resolve("zh_cn.json")))
+                    .findFirst()
+                    .orElseThrow(() -> new IOException(pack + " 缺少 lang 目录"));
         }
     }
 
@@ -192,7 +205,7 @@ class CreativeContentTagsTest {
      */
     private static String expectedSeries(String relative) {
         if (WITHOUT_SERIES.contains(relative)) return null;
-        String after = relative.split("/machine_max/parts/", 2)[1];
+        String after = relative.split("/parts/", 2)[1];
         if (after.contains("/")) return after.substring(0, after.indexOf('/'));
         String stem = after.substring(0, after.length() - ".json".length());
         int underscore = stem.indexOf('_');

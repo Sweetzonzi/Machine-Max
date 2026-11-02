@@ -1,0 +1,14 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:weapon_controller",
+  "basic_durability": 20,
+  "fire_mode": "SALVO",
+  "aim_tolerance_deg": 5,
+  "fire_correction_angle_deg": 0,
+  "aim_inputs": [
+    "aim_aa"
+  ],
+  "fire_inputs": [
+    "fire_aa"
+  ]
+}

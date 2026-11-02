@@ -1,0 +1,51 @@
+{
+  "base_group": {
+    "name": "controlGroup.m1a2_sep.gunner_main_only",
+    "control_mode": "inherit",
+    "move_targets": {},
+    "regular_targets": {},
+    "bindings": [],
+    "view_targets": {
+      "aim_input_p2": [
+        "subsystem.m1a2_sep.main_weapon"
+      ]
+    },
+    "main_weapon_targets": {
+      "fire_input_p2": [
+        "subsystem.m1a2_sep.main_weapon"
+      ]
+    },
+    "secondary_weapon_targets": {}
+  },
+  "groups": [
+    {
+      "name": "controlGroup.m1a2_sep.gunner_coax762",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_coax762_p2": [
+          "subsystem.m1a2_sep.coax_762_controller"
+        ]
+      },
+      "secondary_weapon_targets": {
+        "fire_coax762_p2": [
+          "subsystem.m1a2_sep.coax_762_controller"
+        ]
+      }
+    },
+    {
+      "name": "controlGroup.m1a2_sep.gunner_csamm",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_csamm_p2": [
+          "subsystem.m1a2_sep.coax_controller"
+        ]
+      },
+      "secondary_weapon_targets": {
+        "fire_csamm_p2": [
+          "subsystem.m1a2_sep.coax_controller"
+        ]
+      }
+    }
+  ],
+  "active_index": 0
+}

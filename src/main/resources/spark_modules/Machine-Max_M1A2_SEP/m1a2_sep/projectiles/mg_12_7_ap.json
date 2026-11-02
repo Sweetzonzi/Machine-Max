@@ -1,0 +1,48 @@
+{
+  "type": "ballistic",
+  "tags": [
+    "m1a2_sep:caliber/12_7mm",
+    "machine_max:ammo/ap"
+  ],
+  "max_lifetime": 2.5,
+  "external": {
+    "mass": 0.045,
+    "gravity_factor": 1,
+    "drag_factor": 0.001,
+    "caliber": 12.7,
+    "base_velocity": 850,
+    "base_accuracy_mil": 3
+  },
+  "terminal": {
+    "base_penetration": 16,
+    "base_damage": 24,
+    "penetration_velocity_coefficient": 1,
+    "damage_velocity_coefficient": 0.5
+  },
+  "visual": {
+    "tracer_color": [
+      255,
+      220,
+      90
+    ],
+    "tracer_alpha": 220,
+    "tracer_light_intensity": 3,
+    "muzzle_flash": {
+      "intensity": 9.9
+    }
+  },
+  "sounds": {
+    "fire_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.small",
+        "range": 128
+      }
+    },
+    "shell_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall_interior",
+        "range": 16
+      }
+    }
+  }
+}

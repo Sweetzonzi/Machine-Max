@@ -1,0 +1,325 @@
+{
+  "source": {
+    "game": "War Thunder",
+    "version": "2.59.0.91",
+    "commit": "1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f",
+    "url": "https://github.com/gszabi99/War-Thunder-Datamine/blob/1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f/aces.vromfs.bin_u/gamedata/units/tankmodels/ussr_t_90a.blkx",
+    "sha256": "55cdf81a49f341c06068908c780799f7460c523c824bf7195cebe4d451132a02"
+  },
+  "method": "WT layer identities and nominal thicknesses plus explicit generic qualities are mapped to a scalar MMX RHA proxy. A full array is summed before any angle factor; no single filler layer is represented as full protection. WT projectile-class, variable-thickness and cumulative/explosion effects are not reproduced. Named nominal steel layers use RHA=1 as an explicit MMX approximation, not a claim about their full WT material class.",
+  "xray_hull_layer_sequence": [
+    {
+      "dmPart": "superstructure_front_dm"
+    },
+    {
+      "dmPart": "superstructure_front_dm",
+      "xrayTextThickness": 5.0,
+      "xrayArmorClass": "rubber_tank"
+    },
+    {
+      "dmPart": "superstructure_front_dm",
+      "xrayTextThickness": 3.0
+    },
+    {
+      "dmPart": "composite_armor_hull_01_dm",
+      "xrayTextThickness": 18.0
+    },
+    {
+      "dmPart": "superstructure_front_dm",
+      "xrayTextThickness": 3.0
+    },
+    {
+      "dmPart": "superstructure_front_dm",
+      "xrayTextThickness": 5.0,
+      "xrayArmorClass": "rubber_tank"
+    },
+    {
+      "dmPart": "turret_04_top_dm"
+    },
+    {
+      "dmPart": "turret_05_front_dm"
+    },
+    {
+      "dmPart": "turret_05_bottom_dm"
+    }
+  ],
+  "arrays": [
+    {
+      "name": "hull_upper_front",
+      "layers": [
+        {
+          "dm_part": "superstructure_front_dm",
+          "thickness_mm": 60.0,
+          "generic_quality_proxy": 1.35,
+          "normal_rha_proxy_mm": 81.0,
+          "variable_thickness": false,
+          "source_armor_class": "RHA_tank_modern"
+        },
+        {
+          "dm_part": "composite_armor_hull_01_dm",
+          "thickness_mm": 34.0,
+          "generic_quality_proxy": 0.25,
+          "normal_rha_proxy_mm": 8.5,
+          "variable_thickness": false,
+          "source_armor_class": "spaced_armor_air"
+        },
+        {
+          "dm_part": "turret_04_top_dm",
+          "thickness_mm": 60.0,
+          "generic_quality_proxy": 1.35,
+          "normal_rha_proxy_mm": 81.0,
+          "variable_thickness": false,
+          "source_armor_class": "RHA_tank_modern"
+        },
+        {
+          "dm_part": "turret_05_front_dm",
+          "thickness_mm": 10.0,
+          "generic_quality_proxy": 0.45,
+          "normal_rha_proxy_mm": 4.5,
+          "variable_thickness": false,
+          "source_armor_class": "nbc_liner_tank"
+        },
+        {
+          "dm_part": "turret_05_bottom_dm",
+          "thickness_mm": 50.0,
+          "generic_quality_proxy": 1.35,
+          "normal_rha_proxy_mm": 67.5,
+          "variable_thickness": false,
+          "source_armor_class": "RHA_tank_modern"
+        }
+      ],
+      "sum_nominal_physical_mm": 214.0,
+      "sum_normal_rha_proxy_mm": 242.5,
+      "material_rha_proxy": 1.1331775700934579,
+      "model_reference_incidence_deg": 68,
+      "model_reference_los_proxy_mm": 647.3457869193486,
+      "includes_era": false,
+      "exact_wt_protection_analysis": false
+    },
+    {
+      "name": "turret_front_cheek",
+      "layers": [
+        {
+          "dm_part": "turret_side_dm",
+          "thickness_mm": 70,
+          "generic_quality_proxy": 1,
+          "normal_rha_proxy_mm": 70,
+          "variable_thickness": true,
+          "source_armor_class": "RHA_tank_modern"
+        },
+        {
+          "dm_part": "composite_armor_turret_01_dm",
+          "thickness_mm": 365.0,
+          "generic_quality_proxy": 0.75,
+          "normal_rha_proxy_mm": 273.75,
+          "variable_thickness": false,
+          "source_armor_class": "t_72b_turrert_composite_armor"
+        },
+        {
+          "dm_part": "turret_01_front_dm",
+          "thickness_mm": 45,
+          "generic_quality_proxy": 1,
+          "normal_rha_proxy_mm": 45,
+          "variable_thickness": false,
+          "source_armor_class": "RHA_tank_modern"
+        },
+        {
+          "dm_part": "turret_side_dm",
+          "thickness_mm": 130,
+          "generic_quality_proxy": 1,
+          "normal_rha_proxy_mm": 130,
+          "variable_thickness": true,
+          "source_armor_class": "RHA_tank_modern"
+        }
+      ],
+      "sum_nominal_physical_mm": 610.0,
+      "sum_normal_rha_proxy_mm": 518.75,
+      "material_rha_proxy": 0.8504098360655737,
+      "model_reference_incidence_deg": 37.5,
+      "model_reference_los_proxy_mm": 653.8700647678247,
+      "includes_era": false,
+      "exact_wt_protection_analysis": false
+    }
+  ],
+  "steel_regions": {
+    "hull_lower_front": [
+      {
+        "dm_part": "body_front_dm",
+        "thickness_mm": 85.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 85.0,
+        "variable_thickness": true,
+        "source_armor_class": "RHA_tank_modern"
+      },
+      {
+        "dm_part": "composite_armor_hull_02_dm",
+        "thickness_mm": 20.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 20.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "hull_side": [
+      {
+        "dm_part": "body_side_dm",
+        "thickness_mm": 80.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 80.0,
+        "variable_thickness": true,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "hull_rear": [
+      {
+        "dm_part": "body_back_dm",
+        "thickness_mm": 40.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 40.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "hull_top_front": [
+      {
+        "dm_part": "body_top_dm",
+        "thickness_mm": 30.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 30.0,
+        "variable_thickness": true,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "hull_engine_deck": [
+      {
+        "dm_part": "superstructure_top_dm",
+        "thickness_mm": 20.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 20.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "hull_bottom": [
+      {
+        "dm_part": "body_bottom_dm",
+        "thickness_mm": 20.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 20.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "turret_side_front": [
+      {
+        "dm_part": "turret_03_side_dm",
+        "thickness_mm": 80.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 80.0,
+        "variable_thickness": true,
+        "source_armor_class": "CHA_tank_modern"
+      }
+    ],
+    "turret_side_rear": [
+      {
+        "dm_part": "turret_02_side_dm",
+        "thickness_mm": 60.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 60.0,
+        "variable_thickness": true,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "turret_rear": [
+      {
+        "dm_part": "turret_back_dm",
+        "thickness_mm": 55.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 55.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "turret_roof": [
+      {
+        "dm_part": "turret_top_dm",
+        "thickness_mm": 45.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 45.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "turret_floor": [
+      {
+        "dm_part": "turret_02_bottom_dm",
+        "thickness_mm": 30.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 30.0,
+        "variable_thickness": false,
+        "source_armor_class": "RHA_tank_modern"
+      }
+    ],
+    "gun_mask": [
+      {
+        "dm_part": "gun_mask_dm",
+        "thickness_mm": 50.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 50.0,
+        "variable_thickness": false,
+        "source_armor_class": "CHA_tank"
+      }
+    ],
+    "gun_trunnion": [
+      {
+        "dm_part": "gun_trunnion_dm",
+        "thickness_mm": 150.0,
+        "generic_quality_proxy": 1,
+        "normal_rha_proxy_mm": 150.0,
+        "variable_thickness": false,
+        "source_armor_class": "CHA_tank_modern"
+      }
+    ]
+  },
+  "turret_ring": {
+    "integrity": 100,
+    "impact_absorption": 0.1,
+    "impact_reduction": 8,
+    "impact_multiplier": 1,
+    "internal": false
+  },
+  "barrel": {
+    "independent_subpart": true,
+    "internal_fixed_attachment": true,
+    "launcher_hitbox_binding": "subsystem.t90a.launcher",
+    "barrel_thickness_mm": 35.0,
+    "working_sight_stays_on_elevation_cradle": true
+  },
+  "status": "applied and statically verified; not game-tested",
+  "verification": {
+    "original_visual_cubes": 1758,
+    "world_aabb_changes": 0,
+    "UV_preserved": true,
+    "turret_total_mass_preserved": true,
+    "turret_shared_structural_durability_preserved": true,
+    "gun_combined_center_of_mass_preserved": true,
+    "independent_launcher_damage_binding": true,
+    "existing_sight_documents_preserved": true,
+    "two_paints_preserved": true,
+    "four_seats_preserved": true,
+    "jar_changed": false,
+    "game_tested": false,
+    "base_armor_native_ray_cases": 14,
+    "barrel_mount_pair_bb": [
+      0,
+      32.7,
+      -0.5
+    ]
+  },
+  "limitations": [
+    "The turret array uses X-ray display layer thicknesses 70/130 mm where the same DamageParts surface is variable-thickness; this is an explicit scalar mapping, not exact WT protection analysis.",
+    "Hull inner 34 mm package is one damage-model layer; the X-ray rubber/steel/air subdivisions are explanatory and are not added a second time.",
+    "Structural durability remains shared within the turret Part like 2S38; barrel damage independently lowers the main launcher durability through the bound hit box.",
+    "Generic damage without a specific hit-box context still falls back to the engine strongest-hit-box path; no JAR change is made."
+  ]
+}

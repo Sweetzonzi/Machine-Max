@@ -1,0 +1,958 @@
+{
+  "version": "0.1.8",
+  "baseline": "0.1.7",
+  "seat_raise_bb": 4,
+  "seat_raise_blocks": 0.25,
+  "projects": [
+    {
+      "id": "T90A",
+      "pack": "t90a",
+      "native_validation": {
+        "ok": true,
+        "count": 0,
+        "issues": [],
+        "export_ok": true,
+        "errors": 0,
+        "warnings": 0
+      },
+      "geometry": {
+        "project": "T90A",
+        "moved": [
+          {
+            "kind": "seat",
+            "name": "commander_seat",
+            "before": [
+              12,
+              34,
+              41
+            ],
+            "after": [
+              12,
+              38,
+              41
+            ]
+          },
+          {
+            "kind": "seat",
+            "name": "external_commander_seat",
+            "before": [
+              -12,
+              34,
+              39
+            ],
+            "after": [
+              -12,
+              38,
+              39
+            ]
+          },
+          {
+            "kind": "entry",
+            "name": "MM_Interact_commander",
+            "before": {
+              "from": [
+                4,
+                40,
+                30
+              ],
+              "to": [
+                20,
+                45,
+                46
+              ]
+            },
+            "after": {
+              "from": [
+                4,
+                46,
+                30
+              ],
+              "to": [
+                20,
+                51,
+                46
+              ]
+            }
+          },
+          {
+            "kind": "entry",
+            "name": "MM_Interact_external_commander",
+            "before": {
+              "from": [
+                -20,
+                40,
+                39
+              ],
+              "to": [
+                -4,
+                45,
+                46
+              ]
+            },
+            "after": {
+              "from": [
+                -20,
+                46,
+                39
+              ],
+              "to": [
+                -4,
+                51,
+                46
+              ]
+            }
+          }
+        ]
+      },
+      "access_before": {
+        "project": "T90A",
+        "ok": true,
+        "results": [
+          {
+            "entry": "MM_Interact_commander",
+            "center": [
+              12,
+              42.5,
+              38
+            ],
+            "clear": 19,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 44
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965995,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 44.618802153517024
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 32,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 32
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296598,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 34
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.349862448157914,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 32.741801616522324
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGBarrel",
+                "hit_distance": 22.617692189964913
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 25.67021089131024
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 32.1371934642443
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_external_commander",
+            "center": [
+              -12,
+              42.5,
+              42.5
+            ],
+            "clear": 23,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567262,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36.5,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567263,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567261,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36.5,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567262,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33.00000000000001,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 39.31170309208188,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.72854156563458,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 39.31170309208188,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.12019206242691
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 47.120192062426916
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 16.963269142473678
+              }
+            ]
+          }
+        ],
+        "scope": "24 static rays per entry against configured hitboxes; M1 aft station at saved -155 yaw. Not an in-game reach or dynamic interaction test."
+      },
+      "access_after": {
+        "project": "T90A",
+        "ok": true,
+        "results": [
+          {
+            "entry": "MM_Interact_commander",
+            "center": [
+              12,
+              48.5,
+              38
+            ],
+            "clear": 17,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 45.773502691896255
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 45
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.762395692965995,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 45.77350269189627
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 50.00000000000001
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 30.39999961853028
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 32,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 26
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 30.76239569296598,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 23.83419246269047
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 29.838635042020936
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383043
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383043
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 47.38945030278363
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.349862448157914,
+                "first_hit": "MM_MGMount",
+                "hit_distance": 48.055920618723405
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 33.11876356387719
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 33.11876356387719
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 33.118763563877195
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383041
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_external_commander",
+            "center": [
+              -12,
+              48.5,
+              42.5
+            ],
+            "clear": 23,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567262,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36.5,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567263,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 62.170250116639984
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 33,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567261,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36.5,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.95854811567262,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 33.00000000000001,
+                "first_hit": "MM_MGReceiver",
+                "hit_distance": 3.0000000000000338
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_Hit_turret_era_left",
+                "hit_distance": 70.42121399057477
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 39.31170309208188,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.275686483830434
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383043
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.3498624481579,
+                "first_hit": "MM_TurretRear",
+                "hit_distance": 68.66085129096494
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.72854156563458,
+                "first_hit": "MM_HullEngineDeck",
+                "hit_distance": 98.27925773020468
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 39.31170309208188,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.728541565634586,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.34986244815791,
+                "first_hit": "MM_HullBottom",
+                "hit_distance": null
+              }
+            ]
+          }
+        ],
+        "scope": "24 static rays per entry against configured hitboxes; M1 aft station at saved -155 yaw. Not an in-game reach or dynamic interaction test."
+      },
+      "only_seats_and_invisible_entry_geometry_changed": true
+    }
+  ],
+  "commander_controls": [
+    {
+      "pack": "t90a",
+      "seat": "subsystem.t90a.external_commander_seat",
+      "preset": "t90a:t90a_observer",
+      "group": "controlGroup.t90a.commander_override",
+      "main": [
+        "subsystem.t90a.main_weapon"
+      ],
+      "secondary": [
+        "subsystem.t90a.coax_controller"
+      ],
+      "aim_priority": "p1 before p2",
+      "independent_weapon_stations_isolated": true
+    }
+  ],
+  "fire_lock_limitation": "Existing WeaponControllerSubsystem selects aim input by priority but accepts fire requests from any configured fire channel. This content-pack setup does not add an exclusive gunner fire lock.",
+  "visible_geometry_unchanged": true,
+  "weapon_stats_and_arcs_unchanged": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "installed_into_game": false
+}

@@ -1,0 +1,1196 @@
+{
+  "name": "T-90A",
+  "uuid": "c6e6cb94-0a68-4a26-9908-cd5eac3f9153",
+  "pos": [
+    0,
+    0,
+    0
+  ],
+  "min": [
+    -2.4,
+    -0.12,
+    -5.8
+  ],
+  "max": [
+    2.4,
+    5.1,
+    6.3
+  ],
+  "hp_ratio": 1,
+  "parts": {
+    "b090a100-2026-4028-9000-000000000001": {
+      "registry_key": "t90a:t90a_hull",
+      "name": "part.t90a.t90a_hull",
+      "uuid": "b090a100-2026-4028-9000-000000000001",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.hull": {
+          "id": 1,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.0625,
+              2.0625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_idler": {
+          "id": 2,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.938895,
+              -1.9375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_1": {
+          "id": 3,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              -0.875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_2": {
+          "id": 4,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              0.25
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_3": {
+          "id": 5,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              1.225
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_4": {
+          "id": 6,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              2.2546875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_5": {
+          "id": 7,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              3.3484375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_road_6": {
+          "id": 8,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.463895,
+              4.346875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.left_sprocket": {
+          "id": 9,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.765625,
+              0.9125,
+              5.2375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_idler": {
+          "id": 10,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.938895,
+              -1.9375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_1": {
+          "id": 11,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              -0.875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_2": {
+          "id": 12,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              0.25
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_3": {
+          "id": 13,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              1.225
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_4": {
+          "id": 14,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              2.2546875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_5": {
+          "id": 15,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              3.3484375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_road_6": {
+          "id": 16,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.463895,
+              4.346875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.right_sprocket": {
+          "id": 17,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.765625,
+              0.9125,
+              5.2375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000002": {
+      "registry_key": "t90a:t90a_hull_era_front",
+      "name": "part.t90a.t90a_hull_era_front",
+      "uuid": "b090a100-2026-4028-9000-000000000002",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.hull_era_front": {
+          "id": 18,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.375,
+              -1.125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000003": {
+      "registry_key": "t90a:t90a_hull_era_left",
+      "name": "part.t90a.t90a_hull_era_left",
+      "uuid": "b090a100-2026-4028-9000-000000000003",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.hull_era_left": {
+          "id": 19,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.26625,
+              1.28125,
+              -0.3375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000004": {
+      "registry_key": "t90a:t90a_hull_era_right",
+      "name": "part.t90a.t90a_hull_era_right",
+      "uuid": "b090a100-2026-4028-9000-000000000004",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.hull_era_right": {
+          "id": 20,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              2.26625,
+              1.28125,
+              -0.3375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000005": {
+      "registry_key": "t90a:t90a_turret",
+      "name": "part.t90a.t90a_turret",
+      "uuid": "b090a100-2026-4028-9000-000000000005",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.turret": {
+          "id": 21,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              2.125,
+              1.875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.gun": {
+          "id": 22,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              2.050568181818182,
+              -0.6545454545454545
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.aa_yaw": {
+          "id": 23,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.75,
+              2.6875,
+              2
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.aa_pitch": {
+          "id": 24,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.75625,
+              3.09375,
+              1.78125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.t90a.barrel": {
+          "id": 27,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              2.01875,
+              -2.85
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000006": {
+      "registry_key": "t90a:t90a_turret_era_left",
+      "name": "part.t90a.t90a_turret_era_left",
+      "uuid": "b090a100-2026-4028-9000-000000000006",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.turret_era_left": {
+          "id": 25,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.5,
+              2.0625,
+              0.6875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "b090a100-2026-4028-9000-000000000007": {
+      "registry_key": "t90a:t90a_turret_era_right",
+      "name": "part.t90a.t90a_turret_era_right",
+      "uuid": "b090a100-2026-4028-9000-000000000007",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.t90a.turret_era_right": {
+          "id": 26,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.5,
+              2.0625,
+              0.6875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    }
+  },
+  "connections": [
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000005",
+      "subPartNameA": "sub_part.t90a.turret",
+      "advConnectorName": "connector.t90a.turret_hull",
+      "posRotA": {
+        "position": [
+          0,
+          -0.3500000000000001,
+          -0.125
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000001",
+      "subPartNameS": "sub_part.t90a.hull",
+      "simplePointConnectorName": "connector.t90a.hull_turret",
+      "posRotS": {
+        "position": [
+          0,
+          0.7124999999999999,
+          -0.3125
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000002",
+      "subPartNameA": "sub_part.t90a.hull_era_front",
+      "advConnectorName": "connector.t90a.hull_era_front_host",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000001",
+      "subPartNameS": "sub_part.t90a.hull",
+      "simplePointConnectorName": "connector.t90a.hull_era_front",
+      "posRotS": {
+        "position": [
+          0,
+          0.3125,
+          -3.1875
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000003",
+      "subPartNameA": "sub_part.t90a.hull_era_left",
+      "advConnectorName": "connector.t90a.hull_era_left_host",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000001",
+      "subPartNameS": "sub_part.t90a.hull",
+      "simplePointConnectorName": "connector.t90a.hull_era_left",
+      "posRotS": {
+        "position": [
+          -2.26625,
+          0.21875,
+          -2.4
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000004",
+      "subPartNameA": "sub_part.t90a.hull_era_right",
+      "advConnectorName": "connector.t90a.hull_era_right_host",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000001",
+      "subPartNameS": "sub_part.t90a.hull",
+      "simplePointConnectorName": "connector.t90a.hull_era_right",
+      "posRotS": {
+        "position": [
+          2.26625,
+          0.21875,
+          -2.4
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000006",
+      "subPartNameA": "sub_part.t90a.turret_era_left",
+      "advConnectorName": "connector.t90a.turret_era_left_host",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000005",
+      "subPartNameS": "sub_part.t90a.turret",
+      "simplePointConnectorName": "connector.t90a.turret_era_left",
+      "posRotS": {
+        "position": [
+          -1.5,
+          -0.0625,
+          -1.1875
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "b090a100-2026-4028-9000-000000000007",
+      "subPartNameA": "sub_part.t90a.turret_era_right",
+      "advConnectorName": "connector.t90a.turret_era_right_host",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "b090a100-2026-4028-9000-000000000005",
+      "subPartNameS": "sub_part.t90a.turret",
+      "simplePointConnectorName": "connector.t90a.turret_era_right",
+      "posRotS": {
+        "position": [
+          1.5,
+          -0.0625,
+          -1.1875
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "track_links": [
+    {
+      "sprocket": {
+        "part": "b090a100-2026-4028-9000-000000000001",
+        "sub_part": "sub_part.t90a.left_sprocket"
+      },
+      "members": [
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_sprocket"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_6"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_5"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_4"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_3"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_2"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_road_1"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.left_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "t90a:t90a_track"
+    },
+    {
+      "sprocket": {
+        "part": "b090a100-2026-4028-9000-000000000001",
+        "sub_part": "sub_part.t90a.right_sprocket"
+      },
+      "members": [
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_sprocket"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_6"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_5"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_4"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_3"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_2"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_road_1"
+        },
+        {
+          "part": "b090a100-2026-4028-9000-000000000001",
+          "sub_part": "sub_part.t90a.right_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "t90a:t90a_track"
+    }
+  ],
+  "meta": {
+    "author": "User model; Codex adaptation",
+    "description": "Three-seat T-90A with seven parts, 1G46 day sight, coaxial PKT, commander 12.7 mm MG and procedural tracks."
+  }
+}

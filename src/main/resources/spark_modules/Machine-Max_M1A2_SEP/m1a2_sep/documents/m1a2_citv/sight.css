@@ -1,0 +1,25 @@
+@font-face{font-family:MMField;src:url('../m1a2_gps/mm-field.ttf') format('truetype');font-display:block}
+html{font-size:0;line-height:0}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent}body{display:inline-block;color:var(--display,#b4ff81);font-family:MMField,monospace;font-size:20px;line-height:1;white-space:nowrap;text-shadow:1px 1px 0 #152015}b,i{font-style:normal;font-weight:400}
+.citv{position:relative;width:640px;height:440px}
+.top-line{position:absolute;top:8px;left:22px;width:596px;display:flex;justify-content:space-between;font-size:18px}
+.range-panel{position:absolute;left:240px;top:350px;width:160px;height:62px;text-align:center}
+.range-value{font-size:28px;line-height:32px;letter-spacing:4px}.range-unavailable{font-size:11px;line-height:20px;opacity:.8}
+.reticle{position:absolute;left:160px;top:172px;width:320px;height:96px}
+.line{position:absolute;background-color:var(--reticle,#b4ff81);box-shadow:1px 1px 0 #152015}
+.left-outer{left:0;top:47px;width:40px;height:2px}
+.left-upper{left:80px;top:31px;width:40px;height:2px}
+.left-inner{left:120px;top:47px;width:32px;height:2px}
+.left-lower{left:80px;top:63px;width:40px;height:2px}
+.right-inner{left:168px;top:47px;width:32px;height:2px}
+.right-upper{left:200px;top:31px;width:40px;height:2px}
+.right-lower{left:200px;top:63px;width:40px;height:2px}
+.right-outer{left:280px;top:47px;width:40px;height:2px}
+.upper-post{left:159px;top:0;width:2px;height:16px}
+.upper-stem{left:159px;top:32px;width:2px;height:10px}
+.lower-stem{left:159px;top:54px;width:2px;height:10px}
+.lower-post{left:159px;top:80px;width:2px;height:16px}
+.aim-dot{position:absolute;left:159px;top:47px;width:2px;height:2px;background-color:var(--reticle,#b4ff81);box-shadow:1px 1px 0 #152015}
+.center-square{position:absolute;left:155px;top:43px;width:10px;height:10px;border:1px solid var(--reticle,#b4ff81)}
+.manual-mode{position:absolute;left:110px;top:322px;font-size:18px}
+.heading{position:absolute;right:22px;top:42px;display:flex;justify-content:flex-end;gap:6px;font-size:14px}

@@ -1,0 +1,8 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "m1a2_sep/m1a2_gps/sight.html",
+  "defaults": {
+    "--reticle": "#ffd83d",
+    "--display": "#b4ff81"
+  }
+}

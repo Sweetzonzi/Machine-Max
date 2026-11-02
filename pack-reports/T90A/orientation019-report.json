@@ -1,0 +1,223 @@
+{
+  "version": "0.1.9",
+  "widget": {
+    "style": "t90a:t90a_orientation",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_left",
+    "offset": [
+      14,
+      76,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  },
+  "seats": [
+    {
+      "part": "t90a_hull",
+      "subpart": "sub_part.t90a.hull",
+      "key": "subsystem.t90a.driver_seat",
+      "first": "t90a:t90a_orientation",
+      "third": "t90a:t90a_ground_orientation"
+    },
+    {
+      "part": "t90a_turret",
+      "subpart": "sub_part.t90a.turret",
+      "key": "subsystem.t90a.gunner_seat",
+      "first": "t90a:t90a_orientation",
+      "third": "t90a:t90a_ground_orientation"
+    },
+    {
+      "part": "t90a_turret",
+      "subpart": "sub_part.t90a.turret",
+      "key": "subsystem.t90a.commander_seat",
+      "first": "t90a:t90a_orientation",
+      "third": "t90a:t90a_orientation"
+    },
+    {
+      "part": "t90a_turret",
+      "subpart": "sub_part.t90a.turret",
+      "key": "subsystem.t90a.external_commander_seat",
+      "first": "t90a:t90a_orientation",
+      "third": "t90a:t90a_orientation"
+    }
+  ],
+  "yaw_expression": "local.connector_rotation('connector.t90a.turret_hull', 1) + local.connector_rotation('connector.t90a.hull_turret', 1)",
+  "angle_step_deg": 1,
+  "max_rounding_error_deg": 0.5,
+  "style": "Round green-phosphor CRT with minimal hull outline, turret circle and single barrel line",
+  "size": [
+    168,
+    204
+  ],
+  "ordinary_seats": 4,
+  "scope": "1G46 including commander override",
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "verification": {
+    "ok": true,
+    "version": "0.1.9",
+    "native_plugin": {
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "seats": [
+      "subsystem.t90a.driver_seat",
+      "subsystem.t90a.gunner_seat",
+      "subsystem.t90a.commander_seat",
+      "subsystem.t90a.external_commander_seat"
+    ],
+    "scopes": [
+      "subsystem.t90a.gunner_sight"
+    ],
+    "one_widget_per_seat_and_scope": true,
+    "native_geometry_and_textures_preserved": true,
+    "all_non_hud_part_fields_preserved": true,
+    "source_model_bytes_preserved": true,
+    "aui_tokenizer_bindings": 4,
+    "actual_spark_compiler": {
+      "ok": true,
+      "actual_installed_spark_compiler": true,
+      "reused_compiled_expression": true,
+      "changing_input_cases": 5762,
+      "host_parts": 2,
+      "class_count": 360,
+      "angular_step_deg": 1
+    },
+    "actual_aui_style_observer": {
+      "ok": true,
+      "actual_installed_aui_style_observer": true,
+      "variable_transform_dirty_mask": 0,
+      "literal_transform_dirty_mask": 17,
+      "literal_change_invalidates_transform": true
+    },
+    "transparent_png_assets": 3,
+    "layout": {
+      "ok": true,
+      "frames": [
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "block",
+          "cannon": "block",
+          "angle": "flex",
+          "warning": "none",
+          "rotation": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "block",
+          "cannon": "block",
+          "angle": "flex",
+          "warning": "none",
+          "rotation": "matrix(0.819152, 0.573576, -0.573576, 0.819152, 0, 0)"
+        },
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "block",
+          "cannon": "block",
+          "angle": "flex",
+          "warning": "none",
+          "rotation": "matrix(0, 1, -1, 0, 0, 0)"
+        },
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "block",
+          "cannon": "block",
+          "angle": "flex",
+          "warning": "none",
+          "rotation": "matrix(-1, 0, 0, -1, 0, 0)"
+        },
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "block",
+          "cannon": "block",
+          "angle": "flex",
+          "warning": "none",
+          "rotation": "matrix(0, -1, 1, 0, 0, 0)"
+        },
+        {
+          "size": [
+            168,
+            204
+          ],
+          "hull": "none",
+          "cannon": "none",
+          "angle": "none",
+          "warning": "block",
+          "rotation": "none"
+        }
+      ],
+      "asset_path": "PNG compiled from vector sources",
+      "game_tested": false
+    },
+    "runtime_mod_sha256": "6f653bd7eaf078d4b0b5c884a8eccea97f4e503c4a136bfebf0497b0dd8455fe",
+    "spark_sha256": "575b425231dbca5eea74ac89e905f4ec74ea3472d507be73d9d2cca905831775",
+    "game_tested": false,
+    "mod_jar_changed": false
+  },
+  "offline": {
+    "ok": true,
+    "checks": {
+      "schema_documents": 49,
+      "registered_schema_uris": 202,
+      "parts": 7,
+      "bones": 129,
+      "locators": 76,
+      "subparts": 27,
+      "collision_shapes": 83,
+      "wheels": 16,
+      "interactions": 4,
+      "internal_connector_pairs": 20,
+      "external_connections": 6,
+      "subsystems": 25,
+      "tracks": 2,
+      "texture_dimensions": [
+        512,
+        512
+      ]
+    },
+    "errors": [],
+    "game_tested": false,
+    "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+  },
+  "integration": {
+    "ok": true,
+    "errors": [],
+    "seats": 4,
+    "visible_open_seats": 2,
+    "mg_scope": false,
+    "weapons": 3,
+    "ready_round_capacity": 22,
+    "main_reload_seconds": 7.5,
+    "sight": "1G46 daylight 2.7x–12x; Steel Witness line geometry",
+    "external_joint_types_verified": 6,
+    "turret_era_independent_parts": 2,
+    "game_tested": false
+  },
+  "limitations": [
+    "Headless checks and a static layout preview only; no in-game rendering or input acceptance.",
+    "The direction display represents turret-to-hull relative yaw, quantized to one degree."
+  ]
+}

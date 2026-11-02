@@ -1,0 +1,576 @@
+{
+  "version": "0.5.5",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\tools/../backups/0.5.4-before-aft-m2-view",
+  "new_sight": "subsystem.m1a2_sep.aft_mg_sight",
+  "parent": "sub_part.m1a2_sep.aft_mg_pitch",
+  "locator": "aft_mg_optic",
+  "zoom": [
+    1,
+    1
+  ],
+  "horizontal_stabilized": true,
+  "vertical_stabilized": false,
+  "screen_hud": "m1a2_sep:m1a2_ground_orientation",
+  "scope": "Aft M2 1x horizontal stabilization; roof-mounted GPS virtual stabilized optical head; improved CITV viewer and corrected optical windows.",
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "gps": {
+    "old_locator": [
+      -9,
+      43,
+      -34
+    ],
+    "new_locator": [
+      17.4,
+      43.0,
+      -23.94542
+    ],
+    "new_parent": "bone2",
+    "owner": "sub_part.m1a2_sep.turret",
+    "type": "machine_max:camera",
+    "zoom": [
+      3,
+      10
+    ],
+    "optical_head_yaw_lead_deg": 20,
+    "pitch_limits_deg": [
+      -10,
+      22
+    ],
+    "horizontal_stabilized": true,
+    "vertical_stabilized": true,
+    "window_note": "Upper portion of the visible glass opening, inside its measured y=39.61969..43.79612 bounds, to clear the roof at -10 degrees."
+  },
+  "citv": {
+    "old_locator": [
+      -15.46208,
+      50.1,
+      -22.4
+    ],
+    "new_locator": [
+      -15.45121,
+      48.3495,
+      -21.82806
+    ],
+    "parent": "MM_CITV_Yaw",
+    "zoom": [
+      3,
+      13
+    ],
+    "horizontal_stabilized": true,
+    "vertical_stabilized": true,
+    "layout": "m1a2_sep:m1a2_citv"
+  },
+  "historical_source_pages": {
+    "fm3_20_12": "Printed 10-2 and 10-3; PDF pages 193-194.",
+    "mnd": "Armor Quarterly March 2022, pages 4-5."
+  },
+  "limitations": [
+    "Zoom bounds are historical references, while the engine uses continuous 70/FOV zoom.",
+    "CITV has no actual thermal rendering or digital 25x/50x modes.",
+    "GPS internal yaw lead is a content-pack camera approximation, not a measured real head-mirror travel."
+  ],
+  "verification": {
+    "native_plugin": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 59,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 155,
+        "locators": 103,
+        "subparts": 33,
+        "collision_shapes": 55,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 46,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "optics": {
+      "ok": true,
+      "version": "0.5.5",
+      "aft_sight": {
+        "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+        "type": "machine_max:sight",
+        "basic_durability": 10,
+        "vertical_stabilized": false,
+        "horizontal_stabilized": true,
+        "base_zoom": 1,
+        "max_zoom": 1,
+        "scope_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+        "discovery_inputs": [
+          "sight_aft_mg"
+        ],
+        "allow_cycle": true
+      },
+      "gps": {
+        "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+        "type": "machine_max:camera",
+        "basic_durability": 10,
+        "vertical_stabilized": true,
+        "horizontal_stabilized": true,
+        "base_zoom": 3,
+        "max_zoom": 10,
+        "scope_hud_layout": "m1a2_sep:m1a2_gps",
+        "discovery_inputs": [
+          "gunner_sight"
+        ],
+        "allow_cycle": true,
+        "min_pitch": -10,
+        "max_pitch": 22,
+        "yaw_limit": 20,
+        "pitch_speed": 90,
+        "yaw_speed": 90,
+        "tracking_target_inputs": []
+      },
+      "citv": {
+        "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+        "type": "machine_max:camera",
+        "basic_durability": 10,
+        "vertical_stabilized": true,
+        "horizontal_stabilized": true,
+        "base_zoom": 3,
+        "max_zoom": 13,
+        "min_pitch": -20,
+        "max_pitch": 60,
+        "yaw_limit": 360,
+        "pitch_speed": 90,
+        "yaw_speed": 90,
+        "tracking_target_inputs": [],
+        "discovery_inputs": [
+          "commander_citv"
+        ],
+        "allow_cycle": true,
+        "scope_hud_layout": "m1a2_sep:m1a2_citv"
+      },
+      "changed_locators": [
+        "gunner_optic",
+        "commander_optic"
+      ],
+      "visible_geometry_and_textures_unchanged": true,
+      "control_groups_and_magazines_unchanged": true,
+      "ray_probe": {
+        "samples": [
+          {
+            "name": "GPS",
+            "pitch": -10,
+            "first_hit": null
+          },
+          {
+            "name": "GPS",
+            "pitch": 0,
+            "first_hit": null
+          },
+          {
+            "name": "GPS",
+            "pitch": 10,
+            "first_hit": null
+          },
+          {
+            "name": "GPS",
+            "pitch": 22,
+            "first_hit": null
+          },
+          {
+            "name": "CITV",
+            "pitch": -10,
+            "first_hit": null
+          },
+          {
+            "name": "CITV",
+            "pitch": 0,
+            "first_hit": null
+          },
+          {
+            "name": "CITV",
+            "pitch": 10,
+            "first_hit": null
+          },
+          {
+            "name": "CITV",
+            "pitch": 22,
+            "first_hit": null
+          }
+        ],
+        "scope": "Static model forward rays only, no Minecraft runtime test"
+      },
+      "citv_actual_aui_parser_ok": true,
+      "layout": {
+        "ok": true,
+        "checks": [
+          {
+            "size": [
+              640,
+              440
+            ],
+            "headerFits": true,
+            "range": "----"
+          },
+          {
+            "size": [
+              640,
+              440
+            ],
+            "headerFits": true,
+            "range": "----"
+          }
+        ],
+        "visual_only": true,
+        "runtime_data_bound": false
+      },
+      "runtime_tested": false,
+      "mod_jar_changed": false
+    },
+    "control_routes": {
+      "ok": true,
+      "pack": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\Machine-Max_M1A2_SEP",
+      "checked_routes": 47,
+      "errors": [],
+      "citv_chain": {
+        "seat_owner": "sub_part.m1a2_sep.turret",
+        "controller_owner": "sub_part.m1a2_sep.citv_yaw",
+        "seat_targets": [
+          "global"
+        ],
+        "bus_aim_citv_subscribers": [
+          "subsystem.m1a2_sep.citv_controller"
+        ],
+        "controller_driver_same_subpart": true,
+        "driver_channel_accepted": true,
+        "fire_inputs": []
+      },
+      "scope": "Offline receiver-name scope and dedicated-channel subscription audit, following ISignalSender.setTargetFromNames and ISignalBus.broadcast. Not a Minecraft runtime test."
+    },
+    "weapons_regression": {
+      "ok": true,
+      "states": [
+        {
+          "role": "gunner",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.gunner_main_only",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.gunner_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "gunner",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.gunner_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": -1,
+          "name": "controlGroup.m1a2_sep.commander_observe",
+          "main_fire": [],
+          "secondary_fire": [],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 0,
+          "name": "controlGroup.m1a2_sep.commander_override_coax762",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_762_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        },
+        {
+          "role": "commander",
+          "index": 1,
+          "name": "controlGroup.m1a2_sep.commander_override_csamm",
+          "main_fire": [
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "secondary_fire": [
+            "subsystem.m1a2_sep.coax_controller"
+          ],
+          "aimed": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ],
+          "hud_selected_controllers": [
+            "subsystem.m1a2_sep.citv_controller",
+            "subsystem.m1a2_sep.coax_controller",
+            "subsystem.m1a2_sep.main_weapon"
+          ]
+        }
+      ],
+      "transitions": [
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "gunner",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": -1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 0,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": -1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": []
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 0,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_762_controller"
+          ]
+        },
+        {
+          "role": "commander",
+          "from": 1,
+          "to": 1,
+          "old_channels_cleared": true,
+          "secondary_after_new_press": [
+            "subsystem.m1a2_sep.coax_controller"
+          ]
+        }
+      ],
+      "state_count": 6,
+      "transition_count": 18,
+      "distinct_mg_fire_and_aim_channels": true,
+      "one_launcher_per_mg_controller": true,
+      "commander_driving_and_citv_preserved": true,
+      "main_scope_controller_preserved": true,
+      "selected_only_huds": true,
+      "scope": "Offline state and route model based on cached target tables, merged active channel keys, and clearInputSignals on group changes. No Minecraft runtime test."
+    },
+    "prior_files_unchanged": 310,
+    "changed_prior_files": [
+      "README.txt",
+      "m1a2_sep/lang/en_us.json",
+      "m1a2_sep/lang/zh_cn.json",
+      "m1a2_sep/models/part/m1a2_sep.geo.json",
+      "m1a2_sep/parts/m1a2_turret.json",
+      "m1a2_sep/subsystems/m1a2_commander_citv.json",
+      "m1a2_sep/subsystems/m1a2_gunner_sight.json",
+      "meta.json",
+      "validation.json"
+    ],
+    "new_files": [
+      "m1a2_sep/documents/m1a2_citv/sight.css",
+      "m1a2_sep/documents/m1a2_citv/sight.html",
+      "m1a2_sep/hud_layouts/m1a2_citv.json",
+      "m1a2_sep/huds/m1a2_citv.json",
+      "m1a2_sep/subsystems/aft_mg_sight.json",
+      "optics-position-audit.txt",
+      "optics055-report.json",
+      "更新说明-0.5.5.txt"
+    ]
+  },
+  "historical_references": {
+    "fm3_20_12": {
+      "file": "references/fm3-20_12_2001.pdf",
+      "printed_pages": [
+        "10-2",
+        "10-3"
+      ],
+      "sha256": "2a1845be5683a0a55950b32c639dfad73026365223855e36c4b9314eb14d8718"
+    },
+    "mnd_202203": {
+      "file": "references/mnd-m1a2-optics-202203.pdf",
+      "pages": [
+        4,
+        5
+      ],
+      "sha256": "50f2cf2357f1297f7de450c29771990955e6cd9dbed9ab7214310961163794db"
+    }
+  }
+}

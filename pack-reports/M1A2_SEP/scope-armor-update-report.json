@@ -1,0 +1,329 @@
+{
+  "version": "0.3.1",
+  "parts": [
+    "m1a2_hull",
+    "m1a2_turret",
+    "m1a2_hull_armor_left",
+    "m1a2_hull_armor_right",
+    "m1a2_turret_armor_left",
+    "m1a2_turret_armor_right"
+  ],
+  "mass_kg": 21560,
+  "subparts": 31,
+  "external_connections": 5,
+  "scope": {
+    "base_zoom": 3,
+    "max_zoom": 10,
+    "rangefinder": false,
+    "manual_zeroing": false,
+    "reticle_display": "fixed-size GPS-style reticle with permanent center dot",
+    "calibrated_mil_scale": false,
+    "crt_included": false
+  },
+  "armor_zones": [
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullCore",
+      "material": "machine_max:rha",
+      "thickness": 45,
+      "full_rha_mm": 45,
+      "destroyed_rha_mm": 13.5
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullDeck",
+      "material": "machine_max:rha",
+      "thickness": 30,
+      "full_rha_mm": 30,
+      "destroyed_rha_mm": 9
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullFrontUpper",
+      "material": "machine_max:rha",
+      "thickness": 50,
+      "full_rha_mm": 50,
+      "destroyed_rha_mm": 15
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullFrontLower",
+      "material": "m1a2_sep:m1a2_composite",
+      "thickness": 250,
+      "full_rha_mm": 450,
+      "destroyed_rha_mm": 125
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullRear",
+      "material": "machine_max:rha",
+      "thickness": 35,
+      "full_rha_mm": 35,
+      "destroyed_rha_mm": 10.5
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_SideLeft",
+      "material": "machine_max:rha",
+      "thickness": 80,
+      "full_rha_mm": 80,
+      "destroyed_rha_mm": 24
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_SideRight",
+      "material": "machine_max:rha",
+      "thickness": 80,
+      "full_rha_mm": 80,
+      "destroyed_rha_mm": 24
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_Engine",
+      "material": "machine_max:internal_machinery",
+      "thickness": 5,
+      "full_rha_mm": 2.75,
+      "destroyed_rha_mm": 2.5
+    },
+    {
+      "part": "m1a2_hull",
+      "bone": "MM_HullNose",
+      "material": "m1a2_sep:m1a2_composite",
+      "thickness": 250,
+      "full_rha_mm": 450,
+      "destroyed_rha_mm": 125
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretCore",
+      "material": "machine_max:rha",
+      "thickness": 110,
+      "full_rha_mm": 110,
+      "destroyed_rha_mm": 33
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretFrontLeft",
+      "material": "m1a2_sep:m1a2_du_composite",
+      "thickness": 400,
+      "full_rha_mm": 660,
+      "destroyed_rha_mm": 220
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretFrontRight",
+      "material": "m1a2_sep:m1a2_du_composite",
+      "thickness": 400,
+      "full_rha_mm": 660,
+      "destroyed_rha_mm": 220
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretRear",
+      "material": "machine_max:rha",
+      "thickness": 55,
+      "full_rha_mm": 55,
+      "destroyed_rha_mm": 16.5
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretRoof",
+      "material": "machine_max:rha",
+      "thickness": 30,
+      "full_rha_mm": 30,
+      "destroyed_rha_mm": 9
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretSideLeft",
+      "material": "m1a2_sep:m1a2_composite",
+      "thickness": 80,
+      "full_rha_mm": 144,
+      "destroyed_rha_mm": 40
+    },
+    {
+      "part": "m1a2_turret",
+      "bone": "MM_TurretSideRight",
+      "material": "m1a2_sep:m1a2_composite",
+      "thickness": 80,
+      "full_rha_mm": 144,
+      "destroyed_rha_mm": 40
+    },
+    {
+      "part": "m1a2_hull_armor_left",
+      "bone": "MM_HullAddonLeftHit",
+      "material": "m1a2_sep:m1a2_arat",
+      "thickness": 65,
+      "full_rha_mm": 78,
+      "destroyed_rha_mm": 13
+    },
+    {
+      "part": "m1a2_hull_armor_right",
+      "bone": "MM_HullAddonRightHit",
+      "material": "m1a2_sep:m1a2_arat",
+      "thickness": 65,
+      "full_rha_mm": 78,
+      "destroyed_rha_mm": 13
+    },
+    {
+      "part": "m1a2_turret_armor_left",
+      "bone": "MM_TurretAddonLeftHit",
+      "material": "m1a2_sep:m1a2_arat",
+      "thickness": 55,
+      "full_rha_mm": 66,
+      "destroyed_rha_mm": 11
+    },
+    {
+      "part": "m1a2_turret_armor_right",
+      "bone": "MM_TurretAddonRightHit",
+      "material": "m1a2_sep:m1a2_arat",
+      "thickness": 55,
+      "full_rha_mm": 66,
+      "destroyed_rha_mm": 11
+    }
+  ],
+  "geometry": {
+    "sides": [
+      {
+        "key": "hull",
+        "side": "left",
+        "root": "MM_HullArmorLeft",
+        "visual": "LeftZhuangJia",
+        "hit": "MM_HullAddonLeftHit",
+        "center": [
+          -37,
+          18.585,
+          -8.190000000000001
+        ],
+        "mount": [
+          -32.08,
+          18.585,
+          -8.190000000000001
+        ]
+      },
+      {
+        "key": "hull",
+        "side": "right",
+        "root": "MM_HullArmorRight",
+        "visual": "RightZhuangJia",
+        "hit": "MM_HullAddonRightHit",
+        "center": [
+          37.045,
+          18.585,
+          -8.485
+        ],
+        "mount": [
+          32.08,
+          18.585,
+          -8.485
+        ]
+      },
+      {
+        "key": "turret",
+        "side": "left",
+        "root": "MM_TurretArmorLeft",
+        "visual": "5",
+        "hit": "MM_TurretAddonLeftHit",
+        "center": [
+          -34.43,
+          38.485,
+          9.435
+        ],
+        "mount": [
+          -30.8,
+          38.485,
+          9.435
+        ]
+      },
+      {
+        "key": "turret",
+        "side": "right",
+        "root": "MM_TurretArmorRight",
+        "visual": "6",
+        "hit": "MM_TurretAddonRightHit",
+        "center": [
+          34.43,
+          38.485,
+          9.435
+        ],
+        "mount": [
+          30.8,
+          38.485,
+          9.435
+        ]
+      }
+    ],
+    "baseHitboxes": [
+      "MM_SideLeft",
+      "MM_SideRight",
+      "MM_HullNose",
+      "MM_TurretSideLeft",
+      "MM_TurretSideRight"
+    ]
+  },
+  "parameters_are_game_balance_values": true,
+  "mg_clearance": {
+    "aft_sector": "rear-right, 40 degrees wide",
+    "aft_yaw_deg": [
+      -175,
+      -135
+    ],
+    "aft_initial_yaw_deg": -155,
+    "aft_pitch_deg": [
+      0,
+      45
+    ],
+    "rws_yaw_deg": [
+      -90,
+      90
+    ],
+    "rws_pitch_deg": [
+      -5,
+      55
+    ],
+    "aim_tolerance_deg": 5,
+    "visible_raised_mount": false,
+    "additional_reference_body": false,
+    "geometry_inspection": {
+      "method": "Static oriented cube geometry overlap, 0.02 BB tolerance; sampled angles, not in-game simulation",
+      "posePairs": 4680,
+      "collisions": []
+    }
+  },
+  "limitations": [
+    "No real M1A2 SEP exact armor-equivalence claim.",
+    "ARAT uses independent durability and blast damage reduction; no per-tile detonation or HEAT-specific classifier is available in this content configuration.",
+    "No target rangefinder or manual zeroing query is connected.",
+    "Use the complete assembly template for the saved safe initial MG pose; the authoring model retains its original zero pose."
+  ],
+  "validation": {
+    "game_tested": false,
+    "repair_report": "repair031-report.json"
+  },
+  "references": [
+    {
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-Y10-PURL-gpo156595/pdf/GOVPUB-Y10-PURL-gpo156595.pdf",
+      "supports": "Abrams composite armor approach; not exact SEP thickness"
+    },
+    {
+      "url": "https://www.health.mil/Military-Health-Topics/Environmental-Exposures-Hub/Environmental-Exposures-Topics/Depleted-Uranium",
+      "supports": "DU enhanced armor on some Abrams variants; not hull-wide DU assumption"
+    },
+    {
+      "url": "https://www.defense.gov/News/Article/Article/1105102/army-unit-bolsters-abrams-tanks-with-reactive-armor/",
+      "supports": "ARAT on hull and turret sides, additional protection against RPGs"
+    },
+    {
+      "url": "https://www.asafm.army.mil/Portals/72/Documents/BudgetMaterial/2017/base%20budget/justification%20book/Weapons%20and%20Tracked%20Combat%20Vehicles.pdf",
+      "supports": "Classified armor components; public sources do not establish exact regional thickness"
+    },
+    {
+      "url": "https://www.military-references.com/wp-content/uploads/books/tanks/usa/m1_abrams/M1_Abrams_Tank_Gunnery_FM_3-20_12_2001.pdf",
+      "supports": "US Army reference for visual sight style; game HUD is an adaptation"
+    },
+    {
+      "url": "https://www.benning.army.mil/Armor/OCoA/content/References%20and%20Guides/Tank%20SOP%202015.pdf",
+      "supports": "Public reference to 3X / 10X sight use"
+    }
+  ]
+}

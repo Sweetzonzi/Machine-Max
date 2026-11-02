@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "checks": {
+    "schema_documents": 61,
+    "registered_schema_uris": 202,
+    "parts": 6,
+    "bones": 155,
+    "locators": 103,
+    "subparts": 33,
+    "collision_shapes": 55,
+    "wheels": 18,
+    "interactions": 7,
+    "internal_connector_pairs": 27,
+    "external_connections": 5,
+    "subsystems": 48,
+    "tracks": 2,
+    "texture_dimensions": [
+      1024,
+      1024
+    ]
+  },
+  "errors": [],
+  "game_tested": false,
+  "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+}

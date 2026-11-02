@@ -1,0 +1,104 @@
+{
+  "version": "0.3.4",
+  "sight": {
+    "removed": "Community-reference circular aiming overlay",
+    "retained": "Square, segmented marks, static center dot and actual zoom",
+    "left_status": "Actual chambered ammunition and READY / LOADING / EMPTY",
+    "right_status": "Actual feed selection and reserve ammunition",
+    "range_position": "Bottom center",
+    "rangefinder_implemented": false,
+    "range_placeholder": "---- / NO RANGE",
+    "limitation": "Current HudMolangContext and HudViewSnapshot expose camera pose and optics, not target hit distance. No synthetic distance or unprovided query was inserted."
+  },
+  "aft_m2": {
+    "yaw_limits_before": [
+      -175,
+      -135
+    ],
+    "yaw_limits_after": [
+      -175,
+      -70
+    ],
+    "sector_degrees": 105,
+    "pitch_limits": [
+      0,
+      45
+    ],
+    "initial_yaw": -155,
+    "checked_against": [
+      "RWS full existing yaw/pitch range",
+      "M240 full existing yaw/pitch range"
+    ],
+    "static_pose_pairs": 244420,
+    "intersections": 0,
+    "sampling_step_degrees": 5,
+    "geometry_tolerance_bb": 0.02,
+    "game_physics_verified": false
+  },
+  "description": {
+    "format_example": "Machine-Max_Civilian/machine_max/tooltips/ae86.html",
+    "format": "Localized rich-text title and vehicle introduction only",
+    "sources": [
+      "https://asc.army.mil/docs/pubs/alt/archives/2001/Nov-Dec_2001.pdf",
+      "https://odin.t2com.army.mil/WEG/Asset/739fc6eb75d491d6704b7f265b2704b9"
+    ]
+  },
+  "validation": {
+    "plugin": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 52,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 146,
+        "locators": 94,
+        "subparts": 31,
+        "collision_shapes": 48,
+        "wheels": 18,
+        "interactions": 6,
+        "internal_connector_pairs": 25,
+        "external_connections": 5,
+        "subsystems": 38,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "unchanged_support_files": 58,
+    "geometry_and_assembly_unchanged": true,
+    "preview": {
+      "reticle_center": [
+        800,
+        450
+      ],
+      "rings": 0,
+      "range": "----",
+      "weapon_box": {
+        "x": 480,
+        "y": 230,
+        "width": 640,
+        "height": 440,
+        "top": 230,
+        "right": 1120,
+        "bottom": 670,
+        "left": 480
+      }
+    },
+    "game_tested": false,
+    "installed_into_game": false,
+    "mod_jar_changed": false
+  }
+}

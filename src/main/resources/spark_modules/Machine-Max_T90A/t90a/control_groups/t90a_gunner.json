@@ -1,0 +1,25 @@
+{
+  "base_group": {
+    "name": "controlGroup.t90a.t90a_gunner",
+    "control_mode": "inherit",
+    "move_targets": {},
+    "regular_targets": {},
+    "bindings": [],
+    "view_targets": {
+      "aim_input_p2": [
+        "subsystem.t90a.main_weapon",
+        "subsystem.t90a.coax_controller"
+      ]
+    },
+    "main_weapon_targets": {
+      "fire_input_p2": [
+        "subsystem.t90a.main_weapon"
+      ]
+    },
+    "secondary_weapon_targets": {
+      "secondary_fire_input_p2": [
+        "subsystem.t90a.coax_controller"
+      ]
+    }
+  }
+}

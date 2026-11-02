@@ -1,0 +1,62 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "m1a2_sep:textures/icon/m1a2_hull_armor_left.png",
+  "vehicle_durability_rate": 0.06,
+  "vehicle_damage_rate": 0.095,
+  "vehicle_damage_rate_destroyed": 0.015,
+  "functional_threshold": 0.6,
+  "max_stack_size": 4,
+  "variants": {
+    "desert": {
+      "model": "m1a2_sep:m1a2_sep.geo",
+      "textures": {
+        "default": "m1a2_sep:textures/part/m1a2_sep.png",
+        "olive": "m1a2_sep:textures/part/m1a2_sep_olive.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/decoration",
+        "machine_max:addon_armor",
+        "m1a2_sep:armor/hull_left",
+        "machine_max:series/m1a2"
+      ],
+      "sub_parts": {
+        "sub_part.m1a2_sep.hull_armor_left": {
+          "start_bone": "MM_HullArmorLeft",
+          "end_bones": [],
+          "durability": 100,
+          "mass": 600,
+          "mass_center": "hull_armor_left_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_HullAddonLeftHit": {
+              "id": "part",
+              "type": "box",
+              "material": "m1a2_sep:m1a2_arat",
+              "thickness": 65
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.hull_armor_left_host": {
+              "locator": "hull_armor_left_mount",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {
+                "required_tags": [
+                  "m1a2_sep:hull"
+                ],
+                "integrity": 60,
+                "impact_absorption": 0.1,
+                "impact_reduction": 8
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "version": "0.4.2",
+  "citv_yaw": 360,
+  "citv_speed_deg_s": 90,
+  "citv_mass_kg": 10,
+  "fixed_pedestal": true,
+  "camera_type": "machine_max:camera",
+  "camera_local_pitch_deg": [
+    -20,
+    60
+  ],
+  "rws_actual_bb_yaw_deg": [
+    -97.5,
+    90
+  ],
+  "rws_json_yr": [
+    -90,
+    97.5
+  ],
+  "rws_span_deg": 187.5,
+  "total_mass_kg": 21560,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "geometry": {
+    "pivot": [
+      -15.46208,
+      43.2,
+      -16.465
+    ],
+    "mass": [
+      -15.46208,
+      46.1,
+      -16.465
+    ],
+    "head": "75fdfb27-0e9d-4af8-8232-b58257f8cf25",
+    "moving_cubes": [
+      "fee78392-0971-5d78-236c-3590fc083907",
+      "1931834c-cbac-5fff-98d4-58b434dd9443",
+      "75292c7f-1a94-2a28-42b5-7746212d4aa1",
+      "acfb92a5-7c74-ad9d-f63f-403b76262497",
+      "1a5db76e-1739-69a3-04cc-b9a4723eab16"
+    ],
+    "fixed_base_cubes": [
+      "6fcac62c-0345-b167-99c7-ed2a072ca559",
+      "c9c591f1-da7b-b798-3b63-c3466c4254ad",
+      "2b5fb7bb-0154-80a2-a04d-503c21aa360d",
+      "60c75584-4b7a-06ae-0981-369a6a148d0a"
+    ],
+    "camera": {
+      "position": [
+        -15.46208,
+        50.1,
+        -22.4
+      ],
+      "parent": "MM_CITV_Yaw"
+    },
+    "hit_box": {
+      "from": [
+        -19.5,
+        43,
+        -21.8
+      ],
+      "to": [
+        -11.4,
+        49.2,
+        -12.4
+      ]
+    },
+    "geometry_coordinates_changed": false
+  },
+  "control": {
+    "camera_follows_rotating_head": true,
+    "base_view_targets": {
+      "aim_citv": [
+        "subsystem.m1a2_sep.citv_controller"
+      ]
+    },
+    "controller_fire_inputs": [],
+    "launchers_attached": 0,
+    "commander_override_preserved": true
+  },
+  "verification": {
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "candidate_pose_pairs": 5222631,
+    "selected_rws_poses": 2356,
+    "selected_visible_intersections": 0,
+    "fixed_attachment_intersections": 0,
+    "optical_own_head_clear_samples": 150,
+    "body_rotation_native": "Dp_Mt_Libbulletjme version 23.1.0 initializing\r\nCITV target 0.000 actual_body 0.000 expected 0.000\r\nCITV target 45.000 actual_body 45.000 expected 45.000\r\nCITV target 90.000 actual_body 90.000 expected 90.000\r\nCITV target 135.000 actual_body 135.000 expected 135.000\r\nCITV target 180.000 actual_body -180.000 expected 180.000\r\nCITV target 225.000 actual_body -135.000 expected -135.000\r\nCITV target 270.000 actual_body -90.000 expected -90.000\r\nCITV target 315.000 actual_body -45.000 expected -45.000\r\nCITV target 359.000 actual_body -1.000 expected -1.000\r\nCITV target 0.000 actual_body -0.000 expected 0.000\r\nCITV target 270.000 actual_body -90.000 expected -90.000\r\nCITV target 90.000 actual_body 90.000 expected 90.000\r\nRWS target 0.000 actual_body 0.000 expected 0.000\r\nRWS target 45.000 actual_body 45.000 expected 45.000\r\nRWS target 90.000 actual_body 90.000 expected 90.000\r\nRWS target 130.000 actual_body 90.000 expected 90.000\r\nRWS target 180.000 actual_body 90.000 expected -97.500\r\nRWS target 225.000 actual_body 90.000 expected -97.500\r\nRWS target 0.000 actual_body 0.000 expected 0.000\r\nRWS target 262.500 actual_body -97.500 expected -97.500\r\nRWS target 240.000 actual_body -97.500 expected -97.500\r\nRWS target 300.000 actual_body -60.000 expected -60.000\r\nRWS target 340.000 actual_body -20.000 expected -20.000\r\nRWS target 60.000 actual_body 60.000 expected 60.000\r\nRWS target 0.000 actual_body 0.000 expected 0.000\r\n",
+    "scope": "Offline geometry and installed Bullet library checks; no Minecraft launch or multiplayer test.",
+    "known_limit": "The gimbal model turns in azimuth. Elevation remains the camera internal view angle. At aim points in the forbidden rear sector the RWS can stay at its current limit; turn through the front sector to traverse to the other side.",
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 55,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 154,
+        "locators": 102,
+        "subparts": 33,
+        "collision_shapes": 54,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 42,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "original_element_coordinates_and_uvs_unchanged": true,
+    "total_mass_kg": 21560,
+    "prior_pack_files_unchanged": 276,
+    "changed_prior_files": [
+      "meta.json",
+      "README.txt",
+      "m1a2_sep/control_groups/m1a2_commander.json",
+      "m1a2_sep/lang/en_us.json",
+      "m1a2_sep/lang/zh_cn.json",
+      "m1a2_sep/parts/m1a2_turret.json",
+      "m1a2_sep/templates/m1a2_sep.json",
+      "m1a2_sep/models/part/m1a2_sep.geo.json"
+    ]
+  }
+}

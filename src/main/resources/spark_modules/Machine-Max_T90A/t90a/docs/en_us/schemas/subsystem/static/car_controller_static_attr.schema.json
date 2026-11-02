@@ -1,0 +1,239 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
+  "title": "Vehicle Controller Subsystem Static Attributes",
+  "description": "Static attributes of the vehicle control system, responsible for handling driving inputs, steering control, etc.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:car_controller",
+      "description": "Subsystem type, must be 'machine_max:car_controller'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
+    },
+    "min_steering_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5.0,
+      "description": "Minimum steering radius, in meters. Used for steering limits at low speeds and when handbrake is applied."
+    },
+    "lateral_acceleration": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 8.0,
+          "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Speed-lateral acceleration mapping table, where keys are speed (km/h) and values are corresponding lateral acceleration limits (m/s²). Supports linear interpolation.",
+          "examples": [
+            {
+              "0": 8.0,
+              "30": 6.0,
+              "60": 4.0,
+              "100": 3.0
+            }
+          ]
+        }
+      ],
+      "default": 8.0,
+      "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
+    },
+    "max_drift_angular_velocity": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 57.3,
+          "description": "Maximum drift angular velocity, in °/s. Used as the target value for PD controller during drifting."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Speed-maximum drift angular velocity mapping table, where keys are speed (km/h) and values are corresponding maximum drift angular velocity (°/s). Supports linear interpolation.",
+          "examples": [
+            {
+              "0": 45.8,
+              "30": 57.3,
+              "60": 68.8,
+              "100": 85.9
+            }
+          ]
+        }
+      ],
+      "default": 57.3,
+      "description": "Maximum drift angular velocity, in °/s. Used as the target value for PD controller during drifting."
+    },
+    "manual_gear_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to enable manual gear shifting. If false, automatic shifting is used."
+    },
+    "auto_hand_brake": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to automatically apply handbrake. Automatically applies handbrake when vehicle is stationary and no input is given."
+    },
+    "drift_assist": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable drift assist. Automatically assists in maintaining drift state when the vehicle is turning."
+    },
+    "drift_front_outer_brake_gain": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.3,
+      "description": "Drift front-outer wheel additional brake gain (0~1). Suppresses spin-out and enhances front axle grip. Higher values provide more controllable drifting but increase understeer risk. Only effective when drift assist is enabled."
+    },
+    "drift_rear_inner_brake_gain": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.1,
+      "description": "Drift rear-inner wheel additional brake gain (0~1). Assists rear-end swing into apex. Higher values provide smoother drift entry but increase over-rotation risk. Only effective when drift assist is enabled."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["move_input"],
+      "description": "List of control input signal keys, from highest to lowest priority."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_destroyed": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "handbrake_on": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event for handbrake engagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.car_controller.handbrake_on",
+            "range": 16
+          }
+        },
+        "handbrake_off": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event for handbrake disengagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.car_controller.handbrake_off",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration for handbrake operations."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:car_controller",
+      "description": "Minimal example - only required fields"
+    },
+    {
+      "type": "machine_max:car_controller",
+      "basic_durability": 50.0,
+      "min_steering_radius": 4.0,
+      "lateral_acceleration": 8.0,
+      "max_drift_angular_velocity": 2.0,
+      "manual_gear_shift": true,
+      "auto_hand_brake": true,
+      "drift_assist": true,
+      "drift_front_outer_brake_gain": 0.3,
+      "drift_rear_inner_brake_gain": 0.1,
+      "control_inputs": ["move_input", "regular_input"],
+      "description": "Complete example - includes all optional fields"
+    },
+    {
+      "type": "machine_max:car_controller",
+      "basic_durability": 60.0,
+      "min_steering_radius": 3.5,
+      "lateral_acceleration": {
+        "0": 8.0,
+        "30": 6.0,
+        "60": 4.0,
+        "100": 3.0
+      },
+      "max_drift_angular_velocity": {
+        "0": 1.5,
+        "30": 2.0,
+        "60": 2.5,
+        "100": 3.0
+      },
+      "manual_gear_shift": false,
+      "auto_hand_brake": true,
+      "drift_assist": false,
+      "drift_front_outer_brake_gain": 0.0,
+      "drift_rear_inner_brake_gain": 0.0,
+      "control_inputs": ["move_input"],
+      "description": "Advanced example - using mapping tables, drift assist disabled"
+    }
+  ]
+}

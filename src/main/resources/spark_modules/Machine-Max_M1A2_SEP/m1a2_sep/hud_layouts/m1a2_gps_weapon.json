@@ -1,0 +1,20 @@
+[
+  {
+    "style": "m1a2_sep:m1a2_gps_weapon",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "center",
+    "offset": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "selected_only"
+  }
+]

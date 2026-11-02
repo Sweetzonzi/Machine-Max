@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "version": "0.1.12",
+  "cause": "The local signal address resolves to the Part receiver and does not broadcast the camera discovery handshake.",
+  "old_target": "local",
+  "new_target": "subsystem.t90a.commander_day_sight",
+  "native": {
+    "export_ok": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "runtime": {
+    "ok": true,
+    "old_local_reproduces_empty_camera_list": true,
+    "configured_direct_target_resolves_camera": true,
+    "real_seat_camera_callback_passed": true,
+    "repeat_handshake_deduplicated": true,
+    "camera_class_source": "file:/F:/1.21.1%20MAX/.minecraft/mods/MachineMax-1.21.1-1.0.3-beta.6.jar",
+    "game_tested": false
+  },
+  "all_geometry_and_textures_unchanged": true,
+  "only_one_part_field_changed": true,
+  "all_optic_hud_assets_and_other_seats_preserved": true,
+  "game_tested": false,
+  "mod_jar_changed": false
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "座椅子系统动态属性",
+  "description": "座椅的动态属性，定义座椅位置、信号传输目标，以及按安装位覆盖型号定义的表现配置。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "子系统类型，必须为'machine_max:seat'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "座椅点定位器名称，模型中的骨骼将作为座椅位置。若为空，则使用子系统定义的默认定位器。"
+    },
+    "control_group_preset": {
+      "type": "string",
+      "default": "machine_max:empty",
+      "description": "控制组预设的资源地址，定义此座椅可用的控制频道映射关系。例如 machine_max:default_driver。"
+    },
+    "passenger_num_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "乘客数量信号输出频道及目标。"
+    },
+    "camera_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "摄像机发现握手配置。在这些频道上发送握手信号即可发现本载具上可用的摄像机。例如 {\"gunner_optics\": [\"gunner_primary_sight\"]}"
+    },
+    "dismount_locators": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "下车点定位器名称列表，列表顺序即下车尝试的优先级。每个名称都必须在模型 locators 中存在；留空表示该座位不声明下车点。"
+    },
+    "first_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "第一人称 HUD 布局的安装级覆盖。省略表示沿用型号定义里的 views.first_hud_layout；写成 machine_max:empty 表示这个安装位在第一人称不显示 HUD。"
+    },
+    "third_hud_layout": {
+      "allOf": [
+        { "$ref": "../../base/resource_location.schema.json" }
+      ],
+      "description": "第三人称 HUD 布局的安装级覆盖。省略表示沿用型号定义里的 views.third_hud_layout；写成 machine_max:empty 表示这个安装位在第三人称不显示 HUD。"
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "description": "乘员能否使用物品的安装级覆盖。省略表示沿用型号定义里的 allow_use_items。"
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "third_hud_layout": "machine_max:k17_vehicle_hud",
+      "allow_use_items": true
+    }
+  ]
+}

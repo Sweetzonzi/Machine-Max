@@ -1,0 +1,59 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.m1a2_track",
+				"texture_width": 1024,
+				"texture_height": 1024,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2,
+				"visible_bounds_offset": [0, 0, 0]
+			},
+			"bones": [
+				{
+					"name": "TrackLink",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-5.93527, 0.25, -1.18404],
+							"size": [11.87054, 0.69723, 2.36808],
+							"uv": {
+								"north": {"uv": [481, 164], "uv_size": [12, 1]},
+								"east": {"uv": [547, 98], "uv_size": [2, 1]},
+								"south": {"uv": [481, 225], "uv_size": [12, 1]},
+								"west": {"uv": [547, 102], "uv_size": [2, 1]},
+								"up": {"uv": [418, 105], "uv_size": [12, 2]},
+								"down": {"uv": [418, 148], "uv_size": [12, -2]}
+							}
+						},
+						{
+							"origin": [-4.6, 0, -0.98],
+							"size": [9.2, 0.25, 1.96],
+							"uv": {
+								"north": {"uv": [481, 164], "uv_size": [12, 1]},
+								"east": {"uv": [547, 98], "uv_size": [2, 1]},
+								"south": {"uv": [481, 225], "uv_size": [12, 1]},
+								"west": {"uv": [547, 102], "uv_size": [2, 1]},
+								"up": {"uv": [418, 105], "uv_size": [12, 2]},
+								"down": {"uv": [418, 148], "uv_size": [12, -2]}
+							}
+						},
+						{
+							"origin": [-0.55, 0.94723, -0.4],
+							"size": [1.1, 0.90277, 0.8],
+							"uv": {
+								"north": {"uv": [481, 164], "uv_size": [12, 1]},
+								"east": {"uv": [547, 98], "uv_size": [2, 1]},
+								"south": {"uv": [481, 225], "uv_size": [12, 1]},
+								"west": {"uv": [547, 102], "uv_size": [2, 1]},
+								"up": {"uv": [418, 105], "uv_size": [12, 2]},
+								"down": {"uv": [418, 148], "uv_size": [12, -2]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

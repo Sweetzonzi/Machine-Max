@@ -1,0 +1,1406 @@
+{
+  "version": "0.3.10",
+  "baseline": "0.3.9",
+  "seat_raise_bb": 4,
+  "seat_raise_blocks": 0.25,
+  "projects": [
+    {
+      "id": "M1A2_SEP",
+      "pack": "m1a2_sep",
+      "native_validation": {
+        "ok": true,
+        "count": 0,
+        "issues": [],
+        "export_ok": true,
+        "errors": 0,
+        "warnings": 0
+      },
+      "geometry": {
+        "project": "M1A2_SEP",
+        "moved": [
+          {
+            "kind": "seat",
+            "name": "commander_seat",
+            "before": [
+              12,
+              36,
+              4
+            ],
+            "after": [
+              12,
+              40,
+              4
+            ]
+          },
+          {
+            "kind": "seat",
+            "name": "port_mg_seat",
+            "before": [
+              -12,
+              31,
+              2
+            ],
+            "after": [
+              -12,
+              35,
+              2
+            ]
+          },
+          {
+            "kind": "seat",
+            "name": "aft_mg_seat",
+            "before": [
+              10.88017,
+              34,
+              3
+            ],
+            "after": [
+              10.88017,
+              38,
+              3
+            ]
+          },
+          {
+            "kind": "entry",
+            "name": "MM_Interact_commander",
+            "before": {
+              "from": [
+                4,
+                42,
+                -7
+              ],
+              "to": [
+                22,
+                51,
+                11
+              ]
+            },
+            "after": {
+              "from": [
+                6,
+                52,
+                -30
+              ],
+              "to": [
+                25,
+                62,
+                -16
+              ]
+            }
+          },
+          {
+            "kind": "entry",
+            "name": "MM_Interact_port_mg",
+            "before": {
+              "from": [
+                -16,
+                47,
+                -1
+              ],
+              "to": [
+                -8,
+                54,
+                7
+              ]
+            },
+            "after": {
+              "from": [
+                -26,
+                53,
+                -9
+              ],
+              "to": [
+                -10,
+                61,
+                1
+              ]
+            }
+          },
+          {
+            "kind": "entry",
+            "name": "MM_Interact_aft_mg",
+            "before": {
+              "from": [
+                0.5,
+                45,
+                -10.5
+              ],
+              "to": [
+                21.5,
+                60,
+                10.1
+              ]
+            },
+            "after": {
+              "from": [
+                0.5,
+                49,
+                -10.5
+              ],
+              "to": [
+                21.5,
+                64,
+                10.1
+              ]
+            }
+          }
+        ]
+      },
+      "access_before": {
+        "project": "M1A2_SEP",
+        "ok": true,
+        "results": [
+          {
+            "entry": "MM_Interact_commander",
+            "center": [
+              13,
+              46.5,
+              1.9999999999999982
+            ],
+            "clear": 12,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 31,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.30946354932147
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.60769515458674,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.15707363594294
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.607695154586732,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.550910101577664
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 31,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.91129431279447
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 29.607695154586736,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 28.799140346146736
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 29.60769515458674,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 28.927860237171192
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 31,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 27.829733909353667
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 29.60769515458674,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 26.357293136166874
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 29.607695154586732,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 28.781860374732535
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 31,
+                "first_hit": "MM_Hit_rws_yaw",
+                "hit_distance": 13.199999999999996
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.607695154586732,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.491209574177436
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.607695154586732,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.00338268704855
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.38802180423392,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 34.79835720864021
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.888463593369455,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 34.63422824894255
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.88846359336945,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 36.135436065269914
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.38802180423392,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 35.446548778101345
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 31.888463593369455,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.01762341355936
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 31.888463593369455,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.156258978983978
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 33.38802180423392,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.973540728113825
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 31.88846359336945,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 28.387673481642736
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 31.88846359336944,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.99901231477375
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 33.388021804233915,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.800698460377127
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.88846359336945,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.917070706591495
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.888463593369448,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 35.54573099253721
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_port_mg",
+            "center": [
+              -12,
+              50.5,
+              2.9999999999999982
+            ],
+            "clear": 19,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 36,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 6.843155891166472
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.38119784648299,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.381197846483,
+                "first_hit": "MM_Hit_port_mg_yaw",
+                "hit_distance": 48.31384384880041
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.38119784648299,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.38119784648299,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 52.096336220699605
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 53.29604156750867
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.381197846483,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 35.38119784648299,
+                "first_hit": "MM_Hit_port_mg_yaw",
+                "hit_distance": 28.5684646425152
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 36,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35.38119784648299,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 35.381197846483,
+                "first_hit": "MM_Hit_rws_yaw",
+                "hit_distance": 2.0103525075642628
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 38.77318661136843,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 22.0791754524668
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_Hit_port_mg_pitch",
+                "hit_distance": 49.67266635090973
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_Hit_port_mg_yaw",
+                "hit_distance": 52.03560231839035
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.77318661136843,
+                "first_hit": "MM_TurretRoofFront",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_TurretRoofFront",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.275686483830434
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.77318661136843,
+                "first_hit": "MM_TurretRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 63.27568648383041
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.77318661136843,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 63.27568648383042
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 38.10671629542866,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 24.34350866804512
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_aft_mg",
+            "center": [
+              10.156279848939459,
+              52.5,
+              0.7050280635195518
+            ],
+            "clear": 22,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.41453185089383,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.06959872933757
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.426021502912725,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.257183153210637
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 29.66065548184008,
+                "first_hit": "MM_Hit_aft_mg_pitch",
+                "hit_distance": 23.990727634762187
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.635207224233692,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.29027389222479
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.181866818004703,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.01302870114689
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.459891705794846,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.965621462109873
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.414531850893834,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.069598729337567
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.42602150291272,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.257183618899184
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.66065548184008,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.166385429618543
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.635207224233696,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.290274313130073
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.181866818004714,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.013028701146894
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.459891705794846,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.965621462109873
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.603387386927185,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.385948968377015
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.538729159439953,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.510950614511682
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.945503611469256,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.56722398380939
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.8410620377894,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.62362339257481
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.27576651610722,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.247988221959904
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.72927440720802,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.35099498576059
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.603387386927185,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.385948968377015
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.538729159439956,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.5109511160736
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.94550361146926,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.567224396234266
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.841062037789392,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 32.62362384590366
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": false,
+                "entry_distance": 29.275766516107225,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 27.047054540416372
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.72927440720801,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 33.350994985760586
+              }
+            ]
+          }
+        ],
+        "scope": "24 static rays per entry against configured hitboxes; M1 aft station at saved -155 yaw. Not an in-game reach or dynamic interaction test."
+      },
+      "access_after": {
+        "project": "M1A2_SEP",
+        "ok": true,
+        "results": [
+          {
+            "entry": "MM_Interact_commander",
+            "center": [
+              15.5,
+              57,
+              -23
+            ],
+            "clear": 21,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.5,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 37.9
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.03034488539711,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 37.57512886940357
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 31.91709623134523,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 35.8
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 33,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 9.077063458181964
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 31.917096231345237,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 10.870813171099314
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.03034488539711,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.96076951545867
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.5,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 39.1
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.030344885397106,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.96076951545866
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 31.917096231345237,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.2
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 33,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 31.399999999999995
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 31.91709623134523,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 35.800000000000004
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.030344885397106,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 37.57512886940357
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 32.849505323520475,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 40.81954923807954
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.266638323163537,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 40.46965232221117
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.375764674193135,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.55778001908303
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 35.542087727087726,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.503928435207875
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.375764674193135,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 41.14265912650761
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.266638323163537,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 41.96203297070537
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 32.849505323520475,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 42.11198879179182
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.26663832316353,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 41.96203297070537
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.375764674193135,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 41.14265912650761
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 35.542087727087726,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.503928435207875
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.375764674193135,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 38.55778001908304
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.266638323163527,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 40.46965232221117
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_port_mg",
+            "center": [
+              -18,
+              57,
+              -4.000000000000002
+            ],
+            "clear": 21,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 32,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 4.107309498251464
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 9.525117864810015
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 34.226497308103745,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 34.22649730810374,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 77.6432375511636
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 32,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 57.42367116060685
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 30.76239569296599,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 65.3319766618488
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 34.22649730810374,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 35,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 34.22649730810374,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 30.762395692965985,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 2.3567624488363874
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.465054765660824,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.13211413378129,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.86306575501682,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 37.69615364994153,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.86306575501682,
+                "first_hit": "MM_TurretRoofFront",
+                "hit_distance": 80.77747210701756
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.13211413378129,
+                "first_hit": "MM_TurretRoofFront",
+                "hit_distance": 80.77747210701756
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 34.465054765660824,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 61.847186606112906
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.13211413378129,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 70.36469229998417
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.86306575501682,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 80.77747210701754
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 37.69615364994153,
+                "first_hit": "MM_TurretBustleRoof",
+                "hit_distance": 80.77747210701756
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 36.86306575501682,
+                "first_hit": "MM_TurretAddonLeftHit",
+                "hit_distance": 72.1612080047469
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 33.132114133781286,
+                "first_hit": "MM_HullCore",
+                "hit_distance": null
+              }
+            ]
+          },
+          {
+            "entry": "MM_Interact_aft_mg",
+            "center": [
+              10.156279929547495,
+              56.5,
+              0.7050282363840435
+            ],
+            "clear": 23,
+            "samples": [
+              {
+                "azimuth": 0,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.41453185089383,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.069598729337564
+              },
+              {
+                "azimuth": 30,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.426021502912725,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.257183386054916
+              },
+              {
+                "azimuth": 60,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.66065548184008,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.166385238155105
+              },
+              {
+                "azimuth": 90,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.635207224233696,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.290274102677433
+              },
+              {
+                "azimuth": 120,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.18186681800471,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.01302870114689
+              },
+              {
+                "azimuth": 150,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.45989170579485,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.965621462109876
+              },
+              {
+                "azimuth": 180,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.41453185089383,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.06959872933757
+              },
+              {
+                "azimuth": 210,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 27.42602150291272,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 29.25718338605491
+              },
+              {
+                "azimuth": 240,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.660655481840077,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 31.1663852381551
+              },
+              {
+                "azimuth": 270,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 28.635207224233696,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.29027410267743
+              },
+              {
+                "azimuth": 300,
+                "height": 0,
+                "clear": false,
+                "entry_distance": 27.181866818004714,
+                "first_hit": "MM_Hit_rws_pitch",
+                "hit_distance": 25.112559859094986
+              },
+              {
+                "azimuth": 330,
+                "height": 0,
+                "clear": true,
+                "entry_distance": 29.45989170579485,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 30.96562146210987
+              },
+              {
+                "azimuth": 0,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.60338738692718,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 30,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.538729159439942,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.234669873870324
+              },
+              {
+                "azimuth": 60,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.94550361146926,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387031
+              },
+              {
+                "azimuth": 90,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.841062037789403,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 120,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.275766516107222,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387031
+              },
+              {
+                "azimuth": 150,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.72927440720802,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 180,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.60338738692718,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 210,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.538729159439956,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 240,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.94550361146926,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.234669873870324
+              },
+              {
+                "azimuth": 270,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 30.8410620377894,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              },
+              {
+                "azimuth": 300,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 29.275766516107225,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.234669873870324
+              },
+              {
+                "azimuth": 330,
+                "height": 16,
+                "clear": true,
+                "entry_distance": 31.72927440720801,
+                "first_hit": "MM_Hit_aft_mg_yaw",
+                "hit_distance": 38.23466987387032
+              }
+            ]
+          }
+        ],
+        "scope": "24 static rays per entry against configured hitboxes; M1 aft station at saved -155 yaw. Not an in-game reach or dynamic interaction test."
+      },
+      "only_seats_and_invisible_entry_geometry_changed": true
+    }
+  ],
+  "commander_controls": [
+    {
+      "pack": "m1a2_sep",
+      "seat": "subsystem.m1a2_sep.commander_seat",
+      "preset": "m1a2_sep:m1a2_rws",
+      "group": "controlGroup.m1a2_sep.commander_override",
+      "main": [
+        "subsystem.m1a2_sep.main_weapon"
+      ],
+      "secondary": [
+        "subsystem.m1a2_sep.coax_controller"
+      ],
+      "aim_priority": "p1 before p2",
+      "independent_weapon_stations_isolated": true
+    }
+  ],
+  "fire_lock_limitation": "Existing WeaponControllerSubsystem selects aim input by priority but accepts fire requests from any configured fire channel. This content-pack setup does not add an exclusive gunner fire lock.",
+  "visible_geometry_unchanged": true,
+  "weapon_stats_and_arcs_unchanged": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "installed_into_game": false
+}

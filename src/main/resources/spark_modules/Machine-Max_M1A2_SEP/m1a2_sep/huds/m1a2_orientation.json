@@ -1,0 +1,7 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "m1a2_sep/orientation/indicator.html",
+  "defaults": {
+    "--ink": "#ded2b6"
+  }
+}

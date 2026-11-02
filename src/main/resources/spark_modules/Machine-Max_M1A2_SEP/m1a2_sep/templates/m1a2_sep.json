@@ -1,0 +1,1331 @@
+{
+  "name": "M1A2 SEP",
+  "uuid": "6e79b1a2-1200-4a21-9e65-202610270001",
+  "pos": [
+    0,
+    0,
+    0
+  ],
+  "min": [
+    -2.7,
+    -0.05,
+    -6.8
+  ],
+  "max": [
+    2.7,
+    5.1,
+    4.4
+  ],
+  "hp_ratio": 1,
+  "parts": {
+    "6e79b1a2-1200-4a21-9e65-202610270001": {
+      "registry_key": "m1a2_sep:m1a2_hull",
+      "name": "part.m1a2_sep.m1a2_hull",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270001",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.hull": {
+          "id": 1,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.1875,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_idler": {
+          "id": 4,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.8028425,
+              -3.571886875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_1": {
+          "id": 5,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              -2.662274375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_2": {
+          "id": 6,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              -1.587274375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_3": {
+          "id": 7,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              -0.779974375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_4": {
+          "id": 8,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              0.027325625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_5": {
+          "id": 9,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              0.834625625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_6": {
+          "id": 10,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              1.641925
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_road_7": {
+          "id": 11,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.608156875,
+              0.4261025,
+              2.449225625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.left_sprocket": {
+          "id": 12,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.655249375,
+              0.82437,
+              3.3291825
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_idler": {
+          "id": 13,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.8028425,
+              -3.571886875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_1": {
+          "id": 14,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              -2.662274375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_2": {
+          "id": 15,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              -1.587274375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_3": {
+          "id": 16,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              -0.779974375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_4": {
+          "id": 17,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              0.027325625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_5": {
+          "id": 18,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              0.834625625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_6": {
+          "id": 19,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              1.641925
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_road_7": {
+          "id": 20,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.608156875,
+              0.4261025,
+              2.449225625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.right_sprocket": {
+          "id": 21,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.655249375,
+              0.82437,
+              3.3291825
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270002": {
+      "registry_key": "m1a2_sep:m1a2_turret",
+      "name": "part.m1a2_sep.m1a2_turret",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270002",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.turret": {
+          "id": 2,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              2.1875,
+              0.4375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.gun": {
+          "id": 3,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.126875,
+              2.15625,
+              -2.6193181818181817
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.rws_yaw": {
+          "id": 22,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.966721875,
+              2.88928625,
+              -1.212498125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.rws_pitch": {
+          "id": 23,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.99615375,
+              3.559164375,
+              -1.11256
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.port_mg_yaw": {
+          "id": 24,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.1375,
+              2.65625,
+              -0.34375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.port_mg_pitch": {
+          "id": 25,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.1375,
+              2.99375,
+              -0.34375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.aft_mg_yaw": {
+          "id": 26,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.65486375,
+              2.90625,
+              0.009936875
+            ],
+            "rotation": [
+              0,
+              -0.9762960071199334,
+              0,
+              0.2164396139381029
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.aft_mg_pitch": {
+          "id": 27,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.8607186657440568,
+              3.22467125,
+              0.5108967418703797
+            ],
+            "rotation": [
+              0,
+              -0.9762960071199334,
+              0,
+              0.2164396139381029
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.gun_barrel": {
+          "id": 34,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.126875,
+              2.15625,
+              -4.5625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.citv_yaw": {
+          "id": 35,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.96638,
+              2.88125,
+              -1.0290625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270003": {
+      "registry_key": "m1a2_sep:m1a2_hull_armor_left",
+      "name": "part.m1a2_sep.m1a2_hull_armor_left",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270003",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.hull_armor_left": {
+          "id": 30,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.3125,
+              1.1615625,
+              -0.511875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270004": {
+      "registry_key": "m1a2_sep:m1a2_hull_armor_right",
+      "name": "part.m1a2_sep.m1a2_hull_armor_right",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270004",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.hull_armor_right": {
+          "id": 31,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              2.3153125,
+              1.1615625,
+              -0.5303125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270005": {
+      "registry_key": "m1a2_sep:m1a2_turret_armor_left",
+      "name": "part.m1a2_sep.m1a2_turret_armor_left",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270005",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.turret_armor_left": {
+          "id": 32,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.151875,
+              2.4053125,
+              0.5896875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270006": {
+      "registry_key": "m1a2_sep:m1a2_turret_armor_right",
+      "name": "part.m1a2_sep.m1a2_turret_armor_right",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270006",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.turret_armor_right": {
+          "id": 33,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              2.151875,
+              2.4053125,
+              0.5896875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    }
+  },
+  "connections": [
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
+      "subPartNameA": "sub_part.m1a2_sep.turret",
+      "advConnectorName": "connector.m1a2_sep.turret_hull",
+      "posRotA": {
+        "position": [
+          0.014101875,
+          -0.375,
+          -1.0850149999999998
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270001",
+      "subPartNameS": "sub_part.m1a2_sep.hull",
+      "simplePointConnectorName": "connector.m1a2_sep.hull_turret",
+      "posRotS": {
+        "position": [
+          0.014101875,
+          0.625,
+          -0.647515
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270001",
+      "subPartNameA": "sub_part.m1a2_sep.hull",
+      "advConnectorName": "connector.m1a2_sep.hull_armor_left",
+      "posRotA": {
+        "position": [
+          -2.005,
+          -0.025937499999999947,
+          -0.511875
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270003",
+      "subPartNameS": "sub_part.m1a2_sep.hull_armor_left",
+      "simplePointConnectorName": "connector.m1a2_sep.hull_armor_left_host",
+      "posRotS": {
+        "position": [
+          0.3075000000000001,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270001",
+      "subPartNameA": "sub_part.m1a2_sep.hull",
+      "advConnectorName": "connector.m1a2_sep.hull_armor_right",
+      "posRotA": {
+        "position": [
+          2.005,
+          -0.025937499999999947,
+          -0.5303125
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270004",
+      "subPartNameS": "sub_part.m1a2_sep.hull_armor_right",
+      "simplePointConnectorName": "connector.m1a2_sep.hull_armor_right_host",
+      "posRotS": {
+        "position": [
+          -0.3103125000000002,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
+      "subPartNameA": "sub_part.m1a2_sep.turret",
+      "advConnectorName": "connector.m1a2_sep.turret_armor_left",
+      "posRotA": {
+        "position": [
+          -1.925,
+          0.21781249999999996,
+          0.15218750000000003
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270005",
+      "subPartNameS": "sub_part.m1a2_sep.turret_armor_left",
+      "simplePointConnectorName": "connector.m1a2_sep.turret_armor_left_host",
+      "posRotS": {
+        "position": [
+          0.22687499999999994,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
+      "subPartNameA": "sub_part.m1a2_sep.turret",
+      "advConnectorName": "connector.m1a2_sep.turret_armor_right",
+      "posRotA": {
+        "position": [
+          1.925,
+          0.21781249999999996,
+          0.15218750000000003
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270006",
+      "subPartNameS": "sub_part.m1a2_sep.turret_armor_right",
+      "simplePointConnectorName": "connector.m1a2_sep.turret_armor_right_host",
+      "posRotS": {
+        "position": [
+          -0.22687499999999994,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "track_links": [
+    {
+      "sprocket": {
+        "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+        "sub_part": "sub_part.m1a2_sep.left_sprocket"
+      },
+      "members": [
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_sprocket"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_7"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_6"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_5"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_4"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_3"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_2"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_road_1"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.left_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "m1a2_sep:m1a2_track"
+    },
+    {
+      "sprocket": {
+        "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+        "sub_part": "sub_part.m1a2_sep.right_sprocket"
+      },
+      "members": [
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_sprocket"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_7"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_6"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_5"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_4"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_3"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_2"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_road_1"
+        },
+        {
+          "part": "6e79b1a2-1200-4a21-9e65-202610270001",
+          "sub_part": "sub_part.m1a2_sep.right_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "m1a2_sep:m1a2_track"
+    }
+  ],
+  "meta": {
+    "author": "User-supplied model; Codex adaptation",
+    "description": "The M1A2 SEP is the System Enhancement Package variant of the American Abrams main battle tank. It retains the M1A2's 120 mm main gun and protection, while improving onboard digital systems, thermal sights and thermal management for greater situational awareness and all-weather operation."
+  }
+}

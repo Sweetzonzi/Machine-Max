@@ -1,0 +1,1209 @@
+{
+  "version": "0.4.0",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack\\tools/../backups/0.3.10-before-independent-commander",
+  "seats": 7,
+  "commander_seat": [
+    -14,
+    34,
+    -16
+  ],
+  "commander_optic": [
+    -15.46208,
+    50.1,
+    -22.4
+  ],
+  "optic_visual_group": "bone",
+  "optic_visual_uuid": "53fdf79c-f06d-9d52-03aa-b9ef9d8b524f",
+  "commander_entry": {
+    "from": [
+      -22,
+      50,
+      -26
+    ],
+    "to": [
+      -8,
+      56,
+      -13
+    ]
+  },
+  "aft_yaw": {
+    "before": [
+      -175,
+      -70
+    ],
+    "after": [
+      -240,
+      -70
+    ],
+    "span": 170,
+    "equivalent_left_limit": 120,
+    "right_limit": -70,
+    "initial_yaw": -155,
+    "pitch": [
+      -12,
+      45
+    ]
+  },
+  "ignoring_antenna_uuid": "56e4de6a-d8e0-e977-879b-30d3b7a4f356",
+  "existing_high_elevation_contact": "The rear M2 receiver already overlaps the bone4 hatch ring at 45 degrees elevation. This artwork contact remains; the physical gun and its elevation range are unchanged.",
+  "game_tested": false,
+  "controls": {
+    "commander": {
+      "base_group": {
+        "name": "controlGroup.m1a2_sep.commander_base",
+        "control_mode": "inherit"
+      },
+      "groups": [
+        {
+          "name": "controlGroup.m1a2_sep.commander_observe",
+          "control_mode": "inherit"
+        },
+        {
+          "name": "controlGroup.m1a2_sep.commander_override",
+          "control_mode": "inherit",
+          "view_targets": {
+            "aim_input_p1": [
+              "subsystem.m1a2_sep.main_weapon",
+              "subsystem.m1a2_sep.coax_controller"
+            ]
+          },
+          "main_weapon_targets": {
+            "fire_input_p1": [
+              "subsystem.m1a2_sep.main_weapon"
+            ]
+          },
+          "secondary_weapon_targets": {
+            "secondary_fire_input_p1": [
+              "subsystem.m1a2_sep.coax_controller"
+            ]
+          }
+        }
+      ],
+      "active_index": 0
+    },
+    "rws": {
+      "base_group": {
+        "name": "controlGroup.m1a2_sep.m1a2_rws",
+        "control_mode": "inherit",
+        "move_targets": {},
+        "regular_targets": {},
+        "bindings": [],
+        "view_targets": {
+          "aim_rws": [
+            "global"
+          ]
+        },
+        "main_weapon_targets": {
+          "fire_rws": [
+            "global"
+          ]
+        },
+        "secondary_weapon_targets": {}
+      }
+    },
+    "independent_controls": true,
+    "commander_aim_priority": "p1 before gunner p2",
+    "exclusive_gunner_fire_lock": false
+  },
+  "verification": {
+    "native": {
+      "ok": true,
+      "count": 0,
+      "issues": [],
+      "export_ok": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 53,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 152,
+        "locators": 99,
+        "subparts": 32,
+        "collision_shapes": 53,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 26,
+        "external_connections": 5,
+        "subsystems": 40,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "access": {
+      "ok": true,
+      "results": [
+        {
+          "entry": "MM_Interact_driver",
+          "center": [
+            0,
+            27,
+            -37.5
+          ],
+          "clear": 12,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": true
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_gunner",
+          "center": [
+            -15,
+            44,
+            -9.500000000000002
+          ],
+          "clear": 15,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": false
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_commander",
+          "center": [
+            -15,
+            53,
+            -19.5
+          ],
+          "clear": 16,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": true
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_loader",
+          "center": [
+            -15,
+            43.5,
+            16.499999999999996
+          ],
+          "clear": 16,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": false
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_port_mg",
+          "center": [
+            -18,
+            57,
+            -4.000000000000002
+          ],
+          "clear": 20,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": true
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_rws",
+          "center": [
+            15.5,
+            57,
+            -23
+          ],
+          "clear": 18,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": false
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": true
+            }
+          ]
+        },
+        {
+          "entry": "MM_Interact_aft_mg",
+          "center": [
+            10.156279929547495,
+            56.5,
+            0.7050282363840435
+          ],
+          "clear": 21,
+          "samples": [
+            {
+              "yaw": 0,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 210,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 300,
+              "height": 0,
+              "clear": false
+            },
+            {
+              "yaw": 330,
+              "height": 0,
+              "clear": true
+            },
+            {
+              "yaw": 0,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 30,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 60,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 90,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 120,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 150,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 180,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 210,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 240,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 270,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 300,
+              "height": 16,
+              "clear": true
+            },
+            {
+              "yaw": 330,
+              "height": 16,
+              "clear": true
+            }
+          ]
+        }
+      ],
+      "scope": "Static approach rays including other seat entries, template aft yaw -155; not game reach testing."
+    },
+    "optic": {
+      "origin": [
+        -15.46208,
+        50.1,
+        -22.4
+      ],
+      "samples": [
+        {
+          "yaw": -15,
+          "pitch": -20,
+          "clear": false,
+          "first": {
+            "name": "M2-2",
+            "parent": "M2-2",
+            "distance": 28.027703533072252
+          }
+        },
+        {
+          "yaw": 0,
+          "pitch": -20,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": -20,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": -15,
+          "pitch": -10,
+          "clear": false,
+          "first": {
+            "name": "M2-2",
+            "parent": "M2-2",
+            "distance": 45.263926331603905
+          }
+        },
+        {
+          "yaw": 0,
+          "pitch": -10,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": -10,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": -15,
+          "pitch": 0,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 0,
+          "pitch": 0,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": 0,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": -15,
+          "pitch": 10,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 0,
+          "pitch": 10,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": 10,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": -15,
+          "pitch": 30,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 0,
+          "pitch": 30,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": 30,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": -15,
+          "pitch": 60,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 0,
+          "pitch": 60,
+          "clear": true,
+          "first": null
+        },
+        {
+          "yaw": 15,
+          "pitch": 60,
+          "clear": true,
+          "first": null
+        }
+      ]
+    },
+    "candidate_mg_pose_pairs": 322056,
+    "candidate_yaw": [
+      -245,
+      -70
+    ],
+    "selected_yaw": [
+      -240,
+      -70
+    ],
+    "other_mg_intersections": 0,
+    "native_wrapped_joint_check": "Dp_Mt_Libbulletjme version 23.1.0 initializing\nlimits_deg 70.000 240.000\ntarget 155 reached 155.000 expected 155.000\ntarget 175 reached 175.000 expected 175.000\ntarget 185 reached 185.000 expected 185.000\ntarget 215 reached 215.000 expected 215.000\ntarget 235 reached 235.000 expected 235.000\ntarget 260 reached 240.000 expected 240.000\ntarget 185 reached 185.000 expected 185.000\ntarget 75 reached 75.000 expected 75.000\ntarget 55 reached 70.000 expected 70.000\ntarget 155 reached 155.000 expected 155.000\ntarget 240 reached 240.000 expected 240.000\ntarget 70 reached 70.000 expected 70.000\ntarget 185 reached 185.000 expected 185.000\n",
+    "unchanged_prior_files": 270,
+    "visible_model_geometry_unchanged": true,
+    "weapon_and_armor_parameters_unchanged": true,
+    "game_tested": false,
+    "mod_jar_changed": false
+  },
+  "angle_reference": "Bullet btGeneric6DofSpring2Constraint::testAngularLimitMotor and rotational servo angle wrapping; actual installed Libbulletjme 23.1.0 was checked without launching Minecraft.",
+  "angle_source": "https://github.com/bulletphysics/bullet3/blob/master/src/BulletDynamics/ConstraintSolver/btGeneric6DofSpring2Constraint.cpp"
+}

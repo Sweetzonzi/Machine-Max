@@ -1,0 +1,8 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "m1a2_sep/m1a2_citv/sight.html",
+  "defaults": {
+    "--reticle": "#b4ff81",
+    "--display": "#b4ff81"
+  }
+}

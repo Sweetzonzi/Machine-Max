@@ -1,0 +1,175 @@
+{
+  "ok": true,
+  "root": "E:\\codex\\MMX相关\\T90A_ContentPack",
+  "pack": "Machine-Max_T90A",
+  "namespace": "t90a",
+  "previous_version": "0.1.15",
+  "version": "0.1.16",
+  "backup": "E:\\codex\\MMX相关\\T90A_ContentPack\\backups\\0.1.15-before-soft-optic-aperture",
+  "bb_source": "E:\\codex\\MMX相关\\T90A_ContentPack\\Blockbench\\T90A.bbmodel",
+  "bb_source_sha256": "245653f8f1e8ddff39269da2fe591aab5d3d495be8162cda05cc52f684315f0c",
+  "aperture_diameter_over_screen_height": 1.3,
+  "runtime": {
+    "ok": true,
+    "actual_installed_aui_layout_and_mm_bindings": true,
+    "png_transparency_checked": true,
+    "cold_start_and_zoom_cases": 108,
+    "circular_mask_alpha_samples": [
+      0,
+      0,
+      12,
+      64,
+      169,
+      255,
+      255
+    ],
+    "direct_edge_alpha_samples": [
+      134,
+      236
+    ],
+    "actual_img_nodes": true,
+    "game_tested": false
+  },
+  "preview": {
+    "ok": true,
+    "checks": [
+      {
+        "id": "m1a2",
+        "width": 1600,
+        "height": 900,
+        "nativeMaskLoaded": true,
+        "size": [
+          1600,
+          900
+        ],
+        "mask": [
+          -1000,
+          0,
+          3600,
+          900
+        ],
+        "brokenImages": 0
+      },
+      {
+        "id": "t90a-1g46",
+        "width": 1600,
+        "height": 900,
+        "nativeMaskLoaded": true,
+        "size": [
+          1600,
+          900
+        ],
+        "mask": [
+          -1000,
+          0,
+          3600,
+          900
+        ],
+        "brokenImages": 0
+      },
+      {
+        "id": "t90a-tkn4s8",
+        "width": 1600,
+        "height": 900,
+        "nativeMaskLoaded": true,
+        "size": [
+          1600,
+          900
+        ],
+        "mask": [
+          -1000,
+          0,
+          3600,
+          900
+        ],
+        "brokenImages": 0
+      },
+      {
+        "id": "t90a-tkn4s1",
+        "width": 1600,
+        "height": 900,
+        "nativeMaskLoaded": true,
+        "size": [
+          1600,
+          900
+        ],
+        "mask": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "brokenImages": 0
+      },
+      {
+        "id": "m1a2-wide",
+        "width": 2560,
+        "height": 1080,
+        "nativeMaskLoaded": true,
+        "size": [
+          1600,
+          675
+        ],
+        "mask": [
+          -880,
+          0,
+          4320,
+          1080
+        ],
+        "brokenImages": 0
+      }
+    ],
+    "visual_only": true,
+    "game_tested": false
+  },
+  "offline": {
+    "ok": true,
+    "checks": {
+      "schema_documents": 51,
+      "registered_schema_uris": 202,
+      "parts": 7,
+      "bones": 130,
+      "locators": 78,
+      "subparts": 27,
+      "collision_shapes": 83,
+      "wheels": 16,
+      "interactions": 4,
+      "internal_connector_pairs": 20,
+      "external_connections": 6,
+      "subsystems": 26,
+      "tracks": 2,
+      "texture_dimensions": [
+        512,
+        512
+      ]
+    },
+    "errors": [],
+    "game_tested": false,
+    "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+  },
+  "changed_previous_files": [
+    "README.txt",
+    "meta.json",
+    "t90a/documents/1g46/aperture.svg",
+    "t90a/documents/1g46/sight.html",
+    "t90a/documents/tkn4s/aperture.svg",
+    "t90a/documents/tkn4s/direct-aperture.svg",
+    "t90a/documents/tkn4s/sight.html",
+    "validation.json"
+  ],
+  "new_files": [
+    "optic-aperture-notes.txt",
+    "optic-realism-report.json",
+    "t90a/documents/1g46/aperture.png",
+    "t90a/documents/tkn4s/aperture.png",
+    "t90a/documents/tkn4s/direct-aperture.png",
+    "更新说明-0.1.16.txt"
+  ],
+  "previous_files_unchanged": 213,
+  "all_vehicle_definitions_geometry_textures_weapons_controls_and_fov_unchanged": true,
+  "bb_source_unchanged": true,
+  "mask_png_sha256": "ddbd3b1bd0d9b51c6ad9514177808e3622be13f573809001bc399d8e0eb1f6a0",
+  "svg_sources_are_authoring_sources_png_is_used_at_runtime": true,
+  "game_tested": false,
+  "mod_jars_changed": false
+}

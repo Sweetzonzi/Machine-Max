@@ -1,0 +1,242 @@
+{
+  "version": "0.5.6",
+  "backup": "E:\\codex\\MMX相关\\M1A2_SEP_ContentPack/backups/0.5.5-before-reticle-redraw",
+  "bb_source_sha256": "4f4a2ab45d6d0e37c371d85739a1de9665f1c3c97bf57dbeb9c3c708b4c9df49",
+  "source_pages": {
+    "fm": 194,
+    "mnd": [
+      4,
+      5,
+      7
+    ]
+  },
+  "hud_only": true,
+  "no_native_model_changes": true,
+  "game_tested": false,
+  "mod_jar_changed": false,
+  "verification": {
+    "offline": {
+      "ok": true,
+      "checks": {
+        "schema_documents": 59,
+        "registered_schema_uris": 202,
+        "parts": 6,
+        "bones": 155,
+        "locators": 103,
+        "subparts": 33,
+        "collision_shapes": 55,
+        "wheels": 18,
+        "interactions": 7,
+        "internal_connector_pairs": 27,
+        "external_connections": 5,
+        "subsystems": 46,
+        "tracks": 2,
+        "texture_dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "errors": [],
+      "game_tested": false,
+      "scope": "Offline Draft-07 schema, asset references, geometry, bindings, internal joints and template transforms."
+    },
+    "aui_parser": {
+      "ok": true,
+      "pages": [
+        {
+          "page": "m1a2_gps/sight.html",
+          "bindings": 2,
+          "actual_installed_aui_parser": true
+        },
+        {
+          "page": "m1a2_gps/weapon.html",
+          "bindings": 14,
+          "actual_installed_aui_parser": true
+        },
+        {
+          "page": "m1a2_citv/sight.html",
+          "bindings": 3,
+          "actual_installed_aui_parser": true
+        }
+      ]
+    },
+    "layout": {
+      "ok": true,
+      "checks": [
+        {
+          "size": [
+            640,
+            440
+          ],
+          "dot_center": [
+            320,
+            220
+          ],
+          "reticle": {
+            "x": 160,
+            "y": 172,
+            "w": 320,
+            "h": 96
+          },
+          "range": "----",
+          "lines": [
+            {
+              "class": "line left-outer",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-upper",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-inner",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line left-lower",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-inner",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-upper",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-lower",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line right-outer",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line upper-post",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line upper-stem",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line lower-stem",
+              "color": "rgb(255, 216, 61)"
+            },
+            {
+              "class": "line lower-post",
+              "color": "rgb(255, 216, 61)"
+            }
+          ],
+          "ready": {
+            "x": 212,
+            "y": 355,
+            "w": 18,
+            "h": 18
+          },
+          "overflow": false
+        },
+        {
+          "size": [
+            640,
+            440
+          ],
+          "dot_center": [
+            320,
+            220
+          ],
+          "reticle": {
+            "x": 160,
+            "y": 172,
+            "w": 320,
+            "h": 96
+          },
+          "range": "----",
+          "lines": [
+            {
+              "class": "line left-outer",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-upper",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-inner",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line left-lower",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-inner",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-upper",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-lower",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line right-outer",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line upper-post",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line upper-stem",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line lower-stem",
+              "color": "rgb(180, 255, 129)"
+            },
+            {
+              "class": "line lower-post",
+              "color": "rgb(180, 255, 129)"
+            }
+          ],
+          "ready": null,
+          "overflow": false
+        }
+      ],
+      "visual_only": true,
+      "runtime_data_bound": false
+    },
+    "ready_expression": {
+      "ok": true,
+      "actual_installed_spark_compiler": true,
+      "cases": 4,
+      "note": "Compiler check with state fixtures; not an in-game WC test.",
+      "spark_jar": "SparkCore-1.21.1-neoforge-1.0.1035.jar",
+      "binding": "Direct state class; is-ready visible, all others hidden"
+    },
+    "previous_files_unchanged": 320,
+    "changed_previous_files": [
+      "README.txt",
+      "m1a2_sep/documents/m1a2_citv/sight.css",
+      "m1a2_sep/documents/m1a2_citv/sight.html",
+      "m1a2_sep/documents/m1a2_gps/sight.css",
+      "m1a2_sep/documents/m1a2_gps/sight.html",
+      "m1a2_sep/documents/m1a2_gps/weapon.html",
+      "meta.json"
+    ],
+    "new_files": [
+      "optics056-report.json",
+      "optics056-reticle-audit.txt",
+      "更新说明-0.5.6.txt"
+    ],
+    "all_parts_subsystems_controls_geometry_textures_unchanged": true
+  },
+  "source_sha256": {
+    "fm3-20_12_2001.pdf": "2a1845be5683a0a55950b32c639dfad73026365223855e36c4b9314eb14d8718",
+    "mnd-m1a2-optics-202203.pdf": "50f2cf2357f1297f7de450c29771990955e6cd9dbed9ab7214310961163794db"
+  }
+}

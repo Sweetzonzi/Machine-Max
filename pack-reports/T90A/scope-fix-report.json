@@ -1,0 +1,57 @@
+{
+  "version": "0.1.1",
+  "issue": "T90A scope markings collapsed, mask oversized and status outside viewport",
+  "root_causes": [
+    "AUI 1.2.8 CssLength ignores multiplication factors in calc(), e.g. calc(10px * .92) resolves to 10px",
+    "Position expressions put the old caption at (-100,-450) and status at y=1283.8 in a 1600x900 document",
+    "MoLang comparisons of ammunition label strings did not distinguish empty from AP in the native fixture"
+  ],
+  "fixes": [
+    "Fixed local marker coordinates and one bound transform scale",
+    "Percentage based caption and status anchors",
+    "Opaque outside/transparent circular center via native SVG decoder; removed large CSS shadow",
+    "Direct chambered ammunition label; real state classes for ready/reloading/empty",
+    "Minimum low-zoom reticle size for legibility"
+  ],
+  "native_validation": {
+    "engine": "ApricityUI 1.2.8, current local jar",
+    "cases": 11,
+    "resolutions": [
+      [
+        1600,
+        900
+      ],
+      [
+        3768,
+        2160
+      ],
+      [
+        1200,
+        900
+      ],
+      [
+        3440,
+        1440
+      ]
+    ],
+    "zooms": [
+      2.7,
+      12
+    ],
+    "states": [
+      "ready",
+      "reloading",
+      "empty"
+    ],
+    "ammunition": [
+      "AP",
+      "HE"
+    ],
+    "reticle_center_checked": true,
+    "distinct_ticks_checked": true,
+    "readout_inside_viewport_checked": true,
+    "svg_alpha_checked": true,
+    "opengl_render_tested": false
+  },
+  "game_tested_after_fix": false
+}

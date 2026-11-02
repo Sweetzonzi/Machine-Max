@@ -1,0 +1,22 @@
+{
+  "version": "0.1.2",
+  "seats": 4,
+  "exposed_seats": 2,
+  "MG_scope_removed": true,
+  "original_cubes_unchanged": 1758,
+  "original_geometry_changes": 0,
+  "gunner_entry_z": [
+    30,
+    37
+  ],
+  "external_commander_entry_z": [
+    39,
+    46
+  ],
+  "turret_ERA_parts": 2,
+  "ERA_damage_rates": [
+    0.095,
+    0.015
+  ],
+  "game_tested": false
+}

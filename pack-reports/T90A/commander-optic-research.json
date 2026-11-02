@@ -1,0 +1,44 @@
+{
+  "device": "PNK-4S / TKN-4S Agat-S family",
+  "real_position": "Forward portion of the commander rotating cupola, vehicle right side of turret.",
+  "day_channels_common_pnk4s": [
+    1,
+    7.6
+  ],
+  "variant_note": "TKN-4S-01 and other upgrades have differing published magnification; the source catalog values describe the generic PNK-4S.",
+  "model_candidate": {
+    "cube_uuid": "6a8583ca-467c-6b08-3ab4-54932fb23259",
+    "parent": "T90Up",
+    "case_center_bb_world": [
+      -14.125,
+      43.3215,
+      29.90615
+    ],
+    "suggested_camera_bb_world": [
+      -14.125,
+      43.3215,
+      27.2
+    ],
+    "status": "Position inferred from the existing model sight housing ahead of the commander hatch; not an engineering measurement."
+  },
+  "references": [
+    {
+      "url": "https://www.benning.army.mil/armor/eARMOR/content/issues/2001/SEP_OCT/ArmorSeptemberOctober2001web.pdf",
+      "use": "Crew arrangement and sight at front of commander cupola."
+    },
+    {
+      "url": "https://nation.org.ua/wp-content/uploads/2017/03/Russian_arms_catalog.pdf",
+      "use": "Rosoboronexport catalog PNK-4S product description and day magnification table, search-indexed text."
+    },
+    {
+      "url": "https://lib.sgugit.ru/irbisfulltext/2019/190307_%D0%95%D0%B3%D0%BE%D1%80%D0%B5%D0%BD%D0%BA%D0%BE.pdf",
+      "use": "University textbook figure 3.33: TKN-4S day multipower, direct-view and night fields of view; indexed figure caption."
+    },
+    {
+      "url": "https://agtf.ru/archives/3286",
+      "use": "Original photographer T-90S commander work-station photo set; related variant reference."
+    }
+  ],
+  "scope_status": "0.1.11 installs independent TKN-4S day camera and photo-based engraving; 1x/8x adaptation. No night channel; range scales not calibrated to Minecraft ballistics.",
+  "implementation_report": "tkn4s021-report.json"
+}

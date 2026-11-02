@@ -1,0 +1,6 @@
+{
+  "template": "m1a2_sep:m1a2_sep",
+  "tooltip": "m1a2_sep:tooltips/m1a2_sep.html",
+  "icon": "m1a2_sep:textures/icon/m1a2_sep.png",
+  "scale": 35
+}
