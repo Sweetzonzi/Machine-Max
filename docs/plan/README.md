@@ -59,11 +59,11 @@
 | [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 进行中（v5）；单流八方向意图、外侧锚定的带速上限、驱动/制动预算选择与正反向关节物理回归已接入。共享基类、属性注册与内容包 schema 已落地；阶段 C / D（双流转向、多履带实机验收、HUD）未实现 |
 | [武器系统-组件化投射物与类型体系设计](进行中/武器系统-组件化投射物与类型体系设计.md) | 作为投射物体系总纲：类型派发（阶段 A）、制导组件、碰炸引信与战斗部均已落地；光束武器与引信多样化未实现 |
 | [AUI载具控制面板实现计划](进行中/AUI载具控制面板实现计划.md) | `vehicle_control.html` 与面板控件已就位；`ControlDataAccessor` 优先读取当前座椅的真实 `ControlGroupSet`，无真实数据时回退 `FOR_GUI_TEST`。`RawInputHandler` 中的打开入口整段注释（Tab 已改绑控制组轮换），面板当前无法从游戏内打开 |
-| [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.2.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）已落地；P4 车灯球光、P5 锥光与 S3 未实现 |
+| [渲染-屏幕空间光照通用化设计](进行中/渲染-屏幕空间光照通用化设计.md) | P1（通用通路、光源表、曳光来源与 `screen_space_light` 链）、P2（内容包 `light` 火光参数、`sync:2.2.0` 同步、客户端火光状态与 `ExplosionLightSource`、光源表影响体剔除）、枪口火光（内容包 `visual.muzzle_flash`、`MuzzleFlashLightSource`、优先级 15）已落地；P4 车灯球光与 P5 锥光未实现；S3 表面项已落地，待实机验收 |
 | [界面-HUD样式挂载与布局设计](进行中/界面-HUD样式挂载与布局设计.md) | V1 已落地并实机验收：`HudStyle`/`ModelHudStyle`/`HudElement`/`HudLayout`、`HUD_STYLES`/`HUD_LAYOUTS`、`huds` 与 `hud_layouts` 两个内容包模块；宿主分组 `HudView`/`IHudHost` 覆盖座椅、相机/瞄具与武器控制器。V2-b AUI 载体已落地：`AuiHudStyle`（`aui_hud`）、`HudAnchor` 与元素 `anchor`、每元素独立 `Document`、`CustomHud` 按布局顺序手动绘制，待实机验收。V2-a（`hud.*` 上下文、`data-mm-*` 绑定，`HudPageBinding`）与 V3（`WeaponHudElement`、`weapon.*`）已落地并在 `CustomHud` 接线；V4（玩家覆盖与编辑页）未实现 |
 | [观瞄系统-视点与瞄准控制实施记录](进行中/观瞄系统-视点与瞄准控制实施记录.md) | P0–P6 的实现面均已接入并跑通自动化用例：实体视点、第三人称跟随/自由、固定炮镜期望目标、完整目标上报、WC 持久目标、机构适配与相机路由。剩余：设备模型骨骼读取观察角的接线、多人一致观察角同步（明确为后续 TODO）、客户端与多人实机验收 |
 | [观瞄系统-视点与瞄准控制重构方案](进行中/观瞄系统-视点与瞄准控制重构方案.md) | `AbstractViewpointSubsystem`、`ThirdPersonViewpoint`、`SightSubsystem`/`CameraSubsystem` 平级重构与第一方内容接线均已落地；模型骨骼接线与客户端动态体验未完成，进度细节见上一行的实施记录 |
-| [武器系统-投射物曳光光照设计](进行中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）、S2（光源级遮挡）与 S4（法线响应，随共享着色器）已落地；S3 未实现，待游戏内实测标定。F1（爆炸波前折射的遮挡修复）已落地并实测通过；曳光链已并入通用 `screen_space_light` 通路 |
+| [武器系统-投射物曳光光照设计](进行中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）、S2（光源级遮挡）与 S4（法线响应，随共享着色器）已落地，待游戏内实测标定；S3 表面项已在共享着色器落地，待实机验收。F1（爆炸波前折射的遮挡修复）已落地并实测通过；曳光链已并入通用 `screen_space_light` 通路 |
 | [武器系统-投射物模型渲染设计](进行中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 解析到 `Machine-Max_Soviet_Basic_Kit` 的弹体模型 `models/projectile/9m133.geo.json`，待游戏内验收）；朝向修正、缩放（`model_scale` / `model_rotation` / `model_lod_distance`）与投射物动画驱动未实现 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；压溃与零件间、生物路径迁移不排期 |
 | [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
@@ -85,7 +85,7 @@
 | [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
-| [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 设计完成、未实现。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |
+| [渲染-屏幕空间遮挡S3设计](计划中/渲染-屏幕空间遮挡S3设计.md) | 实现已落地、待实机验收。表面项改用屏幕空间阴影（`P→C` 沿线 8 步、`raw` 深度仿射插值），星芒继续用光源级判定、光晕继续用逐像素 `t_hit`；含性能口径与失败模式清单 |
 | [感知系统-Reading与目标估计设计](计划中/感知系统-Reading与目标估计设计.md) | 初步设计；代码中尚无 `Reading` 相关类型，目标目前仍以裸坐标点传递 |
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 未实现；`TrackRenderer` 中没有下垂/悬链求解代码 |

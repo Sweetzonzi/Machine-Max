@@ -6,13 +6,15 @@
 // 再叠加沿视线积分出的空气散射光晕。两项都是线性量，各自钳制后相加。
 //
 // 算子（设计文档 docs/plan/进行中/渲染-屏幕空间光照物理化设计.md §3）：
-//   1. 逐光源  E_i = c_i · I_i · o_i · w(d) / max(d², d_min²)
+//   1. 逐光源  E_i = c_i · I_i · o_i · v_i · w(d) / max(d², d_min²)
 //      c_i 是线性光色（光源表提交时已从 sRGB 解码）、I_i 是光源在 1 m 处的辐照度，
 //      w(d) = (1 − (d/R)⁴)² 在 d = R 处值与一阶导同时为 0，包围剔除不会在边界留硬边；
 //      d_min 是 1/d² 的奇点截断，逐来源上传；
 //      o_i = max((1 − NormalWeight) + NormalWeight·dot(N, L̂), 0) 是表面朝向响应（S4）：
 //      N 是视空间表面法线、L̂ 是表面点指向光心的单位向量。NormalWeight = 1 时即完整 Lambert 项，
 //      = 0 时 o_i 恒为 1（不乘法线项），中间值让掠射面保留 (1 − NormalWeight) 的底、背光面仍为 0。
+//      v_i 是表面点 P 能否看见光心 C 的屏幕空间遮挡比例（S3）：沿 P→C 的屏幕线段采深度，
+//      1 = 无命中，0 = 采样全部更近。它只作用于表面项，不参与光晕与星芒。
 //   2. 求和得到逐通道响应 e = Σ E_i：先求和再合成，因此结果与光源遍历顺序无关。
 //   3. C_out = 1 − (1 − C)/(1 + e·q)，q = C + β(1 − C)：输出恒在 [0,1]，渐近饱和、不硬截断。
 //   4. 光晕：glow_i = Scatter · k_i · c_i · I_i · I0_i · win(b/Rg_i)，逐通道钳到 GLOW_MAX 后与
@@ -56,9 +58,12 @@
 // 只是表面项恒为零。爆炸波前折射把背景视为"永不遮挡"（zScene = 1e9），与这里的方向相反，
 // 两侧不要互相照抄。
 //
-// 本文件是通用光照链的当前编码：光源表里的条目按球光（POINT）打包，遮挡策略由 LightOcclusion
-// 逐盏选择 NONE 或 SOURCE_DEPTH（S2）。锥光（SPOT）与 S3（SCREEN_RAY）在光源表提交处被报告为
-// 不支持，不会走到这里——它们的字段与分支在 P5 增加。
+// 本文件是通用光照链的当前编码：光源表里的条目按球光（POINT）打包，表面项按 S3 做逐像素
+// 屏幕空间遮挡；LightOcclusion 逐盏选择 NONE 或 SOURCE_DEPTH（S2），只门禁星芒。锥光（SPOT）
+// 与逐盏 S3 模式（SCREEN_RAY）在光源表提交处被报告为不支持，不会走到这里——锥光的字段与分支在 P5 增加。
+//
+// S3 的 8 段线段采样（7 个内部点）见 screenRayVisibility()：raw 深度沿 P→C 仿射插值，场景比射线更近的步
+// 按 OCCL_SOFT_REL 的厚度带计入 occ；近端/灯端各排除一段，避开掠射地面与光源自身几何。
 //
 // 两条包围剔除缺一不可：
 //   perp2 > Rc²  视线到光心的垂距超过 Rc —— 必要，视线完全不穿过球时球内任何点都不在此视线上
@@ -76,11 +81,11 @@ uniform float FocalPx;              // 像素焦距 f
 uniform float DepthA;               // d_tex = DepthB / z - DepthA
 uniform float DepthB;
 uniform float LightCount;           // 有效光源数；必须是 float（int uniform 无法经 set(float) 写入）
-uniform float OcclusionTolRel;      // 遮挡容差的相对分量
+uniform float OcclusionTolRel;      // S2 遮挡容差的相对分量（只用于星芒的光源级判定）
 uniform float LightView[64];        // 每槽 4 个：视空间光心 xyz、世界半径 R(m)
 uniform float LightColor[64];       // 每槽 4 个：线性颜色 rgb、强度（1 m 处辐照度）
 uniform float LightTol[16];         // 每槽 1 个：遮挡容差的绝对分量(m)，由来源折算
-uniform float LightOcclusion[16];   // 每槽 1 个：遮挡策略，0 = 不做遮挡判定，1 = 在光心投影处采一次深度（S2）
+uniform float LightOcclusion[16];   // 每槽 1 个：星芒的光源级遮挡策略，0 = 不做判定，1 = 在光心投影处采一次深度（S2）
 uniform float LightMinDist[16];     // 每槽 1 个：1/d² 的奇点截断 d_min(m)，逐来源取值
 uniform float LightGlow[32];        // 每槽 2 个：光晕阈值半径 Rg(m)、倍率 k；k = 0 关闭该光源的光晕
 uniform float LightGlare[16];       // 每槽 1 个：星芒（十字炫光）的倍率 g；g = 0 关闭该光源的星芒
@@ -103,6 +108,13 @@ const float GLARE_SIGMA_REL = 0.0022;   // 臂根部的横向标准差 = 屏高 
 const float GLARE_TAPER = 0.55;     // 收窄系数：臂尖处横向标准差 = (1 − TAPER)·根部，臂因此根粗尖细
 const float GLARE_MAX_FRACTION = 0.45; // 臂长占屏高的比例上限：兜住小视场（炮镜倍率）把星芒放大到铺满画面
 const float DEG_TO_RAD = 0.01745329252; // 度 → 弧度
+
+// S3 屏幕空间遮挡（docs/plan/计划中/渲染-屏幕空间遮挡S3设计.md §4）
+const int   OCCL_STEPS     = 8;      // 线段分段数；实际采样 from..to（默认 1..7，共 7 个内部点）；0 = 关闭步进（A/B）
+const float OCCL_NEAR_SKIP = 0.06;   // 近端排除比例：压掠射地面的自遮挡条纹
+const float OCCL_FAR_SKIP  = 0.12;   // 灯端排除比例：压光源自身几何的误判
+const float OCCL_BIAS_REL  = 0.01;   // raw 深度的相对偏置：抵消采样步的量化
+const float OCCL_SOFT_REL  = 0.02;   // 半软边宽度（raw 的相对量）：压 8 级台阶
 
 // sRGB 编码的显示值 → 线性辐射度（分段函数，与光源表提交侧的换算同源）
 vec3 srgbToLinear(vec3 c) {
@@ -182,9 +194,37 @@ bool viewNormal(vec2 uv, float zc, out vec3 n) {
     return true;
 }
 
+// S3：本像素表面点 P（texCoord、zBuf）到光心 C（lightPx、zc）的屏幕线段遮挡比例。
+// 返回 1 = 无命中，0 = 所有有效采样都被更近的场景挡住；出屏的步不产生证据。
+// raw 深度沿线段仿射插值，因此标准/反向深度只差 depthSign，不改变采样位置。
+float screenRayVisibility(vec2 lightPx, float zc, float zBuf, float depthSign) {
+    if (OCCL_STEPS <= 0 || zc <= NEAR_Z) return 1.0;
+    int from = int(ceil(float(OCCL_STEPS) * OCCL_NEAR_SKIP));
+    int to   = int(floor(float(OCCL_STEPS) * (1.0 - OCCL_FAR_SKIP)));
+    if (to < from) return 1.0;
+
+    float invSteps = 1.0 / float(max(OCCL_STEPS, 1));
+    vec2  duv      = (lightPx / OutSize - texCoord) * invSteps;
+    float rayRaw   = zBuf;
+    float lightRaw = DepthB / zc - DepthA;
+    float occ      = 0.0;
+    for (int k = from; k <= to; k++) {
+        vec2 uv = texCoord + duv * float(k);
+        if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) continue;
+        float sceneRaw = texture(MCDepthSampler, uv).r;
+        float ray = mix(rayRaw, lightRaw, float(k) * invSteps);
+        float diff = (sceneRaw - ray) * depthSign - OCCL_BIAS_REL * ray;
+        occ += clamp(diff / (OCCL_SOFT_REL * ray) + 0.5, 0.0, 1.0);
+    }
+    return 1.0 - occ / float(to - from + 1);
+}
+
 void main() {
     vec4 src = texture(DiffuseSampler, texCoord);
     if (int(LightCount) <= 0) { fragColor = vec4(src.rgb, 1.0); return; }
+
+    // S3 的深度方向：标准约定 raw 越大越远（DepthB < 0），反向深度相反。
+    float depthSign = (DepthB < 0.0) ? -1.0 : 1.0;
 
     vec2 px = texCoord * OutSize;
 
@@ -270,13 +310,12 @@ void main() {
         }
         if (!haloIn && !glareIn) continue;
 
-        // 光源级可见性：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
+        // 星芒的光源级可见性（S2）：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
-        // 自身的模型会把光源剔掉、光照与星芒凭空消失，太大则近处遮挡物漏光。
-        // **它只门禁表面项与星芒，不门禁光晕**：光晕自己有逐像素的 t_hit 截断，比这一次采样精确，
-        // 套上这个门禁会把"光源被挡住、光晕球露出一半"的情形整片抹掉。
+        // 自身的模型会把光源剔掉、星芒凭空消失，太大则近处遮挡物漏光。
+        // **它只门禁星芒**：表面项由 S3 的 screenRayVisibility() 逐像素决定，光晕由 t_hit 逐像素截断。
         bool sourceVisible = true;
-        if (LightOcclusion[i] > 0.5 && zc > NEAR_Z
+        if (glareIn && LightOcclusion[i] > 0.5 && zc > NEAR_Z
                 && all(greaterThanEqual(lightPx, vec2(0.0)))
                 && all(lessThan(lightPx, OutSize))) {               // 越界按可见处理
             float tol   = max(LightTol[i], zc * OcclusionTolRel);
@@ -285,7 +324,7 @@ void main() {
         }
 
         // 表面项：只在本像素有表面、且表面点落在照明半径内时贡献
-        if (sourceVisible && haloIn && hasSurface) {
+        if (haloIn && hasSurface) {
             float d = length(P - C);
             if (d < R) {
                 // 有限支撑窗：必须在 d = R 处严格归零且一阶导为零，否则包围剔除会在阈值处留下硬边。
@@ -308,8 +347,11 @@ void main() {
                     orient = max(mix(1.0, dot(N, (C - P) / d), nw), 0.0);
                 }
 
+                // S3：表面点到光心之间是否被更近的几何挡住；屏幕空间有投影、d < R 时计算。
+                float visible = screenRayVisibility(lightPx, zc, zBuf, depthSign);
+
                 // 逐光源钳制：曲线本身有界，但内容里的强度没有上界，先兜住异常输入
-                e += min(radiance * (intensity * win * orient / dEff2), vec3(E_MAX));
+                e += min(radiance * (intensity * win * orient * visible / dEff2), vec3(E_MAX));
             }
         }
 

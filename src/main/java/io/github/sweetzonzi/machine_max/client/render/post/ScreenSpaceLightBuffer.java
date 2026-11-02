@@ -25,16 +25,17 @@ import java.util.Map;
  * {@link ProjectileTracerLightSource} 执行，因此该来源的候选集与拆出通用通路之前逐一对应
  * （设计文档 §4.3、§7）。</p>
  *
- * <p><b>P1 的阶段能力在提交处显式报告</b>：锥光（{@link ScreenSpaceLight.Shape#SPOT}）与 S3
- * （{@link ScreenSpaceLight.OcclusionMode#SCREEN_RAY}）返回 {@link SubmitResult#UNSUPPORTED}，
- * 不会按球光或按 S2 悄悄渲染；两者接入 GPU 编码后本条判断才放开（设计文档 §4.1、§10 的 P5）。</p>
+ * <p><b>P1 的阶段能力在提交处显式报告</b>：锥光（{@link ScreenSpaceLight.Shape#SPOT}）与逐盏 S3
+ * 模式（{@link ScreenSpaceLight.OcclusionMode#SCREEN_RAY}）返回 {@link SubmitResult#UNSUPPORTED}，
+ * 不会按球光或按 S2 悄悄渲染；表面项的 S3 由着色器统一执行，不经过这个模式。两者接入 GPU 编码后
+ * 本条判断才放开（设计文档 §4.1、§10 的 P5）。</p>
  *
  * <p><b>提交到 GPU 的数值口径在这里统一一次</b>：颜色在写入槽位时由 sRGB 编码转成线性辐射度
  * （内容包里的 {@code [0,255]} 颜色按显示值理解；直接当线性系数用会让暖色偏冷），强度在写入时
  * 乘上全局倍率，光晕的阈值半径在写入时按 {@code Rg = GLOW_SCALE_M · sqrt(I_base) · k} 算好
  * （着色器不做 {@code sqrt}）。片元的算子有两条：表面项逐光源
- * {@code color · I · o · w(d) / max(d², d_min²)} 求和后经合成曲线映射回显示值
- * （{@code o} 是朝向响应，权重取全局 {@code NormalWeight}）；空气散射光晕
+ * {@code color · I · o · v · w(d) / max(d², d_min²)} 求和后经合成曲线映射回显示值
+ * （{@code o} 是朝向响应，{@code v} 是 S3 遮挡比例，权重取全局 {@code NormalWeight}）；空气散射光晕
  * {@code Scatter · k · color · I · ∫1/r² dt · w(b/Rg)} 求和后加在曲线之后
  * （设计文档 §3.2、§3.3、§3.5、§3.6、§4.1）。</p>
  *
