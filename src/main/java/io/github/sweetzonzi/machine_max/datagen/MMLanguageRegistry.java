@@ -1620,6 +1620,14 @@ public enum MMLanguageRegistry {
             zh_cn, "零件已损毁时，每1点伤害额外推进的销毁倒计时Tick数。默认值：20。范围：0 ~ 100000",
             en_us, "Additional destroy timer advance ticks per 1 damage applied to already destroyed sub-parts. Default: 20. Range: 0 ~ 100000"
     )),
+    CONFIGURATION_SUBPART_DESTROY_ADVANCE_FLOOR_TICKS("machine_max.configuration.subpart_destroy_advance_floor_ticks", ImmutableMap.of(
+            zh_cn, "零件销毁倒计时下限",
+            en_us, "SubPart Destroy Advance Floor Ticks"
+    )),
+    CONFIGURATION_SUBPART_DESTROY_ADVANCE_FLOOR_TICKS_TOOLTIP("machine_max.configuration.subpart_destroy_advance_floor_ticks.tooltip", ImmutableMap.of(
+            zh_cn, "已销毁零件受到追加伤害时，倒计时最多被推进到该Tick数，不会更低。默认值：100（5秒）。范围：0 ~ 100000；0 表示不设下限",
+            en_us, "Lowest destroy timer value that additional damage may advance an already destroyed sub-part to. Default: 100 (5 seconds). Range: 0 ~ 100000; 0 disables the floor"
+    )),
     // 伤害类型死亡信息（键为 death.attack.<MMDamageTypes 的 message_id>）
     DEATH_ATTACK_PROJECTILE("death.attack.machine_max.projectile", ImmutableMap.of(
             zh_cn, "%1$s 被炮弹撕成碎片",

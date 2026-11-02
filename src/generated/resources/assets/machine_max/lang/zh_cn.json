@@ -339,6 +339,8 @@
   "machine_max.configuration.speed_turning_limit.tooltip": "高速时限制转向角度防止侧翻。默认值：true",
   "machine_max.configuration.steering_off_time": "转向回正时间",
   "machine_max.configuration.steering_off_time.tooltip": "松开按键后转向回正到中央所需时间（秒）。越小车轮回正越快。默认值：0.2。范围：0.05 ~ 99999.0",
+  "machine_max.configuration.subpart_destroy_advance_floor_ticks": "零件销毁倒计时下限",
+  "machine_max.configuration.subpart_destroy_advance_floor_ticks.tooltip": "已销毁零件受到追加伤害时，倒计时最多被推进到该Tick数，不会更低。默认值：100（5秒）。范围：0 ~ 100000；0 表示不设下限",
   "machine_max.configuration.subpart_destroy_advance_ticks_per_damage": "零件受伤加速销毁Tick",
   "machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip": "零件已损毁时，每1点伤害额外推进的销毁倒计时Tick数。默认值：20。范围：0 ~ 100000",
   "machine_max.configuration.subpart_destroy_min_ticks": "零件销毁最小Tick",

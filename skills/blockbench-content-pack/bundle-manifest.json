@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-02",
+  "bundled_on": "2026-11-03",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "c8fd9b66ef6bf460933267bd7e23673c29b4c02d",
+    "revision": "8223ead421cf98363bfee72f1e7bc3e15f00ed13",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -56,13 +56,13 @@
       },
       {
         "path": "references/schemas/part/subpart/connector/connector_attr.schema.json",
-        "bytes": 5723,
-        "sha256": "90e25d17676fbc8d45ec87f9327b7c1f4d812be1f2c08c1da993ac2c32b5cede"
+        "bytes": 5544,
+        "sha256": "cf367be8f02414a5262e5fdd2222ae32c97fd8384411ea53adcaba491c9bc7b3"
       },
       {
         "path": "references/schemas/part/subpart/connector/connector_static_attr.schema.json",
-        "bytes": 4803,
-        "sha256": "cc758bda5b2ca65c135bd98a7fe4ebf695011916d5ae24493c4bfe551c485173"
+        "bytes": 4591,
+        "sha256": "22883039bafa8c1982b924daeec6003f95458922354918136909632ae855dee6"
       },
       {
         "path": "references/schemas/part/subpart/connector/joint_attr.schema.json",
@@ -111,8 +111,8 @@
       },
       {
         "path": "references/schemas/part/subpart/sub_part_attr.schema.json",
-        "bytes": 8481,
-        "sha256": "7f031a84c0eba24a3137b6e64fbdb24c8868e01550d85397d42d84e72bbe0bc3"
+        "bytes": 8794,
+        "sha256": "94e623a3ad5630b0cf384105fea124578c2a8059f98310ee74fb67b309b303c6"
       },
       {
         "path": "references/schemas/part/variant_attr.schema.json",
@@ -373,7 +373,7 @@
     "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
     "version": "0.5.12",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1978198,
-    "sha256": "726ee0e805d70b27af3e0607e673fa0f969a9870a1d3be116f4ce1e8195476fc"
+    "bytes": 1979617,
+    "sha256": "0c828d9b1b7ffa372610162878aa3b7366104795f047da4a161c28beecde4842"
   }
 }

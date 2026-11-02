@@ -16,7 +16,6 @@ import java.util.Map;
  * @param impactAbsorptionDestroyed  SubPart已摧毁时，冲击转化为连接点完整性损耗的比例
  * @param impactReduction         连接点受到冲击时减少的冲击量
  * @param impactMultiplier        连接点受到冲击时的伤害倍率
- * @param collideBetweenParts 连接点是否允许部件间碰撞
  * @param requiredTags      连接点的必需标签
  * @param acceptableTags    连接点的可接受标签
  * @param forbiddenTags     连接点的禁止标签
@@ -30,7 +29,6 @@ public record ConnectorStaticAttr(
         float impactAbsorptionDestroyed,
         float impactReduction,
         float impactMultiplier,
-        boolean collideBetweenParts,
         List<ResourceLocation> requiredTags,
         List<ResourceLocation> acceptableTags,
         List<ResourceLocation> forbiddenTags,
@@ -44,7 +42,6 @@ public record ConnectorStaticAttr(
             Codec.FLOAT.optionalFieldOf("impact_absorption_destroyed", 2.0f).forGetter(ConnectorStaticAttr::impactAbsorptionDestroyed),
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorStaticAttr::impactReduction),
             Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.0f).forGetter(ConnectorStaticAttr::impactMultiplier),
-            Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorStaticAttr::collideBetweenParts),
             ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorStaticAttr::acceptableTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorStaticAttr::forbiddenTags),

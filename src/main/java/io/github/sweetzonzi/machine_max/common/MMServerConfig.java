@@ -11,6 +11,7 @@ public class MMServerConfig {
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_TICKS_PER_DURABILITY;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_MIN_TICKS;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_ADVANCE_TICKS_PER_DAMAGE;
+    private static final ModConfigSpec.IntValue SUBPART_DESTROY_ADVANCE_FLOOR_TICKS;
 
     // ==================== 爆炸系统 ====================
 
@@ -54,6 +55,11 @@ public class MMServerConfig {
         SUBPART_DESTROY_ADVANCE_TICKS_PER_DAMAGE = builder
                 .comment("Additional destroy timer advance ticks per 1 damage applied to already destroyed sub-parts.")
                 .defineInRange("subpart_destroy_advance_ticks_per_damage", 20, 0, 100000);
+
+        SUBPART_DESTROY_ADVANCE_FLOOR_TICKS = builder
+                .comment("Lowest destroy timer value that additional damage may advance a destroyed sub-part to.",
+                        "100 ticks = 5 seconds. 0 disables the floor. A value at or above the part's initial timer disables acceleration entirely.")
+                .defineInRange("subpart_destroy_advance_floor_ticks", 100, 0, 100000);
 
         // ==================== 爆炸系统 ====================
 
@@ -127,6 +133,11 @@ public class MMServerConfig {
 
     public static int getSubPartDestroyAdvanceTicksPerDamage() {
         return SUBPART_DESTROY_ADVANCE_TICKS_PER_DAMAGE.get();
+    }
+
+    /** 追加伤害推进倒计时时的下限（tick）；0 = 不设下限。 */
+    public static int getSubPartDestroyAdvanceFloorTicks() {
+        return SUBPART_DESTROY_ADVANCE_FLOOR_TICKS.get();
     }
 
     // ==================== 爆炸系统 ====================

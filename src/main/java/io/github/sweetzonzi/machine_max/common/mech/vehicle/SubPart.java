@@ -247,11 +247,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 return;
             }
         }
-        //同装配体零件不发生碰撞（VehicleCore 或 MechUnit 共用）
+        //同装配体零件默认不发生碰撞；双方显式开启 collide_in_assembly 且没有直接连接时放行
         if (ownerA instanceof SubPart subPartA && ownerB instanceof SubPart subPartB) {
             if (subPartA.part.assembly != null && subPartA.part.assembly == subPartB.part.assembly) {
-                event.setShouldCollide(false);
-                return;
+                if (!(subPartA.attr.collideInAssembly && subPartB.attr.collideInAssembly
+                        && !isDirectlyConnected(subPartA, subPartB))) {
+                    event.setShouldCollide(false);
+                    return;
+                }
             }
         }
         //装配体不与乘客发生碰撞
@@ -267,6 +270,26 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 event.setShouldCollide(false);
             }
         }
+    }
+
+    /**
+     * 两个子零件是否通过连接点直接相连。
+     * <p>两端各查一次：对接和断开由主线程依次写两端的 {@code attachedConnector}，物理线程可能读到
+     * 只更新了一端的中间状态；任一端已建立连接即视为直连。连接点表在部件构造完成后不再增删，
+     * 遍历只读；{@code attachedConnector} 声明为 volatile，供物理线程在 broadphase 回调中读取。</p>
+     */
+    private static boolean isDirectlyConnected(SubPart a, SubPart b) {
+        return hasAttachedConnectorTo(a, b) || hasAttachedConnectorTo(b, a);
+    }
+
+    private static boolean hasAttachedConnectorTo(SubPart from, SubPart to) {
+        for (AbstractConnector connector : from.connectors.values()) {
+            AbstractConnector attached = connector.attachedConnector;
+            if (attached != null && attached.subPart == to) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -975,7 +998,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (drained > 0f) {
             setDurability(Math.clamp(getDurability() - drained, 0, getMaxDurability()));
             part.onDurabilityChanged();
-            // 部件已进入倒计时时，追加伤害加速部件级倒计时；最后 1 秒不再缩减
+            // 部件已进入倒计时时，追加伤害加速部件级倒计时；推进不得低于全局配置的下限
             if (part.isDestroyed()) {
                 int extraAdvance = Math.round(drained * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
                 part.advanceDestroyTimer(extraAdvance);

@@ -58,6 +58,11 @@
       "default": false,
       "description": "攀爬辅助，是否启用攀爬辅助功能"
     },
+    "collide_in_assembly": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否允许该子零件与同一装配体内、未通过连接点直接相连的其他子零件发生碰撞。只有双方都为 true 时才生效；直接相连的零件对始终不碰撞。默认 false"
+    },
     "hit_boxes": {
       "type": "object",
       "additionalProperties": {

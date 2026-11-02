@@ -273,7 +273,7 @@ public final class PartDestroyStateGameTest {
         }
     }
 
-    /** 追加伤害推进部件倒计时，但保留最后 20 tick。 */
+    /** 追加伤害推进部件倒计时，但保留全局配置的下限。 */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void extraDamageAdvancesCountdownWithFloor(GameTestHelper helper) {
         Selection selected = multiSubPart(helper);
@@ -282,7 +282,9 @@ public final class PartDestroyStateGameTest {
             part.subParts.values().forEach(SubPart::setDestroyed);
             part.tickDestroyState();
             int initial = part.getDestroyTime();
-            helper.assertTrue(initial > 70, "初值应足够大以验证推进，实际 " + initial);
+            int floor = MMServerConfig.getSubPartDestroyAdvanceFloorTicks();
+            helper.assertTrue(initial > floor + 50,
+                    "初值应足够大以验证推进，实际 " + initial + "，下限 " + floor);
 
             part.advanceDestroyTimer(50);
             helper.assertTrue(part.getDestroyTime() == initial - 50,
@@ -292,8 +294,11 @@ public final class PartDestroyStateGameTest {
                     "推进后的镜像应同步");
 
             part.advanceDestroyTimer(1_000_000);
-            helper.assertTrue(part.getDestroyTime() == 20,
-                    "倒计时应保留 20 tick 下限，实际 " + part.getDestroyTime());
+            helper.assertTrue(part.getDestroyTime() == floor,
+                    "倒计时应保留 " + floor + " tick 下限，实际 " + part.getDestroyTime());
+            part.advanceDestroyTimer(50);
+            helper.assertTrue(part.getDestroyTime() == floor,
+                    "已在下限时追加伤害不应改变倒计时，实际 " + part.getDestroyTime());
             helper.succeed();
         } finally {
             part.discardUnattached();

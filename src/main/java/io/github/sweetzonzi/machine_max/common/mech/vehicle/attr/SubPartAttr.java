@@ -45,6 +45,8 @@ public class SubPartAttr {
     public final BlockCollisionType blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
+    /** 是否允许与同一装配体内、未通过连接点直接相连的其他子零件碰撞。 */
+    public final boolean collideInAssembly;
 
     // 功能属性
     public final float durability;
@@ -116,6 +118,7 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
+            Codec.BOOL.optionalFieldOf("collide_in_assembly", false).forGetter(SubPartAttr::isCollideInAssembly),
             HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getHitBoxes),
             InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", Map.of()).forGetter(SubPartAttr::getInteractBoxes),
             ConnectorAttr.MAP_CODEC.optionalFieldOf("connectors", Map.of()).forGetter(SubPartAttr::getConnectors),
@@ -139,6 +142,7 @@ public class SubPartAttr {
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
+            boolean collideInAssembly,
             Map<String, HitBoxAttr> hitBoxes,
             Map<String, InteractBoxAttr> interactBoxes,
             Map<String, ConnectorAttr> connectors,
@@ -157,6 +161,7 @@ public class SubPartAttr {
         this.blockCollision = BlockCollisionType.valueOf(blockCollision.replace('-', '_').toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
+        this.collideInAssembly = collideInAssembly;
 
         if (hitBoxes.isEmpty()) throw new PackContentException(Component.translatableWithFallback(
                 "error.machine_max.subpart.empty_hit_boxes", "Sub-part must have at least one hit-box"));

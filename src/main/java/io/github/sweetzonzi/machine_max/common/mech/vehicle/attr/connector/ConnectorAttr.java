@@ -58,7 +58,6 @@ public class ConnectorAttr {
      * @param impactAbsorptionDestroyed SubPart已摧毁时，冲击转化为连接点完整性损耗的比例
      * @param impactReduction          连接点受到冲击时减少的冲击量
      * @param impactMultiplier         连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
-     * @param collideBetweenParts      连接点是否允许部件间碰撞
      * @param requiredTags             连接点的必需标签
      * @param acceptableTags           连接点的可接受标签
      * @param forbiddenTags            连接点的禁止标签
@@ -72,7 +71,6 @@ public class ConnectorAttr {
             Optional<Float> impactAbsorptionDestroyed,
             Optional<Float> impactReduction,
             Optional<Float> impactMultiplier,
-            Optional<Boolean> collideBetweenParts,
             Optional<List<ResourceLocation>> requiredTags,
             Optional<List<ResourceLocation>> acceptableTags,
             Optional<List<ResourceLocation>> forbiddenTags,
@@ -86,7 +84,6 @@ public class ConnectorAttr {
                 Codec.FLOAT.optionalFieldOf("impact_absorption_destroyed").forGetter(OverwriteAttr::impactAbsorptionDestroyed),
                 Codec.FLOAT.optionalFieldOf("impact_reduction").forGetter(OverwriteAttr::impactReduction),
                 Codec.FLOAT.optionalFieldOf("impact_multiplier").forGetter(OverwriteAttr::impactMultiplier),
-                Codec.BOOL.optionalFieldOf("collide_between_parts").forGetter(OverwriteAttr::collideBetweenParts),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags").forGetter(OverwriteAttr::requiredTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags").forGetter(OverwriteAttr::acceptableTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags").forGetter(OverwriteAttr::forbiddenTags),
@@ -179,7 +176,6 @@ public class ConnectorAttr {
                 overwrite.impactAbsorptionDestroyed().isPresent() ? overwrite.impactAbsorptionDestroyed().get() : baseAttr.impactAbsorptionDestroyed(),
                 overwrite.impactReduction().isPresent() ? overwrite.impactReduction().get() : baseAttr.impactReduction(),
                 overwrite.impactMultiplier().isPresent() ? overwrite.impactMultiplier().get() : baseAttr.impactMultiplier(),
-                overwrite.collideBetweenParts().isPresent() ? overwrite.collideBetweenParts().get() : baseAttr.collideBetweenParts(),
                 overwrite.requiredTags().isPresent() ? overwrite.requiredTags().get() : baseAttr.requiredTags(),
                 overwrite.acceptableTags().isPresent() ? overwrite.acceptableTags().get() : baseAttr.acceptableTags(),
                 overwrite.forbiddenTags().isPresent() ? overwrite.forbiddenTags().get() : baseAttr.forbiddenTags(),
@@ -284,10 +280,6 @@ public class ConnectorAttr {
 
     public float getImpactMultiplier() {
         return attr.impactMultiplier();
-    }
-
-    public boolean hasCollideBetweenParts() {
-        return attr.collideBetweenParts();
     }
 
     List<ResourceLocation> getRequiredTags() {

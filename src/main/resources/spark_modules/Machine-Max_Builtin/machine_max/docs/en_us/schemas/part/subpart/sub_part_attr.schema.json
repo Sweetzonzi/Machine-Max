@@ -58,6 +58,11 @@
       "default": false,
       "description": "Climbing assistance, whether to enable climbing assistance function"
     },
+    "collide_in_assembly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this sub-part may collide with other sub-parts in the same assembly that are not directly connected through a connector. Only takes effect when both sides are true; directly connected pairs never collide. Default false"
+    },
     "hit_boxes": {
       "type": "object",
       "additionalProperties": {

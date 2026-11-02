@@ -59,10 +59,6 @@
           "minimum": 0.0,
           "description": "Impact multiplier overwrite."
         },
-        "collide_between_parts": {
-          "type": "boolean",
-          "description": "Whether to allow collision between parts overwrite."
-        },
         "required_tags": {
           "type": "array",
           "items": { "$ref": "../../../base/resource_location.schema.json" },
@@ -125,7 +121,6 @@
         "impact_absorption_destroyed": 2.5,
         "impact_reduction": 3.0,
         "impact_multiplier": 0.8,
-        "collide_between_parts": false,
         "required_tags": ["machine_max:direction/left"],
         "acceptable_tags": ["machine_max:wheel", "machine_max:suspension"],
         "forbidden_tags": ["machine_max:broken_only"],

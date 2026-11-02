@@ -407,14 +407,16 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
-     * 服务端按追加伤害推进倒计时，保留最后 20 tick 的下限。
+     * 服务端按追加伤害推进倒计时，但不低于全局配置的销毁倒计时下限。
      *
      * @param ticks 期望推进的 tick 数；非正值忽略
      */
     public void advanceDestroyTimer(int ticks) {
         if (level.isClientSide() || ticks <= 0 || !destroyCountdownStarted) return;
-        if (destroyTime <= 20) return;
-        destroyTime = Math.max(20, destroyTime - ticks);
+        int floor = MMServerConfig.getSubPartDestroyAdvanceFloorTicks();
+        // 已在下限或以下时保持原值，避免 Math.max 把倒计时反向拉高
+        if (destroyTime <= floor) return;
+        destroyTime = Math.max(floor, destroyTime - ticks);
         mirrorDestroyTime();
     }
 

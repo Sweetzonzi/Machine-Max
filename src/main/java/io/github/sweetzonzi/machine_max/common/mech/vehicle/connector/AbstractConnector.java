@@ -66,7 +66,6 @@ import java.util.Map;
 public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder {
     public final String name;//连接点名称
     public final SubPart subPart;//连接点所属的零件
-    public final boolean collideBetweenParts;//是否允许零件间碰撞
     public final boolean internal;//是否为内部连接点
     public final ConnectorAttr attr;//连接点属性
     public New6Dof joint;//在两个连接点间共享的关节
@@ -75,7 +74,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
     @Setter
-    public AbstractConnector attachedConnector;//与本连接点对接的连接点
+    public volatile AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
     @Setter
     public Transform actualTransform;//本安装点为确保法线方向和连接点方向一致所需的实际变换
@@ -90,7 +89,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
         this.mechanicalEnergyPort = new MechPowerPort(this, attr.getPowerTarget());
-        this.collideBetweenParts = attr.hasCollideBetweenParts();
         this.internal = attr.isInternal();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
@@ -296,12 +294,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * 根据储存的关节属性调整关节
      */
     protected void adjustJoint() {
-        //设置关节属性，默认全自由度锁死，且相连零件之间无碰撞
-        joint.setCollisionBetweenLinkedBodies(collideBetweenParts);
-        if (!collideBetweenParts) { // 若两零件被设置为不与相邻零件碰撞，则脱落后保持这种关系
-//            joint.getBodyA().addToIgnoreList(joint.getBodyB());
-//            joint.getBodyB().addToIgnoreList(joint.getBodyA());
-        }
+        // 关节始终允许两端碰撞，同装配体过滤由 SubPart.onPreCollision 负责。
+        // 不保留 Bullet 的 ignoreList：该列表在关节移除后不会清除，
+        // 会让分裂后断裂点两侧的零件永久互相穿透。
+        joint.setCollisionBetweenLinkedBodies(true);
         joint.set(MotorParam.LowerLimit, 3, 0);
         joint.set(MotorParam.LowerLimit, 4, 0);
         joint.set(MotorParam.LowerLimit, 5, 0);

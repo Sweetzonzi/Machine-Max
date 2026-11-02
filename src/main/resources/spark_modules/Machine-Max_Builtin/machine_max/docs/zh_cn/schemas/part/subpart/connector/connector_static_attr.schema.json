@@ -75,11 +75,6 @@
       "additionalProperties": { "$ref": "joint_attr.schema.json"},
       "default": {},
       "description": "关节属性，目前仅在关节类型为Advanced时生效。键为x、y、z、xr、yr、zr，分别代表x、y、z轴的平动和x、y、z轴的旋转。"
-    },
-    "collide_between_parts": {
-      "type": "boolean",
-      "default": false,
-      "description": "连接点是否允许部件间碰撞。通常设置为false以避免连接点之间的穿透问题。"
     }
   },
   "required": ["type"],

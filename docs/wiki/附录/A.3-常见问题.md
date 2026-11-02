@@ -150,11 +150,12 @@ MachineMax 的物理引擎独立于 Minecraft 主游戏循环运行在专用线�
 
 ### 车被撞坏以后零件消失得很快，能延长吗？
 
-可以。在服务端配置中调整以下三项：
+可以。在服务端配置中调整以下四项：
 
 - `subpart_destroy_ticks_per_durability`：每点耐久上限对应的倒计时刻数，增大可延长残骸保留时间。
 - `subpart_destroy_min_ticks`：最短保留时间，增大可保证即使很脆的零件也能多留一会。
 - `subpart_destroy_advance_ticks_per_damage`：持续受击时倒计时推进速度，减小可让残骸在继续挨打时没那么快消失。
+- `subpart_destroy_advance_floor_ticks`：追加伤害最多把倒计时推进到的下限，增大可让残骸在被持续命中时仍至少保留这么久。
 
 详细说明请参考 [A.1 模组配置](A.1-模组配置.md)。
 

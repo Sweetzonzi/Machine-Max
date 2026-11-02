@@ -80,8 +80,9 @@ MachineMax 的配置文件位于游戏根目录下的 `config` 文件夹中，�
 - `subpart_destroy_ticks_per_durability`：已摧毁部件的倒计时与最大耐久的换算比例。部件越耐用，通常会在被摧毁后停留更久。
 - `subpart_destroy_min_ticks`：已摧毁部件在世界中的最短保留时间。
 - `subpart_destroy_advance_ticks_per_damage`：已摧毁部件继续受到额外伤害时，倒计时推进的速度。
+- `subpart_destroy_advance_floor_ticks`：已销毁部件被追加伤害推进倒计时时，剩余时间不会低于这个 tick 数。默认 100，即 5 秒；0 表示不设下限。
 
-如果你希望战场残骸保留更久、视觉反馈更完整，可以适当提高前两项；如果你希望战斗后场面更快清理，则可以提高最后一项，或适当降低保留时间相关数值。
+前三项决定倒计时的长度与推进速度，最后一项给推进设下限：无论追加伤害多大，残骸都会保留至少这段剩余时间。如果你希望战场残骸保留更久、视觉反馈更完整，可以提高前两项或 `subpart_destroy_advance_floor_ticks`；如果你希望战斗后场面更快清理，可以降低前两项或提高 `subpart_destroy_advance_ticks_per_damage`。
 
 ## 通用配置
 
