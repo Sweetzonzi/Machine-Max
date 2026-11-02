@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * 内容包 {@code fittings/} 的静态资源自检：型号引用的模型、贴图、图标必须真的存在。
@@ -22,8 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 渲染期回退，日志一条 warn 很容易漏掉。这里在单元测试里按内容包目录布局反查文件：
  * 模型在 {@code models/fitting/<型号名>.json}，贴图与图标是命名空间目录下的相对路径。</p>
  *
- * <p>图标尺寸只作推荐（{@code item_icon_2d_128x} 的底板是 128 见方），这里不校验：贴图会
- * 按 UV 铺满整块底板，分辨率高低只影响显存与锐度，不构成资源缺失。</p>
+ * <p>图标只额外要求「可解码 + 方形」：{@code item_icon_2d_128x} 是一个正方形面、
+ * UV 铺满整张贴图，非方形会被拉伸，属于可判定的显示错误。边长不设限，128 只是推荐值；
+ * 也不要求 2 的幂——图标是独立贴图、不进图集，仓库里已有非 2 次幂的零件图标在用。</p>
  */
 class FittingAssetTest {
     /** 仓库内的内容包根目录；Gradle 的测试工作目录是项目根。 */
@@ -61,8 +65,15 @@ class FittingAssetTest {
 
             if (visual.has("icon")) {
                 String icon = visual.get("icon").getAsString();
-                assertTrue(resolveResource(icon).isPresent(),
-                        () -> file + " 的 visual.icon " + icon + " 在内容包里不存在");
+                Path path = resolveResource(icon).orElseGet(() -> {
+                    fail(file + " 的 visual.icon " + icon + " 在内容包里不存在");
+                    return null;
+                });
+                BufferedImage image = ImageIO.read(path.toFile());
+                assertTrue(image != null, () -> file + " 的图标无法解码: " + path);
+                assertTrue(image.getWidth() == image.getHeight(),
+                        () -> file + " 的图标不是方形，铺到正方形底板上会被拉伸: " + path
+                                + "（" + image.getWidth() + "×" + image.getHeight() + "）");
             }
         }
     }
