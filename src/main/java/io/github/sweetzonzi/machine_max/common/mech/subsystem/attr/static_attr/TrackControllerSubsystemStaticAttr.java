@@ -14,8 +14,9 @@ import java.util.TreeMap;
 /**
  * 履带控制器静态属性。
  *
- * <p>单流差速只使用横摆角速度上限、最小转弯半径、侧向加速度和 PD 参数；
- * 转向电机/转向传动的双流参数先保留字段，单流阶段不读取。</p>
+ * <p>当前单流实现是开环拉杆制动：只读取控制频道、转向/制动平滑和手刹/换挡开关。
+ * 横摆角速度上限、最小转弯半径、侧向加速度、PD 与支点参数保留在 JSON 中供旧内容包
+ * 和后续双流草案使用，开环拉杆控制不读取它们。</p>
  */
 @Getter
 public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {

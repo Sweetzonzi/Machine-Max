@@ -3,7 +3,5 @@
   "type": "machine_max:transmission",
   "basic_durability": 40,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
-  "diff_lock": "auto",
-  "diff_lock_sensitivity": 1,
-  "auto_diff_lock_threshold": 15
+  "diff_lock": "false" // 开环拉杆转向依靠内侧制动，开放差速器避免差速锁把扭矩送回慢侧
 }

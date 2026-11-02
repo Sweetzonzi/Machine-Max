@@ -19,11 +19,12 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 履带车辆控制器（单流制动差速）。
+ * 履带车辆控制器（单流开环拉杆制动）。
  *
- * <p>通过 {@code control_outputs} 发现发动机/电机/变速箱与 {@link TrackDriveSubsystem}，
- * 按横向位置分配外侧锚定的带速上限，内侧由驱动的限扭速度伺服减速。
- * 意图模式的纯转向请求前进动力和单侧保持制动，车体绕停止侧附近转动。</p>
+ * <p>通过 {@code control_outputs} 发现发动机/电机/变速箱与 {@link TrackDriveSubsystem}。
+ * A/D 是转向拉杆，按横向位置把基础制动偏置到内侧、释放外侧；拉杆超过死区后内侧离合断开，
+ * 让开放差速器把动力集中到外侧。W/S 是纵向意图，负责加速或制动。意图模式的纯转向请求
+ * 当前行进方向的动力，使车体绕内侧附近转动。</p>
  *
  * <p>绑定表在主线程握手/结构变化时重建，物理线程只读取 volatile 快照。</p>
  */
@@ -33,12 +34,15 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
     private final Map<TrackDriveSubsystem, String> tracks = new HashMap<>();
     private volatile List<TrackBinding> trackBindings = List.of();
-    /** 上一物理步下发给各条履带的带速指令（m/s），下标与 {@link #trackBindings} 对齐；物理线程独占。 */
-    private float[] trackTargets = new float[0];
+    /** 上一物理步下发给各条履带的制动量（0~1），下标与 {@link #trackBindings} 对齐。 */
+    private volatile float[] trackBrakes = new float[0];
+    /** 上一物理步下发给各条履带的离合（0/1），下标与 {@link #trackBindings} 对齐。 */
+    private volatile float[] trackClutches = new float[0];
 
     private float yawRateCmd = 0f;
     private float baseSpeed = 0f;
-    private float previousYawRate = Float.NaN;
+    /** 拉杆侧别使用；低速/静止时沿用上一次行进方向。 */
+    private volatile float lastTravelDirection = 1f;
 
     public record TrackBinding(TrackDriveSubsystem drive, String channel, float localX, float x, float radius) {
     }
@@ -76,7 +80,9 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         super.clearActuatorBindings();
         tracks.clear();
         trackBindings = List.of();
-        trackTargets = new float[0];
+        trackBrakes = new float[0];
+        trackClutches = new float[0];
+        lastTravelDirection = 1f;
     }
 
     @Override
@@ -103,8 +109,8 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
         if (raw.isEmpty()) {
             trackBindings = List.of();
-            trackTargets = new float[0];
-            previousYawRate = Float.NaN;
+            trackBrakes = new float[0];
+            trackClutches = new float[0];
             return;
         }
 
@@ -119,17 +125,22 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         }
         centered.sort(Comparator.comparingDouble(TrackBinding::x));
         trackBindings = List.copyOf(centered);
-        trackTargets = new float[centered.size()];
-        previousYawRate = Float.NaN;
+        trackBrakes = new float[centered.size()];
+        trackClutches = new float[centered.size()];
     }
 
     @Override
     protected float resolveDriveIntent(float longitudinalInput) {
         List<TrackBinding> bindings = validBindings();
-        if (bindings.size() < 2 || bindings.getLast().x() - bindings.getFirst().x() < 0.1f) {
+        if (bindings.size() < 2 || bindingWidth(bindings) < 0.1f) {
             return longitudinalInput;
         }
-        return TrackMath.singleFlowDriveIntent(longitudinalInput, actualSteering);
+        return TrackMath.accelerationIntent(longitudinalInput, actualSteering, speed);
+    }
+
+    @Override
+    protected float resolveBrakeIntent(float longitudinalInput) {
+        return TrackMath.brakeIntent(longitudinalInput, speed);
     }
 
     @Override
@@ -137,7 +148,6 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         if (moveInput == null || moveInputConflict == null) {
             actualThrottle = 0f;
             actualSteering = 0f;
-            previousYawRate = Float.NaN;
             calculateAvgSpeedAndControl();
         }
         super.distributeControlSignals();
@@ -149,115 +159,95 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         if (bindings.isEmpty()) {
             baseSpeed = 0f;
             yawRateCmd = 0f;
-            trackTargets = new float[trackBindings.size()];
-            Arrays.fill(trackTargets, Float.NaN);
+            trackBrakes = new float[trackBindings.size()];
+            trackClutches = new float[trackBindings.size()];
+            Arrays.fill(trackBrakes, Float.NaN);
+            Arrays.fill(trackClutches, Float.NaN);
             return;
         }
 
-        float inputSpeed = 0f;
-        for (TrackBinding binding : bindings) inputSpeed += binding.drive().inputSpeed();
-        float direction = TrackMath.singleFlowDirection(inputSpeed, speed, actualThrottle);
-        float vBase = computeBaseSpeed(bindings, direction);
-        this.baseSpeed = vBase;
-        float minX = bindings.getFirst().x();
-        float maxX = bindings.getLast().x();
-        float width = maxX - minX;
-        boolean raw = ControlPreference.shouldRawThrottleBrake(this);
-        float longitudinal = moveInput == null ? 0f : moveInput[2] / 100f;
+        float width = bindingWidth(bindings);
         float steering = moveInput == null ? 0f : Math.clamp(actualSteering, -1f, 1f);
-        float turnIntent = (raw ? steering : TrackMath.singleFlowTurnRatio(longitudinal, steering)) * direction;
-        float pivotWeight = raw ? 0f : Math.clamp(
-                (Math.abs(steering) - Math.abs(longitudinal)) / Math.max(Math.abs(steering), 0.01f), 0f, 1f);
-        float tableYawRate = (float) Math.toRadians(attr.staticAttribute.getMaxYawRateAtSpeed(Math.abs(speed)));
-        float turnLimit = TrackMath.singleFlowTurnLimit(vBase, speed, width, tableYawRate,
-                attr.staticAttribute.maxLateralAcceleration, attr.staticAttribute.minTurningRadius, pivotWeight);
-        float rDes = width < 0.1f ? 0f
-                : Math.clamp(turnIntent, -turnLimit, turnLimit) * Math.abs(vBase) / width;
-        float bodyYawRate = getSubPart().body.getAngularVelocityLocal(null).y;
-        float error = rDes - bodyYawRate;
-        float tps = getPhysicsLevel().getTps();
-        float dt = tps > 0f ? 1f / tps : 0.05f;
-        float derivative = Float.isNaN(previousYawRate) ? 0f : (bodyYawRate - previousYawRate) / dt;
-        previousYawRate = bodyYawRate;
-        float correction = (attr.staticAttribute.yawP * error - attr.staticAttribute.yawD * derivative)
-                * Math.max(width, 0f) / Math.max(Math.abs(vBase), 0.5f)
-                * Math.clamp(Math.abs(vBase) / 0.5f, 0f, 1f);
-        float turnRatio = Math.clamp(turnIntent + correction, -turnLimit, turnLimit);
-        this.yawRateCmd = width < 0.1f ? 0f : turnRatio * Math.abs(vBase) / width;
+        float lever = TrackMath.leverBrake(steering);
+        float travel = TrackMath.travelDirection(actualThrottle, speed, lastTravelDirection);
+        lastTravelDirection = travel;
+        boolean innerLeft = TrackMath.leverBrakesLeft(steering, travel);
+
+        float vBase = computeBaseSpeed(bindings, travel);
+        baseSpeed = vBase;
+        yawRateCmd = width < 0.1f ? 0f : steering * lever * Math.abs(vBase) / width;
 
         List<TrackBinding> all = trackBindings;
-        float[] targets = new float[all.size()];
-        // 内侧指令锚在动力链给出的带速上，不是当前实际带速。传动箱对每个输出端加了驱动偏置
-        // （{@code TransmissionSubsystem.LOCK_DRIVE_BIAS}），伺服目标本来就高于实际带速；拿实际带速
-        // 当基准会让内侧指令退化成「保持当前速度」，于是内侧每一步都被判成超速，用
-        // {@code max_brake_torque} 把整车锁在当前车速上。
-        float driveAnchor = 0f;
-        for (TrackBinding binding : bindings) {
-            float driveSpeed = Math.abs(binding.drive().inputSpeed() * binding.radius());
-            if (Float.isFinite(driveSpeed)) driveAnchor = Math.max(driveAnchor, driveSpeed);
-        }
-        float anchor = Math.max(driveAnchor, Math.abs(vBase));
+        float[] brakes = new float[all.size()];
+        float[] clutches = new float[all.size()];
         for (int i = 0; i < all.size(); i++) {
             TrackBinding binding = all.get(i);
             if (!binding.drive().isDriveUsable()) {
-                targets[i] = Float.NaN;
+                brakes[i] = Float.NaN;
+                clutches[i] = Float.NaN;
                 continue;
             }
-            float ratio = TrackMath.singleFlowSpeedRatio(binding.x(), minX, maxX, turnRatio, direction);
-            float maxSpeed = binding.drive().linearMaxSpeed();
-            float pivotSpeed = Math.min(maxSpeed, Math.max(tableYawRate, 0f) * Math.max(width, 0f)
-                    * Math.max(Math.abs(longitudinal), Math.abs(steering)));
-            float outerLimit = maxSpeed + (pivotSpeed - maxSpeed) * pivotWeight;
-            float target = ratio < 1f - TrackMath.EPSILON
-                    ? direction * Math.min(anchor, outerLimit) * ratio
-                    : (pivotWeight > 0f && width >= 0.1f ? direction * outerLimit : Float.NaN);
-            targets[i] = target;
+            float brake = actualBrake;
+            float clutch = 1f;
+            if (width >= 0.1f && lever > 0f) {
+                boolean inner = innerLeft ? binding.x() < 0f : binding.x() > 0f;
+                if (inner) {
+                    brake = TrackMath.innerBrake(actualBrake, lever);
+                    clutch = TrackMath.steeringClutch(lever);
+                } else {
+                    brake = TrackMath.outerBrake(actualBrake, lever);
+                }
+            }
+            brakes[i] = brake;
+            clutches[i] = clutch;
             sendCallbackToListener(binding.channel(), binding.drive(),
-                    new TrackControlSignal(actualBrake, actualHandBrake, 1f, target));
+                    new TrackControlSignal(brake, actualHandBrake, clutch, Float.NaN));
         }
-        this.trackTargets = targets;
+        trackBrakes = brakes;
+        trackClutches = clutches;
     }
 
     @Override
     protected String telemetryExtraColumns() {
         StringBuilder columns = new StringBuilder(",base_mps,yaw_cmd,yaw_act");
         for (int i = 0; i < trackBindings.size(); i++) {
-            columns.append(",t").append(i).append("_cmd")
+            columns.append(",t").append(i).append("_brk")
                     .append(",t").append(i).append("_in")
                     .append(",t").append(i).append("_spd")
                     .append(",t").append(i).append("_trq")
-                    .append(",t").append(i).append("_r");
+                    .append(",t").append(i).append("_r")
+                    .append(",t").append(i).append("_clu");
         }
         return columns.toString();
     }
 
     /**
-     * 追加单流基准、横摆指令与每条履带的五元组：本步下发的带速指令、传动箱给出的伺服目标带速、
+     * 追加单流基准、横摆估计与每条履带的六元组：本步下发的制动量与离合、传动箱给出的伺服目标带速、
      * 履带实际带速、下发给滚动轴电机的驱动扭矩、主动轮半径。
      *
-     * <p>伺服目标取 {@code min(_cmd, _in)}（同向时），所以两者的较小值才是这一步真正追的转速。
+     * <p>{@code _brk} 是拉杆偏置后真正下发的制动量；{@code _clu} 是下发的离合（0 断开、1 结合）；
      * {@code _in} 是传动箱输出目标，等于「动力链折算到主动轮的转速 + {@code LOCK_DRIVE_BIAS}」，
-     * 与 {@code _spd} 的差就是速度伺服在这一步的误差：差值大说明电机在饱和推，差值接近零说明
-     * 两侧速度已经对齐、推力只剩阻力那一份。{@code _trq} 贴着 {@code max_drive_torque} 而
-     * {@code _spd} 追不上目标，说明接触面吃不下这份力矩。{@code _cmd} 为 NaN 表示该侧锚定到
-     * {@code _in}，本步不做比例限速。</p>
+     * 与 {@code _spd} 的差是速度伺服在这一步的误差。{@code _trq} 贴着 {@code max_drive_torque}
+     * 而 {@code _spd} 追不上目标，说明接触面吃不下这份力矩。{@code _brk} 为 NaN 表示该侧不可用。</p>
      */
     @Override
     protected void appendTelemetrySample(StringBuilder row) {
         float yawRate = getSubPart().body.getAngularVelocityLocal(null).y;
         row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f", baseSpeed, yawRateCmd, yawRate));
         List<TrackBinding> all = trackBindings;
-        float[] targets = trackTargets;
+        float[] brakes = trackBrakes;
+        float[] clutches = trackClutches;
         for (int i = 0; i < all.size(); i++) {
             TrackDriveSubsystem drive = all.get(i).drive();
             if (!drive.isDriveUsable()) {
-                row.append(",NaN,NaN,NaN,NaN,NaN");
+                row.append(",NaN,NaN,NaN,NaN,NaN,NaN");
                 continue;
             }
-            float target = i < targets.length ? targets[i] : Float.NaN;
-            row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f,%.1f,%.3f",
-                    target, drive.inputSpeed() * drive.radius(), drive.linearSpeed(),
-                    drive.getDriveTorque(), drive.radius()));
+            float brake = i < brakes.length ? brakes[i] : Float.NaN;
+            float clutch = i < clutches.length ? clutches[i] : Float.NaN;
+            row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f,%.1f,%.3f,%.3f",
+                    brake, drive.inputSpeed() * drive.radius(), drive.linearSpeed(),
+                    drive.getDriveTorque(), drive.radius(), clutch));
         }
     }
 
@@ -267,6 +257,47 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
             if (binding.drive().isDriveUsable()) result.add(binding);
         }
         return result;
+    }
+
+    /**
+     * 低速转向时保持最低挡。
+     *
+     * <p>原地转向的中心车速很低，但被驱动侧履带可能已经被发动机拖到高速；基类只按发动机转速
+     * 预测各挡扭矩，会在 1 挡红区直接升 2 挡，换挡断扭矩后整车顿住。这里在转向且中心车速低于
+     * {@link TrackMath#LOW_SPEED_SHIFT_HOLD} 时锁住最低挡，松开转向或车速上来后交还给基类。</p>
+     */
+    @Override
+    protected int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, byte direction) {
+        if (!ControlPreference.shouldAutoSwitchGear(this)) {
+            return super.autoGearShift(gearbox, engineSpeed, direction);
+        }
+
+        float lever = TrackMath.leverBrake(actualSteering);
+        if (!TrackMath.holdLowGearForSteering(lever, speed)) {
+            return super.autoGearShift(gearbox, engineSpeed, direction);
+        }
+
+        byte shiftDirection = direction;
+        if (shiftDirection == 0 && Math.abs(speed) > 0.5f) {
+            shiftDirection = (byte) (speed >= 0f ? 1 : -1);
+        }
+        if (shiftDirection == 0) {
+            return super.autoGearShift(gearbox, engineSpeed, direction);
+        }
+
+        int lowGear = shiftDirection < 0 ? gearbox.minNegativeGear : gearbox.minPositiveGear;
+        if (gearbox.getCurrentGear() == lowGear) {
+            return lowGear;
+        }
+        if (Math.abs(speed) < 1f) {
+            return lowGear;
+        }
+        return super.autoGearShift(gearbox, engineSpeed, direction);
+    }
+
+    /** 有效绑定的横向宽度；不足两条时为 0。 */
+    private float bindingWidth(List<TrackBinding> bindings) {
+        return bindings.size() < 2 ? 0f : bindings.getLast().x() - bindings.getFirst().x();
     }
 
     /**

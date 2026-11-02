@@ -8,8 +8,98 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 public final class TrackMath {
     /** 速度、功率分母的数值下限。 */
     public static final float EPSILON = 1e-4f;
+    /** 意图输入的公共死区。 */
+    public static final float INTENT_DEADZONE = 0.05f;
+    /** A/D 拉杆的死区。 */
+    public static final float LEVER_DEADZONE = 0.05f;
+    /** 超过该拉杆行程后摘掉内侧动力，避免内侧制动与发动机互相拖拽。 */
+    public static final float STEERING_CLUTCH_MIN_LEVER = 0.1f;
+    /** 低于该车速的转向工况保持低挡，避免原地转向时被自动升挡打断。 */
+    public static final float LOW_SPEED_SHIFT_HOLD = 2.5f;
+    /** 低于该车速时，反向纵向输入视为换向请求而不是制动。 */
+    public static final float BRAKE_INTENT_MIN_SPEED = 0.5f;
+    /** 行进方向优先取油门符号的阈值。 */
+    public static final float TRAVEL_THROTTLE_THRESHOLD = 0.05f;
+    /** 行进方向在无油门时取车速符号的阈值。 */
+    public static final float TRAVEL_SPEED_THRESHOLD = 0.3f;
 
     private TrackMath() {
+    }
+
+    /**
+     * W/S 与当前车速反向且已超过低速换向区时，纵向轴表示制动意图。
+     * 低速区反向输入仍按换向请求处理，与基类的 0.5 m/s 门限一致。
+     */
+    public static boolean isBrakeIntent(float longitudinal, float bodySpeed) {
+        return Math.abs(longitudinal) > INTENT_DEADZONE
+                && Math.abs(bodySpeed) >= BRAKE_INTENT_MIN_SPEED
+                && longitudinal * bodySpeed < 0f;
+    }
+
+    /**
+     * 加速意图：W/S 优先决定方向与模式，A/D 在加速时补足油门大小；制动意图返回 0。
+     */
+    public static float accelerationIntent(float longitudinal, float steering, float bodySpeed) {
+        if (isBrakeIntent(longitudinal, bodySpeed)) return 0f;
+        boolean hasLongitudinal = Math.abs(longitudinal) > INTENT_DEADZONE;
+        float magnitude = hasLongitudinal
+                ? Math.max(Math.abs(longitudinal), Math.abs(steering))
+                : Math.abs(steering);
+        if (magnitude < 0.01f) return 0f;
+        float direction = hasLongitudinal
+                ? Math.signum(longitudinal)
+                : (Math.abs(bodySpeed) > 0.1f ? Math.signum(bodySpeed) : 1f);
+        return Math.copySign(Math.min(magnitude, 1f), direction);
+    }
+
+    /** 制动意图只取 W/S 的大小和符号，A/D 不参与放大。 */
+    public static float brakeIntent(float longitudinal, float bodySpeed) {
+        return isBrakeIntent(longitudinal, bodySpeed) ? clamp(longitudinal, -1f, 1f) : 0f;
+    }
+
+    /** A/D 拉杆行程：0 中位，1 满拉杆；只取大小，不区分左右。 */
+    public static float leverBrake(float steering) {
+        if (!Float.isFinite(steering)) return 0f;
+        float magnitude = Math.abs(steering);
+        if (magnitude <= LEVER_DEADZONE) return 0f;
+        return clamp((magnitude - LEVER_DEADZONE) / (1f - LEVER_DEADZONE), 0f, 1f);
+    }
+
+    /**
+     * 转向离合：拉杆超过死区后内侧脱离动力路径，否则保持结合。
+     *
+     * <p>驱动端的 {@code clutchEngagement} 只在 {@code 0} 时断开动力路径，中间值仅缩放
+     * 驱动扭矩，因此这里用二值输出，连续转向由制动拉杆负责。</p>
+     */
+    public static float steeringClutch(float lever) {
+        return lever > STEERING_CLUTCH_MIN_LEVER ? 0f : 1f;
+    }
+
+    /** 低速转向时保持低挡；直线行驶仍按原自动换挡逻辑。 */
+    public static boolean holdLowGearForSteering(float lever, float bodySpeed) {
+        return lever > 0f && Math.abs(bodySpeed) < LOW_SPEED_SHIFT_HOLD;
+    }
+
+    /** 行进方向：油门符号优先，其次车速，最后沿用上次方向。 */
+    public static float travelDirection(float throttle, float bodySpeed, float lastDirection) {
+        if (Math.abs(throttle) > TRAVEL_THROTTLE_THRESHOLD) return Math.signum(throttle);
+        if (Math.abs(bodySpeed) > TRAVEL_SPEED_THRESHOLD) return Math.signum(bodySpeed);
+        return lastDirection < -0.01f ? -1f : 1f;
+    }
+
+    /** 坦克式侧别：前进时 A 左、D 右；倒车时 A 右、D 左，A/D 的偏航方向不随挡位翻转。 */
+    public static boolean leverBrakesLeft(float steering, float travelDirection) {
+        return steering * travelDirection > 0f;
+    }
+
+    /** 基础制动在内侧的偏置。 */
+    public static float innerBrake(float serviceBrake, float lever) {
+        return clamp(serviceBrake + lever * (1f - serviceBrake), 0f, 1f);
+    }
+
+    /** 基础制动在外侧的释放。 */
+    public static float outerBrake(float serviceBrake, float lever) {
+        return clamp(serviceBrake * (1f - lever), 0f, 1f);
     }
 
     public static float clamp(float value, float min, float max) {

@@ -160,6 +160,14 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         return longitudinalInput;
     }
 
+    /**
+     * 意图模式的制动请求。默认与纵向输入一致；履带可把转向从制动请求中分离，
+     * 避免 A/D 在倒车或制动时被当成油门/刹车。物理线程调用。
+     */
+    protected float resolveBrakeIntent(float longitudinalInput) {
+        return longitudinalInput;
+    }
+
     // ===== 生命周期 =====
 
     @Override
@@ -673,7 +681,7 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
                 distributeDriveControl();
             } else {
                 float throttleInput = resolveDriveIntent(moveInput[2] / 100f);
-                float brakeInput = resolveDriveIntent(moveInputConflict[2] / 100f);
+                float brakeInput = resolveBrakeIntent(moveInputConflict[2] / 100f);
 
                 float targetThrottle;
                 float targetBrake;

@@ -2,7 +2,5 @@
   "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:transmission",
   "basic_durability": 80,
-  "diff_lock": "auto",
-  "diff_lock_sensitivity": 1,
-  "auto_diff_lock_threshold": 15
+  "diff_lock": "false" // 开环拉杆转向依靠内侧制动，开放差速器避免差速锁把扭矩送回慢侧
 }
