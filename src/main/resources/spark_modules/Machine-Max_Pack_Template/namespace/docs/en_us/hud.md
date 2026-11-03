@@ -120,7 +120,7 @@ A HUD style defines the internal appearance of one HUD and contains no position,
 ```
 
 - **page** (Required): AUI page key in the form `<pack namespace>/<relative path>`; the pack file `documents/weapon_hud_element/weapon_ammo.html` maps to `machine_max/weapon_hud_element/weapon_ammo.html`
-- **defaults** (Optional): CSS variables written onto the page `body`, readable through `var(...)` in the page stylesheet
+- **defaults** (Optional): CSS variables written onto the page `body`, readable through `var(...)` in the page stylesheet. `--mm-accent` can be overridden globally by the client config `hud.accent_color`: when it holds a valid CSS color, every AUI HUD page uses that color first; when it is blank or unparsable, the color from this field or from the page stylesheet applies.
 
 The page shrinks to its content: the runtime adds the `mm-hud` class to `body` and sets inline rules for `inline-block`, zero margin and a transparent background. The page describes the component content; its layout controls placement and projection. Put a dark background on the component container when needed. The layout field `perspective: false` selects the orthographic overlay and `perspective: true` selects a perspective plane. The field defaults to `true`, so screen-anchored AUI elements must explicitly set it to `false`.
 

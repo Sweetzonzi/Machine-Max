@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client;
 
+import com.sighs.apricityui.parser.Color;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchFeedback;
@@ -32,6 +33,8 @@ public class MMClientConfig {
     private static final ModConfigSpec.BooleanValue GROUND_SEPARATE_THROTTLE_BRAKE;
     /** 是否在启动后首次进入标题画面时显示欢迎页面 */
     private static final ModConfigSpec.BooleanValue SHOW_WELCOME_SCREEN;
+    /** HUD 主题色覆盖；空或不是合法 CSS 颜色时使用内容包样式自己的颜色 */
+    private static final ModConfigSpec.ConfigValue<String> HUD_ACCENT_COLOR;
 
     // ---- 视觉特效 ----
     private static final ModConfigSpec.BooleanValue OVERLOAD_ENABLED;
@@ -122,6 +125,17 @@ public class MMClientConfig {
         SHOW_WELCOME_SCREEN = builder
                 .comment("Show the welcome screen when entering the title screen for the first time after launch.\nSet to false to skip it. Can be re-enabled in the config menu later.\nDefault: true")
                 .define("show_welcome_screen", true);
+
+        builder.push("hud");
+
+        HUD_ACCENT_COLOR = builder
+                .comment("Overrides the --mm-accent CSS variable used by AUI HUD pages.\n"
+                        + "Accepts any CSS color AUI can parse: #rgb, #rrggbb, rgb(...), rgba(...), hsl(...) or a named color.\n"
+                        + "Blank or unparsable values keep the color from the content pack style or page stylesheet.\n"
+                        + "Default: \"\" (content pack color)")
+                .define("accent_color", "");
+
+        builder.pop();
 
         builder.push("visual_effects");
 
@@ -502,6 +516,38 @@ public class MMClientConfig {
      */
     public static boolean isShowWelcomeScreen() {
         return SHOW_WELCOME_SCREEN.get();
+    }
+
+    /**
+     * 获取玩家配置的 HUD 主题色覆盖值。
+     *
+     * <p>返回值会覆盖 AUI HUD 页面的 {@code --mm-accent} CSS 变量。空串表示不覆盖，页面使用
+     * 内容包样式 {@code defaults} 或页面样式表给出的颜色；无法解析为颜色的字符串同样按空串处理，
+     * 这样填错配置不会让 HUD 变成黑色。配置未加载时（例如离线单元测试）也返回空串。</p>
+     *
+     * @return 可供 CSS 使用的颜色字符串，或空串表示使用内容包默认色
+     */
+    public static String getHudAccentColor() {
+        String raw;
+        try {
+            raw = HUD_ACCENT_COLOR.get();
+        } catch (IllegalStateException notLoaded) {
+            return "";
+        }
+        return parseHudAccentColor(raw);
+    }
+
+    /** 校验配置值：只接受 AUI 能解析且不完全透明的 CSS 颜色，其余一律回落为空串。 */
+    static String parseHudAccentColor(String raw) {
+        if (raw == null) return "";
+        String value = raw.trim();
+        if (value.isEmpty() || "unset".equalsIgnoreCase(value)) return "";
+        try {
+            // AUI 的解析器对无法识别或全透明的输入返回 0；transparent 不作为主题色。
+            return Color.parse(value) == 0 ? "" : value;
+        } catch (RuntimeException invalid) {
+            return "";
+        }
     }
 
     /**

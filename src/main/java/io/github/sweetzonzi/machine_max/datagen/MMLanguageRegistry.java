@@ -1327,6 +1327,27 @@ public enum MMLanguageRegistry {
             zh_cn, "Machine Max 部件耐久显示",
             en_us, "Machine Max Part Durability"
     )),
+    // HUD 配置
+    CONFIGURATION_HUD("machine_max.configuration.hud", ImmutableMap.of(
+            zh_cn, "HUD",
+            en_us, "HUD"
+    )),
+    CONFIGURATION_HUD_BUTTON("machine_max.configuration.hud.button", ImmutableMap.of(
+            zh_cn, "HUD",
+            en_us, "HUD"
+    )),
+    CONFIGURATION_HUD_TOOLTIP("machine_max.configuration.hud.tooltip", ImmutableMap.of(
+            zh_cn, "HUD 主题色与显示设置",
+            en_us, "HUD accent color and display settings"
+    )),
+    CONFIGURATION_ACCENT_COLOR("machine_max.configuration.accent_color", ImmutableMap.of(
+            zh_cn, "HUD 主题色",
+            en_us, "HUD Accent Color"
+    )),
+    CONFIGURATION_ACCENT_COLOR_TOOLTIP("machine_max.configuration.accent_color.tooltip", ImmutableMap.of(
+            zh_cn, "覆盖 AUI HUD 页面的 --mm-accent CSS 变量。支持 AUI 能解析的 CSS 颜色：#rgb、#rrggbb、rgb(...)、rgba(...)、hsl(...) 或颜色名。留空或无法解析时使用内容包样式或页面样式表给出的颜色。默认值：空",
+            en_us, "Overrides the --mm-accent CSS variable used by AUI HUD pages. Accepts any CSS color AUI can parse: #rgb, #rrggbb, rgb(...), rgba(...), hsl(...) or a named color. Blank or unparsable values keep the color from the content pack style or page stylesheet. Default: \"\""
+    )),
     // 地面载具配置
     CONFIGURATION_GROUND_VEHICLE("machine_max.configuration.ground_vehicle", ImmutableMap.of(
             zh_cn, "地面载具",

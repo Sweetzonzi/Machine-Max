@@ -15,6 +15,7 @@ import com.sighs.apricityui.spi.AuiServices;
 import com.sighs.apricityui.viewport.ApricityViewport;
 import com.sighs.apricityui.world.WorldWindowDisplayPrecision;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
@@ -57,6 +58,8 @@ public final class AuiHudAnimatable implements HudElementInstance {
 
     /** 运行时加在页面 body 上的类名。 */
     public static final String BODY_CLASS = "mm-hud";
+    /** AUI HUD 页面的主题色变量名，玩家配置覆盖的就是它。 */
+    private static final String ACCENT_VARIABLE = "--mm-accent";
 
     private final ResourceLocation styleId;
     private final AuiHudStyle style;
@@ -133,6 +136,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
             style.defaults().forEach(body::setInlineStyleProperty);
             styledBody = body;
         }
+        applyAccentOverride(body);
         if (!body.getClassList().contains(BODY_CLASS)) body.getClassList().add(BODY_CLASS);
         // 内联声明属于 DOM，CSS 缓存重建会保留它；每次绘制也检查现有 body，支持 JBR 热重载。
         ensureInlineStyle(body, "display", "inline-block");
@@ -141,6 +145,32 @@ public final class AuiHudAnimatable implements HudElementInstance {
         ensureInlineStyle(body, "min-height", "0");
         ensureInlineStyle(body, "margin", "0");
         ensureInlineStyle(body, "background", "transparent");
+    }
+
+    /**
+     * 应用玩家配置的 {@code --mm-accent} 覆盖。
+     * <p>
+     * 覆盖值以内联 {@code !important} 写在 body 上，优先于样式 {@code defaults} 与页面样式表。
+     * 配置清空或非法时回落到样式的作者默认值；样式没有给出该变量时移除内联声明，交给页面样式表。
+     * 每帧比较内联值，因此配置面板保存或 {@code /reload} 后无需重建 HUD 即可生效。
+     */
+    private void applyAccentOverride(Body body) {
+        String override = MMClientConfig.getHudAccentColor();
+        if (!override.isEmpty()) {
+            if (!override.equals(body.getInlineStylePropertyValue(ACCENT_VARIABLE))
+                    || !"important".equals(body.getInlineStylePropertyPriority(ACCENT_VARIABLE))) {
+                body.setInlineStyleProperty(ACCENT_VARIABLE, override, "important");
+            }
+            return;
+        }
+        String authorDefault = style.defaults().get(ACCENT_VARIABLE);
+        String current = body.getInlineStylePropertyValue(ACCENT_VARIABLE);
+        if (authorDefault == null) {
+            if (!current.isEmpty()) body.removeInlineStyleProperty(ACCENT_VARIABLE);
+        } else if (!authorDefault.equals(current)
+                || !body.getInlineStylePropertyPriority(ACCENT_VARIABLE).isEmpty()) {
+            body.setInlineStyleProperty(ACCENT_VARIABLE, authorDefault);
+        }
     }
 
     private static void ensureInlineStyle(Body body, String property, String value) {

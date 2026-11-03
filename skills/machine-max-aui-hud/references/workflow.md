@@ -108,7 +108,7 @@ body { display: inline-block; }
 .tube.is-empty { opacity: 0.5; }
 ~~~
 
-主题色令牌统一用 `--mm-accent`；其他单页语义色（例如 `--hud-warn`）保留自己的名字，但所有 `var()` 都要带默认值，例如 `var(--mm-accent, #a4ff80)`、`var(--hud-warn, #ffb020)`。这样页面在外链 CSS 尚未生效或玩家未设置主题色时仍有可见颜色。
+主题色令牌统一用 `--mm-accent`；其他单页语义色（例如 `--hud-warn`）保留自己的名字，但所有 `var()` 都要带默认值，例如 `var(--mm-accent, #a4ff80)`、`var(--hud-warn, #ffb020)`。这样页面在外链 CSS 尚未生效或玩家未设置主题色时仍有可见颜色。玩家可通过客户端配置 `hud.accent_color` 覆盖 `--mm-accent`；合法 CSS 颜色生效，留空或无法解析时回退到作者默认值。
 
 ### 无数据与预览默认值
 
@@ -201,7 +201,7 @@ example/hud_layouts/weapon_panel.json 是裸数组：
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| --mm-accent | #a4ff80 | 文字、边框、填充颜色 |
+| --mm-accent | #a4ff80 | 文字、边框、填充颜色；玩家可用客户端配置 `hud.accent_color` 全局覆盖 |
 | --panel-bg | rgba(6, 13, 4, 0.48) | 底板颜色 |
 | --scanline-opacity | 0.18 | 扫描线浓度，0 关闭 |
 | --panel-width | 430px | 组件宽度 |

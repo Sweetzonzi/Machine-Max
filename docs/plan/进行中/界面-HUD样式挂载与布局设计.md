@@ -124,6 +124,8 @@
 | `page` | 页面逻辑路径，经 §九 的内容包页面资源管线解析 |
 | `defaults` | 定义级 CSS 变量，可选；页面自身也可用样式表 |
 
+`--mm-accent` 是内容包 AUI HUD 的主题色变量。客户端配置 `hud.accent_color` 保存合法 CSS 颜色时，`src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#applyAccentOverride` 把它以内联 `!important` 写到页面 `body`，覆盖样式 `defaults` 与页面样式表；配置为空或无法解析时回落到样式 `defaults`，样式也没有该变量时由页面 `var()` 的后备值决定。面向内容包作者的取值与回退说明位于 `src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/{zh_cn,en_us}/hud.md` 的 `defaults` 条目。
+
 在本设计的 HUD 路径中，AUI 文档的宿主是 AUI 的 Overlay/Screen：`Client.drawOverlay` 订阅 `RenderGuiEvent.Post`，用 `GuiGraphics.pose()` 调 `Base.drawOverlayDocument(...)`；`Base.drawOverlayDocument` 只施加 2D 缩放与裁剪，不设置投影矩阵。因此 `machine_max:aui_hud` 固定在 GUI/HUD 正交阶段绘制，不能作为透视 HUD 使用。
 
 AUI 另有一条世界内路径：`WorldWindow` 把 Document 放到世界坐标，由 `WorldWindowRenderer` 把关卡投影矩阵传给 `WorldWindow.render(...)`，并启用深度测试、视锥裁剪与世界遮挡。它确实能做透视投影，但语义是世界内面板，不是屏幕空间 HUD；本文的非目标已把它排除（§1.3），`HudElement.perspective` 也不选择这条路径。`WorldWindow` 默认只在创建它的客户端本地渲染，AUI 不提供窗口的网络同步；若本模组将来把载具面板同步给其他客户端并由各客户端重建窗口，它就属于世界可见内容，私人 HUD 只适用于未同步的本地窗口。
