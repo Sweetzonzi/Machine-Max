@@ -119,8 +119,8 @@ class SingleFlowTrackControlTest {
 
     @Test
     void legacySignalsLeaveSpeedToThePowerTrainAndInvalidLimitsAreIgnored() {
-        assertTrue(Float.isNaN(new TrackControlSignal(0f, 0f, 1f).targetSpeed()));
-        assertTrue(Float.isNaN(new TrackControlSignal(0f, 0f, 1f, Float.POSITIVE_INFINITY).targetSpeed()));
-        assertEquals(-3f, new TrackControlSignal(0f, 0f, 1f, -3f).targetSpeed(), EPS);
+        assertTrue(Float.isNaN(new TrackControlSignal(0f, 0f, true).targetSpeed()));
+        assertTrue(Float.isNaN(new TrackControlSignal(0f, 0f, true, Float.POSITIVE_INFINITY).targetSpeed()));
+        assertEquals(-3f, new TrackControlSignal(0f, 0f, true, -3f).targetSpeed(), EPS);
     }
 }

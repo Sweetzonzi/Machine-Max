@@ -66,13 +66,12 @@ public final class TrackMath {
     }
 
     /**
-     * 转向离合：拉杆超过死区后内侧脱离动力路径，否则保持结合。
+     * 转向离合：拉杆超过死区后内侧脱离动力路径，否则保持接合。
      *
-     * <p>驱动端的 {@code clutchEngagement} 只在 {@code 0} 时断开动力路径，中间值仅缩放
-     * 驱动扭矩，因此这里用二值输出，连续转向由制动拉杆负责。</p>
+     * <p>离合只有接合与断开两种状态，连续转向量由制动拉杆承担。</p>
      */
-    public static float steeringClutch(float lever) {
-        return lever > STEERING_CLUTCH_MIN_LEVER ? 0f : 1f;
+    public static boolean steeringClutchEngaged(float lever) {
+        return lever <= STEERING_CLUTCH_MIN_LEVER;
     }
 
     /** 低速转向时保持低挡；直线行驶仍按原自动换挡逻辑。 */

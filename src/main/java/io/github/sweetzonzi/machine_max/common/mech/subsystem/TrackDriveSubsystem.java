@@ -45,7 +45,7 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
     /** 目标转速趋近 0 时反推扭矩的分母下限，避免扭矩被无限放大。 */
     private static final float MIN_SPEED_FOR_TORQUE = 0.25f;
     private static final TrackControlSignal FAIL_SAFE_CONTROL =
-            new TrackControlSignal(1f, 0f, 0f);
+            new TrackControlSignal(1f, 0f, false);
 
     /** producer 名 -> 最近一次收到的机械功率。物理线程写入/读取。 */
     private final Map<String, MechPower> received = new ConcurrentHashMap<>();
@@ -106,17 +106,17 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
 
         float omega = inputSpeed();
         float torque = 0f;
-        for (Map.Entry<String, MechPower> entry : received.entrySet()) {
-            if (!isPowerPathConnected(entry.getKey())) continue;
-            MechPower power = entry.getValue();
-            if (power == null || power.isEmpty()) continue;
-            float speed = power.speed();
-            if (!Float.isFinite(speed)) continue;
-            torque += TrackMath.torqueFromPower(power.power(), speed, MIN_SPEED_FOR_TORQUE);
+        if (control.clutchEngaged()) {
+            for (Map.Entry<String, MechPower> entry : received.entrySet()) {
+                if (!isPowerPathConnected(entry.getKey())) continue;
+                MechPower power = entry.getValue();
+                if (power == null || power.isEmpty()) continue;
+                float speed = power.speed();
+                if (!Float.isFinite(speed)) continue;
+                torque += TrackMath.torqueFromPower(power.power(), speed, MIN_SPEED_FOR_TORQUE);
+            }
+            torque = Math.clamp(torque, -MAX_DRIVE_TORQUE, MAX_DRIVE_TORQUE);
         }
-
-        torque = Math.clamp(torque, -MAX_DRIVE_TORQUE, MAX_DRIVE_TORQUE)
-                * Math.clamp(control.clutchEngagement(), 0f, 1f);
         float brakeTorque = control.brakeControl() > 0.01f ? control.brakeControl() * MAX_BRAKE_TORQUE : 0f;
         float handBrakeTorque = control.handBrakeControl() > 0.01f
                 ? control.handBrakeControl() * MAX_HAND_BRAKE_TORQUE : 0f;
@@ -208,7 +208,7 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
 
     @Override
     public boolean isPowerPathConnected(String producerName) {
-        return getControlInput().clutchEngagement() > 0f && isDriveUsable();
+        return getControlInput().clutchEngaged() && isDriveUsable();
     }
 
     public boolean isDriveUsable() {

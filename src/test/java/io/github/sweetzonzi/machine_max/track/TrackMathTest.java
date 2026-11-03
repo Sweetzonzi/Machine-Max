@@ -46,10 +46,10 @@ class TrackMathTest {
     }
 
     @Test
-    void controlSignalClampsAllFields() {
-        TrackControlSignal signal = new TrackControlSignal(2f, -1f, 0.5f);
+    void controlSignalClampsBrakeFields() {
+        TrackControlSignal signal = new TrackControlSignal(2f, -1f, true);
         assertEquals(1f, signal.brakeControl(), 1e-5f);
         assertEquals(0f, signal.handBrakeControl(), 1e-5f);
-        assertEquals(0.5f, signal.clutchEngagement(), 1e-5f);
+        assertTrue(signal.clutchEngaged());
     }
 }

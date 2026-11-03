@@ -83,11 +83,11 @@ class TrackLeverBrakeTest {
 
     @Test
     void steeringClutchDropsTheInnerTrackOnlyPastTheLeverDeadzone() {
-        assertEquals(1f, TrackMath.steeringClutch(0f), EPS);
-        assertEquals(1f, TrackMath.steeringClutch(0.1f), EPS);
-        assertEquals(0f, TrackMath.steeringClutch(0.11f), EPS);
-        assertEquals(0f, TrackMath.steeringClutch(0.5f), EPS);
-        assertEquals(0f, TrackMath.steeringClutch(1f), EPS);
+        assertTrue(TrackMath.steeringClutchEngaged(0f));
+        assertTrue(TrackMath.steeringClutchEngaged(0.1f));
+        assertFalse(TrackMath.steeringClutchEngaged(0.11f));
+        assertFalse(TrackMath.steeringClutchEngaged(0.5f));
+        assertFalse(TrackMath.steeringClutchEngaged(1f));
     }
 
     @Test

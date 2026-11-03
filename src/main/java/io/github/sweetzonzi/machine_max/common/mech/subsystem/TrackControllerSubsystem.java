@@ -36,8 +36,8 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
     private volatile List<TrackBinding> trackBindings = List.of();
     /** 上一物理步下发给各条履带的制动量（0~1），下标与 {@link #trackBindings} 对齐。 */
     private volatile float[] trackBrakes = new float[0];
-    /** 上一物理步下发给各条履带的离合（0/1），下标与 {@link #trackBindings} 对齐。 */
-    private volatile float[] trackClutches = new float[0];
+    /** 上一物理步下发给各条履带的离合，下标与 {@link #trackBindings} 对齐。 */
+    private volatile boolean[] trackClutches = new boolean[0];
 
     private float yawRateCmd = 0f;
     private float baseSpeed = 0f;
@@ -81,7 +81,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         tracks.clear();
         trackBindings = List.of();
         trackBrakes = new float[0];
-        trackClutches = new float[0];
+        trackClutches = new boolean[0];
         lastTravelDirection = 1f;
     }
 
@@ -110,7 +110,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         if (raw.isEmpty()) {
             trackBindings = List.of();
             trackBrakes = new float[0];
-            trackClutches = new float[0];
+            trackClutches = new boolean[0];
             return;
         }
 
@@ -126,7 +126,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         centered.sort(Comparator.comparingDouble(TrackBinding::x));
         trackBindings = List.copyOf(centered);
         trackBrakes = new float[centered.size()];
-        trackClutches = new float[centered.size()];
+        trackClutches = new boolean[centered.size()];
     }
 
     @Override
@@ -160,9 +160,8 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
             baseSpeed = 0f;
             yawRateCmd = 0f;
             trackBrakes = new float[trackBindings.size()];
-            trackClutches = new float[trackBindings.size()];
+            trackClutches = new boolean[trackBindings.size()];
             Arrays.fill(trackBrakes, Float.NaN);
-            Arrays.fill(trackClutches, Float.NaN);
             return;
         }
 
@@ -179,21 +178,20 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
         List<TrackBinding> all = trackBindings;
         float[] brakes = new float[all.size()];
-        float[] clutches = new float[all.size()];
+        boolean[] clutches = new boolean[all.size()];
         for (int i = 0; i < all.size(); i++) {
             TrackBinding binding = all.get(i);
             if (!binding.drive().isDriveUsable()) {
                 brakes[i] = Float.NaN;
-                clutches[i] = Float.NaN;
                 continue;
             }
             float brake = actualBrake;
-            float clutch = 1f;
+            boolean clutch = true;
             if (width >= 0.1f && lever > 0f) {
                 boolean inner = innerLeft ? binding.x() < 0f : binding.x() > 0f;
                 if (inner) {
                     brake = TrackMath.innerBrake(actualBrake, lever);
-                    clutch = TrackMath.steeringClutch(lever);
+                    clutch = TrackMath.steeringClutchEngaged(lever);
                 } else {
                     brake = TrackMath.outerBrake(actualBrake, lever);
                 }
@@ -236,7 +234,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f", baseSpeed, yawRateCmd, yawRate));
         List<TrackBinding> all = trackBindings;
         float[] brakes = trackBrakes;
-        float[] clutches = trackClutches;
+        boolean[] clutches = trackClutches;
         for (int i = 0; i < all.size(); i++) {
             TrackDriveSubsystem drive = all.get(i).drive();
             if (!drive.isDriveUsable()) {
@@ -244,7 +242,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
                 continue;
             }
             float brake = i < brakes.length ? brakes[i] : Float.NaN;
-            float clutch = i < clutches.length ? clutches[i] : Float.NaN;
+            float clutch = i < clutches.length ? (clutches[i] ? 1f : 0f) : Float.NaN;
             row.append(String.format(Locale.ROOT, ",%.3f,%.3f,%.3f,%.1f,%.3f,%.3f",
                     brake, drive.inputSpeed() * drive.radius(), drive.linearSpeed(),
                     drive.getDriveTorque(), drive.radius(), clutch));
