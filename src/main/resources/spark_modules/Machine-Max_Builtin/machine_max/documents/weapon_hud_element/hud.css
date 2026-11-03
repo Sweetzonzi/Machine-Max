@@ -17,7 +17,7 @@
     --hud-dim: #a3c7d0;
     --hud-faint: #65828b;
     --hud-line: #1b3037;
-    --hud-accent: #74e6ff;
+    --mm-accent: #74e6ff;
     --hud-warn: #ffb020;
     --hud-bad: #ff4f5f;
     --hud-font: ui-monospace, "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
@@ -43,9 +43,9 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: var(--hud-bg);
-    color: var(--hud-text);
-    font-family: var(--hud-font);
+    background: var(--hud-bg, #05090c);
+    color: var(--hud-text, #effdff);
+    font-family: var(--hud-font, ui-monospace, "Cascadia Mono", Consolas, "Microsoft YaHei", monospace);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -68,8 +68,8 @@ body.center {
 
 .el {
     position: relative;
-    color: var(--hud-text);
-    font-family: var(--hud-font);
+    color: var(--hud-text, #effdff);
+    font-family: var(--hud-font, ui-monospace, "Cascadia Mono", Consolas, "Microsoft YaHei", monospace);
     font-variant-numeric: tabular-nums;
     /* The composition previews place these elements on a game-like scene. */
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 8px rgba(0, 0, 0, 0.35);
@@ -82,14 +82,14 @@ body.center {
 .el-identity {
     width: 360px;
     padding-left: 12px;
-    border-left: 2px solid var(--hud-accent);
+    border-left: 2px solid var(--mm-accent, #74e6ff);
 }
 
 .id-name {
     font-size: 21px;
     line-height: 1.15;
     letter-spacing: 1.5px;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.55);
 }
 
@@ -112,7 +112,7 @@ body.center {
     font-size: 10px;
     line-height: 1;
     letter-spacing: 1.4px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .ammo-label {
@@ -123,7 +123,7 @@ body.center {
 
 .ammo-state {
     flex: none;
-    color: var(--hud-warn);
+    color: var(--hud-warn, #ffb020);
 }
 
 .ammo-num {
@@ -138,14 +138,14 @@ body.center {
     font-size: 76px;
     font-weight: 700;
     letter-spacing: -4px;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 20px rgba(116, 230, 255, 0.22);
 }
 
 .ammo-num span {
     font-size: 20px;
     letter-spacing: 0;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .reload-track {
@@ -158,7 +158,7 @@ body.center {
 .reload-track i {
     display: block;
     height: 100%;
-    background: var(--hud-warn);
+    background: var(--hud-warn, #ffb020);
     box-shadow: 0 0 10px rgba(255, 176, 32, 0.55);
 }
 
@@ -171,26 +171,26 @@ body.center {
     font-size: 9px;
     line-height: 1;
     letter-spacing: 1.8px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .reload-line b {
     font-weight: 500;
-    color: var(--hud-warn);
+    color: var(--hud-warn, #ffb020);
 }
 
 .el-ammo.is-empty .ammo-num b,
 .el-ammo.is-empty .ammo-num span {
-    color: var(--hud-bad);
+    color: var(--hud-bad, #ff4f5f);
 }
 
 .el-ammo.is-empty .ammo-state,
 .el-ammo.is-empty .reload-line b {
-    color: var(--hud-bad);
+    color: var(--hud-bad, #ff4f5f);
 }
 
 .el-ammo.is-empty .reload-track i {
-    background: var(--hud-bad);
+    background: var(--hud-bad, #ff4f5f);
     box-shadow: 0 0 10px rgba(255, 79, 95, 0.55);
 }
 
@@ -215,14 +215,14 @@ body.center {
     padding: 7px 8px;
     border-left: 2px solid transparent;
     background: rgba(3, 10, 14, 0.32);
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .belt-no {
     flex: none;
     width: 18px;
     font-size: 9px;
-    color: var(--hud-faint);
+    color: var(--hud-faint, #65828b);
 }
 
 .belt-name {
@@ -237,21 +237,21 @@ body.center {
 .belt-count {
     flex: none;
     font-size: 11px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .belt.is-on {
-    border-left-color: var(--hud-accent);
+    border-left-color: var(--mm-accent, #74e6ff);
     background: rgba(3, 10, 14, 0.68);
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 .belt.is-on .belt-no {
-    color: var(--hud-accent);
+    color: var(--mm-accent, #74e6ff);
 }
 
 .belt.is-on .belt-count {
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 /* ------------------------------------------------------------
@@ -270,12 +270,12 @@ body.center {
     font-size: 9px;
     line-height: 1;
     letter-spacing: 2px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .tubes-head b {
     font-weight: 500;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 .tube-row {
@@ -288,7 +288,7 @@ body.center {
     flex: 1 1 0;
     min-width: 0;
     padding: 5px 5px 4px;
-    border: 1px solid var(--hud-line);
+    border: 1px solid var(--hud-line, #1b3037);
     background: rgba(3, 10, 14, 0.42);
 }
 
@@ -297,13 +297,13 @@ body.center {
     margin-bottom: 5px;
     font-size: 9px;
     line-height: 1;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .tube i {
     display: block;
     height: 4px;
-    background: var(--hud-accent);
+    background: var(--mm-accent, #74e6ff);
 }
 
 .tube.is-loading {
@@ -311,11 +311,11 @@ body.center {
 }
 
 .tube.is-loading span {
-    color: var(--hud-warn);
+    color: var(--hud-warn, #ffb020);
 }
 
 .tube.is-loading i {
-    background: var(--hud-warn);
+    background: var(--hud-warn, #ffb020);
 }
 
 .tube.is-empty {
@@ -323,11 +323,11 @@ body.center {
 }
 
 .tube.is-empty span {
-    color: var(--hud-bad);
+    color: var(--hud-bad, #ff4f5f);
 }
 
 .tube.is-empty i {
-    background: var(--hud-bad);
+    background: var(--hud-bad, #ff4f5f);
 }
 
 /* ------------------------------------------------------------
@@ -347,14 +347,14 @@ body.center {
     font-size: 10px;
     line-height: 1;
     letter-spacing: 1.6px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .scope-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 .scope-count {
@@ -362,17 +362,17 @@ body.center {
     font-size: 18px;
     font-weight: 500;
     letter-spacing: 0;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 .scope-count span {
     font-size: 11px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .scope-time {
     flex: none;
-    color: var(--hud-warn);
+    color: var(--hud-warn, #ffb020);
 }
 
 .scope-bar {
@@ -384,7 +384,7 @@ body.center {
 .scope-bar i {
     display: block;
     height: 100%;
-    background: var(--hud-warn);
+    background: var(--hud-warn, #ffb020);
     box-shadow: 0 0 8px rgba(255, 176, 32, 0.5);
 }
 
@@ -401,31 +401,31 @@ body.center {
 .ring-seg {
     position: absolute;
     inset: 0;
-    transform: rotate(calc(var(--i) * 90deg));
+    transform: rotate(calc(var(--i, 0) * 90deg));
 }
 
 .ring-track {
     position: absolute;
     inset: 24px;
     border: 2px solid transparent;
-    border-top-color: var(--hud-line);
-    border-right-color: var(--hud-line);
+    border-top-color: var(--hud-line, #1b3037);
+    border-right-color: var(--hud-line, #1b3037);
     border-radius: 50%;
 }
 
 .ring-track.is-ready {
-    border-top-color: var(--hud-accent);
-    border-right-color: var(--hud-accent);
+    border-top-color: var(--mm-accent, #74e6ff);
+    border-right-color: var(--mm-accent, #74e6ff);
 }
 
 .ring-track.is-loading {
-    border-top-color: var(--hud-warn);
-    border-right-color: var(--hud-warn);
+    border-top-color: var(--hud-warn, #ffb020);
+    border-right-color: var(--hud-warn, #ffb020);
 }
 
 .ring-track.is-empty {
-    border-top-color: var(--hud-bad);
-    border-right-color: var(--hud-bad);
+    border-top-color: var(--hud-bad, #ff4f5f);
+    border-right-color: var(--hud-bad, #ff4f5f);
     opacity: 0.55;
 }
 
@@ -436,13 +436,13 @@ body.center {
     width: 2px;
     height: 12px;
     margin-left: -1px;
-    background: var(--hud-accent);
+    background: var(--mm-accent, #74e6ff);
     transform-origin: 50% 146px;
-    transform: rotate(calc(var(--p) * 90deg));
+    transform: rotate(calc(var(--p, 0) * 90deg));
 }
 
 .ring-hand.is-loading {
-    background: var(--hud-warn);
+    background: var(--hud-warn, #ffb020);
 }
 
 .ring-hand.is-empty,
@@ -458,7 +458,7 @@ body.center {
     width: 2px;
     height: 14px;
     margin-left: -1px;
-    background: var(--hud-bg);
+    background: var(--hud-bg, #05090c);
     transform-origin: 50% 148px;
 }
 
@@ -478,19 +478,19 @@ body.center {
     font-size: 9px;
     line-height: 1;
     letter-spacing: 2px;
-    color: var(--hud-dim);
+    color: var(--hud-dim, #a3c7d0);
 }
 
 .ring-status b {
     font-weight: 500;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
 }
 
 .ring-status .dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--hud-accent);
+    background: var(--mm-accent, #74e6ff);
 }
 
 /* ------------------------------------------------------------
@@ -500,7 +500,7 @@ body.center {
 .el-reticle {
     width: 340px;
     height: 340px;
-    color: var(--hud-text);
+    color: var(--hud-text, #effdff);
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.85));
 }
 
@@ -547,7 +547,7 @@ body.center {
     height: 3px;
     margin: -1.5px 0 0 -1.5px;
     border-radius: 50%;
-    background: var(--hud-accent);
+    background: var(--mm-accent, #74e6ff);
 }
 
 .ret-tick {

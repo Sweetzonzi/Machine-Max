@@ -2,7 +2,7 @@
   "type": "machine_max:aui_hud",
   "page": "t90a/weapon_hud_components/coax_feed.html",
   "defaults": {
-    "--phosphor": "#e9d9a8",
+    "--mm-accent": "#e9d9a8",
     "--panel-bg": "rgba(18, 16, 11, 0.55)",
     "--scanline-opacity": "0.12",
     "--stack-bottom": "0px"

@@ -95,7 +95,7 @@ class K17HudDocumentStyleTest {
     @Test
     void authorDefaultsCanChangeTheWholePaletteAndDisableScanlines() throws Exception {
         Document document = createHud("amber-no-scanlines",
-                Map.of("--phosphor", "#ffc16b", "--scanline-opacity", "0"));
+                Map.of("--mm-accent", "#ffc16b", "--scanline-opacity", "0"));
         Document.runWithContext(document, () -> {
             commit(document);
             assertEquals(0xffffc16b,

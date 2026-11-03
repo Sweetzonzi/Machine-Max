@@ -115,7 +115,7 @@ A HUD style defines the internal appearance of one HUD and contains no position,
 {
   "type": "machine_max:aui_hud",
   "page": "machine_max/weapon_hud_element/weapon_ammo.html",
-  "defaults": { "--hud-accent": "#7dd3fc" }
+  "defaults": { "--mm-accent": "#7dd3fc" }
 }
 ```
 

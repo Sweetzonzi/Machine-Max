@@ -40,7 +40,7 @@ WC 配置位于 `src/main/resources/spark_modules/Machine-Max_K17/machine_max/pa
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| `--phosphor` | `#a4ff80` | 文字、边框与填充色 |
+| `--mm-accent` | `#a4ff80` | 文字、边框与填充色 |
 | `--panel-bg` | `rgba(6, 13, 4, 0.48)` | 底板 |
 | `--scanline-opacity` | `0.18` | 扫描线浓度，`0` 可关闭 |
 | `--panel-width` | `430px` | 页面内容宽度 |

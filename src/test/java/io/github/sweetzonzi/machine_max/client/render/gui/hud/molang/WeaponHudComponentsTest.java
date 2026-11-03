@@ -184,7 +184,7 @@ class WeaponHudComponentsTest {
     }
 
     @Test void authorDefaultsControlWidthPaletteModulesAndColumns() throws Exception {
-        var page = create("tubes", Map.of("--panel-width", "360px", "--phosphor", "#ffc16b",
+        var page = create("tubes", Map.of("--panel-width", "360px", "--mm-accent", "#ffc16b",
                 "--scanline-opacity", "0", "--identity-display", "none", "--tube-columns", "1fr"));
         page.publish(snapshot(0, false, List.of(tube(1, true, 100), tube(2, false, 35)), List.of()), true);
         var document = page.document();

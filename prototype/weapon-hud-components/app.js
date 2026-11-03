@@ -177,7 +177,7 @@ function fit(){
 new ResizeObserver(fit).observe($('#viewport'));window.addEventListener('resize',fit);
 function focus(value){document.body.classList.toggle('focused',value);fit();(value?$('#exitFocus'):$('#focus')).focus();}
 $('#focus').addEventListener('click',()=>focus(true));$('#exitFocus').addEventListener('click',()=>focus(false));document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('focused'))focus(false);});
-function color(value){document.documentElement.style.setProperty('--phosphor',value);$('#customColor').value=value;$$('[data-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===value)));}
+function color(value){document.documentElement.style.setProperty('--mm-accent',value);$('#customColor').value=value;$$('[data-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===value)));}
 $$('[data-color]').forEach(button=>button.addEventListener('click',()=>color(button.dataset.color)));$('#customColor').addEventListener('input',event=>color(event.target.value));
 $('#brightness').addEventListener('input',event=>{document.documentElement.style.setProperty('--brightness',event.target.value/100);$('#brightnessValue').textContent=`${event.target.value}%`;});
 $('#opacity').addEventListener('input',event=>{document.documentElement.style.setProperty('--panel-opacity',event.target.value/100);$('#opacityValue').textContent=`${event.target.value}%`;});

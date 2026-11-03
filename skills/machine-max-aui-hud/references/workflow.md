@@ -47,6 +47,7 @@ ExamplePack/
 <!doctype html>
 <html lang="zh-CN">
 <head>
+  <meta name="aui-preload">
   <meta charset="utf-8">
   <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
   <title>武器面板</title>
@@ -55,15 +56,15 @@ ExamplePack/
 <body>
   <div class="weapon-panel" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
     <div class="heading">
-      <span data-mm-text="weapon.name"></span>
-      <b data-mm-text="weapon.ammo_text"></b>
+      <span data-mm-text="weapon.name">WEAPON</span>
+      <b data-mm-text="weapon.ammo_text">-- / --</b>
     </div>
     <div class="tubes">
       <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
         <div class="line">
-          <span data-mm-text="tube.index + 1"></span>
-          <span data-mm-text="tube.round_label"></span>
-          <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></span>
+          <span data-mm-text="tube.index + 1">-</span>
+          <span data-mm-text="tube.round_label">--</span>
+          <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)">STANDBY</span>
         </div>
         <div class="track">
           <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
@@ -72,14 +73,16 @@ ExamplePack/
     </div>
     <div class="belts">
       <div class="line belt" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'">
-        <span data-mm-text="belt.label"></span>
-        <b data-mm-text="belt.remaining"></b>
+        <span data-mm-text="belt.label">BELT</span>
+        <b data-mm-text="belt.remaining">--</b>
       </div>
     </div>
   </div>
 </body>
 </html>
 ~~~
+
+内容包页面在 `<head>` 内保留 `<meta name="aui-preload">`。AUI 1.2.9 及以后只预热带这个标记的模板；未标记页面首次打开时，外链 CSS 可能晚于首帧样式计算，`:root` 中的主题变量在首帧不生效。`aui-preload` 的标签存在即开启，`content="none"` 可显式关闭。
 
 同目录 hud.css：
 
@@ -91,7 +94,7 @@ body { display: inline-block; }
   display: inline-block;
   width: 360px;
   padding: 10px;
-  color: var(--phosphor, #a4ff80);
+  color: var(--mm-accent, #a4ff80);
   background: rgba(6, 13, 4, 0.48);
   font-size: 16px;
   line-height: 20px;
@@ -99,11 +102,36 @@ body { display: inline-block; }
 .heading, .line { display: flex; gap: 8px; justify-content: space-between; }
 .tubes, .belts { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .track { height: 3px; background: #ffffff20; }
-.track i { display: block; height: 3px; width: var(--fill, 0%); background: var(--phosphor, #a4ff80); }
+.track i { display: block; height: 3px; width: var(--fill, 0%); background: var(--mm-accent, #a4ff80); }
 .belt { border: 1px solid transparent; padding: 3px; }
-.belt.is-selected { border-color: var(--phosphor, #a4ff80); }
+.belt.is-selected { border-color: var(--mm-accent, #a4ff80); }
 .tube.is-empty { opacity: 0.5; }
 ~~~
+
+主题色令牌统一用 `--mm-accent`；其他单页语义色（例如 `--hud-warn`）保留自己的名字，但所有 `var()` 都要带默认值，例如 `var(--mm-accent, #a4ff80)`、`var(--hud-warn, #ffb020)`。这样页面在外链 CSS 尚未生效或玩家未设置主题色时仍有可见颜色。
+
+### 无数据与预览默认值
+
+浏览器预览和资源管理器预览不会执行 `data-mm-*`；绑定尚未生效时，页面仍应能看出结构。给每个 `data-mm-text` 叶子元素写占位文字，给 `data-mm-num` 的变量在 CSS 里写 fallback：
+
+```html
+<span data-mm-text="weapon.name">WEAPON</span>
+<b data-mm-text="weapon.ammo_text">-- / --</b>
+<span data-mm-text="global.get('vehicle_speed') ?? 0">0</span>
+<div class="track">
+  <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
+</div>
+```
+
+```css
+.track i { width: var(--fill, 0%); }
+```
+
+- 占位值只用 `--`、`0`、`EMPTY`、`N/A` 这类中性值；不要写 `34 km/h`、`1999` 这种看起来像实时读数的数字，否则预览会和游戏状态混淆。
+- 占位文字放在 `data-mm-text` 的叶子元素内；该元素不能包含子元素。绑定生效后由查询结果覆盖。
+- `data-mm-class` 的静态 class 选一个中性状态（例如 `is-unselected`），让预览不是空白；运行时再根据查询切换。
+- `data-mm-repeat` 在空集合时渲染零项。正式页面不要为了预览塞入假条目；需要完整示例时，另建静态预览页并明确标注，不要把它接到游戏 HUD 布局上。
+- 布尔或状态读数用三元表达式给文字，例如 `data-mm-text="weapon.selected ? 'SELECTED' : 'STANDBY'"`；占位文字仍写在中性状态上。
 
 ### 样式
 
@@ -114,7 +142,7 @@ example/huds/weapon_panel.json：
   "type": "machine_max:aui_hud",
   "page": "example/weapon_panel/index.html",
   "defaults": {
-    "--phosphor": "#a4ff80"
+    "--mm-accent": "#a4ff80"
   }
 }
 ~~~
@@ -173,7 +201,7 @@ example/hud_layouts/weapon_panel.json 是裸数组：
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| --phosphor | #a4ff80 | 文字、边框、填充颜色 |
+| --mm-accent | #a4ff80 | 文字、边框、填充颜色 |
 | --panel-bg | rgba(6, 13, 4, 0.48) | 底板颜色 |
 | --scanline-opacity | 0.18 | 扫描线浓度，0 关闭 |
 | --panel-width | 430px | 组件宽度 |

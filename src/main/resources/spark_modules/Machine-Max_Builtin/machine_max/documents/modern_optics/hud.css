@@ -19,7 +19,7 @@ body {
 
 body {
   display: inline-block;
-  color: var(--mm-accent);
+  color: var(--mm-accent, #a4ff80);
   font-family: MMField, monospace;
   font-synthesis: none;
   -webkit-font-smoothing: none;
@@ -105,7 +105,7 @@ i {
   bottom: 8px;
   width: 4320px;
   height: 6px;
-  background-image: repeating-linear-gradient(90deg, var(--mm-accent) 0px, var(--mm-accent) 1px, transparent 1px, transparent 18px);
+  background-image: repeating-linear-gradient(90deg, var(--mm-accent, #a4ff80) 0px, var(--mm-accent, #a4ff80) 1px, transparent 1px, transparent 18px);
   opacity: 0.45;
 }
 
@@ -114,7 +114,7 @@ i {
   bottom: 8px;
   width: 1px;
   height: 11px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.9;
 }
 
@@ -127,7 +127,7 @@ i {
   position: absolute;
   top: 17px;
   transform: translateX(-50%);
-  color: var(--mm-accent);
+  color: var(--mm-accent, #a4ff80);
   font-family: MMField, monospace;
   font-size: 15px;
   line-height: 18px;
@@ -145,7 +145,7 @@ i {
   top: 0;
   width: 10px;
   height: 7px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
@@ -155,7 +155,7 @@ i {
   top: 7px;
   width: 1px;
   height: 34px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.22;
 }
 
@@ -165,7 +165,7 @@ i {
   bottom: 8px;
   width: 548px;
   height: 1px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.18;
 }
 
@@ -212,7 +212,7 @@ i {
   position: relative;
   width: 418px;
   height: 418px;
-  color: var(--mm-accent);
+  color: var(--mm-accent, #a4ff80);
 }
 
 .mm-ret-line,
@@ -223,7 +223,7 @@ i {
 }
 
 .mm-ret-line {
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.85;
 }
 
@@ -256,7 +256,7 @@ i {
 }
 
 .mm-ret-tick {
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.58;
 }
 
@@ -268,7 +268,7 @@ i {
   top: 202px;
   width: 14px;
   height: 14px;
-  border: 1px solid var(--mm-accent);
+  border: 1px solid var(--mm-accent, #a4ff80);
   border-radius: 50%;
   opacity: 0.7;
 }
@@ -278,7 +278,7 @@ i {
   top: 206px;
   width: 6px;
   height: 6px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   border-radius: 50%;
 }
 
@@ -348,7 +348,7 @@ i {
 .mm-dur-seg {
   flex: 1 1 0;
   height: 8px;
-  background-color: var(--mm-accent);
+  background-color: var(--mm-accent, #a4ff80);
   opacity: 0.18;
 }
 
@@ -358,7 +358,7 @@ i {
   top: 0;
   width: var(--dur, 100%);
   height: 8px;
-  background-image: repeating-linear-gradient(90deg, var(--mm-accent) 0px, var(--mm-accent) 22px, transparent 22px, transparent 25px);
+  background-image: repeating-linear-gradient(90deg, var(--mm-accent, #a4ff80) 0px, var(--mm-accent, #a4ff80) 22px, transparent 22px, transparent 25px);
   opacity: 0.9;
 }
 

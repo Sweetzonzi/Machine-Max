@@ -1,5 +1,5 @@
 :root {
-  --accent: #a4ff80;
+  --mm-accent: #a4ff80;
   --page-bg: #0e110e;
   --page-ink: #dfe5d7;
   --page-muted: #7f8976;
@@ -8,13 +8,13 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--page-bg); }
+html { background: var(--page-bg, #0e110e); }
 
 body {
   min-width: 1500px;
   margin: 0;
-  background: var(--page-bg);
-  color: var(--page-ink);
+  background: var(--page-bg, #0e110e);
+  color: var(--page-ink, #dfe5d7);
   font: 14px/1.6 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
@@ -26,7 +26,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid var(--page-line);
+  border-bottom: 1px solid var(--page-line, #2b3326);
 }
 
 .brand {
@@ -48,7 +48,7 @@ body {
 .brand small {
   display: block;
   margin-top: 2px;
-  color: var(--page-muted);
+  color: var(--page-muted, #7f8976);
   font-size: 9px;
   font-weight: 400;
   letter-spacing: 2px;
@@ -62,13 +62,13 @@ body {
 
 .page-title span {
   margin-left: 14px;
-  color: var(--page-muted);
+  color: var(--page-muted, #7f8976);
   font: 10px Consolas, monospace;
   letter-spacing: 1.5px;
 }
 
 .page-meta {
-  color: var(--page-muted);
+  color: var(--page-muted, #7f8976);
   font: 10px Consolas, monospace;
   letter-spacing: 1px;
   white-space: nowrap;
@@ -198,24 +198,24 @@ main {
   gap: 8px 24px;
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid var(--page-line);
+  border-top: 1px solid var(--page-line, #2b3326);
   font: 11px/1.6 Consolas, monospace;
   letter-spacing: 0.04em;
 }
 
 .element-list a {
-  color: var(--accent);
+  color: var(--mm-accent, #a4ff80);
   text-decoration: none;
   border-bottom: 1px dotted rgba(164, 255, 128, 0.45);
 }
 
 .element-list span {
-  color: var(--page-muted);
+  color: var(--page-muted, #7f8976);
 }
 
 .note {
   margin: 14px 0 0;
-  color: var(--page-muted);
+  color: var(--page-muted, #7f8976);
   font-size: 11px;
   line-height: 1.8;
 }

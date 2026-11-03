@@ -117,7 +117,7 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 {
   "type": "machine_max:aui_hud",
   "page": "machine_max/weapon_hud_element/weapon_ammo.html",
-  "defaults": { "--hud-accent": "#7dd3fc" }
+  "defaults": { "--mm-accent": "#7dd3fc" }
 }
 ```
 

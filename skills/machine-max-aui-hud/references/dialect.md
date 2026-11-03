@@ -28,6 +28,8 @@
 | data-mm-repeat | 集合标识，只能是 weapon.tubes 或 weapon.belts，不是数组表达式 |
 | data-mm-index | 可选的下标别名，格式 [a-z_][a-z0-9_]*，从零开始 |
 
+`data-mm-text` 的元素内保留可见占位文字（`--`、`0`、`EMPTY` 等），`data-mm-num` 对应的 CSS 变量在样式里写 fallback。浏览器预览不执行绑定，没有占位时页面会是空白；占位不要写成看起来像实时读数的数字。完整示例见 [组件设计与接入流程](workflow.md) 的“无数据与预览默认值”。
+
 ~~~html
 <div class="weapon" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
   <span data-mm-text="weapon.name"></span>
