@@ -58,7 +58,8 @@ public final class RegenLoaderFillingGameTest {
 
     /**
      * 同时具备逐发送弹的再生装弹机与发射器的变体：装弹机是断言对象，发射器是真实消费者。<br>
-     * 只认逐发送弹的那一型——整匣输弹的型号由一个确定的计时器主导，逐发时序断言要靠合成型号构造。
+     * 只认逐发送弹且输弹耗时为正的那一型——整匣输弹的型号由一个确定的计时器主导，逐发时序断言要靠合成型号构造；
+     * 耗时为零的型号是即时产弹，不付输送时间，测不出逐发的计时。
      */
     private static boolean hasLoaderAndLauncher(VariantAttr variant) {
         boolean loader = false;
@@ -66,7 +67,8 @@ public final class RegenLoaderFillingGameTest {
         for (SubPartAttr subPart : variant.subParts.values()) {
             for (AbstractSubsystemAttr attr : subPart.subsystems.values()) {
                 if (attr instanceof RegenLoaderSubsystemAttr regenLoader
-                        && regenLoader.getStaticAttribute().getFeed().reloadRoundByRound()) {
+                        && regenLoader.getStaticAttribute().getFeed().reloadRoundByRound()
+                        && regenLoader.getStaticAttribute().getFeed().reloadTime() > 0f) {
                     loader = true;
                 }
                 if (attr instanceof LauncherSubsystemAttr) launcher = true;
@@ -92,14 +94,17 @@ public final class RegenLoaderFillingGameTest {
         part.assemblingProgress = 1f;
     }
 
-    /** 逐发送弹的装弹机，按名字取最小的那台：集合遍历顺序不定，不排序会让用例换个型号跑。 */
+    /**
+     * 逐发送弹且输弹耗时为正的装弹机，按名字取最小的那台：集合遍历顺序不定，
+     * 不排序会让用例换个型号跑；耗时为零的即时产弹型号由合成型号用例覆盖。
+     */
     private static RegenLoaderSubsystem loader(RegularPart part) {
         return part.getAllSubsystems().stream()
                 .filter(RegenLoaderSubsystem.class::isInstance)
                 .map(RegenLoaderSubsystem.class::cast)
-                .filter(RegenLoaderSubsystem::isReloadRoundByRound)
+                .filter(loader -> loader.isReloadRoundByRound() && loader.getReloadTimeTicks() > 0)
                 .min(Comparator.comparing(AbstractSubsystem::getName))
-                .orElseThrow(() -> new IllegalStateException("部件里没有逐发送弹的再生装弹机"));
+                .orElseThrow(() -> new IllegalStateException("部件里没有输弹耗时为正的逐发送弹机"));
     }
 
     /** 按名字取最小的发射器，与 {@link #loader(RegularPart)} 的选择口径一致。 */
@@ -164,7 +169,7 @@ public final class RegenLoaderFillingGameTest {
             markAssembled(part);
             RegenLoaderSubsystem loader = loader(part);
             LauncherSubsystem launcher = launcher(part);
-            helper.assertTrue(loader.isReloadRoundByRound(), "第一方再生装弹机是逐发输弹");
+            helper.assertTrue(loader.isReloadRoundByRound(), "装弹机应是逐发输弹");
 
             int total = loader.getReloadTimeTicks();
             helper.assertTrue(total > 0, "逐发机器的输弹耗时应大于 0，实际 " + total);

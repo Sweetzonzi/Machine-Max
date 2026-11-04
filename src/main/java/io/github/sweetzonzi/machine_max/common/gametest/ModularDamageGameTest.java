@@ -118,12 +118,34 @@ public final class ModularDamageGameTest {
         part.assemblingProgress = 1f;
     }
 
+    /** 部件里名字最小的再生装弹机：集合遍历顺序不定，排序让同一次启动内的断言对象稳定。 */
     private static RegenLoaderSubsystem loader(RegularPart part) {
         return part.getAllSubsystems().stream()
                 .filter(RegenLoaderSubsystem.class::isInstance)
                 .map(RegenLoaderSubsystem.class::cast)
-                .findFirst()
+                .min(Comparator.comparing(AbstractSubsystem::getName))
                 .orElseThrow(() -> new IllegalStateException("部件定义声明了再生装弹机，实例表中却没有"));
+    }
+
+    /**
+     * 弹链里至少有一发能贡献殉爆的弹药：根对象的发射药或战斗部贡献非零。<br>
+     * 零贡献弹种不参与殉爆合成，库存与爆炸条数都不会变化，因此不能用来断言起爆。
+     */
+    private static boolean hasCookoffRound(GameTestHelper helper, RegenLoaderSubsystem loader) {
+        return loader.getProjectileTypes().stream()
+                .map(id -> ProjectileType.get(helper.getLevel(), id))
+                .anyMatch(type -> type instanceof BallisticProjectileType ballistic
+                        && (ballistic.getCookoff().damage() > 0 || ballistic.getCookoff().impulse() > 0));
+    }
+
+    /** 带非零殉爆弹种的再生装弹机，按名字取最小的那台。 */
+    private static RegenLoaderSubsystem cookoffLoader(GameTestHelper helper, RegularPart part) {
+        return part.getAllSubsystems().stream()
+                .filter(RegenLoaderSubsystem.class::isInstance)
+                .map(RegenLoaderSubsystem.class::cast)
+                .filter(loader -> hasCookoffRound(helper, loader))
+                .min(Comparator.comparing(AbstractSubsystem::getName))
+                .orElseThrow(() -> new IllegalStateException("部件里没有带非零殉爆弹种的再生装弹机"));
     }
 
     private static LauncherSubsystem launcher(RegularPart part) {
@@ -466,7 +488,7 @@ public final class ModularDamageGameTest {
         RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
         try {
             markAssembled(part);
-            RegenLoaderSubsystem loader = loader(part);
+            RegenLoaderSubsystem loader = cookoffLoader(helper, part);
             loader.loadData(stock(8));
             helper.assertTrue(loader.getAmmoCount() == 8, "前置：残骸的库存应非空");
 
@@ -504,11 +526,10 @@ public final class ModularDamageGameTest {
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void chamberedRoundDetonatesWithTheBreech(GameTestHelper helper) {
-        Selection selected = loaderPart();
-        RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
+        Chambered chambered = chamberedPart(helper);
+        RegularPart part = chambered.part();
+        LauncherSubsystem launcher = chambered.launcher();
         try {
-            markAssembled(part);
-            LauncherSubsystem launcher = chamberedLauncher(helper, part);
             helper.assertTrue(launcher.getChamberedType() != null, "前置：膛内应压入一发有殉爆贡献的弹药");
 
             HitBox breechProbe = registerProbe(launcher, "mm_gametest_breech", "breech");
@@ -543,11 +564,9 @@ public final class ModularDamageGameTest {
     }
 
     /**
-     * 找一根已经压入"炮闩能接收、且殉爆贡献非零"弹药的管。
-     *
-     * <p>候选来自本部件上所有装弹机的弹链，按子系统名排序后逐个试：本用例只需要"膛里有发能炸的弹"
-     * 这一前提，不绑定具体车型或弹种，换部件定义也不会让用例失效。零贡献弹种不会起爆，
-     * 因此只接受发射药伤害或冲量非零的弹种。</p>
+     * 找一台已经压入"炮闩能接收、且殉爆贡献非零"弹药的发射器，找不到返回 {@code null}。<br>
+     * 候选来自本部件上所有装弹机的弹链，按子系统名排序后逐个试。零贡献弹种不会起爆，
+     * 因此只接受发射药伤害或冲量非零的弹种。
      */
     private static LauncherSubsystem chamberedLauncher(GameTestHelper helper, RegularPart part) {
         for (LauncherSubsystem launcher : part.getAllSubsystems().stream()
@@ -568,6 +587,29 @@ public final class ModularDamageGameTest {
                     if (ballistic.getCookoff().damage() <= 0 && ballistic.getCookoff().impulse() <= 0) continue;
                     if (launcher.loadRound(type)) return launcher;
                 }
+            }
+        }
+        return null;
+    }
+
+    private record Chambered(RegularPart part, LauncherSubsystem launcher) {
+    }
+
+    /**
+     * 在所有带发射器与再生装弹机的变体里找一台能压入非零殉爆弹药的发射器。<br>
+     * 按注册名与变体名排序遍历，逐台装配后尝试；没有可用弹种的候选直接丢弃。用例只依赖
+     * 「存在这样的发射器」，不绑定具体车型或弹种，内容包增删也不会改变断言对象。
+     */
+    private static Chambered chamberedPart(GameTestHelper helper) {
+        for (RegularPartType type : PartDefinitions.regular(false).values().stream()
+                .sorted(Comparator.comparing(t -> t.getRegistryKey().toString())).toList()) {
+            for (String variant : type.variants.keySet().stream().sorted().toList()) {
+                if (!hasLoaderAndLauncher(type.variants.get(variant))) continue;
+                RegularPart part = PartFactory.createRegular(type, variant, helper.getLevel());
+                markAssembled(part);
+                LauncherSubsystem launcher = chamberedLauncher(helper, part);
+                if (launcher != null) return new Chambered(part, launcher);
+                part.discardUnattached();
             }
         }
         throw new IllegalStateException("需要一个膛内能压入非零殉爆弹药的发射器");

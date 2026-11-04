@@ -106,17 +106,16 @@ public final class ViewpointGameTest {
                         fixed++;
                         helper.assertTrue(sight.getSubPart().hasLocator(sight.sightAttr.locator),
                                 "炮镜 locator 必须属于其宿主 SubPart");
-                        String expectedBone = name.equals("2s38_turret") ? "2A90" : "AllGunShield";
-                        helper.assertTrue(sight.getSubPart().attr.startBone.equalsIgnoreCase(expectedBone),
+                        helper.assertTrue(sight.getSubPart().attr.startBone.equalsIgnoreCase("AllGunShield"),
                                 "固定炮镜必须直接安装到随炮管俯仰的子部件：" + name);
                     } else if (view instanceof CameraSubsystem camera) {
                         rotatable++;
                         verifyCameraState(helper, camera);
                     }
                 }
-                int expectedFixed = name.equals("k17_turret") ? 0 : 1;
-                int expectedRotatable = name.equals("k17_turret") ? 2
-                        : name.equals("sdkfz234_turret") ? 0 : 1;
+                // 只有 SdKfz234 的炮手镜是随炮管俯仰的固定炮镜；2S38 与 K17 的两台观瞄都是可转镜头
+                int expectedFixed = name.equals("sdkfz234_turret") ? 1 : 0;
+                int expectedRotatable = name.equals("sdkfz234_turret") ? 0 : 2;
                 helper.assertTrue(fixed == expectedFixed, "样例的固定炮镜数量必须与安装配置一致：" + name);
                 helper.assertTrue(rotatable == expectedRotatable, "样例的可转镜头数量必须与安装配置一致：" + name);
             } finally {
