@@ -1,6 +1,6 @@
 {
   "id": "t90a:pack",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "author": "User supplied model; adaptation with Codex",
   "description": "T-90A 是俄罗斯 T-90 系列主战坦克的改进型号，延续了苏式坦克紧凑低矮的布局。该车配备 125 毫米滑膛炮和自动装弹机，并采用改进的观瞄与火控系统，兼顾火力、机动性与防护能力。",
   "dependencies": [

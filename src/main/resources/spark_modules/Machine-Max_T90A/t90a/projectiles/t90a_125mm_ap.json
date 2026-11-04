@@ -19,6 +19,11 @@
     "penetration_velocity_coefficient": 1.2,
     "damage_velocity_coefficient": 0.6
   },
+  "cookoff": {
+    "penetration": 9.0,
+    "damage": 30.0,
+    "impulse": 1200.0
+  },
   "visual": {
     "tracer_color": [
       255,
