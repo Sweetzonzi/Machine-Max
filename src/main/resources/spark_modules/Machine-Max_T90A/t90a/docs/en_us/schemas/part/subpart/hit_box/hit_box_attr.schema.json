@@ -55,7 +55,7 @@
               "allOf": [
                 { "$ref": "../../../base/vector_3d.schema.json" }
               ],
-              "description": "Friction coefficient vector [x, y, z]. x = lateral, y = forward, z = unused."
+              "description": "Friction coefficient vector [lateral, longitudinal, longitudinal]. The first component is lateral (along the axle), the second longitudinal (rolling direction), and the third repeats the second: a wheel surface spins about its own axle, so only equal trailing components keep the longitudinal scale from rotating with the wheel angle. Other parts use the three values as a per-axis scale in part-local coordinates."
             },
             "slip_adaptation": {
               "type": "number",

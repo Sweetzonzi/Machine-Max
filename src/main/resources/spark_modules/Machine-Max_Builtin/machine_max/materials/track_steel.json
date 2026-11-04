@@ -3,7 +3,7 @@
   "physics": {
     "friction": [
       0.9,
-      0.9,
+      1.0,
       1.0
     ],
     "slip_adaptation": 0.5,

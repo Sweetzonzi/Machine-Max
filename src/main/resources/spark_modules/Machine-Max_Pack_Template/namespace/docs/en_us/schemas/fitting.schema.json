@@ -50,7 +50,7 @@
               "allOf": [
                 { "$ref": "base/vector_3d.schema.json" }
               ],
-              "description": "Anisotropic friction vector [x, y, z]. x = lateral, y = forward, z unused."
+              "description": "Track friction vector [lateral, longitudinal, longitudinal]. The first component is lateral (along the axle), the second longitudinal (travel direction); the third must equal the second, otherwise the per-axis scaling rotates the longitudinal friction as the road wheel turns."
             },
             "slip_adaptation": {
               "type": "number",

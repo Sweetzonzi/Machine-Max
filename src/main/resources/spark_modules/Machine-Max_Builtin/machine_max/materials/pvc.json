@@ -4,7 +4,7 @@
     "friction": [
       0.55,
       0.55,
-      0.5
+      0.55
     ],
     "slip_adaptation": 0.38,
     "rolling_friction": 0.018,

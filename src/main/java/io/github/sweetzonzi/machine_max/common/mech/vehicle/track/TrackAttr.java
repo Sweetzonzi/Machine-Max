@@ -1,10 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
@@ -47,6 +49,14 @@ public final class TrackAttr {
         MaterialAttr material = HitBoxAttr.resolve(materialId, overwrite.orElse(null));
         if (material == null) {
             throw new IllegalArgumentException("履带材料不存在: " + materialId);
+        }
+        // 履带轮绕自身局部 X 轴转，而各向异性缩放是按局部轴逐分量做的：切平面里横向恒为 X，
+        // 纵向在 Y–Z 平面内随转角变化。只有 y 与 z 相等时纵向缩放才恒定且不偏斜，
+        // 否则摩擦大小随轮子相位在 y 与 z 之间摆动，方向还会被转偏（45° 时最明显）。
+        var friction = material.physics().friction();
+        if (Math.abs(friction.y - friction.z) > 1e-6) {
+            SparkPackIssues.warn(MMLanguageRegistry.WARN_PART_TRACK_MATERIAL_ANISOTROPY
+                    .component(materialId, friction.x, friction.y, friction.z));
         }
         this.durabilityPerLink = durabilityPerLink;
         this.lengthPerLink = lengthPerLink;

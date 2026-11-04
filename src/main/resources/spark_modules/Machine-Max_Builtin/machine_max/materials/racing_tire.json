@@ -4,7 +4,7 @@
     "friction": [
       3.0,
       3.0,
-      1.0
+      3.0
     ],
     "slip_adaptation": 0.3,
     "slip_curve": {

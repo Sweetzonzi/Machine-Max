@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-03",
+  "bundled_on": "2026-11-04",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "8223ead421cf98363bfee72f1e7bc3e15f00ed13",
+    "revision": "3e0a00084d837634c8977de2eb3904ebfa186073",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -16,8 +16,8 @@
       },
       {
         "path": "references/schemas/base/material_attr.schema.json",
-        "bytes": 8014,
-        "sha256": "5f7f3c98917f834d54ba1a592bb93c85bb05c84b11d3757a16f2d2d48e476043"
+        "bytes": 8384,
+        "sha256": "dc93de69e6f570f13c7155b6f85e34c9052c33f965a5b18299f9d122b7a8685a"
       },
       {
         "path": "references/schemas/base/operation.schema.json",
@@ -41,8 +41,8 @@
       },
       {
         "path": "references/schemas/fitting.schema.json",
-        "bytes": 9605,
-        "sha256": "b7d6a748959610869445e8fbd67149aac6d598364bcf99c336c2457c8cea876d"
+        "bytes": 9787,
+        "sha256": "a2620c1e86fa7d9e4f7f33e2acfff7dc90360e2aa677fb564b9805aa698460ec"
       },
       {
         "path": "references/schemas/hud/hud_element.schema.json",
@@ -71,8 +71,8 @@
       },
       {
         "path": "references/schemas/part/subpart/hit_box/hit_box_attr.schema.json",
-        "bytes": 12276,
-        "sha256": "3afb200dfe3917710ace42599c9dc9975eed18893a7e13dc39129b413295b624"
+        "bytes": 12549,
+        "sha256": "06cbbaf4c0120f6309e9c40b8686e9b5663afa08241831da16a134e3a69c86da"
       },
       {
         "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition.schema.json",

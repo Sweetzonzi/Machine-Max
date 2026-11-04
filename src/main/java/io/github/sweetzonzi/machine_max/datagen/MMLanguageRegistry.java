@@ -443,6 +443,11 @@ public enum MMLanguageRegistry {
             zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的 signal_targets 把频道 %4$s 指向了不存在于本子部件的 %5$s",
             en_us, "signal_targets of connector %3$s in sub-part %2$s of model %1$s routes channel %4$s to %5$s, which is not a subsystem, interact box or connector of that sub-part"
     )),
+    // 装载期警告：内容包不通过校验，但型号照常注册
+    WARN_PART_TRACK_MATERIAL_ANISOTROPY("warn.machine_max.part.track_material_anisotropy", ImmutableMap.of(
+            zh_cn, "履带材料 %1$s 的 friction 为 [%2$s, %3$s, %4$s]：履带轮绕自身轴向转动，各向异性缩放按部件局部轴逐分量相乘，y 与 z 不等会让纵向摩擦随轮子相位摆动、方向被转偏；请写成 [横向, 纵向, 纵向]",
+            en_us, "Track material %1$s declares friction [%2$s, %3$s, %4$s]: a road wheel turns about its own axle and the anisotropic scaling multiplies per local axis, so unequal y and z make the longitudinal friction swing with the wheel phase and skew its direction; write it as [lateral, longitudinal, longitudinal]"
+    )),
     // 提示信息
     TOAST_RESEARCH_COMPLETE("toast.machine_max.research_complete", ImmutableMap.of(
             zh_cn, "研发完成！",

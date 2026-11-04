@@ -50,7 +50,7 @@
               "allOf": [
                 { "$ref": "base/vector_3d.schema.json" }
               ],
-              "description": "各向异性摩擦向量 [x, y, z]。x = 侧向，y = 前进方向，z 未使用。"
+              "description": "履带摩擦向量 [横向, 纵向, 纵向]。第一个分量为横向（沿轮轴）摩擦，第二个为纵向（履带行进方向）摩擦；第三个必须与第二个相同，履带轮绕自身轴向转动时，逐分量缩放才不会把纵向摩擦转向。"
             },
             "slip_adaptation": {
               "type": "number",
