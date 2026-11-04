@@ -251,6 +251,79 @@ class TrackDataCodecTest {
                 () -> FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
     }
 
+    @Test
+    void linkBonesListDefinesPeriodAndRoundTrips() {
+        registerMaterial("machine_max:track_steel");
+        var json = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "length_per_link": 0.15,
+                  "link_bones": ["Pad", "Connector"],
+                  "visual": {
+                    "model": "machine_max:pad_band.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        TrackType type = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+        assertEquals(List.of("Pad", "Connector"), type.linkBones());
+        assertEquals(2, type.linkPeriod());
+        var encoded = FittingType.CODEC.encodeStart(JsonOps.INSTANCE, type).getOrThrow();
+        TrackType roundTripped = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+        assertEquals(type.linkBones(), roundTripped.linkBones());
+    }
+
+    @Test
+    void absentLinkBonesMeansSingleLinkModel() {
+        registerMaterial("machine_max:track_steel");
+        var json = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "visual": {
+                    "model": "machine_max:track_link.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        TrackType type = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+        assertTrue(type.linkBones().isEmpty());
+        assertEquals(1, type.linkPeriod());
+    }
+
+    @Test
+    void linkBonesRejectsBlankAndDuplicateNames() {
+        registerMaterial("machine_max:track_steel");
+        var blank = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "link_bones": ["Pad", " "],
+                  "visual": {
+                    "model": "machine_max:pad_band.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        assertThrows(RuntimeException.class,
+                () -> FittingType.CODEC.parse(JsonOps.INSTANCE, blank).getOrThrow());
+
+        var duplicate = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "link_bones": ["Pad", "Pad"],
+                  "visual": {
+                    "model": "machine_max:pad_band.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        assertThrows(RuntimeException.class,
+                () -> FittingType.CODEC.parse(JsonOps.INSTANCE, duplicate).getOrThrow());
+    }
+
     private static void registerMaterial(String id) {
         MMDynamicRes.MATERIALS.putIfAbsent(ResourceLocation.parse(id), new MaterialAttr(
                 MaterialAttr.PhysicsAttr.DEFAULT,

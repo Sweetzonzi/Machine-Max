@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-04",
+  "bundled_on": "2026-11-05",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "fa593c2ea424cb0e4650ff85b34e7f55a86faf45",
+    "revision": "fe5a60afbe0c9456f53884974e9ae7c73082a246",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -41,8 +41,8 @@
       },
       {
         "path": "references/schemas/fitting.schema.json",
-        "bytes": 9787,
-        "sha256": "a2620c1e86fa7d9e4f7f33e2acfff7dc90360e2aa677fb564b9805aa698460ec"
+        "bytes": 10719,
+        "sha256": "8ffaf7f587c18f1d142380dd1bfca73886ab26684bdda1722544e452001f48a3"
       },
       {
         "path": "references/schemas/hud/hud_element.schema.json",

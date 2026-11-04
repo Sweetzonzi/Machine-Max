@@ -211,6 +211,28 @@ class BeltPath2DTest {
     }
 
     @Test
+    void linkCountRoundsToWholePeriods() {
+        BeltPath2D path = BeltPath2D.build(track(-0.6));
+        int single = path.linkCount(0.2);
+
+        // K = 1 与旧公式逐字一致
+        assertEquals(single, path.linkCount(0.2, 1));
+        assertEquals(single, path.linkCount(0.2, 0));
+
+        for (int period : new int[]{2, 3, 4}) {
+            int count = path.linkCount(0.2, period);
+            assertEquals(0, count % period, "K=" + period + " 时 N 必须是 K 的整数倍");
+            assertTrue(count >= period, "N 至少要能摆满一个重复单元：K=" + period);
+            // 单元数按单元长度取整，节数与单节型号的差不超过半个单元
+            assertTrue(Math.abs(count - single) <= period / 2.0 + 1.0,
+                    "K=" + period + " 时节数偏离由单元长度决定：" + count + " vs " + single);
+        }
+
+        // 路径比一个单元还短时至少摆满一个单元
+        assertEquals(3, path.linkCount(path.length() / 2.0, 3));
+    }
+
+    @Test
     void raisedTwoCentimetersIsNonConvexWithSinglePointContact() {
         List<Circle2D> circles = track(-0.58);
         BeltPath2D path = BeltPath2D.build(circles);

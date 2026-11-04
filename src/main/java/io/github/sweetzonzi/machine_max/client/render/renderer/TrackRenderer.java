@@ -26,10 +26,13 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +53,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>两条绘制路径</b>：</p>
  * <ul>
  *   <li>{@link TrackRenderMode#MODEL}：近处实体渲染。型号的 {@code visual.model} 解析成
- *       {@link OModel} 后逐节绘制同一份单节模型；模型缺失时回退程序化。</li>
+ *       {@link OModel}，按型号的 {@code link_bones} 切成槽位后逐节取槽 {@code i % K} 绘制；
+ *       {@code link_bones} 为空时整模型是一个槽位。模型或骨骼名不可用时回退程序化。</li>
  *   <li>{@link TrackRenderMode#PROCEDURAL}：远处渲染。始终画程序化扁长方体，不加载内容包模型。</li>
  * </ul>
  *
@@ -70,7 +74,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link State} 的 volatile 相位快照 / 节数 / 节距，以及按型号缓存的模型与渲染类型。</p>
  */
 public class TrackRenderer extends VisualEffectRenderer {
-    /** 绘制路径：近处用型号的单节模型，远处用程序化扁长方体。 */
+    /** 绘制路径：近处用型号模型（按槽位取节），远处用程序化扁长方体。 */
     public enum TrackRenderMode {
         MODEL,
         PROCEDURAL
@@ -96,10 +100,10 @@ public class TrackRenderer extends VisualEffectRenderer {
 
     /** 按安装拓扑保留相位；全量同步重建 TrackLink 时，断带和修复承接相同状态。 */
     private static final Map<TrackKey, State> STATES = new ConcurrentHashMap<>();
-    /** 单节模型的渲染资源按型号 id 缓存，避免每帧新建 {@link ModelPose} 与渲染类型。 */
+    /** 型号模型资源按型号 id 缓存，避免每帧新建 {@link ModelPose}、切槽与渲染类型。 */
     private static final Map<ResourceLocation, LinkVisual> VISUALS = new ConcurrentHashMap<>();
-    /** 已经报过「模型缺失」的型号，避免每帧刷日志。 */
-    private static final Set<ResourceLocation> MISSING_MODELS = ConcurrentHashMap.newKeySet();
+    /** 已经报过「模型不可用」的型号，避免每帧刷日志；持有时该型号一律走程序化路径。 */
+    private static final Set<ResourceLocation> UNUSABLE_MODELS = ConcurrentHashMap.newKeySet();
 
     private record TrackKey(VehicleCore vehicle, SubPart sprocket, List<SubPart> members, ResourceLocation type) {
         TrackKey(TrackLink link) {
@@ -118,13 +122,24 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     /**
-     * 一个型号的单节渲染资源。
+     * 一个型号的模型渲染资源。
      *
      * @param renderType 该型号贴图的实体渲染类型
-     * @param pose       静态姿态（单节模型没有动画）
-     * @param bones      模型骨骼，按模型定义顺序
+     * @param pose       静态姿态（节模型没有动画）
+     * @param slots      槽位表，按节序排列；第 i 节取 {@code slots.get(i % slots.size())}
      */
-    private record LinkVisual(RenderType renderType, ModelPose pose, List<OBone> bones) {
+    private record LinkVisual(RenderType renderType, ModelPose pose, List<LinkSlot> slots) {
+    }
+
+    /**
+     * 一个槽位：这一节的骨骼，以及它在模型里的参考点。
+     *
+     * @param bones     该槽位的骨骼，按模型定义顺序
+     * @param refX      参考点（该节外表面中点）相对模型原点的位置，绘制前平移 {@code -ref}
+     * @param refY      Y 分量
+     * @param refZ      Z 分量
+     */
+    private record LinkSlot(List<OBone> bones, float refX, float refY, float refZ) {
     }
 
     @Override
@@ -294,9 +309,12 @@ public class TrackRenderer extends VisualEffectRenderer {
             // +X = 轮轴 / +Y = 内法线 / +Z = 切线；两条矩阵都是右手系。
             poseStack.pushPose();
             if (visual != null) {
+                LinkSlot slot = visual.slots().get(i % visual.slots().size());
                 poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
                         .mul(TrackLinkPose.model(tangent, normal, point, wheelAxis, thickness)));
-                renderModelLink(poseStack, bufferSource, visual, packedLight);
+                // 槽位骨骼的 pivot 不用对齐到采样点，平移量把该节自己的参考点送到采样点
+                poseStack.translate(-slot.refX(), -slot.refY(), -slot.refZ());
+                renderSlot(poseStack, bufferSource, visual, slot, packedLight);
             } else {
                 poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
                         .mul(TrackLinkPose.procedural(tangent, normal, point, wheelAxis, halfThickness)));
@@ -307,7 +325,8 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     /**
-     * 取型号的单节模型渲染资源；模型缺失时返回 {@code null}，调用方回退程序化。
+     * 取型号的模型渲染资源；模型不可用（缺失、{@code link_bones} 与模型不符）时返回
+     * {@code null}，调用方回退程序化。不可用的型号按 id 记住，不再重试。
      */
     @Nullable
     private static LinkVisual visualFor(TrackLink link, SubPart sprocket) {
@@ -315,30 +334,79 @@ public class TrackRenderer extends VisualEffectRenderer {
         ResourceLocation key = link.typeId();
         LinkVisual cached = VISUALS.get(key);
         if (cached != null) return cached;
+        if (UNUSABLE_MODELS.contains(key)) return null;
 
         ModelIndex index = new ModelIndex("fitting", visual.model());
         OModel model = OModel.getOrEmpty(index);
         if (model.getBones().isEmpty()) {
-            if (MISSING_MODELS.add(key)) {
-                MachineMax.LOGGER.warn("履带型号 {} 的模型 {} 不存在或为空，改用程序化履带", key, visual.model());
-            }
+            markUnusable(key, "履带型号 {} 的模型 {} 不存在或为空，改用程序化履带", key, visual.model());
             return null;
         }
         ModelInstance instance = new ModelInstance(sprocket.part, index);
-        LinkVisual created = new LinkVisual(
-                RenderType.entityCutout(visual.texture()),
-                instance.getPose(),
-                List.copyOf(model.getBones().values())
-        );
+        ModelPose pose = instance.getPose();
+        List<LinkSlot> slots = buildSlots(link, model, pose);
+        if (slots == null) return null;
+        LinkVisual created = new LinkVisual(RenderType.entityCutout(visual.texture()), pose, slots);
         VISUALS.put(key, created);
         return created;
     }
 
-    /** 逐骨骼绘制一份单节模型；明暗交给实体管线的两向光照。 */
-    private static void renderModelLink(PoseStack poseStack, MultiBufferSource bufferSource,
-                                        LinkVisual visual, int packedLight) {
+    /**
+     * 按型号的 {@code link_bones} 切槽：每个名字一个槽位，参考点取该骨骼 pivot 在模型里的位置
+     * （经父链静态变换）。列表为空时整个模型的全部骨骼是一个槽位，参考点取模型原点。
+     *
+     * @return 型号的 {@code link_bones} 与模型不符时返回 {@code null}（已告警一次）
+     */
+    @Nullable
+    private static List<LinkSlot> buildSlots(TrackLink link, OModel model, ModelPose pose) {
+        List<String> names = link.type().linkBones();
+        if (names.isEmpty()) {
+            // 空列表不读 pivot：整模型的骨骼一起画，参考点就是模型原点
+            return List.of(new LinkSlot(List.copyOf(model.getBones().values()), 0f, 0f, 0f));
+        }
+        List<LinkSlot> slots = new ArrayList<>(names.size());
+        for (String name : names) {
+            OBone bone = model.getBone(name);
+            if (bone == null) {
+                markUnusable(link.typeId(), "履带型号 {} 的 link_bones 里 {} 不在模型 {} 的骨骼表中，改用程序化履带",
+                        link.typeId(), name, link.type().visual().model());
+                return null;
+            }
+            if (bone.getCubes().isEmpty() && bone.getMesh() == null) {
+                markUnusable(link.typeId(), "履带型号 {} 的 link_bones 里 {} 没有几何，改用程序化履带",
+                        link.typeId(), name);
+                return null;
+            }
+            Vector3f reference = pose.getBonePose(name).getSpaceBonePivot(Vec3.ZERO, 1f);
+            slots.add(new LinkSlot(List.of(bone), reference.x, reference.y, reference.z));
+        }
+        return List.copyOf(slots);
+    }
+
+    /** 型号模型不可用：记一次日志并按 id 记住，后续帧直接回退程序化。 */
+    private static void markUnusable(ResourceLocation key, String message, Object... args) {
+        if (UNUSABLE_MODELS.add(key)) {
+            MachineMax.LOGGER.warn(message, args);
+        }
+    }
+
+    /**
+     * 丢掉按型号缓存的模型外观。
+     *
+     * <p>服务端下发内容包重载时 Spark-Core 会清空并重建 {@code OModel.ORIGINS} 与型号表，
+     * 缓存里的 {@link ModelPose} 与骨骼对象随之失效：继续用会画旧几何、并把旧骨骼挂在新 pivot 上。
+     * 由客户端入口在内容包加载完成时调用。</p>
+     */
+    public static void invalidateModels() {
+        VISUALS.clear();
+        UNUSABLE_MODELS.clear();
+    }
+
+    /** 绘制一个槽位的骨骼；明暗交给实体管线的两向光照。 */
+    private static void renderSlot(PoseStack poseStack, MultiBufferSource bufferSource,
+                                   LinkVisual visual, LinkSlot slot, int packedLight) {
         VertexConsumer consumer = bufferSource.getBuffer(visual.renderType());
-        for (OBone bone : visual.bones()) {
+        for (OBone bone : slot.bones()) {
             ModelRenderHelperKt.render(bone, visual.pose(), poseStack, consumer,
                     packedLight, OverlayTexture.NO_OVERLAY, MODEL_COLOR, 1f, false);
         }

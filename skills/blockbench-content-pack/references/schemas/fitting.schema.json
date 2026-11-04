@@ -202,15 +202,26 @@
       },
       "additionalProperties": false
     },
+    "link_bones": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "maxItems": 8,
+      "uniqueItems": true,
+      "default": [],
+      "description": "逐节骨骼名，按节序排列；长度就是最小重复单元的节数 K。模型的第 k 个槽位画 link_bones[k] 那一个骨骼，环上第 i 节取槽位 i % K，因此节数必须是 K 的整数倍（不整除时加载端保留原节数并告警）。名字必须存在于 visual.model 的骨骼表、互不相同、每个都带几何；空列表表示整个模型就是一节，此时整模型全部骨骼一起画。节的参考点是该骨骼的 pivot，它要与这一节的外表面中点重合。"
+    },
     "visual": {
       "type": "object",
-      "description": "单节履带模型、模型贴图与物品图标。model 与 texture 必填；模型放在内容包的 models/fitting/ 下，按 ModelIndex(\"fitting\", model) 加载。",
+      "description": "履带型号模型、模型贴图与物品图标。model 与 texture 必填；模型放在内容包的 models/fitting/ 下，按 ModelIndex(\"fitting\", model) 加载。",
       "properties": {
         "model": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "单节模型 id，如 machine_max:track_link.geo（对应 models/fitting/track_link.geo.json，文件名含 .geo）。命名空间是内容包里的命名空间目录名，不是内容包名。"
+          "description": "型号模型 id，如 machine_max:track_link.geo（对应 models/fitting/track_link.geo.json，文件名含 .geo）。只读第一个 minecraft:geometry。link_bones 为空时模型是单节；非空时模型是最小重复单元，里面按节序摆 K 节。命名空间是内容包里的命名空间目录名，不是内容包名。"
         },
         "texture": {
           "allOf": [
@@ -222,7 +233,7 @@
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "物品栏 2D 图标贴图，如 machine_max:textures/icon/track_link.png，建议 128×128、透明背景。省略时物品与创造栏直接渲染单节 3D 模型。"
+          "description": "物品栏 2D 图标贴图，如 machine_max:textures/icon/track_link.png，建议 128×128、透明背景。省略时物品与创造栏直接渲染 3D 型号模型——K > 1 时画的是整个最小重复单元（K 节）。"
         }
       },
       "required": ["model", "texture"],

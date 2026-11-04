@@ -97,7 +97,7 @@ public class FittingItem extends Item implements ICustomModelItem {
             animatable.getModelController().setModel(ICON_MODEL);
             animatable.getModelController().setTextureLocation(visual.icon());
         } else {
-            // 没有图标，或不在 GUI：画型号自己的单节模型
+            // 没有图标，或不在 GUI：画型号模型本身；link_bones 定义的最小重复单元有几节就画几节
             animatable.getModelController().setModel(new ModelIndex("fitting", visual.model()));
             animatable.getModelController().setTextureLocation(visual.texture());
         }

@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -43,6 +45,9 @@ public class TrackLink {
      * <p>成员低于该值时履带解散；型号不提供可调下限。</p>
      */
     public static final int MIN_MEMBERS = 2;
+
+    /** 已经报过「持久化节数不是周期整数倍」的型号，按型号去重，避免每台车各记一条。 */
+    private static final Set<ResourceLocation> WARNED_LINK_COUNT_PERIOD = ConcurrentHashMap.newKeySet();
 
     private final VehicleCore vehicle;
     private final TrackType type;
@@ -469,6 +474,7 @@ public class TrackLink {
      *                       {@link TrackLinkData#UNKNOWN_LINK_COUNT} 表示旧数据，按当前包络推导一次。
      */
     private void refreshEnvelope(int persistedCount) {
+        int period = type().linkPeriod();
         if (members.isEmpty()) {
             linkCount = 1;
             maxDurability = attr().maxDurability(1);
@@ -477,15 +483,37 @@ public class TrackLink {
         }
         if (persistedCount > 0) {
             linkCount = persistedCount;
+            warnLinkCountPeriod(persistedCount, period);
         } else {
             TrackEnvelope2D.Result result = envelope(1f);
-            linkCount = result != null
-                    ? result.path().linkCount(attr().lengthPerLink())
+            int derived = result != null
+                    ? result.path().linkCount(attr().lengthPerLink(), period)
                     // 成员缺轮半径 / 位姿尚未就绪：按成员数估一个保守节数，保证耐久上限可用
-                    : Math.max(1, members.size() * 8);
+                    : alignToPeriod(Math.max(1, members.size() * 8), period);
+            linkCount = Math.min(TrackLinkData.MAX_LINK_COUNT, derived);
         }
         maxDurability = attr().maxDurability(linkCount);
         durability = Math.min(durability, maxDurability);
+    }
+
+    /** 把估算节数对齐到周期 K 的整数倍（闭环要求 N % K == 0，估算也不能例外）。 */
+    private static int alignToPeriod(int estimate, int period) {
+        int k = Math.max(1, period);
+        return Math.max(1, Math.round((float) estimate / k)) * k;
+    }
+
+    /**
+     * 持久化节数不是周期 K 的整数倍时告警一次，不改写存档、蓝图与模板。
+     *
+     * <p>玩家可能装着一条按旧型号规则生成的带，或内容包后改了 {@code link_bones}。
+     * 改值会让存档里的耐久上限与外形一起变，因此只提示：闭环在第 N − 1 节与第 0 节接缝处
+     * 相邻两节同槽。告警按型号去重，避免每台车、每次载入各记一条。</p>
+     */
+    private void warnLinkCountPeriod(int count, int period) {
+        if (period <= 1 || count % period == 0) return;
+        if (!WARNED_LINK_COUNT_PERIOD.add(typeId())) return;
+        MachineMax.LOGGER.warn("履带型号 {} 的节数 {} 不是周期 {} 的整数倍，保留原值（闭环接缝处会有两节同槽）",
+                typeId(), count, period);
     }
 
     /** 按当前几何重新推导节数：成员变化后带路长度变了，不能沿用旧值。 */

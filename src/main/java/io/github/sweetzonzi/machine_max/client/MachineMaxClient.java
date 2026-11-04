@@ -2,12 +2,14 @@ package io.github.sweetzonzi.machine_max.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.sighs.apricityui.init.Element;
+import cn.solarmoon.spark_core.pack.diagnostic.event.PackAllFinishedEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.element.PartModelElement;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
 import io.github.sweetzonzi.machine_max.client.render.post.ExplosionLightState;
 import io.github.sweetzonzi.machine_max.client.render.post.MuzzleFlashLightState;
+import io.github.sweetzonzi.machine_max.client.render.renderer.TrackRenderer;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
@@ -20,6 +22,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.io.IOException;
 @Mod(value = MachineMax.MOD_ID, dist = Dist.CLIENT)
@@ -39,6 +42,19 @@ public class MachineMaxClient {
         bus.addListener(MMClientConfig::onChangeConfig);
         // 注册自定义着色器
         bus.addListener(MachineMaxClient::onRegisterShaders);
+        // 内容包重载后丢掉按型号缓存的履带模型外观
+        NeoForge.EVENT_BUS.addListener(MachineMaxClient::onPackFinished);
+    }
+
+    /**
+     * 服务端下发的内容包加载完成：型号模型与型号表已被替换，按型号缓存的外观必须丢掉。
+     *
+     * <p>只在客户端接收远端内容包（{@code fromServer}）时失效——本地包不重读模型
+     * （{@code ModelModule} 对本地包直接返回），清缓存没有意义。</p>
+     */
+    private static void onPackFinished(PackAllFinishedEvent event) {
+        if (!event.getContext().isClientSide() || !event.getContext().getFromServer()) return;
+        TrackRenderer.invalidateModels();
     }
 
     /**

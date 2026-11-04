@@ -202,15 +202,26 @@
       },
       "additionalProperties": false
     },
+    "link_bones": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "maxItems": 8,
+      "uniqueItems": true,
+      "default": [],
+      "description": "Bone name per link, in link order; its length is the minimal repeat unit's link count K. Slot k of the model draws bone link_bones[k], link i on the loop takes slot i % K, so the link count must be a multiple of K (the loader keeps a persisted count and warns when it is not). Every name must exist in visual.model's bone table, be unique, and carry geometry; an empty list means the whole model is one link and every bone of it is drawn. A link's reference point is that bone's pivot, which must coincide with the link's outer-face midpoint."
+    },
     "visual": {
       "type": "object",
-      "description": "Single-link model, model texture and inventory icon. model and texture are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\"fitting\", model).",
+      "description": "Track model, model texture and inventory icon. model and texture are required. The model lives under the content pack's models/fitting/ and is loaded as ModelIndex(\"fitting\", model).",
       "properties": {
         "model": {
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "Single-link model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix). The namespace is the pack's namespace directory name, not the pack name."
+          "description": "Model id, e.g. machine_max:track_link.geo (it points at models/fitting/track_link.geo.json, so the id keeps the .geo suffix). Only the first minecraft:geometry is read. With an empty link_bones the model is a single link; otherwise it is the minimal repeat unit holding K links in link order. The namespace is the pack's namespace directory name, not the pack name."
         },
         "texture": {
           "allOf": [
@@ -222,7 +233,7 @@
           "allOf": [
             { "$ref": "base/resource_location.schema.json" }
           ],
-          "description": "Inventory 2D icon texture, e.g. machine_max:textures/icon/track_link.png; 128×128 with a transparent background is recommended. When omitted, the item and creative tab render the single-link 3D model instead."
+          "description": "Inventory 2D icon texture, e.g. machine_max:textures/icon/track_link.png; 128×128 with a transparent background is recommended. When omitted, the item and creative tab render the 3D model instead — with K > 1 that is the whole repeat unit (K links)."
         }
       },
       "required": ["model", "texture"],

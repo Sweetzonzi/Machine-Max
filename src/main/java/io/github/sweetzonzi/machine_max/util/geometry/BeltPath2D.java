@@ -512,10 +512,26 @@ private final List<Circle2D> inputCircles;
      * 与 TrackAttr 的节数公式一致：N = max(1, round(L / linkLength))。
      */
     public int linkCount(double linkLength) {
+        return linkCount(linkLength, 1);
+    }
+
+    /**
+     * 按最小重复单元的节数取整：N = max(K, round(L / (linkLength × K)) × K)。
+     *
+     * <p>闭环要求节数是 K 的整数倍，否则第 N − 1 节与第 0 节落在同一个槽位、两个不同铸件
+     * 在同一处相撞。先按单元长度求单元数再乘回 K，比先求节数再向上取整更接近标称节距。</p>
+     *
+     * @param linkLength 标称节长（米）
+     * @param period     最小重复单元的节数 K；{@code <= 1} 时与 {@link #linkCount(double)} 一致
+     */
+    public int linkCount(double linkLength, int period) {
         if (!(linkLength > 0)) {
             throw new IllegalArgumentException("linkLength must be > 0");
         }
-        return Math.max(1, (int) Math.round(length / linkLength));
+        long k = Math.max(1, period);
+        long units = Math.max(1L, Math.round(length / (linkLength * k)));
+        long count = Math.max(k, units * k);
+        return (int) Math.min(Integer.MAX_VALUE, count);
     }
 
     public Sample sampleAt(double arcLength) {
