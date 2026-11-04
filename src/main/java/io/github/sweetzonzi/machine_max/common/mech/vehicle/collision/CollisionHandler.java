@@ -212,7 +212,11 @@ public class CollisionHandler {
             return;
         }
         Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
-        applyFriction(subPart.isWheel(hitBoxIndex), friction, hitBox.attr.rollingFriction(),
+        //轮胎（轮类碰撞箱）的方向性由滑移曲线的摩擦椭圆承担：applyWheelFriction 同时写入合成摩擦与摩擦方向。
+        //刚体的各向异性缩放按部件局部轴逐分量计算，轮子转动时它既改变大小（0°~90° 在 1.0 与 1.5 之间）
+        //又让摩擦方向偏离滑移方向（45° 时约 11°），会凭空产生侧向力，所以轮胎必须保持各向同性。
+        boolean tyre = subPart.isWheel(hitBoxIndex);
+        applyFriction(!tyre, friction, hitBox.attr.rollingFriction(),
                 hitBox.attr.spinningFriction(), hitBox.attr.restitution());
     }
 
@@ -221,20 +225,23 @@ public class CollisionHandler {
         return subPart.contactMaterial(hitBoxIndex, hitBox).physics().blockDamageFactor();
     }
 
-    private void applyFriction(boolean isWheel, Vector3f friction, float rolling, float spinning,
+    /**
+     * 把接触材质对应的摩擦参数写进刚体。
+     *
+     * @param anisotropic 是否借刚体的各向异性摩擦表达方向性。履带轮面与非轮胎部件走这条；
+     *                    轮胎由摩擦椭圆表达方向，必须保持各向同性——逐分量缩放按部件局部轴计算，
+     *                    轮子一转，缩放系数与摩擦方向都跟着变，见 {@link #setupFriction}
+     */
+    private void applyFriction(boolean anisotropic, Vector3f friction, float rolling, float spinning,
                                float restitution) {
-        //非轮子部件重设各向异性摩擦，轮胎另行处理
+        //履带与其它部件用各向异性摩擦表达方向性；轮胎不设，保持各向同性
         //(1,1,1) 表示各向同性，需关闭各向异性模式；否则仅在值变化时才更新逐轴摩擦缩放，
         //避免连续相同材质接触时每 tick 在"各向异性/各向同性"间翻转
-        if (!isWheel) {
-            if (friction.equals(Vector3f.UNIT_XYZ))
+        if (!anisotropic || friction.equals(Vector3f.UNIT_XYZ)) {
+            if (!Vector3f.UNIT_XYZ.equals(subPart.body.getAnisotropicFriction(null)))
                 subPart.body.setAnisotropicFriction(Vector3f.UNIT_XYZ, AfMode.none);
-            else if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
-                subPart.body.setAnisotropicFriction(friction, AfMode.basic);
-        } else if (!friction.equals(Vector3f.UNIT_XYZ)) {
-            // 履带轮面也需要各向异性（带方向摩擦），按值变化更新
-            if (!friction.equals(subPart.body.getAnisotropicFriction(null)))
-                subPart.body.setAnisotropicFriction(friction, AfMode.basic);
+        } else if (!friction.equals(subPart.body.getAnisotropicFriction(null))) {
+            subPart.body.setAnisotropicFriction(friction, AfMode.basic);
         }
         if (rolling != subPart.body.getRollingFriction())
             subPart.body.setRollingFriction(rolling);
