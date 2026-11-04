@@ -21,11 +21,7 @@ public final class PartKinds {
     static {
         register("regular", new PartKind<>(RegularPartType.class, RegularPartType.CODEC,
                 RegularPartData.class, RegularPartData.CODEC, RegularPart::new,
-                (type, data, level, mode, context) -> new RegularPart(data, type, level, mode, context),
-                (type, context) -> {
-                    if (type.variants.isEmpty()) throw new IllegalArgumentException("Part needs at least one variant");
-                    if (type.maxStackSize < 1 || type.maxStackSize > 99) throw new IllegalArgumentException("Invalid stack size");
-                }));
+                (type, data, level, mode, context) -> new RegularPart(data, type, level, mode, context)));
     }
 
     /**

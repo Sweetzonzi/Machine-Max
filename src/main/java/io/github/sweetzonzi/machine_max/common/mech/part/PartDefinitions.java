@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.part;
 
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import java.util.*;
 
@@ -8,7 +10,7 @@ import java.util.*;
  * 按逻辑端管理部件定义的装载与发布快照。
  *
  * <p>装载入口先调用 {@link #begin(boolean)} 清空该端可见定义，再在私有候选表收集文件。
- * {@link #validateAndPublish(boolean, Map)} 校验整批候选及其必需引用，剔除失败定义和传递依赖者，
+ * {@link #validateAndPublish(boolean, Map)} 校验整批候选并剔除引用了失效定义的定义，
  * 最后一次性发布全部有效定义与普通部件索引。候选对象不会通过运行时查询暴露。</p>
  * <p>每端通过一个 {@code volatile} 快照引用发布，查询只读集合结构；定义对象及其嵌套属性
  * 不是深复制的，发布后调用者不得修改。装载流程必须保证同一逻辑端的批次不并发交错；
@@ -91,45 +93,35 @@ public final class PartDefinitions {
     }
 
     /**
-     * 校验整批候选，传播必需依赖失败，然后发布有效子集。
+     * 校验整批候选，传播失效引用，然后发布有效子集。
      *
-     * <p>本方法先清空该端发布表，再复制输入映射。每个种类的校验器通过
-     * {@link PartValidationContext#require(net.minecraft.resources.ResourceLocation)} 登记必需引用。
-     * 任一定义失败后，重复剔除引用缺失或失败定义的候选，直到没有新的失效项；完整且有效的循环引用可通过。</p>
-     * <p>单个校验器抛出的 {@link RuntimeException} 会转为诊断，其他候选继续处理。
+     * <p>本方法先清空该端发布表，再复制输入映射，然后反复执行 {@link AbstractPartType#validate(Map)}：
+     * 每轮把本轮判定失败的候选从幸存集中去掉，再拿缩小后的幸存集重新校验其余候选，直到不再出现
+     * 新的失败项。因此引用了失效定义的定义会被连带剔除，完整且有效的循环引用可以通过。</p>
+     * <p>单个定义抛出的 {@link RuntimeException} 会转为诊断，其他候选继续处理；若异常本身携带
+     * 消息组件（如 {@link PackContentException}），组件原样保留，供调用方按玩家语言渲染。
      * 若输入复制等批次级操作异常中止，发布表保持未就绪的空表，运行时工厂无法取得本轮候选。</p>
      *
      * @param clientSide 发布目标逻辑端
      * @param input 完整候选表；键必须与定义注册名一致，本方法不修改输入映射
-     * @return 被剔除定义的只读诊断列表；空列表表示全部候选通过
+     * @return 被剔除定义注册名到诊断消息的只读映射；空映射表示全部候选通过
      */
-    public static List<String> validateAndPublish(boolean clientSide, Map<ResourceLocation, AbstractPartType> input) {
+    public static Map<ResourceLocation, Component> validateAndPublish(boolean clientSide, Map<ResourceLocation, AbstractPartType> input) {
         begin(clientSide);
         Map<ResourceLocation, AbstractPartType> candidates = Map.copyOf(input);
-        Map<ResourceLocation, Set<ResourceLocation>> edges = new LinkedHashMap<>();
-        Map<ResourceLocation, String> invalid = new LinkedHashMap<>();
-        candidates.forEach((id, type) -> {
-            Set<ResourceLocation> dependencies = new LinkedHashSet<>();
-            edges.put(id, dependencies);
-            try {
-                if (!id.equals(type.getRegistryKey())) throw new IllegalArgumentException("Definition id mismatch");
-                PartKinds.get(type.kindId()).validate(type, new PartValidationContext(candidates, dependencies));
-            } catch (RuntimeException error) {
-                invalid.put(id, id + ": " + error.getMessage());
-            }
-        });
-        // 必需引用可能形成多跳链；反复传播直到失效集合稳定，避免留下间接引用坏定义的候选。
+        Map<ResourceLocation, Component> invalid = new LinkedHashMap<>();
         boolean changed;
         do {
             changed = false;
-            for (var entry : edges.entrySet()) {
-                if (invalid.containsKey(entry.getKey())) continue;
-                for (var dependency : entry.getValue()) {
-                    if (!candidates.containsKey(dependency) || invalid.containsKey(dependency)) {
-                        invalid.put(entry.getKey(), entry.getKey() + " -> " + invalid.getOrDefault(dependency, dependency + ": missing"));
-                        changed = true;
-                        break;
-                    }
+            Map<ResourceLocation, AbstractPartType> survivors = new LinkedHashMap<>(candidates);
+            invalid.keySet().forEach(survivors::remove);
+            Map<ResourceLocation, AbstractPartType> view = Collections.unmodifiableMap(survivors);
+            for (var entry : survivors.entrySet()) {
+                try {
+                    entry.getValue().validate(view);
+                } catch (RuntimeException error) {
+                    invalid.put(entry.getKey(), messageOf(error));
+                    changed = true;
                 }
             }
         } while (changed);
@@ -138,7 +130,18 @@ public final class PartDefinitions {
         Map<ResourceLocation, RegularPartType> regular = new LinkedHashMap<>();
         valid.forEach((id, type) -> { if (type instanceof RegularPartType value) regular.put(id, value); });
         publish(clientSide, new Snapshot(Map.copyOf(valid), Map.copyOf(regular), true));
-        return List.copyOf(invalid.values());
+        return Collections.unmodifiableMap(new LinkedHashMap<>(invalid));
+    }
+
+    /**
+     * 把校验失败转成上报用的消息组件。
+     *
+     * <p>内容错误自带可翻译组件，直接沿用；其他运行时异常只可能是代码缺陷，退化为异常消息。</p>
+     */
+    private static Component messageOf(Throwable error) {
+        if (error instanceof PackContentException content) return content.getUserMessage();
+        String message = error.getMessage();
+        return Component.literal(message != null ? message : error.getClass().getSimpleName());
     }
 
     /**

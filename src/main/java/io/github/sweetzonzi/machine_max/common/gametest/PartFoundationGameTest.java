@@ -118,8 +118,7 @@ public final class PartFoundationGameTest {
         var variant = regular.variants.values().iterator().next();
         String kindId = "machine_max_test:body";
         PartKinds.register(kindId, new PartKind<>(ProbeType.class, ProbeType.CODEC, ProbeData.class, ProbeData.CODEC,
-                ProbePart::new, (type, data, level, mode, context) -> new ProbePart(type, data, level, mode, context),
-                (type, context) -> {}));
+                ProbePart::new, (type, data, level, mode, context) -> new ProbePart(type, data, level, mode, context)));
         var definition = new ProbeType(Map.of("default", variant));
         definition.setRegistryKey(ResourceLocation.parse("machine_max_test:core"));
         Map<ResourceLocation, AbstractPartType> all = new LinkedHashMap<>(PartDefinitions.all(false));

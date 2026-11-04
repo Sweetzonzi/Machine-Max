@@ -1,9 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.*;
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -31,6 +34,18 @@ public final class RegularPartType extends AbstractPartType {
 
     // 编解码器
     /**
+     * 堆叠数解码检查：只接受 {@code [1, 99]}。
+     *
+     * <p>越界值是内容写错，解码期即拒绝该文件，消息带上实际值；定义的构造器不再重复这一检查。</p>
+     */
+    private static final Codec<Integer> MAX_STACK_SIZE_CODEC = Codec.INT.validate(value -> {
+        if (value < 1 || value > 99) {
+            throw new PackContentException(MMLanguageRegistry.ERROR_PART_INVALID_STACK_SIZE.component(value));
+        }
+        return DataResult.success(value);
+    });
+
+    /**
      * 普通部件字段的 JSON Codec；不负责注册名绑定，也不自行添加种类判别字段。
      */
     public static final Codec<RegularPartType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -40,7 +55,7 @@ public final class RegularPartType extends AbstractPartType {
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate_destroyed", 0.1f).forGetter(RegularPartType::getVehicleDamageRateDestroyed),
             Codec.FLOAT.optionalFieldOf("functional_threshold", 0.3f).forGetter(RegularPartType::getFunctionalThreshold),
             Codec.BOOL.optionalFieldOf("share_durability", true).forGetter(RegularPartType::isShareDurability),
-            Codec.INT.optionalFieldOf("max_stack_size", 1).forGetter(RegularPartType::getMaxStackSize),
+            MAX_STACK_SIZE_CODEC.optionalFieldOf("max_stack_size", 1).forGetter(RegularPartType::getMaxStackSize),
             VARIANT_MAP_CODEC.fieldOf("variants").forGetter(RegularPartType::getVariants)
     ).apply(instance, RegularPartType::new));
 

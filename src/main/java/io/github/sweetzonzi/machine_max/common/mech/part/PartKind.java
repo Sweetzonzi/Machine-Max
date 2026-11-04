@@ -16,14 +16,13 @@ import net.minecraft.world.level.Level;
  * @param dataCodec 动态存档的 Codec
  * @param creator 新建实例回调；负责完成子类初始化和结构构造
  * @param restorer 存档恢复回调；必须遵守传入的恢复模式和实例权限
- * @param validator 全候选就绪后的校验器；不得构造刚体或修改发布表
  * @param <T> 该种类的定义类型
  * @param <D> 该种类的动态存档类型
  */
 public record PartKind<T extends AbstractPartType, D extends AbstractPartData>(
         Class<T> definitionClass, Codec<T> definitionCodec,
         Class<D> dataClass, Codec<D> dataCodec,
-        Creator<T> creator, Restorer<T, D> restorer, Validator<T> validator) {
+        Creator<T> creator, Restorer<T, D> restorer) {
     /**
      * 新建实例回调；返回部件前应完成结构初始化，入世和装配体注册由外层调用者负责。
      */
@@ -48,24 +47,6 @@ public record PartKind<T extends AbstractPartType, D extends AbstractPartData>(
          * <p>不得修改输入 DTO。可变 NBT 应先复制，构造失败时应清理已分配资源。</p>
          */
         AbstractPart<?> restore(T type, D data, Level level, PartRestoreMode mode, PartCreationContext context);
-    }
-
-    /**
-     * 装载期校验回调；需要的其他部件必须通过校验上下文登记为依赖。
-     */
-    @FunctionalInterface
-    public interface Validator<T> {
-        /**
-         * 检查种类约束与必需引用；失败抛出运行时异常，由发布流程记录诊断并剔除依赖者。
-         */
-        void validate(T type, PartValidationContext context);
-    }
-
-    /**
-     * 将候选定义收窄到注册类并执行校验；类不匹配也视作该定义的校验失败。
-     */
-    void validate(AbstractPartType type, PartValidationContext context) {
-        validator.validate(definitionClass.cast(type), context);
     }
 
     /**

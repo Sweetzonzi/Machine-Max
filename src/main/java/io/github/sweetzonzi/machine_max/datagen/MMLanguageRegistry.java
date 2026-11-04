@@ -374,6 +374,14 @@ public enum MMLanguageRegistry {
             zh_cn, "零件贴图列表不能为空",
             en_us, "Part textures must not be empty"
     )),
+    ERROR_PART_EMPTY_VARIANTS("error.machine_max.part.empty_variants", ImmutableMap.of(
+            zh_cn, "部件至少需要声明一个变体",
+            en_us, "A part must declare at least one variant"
+    )),
+    ERROR_PART_INVALID_STACK_SIZE("error.machine_max.part.invalid_stack_size", ImmutableMap.of(
+            zh_cn, "堆叠数必须落在 [1, 99] 内，实际为 %1$s",
+            en_us, "Stack size must be within [1, 99], got %1$s"
+    )),
     ERROR_PART_CONNECTOR_LOCATOR_NOT_FOUND("error.machine_max.part.connector_locator_not_found", ImmutableMap.of(
             zh_cn, "模型 %1$s 中未找到连接点 %2$s 的定位器 %3$s",
             en_us, "Failed to find locator %3$s of connector %2$s in model %1$s"

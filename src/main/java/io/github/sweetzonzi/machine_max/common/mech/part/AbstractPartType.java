@@ -3,7 +3,9 @@ package io.github.sweetzonzi.machine_max.common.mech.part;
 import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import java.util.*;
@@ -31,7 +33,7 @@ public abstract class AbstractPartType {
      */
     public final Map<String, VariantAttr> variants;
     /**
-     * 普通部件物品使用的最大堆叠数；种类校验器负责检查其允许范围。
+     * 普通部件物品使用的最大堆叠数；解码时检查其允许范围，越界即拒绝当前文件。
      */
     public final int maxStackSize;
     /**
@@ -42,7 +44,9 @@ public abstract class AbstractPartType {
     /**
      * 兼容两种变体写法：单个配置视为 {@code default}，映射写法保留显式名称。
      *
-     * <p>编码时，只有一个 {@code default} 变体的映射输出为单配置，其他情况输出名称映射。</p>
+     * <p>编码时，只有一个 {@code default} 变体的映射输出为单配置，其他情况输出名称映射。
+     * 解码时拒绝空映射：没有变体的定义无法实例化，这一形状错误在读取该文件时即报出，
+     * 使非法定义不进入候选表。编码方向不做此检查。</p>
      */
     public static final Codec<Map<String, VariantAttr>> VARIANT_MAP_CODEC = Codec.either(
             VariantAttr.CODEC,
@@ -59,13 +63,17 @@ public abstract class AbstractPartType {
                     return Either.right(map);
                 }
             }
-    );
+    ).validate(map -> {
+        if (map.isEmpty()) throw new PackContentException(MMLanguageRegistry.ERROR_PART_EMPTY_VARIANTS.component());
+        return DataResult.success(map);
+    });
 
     /**
      * 保存种类共用的静态字段并复制变体映射结构。
      *
-     * <p>构造器不设置注册名，也不执行装载期校验。子类完成自身字段初始化后，由装载流程设置
-     * 注册名、执行文件内检查，再进入整批候选的种类校验。</p>
+     * <p>构造器不设置注册名，也不执行内容检查：变体为空的定义在 Codec 解码阶段即被拒绝，
+     * 其余检查由 {@link #validate(Map)} 在整批候选就绪后执行。子类完成自身字段初始化后，
+     * 由装载流程设置注册名并进入该批次校验。</p>
      */
     protected AbstractPartType(ResourceLocation icon, boolean shareDurability, int maxStackSize,
                                Map<String, VariantAttr> variants) {
@@ -123,16 +131,19 @@ public abstract class AbstractPartType {
     }
 
     /**
-     * 执行单文件内的模型、变体和子零件检查。
+     * 校验整批候选就绪后的定义内容。
      *
-     * <p>由装载器在解码并设置注册名后调用，使错误归属于当前文件。
-     * {@link VariantAttr#validate(String)} 检查子零件集合并下发各项配置检查；
-     * 跨部件必需引用则由 {@link PartDefinitions#validateAndPublish(boolean, Map)} 在候选收集完成后处理。</p>
-     * <p>首个检查错误即中止当前定义，调用者不得将失败对象加入候选表。</p>
+     * <p>由装载器在全部模块的文件读取完成后调用，因此同一轮的其他定义都能通过 {@code candidates}
+     * 查到，引用别的定义的检查可以在这里做。默认实现检查本定义的变体与子零件
+     * （{@link VariantAttr#validate(String)}）；持有跨定义引用的种类重写本方法，追加引用检查后
+     * 调用 {@code super}。</p>
+     * <p>{@code candidates} 是只读幸存集：已判定失败的定义不在其中，所以对它的存在性检查
+     * 会把引用了失效定义的候选一并判为失败。首个错误即中止当前定义。</p>
      *
-     * @throws PackContentException 任一文件内配置检查失败时抛出
+     * @param candidates 本轮仍有效、可被引用的定义，键为定义注册名
+     * @throws PackContentException 任一配置检查失败时抛出；其中的消息组件由装载器原样上报
      */
-    public final void validate() {
+    public void validate(Map<ResourceLocation, AbstractPartType> candidates) {
         for (Map.Entry<String, VariantAttr> variantEntry : variants.entrySet()) {
             variantEntry.getValue().validate(variantEntry.getKey());
         }

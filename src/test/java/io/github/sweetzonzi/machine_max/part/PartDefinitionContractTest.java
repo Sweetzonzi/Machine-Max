@@ -1,5 +1,11 @@
 package io.github.sweetzonzi.machine_max.part;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OCube;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.animation.model.origin.OUVUnion;
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -7,13 +13,21 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.part.*;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PartDefinitionContractTest {
     static final String KIND = "test:body";
+    /** 解析合法定义需要的模型：VariantAttr 构造器按 ModelIndex 查 OModel.ORIGINS。 */
+    static final ResourceLocation PROBE_MODEL = ResourceLocation.parse("test:probe");
+    /** 一个带变体、子零件与碰撞箱的普通部件；碰撞箱名取模型骨骼名。 */
+    static final String REGULAR_JSON = "{\"variants\":{\"default\":{\"model\":\"" + PROBE_MODEL + "\","
+            + "\"sub_parts\":{\"main\":{\"start_bone\":\"root\",\"hit_boxes\":{\"root\":{\"type\":\"box\"}}}}}}}";
     static final Codec<TestType> TEST_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("body_field").forGetter(value -> value.body),
             ResourceLocation.CODEC.listOf().optionalFieldOf("requires", List.of()).forGetter(value -> value.required),
@@ -31,19 +45,37 @@ class PartDefinitionContractTest {
             this.valid = valid;
         }
         @Override public String kindId() { return KIND; }
+        @Override public void validate(Map<ResourceLocation, AbstractPartType> candidates) {
+            super.validate(candidates);
+            for (ResourceLocation dependency : required) {
+                if (!candidates.containsKey(dependency)) {
+                    throw new PackContentException(net.minecraft.network.chat.Component.literal(
+                            "missing dependency " + dependency));
+                }
+            }
+            if (!valid) throw new PackContentException(net.minecraft.network.chat.Component.literal("bad default connector"));
+        }
     }
 
     @BeforeAll static void registerExtension() {
         io.github.sweetzonzi.machine_max.MachineMax.REGISTER.register(net.neoforged.bus.api.BusBuilder.builder().build());
         PartKinds.register(KIND, new PartKind<>(TestType.class, TEST_CODEC, RegularPartData.class, RegularPartData.CODEC,
                 (type, variant, level, context) -> { throw new AssertionError("No native construction during definition tests"); },
-                (type, data, level, mode, context) -> { throw new AssertionError("No native construction during definition tests"); },
-                (type, context) -> {
-                    type.required.forEach(context::require);
-                    if (!type.valid) throw new IllegalArgumentException("bad default connector");
-                }));
+                (type, data, level, mode, context) -> { throw new AssertionError("No native construction during definition tests"); }));
     }
-    @AfterEach void clear() { PartDefinitions.begin(true); PartDefinitions.begin(false); }
+    /** 解析合法普通部件需要模型；测试自建一个只有根骨骼和一个方块的最小模型。 */
+    @BeforeEach void stubModel() {
+        var cube = new OCube(Vec3.ZERO, new Vec3(1, 1, 1), Vec3.ZERO, Vec3.ZERO, 0.0,
+                new OUVUnion(new Vec2(0, 0), null), false, 16, 16);
+        var bones = new LinkedHashMap<String, OBone>();
+        bones.put("root", new OBone("root", null, Vec3.ZERO, Vec3.ZERO, new LinkedHashMap<>(), List.of(cube), null));
+        OModel.getORIGINS().put(new ModelIndex("part", PROBE_MODEL), new OModel(16, 16, bones));
+    }
+    @AfterEach void clear() {
+        OModel.getORIGINS().remove(new ModelIndex("part", PROBE_MODEL));
+        PartDefinitions.begin(true);
+        PartDefinitions.begin(false);
+    }
     private static ResourceLocation id(String name) { return ResourceLocation.parse("test:" + name); }
     private static TestType type(String name, boolean valid, String... requirements) {
         TestType type = new TestType(name, Arrays.stream(requirements).map(PartDefinitionContractTest::id).toList(), valid);
@@ -53,16 +85,30 @@ class PartDefinitionContractTest {
     private static AbstractPartType parse(String json) {
         return PartKinds.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json)).getOrThrow();
     }
+    private static String registryText(MMLanguageRegistry key) {
+        return key.content.get(MMLanguageRegistry.Locale.en_us);
+    }
 
     @Test void absentTypeAndExplicitRegularUseIdenticalLegacyDefaults() {
-        var implicit = assertInstanceOf(RegularPartType.class, parse("{\"variants\":{}}"));
-        var explicit = assertInstanceOf(RegularPartType.class, parse("{\"type\":\"regular\",\"variants\":{}}"));
+        var implicit = assertInstanceOf(RegularPartType.class, parse(REGULAR_JSON));
+        var explicit = assertInstanceOf(RegularPartType.class,
+                parse(REGULAR_JSON.replaceFirst("\\{", "{\"type\":\"regular\",")));
         assertEquals(0.8f, implicit.vehicleDurabilityRate);
         assertEquals(1f, implicit.vehicleDamageRate);
         assertEquals(0.1f, implicit.vehicleDamageRateDestroyed);
         assertEquals(0.3f, implicit.functionalThreshold);
         assertEquals(PartKinds.CODEC.encodeStart(JsonOps.INSTANCE, implicit).getOrThrow(),
                 PartKinds.CODEC.encodeStart(JsonOps.INSTANCE, explicit).getOrThrow());
+    }
+
+    @Test void shapeErrorsAreRejectedWhileDecoding() {
+        var emptyVariants = assertThrows(PackContentException.class, () -> parse("{\"variants\":{}}"));
+        assertEquals(registryText(MMLanguageRegistry.ERROR_PART_EMPTY_VARIANTS),
+                emptyVariants.getUserMessage().getString());
+        var badStackSize = assertThrows(PackContentException.class,
+                () -> parse(REGULAR_JSON.replaceFirst("\\{", "{\"max_stack_size\":100,")));
+        assertEquals(String.format(registryText(MMLanguageRegistry.ERROR_PART_INVALID_STACK_SIZE), 100),
+                badStackSize.getUserMessage().getString());
     }
 
     @Test void extensionRoundTripPreservesTypeAndDedicatedFields() {
