@@ -98,13 +98,14 @@ public class SubPartAttr {
     private Matrix4f modelToStartBone = null;
 
     public enum BlockCollisionType {
-        TRUE, FALSE, GROUND, GROUND_HARD;
+        TRUE, FALSE, GROUND;
 
         /**
-         * 是否走“只与脚下地面碰撞 + 局部高度场”的链路（{@link #GROUND} 与 {@link #GROUND_HARD}）。
+         * 是否走“只与脚下地面碰撞”的链路：这类部件的接触由局部高度场接管，
+         * 是否再对“侵入方块但没碰到平滑面”的接触做抬升改写由 {@code climb_assist} 决定。
          */
-        public boolean usesGroundHeightField() {
-            return this == GROUND || this == GROUND_HARD;
+        public boolean collidesWithTerrain() {
+            return this == GROUND;
         }
     }
 

@@ -53,7 +53,6 @@
           ],
           "block_collision": "ground",
           "collision_height": 2.5,
-          "climb_assist": true,
           "hit_boxes": {
             "MM_HullBottom": {
               "id": "part",

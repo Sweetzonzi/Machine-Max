@@ -44,19 +44,19 @@
     },
     "block_collision": {
       "type": "string",
-      "enum": ["true", "false", "ground", "ground_hard"],
+      "enum": ["true", "false", "ground"],
       "default": "true",
-      "description": "Terrain collision mode: true (default, collides with all blocks), ground (only collides with ground blocks below the part, following the smoothed height field), ground_hard (ground, but a contact on a step face is resolved as a vertical lift, so the part pops up onto the obstacle instead of sliding along the smoothed height field), false (does not collide with any blocks)"
+      "description": "Terrain collision mode: true (default, collides with all blocks), ground (only collides with ground blocks below the part, with contacts taken from an erosion-smoothed terrain surface - it pulls down and rounds off the edges of steps and kerbs, the contact point, normal and penetration all follow that surface with the fixed climb-lift penetration as the depth cap; wheel surfaces solve the contact from the wheel center and radius against that surface, other hit boxes just map their contact point onto it), false (does not collide with any blocks)"
     },
     "collision_height": {
       "type": "number",
       "default": -1.0,
-      "description": "Collision detection height (m), when encountering obstacles lower than this height, no collision occurs with the obstacle (block collision mode needs to be ground or ground_hard). Default -1.0 means all obstacles collide"
+      "description": "Collision detection height (m), when encountering obstacles lower than this height, no collision occurs with the obstacle (block collision mode needs to be ground). Default -1.0 means all obstacles collide"
     },
     "climb_assist": {
       "type": "boolean",
       "default": false,
-      "description": "Climbing assistance, whether to enable climbing assistance function"
+      "description": "Climb assistance: with block_collision set to ground, whether a contact that has penetrated a block but is not seen by the erosion-smoothed terrain surface should lift the part - a supporting face keeps its normal and penetration (capped by the climb-lift penetration), while a contact on a column's side face becomes a vertical-up normal with the same fixed penetration, so the part rises steadily along the face instead of being pushed back by it; when disabled such contacts are simply released and the part follows the erosion-smoothed surface entirely, starting to descend before a block edge instead of dropping a full block. Recommended for wheels and tracks that must climb one-block steps; vehicles that mostly run over low undulations and slopes may leave it off for a more continuous ride; not for chassis and hull lower edges that easily scrape the ground."
     },
     "collide_in_assembly": {
       "type": "boolean",

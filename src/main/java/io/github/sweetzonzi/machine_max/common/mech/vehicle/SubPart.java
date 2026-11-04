@@ -152,7 +152,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
-        } else if (attr.blockCollision.usesGroundHeightField()) {
+        } else if (attr.blockCollision.collidesWithTerrain()) {
             GROUND_COLLISION_ONLY = true;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
         } else {
@@ -424,7 +424,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (!level.isClientSide() && attr.blockCollision.usesGroundHeightField()) {
+        if (!level.isClientSide() && attr.blockCollision.collidesWithTerrain()) {
             // 获取刚体旋转，用于判断是否需要重新计算 getShapeMinY
             Quaternion currentRot = body.getPhysicsRotation(null);
             // 旋转变化时重新计算相对偏移量（相对偏移量仅受旋转影响，平动不影响）
@@ -440,8 +440,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             Vector3f pos = body.getPhysicsLocation(null);
             int blockX = (int) pos.x;
             int blockZ = (int) pos.z;
-            // 仅在中心方块发生变化时重建高度场 (定期重建以反映方块更新)
-            if (blockX != lastHFBlockX || blockZ != lastHFBlockZ || physicsTickCount % 100 == 0) {
+            // 仅在中心方块发生变化时重建高度场 (定期重建以反映方块更新)。ground 模式的接触
+            // 由这张高度场接管，climb_assist 再决定要不要对“侵入方块但没碰到平滑面”的接触抬零件。
+            if (attr.blockCollision.collidesWithTerrain()
+                    && (blockX != lastHFBlockX || blockZ != lastHFBlockZ || physicsTickCount % 100 == 0)) {
                 heightField.rebuild(getPhysicsLevel(), blockX, blockZ, bodyMinY);
                 lastHFBlockX = blockX;
                 lastHFBlockZ = blockZ;

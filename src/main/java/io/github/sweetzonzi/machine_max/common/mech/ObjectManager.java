@@ -498,6 +498,7 @@ public class ObjectManager {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
             physicsLevel.getWorld().getSolverInfo().setNumIterations(50);
+            physicsLevel.getWorld().getSolverInfo().setSplitImpulseThreshold(-0.05f);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -59.5f);//测试平面
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody(shape, 0);

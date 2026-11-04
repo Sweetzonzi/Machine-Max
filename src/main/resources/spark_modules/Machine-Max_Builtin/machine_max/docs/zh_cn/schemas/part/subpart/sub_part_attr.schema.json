@@ -44,19 +44,19 @@
     },
     "block_collision": {
       "type": "string",
-      "enum": ["true", "false", "ground", "ground_hard"],
+      "enum": ["true", "false", "ground"],
       "default": "true",
-      "description": "地形碰撞模式：true（默认，与所有方块碰撞），ground（仅与部件之下的地面方块碰撞，接触跟随平滑高度场），ground_hard（在 ground 基础上把台阶立面的侧面侵入按竖直法线抬升到障碍上，而不是沿平滑高度场滑过去），false（不与任何方块碰撞）"
+      "description": "地形碰撞模式：true（默认，与所有方块碰撞），ground（仅与部件之下的地面方块碰撞，接触面取一块侵蚀平滑后的地形——它把台阶、路肩的棱角压低压平，接触点、法线与侵入深度都按这张面算，深度以固定的抬升垫为上限；轮面按轮心与轮半径与这张面求接触，其余碰撞箱只把接触点映射上去），false（不与任何方块碰撞）"
     },
     "collision_height": {
       "type": "number",
       "default": -1.0,
-      "description": "碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞（方块碰撞模式需要为 ground 或 ground_hard）。默认-1.0表示所有障碍均碰撞"
+      "description": "碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞（方块碰撞模式需要为 ground）。默认-1.0表示所有障碍均碰撞"
     },
     "climb_assist": {
       "type": "boolean",
       "default": false,
-      "description": "攀爬辅助，是否启用攀爬辅助功能"
+      "description": "攀爬辅助：block_collision 为 ground 时，部件插进了方块、但侵蚀平滑后的地形面判定没碰到它，是否把部件抬上去——承载面保留原法线与侵入深度（以抬升垫封顶），立柱侧面改为竖直向上并给同一个固定的侵入深度，部件沿立面匀速升起、不被立面横向顶回；关闭时这类接触直接放行，零件完全跟着侵蚀平滑后的地形走，下坡在方块边沿之前就开始下降、不会整格掉落。要爬上 1 格台阶的轮胎、履带建议开启；以低矮起伏和坡道为主的车可以关闭，行驶更连续；底盘、车壳下缘等容易与地面刮擦的结构建议关闭。"
     },
     "collide_in_assembly": {
       "type": "boolean",
