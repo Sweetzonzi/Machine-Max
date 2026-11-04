@@ -82,7 +82,7 @@
             "description": "一个推进段（恒推力，沿速度矢量施加）。"
           },
           "default": [],
-          "description": "推进段表 — 多段推力。整块可省略或写空数组，均表示无推力。当前实现只施加首段，第二段起不生效。"
+          "description": "推进段表 — 多段推力。整块可省略或写空数组，均表示无推力。每一段都按各自的窗口 [start, start + duration) 施加，段与段之间是空隙（无推力滑行）。"
         }
       },
       "required": ["mass", "base_velocity"],

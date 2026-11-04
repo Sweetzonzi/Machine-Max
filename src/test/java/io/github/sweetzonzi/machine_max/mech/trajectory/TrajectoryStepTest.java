@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 /**
  * {@link TrajectoryStep} 与 BallisticsFramework 正解的一致性回归。
  * <p>
@@ -120,9 +122,9 @@ class TrajectoryStepTest {
     /**
      * 9M133 一类带助推的弹：阻力加速度近百 m/s²，推力 1428 m/s²（20000 N / 14 kg）。
      * <p>
-     * 燃烧窗口取 {@code [0.055, 0.156)}——两端的 0.005 s 与 0.004 s 余量都远大于 float
-     * 累积误差（~10⁻⁷ s），因此“第几步开始/停止施加推力”在两边必然一致；
-     * 若窗口判定写成右闭、或按步后时间判定，偏差会直接体现为米级差异。
+     * 燃烧窗口取 {@code [0.055, 0.156)}（{@code of} 的第三参是时长 {@code 0.101 s}）——两端的
+     * 0.005 s 与 0.004 s 余量都远大于 float 累积误差（~10⁻⁷ s），因此“第几步开始/停止施加推力”
+     * 在两边必然一致；若窗口判定写成右闭、或按步后时间判定，偏差会直接体现为米级差异。
      */
     @Test
     @DisplayName("带推力：20 步等于 solveThrustReducedSI，且燃烧窗口的步位一致")
@@ -130,7 +132,7 @@ class TrajectoryStepTest {
         float dt = 0.01f;
         int steps = 20;
 
-        ThrustProfile thrust = new ThrustProfile(20000f, 0.055f, 0.156f);
+        ThrustProfile thrust = ThrustProfile.of(20000f, 0.055f, 0.101f);
         Case c = new Case("9M133", 14.0f, 152f, 0.40f, 1.0f, 600f, thrust);
         BallisticConfig config = c.config(dt, steps);
 
@@ -163,9 +165,45 @@ class TrajectoryStepTest {
 
         float[] withoutThrust = walk(start, velocity, null, config, steps, dt);
         float[] lateWindow = walk(start, velocity,
-                new ThrustProfile(20000f, steps * dt, steps * dt + 0.5f), config, steps, dt);
+                ThrustProfile.of(20000f, steps * dt, 0.5f), config, steps, dt);
 
         Assertions.assertArrayEquals(withoutThrust, lateWindow, "窗口起点在视界末步之后不应施加推力");
+    }
+
+    /**
+     * 双段 + 空隙：两段都施加，空隙内的步与无推力逐位相同。
+     * <p>
+     * 段表接线后 MM 侧最容易漏的两种情形是“只施加首段”与“空隙里继续施加推力”：
+     * 前者少一段速度增量、后者多一段，都落在 {@link #matchesThrustReduced} 的容差之外，
+     * 所以这里既做逐步比对，也对空隙步做逐位比对。
+     */
+    @Test
+    @DisplayName("双段 + 空隙：两段都生效，空隙步与无推力逐位相同")
+    void segmentedThrustAppliesBothWindowsAndCoastsThroughGap() {
+        float dt = 0.01f;
+        int steps = 20;
+
+        ThrustProfile thrust = new ThrustProfile(List.of(
+                new ThrustProfile.Segment(20000f, 0f, 0.05f, 0f),
+                new ThrustProfile.Segment(20000f, 0.10f, 0.05f, 0f)));
+        Case c = new Case("双段", 14.0f, 152f, 0.40f, 1.0f, 600f, thrust);
+        BallisticConfig config = c.config(dt, steps);
+
+        Vec3 start = new Vec3(0.0, 80.0, 0.0);
+        Vec3 velocity = new Vec3(c.speed(), 0.0, 0.0);
+
+        TrajectoryResult reference = RealisticTrajectory.forwardSolve(start, velocity, config, DENSITY, thrust);
+        assertTracking(c.name(), start, velocity, thrust, config, reference, steps,
+                TOLERANCE_THRUST_POS, TOLERANCE_THRUST_VEL);
+
+        // 空隙内的步（步初 0.06 s）：从同一状态出发，带剖面与 NONE 必须逐位相同
+        float[] withProfile = new float[TrajectoryStep.OUT_LENGTH];
+        float[] withoutProfile = new float[TrajectoryStep.OUT_LENGTH];
+        TrajectoryStep.step(0f, 80f, 0f, 600f, 0f, 0f, 0.06f,
+                config, thrust, DENSITY, 0f, 0f, 0f, dt, withProfile);
+        TrajectoryStep.step(0f, 80f, 0f, 600f, 0f, 0f, 0.06f,
+                config, ThrustProfile.NONE, DENSITY, 0f, 0f, 0f, dt, withoutProfile);
+        Assertions.assertArrayEquals(withoutProfile, withProfile, "空隙内的步不得施加推力");
     }
 
     /**

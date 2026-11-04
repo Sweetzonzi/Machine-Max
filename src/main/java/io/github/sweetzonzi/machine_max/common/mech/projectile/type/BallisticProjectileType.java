@@ -170,22 +170,17 @@ public class BallisticProjectileType extends ProjectileType {
     }
 
     /**
-     * 注册键落地时自检推进段表：多于一段即告警。
+     * 注册键落地时把段表折算成推力剖面。
      * <p>
-     * 段表已按多段形态解码，但积分侧只施加首段，多余段静默失效会让内容作者误以为第二段
-     * 已生效。告警放在这里而非构造函数，是因为段表在构造期解码、注册键在构造之后才赋值，
-     * 只有到这一刻才能把告警指到具体弹种。
-     * TODO(推力分段)：段表接线后删除本方法与 {@link MachineMax#LOGGER} 的引用。
+     * 首次使用时才惰性折算也能跑，但<b>段窗口重叠</b>属于内容包错误，应当在加载期就点名弹种，
+     * 而不是等到第一次开火。折算失败时 {@link #buildThrustProfile} 记一条 error 并退化为
+     * {@link ThrustProfile#NONE}，注册本身不受影响。
      */
     @Override
     public void setRegistryKey(ResourceLocation registryKey) {
         super.setRegistryKey(registryKey);
-        List<ExternalProperties.ThrustSegment> segments = external.thrust();
-        if (segments.size() > 1) {
-            MachineMax.LOGGER.warn(
-                    "弹种 {} 的 external.thrust 配置了 {} 段，当前实现只施加首段，其余段不生效；"
-                            + "多段积分见 docs/plan/进行中/武器系统-推力分段与变质量计划.md",
-                    registryKey, segments.size());
+        if (thrustProfile == null) {
+            thrustProfile = buildThrustProfile(registryKey);
         }
     }
 
@@ -221,22 +216,19 @@ public class BallisticProjectileType extends ProjectileType {
     /**
      * 推进段表（缺省空表，即无推力）。
      * <p>
-     * 段表是多段推进的数据形态；当前积分侧只施加<b>首段</b>，其余段在注册期告警后忽略。
-     * TODO(推力分段)：段表接线后改为整表消费，见
-     * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §5.3。
+     * 作者侧形态：每段自带 {@code start} 与 {@code duration}，段间允许空隙。积分侧消费的是
+     * {@link #getThrustProfile()} 折算出来的剖面，两者逐段一一对应。
      */
     public List<ExternalProperties.ThrustSegment> getThrustSegments() { return external.thrust(); }
 
     /**
-     * 是否配置了<b>当前实现会实际施加</b>的推力。
+     * 是否配置了会被实际施加的推力。
      * <p>
-     * 判据是「段表非空且首段有效」，与 {@link #getThrustProfile()} 的取值口径一致——
-     * 只按「表非空」判定会让首段无效、次段有效的配置出现「有推力」却积分不到的情形。
-     * TODO(推力分段)：段表接线后改为「表中存在任一有效段」。
+     * 判据取折算后的剖面，与 {@link #getThrustProfile()} 同源。只按「段表非空」判定会让
+     * 全段无效（{@code force}/{@code duration} 非正）的配置出现「有推力」却积分不到的情形。
      */
     public boolean hasThrust() {
-        List<ExternalProperties.ThrustSegment> segments = external.thrust();
-        return !segments.isEmpty() && segments.get(0).isActive();
+        return getThrustProfile().isActive();
     }
 
     /**
@@ -271,27 +263,41 @@ public class BallisticProjectileType extends ProjectileType {
     /**
      * 此弹种的推力剖面，时间窗用公制秒表达、自发射瞬间起算。
      * <p>
-     * 段表<b>首段</b>按 {@code (force, start, start + duration)} 折算为弹道库的单窗口
-     * {@link ThrustProfile}；无段或首段无效时返回 {@link ThrustProfile#NONE}。
+     * 段表逐项折算为 {@link ThrustProfile.Segment}（力、点火延迟、时长、段质量），整表一次构造，
+     * 因此多段点火与段间空隙都由剖面本身表达；无段时返回 {@link ThrustProfile#NONE}。
      * <p>
-     * <b>TODO(推力分段)：只取首段是过渡态。</b>弹道库的 {@link ThrustProfile} 仍是一次点火、
-     * 恒力、恒质量的单窗口形态，尚不接受段表，因此这里丢弃第二段起的全部配置（注册期
-     * {@link #setRegistryKey} 会对这种配置告警）。目标形态是整表折算，含段间空隙与燃烧期
-     * 变质量，见 {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §4—§5。
+     * 段质量一律为 0：内容包侧还没有 {@code propellant_mass} 字段（
+     * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §0.2 的 T3），燃烧期质量恒定，
+     * 因此 {@code massAt} 逐位返回 {@link BallisticConfig#mass()}。
      *
      * @return 本弹种的推力剖面（同一实例）
      */
     public ThrustProfile getThrustProfile() {
         ThrustProfile profile = thrustProfile;
         if (profile == null) {
-            List<ExternalProperties.ThrustSegment> segments = external.thrust();
-            ExternalProperties.ThrustSegment first = segments.isEmpty() ? null : segments.get(0);
-            profile = (first != null && first.isActive())
-                    ? new ThrustProfile(first.force(), first.start(), first.end())
-                    : ThrustProfile.NONE;
+            profile = buildThrustProfile(null);
             thrustProfile = profile;
         }
         return profile;
+    }
+
+    /**
+     * 把内容包段表折算成弹道库的剖面，并把折算失败收成一条日志。
+     * <p>
+     * 映射本身是 {@link ExternalProperties#toThrustProfile()} 的一行委托；这里只负责把
+     * {@link IllegalArgumentException}（段窗口重叠）转成点名弹种的 error 并退化为无推力——
+     * 它属于内容包错误，不该让服务端在开火瞬间抛异常。
+     *
+     * @param id 告警用的注册键，可为 {@code null}（注册前调用）
+     */
+    private ThrustProfile buildThrustProfile(@Nullable ResourceLocation id) {
+        try {
+            return external.toThrustProfile();
+        } catch (IllegalArgumentException e) {
+            MachineMax.LOGGER.error("弹种 {} 的 external.thrust 段窗口重叠，已按无推力处理：{}",
+                    id == null ? "(未注册)" : id, e.getMessage());
+            return ThrustProfile.NONE;
+        }
     }
 
     /**
@@ -594,9 +600,9 @@ public class BallisticProjectileType extends ProjectileType {
         /**
          * 推进段表，缺省空表（无推力，纯弹道）。
          * <p>
-         * 形态即多段：数组元素各自带点火时刻与时长，段间允许空隙（空隙即无推力滑行）。
-         * <b>但积分侧当前只施加首段</b>——段表是先行落地的数据契约，用于避免内容包
-         * 作者日后的形态迁移；多段积分与燃烧期变质量尚未接线。详见 {@link ThrustSegment}。
+         * 多段：数组元素各自带点火时刻与时长，段间允许空隙（空隙即无推力滑行）。整表经
+         * {@link #toThrustProfile()} 折算成弹道库的剖面后<b>全部生效</b>——不存在"只施加首段"
+         * 这种截断。字段语义见 {@link ThrustSegment}。
          */
         List<ThrustSegment> thrust
     ) {
@@ -612,21 +618,46 @@ public class BallisticProjectileType extends ProjectileType {
         ).apply(instance, ExternalProperties::new));
 
         /**
+         * 把段表折算成弹道库的推力剖面。
+         * <p>
+         * 这里只做字段映射与逐段搬运：排序、丢弃无效段、拒绝重叠都由
+         * {@link ThrustProfile} 的构造器完成，MM 侧不重复这些判据。段质量一律为 0——内容包
+         * 还没有 {@code propellant_mass} 字段（{@code docs/plan/进行中/武器系统-推力分段与变质量计划.md}
+         * §0.2 的 T3），燃烧期质量恒定。
+         *
+         * @return 弹道库的推力剖面；段表为空时是 {@link ThrustProfile#NONE}
+         * @throws IllegalArgumentException 段窗口重叠时由 {@link ThrustProfile} 的构造器抛出
+         */
+        public ThrustProfile toThrustProfile() {
+            if (thrust.isEmpty()) {
+                return ThrustProfile.NONE;
+            }
+            List<ThrustProfile.Segment> table = new ArrayList<>(thrust.size());
+            for (ThrustSegment segment : thrust) {
+                table.add(new ThrustProfile.Segment(
+                        segment.force(), segment.start(), segment.duration(), 0f));
+            }
+            return new ThrustProfile(table);
+        }
+
+        /**
          * 推进段 — 单段恒推力，沿<b>速度矢量</b>施加（无姿态质点弹的合理近似：弹轴 ≈ 速度）。
          * <p>
-         * 只增速率、不改方向，与制导/阻力/重力共用同一套半隐式 Euler 积分。
-         * 推力段内加速度为 {@code F / m}，燃烧窗口为 {@code [start, start + duration)}。
+         * 只增速率、不改方向，与制导/阻力/重力共用同一套半隐式 Euler 积分。段内加速度为
+         * {@code force / m(t)}，燃烧窗口为 {@code [start, start + duration)}；多段之间允许空隙，
+         * 空隙内无推力。
          * <p>
          * <b>只接受数组形态。</b>{@code external.thrust} 的旧写法（单对象）不再兼容，会在
          * 解码期以「期望列表」失败——有意如此，错误要响亮而非静默降级。
          * <p>
          * <b>两端一致：</b>服务端 {@code updateProjectiles} 与客户端 {@code clientExtrapolate}
-         * 均按同一窗口施加推力，保证客户端外推轨迹与服务端一致。
+         * 均按同一条剖面施加推力，保证客户端外推轨迹与服务端一致。
          * <p>
-         * <b>本段的落地边界（TODO(推力分段)）：</b>数组可容纳多段，但当前只有首段进入积分；
-         * 第二段起被忽略并在注册期告警。字段集中不含 {@code propellant_mass}——燃烧期
-         * 质量流失尚未实现，加字段留到积分侧能消费它的时候。完整目标见
-         * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §三。
+         * <b>字段集中不含 {@code propellant_mass}</b>：燃烧期质量流失的库侧能力已具备
+         * （{@code ThrustProfile.Segment#massKg}），内容包字段与解码属兼容新增，见
+         * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §0.2 的 T3。
+         * 段的有效性与窗口终点不在这里判定：{@code force} 或 {@code duration} 非正的段由
+         * {@link ThrustProfile} 的构造器丢弃，窗口终点是 {@code start + duration}。
          *
          * @param force    推力（N）
          * @param start    点火时刻（s），自发射瞬间起算；0 = 出膛即点火
@@ -642,16 +673,6 @@ public class BallisticProjectileType extends ProjectileType {
                 Codec.FLOAT.optionalFieldOf("start", 0f).forGetter(ThrustSegment::start),
                 Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustSegment::duration)
             ).apply(instance, ThrustSegment::new));
-
-            /** 本段是否会实际施加推力（推力与燃时均 &gt; 0） */
-            public boolean isActive() {
-                return force > 0f && duration > 0f;
-            }
-
-            /** 熄火时刻（s，从发射瞬间起算） */
-            public float end() {
-                return start + duration;
-            }
         }
     }
 

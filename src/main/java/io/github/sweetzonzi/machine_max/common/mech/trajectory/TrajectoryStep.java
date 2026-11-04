@@ -12,7 +12,10 @@ import net.minecraft.world.phys.Vec3;
  * <ul>
  *   <li><b>二次阻力</b> {@code a = -½·ρ·Cd·A·|v|²/m · v̂}，密度按步初位置查询；</li>
  *   <li><b>重力</b> 沿 {@code -Y}，大小为 {@link BallisticConfig#gravity()}；</li>
- *   <li><b>推力</b> 沿 {@code v̂}，大小 {@code force/mass}，只在燃烧窗口内施加；</li>
+ *   <li><b>质量</b> 取 {@code ThrustProfile#massAt(burnTime, m₀)}：燃烧期推进剂烧掉时质量下降，
+ *       阻力与推力加速度因此同源同分母；无装药时它逐位返回 {@code m₀}；</li>
+ *   <li><b>推力</b> 沿 {@code v̂}，大小 {@code forceAt(burnTime)/massAt(...)}，
+ *       只在某段窗口 {@code [start, start + duration)} 内施加，段间空隙无推力；</li>
  *   <li><b>指令加速度</b> 由调用方给出（制导律输出），预载传 0。</li>
  * </ul>
  * 速度为半隐式更新（先算新速度），位置用<b>新</b>速度推进。
@@ -84,11 +87,11 @@ public final class TrajectoryStep {
             dragAccZ = dragAcc * (-vz * invSpeed);
         }
 
-        // ——— 推力：沿 v̂、大小 force/mass；窗口左闭右开，只增速率、不改方向 ———
+        // ——— 推力：沿 v̂、大小 forceAt(burnTime)/massAt(burnTime, m₀)；段外与空隙为 0 ———
         float thrustAccX = 0f, thrustAccY = 0f, thrustAccZ = 0f;
-        if (thrust.isActive() && speed > 1e-6f
-                && burnTime >= thrust.startSeconds() && burnTime < thrust.endSeconds()) {
-            float thrustAcc = thrust.force() / cfg.mass();
+        float forceN = thrust.forceAt(burnTime);
+        if (forceN > 0f && speed > 1e-6f) {
+            float thrustAcc = forceN / thrust.massAt(burnTime, cfg.mass());
             float invSpeed = 1f / speed;
             thrustAccX = thrustAcc * vx * invSpeed;
             thrustAccY = thrustAcc * vy * invSpeed;

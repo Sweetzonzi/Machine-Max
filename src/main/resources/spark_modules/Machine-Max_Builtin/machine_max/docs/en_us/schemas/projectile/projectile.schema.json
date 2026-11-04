@@ -82,7 +82,7 @@
             "description": "One thrust segment (constant thrust applied along the velocity vector)."
           },
           "default": [],
-          "description": "Thrust segment table — multi-stage thrust. The whole block may be omitted, or given as an empty array, meaning no thrust. Only the first segment is applied by the current implementation; later segments have no effect."
+          "description": "Thrust segment table — multi-stage thrust. The whole block may be omitted, or given as an empty array, meaning no thrust. Every segment is applied inside its own [start, start + duration) window; the gaps between segments coast without thrust."
         }
       },
       "required": ["mass", "base_velocity"],
