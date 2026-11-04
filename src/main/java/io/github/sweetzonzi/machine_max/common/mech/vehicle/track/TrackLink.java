@@ -132,7 +132,7 @@ public class TrackLink {
         }
         for (SubPart member : link.members) member.trackLink = link;
         link.rebuildTensionPairs();
-        link.refreshEnvelope();
+        link.refreshEnvelope(data.linkCount());
         if (data.durability() == TrackLinkData.FULL_DURABILITY) {
             link.durability = link.maxDurability;
         } else {
@@ -462,26 +462,35 @@ public class TrackLink {
      *
      * <p>只在创建 / 载入 / 成员变化时调用。运行中的悬挂行程会改变包络长度，
      * 但 N 必须固定，否则节分布会周期性重排；长度变化由节间距吸收。</p>
+     *
+     * @param persistedCount 持久化节数（{@link TrackLinkData#linkCount()}）。大于 0 时直接采用：
+     *                       按本端位姿重算会在载具刚放出 / 刚载入、轮子位姿尚未就绪时，
+     *                       把 N 锁在退化包络（同心圆 → 单轮周长的凸包）上。
+     *                       {@link TrackLinkData#UNKNOWN_LINK_COUNT} 表示旧数据，按当前包络推导一次。
      */
-    private void refreshEnvelope() {
+    private void refreshEnvelope(int persistedCount) {
         if (members.isEmpty()) {
             linkCount = 1;
             maxDurability = attr().maxDurability(1);
             durability = Math.min(durability, maxDurability);
             return;
         }
-        TrackEnvelope2D.Result result = envelope(1f);
-        if (result != null) {
-            linkCount = result.path().linkCount(attr().lengthPerLink());
-            if (result.fallback()) {
-                MachineMax.LOGGER.debug("履带 {} 的轮组布局需要凸包回退", label());
-            }
+        if (persistedCount > 0) {
+            linkCount = persistedCount;
         } else {
-            // 成员缺轮半径 / 位姿尚未就绪：按成员数估一个保守节数，保证耐久上限可用
-            linkCount = Math.max(1, members.size() * 8);
+            TrackEnvelope2D.Result result = envelope(1f);
+            linkCount = result != null
+                    ? result.path().linkCount(attr().lengthPerLink())
+                    // 成员缺轮半径 / 位姿尚未就绪：按成员数估一个保守节数，保证耐久上限可用
+                    : Math.max(1, members.size() * 8);
         }
         maxDurability = attr().maxDurability(linkCount);
         durability = Math.min(durability, maxDurability);
+    }
+
+    /** 按当前几何重新推导节数：成员变化后带路长度变了，不能沿用旧值。 */
+    private void refreshEnvelope() {
+        refreshEnvelope(TrackLinkData.UNKNOWN_LINK_COUNT);
     }
 
     public void damage(float amount) {
@@ -605,7 +614,7 @@ public class TrackLink {
         List<TrackMemberRef> refs = new ArrayList<>(members.size());
         for (SubPart member : members) refs.add(TrackMemberRef.of(member));
         return new TrackLinkData(sp == null ? refs.getFirst() : TrackMemberRef.of(sp),
-                refs, durability, broken, clockwise, typeId);
+                refs, durability, broken, clockwise, typeId, linkCount);
     }
 
     /** 主线程：按创建时确定的铺设绕向求当前包络。 */
@@ -776,7 +785,14 @@ public class TrackLink {
         return maxDurability > 0f ? Math.clamp(durability / maxDurability, 0f, 1f) : 1f;
     }
 
-    /** 由包络周长推导出的履带节数；创建 / 成员变化时固定。 */
+    /**
+     * 整条履带的节数 N。
+     *
+     * <p>由服务端在创建 / 成员变化时按包络周长推导一次，随后作为权威值随
+     * {@link TrackLinkData#linkCount()} 持久化与同步；客户端直接采用，不按自身帧的位姿重算。
+     * 最大耐久与客户端渲染共用这一个值。存档 / 蓝图 / 模板里带 {@code link_count} 时直接采用该值，
+     * 因此同一型号套在不同轮系上可以各自记下自己的节数。</p>
+     */
     public int linkCount() {
         return linkCount;
     }

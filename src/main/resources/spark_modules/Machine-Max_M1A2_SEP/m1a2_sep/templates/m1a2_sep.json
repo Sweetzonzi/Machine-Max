@@ -1273,7 +1273,8 @@
       "durability": -1,
       "broken": false,
       "clockwise": false,
-      "track_type": "m1a2_sep:m1a2_track"
+      "track_type": "m1a2_sep:m1a2_track",
+      "link_count": 80
     },
     {
       "sprocket": {
@@ -1321,7 +1322,8 @@
       "durability": -1,
       "broken": false,
       "clockwise": false,
-      "track_type": "m1a2_sep:m1a2_track"
+      "track_type": "m1a2_sep:m1a2_track",
+      "link_count": 80
     }
   ],
   "meta": {

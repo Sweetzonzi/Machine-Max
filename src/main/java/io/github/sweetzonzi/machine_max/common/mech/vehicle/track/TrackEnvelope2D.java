@@ -11,6 +11,8 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 把一条履带的 {@link TrackLink#members()} 换算成主动轮局部系里的 2D 圆组，再交给
@@ -28,13 +30,26 @@ import java.util.List;
  * 首位（保持绕行方向不变），再按“主动轮 → 下行程 → 上行程”的锚定顺序构建。</p>
  *
  * <p>轮组实际重叠或相邻轮心重合时，回退到圆盘凸包
- * （{@link Result#fallback()} 为 true），并记录告警。其它几何失败返回 null，
- * 不做静默凸包回退，避免把抬轮凹口抹平。</p>
+ * （{@link Result#fallback()} 为 true，原因见 {@link Result#fallbackReason()}）。
+ * 凸包抹掉抬轮凹口，但比整条履带消失更接近可见结果。其它几何失败返回 null，
+ * 不做静默凸包回退。</p>
  *
- * <p>线程：主线程（服务端耐久推导、客户端渲染），不读写物理线程状态。</p>
+ * <p>本类在渲染线程逐帧被调用（剔除盒与履带绘制），因此<b>凸包回退不在这里记日志</b>：
+ * 回退原因随 {@link Result} 返回，由调用方按“进入回退”记一条。真正异常的尺寸 /
+ * 构建失败会告警，但按原因限速 10 秒一次，避免持续异常时刷屏。</p>
+ *
+ * <p>线程：主线程（服务端耐久推导、客户端 tick）与渲染线程（剔除、绘制），只读成员位姿快照。</p>
  */
 public final class TrackEnvelope2D {
     private static final float MIN_RADIUS = 1e-4f;
+    /** 几何告警的最小间隔（毫秒）：同一原因在窗口内只输出一条。 */
+    private static final long WARN_INTERVAL_MS = 10_000L;
+    /** 已经告警过的原因 → 上次输出时刻。键是固定的调用站点，条目数有界。 */
+    private static final Map<String, Long> LAST_WARN_MS = new ConcurrentHashMap<>();
+
+    private static final String WARN_INVALID_SIZE = "invalid-size";
+    private static final String WARN_BUILD_FAILED = "build-failed";
+    private static final String WARN_FALLBACK_FAILED = "fallback-failed";
 
     private TrackEnvelope2D() {
     }
@@ -42,11 +57,16 @@ public final class TrackEnvelope2D {
     /**
      * @param path           有序接触路径，或重叠轮组的凸包回退
      * @param sprocketWorld  主动轮刚体的世界位姿（局部系 → 世界）
-     * @param fallback       是否使用凸包回退
+     * @param fallbackReason 凸包回退原因；没走回退时为 null
      */
-    public record Result(BeltPath2D path, Matrix4f sprocketWorld, boolean fallback) {
+    public record Result(BeltPath2D path, Matrix4f sprocketWorld, @Nullable String fallbackReason) {
         public Result {
             sprocketWorld = new Matrix4f(sprocketWorld);
+        }
+
+        /** 是否使用圆盘凸包回退：回退保留不了抬轮凹口。 */
+        public boolean fallback() {
+            return fallbackReason != null;
         }
     }
 
@@ -92,7 +112,7 @@ public final class TrackEnvelope2D {
         try {
             return buildPoses(poses, radii, linkThickness, clockwise);
         } catch (IllegalArgumentException invalidInput) {
-            MachineMax.LOGGER.warn("履带包络尺寸不可用：{}；碰撞半径={}，履带厚度={}",
+            warnRateLimited(WARN_INVALID_SIZE, "履带包络尺寸不可用：{}；碰撞半径={}，履带厚度={}",
                     invalidInput.getMessage(), radii, linkThickness);
             return null;
         }
@@ -127,18 +147,18 @@ public final class TrackEnvelope2D {
             circles.add(new Circle2D(center.y, center.z, radius));
         }
         try {
-            return new Result(BeltPath2D.build(circles, 1e-9, clockwise), sprocketWorld, false);
+            return new Result(BeltPath2D.build(circles, 1e-9, clockwise), sprocketWorld, null);
         } catch (BeltPath2D.DegenerateLayoutException degenerate) {
             return fallback(circles, sprocketWorld, clockwise, "履带包络退化，回退凸包: "
                     + degenerate.getMessage());
         } catch (IllegalArgumentException | IllegalStateException orderedFailure) {
             if (BeltPath2D.hasOverlappingWheels(circles)) {
                 // 悬挂压缩导致轮子互相嵌入时，有序点接触模型可能无解。回退凸包
-                // 会丢掉抬轮凹口，但比整条履带消失更接近可见结果；日志保留原因。
+                // 会丢掉抬轮凹口，但比整条履带消失更接近可见结果。
                 return fallback(circles, sprocketWorld, clockwise, "履带轮组重叠，包络回退凸包: "
                         + orderedFailure.getMessage());
             }
-            MachineMax.LOGGER.warn("履带包络构建失败，跳过该履带：{}；成员圆={}",
+            warnRateLimited(WARN_BUILD_FAILED, "履带包络构建失败，跳过该履带：{}；成员圆={}",
                     orderedFailure.getMessage(), circles);
             return null;
         }
@@ -172,12 +192,24 @@ public final class TrackEnvelope2D {
     @Nullable
     private static Result fallback(List<Circle2D> circles, Matrix4f sprocketWorld, boolean clockwise, String reason) {
         try {
-            MachineMax.LOGGER.warn("{}；成员圆={}", reason, circles);
-            return new Result(BeltPath2D.convexFallback(circles, clockwise), sprocketWorld, true);
+            return new Result(BeltPath2D.convexFallback(circles, clockwise), sprocketWorld, reason);
         } catch (IllegalArgumentException | IllegalStateException fallbackFailure) {
-            MachineMax.LOGGER.warn("履带包络凸包回退失败：{}；成员圆={}",
+            warnRateLimited(WARN_FALLBACK_FAILED, "履带包络凸包回退失败：{}；成员圆={}",
                     fallbackFailure.getMessage(), circles);
             return null;
         }
+    }
+
+    /**
+     * 按调用站点限速告警：几何在渲染线程逐帧求值，持续异常时逐帧记录会刷屏。
+     *
+     * @param key 固定调用站点标识；同一 key 在 {@link #WARN_INTERVAL_MS} 内只输出一条
+     */
+    private static void warnRateLimited(String key, String message, Object... args) {
+        long now = System.currentTimeMillis();
+        Long last = LAST_WARN_MS.get(key);
+        if (last != null && now - last < WARN_INTERVAL_MS) return;
+        LAST_WARN_MS.put(key, now);
+        MachineMax.LOGGER.warn(message, args);
     }
 }

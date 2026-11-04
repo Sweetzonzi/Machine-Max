@@ -1142,7 +1142,8 @@
       "durability": -1,
       "broken": false,
       "clockwise": false,
-      "track_type": "t90a:t90a_track"
+      "track_type": "t90a:t90a_track",
+      "link_count": 97
     },
     {
       "sprocket": {
@@ -1186,7 +1187,8 @@
       "durability": -1,
       "broken": false,
       "clockwise": false,
-      "track_type": "t90a:t90a_track"
+      "track_type": "t90a:t90a_track",
+      "link_count": 97
     }
   ],
   "meta": {

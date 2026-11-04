@@ -311,6 +311,7 @@
     {
       "clockwise": false,
       "track_type": "machine_max:2s38_track",
+      "link_count": 88,
       "sprocket": {
         "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
         "sub_part": "sub_part.machine_max.left_wheel_8"
@@ -353,6 +354,7 @@
     {
       "clockwise": false,
       "track_type": "machine_max:2s38_track",
+      "link_count": 88,
       "sprocket": {
         "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
         "sub_part": "sub_part.machine_max.right_wheel_8"

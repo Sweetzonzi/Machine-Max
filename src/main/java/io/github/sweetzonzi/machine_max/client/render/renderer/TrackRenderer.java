@@ -40,7 +40,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 履带节渲染：主动轮包裹段锁定角节距，其余路径吸收包络长度变化。
  *
  * <p>几何全部是客户端本地计算：每个渲染帧用 {@code partialTick} 的轮位姿重建
- * {@link TrackEnvelope2D}；{@link TrackBeltLayout} 按连续节序映射位置。
+ * {@link TrackEnvelope2D}；{@link TrackBeltLayout} 按连续节序映射位置。</p>
+ *
+ * <p><b>节数与节距</b>：N 取 {@link TrackLink#linkCount()}（服务端推导后持久化的权威值），
+ * 节距取型号的 {@link TrackAttr#lengthPerLink()}。渲染状态只保存相位；两者都来自载具 / 型号
+ * 数据，不随本端某一帧的包络变化（载具刚放出时成员位姿可能还没就绪，据此推导会把 N 锁在退化包络上）。
  * {@link #tick()}（20tps）按实际轮位姿展开角度，{@link TrackBeltPhase} 在渲染时对齐当帧位姿。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
  *
@@ -105,11 +109,13 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     private static final class State {
-        private volatile int linkCount;
-        private volatile double pitch;
+        /** 最近一次成功的角度快照；渲染线程只读。 */
         private volatile TrackBeltPhase phase;
         private long sampleTick;
+        /** 「主动轮无有效啮合段」已记录过，恢复后清零。 */
         private boolean warned;
+        /** 凸包回退已记录过；同一安装拓扑只记一条。 */
+        private boolean fallbackLogged;
     }
 
     /**
@@ -138,14 +144,10 @@ public class TrackRenderer extends VisualEffectRenderer {
                 if (envelope == null) {
                     continue;
                 }
-                int linkCount = envelope.path().linkCount(link.attr().lengthPerLink());
-                if (state.linkCount == 0) {
-                    state.linkCount = linkCount;
-                    state.pitch = envelope.path().length() / linkCount;
-                }
+                noteFallback(state, link, envelope);
                 var contact = envelope.path().wheelContact(0);
                 if (contact == null || !new TrackBeltLayout(envelope.path(), contact,
-                        state.linkCount, state.pitch, 0).isValid()) {
+                        link.linkCount(), link.attr().lengthPerLink(), 0).isValid()) {
                     if (!state.warned) MachineMax.LOGGER.warn("履带主动轮无有效啮合段，暂缓绘制：{}", link.typeId());
                     state.warned = true;
                     continue;
@@ -170,6 +172,19 @@ public class TrackRenderer extends VisualEffectRenderer {
 
     @Override
     public void physTick(@NotNull PhysicsLevel physicsLevel) {
+    }
+
+    /**
+     * 凸包回退每个安装拓扑只记一条：轮组重叠在悬挂压缩下是正常状态，逐帧记录会刷屏，
+     * 而悬挂在阈值附近抖动时“进入 / 离开回退”也会反复触发。
+     *
+     * <p>回退原因由 {@link TrackEnvelope2D.Result#fallbackReason()} 给出。</p>
+     */
+    private static void noteFallback(State state, TrackLink link, TrackEnvelope2D.Result envelope) {
+        if (!envelope.fallback() || state.fallbackLogged) return;
+        state.fallbackLogged = true;
+        MachineMax.LOGGER.warn("{}；履带 {} 的成员数={}（同一安装拓扑只记录一次）",
+                envelope.fallbackReason(), link.typeId(), link.members().size());
     }
 
     /**
@@ -200,13 +215,15 @@ public class TrackRenderer extends VisualEffectRenderer {
         if (state == null || state.phase == null) return;
         var contact = envelope.path().wheelContact(0);
         if (contact == null) return;
+        int linkCount = link.linkCount();
+        double pitch = link.attr().lengthPerLink();
         double wheel = wheelAngle(link, envelope, partialTick);
         double label = state.phase.label(wheel, contact.startAngle() + wheel, partialTick,
-                envelope.path().inputCircles().getFirst().radius() / state.pitch, Math.signum(contact.sweep()));
-        TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, state.linkCount, state.pitch, label);
+                envelope.path().inputCircles().getFirst().radius() / pitch, Math.signum(contact.sweep()));
+        TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, linkCount, pitch, label);
         if (!layout.isValid()) return;
         LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
-        renderBelt(poseStack, bufferSource, envelope, state.linkCount, layout, link, visual, packedLight);
+        renderBelt(poseStack, bufferSource, envelope, linkCount, layout, link, visual, packedLight);
     }
 
     private static double wheelAngle(TrackLink link, TrackEnvelope2D.Result envelope, float partialTick) {
@@ -236,10 +253,10 @@ public class TrackRenderer extends VisualEffectRenderer {
         if (envelope == null) return ownBox;
 
         double spacing = envelope.path().length() / Math.max(1, link.linkCount());
-        State state = STATES.get(new TrackKey(link));
         var contact = envelope.path().wheelContact(0);
-        if (state != null && state.pitch > 0 && contact != null) {
-            TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, state.linkCount, state.pitch, 0);
+        if (contact != null) {
+            TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact,
+                    link.linkCount(), link.attr().lengthPerLink(), 0);
             if (layout.isValid()) spacing = Math.max(spacing, layout.spacing());
         }
         LocalBounds bounds = localBounds(link, subPart, spacing);

@@ -1,0 +1,21 @@
+T-90A 履带节数（2026-11-05）
+
+580 mm RMSh 双销履带，每侧 97 节。T-90/T-90A 的行走部分沿用 T-72B 家族，
+履带与 T-62/T-72 使用同型 RMSh 履带板，节数相同。
+
+来源：
+- MiniArt 37052「1/35 T-55/T-62/T-72 RMSh Workable Track Links Set. Late Type」：
+  Description — Enough links included for one vehicle (91 tracks for T-55,
+  97 tracks for T-62 or T-72)。
+  https://www.hlj.com/1-35-scale-t-55-t-62-t-72-rmsh-workable-track-links-set-late-type-mnama37052
+  该套件按整车一条配置，T-62/T-72 的 97 节即每侧节数；T-90A 使用同型履带板。
+
+写在哪儿：
+- 节数是具体一环履带的属性（轮组数量、间距不同，节数就不同），因此不进
+  fittings/t90a_track.json，而是写进载具数据的每一条履带：
+  templates/t90a.json 的 track_links[] 里左右两条各带 "link_count": 97。
+  载具从模板 / 蓝图放出时加载端直接采用该值，不再按包络周长反推。
+- 最大耐久 = durability_per_link × N = 20 × 97 = 1940；客户端按 97 节铺满包络。
+- 单节模型与 length_per_link（0.1875）保持原样：本包只补节数，不改模型。
+  97 节时包络上的实际节距会是「周长 ÷ 97」，与模型节长（约 0.184）的差额由
+  主动轮啮合段之外的节间距吸收，表现为履带看起来更密。

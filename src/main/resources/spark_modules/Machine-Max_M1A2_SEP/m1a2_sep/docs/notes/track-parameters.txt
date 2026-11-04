@@ -1,0 +1,20 @@
+M1A2 SEP 履带节数（2026-11-05）
+
+T158 双销挂胶履带，每侧 80 节（整车 160 节）。实车履带会因磨损与张紧在 78–80 节之间
+浮动，本包取 80。
+
+来源（1/35 补品均按整车一条的量配置 160 节，左右各 80 节）：
+- Trumpeter 02033「U.S. T158 track for M1A1/M1A1HA/M1A2」：
+  More Features — 160 individual track links in light grey plastic。
+  https://www.trumpeter-china.com/index.php?g=home&m=product&a=show&id=1148&l=en
+- Friulmodel ATL-155「Abrams M1A1/M1A2 T158 Metal Tracks (1/35)」：
+  Contents — 160 white metal links，Separate left and right track runs。
+  https://www.scalemodelshop.co.uk/friulmodel-metal-tracks-atl-155/
+
+写在哪儿：
+- 节数是具体一环履带的属性（轮组数量、间距不同，节数就不同），因此不进
+  fittings/m1a2_track.json，而是写进载具数据的每一条履带：
+  templates/m1a2_sep.json 的 track_links[] 里左右两条各带 "link_count": 80。
+  载具从模板 / 蓝图放出时加载端直接采用该值，不再按包络周长反推。
+- 最大耐久 = durability_per_link × N = 20 × 80 = 1600；客户端按 80 节铺满包络。
+- length_per_link（0.148005，与单节模型切线方向长度一致）不变。

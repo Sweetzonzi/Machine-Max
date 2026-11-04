@@ -36,7 +36,12 @@ class TrackDataCodecTest {
 
     private static TrackLinkData link(TrackMemberRef sprocket, List<TrackMemberRef> members,
                                       float durability, boolean broken, boolean clockwise) {
-        return new TrackLinkData(sprocket, members, durability, broken, clockwise, DEFAULT_TYPE);
+        return link(sprocket, members, durability, broken, clockwise, TrackLinkData.UNKNOWN_LINK_COUNT);
+    }
+
+    private static TrackLinkData link(TrackMemberRef sprocket, List<TrackMemberRef> members,
+                                      float durability, boolean broken, boolean clockwise, int linkCount) {
+        return new TrackLinkData(sprocket, members, durability, broken, clockwise, DEFAULT_TYPE, linkCount);
     }
 
     @Test
@@ -44,12 +49,13 @@ class TrackDataCodecTest {
         TrackMemberRef sprocket = new TrackMemberRef(UUID.randomUUID(), "drive_sprocket");
         TrackMemberRef road = new TrackMemberRef(UUID.randomUUID(), "road_1");
         TrackLinkData data = new TrackLinkData(sprocket,
-                List.of(sprocket, road), 321.5f, true, false, TRACK_TYPE);
+                List.of(sprocket, road), 321.5f, true, false, TRACK_TYPE, 82);
 
         var encoded = TrackLinkData.CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow();
         TrackLinkData decoded = TrackLinkData.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
         assertEquals(data, decoded);
         assertEquals(TRACK_TYPE, decoded.trackType());
+        assertEquals(82, decoded.linkCount());
     }
 
     @Test
@@ -71,7 +77,7 @@ class TrackDataCodecTest {
     void blueprintNormalizationResetsTrackDurabilityAndBrokenFlag() {
         UUID partUuid = UUID.randomUUID();
         TrackMemberRef sprocket = new TrackMemberRef(partUuid, "sprocket");
-        TrackLinkData damaged = link(sprocket, List.of(sprocket), 12f, true, true);
+        TrackLinkData damaged = link(sprocket, List.of(sprocket), 12f, true, true, 55);
         VehicleData data = new VehicleData("tracked", UUID.randomUUID().toString(),
                 Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, 0.5f, Map.of(), List.of(), List.of(damaged),
                 io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta.EMPTY);
@@ -83,6 +89,29 @@ class TrackDataCodecTest {
         assertFalse(link.broken());
         assertTrue(link.clockwise());
         assertEquals(DEFAULT_TYPE, link.trackType());
+        // 节数与几何无关：蓝图 / 收纳必须原样带回，放出时才是同样的 N 节
+        assertEquals(55, link.linkCount());
+    }
+
+    @Test
+    void missingLinkCountMeansLegacyData() {
+        TrackMemberRef sprocket = new TrackMemberRef(UUID.randomUUID(), "sprocket");
+        var encoded = TrackLinkData.CODEC.encodeStart(JsonOps.INSTANCE,
+                link(sprocket, List.of(sprocket), 12f, false, false, 41)).getOrThrow().getAsJsonObject();
+        encoded.remove("link_count");
+
+        TrackLinkData decoded = TrackLinkData.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+        assertEquals(TrackLinkData.UNKNOWN_LINK_COUNT, decoded.linkCount());
+    }
+
+    @Test
+    void linkCountIsRejectedAboveTheSafetyBound() {
+        TrackMemberRef sprocket = new TrackMemberRef(UUID.randomUUID(), "sprocket");
+        var encoded = TrackLinkData.CODEC.encodeStart(JsonOps.INSTANCE,
+                link(sprocket, List.of(sprocket), 12f, false, false, 41)).getOrThrow().getAsJsonObject();
+        encoded.addProperty("link_count", TrackLinkData.MAX_LINK_COUNT + 1);
+
+        assertTrue(TrackLinkData.CODEC.parse(JsonOps.INSTANCE, encoded).error().isPresent());
     }
 
     @Test
@@ -140,7 +169,7 @@ class TrackDataCodecTest {
         TrackMemberRef sprocket = new TrackMemberRef(UUID.randomUUID(), "sprocket");
         for (boolean clockwise : new boolean[]{false, true}) {
             TrackLinkData data = new TrackLinkData(sprocket, List.of(sprocket), 123f, false, clockwise,
-                    TRACK_TYPE);
+                    TRACK_TYPE, 41);
             var json = TrackLinkData.CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow();
             assertEquals(data, TrackLinkData.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
             FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

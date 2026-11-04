@@ -6,6 +6,9 @@ import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
 /**
  * 主动轮包裹段保持固定角节距，其余路径承载剩余连续节序。
  * {@link #sample(int)} 解析采样轮缘；路径距离只用于包裹段之外的采样。
+ *
+ * <p>{@code count} 是履带的持久化节数，{@code pitch} 是型号声明的每节长度：两者都来自
+ * 型号 / 存档数据，不随某一帧的包络快照变化。包络周长变化只体现在包裹段之外的节间距上。</p>
  */
 final class TrackBeltLayout {
     private final BeltPath2D path;
