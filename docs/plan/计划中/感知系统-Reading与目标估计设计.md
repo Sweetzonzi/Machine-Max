@@ -7,6 +7,7 @@
 >
 > 相邻文档（各自负责自己的主题，本文引用而不复制其内容）：
 >
+> - `docs/plan/进行中/武器系统-目标粒度与锁定单元设计.md` — 可锁定单元取碰撞箱、耐久单元取模块或子系统，以及选定目标后如何持有；`Target` 与指示器物品已落地，本文只负责传感器如何产出目标信息。
 > - `docs/plan/进行中/武器系统-组件化投射物与类型体系设计.md` — 投射物类型体系；其 §4.1 `SeekerAttr` 是导引头属性的落点。
 > - `docs/plan/已实现/武器系统-制导组件实现备忘.md` — 制导律、SoA 目标数组与服务端权威同步的说明。
 > - `docs/wiki/4-物理与战斗机制/4.7-投射物.md` — 投射物的玩家向说明。
@@ -59,24 +60,23 @@ flowchart LR
 
 ### 3.1 形态
 
-`Reading` 是**不可变发布值**：构造完成后不再改动，可安全跨线程传递。
+`Reading` 是**不可变发布值**：构造完成后不再改动，同一进程内可直接传递；跨端或写入存档时按 §3.5 编码为身份键。
 
 ```java
 /** 传感器类信息的统一发布值（不可变）。 */
 public record Reading(
-    long   id,               // 稳定身份：同一目标在持续存在期间保持同值
+    @Nullable Target target, // 可锁定的对象；解析不到时为空
     float  posX, posY, posZ, // 绝对位置（米，世界坐标），始终有效
     float  velX, velY, velZ, // 目标速度估计（m/s），hasVelocity 为假时填 0
     boolean hasVelocity,     // velX/Y/Z 是否可用于外推
     ReadingSource source,    // 信息来源
     float  quality,          // 置信度 0..1；欺骗、衰减、丢锁作用于此
     float  intensity,        // 归一化信号强度 / 信噪比；供门限判定与显示
-    long   lastUpdateTick,   // 最后更新时刻（物理步整数计数）
-    Handle handle            // 活目标句柄，无则为 Handle.HANDLE_NONE
+    long   lastUpdateTick    // 最后更新时刻（物理步整数计数）
 ) {}
 ```
 
-`id` 由产生者分配，同一产生者在目标持续存在期间保持同值。
+`target` 就是消费方要锁定的对象，直接取用；为空表示测到了信号但没有可指认的对象，这条 `Reading` 只能显示，不能建立锁定。
 
 ### 3.2 字段准入规则
 
@@ -87,11 +87,9 @@ public record Reading(
 
 每加一个传感器就往公共对象加字段，是对象膨胀的起点；字段的准入判据必须固定在"有消费者"上。
 
-### 3.3 原语约束
+### 3.3 字段形态与分配
 
-`Reading` 只放原始类型、枚举、句柄，不放 `Vec3`、`Optional`、`List`、`String`。这类字段会在每次构造时额外分配并破坏逃逸分析，是高频对象唯一真实的分配成本来源。"无句柄"用哨兵 `Handle.HANDLE_NONE` 表达，而非 `Optional`。
-
-`Handle` 是允许的唯一嵌套值类型，它随 `Reading` 一并分配；在 §五 的频率下（每秒数十次量级）可接受。若 `Reading` 将来进入更高频的路径，把 `Handle` 的三个字段平铺进 `Reading` 即可消除该分配。
+`Reading` 放原始类型、枚举与一个 `Target` 引用，不放 `Vec3`、`Optional`、`List`、`String`。后几类字段会在每次构造时额外分配并破坏逃逸分析，是高频对象唯一真实的分配成本来源；引用本身不分配，可空性用 `@Nullable` 表达，不用 `Optional`。
 
 ### 3.4 信息来源
 
@@ -109,32 +107,15 @@ public enum ReadingSource {
 
 `source` 供 HUD 选择符号样式与开发期排查使用。**它不进入制导与 AI 的判据**——消费端按模态分支意味着每加一种来源都要改所有消费者。
 
-### 3.5 句柄
+### 3.5 目标引用与跨边界身份
 
-`Handle` 是对活目标的引用，用于读取当前真值：
+`target` 是进程内的活对象引用：`VehicleCore`、`HitBox`、实体或方向目标。消费方直接读它的当前真值，不按 id 或位置反查。
 
-```java
-/** 活目标句柄：按 kind 择一填写有效字段。 */
-public record Handle(HandleKind kind, int objId, @Nullable UUID vehicleUuid) {
-    public static final Handle HANDLE_NONE = new Handle(HandleKind.NONE, 0, null);
-}
+- **目标非空**：`target.point(partialTick)` 是真值，`posX/Y/Z` 是本次测量（含噪声与延迟），两者不同。
+- **目标为空**：信号测到了，但没有可指认的对象（假阳性、目标已销毁、超出同步范围）。这条 `Reading` 可用于显示与记忆航迹，不能建立锁定。
+- **目标被摧毁后**引用仍然有效，`target.isLockable()` 转为假；`Reading` 的最后一个位置就是记忆航迹。
 
-public enum HandleKind {
-    NONE,
-    DESTROYABLE_OBJECT, // objId = DestroyableObject.getId()
-    VANILLA_ENTITY,     // objId = 原版实体 id
-    VEHICLE             // vehicleUuid = VehicleCore 的 UUID
-}
-```
-
-- `DESTROYABLE_OBJECT` —— `DestroyableObject.getId()`，进程内自增、随创建包同步到客户端，覆盖 `SubPart` 与投射物。
-- `VANILLA_ENTITY` —— 原版实体 id，覆盖玩家与生物。
-- `VEHICLE` —— `VehicleCore` 的 UUID，经 `ObjectManager.getVehicleByUUID` 解析，覆盖整台载具。
-
-两条约束：
-
-1. **句柄优先，位置兜底。** 句柄可在读取时解析为当前真值（`source = DIRECT` 即此形态）；句柄失效或目标离开同步范围时，`Reading` 以最后已知位置独立成立，构成记忆航迹。
-2. **句柄不是裸引用。** 跨线程与跨对象销毁周期只传句柄，不传 `SubPart` / `VehicleCore` / `Entity` 引用。
+**跨边界用身份，不用引用。** 需要把目标带到另一侧（网络、存档）时，按《武器系统-目标粒度与锁定单元》§4.3 的身份键编码：会话内用 `(kind, subPartId, hitBoxKey)`，跨存档用 `(partUuid, subPartName, hitBoxKey)`。载荷里不放 `Target` 引用。
 
 ---
 
@@ -231,7 +212,7 @@ flowchart LR
 
 | 位置 | 动作 |
 |---|---|
-| `common/mech/sensor/` | 定义 `Reading`、`ReadingSource`、`Handle` |
+| `common/mech/sensor/` | 定义 `Reading`、`ReadingSource`；`Target` 定义在 `common/mech/target/` |
 | `WeaponControllerSubsystem.targetPosition` | 产出 `source = COMMAND` 的 `Reading` |
 | `LauncherSubsystem` 的目标推送 | 以 `Reading` 为输入，投影时按 §五 外推 |
 | `ProjectileManager.targetX/Y/Z` | 制导热路径的扁平投影，由 Launcher 在投影时写入 |
@@ -245,7 +226,7 @@ flowchart LR
 
 ## 八、命名与位置
 
-- 对象名：**`Reading`**（感知对象）、**`ReadingSource`**（来源）、**`Handle`**（活目标句柄）。
+- 对象名：**`Reading`**（感知对象）、**`ReadingSource`**（来源）、**`Target`**（可锁定对象，定义见《武器系统-目标粒度与锁定单元》）。
 - 包位置：**`common/mech/sensor/`**。
 - **不引入第二层融合对象**（`Track` / `Contact`）：在"一律携带绝对位置"下，测量与航迹在数据形态上重合，引入第二层只增加需要跨类型分派的消费者。融合的接缝留在"多来源如何择一"这一步（§九）。
 
