@@ -83,7 +83,7 @@ class ProjectileThrustCodecTest {
         assertEquals(8.0f, segments.get(1).start(), 1e-6f);
     }
 
-    /** 整表折算：两段都生效，段间空隙无推力，质量恒定（内容包没有装药字段） */
+    /** 整表折算：两段都生效，段间空隙无推力，两个段都不写装药所以质量恒定 */
     @Test
     void conversionAppliesEverySegmentAndLeavesGapsCoasting() {
         ThrustProfile profile = parse("""
