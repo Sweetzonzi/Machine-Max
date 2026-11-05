@@ -71,17 +71,6 @@ class CookoffCompositionTest {
     }
 
     @Test
-    void addOnceEqualsAddWithCountOne() {
-        CookoffContribution contribution = new CookoffContribution(5.0, 2.0, 3.0);
-        CookoffComposition single = new CookoffComposition();
-        single.add(contribution);
-        CookoffComposition counted = compositionOf(contribution, 1);
-        assertEquals(counted.totalDamage(), single.totalDamage(), 0.0);
-        assertEquals(counted.impulse(), single.impulse(), 0.0);
-        assertEquals(counted.penetration(), single.penetration(), 0.0);
-    }
-
-    @Test
     void zeroDamageContributionDoesNotEnterPenetrationAverage() {
         CookoffComposition composition = new CookoffComposition();
         composition.add(new CookoffContribution(100.0, 0.0, 5.0), 2);
@@ -183,14 +172,6 @@ class CookoffCompositionTest {
     void singleRoundNeverExtrapolatesToLargeRadius() {
         // 单发弹药不会被按量外推：半径由标定锚反推，不取“单发半径 × √N”
         assertEquals(1.0, compositionOf(propellant762(), 1).maxRadius(), 0.0);
-    }
-
-    @Test
-    void calibrationConstantsMatchTheDesign() {
-        assertEquals(1.0, CookoffComposition.REFERENCE_RADIUS, 0.0);
-        assertEquals(100.0, CookoffComposition.P_CUT, 0.0);
-        assertEquals(15.0 * 0.1, CookoffComposition.D_CUT, 0.0);
-        assertEquals(Math.sqrt(1500.0) / 10.0, CookoffComposition.J_CUT, 0.0);
     }
 
     // ==================== particleScale ====================

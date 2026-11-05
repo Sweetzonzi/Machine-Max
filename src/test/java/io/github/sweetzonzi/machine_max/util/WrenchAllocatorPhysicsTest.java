@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util;
 
+import io.github.sweetzonzi.machine_max.probe.NativeLibraryLoader;
 import com.jme3.bullet.CollisionConfiguration;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
@@ -9,12 +10,6 @@ import com.jme3.math.Vector3f;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,40 +24,17 @@ class WrenchAllocatorPhysicsTest {
     private PhysicsSpace space;
     private PhysicsRigidBody body;
 
-    /** 从 Spark-Core 的资源直接加载引擎；其它测试已加载时复用同一 native。 */
-    @BeforeAll
-    static void loadNative() throws Exception {
-        try {
-            NativeLibrary.versionNumber();
-            return;
-        } catch (UnsatisfiedLinkError unloaded) {
-            // 独立执行此测试时没有模组加载器，按当前系统选择实际引擎库。
-        }
-        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-        String folder = os.contains("win") ? "windows" : os.contains("mac") ? "macos" : "linux";
-        String library = os.contains("win") ? "bulletjme.dll" : os.contains("mac") ? "libbulletjme.dylib" : "libbulletjme.so";
-        String architecture = arch.contains("aarch64") || arch.contains("arm64") ? "arm64" : "x86_64";
-        for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
-            String resource = "natives/" + variant + "/" + folder + "/" + architecture + "/" + library;
-            try (InputStream input = WrenchAllocatorPhysicsTest.class.getClassLoader().getResourceAsStream(resource)) {
-                if (input == null) continue;
-                Path temporary = Files.createTempFile("wrench-bullet-", library.substring(library.lastIndexOf('.')));
-                Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
-                temporary.toFile().deleteOnExit();
-                System.load(temporary.toAbsolutePath().toString());
-                return;
-            }
-        }
-        throw new IllegalStateException("找不到 Spark-Core 的 Bullet 双精度 native 资源");
-    }
-
     /** 先从碰撞空间摘下刚体，再释放测试引用，由引擎的 Cleaner 回收 native 对象。 */
     @AfterEach
     void detachBody() {
         if (space != null && body != null) space.removeCollisionObject(body);
         body = null;
         space = null;
+    }
+
+    @BeforeAll
+    static void loadNative() {
+        NativeLibraryLoader.load();
     }
 
     /** 对称喷口的力矩相消，线速度应按实际出力而不是期望出力积分。 */

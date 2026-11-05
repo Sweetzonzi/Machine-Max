@@ -209,7 +209,7 @@ class WeaponHudComponentsTest {
         assertNoBindingErrors(page.document());
     }
 
-    @Test void compositionExportsBoundDocumentsForVisualReview() throws Exception {
+    @Test void richWeaponDataBindsOnAllThreeComponents() throws Exception {
         var feed = create("feed");
         var tubes = create("tubes");
         var compact = create("compact");
@@ -226,20 +226,6 @@ class WeaponHudComponentsTest {
                 "7.62 MM", false, "RDY", "test:pktm", List.of(tube(1, true, 100)),
                 List.of(belt("AP/TRACER", 382, true))), true);
         for (var page : List.of(feed, tubes, compact)) assertNoBindingErrors(page.document());
-        var directory = Path.of("build/reports/hud-components");
-        Files.createDirectories(directory);
-        String css = Files.readString(BUILTIN.resolve("documents/weapon_hud_components/hud.css"));
-        String html = "<!doctype html><html><head><meta charset='utf-8'><title>K17 weapon HUD / bound DOM preview</title>"
-                + "<style>" + css + "html,body{width:100%;height:100%;display:block;background:#17231a}"
-                + ".stage{position:relative;width:1600px;height:900px;background:linear-gradient(145deg,#334831,#101c17)}"
-                + ".preview{position:absolute}.feed{right:16px;bottom:104px}.tubes-panel{left:16px;bottom:104px}"
-                + ".compact{left:585px;bottom:104px}.notice{position:absolute;top:20px;left:20px;color:#b6c7ad;font:16px sans-serif}"
-                + "</style></head><body><main class='stage'><div class='notice'>K17 / AUI-bound fixture data / browser preview</div>"
-                + "<div class='preview feed'>" + feed.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
-                + "<div class='preview tubes-panel'>" + tubes.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
-                + "<div class='preview compact'>" + compact.document().querySelector(".weapon-component").getOuterHTML() + "</div>"
-                + "</main></body></html>";
-        Files.writeString(directory.resolve("index.html"), html);
     }
 
     @Test void k17UsesThreeControllerLayoutsAndRetainsStaticComparisonResources() throws Exception {

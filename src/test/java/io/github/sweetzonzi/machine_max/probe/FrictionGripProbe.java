@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.mech.physics;
+package io.github.sweetzonzi.machine_max.probe;
 
 import com.jme3.bullet.CollisionConfiguration;
 import com.jme3.bullet.PhysicsSpace;
@@ -9,16 +9,13 @@ import com.jme3.math.Vector3f;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Locale;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 切向（库仑）摩擦的纯引擎验证，用于回答「摩擦是否也有滚阻那类问题」。
+ *
+ * <p>探针：结论属于求解器而不属于本模组，{@code gradlew test} 不执行本类；
+ * 改参数后用 {@code ./gradlew probeTest} 或 IDE 单独复测。</p>
  *
  * <p>滚阻的问题出在参数单位：它是角冲量上限，被 {@code min(μ·J_n, μ)} 钳制，于是与载荷无关、
  * 与步长成反比。切向摩擦不是这个形状——求解器给摩擦行的界限是
@@ -29,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>球/盒用 {@link PhysicsRigidBody} 的默认求解配置（{@code WarmStart|SIMD}），
  * 与游戏内一样走单条摩擦方向、非缓存方向的分支，摩擦方向由相对切向速度给出。</p>
  */
-class FrictionGripPhysicsTest {
+class FrictionGripProbe {
     private static final float STEP = 1f / 100f;
     private static final float GRAVITY = 9.81f;
     private static final float MASS = 50f;
@@ -37,8 +34,8 @@ class FrictionGripPhysicsTest {
     private static final float SPEED = 5f;
 
     @BeforeAll
-    static void loadNative() throws Exception {
-        NativeLoader.load();
+    static void loadNative() {
+        NativeLibraryLoader.load();
     }
 
     /** 滑动减速度应等于 μg：系数就是系数，不掺杂步长与质量。 */
@@ -184,43 +181,6 @@ class FrictionGripPhysicsTest {
             settle(100);
             launch();
             return deceleration(10, 40);
-        }
-    }
-
-    /** 从 Spark-Core 资源加载 dpmt native（与游戏内同一求解器路径）。 */
-    private static final class NativeLoader {
-        private static boolean loaded;
-
-        static synchronized void load() throws Exception {
-            if (loaded) return;
-            try {
-                NativeLibrary.versionNumber();
-                loaded = true;
-                return;
-            } catch (UnsatisfiedLinkError unloaded) {
-                // 独立执行此测试时没有模组加载器，按当前系统选择实际引擎库。
-            }
-            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-            String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-            String folder = os.contains("win") ? "windows" : os.contains("mac") ? "macos" : "linux";
-            String library = os.contains("win") ? "bulletjme.dll"
-                    : os.contains("mac") ? "libbulletjme.dylib" : "libbulletjme.so";
-            String architecture = arch.contains("aarch64") || arch.contains("arm64") ? "arm64" : "x86_64";
-            for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
-                String resource = "natives/" + variant + "/" + folder + "/" + architecture + "/" + library;
-                try (InputStream input = FrictionGripPhysicsTest.class.getClassLoader()
-                        .getResourceAsStream(resource)) {
-                    if (input == null) continue;
-                    Path temporary = Files.createTempFile("friction-bullet-",
-                            library.substring(library.lastIndexOf('.')));
-                    Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
-                    temporary.toFile().deleteOnExit();
-                    System.load(temporary.toAbsolutePath().toString());
-                    loaded = true;
-                    return;
-                }
-            }
-            throw new IllegalStateException("找不到 Spark-Core 的 Bullet native 资源");
         }
     }
 }

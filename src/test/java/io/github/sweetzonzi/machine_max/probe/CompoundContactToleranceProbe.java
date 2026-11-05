@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.mech.collision;
+package io.github.sweetzonzi.machine_max.probe;
 
 import com.jme3.bullet.CollisionConfiguration;
 import com.jme3.bullet.PhysicsSpace;
@@ -21,10 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,50 +38,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>本机 native 的构建方式见 {@code build/native/build-native.bat}：source 为 Libbulletjme
  * 23.1.2，静态 CRT（{@code /MT}）、双精度、多线程、Release。</p>
  *
+ * <p><b>探针：</b>{@code gradlew test} 不执行本类，因为断言成立与否取决于 native 构件而不是
+ * 代码改动。在装有补丁 native 的机器上用 {@code ./gradlew probeTest} 复核。</p>
+ *
  * <p><b>只在 Windows 上跑：</b>补丁只重建了
  * {@code natives/bullet_dpmt/windows/x86_64/bulletjme.dll}，其余十个二进制是上游 23.1.0
  * 出厂件、不含修正。在 Linux/macOS 上这组断言必然失败（stock native 会丢掉近接触），
  * 所以整类按平台跳过，避免 CI 把"补丁没覆盖的平台"当成回归。</p>
  */
 @EnabledOnOs(OS.WINDOWS)
-class CompoundContactToleranceTest {
+class CompoundContactToleranceProbe {
     private static final float RADIUS = 0.84375f;
     private static final float MASS = 50f;
     private static final float LOAD = 12500f;
     private static final float DT = 0.01f;
 
     @BeforeAll
-    static void loadNative() throws Exception {
-        //指向任意一份 native（例如出厂构件），用于在同一套 rig 下对比不同构建：
-        //  MM_NATIVE_PATH=<path to bulletjme.dll> gradlew test --tests ...CompoundContactToleranceTest
-        String override = System.getenv("MM_NATIVE_PATH");
-        if (override != null && !override.isBlank()) {
-            System.load(Path.of(override).toAbsolutePath().toString());
-            return;
-        }
-        try {
-            NativeLibrary.versionNumber();
-            return;
-        } catch (UnsatisfiedLinkError unloaded) {
-            // JUnit 进程直接加载 Spark-Core 随附的 native。
-        }
-        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-        String folder = os.contains("win") ? "windows" : os.contains("mac") ? "macos" : "linux";
-        String library = os.contains("win") ? "bulletjme.dll" : os.contains("mac") ? "bulletjme.dylib" : "libbulletjme.so";
-        String architecture = arch.contains("aarch64") || arch.contains("arm64") ? "arm64" : "x86_64";
-        for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
-            String resource = "natives/" + variant + "/" + folder + "/" + architecture + "/" + library;
-            try (InputStream input = CompoundContactToleranceTest.class.getClassLoader().getResourceAsStream(resource)) {
-                if (input == null) continue;
-                Path temporary = Files.createTempFile("contact-tolerance-", library.substring(library.lastIndexOf('.')));
-                Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
-                temporary.toFile().deleteOnExit();
-                System.load(temporary.toAbsolutePath().toString());
-                return;
-            }
-        }
-        throw new IllegalStateException("找不到 Spark-Core 的 Bullet 双精度 native 资源");
+    static void loadNative() {
+        NativeLibraryLoader.load();
     }
 
     @Test

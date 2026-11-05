@@ -74,10 +74,10 @@ def main():
     output = root / "build" / "wrench-reference"
     output.mkdir(parents=True, exist_ok=True)
     sources = [root / "src/main/java/io/github/sweetzonzi/machine_max/util/WrenchAllocator.java",
-               root / "src/test/java/io/github/sweetzonzi/machine_max/util/WrenchAllocatorReferenceProbe.java"]
+               root / "src/test/java/io/github/sweetzonzi/machine_max/probe/WrenchAllocatorReferenceProbe.java"]
     subprocess.run([javac, "-encoding", "UTF-8", "-d", str(output), *map(str, sources)], check=True)
     command = [java, "-cp", str(output),
-               "io.github.sweetzonzi.machine_max.util.WrenchAllocatorReferenceProbe"]
+               "io.github.sweetzonzi.machine_max.probe.WrenchAllocatorReferenceProbe"]
     lines = subprocess.check_output(command, text=True, encoding="utf-8").splitlines()
     maximum_error = 0.0
     for line in lines:

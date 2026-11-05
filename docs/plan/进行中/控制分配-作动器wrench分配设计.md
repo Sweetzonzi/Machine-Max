@@ -584,7 +584,7 @@ r_actual = w_alloc − w_actual_inc − w_辅助实际
 - `src/test/java/io/github/sweetzonzi/machine_max/util/WrenchAllocatorTest.java#WrenchAllocatorTest`：14 项通过，覆盖解析阻尼解、权重分担、饱和重分配、批量反例、无权限、掩码、单位换算、16／32／64 器件的混合界与近共线、快照隔离与借用生命周期、非法输入与运算溢出。
 - `src/test/java/io/github/sweetzonzi/machine_max/util/WrenchWorkspaceTest.java#WrenchWorkspaceTest`：8 项通过，覆盖力臂叉积、目标覆盖、已知项扣除、权限保持、原始列对照、写入完整性、喷口方向跨步变化、局部列更新与上下文生命周期。
 - `src/test/java/io/github/sweetzonzi/machine_max/util/WrenchAllocatorPhysicsTest.java#WrenchAllocatorPhysicsTest`：4 项通过，按 100 Hz 推进裸 Bullet：对称推力平移、纯力偶角速度、64 喷口悬停／失效下落，以及同一上下文中的喷口转向与动量保留。采用即时线性器件，未覆盖完整闭环增益、响应滞后或真实舵面。
-- `tools/verify_wrench_allocator.py#reference` 与 `src/test/java/io/github/sweetzonzi/machine_max/util/WrenchAllocatorReferenceProbe.java#WrenchAllocatorReferenceProbe`：86 组输入对照通过。Python 用 NumPy 增广最小二乘的 SVD 求解每轮自由问题，Java 用行空间 Cholesky，控制量／出力／残差等数值的最大绝对差约 `3.86e-11`。两端采用同一批量钉界规则，这是数值实现一致性验证，不是最优性证明。
+- `tools/verify_wrench_allocator.py#reference` 与 `src/test/java/io/github/sweetzonzi/machine_max/probe/WrenchAllocatorReferenceProbe.java#WrenchAllocatorReferenceProbe`：86 组输入对照通过。Python 用 NumPy 增广最小二乘的 SVD 求解每轮自由问题，Java 用行空间 Cholesky，控制量／出力／残差等数值的最大绝对差约 `3.86e-11`。两端采用同一批量钉界规则，这是数值实现一致性验证，不是最优性证明。
 - `.\gradlew --offline test`：Machine-Max 全量 219 项测试通过，失败与跳过均为零。
 
 离线复现命令（Python 需要 NumPy，Java 仅需要 JDK 21；未增加 Java 数学库依赖）：
@@ -642,7 +642,7 @@ double leftCommand = output.control(0); // 当步交给响应／力函数。
 // 需要保存分配诊断时调用 output.snapshot()；动画实际油门来自响应后的状态。
 ```
 
-**分配字节测量（2026-10-27）**：使用与 §11.5 相同的 JVM，探针通过 JDK 的线程分配字节计数，在每种模式预热 10000 次后采样 20000 次。打印和一次性初始化在计数区间之外，重建模式则将整套上下文创建计入；结果对象通过 volatile 槽消费，减少优化掉输出的可能。复现：`python tools/verify_wrench_allocator.py --allocation`，入口为 `src/test/java/io/github/sweetzonzi/machine_max/util/WrenchAllocatorReferenceProbe.java#measureAllocations`。
+**分配字节测量（2026-10-27）**：使用与 §11.5 相同的 JVM，探针通过 JDK 的线程分配字节计数，在每种模式预热 10000 次后采样 20000 次。打印和一次性初始化在计数区间之外，重建模式则将整套上下文创建计入；结果对象通过 volatile 槽消费，减少优化掉输出的可能。复现：`python tools/verify_wrench_allocator.py --allocation`，入口为 `src/test/java/io/github/sweetzonzi/machine_max/probe/WrenchAllocatorReferenceProbe.java#measureAllocations`。
 
 | 器件数 | 复用输入／工作区，每步独立 Result（B/步） | 复用一体化 Workspace，更新目标／方向／力臂并 solve（B/步） | 每步重建整个一体化上下文（B/步） |
 | --- | --- | --- | --- |

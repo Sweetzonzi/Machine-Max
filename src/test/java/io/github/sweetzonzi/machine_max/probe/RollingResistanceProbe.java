@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.mech.physics;
+package io.github.sweetzonzi.machine_max.probe;
 
 import com.jme3.bullet.CollisionConfiguration;
 import com.jme3.bullet.PhysicsSpace;
@@ -10,17 +10,14 @@ import com.jme3.math.Vector3f;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Locale;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 滚动阻力的纯引擎验证（不启动 Minecraft / GameTestServer）。
+ *
+ * <p>探针：结论属于求解器而不属于本模组，{@code gradlew test} 不执行本类；
+ * 改参数后用 {@code ./gradlew probeTest} 或 IDE 单独复测。</p>
  *
  * <p>只使用 Spark-Core 内嵌的 jme3 Bullet 层：{@link PhysicsSpace} + 一个静止地面 + 一个球。
  * native 从 Spark-Core 的 {@code natives/bullet_dpmt/...} 资源手工加载，与 {@code GearJointPhysicsTest}
@@ -52,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code J = C_rr·J_n·r} 之后再交给同一个求解器。本测试固定求解器一侧的事实，
  * 不涉及那次换算。</p>
  */
-class RollingResistancePhysicsTest {
+class RollingResistanceProbe {
     private static final float STEP = 1f / 100f;
     private static final float GRAVITY = 9.81f;
     /** 探针参数：车轮量级（50 kg、半径 0.7 m 上下）。不读内容包，调材质不影响本测试。 */
@@ -66,8 +63,8 @@ class RollingResistancePhysicsTest {
     private static final float SPEED = 2f;
 
     @BeforeAll
-    static void loadNative() throws Exception {
-        NativeLoader.load();
+    static void loadNative() {
+        NativeLibraryLoader.load();
     }
 
     /**
@@ -243,43 +240,6 @@ class RollingResistancePhysicsTest {
         /** 由线减速度反解滚阻力矩：纯滚动下 τ = a·(I + m·r²)/r。 */
         float resistanceTorque(float deceleration) {
             return deceleration * (inertia + mass * radius * radius) / radius;
-        }
-    }
-
-    /** 从 Spark-Core 资源加载 dpmt native（与游戏内同一求解器路径）。 */
-    private static final class NativeLoader {
-        private static boolean loaded;
-
-        static synchronized void load() throws Exception {
-            if (loaded) return;
-            try {
-                NativeLibrary.versionNumber();
-                loaded = true;
-                return;
-            } catch (UnsatisfiedLinkError unloaded) {
-                // 独立执行此测试时没有模组加载器，按当前系统选择实际引擎库。
-            }
-            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-            String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-            String folder = os.contains("win") ? "windows" : os.contains("mac") ? "macos" : "linux";
-            String library = os.contains("win") ? "bulletjme.dll"
-                    : os.contains("mac") ? "libbulletjme.dylib" : "libbulletjme.so";
-            String architecture = arch.contains("aarch64") || arch.contains("arm64") ? "arm64" : "x86_64";
-            for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
-                String resource = "natives/" + variant + "/" + folder + "/" + architecture + "/" + library;
-                try (InputStream input = RollingResistancePhysicsTest.class.getClassLoader()
-                        .getResourceAsStream(resource)) {
-                    if (input == null) continue;
-                    Path temporary = Files.createTempFile("rolling-bullet-",
-                            library.substring(library.lastIndexOf('.')));
-                    Files.copy(input, temporary, StandardCopyOption.REPLACE_EXISTING);
-                    temporary.toFile().deleteOnExit();
-                    System.load(temporary.toAbsolutePath().toString());
-                    loaded = true;
-                    return;
-                }
-            }
-            throw new IllegalStateException("找不到 Spark-Core 的 Bullet native 资源");
         }
     }
 }

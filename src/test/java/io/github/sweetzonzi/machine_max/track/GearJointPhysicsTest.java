@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.track;
 
+import io.github.sweetzonzi.machine_max.probe.NativeLibraryLoader;
 import com.jme3.bullet.CollisionConfiguration;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.RotationOrder;
@@ -17,13 +18,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,8 +40,8 @@ class GearJointPhysicsTest {
     private final List<PhysicsSpace> spaces = new ArrayList<>();
 
     @BeforeAll
-    static void loadNative() throws Exception {
-        NativeLoader.load();
+    static void loadNative() {
+        NativeLibraryLoader.load();
     }
 
     @AfterEach
@@ -137,8 +133,12 @@ class GearJointPhysicsTest {
         }
     }
 
+    /**
+     * 生命周期纪律：先禁用并摘掉约束，再把刚体移出空间。断言移除确实落到空间上——
+     * 只靠「没抛异常」区分不出「移除生效」与「移除被忽略」。
+     */
     @Test
-    void removeJointBeforeBodiesDoesNotCrash() {
+    void removingJointBeforeBodiesLeavesAnEmptySpace() {
         try (Harness h = new Harness()) {
             PhysicsRigidBody a = h.body(-2f, 0.5f, 10f);
             PhysicsRigidBody b = h.body(2f, 0.5f, 10f);
@@ -146,13 +146,19 @@ class GearJointPhysicsTest {
                     new Vector3f(1, 0, 0), new Vector3f(1, 0, 0), -2f);
             h.space.addJoint(joint);
             h.step(10);
+            assertEquals(1, h.space.countJoints(), "约束应已加入空间");
+            assertEquals(2, h.space.countRigidBodies(), "两个刚体应已在空间里");
 
             joint.setEnabled(false);
             h.space.removeJoint(joint);
             assertFalse(joint.isEnabled(), "移除前已禁用");
             h.space.removeCollisionObject(b);
             h.space.removeCollisionObject(a);
+
+            assertEquals(0, h.space.countJoints(), "约束必须已从空间摘除");
+            assertEquals(0, h.space.countRigidBodies(), "刚体必须已从空间摘除");
             h.step(10);
+            assertTrue(h.space.isEmpty(), "摘除后空间应为空，再步进也不应重新加入对象");
         }
     }
 
@@ -313,53 +319,6 @@ class GearJointPhysicsTest {
         @Override
         public void close() {
             // PhysicsSpace 没有 close；native 对象由 Spark-Core 的 Physics Cleaner 回收
-        }
-    }
-
-    /** 从 Spark-Core 资源 / 同目录源码树加载 dpmt native（与游戏内同一求解器路径）。 */
-    private static final class NativeLoader {
-        private static boolean loaded;
-
-        static synchronized void load() throws Exception {
-            if (loaded) return;
-            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-            String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-            String folder;
-            String lib;
-            if (os.contains("win")) {
-                folder = "windows";
-                lib = "bulletjme.dll";
-            } else if (os.contains("mac")) {
-                folder = "macos";
-                lib = "libbulletjme.dylib";
-            } else {
-                folder = "linux";
-                lib = "libbulletjme.so";
-            }
-            String archDir = arch.contains("aarch64") || arch.contains("arm64") ? "arm64" : "x86_64";
-            for (String variant : new String[]{"bullet_dpmt", "bullet_dp"}) {
-                String resource = "natives/" + variant + "/" + folder + "/" + archDir + "/" + lib;
-                try (InputStream in = GearJointPhysicsTest.class.getClassLoader().getResourceAsStream(resource)) {
-                    if (in == null) continue;
-                    Path temp = Files.createTempFile("bulletjme-", lib.substring(lib.lastIndexOf('.')));
-                    Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
-                    temp.toFile().deleteOnExit();
-                    System.load(temp.toAbsolutePath().toString());
-                    loaded = true;
-                    return;
-                }
-            }
-            // 复合构建下的开发目录兜底（不依赖 classpath 打包方式）
-            for (String base : new String[]{"build/resources/main", "src/main/resources"}) {
-                Path fallback = Path.of("..", "Spark-Core", base,
-                        "natives", "bullet_dpmt", folder, archDir, lib);
-                if (Files.isRegularFile(fallback)) {
-                    System.load(fallback.toAbsolutePath().toString());
-                    loaded = true;
-                    return;
-                }
-            }
-            throw new IllegalStateException("找不到 bulletjme native；检查 Spark-Core 资源是否在测试 classpath 上");
         }
     }
 }

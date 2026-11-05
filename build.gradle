@@ -166,6 +166,20 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    // src/test/.../probe/ 是手工探针（引擎行为标定、一次性实验、按机器重建的 native），
+    // 不是产品契约。JUnit Platform 不套用 Gradle 的 *Test 默认包含模式，必须在执行期排除；
+    // 编译仍然进行，探针需要时用 ./gradlew probeTest 单独跑。
+    exclude '**/probe/**'
+}
+
+tasks.register('probeTest', Test) {
+    description = '运行 src/test 下的手工探针（不参与 ./gradlew test）'
+    group = 'verification'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/probe/**'
+    dependsOn 'testClasses'
 }
 
 // 测试源码需要主源码的完整编译/运行类路径（Minecraft、DFU 由 moddev 直接挂在 main 上，

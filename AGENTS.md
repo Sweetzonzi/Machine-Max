@@ -460,7 +460,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 ## 补充说明
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework`，本地缺失时回退 Maven jar。CI 里没有这两个兄弟目录，workflow 会把两个仓库检出到 `_deps/` 并用 `ORG_GRADLE_PROJECT_spark_core_dir` / `ORG_GRADLE_PROJECT_ballistics_framework_dir` 指过去，所以 CI 编的也是源码而不是钉住的发布版；分支名写死在 workflow 里，改分支需同步。AUI 走 `maven.sighs.cc` 的 `com.sighs:ApricityUI-neoforge-1.21.1` 并以 `jarJar` 内嵌进发布 jar，`metadata.json` 声明 `[1.3.0,)`；玩家另装独立 AUI 时 FML 直接采用已装那份（只按 mod id 判断、不比较版本），低于 1.3.0 会让内嵌版失效。
-- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的 `PartFoundationGameTest`、`PartAssemblyProgressGameTest`（服务端的构造、恢复、类型边界与对象表路由）。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
+- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline probeTest` 跑 `src/test/.../probe/` 下的手工探针（引擎行为标定、一次性实验、依赖本机重建 native 的测量，不参与 `test`）；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的 `PartFoundationGameTest`、`PartAssemblyProgressGameTest`（服务端的构造、恢复、类型边界与对象表路由）。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。

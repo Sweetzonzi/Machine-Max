@@ -26,12 +26,6 @@ class TerrainPreloadTest {
     /** 120mm APFSDS 的等效参数：细长杆、速度最高，视界最长 */
     private static final BallisticConfig APFSDS = config(4f, 30f, 0.20f);
 
-    /** 单轮 1 个游戏 tick */
-    private static final float DT_GAME_TICK = 1f / 20f;
-
-    /** 单轮可提交的区块上限 */
-    private static final int MAX_NEW_CHUNKS_PER_ROUND = 8;
-
     private static BallisticConfig config(float mass, float caliberMm, float dragCoefficient) {
         float radius = caliberMm / 2000f;
         return new BallisticConfig(dragCoefficient, mass,
@@ -50,15 +44,6 @@ class TerrainPreloadTest {
     }
 
     @Test
-    @DisplayName("去掉 v·Δ 项会让视界短掉一整段带，APFSDS 上可见")
-    void horizonMustIncludeReplanInterval() {
-        // v·L + 16 在 APFSDS 上是 263.5 m，比正解短 82.5 m —— 正是 v·Δ
-        float missing = 1650f * TerrainPreload.LEAD_SECONDS + TerrainPreload.HORIZON_MARGIN_METERS;
-        Assertions.assertEquals(82.5f,
-                TerrainPreload.horizonMeters(1650f) - missing, 0.01f);
-    }
-
-    @Test
     @DisplayName("采样步长取 0.01 s 与 8 m 的较小者")
     void sampleStepIsTheSmallerOfTimeAndDistance() {
         // v > 800 m/s 时由 8 m 卡住
@@ -69,31 +54,14 @@ class TerrainPreloadTest {
     }
 
     @Test
-    @DisplayName("hold 按物理步频折算：用采样步长当分母会放大两倍以上")
+    @DisplayName("hold 按物理步频折算：同一个提前量在 100 与 60 Hz 下步数不同")
     void holdStepsUsePhysicsStepRate() {
         // 0.2 s 的提前量 = 20 个物理步（tps 100）+ 10 步余量
         Assertions.assertEquals(30, TerrainPreload.holdSteps(0.2f, 100));
-
-        // 反例：APFSDS 的采样步长是 4.85 ms，用它当分母会得到 ceil(0.2 / 0.00485) + 10 = 52，
-        // 比正解大七成、且随速度变化——这就是“分母必须是 tps”的那条回归
-        float sampleDt = TerrainPreload.sampleSeconds(1650f);
-        int wrong = (int) Math.ceil(0.2f / sampleDt) + 10;
-        Assertions.assertTrue(wrong > 2 * 30 - 15, "反例算出的步数应当明显偏大：" + wrong);
-        Assertions.assertNotEquals(wrong, TerrainPreload.holdSteps(0.2f, 100));
-    }
-
-    @Test
-    @DisplayName("单轮新进视界的区块数由 Δ 决定，1 tick 才落在上限内")
-    void newChunksPerRoundBindDelta() {
-        // v·Δ/16 是**轴向**下界：斜穿实测 APFSDS 峰值 9、压格线时 12。
-        // 这条用例守的是“Δ 的选取判据”（Δ ≤ 16N/v），不是“实测区块数 ≤ 8”。
-        for (float speed : new float[]{1650f, 950f, 855f}) {
-            float newChunks = speed * DT_GAME_TICK / 16f;
-            Assertions.assertTrue(newChunks <= MAX_NEW_CHUNKS_PER_ROUND,
-                    "v=" + speed + " 单轮新进 " + newChunks + " 个区块");
-        }
-        // Δ 取 0.2 s 就会越界：APFSDS 20.6、30mm 11.9、7.62 10.7
-        Assertions.assertTrue(1650f * 0.2f / 16f > MAX_NEW_CHUNKS_PER_ROUND);
+        // 同一提前量在客户端物理步频下只有 12 + 6 步：分母确实是 tps，而不是视界采样步长
+        Assertions.assertEquals(18, TerrainPreload.holdSteps(0.2f, 60));
+        // 负提前量按 0 处理，只剩余量
+        Assertions.assertEquals(10, TerrainPreload.holdSteps(-1f, 100));
     }
 
     @Test

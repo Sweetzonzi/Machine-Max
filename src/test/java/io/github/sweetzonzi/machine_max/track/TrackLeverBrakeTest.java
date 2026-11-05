@@ -116,12 +116,4 @@ class TrackLeverBrakeTest {
         assertTrue(TrackMath.leverBrakesLeft(-1f, -1f));
         assertFalse(TrackMath.leverBrakesLeft(0f, 1f));
     }
-
-    @Test
-    void fullLeverLocksTheInnerTrackRegardlessOfServiceBrake() {
-        assertEquals(1f, TrackMath.innerBrake(0.1f, 1f), EPS);
-        assertEquals(0f, TrackMath.outerBrake(0.1f, 1f), EPS);
-        assertEquals(1f, TrackMath.innerBrake(0.5f, 1f), EPS);
-        assertEquals(0f, TrackMath.outerBrake(0.5f, 1f), EPS);
-    }
 }

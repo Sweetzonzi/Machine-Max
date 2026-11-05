@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * 撞碎门槛的离线复现：接近速度、方向有效质量、预测冲量、材料分配与破块判定。
  *
- * <p>系数取 {@code docs/plan/计划中/碰撞系统-撞碎与压溃实现计划.md} §13.1 的起始值
+ * <p>系数取 {@code docs/plan/进行中/碰撞系统-撞碎与压溃实现计划.md} §13.1 的起始值
  * （{@code C_J}=100 N·s/耐久点、{@code C_D}=0.003 HP/(N·s)、{@code approach_epsilon}=0.05 m/s、
  * 材质门 2.0 m/s），参考车型为 2S38 车体（15 t、RHA 25 mm、{@code rha} 材质
  * {@code block_damage_factor}=1.3）。方块护甲与耐久取 {@code ArmorUtil#getBlockArmor} 与
