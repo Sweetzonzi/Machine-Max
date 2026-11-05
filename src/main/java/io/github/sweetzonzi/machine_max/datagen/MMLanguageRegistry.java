@@ -740,6 +740,10 @@ public enum MMLanguageRegistry {
             zh_cn, "蓝图终端",
             en_us, "Blueprint Terminal"
     )),
+    ITEM_TARGET_DESIGNATOR("item.machine_max.target_designator", ImmutableMap.of(
+            zh_cn, "目标指示器",
+            en_us, "Target Designator"
+    )),
     // 物品音效
     SUBTITLES_ITEM_WELDING_TORCH_START("subtitles.item.welding_torch.start", ImmutableMap.of(
             zh_cn, "焊枪启动",

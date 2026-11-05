@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.ResearchPointHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.SeatMapHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.SightHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.TargetDesignatorHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
 import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
@@ -57,6 +58,7 @@ public class MMGuiManager {
         event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
         event.registerAboveAll(id("sight_hud"), new SightHud());
         event.registerAboveAll(id("seat_map_hud"), new SeatMapHud());
+        event.registerAboveAll(id("target_designator_hud"), new TargetDesignatorHud());
 //        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
     }

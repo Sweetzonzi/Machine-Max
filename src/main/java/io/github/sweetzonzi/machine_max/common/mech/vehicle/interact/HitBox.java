@@ -2,21 +2,34 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IModularSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubModule;
+import io.github.sweetzonzi.machine_max.common.mech.target.Target;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import lombok.Getter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 @Getter
-public class HitBox {
+public class HitBox implements Target {
     public final SubPart subPart;
     public final HitBoxAttr attr;
     public final AbstractSubsystem subsystem;
+    /**
+     * 宿主子部件 {@code hitBoxes} 表中的键，即命中框对应的骨骼名。
+     * <p>
+     * 与 {@link HitBoxAttr#id} 不同：后者是「同一次攻击不重复命中」的伤害分组键，可以重复、可以缺省；
+     * 本字段在一个子部件内唯一，因此是碰撞箱的会话内身份。
+     */
+    private final String hitBoxKey;
     private boolean active = true;
     private final boolean alwaysActive;
     /**
@@ -38,9 +51,10 @@ public class HitBox {
      */
     private final Vector3f localCenter;
 
-    public HitBox(SubPart subPart, HitBoxAttr attr, @Nullable Vector3f localCenter) {
+    public HitBox(SubPart subPart, HitBoxAttr attr, String hitBoxKey, @Nullable Vector3f localCenter) {
         this.subPart = subPart;
         this.attr = attr;
+        this.hitBoxKey = hitBoxKey;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
         this.localCenter = localCenter == null ? new Vector3f() : localCenter.clone();
         alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
@@ -64,6 +78,59 @@ public class HitBox {
                     attr.id, subPart.part.name, subPart.name, e.getMessage()
             );
         }
+    }
+
+    // ==================== Target 接口实现 ====================
+
+    /**
+     * 标签取耐久单元的名字：写了 {@code module} 时取模块名，否则取子系统名。
+     * <p>
+     * 子系统名是内容包里的寻址名（形如 {@code subsystem.machine_max.main_weapon}），
+     * 这里去掉命名空间段后展示；没有子系统（纯结构碰撞箱）时退回骨骼名。
+     */
+    @Override
+    public Component label() {
+        if (!attr.module.isEmpty()) return Component.literal(attr.module);
+        if (subsystem != null) {
+            String name = subsystem.getName();
+            int dot = name.lastIndexOf('.');
+            return Component.literal(dot >= 0 ? name.substring(dot + 1) : name);
+        }
+        return Component.literal(hitBoxKey);
+    }
+
+    /**
+     * 真值点：构建期缓存的代表中心按宿主刚体的位姿转到世界坐标，位姿按系数在上一步与当前步之间插值。
+     * <p>
+     * {@code localCenter} 位于刚体质心坐标系，{@code getWorldPositionMatrix(n)} 正是该坐标系到世界空间的变换。
+     */
+    @Override
+    public Vec3 point(Number partialTick) {
+        org.joml.Vector3f world = subPart.getWorldPositionMatrix(partialTick)
+                .transformPosition(SparkMathKt.toVector3f(localCenter), new org.joml.Vector3f());
+        return new Vec3(world.x, world.y, world.z);
+    }
+
+    /**
+     * 内容包显式声明可锁、条件激活、宿主存活、且所属耐久单元未摧毁时可锁。
+     * <p>
+     * {@code lockable} 默认 {@code false}：不是每个碰撞箱都值得标，由作者逐块标注。
+     * 模块优先于子系统：炮管打坏后，即使发射器整体还在，炮管那个框也不再是候选。
+     * 模块名在子系统里查不到时按「没有可摧毁的模块」处理，即仍然可锁。
+     */
+    @Override
+    public boolean isLockable() {
+        if (!attr.lockable) return false;
+        if (!active || subPart.isRemoved || subPart.isDestroyed()) return false;
+        if (subsystem == null) return false;
+        if (attr.module.isEmpty()) return !subsystem.isDestroyed();
+        SubModule module = resolveModule();
+        return module == null || !module.isDestroyed();
+    }
+
+    @Nullable
+    private SubModule resolveModule() {
+        return subsystem instanceof IModularSubsystem modular ? modular.getModule(attr.module) : null;
     }
 
     public float modifyImpact(DamageSource source, float amount) {

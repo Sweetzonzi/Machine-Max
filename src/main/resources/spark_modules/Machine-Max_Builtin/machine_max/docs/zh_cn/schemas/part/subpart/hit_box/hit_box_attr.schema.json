@@ -43,6 +43,11 @@
       "default": "true",
       "description": "生效条件，使用 molang 表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后失去命中判定、拖车撑脚放下后才有碰撞等功能。"
     },
+    "lockable": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否可作为锁定目标被选中（目标指示器标注、后续传感器的候选集）。默认 false：只标出作者认为值得标的部位，而不是每个碰撞箱。可锁还要求绑定了 subsystem、condition 当前为真、且该子系统或其 module 未被摧毁——本字段只是显式准入，不替代那些存活判定。"
+    },
     "overwrite": {
       "type": "object",
       "description": "在引用材质之上叠加的材质覆写。",

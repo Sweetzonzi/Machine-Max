@@ -174,8 +174,8 @@ public final class ModularDamageGameTest {
             HitBoxAttr attr = new HitBoxAttr("mm_gametest_probe", "box", subsystem.getName(), module,
                     source != null ? source.getAttr().getMaterial() : MaterialAttr.DEFAULT_ID,
                     source != null ? source.getAttr().getThickness() : 1f,
-                    "true", null);
-            ctx.extensions().set(MMDamageExtensions.HIT_BOX, new HitBox(subsystem.getSubPart(), attr, null));
+                    "true", false, null);
+            ctx.extensions().set(MMDamageExtensions.HIT_BOX, new HitBox(subsystem.getSubPart(), attr, "mm_gametest_probe", null));
         }
         return new SubPartDamageEvent.Pre(subsystem.getSubPart(), ctx, amount);
     }
@@ -735,8 +735,8 @@ public final class ModularDamageGameTest {
         HitBoxAttr attr = new HitBoxAttr(id, "box", subsystem.getName(), module,
                 source != null ? source.getAttr().getMaterial() : MaterialAttr.DEFAULT_ID,
                 source != null ? source.getAttr().getThickness() : 1f,
-                "true", null);
-        HitBox probe = new HitBox(host, attr, null);
+                "true", false, null);
+        HitBox probe = new HitBox(host, attr, id, null);
         host.hitBoxes.put(id, probe);
         return probe;
     }

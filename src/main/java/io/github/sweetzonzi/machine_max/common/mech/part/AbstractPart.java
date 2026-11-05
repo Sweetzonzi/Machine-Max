@@ -894,7 +894,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 String boneName = entry.getKey();
                 HitBoxAttr hitBoxAttr = entry.getValue();
                 // 局部形心由 SubPartAttr 在碰撞形状构建阶段按 cube 体积加权缓存；此时 SubPart 构造已完成该构建
-                subPart.hitBoxes.put(boneName, new HitBox(subPart, hitBoxAttr, subPartAttr.getHitBoxLocalCenter(boneName)));
+                subPart.hitBoxes.put(boneName, new HitBox(subPart, hitBoxAttr, boneName, subPartAttr.getHitBoxLocalCenter(boneName)));
                 if (hitBoxAttr.shapeType.equals("wheel") && bones.containsKey(boneName)) {
                     wheelParam = PhysicsHelperKt.toBVector3f(bones.get(boneName).getCubes().getFirst().getSize().toVector3f());
                 }

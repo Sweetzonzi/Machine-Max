@@ -10,7 +10,9 @@ import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
 import io.github.sweetzonzi.machine_max.client.render.post.ExplosionLightState;
 import io.github.sweetzonzi.machine_max.client.render.post.MuzzleFlashLightState;
 import io.github.sweetzonzi.machine_max.client.render.renderer.TrackRenderer;
+import io.github.sweetzonzi.machine_max.client.target.TargetDesignatorHandler;
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.TargetDesignatorItem;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -33,6 +35,8 @@ public class MachineMaxClient {
         registerAuiElements();
         // 共通物品类的客户端界面钩子
         PdaItem.setScreenOpener(PdaScreen::open);
+        // 目标指示器的右键锁定钩子
+        TargetDesignatorItem.setUseHandler(TargetDesignatorHandler::onUse);
         // 共通起爆流程的客户端火光登记钩子
         ExplosionManager.setLightSink(ExplosionLightState::onDetonate);
         // 共通开火流程的客户端枪口火光登记钩子

@@ -17,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
+import io.github.sweetzonzi.machine_max.common.item.prop.TargetDesignatorItem
 import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
@@ -159,6 +160,13 @@ object MMItems {
     val FLARE_TEST_ITEM = MachineMax.REGISTER.item{
         id="flare_test"
         factory = { FlareTestItem() }
+    }
+
+    //目标指示器：手持标注视野内可锁定的碰撞箱，右键建立或取消锁定（锁定留在客户端）
+    @JvmStatic
+    val TARGET_DESIGNATOR = MachineMax.REGISTER.item{
+        id="target_designator"
+        factory = { TargetDesignatorItem() }
     }
 
     //油漆喷罐，为部件切换贴图

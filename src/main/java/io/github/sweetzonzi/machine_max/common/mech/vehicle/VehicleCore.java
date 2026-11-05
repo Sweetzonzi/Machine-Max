@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.physics_test.PhysicsTest;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.mech.target.Target;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.ConnectorAlignmentHelper;
@@ -43,6 +44,7 @@ import jme3utilities.math.MyMath;
 import kotlin.ranges.IntRange;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
@@ -65,7 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Getter
-public class VehicleCore implements SyncedDataHolder, IPartAssembly {
+public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     private static final float COMBO_ATTACH_MAX_POS_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR;
     private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//约1e-4°以内视为方向对齐（locator 严格对齐场景）
 
@@ -1594,6 +1596,32 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     @Override
     public void activatePhysics() {
         this.activate();
+    }
+
+    // ==================== Target 接口实现 ====================
+
+    @Override
+    public Component label() {
+        return Component.literal(name);
+    }
+
+    /**
+     * 真值点取形心：{@link #position} 每 tick 由各零件根子部件位置取均值写入，
+     * 读档与分裂时同样赋值；上一 tick 的值在 {@link #oldPosition} 里，两者按系数插值。
+     *
+     * <p>系数到 1 时直接返回当前值，避免 {@code a + (b - a) * 1} 的浮点误差让逐 tick 的调用方
+     * 拿到与 {@link #getPosition()} 差一个 ulp 的点。</p>
+     */
+    @Override
+    public Vec3 point(Number partialTick) {
+        return partialTick.doubleValue() >= 1.0
+                ? position
+                : oldPosition.lerp(position, partialTick.doubleValue());
+    }
+
+    @Override
+    public boolean isLockable() {
+        return !isDestroyed() && !isRemoved;
     }
 
     // ==================== 座位查找 API ====================

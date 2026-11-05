@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.RotationDamper;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
+import io.github.sweetzonzi.machine_max.client.target.TargetDesignatorHandler;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
 import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
@@ -252,9 +253,11 @@ public final class CameraController {
         String viewName = activeCamera == null ? "seat" : activeCamera.getName();
         // 本地信号与上行载荷使用同一完整值，服务端再校验座椅、设备和活动控制组。
         // 重复发送只覆盖状态，不会让每个物理子步再次累计鼠标增量。
-        controllingSeat.setViewInputSignal(new ViewInputSignal(expectedPoint, relativeAim, mode()), viewPart, viewName);
+        // 指示器锁定期间，这个点换成锁定目标的真值点：武器侧不区分点来自准星还是锁定。
+        Vec3 aimPoint = TargetDesignatorHandler.resolveAimPoint(expectedPoint);
+        controllingSeat.setViewInputSignal(new ViewInputSignal(aimPoint, relativeAim, mode()), viewPart, viewName);
         PacketDistributor.sendToServer(new ViewInputPayload(controllingSeat.getSubPart().getId(), controllingSeat.getName(),
-                viewPart, viewName, controllingSeat.getControlGroupSet().getActiveIndex(), expectedPoint, relativeAim));
+                viewPart, viewName, controllingSeat.getControlGroupSet().getActiveIndex(), aimPoint, relativeAim));
     }
 
     /** 主线程维护固定炮镜的输入来源，并单独发布实际观察光轴。 */

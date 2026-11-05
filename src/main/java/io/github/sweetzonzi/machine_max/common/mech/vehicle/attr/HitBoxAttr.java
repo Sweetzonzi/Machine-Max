@@ -36,13 +36,20 @@ public class HitBoxAttr {
     public final float thickness;
     /** 碰撞箱启用条件，Molang语句 */
     public final String condition;
+    /**
+     * 是否可被选作锁定目标。
+     *
+     * <p>缺省 {@code false}：可锁的是作者认为值得标的部位，不是每个碰撞箱。还要同时满足
+     * 「绑定了子系统、条件激活、耐久单元存活」，见 {@code HitBox#isLockable()}。</p>
+     */
+    public final boolean lockable;
     /** 材质属性覆写 */
     @Nullable
     public final OverwriteAttr overwrite;
     /** 最终材质属性，考虑用户自定义覆写 */
     private final MaterialAttr effectiveMaterial;
 
-    public HitBoxAttr(String id, String shapeType, String subsystem, String module, ResourceLocation material, float thickness, String condition, @Nullable OverwriteAttr overwrite) {
+    public HitBoxAttr(String id, String shapeType, String subsystem, String module, ResourceLocation material, float thickness, String condition, boolean lockable, @Nullable OverwriteAttr overwrite) {
         this.id = id;
         String normalizedShape = shapeType == null ? "" : shapeType.toLowerCase(Locale.ROOT);
         if (!SHAPE_TYPES.contains(normalizedShape)) throw new PackContentException(
@@ -53,6 +60,7 @@ public class HitBoxAttr {
         this.material = material;
         this.thickness = thickness;
         this.condition = condition;
+        this.lockable = lockable;
         this.overwrite = overwrite;
         this.effectiveMaterial = getEffectiveMaterial();
     }
@@ -86,6 +94,7 @@ public class HitBoxAttr {
             ResourceLocation.CODEC.optionalFieldOf("material", MaterialAttr.DEFAULT_ID).forGetter(HitBoxAttr::getMaterial),
             Codec.FLOAT.optionalFieldOf("thickness", 1.0f).forGetter(HitBoxAttr::getThickness),
             Codec.STRING.optionalFieldOf("condition", "true").forGetter(HitBoxAttr::getCondition),
+            Codec.BOOL.optionalFieldOf("lockable", false).forGetter(HitBoxAttr::isLockable),
             OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(attr -> Optional.ofNullable(attr.getOverwrite()))
     ).apply(instance, (
             id,
@@ -95,8 +104,9 @@ public class HitBoxAttr {
             material,
             thickness,
             condition,
+            lockable,
             overwrite
-    ) -> new HitBoxAttr(id, shapeType, subsystem, module, material, thickness, condition, overwrite.orElse(null))));
+    ) -> new HitBoxAttr(id, shapeType, subsystem, module, material, thickness, condition, lockable, overwrite.orElse(null))));
 
     public static final Codec<Map<String, HitBoxAttr>> MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,   // 形状骨骼名称

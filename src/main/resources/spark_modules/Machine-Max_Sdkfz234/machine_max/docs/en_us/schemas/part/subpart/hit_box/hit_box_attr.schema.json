@@ -43,6 +43,11 @@
       "default": "true",
       "description": "Activation condition, a molang expression deciding whether the hit box is active, for example glass losing its hit box once broken or a trailer jack losing it when deployed."
     },
+    "lockable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this hit box can be selected as a lock target (target designator annotations, and later the sensor candidate set). Default false: only the parts an author considers worth marking, not every hit box. Being lockable also requires a bound subsystem, a condition that currently holds, and that subsystem or its module not being destroyed; this field is only the explicit gate, it does not replace those liveness checks."
+    },
     "overwrite": {
       "type": "object",
       "description": "Material override applied on top of the referenced material.",

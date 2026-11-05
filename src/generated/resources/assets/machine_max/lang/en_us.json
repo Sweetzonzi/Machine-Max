@@ -215,6 +215,7 @@
   "item.machine_max.power_component_1": "Basic Power Component",
   "item.machine_max.spray_can": "Spray Can",
   "item.machine_max.structural_component_1": "Basic Structural Component",
+  "item.machine_max.target_designator": "Target Designator",
   "item.machine_max.weapon_component_1": "Basic Weapon Component",
   "item.machine_max.welding_torch": "Welding Torch",
   "itemGroup.machine_max.assembly": "MachineMax: Assembly",
