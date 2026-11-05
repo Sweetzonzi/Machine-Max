@@ -207,6 +207,46 @@ class TrajectoryStepTest {
     }
 
     /**
+     * 变质量：装药在窗口内匀速烧掉，段内推力加速度因此逐步上升。
+     * <p>
+     * 两层断言互补：
+     * <ul>
+     *   <li>整段轨迹与 BF 的 {@code solveThrustReducedSI} 逐步比对——两边都以当步总质量做分母；</li>
+     *   <li><b>速度增量之比等于质量反比</b>：同一初态推进半步两次，只改步初的 {@code burnTime}。
+     *       净加速度是 {@code (F − D)/m(t)}，而阻力 {@code D = ½·ρ·Cd·A·|v|²} 与质量无关、同一初态下
+     *       逐位相同，所以两次增量之比恰好是 {@code m晚/m早} 的倒数。若阻力仍用 {@code cfg.mass()}
+     *       而推力用 {@code m(t)}，这个比值会偏出 1e-2 量级，而单看逐步比对（容差 1.0 m/s）是看不出来的。</li>
+     * </ul>
+     */
+    @Test
+    @DisplayName("变质量：段内加速度随装药烧掉上升，轨迹与 BF 一致")
+    void variableMassRaisesAccelerationAcrossTheBurn() {
+        float dt = 0.01f;
+        int steps = 20;
+
+        // 10 个推力步烧掉 2 kg，aT 从 20000/16 升到 20000/14
+        ThrustProfile thrust = new ThrustProfile(List.of(
+                new ThrustProfile.Segment(20000f, 0f, 0.1f, 2f)));
+        Case c = new Case("变质量", 14.0f, 152f, 0.40f, 1.0f, 600f, thrust);
+        BallisticConfig config = c.config(dt, steps);
+
+        Vec3 start = new Vec3(0.0, 80.0, 0.0);
+        Vec3 velocity = new Vec3(c.speed(), 0.0, 0.0);
+
+        TrajectoryResult reference = RealisticTrajectory.forwardSolve(start, velocity, config, DENSITY, thrust);
+        assertTracking(c.name(), start, velocity, thrust, config, reference, steps,
+                TOLERANCE_THRUST_POS, TOLERANCE_THRUST_VEL);
+
+        // 步初 0.00 s：装药未动，分母 16 kg；步初 0.08 s：已烧掉 1.6 kg，分母 14.4 kg
+        Assertions.assertEquals(16f, thrust.massAt(0f, 14f), 0f, "未点火时的总质量");
+        Assertions.assertEquals(14.4f, thrust.massAt(0.08, 14f), 1e-4f, "烧掉 80% 后的总质量");
+
+        float early = axialGainAfterOneStep(0f, config, thrust, dt);
+        float late = axialGainAfterOneStep(0.08f, config, thrust, dt);
+        Assertions.assertEquals(16f / 14.4f, late / early, 1e-3, "速度增量之比应等于质量反比");
+    }
+
+    /**
      * 步长来自显式 {@code dt}，不来自 {@code BallisticConfig#timeStep}。
      * <p>
      * 服务端物理 100 Hz、客户端物理 60 Hz，任何“读当前物理步长”的实现都会在客户端算出 1/60；
@@ -231,6 +271,21 @@ class TrajectoryStepTest {
     private static BallisticConfig configFor(int maxSteps, float timeStep) {
         float radius = 155f / 2000f;
         return new BallisticConfig(0.45f, 43f, (float) (Math.PI * radius * radius), 9.81f, timeStep, maxSteps);
+    }
+
+    /**
+     * 从固定初态（600 m/s 纯轴向）推进一步，返回轴向速度增量（m/s）。
+     * <p>
+     * 两个不同 {@code burnTime} 的调用之间，初速、位置与密度完全相同，阻力 {@code D} 因此逐位相同，
+     * 增量之比直接反映 {@code (F − D)/m} 里分母的变化。取轴向分量而不是速率：重力与近零的 Y 向阻力
+     * 不参与，残差只剩 float 表示误差。
+     */
+    private static float axialGainAfterOneStep(float burnTime, BallisticConfig config,
+                                               ThrustProfile thrust, float dt) {
+        float[] out = new float[TrajectoryStep.OUT_LENGTH];
+        TrajectoryStep.step(0f, 80f, 0f, 600f, 0f, 0f, burnTime,
+                config, thrust, DENSITY, 0f, 0f, 0f, dt, out);
+        return out[TrajectoryStep.OUT_VX] - 600f;
     }
 
     /** 用各种子以 {@code dt} 推进 {@code steps} 步，返回末状态 {@code [px, py, pz, vx, vy, vz]} */

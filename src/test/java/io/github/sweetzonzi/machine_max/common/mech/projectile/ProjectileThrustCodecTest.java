@@ -111,6 +111,64 @@ class ProjectileThrustCodecTest {
     }
 
     /**
+     * 装药进剖面：`propellant_mass` 原样成为段质量，质量在窗口内匀速下降，燃尽后回落到基础质量。
+     * <p>
+     * `external.mass` 是<b>弹体基础质量</b>，装药另计，所以出膛质量是两者之和——这条断言把口径固定住，
+     * 免得日后有人把 `mass` 当成"含药的全重"去改换算。
+     */
+    @Test
+    void propellantMassIsCarriedIntoTheProfileAndBurnsDown() {
+        ExternalProperties props = parse("""
+                "thrust": [{ "force": 2600.0, "start": 0.1, "duration": 2.5, "propellant_mass": 2.0 }]""")
+                .getOrThrow();
+        assertEquals(2.0f, props.thrust().get(0).propellantMass(), 0f, "字段解码");
+
+        ThrustProfile profile = props.toThrustProfile();
+        assertEquals(2.0f, profile.segments().get(0).massKg(), 0f, "段质量按段搬运");
+        assertEquals(28f, profile.massAt(0.0, 26f), 0f, "点火前 = 基础质量 + 全部装药");
+        assertEquals(27f, profile.massAt(1.35, 26f), 1e-4f, "烧到一半");
+        assertEquals(26f, profile.massAt(2.7, 26f), 0f, "燃尽后回落到基础质量");
+    }
+
+    /** 不写 `propellant_mass` 时缺省 0：段质量 0，`massAt` 逐位返回基础质量 */
+    @Test
+    void omittedPropellantKeepsMassConstant() {
+        ThrustProfile profile = profileOf("{ \"force\": 2600.0, \"start\": 0.0, \"duration\": 2.5 }");
+        assertEquals(0f, profile.segments().get(0).massKg(), 0f);
+        assertEquals(26f, profile.massAt(1.0, 26f), 0f);
+    }
+
+    /**
+     * 装药合计必须小于 `mass`：等于、大于、以及"分段都合法但合计超标"都在解码期失败。
+     * <p>
+     * 这层跨字段校验只放解码方向，因此构造函数与测试夹具可以照常造出极端剖面；它挡的是内容包。
+     */
+    @Test
+    void propellantTotalMustStayBelowProjectileMass() {
+        assertTrue(parse("\"thrust\": [{ \"force\": 2600.0, \"start\": 0.0, \"duration\": 1.0, \"propellant_mass\": 26.0 }]")
+                .error().isPresent(), "装药等于弹体质量必须失败");
+        assertTrue(parse("\"thrust\": [{ \"force\": 2600.0, \"start\": 0.0, \"duration\": 1.0, \"propellant_mass\": 30.0 }]")
+                .error().isPresent(), "装药重于弹体必须失败");
+        assertTrue(parse("""
+                "thrust": [
+                  { "force": 2600.0, "start": 0.0, "duration": 1.0, "propellant_mass": 14.0 },
+                  { "force": 2600.0, "start": 2.0, "duration": 1.0, "propellant_mass": 14.0 }
+                ]""").error().isPresent(), "校验按整表求和，单段合法不代表合计合法");
+        assertTrue(parse("\"thrust\": [{ \"force\": 2600.0, \"start\": 0.0, \"duration\": 1.0, \"propellant_mass\": 25.9 }]")
+                .error().isEmpty(), "合计小于 mass 必须通过");
+    }
+
+    /**
+     * 负装药在解码期拒绝。库侧会把它当成无效段丢掉（{@code ThrustProfile} 要求段质量非负），
+     * 于是整段推力一起消失——作者只会看到"没推力"，而这恰好是最难查的那种。
+     */
+    @Test
+    void negativePropellantIsRejected() {
+        assertTrue(parse("\"thrust\": [{ \"force\": 2600.0, \"start\": 0.0, \"duration\": 1.0, \"propellant_mass\": -1.0 }]")
+                .error().isPresent());
+    }
+
+    /**
      * 旧写法（单对象）必须在解码期失败，而不是被当成「一段」静默接受。
      * 这条用例锁死 {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §七
      * 的「对象形态不保留，喊得响而不是静默降级」。

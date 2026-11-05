@@ -77,7 +77,7 @@
 | [界面-车内换座与座位布局HUD调研](进行中/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册，P0–P2 实机验收通过；P3–P4 未实现 |
 | [武器系统-装弹机模块化损伤实施计划](进行中/武器系统-装弹机模块化损伤实施计划.md) | P1–P4 已接入：`feed` / `magazine` 两个模块与模块恢复门槛、`pass_damage=false` 时模块伤害落地的入口修正、实时供给门控与交付清理、再生门控、退弹边界、库存殉爆入口与弹仓受击定位、旧存档比例分摊、`sync:2.8.0`。P5 部分完成：2S38 的 `magazine` / `feed` 命中箱标注与 builtin schema、各包副本已落地，其余第一方载具待标注；P6 实机与标定验收待做；普通装弹机仅做公共接口适配 |
 | [武器系统-武器HUD信息分级与视角形态需求分析](进行中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析，部分落地：逐管读数、弹链余量、装填阶段与三视角布局字段已进入代码；四款具名呈现（`minimal` / `standard` / `scope` / `full`）、可用总数含膛内、逐管「等待供弹」、炮镜装填环与 full 技术面板未实现 |
-| [武器系统-推力分段与变质量计划](进行中/武器系统-推力分段与变质量计划.md) | **已接线**（2026-11-05）：`external.thrust` 为段数组（`force` / `start` / `duration`），整表折算进弹道库 `ThrustProfile`，多段积分与段间空隙生效，9M133 与其余八个包的 schema 副本、技能快照已改；剩余 `propellant_mass`（T3）与随包插件 schema 快照（T6），见该文 §0.2 |
+| [武器系统-推力分段与变质量计划](进行中/武器系统-推力分段与变质量计划.md) | **已实现**（2026-11-06）：`external.thrust` 为段数组（`force` / `start` / `duration` / `propellant_mass`），整表折算进弹道库 `ThrustProfile`，多段积分、段间空隙与燃烧期质量流失生效，装药在解码期校验；`external.mass` 明确为弹体基础质量。builtin 与其余十个包的 schema 副本、技能快照已同步。剩余随包 Blockbench 插件的 schema 快照（T6，待插件仓库发布），见该文 §0.2 |
 | [武器系统-目标粒度与锁定单元设计](进行中/武器系统-目标粒度与锁定单元设计.md) | `Target`（`label`/`point(partialTick)`/`isLockable`）与 `VehicleCore` / `HitBox` 两个实现、`HitBoxAttr.lockable` 显式准入（默认 false，需再满足子系统存活与条件激活）、`HitBox.isLockable()`（模块优先于子系统）、指示器物品与创造栏条目、HUD 标注层（每辆可锁载具一个框 + 其上可锁命中框各一个，屏幕空间标记、按 tick 插值、边长固定 28 像素）、右键锁定与释放（命中不可锁部位时退回整辆载具，每 tick 轮询手持物）、锁定点替换瞄准上行点均已落地，`build` 与 `runGameTestServer` 通过；第一方内容暂未声明 `lockable`，因此只有载具框；传感器 `Reading` 接入、跨端表示与传输（§八）、实体与方向目标未实现；待游戏内验收 |
 
 ## 计划中

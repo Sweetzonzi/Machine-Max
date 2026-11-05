@@ -39,7 +39,7 @@
         "mass": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "弹体质量（kg）。"
+          "description": "弹体质量（kg），不含推进剂。出膛质量 = 本值 + 推进段装药合计。"
         },
         "gravity_factor": {
           "type": "number",
@@ -76,13 +76,14 @@
             "properties": {
               "force": { "type": "number", "minimum": 0, "default": 0, "description": "推力（N）。" },
               "start": { "type": "number", "minimum": 0, "default": 0, "description": "点火时刻（s），从发射瞬间起算；0 = 出膛即点火。" },
-              "duration": { "type": "number", "minimum": 0, "default": 0, "description": "燃烧时长（s）；窗口为 [start, start + duration)。" }
+              "duration": { "type": "number", "minimum": 0, "default": 0, "description": "燃烧时长（s）；窗口为 [start, start + duration)。" },
+              "propellant_mass": { "type": "number", "minimum": 0, "default": 0, "description": "本段全程烧掉的推进剂（kg），在窗口内匀速消耗；0 = 本段质量恒定。全部段的合计必须小于 external.mass。" }
             },
             "additionalProperties": false,
-            "description": "一个推进段（恒推力，沿速度矢量施加）。"
+            "description": "一个推进段（恒推力，沿速度矢量施加）。烧掉装药后弹丸变轻，段内加速度因此逐个物理步上升。"
           },
           "default": [],
-          "description": "推进段表 — 多段推力。整块可省略或写空数组，均表示无推力。每一段都按各自的窗口 [start, start + duration) 施加，段与段之间是空隙（无推力滑行）。"
+          "description": "推进段表 — 多段推力。整块可省略或写空数组，均表示无推力。每一段都按各自的窗口 [start, start + duration) 施加，段与段之间是空隙（无推力滑行）。弹丸总质量 = external.mass + 各段尚未烧掉的装药。"
         }
       },
       "required": ["mass", "base_velocity"],

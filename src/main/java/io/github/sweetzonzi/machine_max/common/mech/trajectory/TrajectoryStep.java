@@ -12,8 +12,9 @@ import net.minecraft.world.phys.Vec3;
  * <ul>
  *   <li><b>二次阻力</b> {@code a = -½·ρ·Cd·A·|v|²/m · v̂}，密度按步初位置查询；</li>
  *   <li><b>重力</b> 沿 {@code -Y}，大小为 {@link BallisticConfig#gravity()}；</li>
- *   <li><b>质量</b> 取 {@code ThrustProfile#massAt(burnTime, m₀)}：燃烧期推进剂烧掉时质量下降，
- *       阻力与推力加速度因此同源同分母；无装药时它逐位返回 {@code m₀}；</li>
+ *   <li><b>质量</b> 取 {@code ThrustProfile#massAt(burnTime, m₀)}，即弹体基础质量
+ *       {@link BallisticConfig#mass()} 加上各段尚未燃尽的装药：燃烧期质量下降，阻力与推力
+ *       加速度因此同源同分母；无装药时它逐位返回 {@code m₀}；</li>
  *   <li><b>推力</b> 沿 {@code v̂}，大小 {@code forceAt(burnTime)/massAt(...)}，
  *       只在某段窗口 {@code [start, start + duration)} 内施加，段间空隙无推力；</li>
  *   <li><b>指令加速度</b> 由调用方给出（制导律输出），预载传 0。</li>
@@ -75,23 +76,27 @@ public final class TrajectoryStep {
     ) {
         float speed = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
 
+        // ——— 当步总质量：基础质量 + 各段未燃尽的装药 ———
+        // 无装药时逐位等于 cfg.mass()；有装药时随燃烧窗口下降，阻力与推力共用这一个分母。
+        float mass = thrust.massAt(burnTime, cfg.mass());
+
         // ——— 二次阻力：F = ½·ρ·Cd·A·|v|²，方向 -v̂ ———
         float dragAccX = 0f, dragAccY = 0f, dragAccZ = 0f;
         if (cfg.dragCoefficient() > 1e-8f && speed > 1e-8f) {
             float rho = density.getDensity(new Vec3(px, py, pz));
             float dragAcc = 0.5f * rho * cfg.dragCoefficient() * cfg.crossSectionArea()
-                    * speed * speed / cfg.mass();
+                    * speed * speed / mass;
             float invSpeed = 1f / speed;
             dragAccX = dragAcc * (-vx * invSpeed);
             dragAccY = dragAcc * (-vy * invSpeed);
             dragAccZ = dragAcc * (-vz * invSpeed);
         }
 
-        // ——— 推力：沿 v̂、大小 forceAt(burnTime)/massAt(burnTime, m₀)；段外与空隙为 0 ———
+        // ——— 推力：沿 v̂、大小 forceAt(burnTime)/当步质量；段外与空隙为 0 ———
         float thrustAccX = 0f, thrustAccY = 0f, thrustAccZ = 0f;
         float forceN = thrust.forceAt(burnTime);
         if (forceN > 0f && speed > 1e-6f) {
-            float thrustAcc = forceN / thrust.massAt(burnTime, cfg.mass());
+            float thrustAcc = forceN / mass;
             float invSpeed = 1f / speed;
             thrustAccX = thrustAcc * vx * invSpeed;
             thrustAccY = thrustAcc * vy * invSpeed;

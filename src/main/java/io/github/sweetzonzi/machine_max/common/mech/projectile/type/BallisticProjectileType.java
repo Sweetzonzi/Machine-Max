@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile.type;
 
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
@@ -264,11 +265,8 @@ public class BallisticProjectileType extends ProjectileType {
      * 此弹种的推力剖面，时间窗用公制秒表达、自发射瞬间起算。
      * <p>
      * 段表逐项折算为 {@link ThrustProfile.Segment}（力、点火延迟、时长、段质量），整表一次构造，
-     * 因此多段点火与段间空隙都由剖面本身表达；无段时返回 {@link ThrustProfile#NONE}。
-     * <p>
-     * 段质量一律为 0：内容包侧还没有 {@code propellant_mass} 字段（
-     * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §0.2 的 T3），燃烧期质量恒定，
-     * 因此 {@code massAt} 逐位返回 {@link BallisticConfig#mass()}。
+     * 因此多段点火、段间空隙与燃烧期质量流失都由剖面本身表达；无段时返回
+     * {@link ThrustProfile#NONE}。
      *
      * @return 本弹种的推力剖面（同一实例）
      */
@@ -581,7 +579,14 @@ public class BallisticProjectileType extends ProjectileType {
      * 这些字段供运动积分与 {@code BallisticsFramework} 外弹道解算使用。
      */
     public record ExternalProperties(
-        /** 质量（kg） */
+        /**
+         * 弹体基础质量（kg），<b>不含推进剂</b>。
+         * <p>
+         * 燃烧期内弹丸的总质量是 {@code mass + 各段尚未燃尽的装药}，由
+         * {@link ThrustProfile#massAt} 给出：出膛质量因此是 {@code mass + Σ propellant_mass}，
+         * 燃尽后回落到 {@code mass}。阻力与推力加速度都以当步的总质量为分母，所以同一个
+         * {@code force} 在燃尽前后给出的加速度不同。不写装药的弹种总质量恒为 {@code mass}。
+         */
         float mass,
         /** 重力系数，1.0 = 标准重力，0 = 无重力 */
         float gravityFactor,
@@ -600,30 +605,64 @@ public class BallisticProjectileType extends ProjectileType {
         /**
          * 推进段表，缺省空表（无推力，纯弹道）。
          * <p>
-         * 多段：数组元素各自带点火时刻与时长，段间允许空隙（空隙即无推力滑行）。整表经
+         * 多段：数组元素各自带点火时刻、时长与装药，段间允许空隙（空隙即无推力滑行）。整表经
          * {@link #toThrustProfile()} 折算成弹道库的剖面后<b>全部生效</b>——不存在"只施加首段"
-         * 这种截断。字段语义见 {@link ThrustSegment}。
+         * 这种截断。字段语义见 {@link ThrustSegment}。各段装药的合计必须小于 {@link #mass}，
+         * 否则解码失败（见 {@link #CODEC}）。
          */
         List<ThrustSegment> thrust
     ) {
-        public static final Codec<ExternalProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.FLOAT.fieldOf("mass").forGetter(ExternalProperties::mass),
-            Codec.FLOAT.optionalFieldOf("gravity_factor", 1.0f).forGetter(ExternalProperties::gravityFactor),
-            Codec.FLOAT.optionalFieldOf("drag_factor", 0f).forGetter(ExternalProperties::dragFactor),
-            Codec.FLOAT.optionalFieldOf("caliber", 50.0f).forGetter(ExternalProperties::caliberMm),
-            Codec.FLOAT.fieldOf("base_velocity").forGetter(ExternalProperties::baseVelocity),
-            Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil),
-            Codec.list(ThrustSegment.CODEC).optionalFieldOf("thrust", List.of())
-                .forGetter(ExternalProperties::thrust)
-        ).apply(instance, ExternalProperties::new));
+        public static final Codec<ExternalProperties> CODEC =
+                RecordCodecBuilder.<ExternalProperties>create(instance -> instance.group(
+                        Codec.FLOAT.fieldOf("mass").forGetter(ExternalProperties::mass),
+                        Codec.FLOAT.optionalFieldOf("gravity_factor", 1.0f).forGetter(ExternalProperties::gravityFactor),
+                        Codec.FLOAT.optionalFieldOf("drag_factor", 0f).forGetter(ExternalProperties::dragFactor),
+                        Codec.FLOAT.optionalFieldOf("caliber", 50.0f).forGetter(ExternalProperties::caliberMm),
+                        Codec.FLOAT.fieldOf("base_velocity").forGetter(ExternalProperties::baseVelocity),
+                        Codec.FLOAT.optionalFieldOf("base_accuracy_mil", 5.0f).forGetter(ExternalProperties::baseAccuracyMil),
+                        Codec.list(ThrustSegment.CODEC).optionalFieldOf("thrust", List.of())
+                                .forGetter(ExternalProperties::thrust)
+                ).apply(instance, ExternalProperties::new))
+                .flatXmap(ExternalProperties::checkPropellant, DataResult::success);
+
+        /**
+         * 解码期的跨字段校验：装药逐段非负，且合计小于弹体质量。
+         * <p>
+         * 这是外面那层 {@code flatXmap} 的实体，<b>只在解码方向生效</b>（编码原样通过）。两条都是
+         * 内容包的输入约束而不是求解器的不变式，所以放在信任边界上，失败时由 {@code PackCodec}
+         * 转成一条带文件定位的内容包错误，而不是等开火才炸：
+         * <ul>
+         *   <li>负装药会让该段被 {@link ThrustProfile} 当成无效段丢弃——推力一起消失，作者却只看到
+         *       "没推力"，因此在这里直接拒绝；</li>
+         *   <li>装药合计不小于 {@code mass} 时，燃烧末期的总质量会归零或为负，加速度发散。
+         *       {@link ThrustProfile#massAt} 虽然有 1e-6 kg 的下限兜底，但那是防除零，不是可用配置。</li>
+         * </ul>
+         */
+        private static DataResult<ExternalProperties> checkPropellant(ExternalProperties props) {
+            float propellant = 0f;
+            for (int i = 0; i < props.thrust.size(); i++) {
+                float mass = props.thrust.get(i).propellantMass();
+                if (mass < 0f) {
+                    int index = i;
+                    return DataResult.error(() -> "external.thrust[" + index + "].propellant_mass 必须为非负数，实际为 " + mass);
+                }
+                propellant += mass;
+            }
+            float total = propellant;
+            if (total >= props.mass) {
+                return DataResult.error(() -> "external.thrust 的装药合计 " + total
+                        + " kg 必须小于 external.mass " + props.mass + " kg（推进剂不能重于弹体，否则燃尽时质量归零）");
+            }
+            return DataResult.success(props);
+        }
 
         /**
          * 把段表折算成弹道库的推力剖面。
          * <p>
          * 这里只做字段映射与逐段搬运：排序、丢弃无效段、拒绝重叠都由
-         * {@link ThrustProfile} 的构造器完成，MM 侧不重复这些判据。段质量一律为 0——内容包
-         * 还没有 {@code propellant_mass} 字段（{@code docs/plan/进行中/武器系统-推力分段与变质量计划.md}
-         * §0.2 的 T3），燃烧期质量恒定。
+         * {@link ThrustProfile} 的构造器完成，MM 侧不重复这些判据。每段的 {@code propellant_mass}
+         * 原样进入 {@code ThrustProfile.Segment#massKg}，段内匀速烧掉；不写该字段时它是 0，
+         * 该段质量恒定，总质量因此在整个燃烧窗口里保持 {@link #mass}。
          *
          * @return 弹道库的推力剖面；段表为空时是 {@link ThrustProfile#NONE}
          * @throws IllegalArgumentException 段窗口重叠时由 {@link ThrustProfile} 的构造器抛出
@@ -635,7 +674,7 @@ public class BallisticProjectileType extends ProjectileType {
             List<ThrustProfile.Segment> table = new ArrayList<>(thrust.size());
             for (ThrustSegment segment : thrust) {
                 table.add(new ThrustProfile.Segment(
-                        segment.force(), segment.start(), segment.duration(), 0f));
+                        segment.force(), segment.start(), segment.duration(), segment.propellantMass()));
             }
             return new ThrustProfile(table);
         }
@@ -644,34 +683,35 @@ public class BallisticProjectileType extends ProjectileType {
          * 推进段 — 单段恒推力，沿<b>速度矢量</b>施加（无姿态质点弹的合理近似：弹轴 ≈ 速度）。
          * <p>
          * 只增速率、不改方向，与制导/阻力/重力共用同一套半隐式 Euler 积分。段内加速度为
-         * {@code force / m(t)}，燃烧窗口为 {@code [start, start + duration)}；多段之间允许空隙，
-         * 空隙内无推力。
+         * {@code force / m(t)}，质量随装药烧掉而下降，因此同一段内加速度单调上升；燃烧窗口为
+         * {@code [start, start + duration)}，多段之间允许空隙，空隙内无推力。
          * <p>
-         * <b>只接受数组形态。</b>{@code external.thrust} 的旧写法（单对象）不再兼容，会在
-         * 解码期以「期望列表」失败——有意如此，错误要响亮而非静默降级。
+         * <b>只接受数组形态。</b>{@code external.thrust} 的单对象写法会在解码期以「期望列表」
+         * 失败——有意如此，错误要响亮而非静默降级。
          * <p>
          * <b>两端一致：</b>服务端 {@code updateProjectiles} 与客户端 {@code clientExtrapolate}
          * 均按同一条剖面施加推力，保证客户端外推轨迹与服务端一致。
          * <p>
-         * <b>字段集中不含 {@code propellant_mass}</b>：燃烧期质量流失的库侧能力已具备
-         * （{@code ThrustProfile.Segment#massKg}），内容包字段与解码属兼容新增，见
-         * {@code docs/plan/进行中/武器系统-推力分段与变质量计划.md} §0.2 的 T3。
          * 段的有效性与窗口终点不在这里判定：{@code force} 或 {@code duration} 非正的段由
          * {@link ThrustProfile} 的构造器丢弃，窗口终点是 {@code start + duration}。
          *
-         * @param force    推力（N）
-         * @param start    点火时刻（s），自发射瞬间起算；0 = 出膛即点火
-         * @param duration 燃烧时长（s），必须为正才生效
+         * @param force          推力（N）
+         * @param start          点火时刻（s），自发射瞬间起算；0 = 出膛即点火
+         * @param duration       燃烧时长（s），必须为正才生效
+         * @param propellantMass 本段全程烧掉的推进剂（kg），段内匀速消耗；0（缺省）= 本段质量恒定。
+         *                       各段合计必须小于 {@link ExternalProperties#mass}，且不得为负
          */
         public record ThrustSegment(
             float force,
             float start,
-            float duration
+            float duration,
+            float propellantMass
         ) {
             public static final Codec<ThrustSegment> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.FLOAT.optionalFieldOf("force", 0f).forGetter(ThrustSegment::force),
                 Codec.FLOAT.optionalFieldOf("start", 0f).forGetter(ThrustSegment::start),
-                Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustSegment::duration)
+                Codec.FLOAT.optionalFieldOf("duration", 0f).forGetter(ThrustSegment::duration),
+                Codec.FLOAT.optionalFieldOf("propellant_mass", 0f).forGetter(ThrustSegment::propellantMass)
             ).apply(instance, ThrustSegment::new));
         }
     }
