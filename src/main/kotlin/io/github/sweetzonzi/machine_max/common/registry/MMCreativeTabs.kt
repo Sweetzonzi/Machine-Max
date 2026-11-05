@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.item.FittingItems
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
@@ -173,6 +174,15 @@ object MMCreativeTabs {
                     val itemStack = ItemStack(MMItems.PART_ITEM)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     itemStack.set(DataComponents.MAX_STACK_SIZE, type.maxStackSize)
+                    externalParts.add(itemStack)
+                }
+                // 履带是唯一进入零部件页的配件：它属于行走机构，要与轮胎出现在同一类别下。
+                // 其他配件只留在配件页。类别与系列由型号自身的标签给出（TrackType 构造时并入机动）。
+                MMDynamicRes.FITTING_TYPES.entries.sortedBy { it.key.toString() }.forEach { (loc, type) ->
+                    if (type !is TrackType) return@forEach
+                    val item = FittingItems.itemFor(type) ?: return@forEach
+                    val itemStack = ItemStack(item)
+                    itemStack.set(MMDataComponents.FITTING_TYPE, loc)
                     externalParts.add(itemStack)
                 }
                 externalParts.forEach { event.accept(it) }

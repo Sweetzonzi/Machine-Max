@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackMemberRef;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -322,6 +323,72 @@ class TrackDataCodecTest {
                 """);
         assertThrows(RuntimeException.class,
                 () -> FittingType.CODEC.parse(JsonOps.INSTANCE, duplicate).getOrThrow());
+    }
+
+    @Test
+    void trackTagsAlwaysCarryMobilityAndKeepAuthoredOnes() {
+        registerMaterial("machine_max:track_steel");
+        var json = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "tags": [
+                    "machine_max:series/t90a",
+                    "machine_max:category/mobility",
+                    "machine_max:category/decoration"
+                  ],
+                  "visual": {
+                    "model": "machine_max:track_link.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        TrackType type = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+        // 机动由种类并入且只留一份；作者写的其他类别原样保留，顺序在并入项之后
+        assertEquals(List.of(
+                MMTags.PART_CATEGORY_MOBILITY,
+                ResourceLocation.parse("machine_max:series/t90a"),
+                ResourceLocation.parse("machine_max:category/decoration")
+        ), type.tags());
+
+        var encoded = FittingType.CODEC.encodeStart(JsonOps.INSTANCE, type).getOrThrow();
+        TrackType roundTripped = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+        assertEquals(type.tags(), roundTripped.tags());
+    }
+
+    @Test
+    void absentTrackTagsMeanMobilityOnly() {
+        registerMaterial("machine_max:track_steel");
+        var json = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "visual": {
+                    "model": "machine_max:track_link.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        TrackType type = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+        assertEquals(List.of(MMTags.PART_CATEGORY_MOBILITY), type.tags());
+    }
+
+    @Test
+    void malformedTagIdFailsTheWholeType() {
+        registerMaterial("machine_max:track_steel");
+        var json = JsonParser.parseString("""
+                {
+                  "type": "track",
+                  "material": "machine_max:track_steel",
+                  "tags": ["not a resource location"],
+                  "visual": {
+                    "model": "machine_max:track_link.geo",
+                    "texture": "machine_max:textures/part/track_link.png"
+                  }
+                }
+                """);
+        assertThrows(RuntimeException.class,
+                () -> FittingType.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
     }
 
     private static void registerMaterial(String id) {

@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -68,6 +69,24 @@ public final class TextUtil {
     }
 
     /**
+     * 收集一组标签的搜索文本：完整标签 ID 与标签译名各一条。
+     *
+     * <p>返回的文本已按 {@link #normalize(String)} 归一化，可直接参与子串匹配；
+     * 输出顺序稳定，重复标签只产生一次文本。</p>
+     *
+     * @param tags 标签集合
+     * @return 去重后的搜索文本集合
+     */
+    public static Set<String> collectSearchTexts(Collection<ResourceLocation> tags) {
+        Set<String> result = new LinkedHashSet<>();
+        for (ResourceLocation tag : tags) {
+            result.add(normalize(tag.toString()));
+            result.add(normalize(getTranslatedOrRawTag(tag)));
+        }
+        return result;
+    }
+
+    /**
      * 收集一个型号全部变体标签的搜索文本：完整标签 ID 与标签译名各一条。
      *
      * <p>返回的文本已按 {@link #normalize(String)} 归一化，可直接参与子串匹配；
@@ -77,12 +96,7 @@ public final class TextUtil {
      * @return 去重后的搜索文本集合
      */
     public static Set<String> collectSearchTexts(@Nullable RegularPartType partType) {
-        Set<String> result = new LinkedHashSet<>();
-        for (ResourceLocation tag : getDistinctSortedTags(partType)) {
-            result.add(normalize(tag.toString()));
-            result.add(normalize(getTranslatedOrRawTag(tag)));
-        }
-        return result;
+        return collectSearchTexts(getDistinctSortedTags(partType));
     }
 
     public static String normalize(String text) {

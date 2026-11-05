@@ -3,10 +3,12 @@ package io.github.sweetzonzi.machine_max.client.render.gui.creative;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import io.github.sweetzonzi.machine_max.common.registry.MMCreativeTabsKt;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -489,12 +491,25 @@ public final class CreativePartBrowser {
         return stack.get(MMDataComponents.getPART_TYPE());
     }
 
-    /** 候选堆对应型号的全部变体标签（并集、去重、按完整 ID 排序），走型号级缓存。 */
+    /** 候选堆对应的配件型号；不是配件时返回 {@code null}。 */
+    @Nullable
+    private FittingType fittingOf(ItemStack stack) {
+        ResourceLocation fittingId = stack.get(MMDataComponents.getFITTING_TYPE());
+        return fittingId == null ? null : MMDynamicRes.FITTING_TYPES.get(fittingId);
+    }
+
+    /**
+     * 候选堆的筛选标签：零件取型号全部变体的标签并集（走型号级缓存），
+     * 配件取型号自身携带的标签（种类固有的类别已在构造时并入）。
+     */
     private List<ResourceLocation> tagsOf(ItemStack stack) {
         ResourceLocation partId = this.partIdOf(stack);
-        if (partId == null) return List.of();
-        this.ensurePartCache(partId);
-        return this.tagCache.getOrDefault(partId, List.of());
+        if (partId != null) {
+            this.ensurePartCache(partId);
+            return this.tagCache.getOrDefault(partId, List.of());
+        }
+        FittingType type = this.fittingOf(stack);
+        return type == null ? List.of() : type.tags();
     }
 
     private List<String> tagSearchTexts(@Nullable ResourceLocation partId) {
@@ -568,8 +583,11 @@ public final class CreativePartBrowser {
                 itemTagIds.add(TextUtil.normalize(key.location().toString()));
             }
         }
-        return matchesAllWords(
-                searchFields(nameAndId, this.tagSearchTexts(partId), itemTagIds, tagMode), words);
+        // 零件的标签文本按型号缓存；配件没有变体，直接由本次已取到的标签生成。
+        List<String> tagTexts = partId != null
+                ? this.tagSearchTexts(partId)
+                : List.copyOf(TextUtil.collectSearchTexts(tags));
+        return matchesAllWords(searchFields(nameAndId, tagTexts, itemTagIds, tagMode), words);
     }
 
     private boolean hasAnyTag(ItemStack stack, List<ResourceLocation> tags) {

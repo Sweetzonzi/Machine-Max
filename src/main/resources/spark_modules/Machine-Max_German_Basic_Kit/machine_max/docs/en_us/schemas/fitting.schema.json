@@ -14,6 +14,16 @@
       "const": "track",
       "description": "Fitting kind. The first release only accepts \"track\"; any other value is a content pack error and the type is not registered."
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "base/resource_location.schema.json" }
+        ]
+      },
+      "default": [],
+      "description": "Creative tab tags, using the same vocabulary as the part definitions' variants[].tags: machine_max:category/* picks the sidebar category on the parts tab, machine_max:series/* feeds the series filter. Categories are not mutually exclusive, so one type may carry several category tags. A track is always running gear, so construction merges machine_max:category/mobility automatically; any other category written here (e.g. category/decoration) is kept and a repeated mobility tag is collapsed. When omitted, a track has the mobility category only and no series, and still lands under mobility."
+    },
     "material": {
       "allOf": [
         { "$ref": "base/resource_location.schema.json" }

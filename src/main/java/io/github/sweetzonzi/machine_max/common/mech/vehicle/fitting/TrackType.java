@@ -4,6 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 履带型号：在 {@link FittingType} 的公共外观之外持有 {@link TrackAttr} 与逐节骨骼名。
+ * 履带型号：在 {@link FittingType} 的公共外观与标签之外持有 {@link TrackAttr} 与逐节骨骼名。
  *
  * <p>履带字段平铺在型号 JSON 的顶层，外观是同一层的 {@code "visual"} 对象；型号本身
  * 不承担运行时职责，只提供数据。型号 id 由内容包加载器写入
@@ -24,8 +26,8 @@ public class TrackType extends FittingType {
     private final TrackAttr attr;
     private final List<String> linkBones;
 
-    public TrackType(FittingVisual visual, TrackAttr attr, List<String> linkBones) {
-        super(visual);
+    public TrackType(FittingVisual visual, List<ResourceLocation> tags, TrackAttr attr, List<String> linkBones) {
+        super(visual, withMobility(tags));
         Set<String> seen = new HashSet<>(linkBones.size());
         for (String name : linkBones) {
             if (name == null || name.isBlank()) {
@@ -37,6 +39,23 @@ public class TrackType extends FittingType {
         }
         this.attr = attr;
         this.linkBones = List.copyOf(new ArrayList<>(linkBones));
+    }
+
+    /**
+     * 并入机动类别：履带始终是行走机构，作者写的其余类别（如装饰）照常保留。
+     *
+     * <p>合并结果去重，作者的列表里重复写机动也只留一份。类别之间不是互斥关系，
+     * 同一个型号可以同时命中多个类别筛选。</p>
+     */
+    private static List<ResourceLocation> withMobility(List<ResourceLocation> tags) {
+        List<ResourceLocation> merged = new ArrayList<>(tags.size() + 1);
+        merged.add(MMTags.PART_CATEGORY_MOBILITY);
+        for (ResourceLocation tag : tags) {
+            if (!tag.equals(MMTags.PART_CATEGORY_MOBILITY)) {
+                merged.add(tag);
+            }
+        }
+        return List.copyOf(merged);
     }
 
     @Override
@@ -66,8 +85,9 @@ public class TrackType extends FittingType {
     public static final MapCodec<TrackType> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             TrackAttr.MAP_CODEC.forGetter(TrackType::attr),
             FittingVisual.CODEC.fieldOf("visual").forGetter(FittingType::visual),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of()).forGetter(FittingType::tags),
             Codec.STRING.listOf().optionalFieldOf("link_bones", List.of()).forGetter(TrackType::linkBones)
-    ).apply(instance, (attr, visual, linkBones) -> new TrackType(visual, attr, linkBones)));
+    ).apply(instance, (attr, visual, tags, linkBones) -> new TrackType(visual, tags, attr, linkBones)));
 
     public static final Codec<TrackType> CODEC = MAP_CODEC.codec();
 }

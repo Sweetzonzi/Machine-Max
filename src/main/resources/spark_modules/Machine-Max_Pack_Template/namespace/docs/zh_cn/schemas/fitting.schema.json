@@ -14,6 +14,16 @@
       "const": "track",
       "description": "配件种类。首版只有 \"track\"；未知取值记为内容包错误，该型号不注册。"
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "base/resource_location.schema.json" }
+        ]
+      },
+      "default": [],
+      "description": "创造页标签，与零件定义 variants[].tags 使用同一套词表：machine_max:category/* 决定零部件创造页侧栏的类别，machine_max:series/* 决定系列筛选。类别不是互斥的，一个型号可以同时带多个 category 标签。履带种类始终是行走机构，构造时会自动并入 machine_max:category/mobility；这里写的其他类别（如 category/decoration）会一并保留，重复写机动只留一份。省略时履带只有机动类别、没有系列，仍会正确归入机动。"
+    },
     "material": {
       "allOf": [
         { "$ref": "base/resource_location.schema.json" }

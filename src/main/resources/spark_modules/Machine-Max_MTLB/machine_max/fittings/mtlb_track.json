@@ -1,6 +1,7 @@
 {
   "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
   "type": "track",
+  "tags": ["machine_max:series/mtlb"],
   "material": "machine_max:track_steel",
   "thickness_mm": 50.0,
   "durability_per_link": 20.0,

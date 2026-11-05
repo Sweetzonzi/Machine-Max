@@ -1,6 +1,7 @@
 {
   "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
   "type": "track",
+  "tags": ["machine_max:series/t90a"],
   "material": "machine_max:track_steel",
   "thickness_mm": 65.625,
   "durability_per_link": 20,
@@ -17,15 +18,5 @@
     "model": "t90a:t90a_track.geo",
     "texture": "t90a:textures/part/t90a.png",
     "icon": "t90a:textures/icon/t90a_track.png"
-  },
-  "sounds": {
-    "hit_un_pen": {
-      "sound_id": "machine_max:part.collision.terrain.hard_metal",
-      "range": 64
-    },
-    "hit_pen": {
-      "sound_id": "machine_max:part.collision.terrain.hard_metal",
-      "range": 64
-    }
   }
 }

@@ -4,13 +4,20 @@ import com.mojang.serialization.Codec;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.List;
+
 /**
  * 载具挂件型号的基类。
  *
  * <p>挂件是挂在载具上的硬件：首版只有履带（{@link TrackType}），后续的装甲板、装饰物
- * 也走同一个注册表与同一份 {@code fittings/} 目录。基类只承载所有挂件共有的外观
- * （{@link FittingVisual}）与注册键；各自的数据字段留在子类，基类不预设履带字段，
- * 也不承担运行时职责。</p>
+ * 也走同一个注册表与同一份 {@code fittings/} 目录。基类承载所有挂件共有的外观
+ * （{@link FittingVisual}）、创造页标签（{@link #tags()}）与注册键；各自的数据字段留在
+ * 子类，基类不预设履带字段，也不承担运行时职责。</p>
+ *
+ * <p>标签与零件变体的 {@code variants[].tags} 共用一套词表（{@code category/*} 与
+ * {@code series/*}），由各子类决定是否在作者的取值之上追加种类固有的标签：履带始终是
+ * 行走机构，因此 {@link TrackType} 会并入 {@code machine_max:category/mobility}；基类本身
+ * 只保存作者写下的标签，不解释它们的含义。</p>
  *
  * <p>{@link #CODEC} 用 JSON 的 {@code "type"} 分派到具体型号的 {@code MapCodec}；
  * 首版只有 {@code "track"}，未知取值抛 {@link IllegalArgumentException}，由内容包加载器
@@ -26,10 +33,12 @@ public abstract class FittingType {
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "default");
 
     private final FittingVisual visual;
+    private final List<ResourceLocation> tags;
     private ResourceLocation registryKey;
 
-    protected FittingType(FittingVisual visual) {
+    protected FittingType(FittingVisual visual, List<ResourceLocation> tags) {
         this.visual = visual;
+        this.tags = List.copyOf(tags);
     }
 
     /** JSON {@code "type"} 的取值，也是 dispatch 的路由键。 */
@@ -56,6 +65,16 @@ public abstract class FittingType {
 
     public FittingVisual visual() {
         return visual;
+    }
+
+    /**
+     * 该型号在创造页上使用的标签，与零件变体的标签词表相同。
+     *
+     * <p>内容包写什么就返回什么，子类可以在构造时追加种类固有的标签；空列表表示该型号没有
+     * 任何分类与系列，在零部件创造页里会落入「未分类」。</p>
+     */
+    public List<ResourceLocation> tags() {
+        return tags;
     }
 
     /**
