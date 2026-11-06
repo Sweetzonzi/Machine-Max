@@ -128,7 +128,11 @@ public class ConnectorAttr {
     }
 
     public boolean conditionCheck(AbstractPartType partType, String variant) {
-        if (MMServerConfig.ignoreAssemblyTagRequirements()) return true; // 检查服务端配置，视情况忽略配方要求
+        return MMServerConfig.ignoreAssemblyTagRequirements() || matchesTags(partType, variant);
+    }
+
+    /** 检查定义中的连接标签，不读取服务器配置；内容包发布阶段也可调用。 */
+    public boolean matchesTags(AbstractPartType partType, String variant) {
         Set<ResourceLocation> tags = new HashSet<>(partType.getVariant(variant).getTags());
         var effectiveAttr = getEffectiveAttr();
         //检查必须拥有的tag情况(必须全都有)
