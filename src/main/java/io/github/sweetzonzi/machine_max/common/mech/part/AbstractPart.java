@@ -219,12 +219,15 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 subPart.setAngularVelocity(posRotVelVel.angularVel());
                 subPart.transform = posRotVelVel.toTransform();
                 subPart.oldTransform = posRotVelVel.toTransform();
-                subPart.body.setPhysicsLocation(posRotVelVel.position());
-                subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
-                subPart.body.setLinearVelocity(posRotVelVel.linearVel());
-                subPart.body.setAngularVelocity(posRotVelVel.angularVel());
-                PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(posRotVelVel.toTransform());
-                PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(posRotVelVel.toTransform());
+                // 客户端的初始化和后续组成更新走同一条 PRE 队列；服务端构造阶段独占刚体。
+                if (level.isClientSide()) {
+                    subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                        if (!subPart.isRemoved()) restoreRigidPose(subPart, posRotVelVel);
+                        return null;
+                    });
+                } else {
+                    restoreRigidPose(subPart, posRotVelVel);
+                }
             } else {
                 subPart.destroy();
             }
@@ -258,6 +261,16 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 setSharedDurability(data.sharedDurabilityRatio * getSharedMaxDurability());
             }
         }
+    }
+
+    private static void restoreRigidPose(SubPart subPart, PosRotVelVel pose) {
+        var transform = pose.toTransform();
+        subPart.body.setPhysicsTransform(transform);
+        subPart.body.setLinearVelocity(pose.linearVel());
+        subPart.body.setAngularVelocity(pose.angularVel());
+        var state = PhysicsBodyExtensionKt.stateOf(subPart.body);
+        state.setTransform(transform);
+        state.setLastTransform(transform);
     }
 
     /**
@@ -562,7 +575,13 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         // 按名精确退出：只打断同一动画的旧实例，保留同层其他事件动画
         AnimLayer layer = animController.getLayers().get(AnimGroups.ACTION);
         if (layer != null) {
-            for (AnimInstance old : new ArrayList<>(layer.getAnimations())) {
+            // 与 Spark 对动画集合的增删共用锁，退出回调放在锁外。
+            var animations = layer.getAnimations();
+            List<AnimInstance> snapshot;
+            synchronized (animations) {
+                snapshot = new ArrayList<>(animations);
+            }
+            for (AnimInstance old : snapshot) {
                 if (old.getOrigin() == target) old.exit();
             }
         }

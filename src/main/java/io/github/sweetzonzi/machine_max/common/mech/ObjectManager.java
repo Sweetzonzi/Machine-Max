@@ -79,24 +79,22 @@ public class ObjectManager {
         return levelCollisionSettlements.computeIfAbsent(level, CollisionPostSettlement::new);
     }
 
+    /** 只注销当前实例，避免销毁临时快照时删除同 ID 的已注册对象。 */
     public static void removeDestroyableObject(DestroyableObject object) {
-        Level level = object.level;
-        levelDestroyableObjects.get(level).remove(object.getId());
+        var objects = levelDestroyableObjects.get(object.level);
+        if (objects != null) objects.remove(object.getId(), object);
     }
 
     public static void removeDestroyableObject(Level level, int id) {
-        if (levelDestroyableObjects.containsKey(level)) {
-            levelDestroyableObjects.get(level).remove(id);
-        } else {
-            MachineMax.LOGGER.warn("尝试从维度{}中移除不存在的DestroyableObject: {}", level.dimension().location(), id);
-        }
+        var objects = levelDestroyableObjects.get(level);
+        if (objects != null) objects.remove(id);
+        else MachineMax.LOGGER.warn("尝试从维度{}中移除不存在的DestroyableObject: {}", level.dimension().location(), id);
     }
 
     @Nullable
     public static DestroyableObject getDestroyableObject(Level level, int id) {
-        if (levelDestroyableObjects.containsKey(level)) {
-            return levelDestroyableObjects.get(level).get(id);
-        } else return null;
+        var objects = levelDestroyableObjects.get(level);
+        return objects == null ? null : objects.get(id);
     }
 
     public static void initVehicle(VehicleCore vehicle){
