@@ -15,15 +15,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 服务端行车记录仪：把地面控制器每个物理步的采样写成一行 CSV。
+ * 通用录制器：把一次采样写成一行 CSV。使用方各自决定采样相位与列定义。
  *
- * <p>采样在物理线程（{@link AbstractGroundControllerSubsystem#onPrePhysicsTick()} 之后），
- * 写盘在主线程（{@link AbstractGroundControllerSubsystem#onTick()}）。物理线程只把已经格式化的行
- * 放进无锁队列，主线程每 tick 排空一次，所以磁盘慢不会拖住物理步进；主线程卡住时队列会攒住，
- * 事后一并写盘，不丢样本。</p>
+ * <p>两个使用者：地面控制器的行车记录（采样在物理线程、{@link AbstractGroundControllerSubsystem#onPrePhysicsTick()}
+ * 之后，写盘在主线程 {@link AbstractGroundControllerSubsystem#onTick()}）与客户端乘车链路的录制
+ * （采样与写盘都在主线程，见 {@code io.github.sweetzonzi.machine_max.client.debug.RideTelemetry}）。
+ * 采样方只把已经格式化的行放进无锁队列，写盘方每 tick 排空一次，所以磁盘慢不会拖住采样；写盘方卡住时
+ * 队列会攒住，事后一并写盘，不丢样本。</p>
  *
- * <p>文件落在 {@code <gamedir>/logs/machine_max/}，一次录制一个文件，列名写在首行。列定义由
- * 控制器给出，本类不认识任何物理量。</p>
+ * <p>文件落在 {@code <gamedir>/logs/machine_max/}，一次录制一个文件，列名写在首行。本类不认识任何
+ * 物理量：列名与每行的内容都由调用方给出。</p>
  */
 public final class DriveTelemetry implements AutoCloseable {
 
