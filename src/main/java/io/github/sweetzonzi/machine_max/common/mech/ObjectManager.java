@@ -282,6 +282,28 @@ public class ObjectManager {
         return vehicle;
     }
 
+    /**
+     * 客户端每 tick 推进一次本 Level 全部可毁对象的呈现位姿。
+     *
+     * <p><b>调用方是客户端 tick 的最前相位</b>（{@code ClientTickEvent.Pre}，早于
+     * {@code ClientLevel#tickEntities}）。这个相位是硬约束：实体自己的 {@code xo/x} 这一对
+     * 由 {@code MMPartEntity#baseTick} 从呈现位姿写入，而相机、乘客座位与实体调试框读的是实体位置，
+     * 因此推进必须早于实体 tick，否则它们会与模型差一个 tick。</p>
+     *
+     * <p>不按「是不是投射物」分流：投射物的 {@code oldTransform}/{@code transform} 由
+     * {@code ProjectileManager} 在 {@code preTick} 里整对重写（本地模拟，不参与网络延迟），
+     * 因此这里写进去的值随后会被那一处覆盖，缓冲对它们只有空转的开销。</p>
+     *
+     * <p><b>调用线程：</b>客户端主线程。</p>
+     *
+     * @param mcLevel 目标维度
+     */
+    public static void advanceClientPresentation(Level mcLevel) {
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>())
+                .values()
+                .forEach(DestroyableObject::advancePresentationPose);
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPreTick(LevelTickEvent.Pre event) {
         Level mcLevel = event.getLevel();

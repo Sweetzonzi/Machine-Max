@@ -60,7 +60,6 @@ import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -299,6 +298,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void preTick() {
         super.preTick();
+        syncDerivedBodyPose();
         if (entity != null && (part.assembly == null || !part.assembly.usesMMPartEntities())) {
             entity.subPart = null;
             entity.discard();
@@ -309,6 +309,24 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (tickCount == 10) {
             part.submitGravityUpdate();
         }
+    }
+
+    /**
+     * 把本零件的派生刚体摆到呈现位姿上：连接点的选取框（{@link AbstractConnector#preTickAttachPose()}）
+     * 与交互判定区（{@link InteractBoxes#updatePose()}）。
+     * <p>
+     * <b>相位是硬约束：</b>本方法由 {@link #preTick()} 调用，而它在 {@code LevelTickEvent.Pre} 的
+     * HIGHEST 优先级上，早于 Spark 在 HIGH 优先级里对每个刚体做的 {@code stateOf(...)} 快照。
+     * 那些派生刚体的调试框与插值读的都是那份快照，所以位姿必须在快照之前落地：
+     * <ul>
+     *   <li>晚于快照写（例如在物理线程的 {@code prePhysicsTick} 里写），它们会永久比模型晚一 tick；</li>
+     *   <li>只在同步包到达时写（{@code onSyncedDataUpdated}），写入节奏就与包到达绑定，
+     *       派生刚体随之复现「按包更新」的抖动，也与每 tick 推进一次的呈现游标脱节。</li>
+     * </ul>
+     */
+    private void syncDerivedBodyPose() {
+        for (AbstractConnector connector : this.connectors.values()) connector.preTickAttachPose();
+        if (interactBoxes != null) interactBoxes.updatePose();
     }
 
     @Override
@@ -1501,14 +1519,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     public Map<String, OBone> getBones() {
         return attr.getBones(part.variant);
-    }
-
-    @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (interactBoxes != null) {
-            interactBoxes.updatePose();//同步刚体与交互判定区位置
-        }
     }
 
     public Transform getLocalMassCenterTransform() {

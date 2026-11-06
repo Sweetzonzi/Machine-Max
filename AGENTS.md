@@ -304,6 +304,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 - **线程标注**：方法 Javadoc 标注调用线程 — `主线程`（20tps）vs `物理线程`（Bullet 物理步进）。
 - **内容包一切**：部件、子系统、连接器、配方、蓝图全在 JSON 中定义，位于 `spark_modules/` 下。
 - **双数学库**：物理使用 JME（`com.jme3.math.*`），渲染使用 JOML（`org.joml.*`）。通过 `SparkMathKt.*` 转换。
+- **呈现位姿的两条取法**：客户端可毁对象的位姿由 `common/mech/PoseDelayBuffer.java` 按客户端 tick 播放（见 `common/mech/DestroyableObject.java#presentationPose`）。`#getPresentationPosition()` / `#getPresentationRotation()` 交出 Minecraft 侧原生类型（`net.minecraft.world.phys.Vec3` / `org.joml.Quaternionf`）的副本，供实体摆放、载具形心与相机使用，可跨 tick 持有；需要喂 jme 物理接口的写点（`setPhysicsLocation` / `setPhysicsRotation` / `lerp(lastTransform, transform, partial)`）读 `transform` 字段本身，那一路零拷贝零转换。服务端没有缓冲，两个 getter 退化为同步数据里的真值。
 - **控制绑定管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。
 - **动画体在公共部件**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`（共享 `ModelPose`、`local.*` Molang、涂装）；`SubPart` 只负责刚体与骨骼子树渲染，`MMPartEntity` 仅作渲染入口/原版交互点。
 - **信号寻址**：路由用 `ISignalReceiver.getSignalAddress()`，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。

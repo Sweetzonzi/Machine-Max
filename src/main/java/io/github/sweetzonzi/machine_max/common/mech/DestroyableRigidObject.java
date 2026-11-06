@@ -1,12 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
-import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -72,15 +70,25 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
         }
     }
 
+    /**
+     * 呈现位姿推进后把同一份位姿落到客户端的运动学镜像刚体上。
+     * <p>
+     * 客户端的刚体只承载呈现位，不参与模拟（构造时 {@code setKinematic(true)}），因此它就该与模型
+     * 同一条时间轴：否则 Spark 的刚体调试框（读 {@code stateOf(body)} 的
+     * {@code lastTransform/transform}）、以及 {@code SubPart#postTick} 从同一处取出的实体包围盒，
+     * 会比模型早到一至两个 tick，两个调试框各走各的。
+     * <p>
+     * <b>时机是硬约束。</b> 本方法由 {@link DestroyableObject#advancePresentationPose()} 在客户端
+     * {@code ClientTickEvent.Pre} 里调用（主线程），早于 {@code LevelTickEvent.Pre} 里
+     * {@code PhysicsLevel#requestStep} 对每个刚体做的 {@code stateOf(...).update()} 快照，
+     * 因此物理线程与渲染读到的都是本次推进后的位姿。
+     */
     @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (!level.isClientSide()) return;//服务器在需同步数据变化时不做特殊处理
-        if (key.equals(DATA_POS_ID)) {
-            body.setPhysicsLocation(PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_POS_ID)));//应用到刚体
-        } else if (key.equals(DATA_ROT_ID)) {
-            body.setPhysicsRotation(SparkMathKt.toBQuaternion(getSyncedData().get(DATA_ROT_ID)));//应用到刚体
-        }
+    protected void onPresentationPoseAdvanced() {
+        super.onPresentationPoseAdvanced();
+        if (!level.isClientSide() || isRemoved) return;
+        body.setPhysicsLocation(transform.getTranslation());
+        body.setPhysicsRotation(transform.getRotation());
     }
 
     @Override

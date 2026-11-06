@@ -123,9 +123,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
                 }
             }
         } else {
-            //更新实体位置
-            this.setPos(SparkMathKt.toVec3(subPart.getPosition()));
-            Quaternionf q = SparkMathKt.toQuaternionf(subPart.getRotation());
+            //更新实体位置：取呈现位姿而不是网络真值。
+            //渲染器用 entity.getPosition(partialTick) 抵消姿态栈的原点、再乘模型自己的世界矩阵，
+            //两者相减之后模型的落点只由模型那一份决定；但相机、乘客座位与实体调试框读的是实体位置，
+            //所以实体必须与模型同一条时间轴，否则乘客会在座位上前后挪动一至两格。
+            this.setPos(subPart.getPresentationPosition());
+            Quaternionf q = subPart.getPresentationRotation();
             // 从四元数提取前向向量
             org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, 1).rotate(q);
             // 计算yaw和pitch

@@ -56,13 +56,24 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
     }
 
     /**
-     * 更新交互判定区的位置和姿态，使其与零件统一
+     * 更新交互判定区的位置和姿态，使其与零件统一。
+     * <p>
+     * 取<b>子零件的刚体</b>（{@code subPart.body}）：客户端那个刚体是运动学镜像，由
+     * {@link io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject#onPresentationPoseAdvanced()}
+     * 每客户端 tick 写成呈现位姿，与模型同一条时间轴；服务端则就是模拟中的刚体本身。
+     * 若改取 {@code getPosition()}（网络真值），客户端的判定区会抢在模型前面一至两个 tick
+     * （车在走、判定区已经到位）。
+     * <p>
+     * <b>调用方必须每 tick 调一次、且早于 {@code PhysicsLevel#requestStep}</b>：这个刚体的位姿由
+     * Spark 的 {@code stateOf(...)} 在那次请求里快照一次，调试框读的就是快照。晚于快照写，
+     * 判定区就会永久晚一 tick；只在同步包到达时写，则会连上「按包更新」的抖动。
+     * 见 {@code SubPart#preTick()}。
      */
     public void updatePose() {
         var point = body;
         if (point == null) return;
-        point.setPhysicsLocation(subPart.getPosition());
-        point.setPhysicsRotation(subPart.getRotation());
+        point.setPhysicsLocation(subPart.body.getPhysicsLocation(null));
+        point.setPhysicsRotation(subPart.body.getPhysicsRotation(null));
     }
 
     public InteractBox getInteractBox(long childShapeId) {

@@ -186,6 +186,21 @@ public class BallisticProjectile extends DestroyableObject
     }
 
     /**
+     * 投射物不参与呈现位姿的抖动缓冲。
+     * <p>
+     * 它的 {@code oldTransform}/{@code transform} 由 {@link ProjectileManager#postTick()} 每 tick
+     * <b>整对重写</b>（位置取本地 SoA、旋转取速度姿态）：投射物在客户端是本地模拟的，不走「服务端
+     * 20 Hz 发包 + 客户端插值」那条路，缓冲对它只有一个副作用——{@code oldTransform} 被写成延迟样本、
+     * {@code transform} 被写成最新值，两者之间凭空多出两个 tick 的位移，弹道会因此抖一下。
+     * <p>
+     * 高速弹体也吃不消这份延迟：200 m/s 下两个 tick 是 20 m，曳光会明显落在命中点后面。
+     */
+    @Override
+    protected boolean usesPresentationDelay() {
+        return false;
+    }
+
+    /**
      * 将投射物注册到世界（两端的统一入口）。
      * <p>
      * {@link DestroyableObject#addToLevel()} → 注册到 {@link ObjectManager#levelDestroyableObjects}

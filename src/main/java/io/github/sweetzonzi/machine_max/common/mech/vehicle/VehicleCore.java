@@ -510,7 +510,10 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                     continue;
                 }
             }
-            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.getPosition());
+            // 取呈现位姿：形心喂给相机支点（第三人称绕心）、目标点与剔除，三者在客户端都要与模型
+            // 同一条时间轴，否则车体看起来会在屏幕上跳（模型平滑、支点还在按包跳动）。
+            // 服务端没有呈现缓冲，getPresentationPosition() 逐位等于 getPosition()。
+            Vec3 partPos = part.rootSubPart.getPresentationPosition();
             Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.getLinearVelocity());
             newPos = newPos.add(partPos);//计算载具形心位置
             newVel = newVel.add(partVel);//计算载具形心速度
@@ -1539,12 +1542,19 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         return new AABB(xMin, yMin, zMin, xMax, yMax, zMax);
     }
 
+    /**
+     * 按当前整车几何重算第三人称的相机退距。
+     * <p>
+     * 中心与各子零件两侧都取<b>呈现位姿</b>（{@link #position} 由呈现位姿求均值得到）：
+     * 两者若不在同一条时间轴上，客户端会凭空多出一段「形心到网络真值」的差距
+     * （一个样本，高速时约一米余），退距被算大，视线就跟着往外缩。
+     */
     public void recalculateCameraDistance() {
-        Vector3f center = PhysicsHelperKt.toBVector3f(this.position);
+        Vec3 center = this.position;
         float maxDistance = 4f;
         for (RegularPart part : this.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
-                float distance = center.distance(subPart.getPosition());
+                float distance = (float) center.distanceTo(subPart.getPresentationPosition());
                 float radius = subPart.collisionShape.maxRadius() + distance;
                 if (radius > maxDistance) maxDistance = radius;
             }
@@ -1608,6 +1618,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     /**
      * 真值点取形心：{@link #position} 每 tick 由各零件根子部件位置取均值写入，
      * 读档与分裂时同样赋值；上一 tick 的值在 {@link #oldPosition} 里，两者按系数插值。
+     *
+     * <p>那些「根子部件位置」取自
+     * {@link io.github.sweetzonzi.machine_max.common.mech.DestroyableObject#getPresentationPosition()}：
+     * 客户端因此与可见模型同一条时间轴（瞄准的目标点落在你看到的位置上），服务端没有呈现缓冲，
+     * 取到的就是真实形心。
      *
      * <p>系数到 1 时直接返回当前值，避免 {@code a + (b - a) * 1} 的浮点误差让逐 tick 的调用方
      * 拿到与 {@link #getPosition()} 差一个 ulp 的点。</p>

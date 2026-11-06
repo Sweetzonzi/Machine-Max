@@ -669,6 +669,34 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         return subPart.getPhysicsLevel();
     }
 
+    /**
+     * 主线程每 tick 一次：把已有选取框的位姿摆到子零件的呈现位姿上。
+     *
+     * <p>位姿源是 {@code subPart.body}：客户端那个刚体是运动学镜像，由
+     * {@link io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject#onPresentationPoseAdvanced()}
+     * 每客户端 tick 写成呈现位姿，因此选取框与模型同一条时间轴；服务端它则是模拟中的刚体本身。
+     *
+     * <p><b>为什么不在物理线程的 {@link #updateAttachPointBody()} 里顺手写</b>：那一步发生在
+     * {@code PhysicsLevel#requestStep} 的 {@code stateOf(...)} 快照之后，于是这个刚体的
+     * Spark 状态永远比子零件的刚体晚一 tick——渲染出来的选取框（以及它的调试框）因此落后模型。
+     * 本方法的调用点在 {@code SubPart#preTick()}（{@code LevelTickEvent.Pre} HIGHEST），
+     * 早于 HIGH 的那次快照，同一 tick 就能被渲染读到。
+     *
+     * <p>创建与移除仍留在物理线程（{@link #updateAttachPointBody()}）：那两步要动物理世界的
+     * 对象表，不属于主线程。这里只写已存在刚体的位姿，重复写同一个值是无害的。
+     *
+     * <p><b>调用线程：</b>主线程（服务端与客户端）。
+     */
+    public void preTickAttachPose() {
+        var point = body;
+        if (point == null || internal || subPart.isRemoved() || !subPart.body.isInWorld()) return;
+        if (hasPart()) return;
+        var position = MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body);
+        var rotation = subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation());
+        point.setPhysicsLocation(position);
+        point.setPhysicsRotation(rotation);
+    }
+
     /** 物理线程。空闲外部端点随子部件移动，拆下配对后恢复选取框。 */
     private void updateAttachPointBody() {
         if (internal || subPart.isRemoved() || !subPart.body.isInWorld()) return;
