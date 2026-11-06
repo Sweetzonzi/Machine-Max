@@ -1,14 +1,21 @@
 package io.github.sweetzonzi.machine_max.common.gametest;
 
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.part.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ItemStorageSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ItemStorageSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.SimpleContainer;
@@ -18,12 +25,83 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
-/** Real-world construction and restoration checks; bodies stay outside the physics world. */
+/** 部件构造、恢复和物理入世契约。 */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class PartFoundationGameTest {
     private record Selection(RegularPartType type, String variant) {}
+    private record InteractionBodies(PhysicsRigidBody attachPoint, PhysicsRigidBody interactBox) {}
+
+    @GameTest(template = "part_foundation", batch = "mmPartFoundation", timeoutTicks = 100)
+    public static void interactionBodiesFollowSubPartLifecycle(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var part = PartFactory.createRegular(type, "sdkfz234_2", helper.getLevel());
+        var connector = part.subParts.values().stream().flatMap(sub -> sub.connectors.values().stream())
+                .filter(point -> !point.internal && !point.hasPart()).findFirst().orElseThrow();
+        var boxes = Objects.requireNonNull(connector.subPart.interactBoxes);
+        boolean deferred = connector.body == null && boxes.body == null;
+        if (!deferred) part.discardUnattached();
+        helper.assertTrue(deferred, "构造部件时不应创建挂点或交互刚体");
+
+        var assembly = new ProbeAssembly(helper.getLevel());
+        assembly.addPart(part);
+        var pos = helper.absolutePos(new BlockPos(0, 4, 0));
+        part.setTransform(new Transform().setTranslation(new Vector3f(pos.getX(), pos.getY(), pos.getZ())));
+        var physics = connector.getPhysicsLevel();
+        var entered = new CompletableFuture<InteractionBodies>();
+        var removed = new CompletableFuture<Boolean>();
+        part.addToLevel();
+        // 在同一物理阶段排队采样，读取入世后的宿主和交互区初始位姿。
+        physics.submitImmediateTask(PPhase.PRE, () -> {
+            var point = connector.body;
+            var box = boxes.body;
+            entered.complete(connector.subPart.body.isInWorld() && point != null && point.isInWorld()
+                    && PhysicsBodyExtensionKt.getOwner(point) == connector && box != null && box.isInWorld()
+                    && PhysicsBodyExtensionKt.getOwner(box) == boxes
+                    && box.getPhysicsLocation(null).equals(connector.subPart.body.getPhysicsLocation(null))
+                    ? new InteractionBodies(point, box) : null);
+            return null;
+        });
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(entered.isDone(), "等待交互刚体入世"))
+                .thenExecute(() -> {
+                    var bodies = entered.join();
+                    part.destroy();
+                    assembly.removePart(part);
+                    helper.assertTrue(bodies != null, "挂点与交互刚体应随子零件入世，并以子零件位姿初始化交互区");
+                    physics.submitImmediateTask(PPhase.ALL, () -> {
+                        removed.complete(connector.body == null && !bodies.attachPoint.isInWorld()
+                                && PhysicsBodyExtensionKt.getOwner(bodies.attachPoint) == null
+                                && boxes.body == null && !bodies.interactBox.isInWorld()
+                                && PhysicsBodyExtensionKt.getOwner(bodies.interactBox) == null);
+                        return null;
+                    });
+                })
+                .thenWaitUntil(() -> helper.assertTrue(removed.isDone(), "等待交互刚体移出物理世界"))
+                .thenExecute(() -> helper.assertTrue(removed.join(), "销毁子零件应移除交互刚体并清除宿主引用"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmPartFoundation", timeoutTicks = 100)
+    public static void discardingCandidateKeepsRegisteredSubPart(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var registered = PartFactory.createRegular(type, "sdkfz234_2", level);
+        var candidate = PartFactory.createRegular(type, "sdkfz234_2", level);
+        try {
+            var current = registered.rootSubPart;
+            ObjectManager.addDestroyableObject(current);
+            candidate.rootSubPart.setId(current.getId()); // 模拟客户端候选从快照恢复同步地址。
+            candidate.discardUnattached();
+            helper.assertTrue(ObjectManager.getDestroyableObject(level, current.getId()) == current,
+                    "丢弃未发布的同 ID 子零件不能注销当前的已注册实例");
+            helper.succeed();
+        } finally {
+            registered.discardUnattached();
+        }
+    }
 
     @GameTest(template = "part_foundation", batch = "mmPartFoundation", timeoutTicks = 100)
     public static void fullStateAndBlueprintSkeleton(GameTestHelper helper) {

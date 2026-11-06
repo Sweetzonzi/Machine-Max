@@ -175,8 +175,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                     AbstractConnector result = null;
                     float distance = Float.MAX_VALUE;
                     for (AbstractConnector connector : subPart.connectors.values()) {
-                        if (!connector.internal && !connector.hasPart() && connector.body != null) {
-                            Vector3f attachPos = connector.body.getPhysicsLocation(null);
+                        var attachPoint = connector.body;
+                        if (!connector.internal && !connector.hasPart() && attachPoint != null) {
+                            Vector3f attachPos = attachPoint.getPhysicsLocation(null);
                             float dist = attachPos.subtract(hitPoint).lengthSquared();
                             if (dist < distance) {//如果距离更近
                                 distance = dist;//更新距离

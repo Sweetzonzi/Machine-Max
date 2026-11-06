@@ -79,9 +79,10 @@ public class ObjectManager {
         return levelCollisionSettlements.computeIfAbsent(level, CollisionPostSettlement::new);
     }
 
+    /** 注销传入实例；同 ID 的另一个对象可能仍在使用该同步地址。 */
     public static void removeDestroyableObject(DestroyableObject object) {
-        Level level = object.level;
-        levelDestroyableObjects.get(level).remove(object.getId());
+        var objects = levelDestroyableObjects.get(object.level);
+        if (objects != null) objects.remove(object.getId(), object);
     }
 
     public static void removeDestroyableObject(Level level, int id) {

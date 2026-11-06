@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
@@ -24,7 +25,8 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
 
     public final SubPart subPart;
     public final CompoundCollisionShape interactBoxShape;
-    public final PhysicsRigidBody body;
+    @Nullable
+    public volatile PhysicsRigidBody body;
     private final Map<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
     public InteractBoxes(SubPart subPart, Map<String, InteractBoxAttr> boxes, CompoundCollisionShape interactBoxShape) {
@@ -35,22 +37,32 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
             InteractBox interactBox = new InteractBox(subPart, name, entry.getValue());
             this.put(name, interactBox);
         }
-        this.body = new PhysicsRigidBody(interactBoxShape, 0);
-        PhysicsBodyExtensionKt.setOwner(this.body, this);
-        this.body.setContactResponse(false);
-        this.body.setKinematic(true); // 非常诡异，不设置运动学模式会导致射线检测等判定不上
-        this.body.setCollisionGroup(CollisionGroups.TRIGGER);
-        this.body.setCollideWithGroups(CollisionGroups.NONE);
-        PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
-        this.body.shouldShowDebugBoxWhenNonColldeWith = true;
+    }
+
+    /** 物理线程。在所属子零件入世后创建交互刚体，并以当前物理位姿放置。 */
+    public void addToLevel() {
+        if (body != null || subPart.isRemoved() || !subPart.body.isInWorld()) return;
+        var point = new PhysicsRigidBody(interactBoxShape, 0);
+        PhysicsBodyExtensionKt.setOwner(point, this);
+        point.setContactResponse(false);
+        point.setKinematic(true); // 保持运动学模式，供射线检测选取交互区。
+        point.setCollisionGroup(CollisionGroups.TRIGGER);
+        point.setCollideWithGroups(CollisionGroups.NONE);
+        point.shouldShowDebugBoxWhenNonColldeWith = true;
+        point.setPhysicsLocation(subPart.body.getPhysicsLocation(null));
+        point.setPhysicsRotation(subPart.body.getPhysicsRotation(null));
+        getPhysicsLevel().getWorld().addCollisionObject(point);
+        body = point;
     }
 
     /**
      * 更新交互判定区的位置和姿态，使其与零件统一
      */
-    public void updatePose(){
-        this.body.setPhysicsLocation(this.subPart.getPosition());//应用到刚体
-        this.body.setPhysicsRotation(this.subPart.getRotation());
+    public void updatePose() {
+        var point = body;
+        if (point == null) return;
+        point.setPhysicsLocation(subPart.getPosition());
+        point.setPhysicsRotation(subPart.getRotation());
     }
 
     public InteractBox getInteractBox(long childShapeId) {
@@ -85,9 +97,17 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
         return getInteractBox(children[childIndex].getShape().nativeId());
     }
 
+    /** 主线程。清理信号容器，交由物理线程移除已建立的刚体。 */
     public void destroy() {
         this.clear();
-        PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+            var point = body;
+            if (point == null) return null;
+            body = null;
+            PhysicsBodyExtensionKt.setOwner(point, null);
+            if (point.isInWorld()) getPhysicsLevel().getWorld().removeCollisionObject(point);
+            return null;
+        });
     }
 
     @NotNull

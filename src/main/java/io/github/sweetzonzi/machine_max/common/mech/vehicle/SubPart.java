@@ -178,9 +178,12 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void addToLevel() {
         super.addToLevel();
+        if (interactBoxes != null) getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            interactBoxes.addToLevel();
+            return null;
+        });
         for (AbstractConnector connector : connectors.values()) {
-            if (connector.hasPart())
-                connector.addToLevel();
+            if (!connector.internal || connector.hasPart()) connector.addToLevel();
         }
     }
 
@@ -203,10 +206,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         // 必须在刚体移出世界之前通知履带摘约束
         TrackLink track = this.trackLink;
         if (track != null) track.onMemberDestroyed(this);
+        // 先标记子零件已移除，防止尚在排队的连接点任务重新创建选取框。
+        super.destroy();
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
         }
-        super.destroy();
         if (notifySubsystems) subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
         if (interactBoxes != null) {
@@ -337,6 +341,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
+        // 批量入世的外部装配体直接加入子刚体，由首个物理步补齐交互区。
+        if (interactBoxes != null && interactBoxes.body == null) interactBoxes.addToLevel();
         collisionHandler.effectManager.resetLatestStates();
         // 更新所有HitBox的生效状态
         if (isActive() || (physicsTickCount % getPhysicsLevel().getTps() * 10 == 0)) {

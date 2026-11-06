@@ -136,11 +136,13 @@ public final class VehicleAssemblyServerHelper {
         DestroyableObject object = ObjectManager.getDestroyableObject(level, request.targetSubPartId());
         if (!(object instanceof SubPart targetSubPart)) return;
         AbstractConnector targetConnector = targetSubPart.connectors.get(request.targetConnector());
-        if (targetConnector == null || targetConnector.hasPart() || targetConnector.body == null) return;
+        if (targetConnector == null || targetConnector.hasPart()) return;
+        var attachPoint = targetConnector.body;
+        if (attachPoint == null) return;
         // 交互距离校验：目标连接点位置到玩家眼睛的距离不超过交互距离
         float maxDistance = (float) player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
         Vector3f eyePos = PhysicsHelperKt.toBVector3f(player.getEyePosition());
-        if (targetConnector.body.getPhysicsLocation(null).subtract(eyePos).lengthSquared() > maxDistance * maxDistance) return;
+        if (attachPoint.getPhysicsLocation(null).subtract(eyePos).lengthSquared() > maxDistance * maxDistance) return;
         // 条件校验：目标接口接受该变体 + 简单接口配对
         if (!targetConnector.conditionCheck(part.type, part.variantName)) return;
         if (!(targetConnector instanceof SimpleConnector || partConnectorAttr.isSimpleConnector())) return;

@@ -79,7 +79,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     @Setter
     public Transform actualTransform;//本安装点为确保法线方向和连接点方向一致所需的实际变换
     public final CollisionShape shape = new BoxCollisionShape(0.125f);//连接点碰撞形状
-    public PhysicsRigidBody body;//部件连接点安装判定区
+    public volatile PhysicsRigidBody body;//部件连接点安装判定区
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
     protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform offsetFromMassCenter) {
@@ -95,26 +95,11 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         syncheddata$builder.define(DATA_INTEGRITY_ID, attr.getIntegrity());
         this.defineSyncedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
-        createAttachPointBody(
-                MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
-                subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
     }
 
     public void prePhysicsTick() {
         NeoForge.EVENT_BUS.post(new ConnectorTickEvent.PrePhys(this));
-        if (!this.hasPart()) {//更新判定点位置姿态
-            if (body == null) {
-                createAttachPointBody(
-                        MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
-                        subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
-            } else {
-                body.setPhysicsLocation(MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body));
-                body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
-            }
-        } else if (body != null) {
-            PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), body);
-            this.body = null;
-        }
+        updateAttachPointBody();
     }
 
     public void postPhysicsTick() {
@@ -132,9 +117,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      */
     public void mcTick() {
         NeoForge.EVENT_BUS.post(new ConnectorTickEvent.Pre(this));
-        if (subPart.level.isClientSide() && body != null) {
-            if (!this.hasPart()) {
-                VisualEffectHelper.attachPoints.put(this, body);
+        if (subPart.level.isClientSide()) {
+            var point = body;
+            if (!hasPart() && point != null) {
+                VisualEffectHelper.attachPoints.put(this, point);
             } else {
                 VisualEffectHelper.attachPoints.remove(this);
             }
@@ -600,16 +586,21 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         return this.attachedConnector != null;
     }
 
+    /** 主线程入口。连接点在所属子部件入世之后建立关节或空闲挂点。 */
     public void addToLevel() {
-        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            if (joint.getPhysicsSpace() == null) {
-                if (!joint.getBodyA().isInWorld())
-                    subPart.getPhysicsLevel().getWorld().addCollisionObject(joint.getBodyA());
-                if (!joint.getBodyB().isInWorld())
-                    subPart.getPhysicsLevel().getWorld().addCollisionObject(joint.getBodyB());
+        subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            if (subPart.isRemoved()) return null;
+            var connection = joint;
+            if (hasPart() && connection != null && connection.getPhysicsSpace() == null) {
+                var world = getPhysicsLevel().getWorld();
+                if (!connection.getBodyA().isInWorld())
+                    world.addCollisionObject(connection.getBodyA());
+                if (!connection.getBodyB().isInWorld())
+                    world.addCollisionObject(connection.getBodyB());
                 if (!getPhysicsLevel().getMcLevel().isClientSide()) // 仅服务端才实际将关节加入世界，避免不必要的求解
-                    subPart.getPhysicsLevel().getWorld().addJoint(joint); // 服务端两刚体均为动力学模式，安全；Bullet 崩溃仅发生在两运动学体间的关节（实测确认，与加入顺序无关）
+                    world.addJoint(connection);
             }
+            updateAttachPointBody();
             return null;
         });
     }
@@ -619,8 +610,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            if (this.body != null && this.body.isInWorld())
-                PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
+            removeAttachPointBody();
             return null;
         });
     }
@@ -679,20 +669,47 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         return subPart.getPhysicsLevel();
     }
 
-    private void createAttachPointBody(Vector3f position, Quaternion rotation) {
-        if (!internal && this.body == null) {//为与外部部件连接的连接点创建碰撞判定，供玩家通过视线选取
-            body = new PhysicsRigidBody(shape, PhysicsBody.massForStatic);
-            PhysicsBodyExtensionKt.setOwner(this.body, this);
-            body.setProtectGravity(true);
-            body.setGravity(Vector3f.ZERO);
-            body.setKinematic(true);
-            body.setContactResponse(false);
-            body.setCollisionGroup(CollisionGroups.TRIGGER);
-            body.setCollideWithGroups(CollisionGroups.NONE);
-            body.setPhysicsLocation(position);
-            body.setPhysicsRotation(rotation);
-            PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
+    /** 物理线程。空闲外部端点随子部件移动，拆下配对后恢复选取框。 */
+    private void updateAttachPointBody() {
+        if (internal || subPart.isRemoved() || !subPart.body.isInWorld()) return;
+        if (hasPart()) {
+            removeAttachPointBody();
+            return;
         }
+        var position = MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body);
+        var rotation = subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation());
+        var point = body;
+        if (point == null) {
+            createAttachPointBody(position, rotation);
+        } else {
+            point.setPhysicsLocation(position);
+            point.setPhysicsRotation(rotation);
+        }
+    }
+
+    /** 物理线程。仅为已入世子部件的空闲外部端点创建选取框。 */
+    private void createAttachPointBody(Vector3f position, Quaternion rotation) {
+        var point = new PhysicsRigidBody(shape, PhysicsBody.massForStatic);
+        PhysicsBodyExtensionKt.setOwner(point, this);
+        point.setProtectGravity(true);
+        point.setGravity(Vector3f.ZERO);
+        point.setKinematic(true);
+        point.setContactResponse(false);
+        point.setCollisionGroup(CollisionGroups.TRIGGER);
+        point.setCollideWithGroups(CollisionGroups.NONE);
+        point.setPhysicsLocation(position);
+        point.setPhysicsRotation(rotation);
+        getPhysicsLevel().getWorld().addCollisionObject(point);
+        body = point;
+    }
+
+    /** 物理线程。撤销选取框及其宿主引用。 */
+    private void removeAttachPointBody() {
+        var point = body;
+        if (point == null) return;
+        body = null;
+        PhysicsBodyExtensionKt.setOwner(point, null);
+        if (point.isInWorld()) getPhysicsLevel().getWorld().removeCollisionObject(point);
     }
 
     // 计算物体绕特定轴的转动惯量

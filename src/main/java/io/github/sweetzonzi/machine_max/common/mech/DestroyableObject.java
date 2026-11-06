@@ -174,7 +174,7 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
 
     public void destroy() {
         isRemoved = true;
-        ObjectManager.removeDestroyableObject(this.level, this.getId());
+        ObjectManager.removeDestroyableObject(this);
     }
 
     /**
