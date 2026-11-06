@@ -219,15 +219,12 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 subPart.setAngularVelocity(posRotVelVel.angularVel());
                 subPart.transform = posRotVelVel.toTransform();
                 subPart.oldTransform = posRotVelVel.toTransform();
-                // 客户端的初始化和后续组成更新走同一条 PRE 队列；服务端构造阶段独占刚体。
-                if (level.isClientSide()) {
-                    subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                        if (!subPart.isRemoved()) restoreRigidPose(subPart, posRotVelVel);
-                        return null;
-                    });
-                } else {
-                    restoreRigidPose(subPart, posRotVelVel);
-                }
+                subPart.body.setPhysicsLocation(posRotVelVel.position());
+                subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
+                subPart.body.setLinearVelocity(posRotVelVel.linearVel());
+                subPart.body.setAngularVelocity(posRotVelVel.angularVel());
+                PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(posRotVelVel.toTransform());
+                PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(posRotVelVel.toTransform());
             } else {
                 subPart.destroy();
             }
@@ -261,16 +258,6 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 setSharedDurability(data.sharedDurabilityRatio * getSharedMaxDurability());
             }
         }
-    }
-
-    private static void restoreRigidPose(SubPart subPart, PosRotVelVel pose) {
-        var transform = pose.toTransform();
-        subPart.body.setPhysicsTransform(transform);
-        subPart.body.setLinearVelocity(pose.linearVel());
-        subPart.body.setAngularVelocity(pose.angularVel());
-        var state = PhysicsBodyExtensionKt.stateOf(subPart.body);
-        state.setTransform(transform);
-        state.setLastTransform(transform);
     }
 
     /**

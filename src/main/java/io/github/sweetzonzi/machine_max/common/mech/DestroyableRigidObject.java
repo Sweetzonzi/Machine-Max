@@ -1,10 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.mech;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -75,11 +77,9 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
         super.onSyncedDataUpdated(key);
         if (!level.isClientSide()) return;//服务器在需同步数据变化时不做特殊处理
         if (key.equals(DATA_POS_ID)) {
-            var position = getPosition();
-            submitPoseUpdate(() -> body.setPhysicsLocation(position));
+            body.setPhysicsLocation(PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_POS_ID)));//应用到刚体
         } else if (key.equals(DATA_ROT_ID)) {
-            var rotation = getRotation();
-            submitPoseUpdate(() -> body.setPhysicsRotation(rotation));
+            body.setPhysicsRotation(SparkMathKt.toBQuaternion(getSyncedData().get(DATA_ROT_ID)));//应用到刚体
         }
     }
 
@@ -109,33 +109,45 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     @Override
     public void setPosition(Vector3f position) {
         super.setPosition(position);
-        if (!updateLock && !level.isClientSide()) submitPoseUpdate(() -> body.setPhysicsLocation(position));
+        if (!updateLock) {
+            getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+                body.setPhysicsLocation(position);
+                return null;
+            });
+        }
     }
 
     @Override
     public void setRotation(Quaternion rotation) {
         super.setRotation(rotation);
-        if (!updateLock && !level.isClientSide()) submitPoseUpdate(() -> body.setPhysicsRotation(rotation));
+        if (!updateLock) {
+            getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+                body.setPhysicsRotation(rotation);
+                return null;
+            });
+        }
     }
 
     @Override
     public void setLinearVelocity(Vector3f linearVelocity) {
         super.setLinearVelocity(linearVelocity);
-        if (!updateLock) submitPoseUpdate(() -> body.setLinearVelocity(linearVelocity));
+        if (!updateLock) {
+            getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+                body.setLinearVelocity(linearVelocity);
+                return null;
+            });
+        }
     }
 
     @Override
     public void setAngularVelocity(Vector3f angularVelocity) {
         super.setAngularVelocity(angularVelocity);
-        if (!updateLock) submitPoseUpdate(() -> body.setAngularVelocity(angularVelocity));
-    }
-
-    /** 网络回调只发布数据，已入世刚体统一在物理线程修改。 */
-    private void submitPoseUpdate(Runnable update) {
-        getPhysicsLevel().submitImmediateTask(level.isClientSide() ? PPhase.PRE : PPhase.ALL, () -> {
-            if (!isRemoved) update.run();
-            return null;
-        });
+        if (!updateLock) {
+            getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+                body.setAngularVelocity(angularVelocity);
+                return null;
+            });
+        }
     }
 
     @Override
