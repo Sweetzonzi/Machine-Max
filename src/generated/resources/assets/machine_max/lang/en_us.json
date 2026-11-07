@@ -409,5 +409,6 @@
   "tooltip.machine_max.wrench.disassembly": "Integrity: %1$s/%2$s Interact to safely unbolt %3$s",
   "tooltip.machine_max.wrench.no_need_to_repair": "%1$s is no need to repair",
   "tooltip.machine_max.wrench.repair": "Integrity: %2$s/%3$s Durability: %4$s/%5$s Interact to repair %1$s",
+  "warn.machine_max.part.hitbox_material_missing": "Hitbox material %1$s does not exist; the default material is used instead",
   "warn.machine_max.part.track_material_anisotropy": "Track material %1$s declares friction [%2$s, %3$s, %4$s]: a road wheel turns about its own axle and the anisotropic scaling multiplies per local axis, so unequal y and z make the longitudinal friction swing with the wheel phase and skew its direction; write it as [lateral, longitudinal, longitudinal]"
 }

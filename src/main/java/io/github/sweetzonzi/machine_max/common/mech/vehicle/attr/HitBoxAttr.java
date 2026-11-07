@@ -1,9 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 
 import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
+import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -46,7 +46,12 @@ public class HitBoxAttr {
     /** 材质属性覆写 */
     @Nullable
     public final OverwriteAttr overwrite;
-    /** 最终材质属性，考虑用户自定义覆写 */
+    /**
+     * 最终材质属性：构造期解析一次并缓存。
+     *
+     * <p>摩擦、装甲与命中音效都在每次接触里查询它（物理线程，每个接触点一次），因此必须读缓存：
+     * 这条路径上重复解析既会为每个接触点分配一次合并结果，也会把「材质缺失」的告警打成刷屏。</p>
+     */
     private final MaterialAttr effectiveMaterial;
 
     public HitBoxAttr(String id, String shapeType, String subsystem, String module, ResourceLocation material, float thickness, String condition, boolean lockable, @Nullable OverwriteAttr overwrite) {
@@ -62,7 +67,7 @@ public class HitBoxAttr {
         this.condition = condition;
         this.lockable = lockable;
         this.overwrite = overwrite;
-        this.effectiveMaterial = getEffectiveMaterial();
+        this.effectiveMaterial = resolveEffectiveMaterial();
     }
 
     /**
@@ -233,17 +238,20 @@ public class HitBoxAttr {
     // ==================== 有效材质合并 ====================
 
     /**
-     * 获取有效的材质属性，合并基础材质和覆写属性。
+     * 构造期解析材质并给出唯一一次告警。
      *
-     * <p>材料缺失时回退 {@link MaterialAttr#DEFAULT} 并打 warn：碰撞箱的容错行为。
-     * 需要区分「材料不存在」的调用方（如履带型号）用 {@link #resolve}。</p>
+     * <p>缺省 id（{@link MaterialAttr#DEFAULT_ID}）表示作者没有指定材质，按设计取内置默认材质，
+     * 不告警；只有写了不存在的 id 才告警，且每个实例至多一条。需要区分「材料不存在」的调用方
+     * （如履带型号）用 {@link #resolve}。</p>
      *
-     * @return 合并后的材质属性
+     * @return 合并后的材质属性；材料缺失时为 {@link MaterialAttr#DEFAULT}
      */
-    public MaterialAttr getEffectiveMaterial() {
-        MaterialAttr materialAttr = resolve(material, overwrite);
-        if (materialAttr != null) return materialAttr;
-        MachineMax.LOGGER.warn("材质 {} 不存在，碰撞箱改用默认材质", material);
+    private MaterialAttr resolveEffectiveMaterial() {
+        MaterialAttr resolved = resolve(material, overwrite);
+        if (resolved != null) return resolved;
+        if (!MaterialAttr.DEFAULT_ID.equals(material)) {
+            SparkPackIssues.warn(MMLanguageRegistry.WARN_PART_HITBOX_MATERIAL_MISSING.component(material));
+        }
         return MaterialAttr.DEFAULT;
     }
 

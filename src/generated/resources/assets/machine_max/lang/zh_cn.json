@@ -423,5 +423,6 @@
   "tooltip.machine_max.wrench.disassembly": "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定",
   "tooltip.machine_max.wrench.no_need_to_repair": "%1$s无需修复或固定",
   "tooltip.machine_max.wrench.repair": "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s",
+  "warn.machine_max.part.hitbox_material_missing": "碰撞箱材质 %1$s 不存在，改用默认材质",
   "warn.machine_max.part.track_material_anisotropy": "履带材料 %1$s 的 friction 为 [%2$s, %3$s, %4$s]：履带轮绕自身轴向转动，各向异性缩放按部件局部轴逐分量相乘，y 与 z 不等会让纵向摩擦随轮子相位摆动、方向被转偏；请写成 [横向, 纵向, 纵向]"
 }

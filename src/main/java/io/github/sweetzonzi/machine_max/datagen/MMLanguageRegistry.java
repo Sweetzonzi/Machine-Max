@@ -456,6 +456,10 @@ public enum MMLanguageRegistry {
             zh_cn, "履带材料 %1$s 的 friction 为 [%2$s, %3$s, %4$s]：履带轮绕自身轴向转动，各向异性缩放按部件局部轴逐分量相乘，y 与 z 不等会让纵向摩擦随轮子相位摆动、方向被转偏；请写成 [横向, 纵向, 纵向]",
             en_us, "Track material %1$s declares friction [%2$s, %3$s, %4$s]: a road wheel turns about its own axle and the anisotropic scaling multiplies per local axis, so unequal y and z make the longitudinal friction swing with the wheel phase and skew its direction; write it as [lateral, longitudinal, longitudinal]"
     )),
+    WARN_PART_HITBOX_MATERIAL_MISSING("warn.machine_max.part.hitbox_material_missing", ImmutableMap.of(
+            zh_cn, "碰撞箱材质 %1$s 不存在，改用默认材质",
+            en_us, "Hitbox material %1$s does not exist; the default material is used instead"
+    )),
     // 提示信息
     TOAST_RESEARCH_COMPLETE("toast.machine_max.research_complete", ImmutableMap.of(
             zh_cn, "研发完成！",
