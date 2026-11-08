@@ -1,0 +1,51 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.machine_max.2s38_suspension": {
+			"loop": true,
+			"bones": {
+				// 摆臂跟随负重轮。local.connector_offset(name, 1) 是负重轮关节的竖向位移（m，正为轮心上抬），
+				// 常量取自 2s38.geo.json 的模型几何（Y/Z，单位格）：轮毂相对摆臂轴为 (-0.3101, 0.3769)，
+				// 初始夹角 -39.446°，故 atan2(轮毂 Y + 位移, 轮毂 Z) + 39.446 即“让摆臂重新指向轮毂”的转角增量。
+				// 关节只有竖向平移，摆臂只能绕侧向轴转，两者在满行程 ±0.16 m 处沿摆臂方向最多差 8~11 cm，
+				// 静态平衡（+0.04 m）处约 2 cm：轮轴在静态姿势下仍在摆臂末端的抱箍内，行程两端会从抱箍口前后露出几厘米。
+				"LeftArm_2": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_2', 1), 0.3769)+39.446", 0, 0]
+				},
+				"LeftArm_3": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_3', 1), 0.3769)+39.446", 0, 0]
+				},
+				"LeftArm_4": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_4', 1), 0.3769)+39.446", 0, 0]
+				},
+				"LeftArm_5": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_5', 1), 0.3769)+39.446", 0, 0]
+				},
+				"LeftArm_6": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_6', 1), 0.3769)+39.446", 0, 0]
+				},
+				"LeftArm_7": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_left_wheel_7', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_2": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_2', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_3": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_3', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_4": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_4', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_5": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_5', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_6": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_6', 1), 0.3769)+39.446", 0, 0]
+				},
+				"RightArm_7": {
+					"rotation": ["math.atan2(-0.3101+local.connector_offset('connector.machine_max.hull_right_wheel_7', 1), 0.3769)+39.446", 0, 0]
+				}
+			}
+		}
+	}
+}

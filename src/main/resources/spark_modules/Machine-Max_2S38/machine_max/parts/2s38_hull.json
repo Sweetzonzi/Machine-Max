@@ -6,6 +6,7 @@
     "2s38": {
       "model": "machine_max:2s38.geo",
       "textures": "machine_max:textures/part/2s38/2s38.png",
+      "animations": "machine_max:2s38",
       "tags": [
         "machine_max:category/structural",
         "machine_max:type/land",

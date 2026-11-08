@@ -8366,7 +8366,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_1",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, -35.91],
+					"pivot": [-20.04, 8.86, -40.135],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, -40.3181],
@@ -8402,7 +8402,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_1",
-					"parent": "TorsionBarSuspension_Right_1",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, -32.03],
 					"cubes": [
 						{
@@ -8756,7 +8756,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_2",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, -20.74],
+					"pivot": [-20.04, 8.86, -24.965],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, -25.1481],
@@ -8792,7 +8792,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_2",
-					"parent": "TorsionBarSuspension_Right_2",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, -16.86],
 					"cubes": [
 						{
@@ -9146,7 +9146,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_3",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, 9.09],
+					"pivot": [-20.04, 8.86, 4.865],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, 4.6794],
@@ -9182,7 +9182,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_3",
-					"parent": "TorsionBarSuspension_Right_3",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, 12.96],
 					"cubes": [
 						{
@@ -9536,7 +9536,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_4",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, -6.09],
+					"pivot": [-20.04, 8.86, -10.315],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, -10.4906],
@@ -9572,7 +9572,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_4",
-					"parent": "TorsionBarSuspension_Right_4",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, -2.21],
 					"cubes": [
 						{
@@ -9926,7 +9926,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_5",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, 46.54],
+					"pivot": [-20.04, 8.86, 50.765],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, 41.48174],
@@ -9962,7 +9962,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_5",
-					"parent": "TorsionBarSuspension_Right_5",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, 42.79],
 					"cubes": [
 						{
@@ -10316,7 +10316,7 @@
 				{
 					"name": "TorsionBarSuspension_Right_6",
 					"parent": "Wheel_Right",
-					"pivot": [-20.04, 8.86, 23.74],
+					"pivot": [-20.04, 8.86, 19.515],
 					"cubes": [
 						{
 							"origin": [-21.86576, 7.17476, 19.3369],
@@ -10352,7 +10352,7 @@
 				},
 				{
 					"name": "Roadwheel_Right_6",
-					"parent": "TorsionBarSuspension_Right_6",
+					"parent": "Wheel_Right",
 					"pivot": [-24.4, 8.22, 27.62],
 					"cubes": [
 						{
@@ -11935,7 +11935,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_1",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, -35.91],
+					"pivot": [20.04, 8.86, -40.135],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, -40.3181],
@@ -11971,7 +11971,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_1",
-					"parent": "TorsionBarSuspension_Left_1",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, -32.03],
 					"cubes": [
 						{
@@ -12325,7 +12325,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_2",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, -20.74],
+					"pivot": [20.04, 8.86, -24.965],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, -25.1481],
@@ -12361,7 +12361,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_2",
-					"parent": "TorsionBarSuspension_Left_2",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, -16.86],
 					"cubes": [
 						{
@@ -12715,7 +12715,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_3",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, 9.09],
+					"pivot": [20.04, 8.86, 4.865],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, 4.6794],
@@ -12751,7 +12751,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_3",
-					"parent": "TorsionBarSuspension_Left_3",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, 12.96],
 					"cubes": [
 						{
@@ -13105,7 +13105,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_4",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, -6.09],
+					"pivot": [20.04, 8.86, -10.315],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, -10.4906],
@@ -13141,7 +13141,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_4",
-					"parent": "TorsionBarSuspension_Left_4",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, -2.21],
 					"cubes": [
 						{
@@ -13495,7 +13495,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_5",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, 46.54],
+					"pivot": [20.04, 8.86, 50.765],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, 41.48174],
@@ -13531,7 +13531,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_5",
-					"parent": "TorsionBarSuspension_Left_5",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, 42.79],
 					"cubes": [
 						{
@@ -13885,7 +13885,7 @@
 				{
 					"name": "TorsionBarSuspension_Left_6",
 					"parent": "Wheel_Left",
-					"pivot": [20.04, 8.86, 23.74],
+					"pivot": [20.04, 8.86, 19.515],
 					"cubes": [
 						{
 							"origin": [20.04218, 7.17476, 19.3369],
@@ -13921,7 +13921,7 @@
 				},
 				{
 					"name": "Roadwheel_Left_6",
-					"parent": "TorsionBarSuspension_Left_6",
+					"parent": "Wheel_Left",
 					"pivot": [24.4, 8.22, 27.62],
 					"cubes": [
 						{

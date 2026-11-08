@@ -5,6 +5,7 @@
   "variants": {
     "model": "machine_max:mtlb.geo",
     "textures": "machine_max:textures/part/mtlb/mtlb.png",
+    "animations": "machine_max:mtlb",
     "tags": [
       "machine_max:category/structural",
       "machine_max:type/land",

@@ -1,0 +1,55 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.machine_max.mtlb_suspension": {
+			"loop": true,
+			"bones": {
+				// 扭杆摆臂跟随负重轮。local.connector_offset(name, 1) 是负重轮关节的竖向位移（m，正为轮心上抬），
+				// 常量取自 mtlb.geo.json 的模型几何（Y/Z，单位格）：轮毂相对摆臂轴为 (-0.04, 0.5066)，
+				// 初始夹角 -4.515°，故 atan2(轮毂 Y + 位移, 轮毂 Z) + 4.515 即“让摆臂重新指向轮毂”的转角增量。
+				// 第 5 号摆臂朝前（轮毂在其前方，Z 为负），初始夹角 -175.411°，atan2 会在 ±180° 处跳变，
+				// 因此套一层 math.min_angle 折回 ±180° 内，避免位移过零时整圈翻转。
+				// 摆臂绕轴转、关节只竖向平移，满行程 ±0.16 m 处两者沿摆臂方向最多差约 4 cm，静态平衡处小于 1 cm。
+				// 模型侧的两个前提（mtlb.geo.json）：摆臂骨骼 pivot 落在扭杆轴心（摆臂前端那个方块的中心，
+				// 不是摆臂方块自身的几何中心），负重轮骨骼挂在 Wheel_Left / Wheel_Right 下而不是挂在摆臂下——
+				// 否则负重轮会同时收到关节位移与摆臂转角，横向位移被叠加两次。
+				"TorsionBarSuspension_Left_1": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_1', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Left_2": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_2', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Left_3": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_3', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Left_4": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_4', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Left_5": {
+					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_5', 1), -0.4984)+175.411)", 0, 0]
+				},
+				"TorsionBarSuspension_Left_6": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_roadwheel_6', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Right_1": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_1', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Right_2": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_2', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Right_3": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_3', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Right_4": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_4', 1), 0.5066)+4.515", 0, 0]
+				},
+				"TorsionBarSuspension_Right_5": {
+					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_5', 1), -0.4984)+175.411)", 0, 0]
+				},
+				"TorsionBarSuspension_Right_6": {
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_roadwheel_6', 1), 0.5066)+4.515", 0, 0]
+				}
+			}
+		}
+	}
+}
