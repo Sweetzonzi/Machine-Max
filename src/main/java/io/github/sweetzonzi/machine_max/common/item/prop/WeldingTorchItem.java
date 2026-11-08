@@ -3,12 +3,15 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.api.ParticleEffects;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
+import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -33,6 +36,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -49,6 +53,16 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.loop"), 32f);
     private static final SoundEvent WELDING_END_SOUND = SoundEvent.createFixedRangeEvent(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.end"), 32f);
+    /** 焊接火花用的内容包粒子效果，与命中火花是同一套：火花之外，烟尘与闪光由效果自身的事件带出。 */
+    private static final ResourceLocation WELD_EFFECT =
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "armor_spall");
+    /**
+     * 焊接火花的喷射间隔（tick）。
+     *
+     * <p>单次喷射 28 颗火花，逐 tick 喷射相当于约 560 颗/秒、同屏两百余颗，远密于焊接应有的观感；
+     * 每 2 tick 一次是约 280 颗/秒。</p>
+     */
+    private static final int WELD_EFFECT_INTERVAL = 2;
 
     public WeldingTorchItem() {
         super(new Properties()
@@ -113,19 +127,15 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                 } else { // 客户端仅负责音效与粒子效果
                     boolean shouldPlayEffect = shouldPlayEffect(subPart);
                     if (shouldPlayEffect) {
-                        var ray = eyesight.getTargetBodyCache().get(subPart.body);
-                        var hitPos = eyesight.getHitPoint(ray);
-                        var normal = ray.getHitNormalLocal(null).mult(0.2f);
-                        for (int i = 0; i < 5; i++) {
-                            level.addParticle(
-                                    ParticleTypes.FIREWORK,
-                                    hitPos.x,
-                                    hitPos.y,
-                                    hitPos.z,
-                                    normal.x + 0.2 * (Math.random() - 0.5),
-                                    normal.y + 0.2 * (Math.random() - 0.5),
-                                    normal.z + 0.2 * (Math.random() - 0.5)
-                            );
+                        if (player.tickCount % WELD_EFFECT_INTERVAL == 0) {
+                            var ray = eyesight.getTargetBodyCache().get(subPart.body);
+                            var normal = ray.getHitNormalLocal(null);
+                            // 法线统一取"朝向持枪者"的那一侧：焊接火花是从焊点朝焊工喷出来的，
+                            // 引擎给的法线朝向取决于射线从哪一面命中
+                            if (normal.dot(eyesight.getView()) > 0f) normal.negateLocal();
+                            spawnWeldSparks(level,
+                                    SparkMathKt.toVec3(eyesight.getHitPoint(ray)),
+                                    SparkMathKt.toVec3(normal));
                         }
                         playWeldingLoopSound(level, player, 1.0f, 1.0f);
                     } else {
@@ -152,16 +162,10 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     if (entity instanceof LivingEntity living) living.invulnerableTime = 0;
                     entity.igniteForSeconds(3);
                 } else {
-                    for (int i = 0; i < 5; i++) {
-                        level.addParticle(
-                                ParticleTypes.FIREWORK,
-                                entity.getX(),
-                                entity.getY(),
-                                entity.getZ(),
-                                1.5 * (Math.random() - 0.5),
-                                1.5 * (Math.random() - 0.5),
-                                1.5 * (Math.random() - 0.5)
-                        );
+                    Vec3 center = entity.getBoundingBox().getCenter();
+                    if (player.tickCount % WELD_EFFECT_INTERVAL == 0) {
+                        // 火花从实体身上朝持枪的人喷回来
+                        spawnWeldSparks(level, center, player.getEyePosition().subtract(center));
                     }
                     playWeldingLoopSound(level, player, 1.0f, 1.0f);
                 }
@@ -212,6 +216,16 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
         if (!shouldPlayEffect)
             shouldPlayEffect = subPart.part instanceof RegularPart regular && regular.getAssemblingProgress() < 1;
         return shouldPlayEffect;
+    }
+
+    /**
+     * 在 {@code pos} 沿 {@code axis} 喷射一簇焊接火花，只在客户端调用。
+     *
+     * @param pos  喷射点（世界坐标）
+     * @param axis 喷射轴（世界坐标，无需预先归一化）
+     */
+    private static void spawnWeldSparks(Level level, Vec3 pos, Vec3 axis) {
+        ParticleEffects.burst(level, WELD_EFFECT, pos, SparkMathKt.toQuaternionf(ViewMath.axisAlong(axis)));
     }
 
     private void playWeldingStartSound(Level level, Player player) {

@@ -41,7 +41,8 @@ public class MMPayloadRegistry {
         // 2.8.0 对应再生装弹机改为 ModularSubsystem：继承链多注册一个模块访问器，子系统自身的访问器编号整体后移，
         // 两端必须同版本才可解码同一份 SubsystemSyncPayload。
         // 2.9.0 / 1.4.0 对应 TrackLinkData 增加 link_count：节数改由服务端持久化并随载具 / 蓝图数据下发。
-        final PayloadRegistrar sync = event.registrar("sync:2.9.0");
+        // 2.9.1 新增 SubPartHitEffectPayload：命中音效与命中火花改由客户端按碰撞箱身份重建。
+        final PayloadRegistrar sync = event.registrar("sync:2.9.1");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
@@ -237,6 +238,11 @@ public class MMPayloadRegistry {
                 ExplosionDetonatePayload.TYPE,
                 ExplosionDetonatePayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ExplosionDetonatePayload::handle)
+        );
+        sync.playToClient(//零件命中表现（子部件 id + 碰撞箱名 + 局部命中点 + 喷射轴），音效与火花由客户端解析
+                SubPartHitEffectPayload.TYPE,
+                SubPartHitEffectPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(SubPartHitEffectPayload::handle)
         );
 
         research.playToClient(//玩家蓝图的自由研发点同步

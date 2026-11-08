@@ -64,4 +64,12 @@ class ViewMathTest {
         assertEquals(Vec2.ZERO,ViewMath.inherit(Quaternion.IDENTITY,p,p));
         assertEquals(1000,ViewMath.advanceFree(p,p,deg(1, 1)).subtract(p).length(),1e-9);
     }
+    @Test void axisAlongPutsLocalPlusZOnDirection() {
+        for(Vec3 direction:new Vec3[]{
+                new Vec3(0,0,1),new Vec3(0,0,-1),new Vec3(1,0,0),
+                new Vec3(0,1,0),new Vec3(0.3,-0.6,0.74),new Vec3(-2,5,-9)}){
+            Vector3f z=MyQuaternion.rotate(ViewMath.axisAlong(direction),Vector3f.UNIT_Z,null);
+            assertEquals(0,new Vec3(z.x,z.y,z.z).normalize().subtract(direction.normalize()).length(),1e-5);
+        }
+    }
 }

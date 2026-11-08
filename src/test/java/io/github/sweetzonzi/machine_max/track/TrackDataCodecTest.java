@@ -395,7 +395,8 @@ class TrackDataCodecTest {
         MMDynamicRes.MATERIALS.putIfAbsent(ResourceLocation.parse(id), new MaterialAttr(
                 MaterialAttr.PhysicsAttr.DEFAULT,
                 MaterialAttr.ArmorAttr.DEFAULT,
-                MaterialAttr.MaterialSoundAttr.DEFAULT
+                MaterialAttr.MaterialSoundAttr.DEFAULT,
+                MaterialAttr.MaterialParticleAttr.EMPTY
         ));
     }
 }

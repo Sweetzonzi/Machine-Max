@@ -2,7 +2,7 @@
 
 **范围**: 载具核心拓扑、零件实体、连接器、碰撞、数据序列化、事件系统。
 
-**文件数**: 47 个（含子目录）| **总行数**: ~9800 行
+**文件数**: 48 个（含子目录）| **总行数**: ~9900 行
 
 ## 结构
 
@@ -14,13 +14,14 @@ vehicle/
 ├── RegularPartType.java               # 部件类型数据（JSON Codec + StreamCodec）
 ├── IPartAssembly.java          # 装配体顶层接口（解耦 Part↔VehicleCore）
 ├── SubPartHitDamage.java       # 单次命中的结算记录，随批次通告交给装配体
+├── SubPartHitEffects.java      # 命中音效与命中火花的客户端表现（按碰撞箱身份回放）
 ├── DamageModifier.java         # 数据驱动的伤害修改器
 ├── CollisionManager.java       # 实体碰撞冲量管理器
 │
 ├── attr/                       # 零件属性系统（11文件，~1600行）
 │   ├── SubPartAttr.java        #   零件基本属性（物理、碰撞、可视化）
 │   ├── VariantAttr.java        #   变体属性（贴图、模型）
-│   ├── MaterialAttr.java       #   材质属性
+│   ├── MaterialAttr.java       #   材质属性（物理 / 装甲 / 音效 / 表现粒子）
 │   ├── MotorAttr.java          #   马达/引擎属性
 │   ├── HitBoxAttr.java         #   命中判定框
 │   ├── AdvancedAeroAttr.java   #   高级空气动力学
@@ -78,6 +79,7 @@ vehicle/
 | 新增连接器类型 | `connector/AbstractConnector.java` | 继承、实现关节类型和信号端口 |
 | 修改碰撞逻辑 | `collision/CollisionHandler.java` | 地形高度场、实体碰撞、Create 兼容 |
 | 修改碰撞特效 | `collision/CollisionEffectManager.java` | 火花/声音/轮子快照 |
+| 修改命中音效 / 火花 | `SubPart.java` + `SubPartHitEffects.java` + `attr/MaterialAttr.java` | 在结算阶段按同一笔命中记录决定，音效与火花都取自材质（`sounds` / `particles`），客户端按碰撞箱身份回放 |
 | 新增属性字段 | `attr/SubPartAttr.java` | 加字段 + JSON Codec |
 | 新增事件 | `event/` | 继承对应事件基类，注册到 NeoForge 总线 |
 | 修改交互框 | `interact/InteractBox.java` | 玩家右键交互、命中检测 |

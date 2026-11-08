@@ -41,8 +41,8 @@
       },
       "minecraft:particle_appearance_billboard": {
         "size": [
-          "(0.13 + 0.14 * variable.particle_random_3) * (1 - 0.45 * variable.particle_age / variable.particle_lifetime)",
-          "0.032 + 0.018 * variable.particle_random_4"
+          "(0.26 + 0.28 * variable.particle_random_3) * (1 - 0.45 * variable.particle_age / variable.particle_lifetime)",
+          "0.064 + 0.036 * variable.particle_random_4"
         ],
         "facing_camera_mode": "lookat_direction",
         "uv": {
@@ -63,7 +63,32 @@
           }
         }
       },
-      "minecraft:particle_appearance_lighting": {}
+      "minecraft:particle_appearance_lighting": {},
+      "minecraft:emitter_lifetime_events": {
+        // 发射器时钟走到 0 秒时触发一次 "hit"，把闪光与烟尘带出来。
+        // 发射器级的 creation_event 在 Spark-Core 里尚未触发，时间线的 0.0 等价于"创建后首个 tick"。
+        "timeline": {
+          "0.0": "hit"
+        }
+      }
+    },
+    "events": {
+      "hit": [
+        {
+          // 命中点的加色闪光：比火花更快、更短，负责"这一下很亮"
+          "particle_effect": {
+            "effect": "machine_max:metal_hit_flash",
+            "type": "emitter"
+          }
+        },
+        {
+          // 金属烟尘：沿喷射轴散开的低透明度烟团，负责"打出了东西"
+          "particle_effect": {
+            "effect": "machine_max:metal_dust",
+            "type": "emitter"
+          }
+        }
+      ]
     }
   }
 }

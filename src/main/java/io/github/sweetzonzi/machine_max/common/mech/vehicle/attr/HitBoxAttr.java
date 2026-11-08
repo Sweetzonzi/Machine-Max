@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -121,21 +122,23 @@ public class HitBoxAttr {
     // ==================== 覆写属性 ====================
 
     /**
-     * HitBox 材质属性覆写，按 physics / armor / sounds 三组分别可选覆写。
+     * HitBox 材质属性覆写，按 physics / armor / sounds / particles 四组分别可选覆写。
      * <p>
      * physics 和 armor 均为字段级 Optional 覆写（未提供则沿用基础材质值），
-     * sounds 为整体覆写。
+     * sounds 为整体覆写，particles 按键叠加（碰撞箱只写它要换的那几个键）。
      * </p>
      */
     public record OverwriteAttr(
             Optional<PhysicsOverwriteAttr> physics,
             Optional<ArmorOverwriteAttr> armor,
-            Optional<MaterialAttr.MaterialSoundAttr> sounds
+            Optional<MaterialAttr.MaterialSoundAttr> sounds,
+            Optional<MaterialAttr.MaterialParticleAttr> particles
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 PhysicsOverwriteAttr.CODEC.optionalFieldOf("physics").forGetter(OverwriteAttr::physics),
                 ArmorOverwriteAttr.CODEC.optionalFieldOf("armor").forGetter(OverwriteAttr::armor),
-                MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds").forGetter(OverwriteAttr::sounds)
+                MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds").forGetter(OverwriteAttr::sounds),
+                MaterialAttr.MaterialParticleAttr.CODEC.optionalFieldOf("particles").forGetter(OverwriteAttr::particles)
         ).apply(instance, OverwriteAttr::new));
     }
 
@@ -284,8 +287,26 @@ public class HitBoxAttr {
         return new MaterialAttr(
                 mergePhysics(baseMaterial.physics(), overwrite.physics().orElse(null)),
                 mergeArmor(baseMaterial.armor(), overwrite.armor().orElse(null)),
-                overwrite.sounds().orElse(baseMaterial.sounds())
+                overwrite.sounds().orElse(baseMaterial.sounds()),
+                mergeParticles(baseMaterial.particles(), overwrite.particles().orElse(null))
         );
+    }
+
+    /**
+     * 粒子按键叠加：覆写里写了哪个键就换哪个键，没写的继续继承材质。
+     *
+     * <p>与 {@code sounds} 的整体替换不同——粒子键会随表现用途增加，
+     * 要求碰撞箱每换一个键就把整张表抄一遍并不合理。</p>
+     */
+    private static MaterialAttr.MaterialParticleAttr mergeParticles(
+            MaterialAttr.MaterialParticleAttr base,
+            @Nullable MaterialAttr.MaterialParticleAttr overwrite
+    ) {
+        if (overwrite == null || overwrite.effects().isEmpty()) return base;
+        if (base.effects().isEmpty()) return overwrite;
+        Map<String, ResourceLocation> merged = new HashMap<>(base.effects());
+        merged.putAll(overwrite.effects());
+        return new MaterialAttr.MaterialParticleAttr(merged);
     }
 
     private static MaterialAttr.PhysicsAttr mergePhysics(
@@ -392,4 +413,8 @@ public class HitBoxAttr {
     // -- MaterialSoundAttr 委托 --
 
     public MaterialAttr.MaterialSoundAttr sounds() { return effectiveMaterial.sounds(); }
+
+    // -- MaterialParticleAttr 委托 --
+
+    public MaterialAttr.MaterialParticleAttr particles() { return effectiveMaterial.particles(); }
 }

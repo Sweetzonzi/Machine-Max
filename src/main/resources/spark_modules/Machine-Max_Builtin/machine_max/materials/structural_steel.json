@@ -60,5 +60,9 @@
       "sound_id": "machine_max:hit_box.hit.pen.metal",
       "range": 64
     }
+  },
+  "particles": {
+    "hit_pen": "machine_max:armor_spall",//击穿时的命中火花：顺着弹道喷出的金属碎屑
+    "hit_un_pen": "machine_max:armor_deflect"//未击穿（含跳弹）时的命中火花：沿装甲表面弹开
   }
 }

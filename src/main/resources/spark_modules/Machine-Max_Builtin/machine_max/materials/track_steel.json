@@ -22,5 +22,9 @@
     "decay_dmg_mult": 1.0,
     "decay_power": 1.5,
     "unpen_power": 0.6
+  },
+  "particles": {
+    "hit_pen": "machine_max:armor_spall",//击穿时的命中火花：顺着弹道喷出的金属碎屑
+    "hit_un_pen": "machine_max:armor_deflect"//未击穿（含跳弹）时的命中火花：沿装甲表面弹开
   }
 }

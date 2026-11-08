@@ -262,12 +262,14 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 ./gradlew checkContent     # 只读校验；check 依赖它，CI 的 build 因此也会跑
 ```
 
-读各包的 JSON，查两类编译期发现不了、进游戏才表现为「物品在但放不出车」或「紫黑格子 / 空模型」的问题：
+读各包的 JSON，查四类编译期发现不了、进游戏才表现为「物品在但放不出车」「紫黑格子 / 空模型」或「打中装甲不出火花、不出烟尘」的问题：
 
 | 检查 | 判据 |
 |------|------|
 | 模板 ↔ 装配体 ↔ 载具蓝图 | 每份 `templates/*.json` 都要有同名装配体与蓝图；每份装配体 / 蓝图的 `template` 指向存在的模板，且与自身文件名同名 |
 | JSON 里的资源引用 | `machine_max:…png` 按内容目录内的相对路径精确匹配，`machine_max:…geo` 按文件名在 `models/` 下递归找 |
+| 碰撞箱的命中火花引用 | 材质的 `particles` 段按键声明表现粒子（`hit_pen` / `hit_un_pen` …），每个值按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；客户端解析不到定义时静默跳过，因此只能在这里拦 |
+| 粒子定义之间的事件引用 | 粒子 JSON 的 `events` 里用 `particle_effect` 生成另一个效果时，`effect` 同样按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；拼错只会让子效果不出现，日志里没有痕迹 |
 
 - **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。
 - **索引按所有包合并**：内容 id 是 `<namespace>/<路径>`，与所在包无关，车包引用 kit 或 builtin 的贴图、模型是正常用法。按包隔离会把这些引用判成缺失。

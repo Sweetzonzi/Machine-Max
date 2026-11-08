@@ -2,13 +2,17 @@
 //
 //   ./gradlew checkContent    只读校验（check 依赖它，CI 的 build 因此也会跑）
 //
-// 两类问题都只能靠读 JSON 发现，编译期不会报：
+// 四类问题都只能靠读 JSON 发现，编译期不会报：
 //
 //  1. 装配体 / 载具蓝图与模板对齐。创造栏的两个页签按模板 id 生成物品，物品里存的是
 //     模板 id，读取时再拿它去 assemblies/、blueprints/ 查同名条目。文件名与模板不同名、
 //     template 字段多带了后缀、或者整条缺失，物品都在但放不出车。
 //  2. JSON 里引用的资源可达。图标少写一层目录、图标改名后引用没跟上、模型改名漏同步，
 //     在游戏里只表现为紫黑格子或空模型，不报错。
+//  3. 材质的表现粒子可达。材质 particles 段里的 id（hit_pen / hit_un_pen …）写错一个字母，
+//     游戏里只是打中装甲不出火花，既不报错也不刷日志（客户端解析不到定义时静默跳过）。
+//  4. 粒子定义之间的子效果引用可达。粒子 JSON 的 events 里用 particle_effect 生成另一个
+//     效果时，效果 id 拼错只会让子效果不出现（如只剩火花、没有闪光与烟尘），同样没有日志。
 //
 // 口径：
 //  - 只扫各包的 <namespace>/ 目录，跳过 docs/（schema 副本由 checkSchemas 管）。
@@ -84,6 +88,41 @@ walkStrings = { Object node, Closure onString ->
     }
 }
 
+// 收集材质的表现粒子：材质的 particles 段是「表现用途 → 粒子 id」的表（hit_pen、hit_un_pen 等）
+def walkMaterialParticles
+walkMaterialParticles = { Object node, Closure onMaterialParticle ->
+    if (node instanceof Map) {
+        node.each { Object key, Object value ->
+            if (key == 'particles' && value instanceof Map) {
+                value.each { Object use, Object particle ->
+                    if (particle != null) {
+                        onMaterialParticle(use.toString(), particle.toString())
+                    }
+                }
+            }
+            walkMaterialParticles(value, onMaterialParticle)
+        }
+    } else if (node instanceof List) {
+        node.each { walkMaterialParticles(it, onMaterialParticle) }
+    }
+}
+
+// 收集粒子定义之间的子效果引用：粒子 JSON 的 events 里用 particle_effect 生成另一个粒子效果
+def walkChildParticles
+walkChildParticles = { Object node, Closure onChildParticle ->
+    if (node instanceof Map) {
+        node.each { Object key, Object value ->
+            if (key == 'particle_effect' && value instanceof Map && value.get('effect') != null) {
+                onChildParticle(value.get('effect').toString())
+            } else {
+                walkChildParticles(value, onChildParticle)
+            }
+        }
+    } else if (node instanceof List) {
+        node.each { walkChildParticles(it, onChildParticle) }
+    }
+}
+
 def readJsonc = { File file ->
     new JsonSlurper().parseText(stripJsonc(file.getText('UTF-8')))
 }
@@ -118,6 +157,7 @@ tasks.register('checkContent') {
         // 跨包引用（车包用 kit 的件、车包用 builtin 的贴图）必须能落到文件。
         Set<String> resourceFiles = new HashSet<>()
         Set<String> geoModels = new HashSet<>()
+        Set<String> particleIds = new HashSet<>()
         packs.each { pack ->
             pack.dir.eachFileRecurse(FileType.FILES) { File file ->
                 if (file.toPath().any { it.toString() == 'docs' }) {
@@ -129,6 +169,11 @@ tasks.register('checkContent') {
                 if (relative.startsWith('models/') && relative.endsWith('.geo.json')) {
                     // 模型引用写成 `machine_max:k17.geo`，文件名是 `k17.geo.json`：存去掉 .json 的名字
                     geoModels << file.name.substring(0, file.name.length() - '.json'.length())
+                }
+                if (relative.startsWith('particles/') && relative.endsWith('.particle.json')) {
+                    // 粒子 id 是 <namespace>/<文件名去掉 .particle.json>
+                    String name = file.name.substring(0, file.name.length() - '.particle.json'.length())
+                    particleIds << pack.namespace + ':' + name
                 }
             }
         }
@@ -192,6 +237,8 @@ tasks.register('checkContent') {
 
         // 2. JSON 里的资源引用
         int referenceCount = 0
+        int particleReferenceCount = 0
+        int childParticleCount = 0
         // 贴图 / 模型只校验内置与模板命名空间，外部命名空间留给对应 mod 自己管
         def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo))$/
         // 说明页面按 AUI 文档根解析：namespace:tooltips/x.html → <包>/<namespace>/documents/tooltips/x.html
@@ -213,6 +260,28 @@ tasks.register('checkContent') {
                 String label = pack.name + '/' + pack.namespace + '/' +
                         pack.dir.toPath().relativize(file.toPath()).toString()
                                 .replace(File.separatorChar, '/' as char)
+                // 3. 材质的表现粒子（命中火花等）
+                walkMaterialParticles(data) { String use, String value ->
+                    particleReferenceCount++
+                    if (!particleIds.contains(value)) {
+                        problems << label + '：particles.' + use + ' ' + value +
+                                ' 找不到粒子定义（particles/<名>.particle.json）'
+                        details.append('    缺粒子  ').append(label).append(' → ')
+                                .append('particles.').append(use).append(' = ').append(value).append('\n')
+                    }
+                }
+                // 4. 粒子定义之间的事件引用（events 里的 particle_effect）
+                if (file.name.endsWith('.particle.json')) {
+                    walkChildParticles(data) { String value ->
+                        childParticleCount++
+                        if (!particleIds.contains(value)) {
+                            problems << label + '：events 引用的子效果 ' + value +
+                                    ' 找不到粒子定义（particles/<名>.particle.json）'
+                            details.append('    缺粒子  ').append(label).append(' → ')
+                                    .append('particle_effect.effect = ').append(value).append('\n')
+                        }
+                    }
+                }
                 walkStrings(data) { String value ->
                     def tooltipMatcher = tooltipPattern.matcher(value)
                     if (tooltipMatcher.matches()) {
@@ -270,7 +339,8 @@ tasks.register('checkContent') {
                     (text ? '\n' + text : ''))
         }
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
-                ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用）。')
+                ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用，' +
+                particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用）。')
     }
 }
 

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/material_attr.json",
   "title": "Material Attributes",
-  "description": "Defines the physical properties, armor protection, and hit sounds of materials, organized in three groups: physics / armor / sounds.",
+  "description": "Defines the physical properties, armor protection, hit sounds and particles of materials, organized in four groups: physics / armor / sounds / particles.",
   "type": "object",
   "properties": {
     "$schema": {
@@ -117,6 +117,31 @@
       },
       "additionalProperties": false,
       "description": "Material hit sound configuration."
+    },
+    "particles": {
+      "type": "object",
+      "description": "Material particle effects, keyed by what the effect is for rather than by material: hit_pen is the hit spark when the armor is penetrated, hit_un_pen when it is not (ricochets included). A missing key means no particle for that case; keys the engine does not read have no effect. Future uses (track marks, tyre scuffs) take a key each in the same table.",
+      "properties": {
+        "hit_pen": {
+          "allOf": [
+            { "$ref": "resource_location.schema.json" }
+          ],
+          "description": "Hit spark particle when the armor is penetrated (particles/<name>.particle.json).",
+          "default": "machine_max:armor_spall"
+        },
+        "hit_un_pen": {
+          "allOf": [
+            { "$ref": "resource_location.schema.json" }
+          ],
+          "description": "Hit spark particle when the armor is not penetrated (particles/<name>.particle.json).",
+          "default": "machine_max:armor_deflect"
+        }
+      },
+      "additionalProperties": {
+        "allOf": [
+          { "$ref": "resource_location.schema.json" }
+        ]
+      }
     }
   },
   "additionalProperties": false,
@@ -131,6 +156,10 @@
       "sounds": {
         "hit_un_pen": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 },
         "hit_pen": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
+      },
+      "particles": {
+        "hit_pen": "machine_max:armor_spall",
+        "hit_un_pen": "machine_max:armor_deflect"
       }
     }
   ]

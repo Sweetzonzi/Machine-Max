@@ -7,9 +7,12 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 /**
- * 材料属性，按功能分为物理、装甲、音效三组。
+ * 材料属性，按功能分为物理、装甲、音效、粒子四组。
  * <p>
  * 伤害管线：条件化 damageModifiers → 线性减伤(dmg_resist) → 百分比乘算(dmg_mult)
  * </p>
@@ -17,20 +20,23 @@ import net.minecraft.world.phys.Vec3;
 public record MaterialAttr(
         PhysicsAttr physics,
         ArmorAttr armor,
-        MaterialSoundAttr sounds
+        MaterialSoundAttr sounds,
+        MaterialParticleAttr particles
 ) {
     public static final ResourceLocation DEFAULT_ID = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "default");
 
     public static final MaterialAttr DEFAULT = new MaterialAttr(
             PhysicsAttr.DEFAULT,
             ArmorAttr.DEFAULT,
-            MaterialSoundAttr.DEFAULT
+            MaterialSoundAttr.DEFAULT,
+            MaterialParticleAttr.EMPTY
     );
 
     public static final Codec<MaterialAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             PhysicsAttr.CODEC.optionalFieldOf("physics", PhysicsAttr.DEFAULT).forGetter(MaterialAttr::physics),
             ArmorAttr.CODEC.optionalFieldOf("armor", ArmorAttr.DEFAULT).forGetter(MaterialAttr::armor),
-            MaterialSoundAttr.CODEC.optionalFieldOf("sounds", MaterialSoundAttr.DEFAULT).forGetter(MaterialAttr::sounds)
+            MaterialSoundAttr.CODEC.optionalFieldOf("sounds", MaterialSoundAttr.DEFAULT).forGetter(MaterialAttr::sounds),
+            MaterialParticleAttr.CODEC.optionalFieldOf("particles", MaterialParticleAttr.EMPTY).forGetter(MaterialAttr::particles)
     ).apply(instance, MaterialAttr::new));
 
     // ==================== 物理属性 ====================
@@ -205,5 +211,50 @@ public record MaterialAttr(
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_un_pen", DEFAULT.onHitUnPen).forGetter(MaterialSoundAttr::onHitUnPen),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_pen", DEFAULT.onHitPen).forGetter(MaterialSoundAttr::onHitPen)
         ).apply(instance, MaterialSoundAttr::new));
+    }
+
+    // ==================== 粒子属性 ====================
+
+    /**
+     * 材质对应的表现粒子，按键取值。
+     *
+     * <p>键说的是<b>表现用途</b>，不是材质本身：同一块装甲板被击穿与被打飞是两簇不同的火花，
+     * 履带痕、烧胎印这类以后也各占一个键。新增用途只需在材质里多写一个键，读取方按
+     * {@link #HIT_PEN} 这样的常量取，不必再往材质或碰撞箱上加字段。</p>
+     *
+     * <p>当前被引擎读取的键：
+     * <ul>
+     *   <li>{@link #HIT_PEN} — 击穿时的命中火花</li>
+     *   <li>{@link #HIT_UN_PEN} — 未击穿（含跳弹）时的命中火花</li>
+     * </ul>
+     * 缺少某个键表示该材质在这种表现下不出粒子；写了引擎不认识的键不会有任何作用。</p>
+     */
+    public record MaterialParticleAttr(Map<String, ResourceLocation> effects) {
+        /** 击穿时的命中火花。 */
+        public static final String HIT_PEN = "hit_pen";
+        /** 未击穿（含跳弹）时的命中火花。 */
+        public static final String HIT_UN_PEN = "hit_un_pen";
+
+        public static final MaterialParticleAttr EMPTY = new MaterialParticleAttr(Map.of());
+
+        public static final Codec<MaterialParticleAttr> CODEC =
+                Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
+                        .xmap(MaterialParticleAttr::new, MaterialParticleAttr::effects);
+
+        public MaterialParticleAttr {
+            effects = Map.copyOf(effects);
+        }
+
+        /** 击穿时的命中火花效果 id；{@code null} 表示不出火花。 */
+        @Nullable
+        public ResourceLocation hitPen() {
+            return effects.get(HIT_PEN);
+        }
+
+        /** 未击穿（含跳弹）时的命中火花效果 id；{@code null} 表示不出火花。 */
+        @Nullable
+        public ResourceLocation hitUnPen() {
+            return effects.get(HIT_UN_PEN);
+        }
     }
 }

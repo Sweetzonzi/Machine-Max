@@ -27,6 +27,22 @@ public final class ViewMath {
         Vec3 d = direction.normalize();
         return new Vec2((float) (Math.asin(Math.clamp(d.y, -1, 1))), (float) (Math.atan2(d.x, -d.z)));
     }
+
+    /**
+     * 使局部 +Z 对齐到 {@code direction} 的旋转。
+     *
+     * <p>观察姿态的光轴是局部 -Z（{@code AimPose#forward()} 与 {@code ViewMathTest} 固定了这一点），
+     * 所以把 {@code -direction} 当作"看向"的方向，旋转后的 +Z 落在 {@code direction} 上。
+     * 不手写欧拉角，避免旋转组合顺序的歧义；锥形喷射这类绕喷射轴对称的效果，
+     * 滚转角取任意值都不影响观感。</p>
+     *
+     * <p>供喷射轴为局部 +Z 的粒子发射器对着世界里的某个方向喷。</p>
+     *
+     * @param direction 目标方向（世界坐标，无需预先归一化）
+     */
+    public static Quaternion axisAlong(Vec3 direction) {
+        return lookRotation(directionAngles(direction.scale(-1.0)));
+    }
     public static Vec2 inherit(Quaternion reference, Vec3 origin, Vec3 point) {
         Vec3 direction = point.subtract(origin);
         return direction.length() < 1e-9 ? Vec2.ZERO : directionAngles(

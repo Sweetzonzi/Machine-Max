@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/material_attr.json",
   "title": "材料属性",
-  "description": "定义材料的物理属性、装甲防护和命中音效，按 physics / armor / sounds 三组组织。",
+  "description": "定义材料的物理属性、装甲防护、命中音效与表现粒子，按 physics / armor / sounds / particles 四组组织。",
   "type": "object",
   "properties": {
     "$schema": {
@@ -120,6 +120,31 @@
       },
       "additionalProperties": false,
       "description": "材料命中音效配置。"
+    },
+    "particles": {
+      "type": "object",
+      "description": "材料表现粒子，按键取值。键说的是表现用途而不是材质：hit_pen 是击穿时的命中火花，hit_un_pen 是未击穿（含跳弹）时的命中火花。缺某个键表示该材质在这种表现下不出粒子；写了引擎不认识的键不会有任何作用。以后新增的表现（履带痕、烧胎印等）会在同一张表里各占一个键。",
+      "properties": {
+        "hit_pen": {
+          "allOf": [
+            { "$ref": "resource_location.schema.json" }
+          ],
+          "description": "击穿时的命中火花粒子 id（对应 particles/<名>.particle.json）。",
+          "default": "machine_max:armor_spall"
+        },
+        "hit_un_pen": {
+          "allOf": [
+            { "$ref": "resource_location.schema.json" }
+          ],
+          "description": "未击穿（含跳弹）时的命中火花粒子 id（对应 particles/<名>.particle.json）。",
+          "default": "machine_max:armor_deflect"
+        }
+      },
+      "additionalProperties": {
+        "allOf": [
+          { "$ref": "resource_location.schema.json" }
+        ]
+      }
     }
   },
   "additionalProperties": false,
@@ -134,6 +159,10 @@
       "sounds": {
         "hit_un_pen": { "sound_id": "machine_max:hit_box.hit.up_pen.metal", "range": 64 },
         "hit_pen": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
+      },
+      "particles": {
+        "hit_pen": "machine_max:armor_spall",
+        "hit_un_pen": "machine_max:armor_deflect"
       }
     }
   ]

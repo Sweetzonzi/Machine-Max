@@ -63,12 +63,14 @@ class MaterialImpactGateTest {
                         new Vec3(0.5, 0.5, 0.5), 0.5f, MaterialAttr.PhysicsAttr.SlipCurveAttr.DEFAULT,
                         0.2f, 0f, 0.1f, 1.0f, 2.5f),
                 MaterialAttr.ArmorAttr.DEFAULT,
-                MaterialAttr.MaterialSoundAttr.DEFAULT);
+                MaterialAttr.MaterialSoundAttr.DEFAULT,
+                MaterialAttr.MaterialParticleAttr.EMPTY);
         HitBoxAttr.OverwriteAttr overwrite = new HitBoxAttr.OverwriteAttr(
                 Optional.of(new HitBoxAttr.PhysicsOverwriteAttr(
                         Optional.of(new Vec3(0.9, 0.9, 0.9)),
                         Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty(), Optional.empty(), Optional.empty())),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty());
 
@@ -86,7 +88,8 @@ class MaterialImpactGateTest {
                         new Vec3(0.5, 0.5, 0.5), 0.5f, MaterialAttr.PhysicsAttr.SlipCurveAttr.DEFAULT,
                         0.2f, 0f, 0.1f, 1.0f, 0.8f),
                 MaterialAttr.ArmorAttr.DEFAULT,
-                MaterialAttr.MaterialSoundAttr.DEFAULT);
+                MaterialAttr.MaterialSoundAttr.DEFAULT,
+                MaterialAttr.MaterialParticleAttr.EMPTY);
         assertEquals(base, HitBoxAttr.mergeWithOverwrite(base, null));
     }
 }

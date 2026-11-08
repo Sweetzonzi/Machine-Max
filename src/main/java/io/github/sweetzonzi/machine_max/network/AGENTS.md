@@ -20,6 +20,7 @@ network/
 │   ├── MovementInputPayload.java   # 玩家移动输入
 │   ├── RegularInputPayload.java    # 常规动作输入
 │   ├── ScriptablePayload.java      # 脚本子系统数据
+│   ├── SubPartHitEffectPayload.java # 命中音效与命中火花的客户端表现（子部件 id 寻址）
 │   ├── SubPartSyncPayload.java     # 增量同步（SynchedEntityData + byte 255）
 │   ├── SubsystemInteractPayload.java # 子系统交互
 │   ├── SubsystemSyncPayload.java   # 子系统状态同步
@@ -37,10 +38,11 @@ network/
 | 修复研究同步 | `payload/research/*` + `handler/research/*` | 双向同步，版本 2.0.0 |
 | 修复组装同步 | `payload/assembly/*.java` | LevelVehicleData, 缓存同步 |
 | 修复投射物同步 | `payload/ProjectileSpawnPayload.java` | 服务端→客户端生成 + 命中特效 |
+| 修复命中音效 / 火花 | `payload/SubPartHitEffectPayload.java` | 只传子部件 id、碰撞箱名、局部命中点与喷射轴，音效与火花 id 由客户端查内容包 |
 
 ## 约定
 
-- **5 个协议组**：`input:2.2.0`（控制）、`sync:2.9.0`（世界状态）、`research:2.0.0`（进度）、`misc:1.4.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 依次编码 clockwise 铺设绕向、`track_type` 型号 id 与 `link_count` 节数，载具同步与蓝图取出载荷均传输这三个字段。
+- **5 个协议组**：`input:2.2.0`（控制）、`sync:2.9.1`（世界状态）、`research:2.0.0`（进度）、`misc:1.4.0`（GUI/制造/蓝图）、`pda:1.0.0`（终端）。`common/mech/vehicle/track/TrackLinkData.java#STREAM_CODEC` 依次编码 clockwise 铺设绕向、`track_type` 型号 id 与 `link_count` 节数，载具同步与蓝图取出载荷均传输这三个字段。
 - **全部处理器在主线程**：使用 `MainThreadPayloadHandler`。无物理线程处理器。
 - **双向载荷**：使用 `DirectionalPayloadHandler` 分离客户端/服务端方法。
 - **普通部件制造状态**：`network/payload/assembly/PartAssemblyProgressSyncPayload.java#STREAM_CODEC` 通过一个 SubPart ID 定位所属部件；ID、组装比例、材料项数、组装形态共 13 字节，接收时通过 `common/mech/ObjectManager.java#getDestroyableObject` 查对象。这里的源码路径均以 `src/main/java/io/github/sweetzonzi/machine_max/` 为基准。

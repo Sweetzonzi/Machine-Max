@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -49,6 +48,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.network.payload.SubPartHitEffectPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
@@ -59,11 +59,8 @@ import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -744,7 +741,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      *
      * <p>本方法是命中数据唯一的收集点：同一次命中的目标、伤害来源、协议上下文、目标命中箱、
      * 入口事件取消标志、金额、结构冲击量与命中几何在这里一次构造并入队，随后不再回读可变上下文。
-     * 履带吸收耐久、击退回退公式与命中音效仍在本方法内即时处理，保持既有的耐久与击退语义。</p>
+     * 履带吸收耐久与击退回退公式仍在本方法内即时处理，保持既有的耐久与击退语义。</p>
+     *
+     * <p>命中音效与命中火花不在这里发出：两者都在主线程的
+     * {@link #settleAccumulatedDamage()} 里按同一笔命中记录一并决定并发给客户端，
+     * 因此音频与视觉共用同一个穿甲判据，也不会因为物理线程直接发包而绕过主线程结算。</p>
      *
      * <p><b>调用线程：</b>命中发生线程（主线程或物理线程），与 {@link BFDamageApi#hurt} 的调用线程相同。
      * 本方法不操作物理体：需要物理副作用的命令一律投递到 PPhase 队列。</p>
@@ -774,36 +775,13 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         TrackLink track = this.trackLink;
         boolean trackAbsorbed = !event.isCanceled() && hasLiveTrack(track);
         // 一次构造入口事件；零伤害、入口取消与履带吸收的命中同样入队，三条通道分别判定
-        HitBox hitBox = findHitBox(ctx);
         accumulateHit(event, trackAbsorbed);
         if (event.isCanceled()) return false;
         if (trackAbsorbed) {
-            SoundEvent trackHit = isArmorPenetrated(ctx)
-                    ? track.attr().sounds().onHitPen()
-                    : track.attr().sounds().onHitUnPen();
-            Vector3f hitPos = getPosition();
-            level.playSound(null, hitPos.x, hitPos.y, hitPos.z,
-                    trackHit, SoundSource.NEUTRAL, 1f, 1f);
             track.damage(amount);
             return true;
         }
-        Vec3 sourcePos = ctx.hitPoint();
-        // 音效与粒子（物理冲量与结构冲击在主线程结算阶段处理，这里只表现本 tick 的命中反馈）
-        Vector3f normal = PhysicsHelperKt.toBVector3f(ctx.hitNormal());
-        BFDamageContext finalCtx = ctx;
-        SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
-            SoundEvent sound = isArmorPenetrated(finalCtx) ? hitBox.getHitPenSound() : hitBox.getHitUnPenSound();
-            level.playSound(null, sourcePos.x, sourcePos.y, sourcePos.z, sound, SoundSource.NEUTRAL, 0.5f, 1);
-            if (!isArmorPenetrated(finalCtx)) {
-                for (int i = 0; i < 3; i++) {
-                    var dir = normal.mult(0.3f).add(new Vector3f(
-                            (float) (Math.random() - 0.5f),
-                            (float) (Math.random() - 0.5f),
-                            (float) (Math.random() - 0.5f)).mult(0.1f));
-                    level.addParticle(ParticleTypes.FIREWORK, sourcePos.x, sourcePos.y, sourcePos.z, dir.x, dir.y, dir.z);
-                }
-            }
-        });
+        // 命中音效与火花的表现在主线程结算阶段随命中记录一并发出，本方法不直接播表现
         return true;
     }
 
@@ -978,9 +956,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * <p>结算本次批次内的每一条命中事件：逐次应用结构冲击与耐久伤害，批次结束后统一扣减耐久并通告装配体，在主线程中统一处理，参见 {@link DestroyableObject#postTick()}</p>
      * <p>Settles each hit event of the batch, then applies the durability loss and notifies the assembly, handled in the main thread, see {@link DestroyableObject#postTick()}</p>
      *
-     * <p>三条效果通道独立结算：结构冲击按连接点自己的许可处理，不被入口取消或零耐久伤害跳过；
+     * <p>四条通道独立结算：结构冲击按连接点自己的许可处理，不被入口取消或零耐久伤害跳过；
      * 耐久伤害在入口取消、履带吸收与非正金额时不入账；物理冲量由 Level 级主线程列表统一发布，
-     * 本方法不直接投递冲量。</p>
+     * 本方法不直接投递冲量；命中音效与命中火花按批合成一个客户端表现包发出，入口取消的命中不表现，
+     * 每笔命中一条、总数按单包上限封顶（见 {@link #collectHitEffect}）。</p>
      *
      * <p><b>调用线程：</b>主线程（每个 Level 在本轮全部零件结算完成后统一发布冲量）。</p>
      */
@@ -990,6 +969,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         float remaining = Math.max(0f, getDurability()); // 本批开始前读取一次，批内沿用该值
         float drained = 0f;                              // 本批此前已结算的量（取自子系统事件的最终金额）
         List<SubPartHitDamage> hits = new ArrayList<>();
+        // 表现条目按命中点收集，上限是单包能装的条数：霰弹与殉爆会在同一批里落下很多个命中点，
+        // 超出部分直接不再收集，以免写出客户端拒收的包（见 SubPartHitEffectPayload.MAX_ENTRIES）
+        List<SubPartHitEffectPayload.Entry> effects = new ArrayList<>();
         while (!accumulatedHits.isEmpty()) {
             SubPartDamageEvent.Pre event = accumulatedHits.poll();
             if (event == null) continue;
@@ -998,11 +980,16 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             applyStructuralImpact(event);
             // 物理冲量：同样独立于耐久分支，子系统取消耐久不影响它；只收进 Level 级列表，不在此发布
             queuePhysicsImpulse(event);
+            HitBox hitBox = findHitBox(ctx);
+            // 命中表现：与受击音效同源，入口取消的命中不表现（与取消即"没打中"的语义一致），
+            // 履带吸收与零耐久伤害仍表现——装甲挡下与履带吸收恰恰是最该有火花的情况
+            if (!event.isCanceled() && hitBox != null) {
+                collectHitEffect(ctx, hitBox, event.isTrackAbsorbed(), effects);
+            }
             if (event.isCanceled() || event.isTrackAbsorbed()) continue; // 入口取消 / 履带吸收不产生零件耐久记账
             float entryDamage = event.getDamageAmount();
             if (entryDamage <= 0f) continue; // 非正伤害不入账
             // 事件随记录带到主线程，直接交给命中判定所属的子系统，不经事件总线
-            HitBox hitBox = findHitBox(ctx);
             if (hitBox != null && hitBox.getSubsystem() != null) {
                 hitBox.getSubsystem().onHurt(event);
             }
@@ -1034,7 +1021,42 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (!hits.isEmpty() && part.assembly != null) {
             part.assembly.onPartDamage(part, List.copyOf(hits));
         }
+        // 命中音效与火花：一批命中合成一个包，只发给能看见火花的玩家
+        if (!effects.isEmpty() && level instanceof ServerLevel serverLevel) {
+            SubPartHitEffectPayload.broadcast(serverLevel, getPresentationPosition(), getId(), effects);
+        }
         // 同步包由基类 postTick 在结算之后统一发送，本方法内不发送
+    }
+
+    /**
+     * 把一笔命中记录折算成一条客户端表现条目。
+     *
+     * <p>穿甲判据用 {@link #isArmorPenetrated}，与受击音效完全同源；喷射轴按结果二选一：
+     * 击穿取命中速度方向（弹体穿出方向），未击穿与跳弹取命中面法线（火花沿装甲表面弹回）。
+     * 命中点转成相对本子部件呈现位置的偏移下发，客户端再用自己的呈现位置还原世界坐标——
+     * 因此偏移量总能压进 float 而不损失精度，载具移动时火花也贴在当时的车体上。</p>
+     *
+     * <p>每笔命中贡献一条，不做合并：霰弹会在同一个碰撞箱上落下多个弹丸，每个命中点都该有自己的火花。
+     * 一批命中表现的总数由 {@link SubPartHitEffectPayload#MAX_ENTRIES} 封顶，超出的一律不收集。</p>
+     *
+     * <p><b>调用线程：</b>主线程（统一结算阶段）。</p>
+     *
+     * @param ctx     本次命中的上下文
+     * @param hitBox  命中的碰撞箱
+     * @param trackAbsorbed 是否被履带装甲层吸收
+     * @param sink    表现条目收集列表，已满则本条不入
+     */
+    private void collectHitEffect(BFDamageContext ctx, HitBox hitBox, boolean trackAbsorbed,
+                                  List<SubPartHitEffectPayload.Entry> sink) {
+        if (sink.size() >= SubPartHitEffectPayload.MAX_ENTRIES) return;
+        boolean penetrated = isArmorPenetrated(ctx);
+        Vec3 sprayDir = penetrated ? ctx.hitVelocity() : ctx.hitNormal();
+        Vec3 offset = ctx.hitPoint().subtract(getPresentationPosition());
+        sink.add(new SubPartHitEffectPayload.Entry(
+                hitBox.getHitBoxKey(),
+                (float) offset.x, (float) offset.y, (float) offset.z,
+                (float) sprayDir.x, (float) sprayDir.y, (float) sprayDir.z,
+                penetrated, trackAbsorbed));
     }
 
     /**
