@@ -371,9 +371,9 @@
     "revision": "5aa355404c792ffaaac686e66255ea1ca1c1d799",
     "source_path": "dist/machine_max_bb_plugin.js",
     "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
-    "version": "0.5.15",
+    "version": "0.5.16",
     "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1992449,
-    "sha256": "648eb4e02fb97dfff0e3569784e619118e1fcdd652615f9654950c0c06838278"
+    "bytes": 1996235,
+    "sha256": "c5c608980b4b8b4df5c6f9448b3aff9d36992128bf7b126827314ed1d3fddbe1"
   }
 }
