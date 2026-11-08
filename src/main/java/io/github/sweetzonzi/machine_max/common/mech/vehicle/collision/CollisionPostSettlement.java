@@ -61,9 +61,6 @@ public final class CollisionPostSettlement {
     /** 禁用接触的距离哨兵：{@code getDistance1} 达到该值的点不参与本步结算。 */
     public static final float DISABLED_DISTANCE = 500f;
 
-    /** 攀爬辅助跳过接触使用的更大距离哨兵。 */
-    public static final float SKIPPED_DISTANCE = 5000f;
-
     /** 诊断日志的最小间隔（纳秒）。 */
     private static final long LOG_INTERVAL_NS = 5_000_000_000L;
 

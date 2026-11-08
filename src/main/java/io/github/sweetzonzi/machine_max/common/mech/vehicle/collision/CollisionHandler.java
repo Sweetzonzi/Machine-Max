@@ -35,6 +35,7 @@ import io.github.sweetzonzi.machine_max.util.mechanic.KnockbackUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import io.github.sweetzonzi.machine_max.util.terrain.LocalHeightField;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
@@ -65,7 +66,9 @@ public class CollisionHandler {
      * <p>实测依据：地形 section 交界与合并盒棱边上的接触拿到的是棱边角平分线，倾斜 5.2°–9.6°，
      * 上面挂着的轮子刚体是平动的（竖直分速 0.00–0.02 m/s），但接触点速度的竖直分量有 1.5–2.5 m/s
      * ——全部由轮胎滚动 {@code ω × r} 贡献。按接触点速度判，这些点会被读成 2–3 m/s 的撞击；
-     * 按刚体分速判则是 0。整车真落地的点刚体竖直分速在 4 m/s 以上，两种口径都给过门。</p>
+     * 按刚体分速判则是 0。整车真落地的点刚体竖直分速在 4 m/s 以上，两种口径都给过门。
+     * 等高接缝上的斜法线已在进入本判据之前处置（见 {@link #resolveInternalEdge}），
+     * 真实棱边仍会以角平分线的形式到达。</p>
      *
      * <p>改口径还不够：悬挂对轮子的下压加速度（K17 合计约 260 m/s²）在一个 10 ms 子步里就是 2.6 m/s，
      * 轮子丢掉一个子步支撑再回来时，刚体竖直分速本身就压着这个量级。所以轮胎材质的
@@ -81,6 +84,23 @@ public class CollisionHandler {
      * 见 {@link #isSupportingTerrainContact(Vector3f)}。
      */
     private static final float CLIMB_SUPPORT_NORMAL_Y = 0.7f;
+
+    /**
+     * 内部棱判据：地形给的法线水平倾斜不小于该值时才处理。
+     * 更小的倾斜已经是竖直法线本身的分量，见 {@link #resolveInternalEdge}。
+     */
+    private static final float EDGE_DIAGONAL_MIN = 0.02f;
+
+    /**
+     * 内部棱判据的边界容差（米）：接触点离最近的方块边界超过它就判这个接触不落在接缝上。
+     * 接缝上的接触点本来就落在边界上，台架实测偏 0–3 cm。
+     */
+    private static final float EDGE_BOUNDARY_TOLERANCE = 0.05f;
+
+    /**
+     * 内部棱判据的等高容差（米）：边界两侧柱顶高度差在这以内算同高。
+     */
+    private static final float EDGE_EQUAL_TOP_TOLERANCE = 1e-3f;
 
     /**
      * 攀爬垫的固定侵入深度（米），也是可攀爬方块上任何一条接触的深度上限。
@@ -366,6 +386,15 @@ public class CollisionHandler {
                                         long manifoldPointId) {
         Level level = subPart.getLevel();
         other.shouldShowDebugBoxWhenNonColldeWith = true;
+
+        //内部棱处置：两侧等高的方块接缝在几何上不是棱边，法线本应竖直，Bullet 给的却是棱线指向
+        //球心的方向（判据与实测见 resolveInternalEdge）。放在最前面，是因为后面每一处读法线的地方
+        //——方块定位、承载判据、摩擦切平面、撞击口径、子系统回调——都该看到同一条竖直法线；
+        //真实棱边（另一侧不同高）不命中，攀爬分支的高度场接管时也会整条覆写。
+        if (resolveInternalEdge(point2, normal, manifoldPointId)) {
+            ManifoldPoints.setNormalWorldOnB(manifoldPointId,
+                    point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate());
+        }
 
         var hitBox = subPart.getHitBox(hitBoxIndex);
         BlockPos blockPos = resolveContactBlock(terrain, worldContactPoint, normal);
@@ -766,6 +795,132 @@ public class CollisionHandler {
      */
     private static boolean isSupportingTerrainContact(Vector3f normal) {
         return normal != null && Math.abs(normal.y) >= CLIMB_SUPPORT_NORMAL_Y;
+    }
+
+    /**
+     * 判这条接触是不是落在「内部棱」上，并按判据处置它：穿透点法线归轴，分离点挪到轮心正下方。
+     *
+     * <p>内部棱指两侧柱顶等高的方块接缝：地形 section 之间的拼接，以及同一平面上相邻的同高方块。
+     * 这种接缝在几何上不是棱边——两侧是同一个平面，法线本应竖直。Bullet 把每个方块当成独立凸体，
+     * 接缝上球面最近的几何特征不是脚下那张面，而是邻块的顶棱线：报出来的接触点落在棱线上，离
+     * 轮心 5–12 cm，法线是棱线指向球心的方向（台架与线上实测倾斜 2.8°–16°），接触距离常常为正
+     * ——球面根本没碰到那个盒子，它只是还落在成对接触阈值的缓存窗口里。</p>
+     *
+     * <p>两种情形都要处置，方式不同：</p>
+     * <ul>
+     *   <li><b>穿透</b>（{@code distance1 < 0}）：斜法线把水平车速投成竖直分速，轮子被抬起。
+     *       归轴成竖直方向即可——两侧等高，脚下确实是那张平面，这条接触仍是承载面，只是不该带
+     *       水平分量。</li>
+     *   <li><b>分离</b>（{@code distance1 ≥ 0}）：保留这条约束，但把作用点挪到轮心正下方的竖轴上。
+     *       求解器对正距离点并不跳过，只是打折——{@code btSequentialImpulseConstraintSolver} 的
+     *       {@code convertContact} 按 {@code distance1 ≤ contactProcessingThreshold} 收点，
+     *       {@code setupContactConstraint} 里 {@code penetration = distance1 + linearSlop > 0} 时
+     *       把位置误差置零、只从目标速度里扣掉 {@code distance1 / dt}，因此它仍会消掉任何快过
+     *       {@code distance1 / dt} 的接近速度（8 mm 距离、10 ms 子步时门槛仅 0.8 m/s）。这个折扣
+     *       正是 native 补丁保住的东西：支撑靠「差点接触」传递，禁用整条会让轮子丢一个子步的支撑、
+     *       掉一个预载子步的距离（台架实测 26 mm）。问题出在作用点：它落在邻块的棱线上，离轮心
+     *       5–12 cm 的水平力臂，而轮子自转在它上面的速度 {@code ω × r} 有竖直分量
+     *       {@code avz·rx − avx·rz}——实测自转 176 rad/s、力臂 0.12 m 时为 21 m/s，与线上单子步
+     *       竖直速度突增 +4…+16 m/s 逐个对应（{@code Δv_y ≈ −ω·r_x}，相关系数 −0.875；36 次突增
+     *       全部落在 {@code 16k} 边界 0.7 m 内）。两侧等高时这个点描述的就是脚下那张平面，把作用点
+     *       挪到轮心正下方的竖轴上等价于把该平面当成一张无限平面取接触点：法向约束与承载都保留，
+     *       力臂归零，{@code ω × r} 不再有竖直分量。</li>
+     * </ul>
+     *
+     * <p>真实棱边（台阶、悬崖、洞沿）两侧不同高，角平分线是对的——上台阶时正是它把轮子往斜上方
+     * 推。判据因此只比较边界两侧柱子在接触点附近的最高点：等高才处置，不等高保持原样。接触点的
+     * 高度只用来决定"附近"是哪三层，不参与比较。判据不需要知道方块属于哪个 section / chunk，
+     * 只看几何。</p>
+     *
+     * <p>只处理朝上的承载面：地形指向零件的法线竖直分量不低于 {@link #CLIMB_SUPPORT_NORMAL_Y}，
+     * 且水平倾斜不低于 {@link #EDGE_DIAGONAL_MIN}。判据带符号——天花板、洞顶的接触法线朝下，
+     * 归到 +Y 会把法线指反。法线本来就竖直的点（正下方那张面的真接触）不受影响。</p>
+     *
+     * <p>归轴后不清法向缓存冲量：倾斜只有几度到十几度，旧方向上的冲量在新方向上仍是很好的初值，
+     * 清零反而让这条接触丢一个子步的支撑。攀爬辅助的立面分支改法线时会清零，那里的倾斜可以到 90°，
+     * 两者不是一回事。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     *
+     * @param terrainPoint    地形侧的接触点
+     * @param normal          地形指向零件的法线，命中内部棱时被就地改成竖直方向
+     * @param manifoldPointId 接触点 ID，分离的内部棱用它改写作用点
+     * @return 是否命中内部棱（命中即已处置：归轴或挪点）
+     */
+    private boolean resolveInternalEdge(ManifoldPoint terrainPoint, Vector3f normal, long manifoldPointId) {
+        //只处理朝上的承载面（地形指向零件的法线竖直向上）：天花板、洞顶的接触法线朝下，
+        //归到 +Y 会把法线指反，判据必须是带符号的。
+        if (normal == null || normal.y < CLIMB_SUPPORT_NORMAL_Y) {
+            return false;
+        }
+        float horizontalX = Math.abs(normal.x);
+        float horizontalZ = Math.abs(normal.z);
+        if (horizontalX + horizontalZ < EDGE_DIAGONAL_MIN) {
+            return false;
+        }
+        Vector3f point = new Vector3f();
+        terrainPoint.getPositionWorld(point);
+        //倾斜的主轴决定接缝朝哪个方向：边界在接触点所在坐标的最近整数处，两侧各一格
+        boolean xDominant = horizontalX >= horizontalZ;
+        float coordinate = xDominant ? point.x : point.z;
+        int boundary = Math.round(coordinate);
+        if (Math.abs(coordinate - boundary) > EDGE_BOUNDARY_TOLERANCE) {
+            return false;
+        }
+        int referenceY = (int) Math.floor(point.y);
+        int planeX = (int) Math.floor(point.x);
+        int planeZ = (int) Math.floor(point.z);
+        float lowerTop = nearbyColumnTop(xDominant ? boundary - 1 : planeX, referenceY,
+                xDominant ? planeZ : boundary - 1);
+        float upperTop = nearbyColumnTop(xDominant ? boundary : planeX, referenceY,
+                xDominant ? planeZ : boundary);
+        if (!Float.isFinite(lowerTop) || !Float.isFinite(upperTop)) {
+            return false;
+        }
+        if (Math.abs(lowerTop - upperTop) >= EDGE_EQUAL_TOP_TOLERANCE) {
+            return false;
+        }
+        //分离：两侧等高，这个点描述的就是脚下那张平面，把作用点挪到轮心正下方的竖轴上（见本方法说明）
+        if (ManifoldPoints.getDistance1(manifoldPointId) >= 0f) {
+            Vector3f centre = subPart.body.getPhysicsLocation(null);
+            Vector3f projected = new Vector3f(centre.x, point.y, centre.z);
+            ManifoldPoints.setPositionWorldOnA(manifoldPointId, projected);
+            ManifoldPoints.setPositionWorldOnB(manifoldPointId, projected);
+        }
+        normal.set(Vector3f.UNIT_Y);
+        return true;
+    }
+
+    /**
+     * 某一列在接触点高度附近的最高点（顶面世界高度）；附近取不到实心方块时返回 {@link Float#NaN}。
+     *
+     * <p>只扫接触点所在层的上、本、下三层：接触点与地表的距离不超过一个接触阈值，这一列的地表
+     * 方块必然落在这三层里。取这三层里最高的顶面，而不是"从上往下第一个实心方块"——两者的值
+     * 在方块高度都不超过 1 格时相同，但方块形状可以比一格高（栅栏 1.5 格），取最高不必依赖
+     * 那条前提。</p>
+     *
+     * <p>一个方块都取不到说明这列的地表比接触点低两层以上，那它一定比另一侧矮，与"取到但更低"
+     * 结论相同，所以返回 NaN，由调用方一并判成不等高。取方块走 {@code terrainManager}，不用当前
+     * section：接缝另一侧的柱子就是相邻 section，而 {@link PhysicsChunkSection#getBlockSnapshot}
+     * 对越界坐标是夹取语义，会静默读到本侧的方块。空气与未加载的 section 都取不到快照
+     * （快照只存实心方块），一律继续往下找。</p>
+     *
+     * <p>调用线程：物理线程。</p>
+     */
+    private float nearbyColumnTop(int x, int referenceY, int z) {
+        float top = Float.NaN;
+        for (int dy = 1; dy >= -1; dy--) {
+            BlockPos pos = new BlockPos(x, referenceY + dy, z);
+            SectionSnapshot.BlockSnapshot snapshot =
+                    subPart.getPhysicsLevel().getTerrainManager().getBlockSnapshotAt(pos);
+            if (snapshot == null) continue;
+            float height = (float) snapshot.getState()
+                    .getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)
+                    .max(Direction.Axis.Y);
+            float worldTop = pos.getY() + height;
+            if (Float.isNaN(top) || worldTop > top) top = worldTop;
+        }
+        return top;
     }
 
     /**
