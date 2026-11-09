@@ -56,6 +56,11 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
+    /**
+     * 物理线程发布、主线程投递的最新反馈值（频道 → 值）。<br>
+     * 写入只发生在物理步，读取与发送只发生在主线程 {@link #onTick()}；键来自接线配置，数量很小。
+     */
+    private final ConcurrentMap<String, Object> publishedFeedback = new ConcurrentHashMap<>();
 
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.FLOAT);
     protected static final EntityDataAccessor<Boolean> DATA_ACTIVE_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.BOOLEAN);
@@ -93,6 +98,9 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
      */
     @Nullable
     private SubPartDamageEvent.Pre lastDamageEvent;
+
+    /** 是否已完成初次 attach；由 {@link SubsystemController} 维护，保证每个子系统恰好 attach 一次。 */
+    private boolean attached;
 
     public int tickCount = 0;
     public int physicsTickCount = 0;
@@ -134,6 +142,23 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             }
         }
         if(!getSubPart().getLevel().isClientSide()) syncToClient();
+        flushPublishedFeedback();
+    }
+
+    /**
+     * 物理线程：发布某个反馈频道的最新采样，由本端主线程在下一个 {@link #onTick()} 通过普通发送入口投递。
+     * 值应为不可变对象或写入后不再修改的副本；下一次发布可以覆盖尚未投递的旧值。
+     */
+    protected void publishFeedback(String channel, Object value) {
+        publishedFeedback.put(channel, value);
+    }
+
+    /** 主线程：把物理线程发布的最新反馈按配置线路投递。 */
+    protected void flushPublishedFeedback() {
+        if (publishedFeedback.isEmpty()) return;
+        for (Map.Entry<String, Object> entry : publishedFeedback.entrySet()) {
+            sendSignalToAllTargets(entry.getKey(), entry.getValue());
+        }
     }
 
     /**
@@ -208,6 +233,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onAttach() {
+        this.attached = true;
         var grid = owner.getEnergyGrid();
         if (grid != null) {
             if (this instanceof IEnergyProducer p) grid.registerProducer(p);
@@ -216,12 +242,18 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onDetach() {
+        this.attached = false;
         var grid = owner.getEnergyGrid();
         if (grid != null) {
             if (this instanceof IEnergyProducer p) grid.unregisterProducer(p);
             if (this instanceof IEnergyConsumer c) grid.unregisterConsumer(c);
         }
         clearLastDamageRecord();
+    }
+
+    /** 是否已经完成初次 attach；由 {@link SubsystemController} 维护。 */
+    boolean isAttached() {
+        return attached;
     }
 
     public void onDisabled() {

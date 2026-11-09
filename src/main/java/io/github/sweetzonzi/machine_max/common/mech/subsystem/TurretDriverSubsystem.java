@@ -169,7 +169,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                     0f                   // roll 暂不使用
             );
             for (String signalKey : attr.rotationAngleOutputs.keySet()) {
-                sendSignalToAllTargets(signalKey, feedbackAngle);
+                publishFeedback(signalKey, feedbackAngle);
             }
         }
     }

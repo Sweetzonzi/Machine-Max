@@ -173,14 +173,14 @@ public class JointDriverSubsystem extends BasicSubsystem implements IMechPowerCo
                 var axisAttr = attr.axisParams.get(axis);
                 if (axis.getValue() <= 2) {//一般平动信号
                     for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般平动速度信号
-                        sendSignalToAllTargets(signalKey, relativeLinearVel.get(axis.getValue()));
+                        publishFeedback(signalKey, relativeLinearVel.get(axis.getValue()));
                     for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般平动位置信号
-                        sendSignalToAllTargets(signalKey, relativePos.get(axis.getValue()));
+                        publishFeedback(signalKey, relativePos.get(axis.getValue()));
                 } else {//一般转动信号
                     for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般转动速度信号
-                        sendSignalToAllTargets(signalKey, relativeAngularVel.get(axis.getValue() - 3));
+                        publishFeedback(signalKey, relativeAngularVel.get(axis.getValue() - 3));
                     for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般转动位置信号
-                        sendSignalToAllTargets(signalKey, -relativeAngle.get(axis.getValue() - 3));
+                        publishFeedback(signalKey, -relativeAngle.get(axis.getValue() - 3));
                 }
             }
             feedbackSpeed = getPrimaryFeedbackSpeed(relativeAngularVel, relativeLinearVel);

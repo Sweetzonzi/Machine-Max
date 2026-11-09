@@ -148,14 +148,6 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
                     setClutched(false);
                 }
                 setCurrentGear(gear);//更新当前挡位
-                //更新挡位信号
-                for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
-                    String signalChannel = entry.getKey();
-                    List<String> targets = entry.getValue();
-                    for (String targetName : targets) {
-                        sendSignalToTarget(signalChannel, targetName, gear);
-                    }
-                }
             }
         }
     }

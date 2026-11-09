@@ -319,10 +319,34 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         updateTotalMass();
         recalculateMaxHp(mode);
         recalculateCameraDistance();
+        rebuildSignalTargets();
         subSystemController.onVehicleStructureChanged();
         if (isInLevel()) {
             // 双端都发：只挂服务端会让专用服务器上的客户端永远收不到，单机同 JVM 又看起来正常
             NeoForge.EVENT_BUS.post(new VehicleStructureChangeEvent(this, reason));
+        }
+    }
+
+    /**
+     * 主线程：按当前归属与配对连接重建全部首跳表，覆盖子系统、信号端口与交互区。
+     * <p>
+     * 合并、分裂与拆件之后，旧表可能仍指向已离开的装配体或已删除的频道；先在局部解析并整体替换，
+     * 再进入子系统发现，读者因此不会看到半张表。首跳表只在本端主线程构建与读取。
+     */
+    public void rebuildSignalTargets() {
+        for (RegularPart part : partMap.values()) {
+            for (AbstractSubsystem subsystem : part.getAllSubsystems()) {
+                subsystem.setTargetFromNames();
+            }
+            for (AbstractConnector connector : part.allConnectors.values()) {
+                if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
+            }
+            for (SubPart subPart : part.subParts.values()) {
+                if (subPart.interactBoxes == null) continue;
+                for (InteractBox interactBox : subPart.interactBoxes.values()) {
+                    interactBox.setTargetFromNames();
+                }
+            }
         }
     }
 

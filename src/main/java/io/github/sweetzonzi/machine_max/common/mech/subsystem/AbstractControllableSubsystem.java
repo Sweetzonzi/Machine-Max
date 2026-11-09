@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,30 +147,47 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             new ConcurrentHashMap<>();
 
     /**
-     * 武器控制器发现握手：遍历所有控制组的全部输出频道，通过回调发现 WeaponController。<br>
-     * 利用回调的信号值携带控制组名，实现精确归属归类。
+     * 按控制组解析武器控制器：遍历该组启用的输出频道，用 {@link ISignalSender#resolveTargets(String)}
+     * 取终端并筛出同类控制器，不再依赖回调频道携带组名。
      */
-    protected void weaponControllerDiscoveryHandshake() {
+    protected void resolveWeaponControllers() {
         weaponControllersByGroup.clear();
         // baseGroup 固定 key = "base"
-        discoverWeaponControllersForGroup("base", controlGroupSet.baseGroup);
+        resolveWeaponControllersForGroup("base", controlGroupSet.baseGroup);
         // 子控制组 key = 组名
         for (ControlGroup group : controlGroupSet.groups) {
-            discoverWeaponControllersForGroup(group.name, group);
+            resolveWeaponControllersForGroup(group.name, group);
         }
     }
 
     /**
-     * 对单个控制组执行武器控制器发现握手。
+     * 对单个控制组执行发现。
      *
      * @param groupKey 控制组标识（"base" 或子组名）
      * @param group    控制组对象
      */
-    private void discoverWeaponControllersForGroup(String groupKey, ControlGroup group) {
-        weaponControllersByGroup.put(groupKey, new ArrayList<>());
+    private void resolveWeaponControllersForGroup(String groupKey, ControlGroup group) {
+        List<WeaponControllerSubsystem> found = new ArrayList<>();
+        Set<WeaponControllerSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (String channel : discoveryChannels(group)) {
+            if (channel.isEmpty()) continue;
+            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
+                for (ISignalReceiver terminal : terminals) {
+                    if (terminal instanceof WeaponControllerSubsystem wc
+                            && wc.getOwner().getSubPart().getPart().assembly
+                            == this.getOwner().getSubPart().getPart().assembly
+                            && seen.add(wc)) {
+                        found.add(wc);
+                    }
+                }
+            }
+        }
+        weaponControllersByGroup.put(groupKey, List.copyOf(found));
+    }
 
-        // 收集该控制组全部输出频道
-        Set<String> channels = new HashSet<>();
+    /** 一个控制组启用的全部输出频道，按固定类别顺序排列，保证发现顺序稳定。 */
+    private static Set<String> discoveryChannels(ControlGroup group) {
+        Set<String> channels = new LinkedHashSet<>();
         channels.addAll(group.moveTargets.keySet());
         channels.addAll(group.viewTargets.keySet());
         channels.addAll(group.regularTargets.keySet());
@@ -178,13 +196,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         for (ControlBinding binding : group.bindings) {
             channels.add(binding.channel);
         }
-
-        // ★ 以控制组名作为信号值，callbackReturnsSignalValue=true，
-        //    回调中拿到的 callbackValue 就是 groupKey，从而精确归类。
-        for (String channel : channels) {
-            if (channel.isEmpty()) continue;
-            sendSignalToAllTargetsWithCallback(channel, groupKey, true);
-        }
+        return channels;
     }
 
     /**
@@ -251,7 +263,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         // 暂不允许自定义控制组，每次从注册表读取预设
         restoreControlGroupPreset();
         resolveCameras();
-        weaponControllerDiscoveryHandshake();
+        resolveWeaponControllers();
     }
 
     /** 主线程记录活动实体视点；null 表示座椅虚拟视点。输入模式按载荷所指设备解析。 */
@@ -261,7 +273,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     /**
      * 设置控制组集合<br>
-     * 切换前先清除当前控制组的输出信号，防止高优先级信号残留。
+     * 切换前先清除当前控制组的输出信号，防止高优先级信号残留。控制组决定本子系统的输出频道，
+     * 因此同时重建首跳表与按组发现结果。
      */
     public void setControlGroupSet(ControlGroupSet cgs) {
         // 先清除当前控制组所有频道的信号（使用旧 controlGroupSet 的频道列表）
@@ -269,49 +282,42 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             clearInputSignals();
         }
         this.controlGroupSet = cgs != null ? cgs : ControlGroupSet.EMPTY;
+        setTargetFromNames();
+        resolveWeaponControllers();
     }
 
     /**
-     * 收集所有控制组和 GUI 元素的全部目标名称并集（baseGroup + 全部子组 + 全部绑定 + GUI 动作）。
-     * 用于注册和显示所有可能的目标频道与接收者，实际发送信号时应使用 getMerged*Targets() 按激活态发送。
+     * 把同一频道的多类目标按固定类别顺序取有序并集。<br>
+     * 同一频道可能同时出现在移动、视角、武器或按键绑定里；后来者不能覆盖先前的目标名。
      */
     public Map<String, List<String>> setUpTargets(Map<String, List<String>> map) {
-        map.putAll(controlGroupSet.getAllMoveTargets());
-        map.putAll(controlGroupSet.getAllRegularTargets());
-        map.putAll(controlGroupSet.getAllViewTargets());
-        map.putAll(controlGroupSet.getAllMainWeaponTargets());
-        map.putAll(controlGroupSet.getAllSecondaryWeaponTargets());
-        map.putAll(controlGroupSet.getAllBindingTargets());
-        map.putAll(controlGroupSet.getAllGuiActionTargets());
-        map.putAll(cameraDiscoveryTargets);
+        mergeTargets(map, controlGroupSet.getAllMoveTargets());
+        mergeTargets(map, controlGroupSet.getAllRegularTargets());
+        mergeTargets(map, controlGroupSet.getAllViewTargets());
+        mergeTargets(map, controlGroupSet.getAllMainWeaponTargets());
+        mergeTargets(map, controlGroupSet.getAllSecondaryWeaponTargets());
+        mergeTargets(map, controlGroupSet.getAllBindingTargets());
+        mergeTargets(map, controlGroupSet.getAllGuiActionTargets());
+        mergeTargets(map, cameraDiscoveryTargets);
         return map;
     }
 
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        if (channelName.equals("callback") && sender instanceof WeaponControllerSubsystem wc) {
-            if (wc.getOwner().getSubPart().getPart().assembly
-                    == this.getOwner().getSubPart().getPart().assembly) {
-                // 从回调信号值中取出控制组名
-                Object callbackValue = getSignalChannel("callback").get(sender);
-                if (callbackValue instanceof String groupKey) {
-                    List<WeaponControllerSubsystem> list =
-                            weaponControllersByGroup.computeIfAbsent(groupKey, k -> new ArrayList<>());
-                    if (!list.contains(wc)) {
-                        list.add(wc);
-                    }
-                }
-            }
-        }
-        return super.onSignalUpdated(channelName, sender);
+    private static void mergeTargets(Map<String, List<String>> into, Map<String, List<String>> from) {
+        from.forEach((channel, targets) -> into.merge(channel, targets, AbstractControllableSubsystem::unionTargets));
+    }
+
+    private static List<String> unionTargets(List<String> first, List<String> second) {
+        Set<String> union = new LinkedHashSet<>(first.size() + second.size());
+        union.addAll(first);
+        union.addAll(second);
+        return List.copyOf(union);
     }
 
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         resolveCameras();
-        weaponControllersByGroup.clear();
-        weaponControllerDiscoveryHandshake();
+        resolveWeaponControllers();
     }
 
     /**

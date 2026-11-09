@@ -270,7 +270,10 @@ public interface ISignalSender {
     }
 
     /**
-     * 设置信号传输目标
+     * 设置信号传输目标。
+     * <p>
+     * 先在局部表完成解析，再整体替换现有首跳表，配置里删掉的频道不会留在表中。目标表由主线程构建，
+     * 物理线程不读取首跳表（反馈与状态投递在主线程 {@code onTick} 完成）。
      */
     default void setTargetFromNames() {
         if (getSubPart() != null) {
@@ -280,14 +283,17 @@ public interface ISignalSender {
                 interactBoxes.putAll(getSubPart().interactBoxes);
             Map<String, SignalPort> ports = new HashMap<>();
             getSubPart().connectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
+            Map<String, Map<String, ISignalReceiver>> rebuilt = new LinkedHashMap<>();
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
                 // 保序：接收者列表的顺序就是 getTargetNames() 里声明的顺序。交互区按此顺序逐个尝试目标，
                 // 座位一类的多目标交互区（同一扇门通往多个座位）依赖它决定先坐哪一个。
                 Map<String, ISignalReceiver> signalReceivers = new LinkedHashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
                 getReceiversFromNames(entry.getValue(), getSubPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getSignalAddress(), receiver));
-                getTargets().put(entry.getKey(), signalReceivers);
+                rebuilt.put(entry.getKey(), signalReceivers);
             }
+            getTargets().clear();
+            getTargets().putAll(rebuilt);
         }
     }
 

@@ -137,10 +137,10 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
             this.feedbackSpeed = 0f;
             this.driveTorque = 0f;
             for (String signalKey : attr.speedOutputs.keySet()) {
-                sendSignalToAllTargets(signalKey, 0f);
+                publishFeedback(signalKey, 0f);
             }
             for (String signalKey : attr.forceOutputs.keySet()) {
-                sendSignalToAllTargets(signalKey, 0f);
+                publishFeedback(signalKey, 0f);
             }
             return;
         }
@@ -149,10 +149,10 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
 
         float radius = radius();
         for (String signalKey : attr.speedOutputs.keySet()) {
-            sendSignalToAllTargets(signalKey, linearSpeed());
+            publishFeedback(signalKey, linearSpeed());
         }
         for (String signalKey : attr.forceOutputs.keySet()) {
-            sendSignalToAllTargets(signalKey, radius > 0f ? driveTorque / radius : 0f);
+            publishFeedback(signalKey, radius > 0f ? driveTorque / radius : 0f);
         }
     }
 

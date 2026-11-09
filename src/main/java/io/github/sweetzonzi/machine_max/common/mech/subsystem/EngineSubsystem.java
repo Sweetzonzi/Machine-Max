@@ -88,6 +88,9 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         } else {
             clearChannelWeights();
         }
+        for (String target : attr.rpmOutputTargets.keySet()) {
+            sendSignalToAllTargets(target, getRotSpeed());
+        }
     }
 
     @Override
@@ -116,7 +119,6 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
                 setRotSpeed((float) rotSpeed);
             }
             pushMechPower(MechPower.ZERO);
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
         } else {
             float avgFeedback = 0;
             int count = 0;
@@ -138,7 +140,6 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
                 setRotSpeed((float) rotSpeed);
             }
             pushMechPower(new MechPower((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
         }
     }
 

@@ -81,9 +81,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         if (passenger != null && this.getOwner().getSubPart() instanceof SubPart part) {
             if (passenger.isRemoved() || passenger.isDeadOrDying()) {
                 removePassenger();
-                return;
-            }
-            if (part.entity != null && passenger.getVehicle() != part.entity) {
+            } else if (part.entity != null && passenger.getVehicle() != part.entity) {
                 if (!passenger.level().isClientSide)
                     passenger.startRiding(part.entity, true);
                 passenger.resetFallDistance();//防止摔死
@@ -93,6 +91,10 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
                 passenger.resetFallDistance();//防止摔死
             }
         } else resetSignalOutputs();
+        // 乘员计数是状态型输出：结构变化清空信号槽后由本 tick 补回，不依赖上下车边沿。
+        for (String channel : attr.passengerNumSignalTargets.keySet()) {
+            sendSignalToAllTargets(channel, occupied ? 1f : 0f);
+        }
     }
 
     @Override
@@ -136,9 +138,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
                 passenger.startRiding(owner.getSubPart().entity, true);
             }
             setOccupied(true);
-            for (String channel : attr.passengerNumSignalTargets.keySet()) {
-                sendSignalToAllTargets(channel, 1f);
-            }
             clearInputSignals();
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
@@ -170,9 +169,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
      */
     public void attachForSwitch(LivingEntity passenger) {
         setOccupied(true);
-        for (String channel : attr.passengerNumSignalTargets.keySet()) {
-            sendSignalToAllTargets(channel, 1f);
-        }
         clearInputSignals();
         this.passenger = passenger;
         ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
@@ -263,9 +259,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         setOccupied(false);
         // 乘客离去，清除额外质量
         setExtraMass(0f);
-        for (String channel : attr.passengerNumSignalTargets.keySet()) {
-            sendSignalToAllTargets(channel, 0f);
-        }
         resetSignalOutputs();
         clearInputSignals();
     }

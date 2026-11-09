@@ -34,6 +34,9 @@ public class SubsystemController implements ISignalBus {
     // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
     private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
 
+    /** 是否已经跑过首次订阅；此前加入的子系统由 {@link #initAllSubsystems()} 统一 attach。 */
+    private boolean initialized;
+
     public SubsystemController(Level level) {
         this.level = level;
     }
@@ -78,14 +81,30 @@ public class SubsystemController implements ISignalBus {
     public void initAllSubsystems() {
         rebuildAllEnergyPaths();
         allSubsystems.forEach(this::subscribe);
-        allSubsystems.forEach(AbstractSubsystem::onAttach);
+        allSubsystems.forEach(this::attachSubsystem);
+        initialized = true;
     }
 
     /**
-     * 将子系统加入控制器，等待初始化
+     * 将子系统加入控制器。初始化之后加入的零件在这里立即订阅并 attach；初始化之前的加入由
+     * {@link #initAllSubsystems()} 统一处理。
      */
     public void addSubsystems(Collection<AbstractSubsystem> subSystems) {
-        allSubsystems.addAll(subSystems);
+        List<AbstractSubsystem> added = new ArrayList<>(subSystems.size());
+        for (AbstractSubsystem subSystem : subSystems) {
+            if (allSubsystems.add(subSystem)) added.add(subSystem);
+        }
+        if (!initialized) return;
+        for (AbstractSubsystem subSystem : added) {
+            subscribe(subSystem);
+            attachSubsystem(subSystem);
+        }
+    }
+
+    /** 每个子系统恰好 attach 一次；跨载具转移过来的已 attach 实例只重新订阅。 */
+    private void attachSubsystem(AbstractSubsystem subSystem) {
+        if (subSystem.isAttached()) return;
+        subSystem.onAttach();
     }
 
     public void removeSubsystems(Collection<AbstractSubsystem> subSystems, boolean transferToAnotherVehicle) {
@@ -104,6 +123,7 @@ public class SubsystemController implements ISignalBus {
     public void onVehicleStructureChanged() {
         // 重建总线订阅
         rebuildSubscriptions();
+        initialized = true;
         // 两阶段：先让所有子系统清空由拓扑推导的缓存，再统一重新握手。
         // 合成一趟时遍历顺序决定成败——后清空的子系统会把先握手得到的结果抹掉。
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructurePreChanged);
@@ -237,6 +257,7 @@ public class SubsystemController implements ISignalBus {
         channels.clear();
         resources.clear();
         signalStorage.clear();
+        initialized = false;
     }
 
     private float getPhysicsTps() {

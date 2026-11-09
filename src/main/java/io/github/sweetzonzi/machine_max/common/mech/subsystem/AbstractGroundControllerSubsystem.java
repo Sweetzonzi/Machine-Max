@@ -22,9 +22,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -45,10 +47,13 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     public float speed = 0.0f;
 
     public boolean handBrake = false;
-    public float actualThrottle = 0f;
-    public float actualBrake = 0f;
-    public float actualHandBrake = 0f;
+    public volatile float actualThrottle = 0f;
+    public volatile float actualBrake = 0f;
+    public volatile float actualHandBrake = 0f;
     public float actualSteering = 0f;
+
+    /** 主线程：停用后已按配置线路复位过一次输出，避免每 tick 重复投递空信号。 */
+    private boolean outputsReset;
 
     protected final ConcurrentMap<ISignalReceiver, Float> overrideCountDown = new ConcurrentHashMap<>();
 
@@ -182,10 +187,37 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         }
         updateMoveInputs();
         if (isActive()) {
+            outputsReset = false;
+            sendControlOutputs();
             for (Map.Entry<ISignalReceiver, Float> entry : overrideCountDown.entrySet()) {
                 if (entry.getValue() > 0) {
                     entry.setValue(entry.getValue() - 0.05f);
                 }
+            }
+        } else if (!outputsReset) {
+            outputsReset = true;
+            resetSignalOutputs();
+        }
+    }
+
+    /** 主线程：把上一物理步算出的控制量按配置线路投递。 */
+    private void sendControlOutputs() {
+        for (Map.Entry<String, List<String>> entry : getThrottleOutputTargets().entrySet()) {
+            String signalChannel = entry.getKey();
+            for (String targetName : entry.getValue()) {
+                sendSignalToTarget(signalChannel, targetName, actualThrottle * 0.01f);
+            }
+        }
+        for (Map.Entry<String, List<String>> entry : getBrakeOutputTargets().entrySet()) {
+            String signalChannel = entry.getKey();
+            for (String targetName : entry.getValue()) {
+                sendSignalToTarget(signalChannel, targetName, actualBrake);
+            }
+        }
+        for (Map.Entry<String, List<String>> entry : getHandbrakeOutputTargets().entrySet()) {
+            String signalChannel = entry.getKey();
+            for (String targetName : entry.getValue()) {
+                sendSignalToTarget(signalChannel, targetName, actualHandBrake);
             }
         }
     }
@@ -205,33 +237,8 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
             actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
             onGroundControlAfterInput();
             distributeControlSignals();
-        } else {
-            resetSignalOutputs();
         }
         sampleTelemetry();
-    }
-
-    @Override
-    public void onPostPhysicsTick() {
-        super.onPostPhysicsTick();
-        for (Map.Entry<String, List<String>> entry : getThrottleOutputTargets().entrySet()) {
-            String signalChannel = entry.getKey();
-            for (String targetName : entry.getValue()) {
-                sendSignalToTarget(signalChannel, targetName, actualThrottle * 0.01f);
-            }
-        }
-        for (Map.Entry<String, List<String>> entry : getBrakeOutputTargets().entrySet()) {
-            String signalChannel = entry.getKey();
-            for (String targetName : entry.getValue()) {
-                sendSignalToTarget(signalChannel, targetName, actualBrake);
-            }
-        }
-        for (Map.Entry<String, List<String>> entry : getHandbrakeOutputTargets().entrySet()) {
-            String signalChannel = entry.getKey();
-            for (String targetName : entry.getValue()) {
-                sendSignalToTarget(signalChannel, targetName, actualHandBrake);
-            }
-        }
     }
 
     @Override
@@ -877,11 +884,21 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>();
-        result.putAll(getControlOutputTargets());
-        result.putAll(getSpeedOutputTargets());
-        result.putAll(getThrottleOutputTargets());
-        result.putAll(getBrakeOutputTargets());
-        result.putAll(getHandbrakeOutputTargets());
+        mergeTargets(result, getControlOutputTargets());
+        mergeTargets(result, getSpeedOutputTargets());
+        mergeTargets(result, getThrottleOutputTargets());
+        mergeTargets(result, getBrakeOutputTargets());
+        mergeTargets(result, getHandbrakeOutputTargets());
         return result;
+    }
+
+    /** 同一频道跨输出类别时取有序并集，后一类不能覆盖前一类的目标名。 */
+    private static void mergeTargets(Map<String, List<String>> into, Map<String, List<String>> from) {
+        from.forEach((channel, targets) -> into.merge(channel, targets, (first, second) -> {
+            Set<String> union = new LinkedHashSet<>(first.size() + second.size());
+            union.addAll(first);
+            union.addAll(second);
+            return List.copyOf(union);
+        }));
     }
 }
