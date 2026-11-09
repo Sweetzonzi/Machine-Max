@@ -149,7 +149,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 客户端收到选择、但弹药池还没建起来时暂存的键串。<br>
-     * 建池依赖装弹机握手，握手与同步值谁先到不确定；暂存后在 {@link #onTick()} 里重试落地，
+     * 建池依赖装弹机在结构变化阶段的发现结果，发现与同步值谁先到不确定；暂存后在 {@link #onTick()} 里重试落地，
      * 不因为一次"池里还没有这条链"就把选择丢掉。
      */
     @Nullable
@@ -221,18 +221,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     public void onTick() {
         super.onTick();
 
-        // 延迟重建弹药池：确保 handshake 回调已完成，supplierChannels 已就绪
+        // 延迟重建弹药池：结构变化与执行器发现都在本轮主线程完成，首个 onTick 建池即可；
+        // 空结果也替换弹药池，不再周期性重试。
         if (needsAmmoPoolUpdate) {
             rebuildAmmoPool();
             needsAmmoPoolUpdate = false;
-        } else if (ammoPool.isEmpty() && tickCount % 20 == 0) {
-            // 兜底：池为空说明本控制器没看到任何带弹链的供给者。装弹机的握手是异步完成的，
-            // 若某次建池早于它（新部件刚接上、结构变化刚结束），一次空结果不能锁死整个会话——
-            // 定期重试，握手一到位池就建起来。
-            rebuildAmmoPool();
         }
 
-        // 客户端：选择值可能先于弹药池到达（建池要等装弹机握手），池建好后把暂存的键串落地
+        // 客户端：选择值可能先于弹药池到达（建池要等装弹机发现完成），池建好后把暂存的键串落地
         if (getLevel().isClientSide() && pendingSelectedBelt != null) {
             applySyncedBelt(pendingSelectedBelt);
         }
@@ -446,7 +442,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 客户端落地服务端的选择。<br>
-     * 池里已经有这条链就改选；还没有（同步值先于握手到达）就暂存，等 {@link #onTick()} 重试。
+     * 池里已经有这条链就改选；还没有（同步值先于发现结果到达）就暂存，等 {@link #onTick()} 重试。
      */
     private void applySyncedBelt(String encoded) {
         if (encoded.isEmpty()) {
@@ -831,7 +827,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 物理线程分别驱动全部 control_outputs 握手执行器。<br>
+     * 物理线程分别驱动全部 control_outputs 已发现执行器。<br>
      * 稳定轴使用各自的枢轴与参考对世界点求角；无稳轴直接采用绝对目标，
      * 不从实际角继续累计，也不把某个炮管的执行角复制给其他机构。
      *
@@ -860,10 +856,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 物理线程从既有 control_outputs 握手结果采样炮镜所用的机构。<br>
+     * 物理线程从既有 control_outputs 发现结果采样炮镜所用的机构。<br>
      * 优先选择直接驱动炮镜宿主的高低机，再匹配支承同一炮塔的方向机；
      * 带后坐子部件等间接挂载使用同 WC 的首套有效机构。一体驱动器同时提供两轴。
-     * 该选择仅服务输入初始化与 HUD，WC 的执行分发仍遍历全部握手驱动器。
+     * 该选择仅服务输入初始化与 HUD，WC 的执行分发仍遍历全部已发现驱动器。
      */
     @Nullable
     public AimGeometrySnapshot sampleAimGeometry(SightSubsystem sight) {
@@ -893,7 +889,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 sight.samplePose(partialTick));
     }
 
-    /** 按已有握手和宿主关系选择关节；数组依次为方向机、高低机，缺失轴为 null。 */
+    /** 按已有绑定和宿主关系选择关节；数组依次为方向机、高低机，缺失轴为 null。 */
     @Nullable
     private New6Dof[] aimJoints(SightSubsystem sight) {
         List<TurretDriverSubsystem> drivers = turrets.keySet().stream()
@@ -968,7 +964,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      *   <li>Boolean：仅 {@code true} 算开火</li>
      *   <li>数值（ControlBinding 的 HOLD/PRESS/TOGGLE 写入）：仅非 0 算开火，
      *       因此开关型绑定拨到关（0）不会残留开火</li>
-     *   <li>其余（握手用的 String、{@link EmptySignal} 等）：不算开火</li>
+     *   <li>其余（非开火语义的 String、{@link EmptySignal} 等）：不算开火</li>
      * </ul>
      *
      * @param signal 频道里的信号值

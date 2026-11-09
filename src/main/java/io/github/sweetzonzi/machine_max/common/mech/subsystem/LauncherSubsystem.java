@@ -197,7 +197,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
      * <p>
      * 内容是<b>当前拓扑的发现结果</b>，每次结构变化由
-     * {@link #onVehicleStructurePreChanged()} 清空、再由各装弹机重新握手填回，因此不会累积历史残留。
+     * {@link #onVehicleStructurePreChanged()} 清空、再由各装弹机重新发现填回，因此不会累积历史残留。
      * 频道键随首次登记产生，某个频道再也没有供给者时会在下一次结构变化后被移除。
      */
     private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
@@ -345,7 +345,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         IAmmoSupplier target = findSupplierByRef(ref);
-        // 握手里还没出现这台机器：保持现状，等 onTick 的重试
+        // 发现结果里还没出现这台机器：保持现状，等 onTick 的重试
         if (target == null || target == currentSupplier) return;
         assignSupplier(target);
     }
@@ -354,7 +354,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 按 {@link #SUPPLIER_ID} 里的身份在本机已发现的供给者中找出实例并指认。<br>
      * 身份是"宿主 RegularPart uuid + SubPart 名 + 子系统名"，同一台机器在两端、在重启前后都是这个值，
      * 因此不需要跨端传对象引用，也不需要额外的查表。客户端在刚载入时（还没收到任何推送）用它把
-     * 存档带回来的指认落地，服务端同样用它把存档里的指认在握手完成后落地。
+     * 存档带回来的指认落地，服务端同样用它把存档里的指认在发现完成后落地。
      * <p>
      * 本方法只认领、不改变膛内状态：载入时的膛内弹药是存档里的既成事实，
      * 退不退由玩家显式操作决定。
@@ -369,7 +369,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 在本机已发现的供给者里按身份找实例。
      *
-     * @return 对应实例；身份为空或握手里还没有这台机器时返回 null
+     * @return 对应实例；身份为空或发现结果里还没有这台机器时返回 null
      */
     @Nullable
     private IAmmoSupplier findSupplierByRef(SupplierRef ref) {
@@ -423,14 +423,19 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 带频道名的供给者注册。<br>
-     * 由 Loader 在 handshake 回调中调用。
-     * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
+     * 由装弹机在结构变化的发现阶段调用；频道名必须是 {@code ammo_inputs} 中声明的到达频道。
+     * 声明外的登记直接拒绝，不建对应列表。
      * <p>
-     * 同一台重复握手不重复登记（一次结构变化里可能有多个装弹机广播同一条发现频道）。
+     * 同一台重复发现不重复登记（一次结构变化里可能有多个装弹机广播同一条发现频道）。
      * 这里不写指认：谁给本管供弹由服务端的路由决定，登记只负责让本管知道"有哪些供给者存在"。
      */
     @Override
     public void addSupplier(IAmmoSupplier supplier, String channelName) {
+        if (!attr.staticAttribute.getAmmoInputs().contains(channelName)) {
+            MachineMax.LOGGER.warn("发射器 {} 拒绝未在 ammo_inputs 中声明的供给频道 {}（来自 {}）",
+                    getName(), channelName, SupplierRef.of(supplier));
+            return;
+        }
         List<IAmmoSupplier> channelSuppliers = supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>());
         if (channelSuppliers.contains(supplier)) return;
         channelSuppliers.add(supplier);
@@ -564,7 +569,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     public void onTick() {
         super.onTick();
-        // 指认的种子：本机字段还空着时（刚载入、握手尚未完成）按同步值里的身份认一次。
+        // 指认的种子：本机字段还空着时（刚载入、发现尚未完成）按同步值里的身份认一次。
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
         if (currentSupplier == null) resolveSyncedSupplier();
         // 若膛内无弹且本管可工作，尝试从供给者取弹。取弹要先过 isActive()：摧毁/停用/待组装的本管

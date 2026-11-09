@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
@@ -1060,7 +1061,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         return consumed >= amount - 0.001f;
     }
 
-    // ==================== 握手机制 ====================
+    // ==================== 弹药发现 ====================
 
     @Override
     public void onAttach() {
@@ -1075,13 +1076,24 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     }
 
     /**
-     * 弹药链握手：向发现频道发送空信号，通过回调发现同一载具内的 IAmmoConsumer。<br>
-     * 下游消费者（Launcher 等）收到回调后通过 addSupplier() 注册此供给者。
-     * 回调携带频道名，供 Launcher 按 ammo_inputs 频道分组。
+     * 弹药发现：遍历 {@code discovery_outputs} 声明的频道，用只读查询解析下游消费者，
+     * 按到达频道把本供给者登记到消费者的 {@code ammo_inputs} 列表。结果由本轮结构变化重新填入，
+     * 不依赖回调频道。
+     * <p><b>调用线程：</b>主线程。
      */
     protected void handShake() {
         for (String signalChannel : attr.discoveryOutputs.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(signalChannel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (!(terminal instanceof IAmmoConsumer consumer)) continue;
+                    if (consumer instanceof AbstractSubsystem sub
+                            && sub.getOwner().getSubPart().getPart().assembly
+                            != this.getOwner().getSubPart().getPart().assembly) {
+                        continue;
+                    }
+                    consumer.addSupplier(this, arrival.getKey());
+                }
+            }
         }
     }
 
@@ -1135,25 +1147,6 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(attr.discoveryOutputs);
         return result;
-    }
-
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        // 弹药发现频道回调：供给者发现下游消费者并注册自身，从回调值读取频道名
-        if (channelName.equals("callback") && sender instanceof IAmmoConsumer consumer) {
-            if (consumer instanceof AbstractSubsystem sub) {
-                if (sub.getOwner().getSubPart().getPart().assembly
-                        != this.getOwner().getSubPart().getPart().assembly) {
-                    return SignalResult.PASS;
-                }
-            }
-            // 从信号频道读取回调携带的频道名，若无法获取则使用 "unknown"
-            Object callbackValue = getSignalChannel("callback").get(sender);
-            String discoveryChannel = callbackValue instanceof String s ? s : "unknown";
-            consumer.addSupplier(this, discoveryChannel);
-            return SignalResult.CONSUME;
-        }
-        return super.onSignalUpdated(channelName, sender);
     }
 
     @Override
