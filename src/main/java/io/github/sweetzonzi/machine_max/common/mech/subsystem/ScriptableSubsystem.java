@@ -100,14 +100,6 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public Map<String, Set<ISignalReceiver>> getCallbackTargets() {
-        if (Hook.run(this) instanceof Map targets) {
-            return targets;
-        }
-        return super.getCallbackTargets();
-    }
-
-    @Override
     public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
         if (Hook.run(this) instanceof ConcurrentMap signalInputChannels) {
             return signalInputChannels;
@@ -224,23 +216,14 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
         vehicleCoreUUID = getOwner().getSubPart().getPart().getAssembly().getAssemblyId();
     }
 
+    /**
+     * 代理覆写：先走默认的输入槽写入与处理，再触发脚本 Hook。
+     */
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         SignalResult result = super.onSignalUpdated(channelName, sender);
         Hook.run(this, channelName, sender);
         return result;
-    }
-
-    /**
-     * 代理覆写：调用默认的 respondCallbackToSender（自动回调），再触发脚本 Hook。
-     */
-    @Override
-    public void respondCallbackToSender(
-            String channelName, ISignalSender sender, Object value,
-            boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        super.respondCallbackToSender(channelName, sender, value,
-                requiresImmediateCallback, callbackReturnsSignalValue);
-        Hook.run(this, channelName, sender);
     }
 
     @Override
@@ -252,46 +235,15 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public void clearCallbackChannel() {
-        super.clearCallbackChannel();
-        Hook.run(this);
-    }
-
-
-    @Override
-    public void addCallbackTarget(String signalChannel, ISignalReceiver target) {
-        super.addCallbackTarget(signalChannel, target);
-        Hook.run(this, signalChannel, target);
-    }
-
-    @Override
-    public void removeCallbackTarget(String signalChannel, ISignalReceiver target) {
-        super.removeCallbackTarget(signalChannel, target);
-        Hook.run(this, signalChannel, target);
-    }
-
-    @Override
-    public void clearCallbackTargets() {
-        super.clearCallbackTargets();
-        Hook.run(this);
-    }
-
-    @Override
     public void resetSignalOutputs() {
         super.resetSignalOutputs();
         Hook.run(this);
     }
 
     @Override
-    public void sendSignalToAllTargetsWithCallback(String signalChannel, Object signalValue, boolean callbackReturnsSignalValue) {
-        super.sendSignalToAllTargetsWithCallback(signalChannel, signalValue, callbackReturnsSignalValue);
-        Hook.run(this, signalChannel, signalValue, callbackReturnsSignalValue);
-    }
-
-    @Override
-    public void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        super.sendSignalToAllTargets(signalChannel, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
-        Hook.run(this, signalChannel, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
+    public void sendSignalToAllTargets(String signalChannel, Object signalValue) {
+        super.sendSignalToAllTargets(signalChannel, signalValue);
+        Hook.run(this, signalChannel, signalValue);
     }
 
     @Override
@@ -299,39 +251,6 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
         SignalResult result = super.sendSignalToTarget(signalChannel, targetName, signalValue);
         Hook.run(this, signalChannel, targetName, signalValue);
         return result;
-    }
-
-    @Override
-    public SignalResult sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
-        SignalResult result = super.sendSignalToTargetWithCallback(signalChannel, targetName, signalValue, callbackReturnsSignalValue);
-        Hook.run(this, signalChannel, targetName, signalValue, callbackReturnsSignalValue);
-        return result;
-    }
-
-    @Override
-    public SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        SignalResult result = super.sendSignalToTarget(signalChannel, targetName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
-        Hook.run(this, signalChannel, targetName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
-        return result;
-    }
-
-    @Override
-    public SignalResult sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
-        SignalResult result = super.sendSignalToTargetWithCallback(signalChannel, target, signalValue, callbackReturnsSignalValue);
-        Hook.run(this, signalChannel, target, signalValue, callbackReturnsSignalValue);
-        return result;
-    }
-
-    @Override
-    public void sendCallbackToAllListeners(String signalChannel, Object signalValue) {
-        super.sendCallbackToAllListeners(signalChannel, signalValue);
-        Hook.run(this, signalChannel, signalValue);
-    }
-
-    @Override
-    public void sendCallbackToListener(String signalChannel, ISignalReceiver receiver, Object signalValue) {
-        super.sendCallbackToListener(signalChannel, receiver, signalValue);
-        Hook.run(this, signalChannel, receiver, signalValue);
     }
 
     @Override

@@ -13,7 +13,8 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +33,10 @@ import java.util.Map;
 public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem {
     public final TrackControllerSubsystemAttr attr;
 
-    private final Map<TrackDriveSubsystem, String> tracks = new HashMap<>();
+    /** 发现阶段的临时绑定表；主线程写，完成后整体发布。 */
+    private final Map<TrackDriveSubsystem, String> pendingTracks = new LinkedHashMap<>();
+    /** 履带驱动绑定快照：物理线程只读。 */
+    private volatile Map<TrackDriveSubsystem, String> tracks = Map.of();
     private volatile List<TrackBinding> trackBindings = List.of();
     /** 上一物理步下发给各条履带的制动量（0~1），下标与 {@link #trackBindings} 对齐。 */
     private volatile float[] trackBrakes = new float[0];
@@ -64,21 +68,15 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
     @Override
     protected void onActuatorDiscovered(ISignalSender sender, String channel) {
         if (sender instanceof TrackDriveSubsystem track) {
-            if (track.getOwner().getSubPart().getPart().assembly
-                    != this.getOwner().getSubPart().getPart().assembly) {
-                tracks.remove(track);
-                removeCallbackTarget(channel, track);
-            } else {
-                tracks.put(track, channel);
-                addCallbackTarget(channel, track);
-            }
+            pendingTracks.put(track, channel);
         }
     }
 
     @Override
     protected void clearActuatorBindings() {
         super.clearActuatorBindings();
-        tracks.clear();
+        pendingTracks.clear();
+        tracks = Map.of();
         trackBindings = List.of();
         trackBrakes = new float[0];
         trackClutches = new boolean[0];
@@ -87,6 +85,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
 
     @Override
     protected void onHandShakeComplete() {
+        tracks = Collections.unmodifiableMap(new LinkedHashMap<>(pendingTracks));
         rebuildTrackBindings();
     }
 
@@ -198,7 +197,7 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
             }
             brakes[i] = brake;
             clutches[i] = clutch;
-            sendCallbackToListener(binding.channel(), binding.drive(),
+            sendSignalToTarget(binding.channel(), binding.drive(),
                     new TrackControlSignal(brake, actualHandBrake, clutch, Float.NaN));
         }
         trackBrakes = brakes;

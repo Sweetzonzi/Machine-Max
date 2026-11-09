@@ -77,14 +77,14 @@ ISignalBus（SubsystemController 实现）
 ## 约定
 
 - **SignalChannel extends ConcurrentHashMap**：通过继承实现线程安全。键为通道名，值为信号值。
-- **信号直送模式**：发送方直接写入接收方的 Channel，绕过旧的绕圈回调机制（重构后）。
+- **信号直送模式**：发送方把值写入接收方的 Channel 并按发送者身份分槽，随后同步调用 `onSignalUpdated`；没有独立的回传通道。
 - **多跳传播**：一个子系统的输出信号可作为另一个子系统的输入，形成信号链。
 - **优先级排序**：`SignalPort` 支持按优先级分发，高优先级接收者先处理（如 CarController 先于 Motor 处理油门信号）。
 - **ISignalBus 由 SubsystemController 实现**：作为所有子系统信号的中枢路由器。
 - **空信号触发**：`EmptySignal` 仅用于触发性通知（如"开火"），无数据负载。
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。
 - **存储写入自述**：发送端只调用 `getSignalStorage()`，由 Part / SubsystemController 自行提供存储表，不再按具体类型 `instanceof` 分派。
-- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头与按组火控发现用它，不再发空信号等回调。
+- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控与火控的执行器发现都用它，发现过程不发空信号。
 - **执行器读输入槽**：火控把 `RotationSignal` / `LauncherSubsystem.FireCommand` 作为信号值，经实例重载写入炮塔/发射器的到达频道；执行器按自己的 `control_inputs` 顺序读取当前槽，`EmptySignal` 表示该来源已释放。结构变化清空输入槽后不需要逐个目标调用释放 setter。
 - **目标名解析作用域（当前）**：`setTargetFromNames` / `getReceiversFromNames` 仍只在发送者所在 SubPart 内解析子系统/交互区/连接点；跨 SubPart 的 Part 级解析见设计文档 §6.5.3 TODO。首跳表在结构变化时整体重建，配置里删掉的频道不会留在表中。
 
@@ -97,4 +97,4 @@ ISignalBus（SubsystemController 实现）
 
 ## 参考文件
 
-- 直送模式（替代绕圈回调）的现行实现见 `ISignalSender` / `SignalChannel`，接线约定见仓库根 `AGENTS.md` 的「独特风格」与「反模式」两节。
+- 直送模式与终端查询的实现见 `ISignalSender` / `SignalChannel`，接线约定见仓库根 `AGENTS.md` 的「独特风格」与「反模式」两节。

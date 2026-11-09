@@ -861,7 +861,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             if (subPart.interactBoxes != null) {
                 for (InteractBox interactBox : subPart.interactBoxes.values()) {
                     interactBox.setTargetFromNames();
-                    if (isInLevel()) interactBox.onVehicleStructureChanged();
                 }
             }
         }
@@ -910,12 +909,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                 // 分裂时上限由 distributeSplitHp 与分裂出的新载具负责
                 onStructureChanged(VehicleStructureChangeEvent.Reason.REMOVE,
                         split ? HpRecalcMode.NONE : HpRecalcMode.CLAMP_ONLY);
-                for (SubPart subPart : part.subParts.values()) {
-                    if (subPart.interactBoxes != null)
-                        for (InteractBox interactBox : subPart.interactBoxes.values()) {
-                            interactBox.onVehicleStructureChanged();
-                        }
-                }
             }
             refreshTrackLinks();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);

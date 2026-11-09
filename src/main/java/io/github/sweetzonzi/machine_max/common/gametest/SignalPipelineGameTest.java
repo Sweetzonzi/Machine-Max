@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackDriveSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
@@ -121,6 +122,34 @@ public final class SignalPipelineGameTest {
             helper.assertTrue(port.getSignalInputChannels().get("probe_port") == null, "端口缓冲被清空");
             helper.assertTrue(seat.getDiscoveredCameras().equals(List.of(sight)),
                     "清空后仍按当前接线重新发现镜头");
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void groundControllerBindsActuatorsFromWiring(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("t90a:t90a_hull"));
+        RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            TrackControllerSubsystem controller = part.getAllSubsystems().stream()
+                    .filter(TrackControllerSubsystem.class::isInstance)
+                    .map(TrackControllerSubsystem.class::cast)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("T-90A 车体没有履带控制器"));
+            helper.assertTrue(controller.getEngines().size() == 1, "按 control_outputs 发现发动机");
+            helper.assertTrue(controller.getGearboxes().size() == 1, "发现变速箱");
+            helper.assertTrue(controller.getTracks().size() == 2, "发现左右两条履带");
+            helper.assertTrue(controller.getTracks().values().stream().allMatch("car_control"::equals),
+                    "绑定记录到达频道");
+
+            vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+            helper.assertTrue(controller.getEngines().size() == 1
+                            && controller.getGearboxes().size() == 1
+                            && controller.getTracks().size() == 2,
+                    "结构变化清空后重新发现，绑定数量精确一致");
             helper.succeed();
         } finally {
             vehicle.onRemoveFromLevel();

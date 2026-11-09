@@ -15,7 +15,8 @@ import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +26,10 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     Vector3f[] vs = new Vector3f[6];
     public float avgSlipRatio = 0.0f;
 
-    private final Map<WheelDriverSubsystem, String> wheels = new HashMap<>();
+    /** 发现阶段的临时绑定表；主线程写，完成后整体发布。 */
+    private final Map<WheelDriverSubsystem, String> pendingWheels = new LinkedHashMap<>();
+    /** 车轮绑定快照：物理线程只读。 */
+    private volatile Map<WheelDriverSubsystem, String> wheels = Map.of();
 
     /**
      * 手刹状态，仅用于客户端音效
@@ -134,25 +138,20 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     @Override
     protected void onActuatorDiscovered(ISignalSender sender, String channel) {
         if (sender instanceof WheelDriverSubsystem wheel) {
-            if (wheel.getOwner().getSubPart().getPart().assembly
-                    != this.getOwner().getSubPart().getPart().assembly) {
-                wheels.remove(wheel);
-                removeCallbackTarget(channel, wheel);
-            } else {
-                wheels.put(wheel, channel);
-                addCallbackTarget(channel, wheel);
-            }
+            pendingWheels.put(wheel, channel);
         }
     }
 
     @Override
     protected void clearActuatorBindings() {
         super.clearActuatorBindings();
-        wheels.clear();
+        pendingWheels.clear();
+        wheels = Map.of();
     }
 
     @Override
     protected void onHandShakeComplete() {
+        wheels = Collections.unmodifiableMap(new LinkedHashMap<>(pendingWheels));
         recalculateSteeringCenter();
     }
 
@@ -225,7 +224,7 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
                 float driftBrakeBias = calculateDriftBrakeBias(wheel, getWheelCarLocalPivot(wheel));
                 float effectiveBrake = calculateEffectiveBrake(wheel,
                         Math.clamp(actualBrake + driftBrakeBias, 0f, 1f));
-                sendCallbackToListener(channel, wheel,
+                sendSignalToTarget(channel, wheel,
                         new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
             }
         }

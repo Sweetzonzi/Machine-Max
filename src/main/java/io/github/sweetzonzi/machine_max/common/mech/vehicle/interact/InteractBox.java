@@ -6,11 +6,9 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.InteractBoxAttr
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -20,7 +18,6 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     public final InteractBoxAttr attr;
     public final Map<String, List<String>> targetNames;
     public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();//信号频道名->接收者名称->接收者（保序，顺序即目标声明顺序）
-    public final Map<String, Set<ISignalReceiver>> callbackTargets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final SubPart subPart;
     public final InteractMode interactMode;
@@ -43,13 +40,6 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     @Override
     public String getSignalAddress() {
         return name;
-    }
-
-    /**
-     * 载具结构发生变化时重新确定连接的子系统
-     */
-    public void onVehicleStructureChanged() {
-        this.clearCallbackChannel();
     }
 
     @Override

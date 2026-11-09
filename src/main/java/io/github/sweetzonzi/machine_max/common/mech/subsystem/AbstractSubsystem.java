@@ -467,14 +467,13 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
-     * 载具结构变化的第二阶段：重建总线订阅之后让子系统重新握手。<br>
-     * 由 {@link #onVehicleStructurePreChanged()} 先清空缓存，因此本方法里可以安全地重新发现拓扑；
-     * 需要清理的缓存应写在那一个方法里，本方法只负责重新建立关系。
+     * 载具结构变化的第二阶段：重建总线订阅之后让子系统重新发现。<br>
+     * 由 {@link #onVehicleStructurePreChanged()} 先清空缓存，因此本方法里可以安全地重新建立关系；
+     * 需要在结构变化时丢弃的状态写在那一个方法里。
      * <p>
      * <b>调用线程：</b>主线程。
      */
     public void onVehicleStructureChanged() {
-        this.clearCallbackChannel();
     }
 
     public boolean isActive() {

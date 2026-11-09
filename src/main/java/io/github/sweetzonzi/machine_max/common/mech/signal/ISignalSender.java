@@ -106,22 +106,6 @@ public interface ISignalSender {
         return receiver instanceof ISignalSender sender ? sender.getSubPart() : null;
     }
 
-    default Map<String, Set<ISignalReceiver>> getCallbackTargets() {
-        return HashMap.newHashMap(1);
-    }
-
-    default void addCallbackTarget(String signalChannel, ISignalReceiver target) {
-        getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>()).add(target);
-    }
-
-    default void removeCallbackTarget(String signalChannel, ISignalReceiver target) {
-        getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>()).remove(target);
-    }
-
-    default void clearCallbackTargets() {
-        getCallbackTargets().clear();
-    }
-
     /**
      * 将发送的信号输出类型全部重置为空信号
      */
@@ -129,13 +113,6 @@ public interface ISignalSender {
         if (this instanceof SignalPort) return;//信号端口只应转发信号，不应对其输出信号进行操作
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
-                var emptySignal = EmptySignal.INSTANCE;
-                signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
-                signalReceiver.onSignalUpdated(entry.getKey(), this);
-            });
-        }
-        for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()) {
-            entry.getValue().forEach((signalReceiver) -> {
                 var emptySignal = EmptySignal.INSTANCE;
                 signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
@@ -150,43 +127,11 @@ public interface ISignalSender {
      * @param signalValue   信号值
      */
     default void sendSignalToAllTargets(String signalChannel, Object signalValue) {
-        sendSignalToAllTargets(signalChannel, signalValue, false, false);
-    }
-
-    /**
-     * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
-     *
-     * @param signalChannel              信号频道名称
-     * @param signalValue                信号值
-     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
-     */
-    default void sendSignalToAllTargetsWithCallback(String signalChannel, Object signalValue, boolean callbackReturnsSignalValue) {
-        sendSignalToAllTargets(signalChannel, signalValue, true, callbackReturnsSignalValue);
-    }
-
-    /**
-     * 将信号发送到所有接收此信号的目标，所有目标在同一频道收到同数值的信号
-     *
-     * @param signalChannel              信号频道名
-     * @param signalValue                信号值
-     * @param requiresImmediateCallback  是否需要即时回调
-     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
-     */
-    default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        if (getTargets().containsKey(signalChannel))
-            getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> sendSignalToTarget(signalChannel, receiverName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue));
-    }
-
-    /**
-     * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
-     *
-     * @param signalChannel 信号频道
-     * @param targetName    接收者名称
-     * @param signalValue   信号值
-     * @return 接收者的处理结果
-     */
-    default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
-        return sendSignalToTarget(signalChannel, targetName, signalValue, false, false);
+        Map<String, ISignalReceiver> targets = getTargets().get(signalChannel);
+        if (targets == null) return;
+        for (ISignalReceiver target : targets.values()) {
+            sendSignalToTarget(signalChannel, target, signalValue);
+        }
     }
 
     /**
@@ -203,85 +148,32 @@ public interface ISignalSender {
      * @return 接收者的处理结果
      */
     default SignalResult sendSignalToTarget(String signalChannel, ISignalReceiver target, Object signalValue) {
-        return deliverSignal(signalChannel, target, signalValue, false, false);
+        return deliverSignal(signalChannel, target, signalValue);
     }
 
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
-     * @param signalChannel              信号频道
-     * @param targetName                 接收者名称
-     * @param signalValue                信号值
-     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     * @param signalChannel 信号频道
+     * @param targetName    接收者名称
+     * @param signalValue   信号值
      * @return 接收者的处理结果
      */
-    default SignalResult sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
-        return sendSignalToTarget(signalChannel, targetName, signalValue, true, callbackReturnsSignalValue);
+    default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
+        Map<String, ISignalReceiver> targets = getTargets().get(signalChannel);
+        if (targets == null) return SignalResult.PASS;
+        ISignalReceiver signalReceiver = targets.get(targetName);
+        if (signalReceiver == null) return SignalResult.PASS;
+        return deliverSignal(signalChannel, signalReceiver, signalValue);
     }
 
-    /**
-     * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
-     *
-     * @param signalChannel              信号频道
-     * @param targetName                 接收者名称
-     * @param signalValue                信号值
-     * @param requiresImmediateCallback  是否需要即时回调
-     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
-     * @return 接收者的处理结果
-     */
-    default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        if (getTargets().containsKey(signalChannel)) {
-            ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
-            if (signalReceiver != null) {
-                return deliverSignal(signalChannel, signalReceiver, signalValue,
-                        requiresImmediateCallback, callbackReturnsSignalValue);
-            }
-        }
-        return SignalResult.PASS;
-    }
-
-    /** 写接收者输入槽、按需回传 callback，再同步触发接收者处理。 */
-    private SignalResult deliverSignal(String signalChannel, ISignalReceiver signalReceiver, Object signalValue,
-                                       boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+    /** 写接收者输入槽并同步触发接收者处理。 */
+    private SignalResult deliverSignal(String signalChannel, ISignalReceiver signalReceiver, Object signalValue) {
         signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
         // 存储写入由接收者自述（RegularPart / SubsystemController 覆写 getSignalStorage）
         Map<String, Object> storage = signalReceiver.getSignalStorage();
         if (storage != null) storage.put(signalChannel, signalValue);
-        // 先让接收者自主决定是否回传 callback，再触发 onSignalUpdated
-        signalReceiver.respondCallbackToSender(signalChannel, this, signalValue,
-                requiresImmediateCallback, callbackReturnsSignalValue);
         return signalReceiver.onSignalUpdated(signalChannel, this);
-    }
-
-    /**
-     * <p>将信号发送到指定接收者，可用于发送同名不同值信号给不同目标</p>
-     * <p>Send a signal to a specified receiver, which can be used to send different values of the same signal to different targets.</p>
-     *
-     * @param signalChannel              信号频道
-     * @param target                     接收者
-     * @param signalValue                信号值
-     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
-     * @return 接收者的处理结果
-     */
-    default SignalResult sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
-        return deliverSignal(signalChannel, target, signalValue, true, callbackReturnsSignalValue);
-    }
-
-    default void sendCallbackToAllListeners(String signalChannel, Object signalValue) {
-        if (this instanceof ISignalReceiver) {
-            var targets = getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>());
-            for (ISignalReceiver target : targets) {
-                target.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                target.onSignalUpdated(signalChannel, this);
-            }
-        }
-    }
-
-    default void sendCallbackToListener(String signalChannel, ISignalReceiver receiver, Object signalValue) {
-        if (this instanceof ISignalReceiver) {
-            receiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-            receiver.onSignalUpdated(signalChannel, this);
-        }
     }
 
     /**

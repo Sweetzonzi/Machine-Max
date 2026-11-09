@@ -21,7 +21,9 @@ import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -74,9 +76,10 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     private final Vector3f telemetryVelocity = new Vector3f();
     private final Vector3f telemetryAngular = new Vector3f();
 
-    protected final Map<EngineSubsystem, String> engines = new HashMap<>();
-    protected final Map<MotorSubsystem, String> motors = new HashMap<>();
-    protected final Map<GearboxSubsystem, String> gearboxes = new HashMap<>();
+    /** 执行器绑定快照：整体替换发布，物理线程只读。键为到达频道。 */
+    protected volatile Map<EngineSubsystem, String> engines = Map.of();
+    protected volatile Map<MotorSubsystem, String> motors = Map.of();
+    protected volatile Map<GearboxSubsystem, String> gearboxes = Map.of();
 
     protected float avgEngineMaxSpeed = 0f;
     protected float avgEngineMinSpeed = 0f;
@@ -134,10 +137,10 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     protected abstract void distributeDriveControl();
 
     /**
-     * 处理发动机/电机/变速箱之外的执行器回调。
+     * 处理发动机/电机/变速箱之外的同类执行器（车轮、履带等）。
      *
-     * @param sender  回调方
-     * @param channel 回调携带的控制频道名
+     * @param sender  已解析的执行器实例
+     * @param channel 到达频道
      */
     protected void onActuatorDiscovered(ISignalSender sender, String channel) {
     }
@@ -446,66 +449,53 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         handShake();
     }
 
-    // ===== 发现与握手 =====
+    // ===== 发现与绑定 =====
 
     /**
-     * 向所有 {@code control_outputs} 目标广播空信号，由回调重新建立执行器绑定。
+     * 从 {@code control_outputs} 声明的频道解析执行器：按到达频道绑定发动机、电机与变速箱，
+     * 其余同类终端交给 {@link #onActuatorDiscovered}。绑定表以不可变快照整体发布给物理线程。
+     * <p><b>调用线程：</b>主线程。
      */
     protected void handShake() {
         clearActuatorBindings();
+        Map<EngineSubsystem, String> foundEngines = new LinkedHashMap<>();
+        Map<MotorSubsystem, String> foundMotors = new LinkedHashMap<>();
+        Map<GearboxSubsystem, String> foundGearboxes = new LinkedHashMap<>();
         for (String signalChannel : getControlOutputTargets().keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(signalChannel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (!(terminal instanceof AbstractSubsystem actuator) || !belongsToSameAssembly(actuator)) continue;
+                    if (actuator instanceof EngineSubsystem engine) {
+                        foundEngines.putIfAbsent(engine, arrival.getKey());
+                    } else if (actuator instanceof MotorSubsystem motor) {
+                        foundMotors.putIfAbsent(motor, arrival.getKey());
+                    } else if (actuator instanceof GearboxSubsystem gearbox) {
+                        foundGearboxes.putIfAbsent(gearbox, arrival.getKey());
+                    } else if (terminal instanceof ISignalSender sender) {
+                        onActuatorDiscovered(sender, arrival.getKey());
+                    }
+                }
+            }
         }
+        this.engines = Collections.unmodifiableMap(foundEngines);
+        this.motors = Collections.unmodifiableMap(foundMotors);
+        this.gearboxes = Collections.unmodifiableMap(foundGearboxes);
+        for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+            overrideCountDown.put(gearbox, 0f);
+        }
+        recalculateEngineAverages();
+        recalculateMotorAverages();
         onHandShakeComplete();
     }
 
     /**
-     * 握手前清空旧绑定。子类覆盖时必须调用 {@code super}。
+     * 发现前清空旧绑定。子类覆盖时必须调用 {@code super}。
      */
     protected void clearActuatorBindings() {
-        engines.clear();
-        motors.clear();
-        gearboxes.clear();
+        this.engines = Map.of();
+        this.motors = Map.of();
+        this.gearboxes = Map.of();
         overrideCountDown.clear();
-        clearCallbackTargets();
-    }
-
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        Object signalValue = getSignalChannel(channelName).get(sender);
-        if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
-            if (sender instanceof EngineSubsystem engine) {
-                if (!belongsToSameAssembly(engine)) {
-                    engines.remove(engine);
-                    recalculateEngineAverages();
-                } else {
-                    engines.put(engine, controlChannel);
-                    addCallbackTarget(controlChannel, engine);
-                    recalculateEngineAverages();
-                }
-            } else if (sender instanceof MotorSubsystem motor) {
-                if (!belongsToSameAssembly(motor)) {
-                    motors.remove(motor);
-                    recalculateMotorAverages();
-                } else {
-                    motors.put(motor, controlChannel);
-                    addCallbackTarget(controlChannel, motor);
-                    recalculateMotorAverages();
-                }
-            } else if (sender instanceof GearboxSubsystem gearbox) {
-                if (!belongsToSameAssembly(gearbox)) {
-                    gearboxes.remove(gearbox);
-                    overrideCountDown.remove(gearbox);
-                } else {
-                    gearboxes.put(gearbox, controlChannel);
-                    addCallbackTarget(controlChannel, gearbox);
-                    overrideCountDown.put(gearbox, 0f);
-                }
-            } else {
-                onActuatorDiscovered(sender, controlChannel);
-            }
-        }
-        return SignalResult.PASS;
     }
 
     private boolean belongsToSameAssembly(AbstractSubsystem subsystem) {
@@ -740,7 +730,7 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
             }
         } else {
             for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
+                sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
             actualBrake = actualBrake * 0.8f;
             if (ControlPreference.shouldAutoHandBrake(this) && !handBrake) {
@@ -766,11 +756,11 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     protected float calculateAvgSpeedAndControl() {
         float avgEngineSpeed = 0f;
         for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-            sendCallbackToListener(entry.getValue(), entry.getKey(), Math.abs(actualThrottle));
+            sendSignalToTarget(entry.getValue(), entry.getKey(), Math.abs(actualThrottle));
             avgEngineSpeed += (float) entry.getKey().getRotSpeed();
         }
         for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-            sendCallbackToListener(entry.getValue(), entry.getKey(), actualThrottle);
+            sendSignalToTarget(entry.getValue(), entry.getKey(), actualThrottle);
             avgEngineSpeed += entry.getKey().getRotSpeed();
         }
         if (engineCount > 1) {

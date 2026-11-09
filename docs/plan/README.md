@@ -51,6 +51,7 @@
 | [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
 | [界面-创造栏零部件筛选实施计划](已实现/界面-创造栏零部件筛选实施计划.md) | `client/render/gui/creative/` 下 `CreativePartBrowser`、`SeriesPickerWidget` 与 `CreativeModeInventoryScreenMixin`、`CreativeModeTabsMixin` 已落地，两个目标创造页启用搜索栏与外侧筛选控件；68 份零件定义/106 个变体写入 series 标签，30 条系列译名与 7 条界面文本已生成；T01—T05 通过。实机验收 U01—U15 待执行，结果与偏差见该文 §12 |
 | [武器系统-推力分段与变质量计划](已实现/武器系统-推力分段与变质量计划.md) | T1–T6 全部落地（2026-11-06）：`external.thrust` 为段数组（`force` / `start` / `duration` / `propellant_mass`），整表折算进弹道库 `ThrustProfile`，多段积分、段间空隙与燃烧期质量流失生效，装药在解码期校验；`external.mass` 明确为弹体基础质量。builtin 与其余十个包的 schema 副本、技能快照，以及随包 Blockbench 插件 `0.5.15` 的内嵌快照均已同步 |
+| [信号系统-子系统发现与投递重构实施计划](已实现/信号系统-子系统发现与投递重构实施计划.md) | P1—P5 分五次提交；`resolveTargets` 只读发现、物理反馈主线程投递、结构变化重建首跳表并清空信号存储、执行器改读输入槽、供给登记改只读发现均已落地；`runGameTestServer` 68 项通过，T11 客户端实机验收待完成 |
 
 ## 进行中
 
@@ -84,7 +85,6 @@
 
 | 文档 | 现状 |
 | --- | --- |
-| [信号系统-子系统发现与投递重构实施计划](计划中/信号系统-子系统发现与投递重构实施计划.md) | 外审修订稿，待复审。`getTargets()` 提供首跳，`resolveTargets(channel)` 同步解析终端。结构变动时清空信号存储并重建接线，子系统按当前输入维护状态。验收见 §6，外审决议见 §8。 |
 | [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
