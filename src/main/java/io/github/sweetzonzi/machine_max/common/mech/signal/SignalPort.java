@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.signal;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,17 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     @Override
     public String getSignalAddress() {
         return name;
+    }
+
+    /**
+     * 对侧连接点上的信号端口；本连接点未对接时返回 {@code null}。
+     * <p>
+     * 只读查询，供 {@link ISignalSender#resolveTargets(String)} 沿实际接线推进。
+     */
+    @Nullable
+    public SignalPort getAttachedPort() {
+        AbstractConnector attached = owner.attachedConnector;
+        return attached == null ? null : attached.signalPort;
     }
 
     /**

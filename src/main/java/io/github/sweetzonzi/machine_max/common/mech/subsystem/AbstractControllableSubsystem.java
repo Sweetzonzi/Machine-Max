@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
@@ -32,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Getter
@@ -90,12 +90,12 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     // ===== 摄像机发现 =====
 
-    /** 握手发现的摄像机列表（线程安全）
-     * -- GETTER --
-     * 返回握手发现的摄像机列表
+    /**
+     * 当前接线上可达的观察设备，按发现顺序去重。<br>
+     * 每次结构变化整体替换为不可变快照：主线程写，主线程与渲染线程读。
      */
     @Getter
-    protected final List<AbstractViewpointSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
+    protected volatile List<AbstractViewpointSubsystem> discoveredCameras = List.of();
 
     /** 当前激活的摄像机（炮镜模式时设置），null 表示座椅直发模式 */
     @Nullable
@@ -108,13 +108,27 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     protected Map<String, List<String>> cameraDiscoveryTargets = Map.of();
 
     /**
-     * 摄像机发现握手，向 cameraDiscoveryTargets 配置的每个频道发送空信号（带回调），
-     * AbstractViewpointSubsystem 收到后通过 callback 回复，座椅在 onSignalUpdated 中缓存。
+     * 从 {@link #cameraDiscoveryTargets} 声明的输出频道解析观察设备。<br>
+     * 只读接线：不使用回调频道，也不写任何信号槽。跨件与 {@code global} 线路由
+     * {@link ISignalSender#resolveTargets(String)} 展开，断开的线路不会出现在结果里。
      */
-    protected void cameraDiscoveryHandshake() {
-        for (String signalChannel : cameraDiscoveryTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
+    protected void resolveCameras() {
+        List<AbstractViewpointSubsystem> cameras = new ArrayList<>();
+        Set<AbstractViewpointSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (String channel : cameraDiscoveryTargets.keySet()) {
+            if (channel.isEmpty()) continue;
+            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
+                for (ISignalReceiver terminal : terminals) {
+                    if (terminal instanceof AbstractViewpointSubsystem camera
+                            && camera.getOwner().getSubPart().getPart().assembly
+                            == this.getOwner().getSubPart().getPart().assembly
+                            && seen.add(camera)) {
+                        cameras.add(camera);
+                    }
+                }
+            }
         }
+        this.discoveredCameras = List.copyOf(cameras);
     }
 
     // ===== 武器控制器发现 =====
@@ -236,7 +250,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         super.onAttach();
         // 暂不允许自定义控制组，每次从注册表读取预设
         restoreControlGroupPreset();
-        cameraDiscoveryHandshake();
+        resolveCameras();
         weaponControllerDiscoveryHandshake();
     }
 
@@ -275,14 +289,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        if (channelName.equals("callback") && sender instanceof AbstractViewpointSubsystem camera) {
-            if (camera.getOwner().getSubPart().getPart().assembly
-                    == this.getOwner().getSubPart().getPart().assembly) {
-                if (!discoveredCameras.contains(camera)) {
-                    discoveredCameras.add(camera);
-                }
-            }
-        } else if (channelName.equals("callback") && sender instanceof WeaponControllerSubsystem wc) {
+        if (channelName.equals("callback") && sender instanceof WeaponControllerSubsystem wc) {
             if (wc.getOwner().getSubPart().getPart().assembly
                     == this.getOwner().getSubPart().getPart().assembly) {
                 // 从回调信号值中取出控制组名
@@ -302,8 +309,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        discoveredCameras.clear();
-        cameraDiscoveryHandshake();
+        resolveCameras();
         weaponControllersByGroup.clear();
         weaponControllerDiscoveryHandshake();
     }
