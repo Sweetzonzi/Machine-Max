@@ -24,6 +24,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ import java.util.Map;
  * </ul>
  *
  * <p>夹具用 2S38 炮塔：真实的 2A90 发射器与 57mm 弹链装弹机，再按同一弹链登记所需机型的合成装弹机。
- * 控制器实例取自部件本身，两根管经与运行时相同的回调入口登记，路由因此走真实的弹药池与排名。</p>
+ * 控制器实例取自部件本身，两根管经与运行时相同的只读发现路径登记，路由因此走真实的弹药池与排名。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -103,10 +104,17 @@ public final class AmmoRoutingGameTest {
                 .orElseThrow(() -> new IllegalStateException("部件里没有名为 " + name + " 的装弹机"));
     }
 
-    /** 登记一根管到控制器：与握手回调同一入口（callback 频道 + 回调值里的控制频道名）。 */
+    /**
+     * 把一根管登记到控制器：直接写首跳表，再让控制器走与运行时相同的只读发现路径
+     * （{@code resolveTargets}）重新解析绑定。到达频道取发射器 real 的
+     * {@code weapon.autocannon} 控制输入。
+     */
     private static void register(WeaponControllerSubsystem controller, LauncherSubsystem launcher) {
-        controller.getSignalChannel("callback").put(launcher, "fire_input_main");
-        controller.onSignalUpdated("callback", launcher);
+        String key = launcher.getSubPart().getPart().uuid + "/" + launcher.getSignalAddress();
+        controller.getTargets()
+                .computeIfAbsent("weapon.autocannon", k -> new LinkedHashMap<>())
+                .put(key, launcher);
+        controller.onVehicleStructureChanged();
     }
 
     private static void fill(GameTestHelper helper, RegenLoaderSubsystem loader, int rounds) {

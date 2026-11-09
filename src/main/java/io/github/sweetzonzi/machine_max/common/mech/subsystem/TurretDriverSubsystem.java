@@ -9,6 +9,8 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 
+import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import jme3utilities.math.MyMath;
@@ -21,7 +23,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 炮塔驱动子系统。<br>
@@ -57,13 +58,6 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     private final float yawMaxSpeed;
     private final float pitchMaxForce;
     private final float pitchMaxSpeed;
-
-    /**
-     * 多控制器目标角度映射。<br>
-     * key = controlInputs 中的频道名，value = (pitch, yaw, roll) 弧度。<br>
-     * 所有操作均在物理线程，ConcurrentHashMap 保证多写者安全。
-     */
-    private final ConcurrentHashMap<String, Vector3f> targetAngles = new ConcurrentHashMap<>();
 
     /**
      * 空闲锁止角 (pitch, yaw, roll)，单位弧度。<br>
@@ -292,27 +286,20 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 由 WeaponController 直接调用，替代 RotationSignal 信号。<br>
-     * 写入优先级权重：channel 对应 controlInputs 中的声明条目。
-     *
-     * @param channel 控制频道名（对应 controlInputs 中的条目）
-     * @param angle   目标角度 (pitch, yaw, roll)，null = 该控制器释放控制权
-     */
-    public void setTargetAngle(String channel, @Nullable Vector3f angle) {
-        if (angle == null) targetAngles.remove(channel);
-        else targetAngles.put(channel, angle);
-    }
-
-    /**
-     * 按 controlInputs 声明的频道顺序（优先级从高到低）获取最高优先级的目标角度。
+     * 按 controlInputs 声明的频道顺序（优先级从高到低）读取当前信号容器里的目标角。<br>
+     * 请求由火控以 {@link RotationSignal} 写入本子系统的输入槽；{@link io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal}
+     * 表示该来源已释放。结构变化后输入槽被清空，无需逐个目标调用释放。
      *
      * @return 最高优先级的有效目标角度，null = 无控制器持有控制权
      */
     @Nullable
     private Vector3f getTargetAngle() {
         for (String channel : attr.staticAttribute.getControlInputs()) {
-            Vector3f angle = targetAngles.get(channel);
-            if (angle != null) return angle;
+            SignalChannel values = getSignalInputChannels().get(channel);
+            if (values == null) continue;
+            for (Object value : values.values()) {
+                if (value instanceof RotationSignal signal) return signal.getValue();
+            }
         }
         return null;
     }

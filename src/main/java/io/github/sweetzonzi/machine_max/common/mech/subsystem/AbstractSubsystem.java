@@ -162,6 +162,17 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
+     * 清空本子系统的普通输入频道与已发布的最近反馈。<br>
+     * 结构变化时由装配体统一调用；绑定重建后从下一次业务 tick 重新读输入，旧信号不会流入新接线。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    public void clearSignalStorage() {
+        signalInputChannels.clear();
+        publishedFeedback.clear();
+    }
+
+    /**
      * 是否需要判定为摧毁。默认耐久 ≤ 0。
      * 模块化子系统覆写以检查 critical 模块状态。
      */

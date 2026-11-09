@@ -133,6 +133,14 @@ public class SubsystemController implements ISignalBus {
     }
 
     /**
+     * 主线程：清空总线的输入频道与 MoLang 信号存储。结构变化时由装配体在重建首跳表之前调用。
+     */
+    public void clearSignalStorage() {
+        channels.clear();
+        signalStorage.clear();
+    }
+
+    /**
      * 给单个玩家补发本装配体全部子系统的同步值全量快照。<br>
      * 用在载具刚在客户端建好之后：那些"载入后不再变化"的值走不到变化广播
      * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}），只能由这里补一次。

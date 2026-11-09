@@ -319,11 +319,36 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         updateTotalMass();
         recalculateMaxHp(mode);
         recalculateCameraDistance();
+        clearSignalStorage();
         rebuildSignalTargets();
         subSystemController.onVehicleStructureChanged();
         if (isInLevel()) {
             // 双端都发：只挂服务端会让专用服务器上的客户端永远收不到，单机同 JVM 又看起来正常
             NeoForge.EVENT_BUS.post(new VehicleStructureChangeEvent(this, reason));
+        }
+    }
+
+    /**
+     * 主线程：清空受影响装配体的信号存储，包括子系统与 Part 的普通输入频道、总线临时存储、
+     * 端口与交互区缓冲，以及已发布的最近反馈。<br>
+     * 清空先于首跳表重建与发现，新绑定面对的是空槽；后续业务 tick、物理采样与主线程反馈重新填充。
+     */
+    public void clearSignalStorage() {
+        subSystemController.clearSignalStorage();
+        for (RegularPart part : partMap.values()) {
+            part.getSignalInputChannels().clear();
+            for (AbstractSubsystem subsystem : part.getAllSubsystems()) {
+                subsystem.clearSignalStorage();
+            }
+            for (AbstractConnector connector : part.allConnectors.values()) {
+                connector.signalPort.getSignalInputChannels().clear();
+            }
+            for (SubPart subPart : part.subParts.values()) {
+                if (subPart.interactBoxes == null) continue;
+                for (InteractBox interactBox : subPart.interactBoxes.values()) {
+                    interactBox.getSignalInputChannels().clear();
+                }
+            }
         }
     }
 

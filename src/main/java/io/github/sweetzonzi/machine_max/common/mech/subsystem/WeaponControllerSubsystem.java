@@ -6,12 +6,13 @@ import com.jme3.math.Vector3f;
 import com.jme3.bullet.joints.New6Dof;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
 import net.minecraft.world.phys.Vec2;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
@@ -40,7 +41,7 @@ import java.util.*;
  * 接收目标坐标和开火指令，控制炮塔驱动子系统指向目标，
  * 并控制发射器子系统在瞄准完毕后开火。<br>
  * 弹药管理：弹链模式，按弹链（有序循环弹种序列）选择和路由弹药的决策。<br>
- * 通过握手（callback）自动发现并绑定同载具内的 TurretDriver 和 Launcher 子系统。
+ * 通过只读终端查询发现并绑定同载具内的 TurretDriver 和 Launcher 子系统，绑定以不可变快照发布给物理线程。
  */
 @Getter
 public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHost {
@@ -48,13 +49,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     public final WeaponControllerSubsystemAttr attr;
 
     /**
-     * 通过握手发现的炮塔驱动子系统及其对应的控制频道名
+     * 通过发现解析出的炮塔驱动子系统及其到达（控制）频道名。整体替换发布，物理线程只读快照。
      */
-    private final Map<TurretDriverSubsystem, String> turrets = new ConcurrentHashMap<>();
+    private volatile Map<TurretDriverSubsystem, String> turrets = Map.of();
     /**
-     * 通过握手发现的发射器子系统及其对应的控制频道名
+     * 通过发现解析出的发射器子系统及其到达（控制）频道名。整体替换发布，物理线程只读快照。
      */
-    private final Map<LauncherSubsystem, String> launchers = new ConcurrentHashMap<>();
+    private volatile Map<LauncherSubsystem, String> launchers = Map.of();
 
     /**
      * 物理线程按有效来源求出的世界目标，主线程读取用于 HUD 与持久数据
@@ -297,7 +298,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         } else {
             // 无开火指令或无可开火发射器 → 释放开火权并重置轮射状态
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                entry.getKey().setFireCommand(entry.getValue(), null);
+                sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
             rippleTickCounter = 0;
             rippleIndex = 0;
@@ -740,13 +741,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
         // 先停火所有发射器
         for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-            entry.getKey().setFireCommand(entry.getValue(), null);
+            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
         }
         // 已瞄准的同时开火
         for (LauncherSubsystem launcher : aimedLaunchers) {
             String channel = launchers.get(launcher);
-            launcher.setFireCommand(channel,
-                new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
+            if (channel == null) continue;
+            sendSignalToTarget(channel, launcher,
+                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
         }
     }
 
@@ -762,14 +764,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (rippleTickCounter <= 0) {
             // 先停火所有发射器
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                entry.getKey().setFireCommand(entry.getValue(), null);
+                sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
             // 只让当前索引的发射器开火
             if (rippleIndex < aimedLaunchers.size()) {
                 LauncherSubsystem launcher = aimedLaunchers.get(rippleIndex);
                 String channel = launchers.get(launcher);
-                launcher.setFireCommand(channel,
-                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
+                if (channel != null) {
+                    sendSignalToTarget(channel, launcher,
+                            new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
+                }
             }
             rippleIndex = (rippleIndex + 1) % aimedLaunchers.size();
             rippleTickCounter = interval;
@@ -788,17 +792,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 释放对所有已绑定 Consumer 的控制权。<br>
-     * 遍历 turrets/launchers，为每个条目调用 setXxx(channel, null/false)。<br>
+     * 释放对所有已绑定执行器的控制权。<br>
+     * 向各执行器实例的到达频道发送 {@link EmptySignal}，执行器按自己的频道优先级判定为无请求。<br>
      * <b>调用线程：</b>可能从主线程（onTick releaseAllControl）或物理线程（onPrePhysicsTick）调用。
-     * Consumer 侧均为 ConcurrentHashMap，线程安全。
+     * 执行器侧输入槽为并发 Map，线程安全。
      */
     private void releaseAllControl() {
         for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
-            entry.getKey().setTargetAngle(entry.getValue(), null);
+            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
         }
         for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-            entry.getKey().setFireCommand(entry.getValue(), null);
+            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
         }
     }
 
@@ -837,7 +841,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         for (var entry : turrets.entrySet()) {
             TurretDriverSubsystem driver = entry.getKey();
             if (!driver.isActive() || driver.isDestroyed()) {
-                driver.setTargetAngle(entry.getValue(), null);
+                sendSignalToTarget(entry.getValue(), driver, EmptySignal.INSTANCE);
                 continue;
             }
             boolean solve = (input.mode.yawStable && driver.hasYawAxis())
@@ -851,7 +855,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             if (!input.mode.yawStable) {
                 angle.y = relative.y;
             }
-            driver.setTargetAngle(entry.getValue(), angle);
+            sendSignalToTarget(entry.getValue(), driver, new RotationSignal(new Vector3f(angle)));
         }
     }
 
@@ -1084,61 +1088,40 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        // ① 快照 + 原子清理：物理线程此后遍历 turrets/launchers 为空，无法重新写入
-        Map<TurretDriverSubsystem, String> oldTurrets = new HashMap<>(turrets);
-        Map<LauncherSubsystem, String> oldLaunchers = new HashMap<>(launchers);
-        turrets.clear();
-        launchers.clear();
-
-        // ② 从快照安全释放（物理线程无法干扰，因为 turrets/launchers 已空）
-        for (Map.Entry<TurretDriverSubsystem, String> e : oldTurrets.entrySet()) {
-            e.getKey().setTargetAngle(e.getValue(), null);
-        }
-        for (Map.Entry<LauncherSubsystem, String> e : oldLaunchers.entrySet()) {
-            e.getKey().setFireCommand(e.getValue(), null);
-        }
-
-        // ③ 重新握手
+        // 旧绑定随即失效：先整体下掉快照，再按当前接线重新解析。执行器侧的输入槽已由装配体清空。
+        this.turrets = Map.of();
+        this.launchers = Map.of();
         handShake();
         // 载具结构变化后标记重建弹药池，实际重建延迟到下一个 onTick
         needsAmmoPoolUpdate = true;
     }
 
     /**
-     * 握手：发送空信号到所有控制输出频道，根据回调发现并绑定下属子系统。<br>
-     * 回调自动由 ISignalSender.sendSignalToTarget 基础设施处理。
+     * 发现并绑定下属执行器：遍历全部控制输出频道，用 {@link ISignalSender#resolveTargets(String)}
+     * 取终端，按到达频道登记炮塔与发射器。结果以不可变快照整体发布，物理线程只读快照。
      */
     protected void handShake() {
+        Map<TurretDriverSubsystem, String> foundTurrets = new LinkedHashMap<>();
+        Map<LauncherSubsystem, String> foundLaunchers = new LinkedHashMap<>();
         for (String signalChannel : attr.controlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(signalChannel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (terminal instanceof TurretDriverSubsystem turret) {
+                        if (belongsToThisAssembly(turret)) foundTurrets.putIfAbsent(turret, arrival.getKey());
+                    } else if (terminal instanceof LauncherSubsystem launcher) {
+                        if (!belongsToThisAssembly(launcher)) continue;
+                        foundLaunchers.putIfAbsent(launcher, arrival.getKey());
+                        needsAmmoPoolUpdate = true;
+                    }
+                }
+            }
         }
+        this.turrets = Collections.unmodifiableMap(foundTurrets);
+        this.launchers = Collections.unmodifiableMap(foundLaunchers);
     }
 
-    /**
-     * 处理回调信号：<br>
-     * - "callback" 频道且值为 String（控制频道名），根据发送者类型存入对应集合<br>
-     * - 不同装配体的回调不会登记到发现表
-     */
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
-        Object signalValue = getSignalChannel(channelName).get(sender);
-        if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
-            if (sender instanceof AbstractSubsystem subsystem
-                    && subsystem.getSubPart().getPart().assembly != getSubPart().getPart().assembly) {
-                return SignalResult.PASS;
-            }
-            if (sender instanceof TurretDriverSubsystem turret) {
-                turrets.put(turret, controlChannel);
-                addCallbackTarget(controlChannel, turret);
-            } else if (sender instanceof LauncherSubsystem launcher) {
-                launchers.put(launcher, controlChannel);
-                addCallbackTarget(controlChannel, launcher);
-                // 发现新 launcher → 标记弹药池待重建，实际在 onTick 中执行
-                needsAmmoPoolUpdate = true;
-            }
-        }
-        return SignalResult.PASS;
+    private boolean belongsToThisAssembly(AbstractSubsystem subsystem) {
+        return subsystem.getSubPart().getPart().assembly == getSubPart().getPart().assembly;
     }
 
     @Override

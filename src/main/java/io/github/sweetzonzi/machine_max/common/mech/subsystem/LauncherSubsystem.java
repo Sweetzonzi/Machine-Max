@@ -22,6 +22,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
@@ -201,24 +202,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
 
-    // ——— 直接调用控制（替代信号轮询） ———
+    // ——— 信号化开火指令 ———
 
     /**
      * 发射控制指令：多控制器通过此 record 原子写入方向、修正角和开火指令。<br>
-     * 由 {@link #setFireCommand} 写入，{@link #getActiveFireCommand} 按优先级读取。
+     * 火控以信号值写入本发射器的控制输入槽，{@link #getActiveFireCommand} 按 controlInputs 优先级读取。
      */
     public record FireCommand(
         @Nullable Vector3f direction,   // null = 使用 locator 朝向
         float correctionAngleDeg,       // 火控修正角（度），0 = 不修正
         boolean firing                  // 是否开火
     ) {}
-
-    /**
-     * 多控制器指令映射。<br>
-     * key = controlInputs 频道名，value = 发射指令。<br>
-     * 物理线程写（WC.onPrePhysicsTick），主线程读（onTick.isFiring）和物理线程读（fireSingle）。
-     */
-    private final ConcurrentHashMap<String, FireCommand> fireCommands = new ConcurrentHashMap<>();
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -963,31 +957,24 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
     }
 
-    // ——— 直接调用控制 API（由 WeaponController 调用） ———
+    // ——— 信号化开火控制（火控写入输入槽） ———
 
     /**
-     * 由 WeaponController 直接调用，原子设置发射指令。<br>
-     * 替代旧的 setFiring + setFireDirection 双调，消除竞态。<br>
-     * <b>调用线程：</b>物理线程。
-     *
-     * @param channel 控制频道名（对应 controlInputs 中的条目）
-     * @param cmd     发射指令，null 或 firing=false = 释放控制权
-     */
-    public void setFireCommand(String channel, @Nullable FireCommand cmd) {
-        if (cmd == null || !cmd.firing()) fireCommands.remove(channel);
-        else fireCommands.put(channel, cmd);
-    }
-
-    /**
-     * 按 controlInputs 频道优先级获取最高优先级的有效发射指令。
+     * 按 controlInputs 频道优先级从当前信号容器读取最高优先级的有效发射指令。<br>
+     * 火控把 {@link FireCommand} 作为信号值写入本发射器的到达频道；
+     * {@link io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal} 表示该来源已释放。
+     * 结构变化后输入槽被清空，无需逐个来源调用释放。
      *
      * @return 最高优先级的有效 FireCommand，null = 无控制器持有开火权
      */
     @Nullable
     private FireCommand getActiveFireCommand() {
         for (String channel : attr.staticAttribute.getControlInputs()) {
-            FireCommand cmd = fireCommands.get(channel);
-            if (cmd != null && cmd.firing()) return cmd;
+            SignalChannel values = getSignalInputChannels().get(channel);
+            if (values == null) continue;
+            for (Object value : values.values()) {
+                if (value instanceof FireCommand cmd && cmd.firing()) return cmd;
+            }
         }
         return null;
     }

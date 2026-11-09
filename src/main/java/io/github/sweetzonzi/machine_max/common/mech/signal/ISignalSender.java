@@ -190,6 +190,23 @@ public interface ISignalSender {
     }
 
     /**
+     * 将信号发送到已解析的接收者实例，用于发送者自己保存了执行器引用的场景。<br>
+     * 不查首跳表、不按名字重新寻址，直接写该实例的输入槽并同步处理。
+     * <p>
+     * <b>结构变化契约：</b>旧引用在同一轮结构变化后失效。发送者必须先在主线程重新
+     * {@link #resolveTargets(String) 解析}并保存接收者引用，再继续发送；物理线程只允许使用
+     * 当前已发布的绑定快照向执行器发送命令。
+     *
+     * @param signalChannel 接收者的输入频道（到达频道）
+     * @param target        已解析的接收者实例
+     * @param signalValue   信号值
+     * @return 接收者的处理结果
+     */
+    default SignalResult sendSignalToTarget(String signalChannel, ISignalReceiver target, Object signalValue) {
+        return deliverSignal(signalChannel, target, signalValue, false, false);
+    }
+
+    /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
      * @param signalChannel              信号频道
@@ -216,17 +233,24 @@ public interface ISignalSender {
         if (getTargets().containsKey(signalChannel)) {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
-                signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                // 存储写入由接收者自述（RegularPart / SubsystemController 覆写 getSignalStorage）
-                Map<String, Object> storage = signalReceiver.getSignalStorage();
-                if (storage != null) storage.put(signalChannel, signalValue);
-                // 先让接收者自主决定是否回传 callback，再触发 onSignalUpdated
-                signalReceiver.respondCallbackToSender(signalChannel, this, signalValue,
+                return deliverSignal(signalChannel, signalReceiver, signalValue,
                         requiresImmediateCallback, callbackReturnsSignalValue);
-                return signalReceiver.onSignalUpdated(signalChannel, this);
             }
         }
         return SignalResult.PASS;
+    }
+
+    /** 写接收者输入槽、按需回传 callback，再同步触发接收者处理。 */
+    private SignalResult deliverSignal(String signalChannel, ISignalReceiver signalReceiver, Object signalValue,
+                                       boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
+        // 存储写入由接收者自述（RegularPart / SubsystemController 覆写 getSignalStorage）
+        Map<String, Object> storage = signalReceiver.getSignalStorage();
+        if (storage != null) storage.put(signalChannel, signalValue);
+        // 先让接收者自主决定是否回传 callback，再触发 onSignalUpdated
+        signalReceiver.respondCallbackToSender(signalChannel, this, signalValue,
+                requiresImmediateCallback, callbackReturnsSignalValue);
+        return signalReceiver.onSignalUpdated(signalChannel, this);
     }
 
     /**
@@ -240,7 +264,7 @@ public interface ISignalSender {
      * @return 接收者的处理结果
      */
     default SignalResult sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
-        return this.sendSignalToTarget(signalChannel, target.getSignalAddress(), signalValue, true, callbackReturnsSignalValue);
+        return deliverSignal(signalChannel, target, signalValue, true, callbackReturnsSignalValue);
     }
 
     default void sendCallbackToAllListeners(String signalChannel, Object signalValue) {

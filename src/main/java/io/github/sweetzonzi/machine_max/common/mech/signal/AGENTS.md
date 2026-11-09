@@ -12,12 +12,12 @@ signal/
 ├── EmptySignal.java             # 空信号（仅触发，无数据）
 ├── SignalResult.java            # 信号处理结果
 │
-├── ISignalSender.java           # 信号发送接口（328行）
+├── ISignalSender.java           # 信号发送接口（352行）
 ├── ISignalReceiver.java         # 信号接收接口：getSignalAddress() 路由名 + getSignalStorage() 存储
 ├── ISignalBus.java              # 信号总线接口
 │
 ├── SignalChannel.java           # 信号通道（extends ConcurrentHashMap，线程安全）
-├── SignalPort.java              # 信号端口（227行），信号路由 + 优先级
+├── SignalPort.java              # 信号端口（185行），信号路由 + 优先级
 │
 ├── MoveInputSignal.java         # 移动输入信号（前进/后退/左/右/跳跃/潜行）
 ├── RegularInputSignal.java      # 常规交互信号
@@ -85,6 +85,7 @@ ISignalBus（SubsystemController 实现）
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。
 - **存储写入自述**：发送端只调用 `getSignalStorage()`，由 Part / SubsystemController 自行提供存储表，不再按具体类型 `instanceof` 分派。
 - **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头与按组火控发现用它，不再发空信号等回调。
+- **执行器读输入槽**：火控把 `RotationSignal` / `LauncherSubsystem.FireCommand` 作为信号值，经实例重载写入炮塔/发射器的到达频道；执行器按自己的 `control_inputs` 顺序读取当前槽，`EmptySignal` 表示该来源已释放。结构变化清空输入槽后不需要逐个目标调用释放 setter。
 - **目标名解析作用域（当前）**：`setTargetFromNames` / `getReceiversFromNames` 仍只在发送者所在 SubPart 内解析子系统/交互区/连接点；跨 SubPart 的 Part 级解析见设计文档 §6.5.3 TODO。首跳表在结构变化时整体重建，配置里删掉的频道不会留在表中。
 
 ## 反模式

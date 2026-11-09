@@ -15,6 +15,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackDriveSubsyste
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -88,6 +89,38 @@ public final class SignalPipelineGameTest {
             SignalChannel delivered = probe.getSignalInputChannels().get(channel);
             helper.assertTrue(delivered != null && delivered.get(track) instanceof Float,
                     "主线程 tick 把发布值经配置线路投递到接收者");
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void structureChangeClearsSignalStorageBeforeDiscovery(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("t90a:t90a_turret"));
+        RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            var turret = part.subParts.get("sub_part.t90a.turret");
+            var gun = part.subParts.get("sub_part.t90a.gun");
+            var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
+            var sight = gun.subsystems.get("subsystem.t90a.gunner_sight");
+            var port = part.allConnectors.values().iterator().next().signalPort;
+
+            seat.getSignalInputChannels().computeIfAbsent("probe_input", k -> new SignalChannel()).put(seat, 1f);
+            vehicle.subSystemController.getSignalInputChannels()
+                    .computeIfAbsent("probe_bus", k -> new SignalChannel()).put(seat, 1f);
+            part.getSignalInputChannels().computeIfAbsent("probe_part", k -> new SignalChannel()).put(seat, 1f);
+            port.getSignalInputChannels().computeIfAbsent("probe_port", k -> new SignalChannel()).put(seat, 1f);
+
+            vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+
+            helper.assertTrue(seat.getSignalInputChannels().get("probe_input") == null, "子系统输入槽被清空");
+            helper.assertTrue(vehicle.subSystemController.getSignalInputChannels().get("probe_bus") == null, "总线临时频道被清空");
+            helper.assertTrue(part.getSignalInputChannels().get("probe_part") == null, "Part 临时存储被清空");
+            helper.assertTrue(port.getSignalInputChannels().get("probe_port") == null, "端口缓冲被清空");
+            helper.assertTrue(seat.getDiscoveredCameras().equals(List.of(sight)),
+                    "清空后仍按当前接线重新发现镜头");
             helper.succeed();
         } finally {
             vehicle.onRemoveFromLevel();

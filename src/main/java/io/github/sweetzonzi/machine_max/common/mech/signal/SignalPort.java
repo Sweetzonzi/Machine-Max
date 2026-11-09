@@ -117,48 +117,6 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
         return result;
     }
 
-    /**
-     * 连接点连接时，立即为对方更新一次信号
-     * 注意：需要应用转译规则
-     */
-    public void onConnectorAttach() {
-        // 检查基本前提条件
-        if (owner.attachedConnector == null || owner.attachedConnector.signalPort == null) {
-            return;
-        }
-
-        AbstractConnector attachedConnector = owner.attachedConnector;
-        Map<String, Map<String, ISignalReceiver>> attachedTargets = attachedConnector.signalPort.getTargets();
-
-        for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-            String originalChannel = entry.getKey();
-
-            // 只转发目标接收方需要的信号
-            String translatedChannel = owner.attachedConnector.signalPort.translateChannel(originalChannel);
-            if (attachedTargets.containsKey(translatedChannel)) {
-                onSignalUpdated(originalChannel, this);
-            }
-        }
-    }
-
-    /**
-     * 与另一个部件连接器断开连接时更新端口引用
-     */
-    public void onConnectorDetach() {
-        if (owner instanceof AbstractConnector ownerConnector
-                && ownerConnector.attachedConnector != null) {
-            for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
-                for (ISignalReceiver receiver : entry.getValue().values()) {
-                    // 从输出目标的信号输入中移除本端口的信号输出
-                    receiver.getSignalInputChannels().remove(entry.getKey());
-                    if (receiver instanceof ISignalSender sender) {
-                        sender.clearCallbackTargets();
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public SubPart getSubPart() {
         return owner.getSubPart();

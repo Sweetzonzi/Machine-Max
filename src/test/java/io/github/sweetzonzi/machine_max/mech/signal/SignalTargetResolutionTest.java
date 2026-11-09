@@ -197,6 +197,20 @@ class SignalTargetResolutionTest {
     }
 
     @Test
+    void instanceSendBypassesTargetTableAndWritesReceiverSlot() {
+        TestSender sender = new TestSender();
+        TestReceiver actuator = new TestReceiver("actuator", List.of());
+
+        SignalResult result = sender.sendSignalToTarget("control", actuator, 2f);
+
+        assertEquals(SignalResult.PASS, result);
+        assertEquals(1, actuator.updates, "实例直送同步触发接收者处理");
+        assertEquals((Object) 2f, actuator.getSignalInputChannels().get("control").get(sender),
+                "信号按发送者身份写入目标输入槽");
+        assertTrue(sender.getTargets().isEmpty(), "实例直送不查、也不改首跳表");
+    }
+
+    @Test
     void queryDoesNotWriteSignalsOrCreateChannels() {
         TestSender sender = new TestSender();
         TestBus bus = new TestBus();

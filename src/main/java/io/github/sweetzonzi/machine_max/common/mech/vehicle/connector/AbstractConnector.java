@@ -238,10 +238,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 this.attachedConnector = targetConnector;
                 targetConnector.attachedConnector = this;
                 this.attachJoint(targetConnector);
-                if (this.signalPort != null && attachedConnector.signalPort != null) {
-                    this.signalPort.onConnectorAttach();
-                    attachedConnector.signalPort.onConnectorAttach();
-                }
                 if (this.mechanicalEnergyPort != null) {
                     this.mechanicalEnergyPort.onConnectorAttach();
                 }
@@ -389,10 +385,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             AbstractConnector advancedConnector = this instanceof SimpleConnector ? attachedConnector : this;
             SimpleConnector simpleConnector = this == advancedConnector ? (SimpleConnector) attachedConnector : (SimpleConnector) this;
             if (destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(advancedConnector, simpleConnector)).isCanceled()) {
-                if (this.signalPort != null && attachedConnector.signalPort != null) {
-                    this.signalPort.onConnectorDetach();
-                    attachedConnector.signalPort.onConnectorDetach();
-                }
                 if (this.mechanicalEnergyPort != null) {
                     this.mechanicalEnergyPort.onConnectorDetach();
                 }
