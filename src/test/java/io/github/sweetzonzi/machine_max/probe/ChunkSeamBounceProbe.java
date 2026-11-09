@@ -132,7 +132,14 @@ class ChunkSeamBounceProbe {
          * 内部边上的分离点保留，但把接触点挪到轮心正下方的竖轴上：约束还在（能接住一个子步的
          * 接近），力臂没了（{@code ω × r} 不再有竖直分量）。
          */
-        PROJECT_SEPARATED
+        PROJECT_SEPARATED,
+        /**
+         * 与出货代码一致的配置（{@code CollisionHandler#resolveInternalEdge}）：内部边上无论
+         * 穿透还是分离都把法线归到竖直，分离点再把作用点挪到轮心正下方，两支都不重算距离。
+         * <p>{@link #INTERNAL_EDGE} 只做归轴那一半、{@link #PROJECT_SEPARATED} 只做分离点那一半，
+         * 两者都不等于出货代码。这个变体用来量「穿透分支也归轴」带进来的那部分。
+         */
+        PRODUCTION
     }
 
     private enum WheelShape {
@@ -238,7 +245,8 @@ class ChunkSeamBounceProbe {
     }
 
     /**
-     * 「丢掉分离点会不会把轮子沉下去」：同一组参数下比五种法线策略的抬升、下沉与平均高度。
+     * 「丢掉分离点会不会把轮子沉下去」：同一组参数下比 {@link Rewrite} 的每一种策略，看抬升、
+     * 下沉与平均高度。
      *
      * <p>下沉这一列是这条规则的验收项——native 补丁保住的正是「球面与地面相差 1 µm 仍算接触」的
      * 近接触，游戏层若在回调里把它们一并否决，支撑会整步丢失，轮子每个子步掉 2.6 m/s。
@@ -272,31 +280,53 @@ class ChunkSeamBounceProbe {
      * 高速档的契约：接缝上「分离的内部棱点」就是抬升源，且它在产品里是**挪点**而不是丢掉。
      *
      * <p>参数取自线上录制：轮速 31–60 m/s、自转 2 倍纯滚动、μ 3（{@code racing_tire}）、
-     * 恢复系数 0.4。断言钉两件事：只归轴时仍有上升分速；挪到轮心正下方后既不抬升也不下沉。</p>
+     * 恢复系数 0.4。三档一起打：{@link Rewrite#INTERNAL_EDGE} 只归轴（两支都改）、
+     * {@link Rewrite#PROJECT_SEPARATED} 只处理分离点、{@link Rewrite#PRODUCTION} 与出货代码
+     * 一致。断言钉三件事：只归轴时仍有上升分速；两种含挪点的配置都既不抬升也不下沉——
+     * 也就是「穿透分支也归轴」没有把被消掉的那份抬升带回来。</p>
      */
     @Test
     void separatedPointsOnFlatSeamsAreTheHighSpeedLiftSource() {
         for (float speed : new float[]{31f, 45f, 60f}) {
+            float flattened;
             try (Rig keep = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, speed)) {
                 keep.rewrite = Rewrite.INTERNAL_EDGE;
                 keep.configureSurface(3f, 2f, 0.4f);
-                float flattened = keep.drive(speed).maxPostVy;
-                try (Rig project = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, speed)) {
-                    project.rewrite = Rewrite.PROJECT_SEPARATED;
-                    project.configureSurface(3f, 2f, 0.4f);
-                    Rig.Run projected = project.drive(speed);
-                    System.out.printf(Locale.ROOT,
-                            "%.0f m/s 自转×2 μ3：只归轴 maxVy=%+7.3f ｜ 挪到轮心正下方 maxVy=%+7.3f"
-                                    + " rise=%5.1fmm sink=%6.1fmm%n",
-                            speed, flattened, projected.maxPostVy,
-                            projected.maxRise * 1000f, projected.minRise * 1000f);
-                    assertTrue(flattened > 4f, speed + " m/s 只归轴时应当仍被抬起：" + flattened);
-                    assertEquals(0f, projected.maxPostVy, 0.6f,
-                            speed + " m/s 挪点后不应再有上升分速");
-                    assertTrue(projected.minRise > -0.005f,
-                            speed + " m/s 挪点后不应下沉超过 5 mm：" + projected.minRise);
-                }
+                flattened = keep.drive(speed).maxPostVy;
             }
+            Rig.Run projected;
+            try (Rig project = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, speed)) {
+                project.rewrite = Rewrite.PROJECT_SEPARATED;
+                project.configureSurface(3f, 2f, 0.4f);
+                projected = project.drive(speed);
+            }
+            Rig.Run shipped;
+            int shippedPenetrating;
+            int shippedSeparated;
+            try (Rig production = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, speed)) {
+                production.rewrite = Rewrite.PRODUCTION;
+                production.configureSurface(3f, 2f, 0.4f);
+                shipped = production.drive(speed);
+                shippedPenetrating = production.penetratingInternal;
+                shippedSeparated = production.separatedInternal;
+            }
+            System.out.printf(Locale.ROOT,
+                    "%.0f m/s 自转×2 μ3：只归轴 maxVy=%+7.3f ｜ 只挪分离点 maxVy=%+7.3f"
+                            + "（rise=%5.1fmm sink=%6.1fmm）｜ 出货配置 maxVy=%+7.3f"
+                            + "（rise=%5.1fmm sink=%6.1fmm，穿透支 %d 个 / 分离支 %d 个）%n",
+                    speed, flattened,
+                    projected.maxPostVy, projected.maxRise * 1000f, projected.minRise * 1000f,
+                    shipped.maxPostVy, shipped.maxRise * 1000f, shipped.minRise * 1000f,
+                    shippedPenetrating, shippedSeparated);
+            assertTrue(flattened > 4f, speed + " m/s 只归轴时应当仍被抬起：" + flattened);
+            assertEquals(0f, projected.maxPostVy, 0.6f,
+                    speed + " m/s 挪点后不应再有上升分速");
+            assertTrue(projected.minRise > -0.005f,
+                    speed + " m/s 挪点后不应下沉超过 5 mm：" + projected.minRise);
+            assertEquals(0f, shipped.maxPostVy, 0.6f,
+                    speed + " m/s 出货配置不应再有上升分速");
+            assertTrue(shipped.minRise > -0.005f,
+                    speed + " m/s 出货配置不应下沉超过 5 mm：" + shipped.minRise);
         }
     }
 
@@ -330,18 +360,33 @@ class ChunkSeamBounceProbe {
     @Test
     void internalEdgeRewriteRemovesTheFlatSeamLift() {
         Rig.Run plain = drive(Layout.SECTIONS);
+        Rig.Run rewritten;
+        int rewrittenCount;
         try (Rig rig = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, 19f)) {
             rig.rewrite = Rewrite.INTERNAL_EDGE;
-            Rig.Run rewritten = rig.drive(19f);
-            System.out.printf(Locale.ROOT,
-                    "19 m/s SECTIONS 原样 maxVy=%+7.3f rise=%5.1fmm ｜ 内部边归轴后 maxVy=%+7.3f rise=%5.1fmm"
-                            + "（改写 %d 个，判成真实棱边 %d 个）%n",
-                    plain.maxPostVy, plain.maxRise * 1000f,
-                    rewritten.maxPostVy, rewritten.maxRise * 1000f, rig.rewritten, rig.keptRealEdges);
-            assertTrue(plain.maxPostVy > 1.0f, "原样应抬升");
-            assertEquals(0f, rewritten.maxPostVy, 0.05f, "平地接缝归轴后不应再有上升分速");
-            assertTrue(rig.rewritten > 0, "应确实改写过平地接缝上的接触点");
+            rewritten = rig.drive(19f);
+            rewrittenCount = rig.rewritten;
         }
+        Rig.Run shipped;
+        int shippedPenetrating;
+        int shippedSeparated;
+        try (Rig rig = new Rig(Layout.SECTIONS, WheelShape.MULTI_SPHERE, 19f)) {
+            rig.rewrite = Rewrite.PRODUCTION;
+            shipped = rig.drive(19f);
+            shippedPenetrating = rig.penetratingInternal;
+            shippedSeparated = rig.separatedInternal;
+        }
+        System.out.printf(Locale.ROOT,
+                "19 m/s SECTIONS 原样 maxVy=%+7.3f rise=%5.1fmm ｜ 内部边归轴后 maxVy=%+7.3f"
+                        + " rise=%5.1fmm（改写 %d 个）｜ 出货配置 maxVy=%+7.3f rise=%5.1fmm"
+                        + "（穿透支 %d 个 / 分离支 %d 个）%n",
+                plain.maxPostVy, plain.maxRise * 1000f,
+                rewritten.maxPostVy, rewritten.maxRise * 1000f, rewrittenCount,
+                shipped.maxPostVy, shipped.maxRise * 1000f, shippedPenetrating, shippedSeparated);
+        assertTrue(plain.maxPostVy > 1.0f, "原样应抬升");
+        assertEquals(0f, rewritten.maxPostVy, 0.05f, "平地接缝归轴后不应再有上升分速");
+        assertEquals(0f, shipped.maxPostVy, 0.6f, "出货配置在低速度档不应再有上升分速");
+        assertTrue(rewrittenCount > 0, "应确实改写过平地接缝上的接触点");
     }
 
     /**
@@ -503,6 +548,10 @@ class ChunkSeamBounceProbe {
         int rewritten;
         /** 判成真实棱边、因而保持原法线的点数。 */
         int keptRealEdges;
+        /** 出货配置下内部边落在「穿透」那一支的点数（只归轴、不挪点）。 */
+        int penetratingInternal;
+        /** 出货配置下内部边落在「分离」那一支的点数（归轴 + 挪点）。 */
+        int separatedInternal;
         /** 逐点写入的合成摩擦（模拟 {@code setupContactFriction} 写 {@code setCombinedFriction}）。 */
         float wheelFriction;
         /** 逐点写入的合成恢复系数。 */
@@ -592,6 +641,25 @@ class ChunkSeamBounceProbe {
                 ManifoldPoints.getPositionWorldOnB(id, point);
             } else {
                 ManifoldPoints.getPositionWorldOnA(id, point);
+            }
+            if (rewrite == Rewrite.PRODUCTION) {
+                if (!isInternalEdge(point, normal)) {
+                    keptRealEdges++;
+                    return;
+                }
+                // 出货代码的两支：穿透只归轴，分离再挪作用点；距离两支都不重算
+                if (distance >= 0f) {
+                    separatedInternal++;
+                    Vector3f centre = wheel.getPhysicsLocation(null);
+                    Vector3f projected = new Vector3f(centre.x, point.y, centre.z);
+                    ManifoldPoints.setPositionWorldOnA(id, projected);
+                    ManifoldPoints.setPositionWorldOnB(id, projected);
+                } else {
+                    penetratingInternal++;
+                }
+                ManifoldPoints.setNormalWorldOnB(id, wheelIsA ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate());
+                rewritten++;
+                return;
             }
             if (rewrite == Rewrite.PROJECT_SEPARATED) {
                 if (distance >= 0f && isInternalEdge(point, normal)) {
