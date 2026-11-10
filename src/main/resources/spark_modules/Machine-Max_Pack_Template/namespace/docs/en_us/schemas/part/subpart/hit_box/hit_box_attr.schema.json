@@ -224,23 +224,10 @@
           "additionalProperties": false
         },
         "sounds": {
-          "type": "object",
-          "description": "Hit sound override.",
-          "properties": {
-            "hit_un_pen": {
-              "allOf": [
-                { "$ref": "../../../base/sound_event.schema.json" }
-              ],
-              "description": "Sound event played when the hit does not penetrate."
-            },
-            "hit_pen": {
-              "allOf": [
-                { "$ref": "../../../base/sound_event.schema.json" }
-              ],
-              "description": "Sound event played when the hit penetrates."
-            }
-          },
-          "additionalProperties": false
+          "allOf": [
+            { "$ref": "../../../base/material_attr.schema.json#/properties/sounds" }
+          ],
+          "description": "Replaces the material's entire sounds group. Omit this group to inherit the material sounds."
         }
       },
       "additionalProperties": false

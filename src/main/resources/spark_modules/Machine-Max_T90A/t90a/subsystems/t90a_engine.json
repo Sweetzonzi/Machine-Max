@@ -14,5 +14,11 @@
     5,
     0.05,
     0.00001
-  ]
+  ],
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "event": "event:/tank_drive_uni"
+    }
+  }
 }

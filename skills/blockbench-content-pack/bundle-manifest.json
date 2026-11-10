@@ -1,13 +1,13 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-10",
+  "bundled_on": "2026-11-11",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "799a9baaf27e928e66a03e15ff51a8774a400e2c",
+    "revision": "bb300e97a1565389d4c0c547facb22eea0f5e573",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 71,
+    "file_count": 72,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -15,9 +15,14 @@
         "sha256": "eb8f51ea20b96e7f3af62d671054832879096f39debcc6556d5dcf2698392c99"
       },
       {
+        "path": "references/schemas/base/fmod_sound.schema.json",
+        "bytes": 576,
+        "sha256": "3a417f4b61b3717e11faf023255de1b5266bd137338c856d4825dcc6ece7c78a"
+      },
+      {
         "path": "references/schemas/base/material_attr.schema.json",
-        "bytes": 9716,
-        "sha256": "72a3ed7eb4a172e3d91f39a80bd89cc575892d62c03821524708d5670d113aef"
+        "bytes": 9952,
+        "sha256": "22d0265aa12433d52b614042162db9515b3452e3ee42cef2fe3dcd1fb443161c"
       },
       {
         "path": "references/schemas/base/operation.schema.json",
@@ -41,8 +46,8 @@
       },
       {
         "path": "references/schemas/fitting.schema.json",
-        "bytes": 11451,
-        "sha256": "5e9d7dc1c26721a49cea5238d8c57d42e99c2a1d4d6f8030d00c72d05d9771fc"
+        "bytes": 11647,
+        "sha256": "c9bea1fa4714bdeb391dbf9a4c9dc7c42bb3515f9d233e5485d911a4863d7fc5"
       },
       {
         "path": "references/schemas/hud/hud_element.schema.json",
@@ -71,8 +76,8 @@
       },
       {
         "path": "references/schemas/part/subpart/hit_box/hit_box_attr.schema.json",
-        "bytes": 12996,
-        "sha256": "e4844d4f9d7eeb7be42fa208150e07090d201ef6df06fe125140fd150649f3bc"
+        "bytes": 12651,
+        "sha256": "eb9356e8c88dd02518a85a74fe94bc280999890076e939b48caa77944d94b85f"
       },
       {
         "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition.schema.json",
@@ -271,8 +276,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
-        "bytes": 6341,
-        "sha256": "282acc164da2720fd83ddf7793a2dfd4e200e822e98269026457e049eec137f6"
+        "bytes": 5899,
+        "sha256": "6075ab6d7b2543b40c80dbb789e30f233d2089c379ea4a541580b7e21a8fb326"
       },
       {
         "path": "references/schemas/subsystem/static/gearbox_static_attr.schema.json",
@@ -286,8 +291,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 9293,
-        "sha256": "7280aa5a010a6879b4663c640af1ee433175f08b8548e33aca6b7a4eadc387df"
+        "bytes": 9555,
+        "sha256": "0363603f159ef83429c3f54873fd5f67d98dbff4408327d39e9884aae0ac0b62"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
@@ -296,8 +301,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/motor_static_attr.schema.json",
-        "bytes": 5194,
-        "sha256": "2c0a888dac295a95156d40701d8633dfc3257bb22947e20de8d2eaa1269ed93f"
+        "bytes": 5429,
+        "sha256": "629c9749494ade3864b969d7944bc499c6df4c1639de5e4daed2f2ffc1439156"
       },
       {
         "path": "references/schemas/subsystem/static/motorbike_controller_static_attr.schema.json",

@@ -18,8 +18,8 @@
   ],
   "sounds": {
     "fmod": {
-      "bank": "spark_core:vehicle_drive",
-      "event": "event:/tank_drive"
+      "bank": "machine_max:basic_vehicle_sounds",
+      "event": "event:/tank_drive_uni"
     }
   }
 }

@@ -3,10 +3,10 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import cn.solarmoon.spark_core.pack.modules.SoundModule;
 import cn.solarmoon.spark_core.sound.SoundData;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.util.sound.PistonEngineSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState;
@@ -34,16 +34,6 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
     public final List<Double> dampingFactors; //发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final List<String> throttleInputKeys; //优先级从高至低
     public final EngineSoundAttr sounds;
-
-    /** 持续工况音的 FMOD bank ID 和 Studio 事件路径。 */
-    public record FmodSoundAttr(ResourceLocation bank, String event) {
-        public static final Codec<FmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                ResourceLocation.CODEC.fieldOf("bank").forGetter(FmodSoundAttr::bank),
-                Codec.STRING.validate(path -> path.startsWith("event:/") && path.length() > "event:/".length()
-                                ? DataResult.success(path) : DataResult.error(() -> "FMOD 事件路径应为 event:/<名称>"))
-                        .fieldOf("event").forGetter(FmodSoundAttr::event)
-        ).apply(instance, FmodSoundAttr::new));
-    }
 
     /** 引擎的生命周期短音效和持续工况音，FMOD 不可用时使用原有工况音。 */
     public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,

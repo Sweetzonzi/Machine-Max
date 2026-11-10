@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -28,6 +29,7 @@ public final class TrackAttr {
     private final ResourceLocation materialId;
     private final Optional<HitBoxAttr.OverwriteAttr> overwrite;
     private final Tension tension;
+    private final Optional<FmodSoundAttr> fmod;
     /** 构造时由 {@link #materialId} + {@link #overwrite} 解析出的有效材料。 */
     private final MaterialAttr resolved;
 
@@ -36,7 +38,8 @@ public final class TrackAttr {
                      float thicknessMm,
                      ResourceLocation materialId,
                      Optional<HitBoxAttr.OverwriteAttr> overwrite,
-                     Tension tension) {
+                     Tension tension,
+                     Optional<FmodSoundAttr> fmod) {
         if (!Float.isFinite(durabilityPerLink) || !(durabilityPerLink > 0f)) {
             throw new IllegalArgumentException("durability_per_link 必须是有限正数: " + durabilityPerLink);
         }
@@ -64,6 +67,7 @@ public final class TrackAttr {
         this.materialId = materialId;
         this.overwrite = overwrite;
         this.tension = tension;
+        this.fmod = fmod;
         this.resolved = material;
     }
 
@@ -119,6 +123,11 @@ public final class TrackAttr {
         return tension;
     }
 
+    /** 整条履带的可选 FMOD 行驶事件，覆盖滚动与滑移两种接地工况。 */
+    public Optional<FmodSoundAttr> fmod() {
+        return fmod;
+    }
+
     /** 整条履带的最大耐久：每节耐久 × 节数，节数至少按 1 计。 */
     public float maxDurability(int linkCount) {
         return durabilityPerLink * Math.max(1, linkCount);
@@ -130,7 +139,8 @@ public final class TrackAttr {
             Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
             ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),
             HitBoxAttr.OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(TrackAttr::overwrite),
-            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension)
+            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension),
+            FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(TrackAttr::fmod)
     ).apply(instance, TrackAttr::new));
 
     /**

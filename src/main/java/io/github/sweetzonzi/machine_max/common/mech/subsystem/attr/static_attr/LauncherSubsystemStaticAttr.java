@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BreechModuleAttr;
@@ -27,21 +28,25 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      *
      * @param basicSounds  基础音效（onDestroyed / onActivated / onDeactivated）
      * @param dryFireSound 空膛击发音效（扣扳机但无弹药）
+     * @param fmod 实际开火的可选 FMOD 事件引用
      */
     public record LauncherSoundAttr(
         BasicSoundAttr basicSounds,
-        SoundEvent dryFireSound
+        SoundEvent dryFireSound,
+        Optional<FmodSoundAttr> fmod
     ) {
         public static final LauncherSoundAttr DEFAULT = new LauncherSoundAttr(
             BasicSoundAttr.DEFAULT,
             SoundEvent.createFixedRangeEvent(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.launcher.dry_fire"), 16)
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.launcher.dry_fire"), 16),
+            Optional.empty()
         );
 
         public static final Codec<LauncherSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BasicSoundAttr.basicSounds(LauncherSoundAttr::basicSounds),
             SoundEvent.DIRECT_CODEC.optionalFieldOf("dry_fire", DEFAULT.dryFireSound)
-                .forGetter(LauncherSoundAttr::dryFireSound)
+                .forGetter(LauncherSoundAttr::dryFireSound),
+            FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(LauncherSoundAttr::fmod)
         ).apply(instance, LauncherSoundAttr::new));
     }
 

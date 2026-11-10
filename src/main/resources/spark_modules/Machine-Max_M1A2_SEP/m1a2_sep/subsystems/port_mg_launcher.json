@@ -17,5 +17,11 @@
     "required_tags": [
       "m1a2_sep:caliber/7_62mm"
     ]
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "m1a2_sep:abrams",
+      "event": "event:/mg_762_abrams"
+    }
   }
 }

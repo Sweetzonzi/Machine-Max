@@ -122,6 +122,12 @@
             "range": 16
           }
         },
+        "fmod": {
+          "allOf": [
+            { "$ref": "../../base/fmod_sound.schema.json" }
+          ],
+          "description": "电机持续工况音的可选 FMOD 事件引用，供播放接入。"
+        },
         "working_sounds": {
           "type": "object",
           "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
@@ -135,7 +141,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "子系统基本音效配置。"
+      "description": "电机的生命周期与工况音效配置。"
     }
   },
   "required": ["type", "max_power"],

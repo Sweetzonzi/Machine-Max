@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -10,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 材料属性，按功能分为物理、装甲、音效、粒子四组。
@@ -196,20 +198,27 @@ public record MaterialAttr(
     // ==================== 音效属性 ====================
 
     /**
-     * 材料对应的命中音效。
+     * 材料对应的命中与接地音效配置。
+     *
+     * @param onHitUnPen 未击穿时的命中音效
+     * @param onHitPen 击穿时的命中音效
+     * @param fmod 轮胎使用本材质时的可选 FMOD 接地事件，用于滚动与滑移
      */
     public record MaterialSoundAttr(
             SoundEvent onHitUnPen,
-            SoundEvent onHitPen
+            SoundEvent onHitPen,
+            Optional<FmodSoundAttr> fmod
     ) {
         public static final MaterialSoundAttr DEFAULT = new MaterialSoundAttr(
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_box.hit.up_pen.metal"), 64f),
-                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_box.hit.pen.metal"), 64f)
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_box.hit.pen.metal"), 64f),
+                Optional.empty()
         );
 
         public static final Codec<MaterialSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_un_pen", DEFAULT.onHitUnPen).forGetter(MaterialSoundAttr::onHitUnPen),
-                SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_pen", DEFAULT.onHitPen).forGetter(MaterialSoundAttr::onHitPen)
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_pen", DEFAULT.onHitPen).forGetter(MaterialSoundAttr::onHitPen),
+                FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MaterialSoundAttr::fmod)
         ).apply(instance, MaterialSoundAttr::new));
     }
 

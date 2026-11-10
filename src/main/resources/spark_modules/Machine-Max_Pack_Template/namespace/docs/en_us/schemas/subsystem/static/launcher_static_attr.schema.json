@@ -89,10 +89,16 @@
             "sound_id": "machine_max:subsystem.launcher.dry_fire",
             "range": 16
           }
+        },
+        "fmod": {
+          "allOf": [
+            { "$ref": "../../base/fmod_sound.schema.json" }
+          ],
+          "description": "Optional FMOD firing event reference for future playback integration."
         }
       },
       "additionalProperties": false,
-      "description": "Launcher sound attributes, including basic sounds and dry fire sound."
+      "description": "Launcher sound attributes, including basic sounds, dry fire and an optional FMOD firing event reference."
     },
     "barrel": {
       "type": "object",

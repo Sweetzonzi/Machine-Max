@@ -122,6 +122,12 @@
             "range": 16
           }
         },
+        "fmod": {
+          "allOf": [
+            { "$ref": "../../base/fmod_sound.schema.json" }
+          ],
+          "description": "Optional FMOD event reference for the motor loop, reserved for playback integration."
+        },
         "working_sounds": {
           "type": "object",
           "description": "Manual working sound map. Keys are RPM strings (e.g. \"800\", \"4500.0\"), values are sound events. Uses auto synthesis when empty.",
@@ -135,7 +141,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Basic sound configuration for the subsystem."
+      "description": "Lifecycle and operating sounds for the motor."
     }
   },
   "required": ["type", "max_power"],

@@ -89,10 +89,16 @@
             "sound_id": "machine_max:subsystem.launcher.dry_fire",
             "range": 16
           }
+        },
+        "fmod": {
+          "allOf": [
+            { "$ref": "../../base/fmod_sound.schema.json" }
+          ],
+          "description": "实际开火的可选 FMOD 事件引用。此字段供播放接入使用。"
         }
       },
       "additionalProperties": false,
-      "description": "发射器音效属性，包含基础音效和空膛击发音效。"
+      "description": "发射器音效属性，包含基础音效、空膛击发音效和可选的 FMOD 开火事件引用。"
     },
     "barrel": {
       "type": "object",

@@ -14,5 +14,11 @@
     5,
     0.05,
     0.00001
-  ]
+  ],
+  "sounds": {
+    "fmod": {
+      "bank": "m1a2_sep:abrams",
+      "event": "event:/tank_drive_abrams"
+    }
+  }
 }

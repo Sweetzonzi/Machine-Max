@@ -13,5 +13,11 @@
     "required_tags": [
       "m1a2_sep:caliber/120mm"
     ]
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "m1a2_sep:abrams",
+      "event": "event:/main_gun_abrams"
+    }
   }
 }

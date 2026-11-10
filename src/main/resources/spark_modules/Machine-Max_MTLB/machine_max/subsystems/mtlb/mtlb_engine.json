@@ -10,5 +10,11 @@
   "red_line_rpm": 2100,
   "red_line_torque_ratio": 0.909,
   "inertia": 10, // 曲轴+飞轮实车 1~3 kg·m²；30.96:1 的一挡下 50 会折成 437 t 等效质量
-  "cylinder": 8
+  "cylinder": 8,
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "event": "event:/tank_drive_uni"
+    }
+  }
 }

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.util.sound.MotorSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState;
@@ -14,6 +15,7 @@ import net.minecraft.sounds.SoundEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
@@ -35,14 +37,23 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
     public final List<String> throttleInputKeys;//优先级从高至低
     public final MotorSoundAttr sounds;
 
-    public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds) {
-        public static final MotorSoundAttr DEFAULT = new MotorSoundAttr(BasicSoundAttr.DEFAULT, Map.of());
+    /**
+     * 电机音效配置。
+     *
+     * @param basicSounds 子系统生命周期音效
+     * @param workingSounds 按转速索引的工况音效，空映射表示自动合成
+     * @param fmod 持续工况音的可选 FMOD 事件引用
+     */
+    public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,
+                                 Optional<FmodSoundAttr> fmod) {
+        public static final MotorSoundAttr DEFAULT = new MotorSoundAttr(BasicSoundAttr.DEFAULT, Map.of(), Optional.empty());
 
         public static final Codec<MotorSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(MotorSoundAttr::basicSounds),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
                         .optionalFieldOf("working_sounds", Map.of())
-                        .forGetter(MotorSoundAttr::workingSounds)
+                        .forGetter(MotorSoundAttr::workingSounds),
+                FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MotorSoundAttr::fmod)
         ).apply(instance, MotorSoundAttr::new));
     }
 

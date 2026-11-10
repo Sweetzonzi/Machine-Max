@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/base/fmod_sound.json",
+  "title": "FMOD 事件引用",
+  "type": "object",
+  "properties": {
+    "bank": {
+      "type": "string",
+      "description": "SparkCore 内容包中的 bank ID，例如 machine_max:basic_vehicle_sounds。"
+    },
+    "event": {
+      "type": "string",
+      "pattern": "^event:/.+",
+      "description": "bank 中的 Studio 事件路径，例如 event:/tank_drive_uni。"
+    }
+  },
+  "required": ["bank", "event"],
+  "additionalProperties": false
+}

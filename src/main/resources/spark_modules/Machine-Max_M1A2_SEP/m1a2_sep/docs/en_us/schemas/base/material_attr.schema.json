@@ -113,10 +113,16 @@
           ],
           "description": "Sound event when hit box is hit and penetrated.",
           "default": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
+        },
+        "fmod": {
+          "allOf": [
+            { "$ref": "fmod_sound.schema.json" }
+          ],
+          "description": "Optional FMOD ground contact event for tires using this material, reserved for rolling and slip playback."
         }
       },
       "additionalProperties": false,
-      "description": "Material hit sound configuration."
+      "description": "Material hit and ground contact sound configuration."
     },
     "particles": {
       "type": "object",

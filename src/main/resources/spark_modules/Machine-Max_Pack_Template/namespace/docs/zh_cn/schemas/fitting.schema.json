@@ -48,6 +48,12 @@
       "default": 0.2,
       "description": "节长，单位米。用于由包络周长推导节数 N，并决定渲染时节的排布间距。"
     },
+    "fmod": {
+      "allOf": [
+        { "$ref": "base/fmod_sound.schema.json" }
+      ],
+      "description": "整条履带的可选 FMOD 行驶事件，供滚动与滑移播放接入。"
+    },
     "overwrite": {
       "type": "object",
       "description": "在 material 之上叠加的材质覆写，与碰撞箱使用同一套合并规则。履带读取 physics、armor 与 sounds，命中音取覆写后的材料。",

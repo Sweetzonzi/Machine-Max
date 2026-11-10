@@ -224,23 +224,10 @@
           "additionalProperties": false
         },
         "sounds": {
-          "type": "object",
-          "description": "命中音效覆写。",
-          "properties": {
-            "hit_un_pen": {
-              "allOf": [
-                { "$ref": "../../../base/sound_event.schema.json" }
-              ],
-              "description": "未击穿时的音效。"
-            },
-            "hit_pen": {
-              "allOf": [
-                { "$ref": "../../../base/sound_event.schema.json" }
-              ],
-              "description": "击穿时的音效。"
-            }
-          },
-          "additionalProperties": false
+          "allOf": [
+            { "$ref": "../../../base/material_attr.schema.json#/properties/sounds" }
+          ],
+          "description": "整组替换材料的 sounds。省略此组则使用材料的音效配置。"
         }
       },
       "additionalProperties": false
