@@ -11,8 +11,18 @@ public class RotationSignal extends Signal<Vector3f> {
 
     public static final RotationSignal IDLE = new RotationSignal(0, 0, 0);
 
+    /** 世界稳定轴的运动前馈，单位 rad/s，使用与目标角相同的关节原生符号。 */
+    public final float pitchFeedforward;
+    public final float yawFeedforward;
+
     public RotationSignal(Vector3f value) {
+        this(value, 0f, 0f);
+    }
+
+    public RotationSignal(Vector3f value, float pitchFeedforward, float yawFeedforward) {
         super(value);
+        this.pitchFeedforward = pitchFeedforward;
+        this.yawFeedforward = yawFeedforward;
     }
 
     /**
@@ -21,7 +31,7 @@ public class RotationSignal extends Signal<Vector3f> {
      * @param roll  横滚角（弧度），暂未使用
      */
     public RotationSignal(float pitch, float yaw, float roll) {
-        super(new Vector3f(pitch, yaw, roll));
+        this(new Vector3f(pitch, yaw, roll));
     }
 
     public float getPitch() {

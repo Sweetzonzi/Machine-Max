@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Vector3f;
 import com.jme3.bullet.joints.New6Dof;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
 import net.minecraft.world.phys.Vec2;
 
@@ -24,6 +25,7 @@ import io.github.sweetzonzi.machine_max.common.visual.HudView;
 import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -34,6 +36,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -47,6 +50,9 @@ import java.util.*;
 public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHost {
 
     public final WeaponControllerSubsystemAttr attr;
+
+    @Getter(AccessLevel.NONE)
+    private volatile AimTelemetry aimTelemetry;
 
     /**
      * 通过发现解析出的炮塔驱动子系统及其到达（控制）频道名。整体替换发布，物理线程只读快照。
@@ -220,6 +226,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     @Override
     public void onTick() {
         super.onTick();
+        AimTelemetry recorder = aimTelemetry;
+        if (recorder != null) recorder.csv.flush();
 
         // 延迟重建弹药池：结构变化与执行器发现都在本轮主线程完成，首个 onTick 建池即可；
         // 空结果也替换弹药池，不再周期性重试。
@@ -267,6 +275,11 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         ViewInputSignal input = selectAimInput();
         Vec3 target = input == null ? (debugAutoFire ? targetPosition : null) : input.aimPoint;
         targetPosition = target;
+        AimTelemetry recorder = aimTelemetry;
+        if (recorder != null) {
+            var physics = getPhysicsLevel();
+            recorder.beginStep(physics.getTickCount(), physics.getTps(), input, target);
+        }
         if (!isActive() || isDestroyed() || target == null) {
             pushGuidanceTargets(null);
             releaseAllControl();
@@ -274,7 +287,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
         var staticAttr = attr.staticAttribute;
         float tolDeg = staticAttr.getAimToleranceDeg();
-        driveAim(input == null ? new ViewInputSignal(target, Vec2.ZERO, AimTargetState.Mode.WORLD) : input);
+        driveAim(input == null ? new ViewInputSignal(target, Vec2.ZERO, AimTargetState.Mode.WORLD) : input, recorder);
 
         // ② 筛选瞄准目标的发射器
         List<LauncherSubsystem> aimedLaunchers = new ArrayList<>();
@@ -302,6 +315,51 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
         // ④ 向受控发射器推送制导目标（瞄准点）——在飞制导弹据此持续修正
         pushGuidanceTargets(target);
+    }
+
+    @Override
+    public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
+        AimTelemetry recorder = aimTelemetry;
+        if (recorder != null) {
+            recorder.sampleStep(getPhysicsLevel().getTickCount(), this, turrets.keySet(), launchers.keySet());
+        }
+    }
+
+    /** 主线程为本武器控制器开启服务端瞄准录制。 */
+    public boolean startAimTelemetry() {
+        if (aimTelemetry != null || getLevel().isClientSide()) return false;
+        SubPart host = getSubPart();
+        var part = host.getPart();
+        try {
+            AimTelemetry recorder = new AimTelemetry("aim-" + part.name + "-" + host.name + "-" + getName());
+            aimTelemetry = recorder;
+            MachineMax.LOGGER.info("瞄准录制开始: {}", recorder.csv.path());
+            return true;
+        } catch (IOException failure) {
+            MachineMax.LOGGER.error("瞄准录制创建失败", failure);
+            return false;
+        }
+    }
+
+    /** 主线程排空并关闭录制，返回路径、行数与写入状态。 */
+    @Nullable
+    public String stopAimTelemetry() {
+        AimTelemetry recorder = aimTelemetry;
+        if (recorder == null) return null;
+        aimTelemetry = null;
+        DriveTelemetry csv = recorder.csv;
+        csv.close();
+        String summary = csv.path() + " (" + csv.samples() + " queued, " + csv.dropped() + " dropped)"
+                + (csv.failed() ? " [write failed]" : "");
+        MachineMax.LOGGER.info("瞄准录制结束: {}", summary);
+        return summary;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        stopAimTelemetry();
     }
 
     /**
@@ -833,25 +891,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      *
      * @param input 本步选中的完整目标，角度以弧度表示
      */
-    private void driveAim(ViewInputSignal input) {
+    private void driveAim(ViewInputSignal input, @Nullable AimTelemetry recorder) {
+        float dt = 1f / getPhysicsLevel().getTps();
         for (var entry : turrets.entrySet()) {
             TurretDriverSubsystem driver = entry.getKey();
             if (!driver.isActive() || driver.isDestroyed()) {
                 sendSignalToTarget(entry.getValue(), driver, EmptySignal.INSTANCE);
                 continue;
             }
-            boolean solve = (input.mode.yawStable && driver.hasYawAxis())
-                    || (input.mode.pitchStable && driver.hasPitchAxis());
-            Vector3f angle = solve ? driver.computeAimAngles(input.aimPoint) : new Vector3f();
-            Vector3f relative = driver.computeAimAngles(input.relativeAim);
-            // 只覆盖无稳轴；稳定轴已经包含世界点解算结果，不能重复叠加输入角。
-            if (!input.mode.pitchStable) {
-                angle.x = relative.x;
-            }
-            if (!input.mode.yawStable) {
-                angle.y = relative.y;
-            }
-            sendSignalToTarget(entry.getValue(), driver, new RotationSignal(new Vector3f(angle)));
+            RotationSignal command = driver.computeAimCommand(input, dt);
+            sendSignalToTarget(entry.getValue(), driver, command);
+            if (recorder != null) recorder.recordDemand(driver, command);
         }
     }
 

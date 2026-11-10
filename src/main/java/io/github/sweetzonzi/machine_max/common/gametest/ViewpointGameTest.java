@@ -20,12 +20,14 @@ import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SightSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -142,6 +144,10 @@ public final class ViewpointGameTest {
         controller.onAttach();
         helper.assertTrue(controller.getTurrets().size() == drivers.size() && drivers.size() >= 4,
                 "单个 WC 必须握手发现全部方向机和多个高低机");
+        // 驱动器先执行常规物理回调，随后火控发布的目标也应在同一步写入电机。
+        var subsystems = new SubsystemController(helper.getLevel());
+        subsystems.addSubsystems(new ArrayList<>(drivers));
+        subsystems.addSubsystems(List.of(controller));
         var seatAttr = SeatSubsystemAttr.CODEC.codec().parse(com.mojang.serialization.JsonOps.INSTANCE,
                 com.google.gson.JsonParser.parseString("{\"definition\":\"machine_max:default_3rd_seat\","
                         + "\"locator\":\"probe\",\"control_group_preset\":\"machine_max:default_gunner\"}")).getOrThrow();
@@ -189,7 +195,7 @@ public final class ViewpointGameTest {
                         "机构实际角的正解必须重建炮镜光轴");
             }
             for (int step = 0; step < 5; step++) {
-                controller.onPrePhysicsTick();
+                subsystems.prePhysicsTick();
                 for (var driver : drivers) {
                     verifyServo(helper, driver,
                             new Vector3f(driver.hasYawAxis() && driver.hasPitchAxis() ? -relative.x : relative.x, -relative.y, 0));
@@ -199,7 +205,7 @@ public final class ViewpointGameTest {
             controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
                     new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD));
             return physics(controller, () -> {
-                controller.onPrePhysicsTick();
+                subsystems.prePhysicsTick();
                 for (var driver : drivers) {
                     verifyServo(helper, driver, driver.computeAimAngles(point));
                 }
@@ -207,15 +213,15 @@ public final class ViewpointGameTest {
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
                     new ViewInputSignal(point, relative, AimTargetState.Mode.PITCH_STABLE));
-            return physics(controller, () -> verifyMixedAxes(helper, controller, drivers, point, relative, false));
+            return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, false));
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
                     new ViewInputSignal(point, relative, AimTargetState.Mode.YAW_STABLE));
-            return physics(controller, () -> verifyMixedAxes(helper, controller, drivers, point, relative, true));
+            return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, true));
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(), EmptySignal.INSTANCE);
             return physics(controller, () -> {
-                controller.onPrePhysicsTick();
+                subsystems.prePhysicsTick();
                 for (var driver : drivers) {
                     verifyServo(helper, driver,
                             new Vector3f(driver.hasYawAxis() && driver.hasPitchAxis() ? -relative.x : relative.x, -relative.y, 0));
@@ -224,10 +230,19 @@ public final class ViewpointGameTest {
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("aim_input").put(controller, EmptySignal.INSTANCE);
             return physics(controller, () -> {
-                controller.onPrePhysicsTick();
+                subsystems.prePhysicsTick();
                 for (var driver : drivers) {
                     verifyServo(helper, driver, driver.getRelativeAngle());
                 }
+            });
+        }, server).thenComposeAsync(ignored -> {
+            var driver = drivers.getFirst();
+            var command = new RotationSignal(.35f, .45f, 0);
+            controller.sendSignalToTarget(controller.getTurrets().get(driver), driver, command);
+            return physics(controller, () -> {
+                verifyServo(helper, driver, driver.getRelativeAngle());
+                driver.onPrePhysicsTick();
+                verifyServo(helper, driver, command.getValue());
             });
         }, server);
         // 成功必须在 GameTest 自己的 tick 内报告，批次完成监听器才会推进下一批。
@@ -242,9 +257,9 @@ public final class ViewpointGameTest {
     }
 
     /** 物理线程检查稳定轴各自反解世界点，另一轴接收操作者的绝对累计角。 */
-    private static void verifyMixedAxes(GameTestHelper helper, WeaponControllerSubsystem controller,
+    private static void verifyMixedAxes(GameTestHelper helper, SubsystemController subsystems,
                                         List<TurretDriverSubsystem> drivers, Vec3 point, Vec2 relative, boolean yawStable) {
-        controller.onPrePhysicsTick();
+        subsystems.prePhysicsTick();
         for (var driver : drivers) {
             Vector3f expected = driver.computeAimAngles(point);
             if (yawStable) {
@@ -387,7 +402,6 @@ public final class ViewpointGameTest {
     }
 
     private static void verifyServo(GameTestHelper helper, TurretDriverSubsystem driver, Vector3f expected) {
-        driver.onPrePhysicsTick();
         var joint = (New6Dof) driver.connector.joint;
         if (driver.hasPitchAxis()) {
             helper.assertTrue(Math.abs(joint.getRotationMotor(0).get(MotorParam.ServoTarget) - expected.x) < 1e-5,

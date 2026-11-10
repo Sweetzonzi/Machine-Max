@@ -30,6 +30,7 @@ public class SubsystemController implements ISignalBus {
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
     public final EnergyGrid energyGrid = new EnergyGrid();
+    private static final ThreadLocal<Level> PRE_PHYSICS_LEVEL = new ThreadLocal<>();
 
     // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
     private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
@@ -58,12 +59,24 @@ public class SubsystemController implements ISignalBus {
 
     /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */
     public void prePhysicsTick() {
-        for (AbstractSubsystem subsystem : allSubsystems) {
-            if (subsystem != null) {
-                subsystem.onPrePhysicsTick();
+        Level previous = PRE_PHYSICS_LEVEL.get();
+        PRE_PHYSICS_LEVEL.set(level);
+        try {
+            for (AbstractSubsystem subsystem : allSubsystems) {
+                if (subsystem != null) {
+                    subsystem.onPrePhysicsTick();
+                }
             }
+            energyGrid.prePhysicsTick(getPhysicsTps());
+        } finally {
+            if (previous == null) PRE_PHYSICS_LEVEL.remove();
+            else PRE_PHYSICS_LEVEL.set(previous);
         }
-        energyGrid.prePhysicsTick(getPhysicsTps());
+    }
+
+    /** 同步信号回调用此判据确认当前线程正在为该世界执行子系统的求解前更新。 */
+    static boolean isPrePhysicsTick(Level level) {
+        return PRE_PHYSICS_LEVEL.get() == level;
     }
 
     /** 物理 tick 后调用所有子系统的 onPostPhysicsTick（物理引擎步进后读取反馈） */

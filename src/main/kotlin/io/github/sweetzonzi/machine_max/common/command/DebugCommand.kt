@@ -19,6 +19,11 @@ class DebugCommand : BaseCommand("debug", 4) {
             Commands.literal("telemetry")
                 .then(Commands.literal("start").executes { setTelemetry(it, true) })
                 .then(Commands.literal("stop").executes { setTelemetry(it, false) })
+                .then(
+                    Commands.literal("aim")
+                        .then(Commands.literal("start").executes { setTelemetry(it, true, aim = true) })
+                        .then(Commands.literal("stop").executes { setTelemetry(it, false, aim = true) })
+                )
         )
         builder.then(
             Commands.literal("autofire")
@@ -99,11 +104,9 @@ class DebugCommand : BaseCommand("debug", 4) {
     }
 
     /**
-     * 开/停服务端行车记录仪：把车上每个地面控制器的物理步采样写成 CSV。
-     *
-     * <p>只写服务端文件，客户端不参与；没装录像的载具会收到失败提示。</p>
+     * 主线程为当前乘坐载具开关服务端 CSV 录制。
      */
-    private fun setTelemetry(ctx: CommandContext<CommandSourceStack>, recording: Boolean): Int {
+    private fun setTelemetry(ctx: CommandContext<CommandSourceStack>, recording: Boolean, aim: Boolean = false): Int {
         val source = ctx.source
         val player = source.player ?: run {
             source.sendFailure(Component.literal("This command can only be executed by a player."))
@@ -113,6 +116,7 @@ class DebugCommand : BaseCommand("debug", 4) {
             source.sendFailure(Component.literal("You are not riding a vehicle."))
             return 0
         }
+        if (aim) return setAimTelemetry(source, vehicle, recording)
 
         val controllers = vehicle.subsystemController.allSubsystems
             .filterIsInstance<AbstractGroundControllerSubsystem>()
@@ -142,6 +146,35 @@ class DebugCommand : BaseCommand("debug", 4) {
             { Component.literal("Telemetry STARTED on $started controller(s): logs/machine_max/") },
             false
         )
+        return 1
+    }
+
+    private fun setAimTelemetry(source: CommandSourceStack, vehicle: VehicleCore, recording: Boolean): Int {
+        val controllers = vehicle.subsystemController.allSubsystems.filterIsInstance<WeaponControllerSubsystem>()
+        if (controllers.isEmpty()) {
+            source.sendFailure(Component.literal("No weapon controller subsystem found on this vehicle."))
+            return 0
+        }
+        if (recording) {
+            val started = controllers.count { it.startAimTelemetry() }
+            if (started == 0) {
+                source.sendFailure(Component.literal("Could not start aim telemetry. Check active recordings and the server log."))
+                return 0
+            }
+            source.sendSuccess(
+                { Component.literal("Aim telemetry STARTED on $started controller(s): logs/machine_max/") },
+                false
+            )
+        } else {
+            val summaries = controllers.mapNotNull { it.stopAimTelemetry() }
+            if (summaries.isEmpty()) {
+                source.sendFailure(Component.literal("Aim telemetry is not recording."))
+                return 0
+            }
+            for (summary in summaries) {
+                source.sendSuccess({ Component.literal("Aim telemetry closed: $summary") }, false)
+            }
+        }
         return 1
     }
 

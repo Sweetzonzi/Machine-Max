@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/** 行车及乘车记录的目录与日志适配；排队和写盘由公共 QueuedCsvWriter 承担。 */
+/** 调试记录的目录与日志适配，排队和写盘由 QueuedCsvWriter 承担。 */
 public final class DriveTelemetry implements AutoCloseable {
     private final QueuedCsvWriter channel;
     private final long startedAtNanos = System.nanoTime();
@@ -44,4 +44,6 @@ public final class DriveTelemetry implements AutoCloseable {
     public Path path() { return channel.path(); }
     public long samples() { return channel.samples(); }
     public long elapsedMillis() { return (System.nanoTime() - startedAtNanos) / 1_000_000L; }
+    long dropped() { return channel.dropped(); }
+    boolean failed() { return channel.failed(); }
 }

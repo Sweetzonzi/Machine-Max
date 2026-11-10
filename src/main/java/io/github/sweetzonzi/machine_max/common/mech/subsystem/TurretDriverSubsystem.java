@@ -4,13 +4,17 @@ import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.joints.motors.RotationMotor;
+import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import jme3utilities.math.MyMath;
@@ -104,6 +108,20 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
+        applyServoTarget();
+    }
+
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalResult result = super.onSignalUpdated(channelName, sender);
+        if (getAcceptedChannels().contains(channelName) && SubsystemController.isPrePhysicsTick(getLevel())) {
+            applyServoTarget();
+        }
+        return result;
+    }
+
+    /** 物理线程在求解前按输入优先级应用伺服目标或空闲锁止角。 */
+    private void applyServoTarget() {
         if (this.connector == null || !(this.connector.joint instanceof New6Dof joint)) return;
         if (joint.getRotationOrder() != RotationOrder.YXZ) joint.setRotationOrder(RotationOrder.YXZ);
 
@@ -113,8 +131,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             //   rotationMotor[1] = YR = 偏航(Yaw)
             // 旋转顺序 YXZ 保证 Yaw 先于 Pitch 应用，两轴解耦
 
-            // 从 Map 按优先级读取目标角度，替代旧的信号轮询
-            Vector3f target = getTargetAngle();
+            RotationSignal target = getTarget();
 
             if (target != null) {
                 // 有控制器接管：解除锁止，跟随其下发的目标角
@@ -125,29 +142,49 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             }
 
             // 伺服目标：有控制器时跟随其目标角，空闲时锁定在固定的锁止角上
-            Vector3f servoAngle = target != null ? target : lockedAngle;
+            Vector3f servoAngle = target != null ? target.getValue() : lockedAngle;
+            float pitchRate = target != null ? target.pitchFeedforward : 0f;
+            float yawRate = target != null ? target.yawFeedforward : 0f;
+            float rateToAngle = 0f;
+            if (pitchRate != 0f || yawRate != 0f) {
+                var physics = getPhysicsLevel();
+                // Spring2 用有效 MotorErp / dt 把角差换成请求角速度。当前关节沿用世界的 jointErp。
+                // 前馈做逆换算，实际跟随能力由求解器根据两端惯量和该轴的力矩上限决定。
+                float erp = physics.getWorld().getSolverInfo().jointErp();
+                if (erp > 0f) rateToAngle = 1f / (physics.getTps() * erp);
+            }
 
             // 每刻都显式使能马达与伺服：关节重载后为新建对象，马达默认关闭时伺服完全无效
             if (hasYaw) {
-                // servoAngle.y = yaw
-                RotationMotor yawMotor = joint.getRotationMotor(1);
-                yawMotor.setMotorEnabled(true);
-                yawMotor.setServoEnabled(true);
-                yawMotor.set(MotorParam.ServoTarget, servoAngle.y);
-                yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
-                yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
+                applyAxis(joint.getRotationMotor(1), servoAngle.y, yawRate, rateToAngle, yawMaxSpeed, yawMaxForce);
             }
 
             if (hasPitch) {
-                // servoAngle.x = pitch
-                RotationMotor pitchMotor = joint.getRotationMotor(0);
-                pitchMotor.setMotorEnabled(true);
-                pitchMotor.setServoEnabled(true);
-                pitchMotor.set(MotorParam.ServoTarget, servoAngle.x);
-                pitchMotor.set(MotorParam.TargetVelocity, pitchMaxSpeed);
-                pitchMotor.set(MotorParam.MaxMotorForce, pitchMaxForce);
+                applyAxis(joint.getRotationMotor(0), servoAngle.x, pitchRate, rateToAngle, pitchMaxSpeed, pitchMaxForce);
             }
         }
+    }
+
+    private static void applyAxis(RotationMotor motor, float angle, float rate, float rateToAngle,
+                                  float maxSpeed, float maxForce) {
+        if (rate != 0f && Float.isFinite(rate) && Float.isFinite(rateToAngle) && rateToAngle > 0f && maxSpeed > 0f) {
+            float advance = Math.clamp(rate, -maxSpeed, maxSpeed) * rateToAngle;
+            float lower = motor.get(MotorParam.LowerLimit);
+            float upper = motor.get(MotorParam.UpperLimit);
+            // 反序上下限表示连续轴。有限轴先把几何角归到行程所在圈，再限幅。
+            if (lower <= upper) {
+                float center = (lower + upper) * 0.5f;
+                float branch = center + (float) Math.IEEEremainder(angle - center, 2 * Math.PI);
+                angle = Math.clamp(branch + advance, lower, upper);
+            } else {
+                angle += advance;
+            }
+        }
+        motor.setMotorEnabled(true);
+        motor.setServoEnabled(true);
+        motor.set(MotorParam.ServoTarget, angle);
+        motor.set(MotorParam.TargetVelocity, maxSpeed);
+        motor.set(MotorParam.MaxMotorForce, maxForce);
     }
 
     @Override
@@ -220,14 +257,41 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      * @return Vector3f(pitch, yaw, 0) 单位弧度
      */
     public Vector3f computeAimAngles(Vec3 targetWorldPos) {
+        return computeAimAngles(targetWorldPos, 0f);
+    }
+
+    /**
+     * 物理线程用同一个世界点计算当前与下一步的几何角。差分只包含机构运动，
+     * 适用于独立方向机、独立高低机和双轴一体，且无稳轴的相对角指令取零前馈。
+     */
+    RotationSignal computeAimCommand(ViewInputSignal input, float dt) {
+        boolean stabilizePitch = hasPitch && input.mode.pitchStable;
+        boolean stabilizeYaw = hasYaw && input.mode.yawStable;
+        Vector3f angle = computeAimAngles(input.relativeAim);
+        if (!stabilizePitch && !stabilizeYaw) return new RotationSignal(angle);
+
+        Vector3f current = computeAimAngles(input.aimPoint);
+        Vector3f next = computeAimAngles(input.aimPoint, dt);
+        if (stabilizePitch) angle.x = current.x;
+        if (stabilizeYaw) angle.y = current.y;
+        return new RotationSignal(angle, stabilizePitch ? (next.x - current.x) / dt : 0f,
+                stabilizeYaw ? (float) (Math.IEEEremainder(next.y - current.y, 2 * Math.PI) / dt) : 0f);
+    }
+
+    private Vector3f computeAimAngles(Vec3 targetWorldPos, float predictionTime) {
         if (connector == null || connector.joint == null) {
             return new Vector3f();
         }
+        var joint = connector.joint;
         // ① 关节枢轴在 bodyA 局部空间的位置 → 转换到世界空间
-        Vector3f pivotLocal = new Vector3f();
-        connector.joint.getPivotA(pivotLocal);
-        Transform bodyATf = connector.joint.getBodyA().getTransform(null);
-        Vector3f pivotWorld = MyMath.transform(bodyATf, pivotLocal, null);
+        Transform bodyATf = joint.getBodyA().getTransform(null);
+        Transform bodyBTf = joint.getBodyB().getTransform(null);
+        if (predictionTime > 0f) {
+            // 枢轴跟随 bodyA 的平移和旋转。独立高低机参考 A，其余轴参考 B。
+            predictPose(joint.getBodyA(), bodyATf, predictionTime);
+            if (hasYaw) predictPose(joint.getBodyB(), bodyBTf, predictionTime);
+        }
+        Vector3f pivotWorld = MyMath.transform(bodyATf, joint.getPivotA(null), null);
 
         // ② 世界方向 = 目标 - 枢轴
         Vector3f worldDir = new Vector3f(
@@ -238,7 +302,6 @@ public class TurretDriverSubsystem extends BasicSubsystem {
 
         // ③ 转换到 bodyB 局部空间，用于偏航（yaw）计算
         //    bodyB 在偏航轴上是不动参考体（车体），偏航角始终在 bodyB 空间中度量
-        Transform bodyBTf = connector.joint.getBodyB().getTransform(null);
         Quaternion bodyBRot = bodyBTf.getRotation();
         Vector3f localDirB = new Vector3f();
         try {
@@ -271,6 +334,17 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         return new Vector3f(pitch, yaw, 0f);
     }
 
+    private static void predictPose(PhysicsRigidBody body, Transform pose, float dt) {
+        pose.getTranslation().addLocal(body.getLinearVelocity(null).multLocal(dt));
+        Vector3f omega = body.getAngularVelocity(null);
+        float speed = omega.length();
+        if (speed > 0f) {
+            // 刚体角速度在世界系，所以增量旋转从左侧乘到现有姿态。
+            Quaternion delta = new Quaternion().fromAngleNormalAxis(speed * dt, omega.multLocal(1f / speed));
+            pose.setRotation(delta.mult(pose.getRotation()));
+        }
+    }
+
     /**
      * 获取关节枢轴（旋转中心）在世界空间中的位置。
      */
@@ -290,15 +364,15 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      * 请求由火控以 {@link RotationSignal} 写入本子系统的输入槽；{@link io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal}
      * 表示该来源已释放。结构变化后输入槽被清空，无需逐个目标调用释放。
      *
-     * @return 最高优先级的有效目标角度，null = 无控制器持有控制权
+     * @return 最高优先级的完整控制指令，null = 无控制器持有控制权
      */
     @Nullable
-    private Vector3f getTargetAngle() {
+    private RotationSignal getTarget() {
         for (String channel : attr.staticAttribute.getControlInputs()) {
             SignalChannel values = getSignalInputChannels().get(channel);
             if (values == null) continue;
             for (Object value : values.values()) {
-                if (value instanceof RotationSignal signal) return signal.getValue();
+                if (value instanceof RotationSignal signal) return signal;
             }
         }
         return null;
