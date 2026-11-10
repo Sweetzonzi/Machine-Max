@@ -282,6 +282,10 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             clearInputSignals();
         }
         this.controlGroupSet = cgs != null ? cgs : ControlGroupSet.EMPTY;
+        // 座位在构造器里就装载预设，此时同一 SubPart 中排在它后面的子系统还没建出来，
+        // 按名解析只会落空。目标表以 attach 为界构建：构造期只记录配置，attach 之后
+        // （含运行期换组与面板编辑）才重建首跳表与按组发现，onAttach 会再走一遍这里。
+        if (!isAttached()) return;
         setTargetFromNames();
         resolveWeaponControllers();
     }

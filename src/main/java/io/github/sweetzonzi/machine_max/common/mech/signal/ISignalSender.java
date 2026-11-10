@@ -237,7 +237,10 @@ public interface ISignalSender {
             } else if (ports.containsKey(targetName)) {
                 SignalPort signalPort = ports.get(targetName);
                 targets.add(signalPort);
-            } else MachineMax.LOGGER.error("未在部件内找到目标端口、子系统或交互区: {}", targetName);
+            } else MachineMax.LOGGER.error("未在部件内找到目标端口、子系统或交互区: {}（发送者 {}，所在 SubPart {}）",
+                    targetName,
+                    this instanceof AbstractSubsystem subsystem ? subsystem.getName() : getClass().getSimpleName(),
+                    ownerPart.name);
         }
         return targets;
     }
