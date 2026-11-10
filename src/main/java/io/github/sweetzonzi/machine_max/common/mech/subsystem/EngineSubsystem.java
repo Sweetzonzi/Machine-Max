@@ -15,15 +15,13 @@ import io.github.sweetzonzi.machine_max.util.control.PDController;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BooleanSupplier;
 
 public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer, ITorqueProvider {
     public final EngineSubsystemAttr attr;
@@ -41,7 +39,6 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     private final @Nullable FmodSoundAttr fmodSound;
     private @Nullable UUID fmodVoice;
     private boolean fmodAttempted;
-    private static volatile BooleanSupplier clientInteriorListener = () -> false;
     private static final int RETRIGGER_TICKS = 20;
 
     /**
@@ -84,9 +81,8 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     @Override
     public void onTick() {
         super.onTick();
-        Level level = getSubPart().getLevel();
-        if (level.isClientSide()) {
-            tickClientSound(level);
+        if (getLevel().isClientSide()) {
+            tickClientSound();
         } else if (fmodSound != null) {
             getSynchedData().set(SOUND_THROTTLE_ID, soundThrottle);
         }
@@ -96,20 +92,16 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     }
 
     /** 客户端主线程更新持续工况音，每台活跃引擎只选择一条播放路径。 */
-    private void tickClientSound(Level level) {
+    private void tickClientSound() {
         if (!isActive()) {
-            if (fmodVoice != null) fadeFmodSound(level, fmodVoice);
+            if (fmodVoice != null) fadeFmodSound(fmodVoice);
             fmodVoice = null;
             fmodAttempted = false;
             clearChannelWeights();
             return;
         }
         double rpm = Math.abs(30 * getRotSpeed() / Math.PI);
-        if (fmodSound != null && tickFmodSound(level, fmodSound, rpm)) {
-            // 每个客户端 tick 读取当前听者。车内混音是可选参数，写入失败时继续播放。
-            setFmodParameter(level, fmodVoice, "interior", clientInteriorListener.getAsBoolean() ? 1f : 0f);
-            return;
-        }
+        if (fmodSound != null && tickFmodSound(fmodSound, rpm)) return;
 
         // FMOD 不可用时才为已配置 FMOD 的引擎准备旧采样或合成工况音。
         EngineSubsystemStaticAttr staticAttr = attr.getStaticAttribute();
@@ -120,14 +112,14 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         EngineSubsystemStaticAttr.RpmWorkingStates candidates = staticAttr.getAdjacentWorkingStates(rpm);
         if (candidates.center() != EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) {
             updateTwoChannelWeightsByRpm(rpm, candidates);
-            tickSoundChannels(level, SoundSource.PLAYERS, tickCount, 8, 8);
+            tickSoundChannels(SoundSource.PLAYERS, tickCount, 8, 8);
         } else {
             clearChannelWeights();
         }
     }
 
     /** 将实际转速映射到 Studio 的 0–100，以服务端同步的油门开度驱动 load。 */
-    private boolean tickFmodSound(Level level, FmodSoundAttr sound, double rpm) {
+    private boolean tickFmodSound(FmodSoundAttr sound, double rpm) {
         EngineSubsystemStaticAttr staticAttr = attr.getStaticAttribute();
         double rpmSpan = staticAttr.redLineRpm - staticAttr.idleRpm;
         if (!(rpmSpan > 0) || !Double.isFinite(rpm)) return fmodVoice != null;
@@ -137,19 +129,20 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         // 一次激活只尝试启动一次。已结束或失效的实例直接交回原有工况音路径。
         if (!fmodAttempted) {
             fmodAttempted = true;
-            fmodVoice = tryPlayFmodSound(level, sound.bank(), sound.event(), SoundSource.PLAYERS,
+            fmodVoice = tryPlayFmodSound(sound.bank(), sound.event(), SoundSource.PLAYERS,
                     Map.of("rpm", soundRpm, "load", load));
-        } else if (fmodVoice != null && (!setFmodParameter(level, fmodVoice, "rpm", soundRpm)
-                || !setFmodParameter(level, fmodVoice, "load", load))) {
-            stopFmodSound(level, fmodVoice);
+        } else if (fmodVoice != null && (!setFmodParameter(fmodVoice, "rpm", soundRpm)
+                || !setFmodParameter(fmodVoice, "load", load))) {
+            stopFmodSound(fmodVoice);
             fmodVoice = null;
         }
         return fmodVoice != null;
     }
 
-    /** 客户端入口注入本地听者判定，共通引擎代码通过回调采样。 */
-    public static void setClientInteriorListener(BooleanSupplier listener) {
-        clientInteriorListener = listener;
+    /** 工况音沿用 Launcher 的车内混音判定，由播放端读取当前听者。 */
+    @Override
+    public boolean shouldApplyInteriorEffect(@Nullable Entity listener, boolean firstPerson) {
+        return isInteriorListener(listener, firstPerson);
     }
 
     /** 主线程移除部件时，先停止仍在播放的 FMOD 工况音。 */
@@ -161,7 +154,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
 
     /** 客户端主线程停止 FMOD 工况音，重新载入区块时可再尝试启动。 */
     public void stopClientFmodSound() {
-        if (fmodVoice != null) stopFmodSound(getLevel(), fmodVoice);
+        if (fmodVoice != null) stopFmodSound(fmodVoice);
         fmodVoice = null;
         fmodAttempted = false;
     }
@@ -421,23 +414,23 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     }
 
     @Override
-    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getPosition(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getPosition());
     }
 
     @Override
-    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getSpeed(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 
     @Override
-    public float getMasterVolume(UUID uuid, SoundEvent event) {
+    public float getMasterVolume(UUID uuid) {
         if (getSubPart().isRemoved() || !isActive()) return 0f;
         return 0.3f + 0.7f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
     }
 
     @Override
-    public float getPitch(UUID uuid, SoundEvent event) {
+    public float getPitch(UUID uuid) {
         SoundChannel channel = getChannel(uuid);
         if (channel == null) return 1f;
         WorkingState state = channelStates.get(channel.getChannelKey());

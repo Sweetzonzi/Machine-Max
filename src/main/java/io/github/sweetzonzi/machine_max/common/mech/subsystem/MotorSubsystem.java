@@ -14,7 +14,6 @@ import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -73,7 +72,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
             MotorSubsystemStaticAttr.RpmWorkingStates candidates = attr.getStaticAttribute().getAdjacentWorkingStates(rpm);
             if (candidates.center() != MotorSubsystemStaticAttr.EMPTY_WORKING_STATE) {
                 updateTwoChannelWeightsByRpm(rpm, candidates);
-                tickSoundChannels(level, SoundSource.PLAYERS, tickCount, 8, 8);
+                tickSoundChannels(SoundSource.PLAYERS, tickCount, 8, 8);
             } else {
                 clearChannelWeights();
             }
@@ -341,17 +340,17 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     @Override
-    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getPosition(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getPosition());
     }
 
     @Override
-    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getSpeed(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 
     @Override
-    public float getMasterVolume(UUID uuid, SoundEvent event) {
+    public float getMasterVolume(UUID uuid) {
         if (getSubPart().isRemoved() || !isActive()) return 0f;
         float throttleFactor = 0.3f + 0.7f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
         double rpm = Math.abs(30 * getRotSpeed() / Math.PI);
@@ -362,7 +361,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     @Override
-    public float getPitch(UUID uuid, SoundEvent event) {
+    public float getPitch(UUID uuid) {
         SoundChannel channel = getChannel(uuid);
         if (channel == null) return 1f;
         WorkingState state = channelStates.get(channel.getChannelKey());

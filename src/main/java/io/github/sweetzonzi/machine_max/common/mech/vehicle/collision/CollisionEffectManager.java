@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.collision;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -208,24 +207,24 @@ public class CollisionEffectManager implements ISoundSpreader {
             if (isTrackOwned()) {
                 // 履带成员不自带轮面音：只上报接地与对地速度，由履带合成一条音效
                 subPart.trackLink.reportWheelContact(horizontalSpeed(), wheelSnap.worldContactPoint());
-                fadeOutWheelSoundIfNeeded(level);
-                fadeOutSlipSoundIfNeeded(level);
+                fadeOutWheelSoundIfNeeded();
+                fadeOutSlipSoundIfNeeded();
             } else {
                 updateContinuousSound(wheelSnap, true);
-                if (slipping) updateSlipSound(level, wheelSnap);
-                else fadeOutSlipSoundIfNeeded(level);
+                if (slipping) updateSlipSound(wheelSnap);
+                else fadeOutSlipSoundIfNeeded();
             }
             if (slipping) spawnDriftSmoke(level, wheelSnap);
         } else {
-            fadeOutWheelSoundIfNeeded(level);
-            fadeOutSlipSoundIfNeeded(level);
+            fadeOutWheelSoundIfNeeded();
+            fadeOutSlipSoundIfNeeded();
         }
 
         if (bodySnap != null) {
             spawnCollisionParticles(bodySnap);
             updateContinuousSound(bodySnap, false);
         } else {
-            fadeOutBodySoundIfNeeded(level);
+            fadeOutBodySoundIfNeeded();
         }
     }
 
@@ -269,8 +268,7 @@ public class CollisionEffectManager implements ISoundSpreader {
      * </ul>
      */
     private void updateContinuousSound(CollisionSnapshot snap, boolean isWheel) {
-        Level level = subPart.getLevel();
-        if (!level.isClientSide()) return;
+        if (!getLevel().isClientSide()) return;
 
         UUID currentUuid = isWheel ? activeWheelSoundUuid : activeBodySoundUuid;
 
@@ -278,8 +276,8 @@ public class CollisionEffectManager implements ISoundSpreader {
         float effectiveSpeed = getEffectiveSpeed(snap);
         if (effectiveSpeed < 0.5f) {
             if (currentUuid != null) {
-                if (isWheel) fadeOutWheelSoundIfNeeded(level);
-                else fadeOutBodySoundIfNeeded(level);
+                if (isWheel) fadeOutWheelSoundIfNeeded();
+                else fadeOutBodySoundIfNeeded();
             }
             return;
         }
@@ -294,11 +292,11 @@ public class CollisionEffectManager implements ISoundSpreader {
 
         if (currentUuid == null) {
             //首次播放，淡入4tick，后续准备淡出8tick，循环播放
-            UUID uuid = playSpreadingSound(level, sound, SoundSource.BLOCKS, 4, 8, true);
+            UUID uuid = playSpreadingSound(sound, SoundSource.BLOCKS, 4, 8, true);
             setActiveSoundState(isWheel, uuid, blockKey);
         } else if (materialChanged) {
             //材质切换，旧音效淡出8tick + 新音效淡入4tick
-            UUID uuid = transitionSound(level, currentUuid, sound, SoundSource.BLOCKS, 4, 8, true);
+            UUID uuid = transitionSound(currentUuid, sound, SoundSource.BLOCKS, 4, 8, true);
             setActiveSoundState(isWheel, uuid, blockKey);
         }
 
@@ -381,9 +379,9 @@ public class CollisionEffectManager implements ISoundSpreader {
     /**
      * 本 tick 无轮胎类碰撞，淡出并清理轮胎音效状态。
      */
-    private void fadeOutWheelSoundIfNeeded(Level level) {
+    private void fadeOutWheelSoundIfNeeded() {
         if (activeWheelSoundUuid != null) {
-            SpreadingSoundHelper.fadeSound(level, activeWheelSoundUuid);
+            fadeSound(activeWheelSoundUuid);
             activeWheelSoundUuid = null;
             activeWheelBlockKey = null;
             currentWheelVolume = 0f;
@@ -394,9 +392,9 @@ public class CollisionEffectManager implements ISoundSpreader {
     /**
      * 本 tick 无车体类碰撞，淡出并清理车体音效状态。
      */
-    private void fadeOutBodySoundIfNeeded(Level level) {
+    private void fadeOutBodySoundIfNeeded() {
         if (activeBodySoundUuid != null) {
-            SpreadingSoundHelper.fadeSound(level, activeBodySoundUuid);
+            fadeSound(activeBodySoundUuid);
             activeBodySoundUuid = null;
             activeBodyBlockKey = null;
             currentBodyVolume = 0f;
@@ -418,9 +416,9 @@ public class CollisionEffectManager implements ISoundSpreader {
      * 更新轮胎额外漂移音效（TIRE_EXTRA_SLIP）。
      * 仅在滑移率超过阈值时调用，作为主轮胎音效的叠加层。
      */
-    private void updateSlipSound(Level level, CollisionSnapshot snap) {
+    private void updateSlipSound(CollisionSnapshot snap) {
         if (activeSlipSoundUuid == null) {
-            UUID uuid = playSpreadingSound(level, TIRE_EXTRA_SLIP, SoundSource.BLOCKS, 4, 8, true);
+            UUID uuid = playSpreadingSound(TIRE_EXTRA_SLIP, SoundSource.BLOCKS, 4, 8, true);
             activeSlipSoundUuid = uuid;
         }
         updateSlipSoundLevel(snap);
@@ -448,9 +446,9 @@ public class CollisionEffectManager implements ISoundSpreader {
     /**
      * 本 tick 无滑移触发或轮胎未碰撞，淡出并清理漂移音效状态。
      */
-    private void fadeOutSlipSoundIfNeeded(Level level) {
+    private void fadeOutSlipSoundIfNeeded() {
         if (activeSlipSoundUuid != null) {
-            SpreadingSoundHelper.fadeSound(level, activeSlipSoundUuid);
+            fadeSound(activeSlipSoundUuid);
             activeSlipSoundUuid = null;
             currentSlipVolume = 0f;
             currentSlipPitch = 1f;
@@ -461,11 +459,17 @@ public class CollisionEffectManager implements ISoundSpreader {
      * 停止所有正在播放的音效（部件被销毁时调用）。
      */
     public void stopAll() {
-        Level level = subPart.getLevel();
-        if (!level.isClientSide()) return;
-        fadeOutWheelSoundIfNeeded(level);
-        fadeOutBodySoundIfNeeded(level);
-        fadeOutSlipSoundIfNeeded(level);
+        if (!getLevel().isClientSide()) return;
+        fadeOutWheelSoundIfNeeded();
+        fadeOutBodySoundIfNeeded();
+        fadeOutSlipSoundIfNeeded();
+    }
+
+    /** 持续摩擦音属于发生碰撞的子部件所在世界。 */
+    @NotNull
+    @Override
+    public Level getLevel() {
+        return subPart.getLevel();
     }
 
     /**
@@ -573,7 +577,7 @@ public class CollisionEffectManager implements ISoundSpreader {
      */
     @NotNull
     @Override
-    public Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public Vec3 getPosition(UUID uuid) {
         if (uuid.equals(activeWheelSoundUuid) || uuid.equals(activeSlipSoundUuid)) {
             var snap = latestWheelSnapshot;
             if (snap != null && snap.worldContactPoint() != null)
@@ -592,7 +596,7 @@ public class CollisionEffectManager implements ISoundSpreader {
      */
     @NotNull
     @Override
-    public Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public Vec3 getSpeed(UUID uuid) {
         return Vec3.ZERO;
     }
 
@@ -600,7 +604,7 @@ public class CollisionEffectManager implements ISoundSpreader {
      * 返回声源的实时音量，由 updateSoundLevel 每 tick 根据碰撞速度更新。
      */
     @Override
-    public float getVolume(UUID uuid, SoundEvent event) {
+    public float getVolume(UUID uuid) {
         if (uuid.equals(activeWheelSoundUuid)) return currentWheelVolume;
         if (uuid.equals(activeBodySoundUuid)) return currentBodyVolume;
         if (uuid.equals(activeSlipSoundUuid)) return currentSlipVolume;
@@ -611,7 +615,7 @@ public class CollisionEffectManager implements ISoundSpreader {
      * 返回声源的实时音高，由 updateSoundLevel 每 tick 根据有效速度动态计算。
      */
     @Override
-    public float getPitch(UUID uuid, SoundEvent event) {
+    public float getPitch(UUID uuid) {
         if (uuid.equals(activeWheelSoundUuid)) return currentWheelPitch;
         if (uuid.equals(activeBodySoundUuid)) return currentBodyPitch;
         if (uuid.equals(activeSlipSoundUuid)) return currentSlipPitch;

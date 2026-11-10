@@ -1,9 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 
-import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionEffectManager;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -36,6 +34,7 @@ public class TrackAudio implements ISoundSpreader {
     private static final float SLIP_FULL_SPEED = 8f;
     private static final float SLIP_MAX_VOLUME = 0.35f;
 
+    private final Level level;
     private UUID rollUuid;
     private UUID slipUuid;
     private float rollVolume;
@@ -45,6 +44,17 @@ public class TrackAudio implements ISoundSpreader {
     private double positionX;
     private double positionY;
     private double positionZ;
+
+    TrackAudio(Level level) {
+        this.level = level;
+    }
+
+    /** 履带音效与所属载具共用一个世界。 */
+    @NotNull
+    @Override
+    public Level getLevel() {
+        return level;
+    }
 
     /**
      * 主线程：按本 tick 的接地与速度状态更新两层音效。
@@ -56,7 +66,7 @@ public class TrackAudio implements ISoundSpreader {
      * @param centerY    接地接触点形心
      * @param centerZ    接地接触点形心
      */
-    void tick(Level level, boolean contact, float beltSpeed, float slip,
+    void tick(boolean contact, float beltSpeed, float slip,
               float centerX, float centerY, float centerZ) {
         positionX = centerX;
         positionY = centerY;
@@ -67,45 +77,45 @@ public class TrackAudio implements ISoundSpreader {
 
         if (contact) {
             if (rollUuid == null) {
-                rollUuid = playSpreadingSound(level, CollisionEffectManager.TIRE_METAL,
+                rollUuid = playSpreadingSound(CollisionEffectManager.TIRE_METAL,
                         SoundSource.BLOCKS, 4, 8, true);
             }
             rollVolume = speedRatio * ROLL_MAX_VOLUME;
             rollPitch = 0.8f + 0.4f * speedRatio;
         } else {
-            fadeRoll(level);
+            fadeRoll();
         }
 
         if (contact && slip > SLIP_FLOOR) {
             if (slipUuid == null) {
-                slipUuid = playSpreadingSound(level, CollisionEffectManager.TIRE_EXTRA_SLIP,
+                slipUuid = playSpreadingSound(CollisionEffectManager.TIRE_EXTRA_SLIP,
                         SoundSource.BLOCKS, 4, 8, true);
             }
             slipVolume = slipAmount * SLIP_MAX_VOLUME;
             slipPitch = 0.85f + 0.5f * slipAmount;
         } else {
-            fadeSlip(level);
+            fadeSlip();
         }
     }
 
     /** 主线程：履带被移除 / 解散时停掉两层音效。 */
-    void stop(Level level) {
-        fadeRoll(level);
-        fadeSlip(level);
+    void stop() {
+        fadeRoll();
+        fadeSlip();
     }
 
-    private void fadeRoll(Level level) {
+    private void fadeRoll() {
         if (rollUuid != null) {
-            SpreadingSoundHelper.fadeSound(level, rollUuid);
+            fadeSound(rollUuid);
             rollUuid = null;
             rollVolume = 0f;
             rollPitch = 1f;
         }
     }
 
-    private void fadeSlip(Level level) {
+    private void fadeSlip() {
         if (slipUuid != null) {
-            SpreadingSoundHelper.fadeSound(level, slipUuid);
+            fadeSound(slipUuid);
             slipUuid = null;
             slipVolume = 0f;
             slipPitch = 1f;
@@ -114,25 +124,25 @@ public class TrackAudio implements ISoundSpreader {
 
     @NotNull
     @Override
-    public Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public Vec3 getPosition(UUID uuid) {
         return new Vec3(positionX, positionY, positionZ);
     }
 
     @NotNull
     @Override
-    public Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public Vec3 getSpeed(UUID uuid) {
         return Vec3.ZERO;
     }
 
     @Override
-    public float getVolume(UUID uuid, SoundEvent event) {
+    public float getVolume(UUID uuid) {
         if (uuid.equals(rollUuid)) return rollVolume;
         if (uuid.equals(slipUuid)) return slipVolume;
         return 0f;
     }
 
     @Override
-    public float getPitch(UUID uuid, SoundEvent event) {
+    public float getPitch(UUID uuid) {
         if (uuid.equals(rollUuid)) return rollPitch;
         if (uuid.equals(slipUuid)) return slipPitch;
         return 1f;

@@ -747,15 +747,15 @@ public class TrackLink {
         Level level = vehicle.level;
         long now = level.getGameTime();
         boolean contact = contactTick >= 0 && now - contactTick <= CONTACT_GRACE_TICKS;
-        if (audio == null) audio = new TrackAudio();
+        if (audio == null) audio = new TrackAudio(level);
         float inv = contactCount > 0 ? 1f / contactCount : 0f;
-        audio.tick(level, contact, beltSpeed(), contactSlip,
+        audio.tick(contact, beltSpeed(), contactSlip,
                 contactCentroidSum.x * inv, contactCentroidSum.y * inv, contactCentroidSum.z * inv);
     }
 
     private void stopAudio() {
         TrackAudio current = audio;
-        if (current != null) current.stop(vehicle.level);
+        if (current != null) current.stop();
     }
 
     /** 主动轮在车体上的对偶：本履带成员之外的第一个连接对象。 */

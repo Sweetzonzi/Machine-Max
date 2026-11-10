@@ -1045,7 +1045,7 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
      */
     private void playProgressSound(@Nullable SoundEvent sound) {
         if (sound == null || !getLevel().isClientSide()) return;
-        playSpreadingSound(getLevel(), sound, SoundSource.NEUTRAL);
+        playSpreadingSound(sound, SoundSource.NEUTRAL);
     }
 
     /**
@@ -1150,12 +1150,12 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
     }
 
     @Override
-    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getPosition(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getPosition());
     }
 
     @Override
-    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public @NotNull Vec3 getSpeed(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 }

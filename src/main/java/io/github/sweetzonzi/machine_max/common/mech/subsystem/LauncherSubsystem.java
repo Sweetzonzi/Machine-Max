@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -1067,14 +1066,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         // 淡出连射循环音效
         if (currentAutoFireUuid != null) {
-            SpreadingSoundHelper.fadeSound(getLevel(), currentAutoFireUuid);
+            fadeSound(currentAutoFireUuid);
             currentAutoFireUuid = null;
             currentFireRateTierKey = null;
         }
 
         // 淡出弹壳循环音效
         if (currentShellSoundUuid != null) {
-            SpreadingSoundHelper.fadeSound(getLevel(), currentShellSoundUuid);
+            fadeSound(currentShellSoundUuid);
             currentShellSoundUuid = null;
             currentShellRateTierKey = null;
         }
@@ -1084,13 +1083,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (ammo != null) {
             SoundEvent ceaseSound = ammo.getCeaseFireSound();
             if (ceaseSound != null && ceaseSound != ProjectileType.ProjectileSoundAttr.NO_SOUND) {
-                playSpreadingSound(getLevel(), ceaseSound, SoundSource.NEUTRAL);
+                playSpreadingSound(ceaseSound, SoundSource.NEUTRAL);
             }
 
             // 停火时播放最后一枚弹壳音效（单发）
             SoundEvent shellSound = ammo.getShellSounds().get("0.0");
             if (shellSound != null) {
-                playSpreadingSound(getLevel(), shellSound, SoundSource.NEUTRAL);
+                playSpreadingSound(shellSound, SoundSource.NEUTRAL);
             }
         }
 
@@ -1143,7 +1142,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             // ★ 首发射击 或 无循环音效配置 → 逐发播放单发音效
             SoundEvent singleSound = fireSounds.get("0.0");
             if (singleSound != null) {
-                this.playSpreadingSound(getLevel(), singleSound, SoundSource.NEUTRAL);
+                this.playSpreadingSound(singleSound, SoundSource.NEUTRAL);
             }
         } else {
             // ★ 连射 → 循环音效（通过 ISoundSpreader 追踪枪口位置/速度）
@@ -1153,11 +1152,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
             if (currentAutoFireUuid == null) {
                 // 首次连射：创建循环实例
-                currentAutoFireUuid = playSpreadingSound(getLevel(), autoSound, SoundSource.NEUTRAL, 0, 0, true);
+                currentAutoFireUuid = playSpreadingSound(autoSound, SoundSource.NEUTRAL, 0, 0, true);
                 currentFireRateTierKey = tierKey;
             } else if (!tierKey.equals(currentFireRateTierKey)) {
                 // RPM 跨档位：交叉淡入新音效
-                currentAutoFireUuid = transitionSound(getLevel(), currentAutoFireUuid, autoSound,
+                currentAutoFireUuid = transitionSound(currentAutoFireUuid, autoSound,
                     SoundSource.NEUTRAL, 0, 0, true);
                 currentFireRateTierKey = tierKey;
             }
@@ -1176,7 +1175,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (isFirstRound || !hasAutoKeys) {
             SoundEvent singleSound = shellSounds.get("0.0");
             if (singleSound != null) {
-                playSpreadingSound(getLevel(), singleSound, SoundSource.NEUTRAL);
+                playSpreadingSound(singleSound, SoundSource.NEUTRAL);
             }
         } else {
             String tierKey = findBestFireSoundKey(shellSounds);
@@ -1184,10 +1183,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             if (autoSound == null) return;
 
             if (currentShellSoundUuid == null) {
-                currentShellSoundUuid = playSpreadingSound(getLevel(), autoSound, SoundSource.NEUTRAL, 0, 5, true);
+                currentShellSoundUuid = playSpreadingSound(autoSound, SoundSource.NEUTRAL, 0, 5, true);
                 currentShellRateTierKey = tierKey;
             } else if (!tierKey.equals(currentShellRateTierKey)) {
-                currentShellSoundUuid = transitionSound(getLevel(), currentShellSoundUuid, autoSound,
+                currentShellSoundUuid = transitionSound(currentShellSoundUuid, autoSound,
                     SoundSource.NEUTRAL, 0, 5, true);
                 currentShellRateTierKey = tierKey;
             }
@@ -1228,18 +1227,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     @Override
     @NotNull
-    public Vec3 getPosition(UUID uuid, SoundEvent event) {
+    public Vec3 getPosition(UUID uuid) {
         return getMuzzleWorldPosition();
     }
 
     @Override
     @NotNull
-    public Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    public Vec3 getSpeed(UUID uuid) {
         return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
     }
 
     @Override
-    public float getPitch(UUID uuid, SoundEvent event) {
+    public float getPitch(UUID uuid) {
         // 根据当前RPM与档位设计RPM的比值调制音高
         String tierKey = null;
         if (uuid.equals(currentAutoFireUuid)) {
@@ -1259,7 +1258,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /** 使用子系统共用的第一人称车内音判定。 */
     @Override
-    public boolean shouldApplyInteriorEffect(@Nullable Entity listener, SoundEvent event, boolean isFirstPerson) {
+    public boolean shouldApplyInteriorEffect(@Nullable Entity listener, boolean isFirstPerson) {
         return isInteriorListener(listener, isFirstPerson);
     }
 
