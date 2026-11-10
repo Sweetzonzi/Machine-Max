@@ -3,7 +3,7 @@
   "type": "machine_max:camera",
   "basic_durability": 10,
   "vertical_stabilized": false,
-  "horizontal_stabilized": false,
+  "horizontal_stabilized": true,
   "base_zoom": 1,
   "max_zoom": 5,
   "min_pitch": -10,
