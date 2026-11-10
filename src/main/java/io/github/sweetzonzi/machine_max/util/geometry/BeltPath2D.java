@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.util.geometry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,6 +24,14 @@ import java.util.List;
 public final class BeltPath2D {
     private static final double EPS = 1e-9;
     private static final double ARC_STEP = Math.PI / 180.0;
+    /** 水平自由跨段的最大中点垂度（米），也是外部包围盒可使用的形变上界。 */
+    public static final double MAX_SAG_HEIGHT = 0.12;
+    private static final double SAG_COEFFICIENT = 0.02;
+    private static final double MAX_SAG_PROFILE_SLOPE = 16 / (3 * Math.sqrt(3));
+    private static final double MIN_SAG_PROJECTION = 1e-6;
+    private static final int SAG_STEPS = 32;
+    private static final double WHEEL_CLEARANCE = 0.0005;
+    private static final double SAG_TOLERANCE = 0.0002;
 
     public enum VertexType {
         CONVEX,
@@ -85,10 +94,35 @@ public final class BeltPath2D {
     public record Sample(Vec2 point, Vec2 tangent, Vec2 normal, int edgeIndex, double arcLength) {
     }
 
-private record Tangent(Vec2 tA, Vec2 tB) {
+    /**
+     * 基础闭环的语义段，区分轮间直线跨段与同一轮上的整段圆弧。
+     *
+     * @param start 起点
+     * @param end 终点
+     * @param direction 第一条基础折线边的单位方向
+     * @param startDistance 起点在基础路径中的累计距离（米）
+     * @param baseLength 基础路径按折线计的段长（米）
+     * @param fromWheel 起点接触轮在输入成员表中的索引
+     * @param toWheel 终点接触轮在输入成员表中的索引
+     * @param arc 圆弧接触信息，直线跨段为 {@code null}
+     * @param firstEdge 此段第一条基础折线边的索引
+     * @param endEdge 此段最后一条基础折线边的索引加一
+     */
+    public record Segment(Vec2 start, Vec2 end, Vec2 direction, double startDistance, double baseLength,
+                          int fromWheel, int toWheel, ArcContact arc, int firstEdge, int endEdge) {
+        public boolean isStraight() {
+            return arc == null;
+        }
     }
 
-private final List<Circle2D> inputCircles;
+    /** 求解器记录的段首折线顶点及轮索引，由 {@link #fromData} 换算成语义段。 */
+    record SegmentStart(int pointIndex, int fromWheel, int toWheel, ArcContact arc) {
+    }
+
+    private record Tangent(Vec2 tA, Vec2 tB) {
+    }
+
+    private final List<Circle2D> inputCircles;
     private final List<Circle2D> orderedCircles;
     private final List<Vertex> vertices;
     private final List<Vec2> points;
@@ -99,6 +133,8 @@ private final List<Circle2D> inputCircles;
     private final double signedArea;
     private final boolean convex;
     private final boolean reversedFromInput;
+    private final List<Segment> segments;
+    private final SagBuffer sag;
 
     private BeltPath2D(
             List<Circle2D> inputCircles,
@@ -111,7 +147,9 @@ private final List<Circle2D> inputCircles;
             double length,
             double signedArea,
             boolean convex,
-            boolean reversedFromInput
+            boolean reversedFromInput,
+            List<Segment> segments,
+            SagBuffer sag
     ) {
         this.inputCircles = inputCircles;
         this.orderedCircles = orderedCircles;
@@ -124,6 +162,8 @@ private final List<Circle2D> inputCircles;
         this.signedArea = signedArea;
         this.convex = convex;
         this.reversedFromInput = reversedFromInput;
+        this.segments = segments;
+        this.sag = sag;
     }
 
     /**
@@ -267,7 +307,7 @@ private final List<Circle2D> inputCircles;
         for (Vec2 point : hull) {
             vertices.add(new Vertex(-1, VertexType.STRAIGHT, 0, point));
         }
-        return fromData(circles, circles, vertices, hull, List.of(), List.of(), false);
+        return fromData(circles, circles, vertices, hull, List.of(), List.of(), false, List.of());
     }
 
     /**
@@ -341,7 +381,12 @@ private final List<Circle2D> inputCircles;
                 points,
                 arcs,
                 List.of(),
-                firstIndex != 0
+                firstIndex != 0,
+                List.of(
+                        new SegmentStart(0, firstIndex, firstIndex, arcs.get(0)),
+                        new SegmentStart(leftArc.size() - 1, firstIndex, 1 - firstIndex, null),
+                        new SegmentStart(leftArc.size(), 1 - firstIndex, 1 - firstIndex, arcs.get(1)),
+                        new SegmentStart(leftArc.size() + rightArc.size() - 1, 1 - firstIndex, firstIndex, null))
         );
     }
 
@@ -374,7 +419,8 @@ private final List<Circle2D> inputCircles;
                 points,
                 arcs,
                 List.of(),
-                false
+                false,
+                List.of(new SegmentStart(0, outerIndex, outerIndex, arcs.getFirst()))
         );
     }
 
@@ -403,6 +449,7 @@ private final List<Circle2D> inputCircles;
         return sweep;
     }
 
+    /** 以同一基础折线建立累计弧长索引与语义段表。 */
     static BeltPath2D fromData(
             List<Circle2D> inputCircles,
             List<Circle2D> orderedCircles,
@@ -410,7 +457,8 @@ private final List<Circle2D> inputCircles;
             List<Vec2> points,
             List<ArcContact> arcs,
             List<PointContact> pointContacts,
-            boolean reversed
+            boolean reversed,
+            List<SegmentStart> starts
     ) {
         List<Edge> edges = buildEdges(points);
         double length = edges.isEmpty() ? 0 : edges.get(edges.size() - 1).startDistance()
@@ -429,8 +477,38 @@ private final List<Circle2D> inputCircles;
                 length,
                 area,
                 isConvex,
-                reversed
+                reversed,
+                buildSegments(points, edges, starts, length),
+                null
         );
+    }
+
+    private static List<Segment> buildSegments(List<Vec2> points, List<Edge> edges,
+                                               List<SegmentStart> starts, double length) {
+        // 段首以顶点索引表达。只允许末点与闭环首点重合，避免退化边让索引错位。
+        if (starts.isEmpty() || starts.getFirst().pointIndex() != 0
+                || (edges.size() != points.size()
+                && !(edges.size() == points.size() - 1 && points.getFirst().distance(points.getLast()) <= EPS))) {
+            return List.of();
+        }
+        List<Segment> result = new ArrayList<>(starts.size());
+        for (int i = 0; i < starts.size(); i++) {
+            SegmentStart source = starts.get(i);
+            int first = source.pointIndex();
+            int end = i + 1 == starts.size() ? edges.size() : starts.get(i + 1).pointIndex();
+            if (first < 0 || end <= first || end > edges.size()) return List.of();
+            Edge firstEdge = edges.get(first);
+            double endDistance = end == edges.size() ? length : edges.get(end).startDistance();
+            result.add(new Segment(firstEdge.start(), edges.get(end - 1).end(), firstEdge.direction(),
+                    firstEdge.startDistance(), endDistance - firstEdge.startDistance(),
+                    source.fromWheel(), source.toWheel(), source.arc(), first, end));
+        }
+        return List.copyOf(result);
+    }
+
+    /** 返回按基础闭环绕向排列的语义段，凸包回退时为空。 */
+    public List<Segment> segments() {
+        return segments;
     }
 
     public List<Circle2D> inputCircles() {
@@ -446,11 +524,16 @@ private final List<Circle2D> inputCircles;
     }
 
     public List<Vec2> points() {
+        if (sag != null) {
+            List<Vec2> result = new ArrayList<>(sag.count);
+            for (int i = 0; i < sag.count; i++) result.add(new Vec2(sag.x[i], sag.y[i]));
+            return List.copyOf(result);
+        }
         return points;
     }
 
     public List<Edge> edges() {
-        return edges;
+        return sag == null ? edges : List.copyOf(buildEdges(points()));
     }
 
     public List<ArcContact> arcs() {
@@ -534,6 +617,367 @@ private final List<Circle2D> inputCircles;
         return (int) Math.min(Integer.MAX_VALUE, count);
     }
 
+    /**
+     * 自由直线跨段的目标中点垂度。跨段越长越松，达到上限后只随重力投影变化。
+     *
+     * @param spanLength 基础跨段长度（米）
+     * @param downAcrossSpan 世界单位下方向在跨段法线上的有符号投影
+     * @return 非负中点垂度（米），与重力平行的跨段取零
+     */
+    public static double freeSagHeight(double spanLength, double downAcrossSpan) {
+        double projection = Math.abs(downAcrossSpan);
+        return projection > MIN_SAG_PROJECTION
+                ? Math.min(MAX_SAG_HEIGHT, SAG_COEFFICIENT * spanLength * spanLength) * projection : 0;
+    }
+
+    /**
+     * 四次下垂曲线相对基础直线的最大斜率，用于界定外表面随切线转动的位移。
+     *
+     * @param spanLength 非退化基础跨段长度（米）
+     * @param height 实际中点垂度（米）
+     */
+    public static double sagSlopeBound(double spanLength, double height) {
+        // f(u) = 16u²(1−u)²，最大 |f'(u)| 为 16/(3√3)。
+        return MAX_SAG_PROFILE_SLOPE * height / spanLength;
+    }
+
+    /** 按闭环绕向把单位切向旋转为单位外法线。 */
+    public Vec2 outwardNormal(Vec2 tangent) {
+        return signedArea >= 0 ? tangent.rightNormal() : tangent.leftNormal();
+    }
+
+    /** 取平面重力在跨段法线方向上的分量，保留投影后的幅度。 */
+    private static Vec2 sagDirection(Segment segment, Vec2 down) {
+        Vec2 normal = segment.direction().rightNormal();
+        return normal.mul(normal.dot(down));
+    }
+
+    /**
+     * 以输入轮盘限制单段中点垂度。基础跨段与轮盘相切时允许保持相切。
+     *
+     * @param segment 基础路径的直线跨段
+     * @param direction 跨段法线方向上的重力投影，可非单位
+     * @param height 候选中点垂度（米）
+     * @return 满足余隙的中点垂度上界（米）
+     */
+    public double limitSag(Segment segment, Vec2 direction, double height) {
+        if (!(height > 0) || !Double.isFinite(height) || !segment.isStraight()) return 0;
+        double magnitude = direction.length();
+        if (!(magnitude > MIN_SAG_PROJECTION) || !Double.isFinite(magnitude)) return 0;
+        double dx = direction.x() / magnitude;
+        double dy = direction.y() / magnitude;
+        double length = segment.baseLength();
+        // 换到以跨段为 X 轴、形变方向为 Y 轴的坐标系，位于背侧的轮盘只会离曲线更远。
+        for (Circle2D wheel : inputCircles) {
+            double x = wheel.x() - segment.start().x();
+            double y = wheel.y() - segment.start().y();
+            double across = x * dx + y * dy;
+            if (across <= 0) continue;
+            double along = x * segment.direction().x() + y * segment.direction().y();
+            double nearest = along - Math.clamp(along, 0, length);
+            double radius = Math.max(wheel.radius(),
+                    Math.min(wheel.radius() + WHEEL_CLEARANCE, Math.hypot(nearest, across)));
+            if (across >= radius + height || along + radius < 0 || along - radius > length) continue;
+            if ((along <= EPS || along >= length - EPS) && across >= radius - EPS) {
+                // 切点附近，轮盘边界和四次形变都按离端点距离的平方变化，可直接比较系数。
+                height = Math.min(height, length * length / (32 * across));
+            } else if (!clearsDisk(length, height, along, across, radius * radius, 0, 1, 0)) {
+                // 候选垂度越大，扫过区域越大。二分保留满足余隙的一侧。
+                double low = 0, high = height;
+                while (high - low > SAG_TOLERANCE) {
+                    double mid = (low + high) * 0.5;
+                    if (clearsDisk(length, mid, along, across, radius * radius, 0, 1, 0)) low = mid;
+                    else high = mid;
+                }
+                height = low;
+            }
+            if (height == 0) break;
+        }
+        return height;
+    }
+
+    /** 细分跨段参数区间，用扫过区域的外接矩形保守排除轮盘相交。 */
+    private static boolean clearsDisk(double length, double height, double along, double across,
+                                      double radiusSquared, double from, double to, int depth) {
+        // 曲线只沿 Y 变形，区间内的最大高度出现在全跨段中点，或区间中离该中点最近的一端。
+        double x = along - Math.clamp(along, length * from, length * to);
+        double y = Math.max(0, across - height * sagProfile(Math.clamp(0.5, from, to)));
+        if (x * x + y * y >= radiusSquared - 1e-12) return true;
+        if (depth == 12) return false;
+        double mid = (from + to) * 0.5;
+        return clearsDisk(length, height, along, across, radiusSquared, from, mid, depth + 1)
+                && clearsDisk(length, height, along, across, radiusSquared, mid, to, depth + 1);
+    }
+
+    /** 单位中点垂度的四次曲线，两个端点的位置与导数均为零。 */
+    private static double sagProfile(double u) {
+        double shape = 4 * u * (1 - u);
+        return shape * shape;
+    }
+
+    /**
+     * 由基础包络构建下垂路径，保持闭环零点、绕向与轮缘切点。整圈校验失败时返回基础包络。
+     *
+     * @param down 世界单位下方向在履带平面内的投影
+     * @param heights 按 {@link #segments()} 顺序给出的中点垂度（米），限幅结果写回此数组
+     * @param buffer 调用方独占的采样缓冲。返回的形变路径有效至该缓冲下次被复用
+     */
+    public BeltPath2D withSag(Vec2 down, double[] heights, SagBuffer buffer) {
+        if (segments.isEmpty()) return this;
+        boolean changed = false;
+        for (int i = 0; i < segments.size(); i++) {
+            Segment span = segments.get(i);
+            if (!(heights[i] > 0) || !span.isStraight()) {
+                heights[i] = 0;
+                continue;
+            }
+            heights[i] = limitSag(span, sagDirection(span, down), heights[i]);
+            changed |= heights[i] > 0;
+        }
+        if (!changed) return this;
+
+        buffer.begin(segments.size(), edges.size() + segments.size() * SAG_STEPS + 1);
+        for (int i = 0; i < segments.size(); i++) {
+            Segment span = segments.get(i);
+            buffer.segmentEdge[i] = buffer.count;
+            double height = heights[i];
+            if (height > 0) {
+                Vec2 direction = sagDirection(span, down);
+                double scale = height / direction.length();
+                buffer.offsetX[i] = direction.x() * scale;
+                buffer.offsetY[i] = direction.y() * scale;
+                // 每段不重复写终点，下一段的首点或闭环补点承担终点索引。
+                for (int j = 0; j < SAG_STEPS; j++) {
+                    double u = (double) j / SAG_STEPS;
+                    double sag = sagProfile(u);
+                    buffer.add(Math.fma(span.end().x() - span.start().x(), u, span.start().x()) + sag * buffer.offsetX[i],
+                            Math.fma(span.end().y() - span.start().y(), u, span.start().y()) + sag * buffer.offsetY[i]);
+                }
+            } else {
+                buffer.offsetX[i] = 0;
+                buffer.offsetY[i] = 0;
+                for (int j = span.firstEdge(); j < span.endEdge(); j++) {
+                    Vec2 point = edges.get(j).start();
+                    buffer.add(point.x(), point.y());
+                }
+            }
+            buffer.bounds(i, span.end());
+        }
+        // 轮盘余隙逐段限制，整圈再检查绕向、自交与轮心包围。
+        buffer.segmentEdge[segments.size()] = buffer.count;
+        double renderLength = buffer.finish();
+        double area = buffer.area;
+        if (!Double.isFinite(renderLength) || !Double.isFinite(area) || Math.signum(area) != Math.signum(signedArea)
+                || buffer.selfIntersects(heights, segments.size())) {
+            Arrays.fill(heights, 0);
+            return this;
+        }
+        for (Circle2D wheel : inputCircles) {
+            if (!buffer.contains(wheel.x(), wheel.y())) {
+                Arrays.fill(heights, 0);
+                return this;
+            }
+        }
+        return new BeltPath2D(inputCircles, orderedCircles, vertices, points, edges, arcs,
+                pointContacts, renderLength, area, buffer.convex, reversedFromInput, segments, buffer);
+    }
+
+    /** 用采样弦长反解段内参数，点位和切向使用对应的解析直线、四次曲线或圆弧。 */
+    private Sample sampleSag(double distance) {
+        // 先定位弦，再找所属语义段，弦内距离线性反解为段内参数。
+        int index = Arrays.binarySearch(sag.distance, 0, sag.count, distance);
+        if (index < 0) index = -index - 2;
+        int segmentIndex = Arrays.binarySearch(sag.segmentEdge, 0, segments.size(), index);
+        if (segmentIndex < 0) segmentIndex = -segmentIndex - 2;
+        Segment segment = segments.get(segmentIndex);
+        int first = sag.segmentEdge[segmentIndex];
+        int end = sag.segmentEdge[segmentIndex + 1];
+        double fraction = (distance - sag.distance[index]) / (sag.distance[index + 1] - sag.distance[index]);
+        double u = (index - first + fraction) / (end - first);
+        Vec2 point, tangent;
+        if (segment.arc() != null) {
+            ArcContact arc = segment.arc();
+            double angle = arc.startAngle() + arc.sweep() * u;
+            point = u == 0 ? segment.start() : inputCircles.get(arc.wheelIndex()).pointAt(angle);
+            tangent = Vec2.fromAngle(angle, 1).leftNormal().mul(Math.signum(arc.sweep()));
+        } else if (sag.offsetX[segmentIndex] != 0 || sag.offsetY[segmentIndex] != 0) {
+            double profile = sagProfile(u);
+            double derivative = 32 * u * (1 - u) * (1 - 2 * u);
+            double dx = segment.end().x() - segment.start().x();
+            double dy = segment.end().y() - segment.start().y();
+            point = new Vec2(segment.start().x() + u * dx + profile * sag.offsetX[segmentIndex],
+                    segment.start().y() + u * dy + profile * sag.offsetY[segmentIndex]);
+            tangent = new Vec2(dx + derivative * sag.offsetX[segmentIndex],
+                    dy + derivative * sag.offsetY[segmentIndex]).normalized();
+        } else {
+            point = new Vec2(Math.fma(sag.x[index + 1] - sag.x[index], fraction, sag.x[index]),
+                    Math.fma(sag.y[index + 1] - sag.y[index], fraction, sag.y[index]));
+            tangent = segment.direction();
+        }
+        return new Sample(point, tangent, outwardNormal(tangent), index, distance);
+    }
+
+    /** 将形变路径上的点还原到段内参数，再通过同一张采样弦长表取累计距离。 */
+    private double sagDistanceAt(Vec2 point) {
+        double best = Double.POSITIVE_INFINITY, result = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            Segment segment = segments.get(i);
+            double u, x, y;
+            ArcContact arc = segment.arc();
+            if (arc == null) {
+                // 形变与基础切向垂直，沿基础直线投影即可还原曲线参数。
+                u = Math.clamp(point.sub(segment.start()).dot(segment.direction()) / segment.baseLength(), 0, 1);
+                double profile = sagProfile(u);
+                x = Math.fma(segment.end().x() - segment.start().x(), u, segment.start().x()) + profile * sag.offsetX[i];
+                y = Math.fma(segment.end().y() - segment.start().y(), u, segment.start().y()) + profile * sag.offsetY[i];
+            } else {
+                Circle2D wheel = inputCircles.get(arc.wheelIndex());
+                double angle = Math.atan2(point.y() - wheel.y(), point.x() - wheel.x());
+                double swept = Math.signum(arc.sweep()) * (angle - arc.startAngle()) % (2 * Math.PI);
+                if (swept < 0) swept += 2 * Math.PI;
+                u = swept <= Math.abs(arc.sweep()) ? swept / Math.abs(arc.sweep())
+                        : point.distance(segment.start()) <= point.distance(segment.end()) ? 0 : 1;
+                double onArc = arc.startAngle() + u * arc.sweep();
+                x = wheel.x() + wheel.radius() * Math.cos(onArc);
+                y = wheel.y() + wheel.radius() * Math.sin(onArc);
+            }
+            if (u == 0 || u == 1) {
+                Vec2 endPoint = u == 0 ? segment.start() : segment.end();
+                x = endPoint.x();
+                y = endPoint.y();
+            }
+            double dx = point.x() - x, dy = point.y() - y;
+            double error = dx * dx + dy * dy;
+            if (error < best) {
+                best = error;
+                int first = sag.segmentEdge[i], end = sag.segmentEdge[i + 1];
+                double sample = first + u * (end - first);
+                int chord = Math.min((int) sample, end - 1);
+                result = Math.fma(sample - chord, sag.distance[chord + 1] - sag.distance[chord], sag.distance[chord]);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 形变路径的工作缓冲。采样坐标、段界与累计距离使用基本类型数组，
+     * 同一调用方可以逐帧复用，路径与缓冲由同一线程持有。
+     */
+    public static final class SagBuffer {
+        private double[] x = {}, y = {}, distance = {};
+        private double[] offsetX = {}, offsetY = {}, minX = {}, minY = {}, maxX = {}, maxY = {};
+        private int[] segmentEdge = {};
+        private int count;
+        private double area;
+        private boolean convex;
+
+        private void begin(int segments, int capacity) {
+            if (x.length < capacity) {
+                x = new double[capacity];
+                y = new double[capacity];
+                distance = new double[capacity];
+            }
+            if (offsetX.length < segments) {
+                offsetX = new double[segments];
+                offsetY = new double[segments];
+                minX = new double[segments];
+                minY = new double[segments];
+                maxX = new double[segments];
+                maxY = new double[segments];
+                segmentEdge = new int[segments + 1];
+            }
+            count = 0;
+        }
+
+        private void add(double px, double py) {
+            x[count] = px;
+            y[count] = py;
+            distance[count] = count == 0 ? 0
+                    : distance[count - 1] + Math.hypot(px - x[count - 1], py - y[count - 1]);
+            count++;
+        }
+
+        private void bounds(int segment, Vec2 end) {
+            minX[segment] = maxX[segment] = end.x();
+            minY[segment] = maxY[segment] = end.y();
+            for (int i = segmentEdge[segment]; i < count; i++) {
+                minX[segment] = Math.min(minX[segment], x[i]);
+                maxX[segment] = Math.max(maxX[segment], x[i]);
+                minY[segment] = Math.min(minY[segment], y[i]);
+                maxY[segment] = Math.max(maxY[segment], y[i]);
+            }
+        }
+
+        /** 补齐闭环最后一条弦，求周长、绕向与凸性。 */
+        private double finish() {
+            add(x[0], y[0]);
+            count--;
+            area = 0;
+            int sign = 0;
+            convex = true;
+            for (int i = 0; i < count; i++) {
+                area += x[i] * y[i + 1] - x[i + 1] * y[i];
+                int previous = i == 0 ? count - 1 : i - 1;
+                double turn = cross(x[i] - x[previous], y[i] - y[previous],
+                        x[i + 1] - x[i], y[i + 1] - y[i]);
+                if (Math.abs(turn) > EPS) {
+                    int next = turn > 0 ? 1 : -1;
+                    convex &= sign == 0 || sign == next;
+                    sign = next;
+                }
+            }
+            area *= 0.5;
+            return distance[count];
+        }
+
+        /** 检查涉及形变段的相交，先按段包围盒剔除，再检查非相邻弦。 */
+        private boolean selfIntersects(double[] heights, int segments) {
+            for (int a = 0; a < segments; a++) {
+                if (heights[a] <= 0) continue;
+                for (int b = 0; b < segments; b++) {
+                    if (a == b || (b < a && heights[b] > 0)
+                            || maxX[a] < minX[b] || maxX[b] < minX[a]
+                            || maxY[a] < minY[b] || maxY[b] < minY[a]) continue;
+                    for (int i = segmentEdge[a]; i < segmentEdge[a + 1]; i++) {
+                        for (int j = segmentEdge[b]; j < segmentEdge[b + 1]; j++) {
+                            int gap = Math.abs(i - j);
+                            if (gap > 1 && gap < count - 1 && intersects(i, j)) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean intersects(int i, int j) {
+            if (Math.max(x[i], x[i + 1]) < Math.min(x[j], x[j + 1])
+                    || Math.max(x[j], x[j + 1]) < Math.min(x[i], x[i + 1])
+                    || Math.max(y[i], y[i + 1]) < Math.min(y[j], y[j + 1])
+                    || Math.max(y[j], y[j + 1]) < Math.min(y[i], y[i + 1])) return false;
+            double ax = x[i + 1] - x[i], ay = y[i + 1] - y[i];
+            double bx = x[j + 1] - x[j], by = y[j + 1] - y[j];
+            double dx = x[j] - x[i], dy = y[j] - y[i];
+            return cross(ax, ay, dx, dy) * cross(ax, ay, dx + bx, dy + by) <= 0
+                    && cross(bx, by, -dx, -dy) * cross(bx, by, ax - dx, ay - dy) <= 0;
+        }
+
+        private boolean contains(double px, double py) {
+            boolean inside = false;
+            for (int i = 0; i < count; i++) {
+                if ((y[i] > py) != (y[i + 1] > py)
+                        && px < x[i] + (x[i + 1] - x[i]) * (py - y[i]) / (y[i + 1] - y[i])) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        private static double cross(double ax, double ay, double bx, double by) {
+            return ax * by - ay * bx;
+        }
+    }
+
+    /** 按累计距离采样，超出周长的距离沿闭环回绕。 */
     public Sample sampleAt(double arcLength) {
         if (!Double.isFinite(arcLength)) {
             throw new IllegalArgumentException("arcLength must be finite");
@@ -546,6 +990,8 @@ private final List<Circle2D> inputCircles;
         if (u < 0) {
             u += length;
         }
+
+        if (sag != null) return sampleSag(u);
 
         int lo = 0;
         int hi = edges.size() - 1;
@@ -560,14 +1006,12 @@ private final List<Circle2D> inputCircles;
         Edge edge = edges.get(lo);
         double t = Math.min(1, Math.max(0, (u - edge.startDistance()) / edge.length()));
         Vec2 tangent = edge.direction();
-        Vec2 normal = signedArea >= 0
-                ? new Vec2(tangent.y(), -tangent.x())
-                : new Vec2(-tangent.y(), tangent.x());
-        return new Sample(edge.pointAt(t), tangent, normal, lo, u);
+        return new Sample(edge.pointAt(t), tangent, outwardNormal(tangent), lo, u);
     }
 
-    /** 路径点在折线上的弧长坐标，供接触段端点定位使用。 */
+    /** 路径点的累计距离。基础路径按折线投影，形变路径以段内参数查弦长表。 */
     public double distanceAt(Vec2 point) {
+        if (sag != null) return sagDistanceAt(point);
         double best = Double.POSITIVE_INFINITY, distance = 0;
         for (Edge edge : edges) {
             double along = Math.max(0, Math.min(edge.length(), point.sub(edge.start()).dot(edge.direction())));
@@ -584,6 +1028,7 @@ private final List<Circle2D> inputCircles;
      * 射线法。边界上的点可能返回 false；需要边界判定时用 {@link #distanceToBoundary(Vec2)}。
      */
     public boolean containsPoint(Vec2 point) {
+        if (sag != null) return sag.contains(point.x(), point.y());
         boolean inside = false;
         for (int i = 0, j = points.size() - 1; i < points.size(); j = i++) {
             Vec2 a = points.get(i);
@@ -599,7 +1044,7 @@ private final List<Circle2D> inputCircles;
 
     public double distanceToBoundary(Vec2 point) {
         double best = Double.POSITIVE_INFINITY;
-        for (Edge edge : edges) {
+        for (Edge edge : edges()) {
             best = Math.min(best, distancePointSegment(point, edge.start(), edge.end()));
         }
         return best;

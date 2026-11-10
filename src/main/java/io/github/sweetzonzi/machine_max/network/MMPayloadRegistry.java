@@ -43,7 +43,7 @@ public class MMPayloadRegistry {
         // 2.9.0 / 1.4.0 对应 TrackLinkData 增加 link_count：节数改由服务端持久化并随载具 / 蓝图数据下发。
         // 2.9.1 新增 SubPartHitEffectPayload：命中音效与命中火花改由客户端按碰撞箱身份重建。
         // 2.9.2 为发动机的 SubsystemSyncPayload 增加 FMOD 使用的油门开度。
-        final PayloadRegistrar sync = event.registrar("sync:2.9.2");
+        final PayloadRegistrar sync = event.registrar("sync:2.9.3");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

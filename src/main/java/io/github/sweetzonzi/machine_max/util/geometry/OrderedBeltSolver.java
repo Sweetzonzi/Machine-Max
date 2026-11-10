@@ -291,6 +291,7 @@ final class OrderedBeltSolver {
                 a.startAngle, a.sweep + b.sweep, a.length + b.length);
     }
 
+    /** 将求解段组装成折线与语义段表，两者共用主动轮锚点。 */
     private BeltPath2D assemble(List<Piece> pieces) {
         List<Vec2> points = new ArrayList<>();
         List<BeltPath2D.ArcContact> arcs = new ArrayList<>();
@@ -300,12 +301,13 @@ final class OrderedBeltSolver {
         // 每个顶点由哪一段产生，以及每段起点落在 points 的哪个下标；两者用于确定
         // 弧长零点的几何位置。
         List<Integer> vertexPiece = new ArrayList<>();
-        List<Integer> pieceStart = new ArrayList<>();
+        List<BeltPath2D.SegmentStart> segmentStarts = new ArrayList<>(pieces.size());
         for (int i = 0; i < pieces.size(); i++) {
             Piece piece = pieces.get(i);
             int before = points.size();
             addPoint(points, piece.start);
-            pieceStart.add(Math.min(before, points.size() - 1));
+            int start = Math.min(before, points.size() - 1);
+            BeltPath2D.ArcContact arc = null;
             if (piece.arc()) {
                 Circle2D circle = circles.get(piece.fromWheel);
                 int count = Math.max(2, (int) Math.ceil(Math.abs(piece.sweep) / ARC_STEP));
@@ -316,8 +318,9 @@ final class OrderedBeltSolver {
                     samples.add(point);
                     addPoint(points, point);
                 }
-                arcs.add(new BeltPath2D.ArcContact(piece.fromWheel, piece.startAngle,
-                        piece.sweep, piece.length, samples));
+                arc = new BeltPath2D.ArcContact(piece.fromWheel, piece.startAngle,
+                        piece.sweep, piece.length, samples);
+                arcs.add(arc);
                 vertices.add(new BeltPath2D.Vertex(piece.fromWheel, BeltPath2D.VertexType.CONVEX,
                         piece.sweep, circle.pointAt(piece.startAngle + piece.sweep * .5)));
                 ordered.add(circle);
@@ -337,6 +340,7 @@ final class OrderedBeltSolver {
                     vertexPiece.add(i);
                 }
             }
+            segmentStarts.add(new BeltPath2D.SegmentStart(start, piece.fromWheel, piece.toWheel, arc));
         }
         if (points.size() > 1 && points.get(0).distance(points.get(points.size() - 1)) <= EPS) {
             points.remove(points.size() - 1);
@@ -351,12 +355,21 @@ final class OrderedBeltSolver {
         // 弧长零点同样取主动轮的首个接触处。铺带顺序由求解器的分段顺序决定，
         // 起点段随接触拓扑变化，若直接拿它当零点，整条履带会在主动轮锁死时平移。
         if (first >= 0 && points.size() > 1) {
-            int anchor = pieceStart.get(vertexPiece.get(first)) % points.size();
+            int firstPiece = vertexPiece.get(first);
+            int anchor = segmentStarts.get(firstPiece).pointIndex() % points.size();
             if (anchor > 0) {
                 Collections.rotate(points, -anchor);
+                // 段首索引以折线首点为零，旋转后按同一偏移重定位。
+                Collections.rotate(segmentStarts, -firstPiece);
+                for (int i = 0; i < segmentStarts.size(); i++) {
+                    var segment = segmentStarts.get(i);
+                    segmentStarts.set(i, new BeltPath2D.SegmentStart(
+                            Math.floorMod(segment.pointIndex() - anchor, points.size()),
+                            segment.fromWheel(), segment.toWheel(), segment.arc()));
+                }
             }
         }
-        return BeltPath2D.fromData(circles, ordered, vertices, points, arcs, contacts, false);
+        return BeltPath2D.fromData(circles, ordered, vertices, points, arcs, contacts, false, segmentStarts);
     }
 
     private Vec2 outward(Vec2 direction) { return direction.rightNormal().mul(sign); }

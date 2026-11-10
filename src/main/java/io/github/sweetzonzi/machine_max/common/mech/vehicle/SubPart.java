@@ -3,6 +3,8 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
+import cn.solarmoon.spark_core.event.PhysicsContactEvent;
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -49,6 +51,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllab
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.SubPartHitEffectPayload;
+import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
@@ -56,7 +59,11 @@ import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import io.github.sweetzonzi.machine_max.util.terrain.LocalHeightField;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyQuaternion;
+import lombok.AccessLevel;
 import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -83,6 +90,27 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @EventBusSubscriber
 @Getter
 public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
+    /** 轮面支撑的运行时同步字段，默认无支撑。 */
+    private static final EntityDataAccessor<Boolean> WHEEL_SUPPORTED_ID =
+            SynchedEntityData.defineId(SubPart.class, EntityDataSerializers.BOOLEAN);
+    /** 服务端物理线程独占的本步接触累积。 */
+    @Getter(AccessLevel.NONE)
+    private boolean wheelSupportThisStep;
+    /** 服务端物理步末发布的支撑结果，供主线程同步。 */
+    @Getter(AccessLevel.NONE)
+    private volatile boolean completedWheelSupport;
+    /** 摧毁时由主线程置位，物理步和网络镜像据此拒绝新的支撑结果。 */
+    @Getter(AccessLevel.NONE)
+    private volatile boolean wheelSupportDisabled;
+    /** 客户端主线程发布的同步镜像，渲染线程直接读取。 */
+    @Getter(AccessLevel.NONE)
+    private volatile boolean wheelSupported;
+
+    /** 服务端读物理步末结果，客户端读同步镜像。 */
+    public boolean isWheelSupported() {
+        return level.isClientSide() ? wheelSupported : !isRemoved && !wheelSupportDisabled && completedWheelSupport;
+    }
+
     //渲染与交互
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
@@ -172,6 +200,48 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     @Override
+    protected void defineSyncedData(SynchedEntityData.Builder builder) {
+        super.defineSyncedData(builder);
+        builder.define(WHEEL_SUPPORTED_ID, false);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        // 客户端主线程读同步表，再把结果发布给渲染线程。
+        if (level.isClientSide() && key.equals(WHEEL_SUPPORTED_ID)) {
+            wheelSupported = !wheelSupportDisabled && !isRemoved && getSyncedData().get(WHEEL_SUPPORTED_ID);
+        }
+    }
+
+    /**
+     * 主线程为新接收方构造支撑快照。只读取已写入同步表的值，
+     * 让快照与后续按同一字段计算的增量衔接。无支撑时由接收方的默认值表示。
+     */
+    public @Nullable SubPartSyncPayload wheelSupportSnapshot() {
+        return getSyncedData().get(WHEEL_SUPPORTED_ID)
+                ? new SubPartSyncPayload(getId(), List.of(SynchedEntityData.DataValue.create(WHEEL_SUPPORTED_ID, true)))
+                : null;
+    }
+
+    /**
+     * 双方的碰撞处理都已执行，此处按轮面归一化 A/B 顺序并汇总最终接触几何。
+     */
+    @SubscribeEvent
+    public static void onWheelSupportContact(PhysicsContactEvent.Process event) {
+        var ownerA = PhysicsBodyExtensionKt.getOwner(event.getO1());
+        var ownerB = PhysicsBodyExtensionKt.getOwner(event.getO2());
+        if (ownerA instanceof SubPart a) a.collectWheelSupport(ownerB, event.getO1Point(), event.getO2Point());
+        if (ownerB instanceof SubPart b) b.collectWheelSupport(ownerA, event.getO2Point(), event.getO1Point());
+    }
+
+    /** 服务端在本步内合并支撑接触，任一个合格接触即可置位。 */
+    private void collectWheelSupport(Object other, ManifoldPoint wheelPoint, ManifoldPoint otherPoint) {
+        if (level.isClientSide() || isRemoved || wheelSupportDisabled || wheelSupportThisStep) return;
+        wheelSupportThisStep = collisionHandler.isWheelSupport(other, wheelPoint, otherPoint, completedWheelSupport);
+    }
+
+    @Override
     public void addToLevel() {
         super.addToLevel();
         if (interactBoxes != null) getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
@@ -204,6 +274,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (track != null) track.onMemberDestroyed(this);
         // 先标记子零件已移除，防止尚在排队的连接点任务重新创建选取框。
         super.destroy();
+        completedWheelSupport = false;
+        wheelSupported = false;
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
         }
@@ -328,6 +400,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     @Override
     public void postTick() {
+        // 父类在本次主线程 tick 发送脏字段，先将已完成的物理步结果写入同步表。
+        if (!level.isClientSide() && !isRemoved) {
+            getSyncedData().set(WHEEL_SUPPORTED_ID, isWheelSupported());
+        }
         super.postTick();
         for (AbstractConnector connector : this.connectors.values()) connector.mcTick();
         if (!isRemoved()) {
@@ -355,6 +431,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
 
     @Override
     public void prePhysicsTick() {
+        // 每个物理步独立累积，休眠零件也在可能提前返回的分支前清零。
+        if (!level.isClientSide()) wheelSupportThisStep = false;
         super.prePhysicsTick();
         // 批量入世的外部装配体直接加入子刚体，由首个物理步补齐交互区。
         if (interactBoxes != null && interactBoxes.body == null) interactBoxes.addToLevel();
@@ -521,6 +599,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void postPhysicsTick() {
         super.postPhysicsTick();
+        if (!level.isClientSide() && (!attr.getWheelHalfWidths().isEmpty() || completedWheelSupport)) {
+            if (isRemoved || wheelSupportDisabled || !body.isInWorld() || attr.getWheelHalfWidths().isEmpty()) {
+                completedWheelSupport = false;
+            } else if (wheelSupportThisStep || body.isActive()) {
+                // 活跃刚体无接触即判离地。休眠无回调时保留上一个完成态。
+                completedWheelSupport = wheelSupportThisStep;
+            }
+        }
         for (AbstractConnector connector : this.connectors.values()) connector.postPhysicsTick();
     }
 
@@ -1143,6 +1229,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     @Override
     public void setDestroyed() {
+        wheelSupportDisabled = true;
+        completedWheelSupport = false;
+        wheelSupported = false;
+        if (!level.isClientSide()) getSyncedData().set(WHEEL_SUPPORTED_ID, false);
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
@@ -1266,14 +1356,9 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * @return 是否为轮胎面
      */
     public boolean isWheelSurface(int contactPointIndex) {
-        try {
-            ChildCollisionShape[] children = this.collisionShape.listChildren();
-            if (children.length >= contactPointIndex)
-                return attr.getWheelHalfWidths().containsKey(children[contactPointIndex].getShape().nativeId());
-            else throw new IndexOutOfBoundsException();
-        } catch (IndexOutOfBoundsException e) {
-            return false;
-        }
+        ChildCollisionShape[] children = this.collisionShape.listChildren();
+        return contactPointIndex >= 0 && contactPointIndex < children.length
+                && isWheelSurface(children[contactPointIndex].getShape().nativeId());
     }
 
     /**

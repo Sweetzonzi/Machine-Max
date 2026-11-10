@@ -24,6 +24,78 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 与非法输入。</p>
  */
 class BeltPath2DTest {
+    @Test
+    void sagPreservesTangenciesAndBuildsAConsistentDistanceIndex() {
+        var wheels = List.of(new Circle2D(0, 0, .4), new Circle2D(3, 0, .4));
+        for (boolean clockwise : new boolean[]{false, true}) {
+            var base = BeltPath2D.build(wheels, 1e-9, clockwise);
+            assertEquals(4, base.segments().size());
+            Vec2 down = new Vec2(0, -1);
+            double[] heights = base.segments().stream()
+                    .mapToDouble(span -> span.isStraight() && span.start().y() > 0 ? .12 : 0).toArray();
+            var render = base.withSag(down, heights, new BeltPath2D.SagBuffer());
+            assertNotEquals(base, render);
+            assertEquals(.01163, render.length() - base.length(), 3e-6);
+            var upper = base.segments().stream()
+                    .filter(span -> span.isStraight() && span.start().y() > 0).findFirst().orElseThrow();
+            double start = render.distanceAt(upper.start());
+            double end = render.distanceAt(upper.end());
+            double spanLength = forwardArcDiff(start, end, render.length());
+            var middle = render.sampleAt(start + spanLength / 2);
+            assertEquals(1.5, middle.point().x(), 1e-9);
+            assertEquals(.28, middle.point().y(), 1e-9);
+            assertEquals(0, render.sampleAt(start).tangent().distance(upper.direction()), 1e-8);
+            assertEquals(0, render.sampleAt(end).tangent().distance(upper.direction()), 1e-8);
+            assertEquals(0, render.sampleAt(start).point().distance(upper.start()), 1e-8);
+            assertEquals(0, render.sampleAt(end).point().distance(upper.end()), 1e-8);
+            for (int i = 0; i < 100; i++) {
+                double distance = (i + .3) * render.length() / 100;
+                assertEquals(distance, render.distanceAt(render.sampleAt(distance).point()), 1e-8);
+            }
+            assertFalse(selfIntersects(render.points()));
+            for (var wheel : wheels) assertTrue(render.containsPoint(wheel.center()));
+        }
+    }
+
+    @Test
+    void sagStopsBeforeAnInteriorWheelAndIgnoresParallelGravityAndHullFallback() {
+        var wheels = List.of(new Circle2D(0, 0, .4), new Circle2D(1.5, .13, .22),
+                new Circle2D(3, 0, .4));
+        var base = BeltPath2D.build(wheels, 1e-9, false);
+        var span = base.segments().stream()
+                .filter(s -> s.isStraight() && s.start().y() > .39 && s.end().y() > .39)
+                .findFirst().orElseThrow();
+        Vec2 down = new Vec2(0, -1);
+        double[] heights = new double[base.segments().size()];
+        int index = base.segments().indexOf(span);
+        heights[index] = .12;
+        var buffer = new BeltPath2D.SagBuffer();
+        var sagged = base.withSag(down, heights, buffer);
+        assertTrue(heights[index] > .048 && heights[index] <= .0495 + 1e-9);
+        assertTrue(sagged.length() > base.length());
+        double start = sagged.distanceAt(span.start());
+        double end = sagged.distanceAt(span.end());
+        Vec2 midpoint = sagged.sampleAt(start + forwardArcDiff(start, end, sagged.length()) / 2).point();
+        assertTrue(midpoint.distance(wheels.get(1).center()) >= .2205 - 1e-9);
+
+        heights[index] = .12;
+        assertEquals(base, base.withSag(span.direction(), heights, buffer));
+        heights[index] = .12;
+        assertEquals(base, base.withSag(Vec2.ZERO, heights, buffer));
+        var hull = BeltPath2D.convexFallback(wheels);
+        assertTrue(hull.segments().isEmpty());
+        assertEquals(hull, hull.withSag(down, heights, buffer));
+    }
+
+    @Test
+    void sagRejectsCrossingTheOppositeSpan() {
+        var base = BeltPath2D.build(List.of(new Circle2D(0, 0, .03), new Circle2D(3, 0, .03)));
+        double[] heights = base.segments().stream()
+                .mapToDouble(span -> span.isStraight() && span.start().y() > 0 ? .12 : 0).toArray();
+        assertEquals(base, base.withSag(new Vec2(0, -1), heights, new BeltPath2D.SagBuffer()));
+        for (double height : heights) assertEquals(0, height);
+    }
+
     private static final double EPS = 1e-9;
     private static final double PI = Math.PI;
 

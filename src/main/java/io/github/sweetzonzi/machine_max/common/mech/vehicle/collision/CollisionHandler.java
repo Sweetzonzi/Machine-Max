@@ -84,6 +84,11 @@ public class CollisionHandler {
      * 见 {@link #isSupportingTerrainContact(Vector3f)}。
      */
     private static final float CLIMB_SUPPORT_NORMAL_Y = 0.7f;
+    /** 轮面支撑进入与保持阈值，均取有符号的世界法线 Y 分量。 */
+    private static final float WHEEL_SUPPORT_ENTER_Y = 0.25f;
+    private static final float WHEEL_SUPPORT_EXIT_Y = 0.15f;
+    /** 支撑接触允许的最大分离距离（米）。 */
+    private static final float WHEEL_SUPPORT_DISTANCE = 0.01f;
 
     /**
      * 内部棱判据：地形给的法线水平倾斜不小于该值时才处理。
@@ -174,6 +179,39 @@ public class CollisionHandler {
             return preProcessBlockCollision(other, normal, worldContactPoint, hitBoxIndex);
         }
         return true;
+    }
+
+    /** 物理线程复用的支撑接触法线与点位缓冲。 */
+    private final Vector3f wheelSupportPoint = new Vector3f();
+
+    /**
+     * 判断碰撞处理后的接触是否为轮面提供向上支撑。判据使用接触几何，与求解冲量无关。
+     *
+     * @param other 接触对方的物理宿主
+     * @param wheelPoint 轮侧接触点
+     * @param otherPoint 对方接触点，供读取指向轮面的世界法线
+     * @param previouslySupported 上个完成物理步的支撑状态，用于选择迟滞阈值
+     */
+    public boolean isWheelSupport(Object other, ManifoldPoint wheelPoint, ManifoldPoint otherPoint,
+                                  boolean previouslySupported) {
+        if (other instanceof SubPart part) {
+            if (subPart.part.assembly != null && subPart.part.assembly == part.part.assembly) return false;
+        } else if (!(other instanceof PhysicsChunkSection)
+                && !(other instanceof PhysicsHost host && CreateCompat.isLoaded()
+                && CreateCollisionResolver.isCreateOwner(host))) {
+            return false;
+        }
+        // 被碰撞处理丢弃的点带大正距离，同样被分离距离上限排除。
+        float distance = wheelPoint.getDistance();
+        if (!Float.isFinite(distance) || distance > WHEEL_SUPPORT_DISTANCE) return false;
+        int shape = wheelPoint.getTriangleIndex();
+        if (!subPart.isWheelSurface(shape)) return false;
+        // 取对方指向轮面的法线，保留正负以排除顶面接触。
+        float up = otherPoint.getNormalWorld(wheelSupportPoint).y;
+        if (!Float.isFinite(up) || up < (previouslySupported ? WHEEL_SUPPORT_EXIT_Y : WHEEL_SUPPORT_ENTER_Y)) {
+            return false;
+        }
+        return subPart.isEffectiveContact(shape, wheelPoint.getPositionWorld(wheelSupportPoint), true);
     }
 
     /**

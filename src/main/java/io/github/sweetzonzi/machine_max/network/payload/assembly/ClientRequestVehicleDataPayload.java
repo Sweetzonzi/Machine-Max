@@ -45,10 +45,10 @@ public record ClientRequestVehicleDataPayload(
                 for (int i = 0; i < packetNum; i++) {
                     PacketDistributor.sendToPlayer((ServerPlayer) context.player(), new LevelVehicleDataPayload(payload.dimension, iterator.next(), packetNum));
                 }
-                // 创建包发完再补子系统同步值：与上面的载荷相邻发送，顺序由同一条连接保证
-                // （见 ObjectManager.pushSubsystemState）。
+                // 创建包发完再补运行时同步字段：与上面的载荷相邻发送，顺序由同一条连接保证
+                // （见 ObjectManager.pushVehicleRuntimeState）。
                 // 取的是服务端内存里的载具而非上面那份存档快照：补推要的是当前值。
-                ObjectManager.pushSubsystemState(context.player().level(), (ServerPlayer) context.player());
+                ObjectManager.pushVehicleRuntimeState(context.player().level(), (ServerPlayer) context.player());
             });
         } else
             MachineMax.LOGGER.error("玩家{}客户端请求的维度{}与玩家所在维度{}不一致:", context.player().getName(), payload.dimension, context.player().level().dimension().location());

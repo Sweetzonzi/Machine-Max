@@ -19,14 +19,21 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
+import io.github.sweetzonzi.machine_max.util.geometry.Circle2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -45,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link TrackEnvelope2D}；{@link TrackBeltLayout} 按连续节序映射位置。</p>
  *
  * <p><b>节数与节距</b>：N 取 {@link TrackLink#linkCount()}（服务端推导后持久化的权威值），
- * 节距取型号的 {@link TrackAttr#lengthPerLink()}。渲染状态只保存相位；两者都来自载具 / 型号
+ * 节距取型号的 {@link TrackAttr#lengthPerLink()}。两者都来自载具 / 型号
  * 数据，不随本端某一帧的包络变化（载具刚放出时成员位姿可能还没就绪，据此推导会把 N 锁在退化包络上）。
  * {@link #tick()}（20tps）按实际轮位姿展开角度，{@link TrackBeltPhase} 在渲染时对齐当帧位姿。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
@@ -71,8 +78,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ul>
  *
  * <p>线程：{@link #tick()} 在主线程，{@link #renderTrack} 在渲染线程；共享状态只有
- * {@link State} 的 volatile 相位快照 / 节数 / 节距，以及按型号缓存的模型与渲染类型。</p>
+ * {@link State} 的 volatile 相位快照，以及按型号缓存的模型与渲染类型。垂度及帧缓存由渲染线程持有。</p>
  */
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class TrackRenderer extends VisualEffectRenderer {
     /** 绘制路径：近处用型号模型（按槽位取节），远处用程序化扁长方体。 */
     public enum TrackRenderMode {
@@ -81,18 +89,22 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     /** 程序化回退的单节宽度（米）；模型路径以模型横向尺寸为准。 */
-    private static final float LINK_WIDTH = 0.35f;
+    private static final double LINK_WIDTH = 0.35;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
     private static final double LINK_LENGTH_RATIO = 0.92;
     private static final double TICK_SECONDS = 1.0 / 20.0;
+    /** 垂度跟随支撑变化的一阶低通时间常数（秒）。 */
+    private static final double SAG_SECONDS = 0.15;
+    private static final double MAX_FRAME_SECONDS = 0.05;
+    /** 轮面支撑探针在世界坐标各轴上的半径（米）。 */
+    private static final double SUPPORT_PROBE = 0.08;
+    private static Level frameLevel;
+    private static long renderFrame;
+    private static long previousFrameTime;
+    private static double sagBlend;
     /** 程序化回退的贴图：原版 4×4 纯白纹理。 */
     private static final ResourceLocation LINK_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    /**
-     * 程序化回退的实体不透明渲染类型：写入深度、正面剔除，带 lightmap / overlay / normal
-     * 顶点属性。与零件模型使用同一套实体光照，同时保证阴影 pass 里可作为实体几何绘制。
-     */
-    private static final RenderType LINK_RENDER_TYPE = RenderType.entitySolid(LINK_TEXTURE);
     /** 程序化回退的单节统一基色。 */
     private static final int LINK_COLOR = 0xFF9A968C;
     /** 模型路径的顶点色：不额外着色，明暗交给实体管线的两向光照。 */
@@ -111,14 +123,165 @@ public class TrackRenderer extends VisualEffectRenderer {
         }
     }
 
+    /** 单条履带的主线程相位快照，以及渲染线程独占的路径、垂度历史和工作缓冲。 */
     private static final class State {
         /** 最近一次成功的角度快照；渲染线程只读。 */
         private volatile TrackBeltPhase phase;
         private long sampleTick;
+        private long cachedFrame = -1;
+        private TrackEnvelope2D.Result frameEnvelope;
+        private TrackBeltLayout frameLayout;
         /** 「主动轮无有效啮合段」已记录过，恢复后清零。 */
         private boolean warned;
         /** 凸包回退已记录过；同一安装拓扑只记一条。 */
         private boolean fallbackLogged;
+
+        private final BeltPath2D.SagBuffer sagBuffer = new BeltPath2D.SagBuffer();
+        private final Vector3f start = new Vector3f();
+        private final Vector3f end = new Vector3f();
+        private final Vector3f displacement = new Vector3f();
+        /** 上一帧的语义段与实际绘制垂度，按相同段序保存。 */
+        private List<BeltPath2D.Segment> previousSegments = List.of();
+        private double[] sagHeights = {};
+        private double[] nextSagHeights = {};
+
+        /** 使垂度历史失效，保留可复用数组。 */
+        private void clearSag() {
+            previousSegments = List.of();
+        }
+
+        /**
+         * 按当帧支撑和地形约束推进跨段垂度，将限幅后的结果写回渲染历史。
+         *
+         * @param link 提供与包络轮序一致的成员表及其同步支撑状态
+         * @param envelope 当帧插值的基础包络和主动轮位姿
+         * @param blend 本帧一阶低通的混合系数
+         */
+        private BeltPath2D saggedPath(TrackLink link, TrackEnvelope2D.Result envelope, double blend) {
+            BeltPath2D base = envelope.path();
+            List<BeltPath2D.Segment> segments = base.segments();
+            Matrix4f world = envelope.sprocketWorld();
+            Vec2 down = envelope.worldDownInPlane();
+            if (segments.isEmpty()) {
+                clearSag();
+                return base;
+            }
+            if (nextSagHeights.length < segments.size()) nextSagHeights = new double[segments.size()];
+            for (int i = 0; i < segments.size(); i++) {
+                BeltPath2D.Segment span = segments.get(i);
+                nextSagHeights[i] = 0;
+                if (!span.isStraight()) continue;
+
+                Vec2 outward = base.outwardNormal(span.direction());
+                double downAcross = outward.dot(down);
+                double free = BeltPath2D.freeSagHeight(span.baseLength(), downAcross);
+                if (free == 0) continue;
+
+                // 重力朝向跨段外侧时，任一端支撑就令该段以绷直为目标。
+                boolean startSupported = link.members().get(span.fromWheel()).isWheelSupported();
+                boolean endSupported = link.members().get(span.toWheel()).isWheelSupported();
+                boolean blocked = downAcross > 0 && (startSupported || endSupported);
+                Vec2 direction = outward.mul(downAcross);
+                double target = blocked ? 0 : base.limitSag(span, direction, free);
+                double prior = previousHeight(segments, i);
+                double filtered = Math.min(free, Math.fma(blend, target - prior, prior));
+                // 收垂期间只在已加载的方块形状能确认支撑与余隙时保留残余垂度。
+                if (blocked && filtered > 0) {
+                    double thickness = link.attr().thicknessMeters();
+                    Level level = link.vehicle().level;
+                    boolean confirmed = (startSupported && confirmsSupport(level, world, down,
+                            base.inputCircles().get(span.fromWheel()), thickness))
+                            || (endSupported && confirmsSupport(level, world, down,
+                            base.inputCircles().get(span.toWheel()), thickness));
+                    if (!confirmed || !sweptSurfaceClear(level, world, span, outward, filtered, thickness)) filtered = 0;
+                }
+                nextSagHeights[i] = filtered;
+            }
+            // 滤波后的旧垂度可能超过当帧轮盘余隙，由几何层再次限幅并回写数组。
+            BeltPath2D path = base.withSag(down, nextSagHeights, sagBuffer);
+            double[] swap = sagHeights;
+            sagHeights = nextSagHeights;
+            nextSagHeights = swap;
+            previousSegments = segments;
+            return path;
+        }
+
+        /** 按有向轮对、出现序号及相邻接触匹配上帧跨段，拓扑变化处从零起算。 */
+        private double previousHeight(List<BeltPath2D.Segment> segments, int index) {
+            BeltPath2D.Segment span = segments.get(index);
+            int occurrence = 0, count = 0;
+            for (int i = 0; i < segments.size(); i++) {
+                if (sameContact(span, segments.get(i))) {
+                    if (i < index) occurrence++;
+                    count++;
+                }
+            }
+            int previousIndex = -1, previousCount = 0;
+            for (int i = 0; i < previousSegments.size(); i++) {
+                if (sameContact(span, previousSegments.get(i))) {
+                    if (previousCount == occurrence) previousIndex = i;
+                    previousCount++;
+                }
+            }
+            // 同轮对可在环上出现多次，只有次数与相邻接触吻合时才继承历史。
+            if (previousCount != count || previousIndex < 0) return 0;
+            for (int offset = -1; offset <= 1; offset += 2) {
+                if (!sameContact(segments.get(Math.floorMod(index + offset, segments.size())),
+                        previousSegments.get(Math.floorMod(previousIndex + offset, previousSegments.size())))) return 0;
+            }
+            return sagHeights[previousIndex];
+        }
+
+        /** 比较接触拓扑，允许轮姿与切点随帧变化。 */
+        private static boolean sameContact(BeltPath2D.Segment a, BeltPath2D.Segment b) {
+            return a.fromWheel() == b.fromWheel() && a.toWheel() == b.toWheel() && a.isStraight() == b.isStraight();
+        }
+
+        /** 在外轮廓朝下的轮缘附近确认是否有已加载的原版方块碰撞形状。 */
+        private boolean confirmsSupport(Level level, Matrix4f world, Vec2 down, Circle2D wheel, double thickness) {
+            double radius = (wheel.radius() + thickness) / down.length();
+            world.transformPosition(0, (float) (wheel.x() + down.x() * radius),
+                    (float) (wheel.y() + down.y() * radius), start);
+            AABB probe = new AABB(start.x - SUPPORT_PROBE, start.y - SUPPORT_PROBE, start.z - SUPPORT_PROBE,
+                    start.x + SUPPORT_PROBE, start.y + SUPPORT_PROBE, start.z + SUPPORT_PROBE);
+            return chunksLoaded(level, probe) && level.getBlockCollisions(null, probe).iterator().hasNext();
+        }
+
+        /** 用包围盒保守检测外表面从基础直线到候选曲线的扫掠余隙。 */
+        private boolean sweptSurfaceClear(Level level, Matrix4f world, BeltPath2D.Segment span, Vec2 outward,
+                                          double height, double thickness) {
+            world.transformPosition(0, (float) (span.start().x() + outward.x() * thickness),
+                    (float) (span.start().y() + outward.y() * thickness), start);
+            world.transformPosition(0, (float) (span.end().x() + outward.x() * thickness),
+                    (float) (span.end().y() + outward.y() * thickness), end);
+            world.transformDirection(0, (float) (outward.x() * height), (float) (outward.y() * height), displacement);
+            // 两端外表面界定基础跨段，按下垂位移、程序化节宽和外法线转动外扩。
+            double normalMotion = thickness * BeltPath2D.sagSlopeBound(span.baseLength(), height);
+            double widthX = LINK_WIDTH * 0.5 * Math.abs(world.m00()) + normalMotion;
+            double widthY = LINK_WIDTH * 0.5 * Math.abs(world.m01()) + normalMotion;
+            double widthZ = LINK_WIDTH * 0.5 * Math.abs(world.m02()) + normalMotion;
+            AABB swept = new AABB(
+                    Math.min(start.x, end.x) + Math.min(0, displacement.x) - widthX,
+                    Math.min(start.y, end.y) + Math.min(0, displacement.y) - widthY,
+                    Math.min(start.z, end.z) + Math.min(0, displacement.z) - widthZ,
+                    Math.max(start.x, end.x) + Math.max(0, displacement.x) + widthX,
+                    Math.max(start.y, end.y) + Math.max(0, displacement.y) + widthY,
+                    Math.max(start.z, end.z) + Math.max(0, displacement.z) + widthZ);
+            return chunksLoaded(level, swept) && !level.getBlockCollisions(null, swept).iterator().hasNext();
+        }
+
+        /** 碰撞查询覆盖的区块须全部就绪，未知地形按余隙不足处理。 */
+        private static boolean chunksLoaded(Level level, AABB box) {
+            // 方块碰撞形状可越过方块边界，查询范围留一格。
+            int minX = Mth.floor(box.minX - 1) >> 4, maxX = Mth.floor(box.maxX + 1) >> 4;
+            int minZ = Mth.floor(box.minZ - 1) >> 4, maxZ = Mth.floor(box.maxZ + 1) >> 4;
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (!level.getChunkSource().hasChunk(x, z)) return false;
+                }
+            }
+            return true;
+        }
     }
 
     /**
@@ -140,6 +303,28 @@ public class TrackRenderer extends VisualEffectRenderer {
      * @param refZ      Z 分量
      */
     private record LinkSlot(List<OBone> bones, float refX, float refY, float refZ) {
+    }
+
+    /** 每个渲染帧只更新时间一次，供近景、远景和阴影共用同一份履带布局。 */
+    @SubscribeEvent
+    public static void onRenderFrame(RenderFrameEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Level level = minecraft.level;
+        long now = System.nanoTime();
+        renderFrame++;
+        // 换世界时丢弃旧世界的履带历史，首帧从零时差起算。
+        if (level != frameLevel) {
+            STATES.keySet().removeIf(key -> key.vehicle().level != level);
+            frameLevel = level;
+            previousFrameTime = now;
+        }
+        sagBlend = sagBlendFactor(minecraft.isPaused() ? 0 : (now - previousFrameTime) * 1e-9);
+        previousFrameTime = now;
+    }
+
+    /** 计算本帧的一阶低通混合系数，长帧截断以限制一次收垂的幅度。 */
+    static double sagBlendFactor(double seconds) {
+        return -Math.expm1(-Math.clamp(seconds, 0, MAX_FRAME_SECONDS) / SAG_SECONDS);
     }
 
     @Override
@@ -222,22 +407,48 @@ public class TrackRenderer extends VisualEffectRenderer {
         TrackLink link = subPart.trackLink;
         if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return;
 
-        TrackEnvelope2D.Result envelope = link.envelope(partialTick);
-        if (envelope == null) return;
-
         State state = STATES.get(new TrackKey(link));
-        if (state == null || state.phase == null) return;
-        var contact = envelope.path().wheelContact(0);
-        if (contact == null) return;
-        int linkCount = link.linkCount();
+        if (state == null) return;
+        if (state.cachedFrame != renderFrame) prepareFrame(state, link, partialTick);
+        if (state.frameLayout == null) return;
+
+        LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
+        renderBelt(poseStack, bufferSource, state.frameEnvelope, state.frameLayout, link, visual, packedLight);
+    }
+
+    /** 按当前位姿与输送相位生成整帧布局，变形不可用时采用基础包络。 */
+    private static void prepareFrame(State state, TrackLink link, float partialTick) {
+        state.cachedFrame = renderFrame;
+        state.frameLayout = null;
+        TrackBeltPhase phase = state.phase;
+        if (phase == null) return;
+        TrackEnvelope2D.Result envelope = link.envelope(partialTick);
+        if (envelope == null) {
+            state.clearSag();
+            return;
+        }
+        BeltPath2D base = envelope.path();
+        var contact = base.wheelContact(0);
+        if (contact == null) {
+            state.clearSag();
+            return;
+        }
+        int count = link.linkCount();
         double pitch = link.attr().lengthPerLink();
         double wheel = wheelAngle(link, envelope, partialTick);
-        double label = state.phase.label(wheel, contact.startAngle() + wheel, partialTick,
-                envelope.path().inputCircles().getFirst().radius() / pitch, Math.signum(contact.sweep()));
-        TrackBeltLayout layout = new TrackBeltLayout(envelope.path(), contact, linkCount, pitch, label);
-        if (!layout.isValid()) return;
-        LinkVisual visual = mode == TrackRenderMode.MODEL ? visualFor(link, subPart) : null;
-        renderBelt(poseStack, bufferSource, envelope, linkCount, layout, link, visual, packedLight);
+        double label = phase.label(wheel, contact.startAngle() + wheel, partialTick,
+                base.inputCircles().getFirst().radius() / pitch, Math.signum(contact.sweep()));
+        // 相位从基础路径的主动轮切点求出，变形只更新路径累计距离与非啮合节距。
+        BeltPath2D path = state.saggedPath(link, envelope, sagBlend);
+        TrackBeltLayout layout = new TrackBeltLayout(path, contact, count, pitch, label);
+        if (!layout.isValid() && path != base) {
+            state.clearSag();
+            layout = new TrackBeltLayout(base, contact, count, pitch, label);
+        }
+        if (layout.isValid()) {
+            state.frameEnvelope = envelope;
+            state.frameLayout = layout;
+        }
     }
 
     private static double wheelAngle(TrackLink link, TrackEnvelope2D.Result envelope, float partialTick) {
@@ -249,7 +460,7 @@ public class TrackRenderer extends VisualEffectRenderer {
      * 计算实体剔除使用的世界 AABB。
      *
      * <p>非履带主动轮直接返回实体自身的完整刚体盒。履带主动轮额外并入整条履带的范围：
-     * 履带节贴着轮面走，因此取全部成员轮刚体 AABB 的并集，再按“履带厚度 + 一个节距”外扩。
+     * 履带节贴着轮面走，因此取全部成员轮刚体 AABB 的并集，再按“履带厚度 + 一个节距 + 最大垂度”外扩。
      * 这个外扩量覆盖两处外伸——两轮之间不贴轮的直边段（切线段会离开两侧的轮盒），
      * 以及平直节端部探出弧面的部分。轮距远大于型号节距的布局仍可能让履带在屏幕边缘晚一帧出现。</p>
      *
@@ -267,7 +478,7 @@ public class TrackRenderer extends VisualEffectRenderer {
         TrackLink link = subPart.trackLink;
         if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return ownBox;
 
-        double margin = link.attr().thicknessMeters() + link.attr().lengthPerLink();
+        double margin = link.attr().thicknessMeters() + link.attr().lengthPerLink() + BeltPath2D.MAX_SAG_HEIGHT;
         double minX = ownBox.minX;
         double minY = ownBox.minY;
         double minZ = ownBox.minZ;
@@ -289,16 +500,19 @@ public class TrackRenderer extends VisualEffectRenderer {
     }
 
     private static void renderBelt(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   TrackEnvelope2D.Result envelope, int linkCount, TrackBeltLayout layout,
+                                   TrackEnvelope2D.Result envelope, TrackBeltLayout layout,
                                    TrackLink link, @Nullable LinkVisual visual, int packedLight) {
         double length = envelope.path().length();
         if (!(length > 1e-6)) return;
         float wheelAxis = (float) -Math.signum(envelope.path().signedArea());
         float thickness = link.attr().thicknessMeters();
         float halfThickness = thickness * 0.5f;
-        float halfWidth = LINK_WIDTH * 0.5f;
+        float halfWidth = (float) (LINK_WIDTH * 0.5);
 
-        for (int i = 0; i < linkCount; i++) {
+        // 程序化节使用同一个不透明实体缓冲，保留实体光照与阴影，每条履带取一次。
+        VertexConsumer proceduralConsumer = visual == null
+                ? bufferSource.getBuffer(RenderType.entitySolid(LINK_TEXTURE)) : null;
+        for (int i = 0; i < layout.count(); i++) {
             BeltPath2D.Sample sample = layout.sample(i);
             float halfLength = (float) (layout.spacing(sample) * LINK_LENGTH_RATIO * 0.5);
             Vec2 point = sample.point();
@@ -318,7 +532,7 @@ public class TrackRenderer extends VisualEffectRenderer {
             } else {
                 poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
                         .mul(TrackLinkPose.procedural(tangent, normal, point, wheelAxis, halfThickness)));
-                renderProceduralLink(poseStack, bufferSource, halfLength, halfThickness, halfWidth, packedLight);
+                renderProceduralLink(poseStack, proceduralConsumer, halfLength, halfThickness, halfWidth, packedLight);
             }
             poseStack.popPose();
         }
@@ -416,10 +630,9 @@ public class TrackRenderer extends VisualEffectRenderer {
      * 画一节扁长方体。每个面按外法线顺序给出逆时针顶点，正面剔除下从外面可见；
      * 明暗由 {@link RenderType#entitySolid} 的实体着色器（两向光照 + 光照图）计算。
      */
-    private static void renderProceduralLink(PoseStack poseStack, MultiBufferSource bufferSource,
+    private static void renderProceduralLink(PoseStack poseStack, VertexConsumer consumer,
                                              float halfLength, float halfThickness, float halfWidth,
                                              int packedLight) {
-        VertexConsumer consumer = bufferSource.getBuffer(LINK_RENDER_TYPE);
         PoseStack.Pose pose = poseStack.last();
 
         float x0 = -halfLength;

@@ -136,10 +136,10 @@ public class ObjectManager {
             PacketDistributor.sendToPlayersInDimension(//发包给维度内玩家，在他们的客户端添加载具
                     (ServerLevel) vehicle.level,
                     new VehicleCreatePayload(vehicle.level.dimension(), new VehicleData(vehicle)));
-            // 紧跟着创建包补一份子系统同步值全量快照：载入后不再变化的值走不到变化广播。
-            // 顺序要求见 pushSubsystemState 的文档
+            // 紧跟着创建包补发运行时同步字段，供客户端初始化。
+            // 顺序要求见 pushVehicleRuntimeState 的文档
             for (ServerPlayer player : ((ServerLevel) vehicle.level).players()) {
-                pushSubsystemState(vehicle, player);
+                pushVehicleRuntimeState(vehicle, player);
             }
         } else {
             clientVehiclesToAdd.remove(vehicle.getUuid());
@@ -149,7 +149,7 @@ public class ObjectManager {
     }
 
     /**
-     * 给单个玩家补发一台载具的全部子系统同步值（{@link io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload}）。<br>
+     * 给单个玩家补发一台载具的子系统同步值及轮面支撑字段。<br>
      * 用于"该玩家的客户端刚建好这台载具"的时刻。
      * <p>
      * <b>必须紧跟在对应的载具创建包之后调用</b>：本补推与创建包走的是同一条连接，
@@ -162,12 +162,18 @@ public class ObjectManager {
      * @param vehicle 已存在于服务端内存的载具
      * @param player  接收方
      */
-    public static void pushSubsystemState(VehicleCore vehicle, ServerPlayer player) {
+    public static void pushVehicleRuntimeState(VehicleCore vehicle, ServerPlayer player) {
         vehicle.getSubsystemController().pushAllTo(player);
+        for (var part : vehicle.partMap.values()) {
+            for (var subPart : part.subParts.values()) {
+                var support = subPart.wheelSupportSnapshot();
+                if (support != null) PacketDistributor.sendToPlayer(player, support);
+            }
+        }
     }
 
     /**
-     * 给单个玩家补发该维度内全部载具的子系统同步值。<br>
+     * 给单个玩家补发该维度内全部载具的运行时同步字段。<br>
      * 同样必须紧跟在维度载具创建包之后调用，顺序要求与单台版本一致。
      * <p>
      * 取的是服务端内存里的载具，而不是 {@code LEVEL_VEHICLES} 存档快照：补推要的是
@@ -179,10 +185,10 @@ public class ObjectManager {
      * @param level  载具所在维度
      * @param player 接收方
      */
-    public static void pushSubsystemState(Level level, ServerPlayer player) {
+    public static void pushVehicleRuntimeState(Level level, ServerPlayer player) {
         if (level.isClientSide()) return;
         for (VehicleCore vehicle : levelVehicles.getOrDefault(level, Map.of()).values()) {
-            pushSubsystemState(vehicle, player);
+            pushVehicleRuntimeState(vehicle, player);
         }
     }
 
@@ -449,8 +455,8 @@ public class ObjectManager {
         for (int i = 0; i < packetNum; i++) {
             PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), iterator.next(), packetNum));
         }
-        // 创建包发完再补子系统同步值：与上面的载荷相邻发送，顺序由同一条连接保证（见 pushSubsystemState）
-        pushSubsystemState(level, (ServerPlayer) event.getEntity());
+        // 创建包发完再补运行时同步字段：与上面的载荷相邻发送，顺序由同一条连接保证（见 pushVehicleRuntimeState）
+        pushVehicleRuntimeState(level, (ServerPlayer) event.getEntity());
         MachineMax.LOGGER.info("玩家{}登录进入维度{}，发送维度内现有载具数据包", event.getEntity().getName().getString(), level.dimension().location());
     }
 

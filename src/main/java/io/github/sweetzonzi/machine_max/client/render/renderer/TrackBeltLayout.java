@@ -31,6 +31,9 @@ final class TrackBeltLayout {
         engaged = contact.contactLength() / pitch;
     }
 
+    /** 布局快照中的闭环节数，绘制遍历以此为准。 */
+    int count() { return count; }
+
     boolean isValid() { return rest > 1e-8 && engaged < count && engaged > 0; }
 
     double spacing() { return Math.max(pitch, rest / (count - engaged)); }

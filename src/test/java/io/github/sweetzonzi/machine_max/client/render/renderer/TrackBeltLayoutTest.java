@@ -6,6 +6,66 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TrackBeltLayoutTest {
+    @Test
+    void freeHeightFollowsProjectedGravityAndTheSpanLengthCap() {
+        assertEquals(.08, BeltPath2D.freeSagHeight(2, 1), 1e-12);
+        assertEquals(.12, BeltPath2D.freeSagHeight(Math.sqrt(6), 1), 1e-12);
+        assertEquals(.12, BeltPath2D.freeSagHeight(3, 1), 1e-12);
+        assertEquals(.06, BeltPath2D.freeSagHeight(3, -.5), 1e-12);
+        assertEquals(0, BeltPath2D.freeSagHeight(3, 0), 1e-12);
+    }
+
+    @Test
+    void supportFlappingKeepsNonEngagedTravelBelowThreeMillimeters() {
+        var base = BeltPath2D.build(List.of(new Circle2D(0, 0, .4), new Circle2D(3, 0, .4)));
+        var contact = base.wheelContact(0);
+        var buffer = new BeltPath2D.SagBuffer();
+        int lower = -1;
+        for (int i = 0; i < base.segments().size(); i++) {
+            var span = base.segments().get(i);
+            if (span.isStraight() && span.start().y() < 0) lower = i;
+        }
+        assertTrue(lower >= 0);
+        int count = base.linkCount(.1875);
+        double[] heights = new double[base.segments().size()];
+        var fixed = new TrackBeltLayout(base, contact, count, .1875, .4);
+        for (int fps : new int[]{30, 60, 120}) {
+            for (int phaseMs : new int[]{0, 13, 24}) {
+                double[] min = new double[count], max = new double[count];
+                java.util.Arrays.fill(min, Double.POSITIVE_INFINITY);
+                java.util.Arrays.fill(max, Double.NEGATIVE_INFINITY);
+                heights[lower] = 0;
+                for (int frame = 0; frame < fps * 3; frame++) {
+                    boolean supported = (frame * 1000 + phaseMs * fps) / (50 * fps) % 2 == 0;
+                    double target = supported ? 0 : BeltPath2D.freeSagHeight(3, 1);
+                    heights[lower] += TrackRenderer.sagBlendFactor(1.0 / fps) * (target - heights[lower]);
+                    var path = base.withSag(new Vec2(0, -1), heights, buffer);
+                    if (frame < fps) continue;
+                    var layout = new TrackBeltLayout(path, contact, count, .1875, .4);
+                    assertTrue(layout.isValid());
+                    for (int i = 0; i < count; i++) {
+                        var sample = layout.sample(i);
+                        var baseline = fixed.sample(i);
+                        if (baseline.edgeIndex() == -1) {
+                            assertEquals(baseline.point(), sample.point());
+                            assertEquals(.1875, layout.spacing(sample), 1e-12);
+                        } else {
+                            double travel = sample.arcLength() - baseline.arcLength();
+                            min[i] = Math.min(min[i], travel);
+                            max[i] = Math.max(max[i], travel);
+                        }
+                    }
+                }
+                for (int i = 0; i < count; i++) {
+                    if (fixed.sample(i).edgeIndex() != -1) {
+                        assertTrue(max[i] - min[i] < .003, "fps=" + fps + ", phaseMs=" + phaseMs
+                                + ", link=" + i + ", travel=" + (max[i] - min[i]));
+                    }
+                }
+            }
+        }
+    }
+
     private static List<Circle2D> wheels(double middle) {
         return List.of(new Circle2D(-2, 1, .4), new Circle2D(-1.5, -.6, .35),
                 new Circle2D(0, middle, .35), new Circle2D(1.5, -.6, .35), new Circle2D(2, 1, .4));

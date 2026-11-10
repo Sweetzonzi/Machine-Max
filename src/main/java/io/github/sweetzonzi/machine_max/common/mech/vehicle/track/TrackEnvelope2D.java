@@ -64,6 +64,14 @@ public final class TrackEnvelope2D {
             sprocketWorld = new Matrix4f(sprocketWorld);
         }
 
+        /**
+         * 将世界单位下方向投到主动轮局部 YZ 平面。
+         * 刚体矩阵只取旋转列的世界 Y 分量，保留投影长度供跨段垂度计算。
+         */
+        public Vec2 worldDownInPlane() {
+            return new Vec2(-sprocketWorld.m11(), -sprocketWorld.m21());
+        }
+
         /** 是否使用圆盘凸包回退：回退保留不了抬轮凹口。 */
         public boolean fallback() {
             return fallbackReason != null;
