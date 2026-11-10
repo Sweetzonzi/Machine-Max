@@ -574,6 +574,10 @@ public class ProjectileManager {
 
         MMProjectileEntity entity = new MMProjectileEntity(MMEntities.PROJECTILE_ENTITY.get(), level);
         entity.bindToProjectile(projectile);
+        // 归属同步到代理实体：原版 Projectile#getOwner 与其它模组的 instanceof 判定因此也看得到射手
+        entity.setOwner(projectile.getOwner());
+        // 反向回填供伤害上下文取 directEntity：投影重建后要指到新实例，因此每次创建都重写
+        projectile.setProxyEntity(entity);
         entity.setPos(posX[idx], posY[idx], posZ[idx]);
         entities[idx] = entity;
         level.addFreshEntity(entity);
@@ -965,17 +969,17 @@ public class ProjectileManager {
     /**
      * 入队一次战斗部起爆请求（物理线程）。
      * <p>
-     * 在命中路径的<b>动能判定完成之后</b>调用，请求载荷只含命中点与该弹种的
-     * {@code warheads} 列表；归属 {@code DamageSource} 与起爆种子由主线程冲刷时生成。
+     * 在命中路径的<b>动能判定完成之后</b>调用，请求载荷含命中点、该弹种的
+     * {@code warheads} 列表与这一发的归属；起爆种子由主线程冲刷时生成。
      * 无战斗部的投射物调用本方法不做任何事，因此调用方无需先判断。
      *
-     * @param projectile 命中的投射物（读取其战斗部列表）
+     * @param projectile 命中的投射物（读取其战斗部列表与归属）
      * @param hitPoint   实测命中点（世界坐标，MC Vec3）
      */
     public void enqueueWarheadDetonation(BallisticProjectile projectile, Vec3 hitPoint) {
         List<WorldEffect> warheads = projectile.getWarheads();
         if (warheads.isEmpty()) return;
-        pendingDetonations.add(new PendingDetonation(hitPoint, warheads));
+        pendingDetonations.add(new PendingDetonation(hitPoint, warheads, projectile.getOwner(), projectile));
     }
 
     /**
@@ -990,11 +994,12 @@ public class ProjectileManager {
      *
      * @param projectile 被摧毁的投射物（读取其战斗部列表）
      * @param origin     被摧毁时最后一次命中的命中点（世界坐标，MC Vec3）
+     * @param attacker   打爆本弹的那一击的归属者，{@code null} = 无归属
      */
-    public void enqueueWarheadCookoff(BallisticProjectile projectile, Vec3 origin) {
+    public void enqueueWarheadCookoff(BallisticProjectile projectile, Vec3 origin, @Nullable Entity attacker) {
         List<WorldEffect> warheads = projectile.getWarheads();
         if (warheads.isEmpty()) return;
-        pendingCookoffs.add(new PendingCookoff(origin, warheads));
+        pendingCookoffs.add(new PendingCookoff(origin, warheads, attacker));
     }
 
     /**
@@ -1027,9 +1032,11 @@ public class ProjectileManager {
 
         PendingDetonation d;
         while ((d = pendingDetonations.poll()) != null) {
+            // 归属三件套一次填满：来源投射物（sourceObject）、它的实体投影（directEntity）与射手
+            // （ownerEntity）。归属在服务端命中时就已经记在弹丸上，这里只做搬运，不重新判定
             EffectContext context = new EffectContext(
                     level, d.hitPoint(), Vec3.ZERO,
-                    null, null, null,
+                    d.source().getProxyEntity(), d.owner(), d.source(),
                     null, null, null);
             EffectExecutor.executeAll(d.warheads(), context);
         }
@@ -1054,7 +1061,9 @@ public class ProjectileManager {
             ExplosionManager.get(level).detonate(
                     new Vector3f((float) origin.x, (float) origin.y, (float) origin.z),
                     composition.toExplosionParams(),
-                    level.random.nextLong());
+                    level.random.nextLong(),
+                    null,
+                    c.attacker());
         }
     }
 
@@ -2237,29 +2246,40 @@ public class ProjectileManager {
     /**
      * 物理线程捕获的战斗部起爆请求，等待主线程冲刷执行。
      * <p>
-     * 只固化"命中点 + 战斗部列表"两项：归属 {@code DamageSource} 与起爆种子
-     * 都在主线程冲刷时生成（种子必须与起爆包一致，由 {@code ExplosionManager} 负责同步）。
+     * 固化"命中点 + 战斗部列表 + 归属"三项：归属是命中那一发弹丸的 owner（射手），
+     * 随请求跨到主线程，成为起爆爆炸的 causing entity；起爆种子仍由主线程生成
+     * （种子必须与起爆包一致，由 {@code ExplosionManager} 负责同步）。
      *
-     * @param hitPoint 实测命中点（世界坐标，MC Vec3，不可变值类型）
-     * @param warheads 该弹种的战斗部效果列表（内容包加载后只读，可安全跨线程共享）
+     * @param hitPoint     实测命中点（世界坐标，MC Vec3，不可变值类型）
+     * @param warheads     该弹种的战斗部效果列表（内容包加载后只读，可安全跨线程共享）
+     * @param owner        命中弹丸的归属者（射手 / 操作者），{@code null} = 无归属
+     * @param source       触发本次起爆的投射物，填进 {@code EffectContext#sourceObject}，
+     *                     并由它提供 {@code directEntity}
      */
     private record PendingDetonation(
             Vec3 hitPoint,
-            List<WorldEffect> warheads
+            List<WorldEffect> warheads,
+            @Nullable Entity owner,
+            BallisticProjectile source
     ) {}
 
     /**
      * 物理线程/主线程捕获的"飞行中被击毁"诱爆合成请求。
      * <p>
-     * 只固化"摧毁位置 + 战斗部列表"两项，主线程冲刷时按各战斗部的
+     * 只固化"摧毁位置 + 战斗部列表 + 归属"三项，主线程冲刷时按各战斗部的
      * {@link ExplosionWorldEffect#cookoff()} 合成并起爆；起爆种子在主线程生成。
+     * <p>
+     * 归属取<b>打爆这发弹的那一击</b>的 causing entity（{@code BFDamageContext#source}），
+     * 不是被打爆的这发弹自己的 owner：飞行中的弹药被敌方打掉时，殉爆属于打它的人。
      *
      * @param origin   被摧毁时最后一次命中的命中点（世界坐标，MC Vec3，不可变值类型）
      * @param warheads 该弹种的战斗部效果列表（内容包加载后只读，可安全跨线程共享）
+     * @param attacker 打爆本弹的那一击的归属者，{@code null} = 无归属
      */
     private record PendingCookoff(
             Vec3 origin,
-            List<WorldEffect> warheads
+            List<WorldEffect> warheads,
+            @Nullable Entity attacker
     ) {}
 
     /**

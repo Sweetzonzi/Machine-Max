@@ -28,6 +28,7 @@
 | [武器系统-投射物拦截与受击判定计划](已实现/武器系统-投射物拦截与受击判定计划.md) | 四阶段各自一个提交（`cbe211dc`、`1467d475`、`f67044a3`、`a7153e82`） |
 | [武器系统-爆炸系统接口设计](已实现/武器系统-爆炸系统接口设计.md) | `common/mech/explosion/` 的类与签名按本文口径实现 |
 | [武器系统-碰炸引信与爆炸战斗部实现备忘](已实现/武器系统-碰炸引信与爆炸战斗部实现备忘.md) | 提交 `90fd8fef`；`warheads` 字段与固定碰炸引信已落地 |
+| [武器系统-伤害归属实现备忘](已实现/武器系统-伤害归属实现备忘.md) | 弹丸 owner 经 `FireCommand#shooter` 传入（来源 `SeatSubsystem.passenger`），`DamageSource` 带 causing/direct entity；命中起爆经 `EffectContext` 与 `detonate(..., attacker)` 归属，殉爆继承导致殉爆那一击的起因实体（`AbstractSubsystem#getLastDamageAttacker`）；带归属的死亡消息由 `mixin/DamageSourceMixin` 切到 `.player` 键，不新增伤害类型；同载具过滤与载具记功未做；`gradlew --offline test` 与 `runGameTestServer`（含 `damageSourceCarriesTheShooterAsCausingEntity`、`cookoffSourceFollowsTheMagazineModule`、`chamberedRoundDetonatesWithTheBreech`）通过，实机验收待完成 |
 | [武器系统-制导组件实现备忘](已实现/武器系统-制导组件实现备忘.md) | 提交 `c1c0db71`；`GuidanceLaw`、`PurePursuitGuidance`、`AuthorityLimits` 已落地 |
 | [武器系统-装弹机装填语义与供给绑定重构计划](已实现/武器系统-装弹机装填语义与供给绑定重构计划.md) | `feed` / `magazine` 分块（含 `reload_round_by_round`）、`dockedConsumers` 对接状态机与 `claimedByOther` 控制器独占绑定均已落地，T01—T20 服务端用例通过；客户端画面与 HUD 进度环的实机验收待完成 |
 | [研究台界面-研发分组与蓝图库统一重构计划](已实现/研究台界面-研发分组与蓝图库统一重构计划.md) | 提交 `87615e1e`；研究台树形界面与研发分组已在 AUI 上实现 |
@@ -85,6 +86,7 @@
 
 | 文档 | 现状 |
 | --- | --- |
+| [界面-载具模型与座位HUD的AUI接入设计](计划中/界面-载具模型与座位HUD的AUI接入设计.md) | v2 待实现。座椅等 HUD 宿主通过布局显式挂载座位图条目，`machinemax-vehicle-model` 支持三轴旋转，`vehicle.*` 提供独立于页面布局的三维座位数据。 |
 | [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |

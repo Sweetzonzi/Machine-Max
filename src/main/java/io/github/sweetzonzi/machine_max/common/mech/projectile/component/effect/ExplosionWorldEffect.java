@@ -54,10 +54,12 @@ public record ExplosionWorldEffect(ExplosionParams params, CookoffContribution c
     }
 
     /**
-     * 正常起爆：把上下文起点翻译为一次 {@link ExplosionManager#detonate}。
+     * 正常起爆：把上下文起点与归属翻译为一次 {@link ExplosionManager#detonate}。
      * <p>
-     * 伤害归属取自 {@link ExplosionParams#damageType()}（默认 {@code machine_max:blast}），
-     * 不带 owner（owner 归属属后续阶段）。
+     * 伤害类型取自 {@link ExplosionParams#damageType()}（默认 {@code machine_max:blast}），
+     * 归属取 {@link EffectContext#ownerEntity()}（射手 / 操作者），它成为该次爆炸伤害的
+     * causing entity；没有归属（调试发射、无乘员的载具）时为 {@code null}。
+     * <p>
      * 种子由服务端生成并随起爆包同步，保证双端一致。
      * <p>
      * 被诱爆不走本方法：受伤摧毁的弹药只把 {@link #cookoff()} 计入库存/战斗部合成，
@@ -74,6 +76,8 @@ public record ExplosionWorldEffect(ExplosionParams params, CookoffContribution c
         ExplosionManager.get(level).detonate(
                 new Vector3f((float) origin.x, (float) origin.y, (float) origin.z),
                 params,
-                level.random.nextLong());
+                level.random.nextLong(),
+                null,
+                context.ownerEntity());
     }
 }

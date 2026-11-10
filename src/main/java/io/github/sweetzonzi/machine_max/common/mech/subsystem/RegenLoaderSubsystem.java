@@ -20,13 +20,14 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.FeedModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.MagazineModuleAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -602,27 +603,29 @@ public class RegenLoaderSubsystem extends ModularSubsystem implements IAmmoSuppl
         Vector3f origin = getLastDamageOrigin();
         // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
         Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
+        // 归属：打坏弹仓的那一击的 causing entity，殉爆继续算在同一个射手头上
+        Entity attacker = getLastDamageAttacker();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
         consumeAllStoredAmmo();
         ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
 
     /**
-     * 起爆定位与豁免只看弹仓模块自己的最近有效受击。
+     * 起爆定位、豁免与归属只看弹仓模块自己的最近有效受击。
      * <p>
      * 不读子系统级记录：同一批次里先打爆弹仓、再打伤机构时，子系统级记录已经被机构那次覆盖，
-     * 用它定位会把殉爆放到机构的命中箱上。模块记录只在弹仓自己的耐久下降时更新，
-     * 零耐久的追加命中也不会改写它。
+     * 用它定位会把殉爆放到机构的命中箱上、记功也会记到打下机构的那一发上。模块记录只在弹仓
+     * 自己的耐久下降时更新，零耐久的追加命中也不会改写它。
      *
-     * @return 命中箱；弹仓没受过有效击、已从摧毁中恢复或读档后为 {@code null}，
-     *         此时起爆点回退宿主质心、且不豁免任何命中箱
+     * @return 弹仓的最近有效受击；没受过有效击、已从摧毁中恢复或读档后为 {@code null}，
+     *         此时起爆点回退宿主质心、不豁免任何命中箱、且本次殉爆无归属
      */
     @Override
     @Nullable
-    public HitBox getLastHitBox() {
+    protected SubPartDamageEvent.Pre getCookoffDamageEvent() {
         SubModule magazine = getModule("magazine");
-        return magazine == null ? null : resolveHitBox(magazine.getLastHitEvent());
+        return magazine == null ? null : magazine.getLastHitEvent();
     }
 
     /**

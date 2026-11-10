@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.network.payload.explosion.ExplosionDetonatePayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -85,12 +86,12 @@ public final class ExplosionManager {
      * <p>仅服务端生效：客户端通过起爆包建立表现条目。</p>
      *
      * @param origin 起爆点
-     * @param params 参数集；伤害归属取自 {@link ExplosionParams#damageType()}，
+     * @param params 参数集；伤害类型取自 {@link ExplosionParams#damageType()}，
      *               调用方不传 {@code DamageSource}
      * @param seed   起爆种子，双端必须一致
      */
     public void detonate(Vector3f origin, ExplosionParams params, long seed) {
-        detonate(origin, params, seed, null);
+        detonate(origin, params, seed, null, null);
     }
 
     /**
@@ -115,6 +116,28 @@ public final class ExplosionManager {
      */
     public void detonate(Vector3f origin, ExplosionParams params, long seed,
                          @Nullable Set<PenetrationKey> ignoredKeys) {
+        detonate(origin, params, seed, ignoredKeys, null);
+    }
+
+    /**
+     * 带归属的起爆入口：{@code attacker} 成为本次爆炸伤害的 causing entity。
+     *
+     * <p>归属只影响服务端的 {@link DamageSource}——实体受伤的记功、仇恨、死亡消息与
+     * {@code SubPartDamageEvent} 里的上下文都经它携带；{@link ExplosionDetonatePayload}
+     * 仍只含"起爆点 + 种子 + 参数集"，客户端表现与归属无关。</p>
+     *
+     * <p>三种调用方各传各的：投射物战斗部传射手（经 {@code EffectContext#ownerEntity}），
+     * 弹药殉爆传<b>导致殉爆的那一击</b>的 causing entity（见
+     * {@code AbstractSubsystem#getLastDamageAttacker()}），指令与测试起爆传 {@code null}。</p>
+     *
+     * @param origin      起爆点
+     * @param params      参数集
+     * @param seed        起爆种子，双端必须一致
+     * @param ignoredKeys 起爆即视为已穿透的穿透键
+     * @param attacker    本次爆炸的归属者（causing entity）；{@code null} 表示无归属
+     */
+    public void detonate(Vector3f origin, ExplosionParams params, long seed,
+                         @Nullable Set<PenetrationKey> ignoredKeys, @Nullable Entity attacker) {
         if (level.isClientSide()) return;
         // 殉爆环路保护：限制每维度同时活跃的实例数
         if (active.size() >= MMServerConfig.explosionMaxActiveInstances()) {
@@ -122,7 +145,9 @@ public final class ExplosionManager {
                     MMServerConfig.explosionMaxActiveInstances(), origin);
             return;
         }
-        DamageSource source = level.damageSources().source(params.damageType());
+        // direct entity 保持为 null：爆炸没有"直接载体"，归属全部落在 causing entity 上，
+        // 与原版 TNT 以外的爆炸口径一致（DamageSource#getEntity 读的正是 causing entity）
+        DamageSource source = level.damageSources().source(params.damageType(), null, attacker);
         PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                 new ExplosionDetonatePayload(level.dimension(), origin, seed, params));
         active.add(new ExplosionInstance(level, origin, params, source, seed, ignoredKeys));

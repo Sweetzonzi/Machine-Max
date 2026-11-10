@@ -32,6 +32,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +75,22 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 主线程末尾定下的值要能被紧随其后的物理步进看到。
      */
     private volatile boolean firing = false;
+
+    /**
+     * 当前开火的归属者：生效中的开火信号来源所载的乘客（通常是座位上的玩家），
+     * {@code null} = 无归属（无人座位、AI 直发指令、调试自动开火）。
+     * <p>
+     * 口径与载具控制器 {@code AbstractGroundControllerSubsystem#controller} 一致：来源是
+     * {@link SeatSubsystem} 时取它的 {@code passenger}。区别在于本字段<b>有读点</b>——
+     * 开火时它随 {@link LauncherSubsystem.FireCommand} 下发给发射器，成为每发弹丸的 owner。
+     * <p>
+     * 写点都在主线程（{@link #readInputSignals()} 与 {@link #updateRegularInputs()}，
+     * 两者都在 {@link #onTick()} 里），读点在物理线程（{@link #onPrePhysicsTick()} 的开火分支），
+     * 因此声明 volatile。客户端恒为 {@code null}：{@code SeatSubsystem.passenger} 只有服务端有值，
+     * 而归属只在服务端参与伤害与记功。
+     */
+    @Nullable
+    private volatile LivingEntity operator;
 
     /**
      * 调试自动开火开关。开启后无视 fire_inputs 信号，持续保持 firing = true。<br>
@@ -802,7 +819,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             String channel = launchers.get(launcher);
             if (channel == null) continue;
             sendSignalToTarget(channel, launcher,
-                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
+                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true, operator));
         }
     }
 
@@ -826,7 +843,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 String channel = launchers.get(launcher);
                 if (channel != null) {
                     sendSignalToTarget(channel, launcher,
-                            new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true));
+                            new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true, operator));
                 }
             }
             rippleIndex = (rippleIndex + 1) % aimedLaunchers.size();
@@ -972,12 +989,15 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         // 读取开火指令：频道里只有表达"开火"的信号才算开火，判据见 isFireSignal。
         // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 fire_input_*），它不算开火，
         // 因此不能按"频道里有东西"来判，否则按一次切换弹种键就会打出一发。
+        // 归属随开火指令一起取：谁能开火，谁就是这一发的 owner。
         this.firing = false;
+        this.operator = null;
         fire: for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
-            for (Object signal : channel.values()) {
-                if (isFireSignal(signal)) {
+            for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
+                if (isFireSignal(entry.getValue())) {
                     this.firing = true;
+                    this.operator = operatorOf(entry.getKey());
                     break fire;
                 }
             }
@@ -1003,6 +1023,21 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             }
 
         }
+    }
+
+    /**
+     * 从开火信号的发送者解析归属者：只有座位能指认一个正在操控它的实体。
+     * <p>
+     * 与载具控制器同一条口径（发送者是 {@link SeatSubsystem} 时取它的 {@code passenger}），
+     * "谁在开车"与"谁在开火"因此在读法上不会分家。其它发送者（脚本子系统、命令、AI 直发）
+     * 没有可指认的操控实体，一律无归属。
+     *
+     * @param sender 写入开火信号的发送者
+     * @return 归属者；不是座位或座位空置时为 {@code null}
+     */
+    @Nullable
+    private static LivingEntity operatorOf(ISignalSender sender) {
+        return sender instanceof SeatSubsystem seat ? seat.passenger : null;
     }
 
     /**
@@ -1063,6 +1098,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 case SECONDARY_FIRE:
                     // hold 语义：tickCount==0 表示按下中，非0表示松开
                     this.firing = tickCount == 0;
+                    // 归属只在"按下中"成立：松开即释放开火权，也就没有主人可记
+                    this.operator = this.firing ? operatorOf(activeSender) : null;
                     break;
                 case NEXT_AMMO_TYPE:
                     // 一次性事件：仅 tickCount==0（按下瞬间）触发

@@ -15,6 +15,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -472,10 +473,12 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         Vector3f origin = getLastDamageOrigin();
         // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
         Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
+        // 归属：打坏本装弹机的那一击的 causing entity，殉爆继续算在同一个射手头上
+        Entity attacker = getLastDamageAttacker();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
         consumeAllStoredAmmo();
         ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
 
     /**

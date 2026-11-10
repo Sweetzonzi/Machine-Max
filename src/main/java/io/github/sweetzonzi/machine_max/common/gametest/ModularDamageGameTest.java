@@ -34,6 +34,9 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -44,11 +47,13 @@ import java.util.Set;
  * 模块化子系统的伤害入口、模块摧毁规则、装弹机的再生清理与退弹边界（T01、T13—T17、T23）的服务端验证；
  * 不进入物理世界。
  *
- * <p>六项契约：</p>
+ * <p>以下契约：</p>
  * <ul>
  *   <li>{@code pass_damage=false} 只取消事件的向下传递，子系统仍按模块吸收伤害（§3.5）；
  *       事件取消是零件耐久与载具伤害的唯一闸门，因此本类断言取消标志与模块耐久两条。</li>
  *   <li>命中箱标注的 {@code module} 决定哪个模块承担伤害；未标注时按模块最大耐久比例分摊。</li>
+ *   <li>殉爆的归属取"打坏关键模块那一击"的起因实体：定位、豁免与归属同源
+ *       （{@code AbstractSubsystem#getCookoffDamageEvent()}），打机构的一击既不改写来源也不改写归属。</li>
  *   <li>摧毁与恢复按模块判定：任一关键模块摧毁即整机摧毁；任何模块（关键与否）都要修到
  *       {@link AbstractSubsystem#RECOVERY_RATIO} 才脱离摧毁，0%—30% 之间保持摧毁且随存档保留。</li>
  *   <li>弹仓归零作废进行中的再生：判毁边沿清一次，锁存态读档再清一次；机构单独损坏不清。</li>
@@ -427,15 +432,15 @@ public final class ModularDamageGameTest {
     }
 
     /**
-     * 起爆定位只认弹仓模块自己的最近有效受击（T09、T06/T07 的定位部分）。
+     * 起爆定位与归属只认弹仓模块自己的最近有效受击（T09、T06/T07 的定位部分）。
      *
      * <p>装配两个登记到宿主上的探针命中箱，分别指向机构与弹仓，逐条固定：</p>
      * <ol>
-     *   <li>只打机构时弹仓没有记录，因此不豁免任何命中箱（起爆点回退质心）；</li>
-     *   <li>打爆弹仓后，豁免恰好是弹仓那个命中箱；</li>
-     *   <li>随后命中机构不会改写弹仓的来源；</li>
+     *   <li>只打机构时弹仓没有记录，因此不豁免任何命中箱（起爆点回退质心）、归属为空；</li>
+     *   <li>打爆弹仓后，豁免恰好是弹仓那个命中箱，归属是那一击的起因实体；</li>
+     *   <li>随后命中机构不会改写弹仓的来源与归属；</li>
      *   <li>零耐久的追加命中同样不会改写；</li>
-     *   <li>弹仓修到恢复门槛后记录被清空，下一次生命周期从零开始。</li>
+     *   <li>弹仓修到恢复门槛后记录被清空，下一次生命周期从零开始（归属随之清空）。</li>
      * </ol>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
@@ -454,21 +459,30 @@ public final class ModularDamageGameTest {
             helper.assertTrue(loader.getModule("magazine").getLastHitEvent() == null, "只打机构不得在弹仓上留记录");
             helper.assertTrue(loader.getCookoffIgnoredKeys().isEmpty(),
                     "弹仓没有有效受击来源时不得豁免任何命中箱（不把宿主整块装甲放行）");
+            helper.assertTrue(loader.getLastDamageAttacker() == null, "弹仓没有有效受击来源时殉爆无归属");
 
-            loader.onHurt(hitEvent(helper, loader, magazineProbe, Float.MAX_VALUE));
+            // 打爆弹仓的是玩家：这一击的起因实体就是随后殉爆的归属
+            Player attacker = helper.makeMockPlayer(GameType.SURVIVAL);
+            loader.onHurt(hitEvent(helper, loader, magazineProbe, Float.MAX_VALUE,
+                    helper.getLevel().damageSources().playerAttack(attacker)));
             helper.assertTrue(loader.getModule("magazine").isDestroyed(), "弹仓应被这一击打爆");
             assertZone(helper, loader.getCookoffIgnoredKeys(), "mm_gametest_magazine", "爆点应来自弹仓命中箱");
+            helper.assertTrue(loader.getLastDamageAttacker() == attacker,
+                    "殉爆归属应取打坏弹仓那一击的起因实体");
 
             loader.onHurt(hitEvent(helper, loader, feedProbe, 1f));
             assertZone(helper, loader.getCookoffIgnoredKeys(), "mm_gametest_magazine", "机构命中不得覆盖弹仓来源");
+            helper.assertTrue(loader.getLastDamageAttacker() == attacker, "机构命中不得覆盖殉爆归属");
 
             loader.onHurt(hitEvent(helper, loader, magazineProbe, 2f));
             assertZone(helper, loader.getCookoffIgnoredKeys(), "mm_gametest_magazine", "零耐力追加命中不得改写来源");
+            helper.assertTrue(loader.getLastDamageAttacker() == attacker, "零耐力追加命中不得改写归属");
 
             SubModule magazine = loader.getModule("magazine");
             loader.routeRepair("magazine", magazine.getMaxDurability() * AbstractSubsystem.RECOVERY_RATIO);
             helper.assertTrue(!magazine.isDestroyed(), "修到恢复门槛后弹仓脱离摧毁");
             helper.assertTrue(magazine.getLastHitEvent() == null, "脱离摧毁即结束一次生命周期，受击记录应清空");
+            helper.assertTrue(loader.getLastDamageAttacker() == null, "受击记录清空后殉爆归属随之清空");
             helper.succeed();
         } finally {
             part.discardUnattached();
@@ -533,9 +547,13 @@ public final class ModularDamageGameTest {
             helper.assertTrue(launcher.getChamberedType() != null, "前置：膛内应压入一发有殉爆贡献的弹药");
 
             HitBox breechProbe = registerProbe(launcher, "mm_gametest_breech", "breech");
-            launcher.onHurt(hitEvent(helper, launcher, breechProbe, Float.MAX_VALUE));
+            Player attacker = helper.makeMockPlayer(GameType.SURVIVAL);
+            launcher.onHurt(hitEvent(helper, launcher, breechProbe, Float.MAX_VALUE,
+                    helper.getLevel().damageSources().playerAttack(attacker)));
             helper.assertTrue(launcher.getModule("breech").isDestroyed(), "炮闩应被这一击打爆");
             assertZone(helper, launcher.getCookoffIgnoredKeys(), "mm_gametest_breech", "爆点应来自炮闩命中箱");
+            helper.assertTrue(launcher.getLastDamageAttacker() == attacker,
+                    "膛内殉爆的归属应取打坏炮闩那一击的起因实体");
 
             ExplosionManager explosions = ExplosionManager.get(helper.getLevel());
             int before = explosions.activeInstances().size();
@@ -744,8 +762,14 @@ public final class ModularDamageGameTest {
     /** 构造一次命中给定的已登记命中箱的事件。 */
     private static SubPartDamageEvent.Pre hitEvent(GameTestHelper helper, AbstractSubsystem subsystem,
                                                    HitBox hitBox, float amount) {
+        return hitEvent(helper, subsystem, hitBox, amount, helper.getLevel().damageSources().generic());
+    }
+
+    /** 同上，但由调用方指定伤害源——归属断言要一条带起因实体的源。 */
+    private static SubPartDamageEvent.Pre hitEvent(GameTestHelper helper, AbstractSubsystem subsystem,
+                                                   HitBox hitBox, float amount, DamageSource source) {
         BFDamageContext ctx = BFDamageContext.builder()
-                .source(helper.getLevel().damageSources().generic())
+                .source(source)
                 .baseDamage(amount)
                 .build();
         ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);

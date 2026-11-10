@@ -73,7 +73,7 @@ public class FlareTestItem extends Item {
 
         Vector3f jmePos = PhysicsHelperKt.toBVector3f(spawnPos);
         Vector3f jmeVel = PhysicsHelperKt.toBVector3f(look).multLocal(flare.getBaseVelocity());
-        flare.create(level, jmePos, jmeVel);
+        flare.create(level, jmePos, jmeVel, player);
 
         SoundEvent fireSound = flare.getFireSounds().get("0.0");
         if (fireSound != null) {

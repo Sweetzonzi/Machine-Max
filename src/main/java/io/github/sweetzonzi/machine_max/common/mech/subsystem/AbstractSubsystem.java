@@ -362,17 +362,52 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
+     * 殉爆来源事件：起爆定位、豁免与<b>归属</b>共用的唯一事件来源。
+     * <p>
+     * 基类读子系统级的记录（{@link #lastDamageEvent}）；模块化子系统覆写为读某个模块的记录，
+     * 让殉爆只认打到该模块身上的那一击。三处消费方（{@link #getLastHitBox()}、
+     * {@link #getCookoffIgnoredKeys()}、{@link #getLastDamageAttacker()}）都经本方法取事件，
+     * 因此"用哪一击定位、豁免谁、记谁的功"不会各走一路。
+     *
+     * @return 起爆依据的那次有效受击；没有有效受击记录时为 {@code null}
+     */
+    @Nullable
+    protected SubPartDamageEvent.Pre getCookoffDamageEvent() {
+        return lastDamageEvent;
+    }
+
+    /**
      * 起爆定位与豁免的唯一依据：本子系统最近一次有效受击指认的命中箱。
      * <p>
-     * 基类读子系统级的记录（{@link #lastDamageEvent}）；模块化子系统可覆写为读某个模块的记录，
-     * 让殉爆只认打到该模块身上的那一击。定位与豁免都只经过这一个方法，
-     * 因此"用哪个命中箱定位、豁免哪个命中箱"不会各走一路。
+     * 定位与豁免都只经过这一个方法，事件来源见 {@link #getCookoffDamageEvent()}。
      *
      * @return 命中箱；没有有效受击记录时为 {@code null}
      */
     @Nullable
     public HitBox getLastHitBox() {
-        return resolveHitBox(lastDamageEvent);
+        return resolveHitBox(getCookoffDamageEvent());
+    }
+
+    /**
+     * 殉爆归属：本子系统起爆时应记功的实体，即<b>导致殉爆那一击</b>的 causing entity。
+     * <p>
+     * 殉爆不是"炸自己"就无主：敌人瞄准弹药架/炮闩的弱点打穿并摧毁它时，那一次伤害事件带着
+     * 自己的归属（射手的 {@code DamageSource}），这次殉爆应当继续算在同一个射手头上，
+     * 否则打弱点与打装甲在战果上没有区别。取值与定位同源——都来自
+     * {@link #getCookoffDamageEvent()}，因此殉爆认的是"打坏关键模块的那一击"。
+     * <p>
+     * 归属随伤害链自然传递：外来投射物 → 零件/子系统 → 殉爆爆炸 → 下一个被打爆的弹药架，
+     * 链条上每一环都读前一环 {@code DamageSource} 的 causing entity。
+     *
+     * <p><b>调用线程：</b>主线程（子系统摧毁边沿）。
+     *
+     * @return 记功实体；没有有效受击记录、或那一击本身无归属时为 {@code null}
+     */
+    @Nullable
+    public Entity getLastDamageAttacker() {
+        SubPartDamageEvent.Pre event = getCookoffDamageEvent();
+        if (event == null || event.getCtx() == null) return null;
+        return event.getCtx().source().getEntity();
     }
 
     /**

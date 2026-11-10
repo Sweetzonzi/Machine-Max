@@ -61,8 +61,8 @@ public class ProjectileTestItem extends Item {
             return InteractionResultHolder.success(stack);
         }
 
-        // 创建投射物并加入世界
-        kineticType.create(level, jmePos, jmeVel);
+        // 创建投射物并加入世界；调试发射与实战同口径，归属记在扣扳机的玩家头上
+        kineticType.create(level, jmePos, jmeVel, player);
 
         // 播放单发开火音效
         SoundEvent fireSound = kineticType.getFireSounds().get("0.0");

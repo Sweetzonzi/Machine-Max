@@ -4,6 +4,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.NonFiniteDiagnostics;
@@ -16,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @GameTestHolder(MachineMax.MOD_ID)
@@ -30,7 +32,7 @@ public final class ProjectileTerrainHitGameTest {
             var type = type(helper, id);
             float speed = type.getBaseVelocity();
             var projectile = new BallisticProjectile(helper.getLevel(), type,
-                    new Vector3f(), new Vector3f(0, 0, speed));
+                    new Vector3f(), new Vector3f(0, 0, speed), null);
             var result = projectile.onTerrainHit(helper.getLevel(), pos, Blocks.BEDROCK.defaultBlockState(),
                     type.getBasePenetration(), speed, Vec3.atCenterOf(pos), new Vec3(0, 1, 0));
             helper.assertTrue(result.destroyed(), "Bedrock must stop " + id + "; result=" + result);
@@ -43,7 +45,7 @@ public final class ProjectileTerrainHitGameTest {
         var type = type(helper, "50mm_pzgr39");
         BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
         var velocity = new Vector3f(0, 0, 835);
-        var projectile = new BallisticProjectile(helper.getLevel(), type, new Vector3f(), velocity);
+        var projectile = new BallisticProjectile(helper.getLevel(), type, new Vector3f(), velocity, null);
         for (var block : List.of(Blocks.GLASS, Blocks.DIRT, Blocks.STONE, Blocks.OBSIDIAN)) {
             var state = block.defaultBlockState();
             float armor = ArmorUtil.getBlockArmor(helper.getLevel(), state, pos);
@@ -60,6 +62,56 @@ public final class ProjectileTerrainHitGameTest {
             }
         }
         helper.succeed();
+    }
+
+    /**
+     * 归属落点：伤害源的 causing entity 是弹丸 owner，direct entity 是没有代理实体时的 {@code null}。
+     *
+     * <p>三条：有 owner 时 {@code getEntity()} 返回射手；没有实体投影时 {@code getDirectEntity()} 为
+     * {@code null}（不把射手冒充成直接载体）；无 owner 的弹丸两个位置都是 {@code null}，与归属落地前的
+     * 行为一致。</p>
+     */
+    @GameTest(template = "part_foundation", batch = "mmProjectileTerrain", timeoutTicks = 40)
+    public static void damageSourceCarriesTheShooterAsCausingEntity(GameTestHelper helper) {
+        var type = type(helper, "50mm_pzgr39");
+        var shooter = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        var victim = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        var velocity = new Vector3f(0, 0, type.getBaseVelocity());
+        var exts = new io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions();
+
+        var owned = new BallisticProjectile(helper.getLevel(), type, new Vector3f(), velocity, shooter);
+        var ctx = owned.buildHurtContext(helper.getLevel(), 10f, Vec3.ZERO, Vec3.ZERO, new Vec3(0, 1, 0), exts);
+        helper.assertTrue(owned.getOwner() == shooter, "弹丸应记住发射时写入的归属");
+        helper.assertTrue(ctx.source().getEntity() == shooter, "伤害源的 causing entity 应为射手");
+        helper.assertTrue(ctx.source().getDirectEntity() == null, "没有实体投影时 direct entity 应为 null");
+        helper.assertTrue(MMLanguageRegistry.DEATH_ATTACK_PROJECTILE_PLAYER.tag.equals(
+                        deathMessageKey(ctx.source(), victim)),
+                "有归属的击杀消息应走带施加者的键，实际 " + deathMessageKey(ctx.source(), victim));
+
+        var ownerless = new BallisticProjectile(helper.getLevel(), type, new Vector3f(), velocity, null);
+        var ownerlessCtx = ownerless.buildHurtContext(helper.getLevel(), 10f, Vec3.ZERO, Vec3.ZERO,
+                new Vec3(0, 1, 0), exts);
+        helper.assertTrue(ownerlessCtx.source().getEntity() == null, "无归属的弹丸不得凭空产生起因实体");
+        helper.assertTrue(ownerlessCtx.source().getDirectEntity() == null, "无归属的弹丸同样没有直接载体");
+        helper.assertTrue(MMLanguageRegistry.DEATH_ATTACK_PROJECTILE.tag.equals(
+                        deathMessageKey(ownerlessCtx.source(), victim)),
+                "无归属时交回原版基础键，实际 " + deathMessageKey(ownerlessCtx.source(), victim));
+
+        // 只接管本项目三类伤害：其它类型即使带起因实体也保持原版措辞
+        helper.assertTrue("death.attack.generic".equals(
+                        deathMessageKey(helper.getLevel().damageSources().source(
+                                net.minecraft.world.damagesource.DamageTypes.GENERIC, shooter), victim)),
+                "其它伤害类型不得被接管");
+        helper.succeed();
+    }
+
+    /** 死亡消息的翻译键；不是可翻译组件时返回 {@code null}。 */
+    @Nullable
+    private static String deathMessageKey(net.minecraft.world.damagesource.DamageSource source,
+                                          net.minecraft.world.entity.LivingEntity victim) {
+        return source.getLocalizedDeathMessage(victim).getContents()
+                instanceof net.minecraft.network.chat.contents.TranslatableContents contents
+                ? contents.getKey() : null;
     }
 
     private static BallisticProjectileType type(GameTestHelper helper, String id) {

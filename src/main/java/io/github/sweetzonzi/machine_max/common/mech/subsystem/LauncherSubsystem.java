@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
@@ -205,12 +206,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 发射控制指令：多控制器通过此 record 原子写入方向、修正角和开火指令。<br>
      * 火控以信号值写入本发射器的控制输入槽，{@link #getActiveFireCommand} 按 controlInputs 优先级读取。
+     * <p>
+     * {@code shooter} 是这次开火的归属者，最终成为每发弹丸的 owner（见
+     * {@link #fireSingle(BallisticProjectileType)}）。它随"开火权"一起下发：谁点的火与谁允许开火
+     * 是同一份记录，不另建一条并行的归属通道。发射器与火控同处一辆载具，因此这里的引用只在
+     * 服务端有值——客户端没有乘客实体，也不需要归属。
      */
     public record FireCommand(
         @Nullable Vector3f direction,   // null = 使用 locator 朝向
         float correctionAngleDeg,       // 火控修正角（度），0 = 不修正
-        boolean firing                  // 是否开火
-    ) {}
+        boolean firing,                 // 是否开火
+        @Nullable Entity shooter        // 本次开火的归属者（射手 / 操作者），null = 无归属
+    ) {
+        /** 无归属的发射指令：方向与修正角照常生效，弹丸不带 owner。 */
+        public FireCommand(@Nullable Vector3f direction, float correctionAngleDeg, boolean firing) {
+            this(direction, correctionAngleDeg, firing, null);
+        }
+    }
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -525,27 +537,32 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Vector3f origin = getLastDamageOrigin();
         // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
         Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
+        // 归属：打坏炮闩的那一击的 causing entity，殉爆继续算在同一个射手头上
+        Entity attacker = getLastDamageAttacker();
         // 先消耗膛内那发再交给普通爆炸服务：本次起爆后本管不再持有这发弹药
         chamberedType = null;
         ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys);
+                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
 
     /**
-     * 起爆定位与豁免只看炮闩模块自己的最近有效受击。
+     * 起爆定位、豁免与归属只看炮闩模块自己的最近有效受击。
      * <p>
      * 膛内那发躺在炮闩里，而炮闩正是发射器唯一的关键模块，因此"打到本子系统"与"打到这发弹药"
      * 在本管上是同一件事；按模块读与装弹机按 {@code magazine} 模块读是同一套口径。模块记录只在
      * 炮闩自己的耐久下降时更新，未标注模块的命中按比例分摊时同样会记到炮闩上。
+     * <p>
+     * 定位（{@link #getLastHitBox()}）、豁免（{@link #getCookoffIgnoredKeys()}）与归属
+     * （{@link #getLastDamageAttacker()}）都由基类经本方法取事件，因此殉爆记的是"打坏炮闩的那一击"。
      *
-     * @return 命中箱；炮闩没受过有效击、或已从摧毁中恢复时为 {@code null}，
-     *         此时起爆点回退宿主质心、且不豁免任何命中箱
+     * @return 炮闩的最近有效受击；没受过有效击、或已从摧毁中恢复时为 {@code null}，
+     *         此时起爆点回退宿主质心、不豁免任何命中箱、且本次殉爆无归属
      */
     @Override
     @Nullable
-    public HitBox getLastHitBox() {
+    protected SubPartDamageEvent.Pre getCookoffDamageEvent() {
         SubModule breech = getModule("breech");
-        return breech == null ? null : resolveHitBox(breech.getLastHitEvent());
+        return breech == null ? null : breech.getLastHitEvent();
     }
 
     /**
@@ -764,6 +781,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      *   <li>散布 + 最终初速计算</li>
      *   <li>继承发射平台速度</li>
      *   <li>调用 {@link ProjectileType#create} 创建投射物（内部进入 SoA 写入）</li>
+     *   <li>把持有开火权那一方的 {@code shooter} 记进每发弹丸，作为伤害与殉爆的归属来源</li>
      *   <li>后坐力 {@code applyImpulse} 直接作用到发射平台刚体</li>
      * </ol>
      */
@@ -776,13 +794,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
 
         // ② 服务端：开火——ProjectileType 内部处理 bullet_num、散布、速度
+        //    归属取自此刻持有开火权的指令：允许本发存在的那个来源就是它的主人，指令已释放则本发无主
+        FireCommand command = getActiveFireCommand();
+        Entity shooter = command == null ? null : command.shooter();
         List<BallisticProjectile> projectiles = type.fire(
             getLevel(), muzzle.position(), muzzle.direction(),
             muzzle.velocityMultiplier(),
             attr.staticAttribute.getBarrel().velocityBonus(),
             attr.staticAttribute.getBarrel().horizontalAccuracyMultiplier() * muzzle.spreadMultiplier(),
             attr.staticAttribute.getBarrel().verticalAccuracyMultiplier() * muzzle.spreadMultiplier(),
-            getSubPart().getLinearVelocity()
+            getSubPart().getLinearVelocity(),
+            shooter
         );
 
         // ③ 制导弹登记：记住 objId 以便后续每物理步推送目标，并装订初始目标

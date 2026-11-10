@@ -100,6 +100,17 @@ int[] typeIndex;               // 投射物类型索引
 
 `vulnerability.rha` 是硬门槛而非软阈值：命中管线先判穿甲，未击穿时默认的 `calculateFinalDamage` 返回 0，`hurt` 因此在 `amount <= 0f` 处早退，耐久不减少。要让某型拦截弹打得动某型目标，就把它配到能击穿对应厚度。
 
+## 伤害归属
+
+归属只由一条链承担：座位乘客经武器控制器的 `operator`、`FireCommand#shooter` 落到 `BallisticProjectile.owner`，再落进 `BFDamageContext.source` 的 causing entity。
+
+- **`owner` 是构造参数**（`BallisticProjectileType#create(level, pos, vel, owner)`），服务端发射时写入，客户端经 spawn 包重建的弹丸恒为 `null`；归属不进任何网络包。
+- **伤害源两层**：`source(type, direct = getProxyEntity(), causing = owner)`。`direct` 是代理实体 `MMProjectileEntity`（区块卸载被回收时为 `null`），`causing` 是射手——与原版箭矢同口径。
+- **代理实体同步 owner**：`createProjectileEntity` 调原版 `Projectile#setOwner`，外部模组经 `getOwner()` 也读得到射手。
+- **起爆归属**：`flushPendingDetonations()` 把 `PendingDetonation` 里的 owner 与投射物搬进 `EffectContext`（`ownerEntity` / `directEntity` / `sourceObject`），`ExplosionWorldEffect` 再传给 `detonate(..., attacker)`。
+- **飞行中被击毁**的弹药，殉爆归属是**打爆它那一击**的 causing entity，不是本弹的 owner（见 `BallisticProjectile#settleAccumulatedDamage`）。
+- **不另建归属通道**：不要为 HUD、脚本或调试再加一份"当前射手"字段；需要读归属就读 `BallisticProjectile#getOwner()` 或伤害上下文里的 `DamageSource`。
+
 ## 约定
 
 - **SoA 数组同步**：添加/删除投射物时，所有数组必须同步操作。

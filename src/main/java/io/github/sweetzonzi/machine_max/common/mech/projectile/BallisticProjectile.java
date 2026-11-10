@@ -20,6 +20,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
+import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
@@ -124,6 +125,33 @@ public class BallisticProjectile extends DestroyableObject
     private final BallisticProjectileType projectileType;
 
     /**
+     * 归属者（射手 / 操作者）：本弹命中与起爆的伤害归因都取自它，{@code null} = 无归属。
+     * <p>
+     * 只由服务端在发射时写入（{@code LauncherSubsystem#fireSingle} 从持有开火权的
+     * {@code FireCommand} 取射手）；客户端经 spawn 包重建的投射物恒为 {@code null}——
+     * 归属只参与服务端的伤害与记功，不参与两端一致的弹道表现。
+     * <p>
+     * 持有的是<b>实体引用</b>而不是 UUID：命中结算在物理线程、起爆冲刷在主线程，两处都不适合
+     * 做 {@code level.getEntity(uuid)}（实体表不是线程安全的）；弹丸寿命只有数秒，引用的失效
+     * 窗口远小于查表引入的线程风险。射手在弹丸飞行期间死亡或离线时，归属仍保留为那个实体——
+     * 与原版箭矢口径一致。
+     */
+    @Getter
+    @Nullable
+    private final Entity owner;
+
+    /**
+     * 本弹在原版实体层的投影，由 {@link ProjectileManager#createProjectileEntity(int)} 创建后回填。
+     * <p>
+     * 只用于两件事：给伤害上下文提供 {@code directEntity}（原版箭矢的"直接载体"位置），
+     * 以及把 {@link #owner} 同步给投影实体。投影可能尚未创建（主线程延迟生成）或已因区块卸载
+     * 被回收，因此 {@link #getProxyEntity()} 每次读取都判活。
+     */
+    @Setter
+    @Nullable
+    private volatile MMProjectileEntity proxyEntity;
+
+    /**
      * 是否已命中。
      * <p>
      * 写入方可能是物理线程（消费命中结果）或主线程（耐久归零），
@@ -171,10 +199,13 @@ public class BallisticProjectile extends DestroyableObject
      * @param type     投射物类型定义
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
+     * @param owner    归属者（射手 / 操作者）；无归属时传 {@code null}
      */
-    public BallisticProjectile(Level level, BallisticProjectileType type, Vector3f position, Vector3f velocity) {
+    public BallisticProjectile(Level level, BallisticProjectileType type, Vector3f position, Vector3f velocity,
+                               @Nullable Entity owner) {
         super(level);
         this.projectileType = type;
+        this.owner = owner;
         setPosition(position);
         setLinearVelocity(velocity);
         Quaternion attitude = ProjectileManager.velocityAttitude(velocity.x, velocity.y, velocity.z);
@@ -183,6 +214,15 @@ public class BallisticProjectile extends DestroyableObject
         // 结构血量的容量来自内容包，而 DATA_DURABILITY_ID 自带 20 的默认值，
         // 与配置无关，因此必须在此显式写入一次初值
         setDurability(getMaxDurability());
+    }
+
+    /**
+     * 本弹的实体投影；已因区块卸载或退场被回收时返回 {@code null}。
+     */
+    @Nullable
+    public MMProjectileEntity getProxyEntity() {
+        MMProjectileEntity entity = proxyEntity;
+        return entity != null && !entity.isRemoved() ? entity : null;
     }
 
     /**
@@ -382,10 +422,12 @@ public class BallisticProjectile extends DestroyableObject
         setDurability(getDurability() - total);
         if (getDurability() > 0f) return;
 
-        // 结构耗尽：这是"受伤摧毁"而非正常引信，发射药已用于发射，只合成各战斗部的诱爆贡献
+        // 结构耗尽：这是"受伤摧毁"而非正常引信，发射药已用于发射，只合成各战斗部的诱爆贡献。
+        // 归属继承"打爆这发弹的那一击"：飞行中的弹药被别人打掉时，殉爆算在那个攻击者头上
         Vec3 hitPoint = last != null ? last.hitPoint()
                 : new Vec3(getPosition().x, getPosition().y, getPosition().z);
-        ObjectManager.getOrCreateProjectileManager(level).enqueueWarheadCookoff(this, hitPoint);
+        ObjectManager.getOrCreateProjectileManager(level).enqueueWarheadCookoff(
+                this, hitPoint, last == null ? null : last.source().getEntity());
         markHit();
     }
 
@@ -1043,6 +1085,11 @@ public class BallisticProjectile extends DestroyableObject
      * <p>
      * 穿深通过 {@link #calculateCurrentPenetration()} 实时计算，
      * 失稳时 ×unstablePenFactor 写入上下文，原始值存入扩展供能量法使用。
+     * <p>
+     * 伤害源按原版箭矢的两层口径构造：{@code directEntity} 是本弹的实体投影（可能尚未创建），
+     * {@code causingEntity} 是 {@link #owner}。归属在这里落地——实体受伤的记功与仇恨、
+     * 零件侧 {@code SubPartDamageEvent} 携带的上下文、以及被这一发打爆的弹药架的殉爆归属，
+     * 全都经这条 {@link DamageSource} 传递。
      *
      * @param level     维度（用于按弹种伤害类型构造 DamageSource）
      * @param damage    伤害量（已按速度衰减的当前值）
@@ -1063,7 +1110,7 @@ public class BallisticProjectile extends DestroyableObject
         exts.set(MMDamageExtensions.ORIGINAL_PENETRATION, originalPen);
 
         return BFDamageContext.builder()
-                .source(level.damageSources().source(getProjectileType().getDamageType()))
+                .source(level.damageSources().source(getProjectileType().getDamageType(), getProxyEntity(), owner))
                 .baseDamage(damage)
                 .penetration(effectivePen)
                 .hitVelocity(hitVel)

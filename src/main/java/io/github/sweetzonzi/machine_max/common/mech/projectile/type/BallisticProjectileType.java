@@ -22,6 +22,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -370,10 +371,11 @@ public class BallisticProjectileType extends ProjectileType {
      * @param level    维度
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
+     * @param owner    归属者（射手 / 操作者）；无归属时传 {@code null}
      * @return 已创建的投射物实例
      */
-    public BallisticProjectile create(Level level, Vector3f position, Vector3f velocity) {
-        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
+    public BallisticProjectile create(Level level, Vector3f position, Vector3f velocity, @Nullable Entity owner) {
+        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity, owner);
         p.addToLevel();
         return p;
     }
@@ -395,7 +397,8 @@ public class BallisticProjectileType extends ProjectileType {
      * @return 已创建并注册的投射物实例
      */
     public BallisticProjectile createWithId(Level level, Vector3f position, Vector3f velocity, int objId) {
-        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity);
+        // 客户端不参与归属：owner 只在服务端决定伤害与记功，随 spawn 包同步的只有位姿与弹种
+        BallisticProjectile p = new BallisticProjectile(level, this, position, velocity, null);
         p.setId(objId); // ★ 在 addToLevel 之前覆写，ObjectManager 和 SoA 均用此 ID
         p.addToLevel();
         return p;
@@ -421,6 +424,7 @@ public class BallisticProjectileType extends ProjectileType {
      * @param hAccuracyMul       水平精度乘子（1.0 = 基础精度）
      * @param vAccuracyMul       垂直精度乘子（1.0 = 基础精度）
      * @param platformVelocity   发射平台速度（JME Vector3f，继承用）
+     * @param shooter            本次开火的归属者（射手 / 操作者），随每发弹丸记下；null = 无归属
      * @return 已创建的投射物列表（全部已 addToLevel）
      */
     public List<BallisticProjectile> fire(
@@ -431,7 +435,8 @@ public class BallisticProjectileType extends ProjectileType {
         float velocityBonus,
         float hAccuracyMul,
         float vAccuracyMul,
-        Vector3f platformVelocity
+        Vector3f platformVelocity,
+        @Nullable Entity shooter
     ) {
         float finalSpeed = external.baseVelocity() * velocityMultiplier + velocityBonus;
         float hRad = external.baseAccuracyMil() * hAccuracyMul / 1000f;
@@ -441,7 +446,7 @@ public class BallisticProjectileType extends ProjectileType {
         for (int i = 0; i < getBulletNum(); i++) {
             Vector3f spreadDir = applyEllipticSpread(direction, hRad, vRad);
             Vector3f vel = spreadDir.mult(finalSpeed).addLocal(platformVelocity);
-            projectiles.add(create(level, muzzlePosition, vel));
+            projectiles.add(create(level, muzzlePosition, vel, shooter));
         }
         return projectiles;
     }
