@@ -22,9 +22,19 @@
     "stable_distance": 0,
     "unstable_pen_factor": 0.3
   },
+  "cookoff": {
+    "penetration": 7.2,
+    "damage": 24.0,
+    "impulse": 960.0
+  },
   "warheads": [
     {
       "type": "machine_max:blast",
+      "cookoff": {
+        "penetration": 45.0,
+        "damage": 70.0,
+        "impulse": 1800.0
+      },
       "base_penetration": 45,
       "base_damage": 70,
       "base_impulse": 1800,

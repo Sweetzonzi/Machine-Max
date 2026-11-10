@@ -558,7 +558,10 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 7
+            "thickness": 7,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+            ] } }
           },
           "HullBellyArmor": {
             "id": "part",
@@ -570,13 +573,19 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 7
+            "thickness": 7,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+            ] } }
           },
           "HullSideLeftSponson": {
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 5
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
           },
           "EngineHitBox": {
             "id": "engine",
@@ -589,7 +598,10 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 5
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
           },
           "HullRoofArmor": {
             "id": "part",
@@ -601,7 +613,10 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 5
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
           },
           "HullRearArmor": {
             "id": "part",
@@ -613,7 +628,10 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:rha",
-            "thickness": 5
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
           }
         },
         "interact_boxes": {
@@ -749,9 +767,9 @@
             "locator": "hull_pkt_axis",
             "definition": "machine_max:fixed_up",
             "overwrite": {
-              "integrity": 100.0,
-              "impact_absorption": 0.1,
-              "impact_reduction": 8.0
+              "integrity": 1200.0,
+              "impact_absorption": 1.0,
+              "impact_reduction": 10.0
             }
           }
         },

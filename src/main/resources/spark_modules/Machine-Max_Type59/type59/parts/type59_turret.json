@@ -42,19 +42,28 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_016": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_017": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_018": {
               "id": "part",
@@ -78,37 +87,55 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_022": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_023": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_024": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_025": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_026": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_027": {
               "id": "part",
@@ -126,7 +153,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_030": {
               "id": "part",
@@ -138,13 +168,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_032": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_033": {
               "id": "part",
@@ -168,7 +204,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_037": {
               "id": "part",
@@ -186,7 +225,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_040": {
               "id": "part",
@@ -204,7 +246,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_043": {
               "id": "part",
@@ -240,13 +285,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_049": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_050": {
               "id": "part",
@@ -276,13 +327,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_055": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_056": {
               "id": "part",
@@ -306,13 +363,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_060": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 155
+              "thickness": 155,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_061": {
               "id": "part",
@@ -342,43 +405,64 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_066": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_067": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_068": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_069": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_070": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_071": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_072": {
               "id": "part",
@@ -390,19 +474,28 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_074": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_075": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_076": {
               "id": "part",
@@ -504,19 +597,28 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_098": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_099": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 200
+              "thickness": 200,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "interact_boxes": {
@@ -555,8 +657,7 @@
               "overwrite": {
                 "required_tags": [
                   "type59:hull"
-                ],
-                "integrity": 100
+                ]
               }
             },
             "connector.type59.turret_gun": {

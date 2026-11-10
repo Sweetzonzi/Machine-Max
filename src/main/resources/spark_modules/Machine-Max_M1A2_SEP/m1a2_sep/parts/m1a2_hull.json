@@ -71,7 +71,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 38.1
+              "thickness": 38.1,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_HullFrontLower": {
               "id": "part",
@@ -80,6 +83,7 @@
               "thickness": 268,
               "overwrite": {
                 "armor": {
+                  "impact_modifiers": [ { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } } ],
                   "rha": 1,
                   "decay_rha": 0.2777777777777778
                 }
@@ -95,13 +99,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 35
+              "thickness": 35,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_SideRight": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 35
+              "thickness": 35,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Engine": {
               "id": "engine",
@@ -117,6 +127,7 @@
               "thickness": 268,
               "overwrite": {
                 "armor": {
+                  "impact_modifiers": [ { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } } ],
                   "rha": 1,
                   "decay_rha": 0.2777777777777778
                 }
@@ -148,9 +159,9 @@
                 "required_tags": [
                   "m1a2_sep:turret"
                 ],
-                "integrity": 100,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8,
+                "integrity": 2400,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10,
                 "impact_multiplier": 1
               }
             },

@@ -70,13 +70,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 105
+              "thickness": 105,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_HullFrontUpper": {
               "id": "part",
               "type": "box",
               "material": "t90a:ufp_array",
-              "thickness": 214
+              "thickness": 214,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_HullDeck": {
               "id": "part",
@@ -135,9 +141,9 @@
                 "required_tags": [
                   "t90a:turret"
                 ],
-                "integrity": 100,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8,
+                "integrity": 2400,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10,
                 "impact_multiplier": 1
               }
             },

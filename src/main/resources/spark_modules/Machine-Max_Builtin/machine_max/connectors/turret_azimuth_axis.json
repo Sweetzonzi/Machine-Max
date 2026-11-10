@@ -2,9 +2,9 @@
   "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
   "type": "Advanced", //必须为Advanced才能提供旋转关节自由度
   "direction": "yn", //放置于炮塔上，法线朝下与车体连接
-  "integrity": 100.0, //方向机基座结构完整度，需承受较大的炮塔重量和冲击
-  "impact_absorption": 0.10,
-  "impact_reduction": 8.0,
+  "integrity": 2400.0, //主战坦克座圈基线：同级 AP 约 5 发震掉，57mm 级约 43 发。轻车在车包里用 overwrite 下调到 1200
+  "impact_absorption": 1.0, //未断时每发把生效冲击全额记入完整性消耗，C 因此等于"累计冲击预算"
+  "impact_reduction": 10.0, //过滤步枪弹与破片：7.62 冲击 5.5 完全不记，12.7 只剩 3.2
   "impact_multiplier": 1.0,
   "joint_attrs": {
     "yr": { //偏航轴（Yaw），绕垂直轴旋转，实现炮塔水平方向回转

@@ -36,7 +36,11 @@
           "connector.machine_max.pkt_hull_axis": {
             "locator": "pkt_hull_axis",
             "definition": "machine_max:turret_azimuth_axis",
-            "overwrite": {}
+            "overwrite": {
+              "integrity": 1200,
+              "impact_absorption": 1.0,
+              "impact_reduction": 10
+            }
           },
           "connector.machine_max.pkt_gun_axis": {
             "locator": "pkt_gun_axis",

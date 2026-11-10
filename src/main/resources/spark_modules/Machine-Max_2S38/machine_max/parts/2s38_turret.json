@@ -41,13 +41,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 25
+              "thickness": 25,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "TurretGlacisArmor": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 25
+              "thickness": 25,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "TurretRearArmor": {
               "id": "part",
@@ -59,13 +65,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "TurretSideLeftArmor": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "TurretAxisHitBox": {
               "id": "azimuth_driver",
@@ -118,7 +130,11 @@
             "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
               "definition": "machine_max:turret_azimuth_axis",
-              "overwrite": {}
+              "overwrite": {
+                "integrity": 1200,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
+              }
             },
             "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",

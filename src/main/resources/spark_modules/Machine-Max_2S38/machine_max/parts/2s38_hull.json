@@ -39,19 +39,28 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 30
+              "thickness": 30,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "HullFrontLowerArmor": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 30
+              "thickness": 30,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "HullNoseArmor": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 25
+              "thickness": 25,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "HullBodyArmor": {
               "id": "part",
@@ -76,13 +85,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 25
+              "thickness": 25,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "HullRightArmor": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 25
+              "thickness": 25,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "interact_boxes": {
@@ -119,9 +134,9 @@
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "overwrite": {
-                "integrity": 100,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8
+                "integrity": 1200,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
               }
             },
             "connector.machine_max.hull_left_wheel_1": {

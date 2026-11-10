@@ -42,7 +42,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -91,7 +94,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -140,7 +146,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -189,7 +198,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -238,7 +250,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -287,7 +302,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -336,7 +354,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {
@@ -385,7 +406,10 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 20
+              "thickness": 20,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "connectors": {

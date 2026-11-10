@@ -53,13 +53,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_HullUpperSideRight": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Engine": {
               "id": "engine",
@@ -84,13 +90,19 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 100
+              "thickness": 100,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_004": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 100
+              "thickness": 100,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_005": {
               "id": "part",
@@ -108,49 +120,73 @@
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_008": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_009": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_010": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_011": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_012": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_013": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "MM_Shell_014": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 80
+              "thickness": 80,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             }
           },
           "interact_boxes": {
@@ -172,7 +208,9 @@
                 "required_tags": [
                   "type59:turret"
                 ],
-                "integrity": 100
+                "integrity": 2400,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
               }
             },
             "connector.type59.hull_left_idler": {

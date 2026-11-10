@@ -28,7 +28,11 @@
             "id": "part",
             "type": "box",
             "material": "machine_max:k17_composite_armor",
-            "thickness": 30
+            "thickness": 30,
+            // 炮塔整体只有一个命中框，正面与侧面无法分开，取两者中间值
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.45, "condition": { "type": "always" } }
+            ] } }
           },
           "GunnerOpticsHitBox": {
             "id": "part",
@@ -79,7 +83,11 @@
           "connector.machine_max.turret_hull_axis": {
             "locator": "turret_hull_axis",
             "definition": "machine_max:turret_azimuth_axis",
-            "overwrite": {}
+            "overwrite": {
+              "integrity": 1200,
+              "impact_absorption": 1.0,
+              "impact_reduction": 10
+            }
           }
         },
         "subsystems": {

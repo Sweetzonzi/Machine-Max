@@ -33,19 +33,28 @@
               "id": "front",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 30
+              "thickness": 30,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
             },
             "LeftArmoHitBox": {
               "id": "left",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 8
+              "thickness": 8,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "RightArmorHitBox": {
               "id": "right",
               "type": "box",
               "material": "machine_max:rha",
-              "thickness": 8
+              "thickness": 8,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
             },
             "TopBackArmorHitBox": {
               "id": "back",
@@ -144,7 +153,11 @@
                   "subsystem.machine_max.car_controller"
                 ]
               },
-              "overwrite": {}
+              "overwrite": {
+                "integrity": 1200,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
+              }
             }
           },
           "subsystems": {
