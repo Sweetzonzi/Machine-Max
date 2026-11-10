@@ -175,7 +175,7 @@
               ]
             },
             "first_hud_layout": "machine_max:k17_weapon_tubes",
-            "third_hud_layout": "machine_max:k17_weapon_tubes",
+            "third_hud_layout": "machine_max:k17_weapon_tubes_third",
             "scope_hud_layout": "machine_max:k17_weapon_tubes"
           },
           "subsystem.machine_max.atgm_ammo_loader": {

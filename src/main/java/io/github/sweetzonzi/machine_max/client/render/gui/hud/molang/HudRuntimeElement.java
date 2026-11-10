@@ -18,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** 一个布局条目的数据与动画身份；模型和 AUI 载体都持有此对象。 */
 public class HudRuntimeElement implements IAnimatable<HudElement> {
-    public record Frame(HudViewSnapshot view, HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected) {}
+    public record Frame(HudViewSnapshot view, HudPartSnapshot part, HudWeaponSnapshot weapon,
+                        HudVehicleSnapshot vehicle, boolean selected) {}
     private final IHudHost host;
     private final HudElement element;
     private final @Nullable Level level;
@@ -28,7 +29,8 @@ public class HudRuntimeElement implements IAnimatable<HudElement> {
     private final Map<String, Object> variables = new ConcurrentHashMap<>();
     private final ThreadLocal<HudMolangContext> contexts = ThreadLocal.withInitial(this::createContext);
     private final ThreadLocal<Frame> evaluationFrames = new ThreadLocal<>();
-    private volatile Frame frame = new Frame(HudViewSnapshot.EMPTY, HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, false);
+    private volatile Frame frame = new Frame(HudViewSnapshot.EMPTY, HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY,
+            HudVehicleSnapshot.EMPTY, false);
 
     public HudRuntimeElement(IHudHost host, HudElement element) {
         this.host = host;
@@ -63,12 +65,16 @@ public class HudRuntimeElement implements IAnimatable<HudElement> {
     }
 
     public void publish(HudPartSnapshot part, HudWeaponSnapshot weapon, boolean selected) {
-        frame = new Frame(frame.view(), part, weapon, selected);
+        publish(part, weapon, HudVehicleSnapshot.EMPTY, selected);
+    }
+
+    public void publish(HudPartSnapshot part, HudWeaponSnapshot weapon, HudVehicleSnapshot vehicle, boolean selected) {
+        frame = new Frame(frame.view(), part, weapon, vehicle, selected);
     }
 
     public void publishView(HudViewSnapshot view) {
         Frame previous = frame;
-        frame = new Frame(view, previous.part(), previous.weapon(), previous.selected());
+        frame = new Frame(view, previous.part(), previous.weapon(), previous.vehicle(), previous.selected());
     }
 
     public boolean visible() { return element.selectionVisibility().visible(this instanceof WeaponHudElement, frame.selected()); }

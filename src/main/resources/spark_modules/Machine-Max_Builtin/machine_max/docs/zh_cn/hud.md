@@ -128,6 +128,43 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 
 AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文字与裁剪，不保证复杂 `backdrop-filter` 等屏幕采样效果。
 
+### 载具模型与座位图
+
+布局可以引用 builtin 的独立布局 `machine_max:vehicle_seat_map`，也可以在已有布局数组中加入以下条目。座椅使用 `views.first_hud_layout` 或 `views.third_hud_layout`，瞄具、相机和武器控制器使用各自的视角布局字段。布局只绘制声明的条目。
+
+```json
+{
+  "style": "machine_max:vehicle_seat_map",
+  "perspective": false,
+  "anchor": "bottom_left",
+  "offset": [8, -22, 0],
+  "scale": [2, 2, 1]
+}
+```
+
+内置独立布局和样式同名，分别位于 `hud_layouts/` 和 `huds/`。宿主引用的布局决定该次投放的 `scale`，条目的 `style` 只选择页面。例如 Type 59 第三人称使用 `type59:type59_ground_orientation`，应在该布局中的座位图条目调整尺寸。
+
+内置页由 [页面](../../documents/vehicle_seat_map/index.html)、[样式](../../huds/vehicle_seat_map.json) 和 [示例布局](../../hud_layouts/vehicle_seat_map.json) 组成。自定义正交 AUI 页可用以下标签。用 CSS 给标签设定宽高，例如 `width: 150px; height: 80px`。
+
+```html
+<machinemax-vehicle-model yaw="35" pitch="25" roll="0" markers="true" damage="true"></machinemax-vehicle-model>
+```
+
+模型取 HUD 宿主所属的实时装配体。角度单位为度，依次绕车体坐标的 Y、X、Z 轴施加右手旋转。缺省为 `0, 90, 0`，俯视时车头朝上。`markers` 和 `damage` 默认为 `false`。开启后分别绘制编号座位和损伤层，损伤层同时受玩家设置控制。
+
+| MoLang 查询 | 返回值 |
+| --- | --- |
+| `vehicle.seat_count` | 宿主载具的座位数。 |
+| `vehicle.seat_right(i)`、`vehicle.seat_up(i)`、`vehicle.seat_forward(i)` | 座位相对载具包围盒中心向右、上、前的带符号距离，单位为方块。 |
+| `vehicle.seat_has_position(i)` | locator 可解析时为 1，否则为 0。 |
+| `vehicle.seat_name(i)` | 座位的本地化名称。 |
+| `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 是否占用、当前是否可换入。 |
+| `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 观察者当前、顺向候选和请求在途座号。观察者未坐在宿主载具上时为 0。 |
+| `vehicle.seat_switch_key` | 换座键的本地化显示名。 |
+| `vehicle.seat_map_visible` | 观察者坐在同车且至少两座、无打开的界面、GUI 可见、非相机模式，并满足玩家的常驻或换座窗口设置时为 1。内置页使用该门槛，自定义页可选择是否使用。 |
+
+座位序号 `i` 从 1 开始。无载具、无对应座位或无有效数据时，相关数值为 0，字符串为空。合法坐标原点用 `seat_has_position(i)` 区分。座位坐标与页面宽高、观察角无关，`data-mm-repeat` 的集合仅为 `weapon.tubes` 和 `weapon.belts`。
+
 ## HUD布局（hud_layouts/）
 
 布局文件的内容是一个数组，每个条目是一个元素：一份样式引用加一组完整投放值。元素内联在布局里，不单独注册；同一个样式可以在一个布局里出现多次。

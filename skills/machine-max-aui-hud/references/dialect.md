@@ -7,6 +7,7 @@
 | 名称 | 作用域 |
 | --- | --- |
 | hud.* | 该 HUD 看到的相机与视口；座位、相机和武器 HUD 均可使用 |
+| vehicle.* | HUD 宿主所属载具的座位数据，以及同车观察者的换座状态 |
 | local.* / global.* | HUD 宿主所属的 Part / 装配体数据，不是任意玩家实体 |
 | weapon.* | 整台所属 WC，在重复项内也保持这个含义 |
 | tube.* | weapon.tubes 的当前管，仅限该重复项及其后代 |
@@ -144,3 +145,18 @@ weapon.bdc_hold_rad(distance) 接收距离（米），返回标准弹道抬角�
 name 必须是目标内容包和运行环境实际提供的变量名。这些接口不用于查询任意对象字段；一个未提供的变量得到 0 或空文字，不代表所需数据已经接通。
 
 查询与标记由运行环境提供。超出本页词表的能力应查该版本随附的作者文档；无法确认支持时明确标注，不把自创名称写进最终 HUD。
+
+## 载具座位查询
+
+| 查询 | 含义 |
+| --- | --- |
+| `vehicle.seat_count` | 宿主载具的座位数 |
+| `vehicle.seat_right(i)`、`vehicle.seat_up(i)`、`vehicle.seat_forward(i)` | 相对车体包围盒中心向右、向上、向前的带符号距离，单位为方块 |
+| `vehicle.seat_has_position(i)` | 1 表示 locator 可解析，0 表示无位置 |
+| `vehicle.seat_name(i)` | 本地化座位名称 |
+| `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用、是否可换入，各为 1 或 0 |
+| `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 同车观察者的当前座、顺向候选和在途目标编号 |
+| `vehicle.seat_switch_key` | 换座键的本地化显示名 |
+| `vehicle.seat_map_visible` | 内置座位图是否满足同车多座、界面与相机状态、玩家显示设置 |
+
+座位编号从 1 开始。无载具、无对应座位或无有效数据时，相关数字为 0、字符串为空。有效原点用 `seat_has_position(i)` 区分。座位列表用计数与索引查询表达，`data-mm-repeat` 的集合仅为 `weapon.tubes` 和 `weapon.belts`。座位位置与 CSS 尺寸、模型观察角无关。

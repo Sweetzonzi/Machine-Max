@@ -6,7 +6,6 @@ import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.ResearchPointHud;
-import io.github.sweetzonzi.machine_max.client.render.gui.hud.SeatMapHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.SightHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.TargetDesignatorHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
@@ -29,10 +28,13 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import java.lang.ref.ReferenceQueue;
@@ -57,7 +59,6 @@ public class MMGuiManager {
         event.registerAboveAll(id("interact_hud"), new InteractHud());
         event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
         event.registerAboveAll(id("sight_hud"), new SightHud());
-        event.registerAboveAll(id("seat_map_hud"), new SeatMapHud());
         event.registerAboveAll(id("target_designator_hud"), new TargetDesignatorHud());
 //        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
@@ -70,7 +71,7 @@ public class MMGuiManager {
     @SubscribeEvent
     private static void onVehicleStructureChanged(VehicleStructureChangeEvent event) {
         if (event.getVehicle() == null || !event.getVehicle().getLevel().isClientSide()) return;
-        SeatMapLayout.markDirty();
+        SeatMapLayout.invalidate(event.getVehicle());
     }
 
     private static ResourceLocation id(String path){
@@ -107,8 +108,7 @@ public class MMGuiManager {
     private static void onAnimTick(LevelTickEvent.Post event) {
         if (!event.getLevel().isClientSide()) return;
         try {
-            if (customHud != null) customHud.tick();
-            tickSeatMap();
+            tickSeatFeedback();
             WeakReference<ITickableRenderable> ref;
             while ((ref = (WeakReference<ITickableRenderable>) referenceQueue.poll()) != null) {
                 // 从集合中移除已经失效的弱引用
@@ -126,14 +126,39 @@ public class MMGuiManager {
         }
     }
 
-    /** 座位图的客户端 tick：推进换座反馈的计时，并在离座时丢掉快照 */
-    private static void tickSeatMap() {
+    @SubscribeEvent
+    private static void onHudTick(ClientTickEvent.Post event) {
+        if (customHud == null) return;
+        try {
+            // 暂停菜单打开时客户端 tick 仍会推进，座位图的界面显隐可以随之刷新。
+            customHud.tick();
+        } catch (Exception e) {
+            MachineMax.LOGGER.warn("Error while ticking custom HUD: ", e);
+        }
+    }
+
+    private static void tickSeatFeedback() {
         LocalPlayer player = Minecraft.getInstance().player;
         SeatSubsystem seat = player != null
                 && ((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem current
                 ? current : null;
         SeatSwitchFeedback.tick(seat);
-        if (seat == null) SeatMapLayout.reset();
+    }
+
+    @SubscribeEvent
+    private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        clearVehicleHud();
+    }
+
+    @SubscribeEvent
+    private static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) clearVehicleHud();
+    }
+
+    private static void clearVehicleHud() {
+        SeatSwitchFeedback.clear();
+        if (customHud != null) customHud.clearView();
+        else SeatMapLayout.retain(Set.of());
     }
 
     @SubscribeEvent

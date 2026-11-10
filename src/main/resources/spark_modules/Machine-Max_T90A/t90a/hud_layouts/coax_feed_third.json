@@ -1,0 +1,20 @@
+[
+  {
+    "style": "t90a:coax_feed",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_left",
+    "offset": [
+      8,
+      -93,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  }
+]

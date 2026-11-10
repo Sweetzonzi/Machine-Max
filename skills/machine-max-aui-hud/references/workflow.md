@@ -233,3 +233,19 @@ example/hud_layouts/weapon_panel.json 是裸数组：
 浏览器预览可以检查静态结构和样式，但不会自行执行 data-mm-*；模拟数据演示也不能证明游戏接线成功。无法运行客户端时交付明确标注的待验收版本，不宣称已经通过实机验证。
 
 保留静态对照时使用独立页面、样式与布局。比较时切换宿主引用，避免静态与动态面板同时占用相同位置；交付时列出具体需要切换的字段和资源键。
+
+## 载具座位图的可选挂载
+
+内置独立布局 `machine_max:vehicle_seat_map` 可由座椅的 `views.first_hud_layout` 或 `views.third_hud_layout` 引用。相机、瞄具与 WC 可用各自的视角布局字段。要和已有仪表共存，在同一布局数组里增加下面这一个条目。
+
+~~~json
+{
+  "style": "machine_max:vehicle_seat_map",
+  "perspective": false,
+  "anchor": "bottom_left",
+  "offset": [8, -22, 0],
+  "scale": [2, 2, 1]
+}
+~~~
+
+自定义页面中放置 `<machinemax-vehicle-model yaw="35" pitch="25" roll="0" markers="true" damage="true"></machinemax-vehicle-model>`，用 CSS 给标签设置宽高。模型来自宿主所属载具，角度以度计，按 Y、X、Z 轴依次施加右手旋转。默认 `0, 90, 0` 为车头朝上的俯视。`markers`、`damage` 缺省关闭。标签绘制模型和可选标记，文本可用 `data-mm-text="vehicle.seat_name(vehicle.next_seat_number)"`。内置页按 `vehicle.seat_map_visible` 隐藏或显示整张图，自定义页可自行选择显隐条件。查询口径见 [绑定语法与查询词表](dialect.md)。

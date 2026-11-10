@@ -1,0 +1,27 @@
+[
+  {
+    "style": "t90a:t90a_orientation",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_left",
+    "offset": [
+      14,
+      40,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "machine_max:vehicle_seat_map",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -22, 0],
+    "scale": [2, 2, 1]
+  }
+]

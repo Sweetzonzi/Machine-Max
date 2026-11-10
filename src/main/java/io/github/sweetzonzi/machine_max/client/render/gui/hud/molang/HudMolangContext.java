@@ -13,7 +13,7 @@ import java.util.Locale;
 
 public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     protected HudRuntimeElement.Frame frame = new HudRuntimeElement.Frame(
-            HudViewSnapshot.EMPTY, HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, false);
+            HudViewSnapshot.EMPTY, HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, HudVehicleSnapshot.EMPTY, false);
     protected String alias;
     protected int itemIndex = -1;
     private final MutableObjectBinding variables = new MutableObjectBinding() {
@@ -100,6 +100,45 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
 
     @QueryBinding(value = "screen_height", namespace = "hud")
     public double hud_screen_height() { return frame.view().height(); }
+
+    @QueryBinding(value = "seat_count", namespace = "vehicle")
+    public double vehicleSeatCount() { return frame.vehicle().seats().size(); }
+
+    @QueryBinding(value = "seat_right", namespace = "vehicle")
+    public double vehicleSeatRight(double number) { return frame.vehicle().seat(number).right(); }
+
+    @QueryBinding(value = "seat_up", namespace = "vehicle")
+    public double vehicleSeatUp(double number) { return frame.vehicle().seat(number).up(); }
+
+    @QueryBinding(value = "seat_forward", namespace = "vehicle")
+    public double vehicleSeatForward(double number) { return frame.vehicle().seat(number).forward(); }
+
+    @QueryBinding(value = "seat_has_position", namespace = "vehicle")
+    public double vehicleSeatHasPosition(double number) { return frame.vehicle().seat(number).hasPosition() ? 1 : 0; }
+
+    @StringQueryBinding(value = "seat_name", namespace = "vehicle")
+    public String vehicleSeatName(double number) { return frame.vehicle().seat(number).name(); }
+
+    @QueryBinding(value = "seat_occupied", namespace = "vehicle")
+    public double vehicleSeatOccupied(double number) { return frame.vehicle().seat(number).occupied() ? 1 : 0; }
+
+    @QueryBinding(value = "seat_available", namespace = "vehicle")
+    public double vehicleSeatAvailable(double number) { return frame.vehicle().seat(number).available() ? 1 : 0; }
+
+    @QueryBinding(value = "current_seat_number", namespace = "vehicle")
+    public double vehicleCurrentSeatNumber() { return frame.vehicle().current(); }
+
+    @QueryBinding(value = "next_seat_number", namespace = "vehicle")
+    public double vehicleNextSeatNumber() { return frame.vehicle().next(); }
+
+    @QueryBinding(value = "pending_seat_number", namespace = "vehicle")
+    public double vehiclePendingSeatNumber() { return frame.vehicle().pending(); }
+
+    @StringQueryBinding(value = "seat_switch_key", namespace = "vehicle")
+    public String vehicleSeatSwitchKey() { return frame.vehicle().switchKey(); }
+
+    @QueryBinding(value = "seat_map_visible", namespace = "vehicle")
+    public double vehicleSeatMapVisible() { return frame.vehicle().mapVisible() ? 1 : 0; }
 
     @QueryBinding(value = "durability", namespace = "local")
     public double local_durability() { return frame.part().number("local.durability"); }

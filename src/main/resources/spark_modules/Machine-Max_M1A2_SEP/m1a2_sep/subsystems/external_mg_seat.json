@@ -27,7 +27,7 @@
       0
     ],
     "first_hud_layout": "machine_max:morden_ground_basic",
-    "third_hud_layout": "machine_max:morden_ground_basic",
+    "third_hud_layout": "machine_max:morden_ground_basic_third",
     "min_pitch": -85,
     "max_pitch": 85,
     "yaw_limit": 360

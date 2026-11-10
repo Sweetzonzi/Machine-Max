@@ -104,10 +104,50 @@ class HudMolangContextTest {
         assertEquals(0, number("weapon.tube_has_source(5)", context));
     }
 
+    @Test void vehicleQueriesUseOneBasedSeatsAndPreserveThePublishedVehicleAcrossViewUpdates() {
+        var ordinary = new HudRuntimeElement(null, element());
+        var weapon = new WeaponHudElement(null, element());
+        var elsewhere = new HudRuntimeElement(null, element());
+        var seats = List.of(
+                new HudVehicleSnapshot.Seat(11, "driver", "Driver", true, 0, 0, 0, true, false, false),
+                new HudVehicleSnapshot.Seat(12, "gunner", "Gunner", true, -1, 2, 3, false, true, false),
+                new HudVehicleSnapshot.Seat(11, "crew", "Crew", false, 0, 0, 0, false, false, true));
+        var vehicle = new HudVehicleSnapshot(new UUID(0, 1), seats, 1, 2, 3, false, "R", true);
+        ordinary.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, vehicle, false);
+        weapon.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, vehicle, true);
+        ordinary.publishView(new HudViewSnapshot(1, 2, 3, 10, 0, 0, 70, 1, 800, 600));
+        assertSame(ordinary.frame().vehicle(), weapon.frame().vehicle());
+        var context = ordinary.getMolangContext();
+        assertEquals(3, number("vehicle.seat_count", context));
+        assertEquals(1, number("vehicle.seat_occupied(1)", context));
+        assertEquals(1, number("vehicle.seat_available(2)", context));
+        assertEquals(-1, number("vehicle.seat_right(2)", context));
+        assertEquals(2, number("vehicle.seat_up(2)", context));
+        assertEquals(3, number("vehicle.seat_forward(2)", context));
+        assertEquals(1, number("vehicle.seat_has_position(1)", context));
+        assertEquals(0, number("vehicle.seat_has_position(3)", context));
+        assertEquals(0, number("vehicle.seat_right(1.5)", context));
+        assertEquals(0, number("vehicle.seat_has_position(0)", context));
+        assertEquals(0, context.vehicleSeatHasPosition(Double.NaN));
+        assertEquals(0, context.vehicleSeatHasPosition(Double.POSITIVE_INFINITY));
+        assertEquals("", MolangContextRegistry.compileString("vehicle.seat_name(-1)", context).evaluate(context));
+        assertEquals("Gunner", MolangContextRegistry.compileString(
+                "vehicle.seat_name(vehicle.next_seat_number)", context).evaluate(context));
+        assertEquals(1, number("vehicle.current_seat_number", context));
+        assertEquals(3, number("vehicle.pending_seat_number", context));
+        assertEquals(1, number("vehicle.seat_map_visible", context));
+        assertEquals(0, number("vehicle.seat_count", elsewhere.getMolangContext()));
+        assertEquals("", elsewhere.getMolangContext().vehicleSeatSwitchKey());
+    }
+
     @Test void invalidQueriesAreDiagnosedBeforeEngineFallback() {
         var ordinary = new HudMolangContext();
         var weapon = new WeaponHudMolangContext();
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.name", ordinary, null));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("vehicle.seat_right", ordinary, null));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("vehicle.seat_occupied(1, 2)", ordinary, null));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("vehicle.missing", ordinary, null));
+        assertDoesNotThrow(() -> HudExpression.validate("vehicle.seat_name(vehicle.next_seat_number)", ordinary, null));
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.fill", weapon, null));
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("belt.label", weapon, "weapon.tubes"));
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.tube_fill()", weapon, null));

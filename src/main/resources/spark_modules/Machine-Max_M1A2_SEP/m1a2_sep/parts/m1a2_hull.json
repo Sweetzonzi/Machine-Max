@@ -587,7 +587,7 @@
                 "hull_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             }
           }
         },

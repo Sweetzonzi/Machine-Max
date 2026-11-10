@@ -11,7 +11,7 @@ import java.util.Set;
 
 /** 校验 HUD 业务命名空间，阻止引擎对未绑定属性及省略索引的静默兜底。 */
 public final class HudExpression {
-    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "belt", "local", "global");
+    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "belt", "local", "global", "vehicle");
     private HudExpression() {}
 
     public static void validate(String expression, HudMolangContext context, String collection) {

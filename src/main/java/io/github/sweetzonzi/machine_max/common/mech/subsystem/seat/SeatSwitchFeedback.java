@@ -5,17 +5,14 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 /**
- * 客户端换座的界面状态：在途请求、脉冲与失败原因。
+ * 客户端换座的界面状态：在途请求、成功脉冲与失败座位。
  *
  * <p>按键路径写、HUD 读，同一线程（都是主线程）。放在 common 是因为它只涉及
  * {@link Component} 与座位引用，不引用任何客户端类；服务端从不读它。</p>
  *
  * <p>客户端不做预测：这里记下的只是“已经发出请求、等结果包”，座位与骑乘状态在这个窗口里
- * 一个都不改。结果包到达后 {@link #onResult} 清掉在途标记，成功则触发脉冲，失败则保留原因
- * 供 actionbar 与标记闪烁使用。</p>
+ * 一个都不改。结果包到达后 {@link #onResult} 清掉在途标记，成功则触发脉冲，失败则记录目标供 HUD 标记。actionbar 文案直接取自结果包的原因。</p>
  */
 public final class SeatSwitchFeedback {
 
@@ -26,12 +23,13 @@ public final class SeatSwitchFeedback {
     /** 成功后的脉冲显示时长 */
     private static final int PULSE_TICKS = 12;
 
+    @Nullable
+    private static VehicleCore vehicle;
     private static int pendingTicks;
     @Nullable
     private static SeatSubsystem pendingTarget;
     private static int pulseTicks;
     private static int failureTicks;
-    private static SeatSwitchReason failureReason = SeatSwitchReason.OK;
     private static int failureSubPartId = -1;
     private static String failureSeatName = "";
 
@@ -60,21 +58,22 @@ public final class SeatSwitchFeedback {
         return pulseTicks;
     }
 
-    public static int failureTicks() {
-        return failureTicks;
+    /** 失败目标是否匹配当前装配体与座位键 */
+    public static boolean failureAt(VehicleCore assembly, int subPartId, String seatName) {
+        return vehicle == assembly && failureTicks > 0
+                && failureSubPartId == subPartId && failureSeatName.equals(seatName);
     }
 
-    public static SeatSwitchReason failureReason() {
-        return failureReason;
-    }
-
-    /** 失败原因是否指向某个具体座位（用于让那张标记闪红） */
-    public static boolean failureAt(int subPartId, String seatName) {
-        return failureTicks > 0 && failureSubPartId == subPartId && failureSeatName.equals(seatName);
+    public static void observe(@Nullable VehicleCore assembly) {
+        if (vehicle == assembly) return;
+        clear();
+        vehicle = assembly;
     }
 
     /** 每个客户端 tick 调一次：递减计时，并在目标成为当前座位后清掉在途标记 */
     public static void tick(@Nullable SeatSubsystem currentSeat) {
+        observe(currentSeat != null && currentSeat.getSubPart().getPart().assembly instanceof VehicleCore assembly
+                ? assembly : null);
         if (pendingTicks > 0) {
             pendingTicks--;
             if (pendingTicks <= 0) pendingTarget = null;
@@ -89,17 +88,15 @@ public final class SeatSwitchFeedback {
     }
 
     /** 结果包到达 */
-    public static void onResult(boolean success, SeatSwitchReason reason, @Nullable SeatSubsystem seat) {
+    public static void onResult(boolean success, @Nullable SeatSubsystem seat) {
         pendingTicks = 0;
         pendingTarget = null;
         if (success) {
             pulseTicks = PULSE_TICKS;
             failureTicks = 0;
-            failureReason = SeatSwitchReason.OK;
             return;
         }
         failureTicks = FAILURE_TICKS;
-        failureReason = reason;
         if (seat != null) {
             failureSubPartId = seat.getSubPart() == null ? -1 : seat.getSubPart().getId();
             failureSeatName = seat.getName();
@@ -109,33 +106,20 @@ public final class SeatSwitchFeedback {
         }
     }
 
-    /** 换车、下车时清空，避免旧的脉冲/失败提示漂到下一台载具上 */
+    /** 清空观察者的装配体及其反馈 */
     public static void clear() {
+        vehicle = null;
         pendingTicks = 0;
         pendingTarget = null;
         pulseTicks = 0;
         failureTicks = 0;
-        failureReason = SeatSwitchReason.OK;
         failureSubPartId = -1;
         failureSeatName = "";
     }
 
     /** 失败原因对应的本地化文案 */
-    public static Component failureMessage() {
-        return Component.translatable(failureKey(failureReason));
-    }
-
-    /** 成功文案：{@code 2/3 · Gunner Seat}，序号来自本地几何顺序，名字由子系统名的翻译键给出 */
-    public static Component successMessage(SeatSubsystem seat) {
-        int index = 1;
-        int total = 1;
-        if (seat.getSubPart() != null && seat.getSubPart().getPart().assembly instanceof VehicleCore vehicle) {
-            LayoutIndex layout = indexOf(vehicle, seat);
-            index = layout.index();
-            total = layout.total();
-        }
-        return Component.translatable("message.machine_max.seat.switched",
-                index, total, Component.translatable(seat.getName()));
+    public static Component failureMessage(SeatSwitchReason reason) {
+        return Component.translatable(failureKey(reason));
     }
 
     /** 满员提示 */
@@ -146,15 +130,6 @@ public final class SeatSwitchFeedback {
     /** 循环键在本地算不出目标时的提示 */
     public static Component noSeatMessage() {
         return Component.translatable("message.machine_max.seat.not_seated");
-    }
-
-    private record LayoutIndex(int index, int total) {
-    }
-
-    private static LayoutIndex indexOf(VehicleCore vehicle, SeatSubsystem seat) {
-        List<SeatSubsystem> order = SeatOrder.order(vehicle);
-        int index = order.indexOf(seat);
-        return new LayoutIndex(index < 0 ? 1 : index + 1, Math.max(1, order.size()));
     }
 
     private static String failureKey(SeatSwitchReason reason) {

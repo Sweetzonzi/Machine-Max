@@ -39,10 +39,11 @@ class SeatMapProjectionTest {
                 (float) Math.toRadians(rollDeg));
     }
 
-    private static Matrix4f map(float fit, float centerSx, float centerSy, Vector3f origin,
-                                Quaternionf attitude) {
-        return SeatMapLayout.mapMatrix(fit, centerSx, centerSy, 100f, 100f, origin,
-                new Quaternionf(attitude).conjugate());
+    private static Matrix4f map(float fit, Vector3f center, Vector3f origin, Quaternionf attitude) {
+        var bounds = new SeatMapLayout.Bounds(center.x, center.y, center.z, 1f, 1f, 1f);
+        float side = 2f * fit / 0.9f;
+        return bounds.projection(new Matrix4f().translationRotate(origin, attitude).invert(),
+                100f - side / 2f, 100f - side / 2f, side, side, 0f, 90f, 0f);
     }
 
     /** 局部方向 → 世界方向 */
@@ -58,7 +59,7 @@ class SeatMapProjectionTest {
     void frontPointsUpOnScreenForEveryAttitude() {
         for (float[] a : ATTITUDES) {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
-            Matrix4f matrix = map(1f, 0f, 0f, new Vector3f(), attitude);
+            Matrix4f matrix = map(1f, new Vector3f(), new Vector3f(), attitude);
             Vector3f mapped = matrix.transformDirection(world(attitude, FRONT));
             assertEquals(0f, mapped.x, EPS, caseName(a) + " 时车头的屏幕横轴必须为 0");
             assertEquals(-1f, mapped.y, EPS, caseName(a) + " 时车头必须指向屏幕上方");
@@ -69,7 +70,7 @@ class SeatMapProjectionTest {
     void rightPointsRightOnScreenForEveryAttitude() {
         for (float[] a : ATTITUDES) {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
-            Matrix4f matrix = map(1f, 0f, 0f, new Vector3f(), attitude);
+            Matrix4f matrix = map(1f, new Vector3f(), new Vector3f(), attitude);
             Vector3f mapped = matrix.transformDirection(world(attitude, RIGHT));
             assertEquals(1f, mapped.x, EPS, caseName(a) + " 时车体右侧必须在屏幕右侧");
             assertEquals(0f, mapped.y, EPS, caseName(a) + " 时车体右侧不能有纵向分量");
@@ -80,7 +81,7 @@ class SeatMapProjectionTest {
     void localUpPointsAtTheViewerForEveryAttitude() {
         for (float[] a : ATTITUDES) {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
-            Matrix4f matrix = map(1f, 0f, 0f, new Vector3f(), attitude);
+            Matrix4f matrix = map(1f, new Vector3f(), new Vector3f(), attitude);
             Vector3f mapped = matrix.transformDirection(world(attitude, UP));
             assertEquals(0f, mapped.x, EPS, caseName(a) + " 时车体上轴不能有横向分量");
             assertEquals(0f, mapped.y, EPS, caseName(a) + " 时车体上轴不能有纵向分量");
@@ -95,7 +96,7 @@ class SeatMapProjectionTest {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
             float fit = 3f;
             Vector3f origin = new Vector3f(11f, 4f, -7f);
-            Matrix4f matrix = map(fit, 0f, 0f, origin, attitude);
+            Matrix4f matrix = map(fit, new Vector3f(), origin, attitude);
 
             Vector3f roof = matrix.transformPosition(new Vector3f(origin)
                     .add(world(attitude, new Vector3f(0f, 3f, 0f))));
@@ -114,7 +115,7 @@ class SeatMapProjectionTest {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
             float fit = 4f;
             Vector3f origin = new Vector3f(37f, 12f, -58f);
-            Matrix4f matrix = map(fit, 0f, 0f, origin, attitude);
+            Matrix4f matrix = map(fit, new Vector3f(), origin, attitude);
 
             Vector3f center = matrix.transformPosition(new Vector3f(origin));
             assertEquals(100f, center.x, 1e-3f, caseName(a) + " 时参考点必须落在面板中心");
@@ -134,17 +135,50 @@ class SeatMapProjectionTest {
             Quaternionf attitude = attitude(a[0], a[1], a[2]);
             Vector3f origin = new Vector3f(-3f, 1f, 5f);
             float fit = 3f;
-            float centerSx = 1.25f;
-            float centerSy = -0.75f;
-            Matrix4f matrix = map(fit, centerSx, centerSy, origin, attitude);
-
-            // 局部坐标 (centerSx, centerSy) 对应的世界点：沿右轴走 centerSx，沿 -前向走 centerSy
-            Vector3f bboxCenter = new Vector3f(world(attitude, RIGHT)).mul(centerSx)
-                    .add(new Vector3f(world(attitude, FRONT)).mul(-centerSy))
-                    .add(origin);
+            Vector3f localCenter = new Vector3f(1.25f, 2.5f, -0.75f);
+            Matrix4f matrix = map(fit, localCenter, origin, attitude);
+            Vector3f bboxCenter = world(attitude, localCenter).add(origin);
             Vector3f mapped = matrix.transformPosition(bboxCenter);
             assertEquals(100f, mapped.x, 1e-3f, caseName(a) + " 时包围盒中心应被居中");
             assertEquals(100f, mapped.y, 1e-3f, caseName(a) + " 时包围盒中心应被居中");
+        }
+    }
+
+    @Test
+    void sideViewSeparatesSeatHeightFromLongitudinalPosition() {
+        var bounds = SeatMapLayout.Bounds.between(new Vector3f(-3, 1, -10), new Vector3f(1, 7, 2));
+        assertEquals(-1f, bounds.centerX(), EPS);
+        assertEquals(4f, bounds.centerY(), EPS);
+        assertEquals(-4f, bounds.centerZ(), EPS);
+        Matrix4f side = bounds.projection(new Matrix4f(), 0, 0, 100, 40, 90, 0, 0);
+        Vector3f low = side.transformPosition(-1, 3, -4, new Vector3f());
+        Vector3f high = side.transformPosition(-1, 5, -4, new Vector3f());
+        Vector3f front = side.transformPosition(-1, 3, -6, new Vector3f());
+        assertEquals(low.x, high.x, EPS);
+        assertTrue(high.y < low.y);
+        assertEquals(low.y, front.y, EPS);
+        assertTrue(front.x < low.x);
+    }
+
+    @Test
+    void obliqueViewFitsAllCornersAndIsIndependentOfVehicleWorldPose() {
+        Vector3f min = new Vector3f(-3, 1, -9);
+        Vector3f max = new Vector3f(6, 8, 2);
+        var bounds = SeatMapLayout.Bounds.between(min, max);
+        Matrix4f localProjection = bounds.projection(new Matrix4f(), 12, 31, 48, 70, 32, 27, 16);
+        Matrix4f reference = new Matrix4f().translationRotate(new Vector3f(15, 8, 31), attitude(50, -19, 71));
+        Matrix4f worldProjection = bounds.projection(new Matrix4f(reference).invert(),
+                12, 31, 48, 70, 32, 27, 16);
+        for (int i = 0; i < 8; i++) {
+            var corner = new Vector3f((i & 1) == 0 ? min.x : max.x,
+                    (i & 2) == 0 ? min.y : max.y, (i & 4) == 0 ? min.z : max.z);
+            var local = localProjection.transformPosition(new Vector3f(corner));
+            var world = worldProjection.transformPosition(reference.transformPosition(corner));
+            assertTrue(local.x >= 12 && local.x <= 60);
+            assertTrue(local.y >= 31 && local.y <= 101);
+            assertEquals(local.x, world.x, EPS);
+            assertEquals(local.y, world.y, EPS);
+            assertEquals(local.z, world.z, EPS);
         }
     }
 }

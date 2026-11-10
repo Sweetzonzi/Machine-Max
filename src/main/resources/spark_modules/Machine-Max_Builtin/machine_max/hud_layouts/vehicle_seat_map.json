@@ -1,0 +1,9 @@
+[
+  {
+    "style": "machine_max:vehicle_seat_map",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -22, 0],
+    "scale": [2, 2, 1]
+  }
+]

@@ -251,7 +251,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "t90a:t90a_orientation",
-              "third_hud_layout": "t90a:t90a_orientation"
+              "third_hud_layout": "t90a:t90a_orientation_third"
             },
             "subsystem.t90a.azimuth_driver": {
               "type": "machine_max:turret_driver",
@@ -314,7 +314,7 @@
                 ]
               },
               "first_hud_layout": "t90a:coax_feed",
-              "third_hud_layout": "t90a:coax_feed"
+              "third_hud_layout": "t90a:coax_feed_third"
             },
             "subsystem.t90a.coax_loader": {
               "type": "machine_max:regen_loader",

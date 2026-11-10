@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="aui-preload">
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="seat-map" data-mm-class="vehicle.seat_map_visible ? 'visible' : 'hidden'">
+    <div class="row">
+      <span class="seat-name" data-mm-text="vehicle.current_seat_number ? vehicle.seat_name(vehicle.current_seat_number) : '--'">--</span>
+      <span><span data-mm-text="vehicle.current_seat_number">0</span>/<span data-mm-text="vehicle.seat_count">0</span></span>
+    </div>
+    <div class="map">
+      <machinemax-vehicle-model markers="true" damage="true"></machinemax-vehicle-model>
+      <span class="forward">▲</span>
+    </div>
+    <div class="row legend">
+      <translation class="current">seat_map.legend.you</translation>
+      <translation class="next">seat_map.legend.next</translation>
+      <translation class="available">seat_map.legend.empty</translation>
+      <translation class="occupied">seat_map.legend.busy</translation>
+    </div>
+    <div class="row switch-hint" data-mm-class="vehicle.next_seat_number ? 'has-next' : 'no-next'">
+      <span data-mm-text="vehicle.seat_switch_key">--</span>
+      <span class="seat-name next next-seat" data-mm-text="vehicle.seat_name(vehicle.next_seat_number)">--</span>
+      <translation class="seat-name occupied no-seat">message.machine_max.seat.full</translation>
+    </div>
+  </div>
+</body>
+</html>

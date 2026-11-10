@@ -1,0 +1,16 @@
+[
+  {
+    "style": "machine_max:example_hud",
+    "perspective": true,
+    "offset": [95, 55, -135],
+    "rotation": [-25, -30, 0],
+    "scale": [15, 15, 15]
+  },
+  {
+    "style": "machine_max:vehicle_seat_map",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -22, 0],
+    "scale": [2, 2, 1]
+  }
+]

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.input.SeatSwitchClient;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -92,13 +93,13 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
             if (!payload.success()) {
                 // 只有发起者的界面需要提示原因；其他客户端连这张标记都不必知道
                 if (localPassenger) {
-                    SeatSwitchFeedback.onResult(false, payload.reason(), target);
-                    local.displayClientMessage(SeatSwitchFeedback.failureMessage(), true);
+                    SeatSwitchClient.updateFeedback(local, target, false);
+                    local.displayClientMessage(SeatSwitchFeedback.failureMessage(payload.reason()), true);
                 }
                 return;
             }
 
-            if (localPassenger) SeatSwitchFeedback.onResult(true, SeatSwitchReason.OK, target);
+            if (localPassenger) SeatSwitchClient.updateFeedback(local, target, true);
             if (target == null) {
                 // 目标座位还没在本地建好：它之后构造时走预设路径，活动组自然等于服务端刚写入的值
                 return;
@@ -121,7 +122,7 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
                     // 跨子零件：主动对齐，不等原版 riders 包；客户端 stopRiding 不触发下车搜索，也没有冲量
                     passenger.startRiding(targetSubPart.getEntity(), true);
                 }
-                local.displayClientMessage(SeatSwitchFeedback.successMessage(target), true);
+                local.displayClientMessage(SeatSwitchClient.successMessage(target), true);
             }
             // 其他玩家的骑乘关系交给原版 riders 包：提前 startRiding 反而可能与它打架
         });

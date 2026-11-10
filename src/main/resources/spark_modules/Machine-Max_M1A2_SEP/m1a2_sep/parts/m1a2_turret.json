@@ -288,7 +288,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
             "subsystem.m1a2_sep.commander_seat": {
               "type": "machine_max:seat",
@@ -310,7 +310,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
             "subsystem.m1a2_sep.loader_seat": {
               "type": "machine_max:seat",
@@ -322,7 +322,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
             "subsystem.m1a2_sep.azimuth_driver": {
               "type": "machine_max:turret_driver",
@@ -372,7 +372,7 @@
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_coax_feed",
-              "third_hud_layout": "m1a2_sep:m1a2_coax_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_coax_feed_third",
               "scope_hud_layout": "m1a2_sep:m1a2_coax_feed"
             },
             "subsystem.m1a2_sep.coax_loader": {
@@ -398,7 +398,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third",
               "allow_use_items": false
             },
             "subsystem.m1a2_sep.ammo_loader_he": {
@@ -429,7 +429,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation"
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
             "subsystem.m1a2_sep.coax_762_controller": {
               "type": "machine_max:weapon_controller",
@@ -440,7 +440,7 @@
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_coax_762_feed",
-              "third_hud_layout": "m1a2_sep:m1a2_coax_762_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_coax_762_feed_third",
               "scope_hud_layout": "m1a2_sep:m1a2_coax_762_feed"
             },
             "subsystem.m1a2_sep.coax_762_loader": {
@@ -917,7 +917,7 @@
                 "aft_mg_exit_right"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation",
+              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third",
               "allow_use_items": false
             }
           }

@@ -126,6 +126,43 @@ The page shrinks to its content: the runtime adds the `mm-hud` class to `body` a
 
 AUI HUD pages receive no mouse input. Perspective rendering supports page geometry, text and clipping; complex screen-sampling effects such as `backdrop-filter` are not guaranteed.
 
+### Vehicle Model and Seat Map
+
+Reference the built-in `machine_max:vehicle_seat_map` layout on its own, or add this entry to an existing layout array. A seat can use `views.first_hud_layout` or `views.third_hud_layout`. Optics, cameras, and weapon controllers use their own view layout fields. Each layout draws the entries it declares.
+
+```json
+{
+  "style": "machine_max:vehicle_seat_map",
+  "perspective": false,
+  "anchor": "bottom_left",
+  "offset": [8, -22, 0],
+  "scale": [2, 2, 1]
+}
+```
+
+The standalone layout and the style share a resource key and live under `hud_layouts/` and `huds/` respectively. Set `scale` on the entry in the layout the host uses. The entry’s `style` selects the page. For example, the Type 59 third-person seat map takes its scale from the entry in `type59:type59_ground_orientation`.
+
+The built-in resources include the [page](../../documents/vehicle_seat_map/index.html), [style](../../huds/vehicle_seat_map.json), and [sample layout](../../hud_layouts/vehicle_seat_map.json). Custom orthographic AUI pages can use the following element. Set its dimensions in CSS, for example `width: 150px; height: 80px`.
+
+```html
+<machinemax-vehicle-model yaw="35" pitch="25" roll="0" markers="true" damage="true"></machinemax-vehicle-model>
+```
+
+The element draws the HUD host's live vehicle assembly. Angles are in degrees and apply right-handed rotations about the vehicle's Y, X, and Z axes, in that order. The defaults `0, 90, 0` give a nose-up top view. `markers` and `damage` default to `false`. Set them to `true` for numbered seats and damage coloring respectively. Damage coloring also follows the player's damage layer setting.
+
+| MoLang query | Result |
+| --- | --- |
+| `vehicle.seat_count` | Number of seats in the host's vehicle. |
+| `vehicle.seat_right(i)`, `vehicle.seat_up(i)`, `vehicle.seat_forward(i)` | Signed distances in blocks from the vehicle bounds center, along the right, up, and forward axes. |
+| `vehicle.seat_has_position(i)` | 1 when the locator yields a valid position, otherwise 0. |
+| `vehicle.seat_name(i)` | Localized seat name. |
+| `vehicle.seat_occupied(i)`, `vehicle.seat_available(i)` | Whether the seat is occupied or available for switching, respectively. |
+| `vehicle.current_seat_number`, `vehicle.next_seat_number`, `vehicle.pending_seat_number` | The observer's current seat, next forward candidate, and pending request. They are 0 when the observer is outside the host vehicle. |
+| `vehicle.seat_switch_key` | Localized label of the switch-seat key. |
+| `vehicle.seat_map_visible` | 1 when the observer occupies the same vehicle, it has at least two seats, the GUI is visible with no open screen or active camera, and the player's Always or After Switch setting permits it. The built-in page uses this query. Custom pages can use their own visibility rules. |
+
+Seat number `i` starts at 1. Missing vehicles, seats, or values give 0 for numeric queries and an empty string for text. Use `seat_has_position(i)` to distinguish a valid position at the origin. Coordinates are independent of the page size and viewing angles. `data-mm-repeat` supports the `weapon.tubes` and `weapon.belts` collections.
+
 ## HUD Layouts (hud_layouts/)
 
 A layout file is an array. Each entry is an element: one style reference plus a complete set of placement values. Elements are inline in the layout and are not registered separately; the same style may appear multiple times in one layout.

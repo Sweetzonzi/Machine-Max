@@ -743,7 +743,7 @@
                 ]
               },
               "first_hud_layout": "type59:coax_feed",
-              "third_hud_layout": "type59:coax_feed"
+              "third_hud_layout": "type59:coax_feed_third"
             },
             "subsystem.type59.coax_loader": {
               "type": "machine_max:regen_loader",
@@ -807,7 +807,7 @@
                 "turret_exit_right"
               ],
               "first_hud_layout": "type59:type59_orientation",
-              "third_hud_layout": "type59:type59_orientation"
+              "third_hud_layout": "type59:type59_orientation_third"
             }
           }
         },

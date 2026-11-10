@@ -120,6 +120,36 @@ class HudPageBindingTest {
         assertEquals("12/30", node.getInnerText());
     }
 
+    @Test void vehicleModelTagAndTextBindingsShareTheHudPage() {
+        var tag = io.github.sweetzonzi.machine_max.client.render.gui.element.VehicleModelElement.TAG_NAME;
+        com.sighs.apricityui.init.Element.register(tag, (owner, name) ->
+                new io.github.sweetzonzi.machine_max.client.render.gui.element.VehicleModelElement(owner));
+        create("""
+                <div class="map" data-mm-class="vehicle.seat_map_visible ? 'visible' : 'hidden'">
+                  <machinemax-vehicle-model markers="true" yaw="45"></machinemax-vehicle-model>
+                  <span class="name" data-mm-text="vehicle.next_seat_number ? vehicle.seat_name(vehicle.next_seat_number) : '--'">--</span>
+                  <span class="bad" data-mm-text="vehicle.seat_up()"></span>
+                </div>
+                """);
+        refresh();
+        assertTrue(document.querySelector(".map").getClassList().contains("is-hidden"));
+        assertEquals("--", document.querySelector(".name").innerText);
+
+        var data = new HudVehicleSnapshot(new UUID(0, 1), List.of(
+                new HudVehicleSnapshot.Seat(4, "driver", "Driver", true, 0, 0, 0, true, false, false),
+                new HudVehicleSnapshot.Seat(4, "gunner", "Gunner", true, 1, 2, 3, false, true, false)),
+                1, 2, 0, false, "R", true);
+        runtime.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, data, true);
+        refresh();
+        var model = document.querySelector(tag);
+        assertInstanceOf(io.github.sweetzonzi.machine_max.client.render.gui.element.VehicleModelElement.class, model);
+        assertEquals("45", model.getAttribute("yaw"));
+        assertTrue(document.querySelector(".map").getClassList().contains("is-visible"));
+        assertFalse(document.querySelector(".map").getClassList().contains("is-hidden"));
+        assertEquals("Gunner", document.querySelector(".name").innerText);
+        assertEquals("MOLANG_ERROR", document.querySelector(".bad").innerText);
+    }
+
     @Test void documentRefreshRebindsNewTreeBeforeValuesAreConsumed() {
         create("<div class='row' data-mm-repeat='weapon.tubes'><span data-mm-text='tube.fill'></span></div>");
         publish(HudMolangContextTest.tube(1, 25)); refresh();

@@ -16,6 +16,7 @@ import com.sighs.apricityui.viewport.ApricityViewport;
 import com.sighs.apricityui.world.WorldWindowDisplayPrecision;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.ScopeBehavior;
@@ -61,10 +62,21 @@ public final class AuiHudAnimatable implements HudElementInstance {
     /** AUI HUD 页面的主题色变量名，玩家配置覆盖的就是它。 */
     private static final String ACCENT_VARIABLE = "--mm-accent";
 
+    private static final ThreadLocal<VehicleModelContext> VEHICLE_MODEL_CONTEXT = new ThreadLocal<>();
+
+    public record VehicleModelContext(Document document, HudRuntimeElement runtime, ResourceLocation styleId,
+                                      float partialTick) {}
+
+    @Nullable
+    public static VehicleModelContext vehicleModelContext(Document document) {
+        var context = VEHICLE_MODEL_CONTEXT.get();
+        return context != null && context.document() == document ? context : null;
+    }
+
     private final ResourceLocation styleId;
     private final AuiHudStyle style;
     private final HudElement element;
-    private final io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime;
+    private final HudRuntimeElement runtime;
     private io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudPageBinding binding;
 
     @Nullable
@@ -87,7 +99,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
     }
 
     public AuiHudAnimatable(ResourceLocation styleId, AuiHudStyle style, HudElement element,
-                            io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime) {
+                            HudRuntimeElement runtime) {
         this.runtime = runtime;
         this.styleId = styleId;
         this.style = style;
@@ -181,7 +193,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
     }
 
     @Override
-    public io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement runtime() { return runtime; }
+    public HudRuntimeElement runtime() { return runtime; }
 
     public void tickBindings() {
         Document target = resolveDocument();
@@ -276,7 +288,14 @@ public final class AuiHudAnimatable implements HudElementInstance {
                 try {
                     poseStack.translate(placement.x(), placement.y(), (float) element.offset().z);
                     poseStack.scale(placement.scaleX(), placement.scaleY(), 1.0f);
-                    Base.drawEmbeddedDocument(poseStack, target, null);
+                    var previous = VEHICLE_MODEL_CONTEXT.get();
+                    VEHICLE_MODEL_CONTEXT.set(new VehicleModelContext(target, runtime, styleId, partialTick));
+                    try {
+                        Base.drawEmbeddedDocument(poseStack, target, null);
+                    } finally {
+                        if (previous == null) VEHICLE_MODEL_CONTEXT.remove();
+                        else VEHICLE_MODEL_CONTEXT.set(previous);
+                    }
                 } finally {
                     // Surface 的入栈/出栈都会提交批次，保持与其它 HUD 元素的绘制顺序。
                     Mask.popSurfaceClip();

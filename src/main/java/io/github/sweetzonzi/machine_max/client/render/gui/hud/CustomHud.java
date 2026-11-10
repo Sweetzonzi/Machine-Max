@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.*;
+import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.client.render.gui.MMGuiManager;
@@ -18,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllab
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractViewpointSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractViewpointSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import io.github.sweetzonzi.machine_max.common.visual.HudElement;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
@@ -48,6 +50,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -142,17 +145,28 @@ public class CustomHud implements LayeredDraw.Layer {
         }
         Set<WeaponControllerSubsystem> selected = seat == null ? Set.of()
                 : new java.util.HashSet<>(seat.getActiveWeaponControllers());
-        var parts = new java.util.IdentityHashMap<AbstractPart<?>, HudPartSnapshot>();
+        var parts = new IdentityHashMap<AbstractPart<?>, HudPartSnapshot>();
+        var vehicles = new IdentityHashMap<VehicleCore, HudVehicleSnapshot>();
+        VehicleCore observerVehicle = seat != null && seat.getSubPart().part.assembly instanceof VehicleCore vehicle
+                ? vehicle : null;
         for (var entry : huds.entrySet()) {
+            if (entry.getValue().isEmpty()) continue;
             var part = entry.getKey() instanceof AbstractSubsystem source ? source.getSubPart().part : null;
             var partSnapshot = part == null ? HudPartSnapshot.EMPTY : parts.computeIfAbsent(part, HudPartSnapshot::capture);
+            var vehicleSnapshot = part != null && part.assembly instanceof VehicleCore vehicle
+                    ? vehicles.computeIfAbsent(vehicle, source -> HudVehicleSnapshot.capture(source,
+                            source == observerVehicle ? seat : null))
+                    : HudVehicleSnapshot.EMPTY;
             var weapon = entry.getKey() instanceof WeaponControllerSubsystem wc ? HudWeaponSnapshot.capture(wc) : HudWeaponSnapshot.EMPTY;
             for (var carrier : entry.getValue()) {
                 var runtime = carrier.runtime();
-                runtime.publish(partSnapshot, weapon, selected.contains(entry.getKey()));
+                runtime.publish(partSnapshot, weapon, vehicleSnapshot, selected.contains(entry.getKey()));
                 if (carrier instanceof AuiHudAnimatable aui && runtime.visible()) aui.tickBindings();
             }
         }
+        var retained = new HashSet<>(vehicles.keySet());
+        if (observerVehicle != null) retained.add(observerVehicle);
+        SeatMapLayout.retain(retained);
     }
 
     /**
@@ -477,7 +491,8 @@ public class CustomHud implements LayeredDraw.Layer {
     }
 
     /** 当前没有任何 HUD 宿主时清理；已有状态才销毁，避免每 tick 空转。 */
-    private void clearView() {
+    public void clearView() {
+        SeatMapLayout.retain(Set.of());
         if (!huds.isEmpty() || activeView != null) {
             clearAll();
         }

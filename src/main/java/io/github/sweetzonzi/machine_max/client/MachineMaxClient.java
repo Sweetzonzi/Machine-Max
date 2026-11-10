@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.pack.diagnostic.event.PackAllFinishedEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.element.PartModelElement;
+import io.github.sweetzonzi.machine_max.client.render.gui.element.VehicleModelElement;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.PdaScreen;
 import io.github.sweetzonzi.machine_max.client.render.post.ExplosionLightState;
 import io.github.sweetzonzi.machine_max.client.render.post.MuzzleFlashLightState;
@@ -74,6 +75,8 @@ public class MachineMaxClient {
     private static void registerAuiElements() {
         Element.register(PartModelElement.TAG_NAME,
                 (document, tagName) -> new PartModelElement(document));
+        Element.register(VehicleModelElement.TAG_NAME,
+                (document, tagName) -> new VehicleModelElement(document));
     }
 
     /**

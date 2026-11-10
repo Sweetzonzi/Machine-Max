@@ -25,6 +25,6 @@
     "max_pitch": 90,
     "yaw_limit": 360,
     "first_hud_layout": "machine_max:empty",
-    "third_hud_layout": "machine_max:empty"
+    "third_hud_layout": "machine_max:vehicle_seat_map"
   }
 }

@@ -90,7 +90,7 @@ public final class SeatOrder {
     }
 
     /**
-     * 只算排序，不保留参考系。按键路径用这个，HUD 用 {@link #layout} 缓存参考系。
+     * 只算排序，不保留参考系。
      */
     public static List<SeatSubsystem> order(VehicleCore vehicle) {
         return layout(vehicle).seats();
@@ -106,7 +106,11 @@ public final class SeatOrder {
      */
     @Nullable
     public static SeatSubsystem next(VehicleCore vehicle, SeatSubsystem from, boolean forward) {
-        List<SeatSubsystem> order = order(vehicle);
+        return next(order(vehicle), from, forward);
+    }
+
+    @Nullable
+    public static SeatSubsystem next(List<SeatSubsystem> order, SeatSubsystem from, boolean forward) {
         int index = order.indexOf(from);
         if (index < 0 || order.size() < 2) return null;
         int direction = forward ? 1 : -1;
