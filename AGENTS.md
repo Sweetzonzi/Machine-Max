@@ -463,14 +463,14 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 ## 补充说明
 
 - **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework`，本地缺失时回退 Maven jar。CI 里没有这两个兄弟目录，workflow 会把两个仓库检出到 `_deps/` 并用 `ORG_GRADLE_PROJECT_spark_core_dir` / `ORG_GRADLE_PROJECT_ballistics_framework_dir` 指过去，所以 CI 编的也是源码而不是钉住的发布版；分支名写死在 workflow 里，改分支需同步。AUI 走 `maven.sighs.cc` 的 `com.sighs:ApricityUI-neoforge-1.21.1` 并以 `jarJar` 内嵌进发布 jar，`metadata.json` 声明 `[1.3.0,)`；玩家另装独立 AUI 时 FML 直接采用已装那份（只按 mod id 判断、不比较版本），低于 1.3.0 会让内嵌版失效。
-- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline probeTest` 跑 `src/test/.../probe/` 下的手工探针（引擎行为标定、一次性实验、依赖本机重建 native 的测量，不参与 `test`）；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的 `PartFoundationGameTest`、`PartAssemblyProgressGameTest`（服务端的构造、恢复、类型边界与对象表路由）。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
+- **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline probeTest` 跑 `src/test/.../probe/` 下的手工探针（引擎行为标定、一次性实验、依赖本机重建 native 的测量，不参与 `test`）；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的服务端 GameTest（部件构造与恢复、类型边界、信号发现与投递、弹药路由、损坏状态、座位顺序），全部为必需用例，失败即非零退出。GameTest 写在 `src/main` 是硬要求：GameTestServer 从 mod 的 classes 扫描 `@GameTestHolder`，`src/test` 不在任何 run 的类路径上；反过来纯逻辑检查留在 `src/test`。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
 - **21 个 TODO 在 MachineMax.java** — 包含蓝图存储、网络包重构、炮塔控制、机甲外骨骼、通用分层作动器控制等完整路线图。
 - **运动学刚体接约束入世后步进 = 物理线程崩溃（已定位）**：已入碰撞世界的刚体被切成运动学模式后若被关节连接，多线程构建的下一次步进即崩在 `btSimulationIslandManagerMt` 的归岛阶段（`EXCEPTION_ACCESS_VIOLATION` in `bulletjme.dll`，线程 `Server PhysicsThread`）。根因是归岛用并查集按定义跳过静态/运动学刚体，其 island tag 为 `-1` 而被无保护地当作下标。**纪律**：不要用运动学模式冻结参与关节的刚体，改用 `VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()` 或平动/转动系数归零；加约束时两端刚体应已在碰撞世界中，移出刚体前先摘掉引用它的约束（Spark-Core 的 `addJoint()` 只打 WARNING、`removePhysicsBody()` 不摘约束）。症状、根因推导、其他触发路径与上游 issue 草稿见 [`docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`](docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md)。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
-- **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。九个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。
+- **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。九个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。发布产物只带游戏运行期需要的类：`jar` 与 `sourcesJar` 排除 `common/gametest/`，GameTest 由开发期的 `runGameTestServer` 从 classes 目录加载。
 
 ## 参考文件
 

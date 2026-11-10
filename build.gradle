@@ -133,6 +133,12 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// GameTest 只服务开发期的 runGameTestServer，它加载的是 classes 目录而不是 jar，
+// 因此发布产物（jar / sourcesJar）排除这批类，游戏内用不到它们。
+tasks.withType(Jar).configureEach {
+    exclude 'io/github/sweetzonzi/machine_max/common/gametest/**'
+}
+
 idea {
     module {
         downloadSources = true
