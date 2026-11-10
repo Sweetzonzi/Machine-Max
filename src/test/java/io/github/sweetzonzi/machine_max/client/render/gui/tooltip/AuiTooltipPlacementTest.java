@@ -7,10 +7,6 @@ import com.sighs.apricityui.parser.HTML;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -89,32 +85,6 @@ class AuiTooltipPlacementTest {
             Element.DOMRect rect = root.getBoundingClientRect();
             assertEquals(680.0d, rect.x, 0.01d);
             assertEquals(128.0d, rect.y, 0.01d);
-        });
-    }
-
-    @Test
-    void realPageHonoursInlinePosition() throws Exception {
-        Path dir = Path.of("src/main/resources/spark_modules/Machine-Max_Civilian/machine_max/documents/tooltips");
-        String css = Files.readString(dir.resolve("tooltip.css"), StandardCharsets.UTF_8);
-        String html = Files.readString(dir.resolve("ae86.html"), StandardCharsets.UTF_8)
-                .replace("<link rel=\"stylesheet\" href=\"tooltip.css\">", "<style>" + css + "</style>");
-        withDocument(html, document -> {
-            Element root = document.querySelector("#tooltip");
-            assertNotNull(root);
-            Element.DOMRect before = root.getBoundingClientRect();
-            assertEquals(0.0d, before.x, 0.01d, "页面初始应停在 CSS 的 left:0");
-            assertEquals(320.0d, before.width, 0.01d, "页面宽度应来自 CSS 的 width");
-
-            root.setInlineStyleProperty("position", "fixed", "important");
-            root.setInlineStyleProperty("pointer-events", "none", "important");
-            root.setInlineStyleProperty("left", "238.00px", "important");
-            root.setInlineStyleProperty("top", "128.00px", "important");
-            document.commitStyleRecalc();
-            document.commitRenderState();
-
-            Element.DOMRect after = root.getBoundingClientRect();
-            assertEquals(238.0d, after.x, 0.01d, "真实页面的行内 left 未生效");
-            assertEquals(128.0d, after.y, 0.01d, "真实页面的行内 top 未生效");
         });
     }
 

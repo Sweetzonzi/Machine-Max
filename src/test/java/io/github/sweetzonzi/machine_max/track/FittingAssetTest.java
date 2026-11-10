@@ -3,14 +3,12 @@ package io.github.sweetzonzi.machine_max.track;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import io.github.sweetzonzi.machine_max.testing.ContentFiles;
 import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -42,18 +40,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 也不要求 2 的幂——图标是独立贴图、不进图集，仓库里已有非 2 次幂的零件图标在用。</p>
  */
 class FittingAssetTest {
-    /** 仓库内的内容包根目录；Gradle 的测试工作目录是项目根。 */
-    private static final Path PACKS = Path.of("src", "main", "resources", "spark_modules");
     /** 最小重复单元的节数上限，与 fitting schema 的 {@code maxItems} 一致。 */
     private static final int MAX_LINK_PERIOD = 8;
 
     @Test
     void everyFittingVisualPointsAtExistingAssets() throws IOException {
-        List<Path> fittings = fittings();
+        List<Path> fittings = ContentFiles.jsonInEveryNamespace("fittings");
         assertTrue(!fittings.isEmpty(), "没有找到任何 fittings/*.json");
 
         for (Path file : fittings) {
-            JsonObject visual = readRoot(file).getAsJsonObject("visual");
+            JsonObject visual = ContentFiles.json(file).getAsJsonObject("visual");
             String model = visual.get("model").getAsString();
             String texture = visual.get("texture").getAsString();
 
@@ -81,8 +77,8 @@ class FittingAssetTest {
 
     @Test
     void everyTrackLinkBonesMatchesItsModel() throws IOException {
-        for (Path file : fittings()) {
-            JsonObject root = readRoot(file);
+        for (Path file : ContentFiles.jsonInEveryNamespace("fittings")) {
+            JsonObject root = ContentFiles.json(file);
             JsonArray declared = root.getAsJsonArray("link_bones");
             if (declared == null || declared.isEmpty()) continue;
 
@@ -114,34 +110,9 @@ class FittingAssetTest {
         }
     }
 
-    /** 遍历全部内容包的 {@code <命名空间>/fittings/*.json}。 */
-    private static List<Path> fittings() throws IOException {
-        List<Path> fittings = new ArrayList<>();
-        try (Stream<Path> packs = Files.list(PACKS)) {
-            for (Path pack : packs.toList()) {
-                try (Stream<Path> namespaces = Files.list(pack)) {
-                    for (Path namespace : namespaces.toList()) {
-                        Path dir = namespace.resolve("fittings");
-                        if (!Files.isDirectory(dir)) continue;
-                        try (Stream<Path> files = Files.list(dir)) {
-                            files.filter(p -> p.toString().endsWith(".json")).forEach(fittings::add);
-                        }
-                    }
-                }
-            }
-        }
-        return fittings;
-    }
-
-    private static JsonObject readRoot(Path file) throws IOException {
-        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            return JsonParser.parseReader(reader).getAsJsonObject();
-        }
-    }
-
     /** 加载器只读第一个 geometry，校验也只看它。 */
     private static JsonObject firstGeometry(Path modelFile) throws IOException {
-        JsonArray geometries = readRoot(modelFile).getAsJsonArray("minecraft:geometry");
+        JsonArray geometries = ContentFiles.json(modelFile).getAsJsonArray("minecraft:geometry");
         assertTrue(geometries != null && !geometries.isEmpty(),
                 () -> modelFile + " 里没有 minecraft:geometry");
         return geometries.get(0).getAsJsonObject();
@@ -181,7 +152,7 @@ class FittingAssetTest {
     }
 
     private static Optional<Path> resolve(String namespace, String relative) throws IOException {
-        try (Stream<Path> packs = Files.list(PACKS)) {
+        try (Stream<Path> packs = Files.list(ContentFiles.PACKS)) {
             return packs
                     .map(pack -> pack.resolve(namespace).resolve(relative))
                     .filter(Files::isRegularFile)

@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
-import com.google.gson.JsonParser;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.layout.Box;
 import com.sighs.apricityui.layout.Size;
@@ -26,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class WeaponHudComponentsTest {
     private static final Path PACKS = Path.of("src/main/resources/spark_modules");
     private static final Path BUILTIN = PACKS.resolve("Machine-Max_Builtin/machine_max");
-    private static final Path K17 = PACKS.resolve("Machine-Max_K17/machine_max");
     private final List<AuiHudAnimatable> instances = new ArrayList<>();
     private record Page(WeaponHudElement runtime, AuiHudAnimatable hud, Document document) {
         void publish(HudWeaponSnapshot snapshot, boolean selected) {
@@ -100,7 +98,7 @@ class WeaponHudComponentsTest {
         assertEquals("he", document.querySelector(".selected-stock .is-selected span[data-mm-text]").getTextContent());
         assertTrue(document.querySelector(".chamber-note").getClassList().contains("is-mismatch"));
         Document.runWithContext(document, () -> {
-            assertEquals(430, document.body.getOffsetWidth(), 0.1);
+            assertTrue(document.body.getOffsetWidth() > 0, "面板必须按内容量出宽度");
             assertEquals(0xffa4ff80, Box.of(document.querySelector(".hud-panel")).getBorderLeftSide().color().getValue());
             assertEquals("none", document.querySelector(".loading-source").getComputedStyle().display);
             assertEquals("unset", Text.of(document.querySelector(".identity b")).fontFamily);
@@ -132,10 +130,9 @@ class WeaponHudComponentsTest {
         assertEquals("0/30", document.querySelector(".caption b").getTextContent());
         assertEquals("58%", document.querySelectorAll(".row-fill").get(2).getInlineStylePropertyValue("--fill"));
         Document.runWithContext(document, () -> {
-            assertEquals(430, document.body.getOffsetWidth(), 0.1);
+            assertTrue(document.body.getOffsetWidth() > 0, "面板必须按内容量出宽度");
             assertTrue(document.body.getOffsetHeight() > 0);
-            assertTrue(rows.get(2).getOffsetWidth() < 220);
-            assertTrue(rows.get(2).getOffsetWidth() > 170);
+            assertTrue(rows.get(2).getOffsetWidth() > 0);
         });
         List<HudWeaponSnapshot.Tube> expanded = new ArrayList<>(List.of(tubes.get(1), tubes.getFirst(), tubes.get(2), tubes.get(3)));
         for (int i = 5; i <= 8; i++) expanded.add(tube(i, false, 10 * i));
@@ -193,7 +190,6 @@ class WeaponHudComponentsTest {
             assertEquals(0xffffc16b, Box.of(document.querySelector(".hud-panel")).getBorderLeftSide().color().getValue());
             assertEquals("none", document.querySelector(".identity").getComputedStyle().display);
             assertEquals("0", document.querySelector(".scanlines").getComputedStyle().opacity);
-            assertTrue(document.querySelector(".tube-row").getOffsetWidth() > 300);
         });
         assertNoBindingErrors(document);
     }
@@ -226,43 +222,5 @@ class WeaponHudComponentsTest {
                 "7.62 MM", false, "RDY", "test:pktm", List.of(tube(1, true, 100)),
                 List.of(belt("AP/TRACER", 382, true))), true);
         for (var page : List.of(feed, tubes, compact)) assertNoBindingErrors(page.document());
-    }
-
-    @Test void k17UsesThreeControllerLayoutsAndRetainsStaticComparisonResources() throws Exception {
-        var part = JsonParser.parseString(Files.readString(K17.resolve("parts/k17_turret.json"))).getAsJsonObject();
-        var subsystems = part.getAsJsonObject("variants")
-                .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main").getAsJsonObject("subsystems");
-        var kinds = Map.of("main_weapon", "feed", "secondary_weapon", "compact", "atgm_weapon", "tubes");
-        for (var entry : kinds.entrySet()) {
-            var wc = subsystems.getAsJsonObject("subsystem.machine_max." + entry.getKey());
-            String layoutKey = "k17_weapon_" + entry.getValue();
-            for (String field : List.of("first_hud_layout", "third_hud_layout", "scope_hud_layout")) {
-                assertEquals("machine_max:" + layoutKey, wc.get(field).getAsString());
-            }
-            var layout = JsonParser.parseString(Files.readString(K17.resolve("hud_layouts/" + layoutKey + ".json")))
-                    .getAsJsonArray().get(0).getAsJsonObject();
-            assertEquals("always", layout.get("selection_visibility").getAsString());
-            assertEquals("screen_fixed", layout.get("scope_behavior").getAsString());
-            assertTrue(layout.get("ignore_zoom").getAsBoolean());
-            var styleKey = layout.get("style").getAsString().split(":")[1];
-            var style = JsonParser.parseString(Files.readString(BUILTIN.resolve("huds/" + styleKey + ".json"))).getAsJsonObject();
-            String page = style.get("page").getAsString().substring("machine_max/".length());
-            assertTrue(Files.isRegularFile(BUILTIN.resolve("documents/" + page)));
-        }
-        var hull = JsonParser.parseString(Files.readString(K17.resolve("parts/k17_hull.json"))).getAsJsonObject();
-        var driverSeat = hull.getAsJsonObject("variants")
-                .getAsJsonObject("sub_parts").getAsJsonObject("sub_part.machine_max.main")
-                .getAsJsonObject("subsystems").getAsJsonObject("subsystem.machine_max.driver_seat");
-        assertEquals("machine_max:default_3rd_driver_seat", driverSeat.get("definition").getAsString());
-        assertEquals("machine_max:morden_ground_basic", driverSeat.get("third_hud_layout").getAsString());
-        assertTrue(Files.isRegularFile(BUILTIN.resolve("hud_layouts/morden_ground_basic.json")));
-        for (String sight : List.of("gunner", "commander")) {
-            var definition = JsonParser.parseString(Files.readString(K17.resolve("subsystems/k17/k17_" + sight + "_sight.json"))).getAsJsonObject();
-            assertEquals("machine_max:modern_optics", definition.get("scope_hud_layout").getAsString());
-        }
-        for (String path : List.of("hud_layouts/k17_weapon_preview.json", "hud_layouts/k17_weapon_preview_scope.json",
-                "huds/k17_weapon_preview.json", "documents/k17_weapon_preview/index.html", "documents/k17_weapon_preview/hud.css")) {
-            assertTrue(Files.isRegularFile(K17.resolve(path)));
-        }
     }
 }

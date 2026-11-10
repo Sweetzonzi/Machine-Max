@@ -66,8 +66,6 @@ WC 配置位于 `src/main/resources/spark_modules/Machine-Max_K17/machine_max/pa
 
 `src/test/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/WeaponHudComponentsTest.java#WeaponHudComponentsTest` 用实际 AUI 页面和绑定器验证：选中供弹与膛内弹分离、装填来源、逐管百分比、零库存就绪管、稳定身份重排、四管扩展为八管、页面重载、多 Document 隔离、外观变量、空快照恢复及 K17 的三视角挂载。
 
-`src/test/java/io/github/sweetzonzi/machine_max/client/render/renderable/K17WeaponHudLayoutTest.java#configuredPanelsFitAndDoNotOverlapAcrossGuiSizes` 以 AUI 实际测量的组件尺寸和内容包布局验证七档 GUI 尺寸的边界与重叠，范围从 320×240 到 3840×2160。测试采用标准四管导弹、单管主炮和单个弹链数据；更多弹链、管数或较长翻译需要额外验收。
-
-组件测试导出 `build/reports/hud-components/index.html`，内容来自 AUI 绑定后的 DOM，使用测试快照；它是浏览器排版预览，不是游戏截图。浏览器策略禁止直接打开本地文件，本轮的几何与样式核对以 AUI 测量为准。
+`src/test/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudPlacementTest.java` 覆盖面板放置的数学：中心对齐、边距按 GUI 像素计、缩放只改被测轴。面板在 320×240 到 3840×2160 下的越界与重叠属于画面验收，由 `runClient` 完成；更多弹链、管数或较长翻译同样需要额外验收。
 
 游戏内待验收：控制组切换、射击与切弹时的实时数据、上下车、第三人称与两个瞄具切换、缩放和 GUI scale、多管损毁与内容包重载。源码资源配置供新生成或重新加载定义的 K17 使用；已保存载具如带有动态属性覆盖，需要核对其布局字段。

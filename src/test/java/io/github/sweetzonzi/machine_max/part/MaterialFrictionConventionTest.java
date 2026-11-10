@@ -3,14 +3,12 @@ package io.github.sweetzonzi.machine_max.part;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import io.github.sweetzonzi.machine_max.testing.ContentFiles;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,16 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 方向。两者不等会让纵向摩擦随轮子转角摆动，并在 45° 附近把摩擦方向扭偏，凭空产生侧向力。</p>
  *
  * <p>这条约定无法用 JSON Schema（draft-07 不能比较两个数组元素）表达，也没有运行期的强制：
- * 只有履带材料会在装载时留下警告，轮胎与普通部件不检查。因此由本测试固定，扫描范围是
- * {@code src/main/resources/spark_modules/**&#47;materials&#47;*.json}，新增内容包无需改动本测试。</p>
+ * 只有履带材料会在装载时留下警告，轮胎与普通部件不检查。因此由本测试固定，扫描范围是各内容包
+ * 命名空间下的 {@code materials/*.json}，新增内容包无需改动本测试。</p>
  */
 class MaterialFrictionConventionTest {
-    private static final Path MODULES = Path.of("src/main/resources/spark_modules");
 
     @Test
     void everyMaterialRepeatsLongitudinalFrictionInTheThirdComponent() throws Exception {
-        List<Path> materials = materials();
-        assertFalse(materials.isEmpty(), "未找到任何内容包材质：" + MODULES.toAbsolutePath());
+        List<Path> materials = ContentFiles.jsonInEveryNamespace("materials");
+        assertFalse(materials.isEmpty(), "未找到任何内容包材质：" + ContentFiles.PACKS);
 
         List<String> violations = new ArrayList<>();
         for (Path material : materials) {
@@ -45,24 +42,10 @@ class MaterialFrictionConventionTest {
                         + String.join("\n  ", violations));
     }
 
-    /** 遍历 spark_modules 下任意内容目录里的 materials 目录。 */
-    private static List<Path> materials() throws Exception {
-        List<Path> found = new ArrayList<>();
-        if (!Files.isDirectory(MODULES)) return found;
-        try (Stream<Path> paths = Files.walk(MODULES)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString().endsWith(".json"))
-                    .filter(p -> p.getParent() != null && "materials".equals(p.getParent().getFileName().toString()))
-                    .sorted()
-                    .forEach(found::add);
-        }
-        return found;
-    }
-
     /** 缺省 friction 使用各向同性默认值，因此只校验显式写出的向量。 */
     private static void collectViolations(Path material, List<String> violations) throws Exception {
-        String file = MODULES.relativize(material).toString().replace('\\', '/');
-        JsonObject root = JsonParser.parseString(Files.readString(material)).getAsJsonObject();
+        String file = ContentFiles.describe(material);
+        JsonObject root = ContentFiles.json(material);
         JsonObject physics = root.getAsJsonObject("physics");
         if (physics == null) return;
         JsonElement friction = physics.get("friction");

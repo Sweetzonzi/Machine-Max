@@ -172,6 +172,9 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    // 内容包用例按相对路径读 src/main/resources/spark_modules，工作目录必须是项目根。
+    // 显式钉住，不依赖 Gradle 的默认值。
+    workingDir = projectDir
     // src/test/.../probe/ 是手工探针（引擎行为标定、一次性实验、按机器重建的 native），
     // 不是产品契约。JUnit Platform 不套用 Gradle 的 *Test 默认包含模式，必须在执行期排除；
     // 编译仍然进行，探针需要时用 ./gradlew probeTest 单独跑。

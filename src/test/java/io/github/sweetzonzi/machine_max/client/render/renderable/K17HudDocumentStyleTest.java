@@ -18,11 +18,22 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 武器 HUD 页面的主题变量管线：边框、装填条与扫描线都从 {@code --mm-accent} /
+ * {@code --scanline-opacity} 取值，作者改一个变量就能换掉整套配色。
+ *
+ * <p>断言只钉「同一个主题色是否贯穿全部装饰」「变量覆写是否生效」与「扫描线是否只盖住自己的
+ * 面板」。具体色值、像素尺寸、元素份数都属于页面样式，由作者随时调整，不进用例。</p>
+ */
 class K17HudDocumentStyleTest {
     private static final Path PAGE_DIRECTORY = Path.of("src/main/resources/spark_modules/"
             + "Machine-Max_K17/machine_max/documents/k17_weapon_preview");
@@ -35,7 +46,7 @@ class K17HudDocumentStyleTest {
     }
 
     @Test
-    void bordersAndReloadFillsResolveToVisiblePhosphor() throws Exception {
+    void everyDecorationTakesItsColorFromTheSameAccentToken() throws Exception {
         Document document = createHud("visible-decoration", Map.of());
         Document.runWithContext(document, () -> {
             commit(document);
@@ -43,28 +54,39 @@ class K17HudDocumentStyleTest {
                 assertEquals("unset", Text.of(leaf).fontFamily,
                         "HUD text must use the native Minecraft font rendering path");
             }
+
+            Set<Integer> accents = new LinkedHashSet<>();
             for (var panel : document.querySelectorAll(".hud-panel")) {
                 var border = Box.of(panel).getBorderLeftSide();
-                assertTrue(border.size() > 0);
-                assertEquals(0xffa4ff80, border.color().getValue());
+                assertTrue(border.size() > 0, "面板必须有左边框");
+                accents.add(border.color().getValue());
             }
             for (String selector : new String[]{".station-id", ".belt-row", ".tube-row", ".chamber-note"}) {
-                for (var node : document.querySelectorAll(selector)) {
-                    assertEquals(0xffa4ff80, Box.of(node).getBorderTopSide().color().getValue(), selector);
+                var nodes = document.querySelectorAll(selector);
+                assertFalse(nodes.isEmpty(), "页面缺少 " + selector);
+                for (var node : nodes) {
+                    accents.add(Box.of(node).getBorderTopSide().color().getValue());
                 }
             }
-            assertEquals(0xffa4ff80,
-                    Box.of(document.querySelector(".identity")).getBorderBottomSide().color().getValue());
-            assertEquals(0xffa4ff80,
-                    new Color(Background.of(document.querySelector(".belt-row .row-fill")).color).getValue());
+            accents.add(Box.of(document.querySelector(".identity")).getBorderBottomSide().color().getValue());
+            accents.add(new Color(Background.of(document.querySelector(".belt-row .row-fill")).color).getValue());
+
+            assertEquals(1, accents.size(), "边框与装填条应共用同一个主题色，实为 " + accents);
+            int accent = accents.iterator().next();
+            assertTrue((accent >>> 24) != 0,
+                    "主题色必须不透明，否则装饰在游戏里不可见：" + Integer.toHexString(accent));
+
             var loading = Background.of(document.querySelector(".is-loading .row-fill")).gradient;
-            assertTrue(loading != null && loading.repeating());
-            assertTrue(loading.stops().stream().anyMatch(stop -> stop.color == 0xffa4ff80));
+            assertNotNull(loading, "装填中的装填条必须是条纹渐变");
+            assertTrue(loading.repeating());
+            assertTrue(loading.stops().stream().anyMatch(stop -> stop.color == accent),
+                    "条纹渐变里必须出现主题色");
+
             var row = document.querySelector(".is-loading");
             var fill = document.querySelector(".is-loading .row-fill");
-            assertTrue(fill.getOffsetHeight() > 0);
-            assertEquals((row.getOffsetWidth() - Box.of(row).getBorderHorizontal()) * 0.58,
-                    fill.getOffsetWidth(), 0.1);
+            assertTrue(fill.getOffsetHeight() > 0, "装填条必须有高度");
+            assertTrue(fill.getOffsetWidth() > 0 && fill.getOffsetWidth() <= row.getOffsetWidth(),
+                    "装填条不能超出所在行");
         });
     }
 
@@ -75,19 +97,25 @@ class K17HudDocumentStyleTest {
             commit(document);
             var panels = document.querySelectorAll(".hud-panel");
             var masks = document.querySelectorAll(".scanlines");
-            assertEquals(3, masks.size());
-            assertEquals(430.0, document.body.getOffsetWidth(), 0.01);
-            assertEquals(395.0, document.body.getOffsetHeight(), 0.01);
-            assertEquals(0, new Color(Background.of(document.body).color).getValue() >>> 24);
+            assertFalse(masks.isEmpty(), "页面必须有扫描线遮罩");
+            assertTrue(masks.size() <= panels.size(),
+                    "扫描线遮罩只应挂在面板内：遮罩 " + masks.size() + " / 面板 " + panels.size());
+
+            assertEquals(0, new Color(Background.of(document.body).color).getValue() >>> 24,
+                    "body 不能自己铺背景色，否则会盖住世界");
+            assertTrue(document.body.getOffsetWidth() > 0 && document.body.getOffsetHeight() > 0,
+                    "body 必须按内容撑开");
+
             for (int i = 0; i < masks.size(); i++) {
                 var mask = masks.get(i);
                 var panel = panels.get(i);
                 var gradient = Background.of(mask).gradient;
-                assertTrue(gradient != null && gradient.repeating());
-                assertEquals(4.0f, gradient.repeatLengthPx());
-                assertEquals(0.18, Double.parseDouble(mask.getComputedStyle().opacity), 0.001);
-                assertTrue(mask.getOffsetWidth() > panel.getOffsetWidth() * 0.95);
-                assertTrue(mask.getOffsetHeight() > panel.getOffsetHeight() * 0.95);
+                assertNotNull(gradient, "扫描线必须是条纹渐变");
+                assertTrue(gradient.repeating());
+                assertTrue(Double.parseDouble(mask.getComputedStyle().opacity) > 0,
+                        "默认主题下扫描线必须可见");
+                assertTrue(mask.getOffsetWidth() > panel.getOffsetWidth() * 0.95, "遮罩必须盖住面板宽度");
+                assertTrue(mask.getOffsetHeight() > panel.getOffsetHeight() * 0.95, "遮罩必须盖住面板高度");
             }
         });
     }
@@ -103,7 +131,8 @@ class K17HudDocumentStyleTest {
             assertEquals(0xffffc16b,
                     new Color(Background.of(document.querySelector(".belt-row .row-fill")).color).getValue());
             for (var mask : document.querySelectorAll(".scanlines")) {
-                assertEquals(0.0, Double.parseDouble(mask.getComputedStyle().opacity), 0.001);
+                assertEquals(0.0, Double.parseDouble(mask.getComputedStyle().opacity), 0.001,
+                        "作者把 --scanline-opacity 设为 0 后扫描线必须完全消失");
             }
         });
     }

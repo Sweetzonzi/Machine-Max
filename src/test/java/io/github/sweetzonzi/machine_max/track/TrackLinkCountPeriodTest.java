@@ -3,12 +3,10 @@ package io.github.sweetzonzi.machine_max.track;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import io.github.sweetzonzi.machine_max.testing.ContentFiles;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 没写 {@code link_count} 的条目跳过——那种情况加载端按当前包络推导，推导本身满足周期。</p>
  */
 class TrackLinkCountPeriodTest {
-    private static final Path PACKS = Path.of("src", "main", "resources", "spark_modules");
 
     @Test
     void everyTemplateTrackLinkCountIsWholePeriods() throws IOException {
@@ -38,8 +35,8 @@ class TrackLinkCountPeriodTest {
         List<String> violations = new ArrayList<>();
 
         for (Path template : templates()) {
-            String file = PACKS.relativize(template).toString().replace('\\', '/');
-            JsonArray links = readRoot(template).getAsJsonArray("track_links");
+            String file = ContentFiles.describe(template);
+            JsonArray links = ContentFiles.json(template).getAsJsonArray("track_links");
             if (links == null) continue;
             for (JsonElement element : links) {
                 JsonObject link = element.getAsJsonObject();
@@ -59,52 +56,40 @@ class TrackLinkCountPeriodTest {
     /** 型号 id → 周期 K（{@code link_bones} 长度，没有该字段的型号为 1）。 */
     private static Map<String, Integer> trackPeriods() throws IOException {
         Map<String, Integer> periods = new HashMap<>();
-        try (Stream<Path> packs = Files.list(PACKS)) {
-            for (Path pack : packs.toList()) {
-                try (Stream<Path> namespaces = Files.list(pack)) {
-                    for (Path namespace : namespaces.toList()) {
-                        Path dir = namespace.resolve("fittings");
-                        if (!Files.isDirectory(dir)) continue;
-                        try (Stream<Path> files = Files.list(dir)) {
-                            for (Path file : files.filter(p -> p.toString().endsWith(".json")).toList()) {
-                                String id = namespace.getFileName() + ":" + stripJson(file.getFileName().toString());
-                                periods.put(id, periodOf(file));
-                            }
-                        }
-                    }
-                }
+        for (Path namespace : namespaces()) {
+            for (Path file : ContentFiles.jsonFiles(namespace.resolve("fittings"))) {
+                String id = namespace.getFileName() + ":" + stripJson(file.getFileName().toString());
+                periods.put(id, periodOf(file));
             }
         }
         return periods;
     }
 
     private static int periodOf(Path fitting) throws IOException {
-        JsonArray bones = readRoot(fitting).getAsJsonArray("link_bones");
+        JsonArray bones = ContentFiles.json(fitting).getAsJsonArray("link_bones");
         return bones == null ? 1 : Math.max(1, bones.size());
     }
 
     private static List<Path> templates() throws IOException {
         List<Path> found = new ArrayList<>();
-        try (Stream<Path> packs = Files.list(PACKS)) {
-            for (Path pack : packs.filter(Files::isDirectory).toList()) {
-                try (Stream<Path> namespaces = Files.list(pack)) {
-                    for (Path namespace : namespaces.toList()) {
-                        Path dir = namespace.resolve("templates");
-                        if (!Files.isDirectory(dir)) continue;
-                        try (Stream<Path> files = Files.list(dir)) {
-                            files.filter(p -> p.toString().endsWith(".json")).forEach(found::add);
-                        }
-                    }
-                }
-            }
+        for (Path namespace : namespaces()) {
+            found.addAll(ContentFiles.jsonFiles(namespace.resolve("templates")));
         }
         return found;
     }
 
-    private static JsonObject readRoot(Path file) throws IOException {
-        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            return JsonParser.parseReader(reader).getAsJsonObject();
+    /** 内容包的命名空间目录：内容 id 的前缀就是这一层目录名。 */
+    private static List<Path> namespaces() throws IOException {
+        List<Path> found = new ArrayList<>();
+        if (!Files.isDirectory(ContentFiles.PACKS)) return found;
+        try (Stream<Path> packs = Files.list(ContentFiles.PACKS)) {
+            for (Path pack : packs.filter(Files::isDirectory).toList()) {
+                try (Stream<Path> children = Files.list(pack)) {
+                    found.addAll(children.filter(Files::isDirectory).toList());
+                }
+            }
         }
+        return found;
     }
 
     private static String stripJson(String name) {

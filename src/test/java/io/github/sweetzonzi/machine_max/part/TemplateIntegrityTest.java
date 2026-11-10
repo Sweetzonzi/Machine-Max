@@ -2,17 +2,16 @@ package io.github.sweetzonzi.machine_max.part;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import io.github.sweetzonzi.machine_max.testing.ContentFiles;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 全部内容包载具模板的满状态契约。
@@ -24,16 +23,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>缺失字段按 {@code RegularPartData} / {@code SubPartData} / {@code AbstractConnector}
  * 的 Codec 默认值（均为 1f）解读为满值，因此只校验显式写出的字段。</p>
  *
- * <p>扫描范围是 {@code src/main/resources/spark_modules/<内容包>/machine_max/templates/*.json}，
- * 新增内容包无需改动本测试。</p>
+ * <p>扫描范围是各内容包命名空间下的 {@code templates/*.json}（多数包是
+ * {@code machine_max/templates}，M1A2 SEP 与 T-90A 分别是 {@code m1a2_sep/templates}、
+ * {@code t90a/templates}），新增内容包无需改动本测试。</p>
  */
 class TemplateIntegrityTest {
-    private static final Path MODULES = Path.of("src/main/resources/spark_modules");
 
     @Test
     void everyTemplateShipsAtFullState() throws Exception {
-        List<Path> templates = templates();
-        assertFalse(templates.isEmpty(), "未找到任何内容包模板：" + MODULES.toAbsolutePath());
+        List<Path> templates = ContentFiles.jsonInEveryNamespace("templates");
+        assertFalse(templates.isEmpty(), "未找到任何内容包模板：" + ContentFiles.PACKS);
 
         List<String> violations = new ArrayList<>();
         for (Path template : templates) {
@@ -44,26 +43,10 @@ class TemplateIntegrityTest {
                 "模板必须是满状态的出厂快照，以下字段低于 1：\n  " + String.join("\n  ", violations));
     }
 
-    /** 遍历 spark_modules 下每个内容包 machine_max/templates 目录里的模板文件。 */
-    private static List<Path> templates() throws Exception {
-        List<Path> found = new ArrayList<>();
-        if (!Files.isDirectory(MODULES)) return found;
-        try (Stream<Path> packs = Files.list(MODULES)) {
-            for (Path pack : packs.filter(Files::isDirectory).toList()) {
-                Path dir = pack.resolve("machine_max/templates");
-                if (!Files.isDirectory(dir)) continue;
-                try (Stream<Path> files = Files.list(dir)) {
-                    files.filter(p -> p.getFileName().toString().endsWith(".json")).sorted().forEach(found::add);
-                }
-            }
-        }
-        return found;
-    }
-
     /** 逐部件、逐子零件、逐连接点记录所有低于满值的比例字段。 */
     private static void collectViolations(Path template, List<String> violations) throws Exception {
-        String file = MODULES.relativize(template).toString().replace('\\', '/');
-        JsonObject root = JsonParser.parseString(Files.readString(template)).getAsJsonObject();
+        String file = ContentFiles.describe(template);
+        JsonObject root = ContentFiles.json(template);
         JsonObject parts = root.getAsJsonObject("parts");
         if (parts == null) {
             violations.add(file + "：缺少 parts");

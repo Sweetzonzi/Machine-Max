@@ -3,23 +3,20 @@ package io.github.sweetzonzi.machine_max.client.render.gui.creative;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
+import io.github.sweetzonzi.machine_max.testing.ContentFiles;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
@@ -27,130 +24,116 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 第一方内容包的 series 标签与系列译名。
+ * 第一方内容包的系列标签与系列译名。
  *
- * <p>递归盘点 {@code src/main/resources/spark_modules/**&#47;parts/**&#47;*.json}，不限定内容命名空间：
- * 除 Builtin 的五个独立物件与 MTLB 的通用 PKT 机枪塔这六份不写系列外，每份定义的每个变体都要带本系列的
- * {@code machine_max:series/&lt;系列&gt;} 标签。车族只由该标签表达，零件上不写裸车族标签
- * （{@code machine_max:&lt;系列&gt;}）；裸名保留为研发组译名键，供研发树按组 id 显示组名。系列译名取自各包
- * 内容命名空间下 {@code lang} 的 {@code machine_max.series.<系列>}；包内同时存在研发组译名
- * {@code machine_max.<系列>} 时，两者取值必须一致（M1A2 SEP 与 T-90A 用零件级研发组，没有裸名键）。</p>
+ * <p>递归盘点 {@code src/main/resources/spark_modules/**&#47;parts/**&#47;*.json}，不限定内容命名空间。
+ * 规则全部由数据自身推出，不维护包清单，也不维护免检清单：</p>
+ *
+ * <ol>
+ *   <li>变体上的系列标签必须与路径推出的系列一致——{@code parts/<系列>/} 取目录名，
+ *       {@code parts/<系列>_*.json} 取第一个下划线前的部分——且一个变体最多挂一个；</li>
+ *   <li>不写系列标签是允许的：货箱、黄金马桶这类不归属车族的独立物件与通用机枪塔都属于这种；</li>
+ *   <li>每个出现过的系列都要有译名 {@code machine_max.series.<系列>}；同一内容包里同时存在研发组
+ *       译名 {@code machine_max.<系列>} 时，两者取值必须一致；</li>
+ *   <li>内容里出现过的系列不得再以裸标签 {@code machine_max:<系列>} 挂在变体上——车族只由
+ *       {@code machine_max:series/<系列>} 表达，裸名保留为研发组译名键。</li>
+ * </ol>
  *
  * <p>用例只读资源文件，不启动 Minecraft 注册表与语言服务。</p>
  */
 class CreativeContentTagsTest {
 
-    private static final Path PARTS_ROOT = Path.of("src/main/resources/spark_modules");
     /** 完整系列标签前缀 {@code machine_max:series/}，命名空间取模组 id，路径前缀取 MMTags。 */
     private static final String SERIES_PREFIX = MachineMax.MOD_ID + ":" + MMTags.PART_SERIES_PREFIX;
 
-    /** 明确不写系列的零件文件，路径相对仓库根。 */
-    private static final Set<String> WITHOUT_SERIES = Set.of(
-            "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/parts/prop/container_16x16x32.json",
-            "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/parts/prop/container_16x16x8.json",
-            "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/parts/prop/container_16x32x32.json",
-            "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/parts/prop/golden_closestool.json",
-            "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/parts/prop/reinforced_container_16x16x8.json",
-            "src/main/resources/spark_modules/Machine-Max_MTLB/machine_max/parts/pkt_turret.json");
-
-    /** 每个有待标型号的包及其系列后缀。 */
-    private static final Map<String, List<String>> SERIES_BY_PACK = new LinkedHashMap<>();
-
-    static {
-        SERIES_BY_PACK.put("Machine-Max_2S38", List.of("2s38"));
-        SERIES_BY_PACK.put("Machine-Max_Civilian", List.of(
-                "ae86", "dayun", "jeep", "kluo", "mini_ev", "r700",
-                "senna_gtr", "szn", "van", "vn", "wine_fox"));
-        SERIES_BY_PACK.put("Machine-Max_K17", List.of("k17"));
-        SERIES_BY_PACK.put("Machine-Max_M1A2_SEP", List.of("m1a2"));
-        SERIES_BY_PACK.put("Machine-Max_MTLB", List.of("mtlb"));
-        SERIES_BY_PACK.put("Machine-Max_Sdkfz234", List.of("sdkfz234"));
-        SERIES_BY_PACK.put("Machine-Max_T90A", List.of("t90a"));
-    }
-
     @Test
-    void everyTaggedVariantCarriesItsSeriesTag() throws IOException {
-        int definitionCount = 0;
-        int variantCount = 0;
-        int taggedDefinitions = 0;
-        int taggedVariants = 0;
-        Set<String> series = new TreeSet<>();
+    void everySeriesTagMatchesTheSeriesItsPathImplies() throws IOException {
         List<String> problems = new ArrayList<>();
+        int taggedVariants = 0;
 
         for (Path file : partFiles()) {
-            definitionCount++;
-            String relative = file.toString().replace('\\', '/');
-            String expected = expectedSeries(relative);
-            List<List<String>> variants = variantTagLists(readJson(file));
-            variantCount += variants.size();
-            if (expected == null) {
-                for (List<String> tags : variants) {
-                    for (String tag : tags) {
-                        if (tag.startsWith(SERIES_PREFIX)) {
-                            problems.add(relative + " should not carry " + tag);
-                        }
-                    }
+            String relative = ContentFiles.describe(file);
+            String expected = seriesFromPath(relative);
+            for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
+                List<String> series = tags.stream().filter(tag -> tag.startsWith(SERIES_PREFIX)).toList();
+                if (series.isEmpty()) continue;
+                taggedVariants++;
+                if (series.size() > 1) {
+                    problems.add(relative + " 的一个变体挂了多个系列标签：" + series);
                 }
-                continue;
-            }
-            taggedDefinitions++;
-            taggedVariants += variants.size();
-            series.add(SERIES_PREFIX + expected);
-            for (List<String> tags : variants) {
-                if (!tags.contains(SERIES_PREFIX + expected)) {
-                    problems.add(relative + " variant misses " + SERIES_PREFIX + expected);
+                for (String tag : series) {
+                    if (!tag.equals(SERIES_PREFIX + expected)) {
+                        problems.add(relative + " 的系列标签 " + tag + " 与路径推出的系列 "
+                                + SERIES_PREFIX + expected + " 不一致");
+                    }
                 }
             }
         }
 
         assertTrue(problems.isEmpty(), String.join("\n", problems));
         // 只守「真的扫到了内容」。份数与变体数属于内容本身，增删一份零件不该让测试变红。
-        assertTrue(definitionCount > 0, "未扫描到任何零件定义：" + PARTS_ROOT);
-        assertTrue(variantCount > 0, "未扫描到任何变体");
-        assertTrue(taggedDefinitions > 0 && taggedDefinitions <= definitionCount,
-                "待标定义份数应在 (0, 总份数] 内：" + taggedDefinitions + "/" + definitionCount);
-        assertTrue(taggedVariants > 0 && taggedVariants <= variantCount,
-                "待标变体数应在 (0, 总变体数] 内：" + taggedVariants + "/" + variantCount);
-        assertTrue(series.size() > 1, "系列标签集合异常：" + series);
+        assertTrue(taggedVariants > 0, "未从内容里读到任何系列标签：" + ContentFiles.PACKS);
     }
 
     @Test
-    void seriesTranslationsMatchResearchGroupNamesWhenPresent() throws IOException {
-        int entries = 0;
+    void seriesTranslationsExistInEveryPackThatUsesThem() throws IOException {
+        Map<String, Set<String>> packsBySeries = new TreeMap<>();
+        for (Path file : partFiles()) {
+            String pack = packOf(file);
+            for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
+                for (String tag : tags) {
+                    if (!tag.startsWith(SERIES_PREFIX)) continue;
+                    packsBySeries
+                            .computeIfAbsent(tag.substring(SERIES_PREFIX.length()), key -> new TreeSet<>())
+                            .add(pack);
+                }
+            }
+        }
+        assertFalse(packsBySeries.isEmpty(), "未从内容里读到任何系列标签");
+
         List<String> problems = new ArrayList<>();
-        for (Map.Entry<String, List<String>> entry : SERIES_BY_PACK.entrySet()) {
-            for (String language : List.of("zh_cn", "en_us")) {
-                Path path = contentDir(entry.getKey()).resolve("lang").resolve(language + ".json");
-                JsonObject lang = readJson(path).getAsJsonObject();
-                for (String suffix : entry.getValue()) {
-                    String groupKey = "machine_max." + suffix;
-                    String seriesKey = "machine_max.series." + suffix;
-                    assertTrue(lang.has(seriesKey), path + " misses " + seriesKey);
-                    if (lang.has(groupKey)
+        for (Map.Entry<String, Set<String>> entry : packsBySeries.entrySet()) {
+            String seriesKey = "machine_max.series." + entry.getKey();
+            String groupKey = "machine_max." + entry.getKey();
+            for (String pack : entry.getValue()) {
+                Path langDirectory = contentDirectory(pack).resolve("lang");
+                for (String language : List.of("zh_cn", "en_us")) {
+                    Path path = langDirectory.resolve(language + ".json");
+                    assertTrue(Files.isRegularFile(path), pack + " 缺少 lang/" + language + ".json");
+                    JsonObject lang = ContentFiles.json(path).getAsJsonObject();
+                    if (!lang.has(seriesKey)) {
+                        problems.add(ContentFiles.describe(path) + " 缺少 " + seriesKey);
+                    } else if (lang.has(groupKey)
                             && !lang.get(groupKey).getAsString().equals(lang.get(seriesKey).getAsString())) {
-                        problems.add(path + ": " + seriesKey + " != " + groupKey);
+                        problems.add(ContentFiles.describe(path) + ": " + seriesKey + " != " + groupKey);
                     }
-                    entries++;
                 }
             }
         }
         assertTrue(problems.isEmpty(), String.join("\n", problems));
-        assertTrue(entries > 0, "未读到任何系列译名");
     }
 
     @Test
-    void noVariantCarriesTheBareVehicleTag() throws IOException {
-        Set<String> bare = new LinkedHashSet<>();
-        for (List<String> suffixes : SERIES_BY_PACK.values()) {
-            for (String suffix : suffixes) bare.add(MachineMax.MOD_ID + ":" + suffix);
+    void noVariantCarriesASeriesBareTag() throws IOException {
+        Set<String> bareNames = new LinkedHashSet<>();
+        for (Path file : partFiles()) {
+            for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
+                for (String tag : tags) {
+                    if (tag.startsWith(SERIES_PREFIX)) {
+                        bareNames.add(MachineMax.MOD_ID + ":" + tag.substring(SERIES_PREFIX.length()));
+                    }
+                }
+            }
         }
-        assertFalse(bare.isEmpty(), "未从系列清单里读出任何车族裸名");
+        assertFalse(bareNames.isEmpty(), "未从内容里读出任何系列标签");
 
         List<String> problems = new ArrayList<>();
         for (Path file : partFiles()) {
-            for (List<String> tags : variantTagLists(readJson(file))) {
+            for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
                 for (String tag : tags) {
-                    if (bare.contains(tag)) problems.add(file + " still carries " + tag);
+                    if (bareNames.contains(tag)) {
+                        problems.add(ContentFiles.describe(file) + " 仍挂着裸车族标签 " + tag);
+                    }
                 }
             }
         }
@@ -161,8 +144,11 @@ class CreativeContentTagsTest {
     void everyContentSeriesTagIsRecognisedAsASeries() throws IOException {
         Set<String> series = new LinkedHashSet<>();
         for (Path file : partFiles()) {
-            String expected = expectedSeries(file.toString().replace('\\', '/'));
-            if (expected != null) series.add(SERIES_PREFIX + expected);
+            for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
+                for (String tag : tags) {
+                    if (tag.startsWith(SERIES_PREFIX)) series.add(tag);
+                }
+            }
         }
         assertFalse(series.isEmpty(), "未从内容里读出任何系列标签");
         for (String tag : series) {
@@ -176,7 +162,8 @@ class CreativeContentTagsTest {
 
     /** 递归收集 parts 目录下的全部零件定义，不限内容命名空间。 */
     private static List<Path> partFiles() throws IOException {
-        try (Stream<Path> stream = Files.walk(PARTS_ROOT)) {
+        if (!Files.isDirectory(ContentFiles.PACKS)) return List.of();
+        try (Stream<Path> stream = Files.walk(ContentFiles.PACKS)) {
             return stream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
@@ -186,13 +173,19 @@ class CreativeContentTagsTest {
         }
     }
 
+    /** 零件文件所在的内容包目录名，例如 {@code Machine-Max_K17}。 */
+    private static String packOf(Path file) {
+        return ContentFiles.PACKS.relativize(file).getName(0).toString();
+    }
+
     /**
-     * 内容命名空间目录：包内直接带 {@code lang/} 的那一层。
+     * 内容命名空间目录：包内直接带 {@code lang/zh_cn.json} 的那一层。
      *
      * <p>多数包用 {@code machine_max}，M1A2 SEP 与 T-90A 分别用自己的 {@code m1a2_sep}、{@code t90a}。</p>
      */
-    private static Path contentDir(String pack) throws IOException {
-        try (Stream<Path> stream = Files.list(PARTS_ROOT.resolve(pack))) {
+    private static Path contentDirectory(String pack) throws IOException {
+        Path packDirectory = ContentFiles.PACKS.resolve(pack);
+        try (Stream<Path> stream = Files.list(packDirectory)) {
             return stream
                     .filter(Files::isDirectory)
                     .filter(dir -> Files.isRegularFile(dir.resolve("lang").resolve("zh_cn.json")))
@@ -202,24 +195,15 @@ class CreativeContentTagsTest {
     }
 
     /**
-     * 与第 8.2 节清单一致的归属规则：不标系列的文件返回 {@code null}；
-     * {@code parts/<系列目录>/} 下的取目录名，{@code parts/} 根下取文件名第一个下划线之前的部分。
+     * 路径推出的系列：{@code parts/<系列目录>/} 取目录名，
+     * {@code parts/} 根下取文件名第一个下划线之前的部分。
      */
-    private static String expectedSeries(String relative) {
-        if (WITHOUT_SERIES.contains(relative)) return null;
+    private static String seriesFromPath(String relative) {
         String after = relative.split("/parts/", 2)[1];
         if (after.contains("/")) return after.substring(0, after.indexOf('/'));
         String stem = after.substring(0, after.length() - ".json".length());
         int underscore = stem.indexOf('_');
         return underscore < 0 ? stem : stem.substring(0, underscore);
-    }
-
-    /** 读入允许注释的 JSON；内容包的零件定义带 {@code //} 注释。 */
-    private static JsonElement readJson(Path path) throws IOException {
-        String text = Files.readString(path, StandardCharsets.UTF_8);
-        JsonReader reader = new JsonReader(new StringReader(text));
-        reader.setLenient(true);
-        return JsonParser.parseReader(reader);
     }
 
     /** 取一份定义里全部变体的 tags；单配置 variants 作为一份内联变体统计。 */

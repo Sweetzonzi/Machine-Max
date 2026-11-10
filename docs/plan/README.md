@@ -48,7 +48,7 @@
 | [武器系统-弹药标签与弹链显示设计](已实现/武器系统-弹药标签与弹链显示设计.md) | 历史快照（基线 `4c74444b`）；弹药标签判定在 `BreechModuleAttr.isAmmoCompatible`，弹链在 `WeaponControllerSubsystem#beltOf`；运行期读取由 `CustomHud` 接管 |
 | [载具系统-部件摧毁状态与组装重力重构计划](已实现/载具系统-部件摧毁状态与组装重力重构计划.md) | 提交 `e90f2e42`、`2d7c4da9`、`b1d667e4`；`AbstractPart` 持有 `destroyTime` / `tickDestroyState` / `applyGravity`，`RegularPart` 以 `assembling` 命名，`RegularPartData` 含 `destroyed` / `destroy_time`，协议升到 `sync:2.7.0` / `misc:1.3.0`；GameTest 全绿，五条实机验收已于 2026-10-29 通过 |
 | [HUD上下文实现与验收](已实现/HUD上下文实现与验收.md) | 上下文、快照、绑定与物理步推进已进入代码，`gradlew --offline build` 含 81 项单测通过；进世界画面与控制组交互的实机验收另行跟踪 |
-| [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest`、`K17WeaponHudLayoutTest` 覆盖绑定与七档 GUI 尺寸；实机验收另行跟踪 |
+| [K17动态武器HUD组件接入](已实现/K17动态武器HUD组件接入.md) | 三个 WC 的样式、布局与 `documents/weapon_hud_components/` 页面均就位；`WeaponHudComponentsTest` 覆盖数据绑定与外观变量；面板在 320×240–3840×2160 下的越界与重叠由 `runClient` 验收 |
 | [界面-创造栏零部件筛选实施计划](已实现/界面-创造栏零部件筛选实施计划.md) | `client/render/gui/creative/` 下 `CreativePartBrowser`、`SeriesPickerWidget` 与 `CreativeModeInventoryScreenMixin`、`CreativeModeTabsMixin` 已落地，两个目标创造页启用搜索栏与外侧筛选控件；68 份零件定义/106 个变体写入 series 标签，30 条系列译名与 7 条界面文本已生成；T01—T05 通过。实机验收 U01—U15 待执行，结果与偏差见该文 §12 |
 | [武器系统-推力分段与变质量计划](已实现/武器系统-推力分段与变质量计划.md) | T1–T6 全部落地（2026-11-06）：`external.thrust` 为段数组（`force` / `start` / `duration` / `propellant_mass`），整表折算进弹道库 `ThrustProfile`，多段积分、段间空隙与燃烧期质量流失生效，装药在解码期校验；`external.mass` 明确为弹体基础质量。builtin 与其余十个包的 schema 副本、技能快照，以及随包 Blockbench 插件 `0.5.15` 的内嵌快照均已同步 |
 | [信号系统-子系统发现与投递重构实施计划](已实现/信号系统-子系统发现与投递重构实施计划.md) | P1—P5 分五次提交；`resolveTargets` 只读发现、物理反馈主线程投递、结构变化重建首跳表并清空信号存储、执行器改读输入槽、供给登记改只读发现均已落地；`runGameTestServer` 68 项通过，T11 客户端实机验收待完成 |
