@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import cn.solarmoon.spark_core.pack.modules.SoundModule;
 import cn.solarmoon.spark_core.sound.SoundData;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -16,6 +17,7 @@ import net.minecraft.sounds.SoundEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
@@ -33,14 +35,27 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
     public final List<String> throttleInputKeys; //优先级从高至低
     public final EngineSoundAttr sounds;
 
-    public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds) {
-        public static final EngineSoundAttr DEFAULT = new EngineSoundAttr(BasicSoundAttr.DEFAULT, Map.of());
+    /** 持续工况音的 FMOD bank ID 和 Studio 事件路径。 */
+    public record FmodSoundAttr(ResourceLocation bank, String event) {
+        public static final Codec<FmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(FmodSoundAttr::bank),
+                Codec.STRING.validate(path -> path.startsWith("event:/") && path.length() > "event:/".length()
+                                ? DataResult.success(path) : DataResult.error(() -> "FMOD 事件路径应为 event:/<名称>"))
+                        .fieldOf("event").forGetter(FmodSoundAttr::event)
+        ).apply(instance, FmodSoundAttr::new));
+    }
+
+    /** 引擎的生命周期短音效和持续工况音，FMOD 不可用时使用原有工况音。 */
+    public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,
+                                  Optional<FmodSoundAttr> fmod) {
+        public static final EngineSoundAttr DEFAULT = new EngineSoundAttr(BasicSoundAttr.DEFAULT, Map.of(), Optional.empty());
 
         public static final Codec<EngineSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(EngineSoundAttr::basicSounds),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
                         .optionalFieldOf("working_sounds", Map.of())
-                        .forGetter(EngineSoundAttr::workingSounds)
+                        .forGetter(EngineSoundAttr::workingSounds),
+                FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(EngineSoundAttr::fmod)
         ).apply(instance, EngineSoundAttr::new));
     }
 

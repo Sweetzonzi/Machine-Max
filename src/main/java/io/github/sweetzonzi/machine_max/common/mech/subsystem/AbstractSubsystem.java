@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
@@ -29,6 +30,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -271,6 +273,12 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onActive() {
+    }
+
+    /** 第一人称听者正在控制任一子系统时，使用车内混音。 */
+    public static boolean isInteriorListener(@Nullable Entity listener, boolean firstPerson) {
+        return firstPerson && listener instanceof IEntityMixin entity
+                && entity.machine_Max$getControllingSubsystem() != null;
     }
 
     /**

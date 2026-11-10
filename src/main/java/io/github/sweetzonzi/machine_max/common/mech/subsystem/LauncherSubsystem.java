@@ -24,7 +24,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
-import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -1258,10 +1257,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return 1.0f;
     }
 
+    /** 使用子系统共用的第一人称车内音判定。 */
     @Override
     public boolean shouldApplyInteriorEffect(@Nullable Entity listener, SoundEvent event, boolean isFirstPerson) {
-        if (listener == null || !isFirstPerson) return false;
-        return ((IEntityMixin) listener).machine_Max$getControllingSubsystem() != null;
+        return isInteriorListener(listener, isFirstPerson);
     }
 
     /**

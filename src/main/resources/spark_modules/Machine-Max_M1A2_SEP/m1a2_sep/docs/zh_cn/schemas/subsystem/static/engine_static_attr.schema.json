@@ -139,6 +139,23 @@
             "range": 16
           }
         },
+        "fmod": {
+          "type": "object",
+          "description": "可选的 FMOD 持续工况音。rpm 从怠速的 0 到红线的 100，load 为 0 到 1 的油门开度。不可用时回退到 working_sounds 或自动合成。",
+          "properties": {
+            "bank": {
+              "type": "string",
+              "description": "SparkCore 内容包中已加载的 bank ID，例如 spark_core:vehicle_drive。"
+            },
+            "event": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "bank 中的持续 Studio 事件路径，例如 event:/tank_drive。"
+            }
+          },
+          "required": ["bank", "event"],
+          "additionalProperties": false
+        },
         "working_sounds": {
           "type": "object",
           "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",

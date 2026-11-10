@@ -15,6 +15,9 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PdaItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.TargetDesignatorItem;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.EngineSubsystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -41,6 +44,7 @@ public class MachineMaxClient {
         ExplosionManager.setLightSink(ExplosionLightState::onDetonate);
         // 共通开火流程的客户端枪口火光登记钩子
         MuzzleFlashLight.setSink(MuzzleFlashLightState::onMuzzleFlash);
+        EngineSubsystem.setClientInteriorListener(MachineMaxClient::isInteriorListener);
         // 配置菜单
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         bus.addListener(MMClientConfig::onChangeConfig);
@@ -48,6 +52,12 @@ public class MachineMaxClient {
         bus.addListener(MachineMaxClient::onRegisterShaders);
         // 内容包重载后丢掉按型号缓存的履带模型外观
         NeoForge.EVENT_BUS.addListener(MachineMaxClient::onPackFinished);
+    }
+
+    /** 和传播音效选择缓冲时一样，以本地相机实体和当前视角判定听者。 */
+    private static boolean isInteriorListener() {
+        Minecraft client = Minecraft.getInstance();
+        return AbstractSubsystem.isInteriorListener(client.getCameraEntity(), client.options.getCameraType().isFirstPerson());
     }
 
     /**

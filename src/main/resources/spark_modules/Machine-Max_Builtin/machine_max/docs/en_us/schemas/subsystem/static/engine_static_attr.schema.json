@@ -139,6 +139,23 @@
             "range": 16
           }
         },
+        "fmod": {
+          "type": "object",
+          "description": "Optional FMOD engine loop. rpm ranges from 0 at idle to 100 at redline. load is throttle opening from 0 to 1. Falls back to working_sounds or automatic synthesis when unavailable.",
+          "properties": {
+            "bank": {
+              "type": "string",
+              "description": "ID of the bank loaded by SparkCore, for example spark_core:vehicle_drive."
+            },
+            "event": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "Path of the looping Studio event in the bank, for example event:/tank_drive."
+            }
+          },
+          "required": ["bank", "event"],
+          "additionalProperties": false
+        },
         "working_sounds": {
           "type": "object",
           "description": "Manual working sound map. Keys are RPM strings (e.g. \"800\", \"4500.0\"), values are sound events. Uses auto synthesis when empty.",

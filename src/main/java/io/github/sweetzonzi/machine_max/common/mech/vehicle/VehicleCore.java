@@ -33,6 +33,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.EngineSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
@@ -111,7 +112,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     private Vec3 oldVelocity = Vec3.ZERO;//上一帧速度
     public float totalMass = 0;//总质量
     public int statusSyncCountDown = 5;//状态同步倒计时
-    @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
     public boolean loaded = false;//是否已加载完毕
@@ -1432,6 +1432,16 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             MyMath.combine(partWorld, transform, partWorld);
             part.setTransform(partWorld);
         }
+    }
+
+    /** 主线程更新区块状态。客户端卸载区块时，先停掉之后不再 tick 的发动机工况音。 */
+    public void setInLoadedChunk(boolean loadedChunk) {
+        if (inLoadedChunk && !loadedChunk && level.isClientSide()) {
+            for (AbstractSubsystem subsystem : subSystemController.getAllSubsystems()) {
+                if (subsystem instanceof EngineSubsystem engine) engine.stopClientFmodSound();
+            }
+        }
+        inLoadedChunk = loadedChunk;
     }
 
     public void onAddToLevel() {

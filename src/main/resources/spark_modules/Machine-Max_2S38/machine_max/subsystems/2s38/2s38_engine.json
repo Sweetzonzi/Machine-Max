@@ -15,5 +15,11 @@
     5,
     0.05,
     0.00001
-  ]
+  ],
+  "sounds": {
+    "fmod": {
+      "bank": "spark_core:vehicle_drive",
+      "event": "event:/tank_drive"
+    }
+  }
 }

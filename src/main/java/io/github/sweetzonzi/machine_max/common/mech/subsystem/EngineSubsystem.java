@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.EngineSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.EngineSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.EngineSubsystemStaticAttr.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.util.control.PDController;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -19,8 +20,10 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BooleanSupplier;
 
 public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer, ITorqueProvider {
     public final EngineSubsystemAttr attr;
@@ -30,7 +33,15 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public final double MAX_TORQUE;//最大扭矩(N·m)
     public final double MIN_IDLE_THROTTLE;//怠速转速下的最小油门
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SOUND_THROTTLE_ID =
+            SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前油门输入（0~1）
+    /** 服务端物理线程发布已限幅的开度，主线程再同步给所有客户端。 */
+    private volatile float soundThrottle;
+    private final @Nullable FmodSoundAttr fmodSound;
+    private @Nullable UUID fmodVoice;
+    private boolean fmodAttempted;
+    private static volatile BooleanSupplier clientInteriorListener = () -> false;
     private static final int RETRIGGER_TICKS = 20;
 
     /**
@@ -52,6 +63,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.fmodSound = attr.getStaticAttribute().getSounds().fmod().orElse(null);
         RED_LINE_SPEED = attr.staticAttribute.redLineRpm * Math.PI / 30.0;//红线转速(rad/s)
         MAX_TORQUE_SPEED = attr.staticAttribute.maxTorqueRpm * Math.PI / 30.0;//最大扭矩转速(rad/s)
         IDLE_SPEED = attr.staticAttribute.idleRpm * Math.PI / 30.0;//怠速转速(rad/s)
@@ -64,7 +76,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
                 0.5 * attr.getStaticAttribute().getInertia(),
                 1.0 / getPhysicsLevel().getTps()
         );
-        if (attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide()) {
+        if (fmodSound == null && attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide()) {
             attr.getStaticAttribute().createSounds();
         }
     }
@@ -73,24 +85,85 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public void onTick() {
         super.onTick();
         Level level = getSubPart().getLevel();
-        if (level.isClientSide() && this.isActive()) {
-            if (soundChannels.isEmpty()) {
-                initSoundChannels();
-            }
-            double rpm = Math.abs(30 * getRotSpeed() / Math.PI);
-            EngineSubsystemStaticAttr.RpmWorkingStates candidates = attr.getStaticAttribute().getAdjacentWorkingStates(rpm);
-            if (candidates.center() != EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) {
-                updateTwoChannelWeightsByRpm(rpm, candidates);
-                tickSoundChannels(level, SoundSource.PLAYERS, tickCount, 8, 8);
-            } else {
-                clearChannelWeights();
-            }
-        } else {
-            clearChannelWeights();
+        if (level.isClientSide()) {
+            tickClientSound(level);
+        } else if (fmodSound != null) {
+            getSynchedData().set(SOUND_THROTTLE_ID, soundThrottle);
         }
         for (String target : attr.rpmOutputTargets.keySet()) {
             sendSignalToAllTargets(target, getRotSpeed());
         }
+    }
+
+    /** 客户端主线程更新持续工况音，每台活跃引擎只选择一条播放路径。 */
+    private void tickClientSound(Level level) {
+        if (!isActive()) {
+            if (fmodVoice != null) fadeFmodSound(level, fmodVoice);
+            fmodVoice = null;
+            fmodAttempted = false;
+            clearChannelWeights();
+            return;
+        }
+        double rpm = Math.abs(30 * getRotSpeed() / Math.PI);
+        if (fmodSound != null && tickFmodSound(level, fmodSound, rpm)) {
+            // 每个客户端 tick 读取当前听者。车内混音是可选参数，写入失败时继续播放。
+            setFmodParameter(level, fmodVoice, "interior", clientInteriorListener.getAsBoolean() ? 1f : 0f);
+            return;
+        }
+
+        // FMOD 不可用时才为已配置 FMOD 的引擎准备旧采样或合成工况音。
+        EngineSubsystemStaticAttr staticAttr = attr.getStaticAttribute();
+        if (soundChannels.isEmpty()) {
+            if (fmodSound != null && staticAttr.workingStates.isEmpty()) staticAttr.createSounds();
+            initSoundChannels();
+        }
+        EngineSubsystemStaticAttr.RpmWorkingStates candidates = staticAttr.getAdjacentWorkingStates(rpm);
+        if (candidates.center() != EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) {
+            updateTwoChannelWeightsByRpm(rpm, candidates);
+            tickSoundChannels(level, SoundSource.PLAYERS, tickCount, 8, 8);
+        } else {
+            clearChannelWeights();
+        }
+    }
+
+    /** 将实际转速映射到 Studio 的 0–100，以服务端同步的油门开度驱动 load。 */
+    private boolean tickFmodSound(Level level, FmodSoundAttr sound, double rpm) {
+        EngineSubsystemStaticAttr staticAttr = attr.getStaticAttribute();
+        double rpmSpan = staticAttr.redLineRpm - staticAttr.idleRpm;
+        if (!(rpmSpan > 0) || !Double.isFinite(rpm)) return fmodVoice != null;
+        float soundRpm = (float) (100.0 * Math.clamp((rpm - staticAttr.idleRpm) / rpmSpan, 0.0, 1.0));
+        float load = getSynchedData().get(SOUND_THROTTLE_ID);
+
+        // 一次激活只尝试启动一次。已结束或失效的实例直接交回原有工况音路径。
+        if (!fmodAttempted) {
+            fmodAttempted = true;
+            fmodVoice = tryPlayFmodSound(level, sound.bank(), sound.event(), SoundSource.PLAYERS,
+                    Map.of("rpm", soundRpm, "load", load));
+        } else if (fmodVoice != null && (!setFmodParameter(level, fmodVoice, "rpm", soundRpm)
+                || !setFmodParameter(level, fmodVoice, "load", load))) {
+            stopFmodSound(level, fmodVoice);
+            fmodVoice = null;
+        }
+        return fmodVoice != null;
+    }
+
+    /** 客户端入口注入本地听者判定，共通引擎代码通过回调采样。 */
+    public static void setClientInteriorListener(BooleanSupplier listener) {
+        clientInteriorListener = listener;
+    }
+
+    /** 主线程移除部件时，先停止仍在播放的 FMOD 工况音。 */
+    @Override
+    public void onDetach() {
+        stopClientFmodSound();
+        super.onDetach();
+    }
+
+    /** 客户端主线程停止 FMOD 工况音，重新载入区块时可再尝试启动。 */
+    public void stopClientFmodSound() {
+        if (fmodVoice != null) stopFmodSound(getLevel(), fmodVoice);
+        fmodVoice = null;
+        fmodAttempted = false;
     }
 
     @Override
@@ -108,6 +181,9 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         double rotSpeed = getRotSpeed();
         if (rotSpeed / IDLE_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
         else throttleInput = Math.clamp(throttleInput, 0, 1);
+        if (fmodSound != null && !getLevel().isClientSide()) {
+            soundThrottle = Double.isFinite(throttleInput) ? (float) throttleInput : 0f;
+        }
         double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);
         if (!isActive()) engineTorque = 0.0;
         double dampingTorque = getDampingTorque(rotSpeed);
@@ -329,6 +405,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(ROT_SPEED_ID, 0f);
+        builder.define(SOUND_THROTTLE_ID, 0f);
     }
 
     @Override
