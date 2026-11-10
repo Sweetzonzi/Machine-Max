@@ -1687,6 +1687,14 @@ public enum MMLanguageRegistry {
             zh_cn, "%1$s 被 %2$s 炸得支离破碎",
             en_us, "%1$s was blown to pieces by %2$s"
     )),
+    DEATH_ATTACK_COOKOFF("death.attack.machine_max.cookoff", ImmutableMap.of(
+            zh_cn, "%1$s 在弹药殉爆中灰飞烟灭",
+            en_us, "%1$s was consumed by an ammo cook-off"
+    )),
+    DEATH_ATTACK_COOKOFF_PLAYER("death.attack.machine_max.cookoff.player", ImmutableMap.of(
+            zh_cn, "%1$s 被 %2$s 打出的殉爆吞没",
+            en_us, "%1$s was consumed by an ammo cook-off caused by %2$s"
+    )),
     DEATH_ATTACK_PART_COLLISION("death.attack.machine_max.part_collision", ImmutableMap.of(
             zh_cn, "%1$s 被碾碎",
             en_us, "%1$s was crushed"

@@ -8,6 +8,8 @@
   "controlGroup.machine_max.commander_override": "Commander Override",
   "death.attack.machine_max.blast": "%1$s was blown to pieces",
   "death.attack.machine_max.blast.player": "%1$s was blown to pieces by %2$s",
+  "death.attack.machine_max.cookoff": "%1$s was consumed by an ammo cook-off",
+  "death.attack.machine_max.cookoff.player": "%1$s was consumed by an ammo cook-off caused by %2$s",
   "death.attack.machine_max.part_collision": "%1$s was crushed",
   "death.attack.machine_max.part_collision.player": "%1$s was crushed by %2$s",
   "death.attack.machine_max.projectile": "%1$s was torn apart by a shell",

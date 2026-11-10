@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.explosion;
 
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -226,7 +227,9 @@ class CookoffCompositionTest {
         assertEquals(1, params.particles().size());
         assertEquals(CookoffComposition.BLAST_MEDIUM_PARTICLE, params.particles().get(0));
         assertEquals(composition.particleScale(), params.particleScale(), 0.0f);
-        assertEquals(ExplosionParams.DEFAULT_DAMAGE_TYPE, params.damageType());
+        // 殉爆有独立伤害类型：命中箱据此在 impact_modifiers 之后再乘常量
+        // HitBox.COOKOFF_IMPACT_MULTIPLIER，使内部起爆不按"外向内"的装甲折减结算
+        assertEquals(MMDamageTypes.COOKOFF, params.damageType());
         assertFalse(params.causesFire());
     }
 }

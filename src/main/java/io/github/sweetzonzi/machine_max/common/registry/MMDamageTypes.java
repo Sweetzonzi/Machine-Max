@@ -31,4 +31,18 @@ public class MMDamageTypes {
      */
     public static final ResourceKey<DamageType> PROJECTILE =
             ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile"));
+
+    /**
+     * 弹药殉爆伤害类型。
+     * <p>库存、膛内与战斗部被诱爆时合成的爆炸归属：起爆点通常位于自身几何内部，与外来的
+     * 高爆弹在语义上不同——前者炸的是自己的结构，后者炸的是外部装甲。</p>
+     * <p>它只改变两件事：冲击结算多乘一次
+     * {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox#COOKOFF_IMPACT_MULTIPLIER}
+     * （内部起爆不按装甲的外向折减结算），以及内容包可以用 {@code damage_type} 条件单独给殉爆写伤害规则。
+     * 爆炸的几何、射线条数、穿深与冲量仍由
+     * {@link io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition}
+     * 合成，与普通爆炸同一条管线。</p>
+     */
+    public static final ResourceKey<DamageType> COOKOFF =
+            ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "cookoff"));
 }

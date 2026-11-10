@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubModule;
 import io.github.sweetzonzi.machine_max.common.mech.target.Target;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -133,8 +134,33 @@ public class HitBox implements Target {
         return subsystem instanceof IModularSubsystem modular ? modular.getModule(attr.module) : null;
     }
 
+    /**
+     * 殉爆把爆炸伤害换算成结构冲击的倍率。
+     *
+     * <p>殉爆的起爆点位于自身几何内部，材质 {@code impact_modifiers} 里按"外向内"标定的折减
+     * （如 {@code rha} 的 0.55）描述的是装甲挡住多少冲击，这个场景不适用；但也不能直接用原始
+     * 伤害，否则抬高连接点完整性后真实弹仓就掀不动挂载件。取 10 的依据是最小一线弹仓
+     * （14 发 125mm，合成伤害约 420）在 {@code rha} 下仍有 {@code 420 × 0.55 × 10 ≈ 2310}，
+     * 与主战座圈 2400 同一量级，近场耦合更好时直接过线；单发被击毁的战斗部（约 40）只有约 220，
+     * 不会凭空掀炮塔。</p>
+     */
+    public static final float COOKOFF_IMPACT_MULTIPLIER = 10f;
+
+    /**
+     * 本次命中对该碰撞箱的结构冲击。
+     *
+     * <p>先走材质与命中箱条件化的 {@code impact_modifiers}。殉爆（{@code machine_max:cookoff}）
+     * 在此之上再乘 {@link #COOKOFF_IMPACT_MULTIPLIER}，使内部起爆不按装甲的外向内折减结算。</p>
+     *
+     * @param source 伤害来源
+     * @param amount 穿甲前原始伤害
+     * @return 冲击量
+     */
     public float modifyImpact(DamageSource source, float amount) {
-        return attr.impactModifiers().apply(source, amount);
+        float impact = attr.impactModifiers().apply(source, amount);
+        return source.is(MMDamageTypes.COOKOFF)
+                ? impact * COOKOFF_IMPACT_MULTIPLIER
+                : impact;
     }
 
     public float modifyPiercing(DamageSource source, float amount) {

@@ -8,6 +8,8 @@
   "controlGroup.machine_max.commander_override": "车长超控",
   "death.attack.machine_max.blast": "%1$s 被炸得支离破碎",
   "death.attack.machine_max.blast.player": "%1$s 被 %2$s 炸得支离破碎",
+  "death.attack.machine_max.cookoff": "%1$s 在弹药殉爆中灰飞烟灭",
+  "death.attack.machine_max.cookoff.player": "%1$s 被 %2$s 打出的殉爆吞没",
   "death.attack.machine_max.part_collision": "%1$s 被碾碎",
   "death.attack.machine_max.part_collision.player": "%1$s 被 %2$s 碾碎",
   "death.attack.machine_max.projectile": "%1$s 被炮弹撕成碎片",

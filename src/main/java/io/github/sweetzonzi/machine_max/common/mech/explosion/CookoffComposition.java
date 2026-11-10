@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.ExplosionWorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.WorldEffect;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
@@ -235,8 +236,14 @@ public final class CookoffComposition {
      *
      * <p>首期殉爆的波前速度与表现取固定值：{@code front_speed = 20.0 m/s}、
      * 粒子仅 {@code machine_max:blast_medium}、火光取 {@link ExplosionLightParams#DEFAULT}。
-     * {@code destroy_blocks}、{@code drop_items}、{@code causes_fire} 与 {@code damage_type}
-     * 沿用普通参数类型的缺省策略，不从参与合成的各战斗部做布尔合并或继承其正常引爆设置。</p>
+     * {@code destroy_blocks}、{@code drop_items} 与 {@code causes_fire} 沿用普通参数类型的缺省策略，
+     * 不从参与合成的各战斗部做布尔合并或继承其正常引爆设置。</p>
+     *
+     * <p>伤害类型固定为 {@link io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes#COOKOFF}：
+     * 命中箱据此在 {@code impact_modifiers} 之上再乘
+     * {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox#COOKOFF_IMPACT_MULTIPLIER}
+     * （10），使真实弹仓的殉爆必然掀开挂载件。该倍率与连接点完整性解耦——把座圈
+     * 抬到多高都不改变"殉爆掀炮塔"这一条，只改变常规炮弹要几发才能震掉。</p>
      *
      * <p>调用方必须先确认 {@link #isEmpty()} 为 {@code false}；本方法在空合成时也会返回一份
      * {@code base_damage = base_impulse = 0} 的参数，但那样没有可结算的效果。</p>
@@ -256,7 +263,7 @@ public final class CookoffComposition {
                 false,
                 List.of(BLAST_MEDIUM_PARTICLE),
                 particleScale(),
-                ExplosionParams.DEFAULT_DAMAGE_TYPE,
+                MMDamageTypes.COOKOFF,
                 ExplosionLightParams.DEFAULT);
     }
 }
