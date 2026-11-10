@@ -1,0 +1,20 @@
+[
+  {
+    "style": "type59:commander_day",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "center",
+    "offset": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  }
+]

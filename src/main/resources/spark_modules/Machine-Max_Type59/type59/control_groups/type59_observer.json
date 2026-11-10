@@ -1,0 +1,49 @@
+{
+  "base_group": {
+    "name": "controlGroup.type59.commander_base",
+    "control_mode": "ground",
+    "move_targets": {
+      "move_input_p2": [
+        "global"
+      ]
+    },
+    "regular_targets": {
+      "regular_input_p2": [
+        "global"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "name": "controlGroup.type59.type59_observer",
+      "control_mode": "inherit",
+      "move_targets": {},
+      "regular_targets": {},
+      "bindings": [],
+      "view_targets": {},
+      "main_weapon_targets": {},
+      "secondary_weapon_targets": {}
+    },
+    {
+      "name": "controlGroup.type59.commander_override",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_input_p1": [
+          "subsystem.type59.main_weapon",
+          "subsystem.type59.coax_controller"
+        ]
+      },
+      "main_weapon_targets": {
+        "fire_input_p1": [
+          "subsystem.type59.main_weapon"
+        ]
+      },
+      "secondary_weapon_targets": {
+        "secondary_fire_input_p1": [
+          "subsystem.type59.coax_controller"
+        ]
+      }
+    }
+  ],
+  "active_index": 0
+}

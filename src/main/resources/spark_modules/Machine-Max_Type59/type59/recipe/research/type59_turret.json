@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": [
+    "type59:type59_turret"
+  ],
+  "research_cost": 240,
+  "icon": "type59:textures/icon/type59_turret.png",
+  "description": "research.type59.type59_turret.desc",
+  "unlock_recipe": "type59:part_fabricating/type59_turret"
+}

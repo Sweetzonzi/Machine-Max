@@ -1,0 +1,999 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "type59:textures/icon/type59_turret.png",
+  "vehicle_durability_rate": 0.9,
+  "functional_threshold": 0.6,
+  "variants": {
+    "standard": {
+      "model": "type59:type59.geo",
+      "textures": {
+        "default": "type59:textures/part/type59.png",
+        "alternate": "type59:textures/part/type59_alt.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "type59:turret"
+      ],
+      "sub_parts": {
+        "sub_part.type59.turret": {
+          "start_bone": "PaoTa",
+          "end_bones": [
+            "bone",
+            "bone3"
+          ],
+          "durability": 520,
+          "mass": 3150,
+          "mass_center": "turret_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_TurretFloor": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            },
+            "MM_Shell_015": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_016": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_017": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_018": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_019": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_020": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_021": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_022": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_023": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_024": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_025": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_026": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_027": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_028": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_029": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_030": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_031": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_032": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_033": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_034": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_035": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_036": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_037": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_038": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_039": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_040": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_041": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_042": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_043": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_044": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_045": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_046": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_047": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_048": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_049": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_050": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_051": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_052": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_053": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_054": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_055": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_056": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_057": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_058": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_059": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_060": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 155
+            },
+            "MM_Shell_061": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_062": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_063": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_064": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_065": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_066": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_067": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_068": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_069": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_070": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_071": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_072": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_073": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_074": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_075": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_076": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_077": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_078": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_079": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_080": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_081": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_082": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_083": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_084": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_085": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 65
+            },
+            "MM_Shell_086": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_087": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_088": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_089": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_090": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_091": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "MM_Shell_092": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_098": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            },
+            "MM_Shell_099": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 200
+            }
+          },
+          "interact_boxes": {
+            "interact.type59.gunner": {
+              "bone": "MM_Interact_gunner",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.type59.gunner_seat"
+                ]
+              }
+            },
+            "interact.type59.commander": {
+              "bone": "MM_Interact_commander",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.type59.commander_seat"
+                ]
+              }
+            },
+            "interact.type59.loader": {
+              "bone": "MM_Interact_loader",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.type59.loader_seat"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.type59.turret_hull": {
+              "locator": "turret_hull_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {
+                "required_tags": [
+                  "type59:hull"
+                ],
+                "integrity": 100
+              }
+            },
+            "connector.type59.turret_gun": {
+              "locator": "turret_gun_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -5,
+                    "upper_limit": 18,
+                    "damping": 2
+                  }
+                }
+              }
+            },
+            "connector.type59.turret_aa": {
+              "locator": "turret_mg_axis",
+              "definition": "machine_max:fixed_up",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.type59.azimuth_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "type59:type59_azimuth",
+              "connector": "connector.type59.turret_hull"
+            },
+            "subsystem.type59.elevation_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "type59:type59_elevation",
+              "connector": "connector.type59.turret_gun"
+            },
+            "subsystem.type59.main_weapon": {
+              "type": "machine_max:weapon_controller",
+              "definition": "machine_max:main_weapon_controller",
+              "control_outputs": {
+                "weapon_control": [
+                  "subsystem.type59.azimuth_driver",
+                  "subsystem.type59.elevation_driver"
+                ],
+                "weapon.gun": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "type59:main_feed",
+              "third_hud_layout": "type59:main_feed",
+              "scope_hud_layout": "type59:scope_main_feed"
+            },
+            "subsystem.type59.ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "type59:type59_loader",
+              "projectile_types": {
+                "type59:type59_100mm_ap": 1
+              },
+              "belt_label": "AP",
+              "discovery_outputs": {
+                "ammo_type59": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.type59.ammo_loader_he": {
+              "type": "machine_max:regen_loader",
+              "definition": "type59:type59_he_loader",
+              "projectile_types": {
+                "type59:type59_100mm_he": 1
+              },
+              "belt_label": "HE",
+              "discovery_outputs": {
+                "ammo_type59": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.type59.coax_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "type59:coax_controller",
+              "control_outputs": {
+                "weapon.mg.coax": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "type59:coax_feed",
+              "third_hud_layout": "type59:coax_feed"
+            },
+            "subsystem.type59.coax_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "type59:coax_loader",
+              "projectile_types": {
+                "type59:mg_7_62_ap": 1
+              },
+              "belt_label": "59T 7.62",
+              "discovery_outputs": {
+                "ammo_coax": [
+                  "global"
+                ]
+              }
+            },
+            "subsystem.type59.commander_day_sight": {
+              "type": "machine_max:camera",
+              "definition": "type59:type59_commander_day_sight",
+              "locator": "commander_day_optic"
+            },
+            "subsystem.type59.gunner_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_seat",
+              "locator": "gunner_seat",
+              "control_group_preset": "type59:type59_gunner",
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "global"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "type59:type59_orientation",
+              "third_hud_layout": "type59:type59_ground_orientation"
+            },
+            "subsystem.type59.commander_seat": {
+              "type": "machine_max:seat",
+              "definition": "type59:closed_commander_seat",
+              "locator": "commander_seat",
+              "control_group_preset": "type59:type59_observer",
+              "camera_discovery_targets": {
+                "commander_day_sight": [
+                  "subsystem.type59.commander_day_sight"
+                ]
+              },
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "type59:type59_orientation",
+              "third_hud_layout": "type59:type59_ground_orientation"
+            },
+            "subsystem.type59.loader_seat": {
+              "type": "machine_max:seat",
+              "definition": "type59:open_roof_seat",
+              "locator": "loader_seat",
+              "control_group_preset": "type59:type59_aa",
+              "dismount_locators": [
+                "turret_exit_left",
+                "turret_exit_right"
+              ],
+              "first_hud_layout": "type59:type59_orientation",
+              "third_hud_layout": "type59:type59_orientation"
+            }
+          }
+        },
+        "sub_part.type59.gun": {
+          "start_bone": "bone",
+          "end_bones": [
+            "MM_MainGunBarrel"
+          ],
+          "durability": 125,
+          "mass": 500,
+          "mass_center": "gun_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunTrunnion": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 120
+            },
+            "MM_Shell_100": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_101": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_102": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_103": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_104": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_105": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_106": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_107": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_108": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_109": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            },
+            "MM_Shell_110": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 115
+            }
+          },
+          "connectors": {
+            "connector.type59.gun_turret": {
+              "locator": "gun_turret_axis",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            },
+            "connector.type59.cradle_barrel": {
+              "locator": "cradle_barrel_mount",
+              "definition": "type59:barrel_mount",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.type59.coax_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "type59:coax_launcher",
+              "locator": "coax_muzzle"
+            },
+            "subsystem.type59.gunner_sight": {
+              "type": "machine_max:sight",
+              "definition": "type59:type59_gunner_sight",
+              "locator": "gunner_optic"
+            }
+          }
+        },
+        "sub_part.type59.barrel": {
+          "start_bone": "MM_MainGunBarrel",
+          "end_bones": [],
+          "durability": 55,
+          "mass": 150,
+          "mass_center": "barrel_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_GunBarrel": {
+              "id": "barrel",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 25,
+              "subsystem": "subsystem.type59.launcher"
+            }
+          },
+          "connectors": {
+            "connector.type59.barrel_cradle": {
+              "locator": "barrel_cradle_mount",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.type59.launcher": {
+              "type": "machine_max:launcher",
+              "definition": "type59:type59_launcher",
+              "locator": "main_muzzle"
+            }
+          }
+        },
+        "sub_part.type59.aa_yaw": {
+          "start_bone": "bone3",
+          "end_bones": [
+            "bone2"
+          ],
+          "durability": 50,
+          "mass": 60,
+          "mass_center": "mg_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_MGMount": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.type59.aa_turret": {
+              "locator": "mg_turret_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": -130,
+                    "upper_limit": 130,
+                    "damping": 1.8
+                  }
+                }
+              }
+            },
+            "connector.type59.aa_elevation": {
+              "locator": "mg_pitch_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -4,
+                    "upper_limit": 82,
+                    "damping": 1.5
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.type59.aa_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "type59:aa_yaw_driver",
+              "connector": "connector.type59.aa_turret"
+            },
+            "subsystem.type59.aa_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "type59:aa_pitch_driver",
+              "connector": "connector.type59.aa_elevation"
+            },
+            "subsystem.type59.aa_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "type59:aa_controller",
+              "control_outputs": {
+                "aim_drive_aa": [
+                  "subsystem.type59.aa_yaw_driver",
+                  "subsystem.type59.aa_pitch_driver"
+                ],
+                "weapon.mg.aa": [
+                  "global"
+                ]
+              },
+              "first_hud_layout": "type59:aa_feed",
+              "third_hud_layout": "type59:aa_feed"
+            },
+            "subsystem.type59.aa_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "type59:aa_loader",
+              "projectile_types": {
+                "type59:mg_12_7_ap": 1
+              },
+              "belt_label": "12.7",
+              "discovery_outputs": {
+                "ammo_aa": [
+                  "global"
+                ]
+              }
+            }
+          }
+        },
+        "sub_part.type59.aa_pitch": {
+          "start_bone": "bone2",
+          "end_bones": [],
+          "durability": 45,
+          "mass": 30,
+          "mass_center": "mg_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_MGReceiver": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            },
+            "MM_MGBarrel": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 5
+            }
+          },
+          "connectors": {
+            "connector.type59.aa_pitch_lock": {
+              "locator": "mg_yaw_axis",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.type59.aa_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "type59:aa_launcher",
+              "locator": "mg_muzzle"
+            }
+          }
+        }
+      }
+    }
+  }
+}

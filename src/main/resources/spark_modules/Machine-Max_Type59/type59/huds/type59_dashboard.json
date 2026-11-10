@@ -1,0 +1,7 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "type59/dashboard/dashboard.html",
+  "defaults": {
+    "--dash-ink": "#e8e5dc"
+  }
+}

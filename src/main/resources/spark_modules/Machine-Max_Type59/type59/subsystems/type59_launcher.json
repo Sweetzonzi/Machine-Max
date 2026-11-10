@@ -1,0 +1,17 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:launcher",
+  "basic_durability": 100,
+  "control_inputs": [
+    "weapon.gun"
+  ],
+  "ammo_inputs": [
+    "ammo_type59"
+  ],
+  "breech": {
+    "fire_rate": 6,
+    "required_tags": [
+      "type59:caliber/100mm"
+    ]
+  }
+}

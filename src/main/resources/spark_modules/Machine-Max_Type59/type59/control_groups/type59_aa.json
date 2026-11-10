@@ -1,0 +1,20 @@
+{
+  "base_group": {
+    "name": "controlGroup.type59.type59_aa",
+    "control_mode": "inherit",
+    "move_targets": {},
+    "regular_targets": {},
+    "bindings": [],
+    "view_targets": {
+      "aim_aa": [
+        "global"
+      ]
+    },
+    "main_weapon_targets": {
+      "fire_aa": [
+        "global"
+      ]
+    },
+    "secondary_weapon_targets": {}
+  }
+}

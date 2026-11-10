@@ -1,0 +1,25 @@
+{
+  "base_group": {
+    "name": "controlGroup.type59.type59_gunner",
+    "control_mode": "inherit",
+    "move_targets": {},
+    "regular_targets": {},
+    "bindings": [],
+    "view_targets": {
+      "aim_input_p2": [
+        "subsystem.type59.main_weapon",
+        "subsystem.type59.coax_controller"
+      ]
+    },
+    "main_weapon_targets": {
+      "fire_input_p2": [
+        "subsystem.type59.main_weapon"
+      ]
+    },
+    "secondary_weapon_targets": {
+      "secondary_fire_input_p2": [
+        "subsystem.type59.coax_controller"
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
+  "type": "track",
+  "material": "machine_max:track_steel",
+  "thickness_mm": 65.625,
+  "durability_per_link": 20,
+  "length_per_link": 0.165625,
+  "tension": {
+    "enabled": true,
+    "stiffness": 12000,
+    "damping": 900,
+    "preload": 0,
+    "slack": 0.015,
+    "max_force": 800
+  },
+  "visual": {
+    "model": "type59:type59_track.geo",
+    "texture": "type59:textures/part/type59.png",
+    "icon": "type59:textures/icon/type59_track.png"
+  },
+  "tags": [
+    "machine_max:series/type59"
+  ]
+}

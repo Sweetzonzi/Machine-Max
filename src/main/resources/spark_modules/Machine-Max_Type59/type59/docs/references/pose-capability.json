@@ -1,0 +1,31 @@
+{
+  "version": "0.1.6",
+  "created_at_utc": "2026-11-08T08:24:11.721281+00:00",
+  "runtime_jar": "F:\\1.21.1 MAX\\.minecraft\\mods\\MachineMax-1.21.1-1.0.3-beta.6.jar",
+  "runtime_sha256": "a763adbac4addb52bc68356dd55ad4c2d95908657f863abdea6913392066a888",
+  "runtime_classes_sha256": {
+    "HudMolangContext": "b1ce42bfed86dfe1fdb9bb8be102b914d47c3286173cbca4cb3704b6220d4eda",
+    "HudPartSnapshot": "bf93dd3d4f966e03428e5dd4b02ea16b19e5944267d1b3346b140a4d86f9f375",
+    "HudViewSnapshot": "abd628d81d11fd7525e1342bed36f254299f48277a5072cfb67e5bbc99d58db9",
+    "AbstractConnector": "c3560d64628f5154128d27c804ff3469d794fcccd4397bf843c5c8ff1c1d8a65"
+  },
+  "requested_display": "Original T90A design: cannon fixed upward; hull shows its actual rotation relative to the turret, independently of player camera direction.",
+  "available_queries": {
+    "hud.view_heading_deg": "Camera observation direction against north",
+    "local.connector_rotation(name,axis)": "Joint rotation of turret against hull, independent of free viewing angle",
+    "local.has_connector(name)": "Connected/detached gate for the relevant turret/hull connector"
+  },
+  "missing_input": "A future player-view-up pose would still need angles against the current view. The restored cannon-up pose uses the existing joint-relative queries and needs no mod changes.",
+  "rotation_deferred_by_user": false,
+  "user_decision": "姿态表先按照原本的设计吧；应该是炮管朝上",
+  "current_presentation": "Cannon-up T90A-style live pose. Synchronized body quaternions and actual connector frames supply joint-relative XYZ degrees. Explicit hull z-index 1, cannon z-index 2; signed angle readout.",
+  "preview": "Explicitly simulated readings, with cannon fixed up and hull rotated left 35 degrees (turret right 35 degrees relative to hull).",
+  "style_sources": {
+    "Machine-Max\\src\\main\\resources\\spark_modules\\Machine-Max_T90A\\t90a\\documents\\orientation\\hull.svg": "fabfa11bd7759690d31fa938122dccb716a7c1c76fdd46a62565fbc2ded8e824",
+    "Machine-Max\\src\\main\\resources\\spark_modules\\Machine-Max_T90A\\t90a\\documents\\orientation\\cannon.svg": "540c506b4ab033cada1c490a27fc2d45e24a9c80d57139ab6370968a17906ff4"
+  },
+  "modification_scope": "34 collision proxy origins/sizes, HUD/language/release data, plus the existing HudPartSnapshot query sampler class; all other mod JAR entries are byte-identical.",
+  "restored_original_design": true,
+  "view_relative_interface_work_deferred": true,
+  "binding_math": "Hull CSS angle = atan2(sin(Y), cos(Y) * cos(X)); X/Y are degrees from the active host connector. Both connector ends share the same joint tuple; full-circle Euler recovery avoids Y-only quadrant folding."
+}

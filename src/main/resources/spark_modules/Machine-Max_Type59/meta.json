@@ -1,0 +1,13 @@
+{
+  "id": "type59:pack",
+  "version": "0.1.9",
+  "author": "User supplied model; MachineMax adaptation",
+  "description": "59式中型坦克：四席、100毫米主炮、双涂装与按照片重制的右下角五表仪表板。",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    }
+  ],
+  "enable_auto_pack": true
+}

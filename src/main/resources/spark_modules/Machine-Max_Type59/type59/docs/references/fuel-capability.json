@@ -1,0 +1,34 @@
+{
+  "runtime_file": "MachineMax-1.21.1-1.0.3-beta.6.jar",
+  "runtime_sha256": "4cc2b8da6fe10c33c918ee8e7f7a7a18c39227d8ff9dc13084f47288c4acdcd9",
+  "installed_binary_inspected": true,
+  "fuel_or_fluid_tank_classes": [],
+  "engine_fuel_members": [],
+  "type59_subsystem_types": [
+    "machine_max:camera",
+    "machine_max:engine",
+    "machine_max:gearbox",
+    "machine_max:launcher",
+    "machine_max:regen_loader",
+    "machine_max:seat",
+    "machine_max:sight",
+    "machine_max:track_controller",
+    "machine_max:track_drive",
+    "machine_max:transmission",
+    "machine_max:turret_driver",
+    "machine_max:weapon_controller"
+  ],
+  "type59_fuel_temperature_signal_fields": [],
+  "electrical_hud_queries": [
+    "public double global_energy();",
+    "public double global_max_energy();"
+  ],
+  "energy_grid_members": [
+    "private float totalStoredEnergy;",
+    "private float maxStoredEnergy;",
+    "public float getTotalStoredEnergy();",
+    "public float getMaxStoredEnergy();"
+  ],
+  "conclusion": "The installed MachineMax binary exposes electrical EnergyGrid storage to HUD, but this Type 59 has no fuel tank, fuel state, fuel output channel or electrical storage subsystem. A physical fuel quantity cannot be recovered from the current setup. Electrical energy is not relabeled as fuel.",
+  "scope": "Current installed jar and Type59 configuration only; does not assert that no other mod version or extension can provide fuel."
+}

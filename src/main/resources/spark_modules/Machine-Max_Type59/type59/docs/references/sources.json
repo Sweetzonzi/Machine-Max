@@ -1,0 +1,51 @@
+{
+  "checked_on": "2026-11-07",
+  "classification": "Game adaptation; quoted nominal values are public game data, not measured real-vehicle armour performance.",
+  "references": [
+    {
+      "url": "https://wiki.warthunder.com/unit/cn_type_59",
+      "publisher": "Gaijin / War Thunder Wiki",
+      "version_seen": "2.59.0.92",
+      "used_for": [
+        "100 mm weapon family",
+        "34 main rounds",
+        "four crew",
+        "3.5x–7x gunner and 1x–5x commander game optics",
+        "-5 to 18 degree elevation",
+        "600 rpm MG game values",
+        "100/80/45 hull and 200/155/65 turret nominal armour game reference"
+      ]
+    },
+    {
+      "url": "https://www.kotsch88.de/f_t-55a.htm",
+      "used_for": "Related Soviet T-54/T-55 optic family reference only; not proof of exact Type 59 engraving."
+    }
+  ],
+  "scope": {
+    "gunner": "Original schematic reticle inspired by the related optical family; 3.5x–7x game zoom, vertical stabilization only.",
+    "commander": "Original schematic cross/lead marks; 1x–5x game zoom, unstabilized.",
+    "calibrated_ballistic_scales": false,
+    "laser_rangefinder": false,
+    "thermal": false
+  },
+  "gameplay": {
+    "mass_kg": 16000,
+    "engine_power_w": 260000,
+    "main_damage_ap": 900,
+    "main_damage_he": 100,
+    "he_blast_damage": 70,
+    "regenerating_supply": true,
+    "manual_loader_simulation": false,
+    "gears_forward": 5,
+    "gears_reverse": 1,
+    "target_speed_kmh": 50,
+    "estimated_speed_kmh": 49.676433834888606,
+    "track_thickness_mm": 65.625,
+    "track_links_per_side": 75
+  },
+  "limitations": [
+    "Armour uses per-plate scalar proxies with the model normals; not a full volumetric protection analysis.",
+    "Power, mass, damage, stock and regenerative supply are game settings.",
+    "No internal crew damage volumes or manually operated loading station."
+  ]
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "style": "machine_max:modern_optics_durability",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_center",
+    "offset": [
+      0,
+      -30,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "type59:type59_orientation",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "top_left",
+    "offset": [
+      14,
+      76,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "selection_visibility": "always"
+  },
+  {
+    "style": "type59:type59_dashboard",
+    "perspective": false,
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "anchor": "bottom_right",
+    "offset": [
+      -8,
+      -8,
+      0
+    ],
+    "scale": [
+      0.9,
+      0.9,
+      1
+    ],
+    "selection_visibility": "always"
+  }
+]

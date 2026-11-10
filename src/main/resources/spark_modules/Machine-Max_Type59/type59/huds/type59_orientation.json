@@ -1,0 +1,7 @@
+{
+  "type": "machine_max:aui_hud",
+  "page": "type59/orientation/indicator.html",
+  "defaults": {
+    "--ink": "#b7f983"
+  }
+}

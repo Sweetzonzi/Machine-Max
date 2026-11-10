@@ -1,0 +1,32 @@
+{
+  "purpose": "Concise Type 59 prototype background, existing armament, user-selected epigraph and default military blueprint footer for introduction 0.1.8.",
+  "default_footer_reference": "Installed MachineMax JAR: spark_modules/Machine-Max_T90A/t90a/lang/{zh_cn,en_us}.json; notes.t90a.blueprint.t90a. Tooltip notes use muted grey italic text.",
+  "epigraph": {
+    "text": "雄关漫道真如铁，而今迈步从头越。",
+    "selection": "User-provided wording; attribution omitted from the UI as requested.",
+    "english": "Original short translation for this content pack."
+  },
+  "checked_on": "2026-11-09",
+  "sources": [
+    {
+      "url": "https://www.sastind.gov.cn/history/n152/n6760142/n6760146/n6760161/c6807606/content.html",
+      "publisher": "国家国防科技工业局／新华社",
+      "supports": "T-54A origins and completion of the first production batch in August 1959."
+    },
+    {
+      "url": "https://www.xinhuanet.com/politics/2017-07/17/c_1121332396.htm",
+      "publisher": "新华社",
+      "supports": "China's first generation of domestically produced main battle tanks."
+    },
+    {
+      "url": "https://museum.cmes.org/machinery/mechanism/detail/27f43ec93a00496899a3721f1e067ee4",
+      "publisher": "中国机械工程学会数字博物馆",
+      "supports": "Four-person crew, 100 mm rifled gun, two 7.62 mm machine guns, one 12.7 mm machine gun and cast turret."
+    },
+    {
+      "url": "https://lewisarmymuseum.com/wp-content/uploads/2023/07/type-59-tank.pdf",
+      "publisher": "Lewis Army Museum",
+      "supports": "Museum photographs and layout labels; Type 59-I sight upgrades are not attributed to the basic Type 59."
+    }
+  ]
+}

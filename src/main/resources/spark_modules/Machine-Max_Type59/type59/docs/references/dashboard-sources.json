@@ -1,0 +1,42 @@
+{
+  "version": "0.1.6",
+  "created_at_utc": "2026-11-08T09:26:50.379585+00:00",
+  "primary_reference": "Two user-provided photographs, the second showing the complete five-gauge panel.",
+  "user_photo_sha256": [
+    "468850b00deebe85ac134fd282ba39a02aec794564ebba3e01298f8b62c18886",
+    "3a5f09c34cf22580de1ab7e6d15e1c0c129f62a9f9a239d2372c0a4f938e316d"
+  ],
+  "user_outline_sha256": "8a1f0bf467bc6425355c7e7a628fa3f60a44dc1225fe366a270d8c895b0c2d83",
+  "visible_structure": "Compact sloped-shoulder grey plate; five equal 144px gauges with 12px horizontal gaps. Four X-diagonal mounts per dial. Upper two title plaques omitted, lower three nameplates retained.",
+  "supporting_primary_sources": [
+    {
+      "url": "https://djvu.online/file/ymDPTONdzn8o7",
+      "title": "1968 T-54/T-54A military repair manual",
+      "use": "Related-family instrument terminology only. User explicitly identifies the photographed lower-right instrument as fuel quantity; this correction takes precedence over the earlier oil-pressure inference."
+    }
+  ],
+  "adaptation": {
+    "upper_two_gauges": "Speed and engine RPM functions/readouts retained; only their title plaques are removed at the user request. Original gauge identity/lettering is not legible in the photo.",
+    "lower_three": "Separate pose dial, player-view-up rotating compass and fuel quantity, all 144px diameter. These are requested game HUD adaptations, not original factory functions.",
+    "pose": "Cannon fixed up; hull rotates relative to the turret from the actual shared joint angle independently of player camera heading. Original T90A cannon-up reference and minimal graphics restored. No tracks, hatches or hull-reference caption. Detached/missing connector: hide symbols and show --. Full-circle yaw is reconstructed from connector Euler X/Y to avoid quadrant folding.",
+    "pose_style_sources": [
+      "Machine-Max_T90A/t90a/documents/orientation/hull.svg",
+      "Machine-Max_T90A/t90a/documents/orientation/cannon.svg"
+    ],
+    "compass": "Player/camera view is fixed upward; compass rose and N/E/S/W rotate by negative hud.view_heading_deg. Fixed central arrow is the viewing direction, not cannon or hull north.",
+    "fuel_scale": "User deferred scale correction: keep normalized 0 / 1/2 / 1 (empty / half / full), and mark the near-empty 0–0.2 sector red. This is a static face marking, not a live fuel warning; no confirmed fuel signal means -- and no needle. No unverified litre capacity.",
+    "bearing_and_gear": "Supplementary strip shows exact camera bearing and gear.",
+    "outline_and_mounts": "User orange shoulder contour and 45/135/225/315 degree X mounts; horizontal dial gaps tightened to 12px.",
+    "dial_ranges": "HUD calibration: speed 0–80 km/h, RPM 0–3000; face layouts are redraws, not exact factory scans."
+  },
+  "artwork": "New code-authored SVG and matching 4x PNGs. No reference photo pixels, browser chrome, captions or watermarks are shipped.",
+  "rendering": "Current AUI caches a transform when only the CSS custom property changes. Balanced string class selection and literal 1-degree transforms make hull, compass and both live needles invalidate the native render cache. Numeric readouts retain actual values.",
+  "signals": {
+    "speed": "global.get('vehicle_speed') *3.6 (m/s to km/h, absolute display)",
+    "rpm": "global.get('engine_speed') *30/pi (rad/s to r/min)",
+    "gear": "global.get_str('gear')",
+    "bearing": "hud.view_heading_deg / hud.view_heading_cardinal",
+    "pose": "math.atan2(math.sin((local.connector_rotation('connector.type59.turret_hull', 1) + local.connector_rotation('connector.type59.hull_turret', 1))), math.cos((local.connector_rotation('connector.type59.turret_hull', 1) + local.connector_rotation('connector.type59.hull_turret', 1))) * math.cos((local.connector_rotation('connector.type59.turret_hull', 0) + local.connector_rotation('connector.type59.hull_turret', 0))))"
+  },
+  "game_validation": "User explicitly takes responsibility for in-game validation of this revision."
+}

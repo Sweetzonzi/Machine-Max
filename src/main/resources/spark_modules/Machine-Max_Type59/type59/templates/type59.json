@@ -1,0 +1,749 @@
+{
+  "name": "59式中型坦克",
+  "uuid": "85eacc97-c9b0-4c0e-8105-25d3d8fc0e6d",
+  "pos": [
+    0,
+    0,
+    0
+  ],
+  "min": [
+    -1.6,
+    -0.1,
+    -5.3
+  ],
+  "max": [
+    1.6,
+    3,
+    3.6
+  ],
+  "hp_ratio": 1,
+  "parts": {
+    "7910c76e-9386-46e4-a080-1daf9e542647": {
+      "registry_key": "type59:type59_hull",
+      "name": "part.type59.type59_hull",
+      "uuid": "7910c76e-9386-46e4-a080-1daf9e542647",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.type59.hull": {
+          "id": 1,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              0.96875,
+              0.375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_idler": {
+          "id": 2,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.797269375,
+              -2.475410625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_road_1": {
+          "id": 3,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.4192925,
+              -1.605425625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_road_2": {
+          "id": 4,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.4192925,
+              -0.542925625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_road_3": {
+          "id": 5,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.4192925,
+              0.282074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_road_4": {
+          "id": 6,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.4192925,
+              1.107074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_road_5": {
+          "id": 7,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.4192925,
+              1.932074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.left_sprocket": {
+          "id": 8,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              -1.247125,
+              0.806676875,
+              2.643916875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_idler": {
+          "id": 9,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.797269375,
+              -2.475410625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_road_1": {
+          "id": 10,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.4192925,
+              -1.605425625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_road_2": {
+          "id": 11,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.4192925,
+              -0.542925625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_road_3": {
+          "id": 12,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.4192925,
+              0.282074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_road_4": {
+          "id": 13,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.4192925,
+              1.107074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_road_5": {
+          "id": 14,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.4192925,
+              1.932074375
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.right_sprocket": {
+          "id": 15,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              1.247125,
+              0.806676875,
+              2.643916875
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "0dadc0e1-6d67-47b0-a158-96db2b9d50d0": {
+      "registry_key": "type59:type59_turret",
+      "name": "part.type59.type59_turret",
+      "uuid": "0dadc0e1-6d67-47b0-a158-96db2b9d50d0",
+      "variant": "standard",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.type59.turret": {
+          "id": 16,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.75,
+              0.125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.gun": {
+          "id": 17,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.73625,
+              -1.0625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.barrel": {
+          "id": 18,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0,
+              1.73238125,
+              -3.125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.aa_yaw": {
+          "id": 19,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.439375,
+              2.28125,
+              0.40625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.type59.aa_pitch": {
+          "id": 20,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.4296875,
+              2.51875,
+              -0.25
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    }
+  },
+  "connections": [
+    {
+      "partUuidA": "0dadc0e1-6d67-47b0-a158-96db2b9d50d0",
+      "subPartNameA": "sub_part.type59.turret",
+      "advConnectorName": "connector.type59.turret_hull",
+      "posRotA": {
+        "position": [
+          0.01751125,
+          -0.3187500000000001,
+          -0.086581875
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "7910c76e-9386-46e4-a080-1daf9e542647",
+      "subPartNameS": "sub_part.type59.hull",
+      "simplePointConnectorName": "connector.type59.hull_turret",
+      "posRotS": {
+        "position": [
+          0.01751125,
+          0.4624999999999999,
+          -0.33658187500000003
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "track_links": [
+    {
+      "sprocket": {
+        "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+        "sub_part": "sub_part.type59.left_sprocket"
+      },
+      "members": [
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_sprocket"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_road_5"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_road_4"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_road_3"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_road_2"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_road_1"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.left_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "type59:type59_track"
+    },
+    {
+      "sprocket": {
+        "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+        "sub_part": "sub_part.type59.right_sprocket"
+      },
+      "members": [
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_sprocket"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_road_5"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_road_4"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_road_3"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_road_2"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_road_1"
+        },
+        {
+          "part": "7910c76e-9386-46e4-a080-1daf9e542647",
+          "sub_part": "sub_part.type59.right_idler"
+        }
+      ],
+      "durability": -1,
+      "broken": false,
+      "clockwise": false,
+      "track_type": "type59:type59_track"
+    }
+  ],
+  "meta": {
+    "description": "59式中型坦克是中国第一代国产主战坦克，参考苏联T-54A研制，于1959年完成首批生产。基本型采用四人车组，以100毫米线膛炮为主武器，并配备7.62毫米并列机枪、航向机枪和12.7毫米高射机枪。五对负重轮与低矮的铸造炮塔是其典型外形特征，后来又发展出多种改进型号。"
+  }
+}
