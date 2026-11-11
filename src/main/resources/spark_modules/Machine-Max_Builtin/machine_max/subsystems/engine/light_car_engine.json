@@ -10,5 +10,13 @@
   "red_line_torque_ratio": 0.75, //(可选, 默认0.9)红线转速时扭矩与最大扭矩比值
   "inertia": 10, //(可选, 默认10.0)转动惯量(kg·m²)
   "cylinder": 4, //(可选, 默认4)气缸数, 影响发动机音效
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Cars/car_drive_4c",
+      "start": "event:/Default_Vehicles/Engine/Cars/car_start_4c",
+      "stop": "event:/Default_Vehicles/Engine/Cars/car_stop_4c"
+    }
+  },
   "damping_factors": [2.0, 0.03, 0.00002] //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数
 }

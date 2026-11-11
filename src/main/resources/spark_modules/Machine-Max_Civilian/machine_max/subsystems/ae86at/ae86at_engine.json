@@ -14,6 +14,12 @@
   "cylinder": 4, //(可选, 默认4)气缸数，影响发动机音效
   "damping_factors": [2.0, 0.03, 0.00002], //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
   "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Cars/car_drive_4c",
+      "start": "event:/Default_Vehicles/Engine/Cars/car_start_4c",
+      "stop": "event:/Default_Vehicles/Engine/Cars/car_stop_4c"
+    },
     "on_activate": {
       "sound_id": "machine_max:subsystem.engine.i4_start",
       "range": 64

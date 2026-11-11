@@ -12,6 +12,14 @@
   "red_line_torque_ratio": 0.643,
   "inertia": 15,
   "cylinder": 12,
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Tanks/tank_drive_uni",
+      "start": "event:/Default_Vehicles/Engine/Tanks/tank_start_uni",
+      "stop": "event:/Default_Vehicles/Engine/Tanks/tank_stop_uni"
+    }
+  },
   "damping_factors": [
     3,
     0.05,

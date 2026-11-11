@@ -10,5 +10,13 @@
   "red_line_torque_ratio": 0.9, //(可选, 默认0.9)红线转速时扭矩与最大扭矩比值
   "inertia": 50, //(可选, 默认10.0)转动惯量(kg·m²), 大惯量适应重载
   "cylinder": 6, //(可选, 默认4)气缸数, 影响发动机音效
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Cars/car_drive_dsl",
+      "start": "event:/Default_Vehicles/Engine/Cars/car_start_dsl",
+      "stop": "event:/Default_Vehicles/Engine/Cars/car_stop_dsl"
+    }
+  },
   "damping_factors": [5.0, 0.05, 0.00001] //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数
 }

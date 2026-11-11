@@ -366,7 +366,17 @@ bank ID 为 `m1a2_sep:abrams`。
 
 ## 当前接入边界
 
-2S38、MT-LB、T-90A、59 式使用 `event:/Default_Vehicles/Engine/Tanks/tank_drive_uni`。M1A2 使用 `event:/Abrams/tank_drive_abrams`。这些发动机配置沿用已接入的持续工况播放。
+发动机持续工况由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#tickFmodSound` 播放。以下定义同时配置同系列的 drive、start 和 stop，运行时持续工况读取 drive。除 M1A2 使用 `m1a2_sep:abrams` 外，其余使用 `machine_max:basic_vehicle_sounds`。
+
+| 发动机定义对应对象 | 持续工况事件 |
+| --- | --- |
+| AE86、AE86 全地形版、Wine Fox、Van、Builtin light_car_engine | `event:/Default_Vehicles/Engine/Cars/car_drive_4c` |
+| Jeep、Builtin medium_car_engine | `event:/Default_Vehicles/Engine/Cars/car_drive_6c` |
+| 大运、Builtin truck_diesel_engine | `event:/Default_Vehicles/Engine/Cars/car_drive_dsl` |
+| 2S38、MT-LB、T-90A、59 式、K17、Sd.Kfz.234 | `event:/Default_Vehicles/Engine/Tanks/tank_drive_uni` |
+| M1A2 | `event:/Abrams/tank_drive_abrams` |
+
+各发动机将自身怠速到红线的区间归一化为 rpm=0～100，load 使用同步的油门开度。K17 与 Sd.Kfz.234 使用通用军用引擎音色。Builtin 的通用定义与各车专用定义分别配置，专用定义由相应车包的零件引用。单缸的 R700、Builtin motorcycle_engine 和 V8 的 Senna GTR、Builtin sport_car_engine 使用其采样或合成工况音；当前 bank 的汽车系列为 2c、4c、6c、dsl。
 
 M1A2 发射器属性的 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，发射器运行时的 FMOD 播放接线待实现。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
 

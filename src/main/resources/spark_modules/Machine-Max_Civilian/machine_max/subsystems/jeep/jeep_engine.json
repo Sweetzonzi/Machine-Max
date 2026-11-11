@@ -11,5 +11,13 @@
   "red_line_torque_ratio": 0.6, //(可选, 默认0.9)红线扭矩系数, 引擎转速处于红线转速时, 最大扭矩衰减至最大扭矩乘以此系数
   "inertia": 15, //(可选, 默认10)转动惯量(kg·m^2), 此值越大, 引擎加速越慢, 存速越好
   "cylinder": 6, //(可选, 默认4)气缸数，影响发动机音效
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Cars/car_drive_6c",
+      "start": "event:/Default_Vehicles/Engine/Cars/car_start_6c",
+      "stop": "event:/Default_Vehicles/Engine/Cars/car_stop_6c"
+    }
+  },
   "damping_factors": [3.0, 0.05, 0.00005] //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
 }
