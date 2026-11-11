@@ -119,13 +119,15 @@
         },
         "fmod": {
           "allOf": [
-            { "$ref": "fmod_sound.schema.json" }
+            {
+              "$ref": "material_fmod_sound.schema.json"
+            }
           ],
-          "description": "轮胎使用本材质时的可选 FMOD 接地事件，供滚动与滑移播放接入。"
+          "description": "为材料音效预留的 FMOD bank。"
         }
       },
       "additionalProperties": false,
-      "description": "材料命中与接地音效配置。"
+      "description": "材料命中音效与预留 FMOD bank 配置。"
     },
     "particles": {
       "type": "object",

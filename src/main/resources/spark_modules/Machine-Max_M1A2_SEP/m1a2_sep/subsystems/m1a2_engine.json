@@ -18,7 +18,9 @@
   "sounds": {
     "fmod": {
       "bank": "m1a2_sep:abrams",
-      "event": "event:/tank_drive_abrams"
+      "drive": "event:/Abrams/tank_drive_abrams",
+      "start": "event:/Abrams/tank_start_abrams",
+      "stop": "event:/Abrams/tank_stop_abrams"
     }
   }
 }

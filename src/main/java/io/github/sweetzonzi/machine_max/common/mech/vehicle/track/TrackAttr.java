@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -29,7 +28,6 @@ public final class TrackAttr {
     private final ResourceLocation materialId;
     private final Optional<HitBoxAttr.OverwriteAttr> overwrite;
     private final Tension tension;
-    private final Optional<FmodSoundAttr> fmod;
     /** 构造时由 {@link #materialId} + {@link #overwrite} 解析出的有效材料。 */
     private final MaterialAttr resolved;
 
@@ -38,8 +36,7 @@ public final class TrackAttr {
                      float thicknessMm,
                      ResourceLocation materialId,
                      Optional<HitBoxAttr.OverwriteAttr> overwrite,
-                     Tension tension,
-                     Optional<FmodSoundAttr> fmod) {
+                     Tension tension) {
         if (!Float.isFinite(durabilityPerLink) || !(durabilityPerLink > 0f)) {
             throw new IllegalArgumentException("durability_per_link 必须是有限正数: " + durabilityPerLink);
         }
@@ -67,7 +64,6 @@ public final class TrackAttr {
         this.materialId = materialId;
         this.overwrite = overwrite;
         this.tension = tension;
-        this.fmod = fmod;
         this.resolved = material;
     }
 
@@ -110,7 +106,7 @@ public final class TrackAttr {
     }
 
     /**
-     * 命中音效：取解析后的材料的 {@code sounds}，与同材料的碰撞箱命中同一套。
+     * 命中音效与预留 FMOD bank 取解析后的材料，型号可用 {@code overwrite.sounds} 按字段定制。
      *
      * <p>履带没有自己的命中音字段。要改音效就改材料，或在型号里用
      * {@code overwrite.sounds} 覆写——覆写会随材料一起解析进 {@code resolved}。</p>
@@ -121,11 +117,6 @@ public final class TrackAttr {
 
     public Tension tension() {
         return tension;
-    }
-
-    /** 整条履带的可选 FMOD 行驶事件，覆盖滚动与滑移两种接地工况。 */
-    public Optional<FmodSoundAttr> fmod() {
-        return fmod;
     }
 
     /** 整条履带的最大耐久：每节耐久 × 节数，节数至少按 1 计。 */
@@ -139,8 +130,7 @@ public final class TrackAttr {
             Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
             ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),
             HitBoxAttr.OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(TrackAttr::overwrite),
-            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension),
-            FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(TrackAttr::fmod)
+            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension)
     ).apply(instance, TrackAttr::new));
 
     /**

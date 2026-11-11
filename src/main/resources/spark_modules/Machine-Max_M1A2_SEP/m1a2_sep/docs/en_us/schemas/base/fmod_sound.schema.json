@@ -11,7 +11,7 @@
     "event": {
       "type": "string",
       "pattern": "^event:/.+",
-      "description": "Studio event path in the bank, for example event:/tank_drive_uni."
+      "description": "Studio event path in the bank, for example event:/Default_Vehicles/Engine/Tanks/tank_drive_uni."
     }
   },
   "required": ["bank", "event"],

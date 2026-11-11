@@ -225,9 +225,11 @@
         },
         "sounds": {
           "allOf": [
-            { "$ref": "../../../base/material_attr.schema.json#/properties/sounds" }
+            {
+              "$ref": "../../../base/material_sound_override.schema.json"
+            }
           ],
-          "description": "Replaces the material's entire sounds group. Omit this group to inherit the material sounds."
+          "description": "Overrides material sounds per field. Omitted fields inherit."
         }
       },
       "additionalProperties": false

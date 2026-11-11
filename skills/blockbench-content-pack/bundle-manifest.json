@@ -3,11 +3,11 @@
   "bundled_on": "2026-11-11",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "bb300e97a1565389d4c0c547facb22eea0f5e573",
+    "revision": "072536f793725d7e3f1eee223c672dc6e9567dd0",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 72,
+    "file_count": 74,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -16,13 +16,23 @@
       },
       {
         "path": "references/schemas/base/fmod_sound.schema.json",
-        "bytes": 576,
-        "sha256": "3a417f4b61b3717e11faf023255de1b5266bd137338c856d4825dcc6ece7c78a"
+        "bytes": 606,
+        "sha256": "99d2df675159c23891342421eeb7681f649233bcb2b91002f6368a3cbb92b2c6"
       },
       {
         "path": "references/schemas/base/material_attr.schema.json",
-        "bytes": 9952,
-        "sha256": "22d0265aa12433d52b614042162db9515b3452e3ee42cef2fe3dcd1fb443161c"
+        "bytes": 9948,
+        "sha256": "ad7390c19dc0893cd5ab434b544ff64b2f5f2dc3311d7560d7f92859f774c062"
+      },
+      {
+        "path": "references/schemas/base/material_fmod_sound.schema.json",
+        "bytes": 418,
+        "sha256": "67fd74d7f7ee150b82a4b2d21aa19c2a617eb9e60f06b6a492844af08c032b5c"
+      },
+      {
+        "path": "references/schemas/base/material_sound_override.schema.json",
+        "bytes": 647,
+        "sha256": "5bb851b8eec3f96340cda5bb7159eba13fdda3135cb881fc9ae88e2997d6d8f4"
       },
       {
         "path": "references/schemas/base/operation.schema.json",
@@ -46,8 +56,8 @@
       },
       {
         "path": "references/schemas/fitting.schema.json",
-        "bytes": 11647,
-        "sha256": "c9bea1fa4714bdeb391dbf9a4c9dc7c42bb3515f9d233e5485d911a4863d7fc5"
+        "bytes": 11076,
+        "sha256": "94b12b19277af4e73979e53e10623fd057790898aa0c04f1e31dcc834d26969b"
       },
       {
         "path": "references/schemas/hud/hud_element.schema.json",
@@ -76,8 +86,8 @@
       },
       {
         "path": "references/schemas/part/subpart/hit_box/hit_box_attr.schema.json",
-        "bytes": 12651,
-        "sha256": "eb9356e8c88dd02518a85a74fe94bc280999890076e939b48caa77944d94b85f"
+        "bytes": 12649,
+        "sha256": "7b88b0189cec9dd9e89d3261504a0080cbf27c0e1b5ed85c19a371e7df912a71"
       },
       {
         "path": "references/schemas/part/subpart/hit_box/modifier/condition/condition.schema.json",
@@ -276,8 +286,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
-        "bytes": 5899,
-        "sha256": "6075ab6d7b2543b40c80dbb789e30f233d2089c379ea4a541580b7e21a8fb326"
+        "bytes": 6912,
+        "sha256": "440da1a70baeb04eabf90b5f70c4d93dc0f72e74945ca6de02e17e92503aaf59"
       },
       {
         "path": "references/schemas/subsystem/static/gearbox_static_attr.schema.json",
@@ -291,8 +301,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 9555,
-        "sha256": "0363603f159ef83429c3f54873fd5f67d98dbff4408327d39e9884aae0ac0b62"
+        "bytes": 9461,
+        "sha256": "f81f3b4a442ea0b9b66c8ae8e0c79934f68297bb60f504529ebdfcf78cb14e5d"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
@@ -301,8 +311,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/motor_static_attr.schema.json",
-        "bytes": 5429,
-        "sha256": "629c9749494ade3864b969d7944bc499c6df4c1639de5e4daed2f2ffc1439156"
+        "bytes": 5760,
+        "sha256": "a3376877dde35ea143867ef968b83a8d21191eed1a149933f2131e7d1146acc5"
       },
       {
         "path": "references/schemas/subsystem/static/motorbike_controller_static_attr.schema.json",
@@ -311,8 +321,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/regen_loader_static_attr.schema.json",
-        "bytes": 8431,
-        "sha256": "bae4526c685ffd5b985a08a40d5e9c5f60742f10425d1b36fff9f4429c75f612"
+        "bytes": 9327,
+        "sha256": "5208584d9f32fd22d0db121280d5921645e89d7676bd52519760207674c2ac6e"
       },
       {
         "path": "references/schemas/subsystem/static/seat_static_attr.schema.json",

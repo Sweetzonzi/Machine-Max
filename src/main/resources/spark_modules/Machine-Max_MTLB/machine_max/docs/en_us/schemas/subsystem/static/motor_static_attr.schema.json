@@ -123,10 +123,24 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "Motor running event. Playback integration pending.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "drive": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "drive"
+            }
+          },
+          "required": [
+            "bank",
+            "drive"
           ],
-          "description": "Optional FMOD event reference for the motor loop, reserved for playback integration."
+          "additionalProperties": false
         },
         "working_sounds": {
           "type": "object",

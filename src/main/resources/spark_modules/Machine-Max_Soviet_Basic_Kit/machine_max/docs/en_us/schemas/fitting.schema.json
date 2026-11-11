@@ -48,12 +48,6 @@
       "default": 0.2,
       "description": "Link length in meters. It derives the link count from the envelope perimeter and sets the spacing used when placing links while rendering."
     },
-    "fmod": {
-      "allOf": [
-        { "$ref": "base/fmod_sound.schema.json" }
-      ],
-      "description": "Optional FMOD driving event for the entire track belt, reserved for rolling and slip playback."
-    },
     "overwrite": {
       "type": "object",
       "description": "Material overwrite layered on top of material, merged with the same rules as hit boxes. Tracks read physics, armor and sounds; track hit sounds come from the merged material.",
@@ -169,9 +163,12 @@
           "additionalProperties": false
         },
         "sounds": {
-          "type": "object",
-          "description": "Hit sound overwrite. Track hit sounds come from the merged material, so values written here apply to tracks.",
-          "additionalProperties": true
+          "allOf": [
+            {
+              "$ref": "base/material_sound_override.schema.json"
+            }
+          ],
+          "description": "Overrides hit sounds and reserved FMOD bank of the track material per field."
         }
       },
       "additionalProperties": false

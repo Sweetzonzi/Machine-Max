@@ -122,6 +122,26 @@
             "range": 16
           }
         },
+        "fmod": {
+          "type": "object",
+          "description": "电机持续工况事件。播放接线待实现。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "drive": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "drive"
+            }
+          },
+          "required": [
+            "bank",
+            "drive"
+          ],
+          "additionalProperties": false
+        },
         "working_sounds": {
           "type": "object",
           "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
@@ -135,7 +155,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "子系统基本音效配置。"
+      "description": "电机的生命周期与工况音效配置。"
     }
   },
   "required": ["type", "max_power"],

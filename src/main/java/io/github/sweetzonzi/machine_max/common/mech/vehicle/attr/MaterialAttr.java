@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.DamageModifier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -198,16 +197,16 @@ public record MaterialAttr(
     // ==================== 音效属性 ====================
 
     /**
-     * 材料对应的命中与接地音效配置。
+     * 材料对应的命中音效与 FMOD bank 配置。
      *
      * @param onHitUnPen 未击穿时的命中音效
      * @param onHitPen 击穿时的命中音效
-     * @param fmod 轮胎使用本材质时的可选 FMOD 接地事件，用于滚动与滑移
+     * @param fmod 为材料 FMOD 音效预留的 bank 配置
      */
     public record MaterialSoundAttr(
             SoundEvent onHitUnPen,
             SoundEvent onHitPen,
-            Optional<FmodSoundAttr> fmod
+            Optional<MaterialFmodSoundAttr> fmod
     ) {
         public static final MaterialSoundAttr DEFAULT = new MaterialSoundAttr(
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hit_box.hit.up_pen.metal"), 64f),
@@ -218,8 +217,32 @@ public record MaterialAttr(
         public static final Codec<MaterialSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_un_pen", DEFAULT.onHitUnPen).forGetter(MaterialSoundAttr::onHitUnPen),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_pen", DEFAULT.onHitPen).forGetter(MaterialSoundAttr::onHitPen),
-                FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MaterialSoundAttr::fmod)
+                MaterialFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MaterialSoundAttr::fmod)
         ).apply(instance, MaterialSoundAttr::new));
+    }
+
+    /** 为材料音效预留的 FMOD bank，事件字段由对应功能的接线需求确定。 */
+    public record MaterialFmodSoundAttr(ResourceLocation bank) {
+        public static final Codec<MaterialFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(MaterialFmodSoundAttr::bank)
+        ).apply(instance, MaterialFmodSoundAttr::new));
+    }
+
+    /** 材料音效的局部覆写，省略的字段继承基础材料。 */
+    public record SoundOverwriteAttr(Optional<SoundEvent> onHitUnPen, Optional<SoundEvent> onHitPen,
+                                     Optional<MaterialFmodSoundAttr> fmod) {
+        public static final Codec<SoundOverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_un_pen").forGetter(SoundOverwriteAttr::onHitUnPen),
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("hit_pen").forGetter(SoundOverwriteAttr::onHitPen),
+                MaterialFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(SoundOverwriteAttr::fmod)
+        ).apply(instance, SoundOverwriteAttr::new));
+
+        /** 装载期合并音效，命中音与 bank 各自按明确写出的字段覆盖。 */
+        public MaterialSoundAttr applyTo(MaterialSoundAttr base) {
+            return new MaterialSoundAttr(onHitUnPen.orElse(base.onHitUnPen()),
+                    onHitPen.orElse(base.onHitPen()),
+                    fmod.or(() -> base.fmod()));
+        }
     }
 
     // ==================== 粒子属性 ====================

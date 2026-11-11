@@ -19,6 +19,14 @@ import java.util.Optional;
 
 @Getter
 public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
+    /** 电机持续工况音的 bank 与事件路径。 */
+    public record MotorFmodSoundAttr(ResourceLocation bank, String drive) {
+        public static final Codec<MotorFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(MotorFmodSoundAttr::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("drive").forGetter(MotorFmodSoundAttr::drive)
+        ).apply(instance, MotorFmodSoundAttr::new));
+    }
+
     public final String particleLocator;
     public final float maxPower;
     public final float maxTorque;
@@ -45,7 +53,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
      * @param fmod 持续工况音的可选 FMOD 事件引用
      */
     public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,
-                                 Optional<FmodSoundAttr> fmod) {
+                                 Optional<MotorFmodSoundAttr> fmod) {
         public static final MotorSoundAttr DEFAULT = new MotorSoundAttr(BasicSoundAttr.DEFAULT, Map.of(), Optional.empty());
 
         public static final Codec<MotorSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -53,7 +61,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
                         .optionalFieldOf("working_sounds", Map.of())
                         .forGetter(MotorSoundAttr::workingSounds),
-                FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MotorSoundAttr::fmod)
+                MotorFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MotorSoundAttr::fmod)
         ).apply(instance, MotorSoundAttr::new));
     }
 

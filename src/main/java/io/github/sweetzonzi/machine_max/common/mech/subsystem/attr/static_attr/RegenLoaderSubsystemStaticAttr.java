@@ -4,14 +4,17 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.FeedModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.MagazineModuleAttr;
 import lombok.Getter;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 再生装弹机子系统静态属性。<br>
@@ -25,6 +28,13 @@ import java.util.Map;
  */
 @Getter
 public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+    /** 装填音的 bank 与事件路径。 */
+    public record ReloadFmodSoundAttr(ResourceLocation bank, String reload) {
+        public static final Codec<ReloadFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(ReloadFmodSoundAttr::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("reload").forGetter(ReloadFmodSoundAttr::reload)
+        ).apply(instance, ReloadFmodSoundAttr::new));
+    }
 
     /**
      * 再生装弹机音效属性 — 包含基础音效和进度分段装填音效。
@@ -34,21 +44,25 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      *
      * @param basicSounds    基础音效（onDestroyed / onActivated / onDeactivated）
      * @param progressSounds 装填进度分段音效映射（key=进度浮点字符串如"0.0","0.25","0.5","0.75","1.0"，value=音效）
+     * @param fmod 可选的 FMOD 装填事件引用
      */
     public record RegenLoaderSoundAttr(
         BasicSoundAttr basicSounds,
-        Map<String, SoundEvent> progressSounds
+        Map<String, SoundEvent> progressSounds,
+        Optional<ReloadFmodSoundAttr> fmod
     ) {
         public static final RegenLoaderSoundAttr DEFAULT = new RegenLoaderSoundAttr(
             BasicSoundAttr.DEFAULT,
-            Map.of()
+            Map.of(),
+            Optional.empty()
         );
 
         public static final Codec<RegenLoaderSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BasicSoundAttr.basicSounds(RegenLoaderSoundAttr::basicSounds),
             Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
                 .optionalFieldOf("progress_sounds", Map.of())
-                .forGetter(RegenLoaderSoundAttr::progressSounds)
+                .forGetter(RegenLoaderSoundAttr::progressSounds),
+            ReloadFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(RegenLoaderSoundAttr::fmod)
         ).apply(instance, RegenLoaderSoundAttr::new));
     }
 

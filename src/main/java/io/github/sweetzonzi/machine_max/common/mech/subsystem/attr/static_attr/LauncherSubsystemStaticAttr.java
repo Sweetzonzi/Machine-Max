@@ -22,6 +22,14 @@ import java.util.Optional;
  */
 @Getter
 public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+    /** 发射器开火音的 bank 与事件路径。 */
+    public record LauncherFmodSoundAttr(ResourceLocation bank, String fire) {
+        public static final Codec<LauncherFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(LauncherFmodSoundAttr::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("fire").forGetter(LauncherFmodSoundAttr::fire)
+        ).apply(instance, LauncherFmodSoundAttr::new));
+    }
+
 
     /**
      * 发射器音效属性 — 包含基础音效和发射器特有音效。
@@ -33,7 +41,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public record LauncherSoundAttr(
         BasicSoundAttr basicSounds,
         SoundEvent dryFireSound,
-        Optional<FmodSoundAttr> fmod
+        Optional<LauncherFmodSoundAttr> fmod
     ) {
         public static final LauncherSoundAttr DEFAULT = new LauncherSoundAttr(
             BasicSoundAttr.DEFAULT,
@@ -46,7 +54,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicSoundAttr.basicSounds(LauncherSoundAttr::basicSounds),
             SoundEvent.DIRECT_CODEC.optionalFieldOf("dry_fire", DEFAULT.dryFireSound)
                 .forGetter(LauncherSoundAttr::dryFireSound),
-            FmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(LauncherSoundAttr::fmod)
+            LauncherFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(LauncherSoundAttr::fmod)
         ).apply(instance, LauncherSoundAttr::new));
     }
 

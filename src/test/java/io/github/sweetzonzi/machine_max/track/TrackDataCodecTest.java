@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.track;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
-import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
@@ -152,7 +151,7 @@ class TrackDataCodecTest {
         assertEquals(50f, attr.thicknessMm(), 1.0e-6f);
         assertEquals(0.05f, attr.thicknessMeters(), 1.0e-6f);
         assertEquals(TrackAttr.Tension.DEFAULT, attr.tension());
-        assertTrue(attr.fmod().isEmpty());
+        assertTrue(attr.sounds().fmod().isEmpty());
         assertEquals(MaterialAttr.MaterialSoundAttr.DEFAULT, attr.sounds());
         assertEquals(20f, attr.maxDurability(1), 1.0e-6f);
         assertEquals(1200f, attr.maxDurability(60), 1.0e-6f);
@@ -196,7 +195,9 @@ class TrackDataCodecTest {
                   "thickness_mm": 50.0,
                   "durability_per_link": 20.0,
                   "length_per_link": 0.2,
-                  "fmod": { "bank": "test:driving", "event": "event:/track" },
+                  "overwrite": {
+                    "sounds": { "fmod": { "bank": "test:material_sounds" } }
+                  },
                   "visual": {
                     "model": "machine_max:track_link.geo",
                     "texture": "machine_max:textures/part/track_link.png"
@@ -208,11 +209,10 @@ class TrackDataCodecTest {
         TrackType track = (TrackType) type;
         assertEquals("track", track.getSerializedName());
         assertEquals(0.2f, track.attr().lengthPerLink(), 1.0e-6f);
-        assertEquals(new FmodSoundAttr(ResourceLocation.parse("test:driving"), "event:/track"),
-                track.attr().fmod().orElseThrow());
+        assertEquals(ResourceLocation.parse("test:material_sounds"), track.attr().sounds().fmod().orElseThrow().bank());
         var encoded = FittingType.CODEC.encodeStart(JsonOps.INSTANCE, track).getOrThrow();
         TrackType roundTripped = (TrackType) FittingType.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
-        assertEquals(track.attr().fmod(), roundTripped.attr().fmod());
+        assertEquals(track.attr().sounds().fmod(), roundTripped.attr().sounds().fmod());
         assertEquals(ResourceLocation.parse("machine_max:track_link.geo"), track.visual().model());
         assertEquals(ResourceLocation.parse("machine_max:textures/part/track_link.png"),
                 track.visual().texture());

@@ -225,9 +225,11 @@
         },
         "sounds": {
           "allOf": [
-            { "$ref": "../../../base/material_attr.schema.json#/properties/sounds" }
+            {
+              "$ref": "../../../base/material_sound_override.schema.json"
+            }
           ],
-          "description": "整组替换材料的 sounds。省略此组则使用材料的音效配置。"
+          "description": "按字段覆写材料音效，未写字段继承材料。"
         }
       },
       "additionalProperties": false

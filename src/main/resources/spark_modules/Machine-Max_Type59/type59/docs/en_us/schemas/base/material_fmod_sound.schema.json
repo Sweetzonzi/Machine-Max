@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/base/material_fmod_sound.json",
+  "title": "Material FMOD bank",
+  "type": "object",
+  "description": "Bank reserved for material sound events.",
+  "properties": {
+    "bank": {
+      "description": "FMOD bank ID",
+      "type": "string"
+    }
+  },
+  "required": [
+    "bank"
+  ],
+  "additionalProperties": false
+}

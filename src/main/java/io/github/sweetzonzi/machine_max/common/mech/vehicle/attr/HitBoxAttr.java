@@ -131,13 +131,13 @@ public class HitBoxAttr {
     public record OverwriteAttr(
             Optional<PhysicsOverwriteAttr> physics,
             Optional<ArmorOverwriteAttr> armor,
-            Optional<MaterialAttr.MaterialSoundAttr> sounds,
+            Optional<MaterialAttr.SoundOverwriteAttr> sounds,
             Optional<MaterialAttr.MaterialParticleAttr> particles
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 PhysicsOverwriteAttr.CODEC.optionalFieldOf("physics").forGetter(OverwriteAttr::physics),
                 ArmorOverwriteAttr.CODEC.optionalFieldOf("armor").forGetter(OverwriteAttr::armor),
-                MaterialAttr.MaterialSoundAttr.CODEC.optionalFieldOf("sounds").forGetter(OverwriteAttr::sounds),
+                MaterialAttr.SoundOverwriteAttr.CODEC.optionalFieldOf("sounds").forGetter(OverwriteAttr::sounds),
                 MaterialAttr.MaterialParticleAttr.CODEC.optionalFieldOf("particles").forGetter(OverwriteAttr::particles)
         ).apply(instance, OverwriteAttr::new));
     }
@@ -287,7 +287,7 @@ public class HitBoxAttr {
         return new MaterialAttr(
                 mergePhysics(baseMaterial.physics(), overwrite.physics().orElse(null)),
                 mergeArmor(baseMaterial.armor(), overwrite.armor().orElse(null)),
-                overwrite.sounds().orElse(baseMaterial.sounds()),
+                overwrite.sounds().map(sounds -> sounds.applyTo(baseMaterial.sounds())).orElse(baseMaterial.sounds()),
                 mergeParticles(baseMaterial.particles(), overwrite.particles().orElse(null))
         );
     }
@@ -295,8 +295,7 @@ public class HitBoxAttr {
     /**
      * 粒子按键叠加：覆写里写了哪个键就换哪个键，没写的继续继承材质。
      *
-     * <p>与 {@code sounds} 的整体替换不同——粒子键会随表现用途增加，
-     * 要求碰撞箱每换一个键就把整张表抄一遍并不合理。</p>
+     * <p>音效和粒子分别按各自字段与表现用途合并，未写入的项目继承材料。</p>
      */
     private static MaterialAttr.MaterialParticleAttr mergeParticles(
             MaterialAttr.MaterialParticleAttr base,

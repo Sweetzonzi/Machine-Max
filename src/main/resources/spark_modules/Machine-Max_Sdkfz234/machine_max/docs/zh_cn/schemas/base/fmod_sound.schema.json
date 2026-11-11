@@ -11,7 +11,7 @@
     "event": {
       "type": "string",
       "pattern": "^event:/.+",
-      "description": "bank 中的 Studio 事件路径，例如 event:/tank_drive_uni。"
+      "description": "bank 中的 Studio 事件路径，例如 event:/Default_Vehicles/Engine/Tanks/tank_drive_uni。"
     }
   },
   "required": ["bank", "event"],

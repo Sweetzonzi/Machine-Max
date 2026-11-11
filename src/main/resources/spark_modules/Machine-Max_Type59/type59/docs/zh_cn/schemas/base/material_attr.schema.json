@@ -116,10 +116,18 @@
           ],
           "description": "碰撞箱被命中且穿透时的音效事件。",
           "default": { "sound_id": "machine_max:hit_box.hit.pen.metal", "range": 64 }
+        },
+        "fmod": {
+          "allOf": [
+            {
+              "$ref": "material_fmod_sound.schema.json"
+            }
+          ],
+          "description": "为材料音效预留的 FMOD bank。"
         }
       },
       "additionalProperties": false,
-      "description": "材料命中音效配置。"
+      "description": "材料命中音效与预留 FMOD bank 配置。"
     },
     "particles": {
       "type": "object",

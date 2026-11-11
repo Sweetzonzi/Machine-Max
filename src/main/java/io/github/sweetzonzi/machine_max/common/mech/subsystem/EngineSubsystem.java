@@ -60,7 +60,9 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.fmodSound = attr.getStaticAttribute().getSounds().fmod().orElse(null);
+        this.fmodSound = attr.getStaticAttribute().getSounds().fmod()
+                .flatMap(sounds -> sounds.drive().map(path -> new FmodSoundAttr(sounds.bank(), path)))
+                .orElse(null);
         RED_LINE_SPEED = attr.staticAttribute.redLineRpm * Math.PI / 30.0;//红线转速(rad/s)
         MAX_TORQUE_SPEED = attr.staticAttribute.maxTorqueRpm * Math.PI / 30.0;//最大扭矩转速(rad/s)
         IDLE_SPEED = attr.staticAttribute.idleRpm * Math.PI / 30.0;//怠速转速(rad/s)

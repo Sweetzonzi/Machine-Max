@@ -140,10 +140,50 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "引擎 FMOD 事件组。drive 为持续工况，rpm 为怠速 0 到红线 100，load 为有效油门开度。start、stop 为单次事件，启停播放接线待实现。至少配置一项，事件不可用时走对应原版路径。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "drive": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "drive"
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "start"
+            },
+            "stop": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "stop"
+            }
+          },
+          "required": [
+            "bank"
           ],
-          "description": "可选的 FMOD 持续工况音。rpm 从怠速的 0 到红线的 100，load 为 0 到 1 的油门开度。不可用时回退到 working_sounds 或自动合成。"
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "drive"
+              ]
+            },
+            {
+              "required": [
+                "start"
+              ]
+            },
+            {
+              "required": [
+                "stop"
+              ]
+            }
+          ]
         },
         "working_sounds": {
           "type": "object",

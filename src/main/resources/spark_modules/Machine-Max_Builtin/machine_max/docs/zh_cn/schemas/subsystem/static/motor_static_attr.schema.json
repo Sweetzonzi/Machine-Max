@@ -123,10 +123,24 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "电机持续工况事件。播放接线待实现。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "drive": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "drive"
+            }
+          },
+          "required": [
+            "bank",
+            "drive"
           ],
-          "description": "电机持续工况音的可选 FMOD 事件引用，供播放接入。"
+          "additionalProperties": false
         },
         "working_sounds": {
           "type": "object",

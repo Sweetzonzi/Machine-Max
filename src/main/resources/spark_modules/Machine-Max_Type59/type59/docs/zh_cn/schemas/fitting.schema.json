@@ -163,21 +163,12 @@
           "additionalProperties": false
         },
         "sounds": {
-          "type": "object",
-          "description": "命中音效覆写。履带命中音取覆写后的材料，这里的值对履带生效。",
-          "additionalProperties": true
-        }
-      },
-      "additionalProperties": false
-    },
-    "tension": {
-      "type": "object",
-      "description": "相邻成员轮之间的单边弹簧-阻尼参数。rest 由相邻轮心距在装配 / 载入时采样，不在 JSON 中声明。",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "是否启用张力。"
+          "allOf": [
+            {
+              "$ref": "base/material_sound_override.schema.json"
+            }
+          ],
+          "description": "按字段覆写履带材料的命中音与预留 FMOD bank。"
         },
         "stiffness": {
           "type": "number",

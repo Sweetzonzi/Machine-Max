@@ -12,10 +12,13 @@ import net.minecraft.resources.ResourceLocation;
  * @param event Studio 事件路径，形如 {@code event:/vehicle/engine}
  */
 public record FmodSoundAttr(ResourceLocation bank, String event) {
+    /** Studio 事件路径的内容包入口校验，各用途的音效配置共用。 */
+    public static final Codec<String> EVENT_PATH_CODEC = Codec.STRING.validate(
+            path -> path.startsWith("event:/") && path.length() > "event:/".length()
+                    ? DataResult.success(path) : DataResult.error(() -> "FMOD 事件路径应为 event:/<名称>"));
+
     public static final Codec<FmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("bank").forGetter(FmodSoundAttr::bank),
-            Codec.STRING.validate(path -> path.startsWith("event:/") && path.length() > "event:/".length()
-                            ? DataResult.success(path) : DataResult.error(() -> "FMOD 事件路径应为 event:/<名称>"))
-                    .fieldOf("event").forGetter(FmodSoundAttr::event)
+            EVENT_PATH_CODEC.fieldOf("event").forGetter(FmodSoundAttr::event)
     ).apply(instance, FmodSoundAttr::new));
 }

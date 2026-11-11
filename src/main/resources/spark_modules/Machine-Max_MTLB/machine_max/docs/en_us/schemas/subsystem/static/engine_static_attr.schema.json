@@ -140,10 +140,50 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "Engine events. drive uses rpm from 0 at idle to 100 at redline and load for effective throttle. start and stop are one-shots with playback integration pending. Configure at least one. Unavailable events use the corresponding vanilla fallback.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "drive": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "drive"
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "start"
+            },
+            "stop": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "stop"
+            }
+          },
+          "required": [
+            "bank"
           ],
-          "description": "Optional FMOD engine loop. rpm ranges from 0 at idle to 100 at redline. load is throttle opening from 0 to 1. Falls back to working_sounds or automatic synthesis when unavailable."
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "drive"
+              ]
+            },
+            {
+              "required": [
+                "start"
+              ]
+            },
+            {
+              "required": [
+                "stop"
+              ]
+            }
+          ]
         },
         "working_sounds": {
           "type": "object",

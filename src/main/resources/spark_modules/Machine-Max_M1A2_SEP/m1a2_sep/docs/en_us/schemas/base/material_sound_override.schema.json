@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/base/material_sound_override.json",
+  "type": "object",
+  "description": "Overrides hit sounds and FMOD bank per field. Omitted fields inherit the material.",
+  "properties": {
+    "hit_un_pen": {
+      "allOf": [
+        {
+          "$ref": "sound_event.schema.json"
+        }
+      ]
+    },
+    "hit_pen": {
+      "allOf": [
+        {
+          "$ref": "sound_event.schema.json"
+        }
+      ]
+    },
+    "fmod": {
+      "allOf": [
+        {
+          "$ref": "material_fmod_sound.schema.json"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

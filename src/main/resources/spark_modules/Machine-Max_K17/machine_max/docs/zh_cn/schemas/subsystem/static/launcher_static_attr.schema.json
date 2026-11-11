@@ -91,23 +91,24 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "开火事件。机枪单发、连射和尾音由 firing 参数控制，播放接线待实现。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "fire": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "fire"
+            }
+          },
+          "required": [
+            "bank",
+            "fire"
           ],
-          "description": "实际开火的可选 FMOD 事件引用。此字段供播放接入使用。"
-        }
-      },
-      "additionalProperties": false,
-      "description": "发射器音效属性，包含基础音效、空膛击发音效和可选的 FMOD 开火事件引用。"
-    },
-    "barrel": {
-      "type": "object",
-      "properties": {
-        "durability_weight": {
-          "type": "number",
-          "minimum": 0,
-          "default": 1.0,
-          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
+          "additionalProperties": false
         },
         "decay_power": {
           "type": "number",

@@ -14,7 +14,9 @@
   "sounds": {
     "fmod": {
       "bank": "machine_max:basic_vehicle_sounds",
-      "event": "event:/tank_drive_uni"
+      "drive": "event:/Default_Vehicles/Engine/Tanks/tank_drive_uni",
+      "start": "event:/Default_Vehicles/Engine/Tanks/tank_start_uni",
+      "stop": "event:/Default_Vehicles/Engine/Tanks/tank_stop_uni"
     }
   }
 }

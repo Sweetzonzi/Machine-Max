@@ -116,13 +116,15 @@
         },
         "fmod": {
           "allOf": [
-            { "$ref": "fmod_sound.schema.json" }
+            {
+              "$ref": "material_fmod_sound.schema.json"
+            }
           ],
-          "description": "Optional FMOD ground contact event for tires using this material, reserved for rolling and slip playback."
+          "description": "FMOD bank reserved for material sounds."
         }
       },
       "additionalProperties": false,
-      "description": "Material hit and ground contact sound configuration."
+      "description": "Material hit sounds and reserved FMOD bank configuration."
     },
     "particles": {
       "type": "object",

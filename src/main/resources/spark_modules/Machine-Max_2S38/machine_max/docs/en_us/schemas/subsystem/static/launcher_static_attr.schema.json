@@ -91,10 +91,24 @@
           }
         },
         "fmod": {
-          "allOf": [
-            { "$ref": "../../base/fmod_sound.schema.json" }
+          "type": "object",
+          "description": "Firing event. Machine gun single shots, bursts and tails use firing. Playback integration pending.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "fire": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "fire"
+            }
+          },
+          "required": [
+            "bank",
+            "fire"
           ],
-          "description": "Optional FMOD firing event reference for future playback integration."
+          "additionalProperties": false
         }
       },
       "additionalProperties": false,

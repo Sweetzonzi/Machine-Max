@@ -89,19 +89,26 @@
             "sound_id": "machine_max:subsystem.launcher.dry_fire",
             "range": 16
           }
-        }
-      },
-      "additionalProperties": false,
-      "description": "发射器音效属性，包含基础音效和空膛击发音效。"
-    },
-    "barrel": {
-      "type": "object",
-      "properties": {
-        "durability_weight": {
-          "type": "number",
-          "minimum": 0,
-          "default": 1.0,
-          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
+        },
+        "fmod": {
+          "type": "object",
+          "description": "开火事件。机枪单发、连射和尾音由 firing 参数控制，播放接线待实现。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "fire": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "fire"
+            }
+          },
+          "required": [
+            "bank",
+            "fire"
+          ],
+          "additionalProperties": false
         },
         "decay_power": {
           "type": "number",

@@ -92,15 +92,62 @@
     "sounds": {
       "type": "object",
       "properties": {
-        "on_destroyed": { "allOf": [
-   { "$ref": "../../base/sound_event.schema.json" }
- ], "description": "Sound event when the subsystem is destroyed.", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
-        "on_activate": { "allOf": [
-   { "$ref": "../../base/sound_event.schema.json" }
- ], "description": "Sound event when the subsystem is activated.", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
-        "on_deactivate": { "allOf": [
-   { "$ref": "../../base/sound_event.schema.json" }
- ], "description": "Sound event when the subsystem is deactivated.", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } }
+        "on_destroyed": {
+          "allOf": [
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          ],
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "allOf": [
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          ],
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "allOf": [
+            {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "fmod": {
+          "type": "object",
+          "description": "Reload event. Playback integration pending.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "reload": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "reload"
+            }
+          },
+          "required": [
+            "bank",
+            "reload"
+          ],
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false,
       "description": "Regen loader subsystem sound configuration."

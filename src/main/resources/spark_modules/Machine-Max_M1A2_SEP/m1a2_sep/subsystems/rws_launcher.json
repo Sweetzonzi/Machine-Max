@@ -21,7 +21,7 @@
   "sounds": {
     "fmod": {
       "bank": "m1a2_sep:abrams",
-      "event": "event:/mg_127_abrams"
+      "fire": "event:/Abrams/Armament/mg_127_abrams"
     }
   }
 }
