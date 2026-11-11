@@ -30,12 +30,12 @@
 | `overheat` | `[0, 1]` | 0 | 连续，工程师确认端点行为 | 设为 1 停止枪声，触发散热与故障声。中间值的混音及故障后的恢复方式待确认 |
 | `deaf` | `[0, 1]` | 0 | 连续，工程师确认端点行为 | 设为 1 触发循环耳鸣，设为 0 自动进入尾音。中间值行为待确认 |
 | `interior` | `[0, 1]` | 0 | 连续，舱内外混音 | 0 表示舱外，1 表示舱内。SparkCore 绑定声源的播放路径按实时听者判定维护此值 |
-| `rpm` | `[0, 100]` | 0 | 连续 | 发动机现有接线将怠速映射为 0，红线映射为 100。履带与轮胎的速度换算待确认。轮胎材质纹理独立于 rpm，rpm=0 时仍可播放 |
+| `rpm` | `[0, 100]` | 0 | 连续 | 发动机将怠速映射为 0、红线映射为 100；轮胎将实际 0～1200 r/min 映射为 0～100 并钳位；普通零件接触固定为 0。履带换算待定。轮胎材质纹理独立于 rpm |
 | `load` | `[0, 1]` | 0 | 连续 | 发动机现有接线传入有效油门开度 |
 | `load_trigger` | `[0, 1]` | 0 | 只读，bank 实测 | 事件内部的负载触发参数，由 Studio 工程维护 |
 | `broken` | `[0, 1]` | 0 | 连续，命名推断 | 故障混音控制，端点含义、恢复方式与触发规则待确认 |
 | `turn_speed` | `[0, 1]` | 0 | 连续，命名推断 | 炮塔转动速度混音控制，归一化基准及角速度换算待确认 |
-| `amount` | `[0, 1]` | 0 | 连续，命名推断 | 履带／轮胎尖叫声的强度，与滑移率或滑移速度的映射待确认 |
+| `amount` | `[0, 1]` | 0 | 连续，命名推断 | 履带／轮胎尖叫声的强度；轮胎接线将实际滑动速度 3～8 m/s 映射为 0～1 并钳位。该换算是代码侧标定，履带映射待定 |
 | `surface` | `[0, 1]` | 0 | 连续，工程师确认 | 接触表面的材质纹理。0 水泥、0.2 泥土、0.4 雪、0.6 泥浆、0.8 木制、1 冰，中间值混合纹理 |
 | `contact` | `[0, 1]` | 0 | 连续，工程师确认 | surface 所控制的材质声音纹理强度，该纹理独立于 rpm |
 | `Distance` | `[0, 300]` | 0 | 自动、只读，bank 实测 | Studio 自动距离参数，由声源与听者空间状态驱动 |
@@ -60,6 +60,29 @@
 相邻档位之间的数值会混合材质纹理，例如 surface=0.3 混合泥土与雪。具体混合曲线由音效工程控制。
 
 此事件可用于滑动摩擦音。将 rpm 固定为 0，用 surface 选择摩擦表面，用 contact 控制材质纹理强度。业务接线需根据接触与摩擦状态驱动 contact，并为静止或失去接触的状态处理音效强度或实例生命周期。
+
+### 接触音效运行时接线
+
+轮胎与普通零件的地形接触由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/collision/CollisionEffectManager.java#tick` 在客户端播放。事件来自 `machine_max:basic_vehicle_sounds`，路径为 `event:/Default_Vehicles/Transmission/Tracks_and_Tires/tire_noise`；轮胎尖叫使用同目录的 `tire_screech`。接触音不读取材料的 sounds.fmod.bank，该字段供材料事件扩展预留。资源缺失、原生库不可用或实例创建失败时静音，持续活动期间每 20 tick 至多重试一次。
+
+轮胎面由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#isWheelSurface` 判定，半径通过 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#getWheelRadius` 查询，并同时要求该形状属于轮胎碰撞箱。轮胎面取零件局部 X 轴上的角速度绝对值，普通接触面的角速度与半径取 0。实际每分钟转数为 `|ω| × 30 / π`，事件 rpm 为 `clamp(实际转速 / 1200, 0, 1) × 100`。1200 r/min 是代码侧统一钳位基准，可按听感标定。
+
+滑动速度 v_slip 是接触点相对对方的速度在接触平面内的长度，包含轮面自转贡献；滚动速度 v_roll 为 `|ω| × 半径`。当前强度换算如下，速度单位均为 m/s：
+
+```text
+roll    = clamp((v_roll - 0.5) / (20 - 0.5), 0, 1)
+slip    = clamp((v_slip - 0.5) / (8 - 0.5), 0, 1)
+contact = min(max(roll, slip), 轮胎面 ? 0.35 : 1)
+amount  = clamp((v_slip - 3) / (8 - 3), 0, 1)
+```
+
+因此正常滚动由滚动项驱动纹理；锁死拖滑与普通零件刮擦可在 rpm=0 时由滑动项发声。轮胎面的材质纹理 contact 上限为 0.35，普通零件刮擦的范围为 0～1；钳位常量位于 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/collision/CollisionEffectManager.java#MAX_TIRE_CONTACT`。轮胎尖叫由实际滑动速度驱动，高滑移率本身不足以触发。强度计算位于 `CollisionEffectManager.java#CollisionSnapshot`，音高由事件参数控制，播放器使用默认音高倍率 1。
+
+surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与沾泥的红树根为 0.6，木质及斧采掘标签为 0.8，土、草、沙、羊毛及铲／锄采掘标签为 0.2，石、金属和未知方块为 0。雪覆盖优先于基底材质，分类实现见 `CollisionEffectManager.java#getSurface`。切换材质只更新同一实例的 surface，直接设置目标档位。
+
+物理线程在物理步完成后发布不可变接触快照。每个 SubPart 持有轮胎、普通接触和轮胎尖叫三个独立声源，空间位置使用各自最近的接触点，多普勒速度使用零件平动速度；轮胎自转仅参与业务参数。静止或断触时将强度及 rpm 置 0，保留实例两 tick 后请求 Studio 停止过渡。部件销毁、载具区块卸载时立即停止实例；听者的 interior 按第一人称且正在控制任一子系统的规则实时维护。生命周期实现见 `CollisionEffectManager.java#ContactSound` 与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#setInLoadedChunk`。
+
+健康履带的轮面由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/track/TrackAudio.java#tick` 管理。断带或解散的成员轮面进入本节的轮胎路径。普通接触面的持续刮擦接线涵盖原版地形和 Create 装置方块，撞击单次音效与 Master FX 接线独立。
 
 ### 机枪
 
@@ -347,7 +370,9 @@ bank ID 为 `m1a2_sep:abrams`。
 
 M1A2 发射器属性的 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，发射器运行时的 FMOD 播放接线待实现。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
 
-引擎的 sounds.fmod.start／stop、电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带、轮胎、传动、手刹／换挡、炮塔和 Master FX 的运行时触发接线也待实现。
+轮胎与普通零件的地形接触已接入 tire_noise，轮胎尖叫已接入 tire_screech，参数与生命周期见本文“接触音效运行时接线”。
+
+引擎的 sounds.fmod.start／stop、电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带、传动、手刹／换挡、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
 
 ## 可复核记录
 

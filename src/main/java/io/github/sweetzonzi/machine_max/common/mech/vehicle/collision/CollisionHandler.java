@@ -48,7 +48,7 @@ import static io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil.calcula
 
 /**
  * 碰撞处理器
- * <p>承载原先分散在 SubPart 中的碰撞物理逻辑，包括预碰撞判定、摩擦系数计算、
+ * <p>管理 SubPart 的碰撞物理逻辑，包括预碰撞判定、摩擦系数计算、
  * 方块破坏、部件伤害、实体击退等。与 CollisionEffectManager 平级协作，
  * 碰撞物理计算完成后将效果数据通过 effectManager 记录，供主线程消费。</p>
  *
@@ -566,7 +566,7 @@ public class CollisionHandler {
         //point1 恒为零件侧，其 getNormalWorld() 是外法线（零件→对方），方向相反。
         Vector3f normalOnPart = resolveNormalOnPart(manifoldPointId, point1.getIndex(), new Vector3f());
 
-        //求解前恢复系数：与是否允许破坏无关，但沿用原有作用范围（允许破坏的接触才写入方块弹性）
+        // 求解前恢复系数只在允许破坏的接触上写入方块弹性。
         boolean destructible = MMServerConfig.shouldDestroyBlocks()
                 && contactBlockDamageFactor(hitBoxIndex, hitBox) > 0
                 && blockState.getDestroySpeed(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) >= 0;
@@ -1227,8 +1227,7 @@ public class CollisionHandler {
     private void recordEffect(int hitBoxIndex, BlockState blockState,
                               Vector3f contactVel, Vector3f normal,
                               Vector3f worldContactPoint, float slipRatio) {
-        boolean isWheel = subPart.isWheel(hitBoxIndex);
-        effectManager.recordLatestEffect(isWheel, blockState, contactVel,
+        effectManager.recordLatestEffect(hitBoxIndex, blockState, contactVel,
                 normal, worldContactPoint, slipRatio);
     }
 }

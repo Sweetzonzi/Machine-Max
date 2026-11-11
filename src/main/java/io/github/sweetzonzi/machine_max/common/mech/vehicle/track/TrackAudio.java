@@ -1,7 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.track;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.collision.CollisionEffectManager;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -25,6 +26,12 @@ import java.util.UUID;
  * <p>线程：主线程。位置取本 tick 接地成员的接触点形心。</p>
  */
 public class TrackAudio implements ISoundSpreader {
+
+    /** 履带当前使用的滚动与滑移采样，传播范围为 64 格。 */
+    private static final SoundEvent TIRE_METAL = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.parse("machine_max:part.collision.terrain.tire_metal"), 64f);
+    private static final SoundEvent TIRE_EXTRA_SLIP = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.parse("machine_max:part.collision.terrain.tire_extra_slip"), 64f);
 
     /** 滚动音满刻度带速（m/s）与对应的音量。 */
     private static final float ROLL_FULL_SPEED = 20f;
@@ -77,7 +84,7 @@ public class TrackAudio implements ISoundSpreader {
 
         if (contact) {
             if (rollUuid == null) {
-                rollUuid = playSpreadingSound(CollisionEffectManager.TIRE_METAL,
+                rollUuid = playSpreadingSound(TIRE_METAL,
                         SoundSource.BLOCKS, 4, 8, true);
             }
             rollVolume = speedRatio * ROLL_MAX_VOLUME;
@@ -88,7 +95,7 @@ public class TrackAudio implements ISoundSpreader {
 
         if (contact && slip > SLIP_FLOOR) {
             if (slipUuid == null) {
-                slipUuid = playSpreadingSound(CollisionEffectManager.TIRE_EXTRA_SLIP,
+                slipUuid = playSpreadingSound(TIRE_EXTRA_SLIP,
                         SoundSource.BLOCKS, 4, 8, true);
             }
             slipVolume = slipAmount * SLIP_MAX_VOLUME;

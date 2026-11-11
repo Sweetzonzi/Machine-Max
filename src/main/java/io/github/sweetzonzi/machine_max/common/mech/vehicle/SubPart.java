@@ -599,6 +599,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     @Override
     public void postPhysicsTick() {
         super.postPhysicsTick();
+        collisionHandler.effectManager.publishLatestStates();
         if (!level.isClientSide() && (!attr.getWheelHalfWidths().isEmpty() || completedWheelSupport)) {
             if (isRemoved || wheelSupportDisabled || !body.isInWorld() || attr.getWheelHalfWidths().isEmpty()) {
                 completedWheelSupport = false;

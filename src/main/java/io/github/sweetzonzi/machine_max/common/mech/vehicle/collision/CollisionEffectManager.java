@@ -2,623 +2,382 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle.collision;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
+import jme3utilities.math.MyQuaternion;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * 碰撞效果管理器
- * <p>统一管理碰撞产生的粒子与持续性音效，实现 ISoundSpreader 以利用 SparkCore 的
- * 音速传播音效系统（包含多普勒效应、淡入淡出、交叉过渡等）。</p>
+ * 地形接触的粒子与 FMOD 持续音效。
  *
- * <p>线程安全模型：</p>
- * <ul>
- *   <li>物理线程调用 {@link #recordLatestEffect} 写入快照（volatile 保证可见性）</li>
- *   <li>主线程调用 {@link #tick} 消费快照并驱动粒子/音效</li>
- *   <li>{@link #resetLatestStates} 每物理tick清空，防止残留</li>
- * </ul>
+ * <p>物理线程在 {@link #resetLatestStates()} 后收集接触，物理步完成时调用
+ * {@link #publishLatestStates()} 发布快照。主线程 {@link #tick()} 只消费完成态，
+ * 轮胎面和普通接触面分别维护声源。快照中的向量使用不可变的 {@link Vec3}，
+ * 接触回调里的可变向量只在记录时读取。</p>
  *
- * <p>音效分为两大类：</p>
- * <ul>
- *   <li><b>轮胎类</b>（isWheel=true）：轮胎与地面的摩擦/尖叫声</li>
- *   <li><b>车体类</b>（isWheel=false）：车体刮擦地面/障碍物的声音</li>
- * </ul>
+ * <p>两类接触都使用 tire_noise；轮胎面以轮轴转速驱动 rpm，普通接触面的 rpm 为 0。
+ * surface 按接触方块选择，contact 取滚动与滑动强度的较大值，轮胎材质纹理受独立上限约束。
+ * 轮胎滑动另用 tire_screech。FMOD 不可用时静音。</p>
  *
- * <p>履带成员的轮胎类音效不在这里播放：它们只把接地与对地速度上报给
- * {@link TrackLink}，由履带合成一条滚动音与一条滑移音；断带或解散后回到本类的轮胎类路径。</p>
- *
- * <p>每类音效持有各自的 UUID 和材质标识键。当地面材质切换时，
- * 通过 transitionSound 进行交叉淡入淡出。无碰撞时通过 fadeSound 淡出。</p>
+ * <p>健康履带的轮面接触只向 {@link TrackLink} 上报，由履带维护自己的音效。
+ * 断带或解散后，成员轮面由本类播放。</p>
  */
-public class CollisionEffectManager implements ISoundSpreader {
+public class CollisionEffectManager {
+    private static final ResourceLocation CONTACT_BANK = ResourceLocation.parse("machine_max:basic_vehicle_sounds");
+    private static final String TIRE_NOISE = "event:/Default_Vehicles/Transmission/Tracks_and_Tires/tire_noise";
+    private static final String TIRE_SCREECH = "event:/Default_Vehicles/Transmission/Tracks_and_Tires/tire_screech";
 
-    // ============ 车体刮擦音效（hard_*，非轮胎） ============
-    public static final SoundEvent HARD_CONCRETE = create("part.collision.terrain.hard_concrete");
-    public static final SoundEvent HARD_DIRT = create("part.collision.terrain.hard_dirt");
-    public static final SoundEvent HARD_ICE = create("part.collision.terrain.hard_ice");
-    public static final SoundEvent HARD_METAL = create("part.collision.terrain.hard_metal");
-    public static final SoundEvent HARD_MUD = create("part.collision.terrain.hard_mud");
-    public static final SoundEvent HARD_SNOW = create("part.collision.terrain.hard_snow");
-    public static final SoundEvent HARD_WOOD = create("part.collision.terrain.hard_wood");
-
-    // ============ 轮胎摩擦音效（tire_*） ============
-    public static final SoundEvent TIRE_CONCRETE = create("part.collision.terrain.tire_concrete");
-    public static final SoundEvent TIRE_DIRT = create("part.collision.terrain.tire_dirt");
-    public static final SoundEvent TIRE_GRASS = create("part.collision.terrain.tire_grass");
-    public static final SoundEvent TIRE_METAL = create("part.collision.terrain.tire_metal");
-    public static final SoundEvent TIRE_SAND = create("part.collision.terrain.tire_sand");
-    public static final SoundEvent TIRE_SANDSTONE = create("part.collision.terrain.tire_sandstone");
-    public static final SoundEvent TIRE_SNOW = create("part.collision.terrain.tire_snow");
-    public static final SoundEvent TIRE_WOOD = create("part.collision.terrain.tire_wood");
-    public static final SoundEvent TIRE_EXTRA_SLIP = create("part.collision.terrain.tire_extra_slip");
-    public static final SoundEvent TIRE_EXTRA_WET = create("part.collision.terrain.tire_extra_wet");
-
-    private static SoundEvent create(String path) {
-        return SoundEvent.createFixedRangeEvent(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path), 64f
-        );
-    }
+    /** 轮胎实际转速 1200 r/min 对应事件 rpm=100，超过此值钳位。 */
+    private static final float FULL_WHEEL_RPM = 1200f;
+    /** 速度均为 m/s：低于起声阈值静音，滚动与滑动强度分别归一化到 0～1。 */
+    private static final float CONTACT_FLOOR = 0.5f;
+    private static final float FULL_ROLL_SPEED = 20f;
+    private static final float FULL_SLIP_SPEED = 8f;
+    /** 轮胎材质纹理的 contact 上限；普通零件刮擦使用事件的完整强度范围。 */
+    private static final float MAX_TIRE_CONTACT = 0.35f;
+    /** 轮胎尖叫须有实际滑动，低速转向时的高滑移率不足以触发。 */
+    private static final float SCREECH_FLOOR = 3f;
+    /** 接触短暂中断保留两 tick；资源不可用时每秒至多尝试播放一次。 */
+    private static final int QUIET_GRACE_TICKS = 2;
+    private static final int RETRY_TICKS = 20;
 
     /**
-     * 碰撞快照
-     * <p>物理线程记录的不可变碰撞数据，每 tick 每类（wheel/body）只保留最新一次。</p>
+     * 一个接触面的跨线程完成态，速度单位为 m/s，角速度单位为 rad/s。
      *
-     * @param isWheel           碰撞部位是否为轮胎
-     * @param blockState        碰撞的方块状态
-     * @param contactVel        接触点相对速度
-     * @param normal            碰撞法线
-     * @param worldContactPoint 世界坐标接触点
-     * @param slipRatio         滑移率（仅轮胎有意义）
+     * @param blockState        被接触的方块状态
+     * @param contactVel        接触点相对对方的世界速度，包含轮面转动贡献
+     * @param worldContactPoint 世界接触位置
+     * @param sourceVelocity    零件平动速度，作为接触区域的多普勒速度
+     * @param wheelAngularSpeed 轮轴角速度的绝对值；普通接触面为 0
+     * @param wheelRadius       轮胎面半径；普通接触面为 0
+     * @param slipSpeed         接触点相对速度在接触平面内的长度
+     * @param slipRatio         轮胎滑移率，用于漂移烟雾
      */
     public record CollisionSnapshot(
-            boolean isWheel,
             BlockState blockState,
-            Vector3f contactVel,
-            Vector3f normal,
-            Vector3f worldContactPoint,
+            Vec3 contactVel,
+            Vec3 worldContactPoint,
+            Vec3 sourceVelocity,
+            float wheelAngularSpeed,
+            float wheelRadius,
+            float slipSpeed,
             float slipRatio
     ) {
+        /** 轮面绕轮轴旋转产生的线速度，普通接触面为 0。 */
+        float rollingSpeed() {
+            return wheelAngularSpeed * wheelRadius;
+        }
+
+        /** 实际转速按统一上限归一化至事件的 0～100。 */
+        float rpm() {
+            return Math.clamp(wheelAngularSpeed * (30f / (float) Math.PI) / FULL_WHEEL_RPM, 0f, 1f) * 100f;
+        }
+
+        /** 滚动与滑动共享材质纹理，取较大强度；轮胎面按独立上限钳位。 */
+        float contact() {
+            float roll = Math.clamp((rollingSpeed() - CONTACT_FLOOR) / (FULL_ROLL_SPEED - CONTACT_FLOOR), 0f, 1f);
+            float slip = Math.clamp((slipSpeed - CONTACT_FLOOR) / (FULL_SLIP_SPEED - CONTACT_FLOOR), 0f, 1f);
+            float strength = Math.max(roll, slip);
+            return wheelRadius > 0f ? Math.min(strength, MAX_TIRE_CONTACT) : strength;
+        }
+
+        /** 尖叫强度由实际滑动速度归一化，低于阈值为 0。 */
+        float screechAmount() {
+            return Math.clamp((slipSpeed - SCREECH_FLOOR) / (FULL_SLIP_SPEED - SCREECH_FLOOR), 0f, 1f);
+        }
     }
 
     private final SubPart subPart;
+    private final ContactSound wheelSound = new ContactSound(TIRE_NOISE);
+    private final ContactSound bodySound = new ContactSound(TIRE_NOISE);
+    private final ContactSound slipSound = new ContactSound(TIRE_SCREECH);
 
-    //物理线程写入的最新快照（每类各一），主线程消费后清空
+    // 本步收集槽只由物理线程写；发布槽只在物理步完成时写，主线程不清空它们。
+    private CollisionSnapshot wheelSnapshotThisStep;
+    private CollisionSnapshot bodySnapshotThisStep;
     private volatile CollisionSnapshot latestWheelSnapshot;
     private volatile CollisionSnapshot latestBodySnapshot;
-
-    //持续性音效的UUID与地面材质标识，用于检测切换和淡入淡出
-    private UUID activeWheelSoundUuid;
-    private UUID activeBodySoundUuid;
-    private UUID activeSlipSoundUuid;
-    private String activeWheelBlockKey;
-    private String activeBodyBlockKey;
-    private float currentWheelVolume;
-    private float currentBodyVolume;
-    private float currentSlipVolume;
-    private float currentWheelPitch = 1f;
-    private float currentBodyPitch = 1f;
-    private float currentSlipPitch = 1f;
+    private CollisionSnapshot consumedWheelSnapshot;
+    private CollisionSnapshot consumedBodySnapshot;
 
     public CollisionEffectManager(SubPart subPart) {
         this.subPart = subPart;
     }
 
-    //向量缓存
-    private final Vector3f tmpBodyTangential = new Vector3f();
-    private final Vector3f tmpSlip = new Vector3f();
-
-    /**
-     * 清空上帧累积的快照，由 CollisionHandler 在物理 tick 开始时调用。
-     * 避免上一帧的残留数据在本帧无新碰撞时仍被消费。
-     */
+    /** 物理线程：开始收集本物理步的接触，不影响主线程可见的完成态。 */
     public void resetLatestStates() {
-        latestWheelSnapshot = null;
-        latestBodySnapshot = null;
+        wheelSnapshotThisStep = null;
+        bodySnapshotThisStep = null;
+    }
+
+    /** 物理线程：发布本步两类接触的完成态，空值表示本步没有这类接触。 */
+    public void publishLatestStates() {
+        latestWheelSnapshot = wheelSnapshotThisStep;
+        latestBodySnapshot = bodySnapshotThisStep;
     }
 
     /**
-     * 记录最新一次碰撞效果快照。
-     * 调用于物理线程（CollisionHandler 各碰撞处理方法中），
-     * 每 tick 每类只保留最后一次接触的数据。
+     * 物理线程：冻结一次接触，轮胎面和普通接触面各保留本步最后一次记录。
+     * 轮轴沿零件局部 X 轴，与 {@link CollisionHandler} 的轮面摩擦计算口径一致。
      *
-     * @param isWheel           碰撞部位是否为轮胎
-     * @param blockState        碰撞的方块状态
-     * @param contactVel        接触点相对速度
-     * @param normal            碰撞法线
-     * @param worldContactPoint 世界坐标接触点
-     * @param slipRatio         滑移率（轮胎滑移时有效）
+     * @param hitBoxIndex 接触子形状索引，供 SubPart 查询轮面与半径
+     * @param blockState 接触方块
+     * @param contactVel 接触点相对速度
+     * @param normal 接触平面法线
+     * @param worldContactPoint 世界接触点
+     * @param slipRatio 轮胎滑移率
      */
-    public void recordLatestEffect(boolean isWheel, BlockState blockState,
+    public void recordLatestEffect(int hitBoxIndex, BlockState blockState,
                                    Vector3f contactVel, Vector3f normal,
                                    Vector3f worldContactPoint, float slipRatio) {
-        var snapshot = new CollisionSnapshot(isWheel, blockState, contactVel, normal, worldContactPoint, slipRatio);
-        if (isWheel) {
-            latestWheelSnapshot = snapshot;
-        } else {
-            latestBodySnapshot = snapshot;
+        if (!subPart.getLevel().isClientSide()) return;
+        boolean wheelSurface = subPart.isWheel(hitBoxIndex) && subPart.isWheelSurface(hitBoxIndex);
+        float radius = wheelSurface ? subPart.getWheelRadius(hitBoxIndex) : 0f;
+        float omega = 0f;
+        if (wheelSurface) {
+            Vector3f axis = new Vector3f();
+            MyQuaternion.rotate(subPart.body.getPhysicsRotation(null), Vector3f.UNIT_X, axis);
+            omega = Math.abs(subPart.body.getAngularVelocity(null).dot(axis));
         }
+        float normalSpeed = contactVel.dot(normal);
+        float slipSpeed = contactVel.subtract(normal.mult(normalSpeed)).length();
+        Vec3 velocity = copy(contactVel);
+        Vec3 point = copy(worldContactPoint);
+        Vec3 sourceVelocity = copy(subPart.body.getLinearVelocity(null));
+        // 接触来自 native 边界，非有限值不能进入粒子或原生音频参数。
+        if (!finite(velocity) || !finite(point) || !finite(sourceVelocity)
+                || !Float.isFinite(omega) || !Float.isFinite(radius) || !Float.isFinite(slipSpeed)) return;
+        var snapshot = new CollisionSnapshot(blockState, velocity, point, sourceVelocity,
+                omega, radius, slipSpeed, Float.isFinite(slipRatio) ? slipRatio : 0f);
+        if (wheelSurface) wheelSnapshotThisStep = snapshot;
+        else bodySnapshotThisStep = snapshot;
     }
 
-    /**
-     * 轮胎漂移烟雾粒子。
-     * <p>滑移率超过0.4时每tick生成，数量与接触速度成正比。
-     * 粒子水平速度取接触速度的50%，垂直速度恒定上升模拟热烟。
-     */
-    private void spawnDriftSmoke(Level level, CollisionSnapshot snap) {
-        Vector3f worldPos = snap.worldContactPoint();
-        Vector3f contactVel = snap.contactVel();
-        float speed = contactVel.length();
-        float slipRatio = snap.slipRatio();
-
-        //每 tick 粒子数量 = f(速度, 滑移率)，上限 8 个防刷
-        float normalizedSlip = (slipRatio - 0.4f) / 0.6f;
-        int count = (int) Math.ceil(speed * 0.3f * normalizedSlip);
-        count = Math.min(count, 4);
-
-        for (int i = 0; i < count; i++) {
-            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                    worldPos.x + (Math.random() - 0.5) * 0.6,
-                    worldPos.y + 0.05,
-                    worldPos.z + (Math.random() - 0.5) * 0.6,
-                    (float)(contactVel.x * 0.5f * (0.8 + 0.4 * Math.random()))*0.05f,
-                    (float) (0.1 + 0.2 * Math.random())*0.05f,
-                    (float)(contactVel.z * 0.5f* (0.8 + 0.4 * Math.random()))*0.05f
-            );
-        }
-    }
-
-    /**
-     * 主线程 tick 入口，由 SubPart.postTick() 调用。
-     * <p>执行流程：</p>
-     * <ol>
-     *   <li>取走最新快照并清空（双缓冲保证线程安全）</li>
-     *   <li>轮胎类/车体类各自处理：有碰撞则生成粒子并更新音效，无碰撞则淡出音效</li>
-     * </ol>
-     */
+    /** 主线程：消费完成态、生成粒子并更新三个持续声源。 */
     public void tick() {
-        Level level = subPart.getLevel();
-        if (!level.isClientSide()) return;
+        if (!subPart.getLevel().isClientSide()) return;
+        CollisionSnapshot wheel = latestWheelSnapshot;
+        CollisionSnapshot body = latestBodySnapshot;
+        // 同一份物理完成态只消费一次，物理步暂停时由声源宽限计时释放循环音。
+        CollisionSnapshot freshWheel = wheel == consumedWheelSnapshot ? null : wheel;
+        CollisionSnapshot freshBody = body == consumedBodySnapshot ? null : body;
+        consumedWheelSnapshot = wheel;
+        consumedBodySnapshot = body;
 
-        //取走最新快照，后续物理线程写入的数据留到下一 tick 消费
-        CollisionSnapshot wheelSnap = latestWheelSnapshot;
-        CollisionSnapshot bodySnap = latestBodySnapshot;
-        latestWheelSnapshot = null;
-        latestBodySnapshot = null;
-
-        if (wheelSnap != null) {
-            spawnCollisionParticles(wheelSnap);
-
-            // 漂移音效同样需要有效速度守卫：静止时不应维持循环音效
-            float effectiveSpeed = getEffectiveSpeed(wheelSnap);
-            boolean slipping = effectiveSpeed >= 0.5f && wheelSnap.slipRatio() > 0.4f;
-            if (isTrackOwned()) {
-                // 履带成员不自带轮面音：只上报接地与对地速度，由履带合成一条音效
-                subPart.trackLink.reportWheelContact(horizontalSpeed(), wheelSnap.worldContactPoint());
-                fadeOutWheelSoundIfNeeded();
-                fadeOutSlipSoundIfNeeded();
-            } else {
-                updateContinuousSound(wheelSnap, true);
-                if (slipping) updateSlipSound(wheelSnap);
-                else fadeOutSlipSoundIfNeeded();
+        if (freshWheel != null) {
+            spawnCollisionParticles(freshWheel);
+            if (freshWheel.slipSpeed() >= CONTACT_FLOOR && freshWheel.slipRatio() > 0.4f) {
+                spawnDriftSmoke(freshWheel);
             }
-            if (slipping) spawnDriftSmoke(level, wheelSnap);
+        }
+        if (freshBody != null) spawnCollisionParticles(freshBody);
+
+        if (isTrackOwned()) {
+            if (freshWheel != null) {
+                Vec3 velocity = freshWheel.sourceVelocity();
+                subPart.trackLink.reportWheelContact((float) velocity.horizontalDistance(), toVector(freshWheel.worldContactPoint()));
+            }
+            wheelSound.stop();
+            slipSound.stop();
         } else {
-            fadeOutWheelSoundIfNeeded();
-            fadeOutSlipSoundIfNeeded();
+            wheelSound.tick(freshWheel);
+            slipSound.tick(freshWheel);
         }
-
-        if (bodySnap != null) {
-            spawnCollisionParticles(bodySnap);
-            updateContinuousSound(bodySnap, false);
-        } else {
-            fadeOutBodySoundIfNeeded();
-        }
+        bodySound.tick(freshBody);
     }
 
-    /**
-     * 根据碰撞快照生成一次性粒子效果。
-     * <p>目前保留原有的泥土/沙地/雪地飞溅逻辑。后续可在此扩展
-     * 轮胎漂移烟雾、火花刮擦等效果。</p>
-     */
-    private void spawnCollisionParticles(CollisionSnapshot snap) {
-        Level level = subPart.getLevel();
-        if (!level.isClientSide()) return;
-
-        BlockState blockState = snap.blockState();
-        Vector3f contactVel = snap.contactVel();
-        Vector3f worldPos = snap.worldContactPoint();
-        float speed = contactVel.length();
-
-        //速度足够或随机触发时生成飞溅粒子
-        if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
-            //仅对泥土/沙地/雪地生成方块碎屑
-            if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
-                if (Math.random() < Math.max(1f, 0.05f * speed)) {
-                    level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
-                            worldPos.x, worldPos.y + 0.01f, worldPos.z,
-                            contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                            contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                            contactVel.z * (1f + 0.2f * (Math.random() - 0.5f))
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * 更新持续性摩擦/刮擦音效。
-     * <p>根据地面材质切换决策：</p>
-     * <ul>
-     *   <li>首次碰撞 → 使用 playSpreadingSound 启动新音效，指定淡入淡出时长</li>
-     *   <li>材质更换 → 使用 transitionSound 交叉淡入淡出至新音效</li>
-     *   <li>材质不变 → 仅调整音量，不重启音效</li>
-     * </ul>
-     */
-    private void updateContinuousSound(CollisionSnapshot snap, boolean isWheel) {
-        if (!getLevel().isClientSide()) return;
-
-        UUID currentUuid = isWheel ? activeWheelSoundUuid : activeBodySoundUuid;
-
-        // 静止或极低速时不应维持循环碰撞音效，主动淡出以释放OpenAL通道
-        float effectiveSpeed = getEffectiveSpeed(snap);
-        if (effectiveSpeed < 0.5f) {
-            if (currentUuid != null) {
-                if (isWheel) fadeOutWheelSoundIfNeeded();
-                else fadeOutBodySoundIfNeeded();
-            }
-            return;
-        }
-
-        //以方块注册名作为材质标识键，检测地面是否切换
-        String blockKey = snap.blockState().getBlock().getDescriptionId();
-        SoundEvent sound = getFrictionSound(isWheel, snap.blockState());
-
-        String currentKey = isWheel ? activeWheelBlockKey : activeBodyBlockKey;
-
-        boolean materialChanged = !blockKey.equals(currentKey);
-
-        if (currentUuid == null) {
-            //首次播放，淡入4tick，后续准备淡出8tick，循环播放
-            UUID uuid = playSpreadingSound(sound, SoundSource.BLOCKS, 4, 8, true);
-            setActiveSoundState(isWheel, uuid, blockKey);
-        } else if (materialChanged) {
-            //材质切换，旧音效淡出8tick + 新音效淡入4tick
-            UUID uuid = transitionSound(currentUuid, sound, SoundSource.BLOCKS, 4, 8, true);
-            setActiveSoundState(isWheel, uuid, blockKey);
-        }
-
-        updateSoundLevel(isWheel, snap);
-    }
-
-    /**
-     * 计算碰撞的有效接触速度（m/s），综合考虑滑移与碾压。
-     * <p>用于判断是否需要播放/维持碰撞音效：低于0.5m/s视为静止，不需音效。</p>
-     *
-     * @param snap 碰撞快照
-     * @return 有效接触速度，取滑移速度与零件切向速度的较大值
-     */
-    private float getEffectiveSpeed(CollisionSnapshot snap) {
-        Vector3f normal = snap.normal();
-        Vector3f contactVel = snap.contactVel();
-
-        // 接触平面上的滑移速度 = contactVel 减去法线分量
-        float normalContactVel = contactVel.dot(normal);
-        tmpSlip.set(contactVel).subtractLocal(normal.mult(normalContactVel));
-        float slipSpeed = tmpSlip.length();
-
-        // 零件本体相对接触平面的切向速度
-        Vector3f bodyVel = subPart.getLinearVelocity();
-        float normalBodyVel = bodyVel.dot(normal);
-        tmpBodyTangential.set(bodyVel).subtractLocal(normal.mult(normalBodyVel));
-        float bodyTangentialSpeed = tmpBodyTangential.length() * 0.1f;
-
-        return Math.max(slipSpeed, bodyTangentialSpeed);
-    }
-
-    /**
-     * 本零件的轮面音是否由履带接管。
-     *
-     * <p>健康履带的轮面音由 {@link TrackLink} 合成一条；断带、解散或没有履带的零件
-     * 仍按一般轮子各自放音。</p>
-     */
+    /** 健康履带的轮面音由 TrackLink 管理，普通刮擦由本管理器处理。 */
     private boolean isTrackOwned() {
         TrackLink track = subPart.trackLink;
         return track != null && !track.isDisposed() && !track.isBroken();
     }
 
-    /**
-     * 零件相对地面的水平速度（m/s），由履带与带速比较得出滑移。
-     *
-     * <p>取水平分量而非投影到前向：转弯时内外侧轮子的地速本来就不同，横摆率
-     * 又会给轮子额外的横向分量，投影会漏掉后者。</p>
-     */
-    private float horizontalSpeed() {
-        Vector3f velocity = subPart.getLinearVelocity();
-        return (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-    }
-
-    /**
-     * 根据碰撞速度与零件自身速度更新音效音量和音高。
-     * <p>综合考虑两种速度来源，确保碾压声和摩擦声都能驱动音效：</p>
-     * <ol>
-     *   <li>零件本体相对接触平面的切向速度（反映碾压/刮擦强度）</li>
-     *   <li>接触点相对速度在接触平面上的投影（反映摩擦滑动强度）</li>
-     *   <li>取两者较大值映射到 0~1 音量，0.8~1.2 音高</li>
-     * </ol>
-     */
-    private void updateSoundLevel(boolean isWheel, CollisionSnapshot snap) {
-        float effectiveSpeed = getEffectiveSpeed(snap);
-
-        // 音量：0~20 m/s 映射到 0~0.8，低于 0.5 m/s 时静音
-        float volume = effectiveSpeed < 0.5f ? 0f : Math.clamp(effectiveSpeed / 20f, 0f, 1f) * 0.5f;
-        // 音高：0~20 m/s 映射到 0.8~1.2
-        float pitch = 0.8f + 0.4f * Math.clamp(effectiveSpeed / 20f, 0f, 1f);
-
-        if (isWheel) {
-            currentWheelVolume = volume;
-            currentWheelPitch = pitch;
-        } else {
-            currentBodyVolume = volume;
-            currentBodyPitch = pitch;
-        }
-    }
-
-    /**
-     * 本 tick 无轮胎类碰撞，淡出并清理轮胎音效状态。
-     */
-    private void fadeOutWheelSoundIfNeeded() {
-        if (activeWheelSoundUuid != null) {
-            fadeSound(activeWheelSoundUuid);
-            activeWheelSoundUuid = null;
-            activeWheelBlockKey = null;
-            currentWheelVolume = 0f;
-            currentWheelPitch = 1f;
-        }
-    }
-
-    /**
-     * 本 tick 无车体类碰撞，淡出并清理车体音效状态。
-     */
-    private void fadeOutBodySoundIfNeeded() {
-        if (activeBodySoundUuid != null) {
-            fadeSound(activeBodySoundUuid);
-            activeBodySoundUuid = null;
-            activeBodyBlockKey = null;
-            currentBodyVolume = 0f;
-            currentBodyPitch = 1f;
-        }
-    }
-
-    private void setActiveSoundState(boolean isWheel, UUID uuid, String blockKey) {
-        if (isWheel) {
-            activeWheelSoundUuid = uuid;
-            activeWheelBlockKey = blockKey;
-        } else {
-            activeBodySoundUuid = uuid;
-            activeBodyBlockKey = blockKey;
-        }
-    }
-
-    /**
-     * 更新轮胎额外漂移音效（TIRE_EXTRA_SLIP）。
-     * 仅在滑移率超过阈值时调用，作为主轮胎音效的叠加层。
-     */
-    private void updateSlipSound(CollisionSnapshot snap) {
-        if (activeSlipSoundUuid == null) {
-            UUID uuid = playSpreadingSound(TIRE_EXTRA_SLIP, SoundSource.BLOCKS, 4, 8, true);
-            activeSlipSoundUuid = uuid;
-        }
-        updateSlipSoundLevel(snap);
-    }
-
-    /**
-     * 根据滑移程度更新漂移音效的音量和音高。
-     */
-    private void updateSlipSoundLevel(CollisionSnapshot snap) {
-        Vector3f normal = snap.normal();
-        Vector3f contactVel = snap.contactVel();
-        //接触平面上的滑移速度 = contactVel 减去法线分量
-        float normalContactVel = contactVel.dot(normal);
-        tmpSlip.set(contactVel).subtractLocal(normal.mult(normalContactVel));
-        float slipSpeed = tmpSlip.length();
-        float slipRatio = snap.slipRatio();
-        //滑移率 0.3~1.0 映射到音量 0~1，仅一定接触速度时才有效
-        float volume = Math.clamp((slipRatio - 0.3f) / 0.6f, 0f, 1f) * Math.clamp(slipSpeed - 3f, 0f, 1f) * 0.3f;
-        //滑移率越高音调越高
-        float pitch = 0.8f + 0.6f * Math.clamp((slipRatio - 0.3f) / 0.6f, 0f, 1f);
-        currentSlipVolume = volume;
-        currentSlipPitch = pitch;
-    }
-
-    /**
-     * 本 tick 无滑移触发或轮胎未碰撞，淡出并清理漂移音效状态。
-     */
-    private void fadeOutSlipSoundIfNeeded() {
-        if (activeSlipSoundUuid != null) {
-            fadeSound(activeSlipSoundUuid);
-            activeSlipSoundUuid = null;
-            currentSlipVolume = 0f;
-            currentSlipPitch = 1f;
-        }
-    }
-
-    /**
-     * 停止所有正在播放的音效（部件被销毁时调用）。
-     */
+    /** 主线程：销毁或卸载区块时立即释放接触声源，恢复 tick 后允许重新播放。 */
     public void stopAll() {
-        if (!getLevel().isClientSide()) return;
-        fadeOutWheelSoundIfNeeded();
-        fadeOutBodySoundIfNeeded();
-        fadeOutSlipSoundIfNeeded();
-    }
-
-    /** 持续摩擦音属于发生碰撞的子部件所在世界。 */
-    @NotNull
-    @Override
-    public Level getLevel() {
-        return subPart.getLevel();
+        if (!subPart.getLevel().isClientSide()) return;
+        wheelSound.stop();
+        bodySound.stop();
+        slipSound.stop();
+        consumedWheelSnapshot = latestWheelSnapshot;
+        consumedBodySnapshot = latestBodySnapshot;
     }
 
     /**
-     * 判断方块是否被雪覆盖（如覆雪草方块、覆雪菌丝等）。
+     * 将接触方块归入 Studio 的六种材质纹理，返回值可直接写入 surface。
+     * 雪覆盖优先；泥浆按泥方块识别；木质按标签和斧采掘标签识别；
+     * 土、草、沙、羊毛采用泥土纹理，石、金属及未知方块采用水泥纹理。
      */
-    private static boolean isSnowCovered(BlockState state) {
-        return state.hasProperty(BlockStateProperties.SNOWY) && state.getValue(BlockStateProperties.SNOWY);
-    }
-
-    /**
-     * 根据方块状态获取车体刮擦音效。
-     * <p>匹配顺序：</p>
-     * <ol>
-     *   <li>雪（含覆雪方块）→ HARD_SNOW</li>
-     *   <li>特殊识别（金属→HARD_METAL，泥→HARD_MUD）</li>
-     *   <li>BlockTags 匹配（DIRT, SAND, ICE, WOOL）</li>
-     *   <li>挖掘工具回退（镐→混凝土，斧→木，铲/锄→泥土）</li>
-     * </ol>
-     */
-    @NotNull
-    public static SoundEvent getBodyScrapeSound(BlockState state) {
-        // 1. 雪（含覆雪草方块）
-        if (state.is(BlockTags.SNOW) || isSnowCovered(state)) return HARD_SNOW;
-
-        String id = state.getBlock().getDescriptionId().toLowerCase();
-
-        // 2. 特殊识别：金属和泥
-        if (id.contains("metal") || id.contains("iron_block") || id.contains("gold_block")
-                || id.contains("copper_block") || id.contains("netherite")) return HARD_METAL;
-        if (id.contains("mud")) return HARD_MUD;
-
-        // 3. BlockTags 匹配
-        if (state.is(BlockTags.DIRT)) return HARD_DIRT;
-        if (state.is(BlockTags.SAND)) return HARD_DIRT;
-        if (state.is(BlockTags.ICE)) return HARD_ICE;
-        if (state.is(BlockTags.WOOL)) return HARD_MUD;
-
-        // 4. 挖掘工具回退
-        if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return HARD_CONCRETE;
-        if (state.is(BlockTags.MINEABLE_WITH_AXE)) return HARD_WOOD;
-        if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return HARD_DIRT;
-        if (state.is(BlockTags.MINEABLE_WITH_HOE)) return HARD_DIRT;
-
-        return HARD_CONCRETE;
-    }
-
-    /**
-     * 根据方块状态获取轮胎摩擦音效。
-     * <p>匹配顺序：</p>
-     * <ol>
-     *   <li>雪（含覆雪方块）→ TIRE_SNOW</li>
-     *   <li>草方块/菌丝/灰化土→ TIRE_GRASS</li>
-     *   <li>砂岩→ TIRE_SANDSTONE，沙→ TIRE_SAND</li>
-     *   <li>金属→ TIRE_METAL</li>
-     *   <li>BlockTags 匹配</li>
-     *   <li>挖掘工具回退</li>
-     * </ol>
-     */
-    @NotNull
-    public static SoundEvent getTireRollSound(BlockState state) {
-        // 1. 雪（含覆雪草方块）
-        if (state.is(BlockTags.SNOW) || isSnowCovered(state)) return TIRE_SNOW;
-
-        String id = state.getBlock().getDescriptionId().toLowerCase();
-
-        // 2. 草/菌丝/灰化土（在 DIRT tag 匹配之前优先）
-        if (id.contains("grass") || id.contains("mycelium") || id.contains("podzol")) return TIRE_GRASS;
-
-        // 3. 沙/砂岩（在 pickaxe 回退之前匹配）
-        if (id.contains("sandstone")) return TIRE_SANDSTONE;
-        if (id.contains("sand")) return TIRE_SAND;
-
-        // 4. 金属（在 pickaxe 回退之前匹配）
-        if (id.contains("metal") || id.contains("iron_block") || id.contains("gold_block")
-                || id.contains("copper_block") || id.contains("netherite")) return TIRE_METAL;
-
-        // 5. BlockTags 匹配
-        if (state.is(BlockTags.SAND)) return TIRE_SAND;
-        if (state.is(BlockTags.DIRT)) return TIRE_DIRT;
-        if (state.is(BlockTags.ICE)) return TIRE_CONCRETE;
-
-        // 6. 挖掘工具回退
-        if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return TIRE_CONCRETE;
-        if (state.is(BlockTags.MINEABLE_WITH_AXE)) return TIRE_WOOD;
-        if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return TIRE_DIRT;
-        if (state.is(BlockTags.MINEABLE_WITH_HOE)) return TIRE_DIRT;
-
-        return TIRE_CONCRETE;
-    }
-
-    /**
-     * 根据轮胎/车体和碰撞方块查询对应的持续性摩擦音效。
-     *
-     * <p>轮面音按地面材质选；履带成员的轮面音不经过这里，见 {@link #isTrackOwned()}。</p>
-     */
-    @NotNull
-    private SoundEvent getFrictionSound(boolean isWheel, BlockState blockState) {
-        return isWheel ? getTireRollSound(blockState) : getBodyScrapeSound(blockState);
-    }
-
-    /**
-     * 返回声源的实时位置。
-     * 优先使用碰撞接触点，回退至 SubPart 位置。
-     * 区别对待 wheel/body 两类音效的 UUID。
-     */
-    @NotNull
-    @Override
-    public Vec3 getPosition(UUID uuid) {
-        if (uuid.equals(activeWheelSoundUuid) || uuid.equals(activeSlipSoundUuid)) {
-            var snap = latestWheelSnapshot;
-            if (snap != null && snap.worldContactPoint() != null)
-                return new Vec3(snap.worldContactPoint().x, snap.worldContactPoint().y, snap.worldContactPoint().z);
-        } else if (uuid.equals(activeBodySoundUuid)) {
-            var snap = latestBodySnapshot;
-            if (snap != null && snap.worldContactPoint() != null)
-                return new Vec3(snap.worldContactPoint().x, snap.worldContactPoint().y, snap.worldContactPoint().z);
-        }
-        Vector3f pos = subPart.getPosition();
-        return new Vec3(pos.x, pos.y, pos.z);
-    }
-
-    /**
-     * 返回声源的实时速度（用于多普勒效应计算）。
-     */
-    @NotNull
-    @Override
-    public Vec3 getSpeed(UUID uuid) {
-        return Vec3.ZERO;
-    }
-
-    /**
-     * 返回声源的实时音量，由 updateSoundLevel 每 tick 根据碰撞速度更新。
-     */
-    @Override
-    public float getVolume(UUID uuid) {
-        if (uuid.equals(activeWheelSoundUuid)) return currentWheelVolume;
-        if (uuid.equals(activeBodySoundUuid)) return currentBodyVolume;
-        if (uuid.equals(activeSlipSoundUuid)) return currentSlipVolume;
+    public static float getSurface(BlockState state) {
+        if (state.is(BlockTags.SNOW) || state.hasProperty(BlockStateProperties.SNOWY)
+                && state.getValue(BlockStateProperties.SNOWY)) return 0.4f;
+        if (state.is(BlockTags.ICE)) return 1f;
+        if (state.is(Blocks.MUD) || state.is(Blocks.MUDDY_MANGROVE_ROOTS)) return 0.6f;
+        if (state.is(BlockTags.LOGS) || state.is(BlockTags.PLANKS) || state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.8f;
+        if (state.is(BlockTags.DIRT) || state.is(BlockTags.SAND) || state.is(BlockTags.WOOL)
+                || state.is(BlockTags.MINEABLE_WITH_SHOVEL) || state.is(BlockTags.MINEABLE_WITH_HOE)) return 0.2f;
         return 0f;
     }
 
-    /**
-     * 返回声源的实时音高，由 updateSoundLevel 每 tick 根据有效速度动态计算。
-     */
-    @Override
-    public float getPitch(UUID uuid) {
-        if (uuid.equals(activeWheelSoundUuid)) return currentWheelPitch;
-        if (uuid.equals(activeBodySoundUuid)) return currentBodyPitch;
-        if (uuid.equals(activeSlipSoundUuid)) return currentSlipPitch;
-        return 1.0f;
+    /** 每个持续声源独立保存位置、速度和 UUID，播放首帧即可查询空间状态。 */
+    private final class ContactSound implements ISoundSpreader {
+        private final String event;
+        private UUID voice;
+        private UUID fadingVoice;
+        private CollisionSnapshot snapshot;
+        private int quietTicks;
+        private int retryTicks;
+
+        private ContactSound(String event) {
+            this.event = event;
+        }
+
+        /** 主线程：持续接触更新同一实例，短暂中断保留实例，资源失效后限频重试。 */
+        private void tick(@Nullable CollisionSnapshot contact) {
+            if (retryTicks > 0) retryTicks--;
+            boolean screech = event.equals(TIRE_SCREECH);
+            float strength = contact == null ? 0f : screech ? contact.screechAmount() : contact.contact();
+            if (contact != null) snapshot = contact;
+            if (strength <= 0f) {
+                if (++quietTicks > QUIET_GRACE_TICKS) fade();
+                else if (voice != null) {
+                    // 断触时立即压低参数；宽限只保留实例，防止接缝导致反复创建。
+                    updateParameters(screech ? Map.of("amount", 0f) : Map.of("rpm", 0f, "contact", 0f));
+                }
+                return;
+            }
+            quietTicks = 0;
+            Map<String, Float> parameters = screech ? Map.of("amount", strength)
+                    : Map.of("rpm", contact.rpm(), "contact", strength, "surface", getSurface(contact.blockState()));
+            if (voice == null) {
+                if (retryTicks > 0) return;
+                voice = tryPlayFmodSound(CONTACT_BANK, event, SoundSource.BLOCKS, parameters);
+                if (voice == null) retryTicks = RETRY_TICKS;
+            } else {
+                updateParameters(parameters);
+            }
+        }
+
+        /** 主线程：任一参数更新失败即释放失效实例，下一次播放按重试间隔进行。 */
+        private void updateParameters(Map<String, Float> parameters) {
+            for (var parameter : parameters.entrySet()) {
+                if (!setFmodParameter(voice, parameter.getKey(), parameter.getValue())) {
+                    stopFmodSound(voice);
+                    voice = null;
+                    retryTicks = RETRY_TICKS;
+                    break;
+                }
+            }
+        }
+
+        /** 主线程：请求 Studio 停止过渡，播放器负责释放完成尾音的实例。 */
+        private void fade() {
+            if (voice != null) {
+                if (fadingVoice != null) stopFmodSound(fadingVoice);
+                if (fadeFmodSound(voice)) fadingVoice = voice;
+                else stopFmodSound(voice);
+                voice = null;
+            }
+        }
+
+        /** 主线程：生命周期结束立即停止，避免离开区块后保留无限循环。 */
+        private void stop() {
+            if (voice != null) stopFmodSound(voice);
+            if (fadingVoice != null) stopFmodSound(fadingVoice);
+            voice = null;
+            fadingVoice = null;
+            quietTicks = 0;
+            retryTicks = 0;
+            // Studio 正在淡出的实例也会查询此声源，保留最后一次不可变空间状态。
+        }
+
+        @NotNull
+        @Override
+        public Level getLevel() {
+            return subPart.getLevel();
+        }
+
+        /** 空间位置取最近接触点，音效启动前已由 tick 保存。 */
+        @NotNull
+        @Override
+        public Vec3 getPosition(UUID uuid) {
+            return snapshot.worldContactPoint();
+        }
+
+        /** 接触区域随零件平动，轮面自转只参与业务参数计算。 */
+        @NotNull
+        @Override
+        public Vec3 getSpeed(UUID uuid) {
+            return snapshot.sourceVelocity();
+        }
+
+        /** 客户端实时听者判定与发动机、发射器共用同一规则。 */
+        @Override
+        public boolean shouldApplyInteriorEffect(@Nullable Entity listener, boolean firstPerson) {
+            return AbstractSubsystem.isInteriorListener(listener, firstPerson);
+        }
+    }
+
+    /** 主线程：根据实际滑移生成轮胎漂移烟雾，每 tick 最多四个粒子。 */
+    private void spawnDriftSmoke(CollisionSnapshot snap) {
+        Vec3 position = snap.worldContactPoint();
+        Vec3 velocity = snap.contactVel();
+        float normalizedSlip = Math.clamp((snap.slipRatio() - 0.4f) / 0.6f, 0f, 1f);
+        int count = Math.min((int) Math.ceil(velocity.length() * 0.3f * normalizedSlip), 4);
+        for (int i = 0; i < count; i++) {
+            subPart.getLevel().addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    position.x + (Math.random() - 0.5) * 0.6,
+                    position.y + 0.05,
+                    position.z + (Math.random() - 0.5) * 0.6,
+                    velocity.x * 0.5 * (0.8 + 0.4 * Math.random()) * 0.05,
+                    0.1 * (0.8 + 0.4 * Math.random()) * 0.05,
+                    velocity.z * 0.5 * (0.8 + 0.4 * Math.random()) * 0.05);
+        }
+    }
+
+    /** 主线程：在土、沙、雪接触处按相对速度生成方块碎屑。 */
+    private void spawnCollisionParticles(CollisionSnapshot snap) {
+        BlockState state = snap.blockState();
+        Vec3 velocity = snap.contactVel();
+        Vec3 position = snap.worldContactPoint();
+        double speed = velocity.length();
+        if ((speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed))
+                && (state.is(BlockTags.DIRT) || state.is(BlockTags.SAND) || state.is(BlockTags.SNOW))) {
+            subPart.getLevel().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, state),
+                    position.x, position.y + 0.01, position.z,
+                    velocity.x * (1f + 0.2f * (Math.random() - 0.5f)),
+                    velocity.y * (1f + 0.2f * (Math.random() - 0.5f)),
+                    velocity.z * (1f + 0.2f * (Math.random() - 0.5f)));
+        }
+    }
+
+    /** 在物理线程把可变的 native 接触向量冻结为不可变快照。 */
+    private static Vec3 copy(Vector3f value) {
+        return new Vec3(value.x, value.y, value.z);
+    }
+
+    /** 履带上报接口使用 jme 向量，转换时不暴露快照状态。 */
+    private static Vector3f toVector(Vec3 value) {
+        return new Vector3f((float) value.x, (float) value.y, (float) value.z);
+    }
+
+    /** native 接触边界的有限性校验。 */
+    private static boolean finite(Vec3 value) {
+        return Double.isFinite(value.x) && Double.isFinite(value.y) && Double.isFinite(value.z);
     }
 }

@@ -600,7 +600,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     }
 
     public void prePhysicsTick() {
-        // 诊断合计换到"上一步"：控制器的采样就在下面这步开头，读到的因此是本步之前的完整合计，
+        // 诊断合计发布已完成的上一物理步：控制器在本步开头采样时读取上一物理步的完整合计，
         // 不含采样点之后才施加的气动与张力
         aeroForceLastStep.set(aeroForceStep);
         aeroForceStep.set(0f, 0f, 0f);
@@ -1434,11 +1434,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         }
     }
 
-    /** 主线程更新区块状态。客户端卸载区块时，先停掉之后不再 tick 的发动机工况音。 */
+    /** 主线程更新区块状态。客户端卸载区块时，停止由载具 tick 维护的发动机和接触音效。 */
     public void setInLoadedChunk(boolean loadedChunk) {
         if (inLoadedChunk && !loadedChunk && level.isClientSide()) {
             for (AbstractSubsystem subsystem : subSystemController.getAllSubsystems()) {
                 if (subsystem instanceof EngineSubsystem engine) engine.stopClientFmodSound();
+            }
+            for (RegularPart part : partMap.values()) {
+                for (SubPart subPart : part.subParts.values()) subPart.collisionHandler.effectManager.stopAll();
             }
         }
         inLoadedChunk = loadedChunk;
