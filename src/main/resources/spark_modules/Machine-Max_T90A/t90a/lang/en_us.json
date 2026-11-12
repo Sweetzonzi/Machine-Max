@@ -128,7 +128,6 @@
   "research.t90a.t90a_turret_era.desc": "Unlock fabrication of the T-90A turret ERA module.",
   "controlGroup.t90a.t90a_gunner": "T-90A gunner",
   "t90a.fitting.t90a_track": "T-90A track",
-  "t90a.pack": "T-90A Vehicle Pack",
   "controlGroup.t90a.commander_base": "T-90A commander driving",
   "controlGroup.t90a.commander_override": "T-90A main gun override",
   "subsystem.t90a.commander_day_sight": "TKN-4S commander day sight",

@@ -254,7 +254,6 @@
   "connector.machine_max.top_left": "顶部左侧连接点",
   "connector.machine_max.chassis_connection": "车架连接点",
   "connector.machine_max.hull_connection": "车壳连接点",
-  "connector.machine_max.top": "顶部连接点",
   "connector.machine_max.bottom": "底部连接点",
   "connector.machine_max.left": "左侧连接点",
   "connector.machine_max.right": "右侧连接点",

@@ -128,7 +128,6 @@
   "sub_part.t90a.barrel": "125 mm 独立炮管",
   "connector.t90a.barrel_cradle": "炮管—炮架内部固定座",
   "t90a.fitting.t90a_track": "T-90A 履带",
-  "t90a.pack": "T-90A 载具包",
   "controlGroup.t90a.commander_base": "T-90A 车长驾驶",
   "controlGroup.t90a.commander_override": "T-90A 主炮超控",
   "subsystem.t90a.commander_day_sight": "TKN-4S 车长日间镜",
