@@ -85,6 +85,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | --- | --- |
 | weapon.name | 字符串，WC 名称；有翻译时使用翻译文字 |
 | weapon.selected | 数值布尔，本观察者是否选中该 WC |
+| weapon.aimed | 数值布尔，全部有效发射管的炮管轴线都在瞄准容差内；没有发射管时为 0，与装填就绪无关 |
 | weapon.state | 字符串，ready 表示至少一根管已备好一发（可立即开火），reloading 表示没有就绪管但至少一根在装填，empty 表示全部无弹或无供给者 |
 | weapon.loaded | 数值，待发 = 膛内 + 弹匣；与 weapon.reserve_remaining 配成“现在能打的 / 还能补的”两段 |
 | weapon.reserve_remaining | 数值，选中供弹链的备弹（装弹机里的数量），不含膛内弹与已装弹链 |
@@ -108,6 +109,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | tube.chambered | 数值布尔，该管膛内是否有弹 |
 | tube.chambered_ammo_label | 字符串，该管实际膛内弹药，空膛可为空字符串 |
 | tube.swapping | 数值布尔，该管是否正在替换已装的那一份；为真时射击锁定，即使膛内有弹也不算就绪 |
+| tube.aimed | 数值布尔，该管炮管轴线与观察者瞄准点的夹角在控制器瞄准容差内 |
 | tube.magazine | 数值布尔，该管是否装着弹链 |
 | tube.magazine_remaining | 数值，该管已装弹链的余量 |
 | tube.magazine_capacity | 数值，该管已装弹链的整份长度，不是剩余容量 |
@@ -132,6 +134,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | tube.phase / tube.has_source | weapon.tube_phase(i) / weapon.tube_has_source(i) |
 | tube.loaded / tube.chambered / tube.swapping | weapon.tube_loaded(i) / weapon.tube_chambered(i) / weapon.tube_swapping(i) |
 | tube.chambered_ammo_label | weapon.tube_chambered_ammo_label(i) |
+| tube.aimed | weapon.tube_aimed(i) |
 | tube.magazine / tube.magazine_remaining | weapon.tube_magazine(i) / weapon.tube_magazine_remaining(i) |
 | tube.magazine_capacity / tube.magazine_label | weapon.tube_magazine_capacity(i) / weapon.tube_magazine_label(i) |
 | tube.reserve_remaining / tube.reserve_capacity / tube.reserve_infinite | weapon.tube_reserve_remaining(i) / weapon.tube_reserve_capacity(i) / weapon.tube_reserve_infinite(i) |
@@ -139,6 +142,13 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | belt.label / belt.remaining / belt.selected | weapon.belt_label(i) / weapon.belt_remaining(i) / weapon.belt_selected(i) |
 
 三个计数按“发数现在在哪”分层，彼此不包含：膛内是已压进膛的那一发，弹匣是本管已装的那一份弹链，备弹是装弹机还能给出的数量。一份弹链交到本管时发数从备弹转到弹匣，压进膛时从弹匣转到膛内；只汇总备弹会在“多管全部上膛、装弹机余量为零”时读成 0，所以主数字写成“待发 / 备弹”：weapon.loaded / weapon.reserve_remaining。
+
+对准读数是另一条轴，与装填无关：
+
+- 目标点是观察者自己的期望瞄准点，观察者换了读数就换，同一控制器对不同观察者可以不同。
+- 容差来自控制器的瞄准容差，判定与开火门限是同一条：方向取含火控修正量的有效发射方向，修正只在武器持有开火权时生效。开火输入会转发回客户端，因此客户端的控制器同样参与这套判定。
+- 容差设得很大的控制器（例如第一方机枪常见的 60 度）几乎恒为对准，这类条目应另配显示条件。
+- `weapon.aimed` 要求全部有效管都对准；没有发射管时为 0。单管用 `tube.aimed` 或 `weapon.tube_aimed(i)`。
 
 切弹后，选择箭头可以先变化，膛内弹和进行中的装填保持实际来源。库存为零时也可能有就绪管；满格进度表达准备状态，不表达仓库剩余量。正在等输弹、等再生还是等整批回充看 tube.phase，这根管有没有摊到供给者看 tube.has_source。单管进度合入弹链行需要可靠的来源对应关系；这些文字标签不能证明身份相同，缺少对应能力时使用独立逐管行。
 

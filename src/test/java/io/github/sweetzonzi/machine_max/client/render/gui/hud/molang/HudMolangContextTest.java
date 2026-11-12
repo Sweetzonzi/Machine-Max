@@ -24,11 +24,15 @@ class HudMolangContextTest {
     }
 
     static HudWeaponSnapshot.Tube tube(int key, double fill) {
+        return tube(key, fill, false);
+    }
+
+    static HudWeaponSnapshot.Tube tube(int key, double fill, boolean aimed) {
         return new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, key), "barrel", "launcher"),
                 "AP", "reloading", "loading", fill, 2, "2.0s", "HE belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "HE belt", 4, 30),
-                new HudWeaponSnapshot.Reserve(12, 100, false));
+                new HudWeaponSnapshot.Reserve(12, 100, false), aimed);
     }
 
     static HudWeaponSnapshot snapshot(List<HudWeaponSnapshot.Tube> tubes) {
@@ -96,11 +100,11 @@ class HudMolangContextTest {
         var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 7), "barrel", "launcher"),
                 "AP", "reloading", "regenerating", 40, 12, "12.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
-                new HudWeaponSnapshot.Reserve(30, 120, false));
+                new HudWeaponSnapshot.Reserve(30, 120, false), false);
         var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 8), "barrel", "launcher"),
                 "HE", "empty", "idle", 0, 0, "", "", false, false,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
-                HudWeaponSnapshot.Reserve.EMPTY);
+                HudWeaponSnapshot.Reserve.EMPTY, false);
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(stalled, orphan)), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();
         try (var ignored = context.enterItem("weapon.tubes", stalled.key(), null)) {
@@ -116,6 +120,30 @@ class HudMolangContextTest {
         assertEquals(0, number("weapon.tube_has_source(5)", context));
     }
 
+    @Test void boreAlignmentIsReadPerTubeAndAggregatesOnlyWhenEveryTubeAligns() {
+        var element = new WeaponHudElement(null, element());
+        var onTarget = tube(1, 100, true);
+        var offTarget = tube(2, 100, false);
+        element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(onTarget, offTarget)), true);
+        var context = (WeaponHudMolangContext) element.getMolangContext();
+        assertEquals(1, number("weapon.tube_aimed(0)", context));
+        assertEquals(0, number("weapon.tube_aimed(1)", context));
+        assertEquals(0, number("weapon.tube_aimed(9)", context), "越界索引按未对准处理");
+        assertEquals(0, number("weapon.aimed", context), "还有一根管没到，聚合为 0");
+        try (var ignored = context.enterItem("weapon.tubes", onTarget.key(), null)) {
+            assertEquals(1, number("tube.aimed", context));
+        }
+        try (var ignored = context.enterItem("weapon.tubes", offTarget.key(), null)) {
+            assertEquals(0, number("tube.aimed", context));
+        }
+        element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(onTarget, tube(2, 100, true))), true);
+        context = (WeaponHudMolangContext) element.getMolangContext();
+        assertEquals(1, number("weapon.aimed", context), "全部管对准时聚合为 1");
+        element.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, true);
+        context = (WeaponHudMolangContext) element.getMolangContext();
+        assertEquals(0, number("weapon.aimed", context), "没有发射管时为 0");
+    }
+
     @Test void chamberMagazineAndReserveStaySeparateNumbers() {
         var element = new WeaponHudElement(null, element());
         // 装填中的管：膛内 1 发、弹链 17 发、备弹 0（弹链是从备弹里取走的，两边不重叠）
@@ -123,13 +151,13 @@ class HudMolangContextTest {
                 "AP", "reloading", "loading", 60, 3, "3.0s", "AP belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 17, 150),
-                new HudWeaponSnapshot.Reserve(0, 300, false));
+                new HudWeaponSnapshot.Reserve(0, 300, false), false);
         // 换装中的管：膛内仍压着 1 发，但此刻打不出去
         var swapping = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 12), "barrel", "launcher"),
                 "AP", "reloading", "loading", 30, 6, "6.0s", "HE belt", true, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 8, 150),
-                new HudWeaponSnapshot.Reserve(200, 300, false));
+                new HudWeaponSnapshot.Reserve(200, 300, false), false);
         element.publish(HudPartSnapshot.EMPTY, new HudWeaponSnapshot("gun", "reloading", 200, 600, false, "200/600",
                 25, 2, "AP", false, "6.0s", "test:ap", List.of(loaded, swapping), List.of()), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();

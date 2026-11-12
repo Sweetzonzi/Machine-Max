@@ -77,7 +77,7 @@ class WeaponHudComponentsTest {
                 ready ? "idle" : "loading", ready ? 100 : fill, ready ? 0 : 2, ready ? "" : "2.0s",
                 ready ? "" : "HE", false, true,
                 ready ? new HudWeaponSnapshot.Chamber(true, "AP") : HudWeaponSnapshot.Chamber.EMPTY,
-                HudWeaponSnapshot.Magazine.EMPTY, base.reserve());
+                HudWeaponSnapshot.Magazine.EMPTY, base.reserve(), base.aimed());
     }
 
     private static HudWeaponSnapshot snapshot(int remaining, boolean mismatch,
@@ -169,7 +169,7 @@ class WeaponHudComponentsTest {
         var regen = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 9), "gun", "launcher"),
                 "9M133", "reloading", "regenerating", 50, 15, "15.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
-                new HudWeaponSnapshot.Reserve(0, 4, false));
+                new HudWeaponSnapshot.Reserve(0, 4, false), false);
         page.publish(snapshot(0, false, List.of(regen), List.of(belt("kornet", 0, true))), true);
         var document = page.document();
         assertEquals("15.0s", document.querySelector(".row-time").getTextContent());
@@ -182,7 +182,7 @@ class WeaponHudComponentsTest {
         var empty = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 10), "gun", "launcher"),
                 "AP", "empty", "idle", 0, 0, "", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
-                HudWeaponSnapshot.Reserve.EMPTY);
+                HudWeaponSnapshot.Reserve.EMPTY, false);
         page.publish(snapshot(0, false, List.of(empty), List.of()), true);
         assertEquals("EMPTY", document.querySelector(".row-time").getTextContent());
         assertNoBindingErrors(document);
@@ -240,8 +240,8 @@ class WeaponHudComponentsTest {
                         .map(t -> new HudWeaponSnapshot.Tube(t.key(), "9M133", t.state(), t.phase(), t.fill(), t.reloadRemaining(),
                                 t.reloadText(), t.state().equals("reloading") ? "KORNET" : "",
                                 false, true,
-                                t.state().equals("ready") ? new HudWeaponSnapshot.Chamber(true, "9M133") : HudWeaponSnapshot.Chamber.EMPTY,
-                                t.magazine(), t.reserve())).toList(),
+                t.state().equals("ready") ? new HudWeaponSnapshot.Chamber(true, "9M133") : HudWeaponSnapshot.Chamber.EMPTY,
+                                t.magazine(), t.reserve(), t.aimed())).toList(),
                 List.of(belt("KORNET", 0, true))), false);
         compact.publish(new HudWeaponSnapshot("PKTM / COAX", "ready", 382, 2000, false, "382/2000",
                 0, 1, "7.62 MM", false, "RDY", "test:pktm", List.of(tube(1, true, 100)),

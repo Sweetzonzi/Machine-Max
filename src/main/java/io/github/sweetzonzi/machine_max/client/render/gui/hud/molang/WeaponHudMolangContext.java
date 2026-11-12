@@ -65,6 +65,13 @@ public class WeaponHudMolangContext extends HudMolangContext {
     }
     @QueryBinding(value = "selected", namespace = "weapon")
     public double selected() { return frame.selected() ? 1 : 0; }
+
+    /** 全部有效发射管的炮管轴线都在瞄准容差内时取 1；没有发射管取 0，与装填就绪无关。 */
+    @QueryBinding(value = "aimed", namespace = "weapon")
+    public double weapon_aimed() {
+        var tubes = weapon().tubes();
+        return !tubes.isEmpty() && tubes.stream().allMatch(HudWeaponSnapshot.Tube::aimed) ? 1 : 0;
+    }
     @QueryBinding(value = "tube_count", namespace = "weapon")
     public double tubeCount() { return weapon().tubes().size(); }
     @QueryBinding(value = "belt_count", namespace = "weapon")
@@ -226,6 +233,12 @@ public class WeaponHudMolangContext extends HudMolangContext {
 
     @QueryBinding(value = "swapping", namespace = "tube")
     public double tube_swapping() { return requireTube().swapping() ? 1 : 0; }
+
+    @QueryBinding(value = "tube_aimed", namespace = "weapon")
+    public double weapon_tube_aimed(double index) { var value = tube(index); return value == null || !value.aimed() ? 0 : 1; }
+
+    @QueryBinding(value = "aimed", namespace = "tube")
+    public double tube_aimed() { return requireTube().aimed() ? 1 : 0; }
 
     @StringQueryBinding(value = "belt_label", namespace = "weapon")
     public String weapon_belt_label(double index) { var value = belt(index); return value == null ? "" : value.label(); }

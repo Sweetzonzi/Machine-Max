@@ -149,6 +149,8 @@ public class CustomHud implements LayeredDraw.Layer {
         var vehicles = new IdentityHashMap<VehicleCore, HudVehicleSnapshot>();
         VehicleCore observerVehicle = seat != null && seat.getSubPart().part.assembly instanceof VehicleCore vehicle
                 ? vehicle : null;
+        // 观察者的期望瞄准点：与上行给控制器的 ViewInputSignal 同源；未进入控制来源时为 null，对准读数全部为 0
+        Vec3 aimPoint = seat != null ? CameraController.getExpectedAimPointWorld() : null;
         for (var entry : huds.entrySet()) {
             if (entry.getValue().isEmpty()) continue;
             var part = entry.getKey() instanceof AbstractSubsystem source ? source.getSubPart().part : null;
@@ -157,7 +159,7 @@ public class CustomHud implements LayeredDraw.Layer {
                     ? vehicles.computeIfAbsent(vehicle, source -> HudVehicleSnapshot.capture(source,
                             source == observerVehicle ? seat : null))
                     : HudVehicleSnapshot.EMPTY;
-            var weapon = entry.getKey() instanceof WeaponControllerSubsystem wc ? HudWeaponSnapshot.capture(wc) : HudWeaponSnapshot.EMPTY;
+            var weapon = entry.getKey() instanceof WeaponControllerSubsystem wc ? HudWeaponSnapshot.capture(wc, aimPoint) : HudWeaponSnapshot.EMPTY;
             for (var carrier : entry.getValue()) {
                 var runtime = carrier.runtime();
                 runtime.publish(partSnapshot, weapon, vehicleSnapshot, selected.contains(entry.getKey()));

@@ -8,14 +8,19 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.Supp
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierStatus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 /**
- * 客户端 tick 生成的单控制器业务值；不包含观察者状态或可变子系统引用。<br>
+ * 客户端 tick 生成的单控制器业务值；不包含观察者身份或可变子系统引用。<br>
  * 弹药分三层计数，彼此不包含：<b>膛内</b>是已压进膛、下一发就打的那一发；
  * <b>弹匣</b>是本管已装的那一份 Belt；<b>备弹</b>是供给者手里还能给出的数量。
  * 一份 Belt 从供给者交到本管时，这些发数从备弹转到弹匣；压进膛时从弹匣转到膛内。
+ * <p>
+ * {@code capture} 接收观察者的瞄准点，因此 {@link Tube#aimed()} 与它同一口径——
+ * 同一控制器被不同观察者看到时，对准读数随观察者变化，与 {@code weapon.selected} 同类。
  */
 public record HudWeaponSnapshot(String name, String state,
                                 int reserveRemaining, int reserveCapacity, boolean reserveInfinite, String reserveText,
@@ -43,12 +48,13 @@ public record HudWeaponSnapshot(String name, String state,
      * 单根管的一帧读数。<br>
      * {@code phase} 把 {@code reloading} 拆成输弹、逐发再生与整批回充三段，页面据此选择文案与显隐；
      * {@code hasSource} 表达"路由没给它摊到装弹机"，与"有机器但打空"区分开；
-     * {@code swapping} 表示本管正在替换已装的那一份，此时射击锁定，即使膛内有弹也不算就绪。
+     * {@code swapping} 表示本管正在替换已装的那一份，此时射击锁定，即使膛内有弹也不算就绪；
+     * {@code aimed} 表示本管此刻满足开火门限：与观察者瞄准点、含火控修正的有效发射方向的夹角在控制器瞄准容差内，与装填状态无关。
      */
     public record Tube(SupplierRef key, String roundLabel, String state, String phase,
                        double fill, double reloadRemaining, String reloadText, String loadingBeltLabel,
                        boolean swapping, boolean hasSource,
-                       Chamber chamber, Magazine magazine, Reserve reserve) {
+                       Chamber chamber, Magazine magazine, Reserve reserve, boolean aimed) {
         /** 本管待发发数：膛内那一发（至多 1）加弹链余量。 */
         public int loaded() {
             return (chamber.loaded() ? 1 : 0) + magazine.remaining();
@@ -72,11 +78,14 @@ public record HudWeaponSnapshot(String name, String state,
 
     public record Belt(AmmoBelt key, String label, int remaining, boolean selected) {}
 
-    public static HudWeaponSnapshot capture(WeaponControllerSubsystem controller) {
+    public static HudWeaponSnapshot capture(WeaponControllerSubsystem controller, @Nullable Vec3 aimPoint) {
         var launchers = controller.getLaunchers().keySet().stream()
                 .filter(l -> l.isActive() && !l.isDestroyed())
                 .sorted(Comparator.comparing(LauncherSubsystem::getName).thenComparing(HudWeaponSnapshot::key))
                 .toList();
+        // 容差取控制器自己的瞄准容差，判定与开火门限同为 LauncherSubsystem#isAimedAt；
+        // 没有瞄准点（未进入控制来源）时全部不判定
+        float aimTolerance = controller.attr.staticAttribute.getAimToleranceDeg();
         var available = controller.getAvailableBelts();
         var selected = controller.getSelectedBelt();
         var pool = controller.getAmmoPool();
@@ -132,7 +141,8 @@ public record HudWeaponSnapshot(String name, String state,
                     belt == null ? Magazine.EMPTY
                             : new Magazine(true, belt.displayLabel(), belt.remaining(), belt.length()),
                     reserve == null ? Reserve.EMPTY
-                            : new Reserve(reserve.remaining(), reserve.capacity(), reserve.infinite())));
+                            : new Reserve(reserve.remaining(), reserve.capacity(), reserve.infinite()),
+                    aimPoint != null && launcher.isAimedAt(aimPoint, aimTolerance)));
         }
         var entries = selected == null ? null : pool.get(selected);
         Totals total = totals(entries == null ? bound

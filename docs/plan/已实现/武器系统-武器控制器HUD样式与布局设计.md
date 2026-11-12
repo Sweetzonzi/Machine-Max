@@ -111,6 +111,7 @@ public record ReserveSnapshot(int remaining, int capacity, boolean infinite) {}
 | --- | --- | --- |
 | `weapon.name` | string | 所属控制器的子系统名 |
 | `weapon.selected` | 0/1 | 所属控制器是否属于当前观察座椅的 base + 当前子组选中集合；与启用/开火/控制权无关 |
+| `weapon.aimed` | 0/1 | 全部有效发射管的炮管轴线都在瞄准容差内；没有发射管时为 0，与装填就绪无关 |
 | `weapon.state` | string | `ready`（至少一根管已备好一发）/ `reloading`（没有就绪管但至少一根在装填）/ `empty`（全部无弹或无供给者） |
 | `weapon.loaded` | number | 待发发数：膛内 + 弹匣 |
 | `weapon.reserve_remaining` | number | 供弹弹链的备弹合计 |
@@ -137,6 +138,7 @@ public record ReserveSnapshot(int remaining, int capacity, boolean infinite) {}
 | `weapon.tube_loaded(i)` | number | 第 i 根管的待发发数：膛内 + 弹链余量 |
 | `weapon.tube_chambered(i)` | 0/1 | 第 i 根管膛内是否有弹 |
 | `weapon.tube_swapping(i)` | 0/1 | 第 i 根管是否正在替换已装的那一份 |
+| `weapon.tube_aimed(i)` | 0/1 | 第 i 根管的炮管轴线是否在瞄准容差内；越界索引按未对准返回 0 |
 | `weapon.tube_magazine(i)` | 0/1 | 第 i 根管是否装着弹链 |
 | `weapon.tube_magazine_remaining(i)` | number | 第 i 根管已装弹链的余量 |
 | `weapon.tube_magazine_capacity(i)` | number | 第 i 根管已装弹链的整份长度 |
@@ -175,6 +177,7 @@ MoLang 不提供可靠的字符串拼接，故 `reserve_text`、`reload_text` �
 | `tube.loaded` | `weapon.tube_loaded(i)` | 当前管的待发发数：膛内 + 弹链余量 |
 | `tube.chambered` | `weapon.tube_chambered(i)` | 当前管膛内是否有弹 |
 | `tube.swapping` | `weapon.tube_swapping(i)` | 当前管是否正在替换已装的那一份 |
+| `tube.aimed` | `weapon.tube_aimed(i)` | 当前管的炮管轴线是否在瞄准容差内，口径见下面的“对准读数” |
 | `tube.magazine` | `weapon.tube_magazine(i)` | 当前管是否装着弹链 |
 | `tube.magazine_remaining` | `weapon.tube_magazine_remaining(i)` | 当前管已装弹链的余量 |
 | `tube.magazine_capacity` | `weapon.tube_magazine_capacity(i)` | 当前管已装弹链的整份长度 |
@@ -188,6 +191,13 @@ MoLang 不提供可靠的字符串拼接，故 `reserve_text`、`reload_text` �
 | `belt.selected` | `weapon.belt_selected(i)` | 当前弹链是否被所属控制器选为供弹弹链 |
 
 `data-mm-repeat="weapon.tubes"` / `"weapon.belts"` 给条目根及后代的数据槽安装对应类型的当前项作用域。绑定器按稳定身份键在本轮不可变快照中解析成员及下标；Java 无参方法读取上下文里的当前项，不根据调用次数推断序号。区域外或类型不匹配时须诊断并使该槽位降级，不隐式取第零项。所有重复项内的 `weapon.*` 仍读取整台控制器。
+
+对准读数的口径：
+
+- 目标点是**观察者**自己的期望瞄准点，与上行给控制器的 `ViewInputSignal` 同源；没有进入控制来源时全部返回 0。因此同一控制器的对准值随观察者变化，与 `weapon.selected` 同类，不是控制器上的共享字段。
+- 判定直接调用发射器的 `isAimedAt`，即开火门限本身：方向是含火控修正量的有效发射方向，修正量只在活跃 `FireCommand` 存在时生效。开火输入经 `RegularInputPayload` 由服务端转发回客户端，客户端控制器同样持有命令，因此 HUD 与本地火控读到的是同一条判定，不需要另立一套近似口径。
+- 容差取控制器的 `aim_tolerance_deg`，与开火门限同一来源；该值很大的控制器（例如第一方机枪常用的 60）读出的对准几乎恒为真，这类条目应按需要另配显示条件。
+- 与装填状态无关：`weapon.aimed` 不要求有弹，`weapon.state == 'ready'` 不要求对准。
 
 显式索引接口服务于模型 HUD 固定骨骼、非重复页面和跨项比较；模型骨骼/文本槽没有 DOM 重复作用域时使用该接口。未来若支持模型槽位声明绑定某根管，可复用同一作用域机制；首版不从骨骼名推测绑定。Java 注入、异常恢复、线程隔离和编译器边界见《[HUD 专用 MoLang 上下文设计](观瞄系统-HUD专用MoLang上下文设计.md)》§3.3。无参查询使用独立名字，不以省略 `weapon.tube_fill(i)` 的参数表达当前项。
 
@@ -258,3 +268,4 @@ MoLang 不提供可靠的字符串拼接，故 `reserve_text`、`reload_text` �
 | 1.7 | 2026-10-21 | 定义座椅候选并集、观察者选中状态与模型/AUI 通用条目显隐；定义当前项无参查询、实际膛内/装填来源及显式索引并存契约 |
 
 | 1.8 | 2026-10-22 | 落实快照、查询、候选显隐与 AUI 列表；提供内置动态页面和标准弹道标定缓存，实机验收待完成 |
+| 1.9 | 2026-11-13 | 增加每管对准读数 `tube.aimed` / `weapon.tube_aimed(i)` 与聚合 `weapon.aimed`；判定复用开火门限 `LauncherSubsystem#isAimedAt`，目标点为观察者期望瞄准点，容差取控制器 `aim_tolerance_deg` |
