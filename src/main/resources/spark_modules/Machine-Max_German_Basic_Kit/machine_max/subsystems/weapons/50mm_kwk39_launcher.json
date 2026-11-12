@@ -1,0 +1,20 @@
+{
+  "type": "machine_max:launcher",
+  "single_round_loading": true,
+  "basic_durability": 80,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "control_inputs": [
+    "weapon.gun",
+    "weapon.gun.kwk39"
+  ],
+  "ammo_inputs": [
+    "ammo_50mm"
+  ],
+  "breech": {
+    "fire_rate": 30,
+    "required_tags": [
+      "machine_max:caliber/50mm"
+    ]
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

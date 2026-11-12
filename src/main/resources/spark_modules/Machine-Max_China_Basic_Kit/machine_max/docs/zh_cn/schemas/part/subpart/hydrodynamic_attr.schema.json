@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subpart/hydrodynamic_attr.schema.json",
+  "title": "流体动力属性",
+  "description": "定义部件在流体（空气、水）中的动力属性，包括阻力、升力等。用于模拟空气动力学和水动力学效果。\n\n## 气动计算模型\n\n流体动力计算基于以下物理模型：\n\n### 默认模式（advanced = false）\n- **阻力计算**：各方向使用一阶（粘性）+ 二阶（惯性）模型\n- **升力计算**：简单速度平方模型（x/y/z_lift）\n\n### 高级气动模式（advanced = true）\n- **在高级气动约定方向上**：使用升力线模型计算升力与二阶阻力\n- **一阶阻力（粘性）**：仍然保留并叠加\n- **非升力方向**：仍使用原有阻力模型\n\n**注意：高级气动模式目前仍为WIP。它已接入实际受力计算，但尚缺少充分的官方实装与长期调校验证。**\n\n## 坐标约定\n- **流体动力计算点本地坐标系**：\n  - y+ ：升力法线方向\n  - z- ：来流方向（前向）\n\n## 详细计算模型\n\n### 阻力计算\n- **一阶阻力（粘性阻力）**：与流体粘度相关，使用湿表面积计算\n  - 公式：`F_viscous = viscosity × C_d1 × v × wettedArea`\n  - 适用于低速流动，与速度线性相关\n- **二阶阻力（压差阻力）**：与流体密度相关，使用投影面积计算\n  - 公式：`F_pressure = 0.5 × density × C_d2 × v² × projectedArea`\n  - 适用于高速流动，与速度平方相关\n\n### 升力计算\n- **升力**：与流体密度相关，使用投影面积计算\n  - 公式：`F_lift = 0.5 × density × C_L × v × projectedArea`\n  - 基于垂直于流动方向的速度分量\n\n### 面积定义\n- **投影面积**：垂直于流动方向的面积\n- **湿表面积**：与流体接触的总表面积，近似为投影面积之和 × 2\n\n## 参数说明\n阻力系数列表必须包含2个值：[一阶系数, 二阶系数]，升力系数为单个数值。",
+  "type": "object",
+  "properties": {
+    "scale": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "缩放系数，用于整体调整流体动力效果。"
+    },
+    "effective_range": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "有效计算范围，单位为m，当在来流方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数，以模拟如车壳遮挡整流带来的减阻效果。"
+    },
+    "transonic_amplifier": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5.0,
+      "description": "跨音速放大系数，用于模拟跨音速时的阻力变化。当速度接近音速时，阻力会急剧增加。"
+    },
+    "front_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "前向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。一阶系数用于低速粘性阻力计算，二阶系数用于高速压差阻力计算。"
+    },
+    "back_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "后向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。"
+    },
+    "left_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "左向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。"
+    },
+    "right_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "右向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。"
+    },
+    "up_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "上向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。"
+    },
+    "down_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "下向阻力系数列表，必须包含两个值：[一阶系数, 二阶系数]。"
+    },
+    "x_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "X轴升力系数。基于Y-Z平面速度分量计算升力，通常为0表示不产生X轴升力。"
+    },
+    "y_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "Y轴升力系数。基于X-Z平面速度分量计算升力，通常为0表示不产生Y轴升力。"
+    },
+    "z_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "Z轴升力系数。基于X-Y平面速度分量计算升力，通常为0表示不产生Z轴升力。"
+    },
+    "advanced": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用高级气动模式。启用后将在高级气动约定方向上使用升力线模型计算升力与二阶阻力。注意：该模式目前仍为WIP，但已接入实际受力计算，尚缺少充分的官方实装与长期调校验证。"
+    },
+    "advanced_aero": {
+      "type": "object",
+      "properties": {
+        "lift_slope": {
+          "type": "number",
+          "default": 6.28,
+          "description": "升力线斜率 dCl/dα（单位：1/rad），薄翼理论默认值为2π"
+        },
+        "alpha0": {
+          "type": "number",
+          "default": 0.0,
+          "description": "零升攻角（单位：rad），此攻角下无升力"
+        },
+        "alpha_stall": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.52,
+          "description": "失速攻角（单位：rad，取正值，对称失速），约30°"
+        },
+        "cd0": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.02,
+          "description": "零升阻力系数"
+        },
+        "k_induced": {
+          "type": "number",
+          "default": 0.05,
+          "description": "诱导阻力系数（≈ 1 / (π * AR * e)）"
+        }
+      },
+      "default": {
+        "lift_slope": 6.28,
+        "alpha0": 0.0,
+        "alpha_stall": 0.52,
+        "cd0": 0.02,
+        "k_induced": 0.05
+      },
+      "description": "高级气动参数配置，仅在advanced = true时生效。基于简化升力线理论：升力系数 Cl = liftSlope * (α - alpha0)，阻力系数 Cd = cd0 + kInduced * Cl²。"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "scale": 1.0,
+      "effective_range": 5.0,
+      "transonic_amplifier": 5.0,
+      "front_drag": [0.2, 1.5],
+      "back_drag": [0.3, 1.8],
+      "left_drag": [0.15, 1.2],
+      "right_drag": [0.15, 1.2],
+      "up_drag": [0.1, 0.8],
+      "down_drag": [0.1, 0.8],
+      "x_lift": 0.0,
+      "y_lift": 0.0,
+      "z_lift": 0.0,
+      "advanced": false,
+      "description": "典型的车辆空气动力学配置，前向阻力较大，侧向和垂直方向阻力较小"
+    },
+    {
+      "scale": 1.2,
+      "effective_range": 4.0,
+      "transonic_amplifier": 4.0,
+      "front_drag": [0.15, 0.5],
+      "back_drag": [0.25, 0.8],
+      "left_drag": [0.1, 0.6],
+      "right_drag": [0.1, 0.6],
+      "up_drag": [0.08, 0.4],
+      "down_drag": [0.08, 0.4],
+      "x_lift": 0.0,
+      "y_lift": 0.0,
+      "z_lift": 0.0,
+      "advanced": true,
+      "advanced_aero": {
+        "lift_slope": 5.5,
+        "alpha0": -0.05,
+        "alpha_stall": 0.45,
+        "cd0": 0.015,
+        "k_induced": 0.04
+      },
+      "description": "高级气动模式配置示例，使用升力线理论计算升力和阻力。注意：该模式目前仍为WIP，但已接入实际受力计算，尚缺少充分的官方实装与长期调校验证。"
+    }
+  ]
+}

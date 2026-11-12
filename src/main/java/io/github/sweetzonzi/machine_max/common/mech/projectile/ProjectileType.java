@@ -179,12 +179,12 @@ public abstract class ProjectileType {
      * <p>
      * 文本取自本弹种自己的翻译键：{@link #getRegistryKey() 注册键} 经
      * {@link ResourceLocation#toLanguageKey()} 得到
-     * {@code <命名空间>.<路径>}（{@code machine_max:50mm_pzgr39} →
-     * {@code machine_max.50mm_pzgr39}，路径中的 {@code /} 原样保留），
+     * {@code <命名空间>.<路径>}（{@code machine_max:50mm_pzgr39_apcbc} →
+     * {@code machine_max.50mm_pzgr39_apcbc}，路径中的 {@code /} 原样保留），
      * 由该弹种所属的内容包在自己的 {@code lang/<locale>.json} 里给出取值。
      * 弹种的 {@link #getTags() 标签}不参与本方法。
      * <p>
-     * 语言表中没有该键时返回键字符串本身（{@code machine_max.50mm_pzgr39}）。
+     * 语言表中没有该键时返回键字符串本身（{@code machine_max.50mm_pzgr39_apcbc}）。
      * 这是刻意的可见失败：内容包漏写语言键时界面直接暴露缺失的键名。
      * <p>
      * 返回值<b>仅供显示</b>，不保证唯一，不得用于比对、查找或路由。
@@ -206,7 +206,7 @@ public abstract class ProjectileType {
      * 设置注册键，由 {@link ProjectileModule} 在加载时调用。
      * 每个 ProjectileType 仅可被注册一次。
      *
-     * @param registryKey 资源键（如 {@code machine_max:20mm_ap}）
+     * @param registryKey 资源键（如 {@code machine_max:30mm_3ubr6_ap}）
      * @throws UnsupportedOperationException 重复注册时抛出
      */
     public void setRegistryKey(ResourceLocation registryKey) {

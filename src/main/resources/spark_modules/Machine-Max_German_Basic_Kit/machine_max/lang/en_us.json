@@ -1,6 +1,6 @@
 {
-  "machine_max.50mm_pzgr39": "AP",
-  "machine_max.50mm_sprgr38": "HE",
-  "machine_max.7_92x57_ap": "AP",
-  "machine_max.7_92x57_t": "TRACER"
+  "machine_max.50mm_pzgr39_apcbc": "AP",
+  "machine_max.50mm_sprgr38_he": "HE",
+  "machine_max.7_92x57_smk_ap": "AP",
+  "machine_max.7_92x57_spur_t": "TRACER"
 }

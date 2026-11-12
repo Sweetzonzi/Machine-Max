@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-12",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "f9efef7323b5ed9776dd7489f7800ee85357ae01",
+    "revision": "19e7984236189d035fbbdfc190858006e386a8b7",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -206,8 +206,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
-        "bytes": 1634,
-        "sha256": "4665051a3c833e103a3e065e8a3fbb83d362cf1d550d065cd3e9fd426a03f4d1"
+        "bytes": 1639,
+        "sha256": "ddb5b7af3de9a9930fe6e9eefb1daafcb4a833ed59c74a7bb0353f8be4e38bcf"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
@@ -226,8 +226,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/regen_loader_dynamic_attr.schema.json",
-        "bytes": 5357,
-        "sha256": "c8599b29c6ae3245868303292a89c46fc521c7e907f0dc85e62e9f3297b6147a"
+        "bytes": 5380,
+        "sha256": "39505182d2b8c3100e64747afb2c716c581474da1741194c10898708ce4c87ef"
       },
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",

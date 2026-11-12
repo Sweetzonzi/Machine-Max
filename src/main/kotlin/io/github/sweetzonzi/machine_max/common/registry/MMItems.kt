@@ -9,7 +9,6 @@ import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.ExplosionTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FlareTestItem
-import io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartFabricatingBlueprintItem
@@ -139,13 +138,6 @@ object MMItems {
     val WELDING_TORCH_ITEM = MachineMax.REGISTER.item{
         id="welding_torch"
         factory = { WeldingTorchItem() }
-    }
-
-    //测试物品：右键发射投射物
-    @JvmStatic
-    val PROJECTILE_TEST_ITEM = MachineMax.REGISTER.item{
-        id="projectile_test"
-        factory = { ProjectileTestItem() }
     }
 
     //测试物品：右键在准星位置引爆一次硬编码参数的爆炸

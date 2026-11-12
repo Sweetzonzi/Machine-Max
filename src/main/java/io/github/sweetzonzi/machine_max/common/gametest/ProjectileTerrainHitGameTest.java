@@ -28,7 +28,7 @@ public final class ProjectileTerrainHitGameTest {
         BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
         float armor = ArmorUtil.getBlockArmor(helper.getLevel(), Blocks.BEDROCK.defaultBlockState(), pos);
         helper.assertTrue(Float.isFinite(armor) && armor > 0f, "Bedrock armor must be positive and finite");
-        for (String id : List.of("50mm_pzgr39", "30mm_ap")) {
+        for (String id : List.of("50mm_pzgr39_apcbc", "30mm_3ubr6_ap")) {
             var type = type(helper, id);
             float speed = type.getBaseVelocity();
             var projectile = new BallisticProjectile(helper.getLevel(), type,
@@ -42,7 +42,7 @@ public final class ProjectileTerrainHitGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmProjectileTerrain", timeoutTicks = 40)
     public static void breakableTerrainKeepsFinitePenetrationSpeed(GameTestHelper helper) {
-        var type = type(helper, "50mm_pzgr39");
+        var type = type(helper, "50mm_pzgr39_apcbc");
         BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
         var velocity = new Vector3f(0, 0, 835);
         var projectile = new BallisticProjectile(helper.getLevel(), type, new Vector3f(), velocity, null);
@@ -73,7 +73,7 @@ public final class ProjectileTerrainHitGameTest {
      */
     @GameTest(template = "part_foundation", batch = "mmProjectileTerrain", timeoutTicks = 40)
     public static void damageSourceCarriesTheShooterAsCausingEntity(GameTestHelper helper) {
-        var type = type(helper, "50mm_pzgr39");
+        var type = type(helper, "50mm_pzgr39_apcbc");
         var shooter = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         var victim = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         var velocity = new Vector3f(0, 0, type.getBaseVelocity());

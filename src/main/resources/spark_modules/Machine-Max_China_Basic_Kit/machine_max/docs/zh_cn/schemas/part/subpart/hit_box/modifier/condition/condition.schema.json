@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/condition/condition.json",
+  "title": "条件",
+  "description": "用于伤害修改器的条件判断系统。支持嵌套逻辑运算。",
+  "allOf": [
+    { "$ref": "condition_base.schema.json"}
+  ]
+}

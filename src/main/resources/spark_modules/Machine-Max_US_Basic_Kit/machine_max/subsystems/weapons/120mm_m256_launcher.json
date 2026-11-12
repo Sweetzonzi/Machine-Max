@@ -1,0 +1,26 @@
+{
+  "type": "machine_max:launcher",
+  "single_round_loading": true,
+  "basic_durability": 100,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "control_inputs": [
+    "weapon.gun",
+    "weapon.gun.m256"
+  ],
+  "ammo_inputs": [
+    "ammo_120mm"
+  ],
+  "breech": {
+    "fire_rate": 8,
+    "required_tags": [
+      "machine_max:caliber/120mm"
+    ]
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:abrams",
+      "fire": "event:/Abrams/Armament/main_gun_abrams"
+    }
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

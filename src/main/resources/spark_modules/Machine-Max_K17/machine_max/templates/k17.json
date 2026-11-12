@@ -498,7 +498,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.2a42": {
-              "chambered_type": "machine_max:30mm_ap",
+              "chambered_type": "machine_max:30mm_3ubr6_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,
@@ -512,7 +512,7 @@
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.pktm": {
-              "chambered_type": "machine_max:7_62x54r_ap",
+              "chambered_type": "machine_max:7_62x54r_b32_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,

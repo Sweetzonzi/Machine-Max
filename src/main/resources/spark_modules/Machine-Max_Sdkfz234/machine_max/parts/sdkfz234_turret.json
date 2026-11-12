@@ -191,10 +191,10 @@
             },
             "subsystem.machine_max.50mm_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:kwk39_50mm_regen_loader",
+              "definition": "machine_max:50mm_kwk39_regen_loader",
               "belt_definition": {
                 "pattern": [
-                  { "ammo": "machine_max:50mm_pzgr39", "count": 1 }
+                  { "ammo": "machine_max:50mm_pzgr39_apcbc", "count": 1 }
                 ],
                 "length": 1
               },
@@ -206,10 +206,10 @@
             },
             "subsystem.machine_max.50mm_he_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:kwk39_50mm_regen_loader",
+              "definition": "machine_max:50mm_kwk39_regen_loader",
               "belt_definition": {
                 "pattern": [
-                  { "ammo": "machine_max:50mm_sprgr38", "count": 1 }
+                  { "ammo": "machine_max:50mm_sprgr38_he", "count": 1 }
                 ],
                 "length": 1
               },
@@ -221,12 +221,12 @@
             },
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:mg34_regen_loader",
+              "definition": "machine_max:7_92mm_mg34_regen_loader",
               "belt_definition": {
                 "label": "AP/T",
                 "pattern": [
-                  { "ammo": "machine_max:7_92x57_ap", "count": 3 },
-                  { "ammo": "machine_max:7_92x57_t", "count": 1 }
+                  { "ammo": "machine_max:7_92x57_smk_ap", "count": 3 },
+                  { "ammo": "machine_max:7_92x57_spur_t", "count": 1 }
                 ],
                 "length": 50
               },
@@ -276,7 +276,7 @@
           "subsystems": {
             "subsystem.machine_max.50mm": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:kwk39_50mm_launcher",
+              "definition": "machine_max:50mm_kwk39_launcher",
               "locator": "main_gun_muzzle"
             }
           }
@@ -317,7 +317,7 @@
           "subsystems": {
             "subsystem.machine_max.mg34": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:mg34_launcher",
+              "definition": "machine_max:7_92mm_mg34_launcher",
               "locator": "mg_muzzle"
             },
             "subsystem.machine_max.gunner_sight": {

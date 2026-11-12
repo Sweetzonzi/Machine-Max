@@ -104,17 +104,17 @@
         "subsystems": {
           "subsystem.machine_max.pkt": {
             "type": "machine_max:launcher",
-            "definition": "machine_max:pktm_launcher",
+            "definition": "machine_max:7_62mm_pktm_launcher",
             "locator": "pkt_muzzle"
           },
           "subsystem.machine_max.pkt_ammo_loader": {
             "type": "machine_max:regen_loader",
-            "definition": "machine_max:pktm_regen_loader",
+            "definition": "machine_max:7_62mm_pktm_regen_loader",
             "belt_definition": {
               "label": "AP/T",
               "pattern": [
-                { "ammo": "machine_max:7_62x54r_ap", "count": 3 },
-                { "ammo": "machine_max:7_62x54r_t", "count": 1 }
+                { "ammo": "machine_max:7_62x54r_b32_ap", "count": 3 },
+                { "ammo": "machine_max:7_62x54r_t46_t", "count": 1 }
               ],
               "length": 200
             },

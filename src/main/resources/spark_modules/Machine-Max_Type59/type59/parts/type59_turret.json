@@ -700,7 +700,7 @@
                   "subsystem.type59.azimuth_driver",
                   "subsystem.type59.elevation_driver"
                 ],
-                "weapon.gun": [
+                "weapon.gun.type59": [
                   "global"
                 ]
               },
@@ -710,32 +710,32 @@
             },
             "subsystem.type59.ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "type59:type59_loader",
+              "definition": "machine_max:100mm_type59_regen_loader",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
-                  { "ammo": "type59:type59_100mm_ap", "count": 1 }
+                  { "ammo": "machine_max:100mm_br412_ap", "count": 1 }
                 ],
                 "length": 1
               },
               "discovery_outputs": {
-                "ammo_type59": [
+                "ammo_100mm": [
                   "global"
                 ]
               }
             },
             "subsystem.type59.ammo_loader_he": {
               "type": "machine_max:regen_loader",
-              "definition": "type59:type59_he_loader",
+              "definition": "machine_max:100mm_type59_regen_loader",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
-                  { "ammo": "type59:type59_100mm_he", "count": 1 }
+                  { "ammo": "machine_max:100mm_of412_he", "count": 1 }
                 ],
                 "length": 1
               },
               "discovery_outputs": {
-                "ammo_type59": [
+                "ammo_100mm": [
                   "global"
                 ]
               }
@@ -744,7 +744,7 @@
               "type": "machine_max:weapon_controller",
               "definition": "type59:coax_controller",
               "control_outputs": {
-                "weapon.mg.coax": [
+                "weapon.mg.type59t": [
                   "global"
                 ]
               },
@@ -753,16 +753,16 @@
             },
             "subsystem.type59.coax_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "type59:coax_loader",
+              "definition": "machine_max:7_62mm_type59t_regen_loader",
               "belt_definition": {
                 "label": "59T 7.62",
                 "pattern": [
-                  { "ammo": "type59:mg_7_62_ap", "count": 1 }
+                  { "ammo": "machine_max:7_62x54r_b32_ap", "count": 1 }
                 ],
                 "length": 250
               },
               "discovery_outputs": {
-                "ammo_coax": [
+                "ammo_7_62mm": [
                   "global"
                 ]
               }
@@ -924,7 +924,7 @@
           "subsystems": {
             "subsystem.type59.coax_launcher": {
               "type": "machine_max:launcher",
-              "definition": "type59:coax_launcher",
+              "definition": "machine_max:7_62mm_type59t_launcher",
               "locator": "coax_muzzle"
             },
             "subsystem.type59.gunner_sight": {
@@ -965,7 +965,7 @@
           "subsystems": {
             "subsystem.type59.launcher": {
               "type": "machine_max:launcher",
-              "definition": "type59:type59_launcher",
+              "definition": "machine_max:100mm_type59_launcher",
               "locator": "main_muzzle"
             }
           }
@@ -1040,7 +1040,7 @@
                   "subsystem.type59.aa_yaw_driver",
                   "subsystem.type59.aa_pitch_driver"
                 ],
-                "weapon.mg.aa": [
+                "weapon.mg.type54": [
                   "global"
                 ]
               },
@@ -1049,16 +1049,16 @@
             },
             "subsystem.type59.aa_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "type59:aa_loader",
+              "definition": "machine_max:12_7mm_type54_regen_loader",
               "belt_definition": {
                 "label": "12.7",
                 "pattern": [
-                  { "ammo": "type59:mg_12_7_ap", "count": 1 }
+                  { "ammo": "machine_max:12_7x108_b32_ap", "count": 1 }
                 ],
                 "length": 100
               },
               "discovery_outputs": {
-                "ammo_aa": [
+                "ammo_12_7mm": [
                   "global"
                 ]
               }
@@ -1101,7 +1101,7 @@
           "subsystems": {
             "subsystem.type59.aa_launcher": {
               "type": "machine_max:launcher",
-              "definition": "type59:aa_launcher",
+              "definition": "machine_max:12_7mm_type54_launcher",
               "locator": "mg_muzzle"
             }
           }

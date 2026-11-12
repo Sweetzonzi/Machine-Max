@@ -7,6 +7,10 @@
     {
       "id": "machine_max:builtin",
       "type": "hard"
+    },
+    {
+      "id": "machine_max:us_basic_kit",
+      "type": "hard"
     }
   ],
   "enable_auto_pack": true

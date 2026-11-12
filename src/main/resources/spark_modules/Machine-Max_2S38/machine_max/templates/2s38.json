@@ -624,7 +624,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.2a90": {
-              "chambered_type": "machine_max:57mm_ap",
+              "chambered_type": "machine_max:57mm_br281_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,
@@ -671,7 +671,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.pktm": {
-              "chambered_type": "machine_max:7_62x54r_ap",
+              "chambered_type": "machine_max:7_62x54r_b32_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,

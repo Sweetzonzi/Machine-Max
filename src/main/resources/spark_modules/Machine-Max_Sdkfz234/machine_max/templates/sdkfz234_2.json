@@ -272,7 +272,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.50mm": {
-              "chambered_type": "machine_max:50mm_pzgr39",
+              "chambered_type": "machine_max:50mm_pzgr39_apcbc",
               "modules": {
                 "barrel": {
                   "destroyed": 0,
@@ -322,7 +322,7 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.mg34": {
-              "chambered_type": "machine_max:7_92x57_ap",
+              "chambered_type": "machine_max:7_92x57_smk_ap",
               "modules": {
                 "barrel": {
                   "destroyed": 0,

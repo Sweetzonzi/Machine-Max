@@ -154,7 +154,7 @@ io.github.sweetzonzi.machine_max/
 | 新增网络包      | `network/payload/` + `MMPayloadRegistry.java`  | 按功能子目录归类                                  |
 | 新增 GUI/HUD | `client/render/gui/`                           | Screen、HUD、hud3d、panel                    |
 | 新增物品/方块/实体 | `common/registry/`（Kotlin）                     | MMItems.kt, MMBlocks.kt, MMEntities.kt    |
-| 新增内容包数据    | `src/main/resources/spark_modules/`            | `Machine-Max_*` 九个第一方包，见「内容包分层」 |
+| 新增内容包数据    | `src/main/resources/spark_modules/`            | `Machine-Max_*` 十一个第一方包，见「内容包分层」 |
 | 新增配方       | `common/recipe/` + `spark_modules/.../recipe/` | 两部分配合                                     |
 | 修复渲染       | `client/render/renderer/`                      | PartEntityRenderer 是主载具渲染器                |
 | 修复碰撞       | `common/mech/vehicle/collision/`               | CollisionHandler + CollisionEffectManager |
@@ -200,15 +200,18 @@ io.github.sweetzonzi.machine_max/
 
 ## 内容包分层
 
-`src/main/resources/spark_modules/` 下是九个第一方内容包。目录名统一 `Machine-Max_` 前缀，包内内容目录统一 `machine_max/`，包 id 是 `machine_max:<小写名>`：
+`src/main/resources/spark_modules/` 下是十一个第一方内容包。目录名统一 `Machine-Max_` 前缀，包内内容目录统一 `machine_max/`，包 id 是 `machine_max:<小写名>`：
 
 | 层 | 目录 | id | 承担 |
 | --- | --- | --- | --- |
 | L0 | `Machine-Max_Builtin` | `machine_max:builtin` | 引擎基元、子系统 / 连接器 / 材质 / 音效 / 粒子 / HUD、新人货架，以及货箱、黄金马桶等题材无关的独立成品件 |
-| L1 | `Machine-Max_Soviet_Basic_Kit` | `machine_max:soviet_basic_kit` | 苏系共用型谱：2A42 / 2A90 机关炮、9M133 反坦克导弹、PKTM 机枪与配套弹种 |
+| L1 | `Machine-Max_Soviet_Basic_Kit` | `machine_max:soviet_basic_kit` | 苏系共用型谱：2A42 / 2A90 机关炮、2A46M 125mm 坦克炮、9M133 反坦克导弹、PKTM / NSVT 机枪与配套弹种 |
 | L1 | `Machine-Max_German_Basic_Kit` | `machine_max:german_basic_kit` | 德系共用型谱：KwK39 50mm 火炮、MG34 机枪与配套弹种 |
+| L1 | `Machine-Max_US_Basic_Kit` | `machine_max:us_basic_kit` | 美系共用型谱：M256 120mm 坦克炮、M2HB 12.7mm 重机枪、M240 7.62mm 通用机枪、`abrams` FMOD bank 与配套弹种 |
+| L1 | `Machine-Max_China_Basic_Kit` | `machine_max:china_basic_kit` | 中系共用型谱：59 式 100mm 线膛炮、54 式 12.7mm 高射机枪、59 式 7.62mm 并列机枪与配套弹种；硬依赖苏系 kit，复用 12.7×108 / 7.62×54R 弹种 |
 | L1 | `Machine-Max_Civilian` | `machine_max:civilian` | 13 款民用载具（集合包，不单独建 kit） |
 | L2 | `Machine-Max_2S38`、`_K17`、`_MTLB`、`_Sdkfz234` | `machine_max:2s38` 等 | 单车 / 车族：几何、挂点、接线、装配体、蓝图、模板、配方、HUD |
+| L2 | `Machine-Max_M1A2_SEP`、`_T90A`、`_Type59` | `m1a2_sep:pack` 等 | 单车：几何、挂点、接线、装配体、蓝图、模板、配方、HUD；武器与弹种取自对应 kit |
 | — | `Machine-Max_Pack_Template` | `machine_max:template` | 空骨架，供作者复制 |
 
 依赖链是 `车包 → kit → builtin`：载具包只声明最具体的那一册，链上的定义自动带入。跨包引用（车包直接用 builtin 的座椅、某个车包用兄弟车包的加装件）靠「所有包先读完再统一注册」成立，`dependencies` 只决定加载顺序与同 id 覆盖。
@@ -471,7 +474,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 - **运动学刚体接约束入世后步进 = 物理线程崩溃（已定位）**：已入碰撞世界的刚体被切成运动学模式后若被关节连接，多线程构建的下一次步进即崩在 `btSimulationIslandManagerMt` 的归岛阶段（`EXCEPTION_ACCESS_VIOLATION` in `bulletjme.dll`，线程 `Server PhysicsThread`）。根因是归岛用并查集按定义跳过静态/运动学刚体，其 island tag 为 `-1` 而被无保护地当作下标。**纪律**：不要用运动学模式冻结参与关节的刚体，改用 `VehicleCore.freezePhysicsForTerrainWait()` / `unfreezePhysicsForTerrainWait()` 或平动/转动系数归零；加约束时两端刚体应已在碰撞世界中，移出刚体前先摘掉引用它的约束（Spark-Core 的 `addJoint()` 只打 WARNING、`removePhysicsBody()` 不摘约束）。症状、根因推导、其他触发路径与上游 issue 草稿见 [`docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md`](docs/plan/计划中/物理-运动学刚体接约束入世后步进崩溃.md)。
 - **耦合扭矩禁用**：`MotorSubsystem.coupleTorque = 0`，因轮子停止时振荡。
 - **CI/CD**：GitHub Actions（`build.yml` — push/PR 自动构建；`pages.yml` — 文档发布到 GitHub Pages）。
-- **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。九个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。发布产物只带游戏运行期需要的类：`jar` 与 `sourcesJar` 排除 `common/gametest/`，GameTest 由开发期的 `runGameTestServer` 从 classes 目录加载。
+- **打包说明**：内容包随 jar 发布——`SparkPackResourceLoader` 启动时把 `src/main/resources/spark_modules/` 下的包目录打包成 `<gamedir>/spark_modules/<目录名>.zip`。十一个第一方包整目录带上即可；目录改名的旧 zip 由 `MMRetiredPackCleanup` 清理。发布产物只带游戏运行期需要的类：`jar` 与 `sourcesJar` 排除 `common/gametest/`，GameTest 由开发期的 `runGameTestServer` 从 classes 目录加载。
 
 ## 参考文件
 

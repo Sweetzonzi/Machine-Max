@@ -189,11 +189,11 @@
             },
             "subsystem.machine_max.2a90_ap_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:2a90_regen_loader",
+              "definition": "machine_max:57mm_2a90_regen_loader",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
-                  { "ammo": "machine_max:57mm_ap", "count": 1 }
+                  { "ammo": "machine_max:57mm_br281_ap", "count": 1 }
                 ],
                 "length": 1
               },
@@ -205,11 +205,11 @@
             },
             "subsystem.machine_max.2a90_he_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:2a90_regen_loader",
+              "definition": "machine_max:57mm_2a90_regen_loader",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
-                  { "ammo": "machine_max:57mm_he", "count": 1 }
+                  { "ammo": "machine_max:57mm_or281_he", "count": 1 }
                 ],
                 "length": 1
               },
@@ -278,7 +278,7 @@
           "subsystems": {
             "subsystem.machine_max.2a90": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:2a90_launcher",
+              "definition": "machine_max:57mm_2a90_launcher",
               "locator": "main_gun_muzzle"
             }
           }
@@ -328,17 +328,17 @@
           "subsystems": {
             "subsystem.machine_max.pktm": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:pktm_launcher",
+              "definition": "machine_max:7_62mm_pktm_launcher",
               "locator": "pktm_muzzle"
             },
             "subsystem.machine_max.pktm_ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "machine_max:pktm_regen_loader",
+              "definition": "machine_max:7_62mm_pktm_regen_loader",
               "belt_definition": {
                 "label": "AP/T",
                 "pattern": [
-                  { "ammo": "machine_max:7_62x54r_ap", "count": 3 },
-                  { "ammo": "machine_max:7_62x54r_t", "count": 1 }
+                  { "ammo": "machine_max:7_62x54r_b32_ap", "count": 3 },
+                  { "ammo": "machine_max:7_62x54r_t46_t", "count": 1 }
                 ],
                 "length": 200
               },

@@ -1,11 +1,14 @@
 {
   "subsystem.machine_max.pktm_ammo_loader": "PKTM 装弹机",
   "subsystem.machine_max.pktm": "PKTM 机枪",
-  "machine_max.30mm_ap": "AP",
-  "machine_max.30mm_he": "HE",
-  "machine_max.7_62x54r_ap": "AP",
-  "machine_max.7_62x54r_t": "曳光",
-  "machine_max.9m133_kornet": "ATGM",
-  "machine_max.57mm_ap": "57mm 穿甲弹",
-  "machine_max.57mm_he": "57mm 高爆弹"
+  "machine_max.30mm_3ubr6_ap": "AP",
+  "machine_max.30mm_3uof8_he": "HE",
+  "machine_max.57mm_br281_ap": "57mm 穿甲弹",
+  "machine_max.57mm_or281_he": "57mm 高爆弹",
+  "machine_max.7_62x54r_b32_ap": "AP",
+  "machine_max.7_62x54r_t46_t": "曳光",
+  "machine_max.12_7x108_b32_ap": "AP",
+  "machine_max.125mm_3bm42_ap": "125mm 穿甲弹",
+  "machine_max.125mm_3of26_he": "125mm 高爆弹",
+  "machine_max.152mm_9m133_atgm": "ATGM"
 }

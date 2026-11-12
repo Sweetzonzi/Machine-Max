@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/recipe/part_fabricating_recipe.schema.json",
+  "title": "Machine-Max Part Fabricating Recipe",
+  "description": "machine_max:part_fabricating 配方的 schema。零件配方必须位于内容包的 recipe/part_fabricating/ 目录下（允许再分子目录），文件名只取最后一段并等于零件 id 的 path，文件所在 namespace 等于零件 id 的 namespace。产物零件由文件名推导，JSON 只声明产物数量。",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "用于编辑器校验的 JSON Schema 引用路径。"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:part_fabricating"
+    },
+    "manual": {
+      "type": "boolean",
+      "default": true,
+      "description": "选填，缺省 true。true 表示装配时消耗配方原料（组装清单按 ceil(原料数量 / result.count) 折算、拆卸清单按 floor 折算）；false 表示装配时消耗本配方的产物整件，材料数量恒为 1 件。"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ingredient_count_pair"
+      }
+    },
+    "result": {
+      "$ref": "#/definitions/result_count"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 100,
+      "description": "手动组装或制造机的制作时间，单位为 tick，1 秒 = 20 tick。"
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "type",
+    "ingredients"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "ingredient_selector": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "tag": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["item"] }, { "required": ["tag"] }],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "neoforge:ingredient_type": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["type"] }, { "required": ["neoforge:ingredient_type"] }],
+          "additionalProperties": true
+        }
+      ]
+    },
+    "ingredient_count_pair": {
+      "type": "object",
+      "properties": {
+        "ingredient": {
+          "$ref": "#/definitions/ingredient_selector"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "ingredient",
+        "count"
+      ],
+      "additionalProperties": false
+    },
+    "result_count": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "additionalProperties": false,
+      "description": "产物数量，选填，缺省 1。产物零件由配方文件名推导，此处只声明数量；数量必须大于 0 且不超过该零件的堆叠上限。"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "type": "machine_max:launcher",
+  "single_round_loading": false,
+  "basic_durability": 45,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "control_inputs": [
+    "weapon.autocannon",
+    "weapon.autocannon.2a42"
+  ],
+  "ammo_inputs": [
+    "ammo_30mm"
+  ],
+  "barrel": {
+    "horizontal_accuracy_multiplier": 1,
+    "vertical_accuracy_multiplier": 1,
+    "recoil_multiplier": 1.3
+  },
+  "breech": {
+    "fire_rate": 550,
+    "required_tags": [
+      "machine_max:caliber/30mm"
+    ]
+  },
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

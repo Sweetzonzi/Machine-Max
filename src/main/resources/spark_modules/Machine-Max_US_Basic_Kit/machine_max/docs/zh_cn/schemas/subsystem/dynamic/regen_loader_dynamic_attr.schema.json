@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/regen_loader_dynamic_attr.json",
+  "title": "再生装弹机子系统动态属性",
+  "description": "再生装弹机子系统的实例属性，描述写在部件 JSON 的 subsystems 块里的逐实例字段：输出模板与弹药发现频道。弹仓容量、再生速率等按型号共享的字段写在 definition 指向的静态属性文件里，不在本文件描述范围内。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_loader",
+      "description": "子系统类型，必须为 'machine_max:regen_loader'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的再生装弹机静态属性定义文件。"
+    },
+    "belt_definition": {
+      "type": "object",
+      "description": "输出模板：每次交付取它的一份副本，字段与弹药内容格式一致。remaining 只表达模板自身的余量，交付时由源按实际库存填写：库存不足一份时交付剩余发数，因此交付实例的 remaining 可能小于 length。length 是一份的发数（也是单次交付上限），不得超过源 magazine.capacity，单发装填的武器填 1。",
+      "properties": {
+        "container_id": {
+          "type": "string",
+          "description": "可选的内容包容器型号，供物品还原、容量与呈现使用；缺省表示虚拟供弹。本阶段只做标识格式解析与保存，型号存在性与容量校验随物品实现接入。"
+        },
+        "label": {
+          "type": "string",
+          "default": "",
+          "description": "弹链显示名，按字面显示在武器 HUD 上。留空时取首发弹种的展示文本。它只影响显示，不参与弹药池分组、路由或唯一身份；两条构成不同的弹链可以显示同一个名字。"
+        },
+        "pattern": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "ammo": {
+                "type": "string",
+                "description": "投射物资源地址，例如 machine_max:30mm_3ubr6_ap。该弹种在界面上的文本取自它自己的语言键。"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "连续同种弹药的发数。"
+              }
+            },
+            "required": ["ammo", "count"],
+            "additionalProperties": false
+          },
+          "description": "有序配弹模式：条目按书写顺序展开，取弹位置为 (length - remaining) % patternTotal。同一弹种可以出现多次；重复的混装只保存短模式，不必展开到每一发。"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "一份 Belt 的容量（发）。按该武器供弹具的实际发数填写，与源 magazine.capacity 相互独立：容量是源能存多少发，长度是一份最多交付多少发。长度大于容量属于配置错误，解码期拒绝。"
+        },
+        "recharge": {
+          "type": "object",
+          "description": "可选自身回充：声明后已装 Belt 由持有它的发射器按速率补回打掉的发数，补到 length 为止。只有需要让已装弹链自己恢复的型号才写这一块。",
+          "properties": {
+            "regen_per_minute": {
+              "type": "number",
+              "minimum": 0,
+              "description": "回充速率（发／分钟）。"
+            },
+            "regen_delay": {
+              "type": "number",
+              "minimum": 0,
+              "default": 0,
+              "description": "成功射击后暂停回充的秒数。每次成功消费本 Belt 额度都重置；持续开火期间因此不产生回充。"
+            },
+            "energy_cost_per_round": {
+              "type": "number",
+              "minimum": 0,
+              "default": 0,
+              "description": "每补一发的能源费用，由持有者提供的能源网格支付；取不到时停在当前进度等待下一 tick。0 表示免费。"
+            }
+          },
+          "required": ["regen_per_minute"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["pattern", "length"],
+      "additionalProperties": false
+    },
+    "discovery_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "弹药发现频道及目标，装弹机据此发现同载具内的弹药消费者。可选。"
+    }
+  },
+  "required": ["type", "definition", "belt_definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_loader",
+      "definition": "machine_max:30mm_2a42_regen_loader",
+      "belt_definition": {
+        "label": "AP/HE",
+        "pattern": [
+          { "ammo": "machine_max:30mm_3ubr6_ap", "count": 1 },
+          { "ammo": "machine_max:30mm_3uof8_he", "count": 1 }
+        ],
+        "length": 150,
+        "recharge": { "regen_per_minute": 100, "regen_delay": 0.3, "energy_cost_per_round": 0 }
+      },
+      "discovery_outputs": {
+        "ammo_2a42": ["global"]
+      }
+    }
+  ]
+}

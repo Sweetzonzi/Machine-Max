@@ -271,7 +271,7 @@
                   "subsystem.t90a.azimuth_driver",
                   "subsystem.t90a.elevation_driver"
                 ],
-                "weapon.gun": [
+                "weapon.gun.2a46m": [
                   "global"
                 ]
               },
@@ -281,32 +281,32 @@
             },
             "subsystem.t90a.ammo_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "t90a:t90a_loader",
+              "definition": "machine_max:125mm_2a46m_regen_loader",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
-                  { "ammo": "t90a:t90a_125mm_ap", "count": 1 }
+                  { "ammo": "machine_max:125mm_3bm42_ap", "count": 1 }
                 ],
                 "length": 1
               },
               "discovery_outputs": {
-                "ammo_t90a": [
+                "ammo_125mm": [
                   "global"
                 ]
               }
             },
             "subsystem.t90a.ammo_loader_he": {
               "type": "machine_max:regen_loader",
-              "definition": "t90a:t90a_he_loader",
+              "definition": "machine_max:125mm_2a46m_regen_loader",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
-                  { "ammo": "t90a:t90a_125mm_he", "count": 1 }
+                  { "ammo": "machine_max:125mm_3of26_he", "count": 1 }
                 ],
                 "length": 1
               },
               "discovery_outputs": {
-                "ammo_t90a": [
+                "ammo_125mm": [
                   "global"
                 ]
               }
@@ -315,7 +315,7 @@
               "type": "machine_max:weapon_controller",
               "definition": "t90a:coax_controller",
               "control_outputs": {
-                "weapon.mg.coax": [
+                "weapon.mg.pktm": [
                   "global"
                 ]
               },
@@ -324,16 +324,16 @@
             },
             "subsystem.t90a.coax_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "t90a:coax_loader",
+              "definition": "machine_max:7_62mm_pktm_regen_loader",
               "belt_definition": {
                 "label": "PKT 7.62",
                 "pattern": [
-                  { "ammo": "t90a:mg_7_62_ap", "count": 1 }
+                  { "ammo": "machine_max:7_62x54r_b32_ap", "count": 1 }
                 ],
                 "length": 250
               },
               "discovery_outputs": {
-                "ammo_coax": [
+                "ammo_7_62mm": [
                   "global"
                 ]
               }
@@ -407,7 +407,7 @@
           "subsystems": {
             "subsystem.t90a.coax_launcher": {
               "type": "machine_max:launcher",
-              "definition": "t90a:coax_launcher",
+              "definition": "machine_max:7_62mm_pktm_launcher",
               "locator": "coax_muzzle"
             },
             "subsystem.t90a.gunner_sight": {
@@ -487,7 +487,7 @@
                   "subsystem.t90a.aa_yaw_driver",
                   "subsystem.t90a.aa_pitch_driver"
                 ],
-                "weapon.mg.aa": [
+                "weapon.mg.nsvt": [
                   "global"
                 ]
               },
@@ -496,16 +496,16 @@
             },
             "subsystem.t90a.aa_loader": {
               "type": "machine_max:regen_loader",
-              "definition": "t90a:aa_loader",
+              "definition": "machine_max:12_7mm_nsvt_regen_loader",
               "belt_definition": {
                 "label": "12.7",
                 "pattern": [
-                  { "ammo": "t90a:mg_12_7_ap", "count": 1 }
+                  { "ammo": "machine_max:12_7x108_b32_ap", "count": 1 }
                 ],
                 "length": 100
               },
               "discovery_outputs": {
-                "ammo_aa": [
+                "ammo_12_7mm": [
                   "global"
                 ]
               }
@@ -548,7 +548,7 @@
           "subsystems": {
             "subsystem.t90a.aa_launcher": {
               "type": "machine_max:launcher",
-              "definition": "t90a:aa_launcher",
+              "definition": "machine_max:12_7mm_nsvt_launcher",
               "locator": "mg_muzzle"
             }
           }
@@ -584,7 +584,7 @@
           "subsystems": {
             "subsystem.t90a.launcher": {
               "type": "machine_max:launcher",
-              "definition": "t90a:t90a_launcher",
+              "definition": "machine_max:125mm_2a46m_launcher",
               "locator": "main_muzzle"
             }
           }

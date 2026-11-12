@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/hud/hud_element.json",
+  "title": "HUD element",
+  "type": "object",
+  "properties": {
+    "style": {
+      "$ref": "../base/resource_location.schema.json"
+    },
+    "perspective": {
+      "type": "boolean",
+      "default": true
+    },
+    "scope_behavior": {
+      "enum": [
+        "screen_fixed",
+        "follow_position",
+        "follow_transform"
+      ],
+      "default": "follow_position"
+    },
+    "ignore_zoom": {
+      "type": "boolean",
+      "default": false
+    },
+    "offset": {
+      "$ref": "../base/vector_3d.schema.json",
+      "default": [
+        0,
+        0,
+        0
+      ]
+    },
+    "rotation": {
+      "$ref": "../base/vector_3d.schema.json",
+      "default": [
+        0,
+        0,
+        0
+      ]
+    },
+    "scale": {
+      "$ref": "../base/vector_3d.schema.json",
+      "default": [
+        1,
+        1,
+        1
+      ]
+    },
+    "anchor": {
+      "enum": [
+        "top_left",
+        "top_center",
+        "top_right",
+        "center_left",
+        "center",
+        "center_right",
+        "bottom_left",
+        "bottom_center",
+        "bottom_right"
+      ],
+      "default": "top_left"
+    },
+    "selection_visibility": {
+      "enum": [
+        "selected_only",
+        "always"
+      ],
+      "default": "selected_only",
+      "description": "Weapon elements use the observing seat selection. Ordinary seat and camera elements are unaffected."
+    }
+  },
+  "required": [
+    "style"
+  ],
+  "additionalProperties": false
+}

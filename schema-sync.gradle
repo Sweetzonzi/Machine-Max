@@ -32,6 +32,8 @@ def syncTargets = [
         [pack: 'Machine-Max_Civilian', namespace: 'machine_max'],
         [pack: 'Machine-Max_Soviet_Basic_Kit', namespace: 'machine_max'],
         [pack: 'Machine-Max_German_Basic_Kit', namespace: 'machine_max'],
+        [pack: 'Machine-Max_US_Basic_Kit', namespace: 'machine_max'],
+        [pack: 'Machine-Max_China_Basic_Kit', namespace: 'machine_max'],
         [pack: 'Machine-Max_2S38', namespace: 'machine_max'],
         [pack: 'Machine-Max_K17', namespace: 'machine_max'],
         [pack: 'Machine-Max_MTLB', namespace: 'machine_max'],

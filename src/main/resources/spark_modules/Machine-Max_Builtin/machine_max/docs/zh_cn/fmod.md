@@ -8,7 +8,7 @@
 
 ## 资源目录与 bank ID
 
-下表路径相对于 `src/main/resources/spark_modules/`。配套的 Master 与字符串表统一放在 Builtin，M1A2 包通过 `meta.json` 的硬依赖使用 Builtin。
+下表路径相对于 `src/main/resources/spark_modules/`。配套的 Master 与字符串表统一放在 Builtin，`abrams.bank` 放在美系型谱包，M1A2 包通过 `meta.json` 的硬依赖使用两者。
 
 | 文件 | 内容包内路径 | bank ID | 事件数 |
 | --- | --- | --- | --- |
@@ -16,7 +16,7 @@
 | Master.strings.bank | `Machine-Max_Builtin/machine_max/fmod/Master.strings.bank` | `machine_max:master.strings` | 0 |
 | basic_vehicle_sounds.bank | `Machine-Max_Builtin/machine_max/fmod/basic_vehicle_sounds.bank` | `machine_max:basic_vehicle_sounds` | 39 |
 | mfx.bank | `Machine-Max_Builtin/machine_max/fmod/mfx.bank` | `machine_max:mfx` | 25 |
-| abrams.bank | `Machine-Max_M1A2_SEP/m1a2_sep/fmod/abrams.bank` | `m1a2_sep:abrams` | 8 |
+| abrams.bank | `Machine-Max_US_Basic_Kit/machine_max/fmod/abrams.bank` | `machine_max:abrams` | 8 |
 
 `mfx.bank` 的 Studio bank 路径为 `bank:/Mfx`。配置使用文件路径生成的 `machine_max:mfx`，事件使用下列大小写精确的 `event:/...` 路径。路径转 bank ID 的规则见 `../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/pack/modules/FModModule.kt#read`。
 
@@ -296,7 +296,7 @@ bank ID 为 `machine_max:mfx`。
 
 ### M1A2 SEP
 
-bank ID 为 `m1a2_sep:abrams`。
+bank ID 为 `machine_max:abrams`。
 
 #### `event:/Abrams`
 
@@ -404,7 +404,7 @@ bank ID 为 `m1a2_sep:abrams`。
 
 ## 当前接入边界
 
-发动机持续工况由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#tickFmodSound` 播放。以下定义同时配置同系列的 drive、start 和 stop，运行时持续工况读取 drive。除 M1A2 使用 `m1a2_sep:abrams` 外，其余使用 `machine_max:basic_vehicle_sounds`。
+发动机持续工况由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#tickFmodSound` 播放。以下定义同时配置同系列的 drive、start 和 stop，运行时持续工况读取 drive。除 M1A2 使用 `machine_max:abrams` 外，其余使用 `machine_max:basic_vehicle_sounds`。
 
 | 发动机定义对应对象 | 持续工况事件 |
 | --- | --- |
@@ -416,7 +416,7 @@ bank ID 为 `m1a2_sep:abrams`。
 
 各发动机将自身怠速到红线的区间归一化为 rpm=0～100，load 使用同步的油门开度。K17 与 Sd.Kfz.234 使用通用军用引擎音色。Builtin 的通用定义与各车专用定义分别配置，专用定义由相应车包的零件引用。单缸的 R700、Builtin motorcycle_engine 和 V8 的 Senna GTR、Builtin sport_car_engine 使用其采样或合成工况音；当前 bank 的汽车系列为 2c、4c、6c、dsl。
 
-M1A2 发射器属性的 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，发射器运行时的 FMOD 播放接线待实现。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
+美系型谱包的发射器属性 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，发射器运行时的 FMOD 播放接线待实现。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
 
 轮胎与普通零件的地形接触已接入 tire_noise，轮胎尖叫已接入 tire_screech，参数与生命周期见本文“接触音效运行时接线”。
 

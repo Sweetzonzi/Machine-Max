@@ -1,0 +1,17 @@
+{
+  "id": "machine_max:china_basic_kit",
+  "version": "1.0",
+  "author": "作者",
+  "description": "中系载具共用的型谱：59 式 100mm 线膛炮、54 式 12.7mm 高射机枪、59 式 7.62mm 并列机枪与配套弹种；7.62×54R 与 12.7×108 弹种沿用苏系 kit，不含具体载具。",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    },
+    {
+      "id": "machine_max:soviet_basic_kit",
+      "type": "hard"
+    }
+  ],
+  "enable_auto_pack": true
+}

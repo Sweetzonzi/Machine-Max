@@ -34,7 +34,7 @@
             "properties": {
               "ammo": {
                 "type": "string",
-                "description": "投射物资源地址，例如 machine_max:30mm_ap。该弹种在界面上的文本取自它自己的语言键。"
+                "description": "投射物资源地址，例如 machine_max:30mm_3ubr6_ap。该弹种在界面上的文本取自它自己的语言键。"
               },
               "count": {
                 "type": "integer",
@@ -94,12 +94,12 @@
   "examples": [
     {
       "type": "machine_max:regen_loader",
-      "definition": "machine_max:2a42_regen_loader",
+      "definition": "machine_max:30mm_2a42_regen_loader",
       "belt_definition": {
         "label": "AP/HE",
         "pattern": [
-          { "ammo": "machine_max:30mm_ap", "count": 1 },
-          { "ammo": "machine_max:30mm_he", "count": 1 }
+          { "ammo": "machine_max:30mm_3ubr6_ap", "count": 1 },
+          { "ammo": "machine_max:30mm_3uof8_he", "count": 1 }
         ],
         "length": 150,
         "recharge": { "regen_per_minute": 100, "regen_delay": 0.3, "energy_cost_per_round": 0 }
