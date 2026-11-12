@@ -31,8 +31,11 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalBus;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -80,7 +83,7 @@ import java.util.concurrent.ConcurrentMap;
  * @param <T> 本种类的静态定义类型
  */
 @Getter
-public abstract class AbstractPart<T extends AbstractPartType> implements IAnimatable<AbstractPart<?>>, ISignalReceiver {
+public abstract class AbstractPart<T extends AbstractPartType> implements IAnimatable<AbstractPart<?>>, ISignalBus {
     // 身份、归属与公共运行状态
     /**
      * 所属的装配体（VehicleCore、MechUnit 等）
@@ -117,6 +120,8 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     /** 部件级信号存储，同时作为 Molang 变量表（{@link #getVariables()}） */
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
+    /** 本部件的 local 总线订阅集合；构造期登记、子零件销毁期移除，与物理归属相互独立 */
+    private final Set<ISignalReceiver> localSubscribers = ConcurrentHashMap.newKeySet();
     // 子零件、连接器与子系统索引
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
@@ -466,10 +471,14 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
 
     /**
      * 清理已创建子零件的物理与连接资源，跳过子系统正常拆离通知。
-     * <p>仅用于构造失败；跳过拆离通知可避免将尚未正式投入使用的库存作为掉落返还。</p>
+     * <p>仅用于构造失败；跳过拆离通知可避免将尚未正式投入使用的库存作为掉落返还。
+     * 清理同时释放本部件的 local 订阅与两份临时信号容器，已移除对象不会被缓存引用继续通知。</p>
      */
     protected final void abortConstruction() {
         subParts.values().forEach(SubPart::abortConstruction);
+        localSubscribers.clear();
+        signalInputChannels.clear();
+        signalStorage.clear();
     }
 
     /**
@@ -680,6 +689,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
             AbstractSubsystem subsystem = attr.createSubsystem(subPart, name);
             subPart.subsystems.put(name, subsystem);//部件内的子系统
             subsystemsByName.put(name, subsystem);//AbstractPart 级按名索引
+            subscribe(subsystem);//默认订阅本部件的 local 总线
         }
     }
 
@@ -1013,6 +1023,9 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      */
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
+        localSubscribers.clear();
+        signalInputChannels.clear();
+        signalStorage.clear();
     }
 
     /**
@@ -1136,7 +1149,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         return rootSubPart.getRenderPosition(partialTicks);
     }
 
-    // ======================== ISignalReceiver 实现 ========================
+    // ======================== ISignalBus 实现 ========================
 
     /** AbstractPart 在信号路由中的保留地址：{@code "local"} 表示当前动画体（AbstractPart） */
     @Override
@@ -1150,6 +1163,70 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     @Override
     public ConcurrentMap<String, Object> getSignalStorage() {
         return signalStorage;
+    }
+
+    /**
+     * 本部件的 local 总线订阅集合。
+     * <p>广播与只读发现都读取这里的当前内容。物理归属与订阅是两种状态：子系统仍属于本部件时也可以
+     * 已经退订，因此查询不能改用 {@link #getAllSubsystems()} 把全部物理成员重新填回。</p>
+     */
+    @Override
+    public Set<ISignalReceiver> getAllSubscribers() {
+        return localSubscribers;
+    }
+
+    /**
+     * 主线程：把接收者加入本部件的 local 总线；重复调用按集合语义幂等。
+     */
+    @Override
+    public void subscribe(ISignalReceiver subscriber) {
+        localSubscribers.add(subscriber);
+    }
+
+    /**
+     * 主线程：把接收者移出本部件的 local 总线。
+     * <p>不改变该对象在装配体总线中的订阅，也不改变它的物理归属。</p>
+     */
+    @Override
+    public void unsubscribe(ISignalReceiver subscriber) {
+        localSubscribers.remove(subscriber);
+    }
+
+    /**
+     * 本部件作为 {@code local} 目标收到信号时，更新部件级键值存储并把该频道内各来源的当前值
+     * 广播给订阅者。
+     * <p>遍历频道内的来源槽而不是回调入参的 {@code sender}：端口转译送达时入参是转发前的原始发送者，
+     * 而槽键已经按来源分开，逐槽广播才能保留每个来源的身份。广播在调用方线程上执行——主线程与物理步
+     * 都会走到这里，因此实现只做槽写入与通知，不安排主线程专属操作。</p>
+     */
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalChannel channel = signalInputChannels.get(channelName);
+        if (channel == null) return SignalResult.PASS;
+        for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
+            signalStorage.put(channelName, entry.getValue());
+            broadcast(channelName, entry.getValue(), entry.getKey());
+        }
+        return SignalResult.PASS;
+    }
+
+    /**
+     * 允许经过连接器的频道进入本部件：{@code local} 作为端口目标时按到达频道交给本部件，
+     * 再由各订阅者自己的接收声明筛选。
+     */
+    @Override
+    public boolean acceptAllRoutingInput() {
+        return true;
+    }
+
+    /**
+     * 主线程：清空本部件的输入频道与部件级键值存储，保留订阅集合。
+     * <p>装配体结构变化时由宿主调用。显式退订由 {@link #unsubscribe(ISignalReceiver)} 表达，
+     * 线路变化不会把它恢复。</p>
+     */
+    public void clearSignalStorage() {
+        signalInputChannels.clear();
+        signalStorage.clear();
     }
 
 }

@@ -1,10 +1,10 @@
 # 信号系统 — Part 信号总线实施计划
 
-**状态**：计划中；设计已明确，P1—P5 尚未实施。本文定义公共 Part 的信号总线契约、代码改动范围和验收场景，不表示功能或验证已经完成。
+**状态**：已实现；P1—P5 全部落地，`local` 总线由 `AbstractPart` 提供、`global` 仍由 `SubsystemController` 管理。§7 的 V1—V9 由单测与 GameTest 覆盖，运行结果见 §7.1；本文固定公共 Part 的信号总线契约、代码落点与验收场景。
 
-**核对日期**：2026-11-12。
+**核对日期**：2026-11-12。**实施日期**：2026-11-13。
 
-**关联需求**：[人工与机械装填及操作员接入计划](武器系统-人工与机械装填及操作员接入计划.md) §4 要求武器／机构在当前 Part 范围内发现座位。同一 Part 的多个 SubPart 应互通，两个炮塔 Part 应隔离；作者可以在独立炮塔上复用同一发现频道。
+**关联需求**：[人工与机械装填及操作员接入计划](../计划中/武器系统-人工与机械装填及操作员接入计划.md) §4 要求武器／机构在当前 Part 范围内发现座位。同一 Part 的多个 SubPart 应互通，两个炮塔 Part 应隔离；作者可以在独立炮塔上复用同一发现频道。
 
 ## 1. 目标与交付边界
 
@@ -36,7 +36,7 @@
 | R10 | `common/gametest/SignalPipelineGameTest.java#structureChangeClearsSignalStorageBeforeDiscovery` | 既有用例检查 Part 输入频道、全车总线和端口缓冲的清空，没有断言 Part 的键值存储清空，也没有覆盖 Part 内广播 |
 | R11 | `common/mech/subsystem/AbstractSubsystem.java#onSignalUpdated`；`common/mech/vehicle/interact/InteractBox.java#interact` | 子系统可立即处理 `InteractSignal`；交互区按显式目标顺序尝试，收到 `CONSUME` 时结束 |
 
-现行发现与投递规则见 [子系统发现与投递重构实施计划](../已实现/信号系统-子系统发现与投递重构实施计划.md) §2—§4。该文中的 `global` 展开是已实现基线；本文定义 `local` 的总线实施契约。
+现行发现与投递规则见 [子系统发现与投递重构实施计划](信号系统-子系统发现与投递重构实施计划.md) §2—§4。该文中的 `global` 展开是已实现基线；本文定义 `local` 的总线实施契约。
 
 ## 3. 运行契约
 
@@ -57,7 +57,7 @@ Part 成为 `ISignalBus` 后，R2 的现有总线分支可以取得其成员，�
 
 查询不写任何来源槽或 MoLang 存储，不通知接收者，也不发送空信号。成员集合覆盖全部 SubPart，因此可以从炮身子零件发现同一炮塔 Part 的座位，不需要同时完成跨 SubPart 的按名字面寻址。
 
-R2 的 `getReceiversFromNames` 对普通名称的解析当前仅查发送者所在 SubPart。把这个解析提升到 Part 全域是 [动画系统 Part 设计](../已实现/动画系统-Part作为动画体重构设计.md) §6.5.3、§10 的独立待办；`local` 总线接入不以该工作作为前提。
+R2 的 `getReceiversFromNames` 对普通名称的解析当前仅查发送者所在 SubPart。把这个解析提升到 Part 全域是 [动画系统 Part 设计](动画系统-Part作为动画体重构设计.md) §6.5.3、§10 的独立待办；`local` 总线接入不以该工作作为前提。
 
 ### 3.3 真实信号到达
 
@@ -117,7 +117,7 @@ R6 表明 `subsystemsByName` 存在保留已销毁对象的可能，因此不能
 
 R11 是“所有消费者都只读值”的实际例外：即时交互可以在回调中执行动作。交互区当前走显式目标顺序及 `CONSUME` 返回链，Part 广播不承担多目标交互调度；本轮不为将来可能广播的交互事件建立全局去重机制。若后续有实际的非幂等广播消费者，再按其业务契约处理。
 
-本次在排除 `docs` 的第一方内容 JSON 中做文本扫描，发现 17 个文件、119 行包含字面量 `"local"`。这只是审查范围统计，不代表 119 条实际广播、订阅命中或已发生错误，也不是验收基线。实施应按完整目标列表及实际频道逐项分类。
+核对时在排除 `docs` 的第一方内容 JSON 中做文本扫描，发现 17 个文件、119 行包含字面量 `"local"`。这只是审查范围统计，不代表 119 条实际广播、订阅命中或已发生错误，也不是验收基线。实施应按完整目标列表及实际频道逐项分类。
 
 ### 5.2 广播与环路
 
@@ -135,11 +135,11 @@ R11 是“所有消费者都只读值”的实际例外：即时交互可以在�
 
 | 步骤 | 状态 | 主要落点 | 完成条件 |
 | --- | --- | --- | --- |
-| P1 | 待实施 | `AbstractPart` | 实现现有 `ISignalBus`；独立集合及三个订阅方法可用，local 退订不改变物理归属或 global 订阅 |
-| P2 | 待实施 | `AbstractPart#createSubsystems`、`SubPart#destroy` 及 Part 回收入口 | 默认订阅、正常退订、失败退订完整接入；Part 转移到另一装配体时保留自身订阅 |
-| P3 | 待实施 | `AbstractPart`、信号接口说明 | 到达处理更新 Part 存储并实际广播；原始发送者保留；允许路由进入 local，成员按声明筛选；现有查询自动按总线展开 |
-| P4 | 待实施 | `AbstractPart`、`VehicleCore#clearSignalStorage` | 公共信号清理方法覆盖两份容器；结构变化保持 local 订阅，销毁／失败收尾释放全部本地状态 |
-| P5 | 待实施 | 既有信号测试、内容说明及下游编译 | §7 契约验证有结果；local 与 global 范围、订阅和配置说明与实际实现一致 |
+| P1 | 已实现 | `AbstractPart` | 实现现有 `ISignalBus`；独立集合及三个订阅方法可用，local 退订不改变物理归属或 global 订阅 |
+| P2 | 已实现 | `AbstractPart#createSubsystems`、`SubPart#destroy` 及 Part 回收入口 | 默认订阅、正常退订、失败退订完整接入；Part 转移到另一装配体时保留自身订阅 |
+| P3 | 已实现 | `AbstractPart`、信号接口说明 | 到达处理更新 Part 存储并实际广播；原始发送者保留；允许路由进入 local，成员按声明筛选；现有查询自动按总线展开 |
+| P4 | 已实现 | `AbstractPart`、`VehicleCore#clearSignalStorage` | 公共信号清理方法覆盖两份容器；结构变化保持 local 订阅，销毁／失败收尾释放全部本地状态 |
+| P5 | 已实现 | 既有信号测试、内容说明及下游编译 | §7 契约验证有结果；local 与 global 范围、订阅和配置说明与实际实现一致 |
 
 `ISignalBus` 的方法形状保持现有契约，广播继续复用其默认实现；公共发送接口不承载新的事件 ID 或投递上下文。只读查询的总线分支复用 R2，必要修改以接口通用注释和直接相关契约为限。
 
@@ -159,7 +159,7 @@ Part 没有主动配置首跳的需求，沿用 `ISignalBus` 的空目标表；�
 | V8 | 同次状态输出指向 local 与 global | 相同来源仍只有一个状态槽，独立来源各自保留；不要求回调只发生一次 |
 | V9 | 公共基类在 RegularPart／BodyPart 中使用 | 不依赖 `VehicleCore` 才能订阅或本地广播；两个项目的公共接口调用均可编译 |
 
-逻辑查询沿用 `src/test/java/io/github/sweetzonzi/machine_max/mech/signal/SignalTargetResolutionTest.java#SignalTargetResolutionTest` 的契约；真实 Part 的构造、销毁和结构变化在 R10 的 `SignalPipelineGameTest` 等既有 GameTest 夹具中验证，实施时只增加覆盖本轮行为的必要用例。具体测试编号与运行结果写在本节，不能用编译成功代替生命周期和广播验证。
+逻辑查询契约在 `src/test/java/io/github/sweetzonzi/machine_max/mech/signal/SignalTargetResolutionTest.java#SignalTargetResolutionTest` 中固定，`localFirstHopExpandsPartSubscribersAndStopsAtTheBus` 与 `busWithoutSubscribersHasNoTerminal` 覆盖 `local` 的订阅展开与空订阅集合；真实 Part 的构造、销毁、结构变化、端口送达与广播由 `src/main/java/io/github/sweetzonzi/machine_max/common/gametest/PartSignalBusGameTest.java#PartSignalBusGameTest` 覆盖。编译成功不能代替生命周期和广播验证，两类用例都必须通过。
 
 实施时从各自仓库根使用离线 wrapper。Machine-Max 至少编译主源码并执行选定的信号契约用例；公共基类的源码兼容同时编译 ARMS-Core。可使用的入口如下，GameTest 采用仓库现有服务端任务：
 
@@ -173,4 +173,25 @@ Part 没有主动配置首跳的需求，沿用 `ISignalBus` 的空目标表；�
 .\gradlew --offline classes
 ```
 
-验证安排属于独立信号系统工作，不扩展 [AmmoBelt 第一阶段计划](武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) §9.2 的仅编译门槛。本次交付只整理实施计划、更新引用并检查文档，不修改生产代码，不运行编译或游戏；P1—P5 均无实施或验证结果。
+### 7.1 验证结果（2026-11-13）
+
+| 入口 | 结果 |
+| --- | --- |
+| `.\gradlew --offline classes` | 成功 |
+| `.\gradlew --offline test --tests '*SignalTargetResolutionTest'` | 成功，含新增的 2 项 `local` 总线只读展开用例 |
+| `.\gradlew --offline runGameTestServer` | 65 项全部通过，其中 `PartSignalBusGameTest` 9 项 |
+| ARMS-Core `.\gradlew --offline classes` | 成功；复合构建编译本地 Machine-Max 源码，`BodyPart` 未改源码 |
+
+| 验收项 | 覆盖用例 |
+| --- | --- |
+| V1 | `localBroadcastReachesOnlyOwnPartSubscribers` |
+| V2 | `crossSubPartSubscribersAreReached` |
+| V3 | `localFirstHopExpandsPartSubscribersAndStopsAtTheBus`、`busWithoutSubscribersHasNoTerminal`，以及 `localBroadcastReachesOnlyOwnPartSubscribers` 的只读断言 |
+| V4 | `portTranslationReachesLocalBus`、`arrivalAcceptsRoutingAndKeepsOriginalSender` |
+| V5 | `constructionSubscribesSubsystemsAndUnsubscribeIsIndependent`、`unsubscribeExcludesFromDiscoveryAndBroadcast` |
+| V6 | `destroyAndFailureRecoveryLeaveNoSubscribers` |
+| V7 | `structureChangeClearsSignalsButKeepsUnsubscribe` |
+| V8 | `localAndGlobalShareOneSlotPerSender` |
+| V9 | ARMS-Core `classes` 成功；`BodyPart` 未改源码 |
+
+验证安排属于独立信号系统工作，不扩展 [AmmoBelt 第一阶段计划](../计划中/武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) §9.2 的仅编译门槛。普通名称解析的 SubPart 级作用域、全车订阅重建与消息通知策略都保持 §2 所述基线，本轮未扩大。

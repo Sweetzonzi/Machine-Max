@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,15 @@ class SignalTargetResolutionTest {
     private static final class TestBus implements ISignalBus {
         private final Set<ISignalReceiver> subscribers = new LinkedHashSet<>();
         private final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();
+        private final String address;
+
+        private TestBus() {
+            this("global");
+        }
+
+        private TestBus(String address) {
+            this.address = address;
+        }
 
         @Override
         public Set<ISignalReceiver> getAllSubscribers() {
@@ -122,7 +132,7 @@ class SignalTargetResolutionTest {
 
         @Override
         public String getSignalAddress() {
-            return "global";
+            return address;
         }
     }
 
@@ -229,5 +239,35 @@ class SignalTargetResolutionTest {
                 "结果映射不可变");
         assertThrows(UnsupportedOperationException.class,
                 () -> resolved.get("gunner_sight").add(sight), "终端列表不可变");
+    }
+
+    @Test
+    void localFirstHopExpandsPartSubscribersAndStopsAtTheBus() {
+        TestSender sender = new TestSender();
+        TestBus partBus = new TestBus("local");
+        TestReceiver seat = new TestReceiver("turret_seat", List.of("reload_operator"));
+        TestReceiver unrelated = new TestReceiver("unrelated", List.of("other_channel"));
+        sender.target("reload_operator", partBus);
+        partBus.subscribe(seat);
+        partBus.subscribe(unrelated);
+
+        Map<String, List<ISignalReceiver>> resolved = sender.resolveTargets("reload_operator");
+
+        assertEquals(Map.of("reload_operator", List.of(seat)), resolved,
+                "local 按订阅者声明展开，Part 本身不作为终端");
+        assertFalse(resolved.values().stream().flatMap(List::stream).anyMatch(receiver -> receiver == partBus),
+                "总线对象不进入终端列表");
+        assertTrue(partBus.getSignalInputChannels().isEmpty(), "查询不写 Part 输入槽");
+        assertEquals(0, seat.updates, "查询不触发接收者处理");
+    }
+
+    @Test
+    void busWithoutSubscribersHasNoTerminal() {
+        TestSender sender = new TestSender();
+        TestBus idleBus = new TestBus("local");
+        sender.target("reload_operator", idleBus);
+
+        assertTrue(sender.resolveTargets("reload_operator").isEmpty(),
+                "没有订阅者的 local 总线不产生终端，也不回退为 Part 自身");
     }
 }

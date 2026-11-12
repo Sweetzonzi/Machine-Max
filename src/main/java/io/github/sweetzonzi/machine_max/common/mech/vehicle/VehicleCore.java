@@ -329,14 +329,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     }
 
     /**
-     * 主线程：清空受影响装配体的信号存储，包括子系统与 Part 的普通输入频道、总线临时存储、
-     * 端口与交互区缓冲，以及已发布的最近反馈。<br>
+     * 主线程：清空受影响装配体的信号存储，包括子系统与 Part 的普通输入频道、部件级键值存储、
+     * 总线临时存储、端口与交互区缓冲，以及已发布的最近反馈。<br>
      * 清空先于首跳表重建与发现，新绑定面对的是空槽；后续业务 tick、物理采样与主线程反馈重新填充。
      */
     public void clearSignalStorage() {
         subSystemController.clearSignalStorage();
         for (RegularPart part : partMap.values()) {
-            part.getSignalInputChannels().clear();
+            part.clearSignalStorage();
             for (AbstractSubsystem subsystem : part.getAllSubsystems()) {
                 subsystem.clearSignalStorage();
             }

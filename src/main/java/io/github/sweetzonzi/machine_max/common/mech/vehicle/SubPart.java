@@ -279,6 +279,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
         }
+        // 先退出所属部件的 local 总线，再清空容器；正常销毁与构造失败回收共用这一入口。
+        for (AbstractSubsystem subsystem : subsystems.values()) part.unsubscribe(subsystem);
         if (notifySubsystems) subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
         if (interactBoxes != null) {
