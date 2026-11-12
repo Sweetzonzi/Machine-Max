@@ -2,7 +2,7 @@
 //
 //   ./gradlew checkContent    只读校验（check 依赖它，CI 的 build 因此也会跑）
 //
-// 四类问题都只能靠读 JSON 发现，编译期不会报：
+// 五类问题都只能靠读 JSON 发现，编译期不会报：
 //
 //  1. 装配体 / 载具蓝图与模板对齐。创造栏的两个页签按模板 id 生成物品，物品里存的是
 //     模板 id，读取时再拿它去 assemblies/、blueprints/ 查同名条目。文件名与模板不同名、
@@ -13,6 +13,9 @@
 //     游戏里只是打中装甲不出火花，既不报错也不刷日志（客户端解析不到定义时静默跳过）。
 //  4. 粒子定义之间的子效果引用可达。粒子 JSON 的 events 里用 particle_effect 生成另一个
 //     效果时，效果 id 拼错只会让子效果不出现（如只剩火花、没有闪光与烟尘），同样没有日志。
+//  5. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
+//     FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现为屏幕上一段原始键名；
+//     只有一边语言有的键则让另一边显示原始键名。两者都不报错。
 //
 // 口径：
 //  - 只扫各包的 <namespace>/ 目录，跳过 docs/（schema 副本由 checkSchemas 管）。
@@ -22,6 +25,8 @@
 //    缺页面只做汇总提示、不判失败：蓝图没有说明文字不影响放置。
 //  - 内容 id 是 <namespace>/<文件名>，与所在包无关，所以跨包引用（车包用 kit 的件）也
 //    能落到文件。
+//  - 语言键的可达性按“有没有消费方”判：字面量出现在包内非 lang、非 docs 的文件或模组源码
+//    里，或能由内容 id 按固定规则拼出。判据取宽，宁可漏报也不误报。
 
 import groovy.io.FileType
 import groovy.json.JsonSlurper
@@ -147,7 +152,7 @@ packs.sort { it.name }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，以及 JSON 引用的图标与模型可达'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标与模型可达，以及语言键的可达性与中英配对'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -318,6 +323,145 @@ tasks.register('checkContent') {
             }
         }
 
+        // 5. 语言键可达 + 中英键集一致
+        //
+        // 一条键“可达”指下列任一路径能取到它：
+        //   a. 字面量出现在某个包的 lang/ 与 docs/ 之外的文件里（模板的 part.* 条目、控制组 /
+        //      连接点 / 子系统名字、HTML 的 <translation>、配方里的 research.*.desc …），
+        //      或出现在模组源码 src/main/{java,kotlin} 里；
+        //   b. 由内容 id 按固定规则拼出：部件 / 装配体 / 蓝图 / 投射物的 <ns>.<文件名>，
+        //      型号的 <ns>.fitting.<文件名>，研发的 <ns>.research.<文件名>；以及任何
+        //      <ns>:<路径> 资源位置对应的两种写法（<ns>.<路径>、<ns>.<路径去掉斜杠>），
+        //      标签 machine_max:series/ae86 与研发分组 type59:type59_turret 都走这条。
+        def resourceIdPattern = ~/^[a-z0-9_.-]+:[a-z0-9_.\/-]+$/
+        def languageKeys = [:] as Map
+        packs.each { pack ->
+            File langDir = new File(pack.dir, 'lang')
+            if (!langDir.isDirectory()) {
+                return
+            }
+            def perFile = [:] as Map
+            langDir.eachFile(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                Object data = readJsonc(file)
+                perFile[file.name] = data instanceof Map ? data.keySet().collect { it.toString() } as Set : [] as Set
+            }
+            if (perFile) {
+                languageKeys[pack.name] = perFile
+            }
+        }
+
+        StringBuilder corpus = new StringBuilder()
+        def appendTextFile = { File file ->
+            String name = file.name.toLowerCase(Locale.ROOT)
+            if (!(name.endsWith('.json') || name.endsWith('.html') || name.endsWith('.css') ||
+                    name.endsWith('.js') || name.endsWith('.svg') || name.endsWith('.md') ||
+                    name.endsWith('.txt'))) {
+                return
+            }
+            corpus.append(file.getText('UTF-8')).append('\n' as char)
+        }
+        packs.each { pack ->
+            pack.dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.toPath().any { it.toString() == 'docs' || it.toString() == 'lang' }) {
+                    return
+                }
+                appendTextFile(file)
+            }
+        }
+        ['java', 'kotlin'].each { String sourceSet ->
+            File sourceDir = new File(projectDir, 'src/main/' + sourceSet)
+            if (!sourceDir.isDirectory()) {
+                return
+            }
+            sourceDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.name.toLowerCase(Locale.ROOT).endsWith('.' + sourceSet)) {
+                    corpus.append(file.getText('UTF-8')).append('\n' as char)
+                }
+            }
+        }
+
+        // 键名只由 ASCII 字母、数字、点、下划线、斜杠组成，所以在整段语料上按“连续记号”
+        // 取词即可。取整记号而不是子串匹配：短键不会因为长键里含有它就被误判为可达。
+        Set<String> literalTokens = new HashSet<>()
+        (corpus.toString() =~ /[A-Za-z0-9_][A-Za-z0-9_.\/#-]*/).each { literalTokens << it.toString() }
+
+        Set<String> derivedKeys = new HashSet<>()
+        packs.each { pack ->
+            String namespace = pack.namespace
+            ['parts', 'assemblies', 'blueprints', 'projectiles'].each { String kind ->
+                File dir = new File(pack.dir, kind)
+                if (!dir.isDirectory()) {
+                    return
+                }
+                dir.eachFileRecurse(FileType.FILES) { File file ->
+                    if (file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                        derivedKeys << namespace + '.' + file.name.substring(0, file.name.length() - 5)
+                    }
+                }
+            }
+            ['fittings': 'fitting', 'recipe/research': 'research'].each { String kind, String prefix ->
+                File dir = new File(pack.dir, kind)
+                if (!dir.isDirectory()) {
+                    return
+                }
+                dir.eachFileRecurse(FileType.FILES) { File file ->
+                    if (file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                        derivedKeys << namespace + '.' + prefix + '.' +
+                                file.name.substring(0, file.name.length() - 5)
+                    }
+                }
+            }
+            pack.dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.toPath().any { it.toString() == 'docs' || it.toString() == 'lang' }) {
+                    return
+                }
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                Object data
+                try {
+                    data = readJsonc(file)
+                } catch (Exception ignored) {
+                    return
+                }
+                walkStrings(data) { String value ->
+                    if (!resourceIdPattern.matcher(value).matches()) {
+                        return
+                    }
+                    int colon = value.indexOf(':')
+                    String idNamespace = value.substring(0, colon)
+                    String idPath = value.substring(colon + 1)
+                    derivedKeys << idNamespace + '.' + idPath
+                    derivedKeys << idNamespace + '.' + idPath.replace('/' as char, '.' as char)
+                }
+            }
+        }
+
+        int languageKeyCount = 0
+        languageKeys.sort { it.key }.each { String packName, Map perFile ->
+            perFile.sort { it.key }.each { String fileName, Set keys ->
+                String label = packName + '/lang/' + fileName
+                keys.each { String key ->
+                    languageKeyCount++
+                    if (literalTokens.contains(key) || derivedKeys.contains(key)) {
+                        return
+                    }
+                    problems << label + '：语言键 ' + key + ' 没有任何消费方' +
+                            '（包内没有引用它的 JSON / HTML，模组源码不取该键，也拼不出这个 id）'
+                }
+            }
+            Set zh = perFile['zh_cn.json']
+            Set en = perFile['en_us.json']
+            if (zh == null || en == null) {
+                return
+            }
+            (zh - en).sort().each { problems << packName + '：语言键 ' + it + ' 只有中文，英文缺' }
+            (en - zh).sort().each { problems << packName + '：语言键 ' + it + ' 只有英文，中文缺' }
+        }
+
         packs.each { pack ->
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
@@ -340,7 +484,8 @@ tasks.register('checkContent') {
         }
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用，' +
-                particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用）。')
+                particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
+                languageKeyCount + ' 条语言键）。')
     }
 }
 
