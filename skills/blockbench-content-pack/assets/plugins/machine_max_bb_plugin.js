@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.6.0
+// MachineMax Blockbench Plugin v0.6.1
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -11776,7 +11776,8 @@
         };
         return Object.assign(withFieldMethods(codec), { schema });
       }
-      function dispatch(key, codecMap) {
+      function dispatch(key, codecMap, opts) {
+        var keepUnknown = !!(opts && opts.onUnknown === "keep");
         var codec = {
           type: "dispatch",
           encode: function(obj, path) {
@@ -11818,6 +11819,7 @@
             }
             var subCodec = codecMap[type];
             if (!subCodec) {
+              if (keepUnknown) return JSON.parse(JSON.stringify(raw));
               throw new Error("Unknown dispatch type: " + type);
             }
             var decoded = subCodec.decode(raw);
@@ -12126,7 +12128,7 @@
         speed_outputs: Codec.map(Codec.STRING, Codec.STRING.list()).default({}),
         force_outputs: Codec.map(Codec.STRING, Codec.STRING.list()).default({})
       });
-      var SubsystemDispatchCodec = Codec.dispatch("type", {
+      var SUBSYSTEM_CODECS = {
         "machine_max:engine": EngineCodec,
         "machine_max:motor": MotorCodec,
         "machine_max:gearbox": GearboxCodec,
@@ -12148,10 +12150,13 @@
         "machine_max:ammo_loader": AmmoLoaderCodec,
         "machine_max:track_controller": TrackControllerCodec,
         "machine_max:track_drive": TrackDriveCodec
-      });
+      };
+      var SubsystemDispatchCodec = Codec.dispatch("type", SUBSYSTEM_CODECS);
+      var SubsystemLoadCodec = Codec.dispatch("type", SUBSYSTEM_CODECS, { onUnknown: "keep" });
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
           SubsystemDispatchCodec,
+          SubsystemLoadCodec,
           EngineCodec,
           WheelDriverCodec,
           SeatCodec,
@@ -12236,32 +12241,36 @@
       var { HitBoxCodec } = require_hit_box_codec();
       var { InteractBoxCodec } = require_interact_box_codec();
       var { ConnectorCodec } = require_connector_codec();
-      var { SubsystemDispatchCodec } = require_subsystem_codec();
+      var { SubsystemDispatchCodec, SubsystemLoadCodec } = require_subsystem_codec();
       var { HydroCodec } = require_hydrodynamic_codec();
-      var SubPartCodec = Codec.record({
-        // ── 骨骼范围 ──
-        start_bone: Codec.STRING.default(""),
-        end_bones: Codec.STRING.list().default([]),
-        // ── 物理属性 ──
-        durability: Codec.FLOAT.default(20),
-        mass: Codec.FLOAT.default(25),
-        mass_center: Codec.STRING.default("mass_center"),
-        projected_area: Codec.FLOAT.list(3).default([-1, -1, -1]),
-        block_collision: Codec.ENUM(["true", "false", "ground"]).default("true"),
-        collision_height: Codec.FLOAT.default(-1),
-        climb_assist: Codec.BOOL.default(false),
-        collide_in_assembly: Codec.BOOL.default(false),
-        hydro_priority: Codec.INT.default(0),
-        // ── 子对象映射 ──
-        hit_boxes: Codec.map(Codec.STRING, HitBoxCodec).default({}),
-        interact_boxes: Codec.map(Codec.STRING, InteractBoxCodec).default({}),
-        connectors: Codec.map(Codec.STRING, ConnectorCodec).default({}),
-        subsystems: Codec.map(Codec.STRING, SubsystemDispatchCodec).default({}),
-        // ── 可选子对象 ──
-        // 默认为空 map（encode 时跳过），与 Java optionalFieldOf("hydrodynamics", Map.of("", DEFAULT)) 语义对齐
-        hydrodynamics: Codec.map(Codec.STRING, HydroCodec).default({})
-      });
-      module.exports = { SubPartCodec };
+      function buildSubPartCodec(subsystemCodec) {
+        return Codec.record({
+          // ── 骨骼范围 ──
+          start_bone: Codec.STRING.default(""),
+          end_bones: Codec.STRING.list().default([]),
+          // ── 物理属性 ──
+          durability: Codec.FLOAT.default(20),
+          mass: Codec.FLOAT.default(25),
+          mass_center: Codec.STRING.default("mass_center"),
+          projected_area: Codec.FLOAT.list(3).default([-1, -1, -1]),
+          block_collision: Codec.ENUM(["true", "false", "ground"]).default("true"),
+          collision_height: Codec.FLOAT.default(-1),
+          climb_assist: Codec.BOOL.default(false),
+          collide_in_assembly: Codec.BOOL.default(false),
+          hydro_priority: Codec.INT.default(0),
+          // ── 子对象映射 ──
+          hit_boxes: Codec.map(Codec.STRING, HitBoxCodec).default({}),
+          interact_boxes: Codec.map(Codec.STRING, InteractBoxCodec).default({}),
+          connectors: Codec.map(Codec.STRING, ConnectorCodec).default({}),
+          subsystems: Codec.map(Codec.STRING, subsystemCodec).default({}),
+          // ── 可选子对象 ──
+          // 默认为空 map（encode 时跳过），与 Java optionalFieldOf("hydrodynamics", Map.of("", DEFAULT)) 语义对齐
+          hydrodynamics: Codec.map(Codec.STRING, HydroCodec).default({})
+        });
+      }
+      var SubPartCodec = buildSubPartCodec(SubsystemDispatchCodec);
+      var SubPartLoadCodec = buildSubPartCodec(SubsystemLoadCodec);
+      module.exports = { SubPartCodec, SubPartLoadCodec };
     }
   });
 
@@ -12276,21 +12285,25 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var { Codec } = require_Codec();
-      var { SubPartCodec } = require_sub_part_codec();
-      var VariantCodec = Codec.record({
-        model: Codec.STRING.field(),
-        // textures: either(单值字符串, 完整 map{名称→路径})
-        // — 单值时编码为裸字符串，解码时包装为 {default: 值}
-        // — 多值时编码为完整 map，解码时保持 map
-        // — 默认值 '' 表示未设置，encode 时跳过字段 → Java 端 fallback 到 missingno
-        textures: Codec.either(Codec.STRING, Codec.map(Codec.STRING, Codec.STRING)).default(""),
-        // animations: 单个资源路径字符串（对应 Java ResourceLocation）
-        // — 默认值 '' 表示未设置，encode 时跳过字段 → Java 端 fallback 到 machine_max:empty
-        animations: Codec.STRING.default(""),
-        tags: Codec.STRING.list().default([]),
-        sub_parts: Codec.either(SubPartCodec, Codec.map(Codec.STRING, SubPartCodec)).default({})
-      });
-      module.exports = { VariantCodec };
+      var { SubPartCodec, SubPartLoadCodec } = require_sub_part_codec();
+      function buildVariantCodec(subPartCodec) {
+        return Codec.record({
+          model: Codec.STRING.field(),
+          // textures: either(单值字符串, 完整 map{名称→路径})
+          // — 单值时编码为裸字符串，解码时包装为 {default: 值}
+          // — 多值时编码为完整 map，解码时保持 map
+          // — 默认值 '' 表示未设置，encode 时跳过字段 → Java 端 fallback 到 missingno
+          textures: Codec.either(Codec.STRING, Codec.map(Codec.STRING, Codec.STRING)).default(""),
+          // animations: 单个资源路径字符串（对应 Java ResourceLocation）
+          // — 默认值 '' 表示未设置，encode 时跳过字段 → Java 端 fallback 到 machine_max:empty
+          animations: Codec.STRING.default(""),
+          tags: Codec.STRING.list().default([]),
+          sub_parts: Codec.either(subPartCodec, Codec.map(Codec.STRING, subPartCodec)).default({})
+        });
+      }
+      var VariantCodec = buildVariantCodec(SubPartCodec);
+      var VariantLoadCodec = buildVariantCodec(SubPartLoadCodec);
+      module.exports = { VariantCodec, VariantLoadCodec };
     }
   });
 
@@ -12305,24 +12318,28 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var { Codec } = require_Codec();
-      var { VariantCodec } = require_variant_codec();
-      var PartCodec = Codec.record({
-        // ── 基础 ──
-        icon: Codec.STRING.default(""),
-        // ── 物理 ──
-        vehicle_durability_rate: Codec.FLOAT.default(0.8),
-        vehicle_damage_rate: Codec.FLOAT.default(1),
-        vehicle_damage_rate_destroyed: Codec.FLOAT.default(0.1),
-        functional_threshold: Codec.FLOAT.default(0.3),
-        // ── 行为 ──
-        share_durability: Codec.BOOL.default(true),
-        max_stack_size: Codec.INT.default(1),
-        // ── 变体 ──
-        variants: Codec.either(VariantCodec, Codec.map(Codec.STRING, VariantCodec)).default({}),
-        // ── 编辑器内部状态（encode 时空对象跳过，不影响导出）──
-        element_markers: Codec.record({}).default({})
-      });
-      module.exports = { PartCodec };
+      var { VariantCodec, VariantLoadCodec } = require_variant_codec();
+      function buildPartCodec(variantCodec) {
+        return Codec.record({
+          // ── 基础 ──
+          icon: Codec.STRING.default(""),
+          // ── 物理 ──
+          vehicle_durability_rate: Codec.FLOAT.default(0.8),
+          vehicle_damage_rate: Codec.FLOAT.default(1),
+          vehicle_damage_rate_destroyed: Codec.FLOAT.default(0.1),
+          functional_threshold: Codec.FLOAT.default(0.3),
+          // ── 行为 ──
+          share_durability: Codec.BOOL.default(true),
+          max_stack_size: Codec.INT.default(1),
+          // ── 变体 ──
+          variants: Codec.either(variantCodec, Codec.map(Codec.STRING, variantCodec)).default({}),
+          // ── 编辑器内部状态（encode 时空对象跳过，不影响导出）──
+          element_markers: Codec.record({}).default({})
+        });
+      }
+      var PartCodec = buildPartCodec(VariantCodec);
+      var PartLoadCodec = buildPartCodec(VariantLoadCodec);
+      module.exports = { PartCodec, PartLoadCodec };
     }
   });
 
@@ -12337,7 +12354,7 @@
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
       var { CONFIG_VERSION } = require_constants();
-      var { PartCodec } = require_part_codec();
+      var { PartCodec, PartLoadCodec } = require_part_codec();
       var { VariantCodec } = require_variant_codec();
       var { SubPartCodec } = require_sub_part_codec();
       var { HitBoxCodec } = require_hit_box_codec();
@@ -12566,7 +12583,7 @@
         for (i = 0; i < partKeys.length; i++) {
           pk = partKeys[i];
           part = result.parts[pk];
-          result.parts[pk] = PartCodec.decode(part);
+          result.parts[pk] = PartLoadCodec.decode(part);
         }
         log2.debug("ensureDefaults: \u5B8C\u6210");
         log2.debug("ensureDefaults: packMeta \u72B6\u6001", {
@@ -19096,6 +19113,16 @@
           TYPE_MAP[SUBSYSTEM_TYPES[i].id] = SUBSYSTEM_TYPES[i];
         }
       })();
+      var RETIRED_TYPES = {
+        "machine_max:regen_loader": {
+          displayName: "\u518D\u751F\u88C5\u5F39\u673A\uFF08\u5DF2\u9000\u5F79\uFF09",
+          detail: "\u4E0A\u6E38\u628A\u5B83\u62C6\u6210\u4E86\u5F39\u836F\u67B6 machine_max:regen_ammo_rack \u4E0E\u81EA\u52A8\u88C5\u5F39\u673A machine_max:ammo_loader\uFF0C\u65E7\u7684\u914D\u5F39\u8868\u4E0E\u53D1\u73B0\u914D\u7F6E\u6CA1\u6709\u7B49\u4EF7\u5B57\u6BB5\uFF0C\u65E0\u6CD5\u81EA\u52A8\u6362\u7B97",
+          replacements: ["machine_max:regen_ammo_rack", "machine_max:ammo_loader"]
+        }
+      };
+      function getRetiredTypeInfo(typeId) {
+        return RETIRED_TYPES[typeId] || null;
+      }
       function getTypeMeta(typeId) {
         return TYPE_MAP[typeId] || null;
       }
@@ -19221,6 +19248,7 @@
         module.exports = {
           SUBSYSTEM_TYPES,
           getTypeMeta,
+          getRetiredTypeInfo,
           getAllTypes,
           getTypesByCategory,
           getTypesGroupedByCategory,
@@ -19588,6 +19616,8 @@
       var CODES = {
         SUBSYSTEM_REQUIRED_FIELD: "subsystem_required_field",
         // 子系统 required 字段缺失（含 ''/null/undefined）
+        SUBSYSTEM_TYPE_UNKNOWN: "subsystem_type_unknown",
+        // 子系统 type 不是插件支持的类型（含已退役类型）
         DEFINITION_REQUIRED: "definition_required",
         // 子系统/连接点的 definition 未配置（空串）
         DEFINITION_REF_MISSING: "definition_ref_missing",
@@ -19895,6 +19925,22 @@
           ));
         }
       }
+      function _collectUnknownSubsystemTypeIssue(partId, vName, spKey, ssName, ssType, problems) {
+        var where = '\u5B50\u7CFB\u7EDF "' + ssName + '" \u5728\u96F6\u4EF6 "' + partId + '"/' + vName + ' \u5B50\u96F6\u4EF6 "' + spKey + '"';
+        var retired = ssTypes.getRetiredTypeInfo(ssType);
+        var message;
+        if (retired) {
+          message = where + '\uFF1A\u7C7B\u578B "' + ssType + '" \u662F' + retired.displayName + "\u3002" + retired.detail + "\u3002\u8BF7\u5220\u9664\u8BE5\u6761\u76EE\u540E\u6309 " + retired.replacements.join(" / ") + " \u91CD\u65B0\u6DFB\u52A0";
+        } else {
+          message = where + '\uFF1A\u7C7B\u578B "' + String(ssType) + '" \u4E0D\u662F\u672C\u63D2\u4EF6\u652F\u6301\u7684\u5B50\u7CFB\u7EDF\u7C7B\u578B\uFF08\u53EF\u80FD\u662F\u62FC\u5199\u9519\u8BEF\uFF0C\u6216\u8BE5\u5DE5\u7A0B\u6765\u81EA\u66F4\u65B0\u7248\u672C\u7684\u63D2\u4EF6\uFF09\u3002\u8BF7\u6539\u9009\u7C7B\u578B\u6216\u5220\u9664\u8BE5\u6761\u76EE';
+        }
+        problems.push(_makeProblem(
+          "error",
+          CODES.SUBSYSTEM_TYPE_UNKNOWN,
+          message,
+          _mkPath("subsystem", partId, vName, spKey, ssName, null, "")
+        ));
+      }
       function collectIssues(config) {
         var problems = [];
         var parts = config && config.parts || {};
@@ -19999,6 +20045,9 @@
               for (var ssName in subsystems) {
                 var ss = subsystems[ssName];
                 var meta = ssTypes.getTypeMeta(ss.type);
+                if (!meta) {
+                  _collectUnknownSubsystemTypeIssue(partId, vName, spKey, ssName, ss.type, problems);
+                }
                 if (isMissingValue(ss.definition)) {
                   problems.push(_makeProblem(
                     "error",
@@ -30699,13 +30748,18 @@
           },
           /**
            * 解析子系统类型的中文显示名
+           *
+           * 类型不在注册表里时：已退役的类型用退役表的中文名（工程里还可能留着），
+           * 其余（拼写错误 / 来自更新版本）直接显示 id，让作者看见原始值。
            */
           resolveSubsystemTypeName: function(ssKey) {
             var ss = this.config.subsystems && this.config.subsystems[ssKey];
             if (!ss || !ss.type) return "\u672A\u6307\u5B9A\u7C7B\u578B";
             var ssTypes = require_subsystem_types();
             var meta = ssTypes.getTypeMeta(ss.type);
-            return meta ? meta.displayName : ss.type;
+            if (meta) return meta.displayName;
+            var retired = ssTypes.getRetiredTypeInfo(ss.type);
+            return retired ? retired.displayName : ss.type;
           },
           resolveSubsystemShortName: function(ssKey) {
             return nameUtils.extractShortName(ssKey);
@@ -31751,6 +31805,16 @@
                 <span style="font-size:12px;color:#ccc">{{ typeDisplayName }} ({{ typeId }})</span>
             </div>
         </div>
+        <!-- \u7C7B\u578B\u4E0D\u5728\u6CE8\u518C\u8868\u91CC\uFF1A\u8BF4\u660E\u5B83\u662F\u4EC0\u4E48\u3001\u8BE5\u600E\u4E48\u5904\u7406\uFF08\u5B57\u6BB5\u8868\u4E3A\u7A7A\uFF0C\u6CA1\u6709\u53EF\u7F16\u8F91\u9879\uFF09 -->
+        <div v-if="typeMissing" class="mm-element-info" style="font-size:10px;color:#ff6b6b;line-height:1.5">
+            <template v-if="retiredTypeInfo">
+                \u8BE5\u7C7B\u578B\u5DF2\u9000\u5F79\uFF1A{{ retiredTypeInfo.detail }}\u3002\u8BF7\u5220\u9664\u8BE5\u6761\u76EE\u540E\u6309
+                {{ retiredTypeInfo.replacements.join(' / ') }} \u91CD\u65B0\u6DFB\u52A0\u3002
+            </template>
+            <template v-else>
+                \u672C\u63D2\u4EF6\u4E0D\u652F\u6301\u8BE5\u7C7B\u578B\uFF08\u53EF\u80FD\u662F\u62FC\u5199\u9519\u8BEF\uFF0C\u6216\u5DE5\u7A0B\u6765\u81EA\u66F4\u65B0\u7248\u672C\u7684\u63D2\u4EF6\uFF09\u3002\u8BF7\u6539\u9009\u7C7B\u578B\u6216\u5220\u9664\u8BE5\u6761\u76EE\u3002
+            </template>
+        </div>
         <div class="mm-field" :class="fieldClass('definition')">
             <label title="\u4ECE subsystem_defs \u4E2D\u9009\u62E9\u578B\u53F7\u5B9A\u4E49">\u578B\u53F7\u5B9A\u4E49</label>
             <select class="mm-select" :value="config.definition" @change="onFieldChange('definition', $event.target.value)">
@@ -32032,7 +32096,18 @@
           },
           typeDisplayName: function() {
             var meta = this.typeMeta;
-            return meta ? meta.displayName : "\u672A\u77E5";
+            if (meta) return meta.displayName;
+            var retired = ssTypes.getRetiredTypeInfo(this.typeId);
+            return retired ? retired.displayName : "\u672A\u77E5";
+          },
+          /** 类型不在注册表里（已退役或未知）：面板显示说明而不是字段表 */
+          typeMissing: function() {
+            return !!this.typeId && !this.typeMeta;
+          },
+          /** 已退役类型的说明，未知类型返回 null */
+          retiredTypeInfo: function() {
+            if (this.typeMeta) return null;
+            return ssTypes.getRetiredTypeInfo(this.typeId);
           },
           typeColor: function() {
             return ssTypes.getTypeColor(this.typeId);
@@ -37495,7 +37570,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.6.0";
+  var PLUGIN_VERSION = "0.6.1";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
