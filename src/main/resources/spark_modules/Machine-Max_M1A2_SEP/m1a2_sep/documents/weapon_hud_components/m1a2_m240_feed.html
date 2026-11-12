@@ -13,7 +13,7 @@
     <div class="identity"><span class="level">MAG</span><b>7.62 MM / M240</b></div>
     <div class="caption">750 RPM | BASE DMG 10 | PEN 8</div>
     <div class="caption">200 RD BOX | AUTO RELOAD 6 S</div>
-    <div class="magazine-line"><span>MAG /</span><b data-mm-text="weapon.ammo_text"></b><span data-mm-text="weapon.state == 'reloading' ? 'RELOADING' : (weapon.state == 'empty' ? 'EMPTY' : 'RDY')"></span></div>
+    <div class="magazine-line"><span>MAG /</span><b data-mm-text="weapon.loaded"></b><span class="mag-stock">/ <span data-mm-text="weapon.reserve_remaining"></span></span><span data-mm-text="weapon.state == 'reloading' ? 'RELOADING' : (weapon.state == 'empty' ? 'EMPTY' : 'RDY')"></span></div>
     <div class="tubes">
       <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
         <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>

@@ -1,6 +1,6 @@
 [
   {
-    "style": "machine_max:2s38_weapon_compact",
+    "style": "machine_max:aui_weapon_compact",
     "perspective": false,
     "scope_behavior": "screen_fixed",
     "ignore_zoom": true,

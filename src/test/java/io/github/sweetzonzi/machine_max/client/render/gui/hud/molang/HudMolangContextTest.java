@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.visual.*;
 import net.minecraft.resources.ResourceLocation;
@@ -24,13 +25,20 @@ class HudMolangContextTest {
 
     static HudWeaponSnapshot.Tube tube(int key, double fill) {
         return new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, key), "barrel", "launcher"),
-                "AP", "reloading", "loading", fill, 2, "2.0s", "", "HE belt", true);
+                "AP", "reloading", "loading", fill, 2, "2.0s", "HE belt", false, true,
+                new HudWeaponSnapshot.Chamber(true, "AP"),
+                new HudWeaponSnapshot.Magazine(true, "HE belt", 4, 30),
+                new HudWeaponSnapshot.Reserve(12, 100, false));
     }
 
     static HudWeaponSnapshot snapshot(List<HudWeaponSnapshot.Tube> tubes) {
-        return new HudWeaponSnapshot("gun", "reloading", 12, 30, false, "12/30", "AP",
-                true, "2.0s", "test:ap", tubes,
-                List.of(new HudWeaponSnapshot.Belt(List.of(ResourceLocation.parse("test:ap")), "AP belt", 12, true)));
+        return new HudWeaponSnapshot("gun", "reloading", 12, 30, false, "12/30",
+                tubes.stream().mapToInt(t -> t.magazine().remaining()).sum(),
+                (int) tubes.stream().filter(t -> t.chamber().loaded()).count(),
+                "AP", true, "2.0s", "test:ap", tubes,
+                List.of(new HudWeaponSnapshot.Belt(
+                        new AmmoBelt(null, "", List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("test:ap"), 1)), 1, 1, null),
+                        "AP belt", 12, true)));
     }
 
     @Test void compiledQueriesShareCodeButKeepElementAndObserverValuesSeparate() {
@@ -48,7 +56,7 @@ class HudMolangContextTest {
         assertEquals(45, number("hud.view_heading_deg", a));
         assertEquals(0, number("hud.view_heading_deg", b));
         assertEquals(8.5, number("global.get('vehicle_speed')", a));
-        assertEquals("12/30", MolangContextRegistry.compileString("weapon.ammo_text", a).evaluate(a));
+        assertEquals("12/30", MolangContextRegistry.compileString("weapon.reserve_text", a).evaluate(a));
         assertEquals(75, number("weapon.tube_fill(1)", a));
         assertEquals(0, number("weapon.tube_fill(-1)", a));
         assertEquals(0, number("weapon.tube_fill(0.5)", a));
@@ -86,9 +94,13 @@ class HudMolangContextTest {
     @Test void tubePhaseAndSourceAreReadableInsideAndOutsideTheScope() {
         var element = new WeaponHudElement(null, element());
         var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 7), "barrel", "launcher"),
-                "AP", "reloading", "regenerating", 40, 12, "12.0s", "", "", true);
+                "AP", "reloading", "regenerating", 40, 12, "12.0s", "", false, true,
+                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
+                new HudWeaponSnapshot.Reserve(30, 120, false));
         var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 8), "barrel", "launcher"),
-                "HE", "empty", "idle", 0, 0, "", "", "", false);
+                "HE", "empty", "idle", 0, 0, "", "", false, false,
+                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
+                HudWeaponSnapshot.Reserve.EMPTY);
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(stalled, orphan)), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();
         try (var ignored = context.enterItem("weapon.tubes", stalled.key(), null)) {
@@ -102,6 +114,50 @@ class HudMolangContextTest {
         assertEquals(0, number("weapon.tube_has_source(1)", context));
         assertEquals("", MolangContextRegistry.compileString("weapon.tube_phase(5)", context).evaluate(context));
         assertEquals(0, number("weapon.tube_has_source(5)", context));
+    }
+
+    @Test void chamberMagazineAndReserveStaySeparateNumbers() {
+        var element = new WeaponHudElement(null, element());
+        // 装填中的管：膛内 1 发、弹链 17 发、备弹 0（弹链是从备弹里取走的，两边不重叠）
+        var loaded = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 11), "barrel", "launcher"),
+                "AP", "reloading", "loading", 60, 3, "3.0s", "AP belt", false, true,
+                new HudWeaponSnapshot.Chamber(true, "AP"),
+                new HudWeaponSnapshot.Magazine(true, "AP belt", 17, 150),
+                new HudWeaponSnapshot.Reserve(0, 300, false));
+        // 换装中的管：膛内仍压着 1 发，但此刻打不出去
+        var swapping = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 12), "barrel", "launcher"),
+                "AP", "reloading", "loading", 30, 6, "6.0s", "HE belt", true, true,
+                new HudWeaponSnapshot.Chamber(true, "AP"),
+                new HudWeaponSnapshot.Magazine(true, "AP belt", 8, 150),
+                new HudWeaponSnapshot.Reserve(200, 300, false));
+        element.publish(HudPartSnapshot.EMPTY, new HudWeaponSnapshot("gun", "reloading", 200, 600, false, "200/600",
+                25, 2, "AP", false, "6.0s", "test:ap", List.of(loaded, swapping), List.of()), true);
+        var context = (WeaponHudMolangContext) element.getMolangContext();
+        assertEquals(27, number("weapon.loaded", context), "待发 = 膛内 2 + 弹链 25");
+        assertEquals(200, number("weapon.reserve_remaining", context));
+        assertEquals(18, number("weapon.tube_loaded(0)", context));
+        assertEquals(9, number("weapon.tube_loaded(1)", context));
+        assertEquals(25, number("weapon.magazine_remaining", context));
+        assertEquals(2, number("weapon.chambered_count", context));
+        try (var ignored = context.enterItem("weapon.tubes", loaded.key(), null)) {
+            assertEquals(1, number("tube.chambered", context));
+            assertEquals(1, number("tube.magazine", context));
+            assertEquals(17, number("tube.magazine_remaining", context));
+            assertEquals(150, number("tube.magazine_capacity", context));
+            assertEquals("AP belt", MolangContextRegistry.compileString("tube.magazine_label", context).evaluate(context));
+            assertEquals(0, number("tube.reserve_remaining", context));
+            assertEquals(0, number("tube.swapping", context));
+        }
+        try (var ignored = context.enterItem("weapon.tubes", swapping.key(), null)) {
+            assertEquals(1, number("tube.chambered", context));
+            assertEquals(1, number("tube.swapping", context));
+            assertEquals(8, number("tube.magazine_remaining", context));
+            assertEquals(200, number("tube.reserve_remaining", context));
+        }
+        assertEquals(0, number("weapon.tube_swapping(0)", context));
+        assertEquals(1, number("weapon.tube_swapping(1)", context));
+        assertEquals(17, number("weapon.tube_magazine_remaining(0)", context));
+        assertEquals(0, number("weapon.tube_chambered(9)", context));
     }
 
     @Test void vehicleQueriesUseOneBasedSeatsAndPreserveThePublishedVehicleAcrossViewUpdates() {

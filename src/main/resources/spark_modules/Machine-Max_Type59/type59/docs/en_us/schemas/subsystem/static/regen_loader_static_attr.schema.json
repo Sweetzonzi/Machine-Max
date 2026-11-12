@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
   "title": "Regen Loader Subsystem Static Attributes",
-  "description": "Static attributes of the regen loader subsystem: how the feed delivers rounds, and how many rounds the magazine stores and regenerates. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen). Durability is split into a feed (non-critical) and a magazine (the only critical) module: the magazine reaching zero destroys the whole subsystem and cooks off the stored rounds, while the feed reaching zero only stops further loading. Both blocks are field homes - delivery fields live in feed, stock and regen fields live in magazine - and omitting either block fails decoding. Belt composition (projectile_types) and the belt label (belt_label) are per-instance fields written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. They do not belong in this file.",
+  "description": "Static attributes of the regen loader subsystem: how the feed delivers rounds, and how many rounds the magazine stores and regenerates. Used for energy weapons (lasers, blasters) and arcade-style regenerating weapons (missile cooldown regen). Durability is split into a feed (non-critical) and a magazine (the only critical) module: the magazine reaching zero destroys the whole subsystem and cooks off the stored rounds, while the feed reaching zero only stops further loading. Both blocks are field homes - delivery fields live in feed, stock and regen fields live in magazine - and omitting either block fails decoding. The delivery template (belt_definition) is a per-instance field written in the subsystems block of a part JSON; see subsystem/dynamic/regen_loader_dynamic_attr.schema.json. It does not belong in this file.",
   "properties": {
     "$schema": {
       "type": "string",
@@ -30,12 +30,7 @@
         "reload_time": {
           "type": "number",
           "minimum": 0,
-          "description": "Time to deliver one loading unit into the chamber (in seconds). Round-by-round mode pays it per round; whole-magazine mode pays it per dock (a dock is the first successful take of the current binding)."
-        },
-        "reload_round_by_round": {
-          "type": "boolean",
-          "default": true,
-          "description": "How many rounds one delivery moves. true = every round pays reload_time (round-by-round delivery); false = reload_time is paid once per dock and every following round is delivered instantly (whole-magazine delivery). Orthogonal to magazine.regen_round_by_round, which answers how many rounds one regeneration refills."
+          "description": "Time to deliver one belt into the chamber (in seconds). Each delivery pays it once; the round count comes from the target launcher's single_round_loading together with the source's actual stock, so a source holding less than one belt delivers what it has."
         },
         "can_supply_multiple": {
           "type": "boolean",
@@ -45,7 +40,7 @@
       },
       "required": ["reload_time"],
       "additionalProperties": false,
-      "description": "Feed module attributes - non-critical, carrying 'how to deliver'. Reaching zero only stops further loading: stock, belt pointer and rounds already chambered in the launcher are untouched, and the subsystem is not destroyed; the feed works again only after being repaired to 30% of its own maximum durability."
+      "description": "Feed module attributes - non-critical, carrying 'how to deliver'. Reaching zero only stops further loading: stock and ammunition already delivered to a launcher are untouched, and the subsystem is not destroyed; the feed works again only after being repaired to 30% of its own maximum durability."
     },
     "magazine": {
       "type": "object",
@@ -165,15 +160,9 @@
     {
       "type": "machine_max:regen_loader",
       "basic_durability": 40,
-      "feed": { "reload_time": 0.45, "reload_round_by_round": true, "can_supply_multiple": false },
+      "feed": { "reload_time": 0.45, "can_supply_multiple": false },
       "magazine": { "capacity": 74, "regen_per_minute": 120, "regen_round_by_round": true, "energy_cost_per_round": 0, "regen_delay": 0.3 },
-      "description": "Round-by-round example - 2A90 autocannon, 74-round magazine, 0.45s per round, 120 rounds/min regen"
-    },
-    {
-      "type": "machine_max:regen_loader",
-      "feed": { "reload_time": 4.0, "reload_round_by_round": false, "can_supply_multiple": false },
-      "magazine": { "capacity": 30, "regen_per_minute": 0 },
-      "description": "Whole-magazine example - 30-round magazine, 4s to dock, every round after the first take is instant; a new binding has to dock again. It differs from the round-by-round example only in its time structure, and both share the same timer and progress reporting"
+      "description": "Standard example - 2A90 autocannon, 74-round magazine, 0.45s per delivery, 120 rounds/min regen"
     },
     {
       "type": "machine_max:regen_loader",

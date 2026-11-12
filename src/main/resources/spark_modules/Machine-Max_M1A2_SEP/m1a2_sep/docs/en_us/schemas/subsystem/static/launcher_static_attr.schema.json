@@ -47,6 +47,11 @@
       "default": [],
       "description": "Ammunition supply discovery channel list. Empty list means universal receive mode (accepts any channel signal)."
     },
+    "single_round_loading": {
+      "type": "boolean",
+      "default": false,
+      "description": "How many rounds one take loads: true puts a single round into the chamber and keeps no loaded stock; false loads the whole belt into the loaded stock. Fill it by how the weapon actually loads, independent of caliber, rate of fire and supplier type: weapons that push one round into the chamber at a time (main guns, missile tubes, autocannons taking one round per shot) use true; machine guns and autocannons fed by a belt or magazine as a whole use false."
+    },
     "sounds": {
       "type": "object",
       "properties": {

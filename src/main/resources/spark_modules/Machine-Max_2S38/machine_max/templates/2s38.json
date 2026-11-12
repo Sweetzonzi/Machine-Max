@@ -547,7 +547,7 @@
               "regen_progress": 8.702278E-6,
               "batch_elapsed": 0
             },
-            "subsystem.machine_max.secondary_weapon": {
+            "subsystem.machine_max.pktm_weapon": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },

@@ -47,6 +47,11 @@
       "default": [],
       "description": "弹药供给发现频道列表。空列表表示万能接收模式（接受任意频道信号）。"
     },
+    "single_round_loading": {
+      "type": "boolean",
+      "default": false,
+      "description": "一次拉取装多少发：true 只把一发推进膛室，不建立已装数据；false 把整份 Belt 装进已装数据。按武器实际怎么装填填写，与口径、射速和供给者类型无关：一次只把一发推进膛室的武器（主炮、导弹发射管、逐发取弹的机关炮）填 true，由弹链或弹匣整份供弹的机枪、机关炮填 false。"
+    },
     "sounds": {
       "type": "object",
       "properties": {

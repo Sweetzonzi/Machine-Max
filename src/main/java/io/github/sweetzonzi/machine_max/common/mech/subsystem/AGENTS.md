@@ -43,7 +43,7 @@ subsystem/
 │
 ├── 武器系统
 │   ├── LauncherSubsystem.java          # 投射物发射器（炮闩/导弹架/火箭管）
-│   ├── AmmoLoaderSubsystem.java        # 弹药装填机（装填时序、弹序循环）
+│   ├── AmmoLoaderSubsystem.java        # 物品弹仓装弹机（交付映射待实现）
 │   └── RegenLoaderSubsystem.java       # 再生装弹机（能量武器弹药）
 │
 ├── 功能与存储
@@ -67,7 +67,7 @@ subsystem/
 | 修复座位交互 | `SeatSubsystem.java` | 乘客登乘、输入信号 |
 | 修复电池 | `BatterySubsystem.java` | 充放电、网格集成 |
 | 修复发射器 | `LauncherSubsystem.java` | 弹药消耗、投射物类型 |
-| 修复装弹机 | `AmmoLoaderSubsystem.java` | 弹序循环、装填时序 |
+| 修复装弹机 | `AmmoLoaderSubsystem.java` | 物品弹仓（交付映射待实现） |
 | 新增静态属性 | `attr/static_attr/` | JSON 编解码，按类型定义 |
 | 新增动态属性 | `attr/dynamic_attr/` | 运行时可变状态 |
 
@@ -84,11 +84,11 @@ subsystem/
 - **保存/加载**：在 `AbstractSubsystem` 中重写 `saveData()`/`loadData()` 进行 NBT 持久化。
 - **线程**：`onCollideWithBlock()` 在物理线程调用；`onInteract()` 在主线程调用。
 - **结构变化两阶段**：`SubsystemController.onVehicleStructureChanged()` 先对所有子系统调用 `onVehicleStructurePreChanged()`，再统一调用 `onVehicleStructureChanged()`。**清空拓扑缓存写第一阶段，重新发现写第二阶段**——`allSubsystems` 是集合，遍历顺序不确定；两者挤在同一趟里时，后清空的子系统会把先发现的结果抹掉（发射器清供给者登记表、装弹机重新登记发现就属于这一对）。
-- **弹药指认服务端独占**：`WeaponControllerSubsystem` 的弹药路由只在服务端执行，客户端经发射器上的供给者身份同步值跟随（`IAmmoSupplier.SupplierRef` = 宿主 Part uuid + SubPart 名 + 子系统名，三者都随载具数据在两端的同一次会话内一致）。客户端的 `requestRound → consumeReadyRound` 链只驱动本机表现（装填进度、装填音效、开火特效），库存计数与弹链指针只有服务端写。
+- **弹药指认与库存服务端独占**：`WeaponControllerSubsystem` 的弹药路由只在服务端执行，客户端经发射器上的供给者身份同步值跟随（`IAmmoSupplier.SupplierRef` = 宿主 Part uuid + SubPart 名 + 子系统名，三者都随载具数据在两端的同一次会话内一致）。取弹链（`requestRound → isRoundReady → consumeReadyBelt`）只在服务端执行；客户端从发射器同步的膛内弹与已装 `AmmoBelt` 读取表现，库存计数只有服务端写。
 - **独占绑定与认领**：`feed.can_supply_multiple=false` 的装弹机同一时刻最多服务一根活跃发射器。认领记在供给者上（`IAmmoSupplier#getBoundConsumers()`，只在主线程由服务端路由写入，不入存档也不同步）：路由为某根管选中机器时把该管加进去，`LauncherSubsystem#assignSupplier` 释放旧绑定时把自己摘出来。候选过滤直接排除"已被别的活跃管认领"的机器，而不是把它排到末位——摊不开时那根管如实显示无供给者。认领有效 = 持有者未摧毁未失能且它的 `currentSupplier` 仍指向本机；读档后认领为空，第一次路由按名字序重建，因此旧存档里两根管指向同一台机器会在这一 tick 收敛成一条。
-- **保持与换人只有一条判据**：候选必须严格更早拿到下一发（`IAmmoSupplier#getTicksToNextRound`；已备好一发与已对接的整匣都是 `0`，空匣是 `Integer.MAX_VALUE`），或者当前供给者已不合法（机构坏了、弹种不被炮闩接受、不在选中弹链上）才当场换人。打空但场上没有更好候选时保持绑定，由它回充后继续供弹；整匣模式已对接的机器下一发是 `0`，因此从不被"更快"的候选迁移。
-- **对接是会话状态**：整匣模式（`feed.reload_round_by_round=false`）下，对接标记在首次取弹成功时置位（`RegenLoaderSubsystem#dockedConsumers`），之后每一发都瞬时送达。`cancelRound`（换供给者）与读档清除它；打空回充、机构损坏、弹仓判毁都不清除——容器不是弹匣内容。标记不写盘，`clearDeliveries` 也不动它。
-- **弹种选择随服务端同步**：`WeaponControllerSubsystem` 的 `selectedBelt` 只在服务端改选，经同步值 `SELECTED_BELT` 推给客户端；值是**有序拼接的弹种注册键串**（`id1,id2`），不是池内下标——结构变化会改变弹链排序，键串只随弹链本身变化。客户端收到时池里可能还没有这条链（装弹机发现未完成），因此先暂存、建池后再落地，不因一次先到的同步值丢掉选择。
+- **保持与换人只有一条判据**：候选必须严格更早拿到下一份交付（`IAmmoSupplier#getTicksToNextRound`；已备好一份是 `0`，弹仓为空是 `Integer.MAX_VALUE`），或者当前供给者已不合法（机构坏了、交付内容不被炮闩接受、不在选中弹链上）才当场换人。打空但场上没有更好候选时保持绑定，由它回充后继续供弹。
+- **交付单位是一份 `AmmoBelt`**：供给者用 `getDeliverySpec()` 预览下一份的满额规格，用 `consumeReadyBelt()` 交付一份独立实例——发数是 `min(库存, 规格长度)`，所以实例余量可以小于规格，规格本身（模式、长度、标签、回充）不变，发射器据此仍认得出是同一份弹链；用 `returnBelt()` 全收或全拒地回收。一份付一次 `feed.reload_time`，装几发由消费者的 `single_round_loading` 与源的实际库存共同决定，与供给者类型无关；没有对接状态，也没有逐发／整匣两种交付模式。换装同样没有独立状态：已装规格与当前供给者的 `getDeliverySpec()` 不一致即在途，供给者按自己的 `reload_time` 备货，备好后发射器先取新的一份再 `returnBelt()` 还回旧的那一份，任一步失败整笔回滚。发射器不排自己的换装计时。
+- **弹链选择随服务端同步**：`WeaponControllerSubsystem` 的 `selectedBelt` 只在服务端改选，经同步值 `SELECTED_BELT` 推给客户端；值是**交付规格本身**（模式、长度、标签与是否回充），不是池内下标——结构变化会改变弹链排序，规格只随弹链本身变化。客户端收到时池里可能还没有这条链（装弹机发现未完成），因此先暂存、建池后再落地，不因一次先到的同步值丢掉选择。
 - **同步只表达变化，初值靠补推**：`SynchedEntityData` 的变化广播（`packDirty()`）只在值真的变过时发得出去，且发给维度内所有玩家。**载入后不再变化的值（如弹药指认）走不到这条路**，因此载具在客户端建好时必须补一份全量快照：`SubsystemController.pushAllTo(ServerPlayer)`，由 `ObjectManager` 在每条载具创建包之后**紧跟着**调用（`pushSubsystemState`）。顺序由同一条连接保证，客户端在创建包的处理器内就建好了载具，因此补推包必然落在目标已存在的时刻。
 - **全量补推不得改动同步状态**：快照取自 `AbstractSubsystem.forEachSyncedValue()`（只读遍历 `SynchedEntityData.itemsById`，该字段由 `META-INF/accesstransformer.cfg` 放宽为 public），经 `PacketDistributor.sendToPlayer` **定向**发送。不得改用 `SynchedEntityData.set(..., force=true)` 强制标脏：那会把脏标记留给下一次 `packDirty()`，让维度内其他玩家收到无谓的包。
 - **自定义同步数据序列化器**：注册在 `MMEntityDataSerializers`（NeoForge 的 `ENTITY_DATA_SERIALIZERS` 注册表，线号为 `256 + 注册表内 id`）。`SynchedEntityData.defineId` 在子系统静态初始化里执行，因此注册文件必须持有序列化器**实例**、注册时交出同一实例，不能从 `DeferredHolder` 取。

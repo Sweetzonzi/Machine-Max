@@ -1,6 +1,7 @@
 {
   "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:launcher",
+  "single_round_loading": false,
   "basic_durability": 20,
   "control_inputs": [
     "weapon.mg.port_mg"

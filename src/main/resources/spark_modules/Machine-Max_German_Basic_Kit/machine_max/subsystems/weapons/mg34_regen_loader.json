@@ -5,7 +5,6 @@
   "feed": {
     // 弹链供弹：换弹链（对接）3 秒，之后每一发瞬时送达
     "reload_time": 3,
-    "reload_round_by_round": false,
     "can_supply_multiple": false
   },
   "magazine": {

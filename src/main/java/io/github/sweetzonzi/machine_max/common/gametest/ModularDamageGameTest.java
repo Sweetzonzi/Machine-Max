@@ -7,6 +7,7 @@ import com.mojang.serialization.JsonOps;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
@@ -41,6 +42,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -137,7 +139,7 @@ public final class ModularDamageGameTest {
      * 零贡献弹种不参与殉爆合成，库存与爆炸条数都不会变化，因此不能用来断言起爆。
      */
     private static boolean hasCookoffRound(GameTestHelper helper, RegenLoaderSubsystem loader) {
-        return loader.getProjectileTypes().stream()
+        return loader.getDeliverySpec().ammoTypes().stream()
                 .map(id -> ProjectileType.get(helper.getLevel(), id))
                 .anyMatch(type -> type instanceof BallisticProjectileType ballistic
                         && (ballistic.getCookoff().damage() > 0 || ballistic.getCookoff().impulse() > 0));
@@ -269,8 +271,8 @@ public final class ModularDamageGameTest {
     /**
      * 机构损坏后：交付承诺全部释放、三个交付入口拒绝、库存不动。
      *
-     * <p>库存用退弹入口灌一发：承诺阶段不扣库存，退弹是内容包之外唯一能加弹的公开入口；
-     * 弹链指针没有公开读法，{@code consumeReadyRound} 返回 null 即证明它没有被推进。</p>
+     * <p>库存用退弹入口灌一份：承诺阶段不扣库存，退弹是内容包之外唯一能加库存的公开入口；
+     * {@code consumeReadyBelt} 返回 null 即证明坏机构取不走那一份。</p>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void brokenFeedReleasesDeliveryAndKeepsStock(GameTestHelper helper) {
@@ -282,9 +284,10 @@ public final class ModularDamageGameTest {
             LauncherSubsystem launcher = launcher(part);
             helper.assertTrue(loader.isActive(), "组装完成的部件里的子系统应处于可工作状态");
 
-            ProjectileType round = ProjectileType.get(helper.getLevel(), loader.getProjectileTypes().getFirst());
+            ProjectileType round = ProjectileType.get(helper.getLevel(), loader.getDeliverySpec().ammoTypes().getFirst());
             helper.assertTrue(round != null, "弹链首发的投射物类型必须已注册");
-            helper.assertTrue(loader.returnRound(round), "空弹仓应接受一发退弹");
+            loader.loadData(stock(loader.getDeliverySpec().length()));
+            helper.assertTrue(loader.returnBelt(singleRound(round)), "空弹仓应接受一发退弹");
             int stockBefore = loader.getRemainingCount();
             helper.assertTrue(stockBefore > 0, "退弹后弹仓应有库存");
 
@@ -299,7 +302,7 @@ public final class ModularDamageGameTest {
                     "机构损坏必须释放全部交付承诺");
             helper.assertTrue(!loader.requestRound(launcher), "坏机构不得受理新请求");
             helper.assertTrue(!loader.isRoundReady(launcher), "坏机构不得报就绪");
-            helper.assertTrue(loader.consumeReadyRound(launcher) == null, "坏机构不得取走弹药");
+            helper.assertTrue(loader.consumeReadyBelt(launcher) == null, "坏机构不得取走弹药");
             helper.assertTrue(loader.getRemainingCount() == stockBefore, "库存计数不得变化");
             helper.assertTrue(loader.getStatus(launcher) == IAmmoSupplier.SupplierStatus.EMPTY,
                     "无交付能力的供给者对消费者报 EMPTY");
@@ -597,7 +600,7 @@ public final class ModularDamageGameTest {
                     .map(RegenLoaderSubsystem.class::cast)
                     .sorted(Comparator.comparing(RegenLoaderSubsystem::getName))
                     .toList()) {
-                for (ProjectileType type : loader.getProjectileTypes().stream()
+                for (ProjectileType type : loader.getDeliverySpec().ammoTypes().stream()
                         .map(id -> ProjectileType.get(helper.getLevel(), id))
                         .toList()) {
                     if (!(type instanceof BallisticProjectileType ballistic)) continue;
@@ -701,42 +704,48 @@ public final class ModularDamageGameTest {
      * 都不进入判定；判定只看弹仓模块是否可储存。</p>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
-    public static void returnRoundFollowsTheMagazineState(GameTestHelper helper) {
+    public static void returnBeltFollowsTheMagazineState(GameTestHelper helper) {
         Selection selected = loaderPart();
         RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
         try {
             markAssembled(part);
             RegenLoaderSubsystem loader = loader(part);
-            helper.assertTrue(!loader.getProjectileTypes().isEmpty(), "前置：弹链应非空");
-            ProjectileType round = ProjectileType.get(helper.getLevel(), loader.getProjectileTypes().getFirst());
+            helper.assertTrue(!loader.getDeliverySpec().ammoTypes().isEmpty(), "前置：弹链应非空");
+            ProjectileType round = ProjectileType.get(helper.getLevel(), loader.getDeliverySpec().ammoTypes().getFirst());
             helper.assertTrue(round != null, "弹链首发弹种应能在测试世界里解码");
+            int one = loader.getDeliverySpec().length();
 
-            loader.loadData(stock(2));
+            loader.loadData(stock(one));
             loader.routeDamage("feed", Float.MAX_VALUE);
-            helper.assertTrue(loader.returnRound(round), "机构损坏而弹仓可储存时应收下退弹");
-            helper.assertTrue(loader.getAmmoCount() == 3, "退弹应让库存 +1，实际 " + loader.getAmmoCount());
+            helper.assertTrue(loader.returnBelt(singleRound(round)), "机构损坏而弹仓可储存时应收下退弹");
+            helper.assertTrue(loader.getAmmoCount() == one + 1, "退弹应让库存 +1，实际 " + loader.getAmmoCount());
 
             loader.loadData(stock(loader.getCapacity()));
-            helper.assertTrue(!loader.returnRound(round), "满仓必须拒收退弹");
+            helper.assertTrue(!loader.returnBelt(singleRound(round)), "满仓必须拒收退弹");
             helper.assertTrue(loader.getAmmoCount() == loader.getCapacity(), "拒收不得改变库存");
 
-            loader.loadData(stock(2));
+            loader.loadData(stock(one));
             loader.routeDamage("magazine", Float.MAX_VALUE);
-            helper.assertTrue(!loader.returnRound(round), "弹仓归零后必须拒收退弹");
-            helper.assertTrue(loader.getAmmoCount() == 2, "拒收不得改变库存，实际 " + loader.getAmmoCount());
+            helper.assertTrue(!loader.returnBelt(singleRound(round)), "弹仓归零后必须拒收退弹");
+            helper.assertTrue(loader.getAmmoCount() == one, "拒收不得改变库存，实际 " + loader.getAmmoCount());
 
             SubModule magazine = loader.getModule("magazine");
             loader.routeRepair("magazine", magazine.getMaxDurability() * 0.1f);
             helper.assertTrue(magazine.isDestroyed(), "前置：10% 仍在恢复锁存");
-            helper.assertTrue(!loader.returnRound(round), "恢复锁存期间必须拒收退弹");
+            helper.assertTrue(!loader.returnBelt(singleRound(round)), "恢复锁存期间必须拒收退弹");
 
             loader.routeRepair("magazine", magazine.getMaxDurability() * AbstractSubsystem.RECOVERY_RATIO);
             helper.assertTrue(!magazine.isDestroyed(), "越过恢复门槛后弹仓脱离摧毁");
-            helper.assertTrue(loader.returnRound(round), "弹仓恢复后可储存，应重新接受退弹");
+            helper.assertTrue(loader.returnBelt(singleRound(round)), "弹仓恢复后可储存，应重新接受退弹");
             helper.succeed();
         } finally {
             part.discardUnattached();
         }
+    }
+
+    /** 单发交付：把一种弹包装成一份长度为 1 的 Belt，供退弹与退回用例使用。 */
+    private static AmmoBelt singleRound(ProjectileType type) {
+        return new AmmoBelt(null, "", List.of(new AmmoBelt.PatternEntry(type.getRegistryKey(), 1)), 1, 1, null);
     }
 
     /** 只带库存的存档片段：模块耐久按缺省比例（满）载入。 */
@@ -852,7 +861,6 @@ public final class ModularDamageGameTest {
                   "feed": {
                     "durability_weight": 3.0,
                     "reload_time": 0.45,
-                    "reload_round_by_round": false,
                     "can_supply_multiple": true
                   },
                   "magazine": {
@@ -869,7 +877,6 @@ public final class ModularDamageGameTest {
                         && full.getMagazine().durabilityWeight() == 1.0f,
                 "显式权重应被保留");
         helper.assertTrue(full.getFeed().reloadTime() == 0.45f, "reload_time 归 feed");
-        helper.assertTrue(!full.getFeed().reloadRoundByRound(), "reload_round_by_round 归 feed");
         helper.assertTrue(full.getFeed().canSupplyMultiple(), "can_supply_multiple 归 feed");
         helper.assertTrue(full.getMagazine().capacity() == 30, "capacity 归 magazine");
         helper.assertTrue(full.getMagazine().regenPerMinute() == 120f, "regen_per_minute 归 magazine");
@@ -889,8 +896,7 @@ public final class ModularDamageGameTest {
         RegenLoaderSubsystemStaticAttr minimal = decodeAttribute("""
                 { "feed": { "reload_time": 0 }, "magazine": { "capacity": 10 } }
                 """).getOrThrow();
-        helper.assertTrue(minimal.getFeed().reloadRoundByRound() && !minimal.getFeed().canSupplyMultiple(),
-                "feed 的可选字段落默认（逐发、独占）");
+        helper.assertTrue(!minimal.getFeed().canSupplyMultiple(), "feed 的可选字段落默认（独占）");
         helper.assertTrue(minimal.getMagazine().regenPerMinute() == 0f
                         && minimal.getMagazine().regenRoundByRound()
                         && minimal.getMagazine().energyCostPerRound() == 0f

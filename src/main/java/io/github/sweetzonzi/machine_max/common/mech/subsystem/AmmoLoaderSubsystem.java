@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.physics.PenetrationKey;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -44,9 +45,10 @@ import java.util.*;
  * 计时器与就绪位都用插入有序的普通集合：本子系统的读写全在主线程（自身 tick、武器控制器的路由、
  * HUD 刷新都在主线程），不需要并发容器。
  * <p>
- * <b>WIP：</b>弹仓以物品容器实现，退弹 {@link #returnRound(ProjectileType)} 的物品映射尚未做完
- * （投射物类型的注册名与物品注册名不通用，取不到时落成 {@code Items.ARROW}，
- * 再取弹时因解析不出投射物类型而被丢弃）。弹药链与路由决策暂由再生装弹机承担。
+ * <b>WIP：</b>弹仓以物品容器实现，物品与 {@link AmmoBelt} 的往返映射尚未做完。交付与回收因此
+ * 明确报告"不可交付 / 拒收"（{@link #getDeliverySpec()} 返回 null、{@link #consumeReadyBelt} 返回 null、
+ * {@link #returnBelt} 返回 false），路由不会把它选为候选，也不会用占位物品冒充一次成功交付。
+ * 弹药链与路由决策暂由再生装弹机承担。
  */
 @ApiStatus.Experimental
 public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
@@ -111,13 +113,13 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
-     * 普通装弹机恒为逐发：交付路径对每一发都计时。<br>
-     * 静态属性里的 {@code round_by_round} 不参与判定——换匣模式在本实现里还没有落地，
-     * 写 {@code false} 不会得到整匣语义。
+     * 下一份交付的规格。<br>
+     * 物品与 {@link AmmoBelt} 的往返映射尚未实现，因此没有可交付规格：本机不进入路由候选。
      */
     @Override
-    public boolean isReloadRoundByRound() {
-        return true;
+    @Nullable
+    public AmmoBelt getDeliverySpec() {
+        return null;
     }
 
     @Override
@@ -211,7 +213,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     /**
      * 取消该消费者尚未取走的交付。<br>
      * 计时器与就绪位都只表示"已承诺交付"，弹仓计数要等
-     * {@link #consumeReadyRound(IAmmoConsumer)} 取出时才扣减，因此这里没有已扣出的弹药需要归还，
+     * {@link #consumeReadyBelt(IAmmoConsumer)} 取出时才扣减，因此这里没有已扣出的弹药需要归还，
      * 清掉承诺即可；取消后输弹线立刻空出，等待中的消费者下次请求即可被排上。
      */
     @Override
@@ -226,56 +228,24 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
-     * 取走已就绪的弹药。
-     *
-     * @return 弹药类型；消费者未就绪或弹仓已空时返回 null
+     * 取走已就绪的交付。<br>
+     * 物品与 {@link AmmoBelt} 的往返映射尚未实现，因此这里不取走任何物品、也不声称成功：
+     * 就绪位被清除，返回 null。
      */
     @Override
     @Nullable
-    public ProjectileType consumeReadyRound(IAmmoConsumer consumer) {
-        if (!readyConsumers.contains(consumer)) return null;
+    public AmmoBelt consumeReadyBelt(IAmmoConsumer consumer) {
         readyConsumers.remove(consumer);
-
-        // 从容器 FIFO 取出第一发非空弹药
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
-            if (!stack.isEmpty()) {
-                ProjectileType type = getProjectileTypeFromItem(stack);
-                if (type == null) {
-                    // 无法识别弹药类型，跳过此物品
-                    stack.shrink(1);
-                    if (stack.isEmpty()) container.setItem(i, ItemStack.EMPTY);
-                    continue;
-                }
-                stack.shrink(1);
-                if (stack.isEmpty()) container.setItem(i, ItemStack.EMPTY);
-                return type;
-            }
-        }
         return null;
     }
 
     /**
-     * 接收一发退还的弹药：有空槽位就把它放进去。<br>
-     * 弹仓是异构物品容器（弹种由每格物品决定），因此没有"弹链匹配"这一层判断，
-     * 只需确认放得下；{@link #getAmmoItem(ProjectileType)} 取不到对应物品时按 WIP 说明
-     * 退回占位物品，再取弹时会因解析不出投射物类型而被丢弃。
-     *
-     * @param type 退还的弹药类型
-     * @return true 表示已放入弹仓
+     * 接收一份退还的弹药。<br>
+     * 把一份 Belt 还原成物品需要物品组件与容器型号，均未实现；本方法明确拒收，
+     * 调用方保留这一份，不用占位物品冒充收下。
      */
     @Override
-    public boolean returnRound(ProjectileType type) {
-        if (getFreeCapacityInternal() <= 0) return false;
-        // 将退弹放入第一个空槽位
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            if (container.getItem(i).isEmpty()) {
-                // 创建一个占位物品（弹药通过 NBT 标记类型）
-                ItemStack stack = new ItemStack(getAmmoItem(type), 1);
-                container.setItem(i, stack);
-                return true;
-            }
-        }
+    public boolean returnBelt(AmmoBelt belt) {
         return false;
     }
 
@@ -348,13 +318,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
-     * 获取剩余容量。
-     */
-    private int getFreeCapacityInternal() {
-        return container.getContainerSize() - getAmmoCount();
-    }
-
-    /**
      * 从 ItemStack 中解析对应的 ProjectileType。<br>
      * 使用物品注册名作为投射物类型 ID 进行查找。
      */
@@ -370,20 +333,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         }
 
         return null;
-    }
-
-    /**
-     * 获取表示指定弹药类型的物品。
-     */
-    private net.minecraft.world.item.Item getAmmoItem(ProjectileType type) {
-        // 尝试从弹药类型的注册名获取对应物品
-        ResourceLocation typeId = type.getRegistryKey();
-        if (typeId != null) {
-            net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(typeId);
-            if (item != null) return item;
-        }
-        // fallback
-        return net.minecraft.world.item.Items.ARROW;
     }
 
     // ==================== 弹药发现 ====================

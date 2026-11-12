@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-12",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "0ab919d41f1a7e54bafa4fdc34a510003b2bdb46",
+    "revision": "f9efef7323b5ed9776dd7489f7800ee85357ae01",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -226,8 +226,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/regen_loader_dynamic_attr.schema.json",
-        "bytes": 2981,
-        "sha256": "59bf1ca2887e60df3a39f842c16395abd03e928102e008b5eb991640290117f2"
+        "bytes": 5357,
+        "sha256": "c8599b29c6ae3245868303292a89c46fc521c7e907f0dc85e62e9f3297b6147a"
       },
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
@@ -301,8 +301,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 9461,
-        "sha256": "f81f3b4a442ea0b9b66c8ae8e0c79934f68297bb60f504529ebdfcf78cb14e5d"
+        "bytes": 9947,
+        "sha256": "aeb4d66dfd80c060e938c83a23fdc74d3471c877382e318abac4ea1b5cbe7cce"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
@@ -321,8 +321,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/regen_loader_static_attr.schema.json",
-        "bytes": 9327,
-        "sha256": "5208584d9f32fd22d0db121280d5921645e89d7676bd52519760207674c2ac6e"
+        "bytes": 8451,
+        "sha256": "cf922baacda8f292affbea53cf77b740daaf339db23d750c6a3df92a206f75a6"
       },
       {
         "path": "references/schemas/subsystem/static/seat_static_attr.schema.json",
@@ -380,15 +380,5 @@
         "sha256": "5e95ecccff7ac73f07e3c86b5fb27e3727c43e9de708aac8334e67ef8e1ebf1f"
       }
     ]
-  },
-  "plugin": {
-    "repository": "https://github.com/Sweetzonzi/Machine-Max_BlockbenchPlugin",
-    "revision": "5aa355404c792ffaaac686e66255ea1ca1c1d799",
-    "source_path": "dist/machine_max_bb_plugin.js",
-    "artifact_kind": "rebuilt with scripts/build.js from the working tree at this revision",
-    "version": "0.5.16",
-    "path": "assets/plugins/machine_max_bb_plugin.js",
-    "bytes": 1996235,
-    "sha256": "c5c608980b4b8b4df5c6f9448b3aff9d36992128bf7b126827314ed1d3fddbe1"
   }
 }

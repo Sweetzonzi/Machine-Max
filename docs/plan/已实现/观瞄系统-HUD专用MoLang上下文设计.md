@@ -55,7 +55,7 @@
 
 只有武器控制器持有的 HUD 元素使用 `WeaponHudMolangContext`。它直接引用自己的 `WeaponControllerSubsystem`，按每客户端 tick 的武器显示快照提供名称、状态、弹药、发射管与弹链。具体字段和取数口径在《[武器系统-武器控制器HUD样式与布局设计](武器系统-武器控制器HUD样式与布局设计.md)》§二、§三定义。
 
-整台控制器与显式索引查询收在 `weapon.*` 下，如 `weapon.ammo_remaining`、`weapon.tube_fill(i)`、`weapon.belt_remaining(i)`。当前项查询位于 `tube.*` / `belt.*`，例如 `tube.fill`、`belt.remaining`；词表及返回口径见武器文档 §三、§3.2。无参值写成属性，带索引或距离的值写成函数。普通 HUD 元素不编译武器表达式；绑定层须给出可定位诊断，避免未绑定查询静默退回 0。
+整台控制器与显式索引查询收在 `weapon.*` 下，如 `weapon.reserve_remaining`、`weapon.tube_fill(i)`、`weapon.belt_remaining(i)`。当前项查询位于 `tube.*` / `belt.*`，例如 `tube.fill`、`belt.remaining`；词表及返回口径见武器文档 §三、§3.2。无参值写成属性，带索引或距离的值写成函数。普通 HUD 元素不编译武器表达式；绑定层须给出可定位诊断，避免未绑定查询静默退回 0。
 
 ### 3.1 炮镜下的分划
 

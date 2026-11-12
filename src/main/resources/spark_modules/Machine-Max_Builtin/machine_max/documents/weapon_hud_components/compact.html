@@ -10,7 +10,7 @@
 <body>
   <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
     <div class="hud-panel grain-compact" data-mm-class="weapon.state">
-    <div class="compact-head"><span data-mm-text="weapon.name"></span><b data-mm-text="weapon.ammo_remaining"></b></div>
+    <div class="compact-head"><span data-mm-text="weapon.name"></span><b><span data-mm-text="weapon.loaded"></span><span>/</span><span data-mm-text="weapon.reserve_remaining"></span></b></div>
     <div class="compact-foot"><div><span>STORE</span><span class="stock-label" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'"><span data-mm-text="belt.label"></span></span></div><span data-mm-text="weapon.reload_text"></span></div>
     <div class="scanlines" aria-hidden="true"></div>
     </div>

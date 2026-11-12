@@ -49,6 +49,7 @@ body { display: inline-block; }
 .chamber-note.is-mismatch { display: flex; gap: 6px; }
 .grain-compact { padding: 7px 10px; border-left-width: 2px; }
 .compact-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.compact-head b { font-size: 32px; line-height: 32px; font-weight: 400; }
+.compact-head > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.compact-head b { display: flex; align-items: baseline; gap: 6px; flex: none; white-space: nowrap; font-size: 32px; line-height: 32px; font-weight: 400; }
 .compact-foot { margin-top: 4px; }
 .scanlines { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; opacity: var(--scanline-opacity, 0.18); background-image: repeating-linear-gradient(0deg, #000000 0px, #000000 1px, transparent 1px, transparent 4px); }

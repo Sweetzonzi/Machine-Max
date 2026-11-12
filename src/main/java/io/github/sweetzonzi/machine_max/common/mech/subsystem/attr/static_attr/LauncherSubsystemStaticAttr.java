@@ -64,6 +64,11 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     private final List<String> controlInputs;
     /** 弹药供给发现频道列表（空列表 = 万能接收模式） */
     private final List<String> ammoInputs;
+    /**
+     * 一次拉取装多少发：{@code true} 只把一发推进膛室，{@code false} 把整份 Belt 装进已装数据。<br>
+     * 它只描述武器实际怎么装填，与口径、射速和供给者类型无关；第一方定义显式填写。
+     */
+    private final boolean singleRoundLoading;
     /** 发射器专属音效属性 */
     private final LauncherSoundAttr launcherSoundAttr;
 
@@ -82,6 +87,8 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     .forGetter(LauncherSubsystemStaticAttr::getControlInputs),
             Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
                     .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
+            Codec.BOOL.optionalFieldOf("single_round_loading", false)
+                    .forGetter(LauncherSubsystemStaticAttr::isSingleRoundLoading),
             LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
                     .forGetter(LauncherSubsystemStaticAttr::getLauncherSounds),
             BarrelModuleAttr.CODEC.codec().optionalFieldOf("barrel", BarrelModuleAttr.DEFAULT)
@@ -96,6 +103,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr basicAttr,
             List<String> controlInputs,
             List<String> ammoInputs,
+            boolean singleRoundLoading,
             LauncherSoundAttr sounds,
             BarrelModuleAttr barrel,
             BreechModuleAttr breech,
@@ -103,6 +111,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         super(basicAttr, sounds.basicSounds());
         this.controlInputs = controlInputs;
         this.ammoInputs = ammoInputs;
+        this.singleRoundLoading = singleRoundLoading;
         this.launcherSoundAttr = sounds;
         this.barrel = barrel;
         this.breech = breech;

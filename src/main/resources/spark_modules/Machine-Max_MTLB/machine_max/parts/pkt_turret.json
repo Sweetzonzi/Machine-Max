@@ -110,11 +110,14 @@
           "subsystem.machine_max.pkt_ammo_loader": {
             "type": "machine_max:regen_loader",
             "definition": "machine_max:pktm_regen_loader",
-            "projectile_types": {
-              "machine_max:7_62x54r_ap": 3,
-              "machine_max:7_62x54r_t": 1
+            "belt_definition": {
+              "label": "AP/T",
+              "pattern": [
+                { "ammo": "machine_max:7_62x54r_ap", "count": 3 },
+                { "ammo": "machine_max:7_62x54r_t", "count": 1 }
+              ],
+              "length": 200
             },
-            "belt_label": "AP/T",
             "discovery_outputs": {
               "ammo_pktm": [
                 "global"

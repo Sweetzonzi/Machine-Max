@@ -5,7 +5,6 @@
   "feed": {
     "durability_weight": 1.0, //(可选, 默认1.0)输弹机构：非关键，归零只停供弹
     "reload_time": 10, //(必填, 秒)把一个装填单位送进膛的时间
-    "reload_round_by_round": true, //(可选, 默认true)true=每发都付 reload_time；false=只在对接时付一次
     "can_supply_multiple": true //(可选, 默认false)true=可同时供多根管，各管独立计时、库存共用
   },
   "magazine": {

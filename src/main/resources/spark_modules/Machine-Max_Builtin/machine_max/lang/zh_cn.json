@@ -35,6 +35,7 @@
   "subsystem.machine_max.gunner_sight": "炮手瞄准镜",
   "subsystem.machine_max.main_weapon": "主武器",
   "subsystem.machine_max.secondary_weapon": "副武器",
+  "subsystem.machine_max.pktm_weapon": "7.62 MM / PKTM",
   "interact.machine_max.driver_hatch_interact": "进入驾驶座",
   "subsystem.machine_max.gun_elevation_driver": "火炮俯仰驱动",
   "sub_part.machine_max.gun": "火炮",

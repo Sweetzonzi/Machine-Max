@@ -9,12 +9,14 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
+import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.MuzzleFlashLight;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
@@ -166,6 +168,24 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private BallisticProjectileType chamberedType;
 
     /**
+     * 已装弹药。null 表示没有已装供弹数据。<br>
+     * 整份装填（{@code single_round_loading=false}）的武器把拉到的一整份 Belt 存在这里，
+     * 并自行推进余量与回充；单发装填的武器不建立本字段，每次拉取都把那一发直接写入 {@link #chamberedType}。
+     * 服务端持久化并同步它，客户端只读同步值。
+     */
+    @Nullable
+    @Getter
+    private AmmoBelt loadedBelt;
+
+    /**
+     * 已装 Belt 的来源身份：换装提交时旧那一份交还给它。<br>
+     * 与 {@link #loadedBelt} 由同一次 {@link #setLoadedBelt} 成对写入，因此始终指向产出当前已装内容的
+     * 那台机器。存档里以身份保存，读档后按身份重新解析实例；它只用于定位接收方，
+     * 不写进可携带的弹药内容。
+     */
+    private SupplierRef loadedBeltSource = SupplierRef.NONE;
+
+    /**
      * 本管当前供给者的<b>身份</b>（网络同步）。<br>
      * 身份由 {@link SupplierRef} 表达：宿主 RegularPart uuid + SubPart 名 + 子系统名，同一会话内两端一致。
      * <p>
@@ -181,6 +201,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     private static final EntityDataAccessor<SupplierRef> SUPPLIER_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
+
+    /**
+     * 已装弹药（网络同步）。<br>
+     * 服务端在拉取、消耗、回充与换装后写入一份快照；客户端据此显示余量与回充进度。
+     * 值是快照而不是服务端持有的那个可变实例——同值写入不会触发广播，因此写入方必须给副本。
+     */
+    private static final EntityDataAccessor<Optional<AmmoBelt>> BELT_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_AMMO_BELT());
+
+    /** 膛内那一发（网络同步），空膛为空值。 */
+    private static final EntityDataAccessor<Optional<ResourceLocation>> CHAMBERED_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RESOURCE_LOCATION());
 
     /**
      * 当前选中的供给者引用。<br>
@@ -257,6 +289,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SUPPLIER_ID, SupplierRef.NONE);
+        builder.define(BELT_ID, Optional.empty());
+        builder.define(CHAMBERED_ID, Optional.empty());
     }
 
     /**
@@ -269,32 +303,63 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
         super.onSyncedDataUpdated(dataAccessor);
-        if (getLevel().isClientSide() && dataAccessor.equals(SUPPLIER_ID)) {
+        if (!getLevel().isClientSide()) return;
+        if (dataAccessor.equals(SUPPLIER_ID)) {
             applySyncedSupplier();
+        } else if (dataAccessor.equals(BELT_ID)) {
+            loadedBelt = getSynchedData().get(BELT_ID).orElse(null);
+        } else if (dataAccessor.equals(CHAMBERED_ID)) {
+            ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
+            chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
         }
     }
 
     // ——— IAmmoConsumer 实现 ———
 
-    @Override
-    public boolean canAcceptAmmo() {
-        return chamberedType == null || isActive();
+    /**
+     * 单发装填：一次拉取只把一发推进膛室，不建立持久的已装 Belt。<br>
+     * 取值来自发射器定义，不由供给者类型或它的配置推导。
+     */
+    public boolean singleRoundLoading() {
+        return attr.staticAttribute.isSingleRoundLoading();
     }
 
-    @Override
-    public int getFreeCapacity() {
-        return chamberedType == null ? 1 : 0;
-    }
-
-    @Override
-    public boolean receiveAmmo(ProjectileType type) {
-        // 发射器只装填飞行弹丸；其它运动模型由各自的发射器处理
-        if (!(type instanceof BallisticProjectileType kinetic)) return false;
-        if (chamberedType == null && isActive()) {
-            chamberedType = kinetic;
-            return true;
+    /**
+     * 这一份交付能不能被本管接收。<br>
+     * 单发装填要求恰好 1 发；整份装填要求至少 1 发，不设长度上限。两种模式都要求模式里每个弹种
+     * 都能解码、且炮闩接受它。校验发生在拉到交付之后——供给者不判断消费者收不收。
+     */
+    public boolean canAcceptBelt(AmmoBelt belt) {
+        if (belt.remaining() <= 0) return false;
+        if (singleRoundLoading() && (belt.length() != 1 || belt.remaining() != 1)) return false;
+        for (AmmoBelt.PatternEntry entry : belt.pattern()) {
+            ProjectileType type = AmmoBelt.resolve(getLevel(), entry.ammo());
+            if (!(type instanceof BallisticProjectileType)) return false;
+            if (!canAccept(type)) return false;
         }
-        return false;
+        return true;
+    }
+
+    /** 写入膛内那一发并同步；客户端不写。 */
+    private void setChambered(@Nullable BallisticProjectileType round) {
+        if (chamberedType == round) return;
+        chamberedType = round;
+        if (!getLevel().isClientSide()) {
+            getSynchedData().set(CHAMBERED_ID, Optional.ofNullable(round == null ? null : round.getRegistryKey()));
+        }
+    }
+
+    /** 写入已装 Belt 与它的返回来源并同步；客户端不写。 */
+    private void setLoadedBelt(@Nullable AmmoBelt belt, SupplierRef source) {
+        loadedBelt = belt;
+        loadedBeltSource = belt == null ? SupplierRef.NONE : source;
+        pushBelt();
+    }
+
+    /** 把已装 Belt 的当前状态作为快照推给客户端。 */
+    private void pushBelt() {
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(BELT_ID, Optional.ofNullable(loadedBelt == null ? null : loadedBelt.syncCopy()));
     }
 
     @Override
@@ -457,8 +522,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 直接装填一发弹药到膛内。<br>
-     * 由外部调用（如 AmmoLoader 直接压弹），绕过 requestRound 流程。
+     * 直接把一发弹药压进膛室，绕过取弹链。<br>
+     * 人工装填、调试工具与测试用它表达"膛内已有一发实弹"；正常供弹走 {@link #tryLoadBelt()}。
      *
      * @return true 表示装填成功
      */
@@ -466,38 +531,40 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (!(type instanceof BallisticProjectileType kinetic)) return false;
         if (chamberedType != null || !isActive()) return false;
         if (!canAccept(type)) return false;
-        chamberedType = kinetic;
+        setChambered(kinetic);
         return true;
     }
 
     /**
      * 退膛：返回膛内弹药并清空。<br>
-     * 退出的弹尝试还给当前供给者；收不收由供给者自己判（弹种是否在它的弹链上、弹仓有没有位置），
-     * 被拒时弹药从膛内消失且未入库——掉落物品的落地位置与物品映射尚未实现。
+     * 退出的一发包装成单发交付还给当前供给者；收不收由供给者自己判，被拒时弹药从膛内消失且未入库
+     * ——掉落物品的落地位置与物品映射尚未实现。
      *
      * @return 退出的弹药类型，空膛返回 null
      */
     @Nullable
     public ProjectileType ejectRound() {
-        ProjectileType round = chamberedType;
+        BallisticProjectileType round = chamberedType;
         if (round == null) return null;
-        chamberedType = null;
+        setChambered(null);
 
-        // 尝试归还给当前供给者；是否接收由供给者判定
+        // 单发交付：退膛只涉及膛内这一发，与已装 Belt 无关
         IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier != null) supplier.returnRound(round);
-        // TODO: returnRound 返回 false（不放行/放不下）时，生成 ItemEntity 掉落于发射器 locator 位置
+        if (supplier != null && round.getRegistryKey() != null) {
+            supplier.returnBelt(new AmmoBelt(null, "", List.of(new AmmoBelt.PatternEntry(round.getRegistryKey(), 1)), 1, 1, null));
+        }
+        // TODO: 供给者拒收时，生成 ItemEntity 掉落于发射器 locator 位置
         return round;
     }
 
     // ==================== 殉爆 ====================
 
     /**
-     * 摧毁边沿：膛内那发随炮闩一起殉爆。
+     * 摧毁边沿：本管持有的膛内弹与已装 Belt 随炮闩一起殉爆。
      * <p>
      * 触发点是框架的子系统摧毁边沿（{@link AbstractSubsystem#onTick()}）。炮闩是发射器唯一的关键模块
-     * （{@link BreechModuleAttr}），因此"摧毁"总意味着炮闩归零：膛内那发按
-     * {@link CookoffComposition#addStoredRound} 计入自己的发射药与各战斗部贡献，合成一次普通爆炸。
+     * （{@link BreechModuleAttr}），因此"摧毁"总意味着炮闩归零：两者按
+     * {@link CookoffComposition#addStoredRound} 计入各自的发射药与各战斗部贡献，合成一次普通爆炸。
      * 这与装弹机库存殉爆是同一条口径——残骸上的炮闩照样起爆，宿主零件整体移除后子系统不再 tick，
      * 自然不起爆。
      * <p>
@@ -510,27 +577,30 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public void onDestroyed() {
         super.onDestroyed();
         if (getLevel().isClientSide()) return;
-        detonateChamberedRound();
+        detonateStoredAmmo();
     }
 
     /**
-     * 膛内单发殉爆：按当前弹种合成贡献、清空膛室并提交一次普通爆炸。
+     * 本管库存殉爆：按膛内那一发与已装 Belt 的实际贡献合成一次普通爆炸。
      * <p>
-     * 合成范围只有这一个库存单元——膛内至多一发，混装、弹链与再生都不参与；它已经从供给者的弹仓
-     * 扣掉（{@link IAmmoSupplier#consumeReadyRound}），所以炮闩殉爆与装弹机库存殉爆不会把同一发
+     * 合成范围是本管持有的全部弹药——膛内至多一发，已装 Belt 按余量逐弹种计入；两者都已经从供给者的
+     * 弹仓扣掉（{@link IAmmoSupplier#consumeReadyBelt}），所以炮闩殉爆与装弹机库存殉爆不会把同一份
      * 算两次。
      * <p>
-     * {@code P、D、J} 全为零时没有可生成爆炸的贡献，不消耗膛内那发、不起爆；发射器已毁，那发也
-     * 打不出去，修好炮闩后仍在膛内。
+     * {@code P、D、J} 全为零时没有可生成爆炸的贡献，不消耗这些弹药、不起爆；发射器已毁，弹药也
+     * 打不出去，修好炮闩后仍在原处。
      * <p>
      * <b>调用线程：</b>主线程（子系统摧毁边沿）。
      */
-    private void detonateChamberedRound() {
-        BallisticProjectileType round = chamberedType;
-        if (round == null) return;
-
+    private void detonateStoredAmmo() {
         CookoffComposition composition = new CookoffComposition();
-        composition.addStoredRound(round, 1);
+        composition.addStoredRound(chamberedType, 1);
+        AmmoBelt belt = loadedBelt;
+        if (belt != null) {
+            for (Map.Entry<ResourceLocation, Integer> entry : belt.countRemaining().entrySet()) {
+                composition.addStoredRound(AmmoBelt.resolve(getLevel(), entry.getKey()), entry.getValue());
+            }
+        }
         if (composition.isEmpty()) return;
 
         // 起爆位置：炮闩模块最近一次有效受击的 HitBox 局部形心；无来源回退宿主质心
@@ -539,8 +609,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
         // 归属：打坏炮闩的那一击的 causing entity，殉爆继续算在同一个射手头上
         Entity attacker = getLastDamageAttacker();
-        // 先消耗膛内那发再交给普通爆炸服务：本次起爆后本管不再持有这发弹药
-        chamberedType = null;
+        // 先消耗本管的弹药再交给普通爆炸服务：本次起爆后本管不再持有这些内容
+        setChambered(null);
+        setLoadedBelt(null, SupplierRef.NONE);
         ExplosionManager.get(getLevel()).detonate(
                 origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
@@ -587,9 +658,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 指认的种子：本机字段还空着时（刚载入、发现尚未完成）按同步值里的身份认一次。
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
         if (currentSupplier == null) resolveSyncedSupplier();
-        // 若膛内无弹且本管可工作，尝试从供给者取弹。取弹要先过 isActive()：摧毁/停用/待组装的本管
-        // 既不该占住供给者的输弹线，也不该在殉爆清空膛室后立刻补一发回膛（见 #detonateChamberedRound）。
-        if (chamberedType == null && isActive()) tryLoadChamber();
+
+        // 库存只有服务端推进：取弹、回充与换装都在这一侧执行，客户端只跟随同步值。
+        if (!getLevel().isClientSide() && isActive() && !isDestroyed()) {
+            tickBeltRecharge();
+            IAmmoSupplier swapTarget = pendingSwapTarget();
+            if (swapTarget != null) {
+                tickBeltSwap(swapTarget);
+            } else {
+                if (needsBelt()) tryLoadBelt();
+                refillChamberFromBelt();
+            }
+        }
 
         if (!isActive() || isDestroyed()) {
             // ★ 仅在"存在进行中的连射/未收尾的循环音效"时执行一次停火处理。
@@ -602,7 +682,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
 
-        if (getActiveFireCommand() == null || chamberedType == null) {
+        // 换装期间锁定射击：膛内弹与旧 Belt 都留在原位，等供给者备好那一份再整份替换
+        if (isSwapping()) {
+            if (wasFiring) handleCeaseFire();
+            resetFireState();
+            return;
+        }
+
+        if (getActiveFireCommand() == null || !hasRoundToFire()) {
             // 停止开火 → 处理停火音效 + 清零累积，防止下次开火"蓄力"
             if (wasFiring) {
                 handleCeaseFire();
@@ -641,30 +728,22 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 不直接遍历 pendingFires（物理线程可能同时 poll 消费），避免并发遍历问题。
         List<ProjectileType> firedTypes = new ArrayList<>(rounds);
         for (int i = 0; i < rounds; i++) {
-            // 若膛内无弹，尝试从供给者取弹
-            if (chamberedType == null) {
-                if (!tryLoadChamber()) {
-                    break; // 弹药未就绪，等待下一 tick
-                }
-            }
+            BallisticProjectileType round = takeRoundForShot();
+            if (round == null) break; // 没有可发射的内容，等待下一 tick
 
             // ③ 首段地形预约：必须先于入队。入队后物理线程在过载时可能在同一个游戏 tick 内就
             //     poll 到这一发（它的物理步与我们交错），预约再登记就落在开火之后了。
             //     本行在主线程，登记经即时队列由本 tick 的 requestStep 消费。
             if (!getLevel().isClientSide()) {
-                seedTrajectoryTerrain(chamberedType);
+                seedTrajectoryTerrain(round);
             }
             // ③.① 入队 pendingFires（物理线程将消费）
-            pendingFires.add(chamberedType);
-            firedTypes.add(chamberedType);
+            pendingFires.add(round);
+            firedTypes.add(round);
             firedCount++;
-            chamberedType = null;
 
-            // ④ 预请求下一发弹药：射击后立即向供给者发起请求，
-            //    使输送计时器与射击并发运行，避免单膛室阻塞射速。
-            if (!tryRequestNextRound()) {
-                break; // 供给者无法接受请求（无弹药且无再生能力）
-            }
+            // ④ 打出一发后立刻从已装 Belt 补膛：连射循环不必等下一 tick 才补弹
+            if (!getLevel().isClientSide()) refillChamberFromBelt();
         }
 
         // ⑤ 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）
@@ -693,34 +772,55 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 尝试从供给者装填一发弹药到膛室。<br>
-     * 弹种兼容性由 Controller 的路由负责：本方法收到不兼容弹药时只做防御性归还，
-     * 等待下个 tick 的重路由。
-     * <p>
-     * 弹药未就绪时每次都向供给者重发请求：{@link IAmmoSupplier#requestRound} 幂等——
-     * 已轮到本管时直接返回，本次没被排上也只返回"已受理"，下个 tick 重发即可再试。
-     * 发射器不缓存"已请求"状态，因为"轮到没轮到"是供给者那边的交付状态，缓存在本地会在换供给者时脱节。
-     *
-     * @return true 表示膛室已有弹药（可立即发射）
+     * 本 tick 是否还需要向供给者拉一份。<br>
+     * 单发装填看膛室，整份装填看是否已有已装数据；可回充 Belt 打空后仍算"有已装数据"，等它自己补额度。
      */
-    private boolean tryLoadChamber() {
+    private boolean needsBelt() {
+        return singleRoundLoading() ? chamberedType == null : loadedBelt == null;
+    }
+
+    /**
+     * 此刻是否有可发射的一发：膛内有弹，或已装可回充 Belt 里还有额度。<br>
+     * 普通 Belt 的弹先入膛，因此它的可发射性由 {@link #chamberedType} 表达。
+     * <p>
+     * 不判断换装：换装期间 {@link #isSwapping()} 为真，射击会被锁住，即使本方法返回 true 也打不出去。
+     * HUD 判断"这根管能不能打"需要同时看这两个条件。
+     */
+    public boolean hasRoundToFire() {
+        if (chamberedType != null) return true;
+        AmmoBelt belt = loadedBelt;
+        return belt != null && belt.hasRecharge() && belt.remaining() > 0;
+    }
+
+    /**
+     * 从供给者拉一份交付。<br>
+     * 未就绪时每次都重发请求：{@link IAmmoSupplier#requestRound} 幂等，本次没被排上也只返回"已受理"，
+     * 下个 tick 重发即可再试。拉到后按 §4.1 校验，不通过就整份退回当前供给者并等待下一次重路由。
+     * <p>
+     * 单发装填把那一发直接写入膛室，不建立已装数据；整份装填把它存为已装 Belt 并记住返回来源。
+     *
+     * @return true 表示本管已有可用的膛内弹或已装 Belt
+     */
+    private boolean tryLoadBelt() {
         IAmmoSupplier supplier = getCurrentSupplier();
         if (supplier == null) return false;
 
         if (supplier.isRoundReady(this)) {
-            ProjectileType offered = supplier.consumeReadyRound(this);
-            if (offered instanceof BallisticProjectileType kinetic && canAccept(offered)) {
-                chamberedType = kinetic;
-                return true;
-            } else {
-                // 防御性处理：Controller 不应选不兼容的 Loader。
-                // 归还与否交给供给者判（它才知道自己收不收这个弹种）
-                if (offered != null) {
-                    MachineMax.LOGGER.warn("Launcher {} 收到不兼容弹药 {}，归还并等待 Controller 重路由", name, offered);
-                    supplier.returnRound(offered);
-                }
+            AmmoBelt pulled = supplier.consumeReadyBelt(this);
+            if (pulled == null) return false;
+            if (!canAcceptBelt(pulled)) {
+                MachineMax.LOGGER.warn("Launcher {} 收到不兼容的交付 {}，整份退回并等待路由", name, pulled);
+                supplier.returnBelt(pulled);
                 return false;
             }
+            if (singleRoundLoading()) {
+                ProjectileType round = AmmoBelt.resolve(getLevel(), pulled.nextRoundId());
+                if (!(round instanceof BallisticProjectileType kinetic)) return false;
+                setChambered(kinetic);
+                return true;
+            }
+            setLoadedBelt(pulled, SupplierRef.of(supplier));
+            return true;
         }
 
         // 弹药未就绪 → 请求（或重复请求）交付，本次未到手就等下一 tick
@@ -729,20 +829,146 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 预请求下一发弹药。<br>
-     * 在每发射击后立即调用，启动供给者的输送计时器，使弹药输送与射击并发进行。<br>
-     * 对于 {@code reloadTimeTicks > 0} 的供给者，这能显著减少有效射击间隔。
-     *
-     * @return true 表示请求已被受理（已轮到本管，或本次没排上、下个 tick 可再试）；
-     *         false 表示供给者当前无弹可给
+     * 从已装 Belt 取一发进膛。<br>
+     * 普通 Belt 每发都经过膛室：先写 {@link #chamberedType}，射击时消费膛内那一发。
+     * 可回充 Belt 不走这一步——它的额度在成功射击时直接消费，避免预取后回充多出一发。
+     * 余量耗尽的普通 Belt 直接清除已装数据，下一 tick 由 {@link #tryLoadBelt()} 拉下一份。
      */
-    private boolean tryRequestNextRound() {
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier == null) return false;
+    private void refillChamberFromBelt() {
+        AmmoBelt belt = loadedBelt;
+        if (belt == null) return;
+        if (belt.remaining() <= 0) {
+            if (!belt.hasRecharge()) setLoadedBelt(null, SupplierRef.NONE);
+            return;
+        }
+        if (belt.hasRecharge() || chamberedType != null) return;
 
-        // 即使请求被拒绝（供给者无弹药），也不阻塞：下个 tick 会重试
-        // 若供给者为 RegenLoader，弹药再生产后 requestRound 会重新成功
-        return supplier.requestRound(this);
+        ProjectileType next = AmmoBelt.resolve(getLevel(), belt.nextRoundId());
+        if (!(next instanceof BallisticProjectileType kinetic) || !canAccept(next)) return;
+        belt.consumeNext();
+        pushBelt();
+        setChambered(kinetic);
+    }
+
+    /**
+     * 取一发用于本次射击。<br>
+     * 膛内有弹就先打膛内那发；可回充 Belt 的射击在这里消费额度并刷新自身回充延迟。
+     * 普通 Belt 的弹已经在膛内，走到这里说明没有可发射内容。客户端只读同步值，不扣余量。
+     *
+     * @return 本次发射的弹种；没有可发射内容时返回 null
+     */
+    @Nullable
+    private BallisticProjectileType takeRoundForShot() {
+        if (chamberedType != null) {
+            BallisticProjectileType round = chamberedType;
+            if (!getLevel().isClientSide()) setChambered(null);
+            return round;
+        }
+        AmmoBelt belt = loadedBelt;
+        if (belt == null || belt.remaining() <= 0) return null;
+        ProjectileType next = AmmoBelt.resolve(getLevel(), belt.nextRoundId());
+        if (!(next instanceof BallisticProjectileType kinetic)) return null;
+        if (!belt.hasRecharge()) return null;
+        if (!getLevel().isClientSide()) {
+            belt.consumeNext();
+            belt.onShot();
+            pushBelt();
+        }
+        return kinetic;
+    }
+
+    // ==================== 整份换装 ====================
+
+    /**
+     * 换装是否进行中：当前供给者要交付的规格与本机已装内容不是同一份。<br>
+     * 换装没有自己的时长与进度——装填流程本身就是供给者的事，它按 {@code feed.reload_time} 备货，
+     * 本管只在它备好时取走那一份、把旧的一份交还原来的机器。进行中时射击锁定，
+     * 已装内容与膛内弹都留在原位。
+     */
+    public boolean isSwapping() {
+        return pendingSwapTarget() != null;
+    }
+
+    /**
+     * 在途换装的交付来源。<br>
+     * 返回 null 表示没有在途换装：没有供给者指认、没有已装数据（单发装填的管始终如此），
+     * 或者供给者要给的规格与已装内容已经一致。
+     */
+    @Nullable
+    private IAmmoSupplier pendingSwapTarget() {
+        IAmmoSupplier supplier = getCurrentSupplier();
+        AmmoBelt loaded = loadedBelt;
+        if (supplier == null || loaded == null) return null;
+        AmmoBelt spec = supplier.getDeliverySpec();
+        if (spec == null || AmmoBelt.compareSpec(loaded, spec) == 0) return null;
+        return supplier;
+    }
+
+    /**
+     * 推进在途换装：向目标供给者请求它那一份，备好后提交整份交换。<br>
+     * 每 tick 重发请求，因此换装途中被路由改派时下一 tick 就转向新机器，不会留下无人认领的交付
+     * ——旧预留已由 {@link #assignSupplier} 取消。备好之前什么都不动：旧 Belt 与膛内弹留在原位。
+     *
+     * @param target 本次换装的交付来源，由 {@link #pendingSwapTarget()} 给出
+     */
+    private void tickBeltSwap(IAmmoSupplier target) {
+        target.requestRound(this);
+        commitBeltSwap(target);
+    }
+
+    /** 在主线程验证并提交整份交换；供给者还没备好或任一条件不满足时都回滚到操作前状态。 */
+    private void commitBeltSwap(IAmmoSupplier target) {
+        if (!target.isRoundReady(this)) return;
+        AmmoBelt incoming = target.consumeReadyBelt(this);
+        if (incoming == null) {
+            abortBeltSwap("目标没有可交付的一份");
+            return;
+        }
+        if (!canAcceptBelt(incoming)) {
+            target.returnBelt(incoming);
+            abortBeltSwap("换入的一份不通过校验");
+            return;
+        }
+        AmmoBelt previous = loadedBelt;
+        if (previous != null) {
+            IAmmoSupplier receiver = findSupplierByRef(loadedBeltSource);
+            if (receiver == null || !receiver.returnBelt(previous)) {
+                target.returnBelt(incoming);
+                abortBeltSwap("旧的一份无处回收");
+                return;
+            }
+        }
+        setLoadedBelt(incoming, SupplierRef.of(target));
+        refillChamberFromBelt();
+    }
+
+    private void abortBeltSwap(String reason) {
+        MachineMax.LOGGER.warn("Launcher {} 换装中止：{}", name, reason);
+        IAmmoSupplier target = getCurrentSupplier();
+        if (target != null) target.cancelRound(this);
+    }
+
+    /**
+     * 推进已装 Belt 的自身回充。<br>
+     * 只有服务端推进；成功射击已经通过 {@link AmmoBelt#onShot()} 重置过延迟，这里只按速率补额度。
+     * 取电由本机所在的能源网格提供，取不到时停在当前进度等待下一 tick。
+     */
+    private void tickBeltRecharge() {
+        AmmoBelt belt = loadedBelt;
+        if (belt == null || !belt.hasRecharge()) return;
+        int before = belt.remaining();
+        float beforeProgress = belt.rechargeProgress();
+        belt.tickRecharge(this::payRechargeEnergy);
+        if (belt.remaining() != before
+                || Math.round(belt.rechargeProgress() * 20f) != Math.round(beforeProgress * 20f)) {
+            pushBelt();
+        }
+    }
+
+    private boolean payRechargeEnergy(float amount) {
+        EnergyGrid grid = getOwner().getEnergyGrid();
+        if (grid == null) return false;
+        return grid.consumeEnergy(amount) >= amount - 0.001f;
     }
 
     /**
@@ -1286,13 +1512,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 获取当前弹药类型（按优先级）。<br>
-     * 优先返回膛内已装填的弹药类型；若空膛则尝试从当前选中的供给者获取正在装填的弹药类型。
+     * 依次取膛内那一发、已装 Belt 的下一发、当前供给者即将交付的弹种。
      *
      * @return 当前弹药类型，完全无弹药信息时返回 null
      */
     @Nullable
     public ProjectileType getCurrentAmmoType() {
         if (chamberedType != null) return chamberedType;
+        AmmoBelt belt = loadedBelt;
+        if (belt != null) {
+            ProjectileType next = AmmoBelt.resolve(getLevel(), belt.nextRoundId());
+            if (next != null) return next;
+        }
         IAmmoSupplier supplier = getCurrentSupplier();
         return supplier != null ? supplier.getSuppliedType() : null;
     }
@@ -1382,13 +1613,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     public void loadData(CompoundTag data) {
         super.loadData(data);
-        if (data.contains("chambered_type")) {
-            ResourceLocation key = ResourceLocation.parse(data.getString("chambered_type"));
-            ProjectileType stored = ProjectileType.get(getLevel(), key);
-            chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
-        } else {
-            chamberedType = null;
-        }
+        ProjectileType stored = data.contains("chambered_type")
+                ? AmmoBelt.resolve(getLevel(), ResourceLocation.parse(data.getString("chambered_type")))
+                : null;
+        setChambered(stored instanceof BallisticProjectileType kinetic ? kinetic : null);
+
+        loadedBelt = data.contains("loaded_belt") ? AmmoBelt.load(data.getCompound("loaded_belt")) : null;
+        loadedBeltSource = readSupplierRef(data, "loaded_belt_source");
+        // 读档不免费产出：存档里没有的内容保持为空，下一次正常交付才转移库存
+        pushBelt();
     }
 
     @Override
@@ -1397,7 +1630,25 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (chamberedType != null) {
             data.putString("chambered_type", chamberedType.getRegistryKey().toString());
         }
+        if (loadedBelt != null) data.put("loaded_belt", loadedBelt.save());
+        writeSupplierRef(data, "loaded_belt_source", loadedBeltSource);
         return data;
+    }
+
+    /** 供给者身份按三项标识保存：同一份装配存档内可恢复，不存 Java 引用。 */
+    private static void writeSupplierRef(CompoundTag data, String key, SupplierRef ref) {
+        if (ref.isNone()) return;
+        CompoundTag tag = new CompoundTag();
+        tag.putUUID("part", ref.partUuid());
+        tag.putString("subpart", ref.subPartName());
+        tag.putString("subsystem", ref.subsystemName());
+        data.put(key, tag);
+    }
+
+    private static SupplierRef readSupplierRef(CompoundTag data, String key) {
+        if (!data.contains(key)) return SupplierRef.NONE;
+        CompoundTag tag = data.getCompound(key);
+        return new SupplierRef(tag.getUUID("part"), tag.getString("subpart"), tag.getString("subsystem"));
     }
 
     /**

@@ -192,8 +192,11 @@
             "subsystem.machine_max.50mm_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:kwk39_50mm_regen_loader",
-              "projectile_types": {
-                "machine_max:50mm_pzgr39": 1
+              "belt_definition": {
+                "pattern": [
+                  { "ammo": "machine_max:50mm_pzgr39", "count": 1 }
+                ],
+                "length": 1
               },
               "discovery_outputs": {
                 "ammo_50mm": [
@@ -204,8 +207,11 @@
             "subsystem.machine_max.50mm_he_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:kwk39_50mm_regen_loader",
-              "projectile_types": {
-                "machine_max:50mm_sprgr38": 1
+              "belt_definition": {
+                "pattern": [
+                  { "ammo": "machine_max:50mm_sprgr38", "count": 1 }
+                ],
+                "length": 1
               },
               "discovery_outputs": {
                 "ammo_50mm": [
@@ -216,11 +222,14 @@
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:mg34_regen_loader",
-              "projectile_types": {
-                "machine_max:7_92x57_ap": 3,
-                "machine_max:7_92x57_t": 1
+              "belt_definition": {
+                "label": "AP/T",
+                "pattern": [
+                  { "ammo": "machine_max:7_92x57_ap", "count": 3 },
+                  { "ammo": "machine_max:7_92x57_t", "count": 1 }
+                ],
+                "length": 50
               },
-              "belt_label": "AP/T",
               "discovery_outputs": {
                 "ammo_7_92mm": [
                   "global"

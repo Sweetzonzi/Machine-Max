@@ -57,7 +57,7 @@ ExamplePack/
   <div class="weapon-panel" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
     <div class="heading">
       <span data-mm-text="weapon.name">WEAPON</span>
-      <b data-mm-text="weapon.ammo_text">-- / --</b>
+      <b data-mm-text="weapon.reserve_text">-- / --</b>
     </div>
     <div class="tubes">
       <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
@@ -116,7 +116,7 @@ body { display: inline-block; }
 
 ```html
 <span data-mm-text="weapon.name">WEAPON</span>
-<b data-mm-text="weapon.ammo_text">-- / --</b>
+<b data-mm-text="weapon.reserve_text">-- / --</b>
 <span data-mm-text="global.get('vehicle_speed') ?? 0">0</span>
 <div class="track">
   <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
@@ -220,7 +220,7 @@ example/hud_layouts/weapon_panel.json 是裸数组：
 
 | 场景 | 观察点 |
 | --- | --- |
-| 最小接线 | 乘坐目标座位并选择该 WC，能看到 weapon.name 和 weapon.ammo_text 的真实值 |
+| 最小接线 | 乘坐目标座位并选择该 WC，能看到 weapon.name 和 weapon.reserve_text 的真实值 |
 | 射击与装填 | 各管状态、进度和时间变化；空膛与就绪显示正确 |
 | 切换供弹 | 选中弹链与膛内弹分别表达，进行中的装填不被页面误标到新选择 |
 | 零库存 | 已就绪的管仍显示就绪，库存与膛内弹不相加 |

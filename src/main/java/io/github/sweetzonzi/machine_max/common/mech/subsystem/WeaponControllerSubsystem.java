@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.*;
 import net.minecraft.world.phys.Vec2;
 
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -28,10 +29,9 @@ import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +44,7 @@ import java.util.*;
  * 武器控制器子系统。<br>
  * 接收目标坐标和开火指令，控制炮塔驱动子系统指向目标，
  * 并控制发射器子系统在瞄准完毕后开火。<br>
- * 弹药管理：弹链模式，按弹链（有序循环弹种序列）选择和路由弹药的决策。<br>
+ * 弹药管理：按交付规格（一份 {@link AmmoBelt} 的内容与长度）分组、选择与路由供给者的决策。<br>
  * 通过只读终端查询发现并绑定同载具内的 TurretDriver 和 Launcher 子系统，绑定以不可变快照发布给物理线程。
  */
 @Getter
@@ -134,56 +134,49 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     // ==================== 弹药管理（弹链模式） ====================
 
     /**
-     * 当前选中的弹链（展平列表）。<br>
+     * 当前选中的弹链规格。<br>
      * 弹药池里有链时不会是 null：{@link #rebuildAmmoPool()} 建池后默认选中排序第一条
      * （顺序见 {@link #BELT_ORDER}），选中的链随结构变化消失时也由它改选。池为空时保持 null
-     * ——那时没有可选的链，路由改走无弹链的兜底供给者（物理弹仓的 {@code AmmoLoaderSubsystem}）。
+     * ——那时没有可选的链，路由改走无交付规格的兜底供给者。
+     * <p>
+     * 值是交付规格（满额模板），不含余量：同一份规格的多个供给者共用一个键，余量在读取时现算。
      * <p>
      * 写入点都在主线程：建池时的默认选中与改选、{@code ammo_switch} 频道、
      * {@code NEXT_AMMO_TYPE} / {@code PREV_AMMO_TYPE} 指令（{@link #updateRegularInputs()}）、
      * {@link #cycleSelectedBelt(boolean)}；读取点也在主线程（路由与 HUD 刷新）。
      */
     @Nullable
-    private List<ResourceLocation> selectedBelt = null;
+    private AmmoBelt selectedBelt = null;
 
     /**
-     * 弹链按完整资源键序列的字典序排列，公共前缀相同时短序列在前。<br>
+     * 弹链按交付规格排列：先比模式条目（弹种、数量），再比长度、标签与是否回充。<br>
      * 默认选中（{@link #rebuildAmmoPool()} 建池后）、轮切（{@link #cycleSelectedBelt(boolean)}）
      * 与 HUD 列表（{@link #getAvailableBelts()}）共用它，三者因此总是指向同一条链。
      */
-    private static final Comparator<List<ResourceLocation>> BELT_ORDER = WeaponControllerSubsystem::compareBelts;
-
-    public static int compareBelts(List<ResourceLocation> left, List<ResourceLocation> right) {
-        for (int i = 0; i < Math.min(left.size(), right.size()); i++) {
-            int order = left.get(i).toString().compareTo(right.get(i).toString());
-            if (order != 0) return order;
-        }
-        return Integer.compare(left.size(), right.size());
-    }
+    private static final Comparator<AmmoBelt> BELT_ORDER = AmmoBelt::compareSpec;
 
     /**
      * 选中弹链的同步镜像（服务端 → 客户端）。<br>
-     * 值是按顺序拼接的弹种注册键（{@code id1,id2,...}），空串表示当前没有可选的弹链。
-     * 选择本身只在服务端决定：客户端读到的 {@link #selectedBelt} 来自本条同步值，
-     * 因此 HUD 高亮的选项卡与实际供弹的弹链总是同一条。
+     * 值是交付规格本身，空值表示当前没有可选的弹链。选择本身只在服务端决定：客户端读到的
+     * {@link #selectedBelt} 来自本条同步值，因此 HUD 高亮的选项卡与实际供弹的弹链总是同一条。
      */
-    private static final EntityDataAccessor<String> SELECTED_BELT =
-            SynchedEntityData.defineId(WeaponControllerSubsystem.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Optional<AmmoBelt>> SELECTED_BELT =
+            SynchedEntityData.defineId(WeaponControllerSubsystem.class, MMEntityDataSerializers.getOPTIONAL_AMMO_BELT());
 
     /**
-     * 客户端收到选择、但弹药池还没建起来时暂存的键串。<br>
+     * 客户端收到选择、但弹药池还没建起来时暂存的规格。<br>
      * 建池依赖装弹机在结构变化阶段的发现结果，发现与同步值谁先到不确定；暂存后在 {@link #onTick()} 里重试落地，
      * 不因为一次"池里还没有这条链"就把选择丢掉。
      */
     @Nullable
-    private String pendingSelectedBelt = null;
+    private AmmoBelt pendingSelectedBelt = null;
 
     /**
      * 聚合弹药池快照。<br>
-     * key = 弹链（展平的不可变列表），value = 提供该弹链的所有 Loader 条目（按装填速度升序）。
+     * key = 交付规格，value = 提供该规格的所有 Loader 条目（按装填速度升序）。
      * 载具结构变化时由 onVehicleStructureChanged 触发完整重建，volatile 保证跨线程可见。
      */
-    private volatile Map<List<ResourceLocation>, List<LoaderEntry>> ammoPool = Map.of();
+    private volatile Map<AmmoBelt, List<LoaderEntry>> ammoPool = Map.of();
 
     /**
      * 自上次完整重建以来的 tick 计数，用于每 10 tick 轻量刷新 availableCount。
@@ -203,9 +196,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     public record LoaderEntry(
             IAmmoSupplier loader,
-            List<ResourceLocation> belt,       // 弹链序列（不可变）
+            AmmoBelt belt,                     // 该 Loader 的交付规格（满额模板）
             int availableCount,                // 该 Loader 的可用弹药数
-            int reloadTimeTicks,               // 装填耗时
+            int reloadTimeTicks,               // 一份交付的装填耗时
             String channel                     // 所属频道名（HUD 显示用，不影响路由）
     ) {
     }
@@ -225,7 +218,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(SELECTED_BELT, "");
+        builder.define(SELECTED_BELT, Optional.empty());
     }
 
     /**
@@ -236,7 +229,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
         super.onSyncedDataUpdated(dataAccessor);
         if (getLevel().isClientSide() && dataAccessor.equals(SELECTED_BELT)) {
-            applySyncedBelt(getSynchedData().get(SELECTED_BELT));
+            applySyncedBelt(getSynchedData().get(SELECTED_BELT).orElse(null));
         }
     }
 
@@ -410,7 +403,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 无弹链的供给者仍可被路由选中，见 {@link #findSupplier}。
      */
     private void rebuildAmmoPool() {
-        Map<List<ResourceLocation>, List<LoaderEntry>> pool = new HashMap<>();
+        Map<AmmoBelt, List<LoaderEntry>> pool = new HashMap<>();
         Set<IAmmoSupplier> visited = new HashSet<>();
 
         for (LauncherSubsystem launcher : launchers.keySet()) {
@@ -420,8 +413,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 for (IAmmoSupplier loader : channelEntry.getValue()) {
                     if (!visited.add(loader)) continue; // 去重
 
-                    List<ResourceLocation> belt = beltOf(loader);
-                    if (belt.isEmpty()) continue;
+                    AmmoBelt belt = loader.getDeliverySpec();
+                    if (belt == null) continue;
                     pool.computeIfAbsent(belt, k -> new ArrayList<>())
                             .add(new LoaderEntry(
                                     loader, belt,
@@ -433,7 +426,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
 
         // 每个弹链内：按 reloadTimeTicks 升序排序
-        for (Map.Entry<List<ResourceLocation>, List<LoaderEntry>> entry : pool.entrySet()) {
+        for (Map.Entry<AmmoBelt, List<LoaderEntry>> entry : pool.entrySet()) {
             entry.getValue().sort(Comparator.comparingInt(LoaderEntry::reloadTimeTicks));
         }
         this.ammoPool = Collections.unmodifiableMap(pool);
@@ -454,27 +447,15 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 供给者的弹链（展平的弹种序列）。<br>
-     * 无弹链概念的供给者（装弹机）返回空列表，因此不进弹药池。
-     */
-    private static List<ResourceLocation> beltOf(IAmmoSupplier supplier) {
-        if (supplier instanceof RegenLoaderSubsystem regenLoader) {
-            return regenLoader.getProjectileTypes();
-        }
-        // AmmoLoader 无弹链：物理弹仓按装填顺序出弹，弹种由 getSuppliedType() 逐发报告
-        return List.of();
-    }
-
-    /**
      * 轻量刷新弹药池 availableCount（不改变结构，仅更新数量）。<br>
      * 每 10 tick 调用一次，通过 LoaderEntry 中保存的 IAmmoSupplier 引用获取实时计数。
      */
     private void refreshAmmoPoolCounts() {
-        Map<List<ResourceLocation>, List<LoaderEntry>> pool = this.ammoPool;
+        Map<AmmoBelt, List<LoaderEntry>> pool = this.ammoPool;
         if (pool.isEmpty()) return;
-        Map<List<ResourceLocation>, List<LoaderEntry>> updated = new HashMap<>();
-        for (Map.Entry<List<ResourceLocation>, List<LoaderEntry>> entry : pool.entrySet()) {
-            List<ResourceLocation> belt = entry.getKey();
+        Map<AmmoBelt, List<LoaderEntry>> updated = new HashMap<>();
+        for (Map.Entry<AmmoBelt, List<LoaderEntry>> entry : pool.entrySet()) {
+            AmmoBelt belt = entry.getKey();
             List<LoaderEntry> updatedEntries = new ArrayList<>(entry.getValue().size());
             for (LoaderEntry le : entry.getValue()) {
                 int count = le.loader().getRemainingCount();
@@ -490,7 +471,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 在可用弹链列表中循环切换选中的弹链。
      */
     private void cycleSelectedBelt(boolean reverse) {
-        List<List<ResourceLocation>> belts = getAvailableBelts();
+        List<AmmoBelt> belts = getAvailableBelts();
         if (belts.isEmpty()) {
             selectedBelt = null;
         } else {
@@ -512,53 +493,40 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     private void pushSyncedBelt() {
         if (getLevel().isClientSide()) return;
-        getSynchedData().set(SELECTED_BELT, encodeBelt(selectedBelt));
+        getSynchedData().set(SELECTED_BELT, Optional.ofNullable(selectedBelt));
     }
 
     /**
      * 客户端落地服务端的选择。<br>
-     * 池里已经有这条链就改选；还没有（同步值先于发现结果到达）就暂存，等 {@link #onTick()} 重试。
+     * 池里已经有这份规格就改选；还没有（同步值先于发现结果到达）就暂存，等 {@link #onTick()} 重试。
      */
-    private void applySyncedBelt(String encoded) {
-        if (encoded.isEmpty()) {
+    private void applySyncedBelt(@Nullable AmmoBelt spec) {
+        if (spec == null) {
             selectedBelt = null;
             pendingSelectedBelt = null;
             return;
         }
-        List<ResourceLocation> matched = findBeltByKey(encoded);
+        AmmoBelt matched = findBelt(spec);
         if (matched != null) {
             selectedBelt = matched;
             pendingSelectedBelt = null;
         } else {
-            pendingSelectedBelt = encoded;
+            pendingSelectedBelt = spec;
         }
     }
 
     /**
-     * 在弹药池里按稳定键串找弹链。
+     * 在弹药池里按交付规格找弹链。
      *
-     * @return 对应的弹链；池里还没有这条链时返回 null
+     * @return 池里的那份规格；还没有这条链时返回 null
      */
     @Nullable
-    private List<ResourceLocation> findBeltByKey(String encoded) {
-        for (List<ResourceLocation> belt : ammoPool.keySet()) {
-            if (encodeBelt(belt).equals(encoded)) return belt;
+    private AmmoBelt findBelt(AmmoBelt spec) {
+        if (ammoPool.containsKey(spec)) return spec;
+        for (AmmoBelt candidate : ammoPool.keySet()) {
+            if (AmmoBelt.compareSpec(candidate, spec) == 0) return candidate;
         }
         return null;
-    }
-
-    /**
-     * 弹链的稳定键串：按顺序拼接弹种注册键，空表编码为空串。<br>
-     * 用作同步值而不是下标——结构变化会改变池里弹链的顺序，键串只随弹链本身变化。
-     */
-    private static String encodeBelt(@Nullable List<ResourceLocation> belt) {
-        if (belt == null || belt.isEmpty()) return "";
-        StringBuilder builder = new StringBuilder();
-        for (ResourceLocation id : belt) {
-            if (!builder.isEmpty()) builder.append(',');
-            builder.append(id);
-        }
-        return builder.toString();
     }
 
     /**
@@ -581,8 +549,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     private static boolean supplyTypeAccepted(IAmmoSupplier supplier, LauncherSubsystem launcher) {
         if (!supplier.isSupplyOperational()) return false;
-        ProjectileType offered = supplier.getSuppliedType();
-        return offered == null || launcher.canAccept(offered);
+        AmmoBelt spec = supplier.getDeliverySpec();
+        return spec != null && launcher.canAcceptBelt(spec);
     }
 
     /**
@@ -592,7 +560,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * @param belt 选中的弹链；{@code null}（未选弹链）时返回空列表
      */
     private static List<IAmmoSupplier> beltSuppliers(WeaponControllerSubsystem controller,
-                                                     @Nullable List<ResourceLocation> belt) {
+                                                     @Nullable AmmoBelt belt) {
         if (belt == null) return List.of();
         List<LoaderEntry> entries = controller.ammoPool.get(belt);
         if (entries == null || entries.isEmpty()) return List.of();
@@ -628,9 +596,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      *   <li>合法性（硬条件）：机构可用、弹种被炮闩接受、仍在选中弹链上。不成立立刻换人，
      *       不等在途的那一发——切链与路由在同一 tick 内先后执行，推迟一步就会从旧链取到一发
      *       与选项卡不符的弹</li>
-     *   <li>代价比较：候选严格更早拿到下一发才换，相等或更慢都保持。判据是
-     *       {@link IAmmoSupplier#getTicksToNextRound(IAmmoConsumer)}，已备好的一发与已对接的整匣
-     *       都是 {@code 0}，空匣是 {@link Integer#MAX_VALUE}——因此打空的机器会被有现货的候选顶替</li>
+     *   <li>代价比较：候选严格更早拿到下一份才换，相等或更慢都保持。判据是
+     *       {@link IAmmoSupplier#getTicksToNextRound(IAmmoConsumer)}，已备好的一份是 {@code 0}，
+     *       空匣是 {@link Integer#MAX_VALUE}——因此打空的机器会被有现货的候选顶替</li>
      * </ol>
      * 没排上候选时由 {@link #findSupplier} 的兜底分支返回当前供给者本身，那一路在路由的
      * {@code candidate == current} 处就保持绑定，不走本方法。
@@ -641,7 +609,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * @return true 表示留着当前供给者
      */
     private boolean isWorthKeeping(LauncherSubsystem launcher, @Nullable IAmmoSupplier current,
-                                   IAmmoSupplier candidate, @Nullable List<ResourceLocation> belt) {
+                                   IAmmoSupplier candidate, @Nullable AmmoBelt belt) {
         if (current == null || !supplyTypeAccepted(current, launcher)) return false;
         if (belt != null && !beltSuppliers(this, belt).contains(current)) return false;
         return candidate.getTicksToNextRound(launcher) >= current.getTicksToNextRound(launcher);
@@ -665,7 +633,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     @Nullable
     private IAmmoSupplier findSupplier(LauncherSubsystem launcher,
-                                       @Nullable List<ResourceLocation> selectedBelt) {
+                                       @Nullable AmmoBelt selectedBelt) {
         List<IAmmoSupplier> usable = new ArrayList<>();
         List<IAmmoSupplier> beltLoaders = beltSuppliers(this, selectedBelt);
         for (IAmmoSupplier loader : beltLoaders) {
@@ -728,7 +696,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         // 按名字排序：launchers 是无序 Map，不定序会让分配结果每 tick 抖动
         activeLaunchers.sort(Comparator.comparing(l -> l.name));
 
-        List<ResourceLocation> belt = selectedBelt;
+        AmmoBelt belt = selectedBelt;
         for (LauncherSubsystem launcher : activeLaunchers) {
             IAmmoSupplier current = launcher.getCurrentSupplier();
 
@@ -760,10 +728,11 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             }
 
             // 换人：assignSupplier 内部会 cancelRound 旧机器并从它的集合里摘掉本管，
-            // 那发仍在旧装弹机的弹仓里（见 RegenLoaderSubsystem#cancelRound），不会丢
+            // 那份额度仍在旧装弹机的弹仓里（见 RegenLoaderSubsystem#cancelRound），不会丢
             launcher.setCurrentSupplier(candidate);
             candidate.getBoundConsumers().add(launcher);
         }
+
     }
 
     // ==================== 公开查询方法 ====================
@@ -772,7 +741,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 当前选中的弹链，null = 无选择。
      */
     @Nullable
-    public List<ResourceLocation> getSelectedBelt() {
+    public AmmoBelt getSelectedBelt() {
         return selectedBelt;
     }
 
@@ -798,7 +767,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 可用弹链列表，供 HUD 弹种选择菜单。<br>
      * 顺序同 {@link #BELT_ORDER}，也就是默认选中与轮切所用的顺序。
      */
-    public List<List<ResourceLocation>> getAvailableBelts() {
+    public List<AmmoBelt> getAvailableBelts() {
         return ammoPool.keySet().stream().sorted(BELT_ORDER).toList();
     }
 

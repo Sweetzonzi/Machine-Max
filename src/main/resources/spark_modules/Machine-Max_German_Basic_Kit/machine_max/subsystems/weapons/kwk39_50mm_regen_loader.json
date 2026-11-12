@@ -4,7 +4,6 @@
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "feed": {
     "reload_time": 2,
-    "reload_round_by_round": true,
     "can_supply_multiple": false
   },
   "magazine": {

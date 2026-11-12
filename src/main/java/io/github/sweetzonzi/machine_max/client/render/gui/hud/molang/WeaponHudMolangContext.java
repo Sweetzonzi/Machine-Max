@@ -80,17 +80,26 @@ public class WeaponHudMolangContext extends HudMolangContext {
     @StringQueryBinding(value = "state", namespace = "weapon")
     public String weapon_state() { return weapon().state(); }
 
-    @QueryBinding(value = "ammo_remaining", namespace = "weapon")
-    public double weapon_ammo_remaining() { return weapon().ammoRemaining(); }
+    @QueryBinding(value = "loaded", namespace = "weapon")
+    public double weapon_loaded() { return weapon().loaded(); }
 
-    @QueryBinding(value = "ammo_capacity", namespace = "weapon")
-    public double weapon_ammo_capacity() { return weapon().ammoCapacity(); }
+    @QueryBinding(value = "reserve_remaining", namespace = "weapon")
+    public double weapon_reserve_remaining() { return weapon().reserveRemaining(); }
 
-    @QueryBinding(value = "ammo_infinite", namespace = "weapon")
-    public double weapon_ammo_infinite() { return weapon().ammoInfinite() ? 1 : 0; }
+    @QueryBinding(value = "reserve_capacity", namespace = "weapon")
+    public double weapon_reserve_capacity() { return weapon().reserveCapacity(); }
 
-    @StringQueryBinding(value = "ammo_text", namespace = "weapon")
-    public String weapon_ammo_text() { return weapon().ammoText(); }
+    @QueryBinding(value = "reserve_infinite", namespace = "weapon")
+    public double weapon_reserve_infinite() { return weapon().reserveInfinite() ? 1 : 0; }
+
+    @StringQueryBinding(value = "reserve_text", namespace = "weapon")
+    public String weapon_reserve_text() { return weapon().reserveText(); }
+
+    @QueryBinding(value = "magazine_remaining", namespace = "weapon")
+    public double weapon_magazine_remaining() { return weapon().magazineRemaining(); }
+
+    @QueryBinding(value = "chambered_count", namespace = "weapon")
+    public double weapon_chambered_count() { return weapon().chamberedCount(); }
 
     @StringQueryBinding(value = "round_label", namespace = "weapon")
     public String weapon_round_label() { return weapon().roundLabel(); }
@@ -135,10 +144,10 @@ public class WeaponHudMolangContext extends HudMolangContext {
     public double tube_reload_remaining() { return requireTube().reloadRemaining(); }
 
     @StringQueryBinding(value = "tube_chambered_ammo_label", namespace = "weapon")
-    public String weapon_tube_chambered_ammo_label(double index) { var value = tube(index); return value == null ? "" : value.chamberedAmmoLabel(); }
+    public String weapon_tube_chambered_ammo_label(double index) { var value = tube(index); return value == null ? "" : value.chamber().label(); }
 
     @StringQueryBinding(value = "chambered_ammo_label", namespace = "tube")
-    public String tube_chambered_ammo_label() { return requireTube().chamberedAmmoLabel(); }
+    public String tube_chambered_ammo_label() { return requireTube().chamber().label(); }
 
     @StringQueryBinding(value = "tube_loading_belt_label", namespace = "weapon")
     public String weapon_tube_loading_belt_label(double index) { var value = tube(index); return value == null ? "" : value.loadingBeltLabel(); }
@@ -157,6 +166,66 @@ public class WeaponHudMolangContext extends HudMolangContext {
 
     @QueryBinding(value = "has_source", namespace = "tube")
     public double tube_has_source() { return requireTube().hasSource() ? 1 : 0; }
+
+    @QueryBinding(value = "tube_loaded", namespace = "weapon")
+    public double weapon_tube_loaded(double index) { var value = tube(index); return value == null ? 0 : value.loaded(); }
+
+    @QueryBinding(value = "loaded", namespace = "tube")
+    public double tube_loaded() { return requireTube().loaded(); }
+
+    @QueryBinding(value = "tube_chambered", namespace = "weapon")
+    public double weapon_tube_chambered(double index) { var value = tube(index); return value == null || !value.chamber().loaded() ? 0 : 1; }
+
+    @QueryBinding(value = "chambered", namespace = "tube")
+    public double tube_chambered() { return requireTube().chamber().loaded() ? 1 : 0; }
+
+    @QueryBinding(value = "tube_magazine", namespace = "weapon")
+    public double weapon_tube_magazine(double index) { var value = tube(index); return value == null || !value.magazine().loaded() ? 0 : 1; }
+
+    @QueryBinding(value = "magazine", namespace = "tube")
+    public double tube_magazine() { return requireTube().magazine().loaded() ? 1 : 0; }
+
+    @QueryBinding(value = "tube_magazine_remaining", namespace = "weapon")
+    public double weapon_tube_magazine_remaining(double index) { var value = tube(index); return value == null ? 0 : value.magazine().remaining(); }
+
+    @QueryBinding(value = "magazine_remaining", namespace = "tube")
+    public double tube_magazine_remaining() { return requireTube().magazine().remaining(); }
+
+    @QueryBinding(value = "tube_magazine_capacity", namespace = "weapon")
+    public double weapon_tube_magazine_capacity(double index) { var value = tube(index); return value == null ? 0 : value.magazine().capacity(); }
+
+    @QueryBinding(value = "magazine_capacity", namespace = "tube")
+    public double tube_magazine_capacity() { return requireTube().magazine().capacity(); }
+
+    @StringQueryBinding(value = "tube_magazine_label", namespace = "weapon")
+    public String weapon_tube_magazine_label(double index) { var value = tube(index); return value == null ? "" : value.magazine().label(); }
+
+    @StringQueryBinding(value = "magazine_label", namespace = "tube")
+    public String tube_magazine_label() { return requireTube().magazine().label(); }
+
+    @QueryBinding(value = "tube_reserve_remaining", namespace = "weapon")
+    public double weapon_tube_reserve_remaining(double index) { var value = tube(index); return value == null ? 0 : value.reserve().remaining(); }
+
+    @QueryBinding(value = "reserve_remaining", namespace = "tube")
+    public double tube_reserve_remaining() { return requireTube().reserve().remaining(); }
+
+    @QueryBinding(value = "tube_reserve_capacity", namespace = "weapon")
+    public double weapon_tube_reserve_capacity(double index) { var value = tube(index); return value == null ? 0 : value.reserve().capacity(); }
+
+    @QueryBinding(value = "reserve_capacity", namespace = "tube")
+    public double tube_reserve_capacity() { return requireTube().reserve().capacity(); }
+
+    @QueryBinding(value = "tube_reserve_infinite", namespace = "weapon")
+    public double weapon_tube_reserve_infinite(double index) { var value = tube(index); return value == null || !value.reserve().infinite() ? 0 : 1; }
+
+    @QueryBinding(value = "reserve_infinite", namespace = "tube")
+    public double tube_reserve_infinite() { return requireTube().reserve().infinite() ? 1 : 0; }
+
+    @QueryBinding(value = "tube_swapping", namespace = "weapon")
+    public double weapon_tube_swapping(double index) { var value = tube(index); return value == null || !value.swapping() ? 0 : 1; }
+
+    @QueryBinding(value = "swapping", namespace = "tube")
+    public double tube_swapping() { return requireTube().swapping() ? 1 : 0; }
 
     @StringQueryBinding(value = "belt_label", namespace = "weapon")
     public String weapon_belt_label(double index) { var value = belt(index); return value == null ? "" : value.label(); }

@@ -5,7 +5,6 @@
   "pass_damage": false,
   "feed": {
     "reload_time": 0,
-    "reload_round_by_round": true,
     "can_supply_multiple": false
   },
   "magazine": {

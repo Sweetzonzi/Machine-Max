@@ -62,7 +62,7 @@ class HudPageBindingTest {
 
     @Test void invalidSlotsAndRegionsDoNotInterruptOtherValues() {
         create("<span class='bad' data-mm-text='tube.fill'></span>"
-                + "<span class='good' data-mm-text='weapon.ammo_text'></span>"
+                + "<span class='good' data-mm-text='weapon.reserve_text'></span>"
                 + "<span class='badnum' data-mm-num='0/0' data-mm-var='--x' data-mm-unit='oops'></span>"
                 + "<div data-mm-repeat='weapon.tubes'><span id='duplicate'></span></div>"
                 + "<div data-mm-repeat='weapon.belts'><span data-mm-repeat='weapon.tubes'></span></div>"
@@ -98,7 +98,7 @@ class HudPageBindingTest {
         create("<div class='target'></div>");
         publish(HudMolangContextTest.tube(1, 25)); refresh();
         var target = document.querySelector(".target");
-        Document.runWithContext(document, () -> target.appendChild(document.createHTML("<span data-mm-text='weapon.ammo_text'></span>")));
+        Document.runWithContext(document, () -> target.appendChild(document.createHTML("<span data-mm-text='weapon.reserve_text'></span>")));
         refresh();
         var added = document.querySelector("span");
         assertEquals("12/30", added.innerText);
@@ -112,7 +112,7 @@ class HudPageBindingTest {
     }
 
     @Test void textBindingReplacesTemplatePlaceholderBeforeLayout() {
-        create("<span data-mm-text='weapon.ammo_text'>Preview placeholder</span>");
+        create("<span data-mm-text='weapon.reserve_text'>Preview placeholder</span>");
         publish(HudMolangContextTest.tube(1, 25)); refresh();
         var node = document.querySelector("span");
         assertEquals("12/30", node.getTextContent());

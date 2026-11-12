@@ -141,11 +141,15 @@
           "subsystem.machine_max.2a42_ammo_loader": {
             "type": "machine_max:regen_loader",
             "definition": "machine_max:2a42_regen_loader",
-            "projectile_types": {
-              "machine_max:30mm_ap": 1,
-              "machine_max:30mm_he": 1
+            "belt_definition": {
+              "label": "AP/HE",
+              "pattern": [
+                { "ammo": "machine_max:30mm_ap", "count": 1 },
+                { "ammo": "machine_max:30mm_he", "count": 1 }
+              ],
+              "length": 150,
+              "recharge": { "regen_per_minute": 100, "regen_delay": 0.3, "energy_cost_per_round": 0 }
             },
-            "belt_label": "AP/HE",
             "discovery_outputs": {
               "ammo_2a42": [
                 "global"
@@ -155,11 +159,14 @@
           "subsystem.machine_max.pktm_ammo_loader": {
             "type": "machine_max:regen_loader",
             "definition": "machine_max:pktm_regen_loader",
-            "projectile_types": {
-              "machine_max:7_62x54r_ap": 3,
-              "machine_max:7_62x54r_t": 1
+            "belt_definition": {
+              "label": "AP/T",
+              "pattern": [
+                { "ammo": "machine_max:7_62x54r_ap", "count": 3 },
+                { "ammo": "machine_max:7_62x54r_t", "count": 1 }
+              ],
+              "length": 200
             },
-            "belt_label": "AP/T",
             "discovery_outputs": {
               "ammo_pktm": [
                 "global"
@@ -181,8 +188,11 @@
           "subsystem.machine_max.atgm_ammo_loader": {
             "type": "machine_max:regen_loader",
             "definition": "machine_max:atgm_regen_loader",
-            "projectile_types": {
-              "machine_max:9m133_kornet": 1
+            "belt_definition": {
+              "pattern": [
+                { "ammo": "machine_max:9m133_kornet", "count": 1 }
+              ],
+              "length": 1
             },
             "discovery_outputs": {
               "ammo_atgm": [

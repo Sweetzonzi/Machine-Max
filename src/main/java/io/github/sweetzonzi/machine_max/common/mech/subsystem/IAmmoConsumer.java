@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * 弹药消费者接口。<br>
  * 发射器等需要从供给者获取弹药的子系统实现此接口。
- * 兼容性校验由消费者在运行时逐发执行。
+ * 交付单位是一份 {@code AmmoBelt}，兼容性校验由消费者在拉到手之后按整份内容执行。
  */
 public interface IAmmoConsumer {
 
@@ -38,20 +38,6 @@ public interface IAmmoConsumer {
             /** 状态数值（装填进度 0~1、再生进度 0~1 等） */
             float statusProgress
     ) {}
-
-    /** 消费者当前是否可以接收弹药 */
-    boolean canAcceptAmmo();
-
-    /** 剩余弹药容量。-1 表示无容量限制 */
-    int getFreeCapacity();
-
-    /**
-     * 接收一发弹药。<br>
-     * 由供给者在完成装填后调用，将弹药存入消费者。
-     *
-     * @return true 表示成功接收
-     */
-    boolean receiveAmmo(ProjectileType type);
 
     /** 获取当前选中的供给者 */
     @Nullable IAmmoSupplier getCurrentSupplier();

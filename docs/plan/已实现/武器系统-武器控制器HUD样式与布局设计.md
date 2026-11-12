@@ -50,10 +50,12 @@
 public record HudWeaponSnapshot(
         String name,
         String state,               // ready / reloading / empty
-        int ammoRemaining,
-        int ammoCapacity,           // < 0 表示无容量概念
-        boolean ammoInfinite,
-        String ammoText,            // 27/120 或 27/∞
+        int reserveRemaining,       // 备弹：供给者还能给出的数量
+        int reserveCapacity,        // < 0 表示无容量概念
+        boolean reserveInfinite,
+        String reserveText,         // 27/120 或 27/∞
+        int magazineRemaining,      // 弹匣：各管已装 Belt 的余量之和
+        int chamberedCount,         // 膛内：已压弹的管数
         String roundLabel,
         boolean roundMismatch,
         String reloadText,
@@ -65,13 +67,20 @@ public record HudWeaponSnapshot(
 public record TubeKey(UUID partUuid, String subPartName, String subsystemName) {}
 public record BeltSnapshot(List<ResourceLocation> key, String label, int remaining, boolean selected) {}
 public record TubeSnapshot(
-        TubeKey key, String roundLabel, String state, float fill,
-        double reloadRemaining, String reloadText,
-        String chamberedAmmoLabel, String loadingBeltLabel
+        TubeKey key, String roundLabel, String state, String phase,
+        float fill, double reloadRemaining, String reloadText, String loadingBeltLabel,
+        boolean swapping, boolean hasSource,
+        ChamberSnapshot chamber, MagazineSnapshot magazine, ReserveSnapshot reserve
 ) {}
+
+public record ChamberSnapshot(boolean loaded, String label) {}
+public record MagazineSnapshot(boolean loaded, String label, int remaining, int capacity) {}
+public record ReserveSnapshot(int remaining, int capacity, boolean infinite) {}
 ```
 
-这是业务结构示意。实际类型为 `HudWeaponSnapshot` 及其嵌套 `Tube` / `Belt`；`activeAmmo` 使用注册键字符串，管身份复用 `IAmmoSupplier.SupplierRef`。`TubeKey` 用发射器所属 Part UUID、SubPart 名和子系统名定位实例，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamberedAmmoLabel` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
+这是业务结构示意。实际类型为 `HudWeaponSnapshot` 及其嵌套 `Tube` / `Belt`；`activeAmmo` 使用注册键字符串，管身份复用 `IAmmoSupplier.SupplierRef`。`TubeKey` 用发射器所属 Part UUID、SubPart 名和子系统名定位实例，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamber.label` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
+
+三个计数按"发数现在在哪"分层，彼此不包含：**膛内**（`chamber`，每管至多一发）、**弹匣**（`magazine`，本管已装的那一份 Belt，`capacity` 是整份长度）、**备弹**（`reserve`，供给者手里的数量）。一份 Belt 从供给者交到本管时发数从备弹转到弹匣，压进膛时从弹匣转到膛内，因此三者相加才是这支武器还能打出的总数。`loaded()` 是其中的膛内 + 弹匣，与备弹配成 HUD 主数字的两段：前半是现在能打的，后半是还能补的。
 
 身份口径可对照 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#SupplierRef` 的三段坐标与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#getLabel` 的显示名约束；弹链集合来自 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#getAvailableBelts`。
 
@@ -81,10 +90,13 @@ public record TubeSnapshot(
 | --- | --- |
 | 发射管顺序 | 按发射器子系统名排序，同名时按 `TubeKey` 的 Part UUID、SubPart 名、子系统名作稳定决胜；被摧毁或未激活者不占槽位 |
 | 弹种槽与 `activeAmmoKey` | 第一根膛内有弹的管提供弹种；都没有时退回第一根有供给者的管的指针态。分划只使用确实有注册键的弹种，没有时返回空 |
-| 弹药计数 | 供弹弹链在弹药池中全部装弹机的余量/容量之和，池内按实例去重；池里没有该弹链时退回已绑定供给者之和 |
+| 备弹计数 | 供弹弹链在弹药池中全部装弹机的余量/容量之和，池内按实例去重；池里没有该弹链时退回已绑定供给者之和 |
+| 弹匣计数 | 各有效管已装 Belt 的余量之和；单发装填的管没有已装 Belt，恒为 0 |
+| 膛内计数 | 已压弹的有效管数，每管至多 1 |
+| 待发 / 备弹 | 待发 = 膛内 + 弹匣，备弹 = 装弹机余量。HUD 主数字显示成"待发/备弹"：四根导弹管全部上膛、装弹机余量为 0 时读作 `4/0`，只汇总备弹会读成 `0/4` |
 | 口径不符 | 膛内弹种的注册键不在供弹弹链里 |
 | 弹链项 | 每条可选弹链一项；快照、默认选择与循环切换共用本节规定的排序规则。名称取池中首个条目的弹链名，余量为该弹链全部条目之和，供弹那条标记为选中；同名弹链按完整序列区分 |
-| 装填段 | 每根有效发射器一段：有膛弹常亮；空膛显示供给者状态与进度；无供给者熄灭 |
+| 装填段 | 每根有效发射器一段：换装中按装填显示（此时射击锁定，膛内有弹也不算就绪）；否则有膛弹常亮；空膛显示供给者状态与进度；无供给者熄灭 |
 | 尾标 | 全空显示空弹；任一装填中显示最慢一段的剩余时间或百分比；否则显示就绪 |
 
 发射器数和可选弹链数来自该控制器关联的载具结构。弹链耗尽时保留条目并切换状态；控制器被摧毁或未激活时，只要其引用属于当前座椅的候选集合，就保留宿主与布局条目；条目按 `selection_visibility` 判定显隐。
@@ -100,10 +112,13 @@ public record TubeSnapshot(
 | `weapon.name` | string | 所属控制器的子系统名 |
 | `weapon.selected` | 0/1 | 所属控制器是否属于当前观察座椅的 base + 当前子组选中集合；与启用/开火/控制权无关 |
 | `weapon.state` | string | `ready`（至少一根管已备好一发）/ `reloading`（没有就绪管但至少一根在装填）/ `empty`（全部无弹或无供给者） |
-| `weapon.ammo_remaining` | number | 供弹弹链余量合计 |
-| `weapon.ammo_capacity` | number | 容量合计；负数表示无容量概念 |
-| `weapon.ammo_infinite` | 0/1 | 是否存在无容量概念的装弹机 |
-| `weapon.ammo_text` | string | 如 `27/120`；容量无上限时只写 `∞` |
+| `weapon.loaded` | number | 待发发数：膛内 + 弹匣 |
+| `weapon.reserve_remaining` | number | 供弹弹链的备弹合计 |
+| `weapon.reserve_capacity` | number | 备弹容量合计；负数表示无容量概念 |
+| `weapon.reserve_infinite` | 0/1 | 是否存在无容量概念的装弹机 |
+| `weapon.reserve_text` | string | 如 `27/120`；容量无上限时只写 `∞` |
+| `weapon.magazine_remaining` | number | 各有效管已装弹链的余量合计 |
+| `weapon.chambered_count` | number | 已压弹的有效管数 |
 | `weapon.round_label` | string | 弹种槽文本；弹链不匹配时显示那发不匹配的膛内弹 |
 | `weapon.round_mismatch` | 0/1 | 任一根管的膛内弹不在供弹弹链上 |
 | `weapon.reload_text` | string | 剩余时间或进度的显示文本 |
@@ -119,13 +134,23 @@ public record TubeSnapshot(
 | `weapon.tube_reload_remaining(i)` | number | 第 i 根管当前阶段的剩余秒数（输弹、逐发再生或整批回充）；非装填为 0，无法折算为 -1 |
 | `weapon.tube_chambered_ammo_label(i)` | string | 第 i 根管的真实膛内弹药标签；空膛为空 |
 | `weapon.tube_loading_belt_label(i)` | string | 第 i 根管正在输弹的来源标签；只有 `tube_phase` 为 `loading` 时非空 |
+| `weapon.tube_loaded(i)` | number | 第 i 根管的待发发数：膛内 + 弹链余量 |
+| `weapon.tube_chambered(i)` | 0/1 | 第 i 根管膛内是否有弹 |
+| `weapon.tube_swapping(i)` | 0/1 | 第 i 根管是否正在替换已装的那一份 |
+| `weapon.tube_magazine(i)` | 0/1 | 第 i 根管是否装着弹链 |
+| `weapon.tube_magazine_remaining(i)` | number | 第 i 根管已装弹链的余量 |
+| `weapon.tube_magazine_capacity(i)` | number | 第 i 根管已装弹链的整份长度 |
+| `weapon.tube_magazine_label(i)` | string | 第 i 根管已装弹链的标签 |
+| `weapon.tube_reserve_remaining(i)` | number | 第 i 根管供给者的备弹 |
+| `weapon.tube_reserve_capacity(i)` | number | 第 i 根管供给者的备弹容量；负数表示无容量概念 |
+| `weapon.tube_reserve_infinite(i)` | 0/1 | 第 i 根管供给者是否有无上限容量 |
 | `weapon.belt_label(i)` | string | 第 i 条弹链的名称 |
 | `weapon.belt_remaining(i)` | number | 第 i 条弹链的余量 |
 | `weapon.belt_selected(i)` | 0/1 | 第 i 条是否为当前供弹弹链 |
 
 `i` 从 0 开始，按快照中的稳定顺序取值；越界时数值返回 0、字符串返回空。整台控制器与显式索引查询位于 `weapon.*`；当前项查询位于 §3.2 的 `tube.*` / `belt.*`。`math.*` 是 Spark 通用词表；`local.*` / `global.*` 持续提供 Part 与装配体的通用数据，HUD 视角与视口查询使用 `hud.*`。
 
-MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。`==` / `!=` 在任一侧是字符串时按文本比较，两侧都是数值时按 double 比较，字符串与数字混比时数字按其文本形式参与，因此行内状态直接写 `tube.state == 'ready'`、`tube.state == 'empty'`；样式切换交给 `data-mm-class="tube.state"`。
+MoLang 不提供可靠的字符串拼接，故 `reserve_text`、`reload_text` 等组合文本由查询直接提供，或由模型文本槽的本地化键和 `molang_args` 填入；数值仍可在表达式中运算。`==` / `!=` 在任一侧是字符串时按文本比较，两侧都是数值时按 double 比较，字符串与数字混比时数字按其文本形式参与，因此行内状态直接写 `tube.state == 'ready'`、`tube.state == 'empty'`；样式切换交给 `data-mm-class="tube.state"`。
 
 ### 3.1 炮镜分划
 
@@ -147,6 +172,16 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 | `tube.reload_remaining` | `weapon.tube_reload_remaining(i)` | 当前管当前阶段的剩余秒数，含义见 §二 |
 | `tube.chambered_ammo_label` | `weapon.tube_chambered_ammo_label(i)` | 当前管的真实膛内弹药标签 |
 | `tube.loading_belt_label` | `weapon.tube_loading_belt_label(i)` | 当前管正在输弹的供弹来源标签；只有 `tube.phase` 为 `loading` 时非空 |
+| `tube.loaded` | `weapon.tube_loaded(i)` | 当前管的待发发数：膛内 + 弹链余量 |
+| `tube.chambered` | `weapon.tube_chambered(i)` | 当前管膛内是否有弹 |
+| `tube.swapping` | `weapon.tube_swapping(i)` | 当前管是否正在替换已装的那一份 |
+| `tube.magazine` | `weapon.tube_magazine(i)` | 当前管是否装着弹链 |
+| `tube.magazine_remaining` | `weapon.tube_magazine_remaining(i)` | 当前管已装弹链的余量 |
+| `tube.magazine_capacity` | `weapon.tube_magazine_capacity(i)` | 当前管已装弹链的整份长度 |
+| `tube.magazine_label` | `weapon.tube_magazine_label(i)` | 当前管已装弹链的标签 |
+| `tube.reserve_remaining` | `weapon.tube_reserve_remaining(i)` | 当前管供给者的备弹 |
+| `tube.reserve_capacity` | `weapon.tube_reserve_capacity(i)` | 当前管供给者的备弹容量；负数表示无容量概念 |
+| `tube.reserve_infinite` | `weapon.tube_reserve_infinite(i)` | 当前管供给者是否有无上限容量 |
 | `belt.index` | 无 | 当前弹链在本轮快照中的下标，从 0 开始 |
 | `belt.label` | `weapon.belt_label(i)` | 当前弹链标签 |
 | `belt.remaining` | `weapon.belt_remaining(i)` | 当前弹链库存余量 |
@@ -165,7 +200,7 @@ MoLang 不提供可靠的字符串拼接，故 `ammo_text`、`reload_text` 等�
 ```html
 <div class="mm-weapon">
   <span data-mm-text="weapon.name"></span>
-  <span data-mm-text="weapon.ammo_text"></span>
+  <span data-mm-text="weapon.reserve_text"></span>
   <i data-mm-num="weapon.tube_fill(0)" data-mm-var="--fill" data-mm-unit="%"></i>
 </div>
 ```

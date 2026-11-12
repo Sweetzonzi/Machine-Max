@@ -282,10 +282,13 @@
             "subsystem.t90a.ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "t90a:t90a_loader",
-              "projectile_types": {
-                "t90a:t90a_125mm_ap": 1
+              "belt_definition": {
+                "label": "AP",
+                "pattern": [
+                  { "ammo": "t90a:t90a_125mm_ap", "count": 1 }
+                ],
+                "length": 1
               },
-              "belt_label": "AP",
               "discovery_outputs": {
                 "ammo_t90a": [
                   "global"
@@ -295,10 +298,13 @@
             "subsystem.t90a.ammo_loader_he": {
               "type": "machine_max:regen_loader",
               "definition": "t90a:t90a_he_loader",
-              "projectile_types": {
-                "t90a:t90a_125mm_he": 1
+              "belt_definition": {
+                "label": "HE",
+                "pattern": [
+                  { "ammo": "t90a:t90a_125mm_he", "count": 1 }
+                ],
+                "length": 1
               },
-              "belt_label": "HE",
               "discovery_outputs": {
                 "ammo_t90a": [
                   "global"
@@ -319,10 +325,13 @@
             "subsystem.t90a.coax_loader": {
               "type": "machine_max:regen_loader",
               "definition": "t90a:coax_loader",
-              "projectile_types": {
-                "t90a:mg_7_62_ap": 1
+              "belt_definition": {
+                "label": "PKT 7.62",
+                "pattern": [
+                  { "ammo": "t90a:mg_7_62_ap", "count": 1 }
+                ],
+                "length": 250
               },
-              "belt_label": "PKT 7.62",
               "discovery_outputs": {
                 "ammo_coax": [
                   "global"
@@ -488,10 +497,13 @@
             "subsystem.t90a.aa_loader": {
               "type": "machine_max:regen_loader",
               "definition": "t90a:aa_loader",
-              "projectile_types": {
-                "t90a:mg_12_7_ap": 1
+              "belt_definition": {
+                "label": "12.7",
+                "pattern": [
+                  { "ammo": "t90a:mg_12_7_ap", "count": 1 }
+                ],
+                "length": 100
               },
-              "belt_label": "12.7",
               "discovery_outputs": {
                 "ammo_aa": [
                   "global"

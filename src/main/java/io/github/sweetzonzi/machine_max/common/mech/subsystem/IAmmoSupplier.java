@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -14,13 +15,13 @@ import java.util.UUID;
 
 /**
  * 弹药供给者接口。<br>
- * 供给者负责管理弹药储备、装填计时和弹药交付。
- * 消费者调用 requestRound → 等待 isRoundReady → consumeReadyRound 三步完成弹药获取。
+ * 供给者负责管理弹药储备、装填计时和弹药交付，交付单位是 {@link AmmoBelt} 的一份实例。
+ * 消费者调用 requestRound → 等待 isRoundReady → consumeReadyBelt 三步取得一份弹药；供给者不向消费者
+ * 推送，也不判断消费者收不收——校验在消费者拉到交付之后执行。
  * <p>
  * <b>双端契约：</b>"哪根管由哪台供给者供弹"是服务端单方面的决定，客户端经
  * {@link IAmmoConsumer} 上的同步指认跟随（身份由 {@link SupplierRef} 表达）。
- * 客户端同样会跑完整的 {@code requestRound → isRoundReady → consumeReadyRound} 链，
- * 但它只驱动本机表现——装填进度、装填音效、开火特效；库存计数与弹链指针只有服务端写。
+ * 取弹链只在服务端执行；客户端从发射器上的同步值读取膛内弹与已装 Belt，只驱动本机表现。
  */
 public interface IAmmoSupplier {
 
@@ -57,7 +58,11 @@ public interface IAmmoSupplier {
         REFILLING
     }
 
-    /** 当前是否有可用弹药 */
+    /**
+     * 当前是否有可交付的弹药。<br>
+     * 判据是"有没有弹"，不是"够不够一整份"：库存不足一份时供给者交付剩余的全部，
+     * 具体发数由 {@link #consumeReadyBelt(IAmmoConsumer)} 返回的实例表达。
+     */
     boolean hasAmmo();
 
     /**
@@ -69,25 +74,28 @@ public interface IAmmoSupplier {
      * 调用方下次判定即看到 true。
      * <p>
      * 武器控制器用它在选取、保持与回退供给者时实时过滤；供给者自己也要用它在
-     * {@code requestRound} / {@code isRoundReady} / {@code consumeReadyRound} 三个交付入口挡下请求，
+     * {@code requestRound} / {@code isRoundReady} / {@code consumeReadyBelt} 三个交付入口挡下请求，
      * 否则绕过控制器的直接请求仍能取走弹药。
      */
     boolean isSupplyOperational();
 
-    /** 剩余弹药计数。-1 表示无计数概念（如再生装弹机） */
+    /** 剩余弹药计数。-1 表示无计数概念（如无限供给） */
     int getRemainingCount();
 
-    /** 当前将提供的弹药类型，null = 无弹药 */
+    /** 下一发的弹种，null = 无弹药或无交付规格 */
     @Nullable ProjectileType getSuppliedType();
 
     /**
-     * 输弹粒度：{@code true} 时每一发都付 {@link #getReloadTimeTicks()}，
-     * {@code false} 时只在对接那一次付，之后瞬时送达。<br>
-     * 与回充粒度（{@code magazine.regen_round_by_round}，「一次回充补几发」）正交。
+     * 下一份交付的内容规格：满额模板（{@code remaining} 等于 {@code length}，回充运行态为零）。<br>
+     * 供路由在取货前检查长度与全部弹种，也用作弹药池的分组键；查询不扣库存、不启动计时。
+     * 实际交付的实例可以比它少发（源库存不足一份时按剩余发数交付），规格本身仍是这一份。
+     * 没有可交付规格的供给者（例如物品读写尚未实现的装弹机）返回 null，不进入候选。
+     * <p>
+     * 返回的对象是共享的只读模板，调用方不得原地推进它；要交付就返回 {@link #consumeReadyBelt} 的实例。
      */
-    boolean isReloadRoundByRound();
+    @Nullable AmmoBelt getDeliverySpec();
 
-    /** 装填耗时（tick） */
+    /** 一次交付（一份 Belt）的装填耗时（tick） */
     int getReloadTimeTicks();
 
     /** 是否允许多个消费者同时等待装填 */
@@ -153,10 +161,10 @@ public interface IAmmoSupplier {
      * 调用时该消费者可能处于两种状态，本方法都要覆盖：交付<b>计时中</b>，或弹药<b>已就绪待取</b>。
      * 取消后（独占模式下）这条通道立刻空出，等待中的消费者下次请求即可被排上。
      * <p>
-     * 与 {@link #returnRound(ProjectileType)} 的分工：那个是"把已经拿到手的弹药还回来"，
+     * 与 {@link #returnBelt(AmmoBelt)} 的分工：那个是"把已经拿到手的那份弹药还回来"，
      * 会改变库存计数；本方法只取消"尚未取走"的交付承诺，而承诺阶段库存本来就没扣，
      * 所以<b>不要在这里补弹</b>——本接口的既有实现都只在
-     * {@link #consumeReadyRound(IAmmoConsumer)} 里扣减库存，补弹会让同一发被算两次。
+     * {@link #consumeReadyBelt(IAmmoConsumer)} 里扣减库存，补弹会让同一份被算两次。
      * 只有"在承诺阶段就已扣出库存"的实现才需要归还，由该实现自行处理。
      * <p>
      * 未覆写时为空操作。
@@ -171,7 +179,7 @@ public interface IAmmoSupplier {
      * <p>
      * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。名字是给玩家读的语义标签，
      * 两条构成不同的弹链可以合法地显示同一个名字（例如都以穿甲弹开头的两条弹链）。
-     * 需要标识弹链时用展平弹链列表（{@code RegenLoaderSubsystem.getProjectileTypes()}），
+     * 需要标识弹链时用 {@link #getDeliverySpec()} 的内容规格，
      * 需要标识弹种时用 {@link #getSuppliedType()} 返回的 {@link ProjectileType} 实例。
      * <p>
      * <b>仅在客户端调用</b>：文本取自玩家语言的翻译键，服务端的语言表不含内容包的键。
@@ -190,12 +198,17 @@ public interface IAmmoSupplier {
     boolean isRoundReady(IAmmoConsumer consumer);
 
     /**
-     * 消费已就绪的弹药。<br>
-     * 仅在 {@link #isRoundReady(IAmmoConsumer)} 返回 true 时调用。
+     * 取走已就绪的交付。<br>
+     * 仅在 {@link #isRoundReady(IAmmoConsumer)} 返回 true 时调用；扣减发生在这一次调用里，
+     * 承诺阶段不扣库存。返回的实例归消费者所有，源不再持有或更新它。
+     * <p>
+     * 实例的发数由供给者按自己的库存决定，可以少于 {@link #getDeliverySpec()} 的长度：规格
+     * （模式、长度、标签、回充）与规格一致，只有 {@code remaining} 变小。消费者据此仍认得出
+     * "这是同一份弹链"，不会把一次缩水的交付当成换装。
      *
-     * @return 弹药类型，若未就绪则返回 null
+     * @return 一份独立实例的 {@link AmmoBelt}；未就绪或已无库存时返回 null
      */
-    @Nullable ProjectileType consumeReadyRound(IAmmoConsumer consumer);
+    @Nullable AmmoBelt consumeReadyBelt(IAmmoConsumer consumer);
 
     /**
      * 供给者的最大容量。-1 表示无容量概念（如无限供给）。
@@ -240,14 +253,14 @@ public interface IAmmoSupplier {
     }
 
     /**
-     * 为这个消费者拿到下一发还要多少 tick，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
-     * 分档：已为本管备好一发（就绪待取）= {@code 0}；正为本管输弹 = 剩余 tick；
+     * 为这个消费者拿到下一份交付还要多少 tick，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
+     * 分档：已为本管备好一份（就绪待取）= {@code 0}；正为本管输弹 = 剩余 tick；
      * 有余弹但还没起送 = 整段 {@link #getReloadTimeTicks()}；无余弹或本机不可交付 =
-     * {@link Integer#MAX_VALUE}。最后两档合起来表达「现货优先」——空匣的机器即使下一 tick 就会
-     * 回充出一发也报 {@code MAX_VALUE}，因为一发撑不起续航，此刻换到有现货的候选才划算。
+     * {@link Integer#MAX_VALUE}。最后一档表达「现货优先」——空匣的机器即使下一 tick 就会回充出
+     * 一发也报 {@code MAX_VALUE}，换到有现货的候选才划算。
      * <p>
      * 方法无副作用：{@link #isRoundReady(IAmmoConsumer)} 只在已经排上的分支里调用，
-     * 不会顺手替消费者发起新请求。整匣模式「已对接、后续瞬时」那一档由实现自己补上。
+     * 不会顺手替消费者发起新请求。
      *
      * @param consumer 请求查询的消费者
      * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
@@ -291,18 +304,17 @@ public interface IAmmoSupplier {
     }
 
     /**
-     * 接收一发退还的弹药。<br>
-     * <b>收不收由供给者自己判</b>——弹种是不是自己这条弹链上的、弹仓当前能不能储存
-     * （坏掉的弹仓不收，否则等于往里灌弹药）、弹仓还有没有位置，都是供给者内部的规则，
-     * 消费者不该替它做判断，因此本方法返回是否收下。
+     * 接收一份退还的弹药。<br>
+     * <b>收不收由供给者自己判</b>——内容里的弹种是不是自己允许的、弹仓当前能不能储存
+     * （坏掉的弹仓不收，否则等于往里灌弹药）、剩余容量是否装得下这一份，都是供给者内部的规则，
+     * 消费者不该替它做判断，因此本方法返回是否收下。全收或全拒：拒收时不改动传入对象。
      * <p>
-     * 典型调用点是发射器退膛：退膛的弹想还给供给者，被拒（弹种不符、弹仓不可储存或已满）时
-     * 由消费者自行处置（例如掉成物品）。
+     * 典型调用点是发射器退膛与整份换装：被拒时由消费者保留这一份，不能原地丢弃。
      *
-     * @param type 退还的弹药类型
-     * @return true 表示已收下；false 表示未接收（弹种不符、弹仓不可储存或无空位）
+     * @param belt 退还的那一份弹药
+     * @return true 表示已收下；false 表示未接收（弹种不被允许、弹仓不可储存或容量不足）
      */
-    boolean returnRound(ProjectileType type);
+    boolean returnBelt(AmmoBelt belt);
 
     /**
      * 供给者身份：宿主 RegularPart 的 uuid + SubPart 名 + 子系统名。<br>

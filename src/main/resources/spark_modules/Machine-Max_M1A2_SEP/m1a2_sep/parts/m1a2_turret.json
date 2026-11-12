@@ -353,10 +353,13 @@
             "subsystem.m1a2_sep.ammo_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:m1a2_loader",
-              "projectile_types": {
-                "m1a2_sep:m1a2_120mm_ap": 1
+              "belt_definition": {
+                "label": "AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:m1a2_120mm_ap", "count": 1 }
+                ],
+                "length": 1
               },
-              "belt_label": "AP",
               "discovery_outputs": {
                 "ammo_m1a2": [
                   "global"
@@ -378,10 +381,13 @@
             "subsystem.m1a2_sep.coax_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:coax_loader",
-              "projectile_types": {
-                "m1a2_sep:mg_12_7_ap": 1
+              "belt_definition": {
+                "label": "12.7 AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:mg_12_7_ap", "count": 1 }
+                ],
+                "length": 100
               },
-              "belt_label": "12.7 AP",
               "discovery_outputs": {
                 "ammo_coax": [
                   "global"
@@ -404,10 +410,13 @@
             "subsystem.m1a2_sep.ammo_loader_he": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:m1a2_he_loader",
-              "projectile_types": {
-                "m1a2_sep:m1a2_120mm_he": 1
+              "belt_definition": {
+                "label": "HE",
+                "pattern": [
+                  { "ammo": "m1a2_sep:m1a2_120mm_he", "count": 1 }
+                ],
+                "length": 1
               },
-              "belt_label": "HE",
               "discovery_outputs": {
                 "ammo_m1a2": [
                   "global"
@@ -446,10 +455,13 @@
             "subsystem.m1a2_sep.coax_762_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:coax_762_loader",
-              "projectile_types": {
-                "m1a2_sep:mg_7_62_ap": 1
+              "belt_definition": {
+                "label": "7.62 AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:mg_7_62_ap", "count": 1 }
+                ],
+                "length": 200
               },
-              "belt_label": "7.62 AP",
               "discovery_outputs": {
                 "ammo_coax_762": [
                   "global"
@@ -624,10 +636,13 @@
             "subsystem.m1a2_sep.rws_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:rws_loader",
-              "projectile_types": {
-                "m1a2_sep:mg_12_7_ap": 1
+              "belt_definition": {
+                "label": "12.7 AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:mg_12_7_ap", "count": 1 }
+                ],
+                "length": 100
               },
-              "belt_label": "12.7 AP",
               "discovery_outputs": {
                 "ammo_rws": [
                   "global"
@@ -755,10 +770,13 @@
             "subsystem.m1a2_sep.port_mg_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:port_mg_loader",
-              "projectile_types": {
-                "m1a2_sep:mg_7_62_ap": 1
+              "belt_definition": {
+                "label": "7.62 AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:mg_7_62_ap", "count": 1 }
+                ],
+                "length": 200
               },
-              "belt_label": "7.62 AP",
               "discovery_outputs": {
                 "ammo_port_mg": [
                   "global"
@@ -892,10 +910,13 @@
             "subsystem.m1a2_sep.aft_mg_loader": {
               "type": "machine_max:regen_loader",
               "definition": "m1a2_sep:aft_mg_loader",
-              "projectile_types": {
-                "m1a2_sep:mg_12_7_ap": 1
+              "belt_definition": {
+                "label": "12.7 AP",
+                "pattern": [
+                  { "ammo": "m1a2_sep:mg_12_7_ap", "count": 1 }
+                ],
+                "length": 100
               },
-              "belt_label": "12.7 AP",
               "discovery_outputs": {
                 "ammo_aft_mg": [
                   "global"

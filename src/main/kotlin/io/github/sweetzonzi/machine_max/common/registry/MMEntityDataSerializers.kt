@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.syncher.EntityDataSerializer
@@ -55,6 +56,17 @@ object MMEntityDataSerializers {
     val OPTIONAL_RESOURCE_LOCATION: EntityDataSerializer<Optional<ResourceLocation>> =
         EntityDataSerializer.forValueType(ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC))
 
+    /**
+     * 可空的弹药内容（模式、长度、余量与回充配置/运行态）。
+     *
+     * 空值表示没有已装供弹数据，用 [Optional.empty] 表达而不是造一份零发 Belt。
+     * 发射器用它同步已装 Belt；值是快照而不是持有者正在推进的实例——同值写入不会广播，
+     * 所以写入方必须先复制（[AmmoBelt.syncCopy]）。
+     */
+    @JvmStatic
+    val OPTIONAL_AMMO_BELT: EntityDataSerializer<Optional<AmmoBelt>> =
+        EntityDataSerializer.forValueType(ByteBufCodecs.optional(AmmoBelt.STREAM_CODEC))
+
     init {
         MachineMax.REGISTER.entityDataSerializer<IAmmoSupplier.SupplierRef> {
             id = "supplier_ref"
@@ -63,6 +75,10 @@ object MMEntityDataSerializers {
         MachineMax.REGISTER.entityDataSerializer<Optional<ResourceLocation>> {
             id = "optional_resource_location"
             factory = { OPTIONAL_RESOURCE_LOCATION }
+        }
+        MachineMax.REGISTER.entityDataSerializer<Optional<AmmoBelt>> {
+            id = "optional_ammo_belt"
+            factory = { OPTIONAL_AMMO_BELT }
         }
     }
 }

@@ -4,7 +4,6 @@
   "basic_durability": 20,
   "feed": {
     "reload_time": 0,
-    "reload_round_by_round": true,
     "can_supply_multiple": false
   },
   "magazine": {
