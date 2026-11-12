@@ -11,12 +11,12 @@ import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WheelDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
 
-import javax.crypto.Mac;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -208,6 +208,37 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
             MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
         }
         return result;
+    }
+
+    /**
+     * 物理线程：轮毂自身及一跳胎面的最大激活半径（m），无轮面时为 0。
+     * 胎面连接的 y/z 平移和 yr/zr 旋转须锁定；x/xr 可带自由度或弹簧阻尼。
+     * 连接器 X 轴按轮轴布置，原驱动连接及车身不参与候选；轮速由 {@link #getRelativeAngularVel()} 提供。
+     */
+    public float getRollingRadius() {
+        if (connector == null || connector.joint == null) return 0f;
+        var drivenConnector = connector.attachedConnector;
+        if (drivenConnector == null || drivenConnector.attachedConnector != connector) return 0f;
+        SubPart driven = drivenConnector.subPart;
+        if (driven.isRemoved) return 0f;
+        float radius = driven.getMaxActiveWheelRadius();
+        for (var link : driven.connectors.values()) {
+            New6Dof joint = link.joint;
+            var other = link.attachedConnector;
+            if (joint == null || joint == connector.joint || other == null
+                    || other.attachedConnector != link || other.subPart == connector.subPart) continue;
+            if (isLocked(joint, 1) && isLocked(joint, 2)
+                    && isLocked(joint, 4) && isLocked(joint, 5)) {
+                radius = Math.max(radius, other.subPart.getMaxActiveWheelRadius());
+            }
+        }
+        return radius;
+    }
+
+    private static boolean isLocked(New6Dof joint, int axis) {
+        float lower = joint.get(MotorParam.LowerLimit, axis);
+        float upper = joint.get(MotorParam.UpperLimit, axis);
+        return Float.isFinite(lower) && lower == upper;
     }
 
     @Override

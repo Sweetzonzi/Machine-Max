@@ -350,8 +350,10 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     }
 
     protected float calculateSlipRatio(WheelDriverSubsystem wheel) {
+        float radius = wheel.getRollingRadius();
+        if (radius <= 0f) return 0f;
         float angularVelocity = -wheel.getRelativeAngularVel().get(0);
-        float wheelLinearSpeed = Math.abs(angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius());
+        float wheelLinearSpeed = Math.abs(angularVelocity * radius);
         float absSpeed = Math.abs(speed);
         return Math.abs(absSpeed - wheelLinearSpeed) / (Math.min(absSpeed, wheelLinearSpeed) + 0.1f);
     }

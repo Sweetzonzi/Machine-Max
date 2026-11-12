@@ -36,7 +36,6 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final StaticWheelSteeringAxisAttr steeringAxis;
     public final boolean absEnabled;
     public final float absTargetSlipRatio;
-    public final float absWheelRadius;
     public final BrakeSoundAttr sounds;//刹车音效配置
 
     public static final MapCodec<WheelDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -54,7 +53,6 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             )).forGetter(WheelDriverSubsystemStaticAttr::getSteeringAxis),
             Codec.BOOL.optionalFieldOf("abs_enabled", false).forGetter(WheelDriverSubsystemStaticAttr::isAbsEnabled),
             Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(WheelDriverSubsystemStaticAttr::getAbsTargetSlipRatio),
-            Codec.FLOAT.optionalFieldOf("abs_wheel_radius", 0.3f).forGetter(WheelDriverSubsystemStaticAttr::getAbsWheelRadius),
             BrakeSoundAttr.CODEC.optionalFieldOf("sounds", BrakeSoundAttr.DEFAULT).forGetter(WheelDriverSubsystemStaticAttr::getSounds)
     ).apply(instance, WheelDriverSubsystemStaticAttr::new
     ));
@@ -66,7 +64,6 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             StaticWheelSteeringAxisAttr steeringAxis,
             boolean absEnabled,
             float absTargetSlipRatio,
-            float absWheelRadius,
             BrakeSoundAttr sounds) {
         super(basicAttr, sounds.basicSounds());
         this.controlSignalKeys = controlSignalKeys;
@@ -74,7 +71,6 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.steeringAxis = steeringAxis;
         this.absEnabled = absEnabled;
         this.absTargetSlipRatio = absTargetSlipRatio;
-        this.absWheelRadius = absWheelRadius;
         this.sounds = sounds;
     }
 

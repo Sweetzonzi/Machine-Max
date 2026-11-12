@@ -366,8 +366,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/wheel_driver_static_attr.schema.json",
-        "bytes": 6824,
-        "sha256": "57c1bfd5f5c1e2a1ca9ddd0e28fe2ef2ca105e329fcb32bb3c4c7368bbc4e8b4"
+        "bytes": 6868,
+        "sha256": "2ced4a16a9ae4c858d3223c0f8879e871ef52a8d2033852e369395a38d763c93"
       },
       {
         "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",

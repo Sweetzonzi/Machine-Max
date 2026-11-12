@@ -127,9 +127,8 @@
     },
     "abs_wheel_radius": {
       "type": "number",
-      "minimum": 0.01,
-      "default": 0.3,
-      "description": "轮胎半径，单位米，用于计算轮胎线速度和滑移率。"
+      "deprecated": true,
+      "description": "兼容字段，值不参与计算。ABS 半径取被驱动零件及一跳连接中最大的激活轮面；相邻连接的 y/z/yr/zr 必须锁定，x/xr 可活动。"
     },
     "sounds": {
       "type": "object",
@@ -220,8 +219,7 @@
         "max_speed": 150.0
       },
       "abs_enabled": true,
-      "abs_target_slip_ratio": 0.15,
-      "abs_wheel_radius": 0.35
+      "abs_target_slip_ratio": 0.15
     }
   ]
 }

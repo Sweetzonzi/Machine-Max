@@ -13,6 +13,5 @@
     "max_speed": 6.28 //最大转向角速度（弧度/秒）
   },
   "abs_enabled": true, //是否启用ABS防抱死系统
-  "abs_target_slip_ratio": 0.15, //ABS目标滑移率
-  "abs_wheel_radius": 0.4 //防抱死轮速计算用轮胎半径
+  "abs_target_slip_ratio": 0.15 //ABS目标滑移率
 }

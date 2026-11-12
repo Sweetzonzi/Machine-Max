@@ -127,9 +127,8 @@
     },
     "abs_wheel_radius": {
       "type": "number",
-      "minimum": 0.01,
-      "default": 0.3,
-      "description": "Wheel radius in meters, used to calculate wheel linear speed and slip ratio."
+      "deprecated": true,
+      "description": "Legacy field; its value is ignored. ABS uses the largest active wheel surface on the driven part or a direct neighbor whose y/z/yr/zr axes are locked; x/xr may move."
     },
     "sounds": {
       "type": "object",
@@ -220,8 +219,7 @@
         "max_speed": 150.0
       },
       "abs_enabled": true,
-      "abs_target_slip_ratio": 0.15,
-      "abs_wheel_radius": 0.35
+      "abs_target_slip_ratio": 0.15
     }
   ]
 }

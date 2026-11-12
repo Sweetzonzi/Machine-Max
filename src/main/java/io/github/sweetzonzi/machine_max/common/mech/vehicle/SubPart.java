@@ -1411,6 +1411,22 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
+     * 物理线程：本零件当前激活轮面的最大半径（m）；没有有效轮面时为 0。
+     * HitBox 条件由 {@link #prePhysicsTick()} 更新；判毁本身保留碰撞，因此这里按碰撞箱激活状态筛选。
+     */
+    public float getMaxActiveWheelRadius() {
+        if (isRemoved) return 0f;
+        float max = 0f;
+        for (var entry : attr.getWheelRadius().entrySet()) {
+            float radius = entry.getValue();
+            if (Float.isFinite(radius) && radius > max && getHitBox(entry.getKey()).isActive()) {
+                max = radius;
+            }
+        }
+        return max;
+    }
+
+    /**
      * 碰撞是否发生在轮胎碰撞体的有效范围内
      *
      * @param contactPointIndex 接触点序号

@@ -15,7 +15,6 @@
   },
   "abs_enabled": true,
   "abs_target_slip_ratio": 0.15,
-  "abs_wheel_radius": 0.5625,
   "control_inputs": [
     "car_control"
   ]

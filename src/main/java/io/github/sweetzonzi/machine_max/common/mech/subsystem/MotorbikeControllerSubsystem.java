@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorbikeControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -32,6 +31,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
 
     @Override
     protected void onGroundControlBegin() {
+        updateGroundHeight();
         this.driftWeight = 0f;
         this.roll = SparkMathKt.toDegrees(getOwner().getSubPart().getRoll());
         this.omegaRoll = getSubPart().body.getAngularVelocityLocal(null).z;
@@ -105,14 +105,11 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
     }
 
     /**
-     * 在父类计算 X/Z 的基础上，额外计算 Y 轴（接地高度）。<br>
+     * 物理线程：保留转向中心的 X/Z，每步按激活轮面更新 Y 轴（估算接地高度）。<br>
      * 接地高度 = 车轮枢轴 Y 均值 - 轮胎半径均值，<br>
      * 使得 massCenterHeight = -computedSteeringCenter.y 等于质心到地面的距离。
      */
-    @Override
-    protected void recalculateSteeringCenter() {
-        super.recalculateSteeringCenter();
-
+    private void updateGroundHeight() {
         float sumPivotY = 0;
         float sumRadius = 0;
         int count = 0;
@@ -121,6 +118,8 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
 
         for (WheelDriverSubsystem wheel : getWheels().keySet()) {
             if (wheel.connector == null || wheel.connector.joint == null) continue;
+            float radius = wheel.getRollingRadius();
+            if (radius <= 0f) continue;
 
             New6Dof joint = wheel.connector.joint;
             Vector3f pivotLocal = new Vector3f();
@@ -130,14 +129,12 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
             Vector3f carLocalPivot = MMMath.worldPointLocalPos(worldPivot, carBody);
 
             sumPivotY += carLocalPivot.y;
-            sumRadius += wheel.attr.staticAttribute.getAbsWheelRadius();
+            sumRadius += radius;
             count++;
         }
 
-        if (count > 0) {
-            double avgGroundY = sumPivotY / count - sumRadius / count;
-            this.computedSteeringCenter = new Vec3(computedSteeringCenter.x, avgGroundY, computedSteeringCenter.z);
-        }
+        double avgGroundY = count > 0 ? (sumPivotY - sumRadius) / count : 0;
+        this.computedSteeringCenter = new Vec3(computedSteeringCenter.x, avgGroundY, computedSteeringCenter.z);
     }
 
     @Override
