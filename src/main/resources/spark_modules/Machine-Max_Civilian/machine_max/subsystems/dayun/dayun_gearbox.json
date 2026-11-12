@@ -1,6 +1,12 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:gearbox", //T50五速手动变速箱
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "shift": "event:/Default_Vehicles/Transmission/Gears/gears_rattle"
+    }
+  },
   "basic_durability": 40, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
   "final_ratio": 3.7, //(可选, 默认10.0)最终变速比(主减速比), 用于整体缩放变速箱减速比
   "ratios": [-12.3, 12.1, 9.41, 7.31, 5.71, 4.46, 3.4, 2.7, 2.11, 1.84, 1.30, 1.00, 0.78], //(可选, 默认[-3.5, 3.5, 2.5, 1.7, 1.4, 1.1])各个挡位的传动比, 负代表反向传动即倒挡

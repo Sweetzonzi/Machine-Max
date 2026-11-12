@@ -13,10 +13,12 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr.HandBrakeSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,6 +58,9 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
 
     /** 主线程：停用后已按配置线路复位过一次输出，避免每 tick 重复投递空信号。 */
     private boolean outputsReset;
+    /** 客户端主线程的手刹声基线，首次 tick 和区块恢复后的首次 tick 只记录状态。 */
+    private long lastHandBrakeSoundTick = Long.MIN_VALUE;
+    private boolean lastHandBrakeSound;
 
     protected final ConcurrentMap<ISignalReceiver, Float> overrideCountDown = new ConcurrentHashMap<>();
 
@@ -104,6 +109,9 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     protected abstract Map<String, List<String>> getBrakeOutputTargets();
 
     protected abstract Map<String, List<String>> getHandbrakeOutputTargets();
+
+    /** 返回此类车控使用的生命周期与手刹操作音配置。 */
+    protected abstract HandBrakeSoundAttr getHandBrakeSounds();
 
     public abstract boolean isAutoHandBrakeEnabled();
 
@@ -200,6 +208,31 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         } else if (!outputsReset) {
             outputsReset = true;
             resetSignalOutputs();
+        }
+        if (getLevel().isClientSide()) tickHandBrakeSound();
+    }
+
+    /**
+     * 客户端主线程：按各机车控计算出的有效手刹状态播放一次操作声。
+     * 物理线程通过 volatile 的 actualHandBrake 发布制动量，阈值为 0.1。
+     * 连续持有手刹不重复发声；FMOD 配置不可用时静音，未配置 FMOD 时使用 OGG。
+     */
+    private void tickHandBrakeSound() {
+        long now = getLevel().getGameTime();
+        boolean engaged = actualHandBrake >= 0.1f;
+        boolean changed = now == lastHandBrakeSoundTick + 1 && engaged != lastHandBrakeSound;
+        lastHandBrakeSoundTick = now;
+        lastHandBrakeSound = engaged;
+        if (!changed) return;
+
+        HandBrakeSoundAttr sounds = getHandBrakeSounds();
+        if (sounds.fmod().isPresent()) {
+            var fmod = sounds.fmod().orElseThrow();
+            tryPlayFmodSound(fmod.bank(), fmod.handbrake(), SoundSource.NEUTRAL, Map.of());
+        } else {
+            var position = getSubPart().getPosition();
+            getLevel().playLocalSound(position.x, position.y, position.z,
+                    engaged ? sounds.handBrakeOn() : sounds.handBrakeOff(), SoundSource.NEUTRAL, 1f, 1f, false);
         }
     }
 

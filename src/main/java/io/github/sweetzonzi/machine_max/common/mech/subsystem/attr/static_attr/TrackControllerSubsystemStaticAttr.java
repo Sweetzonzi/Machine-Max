@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr.HandBrakeSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
 
@@ -34,6 +35,8 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
     public final boolean separateThrottleBrake;
     public final float pivotYawRate;
     public final float pivotSpeedThreshold;
+    /** 履带车的生命周期音效与手刹操作音。 */
+    public final HandBrakeSoundAttr sounds;
 
     private static final List<String> DEFAULT_CONTROL_INPUTS = List.of(
             "move_input_p0", "regular_input_p0",
@@ -78,8 +81,8 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
 
     public static final MapCodec<TrackControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT)
-                    .forGetter(BasicSubsystemStaticAttr::getSoundAttr),
+            HandBrakeSoundAttr.CODEC.optionalFieldOf("sounds", HandBrakeSoundAttr.DEFAULT)
+                    .forGetter(TrackControllerSubsystemStaticAttr::getSounds),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", DEFAULT_CONTROL_INPUTS)
                     .forGetter(TrackControllerSubsystemStaticAttr::getControlInputKeys),
             YAW_RATE_CODEC.optionalFieldOf("max_yaw_rate", createDefaultYawRateMap())
@@ -110,7 +113,7 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
 
     public TrackControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
-            BasicSubsystemStaticAttr.BasicSoundAttr soundAttr,
+            HandBrakeSoundAttr sounds,
             List<String> controlInputKeys,
             TreeMap<Float, Float> maxYawRateMap,
             float minTurningRadius,
@@ -124,7 +127,8 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
             boolean separateThrottleBrake,
             float pivotYawRate,
             float pivotSpeedThreshold) {
-        super(basicAttr, soundAttr);
+        super(basicAttr, sounds.basicSounds());
+        this.sounds = sounds;
         this.controlInputKeys = controlInputKeys;
         this.maxYawRateMap = maxYawRateMap;
         this.minTurningRadius = minTurningRadius;

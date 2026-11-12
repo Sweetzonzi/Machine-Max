@@ -61,6 +61,16 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "fmod": {
+          "type": "object",
+          "description": "单次换挡事件，升挡与降挡共用。已配置 FMOD 时播放失败静音。",
+          "required": ["bank", "shift"],
+          "additionalProperties": false,
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank ID" },
+            "shift": { "type": "string", "pattern": "^event:/.+" }
+          }
+        },
         "on_deactivate": {
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
@@ -95,7 +105,7 @@
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
           ],
-          "description": "离合踩下时的音效事件。",
+          "description": "离合接合时的音效事件，通常对应松开踏板。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_in",
             "range": 16
@@ -105,7 +115,7 @@
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
           ],
-          "description": "离合松开时的音效事件。",
+          "description": "离合分离时的音效事件，通常对应踩下踏板。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_out",
             "range": 16

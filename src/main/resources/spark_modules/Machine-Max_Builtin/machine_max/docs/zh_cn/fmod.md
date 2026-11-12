@@ -121,6 +121,16 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 
 四个炮塔事件各自使用 `turn_speed`、`broken`、`interior` 与自动 `Distance`。手摇／自动通过选择不同事件表达。
 
+### 换挡与手刹运行时接线
+
+第一方变速箱配置 `sounds.fmod.bank` 与 `sounds.fmod.shift`，持续监测同步后的挡位变化。客户端每 tick 最多播放一次 `event:/Default_Vehicles/Transmission/Gears/gears_rattle`，升挡和降挡共用该事件。首次收到含挡位的同步快照只建立声音基线；首次 tick 和区块恢复后的首次 tick 也只记录状态。自动换挡和手动换挡共用实际挡位变化入口，按键请求但挡位未改变时没有换挡声。实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/GearboxSubsystem.java#tickClientSounds` 与同类的 `onSyncedDataUpdated`。
+
+汽车、摩托车和履带车控配置 `sounds.fmod.bank` 与 `sounds.fmod.handbrake`。各客户端通过既有操作同步独立计算车控，不添加音效同步字段。有效手刹制动量 actualHandBrake 在 0.1 阈值两侧变化时，各播放一次 `event:/Default_Vehicles/Cabin_Movements/lever_pull`；长按或保持驻车状态不重复播放。首次取样和区块恢复后的首次取样只建立基线。实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractGroundControllerSubsystem.java#tickHandBrakeSound`。
+
+两种事件均绑定到所属子系统，在客户端主线程通过 `ISoundSpreader.tryPlayFmodSound` 传入空业务参数表。公共声源的位置、平动速度和实时车内判定由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractSubsystem.java#getPosition`、`getSpeed` 和 `shouldApplyInteriorEffect` 提供；播放器维护 interior 和自动空间效果。实例播放结束后由 SparkCore 释放。配置了 FMOD 的操作声在资源缺失或播放失败时静音；未配置 FMOD 的定义使用 sounds 中的 OGG 操作音。
+
+变速箱的离合接合／分离音使用 clutch_in／clutch_out 配置的 OGG，与换挡音分别按状态变化触发。脚刹与气刹使用轮驱的 brake_on／brake_off 配置。当前 bank 没有独立的离合、踏板或气刹事件，gears_grind 没有运行时触发判据。
+
 ## 完整事件目录
 
 每个路径均已通过 Studio 按路径解析，并核对属于对应 bank。参数名对应本文“参数定义域与控制方式”中的范围与默认值。
@@ -313,10 +323,38 @@ bank ID 为 `m1a2_sep:abrams`。
 | 配置归属 | FMOD 字段 | 配置要求 |
 | --- | --- | --- |
 | 引擎 | bank、drive、start、stop | bank 必填，drive／start／stop 至少一项 |
+| 变速箱 | bank、shift | 两项必填，升挡与降挡共用单次事件 |
+| 汽车／摩托车／履带车控 | bank、handbrake | 两项必填，手刹拉起与释放共用单次事件 |
 | 电机 | bank、drive | 两项必填 |
 | 发射器 | bank、fire | 两项必填，机枪实例用 firing 参数控制开火形态 |
 | 装弹机 | bank、reload | 两项必填 |
 | 材料 | bank | 为材料音效预留，填写 fmod 时 bank 必填 |
+
+变速箱的 sounds 配置示例：
+
+```json
+{
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "shift": "event:/Default_Vehicles/Transmission/Gears/gears_rattle"
+    }
+  }
+}
+```
+
+地面车控的 sounds 配置示例，汽车、摩托车和履带车共用此结构：
+
+```json
+{
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "handbrake": "event:/Default_Vehicles/Cabin_Movements/lever_pull"
+    }
+  }
+}
+```
 
 引擎配置示例，放在子系统静态属性中。drive 用于持续工况，start 与 stop 用于启动和停机单次音效。
 
@@ -382,7 +420,9 @@ M1A2 发射器属性的 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun
 
 轮胎与普通零件的地形接触已接入 tire_noise，轮胎尖叫已接入 tire_screech，参数与生命周期见本文“接触音效运行时接线”。
 
-引擎的 sounds.fmod.start／stop、电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带、传动、手刹／换挡、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
+第一方变速箱和地面车控已配置 FMOD 换挡与手刹单次事件，触发规则见本文“换挡与手刹运行时接线”。
+
+引擎的 sounds.fmod.start／stop、电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
 
 ## 可复核记录
 

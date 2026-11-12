@@ -4,29 +4,41 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+
+    /** 升挡和降挡共用的 FMOD 单次换挡事件，无需业务参数。 */
+    public record GearboxFmodSoundAttr(ResourceLocation bank, String shift) {
+        public static final Codec<GearboxFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(GearboxFmodSoundAttr::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("shift").forGetter(GearboxFmodSoundAttr::shift)
+        ).apply(instance, GearboxFmodSoundAttr::new));
+    }
     
     public record GearBoxSoundAttr(
             BasicSoundAttr basicSounds,
             SoundEvent clutchIn,
             SoundEvent clutchOut,
             SoundEvent gearUp,
-            SoundEvent gearDown
+            SoundEvent gearDown,
+            Optional<GearboxFmodSoundAttr> fmod
     ) {
         public static final GearBoxSoundAttr DEFAULT = new GearBoxSoundAttr(
                 BasicSoundAttr.DEFAULT,
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.clutch_in"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.clutch_out"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.up.light"), 16),
-                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.down.light"), 16)
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.down.light"), 16),
+                Optional.empty()
         );
 
         public static final Codec<GearBoxSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -34,7 +46,8 @@ public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("clutch_in", DEFAULT.clutchIn).forGetter(GearBoxSoundAttr::clutchIn),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("clutch_out", DEFAULT.clutchOut).forGetter(GearBoxSoundAttr::clutchOut),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("gear_up", DEFAULT.gearUp).forGetter(GearBoxSoundAttr::gearUp),
-                SoundEvent.DIRECT_CODEC.optionalFieldOf("gear_down", DEFAULT.gearDown).forGetter(GearBoxSoundAttr::gearDown)
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("gear_down", DEFAULT.gearDown).forGetter(GearBoxSoundAttr::gearDown),
+                GearboxFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(GearBoxSoundAttr::fmod)
         ).apply(instance, GearBoxSoundAttr::new));
     }
 

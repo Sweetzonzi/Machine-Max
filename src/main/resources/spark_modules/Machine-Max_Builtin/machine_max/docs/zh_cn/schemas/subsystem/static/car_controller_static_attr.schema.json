@@ -135,6 +135,16 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "fmod": {
+          "type": "object",
+          "description": "单次手刹操作事件，拉起与释放共用。已配置 FMOD 时播放失败静音。",
+          "required": ["bank", "handbrake"],
+          "additionalProperties": false,
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank ID" },
+            "handbrake": { "type": "string", "pattern": "^event:/.+" }
+          }
+        },
         "on_deactivate": {
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }

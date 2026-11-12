@@ -32,10 +32,7 @@
       "default": false,
       "description": "是否在 HUD 等界面隐藏该子系统。"
     },
-    "sounds": {
-      "type": "object",
-      "additionalProperties": true
-    },
+    "sounds": { "$ref": "car_controller_static_attr.schema.json#/properties/sounds" },
     "control_inputs": {
       "type": "array",
       "items": {

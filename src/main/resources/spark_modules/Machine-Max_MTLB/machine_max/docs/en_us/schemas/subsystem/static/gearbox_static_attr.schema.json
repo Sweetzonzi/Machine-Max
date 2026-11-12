@@ -61,6 +61,16 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "fmod": {
+          "type": "object",
+          "description": "One-shot shift event shared by upshifts and downshifts. Unavailable configured FMOD playback stays silent.",
+          "required": ["bank", "shift"],
+          "additionalProperties": false,
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank ID" },
+            "shift": { "type": "string", "pattern": "^event:/.+" }
+          }
+        },
         "on_deactivate": {
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
@@ -95,7 +105,7 @@
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
           ],
-          "description": "Sound event for clutch engagement.",
+          "description": "Sound when the clutch engages, normally when the pedal is released.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_in",
             "range": 16
@@ -105,7 +115,7 @@
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
           ],
-          "description": "Sound event for clutch disengagement.",
+          "description": "Sound when the clutch disengages, normally when the pedal is pressed.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_out",
             "range": 16

@@ -32,10 +32,7 @@
       "default": false,
       "description": "Whether this subsystem is hidden from HUD displays."
     },
-    "sounds": {
-      "type": "object",
-      "additionalProperties": true
-    },
+    "sounds": { "$ref": "car_controller_static_attr.schema.json#/properties/sounds" },
     "control_inputs": {
       "type": "array",
       "items": {

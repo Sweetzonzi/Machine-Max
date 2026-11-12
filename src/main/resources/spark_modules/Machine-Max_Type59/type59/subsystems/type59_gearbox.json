@@ -1,6 +1,12 @@
 {
   "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:gearbox",
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "shift": "event:/Default_Vehicles/Transmission/Gears/gears_rattle"
+    }
+  },
   "basic_durability": 80,
   "final_ratio": 7.2,
   "ratios": [

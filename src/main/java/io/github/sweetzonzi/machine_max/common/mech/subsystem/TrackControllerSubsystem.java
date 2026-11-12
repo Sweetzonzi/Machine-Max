@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.TrackControlSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TrackControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr.HandBrakeSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackMath;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -338,6 +339,11 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
     @Override
     protected Map<String, List<String>> getHandbrakeOutputTargets() {
         return Map.of();
+    }
+
+    @Override
+    protected HandBrakeSoundAttr getHandBrakeSounds() {
+        return attr.staticAttribute.getSounds();
     }
 
     @Override

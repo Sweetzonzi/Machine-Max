@@ -1,10 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.util.PPhase;
-import com.jme3.math.Vector3f;
-
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
@@ -27,7 +22,11 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
     protected static final EntityDataAccessor<Integer> CURRENT_GEAR_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Boolean> CLUTCHED_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.BOOLEAN);
-    private int lastGear = 0;//上一次的挡位，仅用于客户端控制音效 Last gear position, only used for client control of sound effects
+    /** 客户端声音基线由首份含挡位的同步快照建立，加载状态不作为换挡操作播放。 */
+    private boolean clientSoundReady;
+    private int lastGear;
+    private boolean lastClutched;
+    private long lastClientSoundTick = Long.MIN_VALUE;
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
 
     private MechPower receivedPower = MechPower.ZERO;
@@ -59,6 +58,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
     @Override
     public void onTick() {
         super.onTick();
+        if (getLevel().isClientSide()) tickClientSounds();
         String gear = this.gearNames.get(this.getCurrentGear());
         for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();
@@ -201,70 +201,51 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
         builder.define(CLUTCHED_ID, true);
     }
 
-    /**
-     * 在离合或换挡状态发生变化时播放相应音效
-     *
-     * @param dataAccessor 变化的数据
-     */
+    /** 客户端主线程：首份含挡位的服务端快照只建立声音基线，后续变化由 tick 消费。 */
     @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
-        super.onSyncedDataUpdated(dataAccessor);
-        if (!getLevel().isClientSide()) return;
-        Vector3f pos = getSubPart().getPosition();
-        if (dataAccessor == CURRENT_GEAR_ID) {
-            if (getCurrentGear() > lastGear) {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_up", PPhase.PRE, () -> {
-                            getLevel().playLocalSound(
-                                    pos.x, pos.y, pos.z,
-                                    attr.staticAttribute.getGearUpSound(),
-                                    SoundSource.NEUTRAL,
-                                    0.5f,
-                                    1.2f,
-                                    false
-                            );
-                        }
-                );
-            } else {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_down", PPhase.PRE, () -> {
-                            getLevel().playLocalSound(
-                                    pos.x, pos.y, pos.z,
-                                    attr.staticAttribute.getGearDownSound(),
-                                    SoundSource.NEUTRAL,
-                                    0.5f,
-                                    1.2f,
-                                    false
-                            );
-                        }
-                );
-            }
-            lastGear = getCurrentGear();
-        } else if (dataAccessor == CLUTCHED_ID) {
-            if (isClutched()) {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.PRE, () -> {
-                            getLevel().playLocalSound(
-                                    pos.x, pos.y, pos.z,
-                                    attr.staticAttribute.getClutchInSound(),
-                                    SoundSource.NEUTRAL,
-                                    0.5f,
-                                    1.2f,
-                                    false
-                            );
-                        }
-                );
-            } else {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.PRE, () -> {
-                            getLevel().playLocalSound(
-                                    pos.x, pos.y, pos.z,
-                                    attr.staticAttribute.getClutchOutSound(),
-                                    SoundSource.NEUTRAL,
-                                    0.5f,
-                                    1.2f,
-                                    false
-                            );
-                        }
-                );
+    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {
+        super.onSyncedDataUpdated(newData);
+        if (!getLevel().isClientSide() || clientSoundReady) return;
+        for (var value : newData) {
+            if (value.id() == CURRENT_GEAR_ID.id()) {
+                lastGear = getCurrentGear();
+                lastClutched = isClutched();
+                clientSoundReady = true;
+                break;
             }
         }
+    }
+
+    /**
+     * 客户端主线程：挡位变化播放单次换挡音，离合变化使用配置的 OGG。
+     * 每 tick 至多消费一次当前状态；首次取样和区块恢复只记录基线。
+     */
+    private void tickClientSounds() {
+        if (!clientSoundReady) return;
+        long now = getLevel().getGameTime();
+        int gear = getCurrentGear();
+        boolean clutched = isClutched();
+        boolean consecutive = now == lastClientSoundTick + 1;
+        var sounds = attr.staticAttribute.getSounds();
+        if (consecutive && gear != lastGear) {
+            if (sounds.fmod().isPresent()) {
+                var fmod = sounds.fmod().orElseThrow();
+                // 空业务参数表；空间位置和车内混音由公共声源契约提供。
+                tryPlayFmodSound(fmod.bank(), fmod.shift(), SoundSource.NEUTRAL, Map.of());
+            } else {
+                var position = getSubPart().getPosition();
+                getLevel().playLocalSound(position.x, position.y, position.z,
+                        gear > lastGear ? sounds.gearUp() : sounds.gearDown(), SoundSource.NEUTRAL, 0.5f, 1.2f, false);
+            }
+        }
+        if (consecutive && clutched != lastClutched) {
+            var position = getSubPart().getPosition();
+            getLevel().playLocalSound(position.x, position.y, position.z,
+                    clutched ? sounds.clutchIn() : sounds.clutchOut(), SoundSource.NEUTRAL, 0.5f, 1.2f, false);
+        }
+        lastGear = gear;
+        lastClutched = clutched;
+        lastClientSoundTick = now;
     }
 
     public int getCurrentGear() {

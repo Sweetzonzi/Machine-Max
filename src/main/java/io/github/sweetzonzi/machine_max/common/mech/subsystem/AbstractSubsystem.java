@@ -3,6 +3,8 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,12 +45,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 @Getter
-abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender, SyncedDataHolder {
+abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender, SyncedDataHolder, ISoundSpreader {
 
     public final String name;
     public final AbstractSubsystemAttr attr;
@@ -651,8 +655,31 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         return attr.getBasicDurability();
     }
 
+    /** 声源与子系统宿主共用所在世界。 */
+    @NotNull
+    @Override
     public Level getLevel() {
         return getOwner().getLevel();
+    }
+
+    /** 客户端只读取宿主发布的位置，供默认的子系统空间声源使用。 */
+    @NotNull
+    @Override
+    public Vec3 getPosition(UUID uuid) {
+        return SparkMathKt.toVec3(getSubPart().getPosition());
+    }
+
+    /** 子系统的默认声源随宿主平动，速度单位为方块/秒。 */
+    @NotNull
+    @Override
+    public Vec3 getSpeed(UUID uuid) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
+    }
+
+    /** 客户端按当前听者和视角选择车内混音，供操作音与机械音共用。 */
+    @Override
+    public boolean shouldApplyInteriorEffect(@Nullable Entity listener, boolean firstPerson) {
+        return isInteriorListener(listener, firstPerson);
     }
 
     public PhysicsLevel getPhysicsLevel() {

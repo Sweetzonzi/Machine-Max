@@ -8,11 +8,11 @@ import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.WheelControlSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr.HandBrakeSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Collections;
@@ -30,11 +30,6 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     private final Map<WheelDriverSubsystem, String> pendingWheels = new LinkedHashMap<>();
     /** 车轮绑定快照：物理线程只读。 */
     private volatile Map<WheelDriverSubsystem, String> wheels = Map.of();
-
-    /**
-     * 手刹状态，仅用于客户端音效
-     */
-    private boolean handBrakeEnabled = false;
 
     private final PIDController driftingPD;
     /**
@@ -63,40 +58,6 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
         super(owner, name, attr);
         this.attr = attr;
         this.driftingPD = new PIDController(1.5, 0.01, 0.1, 1.0 / getPhysicsLevel().getTps(), -1, 1);
-    }
-
-    @Override
-    public void onTick() {
-        super.onTick();
-        // 手刹车音效播放
-        var pos = getSubPart().getPosition();
-        if (handBrakeEnabled) {
-            if (actualHandBrake < 0.1f) {
-                handBrakeEnabled = false;
-                if (getLevel().isClientSide()) {
-                    getLevel().playLocalSound(
-                            pos.x, pos.y, pos.z,
-                            getAttr().getStaticAttribute().getHandBrakeOffSound(),
-                            SoundSource.NEUTRAL,
-                            1.0f,
-                            1.0f,
-                            false
-                    );
-                }
-            }
-        } else if (actualHandBrake >= 0.1f) {
-            handBrakeEnabled = true;
-            if (getLevel().isClientSide()) {
-                getLevel().playLocalSound(
-                        pos.x, pos.y, pos.z,
-                        getAttr().getStaticAttribute().getHandBrakeOnSound(),
-                        SoundSource.NEUTRAL,
-                        1.0f,
-                        1.0f,
-                        false
-                );
-            }
-        }
     }
 
     @Override
@@ -311,6 +272,11 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     @Override
     protected Map<String, List<String>> getHandbrakeOutputTargets() {
         return attr.getHandbrakeOutputTargets();
+    }
+
+    @Override
+    protected HandBrakeSoundAttr getHandBrakeSounds() {
+        return getAttr().getStaticAttribute().getSounds();
     }
 
     @Override

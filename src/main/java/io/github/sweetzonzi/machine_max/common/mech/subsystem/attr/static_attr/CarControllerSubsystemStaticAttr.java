@@ -5,32 +5,45 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 @Getter
 public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+
+    /** 手刹拉起和释放共用的 FMOD 单次操作事件。 */
+    public record HandBrakeFmodSoundAttr(ResourceLocation bank, String handbrake) {
+        public static final Codec<HandBrakeFmodSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(HandBrakeFmodSoundAttr::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("handbrake").forGetter(HandBrakeFmodSoundAttr::handbrake)
+        ).apply(instance, HandBrakeFmodSoundAttr::new));
+    }
     
     public record HandBrakeSoundAttr(
             BasicSoundAttr basicSounds,
             SoundEvent handBrakeOn,
-            SoundEvent handBrakeOff
+            SoundEvent handBrakeOff,
+            Optional<HandBrakeFmodSoundAttr> fmod
     ) {
         public static final HandBrakeSoundAttr DEFAULT = new HandBrakeSoundAttr(
                 BasicSoundAttr.DEFAULT,
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_on"), 16),
-                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_off"), 16)
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_off"), 16),
+                Optional.empty()
         );
         
         public static final Codec<HandBrakeSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(HandBrakeSoundAttr::basicSounds),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_on", DEFAULT.handBrakeOn).forGetter(HandBrakeSoundAttr::handBrakeOn),
-                SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_off", DEFAULT.handBrakeOff).forGetter(HandBrakeSoundAttr::handBrakeOff)
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_off", DEFAULT.handBrakeOff).forGetter(HandBrakeSoundAttr::handBrakeOff),
+                HandBrakeFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(HandBrakeSoundAttr::fmod)
         ).apply(instance, HandBrakeSoundAttr::new));
     }
     public final float minSteeringRadius;

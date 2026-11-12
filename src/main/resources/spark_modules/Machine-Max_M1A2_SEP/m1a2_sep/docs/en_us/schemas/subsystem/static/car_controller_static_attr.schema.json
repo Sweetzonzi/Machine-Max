@@ -135,6 +135,16 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "fmod": {
+          "type": "object",
+          "description": "One-shot handbrake event shared by engagement and release. Unavailable configured FMOD playback stays silent.",
+          "required": ["bank", "handbrake"],
+          "additionalProperties": false,
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank ID" },
+            "handbrake": { "type": "string", "pattern": "^event:/.+" }
+          }
+        },
         "on_deactivate": {
           "allOf": [
             { "$ref": "../../base/sound_event.schema.json" }
