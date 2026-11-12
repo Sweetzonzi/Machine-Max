@@ -1,5 +1,5 @@
 // ============================================================
-// MachineMax Blockbench Plugin v0.6.1
+// MachineMax Blockbench Plugin v0.6.2
 // 打包文件 — 由 scripts/build.js 自动生成
 // 源文件在 src/ 目录，修改后运行 npm run build 重新生成
 // ============================================================
@@ -12487,7 +12487,9 @@
       }
       function normalizeMapField(obj, field) {
         if (!obj || typeof obj !== "object" || !hasOwn(obj, field)) return;
-        if (obj[field] === null || Array.isArray(obj[field])) obj[field] = {};
+        if (obj[field] === null || Array.isArray(obj[field]) && obj[field].length === 0) {
+          obj[field] = {};
+        }
       }
       function forEachEntry(obj, field, fn) {
         var map = obj && obj[field];
@@ -12563,7 +12565,11 @@
         });
         return result;
       }
-      function ensureDefaults(config) {
+      function ensureDefaults(config, opts) {
+        opts = opts || {};
+        var decodePart = typeof opts.decodePart === "function" ? opts.decodePart : function(part2) {
+          return PartLoadCodec.decode(part2);
+        };
         if (!config || typeof config !== "object") {
           log2.warn("ensureDefaults: \u914D\u7F6E\u65E0\u6548\uFF0C\u8FD4\u56DE\u7A7A\u767D\u914D\u7F6E");
           return createBlankConfig();
@@ -12583,7 +12589,13 @@
         for (i = 0; i < partKeys.length; i++) {
           pk = partKeys[i];
           part = result.parts[pk];
-          result.parts[pk] = PartLoadCodec.decode(part);
+          try {
+            result.parts[pk] = decodePart(part, pk);
+          } catch (e) {
+            log2.warn('ensureDefaults: \u96F6\u4EF6 "' + pk + '" \u89E3\u7801\u5931\u8D25\uFF0C\u4FDD\u7559\u539F\u59CB\u6570\u636E', e);
+            if (typeof opts.onDecodeError === "function") opts.onDecodeError(pk, e);
+            result.parts[pk] = part;
+          }
         }
         log2.debug("ensureDefaults: \u5B8C\u6210");
         log2.debug("ensureDefaults: packMeta \u72B6\u6001", {
@@ -12596,20 +12608,20 @@
         });
         return result;
       }
-      function migrateIfNeeded(config) {
+      function migrateIfNeeded(config, opts) {
         if (!config || typeof config !== "object") {
           log2.info("migrateIfNeeded: \u65E0\u7248\u672C\u53F7\uFF0C\u5E94\u7528\u9ED8\u8BA4\u503C");
-          return ensureDefaults(config);
+          return ensureDefaults(config, opts);
         }
         config = normalizeLegacyPlaceholders(config);
         if (!config.$schema_version) {
           log2.info("migrateIfNeeded: \u65E0\u7248\u672C\u53F7\uFF0C\u5E94\u7528\u9ED8\u8BA4\u503C");
-          return ensureDefaults(config);
+          return ensureDefaults(config, opts);
         }
         var version = config.$schema_version;
         if (version === CONFIG_VERSION) {
           log2.debug("migrateIfNeeded: \u914D\u7F6E\u5DF2\u662F\u6700\u65B0\u7248\u672C v" + version);
-          return ensureDefaults(config);
+          return ensureDefaults(config, opts);
         }
         log2.info("migrateIfNeeded: \u914D\u7F6E\u9700\u8981\u8FC1\u79FB", { from: version, to: CONFIG_VERSION });
         var migrated = JSON.parse(JSON.stringify(config));
@@ -12620,7 +12632,7 @@
             log2.debug("migrateIfNeeded: \u8FC1\u79FB\u6B65\u9AA4 v" + v + " \u5B8C\u6210");
           }
         }
-        return ensureDefaults(normalizeLegacyPlaceholders(migrated));
+        return ensureDefaults(normalizeLegacyPlaceholders(migrated), opts);
       }
       function getActivePart(config) {
         if (!config || !config.parts) {
@@ -16395,7 +16407,17 @@
         fieldSpecs.getContainers(kind).forEach(function(container) {
           var childKind = fieldSpecs.getContainerChildKind(container);
           var entries = node[container];
-          if (!entries || typeof entries !== "object" || Array.isArray(entries)) return;
+          if (entries === void 0 || entries === null) return;
+          if (!isPlainObject(entries)) {
+            errors.push(makeError(
+              path.concat([container]),
+              "type_mismatch",
+              "object\uFF08key \u2192 \u6761\u76EE\uFF09",
+              typeName(entries),
+              "\u5BB9\u5668\u5FC5\u987B\u662F\u5BF9\u8C61"
+            ));
+            return;
+          }
           Object.keys(entries).forEach(function(key) {
             var child = entries[key];
             var childErrors = validateValues(child, {
@@ -17799,6 +17821,162 @@
     }
   });
 
+  // src/doc/load.js
+  var require_load = __commonJS({
+    "src/doc/load.js"(exports, module) {
+      "use strict";
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var fieldSpecs = require_field_specs();
+      var { PartLoadCodec } = require_part_codec();
+      var { VariantLoadCodec } = require_variant_codec();
+      var { SubPartLoadCodec } = require_sub_part_codec();
+      var { HitBoxCodec } = require_hit_box_codec();
+      var { InteractBoxCodec } = require_interact_box_codec();
+      var { ConnectorCodec } = require_connector_codec();
+      var { SubsystemLoadCodec } = require_subsystem_codec();
+      var LOAD_CODECS = {
+        part: PartLoadCodec,
+        variant: VariantLoadCodec,
+        sub_part: SubPartLoadCodec,
+        hit_box: HitBoxCodec,
+        interact_box: InteractBoxCodec,
+        connector: ConnectorCodec,
+        subsystem: SubsystemLoadCodec
+      };
+      var MAX_ISSUES = 64;
+      function isPlainObject(v) {
+        return v !== null && typeof v === "object" && !Array.isArray(v);
+      }
+      function hasOwn(obj, key) {
+        return Object.prototype.hasOwnProperty.call(obj, key);
+      }
+      function typeName(v) {
+        if (v === null) return "null";
+        if (Array.isArray(v)) return "array";
+        return typeof v;
+      }
+      function pushIssue(issues, path, kind, message) {
+        if (issues.length >= MAX_ISSUES) return;
+        issues.push({
+          path: path.slice(),
+          code: "load_decode_failed",
+          kind,
+          message
+        });
+      }
+      function isMapContainer(container, value) {
+        if (container === "variants") return typeof value.model !== "string";
+        if (container === "sub_parts") {
+          for (var key in value) {
+            if (!hasOwn(value, key)) continue;
+            if (key.indexOf(".") >= 0 || key.indexOf(":") >= 0) return true;
+          }
+          return false;
+        }
+        return true;
+      }
+      function sanitizeNode(kind, raw, path, removed, issues) {
+        var codec = LOAD_CODECS[kind];
+        if (!codec) return { ok: false, raw };
+        if (!isPlainObject(raw)) {
+          if (raw !== void 0) {
+            pushIssue(issues, path, kind, "\u5E94\u4E3A\u5BF9\u8C61\uFF0C\u5B9E\u9645\u662F " + typeName(raw));
+          }
+          return { ok: false, raw };
+        }
+        var clean = Object.assign({}, raw);
+        if (kind === "part" && hasOwn(raw, "element_markers") && !isPlainObject(raw.element_markers)) {
+          pushIssue(
+            issues,
+            path.concat(["element_markers"]),
+            kind,
+            "element_markers \u5E94\u4E3A\u5BF9\u8C61\uFF0C\u5B9E\u9645\u662F " + typeName(raw.element_markers)
+          );
+          delete clean.element_markers;
+          removed.push({ path: path.concat(["element_markers"]), raw: raw.element_markers });
+        }
+        var containers = fieldSpecs.getContainers(kind);
+        for (var ci = 0; ci < containers.length; ci++) {
+          var container = containers[ci];
+          var childKind = fieldSpecs.getContainerChildKind(container);
+          if (!childKind || !hasOwn(raw, container)) continue;
+          var entries = raw[container];
+          if (!isPlainObject(entries)) {
+            pushIssue(
+              issues,
+              path.concat([container]),
+              kind,
+              "\u5E94\u4E3A\u5BF9\u8C61\uFF08key \u2192 \u6761\u76EE\uFF09\uFF0C\u5B9E\u9645\u662F " + typeName(entries)
+            );
+            delete clean[container];
+            removed.push({ path: path.concat([container]), raw: entries });
+            continue;
+          }
+          if (!isMapContainer(container, entries)) continue;
+          var kept = {};
+          for (var key in entries) {
+            if (!hasOwn(entries, key)) continue;
+            var childPath = path.concat([container, key]);
+            var child = sanitizeNode(childKind, entries[key], childPath, removed, issues);
+            if (child.ok) {
+              kept[key] = child.raw;
+            } else {
+              removed.push({ path: childPath, raw: entries[key] });
+            }
+          }
+          clean[container] = kept;
+        }
+        try {
+          codec.decode(clean);
+          return { ok: true, raw: clean };
+        } catch (e) {
+          pushIssue(issues, path, kind, e && e.message ? e.message : String(e));
+          return { ok: false, raw };
+        }
+      }
+      function attachRaw(root, path, baseLength, value) {
+        var node = root;
+        for (var i = baseLength; i < path.length - 1; i++) {
+          if (!isPlainObject(node)) return;
+          var seg = path[i];
+          if (!isPlainObject(node[seg])) node[seg] = {};
+          node = node[seg];
+        }
+        if (!isPlainObject(node)) return;
+        node[path[path.length - 1]] = value;
+      }
+      function decodePart(rawPart, opts) {
+        opts = opts || {};
+        var root = opts.partId ? ["parts", String(opts.partId)] : [];
+        var issues = [];
+        var removed = [];
+        var clean = sanitizeNode("part", rawPart, root, removed, issues);
+        if (!clean.ok) return { node: rawPart, issues };
+        var node;
+        try {
+          node = LOAD_CODECS.part.decode(clean.raw);
+        } catch (e) {
+          pushIssue(issues, root, "part", e && e.message ? e.message : String(e));
+          return { node: rawPart, issues };
+        }
+        for (var i = 0; i < removed.length; i++) {
+          attachRaw(node, removed[i].path, root.length, removed[i].raw);
+        }
+        return { node, issues };
+      }
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+          decodePart
+        };
+      }
+    }
+  });
+
   // src/utils/persistence.js
   var require_persistence = __commonJS({
     "src/utils/persistence.js"(exports, module) {
@@ -17814,7 +17992,18 @@
       var { cleanGhostMarkers, migrateConnectorMarkerRefs, repairMarkerConfigs } = require_element_markers();
       var { createLogger: createLogger2 } = require_logger();
       var docProjection = require_projection();
+      var docLoad = require_load();
       var log2 = createLogger2("Persistence");
+      function _decodePartForLoad(part, partId) {
+        var result = docLoad.decodePart(part, { partId });
+        if (result.issues && result.issues.length > 0) {
+          log2.warn('loadConfig: \u96F6\u4EF6 "' + partId + '" \u6709 ' + result.issues.length + " \u5904\u7ED3\u6784\u975E\u6CD5\uFF0C\u5DF2\u539F\u6837\u4FDD\u7559\uFF08\u6821\u9A8C\u4F1A\u62A5\u51FA\u5177\u4F53\u5B57\u6BB5\uFF09", result.issues);
+        }
+        return result.node;
+      }
+      function _migrateForLoad(rawConfig) {
+        return migrateIfNeeded(rawConfig, { decodePart: _decodePartForLoad });
+      }
       function registerProperty2() {
         if (ModelProject.properties[PROPERTY_NAME]) {
           log2.debug("registerProperty: Property \u5DF2\u6CE8\u518C\uFF0C\u8DF3\u8FC7");
@@ -17850,7 +18039,7 @@
         var result;
         if (propData && propData.$schema_version) {
           log2.info("\u4ECE Property \u52A0\u8F7D\u914D\u7F6E\uFF0C\u7248\u672C: " + propData.$schema_version);
-          var migrated = migrateIfNeeded(propData);
+          var migrated = _migrateForLoad(propData);
           Project[PROPERTY_NAME] = migrated;
           result = migrated;
           log2.debug("loadConfig: \u4ECE Property \u52A0\u8F7D\u5B8C\u6210", {
@@ -17862,7 +18051,7 @@
           });
         } else if (propData && typeof propData === "object" && Object.keys(propData).length > 0) {
           log2.info("\u4ECE Property \u52A0\u8F7D\u914D\u7F6E\uFF08\u65E0\u7248\u672C\u53F7\uFF0C\u5C1D\u8BD5\u4FEE\u590D\uFF09\uFF0C\u952E: " + Object.keys(propData).join(","));
-          var repaired = migrateIfNeeded(propData);
+          var repaired = _migrateForLoad(propData);
           Project[PROPERTY_NAME] = repaired;
           result = repaired;
         } else {
@@ -17875,7 +18064,7 @@
                 const raw = JSON.parse(fs.readFileSync(standalonePath, "utf-8"));
                 const config = raw.config || raw;
                 log2.info("\u4ECE\u72EC\u7ACB\u6587\u4EF6\u52A0\u8F7D\u914D\u7F6E: " + standalonePath);
-                Project[PROPERTY_NAME] = migrateIfNeeded(config);
+                Project[PROPERTY_NAME] = _migrateForLoad(config);
                 result = Project[PROPERTY_NAME];
               }
             } catch (e) {
@@ -19744,6 +19933,9 @@
       function _makeProblem(severity, code, message, path) {
         return { severity, code, message, path };
       }
+      function _isObject(v) {
+        return v !== null && typeof v === "object" && !Array.isArray(v);
+      }
       function _mkPath(scope, partId, variantName, subPartKey, itemKey, elementUuid, field) {
         var path = { scope, partId, variantName, field: field || "" };
         if (subPartKey) path.subPartKey = subPartKey;
@@ -19961,7 +20153,16 @@
         for (var i = 0; i < partIds.length; i++) {
           var partId = partIds[i];
           var part = parts[partId];
-          var variants = part.variants || {};
+          if (!_isObject(part)) {
+            problems.push(_makeProblem(
+              "error",
+              CODES.MISSING_REQUIRED,
+              '\u96F6\u4EF6 "' + partId + '"\uFF1A\u6570\u636E\u4E0D\u662F\u5BF9\u8C61\uFF0C\u65E0\u6CD5\u8BFB\u53D6\u53D8\u4F53',
+              _mkPath("part", partId, "", null, null, null, "")
+            ));
+            continue;
+          }
+          var variants = _isObject(part.variants) ? part.variants : {};
           var variantNames = Object.keys(variants);
           if (variantNames.length === 0) {
             problems.push(_makeProblem(
@@ -19975,6 +20176,15 @@
           for (var vi = 0; vi < variantNames.length; vi++) {
             var vName = variantNames[vi];
             var variant = variants[vName];
+            if (!_isObject(variant)) {
+              problems.push(_makeProblem(
+                "error",
+                CODES.MISSING_REQUIRED,
+                '\u96F6\u4EF6 "' + partId + '" \u53D8\u4F53 "' + vName + '"\uFF1A\u6570\u636E\u4E0D\u662F\u5BF9\u8C61\uFF0C\u65E0\u6CD5\u8BFB\u53D6\u5B50\u96F6\u4EF6',
+                _mkPath("variant", partId, vName, null, null, null, "")
+              ));
+              continue;
+            }
             if (!variant.model) {
               problems.push(_makeProblem(
                 "error",
@@ -19983,7 +20193,7 @@
                 _mkPath("variant", partId, vName, null, null, null, "model")
               ));
             }
-            var subParts = variant.sub_parts || {};
+            var subParts = _isObject(variant.sub_parts) ? variant.sub_parts : {};
             var spKeys = Object.keys(subParts);
             if (spKeys.length === 0) {
               problems.push(_makeProblem(
@@ -19996,7 +20206,18 @@
             for (var si = 0; si < spKeys.length; si++) {
               var spKey = spKeys[si];
               var sp = subParts[spKey];
-              if (Object.keys(sp.hit_boxes || {}).length === 0) {
+              if (!_isObject(sp)) {
+                problems.push(_makeProblem(
+                  "error",
+                  CODES.MISSING_REQUIRED,
+                  '\u96F6\u4EF6 "' + partId + '"/' + vName + ' \u5B50\u96F6\u4EF6 "' + spKey + '"\uFF1A\u6570\u636E\u4E0D\u662F\u5BF9\u8C61\uFF0C\u65E0\u6CD5\u8BFB\u53D6\u78B0\u649E\u7BB1\u4E0E\u5B50\u7CFB\u7EDF',
+                  _mkPath("subpart", partId, vName, spKey, null, null, "")
+                ));
+                continue;
+              }
+              var hitBoxes = _isObject(sp.hit_boxes) ? sp.hit_boxes : {};
+              var hitBoxesEmpty = _isObject(sp.hit_boxes) ? Object.keys(hitBoxes).length === 0 : isMissingValue(sp.hit_boxes);
+              if (hitBoxesEmpty) {
                 problems.push(_makeProblem(
                   "error",
                   CODES.MISSING_REQUIRED,
@@ -20012,8 +20233,7 @@
                   _mkPath("subpart", partId, vName, spKey, null, null, "mass")
                 ));
               }
-              var subsystems = sp.subsystems || {};
-              var hitBoxes = sp.hit_boxes || {};
+              var subsystems = _isObject(sp.subsystems) ? sp.subsystems : {};
               for (var hbKey in hitBoxes) {
                 var hb = hitBoxes[hbKey] || {};
                 if (boneCount > 0 && !ports.get().bones.findByUuid(hbKey)) {
@@ -20082,7 +20302,7 @@
                   }
                 }
               }
-              var conns = sp.connectors || {};
+              var conns = _isObject(sp.connectors) ? sp.connectors : {};
               for (var connKey in conns) {
                 var conn = conns[connKey];
                 if (isMissingValue(conn.definition)) {
@@ -20110,6 +20330,154 @@
       }
       if (typeof module !== "undefined" && module.exports) {
         module.exports = { collectIssues };
+      }
+    }
+  });
+
+  // src/services/issues.js
+  var require_issues = __commonJS({
+    "src/services/issues.js"(exports, module) {
+      "use strict";
+      init_define_BUILTIN_CONNECTORS();
+      init_define_BUILTIN_CONTROL_GROUPS();
+      init_define_BUILTIN_MATERIALS();
+      init_define_BUILTIN_PACK_META();
+      init_define_BUILTIN_SUBSYSTEMS();
+      init_define_SCHEMAS();
+      var { collectIssues } = require_validate2();
+      var { validateTree } = require_validate();
+      var keys = require_keys();
+      var { PartCodec } = require_part_codec();
+      var ITEM_CONTAINERS = {
+        hit_boxes: "hit_box",
+        interact_boxes: "interact_box",
+        connectors: "connector",
+        subsystems: "subsystem"
+      };
+      function toProblem(error, config) {
+        var segs = error && error.path || [];
+        var path = { scope: "config", partId: "", variantName: "" };
+        if (segs[0] === "parts" && segs.length >= 2) {
+          path.scope = "part";
+          path.partId = segs[1];
+        }
+        if (segs[2] === "variants" && segs.length >= 4) {
+          path.scope = "variant";
+          path.variantName = segs[3];
+        }
+        var leafStart = 4;
+        if (segs[4] === "sub_parts" && segs.length >= 6) {
+          path.scope = "subpart";
+          path.subPartKey = segs[5];
+          leafStart = 6;
+        }
+        var container = segs[leafStart];
+        if (container && ITEM_CONTAINERS[container] && segs.length > leafStart + 1) {
+          path.scope = ITEM_CONTAINERS[container];
+          path.itemKey = segs[leafStart + 1];
+          path.field = segs.slice(leafStart + 2).join(".");
+          if (path.scope === "hit_box") {
+            path.elementUuid = path.itemKey;
+          } else if (path.scope === "interact_box" && config) {
+            path.elementUuid = _findInteractBoxUuid(config, path);
+          }
+        } else {
+          path.field = segs.slice(leafStart).join(".");
+        }
+        var detail = error.hint || error.expected || "";
+        if (typeof detail === "object") detail = JSON.stringify(detail);
+        var message = error.code + (detail ? "\uFF1A" + detail : "");
+        if (error.got !== void 0 && error.got !== null && typeof error.got !== "object") {
+          message += "\uFF08\u5F53\u524D\u503C: " + String(error.got) + "\uFF09";
+        }
+        return {
+          severity: "error",
+          code: error.code,
+          message,
+          path
+        };
+      }
+      function _findInteractBoxUuid(config, path) {
+        var variant = config && config.parts && config.parts[path.partId] && config.parts[path.partId].variants && config.parts[path.partId].variants[path.variantName];
+        var sp = variant && variant.sub_parts && variant.sub_parts[path.subPartKey];
+        var entry = sp && sp.interact_boxes && sp.interact_boxes[path.itemKey];
+        return entry && entry._uuid || "";
+      }
+      function issueKey(p) {
+        var path = p && p.path || {};
+        return [
+          path.scope || "",
+          path.partId || "",
+          path.variantName || "",
+          path.subPartKey || "",
+          path.itemKey || "",
+          path.field || ""
+        ].join("|");
+      }
+      function dedupeIssues(primary, schema) {
+        var out = [];
+        var seen = {};
+        (primary || []).forEach(function(p) {
+          out.push(p);
+          seen[issueKey(p)] = true;
+        });
+        (schema || []).forEach(function(p) {
+          var key = issueKey(p);
+          if (!seen[key]) {
+            seen[key] = true;
+            out.push(p);
+          }
+        });
+        return out;
+      }
+      function collectAllIssues(config) {
+        if (!config || typeof config !== "object") return [];
+        var primary = collectIssues(config);
+        Object.keys(config.parts || {}).forEach(function(partId) {
+          if (!keys.isSafePartId(partId)) {
+            primary.push({
+              severity: "error",
+              code: "unsafe_part_id",
+              message: '\u96F6\u4EF6 ID "' + partId + '" \u4E0D\u5B89\u5168\uFF08\u4E0D\u80FD\u4F5C\u4E3A\u5BFC\u51FA\u8DEF\u5F84\u6BB5\uFF09',
+              path: { scope: "part", partId, variantName: "", field: "" }
+            });
+          }
+        });
+        var schema = validateTree(config, { completeness: true }).map(function(e) {
+          return toProblem(e, config);
+        });
+        return dedupeIssues(primary, schema);
+      }
+      function probeEncodable(config, existingIssues) {
+        var out = [];
+        var parts = config && config.parts || {};
+        var reported = existingIssues || [];
+        Object.keys(parts).forEach(function(partId) {
+          var hasError = reported.some(function(p) {
+            return p && p.severity === "error" && p.path && p.path.partId === partId;
+          });
+          if (hasError) return;
+          try {
+            PartCodec.encode(JSON.parse(JSON.stringify(parts[partId])));
+          } catch (e) {
+            out.push({
+              severity: "error",
+              code: "encode_failed",
+              message: '\u96F6\u4EF6 "' + partId + '" \u7684\u6570\u636E\u65E0\u6CD5\u7F16\u7801\u6210\u5BFC\u51FA JSON\uFF1A' + (e && e.message ? e.message : String(e)),
+              path: { scope: "part", partId, variantName: "", field: "" }
+            });
+          }
+        });
+        return out;
+      }
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+          toProblem,
+          dedupeIssues,
+          issueKey,
+          collectAllIssues,
+          probeEncodable
+        };
       }
     }
   });
@@ -20879,92 +21247,8 @@
       init_define_BUILTIN_PACK_META();
       init_define_BUILTIN_SUBSYSTEMS();
       init_define_SCHEMAS();
-      var { collectIssues } = require_validate2();
-      var { validateTree } = require_validate();
-      var keys = require_keys();
+      var issuesLib = require_issues();
       var { assertSafePartIds } = require_safe_part_ids();
-      var ITEM_CONTAINERS = {
-        hit_boxes: "hit_box",
-        interact_boxes: "interact_box",
-        connectors: "connector",
-        subsystems: "subsystem"
-      };
-      function toProblem(error, config) {
-        var segs = error && error.path || [];
-        var path = { scope: "config", partId: "", variantName: "" };
-        if (segs[0] === "parts" && segs.length >= 2) {
-          path.scope = "part";
-          path.partId = segs[1];
-        }
-        if (segs[2] === "variants" && segs.length >= 4) {
-          path.scope = "variant";
-          path.variantName = segs[3];
-        }
-        var leafStart = 4;
-        if (segs[4] === "sub_parts" && segs.length >= 6) {
-          path.scope = "subpart";
-          path.subPartKey = segs[5];
-          leafStart = 6;
-        }
-        var container = segs[leafStart];
-        if (container && ITEM_CONTAINERS[container] && segs.length > leafStart + 1) {
-          path.scope = ITEM_CONTAINERS[container];
-          path.itemKey = segs[leafStart + 1];
-          path.field = segs.slice(leafStart + 2).join(".");
-          if (path.scope === "hit_box") {
-            path.elementUuid = path.itemKey;
-          } else if (path.scope === "interact_box" && config) {
-            path.elementUuid = _findInteractBoxUuid(config, path);
-          }
-        } else {
-          path.field = segs.slice(leafStart).join(".");
-        }
-        var detail = error.hint || error.expected || "";
-        if (typeof detail === "object") detail = JSON.stringify(detail);
-        var message = error.code + (detail ? "\uFF1A" + detail : "");
-        if (error.got !== void 0 && error.got !== null && typeof error.got !== "object") {
-          message += "\uFF08\u5F53\u524D\u503C: " + String(error.got) + "\uFF09";
-        }
-        return {
-          severity: "error",
-          code: error.code,
-          message,
-          path
-        };
-      }
-      function _findInteractBoxUuid(config, path) {
-        var variant = config && config.parts && config.parts[path.partId] && config.parts[path.partId].variants && config.parts[path.partId].variants[path.variantName];
-        var sp = variant && variant.sub_parts && variant.sub_parts[path.subPartKey];
-        var entry = sp && sp.interact_boxes && sp.interact_boxes[path.itemKey];
-        return entry && entry._uuid || "";
-      }
-      function issueKey(p) {
-        var path = p && p.path || {};
-        return [
-          path.scope || "",
-          path.partId || "",
-          path.variantName || "",
-          path.subPartKey || "",
-          path.itemKey || "",
-          path.field || ""
-        ].join("|");
-      }
-      function dedupeIssues(primary, schema) {
-        var out = [];
-        var seen = {};
-        (primary || []).forEach(function(p) {
-          out.push(p);
-          seen[issueKey(p)] = true;
-        });
-        (schema || []).forEach(function(p) {
-          var key = issueKey(p);
-          if (!seen[key]) {
-            seen[key] = true;
-            out.push(p);
-          }
-        });
-        return out;
-      }
       function canExport(config) {
         if (!config || typeof config !== "object") {
           return {
@@ -20979,21 +21263,8 @@
             issues: []
           };
         }
-        var primary = collectIssues(config);
-        Object.keys(config.parts || {}).forEach(function(partId) {
-          if (!keys.isSafePartId(partId)) {
-            primary.push({
-              severity: "error",
-              code: "unsafe_part_id",
-              message: '\u96F6\u4EF6 ID "' + partId + '" \u4E0D\u5B89\u5168\uFF08\u4E0D\u80FD\u4F5C\u4E3A\u5BFC\u51FA\u8DEF\u5F84\u6BB5\uFF09',
-              path: { scope: "part", partId, variantName: "", field: "" }
-            });
-          }
-        });
-        var schema = validateTree(config, { completeness: true }).map(function(e) {
-          return toProblem(e, config);
-        });
-        var issues = dedupeIssues(primary, schema);
+        var issues = issuesLib.collectAllIssues(config);
+        issues = issues.concat(issuesLib.probeEncodable(config, issues));
         var errors = issues.filter(function(p) {
           return p.severity === "error";
         });
@@ -21007,9 +21278,11 @@
         canExport,
         assertSafePartIds,
         executeExport: pipeline.executeExport,
-        dedupeIssues,
-        toProblem,
-        _issueKey: issueKey
+        // 问题清单原语：留在本文件导出，保持既有调用方与测试的入口不变
+        collectAllIssues: issuesLib.collectAllIssues,
+        dedupeIssues: issuesLib.dedupeIssues,
+        toProblem: issuesLib.toProblem,
+        _issueKey: issuesLib.issueKey
       };
     }
   });
@@ -29521,7 +29794,7 @@
       init_define_SCHEMAS();
       var { createLogger: createLogger2 } = require_logger();
       var { getConfig } = require_persistence();
-      var { collectIssues } = require_validate2();
+      var { collectAllIssues } = require_issues();
       var log2 = createLogger2("ValidationCheck");
       var CHECK_ID = "mm_validation";
       var _checkInstance = null;
@@ -29564,7 +29837,7 @@
               this.errors.empty();
               return;
             }
-            var problems = collectIssues(config);
+            var problems = collectAllIssues(config);
             var warnings = [];
             var errors = [];
             for (var i = 0; i < problems.length; i++) {
@@ -32767,7 +33040,7 @@
       var content_pack_manager = require_content_pack_manager();
       var nameUtils = require_name_utils();
       var { buildSignalTargetOptions } = require_signal_target_options();
-      var { collectIssues } = require_validate2();
+      var { collectAllIssues } = require_issues();
       var { aggregate, resolveIssueLevel, filterFieldIssues } = require_validation_types();
       var { showAddTagDialog, _hashTagColor } = require_tag_dialog_helper();
       var undo = require_undo();
@@ -33128,13 +33401,13 @@
             });
           },
           /**
-           * 校验问题全集（单一校验源 collectIssues）
+           * 校验问题全集（单一来源 services/issues.js：业务规则 + schema 值）
            * 依赖 config（字段编辑响应式）+ markerVersion.v（非响应式删除兜底）
            */
           validationIssues: function() {
             if (!this.config || !this.markerVersion) return [];
             void this.markerVersion.v;
-            return collectIssues(this.config);
+            return collectAllIssues(this.config);
           },
           /**
            * 按当前零件/变体过滤后的聚合结果（bySubPart / byItem / byPartVariant）
@@ -36587,7 +36860,7 @@
       var em = require_element_markers();
       var defs = require_content_pack_manager();
       var params = require_params();
-      var { collectIssues } = require_validate2();
+      var { collectAllIssues } = require_issues();
       var { canExport } = require_export();
       var cubeUv = require_cube_uv();
       var result = require_result();
@@ -36693,7 +36966,7 @@
       }
       function safeIssues(config) {
         try {
-          return collectIssues(config) || [];
+          return collectAllIssues(config) || [];
         } catch (e) {
           return [];
         }
@@ -37570,7 +37843,7 @@
   var { registerUndoBridge, unregisterUndoBridge } = require_undo();
   var { showToast } = require_notify();
   var docPorts = require_ports();
-  var PLUGIN_VERSION = "0.6.1";
+  var PLUGIN_VERSION = "0.6.2";
   var log = createLogger("Plugin");
   Plugin.register("machine_max_bb_plugin", {
     title: "MachineMax \u96F6\u4EF6\u5B9A\u4E49",
