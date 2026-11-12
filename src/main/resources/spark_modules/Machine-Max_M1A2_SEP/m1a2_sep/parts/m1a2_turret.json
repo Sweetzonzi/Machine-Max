@@ -179,16 +179,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.port_mg_seat"
-                ]
-              }
-            },
-            "interact.m1a2_sep.rws": {
-              "bone": "MM_Interact_rws",
-              "interact_mode": "accurate",
-              "signal_targets": {
-                "interact": [
-                  "subsystem.m1a2_sep.rws_seat"
+                  "subsystem.m1a2_sep.loader_seat"
                 ]
               }
             }
@@ -303,6 +294,9 @@
                   "subsystem.m1a2_sep.gunner_sight",
                   "subsystem.m1a2_sep.gunner_sight_medium",
                   "subsystem.m1a2_sep.gunner_sight_high"
+                ],
+                "sight_rws": [
+                  "global"
                 ]
               },
               "dismount_locators": [
@@ -316,7 +310,12 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "loader_seat",
-              "control_group_preset": "machine_max:empty",
+              "control_group_preset": "m1a2_sep:m1a2_loader",
+              "camera_discovery_targets": {
+                "sight_port_mg": [
+                  "global"
+                ]
+              },
               "dismount_locators": [
                 "turret_exit_left",
                 "turret_exit_right"
@@ -394,19 +393,6 @@
                 ]
               }
             },
-            "subsystem.m1a2_sep.port_mg_seat": {
-              "type": "machine_max:seat",
-              "definition": "m1a2_sep:external_mg_seat",
-              "locator": "port_mg_seat",
-              "control_group_preset": "m1a2_sep:m1a2_port_mg",
-              "dismount_locators": [
-                "turret_exit_left",
-                "turret_exit_right"
-              ],
-              "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third",
-              "allow_use_items": false
-            },
             "subsystem.m1a2_sep.ammo_loader_he": {
               "type": "machine_max:regen_loader",
               "definition": "machine_max:120mm_m256_regen_loader",
@@ -422,23 +408,6 @@
                   "global"
                 ]
               }
-            },
-            "subsystem.m1a2_sep.rws_seat": {
-              "type": "machine_max:seat",
-              "definition": "machine_max:default_3rd_seat",
-              "locator": "rws_seat",
-              "control_group_preset": "m1a2_sep:m1a2_rws",
-              "camera_discovery_targets": {
-                "sight_rws": [
-                  "global"
-                ]
-              },
-              "dismount_locators": [
-                "turret_exit_left",
-                "turret_exit_right"
-              ],
-              "first_hud_layout": "m1a2_sep:m1a2_orientation",
-              "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
             "subsystem.m1a2_sep.coax_762_controller": {
               "type": "machine_max:weapon_controller",
@@ -847,6 +816,11 @@
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_m240_launcher",
               "locator": "port_mg_muzzle"
+            },
+            "subsystem.m1a2_sep.port_mg_sight": {
+              "type": "machine_max:sight",
+              "definition": "m1a2_sep:port_mg_sight",
+              "locator": "port_mg_optic"
             }
           }
         },

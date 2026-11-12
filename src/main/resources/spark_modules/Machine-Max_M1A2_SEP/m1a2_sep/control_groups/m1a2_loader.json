@@ -1,17 +1,17 @@
 {
   "base_group": {
-    "name": "controlGroup.m1a2_sep.m1a2_rws",
+    "name": "controlGroup.m1a2_sep.loader_m240",
     "control_mode": "inherit",
     "move_targets": {},
     "regular_targets": {},
     "bindings": [],
     "view_targets": {
-      "aim_rws": [
+      "aim_port_mg": [
         "global"
       ]
     },
     "main_weapon_targets": {
-      "fire_rws": [
+      "fire_port_mg": [
         "global"
       ]
     },

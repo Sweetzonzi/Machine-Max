@@ -62,6 +62,20 @@
           "subsystem.m1a2_sep.coax_controller"
         ]
       }
+    },
+    {
+      "name": "controlGroup.m1a2_sep.commander_rws",
+      "control_mode": "inherit",
+      "view_targets": {
+        "aim_rws": [
+          "global"
+        ]
+      },
+      "main_weapon_targets": {
+        "fire_rws": [
+          "global"
+        ]
+      }
     }
   ],
   "active_index": -1

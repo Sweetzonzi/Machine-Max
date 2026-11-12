@@ -3,7 +3,7 @@
   "type": "machine_max:sight",
   "basic_durability": 10,
   "vertical_stabilized": false,
-  "horizontal_stabilized": true,
+  "horizontal_stabilized": false,
   "base_zoom": 1,
   "max_zoom": 1,
   "scope_hud_layout": "m1a2_sep:m1a2_ground_orientation",
