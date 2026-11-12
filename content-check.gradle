@@ -2,7 +2,7 @@
 //
 //   ./gradlew checkContent    只读校验（check 依赖它，CI 的 build 因此也会跑）
 //
-// 五类问题都只能靠读 JSON 发现，编译期不会报：
+// 下列问题都只能靠读 JSON 发现，编译期不会报：
 //
 //  1. 装配体 / 载具蓝图与模板对齐。创造栏的两个页签按模板 id 生成物品，物品里存的是
 //     模板 id，读取时再拿它去 assemblies/、blueprints/ 查同名条目。文件名与模板不同名、
@@ -16,6 +16,10 @@
 //  5. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
 //     FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现为屏幕上一段原始键名；
 //     只有一边语言有的键则让另一边显示原始键名。两者都不报错。
+//
+// 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
+// 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
+// 结果是整份文件读不出来——模板读不出来就放不出车，配件读不出来则那个子系统整条消失。
 //
 // 口径：
 //  - 只扫各包的 <namespace>/ 目录，跳过 docs/（schema 副本由 checkSchemas 管）。
@@ -33,7 +37,12 @@ import groovy.json.JsonSlurper
 
 def sparkModulesDir = new File(projectDir, 'src/main/resources/spark_modules')
 
-// 去注释与尾逗号：内容包 JSON 是 JSONC。字符串内的 // 不能被当成注释，所以要逐字符扫。
+// 去注释：内容包 JSON 是 JSONC。字符串内的 // 不能被当成注释，所以要逐字符扫。
+//
+// 尾逗号在这里统一剔掉只是为了喂 JsonSlurper——它的宽容度与运行期刚好相反：
+// Groovy 容忍对象尾逗号、不容忍数组尾逗号；运行期读内容包走 Spark-Core 的 PackCodec，
+// 即 JsonParser.parseString（Gson 宽松模式），它容忍数组尾逗号、拒绝对象尾逗号。
+// 真正按运行期口径判对象尾逗号的是下面的 findObjectTrailingComma。
 def stripJsonc = { String text ->
     String body = text.startsWith('\uFEFF') ? text.substring(1) : text
     StringBuilder out = new StringBuilder(body.length())
@@ -79,6 +88,95 @@ def stripJsonc = { String text ->
         i++
     }
     out.toString().replaceAll(',(\\s*[}\\]])', '$1')
+}
+
+// 对象尾逗号的位置（无则 -1）：Gson 宽松模式读 `{"a":1,}` 会抛
+// MalformedJsonException: Expected name，而 JsonSlurper 读它不报错，
+// 所以这类错误能过检查、只在进游戏读模板时炸掉整个文件。判据与 Gson 一致：
+// 逗号后面（跳过空白与注释）紧跟 `}` 即命中；紧跟 `]` 不算（Gson 接受数组尾逗号）。
+def findObjectTrailingComma = { String text ->
+    int i = 0
+    int n = text.length()
+    boolean inString = false
+    boolean escaped = false
+    while (i < n) {
+        char c = text.charAt(i)
+        if (inString) {
+            if (escaped) {
+                escaped = false
+            } else if (c == ('\\' as char)) {
+                escaped = true
+            } else if (c == ('"' as char)) {
+                inString = false
+            }
+            i++
+            continue
+        }
+        if (c == ('"' as char)) {
+            inString = true
+            i++
+            continue
+        }
+        if (c == ('/' as char) && i + 1 < n && text.charAt(i + 1) == ('/' as char)) {
+            while (i < n && text.charAt(i) != ('\n' as char)) {
+                i++
+            }
+            continue
+        }
+        if (c == ('/' as char) && i + 1 < n && text.charAt(i + 1) == ('*' as char)) {
+            i += 2
+            while (i + 1 < n && !(text.charAt(i) == ('*' as char) && text.charAt(i + 1) == ('/' as char))) {
+                i++
+            }
+            i = Math.min(i + 2, n)
+            continue
+        }
+        if (c == (',' as char)) {
+            int j = i + 1
+            while (j < n) {
+                char d = text.charAt(j)
+                if (d == (' ' as char) || d == ('\n' as char) || d == ('\r' as char) || d == ('\t' as char)) {
+                    j++
+                    continue
+                }
+                if (d == ('/' as char) && j + 1 < n && text.charAt(j + 1) == ('/' as char)) {
+                    while (j < n && text.charAt(j) != ('\n' as char)) {
+                        j++
+                    }
+                    continue
+                }
+                if (d == ('/' as char) && j + 1 < n && text.charAt(j + 1) == ('*' as char)) {
+                    j += 2
+                    while (j + 1 < n && !(text.charAt(j) == ('*' as char) && text.charAt(j + 1) == ('/' as char))) {
+                        j++
+                    }
+                    j = Math.min(j + 2, n)
+                    continue
+                }
+                break
+            }
+            if (j < n && text.charAt(j) == ('}' as char)) {
+                return i
+            }
+        }
+        i++
+    }
+    return -1
+}
+
+// 字符下标 → 1 起的行列，用于把上面扫到的位置报成编辑器能跳的位置
+def lineColumnOf = { String text, int index ->
+    int line = 1
+    int column = 1
+    for (int i = 0; i < index && i < text.length(); i++) {
+        if (text.charAt(i) == ('\n' as char)) {
+            line++
+            column = 1
+        } else {
+            column++
+        }
+    }
+    [line, column]
 }
 
 // 闭包自引用需要先声明
@@ -171,6 +269,15 @@ tasks.register('checkContent') {
                 String relative = pack.dir.toPath().relativize(file.toPath()).toString()
                         .replace(File.separatorChar, '/' as char)
                 resourceFiles << relative
+                if (relative.endsWith('.json')) {
+                    String raw = file.getText('UTF-8')
+                    int commaAt = findObjectTrailingComma(raw)
+                    if (commaAt >= 0) {
+                        def (int line, int column) = lineColumnOf(raw, commaAt)
+                        problems << pack.name + '/' + relative + ':' + line + ':' + column +
+                                '：对象尾逗号（运行期 Gson 读成 Expected name，整个文件读不出来）'
+                    }
+                }
                 if (relative.startsWith('models/') && relative.endsWith('.geo.json')) {
                     // 模型引用写成 `machine_max:k17.geo`，文件名是 `k17.geo.json`：存去掉 .json 的名字
                     geoModels << file.name.substring(0, file.name.length() - '.json'.length())
