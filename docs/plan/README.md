@@ -87,6 +87,7 @@
 
 | 文档 | 现状 |
 | --- | --- |
+| [武器系统-AmmoBelt与发射器装填第一阶段重构计划](计划中/武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) | P0 已完成（§8.1 的迁移清单：19 个 Launcher 定义／23 个实例的 `single_round_loading`，21 个 regen_loader 定义／25 个实例的交付长度、容量与时间），P1 起未实施；有限 AmmoBelt 含 label 与可选自身回充，Launcher 推进回充并允许正常换装；regen 沿用 regen_per_minute，以 belt_definition 交付并按计数回收；ammoLoader 做接口编译适配。第一阶段以 `gradlew --offline classes` 成功验收；物品实现、容器资源、机构／弹架拆分、人工与半自动、乘员、转运、配弹界面和运行验收见 §10 |
 | [动力系统-动力图与支路控制实施计划](计划中/动力系统-动力图与支路控制实施计划.md) | 待审阅、未实施；v2 已吸收外审 E1—E12 及后续七项句级意见，定位见正文 §15；由 SubsystemController 持图，机械消息直接传 producer 对象，保留 MechPower 载荷；P0—P7 覆盖路径解析、反馈资格、确定性更新、支路换挡、功率预算与简化双流验收 |
 | [模型表面查询与骨骼贴花实现计划](计划中/模型表面查询与骨骼贴花实现计划.md) | 设计定稿、功能待实现；首版由代码创建／删除并服务固定贴图弹孔，复用投射物批量命中包；P1—P7 覆盖模型射线、骨骼黑名单、投影裁剪、每 bone 附着、缓存与绘制 |
 | [武器系统-光束系统详细设计](计划中/武器系统-光束系统详细设计.md) | 设计阶段；代码中尚无 `RayProjectileType` / `RayManager` / `RayLauncherSubsystem` |
