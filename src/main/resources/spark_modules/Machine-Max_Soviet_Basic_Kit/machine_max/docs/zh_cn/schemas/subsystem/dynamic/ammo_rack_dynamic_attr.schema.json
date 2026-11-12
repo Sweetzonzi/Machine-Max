@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.json",
+  "title": "物品弹药架子系统动态属性",
+  "description": "物品弹药架的实例属性。当前只有型号引用：容器按型号容量建立，物品往返尚未实现（WIP）。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:ammo_rack",
+      "description": "子系统类型，必须为 'machine_max:ammo_rack'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的物品弹药架静态属性定义文件。"
+    }
+  },
+  "required": ["type", "definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_rack",
+      "definition": "machine_max:7_62mm_item_ammo_rack"
+    }
+  ]
+}

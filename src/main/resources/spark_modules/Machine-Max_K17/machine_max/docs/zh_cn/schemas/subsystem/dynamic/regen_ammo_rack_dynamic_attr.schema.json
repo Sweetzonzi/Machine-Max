@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/regen_ammo_rack_dynamic_attr.json",
+  "title": "再生弹药架子系统动态属性",
+  "description": "再生弹药架的实例属性：该架持有哪一份交付规格，以及在哪些供弹频道上被上游发现。容量与再生速率等按型号共享的字段在静态属性文件里。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_ammo_rack",
+      "description": "子系统类型，必须为 'machine_max:regen_ammo_rack'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的再生弹药架静态属性定义文件。"
+    },
+    "belt_definition": {
+      "type": "object",
+      "description": "交付规格：每次取弹取它的一份副本，字段与弹药内容格式一致。remaining 只表达模板自身的余量，取弹时按实际库存填写：库存不足一份时交付剩余发数，因此交付实例的 remaining 可能小于 length。length 是一份的发数（也是单次交付上限），不得超过型号 capacity。",
+      "properties": {
+        "container_id": {
+          "type": "string",
+          "description": "可选的内容包容器型号，供物品还原、容量与呈现使用；缺省表示虚拟供弹。本阶段只做标识格式解析与保存。"
+        },
+        "label": {
+          "type": "string",
+          "default": "",
+          "description": "弹链显示名，按字面显示在武器 HUD 上。留空时取首发弹种的展示文本。它只影响显示，不参与弹药池分组、路由或唯一身份。"
+        },
+        "pattern": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "ammo": {
+                "type": "string",
+                "description": "投射物资源地址，例如 machine_max:30mm_3ubr6_ap。"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "连续同种弹药的发数。"
+              }
+            },
+            "required": ["ammo", "count"],
+            "additionalProperties": false
+          },
+          "description": "有序配弹模式：条目按书写顺序展开，取弹位置为 (length - remaining) % patternTotal。"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "一份 Belt 的容量（发）。与型号 capacity 相互独立：容量是架能存多少发，长度是一份最多交付多少发。长度大于容量属于配置错误，解码期拒绝。"
+        },
+        "recharge": {
+          "type": "object",
+          "description": "可选自身回充：声明后已装 Belt 由持有它的发射器按速率补回打掉的发数，补到 length 为止。",
+          "properties": {
+            "regen_per_minute": { "type": "number", "minimum": 0, "description": "回充速率（发／分钟）。" },
+            "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "成功射击后暂停回充的秒数。" },
+            "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "每补一发的能源费用，由持有者提供的能源网格支付。" }
+          },
+          "required": ["regen_per_minute"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["pattern", "length"],
+      "additionalProperties": false
+    },
+    "ammo_discovery_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "本架接受的供弹服务频道。自动装弹机的上游查询按它到达本架。频道只表达服务类别（如 ammo_57mm），不承载业务信号。"
+    }
+  },
+  "required": ["type", "definition", "belt_definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "definition": "machine_max:30mm_2a42_regen_ammo_rack",
+      "belt_definition": {
+        "label": "AP/HE",
+        "pattern": [
+          { "ammo": "machine_max:30mm_3ubr6_ap", "count": 1 },
+          { "ammo": "machine_max:30mm_3uof8_he", "count": 1 }
+        ],
+        "length": 150,
+        "recharge": { "regen_per_minute": 100, "regen_delay": 0.3, "energy_cost_per_round": 0 }
+      },
+      "ammo_discovery_inputs": ["ammo_30mm"]
+    }
+  ]
+}

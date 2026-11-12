@@ -1,76 +1,128 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import cn.solarmoon.spark_core.physics.PenetrationKey;
-import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffComposition;
-import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr;
-import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 装弹机子系统。<br>
- * 管理物理弹药供给、装填时序和弹序循环，仅实现 {@link IAmmoSupplier} 接口。<br>
- * 不实现 {@link IAmmoConsumer}（无多级弹药链支持）。
+ * 自动装弹机子系统。<br>
+ * 只做机械装填那一段：为每个作业占一个槽位、按 {@code reload_time} 计时，计时结束的一次交付
+ * 直接取自上游弹药架并交给下游，本机不落第二份库存。库存、容量与再生归
+ * {@link RegenAmmoRackSubsystem}，作业进度归 Launcher。
  * <p>
- * 两种装填模式：
- * <ul>
- *   <li>{@code roundByRound=false} — 整体换弹匣（机炮），切换供给来源时触发 reloadTimeTicks 延迟</li>
- *   <li>{@code roundByRound=true} — 逐发压入（火炮），每发弹药需等待 reloadTimeTicks</li>
- * </ul>
+ * 上游来源由本机自己按 {@code ammo_discovery_targets} 查询，只接受库存持有者（弹药架）；
+ * 机构之间不互认上游，机械链因此不会成环。下游按 {@code ammo_discovery_inputs} 在供弹频道上
+ * 发现本机，与直接查询弹药架的人力直取路径区分开。
  * <p>
- * 状态机：IDLE → RELOADING(consumer, remainingTicks) → READY → consume → IDLE
+ * 并发产能沿用布尔语义：{@code can_supply_multiple=false} 的机构一次只为一个作业分配槽位
+ * （独占且满速）；{@code true} 时不限槽位、各作业分别满速。没排上的请求返回"已受理"但不起计时器，
+ * 下个 tick 重发请求再试——一条输弹线一次只移动一份，因此没有等待队列。
  * <p>
- * 多消费者：{@code can_supply_multiple=false} 时整台装弹机同一时刻只推进一个消费者的计时器，
- * 没排上的消费者在 {@link #requestRound(IAmmoConsumer)} 中只得到"已受理"，不起计时器，
- * 下个 tick 重发请求再试，直到前一个消费者取走弹药腾出输弹线——一条输弹链一次只能移动一发。
- * {@code can_supply_multiple=true} 时所有消费者的计时器并行推进。<br>
- * 因此不存在等待队列：{@link #reloadTimers} 里有没有本消费者，就是"轮到没轮到"。
- * <p>
- * 计时器与就绪位都用插入有序的普通集合：本子系统的读写全在主线程（自身 tick、武器控制器的路由、
- * HUD 刷新都在主线程），不需要并发容器。
- * <p>
- * <b>WIP：</b>弹仓以物品容器实现，物品与 {@link AmmoBelt} 的往返映射尚未做完。交付与回收因此
- * 明确报告"不可交付 / 拒收"（{@link #getDeliverySpec()} 返回 null、{@link #consumeReadyBelt} 返回 null、
- * {@link #returnBelt} 返回 false），路由不会把它选为候选，也不会用占位物品冒充一次成功交付。
- * 弹药链与路由决策暂由再生装弹机承担。
+ * 计时器记<b>已消耗 tick 数</b>并只在 {@link #onTick()} 里自增，取得与其他子系统一致的两条性质：
+ * 停摆期间（未激活 / 已摧毁）计时不走，恢复后接着原进度；交付进度不跨存档，读档后重新发起。
  */
-@ApiStatus.Experimental
-public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
+public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, ISoundSpreader {
 
     public final AmmoLoaderSubsystemAttr attr;
 
-    /** 物理弹药容器（FIFO） */
-    private final SimpleContainer container;
+    /**
+     * 每个消费者这次交付的<b>已装填 tick 数</b>，插入有序。<br>
+     * 有键即"已轮到本消费者"；每个 {@link #onTick()} 自增 1，达到当前所需耗时即转入
+     * {@link #readyConsumers}。判定对象是<b>当前</b> {@link #getReloadTimeTicks()}，
+     * 因此型号属性中途改变装填耗时对在途那一份同样生效。
+     */
+    private final Map<IAmmoConsumer, Integer> deliveryLoadedTicks = new LinkedHashMap<>();
 
-    /** 每个消费者的装填剩余 tick 计时器，插入有序 */
-    private final Map<IAmmoConsumer, Integer> reloadTimers = new LinkedHashMap<>();
-
-    /** 每个消费者弹药是否已就绪（交付已完成、等消费者取走），插入有序 */
+    /** 每个消费者的交付是否已就绪（计时完成、等消费者取走），插入有序 */
     private final Set<IAmmoConsumer> readyConsumers = new LinkedHashSet<>();
 
-    /** 当前绑着本机的消费者集合（认领），由服务端路由与发射器释放绑定维护，见接口注释 */
+    /**
+     * 当前绑着本机的消费者集合（认领），由服务端路由在选中本机时写入、发射器释放绑定时移除。<br>
+     * 不入存档也不同步：读档后第一次路由按名字序重建。
+     */
     private final Set<IAmmoConsumer> boundConsumers = new LinkedHashSet<>();
+
+    /** 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发；仅客户端有效 */
+    private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new LinkedHashMap<>();
+
+    /**
+     * 本机查询得到的上游弹药架，按到达顺序保存；结构变化时整体重建。<br>
+     * 只含库存持有者，且不含本机自身。
+     */
+    private final List<RegenAmmoRackSubsystem> upstreams = new ArrayList<>();
 
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.container = new SimpleContainer(attr.staticAttribute.getMagazineCapacity());
+    }
+
+    // ==================== 上游发现 ====================
+
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        discoverUpstreams();
+    }
+
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        discoverUpstreams();
+    }
+
+    /**
+     * 按 {@code ammo_discovery_targets} 的每个频道做只读查询，收集可达的库存持有者。<br>
+     * 查询结果按对象身份去重，且只保留与宿主同一装配体内的架；机构本身不是库存持有者，因此不会被
+     * 收进来，机械链不会成环。
+     * <p><b>调用线程：</b>主线程（挂载与结构变化）。
+     */
+    private void discoverUpstreams() {
+        List<RegenAmmoRackSubsystem> found = new ArrayList<>();
+        for (String channel : attr.ammoDiscoveryTargets.keySet()) {
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (!(terminal instanceof RegenAmmoRackSubsystem rack)) continue;
+                    if (!sameAssembly(rack)) continue;
+                    if (!found.contains(rack)) found.add(rack);
+                }
+            }
+        }
+        upstreams.clear();
+        upstreams.addAll(found);
+    }
+
+    /** 该子系统是否与本机挂在同一个装配体上。 */
+    private boolean sameAssembly(AbstractSubsystem other) {
+        return other.getOwner().getSubPart().getPart().assembly == getOwner().getSubPart().getPart().assembly;
+    }
+
+    /**
+     * 本次交付使用的上游弹药架：优先取可工作且有货的那一个，其次取可工作但空仓的（它会自行再生）。
+     *
+     * @return 上游弹药架；没有可工作的上游时返回 {@code null}
+     */
+    @Nullable
+    private RegenAmmoRackSubsystem upstream() {
+        RegenAmmoRackSubsystem fallback = null;
+        for (RegenAmmoRackSubsystem rack : upstreams) {
+            if (!rack.isOperational()) continue;
+            if (rack.hasAmmo()) return rack;
+            if (fallback == null) fallback = rack;
+        }
+        return fallback;
     }
 
     // ==================== IAmmoSupplier 实现 ====================
@@ -82,49 +134,42 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     @Override
     public boolean hasAmmo() {
-        return getAmmoCount() > 0;
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack != null && rack.hasAmmo();
     }
 
     /**
-     * 供给能力仍按整机判定：这台装弹机没有拆出模块，机构故障的表达留给后续模块化。
-     * 与 {@link #hasAmmo()} 的分工见接口注释——空仓不等于不能交付，满仓也不等于能交付。
+     * 交付能力：本机启用、未摧毁，且存在可工作的上游弹药架。<br>
+     * 空架但健康仍算可交付——它照常再生，缺弹等待由状态与阶段表达。
      */
     @Override
     public boolean isSupplyOperational() {
-        return isActive();
+        return isActive() && !isDestroyed() && upstream() != null;
     }
 
     @Override
     public int getRemainingCount() {
-        return getAmmoCount();
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? 0 : rack.getAmmoCount();
     }
 
     @Override
     @Nullable
     public ProjectileType getSuppliedType() {
-        // 返回容器中第一发弹药的类型，null 表示空仓
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
-            if (!stack.isEmpty()) {
-                return getProjectileTypeFromItem(stack);
-            }
-        }
-        return null;
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? null : rack.getSuppliedType();
     }
 
-    /**
-     * 下一份交付的规格。<br>
-     * 物品与 {@link AmmoBelt} 的往返映射尚未实现，因此没有可交付规格：本机不进入路由候选。
-     */
     @Override
     @Nullable
     public AmmoBelt getDeliverySpec() {
-        return null;
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? null : rack.getDeliverySpec();
     }
 
     @Override
     public int getReloadTimeTicks() {
-        return (int) (attr.staticAttribute.getReloadTime() * 20f); // 秒 → tick
+        return Math.max(1, (int) (attr.staticAttribute.getReloadTime() * 20f)); // 秒 → tick
     }
 
     @Override
@@ -132,153 +177,159 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return attr.staticAttribute.isCanSupplyMultiple();
     }
 
+    /** 交付规格的弹链名（HUD 弹链选项卡用）。仅在客户端调用：文本取自玩家语言的翻译键。 */
     @Override
     public String getLabel() {
-        ProjectileType type = getSuppliedType();
-        if (type != null) {
-            ResourceLocation key = type.getRegistryKey();
-            return key != null ? key.toString() : "unknown";
-        }
-        return "empty";
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? "empty" : rack.getLabel();
+    }
+
+    @Override
+    public int getCapacity() {
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? -1 : rack.getCapacity();
     }
 
     /**
-     * 请求一发弹药，启动非阻塞装填计时器。<br>
-     * 仅在本地有弹药时启动装填，无弹药直接返回 false（不从上游请求补充）。
-     * 幂等性：同一 consumer 多次调用不会创建重复计时器。
+     * 请求一份交付，启动非阻塞计时器。<br>
+     * 幂等性：同一消费者多次调用不会创建重复计时器。
      * <p>
-     * {@code can_supply_multiple=false} 且已有别人在装填时，本次请求返回 true 但不启动计时器
-     * ——它没有被排上，下个 tick 重发请求即可再试。整个流程只需 {@link #reloadTimers}
-     * 一张表表达"谁的交付在进行中"，因此不记录等待队列。
+     * {@code can_supply_multiple=false} 且已有别人在计时时，本次请求返回 true 但不启动计时器
+     * ——它没有被排上，下个 tick 重发请求即可再试。
      *
-     * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示本地无弹
+     * @return true 表示请求已受理（已轮到它，或本次未被排上）；false 表示本机不可交付或上游无弹
      */
     @Override
     public boolean requestRound(IAmmoConsumer consumer) {
-        // 已在交付中（计时中或待取）→ 幂等返回
+        if (!isSupplyOperational()) return false;
         if (isRoundScheduled(consumer)) return true;
-
-        // 无弹药：不受理，等弹药到位后由消费者再请求
         if (!hasAmmo()) return false;
-
-        // 独占装弹机：已有别人占着这条输弹线，本次不排上
         if (!canSupplyMultiple() && hasScheduledRound()) return true;
-
-        reloadTimers.put(consumer, (int) (attr.staticAttribute.getReloadTime() * 20f));
+        deliveryLoadedTicks.put(consumer, 0);
         return true;
     }
 
     @Override
     public boolean isRoundScheduled(IAmmoConsumer consumer) {
-        return reloadTimers.containsKey(consumer) || readyConsumers.contains(consumer);
+        return deliveryLoadedTicks.containsKey(consumer) || readyConsumers.contains(consumer);
     }
 
     /**
-     * 这次装填已经走了多少 tick：总耗时减剩余。<br>
-     * 计时器是倒计时，所以这里换算一次。
+     * 这次交付已装填多少 tick，供外部查询（{@code -1} = 未在交付）。
+     * 与 {@link #onTick()} 的完成判定、{@link #getReloadProgress(IAmmoConsumer)} 的分子同源。
      */
     @Override
     public int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
-        Integer remaining = reloadTimers.get(consumer);
-        return remaining == null ? -1 : Math.max(0, getReloadTimeTicks() - remaining);
+        Integer loaded = deliveryLoadedTicks.get(consumer);
+        return loaded == null ? -1 : loaded;
     }
 
     /**
      * 是否已有消费者被开始交付。<br>
-     * 交付计时或已就绪待取都算"占着"：待取的那发还在弹仓里没被取走，同样不能被别人认领。
+     * 计时中或已就绪待取都算"占着"：待取的那一份还在上游架里没被取走，同样不能被别人认领。
      */
     @Override
     public boolean hasScheduledRound() {
-        return !reloadTimers.isEmpty() || !readyConsumers.isEmpty();
-    }
-
-    /**
-     * 清掉已经不能再来取弹（被摧毁或失活）的消费者的交付状态。<br>
-     * 消费者退场时不会通知供给者，而它的计时器/就绪位会一直占着输弹线，
-     * 使这台装弹机对后来者永久不可用；因此在 tick 里自行清理。
-     */
-    private void pruneGoneConsumers() {
-        reloadTimers.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
-        readyConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
-        boundConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
-    }
-
-    /**
-     * 该消费者是否已经不能再来取弹（被摧毁或失活）。
-     */
-    private static boolean isConsumerGone(IAmmoConsumer consumer) {
-        return consumer instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive());
+        return !deliveryLoadedTicks.isEmpty() || !readyConsumers.isEmpty();
     }
 
     /**
      * 取消该消费者尚未取走的交付。<br>
-     * 计时器与就绪位都只表示"已承诺交付"，弹仓计数要等
-     * {@link #consumeReadyBelt(IAmmoConsumer)} 取出时才扣减，因此这里没有已扣出的弹药需要归还，
-     * 清掉承诺即可；取消后输弹线立刻空出，等待中的消费者下次请求即可被排上。
+     * 就绪的那一份<b>仍记在上游架的库存里</b>（{@link #consumeReadyBelt} 才扣减），
+     * 因此清掉计时器与就绪位即可，不需要向上游退还——补了会让同一份被算两次。
      */
     @Override
     public void cancelRound(IAmmoConsumer consumer) {
-        reloadTimers.remove(consumer);
+        deliveryLoadedTicks.remove(consumer);
         readyConsumers.remove(consumer);
+        lastPlayedProgressKeys.remove(consumer);
     }
 
     @Override
     public boolean isRoundReady(IAmmoConsumer consumer) {
-        return readyConsumers.contains(consumer);
+        if (!isSupplyOperational()) return false;
+        if (readyConsumers.contains(consumer)) return true;
+        if (deliveryLoadedTicks.containsKey(consumer)) return false;
+        // 未被排上（或从未请求）：顺手再请求一次，由本机决定这次能否排上
+        requestRound(consumer);
+        return false;
     }
 
     /**
-     * 取走已就绪的交付。<br>
-     * 物品与 {@link AmmoBelt} 的往返映射尚未实现，因此这里不取走任何物品、也不声称成功：
-     * 就绪位被清除，返回 null。
+     * 取走已就绪的交付：从上游架扣减并生成一份独立实例，直接交给消费者。<br>
+     * 本机不缓存这份实例，扣减与写入在同一个主线程提交点完成。
+     *
+     * @return 一份独立实例的 Belt；未就绪、本机不可交付或上游已无弹时返回 null
      */
     @Override
     @Nullable
     public AmmoBelt consumeReadyBelt(IAmmoConsumer consumer) {
-        readyConsumers.remove(consumer);
-        return null;
+        if (!isSupplyOperational()) return null;
+        if (!readyConsumers.remove(consumer)) return null;
+        lastPlayedProgressKeys.remove(consumer);
+        RegenAmmoRackSubsystem rack = upstream();
+        if (rack == null) return null;
+        return rack.consumeBelt();
     }
 
-    /**
-     * 接收一份退还的弹药。<br>
-     * 把一份 Belt 还原成物品需要物品组件与容器型号，均未实现；本方法明确拒收，
-     * 调用方保留这一份，不用占位物品冒充收下。
-     */
     @Override
     public boolean returnBelt(AmmoBelt belt) {
-        return false;
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack != null && rack.returnBelt(belt);
     }
 
-    @Override
-    public int getCapacity() {
-        return attr.staticAttribute.getMagazineCapacity();
-    }
+    // ==================== 状态显示 ====================
 
     /**
-     * 装弹机当前工作状态（per-consumer）。<br>
-     * 注意这里不表达"有没有被排上"——那由 {@link #isRoundScheduled(IAmmoConsumer)} 回答。
+     * 机构当前为这个消费者报的工作状态。<br>
+     * 本机计时中或已就绪时报自己的档；否则把上游架的再生阶段映射进来，让打空后的等待在界面上
+     * 仍然可见（{@code RELOADING}），而不是一片熄灭。
      */
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
+        if (!isSupplyOperational()) return SupplierStatus.EMPTY;
         if (readyConsumers.contains(consumer)) return SupplierStatus.READY;
-        if (reloadTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
-        if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
-        return SupplierStatus.READY;
+        if (deliveryLoadedTicks.containsKey(consumer)) return SupplierStatus.RELOADING;
+        RegenAmmoRackSubsystem rack = upstream();
+        if (rack == null) return SupplierStatus.EMPTY;
+        if (rack.getRegenPhase() != ReloadPhase.IDLE) return SupplierStatus.RELOADING;
+        return rack.hasAmmo() ? SupplierStatus.READY : SupplierStatus.EMPTY;
+    }
+
+    @Override
+    public ReloadPhase getReloadPhase(IAmmoConsumer consumer) {
+        if (!isSupplyOperational()) return ReloadPhase.IDLE;
+        if (isRoundScheduled(consumer)) return ReloadPhase.LOADING;
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? ReloadPhase.IDLE : rack.getRegenPhase();
+    }
+
+    @Override
+    public int getRemainingReloadTicks(IAmmoConsumer consumer) {
+        if (!isSupplyOperational()) return 0;
+        if (isRoundScheduled(consumer)) {
+            if (readyConsumers.contains(consumer)) return 0;
+            int elapsed = Math.max(0, getDeliveryElapsedTicks(consumer));
+            return Math.max(0, getReloadTimeTicks() - elapsed);
+        }
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? 0 : rack.getRemainingRegenTicks();
     }
 
     /**
-     * 装填进度（0~1）。<br>
-     * 未被排上的消费者没有计时器，进度为 0。
-     *
-     * @param consumer 请求进度的消费者
-     * @return 进度值；无计时器时返回 0
+     * 装填进度（0~1）：为自己计时时报已消耗 tick ÷ <b>当前</b>耗时；否则报上游架的再生进度。
+     * 分母现算，因此加速／减速对在途那一份同样生效，进度也不会越界。
      */
     @Override
     public float getReloadProgress(IAmmoConsumer consumer) {
-        Integer remaining = reloadTimers.get(consumer);
-        if (remaining == null) return 0f;
-        float total = attr.staticAttribute.getReloadTime() * 20f;
-        return total > 0 ? 1f - (float) remaining / total : 1f;
+        if (!isSupplyOperational()) return 0f;
+        Integer loaded = deliveryLoadedTicks.get(consumer);
+        if (loaded != null) {
+            int total = getReloadTimeTicks();
+            return total <= 0 ? 0f : Math.clamp((float) loaded / total, 0f, 1f);
+        }
+        RegenAmmoRackSubsystem rack = upstream();
+        return rack == null ? 0f : rack.getRegenProgress();
     }
 
     // ==================== 核心逻辑 ====================
@@ -291,170 +342,125 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         // 清掉已退场的消费者，别让它们的交付占着输弹线
         pruneGoneConsumers();
 
-        // 推进装填计时器（本子系统不从上游补充弹药：弹仓空了就拒绝请求）
-        Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = reloadTimers.entrySet().iterator();
+        // 推进交付：已装填量 +1，达到当前所需耗时的消费者转入待取
+        int reloadTicks = getReloadTimeTicks();
+        Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = deliveryLoadedTicks.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<IAmmoConsumer, Integer> entry = iter.next();
-            int remaining = entry.getValue() - 1;
-            if (remaining <= 0) {
-                // 装填完成
-                iter.remove();
-                readyConsumers.add(entry.getKey());
-            } else {
-                entry.setValue(remaining);
+            int loaded = entry.getValue() + 1;
+            if (loaded < reloadTicks) {
+                entry.setValue(loaded);
+                continue;
+            }
+            iter.remove();
+            readyConsumers.add(entry.getKey());
+            lastPlayedProgressKeys.remove(entry.getKey()); // 计时完成，清理该消费者的音效追踪
+        }
+
+        if (getLevel().isClientSide()) tickProgressSounds();
+    }
+
+    /**
+     * 清掉已经不能再来取弹（被摧毁或失活）的消费者的交付状态。<br>
+     * 消费者退场时不会通知本机，而它的计时器／就绪位会一直占着输弹线，使本机对后来者永久不可用。
+     */
+    private void pruneGoneConsumers() {
+        deliveryLoadedTicks.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
+        readyConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
+        lastPlayedProgressKeys.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
+        boundConsumers.removeIf(AmmoLoaderSubsystem::isConsumerGone);
+    }
+
+    /** 该消费者是否已经不能再来取弹（被摧毁或失活）。 */
+    private static boolean isConsumerGone(IAmmoConsumer consumer) {
+        return consumer instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive());
+    }
+
+    /**
+     * 降低伤害入口：供给能力因本击失效时立刻释放全部交付承诺。<br>
+     * 比较投递前后的 {@link #isSupplyOperational()} 而不是只看耐久，是因为"失效"还包含上游架被摧毁的
+     * 情形，零耐久后的追加命中也不该重复触发清理。
+     * <p>
+     * <b>调用线程：</b>主线程（伤害在主线程结算）。
+     */
+    @Override
+    public void onHurt(io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent.Pre event) {
+        boolean wasOperational = isSupplyOperational();
+        super.onHurt(event);
+        if (wasOperational && !isSupplyOperational()) {
+            deliveryLoadedTicks.clear();
+            readyConsumers.clear();
+            lastPlayedProgressKeys.clear();
+        }
+    }
+
+    // ==================== 装填进度音效 ====================
+
+    /**
+     * 处理每消费者的进度分段音效：按当前计时进度查找 ≤ 进度的最大阈值，越过新阈值时播放。<br>
+     * 只认"越过更高的阈值"：耗时变长时进度会回退，此时不该把已经播过的音效再播一遍。
+     * <p><b>调用线程：</b>主线程（{@link #onTick()}，仅客户端）。
+     */
+    private void tickProgressSounds() {
+        Map<String, SoundEvent> sounds = attr.staticAttribute.getProgressSounds();
+        if (sounds.isEmpty()) return;
+
+        int totalTicks = getReloadTimeTicks();
+        if (totalTicks <= 0) return;
+
+        for (Map.Entry<IAmmoConsumer, Integer> entry : deliveryLoadedTicks.entrySet()) {
+            IAmmoConsumer consumer = entry.getKey();
+            float progress = Math.clamp((float) entry.getValue() / totalTicks, 0f, 1f);
+            Float lastKey = lastPlayedProgressKeys.get(consumer);
+            Float matchedKey = findBestProgressKey(sounds, progress);
+            if (matchedKey != null && (lastKey == null || matchedKey > lastKey)) {
+                lastPlayedProgressKeys.put(consumer, matchedKey);
+                playProgressSound(sounds.get(String.valueOf(matchedKey)));
             }
         }
+
+        // 清理已不在计时中的消费者追踪记录
+        lastPlayedProgressKeys.keySet().removeIf(c -> !deliveryLoadedTicks.containsKey(c));
     }
 
     /**
-     * 获取容器内弹药数量。
-     */
-    public int getAmmoCount() {
-        int count = 0;
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            if (!container.getItem(i).isEmpty()) count++;
-        }
-        return count;
-    }
-
-    /**
-     * 从 ItemStack 中解析对应的 ProjectileType。<br>
-     * 使用物品注册名作为投射物类型 ID 进行查找。
+     * 在进度音效映射中查找 ≤ 当前进度的最大键。
+     *
+     * @param sounds          进度音效映射（key=进度浮点字符串）
+     * @param currentProgress 当前进度（0.0~1.0）
+     * @return 最佳匹配的进度阈值，无匹配时返回 null
      */
     @Nullable
-    private ProjectileType getProjectileTypeFromItem(ItemStack stack) {
-        if (stack.isEmpty()) return null;
-
-        // 用物品注册名作为投射物类型 ID
-        ResourceLocation itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (itemId != null) {
-            ProjectileType type = ProjectileType.get(getLevel(), itemId);
-            if (type != null) return type;
-        }
-
-        return null;
-    }
-
-    // ==================== 弹药发现 ====================
-
-    @Override
-    public void onAttach() {
-        super.onAttach();
-        handShake();
-    }
-
-    @Override
-    public void onVehicleStructureChanged() {
-        super.onVehicleStructureChanged();
-        handShake();
-    }
-
-    /**
-     * 弹药发现：遍历 {@code discovery_outputs} 声明的频道，用只读查询解析下游消费者，
-     * 按到达频道把本供给者登记到消费者的 {@code ammo_inputs} 列表。结果由本轮结构变化重新填入，
-     * 不依赖回调频道。
-     * <p><b>调用线程：</b>主线程。
-     */
-    protected void handShake() {
-        for (String signalChannel : attr.discoveryOutputs.keySet()) {
-            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(signalChannel).entrySet()) {
-                for (ISignalReceiver terminal : arrival.getValue()) {
-                    if (!(terminal instanceof IAmmoConsumer consumer)) continue;
-                    if (consumer instanceof AbstractSubsystem sub
-                            && sub.getOwner().getSubPart().getPart().assembly
-                            != this.getOwner().getSubPart().getPart().assembly) {
-                        continue;
+    private static Float findBestProgressKey(Map<String, SoundEvent> sounds, float currentProgress) {
+        return sounds.keySet().stream()
+                .map(k -> {
+                    try {
+                        return Float.parseFloat(k);
+                    } catch (NumberFormatException e) {
+                        return Float.NaN;
                     }
-                    consumer.addSupplier(this, arrival.getKey());
-                }
-            }
-        }
+                })
+                .filter(k -> !Float.isNaN(k) && k <= currentProgress)
+                .max(Float::compareTo)
+                .orElse(null);
     }
 
-    // ==================== 持久化 ====================
-
-    @Override
-    public void loadData(CompoundTag data) {
-        super.loadData(data);
-        NonNullList<ItemStack> items = NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(data, items, getOwner().getLevel().registryAccess());
-        for (int i = 0; i < items.size() && i < container.getContainerSize(); i++) {
-            container.setItem(i, items.get(i));
-        }
-    }
-
-    @Override
-    public CompoundTag saveData(CompoundTag data) {
-        super.saveData(data);
-        ContainerHelper.saveAllItems(data, container.getItems(), true, getOwner().getLevel().registryAccess());
-        return data;
-    }
-
-    @Override
-    public void onDestroyed() {
-        super.onDestroyed();
-        if (getLevel().isClientSide() || getSubPart().isDestroyed()) return;
-        detonateStoredAmmo();
-    }
-
-    /**
-     * 库存殉爆：按物品容器里的实际弹药合成一次普通爆炸，并实际清空容器。
-     * <p>
-     * 每格按 {@code stack.getCount()} 计入该弹种的发射药贡献与各战斗部的被诱爆贡献；
-     * 解析不出投射物类型的物品不产生贡献，但一旦判定需要起爆，容器整体清空（含这些物品），
-     * 不产生掉落物。{@code P、D、J} 全为零时不消耗库存、不起爆。
-     * <p>
-     * <b>调用线程：</b>主线程（子系统摧毁边沿）。
-     */
-    private void detonateStoredAmmo() {
-        if (getAmmoCount() <= 0) return;
-
-        CookoffComposition composition = new CookoffComposition();
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
-            if (stack.isEmpty()) continue;
-            ProjectileType type = getProjectileTypeFromItem(stack);
-            composition.addStoredRound(type, stack.getCount());
-        }
-        if (composition.isEmpty()) return;
-
-        // 起爆位置：最近有效受击指认的 HitBox 局部形心；无有效来源回退宿主质心
-        Vector3f origin = getLastDamageOrigin();
-        // 爆点落在自身命中箱内部，该命中箱必须豁免，否则近距离满值穿深会吃掉整发爆炸
-        Set<PenetrationKey> ignoredKeys = getCookoffIgnoredKeys();
-        // 归属：打坏本装弹机的那一击的 causing entity，殉爆继续算在同一个射手头上
-        Entity attacker = getLastDamageAttacker();
-        // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供给
-        consumeAllStoredAmmo();
-        ExplosionManager.get(getLevel()).detonate(
-                origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
-    }
-
-    /**
-     * 起爆消耗：实际清空物品容器并清掉所有在途与待取的输送承诺。
-     */
-    private void consumeAllStoredAmmo() {
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            container.setItem(i, ItemStack.EMPTY);
-        }
-        reloadTimers.clear();
-        readyConsumers.clear();
+    /** 播放单次进度音效；使用 SpreadingSound 在子系统位置播放，带多普勒速度传播。 */
+    private void playProgressSound(@Nullable SoundEvent sound) {
+        if (sound == null || !getLevel().isClientSide()) return;
+        playSpreadingSound(sound, SoundSource.NEUTRAL);
     }
 
     // ==================== 信号 ====================
 
+    /** 本机接受的供弹服务频道：下游 Launcher 的发现查询按它到达本机。 */
     @Override
-    public boolean acceptAllRoutingInput() {
-        return true;
-    }
-
-    @Override
-    public boolean acceptAllBroadcastInput() {
-        return acceptAllRoutingInput();
+    public List<String> getAcceptedChannels() {
+        return attr.ammoDiscoveryInputs;
     }
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        return attr.discoveryOutputs;
+        return attr.ammoDiscoveryTargets;
     }
 }

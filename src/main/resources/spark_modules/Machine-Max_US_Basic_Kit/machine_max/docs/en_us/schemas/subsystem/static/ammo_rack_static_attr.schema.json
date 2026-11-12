@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/ammo_rack_static_attr.json",
+  "title": "Item ammo rack subsystem (static attributes)",
+  "description": "Static attributes of an item ammo rack: item container size. The item-to-AmmoBelt mapping is not implemented yet, so this type currently provides the container and its own cook-off only (WIP).",
+  "properties": {
+    "$schema": { "type": "string", "description": "Path of this JSON Schema, used for editor completion and validation.", "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:ammo_rack", "description": "Subsystem type, must be 'machine_max:ammo_rack'." },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "Durability limit. Reaching zero destroys the rack and detonates its container contents; it recovers at 30% of the limit." },
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether damage is passed on to the subsystem host." },
+    "limit_damage": { "type": "boolean", "default": false, "description": "Whether passed damage is limited to the remaining subsystem durability." },
+    "hidden": { "type": "boolean", "default": false, "description": "Whether the subsystem is hidden from the HUD." },
+    "magazine_capacity": { "type": "integer", "minimum": 1, "default": 30, "description": "Number of item container slots." },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on destruction." },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on activation." },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on deactivation." }
+      },
+      "additionalProperties": false,
+      "description": "Basic sounds."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_rack",
+      "basic_durability": 20,
+      "magazine_capacity": 30
+    }
+  ]
+}

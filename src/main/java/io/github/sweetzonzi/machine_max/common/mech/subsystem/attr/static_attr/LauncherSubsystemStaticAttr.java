@@ -62,8 +62,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /** 开火信号输入频道列表，优先级从高到低 */
     private final List<String> controlInputs;
-    /** 弹药供给发现频道列表（空列表 = 万能接收模式） */
-    private final List<String> ammoInputs;
     /**
      * 一次拉取装多少发：{@code true} 只把一发推进膛室，{@code false} 把整份 Belt 装进已装数据。<br>
      * 它只描述武器实际怎么装填，与口径、射速和供给者类型无关；第一方定义显式填写。
@@ -85,8 +83,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control"))
                     .forGetter(LauncherSubsystemStaticAttr::getControlInputs),
-            Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
-                    .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
             Codec.BOOL.optionalFieldOf("single_round_loading", false)
                     .forGetter(LauncherSubsystemStaticAttr::isSingleRoundLoading),
             LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
@@ -102,7 +98,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public LauncherSubsystemStaticAttr(
             BasicAttr basicAttr,
             List<String> controlInputs,
-            List<String> ammoInputs,
             boolean singleRoundLoading,
             LauncherSoundAttr sounds,
             BarrelModuleAttr barrel,
@@ -110,7 +105,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Optional<CapacitorModuleAttr> capacitor) {
         super(basicAttr, sounds.basicSounds());
         this.controlInputs = controlInputs;
-        this.ammoInputs = ammoInputs;
         this.singleRoundLoading = singleRoundLoading;
         this.launcherSoundAttr = sounds;
         this.barrel = barrel;

@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/ammo_loader_static_attr.json",
+  "title": "Autoloader subsystem (static attributes)",
+  "description": "Static attributes of an autoloader: the mechanical loading stage in seconds, its concurrency and its sounds. Stock and regeneration belong to the ammo rack model (regen_ammo_rack_static_attr.schema.json); service channels are per-instance fields, see dynamic/ammo_loader_dynamic_attr.schema.json.",
+  "properties": {
+    "$schema": { "type": "string", "description": "Path of this JSON Schema, used for editor completion and validation.", "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:ammo_loader", "description": "Subsystem type, must be 'machine_max:ammo_loader'." },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "Durability limit. Reaching zero only stops loading: the rack's stock is untouched and no cook-off happens. It recovers at 30% of the limit." },
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether damage is passed on to the subsystem host. First-party definitions write false: the loader absorbs hits itself." },
+    "limit_damage": { "type": "boolean", "default": false, "description": "Whether passed damage is limited to the remaining subsystem durability." },
+    "hidden": { "type": "boolean", "default": false, "description": "Whether the subsystem is hidden from the HUD." },
+    "reload_time": { "type": "number", "exclusiveMinimum": 0, "description": "Base duration of the mechanical stage in seconds. Must be greater than 0: a zero-length stage counts as unconfigured, and an autoloader without a mechanical stage cannot express any loading path, so decoding rejects it." },
+    "can_supply_multiple": { "type": "boolean", "default": false, "description": "Concurrency. false = one job holds the only slot (exclusive, full speed); true = unlimited slots, each job at full speed. Stock is always shared through the upstream rack." },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on destruction." },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on activation." },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on deactivation." },
+        "progress_sounds": {
+          "type": "object",
+          "description": "Progress markers of the mechanical stage: keys are decimal strings '0.0'..'1.0', values the sound played at that progress. A single advance that crosses several markers plays each of them in ascending order.",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
+        "fmod": {
+          "type": "object",
+          "description": "Optional FMOD event reference for the mechanical stage. Playback wiring is not implemented yet.",
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank id" },
+            "reload": { "type": "string", "pattern": "^event:/.+", "description": "Reload event path" }
+          },
+          "required": ["bank", "reload"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "Basic sounds plus the progress markers of the mechanical stage."
+    }
+  },
+  "required": ["type", "reload_time"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_loader",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "reload_time": 0.45,
+      "can_supply_multiple": false
+    },
+    {
+      "type": "machine_max:ammo_loader",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "reload_time": 10,
+      "can_supply_multiple": true,
+      "sounds": {
+        "progress_sounds": {
+          "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
+          "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
+          "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
+        }
+      }
+    }
+  ]
+}

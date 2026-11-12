@@ -28,6 +28,13 @@
       ],
       "default": {},
       "description": "剩余弹药反馈输出频道及目标。可选。"
+    },
+    "ammo_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "供弹来源查询表：服务频道到目标名称列表。本管在结构变化时按这张表做只读发现，命中同装配体内的自动装弹机；直接指向弹药架属于人力直取，只在该型号定义了人工段时才作为候选。"
     }
   },
   "required": ["type", "definition", "locator"],

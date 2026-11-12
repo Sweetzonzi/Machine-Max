@@ -202,6 +202,14 @@
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
+              "signal_targets": {
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.coax_autoloader"
+                ],
+                "ammo_7_62mm": [
+                  "subsystem.m1a2_sep.coax_762_autoloader"
+                ]
+              },
               "overwrite": {
                 "joint_attrs": {
                   "xr": {
@@ -350,8 +358,8 @@
               "scope_hud_layout": "m1a2_sep:m1a2_gps_weapon"
             },
             "subsystem.m1a2_sep.ammo_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:120mm_m256_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:120mm_m256_regen_ammo_rack",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
@@ -359,9 +367,19 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_120mm"
+              ]
+            },
+            "subsystem.m1a2_sep.ammo_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:120mm_m256_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_120mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_120mm": [
-                  "global"
+                  "subsystem.m1a2_sep.ammo_loader"
                 ]
               }
             },
@@ -378,8 +396,8 @@
               "scope_hud_layout": "m1a2_sep:m1a2_coax_feed"
             },
             "subsystem.m1a2_sep.coax_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:12_7mm_m2hb_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
                 "label": "12.7 AP",
                 "pattern": [
@@ -387,15 +405,25 @@
                 ],
                 "length": 100
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.m1a2_sep.coax_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_m2hb_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "connector.m1a2_sep.turret_gun"
+                  "subsystem.m1a2_sep.coax_loader"
                 ]
               }
             },
             "subsystem.m1a2_sep.ammo_loader_he": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:120mm_m256_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:120mm_m256_regen_ammo_rack",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
@@ -403,9 +431,19 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_120mm"
+              ]
+            },
+            "subsystem.m1a2_sep.ammo_autoloader_he": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:120mm_m256_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_120mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_120mm": [
-                  "global"
+                  "subsystem.m1a2_sep.ammo_loader_he"
                 ]
               }
             },
@@ -422,8 +460,8 @@
               "scope_hud_layout": "m1a2_sep:m1a2_coax_762_feed"
             },
             "subsystem.m1a2_sep.coax_762_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:7_62mm_m240_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:7_62mm_m240_regen_ammo_rack",
               "belt_definition": {
                 "label": "7.62 AP",
                 "pattern": [
@@ -431,9 +469,19 @@
                 ],
                 "length": 200
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ]
+            },
+            "subsystem.m1a2_sep.coax_762_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:7_62mm_m240_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "connector.m1a2_sep.turret_gun"
+                  "subsystem.m1a2_sep.coax_762_loader"
                 ]
               }
             },
@@ -530,12 +578,22 @@
             "subsystem.m1a2_sep.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_m2hb_launcher",
-              "locator": "coax_muzzle"
+              "locator": "coax_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "connector.m1a2_sep.gun_turret"
+                ]
+              }
             },
             "subsystem.m1a2_sep.coax_762_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_m240_launcher",
-              "locator": "coax_762_muzzle"
+              "locator": "coax_762_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "connector.m1a2_sep.gun_turret"
+                ]
+              }
             }
           }
         },
@@ -578,6 +636,11 @@
               "locator": "rws_elevation",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
+              "signal_targets": {
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.rws_autoloader"
+                ]
+              },
               "overwrite": {
                 "joint_attrs": {
                   "xr": {
@@ -617,8 +680,8 @@
               "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
             },
             "subsystem.m1a2_sep.rws_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:12_7mm_m2hb_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
                 "label": "12.7 AP",
                 "pattern": [
@@ -626,9 +689,19 @@
                 ],
                 "length": 100
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.m1a2_sep.rws_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_m2hb_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "connector.m1a2_sep.rws_elevation"
+                  "subsystem.m1a2_sep.rws_loader"
                 ]
               }
             }
@@ -673,7 +746,12 @@
             "subsystem.m1a2_sep.rws_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_m2hb_launcher",
-              "locator": "rws_muzzle"
+              "locator": "rws_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "connector.m1a2_sep.rws_pitch_lock"
+                ]
+              }
             },
             "subsystem.m1a2_sep.rws_sight": {
               "type": "machine_max:sight",
@@ -721,6 +799,11 @@
               "locator": "port_mg_elevation",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
+              "signal_targets": {
+                "ammo_7_62mm": [
+                  "subsystem.m1a2_sep.port_mg_autoloader"
+                ]
+              },
               "overwrite": {
                 "joint_attrs": {
                   "xr": {
@@ -759,8 +842,8 @@
               "third_hud_layout": "m1a2_sep:m1a2_m240_feed"
             },
             "subsystem.m1a2_sep.port_mg_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:7_62mm_m240_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:7_62mm_m240_regen_ammo_rack",
               "belt_definition": {
                 "label": "7.62 AP",
                 "pattern": [
@@ -768,9 +851,19 @@
                 ],
                 "length": 200
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ]
+            },
+            "subsystem.m1a2_sep.port_mg_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:7_62mm_m240_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "connector.m1a2_sep.port_mg_elevation"
+                  "subsystem.m1a2_sep.port_mg_loader"
                 ]
               }
             }
@@ -815,7 +908,12 @@
             "subsystem.m1a2_sep.port_mg_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_m240_launcher",
-              "locator": "port_mg_muzzle"
+              "locator": "port_mg_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "connector.m1a2_sep.port_mg_pitch_lock"
+                ]
+              }
             },
             "subsystem.m1a2_sep.port_mg_sight": {
               "type": "machine_max:sight",
@@ -874,6 +972,11 @@
               "locator": "aft_mg_elevation",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
+              "signal_targets": {
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.aft_mg_autoloader"
+                ]
+              },
               "overwrite": {
                 "joint_attrs": {
                   "xr": {
@@ -912,8 +1015,8 @@
               "third_hud_layout": "m1a2_sep:m1a2_m2_feed"
             },
             "subsystem.m1a2_sep.aft_mg_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:12_7mm_m2hb_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
                 "label": "12.7 AP",
                 "pattern": [
@@ -921,9 +1024,19 @@
                 ],
                 "length": 100
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.m1a2_sep.aft_mg_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_m2hb_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "connector.m1a2_sep.aft_mg_elevation"
+                  "subsystem.m1a2_sep.aft_mg_loader"
                 ]
               }
             },
@@ -986,7 +1099,12 @@
             "subsystem.m1a2_sep.aft_mg_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_m2hb_launcher",
-              "locator": "aft_mg_muzzle"
+              "locator": "aft_mg_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "connector.m1a2_sep.aft_mg_pitch_lock"
+                ]
+              }
             },
             "subsystem.m1a2_sep.aft_mg_sight": {
               "type": "machine_max:sight",
@@ -1027,7 +1145,12 @@
             "subsystem.m1a2_sep.launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:120mm_m256_launcher",
-              "locator": "main_gun_muzzle"
+              "locator": "main_gun_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_120mm": [
+                  "local"
+                ]
+              }
             }
           }
         },

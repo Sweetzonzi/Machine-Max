@@ -6,9 +6,6 @@
   "control_inputs": [
     "weapon.atgm"
   ],
-  "ammo_inputs": [
-    "ammo_atgm"
-  ],
   "barrel": {
     "recoil_multiplier": 0
   },

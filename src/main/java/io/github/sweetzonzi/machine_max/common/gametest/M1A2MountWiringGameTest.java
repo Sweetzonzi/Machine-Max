@@ -5,6 +5,8 @@ import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
@@ -22,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * M1A2 SEP 炮塔上每个机枪挂载的控制器与装弹机只连自己那根管。
+ * M1A2 SEP 炮塔上每个机枪挂载的控制器与自动装弹机只连自己那根管。
  *
  * <p>炮塔上并列、车顶、舱门与后部五个挂载里有三根 M2HB、两根 M240，共用同一对开火频道
  * （{@code weapon.mg.m2hb} / {@code weapon.mg.m240}），弹药也按口径共用
@@ -30,36 +32,37 @@ import java.util.Map;
  * 因此区分只能落在接线上了：控制器与装弹机在偏航子部件，发射器在俯仰子部件，
  * 中间那一跳走两者之间的俯仰连接点。</p>
  *
- * <p>用例把整座炮塔装成只有这一个零件的装配体，然后沿实际接线解析终端：开火频道与弹药频道
- * 都必须恰好到达本挂载的发射器。装成装配体是必要的——{@code "global"} 指向装配体的信号总线，
- * 只有存在装配体时「广播到同口径全部发射器」才会真的发生，独立零件上这条路径是空的。</p>
+ * <p>用例把整座炮塔装成只有这一个零件的装配体，然后沿实际接线解析终端：开火频道必须恰好到达
+ * 本挂载的发射器；供弹频道由发射器自己发起查询，必须恰好到达本挂载的自动装弹机。
+ * 装成装配体是必要的——{@code "global"} 指向装配体的信号总线，只有存在装配体时
+ * 「广播到同口径全部发射器」才会真的发生，独立零件上这条路径是空的。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class M1A2MountWiringGameTest {
     private static final String BATCH = "mmM1A2MountWiring";
 
-    /** 一个机枪挂载：控制器用开火频道找发射器，装弹机用弹药频道找同一根发射器。 */
+    /** 一个机枪挂载：控制器用开火频道找发射器，发射器用弹药频道找自己的自动装弹机。 */
     private record Mount(String controller, String fireChannel, String launcher,
-                         String loader, String ammoChannel) {
+                         String autoloader, String ammoChannel) {
     }
 
     private static final List<Mount> MOUNTS = List.of(
             new Mount("subsystem.m1a2_sep.coax_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.coax_launcher",
-                    "subsystem.m1a2_sep.coax_loader", "ammo_12_7mm"),
+                    "subsystem.m1a2_sep.coax_autoloader", "ammo_12_7mm"),
             new Mount("subsystem.m1a2_sep.coax_762_controller", "weapon.mg.m240",
                     "subsystem.m1a2_sep.coax_762_launcher",
-                    "subsystem.m1a2_sep.coax_762_loader", "ammo_7_62mm"),
+                    "subsystem.m1a2_sep.coax_762_autoloader", "ammo_7_62mm"),
             new Mount("subsystem.m1a2_sep.rws_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.rws_launcher",
-                    "subsystem.m1a2_sep.rws_loader", "ammo_12_7mm"),
+                    "subsystem.m1a2_sep.rws_autoloader", "ammo_12_7mm"),
             new Mount("subsystem.m1a2_sep.port_mg_controller", "weapon.mg.m240",
                     "subsystem.m1a2_sep.port_mg_launcher",
-                    "subsystem.m1a2_sep.port_mg_loader", "ammo_7_62mm"),
+                    "subsystem.m1a2_sep.port_mg_autoloader", "ammo_7_62mm"),
             new Mount("subsystem.m1a2_sep.aft_mg_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.aft_mg_launcher",
-                    "subsystem.m1a2_sep.aft_mg_loader", "ammo_12_7mm"));
+                    "subsystem.m1a2_sep.aft_mg_autoloader", "ammo_12_7mm"));
 
     private M1A2MountWiringGameTest() {
     }
@@ -98,8 +101,15 @@ public final class M1A2MountWiringGameTest {
             AbstractSubsystem launcher = require(helper, byName, mount.launcher());
             assertReachesOnly(helper, require(helper, byName, mount.controller()),
                     mount.fireChannel(), launcher, launchers);
-            assertReachesOnly(helper, require(helper, byName, mount.loader()),
-                    mount.ammoChannel(), launcher, launchers);
+            // 供弹方向由发射器发起查询：它必须恰好找到本挂载的自动装弹机。
+            AbstractSubsystem autoloader = require(helper, byName, mount.autoloader());
+            assertReachesOnly(helper, launcher, mount.ammoChannel(), autoloader, launchers);
+            // 发现结果要真的登记进本管：查询可达与实际取弹来源是两件事。
+            List<IAmmoSupplier> registered = ((IAmmoConsumer) launcher).getSuppliers();
+            helper.assertTrue(registered.size() == 1,
+                    launcher.name + " 应恰好登记一个供给者，实际 " + registered.size());
+            helper.assertTrue(registered.getFirst() == autoloader,
+                    launcher.name + " 登记的供给者必须是 " + autoloader.name);
         }
     }
 

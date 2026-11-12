@@ -25,7 +25,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * {@link HitBox#isLockable()} 这一条契约——没有声明 {@code lockable} 的碰撞箱不可锁、声明了的
  * 在子系统被摧毁后退出候选，而载具本身仍可锁。</p>
  *
- * <p>探针命中框按 {@link ModularDamageGameTest} 的做法就地构造，不依赖内容包里有可锁定的碰撞箱。</p>
+ * <p>探针命中框在本文件内就地构造，不依赖内容包里有可锁定的碰撞箱。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)

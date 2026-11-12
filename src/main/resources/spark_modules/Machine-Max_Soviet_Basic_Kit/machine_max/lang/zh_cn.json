@@ -1,5 +1,6 @@
 {
-  "subsystem.machine_max.pktm_ammo_loader": "PKTM 装弹机",
+  "subsystem.machine_max.pktm_ammo_loader": "PKTM 弹药架",
+  "subsystem.machine_max.pktm_ammo_autoloader": "PKTM 自动装弹机",
   "subsystem.machine_max.pktm": "PKTM 机枪",
   "machine_max.30mm_3ubr6_ap": "AP",
   "machine_max.30mm_3uof8_he": "HE",

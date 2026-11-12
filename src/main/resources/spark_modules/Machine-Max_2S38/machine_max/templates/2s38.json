@@ -534,18 +534,11 @@
               "durability_ratio": 1.0,
               "regen_delay_remaining": 0,
               "belt_index": 0,
-              "modules": {
-                "feed": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                },
-                "magazine": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                }
-              },
               "regen_progress": 8.702278E-6,
               "batch_elapsed": 0
+            },
+            "subsystem.machine_max.2a90_ap_autoloader": {
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.pktm_weapon": {
               "destroyed": 0,
@@ -567,18 +560,11 @@
               "durability_ratio": 1.0,
               "regen_delay_remaining": 0,
               "belt_index": 0,
-              "modules": {
-                "feed": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                },
-                "magazine": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                }
-              },
               "regen_progress": 8.821487E-6,
               "batch_elapsed": 0
+            },
+            "subsystem.machine_max.2a90_he_autoloader": {
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.azimuth_driver": {
               "destroyed": 0,
@@ -690,18 +676,11 @@
               "durability_ratio": 1.0,
               "regen_delay_remaining": 0,
               "belt_index": 1,
-              "modules": {
-                "feed": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                },
-                "magazine": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                }
-              },
               "regen_progress": 0.0,
               "batch_elapsed": 0
+            },
+            "subsystem.machine_max.pktm_ammo_autoloader": {
+              "durability_ratio": 1.0
             }
           },
           "id": 61

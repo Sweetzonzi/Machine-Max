@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/regen_ammo_rack_static_attr.json",
+  "title": "再生弹药架子系统静态属性",
+  "description": "再生弹药架的静态属性：存量上限与自身再生。它只持有库存，不做装填计时；机械装填段在自动装弹机型号里（ammo_loader_static_attr.schema.json）。交付模板（belt_definition）与供弹频道是逐实例字段，见 dynamic/regen_ammo_rack_dynamic_attr.schema.json。",
+  "properties": {
+    "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:regen_ammo_rack", "description": "子系统类型，必须为 'machine_max:regen_ammo_rack'。" },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "子系统耐久上限。归零即判毁并按实际库存殉爆；修复到上限的 30% 才脱离摧毁状态。" },
+    "pass_damage": { "type": "boolean", "default": true, "description": "是否将伤害传递给子系统持有者。第一方定义写 false：命中伤害由弹药架自己吸收，不传给零件与载具。" },
+    "limit_damage": { "type": "boolean", "default": false, "description": "是否把传递的伤害限制在子系统剩余耐久之内。" },
+    "hidden": { "type": "boolean", "default": false, "description": "是否在 HUD 中隐藏该子系统。" },
+    "capacity": { "type": "integer", "minimum": 1, "description": "存量上限（发）。必须至少为 1，否则永远产不出可交付的一份。" },
+    "regen_per_minute": { "type": "number", "minimum": 0, "default": 0, "description": "每分钟产出数量。regen_round_by_round=true 时是逐发回充速率；false 时是整批回充速率，整批时长 = capacity ÷ 速率。0 = 不自行再生。" },
+    "regen_round_by_round": { "type": "boolean", "default": true, "description": "回充粒度。true = 随打随产；false = 打空后整批回满。" },
+    "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "每产出一发消耗的能量（焦耳）。0 = 免费。整批回充在批次开始时按满容量一次性扣费。" },
+    "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "取走一份后暂停产出的秒数。" },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "销毁时的音效。" },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "启用时的音效。" },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "停用时的音效。" }
+      },
+      "additionalProperties": false,
+      "description": "基础音效。进度音效属于机械段，写在自动装弹机型号里。"
+    }
+  },
+  "required": ["type", "capacity"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "capacity": 50,
+      "regen_per_minute": 120,
+      "regen_round_by_round": true,
+      "regen_delay": 0.3
+    },
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "basic_durability": 25,
+      "pass_damage": false,
+      "capacity": 22,
+      "regen_per_minute": 3,
+      "regen_round_by_round": true,
+      "regen_delay": 2
+    }
+  ]
+}

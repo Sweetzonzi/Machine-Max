@@ -23,6 +23,7 @@ public enum SubsystemTypes {
     BATTERY,//WIP 电池子系统，储存电力，可充放电
     LIGHTING,//照明子系统，提供客户端体积光视觉效果
     LAUNCHER,//发射器子系统，代表炮闩、导弹挂架、火箭管等，可发射弹丸
-    AMMO_LOADER,//WIP 装弹机子系统，管理弹药供给、装填时序、弹序循环
-    REGEN_LOADER,//再生装弹机子系统，能量武器/再生武器弹药供给
+    AMMO_LOADER,//自动装弹机子系统，提供机械装填段、槽位与机械音效（库存归弹药架）
+    REGEN_AMMO_RACK,//再生弹药架子系统，持有数字库存与自身再生
+    AMMO_RACK,//WIP 物品弹药架子系统，持有物品容器（物品往返未实现）
 }

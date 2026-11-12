@@ -3,11 +3,11 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -17,8 +17,8 @@ import java.util.Map;
 
 /**
  * 发射器子系统动态属性。<br>
- * 定义发射点locator、弹药反馈输出等运行时配置。<br>
- * 输入频道（开火信号）在静态属性中定义。
+ * 定义发射点 locator、弹药反馈输出，以及本管查询供弹来源用的发现表。
+ * 开火信号等接收频道在静态属性中定义。
  */
 @Getter
 public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
@@ -27,23 +27,35 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final String fireAnimation;                        // 开火时播放的动画名（零件动画集内的键）
     public final Map<String, List<String>> ammoCountOutputs;   // 剩余弹药反馈输出
 
+    /**
+     * 供弹来源查询：服务频道 → 目标名称列表。<br>
+     * 本管在结构变化时按这张表做只读发现，命中同装配体内的自动装弹机。直接指向弹药架属于人力直取，
+     * 只在该型号定义了人工段时才作为候选，首轮没有人工段，因此这里只应命中机构。
+     */
+    public final Map<String, List<String>> ammoDiscoveryTargets;
+
     public static final MapCodec<LauncherSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("locator").forGetter(LauncherSubsystemAttr::getLocator),
             Codec.STRING.optionalFieldOf("fire_animation", "fire").forGetter(LauncherSubsystemAttr::getFireAnimation),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("ammo_outputs", Map.of()).forGetter(LauncherSubsystemAttr::getAmmoCountOutputs)
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("ammo_outputs", Map.of())
+                    .forGetter(LauncherSubsystemAttr::getAmmoCountOutputs),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("ammo_discovery_targets", Map.of())
+                    .forGetter(LauncherSubsystemAttr::getAmmoDiscoveryTargets)
     ).apply(instance, LauncherSubsystemAttr::new));
 
     public LauncherSubsystemAttr(
             ResourceLocation modelName,
             String locator,
             String fireAnimation,
-            Map<String, List<String>> ammoCountOutputs) {
+            Map<String, List<String>> ammoCountOutputs,
+            Map<String, List<String>> ammoDiscoveryTargets) {
         super(modelName);
         this.staticAttribute = (LauncherSubsystemStaticAttr) getStaticAttr();
         this.locator = locator;
         this.fireAnimation = fireAnimation;
         this.ammoCountOutputs = ammoCountOutputs;
+        this.ammoDiscoveryTargets = ammoDiscoveryTargets;
     }
 
     /**

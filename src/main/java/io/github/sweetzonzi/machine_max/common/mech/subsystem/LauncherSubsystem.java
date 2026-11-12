@@ -25,6 +25,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPar
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -506,14 +507,46 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     @Override
     public void addSupplier(IAmmoSupplier supplier, String channelName) {
-        if (!attr.staticAttribute.getAmmoInputs().contains(channelName)) {
-            MachineMax.LOGGER.warn("发射器 {} 拒绝未在 ammo_inputs 中声明的供给频道 {}（来自 {}）",
-                    getName(), channelName, SupplierRef.of(supplier));
-            return;
-        }
         List<IAmmoSupplier> channelSuppliers = supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>());
         if (channelSuppliers.contains(supplier)) return;
         channelSuppliers.add(supplier);
+    }
+
+    /**
+     * 挂载后与结构变化后重新发现供弹来源。<br>
+     * 需求方发起查询：对 {@code ammo_discovery_targets} 的每个频道做一次只读终端查询，命中的
+     * {@link IAmmoSupplier}（自动装弹机）登记进本管的供给者表。弹药架不是供给者——直接向它取弹属于
+     * 人力直取，只有本型号定义了人工段时才作为候选，因此这里不会把它当成交付来源。
+     * <p><b>调用线程：</b>主线程（挂载与结构变化）。
+     */
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        discoverSuppliers();
+    }
+
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        discoverSuppliers();
+    }
+
+    /** 按 {@code ammo_discovery_targets} 做只读发现并登记供给者；结果已在结构变化的第一阶段清空。 */
+    private void discoverSuppliers() {
+        for (String channel : attr.ammoDiscoveryTargets.keySet()) {
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (terminal == this) continue;
+                    if (!(terminal instanceof IAmmoSupplier supplier)) continue;
+                    if (terminal instanceof AbstractSubsystem sub
+                            && sub.getOwner().getSubPart().getPart().assembly
+                            != getOwner().getSubPart().getPart().assembly) {
+                        continue;
+                    }
+                    addSupplier(supplier, arrival.getKey());
+                }
+            }
+        }
     }
 
     @Override
@@ -1660,9 +1693,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     @Override
     public List<String> getAcceptedChannels() {
-        List<String> channels = new ArrayList<>(attr.staticAttribute.getControlInputs());
-        channels.addAll(attr.staticAttribute.getAmmoInputs());
-        return channels;
+        return attr.staticAttribute.getControlInputs();
     }
 
     @Override
@@ -1670,15 +1701,20 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return acceptAllRoutingInput();
     }
 
+    /**
+     * 宽接收只由控制频道列表决定：{@code control_inputs} 为空表示接受任意路由与广播，
+     * 非空则按所列频道筛选。供弹来源的发现表属于发送侧查询，不参与接收声明。
+     */
     @Override
     public boolean acceptAllRoutingInput() {
-        return attr.staticAttribute.getControlInputs().isEmpty() || attr.staticAttribute.getAmmoInputs().isEmpty();
+        return attr.staticAttribute.getControlInputs().isEmpty();
     }
 
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
         result.putAll(attr.ammoCountOutputs);
+        result.putAll(attr.ammoDiscoveryTargets);
         return result;
     }
 }

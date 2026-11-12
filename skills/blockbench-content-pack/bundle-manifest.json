@@ -1,13 +1,13 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-12",
+  "bundled_on": "2026-11-13",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "19e7984236189d035fbbdfc190858006e386a8b7",
+    "revision": "3b8ba651d69711a74c363413d3a33f6a52196ee1",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 74,
+    "file_count": 78,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -175,6 +175,16 @@
         "sha256": "093ffbeb1260d3208d377c1d61aaab3549063d57aa441dd5a3bc68e1948c9db5"
       },
       {
+        "path": "references/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.schema.json",
+        "bytes": 1871,
+        "sha256": "9fcbb251a49b323b4d10c68bf0327ab8b7d6111433857714daa2be540542aa97"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.schema.json",
+        "bytes": 895,
+        "sha256": "e0cdc0a75302f7552d67dcdf8d2dfb38c8c851990467587c9011900f4f628f4b"
+      },
+      {
         "path": "references/schemas/subsystem/dynamic/basic_dynamic_attr.schema.json",
         "bytes": 773,
         "sha256": "557a49807fd58151a22d5b0833ad633727b081c274052dcd15dbd1a9d0b84bfd"
@@ -206,8 +216,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
-        "bytes": 1639,
-        "sha256": "ddb5b7af3de9a9930fe6e9eefb1daafcb4a833ed59c74a7bb0353f8be4e38bcf"
+        "bytes": 2051,
+        "sha256": "18570255f7edd004601664230afa03f16b0a36bfb50935540002fae1cfcb42df"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
@@ -225,9 +235,9 @@
         "sha256": "b9b6a5c3a9afd7e3109adad878e4848334e3788bfd4dc34ab3a0760c3ae5ca75"
       },
       {
-        "path": "references/schemas/subsystem/dynamic/regen_loader_dynamic_attr.schema.json",
-        "bytes": 5380,
-        "sha256": "39505182d2b8c3100e64747afb2c716c581474da1741194c10898708ce4c87ef"
+        "path": "references/schemas/subsystem/dynamic/regen_ammo_rack_dynamic_attr.schema.json",
+        "bytes": 4567,
+        "sha256": "852816371454249256be0ecc4908d0cca9bdaaf65a1a086a37e5d4bbb3681d80"
       },
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
@@ -270,6 +280,16 @@
         "sha256": "f9139f25634effbbc4c82964a82e7c5fb1eae6aa05aae43b982dd42e9bce3d7d"
       },
       {
+        "path": "references/schemas/subsystem/static/ammo_loader_static_attr.schema.json",
+        "bytes": 4213,
+        "sha256": "94015c043bfe7ff73f9a9d2c3790bd72a38447b2162978149a559ceb6ed4ffe9"
+      },
+      {
+        "path": "references/schemas/subsystem/static/ammo_rack_static_attr.schema.json",
+        "bytes": 2191,
+        "sha256": "79b0aab7c0b70d67def7584bcc636a08f6922c556e6adddcccd262945d4fc7e2"
+      },
+      {
         "path": "references/schemas/subsystem/static/basic_static_attr.schema.json",
         "bytes": 3273,
         "sha256": "ff02ccda316d6022f5a945b74a11b0b72996a3f051396336c9e45a76af0e76df"
@@ -301,8 +321,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 9947,
-        "sha256": "aeb4d66dfd80c060e938c83a23fdc74d3471c877382e318abac4ea1b5cbe7cce"
+        "bytes": 9679,
+        "sha256": "86526348dd22ac199d2ee2322b1c57933720e161c3f4c3ddd825ae57af51df19"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
@@ -320,9 +340,9 @@
         "sha256": "8bc145585c12295490dd325686bab6601e43d3b865a9855c0835a3f00356c077"
       },
       {
-        "path": "references/schemas/subsystem/static/regen_loader_static_attr.schema.json",
-        "bytes": 8451,
-        "sha256": "cf922baacda8f292affbea53cf77b740daaf339db23d750c6a3df92a206f75a6"
+        "path": "references/schemas/subsystem/static/regen_ammo_rack_static_attr.schema.json",
+        "bytes": 3674,
+        "sha256": "f15b9179253d7e63d3f984d7a7a0a3910ac3871218b3f9c7fca74107b5ba3ce7"
       },
       {
         "path": "references/schemas/subsystem/static/seat_static_attr.schema.json",
@@ -371,13 +391,13 @@
       },
       {
         "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",
-        "bytes": 6109,
-        "sha256": "e153a56ce8a4463759352a3f740a312b60ee137365959655ec361debace81701"
+        "bytes": 6654,
+        "sha256": "a06b4df51b2b2d6969154a8bd1221949fc19ab91cb15de4ffd087ca4748cecdd"
       },
       {
         "path": "references/schemas/subsystem/subsystem_static_attr.schema.json",
-        "bytes": 5864,
-        "sha256": "5e95ecccff7ac73f07e3c86b5fb27e3727c43e9de708aac8334e67ef8e1ebf1f"
+        "bytes": 6405,
+        "sha256": "e2e74dd5d1d1ba9bf1570facaed2bd408144e3f2be28d1390473e64cfe5a8dee"
       }
     ]
   }

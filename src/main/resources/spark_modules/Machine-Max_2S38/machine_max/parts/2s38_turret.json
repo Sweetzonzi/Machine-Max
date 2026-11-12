@@ -91,32 +91,28 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_ap_loader",
-              "module": "magazine"
+              "subsystem": "subsystem.machine_max.2a90_ap_loader"
             },
             "RightAmmoStorageHitBox": {
               "id": "2a90_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_he_loader",
-              "module": "magazine"
+              "subsystem": "subsystem.machine_max.2a90_he_loader"
             },
             "LeftAutoloaderHitBox": {
               "id": "part",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_ap_loader",
-              "module": "feed"
+              "subsystem": "subsystem.machine_max.2a90_ap_autoloader"
             },
             "RightAutoloaderHitBox": {
               "id": "part",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.2a90_he_loader",
-              "module": "feed"
+              "subsystem": "subsystem.machine_max.2a90_he_autoloader"
             },
             "GunAzimDriverHitBox": {
               "id": "part",
@@ -188,8 +184,8 @@
               "scope_hud_layout": "machine_max:2s38_weapon_compact"
             },
             "subsystem.machine_max.2a90_ap_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:57mm_2a90_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:57mm_2a90_regen_ammo_rack",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
@@ -197,15 +193,25 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
-                "ammo_2a90": [
-                  "global"
+              "ammo_discovery_inputs": [
+                "ammo_57mm"
+              ]
+            },
+            "subsystem.machine_max.2a90_ap_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:57mm_2a90_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_57mm"
+              ],
+              "ammo_discovery_targets": {
+                "ammo_57mm": [
+                  "subsystem.machine_max.2a90_ap_loader"
                 ]
               }
             },
             "subsystem.machine_max.2a90_he_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:57mm_2a90_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:57mm_2a90_regen_ammo_rack",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
@@ -213,9 +219,19 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
-                "ammo_2a90": [
-                  "global"
+              "ammo_discovery_inputs": [
+                "ammo_57mm"
+              ]
+            },
+            "subsystem.machine_max.2a90_he_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:57mm_2a90_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_57mm"
+              ],
+              "ammo_discovery_targets": {
+                "ammo_57mm": [
+                  "subsystem.machine_max.2a90_he_loader"
                 ]
               }
             },
@@ -279,7 +295,12 @@
             "subsystem.machine_max.2a90": {
               "type": "machine_max:launcher",
               "definition": "machine_max:57mm_2a90_launcher",
-              "locator": "main_gun_muzzle"
+              "locator": "main_gun_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_57mm": [
+                  "local"
+                ]
+              }
             }
           }
         },
@@ -329,11 +350,16 @@
             "subsystem.machine_max.pktm": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_pktm_launcher",
-              "locator": "pktm_muzzle"
+              "locator": "pktm_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "local"
+                ]
+              }
             },
             "subsystem.machine_max.pktm_ammo_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:7_62mm_pktm_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
               "belt_definition": {
                 "label": "AP/T",
                 "pattern": [
@@ -342,9 +368,19 @@
                 ],
                 "length": 200
               },
-              "discovery_outputs": {
-                "ammo_pktm": [
-                  "global"
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ]
+            },
+            "subsystem.machine_max.pktm_ammo_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:7_62mm_pktm_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ],
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "subsystem.machine_max.pktm_ammo_loader"
                 ]
               }
             }

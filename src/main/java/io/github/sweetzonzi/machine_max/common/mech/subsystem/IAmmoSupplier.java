@@ -212,7 +212,8 @@ public interface IAmmoSupplier {
 
     /**
      * 供给者的最大容量。-1 表示无容量概念（如无限供给）。
-     * 由 AmmoLoaderSubsystem / RegenLoaderSubsystem 等具体实现类重写返回各自容量。
+     * 由 {@code AmmoLoaderSubsystem} 等具体实现类重写返回各自容量；机构不持有库存，
+     * 返回值取自它的上游弹药架。
      */
     default int getCapacity() {
         return -1;

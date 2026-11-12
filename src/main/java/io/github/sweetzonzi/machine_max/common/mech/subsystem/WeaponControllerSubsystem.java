@@ -728,7 +728,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             }
 
             // 换人：assignSupplier 内部会 cancelRound 旧机器并从它的集合里摘掉本管，
-            // 那份额度仍在旧装弹机的弹仓里（见 RegenLoaderSubsystem#cancelRound），不会丢
+            // 那份额度仍在旧装弹机的上游弹药架里（见 AmmoLoaderSubsystem#cancelRound），不会丢
             launcher.setCurrentSupplier(candidate);
             candidate.getBoundConsumers().add(launcher);
         }

@@ -425,6 +425,9 @@
               "batch_cooldown": 0,
               "regen_progress": 0.083333254
             },
+            "subsystem.machine_max.2a42_ammo_autoloader": {
+              "durability_ratio": 1.0
+            },
             "subsystem.machine_max.main_weapon": {
               "durability_ratio": 1.0
             },
@@ -442,6 +445,9 @@
               "batch_cooldown": 0,
               "regen_progress": 0.249987
             },
+            "subsystem.machine_max.pktm_ammo_autoloader": {
+              "durability_ratio": 1.0
+            },
             "subsystem.machine_max.atgm_weapon": {
               "durability_ratio": 1.0
             },
@@ -453,6 +459,9 @@
               "belt_index": 0,
               "batch_cooldown": 0,
               "regen_progress": 0.0
+            },
+            "subsystem.machine_max.atgm_ammo_autoloader": {
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.azimuth_driver": {
               "brake_yaw": -0.0027556438,

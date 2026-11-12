@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.json",
+  "title": "Item ammo rack subsystem (dynamic attributes)",
+  "description": "Per-instance attributes of an item ammo rack. Currently only the model reference: the container is created from the model capacity and the item mapping is not implemented yet (WIP).",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:ammo_rack",
+      "description": "Subsystem type, must be 'machine_max:ammo_rack'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing at the matching item ammo rack static attribute definition."
+    }
+  },
+  "required": ["type", "definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_rack",
+      "definition": "machine_max:7_62mm_item_ammo_rack"
+    }
+  ]
+}

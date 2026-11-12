@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/regen_ammo_rack_dynamic_attr.json",
+  "title": "Regenerating ammo rack subsystem (dynamic attributes)",
+  "description": "Per-instance attributes of a regenerating ammo rack: which delivery spec it holds, and on which service channels upstream loaders can find it. Capacity and regeneration rate are model-level fields and live in the static attribute file.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_ammo_rack",
+      "description": "Subsystem type, must be 'machine_max:regen_ammo_rack'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing at the matching rack static attribute definition."
+    },
+    "belt_definition": {
+      "type": "object",
+      "description": "Delivery spec: every hand-over takes a copy of it; fields match the ammo content format. remaining only describes the template itself and is filled from actual stock on hand-over, so a delivered instance may have remaining < length. length is the rounds per delivery (and per-delivery cap) and must not exceed the model capacity.",
+      "properties": {
+        "container_id": {
+          "type": "string",
+          "description": "Optional content-pack container model used for item restore, capacity and presentation; omitted means virtual feeding. Only identifier parsing and persistence are implemented at this stage."
+        },
+        "label": {
+          "type": "string",
+          "default": "",
+          "description": "Belt display name, shown literally on the weapon HUD. When empty, the display text of the first ammo type is used. Display only: it takes no part in pool grouping, routing or identity."
+        },
+        "pattern": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "ammo": {
+                "type": "string",
+                "description": "Projectile resource location, e.g. machine_max:30mm_3ubr6_ap."
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Consecutive rounds of the same ammo type."
+              }
+            },
+            "required": ["ammo", "count"],
+            "additionalProperties": false
+          },
+          "description": "Ordered ammo pattern: entries expand in written order, the round position is (length - remaining) % patternTotal."
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Rounds per belt. Independent of the model capacity: capacity is how much the rack stores, length is how many one delivery may carry. length greater than capacity is a configuration error and is rejected at decode time."
+        },
+        "recharge": {
+          "type": "object",
+          "description": "Optional self-recharge: when declared, the launcher holding a loaded belt refills spent rounds at this rate up to length.",
+          "properties": {
+            "regen_per_minute": { "type": "number", "minimum": 0, "description": "Recharge rate in rounds per minute." },
+            "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Seconds to pause recharge after a successful shot." },
+            "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "Energy per refilled round, paid from the grid provided by the holder." }
+          },
+          "required": ["regen_per_minute"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["pattern", "length"],
+      "additionalProperties": false
+    },
+    "ammo_discovery_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Service channels this rack accepts. Autoloaders reach it through these channels. Channels express a service class only (e.g. ammo_57mm) and carry no business signals."
+    }
+  },
+  "required": ["type", "definition", "belt_definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "definition": "machine_max:30mm_2a42_regen_ammo_rack",
+      "belt_definition": {
+        "label": "AP/HE",
+        "pattern": [
+          { "ammo": "machine_max:30mm_3ubr6_ap", "count": 1 },
+          { "ammo": "machine_max:30mm_3uof8_he", "count": 1 }
+        ],
+        "length": 150,
+        "recharge": { "regen_per_minute": 100, "regen_delay": 0.3, "energy_cost_per_round": 0 }
+      },
+      "ammo_discovery_inputs": ["ammo_30mm"]
+    }
+  ]
+}

@@ -105,11 +105,16 @@
           "subsystem.machine_max.pkt": {
             "type": "machine_max:launcher",
             "definition": "machine_max:7_62mm_pktm_launcher",
-            "locator": "pkt_muzzle"
+            "locator": "pkt_muzzle",
+            "ammo_discovery_targets": {
+              "ammo_7_62mm": [
+                "local"
+              ]
+            }
           },
           "subsystem.machine_max.pkt_ammo_loader": {
-            "type": "machine_max:regen_loader",
-            "definition": "machine_max:7_62mm_pktm_regen_loader",
+            "type": "machine_max:regen_ammo_rack",
+            "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
             "belt_definition": {
               "label": "AP/T",
               "pattern": [
@@ -118,9 +123,19 @@
               ],
               "length": 200
             },
-            "discovery_outputs": {
-              "ammo_pktm": [
-                "global"
+            "ammo_discovery_inputs": [
+              "ammo_7_62mm"
+            ]
+          },
+          "subsystem.machine_max.pkt_ammo_autoloader": {
+            "type": "machine_max:ammo_loader",
+            "definition": "machine_max:7_62mm_pktm_ammo_loader",
+            "ammo_discovery_inputs": [
+              "ammo_7_62mm"
+            ],
+            "ammo_discovery_targets": {
+              "ammo_7_62mm": [
+                "subsystem.machine_max.pkt_ammo_loader"
               ]
             }
           }

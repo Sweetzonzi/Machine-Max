@@ -1,5 +1,6 @@
 {
-  "subsystem.machine_max.pktm_ammo_loader": "Pktm Ammo Loader",
+  "subsystem.machine_max.pktm_ammo_loader": "Pktm Ammo Ammo Rack",
+  "subsystem.machine_max.pktm_ammo_autoloader": "Pktm Ammo Autoloader",
   "subsystem.machine_max.pktm": "Pktm",
   "machine_max.30mm_3ubr6_ap": "AP",
   "machine_max.30mm_3uof8_he": "HE",

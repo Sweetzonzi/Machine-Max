@@ -709,8 +709,8 @@
               "scope_hud_layout": "type59:scope_main_feed"
             },
             "subsystem.type59.ammo_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:100mm_type59_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:100mm_type59_regen_ammo_rack",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
@@ -718,15 +718,25 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_100mm"
+              ]
+            },
+            "subsystem.type59.ammo_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:100mm_type59_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_100mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_100mm": [
-                  "global"
+                  "subsystem.type59.ammo_loader"
                 ]
               }
             },
             "subsystem.type59.ammo_loader_he": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:100mm_type59_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:100mm_type59_regen_ammo_rack",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
@@ -734,9 +744,19 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_100mm"
+              ]
+            },
+            "subsystem.type59.ammo_autoloader_he": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:100mm_type59_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_100mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_100mm": [
-                  "global"
+                  "subsystem.type59.ammo_loader_he"
                 ]
               }
             },
@@ -752,8 +772,8 @@
               "third_hud_layout": "type59:coax_feed_third"
             },
             "subsystem.type59.coax_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:7_62mm_type59t_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:7_62mm_type59t_regen_ammo_rack",
               "belt_definition": {
                 "label": "59T 7.62",
                 "pattern": [
@@ -761,9 +781,19 @@
                 ],
                 "length": 250
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ]
+            },
+            "subsystem.type59.coax_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:7_62mm_type59t_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "global"
+                  "subsystem.type59.coax_loader"
                 ]
               }
             },
@@ -925,7 +955,12 @@
             "subsystem.type59.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_type59t_launcher",
-              "locator": "coax_muzzle"
+              "locator": "coax_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "local"
+                ]
+              }
             },
             "subsystem.type59.gunner_sight": {
               "type": "machine_max:sight",
@@ -966,7 +1001,12 @@
             "subsystem.type59.launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:100mm_type59_launcher",
-              "locator": "main_muzzle"
+              "locator": "main_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_100mm": [
+                  "local"
+                ]
+              }
             }
           }
         },
@@ -1048,8 +1088,8 @@
               "third_hud_layout": "type59:aa_feed"
             },
             "subsystem.type59.aa_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:12_7mm_type54_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_type54_regen_ammo_rack",
               "belt_definition": {
                 "label": "12.7",
                 "pattern": [
@@ -1057,9 +1097,19 @@
                 ],
                 "length": 100
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.type59.aa_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_type54_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "global"
+                  "subsystem.type59.aa_loader"
                 ]
               }
             }
@@ -1102,7 +1152,12 @@
             "subsystem.type59.aa_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_type54_launcher",
-              "locator": "mg_muzzle"
+              "locator": "mg_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "local"
+                ]
+              }
             }
           }
         }

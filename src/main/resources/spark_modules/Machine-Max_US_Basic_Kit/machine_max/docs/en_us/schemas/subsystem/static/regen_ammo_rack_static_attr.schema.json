@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/regen_ammo_rack_static_attr.json",
+  "title": "Regenerating ammo rack subsystem (static attributes)",
+  "description": "Static attributes of a regenerating ammo rack: stock limit and self-regeneration. It holds stock only and runs no loading timer; the mechanical loading stage lives in the autoloader model (ammo_loader_static_attr.schema.json). The delivery spec (belt_definition) and service channels are per-instance fields, see dynamic/regen_ammo_rack_dynamic_attr.schema.json.",
+  "properties": {
+    "$schema": { "type": "string", "description": "Path of this JSON Schema, used for editor completion and validation.", "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:regen_ammo_rack", "description": "Subsystem type, must be 'machine_max:regen_ammo_rack'." },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "Durability limit. Reaching zero destroys the rack and detonates its actual stock; it recovers at 30% of the limit." },
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether damage is passed on to the subsystem host. First-party definitions write false: the rack absorbs hits itself." },
+    "limit_damage": { "type": "boolean", "default": false, "description": "Whether passed damage is limited to the remaining subsystem durability." },
+    "hidden": { "type": "boolean", "default": false, "description": "Whether the subsystem is hidden from the HUD." },
+    "capacity": { "type": "integer", "minimum": 1, "description": "Stock limit in rounds. Must be at least 1, otherwise a full delivery can never be assembled." },
+    "regen_per_minute": { "type": "number", "minimum": 0, "default": 0, "description": "Produced rounds per minute. regen_round_by_round=true: per-round recovery rate; false: full-batch rate, batch duration = capacity / rate. 0 = no self-regeneration." },
+    "regen_round_by_round": { "type": "boolean", "default": true, "description": "Recovery granularity. true = regenerate while firing; false = refill the whole rack once empty." },
+    "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "Energy (J) consumed per produced round. 0 = free. A full batch is charged once at batch start." },
+    "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Seconds to wait after a delivery before regeneration resumes." },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on destruction." },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on activation." },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on deactivation." }
+      },
+      "additionalProperties": false,
+      "description": "Basic sounds. Progress sounds belong to the mechanical stage and are declared on the autoloader model."
+    }
+  },
+  "required": ["type", "capacity"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "capacity": 50,
+      "regen_per_minute": 120,
+      "regen_round_by_round": true,
+      "regen_delay": 0.3
+    },
+    {
+      "type": "machine_max:regen_ammo_rack",
+      "basic_durability": 25,
+      "pass_damage": false,
+      "capacity": 22,
+      "regen_per_minute": 3,
+      "regen_round_by_round": true,
+      "regen_delay": 2
+    }
+  ]
+}

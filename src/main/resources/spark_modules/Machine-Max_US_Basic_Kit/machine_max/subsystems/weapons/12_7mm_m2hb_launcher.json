@@ -7,9 +7,6 @@
     "weapon.mg",
     "weapon.mg.m2hb"
   ],
-  "ammo_inputs": [
-    "ammo_12_7mm"
-  ],
   "barrel": {
     "horizontal_accuracy_multiplier": 2,
     "vertical_accuracy_multiplier": 2

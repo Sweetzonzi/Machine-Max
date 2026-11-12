@@ -976,18 +976,11 @@
               "durability_ratio": 1.0,
               "regen_delay_remaining": 0,
               "belt_index": 0,
-              "modules": {
-                "feed": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                },
-                "magazine": {
-                  "destroyed": 0,
-                  "durability": 10.0
-                }
-              },
               "regen_progress": 0.0,
               "batch_elapsed": 0
+            },
+            "subsystem.machine_max.pkt_ammo_autoloader": {
+              "durability_ratio": 1.0
             },
             "subsystem.machine_max.pkt": {
               "modules": {

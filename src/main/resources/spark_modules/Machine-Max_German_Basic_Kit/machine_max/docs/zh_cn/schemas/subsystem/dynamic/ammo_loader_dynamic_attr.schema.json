@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.json",
+  "title": "自动装弹机子系统动态属性",
+  "description": "自动装弹机的实例属性：本机接受的供弹服务频道，以及查询上游弹药架用的发现表。机构同时是下游发射器的提供方与上游弹药架的需求方，所以两个字段都在实例上。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:ammo_loader",
+      "description": "子系统类型，必须为 'machine_max:ammo_loader'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的自动装弹机静态属性定义文件。"
+    },
+    "ammo_discovery_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "本机接受的供弹服务频道。下游发射器按这些频道做只读发现，命中本机。频道只表达服务类别（如 ammo_57mm），不承载业务信号。"
+    },
+    "ammo_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "上游查询表：供弹服务频道到目标名称列表。第一方按子系统名直接指向本机的上游弹药架，范围因此只覆盖这一对；上游查询只接受库存持有者，机构之间不互认，机械链不会成环。"
+    }
+  },
+  "required": ["type", "definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_loader",
+      "definition": "machine_max:57mm_2a90_ammo_loader",
+      "ammo_discovery_inputs": ["ammo_57mm"],
+      "ammo_discovery_targets": {
+        "ammo_57mm": ["subsystem.machine_max.2a90_ap_loader"]
+      }
+    }
+  ]
+}

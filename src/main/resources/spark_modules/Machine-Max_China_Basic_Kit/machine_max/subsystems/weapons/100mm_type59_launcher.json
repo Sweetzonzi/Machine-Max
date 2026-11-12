@@ -7,9 +7,6 @@
     "weapon.gun",
     "weapon.gun.type59"
   ],
-  "ammo_inputs": [
-    "ammo_100mm"
-  ],
   "breech": {
     "fire_rate": 6,
     "required_tags": [

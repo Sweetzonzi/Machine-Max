@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.json",
+  "title": "Autoloader subsystem (dynamic attributes)",
+  "description": "Per-instance attributes of an autoloader: the service channels this loader accepts, and the discovery table it uses to query its upstream ammo rack. A loader is both the provider for downstream launchers and the consumer of an upstream rack, so both fields live on the instance.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:ammo_loader",
+      "description": "Subsystem type, must be 'machine_max:ammo_loader'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing at the matching autoloader static attribute definition."
+    },
+    "ammo_discovery_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Service channels this loader accepts. Downstream launchers run a read-only discovery on these channels and find this loader. Channels express a service class only (e.g. ammo_57mm) and carry no business signals."
+    },
+    "ammo_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Upstream query table: service channel to target names. First-party content points at the matching rack subsystem by name, so the scope covers exactly that pair. The upstream query accepts stock holders only; loaders never accept other loaders, so a mechanical chain cannot cycle."
+    }
+  },
+  "required": ["type", "definition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_loader",
+      "definition": "machine_max:57mm_2a90_ammo_loader",
+      "ammo_discovery_inputs": ["ammo_57mm"],
+      "ammo_discovery_targets": {
+        "ammo_57mm": ["subsystem.machine_max.2a90_ap_loader"]
+      }
+    }
+  ]
+}

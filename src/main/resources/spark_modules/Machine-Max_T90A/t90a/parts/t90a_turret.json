@@ -280,8 +280,8 @@
               "scope_hud_layout": "t90a:scope_main_feed"
             },
             "subsystem.t90a.ammo_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:125mm_2a46m_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
                 "label": "AP",
                 "pattern": [
@@ -289,15 +289,25 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_125mm"
+              ]
+            },
+            "subsystem.t90a.ammo_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:125mm_2a46m_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_125mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_125mm": [
-                  "global"
+                  "subsystem.t90a.ammo_loader"
                 ]
               }
             },
             "subsystem.t90a.ammo_loader_he": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:125mm_2a46m_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
                 "label": "HE",
                 "pattern": [
@@ -305,9 +315,19 @@
                 ],
                 "length": 1
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_125mm"
+              ]
+            },
+            "subsystem.t90a.ammo_autoloader_he": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:125mm_2a46m_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_125mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_125mm": [
-                  "global"
+                  "subsystem.t90a.ammo_loader_he"
                 ]
               }
             },
@@ -323,8 +343,8 @@
               "third_hud_layout": "t90a:coax_feed_third"
             },
             "subsystem.t90a.coax_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:7_62mm_pktm_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
               "belt_definition": {
                 "label": "PKT 7.62",
                 "pattern": [
@@ -332,9 +352,19 @@
                 ],
                 "length": 250
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ]
+            },
+            "subsystem.t90a.coax_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:7_62mm_pktm_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_7_62mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "global"
+                  "subsystem.t90a.coax_loader"
                 ]
               }
             },
@@ -408,7 +438,12 @@
             "subsystem.t90a.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_pktm_launcher",
-              "locator": "coax_muzzle"
+              "locator": "coax_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_7_62mm": [
+                  "local"
+                ]
+              }
             },
             "subsystem.t90a.gunner_sight": {
               "type": "machine_max:sight",
@@ -495,8 +530,8 @@
               "third_hud_layout": "t90a:aa_feed"
             },
             "subsystem.t90a.aa_loader": {
-              "type": "machine_max:regen_loader",
-              "definition": "machine_max:12_7mm_nsvt_regen_loader",
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_nsvt_regen_ammo_rack",
               "belt_definition": {
                 "label": "12.7",
                 "pattern": [
@@ -504,9 +539,19 @@
                 ],
                 "length": 100
               },
-              "discovery_outputs": {
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.t90a.aa_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_nsvt_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "global"
+                  "subsystem.t90a.aa_loader"
                 ]
               }
             }
@@ -549,7 +594,12 @@
             "subsystem.t90a.aa_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_nsvt_launcher",
-              "locator": "mg_muzzle"
+              "locator": "mg_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "local"
+                ]
+              }
             }
           }
         },
@@ -585,7 +635,12 @@
             "subsystem.t90a.launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:125mm_2a46m_launcher",
-              "locator": "main_muzzle"
+              "locator": "main_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_125mm": [
+                  "local"
+                ]
+              }
             }
           }
         }

@@ -7,9 +7,6 @@
     "weapon.mg",
     "weapon.mg.m240"
   ],
-  "ammo_inputs": [
-    "ammo_7_62mm"
-  ],
   "barrel": {
     "horizontal_accuracy_multiplier": 2,
     "vertical_accuracy_multiplier": 2

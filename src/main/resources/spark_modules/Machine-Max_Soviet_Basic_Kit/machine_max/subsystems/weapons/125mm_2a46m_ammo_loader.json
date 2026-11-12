@@ -1,0 +1,8 @@
+{
+  "type": "machine_max:ammo_loader",
+  "basic_durability": 25,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "reload_time": 7.5, //(必填, 秒)把一份交付送进膛的机械段时间，必须大于 0
+  "can_supply_multiple": false, //(可选, 默认false)false=独占一槽满速；true=不限槽位、各作业分别满速
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

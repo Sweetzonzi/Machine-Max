@@ -41,12 +41,6 @@
       "default": ["weapon_control"],
       "description": "Fire signal input channel list, ordered by priority (highest first). Naming follows a 'class + optional model' convention: base channel is weapon.<class> (e.g. weapon.autocannon, weapon.mg machine gun, weapon.gun direct-fire cannon), optional model channel is weapon.<class>.<model> (e.g. weapon.autocannon.2a42) for dedicated fire-control computers. List order determines priority; the main/secondary weapon role is determined by the seat's control group wiring, not reflected in the channel name."
     },
-    "ammo_inputs": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "Ammunition supply discovery channel list. Empty list means universal receive mode (accepts any channel signal)."
-    },
     "single_round_loading": {
       "type": "boolean",
       "default": false,
@@ -288,7 +282,6 @@
       "type": "machine_max:launcher",
       "basic_durability": 80,
       "control_inputs": ["weapon_control"],
-      "ammo_inputs": ["ammo_main"],
       "description": "Standard example - basic launcher configuration"
     }
   ]

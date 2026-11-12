@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/ammo_rack_static_attr.json",
+  "title": "物品弹药架子系统静态属性",
+  "description": "物品弹药架的静态属性：物品容器容量。物品与 AmmoBelt 的往返尚未实现，本类型当前只提供容器与自身库存殉爆（WIP）。",
+  "properties": {
+    "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:ammo_rack", "description": "子系统类型，必须为 'machine_max:ammo_rack'。" },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "子系统耐久上限。归零即判毁并按容器内物品殉爆；修复到上限的 30% 才脱离摧毁状态。" },
+    "pass_damage": { "type": "boolean", "default": true, "description": "是否将伤害传递给子系统持有者。" },
+    "limit_damage": { "type": "boolean", "default": false, "description": "是否把传递的伤害限制在子系统剩余耐久之内。" },
+    "hidden": { "type": "boolean", "default": false, "description": "是否在 HUD 中隐藏该子系统。" },
+    "magazine_capacity": { "type": "integer", "minimum": 1, "default": 30, "description": "物品容器格数。" },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "销毁时的音效。" },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "启用时的音效。" },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "停用时的音效。" }
+      },
+      "additionalProperties": false,
+      "description": "基础音效。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_rack",
+      "basic_durability": 20,
+      "magazine_capacity": 30
+    }
+  ]
+}

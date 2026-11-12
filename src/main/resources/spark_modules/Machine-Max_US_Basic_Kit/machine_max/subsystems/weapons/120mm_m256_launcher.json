@@ -7,9 +7,6 @@
     "weapon.gun",
     "weapon.gun.m256"
   ],
-  "ammo_inputs": [
-    "ammo_120mm"
-  ],
   "breech": {
     "fire_rate": 8,
     "required_tags": [

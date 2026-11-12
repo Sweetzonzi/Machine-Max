@@ -1,0 +1,11 @@
+{
+  "type": "machine_max:regen_ammo_rack",
+  "basic_durability": 10,
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "capacity": 150, //(必填)存量上限
+  "regen_per_minute": 100, //(可选, 默认0)每分钟产出数量
+  "regen_round_by_round": true, //(可选, 默认true)true=随打随产；false=打空后整批回满
+  "energy_cost_per_round": 0, //(可选, 默认0)每产出一发的取电
+  "regen_delay": 0.3, //(可选, 默认0, 秒)取走一发后暂停产出的时间
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+}

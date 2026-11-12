@@ -7,9 +7,6 @@
     "weapon.autocannon",
     "weapon.autocannon.2a90"
   ],
-  "ammo_inputs": [
-    "ammo_57mm"
-  ],
   "barrel": {
     "horizontal_accuracy_multiplier": 1,
     "vertical_accuracy_multiplier": 1,

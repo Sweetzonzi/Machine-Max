@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/ammo_loader_static_attr.json",
+  "title": "自动装弹机子系统静态属性",
+  "description": "自动装弹机的静态属性：机械装填段的基准秒数、并发产能与该段的音效。库存与再生属于弹药架型号（regen_ammo_rack_static_attr.schema.json）；供弹发现频道是逐实例字段，见 dynamic/ammo_loader_dynamic_attr.schema.json。",
+  "properties": {
+    "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:ammo_loader", "description": "子系统类型，必须为 'machine_max:ammo_loader'。" },
+    "basic_durability": { "type": "number", "exclusiveMinimum": 0, "default": 20.0, "description": "子系统耐久上限。归零只停工，不动弹药架库存、不触发殉爆；修复到上限的 30% 才恢复装填。" },
+    "pass_damage": { "type": "boolean", "default": true, "description": "是否将伤害传递给子系统持有者。第一方定义写 false：命中伤害由机构自己吸收。" },
+    "limit_damage": { "type": "boolean", "default": false, "description": "是否把传递的伤害限制在子系统剩余耐久之内。" },
+    "hidden": { "type": "boolean", "default": false, "description": "是否在 HUD 中隐藏该子系统。" },
+    "reload_time": { "type": "number", "exclusiveMinimum": 0, "description": "机械装填段的基准秒数，必须大于 0。零长度的段按未配置处理，而没有机械段的自动装弹机不能表达任何装填路径，因此解码期拒绝。" },
+    "can_supply_multiple": { "type": "boolean", "default": false, "description": "并发产能。false = 同时只为一个作业分配槽位（独占且满速）；true = 不限槽位，各作业分别满速。库存始终由上游弹药架共用。" },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "销毁时的音效。" },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "启用时的音效。" },
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "停用时的音效。" },
+        "progress_sounds": {
+          "type": "object",
+          "description": "机械段的进度分段音效：键是 '0.0'~'1.0' 的十进制字符串，值是该进度阈值上播放的音效。一次推进跨过多个阈值时按阈值升序逐个播放。",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
+        "fmod": {
+          "type": "object",
+          "description": "机械段的 FMOD 事件引用。播放接线待实现。",
+          "properties": {
+            "bank": { "type": "string", "description": "FMOD bank ID" },
+            "reload": { "type": "string", "pattern": "^event:/.+", "description": "装填事件路径" }
+          },
+          "required": ["bank", "reload"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "基础音效与机械段的进度音效。"
+    }
+  },
+  "required": ["type", "reload_time"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:ammo_loader",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "reload_time": 0.45,
+      "can_supply_multiple": false
+    },
+    {
+      "type": "machine_max:ammo_loader",
+      "basic_durability": 10,
+      "pass_damage": false,
+      "reload_time": 10,
+      "can_supply_multiple": true,
+      "sounds": {
+        "progress_sounds": {
+          "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
+          "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
+          "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
+        }
+      }
+    }
+  ]
+}

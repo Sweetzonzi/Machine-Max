@@ -53,16 +53,15 @@ public interface IAmmoConsumer {
 
     /**
      * 获取按频道分组的供给者映射。<br>
-     * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
-     * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
+     * 频道名是查询命中的到达频道，来自本消费者 {@code ammo_discovery_targets} 里的查询键。
+     * LinkedHashMap 保证迭代顺序与查询顺序一致。
      *
      * @return 频道名 → 该频道下的供给者列表
      */
     Map<String, List<IAmmoSupplier>> getSupplierChannels();
 
     /**
-     * 由供给者在握手中调用，将自身注册到消费者的可选供给者列表中。<br>
-     * 若消费者此前没有供给者，自动选定此供给者。
+     * 由消费者在按 {@code ammo_discovery_targets} 发现时调用，把命中的供给者登记进可选列表。<br>
      * 默认实现转发到 {@link #addSupplier(IAmmoSupplier, String)}，频道名为 "unknown"。
      */
     default void addSupplier(IAmmoSupplier supplier) {
@@ -71,10 +70,10 @@ public interface IAmmoConsumer {
 
     /**
      * 带频道名的供给者注册。<br>
-     * 频道名由 Loader 在 handshake 回调中传递，对应 Launcher 的 ammo_inputs 声明顺序。
+     * 频道名是本次只读发现命中的到达频道（可经连接器转译），由发起查询的消费者传入。
      *
      * @param supplier    供给者实例
-     * @param channelName 发现频道名，用于按频道分组
+     * @param channelName 到达频道名，用于按频道分组
      */
     void addSupplier(IAmmoSupplier supplier, String channelName);
 

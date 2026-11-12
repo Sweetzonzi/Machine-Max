@@ -17,7 +17,9 @@
         "machine_max:item_storage",
         "machine_max:launcher",
         "machine_max:motor",
-        "machine_max:regen_loader",
+        "machine_max:regen_ammo_rack",
+        "machine_max:ammo_rack",
+        "machine_max:ammo_loader",
         "machine_max:seat",
         "machine_max:sight",
         "machine_max:transmission",
@@ -208,12 +210,36 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:regen_loader"
+            "const": "machine_max:regen_ammo_rack"
           }
         }
       },
       "then": {
-        "$ref": "static/regen_loader_static_attr.schema.json"
+        "$ref": "static/regen_ammo_rack_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:ammo_rack"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/ammo_rack_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:ammo_loader"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/ammo_loader_static_attr.schema.json"
       }
     },
     {

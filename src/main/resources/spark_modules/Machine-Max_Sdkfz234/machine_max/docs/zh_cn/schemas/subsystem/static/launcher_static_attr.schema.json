@@ -41,12 +41,6 @@
       "default": ["weapon_control"],
       "description": "开火信号输入频道列表，优先级从高到低。"
     },
-    "ammo_inputs": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "弹药供给发现频道列表。空列表表示万能接收模式（接受任意频道信号）。"
-    },
     "single_round_loading": {
       "type": "boolean",
       "default": false,
@@ -275,7 +269,6 @@
       "type": "machine_max:launcher",
       "basic_durability": 80,
       "control_inputs": ["weapon.autocannon"],
-      "ammo_inputs": ["ammo_main"],
       "description": "标准示例——基础发射器配置（类型级火控频道）"
     }
   ]
