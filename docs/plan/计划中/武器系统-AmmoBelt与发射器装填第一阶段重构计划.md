@@ -4,32 +4,34 @@
 
 **核对日期**：2026-11-12。
 
+**设计补充日期**：2026-11-13。§4—§7 按本节链接的后续目标统一退回、同步和持久化契约：[客户端模拟同步与状态持久化计划](武器系统-客户端模拟同步与状态持久化计划.md) §2—§6。该补充尚未实施；§9.3 仅记录第一阶段已落地内容，不表示客户端 postTick 校准、引用简化和退回失败丢弃已经进入代码。
+
 **目标**：供给者以 `AmmoBelt` 为单位交付和接收弹药；Launcher 分别持有膛内弹与已装弹药，并通过一个布尔决定单发入膛或整份 Belt 装填。regen 沿用 `regen_per_minute` 生产数字库存，以 `belt_definition` 声明交付规格；Belt 保存 `label` 及可选自身回充能力，由 Launcher 推进。ammoLoader 完成接口的编译适配。物品实现与容器型号资源接入另行细化，本阶段验收以主源码编译通过为准。
 
 ## 1. 阅读入口与代码基线
 
-本节描述核对日期的工作区实现。§2—§9 是第一阶段目标，表内源码坐标为活引用，形式为“路径#源码声明符号”。本节 Java 路径统一以 `src/main/java/io/github/sweetzonzi/machine_max/` 为前缀，Kotlin 路径写全。本文提出的 `AmmoBelt` 等类型尚未进入代码。
+本节为第一阶段实施前的历史快照，固定到提交 `f9efef73`；§8 的迁移表以此为起点。表内 Java 路径以 `src/main/java/io/github/sweetzonzi/machine_max/` 为前缀，Kotlin 路径写全，历史坐标采用“路径:行 @ 提交”。第一阶段落地记录见 §9.3；2026-11-13 确认的后续目标以首部链接的同步与持久化计划为准。
 
-| 编号 | 源码坐标 | 当前行为 |
+| 编号 | 历史源码坐标 | 快照行为 |
 | --- | --- | --- |
-| C1 | `common/mech/subsystem/IAmmoSupplier.java#requestRound`、`#consumeReadyRound`、`#returnRound` | 交付与退回的单位是单个 `ProjectileType`；接口同时表达储备、输弹计时与交付 |
-| C2 | `common/mech/subsystem/IAmmoConsumer.java#receiveAmmo`、`#getCurrentSupplier` | 接口上有一个推送式接收方法，生产代码没有调用方；实际交付走拉取链，消费者持有所选供给者引用 |
-| C3 | `common/mech/subsystem/LauncherSubsystem.java#chamberedType`、`#tryLoadChamber`、`#tryRequestNextRound`、`#assignSupplier` | 显式库存只有膛内一发；空膛向供给者取弹，射击后预请求下一发；换供给者保留膛内弹 |
-| C4 | `common/mech/subsystem/LauncherSubsystem.java#loadData`、`#saveData`、`#ejectRound` | 保存 `chambered_type`；退膛尝试归还当前供给者，拒收后的物品落地路径为 TODO |
-| C5 | `common/mech/subsystem/RegenLoaderSubsystem.java#dockedConsumers`、`#startDelivery`、`#takeRoundFromMagazine`、`#returnRound` | 整匣语义由供给者的对接标记表达；逐发取走才扣数字库存；退回只增加数量 |
-| C6 | `common/mech/subsystem/attr/static_attr/module/FeedModuleAttr.java#reloadRoundByRound`、`#reloadTime` | 供给者侧决定每发计时或首次对接计时，`reload_time` 单位为秒 |
-| C7 | `common/mech/subsystem/attr/dynamic_attr/RegenLoaderSubsystemAttr.java#projectileTypesMap`、`#projectileTypes`、`#beltLabel` | `projectile_types` 弹种数量映射被展平为循环列表；实例另存 `belt_label` |
-| C8 | `common/mech/subsystem/AmmoLoaderSubsystem.java#container`、`#consumeReadyRound`、`#getProjectileTypeFromItem`、`#getAmmoItem` | 物品容器与映射为实验实现，消费一件物品后返回一个类型；物品回收存在占位路径 |
-| C9 | `common/mech/subsystem/WeaponControllerSubsystem.java#beltOf`、`#findSupplier`、`#routeAmmoToLaunchers` | 弹药池按展平弹链分组，`beltOf` 直接识别再生装弹机；路由可切换供给者 |
-| C10 | `common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#CODEC` | 发射器静态定义包含控制输入、供弹发现输入及炮管／炮闩／电容模块 |
-| C11 | `common/registry/MMDataComponents.java#PROJECTILE_TYPE`；`src/main/kotlin/io/github/sweetzonzi/machine_max/common/resource/modules/FittingModule.kt#FittingModule` | 已有物品弹种组件，以及“内容包型号 ID → 双端定义表 → 物品呈现”的接入范例 |
-| C12 | `common/mech/subsystem/SubsystemController.java#onVehicleStructureChanged`、`#pushAllTo`；`network/MMPayloadRegistry.java#register` | 结构发现分清理、重建两个相位；首次同步有全量补推；核对时世界同步协议为 `sync:2.9.3` |
-| C13 | `client/render/gui/hud/molang/HudWeaponSnapshot.java#capture`；`common/mech/subsystem/LauncherSubsystem.java#detonateChamberedRound`；`common/mech/explosion/CookoffComposition.java#addStoredRound` | HUD 读取膛内弹和供给者；发射器殉爆只汇总膛内一发，供给者处理自身库存 |
-| C14 | `common/mech/subsystem/attr/static_attr/module/MagazineModuleAttr.java#regenPerMinute`、`#regenRoundByRound`、`#regenDelay`；`common/mech/subsystem/RegenLoaderSubsystem.java#tickRegenRoundByRound`、`#batchTotalTicks` | 已有 `regen_per_minute`（发／分钟）、逐发／整批产出及取货后延迟；整批耗时按源容量除以速率计算 |
+| C1 | `common/mech/subsystem/IAmmoSupplier.java:187 @ f9efef73`（requestRound）、consumeReadyRound、returnRound | 交付与退回的单位是单个 `ProjectileType`；接口同时表达储备、输弹计时与交付 |
+| C2 | `common/mech/subsystem/IAmmoConsumer.java:54 @ f9efef73`（receiveAmmo）、getCurrentSupplier | 接口上有一个推送式接收方法，生产代码没有调用方；实际交付走拉取链，消费者持有所选供给者引用 |
+| C3 | `common/mech/subsystem/LauncherSubsystem.java:166 @ f9efef73`（chamberedType）、tryLoadChamber、tryRequestNextRound、assignSupplier | 显式库存只有膛内一发；空膛向供给者取弹，射击后预请求下一发；换供给者保留膛内弹 |
+| C4 | `common/mech/subsystem/LauncherSubsystem.java:1383 @ f9efef73`（loadData）、saveData、ejectRound | 保存 `chambered_type`；退膛尝试归还当前供给者，拒收后的物品落地路径为 TODO |
+| C5 | `common/mech/subsystem/RegenLoaderSubsystem.java:160 @ f9efef73`（dockedConsumers）、startDelivery、takeRoundFromMagazine、returnRound | 整匣语义由供给者的对接标记表达；逐发取走才扣数字库存；退回只增加数量 |
+| C6 | `common/mech/subsystem/attr/static_attr/module/FeedModuleAttr.java:27 @ f9efef73`（reloadRoundByRound）、reloadTime | 供给者侧决定每发计时或首次对接计时，`reload_time` 单位为秒 |
+| C7 | `common/mech/subsystem/attr/dynamic_attr/RegenLoaderSubsystemAttr.java:30 @ f9efef73`（projectileTypesMap）、projectileTypes、beltLabel | `projectile_types` 弹种数量映射被展平为循环列表；实例另存 `belt_label` |
+| C8 | `common/mech/subsystem/AmmoLoaderSubsystem.java:57 @ f9efef73`（container）、consumeReadyRound、getProjectileTypeFromItem、getAmmoItem | 物品容器与映射为实验实现，消费一件物品后返回一个类型；物品回收存在占位路径 |
+| C9 | `common/mech/subsystem/WeaponControllerSubsystem.java:423 @ f9efef73`（beltOf）、findSupplier、routeAmmoToLaunchers | 弹药池按展平弹链分组，`beltOf` 直接识别再生装弹机；路由可切换供给者 |
+| C10 | `common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java:27 @ f9efef73`（CODEC） | 发射器静态定义包含控制输入、供弹发现输入及炮管／炮闩／电容模块 |
+| C11 | `common/registry/MMDataComponents.java:60 @ f9efef73`（PROJECTILE_TYPE）；`src/main/kotlin/io/github/sweetzonzi/machine_max/common/resource/modules/FittingModule.kt:24 @ f9efef73`（FittingModule） | 已有物品弹种组件，以及“内容包型号 ID → 双端定义表 → 物品呈现”的接入范例 |
+| C12 | `common/mech/subsystem/SubsystemController.java:136 @ f9efef73`（onVehicleStructureChanged）、pushAllTo；`network/MMPayloadRegistry.java:34 @ f9efef73`（register） | 结构发现分清理、重建两个相位；首次同步有全量补推；核对时世界同步协议为 `sync:2.9.3` |
+| C13 | `client/render/gui/hud/molang/HudWeaponSnapshot.java:39 @ f9efef73`（capture）；`common/mech/subsystem/LauncherSubsystem.java:513 @ f9efef73`（detonateChamberedRound）；`common/mech/explosion/CookoffComposition.java:158 @ f9efef73`（addStoredRound） | HUD 读取膛内弹和供给者；发射器殉爆只汇总膛内一发，供给者处理自身库存 |
+| C14 | `common/mech/subsystem/attr/static_attr/module/MagazineModuleAttr.java:25 @ f9efef73`（regenPerMinute）、regenRoundByRound、regenDelay；`common/mech/subsystem/RegenLoaderSubsystem.java:857 @ f9efef73`（tickRegenRoundByRound）、batchTotalTicks | 已有 `regen_per_minute`（发／分钟）、逐发／整批产出及取货后延迟；整批耗时按源容量除以速率计算 |
 
 相关文档的分工：
 
-- [装填语义与供给绑定重构计划](../已实现/武器系统-装弹机装填语义与供给绑定重构计划.md) §3、§5—§7、§14：C5、C6 的对接与绑定行为及其实施记录。本文定义独立的第一阶段目标，不把该文的已实现状态当作 AmmoBelt 已实现。
+- [装填语义与供给绑定重构计划](../已实现/武器系统-装弹机装填语义与供给绑定重构计划.md) §3、§5—§7、§14：C5、C6 的对接与绑定行为及其实施记录。该文提供改造起点的行为依据，AmmoBelt 的落地记录见本文 §9.3。
 - [装弹机模块化损伤实施计划](../进行中/武器系统-装弹机模块化损伤实施计划.md) §3—§7：机构／弹仓损伤、再生门控、退弹和存档恢复。第一阶段沿用模块健康判据，库存归属按本文 §6.4 核对。
 - [武器 HUD 信息分级与视角形态需求分析](../进行中/武器系统-武器HUD信息分级与视角形态需求分析.md) §三：计数与状态需求。本文 §7.2 规定 AmmoBelt 接入所需的最低适配。
 - [载具系统殉爆机制设计](../进行中/载具系统-殉爆机制设计.md) §三、§四：实际库存贡献、事件来源和起爆结算。
@@ -175,17 +177,17 @@ Codec 和网络解码边界检查：正的模式计数、`0 ≤ remaining ≤ le
 
 整份替换由规格差异驱动：Launcher 已装内容的规格与当前供给者要交付的规格不一致时，就把这次差异当作在途换装——向该供给者 `requestRound`，它按自己的 `reload_time` 备货，备好后整份替换。装填流程只属于供给者，Launcher 侧不另排计时；专用按键、界面与完整多阶段人工动作归 §10。
 
-换装期间（从差异成立到提交完成）保留膛内弹和旧 Belt，暂停本武器射击，目标来源只持有交付预留。旧 Belt 的回充仍由当前持有者按 §3.4 推进，交接验证读取提交时的实际余量。提交在主线程完成：先取出新的一份并校验，再把旧的一份交还它的来源，任一步失败都整笔回滚；本阶段不模拟“旧匣已在手中”的中间实体状态。终止未提交操作只释放预留，武器已有弹药保持在原位置。
+换装期间（从差异成立到提交完成）保留膛内弹和旧 Belt，暂停本武器射击，目标来源只持有交付预留。旧 Belt 的回充由当前持有者按 §3.4 推进，交接读取提交时的实际余量。有效新交付在主线程验证后提交；旧 Belt 可交给当前合法且接受它的提供者，无人接收或整份拒收则直接丢弃，换装照常完成。新交付失败或不合法时不提交换装，不因取新弹失败丢弃旧 Belt。本阶段不模拟“旧匣已在手中”的中间实体状态；终止未提交操作只释放预留。
 
 充能 Belt 允许同样的换装流程。玩家可以等待当前 Belt 自行恢复，也可以使用库存中的另一份满额 Belt；是否具有回充能力不限制换装。新 Belt 必须来自实际可交付额度，换装本身不将当前 Belt 重置为满额。自动比较“等待回充还是换装”的策略留待后续细化。
 
-示例：膛内 A × 1、已装 A × 17，换入 B × 30 后，膛内为 A × 1、已装为 B × 30，A × 17 交还它的来源。regen_loader 按接受规则加 17；未来 ammo_loader 物品实现保存剩余弹序。当前物品接收方未实现或拒收时，操作不能丢弃旧 Belt。首次后续射击使用膛内 A。示例数值仅说明数量和顺序契约，不作为本阶段测试或内容标定基线。
+示例：膛内 A × 1、已装 A × 17，换入 B × 30 后，膛内为 A × 1、已装为 B × 30。旧 A × 17 若由 regen_loader 接受则加 17；未来 ammo_loader 接受时保存剩余弹序。无人接受则丢弃这 17 发，不影响新 Belt 装入。首次后续射击使用膛内 A。示例数值仅说明数量和顺序契约，不作为本阶段测试或内容标定基线。
 
 ### 4.4 选择、已装状态与退回目标
 
 控制器的所选弹药、下一次来源、实际已装 Belt 和膛内弹分别有明确读取点。选择变化经规格差异触发的整份替换影响已装库存，不能立即覆盖 `loadedBelt`。普通来源重排或更快候选不抢走已经装好的 Belt。
 
-整份卸弹与退膛是不同操作。退膛将一发包装成单发交付；卸弹返回整个剩余 Belt。返回目标由操作显式确定，可以使用武器记录的已装来源作为定位依据，不能无条件把旧 Belt 交给刚选中的新供给者。来源定位属于武器／运行期操作，不写进可携带弹药物品。
+整份卸弹与退膛是不同操作。退膛将一发包装成单发交付；卸弹处理整个剩余 Belt。两者可向当前合法提供者尝试回收，由接收策略判断是否接受，不要求退回历史来源。无人接收或拒收时允许直接丢弃，不要求生成掉落物。武器无需保存历史来源追踪，AmmoBelt 也不携带来源引用。
 
 ## 5. 供给者的交付与回收
 
@@ -195,9 +197,9 @@ Codec 和网络解码边界检查：正的模式计数、`0 ≤ remaining ≤ le
 
 预留由实际库存所有者维护，覆盖单发、物品槽位和数字数量，多个消费者合计不能超过可交付库存。第一阶段复用现有交付／认领存储及主线程编排，不建立独立事务服务。`can_supply_multiple` 的已有并发限制继续约束未完成交付；已交付的 Belt 不需要源持续占用服务通道。
 
-在同一主线程提交点完成源库存扣减与目标写入。换装同时涉及旧 Belt 的返回时，先验证完整交换，包括取出新物品后可腾出的槽位／数量空间，再执行提交。任一条件失败，源与武器库存都不变，操作保留或终止并给出明确状态。
+在同一主线程提交点完成源库存扣减与目标写入，新交付的兼容性和可用性必须通过校验。换装的旧 Belt 另按回收策略接受或丢弃；回收空间不足可以拒收，但不阻止已经合法的新交付提交。不能把接收方拒收解释为已成功回收。
 
-退回采用全收／全拒；拒收不改传入对象，不清除调用方字段。调用方保留尚未成功交接的 Belt。部分回收及自动寻找多个接收方不在第一阶段范围。
+退回接口采用全收／全拒；接收方拒收时不改库存或传入对象。调用方在正常退膛／卸弹／换装中可以丢弃被拒收的内容，并清理自身对应字段。部分回收及自动寻找多个接收方不在第一阶段范围。
 
 ### 5.2 regen_loader
 
@@ -233,24 +235,24 @@ F5 可参考 C11 的 `PROJECTILE_TYPE` 识别通路设计单发物品转换；�
 
 ```text
 源储备 → Launcher.loadedBelt → Launcher.chamberedType → 射击消耗
-                  └────────→ 指定接收方
+                  └────────→ 合法接收方或明确丢弃
 ```
 
 单发模式由源直接提交到膛室。源扣减发生在交付提交，Belt 入膛不再次扣源。预留表示对源库存的承诺，不计入第二份库存。每份已交付内容只有一个可消费所有者。
 
-已装 Belt 与供给者储备容量独立。源生产与 Belt 自身回充分别增加各自余量；数量核对须计入这两条实际产出。可回充 Belt 的额度在成功射击时直接消费，不经过一份额外的独立膛内库存。容量、输出长度与两处回充配置必须按 §8 的迁移清单逐型号核对，不能将这项玩法变化藏在计数实现中。
+已装 Belt 与供给者储备容量独立。源生产与 Belt 自身回充分别增加各自余量；数量核对须计入这两条实际产出，以及退回拒收后的明确丢弃损耗。可回充 Belt 的额度在成功射击时直接消费，不经过一份额外的独立膛内库存。容量、输出长度与两处回充配置必须按 §8 的迁移清单逐型号核对，不能将这项玩法变化藏在计数实现中。
 
 ### 6.2 存档
 
-武器保存独立膛内弹、完整紧凑 Belt（含 label、可选回充定义与运行进度）与返回来源定位。换装不单独存档：它由“已装规格与当前供给者的交付规格不一致”这一状态描述，读档后路由重新指认即自然恢复。回充随实例保存，不保存持续回充来源链接。返回位置引用使用可在同一份装配存档内恢复的部件／子系统标识，不保存 Java 引用。
+Launcher 保存独立膛内弹、完整紧凑 Belt（含 label、实际弹序、余量、可选回充定义与运行进度）及需要延续的剩余射击冷却。当前供给者、装填路径、历史退回来源和网络地址不持久化；首轮未完成装填不存档，读档后重新发起。关系由服务端恢复实际状态后重新发现、选择并同步到客户端，不要求原路退回。
 
-源保存实际物品或数字库存及再生状态。运行期预留从已恢复的操作重建，不在源与目标两边各保存一份已扣库存。目标消失或无法恢复预留时，未提交操作终止，已装 Belt 与膛内弹保留。读档不免费产出新 Belt，不重放库存转移。
+源保存实际物品或数字库存及自身再生进度／延迟；武器控制器保存玩家选中的弹药规格。发现结果、人员认领、机构占用和交付预留不存档，服务端运行时重建，不在源与目标两边各保存一份已扣库存。结构、接线与连接拓扑由载具／部件层负责恢复，不在子系统存档中重复保存。读档不免费产出新 Belt，不重放库存转移。
 
 武器使用的 AmmoBelt 编解码也作为未来物品数据格式。已装内容保存实际紧凑弹序、标签及恢复内容所需模式，不只保存可被玩家编辑的配弹预设 ID；读档不从源当前模板重置余量或回充进度。定义引用无法解析时保留可恢复信息；容器容量变化的数据迁移由 F5 细化，不能以本阶段不存在的容器查询实现校验。
 
 ### 6.3 数量与回收验收口径
 
-未来 ammo_loader 的物品往返要求数量、弹种和剩余顺序一致；regen 回收要求接受数量正确，允许具体弹种和弹序在下一次发放时按模板重新生成。这些是实现行为约定，本阶段不要求为其建立测试夹具或运行验收。
+未来 ammo_loader 成功接受后的物品往返要求数量、弹种和剩余顺序一致；regen 成功回收要求接受数量正确，允许具体弹种和弹序在下一次发放时按模板重新生成。接收方拒收不改库存，调用方丢弃单独计为损耗。这些是实现行为约定，本阶段不要求为其建立测试夹具或运行验收。
 
 ### 6.4 损伤与殉爆
 
@@ -262,7 +264,9 @@ F5 可参考 C11 的 `PROJECTILE_TYPE` 识别通路设计单发物品转换；�
 
 ### 7.1 路由和线程
 
-服务端负责来源选择、交付、回收与库存消费。客户端只跟随权威状态并驱动表现，不能扣库存或建立真实预留。Launcher 持久化并同步自己的膛内弹与已装 `AmmoBelt`（含回充运行态）；客户端从同步值读取，向供给者取弹的链路只在服务端执行。客户端本地的消费只更新表现副本，服务端下一次推送覆盖余量。AmmoBelt 的物品／持久化／网络解码复用同一含义。
+服务端负责真实库存、来源选择、实际交付／回收与投射物生成。客户端跟随服务端选定的来源，正常模拟装填、取弹、扣弹、回充与音效特效；本地消费使用独立状态副本，不回写服务端库存，不生成真实投射物或建立真实预留。同步回调缓存新值，客户端主线程 postTick 在本轮模拟结束后只应用新收到的字段；校准不触发表现，不引入状态回滚或预测重推。AmmoBelt 的物品／持久化／网络解码复用同一含义。
+
+运行期供给指认统一使用宿主 SubPart ID ＋ 子系统名，复用普通子系统同步的寻址形状，不发送 Part UUID 或 SubPart 名，不建立额外的子系统整数注册表。完整字段、空值更新、初始基线及服务端重建关系见 [客户端模拟同步与状态持久化计划](武器系统-客户端模拟同步与状态持久化计划.md) §2—§5。
 
 路由候选根据下一份交付检查长度和全部弹种；容器安装条件校验随 F5 接入。弹药池通过统一接口读取交付规格，ammo_loader 尚不能交付的路径不进入候选，不能用 `instanceof RegenLoaderSubsystem` 作为长期接口契约。池分组使用紧凑配弹规格及需要区分的容器 ID／回充规格，不以 3000 个键的展平数组或 `label` 作为身份。不同内容允许具有相同显示名。
 
@@ -276,7 +280,7 @@ F5 可参考 C11 的 `PROJECTILE_TYPE` 识别通路设计单发物品转换；�
 
 屏幕标签使用紧凑类型名，例如以 AP 为主且夹有少量 AP-T 的弹链可标 `AP`，全穿甲曳光弹链可标 `AP-T`；纯曳光弹在命名参考标准 §3.3 中对应 `T`。不在示例短标签中加入“混装弹链”等说明性后缀。实际比例和顺序保存在 `pattern` 中，可供未来详情界面显示；标签不随本次取到的弹种变化，也不要求逐项枚举全部成员。玩家可以自定义显示名，引擎不从名字推断弹药效果。
 
-首次进入、读档及结构恢复需同步完整 Belt、膛内弹与当前操作，沿用 C12 的全量补推。稳定射击过程使用紧凑内容与消费位置／数量变化，避免每 tick 展开发送全部弹种。具体使用同步值还是现有载荷扩展在 P4 按当前同步通路确定，不预建两条并行协议。
+首次进入、读档及结构恢复需同步完整 Belt、膛内弹与服务端当前操作，沿用 C12 的全量补推；完整初值建立模拟基线，不重播历史音效。稳定射击过程使用紧凑内容与消费位置／数量变化，避免每 tick 展开发送全部弹种，也不逐发分别发送音效和特效包。同步按现有通路调整；每 tick 检查脏字段不等于每 tick 全量下发，客户端只能应用实际收到的新值。
 
 字段表或载荷布局变化必须同步提升 `MMPayloadRegistry#register` 中对应协议组，实施时读取当时版本并递增，不能覆盖同期任务的版本更新。本次文档核对值见 C12，不据此预写未来版本号。
 
@@ -437,6 +441,7 @@ F5 可参考 C11 的 `PROJECTILE_TYPE` 识别通路设计单发物品转换；�
 | F4 | 待发架与后备架之间的弹药转运 | 待发位置耗尽、后备有弹时由人员或机构转运；转运可与武器装填形成不同任务 | 确定允许路径、存入单位、容量预留和对射击的影响，不把所有可发现库存自动视为可达 |
 | F5 | 容器定义与弹药／供弹具物品实现 | 型号加载、容量与安装校验、模型呈现、AmmoBelt 物品组件、实际读取和回收、空容器与单发物品映射 | 复用本阶段实例格式；物品供给者按整件交付／回收，regen 按数量回收；交付真实物品闭环后再运行相关验证 |
 | F6 | 玩家配弹编辑与操作界面 | 自定义有序混装、保存配弹方案、实际取出／补入、空容器填装、弹链编辑及手动提前换装输入 | 依赖 F5；预设指导未来装填，已装内容保存实际结果；完整编辑与交互另列实施计划 |
-| F7 | 行为回归与运行验收 | 有限弹序和自身回充进度编解码、成功射击延迟、充能换装、两处生产的数量核对、拒收无损、物品往返、库存损伤／殉爆、多人同步和客户端表现 | 依据实际交付的功能确定 JUnit、GameTest 与实机场景；本阶段只编译，不把这些验证写成已完成 |
+| F7 | 行为回归与运行验收 | 有限弹序和自身回充进度编解码、成功射击延迟、充能换装、两处生产的数量核对、接收方拒收不改库存及调用方明确丢弃、物品往返、库存损伤／殉爆、多人同步和客户端表现 | 依据实际交付的功能确定 JUnit、GameTest 与实机场景；本阶段只编译，不把这些验证写成已完成 |
+| F8 | 客户端模拟同步与状态持久化 | 2S38 首发后音效／特效缺失、导弹发射表现缺失；本地消费后的校准、供给指认、关系恢复与历史来源追踪 | [客户端模拟同步与状态持久化计划](武器系统-客户端模拟同步与状态持久化计划.md) §2—§7：回调缓存后在客户端 postTick 应用，不做回滚重推；宿主 ID ＋ 名称寻址；只保存子系统实际状态，关系重建、未完成装填重启，拒收允许丢弃；尚未实施 |
 
 本阶段收尾报告给出各 F 项对应的新计划链接；若尚未细化，以本节编号作为明确入口，不创建只有标题的计划文件。第一阶段文档按 §9 的实际落地状态归类，不能因 F 项尚未实现而将其误计为本阶段缺口。
