@@ -15,42 +15,30 @@ import java.util.UUID;
 
 /**
  * 弹药供给者接口。<br>
- * 供给者负责管理弹药储备、装填计时和弹药交付，交付单位是 {@link AmmoBelt} 的一份实例。
- * 消费者调用 requestRound → 等待 isRoundReady → consumeReadyBelt 三步取得一份弹药；供给者不向消费者
- * 推送，也不判断消费者收不收——校验在消费者拉到交付之后执行。
+ * 供给者提供的是<b>可工作条件</b>与<b>交付本身</b>：消费者（{@link LauncherSubsystem}）在自己的
+ * {@link ReloadJob} 里推进这份装填的时间，每 tick 向供给者索取"本 tick 能推进多少"
+ * （{@link #getAdvanceTicks(IAmmoConsumer)}），走完后取走一份 {@link AmmoBelt}。供给者不再为任何
+ * 消费者保存一份并行计时，也不向消费者推送。
+ * <p>
+ * 交付单位是一份 Belt 实例：{@link #getDeliverySpec()} 预览下一份的满额规格，
+ * {@link #consumeReadyBelt(IAmmoConsumer)} 扣减库存并交出独立实例，{@link #returnBelt(AmmoBelt)}
+ * 全收或全拒地回收。校验在消费者拉到交付之后执行——供给者不判断消费者收不收。
  * <p>
  * <b>双端契约：</b>"哪根管由哪台供给者供弹"是服务端单方面的决定，客户端经
  * {@link IAmmoConsumer} 上的同步指认跟随（身份由 {@link SupplierRef} 表达）。
- * 取弹链只在服务端执行；客户端从发射器上的同步值读取膛内弹与已装 Belt，只驱动本机表现。
+ * 取弹链只在服务端执行；客户端从发射器上的同步值读取膛内弹、已装 Belt 与作业进度，只驱动本机表现。
  */
 public interface IAmmoSupplier {
 
     /**
-     * 供给者当前工作状态枚举。<br>
-     * 由供给者自行报告，消除消费者侧的 instanceof 分支。
-     */
-    enum SupplierStatus {
-        /** 正常可用，有弹药待交付 */
-        READY,
-        /**
-         * 该消费者当前无可交付弹药。<br>
-         * 包含两种情况：弹仓真的空了，或供给者此刻不具备交付能力（{@link #isSupplyOperational()} 为 false）。
-         * 因此<b>不要</b>用它反推库存为零——要问库存请用 {@link #hasAmmo()} 或 {@link #getRemainingCount()}。
-         */
-        EMPTY,
-        /** 装填或冷却中 */
-        RELOADING
-    }
-
-    /**
-     * 装填阶段：该消费者当前卡在哪一段。<br>
-     * 与 {@link SupplierStatus} 正交——状态只说"还没准备好"，阶段说清是输弹、逐发再生还是整批回充。
-     * 显示层据此选择进度口径与文案；路由判据仍用 {@link #getTicksToNextRound}。
+     * 装填阶段：消费者此刻等的是哪一段。<br>
+     * 作业本身的推进由消费者的 {@link ReloadJob} 表达；本枚举只描述"没有作业时供给者在忙什么"，
+     * 以及显示层该用哪种进度口径。
      */
     enum ReloadPhase {
         /** 没有进行中的装填或再生 */
         IDLE,
-        /** 正在把弹药送进膛室（整匣模式的首次对接也在这里） */
+        /** 一份交付正在推进（消费者有作业） */
         LOADING,
         /** 弹仓补货中：按速率逐发再生下一发 */
         REGENERATING,
@@ -74,8 +62,8 @@ public interface IAmmoSupplier {
      * 调用方下次判定即看到 true。
      * <p>
      * 武器控制器用它在选取、保持与回退供给者时实时过滤；供给者自己也要用它在
-     * {@code requestRound} / {@code isRoundReady} / {@code consumeReadyBelt} 三个交付入口挡下请求，
-     * 否则绕过控制器的直接请求仍能取走弹药。
+     * {@link #getAdvanceTicks(IAmmoConsumer)} 与 {@link #consumeReadyBelt(IAmmoConsumer)}
+     * 两个入口挡下请求，否则绕过控制器的直接请求仍能取走弹药。
      */
     boolean isSupplyOperational();
 
@@ -95,45 +83,14 @@ public interface IAmmoSupplier {
      */
     @Nullable AmmoBelt getDeliverySpec();
 
-    /** 一次交付（一份 Belt）的装填耗时（tick） */
+    /**
+     * 交付一份 Belt 的机械段基准时长（tick）。<br>
+     * 消费者在开工时把它写进 {@link ReloadJob#totalTicks()}，此后不再改读本方法。
+     */
     int getReloadTimeTicks();
 
     /** 是否允许多个消费者同时等待装填 */
     boolean canSupplyMultiple();
-
-    /**
-     * 该消费者是否已被本供给者开始交付（交付计时中，或弹药已就绪待取）。<br>
-     * 这是"轮到我了"的唯一判据：
-     * <ul>
-     *   <li>{@code canSupplyMultiple()=true} — 请求被接受即开始交付，本方法随即为 true</li>
-     *   <li>{@code canSupplyMultiple()=false} — 同一时刻只有一位消费者被交付，
-     *       未排上的请求返回 true 但本方法保持 false，消费者下个 tick 重发请求即可再试</li>
-     * </ul>
-     * 因此"排队"不是持久状态，而是"本次未被排上"的瞬时结果，供给者无需为它记录队列。
-     * <p>
-     * 与 {@link #getStatus(IAmmoConsumer)} 的区别：状态里的 {@code RELOADING} 既可能是"已轮到它"，
-     * 也可能是"它还没被排上"，本方法只回答前者。
-     * <p>
-     * 未覆写时返回 false，调用方按"尚未轮到"处理。
-     *
-     * @param consumer 请求查询的消费者
-     * @return true 表示该消费者正被交付
-     */
-    default boolean isRoundScheduled(IAmmoConsumer consumer) {
-        return false;
-    }
-
-    /**
-     * 是否已有消费者被开始交付（等价于"这条交付通道已被占"）。<br>
-     * 独占供给者用它决定能否再接一位消费者；武器控制器用它判断这台装弹机是不是已经
-     * 名花有主、别的发射器该去找别人。允许并行供弹（{@link #canSupplyMultiple()}）时该标志
-     * 不构成限制，多根管可以同时挂在同一台上。
-     * <p>
-     * 未覆写时返回 false，调用方按"无人交付"处理。
-     */
-    default boolean hasScheduledRound() {
-        return false;
-    }
 
     /**
      * 当前绑着本机的消费者集合（认领）。<br>
@@ -153,60 +110,32 @@ public interface IAmmoSupplier {
     Set<IAmmoConsumer> getBoundConsumers();
 
     /**
-     * 取消该消费者在本供给者处<b>进行中或尚未取走</b>的交付，让那发重新可被分配。<br>
-     * 由消费者在换供给者时调用（见 {@code LauncherSubsystem.setCurrentSupplier}），
-     * 否则旧供给者会一直为一位已经不管它的消费者留着这条交付通道，
-     * 弹仓里那发既不会被取走，也不会被别的消费者使用。
+     * 本 tick 能为该消费者的作业推进多少 tick。<br>
+     * 这是供给者唯一的"放行"入口：{@code 0} 表示本 tick 推不动（缺弹、机构损坏、供能不足、
+     * 槽位被别的作业占着），正数表示推进量。调用方把返回值累计进
+     * {@link ReloadJob#advance(int)}，因此推进速度由供给者表达，进度仍归消费者。
      * <p>
-     * 调用时该消费者可能处于两种状态，本方法都要覆盖：交付<b>计时中</b>，或弹药<b>已就绪待取</b>。
-     * 取消后（独占模式下）这条通道立刻空出，等待中的消费者下次请求即可被排上。
+     * 本方法与 {@link #consumeReadyBelt(IAmmoConsumer)} 都必须用 {@link #isSupplyOperational()}
+     * 挡下失效的机构，否则绕过控制器的直接请求仍能取走弹药。
      * <p>
-     * 与 {@link #returnBelt(AmmoBelt)} 的分工：那个是"把已经拿到手的那份弹药还回来"，
-     * 会改变库存计数；本方法只取消"尚未取走"的交付承诺，而承诺阶段库存本来就没扣，
-     * 所以<b>不要在这里补弹</b>——本接口的既有实现都只在
-     * {@link #consumeReadyBelt(IAmmoConsumer)} 里扣减库存，补弹会让同一份被算两次。
-     * 只有"在承诺阶段就已扣出库存"的实现才需要归还，由该实现自行处理。
-     * <p>
-     * 未覆写时为空操作。
+     * {@code can_supply_multiple=false} 的机构一次只为一条作业推进：别的活跃消费者已经绑着本机时，
+     * 未绑定者拿到 {@code 0}——一条输弹线一次只移动一份，等待方下个 tick 再问。
      *
-     * @param consumer 要取消交付的消费者
+     * @param consumer 请求放行的消费者
+     * @return 本 tick 可推进的 tick 数；{@code 0} 表示本 tick 推不动
      */
-    default void cancelRound(IAmmoConsumer consumer) {
-    }
+    int getAdvanceTicks(IAmmoConsumer consumer);
 
     /**
-     * HUD 弹链名。
-     * <p>
-     * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。名字是给玩家读的语义标签，
-     * 两条构成不同的弹链可以合法地显示同一个名字（例如都以穿甲弹开头的两条弹链）。
-     * 需要标识弹链时用 {@link #getDeliverySpec()} 的内容规格，
-     * 需要标识弹种时用 {@link #getSuppliedType()} 返回的 {@link ProjectileType} 实例。
-     * <p>
-     * <b>仅在客户端调用</b>：文本取自玩家语言的翻译键，服务端的语言表不含内容包的键。
-     */
-    String getLabel();
-
-    /**
-     * 请求一发弹药，启动非阻塞装填计时器。<br>
-     * 幂等性：同一 consumer 多次调用不会创建重复计时器。
-     *
-     * @return true 表示请求已接受（首次请求或已在装填中）
-     */
-    boolean requestRound(IAmmoConsumer consumer);
-
-    /** 指定消费者的弹药是否已就绪 */
-    boolean isRoundReady(IAmmoConsumer consumer);
-
-    /**
-     * 取走已就绪的交付。<br>
-     * 仅在 {@link #isRoundReady(IAmmoConsumer)} 返回 true 时调用；扣减发生在这一次调用里，
-     * 承诺阶段不扣库存。返回的实例归消费者所有，源不再持有或更新它。
+     * 取走一份已经备好的交付。<br>
+     * 消费者在作业走完后调用；扣减发生在这一次调用里，此前库存未动。返回的实例归消费者所有，
+     * 源不再持有或更新它。
      * <p>
      * 实例的发数由供给者按自己的库存决定，可以少于 {@link #getDeliverySpec()} 的长度：规格
      * （模式、长度、标签、回充）与规格一致，只有 {@code remaining} 变小。消费者据此仍认得出
      * "这是同一份弹链"，不会把一次缩水的交付当成换装。
      *
-     * @return 一份独立实例的 {@link AmmoBelt}；未就绪或已无库存时返回 null
+     * @return 一份独立实例的 {@link AmmoBelt}；本机不可交付或已无库存时返回 null
      */
     @Nullable AmmoBelt consumeReadyBelt(IAmmoConsumer consumer);
 
@@ -220,88 +149,35 @@ public interface IAmmoSupplier {
     }
 
     /**
-     * 供给者当前工作状态（per-consumer）。<br>
-     * 由具体供给者自行报告，无需消费者做 instanceof 判断。
-     *
-     * @param consumer 请求状态的消费者
-     * @return 当前状态
+     * 没有进行中的作业时，供给者在忙哪一段。<br>
+     * 默认不区分再生形态（{@link ReloadPhase#IDLE}）：只有按速率补货的实现才覆写。
+     * 显示层用它把"等待供弹"与"等待再生"分开，秒数才算在正确的阶段上。
      */
-    default SupplierStatus getStatus(IAmmoConsumer consumer) {
-        return getRemainingCount() > 0 ? SupplierStatus.READY : SupplierStatus.EMPTY;
+    default ReloadPhase getRefillPhase() {
+        return ReloadPhase.IDLE;
+    }
+
+    /** 当前再生阶段的进度（0~1）；没有再生时返回 0。 */
+    default float getRefillProgress() {
+        return 0f;
+    }
+
+    /** 当前再生阶段剩余 tick；没有再生时返回 0。 */
+    default int getRefillRemainingTicks() {
+        return 0;
     }
 
     /**
-     * 装填/再生进度（0~1）。<br>
-     *
-     * @param consumer 请求进度的消费者
-     * @return 进度值 0.0~1.0
-     */
-    float getReloadProgress(IAmmoConsumer consumer);
-
-    /**
-     * 该消费者在本供给者处这次输送已经走了多少 tick。<br>
-     * 与 {@link #getReloadProgress(IAmmoConsumer)} 的分工：那个是给显示用的比例（会被钳位、
-     * 在没有计时器时可能退化成别的含义），这里是内部计时的原始刻度，供调用方判断"这一发是否
-     * 还值得改主意"（例如武器控制器只在开装后的头几 tick 内允许换装弹机）。
+     * 按消费者作业的当前进度播放本机负责的那一段装填音效。<br>
+     * 机械段的声音定位在装弹机上，因此由供给者自己播放；消费者只交来进度，已播阈值由供给者记录，
+     * 同一段不重播。默认空实现：没有进度音效的供给者不必覆写。
      * <p>
-     * 未覆写时返回 -1，调用方按"没有为本消费者输送"处理。
+     * <b>仅在客户端调用</b>，每个客户端 tick 一次。
      *
-     * @param consumer 请求查询的消费者
-     * @return 已输送的 tick 数；本供给者没有为它输送时返回 -1
+     * @param consumer 正在装填的消费者
+     * @param progress 该消费者当前作业的进度（0~1）
      */
-    default int getDeliveryElapsedTicks(IAmmoConsumer consumer) {
-        return -1;
-    }
-
-    /**
-     * 为这个消费者拿到下一份交付还要多少 tick，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
-     * 分档：已为本管备好一份（就绪待取）= {@code 0}；正为本管输弹 = 剩余 tick；
-     * 有余弹但还没起送 = 整段 {@link #getReloadTimeTicks()}；无余弹或本机不可交付 =
-     * {@link Integer#MAX_VALUE}。最后一档表达「现货优先」——空匣的机器即使下一 tick 就会回充出
-     * 一发也报 {@code MAX_VALUE}，换到有现货的候选才划算。
-     * <p>
-     * 方法无副作用：{@link #isRoundReady(IAmmoConsumer)} 只在已经排上的分支里调用，
-     * 不会顺手替消费者发起新请求。
-     *
-     * @param consumer 请求查询的消费者
-     * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
-     */
-    default int getTicksToNextRound(IAmmoConsumer consumer) {
-        if (!isSupplyOperational()) return Integer.MAX_VALUE;
-        if (isRoundScheduled(consumer) && isRoundReady(consumer)) return 0;
-        if (!hasAmmo()) return Integer.MAX_VALUE;
-        int elapsed = getDeliveryElapsedTicks(consumer);
-        if (elapsed < 0) return Math.max(0, getReloadTimeTicks());
-        return Math.max(0, getReloadTimeTicks() - elapsed);
-    }
-
-    /**
-     * 该消费者当前所处的装填阶段。<br>
-     * 默认只区分"已排上输弹"与"没有进行中的装填"：不按再生态细分的实现无需覆写。
-     * 本方法无副作用——{@link #isRoundReady(IAmmoConsumer)} 带副作用的实现（未排上时会顺手补请求）
-     * 由 {@link #getRemainingReloadTicks} 先用 {@link #isRoundScheduled} 挡住。
-     *
-     * @param consumer 请求查询的消费者
-     * @return 当前阶段
-     */
-    default ReloadPhase getReloadPhase(IAmmoConsumer consumer) {
-        return isRoundScheduled(consumer) ? ReloadPhase.LOADING : ReloadPhase.IDLE;
-    }
-
-    /**
-     * 当前阶段的剩余 tick 数：输弹计时、逐发再生或整批回充还剩多久。<br>
-     * 与 {@link #getTicksToNextRound} 的分工：那个回答"值不值得换供给者"（无弹报
-     * {@link Integer#MAX_VALUE}），本方法回答"这一格还要等多久"，让显示层把秒数算在正确的阶段上。
-     * 不启动计时、不修改状态。
-     *
-     * @param consumer 请求查询的消费者
-     * @return 剩余 tick；没有进行中的阶段时为 0
-     */
-    default int getRemainingReloadTicks(IAmmoConsumer consumer) {
-        if (getReloadPhase(consumer) != ReloadPhase.LOADING) return 0;
-        if (isRoundScheduled(consumer) && isRoundReady(consumer)) return 0;
-        int elapsed = Math.max(0, getDeliveryElapsedTicks(consumer));
-        return Math.max(0, getReloadTimeTicks() - elapsed);
+    default void tickStageSounds(IAmmoConsumer consumer, float progress) {
     }
 
     /**
@@ -316,6 +192,18 @@ public interface IAmmoSupplier {
      * @return true 表示已收下；false 表示未接收（弹种不被允许、弹仓不可储存或容量不足）
      */
     boolean returnBelt(AmmoBelt belt);
+
+    /**
+     * HUD 弹链名。
+     * <p>
+     * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。名字是给玩家读的语义标签，
+     * 两条构成不同的弹链可以合法地显示同一个名字（例如都以穿甲弹开头的两条弹链）。
+     * 需要标识弹链时用 {@link #getDeliverySpec()} 的内容规格，
+     * 需要标识弹种时用 {@link #getSuppliedType()} 返回的 {@link ProjectileType} 实例。
+     * <p>
+     * <b>仅在客户端调用</b>：文本取自玩家语言的翻译键，服务端的语言表不含内容包的键。
+     */
+    String getLabel();
 
     /**
      * 供给者身份：宿主 RegularPart 的 uuid + SubPart 名 + 子系统名。<br>

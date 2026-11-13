@@ -42,8 +42,9 @@ subsystem/
 │     └── SightSubsystem.java           # 瞄准镜（继承 CameraSubsystem）
 │
 ├── 武器系统
-│   ├── LauncherSubsystem.java          # 投射物发射器（炮闩/导弹架/火箭管）
-│   ├── AmmoLoaderSubsystem.java        # 自动装弹机：机械段计时、槽位、上游查询
+│   ├── LauncherSubsystem.java          # 投射物发射器（炮闩/导弹架/火箭管），持有装填作业
+│   ├── ReloadJob.java                  # 一条装填作业的进度与总时长，归 Launcher
+│   ├── AmmoLoaderSubsystem.java        # 自动装弹机：放行条件、槽位与交付
 │   ├── RegenAmmoRackSubsystem.java     # 再生弹药架：数字库存与自身再生
 │   └── AmmoRackSubsystem.java          # 物品弹药架：物品容器（往返 WIP）
 │
@@ -68,7 +69,7 @@ subsystem/
 | 修复座位交互 | `SeatSubsystem.java` | 乘客登乘、输入信号 |
 | 修复电池 | `BatterySubsystem.java` | 充放电、网格集成 |
 | 修复发射器 | `LauncherSubsystem.java` | 弹药消耗、投射物类型 |
-| 修复装弹机 | `AmmoLoaderSubsystem.java` | 机械段计时与上游查询 |
+| 修复装弹机 | `AmmoLoaderSubsystem.java` | 放行条件、槽位与交付；计时不在这里 |
 | 修复弹药架 | `RegenAmmoRackSubsystem.java` | 库存、再生与库存殉爆 |
 | 新增静态属性 | `attr/static_attr/` | JSON 编解码，按类型定义 |
 | 新增动态属性 | `attr/dynamic_attr/` | 运行时可变状态 |
@@ -86,10 +87,11 @@ subsystem/
 - **保存/加载**：在 `AbstractSubsystem` 中重写 `saveData()`/`loadData()` 进行 NBT 持久化。
 - **线程**：`onCollideWithBlock()` 在物理线程调用；`onInteract()` 在主线程调用。
 - **结构变化两阶段**：`SubsystemController.onVehicleStructureChanged()` 先对所有子系统调用 `onVehicleStructurePreChanged()`，再统一调用 `onVehicleStructureChanged()`。**清空拓扑缓存写第一阶段，重新发现写第二阶段**——`allSubsystems` 是集合，遍历顺序不确定；两者挤在同一趟里时，后清空的子系统会把先发现的结果抹掉（发射器清供给者登记表、装弹机重新登记发现就属于这一对）。
-- **弹药指认与库存服务端独占**：`WeaponControllerSubsystem` 的弹药路由只在服务端执行，客户端经发射器上的供给者身份同步值跟随（`IAmmoSupplier.SupplierRef` = 宿主 Part uuid + SubPart 名 + 子系统名，三者都随载具数据在两端的同一次会话内一致）。取弹链（`requestRound → isRoundReady → consumeReadyBelt`）只在服务端执行；客户端从发射器同步的膛内弹与已装 `AmmoBelt` 读取表现，库存计数只有服务端写。
+- **弹药指认与库存服务端独占**：`WeaponControllerSubsystem` 的弹药路由只在服务端执行，客户端经发射器上的供给者身份同步值跟随（`IAmmoSupplier.SupplierRef` = 宿主 Part uuid + SubPart 名 + 子系统名，三者都随载具数据在两端的同一次会话内一致）。取弹链只在服务端执行：`LauncherSubsystem#tickReload()` 推进自己的 `ReloadJob`，走完后 `consumeReadyBelt()` 取走那一份；客户端从发射器同步的膛内弹、已装 `AmmoBelt` 与作业进度读取表现，库存计数只有服务端写。
+- **装填计时归消费者**：进度记在 `LauncherSubsystem` 持有的 `ReloadJob`（目标供给者、已推进 tick、本阶段时长），时长在开工时取自供给者的 `getReloadTimeTicks()` 并定死。供给者只回答 `getAdvanceTicks(consumer)`（本 tick 能推进多少，缺弹／损坏／槽位被占时是 `0`）并在作业走完后交付一份；它不持有针对任何消费者的计时器，音效游标是客户端本地量（`AmmoLoaderSubsystem#tickStageSounds`），既不下行也不存档。
 - **独占绑定与认领**：`feed.can_supply_multiple=false` 的装弹机同一时刻最多服务一根活跃发射器。认领记在供给者上（`IAmmoSupplier#getBoundConsumers()`，只在主线程由服务端路由写入，不入存档也不同步）：路由为某根管选中机器时把该管加进去，`LauncherSubsystem#assignSupplier` 释放旧绑定时把自己摘出来。候选过滤直接排除"已被别的活跃管认领"的机器，而不是把它排到末位——摊不开时那根管如实显示无供给者。认领有效 = 持有者未摧毁未失能且它的 `currentSupplier` 仍指向本机；读档后认领为空，第一次路由按名字序重建，因此旧存档里两根管指向同一台机器会在这一 tick 收敛成一条。
-- **保持与换人只有一条判据**：候选必须严格更早拿到下一份交付（`IAmmoSupplier#getTicksToNextRound`；已备好一份是 `0`，弹仓为空是 `Integer.MAX_VALUE`），或者当前供给者已不合法（机构坏了、交付内容不被炮闩接受、不在选中弹链上）才当场换人。打空但场上没有更好候选时保持绑定，由它回充后继续供弹。
-- **交付单位是一份 `AmmoBelt`**：供给者用 `getDeliverySpec()` 预览下一份的满额规格，用 `consumeReadyBelt()` 交付一份独立实例——发数是 `min(库存, 规格长度)`，所以实例余量可以小于规格，规格本身（模式、长度、标签、回充）不变，发射器据此仍认得出是同一份弹链；用 `returnBelt()` 全收或全拒地回收。一份付一次 `feed.reload_time`，装几发由消费者的 `single_round_loading` 与源的实际库存共同决定，与供给者类型无关；没有对接状态，也没有逐发／整匣两种交付模式。换装同样没有独立状态：已装规格与当前供给者的 `getDeliverySpec()` 不一致即在途，供给者按自己的 `reload_time` 备货，备好后发射器先取新的一份再 `returnBelt()` 还回旧的那一份，任一步失败整笔回滚。发射器不排自己的换装计时。
+- **保持与换人只有一条判据**：候选必须严格更早拿到下一份交付（`LauncherSubsystem#ticksToNextRound(IAmmoSupplier)`；已备好一份是 `0`，弹仓为空是 `Integer.MAX_VALUE`），或者当前供给者已不合法（机构坏了、交付内容不被炮闩接受、不在选中弹链上）才当场换人。打空但场上没有更好候选时保持绑定，由它回充后继续供弹。
+- **交付单位是一份 `AmmoBelt`**：供给者用 `getDeliverySpec()` 预览下一份的满额规格，用 `consumeReadyBelt()` 交付一份独立实例——发数是 `min(库存, 规格长度)`，所以实例余量可以小于规格，规格本身（模式、长度、标签、回充）不变，发射器据此仍认得出是同一份弹链；用 `returnBelt()` 全收或全拒地回收。一份付一次机械段的 `reload_time`（作业时长），装几发由消费者的 `single_round_loading` 与源的实际库存共同决定，与供给者类型无关；没有对接状态，也没有逐发／整匣两种交付模式。换装同样没有独立状态：已装规格与当前供给者的 `getDeliverySpec()` 不一致即在途，它与首次装填共用同一条作业，走完后发射器先取新的一份再 `returnBelt()` 还回旧的那一份，任一步失败整笔回滚。
 - **弹链选择随服务端同步**：`WeaponControllerSubsystem` 的 `selectedBelt` 只在服务端改选，经同步值 `SELECTED_BELT` 推给客户端；值是**交付规格本身**（模式、长度、标签与是否回充），不是池内下标——结构变化会改变弹链排序，规格只随弹链本身变化。客户端收到时池里可能还没有这条链（装弹机发现未完成），因此先暂存、建池后再落地，不因一次先到的同步值丢掉选择。
 - **同步只表达变化，初值靠补推**：`SynchedEntityData` 的变化广播（`packDirty()`）只在值真的变过时发得出去，且发给维度内所有玩家。**载入后不再变化的值（如弹药指认）走不到这条路**，因此载具在客户端建好时必须补一份全量快照：`SubsystemController.pushAllTo(ServerPlayer)`，由 `ObjectManager` 在每条载具创建包之后**紧跟着**调用（`pushSubsystemState`）。顺序由同一条连接保证，客户端在创建包的处理器内就建好了载具，因此补推包必然落在目标已存在的时刻。
 - **全量补推不得改动同步状态**：快照取自 `AbstractSubsystem.forEachSyncedValue()`（只读遍历 `SynchedEntityData.itemsById`，该字段由 `META-INF/accesstransformer.cfg` 放宽为 public），经 `PacketDistributor.sendToPlayer` **定向**发送。不得改用 `SynchedEntityData.set(..., force=true)` 强制标脏：那会把脏标记留给下一次 `packDirty()`，让维度内其他玩家收到无谓的包。

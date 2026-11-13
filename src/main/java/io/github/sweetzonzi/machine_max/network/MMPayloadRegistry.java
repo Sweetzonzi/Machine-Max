@@ -45,7 +45,9 @@ public class MMPayloadRegistry {
         // 2.9.2 为发动机的 SubsystemSyncPayload 增加 FMOD 使用的油门开度。
         // 3.0.0 对应弹药交付改为一份 AmmoBelt：发射器增加已装 Belt 与膛内弹两个同步项，再生装弹机去掉弹链指针，
         // 武器控制器选中的弹链改为交付规格——子系统访问器编号与载荷类型都变了，两端必须同版本。
-        final PayloadRegistrar sync = event.registrar("sync:3.0.0");
+        // 4.0.0 对应装填计时搬到发射器：发射器再增加作业目标、已推进 tick 与本阶段时长三个同步项，
+        // 同一子系统类的访问器编号整体后移，两端必须同版本才可解码同一份 SubsystemSyncPayload。
+        final PayloadRegistrar sync = event.registrar("sync:4.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

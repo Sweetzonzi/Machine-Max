@@ -597,7 +597,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      *       不等在途的那一发——切链与路由在同一 tick 内先后执行，推迟一步就会从旧链取到一发
      *       与选项卡不符的弹</li>
      *   <li>代价比较：候选严格更早拿到下一份才换，相等或更慢都保持。判据是
-     *       {@link IAmmoSupplier#getTicksToNextRound(IAmmoConsumer)}，已备好的一份是 {@code 0}，
+     *       {@link LauncherSubsystem#ticksToNextRound(IAmmoSupplier)}，已备好一份是 {@code 0}，
      *       空匣是 {@link Integer#MAX_VALUE}——因此打空的机器会被有现货的候选顶替</li>
      * </ol>
      * 没排上候选时由 {@link #findSupplier} 的兜底分支返回当前供给者本身，那一路在路由的
@@ -612,7 +612,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                                    IAmmoSupplier candidate, @Nullable AmmoBelt belt) {
         if (current == null || !supplyTypeAccepted(current, launcher)) return false;
         if (belt != null && !beltSuppliers(this, belt).contains(current)) return false;
-        return candidate.getTicksToNextRound(launcher) >= current.getTicksToNextRound(launcher);
+        return launcher.ticksToNextRound(candidate) >= launcher.ticksToNextRound(current);
     }
 
     /**
@@ -727,8 +727,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 continue;
             }
 
-            // 换人：assignSupplier 内部会 cancelRound 旧机器并从它的集合里摘掉本管，
-            // 那份额度仍在旧装弹机的上游弹药架里（见 AmmoLoaderSubsystem#cancelRound），不会丢
+            // 换人：assignSupplier 内部丢弃本管在旧机器上的作业并从它的集合里摘掉本管。
+            // 旧作业的库存从未扣减（扣减只发生在交付那一刻），因此换人不丢失任何一份弹药
             launcher.setCurrentSupplier(candidate);
             candidate.getBoundConsumers().add(launcher);
         }

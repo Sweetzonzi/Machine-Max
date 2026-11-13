@@ -5,7 +5,6 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.ReloadPhase;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierStatus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -119,17 +118,26 @@ public record HudWeaponSnapshot(String name, String state,
             if (belt != null) magazineRemaining += belt.remaining();
 
             // 状态描述这根管此刻能不能打：换装中一律不算就绪，哪怕膛内还压着一发
+            ReloadJob job = launcher.getReloadJob();
             boolean canFire = launcher.hasRoundToFire();
+            // 补给还指望得上：机构可工作，且此刻有弹或在再生/回充中。都不成立才算空仓
+            boolean supplyComing = supplier != null
+                    && supplier.isSupplyOperational()
+                    && (supplier.hasAmmo() || supplier.getRefillPhase() != ReloadPhase.IDLE);
             String state = swapping ? "reloading"
                     : canFire ? "ready"
-                    : supplier == null ? "empty"
-                    : supplier.getStatus(launcher) == SupplierStatus.EMPTY ? "empty" : "reloading";
-            boolean loading = state.equals("reloading") && supplier != null;
-            ReloadPhase phase = loading ? supplier.getReloadPhase(launcher) : ReloadPhase.IDLE;
+                    : supplyComing ? "reloading" : "empty";
+            boolean loading = state.equals("reloading");
+            // 有作业 = 这一份正在推进；否则报供给者此刻在忙的那一段（逐发再生 / 整批回充）
+            ReloadPhase phase = !loading ? ReloadPhase.IDLE
+                    : job != null ? ReloadPhase.LOADING
+                    : supplier != null ? supplier.getRefillPhase() : ReloadPhase.IDLE;
             double progress = state.equals("ready") ? 1
-                    : loading ? finiteProgress(supplier.getReloadProgress(launcher)) : 0;
+                    : job != null ? finiteProgress(job.progress())
+                    : loading && phase != ReloadPhase.IDLE ? finiteProgress(supplier.getRefillProgress()) : 0;
             // 秒数只按当前阶段的剩余 tick 折算：再生与整批回充的耗时都不是 reload_time
-            int ticks = loading && phase != ReloadPhase.IDLE ? supplier.getRemainingReloadTicks(launcher) : -1;
+            int ticks = job != null ? job.remainingTicks()
+                    : loading && phase != ReloadPhase.IDLE ? supplier.getRefillRemainingTicks() : -1;
             double seconds = !loading ? 0 : ticks >= 0 ? ticks / 20.0 : -1;
             Totals reserve = supplier == null ? null : totals(List.of(supplier));
             tubes.add(new Tube(key(launcher), round != null ? round.getDisplayLabel() : roundLabel(supplier),

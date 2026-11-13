@@ -30,6 +30,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
@@ -216,6 +217,34 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RESOURCE_LOCATION());
 
     /**
+     * 当前装填作业的目标供给者（网络同步）。<br>
+     * 值为 {@link SupplierRef#NONE} 表示没有进行中的作业。作业已推进多少、本阶段多长由
+     * {@link #JOB_ELAPSED_ID} 与 {@link #JOB_TOTAL_ID} 表达——它们是同一个作业的三个字段，
+     * 分开下发是因为只有进度每 tick 变化，目标与时长只在开工时写一次。
+     */
+    private static final EntityDataAccessor<SupplierRef> JOB_TARGET_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
+
+    /** 当前作业已推进的 tick 数（网络同步）。 */
+    private static final EntityDataAccessor<Integer> JOB_ELAPSED_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 当前作业本阶段的实际时长（网络同步）。<br>
+     * 由服务端发布，客户端不按型号或人员能力重算；段内不重算分母，进度因此不会倒退。
+     */
+    private static final EntityDataAccessor<Integer> JOB_TOTAL_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 本管的当前装填作业：进度、总时长与交付目标都记在这里，供给者不再持有一份并行计时。<br>
+     * 服务端每 tick 推进并下发；客户端由三个同步值重建只读副本，不自行推进。
+     * 不存档——未完成的装填读档后重新发起，作业不跨存档延续。
+     */
+    @Nullable
+    private ReloadJob reloadJob;
+
+    /**
      * 当前选中的供给者引用。<br>
      * 服务端由 WeaponController 的路由决策设置；客户端由 {@link #SUPPLIER_ID} 同步值解析得到。
      * null 表示无供给者（不装填，可发射膛内已有弹药）。
@@ -292,6 +321,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         builder.define(SUPPLIER_ID, SupplierRef.NONE);
         builder.define(BELT_ID, Optional.empty());
         builder.define(CHAMBERED_ID, Optional.empty());
+        builder.define(JOB_TARGET_ID, SupplierRef.NONE);
+        builder.define(JOB_ELAPSED_ID, 0);
+        builder.define(JOB_TOTAL_ID, 0);
     }
 
     /**
@@ -312,7 +344,28 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else if (dataAccessor.equals(CHAMBERED_ID)) {
             ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
             chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
+        } else if (dataAccessor.equals(JOB_TARGET_ID)
+                || dataAccessor.equals(JOB_ELAPSED_ID)
+                || dataAccessor.equals(JOB_TOTAL_ID)) {
+            rebuildJobFromSynced();
         }
+    }
+
+    /**
+     * 客户端按三个同步值重建作业副本。<br>
+     * 目标为空表示服务端当前没有作业（已交付、已取消或换人）；{@code elapsed} 只作显示与音效触发，
+     * 客户端不据它推进库存或射击状态。
+     */
+    private void rebuildJobFromSynced() {
+        SupplierRef target = getSynchedData().get(JOB_TARGET_ID);
+        int total = getSynchedData().get(JOB_TOTAL_ID);
+        if (target.isNone() || total <= 0) {
+            reloadJob = null;
+            return;
+        }
+        ReloadJob job = new ReloadJob(target, total);
+        job.advance(getSynchedData().get(JOB_ELAPSED_ID));
+        reloadJob = job;
     }
 
     // ——— IAmmoConsumer 实现 ———
@@ -371,11 +424,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 设置当前供给者，由 WeaponController 的服务端路由调用。<br>
-     * 引用发生变化时顺带取消旧供给者那边尚未取走的交付
-     * （{@link IAmmoSupplier#cancelRound(IAmmoConsumer)}）并把自己从它的认领集合里摘掉：
-     * 那条交付是"点名给本管的"，本管一走它就无人认领，旧装弹机会一直把输弹线占着，
-     * 弹仓里那发既不会被取走也不会给别人；独占机器还会因此永远无法被别的管选中。
-     * 清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
+     * 引用发生变化时丢弃本管进行中的作业并把自己从旧供给者的认领集合里摘掉：那份作业是"点名给本管的"，
+     * 本管一走它就无人认领，旧装弹机会一直把输弹线占着，新的一份既不会开始也不会给别人；
+     * 独占机器还会因此永远无法被别的管选中。旧作业的库存从未扣减（扣减只发生在交付那一刻），
+     * 丢弃它不退还任何东西。清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
      * <p>
      * 指认随之写入 {@link #SUPPLIER_ID} 推给客户端。客户端不调用本方法：它的指认由同步值经
      * {@link #applySyncedSupplier()} 落到同一字段上，两端因此不会各自决策出不同结果。
@@ -403,8 +455,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         IAmmoSupplier previous = this.currentSupplier;
         if (previous == supplier) return;
         this.currentSupplier = supplier;
+        // 换人等于放弃这一份作业：供给者那边的库存本来就没扣，本管重新开工从 0 起算
+        setReloadJob(null);
         if (previous != null) {
-            previous.cancelRound(this);
             previous.getBoundConsumers().remove(this);
         }
     }
@@ -556,7 +609,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 直接把一发弹药压进膛室，绕过取弹链。<br>
-     * 人工装填、调试工具与测试用它表达"膛内已有一发实弹"；正常供弹走 {@link #tryLoadBelt()}。
+     * 人工装填、调试工具与测试用它表达"膛内已有一发实弹"；正常供弹走 {@link #tickReload()}。
      *
      * @return true 表示装填成功
      */
@@ -610,6 +663,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public void onDestroyed() {
         super.onDestroyed();
         if (getLevel().isClientSide()) return;
+        // 摧毁即收尾：进行中的作业丢弃，客户端随之清空进度显示（库存未扣，不退还任何东西）
+        setReloadJob(null);
         detonateStoredAmmo();
     }
 
@@ -692,16 +747,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
         if (currentSupplier == null) resolveSyncedSupplier();
 
-        // 库存只有服务端推进：取弹、回充与换装都在这一侧执行，客户端只跟随同步值。
+        // 库存只有服务端推进：作业计时、取弹、回充与换装都在这一侧执行，客户端只跟随同步值。
         if (!getLevel().isClientSide() && isActive() && !isDestroyed()) {
             tickBeltRecharge();
-            IAmmoSupplier swapTarget = pendingSwapTarget();
-            if (swapTarget != null) {
-                tickBeltSwap(swapTarget);
-            } else {
-                if (needsBelt()) tryLoadBelt();
-                refillChamberFromBelt();
-            }
+            tickReload();
+            if (!isSwapping()) refillChamberFromBelt();
+        } else if (getLevel().isClientSide()) {
+            // 客户端按服务端下发的作业进度驱动机械段音效，不推进作业本身
+            tickReloadSounds();
         }
 
         if (!isActive() || isDestroyed()) {
@@ -826,46 +879,126 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 从供给者拉一份交付。<br>
-     * 未就绪时每次都重发请求：{@link IAmmoSupplier#requestRound} 幂等，本次没被排上也只返回"已受理"，
-     * 下个 tick 重发即可再试。拉到后按 §4.1 校验，不通过就整份退回当前供给者并等待下一次重路由。
-     * <p>
-     * 单发装填把那一发直接写入膛室，不建立已装数据；整份装填把它存为已装 Belt 并记住返回来源。
-     *
-     * @return true 表示本管已有可用的膛内弹或已装 Belt
+     * 本管当前的装填作业；{@code null} 表示没有进行中的作业。
      */
-    private boolean tryLoadBelt() {
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier == null) return false;
+    @Nullable
+    public ReloadJob getReloadJob() {
+        return reloadJob;
+    }
 
-        if (supplier.isRoundReady(this)) {
-            AmmoBelt pulled = supplier.consumeReadyBelt(this);
-            if (pulled == null) return false;
-            if (!canAcceptBelt(pulled)) {
-                MachineMax.LOGGER.warn("Launcher {} 收到不兼容的交付 {}，整份退回并等待路由", name, pulled);
-                supplier.returnBelt(pulled);
-                return false;
-            }
-            if (singleRoundLoading()) {
-                ProjectileType round = AmmoBelt.resolve(getLevel(), pulled.nextRoundId());
-                if (!(round instanceof BallisticProjectileType kinetic)) return false;
-                setChambered(kinetic);
-                return true;
-            }
-            setLoadedBelt(pulled, SupplierRef.of(supplier));
-            return true;
+    /**
+     * 这份作业还要多久交付，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
+     * 分档：本管正在为它推进的那一份 = 作业剩余 tick；供给者可交付且有余弹但还没开工 = 整段
+     * {@link IAmmoSupplier#getReloadTimeTicks()}；无余弹或供给者不可交付 = {@link Integer#MAX_VALUE}
+     * （现货优先：空匣的机器即使下一 tick 就会回充出一发也不值得留）。
+     *
+     * @param supplier 候选或当前供给者，可为 null（一律该换）
+     * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
+     */
+    public int ticksToNextRound(@Nullable IAmmoSupplier supplier) {
+        if (supplier == null || !supplier.isSupplyOperational()) return Integer.MAX_VALUE;
+        ReloadJob job = reloadJob;
+        if (job != null && job.deliveryTarget().equals(SupplierRef.of(supplier))) {
+            return job.remainingTicks();
+        }
+        if (!supplier.hasAmmo()) return Integer.MAX_VALUE;
+        return Math.max(0, supplier.getReloadTimeTicks());
+    }
+
+    /**
+     * 写入当前作业并把三个字段推给客户端（仅服务端写同步值）。<br>
+     * 客户端重建副本走 {@link #rebuildJobFromSynced()}，不调用本方法。
+     */
+    private void setReloadJob(@Nullable ReloadJob job) {
+        reloadJob = job;
+        pushReloadJob();
+    }
+
+    private void pushReloadJob() {
+        if (getLevel().isClientSide()) return;
+        ReloadJob job = reloadJob;
+        getSynchedData().set(JOB_TARGET_ID, job == null ? SupplierRef.NONE : job.deliveryTarget());
+        getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
+        getSynchedData().set(JOB_TOTAL_ID, job == null ? 0 : job.totalTicks());
+    }
+
+    /**
+     * 推进本管的装填作业。<br>
+     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工时把机械段基准时长写进作业，
+     * 此后每 tick 向供给者索取可推进量；走完后取走那一份，交给装填或换装的分支。
+     * <p>
+     * 推进速度由供给者表达——缺弹、机构损坏、独占槽位被别的作业占着时它返回 {@code 0}，本管不自行判断
+     * 机构能否工作。作业的库存并未预扣，因此换人、机构失效或交付为空时直接丢弃即可，不需要退还。
+     * <p><b>调用线程：</b>主线程（仅服务端：库存与交付都在这一侧执行）。
+     */
+    private void tickReload() {
+        IAmmoSupplier supplier = getCurrentSupplier();
+        boolean swapping = supplier != null && pendingSwapTarget() != null;
+        boolean want = supplier != null
+                && supplier.isSupplyOperational()
+                && (swapping || needsBelt());
+        if (!want) {
+            if (reloadJob != null) setReloadJob(null);
+            return;
         }
 
-        // 弹药未就绪 → 请求（或重复请求）交付，本次未到手就等下一 tick
-        supplier.requestRound(this);
-        return false;
+        SupplierRef target = SupplierRef.of(supplier);
+        ReloadJob job = reloadJob;
+        if (job == null || !job.deliveryTarget().equals(target)) {
+            // 换人、换装目标变化或首次开工：从 0 起算，时长取此刻的机械段基准
+            job = new ReloadJob(target, supplier.getReloadTimeTicks());
+            reloadJob = job;
+        }
+        job.advance(supplier.getAdvanceTicks(this));
+        pushReloadJob();
+        if (!job.isComplete()) return;
+
+        AmmoBelt delivered = supplier.consumeReadyBelt(this);
+        setReloadJob(null);
+        if (delivered == null) return; // 上游在最后一 tick 被抢空：下个 tick 重开作业
+        if (swapping) {
+            commitBeltSwap(supplier, delivered);
+        } else {
+            acceptDelivery(supplier, delivered);
+        }
+    }
+
+    /**
+     * 接受一份交付：按本管的装填模式写入膛室或已装数据。<br>
+     * 不通过整份校验的交付原样退回供给者，等下一次作业重来。
+     */
+    private void acceptDelivery(IAmmoSupplier supplier, AmmoBelt pulled) {
+        if (!canAcceptBelt(pulled)) {
+            MachineMax.LOGGER.warn("Launcher {} 收到不兼容的交付 {}，整份退回并等待路由", name, pulled);
+            supplier.returnBelt(pulled);
+            return;
+        }
+        if (singleRoundLoading()) {
+            ProjectileType round = AmmoBelt.resolve(getLevel(), pulled.nextRoundId());
+            if (round instanceof BallisticProjectileType kinetic) setChambered(kinetic);
+            return;
+        }
+        setLoadedBelt(pulled, SupplierRef.of(supplier));
+    }
+
+    /**
+     * 客户端把当前作业进度交给供给者，驱动它负责的那一段音效（机械段的声音定位在装弹机上）。<br>
+     * 已播阈值由供给者自己记，本管只提供进度。
+     */
+    private void tickReloadSounds() {
+        ReloadJob job = reloadJob;
+        if (job == null) return;
+        IAmmoSupplier supplier = getCurrentSupplier();
+        // 指认与作业目标还没对齐（同步先后顺序）时不播：声音定位在实际交付的那台机器上
+        if (supplier == null || !job.deliveryTarget().equals(SupplierRef.of(supplier))) return;
+        supplier.tickStageSounds(this, job.progress());
     }
 
     /**
      * 从已装 Belt 取一发进膛。<br>
      * 普通 Belt 每发都经过膛室：先写 {@link #chamberedType}，射击时消费膛内那一发。
      * 可回充 Belt 不走这一步——它的额度在成功射击时直接消费，避免预取后回充多出一发。
-     * 余量耗尽的普通 Belt 直接清除已装数据，下一 tick 由 {@link #tryLoadBelt()} 拉下一份。
+     * 余量耗尽的普通 Belt 直接清除已装数据，下一 tick 由 {@link #tickReload()} 拉下一份。
      */
     private void refillChamberFromBelt() {
         AmmoBelt belt = loadedBelt;
@@ -914,7 +1047,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 换装是否进行中：当前供给者要交付的规格与本机已装内容不是同一份。<br>
-     * 换装没有自己的时长与进度——装填流程本身就是供给者的事，它按 {@code feed.reload_time} 备货，
+     * 换装没有自己的时长与进度——它与首次装填共用同一条 {@link ReloadJob}，按供给者的机械段计时，
      * 本管只在它备好时取走那一份、把旧的一份交还原来的机器。进行中时射击锁定，
      * 已装内容与膛内弹都留在原位。
      */
@@ -938,25 +1071,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 推进在途换装：向目标供给者请求它那一份，备好后提交整份交换。<br>
-     * 每 tick 重发请求，因此换装途中被路由改派时下一 tick 就转向新机器，不会留下无人认领的交付
-     * ——旧预留已由 {@link #assignSupplier} 取消。备好之前什么都不动：旧 Belt 与膛内弹留在原位。
+     * 在主线程验证并提交整份交换；新的一份不通过校验或旧的一份无处回收时都回滚到操作前状态。<br>
+     * 旧的一份优先交还产出它的那台机器（身份见 {@link #loadedBeltSource}），找不到或拒收时整笔放弃
+     * ——不能丢下旧的一份再装新的。
      *
-     * @param target 本次换装的交付来源，由 {@link #pendingSwapTarget()} 给出
+     * @param target   本次换装的交付来源，由 {@link #pendingSwapTarget()} 给出
+     * @param incoming 已从该来源取走的一份
      */
-    private void tickBeltSwap(IAmmoSupplier target) {
-        target.requestRound(this);
-        commitBeltSwap(target);
-    }
-
-    /** 在主线程验证并提交整份交换；供给者还没备好或任一条件不满足时都回滚到操作前状态。 */
-    private void commitBeltSwap(IAmmoSupplier target) {
-        if (!target.isRoundReady(this)) return;
-        AmmoBelt incoming = target.consumeReadyBelt(this);
-        if (incoming == null) {
-            abortBeltSwap("目标没有可交付的一份");
-            return;
-        }
+    private void commitBeltSwap(IAmmoSupplier target, AmmoBelt incoming) {
         if (!canAcceptBelt(incoming)) {
             target.returnBelt(incoming);
             abortBeltSwap("换入的一份不通过校验");
@@ -977,8 +1099,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     private void abortBeltSwap(String reason) {
         MachineMax.LOGGER.warn("Launcher {} 换装中止：{}", name, reason);
-        IAmmoSupplier target = getCurrentSupplier();
-        if (target != null) target.cancelRound(this);
+        // 作业已随交付取走而清空；下一 tick 重开一份，目标仍是当前供给者
     }
 
     /**
