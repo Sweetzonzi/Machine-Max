@@ -10,7 +10,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -93,21 +92,46 @@ public interface IAmmoSupplier {
     boolean canSupplyMultiple();
 
     /**
-     * 当前绑着本机的消费者集合（认领）。<br>
-     * 只在主线程由服务端路由写入：路由为某根管选中本机时把该管加进来，发射器释放绑定时
-     * （{@code LauncherSubsystem#assignSupplier}）把自己移除。不入存档、不同步——读档后第一次路由
-     * 按名字序重建，因此旧存档里"两根管指向同一台独占机器"会在第一次路由里消解。
+     * 为一条已受理的作业占用本机。<br>
+     * 受理点只有一处：消费者在开工时用即将写进自己作业的 {@code jobId} 调用本方法。返回 {@code true}
+     * 表示这份作业被接单，此后 {@link #getAdvanceTicks(IAmmoConsumer)} 与
+     * {@link #consumeReadyBelt(IAmmoConsumer)} 只认这一条占用；返回 {@code false} 表示本 tick 接不了单
+     * （不可交付、没有可交付的库存、独占槽位已被别的活跃作业占着），消费者因此不建作业，下个 tick
+     * 再问一次。未被受理的请求不写记录，所以它既不占槽也不挡别人。
      * <p>
-     * 用集合而不是单个字段，是因为 {@link #canSupplyMultiple()} 为真的机器合法地同时绑定多根管；
-     * 独占只是"集合里最多一条有效认领"这一条判据，两种形态共用同一份存储。
-     * <p>
-     * 有效认领 = 持有者未摧毁、未失能，且它的 {@code currentSupplier} 仍指向本机。
-     * 集合里可能残留无效条目（持有者的控制器先被摧毁），读取方按这条规则过滤，
-     * 供给者在 {@code onTick} 里自行剔除。
+     * 记录里只有消费者引用与该作业的 {@code jobId}，不复制作业内容；不入存档也不同步——读档后第一次
+     * 受理重新建立。消费者写作业与调用本方法是同一次受理，因此记录里的编号总能与对方当前作业对上。
      *
-     * @return 可直接增删的集合，仅在主线程有意义
+     * @param consumer 申请开工的消费者
+     * @param jobId    它即将写入作业的编号
+     * @return true 表示已受理并记下这份占用
      */
-    Set<IAmmoConsumer> getBoundConsumers();
+    boolean claimFor(IAmmoConsumer consumer, int jobId);
+
+    /**
+     * 按身份释放占用。<br>
+     * 只有记录里的 {@code jobId} 与给定值相同才删除：旧作业的回调因此不会摘掉同一消费者的新作业。
+     * 重复释放、释放别人、释放一条已经不存在的记录都是无操作，也不会改动库存。
+     *
+     * @param consumer 结束作业的消费者
+     * @param jobId    这条作业的编号，必须是当初 {@link #claimFor} 收到的那个值
+     */
+    void releaseClaim(IAmmoConsumer consumer, int jobId);
+
+    /**
+     * 询问的消费者之外，是否已有活跃作业占着本机。<br>
+     * 路由用它把忙着的独占机构排除在候选之外——被占的机器根本不进候选，N 根管不会轮抢同一台，
+     * 只会摊到 N 台上；摊不开时那根管如实显示无供给者。这比"排到末位"更强，也免得等待方每 tick
+     * 被选上又拿不到推进量。
+     * <p>
+     * 读之前先剔除失效记录（消费者已摧毁／失活、指认已换、当前作业缺失或编号对不上），因此
+     * 返回值反映的是此刻真正在推进的作业，而不是历史残骸。{@code can_supply_multiple=true} 的机构
+     * 允许并行，恒为 {@code false}。
+     *
+     * @param consumer 询问的消费者
+     * @return true 表示本机已被属于别人的作业占着
+     */
+    boolean isClaimedByOther(IAmmoConsumer consumer);
 
     /**
      * 本 tick 能为该消费者的作业推进多少 tick。<br>

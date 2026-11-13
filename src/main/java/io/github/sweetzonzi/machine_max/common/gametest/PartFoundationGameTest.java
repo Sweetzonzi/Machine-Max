@@ -24,6 +24,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -299,11 +300,18 @@ public final class PartFoundationGameTest {
         @Override public float assemblyDamage(float amount, float remaining, boolean destroyed) { return amount; }
     }
 
+    /**
+     * 探针上下文。无参构造不是给用例用的：Molang 引擎在加载动画时只按上下文类型建引擎，
+     * 要求上下文子类有无参构造（{@code MolangEngineHelper#createEngine(Class)}、
+     * {@code MolangContextRegistry#getOrCreateEngine(Class)} 都按这条契约取原型）；
+     * 缺了它，探针部件一旦是第一个加载某份模型动画的部件，加载就抛异常。
+     */
     public static final class ProbeMolangContext extends io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext {
-        private final ProbePart part;
-        ProbeMolangContext(ProbePart part) { super(part); this.part = part; }
+        private final @Nullable ProbePart part;
+        public ProbeMolangContext() { this(null); }
+        ProbeMolangContext(@Nullable ProbePart part) { super(part); this.part = part; }
         @cn.solarmoon.spark_core.molang.runtime.binding.QueryBinding("body.reserve")
-        public double reserve() { return part.reserve; }
+        public double reserve() { return part == null ? 0 : part.reserve; }
     }
 
     private static final class ProbeAssembly implements IPartAssembly {

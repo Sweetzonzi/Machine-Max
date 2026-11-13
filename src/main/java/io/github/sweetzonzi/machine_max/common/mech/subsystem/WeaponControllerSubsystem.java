@@ -572,25 +572,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 这台独占机器是否已被别的活跃管认领。<br>
-     * 认领有效 = 持有者未摧毁、未失能，且它的 {@link IAmmoConsumer#getCurrentSupplier()} 仍指向本机；
-     * 集合里残留的失效条目（持有者先失效、或它已经换了机器）在这里被忽略。
-     * {@code canSupplyMultiple=true} 的机器允许多根管同时绑定，不做这条排除。
-     * <p>
-     * 这比"排到末位"更强：被占的独占机器根本不进候选，因此 N 根管不会轮抢同一台机器，
-     * 只会摊到 N 台上；摊不开时那根管如实显示无供给者。
-     */
-    private static boolean claimedByOther(IAmmoSupplier supplier, LauncherSubsystem launcher) {
-        if (supplier.canSupplyMultiple()) return false;
-        for (IAmmoConsumer holder : supplier.getBoundConsumers()) {
-            if (holder == launcher) continue;
-            if (holder instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive())) continue;
-            if (holder.getCurrentSupplier() == supplier) return true;
-        }
-        return false;
-    }
-
-    /**
      * 当前供给者是否值得留：一次合法性判定加一次代价比较。<br>
      * <ol>
      *   <li>合法性（硬条件）：机构可用、弹种被炮闩接受、仍在选中弹链上。不成立立刻换人，
@@ -625,9 +606,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 下个 tick 又换回来），一发都装不上。守住当前供给者时同样要求它位于选中弹链上：选中链
      * 暂时空着就等它再生，不从别的链借弹，打出去的弹种因此总是选项卡上写的那一种。
      * <p>
-     * 每条路都按「装填耗时升序 → 供给者身份」排序。候选都是未绑定的机器（已被别的管认领的独占机器
-     * 不进候选），因此排序键与换人比较同源：对未绑定的机器，拿到下一发的时间就是它的装填耗时。
-     * 身份是稳定的决胜键，使同一份载具状态下每次摊派的结果一致。
+     * 每条路都按「装填耗时升序 → 供给者身份」排序。候选都是没被占用的机器（已有别的作业占着的独占
+     * 机器不进候选，见 {@link IAmmoSupplier#isClaimedByOther(IAmmoConsumer)}），因此排序键与换人比较
+     * 同源：对空着的机器，拿到下一发的时间就是它的装填耗时。身份是稳定的决胜键，使同一份载具状态下
+     * 每次摊派的结果一致。
      *
      * @return 选定的供给者；无可用供给者时返回 null
      */
@@ -638,7 +620,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         List<IAmmoSupplier> beltLoaders = beltSuppliers(this, selectedBelt);
         for (IAmmoSupplier loader : beltLoaders) {
             if (loader != launcher.getCurrentSupplier() && canSupplyTo(loader, launcher)
-                    && !claimedByOther(loader, launcher)) usable.add(loader);
+                    && !loader.isClaimedByOther(launcher)) usable.add(loader);
         }
         boolean beltHasTaker = beltLoaders.stream().anyMatch(loader -> supplyTypeAccepted(loader, launcher));
         if (usable.isEmpty() && !beltHasTaker) {
@@ -646,7 +628,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
                 for (IAmmoSupplier loader : channelLoaders) {
                     if (seen.put(loader, Boolean.TRUE) != null) continue;
-                    if (canSupplyTo(loader, launcher) && !claimedByOther(loader, launcher)) usable.add(loader);
+                    if (canSupplyTo(loader, launcher) && !loader.isClaimedByOther(launcher)) usable.add(loader);
                 }
             }
         }
@@ -680,9 +662,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         // 弹药池尚未重建（handshake 未完成），跳过路由，等待下一次 onTick 重建
         if (needsAmmoPoolUpdate) return;
 
-        // 释放：已经不能发射的管不再持有绑定，它占的独占机器必须让给别人。
+        // 释放：已经不能发射的管不再持有作业，它占的独占机器必须让给别人。
         // 控制器自己被停用或摧毁时不走这条——发射器的 onTick 在开火指令判定之前就取弹，
-        // 机器确实还在被使用，此时释放认领会允许第二根管绑上同一台独占机器。
+        // 机器确实还在被使用，此时释放占用会允许第二根管占上同一台独占机器。
         for (LauncherSubsystem launcher : new ArrayList<>(launchers.keySet())) {
             if ((launcher.isDestroyed() || !launcher.isActive()) && launcher.getCurrentSupplier() != null) {
                 launcher.setCurrentSupplier(null);
@@ -700,20 +682,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         for (LauncherSubsystem launcher : activeLaunchers) {
             IAmmoSupplier current = launcher.getCurrentSupplier();
 
-            // ① 认领检查：独占机器已被别的活跃管认领 → 本管置空（旧存档的双重绑定由此消解）。
-            //    置空同时把本管从旧集合摘掉，下面重选时那台机器仍被前一根管占着，不会又被选回来
-            if (current != null && claimedByOther(current, launcher)) {
+            // ① 占用检查：独占机器已被别的活跃作业占着 → 本管置空（旧存档里的双重绑定由此消解）。
+            //    置空收尾的是本管自己的作业，别人的占用不受影响，因此下面重选时那台机器仍不会进候选
+            if (current != null && current.isClaimedByOther(launcher)) {
                 launcher.setCurrentSupplier(null);
                 current = null;
             }
 
             IAmmoSupplier candidate = findSupplier(launcher, belt);
 
-            // ④ 没有更该选的（含兜底返回当前供给者）：保持，并确保认领在位
-            if (candidate == current) {
-                if (current != null) current.getBoundConsumers().add(launcher);
-                continue;
-            }
+            // ④ 没有更该选的（含兜底返回当前供给者）：保持。占用随作业存续，不需要在这里续写
+            if (candidate == current) continue;
 
             // ③ 选中弹链上已无合法供给者：清掉指认，膛内那发照打（退膛是显式操作）
             if (candidate == null) {
@@ -721,16 +700,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
                 continue;
             }
 
-            // ⑤⑥ 当前不合法，或候选严格更早拿到下一发 → 换人；否则保持并续认领
-            if (isWorthKeeping(launcher, current, candidate, belt)) {
-                current.getBoundConsumers().add(launcher);
-                continue;
-            }
+            // ⑤⑥ 当前不合法，或候选严格更早拿到下一发 → 换人；否则保持
+            if (isWorthKeeping(launcher, current, candidate, belt)) continue;
 
-            // 换人：assignSupplier 内部丢弃本管在旧机器上的作业并从它的集合里摘掉本管。
+            // 换人：assignSupplier 内部按身份收尾本管在旧机器上的作业。
             // 旧作业的库存从未扣减（扣减只发生在交付那一刻），因此换人不丢失任何一份弹药
             launcher.setCurrentSupplier(candidate);
-            candidate.getBoundConsumers().add(launcher);
         }
 
     }

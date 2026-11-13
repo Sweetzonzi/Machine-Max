@@ -245,6 +245,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private ReloadJob reloadJob;
 
     /**
+     * 下一份作业的编号，本机自增。<br>
+     * 与宿主 SubPart 的 int ID、本子系统名组成 {@code (subPartId, name, jobId)}：机构占用与架预留都
+     * 以这个三元组为键，因此同一台管先后两次作业不会互相认领，旧作业的回调也摘不掉新作业的占用。
+     * 不存档——作业本身不跨存档延续，读档后从 1 重新分配即可。
+     */
+    private int nextJobId = 1;
+
+    /**
      * 当前选中的供给者引用。<br>
      * 服务端由 WeaponController 的路由决策设置；客户端由 {@link #SUPPLIER_ID} 同步值解析得到。
      * null 表示无供给者（不装填，可发射膛内已有弹药）。
@@ -354,7 +362,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 客户端按三个同步值重建作业副本。<br>
      * 目标为空表示服务端当前没有作业（已交付、已取消或换人）；{@code elapsed} 只作显示与音效触发，
-     * 客户端不据它推进库存或射击状态。
+     * 客户端不据它推进库存或射击状态。副本不携带服务端分配的作业编号——编号目前只在服务端用于
+     * 机构占用与架预留的身份匹配，客户端镜像以 {@link ReloadJob#UNASSIGNED_JOB_ID} 表示"未携带"。
      */
     private void rebuildJobFromSynced() {
         SupplierRef target = getSynchedData().get(JOB_TARGET_ID);
@@ -363,7 +372,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             reloadJob = null;
             return;
         }
-        ReloadJob job = new ReloadJob(target, total);
+        ReloadJob job = new ReloadJob(ReloadJob.UNASSIGNED_JOB_ID, target, total);
         job.advance(getSynchedData().get(JOB_ELAPSED_ID));
         reloadJob = job;
     }
@@ -445,7 +454,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 把指认落到本机字段上，取消旧供给者的待交付并释放它的认领。<br>
+     * 把指认落到本机字段上，并按身份收尾旧供给者上属于本管的那条作业。<br>
      * 不含任何同步动作，也不动膛内那发：换指认只影响<b>后续</b>装填，膛内已经压好的那发照打
      * （它属于哪条弹链由玩家的显式退膛操作决定，不在这里替玩家丢）。服务端由
      * {@link #setCurrentSupplier} 追加写入同步值，客户端由 {@link #applySyncedSupplier()}
@@ -454,12 +463,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private void assignSupplier(@Nullable IAmmoSupplier supplier) {
         IAmmoSupplier previous = this.currentSupplier;
         if (previous == supplier) return;
+        // 换人等于放弃这一份作业：先按旧身份收尾（此时字段还是旧值），再改指认。
+        // 供给者那边的库存本来就没扣，本管重新开工从 0 起算
+        finishReloadJob();
         this.currentSupplier = supplier;
-        // 换人等于放弃这一份作业：供给者那边的库存本来就没扣，本管重新开工从 0 起算
-        setReloadJob(null);
-        if (previous != null) {
-            previous.getBoundConsumers().remove(this);
-        }
     }
 
     /**
@@ -663,8 +670,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public void onDestroyed() {
         super.onDestroyed();
         if (getLevel().isClientSide()) return;
-        // 摧毁即收尾：进行中的作业丢弃，客户端随之清空进度显示（库存未扣，不退还任何东西）
-        setReloadJob(null);
+        // 摧毁即收尾：按身份释放机构占用并丢弃进行中的作业，客户端随之清空进度显示（库存未扣，不退还任何东西）
+        finishReloadJob();
         detonateStoredAmmo();
     }
 
@@ -879,8 +886,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 本管当前的装填作业；{@code null} 表示没有进行中的作业。
+     * 本管当前的装填作业；{@code null} 表示没有进行中的作业。<br>
+     * 供给者（放行、交付、占用校验）与显示层都从这里读同一份作业，不另存一份分配记录。
      */
+    @Override
     @Nullable
     public ReloadJob getReloadJob() {
         return reloadJob;
@@ -906,11 +915,28 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 写入当前作业并把三个字段推给客户端（仅服务端写同步值）。<br>
+     * 受理一份新作业：写入当前作业并把它的身份与进度推给客户端（仅服务端写同步值）。<br>
+     * 受理前必须已经取得供给者的占用（{@link IAmmoSupplier#claimFor}），因此这里不重复判断。
      * 客户端重建副本走 {@link #rebuildJobFromSynced()}，不调用本方法。
      */
-    private void setReloadJob(@Nullable ReloadJob job) {
+    private void beginReloadJob(ReloadJob job) {
         reloadJob = job;
+        pushReloadJob();
+    }
+
+    /**
+     * 统一收尾：先按作业身份释放供给者那边的占用，再清空作业与本机的进度字段。<br>
+     * 成功交付、取消、换人、摧毁与路径失效都走这一口，因此不存在"只清进度不释放占用"的分支；
+     * 释放只按编号删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
+     * 重复收尾因此安全。
+     * <p><b>调用线程：</b>主线程。
+     */
+    private void finishReloadJob() {
+        ReloadJob job = reloadJob;
+        if (job == null) return;
+        IAmmoSupplier supplier = currentSupplier;
+        if (supplier != null) supplier.releaseClaim(this, job.jobId());
+        reloadJob = null;
         pushReloadJob();
     }
 
@@ -924,43 +950,67 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 推进本管的装填作业。<br>
-     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工时把机械段基准时长写进作业，
-     * 此后每 tick 向供给者索取可推进量；走完后取走那一份，交给装填或换装的分支。
+     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工前先向供给者申请占用——
+     * 接不了单（不可交付、没有可交付的库存、独占槽位被别的作业占着）就不建作业，下个 tick 再试，
+     * 因此等待中的管既不占槽也不下发进度。受理后把机械段基准时长写进作业，此后每 tick 向供给者
+     * 索取可推进量；走完后取走那一份，交给装填或换装的分支。
      * <p>
-     * 推进速度由供给者表达——缺弹、机构损坏、独占槽位被别的作业占着时它返回 {@code 0}，本管不自行判断
-     * 机构能否工作。作业的库存并未预扣，因此换人、机构失效或交付为空时直接丢弃即可，不需要退还。
+     * 作业的交付目标不会在作业存续期间漂移：指认只经 {@link #assignSupplier} 变更，而它在换人前
+     * 就收尾了旧作业。
      * <p><b>调用线程：</b>主线程（仅服务端：库存与交付都在这一侧执行）。
      */
     private void tickReload() {
         IAmmoSupplier supplier = getCurrentSupplier();
+        if (supplier != null && !isStillDiscovered(supplier)) {
+            // 结构变化后旧路径已不可达（拆件、跨载具转移）：先按身份收尾再丢指认，
+            // 不能带着已经不在本装配体内的占用继续推进
+            setCurrentSupplier(null);
+            return;
+        }
         boolean swapping = supplier != null && pendingSwapTarget() != null;
         boolean want = supplier != null
                 && supplier.isSupplyOperational()
                 && (swapping || needsBelt());
         if (!want) {
-            if (reloadJob != null) setReloadJob(null);
+            finishReloadJob();
             return;
         }
 
-        SupplierRef target = SupplierRef.of(supplier);
         ReloadJob job = reloadJob;
-        if (job == null || !job.deliveryTarget().equals(target)) {
-            // 换人、换装目标变化或首次开工：从 0 起算，时长取此刻的机械段基准
-            job = new ReloadJob(target, supplier.getReloadTimeTicks());
-            reloadJob = job;
+        if (job == null) {
+            int jobId = nextJobId++;
+            if (!supplier.claimFor(this, jobId)) return; // 未受理：不入占用表、不挡槽、不开始计时
+            job = new ReloadJob(jobId, SupplierRef.of(supplier), supplier.getReloadTimeTicks());
+            beginReloadJob(job);
         }
         job.advance(supplier.getAdvanceTicks(this));
         pushReloadJob();
         if (!job.isComplete()) return;
 
         AmmoBelt delivered = supplier.consumeReadyBelt(this);
-        setReloadJob(null);
+        finishReloadJob();
         if (delivered == null) return; // 上游在最后一 tick 被抢空：下个 tick 重开作业
         if (swapping) {
             commitBeltSwap(supplier, delivered);
         } else {
             acceptDelivery(supplier, delivered);
         }
+    }
+
+    /**
+     * 指认的供给者是否仍在当前发现结果里。<br>
+     * 结构变化会整体重建供给者表：拆下来的机器跟着部件去了别的装配体，它不会再来登记，占着它的作业
+     * 因此必须收尾——继续推进等于让弹药跨装配体流动。判定读表本身而不是空间距离，因为"可达"由接线
+     * 与频道决定，不由距离决定。
+     *
+     * @param supplier 当前指认的供给者
+     * @return true 表示它仍在本管这一轮发现结果里
+     */
+    private boolean isStillDiscovered(IAmmoSupplier supplier) {
+        for (List<IAmmoSupplier> channelSuppliers : supplierChannels.values()) {
+            if (channelSuppliers.contains(supplier)) return true;
+        }
+        return false;
     }
 
     /**

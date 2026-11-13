@@ -10,11 +10,10 @@ import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 自动装弹机子系统。<br>
@@ -28,8 +27,9 @@ import java.util.Set;
  * 发现本机，与直接查询弹药架的人力直取路径区分开。
  * <p>
  * 并发产能沿用布尔语义：{@code can_supply_multiple=false} 的机构一次只为一条作业推进
- * （独占且满速）；{@code true} 时不限槽位、各作业分别满速。没排上的作业拿到
- * {@code 0} 推进量，下个 tick 再问——一条输弹线一次只移动一份，因此没有等待队列。
+ * （独占且满速）；{@code true} 时不限槽位、各作业分别满速。能不能推进由本机受理过的占用决定
+ * （{@link #claimFor}）：没被接单的请求拿到 {@code 0} 推进量，下个 tick 再问——一条输弹线一次只
+ * 移动一份，因此没有等待队列。
  * <p>
  * 进度音效属于本机（机械段的声音定位在装弹机上），但<b>触发源是消费者的作业进度</b>：
  * 消费者的每个客户端 tick 把当前进度交给 {@link #tickStageSounds(IAmmoConsumer, float)}，
@@ -40,10 +40,11 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     public final AmmoLoaderSubsystemAttr attr;
 
     /**
-     * 当前绑着本机的消费者集合（认领），由服务端路由在选中本机时写入、发射器释放绑定时移除。<br>
-     * 不入存档也不同步：读档后第一次路由按名字序重建。独占机构用它判断"这条输弹线已经给了谁"。
+     * 已受理作业的占用表：消费者 → 该作业的 {@code jobId}。<br>
+     * 只在受理点（{@link #claimFor}）写入，由消费者按身份释放：旧作业的回调因此摘不掉新作业的占用。
+     * 只记消费者引用与编号，不复制作业内容；不入存档也不同步，读档后第一次受理重新建立。
      */
-    private final Set<IAmmoConsumer> boundConsumers = new LinkedHashSet<>();
+    private final Map<IAmmoConsumer, Integer> claimedJobs = new LinkedHashMap<>();
 
     /**
      * 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同一段重复触发；仅客户端有效。<br>
@@ -122,8 +123,67 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     // ==================== IAmmoSupplier 实现 ====================
 
     @Override
-    public Set<IAmmoConsumer> getBoundConsumers() {
-        return boundConsumers;
+    public boolean claimFor(IAmmoConsumer consumer, int jobId) {
+        sweepStaleClaims();
+        if (!isSupplyOperational()) return false;
+        if (!hasAmmo()) return false;
+        if (!canSupplyMultiple() && hasOtherClaim(consumer)) return false;
+        claimedJobs.put(consumer, jobId);
+        return true;
+    }
+
+    @Override
+    public void releaseClaim(IAmmoConsumer consumer, int jobId) {
+        Integer held = claimedJobs.get(consumer);
+        if (held != null && held == jobId) {
+            claimedJobs.remove(consumer);
+        }
+    }
+
+    @Override
+    public boolean isClaimedByOther(IAmmoConsumer consumer) {
+        if (canSupplyMultiple()) return false;
+        sweepStaleClaims();
+        for (IAmmoConsumer holder : claimedJobs.keySet()) {
+            if (holder != consumer) return true;
+        }
+        return false;
+    }
+
+    /** 该消费者是否正持有本机的一条占用。 */
+    private boolean ownsClaim(IAmmoConsumer consumer) {
+        return claimedJobs.containsKey(consumer);
+    }
+
+    /** 本机是否已被属于别人的作业占着。 */
+    private boolean hasOtherClaim(IAmmoConsumer consumer) {
+        for (IAmmoConsumer holder : claimedJobs.keySet()) {
+            if (holder != consumer) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 剔除失效占用，按不存在处理。<br>
+     * 失效包括消费者已摧毁／失活、它的指认已不指向本机、它的当前作业缺失或编号对不上。合法的暂停
+     * （缺弹、机构受阻）不影响占用：作业还在，编号也还在。清理只删记录，不改库存、不补弹。
+     * <p><b>调用线程：</b>主线程（每次读取或受理前）。
+     */
+    private void sweepStaleClaims() {
+        Iterator<Map.Entry<IAmmoConsumer, Integer>> it = claimedJobs.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<IAmmoConsumer, Integer> entry = it.next();
+            if (isStaleClaim(entry.getKey(), entry.getValue())) it.remove();
+        }
+    }
+
+    /** 这条占用是否已经不能代表一条真正在推进的作业。 */
+    private boolean isStaleClaim(IAmmoConsumer consumer, int jobId) {
+        if (!(consumer instanceof AbstractSubsystem sub)) return true;
+        if (sub.isDestroyed() || !sub.isActive()) return true;
+        if (consumer.getCurrentSupplier() != this) return true;
+        ReloadJob job = consumer.getReloadJob();
+        return job == null || job.jobId() != jobId;
     }
 
     @Override
@@ -177,20 +237,21 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /**
      * 本 tick 能为该消费者的作业推进多少。<br>
-     * 只有同时满足"本机可工作、上游有弹、这条输弹线轮到了它"时才推进；独占机构已经服务别的作业时
-     * 返回 0，等待方下个 tick 再问。
+     * 只有同时满足"本机可工作、上游有弹、本机受理过这条作业"时才推进；没被接单的请求（还在等槽位、
+     * 或占用已失效）拿到 0，下个 tick 再问。
      */
     @Override
     public int getAdvanceTicks(IAmmoConsumer consumer) {
         if (!isSupplyOperational()) return 0;
         if (!hasAmmo()) return 0;
-        if (!canSupplyMultiple() && hasOtherActiveClaimant(consumer)) return 0;
-        return 1;
+        sweepStaleClaims();
+        return ownsClaim(consumer) ? 1 : 0;
     }
 
     /**
      * 取走一份交付：从上游架扣减并生成一份独立实例，直接交给消费者。<br>
-     * 本机不缓存这份实例，扣减与写入在同一个主线程提交点完成。
+     * 本机不缓存这份实例，扣减与写入在同一个主线程提交点完成。只有持有本机占用的作业能取走交付
+     * ——交付与受理是同一条作业的两端，替没被接单的请求取弹等于替别人的承诺扣库存。
      *
      * @return 一份独立实例的 Belt；本机不可交付或上游已无弹时返回 null
      */
@@ -198,7 +259,8 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     @Nullable
     public AmmoBelt consumeReadyBelt(IAmmoConsumer consumer) {
         if (!isSupplyOperational()) return null;
-        if (!canSupplyMultiple() && hasOtherActiveClaimant(consumer)) return null;
+        sweepStaleClaims();
+        if (!ownsClaim(consumer)) return null;
         RegenAmmoRackSubsystem rack = upstream();
         if (rack == null) return null;
         return rack.consumeBelt();
@@ -249,22 +311,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return rack == null ? 0 : rack.getRemainingRegenTicks();
     }
 
-    // ==================== 认领与音效 ====================
-
-    /**
-     * 独占机构是否已在为别的活跃消费者推进。
-     *
-     * @param consumer 询问的消费者
-     * @return true 表示这条输弹线已经属于另一条作业
-     */
-    private boolean hasOtherActiveClaimant(IAmmoConsumer consumer) {
-        for (IAmmoConsumer holder : boundConsumers) {
-            if (holder == consumer) continue;
-            if (isConsumerGone(holder)) continue;
-            if (holder.getCurrentSupplier() == this) return true;
-        }
-        return false;
-    }
+    // ==================== 音效 ====================
 
     /** 该消费者是否已经不能再来取弹（被摧毁或失活）。 */
     private static boolean isConsumerGone(IAmmoConsumer consumer) {

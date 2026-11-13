@@ -22,6 +22,14 @@ public interface IAmmoConsumer {
      */
     void setCurrentSupplier(@Nullable IAmmoSupplier supplier);
 
+    /**
+     * 本消费者当前唯一的那一份装填作业；{@code null} 表示没有进行中的作业。<br>
+     * 只读口：供给者（放行、交付、占用校验）、人员附件与显示层都从这里读取同一份作业，不强转具体
+     * 消费者类型，也不各自保存一份分配记录。返回的是本端当前对象本身而不是快照，跨 tick 持有引用时
+     * 内容会照常变化；推进、阶段切换与结束都归消费者自己，外部执行者不能修改作业字段。
+     */
+    @Nullable ReloadJob getReloadJob();
+
     /** 获取所有已注册的供给者列表 */
     List<IAmmoSupplier> getSuppliers();
 
