@@ -49,6 +49,14 @@ public final class ReloadJob {
     /** 已推进的 tick 数，单调不减，最大等于 {@link #totalTicks} */
     private int elapsedTicks;
 
+    /**
+     * 连续推不动的 tick 数：本 tick 推进量为 0 时自增，推进量大于 0 时清零。<br>
+     * 暂停是"承诺还在但推不动"（机构受阻、供能不足、没有可用执行者），与"等重试"（还没有作业）不同——
+     * 后者没有作业对象，也就没有这个计数。超时判定在持有作业的一方（见
+     * {@code LauncherSubsystem#tickReload()}），本类只如实记录。
+     */
+    private int pausedTicks;
+
     public ReloadJob(ReloadJobKey key, SupplierRef deliveryTarget, SupplierRef upstreamOrigin,
                      AmmoBelt spec, int reservedCount, int totalTicks) {
         this.key = key;
@@ -102,6 +110,11 @@ public final class ReloadJob {
         return elapsedTicks;
     }
 
+    /** 连续推不动的 tick 数；任何一次有效推进都把它清零 */
+    public int pausedTicks() {
+        return pausedTicks;
+    }
+
     /** 距离阶段完成还剩多少 tick */
     public int remainingTicks() {
         return Math.max(0, totalTicks - elapsedTicks);
@@ -120,10 +133,27 @@ public final class ReloadJob {
     /**
      * 推进本 tick 的时间。推进量由执行者给出，作业只负责累计。
      *
-     * @param ticks 本 tick 可推进的 tick 数；{@code <= 0} 表示本 tick 推不动（缺弹、机构受阻）
+     * @param ticks 本 tick 可推进的 tick 数；{@code <= 0} 表示本 tick 推不动（缺弹、机构受阻），
+     *              记一次暂停
      */
     public void advance(int ticks) {
-        if (ticks <= 0) return;
+        if (ticks <= 0) {
+            pausedTicks++;
+            return;
+        }
+        pausedTicks = 0;
         elapsedTicks = Math.min(totalTicks, elapsedTicks + ticks);
+    }
+
+    /**
+     * 把进度对齐到权威基线：只向前，不倒退，不计暂停。<br>
+     * 与 {@link #advance(int)} 分开是因为两者含义不同——那条路表达"这一 tick 走了多久"，
+     * 这条路表达"权威说进度到这里了"（作业开始、离散重建、全量补推）。基线可能比本地进度小
+     * （客户端已经跑在前面），此时保持本地进度；它不是一次零推进，因此不增加暂停计数。
+     *
+     * @param elapsed 权威基线（已推进的 tick 数）
+     */
+    public void advanceTo(int elapsed) {
+        elapsedTicks = Math.clamp(elapsed, elapsedTicks, totalTicks);
     }
 }

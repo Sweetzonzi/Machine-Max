@@ -47,7 +47,11 @@ public class MMPayloadRegistry {
         // 武器控制器选中的弹链改为交付规格——子系统访问器编号与载荷类型都变了，两端必须同版本。
         // 4.0.0 对应装填计时搬到发射器：发射器再增加作业目标、已推进 tick 与本阶段时长三个同步项，
         // 同一子系统类的访问器编号整体后移，两端必须同版本才可解码同一份 SubsystemSyncPayload。
-        final PayloadRegistrar sync = event.registrar("sync:5.0.0");
+        // 5.0.0 对应作业身份与分配下行：发射器增加作业编号、实际来源、冻结规格与预留份额，独占机构增加
+        // 槽位拥有者，再生架增加已预留总量；SupplierRef 的编码由「Part uuid + SubPart 名 + 子系统名」
+        // 收成「宿主 SubPart ID + 子系统名」。
+        // 6.0.0 对应结束结果：发射器再增加最近一次结束的作业编号与已交付结论两个同步项（访问器编号后移）。
+        final PayloadRegistrar sync = event.registrar("sync:6.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

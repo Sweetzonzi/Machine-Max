@@ -13,7 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link ReloadJob} 的推进与分配契约：进度单调不减、到点即完成、推进量由执行者给出而不是自己走秒。
- * 作业不存档，也不关心推进量从哪来——缺弹与机构受阻都表现为本 tick 的推进量为 0。
+ * 作业不存档，也不关心推进量从哪来——缺弹与机构受阻都表现为本 tick 的推进量为 0，连续推不动的次数
+ * 记在作业上（{@link ReloadJob#pausedTicks()}），超时判定留给持有作业的一方。
+ * <p>
+ * 权威基线与逐 tick 推进是两条不同的路：{@link ReloadJob#advanceTo(int)} 只向前对齐、不计暂停，
+ * 因此客户端跑在前面时不会被一条更旧的基线拉回。
  * <p>
  * 受理时定下的四项分配（身份、交付目标、实际来源、冻结规格与份额）在作业存续期间不变：机构占用与
  * 架预留按它们匹配，换架或换规格要作废旧作业并重新申请。
@@ -58,6 +62,35 @@ class ReloadJobTest {
         job.advance(-3);  // 负推进量不倒退
         assertEquals(2, job.elapsedTicks());
         assertFalse(job.isComplete());
+        assertEquals(2, job.pausedTicks(), "推不动的 tick 记暂停，负推进量同样算推不动");
+    }
+
+    @Test
+    void anyEffectiveAdvanceClearsThePauseCount() {
+        ReloadJob job = job(9);
+        job.advance(0);
+        job.advance(0);
+        assertEquals(2, job.pausedTicks());
+        job.advance(1);
+        assertEquals(0, job.pausedTicks(), "一次有效推进把连续暂停计数清零");
+        job.advance(0);
+        assertEquals(1, job.pausedTicks(), "清零之后重新从头累计");
+    }
+
+    @Test
+    void baselineAlignmentOnlyMovesForwardAndIsNotAPause() {
+        ReloadJob job = job(9);
+        job.advance(0);
+        job.advanceTo(4);
+        assertEquals(4, job.elapsedTicks());
+        assertEquals(1, job.pausedTicks(), "对齐权威基线不是一次零推进，不改暂停计数");
+
+        job.advanceTo(2);
+        assertEquals(4, job.elapsedTicks(), "基线比本地进度小（本端已经跑在前面）时保持本地进度");
+
+        job.advanceTo(99);
+        assertEquals(9, job.elapsedTicks(), "基线超过本阶段时长时钳在时长上");
+        assertTrue(job.isComplete());
     }
 
     @Test
