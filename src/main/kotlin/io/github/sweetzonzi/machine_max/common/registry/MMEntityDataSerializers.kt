@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.syncher.EntityDataSerializer
 import net.minecraft.resources.ResourceLocation
@@ -30,15 +31,24 @@ object MMEntityDataSerializers {
     }
 
     /**
-     * 供给者指认：宿主 RegularPart uuid + SubPart 名 + 子系统名。
+     * 子系统身份：宿主 SubPart 的 int ID + 子系统名。
      *
-     * 传输开销为 16 字节 uuid + 两个 UTF-8 名；空值用 [IAmmoSupplier.SupplierRef.NONE] 表达。
-     * 换用这三项而不是 SubPart 的 int id，是因为 int id 由会话内计数器分配、不进存档，
-     * 而这个值要同时进存档（后进玩家靠它拿到当前指认），必须重启后仍然有效。
+     * 传输开销为一个变长整数加一个 UTF-8 名称；空值用 [IAmmoSupplier.SupplierRef.NONE] 表达。
+     * 这个值只在一次会话内指认同一台机器（服务端创建载体时分配 SubPart ID，随载具数据下发），
+     * 来源关系本身不持久化，因此不需要重启后仍然有效。
      */
     @JvmStatic
     val SUPPLIER_REF: EntityDataSerializer<IAmmoSupplier.SupplierRef> =
         EntityDataSerializer.forValueType(IAmmoSupplier.SupplierRef.STREAM_CODEC)
+
+    /**
+     * 作业身份：宿主 SubPart ID + 发射器名 + 作业编号。
+     *
+     * 独占装弹机构用它下发槽位拥有者；空值用 [ReloadJobKey.NONE] 表达。
+     */
+    @JvmStatic
+    val RELOAD_JOB_KEY: EntityDataSerializer<ReloadJobKey> =
+        EntityDataSerializer.forValueType(ReloadJobKey.STREAM_CODEC)
 
     /**
      * 可空的资源地址（`Optional<ResourceLocation>`）。
@@ -71,6 +81,10 @@ object MMEntityDataSerializers {
         MachineMax.REGISTER.entityDataSerializer<IAmmoSupplier.SupplierRef> {
             id = "supplier_ref"
             factory = { SUPPLIER_REF }
+        }
+        MachineMax.REGISTER.entityDataSerializer<ReloadJobKey> {
+            id = "reload_job_key"
+            factory = { RELOAD_JOB_KEY }
         }
         MachineMax.REGISTER.entityDataSerializer<Optional<ResourceLocation>> {
             id = "optional_resource_location"

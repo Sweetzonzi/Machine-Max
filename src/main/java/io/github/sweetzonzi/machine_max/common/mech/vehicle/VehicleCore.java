@@ -584,6 +584,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                 loaded = true;
             }
             subSystemController.tick();
+            subSystemController.postTick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }

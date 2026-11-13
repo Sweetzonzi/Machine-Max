@@ -64,10 +64,10 @@ public record HudWeaponSnapshot(
         List<TubeSnapshot> tubes
 ) {}
 
-public record TubeKey(UUID partUuid, String subPartName, String subsystemName) {}
+public record SupplierRef(int subPartId, String subsystemName) {}
 public record BeltSnapshot(List<ResourceLocation> key, String label, int remaining, boolean selected) {}
 public record TubeSnapshot(
-        TubeKey key, String roundLabel, String state, String phase,
+        SupplierRef key, String roundLabel, String state, String phase,
         float fill, double reloadRemaining, String reloadText, String loadingBeltLabel,
         boolean swapping, boolean hasSource,
         ChamberSnapshot chamber, MagazineSnapshot magazine, ReserveSnapshot reserve
@@ -78,17 +78,17 @@ public record MagazineSnapshot(boolean loaded, String label, int remaining, int 
 public record ReserveSnapshot(int remaining, int capacity, boolean infinite) {}
 ```
 
-这是业务结构示意。实际类型为 `HudWeaponSnapshot` 及其嵌套 `Tube` / `Belt`；`activeAmmo` 使用注册键字符串，管身份复用 `IAmmoSupplier.SupplierRef`。`TubeKey` 用发射器所属 Part UUID、SubPart 名和子系统名定位实例，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamber.label` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
+这是业务结构示意。实际类型为 `HudWeaponSnapshot` 及其嵌套 `Tube` / `Belt`；`activeAmmo` 使用注册键字符串，管身份复用 `IAmmoSupplier.SupplierRef`。管身份取自发射器宿主 SubPart 的 int ID 与子系统名，不使用显示名称或数组下标。`BeltSnapshot.key` 是完整的展平弹链序列，顺序和重复次数都参与相等比较，例如 `[AP, AP, HE]` 与 `[AP, HE]` 是两条不同弹链。快照中的列表及身份键列表须防御性复制为不可变值。`TubeSnapshot.fill` 使用 0～100，与 `tube.fill`、`weapon.tube_fill(i)` 及百分比 CSS 绑定一致。`reloadRemaining` 使用秒：非装填状态为 0，正在装填但无法取得剩余时间时为 -1。`chamber.label` 只取实际膛内弹药，空膛为空；`loadingBeltLabel` 只取该管实际正在装填的供弹来源，未装填或来源无标签时为空，不用控制器当前选中弹链代替。`roundLabel` 是可包含供给者指针态的行显示文本，与真实膛内标签分别存储。
 
 三个计数按"发数现在在哪"分层，彼此不包含：**膛内**（`chamber`，每管至多一发）、**弹匣**（`magazine`，本管已装的那一份 Belt，`capacity` 是整份长度）、**备弹**（`reserve`，供给者手里的数量）。一份 Belt 从供给者交到本管时发数从备弹转到弹匣，压进膛时从弹匣转到膛内，因此三者相加才是这支武器还能打出的总数。`loaded()` 是其中的膛内 + 弹匣，与备弹配成 HUD 主数字的两段：前半是现在能打的，后半是还能补的。
 
-身份口径可对照 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#SupplierRef` 的三段坐标与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#getLabel` 的显示名约束；弹链集合来自 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#getAvailableBelts`。
+身份口径可对照 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#SupplierRef` 的两段坐标与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/IAmmoSupplier.java#getLabel` 的显示名约束；弹链集合来自 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/WeaponControllerSubsystem.java#getAvailableBelts`。
 
 单台控制器的取数规则由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudWeaponSnapshot.java#capture` 实现：
 
 | 量 | 口径 |
 | --- | --- |
-| 发射管顺序 | 按发射器子系统名排序，同名时按 `TubeKey` 的 Part UUID、SubPart 名、子系统名作稳定决胜；被摧毁或未激活者不占槽位 |
+| 发射管顺序 | 按发射器子系统名排序，同名时按 `SupplierRef` 的宿主 SubPart ID 与子系统名作稳定决胜；被摧毁或未激活者不占槽位 |
 | 弹种槽与 `activeAmmoKey` | 第一根膛内有弹的管提供弹种；都没有时退回第一根有供给者的管的指针态。分划只使用确实有注册键的弹种，没有时返回空 |
 | 备弹计数 | 供弹弹链在弹药池中全部装弹机的余量/容量之和，池内按实例去重；池里没有该弹链时退回已绑定供给者之和 |
 | 弹匣计数 | 各有效管已装 Belt 的余量之和；单发装填的管没有已装 Belt，恒为 0 |

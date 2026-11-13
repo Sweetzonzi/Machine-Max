@@ -57,8 +57,25 @@ public class SubsystemController implements ISignalBus {
         }
     }
 
-    /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */
-    public void prePhysicsTick() {
+    /**
+     * 本轮子系统业务 tick 之后的统一落地边界：所有子系统都跑完 {@link AbstractSubsystem#onTick()} 之后再逐个
+     * 调用 {@link AbstractSubsystem#onPostTick()}。<br>
+     * 分成两趟而不是在同一次遍历里做，是因为一个子系统的收尾可能依赖别的子系统本 tick 的结果：
+     * 客户端把同步到的分配、库存与作业一起落地时，读的必须是同一轮已推进完的状态。
+     * <p>
+     * 由 {@code VehicleCore#preTick()} 在 {@link #tick()} 之后紧接着调用。它既不是物理线程的
+     * {@code postPhysicsTick}，也不在 {@code LevelTickEvent.Post}：粒度是"这台载具的子系统本轮跑完了"，
+     * 因此同一个 tick 内到达的同步值只会被应用一次。
+     */
+    public void postTick() {
+        for (AbstractSubsystem subsystem : allSubsystems) {
+            if (subsystem != null) {
+                subsystem.onPostTick();
+            }
+        }
+    }
+
+    /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */    public void prePhysicsTick() {
         Level previous = PRE_PHYSICS_LEVEL.get();
         PRE_PHYSICS_LEVEL.set(level);
         try {
@@ -167,6 +184,9 @@ public class SubsystemController implements ISignalBus {
      */
     public void pushAllTo(ServerPlayer player) {
         for (AbstractSubsystem subsystem : allSubsystems) {
+            // 只写本地模拟意义的值（如作业进度基线）在这一刻刷新成当前值，
+            // 新加入的客户端拿到的才是"现在"而不是上次写入时的旧值
+            subsystem.refreshSyncBaseline();
             List<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
             subsystem.forEachSyncedValue(values::add);
             PacketDistributor.sendToPlayer(player,

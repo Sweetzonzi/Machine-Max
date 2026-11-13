@@ -120,10 +120,11 @@ public record HudWeaponSnapshot(String name, String state,
             // 状态描述这根管此刻能不能打：换装中一律不算就绪，哪怕膛内还压着一发
             ReloadJob job = launcher.getReloadJob();
             boolean canFire = launcher.hasRoundToFire();
-            // 补给还指望得上：机构可工作，且此刻有弹或在再生/回充中。都不成立才算空仓
+            // 补给还指望得上：机构可工作，且已有一条作业在推进、有可分配的弹，或正在再生／回充。
+            // 作业在推进就够——那份弹已按作业身份预留，可分配数量为 0 不代表这一份不会到
             boolean supplyComing = supplier != null
                     && supplier.isSupplyOperational()
-                    && (supplier.hasAmmo() || supplier.getRefillPhase() != ReloadPhase.IDLE);
+                    && (job != null || supplier.hasAmmo() || supplier.getRefillPhase() != ReloadPhase.IDLE);
             String state = swapping ? "reloading"
                     : canFire ? "ready"
                     : supplyComing ? "reloading" : "empty";
@@ -177,9 +178,12 @@ public record HudWeaponSnapshot(String name, String state,
                 tubes, belts);
     }
 
+    /**
+     * 一根管的稳定键：宿主 SubPart ID + 该管的子系统名。<br>
+     * 只用于 HUD 在同一台载具的两帧之间认出"还是这根管"，不参与路由或占用判定。
+     */
     public static SupplierRef key(LauncherSubsystem launcher) {
-        var subPart = launcher.getSubPart();
-        return new SupplierRef(subPart.part.uuid, subPart.name, launcher.getName());
+        return new SupplierRef(launcher.getSubPart().getId(), launcher.getName());
     }
 
     private record Totals(int remaining, int capacity, boolean infinite) {}

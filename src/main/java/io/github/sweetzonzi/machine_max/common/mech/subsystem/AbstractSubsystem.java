@@ -159,8 +159,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         publishedFeedback.put(channel, value);
     }
 
-    /** 主线程：把物理线程发布的最新反馈按配置线路投递。 */
-    protected void flushPublishedFeedback() {
+    /** 主线程：把物理线程发布的最新反馈按配置线路投递。 */    protected void flushPublishedFeedback() {
         if (publishedFeedback.isEmpty()) return;
         for (Map.Entry<String, Object> entry : publishedFeedback.entrySet()) {
             sendSignalToAllTargets(entry.getKey(), entry.getValue());
@@ -199,6 +198,26 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
      * 注意：DATA_DESTROYED_ID 已由 onTick() 框架层设置为 false，回调中不需重复操作。
      */
     protected void onRecovered() {}
+
+    /**
+     * 主线程 tick 收尾：业务 tick 与同步广播都完成之后调用，用于把本 tick 收到的权威值落地。<br>
+     * 与 {@link #onPostPhysicsTick()} 是两回事：那个在物理步之后，本方法在游戏 tick 的最后。
+     * 默认空实现；只有"同步回调先缓存、tick 末统一应用"的子系统才覆写（见
+     * {@code LauncherSubsystem#onPostTick()}），这样一次收到的多项变化不会在模拟中途被逐项落地。
+     * <p><b>调用线程：</b>主线程，由 {@link SubsystemController#postTick()} 统一调用。
+     */
+    public void onPostTick() {
+    }
+
+    /**
+     * 全量补推之前的一次性刷新：把"只在离散时刻写入、平时不写"的值（例如作业进度基线）刷成当前值，
+     * 让刚拿到载具的客户端从"现在"开始模拟，而不是从上次写入时的旧值开始。<br>
+     * 变化广播不经过这里——那条路只在值真的变化时发送，而基线的特点恰恰是平时不写。
+     * 默认空实现；只有持有这类值的子系统才覆写。
+     * <p><b>调用线程：</b>主线程（服务端，{@link SubsystemController#pushAllTo(ServerPlayer)}）。
+     */
+    public void refreshSyncBaseline() {
+    }
 
     public void onPrePhysicsTick() {
     }

@@ -180,16 +180,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private AmmoBelt loadedBelt;
 
     /**
-     * 已装 Belt 的来源身份：换装提交时旧那一份交还给它。<br>
-     * 与 {@link #loadedBelt} 由同一次 {@link #setLoadedBelt} 成对写入，因此始终指向产出当前已装内容的
-     * 那台机器。存档里以身份保存，读档后按身份重新解析实例；它只用于定位接收方，
-     * 不写进可携带的弹药内容。
-     */
-    private SupplierRef loadedBeltSource = SupplierRef.NONE;
-
-    /**
      * 本管当前供给者的<b>身份</b>（网络同步）。<br>
-     * 身份由 {@link SupplierRef} 表达：宿主 RegularPart uuid + SubPart 名 + 子系统名，同一会话内两端一致。
+     * 身份由 {@link SupplierRef} 表达：宿主 SubPart ID + 子系统名，同一会话内两端一致。
      * <p>
      * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）。客户端在
      * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
@@ -217,16 +209,36 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RESOURCE_LOCATION());
 
     /**
-     * 当前装填作业的目标供给者（网络同步）。<br>
-     * 值为 {@link SupplierRef#NONE} 表示没有进行中的作业。作业已推进多少、本阶段多长由
-     * {@link #JOB_ELAPSED_ID} 与 {@link #JOB_TOTAL_ID} 表达——它们是同一个作业的三个字段，
-     * 分开下发是因为只有进度每 tick 变化，目标与时长只在开工时写一次。
+     * 当前装填作业的编号（网络同步）。{@code 0} 表示没有作业。<br>
+     * 编号与宿主 SubPart ID、本子系统名组成作业身份 {@link ReloadJobKey}：机构占用、实际架预留与独占
+     * 机构的槽位拥有者都用它匹配。客户端据它区分"同一条作业又收到一次更新"与"换了一条作业"——
+     * 前者保留本地已推进的进度，后者从基线重新开始。
      */
+    private static final EntityDataAccessor<Integer> JOB_ID_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+
+    /** 当前作业的交付目标（网络同步）：机构路径是机构，纯人工直取路径是弹药架。 */
     private static final EntityDataAccessor<SupplierRef> JOB_TARGET_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
 
-    /** 当前作业已推进的 tick 数（网络同步）。 */
-    private static final EntityDataAccessor<Integer> JOB_ELAPSED_ID =
+    /**
+     * 当前作业的实际来源弹药架（网络同步）。<br>
+     * 由机构在受理时挑定并写进作业；纯人工直取路径与 {@link #JOB_TARGET_ID} 相同。客户端用它定位
+     * "这份交付从哪台架来"：判断本地能否推进、播放机械段音效与显示来源。
+     */
+    private static final EntityDataAccessor<SupplierRef> JOB_ORIGIN_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
+
+    /**
+     * 当前作业的冻结交付规格（网络同步）。<br>
+     * 受理时定下，此后供给者的规格变化不改写它；客户端据此知道这一份是什么内容、多少发，
+     * 不必在完成时从变化后的供给预览重新推导。
+     */
+    private static final EntityDataAccessor<Optional<AmmoBelt>> JOB_SPEC_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_AMMO_BELT());
+
+    /** 当前作业的弹药预留量 {@code q}（网络同步）：实际架已按这个份额扣着库存。 */
+    private static final EntityDataAccessor<Integer> JOB_RESERVED_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
 
     /**
@@ -237,12 +249,31 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
 
     /**
-     * 本管的当前装填作业：进度、总时长与交付目标都记在这里，供给者不再持有一份并行计时。<br>
-     * 服务端每 tick 推进并下发；客户端由三个同步值重建只读副本，不自行推进。
-     * 不存档——未完成的装填读档后重新发起，作业不跨存档延续。
+     * 当前作业已推进 tick 数（网络同步）。<br>
+     * <b>只作基线，不是每 tick 的进度镜像：</b>服务端在作业开始与离散重建（暂停恢复、换人、完整补推）
+     * 时写一次，稳定装填期间不写。两端在基线之上各自按执行者给的推进量累计，因此这条通路不承担
+     * 逐 tick 计时。客户端只在换作业或收到更新的基线时向前对齐，不让进度倒退。
+     */
+    private static final EntityDataAccessor<Integer> JOB_ELAPSED_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 本管的当前装填作业：身份、冻结分配与进度都记在这里，供给者不另持一份并行计时。<br>
+     * 服务端每 tick 按执行者给的推进量累计；客户端在 {@link #onPostTick()} 用同步的分配字段建一份
+     * 自己的作业，同样按执行者的推进量累计，只是不扣库存、不交付。两端都只有一个作业对象，
+     * 不另存分配快照。不存档——未完成的装填读档后重新发起，作业不跨存档延续。
      */
     @Nullable
     private ReloadJob reloadJob;
+
+    /**
+     * 客户端待落地的同步项：回调只记"哪几项变了"，模拟结束后在 {@link #onPostTick()} 统一应用。<br>
+     * 分项记是因为落地的顺序有语义（指认 → 作业 → 弹药内容），而回调的到达顺序不保证。服务端不读写。
+     */
+    private boolean pendingSupplier;
+    private boolean pendingJob;
+    private boolean pendingBelt;
+    private boolean pendingChambered;
 
     /**
      * 下一份作业的编号，本机自增。<br>
@@ -329,7 +360,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         builder.define(SUPPLIER_ID, SupplierRef.NONE);
         builder.define(BELT_ID, Optional.empty());
         builder.define(CHAMBERED_ID, Optional.empty());
+        builder.define(JOB_ID_ID, 0);
         builder.define(JOB_TARGET_ID, SupplierRef.NONE);
+        builder.define(JOB_ORIGIN_ID, SupplierRef.NONE);
+        builder.define(JOB_SPEC_ID, Optional.empty());
+        builder.define(JOB_RESERVED_ID, 0);
         builder.define(JOB_ELAPSED_ID, 0);
         builder.define(JOB_TOTAL_ID, 0);
     }
@@ -337,7 +372,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 同步数据落地后的处理。<br>
      * 收到子系统同步包时，基类会逐个访问器回调本方法（服务端自己写值时同样回调一次）。
-     * 这里只处理客户端：服务端推来的指认要落到本机的供给者实例上。
+     * 客户端在这里只记"哪一项变了"：值已经写进 {@link #getSynchedData()}，真正落地到本机状态由
+     * {@link #onPostTick()} 在本轮模拟结束后统一完成，避免在模拟中途替换作业与弹药内容。
      *
      * @param dataAccessor 发生变化的访问器
      */
@@ -346,34 +382,98 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.onSyncedDataUpdated(dataAccessor);
         if (!getLevel().isClientSide()) return;
         if (dataAccessor.equals(SUPPLIER_ID)) {
-            applySyncedSupplier();
+            pendingSupplier = true;
         } else if (dataAccessor.equals(BELT_ID)) {
-            loadedBelt = getSynchedData().get(BELT_ID).orElse(null);
+            pendingBelt = true;
         } else if (dataAccessor.equals(CHAMBERED_ID)) {
-            ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
-            chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
-        } else if (dataAccessor.equals(JOB_TARGET_ID)
+            pendingChambered = true;
+        } else if (dataAccessor.equals(JOB_ID_ID)
+                || dataAccessor.equals(JOB_TARGET_ID)
+                || dataAccessor.equals(JOB_ORIGIN_ID)
+                || dataAccessor.equals(JOB_SPEC_ID)
+                || dataAccessor.equals(JOB_RESERVED_ID)
                 || dataAccessor.equals(JOB_ELAPSED_ID)
                 || dataAccessor.equals(JOB_TOTAL_ID)) {
-            rebuildJobFromSynced();
+            pendingJob = true;
         }
     }
 
     /**
-     * 客户端按三个同步值重建作业副本。<br>
-     * 目标为空表示服务端当前没有作业（已交付、已取消或换人）；{@code elapsed} 只作显示与音效触发，
-     * 客户端不据它推进库存或射击状态。副本不携带服务端分配的作业编号——编号目前只在服务端用于
-     * 机构占用与架预留的身份匹配，客户端镜像以 {@link ReloadJob#UNASSIGNED_JOB_ID} 表示"未携带"。
+     * 客户端在本轮模拟结束后统一落地待处理同步值。<br>
+     * 顺序是先指认、再作业、最后膛内弹与已装 Belt：指认变化会先按身份结束旧作业，作业字段随后组成
+     * 新状态，弹药内容最后覆盖本地副本，因此一次收到的多项变化不会出现"作业已换而膛内还是旧的那发"
+     * 中间态。服务端没有待应用值，本方法直接返回。
+     * <p><b>调用线程：</b>主线程（客户端 tick 收尾，由 {@code SubsystemController#postTick()} 统一调用）。
      */
-    private void rebuildJobFromSynced() {
-        SupplierRef target = getSynchedData().get(JOB_TARGET_ID);
-        int total = getSynchedData().get(JOB_TOTAL_ID);
-        if (target.isNone() || total <= 0) {
+    @Override
+    public void onPostTick() {
+        super.onPostTick();
+        if (!getLevel().isClientSide()) return;
+        if (pendingSupplier) {
+            pendingSupplier = false;
+            applySyncedSupplier();
+        }
+        if (pendingJob) {
+            pendingJob = false;
+            applySyncedJob();
+        }
+        if (pendingBelt) {
+            pendingBelt = false;
+            loadedBelt = getSynchedData().get(BELT_ID).orElse(null);
+        }
+        if (pendingChambered) {
+            pendingChambered = false;
+            ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
+            chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
+        }
+    }
+
+    /**
+     * 全量补推前把进度基线刷成当前进度。<br>
+     * {@link #JOB_ELAPSED_ID} 平时只在作业开始与离散重建时写，直接推给新加入的客户端会让它从 0 开始
+     * 模拟一份已经进行到一半的作业；这一刻刷新一次，客户端拿到的基线就是"现在"。
+     * <p><b>调用线程：</b>主线程（服务端，{@code SubsystemController#pushAllTo}）。
+     */
+    @Override
+    public void refreshSyncBaseline() {
+        if (getLevel().isClientSide()) return;
+        ReloadJob job = reloadJob;
+        getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
+    }
+
+    /**
+     * 客户端按同步的作业字段组成本地作业。<br>
+     * 编号为 {@code 0} 表示权威已收尾（交付、取消、换人或失效）：本地作业结束。客户端不在这里释放
+     * 占用或预留——那些由服务端按身份释放，本端只是镜像。<br>
+     * 编号与本地当前作业相同表示这是同一条作业的离散更新（进度基线、阶段时长）：沿用本地已推进的
+     * 进度，只向前对齐基线，不让进度倒退；编号不同则是新作业，从基线重新起算。<br>
+     * 规格或时长为空说明这一批字段还没到齐，保持现状等补齐，不建半份作业。
+     */
+    private void applySyncedJob() {
+        int jobId = getSynchedData().get(JOB_ID_ID);
+        if (jobId <= 0) {
             reloadJob = null;
             return;
         }
-        ReloadJob job = new ReloadJob(ReloadJob.UNASSIGNED_JOB_ID, target, total);
-        job.advance(getSynchedData().get(JOB_ELAPSED_ID));
+        AmmoBelt spec = getSynchedData().get(JOB_SPEC_ID).orElse(null);
+        int total = getSynchedData().get(JOB_TOTAL_ID);
+        if (spec == null || total <= 0) return;
+
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), jobId);
+        int baseline = Math.max(0, getSynchedData().get(JOB_ELAPSED_ID));
+        ReloadJob current = reloadJob;
+        if (current != null && current.key().equals(key)) {
+            // 同一条作业：基线只补差额，advance 不会被负数拉回
+            current.advance(baseline - current.elapsedTicks());
+            return;
+        }
+        ReloadJob job = new ReloadJob(key,
+                getSynchedData().get(JOB_TARGET_ID),
+                getSynchedData().get(JOB_ORIGIN_ID),
+                spec,
+                getSynchedData().get(JOB_RESERVED_ID),
+                total);
+        job.advance(baseline);
         reloadJob = job;
     }
 
@@ -412,10 +512,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
     }
 
-    /** 写入已装 Belt 与它的返回来源并同步；客户端不写。 */
-    private void setLoadedBelt(@Nullable AmmoBelt belt, SupplierRef source) {
+    /**
+     * 写入已装 Belt 并同步；客户端不写。<br>
+     * 旧内容的退回目标是"当前合法且接受它的机器"，不记账：换装提交时按当前供给者与已发现的供给者
+     * 依次询问，因此不需要把产出它的那台机器存下来——那份来源关系既不持久化，也不参与路由。
+     */
+    private void setLoadedBelt(@Nullable AmmoBelt belt) {
         loadedBelt = belt;
-        loadedBeltSource = belt == null ? SupplierRef.NONE : source;
         pushBelt();
     }
 
@@ -706,7 +809,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Entity attacker = getLastDamageAttacker();
         // 先消耗本管的弹药再交给普通爆炸服务：本次起爆后本管不再持有这些内容
         setChambered(null);
-        setLoadedBelt(null, SupplierRef.NONE);
+        setLoadedBelt(null);
         ExplosionManager.get(getLevel()).detonate(
                 origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
@@ -760,8 +863,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             tickReload();
             if (!isSwapping()) refillChamberFromBelt();
         } else if (getLevel().isClientSide()) {
-            // 客户端按服务端下发的作业进度驱动机械段音效，不推进作业本身
-            tickReloadSounds();
+            // 客户端按同一份分配与运行条件自行推进作业，并驱动机械段音效
+            tickClientReload();
         }
 
         if (!isActive() || isDestroyed()) {
@@ -915,9 +1018,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 受理一份新作业：写入当前作业并把它的身份与进度推给客户端（仅服务端写同步值）。<br>
-     * 受理前必须已经取得供给者的占用（{@link IAmmoSupplier#claimFor}），因此这里不重复判断。
-     * 客户端重建副本走 {@link #rebuildJobFromSynced()}，不调用本方法。
+     * 受理一份新作业：写入当前作业并把它的身份、分配与进度推给客户端（仅服务端写同步值）。<br>
+     * 受理前必须已经取得供给者授予的占用与预留（{@link IAmmoSupplier#claimFor}），因此这里不重复判断。
+     * 客户端按同步字段建自己的作业，走 {@link #applySyncedJob()}，不调用本方法。
      */
     private void beginReloadJob(ReloadJob job) {
         reloadJob = job;
@@ -925,9 +1028,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 统一收尾：先按作业身份释放供给者那边的占用，再清空作业与本机的进度字段。<br>
-     * 成功交付、取消、换人、摧毁与路径失效都走这一口，因此不存在"只清进度不释放占用"的分支；
-     * 释放只按编号删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
+     * 统一收尾：先按作业身份释放供给者那边的占用与实际架预留，再清空作业与本机的进度字段。<br>
+     * 成功交付、取消、换人、摧毁与路径失效都走这一口，因此不存在"只清进度不释放承诺"的分支；
+     * 释放只按身份删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
      * 重复收尾因此安全。
      * <p><b>调用线程：</b>主线程。
      */
@@ -935,28 +1038,39 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         ReloadJob job = reloadJob;
         if (job == null) return;
         IAmmoSupplier supplier = currentSupplier;
-        if (supplier != null) supplier.releaseClaim(this, job.jobId());
+        if (supplier != null) supplier.releaseClaim(this, job.key());
         reloadJob = null;
         pushReloadJob();
     }
 
+    /**
+     * 把当前作业的分配字段推给客户端。<br>
+     * 只在作业开始与收尾时调用：稳定装填期间服务端不写进度字段，两端在基线之上各自累计
+     * （{@link #JOB_ELAPSED_ID} 是基线，不是每 tick 的镜像）。离散重建（暂停恢复、换人、作业重建）
+     * 另行写入当时的进度作为新基线。
+     */
     private void pushReloadJob() {
         if (getLevel().isClientSide()) return;
         ReloadJob job = reloadJob;
+        getSynchedData().set(JOB_ID_ID, job == null ? 0 : job.jobId());
         getSynchedData().set(JOB_TARGET_ID, job == null ? SupplierRef.NONE : job.deliveryTarget());
+        getSynchedData().set(JOB_ORIGIN_ID, job == null ? SupplierRef.NONE : job.upstreamOrigin());
+        getSynchedData().set(JOB_SPEC_ID, job == null ? Optional.empty() : Optional.of(job.spec().syncCopy()));
+        getSynchedData().set(JOB_RESERVED_ID, job == null ? 0 : job.reservedCount());
         getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
         getSynchedData().set(JOB_TOTAL_ID, job == null ? 0 : job.totalTicks());
     }
 
     /**
      * 推进本管的装填作业。<br>
-     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工前先向供给者申请占用——
-     * 接不了单（不可交付、没有可交付的库存、独占槽位被别的作业占着）就不建作业，下个 tick 再试，
-     * 因此等待中的管既不占槽也不下发进度。受理后把机械段基准时长写进作业，此后每 tick 向供给者
-     * 索取可推进量；走完后取走那一份，交给装填或换装的分支。
+     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工前先向供给者申请受理——
+     * 它在同一次调用里取得机构槽位与该次作业的弹药预留；接不了单（不可工作、没有可分配库存、独占槽位
+     * 被别的作业占着）就不建作业、不开始计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
+     * 受理后把机械段基准时长与冻结的分配写进作业，此后每 tick 向供给者索取可推进量；走完后兑现预留、
+     * 取走那一份，交给装填或换装的分支。
      * <p>
-     * 作业的交付目标不会在作业存续期间漂移：指认只经 {@link #assignSupplier} 变更，而它在换人前
-     * 就收尾了旧作业。
+     * 作业的交付目标与来源不会在作业存续期间漂移：指认只经 {@link #assignSupplier} 变更，而它在换人前
+     * 就收尾了旧作业；来源只由受理时授予，换架要重建作业。
      * <p><b>调用线程：</b>主线程（仅服务端：库存与交付都在这一侧执行）。
      */
     private void tickReload() {
@@ -978,18 +1092,26 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         ReloadJob job = reloadJob;
         if (job == null) {
-            int jobId = nextJobId++;
-            if (!supplier.claimFor(this, jobId)) return; // 未受理：不入占用表、不挡槽、不开始计时
-            job = new ReloadJob(jobId, SupplierRef.of(supplier), supplier.getReloadTimeTicks());
+            // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
+            ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
+            IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
+            if (grant == null) return; // 未受理：不入占用、不占预留、不开始计时
+            nextJobId++;
+            job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
+                    grant.reservedCount(), supplier.getReloadTimeTicks());
             beginReloadJob(job);
         }
+        if (!supplier.holdsCommitment(this)) {
+            // 占用或预留已不存在（来源失效、份额被撤销）：按失效收尾，由路由重选
+            finishReloadJob();
+            return;
+        }
         job.advance(supplier.getAdvanceTicks(this));
-        pushReloadJob();
         if (!job.isComplete()) return;
 
         AmmoBelt delivered = supplier.consumeReadyBelt(this);
         finishReloadJob();
-        if (delivered == null) return; // 上游在最后一 tick 被抢空：下个 tick 重开作业
+        if (delivered == null) return; // 兑现不出这一份：下个 tick 重开作业
         if (swapping) {
             commitBeltSwap(supplier, delivered);
         } else {
@@ -1028,7 +1150,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             if (round instanceof BallisticProjectileType kinetic) setChambered(kinetic);
             return;
         }
-        setLoadedBelt(pulled, SupplierRef.of(supplier));
+        setLoadedBelt(pulled);
+    }
+
+    /**
+     * 客户端推进本管的装填作业，并把进度交给供给者驱动机械段音效。<br>
+     * 计时在两端各自累计：服务端只给分配、基线与运行条件，客户端每个 tick 按执行者给出的推进量前进，
+     * 不等待逐 tick 的进度包。客户端不扣库存、不交付、不生成投射物——那些仍由服务端执行并经同步值
+     * 校准，因此本地进度只是显示与音效的依据。
+     * <p><b>调用线程：</b>主线程（客户端）。
+     */
+    private void tickClientReload() {
+        ReloadJob job = reloadJob;
+        IAmmoSupplier supplier = getCurrentSupplier();
+        if (job != null && supplier != null) {
+            job.advance(supplier.getAdvanceTicks(this));
+        }
+        tickReloadSounds();
     }
 
     /**
@@ -1054,7 +1192,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         AmmoBelt belt = loadedBelt;
         if (belt == null) return;
         if (belt.remaining() <= 0) {
-            if (!belt.hasRecharge()) setLoadedBelt(null, SupplierRef.NONE);
+            if (!belt.hasRecharge()) setLoadedBelt(null);
             return;
         }
         if (belt.hasRecharge() || chamberedType != null) return;
@@ -1098,7 +1236,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 换装是否进行中：当前供给者要交付的规格与本机已装内容不是同一份。<br>
      * 换装没有自己的时长与进度——它与首次装填共用同一条 {@link ReloadJob}，按供给者的机械段计时，
-     * 本管只在它备好时取走那一份、把旧的一份交还原来的机器。进行中时射击锁定，
+     * 本管只在它备好时取走那一份、把旧的一份交给当前合法且接受它的机器。进行中时射击锁定，
      * 已装内容与膛内弹都留在原位。
      */
     public boolean isSwapping() {
@@ -1121,9 +1259,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 在主线程验证并提交整份交换；新的一份不通过校验或旧的一份无处回收时都回滚到操作前状态。<br>
-     * 旧的一份优先交还产出它的那台机器（身份见 {@link #loadedBeltSource}），找不到或拒收时整笔放弃
-     * ——不能丢下旧的一份再装新的。
+     * 在主线程验证并提交整份交换。<br>
+     * 新的一份不通过校验时原样退回、整笔放弃。旧的一份交给当前合法且接受它的机器——先问本次交付的
+     * 来源，再问当前指认，最后按发现顺序尝试其余供给者；都拒收时丢弃并记一条警告，不做"原路退回"
+     * 的强制要求（来源关系不持久化，重新拾取到哪台由机器自己的收弹规则决定）。
      *
      * @param target   本次换装的交付来源，由 {@link #pendingSwapTarget()} 给出
      * @param incoming 已从该来源取走的一份
@@ -1135,16 +1274,30 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         AmmoBelt previous = loadedBelt;
-        if (previous != null) {
-            IAmmoSupplier receiver = findSupplierByRef(loadedBeltSource);
-            if (receiver == null || !receiver.returnBelt(previous)) {
-                target.returnBelt(incoming);
-                abortBeltSwap("旧的一份无处回收");
-                return;
-            }
+        if (previous != null && !returnBeltToAnySupplier(previous, target)) {
+            MachineMax.LOGGER.warn("Launcher {} 换装时旧的一份没有任何机器接收，按规则丢弃 {}", name, previous);
         }
-        setLoadedBelt(incoming, SupplierRef.of(target));
+        setLoadedBelt(incoming);
         refillChamberFromBelt();
+    }
+
+    /**
+     * 把一份旧内容交给当前合法且接受它的机器。<br>
+     * 收不收由机器自己判定（弹种、可储存状态与剩余容量），本管只按顺序询问。
+     *
+     * @param belt      要交还的一份
+     * @param preferred 优先询问的机器，可为 null
+     * @return true 表示已由某台机器收下
+     */
+    private boolean returnBeltToAnySupplier(AmmoBelt belt, @Nullable IAmmoSupplier preferred) {
+        if (preferred != null && preferred.returnBelt(belt)) return true;
+        IAmmoSupplier current = getCurrentSupplier();
+        if (current != null && current != preferred && current.returnBelt(belt)) return true;
+        for (IAmmoSupplier supplier : getSuppliers()) {
+            if (supplier == preferred || supplier == current) continue;
+            if (supplier.returnBelt(belt)) return true;
+        }
+        return false;
     }
 
     private void abortBeltSwap(String reason) {
@@ -1823,7 +1976,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         setChambered(stored instanceof BallisticProjectileType kinetic ? kinetic : null);
 
         loadedBelt = data.contains("loaded_belt") ? AmmoBelt.load(data.getCompound("loaded_belt")) : null;
-        loadedBeltSource = readSupplierRef(data, "loaded_belt_source");
         // 读档不免费产出：存档里没有的内容保持为空，下一次正常交付才转移库存
         pushBelt();
     }
@@ -1835,24 +1987,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             data.putString("chambered_type", chamberedType.getRegistryKey().toString());
         }
         if (loadedBelt != null) data.put("loaded_belt", loadedBelt.save());
-        writeSupplierRef(data, "loaded_belt_source", loadedBeltSource);
         return data;
-    }
-
-    /** 供给者身份按三项标识保存：同一份装配存档内可恢复，不存 Java 引用。 */
-    private static void writeSupplierRef(CompoundTag data, String key, SupplierRef ref) {
-        if (ref.isNone()) return;
-        CompoundTag tag = new CompoundTag();
-        tag.putUUID("part", ref.partUuid());
-        tag.putString("subpart", ref.subPartName());
-        tag.putString("subsystem", ref.subsystemName());
-        data.put(key, tag);
-    }
-
-    private static SupplierRef readSupplierRef(CompoundTag data, String key) {
-        if (!data.contains(key)) return SupplierRef.NONE;
-        CompoundTag tag = data.getCompound(key);
-        return new SupplierRef(tag.getUUID("part"), tag.getString("subpart"), tag.getString("subsystem"));
     }
 
     /**

@@ -166,7 +166,7 @@ class WeaponHudComponentsTest {
 
     @Test void regeneratingRowKeepsItsCountdownButHidesTheLoadingSource() throws Exception {
         var page = create("tubes");
-        var regen = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 9), "gun", "launcher"),
+        var regen = new HudWeaponSnapshot.Tube(new SupplierRef(9, "launcher"),
                 "9M133", "reloading", "regenerating", 50, 15, "15.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 new HudWeaponSnapshot.Reserve(0, 4, false), false);
@@ -179,7 +179,7 @@ class WeaponHudComponentsTest {
             assertTrue(document.querySelector(".loading-source").getClassList().contains("is-regenerating"));
         });
 
-        var empty = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 10), "gun", "launcher"),
+        var empty = new HudWeaponSnapshot.Tube(new SupplierRef(10, "launcher"),
                 "AP", "empty", "idle", 0, 0, "", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 HudWeaponSnapshot.Reserve.EMPTY, false);

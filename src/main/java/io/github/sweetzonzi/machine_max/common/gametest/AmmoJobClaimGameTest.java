@@ -6,9 +6,11 @@ import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoLoaderSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -25,9 +27,10 @@ import java.util.Map;
 /**
  * 一条装填作业的受理与占用归属，用 M1A2 SEP 炮塔上真实相连的一组零件固定。
  *
- * <p>契约有四条：① 有现货时受理并建作业，作业带服务端分配的编号，进度记在管上；② 独占机构受理后
- * 对别的管表现为已占用，但不算自己；③ 释放按编号匹配——旧编号的释放不能摘掉同一条输弹线上的新作业；
- * ④ 没有可交付的库存时不建作业，也就不会占住机器。</p>
+ * <p>契约有五条：① 有现货时受理并建作业，作业带服务端分配的编号、来源与份额，进度记在管上；
+ * ② 受理同时占用来源架的一份弹药——可分配库存减少而实际库存不动；③ 独占机构受理后对别的管表现为
+ * 已占用，但不算自己；④ 释放与预留撤销都按身份匹配——旧编号的释放不能摘掉同一条输弹线上的新作业；
+ * ⑤ 没有可分配的库存时不建作业，也就不会占住机器；预留被撤销时作业按失效收尾。</p>
  *
  * <p>这些只能在真实装配体上跑：受理要读上游弹药架的实际库存与发现结果，占用要读作业与指认，
  * 纯 JUnit 既没有子系统宿主也没有这两个子系统之间的接线。用例取 120mm 炮（机械段 5 秒），
@@ -86,27 +89,45 @@ public final class AmmoJobClaimGameTest {
             helper.assertTrue(autoloader.isClaimedByOther(otherLauncher),
                     "独占机构受理一条作业后，对别的管必须表现为已占用");
 
-            // 释放按编号匹配：旧编号不能摘掉同一条输弹线上的新作业
-            autoloader.releaseClaim(launcher, job.jobId() + 1);
+            // 受理同时取得整次作业的预留：可分配库存减少、实际库存不动，来源与规格冻结在作业上
+            int stock = rack.getAmmoCount();
+            helper.assertTrue(job.reservedCount() > 0, "受理必须取得本次作业的预留份额");
+            helper.assertTrue(rack.getReservedTotal() == job.reservedCount(),
+                    "预留总量必须等于该作业的份额");
+            helper.assertTrue(rack.getAvailableCount() == stock - job.reservedCount(),
+                    "可分配库存必须是实际库存减去已预留总量");
+            helper.assertTrue(rack.getAmmoCount() == stock, "开工预留不得提前扣减实际库存");
+            helper.assertTrue(job.upstreamOrigin().equals(SupplierRef.of(rack)),
+                    "作业的实际来源必须是受理时挑中的那台架");
+            helper.assertTrue(AmmoBelt.compareSpec(job.spec(), spec) == 0,
+                    "作业的冻结规格必须与来源架的交付规格一致");
+            helper.assertTrue(autoloader.holdsCommitment(launcher), "受理后机构必须仍持有这条作业的承诺");
+
+            // 释放与撤销按身份匹配：旧编号不能摘掉同一条输弹线上的新作业
+            ReloadJobKey staleKey = new ReloadJobKey(job.key().subPartId(), job.key().launcherName(),
+                    job.jobId() + 1);
+            autoloader.releaseClaim(launcher, staleKey);
             helper.assertTrue(autoloader.isClaimedByOther(otherLauncher),
-                    "编号不匹配的释放不得摘掉占用");
-            helper.assertTrue(launcher.getReloadJob() == job, "编号不匹配的释放不得影响作业本身");
+                    "身份不匹配的释放不得摘掉占用");
+            helper.assertTrue(launcher.getReloadJob() == job, "身份不匹配的释放不得影响作业本身");
             launcher.onTick();
             helper.assertTrue(job.elapsedTicks() == 2, "占用还在时机构继续放行推进");
 
-            // 收尾：换人或取消先按身份释放占用，机器随即对别人可用
-            launcher.setCurrentSupplier(null);
-            helper.assertTrue(launcher.getReloadJob() == null, "解除指认必须收尾作业");
+            // 预留被撤销 → 机构不再承诺这条作业，管按失效收尾并让机器重新可用
+            rack.releaseReservation(job.key());
+            helper.assertTrue(!autoloader.holdsCommitment(launcher), "预留撤销后不得再声称持有承诺");
+            launcher.onTick();
+            helper.assertTrue(launcher.getReloadJob() == null, "承诺失效时必须收尾作业");
+            helper.assertTrue(rack.getReservedTotal() == 0, "收尾后不得留下预留");
             helper.assertTrue(!autoloader.isClaimedByOther(otherLauncher), "收尾后机器必须重新可用");
 
-            // 没有可交付的库存时不建作业、不占槽：等待供弹的请求不进占用表
-            for (int i = 0; i < 8 && rack.hasAmmo(); i++) {
-                rack.consumeBelt();
-            }
+            // 没有可分配的库存时不建作业、不占槽：等待供弹的请求不进占用表
+            ReloadJobKey scratch = new ReloadJobKey(launcher.getSubPart().getId(), LAUNCHER, 9999);
+            helper.assertTrue(rack.reserve(scratch, Integer.MAX_VALUE) > 0, "清空库存前应能预留整架");
+            helper.assertTrue(rack.deliverReserved(scratch) != null, "兑现预留应扣掉整架库存");
             helper.assertTrue(!rack.hasAmmo(), "本例需要把架清空");
-            launcher.setCurrentSupplier(autoloader);
             launcher.onTick();
-            helper.assertTrue(launcher.getReloadJob() == null, "没有现货时不得建作业");
+            helper.assertTrue(launcher.getReloadJob() == null, "没有可分配库存时不得建作业");
             helper.assertTrue(!autoloader.isClaimedByOther(otherLauncher), "未被受理的请求不得占用机器");
             helper.succeed();
         } finally {

@@ -18,6 +18,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +27,18 @@ import java.util.Set;
 
 /**
  * 再生弹药架子系统。<br>
- * 只持有库存与自身再生：数字存量、再生进度、交付规格 {@code belt_definition}。它不做装填计时，
- * 也不向任何人推送——机构的机械段决定什么时候来取，Launcher 的作业进度记在管上。
+ * 只持有库存、自身再生与<b>弹药预留</b>：数字存量、再生进度、交付规格 {@code belt_definition}、
+ * 各作业的预留量。它不做装填计时，也不向任何人推送进度——机构的机械段决定什么时候来取，
+ * Launcher 的作业进度记在管上。
  * <p>
- * 交付单位是一份 {@link AmmoBelt}：每次取弹按模板给一份独立实例，发数是
- * {@code min(库存, 规格长度)}；取走后按 {@code regen_delay} 暂停，
- * 再按 {@code regen_per_minute} 与 {@code regen_round_by_round} 决定逐发产出还是整批回满。
+ * <b>预留：</b>每条作业在受理时按整次作业取一份 {@code q}（{@link #reserve}），可分配库存随之减少，
+ * 但实际库存 {@code N} 在交付那一刻才扣（{@link #deliverReserved}）。已取得预留的作业不受其他作业
+ * 抢走可分配库存的影响；预留被撤销（来源失效、强制损失、作业终止）时只减少承诺，不补弹。
+ * 任意时刻 {@code 0 ≤ R = Σq ≤ N}，{@link #trimReservationsToStock} 维护这条不变量。
+ * <p>
+ * 交付单位是一份 {@link AmmoBelt}：每次兑现按模板给一份独立实例，发数是该作业的预留量；
+ * 取走后按 {@code regen_delay} 暂停，再按 {@code regen_per_minute} 与 {@code regen_round_by_round}
+ * 决定逐发产出还是整批回满。
  * <p>
  * 计时器一律记<b>已消耗量</b>并只在 {@link #onTick()} 里自增自减，不记"开始时刻"：开始时刻是本机
  * {@link #tickCount} 的读数，跨存档没有意义；而计数天然满足两条要求——停摆期间（未激活 /
@@ -46,6 +54,21 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
     /** 当前弹药计数（网络同步） */
     private static final EntityDataAccessor<Integer> AMMO_COUNT_ID =
             SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 已预留总量 {@code R}（网络同步）。<br>
+     * 已经包含本作业自己的份额：显示可分配数量时只算 {@code N - R}，本作业的 {@code q} 就在 {@code R} 里面。
+     * 逐作业的预留表 {@link #reservations} 只在服务端有内容，客户端跟随这个总量。
+     */
+    private static final EntityDataAccessor<Integer> RESERVED_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
+
+    /**
+     * 各作业的预留量 {@code q}：作业身份 → 份数。<br>
+     * 只在服务端写：受理时新增（{@link #reserve}），交付（{@link #deliverReserved}）与释放
+     * （{@link #releaseReservation}）时整笔删除，没有部分兑现。不入存档——读档后未完成的装填重新申请。
+     */
+    private final Map<ReloadJobKey, Integer> reservations = new LinkedHashMap<>();
 
     /** 逐发再生的进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发） */
     private float regenProgress = 0f;
@@ -72,6 +95,7 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(AMMO_COUNT_ID, 0);
+        builder.define(RESERVED_ID, 0);
     }
 
     // ==================== 库存 ====================
@@ -85,12 +109,112 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
         getSynchedData().set(AMMO_COUNT_ID, count);
     }
 
+    /** 已预留总量 {@code R}：各作业 {@code q} 之和，已包含本作业份额 */
+    public int getReservedTotal() {
+        return getSynchedData().get(RESERVED_ID);
+    }
+
+    /** 可分配库存 {@code N - R}：可供尚未受理的作业申请的份数 */
+    public int getAvailableCount() {
+        return Math.max(0, getAmmoCount() - getReservedTotal());
+    }
+
+    /**
+     * 该作业在本架的预留量。<br>
+     * 预留表只在服务端有内容，客户端读到 0；客户端按作业上同步的 {@code reservedCount} 与这里的总量
+     * 判断这条作业的承诺是否还在。
+     *
+     * @param key 作业身份
+     * @return 该作业的 {@code q}；没有预留时为 0
+     */
+    public int reservedFor(ReloadJobKey key) {
+        return reservations.getOrDefault(key, 0);
+    }
+
+    /**
+     * 为一条作业预留弹药：可分配库存立即减少，实际库存不动。<br>
+     * 预留量取 {@code q = min(可分配库存, wanted)}，不足一份也能开工（交付时按 {@code q} 发）。
+     * 同一身份重复申请沿用原份额，不叠加；{@link ReloadJobKey#NONE} 与客户端调用都不产生预留。
+     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     *
+     * @param key    作业身份
+     * @param wanted 本次最多想预留多少发（通常是交付规格的长度）
+     * @return 实际预留量 {@code q}；没有可分配库存时返回 0
+     */
+    public int reserve(ReloadJobKey key, int wanted) {
+        if (getLevel().isClientSide() || key.isNone() || wanted <= 0) return 0;
+        int existing = reservedFor(key);
+        if (existing > 0) return existing;
+        int granted = Math.min(getAvailableCount(), wanted);
+        if (granted <= 0) return 0;
+        reservations.put(key, granted);
+        publishReserved();
+        return granted;
+    }
+
+    /**
+     * 按身份撤销一条作业的预留：只减少承诺，不改动实际库存、不补弹。<br>
+     * 重复撤销、撤销不存在的身份都是无操作。
+     * <p><b>调用线程：</b>主线程（服务端）。
+     *
+     * @param key 作业身份
+     */
+    public void releaseReservation(ReloadJobKey key) {
+        if (getLevel().isClientSide() || key.isNone()) return;
+        if (reservations.remove(key) != null) publishReserved();
+    }
+
+    /**
+     * 兑现一条作业的预留：按该身份扣减实际库存并生成交付实例。<br>
+     * 同一身份只兑现一次——预留在此处删除，重复调用返回 {@code null}，不会扣第二次。
+     * <p><b>调用线程：</b>主线程（服务端交付点）。
+     *
+     * @param key 作业身份
+     * @return 交付实例，发数等于该作业的预留量；没有预留时返回 {@code null}
+     */
+    @Nullable
+    public AmmoBelt deliverReserved(ReloadJobKey key) {
+        if (getLevel().isClientSide() || key.isNone()) return null;
+        Integer granted = reservations.remove(key);
+        if (granted == null || granted <= 0) return null;
+        publishReserved();
+        setAmmoCount(getAmmoCount() - granted);
+        applyDeliveryDelay();
+        return attr.beltDefinition.freshCopy(granted);
+    }
+
+    /** 把预留表的总量写进同步值 {@code R}。 */
+    private void publishReserved() {
+        int total = 0;
+        for (int granted : reservations.values()) total += granted;
+        getSynchedData().set(RESERVED_ID, total);
+    }
+
+    /**
+     * 维护 {@code R ≤ N}：实际库存因非交付原因减少后，按 {@link ReloadJobKey} 元组升序排列预留键，
+     * 从最大键起整笔撤销，直到剩余预留总量不超过新的实际库存。<br>
+     * 撤销顺序只由服务端这一处决定，客户端跟随 {@code R} 的新值；保留的份额不被静默缩小。
+     * <p><b>调用线程：</b>主线程（服务端）。
+     */
+    private void trimReservationsToStock() {
+        if (getLevel().isClientSide()) return;
+        int total = getReservedTotal();
+        if (total <= getAmmoCount()) return;
+        List<ReloadJobKey> keys = new ArrayList<>(reservations.keySet());
+        keys.sort(Comparator.naturalOrder());
+        for (int i = keys.size() - 1; i >= 0 && total > getAmmoCount(); i--) {
+            Integer granted = reservations.remove(keys.get(i));
+            if (granted != null) total -= granted;
+        }
+        publishReserved();
+    }
+
     /** 存量上限，来自型号的 {@code capacity} */
     public int getCapacity() {
         return attr.staticAttribute.getCapacity();
     }
 
-    /** 库存非零即成立，与够不够一整份无关 */
+    /** 实际库存非零即成立，与够不够一整份无关；已被预留的部分也算在内，可分配数量见 {@link #getAvailableCount()} */
     public boolean hasAmmo() {
         return getAmmoCount() > 0;
     }
@@ -117,35 +241,6 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
     @Nullable
     public ProjectileType getSuppliedType() {
         return AmmoBelt.resolve(getLevel(), attr.beltDefinition.nextRoundId());
-    }
-
-    /**
-     * 取走一份交付：扣减库存并生成一份独立实例。<br>
-     * 交付量是 {@code min(库存, length)}：够一份就交满额，不够就交剩余的全部。缩水只体现在实例余量上，
-     * 模板长度不动——规格（模式、长度、标签、回充）必须与模板一致，消费者据此判断"是不是同一份弹链"。
-     *
-     * @return 交付实例；库存为零或本架不可供货时返回 {@code null}
-     */
-    @Nullable
-    public AmmoBelt consumeBelt() {
-        if (!isOperational()) return null;
-        AmmoBelt belt = deliverBelt();
-        if (belt != null) applyDeliveryDelay();
-        return belt;
-    }
-
-    /**
-     * 扣掉本次交付的发数并生成独立实例。
-     *
-     * @return 交付实例；库存为零时返回 {@code null}
-     */
-    @Nullable
-    private AmmoBelt deliverBelt() {
-        int count = getAmmoCount();
-        if (count <= 0) return null;
-        int delivered = Math.min(count, attr.beltDefinition.length());
-        if (!getLevel().isClientSide()) setAmmoCount(count - delivered);
-        return attr.beltDefinition.freshCopy(delivered);
     }
 
     /**
@@ -303,6 +398,8 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
         Entity attacker = getLastDamageAttacker();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供
         setAmmoCount(0);
+        // 库存归零之后，架内已预留的份额也没有弹可兑现：按身份整笔撤销，不留 R > N
+        trimReservationsToStock();
         ExplosionManager.get(getLevel()).detonate(
                 origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
@@ -436,6 +533,9 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
         if (data.contains("batch_elapsed")) batchElapsedTicks = data.getInt("batch_elapsed");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
+        // 预留不入存档：读档后未完成的装填重新申请，R 从 0 起
+        reservations.clear();
+        publishReserved();
         // 恢复锁存下不把上一段生命周期的那批产出带进来：存档可能写在归零的同一 tick
         // （那时摧毁边沿还没走，onDestroyed 的清理来不及发生），读档也不会补发摧毁回调
         if (isDestroyed()) clearRegenState();

@@ -28,7 +28,7 @@ class HudMolangContextTest {
     }
 
     static HudWeaponSnapshot.Tube tube(int key, double fill, boolean aimed) {
-        return new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, key), "barrel", "launcher"),
+        return new HudWeaponSnapshot.Tube(new SupplierRef(key, "launcher"),
                 "AP", "reloading", "loading", fill, 2, "2.0s", "HE belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "HE belt", 4, 30),
@@ -97,11 +97,11 @@ class HudMolangContextTest {
 
     @Test void tubePhaseAndSourceAreReadableInsideAndOutsideTheScope() {
         var element = new WeaponHudElement(null, element());
-        var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 7), "barrel", "launcher"),
+        var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(7, "launcher"),
                 "AP", "reloading", "regenerating", 40, 12, "12.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 new HudWeaponSnapshot.Reserve(30, 120, false), false);
-        var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 8), "barrel", "launcher"),
+        var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(8, "launcher"),
                 "HE", "empty", "idle", 0, 0, "", "", false, false,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 HudWeaponSnapshot.Reserve.EMPTY, false);
@@ -147,13 +147,13 @@ class HudMolangContextTest {
     @Test void chamberMagazineAndReserveStaySeparateNumbers() {
         var element = new WeaponHudElement(null, element());
         // 装填中的管：膛内 1 发、弹链 17 发、备弹 0（弹链是从备弹里取走的，两边不重叠）
-        var loaded = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 11), "barrel", "launcher"),
+        var loaded = new HudWeaponSnapshot.Tube(new SupplierRef(11, "launcher"),
                 "AP", "reloading", "loading", 60, 3, "3.0s", "AP belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 17, 150),
                 new HudWeaponSnapshot.Reserve(0, 300, false), false);
         // 换装中的管：膛内仍压着 1 发，但此刻打不出去
-        var swapping = new HudWeaponSnapshot.Tube(new SupplierRef(new UUID(0, 12), "barrel", "launcher"),
+        var swapping = new HudWeaponSnapshot.Tube(new SupplierRef(12, "launcher"),
                 "AP", "reloading", "loading", 30, 6, "6.0s", "HE belt", true, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 8, 150),
