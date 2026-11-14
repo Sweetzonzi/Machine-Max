@@ -17,7 +17,7 @@ signal/
 ├── ISignalBus.java              # 信号总线接口
 │
 ├── SignalChannel.java           # 信号通道（extends ConcurrentHashMap，线程安全）
-├── SignalPort.java              # 信号端口（185行），信号路由 + 优先级
+├── SignalPort.java              # 信号端口（185行），信号路由 + 频道转译
 │
 ├── MoveInputSignal.java         # 移动输入信号（前进/后退/左/右/跳跃/潜行）
 ├── RegularInputSignal.java      # 常规交互信号
@@ -33,7 +33,7 @@ signal/
 | 任务 | 文件 | 说明 |
 |------|------|------|
 | 新增信号类型 | `Signal.java` | 继承 Signal\<T\>，定义值类型和语义 |
-| 修改信号路由 | `SignalPort.java` | 输入→输出映射、信号优先级、多跳传播 |
+| 修改信号路由 | `SignalPort.java` | 输入→输出映射、频道转译、多跳传播 |
 | 修改信号通道 | `SignalChannel.java` | 线程安全的通道映射 |
 | 实现信号发送 | `ISignalSender.java` | 实现 `getTargetNames()` / `getTargets()` 与信号写入逻辑 |
 | 实现信号接收 | `ISignalReceiver.java` | 实现 `getSignalAddress()`（路由名）与 `onSignalUpdated()`；需要 Molang `get/get_str` 时覆写 `getSignalStorage()` |
@@ -64,17 +64,26 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 
 频道名是下划线分隔的扁平字符串，引擎不解析它：频道只作为 `ConcurrentHashMap` 的键做整串比较（`SignalChannel`），唯一的例外是接收者按自己声明的列表顺序挑第一个有效信号。点号属于**寻址名**——`subsystem.<命名空间>.<名字>`、`interact.<命名空间>.<名字>`、`weapon.<类别>.<型号>`——由 `ISignalSender#setTargetFromNames` 与交互区一类代码消费，两类字符串不共用解析入口。
 
-乘员输入频道（座位写、控制器读）：
+乘员输入频道（座位写、控制器读）一律是 `crew_<role>_<category>` 岗位频道或 `crew_<role>_<category>_<device>` 设备频道：
+
+| 段 | 取值 |
+|----|------|
+| `role` | `driver` / `commander` / `gunner` / `loader` / `any` |
+| `category` | `aim`（view_targets）/ `fire`（main_weapon_targets）/ `secondary_fire`（secondary_weapon_targets）/ `move` / `regular` |
+| `device` | `main_gun` / `coax762` / `csamm` / `rws` / `citv` / `aa` / `port_mg` / `aft_mg` / `atgm` |
 
 | 频道 | 信号类型 | 说明 |
 |------|----------|------|
-| `move_input` | MoveInputSignal | 移动控制输入 |
-| `regular_input` | RegularInputSignal | 常规按键输入（换挡、离合、引擎启动等） |
-| `aim_input` | ViewInputSignal | 视角/瞄准输入 |
-| `fire_input` | RegularInputSignal 或裸值 | 主武器开火指令，按 `isFireSignal` 语义判定 |
-| `secondary_fire_input` | 同上 | 副武器开火指令 |
+| `crew_driver_move` / `crew_commander_move` | MoveInputSignal | 移动控制输入 |
+| `crew_driver_regular` / `crew_commander_regular` | RegularInputSignal | 常规按键输入（换挡、离合、引擎启动等） |
+| `crew_gunner_aim` / `crew_commander_aim` / `crew_any_aim` | ViewInputSignal | 视角/瞄准输入 |
+| `crew_gunner_fire` / `crew_commander_fire` / `crew_any_fire` | RegularInputSignal 或裸值 | 主武器开火指令，按 `isFireSignal` 语义判定 |
+| `crew_gunner_secondary_fire` 等 | 同上 | 副武器开火指令 |
+| `crew_gunner_aim_coax762` 等 | ViewInputSignal | 同一岗位的第二台设备，一台一条 |
 
-同一族用名次后缀分档（`aim_input_p1`、`fire_input_p2` 等），后缀只决定接收者列表里的先后。岗位化的 `crew_<role>_<category>[_<device>]` 是《信号系统-操作权与越级优先级设计》P1 的目标形态。
+三段与四段的区别是"目标定不定"：三段同名即命中（装配体内谁声明谁收），四段点名一台已知设备。加装件（`m153_crows`、PKT 机枪塔）只声明岗位频道，装到哪台车由宿主的座位预设决定；自带主武器留岗位频道，同一岗位的第二台及以后设备用设备频道。完整规则、字表与替换清单见 `docs/plan/已实现/信号系统-操作权与越级优先级设计.md`。
+
+**读取按三键排序**（`WeaponControllerSubsystem#selectInputSlot`）：越级量降序 → 档位降序（列表靠前者高，档位 = 列表长度 − 下标）→ 发送者稳定身份升序（`ISignalSender#compareSenders`）。越级量由 `Signal#priority` 携带，座位在出口处按频道取 `ControlGroupSet#priorityOf(channel)` 复制一份；非 `Signal` 的裸值（按键绑定、GUI 动作）按 0。全部越级量为 0 时退化为"按列表顺序取第一个有效信号"。只有武器控制器的瞄准与开火接入这套排序，驾驶、引擎、变速箱等读取点仍按列表顺序取第一个。
 
 执行器与内部线不做乘员寻址：
 
@@ -92,7 +101,7 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 - **SignalChannel extends ConcurrentHashMap**：通过继承实现线程安全。键为通道名，值为信号值。
 - **信号直送模式**：发送方把值写入接收方的 Channel 并按发送者身份分槽，随后同步调用 `onSignalUpdated`；没有独立的回传通道。
 - **多跳传播**：一个子系统的输出信号可作为另一个子系统的输入，形成信号链。
-- **优先级排序**：`SignalPort` 支持按优先级分发，高优先级接收者先处理（如 CarController 先于 Motor 处理油门信号）。
+- **越级量**：`Signal#priority`（默认 0）随信号本体走，由发送方在出口处写入；接收者读取时按"越级量 → 档位 → 稳定身份"三键排序。`SignalPort` 没有优先级字段，转发按目标表迭代顺序进行。
 - **两级 ISignalBus 都由订阅集合驱动**：`AbstractPart` 提供 `local`，订阅范围是本部件全部 SubPart 当前持有的子系统；`SubsystemController` 提供 `global`，订阅范围是整车全部子系统。两者共用 `ISignalBus#broadcast`：按原始发送者分槽写入接收者输入频道后再通知，广播不递归到端口或其他总线。Part 的 `acceptAllRoutingInput` 为 true，允许经连接器到达 `local` 的频道；`acceptAllBroadcastInput` 保持 false，订阅者仍按自己声明的频道筛选。
 - **空信号触发**：`EmptySignal` 仅用于触发性通知（如"开火"），无数据负载。
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。

@@ -118,7 +118,7 @@ public class RegularInputPayload implements CustomPacketPayload {
                 break;
             /*
              *  武器控制 — 路由到控制组的 mainWeaponTargets / secondaryWeaponTargets。
-             *  弹种切换与开火共用这条路（内容包里两个目标键都是 fire_input_*），
+             *  弹种切换与开火共用这条路（内容包里是 crew_<岗位>_fire 与 crew_<岗位>_secondary_fire），
              *  接收侧按指令类型区分，不按"频道非空"判定。
              */
             case MAIN_FIRE, NEXT_AMMO_TYPE, PREV_AMMO_TYPE:

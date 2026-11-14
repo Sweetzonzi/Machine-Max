@@ -56,6 +56,7 @@
 | [武器系统-推力分段与变质量计划](已实现/武器系统-推力分段与变质量计划.md) | T1–T6 全部落地（2026-11-06）：`external.thrust` 为段数组（`force` / `start` / `duration` / `propellant_mass`），整表折算进弹道库 `ThrustProfile`，多段积分、段间空隙与燃烧期质量流失生效，装药在解码期校验；`external.mass` 明确为弹体基础质量。builtin 与其余十个包的 schema 副本、技能快照，以及随包 Blockbench 插件 `0.5.15` 的内嵌快照均已同步 |
 | [信号系统-子系统发现与投递重构实施计划](已实现/信号系统-子系统发现与投递重构实施计划.md) | P1—P5 分五次提交；`resolveTargets` 只读发现、物理反馈主线程投递、结构变化重建首跳表并清空信号存储、执行器改读输入槽、供给登记改只读发现均已落地；`runGameTestServer` 68 项通过，T11 客户端实机验收待完成 |
 | [信号系统-Part信号总线实施计划](已实现/信号系统-Part信号总线实施计划.md) | `AbstractPart` 实现 `ISignalBus`，用独立订阅集合提供 `local` 广播，`SubsystemController` 保持 `global`；订阅随构造/销毁自动订退，结构变化只清临时信号；`SignalTargetResolutionTest` 覆盖 local 展开用例，`PartSignalBusGameTest` 9 项、`runGameTestServer` 65 项通过，ARMS-Core `classes` 成功 |
+| [信号系统-操作权与越级优先级设计](已实现/信号系统-操作权与越级优先级设计.md) | P1—P4、P6 已实施：`Signal#priority`（默认 0、`withPriority` 协变返回、`priorityOf` 兜底裸值）与 `ControlGroup.priorities`（按频道的稀疏非负整数表、负值解码即错、活动子组按键覆盖基础组）落地，`WeaponControllerSubsystem#selectInputSlot` 让瞄准、开火扫描与标准化指令三处按"越级量 → 档位 → 稳定身份"取唯一来源；频道名统一为 `crew_<role>_<category>[_<device>]`，17 份预设、13 个武器控制器、4 处 Java 默认列表、3 份连接点接线与 5 份模板的内嵌快照全部迁完，补 `mtlb_commander`；`checkContent` 增加"越级量键必须是这一组会发出的频道"（18 条键），新增 `SignalPriorityContractTest`，`runGameTestServer` 59 条通过。P5（战机前后座等内容用例）与 P7（驾驶读取点接入排序）未实施 |
 | [子系统-下游类型注册开放与内置迁移计划-静态表方案](已实现/子系统-下游类型注册开放与内置迁移计划-静态表方案.md) | `SubsystemKinds`（21 条已开放内置登记、`Kind` 两侧 Codec、`seal`）、`SubsystemCodecs` 两个分派 Codec、基类 final `getType()` 与解码期型号绑定均已落地；两张子系统 NeoForge 注册表、48 项 `RegisterEvent` 登记与 `SubsystemTypes` 枚举已删除，50 处 `getType()` 覆写移除；顶层 schema 的 `type` 改为 21 项枚举 + 外部分支。`joint_driver`、`scriptable`、`battery` 的字段契约未定稿，登记被注释掉、schema 也不提供（编辑器与运行时都按未知类型拒绝）；`SubsystemKindDispatchTest` 8 项、`runGameTestServer` 56 项、`build` 通过 |
 
 ## 进行中
@@ -105,7 +106,6 @@
 | [武器系统-爆炸系统破坏期性能与优化建议](计划中/武器系统-爆炸系统破坏期性能与优化建议.md) | 建议稿；破坏期成本模型与优化候选项均未实施 |
 | [履带系统-重力下垂渲染实现方案](计划中/履带系统-重力下垂渲染实现方案.md) | 待实现。用固定切点的四次曲线表现自由跨段松弛，保持主动轮啮合 |
 | [物理-运动学刚体接约束入世后步进崩溃](计划中/物理-运动学刚体接约束入世后步进崩溃.md) | 上游 issue 草稿 + 验证记录；项目侧已用平动/转动系数归零规避（提交 `00e3697d`），提交上游一事未完成 |
-| [信号系统-操作权与越级优先级设计](计划中/信号系统-操作权与越级优先级设计.md) | 设计定稿、功能待实现：`Signal` 携带越级量（默认 0）、`ControlGroup.priorities` 按频道给量（稀疏表，默认 0）、两个武器读取点按三键排序（越级量 → 档位 → 稳定身份）；频道名统一为下划线文法 `crew_<role>_<category>[_<device>]`，`_p0`—`_p3` 名次后缀与裸名退役，超控不再占独立频道（同一条 + 越级量），接收者列表以默认操作者在前，岗位频道/设备频道/连接点接线的分工见 §4，P1 替换清单见附录 A；`SignalChannel` 结构与名字寻址作用域不变，全部越级量为 0 时与"列表里第一个有效信号"逐位等价。代码中尚无 `priorities` 字段与 `withPriority` |
 
 ## 未纳入本目录
 
