@@ -82,6 +82,30 @@ public class LocalHeightField {
     }
 
     /**
+     * 该方块状态是不是高度场认的地表：硬质（镐/斧可挖掘或基岩）或软质（锹可挖掘）。
+     *
+     * <p>这是「地形表面」的唯一判据，高度场与攀爬辅助的可爬方块清单都按它分类。
+     * 返回 false 的方块（树叶、植株、羊毛、干草捆等既非硬质也非软质的方块）不参与高度场，
+     * 因此在高度场接管的地形接触里也没有可供替换的平滑面。</p>
+     *
+     * <p>调用线程：任意。</p>
+     */
+    public static boolean isHeightFieldSurface(BlockState state) {
+        return surfaceOf(state) != null;
+    }
+
+    /** 按可挖掘工具把方块分入两张高度场，不属于任何一张时返回 null。 */
+    private static SurfaceType surfaceOf(BlockState state) {
+        if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)
+                || state.is(BlockTags.MINEABLE_WITH_AXE)
+                || state.is(Blocks.BEDROCK)) {
+            return SurfaceType.HARD;
+        }
+        if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return SurfaceType.SOFT;
+        return null;
+    }
+
+    /**
      * 采样某一方块柱的最高碰撞高度，并按方块类型分入硬质/软质高度场
      * <p>
      * 分类规则：
@@ -132,16 +156,8 @@ public class LocalHeightField {
             float worldHeight = pos.getY() + height;
 
             // 判断方块表面类型
-            SurfaceType type;
-            if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)
-                    || state.is(BlockTags.MINEABLE_WITH_AXE)
-                    || state.is(Blocks.BEDROCK)) {
-                type = SurfaceType.HARD;
-            } else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) {
-                type = SurfaceType.SOFT;
-            } else {
-                continue; // 树叶等非硬非软方块跳过，不参与高度场
-            }
+            SurfaceType type = surfaceOf(state);
+            if (type == null) continue; // 树叶等非硬非软方块跳过，不参与高度场
 
             highestHeight = worldHeight;
             highestType = type;

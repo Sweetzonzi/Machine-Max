@@ -176,7 +176,7 @@ public class CollisionHandler {
         point2.getNormalWorld(normal);
         //对方为方块时执行预碰撞判定（攀爬辅助等）
         if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
-            return preProcessBlockCollision(other, normal, worldContactPoint, hitBoxIndex);
+            return preProcessBlockCollision(other, normal, worldContactPoint, hitBoxIndex, manifoldPointId);
         }
         return true;
     }
@@ -351,7 +351,8 @@ public class CollisionHandler {
      * @return true 表示保留本次碰撞，false 表示跳过
      */
     private boolean preProcessBlockCollision(PhysicsRigidBody other, Vector3f normal,
-                                             Vector3f worldContactPoint, int hitBoxIndex) {
+                                             Vector3f worldContactPoint, int hitBoxIndex,
+                                             long manifoldPointId) {
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             //轮胎的圆柱是拾取/命中判定用的辅助形状：它整颗都在同一 hitbox 的球体内，只在侧壁
@@ -359,6 +360,10 @@ public class CollisionHandler {
             if (subPart.isWheel(hitBoxIndex) && !subPart.isWheelSurface(hitBoxIndex)) return false;
             other.shouldShowDebugBoxWhenNonColldeWith = true;
             BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
+            //已逻辑移除的方块：section 的碰撞形状要等异步重建才换新，这段时间里 Bullet 仍会为它
+            //造新接触点并按满刚性求解。这里在落点真正侵入时不建这个点，免得它在本步被 Processed
+            //禁用之前先顶零件一次（§5.3）。未侵入的接触对求解器没有贡献，照常保留。
+            if (ManifoldPoints.getDistance1(manifoldPointId) < 0f && terrain.isRemoved(blockPos)) return false;
             //若该方块属于攀爬辅助列表，使用高度场进行碰撞修正
             if (subPart.climbableBlocks.contains(blockPos)) {
                 //开启攀爬辅助时接触一条都不放行：平滑面与“抬零件”两级改写都在
@@ -436,13 +441,17 @@ public class CollisionHandler {
 
         var hitBox = subPart.getHitBox(hitBoxIndex);
         BlockPos blockPos = resolveContactBlock(terrain, worldContactPoint, normal);
-        SectionSnapshot.BlockSnapshot block = blockPos == null ? null : terrain.getBlockSnapshot(blockPos);
-        if (block == null) {
-            // 接触点落在 section 之外或没有快照：保留接触，只跳过与方块有关的统计与破坏
+        if (blockPos == null) {
+            // 接触点落在 section 之外：保留接触，只跳过与方块有关的统计与破坏
             return;
         }
-        if (terrain.isRemoved(blockPos)) {
-            disableContact(manifoldPointId);
+        SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
+        if (block == null) {
+            // 解析到的格子没有快照，有两种来源：接触点落在方块表面外侧，取整后落进相邻的空格；
+            // 或者该方块已被本节逻辑移除，而 section 的碰撞形状还在等异步重建。前者只可能出现在
+            // 未侵入的接触上——侵入意味着点在实心形状内部，取整仍落在同一个格子——对求解器没有
+            // 贡献，保留；后者正是要把零件按满刚性顶回去的那条接触，禁用掉（§5.3）。
+            if (ManifoldPoints.getDistance1(manifoldPointId) < 0f) disableContact(manifoldPointId);
             return;
         }
         //获取方块物理属性

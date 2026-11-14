@@ -570,7 +570,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                                 : (float) blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).max(Direction.Axis.Y);
                         float terrainHeight = blockHeight + currentPos.getY();
 
-                        if (terrainHeight > y0 && terrainHeight < bodyMinY + attr.stepHeight) {
+                        //可爬方块只取高度场认的地表（见 LocalHeightField#isHeightFieldSurface）：
+                        //树叶、植株这类方块在高度场里没有对应的高度，攀爬辅助也就没有可以替换上去的
+                        //平滑面，把它们收进来只会让接触被改写成抬升、绕过破坏路径。
+                        if (terrainHeight > y0 && terrainHeight < bodyMinY + attr.stepHeight
+                                && LocalHeightField.isHeightFieldSurface(blockState)) {
                             float height = terrainHeight - bodyMinY; // 部件最低点与地形的高度差
                             noCollisionBlocks.clear();
                             // 向上遍历检查连续方块
@@ -581,6 +585,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                                 if (higherSnapshot == null) break;
 
                                 BlockState higherState = higherSnapshot.getState();
+                                //柱子在第一个非地表方块处结束，上面的方块不属于这级台阶
+                                if (!LocalHeightField.isHeightFieldSurface(higherState)) break;
                                 float higherBlockHeight = (float) higherState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).max(Direction.Axis.Y);
                                 float higherTerrainHeight = higherBlockHeight + highestBlockPos.getY();
                                 height = higherTerrainHeight - y0;
