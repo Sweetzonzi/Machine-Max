@@ -159,7 +159,7 @@ The element draws the HUD host's live vehicle assembly. Angles are in degrees an
 | `vehicle.seat_occupied(i)`, `vehicle.seat_available(i)` | Whether the seat is occupied or available for switching, respectively. |
 | `vehicle.current_seat_number`, `vehicle.next_seat_number`, `vehicle.pending_seat_number` | The observer's current seat, next forward candidate, and pending request. They are 0 when the observer is outside the host vehicle. |
 | `vehicle.seat_switch_key` | Localized label of the switch-seat key. |
-| `vehicle.seat_map_visible` | 1 when the observer occupies the same vehicle, it has at least two seats, the GUI is visible with no open screen or active camera, and the player's Always or After Switch setting permits it. The built-in page uses this query. Custom pages can use their own visibility rules. |
+| `vehicle.seat_map_visible` | 1 when the observer occupies the same vehicle, it has at least two seats, and the GUI is visible with no open screen or active camera. The built-in page uses this query. Custom pages can use their own visibility rules. |
 
 Seat number `i` starts at 1. Missing vehicles, seats, or values give 0 for numeric queries and an empty string for text. Use `seat_has_position(i)` to distinguish a valid position at the origin. Coordinates are independent of the page size and viewing angles. `data-mm-repeat` supports the `weapon.tubes` and `weapon.belts` collections.
 

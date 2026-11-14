@@ -17,7 +17,7 @@
 | 文档 | 判定依据 |
 | --- | --- |
 | [界面-载具模型与座位HUD的AUI接入设计](已实现/界面-载具模型与座位HUD的AUI接入设计.md) | `VehicleModelElement` 绘制三轴投影模型和座位标记，`HudVehicleSnapshot` 提供 `vehicle.*` 查询，随附内容包通过第三人称座椅布局显式挂载内置座位图。游戏内画面与性能待验收。 |
-| [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 交付范围 P0–P2 已落地：`SeatOrder`、`SeatSwitchHelper`、`SeatSwitchPayload` / `SeatSwitchResultPayload`、`SeatSubsystem` 占用同步、四套 builtin 座位图页面；座位图由 AUI 页面 + `VehicleModelElement` 承载。P3 打磨项与 P4 可选扩展不在交付范围，见文档 §六 末。 |
+| [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 交付范围 P0–P2 已落地：`SeatOrder`、`SeatSwitchHelper`、`SeatSwitchPayload` / `SeatSwitchResultPayload`、`SeatSubsystem` 占用同步、四套 builtin 座位图页面，以及按住换座键按 `1`–`9` 的编号直选；座位图由 AUI 页面 + `VehicleModelElement` 承载。P3 打磨项与 P4 可选扩展不在交付范围，见文档 §六 末。 |
 | [PDA蓝图终端-详细设计文档](已实现/PDA蓝图终端-详细设计文档.md) | 提交 `271bb934`；`client/render/gui/pda/` 与 `PdaItem` 已落地 |
 | [PDA蓝图终端-接口设计文档](已实现/PDA蓝图终端-接口设计文档.md) | 与详细设计同批落地（提交 `271bb934`）；注册项、数据组件、网络包字段均按本文口径实现 |
 | [伤害结算相位与装配体投递修改计划](已实现/伤害结算相位与装配体投递修改计划.md) | 提交 `20355f6a`；`settleAccumulatedDamage` 移至 `postTick`，`SubPartHitDamage` 携带完整批次 |

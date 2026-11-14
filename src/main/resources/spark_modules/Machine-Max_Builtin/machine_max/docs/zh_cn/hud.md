@@ -164,7 +164,7 @@ AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文
 | `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 是否占用、当前是否可换入。 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 观察者当前、顺向候选和请求在途座号。观察者未坐在宿主载具上时为 0。 |
 | `vehicle.seat_switch_key` | 换座键的本地化显示名。 |
-| `vehicle.seat_map_visible` | 观察者坐在同车且至少两座、无打开的界面、GUI 可见、非相机模式，并满足玩家的常驻或换座窗口设置时为 1。内置页使用该门槛，自定义页可选择是否使用。 |
+| `vehicle.seat_map_visible` | 观察者坐在同车且至少两座、无打开的界面、GUI 可见、非相机模式时为 1。内置页使用该门槛，自定义页可选择是否使用。 |
 
 座位序号 `i` 从 1 开始。无载具、无对应座位或无有效数据时，相关数值为 0，字符串为空。合法坐标原点用 `seat_has_position(i)` 区分。座位坐标与页面宽高、观察角无关。
 

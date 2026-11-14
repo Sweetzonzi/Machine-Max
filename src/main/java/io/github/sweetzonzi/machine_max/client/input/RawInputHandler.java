@@ -470,9 +470,13 @@ public class RawInputHandler {
             KeyHooks.EVENT(KeyBinding.generalCycleCameraKey)
                     .OnKeyDown(() -> CameraController.switchCamera(1));
 
-            //循环换座：按几何顺序切到下一个可用座位，不打开界面
-            KeyHooks.EVENT(KeyBinding.generalCycleSeatKey)
-                    .OnKeyDown(() -> SeatSwitchClient.requestCycle(true));
+            //换座：只按换座键切到下一个可用座位；按住换座键时按 1–9 直选该编号的座位
+            SeatSwitchClient.tickChord();
+            for (int number = 1; number <= 9; number++) {
+                int chosen = number;
+                KeyHooks.EVENT(GLFW.GLFW_KEY_0 + chosen)
+                        .OnKeyDown(() -> SeatSwitchClient.chordNumber(chosen));
+            }
 
             KeyHooks.EVENT(KeyBinding.generalCameraZoomKey)
                     .OnKeyDown(CameraController::toggleZoom);

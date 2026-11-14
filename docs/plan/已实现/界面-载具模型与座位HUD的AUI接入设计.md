@@ -31,7 +31,7 @@
 
 布局省略该条目，或对应视角使用 `machine_max:empty`、空数组时，该宿主不显示座位图。随附内容包的座椅在第三人称显式挂载座位图。带仪表的布局保留原条目，并为共用第一人称或炮镜布局的座椅提供第三人称专用布局。例如 `type59:type59_ground_orientation` 的座位图与耐久、方位和仪表条目共存，见 `src/main/resources/spark_modules/Machine-Max_Type59/type59/hud_layouts/type59_ground_orientation.json`。没有其他仪表的座椅可直接引用 `machine_max:vehicle_seat_map`。缺布局、缺样式或页面创建失败沿相应加载器的单次诊断跳过资源或条目。
 
-内置页面通过 `data-mm-class` 消费 `vehicle.seat_map_visible`。显示要求当前玩家坐在同一装配体、至少两座、无打开的界面、GUI 可见、非相机模式，并满足玩家的常驻、换座窗口或关闭设置。换座窗口按请求在途或成功脉冲判定，见 `src/main/java/io/github/sweetzonzi/machine_max/client/MMClientConfig.java#isSeatMapVisible`。该查询只控制消费它的页面。作者可使用自定义显隐条件，例如单座车体仪表或炮镜页面。损伤层设置适用于标签中显式启用的损伤渲染，详见 §5。
+内置页面通过 `data-mm-class` 消费 `vehicle.seat_map_visible`。该查询在观察者坐在同一装配体、至少两座、无打开的界面、GUI 可见、非相机模式时为 1，见 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudVehicleSnapshot.java#capture`。该查询只控制消费它的页面。作者可使用自定义显隐条件，例如单座车体仪表或炮镜页面。损伤层设置适用于标签中显式启用的损伤渲染，详见 §5。
 
 挂载与加载入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/visual/IHudHost.java#resolve`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/SeatSubsystem.java#hudLayoutFor`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#rebuild`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#renderInScopeMode` 和 `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#createDocument`。通用资源契约见 `docs/plan/进行中/界面-HUD样式挂载与布局设计.md` §3.2、§4、§6.1。原生换座与座位图的设计及验收见 `docs/plan/已实现/界面-车内换座与座位布局HUD调研.md` §五、§5.7、§七。
 
@@ -68,9 +68,9 @@
 
 ## 4. 换座与反馈
 
-客户端以结构缓存的有序列表作为 HUD 和按键的共同顺序来源。按键按实时 `SeatOrder.available` 扫描可用座位，服务端校验请求中的实际座位键。
+客户端以结构缓存的有序列表作为 HUD 和按键的共同顺序来源。按键按实时 `SeatOrder.available` 扫描可用座位，服务端校验请求中的实际座位键。同一个列表的下标加一就是标记上的编号，也是按住换座键时数字 `1`–`9` 直选用的编号；直选同样先按 `SeatOrder.available` 复核，服务端校验的仍是请求里的实际座位键。
 
-快照使用 `SeatSwitchFeedback.pendingTarget()` 记录等待目标。候选变化时，等待与失败标记指向所请求的座位。失败目标以装配体与座位键匹配，成功脉冲指向已确认的当前座位。成功提示使用同一份有序列表显示编号。切换装配体、下车或退出连接时清理相应反馈与缓存。结构变动后不在当前布局中的目标不绘制标记。按键、actionbar 和服务器校验独立于 AUI 页面。来源见 `src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#requestCycle`、`src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#successMessage`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatSwitchFeedback.java#pendingTarget` 和 `src/main/java/io/github/sweetzonzi/machine_max/network/payload/SeatSwitchPayload.java#serverHandler`。
+快照使用 `SeatSwitchFeedback.pendingTarget()` 记录等待目标。候选变化时，等待与失败标记指向所请求的座位。失败目标以装配体与座位键匹配，成功脉冲指向已确认的当前座位。成功提示使用同一份有序列表显示编号。切换装配体、下车或退出连接时清理相应反馈与缓存。结构变动后不在当前布局中的目标不绘制标记。按键、actionbar 和服务器校验独立于 AUI 页面。来源见 `src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#requestCycle`、`src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#requestNumber`、`src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#successMessage`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatSwitchFeedback.java#pendingTarget` 和 `src/main/java/io/github/sweetzonzi/machine_max/network/payload/SeatSwitchPayload.java#serverHandler`。
 
 ## 5. 模型标签
 

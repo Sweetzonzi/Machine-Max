@@ -530,6 +530,10 @@ public enum MMLanguageRegistry {
             zh_cn, "该座位所在的零件尚未就绪",
             en_us, "That seat's part is not ready yet"
     )),
+    MESSAGE_SEAT_NO_SUCH_NUMBER("message.machine_max.seat.no_such_number", ImmutableMap.of(
+            zh_cn, "没有 %1$s 号座位（本车共 %2$s 个座位）",
+            en_us, "No seat %1$s (this vehicle has %2$s seats)"
+    )),
     MESSAGE_SEAT_MOUNT_FAILED("message.machine_max.seat.mount_failed", ImmutableMap.of(
             zh_cn, "无法就座",
             en_us, "Could not take that seat"

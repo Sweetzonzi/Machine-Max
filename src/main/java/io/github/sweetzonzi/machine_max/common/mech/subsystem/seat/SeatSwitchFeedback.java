@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem.seat;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -130,6 +131,11 @@ public final class SeatSwitchFeedback {
     /** 循环键在本地算不出目标时的提示 */
     public static Component noSeatMessage() {
         return Component.translatable("message.machine_max.seat.not_seated");
+    }
+
+    /** 按住换座键按下的编号超出本车座位数时的提示 */
+    public static Component outOfRangeMessage(int number, int total) {
+        return Component.translatable(MMLanguageRegistry.MESSAGE_SEAT_NO_SUCH_NUMBER.tag, number, total);
     }
 
     private static String failureKey(SeatSwitchReason reason) {

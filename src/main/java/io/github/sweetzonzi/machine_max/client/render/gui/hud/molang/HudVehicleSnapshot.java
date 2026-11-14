@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
@@ -50,7 +49,7 @@ public record HudVehicleSnapshot(@Nullable UUID assemblyId, List<Seat> seats, in
         boolean successPulse = current != 0 && SeatSwitchFeedback.pulseTicks() > 0;
         Minecraft minecraft = Minecraft.getInstance();
         boolean visible = current != 0 && layout.seats().size() > 1 && minecraft.screen == null
-                && !minecraft.options.hideGui && !CameraController.isCameraMode() && MMClientConfig.isSeatMapVisible();
+                && !minecraft.options.hideGui && !CameraController.isCameraMode();
         var bounds = layout.bounds();
         var reference = layout.reference();
         Matrix4f worldToReference = reference == null ? null : reference.getWorldPositionMatrix(1f).invert();
