@@ -50,9 +50,7 @@ public final class HudPageBinding implements AutoCloseable {
                     validatedItem = item;
                 }
                 if (item == null) write(context);
-                else if (context instanceof WeaponHudMolangContext weapon) {
-                    try (var ignored = weapon.enterItem(item.collection(), item.key(), item.alias())) { write(context); }
-                } else throw new IllegalArgumentException("普通 HUD 元素不能绑定武器集合");
+                else try (var ignored = context.enterRepeat(item.collection(), item.key(), item.alias())) { write(context); }
             } catch (RuntimeException failure) {
                 failed = true;
                 warn(node.tagName + "[" + attribute + "=" + expression + "]", failure);
@@ -127,8 +125,9 @@ public final class HudPageBinding implements AutoCloseable {
             collection = template.getAttribute("data-mm-repeat");
             String index = template.getAttribute("data-mm-index");
             alias = index == null || index.isEmpty() ? null : index;
-            if (!(runtime instanceof WeaponHudElement)) throw new IllegalArgumentException("武器集合要求武器 HUD 宿主");
-            if (!Set.of("weapon.tubes", "weapon.belts").contains(collection)) throw new IllegalArgumentException("未知集合: " + collection);
+            if (!Set.of("weapon.tubes", "weapon.belts", "vehicle.seats").contains(collection)) throw new IllegalArgumentException("未知集合: " + collection);
+            if (!collection.equals("vehicle.seats") && !(runtime instanceof WeaponHudElement))
+                throw new IllegalArgumentException("武器集合要求武器 HUD 宿主");
             if (alias != null && !alias.matches("[a-z_][a-z0-9_]*")) throw new IllegalArgumentException("非法下标别名: " + alias);
             validateTemplate(template, true);
             markup = template.getOuterHTML();
@@ -141,9 +140,13 @@ public final class HudPageBinding implements AutoCloseable {
         }
 
         void reconcile(HudRuntimeElement.Frame frame) {
-            var keys = collection.equals("weapon.tubes")
-                    ? frame.weapon().tubes().stream().map(t -> (Object) t.key()).toList()
-                    : frame.weapon().belts().stream().map(b -> (Object) b.key()).toList();
+            var keys = switch (collection) {
+                case "weapon.tubes" -> frame.weapon().tubes().stream().map(t -> (Object) t.key()).toList();
+                case "weapon.belts" -> frame.weapon().belts().stream().map(b -> (Object) b.key()).toList();
+                case "vehicle.seats" -> frame.vehicle().seats().stream()
+                        .map(s -> (Object) s.identity()).toList();
+                default -> throw new IllegalArgumentException("未知集合: " + collection);
+            };
             Set<Object> wanted = new HashSet<>(keys);
             rows.entrySet().removeIf(entry -> {
                 if (wanted.contains(entry.getKey())) return false;

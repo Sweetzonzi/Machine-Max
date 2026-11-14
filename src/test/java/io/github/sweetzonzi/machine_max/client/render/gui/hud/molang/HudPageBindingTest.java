@@ -136,8 +136,8 @@ class HudPageBindingTest {
         assertEquals("--", document.querySelector(".name").innerText);
 
         var data = new HudVehicleSnapshot(new UUID(0, 1), List.of(
-                new HudVehicleSnapshot.Seat(4, "driver", "Driver", true, 0, 0, 0, true, false, false),
-                new HudVehicleSnapshot.Seat(4, "gunner", "Gunner", true, 1, 2, 3, false, true, false)),
+                new HudVehicleSnapshot.Seat(4, "driver", "Driver", true, 0, 0, 0, true, false, false, ""),
+                new HudVehicleSnapshot.Seat(4, "gunner", "Gunner", true, 1, 2, 3, false, true, false, "")),
                 1, 2, 0, false, "R", true);
         runtime.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, data, true);
         refresh();

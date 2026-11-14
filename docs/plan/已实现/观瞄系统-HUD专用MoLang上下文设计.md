@@ -82,11 +82,11 @@
 
 ### 3.3 Java 无参查询的当前项作用域
 
-无参查询不从调用次数、DOM 顺序或全局计数器推断管序号。绑定器为每个数据槽登记所属重复项的集合类型与稳定身份键；条目根和后代的数据槽都继承该项身份。每次求值先固定元素求值帧，再从该帧的不可变业务快照按身份键解析当前项及其下标，安装到本元素、本消费线程的上下文。以下是作用域机制示意；代码中的实际入口为 `WeaponHudMolangContext#enterItem`，接收集合标识、稳定身份键及可选下标别名：
+无参查询不从调用次数、DOM 顺序或全局计数器推断管序号。绑定器为每个数据槽登记所属重复项的集合类型与稳定身份键；条目根和后代的数据槽都继承该项身份。每次求值先固定元素求值帧，再从该帧的不可变业务快照按身份键解析当前项及其下标，安装到本元素、本消费线程的上下文。以下是作用域机制示意；代码中的实际入口为 `WeaponHudMolangContext#enterRepeat`，接收集合标识、稳定身份键及可选下标别名：
 
 ```java
 context.reset(element, animationTime);
-try (var scope = context.enterItem("weapon.tubes", tubeKey, null)) {
+try (var scope = context.enterRepeat("weapon.tubes", tubeKey, null)) {
     value = expression.evaluate(context);
 }
 

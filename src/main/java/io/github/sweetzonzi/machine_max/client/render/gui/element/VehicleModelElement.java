@@ -50,6 +50,7 @@ public final class VehicleModelElement extends Element {
     private static final float[] CLIP_RADII = {0f, 0f, 0f, 0f};
     private static final Color NUMBER_COLOR = new Color(0xFF0B1016);
     private static final Set<String> REPORTED_FAILURES = ConcurrentHashMap.newKeySet();
+    private float headingYaw;
 
     public VehicleModelElement(Document document) {
         super(document, TAG_NAME);
@@ -88,9 +89,21 @@ public final class VehicleModelElement extends Element {
         if (!(width > 0f && height > 0f && Float.isFinite(width) && Float.isFinite(height))) return;
 
         float partialTick = context.partialTick();
-        Matrix4f worldToReference = layout.reference().getWorldPositionMatrix(partialTick).invert();
-        Matrix4f projection = layout.bounds().projection(worldToReference, x, y, width, height,
-                angle("yaw", 0f), angle("pitch", 90f), angle("roll", 0f));
+        Matrix4f referenceToWorld = layout.reference().getWorldPositionMatrix(partialTick);
+        Matrix4f worldToReference = new Matrix4f(referenceToWorld).invert();
+        Matrix4f rotation;
+        String orientation = getAttribute("orientation");
+        if (orientation == null || orientation.isBlank() || orientation.equalsIgnoreCase("fixed")) {
+            rotation = fixedRotation(angle("yaw", 0f));
+        } else if (orientation.equalsIgnoreCase("heading")) {
+            headingYaw = SeatMapLayout.relativeHeadingYaw(referenceToWorld,
+                    Minecraft.getInstance().gameRenderer.getMainCamera().getYRot(), headingYaw);
+            rotation = fixedRotation(headingYaw + angle("yaw", 0f));
+        } else if (orientation.equalsIgnoreCase("camera")) {
+            rotation = SeatMapLayout.cameraRelativeRotation(referenceToWorld,
+                    Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
+        } else throw new IllegalArgumentException("未知载具模型 orientation: " + orientation);
+        Matrix4f projection = layout.bounds().projection(worldToReference, x, y, width, height, rotation);
         if (!projection.isFinite()) return;
 
         Base.commitDraws();
@@ -105,6 +118,12 @@ public final class VehicleModelElement extends Element {
         } finally {
             Mask.popMask(pose, x, y, width, height, CLIP_RADII);
         }
+    }
+
+    private Matrix4f fixedRotation(float yaw) {
+        return new Matrix4f().rotateZ((float) Math.toRadians(angle("roll", 0f)))
+                .rotateX((float) Math.toRadians(angle("pitch", 90f)))
+                .rotateY((float) Math.toRadians(yaw));
     }
 
     private float angle(String attribute, float fallback) {

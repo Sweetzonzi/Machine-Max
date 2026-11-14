@@ -18,6 +18,7 @@ description: 为 Machine-Max 内容包作者设计、接入和排查基于 AUI �
 ## 按任务读取
 
 - 写表达式和动态列表：读 [绑定语法与查询词表](references/dialect.md)。
+- 编写载具状态与乘员名单：读 [座位列表与 builtin 样式](references/vehicle-seats.md)。
 - 拆分组件、挂载资源、调整视角和验证：读 [组件设计与接入流程](references/workflow.md)。
 
 ## 方法

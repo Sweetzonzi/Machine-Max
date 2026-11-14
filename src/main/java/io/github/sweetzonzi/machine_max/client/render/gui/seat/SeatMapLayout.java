@@ -9,6 +9,9 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
+import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -34,6 +37,11 @@ public final class SeatMapLayout {
                     .rotateZ((float) Math.toRadians(roll))
                     .rotateX((float) Math.toRadians(pitch))
                     .rotateY((float) Math.toRadians(yaw));
+            return projection(worldToReference, x, y, width, height, rotation);
+        }
+
+        public Matrix4f projection(Matrix4f worldToReference, float x, float y, float width, float height,
+                                   Matrix4fc rotation) {
             // 旋转后的 AABB 半宽等于八个旋转角点在该轴上的最大绝对坐标。
             float halfWidth = Math.abs(rotation.m00()) * halfX + Math.abs(rotation.m10()) * halfY
                     + Math.abs(rotation.m20()) * halfZ;
@@ -58,6 +66,24 @@ public final class SeatMapLayout {
     private static final ConcurrentHashMap<VehicleCore, Snapshot> CACHE = new ConcurrentHashMap<>();
 
     private SeatMapLayout() {}
+
+    /** 参考件局部空间 → 实际相机空间；Camera.rotation 已包含 NeoForge 的横滚。 */
+    public static Matrix4f cameraRelativeRotation(Matrix4fc referenceToWorld, Quaternionfc cameraToWorld) {
+        return new Matrix4f().rotation(cameraToWorld.conjugate(new Quaternionf()))
+                .rotate(referenceToWorld.getNormalizedRotation(new Quaternionf()));
+    }
+
+    /**
+     * 只随相机方位转动的局部观察角，单位度；相机 yaw 使用 Minecraft 的南 0° 约定。
+     * 相机右轴落在参考件上轴时，局部方位无定义，保持该元素上一帧的角度。
+     */
+    public static float relativeHeadingYaw(Matrix4fc referenceToWorld, float cameraYaw, float fallback) {
+        Vector3f right = new Quaternionf().rotationY((float) Math.PI - (float) Math.toRadians(cameraYaw))
+                .transform(new Vector3f(1, 0, 0));
+        referenceToWorld.getNormalizedRotation(new Quaternionf()).conjugate().transform(right);
+        if (right.x * right.x + right.z * right.z < 1e-8f) return fallback;
+        return (float) Math.toDegrees(Math.atan2(right.z, right.x));
+    }
 
     public static void invalidate(VehicleCore vehicle) {
         CACHE.remove(vehicle);

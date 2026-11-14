@@ -12,6 +12,7 @@
 | weapon.* | 整台所属 WC，在重复项内也保持这个含义 |
 | tube.* | weapon.tubes 的当前管，仅限该重复项及其后代 |
 | belt.* | weapon.belts 的当前弹链，仅限该重复项及其后代 |
+| seat.* | vehicle.seats 的当前座位，仅限该重复项及其后代 |
 | variable.* / v.* | 元素变量；data-mm-index 声明的下标别名只读 |
 | math.* | MoLang 数学函数，不代表任意浏览器函数均可用 |
 
@@ -26,7 +27,7 @@
 | data-mm-var | 合法 CSS 自定义属性名，例如 --fill |
 | data-mm-unit | 附加单位；省略表示无单位。允许 %、px、deg、rad、em、rem、vw、vh、s、ms |
 | data-mm-class | 返回一个类名片段，自动加 is- 前缀；元素的静态 class 保留 |
-| data-mm-repeat | 集合标识，只能是 weapon.tubes 或 weapon.belts，不是数组表达式 |
+| data-mm-repeat | 集合标识：weapon.tubes、weapon.belts 或 vehicle.seats，不是数组表达式 |
 | data-mm-index | 可选的下标别名，格式 [a-z_][a-z0-9_]*，从零开始 |
 
 `data-mm-text` 的元素内保留可见占位文字（`--`、`0`、`EMPTY` 等），`data-mm-num` 对应的 CSS 变量在样式里写 fallback。浏览器预览不执行绑定，没有占位时页面会是空白；占位不要写成看起来像实时读数的数字。完整示例见 [组件设计与接入流程](workflow.md) 的“无数据与预览默认值”。
@@ -183,9 +184,10 @@ name 必须是目标内容包和运行环境实际提供的变量名。这些接
 | `vehicle.seat_right(i)`、`vehicle.seat_up(i)`、`vehicle.seat_forward(i)` | 相对车体包围盒中心向右、向上、向前的带符号距离，单位为方块 |
 | `vehicle.seat_has_position(i)` | 1 表示 locator 可解析，0 表示无位置 |
 | `vehicle.seat_name(i)` | 本地化座位名称 |
+| `vehicle.seat_entity_name(i)` | 从当前乘员实体读取的名称，含非玩家乘员；未占用或实体引用暂缺时为空文本 |
 | `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用、是否可换入，各为 1 或 0 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 同车观察者的当前座、顺向候选和在途目标编号 |
 | `vehicle.seat_switch_key` | 换座键的本地化显示名 |
 | `vehicle.seat_map_visible` | 内置座位图是否满足同车多座、界面与相机状态、玩家显示设置 |
 
-座位编号从 1 开始。无载具、无对应座位或无有效数据时，相关数字为 0、字符串为空。有效原点用 `seat_has_position(i)` 区分。座位列表用计数与索引查询表达，`data-mm-repeat` 的集合仅为 `weapon.tubes` 和 `weapon.belts`。座位位置与 CSS 尺寸、模型观察角无关。
+座位编号从 1 开始。无载具、无对应座位或无有效数据时，相关数字为 0、字符串为空。有效原点用 `seat_has_position(i)` 区分。座位位置与 CSS 尺寸、模型观察角无关。动态名单使用 `data-mm-repeat="vehicle.seats"`，当前项查询与 builtin 样式见 [座位列表](vehicle-seats.md)。

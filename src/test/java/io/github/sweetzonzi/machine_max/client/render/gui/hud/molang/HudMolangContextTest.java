@@ -75,7 +75,7 @@ class HudMolangContextTest {
         var context = (WeaponHudMolangContext) element.getMolangContext();
         context.getVariableStorage().set("row", Value.of(42));
         assertThrows(IllegalStateException.class, () -> {
-            try (var ignored = context.enterItem("weapon.tubes", two.key(), "row")) {
+            try (var ignored = context.enterRepeat("weapon.tubes", two.key(), "row")) {
                 assertEquals(75, number("tube.fill", context));
                 assertEquals(1, number("tube.index", context));
                 assertEquals(1, number("v.row", context));
@@ -89,7 +89,7 @@ class HudMolangContextTest {
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(two, one)), false);
         assertEquals(1, number("weapon.selected", context), "the previous evaluation frame stays pinned");
         var next = (WeaponHudMolangContext) element.getMolangContext();
-        try (var ignored = next.enterItem("weapon.tubes", two.key(), null)) {
+        try (var ignored = next.enterRepeat("weapon.tubes", two.key(), null)) {
             assertEquals(0, number("tube.index", next));
             assertEquals(75, number("tube.fill", next));
         }
@@ -107,7 +107,7 @@ class HudMolangContextTest {
                 HudWeaponSnapshot.Reserve.EMPTY, false);
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(stalled, orphan)), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();
-        try (var ignored = context.enterItem("weapon.tubes", stalled.key(), null)) {
+        try (var ignored = context.enterRepeat("weapon.tubes", stalled.key(), null)) {
             assertEquals("reloading", MolangContextRegistry.compileString("tube.state", context).evaluate(context));
             assertEquals("regenerating", MolangContextRegistry.compileString("tube.phase", context).evaluate(context));
             assertEquals(1, number("tube.has_source", context));
@@ -130,10 +130,10 @@ class HudMolangContextTest {
         assertEquals(0, number("weapon.tube_aimed(1)", context));
         assertEquals(0, number("weapon.tube_aimed(9)", context), "越界索引按未对准处理");
         assertEquals(0, number("weapon.aimed", context), "还有一根管没到，聚合为 0");
-        try (var ignored = context.enterItem("weapon.tubes", onTarget.key(), null)) {
+        try (var ignored = context.enterRepeat("weapon.tubes", onTarget.key(), null)) {
             assertEquals(1, number("tube.aimed", context));
         }
-        try (var ignored = context.enterItem("weapon.tubes", offTarget.key(), null)) {
+        try (var ignored = context.enterRepeat("weapon.tubes", offTarget.key(), null)) {
             assertEquals(0, number("tube.aimed", context));
         }
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(onTarget, tube(2, 100, true))), true);
@@ -167,7 +167,7 @@ class HudMolangContextTest {
         assertEquals(9, number("weapon.tube_loaded(1)", context));
         assertEquals(25, number("weapon.magazine_remaining", context));
         assertEquals(2, number("weapon.chambered_count", context));
-        try (var ignored = context.enterItem("weapon.tubes", loaded.key(), null)) {
+        try (var ignored = context.enterRepeat("weapon.tubes", loaded.key(), null)) {
             assertEquals(1, number("tube.chambered", context));
             assertEquals(1, number("tube.magazine", context));
             assertEquals(17, number("tube.magazine_remaining", context));
@@ -176,7 +176,7 @@ class HudMolangContextTest {
             assertEquals(0, number("tube.reserve_remaining", context));
             assertEquals(0, number("tube.swapping", context));
         }
-        try (var ignored = context.enterItem("weapon.tubes", swapping.key(), null)) {
+        try (var ignored = context.enterRepeat("weapon.tubes", swapping.key(), null)) {
             assertEquals(1, number("tube.chambered", context));
             assertEquals(1, number("tube.swapping", context));
             assertEquals(8, number("tube.magazine_remaining", context));
@@ -193,9 +193,9 @@ class HudMolangContextTest {
         var weapon = new WeaponHudElement(null, element());
         var elsewhere = new HudRuntimeElement(null, element());
         var seats = List.of(
-                new HudVehicleSnapshot.Seat(11, "driver", "Driver", true, 0, 0, 0, true, false, false),
-                new HudVehicleSnapshot.Seat(12, "gunner", "Gunner", true, -1, 2, 3, false, true, false),
-                new HudVehicleSnapshot.Seat(11, "crew", "Crew", false, 0, 0, 0, false, false, true));
+                new HudVehicleSnapshot.Seat(11, "driver", "Driver", true, 0, 0, 0, true, false, false, ""),
+                new HudVehicleSnapshot.Seat(12, "gunner", "Gunner", true, -1, 2, 3, false, true, false, ""),
+                new HudVehicleSnapshot.Seat(11, "crew", "Crew", false, 0, 0, 0, false, false, true, ""));
         var vehicle = new HudVehicleSnapshot(new UUID(0, 1), seats, 1, 2, 3, false, "R", true);
         ordinary.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, vehicle, false);
         weapon.publish(HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, vehicle, true);

@@ -9,10 +9,11 @@ public class WeaponHudMolangContext extends HudMolangContext {
     private HudWeaponSnapshot.Belt belt;
     public WeaponHudMolangContext() {}
 
-    @Override protected void clearItem() { tube = null; belt = null; }
+    @Override protected void clearRepeat() { super.clearRepeat(); tube = null; belt = null; }
     private HudWeaponSnapshot weapon() { return frame.weapon(); }
 
-    public ItemScope enterItem(String collection, Object key, String indexAlias) {
+    public RepeatScope enterRepeat(String collection, Object key, String indexAlias) {
+        if (collection.equals("vehicle.seats")) return super.enterRepeat(collection, key, indexAlias);
         int index = -1;
         HudWeaponSnapshot.Tube nextTube = null;
         HudWeaponSnapshot.Belt nextBelt = null;
@@ -28,25 +29,11 @@ public class WeaponHudMolangContext extends HudMolangContext {
             }
         } else throw new IllegalArgumentException("未知 HUD 集合: " + collection);
         if (index < 0) throw new IllegalArgumentException("本轮快照不存在成员: " + key);
-        ItemScope restore = new ItemScope(tube, belt, alias, itemIndex);
-        tube = nextTube; belt = nextBelt; alias = indexAlias; itemIndex = index;
+        var previousTube = tube;
+        var previousBelt = belt;
+        RepeatScope restore = new RepeatScope(() -> { tube = previousTube; belt = previousBelt; });
+        tube = nextTube; belt = nextBelt; alias = indexAlias; repeatIndex = index;
         return restore;
-    }
-
-    public final class ItemScope implements AutoCloseable {
-        private final HudWeaponSnapshot.Tube previousTube;
-        private final HudWeaponSnapshot.Belt previousBelt;
-        private final String previousAlias;
-        private final int previousIndex;
-        private boolean closed;
-        private ItemScope(HudWeaponSnapshot.Tube tube, HudWeaponSnapshot.Belt belt, String alias, int index) {
-            previousTube = tube; previousBelt = belt; previousAlias = alias; previousIndex = index;
-        }
-        @Override public void close() {
-            if (closed) return;
-            closed = true;
-            tube = previousTube; belt = previousBelt; alias = previousAlias; itemIndex = previousIndex;
-        }
     }
 
     private HudWeaponSnapshot.Tube requireTube() {
@@ -77,9 +64,9 @@ public class WeaponHudMolangContext extends HudMolangContext {
     @QueryBinding(value = "belt_count", namespace = "weapon")
     public double beltCount() { return weapon().belts().size(); }
     @QueryBinding(value = "index", namespace = "tube")
-    public double tubeIndex() { requireTube(); return itemIndex; }
+    public double tubeIndex() { requireTube(); return repeatIndex; }
     @QueryBinding(value = "index", namespace = "belt")
-    public double beltIndex() { requireBelt(); return itemIndex; }
+    public double beltIndex() { requireBelt(); return repeatIndex; }
 
     @StringQueryBinding(value = "name", namespace = "weapon")
     public String weapon_name() { return weapon().name(); }

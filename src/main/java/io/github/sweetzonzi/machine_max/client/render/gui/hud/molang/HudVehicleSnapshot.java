@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
@@ -30,9 +31,11 @@ public record HudVehicleSnapshot(@Nullable UUID assemblyId, List<Seat> seats, in
 
     public record Seat(int subPartId, String key, String name, boolean hasPosition,
                        float right, float up, float forward,
-                       boolean occupied, boolean available, boolean failed) {}
+                       boolean occupied, boolean available, boolean failed, String entityName) {
+        public Pair<Integer, String> identity() { return Pair.of(subPartId, key); }
+    }
 
-    private static final Seat MISSING_SEAT = new Seat(-1, "", "", false, 0, 0, 0, false, false, false);
+    private static final Seat MISSING_SEAT = new Seat(-1, "", "", false, 0, 0, 0, false, false, false, "");
 
     public Seat seat(double number) {
         if (number < 1 || number > seats.size() || number != Math.rint(number)) return MISSING_SEAT;
@@ -64,7 +67,7 @@ public record HudVehicleSnapshot(@Nullable UUID assemblyId, List<Seat> seats, in
             seats.add(new Seat(id, key, Component.translatable(key).getString(), point != null,
                     point == null ? 0 : point.x, point == null ? 0 : point.y, point == null ? 0 : -point.z,
                     seat.isOccupied(), SeatOrder.available(seat),
-                    current != 0 && SeatSwitchFeedback.failureAt(vehicle, id, key)));
+                    current != 0 && SeatSwitchFeedback.failureAt(vehicle, id, key), seat.getOccupantName()));
         }
         return new HudVehicleSnapshot(vehicle.getAssemblyId(), seats, current, layout.numberOf(next), pending,
                 successPulse, KeyBinding.generalCycleSeatKey.getTranslatedKeyMessage().getString(), visible);

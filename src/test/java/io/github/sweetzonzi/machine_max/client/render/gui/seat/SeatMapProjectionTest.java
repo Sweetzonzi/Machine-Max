@@ -181,4 +181,88 @@ class SeatMapProjectionTest {
             assertEquals(local.z, world.z, EPS);
         }
     }
+
+    @Test
+    void cameraViewProjectsTheVehicleOntoTheActualCameraBasis() {
+        var bounds = new SeatMapLayout.Bounds(1, 2, -3, 3, 2, 7);
+        for (float[] body : ATTITUDES) for (float[] camera : ATTITUDES) {
+            var referenceRotation = attitude(body[0], body[1], body[2]);
+            var reference = new Matrix4f().translationRotate(new Vector3f(17, -8, 33), referenceRotation);
+            // NeoForge Camera#setRotation：yaw/pitch/roll 全部在 Camera.rotation 内。
+            var cameraRotation = new Quaternionf().rotationYXZ((float) Math.PI - (float) Math.toRadians(camera[0]),
+                    (float) -Math.toRadians(camera[1]), (float) -Math.toRadians(camera[2]));
+            var unchanged = new Quaternionf(cameraRotation);
+            Matrix4f localToView = SeatMapLayout.cameraRelativeRotation(reference, cameraRotation);
+            Matrix4f projection = bounds.projection(new Matrix4f(reference).invert(), 12, 31, 140, 160, localToView);
+            Vector3f cameraRight = cameraRotation.transform(new Vector3f(1, 0, 0));
+            Vector3f cameraUp = cameraRotation.transform(new Vector3f(0, 1, 0));
+            Vector3f cameraBack = cameraRotation.transform(new Vector3f(0, 0, 1));
+            float fit = projection.transformDirection(new Vector3f(cameraRight)).x;
+            assertTrue(fit > 0);
+            for (Vector3f local : new Vector3f[]{FRONT, RIGHT, UP}) {
+                Vector3f world = referenceRotation.transform(new Vector3f(local));
+                Vector3f mapped = projection.transformDirection(new Vector3f(world));
+                assertEquals(world.dot(cameraRight) * fit, mapped.x, 1e-3f);
+                assertEquals(-world.dot(cameraUp) * fit, mapped.y, 1e-3f);
+                assertEquals(world.dot(cameraBack) * fit, mapped.z, 1e-3f);
+            }
+            Vector3f center = projection.transformPosition(reference.transformPosition(new Vector3f(1, 2, -3)));
+            assertEquals(82, center.x, 1e-3f);
+            assertEquals(111, center.y, 1e-3f);
+            assertTrue(cameraRotation.equals(unchanged), "HUD must not mutate the main camera quaternion");
+        }
+    }
+
+    @Test
+    void cameraPitchRollAndVerticalViewsFitEveryBoundingCorner() {
+        Vector3f min = new Vector3f(-3, 1, -9), max = new Vector3f(6, 8, 2);
+        var bounds = SeatMapLayout.Bounds.between(min, max);
+        var reference = new Matrix4f().translationRotate(new Vector3f(-30, 9, 71), attitude(50, -19, 71));
+        for (float pitch : new float[]{-90, -89.999f, 0, 89.999f, 90}) {
+            var camera = attitude(131, pitch, 37);
+            Matrix4f projection = bounds.projection(new Matrix4f(reference).invert(), 12, 31, 48, 70,
+                    SeatMapLayout.cameraRelativeRotation(reference, camera));
+            assertTrue(projection.isFinite());
+            for (int i = 0; i < 8; i++) {
+                var corner = new Vector3f((i & 1) == 0 ? min.x : max.x,
+                        (i & 2) == 0 ? min.y : max.y, (i & 4) == 0 ? min.z : max.z);
+                var mapped = projection.transformPosition(reference.transformPosition(corner));
+                assertTrue(mapped.x >= 12 && mapped.x <= 60);
+                assertTrue(mapped.y >= 31 && mapped.y <= 101);
+            }
+        }
+    }
+
+    @Test
+    void headingTracksRelativeAzimuthAndPreservesSideOnOrientation() {
+        var bounds = new SeatMapLayout.Bounds(0, 0, 0, 2, 1, 6);
+        for (float vehicleYaw : new float[]{0, 30, -170, 180}) {
+            var reference = new Matrix4f().rotateY((float) Math.toRadians(vehicleYaw));
+            for (float cameraYaw : new float[]{-1, 0, 90, 180, 359}) {
+                float actualYaw = SeatMapLayout.relativeHeadingYaw(reference, cameraYaw, 17);
+                float expectedYaw = vehicleYaw + cameraYaw - 180;
+                Matrix4f actual = bounds.projection(new Matrix4f(), 0, 0, 100, 100, actualYaw, 70, 0);
+                Matrix4f expected = bounds.projection(new Matrix4f(), 0, 0, 100, 100, expectedYaw, 70, 0);
+                Vector3f a = actual.transformDirection(new Vector3f(FRONT));
+                Vector3f b = expected.transformDirection(new Vector3f(FRONT));
+                assertEquals(b.x, a.x, 1e-3f);
+                assertEquals(b.y, a.y, 1e-3f);
+            }
+        }
+        float sideYaw = SeatMapLayout.relativeHeadingYaw(new Matrix4f(), 90, 0);
+        Vector3f side = bounds.projection(new Matrix4f(), 0, 0, 100, 100, sideYaw, 70, 0)
+                .transformDirection(new Vector3f(FRONT));
+        assertTrue(Math.abs(side.x) > 0);
+        assertEquals(0, side.y, EPS, "side-on vehicle should lie horizontally in the heading HUD");
+    }
+
+    @Test
+    void undefinedHeadingHoldsItsPreviousValueAndCameraRollIsAppliedOnce() {
+        assertEquals(42, SeatMapLayout.relativeHeadingYaw(new Matrix4f().rotateZ((float) Math.PI / 2), 180, 42));
+        Matrix4f rotation = SeatMapLayout.cameraRelativeRotation(new Matrix4f(),
+                new Quaternionf().rotationZ((float) -Math.PI / 2));
+        Vector3f right = rotation.transformDirection(new Vector3f(RIGHT));
+        assertEquals(0, right.x, EPS);
+        assertEquals(1, right.y, EPS);
+    }
 }

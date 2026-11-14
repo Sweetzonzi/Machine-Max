@@ -22,17 +22,52 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import java.util.List;
 
 /**
- * 座位几何顺序与控制组复位的纯逻辑检查。
+ * 座位几何顺序、控制组复位与乘员实体名称读取检查。
  *
  * <p>这里不涉及骑乘：换座的骑乘迁移需要真实实体与物理世界，放在客户端实测验收。
- * 本文件覆盖三件容易回归的纯函数约定——单个座位没有“下一个”、没有代理实体的座位不可用、
- * 控制组复位是幂等的且落在预设的默认值上。</p>
+ * 本文件覆盖单座候选、代理实体可用性、控制组复位，以及乘员改名、缺失和离座时的名称读数。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class SeatOrderGameTest {
 
     private SeatOrderGameTest() {
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmSeatOrder", timeoutTicks = 100)
+    public static void occupantNameFollowsTheEntityAndClearsOnExit(GameTestHelper helper) {
+        Selection selected = seatPart();
+        RegularPart part = PartFactory.createRegular(selected.type(), selected.variant(), helper.getLevel());
+        VehicleCore vehicle = null;
+        try {
+            vehicle = new VehicleCore(helper.getLevel(), part);
+            SeatSubsystem seat = SeatOrder.seats(vehicle).getFirst();
+            var passenger = net.minecraft.world.entity.EntityType.PIG.create(helper.getLevel());
+            helper.assertTrue(passenger != null, "the passenger entity is available");
+            passenger.setCustomName(net.minecraft.network.chat.Component.literal("First name"));
+            seat.attachForSwitch(passenger);
+            helper.assertTrue(seat.getOccupantName().equals("First name"), "the name comes from the current entity");
+            passenger.setCustomName(net.minecraft.network.chat.Component.literal("Updated name"));
+            helper.assertTrue(seat.getOccupantName().equals("Updated name"), "renaming is visible without a seat update");
+            SeatSubsystem peer = new SeatSubsystem(seat.getOwner(), seat.getName(), seat.getAttr());
+            var initial = new java.util.ArrayList<net.minecraft.network.syncher.SynchedEntityData.DataValue<?>>();
+            seat.forEachSyncedValue(initial::add);
+            peer.getSynchedData().assignValues(initial);
+            helper.assertTrue(peer.passenger == null && peer.isOccupied() && peer.getOccupantName().isEmpty(),
+                    "an occupied seat without a local passenger reference has an unknown name");
+            seat.getSynchedData().packDirty();
+            seat.detachForSwitch(passenger);
+            helper.assertTrue(seat.getOccupantName().isEmpty(), "leaving clears the local entity name");
+            var changes = seat.getSynchedData().packDirty();
+            helper.assertTrue(changes != null, "leaving publishes a dirty seat update");
+            peer.getSynchedData().assignValues(changes);
+            helper.assertTrue(!peer.isOccupied() && peer.getOccupantName().isEmpty(),
+                    "the normal delta update clears occupation");
+            helper.succeed();
+        } finally {
+            if (vehicle != null) vehicle.onRemoveFromLevel();
+            else part.destroy();
+        }
     }
 
     private record Selection(RegularPartType type, String variant) {

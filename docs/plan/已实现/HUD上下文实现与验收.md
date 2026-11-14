@@ -23,7 +23,7 @@ HUD 模型沿用 Spark 的物理动画管线。`src/main/java/io/github/sweetzon
 
 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#refresh` 支持 `data-mm-text`、`data-mm-num` / `data-mm-var` / `data-mm-unit`、`data-mm-class`，以及 `weapon.tubes` / `weapon.belts` 重复区域。
 
-模板通过 `Document.createHTML` 使用 AUI 的 HTML 解析顺序实例化，属性与子树就绪后执行 DOM 初始化；不调用 `cloneNode`。注释节点标记重复区域边界，按稳定键增删和重排条目，同一身份复用节点。当前项由 `WeaponHudMolangContext.java#enterItem` 安装，退出及异常时恢复；下标别名位于上下文覆盖层，不写入 Part 或共享变量表。普通元素、错误集合类型、缺少当前项和省略显式索引得到诊断。
+模板通过 `Document.createHTML` 使用 AUI 的 HTML 解析顺序实例化，属性与子树就绪后执行 DOM 初始化；不调用 `cloneNode`。注释节点标记重复区域边界，按稳定键增删和重排条目，同一身份复用节点。当前项由 `WeaponHudMolangContext.java#enterRepeat` 安装，退出及异常时恢复；下标别名位于上下文覆盖层，不写入 Part 或共享变量表。普通元素、错误集合类型、缺少当前项和省略显式索引得到诊断。
 
 绑定器监听外部节点和数据标记变化；页面刷新代数变化时释放槽位、模板及观察器，并在测量前重新绑定。数值、文本和 class 只在结果变化时写入。重复模板不能含固定 ID，首版不支持嵌套重复区域；这些错误停止对应区域，其他槽位继续运行。
 

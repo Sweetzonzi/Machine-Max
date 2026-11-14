@@ -6,54 +6,182 @@ import cn.solarmoon.spark_core.molang.runtime.binding.StringQueryBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.MutableObjectBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.ObjectProperty;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import net.minecraft.network.chat.Component;
-
-import java.util.Locale;
 
 public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     protected HudRuntimeElement.Frame frame = new HudRuntimeElement.Frame(
             HudViewSnapshot.EMPTY, HudPartSnapshot.EMPTY, HudWeaponSnapshot.EMPTY, HudVehicleSnapshot.EMPTY, false);
     protected String alias;
-    protected int itemIndex = -1;
+    protected int repeatIndex = -1;
+    private HudVehicleSnapshot.Seat seat;
     private final MutableObjectBinding variables = new MutableObjectBinding() {
-        @Override public ObjectProperty getProperty(String name) {
-            if (alias != null && alias.equalsIgnoreCase(name)) return ObjectProperty.property(Value.of(itemIndex), true);
+        @Override
+        public ObjectProperty getProperty(String name) {
+            if (alias != null && alias.equalsIgnoreCase(name))
+                return ObjectProperty.property(Value.of(repeatIndex), true);
             var stored = super.getProperty(name);
             if (stored != null) return stored;
             return getEntity() == null ? null : ObjectProperty.property(Value.of(getEntity().getVariables().get(name)), false);
         }
-        @Override public boolean set(String name, Value value) {
-            if (alias != null && alias.equalsIgnoreCase(name)) throw new IllegalArgumentException("只读重复项下标: " + name);
+
+        @Override
+        public boolean set(String name, Value value) {
+            if (alias != null && alias.equalsIgnoreCase(name))
+                throw new IllegalArgumentException("只读重复项下标: " + name);
             return super.set(name, value);
         }
     };
 
-    public HudMolangContext() { super(); }
+    public HudMolangContext() {
+        super();
+    }
 
-    @Override public void reset(HudRuntimeElement element, double animationTime) {
+    @Override
+    public void reset(HudRuntimeElement element, double animationTime) {
         super.reset(element, animationTime);
         frame = element.frame();
         alias = null;
-        itemIndex = -1;
-        clearItem();
+        repeatIndex = -1;
+        clearRepeat();
     }
 
-    protected void clearItem() {}
-    public void useFrame(HudRuntimeElement.Frame frame) { this.frame = frame; }
-    @Override public MutableObjectBinding getVariableStorage() { return variables; }
+    protected void clearRepeat() {
+        seat = null;
+    }
+
+    public void useFrame(HudRuntimeElement.Frame frame) {
+        this.frame = frame;
+    }
+
+    @Override
+    public MutableObjectBinding getVariableStorage() {
+        return variables;
+    }
+
+    public RepeatScope enterRepeat(String collection, Object key, String indexAlias) {
+        if (!collection.equals("vehicle.seats")) throw new IllegalArgumentException("未知 HUD 集合: " + collection);
+        if (!(key instanceof Pair<?, ?> identity) || !(identity.getFirst() instanceof Integer subPartId))
+            throw new IllegalArgumentException("本轮快照不存在座位: " + key);
+        var seats = frame.vehicle().seats();
+        for (int i = 0; i < seats.size(); i++) {
+            var candidate = seats.get(i);
+            if (candidate.subPartId() != subPartId || !candidate.key().equals(identity.getSecond())) continue;
+            var previous = seat;
+            var scope = new RepeatScope(() -> seat = previous);
+            seat = candidate;
+            alias = indexAlias;
+            repeatIndex = i;
+            return scope;
+        }
+        throw new IllegalArgumentException("本轮快照不存在座位: " + key);
+    }
+
+    /** 模板重复项的临时求值作用域；关闭时恢复当前项与下标别名。 */
+    public final class RepeatScope implements AutoCloseable {
+        private final String previousAlias = alias;
+        private final int previousIndex = repeatIndex;
+        private final Runnable restore;
+        private boolean closed;
+
+        RepeatScope(Runnable restore) {
+            this.restore = restore;
+        }
+
+        @Override
+        public void close() {
+            if (closed) return;
+            closed = true;
+            restore.run();
+            alias = previousAlias;
+            repeatIndex = previousIndex;
+        }
+    }
+
+    private HudVehicleSnapshot.Seat requireSeat() {
+        if (seat == null) throw new IllegalStateException("seat.* 需要 vehicle.seats 当前项作用域");
+        return seat;
+    }
+
+    @QueryBinding(value = "index", namespace = "seat")
+    public double seatIndex() {
+        requireSeat();
+        return repeatIndex;
+    }
+
+    @QueryBinding(value = "number", namespace = "seat")
+    public double seatNumber() {
+        requireSeat();
+        return repeatIndex + 1;
+    }
+
+    @StringQueryBinding(value = "name", namespace = "seat")
+    public String seatName() {
+        return requireSeat().name();
+    }
+
+    @StringQueryBinding(value = "entity_name", namespace = "seat")
+    public String seatEntityName() {
+        return requireSeat().entityName();
+    }
+
+    @QueryBinding(value = "occupied", namespace = "seat")
+    public double seatOccupied() {
+        return requireSeat().occupied() ? 1 : 0;
+    }
+
+    @QueryBinding(value = "available", namespace = "seat")
+    public double seatAvailable() {
+        return requireSeat().available() ? 1 : 0;
+    }
+
+    @QueryBinding(value = "current", namespace = "seat")
+    public double seatCurrent() {
+        return seatNumber() == frame.vehicle().current() ? 1 : 0;
+    }
+
+    @QueryBinding(value = "next", namespace = "seat")
+    public double seatNext() {
+        return seatNumber() == frame.vehicle().next() ? 1 : 0;
+    }
+
+    @QueryBinding(value = "pending", namespace = "seat")
+    public double seatPending() {
+        return seatNumber() == frame.vehicle().pending() ? 1 : 0;
+    }
+
+    @QueryBinding(value = "failed", namespace = "seat")
+    public double seatFailed() {
+        return requireSeat().failed() ? 1 : 0;
+    }
+
+    @StringQueryBinding(value = "state", namespace = "seat")
+    public String seatState() {
+        var value = requireSeat();
+        return value.failed() ? "failed" : seatCurrent() != 0 ? "current" : seatPending() != 0 ? "pending"
+                : seatNext() != 0 ? "next" : value.occupied() ? "occupied" : value.available() ? "empty" : "unavailable";
+    }
 
     @QueryBinding(value = "camera_pos_x", namespace = "hud")
-    public double hud_camera_pos_x() { return frame.view().x(); }
+    public double hud_camera_pos_x() {
+        return frame.view().x();
+    }
 
     @QueryBinding(value = "camera_pos_y", namespace = "hud")
-    public double hud_camera_pos_y() { return frame.view().y(); }
+    public double hud_camera_pos_y() {
+        return frame.view().y();
+    }
 
     @QueryBinding(value = "camera_pos_z", namespace = "hud")
-    public double hud_camera_pos_z() { return frame.view().z(); }
+    public double hud_camera_pos_z() {
+        return frame.view().z();
+    }
 
     @QueryBinding(value = "view_heading_deg", namespace = "hud")
-    public double hud_view_heading_deg() { return frame.view().heading(); }
+    public double hud_view_heading_deg() {
+        return frame.view().heading();
+    }
 
     @StringQueryBinding(value = "view_heading_cardinal", namespace = "hud")
     public String hud_view_heading_cardinal() {
@@ -72,18 +200,28 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     }
 
     @QueryBinding(value = "view_pitch_deg", namespace = "hud")
-    public double hud_view_pitch_deg() { return frame.view().pitch(); }
+    public double hud_view_pitch_deg() {
+        return frame.view().pitch();
+    }
 
     @QueryBinding(value = "view_roll_deg", namespace = "hud")
-    public double hud_view_roll_deg() { return frame.view().roll(); }
+    public double hud_view_roll_deg() {
+        return frame.view().roll();
+    }
 
     @QueryBinding(value = "fov_deg", namespace = "hud")
-    public double hud_fov_deg() { return frame.view().fov(); }
+    public double hud_fov_deg() {
+        return frame.view().fov();
+    }
 
     @QueryBinding(value = "current_zoom", namespace = "hud")
-    public double hud_current_zoom() { return frame.view().zoom(); }
+    public double hud_current_zoom() {
+        return frame.view().zoom();
+    }
 
-    /** 当前 HUD 宿主（子系统）的本地化名称；失败时返回可定位的占位文本。 */
+    /**
+     * 当前 HUD 宿主（子系统）的本地化名称；失败时返回可定位的占位文本。
+     */
     @StringQueryBinding(value = "host_name", namespace = "hud")
     public String hud_host_name() {
         HudRuntimeElement entity = getEntity();
@@ -96,103 +234,178 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     }
 
     @QueryBinding(value = "screen_width", namespace = "hud")
-    public double hud_screen_width() { return frame.view().width(); }
+    public double hud_screen_width() {
+        return frame.view().width();
+    }
 
     @QueryBinding(value = "screen_height", namespace = "hud")
-    public double hud_screen_height() { return frame.view().height(); }
+    public double hud_screen_height() {
+        return frame.view().height();
+    }
 
     @QueryBinding(value = "seat_count", namespace = "vehicle")
-    public double vehicleSeatCount() { return frame.vehicle().seats().size(); }
+    public double vehicleSeatCount() {
+        return frame.vehicle().seats().size();
+    }
 
     @QueryBinding(value = "seat_right", namespace = "vehicle")
-    public double vehicleSeatRight(double number) { return frame.vehicle().seat(number).right(); }
+    public double vehicleSeatRight(double number) {
+        return frame.vehicle().seat(number).right();
+    }
 
     @QueryBinding(value = "seat_up", namespace = "vehicle")
-    public double vehicleSeatUp(double number) { return frame.vehicle().seat(number).up(); }
+    public double vehicleSeatUp(double number) {
+        return frame.vehicle().seat(number).up();
+    }
 
     @QueryBinding(value = "seat_forward", namespace = "vehicle")
-    public double vehicleSeatForward(double number) { return frame.vehicle().seat(number).forward(); }
+    public double vehicleSeatForward(double number) {
+        return frame.vehicle().seat(number).forward();
+    }
 
     @QueryBinding(value = "seat_has_position", namespace = "vehicle")
-    public double vehicleSeatHasPosition(double number) { return frame.vehicle().seat(number).hasPosition() ? 1 : 0; }
+    public double vehicleSeatHasPosition(double number) {
+        return frame.vehicle().seat(number).hasPosition() ? 1 : 0;
+    }
 
     @StringQueryBinding(value = "seat_name", namespace = "vehicle")
-    public String vehicleSeatName(double number) { return frame.vehicle().seat(number).name(); }
+    public String vehicleSeatName(double number) {
+        return frame.vehicle().seat(number).name();
+    }
+
+    @StringQueryBinding(value = "seat_entity_name", namespace = "vehicle")
+    public String vehicleSeatEntityName(double number) {
+        return frame.vehicle().seat(number).entityName();
+    }
 
     @QueryBinding(value = "seat_occupied", namespace = "vehicle")
-    public double vehicleSeatOccupied(double number) { return frame.vehicle().seat(number).occupied() ? 1 : 0; }
+    public double vehicleSeatOccupied(double number) {
+        return frame.vehicle().seat(number).occupied() ? 1 : 0;
+    }
 
     @QueryBinding(value = "seat_available", namespace = "vehicle")
-    public double vehicleSeatAvailable(double number) { return frame.vehicle().seat(number).available() ? 1 : 0; }
+    public double vehicleSeatAvailable(double number) {
+        return frame.vehicle().seat(number).available() ? 1 : 0;
+    }
 
     @QueryBinding(value = "current_seat_number", namespace = "vehicle")
-    public double vehicleCurrentSeatNumber() { return frame.vehicle().current(); }
+    public double vehicleCurrentSeatNumber() {
+        return frame.vehicle().current();
+    }
 
     @QueryBinding(value = "next_seat_number", namespace = "vehicle")
-    public double vehicleNextSeatNumber() { return frame.vehicle().next(); }
+    public double vehicleNextSeatNumber() {
+        return frame.vehicle().next();
+    }
 
     @QueryBinding(value = "pending_seat_number", namespace = "vehicle")
-    public double vehiclePendingSeatNumber() { return frame.vehicle().pending(); }
+    public double vehiclePendingSeatNumber() {
+        return frame.vehicle().pending();
+    }
 
     @StringQueryBinding(value = "seat_switch_key", namespace = "vehicle")
-    public String vehicleSeatSwitchKey() { return frame.vehicle().switchKey(); }
+    public String vehicleSeatSwitchKey() {
+        return frame.vehicle().switchKey();
+    }
 
     @QueryBinding(value = "seat_map_visible", namespace = "vehicle")
-    public double vehicleSeatMapVisible() { return frame.vehicle().mapVisible() ? 1 : 0; }
+    public double vehicleSeatMapVisible() {
+        return frame.vehicle().mapVisible() ? 1 : 0;
+    }
 
     @QueryBinding(value = "durability", namespace = "local")
-    public double local_durability() { return frame.part().number("local.durability"); }
+    public double local_durability() {
+        return frame.part().number("local.durability");
+    }
 
     @QueryBinding(value = "max_durability", namespace = "local")
-    public double local_max_durability() { return frame.part().number("local.max_durability"); }
+    public double local_max_durability() {
+        return frame.part().number("local.max_durability");
+    }
 
     @QueryBinding(value = "is_destroyed", namespace = "local")
-    public double local_is_destroyed() { return frame.part().number("local.is_destroyed"); }
+    public double local_is_destroyed() {
+        return frame.part().number("local.is_destroyed");
+    }
 
     @QueryBinding(value = "has_connector", namespace = "local")
-    public double local_has_connector(String name) { return frame.part().number("local.has_connector:" + name); }
+    public double local_has_connector(String name) {
+        return frame.part().number("local.has_connector:" + name);
+    }
 
     @QueryBinding(value = "has_subsystem", namespace = "local")
-    public double local_has_subsystem(String name) { return frame.part().number("local.has_subsystem:" + name); }
+    public double local_has_subsystem(String name) {
+        return frame.part().number("local.has_subsystem:" + name);
+    }
 
     @QueryBinding(value = "subsystem_durability", namespace = "local")
-    public double local_subsystem_durability(String name) { return frame.part().number("local.subsystem_durability:" + name); }
+    public double local_subsystem_durability(String name) {
+        return frame.part().number("local.subsystem_durability:" + name);
+    }
 
     @QueryBinding(value = "subsystem_max_durability", namespace = "local")
-    public double local_subsystem_max_durability(String name) { return frame.part().number("local.subsystem_max_durability:" + name); }
+    public double local_subsystem_max_durability(String name) {
+        return frame.part().number("local.subsystem_max_durability:" + name);
+    }
 
     @QueryBinding(value = "subsystem_active", namespace = "local")
-    public double local_subsystem_active(String name) { return frame.part().number("local.subsystem_active:" + name); }
+    public double local_subsystem_active(String name) {
+        return frame.part().number("local.subsystem_active:" + name);
+    }
 
     @QueryBinding(value = "subsystem_destroyed", namespace = "local")
-    public double local_subsystem_destroyed(String name) { return frame.part().number("local.subsystem_destroyed:" + name); }
+    public double local_subsystem_destroyed(String name) {
+        return frame.part().number("local.subsystem_destroyed:" + name);
+    }
 
     @QueryBinding(value = "connector_offset", namespace = "local")
-    public double local_connector_offset(String name, int axis) { return frame.part().number("local.connector_offset:" + name + ":" + axis); }
+    public double local_connector_offset(String name, int axis) {
+        return frame.part().number("local.connector_offset:" + name + ":" + axis);
+    }
 
     @QueryBinding(value = "connector_rotation", namespace = "local")
-    public double local_connector_rotation(String name, int axis) { return frame.part().number("local.connector_rotation:" + name + ":" + axis); }
+    public double local_connector_rotation(String name, int axis) {
+        return frame.part().number("local.connector_rotation:" + name + ":" + axis);
+    }
 
     @QueryBinding(value = "hp", namespace = "global")
-    public double global_hp() { return frame.part().number("global.hp"); }
+    public double global_hp() {
+        return frame.part().number("global.hp");
+    }
 
     @QueryBinding(value = "max_hp", namespace = "global")
-    public double global_max_hp() { return frame.part().number("global.max_hp"); }
+    public double global_max_hp() {
+        return frame.part().number("global.max_hp");
+    }
 
     @QueryBinding(value = "energy", namespace = "global")
-    public double global_energy() { return frame.part().number("global.energy"); }
+    public double global_energy() {
+        return frame.part().number("global.energy");
+    }
 
     @QueryBinding(value = "max_energy", namespace = "global")
-    public double global_max_energy() { return frame.part().number("global.max_energy"); }
+    public double global_max_energy() {
+        return frame.part().number("global.max_energy");
+    }
 
     @QueryBinding(value = "get", namespace = "local")
-    public double localGet(String name) { return frame.part().number("local.get:" + name); }
+    public double localGet(String name) {
+        return frame.part().number("local.get:" + name);
+    }
+
     @StringQueryBinding(value = "get_str", namespace = "local")
-    public String localGetStr(String name) { return frame.part().string("local.get:" + name); }
+    public String localGetStr(String name) {
+        return frame.part().string("local.get:" + name);
+    }
 
     @QueryBinding(value = "get", namespace = "global")
-    public double globalGet(String name) { return frame.part().number("global.get:" + name); }
+    public double globalGet(String name) {
+        return frame.part().number("global.get:" + name);
+    }
+
     @StringQueryBinding(value = "get_str", namespace = "global")
-    public String globalGetStr(String name) { return frame.part().string("global.get:" + name); }
+    public String globalGetStr(String name) {
+        return frame.part().string("global.get:" + name);
+    }
 
 }

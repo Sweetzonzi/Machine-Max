@@ -1,0 +1,13 @@
+[
+  {
+    "style": "machine_max:vehicle_status_heading",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [
+      8,
+      -22,
+      0
+    ],
+    "scale": [ 1, 1, 1 ]
+  }
+]

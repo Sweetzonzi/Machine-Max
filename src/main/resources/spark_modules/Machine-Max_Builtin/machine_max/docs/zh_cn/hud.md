@@ -152,18 +152,25 @@ AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文
 
 模型取 HUD 宿主所属的实时装配体。角度单位为度，依次绕车体坐标的 Y、X、Z 轴施加右手旋转。缺省为 `0, 90, 0`，俯视时车头朝上。`markers` 和 `damage` 默认为 `false`。开启后分别绘制编号座位和损伤层，损伤层同时受玩家设置控制。
 
+`orientation="fixed"`（缺省）使用固定角度；`orientation="heading"` 随实际相机方位改变 yaw，使用页面的固定 pitch/roll，yaw 属性作为方位偏置；`orientation="camera"` 使用实际相机相对于载具的完整姿态，联动俯仰和横滚，忽略固定角度属性。模型与座位标记共用逐帧插值投影，缩略图按包围盒适配尺寸。相机模式保持正交显示，镜头远近和 FOV 不改变缩略图大小。
+
 | MoLang 查询 | 返回值 |
 | --- | --- |
 | `vehicle.seat_count` | 宿主载具的座位数。 |
 | `vehicle.seat_right(i)`、`vehicle.seat_up(i)`、`vehicle.seat_forward(i)` | 座位相对载具包围盒中心向右、上、前的带符号距离，单位为方块。 |
 | `vehicle.seat_has_position(i)` | locator 可解析时为 1，否则为 0。 |
 | `vehicle.seat_name(i)` | 座位的本地化名称。 |
+| `vehicle.seat_entity_name(i)` | 从当前乘员实体读取的名称，含非玩家乘员；未占用或实体引用暂缺时为空文本。 |
 | `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 是否占用、当前是否可换入。 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 观察者当前、顺向候选和请求在途座号。观察者未坐在宿主载具上时为 0。 |
 | `vehicle.seat_switch_key` | 换座键的本地化显示名。 |
 | `vehicle.seat_map_visible` | 观察者坐在同车且至少两座、无打开的界面、GUI 可见、非相机模式，并满足玩家的常驻或换座窗口设置时为 1。内置页使用该门槛，自定义页可选择是否使用。 |
 
-座位序号 `i` 从 1 开始。无载具、无对应座位或无有效数据时，相关数值为 0，字符串为空。合法坐标原点用 `seat_has_position(i)` 区分。座位坐标与页面宽高、观察角无关，`data-mm-repeat` 的集合仅为 `weapon.tubes` 和 `weapon.belts`。
+座位序号 `i` 从 1 开始。无载具、无对应座位或无有效数据时，相关数值为 0，字符串为空。合法坐标原点用 `seat_has_position(i)` 区分。座位坐标与页面宽高、观察角无关。
+
+`data-mm-repeat="vehicle.seats"` 展开全部座位，支持 `seat.index/number/name/entity_name/occupied/available/current/next/pending/failed/state`。当前项下标从 0 开始，座号从 1 开始；稳定行身份由 SubPart ID 和座位键组成。名字直接从本端乘员实体读取。空位可显示 `---`，已占用但实体引用暂缺可显示 `…`。
+
+builtin 提供三种载具状态图：方位跟随 `machine_max:vehicle_status_heading`、视角跟随 `machine_max:vehicle_status_camera`、固定俯视 `machine_max:vehicle_status_topdown`，以及独立的席位列表 `machine_max:vehicle_seat_list`。每个资源键都有同名样式和独立布局。席位列表只显示座位、乘员与换座信息。完整页面与接线说明见 [载具 HUD：状态图与席位列表](../../documents/vehicle_hud/README.md)。
 
 ## HUD布局（hud_layouts/）
 

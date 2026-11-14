@@ -5,5 +5,16 @@
     "offset": [95, 45, -135],
     "rotation": [-25, -30, 0],
     "scale": [20, 20, 20]
+  },
+  {
+    "style": "machine_max:vehicle_status_topdown",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [
+      8,
+      -22,
+      0
+    ],
+    "scale": [ 1, 1, 1 ]
   }
 ]

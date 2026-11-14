@@ -7,10 +7,10 @@
     "scale": [15, 15, 15]
   },
   {
-    "style": "machine_max:vehicle_seat_map",
+    "style": "machine_max:vehicle_seat_list",
     "perspective": false,
     "anchor": "bottom_left",
     "offset": [8, -22, 0],
-    "scale": [2, 2, 1]
+    "scale": [ 1, 1, 1 ]
   }
 ]

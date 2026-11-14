@@ -308,9 +308,16 @@ i {
    ------------------------------------------------------------ */
 
 .mm-durability {
-  width: 432px;
+  width: 297px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mm-dur-caption {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
@@ -323,15 +330,16 @@ i {
 .mm-dur-label { opacity: 0.6; }
 
 .mm-dur-value {
-  min-width: 50px;
+  white-space: nowrap;
   text-align: right;
 }
+
+.mm-durability.is-unknown .mm-dur-bar { opacity: 0.3; }
 
 /* 12 段 × 22px + 11 个间隙 × 3px = 297px；填充条用同一周期切出分段。 */
 .mm-dur-bar {
   position: relative;
-  flex: 0 0 297px;
-  width: 297px;
+  width: 100%;
   height: 8px;
 }
 
@@ -356,7 +364,7 @@ i {
   position: absolute;
   left: 0;
   top: 0;
-  width: var(--dur, 100%);
+  width: var(--dur, 0%);
   height: 8px;
   background-image: repeating-linear-gradient(90deg, var(--mm-accent, #a4ff80) 0px, var(--mm-accent, #a4ff80) 22px, transparent 22px, transparent 25px);
   opacity: 0.9;

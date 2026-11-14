@@ -1,0 +1,66 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: transparent; }
+body { display: inline-block; }
+.vehicle-hud { display: none; width: 188px; color: #e0e9e9; font-size: 11px; line-height: 14px; padding: 4px 4px 5px; }
+.vehicle-hud.is-visible { display: block; }
+.model-stage { position: relative; width: 180px; height: 166px; }
+.model-disc { position: absolute; left: 10px; top: 3px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, #10252e9e, #101c286b); }
+.model-ring { position: absolute; left: 10px; top: 3px; width: 160px; height: 160px; border: 1px solid #b6d7d736; border-radius: 50%; }
+.front-mark { position: absolute; top: 2px; left: 86px; color: #d0e3df99; font-size: 7px; }
+.reticle { position: absolute; top: 79px; width: 5px; height: 1px; background: #c4dddd70; }
+.reticle.left { left: 11px; }.reticle.right { right: 11px; }
+machinemax-vehicle-model { position: absolute; display: block; left: 18px; top: 12px; width: 144px; height: 140px; }
+.health-line { display: flex; flex-direction: column; gap: 3px; margin: 1px 14px 7px; font-size: 9px; color: #d4e4df; }
+.health-caption { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.health-label { opacity: .65; }
+.health-track { width: 100%; height: 3px; background: #dce9e52e; }
+.health-track i { display: block; height: 3px; width: var(--health, 0%); background: #d4e4df; }
+.health-value { white-space: nowrap; text-align: right; }
+.health-line.is-unknown .health-track { opacity: .3; }
+.seat-identity { display: flex; align-items: center; gap: 7px; padding: 0 6px 5px; border-bottom: 1px solid #c3dddd38; }
+.self-label { display: flex; align-items: center; gap: 4px; flex-shrink: 0; color: #4fd1ff; font-size: 10px; }
+.self-label i { display: block; width: 4px; height: 10px; background: #4fd1ff; }
+.current-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.seat-number { color: #4fd1ff; font-size: 15px; }
+.switch-line { display: flex; align-items: center; gap: 7px; padding: 7px 6px 2px; }
+.keycap { flex-shrink: 0; min-width: 18px; padding: 0 3px; border: 1px solid #e0e9e970; text-align: center; font-size: 10px; background: #111d2459; }
+.switch-arrow { color: #6cff6c; font-size: 15px; }
+.switch-target { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #6cff6c; }
+.switch-full, .pending-label { display: none; }
+.switch-line.is-full .switch-target, .switch-line.is-full .switch-arrow { display: none; }
+.switch-line.is-full .switch-full { display: block; color: #a1abab; }
+.switch-line.is-pending .pending-label { display: block; color: #6cff6c; }
+.seat-legend { display: flex; justify-content: space-between; gap: 5px; margin: 6px 6px 0; font-size: 8px; line-height: 11px; color: #bbcecb; }
+.seat-legend span { display: flex; align-items: center; gap: 3px; }
+.seat-legend i { width: 3px; height: 3px; background: currentColor; }
+.seat-legend .current { color: #4fd1ff; }.seat-legend .next { color: #6cff6c; }
+.seat-legend .empty { color: #f2f6fa; }.seat-legend .occupied { color: #ffb020; }
+.camera .model-stage { height: 170px; }
+.camera .model-disc { left: 6px; top: 126px; width: 168px; height: 34px; border-radius: 50%; background: #8bdde810; border: 1px solid #8bdde825; }
+.camera .model-ring { display: none; }
+.camera machinemax-vehicle-model { left: 8px; top: 6px; width: 164px; height: 150px; }
+.camera .reticle { width: 8px; height: 7px; top: 151px; background: transparent; border-bottom: 1px solid #9ddde088; }
+.camera .reticle.left { left: 5px; border-left: 1px solid #9ddde088; }.camera .reticle.right { right: 5px; border-right: 1px solid #9ddde088; }
+.camera .front-mark { display: none; }
+.camera .health-track i { background: var(--mm-accent, #b5ebee); }
+.camera .seat-identity { border-color: #a5e1e451; }
+.topdown .model-stage { height: 130px; }
+.topdown .model-disc, .topdown .model-ring, .topdown .reticle { display: none; }
+.topdown machinemax-vehicle-model { left: 29px; top: 0; width: 122px; height: 126px; }
+.topdown .front-mark { top: 0; }
+.topdown .health-line { margin-bottom: 6px; }
+.topdown .seat-legend { display: none; }
+.seat-list { width: 252px; padding: 5px 5px 7px; }
+.crew-heading { display: flex; justify-content: space-between; margin: 0 6px 7px; padding-bottom: 4px; border-bottom: 1px solid #c3dddd38; color: #bad0cb; font-size: 9px; letter-spacing: 1px; }
+.crew-list { display: flex; flex-direction: column; gap: 2px; }
+.crew-row { display: grid; grid-template-columns: 12px 18px 1fr 1fr; align-items: center; gap: 5px; min-height: 23px; padding: 3px 5px; border-left: 2px solid transparent; background: linear-gradient(90deg, #10232a90, #10232a12); }
+.crew-seat, .crew-player { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.crew-number { color: #a4b9b7; font-size: 10px; }.crew-marker { color: #f2f6fa; text-align: center; }
+.crew-player { color: #bbcecb; font-size: 10px; }
+.crew-row.is-current { border-left-color: #4fd1ff; background: linear-gradient(90deg, #4fd1ff24, #10232a12); }
+.crew-row.is-current .crew-number, .crew-row.is-current .crew-marker { color: #4fd1ff; }
+.crew-row.is-next .crew-marker, .crew-row.is-pending .crew-marker { color: #6cff6c; font-size: 15px; }
+.crew-row.is-occupied .crew-marker { color: #ffb020; }
+.crew-row.is-unavailable { opacity: .5; }.crew-row.is-unavailable .crew-number { text-decoration: line-through; }
+.crew-row.is-failed { border-left-color: #ff4040; }.crew-row.is-failed .crew-marker { color: #ff4040; }
+.seat-list .seat-identity { margin-top: 8px; }

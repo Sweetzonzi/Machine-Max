@@ -4,6 +4,6 @@
     "perspective": false,
     "anchor": "bottom_left",
     "offset": [8, -22, 0],
-    "scale": [2, 2, 1]
+    "scale": [ 1, 1, 1 ]
   }
 ]

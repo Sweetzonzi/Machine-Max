@@ -125,6 +125,11 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         if (!getLevel().isClientSide()) synchedData.set(DATA_OCCUPIED_ID, value);
     }
 
+    /** 主线程：从本端当前乘员实体读取名称，实体引用暂缺时返回空文本。 */
+    public String getOccupantName() {
+        return occupied && passenger != null ? passenger.getName().getString() : "";
+    }
+
     public void setPassenger(LivingEntity passenger) {
         if (owner.getSubPart() != null && owner.getSubPart().entity != null) {
             updateBoardingOffset(passenger);

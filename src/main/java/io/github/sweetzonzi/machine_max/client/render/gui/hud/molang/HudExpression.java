@@ -11,7 +11,7 @@ import java.util.Set;
 
 /** 校验 HUD 业务命名空间，阻止引擎对未绑定属性及省略索引的静默兜底。 */
 public final class HudExpression {
-    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "belt", "local", "global", "vehicle");
+    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "belt", "seat", "local", "global", "vehicle");
     private HudExpression() {}
 
     public static void validate(String expression, HudMolangContext context, String collection) {
@@ -32,7 +32,8 @@ public final class HudExpression {
                 }
                 if (!NAMESPACES.contains(ns)) continue;
                 if (ns.equals("tube") && !"weapon.tubes".equals(collection)
-                        || ns.equals("belt") && !"weapon.belts".equals(collection)) {
+                        || ns.equals("belt") && !"weapon.belts".equals(collection)
+                        || ns.equals("seat") && !"vehicle.seats".equals(collection)) {
                     throw new IllegalArgumentException(ns + ".* 缺少对应的当前项作用域");
                 }
                 int arguments = 0;
