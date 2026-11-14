@@ -17,6 +17,7 @@
 | 文档 | 判定依据 |
 | --- | --- |
 | [界面-载具模型与座位HUD的AUI接入设计](已实现/界面-载具模型与座位HUD的AUI接入设计.md) | `VehicleModelElement` 绘制三轴投影模型和座位标记，`HudVehicleSnapshot` 提供 `vehicle.*` 查询，随附内容包通过第三人称座椅布局显式挂载内置座位图。游戏内画面与性能待验收。 |
+| [界面-车内换座与座位布局HUD调研](已实现/界面-车内换座与座位布局HUD调研.md) | 交付范围 P0–P2 已落地：`SeatOrder`、`SeatSwitchHelper`、`SeatSwitchPayload` / `SeatSwitchResultPayload`、`SeatSubsystem` 占用同步、四套 builtin 座位图页面；座位图由 AUI 页面 + `VehicleModelElement` 承载。P3 打磨项与 P4 可选扩展不在交付范围，见文档 §六 末。 |
 | [PDA蓝图终端-详细设计文档](已实现/PDA蓝图终端-详细设计文档.md) | 提交 `271bb934`；`client/render/gui/pda/` 与 `PdaItem` 已落地 |
 | [PDA蓝图终端-接口设计文档](已实现/PDA蓝图终端-接口设计文档.md) | 与详细设计同批落地（提交 `271bb934`）；注册项、数据组件、网络包字段均按本文口径实现 |
 | [伤害结算相位与装配体投递修改计划](已实现/伤害结算相位与装配体投递修改计划.md) | 提交 `20355f6a`；`settleAccumulatedDamage` 移至 `postTick`，`SubPartHitDamage` 携带完整批次 |
@@ -81,7 +82,6 @@
 | [武器系统-爆炸波前视觉设计](进行中/武器系统-爆炸波前视觉设计.md) | 第一期的屏幕空间折射已落地（`blast_distortion` 着色器 + `BlastDistortionEffect`）；第二期的世界内薄壳辉光未实现 |
 | [武器系统-爆炸系统详细设计](进行中/武器系统-爆炸系统详细设计.md) | §十七 阶段 A–J 已落地；阶段 K/L 待上游通用 Effect 体系 |
 | [武器系统-投射物弹道预测与区块预载设计](进行中/武器系统-投射物弹道预测与区块预载设计.md) | 提交 `836194ea`、`db503f23`；`common/mech/trajectory/` 下 `TrajectoryStep`、`ChunkCoverage`、`ElevationFilter`、`TerrainPreload` 已接入 `ProjectileManager#preTick` 与 `LauncherSubsystem#onTick` 的首段，四组纯 JUnit 通过；未做 `needsReplan`，`reactivations` 未接入，两条 GameTest 待落地 |
-| [界面-车内换座与座位布局HUD调研](进行中/界面-车内换座与座位布局HUD调研.md) | 提交 `e0fb8a49`；`SeatMapHud`、`SeatMapLayout`、`SubsystemDurabilityColors`、`SeatSwitchHelper`、`SeatOrder` 与 `SeatSwitchPayload` / `SeatSwitchResultPayload` 均已落地，`MMGuiManager` 用 `registerAboveAll` 常驻注册，P0–P2 实机验收通过；P3–P4 未实现 |
 | [武器系统-装弹机模块化损伤实施计划](进行中/武器系统-装弹机模块化损伤实施计划.md) | P1–P4 已接入：`feed` / `magazine` 两个模块与模块恢复门槛、`pass_damage=false` 时模块伤害落地的入口修正、实时供给门控与交付清理、再生门控、退弹边界、库存殉爆入口与弹仓受击定位、旧存档比例分摊、`sync:2.8.0`。P5 部分完成：2S38 的 `magazine` / `feed` 命中箱标注与 builtin schema、各包副本已落地，其余第一方载具待标注；P6 实机与标定验收待做；普通装弹机仅做公共接口适配 |
 | [武器系统-武器HUD信息分级与视角形态需求分析](进行中/武器系统-武器HUD信息分级与视角形态需求分析.md) | 需求分析，部分落地：逐管读数、弹链余量、装填阶段与三视角布局字段已进入代码；四款具名呈现（`minimal` / `standard` / `scope` / `full`）、可用总数含膛内、逐管「等待供弹」、炮镜装填环与 full 技术面板未实现 |
 | [武器系统-目标粒度与锁定单元设计](进行中/武器系统-目标粒度与锁定单元设计.md) | `Target`（`label`/`point(partialTick)`/`isLockable`）与 `VehicleCore` / `HitBox` 两个实现、`HitBoxAttr.lockable` 显式准入（默认 false，需再满足子系统存活与条件激活）、`HitBox.isLockable()`（模块优先于子系统）、指示器物品与创造栏条目、HUD 标注层（每辆可锁载具一个框 + 其上可锁命中框各一个，屏幕空间标记、按 tick 插值、边长固定 28 像素）、右键锁定与释放（命中不可锁部位时退回整辆载具，每 tick 轮询手持物）、锁定点替换瞄准上行点均已落地，`build` 与 `runGameTestServer` 通过；第一方内容暂未声明 `lockable`，因此只有载具框；传感器 `Reading` 接入、跨端表示与传输（§八）、实体与方向目标未实现；待游戏内验收 |

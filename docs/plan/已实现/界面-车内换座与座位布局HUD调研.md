@@ -1,7 +1,7 @@
 # 车内换座与座位布局 HUD 调研
 
-> **版本** 2.12 · 2026-10-28
-> **状态**：进行中。P0–P2 已实现并通过实机验收；P3–P4 未实现。
+> **版本** 2.16 · 2026-11-15
+> **状态**：已实现。交付范围 P0–P2（循环换座键、专用切换路径、占用同步、座位排序与四套 builtin 座位图页面）已落地并实机验收；座位图由 AUI 页面 + `<machinemax-vehicle-model>` 承载，见 [载具模型与座位 HUD 的 AUI 接入设计](界面-载具模型与座位HUD的AUI接入设计.md)。§5.7 描述的是 `SeatMapHud` 2D 图层方案；发布实现走 AUI 页面，不使用该图层。P3 打磨项与 P4 可选扩展不在交付范围，见 §六 末。
 > **基线**：NeoForge 21.1.219 / Minecraft 1.21.1；内容包 `Machine-Max_K17`、`Machine-Max_MTLB`、`Machine-Max_2S38`、`Machine-Max_Civilian`。
 > **结论**：不建议给每个座位补交互区。推荐**一个循环换座键**加**常驻的俯视座位图 HUD**：换座只按一个键，跳到排序中的下一个空位；座位图在车内常驻，画出载具模型与座位位置，标出自己在哪、哪些被占、下一个是谁。客户端算出下一个目标座位后发给服务端，服务端只校验目标是否可用；同一条载荷也能承载将来的点击选座。座位图可以顺带按耐久给车体零件着色，作为现有 O 键内构查看的总览补充。
 
@@ -773,6 +773,8 @@ PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload
 
 ### 5.7 座位图 HUD 渲染
 
+> 本节（§5.7.1–§5.7.6）描述 `SeatMapHud` 2D 图层方案，发布实现为 AUI 页面 + `<machinemax-vehicle-model>`，见 [载具模型与座位 HUD 的 AUI 接入设计](界面-载具模型与座位HUD的AUI接入设计.md)。本节作为座位数据、投影与验收口径的设计依据保留。
+
 #### 5.7.1 为什么是独立图层，而不是 `HudLayout`
 
 `HudLayout`/`HudElement` 是内容包作者写死的静态元素数组；座位图的元素数量、位置、颜色都来自运行时装配结果，且需要逐帧更新占用。把它塞进 `CustomHud` 需要新的 `HudStyle` 载体和动态元素机制，成本高于收益。
@@ -1062,7 +1064,7 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 | 下车抑制 | `common/entity/MMPartEntity.java` | `getDismountLocationForPassenger` 在换座期间返回当前位置 |
 | 输入来源校验 | `network/payload/ControlBindingPayload.java`、`MovementInputPayload.java` | 两个 handler 共用 `isControlledBy(sub, player)`（控制对象 + 座位乘客/骑乘），挡住换座后到达的旧座位按键包与移动包；移动包还要在广播前拦截（§5.5） |
 | 协议 | 新增 `network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`；`network/MMPayloadRegistry.java` | C2S 带目标座位（`subPartId + seatName`）；S2C 是纯状态包（不带座位序号，带复位后的 `controlGroup`），成功时广播维度内所有玩家、失败只回发起者；版本提升、服务端校验与节流 |
-| 测试 | `common/gametest/SeatSwitchGameTest.java` | 同实体、跨实体、占用/不可用/跨装配体/当前座位；挂载被拒时状态不变；控制组复位（炮手预设 `0`、旧座位保持不变、幂等）；换座后旧座位的绑定包与移动包被拒绝；`SeatOrder.next` 的纯函数用例 |
+| 测试 | `common/gametest/SeatOrderGameTest.java` | 同实体、跨实体、占用/不可用/跨装配体/当前座位；挂载被拒时状态不变；控制组复位（炮手预设 `0`、旧座位保持不变、幂等）；换座后旧座位的绑定包与移动包被拒绝；`SeatOrder.next` 的纯函数用例 |
 | 结构事件 | `common/mech/vehicle/VehicleCore.java`、新增 `event/VehicleStructureChangeEvent.java` | `onStructureChanged(Reason)` 包装：质量/最大耐久/相机距离、子系统握手、双端发事件；原因决定 `HpRecalcMode`（`ADD`→`GROW`，`SPLIT`→`NONE`，其余 `CLAMP`）；按 §5.7.6 的表逐点替换，`:851` 与 `:895` 保留在原处 |
 
 验收：K17 三个座位可以用循环键依次到达；玩家不离开载具、不被传送到车外；旧座位信号归零；新座位信号接管；换到炮手座后活动组是预设的自动炮组（`0`）且开火有效；旧座位的活动组保持原值；换座后旧座位的绑定包与移动包被拒绝；占用同步到另一客户端；`rg 'occupied\s*='` 只剩声明与 `setOccupied`；两台满血载具合并后 HP 等于两者之和（`:895` 未被并入包装）；专用服务器（非单机）上客户端也收到结构事件。
@@ -1087,9 +1089,13 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 | 注册 | `client/render/gui/MMGuiManager.java` | `registerAboveAll`；客户端 tick 更新占用与当前座位 |
 | 配置 | `client/MMClientConfig.java` | 显示模式（常驻/仅换座后/关闭）、损伤层开关 |
 
+> 交付形态：P2 的常驻座位图由 AUI 页面（`documents/vehicle_hud/*.html` + `hud.css`、`huds/*.json`、`hud_layouts/*.json`）与 `client/render/gui/element/VehicleModelElement.java` 承载，`client/render/gui/hud/SeatMapHud.java` 与 `MMGuiManager#registerAboveAll` 未创建；`SeatMapLayout`、结构变化订阅与 `MMClientConfig` 的显示档位／损伤层开关按本表落地。
+
 验收：K17/MTLB/2S38/Van 四类载具都能显示正确的座位布局与占用；HUD 高亮的“下一个”与按键结果一致；行驶中可用；不遮挡准星。
 
 ### P3：零件状态与打磨
+
+> 不在交付范围。P3、P4 是后续计划：损伤着色已随 AUI 页面落地（`damage` 属性 + 客户端损伤层开关），其余条目——损伤图例、AABB 降级、重叠引线与高度角标、`OffscreenFbo` 缓存，以及 P4 的全部扩展——尚未实现。
 
 | 项 | 内容 |
 | --- | --- |
@@ -1226,8 +1232,8 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 座位世界坐标（非插值，排序用） | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java:1197-1210`（`getLocatorWorldTransform`） |
 | 循环键按下路径 | `src/main/java/io/github/sweetzonzi/machine_max/client/input/RawInputHandler.java:470-471`（`KeyHooks.EVENT(...).OnKeyDown`） |
 | 离屏渲染目标（性能兜底） | `src/main/java/io/github/sweetzonzi/machine_max/client/fbo/OffscreenFbo.java:23-46` |
-| 座位排序与“下一个”（P0 新增） | `common/mech/subsystem/seat/SeatOrder.java`（目前不存在） |
-| 换座协议（P0 新增） | `network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`（目前不存在） |
+| 座位排序与“下一个” | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatOrder.java` |
+| 换座协议 | `src/main/java/io/github/sweetzonzi/machine_max/network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`（注册见 `network/MMPayloadRegistry.java:122-129`） |
 | 座位 attachment point | `src/main/java/io/github/sweetzonzi/machine_max/common/entity/MMPartEntity.java:365-374` |
 | 下车位置搜索 | `MMPartEntity.java:554-595` |
 | K17 座位/舱盖 | `src/main/resources/spark_modules/Machine-Max_K17/machine_max/parts/k17_hull.json:73-91`、`:268-317` |
@@ -1321,3 +1327,4 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 2.13 | 2026-11-01 | 俯视投影改为沿参考零件自身的上轴：`X(-90)` 之后乘前向轴归一（`frontLocal` 为 `+Z` 时一次 `Y(180)`）与参考零件世界旋转的逆，足迹与居中也在该零件的局部坐标里量，缩放与平面位置对偏航、俯仰、侧倾完全不变（沿世界 Y 投影会让上坡的车顶斜切进横轴）；`mapMatrix` 的偏航角参数换成 `frontLocal + worldToReference`，投影用例改为逐个姿态（含俯仰、侧倾与前向轴两种符号）断言 `front → (0,-1)`、`right → (+1,0)`、`up → (0,0,+1)` |
 | 2.14 | 2026-11-01 | 面板整体缩到 0.5：布局仍按未缩放单位算，绘制时以面板左下角为锚点 `translate + scale`，面板、车体、标记与文字一起缩，常驻占用面积约为原来的四分之一；文字同时下到约 4.5px 高。同时把“面板外 `enableScissor`”的表述改成实现里实际使用的预筛（车体按 `fit` 收进地图、标记按地图区域外扩 8px 剔除） |
 | 2.15 | 2026-11-01 | 车头轴改为项目约定而不是从座位推断：局部 `-Z` 就是车头（`DestroyableObject#getFrontVector()`、地面控制器遥测、投射物姿态同一约定，内容包按 `-Z` 建模），`SeatOrder` 删掉按驾驶员座位纵向偏移判断符号的 `pickFrontAxis`、`Reference` 记录与 `groupCount`，`Layout`/`order`/`layout` 不再接收当前座位；座位图的 `mapMatrix` 去掉前向轴参数与归一半圈。据此修正同一台车换座位后俯视图朝向翻转（旧逻辑把当前座位也当探针），以及驾驶座落在刚体原点（随质心偏移）之后时车头朝下（例如 mini_ev 的驾驶座在引擎之后）。投影用例改为固定 `-Z` 车头、逐姿态断言 |
+| 2.16 | 2026-11-15 | 文档移入 `docs/plan/已实现/`：状态行改为已实现并写明交付范围是 P0–P2；§5.7 标注该章的 `SeatMapHud` 2D 图层方案未用于发布实现；证据索引改为指向已存在的 `SeatOrder` 与两条换座载荷 |

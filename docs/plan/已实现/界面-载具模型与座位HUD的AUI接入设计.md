@@ -33,7 +33,7 @@
 
 内置页面通过 `data-mm-class` 消费 `vehicle.seat_map_visible`。显示要求当前玩家坐在同一装配体、至少两座、无打开的界面、GUI 可见、非相机模式，并满足玩家的常驻、换座窗口或关闭设置。换座窗口按请求在途或成功脉冲判定，见 `src/main/java/io/github/sweetzonzi/machine_max/client/MMClientConfig.java#isSeatMapVisible`。该查询只控制消费它的页面。作者可使用自定义显隐条件，例如单座车体仪表或炮镜页面。损伤层设置适用于标签中显式启用的损伤渲染，详见 §5。
 
-挂载与加载入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/visual/IHudHost.java#resolve`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/SeatSubsystem.java#hudLayoutFor`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#rebuild`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#renderInScopeMode` 和 `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#createDocument`。通用资源契约见 `docs/plan/进行中/界面-HUD样式挂载与布局设计.md` §3.2、§4、§6.1。原生换座与座位图的设计及验收见 `docs/plan/进行中/界面-车内换座与座位布局HUD调研.md` §五、§5.7、§七。
+挂载与加载入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/visual/IHudHost.java#resolve`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/SeatSubsystem.java#hudLayoutFor`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#rebuild`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/CustomHud.java#renderInScopeMode` 和 `src/main/java/io/github/sweetzonzi/machine_max/client/render/renderable/AuiHudAnimatable.java#createDocument`。通用资源契约见 `docs/plan/进行中/界面-HUD样式挂载与布局设计.md` §3.2、§4、§6.1。原生换座与座位图的设计及验收见 `docs/plan/已实现/界面-车内换座与座位布局HUD调研.md` §五、§5.7、§七。
 
 ## 3. 座位数据与 MoLang
 
@@ -97,6 +97,6 @@
 - `SeatMapProjectionTest` 覆盖包围盒中心、俯视、侧视、斜视及整车刚性位姿不变量。`HudMolangContextTest` 与 `HudPageBindingTest` 覆盖一基索引、无效参数、缺失位置与合法原点、共享发布帧、页面显隐和未知查询诊断。用例在 `src/test/java/io/github/sweetzonzi/machine_max/client/render/gui/`。
 - 游戏内检查各车的第三人称仪表共存、不同 GUI scale、重载、上下车和玩家设置。使用活动件、多高度座位和可拆装的自组车核对模型与标记对齐、结构缓存失效、换座时的占用竞争和失败反馈。将条目投放到相机与武器控制器的自定义布局，检查宿主身份、显隐和空布局。
 - 游戏内检查模型内容框裁剪、编号字体、模型与内构透明层以及相邻 AUI 内容的提交顺序。
-- 性能验收使用同一场景、分辨率、GUI scale、视角与车辆，预热后测条目显示和隐藏时的 HUD CPU 耗时及整帧时间。稳态帧时间增量的目标为 **P95 < 1.5 ms**，预算取自 [车内换座与座位布局 HUD 调研](../进行中/界面-车内换座与座位布局HUD调研.md) §七。座位坐标和几何不写入 DOM，文字和显隐仅在绑定值变化时写入。帧耗时待测量。
+- 性能验收使用同一场景、分辨率、GUI scale、视角与车辆，预热后测条目显示和隐藏时的 HUD CPU 耗时及整帧时间。稳态帧时间增量的目标为 **P95 < 1.5 ms**，预算取自 [车内换座与座位布局 HUD 调研](界面-车内换座与座位布局HUD调研.md) §七。座位坐标和几何不写入 DOM，文字和显隐仅在绑定值变化时写入。帧耗时待测量。
 
 内容包入口和查询表见 [HUD 编写指南](../../../src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/hud.md) 的「载具模型与座位图」一节。
