@@ -245,9 +245,9 @@
                 "required_tags": [
                   "m1a2_sep:armor/turret_left"
                 ],
-                "integrity": 60,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8
+                "integrity": 2400,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
               }
             },
             "connector.m1a2_sep.turret_armor_right": {
@@ -257,9 +257,9 @@
                 "required_tags": [
                   "m1a2_sep:armor/turret_right"
                 ],
-                "integrity": 60,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8
+                "integrity": 2400,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
               }
             },
             "connector.m1a2_sep.turret_citv": {

@@ -49,9 +49,9 @@
                 "required_tags": [
                   "m1a2_sep:turret"
                 ],
-                "integrity": 60,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8
+                "integrity": 2400,
+                "impact_absorption": 1,
+                "impact_reduction": 10
               }
             }
           }
@@ -100,9 +100,9 @@
                 "required_tags": [
                   "m1a2_sep:turret"
                 ],
-                "integrity": 60,
-                "impact_absorption": 0.1,
-                "impact_reduction": 8
+                "integrity": 2400,
+                "impact_absorption": 1,
+                "impact_reduction": 10
               }
             }
           }

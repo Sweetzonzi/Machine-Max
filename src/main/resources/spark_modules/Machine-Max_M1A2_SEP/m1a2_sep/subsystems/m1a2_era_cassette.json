@@ -1,0 +1,6 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:basic",
+  "basic_durability": 8,
+  "pass_damage": false
+}
