@@ -3,9 +3,9 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr
 import cn.solarmoon.spark_core.pack.diagnostic.PackContentException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataRegistries;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemCodecs;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemKinds;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -18,7 +18,6 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 @Getter
 abstract public class AbstractSubsystemAttr {
@@ -30,7 +29,19 @@ abstract public class AbstractSubsystemAttr {
 
     public abstract MapCodec<? extends AbstractSubsystemAttr> codec();
 
-    public abstract SubsystemTypes getType();
+    /**
+     * 类型 ID，由登记表按 {@link #codec()} 的实例身份反查。
+     *
+     * <p>属性类不另声明类型常量：类型身份等于登记时给出的那个 Codec 单例，因此等价克隆、
+     * 覆写本方法或用同名 ID 都造不出第二种身份。解码前类型必须已登记，时序见
+     * {@link SubsystemKinds#seal()}。</p>
+     *
+     * @return 该属性的命名空间类型 ID，例如 {@code machine_max:wheel_driver}
+     * @throws PackContentException {@code codec()} 返回的实例未登记时抛出
+     */
+    public final ResourceLocation getType() {
+        return SubsystemKinds.nameOf(codec(), SubsystemKinds.Slot.INSTALL);
+    }
 
     public abstract AbstractSubsystem createSubsystem(ISubsystemHost owner, String name);
 
@@ -51,33 +62,44 @@ abstract public class AbstractSubsystemAttr {
         return NO_CONTROL_GROUP_PRESET;
     }
 
-    public static final Codec<AbstractSubsystemAttr> CODEC = MMDataRegistries.getSUBSYSTEM_ATTR_CODEC().byNameCodec()
-            .dispatch(
-                    AbstractSubsystemAttr::codec,
-                    Function.identity()
-            );
+    public static final Codec<AbstractSubsystemAttr> CODEC = SubsystemCodecs.INSTALL_CODEC;
 
     public static final Codec<Map<String, AbstractSubsystemAttr>> MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,//子系统名称
             CODEC//子系统属性
     );
 
+    /**
+     * 取本安装项引用的型号定义，并完成类型绑定。
+     *
+     * <p>具体安装属性在解码构造器里调用本方法，因此型号缺失与"型号属于另一类子系统"都在
+     * JSON 解码时暴露，不在出车或物理步才暴露。两端来源的选择口径是客户端型号表优先、
+     * 服务端型号表兜底；两张表都没有该定义即内容错误。</p>
+     *
+     * <p>两侧类型 ID 都从 {@link SubsystemKinds} 派生后按值比较，属于内容级检查：登记级的
+     * 两侧配对已由登记项本身保证。</p>
+     *
+     * @return 已确认类型的型号定义，具体属性据此强转成自己的静态属性类型
+     * @throws PackContentException 型号不存在，或型号的类型与安装属性不同
+     */
     protected AbstractSubsystemStaticAttr getStaticAttr() {
-        var staticAttr = MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.get(getModelName());
+        var definition = getModelName();
+        var staticAttr = MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.get(definition);
         if (staticAttr == null)
-            staticAttr = MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.get(getModelName());
-        if (staticAttr == null)
-            throw new NullPointerException("Subsystem definition " + getModelName() + "(" + getType() + ") not found");
-        if (staticAttr.getType() != getType())
-            throw new ClassCastException("Subsystem definition " + getModelName() + " type mismatches with subsystem type " + getType());
-        else return staticAttr;
+            staticAttr = MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.get(definition);
+        if (staticAttr == null) throw new PackContentException(
+                MMLanguageRegistry.ERROR_SUBSYSTEM_DEFINITION_NOT_FOUND.component(
+                        definition.toString(), getType().toString()));
+        ResourceLocation expected = getType();
+        ResourceLocation actual = staticAttr.getType();
+        if (!expected.equals(actual)) throw new PackContentException(
+                MMLanguageRegistry.ERROR_SUBSYSTEM_DEFINITION_TYPE_MISMATCH.component(
+                        definition.toString(), expected.toString(), actual.toString()));
+        return staticAttr;
     }
 
     public float getBasicDurability() {
-        var staticAttr = getStaticAttr();
-        if (staticAttr == null) {
-            return 1.0f;
-        } else return staticAttr.basicDurability;
+        return getStaticAttr().basicDurability;
     }
 
     /**

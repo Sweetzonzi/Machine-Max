@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MotorAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.JointDriverSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.JointDriverSubsystem;
@@ -20,7 +19,7 @@ import java.util.Map;
 /**
  * 关节驱动子系统动态属性：指定被控连接点、旋转顺序与各轴驱动参数。
  * <p>
- * <b>WIP：</b>{@link SubsystemTypes#JOINT} 的 JSON 契约尚未定稿，平动轴控制仍在实现中。
+ * <b>WIP：</b>{@code machine_max:joint_driver} 的 JSON 契约尚未定稿，平动轴控制仍在实现中。
  */
 @ApiStatus.Experimental
 @Getter
@@ -59,11 +58,6 @@ public class JointDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.JOINT  ;
     }
 
     @Override

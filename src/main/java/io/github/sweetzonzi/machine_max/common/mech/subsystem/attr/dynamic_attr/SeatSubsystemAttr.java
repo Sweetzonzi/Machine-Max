@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -105,7 +104,6 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         return List.copyOf(dismountLocators);
     }
 
-
     /**
      * 座位安装点必须落在宿主子部件区间内；下车点缺失不阻断装载——下车流程本身会跳过该候选点并告警。
      *
@@ -127,11 +125,6 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.SEAT;
     }
 
     @Override

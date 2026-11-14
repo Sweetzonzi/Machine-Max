@@ -2,35 +2,44 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/subsystem_static_attr.json",
   "title": "子系统静态属性",
-  "description": "子系统静态属性的顶层架构，根据 type 字段分派到具体子系统类型。",
+  "description": "子系统静态属性的顶层架构，根据 type 字段分派到具体子系统类型。type 接受 21 个已开放的内置 machine_max 类型，或命名空间不是 machine_max 的扩展类型；joint_driver、scriptable、battery 三个类型仍在开发中、字段契约未定稿，尚未登记，因此既不能在这里选择，也不会被运行时接受。",
   "type": "object",
   "properties": {
     "type": {
       "type": "string",
-      "enum": [
-        "machine_max:basic",
-        "machine_max:camera",
-        "machine_max:car_controller",
-        "machine_max:motorbike_controller",
-        "machine_max:engine",
-        "machine_max:gearbox",
-        "machine_max:item_storage",
-        "machine_max:launcher",
-        "machine_max:motor",
-        "machine_max:regen_ammo_rack",
-        "machine_max:ammo_rack",
-        "machine_max:ammo_loader",
-        "machine_max:seat",
-        "machine_max:sight",
-        "machine_max:transmission",
-        "machine_max:wheel_driver",
-        "machine_max:lighting",
-        "machine_max:turret_driver",
-        "machine_max:weapon_controller",
-        "machine_max:track_controller",
-        "machine_max:track_drive"
+      "anyOf": [
+        {
+          "enum": [
+          "machine_max:basic",
+          "machine_max:seat",
+          "machine_max:item_storage",
+          "machine_max:engine",
+          "machine_max:motor",
+          "machine_max:car_controller",
+          "machine_max:motorbike_controller",
+          "machine_max:track_controller",
+          "machine_max:track_drive",
+          "machine_max:gearbox",
+          "machine_max:transmission",
+          "machine_max:wheel_driver",
+          "machine_max:turret_driver",
+          "machine_max:lighting",
+          "machine_max:launcher",
+          "machine_max:ammo_loader",
+          "machine_max:ammo_rack",
+          "machine_max:weapon_controller",
+          "machine_max:camera",
+          "machine_max:sight",
+          "machine_max:regen_ammo_rack"
+          ],
+          "description": "内置子系统类型，取值必须是上列 21 个之一。"
+        },
+        {
+          "pattern": "^(?!machine_max:)[a-z0-9_.-]+:[a-z0-9/._-]+$",
+          "description": "扩展模组登记的类型：命名空间不能是 machine_max，因此拼错的内置类型不会被本分支接受。运行时仍要求该类型已登记，编辑器接受只表示字段由下游 schema 约束。"
+        }
       ],
-      "description": "Subsystem type, determines which specific subsystem schema to use."
+      "description": "子系统类型，决定使用哪个具体的子系统架构。"
     }
   },
   "additionalProperties": true,
@@ -42,96 +51,12 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:camera"
+            "const": "machine_max:basic"
           }
         }
       },
       "then": {
-        "$ref": "static/camera_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:car_controller"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/car_controller_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:engine"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/engine_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:gearbox"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/gearbox_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:item_storage"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/item_storage_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:launcher"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/launcher_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:motor"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/motor_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:motorbike_controller"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/motorbike_controller_static_attr.schema.json"
+        "$ref": "static/basic_static_attr.schema.json"
       }
     },
     {
@@ -150,12 +75,96 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:sight"
+            "const": "machine_max:item_storage"
           }
         }
       },
       "then": {
-        "$ref": "static/sight_static_attr.schema.json"
+        "$ref": "static/item_storage_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:engine"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/engine_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:motor"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/motor_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:car_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/car_controller_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:motorbike_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/motorbike_controller_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/track_controller_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:track_drive"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/track_drive_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:gearbox"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/gearbox_static_attr.schema.json"
       }
     },
     {
@@ -186,18 +195,6 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:lighting"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/lighting_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
             "const": "machine_max:turret_driver"
           }
         }
@@ -210,24 +207,24 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:regen_ammo_rack"
+            "const": "machine_max:lighting"
           }
         }
       },
       "then": {
-        "$ref": "static/regen_ammo_rack_static_attr.schema.json"
+        "$ref": "static/lighting_static_attr.schema.json"
       }
     },
     {
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:ammo_rack"
+            "const": "machine_max:launcher"
           }
         }
       },
       "then": {
-        "$ref": "static/ammo_rack_static_attr.schema.json"
+        "$ref": "static/launcher_static_attr.schema.json"
       }
     },
     {
@@ -246,6 +243,18 @@
       "if": {
         "properties": {
           "type": {
+            "const": "machine_max:ammo_rack"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/ammo_rack_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
             "const": "machine_max:weapon_controller"
           }
         }
@@ -258,37 +267,49 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:track_controller"
+            "const": "machine_max:camera"
           }
         }
       },
       "then": {
-        "$ref": "static/track_controller_static_attr.schema.json"
+        "$ref": "static/camera_static_attr.schema.json"
       }
     },
     {
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:track_drive"
+            "const": "machine_max:sight"
           }
         }
       },
       "then": {
-        "$ref": "static/track_drive_static_attr.schema.json"
+        "$ref": "static/sight_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:regen_ammo_rack"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/regen_ammo_rack_static_attr.schema.json"
       }
     }
   ],
   "examples": [
     {
-      "$schema": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json",
+      "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
       "type": "machine_max:item_storage",
       "basic_durability": 100.0,
       "rows": 6,
       "columns": 9
     },
     {
-      "$schema": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json",
+      "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
       "type": "machine_max:engine",
       "max_power": 75000.0,
       "max_torque": 130.0,

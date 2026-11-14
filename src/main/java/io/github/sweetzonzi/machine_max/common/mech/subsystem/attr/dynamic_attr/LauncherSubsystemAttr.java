@@ -6,7 +6,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import lombok.Getter;
@@ -72,11 +71,6 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.LAUNCHER;
     }
 
     @Override

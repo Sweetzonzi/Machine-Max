@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LightingSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -43,11 +42,6 @@ public class LightingSubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.LIGHTING;
     }
 
     @Override

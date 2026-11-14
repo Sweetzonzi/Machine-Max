@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -36,11 +35,6 @@ public class ScriptableSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemStaticAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.JAVASCRIPT;
     }
 
 }

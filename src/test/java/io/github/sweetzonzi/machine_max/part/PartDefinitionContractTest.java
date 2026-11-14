@@ -58,7 +58,6 @@ class PartDefinitionContractTest {
     }
 
     @BeforeAll static void registerExtension() {
-        io.github.sweetzonzi.machine_max.MachineMax.REGISTER.register(net.neoforged.bus.api.BusBuilder.builder().build());
         PartKinds.register(KIND, new PartKind<>(TestType.class, TEST_CODEC, RegularPartData.class, RegularPartData.CODEC,
                 (type, variant, level, context) -> { throw new AssertionError("No native construction during definition tests"); },
                 (type, data, level, mode, context) -> { throw new AssertionError("No native construction during definition tests"); }));

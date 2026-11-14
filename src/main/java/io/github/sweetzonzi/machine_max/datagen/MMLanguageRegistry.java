@@ -439,6 +439,31 @@ public enum MMLanguageRegistry {
             zh_cn, "模型 %1$s 的子部件 %2$s 中，子系统 %3$s 受控的连接点 %4$s 不是高级连接点",
             en_us, "Connector %4$s controlled by subsystem %3$s in sub-part %2$s of model %1$s is not an advanced connector"
     )),
+    // 子系统类型登记与型号绑定
+    ERROR_SUBSYSTEM_TYPE_INVALID("error.machine_max.subsystem.type_invalid", ImmutableMap.of(
+            zh_cn, "子系统属性缺少可用的类型 ID：type 必须是一个已登记类型的命名空间 ID，实际为 %1$s",
+            en_us, "Subsystem attribute has no usable type id: \"type\" must be a registered namespaced id, got %1$s"
+    )),
+    ERROR_SUBSYSTEM_TYPE_UNKNOWN("error.machine_max.subsystem.type_unknown", ImmutableMap.of(
+            zh_cn, "子系统属性引用了未登记的类型 %1$s（%2$s 侧 Codec）；类型由 SubsystemKinds 登记，内容包只能选择已登记类型",
+            en_us, "Subsystem attribute references unregistered type %1$s (%2$s codec); types are registered in SubsystemKinds and content packs may only pick registered types"
+    )),
+    ERROR_SUBSYSTEM_DEFINITION_NOT_FOUND("error.machine_max.subsystem.definition_not_found", ImmutableMap.of(
+            zh_cn, "子系统类型 %2$s 引用的型号 %1$s 不存在：客户端表 STATIC_SUBSYSTEM_ATTRS 与服务端表 SERVER_STATIC_SUBSYSTEM_ATTRS 都没有该定义",
+            en_us, "Definition %1$s referenced by subsystem type %2$s was not found in STATIC_SUBSYSTEM_ATTRS or SERVER_STATIC_SUBSYSTEM_ATTRS"
+    )),
+    ERROR_SUBSYSTEM_DEFINITION_TYPE_MISMATCH("error.machine_max.subsystem.definition_type_mismatch", ImmutableMap.of(
+            zh_cn, "子系统型号 %1$s 的类型是 %3$s，与安装属性要求的类型 %2$s 不一致",
+            en_us, "Subsystem definition %1$s is of type %3$s but the install attribute requires type %2$s"
+    )),
+    ERROR_SUBSYSTEM_CODEC_UNREGISTERED("error.machine_max.subsystem.codec_unregistered", ImmutableMap.of(
+            zh_cn, "子系统属性的 %1$s 侧 Codec 未登记到 SubsystemKinds：codec() 必须返回该类型登记时给出的 Codec 单例",
+            en_us, "The %1$s codec of a subsystem attribute is not registered in SubsystemKinds: codec() must return the singleton codec given when the type was registered"
+    )),
+    ERROR_SUBSYSTEM_KIND_SEALED("error.machine_max.subsystem.kind_sealed", ImmutableMap.of(
+            zh_cn, "子系统类型 %1$s 在类型表封表之后登记；登记必须在内容包装载之前（模组初始化阶段）完成",
+            en_us, "Subsystem type %1$s was registered after the type table was sealed; register during mod initialization, before content packs load"
+    )),
     ERROR_PART_CONNECTOR_INVALID_JOINT_AXIS("error.machine_max.part.connector_invalid_joint_axis", ImmutableMap.of(
             zh_cn, "模型 %1$s 的子部件 %2$s 中，连接点 %3$s 的 joint_attrs 轴名 %4$s 非法，只能是 X、Y、Z、XR、YR、ZR",
             en_us, "joint_attrs axis %4$s of connector %3$s in sub-part %2$s of model %1$s is invalid; expected X, Y, Z, XR, YR or ZR"

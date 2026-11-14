@@ -54,12 +54,14 @@
 | [界面-创造栏零部件筛选实施计划](已实现/界面-创造栏零部件筛选实施计划.md) | `client/render/gui/creative/` 下 `CreativePartBrowser`、`SeriesPickerWidget` 与 `CreativeModeInventoryScreenMixin`、`CreativeModeTabsMixin` 已落地，两个目标创造页启用搜索栏与外侧筛选控件；68 份零件定义/106 个变体写入 series 标签，30 条系列译名与 7 条界面文本已生成；T01—T05 通过。实机验收 U01—U15 待执行，结果与偏差见该文 §12 |
 | [武器系统-推力分段与变质量计划](已实现/武器系统-推力分段与变质量计划.md) | T1–T6 全部落地（2026-11-06）：`external.thrust` 为段数组（`force` / `start` / `duration` / `propellant_mass`），整表折算进弹道库 `ThrustProfile`，多段积分、段间空隙与燃烧期质量流失生效，装药在解码期校验；`external.mass` 明确为弹体基础质量。builtin 与其余十个包的 schema 副本、技能快照，以及随包 Blockbench 插件 `0.5.15` 的内嵌快照均已同步 |
 | [信号系统-子系统发现与投递重构实施计划](已实现/信号系统-子系统发现与投递重构实施计划.md) | P1—P5 分五次提交；`resolveTargets` 只读发现、物理反馈主线程投递、结构变化重建首跳表并清空信号存储、执行器改读输入槽、供给登记改只读发现均已落地；`runGameTestServer` 68 项通过，T11 客户端实机验收待完成 |
-| [信号系统-Part信号总线实施计划](已实现/信号系统-Part信号总线实施计划.md) | `AbstractPart` 实现 `ISignalBus`，用独立订阅集合提供 `local` 广播，`SubsystemController` 保持 `global`；订阅随构造/销毁自动订退，结构变化只清临时信号；`SignalTargetResolutionTest` 新增 local 展开用例，`PartSignalBusGameTest` 9 项、`runGameTestServer` 65 项通过，ARMS-Core `classes` 成功 |
+| [信号系统-Part信号总线实施计划](已实现/信号系统-Part信号总线实施计划.md) | `AbstractPart` 实现 `ISignalBus`，用独立订阅集合提供 `local` 广播，`SubsystemController` 保持 `global`；订阅随构造/销毁自动订退，结构变化只清临时信号；`SignalTargetResolutionTest` 覆盖 local 展开用例，`PartSignalBusGameTest` 9 项、`runGameTestServer` 65 项通过，ARMS-Core `classes` 成功 |
+| [子系统-下游类型注册开放与内置迁移计划-静态表方案](已实现/子系统-下游类型注册开放与内置迁移计划-静态表方案.md) | `SubsystemKinds`（21 条已开放内置登记、`Kind` 两侧 Codec、`seal`）、`SubsystemCodecs` 两个分派 Codec、基类 final `getType()` 与解码期型号绑定均已落地；两张子系统 NeoForge 注册表、48 项 `RegisterEvent` 登记与 `SubsystemTypes` 枚举已删除，50 处 `getType()` 覆写移除；顶层 schema 的 `type` 改为 21 项枚举 + 外部分支。`joint_driver`、`scriptable`、`battery` 的字段契约未定稿，登记被注释掉、schema 也不提供（编辑器与运行时都按未知类型拒绝）；`SubsystemKindDispatchTest` 8 项、`runGameTestServer` 56 项、`build` 通过 |
 
 ## 进行中
 
 | 文档 | 当前进度 |
 | --- | --- |
+| [界面-载具状态HUD数据接入设计](进行中/界面-载具状态HUD数据接入设计.md) | builtin 透视／全息／俯视／名单四种样式、vehicle.seats 重复集合、乘员实体名称查询已交付；AUI 绑定与布局回归通过，客户端画面待验收；通用共享值、定制耐久条和真实履带几何待实施 |
 | [控制分配-作动器wrench分配设计](进行中/控制分配-作动器wrench分配设计.md) | `util/WrenchAllocator` 批量阻尼伪逆／批量钉界基线已实现，14 项数学、8 项上下文与 4 项裸 Bullet 测试、86 组 NumPy SVD 对照通过；内核微基准覆盖 16／32／64 器件，输入与求解缓冲统一在 Workspace，动态更新方向后的填充求解实测 0 B/步。完整飞控、响应与游戏接线未完成，结果与范围见该文 §11.5 |
 | [履带系统-物理实现设计文档](进行中/履带系统-物理实现设计文档.md) | `TrackLink` / `TrackAttr` / `TrackEnvelope2D` / `TrackMemberRef` / `TrackLinkData` 已落地；纯物理 JUnit（ratio/轴/启停/长跑/拆约束）、`VehicleData` 序列化、生命周期、履带列表（无名字）、`FittingItem` / `TrackItem` 的铺设闭合流程、摩擦/装甲/张力、滚动/命中音效覆盖已接入；长度耐久（`durabilityPerLink` / `lengthPerLink` + 包络推导 N 与最大耐久）、关键事件同步、客户端履带节渲染与 X 角速度相位已落地；履带型号已数据驱动（`fittings/` + `FittingModule` / `FittingType` / `TrackType`），近处按槽位逐节绘制型号模型、远处与模型不可用时回退程序化；型号 → 物品由 `FittingItems` 派发，物品栏优先 `visual.icon` 的 2D 图标、缺图标回退 3D 型号模型，独立配件创造栏按型号生成条目，履带另在零部件创造页按型号标签归入机动类别（其他配件种类不收录）；用料按节数记录（`TrackLink.linkCount()`），暂不消耗物品；履带控制阶段 A / B（`AbstractGroundControllerSubsystem` + `TrackControllerSubsystem` + `TrackDriveSubsystem`，单流）已落地，阶段 C / D 未实现；纯 2D 原型：凸包基线 9/9 场景 + 157/157 断言 + 300/300 随机，有序非凸 7/7 场景 + 18/18 用例 + 321/321 断言（`prototype/track-envelope-2d/`）；周期节（公母带）与逐节骨骼已落地（`link_bones`、按 `i % K` 取槽、节数按周期取整、骨骼名与模板节数的内容校验），K > 1 的外观已用临时 K=2 双骨骼模型实机验收；`gradlew check` 通过（含 `checkSchemas` 与全量 JUnit） |
 | [履带系统-控制与驱动子系统设计](进行中/履带系统-控制与驱动子系统设计.md) | 进行中（v5）；单流八方向意图、外侧锚定的带速上限、驱动/制动预算选择与正反向关节物理回归已接入。共享基类、属性注册与内容包 schema 已落地；阶段 C / D（双流转向、多履带实机验收、HUD）未实现 |
@@ -88,7 +90,9 @@
 
 | 文档 | 现状 |
 | --- | --- |
-| [子系统-下游类型注册开放与内置迁移计划](计划中/子系统-下游类型注册开放与内置迁移计划.md) | 尚未实施；使用现有双 Codec 注册表与 NeoForge DeferredRegister 统一迁移内置条目，类型身份采用命名空间 ID，公开无创建副作用的注册表 Key；P0—P4 覆盖配对清单、类型校验、内容工具与回归，不交付独立演示模组 |
+| [MoLang-共享值与信号互通设计](计划中/MoLang-共享值与信号互通设计.md) | 调查与存储探针完成，功能待实施；确认 Part 变量表与信号存储共用，实测 Spark 编译变量桥接断层；通用 local／global 读写复用现有容器，实际信号输出复用来源槽、路由和物理反馈边界 |
+| [MoLang-变量桥接与共享值修复实施方案](计划中/MoLang-变量桥接与共享值修复实施方案.md) | 详细调查与隔离候选对照完成，生产代码未实施；列出 Spark 实时绑定、类型与单次副作用修复，Machine-Max 共享接口和履带查询，以及文件级批次和回归判据 |
+| [子系统-下游类型注册开放与内置迁移计划](计划中/子系统-下游类型注册开放与内置迁移计划.md) | 已否决，未实施。记录 A 路线（两张 NeoForge Codec 注册表 + 各自 DeferredRegister）的设计与验收口径，保留作对照；实现采用静态表方案，见 `已实现/子系统-下游类型注册开放与内置迁移计划-静态表方案.md`，否决理由见该文附录 A |
 | [武器系统-装弹机与弹药架拆分、装填及操作员接入计划](计划中/武器系统-人工与机械装填及操作员接入计划.md) | P2 拆分与内容迁移已完成（S11）；P3a 已交付 Launcher 作业与 `sync:4.0.0`（S12）；P3b 第一步已交付作业只读口、唯一实际占用、按身份释放、统一收尾与失效占用惰性清理（S18）；P4 同步层已交付实际架弹药预留、`SupplierRef` 二项引用、作业分配与槽位拥有者下行、两端本地推进与 tick 收尾统一应用（S19）；P4 双端闭环已交付客户端本地交付与本地射击循环、带原 `jobId` 的已交付／未交付结束结果、200 tick 暂停超时，协议组为 `sync:6.0.0`（S20）。尚待实施：人物段与座位发现、人物占用、物品架预留、`modules.*` 存档折算，以及 §2.1 等价 reload_time 的核对；§5.6 交接损伤存档，§7.1 覆盖 25 处配置迁移；不前置独立过渡修补，依赖 Part 总线 |
 | [武器系统-装弹机与弹药架拆分迁移清单](计划中/武器系统-装弹机与弹药架拆分迁移清单.md) | P2 已实施：三类型（`regen_ammo_rack`／`ammo_loader`／`ammo_rack`）落地，25 条供弹边、14 份定义拆成 28 份、8 个命中箱、4 份模板 10 条初始状态全部迁完，schema 与语言文件同步；`classes`／`checkSchemas`／`checkContent` 与 55 条 GameTest 通过，重扫 25／25／0／0。未纳入：`modules.*` 存档折算、机构几何与人工段标定（作业状态、机构占用、实际架预留、双端本地推进、结束结果与只读客户端 HUD 已落地，见主计划 §10.1 的 S12／S13／S18／S19／S20） |
 | [武器系统-AmmoBelt与发射器装填第一阶段重构计划](计划中/武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) | 第一阶段 P1—P5 已实施，编译记录见 §9.3，运行行为未验；§4—§7 的客户端 postTick 校准、宿主 ID ＋ 名称引用、关系重建和拒收丢弃为后续目标，与 §10 F1—F3、F8 同属装填重构计划，不构成现有合一实现的独立修补阶段。物品、容器资源及其他后续范围见 §10 |

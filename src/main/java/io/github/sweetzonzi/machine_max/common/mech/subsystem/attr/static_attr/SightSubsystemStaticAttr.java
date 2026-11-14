@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -50,8 +49,4 @@ public class SightSubsystemStaticAttr extends AbstractViewpointSubsystemStaticAt
         return CODEC;
     }
 
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.SIGHT;
-    }
 }

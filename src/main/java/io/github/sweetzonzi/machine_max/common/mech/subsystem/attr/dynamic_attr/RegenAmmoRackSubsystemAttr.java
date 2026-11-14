@@ -7,7 +7,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.RegenAmmoRackSubsystemStaticAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -76,11 +75,6 @@ public class RegenAmmoRackSubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.REGEN_AMMO_RACK;
     }
 
     @Override

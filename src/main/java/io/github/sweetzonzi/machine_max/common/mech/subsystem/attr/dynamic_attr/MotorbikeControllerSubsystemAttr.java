@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorbikeControllerSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.MotorbikeControllerSubsystem;
@@ -48,11 +47,6 @@ public class MotorbikeControllerSubsystemAttr extends CarControllerSubsystemAttr
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.MOTORBIKE_CTRL;
     }
 
     @Override

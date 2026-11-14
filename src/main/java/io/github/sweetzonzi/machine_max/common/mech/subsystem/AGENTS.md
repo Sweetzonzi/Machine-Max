@@ -1,6 +1,6 @@
 # subsystem/ — 子系统实现
 
-**范围**: 22 种子系统、属性体系、基类层级。
+**范围**: 21 种已开放子系统类型（另有 3 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
 
 ## 结构
 
@@ -16,10 +16,11 @@ subsystem/
 │   ├── IAmmoSupplier.java              # 弹药供给接口
 │   └── ITorqueProvider.java            # 扭矩提供接口
 ├── attr/
-│   ├── SubsystemTypes.java             # 22 种类型枚举
+│   ├── SubsystemKinds.java             # 类型登记表：21 条已开放登记、下游登记入口、封表
+│   ├── SubsystemCodecs.java            # 安装属性与静态属性的分派 Codec
 │   ├── WorkingState.java               # 工作状态枚举
-│   ├── static_attr/                    # 23 个 JSON 驱动静态属性
-│   └── dynamic_attr/                   # 22 个运行时可变属性
+│   ├── static_attr/                    # 型号 JSON 驱动静态属性（每个已登记类型一份）
+│   └── dynamic_attr/                   # 运行时动态属性（与静态属性一一配对）
 │
 ├── 动力与传动
 │   ├── EngineSubsystem.java            # 内燃机，RPM 扭矩曲线
@@ -54,15 +55,15 @@ subsystem/
 │   ├── LightingSubsystem.java          # 客户端体积光
 │   └── ScriptableSubsystem.java        # JavaScript 驱动逻辑
 │
-└── 注意：SignalConvertSubsystem 已在 SubsystemTypes 中枚举，但尚无实现文件
-    （只有 SignalConvertSubsystemStaticAttr.java 和 SignalConvertSubsystemAttr.java）
+└── 注意：SignalConvertSubsystem 没有登记为类型（只有 SignalConvertSubsystemStaticAttr.java
+    与 SignalConvertSubsystemAttr.java，两侧 codec() 返回 null），内容包引用不到它
 ```
 
 ## 快速定位
 
 | 任务 | 文件 | 说明 |
 |------|------|------|
-| 新增子系统类型 | `AbstractSubsystem.java` | 继承，注册到 SubsystemTypes |
+| 新增子系统类型 | `attr/SubsystemKinds.java` | 继承 AbstractSubsystem，模组初始化期登记安装与静态两个 Codec |
 | 修复引擎行为 | `EngineSubsystem.java` | RPM 扭矩曲线、声音状态 |
 | 修复电动机 | `MotorSubsystem.java` | coupleTorque=0（已知 Bug） |
 | 修复变速箱 | `GearboxSubsystem.java` | 自动换挡、减速比逻辑 |
@@ -77,6 +78,9 @@ subsystem/
 
 ## 约定
 
+- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 21 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
+- **开发中的类型不登记**：`joint_driver`、`scriptable`、`battery` 的字段契约仍在定稿（属性类标 `@ApiStatus.Experimental`），`SubsystemKinds` 里对应的 `register` 被注释掉，解码按「未知类型」拒绝；schema 也不提供这三个类型。契约定稿后取消注释即可，两侧 Codec 与登记结构不用改。
+- **类型身份由登记项派生**：`getType()` 是基类的 final 方法，按 `codec()` 的实例身份反查登记 ID；具体属性类只声明自己的 `CODEC` 单例与 `createSubsystem` 工厂，不声明类型常量、也不覆写 `getType`。型号绑定比较两侧派生 ID 的值，发生在安装属性的解码构造器里（`getStaticAttr`）。
 - **继承链**：`AbstractSubsystem` → `AbstractControllableSubsystem` → 具体类型。
 - **信号 I/O**：全部实现 `ISignalReceiver`/`ISignalSender`。通道为 `ConcurrentMap<String, SignalChannel>`；寻址名由 `getSignalAddress()` 提供（子系统名），保留目标名 `"local"` = Part、`"global"` = 装配体。默认输出目标（`*_outputs`）应写 `["local","global"]` 或 `["global"]`。
 - **武器开火控制频道命名**：发射器 `control_inputs` 遵循「类型 + 可选型号」——基础频道 `weapon.<class>`（如 `weapon.mg` 机枪、`weapon.autocannon` 机关炮、`weapon.gun` 直射火炮），可选型号频道 `weapon.<class>.<model>`（如 `weapon.autocannon.2a42`），用于专用火控计算机；列表顺序即优先级。主/副武器角色由座位控制组 `mainWeaponTargets`/`secondaryWeaponTargets` 布线决定，不在频道名中体现。weapon_controller 的 `control_outputs` 采用「分裂频道」：保留 turret_driver 瞄准频道，另加类型开火频道（避免和炮塔瞄准绑定耦合）。

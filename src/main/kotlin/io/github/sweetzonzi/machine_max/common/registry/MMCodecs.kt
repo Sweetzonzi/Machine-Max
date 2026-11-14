@@ -3,113 +3,15 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.effect.ExplosionWorldEffect
 import io.github.sweetzonzi.machine_max.common.mech.projectile.component.guidance.PurePursuitGuidance
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenAmmoRackSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoRackSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BatterySubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CameraSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SightSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.EngineSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.GearboxSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ItemStorageSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.JointDriverSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LightingSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorbikeControllerSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ScriptableSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TrackControllerSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TrackDriveSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TransmissionSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WheelDriverSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AmmoLoaderSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BasicSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.RegenAmmoRackSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AmmoRackSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BatterySubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.EngineSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.GearboxSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ItemStorageSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.JointDriverSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.WeaponControllerSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LightingSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorbikeControllerSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ScriptableSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SightSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TrackControllerSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TrackDriveSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TransmissionSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TurretDriverSubsystemStaticAttr
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.WheelDriverSubsystemStaticAttr
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.registries.RegisterEvent
 
 object MMCodecs {
     private fun reg(event: RegisterEvent) {
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("basic")) { BasicSubsystemDynamicAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("seat")) { SeatSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("item_storage")) { ItemStorageSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("engine")) { EngineSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) { MotorSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motorbike_controller")) { MotorbikeControllerSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("track_controller")) { TrackControllerSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("track_drive")) { TrackDriveSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("battery")) { BatterySubsystemAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_rack")) { AmmoRackSubsystemAttr.CODEC}  // WIP: 物品往返未实现
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("camera")) { CameraSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("sight")) { SightSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("regen_ammo_rack")) { RegenAmmoRackSubsystemAttr.CODEC}
-
         event.register(MMDataRegistries.WORLD_EFFECT_CODEC.key(), id("blast")) { ExplosionWorldEffect.CODEC }
 
         event.register(MMDataRegistries.GUIDANCE_LAW_CODEC.key(), id("pure_pursuit")) { PurePursuitGuidance.CODEC }
-
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("seat")) { SeatSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("item_storage")) { ItemStorageSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("engine")) { EngineSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("motor")) { MotorSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("motorbike_controller")) { MotorbikeControllerSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("track_controller")) { TrackControllerSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("track_drive")) { TrackDriveSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("battery")) { BatterySubsystemStaticAttr.CODEC}  // WIP: 类型未定稿
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_rack")) { AmmoRackSubsystemStaticAttr.CODEC}  // WIP: 物品往返未实现
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("camera")) { CameraSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("sight")) { SightSubsystemStaticAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("regen_ammo_rack")) { RegenAmmoRackSubsystemStaticAttr.CODEC}
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, id)

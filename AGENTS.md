@@ -5,7 +5,7 @@
 ## 概览
 
 基于 NeoForge 1.21.1 的 Minecraft 载具模组。Kotlin + Java 混合，Gradle 8.9（Groovy DSL），JDK 21。
-采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、22 种子系统类型、内容包扩展机制。
+采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、21 种已开放子系统类型、内容包扩展机制。
 
 ## 依赖项目
 
@@ -31,10 +31,10 @@ io.github.sweetzonzi.machine_max/
 │   │   │   ├── data/                # VehicleData, PartData, SubPartData 序列化
 │   │   │   ├── event/               # ConnectorAttachEvent, VehicleSpiltEvent ...
 │   │   │   └── interact/            # HitBox, InteractBox, InteractBoxes
-│   │   ├── subsystem/               # 22 种子系统实现 — 见 subsystem/AGENTS.md
-│   │   │   └── attr/                # SubsystemTypes（枚举）、WorkingState
-│   │   │       ├── dynamic_attr/    # 22 个运行时动态属性类
-│   │   │       └── static_attr/     # 23 个 JSON 驱动静态属性类
+│   │   ├── subsystem/               # 21 种已开放子系统实现 — 见 subsystem/AGENTS.md
+│   │   │   └── attr/                # SubsystemKinds（类型登记表）、SubsystemCodecs（分派）、WorkingState
+│   │   │       ├── dynamic_attr/    # 运行时动态属性类（21 个已开放类型各一份，另有 3 个开发中与 1 个占位）
+│   │   │       └── static_attr/     # JSON 驱动静态属性类（与动态属性一一配对）
 │   │   ├── projectile/              # 数据驱动投射物系统（SoA 数组）— 见 projectile/AGENTS.md
 │   │   ├── signal/                  # 信号系统：Signal, SignalChannel, ISignalBus ... — 见 signal/AGENTS.md
 │   │   ├── control/                 # 控制绑定系统：ControlBinding, ControlGroup, GuiAction ...
@@ -150,7 +150,7 @@ io.github.sweetzonzi.machine_max/
 | 任务         | 位置                                             | 说明                                        |
 | ---------- | ---------------------------------------------- | ----------------------------------------- |
 | 修改载具物理     | `common/mech/vehicle/`                         | VehicleCore（聚合根）、SubPart、Part、连接器         |
-| 新增子系统类型    | `common/mech/subsystem/`                       | 继承 AbstractSubsystem，注册到 SubsystemTypes   |
+| 新增子系统类型    | `common/mech/subsystem/attr/SubsystemKinds.java` | 继承 AbstractSubsystem，模组初始化期用 `SubsystemKinds.register` 登记安装与静态两个 Codec |
 | 新增网络包      | `network/payload/` + `MMPayloadRegistry.java`  | 按功能子目录归类                                  |
 | 新增 GUI/HUD | `client/render/gui/`                           | Screen、HUD、hud3d、panel                    |
 | 新增物品/方块/实体 | `common/registry/`（Kotlin）                     | MMItems.kt, MMBlocks.kt, MMEntities.kt    |

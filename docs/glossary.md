@@ -70,8 +70,9 @@
   - `io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem` — 摄像头子系统
   - `io.github.sweetzonzi.machine_max.common.mech.subsystem.ScriptableSubsystem` — JavaScript 脚本子系统
   - `io.github.sweetzonzi.machine_max.common.mech.subsystem.ItemStorageSubsystem` — 物品存储子系统
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.subsystem.SubsystemTypes` — 子系统类型枚举
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.subsystem.WorkingState` — 子系统工作状态
+  - `io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemKinds` — 子系统类型登记表（类型 ID 与两侧 Codec 的唯一来源）
+  - `io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemCodecs` — 安装属性与静态属性的分派 Codec
+  - `io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState` — 子系统工作状态
 
 ---
 

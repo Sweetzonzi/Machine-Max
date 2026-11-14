@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemKinds
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
@@ -15,6 +16,9 @@ import net.minecraft.resources.ResourceLocation
 class SubsystemModule : SparkPackModule {
     override val id: String = "subsystems"
     override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        // 子系统类型的登记窗口到此为止：模组初始化阶段已登记完内置与下游类型，
+        // 本模块的读取回调在此之前不会执行，封表因此不会拦下正常登记。
+        SubsystemKinds.seal()
         if (!fromServer) return
         if (isClientSide) {
             MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.clear()

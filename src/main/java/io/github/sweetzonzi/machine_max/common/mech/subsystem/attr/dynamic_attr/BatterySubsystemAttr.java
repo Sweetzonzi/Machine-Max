@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BatterySubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BatterySubsystem;
@@ -14,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * 电池子系统动态属性——引用静态属性中的电池型号。
  * <p>
- * <b>WIP：</b>{@link SubsystemTypes#BATTERY} 的 JSON 契约与平衡数值尚未定稿。
+ * <b>WIP：</b>{@code machine_max:battery} 的 JSON 契约与平衡数值尚未定稿。
  */
 @ApiStatus.Experimental
 @Getter
@@ -33,11 +32,6 @@ public class BatterySubsystemAttr extends BasicSubsystemDynamicAttr {
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.BATTERY;
     }
 
     @Override

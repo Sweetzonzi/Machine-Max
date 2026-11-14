@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BreechModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.CapacitorModuleAttr;
@@ -29,7 +28,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 FmodSoundAttr.EVENT_PATH_CODEC.fieldOf("fire").forGetter(LauncherFmodSoundAttr::fire)
         ).apply(instance, LauncherFmodSoundAttr::new));
     }
-
 
     /**
      * 发射器音效属性 — 包含基础音效和发射器特有音效。
@@ -129,8 +127,4 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         return CODEC;
     }
 
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.LAUNCHER;
-    }
 }

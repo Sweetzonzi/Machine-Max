@@ -9,7 +9,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.util.sound.PistonEngineSoundSynthesizer;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -94,7 +93,6 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0f)
     );
     public record RpmWorkingStates(WorkingState left, WorkingState center, WorkingState right) {}
-
 
     public EngineSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
@@ -243,15 +241,9 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
         }
     }
 
-
     @Override
     public MapCodec<? extends AbstractSubsystemStaticAttr> codec() {
         return CODEC;
-    }
-
-    @Override
-    public SubsystemTypes getType() {
-        return SubsystemTypes.ENGINE;
     }
 
 }
