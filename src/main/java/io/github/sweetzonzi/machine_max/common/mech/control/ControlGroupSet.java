@@ -196,6 +196,23 @@ public class ControlGroupSet {
     }
 
     /**
+     * 当前生效的越级量：先查活动子组、再查基础组、都没有就是 0。<br>
+     * 合并口径与目标表一致——子组声明了这条频道就按子组的值，没声明就继承基础组。
+     *
+     * @param channel 控制组输出的频道名
+     * @return 这条频道本次输出的越级量，未声明时为 0
+     */
+    public int priorityOf(String channel) {
+        ControlGroup active = getActiveGroup();
+        if (active != null) {
+            Integer value = active.priorities.get(channel);
+            if (value != null) return value;
+        }
+        Integer value = baseGroup.priorities.get(channel);
+        return value != null ? value : 0;
+    }
+
+    /**
      * 获取所有控制组的常规按键输出目标并集（baseGroup + 全部子组）。
      * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedRegularTargets()。
      */

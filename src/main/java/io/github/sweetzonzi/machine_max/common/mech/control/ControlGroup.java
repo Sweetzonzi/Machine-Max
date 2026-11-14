@@ -36,6 +36,13 @@ public class ControlGroup {
     /** 副武器控制输出映射 {频道名: [目标名称列表]}，用于路由副武器开火/换弹等指令 */
     public final Map<String, List<String>> secondaryWeaponTargets;
 
+    /**
+     * 越级量：{频道名: 非负整数}。不在表里的频道按 0，整块可以不写。<br>
+     * 按频道给而不是按类目给，因为同一个控制组会同时发出几条性质不同的频道；数值由出口
+     * 逐频道取用（{@link ControlGroupSet#priorityOf(String)}），不进入频道名。
+     */
+    public final Map<String, Integer> priorities;
+
     /** 离散按键绑定列表 */
     public final List<ControlBinding> bindings;
 
@@ -45,6 +52,7 @@ public class ControlGroup {
                         Map<String, List<String>> regularTargets,
                         Map<String, List<String>> mainWeaponTargets,
                         Map<String, List<String>> secondaryWeaponTargets,
+                        Map<String, Integer> priorities,
                         List<ControlBinding> bindings) {
         this.name = name;
         this.controlMode = controlMode != null ? controlMode : ControlMode.INHERIT;
@@ -53,7 +61,20 @@ public class ControlGroup {
         this.regularTargets = regularTargets != null ? Map.copyOf(regularTargets) : Collections.emptyMap();
         this.mainWeaponTargets = mainWeaponTargets != null ? Map.copyOf(mainWeaponTargets) : Collections.emptyMap();
         this.secondaryWeaponTargets = secondaryWeaponTargets != null ? Map.copyOf(secondaryWeaponTargets) : Collections.emptyMap();
+        this.priorities = priorities != null ? Map.copyOf(priorities) : Collections.emptyMap();
         this.bindings = bindings != null ? List.copyOf(bindings) : Collections.emptyList();
+    }
+
+    /** 不带越级量的控制组。 */
+    public ControlGroup(String name, ControlMode controlMode,
+                        Map<String, List<String>> moveTargets,
+                        Map<String, List<String>> viewTargets,
+                        Map<String, List<String>> regularTargets,
+                        Map<String, List<String>> mainWeaponTargets,
+                        Map<String, List<String>> secondaryWeaponTargets,
+                        List<ControlBinding> bindings) {
+        this(name, controlMode, moveTargets, viewTargets, regularTargets, mainWeaponTargets,
+                secondaryWeaponTargets, Collections.emptyMap(), bindings);
     }
 
     /**
@@ -61,12 +82,18 @@ public class ControlGroup {
      */
     public ControlGroup(String name, ControlMode controlMode, List<ControlBinding> bindings) {
         this(name, controlMode, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
-                Collections.emptyMap(), Collections.emptyMap(), bindings);
+                Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), bindings);
     }
 
     private static final Codec<Map<String, List<String>>> TARGET_MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,
             Codec.STRING.listOf()
+    );
+
+    /** 越级量表：值为非负整数，负值在解码期即判为错误。 */
+    private static final Codec<Map<String, Integer>> PRIORITY_MAP_CODEC = Codec.unboundedMap(
+            Codec.STRING,
+            Codec.intRange(0, Integer.MAX_VALUE)
     );
 
     public static final Codec<ControlGroup> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -77,6 +104,7 @@ public class ControlGroup {
             TARGET_MAP_CODEC.optionalFieldOf("regular_targets", Collections.emptyMap()).forGetter(g -> g.regularTargets),
             TARGET_MAP_CODEC.optionalFieldOf("main_weapon_targets", Collections.emptyMap()).forGetter(g -> g.mainWeaponTargets),
             TARGET_MAP_CODEC.optionalFieldOf("secondary_weapon_targets", Collections.emptyMap()).forGetter(g -> g.secondaryWeaponTargets),
+            PRIORITY_MAP_CODEC.optionalFieldOf("priorities", Collections.emptyMap()).forGetter(g -> g.priorities),
             ControlBinding.CODEC.listOf().optionalFieldOf("bindings", Collections.emptyList()).forGetter(g -> g.bindings)
     ).apply(instance, ControlGroup::new));
 
@@ -110,7 +138,29 @@ public class ControlGroup {
         }
     };
 
-    /** 手动实现 StreamCodec，因为 8 个字段超过 composite(Function6) 的参数上限 */
+    private static final StreamCodec<ByteBuf, Map<String, Integer>> PRIORITY_MAP_STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public Map<String, Integer> decode(ByteBuf buf) {
+            int size = ByteBufCodecs.VAR_INT.decode(buf);
+            Map<String, Integer> map = new HashMap<>();
+            for (int i = 0; i < size; i++) {
+                String key = ByteBufCodecs.STRING_UTF8.decode(buf);
+                map.put(key, ByteBufCodecs.VAR_INT.decode(buf));
+            }
+            return map;
+        }
+
+        @Override
+        public void encode(ByteBuf buf, Map<String, Integer> map) {
+            ByteBufCodecs.VAR_INT.encode(buf, map.size());
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                ByteBufCodecs.STRING_UTF8.encode(buf, entry.getKey());
+                ByteBufCodecs.VAR_INT.encode(buf, entry.getValue());
+            }
+        }
+    };
+
+    /** 手动实现 StreamCodec，因为 9 个字段超过 composite(Function6) 的参数上限 */
     public static final StreamCodec<ByteBuf, ControlGroup> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public ControlGroup decode(ByteBuf buf) {
@@ -121,9 +171,10 @@ public class ControlGroup {
             Map<String, List<String>> regularTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
             Map<String, List<String>> mainWeaponTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
             Map<String, List<String>> secondaryWeaponTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            Map<String, Integer> priorities = PRIORITY_MAP_STREAM_CODEC.decode(buf);
             List<ControlBinding> bindings = ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()).decode(buf);
             return new ControlGroup(name, controlMode, moveTargets, viewTargets, regularTargets,
-                    mainWeaponTargets, secondaryWeaponTargets, bindings);
+                    mainWeaponTargets, secondaryWeaponTargets, priorities, bindings);
         }
 
         @Override
@@ -135,6 +186,7 @@ public class ControlGroup {
             TARGET_MAP_STREAM_CODEC.encode(buf, g.regularTargets);
             TARGET_MAP_STREAM_CODEC.encode(buf, g.mainWeaponTargets);
             TARGET_MAP_STREAM_CODEC.encode(buf, g.secondaryWeaponTargets);
+            PRIORITY_MAP_STREAM_CODEC.encode(buf, g.priorities);
             ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()).encode(buf, g.bindings);
         }
     };

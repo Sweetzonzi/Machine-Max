@@ -88,6 +88,8 @@ public class PanelConfigEditor {
         Map<String, List<String>> regularTargets;
         Map<String, List<String>> mainWeaponTargets;
         Map<String, List<String>> secondaryWeaponTargets;
+        /** 越级量表只随组往返，编辑器不提供逐项编辑 */
+        Map<String, Integer> priorities;
         List<BindingEditData> bindings = new ArrayList<>();
 
         GroupEditData(String name, String controlMode,
@@ -95,7 +97,8 @@ public class PanelConfigEditor {
                       Map<String, List<String>> viewTargets,
                       Map<String, List<String>> regularTargets,
                       Map<String, List<String>> mainWeaponTargets,
-                      Map<String, List<String>> secondaryWeaponTargets) {
+                      Map<String, List<String>> secondaryWeaponTargets,
+                      Map<String, Integer> priorities) {
             this.name = name;
             this.controlMode = controlMode;
             this.moveTargets = moveTargets;
@@ -103,6 +106,7 @@ public class PanelConfigEditor {
             this.regularTargets = regularTargets;
             this.mainWeaponTargets = mainWeaponTargets;
             this.secondaryWeaponTargets = secondaryWeaponTargets;
+            this.priorities = priorities;
         }
     }
 
@@ -163,7 +167,8 @@ public class PanelConfigEditor {
                 data.getBaseGroup().viewTargets,
                 data.getBaseGroup().regularTargets,
                 data.getBaseGroup().mainWeaponTargets,
-                data.getBaseGroup().secondaryWeaponTargets
+                data.getBaseGroup().secondaryWeaponTargets,
+                data.getBaseGroup().priorities
         );
         for (ControlBinding b : data.getBaseGroup().bindings) {
             base.bindings.add(new BindingEditData(
@@ -177,7 +182,7 @@ public class PanelConfigEditor {
             GroupEditData ged = new GroupEditData(
                     g.name, g.controlMode.name(),
                     g.moveTargets, g.viewTargets, g.regularTargets,
-                    g.mainWeaponTargets, g.secondaryWeaponTargets
+                    g.mainWeaponTargets, g.secondaryWeaponTargets, g.priorities
             );
             for (ControlBinding b : g.bindings) {
                 ged.bindings.add(new BindingEditData(
@@ -976,6 +981,7 @@ public class PanelConfigEditor {
                 java.util.Collections.emptyMap(),
                 java.util.Collections.emptyMap(),
                 java.util.Collections.emptyMap(),
+                java.util.Collections.emptyMap(),
                 java.util.Collections.emptyMap());
         groupList.add(g);
         selGroup = groupList.size() - 1;
@@ -1189,6 +1195,7 @@ public class PanelConfigEditor {
                 baseEdit.regularTargets,
                 baseEdit.mainWeaponTargets,
                 baseEdit.secondaryWeaponTargets,
+                baseEdit.priorities,
                 buildBindings(baseEdit.bindings)
         );
 
@@ -1204,6 +1211,7 @@ public class PanelConfigEditor {
                     g.regularTargets,
                     g.mainWeaponTargets,
                     g.secondaryWeaponTargets,
+                    g.priorities,
                     buildBindings(g.bindings)
             ));
         }

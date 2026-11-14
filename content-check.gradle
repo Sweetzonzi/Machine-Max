@@ -19,6 +19,9 @@
 //  6. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
 //     FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现为屏幕上一段原始键名；
 //     只有一边语言有的键则让另一边显示原始键名。两者都不报错。
+//  7. 控制组预设的越级量表只写自己会发出的频道。priorities 的键拼错时，这一条频道就按
+//     越级量 0 处理——表现是"超控没反应"，既不报错也不刷日志。解码期只能校验值的范围
+//     （负值被 Codec.intRange 拒绝），看不到基础组，所以键只能在这里对。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -253,6 +256,22 @@ def readJsonc = { File file ->
     new JsonSlurper().parseText(stripJsonc(file.getText('UTF-8')))
 }
 
+// 控制组预设里一组会发出的频道：五张输出目标表的键。按键绑定与 GUI 动作投递的是裸值，
+// 出口处不带越级量，因此不算在越级量表的可选键里。
+def presetChannels = { Object group ->
+    Set<String> channels = new LinkedHashSet<>()
+    if (group instanceof Map) {
+        ['move_targets', 'view_targets', 'regular_targets', 'main_weapon_targets',
+         'secondary_weapon_targets'].each { String key ->
+            Object targets = ((Map) group).get(key)
+            if (targets instanceof Map) {
+                targets.keySet().each { channels.add(it.toString()) }
+            }
+        }
+    }
+    channels
+}
+
 // 包目录 → 内容目录（meta.json 的 id 前缀就是 namespace）
 def packs = []
 if (sparkModulesDir.isDirectory()) {
@@ -316,6 +335,7 @@ tasks.register('checkContent') {
         // 控制组预设索引：id → 所在包。id 是 ControlGroupModule 拼的那个
         // <namespace>:<文件名去掉 .json>（它不看子目录），与模板走同一条规则。
         Map<String, String> controlGroupPresets = [:]
+        Map<String, File> controlGroupPresetFiles = [:]
         packs.each { pack ->
             File dir = new File(pack.dir, 'control_groups')
             if (!dir.isDirectory()) {
@@ -327,6 +347,7 @@ tasks.register('checkContent') {
                 }
                 String stem = file.name.substring(0, file.name.length() - '.json'.length())
                 controlGroupPresets[pack.namespace + ':' + stem] = pack.name
+                controlGroupPresetFiles[pack.namespace + ':' + stem] = file
             }
         }
 
@@ -623,6 +644,48 @@ tasks.register('checkContent') {
             (en - zh).sort().each { problems << packName + '：语言键 ' + it + ' 只有英文，中文缺' }
         }
 
+        // 7. 控制组预设的越级量表键可达
+        //
+        // 只算五张输出目标表：按键绑定与 GUI 动作投递的是裸值，出口处不带越级量，
+        // 把它们的频道写进 priorities 不会生效。子组可见的频道是基础组与它自己的并集
+        // （合并口径与 ControlGroupSet#getMergedViewTargets 一致）。
+        int priorityKeyCount = 0
+        controlGroupPresetFiles.keySet().sort().each { String presetId ->
+            File presetFile = (File) controlGroupPresetFiles[presetId]
+            Object raw = readJsonc(presetFile)
+            if (!(raw instanceof Map)) {
+                return
+            }
+            Map data = (Map) raw
+            Set<String> baseChannels = presetChannels(data.get('base_group'))
+            def checkPriorities = { String groupLabel, Object group, Set<String> available ->
+                if (!(group instanceof Map)) {
+                    return
+                }
+                Object table = ((Map) group).get('priorities')
+                if (!(table instanceof Map)) {
+                    return
+                }
+                table.keySet().each { Object key ->
+                    priorityKeyCount++
+                    if (available.contains(key.toString())) {
+                        return
+                    }
+                    problems << presetId + '：' + groupLabel + ' 的 priorities 里 ' + key +
+                            ' 不是这一组会发出的频道（' + (available ? available.sort().join('、') : '无') + '）'
+                    details.append('    越级量键  ').append(presetId).append(' / ').append(groupLabel)
+                            .append(' → ').append(key).append('\n')
+                }
+            }
+            checkPriorities('base_group', data.get('base_group'), baseChannels)
+            List groups = data.get('groups') instanceof List ? (List) data.get('groups') : []
+            groups.eachWithIndex { Object group, int index ->
+                Set<String> merged = new LinkedHashSet<>(baseChannels)
+                merged.addAll(presetChannels(group))
+                checkPriorities('groups[' + index + ']', group, merged)
+            }
+        }
+
         packs.each { pack ->
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
@@ -649,7 +712,7 @@ tasks.register('checkContent') {
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
-                languageKeyCount + ' 条语言键）。')
+                priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键）。')
     }
 }
 
