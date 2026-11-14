@@ -114,6 +114,8 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
+              "first_hud_layout": "machine_max:sdkfz234_driver",
+              "third_hud_layout": "machine_max:sdkfz234_driver",
               "control_group_preset": "machine_max:default_gunner",
               "reload_operator_discovery_inputs": [
                 "crew.reload.gunner"
@@ -134,6 +136,8 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
+              "first_hud_layout": "machine_max:sdkfz234_driver",
+              "third_hud_layout": "machine_max:sdkfz234_driver",
               "control_group_preset": "machine_max:default_commander",
               "reload_operator_discovery_inputs": [
                 "crew.reload.commander"
@@ -163,6 +167,9 @@
             "subsystem.machine_max.main_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
+              "first_hud_layout": "machine_max:sdkfz234_main_gun",
+              "third_hud_layout": "machine_max:sdkfz234_main_gun",
+              "scope_hud_layout": "machine_max:sdkfz234_main_gun",
               "control_outputs": {
                 "weapon_control": [
                   "global"
@@ -175,6 +182,9 @@
             "subsystem.machine_max.secondary_weapon": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:secondary_weapon_controller",
+              "first_hud_layout": "machine_max:sdkfz234_mg34",
+              "third_hud_layout": "machine_max:sdkfz234_mg34",
+              "scope_hud_layout": "machine_max:sdkfz234_mg34",
               "control_outputs": {
                 "weapon.mg": [
                   "global"

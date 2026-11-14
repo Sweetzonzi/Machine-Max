@@ -292,6 +292,8 @@
             "subsystem.machine_max.driver_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_driver_seat",
+              "first_hud_layout": "machine_max:sdkfz234_driver",
+              "third_hud_layout": "machine_max:sdkfz234_driver",
               "locator": "driver_seat",
               "control_group_preset": "machine_max:default_driver",
               "passenger_num_outputs": {
@@ -305,6 +307,8 @@
             "subsystem.machine_max.radio_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_passenger_seat",
+              "first_hud_layout": "machine_max:sdkfz234_driver",
+              "third_hud_layout": "machine_max:sdkfz234_driver",
               "locator": "radio_seat",
               "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {

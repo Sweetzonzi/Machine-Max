@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="aui-preload">
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Sd.Kfz. 234 / driving instruments</title>
+  <link rel="stylesheet" href="hud.css">
+  <link rel="stylesheet" href="needle-angles.css">
+</head>
+<body>
+  <div class="driver-component">
+  <div class="driver-panel">
+    <img class="driver-face" src="driver-face.png" width="232" height="106" alt="">
+    <div class="speed-instrument" data-mm-class="(global.get_str('vehicle_speed') ?? '') != '' ? 'available' : 'missing'">
+      <img class="speed-needle" src="needle.png" width="4" height="42" alt="" data-mm-class="(math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 51 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 25 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 13 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 7 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 3 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 1 ? 'speed000' : 'speed001') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 5 ? 'speed002' : 'speed003')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 11 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 9 ? 'speed004' : 'speed005') : 'speed006')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 19 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 17 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 15 ? 'speed007' : 'speed008') : 'speed009') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 23 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 21 ? 'speed010' : 'speed011') : 'speed012'))) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 39 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 33 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 29 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 27 ? 'speed013' : 'speed014') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 31 ? 'speed015' : 'speed016')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 37 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 35 ? 'speed017' : 'speed018') : 'speed019')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 45 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 43 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 41 ? 'speed020' : 'speed021') : 'speed022') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 49 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 47 ? 'speed023' : 'speed024') : 'speed025')))) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 77 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 65 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 59 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 55 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 53 ? 'speed026' : 'speed027') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 57 ? 'speed028' : 'speed029')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 63 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 61 ? 'speed030' : 'speed031') : 'speed032')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 71 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 69 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 67 ? 'speed033' : 'speed034') : 'speed035') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 75 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 73 ? 'speed036' : 'speed037') : 'speed038'))) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 89 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 83 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 81 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 79 ? 'speed039' : 'speed040') : 'speed041') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 87 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 85 ? 'speed042' : 'speed043') : 'speed044')) : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 95 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 93 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 91 ? 'speed045' : 'speed046') : 'speed047') : (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 99 ? (math.min(100, math.abs(global.get('vehicle_speed') ?? 0) * 3.6) < 97 ? 'speed048' : 'speed049') : 'speed050')))))">
+      <i class="speed-hub"></i>
+      <span class="speed-value live" data-mm-text="math.round(math.abs(global.get('vehicle_speed') ?? 0) * 3.6)">0</span>
+      <span class="speed-value missing">--</span>
+    </div>
+    <span class="rpm-label">RPM</span>
+    <div class="rpm-value" data-mm-class="(global.get_str('engine_speed') ?? '') != '' ? 'available' : 'missing'">
+      <span class="live" data-mm-text="math.round(math.abs(global.get('engine_speed') ?? 0) * 30 / math.pi)">0</span><span class="missing">--</span>
+    </div>
+    <span class="gear-label"><translation>hud.sdkfz234.gear</translation></span>
+    <span class="gear-value" data-mm-text="global.get_str('gear') ?? '--'">--</span>
+  </div>
+  </div>
+</body>
+</html>

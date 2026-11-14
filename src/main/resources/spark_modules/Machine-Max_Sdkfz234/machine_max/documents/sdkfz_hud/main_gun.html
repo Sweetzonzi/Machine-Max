@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="aui-preload">
+  <meta charset="utf-8">
+  <meta name="aui-viewport" content="mode=browser; width=1600; user-scalable=false">
+  <title>Sd.Kfz. 234 / main gun</title>
+  <link rel="stylesheet" href="hud.css">
+  <link rel="stylesheet" href="pointer-positions.css">
+</head>
+<body>
+  <div class="main-component">
+    <div class="main-panel" data-mm-class="weapon.state">
+      <img class="main-face" src="main-face.png" width="368" height="124" alt="">
+      <div class="gun-heading" data-mm-class="weapon.selected ? 'selected' : 'unselected'"><span>5 cm KwK 39</span><span class="chamber"><translation>hud.sdkfz234.chamber</translation><b data-mm-text="weapon.tube_chambered(0) ? weapon.tube_chambered_ammo_label(0) : '--'">--</b></span></div>
+      <div class="stock-line">
+        <span class="quiet"><translation>hud.sdkfz234.reserve</translation></span>
+        <div class="stocks"><span class="stock" data-mm-repeat="weapon.belts"><span data-mm-text="belt.label">--</span><b data-mm-text="belt.remaining">0</b></span></div>
+        <div class="selected-feeds"><span class="selected-feed" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'"><translation>hud.sdkfz234.next</translation><span data-mm-text="belt.label">--</span></span></div>
+      </div>
+      <div class="tuner-travel"><i class="tuner-pointer" data-mm-class="(weapon.tube_fill(0) < 50.5 ? (weapon.tube_fill(0) < 25.5 ? (weapon.tube_fill(0) < 12.5 ? (weapon.tube_fill(0) < 6.5 ? (weapon.tube_fill(0) < 3.5 ? (weapon.tube_fill(0) < 1.5 ? (weapon.tube_fill(0) < 0.5 ? 'p000' : 'p001') : (weapon.tube_fill(0) < 2.5 ? 'p002' : 'p003')) : (weapon.tube_fill(0) < 5.5 ? (weapon.tube_fill(0) < 4.5 ? 'p004' : 'p005') : 'p006')) : (weapon.tube_fill(0) < 9.5 ? (weapon.tube_fill(0) < 8.5 ? (weapon.tube_fill(0) < 7.5 ? 'p007' : 'p008') : 'p009') : (weapon.tube_fill(0) < 11.5 ? (weapon.tube_fill(0) < 10.5 ? 'p010' : 'p011') : 'p012'))) : (weapon.tube_fill(0) < 19.5 ? (weapon.tube_fill(0) < 16.5 ? (weapon.tube_fill(0) < 14.5 ? (weapon.tube_fill(0) < 13.5 ? 'p013' : 'p014') : (weapon.tube_fill(0) < 15.5 ? 'p015' : 'p016')) : (weapon.tube_fill(0) < 18.5 ? (weapon.tube_fill(0) < 17.5 ? 'p017' : 'p018') : 'p019')) : (weapon.tube_fill(0) < 22.5 ? (weapon.tube_fill(0) < 21.5 ? (weapon.tube_fill(0) < 20.5 ? 'p020' : 'p021') : 'p022') : (weapon.tube_fill(0) < 24.5 ? (weapon.tube_fill(0) < 23.5 ? 'p023' : 'p024') : 'p025')))) : (weapon.tube_fill(0) < 38.5 ? (weapon.tube_fill(0) < 32.5 ? (weapon.tube_fill(0) < 29.5 ? (weapon.tube_fill(0) < 27.5 ? (weapon.tube_fill(0) < 26.5 ? 'p026' : 'p027') : (weapon.tube_fill(0) < 28.5 ? 'p028' : 'p029')) : (weapon.tube_fill(0) < 31.5 ? (weapon.tube_fill(0) < 30.5 ? 'p030' : 'p031') : 'p032')) : (weapon.tube_fill(0) < 35.5 ? (weapon.tube_fill(0) < 34.5 ? (weapon.tube_fill(0) < 33.5 ? 'p033' : 'p034') : 'p035') : (weapon.tube_fill(0) < 37.5 ? (weapon.tube_fill(0) < 36.5 ? 'p036' : 'p037') : 'p038'))) : (weapon.tube_fill(0) < 44.5 ? (weapon.tube_fill(0) < 41.5 ? (weapon.tube_fill(0) < 40.5 ? (weapon.tube_fill(0) < 39.5 ? 'p039' : 'p040') : 'p041') : (weapon.tube_fill(0) < 43.5 ? (weapon.tube_fill(0) < 42.5 ? 'p042' : 'p043') : 'p044')) : (weapon.tube_fill(0) < 47.5 ? (weapon.tube_fill(0) < 46.5 ? (weapon.tube_fill(0) < 45.5 ? 'p045' : 'p046') : 'p047') : (weapon.tube_fill(0) < 49.5 ? (weapon.tube_fill(0) < 48.5 ? 'p048' : 'p049') : 'p050'))))) : (weapon.tube_fill(0) < 75.5 ? (weapon.tube_fill(0) < 63.5 ? (weapon.tube_fill(0) < 57.5 ? (weapon.tube_fill(0) < 54.5 ? (weapon.tube_fill(0) < 52.5 ? (weapon.tube_fill(0) < 51.5 ? 'p051' : 'p052') : (weapon.tube_fill(0) < 53.5 ? 'p053' : 'p054')) : (weapon.tube_fill(0) < 56.5 ? (weapon.tube_fill(0) < 55.5 ? 'p055' : 'p056') : 'p057')) : (weapon.tube_fill(0) < 60.5 ? (weapon.tube_fill(0) < 59.5 ? (weapon.tube_fill(0) < 58.5 ? 'p058' : 'p059') : 'p060') : (weapon.tube_fill(0) < 62.5 ? (weapon.tube_fill(0) < 61.5 ? 'p061' : 'p062') : 'p063'))) : (weapon.tube_fill(0) < 69.5 ? (weapon.tube_fill(0) < 66.5 ? (weapon.tube_fill(0) < 65.5 ? (weapon.tube_fill(0) < 64.5 ? 'p064' : 'p065') : 'p066') : (weapon.tube_fill(0) < 68.5 ? (weapon.tube_fill(0) < 67.5 ? 'p067' : 'p068') : 'p069')) : (weapon.tube_fill(0) < 72.5 ? (weapon.tube_fill(0) < 71.5 ? (weapon.tube_fill(0) < 70.5 ? 'p070' : 'p071') : 'p072') : (weapon.tube_fill(0) < 74.5 ? (weapon.tube_fill(0) < 73.5 ? 'p073' : 'p074') : 'p075')))) : (weapon.tube_fill(0) < 88.5 ? (weapon.tube_fill(0) < 82.5 ? (weapon.tube_fill(0) < 79.5 ? (weapon.tube_fill(0) < 77.5 ? (weapon.tube_fill(0) < 76.5 ? 'p076' : 'p077') : (weapon.tube_fill(0) < 78.5 ? 'p078' : 'p079')) : (weapon.tube_fill(0) < 81.5 ? (weapon.tube_fill(0) < 80.5 ? 'p080' : 'p081') : 'p082')) : (weapon.tube_fill(0) < 85.5 ? (weapon.tube_fill(0) < 84.5 ? (weapon.tube_fill(0) < 83.5 ? 'p083' : 'p084') : 'p085') : (weapon.tube_fill(0) < 87.5 ? (weapon.tube_fill(0) < 86.5 ? 'p086' : 'p087') : 'p088'))) : (weapon.tube_fill(0) < 94.5 ? (weapon.tube_fill(0) < 91.5 ? (weapon.tube_fill(0) < 90.5 ? (weapon.tube_fill(0) < 89.5 ? 'p089' : 'p090') : 'p091') : (weapon.tube_fill(0) < 93.5 ? (weapon.tube_fill(0) < 92.5 ? 'p092' : 'p093') : 'p094')) : (weapon.tube_fill(0) < 97.5 ? (weapon.tube_fill(0) < 96.5 ? (weapon.tube_fill(0) < 95.5 ? 'p095' : 'p096') : 'p097') : (weapon.tube_fill(0) < 99.5 ? (weapon.tube_fill(0) < 98.5 ? 'p098' : 'p099') : 'p100'))))))"></i></div>
+      <div class="gun-status">
+        <div class="phase" data-mm-class="weapon.tube_count > 0 ? weapon.tube_phase(0) : 'idle'">
+          <span class="when-ready"><translation>hud.sdkfz234.ready</translation></span>
+          <span class="when-loading"><translation>hud.sdkfz234.loading</translation><span data-mm-text="weapon.tube_loading_belt_label(0)">--</span></span>
+          <span class="when-regenerating"><translation>hud.sdkfz234.regenerating</translation></span>
+          <span class="when-refilling"><translation>hud.sdkfz234.refilling</translation></span>
+          <span class="when-waiting"><translation>hud.sdkfz234.waiting</translation></span>
+          <span class="when-empty"><translation>hud.sdkfz234.empty</translation></span>
+        </div>
+        <div class="progress-text"><span data-mm-text="math.round(weapon.tube_fill(0))">0</span><span>%</span><span class="remaining" data-mm-class="weapon.state == 'reloading' ? (weapon.tube_reload_remaining(0) >= 0 ? 'visible' : 'hidden') : 'hidden'"><span> / </span><span data-mm-text="math.round(weapon.tube_reload_remaining(0) * 10) / 10">--</span><span>s</span></span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

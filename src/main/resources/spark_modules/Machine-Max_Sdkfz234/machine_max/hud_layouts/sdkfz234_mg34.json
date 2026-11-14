@@ -1,0 +1,12 @@
+[
+  {
+    "style": "machine_max:sdkfz234_mg34",
+    "perspective": false,
+    "anchor": "bottom_right",
+    "offset": [-8, -28, 0],
+    "scale": [1, 1, 1],
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "selection_visibility": "always"
+  }
+]

@@ -1,0 +1,61 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: transparent; }
+body { display: inline-block; font-family: "default"; color: #e6dcc5; font-size: 16px; line-height: 20px; }
+b { font-weight: 400; }
+.driver-component { display: inline-block; width: 432px; height: 106px; padding-left: 200px; }
+.driver-panel { position: relative; display: inline-block; width: 232px; height: 106px; }
+.driver-face, .main-face, .mg-face { position: absolute; left: 0; top: 0; display: block; }
+.driver-face { width: 232px; height: 106px; }
+.speed-instrument { position: absolute; left: 0; top: 0; width: 106px; height: 106px; }
+.speed-needle { position: absolute; display: none; left: 51px; top: 14px; width: 4px; height: 42px; transform-origin: 2px 39px; transform: rotate(-135deg); }
+.speed-instrument.is-available .speed-needle { display: block; }
+.speed-hub { position: absolute; left: 48px; top: 48px; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #a89873; background: #6f6851; }
+.speed-value { position: absolute; left: 25px; top: 67px; width: 56px; height: 28px; font-size: 26px; line-height: 28px; text-align: center; color: #eee2c4; }
+.live { display: none; } .missing { display: inline; }
+.is-available .live { display: inline; } .is-available .missing { display: none; }
+.speed-instrument.is-available .speed-value.live { display: block; }
+.rpm-label, .gear-label { position: absolute; left: 116px; width: 42px; height: 20px; font-size: 15px; line-height: 20px; color: #cbc5ad; }
+.rpm-label { top: 31px; } .gear-label { top: 61px; }
+.rpm-value, .gear-value { position: absolute; left: 158px; width: 63px; height: 22px; font-size: 19px; line-height: 22px; text-align: right; color: #eee2c4; }
+.rpm-value { top: 30px; } .gear-value { top: 60px; }
+.main-component { display: inline-block; width: 368px; padding-bottom: 56px; }
+.main-panel { position: relative; width: 368px; height: 124px; }
+.main-face { width: 368px; height: 124px; }
+.gun-heading { position: absolute; left: 16px; top: 8px; display: flex; justify-content: space-between; align-items: center; width: 336px; height: 22px; font-size: 18px; line-height: 22px; }
+.gun-heading.is-unselected > span:first-child, .mg-name.is-unselected { color: #c8c3af; }
+.chamber { display: flex; align-items: center; gap: 5px; color: #d1cbb6; font-size: 16px; }
+.chamber b { color: #eee1c0; }
+.stock-line { position: absolute; left: 16px; top: 34px; width: 336px; height: 22px; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.quiet { color: #ccc6b0; }
+.stocks { display: flex; align-items: center; gap: 14px; }
+.stock { display: flex; align-items: center; gap: 5px; }
+.stock b { color: #f0e5c9; }
+.selected-feeds { margin-left: auto; display: flex; }
+.selected-feed { display: flex; gap: 5px; color: #e2c593; }
+.selected-feed.is-unselected { display: none; }
+.tuner-travel { position: absolute; left: 24px; top: 61px; width: 320px; height: 30px; }
+.tuner-pointer { position: absolute; left: 0; top: 0; width: 2px; height: 30px; background: #a05335; }
+.gun-status { position: absolute; left: 16px; top: 100px; display: flex; justify-content: space-between; align-items: center; width: 336px; height: 18px; font-size: 16px; line-height: 18px; color: #d5cdb4; }
+.phase { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.phase > span { display: none; }
+.is-ready .phase > .when-ready, .is-empty .phase > .when-empty { display: inline; }
+.is-reloading .phase.is-loading > .when-loading { display: flex; gap: 5px; }
+.is-reloading .phase.is-regenerating > .when-regenerating, .is-reloading .phase.is-refilling > .when-refilling, .is-reloading .phase.is-idle > .when-waiting { display: inline; }
+.progress-text { display: flex; align-items: center; white-space: nowrap; color: #e6d2a6; font-size: 16px; line-height: 18px; }
+.remaining { display: flex; align-items: center; }
+.remaining.is-hidden { display: none; }
+.mg-panel { position: relative; display: inline-block; width: 368px; height: 56px; }
+.mg-face { width: 368px; height: 56px; }
+.mg-heading { position: absolute; left: 12px; top: 4px; width: 344px; height: 22px; display: flex; align-items: center; gap: 12px; color: #d0ccb8; white-space: nowrap; }
+.mg-name { color: #e0d8c1; }
+.belt-label { color: #ccc6b0; max-width: 70px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.belt-count, .reserve-count { display: flex; align-items: center; gap: 3px; }
+.reserve-count { margin-left: auto; }
+.mg-status { position: absolute; left: 12px; top: 32px; display: flex; align-items: center; gap: 7px; height: 18px; max-width: 132px; overflow: hidden; font-size: 14px; line-height: 18px; }
+.mg-status .chamber { font-size: 14px; }
+.mg-status .phase { color: #c9c3ad; }
+.mg-panel.is-reloading .phase { color: #e0c08a; }
+.mg-travel { position: absolute; left: 150px; top: 38px; width: 86px; height: 4px; background: #8a846e; }
+.mg-pointer { position: absolute; left: 0; top: -1px; width: 2px; height: 6px; background: #d7bc87; }
+.mg-progress { position: absolute; right: 12px; top: 32px; height: 18px; font-size: 14px; line-height: 18px; color: #c9c1aa; }
+.mg-panel.is-reloading .mg-progress { color: #e0c08a; }
