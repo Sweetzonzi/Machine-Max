@@ -3,11 +3,11 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "fd4ef3a003d905fd2216f2e0a567be1899beacbd",
+    "revision": "252d04d81b97bf09c3950b9424a8eaff38501b74",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 78,
+    "file_count": 80,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -235,6 +235,11 @@
         "sha256": "b9b6a5c3a9afd7e3109adad878e4848334e3788bfd4dc34ab3a0760c3ae5ca75"
       },
       {
+        "path": "references/schemas/subsystem/dynamic/reactive_armor_dynamic_attr.schema.json",
+        "bytes": 868,
+        "sha256": "69898a99d2113dd3feef4cedae9b4bd63fcc24688dcac4248963f5b43c3f51b7"
+      },
+      {
         "path": "references/schemas/subsystem/dynamic/regen_ammo_rack_dynamic_attr.schema.json",
         "bytes": 4567,
         "sha256": "852816371454249256be0ecc4908d0cca9bdaaf65a1a086a37e5d4bbb3681d80"
@@ -340,6 +345,11 @@
         "sha256": "8bc145585c12295490dd325686bab6601e43d3b865a9855c0835a3f00356c077"
       },
       {
+        "path": "references/schemas/subsystem/static/reactive_armor_static_attr.schema.json",
+        "bytes": 4119,
+        "sha256": "c7538dcb2d3533731bdcab439c20c816e4b9416bd7530a29d7e7ae31c1291865"
+      },
+      {
         "path": "references/schemas/subsystem/static/regen_ammo_rack_static_attr.schema.json",
         "bytes": 3674,
         "sha256": "f15b9179253d7e63d3f984d7a7a0a3910ac3871218b3f9c7fca74107b5ba3ce7"
@@ -391,13 +401,13 @@
       },
       {
         "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",
-        "bytes": 7674,
-        "sha256": "5daefcfc5ef8c8edec032d8123e120d28e45a543a8ce8c8cee9207bdc584e242"
+        "bytes": 7956,
+        "sha256": "4cd7eef01aa77d2138d68c151eabc8e97703a013ede63e10d57e8824524c7799"
       },
       {
         "path": "references/schemas/subsystem/subsystem_static_attr.schema.json",
-        "bytes": 7420,
-        "sha256": "c3f6f276e5217d9200dd77f032b446e98a878536d519e7bd7af36e3a99d7d4ee"
+        "bytes": 7700,
+        "sha256": "a1c8a5bfbaf860b1ed23dccebda9f620ad25295d0b58cd4a0b65e75130bab699"
       }
     ]
   },

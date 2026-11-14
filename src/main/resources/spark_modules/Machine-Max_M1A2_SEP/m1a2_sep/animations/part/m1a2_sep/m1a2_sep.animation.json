@@ -1,5 +1,5 @@
-// 附加装甲的爆反块随子系统一起消失：每段 13 个爆反盒各绑一个 basic 子系统，
-// 该段被打掉后把对应骨骼整体缩放到 0，露出后面的裙板本体（LeftZhuangJia / RightZhuangJia）。
+// 附加装甲的爆反块随子系统一起消失：每段 13 个爆反盒各绑一个 machine_max:reactive_armor 子系统，
+// 该砖被达到灵敏度阈值的命中打到即失效，对应骨骼整体缩放到 0，露出后面的裙板本体（LeftZhuangJia / RightZhuangJia）。
 // 碰撞判定不依赖这里——hit_boxes 的 condition 读的是同一个子系统。
 {
 	"format_version": "1.8.0",

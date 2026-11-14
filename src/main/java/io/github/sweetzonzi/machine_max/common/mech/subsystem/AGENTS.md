@@ -1,6 +1,6 @@
 # subsystem/ — 子系统实现
 
-**范围**: 21 种已开放子系统类型（另有 3 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
+**范围**: 22 种已开放子系统类型（另有 3 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
 
 ## 结构
 
@@ -16,7 +16,7 @@ subsystem/
 │   ├── IAmmoSupplier.java              # 弹药供给接口
 │   └── ITorqueProvider.java            # 扭矩提供接口
 ├── attr/
-│   ├── SubsystemKinds.java             # 类型登记表：21 条已开放登记、下游登记入口、封表
+│   ├── SubsystemKinds.java             # 类型登记表：22 条已开放登记、下游登记入口、封表
 │   ├── SubsystemCodecs.java            # 安装属性与静态属性的分派 Codec
 │   ├── WorkingState.java               # 工作状态枚举
 │   ├── static_attr/                    # 型号 JSON 驱动静态属性（每个已登记类型一份）
@@ -82,7 +82,7 @@ subsystem/
 
 ## 约定
 
-- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 21 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
+- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 22 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
 - **开发中的类型不登记**：`joint_driver`、`scriptable`、`battery` 的字段契约仍在定稿（属性类标 `@ApiStatus.Experimental`），`SubsystemKinds` 里对应的 `register` 被注释掉，解码按「未知类型」拒绝；schema 也不提供这三个类型。契约定稿后取消注释即可，两侧 Codec 与登记结构不用改。
 - **类型身份由登记项派生**：`getType()` 是基类的 final 方法，按 `codec()` 的实例身份反查登记 ID；具体属性类只声明自己的 `CODEC` 单例与 `createSubsystem` 工厂，不声明类型常量、也不覆写 `getType`。型号绑定比较两侧派生 ID 的值，发生在安装属性的解码构造器里（`getStaticAttr`）。
 - **继承链**：`AbstractSubsystem` → `AbstractControllableSubsystem` → 具体类型。
@@ -94,6 +94,8 @@ subsystem/
 - **功率流**：`Engine/Motor` (IMechPowerProducer) → `Gearbox` → `Transmission` → `WheelDriver/JointDriver`，通过连接器的 MechPowerPort 传递。
 - **能源网格**：`BatterySubsystem` 同时实现 `IEnergyProducer` 和 `IEnergyConsumer`。`EnergyGrid` 每 tick 平衡。
 - **保存/加载**：在 `AbstractSubsystem` 中重写 `saveData()`/`loadData()` 进行 NBT 持久化。
+- **命中钩子分两级**：`SubPart#settleAccumulatedDamage` 对每笔未被入口取消、未被履带吸收的命中先调 `AbstractSubsystem#onHit`，再在金额为正时调 `onHurt`。`onHit` 与金额无关，只表达"被命中了"，是"被打到就失效"这类判定的唯一入口（`ReactiveArmorSubsystem` 的阈值引爆）；金额、取消与耐久记账仍归 `onHurt`。`onHit` 默认空实现，不要在里面扣耐久——那会让零伤害与碰撞冲击变成磨损源。
+- **爆反的参考实现**：`Machine-Max_Builtin` 的 `machine_max:reactive_armor_brick`（`subsystems/reactive_armor/reactive_armor_brick.json`）配材质 `machine_max:reactive_armor`（`materials/reactive_armor.json`）是这一机制的可抄写样例：子系统负责"进砖穿深达到 `trigger_penetration` 即失效"，材质把 `decay_rha` 写成与 `rha` 相同、让等效厚度恒定，并用加性两段（动能 −20、化学能再 −230）表达早期爆反的拦截；零件侧每块砖一个带 `condition` 与 `subsystem` 的命中箱。美系基础包的 `machine_max:arat_ii`（材质，动能 −30、化学能合计 −350）与 `machine_max:arat_ii_tile`（型号）是同形状的真实型号样例，M1A2 的 26 个框只引用这两个 id。
 - **线程**：`onCollideWithBlock()` 在物理线程调用；`onInteract()` 在主线程调用。
 - **结构变化两阶段**：`SubsystemController.onVehicleStructureChanged()` 先对所有子系统调用 `onVehicleStructurePreChanged()`，再统一调用 `onVehicleStructureChanged()`。**清空拓扑缓存写第一阶段，重新发现写第二阶段**——`allSubsystems` 是集合，遍历顺序不确定；两者挤在同一趟里时，后清空的子系统会把先发现的结果抹掉（发射器清供给者登记表、装弹机重新登记发现就属于这一对）。
 - **装填重构实施边界**：下列弹药指认、取弹与换装的现状描述以 P4 双端闭环（作业身份、实际架预留、双端本地推进与本地交付、结束结果，见主计划 §10.1 的 S19／S20）、人工段（S21）与人力直取路径（S22）为基线；主计划 §3.4—§3.6、§4、§5 与 §10.1 的 S13—S22 是这些契约的出处：服务端分配并预留，两端本地推进计时与弹药内容，字段按最新绝对值下发，客户端在 tick 收尾统一应用。仍欠：物品架预留。

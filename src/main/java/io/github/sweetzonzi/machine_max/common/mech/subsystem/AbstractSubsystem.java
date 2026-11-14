@@ -305,6 +305,27 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
+     * 命中钩子：本子系统所属的命中箱被一次命中选中时调用，<b>与本次伤害金额无关</b>。
+     * <p>
+     * 与 {@link #onHurt(SubPartDamageEvent.Pre)} 的分工：金额、取消与耐久记账属于 {@code onHurt}，
+     * 后者只在入口金额为正时被调用；本方法只表达"被命中了"这一事实，因此未击穿、被
+     * {@code damage_modifiers} 抹平、以及碰撞冲击这类金额为 0 的命中同样会走到这里。
+     * 需要"被打到就失效"的子系统（例如反应装甲砖）由本方法承担判定。
+     * <p>
+     * 调用时序：每次结算命中恰好一次，且总在 {@code onHurt} 之前，因此本方法对事件的修改
+     * （金额、取消）对随后的 {@code onHurt} 可见。入口取消（{@link SubPartDamageEvent.Pre#isCanceled()}）
+     * 与履带吸收（{@link SubPartDamageEvent.Pre#isTrackAbsorbed()}）的命中不调用本方法。
+     * <p>
+     * 默认实现为空：普通装甲不需要"被打到"这一事件，没有伤害就什么都不该发生。
+     * <p>
+     * <b>调用线程：</b>主线程（{@code SubPart#settleAccumulatedDamage} 的命中结算阶段）。
+     *
+     * @param event 本次命中的入口事件，可被修改；金额为 0 时同样会传入
+     */
+    public void onHit(SubPartDamageEvent.Pre event) {
+    }
+
+    /**
      * 默认受击处理：直接扣减自身耐久；只有本次确实减少了耐久时才记为最近有效受击。
      * <p>
      * 记录供 tick 判毁后的起爆定位使用（见 {@link #getLastDamageEvent()} 与

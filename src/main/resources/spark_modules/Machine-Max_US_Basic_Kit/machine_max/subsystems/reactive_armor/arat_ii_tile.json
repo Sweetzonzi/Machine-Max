@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:reactive_armor",
+  "basic_durability": 8,
+  "pass_damage": false,
+  "hidden": false, // 砖的损坏状态要在 HUD 里可见
+  "trigger_penetration": 50
+}

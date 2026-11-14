@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/reactive_armor_dynamic_attr.json",
+  "title": "爆反附加装甲动态属性",
+  "description": "爆反（反应装甲）砖的动态属性，只需指定型号即可；灵敏度阈值写在同一型号的静态属性里。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:reactive_armor",
+      "description": "子系统类型，必须为'machine_max:reactive_armor'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:reactive_armor",
+      "definition": "machine_max:reactive_armor_brick"
+    }
+  ]
+}

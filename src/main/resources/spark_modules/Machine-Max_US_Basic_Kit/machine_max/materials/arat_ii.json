@@ -1,0 +1,118 @@
+{
+  "$schema": "../docs/zh_cn/schemas/base/material_attr.schema.json",
+  "physics": {
+    "friction": [
+      0.35,
+      0.35,
+      0.35
+    ],
+    "slip_adaptation": 0.65,
+    "rolling_friction": 0.28,
+    "spinning_friction": 0,
+    "restitution": 0.07,
+    "block_damage_factor": 1.3
+  },
+  "armor": {
+    "angle_effect": true,
+    "unpen_power": 2,
+    "impact_modifiers": [
+      {
+        "operation": "multiply",
+        "value": 0.55,
+        "condition": {
+          "type": "always"
+        }
+      }
+    ],
+    "penetration_modifiers": [ // 加性：ARAT II 削掉的是固定的穿透量；动能 30 mm，化学能再吃 320 mm（合计 350）
+      {
+        "operation": "add",
+        "value": -30,
+        "condition": {
+          "type": "always"
+        }
+      },
+      {
+        "operation": "add",
+        "value": -320,
+        "condition": {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "damage_type",
+              "id": "machine_max:blast"
+            },
+            {
+              "type": "damage_tag",
+              "id": "minecraft:is_explosion"
+            }
+          ]
+        }
+      }
+    ],
+    "damage_modifiers": [
+      {
+        "operation": "add",
+        "value": -9,
+        "condition": {
+          "type": "damage_type",
+          "id": "minecraft:fly_into_wall"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.09,
+        "condition": {
+          "type": "damage_type",
+          "id": "minecraft:sweet_berry_bush"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.09,
+        "condition": {
+          "type": "entity_type",
+          "id": "minecraft:slime"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.55,
+        "condition": {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "damage_type",
+              "id": "machine_max:blast"
+            },
+            {
+              "type": "damage_tag",
+              "id": "minecraft:is_explosion"
+            }
+          ]
+        }
+      }
+    ],
+    "rha": 1.2,
+    "dmg_resist": 4,
+    "dmg_mult": 0.75,
+    "decay_rha": 1.2, // 与 rha 相同：单块瓦的等效厚度恒定（65 mm × 1.2 = 78 mm），不随附甲零件耐久衰减；失效由子系统与 condition 表达
+    "decay_power": 1.5,
+    "decay_dmg_resist": 0,
+    "decay_dmg_mult": 1
+  },
+  "sounds": {
+    "hit_un_pen": {
+      "sound_id": "machine_max:hit_box.hit.up_pen.metal",
+      "range": 64
+    },
+    "hit_pen": {
+      "sound_id": "machine_max:hit_box.hit.pen.metal",
+      "range": 64
+    }
+  },
+  "particles": {
+    "hit_pen": "machine_max:armor_spall", // 击穿时的命中火花：顺着弹道喷出的金属碎屑
+    "hit_un_pen": "machine_max:armor_deflect" // 未击穿（含跳弹）时的命中火花：沿装甲表面弹开
+  }
+}

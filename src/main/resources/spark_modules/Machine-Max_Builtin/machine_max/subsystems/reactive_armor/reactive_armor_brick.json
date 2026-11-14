@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:reactive_armor",
+  "basic_durability": 1, // (可选, 默认20.0)只是存活位：达到触发阈值的命中把它归零，没有"按伤害扣到一半"的中间状态
+  "pass_damage": false, // (可选, 默认true)拦下的命中不把伤害转给零件：砖的防护由自己的命中箱结算，穿透的弹丸继续打后面的框
+  "hidden": false, // (可选, 默认false)砖的损坏状态要在 HUD 里可见，因此保持显示
+  "trigger_penetration": 50 // (可选, 默认50)灵敏度阈值，单位 mm 等效穿深；比较用命中上下文里的原始穿深，不受本命中箱的穿深修正影响
+}

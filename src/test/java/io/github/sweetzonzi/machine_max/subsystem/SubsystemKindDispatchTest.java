@@ -34,7 +34,7 @@ class SubsystemKindDispatchTest {
             "motorbike_controller", "track_controller", "track_drive", "gearbox", "transmission",
             "wheel_driver", "turret_driver", "lighting",
             "launcher", "ammo_loader", "ammo_rack", "weapon_controller", "camera", "sight",
-            "regen_ammo_rack");
+            "regen_ammo_rack", "reactive_armor");
 
     /** 字段契约未定稿、因此没有登记的开发中类型。 */
     static final List<String> WIP_IDS = List.of("joint_driver", "scriptable", "battery");

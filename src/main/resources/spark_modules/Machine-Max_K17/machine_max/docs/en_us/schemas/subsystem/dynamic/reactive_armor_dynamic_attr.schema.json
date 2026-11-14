@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/reactive_armor_dynamic_attr.json",
+  "title": "Reactive Add-on Armor Dynamic Attributes",
+  "description": "Dynamic attributes for reactive armor bricks, specifying only the model is required; the sensitivity threshold lives in the static attributes of the same model.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:reactive_armor",
+      "description": "Subsystem type, must be 'machine_max:reactive_armor'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding static attribute definition file."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:reactive_armor",
+      "definition": "machine_max:reactive_armor_brick"
+    }
+  ]
+}

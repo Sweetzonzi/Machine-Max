@@ -340,6 +340,8 @@ public final class ExplosionInstance {
     /**
      * 对 [起点, 终点] 段做一次快照 rayTest，命中刚体登记。
      * 候选集按 owner 分派：仅 {@link SubPart} 走完整通路；其余（实体刚体、交互区、地形、未知）跳过。
+     * 命中箱按 {@link SubPart#findPickableHitBox(int)} 严格映射：条件失效的框与轮胎辅助球体不登记，
+     * 射线继续传播——与投射物、玩家拾取同一条判定；{@code SubPart#getHitBox} 的越界回退不参与本路径。
      */
     private void rayTestRigid(BlastRay ray, float ox, float oy, float oz, float ex, float ey, float ez) {
         if (worldSnapshot == null || candidateCount == 0) return;
@@ -360,7 +362,10 @@ public final class ExplosionInstance {
             int tri = r.triangleIndex();
             PenetrationKey key = PenetrationKey.fromCollision(pco, tri);
             if (key == null) continue;
-            HitBox hitBox = subPart.getHitBox(tri);
+            // 与投射物、玩家拾取共用同一套严格映射：条件失效的命中箱与轮胎辅助球体返回 null，
+            // 本次命中不计入，射线继续传播（见 SubPart#findPickableHitBox）
+            HitBox hitBox = subPart.findPickableHitBox(tri);
+            if (hitBox == null) continue;
 
             float frac = r.getHitFraction();
             float px = ox + (ex - ox) * frac;

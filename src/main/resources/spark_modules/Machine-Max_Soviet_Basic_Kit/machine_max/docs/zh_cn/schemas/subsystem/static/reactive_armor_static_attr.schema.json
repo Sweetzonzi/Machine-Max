@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/reactive_armor_static_attr.json",
+  "title": "爆反附加装甲静态属性",
+  "description": "爆反（反应装甲）砖：被足够强的命中打到即失效，不按伤害量磨损。basic_durability 在这里是存活位而不是耐打程度；是否失效只由 trigger_penetration 与命中穿深比较决定。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:reactive_armor",
+      "description": "子系统类型，必须为'machine_max:reactive_armor'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，在这里是存活位：达到阈值的命中直接把它归零，数值本身只影响HUD与维修读数。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。为false时砖拦下的命中不再把金额传给车体；穿透的弹丸继续飞行、由后面的命中箱各自结算。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。本类型不按伤害扣自身耐久，该字段只在 pass_damage 为 true 时保留与 basic 一致的字段形状。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示。逐砖声明的爆反砖取false，让每块砖的损坏状态在HUD清单里可见。"
+    },
+    "trigger_penetration": {
+      "type": "number",
+      "minimum": 0,
+      "default": 50,
+      "description": "灵敏度阈值，单位mm等效穿深。进砖之前的穿深达到该值即引爆失效，当次是否击穿无关；低于阈值的命中既不引爆也不磨损。比较用命中上下文里的原始穿深，不受本命中箱自己的 penetration_modifiers 影响。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "子系统失活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_destroyed": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:reactive_armor",
+      "description": "最简示例 - 灵敏度取缺省的50mm等效穿深"
+    },
+    {
+      "type": "machine_max:reactive_armor",
+      "basic_durability": 8,
+      "pass_damage": false,
+      "hidden": false,
+      "trigger_penetration": 50,
+      "description": "逐砖示例 - 车体裙板爆反：拦下命中、损坏状态在HUD可见，50mm等效穿深起爆"
+    },
+    {
+      "type": "machine_max:reactive_armor",
+      "basic_durability": 12,
+      "pass_damage": false,
+      "trigger_penetration": 80,
+      "description": "重装甲示例 - 只有大口径动能弹与爆炸射流才能引爆"
+    }
+  ]
+}

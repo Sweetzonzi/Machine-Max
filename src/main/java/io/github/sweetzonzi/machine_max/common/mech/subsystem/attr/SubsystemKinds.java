@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LightingSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorbikeControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ReactiveArmorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenAmmoRackSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
@@ -43,6 +44,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.L
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LightingSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorbikeControllerSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ReactiveArmorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.RegenAmmoRackSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ScriptableSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr;
@@ -67,7 +69,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code type} 分派到安装属性，子系统型号 JSON 的 {@code type} 分派到静态属性，两侧因此
  * 不可能出现"安装侧叫 A、静态侧叫 B"的错配。</p>
  *
- * <p>内建 21 条登记在静态初始化里完成；另有三个仍在开发中的类型（{@code joint_driver}、
+ * <p>内建 22 条登记在静态初始化里完成；另有三个仍在开发中的类型（{@code joint_driver}、
  * {@code scriptable}、{@code battery}）的登记被注释掉，内容包无法引用它们，见静态初始化的说明。
  * 下游在自己的模组初始化阶段调用 {@link #register(ResourceLocation, Kind)}，必须早于内容包装载；
  * 内容包装载开始时 {@link #seal()} 封表，此后的登记立即失败。</p>
@@ -138,6 +140,7 @@ public final class SubsystemKinds {
         register("camera", CameraSubsystemAttr.CODEC, CameraSubsystemStaticAttr.CODEC);
         register("sight", SightSubsystemAttr.CODEC, SightSubsystemStaticAttr.CODEC);
         register("regen_ammo_rack", RegenAmmoRackSubsystemAttr.CODEC, RegenAmmoRackSubsystemStaticAttr.CODEC);
+        register("reactive_armor", ReactiveArmorSubsystemAttr.CODEC, ReactiveArmorSubsystemStaticAttr.CODEC);
     }
 
     private SubsystemKinds() {

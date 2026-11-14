@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/reactive_armor_static_attr.json",
+  "title": "Reactive Add-on Armor Static Attributes",
+  "description": "A reactive armor brick: it is spent the moment a strong enough hit lands on it, and is never worn down by damage. basic_durability is a liveness flag here rather than toughness; whether the brick detonates depends only on how trigger_penetration compares with the incoming penetration.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:reactive_armor",
+      "description": "Subsystem type, must be 'machine_max:reactive_armor'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, used here as a liveness flag: a hit that reaches the threshold zeroes it at once, so the value itself only affects HUD and repair readouts."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. When false, a hit stopped by the brick is not forwarded to the vehicle; a penetrating projectile keeps flying and is resolved by the boxes behind it."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. This type never wears its own durability by damage, so the field keeps the same shape as basic for pass_damage=true definitions."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD displays. Per-brick reactive armor uses false so each brick's damage state stays visible in the subsystem list."
+    },
+    "trigger_penetration": {
+      "type": "number",
+      "minimum": 0,
+      "default": 50,
+      "description": "Sensitivity threshold in mm of equivalent penetration. Incoming penetration reaching this value detonates the brick regardless of whether that hit penetrated; hits below it neither detonate nor wear the brick. The comparison uses the raw penetration of the hit context and is not affected by this hit box's own penetration_modifiers."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_destroyed": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Basic subsystem sound configuration."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:reactive_armor",
+      "description": "Minimal example - sensitivity falls back to the default 50 mm equivalent penetration"
+    },
+    {
+      "type": "machine_max:reactive_armor",
+      "basic_durability": 8,
+      "pass_damage": false,
+      "hidden": false,
+      "trigger_penetration": 50,
+      "description": "Per-brick example - hull skirt reactive armor: stops the hit, damage state visible in the HUD, detonates at 50 mm equivalent penetration"
+    },
+    {
+      "type": "machine_max:reactive_armor",
+      "basic_durability": 12,
+      "pass_damage": false,
+      "trigger_penetration": 80,
+      "description": "Heavy example - only large-caliber kinetic rounds and blast jets can detonate it"
+    }
+  ]
+}

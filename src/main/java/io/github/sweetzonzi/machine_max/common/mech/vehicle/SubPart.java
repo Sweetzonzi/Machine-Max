@@ -1056,6 +1056,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * 本方法不直接投递冲量；命中音效与命中火花按批合成一个客户端表现包发出，入口取消的命中不表现，
      * 每笔命中一条、总数按单包上限封顶（见 {@link #collectHitEffect}）。</p>
      *
+     * <p>命中箱所属子系统另有两条钩子：{@code onHit} 对每一笔未被入口取消、未被履带吸收的命中
+     * 恰好调用一次，与金额是否为正无关，且排在 {@code onHurt} 之前；{@code onHurt} 只在金额为正时
+     * 调用（见 {@link io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem#onHit}）。</p>
+     *
      * <p><b>调用线程：</b>主线程（每个 Level 在本轮全部零件结算完成后统一发布冲量）。</p>
      */
     @Override
@@ -1082,6 +1086,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 collectHitEffect(ctx, hitBox, event.isTrackAbsorbed(), effects);
             }
             if (event.isCanceled() || event.isTrackAbsorbed()) continue; // 入口取消 / 履带吸收不产生零件耐久记账
+            // 命中钩子：与金额无关，未击穿、被伤害修正抹平与碰撞冲击同样到达这里；
+            // 排在 onHurt 之前，对它做的修改对随后的 onHurt 可见（见 AbstractSubsystem#onHit）
+            if (hitBox != null && hitBox.getSubsystem() != null) {
+                hitBox.getSubsystem().onHit(event);
+            }
             float entryDamage = event.getDamageAmount();
             if (entryDamage <= 0f) continue; // 非正伤害不入账
             // 事件随记录带到主线程，直接交给命中判定所属的子系统，不经事件总线

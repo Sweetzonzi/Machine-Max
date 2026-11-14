@@ -56,9 +56,11 @@ MM_TurretBustleRight: 47.05 mm RHA; m1a2_sep:m1a2_composite
 战雷 X-ray 的复合层显示厚度与 DamageParts 的计算厚度存在差异；这里明确使用后者计算复合层，并用 X-ray 给出的钢板层序/显示厚度作为适配参考。可变厚度、材料角度曲线、弹型差异和战雷网格均未复现，不能将这些数字视作战雷精确等效。
 保持本模型原有首部倾角，因此本包 280 mm AP 可能击穿新版首下/首部，炮塔两颊仍明显更强。不要以这组近似值推断任意弹药或角度都能被拦截。
 顶部有独立薄甲覆盖，炮塔侧面区分乘员舱与尾舱；内部核心盒只作低厚度兜底。基甲盒共享 id=part，不把相互重叠的区域重复叠加为多层装甲。
-四块附加装甲：车体左右各 78 mm RHA、炮塔左右各 66 mm，独立承伤并随耐久衰减；这部分是分区代理，不是战雷 ARAT 精确模型。
-ARAT 的爆炸伤害系数为 0.55，没有逐砖起爆、HEAT 射流或串联判定；战雷的 450 mm 破甲防护不能直接作为 HE 爆炸防护。
-四块附加装甲的挂点取炮塔座圈同级参数：车体侧与附加装甲侧两端都是 integrity=2400、impact_absorption=1.0、impact_reduction=10、impact_multiplier=1。单发 50mm AP 命中附甲的生效冲击约 45，整块附甲要累计五十余发才会脱落；这段期间被命中的爆反段先按各自的 8 点子系统耐久逐块被摧毁，并从模型上隐藏。
+附加装甲：车体左右各 13 块爆反瓦，每块 65 mm 厚度、材质 machine_max:arat_ii（ARAT II，rha 1.2 ≈ 78 mm 等效），后面是 30 mm 内层裙板 LeftZhuangJia / RightZhuangJia；炮塔左右各 66 mm 仍用 m1a2_sep:m1a2_arat。型号按 TUSK II 的 ARAT II（Abrams Reactive Armor Tile II，艾布拉姆斯反应装甲块 II 型）命名，放在美系基础包，后续美系车可以直接复用；这部分是分区代理，不是 ARAT II 的精确模型。
+车体 26 块爆反瓦各自是独立的耐久单元：命中箱带 condition 与 subsystem，子系统类型 machine_max:reactive_armor、灵敏度 trigger_penetration 50（单位 mm 等效穿深）。进砖之前的穿深达到阈值即失效并从模型隐藏，当次是否击穿无关；低于阈值的命中既不引爆也不磨损，碰撞冲击同样不引爆；其余砖不受影响，失效后该处只剩 30 mm 内层裙板。26 块砖的子系统在 HUD 清单里各自可见（hidden: false），损坏状态因此对玩家直接可读。
+爆反瓦的等效装甲由材质 machine_max:arat_ii 固定：decay_rha 取 1.2，与 rha 相同，等效系数因此恒为 1.2，78 mm 不随附甲零件耐久衰减。penetration_modifiers 用加性：所有来源先吃 30 mm，爆炸/射流再吃 320 mm（合计 350）。它对两条路径同时生效：动能弹同时少 30 mm 的击穿判定与余速（120 mm / 125 mm / 57 mm 的击穿结论不变，30 mm AP 的 50 mm 本来也不到 78 mm）；射流按 350 mm 削减保留能量，500 mm 级射流穿过瓦后只剩约四成。炮塔附甲那 66 mm 仍按 m1a2_arat 的 decay_rha 0.2 随耐久衰减。
+ARAT 的爆炸伤害系数为 0.55，没有 HEAT 射流或串联判定；爆反失效不产生爆炸，因此没有自伤源与链式引爆。战雷的 450 mm 破甲防护不能直接作为 HE 爆炸防护。
+四块附加装甲的挂点取炮塔座圈同级参数：车体侧与附加装甲侧两端都是 integrity=2400、impact_absorption=1.0、impact_reduction=10、impact_multiplier=1。单发 50mm AP 命中附甲的生效冲击约 45，整块附甲要累计五十余发才会脱落；挂点脱落之前，被命中的爆反砖先按各自的灵敏度逐块失效。
 完整分区、计算口径和固定来源见 armor-parameters.txt、armor-barrel036-report.json。
 
 座圈与独立炮管
@@ -74,3 +76,6 @@ ARAT 的爆炸伤害系数为 0.55，没有逐砖起爆、HEAT 射流或串联�
 https://github.com/gszabi99/War-Thunder-Datamine/blob/e64d287d6223eba19fb9c8c02324090b25e533f2/aces.vromfs.bin_u/gamedata/units/tankmodels/us_m1a2_sep_abrams.blkx
 
 钢板参考来自 xray_viewer_data 的 armorArrayText 与 DamageParts；复合层来自 DamageParts.hull_turret_spaced_armor。
+
+ARAT II 的型号名与定位（TUSK II 套件在车体与炮塔侧面加挂的瓦状反应装甲，主要提升化学能弹药防护）：
+https://warthunder.com/zh/news/1318-kai-fa-m1a2-sepv2-tusk-ii-mei-li-jian-zhong-zhuang-qi-bing-zh
