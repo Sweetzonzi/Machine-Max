@@ -51,7 +51,9 @@ public class MMPayloadRegistry {
         // 槽位拥有者，再生架增加已预留总量；SupplierRef 的编码由「Part uuid + SubPart 名 + 子系统名」
         // 收成「宿主 SubPart ID + 子系统名」。
         // 6.0.0 对应结束结果：发射器再增加最近一次结束的作业编号与已交付结论两个同步项（访问器编号后移）。
-        final PayloadRegistrar sync = event.registrar("sync:6.0.0");
+        // 7.0.0 对应装填作业的人工段：发射器增加当前阶段一个同步项（访问器编号后移），阶段切换与换人
+        // 重定时都会改写本阶段时长与进度基线，客户端按阶段分别推进。
+        final PayloadRegistrar sync = event.registrar("sync:7.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

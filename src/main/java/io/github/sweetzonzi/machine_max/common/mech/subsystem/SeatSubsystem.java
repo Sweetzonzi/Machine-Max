@@ -28,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +53,18 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
      * 下车、死亡与子系统移除都不清空，随座位实例存续。</p>
      */
     public Vector3f boardingLocalOffset;
+
+    /**
+     * 本座位实际接受的频道：型号的交互输入与安装实例的装填发现频道取并集。<br>
+     * 在构造时算一次，广播与终端查询每 tick 都要读它，不在调用现场拼表。
+     */
+    private final List<String> acceptedChannels;
+
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.acceptedChannels = mergeAcceptedChannels(
+                attr.staticAttribute.getAcceptedChannels(), attr.getReloadOperatorDiscoveryInputs());
         // 从动态属性加载摄像机发现目标
         this.cameraDiscoveryTargets = attr.getCameraDiscoveryTargets();
         //从动态属性加载控制组预设
@@ -270,7 +280,23 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
 
     @Override
     public List<String> getAcceptedChannels() {
-        return attr.staticAttribute.getAcceptedChannels();
+        return acceptedChannels;
+    }
+
+    /**
+     * 交互输入与装填发现频道取并集，重复的频道只保留首次出现的位置。
+     *
+     * @param interactInputs 型号声明的交互输入
+     * @param operatorInputs 安装实例声明的装填发现频道
+     * @return 不可变的频道表
+     */
+    private static List<String> mergeAcceptedChannels(List<String> interactInputs, List<String> operatorInputs) {
+        if (operatorInputs.isEmpty()) return List.copyOf(interactInputs);
+        List<String> merged = new ArrayList<>(interactInputs);
+        for (String channel : operatorInputs) {
+            if (!merged.contains(channel)) merged.add(channel);
+        }
+        return List.copyOf(merged);
     }
 
     @Override

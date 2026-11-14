@@ -117,6 +117,10 @@ public interface IAmmoSupplier {
      * {@code null}，消费者因此不建作业、不开始计时，下个 tick 再问一次。未被受理的请求不写记录，
      * 所以它既不占槽也不挡别人。
      * <p>
+     * <b>已有本作业预留时只取槽位：</b>带人工段的流程在人工段开工前就用 {@link #reserveFor} 取了预留
+     * （那时还不占机械槽），进入机械段时再调用本方法补齐槽位；这时授予仍带同一个来源与份额，
+     * 但消费者以作业上冻结的规格为准，不拿它覆盖受理时的分配。
+     * <p>
      * 记录里只有消费者引用与该作业的身份，不复制作业内容；预留记在来源弹药架上，键是同一个身份。
      * 两者都不入存档：读档后第一次受理重新建立。消费者写作业与调用本方法是同一次受理，
      * 因此记录里的身份总能与对方当前作业对上。
@@ -126,6 +130,81 @@ public interface IAmmoSupplier {
      * @return 本次授予的来源与份额；{@code null} 表示本 tick 接不了单
      */
     @Nullable Grant claimFor(IAmmoConsumer consumer, ReloadJobKey key);
+
+    // ==================== 人工段 ====================
+
+    /**
+     * 本机构流程中人工准备段的基准时长（tick）；0 表示没有人工段（全自动流程）。<br>
+     * 这是"标准人力"下的秒数，还要乘岗位倍率 {@code P} 与乘员个人倍率 {@code A} 才是实际时长
+     * （见装填计划 §2.2）；换算由持有作业的消费者做，本机只报基准值。
+     */
+    default int getHumanReloadTimeTicks() {
+        return 0;
+    }
+
+    /**
+     * 只取得整次作业的弹药预留，<b>不占机械槽</b>。<br>
+     * 人工段开工时用：这时还没有机械动作，占着机构槽位会让别的管白白等。人工段结束后要机械动作时，
+     * 消费者再调用 {@link #claimFor} 补齐槽位——那份预留已经在，只需登记槽位。
+     * <p>没有人工段的机构不需要这个入口，默认实现与 {@link #claimFor} 相同。
+     *
+     * @param consumer 申请开工的消费者
+     * @param key      它即将写进作业的身份
+     * @return 本次授予的来源与份额；{@code null} 表示没有可交付的库存
+     */
+    @Nullable
+    default Grant reserveFor(IAmmoConsumer consumer, ReloadJobKey key) {
+        return claimFor(consumer, key);
+    }
+
+    /**
+     * 为人工段认领一名执行者（坐在这台座位上的实际乘员）。<br>
+     * 由机构按自己的装填人员发现表选人：候选是"有效座位的存活乘员 × 可走的路径"，取预计完成时间最小者
+     * （§4.3）；同一个人通过多条线路出现时只采用最有利的那条。选不到人时返回 {@code false}，
+     * 消费者因此不建作业、不占预留，下个 tick 再问一次。
+     * <p>没有人工段的机构不需要这个入口，默认实现恒为 {@code true}（没有人要认领）。
+     *
+     * @param consumer 申请开工的消费者
+     * @param key      它即将写进作业的身份
+     * @return true 表示这次作业此刻有人可干
+     */
+    default boolean claimOperator(IAmmoConsumer consumer, ReloadJobKey key) {
+        return true;
+    }
+
+    /**
+     * 这条作业的人工段是否仍有可用执行者。<br>
+     * 乘员离座、死亡或实体移除时立即变为 {@code false}：人工段不能空跑，消费者据此换人或暂停
+     * （原库存预留与已取得的机械槽位都保持，见 §9 第 3 条）。
+     * <p>没有人工段的机构默认恒为 {@code true}。
+     *
+     * @param consumer 询问的消费者
+     */
+    default boolean holdsOperator(IAmmoConsumer consumer) {
+        return true;
+    }
+
+    /**
+     * 按身份释放人工段的执行者认领。<br>
+     * 人工段完成、作业终止、换人都是这个入口；身份不匹配时无操作，旧作业的回调因此摘不掉新作业的认领。
+     * 释放不改变已完成的人工进度。
+     *
+     * @param consumer 结束人工段或结束作业的消费者
+     * @param key      这条作业的身份
+     */
+    default void releaseOperator(IAmmoConsumer consumer, ReloadJobKey key) {
+    }
+
+    /**
+     * 已认领执行者的人工段时间倍率（岗位倍率 {@code P} × 个人倍率 {@code A}）。<br>
+     * 消费者用它在换人后重新换算剩余时长（{@link ReloadJob#retimeHuman(double)}）：倍率变小时剩余 tick 变少，
+     * 变大时变多，进度比例不倒退。没有人工段或没有认领时返回 1。
+     *
+     * @param consumer 询问的消费者
+     */
+    default double getOperatorTimeScale(IAmmoConsumer consumer) {
+        return 1.0;
+    }
 
     /**
      * 按身份释放占用与弹药预留。<br>

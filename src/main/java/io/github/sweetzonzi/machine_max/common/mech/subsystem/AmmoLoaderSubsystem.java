@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -10,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,14 +24,19 @@ import java.util.Map;
 
 /**
  * 自动装弹机子系统。<br>
- * 只提供机械装填的<b>可工作条件</b>、<b>占用与库存承诺</b>与<b>交付本身</b>：为每条作业回答本 tick 能
- * 推进多少（{@link #getAdvanceTicks(IAmmoConsumer)}），并在作业走完后把上游弹药架的那份预留兑现成交付。
- * 装填进度归消费者的 {@link ReloadJob}，本机不持有一份并行计时；库存、容量、预留与再生归
+ * 提供一次装填的<b>可工作条件</b>、<b>占用与库存承诺</b>、<b>人工段的用人</b>与<b>交付本身</b>：为每条作业
+ * 回答本 tick 能推进多少（{@link #getAdvanceTicks(IAmmoConsumer)}），并在作业走完后把上游弹药架的那份预留
+ * 兑现成交付。装填进度归消费者的 {@link ReloadJob}，本机不持有一份并行计时；库存、容量、预留与再生归
  * {@link RegenAmmoRackSubsystem}；本机不缓存 AmmoBelt 实例，扣减与写入在同一个主线程提交点完成。
+ * <p>
+ * <b>两段流程：</b>型号可以配置一段人工准备（{@link #getHumanReloadTimeTicks()}）。有它时作业先走
+ * {@link ReloadJob.Stage#HUMAN}，由本机发现的座位上的实际乘员推进；人工段完成后释放人员，再申请机械槽位进入
+ * {@link ReloadJob.Stage#MACHINE}。所以人工段不占机械槽（{@link #claimFor} 只在机械段调用，
+ * {@link #reserveFor} 在人工段前只取弹药预留），而整次作业的弹药在首个阶段之前就已按身份预留。
  * <p>
  * 上游来源由本机自己按 {@code ammo_discovery_targets} 查询，只接受库存持有者（弹药架）；
  * 机构之间不互认上游，机械链因此不会成环。下游按 {@code ammo_discovery_inputs} 在供弹频道上
- * 发现本机，与直接查询弹药架的人力直取路径区分开。
+ * 发现本机；人工段的乘员按 {@code reload_operator_discovery_targets} 在装填人员频道上发现座位。
  * <p>
  * <b>受理是唯一写入点：</b>一次受理同时取得机构槽位（仅独占机构）与该次作业在来源架上的弹药预留
  * （{@link #claimFor}）。没被受理的请求不写占用、不占预留，也不开始计时；机构据此既不挡别人也不承诺
@@ -39,9 +47,9 @@ import java.util.Map;
  * （独占且满速），并把槽位拥有者下发；{@code true} 时不限槽位、各作业分别满速，没有独占槽位。
  * 客户端据下发的拥有者建立本地镜像，不运行第二套抢占判定。
  * <p>
- * 进度音效属于本机（机械段的声音定位在装弹机上），但<b>触发源是消费者的作业进度</b>：
- * 消费者的每个客户端 tick 把当前进度交给 {@link #tickStageSounds(IAmmoConsumer, float)}，
- * 已播阈值记在这里，因此作业重开或进度回退都不会把同一段音效再播一遍。
+ * 进度音效属于本机配置，但<b>触发源是消费者的作业进度</b>：消费者的每个客户端 tick 把当前进度交给
+ * {@link #tickStageSounds(IAmmoConsumer, float)}。人工段的声音定位在发射器上（人把弹交到炮闩跟前），
+ * 机械段定位在本机；已播游标按阶段分开记，阶段切换先把上一段剩下的标记补完再起新段。
  */
 public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, ISoundSpreader {
 
@@ -59,7 +67,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     /**
      * 已受理作业的占用表：消费者 → 该作业的身份。<br>
      * 只在受理点（{@link #claimFor}）写入，由消费者按身份释放：旧作业的回调因此摘不掉新作业的占用。
-     * 只记消费者引用与身份，不复制作业内容；不入存档。
+     * 只记消费者引用与身份，不复制作业内容；不入存档。人工段不在这张表里——那时还没有机械动作。
      */
     private final Map<IAmmoConsumer, ReloadJobKey> claimedJobs = new LinkedHashMap<>();
 
@@ -73,17 +81,37 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     private boolean pendingSlotOwner;
 
     /**
-     * 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同一段重复触发；仅客户端有效。<br>
+     * 每个消费者在本阶段的音效游标：已播到的进度比例与它是哪一段。<br>
      * 游标是各客户端自己的量：进度回退（作业重开、上行校准把进度往回拉）只把游标拉回去，
-     * 不重播已经越过的阈值。
+     * 不重播已经越过的阈值；阶段切换时先把上一段剩下的标记补完，再为新段重建游标。
      */
-    private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new LinkedHashMap<>();
+    private final Map<IAmmoConsumer, SoundCursor> soundCursors = new LinkedHashMap<>();
 
     /**
      * 本机查询得到的上游弹药架，按到达顺序保存；结构变化时整体重建。<br>
      * 只含库存持有者，且不含本机自身。
      */
     private final List<RegenAmmoRackSubsystem> upstreams = new ArrayList<>();
+
+    /**
+     * 本机为人工段查询到的座位，以及该座位到达本机的装填人员频道；结构变化时整体重建。<br>
+     * 同一座位可以经多条线路到达，此时保留每条线路——岗位倍率绑定配置条目，候选按各自的关系代价比较。
+     */
+    private final Map<SeatSubsystem, List<String>> operatorSeats = new LinkedHashMap<>();
+
+    /** 人工段当前认领的座位；null = 没有认领。服务端字段 */
+    @Nullable
+    private SeatSubsystem operatorSeat;
+
+    /** 人工段当前认领的乘员；与 {@link #operatorSeat} 一起给出执行者。服务端字段 */
+    @Nullable
+    private LivingEntity operator;
+
+    /** 已认领执行者的时间倍率（岗位倍率 × 个人倍率），换人时随之更新 */
+    private double operatorTimeScale = 1.0;
+
+    /** 已经就有没有执行者这件事告过警，避免每次结构变化重复刷屏 */
+    private boolean warnedNoOperator;
 
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
@@ -119,18 +147,20 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         slotOwner = getSynchedData().get(SLOT_OWNER_ID);
     }
 
-    // ==================== 上游发现 ====================
+    // ==================== 上游与人员发现 ====================
 
     @Override
     public void onAttach() {
         super.onAttach();
         discoverUpstreams();
+        discoverOperatorSeats();
     }
 
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         discoverUpstreams();
+        discoverOperatorSeats();
     }
 
     /**
@@ -152,6 +182,40 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         }
         upstreams.clear();
         upstreams.addAll(found);
+    }
+
+    /**
+     * 按 {@code reload_operator_discovery_targets} 的每个频道做只读查询，收集可达的座位。<br>
+     * 倍率键取<b>发起查询的配置条目</b>，不取到达频道：连接器可以转译频道，但这条关系的岗位倍率仍写在
+     * 本机那张表的原名下。座位只作为发现结果保存，实际是否有人由每个 tick 读 {@code passenger}——乘员上下座
+     * 不触发结构变化，不能只在发现时判定一次。
+     * <p><b>调用线程：</b>主线程（挂载与结构变化）。
+     */
+    private void discoverOperatorSeats() {
+        Map<SeatSubsystem, List<String>> found = new LinkedHashMap<>();
+        for (String channel : attr.reloadOperatorDiscoveryTargets.keySet()) {
+            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
+                for (ISignalReceiver terminal : arrival.getValue()) {
+                    if (!(terminal instanceof SeatSubsystem seat)) continue;
+                    if (!sameAssembly(seat)) continue;
+                    List<String> channels = found.computeIfAbsent(seat, k -> new ArrayList<>(2));
+                    if (!channels.contains(channel)) channels.add(channel);
+                }
+            }
+        }
+        operatorSeats.clear();
+        operatorSeats.putAll(found);
+
+        if (getHumanReloadTimeTicks() > 0 && operatorSeats.isEmpty()) {
+            if (!warnedNoOperator) {
+                warnedNoOperator = true;
+                MachineMax.LOGGER.warn("装弹机 {} 配置了人工段，但没有任何座位声明装填人员频道 {}；"
+                                + "这条流程等不到执行者，装填会一直停在等待人工",
+                        name, attr.reloadOperatorDiscoveryTargets.keySet());
+            }
+        } else {
+            warnedNoOperator = false;
+        }
     }
 
     /** 该子系统是否与本机挂在同一个装配体上。 */
@@ -214,17 +278,51 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         sweepStaleClaims();
         if (!isSupplyOperational()) return null;
         if (!canSupplyMultiple() && hasOtherClaim(consumer)) return null;
+        // 人工段已经按身份取得预留：这一步只补机构槽位，不重复预留，也不把来源换成另一台架
+        RegenAmmoRackSubsystem reserved = reservationRack(key);
+        IAmmoSupplier.Grant grant = reserved != null ? grantOf(reserved, key) : reserveOnSomeRack(key);
+        if (grant == null) return null;
+        claimedJobs.put(consumer, key);
+        publishSlotOwner();
+        return grant;
+    }
+
+    @Override
+    @Nullable
+    public IAmmoSupplier.Grant reserveFor(IAmmoConsumer consumer, ReloadJobKey key) {
+        if (getLevel().isClientSide() || key.isNone()) return null;
+        if (!isSupplyOperational()) return null;
+        RegenAmmoRackSubsystem reserved = reservationRack(key);
+        return reserved != null ? grantOf(reserved, key) : reserveOnSomeRack(key);
+    }
+
+    /**
+     * 在可工作的上游架里挑一台预留整次作业的份额。
+     *
+     * @return 授予的来源与份额；一台都接不了时返回 null
+     */
+    @Nullable
+    private IAmmoSupplier.Grant reserveOnSomeRack(ReloadJobKey key) {
         for (RegenAmmoRackSubsystem rack : upstreams) {
             if (!rack.isOperational()) continue;
             AmmoBelt spec = rack.getDeliverySpec();
             if (spec == null) continue;
             int granted = rack.reserve(key, spec.length());
             if (granted <= 0) continue;
-            claimedJobs.put(consumer, key);
-            publishSlotOwner();
             return new IAmmoSupplier.Grant(SupplierRef.of(rack), spec.freshCopy(), granted);
         }
         return null;
+    }
+
+    /**
+     * 把某台架已有的预留读成一次授予。金额为 0（预留已被撤销或兑现）时返回 null。
+     */
+    @Nullable
+    private IAmmoSupplier.Grant grantOf(RegenAmmoRackSubsystem rack, ReloadJobKey key) {
+        AmmoBelt spec = rack.getDeliverySpec();
+        int granted = rack.reservedFor(key);
+        if (spec == null || granted <= 0) return null;
+        return new IAmmoSupplier.Grant(SupplierRef.of(rack), spec.freshCopy(), granted);
     }
 
     @Override
@@ -255,11 +353,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     public boolean holdsCommitment(IAmmoConsumer consumer) {
         ReloadJob job = consumer.getReloadJob();
         if (job == null) return false;
+        boolean human = job.stage() == ReloadJob.Stage.HUMAN;
         if (getLevel().isClientSide()) {
-            if (!canSupplyMultiple() && !slotOwner.equals(job.key())) return false;
+            // 人工段还没有机械槽位：承诺只是"这份预留还在"
+            if (!human && !canSupplyMultiple() && !slotOwner.equals(job.key())) return false;
             return hasLocalReservedStock(job);
         }
         sweepStaleClaims();
+        if (human) return reservationRack(job.key()) != null;
         return ownsClaim(consumer, job.key()) && reservationRack(job.key()) != null;
     }
 
@@ -358,11 +459,22 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /**
      * 机械段的基准时长：型号的 {@code reload_time} 秒换算成 tick。<br>
-     * 消费者的作业在开工时读一次并定死，段内不再改读本方法。
+     * 消费者的作业在进入机械段时读一次并定死，段内不再改读本方法。
      */
     @Override
     public int getReloadTimeTicks() {
         return Math.max(1, (int) (attr.staticAttribute.getReloadTime() * 20f)); // 秒 → tick
+    }
+
+    /**
+     * 人工段的基准时长：型号的 {@code human_reload_time} 秒换算成 tick；没有配置人工段时是 0。<br>
+     * 这是标准人力下的秒数，岗位倍率与个人倍率由消费者按 {@link #getOperatorTimeScale} 乘上去。
+     */
+    @Override
+    public int getHumanReloadTimeTicks() {
+        float seconds = attr.staticAttribute.getHumanReloadTime();
+        if (seconds <= 0f) return 0;
+        return Math.max(1, (int) (seconds * 20f));
     }
 
     @Override
@@ -372,19 +484,22 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /**
      * 本 tick 能为该消费者的作业推进多少。<br>
-     * 服务端认两条：本机可工作、本机受理过这条作业且它的预留还在。客户端用同一套判据的镜像——
-     * 下发的槽位拥有者（独占机构）与来源架的剩余库存（预留是否还在），因此两端算出的推进量一致，
-     * 不需要逐 tick 下发。
+     * 人工段只看人还在不在：时长已经把岗位倍率与个人倍率折进去，本机不再按秒数算推进量。
+     * 机械段认两条：本机可工作、本机受理过这条作业且它的预留还在。客户端用同一套判据的镜像——人工段
+     * 恒为 1（人员状态由服务端判定），机械段看下发的槽位拥有者（独占机构）与来源架剩余库存。
      */
     @Override
     public int getAdvanceTicks(IAmmoConsumer consumer) {
         if (!isSupplyOperational()) return 0;
         ReloadJob job = consumer.getReloadJob();
         if (job == null) return 0;
+        boolean human = job.stage() == ReloadJob.Stage.HUMAN;
         if (getLevel().isClientSide()) {
+            if (human) return 1;
             if (!canSupplyMultiple() && !slotOwner.equals(job.key())) return 0;
             return hasLocalReservedStock(job) ? 1 : 0;
         }
+        if (human) return holdsOperator(consumer) ? 1 : 0;
         sweepStaleClaims();
         if (!ownsClaim(consumer, job.key())) return 0;
         return reservationRack(job.key()) != null ? 1 : 0;
@@ -440,6 +555,134 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return rack == null ? -1 : rack.getCapacity();
     }
 
+    // ==================== 人工段 ====================
+
+    /**
+     * 为人工段认领一名执行者，或在已有更好的人时换人。<br>
+     * 候选是"有效座位的存活乘员 × 它到达本机的线路"，代价是剩余人工段的实际用时
+     * （剩余标准人力时间 × 岗位倍率 × 个人倍率）。当前执行者仍然可用时，只有严格更便宜的候选才换人；
+     * 相等时保持——同一个人经多条线路出现时也只取最有利的那条（{@link ReloadCrewSelection}）。
+     * <p>选不到人时返回 false：消费者据此暂停（作业与预留都还在），暂停超过上限才终止。
+     * <p><b>调用线程：</b>主线程（服务端，消费者的每个装填 tick）。
+     */
+    @Override
+    public boolean claimOperator(IAmmoConsumer consumer, ReloadJobKey key) {
+        if (getLevel().isClientSide()) return true;
+        int standard = getHumanReloadTimeTicks();
+        if (standard <= 0) return true;
+
+        double remaining = remainingStandardTicks(consumer, standard);
+        OperatorCandidate best = bestOperator(consumer, remaining);
+        if (holdsOperator(consumer)) {
+            if (best == null || best.estimateTicks() >= operatorTimeScale * remaining) return true;
+            releaseOperator(consumer, key);
+        }
+        if (best == null) return false;
+        CrewReloadAttachment crew = CrewReloadAttachment.of(best.person());
+        if (!crew.claim(consumer, key)) return false;
+        operator = best.person();
+        operatorSeat = best.seat();
+        operatorTimeScale = attr.timeMultiplierFor(best.channel()) * crew.multiplier();
+        return true;
+    }
+
+    /**
+     * 这条作业的人工段是否仍有可用执行者。<br>
+     * 乘员离座、死亡、实体移除、座位被摧毁，或者认领已经不在原作业上，都算不可用；此时人工段不能空跑。
+     * 客户端不判断人员（人员状态由服务端判定，实际时长也已经随同步值发布）。
+     */
+    @Override
+    public boolean holdsOperator(IAmmoConsumer consumer) {
+        if (getLevel().isClientSide()) return true;
+        LivingEntity person = operator;
+        SeatSubsystem seat = operatorSeat;
+        if (person == null || seat == null) return false;
+        if (person.isRemoved() || person.isDeadOrDying()) return false;
+        if (seat.getPassenger() != person) return false;
+        if (seat.isDestroyed() || !seat.isActive()) return false;
+        return CrewReloadAttachment.of(person).holdsClaim(consumer);
+    }
+
+    @Override
+    public void releaseOperator(IAmmoConsumer consumer, ReloadJobKey key) {
+        if (getLevel().isClientSide() || operator == null) return;
+        if (!CrewReloadAttachment.of(operator).release(key)) return;
+        operator = null;
+        operatorSeat = null;
+        operatorTimeScale = 1.0;
+    }
+
+    /**
+     * 已认领执行者的人工段时间倍率（岗位倍率 × 个人倍率）。<br>
+     * 消费者拿它在换人后重算剩余时长；没有认领时按标准人力 1。
+     */
+    @Override
+    public double getOperatorTimeScale(IAmmoConsumer consumer) {
+        if (getLevel().isClientSide() || operator == null) return 1.0;
+        return operatorTimeScale > 0 && Double.isFinite(operatorTimeScale) ? operatorTimeScale : 1.0;
+    }
+
+    /**
+     * 剩余人工段的<b>标准</b>人力 tick 数：作业上剩余的进度折算回未乘倍率的量。<br>
+     * 还没有作业（开工前的选人）时就是整段基准时长。
+     */
+    private static double remainingStandardTicks(IAmmoConsumer consumer, int standardTicks) {
+        ReloadJob job = consumer.getReloadJob();
+        if (job == null || job.stage() != ReloadJob.Stage.HUMAN) return standardTicks;
+        return Math.max(0.0, (job.totalTicks() - job.elapsedTicks()) * job.humanRate());
+    }
+
+    /**
+     * 挑出剩余人工段用时最短的候选。
+     *
+     * @param remainingStandard 剩余标准人力 tick
+     * @return 最优候选；没有可用乘员时返回 null
+     */
+    @Nullable
+    private OperatorCandidate bestOperator(IAmmoConsumer consumer, double remainingStandard) {
+        List<ReloadCrewSelection.Candidate> keys = new ArrayList<>(operatorSeats.size());
+        List<OperatorCandidate> candidates = new ArrayList<>(operatorSeats.size());
+        for (Map.Entry<SeatSubsystem, List<String>> entry : operatorSeats.entrySet()) {
+            SeatSubsystem seat = entry.getKey();
+            LivingEntity person = usableOperator(seat, consumer);
+            if (person == null) continue;
+            CrewReloadAttachment crew = CrewReloadAttachment.of(person);
+            for (String channel : entry.getValue()) {
+                double estimate = remainingStandard * attr.timeMultiplierFor(channel) * crew.multiplier();
+                keys.add(new ReloadCrewSelection.Candidate(person.getUUID(), seat.getSubPart().getId(),
+                        seat.name, estimate));
+                candidates.add(new OperatorCandidate(seat, channel, person, estimate));
+            }
+        }
+        int index = ReloadCrewSelection.bestIndex(keys);
+        return index < 0 ? null : candidates.get(index);
+    }
+
+    /**
+     * 座位上此刻能不能派人：有人、人还在、座位在、这个人没在替别的作业干活。
+     *
+     * @return 可用的乘员；任一项不成立时返回 null
+     */
+    @Nullable
+    private static LivingEntity usableOperator(SeatSubsystem seat, IAmmoConsumer consumer) {
+        LivingEntity person = seat.getPassenger();
+        if (person == null || person.isRemoved() || person.isDeadOrDying()) return null;
+        if (seat.isDestroyed() || !seat.isActive()) return null;
+        if (CrewReloadAttachment.of(person).isClaimedByOther(consumer)) return null;
+        return person;
+    }
+
+    /**
+     * 一个候选执行者：谁、坐在哪、经哪条线路被发现、干完剩余人工段还要多久。
+     *
+     * @param seat           候选座位
+     * @param channel        该座位到达本机的装填人员频道（岗位倍率按它查）
+     * @param person         实际乘员
+     * @param estimateTicks  预计完成剩余人工段所需的 tick
+     */
+    private record OperatorCandidate(SeatSubsystem seat, String channel, LivingEntity person, double estimateTicks) {
+    }
+
     // ==================== 状态显示 ====================
 
     /**
@@ -468,6 +711,10 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     // ==================== 音效 ====================
 
+    /** 某消费者在本阶段的音效游标：阶段与已播到的进度比例 */
+    private record SoundCursor(ReloadJob.Stage stage, float progress) {
+    }
+
     /** 该消费者是否已经不能再来取弹（被摧毁或失活）。 */
     private static boolean isConsumerGone(IAmmoConsumer consumer) {
         return consumer instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive());
@@ -485,14 +732,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         boolean wasOperational = isSupplyOperational();
         super.onHurt(event);
         if (wasOperational && !isSupplyOperational()) {
-            lastPlayedProgressKeys.clear();
+            soundCursors.clear();
         }
     }
 
     /**
-     * 按消费者作业的当前进度处理机械段的分段音效。<br>
-     * 一次推进跨过多个阈值时按阈值升序逐个播放，不能只播最大的那个。进度回退（作业重开或上行校准
-     * 把进度往回拉）只把游标拉回当前进度，不重播已越过的阈值。
+     * 按消费者作业的当前进度处理本段的进度音效。<br>
+     * 阈值 0 是段开始音、1 是本段走完的音，两者都不进越过循环；一次推进跨过多个阈值时按升序逐个播放。
+     * 阶段切换先把上一段剩下的标记补完，再为新段重建游标；进度回退只把游标拉回当前进度，不重播。
      * <p><b>调用线程：</b>主线程（客户端 tick，由 {@link LauncherSubsystem#onTick()} 驱动）。
      *
      * @param consumer 正在装填的消费者
@@ -500,43 +747,87 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
      */
     public void tickStageSounds(IAmmoConsumer consumer, float progress) {
         if (!getLevel().isClientSide()) return;
-        Map<String, SoundEvent> sounds = attr.staticAttribute.getProgressSounds();
-        if (sounds.isEmpty()) return;
-
+        ReloadJob job = consumer.getReloadJob();
+        if (job == null) return;
+        ReloadJob.Stage stage = job.stage();
         float clamped = Math.clamp(progress, 0f, 1f);
-        Float lastKey = lastPlayedProgressKeys.get(consumer);
-        if (lastKey != null && clamped < lastKey) {
-            // 作业重开或校准回退：游标回到当前进度，已经播过的那一段不重播
-            lastPlayedProgressKeys.put(consumer, clamped);
+        SoundCursor cursor = soundCursors.get(consumer);
+
+        if (cursor != null && cursor.stage() != stage) {
+            // 阶段切换：上一段没播完的标记先补完，再起新段
+            playCrossed(consumer, cursor.stage(), cursor.progress(), 1f);
+            cursor = null;
+        }
+        if (cursor == null) {
+            // 本段第一次被观察到：只有正好落在段首时才播开始音，晚到的观察者只建立基线
+            if (job.elapsedTicks() <= 1) playMarker(consumer, stage, 0f);
+            cursor = new SoundCursor(stage, 0f);
+        }
+        if (clamped < cursor.progress()) {
+            // 作业重开或校准把进度往回拉：游标跟回去，已经播过的不重播
+            soundCursors.put(consumer, new SoundCursor(stage, clamped));
+            if (clamped <= 0f && job.elapsedTicks() <= 1) playMarker(consumer, stage, 0f);
             return;
         }
-        float from = lastKey == null ? 0f : lastKey;
-        // 记下"阈值 → 音效"再看阈值排序，避免把键重新格式化成字符串去回查
+        playCrossed(consumer, stage, cursor.progress(), clamped);
+        soundCursors.put(consumer, new SoundCursor(stage, clamped));
+        // 已退场的消费者不再需要游标
+        soundCursors.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
+    }
+
+    /** 把 {@code (from, to]} 区间里跨过的阈值按升序播一遍；阈值 0 属于段开始音，不在这个区间里。 */
+    private void playCrossed(IAmmoConsumer consumer, ReloadJob.Stage stage, float from, float to) {
+        Map<String, SoundEvent> sounds = soundsOf(stage);
+        if (sounds.isEmpty()) return;
         List<Map.Entry<Float, SoundEvent>> crossed = new ArrayList<>();
         for (Map.Entry<String, SoundEvent> entry : sounds.entrySet()) {
-            try {
-                float threshold = Float.parseFloat(entry.getKey());
-                if (!Float.isFinite(threshold)) continue;
-                if (threshold > from && threshold <= clamped) {
-                    crossed.add(Map.entry(threshold, entry.getValue()));
-                }
-            } catch (NumberFormatException ignored) {
-                // 非数值键不是进度标记，跳过
-            }
+            float threshold = thresholdOf(entry.getKey());
+            if (!Float.isFinite(threshold) || threshold <= 0f) continue;
+            if (threshold > from && threshold <= to) crossed.add(Map.entry(threshold, entry.getValue()));
         }
         crossed.sort(Map.Entry.comparingByKey());
         for (Map.Entry<Float, SoundEvent> entry : crossed) {
-            playProgressSound(entry.getValue());
+            playAt(consumer, stage, entry.getValue());
         }
-        lastPlayedProgressKeys.put(consumer, clamped);
-        // 已退场的消费者不再需要游标
-        lastPlayedProgressKeys.keySet().removeIf(AmmoLoaderSubsystem::isConsumerGone);
     }
 
-    /** 播放单次进度音效；使用 SpreadingSound 在子系统位置播放，带多普勒速度传播。 */
-    private void playProgressSound(@Nullable SoundEvent sound) {
+    /** 播放某个固定阈值的音效（0 = 段开始）；该段没有配置这个阈值时什么都不做。 */
+    private void playMarker(IAmmoConsumer consumer, ReloadJob.Stage stage, float threshold) {
+        for (Map.Entry<String, SoundEvent> entry : soundsOf(stage).entrySet()) {
+            float value = thresholdOf(entry.getKey());
+            if (Float.isFinite(value) && Math.abs(value - threshold) < 1e-4f) {
+                playAt(consumer, stage, entry.getValue());
+                return;
+            }
+        }
+    }
+
+    /** 该阶段的进度音效配置：人工段在发射器上，机械段在本机。 */
+    private Map<String, SoundEvent> soundsOf(ReloadJob.Stage stage) {
+        return stage == ReloadJob.Stage.HUMAN
+                ? attr.staticAttribute.getHumanProgressSounds()
+                : attr.staticAttribute.getProgressSounds();
+    }
+
+    /**
+     * 播放一处进度音效：人工段定位在发射器（人把弹交到炮闩跟前），机械段定位在本机。
+     */
+    private void playAt(IAmmoConsumer consumer, ReloadJob.Stage stage, @Nullable SoundEvent sound) {
         if (sound == null || !getLevel().isClientSide()) return;
+        if (stage == ReloadJob.Stage.HUMAN) {
+            if (consumer instanceof ISoundSpreader spreader) spreader.playSpreadingSound(sound, SoundSource.NEUTRAL);
+            return;
+        }
         playSpreadingSound(sound, SoundSource.NEUTRAL);
+    }
+
+    /** 解析音效表的阈值键；不是数值的键按"不是进度标记"处理。 */
+    private static float thresholdOf(String key) {
+        try {
+            return Float.parseFloat(key);
+        } catch (NumberFormatException ignored) {
+            return Float.NaN;
+        }
     }
 
     // ==================== 信号 ====================
@@ -547,8 +838,15 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return attr.ammoDiscoveryInputs;
     }
 
+    /**
+     * 本机的查询表：上游弹药架与人工段座位。<br>
+     * 两者都是只读发现的入口，因此都进首跳表；装填人员频道只用于握手，本机不往座位发业务信号。
+     */
     @Override
     public Map<String, List<String>> getTargetNames() {
-        return attr.ammoDiscoveryTargets;
+        if (attr.reloadOperatorDiscoveryTargets.isEmpty()) return attr.ammoDiscoveryTargets;
+        Map<String, List<String>> merged = new LinkedHashMap<>(attr.ammoDiscoveryTargets);
+        merged.putAll(attr.reloadOperatorDiscoveryTargets);
+        return merged;
     }
 }

@@ -17,10 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 记在作业上（{@link ReloadJob#pausedTicks()}），超时判定留给持有作业的一方。
  * <p>
  * 权威基线与逐 tick 推进是两条不同的路：{@link ReloadJob#advanceTo(int)} 只向前对齐、不计暂停，
- * 因此客户端跑在前面时不会被一条更旧的基线拉回。
+ * 因此客户端跑在前面时不会被一条更旧的基线拉回；而阶段切换与换人重定时换了坐标系，
+ * 由 {@link ReloadJob#alignRemote(ReloadJob.Stage, int, int)} 整体重设。
  * <p>
  * 受理时定下的四项分配（身份、交付目标、实际来源、冻结规格与份额）在作业存续期间不变：机构占用与
  * 架预留按它们匹配，换架或换规格要作废旧作业并重新申请。
+ * <p>
+ * 两个阶段的契约：人工段的时长已经把岗位倍率与个人倍率折进去，机械段不乘人员倍率；换人只改剩余量，
+ * 完成比例不倒退（{@link ReloadJob#retimeHuman(double)}）。
  */
 class ReloadJobTest {
 
@@ -131,5 +135,103 @@ class ReloadJobTest {
     void negativeReservationIsClampedToZero() {
         ReloadJob job = new ReloadJob(KEY, TARGET, ORIGIN, SPEC, -2, 5);
         assertEquals(0, job.reservedCount());
+    }
+
+    // ==================== 阶段 ====================
+
+    private static ReloadJob humanJob(int totalTicks, double rate) {
+        return new ReloadJob(KEY, TARGET, ORIGIN, SPEC, 5, ReloadJob.Stage.HUMAN, totalTicks, rate);
+    }
+
+    @Test
+    void aFlowWithoutHumanStageStartsInTheMachineStage() {
+        ReloadJob job = job(9);
+        assertEquals(ReloadJob.Stage.MACHINE, job.stage());
+        assertEquals(1.0, job.humanRate(), "机械段不乘人员倍率");
+    }
+
+    @Test
+    void enteringTheMachineStageResetsTheProgressAndDropsTheHumanRate() {
+        ReloadJob job = humanJob(20, 1.5);
+        job.advance(20);
+        assertTrue(job.isComplete());
+
+        job.enterMachineStage(30);
+        assertEquals(ReloadJob.Stage.MACHINE, job.stage());
+        assertEquals(30, job.totalTicks());
+        assertEquals(0, job.elapsedTicks(), "机械段从 0 开始计时");
+        assertEquals(0, job.pausedTicks(), "换段不是暂停");
+        assertEquals(1.0, job.humanRate());
+        assertFalse(job.isComplete());
+    }
+
+    @Test
+    void retimeHumanKeepsTheProgressRatioWhenTheCrewChanges() {
+        ReloadJob job = humanJob(100, 1.0);
+        job.advance(50);
+        assertEquals(0.5f, job.progress());
+
+        // 换上一个慢一倍的人（倍率 2）：剩余标准人力 50，实际还要 50 × 2 = 100 tick
+        assertTrue(job.retimeHuman(2.0));
+        assertEquals(0.5f, job.progress(), "换人后进度比例不变，进度条不倒退");
+        assertEquals(100, job.remainingTicks(), "剩余量按新倍率换算");
+        assertEquals(2.0, job.humanRate());
+
+        // 再换回标准人力：剩余标准人力 50，实际还要 50 tick
+        assertTrue(job.retimeHuman(1.0));
+        assertEquals(0.5f, job.progress());
+        assertEquals(50, job.remainingTicks());
+    }
+
+    @Test
+    void retimeHumanOnAFreshStageOnlyRescalesTheWholeSegment() {
+        ReloadJob job = humanJob(40, 1.0);
+        assertTrue(job.retimeHuman(2.0));
+        assertEquals(0, job.elapsedTicks());
+        assertEquals(80, job.totalTicks(), "还没动的时候只剩整段的剩余量要换算");
+        assertEquals(80, job.remainingTicks());
+    }
+
+    @Test
+    void retimeHumanIgnoresMachineStageNonPositiveAndUnchangedRates() {
+        ReloadJob machine = job(10);
+        assertFalse(machine.retimeHuman(2.0), "机械段不按人员倍率重定时");
+
+        ReloadJob job = humanJob(10, 1.0);
+        assertFalse(job.retimeHuman(1.0), "倍率没变时不是一次改写");
+        assertFalse(job.retimeHuman(0), "非正倍率不处理");
+        assertFalse(job.retimeHuman(Double.NaN), "非有限倍率不处理");
+        assertEquals(10, job.totalTicks());
+    }
+
+    @Test
+    void alignRemoteAdoptsANewStageFromTheBaseline() {
+        ReloadJob job = humanJob(20, 1.2);
+        job.advance(20);
+
+        job.alignRemote(ReloadJob.Stage.MACHINE, 40, 0);
+        assertEquals(ReloadJob.Stage.MACHINE, job.stage());
+        assertEquals(40, job.totalTicks());
+        assertEquals(0, job.elapsedTicks(), "换段时按基线从 0 起算，不是倒退");
+        assertEquals(1.0, job.humanRate());
+    }
+
+    @Test
+    void alignRemoteOnTheSameStageOnlyMovesForwardAndTakesTheNewDuration() {
+        ReloadJob job = humanJob(100, 1.0);
+        job.alignRemote(ReloadJob.Stage.HUMAN, 100, 50);
+        assertEquals(50, job.elapsedTicks(), "同阶段同长度：按基线向前对齐");
+        assertEquals(0.5f, job.progress());
+
+        // 同一条作业换人重定时：新的总时长与整体缩放过的基线一起到达，坐标整体换一帧
+        job.alignRemote(ReloadJob.Stage.HUMAN, 50, 25);
+        assertEquals(50, job.totalTicks());
+        assertEquals(25, job.elapsedTicks());
+        assertEquals(0.5f, job.progress(), "换一帧之后完成比例保持不变");
+        assertEquals(25, job.remainingTicks());
+
+        // 长度没变的基线只能向前
+        job.alignRemote(ReloadJob.Stage.HUMAN, 50, 10);
+        assertEquals(25, job.elapsedTicks(), "基线落在本端进度之后时保持本地进度");
     }
 }

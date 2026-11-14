@@ -25,6 +25,12 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final Map<String, List<String>> passengerNumSignalTargets;
     /** 摄像机发现握手配置 */
     public final Map<String, List<String>> cameraDiscoveryTargets;
+    /**
+     * 本座位被装填需求方发现的频道（安装级）。<br>
+     * 型号的 {@code interact_inputs} 仍描述交互输入，本字段只为"谁站在这里能替这门武器装填"提供频道；
+     * 两者在 {@code SeatSubsystem#getAcceptedChannels()} 里取并集。频道只用于发现握手，不承载装填指令。
+     */
+    public final List<String> reloadOperatorDiscoveryInputs;
     /** 下车 locator 名称列表，顺序即优先级；空列表表示该座位未声明下车点 */
     public final List<String> dismountLocators;
     /**
@@ -44,6 +50,8 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             ResourceLocation.CODEC.optionalFieldOf("control_group_preset", NO_CONTROL_GROUP_PRESET).forGetter(SeatSubsystemAttr::getControlGroupPreset),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("camera_discovery_targets", Map.of()).forGetter(SeatSubsystemAttr::getCameraDiscoveryTargets),
+            Codec.STRING.listOf().optionalFieldOf("reload_operator_discovery_inputs", List.of())
+                    .forGetter(SeatSubsystemAttr::getReloadOperatorDiscoveryInputs),
             Codec.STRING.listOf().optionalFieldOf("dismount_locators", List.of()).forGetter(SeatSubsystemAttr::getDismountLocators),
             ResourceLocation.CODEC.optionalFieldOf("first_hud_layout").forGetter(SeatSubsystemAttr::getFirstHudLayoutOverride),
             ResourceLocation.CODEC.optionalFieldOf("third_hud_layout").forGetter(SeatSubsystemAttr::getThirdHudLayoutOverride),
@@ -56,6 +64,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             ResourceLocation controlGroupPreset,
             Map<String, List<String>> passengerNumSignalTargets,
             Map<String, List<String>> cameraDiscoveryTargets,
+            List<String> reloadOperatorDiscoveryInputs,
             List<String> dismountLocators,
             Optional<ResourceLocation> firstHudLayoutOverride,
             Optional<ResourceLocation> thirdHudLayoutOverride,
@@ -68,6 +77,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.controlGroupPreset = controlGroupPreset;
         this.passengerNumSignalTargets = passengerNumSignalTargets;
         this.cameraDiscoveryTargets = cameraDiscoveryTargets;
+        this.reloadOperatorDiscoveryInputs = List.copyOf(reloadOperatorDiscoveryInputs);
         this.dismountLocators = checkDismountLocators(dismountLocators);
         this.firstHudLayoutOverride = firstHudLayoutOverride;
         this.thirdHudLayoutOverride = thirdHudLayoutOverride;

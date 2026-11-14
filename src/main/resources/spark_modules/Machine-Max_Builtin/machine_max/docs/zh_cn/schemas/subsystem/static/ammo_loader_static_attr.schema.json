@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/ammo_loader_static_attr.json",
   "title": "自动装弹机子系统静态属性",
-  "description": "自动装弹机的静态属性：机械装填段的基准秒数、并发产能与该段的音效。库存与再生属于弹药架型号（regen_ammo_rack_static_attr.schema.json）；供弹发现频道是逐实例字段，见 dynamic/ammo_loader_dynamic_attr.schema.json。",
+  "description": "自动装弹机的静态属性：可选的人工准备段、机械装填段的基准秒数、并发产能与两段各自的音效。库存与再生属于弹药架型号（regen_ammo_rack_static_attr.schema.json）；供弹与装填人员的发现频道是逐实例字段，见 dynamic/ammo_loader_dynamic_attr.schema.json。",
   "properties": {
     "$schema": { "type": "string", "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验", "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json" },
     "type": { "type": "string", "const": "machine_max:ammo_loader", "description": "子系统类型，必须为 'machine_max:ammo_loader'。" },
@@ -11,6 +11,7 @@
     "limit_damage": { "type": "boolean", "default": false, "description": "是否把传递的伤害限制在子系统剩余耐久之内。" },
     "hidden": { "type": "boolean", "default": false, "description": "是否在 HUD 中隐藏该子系统。" },
     "reload_time": { "type": "number", "exclusiveMinimum": 0, "description": "机械装填段的基准秒数，必须大于 0。零长度的段按未配置处理，而没有机械段的自动装弹机不能表达任何装填路径，因此解码期拒绝。" },
+    "human_reload_time": { "type": "number", "minimum": 0, "default": 0, "description": "人工准备段的基准秒数（标准人力）。省略或写 0 表示全自动流程；负值与非有限值是解码错误。人工段在机械段之前执行，实际时长还要乘岗位倍率与该乘员的个人倍率。配了人工段却没有座位声明本机的装填人员频道时，这条流程等不到执行者，启动时会告警。" },
     "can_supply_multiple": { "type": "boolean", "default": false, "description": "并发产能。false = 同时只为一个作业分配槽位（独占且满速）；true = 不限槽位，各作业分别满速。库存始终由上游弹药架共用。" },
     "sounds": {
       "type": "object",
@@ -20,7 +21,12 @@
         "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "停用时的音效。" },
         "progress_sounds": {
           "type": "object",
-          "description": "机械段的进度分段音效：键是 '0.0'~'1.0' 的十进制字符串，值是该进度阈值上播放的音效。一次推进跨过多个阈值时按阈值升序逐个播放。",
+          "description": "机械段的进度分段音效：键是 '0.0'~'1.0' 的十进制字符串，值是该进度阈值上播放的音效。阈值 0 是段开始音、1 是段走完的音，两者不进越过循环；一次推进跨过多个阈值时按阈值升序逐个播放。声音定位在本机。",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
+        "human_progress_sounds": {
+          "type": "object",
+          "description": "人工准备段的进度分段音效，键的写法与 progress_sounds 相同。声音定位在发射器上（人把弹交到炮闩跟前），不在本机。阶段切换时先把上一段剩下的标记补完，再开始新的一段。",
           "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
         "fmod": {
@@ -35,7 +41,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "基础音效与机械段的进度音效。"
+      "description": "基础音效与两段的进度音效。"
     }
   },
   "required": ["type", "reload_time"],
@@ -59,6 +65,22 @@
           "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
           "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
           "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
+        }
+      }
+    },
+    {
+      "type": "machine_max:ammo_loader",
+      "basic_durability": 25,
+      "pass_damage": false,
+      "human_reload_time": 2,
+      "reload_time": 4,
+      "sounds": {
+        "human_progress_sounds": {
+          "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
+          "0.8": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 }
+        },
+        "progress_sounds": {
+          "0.6": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
         }
       }
     }

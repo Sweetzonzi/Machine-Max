@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment
+import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
 import net.minecraft.world.entity.LivingEntity
@@ -28,6 +29,15 @@ object MMAttachments {
         factory = { _ -> ControlPreferenceAttachment() }
         copyOnDeath = true
         serializer = ControlPreferenceAttachment.CODEC
+    }
+
+    //实体的人工装填能力：个人倍率与当前认领的作业
+    @JvmStatic
+    val ENTITY_CREW_RELOAD = MachineMax.REGISTER.attachment {
+        id = "crew_reload"
+        factory = { _ -> CrewReloadAttachment() }
+        copyOnDeath = true
+        serializer = CrewReloadAttachment.CODEC
     }
 
     //实体保存的蓝图与研发点

@@ -249,6 +249,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
 
     /**
+     * 当前作业所处的阶段（网络同步）：{@code 0} = 人工准备，{@code 1} = 机械运行。<br>
+     * 客户端必须知道这一段是谁在推进：人工段的时长已经把岗位倍率与个人倍率折进去，本端每 tick 推进 1，
+     * 走完后不能自己交付，要等权威把阶段推到机械段；机械段则按执行者给的推进量与机构槽位推进。
+     * 与 {@link #JOB_TOTAL_ID} 成对更新：阶段切换会重发时长与一条归零的进度基线。
+     */
+    private static final EntityDataAccessor<Integer> JOB_STAGE_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+
+    /**
      * 当前作业已推进 tick 数（网络同步）。<br>
      * <b>只作基线，不是每 tick 的进度镜像：</b>服务端在作业开始与离散重建（暂停恢复、换人、完整补推）
      * 时写一次，稳定装填期间不写。两端在基线之上各自按执行者给的推进量累计，因此这条通路不承担
@@ -404,6 +413,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         builder.define(JOB_RESERVED_ID, 0);
         builder.define(JOB_ELAPSED_ID, 0);
         builder.define(JOB_TOTAL_ID, 0);
+        builder.define(JOB_STAGE_ID, 0);
         builder.define(JOB_RESULT_ID, 0);
         builder.define(JOB_RESULT_DELIVERED_ID, false);
     }
@@ -434,6 +444,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 || dataAccessor.equals(JOB_ELAPSED_ID)
                 || dataAccessor.equals(JOB_RESULT_ID)
                 || dataAccessor.equals(JOB_RESULT_DELIVERED_ID)
+                || dataAccessor.equals(JOB_STAGE_ID)
                 || dataAccessor.equals(JOB_TOTAL_ID)) {
             pendingJob = true;
         }
@@ -517,10 +528,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (spec == null || total <= 0) return;
 
         ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), jobId);
+        ReloadJob.Stage stage = stageOf(getSynchedData().get(JOB_STAGE_ID));
         int baseline = Math.max(0, getSynchedData().get(JOB_ELAPSED_ID));
         ReloadJob current = reloadJob;
         if (current != null && current.key().equals(key)) {
-            current.advanceTo(baseline);
+            // 同一条作业的离散更新：阶段变了就按新阶段从基线起算（人工段走完换成机械段），
+            // 阶段没变只把时长与基线对齐（换人重定时会同时给出缩放过的进度与新的剩余量）
+            current.alignRemote(stage, total, baseline);
             return;
         }
         // 本地已经替这一条交过了：只等权威结束结果，把它建回来会再交一次
@@ -530,9 +544,21 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 getSynchedData().get(JOB_ORIGIN_ID),
                 spec,
                 getSynchedData().get(JOB_RESERVED_ID),
-                total);
+                stage,
+                total,
+                1.0);
         job.advanceTo(baseline);
         reloadJob = job;
+    }
+
+    /** 同步值里的阶段编码：{@code 0} = 人工准备，{@code 1} = 机械运行。 */
+    private static ReloadJob.Stage stageOf(int value) {
+        return value == 0 ? ReloadJob.Stage.HUMAN : ReloadJob.Stage.MACHINE;
+    }
+
+    /** 阶段写进同步值的编码；与 {@link #stageOf(int)} 成对。 */
+    private static int encodeStage(ReloadJob.Stage stage) {
+        return stage == ReloadJob.Stage.HUMAN ? 0 : 1;
     }
 
     /**
@@ -1094,9 +1120,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 这份作业还要多久交付，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
-     * 分档：本管正在为它推进的那一份 = 作业剩余 tick；供给者可交付且有余弹但还没开工 = 整段
-     * {@link IAmmoSupplier#getReloadTimeTicks()}；无余弹或供给者不可交付 = {@link Integer#MAX_VALUE}
+     * 分档：本管正在为它推进的那一份 = 本阶段剩余 tick（还停在人工段时再加上整段机械时长）；供给者可交付且
+     * 有余弹但还没开工 = 人工段基准时长加整段机械时长；无余弹或供给者不可交付 = {@link Integer#MAX_VALUE}
      * （现货优先：空匣的机器即使下一 tick 就会回充出一发也不值得留）。
+     * <p>还没开工的那一档按<b>标准人力</b>估人工段：选人之后的实际倍率只有受理时才定，而这里比较的是
+     * "换不换供给者"，含人工段的型号因此排在同样机械时长但不带人工段的型号之后——这正是它的实际代价。
      *
      * @param supplier 候选或当前供给者，可为 null（一律该换）
      * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
@@ -1105,15 +1133,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (supplier == null || !supplier.isSupplyOperational()) return Integer.MAX_VALUE;
         ReloadJob job = reloadJob;
         if (job != null && job.deliveryTarget().equals(SupplierRef.of(supplier))) {
-            return job.remainingTicks();
+            int remaining = job.remainingTicks();
+            if (job.stage() == ReloadJob.Stage.HUMAN) remaining += supplier.getReloadTimeTicks();
+            return remaining;
         }
         if (!supplier.hasAmmo()) return Integer.MAX_VALUE;
-        return Math.max(0, supplier.getReloadTimeTicks());
+        return Math.max(0, supplier.getHumanReloadTimeTicks() + supplier.getReloadTimeTicks());
     }
 
     /**
      * 受理一份新作业：写入当前作业并把它的身份、分配与进度推给客户端（仅服务端写同步值）。<br>
-     * 受理前必须已经取得供给者授予的占用与预留（{@link IAmmoSupplier#claimFor}），因此这里不重复判断。
+     * 受理前必须已经取得供给者授予的资源（{@link IAmmoSupplier#claimFor}，或有判定流程时
+     * {@link IAmmoSupplier#reserveFor} 加 {@link IAmmoSupplier#claimOperator}），因此这里不重复判断。
      * 客户端按同步字段建自己的作业，走 {@link #applySyncedJob()}，不调用本方法。
      */
     private void beginReloadJob(ReloadJob job) {
@@ -1122,7 +1153,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 统一收尾：先按作业身份释放供给者那边的占用与实际架预留，再发布结束结果并清空作业。<br>
+     * 统一收尾：先按作业身份释放人物占用、机构占用与实际架预留，再发布结束结果并清空作业。<br>
      * 成功交付、取消、换人、摧毁、路径失效与暂停超时都走这一口，因此不存在"只清进度不释放承诺"的分支；
      * 释放只按身份删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
      * 重复收尾因此安全。<br>
@@ -1135,7 +1166,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         ReloadJob job = reloadJob;
         if (job == null) return;
         IAmmoSupplier supplier = currentSupplier;
-        if (supplier != null) supplier.releaseClaim(this, job.key());
+        if (supplier != null) {
+            supplier.releaseOperator(this, job.key());
+            supplier.releaseClaim(this, job.key());
+        }
         reloadJob = null;
         if (!getLevel().isClientSide()) {
             getSynchedData().set(JOB_RESULT_ID, job.jobId());
@@ -1151,9 +1185,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 把当前作业的分配字段推给客户端。<br>
-     * 只在作业开始与收尾时调用：稳定装填期间服务端不写进度字段，两端在基线之上各自累计
-     * （{@link #JOB_ELAPSED_ID} 是基线，不是每 tick 的镜像）。离散重建（暂停恢复、换人、作业重建）
-     * 另行写入当时的进度作为新基线。<br>
+     * 只在作业开始、阶段切换、换人重定时与收尾时调用：稳定装填期间服务端不写进度字段，两端在基线之上
+     * 各自累计（{@link #JOB_ELAPSED_ID} 是基线，不是每 tick 的镜像）。阶段切换与换人重定时写的是
+     * "新的本阶段时长 + 新的进度基线"，客户端因此从新基线继续跑，比例不倒退。<br>
      * 结束结果（{@link #JOB_RESULT_ID}／{@link #JOB_RESULT_DELIVERED_ID}）不在这里写：它只描述
      * 已经结束的那一条作业，新作业开始时不覆盖它。
      */
@@ -1167,24 +1201,28 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         getSynchedData().set(JOB_RESERVED_ID, job == null ? 0 : job.reservedCount());
         getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
         getSynchedData().set(JOB_TOTAL_ID, job == null ? 0 : job.totalTicks());
+        getSynchedData().set(JOB_STAGE_ID, job == null ? 0 : encodeStage(job.stage()));
     }
 
     /**
      * 推进本管的装填作业。<br>
      * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工前先向供给者申请受理——
-     * 它在同一次调用里取得机构槽位与该次作业的弹药预留；接不了单（不可工作、没有可分配库存、独占槽位
-     * 被别的作业占着）就不建作业、不开始计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
-     * 受理后把机械段基准时长与冻结的分配写进作业，此后每 tick 向供给者索取可推进量；走完后兑现预留、
-     * 取走那一份，交给装填或换装的分支。
+     * 有判定流程时它同时认领一名执行者并只取弹药预留，没有人工段的流程则一次取得机构槽位与该次作业的
+     * 弹药预留；接不了单（不可工作、没有可分配库存、没有人、独占槽位被别的作业占着）就不建作业、
+     * 不开始计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
+     * <p>
+     * 有判定流程的作业先走人工段（{@link #tickHumanStage}）：人工段完成才申请机械槽位，进入机械段后按供给者
+     * 给的推进量走完、兑现预留、交给装填或换装的分支。
      * <p>
      * 作业的交付目标与来源不会在作业存续期间漂移：指认只经 {@link #assignSupplier} 变更，而它在换人前
      * 就收尾了旧作业；来源只由受理时授予，换架要重建作业。
      * <p>
-     * <b>暂停与超时：</b>受理成立后本 tick 的推进量可能为 0（机构受阻、供能不足、将来的执行者缺席），
-     * 承诺仍在，因此不立刻收尾而是等它恢复；连续推不动 {@link #PAUSE_TIMEOUT_TICKS} 个 tick 才按未交付
-     * 终止并释放全部资源，与显式取消共用同一条结束结果。这个上限只作用于"有作业、有承诺"的暂停；
-     * 还没受理的等待没有作业，也就不计时。
-     * <p><b>调用线程：</b>主线程（仅服务端：库存与交付都在这一侧执行）。
+     * <b>暂停与超时：</b>受理成立后本 tick 的推进量可能为 0（机构受阻、供能不足、执行者离场且无人替补、
+     * 人工段结束却拿不到机械槽位），承诺仍在，因此不立刻收尾而是等它恢复；连续推不动
+     * {@link #PAUSE_TIMEOUT_TICKS} 个 tick 才按未交付终止并释放全部资源（人员、机构槽位与架预留），
+     * 与显式取消共用同一条结束结果。这个上限只作用于"有作业、有承诺"的暂停；还没受理的等待没有作业，
+     * 也就不计时。
+     * <p><b>调用线程：</b>主线程（仅服务端：库存、选人与交付都在这一侧执行）。
      */
     private void tickReload() {
         IAmmoSupplier supplier = getCurrentSupplier();
@@ -1205,18 +1243,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         ReloadJob job = reloadJob;
         if (job == null) {
-            // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
-            ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
-            IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
-            if (grant == null) return; // 未受理：不入占用、不占预留、不开始计时
-            nextJobId++;
-            job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
-                    grant.reservedCount(), supplier.getReloadTimeTicks());
-            beginReloadJob(job);
+            job = acceptNewJob(supplier);
+            if (job == null) return; // 未受理：不入占用、不占预留、不开始计时
         }
         if (!supplier.holdsCommitment(this)) {
             // 占用或预留已不存在（来源失效、份额被撤销）：按失效收尾，由路由重选
             finishReloadJob();
+            return;
+        }
+        if (job.stage() == ReloadJob.Stage.HUMAN) {
+            tickHumanStage(supplier, job);
             return;
         }
         job.advance(supplier.getAdvanceTicks(this));
@@ -1234,6 +1270,97 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else {
             acceptDelivery(supplier, delivered);
         }
+    }
+
+    /**
+     * 受理一条新作业。<br>
+     * 有判定流程的型号（{@code human_reload_time > 0}）先认领执行者，再只取整次作业的弹药预留：人工段没有
+     * 机械动作，占着机构槽位会让别的管白白等。任一步失败都释放本次已取得的资源、不建作业。
+     * 没有人工段的型号一次取得预留与机构槽位，两种资源在同一份授予里返回。
+     *
+     * @param supplier 当前供给者
+     * @return 新建的作业；本 tick 接不了单时返回 null
+     */
+    @Nullable
+    private ReloadJob acceptNewJob(IAmmoSupplier supplier) {
+        // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
+        int humanTicks = supplier.getHumanReloadTimeTicks();
+        if (humanTicks > 0) {
+            if (!supplier.claimOperator(this, key)) return null; // 没有执行者：不占弹也不开工
+            IAmmoSupplier.Grant grant = supplier.reserveFor(this, key);
+            if (grant == null) {
+                supplier.releaseOperator(this, key);
+                return null;
+            }
+            nextJobId++;
+            double rate = supplier.getOperatorTimeScale(this);
+            ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
+                    grant.reservedCount(), ReloadJob.Stage.HUMAN, humanStageTicks(humanTicks, rate), rate);
+            beginReloadJob(job);
+            return job;
+        }
+        IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
+        if (grant == null) return null;
+        nextJobId++;
+        ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
+                grant.reservedCount(), supplier.getReloadTimeTicks());
+        beginReloadJob(job);
+        return job;
+    }
+
+    /**
+     * 推进人工段：有人就往前走，人走了先换人、换不到就暂停，走完后释放人员并申请机械槽位。<br>
+     * 换人保留已完成的进度，只按新倍率换算剩余量（{@link ReloadJob#retimeHuman(double)}）；倍率变了就重发
+     * 一次时长与基线，客户端的进度条因此不会倒退。人员离场时立刻释放其认领，不能把离场者锁在旧作业上。
+     *
+     * @param supplier 当前供给者（人工段的执行者由它发现与认领）
+     * @param job      处于人工段的作业
+     */
+    private void tickHumanStage(IAmmoSupplier supplier, ReloadJob job) {
+        if (!supplier.holdsOperator(this)) supplier.releaseOperator(this, job.key());
+        if (!supplier.claimOperator(this, job.key())) {
+            pauseReloadJob(job);
+            return;
+        }
+        if (job.retimeHuman(supplier.getOperatorTimeScale(this))) pushReloadJob();
+        if (!job.isComplete()) {
+            job.advance(supplier.getAdvanceTicks(this));
+            if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
+                finishReloadJob();
+                return;
+            }
+        }
+        if (job.isComplete()) finishHumanStage(supplier, job);
+    }
+
+    /**
+     * 人工段完成：先释放人员，再申请机械槽位，都成立了才进入机械段。<br>
+     * 槽位一时拿不到时作业停在人工段末端等（原库存预留保持），由暂停上限兜底。
+     *
+     * @param supplier 当前供给者
+     * @param job      刚走完人工段的作业
+     */
+    private void finishHumanStage(IAmmoSupplier supplier, ReloadJob job) {
+        supplier.releaseOperator(this, job.key());
+        if (supplier.claimFor(this, job.key()) == null) {
+            pauseReloadJob(job);
+            return;
+        }
+        job.enterMachineStage(supplier.getReloadTimeTicks());
+        pushReloadJob();
+    }
+
+    /** 本 tick 推不动的作业：记一次暂停，超过上限就按未交付收尾。 */
+    private void pauseReloadJob(ReloadJob job) {
+        job.advance(0);
+        if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) finishReloadJob();
+    }
+
+    /** 人工段实际时长：标准人力 tick 乘上岗位倍率与个人倍率。 */
+    private static int humanStageTicks(int standardTicks, double rate) {
+        double safe = rate > 0 && Double.isFinite(rate) ? rate : 1.0;
+        return Math.max(1, (int) Math.round(standardTicks * safe));
     }
 
     /**
@@ -1275,7 +1402,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 计时在两端各自累计：服务端只给分配、基线与运行条件，客户端每个 tick 按执行者给出的推进量前进，
      * 不等待逐 tick 的进度包。走完后用作业上冻结的规格与份额生成同一份交付，交给首次装填或整份换装
      * ——这是"本地先交付"那一半：交出什么不由本端推导，规格与份额都是受理时定死的。<br>
-     * 本端不建立真实预留、不扣实际库存（那些只在服务端），因此这份交付内容会在权威结果到达时被覆盖：
+     * 人工段的推进量恒为 1（时长已把岗位倍率与个人倍率折进去，人员状态由服务端判定），走完也只表示这一段
+     * 完成：机械段还没开始，因此不在本地交付，等权威把阶段推过来再继续跑机械段。人员中途离场时服务端的
+     * 作业会暂停，本端会先跑完人工段——这份预测差异由随后的权威结果覆盖。
+     * <p>本端不建立真实预留、不扣实际库存（那些只在服务端），因此这份交付内容会在权威结果到达时被覆盖：
      * 交付成功时覆盖成同一份，作业被撤销时覆盖成撤销后的样子。同一 {@code jobId} 只交一次。
      * <p><b>调用线程：</b>主线程（客户端）。
      */
@@ -1299,6 +1429,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         job.advance(supplier.getAdvanceTicks(this));
         tickReloadSounds();
         if (!job.isComplete()) return;
+        // 人工段走完只是这一段完成：机械段还没开始，交付要等权威把阶段推过来
+        if (job.stage() == ReloadJob.Stage.HUMAN) return;
 
         boolean swapping = isSwapping();
         AmmoBelt delivered = job.spec().freshCopy(job.reservedCount());

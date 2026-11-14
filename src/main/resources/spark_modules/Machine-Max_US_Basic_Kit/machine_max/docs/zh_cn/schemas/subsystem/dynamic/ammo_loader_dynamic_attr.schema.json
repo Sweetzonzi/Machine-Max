@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.json",
   "title": "自动装弹机子系统动态属性",
-  "description": "自动装弹机的实例属性：本机接受的供弹服务频道，以及查询上游弹药架用的发现表。机构同时是下游发射器的提供方与上游弹药架的需求方，所以两个字段都在实例上。",
+  "description": "自动装弹机的实例属性：本机接受的供弹服务频道、查询上游弹药架用的发现表，以及人工段的用人查询与岗位倍率。机构同时是下游发射器的提供方、上游弹药架的需求方与人工段的用人方，所以三份配置都在实例上。",
   "properties": {
     "type": {
       "type": "string",
@@ -25,6 +25,19 @@
       ],
       "default": {},
       "description": "上游查询表：供弹服务频道到目标名称列表。第一方按子系统名直接指向本机的上游弹药架，范围因此只覆盖这一对；上游查询只接受库存持有者，机构之间不互认，机械链不会成环。"
+    },
+    "reload_operator_discovery_targets": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "人工段的用人查询表：装填人员频道到目标名称列表。常规写法是 {\"crew.reload.loader\": [\"local\"]}——local 是本 Part 的全部 SubPart，座位只要在自己的 reload_operator_discovery_inputs 里声明同一频道就会被发现；两个炮塔做在两个 Part 里时 local 天然隔离。只有型号配置了 human_reload_time 时才有意义。频道只用于握手发现，不承载装填指令。"
+    },
+    "reload_operator_time_multipliers": {
+      "type": "object",
+      "default": {},
+      "description": "岗位时间倍率 P：装填人员频道到倍率的映射，例如 {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}。它只属于本机与该座位之间的这条发现关系，不是座位的全局能力；同一个座位替另一门武器装填可以是别的倍率。未列出的频道按 1.0 处理，值必须是有限正数。",
+      "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
     }
   },
   "required": ["type", "definition"],
@@ -36,6 +49,20 @@
       "ammo_discovery_inputs": ["ammo_57mm"],
       "ammo_discovery_targets": {
         "ammo_57mm": ["subsystem.machine_max.2a90_ap_loader"]
+      }
+    },
+    {
+      "type": "machine_max:ammo_loader",
+      "definition": "m1a2_sep:120mm_m256_autoloader",
+      "ammo_discovery_inputs": ["ammo_120mm"],
+      "ammo_discovery_targets": {
+        "ammo_120mm": ["subsystem.m1a2_sep.ammo_loader"]
+      },
+      "reload_operator_discovery_targets": {
+        "crew.reload.loader": ["local"]
+      },
+      "reload_operator_time_multipliers": {
+        "crew.reload.loader": 1.0
       }
     }
   ]

@@ -37,6 +37,12 @@
       "default": {},
       "description": "摄像机发现握手配置。在这些频道上发送握手信号即可发现本载具上可用的摄像机。例如 {\"gunner_optics\": [\"gunner_primary_sight\"]}"
     },
+    "reload_operator_discovery_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "本座位被装填需求方发现的频道（安装级）。例如装填手座位写 [\"crew.reload.loader\"]，炮手座位写 [\"crew.reload.gunner\"]；装弹机的 reload_operator_discovery_targets 在这些频道上查询，命中的座位把实际乘员交给人工段。与型号的 interact_inputs 取并集，频道只用于握手发现，不承载装填指令。"
+    },
     "dismount_locators": {
       "type": "array",
       "items": { "type": "string" },
@@ -69,6 +75,13 @@
       "control_group_preset": "machine_max:default_driver",
       "third_hud_layout": "machine_max:k17_vehicle_hud",
       "allow_use_items": true
+    },
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_3rd_seat",
+      "locator": "loader_seat",
+      "control_group_preset": "machine_max:empty",
+      "reload_operator_discovery_inputs": ["crew.reload.loader"]
     }
   ]
 }
