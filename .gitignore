@@ -50,6 +50,11 @@ Machine-Max.code-workspace
 /spark-reports/
 /spark.json
 
+# Blockbench 工程文件：作者本地的模型源，插件把它导出成 models/part/*.geo.json
+# 以及部件/变体配置；目录里带时间戳的 .bak- 是 Blockbench 的备份，同样不入库
+*.bbmodel
+*.bbmodel.bak-*
+
 # 本地技能注册：.agents/skills 是指向 skills/ 的目录联接，由 DSH 的 project-agents
 # 扫描根按需读取，不入库（克隆后如需注册，重建一次链接即可）
 /.agents/
