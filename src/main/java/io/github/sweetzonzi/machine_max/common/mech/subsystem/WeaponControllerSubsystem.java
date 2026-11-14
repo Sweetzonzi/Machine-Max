@@ -15,6 +15,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.Signal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * 武器控制器子系统。<br>
@@ -93,7 +95,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private volatile LivingEntity operator;
 
     /**
-     * 调试自动开火开关。开启后无视 fire_inputs 信号，持续保持 firing = true。<br>
+     * 调试自动开火开关。开启后无视 fire_inputs 里的信号，持续保持 firing = true。<br>
      * 由 /mm debug autofire 命令控制，用于测试武器系统。
      */
     private volatile boolean debugAutoFire = false;
@@ -821,28 +823,85 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
     }
 
-    /** 物理线程按 aim_inputs 顺序读取当前有效来源，信号本身保存完整目标。 */
+    /**
+     * 物理线程选出生效的瞄准来源，信号本身保存完整目标。<br>
+     * 候选是 aim_inputs 全部频道里的有效信号，按三键排序取第一项（{@link #selectInputSlot}）；
+     * 全部越级量为 0 时退化为"按 aim_inputs 顺序取第一个有效信号"。
+     */
     @Nullable
     private ViewInputSignal selectAimInput() {
-        for (String channel : attr.staticAttribute.getAimInputs()) {
-            for (var entry : getSignalChannel(channel).entrySet()) {
-                if (entry.getKey() instanceof AbstractSubsystem source
-                        && (!source.isActive() || source.isDestroyed() || source.getSubPart().isRemoved)) {
+        Map.Entry<ISignalSender, Object> slot = selectInputSlot(attr.staticAttribute.getAimInputs(),
+                WeaponControllerSubsystem::isAimInput);
+        if (slot == null) {
+            return null;
+        }
+        Object value = slot.getValue();
+        if (value instanceof ViewInputSignal view) {
+            return view;
+        }
+        if (value instanceof Vec3 point) {
+            return new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD);
+        }
+        if (value instanceof Vector3f point) {
+            return new ViewInputSignal(new Vec3(point.x, point.y, point.z), Vec2.ZERO, AimTargetState.Mode.WORLD);
+        }
+        return null;
+    }
+
+    /** 瞄准读取点能消费的值：完整目标，或裸世界点。 */
+    private static boolean isAimInput(Object value) {
+        return value instanceof ViewInputSignal || value instanceof Vec3 || value instanceof Vector3f;
+    }
+
+    /** 标准化指令读取点只认 {@link RegularInputSignal}，裸值与开火布尔由扫描负责。 */
+    private static boolean isRegularCommand(Object value) {
+        return value instanceof RegularInputSignal;
+    }
+
+    /**
+     * 在一批频道里选出唯一生效的输入槽：越级量降序 → 档位降序 → 发送者稳定身份升序。<br>
+     * 档位是频道在列表里的位置（{@code 列表长度 − 下标}），靠前的频道档位高；越级量取自频道值
+     * 自身（{@link Signal#priorityOf(Object)}），按键绑定与 GUI 动作投递的裸值按 0。必须扫完
+     * 全部频道：排在后面的频道可能带着更大的越级量。
+     *
+     * @param channels 接收者声明的频道列表，顺序即档位
+     * @param usable   频道值是否由本读取点消费
+     * @return 胜出的槽位；没有可用信号时为 {@code null}
+     */
+    @Nullable
+    private Map.Entry<ISignalSender, Object> selectInputSlot(List<String> channels, Predicate<Object> usable) {
+        Map.Entry<ISignalSender, Object> best = null;
+        int bestPriority = 0;
+        int bestTier = 0;
+        for (int i = 0; i < channels.size(); i++) {
+            int tier = channels.size() - i;
+            for (Map.Entry<ISignalSender, Object> entry : getSignalChannel(channels.get(i)).entrySet()) {
+                if (!isSenderUsable(entry.getKey()) || !usable.test(entry.getValue())) {
                     continue;
                 }
-                Object value = entry.getValue();
-                if (value instanceof ViewInputSignal view) {
-                    return view;
-                }
-                if (value instanceof Vec3 point) {
-                    return new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD);
-                }
-                if (value instanceof Vector3f point) {
-                    return new ViewInputSignal(new Vec3(point.x, point.y, point.z), Vec2.ZERO, AimTargetState.Mode.WORLD);
+                int priority = Signal.priorityOf(entry.getValue());
+                if (best == null || outranks(priority, tier, entry.getKey(), bestPriority, bestTier, best.getKey())) {
+                    best = entry;
+                    bestPriority = priority;
+                    bestTier = tier;
                 }
             }
         }
-        return null;
+        return best;
+    }
+
+    /** 发送者还在：子系统已摧毁、已失活或所在 SubPart 已被移除的槽位不算候选。 */
+    private static boolean isSenderUsable(ISignalSender sender) {
+        return !(sender instanceof AbstractSubsystem source
+                && (!source.isActive() || source.isDestroyed() || source.getSubPart().isRemoved));
+    }
+
+    /** 三键次序：越级量降序 → 档位降序 → 稳定身份升序。 */
+    private static boolean outranks(int priority, int tier, ISignalSender sender,
+                                    int otherPriority, int otherTier, ISignalSender other) {
+        if (priority != otherPriority) return priority > otherPriority;
+        if (tier != otherTier) return tier > otherTier;
+        return ISignalSender.compareSenders(sender, other) < 0;
     }
 
     /**
@@ -931,20 +990,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     private void readInputSignals() {
         // 读取开火指令：频道里只有表达"开火"的信号才算开火，判据见 isFireSignal。
-        // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 fire_input_*），它不算开火，
+        // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 crew_<岗位>_fire），它不算开火，
         // 因此不能按"频道里有东西"来判，否则按一次切换弹种键就会打出一发。
         // 归属随开火指令一起取：谁能开火，谁就是这一发的 owner。
         this.firing = false;
         this.operator = null;
-        fire: for (String signalKey : attr.staticAttribute.getFireInputs()) {
-            SignalChannel channel = getSignalChannel(signalKey);
-            for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
-                if (isFireSignal(entry.getValue())) {
-                    this.firing = true;
-                    this.operator = operatorOf(entry.getKey());
-                    break fire;
-                }
-            }
+        Map.Entry<ISignalSender, Object> fireSlot = selectInputSlot(attr.staticAttribute.getFireInputs(),
+                WeaponControllerSubsystem::isFireSignal);
+        if (fireSlot != null) {
+            this.firing = true;
+            this.operator = operatorOf(fireSlot.getKey());
         }
 
         // 读取弹药切换指令：轮询 ammo_switch 频道
@@ -986,7 +1041,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 信号是否表达"开火"。<br>
-     * 开火频道与弹种切换指令共用线路（座位的开火目标频道就是 {@code fire_input_*}），
+     * 开火频道与弹种切换指令共用线路（座位的开火目标频道就是 {@code crew_<岗位>_fire}），
      * 所以判定必须看信号语义，不能只看"频道里有东西"：
      * <ul>
      *   <li>{@link RegularInputSignal}：主武器、副武器开火指令算开火；弹种切换等其余按键语义不算</li>
@@ -1018,50 +1073,37 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * AI 实体可通过发送 RegularInputSignal 到此子系统直接控制武器，无需经过控制组绑定。
      */
     private void updateRegularInputs() {
-        RegularInputSignal activeRegular = null;
-        SignalChannel activeChannel = null;
-        ISignalSender activeSender = null;
-
-        for (String signalKey : attr.staticAttribute.getFireInputs()) {
-            SignalChannel channel = getSignalChannel(signalKey);
-            for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
-                if (entry.getValue() instanceof RegularInputSignal ris) {
-                    activeRegular = ris;
-                    activeChannel = channel;
-                    activeSender = entry.getKey();
-                    break;
+        // 与开火扫描同一把尺子：标准化指令也只认三键排序后的那一条，
+        // 否则低档频道里的一条松开指令会盖掉越级频道里的按下。
+        Map.Entry<ISignalSender, Object> slot = selectInputSlot(attr.staticAttribute.getFireInputs(),
+                WeaponControllerSubsystem::isRegularCommand);
+        if (slot == null) return;
+        RegularInputSignal activeRegular = (RegularInputSignal) slot.getValue();
+        int tickCount = activeRegular.getInputTickCount();
+        switch (activeRegular.getInputType()) {
+            case MAIN_FIRE:
+            case SECONDARY_FIRE:
+                // hold 语义：tickCount==0 表示按下中，非0表示松开
+                this.firing = tickCount == 0;
+                // 归属只在"按下中"成立：松开即释放开火权，也就没有主人可记
+                this.operator = this.firing ? operatorOf(slot.getKey()) : null;
+                break;
+            case NEXT_AMMO_TYPE:
+                // 一次性事件：仅 tickCount==0（按下瞬间）触发
+                if (tickCount == 0) {
+                    cycleSelectedBelt(false);
+                    slot.setValue(EmptySignal.INSTANCE);
                 }
-            }
-            if (activeRegular != null) break;
-        }
-
-        if (activeRegular != null) {
-            int tickCount = activeRegular.getInputTickCount();
-            switch (activeRegular.getInputType()) {
-                case MAIN_FIRE:
-                case SECONDARY_FIRE:
-                    // hold 语义：tickCount==0 表示按下中，非0表示松开
-                    this.firing = tickCount == 0;
-                    // 归属只在"按下中"成立：松开即释放开火权，也就没有主人可记
-                    this.operator = this.firing ? operatorOf(activeSender) : null;
-                    break;
-                case NEXT_AMMO_TYPE:
-                    // 一次性事件：仅 tickCount==0（按下瞬间）触发
-                    if (tickCount == 0) {
-                        cycleSelectedBelt(false);
-                        activeChannel.put(activeSender, EmptySignal.INSTANCE);
-                    }
-                    break;
-                case PREV_AMMO_TYPE:
-                    // 循环反向切换弹链
-                    if (tickCount == 0) {
-                        cycleSelectedBelt(true);
-                        activeChannel.put(activeSender, EmptySignal.INSTANCE);
-                    }
-                    break;
-                default:
-                    break;
-            }
+                break;
+            case PREV_AMMO_TYPE:
+                // 循环反向切换弹链
+                if (tickCount == 0) {
+                    cycleSelectedBelt(true);
+                    slot.setValue(EmptySignal.INSTANCE);
+                }
+                break;
+            default:
+                break;
         }
     }
 

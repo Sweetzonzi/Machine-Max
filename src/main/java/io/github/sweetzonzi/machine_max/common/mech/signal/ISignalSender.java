@@ -87,23 +87,40 @@ public interface ISignalSender {
         terminals.computeIfAbsent(channel, k -> new ArrayList<>()).add(receiver);
     }
 
-    private static int compareBusSubscribers(ISignalReceiver a, ISignalReceiver b) {
-        int result = ownerPartKey(a).compareTo(ownerPartKey(b));
-        if (result != 0) return result;
-        SubPart partA = subPartOf(a);
-        SubPart partB = subPartOf(b);
-        result = (partA == null ? "" : partA.name).compareTo(partB == null ? "" : partB.name);
-        if (result != 0) return result;
-        return a.getSignalAddress().compareTo(b.getSignalAddress());
+    /** 稳定身份比较：部件 UUID → SubPart 名 → 寻址名，与哈希顺序无关。用于总线订阅者。 */
+    public static int compareBusSubscribers(ISignalReceiver a, ISignalReceiver b) {
+        return compareIdentity(a, b);
     }
 
-    private static String ownerPartKey(ISignalReceiver receiver) {
+    /** 同一把尺子，用于频道槽位排序（槽位键是 {@link ISignalSender}）。 */
+    public static int compareSenders(ISignalSender a, ISignalSender b) {
+        return compareIdentity(a, b);
+    }
+
+    private static int compareIdentity(Object a, Object b) {
+        int result = ownerPartKey(a).compareTo(ownerPartKey(b));
+        if (result != 0) return result;
+        result = subPartName(a).compareTo(subPartName(b));
+        if (result != 0) return result;
+        return addressOf(a).compareTo(addressOf(b));
+    }
+
+    private static String ownerPartKey(Object receiver) {
         SubPart subPart = subPartOf(receiver);
         return subPart == null ? "" : subPart.getPart().uuid.toString();
     }
 
-    private static SubPart subPartOf(ISignalReceiver receiver) {
+    private static String subPartName(Object receiver) {
+        SubPart subPart = subPartOf(receiver);
+        return subPart == null ? "" : subPart.name;
+    }
+
+    private static SubPart subPartOf(Object receiver) {
         return receiver instanceof ISignalSender sender ? sender.getSubPart() : null;
+    }
+
+    private static String addressOf(Object receiver) {
+        return receiver instanceof ISignalReceiver r ? r.getSignalAddress() : receiver.getClass().getName();
     }
 
     /**

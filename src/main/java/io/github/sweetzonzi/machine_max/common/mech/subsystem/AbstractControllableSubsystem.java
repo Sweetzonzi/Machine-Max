@@ -346,7 +346,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         Map<String, List<String>> targets = controlGroupSet.getMergedMoveTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
+                this.sendSignalToAllTargets(signalKey,
+                        new MoveInputSignal(inputs, conflicts, controlGroupSet.priorityOf(signalKey)));
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
@@ -360,7 +361,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         Map<String, List<String>> targets = controlGroupSet.getMergedRegularTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
+                this.sendSignalToAllTargets(signalKey,
+                        new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey)));
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
@@ -378,7 +380,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         viewSourcePart = sourcePart;
         viewSourceName = sourceName;
         for (String channel : controlGroupSet.getMergedViewTargets().keySet()) {
-            sendSignalToAllTargets(channel, input);
+            sendSignalToAllTargets(channel, input.withPriority(controlGroupSet.priorityOf(channel)));
         }
         getSubPart().getPart().assembly.activatePhysics();
         return true;
@@ -399,7 +401,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                 // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
                 Object signal = (inputType == KeyInputMapping.MAIN_FIRE && tickCount != 0)
                         ? EmptySignal.INSTANCE
-                        : new RegularInputSignal(inputType, tickCount);
+                        : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey));
                 this.sendSignalToAllTargets(signalKey, signal);
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
@@ -425,7 +427,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                 // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
                 Object signal = (inputType == KeyInputMapping.SECONDARY_FIRE && tickCount != 0)
                         ? EmptySignal.INSTANCE
-                        : new RegularInputSignal(inputType, tickCount);
+                        : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey));
                 this.sendSignalToAllTargets(signalKey, signal);
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
