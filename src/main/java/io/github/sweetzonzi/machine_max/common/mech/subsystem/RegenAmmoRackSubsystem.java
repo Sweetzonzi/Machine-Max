@@ -28,8 +28,12 @@ import java.util.Set;
 /**
  * 再生弹药架子系统。<br>
  * 只持有库存、自身再生与<b>弹药预留</b>：数字存量、再生进度、交付规格 {@code belt_definition}、
- * 各作业的预留量。它不做装填计时，也不向任何人推送进度——机构的机械段决定什么时候来取，
- * Launcher 的作业进度记在管上。
+ * 各作业的预留量。它不做装填计时，也不向任何人推送进度——装填进度记在 {@link LauncherSubsystem} 的作业上。
+ * <p>
+ * <b>两种交付方：</b>接了一台自动装弹机的管由机构来取弹（{@link AmmoLoaderSubsystem} 是交付目标，
+ * 本架是它的上游）；武器型号自己声明了人工段的管直接从本架取弹，全程由乘员装填，机构可省略——
+ * 这时本架就是交付目标，机械段时长为零（见 {@link #getReloadTimeTicks()}），人工段的用人由发射器发现
+ * 与认领。两种路径的库存承诺是同一份预留表，受理与撤销口径不因交付方是谁而变。
  * <p>
  * <b>预留：</b>每条作业在受理时按整次作业取一份 {@code q}（{@link #reserve}），可分配库存随之减少，
  * 但实际库存 {@code N} 在交付那一刻才扣（{@link #deliverReserved}）。已取得预留的作业不受其他作业
@@ -47,7 +51,7 @@ import java.util.Set;
  * 耐久是普通子系统的一份：归零由基类判毁，摧毁边沿触发自身库存殉爆，恢复门槛沿用基类的 30%。<br>
  * 能量消耗通过 {@link EnergyGrid#consumeEnergy(float)} 瞬时抽取，不实现 {@code IEnergyConsumer} 接口。
  */
-public class RegenAmmoRackSubsystem extends BasicSubsystem {
+public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSupplier {
 
     public final RegenAmmoRackSubsystemAttr attr;
 
@@ -210,13 +214,18 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
     }
 
     /** 存量上限，来自型号的 {@code capacity} */
+    @Override
     public int getCapacity() {
         return attr.staticAttribute.getCapacity();
     }
 
-    /** 实际库存非零即成立，与够不够一整份无关；已被预留的部分也算在内，可分配数量见 {@link #getAvailableCount()} */
+    /**
+     * 此刻是否有可供<b>新作业</b>申请的弹药：本架可工作且可分配库存（{@code N - R}）大于零。<br>
+     * 已有预留的作业不看这个值——那一份已经记在它名下（见 {@link #getAdvanceTicks(IAmmoConsumer)}）。
+     */
+    @Override
     public boolean hasAmmo() {
-        return getAmmoCount() > 0;
+        return isOperational() && getAvailableCount() > 0;
     }
 
     /**
@@ -228,16 +237,19 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
     }
 
     /** 下一份交付的规格：{@code belt_definition} 本身，满额、回充运行态为零。调用方不得原地推进它。 */
+    @Override
     public AmmoBelt getDeliverySpec() {
         return attr.beltDefinition;
     }
 
     /** 交付规格的弹链名（HUD 弹链选项卡用），不读库存，因此同一份规格的返回值恒定。 */
+    @Override
     public String getLabel() {
         return attr.beltDefinition.displayLabel();
     }
 
     /** 下一发的弹种，{@code null} 表示无交付规格 */
+    @Override
     @Nullable
     public ProjectileType getSuppliedType() {
         return AmmoBelt.resolve(getLevel(), attr.beltDefinition.nextRoundId());
@@ -266,6 +278,7 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
      * @param belt 退还的那一份弹药
      * @return true 表示已收下并计入库存
      */
+    @Override
     public boolean returnBelt(AmmoBelt belt) {
         if (!isOperational()) return false;
         if (!allowsEveryAmmo(belt)) return false;
@@ -283,6 +296,131 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem {
             if (!allowed.contains(ammo)) return false;
         }
         return true;
+    }
+
+    // ==================== 供弹（交付方） ====================
+
+    /**
+     * 交付能力：本架启用且未摧毁，与 {@link #isOperational()} 同一判据。<br>
+     * 库存持有者没有独立的机构条件，"有没有可分配的弹"由 {@link #hasAmmo()} 表达。
+     */
+    @Override
+    public boolean isSupplyOperational() {
+        return isOperational();
+    }
+
+    /** 可申请的数量：{@code N - R}，已按身份预留的那一份不计入。 */
+    @Override
+    public int getRemainingCount() {
+        return getAvailableCount();
+    }
+
+    /**
+     * 机械段时长：库存持有者没有机械动作，交付在预留兑现那一刻完成。<br>
+     * 直接取弹的流程整段时间都在人工段里（发射器型号的 {@code human_reload_time}），因此这里报 0；
+     * 作业的时长字段下限是 1 tick，所以进入机械段后下一个 tick 就兑现。
+     */
+    @Override
+    public int getReloadTimeTicks() {
+        return 0;
+    }
+
+    /**
+     * 允许多条作业同时在本架取弹。<br>
+     * 库存只按预留表分份，没有"机械槽"这种独占资源；同一份库存不会被两条作业同时承诺
+     * （{@link #reserve} 按身份记账，可分配数量随之减少）。
+     */
+    @Override
+    public boolean canSupplyMultiple() {
+        return true;
+    }
+
+    /**
+     * 为一条作业取得整次作业的弹药预留；已取得过的身份沿用原份额。<br>
+     * 库存持有者没有机械槽位，因此受理与人工段前的预留是同一件事——这也是
+     * {@link IAmmoSupplier#reserveFor} 的默认实现直接复用本方法的原因。
+     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     */
+    @Override
+    @Nullable
+    public IAmmoSupplier.Grant claimFor(IAmmoConsumer consumer, ReloadJobKey key) {
+        if (getLevel().isClientSide() || key.isNone() || !isOperational()) return null;
+        AmmoBelt spec = getDeliverySpec();
+        if (spec == null) return null;
+        int granted = reserve(key, spec.length());
+        if (granted <= 0) return null;
+        // 直接取弹时交付目标就是本架，来源因此与它相同
+        return new IAmmoSupplier.Grant(IAmmoSupplier.SupplierRef.of(this), spec.freshCopy(), granted);
+    }
+
+    /**
+     * 本 tick 能为该作业推进多少：本架可工作、且该身份仍有预留时为 1。<br>
+     * 客户端没有预留表（服务端不下发整张表），按"预留还在"的乐观口径报 1；撤销由随后的结束结果收口。
+     */
+    @Override
+    public int getAdvanceTicks(IAmmoConsumer consumer) {
+        if (!isOperational()) return 0;
+        if (getLevel().isClientSide()) return 1;
+        ReloadJob job = consumer.getReloadJob();
+        return job != null && reservedFor(job.key()) > 0 ? 1 : 0;
+    }
+
+    /**
+     * 兑现一条作业的预留，把它变成一份独立交付实例。<br>
+     * 与 {@link #deliverReserved(ReloadJobKey)} 同一条路径：按身份扣实际库存、交出实例、一次兑现。
+     */
+    @Override
+    @Nullable
+    public AmmoBelt consumeReadyBelt(IAmmoConsumer consumer) {
+        if (getLevel().isClientSide() || !isOperational()) return null;
+        ReloadJob job = consumer.getReloadJob();
+        if (job == null) return null;
+        return deliverReserved(job.key());
+    }
+
+    /** 按身份撤销预留：只减少承诺，不补弹。 */
+    @Override
+    public void releaseClaim(IAmmoConsumer consumer, ReloadJobKey key) {
+        releaseReservation(key);
+    }
+
+    /**
+     * 库存持有者不设机械槽位：同一台架可以同时为多条作业保留各自的份额，因此从不表现为"被别人占着"。
+     * 同一份库存的独占性由预留表保证，不由本方法表达。
+     */
+    @Override
+    public boolean isClaimedByOther(IAmmoConsumer consumer) {
+        return false;
+    }
+
+    /**
+     * 该作业在本架的承诺是否还在。<br>
+     * 客户端没有预留表，按"实际库存不少于该作业份额"这条保守判据回答（与装弹机对客户端的口径一致）。
+     */
+    @Override
+    public boolean holdsCommitment(IAmmoConsumer consumer) {
+        ReloadJob job = consumer.getReloadJob();
+        if (job == null) return false;
+        if (getLevel().isClientSide()) {
+            return job.reservedCount() > 0 && getAmmoCount() >= job.reservedCount();
+        }
+        return reservedFor(job.key()) > 0;
+    }
+
+    /** 没有作业时本架在忙哪一段：再生／回充阶段直接透了给显示层。 */
+    @Override
+    public IAmmoSupplier.ReloadPhase getRefillPhase() {
+        return isOperational() ? getRegenPhase() : IAmmoSupplier.ReloadPhase.IDLE;
+    }
+
+    @Override
+    public float getRefillProgress() {
+        return getRegenProgress();
+    }
+
+    @Override
+    public int getRefillRemainingTicks() {
+        return getRemainingRegenTicks();
     }
 
     // ==================== 再生显示 ====================

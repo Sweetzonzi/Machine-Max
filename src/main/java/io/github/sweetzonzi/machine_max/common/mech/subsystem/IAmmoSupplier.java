@@ -380,19 +380,14 @@ public interface IAmmoSupplier {
         }
 
         /**
-         * 取某台供给者的身份。<br>
-         * 供给者不是子系统时返回 {@link #NONE}。
+         * 取某台供给者的身份：宿主 SubPart ID ＋ 子系统名。<br>
+         * "交出这一份的机器"与"机构为本次作业挑中的上游弹药架"都用这个形状指认，因此它同时服务两个角色；
+         * 人力直取路径下两者是同一台弹药架。供给者不是子系统时返回 {@link #NONE}。
          */
         public static SupplierRef of(@Nullable IAmmoSupplier supplier) {
-            return supplier instanceof AbstractSubsystem sub ? of(sub) : NONE;
-        }
-
-        /**
-         * 取某个子系统的身份：宿主 SubPart ID + 子系统名。<br>
-         * 上游弹药架不是供给者接口的实现，但作业要按同一个形状记录它，因此这里也提供子系统重载。
-         */
-        public static SupplierRef of(AbstractSubsystem subsystem) {
-            return new SupplierRef(subsystem.getSubPart().getId(), subsystem.getName());
+            return supplier instanceof AbstractSubsystem sub
+                    ? new SupplierRef(sub.getSubPart().getId(), sub.getName())
+                    : NONE;
         }
 
         /**

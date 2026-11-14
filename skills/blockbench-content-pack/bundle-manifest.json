@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "7b1efc8732ccb8d7292f73d711ec5c91db9a3507",
+    "revision": "558d3c2163cde0f59d199f33ebe31dddeeac72cd",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -216,8 +216,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
-        "bytes": 2051,
-        "sha256": "18570255f7edd004601664230afa03f16b0a36bfb50935540002fae1cfcb42df"
+        "bytes": 3517,
+        "sha256": "dd055514c16b0eec24b2f9dde66cf3d193d8af0d311d4ecdc0d8bb58338cc51f"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
@@ -321,8 +321,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 9679,
-        "sha256": "86526348dd22ac199d2ee2322b1c57933720e161c3f4c3ddd825ae57af51df19"
+        "bytes": 11525,
+        "sha256": "b73fea0ba60c23726d034dd68392c99de284ad05a305e8e5dd62703807e80d7c"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",

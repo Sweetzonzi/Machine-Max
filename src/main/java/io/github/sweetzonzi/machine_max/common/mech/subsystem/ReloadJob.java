@@ -15,7 +15,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.Supp
  * 回调不会摘掉同一条输弹线上的新作业。作业不跨存档延续，读档后重新受理会拿到新的编号。
  * <p>
  * <b>分配在受理时冻结：</b>{@link #deliveryTarget()}（交出这一份的机器）、{@link #upstreamOrigin()}
- * （机构为本次作业挑中的上游弹药架，纯人工直取路径为空）、{@link #spec()}（交付规格）与
+ * （这批弹实际出自哪台弹药架；人力直取下与交付目标同一台）、{@link #spec()}（交付规格）与
  * {@link #reservedCount()}（整次作业的弹药预留量）都在 {@link IAmmoSupplier#claimFor} 受理那一刻确定。
  * 此后供给者的交付规格、库存或来源列表变化都不改写这几个值：换架或换规格要作废旧作业并重新申请，
  * 不能把已受理的作业静默换成另一份。

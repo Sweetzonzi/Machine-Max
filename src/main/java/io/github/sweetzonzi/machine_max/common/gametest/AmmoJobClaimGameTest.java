@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -18,6 +19,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructu
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -25,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 一条装填作业的受理与占用归属，用 M1A2 SEP 炮塔上真实相连的一组零件固定。
+ * 一条装填作业的受理与占用归属，用 T90A 炮塔上真实相连的一组零件固定。
  *
  * <p>契约有五条：① 有现货时受理并建作业，作业带服务端分配的编号、来源与份额，进度记在管上；
  * ② 受理同时占用来源架的一份弹药——可分配库存减少而实际库存不动；③ 独占机构受理后对别的管表现为
@@ -37,18 +40,26 @@ import java.util.Map;
  * 与上面这条用例里固定。</p>
  *
  * <p>这些只能在真实装配体上跑：受理要读上游弹药架的实际库存与发现结果，占用要读作业与指认，
- * 纯 JUnit 既没有子系统宿主也没有这两个子系统之间的接线。用例取 120mm 炮（机械段 5 秒），
- * 受理后的作业因此在断言之间仍然存在。</p>
+ * 纯 JUnit 既没有子系统宿主也没有这两个子系统之间的接线。用例取 125mm 炮（机械段 7.5 秒）＋它的
+ * 自动装弹机，受理后的作业因此在断言之间仍然存在；同车型的其他管用来验证独占机构的占用表现。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class AmmoJobClaimGameTest {
     private static final String BATCH = "mmAmmoJobClaim";
-    private static final String PART = "m1a2_sep:m1a2_turret";
-    private static final String LAUNCHER = "subsystem.m1a2_sep.launcher";
-    private static final String OTHER_LAUNCHER = "subsystem.m1a2_sep.coax_launcher";
-    private static final String AUTOLOADER = "subsystem.m1a2_sep.ammo_autoloader";
-    private static final String RACK = "subsystem.m1a2_sep.ammo_loader";
+    private static final String PART = "t90a:t90a_turret";
+    private static final String VARIANT = "standard";
+    private static final String LAUNCHER = "subsystem.t90a.launcher";
+    private static final String OTHER_LAUNCHER = "subsystem.t90a.coax_launcher";
+    private static final String AUTOLOADER = "subsystem.t90a.ammo_autoloader";
+    private static final String RACK = "subsystem.t90a.ammo_loader";
+
+    /** 人力直取用例的夹具：M1A2 SEP 炮塔的 120mm 炮，它的自动装弹机已从内容里移除 */
+    private static final String MANUAL_PART = "m1a2_sep:m1a2_turret";
+    private static final String MANUAL_VARIANT = "desert";
+    private static final String MANUAL_LAUNCHER = "subsystem.m1a2_sep.launcher";
+    private static final String MANUAL_RACK = "subsystem.m1a2_sep.ammo_loader";
+    private static final String MANUAL_SEAT = "subsystem.m1a2_sep.loader_seat";
 
     private AmmoJobClaimGameTest() {
     }
@@ -56,8 +67,8 @@ public final class AmmoJobClaimGameTest {
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void acceptedJobOwnsTheFeedLineAndReleaseMatchesItsIdentity(GameTestHelper helper) {
         RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse(PART));
-        helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
-        RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
+        helper.assertTrue(type != null, "T90A 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, VARIANT, helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
@@ -147,14 +158,14 @@ public final class AmmoJobClaimGameTest {
      *
      * <p>契约：① 机械段走完即兑现预留——实际库存按预留份额扣一次，可分配数量与已预留总量都归零；
      * ② 收尾发布带原 {@code jobId} 的已交付结论，客户端据它结束本地作业；③ 交付内容写进本管的膛室
-     * （120mm 是单发装填），机器随之重新可用。这里只跑发射器自己的 tick：机构与架不进 tick，
+     * （125mm 是单发装填），机器随之重新可用。这里只跑发射器自己的 tick：机构与架不进 tick，
      * 因此这 100 多个 tick 里不会有再生掺进来。</p>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 300)
     public static void deliveredJobFillsTheBreechAndPublishesItsResult(GameTestHelper helper) {
         RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse(PART));
-        helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
-        RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
+        helper.assertTrue(type != null, "T90A 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, VARIANT, helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
@@ -187,6 +198,69 @@ public final class AmmoJobClaimGameTest {
             helper.assertTrue(!autoloader.isClaimedByOther(otherLauncher), "交付后机器必须重新可用");
             helper.succeed();
         } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /**
+     * 人力直取：炮塔上没有装弹机，乘员从弹药架取弹并全程装填。
+     *
+     * <p>契约：① 只有武器型号声明了人工段（{@code human_reload_time}）时弹药架才作为交付目标被登记——
+     * 这根管的发现结果里没有自动装弹机，却有自己的弹药架；② 受理的是人工段：标准人力的时长按岗位倍率与
+     * 个人倍率折算，机械段尚未开始；③ 人工段走完后才进入机械段，库存持有者没有机械动作，因此紧接着的
+     * 那一 tick 就兑现；④ 开工只取预留、不扣实际库存，交付时按预留份额扣一次，膛内有一发，结束结果带原
+     * 编号与已交付结论。</p>
+     *
+     * <p>这里用 M1A2 SEP 炮塔的 120mm 炮：它的自动装弹机已从内容里移除，装填手座位上放一个假乘员即可推进
+     * 人工段。人工段只读实际乘员的引用与人工装填能力，因此不必走完整的登乘流程。</p>
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 400)
+    public static void manualPathTakesRoundsStraightFromTheRack(GameTestHelper helper) {
+        RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse(MANUAL_PART));
+        helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, MANUAL_VARIANT, helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        ArmorStand loaderEntity = null;
+        try {
+            Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            LauncherSubsystem launcher = require(helper, byName, MANUAL_LAUNCHER, LauncherSubsystem.class);
+            RegenAmmoRackSubsystem rack = require(helper, byName, MANUAL_RACK, RegenAmmoRackSubsystem.class);
+            SeatSubsystem seat = require(helper, byName, MANUAL_SEAT, SeatSubsystem.class);
+            vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+
+            helper.assertTrue(launcher.getHumanReloadTimeTicks() > 0, "本管必须声明完整人力流程");
+            helper.assertTrue(launcher.getSuppliers().contains(rack),
+                    "声明了人工段的管必须把弹药架当作交付目标");
+
+            AmmoBelt spec = rack.getDeliverySpec();
+            helper.assertTrue(rack.returnBelt(spec.freshCopy(spec.length())), MANUAL_RACK + " 应接受一份现货");
+            int stock = rack.getAmmoCount();
+
+            loaderEntity = new ArmorStand(EntityType.ARMOR_STAND, helper.getLevel());
+            helper.getLevel().addFreshEntity(loaderEntity);
+            seat.passenger = loaderEntity;
+
+            launcher.setCurrentSupplier(rack);
+            launcher.onTick();
+            ReloadJob job = launcher.getReloadJob();
+            helper.assertTrue(job != null, "有人与现货时应受理一份作业");
+            helper.assertTrue(job.stage() == ReloadJob.Stage.HUMAN, "人力直取的作业从人工段开始");
+            helper.assertTrue(job.totalTicks() == launcher.getHumanReloadTimeTicks(),
+                    "标准人力的本阶段时长等于型号的基准时长");
+            helper.assertTrue(job.reservedCount() > 0 && rack.getAmmoCount() == stock,
+                    "开工只取预留，不扣实际库存");
+
+            for (int i = 0; i < 300 && launcher.getReloadJob() != null; i++) launcher.onTick();
+            helper.assertTrue(launcher.getReloadJob() == null, "走完后作业必须收尾");
+            helper.assertTrue(launcher.lastEndedJobId() == job.jobId(), "结束结果必须带原作业编号");
+            helper.assertTrue(launcher.lastEndWasDelivered(), "兑现出一份时结束结果必须是已交付");
+            helper.assertTrue(launcher.getChamberedType() != null, "单发装填的管交付后膛内必须有一发");
+            helper.assertTrue(rack.getAmmoCount() == stock - job.reservedCount(),
+                    "成功交付按预留份额扣一次实际库存");
+            helper.assertTrue(rack.getReservedTotal() == 0, "兑现后不得留下预留");
+            helper.succeed();
+        } finally {
+            if (loaderEntity != null) loaderEntity.discard();
             vehicle.onRemoveFromLevel();
         }
     }

@@ -96,15 +96,8 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
     }
 
     /**
-     * 某条发现关系上的岗位倍率；未声明时按标准 1.0。
-     *
-     * @param channel 装填人员频道
+     * 某条发现关系上的岗位倍率由人工段选人读取：未声明的频道按标准 1.0，因此解码校验只管拒绝写坏的值。
      */
-    public double timeMultiplierFor(String channel) {
-        Double value = reloadOperatorTimeMultipliers.get(channel);
-        return value == null ? 1.0 : value;
-    }
-
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;

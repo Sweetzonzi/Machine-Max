@@ -7,11 +7,30 @@
     "weapon.gun",
     "weapon.gun.kwk39"
   ],
+  //(可选, 默认0)完整人力装填的基准秒数：本炮直接从弹药架取弹、由乘员全程装填，0 = 不支持该路径
+  "human_reload_time": 5,
   "breech": {
     "fire_rate": 30,
     "required_tags": [
       "machine_max:caliber/50mm"
     ]
+  },
+  "sounds": {
+    //人工段进度音效：开闩、装弹、手动关闩，键是 0~1 的进度比例，声音定位在本炮上
+    "human_progress_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:subsystem.loader.reload_start",
+        "range": 16
+      },
+      "0.5": {
+        "sound_id": "machine_max:subsystem.loader.reload_shell",
+        "range": 16
+      },
+      "0.9": {
+        "sound_id": "machine_max:subsystem.loader.reload_close",
+        "range": 16
+      }
+    }
   },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

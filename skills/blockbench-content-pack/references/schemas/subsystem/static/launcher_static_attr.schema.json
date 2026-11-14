@@ -46,6 +46,12 @@
       "default": false,
       "description": "一次拉取装多少发：true 只把一发推进膛室，不建立已装数据；false 把整份 Belt 装进已装数据。按武器实际怎么装填填写，与口径、射速和供给者类型无关：一次只把一发推进膛室的武器（主炮、导弹发射管、逐发取弹的机关炮）填 true，由弹链或弹匣整份供弹的机枪、机关炮填 false。"
     },
+    "human_reload_time": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "完整人力装填流程的基准秒数（标准人力）：本型号直接从弹药架取弹、由乘员全程装填，机械段为零。省略或写 0 表示不支持该路径，这根管只经自动装弹机装填；负值与非有限值是解码错误。交付方自己声明了人工段时由它负责用人，本字段不参与。实际时长还要乘岗位倍率与该乘员的个人倍率。配了人工段却没有座位声明本管的装填人员频道时，这条流程等不到执行者，启动时会告警。"
+    },
     "sounds": {
       "type": "object",
       "properties": {
@@ -88,6 +94,11 @@
             "sound_id": "machine_max:subsystem.launcher.dry_fire",
             "range": 16
           }
+        },
+        "human_progress_sounds": {
+          "type": "object",
+          "description": "人工段的进度分段音效：键是 '0.0'~'1.0' 的十进制字符串，值是该进度阈值上播放的音效。阈值 0 是段开始音、1 是段走完的音，两者不进越过循环；一次推进跨过多个阈值时按阈值升序逐个播放。声音定位在本管上——人力直取路径没有机构。只有交付方自己声明了人工段时由它播，本表用于本型号自己负责的人工段。",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
         "fmod": {
           "type": "object",
@@ -270,6 +281,19 @@
       "basic_durability": 80,
       "control_inputs": ["weapon.autocannon"],
       "description": "标准示例——基础发射器配置（类型级火控频道）"
+    },
+    {
+      "type": "machine_max:launcher",
+      "single_round_loading": true,
+      "human_reload_time": 5,
+      "sounds": {
+        "human_progress_sounds": {
+          "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
+          "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
+          "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
+        }
+      },
+      "description": "人力直取示例——炮塔上没有装弹机，由乘员从弹药架取弹并全程装填"
     }
   ]
 }

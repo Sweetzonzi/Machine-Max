@@ -141,9 +141,6 @@
               "batch_cooldown": 0,
               "regen_progress": 0.9499953
             },
-            "subsystem.machine_max.50mm_ammo_autoloader": {
-              "durability_ratio": 1.0
-            },
             "subsystem.machine_max.50mm_he_ammo_loader": {
               "ammo_count": 6,
               "is_batch_reloading": 0,
@@ -152,9 +149,6 @@
               "belt_index": 0,
               "batch_cooldown": 0,
               "regen_progress": 0.0
-            },
-            "subsystem.machine_max.50mm_he_ammo_autoloader": {
-              "durability_ratio": 1.0
             },
             "subsystem.machine_max.commander_seat": {
               "control_group_set": {

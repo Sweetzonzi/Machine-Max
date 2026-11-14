@@ -348,6 +348,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      */
     private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
 
+    /**
+     * 本机自己负责的人工段用人（人力直取路径）。<br>
+     * 交付方自己声明了人工段时由它负责用人，本字段闲置；两者共用
+     * {@link ReloadOperatorRoster}，选人口径因此只有一处。
+     */
+    private final ReloadOperatorRoster operators;
+
+    /**
+     * 客户端：本机人工段已播到的进度比例；负数表示本段还没有游标。<br>
+     * 游标是各客户端自己的量：进度回退（作业重开、上行校准把进度往回拉）只把游标拉回去，不重播已经越过的
+     * 阈值。换作业时由 {@link #humanSoundJobId} 识别并重建。
+     */
+    private float humanSoundProgress = -1f;
+
+    /** 客户端：{@link #humanSoundProgress} 对应的作业编号；换作业时游标从头建立 */
+    private int humanSoundJobId;
+
     // ——— 信号化开火指令 ———
 
     /**
@@ -374,6 +391,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.operators = new ReloadOperatorRoster(this, attr.reloadOperatorDiscoveryTargets,
+                attr.reloadOperatorTimeMultipliers);
         if (attr.locator == null || attr.locator.isEmpty()) {
             MachineMax.LOGGER.error("发射器子系统 {} 未配置发射点locator", name);
         }
@@ -782,29 +801,38 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 挂载后与结构变化后重新发现供弹来源。<br>
      * 需求方发起查询：对 {@code ammo_discovery_targets} 的每个频道做一次只读终端查询，命中的
-     * {@link IAmmoSupplier}（自动装弹机）登记进本管的供给者表。弹药架不是供给者——直接向它取弹属于
-     * 人力直取，只有本型号定义了人工段时才作为候选，因此这里不会把它当成交付来源。
+     * {@link IAmmoSupplier} 登记进本管的供给者表。自动装弹机与库存持有者（弹药架）都是供给者，区别在于
+     * 库存持有者没有机械段：直接向它取弹属于人力直取，只有本型号声明了人工段时才登记，否则这根管只经
+     * 机构装填（见 {@link #discoverSuppliers()}）。
      * <p><b>调用线程：</b>主线程（挂载与结构变化）。
      */
     @Override
     public void onAttach() {
         super.onAttach();
         discoverSuppliers();
+        operators.discover(getHumanReloadTimeTicks());
     }
 
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         discoverSuppliers();
+        operators.discover(getHumanReloadTimeTicks());
     }
 
-    /** 按 {@code ammo_discovery_targets} 做只读发现并登记供给者；结果已在结构变化的第一阶段清空。 */
+    /**
+     * 按 {@code ammo_discovery_targets} 做只读发现并登记供给者；结果已在结构变化的第一阶段清空。<br>
+     * 库存持有者只有在本人力流程存在时才进候选：它的机械段为零，人工段由本管负责，因此不能在没有人工段的
+     * 型号上充当交付目标——那会变成"取弹不花时间"。同一频道上同时有机构与库存持有时两者都登记，
+     * 由路由按预计完成时间二选一（见 {@link #ticksToNextRound(IAmmoSupplier)}）。
+     */
     private void discoverSuppliers() {
         for (String channel : attr.ammoDiscoveryTargets.keySet()) {
             for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
                 for (ISignalReceiver terminal : arrival.getValue()) {
                     if (terminal == this) continue;
                     if (!(terminal instanceof IAmmoSupplier supplier)) continue;
+                    if (terminal instanceof RegenAmmoRackSubsystem && getHumanReloadTimeTicks() <= 0) continue;
                     if (terminal instanceof AbstractSubsystem sub
                             && sub.getOwner().getSubPart().getPart().assembly
                             != getOwner().getSubPart().getPart().assembly) {
@@ -1125,6 +1153,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * （现货优先：空匣的机器即使下一 tick 就会回充出一发也不值得留）。
      * <p>还没开工的那一档按<b>标准人力</b>估人工段：选人之后的实际倍率只有受理时才定，而这里比较的是
      * "换不换供给者"，含人工段的型号因此排在同样机械时长但不带人工段的型号之后——这正是它的实际代价。
+     * 人工段的基准时长取本条作业真正的用人方（见 {@link #humanStageStandardTicks(IAmmoSupplier)}）。
      *
      * @param supplier 候选或当前供给者，可为 null（一律该换）
      * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
@@ -1138,13 +1167,123 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return remaining;
         }
         if (!supplier.hasAmmo()) return Integer.MAX_VALUE;
-        return Math.max(0, supplier.getHumanReloadTimeTicks() + supplier.getReloadTimeTicks());
+        return Math.max(0, humanStageStandardTicks(supplier) + supplier.getReloadTimeTicks());
+    }
+
+    /**
+     * 受理一条新作业。<br>
+     * 有判定流程的型号先认领执行者，再只取整次作业的弹药预留：人工段没有机械动作，占着机构槽位会让别的管
+     * 白白等。任一步失败都释放本次已取得的资源、不建作业。
+     * 没有人工段的型号一次取得预留与机构槽位，两种资源在同一份授予里返回。
+     *
+     * @param supplier 当前供给者
+     * @return 新建的作业；本 tick 接不了单时返回 null
+     */
+    @Nullable
+    private ReloadJob acceptNewJob(IAmmoSupplier supplier) {
+        // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
+        int humanTicks = humanStageStandardTicks(supplier);
+        if (humanTicks > 0) {
+            if (!claimOperator(supplier, key)) return null; // 没有执行者：不占弹也不开工
+            IAmmoSupplier.Grant grant = supplier.reserveFor(this, key);
+            if (grant == null) {
+                releaseOperator(supplier, key);
+                return null;
+            }
+            nextJobId++;
+            double rate = operatorTimeScale(supplier);
+            ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
+                    grant.reservedCount(), ReloadJob.Stage.HUMAN, humanStageTicks(humanTicks, rate), rate);
+            beginReloadJob(job);
+            return job;
+        }
+        IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
+        if (grant == null) return null;
+        nextJobId++;
+        ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
+                grant.reservedCount(), supplier.getReloadTimeTicks());
+        beginReloadJob(job);
+        return job;
+    }
+
+    /**
+     * 本管是否为这条作业的人工段负责用人。<br>
+     * 交付方自己声明了人工段时由它负责（机构型号的 {@code human_reload_time}）；否则由本管负责，条件是本型号
+     * 声明了完整人力流程——这就是人力直取路径：交付方是库存持有者，机械段为零，取弹与装填都归乘员。
+     * 两处都声明时以交付方为准，一条作业因此只有一段人工段。
+     *
+     * @param supplier 当前供给者
+     */
+    private boolean ownsHumanStage(IAmmoSupplier supplier) {
+        return supplier.getHumanReloadTimeTicks() <= 0 && getHumanReloadTimeTicks() > 0;
+    }
+
+    /**
+     * 本条作业人工段的基准时长（标准人力 tick）；{@code 0} 表示没有人工段。
+     *
+     * @param supplier 当前供给者
+     */
+    private int humanStageStandardTicks(IAmmoSupplier supplier) {
+        return ownsHumanStage(supplier) ? getHumanReloadTimeTicks() : supplier.getHumanReloadTimeTicks();
+    }
+
+    /**
+     * 本型号完整人力流程的基准时长：{@code human_reload_time} 秒换算成 tick；0 表示不支持该路径。<br>
+     * 这是标准人力下的时长，岗位倍率与个人倍率由 {@link #humanStageTicks(int, double)} 乘上去。
+     */
+    public int getHumanReloadTimeTicks() {
+        float seconds = attr.staticAttribute.getHumanReloadTime();
+        if (seconds <= 0f) return 0;
+        return Math.max(1, (int) (seconds * 20f));
+    }
+
+    /**
+     * 为人工段认领一名执行者：由本条作业真正的用人方处理。
+     *
+     * @param supplier 当前供给者
+     * @param key      作业身份
+     * @return true 表示此刻这条作业有人可干
+     */
+    private boolean claimOperator(IAmmoSupplier supplier, ReloadJobKey key) {
+        return ownsHumanStage(supplier)
+                ? operators.claim(this, key, getHumanReloadTimeTicks())
+                : supplier.claimOperator(this, key);
+    }
+
+    /** 这条作业的人工段是否仍有可用执行者，由用人方回答。 */
+    private boolean holdsOperator(IAmmoSupplier supplier) {
+        return ownsHumanStage(supplier) ? operators.holds(this) : supplier.holdsOperator(this);
+    }
+
+    /** 按身份释放执行者认领，由用人方处理；没有认领的一方是无操作。 */
+    private void releaseOperator(IAmmoSupplier supplier, ReloadJobKey key) {
+        if (ownsHumanStage(supplier)) {
+            operators.release(this, key);
+        } else {
+            supplier.releaseOperator(this, key);
+        }
+    }
+
+    /** 已认领执行者的人工段时间倍率（岗位倍率 × 个人倍率），由用人方回答。 */
+    private double operatorTimeScale(IAmmoSupplier supplier) {
+        return ownsHumanStage(supplier) ? operators.timeScale() : supplier.getOperatorTimeScale(this);
+    }
+
+    /**
+     * 本 tick 人工段能推进多少。<br>
+     * 人工段由本管负责时只看人还在不在（时长已经把倍率折进去）；由交付方负责时问它——机构的放行条件
+     * 归它自己表达。
+     */
+    private int humanStageAdvance(IAmmoSupplier supplier) {
+        if (!ownsHumanStage(supplier)) return supplier.getAdvanceTicks(this);
+        return holdsOperator(supplier) ? 1 : 0;
     }
 
     /**
      * 受理一份新作业：写入当前作业并把它的身份、分配与进度推给客户端（仅服务端写同步值）。<br>
-     * 受理前必须已经取得供给者授予的资源（{@link IAmmoSupplier#claimFor}，或有判定流程时
-     * {@link IAmmoSupplier#reserveFor} 加 {@link IAmmoSupplier#claimOperator}），因此这里不重复判断。
+     * 受理前必须已经取得交付方授予的资源（{@link IAmmoSupplier#claimFor}，或有人工段时
+     * {@link IAmmoSupplier#reserveFor} 加执行者认领），因此这里不重复判断。
      * 客户端按同步字段建自己的作业，走 {@link #applySyncedJob()}，不调用本方法。
      */
     private void beginReloadJob(ReloadJob job) {
@@ -1166,10 +1305,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         ReloadJob job = reloadJob;
         if (job == null) return;
         IAmmoSupplier supplier = currentSupplier;
-        if (supplier != null) {
-            supplier.releaseOperator(this, job.key());
-            supplier.releaseClaim(this, job.key());
-        }
+        // 人工段可能由交付方负责，也可能由本管负责（人力直取）：两个入口都按身份释放，
+        // 没有认领的那一方是无操作，因此这里不必反推是哪一个
+        if (supplier != null) supplier.releaseOperator(this, job.key());
+        operators.release(this, job.key());
+        if (supplier != null) supplier.releaseClaim(this, job.key());
         reloadJob = null;
         if (!getLevel().isClientSide()) {
             getSynchedData().set(JOB_RESULT_ID, job.jobId());
@@ -1273,59 +1413,22 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 受理一条新作业。<br>
-     * 有判定流程的型号（{@code human_reload_time > 0}）先认领执行者，再只取整次作业的弹药预留：人工段没有
-     * 机械动作，占着机构槽位会让别的管白白等。任一步失败都释放本次已取得的资源、不建作业。
-     * 没有人工段的型号一次取得预留与机构槽位，两种资源在同一份授予里返回。
-     *
-     * @param supplier 当前供给者
-     * @return 新建的作业；本 tick 接不了单时返回 null
-     */
-    @Nullable
-    private ReloadJob acceptNewJob(IAmmoSupplier supplier) {
-        // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
-        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
-        int humanTicks = supplier.getHumanReloadTimeTicks();
-        if (humanTicks > 0) {
-            if (!supplier.claimOperator(this, key)) return null; // 没有执行者：不占弹也不开工
-            IAmmoSupplier.Grant grant = supplier.reserveFor(this, key);
-            if (grant == null) {
-                supplier.releaseOperator(this, key);
-                return null;
-            }
-            nextJobId++;
-            double rate = supplier.getOperatorTimeScale(this);
-            ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
-                    grant.reservedCount(), ReloadJob.Stage.HUMAN, humanStageTicks(humanTicks, rate), rate);
-            beginReloadJob(job);
-            return job;
-        }
-        IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
-        if (grant == null) return null;
-        nextJobId++;
-        ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
-                grant.reservedCount(), supplier.getReloadTimeTicks());
-        beginReloadJob(job);
-        return job;
-    }
-
-    /**
      * 推进人工段：有人就往前走，人走了先换人、换不到就暂停，走完后释放人员并申请机械槽位。<br>
      * 换人保留已完成的进度，只按新倍率换算剩余量（{@link ReloadJob#retimeHuman(double)}）；倍率变了就重发
      * 一次时长与基线，客户端的进度条因此不会倒退。人员离场时立刻释放其认领，不能把离场者锁在旧作业上。
      *
-     * @param supplier 当前供给者（人工段的执行者由它发现与认领）
+     * @param supplier 当前供给者（人工段的用人方由它或本管承担，见 {@link #ownsHumanStage(IAmmoSupplier)}）
      * @param job      处于人工段的作业
      */
     private void tickHumanStage(IAmmoSupplier supplier, ReloadJob job) {
-        if (!supplier.holdsOperator(this)) supplier.releaseOperator(this, job.key());
-        if (!supplier.claimOperator(this, job.key())) {
+        if (!holdsOperator(supplier)) releaseOperator(supplier, job.key());
+        if (!claimOperator(supplier, job.key())) {
             pauseReloadJob(job);
             return;
         }
-        if (job.retimeHuman(supplier.getOperatorTimeScale(this))) pushReloadJob();
+        if (job.retimeHuman(operatorTimeScale(supplier))) pushReloadJob();
         if (!job.isComplete()) {
-            job.advance(supplier.getAdvanceTicks(this));
+            job.advance(humanStageAdvance(supplier));
             if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
                 finishReloadJob();
                 return;
@@ -1335,14 +1438,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 人工段完成：先释放人员，再申请机械槽位，都成立了才进入机械段。<br>
+     * 人工段完成：先释放人员，再取得本段的执行资源，都成立了才进入机械段。<br>
+     * 交付方是机构时这里申请的是它的机械槽位；交付方是库存持有者时它没有机械动作，同一次调用只是确认
+     * 那份预留仍在（{@link IAmmoSupplier#claimFor} 对已有身份沿用原份额），机械段因此只有一个 tick。
      * 槽位一时拿不到时作业停在人工段末端等（原库存预留保持），由暂停上限兜底。
      *
      * @param supplier 当前供给者
      * @param job      刚走完人工段的作业
      */
     private void finishHumanStage(IAmmoSupplier supplier, ReloadJob job) {
-        supplier.releaseOperator(this, job.key());
+        releaseOperator(supplier, job.key());
         if (supplier.claimFor(this, job.key()) == null) {
             pauseReloadJob(job);
             return;
@@ -1456,8 +1561,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 客户端把当前作业进度交给供给者，驱动它负责的那一段音效（机械段的声音定位在装弹机上）。<br>
-     * 已播阈值由供给者自己记，本管只提供进度。
+     * 客户端把当前作业进度交给音效持有者：机械段的声音定位在机构上，人工段的声音定位在装填动作发生的地方。<br>
+     * 人工段由交付方负责时（机构型号的人工准备）由它自己播；由本管负责时（人力直取）本管按自己的音效表播，
+     * 播放位置就是本管。已播游标归各自的持有者，本管只提供进度。
      */
     private void tickReloadSounds() {
         ReloadJob job = reloadJob;
@@ -1465,7 +1571,47 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         IAmmoSupplier supplier = deliverySupplier(job);
         // 指认与作业目标还没对齐（同步先后顺序）时不播：声音定位在实际交付的那台机器上
         if (supplier == null) return;
+        if (job.stage() == ReloadJob.Stage.HUMAN && ownsHumanStage(supplier)) {
+            tickOwnHumanSounds(job);
+            return;
+        }
         supplier.tickStageSounds(this, job.progress());
+    }
+
+    /**
+     * 播本管负责的人工段进度音效。<br>
+     * 阈值 0 是段开始音、1 是本段走完的音，两者都不进越过循环；一次推进跨过多个阈值时按升序逐个播放。
+     * 只有从段首观察到的作业才播开始音，完整补推建立的基线不补播历史标记；进度回退只把游标拉回去。
+     *
+     * @param job 处于人工段的本地作业
+     */
+    private void tickOwnHumanSounds(ReloadJob job) {
+        Map<String, SoundEvent> sounds = attr.staticAttribute.getHumanProgressSounds();
+        if (sounds.isEmpty()) return;
+        if (humanSoundJobId != job.jobId()) {
+            humanSoundJobId = job.jobId();
+            humanSoundProgress = -1f;
+        }
+        float progress = Math.clamp(job.progress(), 0f, 1f);
+        if (humanSoundProgress < 0f) {
+            if (job.elapsedTicks() <= 1) playOwnHumanMarker(sounds, 0f);
+            humanSoundProgress = 0f;
+        }
+        if (progress < humanSoundProgress) {
+            // 作业重开或校准把进度往回拉：游标跟回去，已经播过的不重播
+            humanSoundProgress = progress;
+            return;
+        }
+        for (SoundEvent sound : ReloadSoundMarkers.crossed(sounds, humanSoundProgress, progress)) {
+            playSpreadingSound(sound, SoundSource.NEUTRAL);
+        }
+        humanSoundProgress = progress;
+    }
+
+    /** 播放本管人工段在某个固定阈值上的音效（0 = 段开始）；没有这一档时什么都不做。 */
+    private void playOwnHumanMarker(Map<String, SoundEvent> sounds, float threshold) {
+        SoundEvent sound = ReloadSoundMarkers.at(sounds, threshold);
+        if (sound != null) playSpreadingSound(sound, SoundSource.NEUTRAL);
     }
 
     /**
@@ -2304,11 +2450,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return attr.staticAttribute.getControlInputs().isEmpty();
     }
 
+    /**
+     * 本机的查询表：弹药反馈输出、供弹来源与人工段座位。<br>
+     * 三者都是只读发现的入口，因此都进首跳表；装填人员频道只用于握手，本机不往座位发业务信号。
+     */
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(2);
+        Map<String, List<String>> result = new HashMap<>(4);
         result.putAll(attr.ammoCountOutputs);
         result.putAll(attr.ammoDiscoveryTargets);
+        result.putAll(attr.reloadOperatorDiscoveryTargets);
         return result;
     }
 }

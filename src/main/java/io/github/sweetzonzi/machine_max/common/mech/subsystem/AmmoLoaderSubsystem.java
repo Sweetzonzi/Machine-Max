@@ -1,8 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
@@ -12,7 +10,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,28 +91,16 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     private final List<RegenAmmoRackSubsystem> upstreams = new ArrayList<>();
 
     /**
-     * 本机为人工段查询到的座位，以及该座位到达本机的装填人员频道；结构变化时整体重建。<br>
-     * 同一座位可以经多条线路到达，此时保留每条线路——岗位倍率绑定配置条目，候选按各自的关系代价比较。
+     * 人工段的用人：座位发现、执行者认领与岗位倍率。<br>
+     * 发射器在人力直取路径上需要同一份东西，因此选人口径只有 {@link ReloadOperatorRoster} 一处。
      */
-    private final Map<SeatSubsystem, List<String>> operatorSeats = new LinkedHashMap<>();
-
-    /** 人工段当前认领的座位；null = 没有认领。服务端字段 */
-    @Nullable
-    private SeatSubsystem operatorSeat;
-
-    /** 人工段当前认领的乘员；与 {@link #operatorSeat} 一起给出执行者。服务端字段 */
-    @Nullable
-    private LivingEntity operator;
-
-    /** 已认领执行者的时间倍率（岗位倍率 × 个人倍率），换人时随之更新 */
-    private double operatorTimeScale = 1.0;
-
-    /** 已经就有没有执行者这件事告过警，避免每次结构变化重复刷屏 */
-    private boolean warnedNoOperator;
+    private final ReloadOperatorRoster operators;
 
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.operators = new ReloadOperatorRoster(this, attr.reloadOperatorDiscoveryTargets,
+                attr.reloadOperatorTimeMultipliers);
     }
 
     // ==================== 同步数据 ====================
@@ -153,14 +138,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     public void onAttach() {
         super.onAttach();
         discoverUpstreams();
-        discoverOperatorSeats();
+        operators.discover(getHumanReloadTimeTicks());
     }
 
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         discoverUpstreams();
-        discoverOperatorSeats();
+        operators.discover(getHumanReloadTimeTicks());
     }
 
     /**
@@ -182,40 +167,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         }
         upstreams.clear();
         upstreams.addAll(found);
-    }
-
-    /**
-     * 按 {@code reload_operator_discovery_targets} 的每个频道做只读查询，收集可达的座位。<br>
-     * 倍率键取<b>发起查询的配置条目</b>，不取到达频道：连接器可以转译频道，但这条关系的岗位倍率仍写在
-     * 本机那张表的原名下。座位只作为发现结果保存，实际是否有人由每个 tick 读 {@code passenger}——乘员上下座
-     * 不触发结构变化，不能只在发现时判定一次。
-     * <p><b>调用线程：</b>主线程（挂载与结构变化）。
-     */
-    private void discoverOperatorSeats() {
-        Map<SeatSubsystem, List<String>> found = new LinkedHashMap<>();
-        for (String channel : attr.reloadOperatorDiscoveryTargets.keySet()) {
-            for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
-                for (ISignalReceiver terminal : arrival.getValue()) {
-                    if (!(terminal instanceof SeatSubsystem seat)) continue;
-                    if (!sameAssembly(seat)) continue;
-                    List<String> channels = found.computeIfAbsent(seat, k -> new ArrayList<>(2));
-                    if (!channels.contains(channel)) channels.add(channel);
-                }
-            }
-        }
-        operatorSeats.clear();
-        operatorSeats.putAll(found);
-
-        if (getHumanReloadTimeTicks() > 0 && operatorSeats.isEmpty()) {
-            if (!warnedNoOperator) {
-                warnedNoOperator = true;
-                MachineMax.LOGGER.warn("装弹机 {} 配置了人工段，但没有任何座位声明装填人员频道 {}；"
-                                + "这条流程等不到执行者，装填会一直停在等待人工",
-                        name, attr.reloadOperatorDiscoveryTargets.keySet());
-            }
-        } else {
-            warnedNoOperator = false;
-        }
     }
 
     /** 该子系统是否与本机挂在同一个装配体上。 */
@@ -559,57 +510,24 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /**
      * 为人工段认领一名执行者，或在已有更好的人时换人。<br>
-     * 候选是"有效座位的存活乘员 × 它到达本机的线路"，代价是剩余人工段的实际用时
-     * （剩余标准人力时间 × 岗位倍率 × 个人倍率）。当前执行者仍然可用时，只有严格更便宜的候选才换人；
-     * 相等时保持——同一个人经多条线路出现时也只取最有利的那条（{@link ReloadCrewSelection}）。
+     * 候选、代价与决胜由 {@link ReloadOperatorRoster} 给出：本机只交出自己的基准时长与作业身份。
      * <p>选不到人时返回 false：消费者据此暂停（作业与预留都还在），暂停超过上限才终止。
      * <p><b>调用线程：</b>主线程（服务端，消费者的每个装填 tick）。
      */
     @Override
     public boolean claimOperator(IAmmoConsumer consumer, ReloadJobKey key) {
-        if (getLevel().isClientSide()) return true;
-        int standard = getHumanReloadTimeTicks();
-        if (standard <= 0) return true;
-
-        double remaining = remainingStandardTicks(consumer, standard);
-        OperatorCandidate best = bestOperator(consumer, remaining);
-        if (holdsOperator(consumer)) {
-            if (best == null || best.estimateTicks() >= operatorTimeScale * remaining) return true;
-            releaseOperator(consumer, key);
-        }
-        if (best == null) return false;
-        CrewReloadAttachment crew = CrewReloadAttachment.of(best.person());
-        if (!crew.claim(consumer, key)) return false;
-        operator = best.person();
-        operatorSeat = best.seat();
-        operatorTimeScale = attr.timeMultiplierFor(best.channel()) * crew.multiplier();
-        return true;
+        return operators.claim(consumer, key, getHumanReloadTimeTicks());
     }
 
-    /**
-     * 这条作业的人工段是否仍有可用执行者。<br>
-     * 乘员离座、死亡、实体移除、座位被摧毁，或者认领已经不在原作业上，都算不可用；此时人工段不能空跑。
-     * 客户端不判断人员（人员状态由服务端判定，实际时长也已经随同步值发布）。
-     */
+    /** 这条作业的人工段是否仍有可用执行者；客户端恒为 true（人员状态由服务端判定）。 */
     @Override
     public boolean holdsOperator(IAmmoConsumer consumer) {
-        if (getLevel().isClientSide()) return true;
-        LivingEntity person = operator;
-        SeatSubsystem seat = operatorSeat;
-        if (person == null || seat == null) return false;
-        if (person.isRemoved() || person.isDeadOrDying()) return false;
-        if (seat.getPassenger() != person) return false;
-        if (seat.isDestroyed() || !seat.isActive()) return false;
-        return CrewReloadAttachment.of(person).holdsClaim(consumer);
+        return operators.holds(consumer);
     }
 
     @Override
     public void releaseOperator(IAmmoConsumer consumer, ReloadJobKey key) {
-        if (getLevel().isClientSide() || operator == null) return;
-        if (!CrewReloadAttachment.of(operator).release(key)) return;
-        operator = null;
-        operatorSeat = null;
-        operatorTimeScale = 1.0;
+        operators.release(consumer, key);
     }
 
     /**
@@ -618,69 +536,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
      */
     @Override
     public double getOperatorTimeScale(IAmmoConsumer consumer) {
-        if (getLevel().isClientSide() || operator == null) return 1.0;
-        return operatorTimeScale > 0 && Double.isFinite(operatorTimeScale) ? operatorTimeScale : 1.0;
-    }
-
-    /**
-     * 剩余人工段的<b>标准</b>人力 tick 数：作业上剩余的进度折算回未乘倍率的量。<br>
-     * 还没有作业（开工前的选人）时就是整段基准时长。
-     */
-    private static double remainingStandardTicks(IAmmoConsumer consumer, int standardTicks) {
-        ReloadJob job = consumer.getReloadJob();
-        if (job == null || job.stage() != ReloadJob.Stage.HUMAN) return standardTicks;
-        return Math.max(0.0, (job.totalTicks() - job.elapsedTicks()) * job.humanRate());
-    }
-
-    /**
-     * 挑出剩余人工段用时最短的候选。
-     *
-     * @param remainingStandard 剩余标准人力 tick
-     * @return 最优候选；没有可用乘员时返回 null
-     */
-    @Nullable
-    private OperatorCandidate bestOperator(IAmmoConsumer consumer, double remainingStandard) {
-        List<ReloadCrewSelection.Candidate> keys = new ArrayList<>(operatorSeats.size());
-        List<OperatorCandidate> candidates = new ArrayList<>(operatorSeats.size());
-        for (Map.Entry<SeatSubsystem, List<String>> entry : operatorSeats.entrySet()) {
-            SeatSubsystem seat = entry.getKey();
-            LivingEntity person = usableOperator(seat, consumer);
-            if (person == null) continue;
-            CrewReloadAttachment crew = CrewReloadAttachment.of(person);
-            for (String channel : entry.getValue()) {
-                double estimate = remainingStandard * attr.timeMultiplierFor(channel) * crew.multiplier();
-                keys.add(new ReloadCrewSelection.Candidate(person.getUUID(), seat.getSubPart().getId(),
-                        seat.name, estimate));
-                candidates.add(new OperatorCandidate(seat, channel, person, estimate));
-            }
-        }
-        int index = ReloadCrewSelection.bestIndex(keys);
-        return index < 0 ? null : candidates.get(index);
-    }
-
-    /**
-     * 座位上此刻能不能派人：有人、人还在、座位在、这个人没在替别的作业干活。
-     *
-     * @return 可用的乘员；任一项不成立时返回 null
-     */
-    @Nullable
-    private static LivingEntity usableOperator(SeatSubsystem seat, IAmmoConsumer consumer) {
-        LivingEntity person = seat.getPassenger();
-        if (person == null || person.isRemoved() || person.isDeadOrDying()) return null;
-        if (seat.isDestroyed() || !seat.isActive()) return null;
-        if (CrewReloadAttachment.of(person).isClaimedByOther(consumer)) return null;
-        return person;
-    }
-
-    /**
-     * 一个候选执行者：谁、坐在哪、经哪条线路被发现、干完剩余人工段还要多久。
-     *
-     * @param seat           候选座位
-     * @param channel        该座位到达本机的装填人员频道（岗位倍率按它查）
-     * @param person         实际乘员
-     * @param estimateTicks  预计完成剩余人工段所需的 tick
-     */
-    private record OperatorCandidate(SeatSubsystem seat, String channel, LivingEntity person, double estimateTicks) {
+        return operators.timeScale();
     }
 
     // ==================== 状态显示 ====================
@@ -777,29 +633,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /** 把 {@code (from, to]} 区间里跨过的阈值按升序播一遍；阈值 0 属于段开始音，不在这个区间里。 */
     private void playCrossed(IAmmoConsumer consumer, ReloadJob.Stage stage, float from, float to) {
-        Map<String, SoundEvent> sounds = soundsOf(stage);
-        if (sounds.isEmpty()) return;
-        List<Map.Entry<Float, SoundEvent>> crossed = new ArrayList<>();
-        for (Map.Entry<String, SoundEvent> entry : sounds.entrySet()) {
-            float threshold = thresholdOf(entry.getKey());
-            if (!Float.isFinite(threshold) || threshold <= 0f) continue;
-            if (threshold > from && threshold <= to) crossed.add(Map.entry(threshold, entry.getValue()));
-        }
-        crossed.sort(Map.Entry.comparingByKey());
-        for (Map.Entry<Float, SoundEvent> entry : crossed) {
-            playAt(consumer, stage, entry.getValue());
+        for (SoundEvent sound : ReloadSoundMarkers.crossed(soundsOf(stage), from, to)) {
+            playAt(consumer, stage, sound);
         }
     }
 
     /** 播放某个固定阈值的音效（0 = 段开始）；该段没有配置这个阈值时什么都不做。 */
     private void playMarker(IAmmoConsumer consumer, ReloadJob.Stage stage, float threshold) {
-        for (Map.Entry<String, SoundEvent> entry : soundsOf(stage).entrySet()) {
-            float value = thresholdOf(entry.getKey());
-            if (Float.isFinite(value) && Math.abs(value - threshold) < 1e-4f) {
-                playAt(consumer, stage, entry.getValue());
-                return;
-            }
-        }
+        playAt(consumer, stage, ReloadSoundMarkers.at(soundsOf(stage), threshold));
     }
 
     /** 该阶段的进度音效配置：人工段在发射器上，机械段在本机。 */
@@ -813,21 +654,12 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
      * 播放一处进度音效：人工段定位在发射器（人把弹交到炮闩跟前），机械段定位在本机。
      */
     private void playAt(IAmmoConsumer consumer, ReloadJob.Stage stage, @Nullable SoundEvent sound) {
-        if (sound == null || !getLevel().isClientSide()) return;
+        if (sound == null) return;
         if (stage == ReloadJob.Stage.HUMAN) {
             if (consumer instanceof ISoundSpreader spreader) spreader.playSpreadingSound(sound, SoundSource.NEUTRAL);
             return;
         }
         playSpreadingSound(sound, SoundSource.NEUTRAL);
-    }
-
-    /** 解析音效表的阈值键；不是数值的键按"不是进度标记"处理。 */
-    private static float thresholdOf(String key) {
-        try {
-            return Float.parseFloat(key);
-        } catch (NumberFormatException ignored) {
-            return Float.NaN;
-        }
     }
 
     // ==================== 信号 ====================

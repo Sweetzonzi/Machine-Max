@@ -319,6 +319,9 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "loader_seat",
               "control_group_preset": "m1a2_sep:m1a2_loader",
+              "reload_operator_discovery_inputs": [
+                "crew.reload.loader"
+              ],
               "camera_discovery_targets": {
                 "sight_port_mg": [
                   "global"
@@ -371,18 +374,6 @@
                 "ammo_120mm"
               ]
             },
-            "subsystem.m1a2_sep.ammo_autoloader": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:120mm_m256_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_120mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_120mm": [
-                  "subsystem.m1a2_sep.ammo_loader"
-                ]
-              }
-            },
             "subsystem.m1a2_sep.coax_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "m1a2_sep:coax_controller",
@@ -434,18 +425,6 @@
               "ammo_discovery_inputs": [
                 "ammo_120mm"
               ]
-            },
-            "subsystem.m1a2_sep.ammo_autoloader_he": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:120mm_m256_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_120mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_120mm": [
-                  "subsystem.m1a2_sep.ammo_loader_he"
-                ]
-              }
             },
             "subsystem.m1a2_sep.coax_762_controller": {
               "type": "machine_max:weapon_controller",
@@ -1150,6 +1129,14 @@
                 "ammo_120mm": [
                   "local"
                 ]
+              },
+              "reload_operator_discovery_targets": {
+                "crew.reload.loader": [
+                  "local"
+                ]
+              },
+              "reload_operator_time_multipliers": {
+                "crew.reload.loader": 1.0
               }
             }
           }

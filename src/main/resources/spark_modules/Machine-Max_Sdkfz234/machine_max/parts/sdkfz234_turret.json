@@ -70,20 +70,6 @@
               "material": "machine_max:internal_machinery",
               "thickness": 5,
               "subsystem": "subsystem.machine_max.azimuth_driver"
-            },
-            "Loader50mmAPHitBox": {
-              "id": "ap_ammo_loader",
-              "type": "box",
-              "material": "machine_max:internal_machinery",
-              "thickness": 10,
-              "subsystem": "subsystem.machine_max.50mm_ammo_autoloader"
-            },
-            "Loader50mmHEHitBox": {
-              "id": "he_ammo_loader",
-              "type": "box",
-              "material": "machine_max:internal_machinery",
-              "thickness": 10,
-              "subsystem": "subsystem.machine_max.50mm_he_ammo_autoloader"
             }
           },
           "interact_boxes": {
@@ -129,6 +115,9 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "machine_max:default_gunner",
+              "reload_operator_discovery_inputs": [
+                "crew.reload.gunner"
+              ],
               "passenger_num_outputs": {
                 "passenger_num": [
                   "local",
@@ -146,6 +135,9 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
               "control_group_preset": "machine_max:default_commander",
+              "reload_operator_discovery_inputs": [
+                "crew.reload.commander"
+              ],
               "passenger_num_outputs": {
                 "passenger_num": [
                   "local",
@@ -202,18 +194,6 @@
                 "ammo_50mm"
               ]
             },
-            "subsystem.machine_max.50mm_ammo_autoloader": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:50mm_kwk39_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_50mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_50mm": [
-                  "subsystem.machine_max.50mm_ammo_loader"
-                ]
-              }
-            },
             "subsystem.machine_max.50mm_he_ammo_loader": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:50mm_kwk39_regen_ammo_rack",
@@ -226,18 +206,6 @@
               "ammo_discovery_inputs": [
                 "ammo_50mm"
               ]
-            },
-            "subsystem.machine_max.50mm_he_ammo_autoloader": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:50mm_kwk39_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_50mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_50mm": [
-                  "subsystem.machine_max.50mm_he_ammo_loader"
-                ]
-              }
             },
             "subsystem.machine_max.mg34_ammo_loader": {
               "type": "machine_max:regen_ammo_rack",
@@ -312,6 +280,18 @@
                 "ammo_50mm": [
                   "local"
                 ]
+              },
+              "reload_operator_discovery_targets": {
+                "crew.reload.gunner": [
+                  "local"
+                ],
+                "crew.reload.commander": [
+                  "local"
+                ]
+              },
+              "reload_operator_time_multipliers": {
+                "crew.reload.gunner": 1.0,
+                "crew.reload.commander": 1.0
               }
             }
           }
