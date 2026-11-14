@@ -651,64 +651,8 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.rws_yaw": {
-          "id": 22,
-          "durability_ratio": 1,
-          "pos_rot_vel_vel": {
-            "position": [
-              0.966721875,
-              2.88928625,
-              -1.212498125
-            ],
-            "rotation": [
-              0,
-              0,
-              0,
-              1
-            ],
-            "linear_vel": [
-              0,
-              0,
-              0
-            ],
-            "angular_vel": [
-              0,
-              0,
-              0
-            ]
-          },
-          "connector_data": {},
-          "subsystem_data": {}
-        },
-        "sub_part.m1a2_sep.rws_pitch": {
-          "id": 23,
-          "durability_ratio": 1,
-          "pos_rot_vel_vel": {
-            "position": [
-              0.99615375,
-              3.559164375,
-              -1.11256
-            ],
-            "rotation": [
-              0,
-              0,
-              0,
-              1
-            ],
-            "linear_vel": [
-              0,
-              0,
-              0
-            ],
-            "angular_vel": [
-              0,
-              0,
-              0
-            ]
-          },
-          "connector_data": {},
-          "subsystem_data": {}
-        },
+
+
         "sub_part.m1a2_sep.port_mg_yaw": {
           "id": 24,
           "durability_ratio": 1,
@@ -862,6 +806,77 @@
               -0.96638,
               2.88125,
               -1.0290625
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        }
+      }
+    },
+    "6e79b1a2-1200-4a21-9e65-202610270007": {
+      "registry_key": "m1a2_sep:m153_crows",
+      "name": "part.m1a2_sep.m153_crows",
+      "uuid": "6e79b1a2-1200-4a21-9e65-202610270007",
+      "variant": "desert",
+      "assembling_progress": 1,
+      "material_assembling_progress": 99999,
+      "render_wireframe": false,
+      "shared_durability_ratio": 1,
+      "texture_name": "default",
+      "sub_parts": {
+        "sub_part.m1a2_sep.rws_yaw": {
+          "id": 22,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.966721875,
+              2.88928625,
+              -1.212498125
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "linear_vel": [
+              0,
+              0,
+              0
+            ],
+            "angular_vel": [
+              0,
+              0,
+              0
+            ]
+          },
+          "connector_data": {},
+          "subsystem_data": {}
+        },
+        "sub_part.m1a2_sep.rws_pitch": {
+          "id": 23,
+          "durability_ratio": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              0.99615375,
+              3.559164375,
+              -1.11256
             ],
             "rotation": [
               0,
@@ -1216,6 +1231,40 @@
           -0.22687499999999994,
           0,
           0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270007",
+      "subPartNameA": "sub_part.m1a2_sep.rws_yaw",
+      "advConnectorName": "connector.m1a2_sep.rws_turret",
+      "posRotA": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270002",
+      "subPartNameS": "sub_part.m1a2_sep.turret",
+      "simplePointConnectorName": "connector.m1a2_sep.turret_rws",
+      "posRotS": {
+        "position": [
+          0.966721875,
+          0.70178625,
+          -1.649998125
         ],
         "rotation": [
           0,

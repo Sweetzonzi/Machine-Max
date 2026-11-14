@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -32,10 +33,10 @@ import java.util.Map;
  * 因此区分只能落在接线上了：控制器与装弹机在偏航子部件，发射器在俯仰子部件，
  * 中间那一跳走两者之间的俯仰连接点。</p>
  *
- * <p>用例把整座炮塔装成只有这一个零件的装配体，然后沿实际接线解析终端：开火频道必须恰好到达
- * 本挂载的发射器；供弹频道由发射器自己发起查询，必须恰好到达本挂载的自动装弹机。
- * 装成装配体是必要的——{@code "global"} 指向装配体的信号总线，只有存在装配体时
- * 「广播到同口径全部发射器」才会真的发生，独立零件上这条路径是空的。</p>
+ * <p>用例把炮塔与遥控武器站装成同一台装配体：炮塔零件带四个挂载，武器站零件带 CROWS。
+ * 沿实际接线解析终端：开火频道必须恰好到达本挂载的发射器；供弹频道由发射器自己发起查询，
+ * 必须恰好到达本挂载的自动装弹机。装成装配体是必要的——{@code "global"} 指向装配体的
+ * 信号总线，只有存在装配体时「广播到同口径全部发射器」才会真的发生，独立零件上这条路径是空的。</p>
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -74,8 +75,10 @@ public final class M1A2MountWiringGameTest {
         helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
         RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        RegularPart rws = attachRws(helper, vehicle, part);
         try {
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            byName.putAll(collectSubsystems(rws));
             List<AbstractSubsystem> launchers = new ArrayList<>();
             for (AbstractSubsystem subsystem : byName.values()) {
                 if (subsystem instanceof LauncherSubsystem) launchers.add(subsystem);
@@ -127,6 +130,26 @@ public final class M1A2MountWiringGameTest {
             helper.assertTrue(!terminals.contains(launcher),
                     where + " 不得到达 " + launcher.name + "（同一频道上的其它挂载）");
         }
+    }
+
+    /**
+     * 把遥控武器站零件接到炮塔上，返回武器站零件。
+     *
+     * <p>武器站在模板里是独立零件，挂点是一对对外连接（炮塔侧 Simple、武器站侧 Advanced）。
+     * 用例按同样的方式把它接上，装配体里才会出现 CROWS 那几个子系统。</p>
+     */
+    private static RegularPart attachRws(GameTestHelper helper, VehicleCore vehicle, RegularPart turret) {
+        RegularPartType type = PartDefinitions.regular(false)
+                .get(ResourceLocation.parse("m1a2_sep:m153_crows"));
+        helper.assertTrue(type != null, "M1A2 SEP 遥控武器站的部件定义必须已加载");
+        RegularPart rws = PartFactory.createRegular(type, "desert", helper.getLevel());
+        AbstractConnector advanced = rws.subParts.get("sub_part.m1a2_sep.rws_yaw")
+                .connectors.get("connector.m1a2_sep.rws_turret");
+        AbstractConnector simple = turret.subParts.get("sub_part.m1a2_sep.turret")
+                .connectors.get("connector.m1a2_sep.turret_rws");
+        vehicle.attachConnector(advanced, simple, rws);
+        helper.assertTrue(advanced.hasPart(), "遥控武器站必须挂到炮塔的武器站挂点上");
+        return rws;
     }
 
     private static Map<String, AbstractSubsystem> collectSubsystems(RegularPart part) {

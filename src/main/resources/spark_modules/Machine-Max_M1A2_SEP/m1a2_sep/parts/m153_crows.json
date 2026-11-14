@@ -1,0 +1,189 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "m1a2_sep:textures/icon/m153_crows.png",
+  "vehicle_durability_rate": 0.5,
+  "functional_threshold": 0.6,
+  "variants": {
+    "desert": {
+      "model": "m1a2_sep:m1a2_sep.geo",
+      "textures": {
+        "default": "m1a2_sep:textures/part/m1a2_sep.png",
+        "olive": "m1a2_sep:textures/part/m1a2_sep_olive.png"
+      },
+      "animations": "machine_max:empty",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/weapon",
+        "m1a2_sep:m153_crows",
+        "machine_max:series/m1a2"
+      ],
+      "sub_parts": {
+        "sub_part.m1a2_sep.rws_yaw": {
+          "start_bone": "MM_RWS_Yaw",
+          "end_bones": [
+            "MM_RWS_Pitch"
+          ],
+          "mass": 40,
+          "mass_center": "rws_yaw_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_rws_yaw": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.rws_turret": {
+              "locator": "rws_turret_mount",
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {
+                "joint_attrs": {
+                  "yr": {
+                    "lower_limit": -127.5,
+                    "upper_limit": 137.5,
+                    "damping": 1.82771
+                  }
+                }
+              }
+            },
+            "connector.m1a2_sep.rws_elevation": {
+              "locator": "rws_elevation",
+              "definition": "machine_max:turret_elevation_axis",
+              "internal": true,
+              "signal_targets": {
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.rws_autoloader"
+                ]
+              },
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -20,
+                    "upper_limit": 55,
+                    "damping": 1.52309
+                  }
+                }
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.rws_yaw_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:rws_yaw_driver",
+              "connector": "connector.m1a2_sep.rws_turret"
+            },
+            "subsystem.m1a2_sep.rws_pitch_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "m1a2_sep:rws_pitch_driver",
+              "connector": "connector.m1a2_sep.rws_elevation"
+            },
+            "subsystem.m1a2_sep.rws_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:rws_controller",
+              "control_outputs": {
+                "aim_drive_rws": [
+                  "subsystem.m1a2_sep.rws_yaw_driver",
+                  "subsystem.m1a2_sep.rws_pitch_driver"
+                ],
+                "weapon.mg.m2hb": [
+                  "connector.m1a2_sep.rws_elevation"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
+            },
+            "subsystem.m1a2_sep.rws_loader": {
+              "type": "machine_max:regen_ammo_rack",
+              "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
+              "belt_definition": {
+                "label": "12.7 AP",
+                "pattern": [
+                  {
+                    "ammo": "machine_max:12_7x99_m2_ap",
+                    "count": 1
+                  }
+                ],
+                "length": 100
+              },
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ]
+            },
+            "subsystem.m1a2_sep.rws_autoloader": {
+              "type": "machine_max:ammo_loader",
+              "definition": "machine_max:12_7mm_m2hb_ammo_loader",
+              "ammo_discovery_inputs": [
+                "ammo_12_7mm"
+              ],
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.rws_loader"
+                ]
+              }
+            }
+          }
+        },
+        "sub_part.m1a2_sep.rws_pitch": {
+          "start_bone": "MM_RWS_Pitch",
+          "end_bones": [],
+          "mass": 40,
+          "mass_center": "rws_pitch_mass",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "MM_Hit_rws_pitch": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 10,
+              "subsystem": "subsystem.m1a2_sep.rws_launcher"
+            }
+          },
+          "connectors": {
+            "connector.m1a2_sep.rws_pitch_lock": {
+              "locator": "rws_pitch_lock",
+              "definition": "machine_max:fixed_back",
+              "internal": true,
+              "overwrite": {},
+              "signal_targets": {
+                "weapon.mg.m2hb": [
+                  "subsystem.m1a2_sep.rws_launcher"
+                ],
+                "ammo_12_7mm": [
+                  "subsystem.m1a2_sep.rws_launcher"
+                ]
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.m1a2_sep.rws_launcher": {
+              "type": "machine_max:launcher",
+              "definition": "machine_max:12_7mm_m2hb_launcher",
+              "locator": "rws_muzzle",
+              "ammo_discovery_targets": {
+                "ammo_12_7mm": [
+                  "connector.m1a2_sep.rws_pitch_lock"
+                ]
+              }
+            },
+            "subsystem.m1a2_sep.rws_sight": {
+              "type": "machine_max:sight",
+              "definition": "m1a2_sep:rws_sight",
+              "locator": "rws_optic"
+            }
+          }
+        }
+      }
+    }
+  }
+}

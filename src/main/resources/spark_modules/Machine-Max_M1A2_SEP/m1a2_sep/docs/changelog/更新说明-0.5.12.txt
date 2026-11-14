@@ -1,0 +1,15 @@
+0.5.12 遥控武器站独立成零件
+
+炮塔顶部的遥控武器站是一个独立零件 m153_crows，只含两个子零件 rws_yaw 与 rws_pitch。它是美军的 CROWS（Common Remotely Operated Weapon Station），这套的美军编号 M153，车上装 12.7 mm M2HB；零件 id 用"编号 + 系统名"，不按车名命名，同一套武器站装到别的车上 id 不变。炮塔零件 m1a2_turret 的子零件集合是其余八项，其 end_bones 增加 MM_RWS_Yaw，整棵武器站子树（含 rws_yaw / rws_pitch 的几何）不再计入炮塔零件；其它子零件、子系统与碰撞箱不变。
+
+两个挂点是一对对外连接：炮塔侧 connector.m1a2_sep.turret_rws（machine_max:fixed_up，Simple，法线 +Y，覆写 integrity 2400、impact_absorption 1、impact_reduction 10，并要求对侧零件带 m1a2_sep:m153_crows 标签），武器站侧 connector.m1a2_sep.rws_turret（machine_max:turret_azimuth_axis，Advanced，法线 -Y，方位限位 -127.5°~137.5°、阻尼 1.82771）。两个挂点的 locator 共点且法线相反，因此焊接即可对接，也可随时拆下。武器站零件的变体标签是 machine_max:type/land、machine_max:category/weapon、m1a2_sep:m153_crows、machine_max:series/m1a2。
+
+模板新增部件 6e79b1a2-1200-4a21-9e65-202610270007 与一条连接关系；两个子零件沿用原 id（22、23）与原坐标，连接点姿态由各连接点相对质心的偏移换算。耐久贡献取 vehicle_durability_rate 0.5（与炮塔零件同一系数），拆分不改变整车耐久上限。制造配方为机械 2 / 电子 6 / 结构 4、150 tick，研发费用 150，图标 textures/icon/m153_crows.png。
+
+m153_crows、m1a2_turret、m1a2_turret_armor 三张图标按零件自身几何离屏渲染（512×512）：武器站图标只有武器站，附加装甲图标只有装甲板，取景按各自的包围盒计算。
+
+舱内车长的控制组（control_groups/m1a2_commander.json）按"主炮是主武器、机枪全是副武器"排：CROWS 的 aim_rws 与副武器频道 fire_rws 放在基础组，坐下就能瞄准并用副武器键开火；三个子控制组 commander_override_main_gun / commander_override_coax762 / commander_override_csamm 各自只叠加一台武器的瞄准频道，主炮组把 fire_input_p1 放到主武器键，两个机枪组把 fire_coax762_p1 / fire_csamm_p1 叠加到副武器键——副武器键因此一键打出当前所有机枪（CROWS 常驻，同轴或反狙击 M2 按组追加），主武器键只留给主炮。切换控制组只加不减，原来单列的 commander_rws 子组由基础组取代。
+
+炮塔尾舱里的两个 120 mm 弹药架有了自己的碰撞箱：MM_Hit_ammo_rack_ap 与 MM_Hit_ammo_rack_he，材质 machine_max:internal_machinery、等效厚度 5 mm，分别绑定子系统 subsystem.m1a2_sep.ammo_loader 与 subsystem.m1a2_sep.ammo_loader_he，碰撞箱 id 是 m256_ap_ammo、m256_he_ammo——两个 id 不同，同一次攻击落在两侧时两个弹药架各自记账。两块体积是尾舱内部左右各一的封闭长方体，夹在炮塔侧壁、尾壁与尾舱顶之间，不伸出装甲外表面；打穿尾舱装甲的弹丸落到哪一侧，就按等量伤害记到哪一侧的弹药架，击穿位置也因此决定殉爆来自哪一份库存。
+
+迁移：蓝图引用模板 id，重新生成的整车直接是拆分布局。旧存档里的载具按各自保存的连接关系恢复，武器站仍在炮塔零件内；要改用新布局需重新取整车。
