@@ -62,17 +62,30 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 
 ## 信号通道约定
 
-通道名称采用点分命名空间：`{域}.{子域}.{操作}`
+频道名是下划线分隔的扁平字符串，引擎不解析它：频道只作为 `ConcurrentHashMap` 的键做整串比较（`SignalChannel`），唯一的例外是接收者按自己声明的列表顺序挑第一个有效信号。点号属于**寻址名**——`subsystem.<命名空间>.<名字>`、`interact.<命名空间>.<名字>`、`weapon.<类别>.<型号>`——由 `ISignalSender#setTargetFromNames` 与交互区一类代码消费，两类字符串不共用解析入口。
 
-| 通道名 | 信号类型 | 说明 |
-|--------|----------|------|
-| `control.move` | MoveInputSignal | 移动控制输入 |
-| `control.view` | ViewInputSignal | 视角/瞄准输入 |
-| `control.regular` | RegularInputSignal | 常规交互（跳跃、互动等） |
-| `control.motor` | MotorControlSignal | 马达/引擎控制 |
-| `control.wheel` | WheelControlSignal | 车轮驱动/转向 |
-| `control.rotation` | RotationSignal | 旋转/角度控制（炮塔、关节等） |
-| `interact` | InteractSignal | 玩家交互信号 |
+乘员输入频道（座位写、控制器读）：
+
+| 频道 | 信号类型 | 说明 |
+|------|----------|------|
+| `move_input` | MoveInputSignal | 移动控制输入 |
+| `regular_input` | RegularInputSignal | 常规按键输入（换挡、离合、引擎启动等） |
+| `aim_input` | ViewInputSignal | 视角/瞄准输入 |
+| `fire_input` | RegularInputSignal 或裸值 | 主武器开火指令，按 `isFireSignal` 语义判定 |
+| `secondary_fire_input` | 同上 | 副武器开火指令 |
+
+同一族用名次后缀分档（`aim_input_p1`、`fire_input_p2` 等），后缀只决定接收者列表里的先后。岗位化的 `crew_<role>_<category>[_<device>]` 是《信号系统-操作权与越级优先级设计》P1 的目标形态。
+
+执行器与内部线不做乘员寻址：
+
+| 频道 | 方向 | 说明 |
+|------|------|------|
+| `weapon_control` | 武器控制器 → 炮塔驱动器 | 火控输出 |
+| `car_control` / `move_control` | 座位 → 行驶控制器/车轮驱动器 | 行驶与移动反馈 |
+| `aim_drive_<设备>` | 武器控制器 → 炮塔驱动器 | 单台设备的瞄准驱动，载荷为 `RotationSignal` |
+| `diff_lock_control` | 座位 → 变速箱 | 差速锁 |
+| `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令 |
+| `interact` | 交互区 → 子系统 | 玩家交互 |
 
 ## 约定
 
