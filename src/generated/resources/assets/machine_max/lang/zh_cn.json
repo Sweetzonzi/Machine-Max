@@ -414,6 +414,7 @@
   "message.machine_max.seat.unavailable": "该座位不可用",
   "message.machine_max.vehicle.place_failed": "部署载具失败: %1$s",
   "message.machine_max.watch_interact_box_info": "[%1$s]",
+  "seat_map.hint.chord": "切换到指定座位",
   "seat_map.legend.busy": "占用",
   "seat_map.legend.empty": "空",
   "seat_map.legend.next": "下一个",

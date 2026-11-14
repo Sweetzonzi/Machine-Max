@@ -64,6 +64,15 @@ public final class SeatSwitchClient {
     }
 
     /**
+     * 换座键是否被按住，也就是数字键当前是否按座位编号解释。
+     *
+     * <p>座位图 HUD 的行内提示据此提示数字直选已经生效（{@code vehicle.seat_chord_armed}）。</p>
+     */
+    public static boolean isChordArmed() {
+        return chordArmed;
+    }
+
+    /**
      * 换座键按住期间按下数字键。
      *
      * @param number 座位编号，与座位图标记上的数字一致，取值 {@code 1}–{@code 9}

@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.molang.runtime.value.MutableObjectBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.ObjectProperty;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.client.input.SeatSwitchClient;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import net.minecraft.network.chat.Component;
 
@@ -306,6 +307,11 @@ public class HudMolangContext extends SparkMolangContext<HudRuntimeElement> {
     @StringQueryBinding(value = "seat_switch_key", namespace = "vehicle")
     public String vehicleSeatSwitchKey() {
         return frame.vehicle().switchKey();
+    }
+
+    @QueryBinding(value = "seat_chord_armed", namespace = "vehicle")
+    public double vehicleSeatChordArmed() {
+        return SeatSwitchClient.isChordArmed() ? 1 : 0;
     }
 
     @QueryBinding(value = "seat_map_visible", namespace = "vehicle")

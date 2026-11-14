@@ -30,6 +30,10 @@ machinemax-vehicle-model { position: absolute; display: block; left: 18px; top: 
 .switch-line.is-full .switch-target, .switch-line.is-full .switch-arrow { display: none; }
 .switch-line.is-full .switch-full { display: block; color: #a1abab; }
 .switch-line.is-pending .pending-label { display: block; color: #4fd1ff; }
+.chord-hint { display: flex; align-items: center; gap: 5px; margin: 4px 6px 0; font-size: 11px; line-height: 14px; color: #8fa4a0; }
+.chord-hint .chord-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chord-hint.is-armed { color: #4fd1ff; }
+.chord-hint.is-armed .keycap { border-color: #4fd1ff99; color: #4fd1ff; background: #4fd1ff1f; }
 .seat-legend { display: flex; justify-content: space-between; gap: 5px; margin: 6px 6px 0; font-size: 8px; line-height: 11px; color: #bbcecb; }
 .seat-legend span { display: flex; align-items: center; gap: 3px; }
 .seat-legend i { width: 3px; height: 3px; background: currentColor; }

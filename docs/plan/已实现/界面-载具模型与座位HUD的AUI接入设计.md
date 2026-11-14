@@ -62,6 +62,7 @@
 | `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用和可换入性，分别读同步字段和 `SeatOrder.available`。无对应座位时为 0。 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 当前座位、按键的下一候选、实际在途目标的编号。无对应座位时为 0。 |
 | `vehicle.seat_switch_key` | 玩家换座键的本地化显示名。宿主无载具时为空字符串。 |
+| `vehicle.seat_chord_armed` | 换座键按住期间为 1，此时数字键按座号解释。内置页用它点亮编号直选提示。 |
 | `vehicle.seat_map_visible` | §2 定义的内置页显示门槛，成立时为 1。 |
 
 首版用计数和按序号的查询表达列表。动态名单有实际需求时，可将同一批数据接入 `data-mm-repeat`。现行重复器接受武器发射管和弹链，见 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#Region`。
@@ -69,6 +70,8 @@
 ## 4. 换座与反馈
 
 客户端以结构缓存的有序列表作为 HUD 和按键的共同顺序来源。按键按实时 `SeatOrder.available` 扫描可用座位，服务端校验请求中的实际座位键。同一个列表的下标加一就是标记上的编号，也是按住换座键时数字 `1`–`9` 直选用的编号；直选同样先按 `SeatOrder.available` 复核，服务端校验的仍是请求里的实际座位键。
+
+内置页在单按提示下方另起一行编号直选提示：`[换座键] + [1~N]` 键帽加 `seat_map.hint.chord` 文案。范围在页面里写作静态文本 `1~N`，不按本车座数改写：数字键覆盖 1–9，超过 9 座的其余座位由单按到达。`vehicle.seat_chord_armed` 为 1 时该行切到 `is-armed` 状态，表示数字键此刻归换座。
 
 快照使用 `SeatSwitchFeedback.pendingTarget()` 记录等待目标。候选变化时，等待与失败标记指向所请求的座位。失败目标以装配体与座位键匹配，成功脉冲指向已确认的当前座位。成功提示使用同一份有序列表显示编号。切换装配体、下车或退出连接时清理相应反馈与缓存。结构变动后不在当前布局中的目标不绘制标记。按键、actionbar 和服务器校验独立于 AUI 页面。来源见 `src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#requestCycle`、`src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#requestNumber`、`src/main/java/io/github/sweetzonzi/machine_max/client/input/SeatSwitchClient.java#successMessage`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatSwitchFeedback.java#pendingTarget` 和 `src/main/java/io/github/sweetzonzi/machine_max/network/payload/SeatSwitchPayload.java#serverHandler`。
 

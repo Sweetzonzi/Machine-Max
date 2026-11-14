@@ -558,6 +558,10 @@ public enum MMLanguageRegistry {
             zh_cn, "占用",
             en_us, "BUSY"
     )),
+    SEAT_MAP_HINT_CHORD("seat_map.hint.chord", ImmutableMap.of(
+            zh_cn, "切换到指定座位",
+            en_us, "switch to that seat"
+    )),
     MESSAGE_LEAVING_VEHICLE("message.machine_max.leaving_vehicle", ImmutableMap.of(
             zh_cn, "长按[%1$s]键%2$s/0.50秒以离开载具",
             en_us, "Hold [%1$s] %2$s/0.50s to leave the vehicle."

@@ -41,7 +41,7 @@
 
 根元素得到 is-selected 或 is-unselected。返回值不能含多个空格分隔的类名，也不要再写一次 is- 前缀。对于数值布尔查询，用三元表达式明确选择文字。
 
-MoLang 不是 JavaScript。组合文字优先用已格式化查询，或将标签与数值分到相邻元素。不要假设字符串加法、字符串模板或浏览器对象可用。
+MoLang 不是 JavaScript。组合文字优先用已格式化查询（这类查询以 `_text` 结尾，例如 `weapon.reserve_text`），或将标签与数值分到相邻元素。不要假设字符串加法、字符串模板或浏览器对象可用。
 
 ## 3. 重复模板
 
@@ -188,6 +188,7 @@ name 必须是目标内容包和运行环境实际提供的变量名。这些接
 | `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用、是否可换入，各为 1 或 0 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 同车观察者的当前座、顺向候选和在途目标编号 |
 | `vehicle.seat_switch_key` | 换座键的本地化显示名 |
+| `vehicle.seat_chord_armed` | 换座键按住期间为 1，此时数字键按座号解释 |
 | `vehicle.seat_map_visible` | 内置座位图是否满足同车多座、界面与相机状态 |
 
 座位编号从 1 开始。无载具、无对应座位或无有效数据时，相关数字为 0、字符串为空。有效原点用 `seat_has_position(i)` 区分。座位位置与 CSS 尺寸、模型观察角无关。动态名单使用 `data-mm-repeat="vehicle.seats"`，当前项查询与 builtin 样式见 [座位列表](vehicle-seats.md)。

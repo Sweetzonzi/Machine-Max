@@ -400,6 +400,7 @@
   "message.machine_max.seat.unavailable": "That seat is unavailable",
   "message.machine_max.vehicle.place_failed": "Failed to deploy vehicle: %1$s",
   "message.machine_max.watch_interact_box_info": "[%1$s]",
+  "seat_map.hint.chord": "switch to that seat",
   "seat_map.legend.busy": "BUSY",
   "seat_map.legend.empty": "EMPTY",
   "seat_map.legend.next": "NEXT",
