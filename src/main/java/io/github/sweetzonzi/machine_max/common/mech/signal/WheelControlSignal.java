@@ -44,6 +44,12 @@ public class WheelControlSignal extends Signal<WheelControlSignalTemplate> {
         return value.steeringControl();
     }
 
+    /** 执行器线不参与乘员输入排序，越级量对它没有意义，返回自身。 */
+    @Override
+    public WheelControlSignal withPriority(int priority) {
+        return this;
+    }
+
     @Override
     public String toString() {
         return "brakeControl=" + getBrakeControl() + ", handBrake=" + getHandBrakeControl() + ", steeringControl=" + getSteeringControl();

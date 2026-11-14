@@ -46,6 +46,12 @@ public class RotationSignal extends Signal<Vector3f> {
         return value.z;
     }
 
+    /** 执行器线不参与乘员输入排序，越级量对它没有意义，返回自身。 */
+    @Override
+    public RotationSignal withPriority(int priority) {
+        return this;
+    }
+
     @Override
     public String toString() {
         return "RotationSignal{pitch=" + value.x + ", yaw=" + value.y + ", roll=" + value.z + "}";

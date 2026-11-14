@@ -11,4 +11,10 @@ public class EmptySignal extends Signal<Void> {
     public boolean equals(Object obj) {
         return obj instanceof EmptySignal;
     }
+
+    /** 空信号不参与排序，越级量对它没有意义，返回自身。 */
+    @Override
+    public EmptySignal withPriority(int priority) {
+        return this;
+    }
 }

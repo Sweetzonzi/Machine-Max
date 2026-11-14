@@ -4,11 +4,19 @@ import com.mojang.datafixers.util.Pair;
 
 public class MoveInputSignal extends Signal<Pair<byte[], byte[]>> {
     public MoveInputSignal(Pair<byte[], byte[]> value) {
-        super(value);
+        this(value, 0);
+    }
+
+    public MoveInputSignal(Pair<byte[], byte[]> value, int priority) {
+        super(value, priority);
     }
 
     public MoveInputSignal(byte[] input, byte[] conflict) {
-        super(Pair.of(input, conflict));
+        this(input, conflict, 0);
+    }
+
+    public MoveInputSignal(byte[] input, byte[] conflict, int priority) {
+        super(Pair.of(input, conflict), priority);
     }
 
     public byte[] getMoveInput() {
@@ -17,5 +25,10 @@ public class MoveInputSignal extends Signal<Pair<byte[], byte[]>> {
 
     public byte[] getMoveInputConflict() {
         return value.getSecond();
+    }
+
+    @Override
+    public MoveInputSignal withPriority(int priority) {
+        return priority == this.priority ? this : new MoveInputSignal(value, priority);
     }
 }

@@ -17,9 +17,19 @@ public final class ViewInputSignal extends Signal<Vec3> {
     public final AimTargetState.Mode mode;
 
     public ViewInputSignal(Vec3 point, Vec2 relativeAim, AimTargetState.Mode mode) {
-        super(point);
+        this(point, relativeAim, mode, 0);
+    }
+
+    public ViewInputSignal(Vec3 point, Vec2 relativeAim, AimTargetState.Mode mode, int priority) {
+        super(point, priority);
         this.aimPoint = point;
         this.relativeAim = relativeAim;
         this.mode = mode;
+    }
+
+    @Override
+    public ViewInputSignal withPriority(int priority) {
+        return priority == this.priority ? this
+                : new ViewInputSignal(aimPoint, relativeAim, mode, priority);
     }
 }
