@@ -38,8 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class VehicleModelElement extends Element {
     public static final String TAG_NAME = "machinemax-vehicle-model";
-    private static final int CURRENT = 0xFF4FD1FF;
-    private static final int NEXT = 0xFF6CFF6C;
+    private static final int CURRENT = 0xFF6CFF6C;
+    private static final int NEXT = 0xFF4FD1FF;
     private static final int EMPTY = 0xFFF2F6FA;
     private static final int OCCUPIED = 0xFFFFB020;
     private static final int UNAVAILABLE = 0xFF808080;

@@ -18,22 +18,22 @@ machinemax-vehicle-model { position: absolute; display: block; left: 18px; top: 
 .health-value { white-space: nowrap; text-align: right; }
 .health-line.is-unknown .health-track { opacity: .3; }
 .seat-identity { display: flex; align-items: center; gap: 7px; padding: 0 6px 5px; border-bottom: 1px solid #c3dddd38; }
-.self-label { display: flex; align-items: center; gap: 4px; flex-shrink: 0; color: #4fd1ff; font-size: 10px; }
-.self-label i { display: block; width: 4px; height: 10px; background: #4fd1ff; }
+.self-label { display: flex; align-items: center; gap: 4px; flex-shrink: 0; color: #6cff6c; font-size: 10px; }
+.self-label i { display: block; width: 4px; height: 10px; background: #6cff6c; }
 .current-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.seat-number { color: #4fd1ff; font-size: 15px; }
+.seat-number { color: #6cff6c; font-size: 15px; }
 .switch-line { display: flex; align-items: center; gap: 7px; padding: 7px 6px 2px; }
 .keycap { flex-shrink: 0; min-width: 18px; padding: 0 3px; border: 1px solid #e0e9e970; text-align: center; font-size: 10px; background: #111d2459; }
-.switch-arrow { color: #6cff6c; font-size: 15px; }
-.switch-target { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #6cff6c; }
+.switch-arrow { color: #4fd1ff; font-size: 15px; }
+.switch-target { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #4fd1ff; }
 .switch-full, .pending-label { display: none; }
 .switch-line.is-full .switch-target, .switch-line.is-full .switch-arrow { display: none; }
 .switch-line.is-full .switch-full { display: block; color: #a1abab; }
-.switch-line.is-pending .pending-label { display: block; color: #6cff6c; }
+.switch-line.is-pending .pending-label { display: block; color: #4fd1ff; }
 .seat-legend { display: flex; justify-content: space-between; gap: 5px; margin: 6px 6px 0; font-size: 8px; line-height: 11px; color: #bbcecb; }
 .seat-legend span { display: flex; align-items: center; gap: 3px; }
 .seat-legend i { width: 3px; height: 3px; background: currentColor; }
-.seat-legend .current { color: #4fd1ff; }.seat-legend .next { color: #6cff6c; }
+.seat-legend .current { color: #6cff6c; }.seat-legend .next { color: #4fd1ff; }
 .seat-legend .empty { color: #f2f6fa; }.seat-legend .occupied { color: #ffb020; }
 .camera .model-stage { height: 170px; }
 .camera .model-disc { left: 6px; top: 126px; width: 168px; height: 34px; border-radius: 50%; background: #8bdde810; border: 1px solid #8bdde825; }
@@ -57,9 +57,9 @@ machinemax-vehicle-model { position: absolute; display: block; left: 18px; top: 
 .crew-seat, .crew-player { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .crew-number { color: #a4b9b7; font-size: 10px; }.crew-marker { color: #f2f6fa; text-align: center; }
 .crew-player { color: #bbcecb; font-size: 10px; }
-.crew-row.is-current { border-left-color: #4fd1ff; background: linear-gradient(90deg, #4fd1ff24, #10232a12); }
-.crew-row.is-current .crew-number, .crew-row.is-current .crew-marker { color: #4fd1ff; }
-.crew-row.is-next .crew-marker, .crew-row.is-pending .crew-marker { color: #6cff6c; font-size: 15px; }
+.crew-row.is-current { border-left-color: #6cff6c; background: linear-gradient(90deg, #6cff6c24, #10232a12); }
+.crew-row.is-current .crew-number, .crew-row.is-current .crew-marker { color: #6cff6c; }
+.crew-row.is-next .crew-marker, .crew-row.is-pending .crew-marker { color: #4fd1ff; font-size: 15px; }
 .crew-row.is-occupied .crew-marker { color: #ffb020; }
 .crew-row.is-unavailable { opacity: .5; }.crew-row.is-unavailable .crew-number { text-decoration: line-through; }
 .crew-row.is-failed { border-left-color: #ff4040; }.crew-row.is-failed .crew-marker { color: #ff4040; }
