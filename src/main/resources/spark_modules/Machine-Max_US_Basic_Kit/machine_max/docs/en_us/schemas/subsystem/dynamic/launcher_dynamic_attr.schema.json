@@ -46,7 +46,7 @@
     "reload_operator_time_multipliers": {
       "type": "object",
       "default": {},
-      "description": "Post time multipliers: crew channel to how convenient that post is for loading this weapon (dedicated loader 1.0, gunner 2.0); keys are the query table's channel names. It belongs to this discovery relation, not to the seat globally — the same person loading another weapon can have another multiplier. Undeclared channels are 1.0; zero, negative and non-finite values are decoding errors. Two seats with the same number load at the same speed.",
+      "description": "Post time multipliers: crew channel to how convenient that post is for loading this weapon (dedicated loader 1.0, gunner 2.0); keys are the query table's channel names. It belongs to this discovery relation, not to the seat globally — the same person loading another weapon can have another multiplier. Undeclared channels are 1.0; zero, negative and non-finite values are decoding errors. Two seats with the same number load at the same speed. When several channels reach the same seat, the lowest multiplier among them applies: a seat yields one candidate and multipliers never add up.",
       "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
     }
   },

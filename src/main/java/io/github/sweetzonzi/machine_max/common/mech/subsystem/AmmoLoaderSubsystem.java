@@ -527,7 +527,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     @Override
     public void releaseOperator(IAmmoConsumer consumer, ReloadJobKey key) {
-        operators.release(consumer, key);
+        operators.release(key);
     }
 
     /**

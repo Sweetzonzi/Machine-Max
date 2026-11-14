@@ -1259,7 +1259,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /** 按身份释放执行者认领，由用人方处理；没有认领的一方是无操作。 */
     private void releaseOperator(IAmmoSupplier supplier, ReloadJobKey key) {
         if (ownsHumanStage(supplier)) {
-            operators.release(this, key);
+            operators.release(key);
         } else {
             supplier.releaseOperator(this, key);
         }
@@ -1308,7 +1308,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 人工段可能由交付方负责，也可能由本管负责（人力直取）：两个入口都按身份释放，
         // 没有认领的那一方是无操作，因此这里不必反推是哪一个
         if (supplier != null) supplier.releaseOperator(this, job.key());
-        operators.release(this, job.key());
+        operators.release(job.key());
         if (supplier != null) supplier.releaseClaim(this, job.key());
         reloadJob = null;
         if (!getLevel().isClientSide()) {
@@ -1415,13 +1415,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 推进人工段：有人就往前走，人走了先换人、换不到就暂停，走完后释放人员并申请机械槽位。<br>
      * 换人保留已完成的进度，只按新倍率换算剩余量（{@link ReloadJob#retimeHuman(double)}）；倍率变了就重发
-     * 一次时长与基线，客户端的进度条因此不会倒退。人员离场时立刻释放其认领，不能把离场者锁在旧作业上。
+     * 一次时长与基线，客户端的进度条因此不会倒退。离场者的认领由用人方在换人时按身份释放
+     * （见 {@link ReloadOperatorRoster#claim}），人工段因此不会把人锁在已经下车的座位上。
      *
      * @param supplier 当前供给者（人工段的用人方由它或本管承担，见 {@link #ownsHumanStage(IAmmoSupplier)}）
      * @param job      处于人工段的作业
      */
     private void tickHumanStage(IAmmoSupplier supplier, ReloadJob job) {
-        if (!holdsOperator(supplier)) releaseOperator(supplier, job.key());
         if (!claimOperator(supplier, job.key())) {
             pauseReloadJob(job);
             return;

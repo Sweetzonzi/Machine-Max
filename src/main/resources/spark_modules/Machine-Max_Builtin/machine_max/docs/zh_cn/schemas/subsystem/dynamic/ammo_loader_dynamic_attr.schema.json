@@ -36,7 +36,7 @@
     "reload_operator_time_multipliers": {
       "type": "object",
       "default": {},
-      "description": "岗位时间倍率 P：装填人员频道到倍率的映射，例如 {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}。它只属于本机与该座位之间的这条发现关系，不是座位的全局能力；同一个座位替另一门武器装填可以是别的倍率。未列出的频道按 1.0 处理，值必须是有限正数。",
+      "description": "岗位时间倍率 P：装填人员频道到倍率的映射，例如 {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}。它只属于本机与该座位之间的这条发现关系，不是座位的全局能力；同一个座位替另一门武器装填可以是别的倍率。未列出的频道按 1.0 处理，值必须是有限正数。同一座位经多条线路可达时取其中最低的倍率：一个座位只出一个候选，倍率不叠加。",
       "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
     }
   },

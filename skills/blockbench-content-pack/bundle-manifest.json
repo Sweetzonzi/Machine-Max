@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "558d3c2163cde0f59d199f33ebe31dddeeac72cd",
+    "revision": "fd4ef3a003d905fd2216f2e0a567be1899beacbd",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -176,8 +176,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.schema.json",
-        "bytes": 3517,
-        "sha256": "9b824af72340aa2e7d5f7377b832606282cc1df641df22bfa5b65c5426ecf405"
+        "bytes": 3631,
+        "sha256": "cbce672d979b17086835ee1f2e57cd4e1088b3e21fda809ecabc67b88fc3ad75"
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.schema.json",
@@ -216,8 +216,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
-        "bytes": 3517,
-        "sha256": "dd055514c16b0eec24b2f9dde66cf3d193d8af0d311d4ecdc0d8bb58338cc51f"
+        "bytes": 3631,
+        "sha256": "de0f237cb241508bd4e1c075613898d86b7223cb30d7d109b5b06e7815d647ce"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",

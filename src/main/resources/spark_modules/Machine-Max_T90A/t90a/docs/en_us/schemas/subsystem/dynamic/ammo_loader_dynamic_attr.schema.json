@@ -36,7 +36,7 @@
     "reload_operator_time_multipliers": {
       "type": "object",
       "default": {},
-      "description": "Post multipliers P: crew channel to multiplier, e.g. {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}. They belong to the relation between this loader and that seat, not to the seat as a global ability; the same seat may carry another multiplier when serving another weapon. Unlisted channels count as 1.0 and values must be finite and positive.",
+      "description": "Post multipliers P: crew channel to multiplier, e.g. {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}. They belong to the relation between this loader and that seat, not to the seat as a global ability; the same seat may carry another multiplier when serving another weapon. Unlisted channels count as 1.0 and values must be finite and positive. When several channels reach the same seat, the lowest multiplier among them applies: a seat yields one candidate and multipliers never add up.",
       "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
     }
   },
