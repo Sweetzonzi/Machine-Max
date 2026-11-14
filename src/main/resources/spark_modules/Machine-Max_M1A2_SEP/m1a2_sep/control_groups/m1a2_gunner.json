@@ -6,13 +6,13 @@
     "regular_targets": {},
     "bindings": [],
     "view_targets": {
-      "aim_input_p2": [
-        "subsystem.m1a2_sep.main_weapon"
+      "crew_gunner_aim": [
+        "global"
       ]
     },
     "main_weapon_targets": {
-      "fire_input_p2": [
-        "subsystem.m1a2_sep.main_weapon"
+      "crew_gunner_fire": [
+        "global"
       ]
     },
     "secondary_weapon_targets": {}
@@ -22,13 +22,13 @@
       "name": "controlGroup.m1a2_sep.gunner_coax762",
       "control_mode": "inherit",
       "view_targets": {
-        "aim_coax762_p2": [
-          "subsystem.m1a2_sep.coax_762_controller"
+        "crew_gunner_aim_coax762": [
+          "global"
         ]
       },
       "secondary_weapon_targets": {
-        "fire_coax762_p2": [
-          "subsystem.m1a2_sep.coax_762_controller"
+        "crew_gunner_secondary_fire_coax762": [
+          "global"
         ]
       }
     },
@@ -36,13 +36,13 @@
       "name": "controlGroup.m1a2_sep.gunner_csamm",
       "control_mode": "inherit",
       "view_targets": {
-        "aim_csamm_p2": [
-          "subsystem.m1a2_sep.coax_controller"
+        "crew_gunner_aim_csamm": [
+          "global"
         ]
       },
       "secondary_weapon_targets": {
-        "fire_csamm_p2": [
-          "subsystem.m1a2_sep.coax_controller"
+        "crew_gunner_secondary_fire_csamm": [
+          "global"
         ]
       }
     }

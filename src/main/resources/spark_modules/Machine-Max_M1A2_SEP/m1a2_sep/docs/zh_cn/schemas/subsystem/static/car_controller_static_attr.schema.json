@@ -129,8 +129,8 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["move_input"],
-      "description": "控制输入信号键列表，优先级从高到低。"
+      "default": ["crew_driver_move", "crew_driver_regular", "crew_commander_move", "crew_commander_regular"],
+      "description": "控制输入信号键列表，优先级从高到低。默认驾驶者在前、车长在后。"
     },
     "sounds": {
       "type": "object",
@@ -218,7 +218,7 @@
       "drift_assist": true,
       "drift_front_outer_brake_gain": 0.3,
       "drift_rear_inner_brake_gain": 0.1,
-      "control_inputs": ["move_input", "regular_input"],
+      "control_inputs": ["crew_driver_move", "crew_driver_regular"],
       "description": "完整示例 - 包含所有可选字段"
     },
     {
@@ -242,7 +242,7 @@
       "drift_assist": false,
       "drift_front_outer_brake_gain": 0.0,
       "drift_rear_inner_brake_gain": 0.0,
-      "control_inputs": ["move_input"],
+      "control_inputs": ["crew_driver_move"],
       "description": "高级示例 - 使用映射表配置，禁用漂移辅助"
     }
   ]

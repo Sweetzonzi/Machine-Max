@@ -6,9 +6,9 @@
   "aim_tolerance_deg": 5,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_aft_mg"
+    "crew_gunner_aim_aft_mg"
   ],
   "fire_inputs": [
-    "fire_aft_mg"
+    "crew_gunner_fire_aft_mg"
   ]
 }

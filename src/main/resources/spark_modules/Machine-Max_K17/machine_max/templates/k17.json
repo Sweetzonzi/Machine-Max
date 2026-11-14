@@ -57,45 +57,9 @@
           },
           "subsystem_data": {
             "subsystem.machine_max.gunner_seat": {
-              "control_group_set": {
-                "base_group": {
-                  "view_targets": {
-                    "aim_input_p2": [
-                      "global"
-                    ]
-                  },
-                  "name": "controlGroup.machine_max.base",
-                  "main_weapon_targets": {
-                    "fire_input_p2": [
-                      "global"
-                    ]
-                  },
-                  "secondary_weapon_targets": {
-                    "secondary_fire_input_p2": [
-                      "global"
-                    ]
-                  }
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.driver_seat": {
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base",
-                  "regular_targets": {
-                    "regular_input_p1": [
-                      "global"
-                    ]
-                  },
-                  "move_targets": {
-                    "move_input_p1": [
-                      "global"
-                    ]
-                  },
-                  "control_mode": "ground"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.engine": {
@@ -132,60 +96,6 @@
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.commander_seat": {
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base",
-                  "regular_targets": {
-                    "regular_input": [
-                      "global"
-                    ]
-                  },
-                  "move_targets": {
-                    "move_input": [
-                      "global"
-                    ]
-                  },
-                  "control_mode": "ground"
-                },
-                "groups": [
-                  {
-                    "view_targets": {
-                      "aim_input": [
-                        "global"
-                      ]
-                    },
-                    "name": "controlGroup.machine_max.backup_fire_control",
-                    "main_weapon_targets": {
-                      "fire_input": [
-                        "global"
-                      ]
-                    },
-                    "secondary_weapon_targets": {
-                      "secondary_fire_input": [
-                        "global"
-                      ]
-                    }
-                  },
-                  {
-                    "view_targets": {
-                      "aim_input_p1": [
-                        "global"
-                      ]
-                    },
-                    "name": "controlGroup.machine_max.commander_override",
-                    "main_weapon_targets": {
-                      "fire_input_p1": [
-                        "global"
-                      ]
-                    },
-                    "secondary_weapon_targets": {
-                      "secondary_fire_input_p1": [
-                        "global"
-                      ]
-                    }
-                  }
-                ]
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_wheel_4": {

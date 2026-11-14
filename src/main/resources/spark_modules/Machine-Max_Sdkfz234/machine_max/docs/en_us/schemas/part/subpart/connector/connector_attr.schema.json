@@ -95,7 +95,7 @@
         "items": { "type": "string" }
       },
       "default": {},
-      "description": "Control signal transmission targets of the connection point within this part, key is signal channel, value is target list (subsystem/connection point name/part/global). For example: {\"move_input\": [\"car_controller\", \"engine\"]}."
+      "description": "Control signal transmission targets of the connection point within this part, key is signal channel, value is target list (subsystem/connection point name/part/global). For example: {\"crew_driver_move\": [\"car_controller\", \"engine\"]}."
     },
     "internal": {
       "type": "boolean",

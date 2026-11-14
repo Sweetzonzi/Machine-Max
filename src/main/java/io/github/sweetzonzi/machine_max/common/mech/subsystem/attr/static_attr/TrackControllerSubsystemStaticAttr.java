@@ -38,11 +38,8 @@ public class TrackControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr
     public final HandBrakeSoundAttr sounds;
 
     private static final List<String> DEFAULT_CONTROL_INPUTS = List.of(
-            "move_input_p0", "regular_input_p0",
-            "move_input_p1", "regular_input_p1",
-            "move_input_p2", "regular_input_p2",
-            "move_input_p3", "regular_input_p3",
-            "move_input", "regular_input"
+            "crew_driver_move", "crew_driver_regular",
+            "crew_commander_move", "crew_commander_regular"
     );
 
     public static final Codec<TreeMap<Float, Float>> YAW_RATE_CODEC =

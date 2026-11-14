@@ -56,13 +56,13 @@
     "aim_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": [],
+      "default": ["crew_gunner_aim", "crew_commander_aim", "crew_any_aim"],
       "description": "List of aim target coordinate input channels. Reads Vec3 world coordinates from any channel. Typically receives ViewInputSignal from CameraSubsystem or SeatSubsystem."
     },
     "fire_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": [],
+      "default": ["crew_gunner_fire", "crew_commander_fire", "crew_any_fire"],
       "description": "List of fire command input channels. A channel counts as firing when it carries a fire signal: a main/secondary weapon fire instruction, a boolean true, or a non-zero number. Ammo-type switching instructions share these channels and are never treated as fire. Typically receives key-triggered fire signals."
     },
     "fire_correction_angle_deg": {

@@ -6,11 +6,11 @@
   "aim_tolerance_deg": 5,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_input_p1",
-    "aim_input_p2"
+    "crew_gunner_aim",
+    "crew_commander_aim"
   ],
   "fire_inputs": [
-    "secondary_fire_input_p1",
-    "secondary_fire_input_p2"
+    "crew_gunner_secondary_fire",
+    "crew_commander_secondary_fire"
   ]
 }

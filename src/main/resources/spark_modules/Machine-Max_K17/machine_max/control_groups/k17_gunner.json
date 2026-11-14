@@ -3,7 +3,7 @@
     "name": "controlGroup.machine_max.base",
     "control_mode": "inherit",
     "view_targets": {
-      "aim_input_p2": ["global"]
+      "crew_gunner_aim": ["global"]
     }
   },
   "groups": [
@@ -11,17 +11,17 @@
       "name": "controlGroup.machine_max.autocannon_control",
       "control_mode": "inherit",
       "main_weapon_targets": {
-        "fire_input_p2": ["global"]
+        "crew_gunner_fire": ["global"]
       },
       "secondary_weapon_targets": {
-        "secondary_fire_input_p2": ["global"]
+        "crew_gunner_secondary_fire": ["global"]
       }
     },
     {
       "name": "controlGroup.machine_max.atgm_control",
       "control_mode": "inherit",
       "main_weapon_targets": {
-        "atgm_fire_input": ["global"]
+        "crew_gunner_fire_atgm": ["global"]
       }
     }
   ],

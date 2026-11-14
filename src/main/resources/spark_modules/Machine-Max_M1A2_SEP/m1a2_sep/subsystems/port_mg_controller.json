@@ -6,9 +6,9 @@
   "aim_tolerance_deg": 60,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_port_mg"
+    "crew_loader_aim_port_mg"
   ],
   "fire_inputs": [
-    "fire_port_mg"
+    "crew_loader_fire_port_mg"
   ]
 }

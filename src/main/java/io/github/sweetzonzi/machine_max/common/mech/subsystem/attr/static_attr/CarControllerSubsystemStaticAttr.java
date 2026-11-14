@@ -107,11 +107,8 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("drift_front_outer_brake_gain", 0.3f).forGetter(CarControllerSubsystemStaticAttr::getDriftFrontOuterBrakeGain),
             Codec.FLOAT.optionalFieldOf("drift_rear_inner_brake_gain", 0.1f).forGetter(CarControllerSubsystemStaticAttr::getDriftRearInnerBrakeGain),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of(
-                    "move_input_p0", "regular_input_p0",
-                    "move_input_p1", "regular_input_p1",
-                    "move_input_p2", "regular_input_p2",
-                    "move_input_p3", "regular_input_p3",
-                    "move_input", "regular_input"
+                    "crew_driver_move", "crew_driver_regular",
+                    "crew_commander_move", "crew_commander_regular"
             )).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys),
             HandBrakeSoundAttr.CODEC.optionalFieldOf("sounds", HandBrakeSoundAttr.DEFAULT).forGetter(CarControllerSubsystemStaticAttr::getSounds)
     ).apply(instance, CarControllerSubsystemStaticAttr::new));

@@ -6,12 +6,12 @@
     "regular_targets": {},
     "bindings": [],
     "view_targets": {
-      "aim_aft_mg": [
+      "crew_gunner_aim_aft_mg": [
         "global"
       ]
     },
     "main_weapon_targets": {
-      "fire_aft_mg": [
+      "crew_gunner_fire_aft_mg": [
         "global"
       ]
     },

@@ -822,7 +822,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
-            "control_group_preset": "machine_max:default_commander",
+            "control_group_preset": "machine_max:mtlb_commander",
             "passenger_num_outputs": {
               "passenger_num": [
                 "local",

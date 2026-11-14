@@ -6,11 +6,11 @@
   "aim_tolerance_deg": 60,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_coax762_p1",
-    "aim_coax762_p2"
+    "crew_gunner_aim_coax762",
+    "crew_commander_aim_coax762"
   ],
   "fire_inputs": [
-    "fire_coax762_p1",
-    "fire_coax762_p2"
+    "crew_gunner_secondary_fire_coax762",
+    "crew_commander_secondary_fire_coax762"
   ]
 }

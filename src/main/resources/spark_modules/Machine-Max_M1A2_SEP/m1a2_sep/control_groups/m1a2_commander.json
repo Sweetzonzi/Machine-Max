@@ -3,25 +3,25 @@
     "name": "controlGroup.m1a2_sep.commander_observe",
     "control_mode": "ground",
     "view_targets": {
-      "aim_citv": [
+      "crew_commander_aim": [
         "global"
       ],
-      "aim_rws": [
+      "crew_commander_aim_citv": [
         "global"
       ]
     },
     "move_targets": {
-      "move_input": [
+      "crew_commander_move": [
         "global"
       ]
     },
     "regular_targets": {
-      "regular_input": [
+      "crew_commander_regular": [
         "global"
       ]
     },
     "secondary_weapon_targets": {
-      "fire_rws": [
+      "crew_commander_secondary_fire": [
         "global"
       ]
     }
@@ -30,43 +30,50 @@
     {
       "name": "controlGroup.m1a2_sep.commander_override_main_gun",
       "control_mode": "inherit",
-      "view_targets": {
-        "aim_input_p1": [
-          "subsystem.m1a2_sep.main_weapon"
+      "main_weapon_targets": {
+        "crew_commander_fire": [
+          "global"
         ]
       },
-      "main_weapon_targets": {
-        "fire_input_p1": [
-          "subsystem.m1a2_sep.main_weapon"
-        ]
+      "priorities": {
+        "crew_commander_aim": 1,
+        "crew_commander_fire": 1
       }
     },
     {
       "name": "controlGroup.m1a2_sep.commander_override_coax762",
       "control_mode": "inherit",
       "view_targets": {
-        "aim_coax762_p1": [
-          "subsystem.m1a2_sep.coax_762_controller"
+        "crew_commander_aim_coax762": [
+          "global"
         ]
       },
       "secondary_weapon_targets": {
-        "fire_coax762_p1": [
-          "subsystem.m1a2_sep.coax_762_controller"
+        "crew_commander_secondary_fire_coax762": [
+          "global"
         ]
+      },
+      "priorities": {
+        "crew_commander_aim_coax762": 1,
+        "crew_commander_secondary_fire_coax762": 1
       }
     },
     {
       "name": "controlGroup.m1a2_sep.commander_override_csamm",
       "control_mode": "inherit",
       "view_targets": {
-        "aim_csamm_p1": [
-          "subsystem.m1a2_sep.coax_controller"
+        "crew_commander_aim_csamm": [
+          "global"
         ]
       },
       "secondary_weapon_targets": {
-        "fire_csamm_p1": [
-          "subsystem.m1a2_sep.coax_controller"
+        "crew_commander_secondary_fire_csamm": [
+          "global"
         ]
+      },
+      "priorities": {
+        "crew_commander_aim_csamm": 1,
+        "crew_commander_secondary_fire_csamm": 1
       }
     }
   ],

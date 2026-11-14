@@ -235,47 +235,22 @@
           "subsystem_data": {
             "subsystem.machine_max.passenger_seat_8": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_6": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_7": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_4": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_5": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.engine": {
@@ -296,78 +271,14 @@
             },
             "subsystem.machine_max.commander_seat": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base",
-                  "regular_targets": {
-                    "regular_input": [
-                      "global"
-                    ]
-                  },
-                  "move_targets": {
-                    "move_input": [
-                      "global"
-                    ]
-                  },
-                  "control_mode": "ground"
-                },
-                "groups": [
-                  {
-                    "view_targets": {
-                      "aim_input": [
-                        "global"
-                      ]
-                    },
-                    "name": "controlGroup.machine_max.backup_fire_control",
-                    "main_weapon_targets": {
-                      "fire_input": [
-                        "global"
-                      ]
-                    },
-                    "secondary_weapon_targets": {
-                      "secondary_fire_input": [
-                        "global"
-                      ]
-                    }
-                  },
-                  {
-                    "view_targets": {
-                      "aim_input_p1": [
-                        "global"
-                      ]
-                    },
-                    "name": "controlGroup.machine_max.commander_override",
-                    "main_weapon_targets": {
-                      "fire_input_p1": [
-                        "global"
-                      ]
-                    },
-                    "secondary_weapon_targets": {
-                      "secondary_fire_input_p1": [
-                        "global"
-                      ]
-                    }
-                  }
-                ]
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_2": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.passenger_seat_3": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.gearbox": {
@@ -376,31 +287,10 @@
             },
             "subsystem.machine_max.passenger_seat_1": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.driver_seat": {
               "destroyed": 0,
-              "control_group_set": {
-                "base_group": {
-                  "name": "controlGroup.machine_max.base",
-                  "regular_targets": {
-                    "regular_input_p1": [
-                      "global"
-                    ]
-                  },
-                  "move_targets": {
-                    "move_input_p1": [
-                      "global"
-                    ]
-                  },
-                  "control_mode": "ground"
-                }
-              },
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.track_right": {

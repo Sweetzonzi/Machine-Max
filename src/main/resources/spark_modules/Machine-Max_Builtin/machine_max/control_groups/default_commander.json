@@ -3,10 +3,10 @@
         "name": "controlGroup.machine_max.base",
         "control_mode": "ground",
         "move_targets": {
-            "move_input": ["global"]
+            "crew_commander_move": ["global"]
         },
         "regular_targets": {
-            "regular_input": ["global"]
+            "crew_commander_regular": ["global"]
         }
     },
     "groups": [
@@ -14,26 +14,31 @@
             "name": "controlGroup.machine_max.backup_fire_control",
             "control_mode": "inherit",
             "view_targets": {
-                "aim_input": ["global"]
+                "crew_any_aim": ["global"]
             },
             "main_weapon_targets": {
-                "fire_input": ["global"]
+                "crew_any_fire": ["global"]
             },
             "secondary_weapon_targets": {
-                "secondary_fire_input": ["global"]
+                "crew_any_secondary_fire": ["global"]
             }
         },
         {
             "name": "controlGroup.machine_max.commander_override",
             "control_mode": "inherit",
             "view_targets": {
-                "aim_input_p1": ["global"]
+                "crew_commander_aim": ["global"]
             },
             "main_weapon_targets": {
-                "fire_input_p1": ["global"]
+                "crew_commander_fire": ["global"]
             },
             "secondary_weapon_targets": {
-                "secondary_fire_input_p1": ["global"]
+                "crew_commander_secondary_fire": ["global"]
+            },
+            "priorities": {
+                "crew_commander_aim": 1,
+                "crew_commander_fire": 1,
+                "crew_commander_secondary_fire": 1
             }
         }
     ]

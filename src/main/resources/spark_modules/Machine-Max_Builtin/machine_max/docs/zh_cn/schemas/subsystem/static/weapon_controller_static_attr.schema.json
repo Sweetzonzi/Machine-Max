@@ -56,14 +56,14 @@
     "aim_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": [],
-      "description": "瞄准目标坐标输入频道列表，从任一频道读取Vec3世界坐标。通常接收CameraSubsystem或SeatSubsystem的ViewInputSignal。"
+      "default": ["crew_gunner_aim", "crew_commander_aim", "crew_any_aim"],
+      "description": "瞄准目标坐标输入频道列表，从任一频道读取Vec3世界坐标。通常接收CameraSubsystem或SeatSubsystem的ViewInputSignal。列表顺序即默认归属：默认操作者在最前、接管方在后、crew_any_aim 兜底；临时抢占由信号自带的越级量决定，不靠改列表。"
     },
     "fire_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": [],
-      "description": "开火指令输入频道列表，任一频道里出现开火信号即视为开火指令。信号按语义判定：主/副武器开火指令、值为 true 的布尔、非 0 的数值算开火；弹种切换指令与开火指令共用这些频道，不会被当作开火。通常接收按键触发的开火信号。"
+      "default": ["crew_gunner_fire", "crew_commander_fire", "crew_any_fire"],
+      "description": "开火指令输入频道列表，任一频道里出现开火信号即视为开火指令。信号按语义判定：主/副武器开火指令、值为 true 的布尔、非 0 的数值算开火；弹种切换指令与开火指令共用这些频道，不会被当作开火。通常接收按键触发的开火信号。列表顺序即默认归属，口径同 aim_inputs。"
     },
     "fire_correction_angle_deg": {
       "type": "number",

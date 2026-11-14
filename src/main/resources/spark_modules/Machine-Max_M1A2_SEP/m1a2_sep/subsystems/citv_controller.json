@@ -6,7 +6,7 @@
   "aim_tolerance_deg": 5,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_citv"
+    "crew_commander_aim_citv"
   ],
   "fire_inputs": []
 }

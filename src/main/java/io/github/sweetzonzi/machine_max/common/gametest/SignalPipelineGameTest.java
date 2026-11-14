@@ -46,7 +46,7 @@ public final class SignalPipelineGameTest {
             var turret = part.subParts.get("sub_part.t90a.turret");
             var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
             var weapon = (WeaponControllerSubsystem) turret.subsystems.get("subsystem.t90a.main_weapon");
-            helper.assertTrue(seat.getTargets().containsKey("aim_input_p2"), "预设控制组的频道先进入首跳表");
+            helper.assertTrue(seat.getTargets().containsKey("crew_gunner_aim"), "预设控制组的频道先进入首跳表");
 
             Map<String, List<String>> move = Map.of("probe_shared", List.of("subsystem.t90a.azimuth_driver"));
             Map<String, List<String>> weapons = Map.of(
@@ -59,7 +59,7 @@ public final class SignalPipelineGameTest {
             helper.assertTrue(seat.getTargets().get("probe_shared").keySet().equals(new LinkedHashSet<>(List.of(
                             "subsystem.t90a.azimuth_driver", "subsystem.t90a.main_weapon"))),
                     "同一频道跨类别取有序并集，先移动后武器");
-            helper.assertTrue(!seat.getTargets().containsKey("aim_input_p2"), "配置删去的频道退出首跳表");
+            helper.assertTrue(!seat.getTargets().containsKey("crew_gunner_aim"), "配置删去的频道退出首跳表");
             helper.assertTrue(seat.getWeaponControllersByGroup().getOrDefault("base", List.of()).equals(List.of(weapon)),
                     "按组发现命中主火控，且同一实例只出现一次");
             helper.succeed();

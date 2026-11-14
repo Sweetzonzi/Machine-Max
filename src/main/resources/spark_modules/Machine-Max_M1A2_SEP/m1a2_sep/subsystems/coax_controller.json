@@ -6,11 +6,11 @@
   "aim_tolerance_deg": 60,
   "fire_correction_angle_deg": 0,
   "aim_inputs": [
-    "aim_csamm_p1",
-    "aim_csamm_p2"
+    "crew_gunner_aim_csamm",
+    "crew_commander_aim_csamm"
   ],
   "fire_inputs": [
-    "fire_csamm_p1",
-    "fire_csamm_p2"
+    "crew_gunner_secondary_fire_csamm",
+    "crew_commander_secondary_fire_csamm"
   ]
 }

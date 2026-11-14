@@ -39,16 +39,10 @@
         "type": "string"
       },
       "default": [
-        "move_input_p0",
-        "regular_input_p0",
-        "move_input_p1",
-        "regular_input_p1",
-        "move_input_p2",
-        "regular_input_p2",
-        "move_input_p3",
-        "regular_input_p3",
-        "move_input",
-        "regular_input"
+        "crew_driver_move",
+        "crew_driver_regular",
+        "crew_commander_move",
+        "crew_commander_regular"
       ],
       "description": "控制输入频道，按优先级排列。"
     },

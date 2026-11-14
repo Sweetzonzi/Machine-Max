@@ -167,7 +167,7 @@ public final class ViewpointGameTest {
         var server = helper.getLevel().getServer();
         Vec3 point = new Vec3(50, 30, -100);
         Vec2 relative = new Vec2(.1f, .2f);
-        controller.getSignalChannel("aim_input").put(controller,
+        controller.getSignalChannel("crew_any_aim").put(controller,
                 new ViewInputSignal(point, relative, AimTargetState.Mode.RELATIVE));
         CompletableFuture<Void> result = physics(controller, () -> {
             for (var driver : drivers) {
@@ -202,7 +202,7 @@ public final class ViewpointGameTest {
                 }
             }
         }).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
+            controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
                     new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD));
             return physics(controller, () -> {
                 subsystems.prePhysicsTick();
@@ -211,15 +211,15 @@ public final class ViewpointGameTest {
                 }
             });
         }, server).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
+            controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
                     new ViewInputSignal(point, relative, AimTargetState.Mode.PITCH_STABLE));
             return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, false));
         }, server).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(),
+            controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
                     new ViewInputSignal(point, relative, AimTargetState.Mode.YAW_STABLE));
             return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, true));
         }, server).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("aim_input_p1").put(drivers.getFirst(), EmptySignal.INSTANCE);
+            controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(), EmptySignal.INSTANCE);
             return physics(controller, () -> {
                 subsystems.prePhysicsTick();
                 for (var driver : drivers) {
@@ -228,7 +228,7 @@ public final class ViewpointGameTest {
                 }
             });
         }, server).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("aim_input").put(controller, EmptySignal.INSTANCE);
+            controller.getSignalChannel("crew_any_aim").put(controller, EmptySignal.INSTANCE);
             return physics(controller, () -> {
                 subsystems.prePhysicsTick();
                 for (var driver : drivers) {

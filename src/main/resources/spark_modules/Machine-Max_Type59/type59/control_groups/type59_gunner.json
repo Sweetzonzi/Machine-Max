@@ -6,19 +6,18 @@
     "regular_targets": {},
     "bindings": [],
     "view_targets": {
-      "aim_input_p2": [
-        "subsystem.type59.main_weapon",
-        "subsystem.type59.coax_controller"
+      "crew_gunner_aim": [
+        "global"
       ]
     },
     "main_weapon_targets": {
-      "fire_input_p2": [
-        "subsystem.type59.main_weapon"
+      "crew_gunner_fire": [
+        "global"
       ]
     },
     "secondary_weapon_targets": {
-      "secondary_fire_input_p2": [
-        "subsystem.type59.coax_controller"
+      "crew_gunner_secondary_fire": [
+        "global"
       ]
     }
   }

@@ -6,12 +6,12 @@
     "regular_targets": {},
     "bindings": [],
     "view_targets": {
-      "aim_aa": [
+      "crew_loader_aim_aa": [
         "global"
       ]
     },
     "main_weapon_targets": {
-      "fire_aa": [
+      "crew_loader_fire_aa": [
         "global"
       ]
     },

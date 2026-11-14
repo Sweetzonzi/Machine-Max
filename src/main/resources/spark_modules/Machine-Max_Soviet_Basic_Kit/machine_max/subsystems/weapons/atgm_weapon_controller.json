@@ -6,15 +6,13 @@
   "ripple_interval": 1,
   "aim_tolerance_deg": 10,
   "aim_inputs": [
-    "aim_input_p0",
-    "aim_input_p1",
-    "aim_input_p2",
-    "aim_input_p3",
-    "aim_input"
+    "crew_gunner_aim",
+    "crew_commander_aim",
+    "crew_any_aim"
   ],
   "fire_inputs": [
-    "atgm_fire_input"
+    "crew_gunner_fire_atgm"
   ],
   "fire_correction_angle_deg": 1,
-  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

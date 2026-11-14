@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "8f76bb69af37457c23bc4c1317e42de5a3a89f2d",
+    "revision": "9b24bef5d468e0d2fbdb566b507ca855aa60894b",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -71,8 +71,8 @@
       },
       {
         "path": "references/schemas/part/subpart/connector/connector_attr.schema.json",
-        "bytes": 5544,
-        "sha256": "cf367be8f02414a5262e5fdd2222ae32c97fd8384411ea53adcaba491c9bc7b3"
+        "bytes": 5550,
+        "sha256": "b7f2e82311fcdf72c475e26c33a00add99b1e22be19229f88700a2e0e8f49b6c"
       },
       {
         "path": "references/schemas/part/subpart/connector/connector_static_attr.schema.json",
@@ -126,8 +126,8 @@
       },
       {
         "path": "references/schemas/part/subpart/sub_part_attr.schema.json",
-        "bytes": 9515,
-        "sha256": "1cda28e0e7db7145276431ba17548bfafec804cfce5e10328e9f5a1064f68b2c"
+        "bytes": 9533,
+        "sha256": "d746e0273f7fd3cbfe318277628d8672329fa76bb32e5667ef2d1ae45e69d62f"
       },
       {
         "path": "references/schemas/part/variant_attr.schema.json",
@@ -171,8 +171,8 @@
       },
       {
         "path": "references/schemas/subsystem/base/signal_targets.json",
-        "bytes": 631,
-        "sha256": "093ffbeb1260d3208d377c1d61aaab3549063d57aa441dd5a3bc68e1948c9db5"
+        "bytes": 637,
+        "sha256": "9ec5683e8ebf543251fa28962c011246e89ceb38d7d3135dafb7377ae7de8466"
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.schema.json",
@@ -306,8 +306,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/car_controller_static_attr.schema.json",
-        "bytes": 8571,
-        "sha256": "32cec1596fcacf60e4d69e235d2e361f1109101faf0b1d35705b3b57eb1a80bc"
+        "bytes": 8706,
+        "sha256": "1c1856f96776fe59234824ecfec7171f0d7e8247336fdb663d915968d15529d5"
       },
       {
         "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
@@ -341,8 +341,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/motorbike_controller_static_attr.schema.json",
-        "bytes": 6045,
-        "sha256": "8bc145585c12295490dd325686bab6601e43d3b865a9855c0835a3f00356c077"
+        "bytes": 6012,
+        "sha256": "9c37e85787e1a75483eebf533da6e9ccbae6d137d7c65a1a227e57f85642e2ec"
       },
       {
         "path": "references/schemas/subsystem/static/reactive_armor_static_attr.schema.json",
@@ -366,8 +366,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/track_controller_static_attr.schema.json",
-        "bytes": 4346,
-        "sha256": "4904e7352fd4e09ab92a5637c97a3a8f35723997ea5b0ac32b6e7443f5a7d485"
+        "bytes": 4211,
+        "sha256": "c44636036e8c2c2ba51e85c38cf09f837a7c93a1f190e427cb2a21ca93e24ddc"
       },
       {
         "path": "references/schemas/subsystem/static/track_drive_static_attr.schema.json",
@@ -391,8 +391,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/weapon_controller_static_attr.schema.json",
-        "bytes": 5396,
-        "sha256": "1f9f29fa2f6744bbf1990d10fbe8421b2a89d91999e29df05a7e0c008e64fe67"
+        "bytes": 5725,
+        "sha256": "9bc3810120a625a9284bd2e60b40a236356dac1da04edc12470df0c52cedca0d"
       },
       {
         "path": "references/schemas/subsystem/static/wheel_driver_static_attr.schema.json",
