@@ -41,7 +41,7 @@
       "type": "array",
       "items": { "type": "string" },
       "default": [],
-      "description": "Per-installation channels on which loading demanders discover this seat. e.g. the loader seat writes [\"crew.reload.loader\"] and the gunner seat [\"crew.reload.gunner\"]; the autoloader queries these channels in its reload_operator_discovery_targets and hands the actual occupant to its human stage. Unioned with the model's interact_inputs; channels are handshakes for discovery only and carry no loading commands."
+      "description": "Per-installation channels on which loading demanders discover this seat. e.g. the loader seat writes [\"crew_loader_reload\"] and the gunner seat [\"crew_gunner_reload\"]; the autoloader queries these channels in its reload_operator_discovery_targets and hands the actual occupant to its human stage. Unioned with the model's interact_inputs; channels are handshakes for discovery only and carry no loading commands."
     },
     "dismount_locators": {
       "type": "array",
@@ -81,7 +81,7 @@
       "definition": "machine_max:default_3rd_seat",
       "locator": "loader_seat",
       "control_group_preset": "machine_max:empty",
-      "reload_operator_discovery_inputs": ["crew.reload.loader"]
+      "reload_operator_discovery_inputs": ["crew_loader_reload"]
     }
   ]
 }

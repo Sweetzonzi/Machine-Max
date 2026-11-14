@@ -38,7 +38,7 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
     /**
      * 人工段用人查询：装填人员频道 → 目标名称列表。<br>
      * 只有人力直取路径用它：机构有自己的那张表（人工段属于机构的流程）。常规写法是
-     * {@code {"crew.reload.loader": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位只要在自己的
+     * {@code {"crew_loader_reload": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位只要在自己的
      * 实例字段里声明同一频道就会被发现。
      */
     public final Map<String, List<String>> reloadOperatorDiscoveryTargets;

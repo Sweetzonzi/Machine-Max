@@ -41,7 +41,7 @@
         { "$ref": "../base/signal_targets.json" }
       ],
       "default": {},
-      "description": "人工段的用人查询表：装填人员频道到目标名称列表。只有人力直取路径用它——机构有自己的那张表（人工段属于机构的流程）。常规写法是 {\"crew.reload.loader\": [\"local\"]}——local 是本 Part 的全部 SubPart，座位只要在自己的 reload_operator_discovery_inputs 里声明同一频道就会被发现；两个炮塔做在两个 Part 里时 local 天然隔离。只有型号配置了 human_reload_time 时才有意义。频道只用于握手发现，不承载装填指令。"
+      "description": "人工段的用人查询表：装填人员频道到目标名称列表。只有人力直取路径用它——机构有自己的那张表（人工段属于机构的流程）。常规写法是 {\"crew_loader_reload\": [\"local\"]}——local 是本 Part 的全部 SubPart，座位只要在自己的 reload_operator_discovery_inputs 里声明同一频道就会被发现；两个炮塔做在两个 Part 里时 local 天然隔离。只有型号配置了 human_reload_time 时才有意义。频道只用于握手发现，不承载装填指令。"
     },
     "reload_operator_time_multipliers": {
       "type": "object",

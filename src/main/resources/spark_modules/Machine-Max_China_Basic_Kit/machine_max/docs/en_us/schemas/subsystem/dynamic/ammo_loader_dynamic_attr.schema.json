@@ -31,12 +31,12 @@
         { "$ref": "../base/signal_targets.json" }
       ],
       "default": {},
-      "description": "Crew query table of the human stage: crew channel to target names. The usual form is {\"crew.reload.loader\": [\"local\"]} — local is every SubPart of the part, so a seat is found as soon as it declares the same channel in its own reload_operator_discovery_inputs; two turrets built in two parts stay isolated by local. Only meaningful when the model configures human_reload_time. Channels are handshakes for discovery only and carry no loading commands."
+      "description": "Crew query table of the human stage: crew channel to target names. The usual form is {\"crew_loader_reload\": [\"local\"]} — local is every SubPart of the part, so a seat is found as soon as it declares the same channel in its own reload_operator_discovery_inputs; two turrets built in two parts stay isolated by local. Only meaningful when the model configures human_reload_time. Channels are handshakes for discovery only and carry no loading commands."
     },
     "reload_operator_time_multipliers": {
       "type": "object",
       "default": {},
-      "description": "Post multipliers P: crew channel to multiplier, e.g. {\"crew.reload.loader\": 1.0, \"crew.reload.gunner\": 2.0}. They belong to the relation between this loader and that seat, not to the seat as a global ability; the same seat may carry another multiplier when serving another weapon. Unlisted channels count as 1.0 and values must be finite and positive. When several channels reach the same seat, the lowest multiplier among them applies: a seat yields one candidate and multipliers never add up.",
+      "description": "Post multipliers P: crew channel to multiplier, e.g. {\"crew_loader_reload\": 1.0, \"crew_gunner_reload\": 2.0}. They belong to the relation between this loader and that seat, not to the seat as a global ability; the same seat may carry another multiplier when serving another weapon. Unlisted channels count as 1.0 and values must be finite and positive. When several channels reach the same seat, the lowest multiplier among them applies: a seat yields one candidate and multipliers never add up.",
       "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
     }
   },
@@ -59,10 +59,10 @@
         "ammo_120mm": ["subsystem.m1a2_sep.ammo_loader"]
       },
       "reload_operator_discovery_targets": {
-        "crew.reload.loader": ["local"]
+        "crew_loader_reload": ["local"]
       },
       "reload_operator_time_multipliers": {
-        "crew.reload.loader": 1.0
+        "crew_loader_reload": 1.0
       }
     }
   ]

@@ -37,7 +37,7 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
 
     /**
      * 人工段用人查询：装填人员频道 → 目标名称列表。<br>
-     * 常规写法是 {@code {"crew.reload.loader": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位
+     * 常规写法是 {@code {"crew_loader_reload": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位
      * 只要在自己的实例字段里声明同一频道就会被发现。两个独立炮塔做在两个 Part 里时，{@code local} 天然隔离。
      */
     public final Map<String, List<String>> reloadOperatorDiscoveryTargets;

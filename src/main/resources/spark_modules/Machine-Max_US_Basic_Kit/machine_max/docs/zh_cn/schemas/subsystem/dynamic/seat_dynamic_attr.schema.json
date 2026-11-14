@@ -41,7 +41,7 @@
       "type": "array",
       "items": { "type": "string" },
       "default": [],
-      "description": "本座位被装填需求方发现的频道（安装级）。例如装填手座位写 [\"crew.reload.loader\"]，炮手座位写 [\"crew.reload.gunner\"]；装弹机的 reload_operator_discovery_targets 在这些频道上查询，命中的座位把实际乘员交给人工段。与型号的 interact_inputs 取并集，频道只用于握手发现，不承载装填指令。"
+      "description": "本座位被装填需求方发现的频道（安装级）。例如装填手座位写 [\"crew_loader_reload\"]，炮手座位写 [\"crew_gunner_reload\"]；装弹机的 reload_operator_discovery_targets 在这些频道上查询，命中的座位把实际乘员交给人工段。与型号的 interact_inputs 取并集，频道只用于握手发现，不承载装填指令。"
     },
     "dismount_locators": {
       "type": "array",
@@ -81,7 +81,7 @@
       "definition": "machine_max:default_3rd_seat",
       "locator": "loader_seat",
       "control_group_preset": "machine_max:empty",
-      "reload_operator_discovery_inputs": ["crew.reload.loader"]
+      "reload_operator_discovery_inputs": ["crew_loader_reload"]
     }
   ]
 }

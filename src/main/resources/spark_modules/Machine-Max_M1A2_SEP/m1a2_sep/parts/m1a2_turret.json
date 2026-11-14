@@ -296,7 +296,7 @@
               "locator": "gunner_seat",
               "control_group_preset": "m1a2_sep:m1a2_gunner",
               "reload_operator_discovery_inputs": [
-                "crew.reload.gunner"
+                "crew_gunner_reload"
               ],
               "camera_discovery_targets": {
                 "gunner_sight": [
@@ -318,7 +318,7 @@
               "locator": "commander_seat",
               "control_group_preset": "m1a2_sep:m1a2_commander",
               "reload_operator_discovery_inputs": [
-                "crew.reload.commander"
+                "crew_commander_reload"
               ],
               "camera_discovery_targets": {
                 "commander_citv": [
@@ -346,7 +346,7 @@
               "locator": "loader_seat",
               "control_group_preset": "m1a2_sep:m1a2_loader",
               "reload_operator_discovery_inputs": [
-                "crew.reload.loader"
+                "crew_loader_reload"
               ],
               "camera_discovery_targets": {
                 "sight_port_mg": [
@@ -994,20 +994,20 @@
                 ]
               },
               "reload_operator_discovery_targets": {
-                "crew.reload.loader": [
+                "crew_loader_reload": [
                   "local"
                 ],
-                "crew.reload.commander": [
+                "crew_commander_reload": [
                   "local"
                 ],
-                "crew.reload.gunner": [
+                "crew_gunner_reload": [
                   "local"
                 ]
               },
               "reload_operator_time_multipliers": {
-                "crew.reload.loader": 1.0,
-                "crew.reload.commander": 1.25,
-                "crew.reload.gunner": 1.25
+                "crew_loader_reload": 1.0,
+                "crew_commander_reload": 1.25,
+                "crew_gunner_reload": 1.25
               }
             }
           }

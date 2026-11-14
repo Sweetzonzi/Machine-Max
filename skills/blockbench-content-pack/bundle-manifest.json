@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "252d04d81b97bf09c3950b9424a8eaff38501b74",
+    "revision": "8f76bb69af37457c23bc4c1317e42de5a3a89f2d",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -177,7 +177,7 @@
       {
         "path": "references/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.schema.json",
         "bytes": 3631,
-        "sha256": "cbce672d979b17086835ee1f2e57cd4e1088b3e21fda809ecabc67b88fc3ad75"
+        "sha256": "14a55da5ff2f2e5b410dd384b356da6fe77ff6de1064179572778c8a8e12a936"
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.schema.json",
@@ -217,7 +217,7 @@
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
         "bytes": 3631,
-        "sha256": "de0f237cb241508bd4e1c075613898d86b7223cb30d7d109b5b06e7815d647ce"
+        "sha256": "21a8e556fff5091e9068df075602b7ef9d0e9606d71323a646b5743ab3d6e581"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
@@ -247,7 +247,7 @@
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
         "bytes": 3904,
-        "sha256": "5c51dd9ccdd0683e17b789287d47426cb184d706676af13cd045d18abb77ac36"
+        "sha256": "8b9a450b09f7603a0d6906387f77dbfca0fc58520ebe8c436d28d13545b2782a"
       },
       {
         "path": "references/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json",
