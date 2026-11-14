@@ -13,7 +13,10 @@
 //     游戏里只是打中装甲不出火花，既不报错也不刷日志（客户端解析不到定义时静默跳过）。
 //  4. 粒子定义之间的子效果引用可达。粒子 JSON 的 events 里用 particle_effect 生成另一个
 //     效果时，效果 id 拼错只会让子效果不出现（如只剩火花、没有闪光与烟尘），同样没有日志。
-//  5. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
+//  5. 座位控制组预设可达。座位安装块的 control_group_preset 指向 control_groups/<名>.json，
+//     拼错一个字母时 SeatSubsystem 构造器打一条 WARN 就按空控制组继续——座位仍在，乘员按
+//     什么键都没有反应，面板里也列不出任何组。
+//  6. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
 //     FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现为屏幕上一段原始键名；
 //     只有一边语言有的键则让另一边显示原始键名。两者都不报错。
 //
@@ -28,7 +31,10 @@
 //  - `.html` 按 AUI 文档根解析（namespace:tooltips/x.html → <namespace>/documents/tooltips/x.html），
 //    缺页面只做汇总提示、不判失败：蓝图没有说明文字不影响放置。
 //  - 内容 id 是 <namespace>/<文件名>，与所在包无关，所以跨包引用（车包用 kit 的件）也
-//    能落到文件。
+//    能落到文件。控制组预设的 id 取 control_groups/ 下的文件名（ControlGroupModule 只用
+//    文件名拼 id，不看子目录），索引因此按文件名建。
+//  - 座位控制组预设 machine_max:empty 是“不挂预设”的保留值（AbstractSubsystemAttr
+//    .NO_CONTROL_GROUP_PRESET），从不落地成文件，引用它不算缺失。
 //  - 语言键的可达性按“有没有消费方”判：字面量出现在包内非 lang、非 docs 的文件或模组源码
 //    里，或能由内容 id 按固定规则拼出。判据取宽，宁可漏报也不误报。
 
@@ -226,6 +232,23 @@ walkChildParticles = { Object node, Closure onChildParticle ->
     }
 }
 
+// 收集座位安装块的控制组预设引用：control_group_preset 由 SeatSubsystemAttr 的 codec 声明，
+// 是唯一读取该字段的地方，所以按字段名扫即可、不必先认 type。键名取外层映射的键（即子系统
+// 名，如 subsystem.m1a2_sep.commander_seat），报错时直接指得到 JSON 里的那一行。
+def walkControlGroupPresets
+walkControlGroupPresets = { Object node, Closure onPreset ->
+    if (node instanceof Map) {
+        node.each { Object key, Object value ->
+            if (value instanceof Map && value.get('control_group_preset') != null) {
+                onPreset(key.toString(), value.get('control_group_preset').toString())
+            }
+            walkControlGroupPresets(value, onPreset)
+        }
+    } else if (node instanceof List) {
+        node.each { walkControlGroupPresets(it, onPreset) }
+    }
+}
+
 def readJsonc = { File file ->
     new JsonSlurper().parseText(stripJsonc(file.getText('UTF-8')))
 }
@@ -250,7 +273,7 @@ packs.sort { it.name }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标与模型可达，以及语言键的可达性与中英配对'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，以及语言键的可达性与中英配对'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -287,6 +310,23 @@ tasks.register('checkContent') {
                     String name = file.name.substring(0, file.name.length() - '.particle.json'.length())
                     particleIds << pack.namespace + ':' + name
                 }
+            }
+        }
+
+        // 控制组预设索引：id → 所在包。id 是 ControlGroupModule 拼的那个
+        // <namespace>:<文件名去掉 .json>（它不看子目录），与模板走同一条规则。
+        Map<String, String> controlGroupPresets = [:]
+        packs.each { pack ->
+            File dir = new File(pack.dir, 'control_groups')
+            if (!dir.isDirectory()) {
+                return
+            }
+            dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                String stem = file.name.substring(0, file.name.length() - '.json'.length())
+                controlGroupPresets[pack.namespace + ':' + stem] = pack.name
             }
         }
 
@@ -351,6 +391,7 @@ tasks.register('checkContent') {
         int referenceCount = 0
         int particleReferenceCount = 0
         int childParticleCount = 0
+        int presetReferenceCount = 0
         // 贴图 / 模型只校验内置与模板命名空间，外部命名空间留给对应 mod 自己管
         def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo))$/
         // 说明页面按 AUI 文档根解析：namespace:tooltips/x.html → <包>/<namespace>/documents/tooltips/x.html
@@ -394,6 +435,19 @@ tasks.register('checkContent') {
                         }
                     }
                 }
+                // 5. 座位控制组预设（座位安装块的 control_group_preset）
+                walkControlGroupPresets(data) { String subsystem, String preset ->
+                    if (preset == 'machine_max:empty') {
+                        return
+                    }
+                    presetReferenceCount++
+                    if (!controlGroupPresets.containsKey(preset)) {
+                        problems << label + '：子系统 ' + subsystem + ' 的 control_group_preset ' + preset +
+                                ' 找不到控制组预设（control_groups/<名>.json）'
+                        details.append('    缺预设  ').append(label).append(' → ')
+                                .append(subsystem).append(' = ').append(preset).append('\n')
+                    }
+                }
                 walkStrings(data) { String value ->
                     def tooltipMatcher = tooltipPattern.matcher(value)
                     if (tooltipMatcher.matches()) {
@@ -430,7 +484,7 @@ tasks.register('checkContent') {
             }
         }
 
-        // 5. 语言键可达 + 中英键集一致
+        // 6. 语言键可达 + 中英键集一致
         //
         // 一条键“可达”指下列任一路径能取到它：
         //   a. 字面量出现在某个包的 lang/ 与 docs/ 之外的文件里（模板的 part.* 条目、控制组 /
@@ -573,8 +627,10 @@ tasks.register('checkContent') {
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
             int ownBlueprints = blueprints.values().count { it.pack == pack.name }
+            int ownControlGroups = controlGroupPresets.values().count { it == pack.name }
             logger.quiet('  ok  ' + pack.name + '/' + pack.namespace + '：模板 ' + ownTemplates +
-                    '，装配体 ' + ownAssemblies + '，载具蓝图 ' + ownBlueprints)
+                    '，装配体 ' + ownAssemblies + '，载具蓝图 ' + ownBlueprints +
+                    '，控制组预设 ' + ownControlGroups)
         }
         if (pendingTooltips) {
             logger.quiet('  提示 ' + pendingTooltips.size() + ' 处 tooltip 引用的 html 还没有文件' +
@@ -592,6 +648,7 @@ tasks.register('checkContent') {
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
+                presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
                 languageKeyCount + ' 条语言键）。')
     }
 }
