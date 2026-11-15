@@ -209,62 +209,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RESOURCE_LOCATION());
 
     /**
-     * 当前装填作业的编号（网络同步）。{@code 0} 表示没有作业。<br>
-     * 编号与宿主 SubPart ID、本子系统名组成作业身份 {@link ReloadJobKey}：机构占用、实际架预留与独占
-     * 机构的槽位拥有者都用它匹配。客户端据它区分"同一条作业又收到一次更新"与"换了一条作业"——
-     * 前者保留本地已推进的进度，后者从基线重新开始。
+     * 当前装填作业的整包快照（网络同步），空值表示这一 tick 没有作业。<br>
+     * 编号、交付目标、实际来源、冻结规格、预留份额、进度基线、本阶段时长与阶段一起下发，见
+     * {@link ReloadJobSync}：这八项只在同一批事件里一起变，客户端也必须凑齐才能建作业，逐项下发只会
+     * 制造"字段到齐没有"这个中间状态，并让每次字段扩展都推动访问器编号后移。
+     * <p>
+     * 编号与宿主 SubPart ID、本子系统名组成作业身份 {@link ReloadJobKey}：机构占用、实际架预留与
+     * 独占机构的槽位拥有者都用它匹配。客户端据编号区分"同一条作业又收到一次更新"与"换了一条作业"
+     * ——前者保留本地已推进的进度，后者从基线重新开始。
      */
-    private static final EntityDataAccessor<Integer> JOB_ID_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
-
-    /** 当前作业的交付目标（网络同步）：机构路径是机构，纯人工直取路径是弹药架。 */
-    private static final EntityDataAccessor<SupplierRef> JOB_TARGET_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
-
-    /**
-     * 当前作业的实际来源弹药架（网络同步）。<br>
-     * 由机构在受理时挑定并写进作业；纯人工直取路径与 {@link #JOB_TARGET_ID} 相同。客户端用它定位
-     * "这份交付从哪台架来"：判断本地能否推进、播放机械段音效与显示来源。
-     */
-    private static final EntityDataAccessor<SupplierRef> JOB_ORIGIN_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
-
-    /**
-     * 当前作业的冻结交付规格（网络同步）。<br>
-     * 受理时定下，此后供给者的规格变化不改写它；客户端据此知道这一份是什么内容、多少发，
-     * 不必在完成时从变化后的供给预览重新推导。
-     */
-    private static final EntityDataAccessor<Optional<AmmoBelt>> JOB_SPEC_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_AMMO_BELT());
-
-    /** 当前作业的弹药预留量 {@code q}（网络同步）：实际架已按这个份额扣着库存。 */
-    private static final EntityDataAccessor<Integer> JOB_RESERVED_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
-
-    /**
-     * 当前作业本阶段的实际时长（网络同步）。<br>
-     * 由服务端发布，客户端不按型号或人员能力重算；段内不重算分母，进度因此不会倒退。
-     */
-    private static final EntityDataAccessor<Integer> JOB_TOTAL_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
-
-    /**
-     * 当前作业所处的阶段（网络同步）：{@code 0} = 人工准备，{@code 1} = 机械运行。<br>
-     * 客户端必须知道这一段是谁在推进：人工段的时长已经把岗位倍率与个人倍率折进去，本端每 tick 推进 1，
-     * 走完后不能自己交付，要等权威把阶段推到机械段；机械段则按执行者给的推进量与机构槽位推进。
-     * 与 {@link #JOB_TOTAL_ID} 成对更新：阶段切换会重发时长与一条归零的进度基线。
-     */
-    private static final EntityDataAccessor<Integer> JOB_STAGE_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
-
-    /**
-     * 当前作业已推进 tick 数（网络同步）。<br>
-     * <b>只作基线，不是每 tick 的进度镜像：</b>服务端在作业开始与离散重建（暂停恢复、换人、完整补推）
-     * 时写一次，稳定装填期间不写。两端在基线之上各自按执行者给的推进量累计，因此这条通路不承担
-     * 逐 tick 计时。客户端只在换作业或收到更新的基线时向前对齐，不让进度倒退。
-     */
-    private static final EntityDataAccessor<Integer> JOB_ELAPSED_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Optional<ReloadJobSync>> JOB_SYNC_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RELOAD_JOB_SYNC());
 
     /**
      * 最近一次结束的作业编号（网络同步）。{@code 0} 表示本端还没有结束过作业。<br>
@@ -281,7 +236,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 最近一次结束是否已交付（网络同步），与 {@link #JOB_RESULT_ID} 是同一条结果的结论。<br>
      * 客户端不据它推断弹药内容——内容以权威的 {@link #BELT_ID}／{@link #CHAMBERED_ID} 为准；
-     * 分开记是为了让"作业空了"与"这一份交付成功了"不混为一谈：中止的作业同样会把作业字段清 0。
+     * 分开记是为了让"作业空了"与"这一份交付成功了"不混为一谈：中止的作业同样会清空作业快照。
      */
     private static final EntityDataAccessor<Boolean> JOB_RESULT_DELIVERED_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, EntityDataSerializers.BOOLEAN);
@@ -425,14 +380,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         builder.define(SUPPLIER_ID, SupplierRef.NONE);
         builder.define(BELT_ID, Optional.empty());
         builder.define(CHAMBERED_ID, Optional.empty());
-        builder.define(JOB_ID_ID, 0);
-        builder.define(JOB_TARGET_ID, SupplierRef.NONE);
-        builder.define(JOB_ORIGIN_ID, SupplierRef.NONE);
-        builder.define(JOB_SPEC_ID, Optional.empty());
-        builder.define(JOB_RESERVED_ID, 0);
-        builder.define(JOB_ELAPSED_ID, 0);
-        builder.define(JOB_TOTAL_ID, 0);
-        builder.define(JOB_STAGE_ID, 0);
+        builder.define(JOB_SYNC_ID, Optional.empty());
         builder.define(JOB_RESULT_ID, 0);
         builder.define(JOB_RESULT_DELIVERED_ID, false);
     }
@@ -455,16 +403,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             pendingBelt = true;
         } else if (dataAccessor.equals(CHAMBERED_ID)) {
             pendingChambered = true;
-        } else if (dataAccessor.equals(JOB_ID_ID)
-                || dataAccessor.equals(JOB_TARGET_ID)
-                || dataAccessor.equals(JOB_ORIGIN_ID)
-                || dataAccessor.equals(JOB_SPEC_ID)
-                || dataAccessor.equals(JOB_RESERVED_ID)
-                || dataAccessor.equals(JOB_ELAPSED_ID)
+        } else if (dataAccessor.equals(JOB_SYNC_ID)
                 || dataAccessor.equals(JOB_RESULT_ID)
-                || dataAccessor.equals(JOB_RESULT_DELIVERED_ID)
-                || dataAccessor.equals(JOB_STAGE_ID)
-                || dataAccessor.equals(JOB_TOTAL_ID)) {
+                || dataAccessor.equals(JOB_RESULT_DELIVERED_ID)) {
             pendingJob = true;
         }
     }
@@ -514,70 +455,50 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 全量补推前把进度基线刷成当前进度。<br>
-     * {@link #JOB_ELAPSED_ID} 平时只在作业开始与离散重建时写，直接推给新加入的客户端会让它从 0 开始
-     * 模拟一份已经进行到一半的作业；这一刻刷新一次，客户端拿到的基线就是"现在"。
+     * 全量补推前把快照里的进度基线刷成当前进度。<br>
+     * {@link ReloadJobSync#elapsed()} 平时只在作业开始与离散重建时写，直接推给新加入的客户端会让它从 0
+     * 开始模拟一份已经进行到一半的作业；这一刻刷新一次，客户端拿到的基线就是"现在"。基线没变时不重写，
+     * 否则一个值都没变的快照会留下脏标记，随下一次变化广播发给维度内的其他玩家。
      * <p><b>调用线程：</b>主线程（服务端，{@code SubsystemController#pushAllTo}）。
      */
     @Override
     public void refreshSyncBaseline() {
         if (getLevel().isClientSide()) return;
         ReloadJob job = reloadJob;
-        getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
+        Optional<ReloadJobSync> synced = getSynchedData().get(JOB_SYNC_ID);
+        if (job == null || synced.isEmpty()) return;
+        ReloadJobSync snapshot = synced.get();
+        if (snapshot.elapsed() == job.elapsedTicks()) return;
+        getSynchedData().set(JOB_SYNC_ID, Optional.of(snapshot.withElapsed(job.elapsedTicks())));
     }
 
     /**
-     * 客户端按同步的作业字段组成本地作业。<br>
-     * 先应用结束结果，再按作业字段落地当前作业：结果只影响身份匹配的那一条本地作业，作业字段才是
-     * "现在有哪份作业"。编号为 {@code 0} 表示权威已收尾：本地作业结束，客户端不释放占用或预留
-     * ——那些由服务端按身份释放，本端只是镜像。<br>
+     * 客户端按同步快照组成本地作业。<br>
+     * 先应用结束结果，再落地快照：结果只影响身份匹配的那一条本地作业，快照才是"现在有哪份作业"。
+     * 快照为空表示权威已收尾：本地作业结束，客户端不释放占用或预留——那些由服务端按身份释放，
+     * 本端只是镜像。<br>
      * 编号与本地当前作业相同表示同一条作业的离散更新（进度基线、阶段时长）：沿用本地已推进的进度，
-     * 只向前对齐基线，不让进度倒退；编号不同则是新作业，从基线重新起算。<br>
-     * 规格或时长为空说明这一批字段还没到齐，保持现状等补齐，不建半份作业。
+     * 只向前对齐基线，不让进度倒退；编号不同则是新作业，从基线重新起算。
      */
     private void applySyncedJob() {
         applyJobResult();
-        int jobId = getSynchedData().get(JOB_ID_ID);
-        if (jobId <= 0) {
+        Optional<ReloadJobSync> synced = getSynchedData().get(JOB_SYNC_ID);
+        if (synced.isEmpty()) {
             reloadJob = null;
             return;
         }
-        AmmoBelt spec = getSynchedData().get(JOB_SPEC_ID).orElse(null);
-        int total = getSynchedData().get(JOB_TOTAL_ID);
-        if (spec == null || total <= 0) return;
-
-        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), jobId);
-        ReloadJob.Stage stage = stageOf(getSynchedData().get(JOB_STAGE_ID));
-        int baseline = Math.max(0, getSynchedData().get(JOB_ELAPSED_ID));
+        ReloadJobSync snapshot = synced.get();
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), snapshot.jobId());
         ReloadJob current = reloadJob;
         if (current != null && current.key().equals(key)) {
             // 同一条作业的离散更新：阶段变了就按新阶段从基线起算（人工段走完换成机械段），
             // 阶段没变只把时长与基线对齐（换人重定时会同时给出缩放过的进度与新的剩余量）
-            current.alignRemote(stage, total, baseline);
+            current.alignRemote(snapshot.stage(), snapshot.total(), snapshot.elapsed());
             return;
         }
         // 本地已经替这一条交过了：只等权威结束结果，把它建回来会再交一次
-        if (jobId == lastLocalDeliveryId) return;
-        ReloadJob job = new ReloadJob(key,
-                getSynchedData().get(JOB_TARGET_ID),
-                getSynchedData().get(JOB_ORIGIN_ID),
-                spec,
-                getSynchedData().get(JOB_RESERVED_ID),
-                stage,
-                total,
-                1.0);
-        job.advanceTo(baseline);
-        reloadJob = job;
-    }
-
-    /** 同步值里的阶段编码：{@code 0} = 人工准备，{@code 1} = 机械运行。 */
-    private static ReloadJob.Stage stageOf(int value) {
-        return value == 0 ? ReloadJob.Stage.HUMAN : ReloadJob.Stage.MACHINE;
-    }
-
-    /** 阶段写进同步值的编码；与 {@link #stageOf(int)} 成对。 */
-    private static int encodeStage(ReloadJob.Stage stage) {
-        return stage == ReloadJob.Stage.HUMAN ? 0 : 1;
+        if (snapshot.jobId() == lastLocalDeliveryId) return;
+        reloadJob = snapshot.toLocalJob(key);
     }
 
     /**
@@ -1324,24 +1245,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 把当前作业的分配字段推给客户端。<br>
+     * 把当前作业的整包快照推给客户端。<br>
      * 只在作业开始、阶段切换、换人重定时与收尾时调用：稳定装填期间服务端不写进度字段，两端在基线之上
-     * 各自累计（{@link #JOB_ELAPSED_ID} 是基线，不是每 tick 的镜像）。阶段切换与换人重定时写的是
-     * "新的本阶段时长 + 新的进度基线"，客户端因此从新基线继续跑，比例不倒退。<br>
+     * 各自累计（{@link ReloadJobSync#elapsed()} 是基线，不是每 tick 的镜像）。阶段切换与换人重定时写的
+     * 是"新的本阶段时长 + 新的进度基线"，客户端因此从新基线继续跑，比例不倒退。<br>
      * 结束结果（{@link #JOB_RESULT_ID}／{@link #JOB_RESULT_DELIVERED_ID}）不在这里写：它只描述
      * 已经结束的那一条作业，新作业开始时不覆盖它。
      */
     private void pushReloadJob() {
         if (getLevel().isClientSide()) return;
         ReloadJob job = reloadJob;
-        getSynchedData().set(JOB_ID_ID, job == null ? 0 : job.jobId());
-        getSynchedData().set(JOB_TARGET_ID, job == null ? SupplierRef.NONE : job.deliveryTarget());
-        getSynchedData().set(JOB_ORIGIN_ID, job == null ? SupplierRef.NONE : job.upstreamOrigin());
-        getSynchedData().set(JOB_SPEC_ID, job == null ? Optional.empty() : Optional.of(job.spec().syncCopy()));
-        getSynchedData().set(JOB_RESERVED_ID, job == null ? 0 : job.reservedCount());
-        getSynchedData().set(JOB_ELAPSED_ID, job == null ? 0 : job.elapsedTicks());
-        getSynchedData().set(JOB_TOTAL_ID, job == null ? 0 : job.totalTicks());
-        getSynchedData().set(JOB_STAGE_ID, job == null ? 0 : encodeStage(job.stage()));
+        getSynchedData().set(JOB_SYNC_ID, job == null ? Optional.empty() : Optional.of(ReloadJobSync.of(job)));
     }
 
     /**

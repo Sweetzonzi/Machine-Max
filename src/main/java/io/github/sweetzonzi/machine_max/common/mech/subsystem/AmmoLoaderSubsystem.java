@@ -409,12 +409,13 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     }
 
     /**
-     * 机械段的基准时长：型号的 {@code reload_time} 秒换算成 tick。<br>
-     * 消费者的作业在进入机械段时读一次并定死，段内不再改读本方法。
+     * 机械段的基准时长：型号的 {@code reload_time} 秒换算成 tick，0 表示没有机械段。<br>
+     * 消费者的作业在进入机械段时读一次并定死，段内不再改读本方法。零时长不在这里抬成 1 tick：
+     * 交付的节奏由上游弹药架的整批回充决定，机构本身没有可等的动作（弹链直接接在枪上的机枪）。
      */
     @Override
     public int getReloadTimeTicks() {
-        return Math.max(1, (int) (attr.staticAttribute.getReloadTime() * 20f)); // 秒 → tick
+        return Math.max(0, (int) (attr.staticAttribute.getReloadTime() * 20f)); // 秒 → tick
     }
 
     /**

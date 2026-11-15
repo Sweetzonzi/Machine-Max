@@ -24,6 +24,9 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.Supp
  * 没有人工段的流程从一开始就处于机械段。阶段切换重置进度、保留分配；{@link #totalTicks()} 是<b>当前阶段</b>
  * 的实际时长，由服务端发布，离散变化（阶段切换、换人）时与进度基线一起重发，稳定运行期间不逐 tick 更新。
  * <p>
+ * <b>时长为 0 是一个正常值：</b>没有机械段的机构不申报时长，作业在受理的那一 tick 里推进、走完并兑现，
+ * 完成比例恒为 100%（见 {@link #progress()}）。这描述的是"没有可等的机构动作"，而不是"字段还没到"。
+ * <p>
  * <b>进度是坐标而不是计时器读数：</b>{@link #elapsedTicks()} 与 {@link #totalTicks()} 的关系给出完成比例与
  * 剩余量，两端各自每 tick 推进 1（人工段的倍率已经折进时长里）。因此一次换人只需要把剩余量按新速率换算、
  * 并按原比例缩放进度坐标——见 {@link #retimeHuman(double)}：人变慢时进度条不会倒退，剩余时间如实变长。
@@ -63,7 +66,7 @@ public final class ReloadJob {
     private Stage stage;
 
     /**
-     * 本阶段的实际时长（tick）。<br>
+     * 本阶段的实际时长（tick），0 表示本阶段没有可等的动作。<br>
      * 开工时由服务端按流程解析（人工段是 {@code (H + C) × P × A}，机械段是机构的 {@code reload_time}）；
      * 换人使后续速度变化时重发一个新值，进度坐标按 {@link #retimeHuman(double)} 换算，比例不倒退。
      */
@@ -94,7 +97,7 @@ public final class ReloadJob {
      * @param spec            冻结规格
      * @param reservedCount   预留份额
      * @param stage           起始阶段
-     * @param totalTicks      起始阶段的实际时长（tick，至少 1）
+     * @param totalTicks      起始阶段的实际时长（tick，0 表示没有可等的动作，作业立即完成）
      * @param humanRate       人工段的时间倍率（机械段传 1）
      */
     public ReloadJob(ReloadJobKey key, SupplierRef deliveryTarget, SupplierRef upstreamOrigin,
@@ -105,7 +108,7 @@ public final class ReloadJob {
         this.spec = spec;
         this.reservedCount = Math.max(0, reservedCount);
         this.stage = stage;
-        this.totalTicks = Math.max(1, totalTicks);
+        this.totalTicks = Math.max(0, totalTicks);
         this.humanRate = humanRate > 0 && Double.isFinite(humanRate) ? humanRate : 1.0;
     }
 
@@ -178,12 +181,17 @@ public final class ReloadJob {
         return Math.max(0, totalTicks - elapsedTicks);
     }
 
-    /** 已完成比例（0~1） */
+    /**
+     * 已完成比例（0~1）。<br>
+     * 本阶段时长为 0 时恒为 1：没有要等的人或机构动作，作业在受理的那一 tick 里走完，读进度的一方
+     * 因此不必为零分母另设分支。
+     */
     public float progress() {
+        if (totalTicks <= 0) return 1f;
         return Math.clamp((float) elapsedTicks / totalTicks, 0f, 1f);
     }
 
-    /** 本阶段是否已走完 */
+    /** 本阶段是否已走完；时长为 0 的作业从一开始就是走完的 */
     public boolean isComplete() {
         return elapsedTicks >= totalTicks;
     }
@@ -220,11 +228,11 @@ public final class ReloadJob {
      * 由 Launcher 在人工段完成、并且已经取得机构槽位之后调用，随后重发阶段与时长（见
      * {@code LauncherSubsystem#pushReloadJob()}）。
      *
-     * @param machineTicks 机械段实际时长，即机构的 {@link IAmmoSupplier#getReloadTimeTicks()}
+     * @param machineTicks 机械段实际时长，即机构的 {@link IAmmoSupplier#getReloadTimeTicks()}；0 表示没有机械段
      */
     public void enterMachineStage(int machineTicks) {
         stage = Stage.MACHINE;
-        totalTicks = Math.max(1, machineTicks);
+        totalTicks = Math.max(0, machineTicks);
         elapsedTicks = 0;
         pausedTicks = 0;
         humanRate = 1.0;
@@ -268,16 +276,17 @@ public final class ReloadJob {
      * 阶段变了（人工段 → 机械段）或者时长变了（换人重定时）都换了坐标系：按基线重设进度，那不是倒退——
      * 基线是服务端按同一比例缩放过的量，重设之后完成比例保持不变。其余情况（同一阶段、同一时长，
      * 例如完整补推带来的一条基线）只向前对齐，不让进度倒退。
-     * <p>总时长不小于 1；基线超出时长时钳在时长上，因此一次坏值不会让完成比例超过 100%。
+     * <p>总时长不小于 0，基线超出时长时钳在时长上，因此一次坏值不会让完成比例超过 100%。
      *
      * @param stage    权威阶段
-     * @param total    权威的本阶段实际时长；{@code <= 0} 表示这一批字段还没到齐，保持现状
+     * @param total    权威的本阶段实际时长，0 表示这一阶段没有可等的动作
      * @param baseline 权威进度基线
      */
     public void alignRemote(Stage stage, int total, int baseline) {
-        if (stage != this.stage || (total > 0 && total != totalTicks)) {
+        int totalTicks = Math.max(0, total);
+        if (stage != this.stage || totalTicks != this.totalTicks) {
             this.stage = stage;
-            this.totalTicks = Math.max(1, total > 0 ? total : totalTicks);
+            this.totalTicks = totalTicks;
             this.elapsedTicks = Math.clamp(baseline, 0, this.totalTicks);
             this.pausedTicks = 0;
             if (stage == Stage.MACHINE) this.humanRate = 1.0;

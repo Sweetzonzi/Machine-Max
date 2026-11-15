@@ -53,7 +53,9 @@ public class MMPayloadRegistry {
         // 6.0.0 对应结束结果：发射器再增加最近一次结束的作业编号与已交付结论两个同步项（访问器编号后移）。
         // 7.0.0 对应装填作业的人工段：发射器增加当前阶段一个同步项（访问器编号后移），阶段切换与换人
         // 重定时都会改写本阶段时长与进度基线，客户端按阶段分别推进。
-        final PayloadRegistrar sync = event.registrar("sync:7.0.0");
+        // 8.0.0 对应装填作业改为整包同步：发射器的八个作业访问器收成一个可选快照（ReloadJobSync，经
+        // MMEntityDataSerializers 的自定义序列化器下发，结果两项仍在外面），访问器编号整体后移。
+        final PayloadRegistrar sync = event.registrar("sync:8.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.4.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

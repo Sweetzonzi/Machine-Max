@@ -107,10 +107,30 @@ class ReloadJobTest {
     }
 
     @Test
-    void totalTicksIsAtLeastOneSoAZeroLengthSegmentStillCompletes() {
+    void aZeroLengthStageStartsOutComplete() {
         ReloadJob job = job(0);
-        assertEquals(1, job.totalTicks());
+        assertEquals(0, job.totalTicks(), "没有机械段时不被抬成 1 tick");
+        assertEquals(0, job.remainingTicks());
+        assertEquals(1f, job.progress(), "没有要等的动作，完成比例恒为 100%");
+        assertTrue(job.isComplete());
+
         job.advance(1);
+        assertEquals(0, job.elapsedTicks(), "零时长的段没有可推进的坐标");
+    }
+
+    @Test
+    void aNegativeDurationIsClampedToZero() {
+        assertEquals(0, job(-5).totalTicks());
+    }
+
+    @Test
+    void enteringAZeroLengthMachineStageFinishesImmediately() {
+        ReloadJob job = humanJob(20, 1.0);
+        job.advance(20);
+        job.enterMachineStage(0);
+        assertEquals(ReloadJob.Stage.MACHINE, job.stage());
+        assertEquals(0, job.totalTicks());
+        assertEquals(1f, job.progress());
         assertTrue(job.isComplete());
     }
 
@@ -233,5 +253,17 @@ class ReloadJobTest {
         // 长度没变的基线只能向前
         job.alignRemote(ReloadJob.Stage.HUMAN, 50, 10);
         assertEquals(25, job.elapsedTicks(), "基线落在本端进度之后时保持本地进度");
+    }
+
+    @Test
+    void alignRemoteTakesAZeroLengthStageAsItsOwnCoordinateFrame() {
+        ReloadJob job = humanJob(20, 1.0);
+        job.advance(20);
+
+        job.alignRemote(ReloadJob.Stage.MACHINE, 0, 0);
+        assertEquals(0, job.totalTicks(), "0 是时长，不表示字段还没到齐");
+        assertEquals(0, job.elapsedTicks());
+        assertEquals(1f, job.progress());
+        assertTrue(job.isComplete());
     }
 }

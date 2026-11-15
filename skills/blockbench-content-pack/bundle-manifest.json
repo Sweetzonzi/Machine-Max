@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-15",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "9b24bef5d468e0d2fbdb566b507ca855aa60894b",
+    "revision": "97950b2eaf681437d1c54c016482a8f17d33e49b",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -286,8 +286,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/ammo_loader_static_attr.schema.json",
-        "bytes": 5792,
-        "sha256": "50059ea8ee870eaa3bc6807e1dee8364b81a80d99adca832f107cf867caf0a0b"
+        "bytes": 5846,
+        "sha256": "77d8086b83dd5284149bba23172eedcd7dd8e553e66906a8ce7802f62479ba14"
       },
       {
         "path": "references/schemas/subsystem/static/ammo_rack_static_attr.schema.json",

@@ -18,9 +18,9 @@ import java.util.Optional;
  * <b>机械运行</b>段（{@code reload_time}），外加并发产能 {@code can_supply_multiple} 与两段各自的进度音效。
  * 库存与再生参数属于弹药架型号。
  * <p>
- * 机械段是一段正时长的流程：{@code reload_time} 必填且必须大于零。长度为 0 的段按"未配置"处理，
- * 而没有机械段的自动装弹机不能表达任何装填路径，因此在解码期就拒绝。人工段相反：0 表示全自动流程，
- * 只有负值或非有限值被拒绝。
+ * 两段都可以是零时长，含义各不相同：机械段写 0 表示本机构没有机械动作（弹链或弹匣直接接在枪上，
+ * 交付瞬时完成，节奏由上游弹药架的整批回充决定），人工段写 0 表示本型号走全自动流程。负值与非有限值
+ * 在解码期拒绝。
  * </p>
  */
 @Getter
@@ -67,7 +67,7 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         ).apply(instance, AmmoLoaderSoundAttr::new));
     }
 
-    /** 一整份交付的基准机械秒数（必填，必须大于零） */
+    /** 一整份交付的基准机械秒数（必填，非负；0 表示没有机械段，交付瞬时完成） */
     private final float reloadTime;
 
     /**
@@ -115,10 +115,10 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     }
 
     /**
-     * 边界校验：{@code basic_durability} 与 {@code reload_time} 必须是有限正数，{@code human_reload_time}
+     * 边界校验：{@code basic_durability} 必须是有限正数，{@code reload_time} 与 {@code human_reload_time}
      * 只能是有限非负数。
-     * 前者为零时机构一碰就毁，{@code reload_time} 为零时没有可执行的机械段——两者都不是合法配置；
-     * 人工段按装填计划 §9 第 4 条处理：显式的 0 表示"不配置人工段"，负值或非有限值是解码错误。
+     * 耐久为零时机构一碰就毁，不是合法配置；两个时长字段的 0 各有含义（没有机械段／没有人工段），
+     * 只有负值与非有限值是解码错误。
      */
     private static DataResult<AmmoLoaderSubsystemStaticAttr> validateAttributes(
             AmmoLoaderSubsystemStaticAttr attr) {
@@ -130,8 +130,8 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         if (!Float.isFinite(reloadTime)) {
             return DataResult.error(() -> "reload_time 必须是有限数，实际为 " + reloadTime);
         }
-        if (reloadTime <= 0f) {
-            return DataResult.error(() -> "reload_time 必须大于 0（零长度的机械段按未配置处理），实际为 " + reloadTime);
+        if (reloadTime < 0f) {
+            return DataResult.error(() -> "reload_time 不得为负（0 表示没有机械段），实际为 " + reloadTime);
         }
         float human = attr.humanReloadTime;
         if (!Float.isFinite(human)) {

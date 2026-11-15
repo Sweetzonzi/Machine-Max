@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobSync
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.syncher.EntityDataSerializer
 import net.minecraft.resources.ResourceLocation
@@ -77,6 +78,19 @@ object MMEntityDataSerializers {
     val OPTIONAL_AMMO_BELT: EntityDataSerializer<Optional<AmmoBelt>> =
         EntityDataSerializer.forValueType(ByteBufCodecs.optional(AmmoBelt.STREAM_CODEC))
 
+    /**
+     * 可空的装填作业快照（[ReloadJobSync]：编号、交付目标、实际来源、冻结规格、预留份额、进度基线、
+     * 本阶段时长与阶段）。
+     *
+     * 空值表示这一 tick 没有作业，用 [Optional.empty] 表达而不是在编号里占一个哨兵：编号是自增的
+     * 恒正量，而时长为 0 是合法配置（没有机械段的机构），写成"编号 0 表示无作业"会把这两件事绑在一起。
+     * 八项同批变化、客户端必须凑齐才能建作业，因此整包下发——逐项下发时"字段到齐没有"是可观察状态，
+     * 落地处就得为它写防御分支。
+     */
+    @JvmStatic
+    val OPTIONAL_RELOAD_JOB_SYNC: EntityDataSerializer<Optional<ReloadJobSync>> =
+        EntityDataSerializer.forValueType(ByteBufCodecs.optional(ReloadJobSync.STREAM_CODEC))
+
     init {
         MachineMax.REGISTER.entityDataSerializer<IAmmoSupplier.SupplierRef> {
             id = "supplier_ref"
@@ -93,6 +107,10 @@ object MMEntityDataSerializers {
         MachineMax.REGISTER.entityDataSerializer<Optional<AmmoBelt>> {
             id = "optional_ammo_belt"
             factory = { OPTIONAL_AMMO_BELT }
+        }
+        MachineMax.REGISTER.entityDataSerializer<Optional<ReloadJobSync>> {
+            id = "optional_reload_job_sync"
+            factory = { OPTIONAL_RELOAD_JOB_SYNC }
         }
     }
 }
