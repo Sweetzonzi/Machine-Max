@@ -205,7 +205,7 @@ io.github.sweetzonzi.machine_max/
 | 层 | 目录 | id | 承担 |
 | --- | --- | --- | --- |
 | L0 | `Machine-Max_Builtin` | `machine_max:builtin` | 引擎基元、子系统 / 连接器 / 材质 / 音效 / 粒子 / HUD、新人货架，以及货箱、黄金马桶等题材无关的独立成品件 |
-| L1 | `Machine-Max_Soviet_Basic_Kit` | `machine_max:soviet_basic_kit` | 苏系共用型谱：2A42 / 2A90 机关炮、2A46M 125mm 坦克炮、9M133 反坦克导弹、PKTM / NSVT 机枪与配套弹种 |
+| L1 | `Machine-Max_Soviet_Basic_Kit` | `machine_max:soviet_basic_kit` | 苏系共用型谱：2A42 / 2A90 机关炮、2A46M 125mm 坦克炮、9M133 反坦克导弹、PKTM / NSVT 机枪、Kontakt-5 反应装甲瓦（材质 `kontakt5` 与型号 `kontakt5_tile`）与配套弹种 |
 | L1 | `Machine-Max_German_Basic_Kit` | `machine_max:german_basic_kit` | 德系共用型谱：KwK39 50mm 火炮、MG34 机枪与配套弹种 |
 | L1 | `Machine-Max_US_Basic_Kit` | `machine_max:us_basic_kit` | 美系共用型谱：M256 120mm 坦克炮、M2HB 12.7mm 重机枪、M240 7.62mm 通用机枪、ARAT II 反应装甲瓦（材质 `arat_ii` 与型号 `arat_ii_tile`）、`abrams` FMOD bank 与配套弹种 |
 | L1 | `Machine-Max_China_Basic_Kit` | `machine_max:china_basic_kit` | 中系共用型谱：59 式 100mm 线膛炮、54 式 12.7mm 高射机枪、59 式 7.62mm 并列机枪与配套弹种；硬依赖苏系 kit，复用 12.7×108 / 7.62×54R 弹种 |
