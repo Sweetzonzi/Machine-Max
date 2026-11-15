@@ -14,8 +14,7 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/weapon",
-        "m1a2_sep:m153_crows",
-        "machine_max:series/m1a2"
+        "m1a2_sep:m153_crows"
       ],
       "sub_parts": {
         "sub_part.m1a2_sep.rws_yaw": {
