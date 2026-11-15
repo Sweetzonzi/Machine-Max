@@ -7,7 +7,7 @@
     notes/               参数与参考数据（*.txt、references/）
     changelog/           各版本更新说明（更新说明-*.txt）
 
-开发期验证报告不随包分发，保存在仓库 pack-reports/。
+参数台账与出处随包：`<namespace>/docs/notes/`（含 `references/sources.txt`）。下文各版本说明提到的 `*-report.json`、`validation.json` 与 `work/` 是当时的离线检查记录，不随仓库保留。
 
 ------------------------------------------------------------
 
@@ -232,25 +232,25 @@ Kontakt-5 外观对应的附加装甲独立承伤：车体各组 60×1.2 = 72 mm
 履带包络使用本地 Machine-Max BeltPath2D + OrderedBeltSolver，双侧路径长均约 16.66012 游戏米，各 89 节。
 原作几何回归核对、整车静态多视角观察、炮镜高低倍率及 16:9/4:3 布局预览完成。
 尚未做游戏内生成、悬挂落地、行驶、射击、多人交互和伤害实测。静态通过不代表这些效果已验收。
-详见 validation.json、integration-validation.json 和 references/sources.txt。
+参数与出处见 docs/notes/references/sources.txt。
 
 0.1.1 炮镜兼容验证
 已使用实际 ApricityUI 1.2.8 完成 11 组无界面布局/绑定检查，覆盖原截图分辨率、16:9、4:3、超宽屏、两档倍率、AP/HE 与装填状态。SVG 使用 AUI 自身解码器验证透明中心和不透明外缘。
-这些检查使用真实布局和绑定引擎，不是浏览器模拟；未包含游戏 OpenGL 最终绘制。详见 scope-fix-report.json。0.1.0 原包和炮镜资料保留在原版本 ZIP 与 backups/0.1.0-before-scope-fix。
+这些检查使用真实布局和绑定引擎，不是浏览器模拟；未包含游戏 OpenGL 最终绘制。0.1.0 原包和炮镜资料保留在原版本 ZIP 与 backups/0.1.0-before-scope-fix。
 
 0.1.2 开放席位、社区分划与独立爆反
 新增独立外置车长，原车长机枪席位显示为外置机枪手；旧席位内部 ID 保留以减小存档影响。两个开放席位的模型定位点为 [12,34,41] 与 [-12,34,39]，普通眼点由引擎加高 1.1 游戏米。四个交互入口互不重叠。
 建议更新后重启客户端并重新生成完整四席装配体核对；既有载具可能保留旧的座椅实例数据。
 炮塔左右爆反原有独立零件、单独碰撞、制造配方和外部固定连接保留；参照 2S38 附加装甲，伤害传递倍率设为 0.095，摧毁后为 0.015，堆叠上限 4。外部连接支持拆装与冲击断连；不声称实现逐砖爆炸反应装甲。
 社区分划来源：Da_SongSong“钢铁见证者”合集，经 WTLIKER 原帖链接从作者 WT Live 公开发布页取得。只转换 1G46 静态线段，不执行原包安装器，不导入 WT 弹道或自动抬炮代码。详细署名与原帖见 references/sources.txt。
-原生 AUI 校验见 community-reticle-report.json 和 work/scope-native-community.txt；游戏内四人同乘、射击和拆装仍待实测。
+原生 AUI 校验覆盖页面加载、绑定与倍率切换；游戏内四人同乘、射击和拆装仍待实测。
 
 0.1.3 双涂装
 采用用户提供的 俄罗斯_T90A1.6.bbmodel：第一张贴图为默认橄榄色，第二张为喷漆可切换的绿色涂装，名为 Z 的第三张贴图未采用。两张均为 512×512，逐像素保持原图。七个部件的涂装顺序均为 default → green → default，使用喷罐对准需要更换的部件切换；整车统一涂装需分别喷涂车体、炮塔和附加装甲。履带 fitting 使用第一张贴图，不参与部件喷漆切换。
 已同步整车与履带工程、默认物品图标；既有四席、武器、爆反配置、几何和 UV 保持不变。两种涂装已在 Blockbench 渲染核对，尚未实测游戏内喷漆操作。
 
 0.1.4 分区基甲、座圈和炮管
-参照 War Thunder 2.59.0.91，固定数据提交 1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f。完整层序、名义厚度、质量系数、法向代理 RHA 和模型参考倾角的计算分别列在 armor-update-report.json。未复现战雷的弹种差异、可变厚度网格或化学能防护算法。
+参照 War Thunder 2.59.0.91，固定数据提交 1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f。完整层序、名义厚度、质量系数、法向代理 RHA 和模型参考倾角见 materials/ufp_array.json、materials/turret_cheek_array.json 与 docs/notes/references/sources.txt 记录的固定提交。未复现战雷的弹种差异、可变厚度网格或化学能防护算法。
 座圈两端均为 integrity=100、impact_absorption=0.1、impact_reduction=8、impact_multiplier=1 的外部连接；可以受冲击断开，不要求先损毁。
 炮管新建独立 SubPart，用内部固定连接挂在俯仰架上，保留俯仰；主炮口和主炮发射器随炮管，炮镜与同轴机枪留在俯仰架。炮管命中箱绑定主炮发射器，可使其耐久独立降低并失效。仍沿用 2S38 的 Part 共享结构耐久，不宣称独立炮管结构血条；总质量、共享耐久与组合质心均不变。
 已有炮镜、四席、履带、武器参数、双涂装及车型简介保留。建议更新后重新生成完整装配体以建立新增炮管刚体。未启动游戏测试，未修改或替换任何模组 JAR。

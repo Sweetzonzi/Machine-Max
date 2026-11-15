@@ -1,0 +1,33 @@
+Type 59 参数与史料的公开来源
+最后更新：0.1.8
+
+本文件记录数值与外观的出处。标"游戏值"的条目取自 War Thunder Wiki，是本模组的适配值，
+不是实车测量结果。
+
+1. 装甲、火力与乘员的游戏数据
+   https://wiki.warthunder.com/unit/cn_type_59 （读取版本 2.59.0.92）
+   用途：100 mm 炮族、34 发主炮弹、4 名乘员、炮手 3.5×–7× 与车长 1×–5× 的观瞄倍率、
+   俯仰角 -5°–18°、机枪 600 发/分的游戏值，以及车体 100/80/45 与炮塔 200/155/65 的
+   名义装甲游戏参照。本包按分板标量 + 模型法线实现，不做容积防护分析。
+
+2. 光学家族参照
+   https://www.kotsch88.de/f_t-55a.htm
+   用途：苏式 T-54/55 光学家族的样式参照。它是相关家族资料，不是 59 式分划的直接证据；
+   本包的炮手与车长分划都是另画的示意分划（炮手 3.5×–7× 仅垂稳，车长 1×–5× 无稳定）。
+
+3. 车型史与总体布置
+   https://www.sastind.gov.cn/history/n152/n6760142/n6760146/n6760161/c6807606/content.html
+     用途：T-54A 引进与 1959 年首批国产化完成。
+   https://www.xinhuanet.com/politics/2017-07/17/c_1121332396.htm
+     用途：国产第一代主战坦克的定位。
+   https://museum.cmes.org/machinery/mechanism/detail/27f43ec93a00496899a3721f1e067ee4
+     用途：四人车组、100 mm 线膛炮、两挺 7.62 mm 与一挺 12.7 mm 机枪、铸造炮塔。
+   https://lewisarmymuseum.com/wp-content/uploads/2023/07/type-59-tank.pdf
+     用途：博物馆照片与布置标注；59-I 的观瞄升级不归到基本型 59。
+
+4. 仪表术语
+   https://djvu.online/file/ymDPTONdzn8o7 （1968 年 T-54/T-54A 修理手册）
+   用途：相关家族仪表名称对照。面板上右下那只仪表由用户认定为油量，用户判断优先于
+   早先的油压推测（见 dashboard-notes.txt）。
+
+本包质量、功率、伤害、备弹与再生补给都是游戏设置，见 huds/、subsystems/ 与 assemblies/ 下的数值。

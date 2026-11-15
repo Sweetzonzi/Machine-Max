@@ -43,7 +43,7 @@ WTLIKER：https://wtliker.com/resources/7706/
 
 7. 0.1.4 装甲游戏数据
 https://github.com/gszabi99/War-Thunder-Datamine/blob/1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f/aces.vromfs.bin_u/gamedata/units/tankmodels/ussr_t_90a.blkx
-War Thunder 2.59.0.91；固定提交与 SHA-256 见 armor-update-report.json。DamageParts 为标称碰撞材料数据，xrayTextThickness 为显示层序；本包把它们映射为标量近似，不把单层厚度×系数冒充完整区域防护。
+War Thunder 2.59.0.91；固定提交 1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f，该 blkx 的 SHA-256 为 55cdf81a49f341c06068908c780799f7460c523c824bf7195cebe4d451132a02。DamageParts 为标称碰撞材料数据，xrayTextThickness 为显示层序；本包把它们映射为标量近似，不把单层厚度×系数冒充完整区域防护。
 官方概览：https://wiki.warthunder.com/unit/ussr_t_90a （页面版本 2.59.0.86，仅交叉核对车型，数值实施使用上述固定 2.59.0.91 文件）。
 
 
@@ -62,3 +62,34 @@ https://archive.is/TruAx
 11. 车体侧裙挂板数量
 https://almapress.com.pl/index.php?controller=attachment&id_attachment=830
 波兰出版物的 T-90 结构与现代化章节：车体侧裙为橡胶裙板，前段挂三块 Kontakt-5 板。用于核对本包车体每侧 3 块瓦的划分与实车挂法一致。
+
+12. 并列与车顶机枪的产品页（弹药、射速、初速）
+https://roe.ru/pdfs/pdf_1064.pdf
+PKTM：7.62×54R、700–800 发/分、弹链 250 发、通用枪口初速 850 m/s。
+https://roe.ru/pdfs/pdf_2227.pdf
+Kord 系列：12.7×108、600–750 发/分、通用初速 820–860 m/s；该产品页含步兵枪架与北约弹种变型，两者的重量与 12.7×99 都不套用到本车。
+https://www.zid.ru/upload/iblock/1a9/040913.pdf
+厂家 2013-09-04 报纸：6P49 Kord 的车用与 PKTM 生产。
+用途：确认车长机枪按 Kord 12.7 / 并列 PKTM 7.62 配置。850 m/s 是通用枪械指标，不是本车 B-32 实测初速；游戏里的 2000 发是整车供应池，不是一条弹链的容量。
+
+13. 弹药与备弹的俄文资料
+https://roe.ru/pdfs/pdf_4437.pdf
+T90S 出口型：并列 2000 发、车顶 300 发。相关家族备弹量交叉核对，不主张每个 T-90A 生产批次都相同。
+https://ru.djvu.online/file/QZWepCuayfwyP
+《俄罗斯武器与技术（21 世纪百科）》第 XII 卷（2006）第 298–315 页：7BZ3/B-32 弹重 10.39 g、目录 V0 808 m/s、200 m 正射 10 mm 板；57BZ542/B-32 弹重 48.2 g、V0 818 m/s、100 m 正射 20 mm 板。
+用途：机枪弹重与参考穿板。目录 V0 是参考值而非本车测速；正射板厚取俄文原文（英文译本与之冲突），也不假设这种打靶能换算成 Minecraft 的 RHA。
+
+14. 车长镜 TKN-4S 的倍率与安装位置
+https://www.benning.army.mil/armor/eARMOR/content/issues/2001/SEP_OCT/ArmorSeptemberOctober2001web.pdf
+乘员布置与车长舱盖前观瞄的位置。
+https://nation.org.ua/wp-content/uploads/2017/03/Russian_arms_catalog.pdf
+Rosoboronexport 目录：PNK-4S 产品说明与日间倍率表。
+https://lib.sgugit.ru/irbisfulltext/2019/190307_%D0%95%D0%B3%D0%BE%D1%80%D0%B5%D0%BD%D0%BA%D0%BE.pdf
+СГУГиТ 2019 教材图 3.33：TKN-4S 的日间多倍、直视与夜间视场。1× 窗口与十字分划的形态取自这张图。
+https://agtf.ru/archives/3286
+T-90S 车长工位的实拍组图，用于确认镜头在舱盖前的位置。
+用途：确认 1×／8× 倍率与安装位置；分划仍是按照片与教材重画的示意分划，没有按本模组弹道标定。
+
+15. AP 后效说明
+https://wiki.warthunder.com/weapon/2544-tank-ammunition
+用途：理解 APFSDS 的关键模块后效。本包主炮 AP 的 1200 基础伤害与 280 mm 穿深是游戏适配值，不是该页面给出的数值。

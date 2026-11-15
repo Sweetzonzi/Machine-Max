@@ -1,0 +1,45 @@
+M1A2 SEP 参数与外观的公开来源
+最后更新：0.5.9
+
+本文件记录数值与外观的出处。凡标注"游戏适配"的条目都是本包的设计值，不是实车测量结果。
+
+1. 分区装甲与炮管数值的游戏数据
+   https://github.com/gszabi99/War-Thunder-Datamine/blob/e64d287d6223eba19fb9c8c02324090b25e533f2/aces.vromfs.bin_u/gamedata/units/tankmodels/us_m1a2_sep_abrams.blkx
+   War Thunder 2.59 系列，固定提交 e64d287d6223eba19fb9c8c02324090b25e533f2。
+   用途：车体与炮塔的分区层序、名义厚度、炮盾与炮管数值。本包把它们映射成标量 RHA 代理
+   （见 armor-parameters.txt），不复现弹种差异、可变厚度网格与化学能防护算法。
+
+2. AP 后效
+   https://wiki.warthunder.com/weapon/2544-tank-ammunition
+   用途：理解 APFSDS 的模块后效；本包 120 mm AP 的伤害与穿深是游戏适配值。
+
+3. ARAT 与复合装甲的公开说明
+   https://www.defense.gov/News/Article/Article/1105102/army-unit-bolsters-abrams-tanks-with-reactive-armor/
+     用途：ARAT 装在车体与炮塔两侧，针对 RPG 类威胁。
+   https://www.govinfo.gov/content/pkg/GOVPUB-Y10-PURL-gpo156595/pdf/GOVPUB-Y10-PURL-gpo156595.pdf
+     用途：Abrams 的复合装甲思路；不是 SEP 的精确厚度。
+   https://www.health.mil/Military-Health-Topics/Environmental-Exposures-Hub/Environmental-Exposures-Topics/Depleted-Uranium
+     用途：部分型号使用贫铀装甲；不足以假设整车都是贫铀。
+   https://www.asafm.army.mil/Portals/72/Documents/BudgetMaterial/2017/base%20budget/justification%20book/Weapons%20and%20Tracked%20Combat%20Vehicles.pdf
+     用途：装甲组件属保密项；公开资料无法确定分区厚度。
+   结论：本包的基甲是分区标量代理，不能当作实车防护分析。
+
+4. 炮镜与倍率
+   https://www.military-references.com/wp-content/uploads/books/tanks/usa/m1_abrams/M1_Abrams_Tank_Gunnery_FM_3-20_12_2001.pdf
+     用途：美军教范的视场样式；HUD 分划是游戏适配。
+   https://www.benning.army.mil/Armor/OCoA/content/References%20and%20Guides/Tank%20SOP%202015.pdf
+     用途：3× / 10× 的使用场景。
+   https://asc.army.mil/docs/pubs/alt/archives/2001/Nov-Dec_2001.pdf
+     用途：炮长镜的功能描述。
+   https://odin.t2com.army.mil/WEG/Asset/739fc6eb75d491d6704b7f265b2704b9
+     用途：装备说明条目，交叉核对镜体外观与功能。
+
+5. 炮镜外观的社区参照
+   https://wtliker.com/resources/3365/、原作者页 https://live.warthunder.com/post/889646/en/、https://wtliker.com/resources/3716/
+   用途：镜体与分划外观对照。没有执行原包安装器，没有导入其弹道或自动抬炮代码。
+
+6. 关节角度
+   https://github.com/bulletphysics/bullet3/blob/master/src/BulletDynamics/ConstraintSolver/btGeneric6DofSpring2Constraint.cpp
+   用途：确认 6DoF 弹簧约束的角度与限位语义（炮塔座圈、炮俯仰、舱盖等）。
+
+参考图片、原模型与社区分划的权利各归对应作者；本包只做游戏内适配。

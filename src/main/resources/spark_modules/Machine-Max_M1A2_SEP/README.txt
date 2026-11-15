@@ -7,7 +7,7 @@
     notes/               参数与参考数据（*.txt、references/）
     changelog/           各版本更新说明（更新说明-*.txt）
 
-开发期验证报告不随包分发，保存在仓库 pack-reports/。
+参数台账与出处随包：`<namespace>/docs/notes/`（含 `references/sources.txt`）。下文各版本说明提到的 `*-report.json`、`validation.json` 与 `work/` 是当时的离线检查记录，不随仓库保留。
 
 ------------------------------------------------------------
 
@@ -101,7 +101,7 @@ RWS 实际模型偏航 −137.5°～127.5°，共 265°，俯仰 −20°～55°�
 
 工程与核对
 
-Blockbench/M1A2_SEP.bbmodel 为原生工程；Blockbench/M1A2_track.bbmodel 为履带单节。orientation053-report.json 记录炮管朝上模式和动态旋转缓存修复；orientation051-report.json 记录初版宿主覆盖与离线检查；weapons050-report.json 记录 M240、三档控制、HUD、枪口及回归核对；历史报告仅代表对应版本。
+Blockbench/M1A2_SEP.bbmodel 为原生工程；Blockbench/M1A2_track.bbmodel 为履带单节。炮管朝上模式与动态旋转缓存修复、初版宿主覆盖与离线检查、M240 三档控制与 HUD 及枪口核对都记在下文各版本说明与 docs/notes/ 里；历史记录仅代表对应版本。
 完成原生插件、离线 schema/资源/信号路由、控制组状态与切换清除检查，以及 M240 枪口俯仰与遮挡核对。HUD 浏览器图片仅用于布局对照，没有游戏运行数据。未启动 Minecraft，尚未进行游戏内操控验收；模组 JAR 未修改。
 0.4.5 备份：backups/0.4.5-before-dual-coax/。
 

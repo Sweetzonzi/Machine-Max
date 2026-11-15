@@ -61,7 +61,7 @@ MM_TurretBustleRight: 47.05 mm RHA; m1a2_sep:m1a2_composite
 爆反瓦的等效装甲由材质 machine_max:arat_ii 固定：decay_rha 取 1.2，与 rha 相同，等效系数因此恒为 1.2，78 mm 不随附甲零件耐久衰减。penetration_modifiers 用加性：所有来源先吃 30 mm，爆炸/射流再吃 320 mm（合计 350）。它对两条路径同时生效：动能弹同时少 30 mm 的击穿判定与余速（120 mm / 125 mm / 57 mm 的击穿结论不变，30 mm AP 的 50 mm 本来也不到 78 mm）；射流按 350 mm 削减保留能量，500 mm 级射流穿过瓦后只剩约四成。炮塔附甲那 66 mm 仍按 m1a2_arat 的 decay_rha 0.2 随耐久衰减。
 ARAT 的爆炸伤害系数为 0.55，没有 HEAT 射流或串联判定；爆反失效不产生爆炸，因此没有自伤源与链式引爆。战雷的 450 mm 破甲防护不能直接作为 HE 爆炸防护。
 四块附加装甲的挂点取炮塔座圈同级参数：车体侧与附加装甲侧两端都是 integrity=2400、impact_absorption=1.0、impact_reduction=10、impact_multiplier=1。单发 50mm AP 命中附甲的生效冲击约 45，整块附甲要累计五十余发才会脱落；挂点脱落之前，被命中的爆反砖先按各自的灵敏度逐块失效。
-完整分区、计算口径和固定来源见 armor-parameters.txt、armor-barrel036-report.json。
+完整分区与计算口径以上文为准；固定来源（战雷数据文件的提交与文件）见 docs/notes/references/sources.txt。
 
 座圈与独立炮管
 
