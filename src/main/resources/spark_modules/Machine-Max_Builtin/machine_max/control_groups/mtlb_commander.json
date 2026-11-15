@@ -11,6 +11,9 @@
         "view_targets": {
             "crew_commander_aim": ["global"]
         },
+        "main_weapon_targets": {
+            "crew_commander_fire": ["global"]
+        },
         "secondary_weapon_targets": {
             "crew_commander_secondary_fire": ["global"]
         }
