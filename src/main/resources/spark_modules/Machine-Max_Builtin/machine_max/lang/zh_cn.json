@@ -60,5 +60,8 @@
   "subsystem.machine_max.container_16x16x32": "2SCU储物箱",
   "machine_max.research.reinforced_container_16x16x8": "1/2SCU强化储物箱",
   "machine_max.research.golden_closestool": "黄金马桶",
-  "machine_max.container_16x16x32": "2SCU储物箱"
+  "machine_max.container_16x16x32": "2SCU储物箱",
+  "controlGroup.machine_max.weapon_control": "武器控制",
+  "controlGroup.machine_max.backup_fire_control": "备用火控",
+  "controlGroup.machine_max.commander_override": "车长超控"
 }
