@@ -3,7 +3,7 @@
     "name": "controlGroup.m1a2_sep.commander_observe",
     "control_mode": "ground",
     "view_targets": {
-      "crew_commander_aim": [
+      "crew_any_aim": [
         "global"
       ],
       "crew_commander_aim_citv": [
@@ -23,56 +23,74 @@
     "secondary_weapon_targets": {
       "crew_commander_secondary_fire": [
         "global"
+      ],
+      "crew_any_secondary_fire": [
+        "global"
       ]
     }
   },
   "groups": [
     {
-      "name": "controlGroup.m1a2_sep.commander_override_main_gun",
+      "name": "controlGroup.m1a2_sep.commander_backup_fire",
       "control_mode": "inherit",
-      "main_weapon_targets": {
-        "crew_commander_fire": [
+      "view_targets": {
+        "crew_commander_aim": [
+          "global"
+        ],
+        "crew_commander_aim_coax762": [
+          "global"
+        ],
+        "crew_commander_aim_csamm": [
           "global"
         ]
       },
-      "priorities": {
-        "crew_commander_aim": 1,
-        "crew_commander_fire": 1
-      }
-    },
-    {
-      "name": "controlGroup.m1a2_sep.commander_override_coax762",
-      "control_mode": "inherit",
-      "view_targets": {
-        "crew_commander_aim_coax762": [
+      "main_weapon_targets": {
+        "crew_commander_fire": [
           "global"
         ]
       },
       "secondary_weapon_targets": {
         "crew_commander_secondary_fire_coax762": [
           "global"
+        ],
+        "crew_commander_secondary_fire_csamm": [
+          "global"
         ]
-      },
-      "priorities": {
-        "crew_commander_aim_coax762": 1,
-        "crew_commander_secondary_fire_coax762": 1
       }
     },
     {
-      "name": "controlGroup.m1a2_sep.commander_override_csamm",
+      "name": "controlGroup.m1a2_sep.commander_override",
       "control_mode": "inherit",
       "view_targets": {
+        "crew_commander_aim": [
+          "global"
+        ],
+        "crew_commander_aim_coax762": [
+          "global"
+        ],
         "crew_commander_aim_csamm": [
           "global"
         ]
       },
+      "main_weapon_targets": {
+        "crew_commander_fire": [
+          "global"
+        ]
+      },
       "secondary_weapon_targets": {
+        "crew_commander_secondary_fire_coax762": [
+          "global"
+        ],
         "crew_commander_secondary_fire_csamm": [
           "global"
         ]
       },
       "priorities": {
+        "crew_commander_aim": 1,
+        "crew_commander_aim_coax762": 1,
         "crew_commander_aim_csamm": 1,
+        "crew_commander_fire": 1,
+        "crew_commander_secondary_fire_coax762": 1,
         "crew_commander_secondary_fire_csamm": 1
       }
     }

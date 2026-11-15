@@ -10,11 +10,11 @@
         "global"
       ]
     },
-    "main_weapon_targets": {
+    "main_weapon_targets": {},
+    "secondary_weapon_targets": {
       "crew_loader_fire_port_mg": [
         "global"
       ]
-    },
-    "secondary_weapon_targets": {}
+    }
   }
 }

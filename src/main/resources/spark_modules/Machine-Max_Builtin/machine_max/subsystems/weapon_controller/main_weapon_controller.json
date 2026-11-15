@@ -4,15 +4,13 @@
   "basic_durability": 20,
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "fire_mode": "SALVO", //(可选, 默认SALVO)射击模式: SALVO(齐射) / RIPPLE(轮射)
-  "aim_inputs": [ //瞄准输入：默认操作者在前，接管方在后，any 兜底；优先级由信号自带的越级量决定
+  "aim_inputs": [ //瞄准输入：默认操作者在前，接管方在后；本车主炮只认本车的炮长与车长，加装件才走 crew_any_*
     "crew_gunner_aim",
-    "crew_commander_aim",
-    "crew_any_aim"
+    "crew_commander_aim"
   ],
-  "fire_inputs": [ //开火输入，先后同上
+  "fire_inputs": [ //开火输入，先后同上；开火同样只认本车的炮长与车长
     "crew_gunner_fire",
-    "crew_commander_fire",
-    "crew_any_fire"
+    "crew_commander_fire"
   ],
   "aim_tolerance_deg": 60.0 //(可选, 默认3.0)瞄准容差角度(°)。发射器指向与目标偏差小于此值时允许开火，设为大于180(如360)则禁用容差检查
 }

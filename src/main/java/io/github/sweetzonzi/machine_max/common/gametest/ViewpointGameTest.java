@@ -167,7 +167,8 @@ public final class ViewpointGameTest {
         var server = helper.getLevel().getServer();
         Vec3 point = new Vec3(50, 30, -100);
         Vec2 relative = new Vec2(.1f, .2f);
-        controller.getSignalChannel("crew_any_aim").put(controller,
+        // 主炮只认岗位频道，这里用默认操作者的那条驱动第一段。
+        controller.getSignalChannel("crew_gunner_aim").put(controller,
                 new ViewInputSignal(point, relative, AimTargetState.Mode.RELATIVE));
         CompletableFuture<Void> result = physics(controller, () -> {
             for (var driver : drivers) {
@@ -202,8 +203,9 @@ public final class ViewpointGameTest {
                 }
             }
         }).thenComposeAsync(ignored -> {
+            // 接管来源排在同一列表的第二档，压过第一档只能靠越级量。
             controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
-                    new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD));
+                    new ViewInputSignal(point, Vec2.ZERO, AimTargetState.Mode.WORLD, 1));
             return physics(controller, () -> {
                 subsystems.prePhysicsTick();
                 for (var driver : drivers) {
@@ -212,11 +214,11 @@ public final class ViewpointGameTest {
             });
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
-                    new ViewInputSignal(point, relative, AimTargetState.Mode.PITCH_STABLE));
+                    new ViewInputSignal(point, relative, AimTargetState.Mode.PITCH_STABLE, 1));
             return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, false));
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(),
-                    new ViewInputSignal(point, relative, AimTargetState.Mode.YAW_STABLE));
+                    new ViewInputSignal(point, relative, AimTargetState.Mode.YAW_STABLE, 1));
             return physics(controller, () -> verifyMixedAxes(helper, subsystems, drivers, point, relative, true));
         }, server).thenComposeAsync(ignored -> {
             controller.getSignalChannel("crew_commander_aim").put(drivers.getFirst(), EmptySignal.INSTANCE);
@@ -228,7 +230,7 @@ public final class ViewpointGameTest {
                 }
             });
         }, server).thenComposeAsync(ignored -> {
-            controller.getSignalChannel("crew_any_aim").put(controller, EmptySignal.INSTANCE);
+            controller.getSignalChannel("crew_gunner_aim").put(controller, EmptySignal.INSTANCE);
             return physics(controller, () -> {
                 subsystems.prePhysicsTick();
                 for (var driver : drivers) {

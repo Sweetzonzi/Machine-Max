@@ -3,13 +3,18 @@ package io.github.sweetzonzi.machine_max.common.gametest;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
@@ -21,8 +26,10 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * M1A2 SEP 炮塔上每个机枪挂载的控制器与自动装弹机只连自己那根管。
@@ -95,6 +102,188 @@ public final class M1A2MountWiringGameTest {
             helper.succeed();
         } finally {
             vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /**
+     * 遥控武器站的瞄准与开火走同一对挂点：控制器在炮塔零件里，方位与俯仰驱动器在武器站零件里，
+     * 中间那一跳只能落在挂点连接对上。{@code aim_drive_rws} 因此必须恰好到达这两台驱动器——
+     * 到达别的驱动器，或者一台都到不了，都会在游戏里表现为「武器站不转」。
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void rwsAimCrossesTheMountConnector(GameTestHelper helper) {
+        RegularPartType type = PartDefinitions.regular(false)
+                .get(ResourceLocation.parse("m1a2_sep:m1a2_turret"));
+        helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        RegularPart rws = attachRws(helper, vehicle, part);
+        try {
+            Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            byName.putAll(collectSubsystems(rws));
+            AbstractSubsystem controller = require(helper, byName, "subsystem.m1a2_sep.rws_controller");
+            AbstractSubsystem yawDriver = require(helper, byName, "subsystem.m1a2_sep.rws_yaw_driver");
+            AbstractSubsystem pitchDriver = require(helper, byName, "subsystem.m1a2_sep.rws_pitch_driver");
+
+            assertAimReachesStation(helper, controller, yawDriver, pitchDriver);
+            // 结构变化后首跳表整体重建、发现重做，接线结果必须与初次装车一致。
+            vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+            assertAimReachesStation(helper, controller, yawDriver, pitchDriver);
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    private static void assertAimReachesStation(GameTestHelper helper, AbstractSubsystem controller,
+                                                AbstractSubsystem yawDriver, AbstractSubsystem pitchDriver) {
+        List<ISignalReceiver> terminals = new ArrayList<>();
+        controller.resolveTargets("aim_drive_rws").values().forEach(terminals::addAll);
+        helper.assertTrue(terminals.size() == 2,
+                controller.name + " 的 aim_drive_rws 应恰好到达两台驱动器，实际 " + addresses(terminals));
+        helper.assertTrue(terminals.contains(yawDriver), "aim_drive_rws 必须到达武器站的方位驱动器");
+        helper.assertTrue(terminals.contains(pitchDriver), "aim_drive_rws 必须到达武器站的俯仰驱动器");
+    }
+
+    /**
+     * 火控终端是一个独立的单连接点零件：它没有自己的枪与驱动器，靠广播认领同装配体里接受这些频道的执行器。
+     * 用例验零件本身装得起来——几何里的碰撞骨与挂点定位器都在、型号建出武器控制器、两条输出频道都指向装配体总线。
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void terminalPartMountsAndBroadcasts(GameTestHelper helper) {
+        RegularPartType type = PartDefinitions.regular(false)
+                .get(ResourceLocation.parse("m1a2_sep:m153_crows_terminal"));
+        helper.assertTrue(type != null, "M153 CROWS 火控终端的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, null, helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            SubPart main = part.subParts.get("sub_part.m1a2_sep.main");
+            helper.assertTrue(main != null, "火控终端必须只有一个主零件");
+            helper.assertTrue(!main.hitBoxes.isEmpty(), "几何里的碰撞骨必须建成碰撞箱");
+            helper.assertTrue(main.connectors.containsKey("connector.m1a2_sep.crows_terminal_mount"),
+                    "火控终端必须有挂点连接点");
+            AbstractSubsystem subsystem = require(helper, collectSubsystems(part),
+                    "subsystem.m1a2_sep.crows_terminal");
+            helper.assertTrue(subsystem instanceof WeaponControllerSubsystem,
+                    "火控终端持有的必须是武器控制器子系统，实际 " + subsystem.getClass().getSimpleName());
+            Map<String, List<String>> targets = subsystem.getTargetNames();
+            helper.assertTrue(List.of("global").equals(targets.get("aim_drive_rws")),
+                    "aim_drive_rws 必须广播到装配体，实际 " + targets.get("aim_drive_rws"));
+            helper.assertTrue(List.of("global").equals(targets.get("weapon.mg.m2hb")),
+                    "weapon.mg.m2hb 必须广播到装配体，实际 " + targets.get("weapon.mg.m2hb"));
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /**
+     * 车长座的三层分工：默认只驱动武器站，备用组连带主炮与并列机枪但不带越级量，超控组带 1 压过炮长。
+     *
+     * <p>主炮控制器 {@code machine_max:main_weapon_controller} 的瞄准与开火列表只有
+     * {@code crew_gunner_*} 与 {@code crew_commander_*}：通用频道一旦回到列表里，
+     * 任何座位都能把炮塔带走。因此车长的默认组只发 {@code crew_any_aim} 与
+     * {@code crew_any_secondary_fire}——武器站与加装件认这两条；{@code crew_commander_aim}
+     * 与 {@code crew_commander_fire} 只出现在备用组与超控组。</p>
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void commanderTiersSplitCrowsBackupAndOverride(GameTestHelper helper) {
+        RegularPartType type = PartDefinitions.regular(false)
+                .get(ResourceLocation.parse("m1a2_sep:m1a2_turret"));
+        helper.assertTrue(type != null, "M1A2 SEP 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            AbstractSubsystem seat = require(helper, byName, "subsystem.m1a2_sep.commander_seat");
+            WeaponControllerSubsystem mainGun =
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.main_weapon");
+            WeaponControllerSubsystem crows =
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.rws_controller");
+
+            // 主炮只认本车的炮长与车长：列表里带通用频道时，任何座位都能凭它把炮塔带走。
+            helper.assertTrue(!mainGun.getAcceptedChannels().contains("crew_any_aim"),
+                    "主炮控制器不得接受 crew_any_aim：那等于把炮塔交给任何座位");
+            helper.assertTrue(!mainGun.getAcceptedChannels().contains("crew_any_fire"),
+                    "主炮控制器不得接受 crew_any_fire：那等于让任何座位都能开这一炮");
+
+            ControlGroupSet groups = ((AbstractControllableSubsystem) seat).getControlGroupSet();
+            ControlGroup base = groups.baseGroup;
+            helper.assertTrue(!base.viewTargets.containsKey("crew_commander_aim"),
+                    "车长基础组不得发 crew_commander_aim：主炮控制器认这条频道，炮塔会跟着车长的默认视角转");
+            assertDrives(helper, "车长基础组", base, crows, true);
+            assertDrives(helper, "车长基础组", base, mainGun, false);
+            // 加装件只认通用频道，默认组必须把它们广播出去。
+            helper.assertTrue(base.viewTargets.containsKey("crew_any_aim"),
+                    "车长基础组必须广播 crew_any_aim，加装的武器站靠它跟随");
+            helper.assertTrue(base.secondaryWeaponTargets.containsKey("crew_any_secondary_fire"),
+                    "车长基础组必须广播 crew_any_secondary_fire，加装的武器站靠它开火");
+
+            // 车长只要三个组：默认 + 备用火控 + 超控，后两个都要能带动全部武器。
+            helper.assertTrue(groups.groups.size() == 2,
+                    "车长预设只应有备用火控与超控两个子组，实际 " + groups.groups.size());
+            WeaponControllerSubsystem coax762 =
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.coax_762_controller");
+            WeaponControllerSubsystem csamm =
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.coax_controller");
+            List<WeaponControllerSubsystem> allWeapons = List.of(crows, mainGun, coax762, csamm);
+
+            // 备用火控：武器站与主炮／机枪一起动，不带越级量——炮长在位时由炮长优先。
+            ControlGroup backup = group(groups, "controlGroup.m1a2_sep.commander_backup_fire");
+            helper.assertTrue(backup != null, "车长预设必须带备用火控组");
+            for (WeaponControllerSubsystem weapon : allWeapons) {
+                assertDrives(helper, "备用火控组", backup, weapon, true);
+            }
+            helper.assertTrue(backup.priorities.isEmpty(),
+                    "备用火控组不得带越级量：它只在炮长缺席时生效，抢不走在位的炮长");
+
+            // 超控：同样的频道与目标，越级量 1 才压得过炮长。
+            ControlGroup override = group(groups, "controlGroup.m1a2_sep.commander_override");
+            helper.assertTrue(override != null, "车长预设必须带超控组");
+            for (WeaponControllerSubsystem weapon : allWeapons) {
+                assertDrives(helper, "超控组", override, weapon, true);
+            }
+            for (String channel : List.of("crew_commander_aim", "crew_commander_aim_coax762",
+                    "crew_commander_aim_csamm", "crew_commander_fire",
+                    "crew_commander_secondary_fire_coax762", "crew_commander_secondary_fire_csamm")) {
+                helper.assertTrue(override.priorities.getOrDefault(channel, 0) == 1,
+                        "超控组必须给 " + channel + " 写越级量 1，否则压不过炮长");
+            }
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /** 按控制组名取子组，缺省返回 null。 */
+    private static ControlGroup group(ControlGroupSet groups, String name) {
+        for (ControlGroup group : groups.groups) {
+            if (group.name.equals(name)) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 该组发出的瞄准与开火频道是否命中这台控制器的输入列表。
+     *
+     * <p>只比频道名，不跑信号：控制组的输出表就是它会发的全部频道，接收者列表就是它认的全部频道，
+     * 两者交集为空即"这个组永远驱动不了这台控制器"。空表按不相交处理。</p>
+     */
+    private static void assertDrives(GameTestHelper helper, String label, ControlGroup group,
+                                     WeaponControllerSubsystem controller, boolean expected) {
+        Set<String> emitted = new LinkedHashSet<>();
+        emitted.addAll(group.viewTargets.keySet());
+        emitted.addAll(group.mainWeaponTargets.keySet());
+        emitted.addAll(group.secondaryWeaponTargets.keySet());
+        emitted.retainAll(controller.getAcceptedChannels());
+        if (expected) {
+            helper.assertTrue(!emitted.isEmpty(),
+                    label + " 必须命中 " + controller.name + " 的输入列表，实际没有一条共同的频道");
+        } else {
+            helper.assertTrue(emitted.isEmpty(),
+                    label + " 不得命中 " + controller.name + "，实际共同频道 " + emitted);
         }
     }
 
