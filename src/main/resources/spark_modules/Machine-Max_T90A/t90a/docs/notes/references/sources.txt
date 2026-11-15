@@ -45,3 +45,20 @@ WTLIKER：https://wtliker.com/resources/7706/
 https://github.com/gszabi99/War-Thunder-Datamine/blob/1cdfd2c628f07c9b64e13ef69abd0ffda6c2d10f/aces.vromfs.bin_u/gamedata/units/tankmodels/ussr_t_90a.blkx
 War Thunder 2.59.0.91；固定提交与 SHA-256 见 armor-update-report.json。DamageParts 为标称碰撞材料数据，xrayTextThickness 为显示层序；本包把它们映射为标量近似，不把单层厚度×系数冒充完整区域防护。
 官方概览：https://wiki.warthunder.com/unit/ussr_t_90a （页面版本 2.59.0.86，仅交叉核对车型，数值实施使用上述固定 2.59.0.91 文件）。
+
+
+8. Kontakt-5 公开说明（2026-11）
+http://aux.ciar.org/~ttk/mbt/fofanov/armor.kiev.ua/fofanov/Tanks/EQP/kontakt5.html
+Fofanov 的 Kontakt-5 专页：迎弹面为 15 mm 硬钢，长杆弹损失三成以上侵彻潜力。用于确认「对动能弹也有效」这一点，没有用于反推本包的标量数值。
+
+9. NII Stali 数据的二手转述
+https://forum.warthunder.com/t/pantsir-sm-sv-all-in-one/312016/154
+论坛帖转述的厂家口径：对 RPG/ATGM 400–500 mm，对破甲弹 200–250 mm，对 APFSDS 侵彻潜力 -20%。只作为 450 mm 化学能等效的量级对照；口径与破甲弹并不等价，因此未直接采用上限。
+
+10. 4S22 元件尺寸估算
+https://archive.is/TruAx
+旧式 K-5 元件尺寸与质量的讨论（约 10.5×23×7 cm、单块约 10 kg、4S22 装药约 330 g TNT 当量）。仅用于确认瓦是「独立小块」而不是整面装甲，未进入游戏数值。
+
+11. 车体侧裙挂板数量
+https://almapress.com.pl/index.php?controller=attachment&id_attachment=830
+波兰出版物的 T-90 结构与现代化章节：车体侧裙为橡胶裙板，前段挂三块 Kontakt-5 板。用于核对本包车体每侧 3 块瓦的划分与实车挂法一致。

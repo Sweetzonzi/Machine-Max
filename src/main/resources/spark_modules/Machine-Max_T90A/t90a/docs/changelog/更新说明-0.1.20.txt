@@ -1,0 +1,19 @@
+0.1.20 附加装甲改为逐块爆反
+
+车体首上、车体两侧、炮塔两侧的附加装甲从「整个零件一个命中箱」改为逐块瓦：车首 6 块、车体左侧 3 块、右侧 3 块、炮塔左侧 7 块、炮塔右侧 7 块，共 26 块。每块一个可见骨骼、一个命中骨骼、一条 hitbox 与一个 machine_max:reactive_armor 子系统实例（型号 machine_max:kontakt5_tile）；hitbox 的 condition 绑定该实例的存活状态，那次命中把瓦打掉之后，同一位置只剩底衬与后面的车体装甲。
+
+炮塔前部四片窄瓦合为一块：它们装在同一段安装面上，命中任一片表现一致，拆成四个子系统只会把炮塔正面判定切碎。合并后由一块 subsystem 与一个可见骨骼覆盖四片，整段一起消失。
+
+每个零件另有一条无条件生效的底衬命中箱（machine_max:structural_steel，10 mm），代表挂架、背板与安装结构，瓦被打掉后仍在原位。
+
+材质改用苏系基础包的 machine_max:kontakt5：板厚 30 mm、rha 1.7、对动能弹加性 -70（合计 121 mm）、对化学能再加 -400（合计 451 mm）；rha 与 decay_rha 同为 1.7，单块瓦的等效厚度不随零件耐久衰减。车包本地的 t90a:kontakt5（60/75 mm 板厚、rha 1.2、无穿深修正）删除，四个附加装甲零件全部改引新材质。
+
+瓦的失效只由 trigger_penetration 50 mm 判定：命中上下文的穿深达到 50 mm 就把该瓦的子系统归零，低于阈值不消耗瓦。
+
+挂点耐久：模块侧（t90a:armor_front / armor_left / armor_right）与车体、炮塔侧（connector.t90a.hull_era_* / turret_era_*）的连接点统一为 integrity 2400、impact_absorption 0.1、impact_reduction 8。一发 125 mm AP 对爆反的冲击是 1200 × 0.55 = 660，扣掉减免与吸收只磨掉 65 完整度，要连续三十余发才会断；单发击落需要 2408 以上的冲击，即重爆炸或高速碰撞。模块耐久归零后按 impact_absorption_destroyed 的默认 2.0 计算，两发脱落。
+
+失效表现：新增 t90a/animations/part/t90a_era/t90a_era.animation.json，一条 loop 动画把 26 个可见骨骼的 scale 绑到 !local.subsystem_destroyed(...)，子系统被摧毁时砖块缩到自己的骨骼轴心消失。可见骨骼与命中骨骼一一对应（MM_<变体>_NN 与 MM_Hit_<变体>_NN），动画与命中箱条件读同一个子系统，所以「看不见」与「打不到」同步发生。
+
+迁移：零件类型 id、标签、连接点、质量与耐久未变，装配体与蓝图不需要重新生成；已有车辆在下次加载时按新的命中箱与子系统实例结算。研发进度不受影响。
+
+未做游戏内实测。Blockbench 校验 0 问题、允许导出；导出后命中箱键与 geo 骨骼一一对应；gradlew checkContent 通过。数值来源与映射见 t90a/docs/notes/反应装甲参数.txt。

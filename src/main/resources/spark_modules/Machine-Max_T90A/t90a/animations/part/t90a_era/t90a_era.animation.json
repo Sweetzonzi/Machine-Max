@@ -1,0 +1,92 @@
+// 爆反瓦被摧毁后整块消失：每块瓦绑定一个 machine_max:reactive_armor 子系统，
+// 达到触发阈值的命中把子系统归零，对应的可见骨骼整体缩放到 0，露出后面的挂架与车体/炮塔装甲。
+// 碰撞判定不依赖这里——hit_boxes 的 condition 读的是同一个子系统。
+// 可见骨骼与命中骨骼一一对应：MM_<变体>_NN 是可见砖块，MM_Hit_<变体>_NN 是判定体。
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"MM_hull_era_front_01": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_01')"
+				},
+				"MM_hull_era_front_02": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_02')"
+				},
+				"MM_hull_era_front_03": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_03')"
+				},
+				"MM_hull_era_front_04": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_04')"
+				},
+				"MM_hull_era_front_05": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_05')"
+				},
+				"MM_hull_era_front_06": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_06')"
+				},
+				"MM_hull_era_left_01": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_01')"
+				},
+				"MM_hull_era_left_02": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_02')"
+				},
+				"MM_hull_era_left_03": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_03')"
+				},
+				"MM_hull_era_right_01": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_01')"
+				},
+				"MM_hull_era_right_02": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_02')"
+				},
+				"MM_hull_era_right_03": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_03')"
+				},
+				"MM_turret_era_left_01": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_01')"
+				},
+				"MM_turret_era_left_02": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_02')"
+				},
+				"MM_turret_era_left_03": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_03')"
+				},
+				"MM_turret_era_left_04": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_04')"
+				},
+				"MM_turret_era_left_05": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_05')"
+				},
+				"MM_turret_era_left_06": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_06')"
+				},
+				"MM_turret_era_left_07": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_07')"
+				},
+				"MM_turret_era_right_01": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_01')"
+				},
+				"MM_turret_era_right_02": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_02')"
+				},
+				"MM_turret_era_right_03": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_03')"
+				},
+				"MM_turret_era_right_04": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_04')"
+				},
+				"MM_turret_era_right_05": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_05')"
+				},
+				"MM_turret_era_right_06": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_06')"
+				},
+				"MM_turret_era_right_07": {
+					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_07')"
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,134 @@
+T-90A 附加装甲（Kontakt-5）参数与命中箱划分
+最后更新：0.1.20
+
+一、数值
+
+材质 machine_max:kontakt5，定义在苏系基础包（Machine-Max_Soviet_Basic_Kit）。
+  thickness 30 mm（每块瓦的板厚，写在命中箱上）
+  armor.rha 1.7（与 War Thunder ERA_K_V 的 genericArmorQuality 同值）
+  armor.decay_rha 1.7（等于 rha：单块瓦的等效厚度恒定，不随附加装甲零件的耐久衰减；失效由子系统判定）
+  armor.penetration_modifiers 两条加性修正：
+      add -70，无条件生效
+      add -400，条件为伤害类型 machine_max:blast 或伤害标签 minecraft:is_explosion
+  armor.impact_modifiers：乘法 0.55（与 machine_max:rha 同口径的碰撞冲击折减）
+  armor.unpen_power 0：未击穿不产生钝伤
+
+单块瓦的等效防护 = 板厚 × rha + 加性修正：
+  对动能弹 30 × 1.7 + 70 = 121 mm
+  对化学能 30 × 1.7 + 70 + 400 = 451 mm
+
+War Thunder 的 ERA_K_V 四个数组（车首 8 块、车体侧 6 块、炮塔前 8 块、炮塔顶 6 块）给出的原始值相同：
+  kineticProtectionEquivalent 120、cumulativeProtectionEquivalent 450
+  armorThickness 20（车体）或 30（炮塔）、genericArmorQuality 1.7
+本包把板厚统一取 30 mm：板本体 30 × 1.7 = 51，120 - 51 = 69 记作 70、450 - 51 = 399 记作 400，
+写成两条加性修正，于是单块落到 121 / 451。
+
+子系统型号 machine_max:kontakt5_tile，同样在苏系基础包。
+  type machine_max:reactive_armor
+  basic_durability 8（只是存活位：达到阈值的一次命中把它归零，没有按伤害递减的中间态）
+  pass_damage false（拦下的命中不把伤害转给零件）
+  hidden false（损坏状态在 HUD 可见）
+  trigger_penetration 50（单位 mm；比较用命中上下文里的原始穿深）
+
+二、无条件底衬
+
+每块附加装甲零件除了逐块瓦之外，还有一个不带 condition、不带 subsystem 的命中箱，材质
+machine_max:structural_steel、thickness 10 mm。它在瓦被打掉之后仍然存在，代表挂架、
+背板与车体/炮塔上的安装结构。底衬的几何是瓦后方的那层薄板或整片挂架，与瓦的碰撞体在空间上
+重叠，但两者在配置里是两个命中箱条目，各自独立结算：
+
+  MM_Hit_hull_era_rack        车体首上，两片横贯整排的挂板
+  MM_Hit_hull_era_rack_left   车体左侧，一片贯穿三块瓦的薄板
+  MM_Hit_hull_era_rack_right  车体右侧，同上
+  MM_Hit_turret_era_rack_left  炮塔左侧后段小挂板
+  MM_Hit_turret_era_rack_right 炮塔右侧后段小挂板
+
+三、逐块划分
+
+每块瓦是「一对骨骼」：MM_<变体>_NN 放可见砖块，MM_Hit_<变体>_NN 放碰撞体（UV 清空，
+不参与绘制）。命中箱条目用 condition 绑定子系统存活状态，瓦的系统被摧毁后该条目失效，
+弹丸继续打在后面的底衬或车体/炮塔装甲上。
+
+车体首上 sub_part.t90a.hull_era_front（7 条：1 底衬 + 6 瓦）
+  MM_Hit_hull_era_rack       底衬，无条件
+  MM_Hit_hull_era_front_01   下排（z≈-27）左侧      subsystem.t90a.hull_era_front_01
+  MM_Hit_hull_era_front_02   下排右侧               subsystem.t90a.hull_era_front_02
+  MM_Hit_hull_era_front_03   上排（z≈-17）最左      subsystem.t90a.hull_era_front_03
+  MM_Hit_hull_era_front_04   上排左中              subsystem.t90a.hull_era_front_04
+  MM_Hit_hull_era_front_05   上排右中              subsystem.t90a.hull_era_front_05
+  MM_Hit_hull_era_front_06   上排最右              subsystem.t90a.hull_era_front_06
+
+车体左侧 sub_part.t90a.hull_era_left（4 条：1 底衬 + 3 瓦）
+  MM_Hit_hull_era_rack_left  底衬，无条件
+  MM_Hit_hull_era_left_01    最前一块（z 由 -26 起）   subsystem.t90a.hull_era_left_01
+  MM_Hit_hull_era_left_02    中间一块                subsystem.t90a.hull_era_left_02
+  MM_Hit_hull_era_left_03    最后一块                subsystem.t90a.hull_era_left_03
+
+车体右侧 sub_part.t90a.hull_era_right（4 条：1 底衬 + 3 瓦）
+  骨骼名与左侧同构，left 段写作 right；子系统 id 同规则，编号与左侧镜像一致。
+
+炮塔左侧 sub_part.t90a.turret_era_left（8 条：1 底衬 + 7 瓦）
+  MM_Hit_turret_era_rack_left  底衬，无条件
+  MM_Hit_turret_era_left_01    前部四块小瓦合为一块   subsystem.t90a.turret_era_left_01
+  MM_Hit_turret_era_left_02…07 六块主砖（1.5×9.5×6.5 与 1.5×6×6.5 交替）
+                               各自的 subsystem.t90a.turret_era_left_0N
+
+  小瓦合并的理由：前部四片是同一段安装面上的四块窄瓦，打在任意一片上表现一致，拆成四个
+  子系统会让炮塔正面的判定碎得没有意义。合并后一块 subsystem 覆盖四片，可见骨骼
+  MM_turret_era_left_01 也把四片放在一起，整段一起消失。
+
+炮塔右侧 sub_part.t90a.turret_era_right（8 条：1 底衬 + 7 瓦）
+  骨骼名与子系统 id 同左侧规则，left 段写作 right；编号与左侧镜像一致。
+
+命中箱条目的 id 全部写 part：同一次攻击不会重复命中同一 id 的多个碰撞体，因此一发弹丸
+最多打掉一块瓦。
+
+四、失效表现（动画）
+
+t90a/animations/part/t90a_era/t90a_era.animation.json 里有一条 loop:true 的 parallel0，
+对 26 个可见骨骼逐个写 scale = !local.subsystem_destroyed('…')：子系统存活时缩放 1，
+被摧毁时缩放 0，砖块整体缩到骨骼轴上消失。骨骼轴心取砖块中心，所以过渡是砖块从中心
+缩掉，不是飞走。
+
+与判定的一致性：动画读的子系统与 hitbox 的 condition 是同一个，因此「看不见」与「打不到」
+同步发生。动画只在客户端播放，服务端的判定不依赖它。
+
+五、与 M1A2 的对照
+
+  M1A2（machine_max:arat_ii，单条 65 mm × 1.2 + 30 = 108 动能 / +350 = 428 化学能）
+  T-90A（machine_max:kontakt5，单条 30 mm × 1.7 + 70 = 121 动能 / +400 = 451 化学能）
+
+两者都是「一块瓦 = 一对骨骼 = 一个子系统 + 一条无条件底衬 + loop 动画缩放到 0」的结构。
+M1A2 车体侧每侧 13 块，T-90A 车体侧每侧 3 块、炮塔侧 7 块，块数由模型几何与实车挂法决定。
+
+六、挂点耐久
+
+附加装甲的挂点由两侧各一个连接点组成：模块侧 t90a:armor_front / armor_left / armor_right，
+车体或炮塔侧 connector.t90a.hull_era_* / connector.t90a.turret_era_*（覆写自
+machine_max:fixed_front / fixed_left / fixed_right）。两侧统一写成：
+
+  integrity 2400
+  impact_absorption 0.1
+  impact_reduction 8
+  impact_multiplier 1（未写，取默认）
+
+冲击怎么来：impact = 命中箱的 baseDamage 经材质 impact_modifiers 折减，爆反材质是 ×0.55。
+连接点再算 applied = (impact - 8) × 1；applied 达到剩余完整性就整块脱落，否则完整性减去
+0.1 × applied。一发 125 mm AP 是 1200 × 0.55 = 660 冲击，applied 652，扣 65.2：
+
+  125 mm AP        约 36 发才磨穿挂点
+  125 mm HE        每发扣 5.8，几乎不影响
+  12.7 mm 机枪      每发扣 0.5，可以忽略
+  单发直接击落      需要 impact ≥ 2408，相当于 baseDamage ≥ 4378 的命中（重爆炸或高速碰撞）
+
+模块被打到耐久归零之后吸收比例按 impact_absorption_destroyed 的默认值 2.0 计算，
+一发 AP 就扣 1304，两发脱落——被打烂的模块就是会掉。
+
+命中冲击按距离平方反比分给命中子零件的所有外部连接点，所以车体侧的中弹要分给炮塔座、
+负重轮等一堆连接点，落到某个挂点上的份额远小于整发。
+
+七、验证状态
+
+已通过：Blockbench 插件 validate（0 问题、export_ok）、导出后命中箱键与 geo 骨骼一一对应、
+gradlew checkContent。未做游戏内实测，包括命中分层顺序、逐块失效的手感、动画消失的观感
+与化学能弹的实际表现。

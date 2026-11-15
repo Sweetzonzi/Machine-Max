@@ -11,6 +11,16 @@
 
 ------------------------------------------------------------
 
+0.1.20 附加装甲逐块爆反
+
+车体首上、车体两侧、炮塔两侧的附加装甲改为逐块瓦的独立命中箱：车首 6 块、车体左侧 3 块、右侧 3 块、炮塔左侧 7 块、炮塔右侧 7 块，共 26 块。每块一对骨骼（MM_<变体>_NN 可见、MM_Hit_<变体>_NN 判定）、一条 hitbox 与一个 reactive_armor 子系统实例（型号 machine_max:kontakt5_tile），hitbox 的 condition 绑定该实例的存活状态；炮塔前部四片窄瓦合为一块，避免把炮塔正面判定切碎。每个零件另有一条无条件生效的底衬命中箱（machine_max:structural_steel，10 mm），代表挂架、背板与安装结构。
+
+材质改用苏系基础包的 machine_max:kontakt5：板厚 30 mm、rha 1.7、对动能弹加性 -70（合计 121 mm）、对化学能再加 -400（合计 451 mm）。车包本地的 t90a:kontakt5（60/75 mm 板厚、rha 1.2、无穿深修正）删除。挂点耐久：附加装甲两侧的连接点统一为 integrity 2400、impact_absorption 0.1、impact_reduction 8，一发 125 mm AP 只磨掉 65 完整度（约三十六发才断），单发击落需要 2408 以上的冲击。失效表现由 t90a/animations/part/t90a_era/t90a_era.animation.json 提供：一条 loop 动画把 26 个可见骨骼的 scale 绑到 !local.subsystem_destroyed(...)，瓦被打掉后砖块缩到自己的骨骼轴心消失。数值来源与逐块划分见 t90a/docs/notes/反应装甲参数.txt。
+
+迁移：零件类型 id、标签、连接点、质量与耐久未变，装配体与蓝图不需要重新生成；已有车辆下次加载时按新的命中箱与子系统实例结算。未做游戏内实测；Blockbench 校验 0 问题、允许导出，导出后命中箱键与 geo 骨骼一一对应，gradlew checkContent 通过。以下各节为历史记录，附加装甲的当前数值与命中箱划分以本节和上述参数文件为准。
+
+历史版本说明
+
 0.1.18 附加装甲使用变体
 
 车体与炮塔的附加装甲各是一个零件类型：t90a_hull_era 用 front / left / right 三个变体覆盖首上、左侧、右侧，t90a_turret_era 用 left / right 覆盖炮塔两侧。模板放置七个零件实例；uuid、坐标、碰撞箱、质量、连接点与标签沿用模板既有值，registry_key、name 与 variant 指向合并后的类型。首上变体沿用 t90a:armor/hull_era_front 标签，车体首上挂点的 required_tags 据此匹配，不需要新增标签。合并后的零件与研发条目共用一张中性图标（t90a_hull_era.png、t90a_turret_era.png）。
