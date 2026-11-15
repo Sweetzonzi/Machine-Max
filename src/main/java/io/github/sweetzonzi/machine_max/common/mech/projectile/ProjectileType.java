@@ -276,8 +276,9 @@ public abstract class ProjectileType {
      * @param intensity     光源在 1 m 处的辐照度（{@code [0,4096]}）；0 表示该弹种开火不发光
      * @param glow          空气散射光晕的倍率（非负，无上界）：同时缩放光晕的阈值半径与亮度，
      *                      {@code 0} 表示该弹种开火只有表面光照、没有光晕
-     * @param glare         十字炫光的倍率（非负，无上界）：同时缩放臂根的亮度与臂长，
-     *                      {@code 0} 表示该弹种开火没有星芒
+     * @param glare         镜头拉丝的倍率（非负，无上界）：同时缩放臂根的亮度与臂长，
+     *                      {@code 0} 表示该弹种开火没有拉丝。缺省 {@code 0}——枪口焰在画面上是有张角的
+     *                      扩展光源，而拉丝只在亚像素的点光源上成立；内容想要拉丝必须显式写正数
      * @param durationTicks 总寿命（游戏 tick，{@code [1,40]}），按 20 TPS 计，暂停时冻结
      */
     public record MuzzleFlash(
@@ -315,20 +316,24 @@ public abstract class ProjectileType {
         public static final int MAX_DURATION_TICKS = 40;
 
         /**
-         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、星芒倍率 1、持续 6 tick（≈300 ms）。
+         * 缺省枪口火光：按口径折算半径、暖白色、辐照度 90、光晕倍率 1、拉丝倍率 0、持续 40 tick（≈2 s）。
          *
          * <p><b>强度是绝对量</b>：90 对应 50 mm 档（缺省半径 9.5 m，参考距离 4.75 m 处把 0.10 的
          * 灰板抬到 0.30 所需的辐照度，见物理化设计 §4.2）。任何弹种都可以用它当起点，但真正
          * 按装药量区分的做法是在 {@code visual.muzzle_flash.intensity} 里按本节的口径写显式值：
          * 7.62 mm ≈ 10、20 mm ≈ 25、30 mm ≈ 42、50 mm ≈ 90、120 mm ≈ 400、155 mm ≈ 640。</p>
          *
-         * <p><b>标定目标是"夜里打一发就看得见"</b>：6 tick 让它在画面上停留 3–4 帧（更短的值只覆盖
-         * 1–2 帧，肉眼容易漏掉），同时不至于久留成常亮。{@code (1-u)²} 包络使后半程快速变暗，
-         * 因此实际可辨时长约一半。连射时多条登记会重叠（见 {@link MuzzleFlashLight} 的
-         * "每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
+         * <p><b>标定目标是"夜里打一发就看得见"</b>：10 tick —— 它在画面上停留 4–5 帧
+         * （更短的值只覆盖 1–2 帧，肉眼容易漏掉），同时不至于久留成常亮；{@code (1-u)²} 包络使
+         * 后半程快速变暗，因此实际可辨时长约一半。连射时多条登记会重叠（见 {@link MuzzleFlashLight}
+         * 的"每 tick 至多一条"），表现为持续光而不是逐发频闪。</p>
+         *
+         * <p><b>拉丝倍率缺省 0</b>：7.62 mm 的枪口焰在 2–3 m 处张角有好几度，是扩展光源，镜头里不会
+         * 出现柱面镜/衍射那种细亮条；把它画成拉丝等于给每一发子弹按上一根屏幕准星。需要拉丝的是远处的
+         * 点光源（信号弹、探照灯），由各自来源的字段显式写正数。</p>
          */
         public static final MuzzleFlash DEFAULT =
-            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 1f, 6);
+            new MuzzleFlash(true, DERIVE_RADIUS, new Vec3i(255, 200, 120), 90f, 1f, 0f, 10);
 
         /** {@link #radius} 的校验：接受缺省哨兵，或 {@code (0, 64]} 内的有限正数。 */
         private static final Codec<Double> RADIUS_CODEC = Codec.DOUBLE.validate(value -> {
@@ -481,17 +486,18 @@ public abstract class ProjectileType {
          */
         double tracerGlow,
         /**
-         * 曳光光源的十字炫光倍率（可选，默认 1.0，非负、无上界）。
+         * 曳光光源的镜头拉丝倍率（可选，默认 0，非负、无上界）。
          * <p>
-         * 倍率同时缩放臂根亮度与臂长，{@code 0} 表示该弹种没有星芒。星芒的驱动量是相机处的
-         * 表观照度 {@code I/d²}，所以曳光只有在贴近相机掠过时才会画出来（10 m 处约 0.2 的线性
-         * 亮度），远距离弹道不会被画成一串星芒；嫌它吵就把本字段写成 0。
+         * 倍率同时缩放臂根亮度与臂长，{@code 0} 表示该弹种没有拉丝。驱动量是相机处的表观照度
+         * {@code I/d²}，曳光在 10 m 处只有约 0.2，画出来也只是贴近掠过时闪一下；而它是一条沿弹道
+         * 移动的线，闪烁比形状更容易被注意到，因此缺省关掉，要留就显式写正数。
          */
         double tracerGlare,
         /**
          * 枪口火光 — 该弹种开火时在枪口投射的屏幕空间光源（可选子对象）。
          * <p>
-         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、光晕倍率 1、6 tick。
+         * 缺省 {@link MuzzleFlash#DEFAULT}：开启、按口径折算半径、暖白、辐照度 90、光晕倍率 1、
+         * 寿命 40 tick（约 2 s，见 {@link MuzzleFlash#DEFAULT}）。
          * 意思是"任何有口径的弹种开火都会闪一下"，想关掉的弹种写 {@code muzzle_flash.enabled = false}。
          * <p>
          * 它按弹种而不是按发射器配置，理由与 {@code fire_particles}、{@code fire_sounds} 相同：

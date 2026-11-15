@@ -57,7 +57,7 @@ public final class MuzzleFlashLight {
      * @param colorRgb      颜色，打包的 {@code 0xRRGGBB}；每个通道都在 {@code [0,255]}
      * @param intensity     光源在 1 m 处的辐照度（归一化单位），已由内容包给出
      * @param glow          空气散射光晕的倍率（非负，无上界），同时缩放光晕的阈值半径与亮度
-     * @param glare         十字炫光的倍率（非负，无上界），同时缩放臂根的亮度与臂长
+     * @param glare         镜头拉丝的倍率（非负，无上界），同时缩放臂根的亮度与臂长
      * @param durationTicks 总寿命（游戏 tick），按 20 TPS 计
      */
     public record Params(float radius, int colorRgb, float intensity, float glow, float glare, int durationTicks) {

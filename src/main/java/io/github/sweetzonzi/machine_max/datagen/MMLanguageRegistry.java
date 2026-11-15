@@ -150,6 +150,21 @@ public enum MMLanguageRegistry {
             en_us, "Machine Max:Assembly"
     )),
     // 按键名称-通用
+    KEY_LIGHT_CAPTURE("key.machine_max.general.light_capture", ImmutableMap.of(
+            zh_cn, "临时：截取光照预算对照"
+    )),
+    MESSAGE_LIGHT_CAPTURE_ARMED("message.machine_max.light_capture.armed", ImmutableMap.of(
+            zh_cn, "光照对照已准备，请在5秒内产生光源。截取期间画面会停顿。"
+    )),
+    MESSAGE_LIGHT_CAPTURE_SAVED("message.machine_max.light_capture.saved", ImmutableMap.of(
+            zh_cn, "同帧光照对照已保存：%s"
+    )),
+    MESSAGE_LIGHT_CAPTURE_FAILED("message.machine_max.light_capture.failed", ImmutableMap.of(
+            zh_cn, "光照对照截取失败，详细原因见日志。"
+    )),
+    MESSAGE_LIGHT_CAPTURE_EMPTY("message.machine_max.light_capture.empty", ImmutableMap.of(
+            zh_cn, "5秒内没有可截取的光源。请开启光照效果后重试。"
+    )),
     KEY_GENERAL_FREE_CAM("key.machine_max.general.free_cam", ImmutableMap.of(
             zh_cn, "自由视角",
             en_us, "Free Camera"
@@ -1542,6 +1557,12 @@ public enum MMLanguageRegistry {
     CONFIGURATION_SHOW_WELCOME_SCREEN_TOOLTIP("machine_max.configuration.show_welcome_screen.tooltip", ImmutableMap.of(
             zh_cn, "启动后首次进入标题画面时弹出欢迎页面。默认值：true",
             en_us, "Show the welcome screen when entering the title screen for the first time after launch. Default: true"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_SHADOW_RANGE("machine_max.configuration.screen_space_light_shadow_range", ImmutableMap.of(
+            zh_cn, "屏幕空间光照遮挡范围（米）"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_SHADOW_RANGE_TOOLTIP("machine_max.configuration.screen_space_light_shadow_range.tooltip", ImmutableMap.of(
+            zh_cn, "仅对距离光源小于此值的表面计算遮挡，范围内检查到光源的完整路径。最后25%的距离平滑减弱阴影，范围外跳过遮挡查询。0关闭此遮挡，光照仍正常计算。默认8米，可设16米以覆盖更大范围。范围：0～64米。"
     )),
     // 后处理视觉特效配置
     CONFIGURATION_VISUAL_EFFECTS("machine_max.configuration.visual_effects", ImmutableMap.of(

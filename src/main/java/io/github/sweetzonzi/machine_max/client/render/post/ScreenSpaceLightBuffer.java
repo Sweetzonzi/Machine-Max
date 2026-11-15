@@ -21,9 +21,8 @@ import java.util.Map;
  * 而这类光源（爆炸火光）正是曳光不需要处理的形态。据此本类不采用“背后光心即丢弃”这条不区分
  * 来源的规则（设计文档 §4.3）。</p>
  *
- * <p>来源特有的剔除留在来源里：曳光的光心背后、渲染距离与屏幕投影下限三条仍由
- * {@link ProjectileTracerLightSource} 执行，因此该来源的候选集与拆出通用通路之前逐一对应
- * （设计文档 §4.3、§7）。</p>
+ * <p>来源特有的剔除留在来源里：{@link ProjectileTracerLightSource} 在光心位于相机背后、
+ * 光心超出渲染距离或屏幕投影小于下限时排除曳光候选（设计文档 §4.3、§7）。</p>
  *
  * <p><b>P1 的阶段能力在提交处显式报告</b>：锥光（{@link ScreenSpaceLight.Shape#SPOT}）与逐盏 S3
  * 模式（{@link ScreenSpaceLight.OcclusionMode#SCREEN_RAY}）返回 {@link SubmitResult#UNSUPPORTED}，
@@ -35,7 +34,8 @@ import java.util.Map;
  * 乘上全局倍率，光晕的阈值半径在写入时按 {@code Rg = GLOW_SCALE_M · sqrt(I_base) · k} 算好
  * （着色器不做 {@code sqrt}）。片元的算子有两条：表面项逐光源
  * {@code color · I · o · v · w(d) / max(d², d_min²)} 求和后经合成曲线映射回显示值
- * （{@code o} 是朝向响应，{@code v} 是 S3 遮挡比例，权重取全局 {@code NormalWeight}）；空气散射光晕
+ * （{@code o} 是由全局 {@code NormalWeight} 控制的朝向响应；{@code v} 是 S3 可见性，命中为 0，
+ * 完整未命中和未知为 1）；空气散射光晕
  * {@code Scatter · k · color · I · ∫1/r² dt · w(b/Rg)} 求和后加在曲线之后
  * （设计文档 §3.2、§3.3、§3.5、§3.6、§4.1）。</p>
  *
@@ -43,7 +43,7 @@ import java.util.Map;
  * {@code I} 与 {@code R} 不成标定比例时），按照明半径剔除会把光晕一起丢掉。当前标定下
  * {@code Rg/R ≤ 0.52}，这条恒取 {@code R}，它防的是内容。</p>
  *
- * <p><b>星芒（十字炫光）只上传逐来源倍率</b>：臂长与臂根亮度都在片元里按"相机处的表观照度"
+ * <p><b>星芒（单轴镜头拉丝）只上传逐来源倍率</b>：臂长与臂根亮度都在片元里按"相机处的表观照度"
  * {@code I/d²} 现场求值（设计文档 §3.7），光源表不做任何派生。它不进影响球——星芒是固定角度的
  * 成像项而不是米制范围，{@code max(R, Rg)} 里没有它的位置；片元按像素距离自己剔除。代价是
  * 整球落在视锥外的光源会先被本类剔除，连带没有星芒——只有极远处（影响球张角小于臂长）才会发生，
@@ -87,16 +87,19 @@ public final class ScreenSpaceLightBuffer {
     private final float[] minDistance;
     /** 每槽 2 个：光晕的阈值半径（m）、逐来源倍率 {@code k}；半径按基础强度派生，倍率由内容给出 */
     private final float[] glow;
-    /** 每槽 1 个：星芒（十字炫光）的逐来源倍率 {@code g}，{@code 0} 表示该光源没有星芒 */
+    /** 每槽 1 个：星芒（单轴镜头拉丝）的逐来源倍率 {@code g}，{@code 0} 表示该光源没有拉丝 */
     private final float[] glare;
     /** 槽内条目的投影半径（px），只用于排序与“超限时置换最弱一个” */
     private final float[] sortRadiusPx;
-    /** 槽内条目的来源优先级，只用于容量比较 */
+    /** 槽内条目的来源优先级，用于容量选择及 GPU 遮挡预算的分配顺序 */
     private final int[] slotPriority;
+    /** 记录本帧接收顺序，容量置换后同键条目的预算顺序也遵循先到先用。 */
+    private final int[] slotArrival;
     /** 槽内条目的来源身份，只用于“被置换数”的归属 */
     private final ResourceLocation[] slotSourceId;
 
     private int count;
+    private int nextArrival;
     private float focalPx = 1f;
     private float globalIntensity = 1f;
     private float screenDiagonal = 1f;
@@ -130,6 +133,7 @@ public final class ScreenSpaceLightBuffer {
         this.glare = new float[capacity];
         this.sortRadiusPx = new float[capacity];
         this.slotPriority = new int[capacity];
+        this.slotArrival = new int[capacity];
         this.slotSourceId = new ResourceLocation[capacity];
     }
 
@@ -141,6 +145,7 @@ public final class ScreenSpaceLightBuffer {
      */
     public void beginFrame(LightFrameContext frame, float globalIntensity) {
         count = 0;
+        nextArrival = 0;
         capped = false;
         this.globalIntensity = Float.isFinite(globalIntensity) ? globalIntensity : 1f;
         float focal = frame.focalPx();
@@ -187,9 +192,14 @@ public final class ScreenSpaceLightBuffer {
     }
 
     /**
-     * 结束一帧：统计各来源的最终入选数，并按限频发汇总日志。
+     * 结束一帧：按选择键稳定排序，使 GPU 的共享遮挡预算先用于高优先级、大投影光源；统计并发诊断。
      */
     public void endFrame() {
+        for (int i = 1; i < count; i++) {
+            for (int j = i; j > 0 && precedesSlot(j, j - 1); j--) {
+                swapSlots(j, j - 1);
+            }
+        }
         for (SourceStats stats : statsBySource.values()) stats.selected = 0;
         for (int slot = 0; slot < count; slot++) {
             ResourceLocation id = slotSourceId[slot];
@@ -197,6 +207,34 @@ public final class ScreenSpaceLightBuffer {
         }
         logDiagnostics();
         cappedLastFrame = capped;
+    }
+
+    private boolean precedesSlot(int a, int b) {
+        return beatsSlot(slotPriority[a], sortRadiusPx[a], b)
+                || (slotPriority[a] == slotPriority[b] && sortRadiusPx[a] == sortRadiusPx[b]
+                    && slotArrival[a] < slotArrival[b]);
+    }
+
+    private void swapSlots(int a, int b) {
+        swap(positionRadius, a, b, 4);
+        swap(colorIntensity, a, b, 4);
+        swap(sourceDepthTolerance, a, b, 1);
+        swap(occlusion, a, b, 1);
+        swap(minDistance, a, b, 1);
+        swap(glow, a, b, 2);
+        swap(glare, a, b, 1);
+        swap(sortRadiusPx, a, b, 1);
+        int priority = slotPriority[a]; slotPriority[a] = slotPriority[b]; slotPriority[b] = priority;
+        int arrival = slotArrival[a]; slotArrival[a] = slotArrival[b]; slotArrival[b] = arrival;
+        ResourceLocation id = slotSourceId[a]; slotSourceId[a] = slotSourceId[b]; slotSourceId[b] = id;
+    }
+
+    private static void swap(float[] values, int a, int b, int width) {
+        for (int k = 0; k < width; k++) {
+            float value = values[a * width + k];
+            values[a * width + k] = values[b * width + k];
+            values[b * width + k] = value;
+        }
     }
 
     /** @return 本帧入选的光源数；0 表示本帧没有 GPU 工作 */
@@ -246,7 +284,7 @@ public final class ScreenSpaceLightBuffer {
         return glow;
     }
 
-    /** @return 扁平数组 {@code [capacity]}：每槽星芒（十字炫光）的逐来源倍率 */
+    /** @return 扁平数组 {@code [capacity]}：每槽星芒（单轴镜头拉丝）的逐来源倍率 */
     public float[] glare() {
         return glare;
     }
@@ -362,6 +400,7 @@ public final class ScreenSpaceLightBuffer {
         glare[slot] = light.glareMultiplier();
         sortRadiusPx[slot] = sortPx;
         slotPriority[slot] = light.priority();
+        slotArrival[slot] = nextArrival++;
         slotSourceId[slot] = light.sourceId();
     }
 

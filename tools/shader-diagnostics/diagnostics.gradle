@@ -1,0 +1,69 @@
+// 独立诊断源码集只编译无Minecraft依赖的实际深度构建器、预设和命令行入口。
+sourceSets {
+    shaderDiagnostics {
+        java {
+            srcDirs 'tools/shader-diagnostics/src/main/java', 'src/main/java'
+            include 'io/github/sweetzonzi/machine_max/client/render/post/ScreenSpaceLightDiagnostics.java'
+            include 'io/github/sweetzonzi/machine_max/client/render/post/ScreenSpaceLightDiagnosticPreset.java'
+            include 'io/github/sweetzonzi/machine_max/client/render/post/ScreenSpaceDepthPyramid.java'
+            include 'io/github/sweetzonzi/machine_max/client/render/post/PostProcessingGpuState.java'
+        }
+    }
+    shaderDiagnosticsTest {
+        java.srcDir 'tools/shader-diagnostics/src/test/java'
+        compileClasspath += sourceSets.shaderDiagnostics.output
+        runtimeClasspath += sourceSets.shaderDiagnostics.output
+    }
+}
+
+configurations {
+    shaderDiagnosticsTestImplementation.extendsFrom shaderDiagnosticsImplementation
+    shaderDiagnosticsTestRuntimeOnly.extendsFrom shaderDiagnosticsRuntimeOnly
+}
+
+def diagnosticsOs = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+def diagnosticsArch = System.getProperty('os.arch').toLowerCase(Locale.ROOT)
+def diagnosticsNatives = diagnosticsOs.contains('win') ? 'natives-windows' : diagnosticsOs.contains('mac') ? 'natives-macos' : 'natives-linux'
+if (diagnosticsArch in ['aarch64', 'arm64']) diagnosticsNatives += '-arm64'
+
+dependencies {
+    shaderDiagnosticsImplementation 'com.google.code.gson:gson:2.10.1'
+    shaderDiagnosticsTestImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    for (module in ['lwjgl', 'lwjgl-glfw', 'lwjgl-opengl']) {
+        shaderDiagnosticsImplementation "org.lwjgl:${module}:3.3.3"
+        shaderDiagnosticsRuntimeOnly "org.lwjgl:${module}:3.3.3:${diagnosticsNatives}"
+    }
+}
+
+tasks.register('shaderDiagnosticsTest', Test) {
+    description = '诊断工具的输入校验与PNG差异契约（无需图形环境）'
+    group = 'verification'
+    testClassesDirs = sourceSets.shaderDiagnosticsTest.output.classesDirs
+    classpath = sourceSets.shaderDiagnosticsTest.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'java.awt.headless', 'true'
+    workingDir = projectDir
+}
+
+tasks.named('check').configure { dependsOn tasks.named('shaderDiagnosticsTest') }
+
+tasks.register('shaderDiagnostics', JavaExec) {
+    description = '独立回放屏幕空间光照截取，输出对照图、HTML和像素诊断'
+    group = 'verification'
+    classpath = sourceSets.shaderDiagnostics.runtimeClasspath
+    mainClass = 'io.github.sweetzonzi.machine_max.client.render.post.ScreenSpaceLightDiagnostics'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    workingDir = projectDir
+    doFirst {
+        if (providers.gradleProperty('shaderDiagnosticsHelp').isPresent()) {
+            args '--help'
+        } else {
+            ['Capture': 'capture', 'Shader': 'shader', 'Reducer': 'reducer', 'Preset': 'preset', 'Variants': 'variants',
+             'Output': 'output', 'Baseline': 'baseline', 'Threshold': 'threshold', 'Pixel': 'pixel', 'Light': 'light',
+             'CompareLeft': 'compare-left', 'CompareRight': 'compare-right'].each { key, option ->
+                def value = providers.gradleProperty('shader' + key)
+                if (value.isPresent()) args '--' + option, value.get()
+            }
+        }
+    }
+}

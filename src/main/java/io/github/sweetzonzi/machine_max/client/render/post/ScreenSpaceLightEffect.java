@@ -17,6 +17,7 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -62,6 +63,8 @@ public class ScreenSpaceLightEffect {
 
     private static final ResourceLocation CHAIN_LOCATION =
             ResourceLocation.parse("machine_max:shaders/post/screen_space_light.json");
+    private static final ResourceLocation DEPTH_REDUCE_LOCATION =
+            ResourceLocation.parse("machine_max:shaders/program/screen_space_depth_reduce.fsh");
     /** 本效果 pass 的名字，与链 JSON 中声明的 name 一致 */
     private static final String PASS_NAME = "machine_max:screen_space_light";
     /** 链内声明的世界深度快照目标名，与链 JSON 的 targets 一致 */
@@ -73,6 +76,9 @@ public class ScreenSpaceLightEffect {
     private final LightFrameContext frame = new LightFrameContext();
     /** 光源表：扁平数组、容量选择与诊断计数 */
     private final ScreenSpaceLightBuffer buffer = new ScreenSpaceLightBuffer(CAPACITY);
+    private final ScreenSpaceLightCapture capture = new ScreenSpaceLightCapture();
+    @Nullable private ScreenSpaceDepthPyramid hierarchy;
+    private boolean hierarchyFailed;
 
     @Nullable
     private PostChain chain;
@@ -128,6 +134,7 @@ public class ScreenSpaceLightEffect {
      */
     public void render(Matrix4f modelViewMatrix, Matrix4f projectionMatrix, Vec3 cameraPos,
                        Level level, float partialTick) {
+        capture.expireRequest();
         if (!MMClientConfig.isScreenSpaceLightEnabled()) {
             // 总开关关闭：不采集、不加载链、不提交 pass。进入关闭状态的那一帧清一次诊断计数，
             // 使重新打开时不沿用关闭前的触顶状态；瞬态光源的年龄由游戏时钟推导，照常推进。
@@ -178,12 +185,25 @@ public class ScreenSpaceLightEffect {
 
         // 标量经链写入（对未声明该 uniform 的 pass 是空操作），数组必须拿到 pass 引用全量写入
         float[] depth = BlastProjectionUtil.calibrateDepth(projectionMatrix, CALIB_Z_NEAR, CALIB_Z_FAR);
+        float shadowRange = MMClientConfig.getScreenSpaceLightShadowRange();
+        if (hierarchy == null || hierarchyFailed) return;
+        if (shadowRange > 0f || capture.isRequested()) {
+            try {
+                hierarchy.build(worldDepth.getDepthTextureId(), width, height, depth[0], depth[1]);
+            } catch (RuntimeException e) {
+                hierarchyFailed = true;
+                MachineMax.LOGGER.error("屏幕空间光照：深度层级构建失败，暂停本效果直至重新进入世界", e);
+                return;
+            }
+        }
+        chain.setUniform("HierarchyLevels", hierarchy.levels());
         chain.setUniform("FocalPx", focalPx);
         chain.setUniform("DepthA", depth[0]);
         chain.setUniform("DepthB", depth[1]);
         chain.setUniform("LightCount", count);
         chain.setUniform("OcclusionTolRel", SOURCE_DEPTH_RELATIVE_TOLERANCE);
         chain.setUniform("NormalWeight", MMClientConfig.getScreenSpaceLightNormalWeight());
+        chain.setUniform("ShadowRange", shadowRange);
         lightViewUniform.set(buffer.positionRadius());
         lightColorUniform.set(buffer.colorIntensity());
         lightTolUniform.set(buffer.sourceDepthTolerance());
@@ -192,8 +212,16 @@ public class ScreenSpaceLightEffect {
         lightGlowUniform.set(buffer.glow());
         lightGlareUniform.set(buffer.glare());
 
+        capture.capture(mc.getMainRenderTarget(), worldDepth, hierarchy, frame, buffer, depth[0], depth[1],
+                MMClientConfig.getScreenSpaceLightNormalWeight(), SOURCE_DEPTH_RELATIVE_TOLERANCE, shadowRange);
+
         chain.process(partialTick);
         mc.getMainRenderTarget().bindWrite(true);
+    }
+
+    /** 客户端主线程：准备截取下一帧有光源的世界画面。 */
+    public void requestCapture() {
+        capture.request();
     }
 
     /**
@@ -202,15 +230,25 @@ public class ScreenSpaceLightEffect {
     public void load() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.getResourceManager() == null) return;
+        ScreenSpaceDepthPyramid newHierarchy = null;
+        PostChain newChain = null;
         try {
-            PostChain newChain = new PostChain(
+            String reduceSource;
+            try (var stream = mc.getResourceManager().getResourceOrThrow(DEPTH_REDUCE_LOCATION).open()) {
+                reduceSource = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+            newHierarchy = new ScreenSpaceDepthPyramid(reduceSource);
+            newChain = new PostChain(
                     mc.getTextureManager(),
                     mc.getResourceManager(),
                     mc.getMainRenderTarget(),
                     CHAIN_LOCATION
             );
             if (chain != null) chain.close();
+            if (hierarchy != null) hierarchy.close();
             chain = newChain;
+            hierarchy = newHierarchy;
+            hierarchyFailed = false;
             cachedWidth = mc.getWindow().getWidth();
             cachedHeight = mc.getWindow().getHeight();
             chain.resize(cachedWidth, cachedHeight);
@@ -219,7 +257,9 @@ public class ScreenSpaceLightEffect {
             verifyArrayCounts();
             loaded = true;
             MachineMax.LOGGER.debug("屏幕空间光照后处理已加载");
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
+            if (newChain != null && newChain != chain) newChain.close();
+            if (newHierarchy != null && newHierarchy != hierarchy) newHierarchy.close();
             MachineMax.LOGGER.error("屏幕空间光照后处理加载失败", e);
             loaded = true; // 标记已尝试，不再重复失败
         }
@@ -269,6 +309,7 @@ public class ScreenSpaceLightEffect {
         lightGlareUniform = null;
         for (PostPass pass : ((PostChainAccessor) newChain).machineMax$getPasses()) {
             if (!PASS_NAME.equals(pass.getName())) continue;
+            pass.addAuxAsset("DepthHierarchySampler", hierarchy::texture, 1, 1);
             lightViewUniform = pass.getEffect().getUniform("LightView");
             lightColorUniform = pass.getEffect().getUniform("LightColor");
             lightTolUniform = pass.getEffect().getUniform("LightTol");
@@ -381,6 +422,12 @@ public class ScreenSpaceLightEffect {
      * 释放 GPU 资源与诊断状态。
      */
     public void dispose() {
+        capture.cancel();
+        if (hierarchy != null) {
+            hierarchy.close();
+            hierarchy = null;
+        }
+        hierarchyFailed = false;
         if (chain != null) {
             chain.close();
             chain = null;

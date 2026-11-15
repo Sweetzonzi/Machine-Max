@@ -56,6 +56,8 @@ public class KeyBinding {
      */
     @SubscribeEvent
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {
+        // 开发诊断：需要现场截取时，与lightCaptureKey和PostProcessingManager.onLightCaptureTick一起启用。
+        // event.register(lightCaptureKey);
         //通用按键
         event.register(KeyBinding.generalFreeCamKey);//自由视角
         event.register(KeyBinding.generalInteractKey);//互动
@@ -100,6 +102,10 @@ public class KeyBinding {
         event.register(KeyBinding.generalCycleSeatKey);//循环换座
 
     }
+
+    // 开发诊断按键默认停用，避免构造KeyMapping时将F6加入全局按键表。
+    // public static final KeyMapping lightCaptureKey = new KeyMapping(MMLanguageRegistry.KEY_LIGHT_CAPTURE.tag,
+    //         KeyCategory.GENERAL, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F6, KeyCategory.GENERAL.getCategory());
 
     public static KeyMapping generalFreeCamKey = new KeyMapping(FREE_CAM_KEY,//键位名称
             KeyCategory.GENERAL,//键位冲突类型

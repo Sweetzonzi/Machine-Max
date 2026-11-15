@@ -196,6 +196,8 @@ tasks.register('probeTest', Test) {
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 
+apply from: file('tools/shader-diagnostics/diagnostics.gradle')
+
 kotlin {
     jvmToolchain(21)
 }

@@ -29,6 +29,7 @@
     "tracer_light_radius": 40.0,
     "tracer_light_intensity": 1524,
     "tracer_light_color": [255, 238, 205],
+    "tracer_glare": 2.5,
     "muzzle_flash": { "intensity": 90.3 }
   },
   "sounds": {

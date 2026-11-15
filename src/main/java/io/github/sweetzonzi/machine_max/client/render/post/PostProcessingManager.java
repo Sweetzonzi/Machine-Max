@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.post;
 
 import io.github.sweetzonzi.machine_max.client.event.RenderLevelLastEvent;
 import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
+import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.ExplosionManager;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -37,6 +38,7 @@ public class PostProcessingManager {
     private final OverloadVisionEffect overloadVision = new OverloadVisionEffect();
     private final CrtMonitorEffect crtMonitor = new CrtMonitorEffect();
     private final BlastDistortionEffect blastDistortion = new BlastDistortionEffect();
+    // private boolean lightCaptureHeld; // 开发诊断按键的按下沿状态。
     /**
      * 通用屏幕空间光照；来源列表在构造期固定，优先级与容量规则见各来源自己的声明。
      *
@@ -109,12 +111,25 @@ public class PostProcessingManager {
     /** 客户端 Tick：退出世界时自动释放所有 PostChain GPU 资源，同时衰减失色压制效果 */
     @SubscribeEvent
     private static void onClientTick(ClientTickEvent.Pre event) {
-        if (Minecraft.getInstance().level == null) {
+        Minecraft mc = Minecraft.getInstance();
+        // 开发诊断：与KeyBinding中的F6定义、注册及下方辅助方法一起启用。
+        // onLightCaptureTick(mc);
+        if (mc.level == null) {
             INSTANCE.disposeAll();
         } else {
             CameraShakeController.tickSuppression(); // 失色压制每帧衰减
         }
     }
+
+    // private static void onLightCaptureTick(Minecraft mc) {
+    //     boolean down = KeyBinding.lightCaptureKey.isDown();
+    //     boolean clicked = false;
+    //     while (KeyBinding.lightCaptureKey.consumeClick()) clicked = true;
+    //     if (clicked && !INSTANCE.lightCaptureHeld && mc.level != null && mc.screen == null) {
+    //         INSTANCE.screenSpaceLight.requestCapture();
+    //     }
+    //     INSTANCE.lightCaptureHeld = down;
+    // }
 
     // ========== 对外开关 ==========
 

@@ -39,7 +39,7 @@ public final class ScreenSpaceLight {
         /** 不做遮挡判定 */
         NONE,
         /**
-         * S2：在光心的屏幕投影位置采一次深度，显著更近即判定光源自身不可见，跳过它的星芒。
+         * S2：在光心的屏幕投影位置采一次深度，显著更近即判定光源自身不可见，跳过它的镜头拉丝。
          *
          * <p>表面项由 S3 的逐像素屏幕空间步进决定，不读本模式；空气散射光晕不走这条判定：
          * 它有逐像素的深度截断，比这一次采样精确，套上本判定会把"光源被挡住、光晕球露出一半"的情形整片抹掉。</p>
@@ -73,7 +73,14 @@ public final class ScreenSpaceLight {
      */
     public static final float GLOW_SCALE_M = 0.32f;
 
-    /** 光晕阈值半径的上限（m）：兜住异常内容与贴脸光源 */
+    /**
+     * 光晕阈值半径的上限（m）：兜异常内容与贴脸光源。
+     *
+     * <p>它只封顶、不参与派生，缺省内容碰不到它（枪口 1.0–3.0 m、曳光 0.5–1.3 m、爆炸 4.1 m、
+     * 信号弹 12.5 m，均按 {@code k = 1} 计）。上限真正决定的是<b>单盏灯的剔除球最大能到多大</b>，
+     * 也就是光晕最多占多少屏幕：32 m 在 70° FOV、距离 100 m 处覆盖约 18° 的半角，足够让一个
+     * 远处的亮光源保住一圈仍然可见的晕；再往上只是让更多像素跑同一段解析积分。</p>
+     */
     public static final float MAX_GLOW_RADIUS_M = 32f;
 
     /** 提交时由光源表盖上的来源身份，用于逐来源诊断 */
@@ -123,7 +130,7 @@ public final class ScreenSpaceLight {
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
         this.glowMultiplier = 1f;
-        this.glareMultiplier = 1f;                  // 星芒缺省按标定倍率画：来源不调 setGlare 也有
+        this.glareMultiplier = 1f;                  // 载体复位值：来源不调 setGlare 时按 1 画
         this.shape = Shape.POINT;
         this.directionView.set(0f, 0f, -1f);
         this.cosInner = 1f;
@@ -159,7 +166,7 @@ public final class ScreenSpaceLight {
         this.minDistance = DEFAULT_MIN_DISTANCE_M;
         this.baseIntensity = 0f;                    // 缺省不发散空气散射：来源要显式 setGlow
         this.glowMultiplier = 1f;
-        this.glareMultiplier = 1f;                  // 星芒缺省按标定倍率画：来源不调 setGlare 也有
+        this.glareMultiplier = 1f;                  // 载体复位值：来源不调 setGlare 时按 1 画
         this.shape = Shape.SPOT;
         this.directionView.set(directionView);
         this.cosInner = cosInner;
@@ -266,10 +273,11 @@ public final class ScreenSpaceLight {
     }
 
     /**
-     * 写星芒（十字炫光）的逐来源倍率（设计文档 §3.7）。
+     * 写星芒（单轴镜头拉丝）的逐来源倍率（设计文档 §3.7）。
      *
      * <p>可选，且必须在 {@link #setPoint}/{@link #setSpot} 之后调用：两者会把它复位成 1，
-     * 载体逐盏复用，不复位就会把上一盏灯的倍率带过来。不调用即按 1 处理。</p>
+     * 载体逐盏复用，不复位就会把上一盏灯的倍率带过来。不调用即按 1 处理；三个内置来源都在提交前
+     * 显式写这个值，所以实际生效的是各来源的字段（枪口火光缺省 0，曳光与爆炸火光缺省 1）。</p>
      *
      * <p>星芒与空气散射光晕是两项独立的加法：本倍率同时缩放臂根亮度（线性）与臂长（开方），
      * {@code 0} 关闭该光源的星芒，不影响它的表面光照与光晕。它不参与阈值半径。
@@ -282,7 +290,7 @@ public final class ScreenSpaceLight {
         this.glareMultiplier = glareMultiplier;
     }
 
-    /** @return 逐来源星芒倍率 {@code g}；{@code 0} 表示该光源没有星芒 */
+    /** @return 逐来源星芒倍率 {@code g}；{@code 0} 表示该光源没有镜头拉丝 */
     public float glareMultiplier() {
         return glareMultiplier;
     }
