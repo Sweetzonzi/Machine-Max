@@ -1,0 +1,35 @@
+{
+    "base_group": {
+        "name": "controlGroup.machine_max.base",
+        "control_mode": "ground",
+        "move_targets": {
+            "crew_driver_move": ["global"]
+        },
+        "view_targets": {},
+        "regular_targets": {
+            "crew_driver_regular": ["global"]
+        },
+        "bindings": []
+    },
+    "groups": [
+        {
+            "name": "controlGroup.machine_max.weapon_control",
+            "control_mode": "inherit",
+            "view_targets": {
+                "crew_any_aim": ["global"]
+            },
+            "main_weapon_targets": {
+                "crew_any_fire": ["global"],
+                "crew_any_secondary_fire": ["global"]
+            },
+            "secondary_weapon_targets": {
+                "crew_any_secondary_fire": ["global"]
+            },
+            "priorities": {
+                "crew_any_aim": 1,
+                "crew_any_fire": 1,
+                "crew_any_secondary_fire": 1
+            }
+        }
+    ]
+}

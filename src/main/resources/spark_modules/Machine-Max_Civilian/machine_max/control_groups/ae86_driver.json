@@ -12,5 +12,26 @@
             "crew_driver_regular": ["connector.machine_max.chassis_connection"]
         },
         "bindings": []
-    }
+    },
+    "groups": [
+        {
+            "name": "controlGroup.machine_max.weapon_control",
+            "control_mode": "inherit",
+            "view_targets": {
+                "crew_any_aim": ["global"]
+            },
+            "main_weapon_targets": {
+                "crew_any_fire": ["global"],
+                "crew_any_secondary_fire": ["global"]
+            },
+            "secondary_weapon_targets": {
+                "crew_any_secondary_fire": ["global"]
+            },
+            "priorities": {
+                "crew_any_aim": 1,
+                "crew_any_fire": 1,
+                "crew_any_secondary_fire": 1
+            }
+        }
+    ]
 }
