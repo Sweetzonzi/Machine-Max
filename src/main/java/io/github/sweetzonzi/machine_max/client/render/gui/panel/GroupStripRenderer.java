@@ -5,6 +5,7 @@ import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -69,7 +70,7 @@ public class GroupStripRenderer {
 
             Element nameEl = doc.createElement("div");
             nameEl.setAttribute("class", "gc-name");
-            nameEl.innerText = isBase ? "BASE" : group.name;
+            nameEl.innerText = isBase ? "BASE" : Component.translatable(group.name).getString();
 
             Element numberEl = doc.createElement("div");
             numberEl.setAttribute("class", "gc-number");
