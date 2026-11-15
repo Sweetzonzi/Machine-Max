@@ -490,6 +490,21 @@
                 ]
               }
             },
+            "subsystem.m1a2_sep.rws_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "m1a2_sep:rws_controller",
+              "control_outputs": {
+                "aim_drive_rws": [
+                  "connector.m1a2_sep.turret_rws"
+                ],
+                "weapon.mg.m2hb": [
+                  "connector.m1a2_sep.turret_rws"
+                ]
+              },
+              "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
+              "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
+            },
             "subsystem.m1a2_sep.gunner_sight": {
               "type": "machine_max:camera",
               "definition": "m1a2_sep:m1a2_gunner_sight",

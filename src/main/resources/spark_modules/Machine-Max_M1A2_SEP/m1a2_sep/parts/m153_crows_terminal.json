@@ -1,0 +1,54 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "m1a2_sep:textures/icon/m153_crows.png",
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0,
+  "max_stack_size": 16,
+  "variants": {
+    "model": "m1a2_sep:crows_terminal.geo",
+    "textures": "m1a2_sep:textures/part/crows_terminal.png",
+    "animations": "machine_max:empty",
+    "tags": [
+      "machine_max:type/land",
+      "machine_max:category/misc",
+      "m1a2_sep:m153_crows_terminal"
+    ],
+    "sub_parts": {
+      "sub_part.m1a2_sep.main": {
+        "durability": 20,
+        "mass": 3,
+        "hit_boxes": {
+          "Shape": {
+            "type": "box",
+            "material": "machine_max:structural_steel",
+            "thickness": 5
+          }
+        },
+        "subsystems": {
+          "subsystem.m1a2_sep.crows_terminal": {
+            "type": "machine_max:weapon_controller",
+            "definition": "m1a2_sep:rws_controller",
+            "control_outputs": {
+              "aim_drive_rws": [
+                "global"
+              ],
+              "weapon.mg.m2hb": [
+                "global"
+              ]
+            },
+            "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
+            "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
+            "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
+          }
+        },
+        "connectors": {
+          "connector.m1a2_sep.crows_terminal_mount": {
+            "locator": "down",
+            "definition": "machine_max:fixed_down"
+          }
+        }
+      }
+    }
+  }
+}
