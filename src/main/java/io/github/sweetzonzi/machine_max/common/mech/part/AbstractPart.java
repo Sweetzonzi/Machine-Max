@@ -123,7 +123,11 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     /** 本部件的 local 总线订阅集合；构造期登记、子零件销毁期移除，与物理归属相互独立 */
     private final Set<ISignalReceiver> localSubscribers = ConcurrentHashMap.newKeySet();
     // 子零件、连接器与子系统索引
-    public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
+    /**
+     * 子零件表。迭代序 = 内容包声明序（构造期写定），`createSubParts` 按定义顺序填充，
+     * 因此"第几个子零件"、"子系统 tick 顺序"与座位枚举都可依赖这个序。
+     */
+    public final Map<String, SubPart> subParts = LinkedHashMap.newLinkedHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     /** AbstractPart 级按名索引：连接点名 → 连接点（用于 Molang 按名寻址） */

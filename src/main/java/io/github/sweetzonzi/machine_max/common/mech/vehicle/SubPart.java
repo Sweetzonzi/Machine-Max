@@ -123,8 +123,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public final SubPartAttr attr;
     public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
     public final InteractBoxes interactBoxes;//交互判定
-    public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
-    public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
+    /** 子系统：迭代序 = 内容包声明序，构造期写定，此后不再增删 */
+    public final LinkedHashMap<String, AbstractSubsystem> subsystems = LinkedHashMap.newLinkedHashMap(1);
+    /** 连接点：迭代序 = 内容包声明序，构造期写定（{@code ConnectorSyncPayload} 的序号取这个位置） */
+    public final LinkedHashMap<String, AbstractConnector> connectors = LinkedHashMap.newLinkedHashMap(1);
     /** 子系统额外质量映射表（子系统名称 → 额外质量值 kg），由 ISubsystemHost.updateExtraMass() 管理 */
     private final ConcurrentHashMap<String, Float> extraMassMap = new ConcurrentHashMap<>();
     /**
