@@ -22,24 +22,56 @@ public interface ISignalSender {
 
     /**
      * 解析本发送者在某个输出频道上可达的全部终端，按终端实际到达的频道分组。<br>
-     * 首跳取自 {@link #getTargets()}；遇到 {@link SignalPort} 时沿对侧端口继续，并用对侧端口的转译表得到
-     * 到达频道；遇到 {@link ISignalBus} 时按订阅者声明的接受条件展开 {@code global}。端口与总线转发按各自的
-     * 接受规则（{@link ISignalReceiver#acceptAllRoutingInput()}、{@link ISignalReceiver#acceptAllBroadcastInput()}
-     * 与 {@link ISignalReceiver#getAcceptedChannels()}）筛选，显式直连直接以配置的接收者为终端。
-     * <p>
-     * <b>只读：</b>只遍历目标表与连接状态，不写信号槽、不建频道、不写 MoLang 存储、不触发
-     * {@link ISignalReceiver#onSignalUpdated}，因此可以在建立绑定前反复调用。同一对象在同一到达频道只出现
-     * 一次，经不同到达频道可达时各保留一项；环路按「对象身份、频道」终止。返回的映射与列表不可变，
-     * 频道顺序与频道内的终端顺序均为首次出现顺序。
-     * <p>
-     * <b>调用线程：</b>主线程（目标表与订阅表由主线程构建）。
+     * 展开规则见 {@link #resolveTargets(String, List)}。
      *
      * @param outputChannel 发送者的输出频道
      * @return 到达频道 → 终端列表；该频道没有首跳或线条全部断开时返回空映射
      */
     default Map<String, List<ISignalReceiver>> resolveTargets(String outputChannel) {
         if (outputChannel == null || outputChannel.isEmpty()) return Map.of();
-        Map<String, ISignalReceiver> firstHop = getTargets().get(outputChannel);
+        return resolveFirstHop(getTargets().get(outputChannel), outputChannel);
+    }
+
+    /**
+     * 同上，但只沿 {@code firstHopNames} 列出的那几条首跳推进。<br>
+     * 用于同一个频道被不同控制组指向不同接收者时，按组查看各自的终端；名字按给定顺序保留，
+     * 目标表里不存在的名字直接跳过（建表期已记录）。空列表表示这条频道在本组不到达任何终端。
+     * <p>
+     * <b>只读：</b>只遍历目标表与连接状态，不写信号槽、不建频道、不写 MoLang 存储、不触发
+     * {@link ISignalReceiver#onSignalUpdated}，因此可以在建立绑定前反复调用。
+     *
+     * @param outputChannel 发送者的输出频道
+     * @param firstHopNames 本次要考虑的首跳目标名，不可为 {@code null}
+     * @return 到达频道 → 终端列表
+     */
+    default Map<String, List<ISignalReceiver>> resolveTargets(String outputChannel, List<String> firstHopNames) {
+        Objects.requireNonNull(firstHopNames, "firstHopNames");
+        if (outputChannel == null || outputChannel.isEmpty()) return Map.of();
+        Map<String, ISignalReceiver> union = getTargets().get(outputChannel);
+        if (union == null || union.isEmpty()) return Map.of();
+        Map<String, ISignalReceiver> firstHop = new LinkedHashMap<>(firstHopNames.size());
+        for (String name : firstHopNames) {
+            ISignalReceiver receiver = union.get(name);
+            if (receiver != null) firstHop.put(name, receiver);
+        }
+        return resolveFirstHop(firstHop, outputChannel);
+    }
+
+    /**
+     * 从一组已解析的首跳推进到终端：遇到 {@link SignalPort} 时沿对侧端口继续，并用对侧端口的转译表得到
+     * 到达频道；遇到 {@link ISignalBus} 时按订阅者声明的接受条件展开 {@code global}。端口与总线转发按各自的
+     * 接受规则（{@link ISignalReceiver#acceptAllRoutingInput()}、{@link ISignalReceiver#acceptAllBroadcastInput()}
+     * 与 {@link ISignalReceiver#getAcceptedChannels()}）筛选，显式直连直接以配置的接收者为终端。
+     * <p>
+     * 同一对象在同一到达频道只出现一次，经不同到达频道可达时各保留一项；环路按「对象身份、频道」终止。
+     * 返回的映射与列表不可变，频道顺序与频道内的终端顺序均为首次出现顺序。
+     *
+     * @param firstHop      首跳实例，{@code null} 或空表示这条线路不存在
+     * @param outputChannel 首跳的到达频道
+     * @return 不可变的「到达频道 → 终端列表」
+     */
+    private static Map<String, List<ISignalReceiver>> resolveFirstHop(
+            @Nullable Map<String, ISignalReceiver> firstHop, String outputChannel) {
         if (firstHop == null || firstHop.isEmpty()) return Map.of();
 
         Map<String, List<ISignalReceiver>> terminals = new LinkedHashMap<>();

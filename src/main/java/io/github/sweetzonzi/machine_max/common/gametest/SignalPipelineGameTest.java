@@ -4,12 +4,15 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlMode;
+import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimTargetState;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
+import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackControllerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.TrackDriveSubsystem;
@@ -20,8 +23,11 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructu
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,6 +72,66 @@ public final class SignalPipelineGameTest {
         } finally {
             vehicle.onRemoveFromLevel();
         }
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void controlGroupDeliversOnlyItsOwnTargets(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("t90a:t90a_turret"));
+        RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            var turret = part.subParts.get("sub_part.t90a.turret");
+            var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
+            var weapon = (WeaponControllerSubsystem) turret.subsystems.get("subsystem.t90a.main_weapon");
+            var azimuth = turret.subsystems.get("subsystem.t90a.azimuth_driver");
+            String aim = "probe_shared_aim";
+            String fire = "probe_shared_fire";
+
+            // 第一段：同一开火频道在两组里指向不同接收者，发现按组各自成立。
+            ControlGroup fireBase = new ControlGroup("probe_fire_base", ControlMode.INHERIT, Map.of(), Map.of(),
+                    Map.of(), Map.of(fire, List.of("subsystem.t90a.main_weapon")), Map.of(), List.of());
+            ControlGroup fireSub = new ControlGroup("probe_fire_sub", ControlMode.INHERIT, Map.of(), Map.of(),
+                    Map.of(), Map.of(fire, List.of("subsystem.t90a.azimuth_driver")), Map.of(), List.of());
+            seat.setControlGroupSet(new ControlGroupSet(fireBase, List.of(fireSub), List.of(), -1));
+            helper.assertTrue(seat.getWeaponControllersByGroup().getOrDefault("base", List.of()).equals(List.of(weapon)),
+                    "基础组的开火频道指向主火控，发现必须命中它");
+            helper.assertTrue(seat.getWeaponControllersByGroup().getOrDefault("probe_fire_sub", List.of()).isEmpty(),
+                    "子组的同名频道只指向方向机，不能靠并集再发现主火控");
+
+            // 第二段：同一视角频道在两组里指向不同接收者，投递按组各自成立。
+            ControlGroup aimBase = new ControlGroup("probe_aim_base", ControlMode.INHERIT, Map.of(),
+                    Map.of(aim, List.of("subsystem.t90a.azimuth_driver")), Map.of(), Map.of(), Map.of(), List.of());
+            ControlGroup aimSub = new ControlGroup("probe_aim_sub", ControlMode.INHERIT, Map.of(),
+                    Map.of(aim, List.of("subsystem.t90a.main_weapon")), Map.of(), Map.of(), Map.of(), List.of());
+
+            seat.setControlGroupSet(new ControlGroupSet(aimBase, List.of(aimSub), List.of(), -1));
+            helper.assertTrue(seat.setViewInputSignal(
+                            new ViewInputSignal(new Vec3(1, 2, 3), Vec2.ZERO, AimTargetState.Mode.WORLD), -1, ""),
+                    "座椅必须处于可工作状态");
+            helper.assertTrue(delivered(azimuth, aim, seat) instanceof ViewInputSignal,
+                    "基础组声明的接收者拿到视角目标");
+            helper.assertTrue(delivered(weapon, aim, seat) == null,
+                    "同一频道在基础组没有指向主火控，不得投递");
+
+            seat.setControlGroupSet(new ControlGroupSet(aimBase, List.of(aimSub), List.of(), 0));
+            helper.assertTrue(seat.setViewInputSignal(
+                            new ViewInputSignal(new Vec3(4, 5, 6), Vec2.ZERO, AimTargetState.Mode.WORLD), -1, ""),
+                    "切到子组后仍可发信");
+            helper.assertTrue(delivered(weapon, aim, seat) instanceof ViewInputSignal,
+                    "子组声明的接收者拿到视角目标");
+            helper.assertTrue(delivered(azimuth, aim, seat) == EmptySignal.INSTANCE,
+                    "切组清空把基础组的接收者置空，切换后不再收到");
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /** 读某接收者在指定频道上由该发送者写入的值；频道或槽位不存在时为 {@code null}。 */
+    @Nullable
+    private static Object delivered(ISignalReceiver receiver, String channel, ISignalSender sender) {
+        SignalChannel slot = receiver.getSignalInputChannels().get(channel);
+        return slot == null ? null : slot.get(sender);
     }
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)

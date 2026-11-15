@@ -29,11 +29,13 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Getter
@@ -161,7 +163,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 对单个控制组执行发现。
+     * 对单个控制组执行发现。<br>
+     * 只沿该组自己声明的目标推进：同一频道被两个组指向不同接收者时，各组只看到自己的那些。
      *
      * @param groupKey 控制组标识（"base" 或子组名）
      * @param group    控制组对象
@@ -169,9 +172,10 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     private void resolveWeaponControllersForGroup(String groupKey, ControlGroup group) {
         List<WeaponControllerSubsystem> found = new ArrayList<>();
         Set<WeaponControllerSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (String channel : discoveryChannels(group)) {
+        for (Map.Entry<String, List<String>> entry : discoveryTargetNames(group).entrySet()) {
+            String channel = entry.getKey();
             if (channel.isEmpty()) continue;
-            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
+            for (List<ISignalReceiver> terminals : resolveTargets(channel, entry.getValue()).values()) {
                 for (ISignalReceiver terminal : terminals) {
                     if (terminal instanceof WeaponControllerSubsystem wc
                             && wc.getOwner().getSubPart().getPart().assembly
@@ -185,18 +189,21 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         weaponControllersByGroup.put(groupKey, List.copyOf(found));
     }
 
-    /** 一个控制组启用的全部输出频道，按固定类别顺序排列，保证发现顺序稳定。 */
-    private static Set<String> discoveryChannels(ControlGroup group) {
-        Set<String> channels = new LinkedHashSet<>();
-        channels.addAll(group.moveTargets.keySet());
-        channels.addAll(group.viewTargets.keySet());
-        channels.addAll(group.regularTargets.keySet());
-        channels.addAll(group.mainWeaponTargets.keySet());
-        channels.addAll(group.secondaryWeaponTargets.keySet());
-        for (ControlBinding binding : group.bindings) {
-            channels.add(binding.channel);
+    /**
+     * 一个控制组的输出声明：频道名 → 该组声明的目标名。<br>
+     * 五类目标表与按键绑定按类别顺序取有序并集，同一频道在多个类别里出现时目标名合并而不是覆盖。
+     */
+    private static Map<String, List<String>> discoveryTargetNames(ControlGroup group) {
+        Map<String, List<String>> names = new LinkedHashMap<>();
+        for (Map<String, List<String>> map : List.of(group.moveTargets, group.viewTargets, group.regularTargets,
+                group.mainWeaponTargets, group.secondaryWeaponTargets)) {
+            map.forEach((channel, targets) ->
+                    names.merge(channel, targets, AbstractControllableSubsystem::unionTargets));
         }
-        return channels;
+        for (ControlBinding binding : group.bindings) {
+            names.merge(binding.channel, binding.targets, AbstractControllableSubsystem::unionTargets);
+        }
+        return names;
     }
 
     /**
@@ -317,6 +324,21 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         return List.copyOf(union);
     }
 
+    /**
+     * 按合并表声明的目标逐个投递：只有 base 与活动子组共同声明的接收者会拿到值。<br>
+     * 频道名取自合并表，接收者名逐条经首跳表换算成实例；声明了但解不出接收者的名字由
+     * {@link ISignalSender#sendSignalToTarget(String, String, Object)} 跳过。目标名与首跳表的键
+     * 同为接收者的寻址名（子系统名、{@code "local"}、{@code "global"}、交互区名、连接点名）。
+     */
+    private void sendPerTarget(Map<String, List<String>> targets, Function<String, Object> valueOf) {
+        for (Map.Entry<String, List<String>> entry : targets.entrySet()) {
+            Object value = valueOf.apply(entry.getKey());
+            for (String targetName : entry.getValue()) {
+                this.sendSignalToTarget(entry.getKey(), targetName, value);
+            }
+        }
+    }
+
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
@@ -345,10 +367,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
         Map<String, List<String>> targets = controlGroupSet.getMergedMoveTargets();
         if (!targets.isEmpty() && this.isActive()) {
-            for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey,
-                        new MoveInputSignal(inputs, conflicts, controlGroupSet.priorityOf(signalKey)));
-            }
+            sendPerTarget(targets, channel -> new MoveInputSignal(inputs, conflicts,
+                    controlGroupSet.priorityOf(channel)));
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
@@ -360,10 +380,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
         Map<String, List<String>> targets = controlGroupSet.getMergedRegularTargets();
         if (!targets.isEmpty() && this.isActive()) {
-            for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey,
-                        new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey)));
-            }
+            sendPerTarget(targets, channel -> new RegularInputSignal(inputType, tickCount,
+                    controlGroupSet.priorityOf(channel)));
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
@@ -379,9 +397,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         }
         viewSourcePart = sourcePart;
         viewSourceName = sourceName;
-        for (String channel : controlGroupSet.getMergedViewTargets().keySet()) {
-            sendSignalToAllTargets(channel, input.withPriority(controlGroupSet.priorityOf(channel)));
-        }
+        sendPerTarget(controlGroupSet.getMergedViewTargets(),
+                channel -> input.withPriority(controlGroupSet.priorityOf(channel)));
         getSubPart().getPart().assembly.activatePhysics();
         return true;
     }
@@ -397,13 +414,10 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     public void setMainWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
         Map<String, List<String>> targets = controlGroupSet.getMergedMainWeaponTargets();
         if (!targets.isEmpty() && this.isActive()) {
-            for (String signalKey : targets.keySet()) {
-                // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
-                Object signal = (inputType == KeyInputMapping.MAIN_FIRE && tickCount != 0)
-                        ? EmptySignal.INSTANCE
-                        : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey));
-                this.sendSignalToAllTargets(signalKey, signal);
-            }
+            // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
+            sendPerTarget(targets, channel -> (inputType == KeyInputMapping.MAIN_FIRE && tickCount != 0)
+                    ? EmptySignal.INSTANCE
+                    : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(channel)));
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
@@ -423,13 +437,10 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     public void setSecondaryWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
         Map<String, List<String>> targets = controlGroupSet.getMergedSecondaryWeaponTargets();
         if (!targets.isEmpty() && this.isActive()) {
-            for (String signalKey : targets.keySet()) {
-                // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
-                Object signal = (inputType == KeyInputMapping.SECONDARY_FIRE && tickCount != 0)
-                        ? EmptySignal.INSTANCE
-                        : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(signalKey));
-                this.sendSignalToAllTargets(signalKey, signal);
-            }
+            // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
+            sendPerTarget(targets, channel -> (inputType == KeyInputMapping.SECONDARY_FIRE && tickCount != 0)
+                    ? EmptySignal.INSTANCE
+                    : new RegularInputSignal(inputType, tickCount, controlGroupSet.priorityOf(channel)));
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {

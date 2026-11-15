@@ -107,8 +107,9 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。
 - **存储写入自述**：发送端只调用 `getSignalStorage()`，由 Part / SubsystemController 自行提供存储表，不按具体类型 `instanceof` 分派。
 - **Part 订阅随结构自动订退**：子系统在 `AbstractPart#createSubsystems` 进入 SubPart 容器后订阅所属 Part，`SubPart#destroy`（含构造失败回收）退出。显式退订不改变物理归属与 global 订阅；结构变化只清 `signalInputChannels` 与 `signalStorage`，不退订。
-- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控与火控的执行器发现都用它，发现过程不发空信号。
+- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控与火控的执行器发现都用它，发现过程不发空信号。同名频道的两个控制组可以各查各的：`resolveTargets(outputChannel, firstHopNames)` 只用列出的那几条首跳，名字按给定顺序保留、表里没有的直接跳过，空列表即「这条频道在本组不到达任何终端」。首跳的键就是配置里的目标名（子系统名、`"local"`、`"global"`、交互区名、连接点名），所以第二个重载是对首跳表做过滤，不重新按名解析。
 - **执行器读输入槽**：火控把 `RotationSignal` / `LauncherSubsystem.FireCommand` 作为信号值，经实例重载写入炮塔/发射器的到达频道；执行器按自己的 `control_inputs` 顺序读取当前槽，`EmptySignal` 表示该来源已释放。结构变化清空输入槽后不需要逐个目标调用释放 setter。
+- **控制组按自己的声明投递**：控制组的类目出口（`setMoveInputSignal`、`setViewInputSignal`、主／副武器与常规输入）遍历 base 与活动子组合并后的「频道 → 目标名」，逐个 `sendSignalToTarget(channel, name, value)`；首跳表本身是 base 与全部子组的并集，所以缺省行为与「发给该频道全部首跳」一致，而两组把同一频道指向不同接收者时各发各的。清空（`clearInputSignals`、切组、失活）仍按并集把可能发过的频道全部置空。
 - **目标名解析作用域（当前）**：`setTargetFromNames` / `getReceiversFromNames` 仍只在发送者所在 SubPart 内解析子系统/交互区/连接点；跨 SubPart 的 Part 级解析见设计文档 §6.5.3 TODO。首跳表在结构变化时整体重建，配置里删掉的频道不会留在表中。
 
 ## 反模式
