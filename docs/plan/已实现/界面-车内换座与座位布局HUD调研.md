@@ -46,7 +46,7 @@
 ```text
 F 键
   → LivingEntityEyesightAttachment.clientInteract()
-  → SubsystemInteractPayload(subPartId, interactBoxName)
+  → SubsystemInteractPayload(子零件 ID, 交互区名)
   → 服务端 InteractBox.interact(entity)
   → 按 signal_targets 顺序逐个尝试目标
   → SeatSubsystem.onInteract(entity)
@@ -152,7 +152,7 @@ K17 只有驾驶员舱盖与后舱盖两个交互区：驾驶员舱盖只指向�
 | R2 | 不要求内容作者补交互区 | 新载具/玩家组装的载具不改模型也能换座 |
 | R3 | 第三人称/封闭车体可用 | 不依赖“看见座位”或“射线到达座位” |
 | R4 | 展示占用与可用性 | 空位、已占用、不可用、当前座位、下一个目标可区分 |
-| R5 | 服务端权威 | 客户端用本地顺序算出目标座位，只发目标（`subPartId + seatName`）；服务端不排序，只复核目标存在、同装配体、未占用、可用（§5.4.2） |
+| R5 | 服务端权威 | 客户端用本地顺序算出目标座位，只发目标（子零件 ID + 座位序号）；服务端不排序，只复核目标存在、同装配体、未占用、可用（§5.4.2） |
 | R6 | 尽量不打断驾驶 | 换座与查看座位图时不释放鼠标、不停车、不暂停 |
 | R7 | 兼容现有进入流程 | 车外舱盖/车门交互区保留，不变更语义 |
 | R8 | 可扩展到零件状态 | 逐 SubPart 的渲染颜色可按耐久给色 |
@@ -265,9 +265,9 @@ K17 只有驾驶员舱盖与后舱盖两个交互区：驾驶员舱盖只指向�
 单按 X（换座键）
   → 客户端按几何顺序算出“下一个可用座位”，HUD 高亮它
   → 一个可用的都没有 → 本地提示“满员”，不发包
-  → SeatSwitchPayload(targetSubPartId, targetSeatName)
+  → SeatSwitchPayload(目标子零件 ID, 目标座位序号)
   → 服务端解析目标、校验、切换
-  → SeatSwitchResultPayload(targetSubPartId, targetSeatName, success, reason)
+  → SeatSwitchResultPayload(目标子零件 ID, 目标座位序号, success, reason)
   → 客户端应用；HUD 的当前位置移到新座位
 
 按住 X 再按 1–9（数字直选）
@@ -301,12 +301,11 @@ List<SeatSubsystem> seats = vehicle.getAllSeats().stream()
         .toList();
 ```
 
-每个座位取世界位置，按用途分两种取法：
+每个座位取用的位置分两种：
 
 ```java
-// 排序/顺序：非插值，同一 tick 内取到稳定值，不受渲染插值影响
-Vector3f sortPos = seat.getSubPart()
-        .getLocatorWorldTransform(seat.getAttr().getLocator()).getTranslation();
+// 座位图标记的局部位置：内容定义里的 locator 局部变换（静态，不随姿态变化）
+Transform local = seat.getSubPart().getAttr().locatorTransforms.get(seat.getAttr().getLocator());
 
 // 渲染标记：插值，逐帧跟随物理更平滑
 Vector3f drawPos = seat.getSubPart()
@@ -392,16 +391,16 @@ float sy = -rel.dot(front);
 
 #### 5.2.3 排序、编号与“下一个”
 
-排序键：`(sy, sx, seatName, subPartId)` 升序——先上后下、先左后右；名字/宿主 id 作为稳定 tie-breaker。Van 的四个座位子系统名都叫 `subsystem.machine_max.seat`，必须靠宿主 SubPart id 或 locator 兜底，不能只按名字排。坐标先四舍五入到 0.05 格，减少两端浮点误差导致的顺序翻转。
+排序键：部件 UUID 升序 → 子零件声明序 → 子系统声明序（`VehicleCore#getAllSeats()`，`#nextSeat` 按同一份列表回绕）。它不读位姿、名字、`SubPart#id` 与会话计数器，因此炮塔转动、悬挂起伏改变不了编号；存档恢复后 UUID 不变，编号也不变。
 
 编号 `1..N` 是**显示顺序**，画在座位标记上（同时在面板标题的 `当前/总数` 与 actionbar 里出现），帮助玩家理解“按键会按什么次序走”；它不映射任何按键。
 
 **“下一个”由客户端算出，作为发送的目标**：
 
 ```java
-// SeatOrder 放 common 便于其它调用方复用；服务端不依赖它排序
+// 座次枚举放 common（VehicleCore#getAllSeats）：服务端与客户端用同一份结构顺序
 static SeatSubsystem next(VehicleCore vehicle, SeatSubsystem from, boolean forward) {
-    List<SeatSubsystem> order = order(vehicle);   // 已按 (sy, sx, seatName, subPartId) 排好
+    List<SeatSubsystem> order = order(vehicle);   // 已按结构顺序排好（VehicleCore#getAllSeats）
     int i = order.indexOf(from);
     if (i < 0 || order.size() < 2) return null;
     int dir = forward ? 1 : -1;
@@ -420,12 +419,12 @@ static boolean available(SeatSubsystem s) {
 }
 ```
 
-- 算出目标后发 `SeatSwitchPayload(targetSubPartId, targetSeatName)`：服务端不重算顺序，只校验这个座位。两端的顺序**不需要一致**——服务端收到的已经是具体座位名，即使它自己有另一套排法也不影响结果。
-- 排序用**非插值**的 `getLocatorWorldTransform`（`SubPart.java:1197`）；插值版本只用于标记的逐帧位置。排序只影响“按几次键到哪里”和编号显示，不影响换座的正确性。
+- 算出目标后发 `SeatSwitchPayload(目标子零件 ID, 目标座位序号)`：服务端不重算顺序，只校验这个座位。客户端用来算“下一个”的几何顺序与服务端无关；载荷里的序号是内容定义的声明序位置，两端由同一份内容定义保证一致。
+- 枚举与“下一个”只读结构与同步值 `occupied`（可用性见 `SeatSubsystem#isAvailable`），不读位姿；编号只影响“按几次键到哪里”和显示，不影响换座的正确性。
 - 可用性只读 `isOccupied()`，不读 `passenger`：`passenger` 只有服务端有值，客户端读它会把所有座位当空位。服务端在 `SeatSubsystem` 里同步维护两者，语义一致。
 - 当前座位也参与排序；它自己永远不是“下一个”，所以只有 1 个座位时按键无操作。
 - 没有别的可用座位时返回 `null`，客户端本地提示“满员”，不发包。
-- 炮塔旋转会让炮塔上的座位在车体参考系里移动；顺序在**进入座位 / 结构变化 / 座位集合变化**时重算并缓存，不会转到一半跳变。标记位置仍逐帧更新。
+- 炮塔旋转不会改变座位编号（枚举不读位姿）；编号与顺序每次从 `VehicleCore#getAllSeats()` 现场取，标记位置仍逐帧更新。
 - 重叠座位（同一 XZ、不同高度）：检测屏幕距离小于标记尺寸的座位，沿 X 方向错开几像素，并画一条细引线指回真实位置；高度差用一个小 `↑`/`↓` 角标表示（可选）。
 
 #### 5.2.4 车体形状与座位标记的屏幕坐标
@@ -596,10 +595,10 @@ public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
 
 ```java
 // C2S：目标座位；循环键与将来的选座界面共用
-public record SeatSwitchPayload(int subPartId, String seatName) implements CustomPacketPayload { ... }
+public record SeatSwitchPayload(int subPartId, int seatIndex) implements CustomPacketPayload { ... }
 
 // S2C：纯状态包，成功时广播给维度内所有玩家，失败只回发起者
-public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, String seatName,
+public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, int seatIndex,
                                       int controlGroup, boolean success, Reason reason)
         implements CustomPacketPayload {
     public enum Reason { OK, NOT_SEATED, SAME_SEAT, OCCUPIED, UNAVAILABLE,
@@ -607,9 +606,9 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
 }
 ```
 
-- 注册到 `input` 协议组（`MMPayloadRegistry.java:35`），新增载荷时按项目约定提升该组版本（当前 `input:2.2.0`）。
+- 注册到 `input` 协议组（`MMPayloadRegistry.java:35`），新增载荷时按项目约定提升该组版本（当前 `input:3.0.0`）。
 - **载荷带具体目标，不带方向**：循环键先在本地算出下一个可用座位，再把座位名发出去。将来的点击/数字键/径向菜单直接填被点的座位，不需要新增第二个载荷。
-- **服务端不排序**：它只解析 `subPartId + seatName`，确认座位存在、同装配体、可用、未被占。两端的顺序即使不同也不影响结果。
+- **服务端不排序**：它只按 `(子零件 ID, 座位序号)` 解析，确认座位存在、同装配体、可用、未被占。客户端用来算“下一个”的几何顺序即使与服务端不同，也不影响结果。
 - **编号不进协议**：`1/3` 里的序号由客户端按自己的顺序算，actionbar 与面板标题都读本地排序；服务端既不生成也不回带 `index`/`total`——它与“服务端不排序”是同一条约束的两面。两端的编号在极端情况下可能不同（客户端晚一个网络 tick 的占用），但编号只是显示顺序，不影响换到哪个座位。
 - **`controlGroup` 是状态，不是座位序号**：结果包带上目标座位复位后的活动控制组索引，客户端照抄写入本地副本（§5.11）。上一条“编号不进协议”只针对**座位序号**——服务端不排序，生成不了；控制组索引是服务端在 ⑤ 里刚写下的真实状态，它本来就有值，而且两端必须相等才不会让视角包与绑定索引失配。
 - **结果包必须是纯状态包**：只写 `passenger`/`occupied`/`controllingSubsystem` 与相机目标，不调 `interactBox.interact`、`setPassenger`、`removePassenger`，注册为 `playToClient`。这些字段没有原版包承载（`ClientboundSetPassengersPacket` 只带骑乘关系），骑乘实体本身也不是可靠信号——同一 SubPart 换座时 `getVehicle()` 根本不变。
@@ -623,7 +622,7 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
 顺序执行，任一失败返回对应 `Reason`：
 
 1. `ObjectManager.getDestroyableObject(level, subPartId)` 是 `SubPart`；
-2. 该 SubPart 的 `subsystems.get(seatName)` 是 `SeatSubsystem to`；
+2. 该 SubPart 的 `subsystemAt(seatIndex)` 是 `SeatSubsystem to`；
 3. 玩家当前 `controllingSubsystem` 是 `SeatSubsystem from`；
 4. `from.passenger == player`，且 `player.getVehicle() == from.getSubPart().getEntity()`；
 5. `from != to`；
@@ -698,7 +697,7 @@ if (SeatSwitchHelper.isSwitching(passenger)) return passenger.position();
 
 - `detachForSwitch` 的内容与 `removePassenger` 相同，但**不调用 `stopRiding`、不加冲量**。
 - `attachForSwitch` 的内容与 `setPassenger` 相同，但**不重复移除旧座位**，也不调用 `startRiding`：同实体路径本来就不需要挂载，跨实体路径由调用方先挂载成功再调它。
-- `updateBoardingOffset` 已经处理“同一装配体换座”的世界坐标交接（`SeatSubsystem.java:136-155`）；只要在清 `controllingSubsystem` 之前调用，就能复用。它目前是 `private`，所以 `SeatSwitchHelper` 必须和 `SeatSubsystem` 同包（`common/mech/subsystem/`），或者由 `SeatSubsystem` 暴露 `transferBoardingOffsetFrom(from, passenger)`。`SeatOrder` 放在子包 `common/mech/subsystem/seat/` 时，`SeatSwitchHelper` 不能跟着搬进去——跨子包调用不到包内可见方法。
+- `updateBoardingOffset` 已经处理“同一装配体换座”的世界坐标交接（`SeatSubsystem.java:136-155`）；只要在清 `controllingSubsystem` 之前调用，就能复用。它目前是 `private`，所以 `SeatSwitchHelper` 必须和 `SeatSubsystem` 同包（`common/mech/subsystem/`），或者由 `SeatSubsystem` 暴露 `transferBoardingOffsetFrom(from, passenger)`——跨子包调用不到包内可见方法。
 - 新座位接管时把活动控制组复位到该座位预设的默认值（`resetControlGroupToPreset()`，§5.11），避免继承上一个乘客留下的子组；旧座位的子组保持不变，留给下一次进入。
 - 服务端切换成功后广播 `SeatSwitchResultPayload`；每个客户端按 `passengerEntityId` 找到本地实体，对目标座位应用：
   - **同 SubPart**：骑乘关系没变，不调用 `stopRiding`/`startRiding`；只清旧座位的客户端字段，再按结果包里的 `passengerEntityId` 设置新座位的 `occupied` 与 `controllingSubsystem`。`passenger` 字段的权威值在服务端，客户端写它只用于显示，不参与 §5.2.3 的 `available()` 判定。
@@ -718,7 +717,7 @@ if (SeatSwitchHelper.isSwitching(passenger)) return passenger.position();
 
 #### 换座期间在途的旧座位输入
 
-换座请求发出到结果包到达之间，客户端仍按旧座位注册着按键：`handleNormalInputs` 每 tick 用当前 `controllingSubsystem` 的 `getMergedBindings()` 重建一次（`RawInputHandler.java:516-538`），所以这段时间按下的键会带着旧座位的 `subPartId + subSystemName + bindingIndex` 发出。服务端要是在处理完换座之后才收到它们，就会把 `detachForSwitch` 刚清掉的信号重新写回旧座位——玩家的手还按在油门/扳机上，旧座位的线路被重新点亮一次。
+换座请求发出到结果包到达之间，客户端仍按旧座位注册着按键：`handleNormalInputs` 每 tick 用当前 `controllingSubsystem` 的 `getMergedBindings()` 重建一次（`RawInputHandler.java:516-538`），所以这段时间按下的键会带着旧座位的 `subPartId + 子系统序号 + bindingIndex` 发出。服务端要是在处理完换座之后才收到它们，就会把 `detachForSwitch` 刚清掉的信号重新写回旧座位——玩家的手还按在油门/扳机上，旧座位的线路被重新点亮一次。
 
 两个载荷缺这层校验：
 
@@ -940,7 +939,7 @@ PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload
 
 | 状态 | 存在哪 | 权威端 | 下行通道 | 谁读它 |
 | --- | --- | --- | --- | --- |
-| 占用 `occupied` | 每个 `SeatSubsystem` | 服务端 | `DATA_OCCUPIED_ID`（每 tick 脏值；`pushAllTo` 补全量） | `SeatOrder.available()`、座位图标记 |
+| 占用 `occupied` | 每个 `SeatSubsystem` | 服务端 | `DATA_OCCUPIED_ID`（每 tick 脏值；`pushAllTo` 补全量） | `SeatSubsystem#isAvailable()`、座位图标记 |
 | 乘客 `passenger` | 每个 `SeatSubsystem` | 服务端 | **无** | 服务端校验、`findOccupiedSeat` 的下车搜索 |
 | 骑乘关系 | `Entity.vehicle` / `passengers` | 服务端 | `ClientboundSetPassengersPacket`（原版，下一 tick） | 原版移动与 `positionRider`、`onTick` 重试 |
 | 控制关系 `controllingSubsystem` | 实体附件（Mixin） | 服务端 | **没有原版包**：换座结果包 / 交互包重放 / 输入包重放 | `getPassengerAttachmentPoint`、`CameraController`、座位输入路由 |
@@ -949,8 +948,8 @@ PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload
 按 tick 展开：
 
 ```text
-T     客户端   按下 X → SeatOrder.next(...) 用本地顺序 + 本地 occupied 算出目标
-              → 发 SeatSwitchPayload(subPartId, seatName)，置 pending（20 tick 去重）
+T     客户端   按下 X → VehicleCore#nextSeat(...) 用本地结构顺序 + 本地 occupied 算出目标
+              → 发 SeatSwitchPayload(子零件 ID, 座位序号)，置 pending（20 tick 去重）
 T     服务端   解析 → 十步校验 → ①交接上车点 ②startRiding ③失败即返回
               ④清旧座位：setOccupied(false)、passenger=null、controlling=null
               ⑤接管新座位：passenger=player、setOccupied(true)、controlling=to、信号、额外质量、控制组复位
@@ -1050,7 +1049,7 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 
 #### 5.11.4 时序与在途包
 
-- `T` 按下 `X` 后、结果包到达前，`CameraController.send()` 仍用**旧座位**的 `activeIndex` 发包；但同一个包的 `subPartId`/`subSystemName` 指着旧座位，而服务端此时控制关系已经换到新座位，`ViewInputPayload` 的前两条（来源座椅、当前控制对象）就把它挡住了，与组值无关。丢一两帧视角包没有后果：`send()` 每 tick 重发完整目标（`CameraController.java:233-248`），不是增量。
+- `T` 按下 `X` 后、结果包到达前，`CameraController.send()` 仍用**旧座位**的 `activeIndex` 发包；但同一个包的 `subPartId`/子系统序号指着旧座位，而服务端此时控制关系已经换到新座位，`ViewInputPayload` 的前两条（来源座椅、当前控制对象）就把它挡住了，与组值无关。丢一两帧视角包没有后果：`send()` 每 tick 重发完整目标（`CameraController.java:233-248`），不是增量。
 - 结果包通过 `enqueueWork` 在主线程队列里执行，同一 tick 稍后才到 `handleNormalInputs`/`send()`，所以第一次用新值发包时两端已经一致。
 - 结果包丢失（掉线、维度切换）：`activeIndex` 没有全量补推，客户端会停在旧值；玩家按一次切组键就会上行整份集合（`RawInputHandler.java:396-409`），两端重新对齐。要彻底消掉这个窗口，需要一条“座位全量状态”包，属于 P4 的范围。
 - 复位只动该座位自己的 `ControlGroupSet` 与它的输入信号；乘客字段、骑乘关系、`occupied` 都不受影响。
@@ -1065,13 +1064,13 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 | 项 | 文件 | 内容 |
 | --- | --- | --- |
 | 占用同步 | `common/mech/subsystem/SeatSubsystem.java` | `DATA_OCCUPIED_ID`、`defineSynchedData`、`setOccupied`、`onSyncedDataUpdated`；`setPassenger`/`removePassenger`/`detachForSwitch`/`attachForSwitch` 四处写点统一调 `setOccupied` |
-| 座位顺序 | 新增 `common/mech/subsystem/seat/SeatOrder.java` | 刚性簇参考系、`(sy, sx, seatName, subPartId)` 排序、`available(...)`、`next(vehicle, from, forward)`；客户端用，服务端不依赖 |
+| 座位顺序 | `common/mech/vehicle/VehicleCore.java#getAllSeats` | 部件 UUID 升序 → 子零件声明序 → 子系统声明序；`#nextSeat(from, forward)` 按同一份列表回绕；参考件选择在客户端 `SeatMapLayout`，只决定座位图坐标系 |
 | 专用切换 | `SeatSubsystem.java`、新增**同包** `SeatSwitchHelper.java` | `detachForSwitch`、`attachForSwitch`、同实体/跨实体切换、boarding offset 交接、先挂载再改座位（失败无需回滚） |
 | 控制组复位 | `common/mech/subsystem/AbstractControllableSubsystem.java`、`SeatSubsystem.java` | `resetControlGroupToPreset()`：目标取预设的 `active_index`、换新实例而不是就地 `activate`、幂等；接入 `attachForSwitch` 与 `setPassenger`（§5.11） |
 | 下车抑制 | `common/entity/MMPartEntity.java` | `getDismountLocationForPassenger` 在换座期间返回当前位置 |
 | 输入来源校验 | `network/payload/ControlBindingPayload.java`、`MovementInputPayload.java` | 两个 handler 共用 `isControlledBy(sub, player)`（控制对象 + 座位乘客/骑乘），挡住换座后到达的旧座位按键包与移动包；移动包还要在广播前拦截（§5.5） |
-| 协议 | 新增 `network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`；`network/MMPayloadRegistry.java` | C2S 带目标座位（`subPartId + seatName`）；S2C 是纯状态包（不带座位序号，带复位后的 `controlGroup`），成功时广播维度内所有玩家、失败只回发起者；版本提升、服务端校验与节流 |
-| 测试 | `common/gametest/SeatOrderGameTest.java` | 同实体、跨实体、占用/不可用/跨装配体/当前座位；挂载被拒时状态不变；控制组复位（炮手预设 `0`、旧座位保持不变、幂等）；换座后旧座位的绑定包与移动包被拒绝；`SeatOrder.next` 的纯函数用例 |
+| 协议 | 新增 `network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`；`network/MMPayloadRegistry.java` | C2S 带目标座位（`(子零件 ID, 座位序号)`）；S2C 是纯状态包（不带座位序号，带复位后的 `controlGroup`），成功时广播维度内所有玩家、失败只回发起者；版本提升、服务端校验与节流 |
+| 测试 | `common/gametest/SeatSwitchGameTest.java` | 同实体、跨实体、占用/不可用/跨装配体/当前座位；挂载被拒时状态不变；控制组复位（炮手预设 `0`、旧座位保持不变、幂等）；换座后旧座位的绑定包与移动包被拒绝；`VehicleCore#nextSeat` 的候选集用例 |
 | 结构事件 | `common/mech/vehicle/VehicleCore.java`、新增 `event/VehicleStructureChangeEvent.java` | `onStructureChanged(Reason)` 包装：质量/最大耐久/相机距离、子系统握手、双端发事件；原因决定 `HpRecalcMode`（`ADD`→`GROW`，`SPLIT`→`NONE`，其余 `CLAMP`）；按 §5.7.6 的表逐点替换，`:851` 与 `:895` 保留在原处 |
 
 验收：K17 三个座位可以用循环键依次到达；玩家不离开载具、不被传送到车外；旧座位信号归零；新座位信号接管；换到炮手座后活动组是预设的自动炮组（`0`）且开火有效；旧座位的活动组保持原值；换座后旧座位的绑定包与移动包被拒绝；占用同步到另一客户端；`rg 'occupied\s*='` 只剩声明与 `setOccupied`；两台满血载具合并后 HP 等于两者之和（`:895` 未被并入包装）；专用服务器（非单机）上客户端也收到结构事件。
@@ -1081,8 +1080,8 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 | 项 | 文件 | 内容 |
 | --- | --- | --- |
 | 键位 | `client/input/KeyBinding.java`、`MMLanguageRegistry` | `cycle_seat`，默认 `X`；注册到 `RegisterKeyMappingsEvent` |
-| 输入 | `client/input/RawInputHandler.java` | 在 `handleNormalInputs` 的每 tick 调用处执行 `KeyHooks.EVENT(...).OnKeyDown(...)`；`SeatOrder.next(...)` 算目标后发 `SeatSwitchPayload(subPartId, seatName)`；actionbar 反馈；`pending` 去重 |
-| 客户端预测 | 复用 `SeatOrder.next(...)` | 同时用于 HUD 高亮、“下一个”标记与“满员”提示；算不出目标就不发包 |
+| 输入 | `client/input/RawInputHandler.java` | 在 `handleNormalInputs` 的每 tick 调用处执行 `KeyHooks.EVENT(...).OnKeyDown(...)`；`VehicleCore#nextSeat(...)` 算目标后发 `SeatSwitchPayload(子零件 ID, 座位序号)`；actionbar 反馈；`pending` 去重 |
+| 客户端预测 | 复用 `VehicleCore#nextSeat(...)` | 同时用于 HUD 高亮、“下一个”标记与“满员”提示；算不出目标就不发包 |
 
 验收：MTLB 10 个座位可用 `X` 依次到达；占用/不可用自动跳过；不打开界面。
 
@@ -1090,7 +1089,7 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 
 | 项 | 文件 | 内容 |
 | --- | --- | --- |
-| 布局 | 新增 `client/render/gui/seat/SeatMapLayout.java` | 座位标记的屏幕布局：重叠错开、载具包围盒与适配缩放（`fit`）；参考系与排序来自 common 的 `SeatOrder`；标记世界坐标每帧现取 |
+| 布局 | 新增 `client/render/gui/seat/SeatMapLayout.java` | 座位标记的屏幕布局：重叠错开、载具包围盒与适配缩放（`fit`）；参考系来自本类的参考件选择，排序来自 `VehicleCore#getAllSeats()`；标记世界坐标每帧现取 |
 | 重算 | `SeatMapLayout.java` | 订阅 `VehicleStructureChangeEvent` 置脏；进入座位时算一次，脏了下一 tick 重算；装配体 uuid 变了无条件重建 |
 | HUD | 新增 `client/render/gui/hud/SeatMapHud.java` | 常驻条件、面板、GUI 内半透明透视车体（沿参考零件自身三轴俯视、外壳 + 内构两遍、空模型守卫）、座位标记与“下一个”、标题与键位提示里的座位名、图例、反馈 |
 | 注册 | `client/render/gui/MMGuiManager.java` | `registerAboveAll`；客户端 tick 更新占用与当前座位 |
@@ -1117,7 +1116,7 @@ S2C 载荷加一个字段（§5.4.1），`controlGroup` 只在 `success` 时有�
 - 控制面板 3D 预览：按现有附录 A 用 `VehicleAnimatable` 做斜视角预览，和座位图分开。
 - 乘客名字/角色同步：在座位上同步 UUID/名字，地图显示“谁在哪个座位”。
 - 大编制载具：座位很多时标记聚合，或加“按住展开大图”。
-- 反向循环键：`Shift+X` 把 `SeatOrder.next(...)` 的 `forward` 传成 `false`。
+- 反向循环键：`Shift+X` 把 `VehicleCore#nextSeat(...)` 的 `forward` 传成 `false`。
 - 手柄径向选择：需要一个“按住 + 摇杆”的组合键，届时与会话内的座位图展开状态配合。
 - 座位点击/数字键：命中哪张座位标记就发 `SeatSwitchPayload`，协议不变。
 
@@ -1143,7 +1142,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | --- | --- |
 | 循环换座（K17 驾驶 → 下一个空位） | 旧座位空、新座位占用；`controllingSubsystem` 指向新座位；玩家仍骑同一实体；boarding offset 交接；位置不跳变（不触发下车搜索/冲量） |
 | 跨实体循环换座（Van 左前 → 下一个空位） | 玩家骑到新实体；旧实体释放；玩家位置不落到车外；`getDismountLocationForPassenger` 未被用作真实下车点 |
-| `SeatOrder.next` 纯函数 | 给定坐标/占用/可用性 → 期望目标；回绕；只有一个座位 → `null`；满员 → `null` |
+| `SeatSubsystem#isAvailable` | 座位与宿主都在、宿主有代理实体、未被占用 |
 | 满员 | 客户端算不出目标，不发包；服务端不收包、不受影响 |
 | 目标已占用 | 返回 `OCCUPIED`；两座位状态不变 |
 | 目标已毁坏/未激活 | 返回 `UNAVAILABLE` |
@@ -1217,7 +1216,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 4. 是否需要在座位图上显示其他玩家名字？需要额外同步 UUID/名字；v1 只显示占用。
 5. 是否把座位图做成内容包可放置的 HUD 元素？不建议；它是核心 UI，位置由客户端配置。
 6. 是否允许行驶中换座？建议允许；如果担心驾驶员切走导致失控，可后续加“仅在速度低于阈值时允许离开驾驶位”的服务器配置，但默认不限制。
-7. 是否需要反向循环键？`Shift+X` 的成本只是把 `SeatOrder.next(...)` 的 `forward` 传成 `false`；v1 先不做，留作 P4。
+7. 是否需要反向循环键？`Shift+X` 的成本只是把 `VehicleCore#nextSeat(...)` 的 `forward` 传成 `false`；v1 先不做，留作 P4。
 
 ***
 
@@ -1239,7 +1238,7 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 座位世界坐标（非插值，排序用） | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java:1197-1210`（`getLocatorWorldTransform`） |
 | 循环键按下路径 | `src/main/java/io/github/sweetzonzi/machine_max/client/input/RawInputHandler.java:470-471`（`KeyHooks.EVENT(...).OnKeyDown`） |
 | 离屏渲染目标（性能兜底） | `src/main/java/io/github/sweetzonzi/machine_max/client/fbo/OffscreenFbo.java:23-46` |
-| 座位排序与“下一个” | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatOrder.java` |
+| 座位枚举与“下一个” | `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#getAllSeats` / `#nextSeat`；可用性在 `SeatSubsystem#isAvailable` |
 | 换座协议 | `src/main/java/io/github/sweetzonzi/machine_max/network/payload/SeatSwitchPayload.java`、`SeatSwitchResultPayload.java`（注册见 `network/MMPayloadRegistry.java:122-129`） |
 | 座位 attachment point | `src/main/java/io/github/sweetzonzi/machine_max/common/entity/MMPartEntity.java:365-374` |
 | 下车位置搜索 | `MMPartEntity.java:554-595` |
@@ -1338,3 +1337,4 @@ v1（P0–P2）约 6–8 天；加上 P3 约两周。建议按 P0 → P1 → P2 
 | 2.17 | 2026-11-15 | 换座键增加编号直选：按住换座键再按 `1`–`9` 切到与座位图标记同号的座位，越界、当前座位、占用与不可用都在本地提示且不发包。切下一个改在松开换座键时触发，按下的那一刻才留得出位置给数字直选；按住期间对应的热栏点击由换座吞掉（`ClientTickEvent.Pre` 早于 `Minecraft#handleKeybinds`），松开后热栏照常。座位图在按住期间同样可见，选号时看得到编号 |
 | 2.18 | 2026-11-15 | 座位图的显示档位配置撤除：座位图在车上常驻，显隐只由观察者同车、至少两座、无打开的界面、GUI 可见、非相机模式决定；`MMClientConfig` 删除 `SeatMapMode`、`seat_map.mode` 键与 `isSeatMapVisible`，`vehicle.seat_map_visible` 查询口径随之收窄为这组条件 |
 | 2.19 | 2026-11-15 | 内置座位图页加编号直选提示：单按换座提示下方新增 `[换座键] + [1~N]` 键帽行与 `seat_map.hint.chord` 文案；键帽范围为静态文本 `1~N`（数字键覆盖 1–9，超过 9 座由单按到达）；`vehicle.seat_chord_armed` 在按住期间切到 `is-armed` 高亮；键帽与单按提示共用 `.keycap`，键名取 `vehicle.seat_switch_key` 的本地化显示 |
+| 2.20 | 2026-11-16 | 座次排序删除几何顺序：`SeatOrder` 整个类删除，枚举与循环换座进 `VehicleCore#getAllSeats()` / `#nextSeat()`（部件 UUID 升序 → 子零件声明序 → 子系统声明序，不读位姿、名字与会话计数器），可用性进 `SeatSubsystem#isAvailable()`，参考件选择进客户端 `SeatMapLayout`（只决定座位图坐标系，不参与排序）；换座键、数字直选、HUD 的座位表与编号同源改为 `VehicleCore#getAllSeats()`；测试随类改名 `SeatSwitchGameTest` |

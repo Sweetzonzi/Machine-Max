@@ -19,6 +19,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * 交互区交互包（双向）。<br>
+ * 以 {@code (子零件 ID, 交互区名)} 定位：交互区活表 {@code InteractBoxes} 继承 {@code ConcurrentHashMap}
+ * （物理宿主需要并发写），自身没有迭代序，序号只能从 JSON 键位推出；这是右键低频包，不值得为此引入
+ * 一条「键位必须两端一致」的依赖，因此保持名字寻址。
+ */
 @RequiredArgsConstructor
 @Accessors(chain=true)
 @Data

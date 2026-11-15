@@ -5,7 +5,6 @@ import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatOrder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchFeedback;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import net.minecraft.client.Minecraft;
@@ -44,7 +43,7 @@ public record HudVehicleSnapshot(@Nullable UUID assemblyId, List<Seat> seats, in
     public static HudVehicleSnapshot capture(VehicleCore vehicle, @Nullable SeatSubsystem observer) {
         SeatMapLayout.Snapshot layout = SeatMapLayout.snapshot(vehicle);
         int current = layout.numberOf(observer);
-        SeatSubsystem next = current == 0 ? null : SeatOrder.next(layout.seats(), observer, true);
+        SeatSubsystem next = current == 0 ? null : vehicle.nextSeat(observer, true);
         int pending = current == 0 ? 0 : layout.numberOf(SeatSwitchFeedback.pendingTarget());
         boolean successPulse = current != 0 && SeatSwitchFeedback.pulseTicks() > 0;
         Minecraft minecraft = Minecraft.getInstance();
@@ -65,7 +64,7 @@ public record HudVehicleSnapshot(@Nullable UUID assemblyId, List<Seat> seats, in
             }
             seats.add(new Seat(id, key, Component.translatable(key).getString(), point != null,
                     point == null ? 0 : point.x, point == null ? 0 : point.y, point == null ? 0 : -point.z,
-                    seat.isOccupied(), SeatOrder.available(seat),
+                    seat.isOccupied(), seat.isAvailable(),
                     current != 0 && SeatSwitchFeedback.failureAt(vehicle, id, key), seat.getOccupantName()));
         }
         return new HudVehicleSnapshot(vehicle.getAssemblyId(), seats, current, layout.numberOf(next), pending,

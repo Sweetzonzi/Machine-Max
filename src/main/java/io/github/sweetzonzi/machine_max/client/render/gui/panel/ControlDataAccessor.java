@@ -131,26 +131,12 @@ public class ControlDataAccessor {
     }
 
     /**
-     * 获取当前控制子系统的 subPartId，-1 表示不存在。
-     */
-    public static int getCurrentSubPartId(Minecraft mc) {
-        if (mc.player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
-            return sub.getOwner().getSubPart().getId();
-        }
-        return -1;
-    }
-
-    /**
-     * 获取当前子系统名称。
+     * 当前受控子系统；玩家不在载具控制下时返回 {@code null}。
      */
     @Nullable
-    public static String getCurrentSubSystemName(Minecraft mc) {
-        if (mc.player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
-            return sub.name;
-        }
-        return null;
+    private static AbstractControllableSubsystem getControllingSubsystem(Minecraft mc) {
+        return mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub ? sub : null;
     }
 
     /**
@@ -159,16 +145,15 @@ public class ControlDataAccessor {
      * 如果玩家未在座椅中（无真实子系统），则仅更新本地 Mock 缓存。
      */
     public static void saveControlSet(Minecraft mc, ControlGroupSet modified) {
+        AbstractControllableSubsystem sub = getControllingSubsystem(mc);
         // 1. 立即更新本地子系统副本（发包前改，确保即时生效）
-        if (mc.player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+        if (sub != null) {
             sub.setControlGroupSet(modified);
         }
         // 2. 发送网络包到服务端
-        int subPartId = getCurrentSubPartId(mc);
-        String subSystemName = getCurrentSubSystemName(mc);
-        if (subPartId >= 0 && subSystemName != null) {
-            PacketDistributor.sendToServer(new ControlGroupSetEditPayload(subPartId, subSystemName, modified));
+        if (sub != null) {
+            PacketDistributor.sendToServer(new ControlGroupSetEditPayload(
+                    sub.getSubPart().getId(), sub.getSubPart().subsystemIndex(sub), modified));
             cachedSnapshot = modified;
         } else {
             // 无座椅时：更新本地 Mock 数据
@@ -181,9 +166,9 @@ public class ControlDataAccessor {
      * 如果玩家未在座椅中则不发送（静默丢弃）。
      */
     public static void sendGuiAction(Minecraft mc, int actionIndex, GuiActionType type, float value) {
-        int subPartId = getCurrentSubPartId(mc);
-        String subSystemName = getCurrentSubSystemName(mc);
-        if (subPartId < 0 || subSystemName == null) return;
-        PacketDistributor.sendToServer(new GuiActionPayload(subPartId, subSystemName, actionIndex, type, value));
+        AbstractControllableSubsystem sub = getControllingSubsystem(mc);
+        if (sub == null) return;
+        PacketDistributor.sendToServer(new GuiActionPayload(
+                sub.getSubPart().getId(), sub.getSubPart().subsystemIndex(sub), actionIndex, type, value));
     }
 }

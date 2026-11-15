@@ -251,7 +251,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
             String subsystemName = entry.getValue().getSubsystem();
             if (!bones.containsKey(boneName) || subsystemName.isEmpty()) continue;
 
-            AbstractSubsystem subsystem = subPart.subsystems.get(subsystemName);
+            AbstractSubsystem subsystem = subPart.findOwnSubsystem(subsystemName);
             if (!(subsystem instanceof BasicSubsystem basicSubsystem) || basicSubsystem.isHidden()) continue;
 
             int color = getSubsystemColorByDurability(subsystem.getDurability(), subsystem.getMaxDurability());

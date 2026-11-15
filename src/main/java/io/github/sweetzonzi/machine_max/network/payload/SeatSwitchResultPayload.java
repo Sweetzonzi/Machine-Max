@@ -36,12 +36,12 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param passengerEntityId 换座的乘客实体 id
  * @param subPartId         目标座位所在子零件的全局 ID
- * @param seatName          目标座位的子系统名
+ * @param seatIndex         目标座位在该子零件声明序中的位置
  * @param controlGroup      目标座位复位后的活动控制组索引，失败时为 -1
  * @param success           是否完成
  * @param reason            结局，成功固定为 {@link SeatSwitchReason#OK}
  */
-public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, String seatName,
+public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, int seatIndex,
                                       int controlGroup, boolean success, SeatSwitchReason reason)
         implements CustomPacketPayload {
 
@@ -50,9 +50,9 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
     public static final StreamCodec<FriendlyByteBuf, SeatSwitchResultPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull SeatSwitchResultPayload decode(FriendlyByteBuf buf) {
-            int passenger = buf.readInt();
-            int subPart = buf.readInt();
-            String seat = buf.readUtf();
+            int passenger = buf.readVarInt();
+            int subPart = buf.readVarInt();
+            int seat = buf.readVarInt();
             int group = buf.readVarInt() - 1;
             boolean success = buf.readBoolean();
             SeatSwitchReason reason = SeatSwitchReason.values()[buf.readVarInt()];
@@ -61,9 +61,9 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
 
         @Override
         public void encode(FriendlyByteBuf buf, @NotNull SeatSwitchResultPayload payload) {
-            buf.writeInt(payload.passengerEntityId());
-            buf.writeInt(payload.subPartId());
-            buf.writeUtf(payload.seatName());
+            buf.writeVarInt(payload.passengerEntityId());
+            buf.writeVarInt(payload.subPartId());
+            buf.writeVarInt(payload.seatIndex());
             // 索引可能为 -1（无子控制组激活），用 +1 偏置写成无符号 varint
             buf.writeVarInt(payload.controlGroup() + 1);
             buf.writeBoolean(payload.success());
@@ -87,7 +87,7 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
         context.enqueueWork(() -> {
             Player local = context.player();
             Level level = local.level();
-            SeatSubsystem target = resolveSeat(level, payload.subPartId(), payload.seatName());
+            SeatSubsystem target = resolveSeat(level, payload.subPartId(), payload.seatIndex());
             boolean localPassenger = payload.passengerEntityId() == local.getId();
 
             if (!payload.success()) {
@@ -129,10 +129,10 @@ public record SeatSwitchResultPayload(int passengerEntityId, int subPartId, Stri
     }
 
     @Nullable
-    private static SeatSubsystem resolveSeat(Level level, int subPartId, String seatName) {
+    private static SeatSubsystem resolveSeat(Level level, int subPartId, int seatIndex) {
         DestroyableObject object = ObjectManager.getDestroyableObject(level, subPartId);
         if (!(object instanceof SubPart subPart)) return null;
-        AbstractSubsystem subsystem = subPart.subsystems.get(seatName);
+        AbstractSubsystem subsystem = subPart.subsystemAt(seatIndex);
         return subsystem instanceof SeatSubsystem seat ? seat : null;
     }
 }

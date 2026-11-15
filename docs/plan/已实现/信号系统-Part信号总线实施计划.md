@@ -28,8 +28,8 @@
 | R2 | `common/mech/signal/ISignalSender.java#getReceiversFromNames`、`#resolveSignalLine` | `local` 首跳是发送者所属 Part；总线按成员声明筛选，普通接收者作为终端结束查询 |
 | R3 | `common/mech/signal/ISignalBus.java#broadcast`、`#getAllSubscribers`、`#subscribe`、`#unsubscribe` | 现有总线接口继承发送和接收契约；广播按原始发送者分槽，通知符合频道条件的成员；成员管理方法需要实现 |
 | R4 | `common/mech/subsystem/SubsystemController.java#busSubscribers`、`#onSignalUpdated`、`#rebuildSubscriptions` | 全车总线只订阅子系统；收到通知时遍历该频道内各来源槽，更新总线存储并广播 |
-| R5 | `common/mech/part/AbstractPart.java#createSubsystems`、`#getAllSubsystems`、`#subsystemsByName` | 构造时填写 SubPart 容器与 Part 按名索引；`getAllSubsystems` 从各 SubPart 当前容器汇总去重集合 |
-| R6 | `common/mech/vehicle/SubPart.java#destroy`、`#abortConstruction`；`common/mech/part/AbstractPart.java#restoreState`、`#abortConstruction` | 正常销毁和构造失败都会清空 SubPart 的子系统容器；完整恢复也可能销毁保存状态中缺少的子结构；上述路径没有对应清空 Part 按名索引的动作 |
+| R5 | `common/mech/vehicle/SubPart.java#installSubsystem`、`common/mech/part/AbstractPart.java#getAllSubsystems` | 构造期由 `AbstractPart` 按声明序逐个把子系统装进所属 SubPart 并订阅 local 总线；Part 不持有按名索引；`getAllSubsystems` 从各 SubPart 当前容器汇总去重集合 |
+| R6 | `common/mech/vehicle/SubPart.java#destroy`、`#abortConstruction`；`common/mech/part/AbstractPart.java#restoreState`、`#abortConstruction` | 正常销毁和构造失败都会清空 SubPart 的子系统容器；完整恢复也可能销毁保存状态中缺少的子结构；Part 不持有按名索引，因此不需要这一类清理；订阅集合由 SubPart 的清理入口统一释放 |
 | R7 | `common/mech/signal/ISignalSender.java#deliverSignal`；`common/mech/signal/SignalPort.java#onSignalUpdated` | 直送会写接收者提供的存储并通知；端口转发写来源槽后直接通知，未统一调用 `deliverSignal` |
 | R8 | `common/mech/signal/ISignalReceiver.java#acceptAllRoutingInput`、`#acceptAllBroadcastInput`、`#getAcceptedChannels` | 三个默认值分别为 false、false、空列表；端口路由和总线广播使用不同接收开关 |
 | R9 | `common/mech/vehicle/VehicleCore.java#clearSignalStorage`、`#rebuildSignalTargets`；`common/mech/subsystem/SubsystemController.java#clearSignalStorage` | 结构变化会清输入槽并重建线路；车辆清理逐 Part 清输入频道，但没有清 Part 的 `signalStorage`，全车总线的两份容器都有清理 |
@@ -90,7 +90,7 @@ part.subscribe(seat)               // 恢复该座位的 local 订阅
 
 默认规则是本 Part 的子系统构造完成后自动订阅本地总线，退出本 Part 的实际子系统结构时退订。初始化／销毁代码可以调用这些方法，但订阅状态归各自总线所有，不由全局控制器统一代管 local。Part 的局部能力不以存在全车控制器为前提。
 
-自动订阅接在 R5 的 `createSubsystems`：子系统成功构造并进入 SubPart 容器后，由所属 Part 注册到本地总线。正常销毁与失败回收共用 R6 的 SubPart 清理入口执行本地退订；是否调用正常 `onDetach` 继续由现有 `notifySubsystems` 条件决定。本地退订不依赖正常拆离通知，避免构造失败分支遗漏清理。
+自动订阅接在 R5 的 `SubPart#installSubsystem`：子系统成功构造并进入 SubPart 容器后，由所属 Part 注册到本地总线。正常销毁与失败回收共用 R6 的 SubPart 清理入口执行本地退订；是否调用正常 `onDetach` 继续由现有 `notifySubsystems` 条件决定。本地退订不依赖正常拆离通知，避免构造失败分支遗漏清理。
 
 | 时点 | 需要保证的状态 |
 | --- | --- |
@@ -101,7 +101,7 @@ part.subscribe(seat)               // 恢复该座位的 local 订阅
 | 完整恢复销毁子结构 | 退出的对象不作为广播或查询候选 |
 | 装配体合并／分裂 | Part 内部结构未变时保留其 local 订阅，global 按装配体归属重建；业务发现按结构变化两相位重建 |
 
-R6 表明 `subsystemsByName` 存在保留已销毁对象的可能，因此不能把该按名索引作为订阅表，也不能只清空 SubPart 容器而保留总线订阅。实际销毁和失败回收都要覆盖退订，但失败回收不走正常库存掉落。按名索引的独立清理问题不属于本轮总线接入的前提。
+R6 表明按名索引不能当作订阅表：销毁会清空 SubPart 容器，独立的索引会留下已销毁对象。当前实现不设按名索引，订阅集合就是总线自己的集合，因此没有这份独立清理。实际销毁和失败回收都要覆盖退订，但失败回收不走正常库存掉落。
 
 在 `AbstractPart` 提供清理本 Part 两份临时信号容器的方法，车辆的 R9 清理入口调用该方法。清空对象为 `signalInputChannels` 与 `signalStorage`，不包含订阅集合；仅线路变化不能覆盖显式退订。Part 正常销毁和构造失败收尾则同时清理订阅集合及临时信号，避免已移除对象被缓存引用继续通知。公共清理方法不依赖车辆种类，其他宿主可以使用同一入口。
 
@@ -136,7 +136,7 @@ R11 是“所有消费者都只读值”的实际例外：即时交互可以在�
 | 步骤 | 状态 | 主要落点 | 完成条件 |
 | --- | --- | --- | --- |
 | P1 | 已实现 | `AbstractPart` | 实现现有 `ISignalBus`；独立集合及三个订阅方法可用，local 退订不改变物理归属或 global 订阅 |
-| P2 | 已实现 | `AbstractPart#createSubsystems`、`SubPart#destroy` 及 Part 回收入口 | 默认订阅、正常退订、失败退订完整接入；Part 转移到另一装配体时保留自身订阅 |
+| P2 | 已实现 | `SubPart#installSubsystem`、`SubPart#destroy` 及 Part 回收入口 | 默认订阅、正常退订、失败退订完整接入；Part 转移到另一装配体时保留自身订阅 |
 | P3 | 已实现 | `AbstractPart`、信号接口说明 | 到达处理更新 Part 存储并实际广播；原始发送者保留；允许路由进入 local，成员按声明筛选；现有查询自动按总线展开 |
 | P4 | 已实现 | `AbstractPart`、`VehicleCore#clearSignalStorage` | 公共信号清理方法覆盖两份容器；结构变化保持 local 订阅，销毁／失败收尾释放全部本地状态 |
 | P5 | 已实现 | 既有信号测试、内容说明及下游编译 | §7 契约验证有结果；local 与 global 范围、订阅和配置说明与实际实现一致 |

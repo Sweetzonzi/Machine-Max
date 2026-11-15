@@ -118,12 +118,12 @@ SubPart 构造时统一使用 `new ModelIndex("part", part.variant.getModel())`�
 - 客户端由 `subPartId` 经 `ObjectManager.getDestroyableObject` 反查 `SubPart`（[PartPaintPayload.java](../../../src/main/java/io/github/sweetzonzi/machine_max/network/payload/assembly/PartPaintPayload.java#L41-L49)）。
 - 调用点：`SprayCanItem` 直接读 `SubPart.textureName` 并调用 `SubPart.switchTexture`（[SprayCanItem.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/item/prop/SprayCanItem.java#L45-L51)）；`Part` 反序列化时逐 SubPart 调 `switchTexture`（[Part.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L145)）。
 
-### 3.8 命名现状（唯一性作用域为 SubPart）
+### 3.8 命名（唯一性作用域为单变体内的 Part）
 
-- 数据模型：连接点/子系统是 **per-SubPart Map**；`Part.allConnectors` / `externalConnectors` 用 **`Pair(subPartName, connectorName)`** 复合键，即**当前明确允许跨 SubPart 重名**（[Part.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/Part.java#L281-L282)、[VariantAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L147-L175)）。
-- 插件校验作用域也是 per-SubPart（[naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L68-L100)），`collectIssues` 无跨 SubPart 重名检查（[validation.js](../../../../Machine-Max_BlockbenchPlugin/src/mode/validation.js#L182-L260)）。
-- 连接点默认名由 locator 名生成 `connector.<ns>.<snake(locator)>`（[naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L34-L56)），对称子零件极易撞名。
-- 实测：全库仅 `k17_turret`（4 子零件）与 `sdkfz234_turret`（3 子零件）为真·多子零件 Part，且二者命名**已天然全局唯一**；其余为单子零件（多 occurrence 来自多变体）。因此唯一性作用域必须是**单变体内的 Part**，不能是 part 类型全局（否则 `van_seat` 等多变体复用同名会被误判）。
+- 数据模型：连接点/子系统是 **per-SubPart Map**；`Part.allConnectors` / `externalConnectors` 用 **`Pair(subPartName, connectorName)`** 复合键保留子零件维度。名字的唯一性不靠这个复合键：解码期 `VariantAttr#validateUniqueNames` 要求连接点 / 子系统 / 交互区三类名字在**单变体内**唯一（[VariantAttr.java](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/VariantAttr.java#L139-L173)），违反时抛 `PackContentException`，该部件类型双端都不出现。
+- 插件校验作用域同样是单变体：[validation.js](../../../../Machine-Max_BlockbenchPlugin/src/mode/validation.js) 的 `collectIssues`（`_collectNameConflicts`）检查跨 SubPart 重名与保留地址，均按 error 级上报。
+- 连接点默认名由 locator 名生成 `connector.<ns>.<snake(locator)>`（[naming.js](../../../../Machine-Max_BlockbenchPlugin/src/core/naming.js#L34-L56)），对称子零件极易撞名——这正是把作用域定为单变体的原因。
+- 实测：129 份变体定义中 13 份有 2 个以上子零件，最多 19 个。唯一性作用域因此必须是**单变体内的 Part**，不能是 part 类型全局（否则 `van_seat` 等多变体复用同名会被误判）。
 
 ## 4. 设计决策
 
@@ -306,9 +306,7 @@ default Map<String, Object> getSignalStorage() { return null; }
 
 > `"local"` 的语义从"宿主 SubPart"上移为"宿主 Part"。多 SubPart 的 Part 中，不同子零件输出同名频道会互相覆盖；需要按子零件区分时应使用独立频道名（`local.subpart_get` 已随 `SubPart.signalStorage` 一并移除）。
 >
-> **目标解析作用域（本期不变）**：[`setTargetFromNames` / `getReceiversFromNames`](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java#L204-L248) 仍只在**发送者所在 SubPart** 内解析子系统 / 交互区 / 连接点，因此本期跨 SubPart 的目标名仍解析不到（发送者与目标同属一个 SubPart 时行为不变）。
->
-> **TODO（后续）**：若要让信号也享受 Part 级唯一寻址，需把上述建表改为聚合整个 Part 的所有 SubPart（复用 6.7 的 Part 级 owner 索引）。本期不实现。
+> **目标解析作用域是 Part**：[`setTargetFromNames` / `getReceiversFromNames`](../../../src/main/java/io/github/sweetzonzi/machine_max/common/mech/signal/ISignalSender.java) 在建首跳表时聚合发送者所属**整个 Part** 的子系统 / 交互区 / 连接点，跨 SubPart 的目标名因此可达；`getReceiversFromNames` 的形参签名保持不变（JS Hook 契约），改造只更换传入的表内容。实现与验收见 [`信号系统-Part级名字解析与子系统封装`](信号系统-Part级名字解析与子系统封装.md)。
 
 #### 6.5.4 迁移范围（**不只是 JSON**）
 
@@ -441,7 +439,7 @@ flowchart TD
 2. **Assembly 级动画层**：机甲全身关键帧需要统一时间轴，`Part` 级作为局部覆盖层。
 3. **预览链路收敛**：`PartAnimatable` / `SubPartAnimatable` / `VehicleAnimatable` 改为 Part 级共享 pose，消除与世界内渲染的双实现。
 4. **Molang 上下文拆分**：视并发压力，将"只读查询上下文"与"带 animTime 的求值上下文"分离。
-5. **信号目标解析上移到 Part**：`setTargetFromNames` / `getReceiversFromNames` 目前只在发送者所在 SubPart 内解析；待需要跨 SubPart 按名寻址时，改为聚合整个 Part（复用 6.7 的 Part 级 owner 索引）。详见 6.5.3 TODO。
+5. **信号目标解析上移到 Part**：已实现。`setTargetFromNames` 聚合整个 Part 的子系统 / 交互区 / 连接点，`getReceiversFromNames` 签名不变；名字唯一性由解码期校验保证。见 [`信号系统-Part级名字解析与子系统封装`](信号系统-Part级名字解析与子系统封装.md)。
 
 ## 附录 A：Molang 迁移映射表
 

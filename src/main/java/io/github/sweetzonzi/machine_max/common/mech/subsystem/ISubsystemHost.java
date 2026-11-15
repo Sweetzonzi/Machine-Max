@@ -6,11 +6,28 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Map;
 
 public interface ISubsystemHost {
     SubPart getSubPart();
-    Map<String, AbstractSubsystem> getSubsystems();
+
+    /**
+     * 宿主直接持有的子系统，迭代序 = 内容包声明序。
+     * <p>只交值不交键：按名查本宿主用 {@link #findOwnSubsystem(String)}，“放到部件全域找”属于
+     * Part 级职责（{@link SubPart#findSubsystem(String)}），不从这里开第二个入口。</p>
+     */
+    Collection<AbstractSubsystem> ownSubsystems();
+
+    /**
+     * 只在本宿主内按名查子系统，供网络包与存档按 {@code (宿主, 名字)} 定位。
+     *
+     * @param name 子系统名
+     * @return 本宿主上的该子系统；不存在时返回 {@code null}
+     */
+    @Nullable
+    AbstractSubsystem findOwnSubsystem(String name);
+
     Level getLevel();
 
     @NotNull

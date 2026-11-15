@@ -267,7 +267,7 @@ public final class AmmoJobClaimGameTest {
 
     private static Map<String, AbstractSubsystem> collectSubsystems(RegularPart part) {
         Map<String, AbstractSubsystem> byName = new LinkedHashMap<>();
-        part.subParts.values().forEach(subPart -> byName.putAll(subPart.subsystems));
+        part.subParts.values().forEach(subPart -> subPart.ownSubsystems().forEach(subsystem -> byName.put(subsystem.getName(), subsystem)));
         return byName;
     }
 

@@ -56,7 +56,7 @@ public class HitBox implements Target {
         this.subPart = subPart;
         this.attr = attr;
         this.hitBoxKey = hitBoxKey;
-        this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
+        this.subsystem = subPart.findOwnSubsystem(attr.subsystem);
         this.localCenter = localCenter == null ? new Vector3f() : localCenter.clone();
         alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
         this.hitBoxCondition = alwaysActive ? null : MolangContextRegistry.compile(attr.condition, subPart.part.getSparkMolangContext());

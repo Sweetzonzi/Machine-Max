@@ -19,13 +19,13 @@ import org.jetbrains.annotations.NotNull;
  * 载具移动控制信号数据包，包含六向输入信号和冲突输入信号(TODO:视角朝向)
  *
  * @param subPartId      子零件全局ID
- * @param subSystemName  控制的子系统名称
+ * @param subsystemIndex 受控子系统在该子零件声明序中的位置
  * @param input          六向输入信号
  * @param inputConflict  输入冲突信号
  */
 public record MovementInputPayload(
         int subPartId,
-        String subSystemName,
+        int subsystemIndex,
         byte[] input,
         byte[] inputConflict) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<MovementInputPayload> TYPE = new CustomPacketPayload.Type<>(
@@ -33,17 +33,17 @@ public record MovementInputPayload(
     public static final StreamCodec<FriendlyByteBuf, MovementInputPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull MovementInputPayload decode(FriendlyByteBuf buf) {
-            int subPartId = buf.readInt();
-            String subSystemName = buf.readUtf();
+            int subPartId = buf.readVarInt();
+            int subsystemIndex = buf.readVarInt();
             byte[] input = buf.readByteArray();
             byte[] inputConflict = buf.readByteArray();
-            return new MovementInputPayload(subPartId, subSystemName, input, inputConflict);
+            return new MovementInputPayload(subPartId, subsystemIndex, input, inputConflict);
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull MovementInputPayload payload) {
-            buffer.writeInt(payload.subPartId());
-            buffer.writeUtf(payload.subSystemName());
+            buffer.writeVarInt(payload.subPartId());
+            buffer.writeVarInt(payload.subsystemIndex());
             buffer.writeByteArray(payload.input());
             buffer.writeByteArray(payload.inputConflict());
         }
@@ -65,9 +65,9 @@ public record MovementInputPayload(
         Player player = context.player();
         DestroyableObject object = ObjectManager.getDestroyableObject(player.level(), payload.subPartId());
         if (!(object instanceof SubPart subPart)) return;
-        if (!(subPart.subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem)) {
-            MachineMax.LOGGER.warn("收到移动输入但子系统 {} 不存在于 SubPart(id={})",
-                    payload.subSystemName(), payload.subPartId());
+        if (!(subPart.subsystemAt(payload.subsystemIndex()) instanceof AbstractControllableSubsystem subSystem)) {
+            MachineMax.LOGGER.warn("收到移动输入但 SubPart(id={}) 上没有序号为 {} 的子系统",
+                    payload.subPartId(), payload.subsystemIndex());
             return;
         }
         // 来源校验必须在广播之前：否则换座后到达的旧座位油门会被整包广播回所有客户端重放，
@@ -78,11 +78,12 @@ public record MovementInputPayload(
     }
 
     public static boolean handler(SubPart subPart, final MovementInputPayload payload) {
-        if (subPart.subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
+        if (subPart.subsystemAt(payload.subsystemIndex()) instanceof AbstractControllableSubsystem subSystem) {
             subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
             return true;
         } else {
-            MachineMax.LOGGER.warn("收到移动输入但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
+            MachineMax.LOGGER.warn("收到移动输入但 SubPart(id={}) 上没有序号为 {} 的子系统",
+                    payload.subPartId(), payload.subsystemIndex());
             return false;
         }
     }

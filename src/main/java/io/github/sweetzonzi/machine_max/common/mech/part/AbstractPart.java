@@ -48,6 +48,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConn
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
@@ -61,6 +62,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.util.*;
@@ -130,10 +132,54 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     public final Map<String, SubPart> subParts = LinkedHashMap.newLinkedHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
-    /** AbstractPart 级按名索引：连接点名 → 连接点（用于 Molang 按名寻址） */
-    public final Map<String, AbstractConnector> connectorsByName = HashMap.newHashMap(1);
-    /** AbstractPart 级按名索引：子系统名 → 子系统（用于 Molang 按名寻址） */
-    public final Map<String, AbstractSubsystem> subsystemsByName = HashMap.newHashMap(1);
+
+    /**
+     * 在本部件全域按名查子系统，遍历序 = 子零件声明序。
+     * <p>名字在 Part 内唯一（解码期 {@code VariantAttr#validateUniqueNames} 保证），命中即返回，
+     * 不保留常驻索引：解析只发生在建首跳表与 MoLang 查询，现场遍历的成本可以忽略。</p>
+     *
+     * @param name 子系统名
+     * @return 本部件内该名字的子系统；不存在时返回 {@code null}
+     */
+    @Nullable
+    public AbstractSubsystem findSubsystem(String name) {
+        for (SubPart subPart : subParts.values()) {
+            AbstractSubsystem subsystem = subPart.findOwnSubsystem(name);
+            if (subsystem != null) return subsystem;
+        }
+        return null;
+    }
+
+    /**
+     * 在本部件全域按名查连接点，遍历序 = 子零件声明序 → 连接点声明序。
+     *
+     * @param name 连接点名
+     * @return 本部件内该名字的连接点；不存在时返回 {@code null}
+     */
+    @Nullable
+    public AbstractConnector findConnector(String name) {
+        for (SubPart subPart : subParts.values()) {
+            AbstractConnector connector = subPart.connectors.get(name);
+            if (connector != null) return connector;
+        }
+        return null;
+    }
+
+    /**
+     * 在本部件全域按名查交互区，遍历序 = 子零件声明序。
+     *
+     * @param name 交互区名
+     * @return 本部件内该名字的交互区；不存在时返回 {@code null}
+     */
+    @Nullable
+    public InteractBox findInteractBox(String name) {
+        for (SubPart subPart : subParts.values()) {
+            if (subPart.interactBoxes == null) continue;
+            InteractBox interactBox = subPart.interactBoxes.get(name);
+            if (interactBox != null) return interactBox;
+        }
+        return null;
+    }
 
     /**
      * 绑定当前定义、变体、身份和实例权限，建立默认 MoLang 上下文。
@@ -257,7 +303,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().subsystemData.entrySet()) {
                     String subSystemName = subsystemData.getKey();
                     CompoundTag subsystemTagData = subsystemData.getValue();
-                    AbstractSubsystem subsystem = subPart.subsystems.get(subSystemName);
+                    AbstractSubsystem subsystem = subPart.findOwnSubsystem(subSystemName);
                     if (subsystem != null)
                         subsystem.loadData(subsystemTagData.copy());
                 }
@@ -631,7 +677,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     public Set<AbstractSubsystem> getAllSubsystems() {
         HashSet<AbstractSubsystem> subsystems = new HashSet<>();
         for (SubPart subPart : subParts.values()) {
-            subsystems.addAll(subPart.subsystems.values());
+            subsystems.addAll(subPart.ownSubsystems());
         }
         return subsystems;
     }
@@ -680,25 +726,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
 
 
     /**
-     * 构造指定子零件的子系统，并同时建立部件级按名查询索引。
-     * <p>仅在结构构造期间执行；同名索引按写入顺序覆盖，调用方应避免跨子零件重名。</p>
-     */
-    private void createSubsystems(
-            SubPart subPart,
-            Map<String, AbstractSubsystemAttr> subSystemAttrMap
-    ) {
-        for (Map.Entry<String, AbstractSubsystemAttr> entry : subSystemAttrMap.entrySet()) {
-            String name = entry.getKey();
-            AbstractSubsystemAttr attr = entry.getValue();
-            AbstractSubsystem subsystem = attr.createSubsystem(subPart, name);
-            subPart.subsystems.put(name, subsystem);//部件内的子系统
-            subsystemsByName.put(name, subsystem);//AbstractPart 级按名索引
-            subscribe(subsystem);//默认订阅本部件的 local 总线
-        }
-    }
-
-    /**
-     * 按定位器构造连接器，填充子零件表、部件全量表、外部表及按名索引。
+     * 按定位器构造连接器，填充子零件表、部件全量表与外部表。
      * <p>缺少配置要求的定位器时立即抛出异常，由结构构造入口清理已分配资源。</p>
      */
     private void createConnectors(
@@ -726,7 +754,6 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                     );
                 }
                 subPart.connectors.put(connectorName, connector);
-                this.connectorsByName.put(connectorName, connector);//AbstractPart 级按名索引
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
@@ -906,8 +933,11 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
             subPart.projectedArea = calculateProjectedArea(subPart);
             //创建零件连接点
             createConnectors(subPart, subPartAttr);
-            //创建部件内子系统
-            createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
+            //创建部件内子系统，赋予部件实际功能（按声明序安装，容器序即声明序）
+            for (Map.Entry<String, AbstractSubsystemAttr> subsystemEntry : subPartAttr.subsystems.entrySet()) {
+                subPart.installSubsystem(subsystemEntry.getKey(),
+                        subsystemEntry.getValue().createSubsystem(subPart, subsystemEntry.getKey()));
+            }
             //创建命中判定区属性并匹配对应子系统(内部实现)
             Vector3f wheelParam = null;
             for (Map.Entry<String, HitBoxAttr> entry : subPart.attr.hitBoxes.entrySet()) {

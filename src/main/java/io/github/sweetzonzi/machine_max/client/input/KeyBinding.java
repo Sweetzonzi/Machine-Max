@@ -289,7 +289,7 @@ public class KeyBinding {
             KeyCategory.GENERAL.getCategory()
     );
 
-    /** 循环换座：按几何顺序切到下一个可用座位，默认 X 键 */
+    /** 循环换座：按结构顺序切到下一个可用座位，默认 X 键 */
     public static KeyMapping generalCycleSeatKey = new KeyMapping(CYCLE_SEAT_KEY,
             KeyCategory.GENERAL,
             InputConstants.Type.KEYSYM,

@@ -190,7 +190,8 @@ public class SubsystemController implements ISignalBus {
             List<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
             subsystem.forEachSyncedValue(values::add);
             PacketDistributor.sendToPlayer(player,
-                    new SubsystemSyncPayload(subsystem.getSubPart().getId(), subsystem.getName(), values));
+                    new SubsystemSyncPayload(subsystem.getSubPart().getId(),
+                            subsystem.getSubPart().subsystemIndex(subsystem), values));
         }
     }
 

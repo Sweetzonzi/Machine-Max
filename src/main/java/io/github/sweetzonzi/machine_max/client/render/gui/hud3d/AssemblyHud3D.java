@@ -176,7 +176,7 @@ public class AssemblyHud3D implements IHud3DElement {
                     warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBPART_DESTROYED.tag));
                 }
             }
-            for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
+            for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
                 if (subsystem instanceof BasicSubsystem basicSubsystem && basicSubsystem.isHidden()) continue;
                 if (subsystem.isDestroyed())
                     warningMessages.add(Component.translatable(MMLanguageRegistry.HUD_WARN_SUBSYSTEM_MALFUNCTION.tag,
@@ -429,7 +429,7 @@ public class AssemblyHud3D implements IHud3DElement {
             String name = entry.getKey();
             String subsystemName = entry.getValue().subsystem;
             if (bonesToRender.containsKey(name) && !subsystemName.isEmpty()) {
-                AbstractSubsystem subsystem = subPart.subsystems.get(subsystemName);
+                AbstractSubsystem subsystem = subPart.findOwnSubsystem(subsystemName);
                 if (subsystem instanceof BasicSubsystem basicSubsystem && !basicSubsystem.isHidden()) {
                     ModelRenderHelperKt.render(
                             bonesToRender.get(name),

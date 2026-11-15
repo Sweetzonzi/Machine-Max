@@ -250,14 +250,16 @@ public final class CameraController {
         // 无稳目标从当前主 WC 的实际角初始化，之后只发送累计后的完整值。
         Vec2 relativeAim = activeCamera instanceof SightSubsystem ? aimTarget.getRelativeAim() : Vec2.ZERO;
         int viewPart = activeCamera == null ? -1 : activeCamera.getSubPart().getId();
+        int viewIndex = activeCamera == null ? -1 : activeCamera.getSubPart().subsystemIndex(activeCamera);
         String viewName = activeCamera == null ? "seat" : activeCamera.getName();
         // 本地信号与上行载荷使用同一完整值，服务端再校验座椅、设备和活动控制组。
         // 重复发送只覆盖状态，不会让每个物理子步再次累计鼠标增量。
         // 指示器锁定期间，这个点换成锁定目标的真值点：武器侧不区分点来自准星还是锁定。
         Vec3 aimPoint = TargetDesignatorHandler.resolveAimPoint(expectedPoint);
         controllingSeat.setViewInputSignal(new ViewInputSignal(aimPoint, relativeAim, mode()), viewPart, viewName);
-        PacketDistributor.sendToServer(new ViewInputPayload(controllingSeat.getSubPart().getId(), controllingSeat.getName(),
-                viewPart, viewName, controllingSeat.getControlGroupSet().getActiveIndex(), aimPoint, relativeAim));
+        PacketDistributor.sendToServer(new ViewInputPayload(controllingSeat.getSubPart().getId(),
+                controllingSeat.getSubPart().subsystemIndex(controllingSeat),
+                viewPart, viewIndex, controllingSeat.getControlGroupSet().getActiveIndex(), aimPoint, relativeAim));
     }
 
     /** 主线程维护固定炮镜的输入来源，并单独发布实际观察光轴。 */

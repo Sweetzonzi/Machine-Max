@@ -135,10 +135,8 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     }
 
     private IMechPowerConsumer resolveEnergyTarget(String targetName) {
-        if (getOwner().getSubsystems().containsKey(targetName)) {
-            var sub = getOwner().getSubsystems().get(targetName);
-            if (sub instanceof IMechPowerConsumer consumer) return consumer;
-        }
+        var sub = getOwner().findOwnSubsystem(targetName);
+        if (sub instanceof IMechPowerConsumer consumer) return consumer;
         if (getSubPart().connectors.containsKey(targetName)) {
             return getSubPart().connectors.get(targetName).mechanicalEnergyPort;
         }

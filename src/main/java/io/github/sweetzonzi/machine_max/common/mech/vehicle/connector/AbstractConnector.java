@@ -623,7 +623,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             SynchedEntityData synchedentitydata = this.getSynchedData();
             List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
             if (list != null) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new ConnectorSyncPayload(getSubPart().getId(), name, list));
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level,
+                        new ConnectorSyncPayload(getSubPart().getId(), subPart.connectorIndex(this), list));
             }
         }
     }

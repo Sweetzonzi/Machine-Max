@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -82,5 +83,33 @@ public final class ContentFiles {
     /** 内容包根相对路径，用作失败消息里的定位。 */
     public static String describe(Path file) {
         return PACKS.relativize(file).toString().replace('\\', '/');
+    }
+
+    /**
+     * 每个内容包每个命名空间下的 {@code <子目录>} 里递归的全部 {@code *.json}（含子目录）。
+     *
+     * <p>{@code parts/} 这类目录既有平铺文件也有 {@code parts/prop/} 一层分组，直接列一层会漏。
+     * 结果按路径排序，与文件系统遍历顺序无关。</p>
+     */
+    public static List<Path> jsonTreeInEveryNamespace(String child) throws IOException {
+        List<Path> found = new ArrayList<>();
+        if (!Files.isDirectory(PACKS)) return found;
+        try (Stream<Path> packs = Files.list(PACKS)) {
+            for (Path pack : packs.filter(Files::isDirectory).toList()) {
+                try (Stream<Path> namespaces = Files.list(pack)) {
+                    for (Path namespace : namespaces.filter(Files::isDirectory).toList()) {
+                        Path root = namespace.resolve(child);
+                        if (!Files.isDirectory(root)) continue;
+                        try (Stream<Path> files = Files.walk(root)) {
+                            files.filter(Files::isRegularFile)
+                                    .filter(path -> path.getFileName().toString().endsWith(".json"))
+                                    .forEach(found::add);
+                        }
+                    }
+                }
+            }
+        }
+        found.sort(Comparator.comparing(Path::toString));
+        return found;
     }
 }

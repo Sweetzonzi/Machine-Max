@@ -237,29 +237,39 @@ public interface ISignalSender {
     /**
      * 设置信号传输目标。
      * <p>
+     * 名字的作用域是发送者所在的<b>部件（Part）</b>：子系统 / 交互区 / 连接点三类名字都在整部件内解析，
+     * 跨子零件的具名引用因此可达。名字在 Part 内唯一（解码期校验保证），三类名字共用一套命名空间。
+     * <p>
+     * 聚合一趟 {@code subParts} 现场得到三张表，不保留常驻索引：解析只在建首跳表时发生（attach、换组、
+     * 结构变化），不需要缓存，也没有需要在子零件销毁/重建时清理的清理点。
+     * <p>
      * 先在局部表完成解析，再整体替换现有首跳表，配置里删掉的频道不会留在表中。目标表由主线程构建，
      * 物理线程不读取首跳表（反馈与状态投递在主线程 {@code onTick} 完成）。
      */
     default void setTargetFromNames() {
-        if (getSubPart() != null) {
-            Map<String, AbstractSubsystem> subSystems = getSubPart().subsystems;
-            Map<String, InteractBox> interactBoxes = new HashMap<>();
-            if (getSubPart().interactBoxes != null)
-                interactBoxes.putAll(getSubPart().interactBoxes);
-            Map<String, SignalPort> ports = new HashMap<>();
-            getSubPart().connectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
-            Map<String, Map<String, ISignalReceiver>> rebuilt = new LinkedHashMap<>();
-            for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
-                // 保序：接收者列表的顺序就是 getTargetNames() 里声明的顺序。交互区按此顺序逐个尝试目标，
-                // 座位一类的多目标交互区（同一扇门通往多个座位）依赖它决定先坐哪一个。
-                Map<String, ISignalReceiver> signalReceivers = new LinkedHashMap<>(2);
-                if (entry.getKey().isEmpty()) continue;
-                getReceiversFromNames(entry.getValue(), getSubPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getSignalAddress(), receiver));
-                rebuilt.put(entry.getKey(), signalReceivers);
+        SubPart owner = getSubPart();
+        if (owner == null) return;
+        Map<String, AbstractSubsystem> subSystems = new HashMap<>();
+        Map<String, InteractBox> interactBoxes = new HashMap<>();
+        Map<String, SignalPort> ports = new HashMap<>();
+        for (SubPart subPart : owner.part.subParts.values()) {
+            for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
+                subSystems.put(subsystem.getName(), subsystem);
             }
-            getTargets().clear();
-            getTargets().putAll(rebuilt);
+            if (subPart.interactBoxes != null) interactBoxes.putAll(subPart.interactBoxes);
+            subPart.connectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
         }
+        Map<String, Map<String, ISignalReceiver>> rebuilt = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
+            // 保序：接收者列表的顺序就是 getTargetNames() 里声明的顺序。交互区按此顺序逐个尝试目标，
+            // 座位一类的多目标交互区（同一扇门通往多个座位）依赖它决定先坐哪一个。
+            Map<String, ISignalReceiver> signalReceivers = new LinkedHashMap<>(2);
+            if (entry.getKey().isEmpty()) continue;
+            getReceiversFromNames(entry.getValue(), owner, subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getSignalAddress(), receiver));
+            rebuilt.put(entry.getKey(), signalReceivers);
+        }
+        getTargets().clear();
+        getTargets().putAll(rebuilt);
     }
 
     default List<ISignalReceiver> getReceiversFromNames(

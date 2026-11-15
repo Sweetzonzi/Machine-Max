@@ -657,7 +657,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             SynchedEntityData synchedentitydata = this.getSynchedData();
             List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
             if (list != null) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new SubsystemSyncPayload(getSubPart().getId(), name, list));
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level,
+                        new SubsystemSyncPayload(getSubPart().getId(), getSubPart().subsystemIndex(this), list));
             }
         }
     }

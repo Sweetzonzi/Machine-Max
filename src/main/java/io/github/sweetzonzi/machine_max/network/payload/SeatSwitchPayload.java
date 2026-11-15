@@ -27,14 +27,18 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 换座请求（客户端→服务端）。
  *
- * <p>载荷带的是<strong>具体目标座位</strong>，不是方向或序号：循环键先在本地按几何顺序算出下一个
- * 可用座位，再把 {@code subPartId + seatName} 发出去；将来的点击、数字键或径向菜单直接填被点的
- * 座位，协议不变。服务端因此不需要排序，也不生成任何编号——两端顺序不一致不影响结果。</p>
+ * <p>载荷带的是<strong>具体目标座位</strong>，不是方向或序号：循环键先在本地按结构顺序
+ * （{@link io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore#nextSeat}）算出下一个
+ * 可用座位，再把 {@code (subPartId, 座位序号)} 发出去；点击、数字键或径向菜单直接填被点的
+ * 座位，协议不变。服务端因此不需要排序，也不生成任何编号——两端枚举顺序一致，但结果仍按请求里的
+ * 座位校验。</p>
+ *
+ * <p>座位序号是该座位子系统在目标子零件声明序中的位置；名字仍是存档键与翻译键，不上线。</p>
  *
  * @param subPartId 目标座位所在子零件的全局 ID
- * @param seatName  目标座位的子系统名
+ * @param seatIndex 目标座位在该子零件声明序中的位置
  */
-public record SeatSwitchPayload(int subPartId, String seatName) implements CustomPacketPayload {
+public record SeatSwitchPayload(int subPartId, int seatIndex) implements CustomPacketPayload {
 
     /** 同一玩家的换座请求最小间隔（tick）；一次成功换座要跑上车点交接、两组信号切换与相机距离重算 */
     private static final long MIN_INTERVAL_TICKS = 10;
@@ -47,13 +51,13 @@ public record SeatSwitchPayload(int subPartId, String seatName) implements Custo
     public static final StreamCodec<FriendlyByteBuf, SeatSwitchPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull SeatSwitchPayload decode(FriendlyByteBuf buf) {
-            return new SeatSwitchPayload(buf.readInt(), buf.readUtf());
+            return new SeatSwitchPayload(buf.readVarInt(), buf.readVarInt());
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull SeatSwitchPayload payload) {
-            buffer.writeInt(payload.subPartId());
-            buffer.writeUtf(payload.seatName());
+            buffer.writeVarInt(payload.subPartId());
+            buffer.writeVarInt(payload.seatIndex());
         }
     };
 
@@ -81,10 +85,10 @@ public record SeatSwitchPayload(int subPartId, String seatName) implements Custo
                 return;
             }
             // 2) 目标座位
-            AbstractSubsystem subsystem = targetSubPart.subsystems.get(payload.seatName());
+            AbstractSubsystem subsystem = targetSubPart.subsystemAt(payload.seatIndex());
             if (!(subsystem instanceof SeatSubsystem to)) {
-                MachineMax.LOGGER.debug("收到换座请求但 SubPart(id={}) 上没有座位 {}",
-                        payload.subPartId(), payload.seatName());
+                MachineMax.LOGGER.debug("收到换座请求但 SubPart(id={}) 上没有序号为 {} 的座位",
+                        payload.subPartId(), payload.seatIndex());
                 return;
             }
             // 3) 发起者当前座位
@@ -142,7 +146,8 @@ public record SeatSwitchPayload(int subPartId, String seatName) implements Custo
             // 成功：广播给维度内所有玩家——每个客户端的 controllingSubsystem 各一份，漏掉哪一份，
             // 那边的乘客就会被 getPassengerAttachmentPoint 摆到实体原点
             PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(),
-                    new SeatSwitchResultPayload(player.getId(), to.getSubPart().getId(), to.getName(),
+                    new SeatSwitchResultPayload(player.getId(), to.getSubPart().getId(),
+                            to.getSubPart().subsystemIndex(to),
                             controlGroup, true, SeatSwitchReason.OK));
         });
     }
@@ -152,7 +157,7 @@ public record SeatSwitchPayload(int subPartId, String seatName) implements Custo
         int controlGroup = reason == SeatSwitchReason.OK && to.getControlGroupSet() != null
                 ? to.getControlGroupSet().getActiveIndex() : -1;
         PacketDistributor.sendToPlayer(player, new SeatSwitchResultPayload(
-                player.getId(), payload.subPartId(), payload.seatName(), controlGroup, false, reason));
+                player.getId(), payload.subPartId(), payload.seatIndex(), controlGroup, false, reason));
     }
 
     /** 记录表超过一定规模时清掉早已过窗的条目：换座很稀疏，不需要无界增长 */

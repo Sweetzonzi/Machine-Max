@@ -553,7 +553,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityWithComplexSpa
      */
     private SeatSubsystem findOccupiedSeat(LivingEntity passenger) {
         if (subPart == null) return null;
-        for (var subsystem : subPart.getSubsystems().values()) {
+        for (var subsystem : subPart.ownSubsystems()) {
             if (subsystem instanceof SeatSubsystem seat && seat.passenger == passenger) return seat;
         }
         return null;

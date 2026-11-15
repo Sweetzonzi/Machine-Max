@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.client.render.gui.seat.SeatMapLayout;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatOrder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchFeedback;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatSwitchReason;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -21,11 +20,11 @@ import java.util.List;
  * 换座键的客户端逻辑：只按换座键切到下一个可用座位；按住换座键再按 {@code 1}–{@code 9}
  * 直接切到编号为该数字的座位。
  *
- * <p>只在座位控制下响应，且不打开界面、不隐藏 GUI、不在炮镜/摄像机模式。目标座位由本地按几何顺序
+ * <p>只在座位控制下响应，且不打开界面、不隐藏 GUI、不在炮镜/摄像机模式。目标座位由本地按结构顺序
  * 算出（{@link SeatMapLayout#snapshot}），发出去的是具体座位，不是方向或序号——服务端不排序，只校验。
  * 算不出目标时本地提示，不发包。</p>
  *
- * <p>编号就是座位图标记上的数字（几何顺序，从 1 起）。数字键默认同时是热栏键：按住换座键期间按下的
+ * <p>编号就是座位图标记上的数字（结构顺序：部件 UUID 升序 → 子零件声明序 → 子系统声明序，从 1 起）。数字键默认同时是热栏键：按住换座键期间按下的
  * 数字归换座，{@link #chordNumber} 吞掉对应的热栏点击（{@code ClientTickEvent.Pre} 早于原版
  * {@code Minecraft#handleKeybinds}），槽位因此不切。</p>
  *
@@ -88,7 +87,7 @@ public final class SeatSwitchClient {
     }
 
     /**
-     * 按一次换座键：切到几何顺序里的下一个可用座位。
+     * 按一次换座键：切到结构顺序里的下一个可用座位。
      *
      * @param forward true 顺向、false 逆向
      */
@@ -98,7 +97,7 @@ public final class SeatSwitchClient {
         VehicleCore vehicle = vehicleOf(seat);
         SeatSwitchFeedback.observe(vehicle);
         if (SeatSwitchFeedback.isPending()) return;
-        SeatSubsystem target = SeatOrder.next(SeatMapLayout.snapshot(vehicle).seats(), seat, forward);
+        SeatSubsystem target = vehicle.nextSeat(seat, forward);
         if (target == null) {
             actionBar(SeatSwitchFeedback.fullMessage());
             return;
@@ -131,7 +130,7 @@ public final class SeatSwitchClient {
             actionBar(SeatSwitchFeedback.failureMessage(SeatSwitchReason.SAME_SEAT));
             return true;
         }
-        if (!SeatOrder.available(target)) {
+        if (!target.isAvailable()) {
             actionBar(SeatSwitchFeedback.failureMessage(
                     target.isOccupied() ? SeatSwitchReason.OCCUPIED : SeatSwitchReason.UNAVAILABLE));
             return true;
@@ -186,7 +185,8 @@ public final class SeatSwitchClient {
     private static void dispatch(SeatSubsystem target) {
         if (target.getSubPart() == null) return;
         SeatSwitchFeedback.beginPending(target);
-        PacketDistributor.sendToServer(new SeatSwitchPayload(target.getSubPart().getId(), target.getName()));
+        PacketDistributor.sendToServer(new SeatSwitchPayload(target.getSubPart().getId(),
+                target.getSubPart().subsystemIndex(target)));
     }
 
     private static void actionBar(Component message) {

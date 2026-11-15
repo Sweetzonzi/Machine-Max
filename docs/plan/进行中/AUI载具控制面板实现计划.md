@@ -740,9 +740,9 @@ if (client.player instanceof IEntityMixin mixin
     // ✅ 直接从子系统读取 ControlGroupSet（@Getter 自动生成）
     ControlGroupSet cgs = sub.getControlGroupSet();
 
-    // 获取 SubPart 全局 ID（用于网络包中的 subPartId）
-    int subPartId = sub.getOwner().getSubPart().getId();
-    String subSystemName = sub.name;
+    // 获取 SubPart 全局 ID 与子系统序号（用于网络包里的定位二元组）
+    int subPartId = sub.getSubPart().getId();
+    int subsystemIndex = sub.getSubPart().subsystemIndex(sub);
 }
 ```
 
@@ -768,8 +768,8 @@ if (client.player instanceof IEntityMixin mixin
 ```java
 // 注册到 MMPayloadRegistry
 public record ControlGroupSetEditPayload(
-    int subPartId,              // 从 sub.getOwner().getSubPart().getId() 获取
-    String subSystemName,       // 子系统名称
+    int subPartId,              // 从 sub.getSubPart().getId() 获取
+    int subsystemIndex,         // 受控子系统在子零件声明序中的位置
     ControlGroupSet controlGroupSet  // 使用已有的 STREAM_CODEC
 ) implements CustomPacketPayload
 ```
@@ -780,7 +780,8 @@ public record ControlGroupSetEditPayload(
 // Handler
 DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
 if (object instanceof SubPart subPart) {
-    AbstractControllableSubsystem target = findSubsystemByName(subPart, payload.subSystemName());
+    AbstractControllableSubsystem target = subPart.subsystemAt(payload.subsystemIndex()) instanceof AbstractControllableSubsystem controllable
+            ? controllable : null;
     if (target != null) {
         target.setControlGroupSet(payload.controlGroupSet());
         target.saveDataToSubsPart();  // 触发 NBT 持久化
@@ -795,7 +796,7 @@ if (object instanceof SubPart subPart) {
 ```java
 public record GuiActionPayload(
     int subPartId,
-    String subSystemName,
+    int subsystemIndex,        // 受控子系统在子零件声明序中的位置
     int actionIndex,           // guiActions 列表中的索引
     GuiActionType actionType,  // PULSE/TOGGLE/SLIDER
     float value                // TOGGLE: 0/1, SLIDER: 当前值, PULSE: 忽略
@@ -822,23 +823,11 @@ public class ControlDataAccessor {
         return null;
     }
 
-    /** 获取当前控制子系统的 subPartId，-1 表示不存在 */
-    public static int getCurrentSubPartId(Minecraft mc) {
-        if (mc.player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
-            return sub.getOwner().getSubPart().getId();
-        }
-        return -1;
-    }
-
-    /** 获取当前子系统名称 */
+    /** 当前受控子系统；玩家不在载具控制下时返回 null */
     @Nullable
-    public static String getCurrentSubSystemName(Minecraft mc) {
-        if (mc.player instanceof IEntityMixin mixin
-                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
-            return sub.name;
-        }
-        return null;
+    public static AbstractControllableSubsystem getControllingSubsystem(Minecraft mc) {
+        return mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub ? sub : null;
     }
 
     /** 保存 ControlGroupSet → 发送到服务端 */

@@ -140,6 +140,18 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         return occupied && passenger != null ? passenger.getName().getString() : "";
     }
 
+    /**
+     * 本座位此刻能否被换入：座位与宿主都还在、宿主已有代理实体、且未被占用。
+     * <p>只读 {@link #occupied}（服务端维护并同步，两端语义一致）；{@link #passenger} 只有服务端有值，
+     * 客户端读它会把所有座位当成空位。</p>
+     */
+    public boolean isAvailable() {
+        return isActive() && !isDestroyed()
+                && !getSubPart().isDestroyed()
+                && getSubPart().getEntity() != null
+                && !occupied;
+    }
+
     public void setPassenger(LivingEntity passenger) {
         if (owner.getSubPart() != null && owner.getSubPart().entity != null) {
             updateBoardingOffset(passenger);

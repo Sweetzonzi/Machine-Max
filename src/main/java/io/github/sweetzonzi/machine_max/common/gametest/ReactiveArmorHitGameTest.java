@@ -90,7 +90,7 @@ public final class ReactiveArmorHitGameTest {
             for (String variant : type.variants.keySet().stream().sorted().toList()) {
                 RegularPart part = PartFactory.createRegular(type, variant, level);
                 SubPart host = part.subParts.values().stream()
-                        .filter(child -> !child.subsystems.isEmpty())
+                        .filter(child -> !child.ownSubsystems().isEmpty())
                         .min(Comparator.comparing(SubPart::getName))
                         .orElse(null);
                 if (host != null) return new Fixture(part, host);
@@ -199,7 +199,7 @@ public final class ReactiveArmorHitGameTest {
         try (Fixture fixture = fixture(helper)) {
             try {
                 CountingSubsystem probe = new CountingSubsystem(fixture.subPart(), COUNTING_NAME, countingAttr());
-                fixture.subPart().subsystems.put(COUNTING_NAME, probe);
+                fixture.subPart().installSubsystem(COUNTING_NAME, probe);
                 HitBox box = new HitBox(fixture.subPart(), probeBoxAttr(COUNTING_NAME), "mm_gametest_probe", null);
 
                 hit(helper, fixture.subPart(), box, 0f, 0f, false);
@@ -220,7 +220,7 @@ public final class ReactiveArmorHitGameTest {
         try (Fixture fixture = fixture(helper)) {
             try {
                 CountingSubsystem probe = new CountingSubsystem(fixture.subPart(), COUNTING_NAME, countingAttr());
-                fixture.subPart().subsystems.put(COUNTING_NAME, probe);
+                fixture.subPart().installSubsystem(COUNTING_NAME, probe);
                 HitBox box = new HitBox(fixture.subPart(), probeBoxAttr(COUNTING_NAME), "mm_gametest_probe", null);
 
                 float dealt = hit(helper, fixture.subPart(), box, 40f, 500f, false);
@@ -245,7 +245,7 @@ public final class ReactiveArmorHitGameTest {
         try (Fixture fixture = fixture(helper)) {
             try {
                 ReactiveArmorSubsystem era = eraSubsystem(fixture.subPart());
-                fixture.subPart().subsystems.put(ERA_NAME, era);
+                fixture.subPart().installSubsystem(ERA_NAME, era);
                 HitBox box = new HitBox(fixture.subPart(), probeBoxAttr(ERA_NAME), "mm_gametest_probe", null);
                 float before = era.getDurability();
 
@@ -269,7 +269,7 @@ public final class ReactiveArmorHitGameTest {
         try (Fixture fixture = fixture(helper)) {
             try {
                 ReactiveArmorSubsystem era = eraSubsystem(fixture.subPart());
-                fixture.subPart().subsystems.put(ERA_NAME, era);
+                fixture.subPart().installSubsystem(ERA_NAME, era);
                 HitBox box = new HitBox(fixture.subPart(), probeBoxAttr(ERA_NAME), "mm_gametest_probe", null);
                 float before = era.getDurability();
 

@@ -222,7 +222,7 @@ public final class VehicleModelElement extends Element {
             if (subsystemName == null || subsystemName.isEmpty()) continue;
             OBone bone = bones.get(entry.getKey());
             if (bone == null) continue;
-            if (!(sub.subsystems.get(subsystemName) instanceof BasicSubsystem subsystem)) continue;
+            if (!(sub.findOwnSubsystem(subsystemName) instanceof BasicSubsystem subsystem)) continue;
             if (subsystem.isHidden()) continue;
             ModelRenderHelperKt.render(bone, modelPose, pose, buffer,
                     Brightness.FULL_BRIGHT.pack(), OverlayTexture.NO_OVERLAY,

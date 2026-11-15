@@ -1709,23 +1709,33 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
 
     /**
      * 获取载具上所有 {@link SeatSubsystem}（座位）。
+     *
+     * <p>顺序只由结构决定：<b>部件 UUID 升序 → 子零件声明序 → 子系统声明序</b>。这个顺序不读位姿、
+     * 不读名字、不读会话计数器，因此炮塔转动、悬挂起伏都改变不了编号；存档恢复后 UUID 不变，
+     * 编号也不变。用同一份蓝图重新放置会生成新 UUID，编号可能变——编号只承诺“同一台载具在其
+     * 生命周期内稳定”。</p>
      */
     public List<SeatSubsystem> getAllSeats() {
-        return subSystemController.getAllSubsystems().stream()
-                .filter(s -> s instanceof SeatSubsystem)
-                .map(s -> (SeatSubsystem) s)
-                .collect(Collectors.toList());
+        List<UUID> partIds = new ArrayList<>(partMap.keySet());
+        Collections.sort(partIds);
+        List<SeatSubsystem> seats = new ArrayList<>();
+        for (UUID partId : partIds) {
+            RegularPart part = partMap.get(partId);
+            if (part == null) continue;
+            for (SubPart subPart : part.subParts.values()) {
+                for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
+                    if (subsystem instanceof SeatSubsystem seat) seats.add(seat);
+                }
+            }
+        }
+        return seats;
     }
 
     /**
-     * 获取载具上所有未被占用的座位。
+     * 获取载具上所有未被占用的座位，顺序同 {@link #getAllSeats()}。
      */
     public List<SeatSubsystem> getEmptySeats() {
-        return subSystemController.getAllSubsystems().stream()
-                .filter(s -> s instanceof SeatSubsystem)
-                .map(s -> (SeatSubsystem) s)
-                .filter(s -> !s.occupied)
-                .collect(Collectors.toList());
+        return getAllSeats().stream().filter(seat -> !seat.occupied).toList();
     }
 
     /**
@@ -1733,10 +1743,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      */
     @Nullable
     public SeatSubsystem getFirstEmptySeat() {
-        for (AbstractSubsystem s : subSystemController.getAllSubsystems()) {
-            if (s instanceof SeatSubsystem seat && !seat.occupied) {
-                return seat;
-            }
+        for (SeatSubsystem seat : getAllSeats()) {
+            if (!seat.occupied) return seat;
         }
         return null;
     }
@@ -1746,10 +1754,26 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      */
     @Nullable
     public SeatSubsystem getFirstSeat() {
-        for (AbstractSubsystem s : subSystemController.getAllSubsystems()) {
-            if (s instanceof SeatSubsystem seat) {
-                return seat;
-            }
+        List<SeatSubsystem> seats = getAllSeats();
+        return seats.isEmpty() ? null : seats.getFirst();
+    }
+
+    /**
+     * 按 {@link #getAllSeats()} 的顺序回绕一圈找下一个可换入的座位，跳过自身与不可用座位。
+     *
+     * @param from    当前座位；不在本装配体座位表里时返回 null
+     * @param forward true 顺向、false 逆向
+     * @return 目标座位；没有其它可用座位时返回 null
+     */
+    @Nullable
+    public SeatSubsystem nextSeat(SeatSubsystem from, boolean forward) {
+        List<SeatSubsystem> seats = getAllSeats();
+        int index = seats.indexOf(from);
+        if (index < 0 || seats.size() < 2) return null;
+        int direction = forward ? 1 : -1;
+        for (int step = 1; step < seats.size(); step++) {
+            SeatSubsystem candidate = seats.get(Math.floorMod(index + step * direction, seats.size()));
+            if (candidate != from && candidate.isAvailable()) return candidate;
         }
         return null;
     }

@@ -32,7 +32,11 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 public class MMPayloadRegistry {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar input = event.registrar("input:2.2.0");
+        // 3.0.0 / 9.0.0 / 2.0.0 对应子系统、连接点与交互区的线上寻址改为声明序序号：
+        // 载荷里的「子零件 ID + writeUtf(名字)」换成「varint 子零件 ID + varint 序号」，接收方按同一份内容定义
+        // 重建的同一个子零件用 SubPart#subsystemAt / #connectorAt / #interactBoxAt 反查。序号越界即整包丢弃，
+        // 不回退按名字再查；名字仍是存档键与翻译键。
+        final PayloadRegistrar input = event.registrar("input:3.0.0");
         // TrackLinkData#STREAM_CODEC 依次编码 clockwise 绕向、track_type 型号 id 与 link_count 节数，
         // VehicleData 的同步和蓝图载荷使用同一格式。
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。
@@ -55,9 +59,9 @@ public class MMPayloadRegistry {
         // 重定时都会改写本阶段时长与进度基线，客户端按阶段分别推进。
         // 8.0.0 对应装填作业改为整包同步：发射器的八个作业访问器收成一个可选快照（ReloadJobSync，经
         // MMEntityDataSerializers 的自定义序列化器下发，结果两项仍在外面），访问器编号整体后移。
-        final PayloadRegistrar sync = event.registrar("sync:8.0.0");
+        final PayloadRegistrar sync = event.registrar("sync:9.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
-        final PayloadRegistrar misc = event.registrar("misc:1.4.0");
+        final PayloadRegistrar misc = event.registrar("misc:2.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置

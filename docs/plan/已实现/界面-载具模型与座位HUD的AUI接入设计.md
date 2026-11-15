@@ -45,11 +45,11 @@
 
 ### 3.2 参考系、编号与中心
 
-车体内部坐标取参考子零件的局部轴，`+X` 向右，`+Y` 向上，`−Z` 向前。`SeatOrder.layout` 执行排序和参考件选择，客户端以 `SeatMapLayout.Snapshot` 缓存结果。该快照测量三维碰撞包围盒。将所有碰撞形状可解析的子零件包围盒角点转换到参考系后合并，取中心作为座位坐标原点和模型旋转中心。缓存按当前 Level 和装配体实例区分，结构变化后在下一次取用前重算。车体运动和活动件动画只更新采样位置，中心保持固定在该次结构缓存中。若无有限包围盒，坐标原点取参考子零件原点，标签跳过依赖包围盒的几何绘制。没有参考件时三维位置不可用。
+车体内部坐标取参考子零件的局部轴，`+X` 向右，`+Y` 向上，`−Z` 向前。`SeatMapLayout` 选择参考件，客户端以 `SeatMapLayout.Snapshot` 缓存结果；座次本身与参考件无关，来自 `VehicleCore#getAllSeats()`（部件 UUID 升序 → 子零件声明序 → 子系统声明序）。该快照测量三维碰撞包围盒。将所有碰撞形状可解析的子零件包围盒角点转换到参考系后合并，取中心作为座位坐标原点和模型旋转中心。缓存按当前 Level 和装配体实例区分，结构变化后在下一次取用前重算。车体运动和活动件动画只更新采样位置，中心保持固定在该次结构缓存中。若无有限包围盒，坐标原点取参考子零件原点，标签跳过依赖包围盒的几何绘制。没有参考件时三维位置不可用。
 
 先将座位 locator 变换到参考子零件的局部空间，再减去缓存中心。若差为 `(x,y,z)`，查询值为 `(x,y,-z)`，单位为方块。先检查 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/attr/SubPartAttr.java#locatorTransforms`，再验证局部和最终位置均有限。解析失败不得把刚体原点记成有效位置。整车刚性运动不改变固定座位的读数，活动件上的座位随其 locator 更新。
 
-座次取自同一份缓存的有序列表，内部身份为装配体内的 `subPartId + seatName`。座位序号从 **1** 开始，对应可见编号。武器显式索引从 0 开始。零、负数、非整数、非有限值或超出列表范围时，返回 0 或空字符串。对应实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/seat/SeatOrder.java#layout`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/seat/SeatMapLayout.java#measure`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#getLerpedLocatorWorldTransform`。
+座次取自同一份缓存的有序列表，内部身份为装配体内的 `subPartId + seatName`。座位序号从 **1** 开始，对应可见编号。武器显式索引从 0 开始。零、负数、非整数、非有限值或超出列表范围时，返回 0 或空字符串。对应实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#getAllSeats`、`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/seat/SeatMapLayout.java#measure`、`src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#getLerpedLocatorWorldTransform`。
 
 ### 3.3 查询表
 
@@ -59,7 +59,7 @@
 | `vehicle.seat_right(i)`、`vehicle.seat_up(i)`、`vehicle.seat_forward(i)` | 带符号的三维距离。无有效位置时为 0。 |
 | `vehicle.seat_has_position(i)` | 存在有效位置时为 1，否则为 0。用于区分缺失与合法的 `(0,0,0)`。 |
 | `vehicle.seat_name(i)` | 座位子系统名对应的本地化名称，缺翻译时使用键本身。无对应座位时为空字符串。 |
-| `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用和可换入性，分别读同步字段和 `SeatOrder.available`。无对应座位时为 0。 |
+| `vehicle.seat_occupied(i)`、`vehicle.seat_available(i)` | 占用和可换入性，分别读同步字段和 `SeatSubsystem#isAvailable()`。无对应座位时为 0。 |
 | `vehicle.current_seat_number`、`vehicle.next_seat_number`、`vehicle.pending_seat_number` | 当前座位、按键的下一候选、实际在途目标的编号。无对应座位时为 0。 |
 | `vehicle.seat_switch_key` | 玩家换座键的本地化显示名。宿主无载具时为空字符串。 |
 | `vehicle.seat_chord_armed` | 换座键按住期间为 1，此时数字键按座号解释。内置页用它点亮编号直选提示。 |
@@ -69,7 +69,7 @@
 
 ## 4. 换座与反馈
 
-客户端以结构缓存的有序列表作为 HUD 和按键的共同顺序来源。按键按实时 `SeatOrder.available` 扫描可用座位，服务端校验请求中的实际座位键。同一个列表的下标加一就是标记上的编号，也是按住换座键时数字 `1`–`9` 直选用的编号；直选同样先按 `SeatOrder.available` 复核，服务端校验的仍是请求里的实际座位键。
+客户端以结构缓存的有序列表作为 HUD 和按键的共同顺序来源。按键按实时 `SeatSubsystem#isAvailable()` 扫描可用座位，服务端校验请求中的实际座位键。同一个列表的下标加一就是标记上的编号，也是按住换座键时数字 `1`–`9` 直选用的编号；直选同样先按 `SeatSubsystem#isAvailable()` 复核，服务端校验的仍是请求里的实际座位键。
 
 内置页在单按提示下方另起一行编号直选提示：`[换座键] + [1~N]` 键帽加 `seat_map.hint.chord` 文案。范围在页面里写作静态文本 `1~N`，不按本车座数改写：数字键覆盖 1–9，超过 9 座的其余座位由单按到达。`vehicle.seat_chord_armed` 为 1 时该行切到 `is-armed` 状态，表示数字键此刻归换座。
 

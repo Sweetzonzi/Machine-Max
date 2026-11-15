@@ -7,7 +7,6 @@ import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -18,11 +17,15 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 控制组集合编辑结果保存包（客户端→服务端）。<br>
  * 编辑器保存配置时，将整个修改后的 ControlGroupSet 发送到服务端，
- * 服务端通过 ObjectManager 定位到目标子系统并持久化。
+ * 服务端以 {@code (子零件 ID, 子系统序号)} 定位到目标子系统并持久化。
+ *
+ * @param subPartId      受控子系统所属子零件的全局 ID
+ * @param subsystemIndex 受控子系统在该子零件声明序中的位置
+ * @param controlGroupSet 修改后的控制组集合
  */
 public record ControlGroupSetEditPayload(
         int subPartId,
-        String subSystemName,
+        int subsystemIndex,
         ControlGroupSet controlGroupSet
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ControlGroupSetEditPayload> TYPE = new CustomPacketPayload.Type<>(
@@ -30,16 +33,16 @@ public record ControlGroupSetEditPayload(
     public static final StreamCodec<FriendlyByteBuf, ControlGroupSetEditPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull ControlGroupSetEditPayload decode(FriendlyByteBuf buf) {
-            int subPartId = buf.readInt();
-            String subSystemName = buf.readUtf();
+            int subPartId = buf.readVarInt();
+            int subsystemIndex = buf.readVarInt();
             ControlGroupSet cgs = ControlGroupSet.STREAM_CODEC.decode(buf);
-            return new ControlGroupSetEditPayload(subPartId, subSystemName, cgs);
+            return new ControlGroupSetEditPayload(subPartId, subsystemIndex, cgs);
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull ControlGroupSetEditPayload payload) {
-            buffer.writeInt(payload.subPartId());
-            buffer.writeUtf(payload.subSystemName());
+            buffer.writeVarInt(payload.subPartId());
+            buffer.writeVarInt(payload.subsystemIndex());
             ControlGroupSet.STREAM_CODEC.encode(buffer, payload.controlGroupSet());
         }
     };
@@ -53,13 +56,13 @@ public record ControlGroupSetEditPayload(
         context.enqueueWork(() -> {
             DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
             if (object instanceof SubPart subPart) {
-                AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
+                AbstractSubsystem subsystem = subPart.subsystemAt(payload.subsystemIndex());
                 if (subsystem instanceof AbstractControllableSubsystem controllable
                         && ((io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin) context.player()).machine_Max$getControllingSubsystem() == controllable) {
                     controllable.setControlGroupSet(payload.controlGroupSet());
                 } else {
-                    MachineMax.LOGGER.warn("收到ControlGroupSetEditPayload但子系统 {} 不存在于 SubPart(id={})",
-                            payload.subSystemName(), payload.subPartId());
+                    MachineMax.LOGGER.warn("收到ControlGroupSetEditPayload但 SubPart(id={}) 上序号为 {} 的子系统不存在",
+                            payload.subPartId(), payload.subsystemIndex());
                 }
             } else {
                 MachineMax.LOGGER.warn("收到ControlGroupSetEditPayload但维度 {} 中不存在 SubPart(id={})",

@@ -109,7 +109,7 @@ public final class PartFoundationGameTest {
         Selection selected = PartDefinitions.regular(false).values().stream()
                 .flatMap(type -> type.variants.entrySet().stream()
                         .filter(entry -> entry.getValue().textures.size() > 1 && entry.getValue().subParts.values().stream()
-                                .anyMatch(sub -> sub.subsystems.values().stream().anyMatch(attr ->
+                                .anyMatch(sub -> sub.getSubsystems().values().stream().anyMatch(attr ->
                                         attr instanceof ItemStorageSubsystemAttr)))
                         .map(entry -> new Selection(type, entry.getKey())))
                 .findFirst().orElseThrow(() -> new IllegalStateException("Need a painted regular part with a storage subsystem"));

@@ -3,10 +3,13 @@ package io.github.sweetzonzi.machine_max.client.render.gui.seat;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
+import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.seat.SeatOrder;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -16,8 +19,14 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** 客户端装配体结构缓存。参考件的世界位姿由各消费方按采样相位读取。 */
@@ -97,13 +106,159 @@ public final class SeatMapLayout {
         return CACHE.computeIfAbsent(vehicle, SeatMapLayout::build);
     }
 
+    /**
+     * 结构快照：参考件只决定座位标记投影用的局部坐标系，不参与座次排序。
+     * <p>座次取自 {@link VehicleCore#getAllSeats()}（部件 UUID 升序 → 子零件声明序 → 子系统声明序），
+     * 与几何位姿、名字、会话计数器无关。</p>
+     */
     private static Snapshot build(VehicleCore vehicle) {
-        SeatOrder.Layout layout = SeatOrder.layout(vehicle);
-        SubPart reference = layout.reference();
-        List<SubPart> subParts = new ArrayList<>();
-        for (var part : vehicle.partMap.values()) subParts.addAll(part.subParts.values());
+        List<SubPart> subParts = collectSubParts(vehicle);
+        SubPart reference = pickReference(subParts, vehicle);
         Bounds bounds = reference == null ? null : measure(subParts, reference);
-        return new Snapshot(reference, List.copyOf(layout.seats()), List.copyOf(subParts), bounds);
+        return new Snapshot(reference, List.copyOf(vehicle.getAllSeats()), List.copyOf(subParts), bounds);
+    }
+
+    /** 按部件 UUID 升序枚举子零件，让参考件选择与会话无关。 */
+    private static List<SubPart> collectSubParts(VehicleCore vehicle) {
+        List<UUID> partIds = new ArrayList<>(vehicle.partMap.keySet());
+        Collections.sort(partIds);
+        List<SubPart> subParts = new ArrayList<>();
+        for (UUID partId : partIds) {
+            AbstractPart<?> part = vehicle.partMap.get(partId);
+            if (part == null) continue;
+            subParts.addAll(part.subParts.values());
+        }
+        return subParts;
+    }
+
+    // ===== 参考件选择（只决定局部坐标系，不参与座次排序） =====
+
+    /**
+     * 刚性簇：只有 Advanced 一侧的连接点带关节配置，simple 侧的 {@code joint_attrs} 是无操作配置。
+     *
+     * <p>边必须从连接点关系建立：{@code partNet} 的节点是部件，部件内部子零件之间的连接由
+     * {@code AbstractPart.autoAttachInternalConnectors} 直接连，从不进 {@code partNet}。
+     * 只看 {@code partNet} 会让同一部件里的车身、炮塔、整排座椅退化成互不相连的孤立节点。</p>
+     *
+     * <p>簇表用 {@link LinkedHashMap}：并列时取先枚举者（枚举序由部件 UUID 决定），因此同一台车
+     * 在同一次载入里结果稳定，不需要 {@code SubPart#id} 这类会话计数器做 tie-break。</p>
+     */
+    private static SubPart pickReference(List<SubPart> subParts, VehicleCore vehicle) {
+        if (subParts.isEmpty()) return null;
+        Map<SubPart, SubPart> parents = new IdentityHashMap<>();
+        for (SubPart sub : subParts) parents.put(sub, sub);
+
+        for (SubPart sub : subParts) {
+            for (AbstractConnector connector : sub.connectors.values()) {
+                if (!rigid(connector)) continue;
+                AbstractConnector other = connector.attachedConnector;
+                if (other == null || other.subPart == null) continue;
+                // 只处理本装配体内的连接；另一侧可能属于别的装配体（跨载具对接的中间态）
+                if (other.subPart.part.assembly != vehicle) continue;
+                if (!parents.containsKey(other.subPart)) continue;
+                union(parents, sub, other.subPart);
+            }
+        }
+
+        Map<SubPart, ClusterInfo> clusters = new LinkedHashMap<>();
+        for (SubPart sub : subParts) {
+            SubPart root = find(parents, sub);
+            ClusterInfo info = clusters.computeIfAbsent(root, key -> new ClusterInfo());
+            info.mass += Math.max(0f, sub.getAttr().getMass());
+            if (sub.getMaxWheelRadius() > 0f) info.hasWheel = true;
+            if (hasDriverSeat(sub)) info.hasDriverSeat = true;
+        }
+
+        SubPart bestRoot = null;
+        ClusterInfo best = null;
+        for (Map.Entry<SubPart, ClusterInfo> entry : clusters.entrySet()) {
+            if (entry.getValue().hasDriverSeat) {
+                bestRoot = entry.getKey();
+                best = entry.getValue();
+                break;
+            }
+        }
+        if (bestRoot == null) {
+            for (Map.Entry<SubPart, ClusterInfo> entry : clusters.entrySet()) {
+                ClusterInfo info = entry.getValue();
+                if (info.hasWheel) continue;
+                if (best == null || info.mass > best.mass) {
+                    bestRoot = entry.getKey();
+                    best = info;
+                }
+            }
+        }
+        if (bestRoot == null) {
+            // 只剩轮子簇（例如拆到只剩底盘车轮）时不做排除，直接取质量最大者
+            for (Map.Entry<SubPart, ClusterInfo> entry : clusters.entrySet()) {
+                if (best == null || entry.getValue().mass > best.mass) {
+                    bestRoot = entry.getKey();
+                    best = entry.getValue();
+                }
+            }
+        }
+
+        SubPart ref = null;
+        for (SubPart sub : subParts) {
+            if (find(parents, sub) != bestRoot) continue;
+            if (ref == null || betterAsReference(sub, ref)) ref = sub;
+        }
+        return ref;
+    }
+
+    /** 簇内排序键：质量 → 竖直投影面积；两者都并列时取先枚举者。 */
+    private static boolean betterAsReference(SubPart candidate, SubPart current) {
+        float candidateMass = candidate.getAttr().getMass();
+        float currentMass = current.getAttr().getMass();
+        if (Math.abs(candidateMass - currentMass) > 1e-4f) return candidateMass > currentMass;
+        double candidateArea = verticalProjectedArea(candidate);
+        double currentArea = verticalProjectedArea(current);
+        if (Math.abs(candidateArea - currentArea) > 1e-6) return candidateArea > currentArea;
+        return false;
+    }
+
+    private static double verticalProjectedArea(SubPart sub) {
+        return sub.projectedArea == null ? 0d : sub.projectedArea.y;
+    }
+
+    private static boolean hasDriverSeat(SubPart sub) {
+        for (AbstractSubsystem subsystem : sub.ownSubsystems()) {
+            if (subsystem instanceof SeatSubsystem seat && isDriverName(seat.getName())) return true;
+        }
+        return false;
+    }
+
+    private static boolean isDriverName(String name) {
+        return name != null && name.toLowerCase(Locale.ROOT).contains("driver");
+    }
+
+    /** 刚性边：Advanced 连接点没有配置任何关节轴；simple 侧的 joint_attrs 不参与 */
+    private static boolean rigid(AbstractConnector connector) {
+        return connector instanceof AdvancedConnector && connector.attr.getJointAttrs().isEmpty();
+    }
+
+    private static SubPart find(Map<SubPart, SubPart> parents, SubPart sub) {
+        SubPart root = sub;
+        while (parents.get(root) != root) root = parents.get(root);
+        SubPart cursor = sub;
+        while (parents.get(cursor) != root) {
+            SubPart next = parents.get(cursor);
+            parents.put(cursor, root);
+            cursor = next;
+        }
+        return root;
+    }
+
+    private static void union(Map<SubPart, SubPart> parents, SubPart a, SubPart b) {
+        SubPart rootA = find(parents, a);
+        SubPart rootB = find(parents, b);
+        if (rootA != rootB) parents.put(rootA, rootB);
+    }
+
+    private static final class ClusterInfo {
+        float mass;
+        boolean hasWheel;
+        boolean hasDriverSeat;
     }
 
     @Nullable

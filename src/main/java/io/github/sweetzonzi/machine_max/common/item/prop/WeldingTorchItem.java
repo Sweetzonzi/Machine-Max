@@ -200,7 +200,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
         }
         if (!shouldPlayEffect)
-            for (AbstractSubsystem subsystem : subPart.getSubsystems().values()) {
+            for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
                 if (subsystem.getDurability() < subsystem.getMaxDurability()) {
                     shouldPlayEffect = true;
                     break;

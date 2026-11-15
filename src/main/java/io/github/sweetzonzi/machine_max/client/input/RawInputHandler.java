@@ -105,7 +105,7 @@ public class RawInputHandler {
                 seat.owner instanceof SubPart subPart) {
             var part = subPart.part;
             int subPartId = subPart.getId();
-            String subSystemName = seat.name;
+            int subSystemIndex = subPart.subsystemIndex(seat);
             MMJoystickHandler.refreshState();
 
             if (!(part.assembly instanceof VehicleCore vehicle)) return;
@@ -249,7 +249,7 @@ public class RawInputHandler {
             // 仅在输入有变化时发送数据包
             if (moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
-                        subPartId, subSystemName, moveInputs, moveInputConflicts));
+                        subPartId, subSystemIndex, moveInputs, moveInputConflicts));
         }
     }
 
@@ -403,8 +403,8 @@ public class RawInputHandler {
                         // 立即更新本地 + 发送网络包到服务端
                         sub.setControlGroupSet(modified);
                         PacketDistributor.sendToServer(new ControlGroupSetEditPayload(
-                                sub.getOwner().getSubPart().getId(),
-                                sub.name,
+                                sub.getSubPart().getId(),
+                                sub.getSubPart().subsystemIndex(sub),
                                 modified
                         ));
 
@@ -523,8 +523,8 @@ public class RawInputHandler {
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub
                     && !(client.screen instanceof VehicleControlScreen)) { // 载具信息面板开启时屏蔽输入
-                int subPartId = sub.getOwner().getSubPart().getId();
-                String subSystemName = sub.name;
+                int subPartId = sub.getSubPart().getId();
+                int subSystemIndex = sub.getSubPart().subsystemIndex(sub);
                 List<ControlBinding> bindings = sub.getControlGroupSet().getMergedBindings();
                 for (int i = 0; i < bindings.size(); i++) {
                     ControlBinding binding = bindings.get(i);
@@ -533,13 +533,13 @@ public class RawInputHandler {
                     KeyHooks.EVENT(inputKey)
                             .OnKeyDown(() -> {
                                 PacketDistributor.sendToServer(
-                                        new ControlBindingPayload(subPartId, subSystemName, index, 0));
+                                        new ControlBindingPayload(subPartId, subSystemIndex, index, 0));
                                 sub.sendBindingSignal(index, 0);
                             })
                             .OnKeyUp(() -> {
                                 if (binding.action != BindingAction.TOGGLE) {
                                     PacketDistributor.sendToServer(
-                                            new ControlBindingPayload(subPartId, subSystemName, index, 1));
+                                            new ControlBindingPayload(subPartId, subSystemIndex, index, 1));
                                     sub.sendBindingSignal(index, 1);
                                 }
                             });

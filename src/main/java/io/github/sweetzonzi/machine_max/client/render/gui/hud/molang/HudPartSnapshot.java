@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,20 +30,25 @@ public record HudPartSnapshot(Map<String, Double> numbers, Map<String, String> s
             n.put("local.max_durability", (double) root.getMaxDurability());
             n.put("local.is_destroyed", root.isDestroyed() ? 1.0 : 0.0);
         }
-        part.getConnectorsByName().forEach((key, connector) -> {
-            n.put("local.has_connector:" + key, connector.hasPart() ? 1.0 : 0.0);
-            for (int axis = 0; axis < 3; axis++) {
-                n.put("local.connector_offset:" + key + ":" + axis, (double) connector.getPivotOffset().get(axis));
-                n.put("local.connector_rotation:" + key + ":" + axis, (double) connector.getPivotRotation().get(axis));
+        // 名称在 Part 内唯一，逐子零件遍历即可覆盖全部连接点与子系统，无需另一张按名索引
+        for (SubPart subPart : part.getSubParts().values()) {
+            for (AbstractConnector connector : subPart.connectors.values()) {
+                String key = connector.getName();
+                n.put("local.has_connector:" + key, connector.hasPart() ? 1.0 : 0.0);
+                for (int axis = 0; axis < 3; axis++) {
+                    n.put("local.connector_offset:" + key + ":" + axis, (double) connector.getPivotOffset().get(axis));
+                    n.put("local.connector_rotation:" + key + ":" + axis, (double) connector.getPivotRotation().get(axis));
+                }
             }
-        });
-        part.getSubsystemsByName().forEach((key, subsystem) -> {
-            n.put("local.has_subsystem:" + key, 1.0);
-            n.put("local.subsystem_durability:" + key, (double) subsystem.getDurability());
-            n.put("local.subsystem_max_durability:" + key, (double) subsystem.getMaxDurability());
-            n.put("local.subsystem_active:" + key, subsystem.isActive() ? 1.0 : 0.0);
-            n.put("local.subsystem_destroyed:" + key, subsystem.isDestroyed() ? 1.0 : 0.0);
-        });
+            for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
+                String key = subsystem.getName();
+                n.put("local.has_subsystem:" + key, 1.0);
+                n.put("local.subsystem_durability:" + key, (double) subsystem.getDurability());
+                n.put("local.subsystem_max_durability:" + key, (double) subsystem.getMaxDurability());
+                n.put("local.subsystem_active:" + key, subsystem.isActive() ? 1.0 : 0.0);
+                n.put("local.subsystem_destroyed:" + key, subsystem.isDestroyed() ? 1.0 : 0.0);
+            }
+        }
         signals("local.get:", part.getSignalStorage(), n, s);
         var assembly = part.getAssembly();
         if (assembly != null) {

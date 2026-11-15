@@ -112,7 +112,7 @@ public class MechPowerPort implements IMechPowerConsumer {
 
     private IMechPowerConsumer resolveLocalConsumer() {
         if (powerTargetName == null || powerTargetName.isEmpty()) return null;
-        AbstractSubsystem subsystem = owner.subPart.subsystems.get(powerTargetName);
+        AbstractSubsystem subsystem = owner.subPart.findOwnSubsystem(powerTargetName);
         if (subsystem instanceof IMechPowerConsumer consumer) return consumer;
         AbstractConnector connector = owner.subPart.connectors.get(powerTargetName);
         if (connector != null && connector.mechanicalEnergyPort != null) return connector.mechanicalEnergyPort;

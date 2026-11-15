@@ -50,8 +50,8 @@ public final class SignalPipelineGameTest {
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
             var turret = part.subParts.get("sub_part.t90a.turret");
-            var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
-            var weapon = (WeaponControllerSubsystem) turret.subsystems.get("subsystem.t90a.main_weapon");
+            var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
             helper.assertTrue(seat.getTargets().containsKey("crew_gunner_aim"), "预设控制组的频道先进入首跳表");
 
             Map<String, List<String>> move = Map.of("probe_shared", List.of("subsystem.t90a.azimuth_driver"));
@@ -81,9 +81,9 @@ public final class SignalPipelineGameTest {
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
             var turret = part.subParts.get("sub_part.t90a.turret");
-            var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
-            var weapon = (WeaponControllerSubsystem) turret.subsystems.get("subsystem.t90a.main_weapon");
-            var azimuth = turret.subsystems.get("subsystem.t90a.azimuth_driver");
+            var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
+            var azimuth = turret.findOwnSubsystem("subsystem.t90a.azimuth_driver");
             String aim = "probe_shared_aim";
             String fire = "probe_shared_fire";
 
@@ -170,8 +170,8 @@ public final class SignalPipelineGameTest {
         try {
             var turret = part.subParts.get("sub_part.t90a.turret");
             var gun = part.subParts.get("sub_part.t90a.gun");
-            var seat = (SeatSubsystem) turret.subsystems.get("subsystem.t90a.gunner_seat");
-            var sight = gun.subsystems.get("subsystem.t90a.gunner_sight");
+            var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
+            var sight = gun.findOwnSubsystem("subsystem.t90a.gunner_sight");
             var port = part.allConnectors.values().iterator().next().signalPort;
 
             seat.getSignalInputChannels().computeIfAbsent("probe_input", k -> new SignalChannel()).put(seat, 1f);

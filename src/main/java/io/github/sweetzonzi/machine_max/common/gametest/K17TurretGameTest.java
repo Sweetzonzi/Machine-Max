@@ -51,7 +51,7 @@ public final class K17TurretGameTest {
             for (Tube tube : TUBES) {
                 SubPart host = part.subParts.get(tube.subPart());
                 helper.assertTrue(host != null, "子部件必须存在：" + tube.subPart());
-                AbstractSubsystem subsystem = host.subsystems.get(tube.subsystem());
+                AbstractSubsystem subsystem = host.findOwnSubsystem(tube.subsystem());
                 helper.assertTrue(subsystem != null, "发射器子系统必须存在：" + tube.subsystem());
 
                 HitBox hitBox = host.hitBoxes.get(tube.bone());

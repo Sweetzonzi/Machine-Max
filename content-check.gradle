@@ -22,6 +22,10 @@
 //  7. 控制组预设的越级量表只写自己会发出的频道。priorities 的键拼错时，这一条频道就按
 //     越级量 0 处理——表现是"超控没反应"，既不报错也不刷日志。解码期只能校验值的范围
 //     （负值被 Codec.intRange 拒绝），看不到基础组，所以键只能在这里对。
+//  8. 单变体内「子系统 / 交互区 / 连接点」名字唯一且不使用信号保留地址。三类名字共用一套
+//     命名空间，按名解析的作用域是单个 Part；重名时运行期只命中其中一个，解码期
+//     （VariantAttr#validateUniqueNames）抛 PackContentException 让该部件类型双端都不出现。
+//     这里把同一判据提前到构建期，作者不必进游戏才发现自己的内容被整条剔除。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -292,7 +296,7 @@ packs.sort { it.name }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，以及语言键的可达性与中英配对'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，语言键的可达性与中英配对，以及单变体内三类信号名字的唯一性'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -686,6 +690,98 @@ tasks.register('checkContent') {
             }
         }
 
+        // 8. 单变体内「子系统 / 交互区 / 连接点」名字唯一且不使用信号保留地址
+        //
+        // 运行期按名字解析的作用域是单个 Part 实例，也就是单份变体定义；三类名字共用一套
+        // 命名空间（VariantAttr#validateUniqueNames 是解码期权威校验）。运行期没有并列分支：
+        // 命中即返回，重名会静默地只解析到其中第一个。这里把同一判据提前到构建期，
+        // 免得作者写完内容、进游戏放不出该部件类型才发现。
+        int partDefinitionCount = 0
+        int partVariantCount = 0
+        Set<String> reservedSignalNames = ['local', 'global'] as Set
+        packs.each { pack ->
+            File partsDir = new File(pack.dir, 'parts')
+            if (!partsDir.isDirectory()) {
+                return
+            }
+            partsDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                Object data
+                try {
+                    data = readJsonc(file)
+                } catch (Exception exception) {
+                    problems << pack.name + '/' + pack.dir.toPath().relativize(file.toPath()).toString()
+                            .replace(File.separatorChar, '/' as char) + '：解析失败（' + exception.message + '）'
+                    return
+                }
+                if (!(data instanceof Map)) {
+                    return
+                }
+                Object variantsRaw = ((Map) data).get('variants')
+                if (!(variantsRaw instanceof Map)) {
+                    return
+                }
+                Map variantsObj = (Map) variantsRaw
+                Map variantEntries
+                if (variantsObj.get('sub_parts') instanceof Map) {
+                    variantEntries = ['default': variantsObj]
+                } else {
+                    variantEntries = variantsObj
+                }
+                String relative = pack.name + '/' + pack.dir.toPath().relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+                partDefinitionCount++
+                variantEntries.each { Object variantName, Object variantRaw ->
+                    if (!(variantRaw instanceof Map)) {
+                        return
+                    }
+                    Map variant = (Map) variantRaw
+                    Object subPartsRaw = variant.get('sub_parts')
+                    if (!(subPartsRaw instanceof Map)) {
+                        return
+                    }
+                    partVariantCount++
+                    Map<String, String> ownerByName = [:]
+                    [['connectors', '连接点'], ['subsystems', '子系统'], ['interact_boxes', '交互区']].each { List pair ->
+                        String field = pair[0]
+                        String label = pair[1]
+                        ((Map) subPartsRaw).each { Object subPartName, Object subPartRaw ->
+                            if (!(subPartRaw instanceof Map)) {
+                                return
+                            }
+                            Object namesRaw = ((Map) subPartRaw).get(field)
+                            if (!(namesRaw instanceof Map)) {
+                                return
+                            }
+                            ((Map) namesRaw).keySet().each { Object nameRaw ->
+                                String name = nameRaw.toString()
+                                if (reservedSignalNames.contains(name)) {
+                                    problems << relative + '：变体 ' + variantName + ' 的子零件 ' + subPartName +
+                                            ' 把信号保留地址 ' + name + ' 用作' + label + '名' +
+                                            '（保留地址只作为 signal_targets 的目标，不能当节点名）'
+                                    return
+                                }
+                                String owner = subPartName + '/' + label
+                                String previous = ownerByName[name]
+                                if (previous == null) {
+                                    ownerByName[name] = owner
+                                    return
+                                }
+                                problems << relative + '：变体 ' + variantName + ' 内名称 ' + name + ' 重复：' +
+                                        previous + ' 与 ' + owner + ' 冲突' +
+                                        '（子系统 / 交互区 / 连接点共用一套命名空间，重名时按名解析只命中其中一个）'
+                                details.append('    重名  ').append(relative).append(' / 变体 ')
+                                        .append(variantName).append(' / ').append(name).append(' → ')
+                                        .append(previous).append('、').append(owner).append('\n')
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         packs.each { pack ->
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
@@ -709,7 +805,8 @@ tasks.register('checkContent') {
                     (text ? '\n' + text : ''))
         }
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
-                ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + referenceCount + ' 处资源引用，' +
+                ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + partDefinitionCount + ' 份部件定义 / ' +
+                partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + referenceCount + ' 处资源引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
                 priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键）。')

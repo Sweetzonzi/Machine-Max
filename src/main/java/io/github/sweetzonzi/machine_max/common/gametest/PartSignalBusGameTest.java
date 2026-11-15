@@ -288,6 +288,67 @@ public final class PartSignalBusGameTest {
         return value instanceof Number number ? number.floatValue() : Float.NaN;
     }
 
+    /**
+     * 具名目标的作用域是 Part：发送者所在子零件之外的子系统名，只要在同一部件内就能解析到。
+     * <p>T1 / T2：跨子零件具名投递可达；同一频道上的两个名字各自只到自己的那一台。</p>
+     */
+    @GameTest(template = "part_foundation", batch = "mmSignal", timeoutTicks = 100)
+    public static void namedTargetsResolveAcrossSubParts(GameTestHelper helper) {
+        RegularPart part = turret(helper);
+        try {
+            SubPart turretSub = part.getSubParts().get("sub_part.t90a.turret");
+            SubPart gunSub = part.getSubParts().get("sub_part.t90a.gun");
+            helper.assertTrue(turretSub != null && gunSub != null && turretSub != gunSub,
+                    "夹具部件应把炮塔与火炮分在两个子零件上");
+            List<AbstractSubsystem> gunSubsystems = new ArrayList<>(gunSub.ownSubsystems());
+            helper.assertTrue(!gunSubsystems.isEmpty(), "火炮子零件上应带有子系统");
+            AbstractSubsystem remote = gunSubsystems.getFirst();
+            AbstractSubsystem local = turretSub.ownSubsystems().stream()
+                    .filter(subsystem -> subsystem != remote)
+                    .findFirst()
+                    .orElse(null);
+            helper.assertTrue(local != null, "炮塔子零件上应带有子系统");
+
+            // find* 在 Part 全域解析：跨子零件也能查到
+            helper.assertTrue(part.findSubsystem(remote.getName()) == remote,
+                    "Part 级按名查子系统覆盖全部子零件");
+            helper.assertTrue(part.findConnector("probe_missing_connector") == null,
+                    "不存在的连接点名返回 null");
+
+            // T1：发送者在炮塔子零件，目标是火炮子零件上的子系统
+            ProbeEndpoint sender = new ProbeEndpoint("probe_cross_sub_part", List.of(), turretSub);
+            sender.getTargetNames().put(CHANNEL, List.of(remote.getName()));
+            sender.setTargetFromNames();
+            helper.assertTrue(sender.getTargets().getOrDefault(CHANNEL, Map.of()).containsValue(remote),
+                    "发送者所在子零件之外的子系统名必须解析到");
+            sender.sendSignalToAllTargets(CHANNEL, 5f);
+            SignalChannel crossPartChannel = remote.getSignalInputChannels().get(CHANNEL);
+            helper.assertTrue(crossPartChannel != null && numberOf(crossPartChannel.get(sender)) == 5f,
+                    "跨子零件具名投递写入目标输入槽");
+
+            // T2：同一频道上两个名字，各自只到自己的那一台
+            ProbeEndpoint firstSender = new ProbeEndpoint("probe_first_target", List.of(), turretSub);
+            ProbeEndpoint secondSender = new ProbeEndpoint("probe_second_target", List.of(), gunSub);
+            firstSender.getTargetNames().put(CHANNEL, List.of(remote.getName()));
+            secondSender.getTargetNames().put(CHANNEL, List.of(local.getName()));
+            firstSender.setTargetFromNames();
+            secondSender.setTargetFromNames();
+            firstSender.sendSignalToAllTargets(CHANNEL, 1f);
+            secondSender.sendSignalToAllTargets(CHANNEL, 2f);
+            SignalChannel remoteChannel = remote.getSignalInputChannels().get(CHANNEL);
+            SignalChannel localChannel = local.getSignalInputChannels().get(CHANNEL);
+            helper.assertTrue(remoteChannel != null && numberOf(remoteChannel.get(firstSender)) == 1f
+                            && remoteChannel.get(secondSender) == null,
+                    "第一个名字只到达自己指向的子系统");
+            helper.assertTrue(localChannel != null && numberOf(localChannel.get(secondSender)) == 2f
+                            && localChannel.get(firstSender) == null,
+                    "第二个名字只到达自己指向的子系统");
+            helper.succeed();
+        } finally {
+            part.discardUnattached();
+        }
+    }
+
     /** 可配置首跳表的探针端点：既作为订阅者接收广播，也作为发送者查询/投递。 */
     private static final class ProbeEndpoint implements ISignalReceiver, ISignalSender {
         private final String address;

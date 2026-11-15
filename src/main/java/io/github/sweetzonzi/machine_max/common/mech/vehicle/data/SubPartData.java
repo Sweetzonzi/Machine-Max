@@ -141,10 +141,8 @@ public class SubPartData {
             connectorData.put(connectorName, connector.saveData(new CompoundTag()));
         }
         Map<String, CompoundTag> subPartSubsystemData = HashMap.newHashMap(1);
-        for (Map.Entry<String, AbstractSubsystem> entry : subPart.subsystems.entrySet()) {
-            String subsystemName = entry.getKey();
-            AbstractSubsystem subsystem = entry.getValue();
-            subPartSubsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
+        for (AbstractSubsystem subsystem : subPart.ownSubsystems()) {
+            subPartSubsystemData.put(subsystem.getName(), subsystem.saveData(new CompoundTag()));
         }
         this.id = subPart.getId();
         // 耐久以比例持久化，避免内容包调整耐久上限后存档数值失真

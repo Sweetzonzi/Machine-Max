@@ -103,7 +103,7 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<AbstractPa
     @QueryBinding(value = "has_connector", namespace = "local")
     public double localHasConnector(String name) {
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractConnector c = p.getConnectorsByName().get(name);
+        AbstractConnector c = p.findConnector(name);
         return c != null && c.hasPart() ? 1.0 : 0.0;
     }
 
@@ -111,7 +111,7 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<AbstractPa
     public double localConnectorOffset(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractConnector c = p.getConnectorsByName().get(name);
+        AbstractConnector c = p.findConnector(name);
         return c != null ? c.getPivotOffset().get(axis) : 0.0;
     }
 
@@ -119,40 +119,40 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<AbstractPa
     public double localConnectorRotation(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractConnector c = p.getConnectorsByName().get(name);
+        AbstractConnector c = p.findConnector(name);
         return c != null ? c.getPivotRotation().get(axis) : 0.0;
     }
 
     @QueryBinding(value = "has_subsystem", namespace = "local")
     public double localHasSubsystem(String name) {
-        AbstractPart<?> p = part(); return p != null && p.getSubsystemsByName().containsKey(name) ? 1.0 : 0.0;
+        AbstractPart<?> p = part(); return p != null && p.findSubsystem(name) != null ? 1.0 : 0.0;
     }
 
     @QueryBinding(value = "subsystem_durability", namespace = "local")
     public double localSubsystemDurability(String name) {
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
+        AbstractSubsystem sub = p.findSubsystem(name);
         return sub != null ? sub.getDurability() : 0.0;
     }
 
     @QueryBinding(value = "subsystem_max_durability", namespace = "local")
     public double localSubsystemMaxDurability(String name) {
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
+        AbstractSubsystem sub = p.findSubsystem(name);
         return sub != null ? sub.getMaxDurability() : 0.0;
     }
 
     @QueryBinding(value = "subsystem_active", namespace = "local")
     public double localSubsystemActive(String name) {
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
+        AbstractSubsystem sub = p.findSubsystem(name);
         return sub != null && sub.isActive() ? 1.0 : 0.0;
     }
 
     @QueryBinding(value = "subsystem_destroyed", namespace = "local")
     public double localSubsystemDestroyed(String name) {
         AbstractPart<?> p = part(); if (p == null) return 0.0;
-        AbstractSubsystem sub = p.getSubsystemsByName().get(name);
+        AbstractSubsystem sub = p.findSubsystem(name);
         return sub != null && sub.isDestroyed() ? 1.0 : 0.0;
     }
 

@@ -123,9 +123,17 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public final SubPartAttr attr;
     public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
     public final InteractBoxes interactBoxes;//交互判定
-    /** 子系统：迭代序 = 内容包声明序，构造期写定，此后不再增删 */
-    public final LinkedHashMap<String, AbstractSubsystem> subsystems = LinkedHashMap.newLinkedHashMap(1);
-    /** 连接点：迭代序 = 内容包声明序，构造期写定（{@code ConnectorSyncPayload} 的序号取这个位置） */
+    /**
+     * 子系统表：迭代序 = 内容包声明序，构造期写定，此后不再增删。
+     * <p>按名读取走 {@link #findOwnSubsystem(String)}；线上序号按迭代位置读写，见
+     * {@link #subsystemIndex(AbstractSubsystem)} / {@link #subsystemAt(int)}。</p>
+     */
+    @Getter(AccessLevel.NONE)
+    private final LinkedHashMap<String, AbstractSubsystem> subsystems = LinkedHashMap.newLinkedHashMap(1);
+    /**
+     * 连接点：迭代序 = 内容包声明序，构造期写定。
+     * <p>线上序号按迭代位置读写，见 {@link #connectorIndex(AbstractConnector)} / {@link #connectorAt(int)}。</p>
+     */
     public final LinkedHashMap<String, AbstractConnector> connectors = LinkedHashMap.newLinkedHashMap(1);
     /** 子系统额外质量映射表（子系统名称 → 额外质量值 kg），由 ISubsystemHost.updateExtraMass() 管理 */
     private final ConcurrentHashMap<String, Float> extraMassMap = new ConcurrentHashMap<>();
@@ -199,6 +207,122 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                     event.getO1Point().getId());
             return null;
         });
+    }
+
+    /**
+     * 本子零件直接持有的子系统，迭代序 = 内容包声明序。
+     * <p>只交值、不交键：需要按名查本子零件时用 {@link #findOwnSubsystem(String)}，需要 Part 域解析时用
+     * {@link #findSubsystem(String)}。返回容器视图，不要在遍历中结构修改。</p>
+     */
+    public Collection<AbstractSubsystem> ownSubsystems() {
+        return subsystems.values();
+    }
+
+    /**
+     * 只在本子零件内按名查子系统：网络包与存档按 {@code (子零件, 名字)} 定位，精度高于 Part 级唯一性。
+     *
+     * @param name 子系统名
+     * @return 本子零件上的该子系统；不存在时返回 {@code null}
+     */
+    @Nullable
+    public AbstractSubsystem findOwnSubsystem(String name) {
+        return subsystems.get(name);
+    }
+
+    /**
+     * 在本部件（Part）全域按名查子系统：信号具名目标与 MoLang {@code local.*} 走这条。
+     * <p>子系统 / 交互区 / 连接点三类名字共用一套命名空间，Part 内唯一性由解码期校验保证。</p>
+     *
+     * @param name 子系统名
+     * @return 本部件内该名字的子系统；不存在时返回 {@code null}
+     */
+    @Nullable
+    public AbstractSubsystem findSubsystem(String name) {
+        return part.findSubsystem(name);
+    }
+
+    /**
+     * 子系统在本子零件声明序中的位置，供线上载荷编码序号。
+     *
+     * <p>线上地址是 {@code (子零件 ID, 序号)} 二元组：载荷里的子零件 ID 已限定容器，序号只需在该容器内
+     * 唯一，因此不需要 Part 级编号。位置取声明序 {@code LinkedHashMap} 的迭代位置；容器只整体清空、
+     * 从不部分删减，位置对存活子系统因此稳定。发送侧每包扫一次，子零件内至多几十项。</p>
+     *
+     * @param subsystem 子系统实例
+     * @return 声明序位置（0 起）；不在本子零件内时返回 {@code -1}
+     */
+    public int subsystemIndex(AbstractSubsystem subsystem) {
+        int index = 0;
+        for (AbstractSubsystem candidate : subsystems.values()) {
+            if (candidate == subsystem) return index;
+            index++;
+        }
+        return -1;
+    }
+
+    /**
+     * 按声明序位置取本子零件上的子系统：线上载荷以 {@code (子零件 ID, 序号)} 定位。
+     *
+     * <p>越界、或该位置已随子系统容器销毁而消失时返回 {@code null}，调用方整包丢弃，
+     * 不回退按名字再查——回退会把「序号错了」变成「有时对有时错」。</p>
+     *
+     * @param index 声明序位置（0 起）
+     * @return 该位置的子系统；不存在时为 {@code null}
+     */
+    @Nullable
+    public AbstractSubsystem subsystemAt(int index) {
+        if (index < 0) return null;
+        int position = 0;
+        for (AbstractSubsystem candidate : subsystems.values()) {
+            if (position++ == index) return candidate;
+        }
+        return null;
+    }
+
+    /**
+     * 连接点在本子零件声明序中的位置，供 {@code ConnectorSyncPayload} 编码序号。
+     * <p>与子系统同形：地址是 {@code (子零件 ID, 序号)}，容器是声明序 {@code LinkedHashMap}。</p>
+     *
+     * @param connector 连接点实例
+     * @return 声明序位置（0 起）；不在本子零件内时返回 {@code -1}
+     */
+    public int connectorIndex(AbstractConnector connector) {
+        int index = 0;
+        for (AbstractConnector candidate : connectors.values()) {
+            if (candidate == connector) return index;
+            index++;
+        }
+        return -1;
+    }
+
+    /**
+     * 按声明序位置取本子零件上的连接点；越界时返回 {@code null}，调用方整包丢弃。
+     *
+     * @param index 声明序位置（0 起）
+     * @return 该位置的连接点；不存在时为 {@code null}
+     */
+    @Nullable
+    public AbstractConnector connectorAt(int index) {
+        if (index < 0) return null;
+        int position = 0;
+        for (AbstractConnector candidate : connectors.values()) {
+            if (position++ == index) return candidate;
+        }
+        return null;
+    }
+
+    /**
+     * 安装一个子系统：以声明的名字写入本子零件的声明序表，并订阅所属部件的 local 总线。
+     * <p>结构构造期由 {@link AbstractPart} 按声明序逐个调用；子系统表在构造完成后不再增删。
+     * 容器键取内容定义里的声明名而不是 {@link AbstractSubsystem#getName()}——后者是虚拟分派，
+     * 脚本子系统可经 Hook 覆写，存档与网络包定位用的仍是声明名。</p>
+     *
+     * @param name      子系统在内容定义里的声明名
+     * @param subsystem 待安装的子系统
+     */
+    public void installSubsystem(String name, AbstractSubsystem subsystem) {
+        subsystems.put(name, subsystem);
+        part.subscribe(subsystem);
     }
 
     @Override
@@ -282,8 +406,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             connector.destroy();
         }
         // 先退出所属部件的 local 总线，再清空容器；正常销毁与构造失败回收共用这一入口。
-        for (AbstractSubsystem subsystem : subsystems.values()) part.unsubscribe(subsystem);
-        if (notifySubsystems) subsystems.forEach((name, subsystem) -> subsystem.onDetach());
+        for (AbstractSubsystem subsystem : ownSubsystems()) part.unsubscribe(subsystem);
+        if (notifySubsystems) ownSubsystems().forEach(AbstractSubsystem::onDetach);
         subsystems.clear();
         if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
@@ -1014,7 +1138,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 setDurability(currentDurability + repairAmount);
             }
             // 修理子系统（若实现 IModularSubsystem 则路由到模块，否则直接设置耐久度）
-            for (AbstractSubsystem subsystem : subsystems.values()) {
+            for (AbstractSubsystem subsystem : ownSubsystems()) {
                 if (subsystemsRepairAmount <= 0) break;
                 if (subsystem.getDurability() < subsystem.getMaxDurability()) {
                     if (subsystem instanceof IModularSubsystem modular) {
@@ -1253,7 +1377,7 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         completedWheelSupport = false;
         wheelSupported = false;
         if (!level.isClientSide()) getSyncedData().set(WHEEL_SUPPORTED_ID, false);
-        for (AbstractSubsystem subsystem : subsystems.values()) {
+        for (AbstractSubsystem subsystem : ownSubsystems()) {
             subsystem.setActive(false);
         }
         for (AbstractConnector connector : connectors.values()) {

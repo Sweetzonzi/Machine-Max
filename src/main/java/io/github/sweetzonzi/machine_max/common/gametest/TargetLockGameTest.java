@@ -45,7 +45,7 @@ public final class TargetLockGameTest {
         return PartDefinitions.regular(false).values().stream()
                 .flatMap(type -> type.variants.entrySet().stream()
                         .filter(entry -> entry.getValue().subParts.values().stream()
-                                .anyMatch(sub -> !sub.subsystems.isEmpty()))
+                                .anyMatch(sub -> !sub.getSubsystems().isEmpty()))
                         .map(entry -> new Selection(type, entry.getKey())))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("内容包里没有带子系统的普通部件"));
@@ -98,8 +98,8 @@ public final class TargetLockGameTest {
     private static Probe probe(VehicleCore vehicle, boolean lockable) {
         for (RegularPart part : vehicle.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
-                if (subPart.subsystems.isEmpty()) continue;
-                AbstractSubsystem subsystem = subPart.subsystems.values().iterator().next();
+                if (subPart.ownSubsystems().isEmpty()) continue;
+                AbstractSubsystem subsystem = subPart.ownSubsystems().iterator().next();
                 HitBoxAttr attr = new HitBoxAttr("mm_gametest_lock", "box", subsystem.getName(), "",
                         MaterialAttr.DEFAULT_ID, 1f, "true", lockable, null);
                 return new Probe(new HitBox(subPart, attr, "mm_gametest_lock", null), subsystem);
