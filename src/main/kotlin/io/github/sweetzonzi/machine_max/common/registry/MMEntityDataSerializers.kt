@@ -4,7 +4,9 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobSync
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobProgress
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobResults
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobSpec
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.syncher.EntityDataSerializer
 import net.minecraft.resources.ResourceLocation
@@ -79,17 +81,35 @@ object MMEntityDataSerializers {
         EntityDataSerializer.forValueType(ByteBufCodecs.optional(AmmoBelt.STREAM_CODEC))
 
     /**
-     * 可空的装填作业快照（[ReloadJobSync]：编号、交付目标、实际来源、冻结规格、预留份额、进度基线、
-     * 本阶段时长与阶段）。
+     * 可空的作业冻结分配（[ReloadJobSpec]：编号、运输者、提供者、冻结规格与预留份额）。
      *
      * 空值表示这一 tick 没有作业，用 [Optional.empty] 表达而不是在编号里占一个哨兵：编号是自增的
      * 恒正量，而时长为 0 是合法配置（没有机械段的机构），写成"编号 0 表示无作业"会把这两件事绑在一起。
-     * 八项同批变化、客户端必须凑齐才能建作业，因此整包下发——逐项下发时"字段到齐没有"是可观察状态，
-     * 落地处就得为它写防御分支。
+     * 这五项在作业存续期间不变，因此只在受理、收尾与全量补推时下发。
      */
     @JvmStatic
-    val OPTIONAL_RELOAD_JOB_SYNC: EntityDataSerializer<Optional<ReloadJobSync>> =
-        EntityDataSerializer.forValueType(ByteBufCodecs.optional(ReloadJobSync.STREAM_CODEC))
+    val OPTIONAL_RELOAD_JOB_SPEC: EntityDataSerializer<Optional<ReloadJobSpec>> =
+        EntityDataSerializer.forValueType(ByteBufCodecs.optional(ReloadJobSpec.STREAM_CODEC))
+
+    /**
+     * 可空的作业动态样本（[ReloadJobProgress]：编号、进度基线、本阶段时长与阶段）。
+     *
+     * 与冻结分配分开：换段与换人重定时只改这四项，重发整份交付规格是白字节开销。
+     * 编号是两支样本的关联键，客户端拿它把两份配成一条作业。
+     */
+    @JvmStatic
+    val OPTIONAL_RELOAD_JOB_PROGRESS: EntityDataSerializer<Optional<ReloadJobProgress>> =
+        EntityDataSerializer.forValueType(ByteBufCodecs.optional(ReloadJobProgress.STREAM_CODEC))
+
+    /**
+     * 按发生顺序排列的作业结束结果（[ReloadJobResults]：编号与是否已交付）。
+     *
+     * 一轮可以结束不止一条作业（零时长作业连续受理、交付），标量字段会丢掉前一条的终态。
+     * 只保留最近若干条：这是同步值而不是日志，客户端用编号水位忽略已应用过的条目。
+     */
+    @JvmStatic
+    val RELOAD_JOB_RESULTS: EntityDataSerializer<ReloadJobResults> =
+        EntityDataSerializer.forValueType(ReloadJobResults.STREAM_CODEC)
 
     init {
         MachineMax.REGISTER.entityDataSerializer<AmmoRef> {
@@ -108,9 +128,18 @@ object MMEntityDataSerializers {
             id = "optional_ammo_belt"
             factory = { OPTIONAL_AMMO_BELT }
         }
-        MachineMax.REGISTER.entityDataSerializer<Optional<ReloadJobSync>> {
-            id = "optional_reload_job_sync"
-            factory = { OPTIONAL_RELOAD_JOB_SYNC }
+        MachineMax.REGISTER.entityDataSerializer<Optional<ReloadJobSpec>> {
+            id = "optional_reload_job_spec"
+            factory = { OPTIONAL_RELOAD_JOB_SPEC }
+        }
+        MachineMax.REGISTER.entityDataSerializer<Optional<ReloadJobProgress>> {
+            id = "optional_reload_job_progress"
+            factory = { OPTIONAL_RELOAD_JOB_PROGRESS }
+        }
+        MachineMax.REGISTER.entityDataSerializer<ReloadJobResults> {
+            id = "reload_job_results"
+            factory = { RELOAD_JOB_RESULTS }
         }
     }
 }
+

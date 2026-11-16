@@ -330,6 +330,25 @@ public final class AmmoBelt {
     }
 
     /**
+     * 两份弹链的<b>交付规格</b>是否相同：容器身份、模式、长度、标签与回充配置，不含余量与回充运行态。<br>
+     * 与 {@link #compareSpec} 的分工：那条是排序用的全序，回充只比较"有没有"，不比较速率／延迟／耗电；
+     * 判断"这份交付是不是同一条作业当初冻结的那一份"必须比到回充配置本身，否则回充参数不同的两条作业
+     * 会被当成同一条。
+     *
+     * @param other 另一份弹链
+     * @return true 表示交付规格相同
+     */
+    public boolean sameDeliverySpec(@Nullable AmmoBelt other) {
+        if (this == other) return true;
+        if (other == null) return false;
+        return length == other.length
+                && java.util.Objects.equals(containerId, other.containerId)
+                && label.equals(other.label)
+                && pattern.equals(other.pattern)
+                && java.util.Objects.equals(recharge, other.recharge);
+    }
+
+    /**
      * 弹链显示名：{@link #label()} 非空时按字面返回，否则取首发弹种的语言键文本。
      * <p>
      * <b>仅在客户端调用</b>：内容包的翻译键只在客户端语言表里。

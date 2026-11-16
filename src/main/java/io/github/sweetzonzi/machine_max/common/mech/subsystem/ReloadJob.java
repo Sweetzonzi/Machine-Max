@@ -147,6 +147,25 @@ public final class ReloadJob {
         return reservedCount;
     }
 
+    /**
+     * 本作业的冻结分配是否与一份权威样本一致：编号、运输者、提供者、冻结规格与预留份额。
+     *
+     * <p>用途是区分"同一条作业又收到一次更新"与"两条不同的作业碰巧用了同一个编号"。后者必须按分叉处理：
+     * 沿用本地进度会让本端按另一份规格继续推进，交付内容也与权威不同。规格比较走
+     * {@link AmmoBelt#sameDeliverySpec(AmmoBelt)}，比到回充配置本身；进度、本阶段时长与阶段不参与——
+     * 它们在一条作业的生命周期里本来就会变。</p>
+     *
+     * @param snapshot 权威样本
+     * @return true 表示这是同一条作业的离散更新
+     */
+    public boolean allocationMatches(ReloadJobSpec snapshot) {
+        return jobId() == snapshot.jobId()
+                && transporter.equals(snapshot.transporter())
+                && provider.equals(snapshot.provider())
+                && reservedCount == snapshot.reserved()
+                && spec.sameDeliverySpec(snapshot.spec());
+    }
+
     /** 当前阶段 */
     public Stage stage() {
         return stage;

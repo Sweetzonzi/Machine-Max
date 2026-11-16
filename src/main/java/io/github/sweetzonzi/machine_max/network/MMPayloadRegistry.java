@@ -57,8 +57,8 @@ public class MMPayloadRegistry {
         // 6.0.0 对应结束结果：发射器再增加最近一次结束的作业编号与已交付结论两个同步项（访问器编号后移）。
         // 7.0.0 对应装填作业的人工段：发射器增加当前阶段一个同步项（访问器编号后移），阶段切换与换人
         // 重定时都会改写本阶段时长与进度基线，客户端按阶段分别推进。
-        // 8.0.0 对应装填作业改为整包同步：发射器的八个作业访问器收成一个可选快照（ReloadJobSync，经
-        // MMEntityDataSerializers 的自定义序列化器下发，结果两项仍在外面），访问器编号整体后移。
+        // 8.0.0 对应装填作业改为整包同步：发射器的八个作业访问器收成一个可选快照，
+        // 结果两项仍在外面，访问器编号整体后移。
         // 10.0.0 / 3.0.0 对应 DTO 的 uuid 线上编码统一改为双 long（16 字节）：
         // VehicleData.uuid、RegularPartData.uuid、ConnectionData.partUuidA/S 由 writeUtf 改为 writeUUID；
         // ConnectorAttachPayload 的 connections/partData 由 JSON Codec 改为二进制 STREAM_CODEC，与 Detach 对齐。
@@ -71,7 +71,12 @@ public class MMPayloadRegistry {
         // 15.0.0 两处：发射器下发权威的下一个作业编号（NEXT_JOB_ID），客户端据它把本地计数推到下界之后；
         // 批次头收成装配体身份 + 条目列表——同步值是值表，客户端按 (子零件, 序号, 数据项) 合并，
         // 代次、批次序号、采样步与 full 标记连同随队列作废的机制一并去掉。
-        final PayloadRegistrar sync = event.registrar("sync:15.0.0");
+        // 16.0.0 对应装填作业的同步拆成两支：冻结分配（ReloadJobSpec，受理/收尾/全量补推时下发）与
+        // 动态样本（ReloadJobProgress，换段与换人重定时下发），序列化器由 optional_reload_job_sync
+        // 换成 optional_reload_job_spec 与 optional_reload_job_progress，访问器编号随之改变。
+        // 17.0.0 对应结束结果由一对标量改成一串有序结果（ReloadJobResults）：同一轮可以结束不止一条作业，
+        // 标量只留得下最后一次；序列化器 reload_job_results。
+        final PayloadRegistrar sync = event.registrar("sync:17.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
