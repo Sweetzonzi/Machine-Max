@@ -821,7 +821,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 写入已装 Belt 并同步；客户端不写。<br>
-     * 旧内容的去处是"当前路的提供者，其次本装配体里其它提供者"，不记账：换装提交时按 {@link #getRoutes()}
+     * 旧内容的去处是"当前路的提供者，其次本装配体里其它提供者"，不记账：退还时按 {@link #getRoutes()}
      * 依次询问，因此不需要把产出它的那台机器存下来——那份来源关系既不持久化，也不参与路由。
      */
     private void setLoadedBelt(@Nullable AmmoBelt belt) {
@@ -1305,10 +1305,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 本 tick 是否还需要向供给者拉一份。<br>
-     * 单发装填看膛室，整份装填看是否已有已装数据；可回充 Belt 打空后仍算"有已装数据"，等它自己补额度。
+     * 单发装填看膛室，整份装填看还有没有能打的那一份：没有一份，或者那一份已经打空，都要换新的。
+     * 可回充的一份打空后同样要换——换一份付的是运输者那一段（秒级），而等它自己按回充间隔把一整条
+     * 补回来要按发数乘间隔，长得多。回充因此只承担两件事：停火间隙把打掉的位置补齐，以及换不到新的
+     * 一份时（提供者没有可分配库存）继续供弹。
      */
     private boolean needsBelt() {
-        return singleRoundLoading() ? chamberedType == null : loadedBelt == null;
+        if (singleRoundLoading()) return chamberedType == null;
+        AmmoBelt belt = loadedBelt;
+        return belt == null || belt.remaining() <= 0;
     }
 
     /**
@@ -1404,11 +1409,34 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             job = new ReloadJob(key, round, grant.spec(), grant.reservedCount(), transporter.getReloadTimeTicks());
         }
         roundsAccepted = round;
+        releaseSpentBelt(provider);
         beginReloadJob(job);
         WeaponTrace.log(getLevel(), "reload-start launcher={} round={} stage={} stageTicks={} rate={} reserved={} transporter={} provider={}",
                 traceId(), job.round(), job.stage(), job.totalTicks(), job.humanRate(), job.reservedCount(),
                 WeaponTrace.ref(job.transporter()), WeaponTrace.ref(job.provider()));
         return job;
+    }
+
+    /**
+     * 把打空的那一份在开工这一刻退回去，本管随之空手等交付。<br>
+     * 换新一旦受理，这一份就不再是本管的弹药：留在原位只会让自身回充继续往里补，补出来的那一发又会让
+     * {@link #needsBelt()} 判成"还有能打的那一份"，作业被"不再需要这一份"收尾，下一秒再打空、再受理——两份在
+     * 同一格里来回。退掉之后 {@link #needsBelt()} 在整个装填期间恒为真，作业不会被自己补出来的一发撤掉。<br>
+     * 空的一份同样走退还，不走丢弃：它的去处与有弹的那一份完全一样（见 {@link #returnBeltToProviders}），
+     * 提供者按余量记账，余量为 0 时收下并不改库存，但这份弹药是回到了架上而不是被本管丢掉。只有所有提供者
+     * 都收不下（都已不可储存）时才记警告丢弃。<br>
+     * 换不到新的一份时不会走到这里——受理失败，那一份留在原位继续按回充供弹。
+     *
+     * @param preferred 本次受理的提供者，先问这一台
+     */
+    private void releaseSpentBelt(IAmmoSupplier preferred) {
+        AmmoBelt spent = loadedBelt;
+        if (spent == null || spent.remaining() > 0) return;
+        WeaponTrace.log(getLevel(), "belt-release launcher={} spent={}/{}", traceId(), spent.remaining(), spent.length());
+        setLoadedBelt(null);
+        if (!returnBeltToProviders(spent, preferred)) {
+            MachineMax.LOGGER.warn("Launcher {} 打空的一份没有任何弹药架接收，按规则丢弃 {}", name, spent);
+        }
     }
 
     /**
@@ -1728,7 +1756,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 接受一份交付：按本管的装填模式写入膛室或已装数据。<br>
-     * 不通过整份校验的交付原样退回提供者，等下一次作业重来。
+     * 不通过整份校验的交付原样退回提供者，等下一次作业重来。整份装填时本管通常已经空手——打空的那一份在
+     * 开工时就退掉了（见 {@link #releaseSpentBelt}）——这里仍按"挂着一份就先换下"处理：客户端的受理比权威
+     * 早一拍，换新在途时权威那份旧样本可能把一份送回来，落地的这一刻不能连它的余量一起丢掉。
      */
     private void acceptDelivery(IAmmoSupplier provider, AmmoBelt pulled) {
         if (!canAcceptBelt(pulled)) {
@@ -1740,6 +1770,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             ProjectileType round = AmmoBelt.resolve(getLevel(), pulled.nextRoundId());
             if (round instanceof BallisticProjectileType kinetic) setChambered(kinetic);
             return;
+        }
+        AmmoBelt previous = loadedBelt;
+        if (previous != null) {
+            WeaponTrace.log(getLevel(), "belt-replace launcher={} old={}/{} new={}/{}", traceId(),
+                    previous.remaining(), previous.length(), pulled.remaining(), pulled.length());
+            if (!returnBeltToProviders(previous, provider)) {
+                MachineMax.LOGGER.warn("Launcher {} 换下的一份没有任何弹药架接收，按规则丢弃 {}", name, previous);
+            }
         }
         setLoadedBelt(pulled);
     }
@@ -1815,7 +1853,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 从已装 Belt 取一发进膛。<br>
      * 普通 Belt 每发都经过膛室：先写 {@link #chamberedType}，射击时消费膛内那一发。
      * 可回充 Belt 不走这一步——它的额度在成功射击时直接消费，避免预取后回充多出一发。
-     * 余量耗尽的普通 Belt 直接清除已装数据，下一 tick 由 {@link #tickReload()} 拉下一份。
+     * 余量耗尽的普通 Belt 直接清除已装数据。可回充的一份打空后仍留在原位，等它按回充补出下一发——
+     * 与此同时 {@link #needsBelt()} 已经在为它申请新的一份，受理的那一刻由 {@link #releaseSpentBelt}
+     * 把它退回提供者，因此这条回充只是停火间隙的补齐，不是换新的替代。
      */
     private void refillChamberFromBelt() {
         AmmoBelt belt = loadedBelt;
@@ -1942,7 +1982,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 推进已装 Belt 的自身回充，两端都跑。<br>
      * 回充要按发取电，而取电是真实扣费：服务端从能源网抽，客户端不预支能源额度，只在<b>不需要付费</b>时
      * 推进（见 {@link #payRechargeEnergy(float)}）。付费回充在客户端等权威结果——补出一发的那一刻服务端就
-     * 推了新余量。成功射击已经通过 {@link AmmoBelt#onShot()} 重置过延迟，这里只按速率补额度。
+     * 推了新余量。成功射击已经通过 {@link AmmoBelt#onShot()} 重置过延迟，这里只按速率补额度。<br>
+     * 打空的那一份在受理换新的那一刻就退掉了（见 {@link #releaseSpentBelt}），换新在途时本管的已装一律为空，
+     * 因此这里不需要另加"作业在途就不补"的闸：没有一份挂在身上，回充也就无从补起。
      */
     private void tickBeltRecharge() {
         AmmoBelt belt = loadedBelt;
