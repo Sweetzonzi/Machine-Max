@@ -66,7 +66,10 @@ public class MMPayloadRegistry {
         // 11.0.0 对应弹药三角色拆分：发射器的供给者身份收成一对路由引用（ROUTE_TRANSPORTER / ROUTE_PROVIDER，
         // 类型 AmmoRef = 宿主 SubPart ID + 声明序序号），装填作业快照里的两个引用改为运输者与提供者；
         // SupplierRef 被 AmmoRef 取代，序列化器 id 由 supplier_ref 改为 ammo_ref，作业身份改按子系统序号编码。
-        final PayloadRegistrar sync = event.registrar("sync:11.0.0");
+        // 12.0.0 对应子系统同步改为一轮一批：SubsystemSyncPayload 由"单个子系统一个包"变成
+        // "同一控制器一轮一份批次"，头部带装配体身份、同步代次、批次序号、采样步与完整标记，
+        // 条目内仍是 (子零件 ID, 声明序序号, 变化值)。线格式整体变化，两端必须同版本。
+        final PayloadRegistrar sync = event.registrar("sync:12.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

@@ -585,6 +585,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             }
             subSystemController.tick();
             subSystemController.postTick();
+            // 收尾之后再采样一轮脏字段：onPostTick 里写入的同步值也属于本轮，不能等下一个 tick
+            subSystemController.flushSync(getAssemblyId());
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }

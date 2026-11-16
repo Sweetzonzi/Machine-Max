@@ -147,8 +147,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
                 onRecovered();
             }
         }
-        if(!getSubPart().getLevel().isClientSide()) syncToClient();
-        flushPublishedFeedback();
+        if(!getSubPart().getLevel().isClientSide()) flushPublishedFeedback();
     }
 
     /**
@@ -652,15 +651,21 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     protected void defineSynchedData(SynchedEntityData.Builder builder){}
 
-    protected void syncToClient() {
-        if (!getSubPart().level.isClientSide()) {
-            SynchedEntityData synchedentitydata = this.getSynchedData();
-            List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
-            if (list != null) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level,
-                        new SubsystemSyncPayload(getSubPart().getId(), getSubPart().subsystemIndex(this), list));
-            }
-        }
+    /**
+     * 取走本轮变化过的同步值，交回给控制器的统一发送边界。
+     *
+     * <p>变化广播不再是"谁先跑完谁先发"：业务 tick 与收尾都可能写同步数据，只有全部收尾跑完之后
+     * 采一次样，才能保证同一轮里靠后的收尾所改变的值也进入这一批。因此打包点只有
+     * {@link SubsystemController#flushSync(java.util.UUID)} 一处，本方法只负责取出脏值。</p>
+     *
+     * <p><b>调用线程：</b>主线程（服务端，控制器本轮收尾之后）。</p>
+     *
+     * @return 本轮变化的访问器值；没有变化时为空列表
+     */
+    public List<SynchedEntityData.DataValue<?>> packDirtyValues() {
+        if (getLevel().isClientSide()) return List.of();
+        List<SynchedEntityData.DataValue<?>> dirty = getSynchedData().packDirty();
+        return dirty == null ? List.of() : dirty;
     }
 
     /**

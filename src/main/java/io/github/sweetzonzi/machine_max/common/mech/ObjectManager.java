@@ -163,7 +163,7 @@ public class ObjectManager {
      * @param player  接收方
      */
     public static void pushVehicleRuntimeState(VehicleCore vehicle, ServerPlayer player) {
-        vehicle.getSubsystemController().pushAllTo(player);
+        vehicle.getSubsystemController().pushAllTo(vehicle.getAssemblyId(), player);
         for (var part : vehicle.partMap.values()) {
             for (var subPart : part.subParts.values()) {
                 var support = subPart.wheelSupportSnapshot();

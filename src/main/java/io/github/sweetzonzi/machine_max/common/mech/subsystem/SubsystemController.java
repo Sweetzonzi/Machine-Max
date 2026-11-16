@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalBus;
@@ -8,10 +11,12 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import lombok.Getter;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -42,6 +47,21 @@ public class SubsystemController implements ISignalBus {
 
     /** 是否已经跑过首次订阅；此前加入的子系统由 {@link #initAllSubsystems()} 统一 attach。 */
     private boolean initialized;
+
+    /** 待应用批次的上限；超过即丢弃本域队列，等下一份完整样本重建。 */
+    private static final int MAX_PENDING_BATCHES = 64;
+
+    /** 服务端同步代次；结构迁移使其递增，客户端据此作废跨迁移排队的批次。 */
+    private int syncGeneration = 1;
+
+    /** 服务端递增批次序号，仅用于顺序诊断。 */
+    private int nextBatchSeq = 1;
+
+    /** 客户端已收到的最新代次；换代次时排队中的批次整体作废。 */
+    private int inboxGeneration;
+
+    /** 客户端待应用批次，按到达顺序排列，业务 tick 收尾统一落地。 */
+    private final Deque<SubsystemSyncPayload> pendingBatches = new ArrayDeque<>();
 
     public SubsystemController(Level level) {
         this.level = level;
@@ -75,22 +95,110 @@ public class SubsystemController implements ISignalBus {
     }
 
     /**
-     * 本轮子系统业务 tick 之后的统一落地边界：所有子系统都跑完 {@link AbstractSubsystem#onTick()} 之后再逐个
-     * 调用 {@link AbstractSubsystem#onPostTick()}。<br>
+     * 本轮子系统业务 tick 之后的统一落地边界。
+     *
+     * <p>先应用客户端待处理的权威批次，再逐个调用 {@link AbstractSubsystem#onPostTick()}。
      * 分成两趟而不是在同一次遍历里做，是因为一个子系统的收尾可能依赖别的子系统本 tick 的结果：
-     * 客户端把同步到的分配、库存与作业一起落地时，读的必须是同一轮已推进完的状态。
-     * <p>
-     * 由 {@code VehicleCore#preTick()} 在 {@link #tick()} 之后紧接着调用。它既不是物理线程的
+     * 客户端把同步到的分配、库存与作业一起落地时，读的必须是同一轮已推进完的状态。</p>
+     *
+     * <p>由 {@code VehicleCore#preTick()} 在 {@link #tick()} 之后紧接着调用。它既不是物理线程的
      * {@code postPhysicsTick}，也不在 {@code LevelTickEvent.Post}：粒度是"这台载具的子系统本轮跑完了"，
-     * 因此同一个 tick 内到达的同步值只会被应用一次。
+     * 因此同一个 tick 内到达的同步值只会被应用一次。</p>
      */
     public void postTick() {
+        applyPendingBatches();
         Set<AbstractSubsystem> snapshot = allSubsystems;
         for (AbstractSubsystem subsystem : snapshot) {
             if (subsystem != null) {
                 subsystem.onPostTick();
             }
         }
+    }
+
+    /**
+     * 客户端：按到达顺序把所有待应用批次写入各子系统的同步数据。
+     *
+     * <p>写入即触发各子系统自己的变化回调，因此"哪些字段变了"的判定发生在同一处，业务收尾随后
+     * 读取的就是本轮已落地的权威值。成员缺失的条目跳过并记一次日志：序号对不上说明两端结构定义
+     * 已经不一致，回退不到别的子系统。</p>
+     */
+    private void applyPendingBatches() {
+        if (!level.isClientSide() || pendingBatches.isEmpty()) return;
+        while (!pendingBatches.isEmpty()) {
+            SubsystemSyncPayload batch = pendingBatches.pollFirst();
+            for (SubsystemSyncPayload.Entry entry : batch.entries()) {
+                DestroyableObject holder = ObjectManager.getDestroyableObject(level, entry.subPartId());
+                if (!(holder instanceof SubPart subPart)) {
+                    MachineMax.LOGGER.warn("丢弃子系统同步条目：维度{}没有子零件 id={}",
+                            level.dimension().location(), entry.subPartId());
+                    continue;
+                }
+                AbstractSubsystem subsystem = subPart.subsystemAt(entry.subsystemIndex());
+                if (subsystem == null) {
+                    MachineMax.LOGGER.warn("丢弃子系统同步条目：SubPart(id={}) 上没有序号为 {} 的子系统",
+                            entry.subPartId(), entry.subsystemIndex());
+                    continue;
+                }
+                subsystem.getSynchedData().assignValues(entry.values());
+            }
+        }
+    }
+
+    /**
+     * 客户端：收下一轮权威批次。
+     *
+     * <p>代次变化说明结构迁移过，排队中的批次整体作废；完整样本覆盖同代次已排队的部分样本
+     * （它是在那些字段之后采样的）。队列有界，超限即丢空本域队列并记日志——此时本域需要一份
+     * 新的完整样本，而不是继续拿不连续的值。</p>
+     *
+     * <p><b>调用线程：</b>主线程（网络批次处理器）。</p>
+     *
+     * @param batch 收到的批次
+     */
+    public void enqueueSyncBatch(SubsystemSyncPayload batch) {
+        if (!level.isClientSide()) return;
+        if (batch.generation() != inboxGeneration) {
+            inboxGeneration = batch.generation();
+            pendingBatches.clear();
+        } else if (batch.full()) {
+            pendingBatches.clear();
+        }
+        if (pendingBatches.size() >= MAX_PENDING_BATCHES) {
+            pendingBatches.clear();
+            MachineMax.LOGGER.warn("子系统同步队列超过 {} 份，丢弃本域队列：批次 seq={}",
+                    MAX_PENDING_BATCHES, batch.batchSeq());
+            return;
+        }
+        pendingBatches.addLast(batch);
+    }
+
+    /**
+     * 服务端：把本轮脏字段打成一份批次发给维度内的玩家。
+     *
+     * <p>必须在所有子系统的 {@link AbstractSubsystem#onPostTick()} 都跑完之后调用：收尾里产生的
+     * 变化也要进入本轮的采样。打包与发送都只在这里发生，不在逐个执行 onPostTick 的同时进行，
+     * 因为后面的收尾可能改变同一份资源。</p>
+     *
+     * <p><b>调用线程：</b>主线程（服务端）。</p>
+     *
+     * @param assemblyId 本装配体身份，随批次下发供客户端核对归属
+     */
+    public void flushSync(UUID assemblyId) {
+        if (level.isClientSide()) return;
+        List<SubsystemSyncPayload.Entry> entries = new ArrayList<>();
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
+            if (subsystem == null) continue;
+            List<SynchedEntityData.DataValue<?>> dirty = subsystem.packDirtyValues();
+            if (dirty.isEmpty()) continue;
+            SubPart host = subsystem.getSubPart();
+            entries.add(new SubsystemSyncPayload.Entry(host.getId(), host.subsystemIndex(subsystem), dirty));
+        }
+        if (entries.isEmpty()) return;
+        int seq = nextBatchSeq;
+        nextBatchSeq = nextBatchSeq == Integer.MAX_VALUE ? 1 : nextBatchSeq + 1;
+        PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                new SubsystemSyncPayload(assemblyId, syncGeneration, seq, level.getGameTime(), false, entries));
     }
 
     /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */    public void prePhysicsTick() {
@@ -197,6 +305,8 @@ public class SubsystemController implements ISignalBus {
     }
 
     public void onVehicleStructureChanged() {
+        // 结构迁移使同步代次前进：跨迁移排队的批次不能与新的成员集合拼成一份可执行状态
+        syncGeneration = syncGeneration == Integer.MAX_VALUE ? 1 : syncGeneration + 1;
         // 重建总线订阅
         rebuildSubscriptions();
         initialized = true;
@@ -221,24 +331,33 @@ public class SubsystemController implements ISignalBus {
      * 用在载具刚在客户端建好之后：那些"载入后不再变化"的值走不到变化广播
      * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}），只能由这里补一次。
      * <p>
-     * 每个子系统一个包，载荷格式与变化广播完全相同（{@link SubsystemSyncPayload}）。<b>不改动任何
-     * 同步状态</b>：既不清脏标记，也不强制标脏，因此其他在线玩家不会因此多收包。
+     * 整份快照打成一个 {@code full} 批次（{@link SubsystemSyncPayload}），与变化批次同一格式：
+     * 客户端先清空本域待应用队列再落地，因此"半份旧状态 + 半份新状态"拼不出可执行状态。
+     * <b>不改动任何同步状态</b>：既不清脏标记，也不强制标脏，因此其他在线玩家不会因此多收包。
      * <p>
      * <b>调用线程：</b>主线程（服务端）。
      *
-     * @param player 接收方
+     * @param assemblyId 本装配体身份，随批次下发供客户端核对归属
+     * @param player     接收方
      */
-    public void pushAllTo(ServerPlayer player) {
-        for (AbstractSubsystem subsystem : allSubsystems) {
+    public void pushAllTo(UUID assemblyId, ServerPlayer player) {
+        List<SubsystemSyncPayload.Entry> entries = new ArrayList<>();
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
+            if (subsystem == null) continue;
             // 只写本地模拟意义的值（如作业进度基线）在这一刻刷新成当前值，
             // 新加入的客户端拿到的才是"现在"而不是上次写入时的旧值
             subsystem.refreshSyncBaseline();
             List<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
             subsystem.forEachSyncedValue(values::add);
-            PacketDistributor.sendToPlayer(player,
-                    new SubsystemSyncPayload(subsystem.getSubPart().getId(),
-                            subsystem.getSubPart().subsystemIndex(subsystem), values));
+            SubPart host = subsystem.getSubPart();
+            entries.add(new SubsystemSyncPayload.Entry(host.getId(), host.subsystemIndex(subsystem), values));
         }
+        if (entries.isEmpty()) return;
+        int seq = nextBatchSeq;
+        nextBatchSeq = nextBatchSeq == Integer.MAX_VALUE ? 1 : nextBatchSeq + 1;
+        PacketDistributor.sendToPlayer(player,
+                new SubsystemSyncPayload(assemblyId, syncGeneration, seq, level.getGameTime(), true, entries));
     }
 
     public void rebuildAllEnergyPaths() {
