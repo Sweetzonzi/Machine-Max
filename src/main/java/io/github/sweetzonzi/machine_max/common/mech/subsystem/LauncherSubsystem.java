@@ -72,38 +72,17 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     public final LauncherSubsystemAttr attr;
 
-    // ——— 计时器累积发射（物理线程重构） ———
+    // ——— 射速相位（整数子 tick 单位） ———
 
     /**
-     * 发射计时器累积（秒）。
+     * 本管的射速相位与防连点冷却。
      * <p>
-     * 每 tick 累积 0.05s，除以单发间隔得到应发射数。
-     * 停止开火时清零，防止"蓄力"。
+     * 调度只依赖实际执行的业务 tick，不含绝对时刻；周期来自炮闩射速，随模块受损或升级按新周期
+     * 结算当轮。相位、冷却与连射标记各自独立，见 {@link FirePhase}。
      * <p>
      * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
      */
-    private double fireAccumulator = 0.0;
-
-    /**
-     * 上一 tick 是否正在开火。
-     * <p>
-     * 用于检测"刚按下开火键"的首帧——首帧将 accumulator 预填充为
-     * {@code intervalSec} 而非从 0 累积 0.05s，确保 RPM < 1200 的武器立即发射第一发。
-     * <p>
-     * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
-     */
-    private boolean wasFiring = false;
-
-    /**
-     * 上次成功开火的 tick 数（{@link #tickCount} 的值）。
-     * <p>
-     * 防止连按超射：首帧预填充仅在距离上次开火已过至少 {@code intervalSec} 时允许。
-     * 连按（间隔不足）时拒绝预填充，退回正常累积。
-     * 初始 -1 表示从未开火，允许首帧无条件预填充。
-     * <p>
-     * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
-     */
-    private int lastFireTick = -1;
+    private final FirePhase firePhase = new FirePhase();
 
     /**
      * 待物理线程发射的弹药类型队列。
@@ -454,12 +433,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private void applySyncedBelt() {
         AmmoBelt synced = getSynchedData().get(BELT_ID).orElse(null);
         loadedBelt = synced == null ? null : synced.copy();
+        WeaponTrace.log(getLevel(), "sync-belt launcher={} loaded={}", traceId(),
+                loadedBelt == null ? "-" : loadedBelt.remaining() + "/" + loadedBelt.length());
     }
 
     /** 按同步值重建膛内那一发。 */
     private void applySyncedChamber() {
         ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
         chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
+        WeaponTrace.log(getLevel(), "sync-chamber launcher={} ammo={}", traceId(),
+                chamberedType == null ? "-" : chamberedType.getRegistryKey());
     }
 
     /**
@@ -492,6 +475,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         applyJobResult();
         Optional<ReloadJobSync> synced = getSynchedData().get(JOB_SYNC_ID);
         if (synced.isEmpty()) {
+            if (reloadJob != null) {
+                WeaponTrace.log(getLevel(), "reload-mirror-clear launcher={} job={}", traceId(), reloadJob.jobId());
+            }
             reloadJob = null;
             return;
         }
@@ -502,12 +488,20 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (current != null && current.key().equals(key)) {
             // 同一条作业的离散更新：阶段变了就按新阶段从基线起算（人工段走完换成机械段），
             // 阶段没变只把时长与基线对齐（换人重定时会同时给出缩放过的进度与新的剩余量）
+            boolean restaged = current.stage() != snapshot.stage() || current.totalTicks() != snapshot.total();
             current.alignRemote(snapshot.stage(), snapshot.total(), snapshot.elapsed());
+            if (restaged) {
+                WeaponTrace.log(getLevel(), "reload-mirror-stage launcher={} job={} stage={} stageTicks={} baseline={}",
+                        traceId(), snapshot.jobId(), snapshot.stage(), snapshot.total(), snapshot.elapsed());
+            }
             return;
         }
         // 本地已经替这一条交过了：只等权威结束结果，把它建回来会再交一次
         if (snapshot.jobId() == lastLocalDeliveryId) return;
         reloadJob = snapshot.toLocalJob(key);
+        WeaponTrace.log(getLevel(), "reload-mirror launcher={} job={} stage={} stageTicks={} baseline={} transporter={} provider={}",
+                traceId(), snapshot.jobId(), snapshot.stage(), snapshot.total(), snapshot.elapsed(),
+                WeaponTrace.ref(snapshot.transporter()), WeaponTrace.ref(snapshot.provider()));
     }
 
     /**
@@ -524,6 +518,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         lastAppliedResultId = resultId;
         ReloadJob current = reloadJob;
         boolean mine = current != null ? current.jobId() == resultId : resultId == lastLocalDeliveryId;
+        WeaponTrace.log(getLevel(), "reload-result launcher={} job={} delivered={} mine={}", traceId(), resultId,
+                getSynchedData().get(JOB_RESULT_DELIVERED_ID), mine);
         if (!mine) return;
         reloadJob = null;
         applySyncedBelt();
@@ -606,12 +602,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 换路等于放弃这一份作业：先按旧身份收尾（此时字段还是旧值），再改指认
         finishReloadJob();
         currentRoute = route;
+        AmmoRef transporterRef = route == null ? AmmoRef.NONE : AmmoRef.ofTransporter(route.transporter());
+        AmmoRef providerRef = route == null ? AmmoRef.NONE : AmmoRef.ofProvider(route.provider());
         if (!getLevel().isClientSide()) {
-            getSynchedData().set(ROUTE_TRANSPORTER_ID,
-                    route == null ? AmmoRef.NONE : AmmoRef.ofTransporter(route.transporter()));
-            getSynchedData().set(ROUTE_PROVIDER_ID,
-                    route == null ? AmmoRef.NONE : AmmoRef.ofProvider(route.provider()));
+            getSynchedData().set(ROUTE_TRANSPORTER_ID, transporterRef);
+            getSynchedData().set(ROUTE_PROVIDER_ID, providerRef);
         }
+        WeaponTrace.log(getLevel(), "route launcher={} transporter={} provider={}", traceId(),
+                WeaponTrace.ref(transporterRef), WeaponTrace.ref(providerRef));
     }
 
     /**
@@ -903,20 +901,22 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires + 客户端音效管理。
+     * 插桩用的身份：宿主零件名 ＋ 本子系统名。<br>
+     * 两端同名、且不随会话分配的 int ID 变化，因此可直接用来对齐客户端与服务端的两份记录。
+     */
+    private String traceId() {
+        SubPart host = getSubPart();
+        return (host == null ? "?" : host.name) + "/" + name;
+    }
+
+    /**
+     * 主线程 tick：相位推进 + 弹药消费 + 入队 pendingFires + 客户端音效管理。
      * <p>
      * <b>调用线程：</b>主线程（20tps）。
      * <p>
-     * 逻辑：
-     * <ol>
-     *   <li>若停止开火 → 处理停火音效，{@code fireAccumulator = 0}，防止蓄力</li>
-     *   <li>刚按下开火键的首帧 → 预填充 accumulator 为 {@code intervalSec}，保证立即发射</li>
-     *   <li>后续帧 → 正常 {@code fireAccumulator += 0.05s}，计算应发射数 {@code N}</li>
-     *   <li>弹药消费循环（最多 N 发）：取弹 → 兼容校验 → 膛内 → 入队 {@link #pendingFires}
-     *       → 提交地形首段预约（服务端） → 装填下一发</li>
-     *   <li>客户端音效处理：遍历 pendingFires，首发射击用单发音效，后续连射启动/维持循环音效</li>
-     *   <li>扣除已发射数对应的时间：{@code fireAccumulator -= N × intervalSec}</li>
-     * </ol>
+     * 射速调度只用实际执行的业务 tick 计数：每 tick 记 {@link FirePhase#TICK_UNITS} 个相位单位，
+     * 单发周期由炮闩射速量化成整数相位。相位与冷却都是有界相对量，不含绝对时刻，因此暂停、
+     * 客户端晚创建与两端 {@code tickCount} 数值不同都不需要时钟原点换算。
      */
     @Override
     public void onTick() {
@@ -936,84 +936,95 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
         if (isActive() && !isDestroyed() && !isSwapping()) refillChamberFromBelt();
 
-        if (!isActive() || isDestroyed()) {
-            // ★ 仅在"存在进行中的连射/未收尾的循环音效"时执行一次停火处理。
-            //   子系统被摧毁、宿主零件被摧毁或装配度跌破阈值时该分支会每 tick 命中，
-            //   若无条件调用 handleCeaseFire()，停火尾音会被反复播放。
-            if (wasFiring || currentAutoFireUuid != null || currentShellSoundUuid != null) {
-                handleCeaseFire();
-            }
-            resetFireState();
+        // 原始扳机事实：本端武器可用、未换装锁定且确有开火指令。它与"处于一次连射中"是两件事，
+        // 因此不共用一个标记——前者每轮重算，后者只在相位推进里播种与清除。
+        boolean triggerHeld = isActive() && !isDestroyed() && !isSwapping() && getActiveFireCommand() != null;
+        if (!triggerHeld) {
+            ceaseBurst(ceaseReason());
             return;
         }
+        advanceFirePhase();
+    }
 
-        // 换装期间锁定射击：膛内弹与旧 Belt 都留在原位，等供给者备好那一份再整份替换
-        if (isSwapping()) {
-            if (wasFiring) handleCeaseFire();
-            resetFireState();
-            return;
-        }
+    /** 本轮停火的原因，只用于插桩。 */
+    private String ceaseReason() {
+        if (!isActive() || isDestroyed()) return "inactive";
+        if (isSwapping()) return "swapping";
+        return "command-free";
+    }
 
-        if (getActiveFireCommand() == null || !hasRoundToFire()) {
-            // 停止开火 → 处理停火音效 + 清零累积，防止下次开火"蓄力"
-            if (wasFiring) {
-                handleCeaseFire();
+    /**
+     * 结束本次连射：相位归零、连射标记清除，防连点冷却按本 tick 递减一档。
+     *
+     * <p>冷却保留意味着"上一发刚过去"，因此快速连按不会把低射速武器的间隔重置成一个完整新间隔。
+     * 停火音效只在确实有过连射、或还有未收尾的循环实例时处理一次：子系统被摧毁、宿主零件被摧毁
+     * 或装配度跌破阈值时本方法每 tick 都会命中，无条件调用会把停火尾音反复播放。</p>
+     */
+    private void ceaseBurst(String reason) {
+        if (firePhase.isBurstActive() || hasLiveFireSound()) {
+            if (firePhase.isBurstActive()) {
+                WeaponTrace.log(getLevel(), "fire-end launcher={} reason={}", traceId(), reason);
             }
-            resetFireState();
-            return;
+            handleCeaseFire();
+        }
+        firePhase.stop();
+    }
+
+    /** 是否还有本次连射未收尾的射击音效；服务端的三个标记恒为空，因此只对客户端有意义。 */
+    private boolean hasLiveFireSound() {
+        return currentAutoFireUuid != null || currentShellSoundUuid != null || roundsFiredThisBurst > 0;
+    }
+
+    /**
+     * 按相位打出本轮的发射预算。
+     *
+     * <p>首次按下时相位播种为 {@code intervalU - cooldownU}：刚好到期就能发射，不需要额外等待
+     * 一个完整间隔；播种值经过夹紧，换型号后冷却大于新周期也不会得到负相位。已经到发射点却
+     * 确实缺弹时由 {@link FirePhase} 把逾期量收敛为"当前已就绪"，不蓄积历史欠发，也不清零相位。</p>
+     */
+    private void advanceFirePhase() {
+        long intervalU = FirePhase.intervalUFor(attr.staticAttribute.getBreech().fireRate());
+        boolean burstJustStarted = !firePhase.isBurstActive();
+        if (burstJustStarted && WeaponTrace.isEnabled()) {
+            ProjectileType startingAmmo = getCurrentAmmoType();
+            WeaponTrace.log(getLevel(), "fire-begin launcher={} rpm={} intervalU={} ammo={}", traceId(),
+                    attr.staticAttribute.getBreech().fireRate(), intervalU,
+                    startingAmmo == null ? "-" : startingAmmo.getRegistryKey());
         }
 
-        // ★ 记录是否为本burst首帧（在 wasFiring 被置 true 之前）
-        boolean burstJustStarted = !wasFiring;
-        float intervalSec = 60f / attr.staticAttribute.getBreech().fireRate();
-
-        // ① 计时器累积：首帧预填充 intervalSec 以立即发射，后续帧正常 +0.05s
-        if (!wasFiring) {
-            // 刚按下开火键 → 检查距离上次开火是否足够远，防止连按超射
-            int elapsed = tickCount - lastFireTick;
-            float elapsedSec = elapsed * 0.05f;
-            if (lastFireTick < 0 || elapsedSec >= intervalSec) {
-                // 从未开火或距离上次开火已超过间隔 → 允许预填充
-                fireAccumulator = intervalSec;
-            } else {
-                // 连按（间隔不足 intervalSec）→ 正常累积，不预填充
-                fireAccumulator = 0.05;
-            }
-        } else {
-            fireAccumulator += 0.05; // 1 tick = 0.05s
-        }
-        wasFiring = true;
-        int rounds = (int) (fireAccumulator / intervalSec);
-
-        if (rounds < 1) return;
-
-        // ② 弹药消费循环
-        int firedCount = 0;
         // 本地快照：缓存本 tick 发射的弹药类型，供客户端特效处理使用。
         // 不直接遍历 pendingFires（物理线程可能同时 poll 消费），避免并发遍历问题。
-        List<ProjectileType> firedTypes = new ArrayList<>(rounds);
-        for (int i = 0; i < rounds; i++) {
+        List<ProjectileType> firedTypes = new ArrayList<>(1);
+        int firedCount = firePhase.tick(intervalU, true, () -> {
             BallisticProjectileType round = takeRoundForShot();
-            if (round == null) break; // 没有可发射的内容，等待下一 tick
+            if (round == null) return false; // 没有可发射的内容，等待下一 tick
 
-            // ③ 首段地形预约：必须先于入队。入队后物理线程在过载时可能在同一个游戏 tick 内就
-            //     poll 到这一发（它的物理步与我们交错），预约再登记就落在开火之后了。
-            //     本行在主线程，登记经即时队列由本 tick 的 requestStep 消费。
+            // 首段地形预约：必须先于入队。入队后物理线程在过载时可能在同一个游戏 tick 内就
+            // poll 到这一发（它的物理步与我们交错），预约再登记就落在开火之后了。
+            // 本行在主线程，登记经即时队列由本 tick 的 requestStep 消费。
             if (!getLevel().isClientSide()) {
                 seedTrajectoryTerrain(round);
             }
-            // ③.① 入队 pendingFires（物理线程将消费）
             pendingFires.add(round);
             firedTypes.add(round);
-            firedCount++;
 
-            // ④ 打出一发后立刻从已装 Belt 补膛：连射循环不必等下一 tick 才补弹。
-            //    两端都补——客户端不补就会拿着同一发一直打，射击表现与剩余发数脱节
+            // 打出一发后立刻从已装 Belt 补膛：连射循环不必等下一 tick 才补弹。
+            // 两端都补——客户端不补就会拿着同一发一直打，射击表现与剩余发数脱节
             refillChamberFromBelt();
+            return true;
+        });
+
+        if (firedCount > 0 && WeaponTrace.isEnabled()) {
+            WeaponTrace.log(getLevel(), "fire-shot launcher={} n={} intervalU={} phaseU={} cooldownU={}", traceId(),
+                    firedCount, intervalU, firePhase.phaseU(), firePhase.cooldownU());
         }
 
-        // ⑤ 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）
+        // 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）
         if (getLevel().isClientSide() && firedCount > 0) {
+            if (WeaponTrace.isEnabled()) {
+                WeaponTrace.log(getLevel(), "fx-fire launcher={} n={} ammo={} muzzle={}", traceId(), firedCount,
+                        firedTypes.get(0).getRegistryKey(), getMuzzleWorldPosition());
+            }
             handleFiringSounds(firedTypes, burstJustStarted);
             for (ProjectileType type : firedTypes) {
                 type.playFireEffect(getLevel(), this, attr.locator);
@@ -1022,19 +1033,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             playMuzzleFlash(firedTypes.get(0));
         }
 
-        // ⑥ 扣除已发射数对应的时间
-        fireAccumulator -= firedCount * intervalSec;
-        if (fireAccumulator < 0) fireAccumulator = 0;
-        // 记录上次开火 tick（用于防连按超射）
-        if (firedCount > 0) lastFireTick = tickCount;
-    }
-
-    /**
-     * 重置发射相关状态。
-     */
-    private void resetFireState() {
-        fireAccumulator = 0.0;
-        wasFiring = false;
+        if (firePhase.starved() && hasLiveFireSound()) {
+            // 到了发射点却没有可发射内容：收掉持续音效，但不动相位与扳机事实，
+            // 补上弹的下一步按当时的预算继续（不补发历史欠发）。
+            WeaponTrace.log(getLevel(), "fire-end launcher={} reason=no-round", traceId());
+            handleCeaseFire();
+        }
     }
 
     /**
@@ -1129,6 +1133,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                     grant.spec(), grant.reservedCount(), transporter.getReloadTimeTicks());
         }
         beginReloadJob(job);
+        WeaponTrace.log(getLevel(), "reload-start launcher={} job={} stage={} stageTicks={} rate={} reserved={} transporter={} provider={}",
+                traceId(), job.jobId(), job.stage(), job.totalTicks(), job.humanRate(), job.reservedCount(),
+                WeaponTrace.ref(job.transporter()), WeaponTrace.ref(job.provider()));
         return job;
     }
 
@@ -1171,6 +1178,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private void finishReloadJob(boolean delivered) {
         ReloadJob job = reloadJob;
         if (job == null) return;
+        WeaponTrace.log(getLevel(), "reload-end launcher={} job={} delivered={} stage={} progress={}/{}",
+                traceId(), job.jobId(), delivered, job.stage(), job.elapsedTicks(), job.totalTicks());
         AmmoPath route = currentRoute;
         if (route != null) {
             route.transporter().releaseClaim(this, job.key());
@@ -1260,7 +1269,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             tickHumanStage(route, job);
             return;
         }
-        job.advance(route.transporter().getAdvanceTicks(this));
+        int advance = route.transporter().getAdvanceTicks(this);
+        job.advance(advance);
+        if (advance <= 0 && job.pausedTicks() == 1) {
+            WeaponTrace.log(getLevel(), "reload-stall launcher={} job={} stage={}", traceId(), job.jobId(), job.stage());
+        }
         if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
             finishReloadJob();
             return;
@@ -1284,7 +1297,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             pauseReloadJob(job);
             return;
         }
-        if (job.retimeHuman(transporter.getOperatorTimeScale(this))) pushReloadJob();
+        if (job.retimeHuman(transporter.getOperatorTimeScale(this))) {
+            pushReloadJob();
+            WeaponTrace.log(getLevel(), "reload-retime launcher={} job={} rate={} stageTicks={}", traceId(),
+                    job.jobId(), job.humanRate(), job.totalTicks());
+        }
         if (!job.isComplete()) {
             job.advance(1);
             if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
@@ -1315,11 +1332,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
         job.enterMachineStage(transporter.getReloadTimeTicks());
         pushReloadJob();
+        WeaponTrace.log(getLevel(), "reload-stage launcher={} job={} stage=MACHINE stageTicks={}", traceId(),
+                job.jobId(), job.totalTicks());
     }
 
     /** 本 tick 推不动的作业：记一次暂停，超过上限就按未交付收尾。 */
     private void pauseReloadJob(ReloadJob job) {
         job.advance(0);
+        if (job.pausedTicks() == 1) {
+            WeaponTrace.log(getLevel(), "reload-pause launcher={} job={} stage={}", traceId(), job.jobId(), job.stage());
+        }
         if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) finishReloadJob();
     }
 
@@ -1331,6 +1353,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         boolean swapping = pendingSwapTarget() != null;
         IAmmoSupplier provider = route.provider();
         AmmoBelt delivered = provider.deliverReserved(job.key());
+        WeaponTrace.log(getLevel(), "reload-deliver launcher={} job={} ok={} rounds={} provider={}", traceId(),
+                job.jobId(), delivered != null, delivered == null ? 0 : delivered.remaining(),
+                WeaponTrace.ref(job.provider()));
         finishReloadJob(delivered != null);
         if (delivered == null) return;
         if (swapping) {
@@ -1401,7 +1426,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             tickReloadSounds();
             return;
         }
-        job.advance(route.transporter().getAdvanceTicks(this));
+        int advance = route.transporter().getAdvanceTicks(this);
+        if (advance <= 0 && job.pausedTicks() == 0) {
+            WeaponTrace.log(getLevel(), "reload-stall-local launcher={} job={} stage={}", traceId(),
+                    job.jobId(), job.stage());
+        }
+        job.advance(advance);
         tickReloadSounds();
         if (!job.isComplete()) return;
         // 机械运输者的人工准备段走完只是这一段完成：机械段还没开始，交付要等权威把阶段推过来。
@@ -1412,6 +1442,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         AmmoBelt delivered = job.spec().freshCopy(job.reservedCount());
         reloadJob = null;
         lastLocalDeliveryId = job.jobId();
+        WeaponTrace.log(getLevel(), "reload-local-deliver launcher={} job={} stage={} rounds={}", traceId(),
+                job.jobId(), job.stage(), delivered.remaining());
         if (swapping) {
             commitBeltSwap(route.provider(), delivered);
         } else {
@@ -1699,6 +1731,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             getSubPart().getLinearVelocity(),
             shooter
         );
+        WeaponTrace.log(getLevel(), "projectile launcher={} ammo={} n={} speed={} muzzle={}", traceId(),
+                type.getRegistryKey(), projectiles.size(), muzzle.speed(), muzzle.position());
 
         // ③ 制导弹登记：记住 objId 以便后续每物理步推送目标，并装订初始目标
         if (type.hasGuidance()) {

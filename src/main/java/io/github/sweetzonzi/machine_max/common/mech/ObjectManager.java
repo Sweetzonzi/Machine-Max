@@ -258,10 +258,7 @@ public class ObjectManager {
         vehicle.isRemoved = true;
         vehicle.inLevel = false;
         vehicle.releaseVehicleHeldChunks();
-        vehicle.subSystemController.allSubsystems.clear();
-        vehicle.subSystemController.channels.clear();
-        vehicle.subSystemController.signalStorage.clear();
-        vehicle.subSystemController.resources.clear();
+        vehicle.subSystemController.discardUninitialized();
         return true;
     }
 

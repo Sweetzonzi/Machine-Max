@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.FirePhase;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import net.minecraft.resources.ResourceLocation;
@@ -28,9 +30,18 @@ public class BreechModuleAttr extends AbstractModuleAttr {
     /** 弹药不能包含的 tag，空列表表示不禁止 */
     private final List<ResourceLocation> forbiddenTags;
 
+    /**
+     * 射速字段的编解码校验。
+     *
+     * <p>射速要正且有限，并且量化后的单发周期 {@code round(1200 × 1e6 / RPM)} 必须能在 long 相位里
+     * 表示——{@code fire_rate} 没有产品下界，0.1 RPM 的周期约 1.2×10^10 相位单位，远超 int 范围。
+     * 非法值在解码入口拒绝，运行期不再重复判定。</p>
+     */
+    private static final Codec<Float> FIRE_RATE_CODEC = Codec.FLOAT.validate(BreechModuleAttr::validateFireRate);
+
     public static final MapCodec<BreechModuleAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("durability_weight", 1.0f).forGetter(AbstractModuleAttr::durabilityWeight),
-            Codec.FLOAT.fieldOf("fire_rate").forGetter(BreechModuleAttr::fireRate),
+            FIRE_RATE_CODEC.fieldOf("fire_rate").forGetter(BreechModuleAttr::fireRate),
             ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of())
                     .forGetter(BreechModuleAttr::requiredTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of())
@@ -43,11 +54,24 @@ public class BreechModuleAttr extends AbstractModuleAttr {
     public static final BreechModuleAttr DEFAULT = new BreechModuleAttr(
             0.4f, 600f, List.of(), List.of(), List.of());
 
+    /**
+     * 射速必须正、有限，且量化后的周期能落进 long 相位。
+     *
+     * @param rpm 每分钟发数
+     * @return 通过时原样返回
+     */
+    static DataResult<Float> validateFireRate(float rpm) {
+        if (FirePhase.intervalUFor(rpm) < 1L) {
+            return DataResult.error(() -> "fire_rate 必须是正有限数且单发周期可表示，实际为 " + rpm);
+        }
+        return DataResult.success(rpm);
+    }
+
     public BreechModuleAttr(float durabilityWeight, float fireRate,
                             List<ResourceLocation> requiredTags, List<ResourceLocation> acceptableTags,
                             List<ResourceLocation> forbiddenTags) {
         super(durabilityWeight, true); // 炮闩 critical，硬编码
-        this.fireRate = fireRate;
+        this.fireRate = validateFireRate(fireRate).getOrThrow(IllegalArgumentException::new);
         this.requiredTags = requiredTags;
         this.acceptableTags = acceptableTags;
         this.forbiddenTags = forbiddenTags;

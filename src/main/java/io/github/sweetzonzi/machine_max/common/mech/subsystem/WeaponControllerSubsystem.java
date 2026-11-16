@@ -133,6 +133,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     private int rippleTickCounter = 0;
 
+    /**
+     * 插桩用：上一次记录的开火门状态。{@code 0} 无开火指令，{@code 1} 有指令且至少一根管已瞄准，
+     * {@code 2} 有指令但没有可开火的管。<br>
+     * 只在状态变化时写一条记录，日志因此能直接读出"扳机按下／松开"与"瞄准门拦下了开火"。
+     * <p><b>调用线程：</b>仅物理线程（{@link #onPrePhysicsTick()}）。
+     */
+    private int traceFireState;
+
     // ==================== 弹药管理（弹链模式） ====================
 
     /**
@@ -316,6 +324,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
 
         // ③ 按射击模式开火
+        int traceState = !firing ? 0 : (aimedLaunchers.isEmpty() ? 2 : 1);
+        if (traceState != traceFireState) {
+            String event = traceState == 0 ? "trigger-up"
+                    : traceFireState == 0 ? "trigger-down"
+                    : traceState == 1 ? "trigger-aim"
+                    : "trigger-noaim";
+            WeaponTrace.log(getLevel(), "{} controller={} aimed={} target={}", event, name,
+                    aimedLaunchers.size(), target);
+            traceFireState = traceState;
+        }
         if (firing && !aimedLaunchers.isEmpty()) {
             switch (staticAttr.getDefaultFireMode()) {
                 case SALVO -> fireSalvo(aimedLaunchers, target);

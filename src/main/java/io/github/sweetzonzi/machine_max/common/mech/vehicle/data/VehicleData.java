@@ -5,7 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jme3.math.Vector3f;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -28,8 +31,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +61,7 @@ public class VehicleData {
     public final BlueprintMeta meta;
 
     /** JSON 存档/蓝图编解码：UUID 字段用 {@link UUIDUtil#STRING_CODEC} 落盘为字符串，兼容既有模板。 */
-    public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    private static final Codec<VehicleData> STRUCTURED_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("name", "Vehicle").forGetter(VehicleData::getName),
             UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
@@ -64,11 +69,39 @@ public class VehicleData {
             Vec3.CODEC.optionalFieldOf("max", Vec3.ZERO).forGetter(VehicleData::getMax),
             Codec.FLOAT.optionalFieldOf("hp_ratio", 1f).forGetter(VehicleData::getHpRatio),
             RegularPartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
+            UUIDUtil.STRING_CODEC.listOf().optionalFieldOf("part_order", List.of())
+                    .forGetter(VehicleData::partOrderList),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections),
             TrackLinkData.CODEC.listOf().optionalFieldOf("track_links", List.of())
                     .forGetter(VehicleData::getTrackLinks),
             BlueprintMeta.CODEC.optionalFieldOf("meta", BlueprintMeta.EMPTY).forGetter(VehicleData::getMeta)
     ).apply(instance, VehicleData::new));
+
+    /**
+     * 载具数据的 JSON 编解码。
+     *
+     * <p>{@code part_order} 是零件安装序的显式承载：{@code parts} 只负责按键查找，JSON 对象与
+     * NBT 复合标签的键序都不是可依赖的持久契约，顺序必须单独写出来。解码时按该列表重排
+     * {@code parts}，因此下游只读一份有序映射。</p>
+     *
+     * <p>列表与 {@code parts} 的键集合必须严格相同：重复、引用了不存在的部件、以及列表长度与
+     * 条目数不符都在这里拒绝。解码期校验失败以 {@link DataResult} 错误返回，不抛出。</p>
+     */
+    public static final Codec<VehicleData> CODEC = new Codec<>() {
+        @Override
+        public <T> DataResult<Pair<VehicleData, T>> decode(DynamicOps<T> ops, T input) {
+            try {
+                return STRUCTURED_CODEC.decode(ops, input);
+            } catch (IllegalArgumentException e) {
+                return DataResult.error(e::getMessage);
+            }
+        }
+
+        @Override
+        public <T> DataResult<T> encode(VehicleData input, DynamicOps<T> ops, T prefix) {
+            return STRUCTURED_CODEC.encode(input, ops, prefix);
+        }
+    };
 
     /**
      * 网络编码：载具 UUID 以双 long 传输（16 字节），字段本身即为 UUID，无需字符串转换。
@@ -150,6 +183,62 @@ public class VehicleData {
     }
 
     /**
+     * 解码入口：按 {@code part_order} 把 {@code parts} 排成安装序。
+     *
+     * <p>列表为空表示数据没有携带顺序（旧存档、旧模板），此时按 UUID 字符串全序建立一次
+     * 确定性基线；该基线只服务旧格式入口，运行时没有第二条隐式重排的路径。</p>
+     *
+     * @param declaredOrder {@code part_order}；空表示旧格式
+     * @throws IllegalArgumentException 列表与 {@code parts} 键集合不一致
+     */
+    private VehicleData(String name, UUID uuid,
+                        Vec3 pos, Vec3 min, Vec3 max,
+                        float hpRatio, Map<String, RegularPartData> parts, List<UUID> declaredOrder,
+                        List<ConnectionData> connections,
+                        List<TrackLinkData> trackLinks, BlueprintMeta meta) {
+        this(name, uuid, pos, min, max, hpRatio, orderParts(parts, declaredOrder), connections,
+                trackLinks, meta);
+    }
+
+    /**
+     * 按显式顺序重排零件映射；缺省顺序时退回 UUID 字符串全序。
+     *
+     * @return 新映射，键序即安装序
+     */
+    private static Map<String, RegularPartData> orderParts(Map<String, RegularPartData> parts,
+                                                           List<UUID> declaredOrder) {
+        LinkedHashMap<String, RegularPartData> ordered = LinkedHashMap.newLinkedHashMap(parts.size());
+        if (declaredOrder.isEmpty()) {
+            List<String> keys = new ArrayList<>(parts.keySet());
+            keys.sort(Comparator.naturalOrder());
+            for (String key : keys) ordered.put(key, parts.get(key));
+            return ordered;
+        }
+        if (declaredOrder.size() != parts.size()) {
+            throw new IllegalArgumentException("part_order 条目数 " + declaredOrder.size()
+                    + " 与 parts 条目数 " + parts.size() + " 不一致");
+        }
+        for (UUID id : declaredOrder) {
+            String key = id.toString();
+            RegularPartData part = parts.get(key);
+            if (part == null) throw new IllegalArgumentException("part_order 引用了不存在的部件: " + key);
+            if (ordered.put(key, part) != null) throw new IllegalArgumentException("part_order 重复的部件: " + key);
+        }
+        return ordered;
+    }
+
+    /**
+     * 当前零件安装序，以 UUID 列表形式落盘为 {@code part_order}。
+     *
+     * @return 与 {@link #parts} 键序一致的 UUID 列表
+     */
+    public List<UUID> partOrderList() {
+        List<UUID> order = new ArrayList<>(parts.size());
+        for (String key : parts.keySet()) order.add(UUID.fromString(key));
+        return order;
+    }
+
+    /**
      * 将载具数据打包为方便传输与读取的VehicleData
      *
      * @param vehicle 载具实例
@@ -221,7 +310,7 @@ public class VehicleData {
      */
     public VehicleData rebased() {
         Vector3f offset = PhysicsHelperKt.toBVector3f(pos);
-        Map<String, RegularPartData> rebasedParts = new HashMap<>(parts.size());
+        Map<String, RegularPartData> rebasedParts = LinkedHashMap.newLinkedHashMap(parts.size());
         for (Map.Entry<String, RegularPartData> entry : parts.entrySet()) {
             RegularPartData part = entry.getValue();
             // 子零件坐标平移 + 速度归零（放出来的载具不应带残余动量）
@@ -325,6 +414,14 @@ public class VehicleData {
         checkFiniteVec(problems, "max", max);
 
         Set<UUID> partUuids = new HashSet<>(parts.size());
+        // 结构：parts 的键必须可解析为 UUID——part_order 与蓝图往返都以它为部件身份
+        for (String key : parts.keySet()) {
+            try {
+                UUID.fromString(key);
+            } catch (IllegalArgumentException e) {
+                problems.add(BlueprintProblem.invalidValue("非法 parts 键: " + key));
+            }
+        }
         for (Map.Entry<String, RegularPartData> entry : parts.entrySet()) {
             RegularPartData part = entry.getValue();
 

@@ -10,7 +10,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -112,7 +112,7 @@ public class RegularPartData extends AbstractPartData {
         @Override
         public @NotNull Map<String, RegularPartData> decode(RegistryFriendlyByteBuf buffer) {
             int size = buffer.readVarInt();
-            var map = new HashMap<String, RegularPartData>();
+            LinkedHashMap<String, RegularPartData> map = LinkedHashMap.newLinkedHashMap(size);
             for (int i = 0; i < size; i++) {
                 String key = buffer.readUtf();
                 RegularPartData partData = STREAM_CODEC.decode(buffer);

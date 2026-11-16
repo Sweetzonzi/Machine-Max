@@ -117,6 +117,7 @@ subsystem/
 - **同步只表达变化，初值靠补推**：`SynchedEntityData` 的变化广播（`packDirty()`）只在值真的变过时发得出去，且发给维度内所有玩家。**载入后不再变化的值（如弹药指认）走不到这条路**，因此载具在客户端建好时必须补一份全量快照：`SubsystemController.pushAllTo(ServerPlayer)`，由 `ObjectManager` 在每条载具创建包之后**紧跟着**调用（`pushSubsystemState`）。顺序由同一条连接保证，客户端在创建包的处理器内就建好了载具，因此补推包必然落在目标已存在的时刻。
 - **全量补推不得改动同步状态**：快照取自 `AbstractSubsystem.forEachSyncedValue()`（只读遍历 `SynchedEntityData.itemsById`，该字段由 `META-INF/accesstransformer.cfg` 放宽为 public），经 `PacketDistributor.sendToPlayer` **定向**发送。不得改用 `SynchedEntityData.set(..., force=true)` 强制标脏：那会把脏标记留给下一次 `packDirty()`，让维度内其他玩家收到无谓的包。
 - **自定义同步数据序列化器**：注册在 `MMEntityDataSerializers`（NeoForge 的 `ENTITY_DATA_SERIALIZERS` 注册表，线号为 `256 + 注册表内 id`）。`SynchedEntityData.defineId` 在子系统静态初始化里执行，因此注册文件必须持有序列化器**实例**、注册时交出同一实例，不能从 `DeferredHolder` 取。装填作业的整包快照走的就是这条路（`optional_reload_job_sync`，值为 `Optional<ReloadJobSync>`）。
+- **武器链路插桩**：`WeaponTrace` 默认关闭，`/mm debug weaponlog start|stop`（权限级 4）切换。打开后每条记录形如 `[WDBG][S|C][t=<游戏时间>] 事件 字段=值`，端别与游戏时间由 `WeaponTrace.log` 补齐，事件文本由调用点给出。覆盖的事件：开火 `fire-begin`／`fire-shot`／`fire-end`／`projectile`，路由 `route`，装填 `reload-start`／`reload-stage`／`reload-retime`／`reload-pause`／`reload-stall`／`reload-deliver`／`reload-end`，客户端镜像 `reload-mirror`／`reload-mirror-stage`／`reload-mirror-clear`／`reload-local-deliver`／`reload-result`／`sync-belt`／`sync-chamber`，客户端表现 `fx-fire`，以及武器控制器的扳机门 `trigger-down`／`trigger-up`／`trigger-aim`／`trigger-noaim`。开关是进程内的静态量：单人游戏里客户端与服务端同进程，一条命令同时打开两端；专用服务器接独立客户端时，每一侧各自打开。关闭时不写日志，逐发路径上只多一次 volatile 读。
 
 ## 反模式
 

@@ -19,7 +19,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
 public class SubsystemController implements ISignalBus {
@@ -28,7 +27,13 @@ public class SubsystemController implements ISignalBus {
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
-    public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
+    /**
+     * 成员快照：按宿主的注册调用序排列，发布后不再修改。<br>
+     * 写入只发生在主线程的成员变化点，一次替换整份快照；物理线程 {@link #prePhysicsTick()} /
+     * {@link #postPhysicsTick()} 与主线程遍历各自捕获当时那一份，因此不需要 CopyOnWrite 的逐次复制，
+     * 也不会看到构建到一半的集合。顺序属于装配状态：成员追加不减既有位置，删除只移除目标本身。
+     */
+    private volatile Set<AbstractSubsystem> allSubsystems = Set.of();
     public final EnergyGrid energyGrid = new EnergyGrid();
     private static final ThreadLocal<Level> PRE_PHYSICS_LEVEL = new ThreadLocal<>();
 
@@ -46,11 +51,23 @@ public class SubsystemController implements ISignalBus {
         this.level = vehicle.getLevel();
     }
 
+    /**
+     * 当前成员快照：只读、按宿主的注册调用序排列。
+     * <p>遍历方拿到的是调用时刻那一份，不会看到发布到一半的集合，也不会因为随后发布的
+     * 新快照而在遍历中途改变内容。
+     *
+     * @return 不可变成员快照
+     */
+    public Set<AbstractSubsystem> getAllSubsystems() {
+        return allSubsystems;
+    }
+
     // ===== 现有生命周期方法（整合总线订阅） =====
 
     /** 调用所有子系统的 onTick，在主线程 20tps 下执行 */
     public void tick() {
-        for (AbstractSubsystem subsystem : allSubsystems) {
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
             if (subsystem != null) {
                 subsystem.onTick();
             }
@@ -68,7 +85,8 @@ public class SubsystemController implements ISignalBus {
      * 因此同一个 tick 内到达的同步值只会被应用一次。
      */
     public void postTick() {
-        for (AbstractSubsystem subsystem : allSubsystems) {
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
             if (subsystem != null) {
                 subsystem.onPostTick();
             }
@@ -79,7 +97,8 @@ public class SubsystemController implements ISignalBus {
         Level previous = PRE_PHYSICS_LEVEL.get();
         PRE_PHYSICS_LEVEL.set(level);
         try {
-            for (AbstractSubsystem subsystem : allSubsystems) {
+            Set<AbstractSubsystem> snapshot = allSubsystems;
+            for (AbstractSubsystem subsystem : snapshot) {
                 if (subsystem != null) {
                     subsystem.onPrePhysicsTick();
                 }
@@ -98,7 +117,8 @@ public class SubsystemController implements ISignalBus {
 
     /** 物理 tick 后调用所有子系统的 onPostPhysicsTick（物理引擎步进后读取反馈） */
     public void postPhysicsTick() {
-        for (AbstractSubsystem subsystem : allSubsystems) {
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
             if (subsystem != null) {
                 subsystem.onPostPhysicsTick();
             }
@@ -118,17 +138,35 @@ public class SubsystemController implements ISignalBus {
     /**
      * 将子系统加入控制器。初始化之后加入的零件在这里立即订阅并 attach；初始化之前的加入由
      * {@link #initAllSubsystems()} 统一处理。
+     * <p>
+     * 参数顺序即执行序：调用方按零件安装序、零件内按子零件声明序、子系统安装序展开后传入。
+     * 已经在集合里的成员保位不动，重复注册不会把既有成员挪到队尾。
+     * <p><b>调用线程：</b>主线程。
      */
     public void addSubsystems(Collection<AbstractSubsystem> subSystems) {
         List<AbstractSubsystem> added = new ArrayList<>(subSystems.size());
+        Set<AbstractSubsystem> current = allSubsystems;
+        LinkedHashSet<AbstractSubsystem> ordered = LinkedHashSet.newLinkedHashSet(current.size() + subSystems.size());
+        ordered.addAll(current);
         for (AbstractSubsystem subSystem : subSystems) {
-            if (allSubsystems.add(subSystem)) added.add(subSystem);
+            if (subSystem != null && ordered.add(subSystem)) added.add(subSystem);
         }
+        if (added.isEmpty()) return;
+        publishMembers(ordered);
         if (!initialized) return;
         for (AbstractSubsystem subSystem : added) {
             subscribe(subSystem);
             attachSubsystem(subSystem);
         }
+    }
+
+    /** 主线程：以新成员序一次替换整份快照；发布后的集合只读，遍历方各自持有自己捕获的那一份。 */
+    private void publishMembers(Collection<AbstractSubsystem> members) {
+        LinkedHashSet<AbstractSubsystem> ordered = LinkedHashSet.newLinkedHashSet(members.size());
+        for (AbstractSubsystem member : members) {
+            if (member != null) ordered.add(member);
+        }
+        allSubsystems = Collections.unmodifiableSet(ordered);
     }
 
     /** 每个子系统恰好 attach 一次；跨载具转移过来的已 attach 实例只重新订阅。 */
@@ -138,16 +176,24 @@ public class SubsystemController implements ISignalBus {
     }
 
     public void removeSubsystems(Collection<AbstractSubsystem> subSystems, boolean transferToAnotherVehicle) {
-        for (AbstractSubsystem subSystem : subSystems) this.removeSubsystem(subSystem, transferToAnotherVehicle);
-        allSubsystems.removeAll(subSystems);
+        if (subSystems.isEmpty()) return;
+        for (AbstractSubsystem subSystem : subSystems) detachSubsystem(subSystem, transferToAnotherVehicle);
+        Set<AbstractSubsystem> removing = new HashSet<>(subSystems);
+        LinkedHashSet<AbstractSubsystem> ordered = new LinkedHashSet<>(allSubsystems);
+        if (ordered.removeAll(removing)) publishMembers(ordered);
     }
 
     public void removeSubsystem(AbstractSubsystem subSystem, boolean transferToAnotherVehicle) {
-        if (!transferToAnotherVehicle) {
-            subSystem.onDetach();
-            unsubscribe(subSystem);
-        }
-        allSubsystems.remove(subSystem);
+        detachSubsystem(subSystem, transferToAnotherVehicle);
+        LinkedHashSet<AbstractSubsystem> ordered = new LinkedHashSet<>(allSubsystems);
+        if (ordered.remove(subSystem)) publishMembers(ordered);
+    }
+
+    /** 脱离生命周期；转移给其它装配体的实例保持订阅与 attach 状态，由接收方按新顺序注册。 */
+    private void detachSubsystem(AbstractSubsystem subSystem, boolean transferToAnotherVehicle) {
+        if (transferToAnotherVehicle) return;
+        subSystem.onDetach();
+        unsubscribe(subSystem);
     }
 
     public void onVehicleStructureChanged() {
@@ -270,7 +316,7 @@ public class SubsystemController implements ISignalBus {
 
     /** Releases construction-local state without gameplay detach effects such as inventory drops. */
     public void discardUninitialized() {
-        allSubsystems.clear();
+        allSubsystems = Set.of();
         busSubscribers.clear();
         channels.clear();
         resources.clear();

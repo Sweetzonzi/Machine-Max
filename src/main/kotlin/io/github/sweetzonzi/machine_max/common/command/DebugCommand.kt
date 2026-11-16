@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.context.CommandContext
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractGroundControllerSubsystem
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponTrace
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin
 import net.minecraft.commands.CommandBuildContext
@@ -26,6 +27,11 @@ class DebugCommand : BaseCommand("debug", 4) {
                 )
         )
         builder.then(
+            Commands.literal("weaponlog")
+                .then(Commands.literal("start").executes { setWeaponLog(it, true) })
+                .then(Commands.literal("stop").executes { setWeaponLog(it, false) })
+        )
+        builder.then(
             Commands.literal("autofire")
                 .then(Commands.literal("stop").executes { stopAutoFire(it) })
                 .then(
@@ -39,6 +45,20 @@ class DebugCommand : BaseCommand("debug", 4) {
                         )
                 )
         )
+    }
+
+    /**
+     * 开关武器链路的时序插桩（开火、装填与客户端表现）。<br>
+     * 开关是进程内的静态量：单人游戏里客户端与服务端同进程，一条命令同时打开两侧；专用服务器接独立客户端时
+     * 只打开执行命令的一侧。
+     */
+    private fun setWeaponLog(ctx: CommandContext<CommandSourceStack>, enabled: Boolean): Int {
+        WeaponTrace.setEnabled(enabled)
+        ctx.source.sendSuccess(
+            { Component.literal("Weapon trace ${if (enabled) "ENABLED" else "DISABLED"} in this process.") },
+            false
+        )
+        return 1
     }
 
     private fun startAutoFire(ctx: CommandContext<CommandSourceStack>): Int {

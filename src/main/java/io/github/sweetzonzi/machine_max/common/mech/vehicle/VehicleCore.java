@@ -1071,7 +1071,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             donorEdges.add(Map.entry(donorVehicle.partNet.incidentNodes(edge), edge));
         }
 
-        for (RegularPart part : new ArrayList<>(donorVehicle.partMap.values())) {
+        // 顺序由两段节点序相接：先保留接收方现有节点序，再按被吸收方的节点序追加。
+        // partMap 是并发映射，它的迭代序不承载安装序，不能用来决定优先级。
+        for (RegularPart part : new ArrayList<>(donorVehicle.partNet.nodes())) {
             Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
             donorVehicle.subSystemController.removeSubsystems(subsystems, true);
             donorVehicle.partMap.remove(part.uuid);
@@ -1262,15 +1264,16 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
             if (spiltPartNets.size() <= 1) return Map.of();
 
-            // 1. 将子网络转为列表并按总质量降序排序
+            // 1. 将子网络转为列表并按总质量降序排序；质量相同时按各分量最早成员在旧节点序中的位置决胜
+            Map<RegularPart, Integer> nodeIndex = HashMap.newHashMap(partNet.nodes().size());
+            int nextIndex = 0;
+            for (RegularPart node : partNet.nodes()) nodeIndex.put(node, nextIndex++);
             List<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> sortedNets = new ArrayList<>(spiltPartNets);
-            sortedNets.sort((net1, net2) -> {
-                float mass1 = calculateNetworkMass(net1);
-                float mass2 = calculateNetworkMass(net2);
-                return Float.compare(mass2, mass1); // 降序排序
-            });
+            sortedNets.sort(Comparator
+                    .comparingDouble(this::calculateNetworkMass).reversed()
+                    .thenComparingInt(net -> earliestNodeIndex(net, nodeIndex)));
 
-            Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
+            Map<UUID, UUID> spiltVehiclesToSend = new LinkedHashMap<>();
             List<VehicleCore> createdVehicles = new ArrayList<>();
 
             // 2. 索引为 0 的网络（质量最大者）保留当前载具身份，不进行处理。
@@ -1279,7 +1282,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                 MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> network = sortedNets.get(i);
                 UUID newVehicleUuid = UUID.randomUUID();
 
-                // 获取该网络中任意一个部件的 UUID，用于客户端识别是哪一部分分裂了
+                // 取该分量最早成员的 UUID，用于客户端识别是哪一部分分裂了；
+                // network.nodes() 已按旧节点序排列，迭代首项即最早成员
                 UUID referencePartUuid = network.nodes().iterator().next().uuid;
 
                 // 调用分裂构造函数：
@@ -1306,6 +1310,17 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             total += part.totalMass;
         }
         return total;
+    }
+
+    /** 分量决胜依据：该分量所有成员中最小的旧节点序下标。 */
+    private static int earliestNodeIndex(MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> network,
+                                        Map<RegularPart, Integer> nodeIndex) {
+        int earliest = Integer.MAX_VALUE;
+        for (RegularPart part : network.nodes()) {
+            Integer index = nodeIndex.get(part);
+            if (index != null && index < earliest) earliest = index;
+        }
+        return earliest;
     }
 
     private void clientHandleSpilt(Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles, float sourceHp) {
@@ -1335,44 +1350,56 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      * <p>获取载具部件连接关系图的所有联通子图的集合，用于连通性检查</p>
      * <p>GetVehicleVariable all the connected sub-graphs of the vehicle part connection graph, used for connectivity check.</p>
      *
+     * <p>节点序属于装配状态：每个分量内先按<b>旧节点序</b>加入全部节点，再加边（{@code addEdge} 会隐式
+     * 加入缺失端点，先加边会把端点排到不该在的位置）。分量按各自最早成员在旧节点序中的位置排列，
+     * 因此返回集合的迭代序也承载了决胜依据。</p>
+     *
      * @return 连通子图集合 Subgraph set
      */
     public Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> partNetSpiltCheck() {
         synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
             if (partNet.nodes().isEmpty()) return Set.of();
 
-            Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
-            Set<RegularPart> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
+            List<RegularPart> nodeOrder = new ArrayList<>(partNet.nodes());
+            Map<RegularPart, Integer> nodeIndex = HashMap.newHashMap(nodeOrder.size());
+            for (int i = 0; i < nodeOrder.size(); i++) nodeIndex.put(nodeOrder.get(i), i);
 
-            while (!unvisited.isEmpty()) {
+            Set<RegularPart> unvisited = new HashSet<>(nodeOrder); // 只做成员判定与访问标记
+            List<List<RegularPart>> components = new ArrayList<>();
+
+            for (RegularPart startPart : nodeOrder) {
+                if (!unvisited.remove(startPart)) continue;
                 // 1. 开启一个新的连通子图搜索
-                RegularPart startPart = unvisited.iterator().next();
-                Set<RegularPart> componentNodes = new HashSet<>();
+                List<RegularPart> componentNodes = new ArrayList<>();
                 Queue<RegularPart> queue = new LinkedList<>();
 
                 queue.add(startPart);
                 componentNodes.add(startPart);
-                unvisited.remove(startPart);
 
                 // 2. BFS 搜索所有连通的节点
                 while (!queue.isEmpty()) {
                     RegularPart current = queue.poll();
                     for (RegularPart neighbor : partNet.adjacentNodes(current)) {
-                        if (unvisited.contains(neighbor)) {
-                            unvisited.remove(neighbor);
+                        if (unvisited.remove(neighbor)) {
                             componentNodes.add(neighbor);
                             queue.add(neighbor);
                         }
                     }
                 }
+                // 3. 分量内按旧节点序排列；起点是旧节点序里最早的未访问节点，因此这同时是分量间顺序
+                componentNodes.sort(Comparator.comparingInt(nodeIndex::get));
+                components.add(componentNodes);
+            }
 
-                // 3. 为这个连通分量构建一个新的 Network 实例
+            Set<MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>>> splitPartNets =
+                    LinkedHashSet.newLinkedHashSet(components.size());
+            for (List<RegularPart> componentNodes : components) {
                 MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
                         NetworkBuilder.undirected().allowsParallelEdges(true).build();
-
+                // 先按序加入全部节点
+                for (RegularPart node : componentNodes) splitPartNet.addNode(node);
+                // 再加边，端点此时都已存在，不会再改变节点序
                 for (RegularPart node : componentNodes) {
-                    splitPartNet.addNode(node);
-                    // 将该节点的所有边加入新网络
                     for (Pair<AbstractConnector, SimpleConnector> edge : partNet.incidentEdges(node)) {
                         EndpointPair<RegularPart> incidentNodes = partNet.incidentNodes(edge);
                         splitPartNet.addEdge(incidentNodes.nodeU(), incidentNodes.nodeV(), edge);
@@ -1553,12 +1580,15 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     }
 
     /**
-     * 将载具的所有部件存入一个Map中
+     * 将载具的所有部件存入一个Map中。
+     *
+     * <p>键序即零件安装序，取自 {@link #partNet} 的节点序（节点按连接流程逐个加入）；持久化与
+     * 网络编码都沿用这份顺序，因此恢复后重新注册子系统时执行序不变。</p>
      *
      * @return resourceType:部件UUID，value:部件数据
      */
     public Map<String, RegularPartData> getPartData() {
-        Map<String, RegularPartData> result = new HashMap<>();
+        Map<String, RegularPartData> result = LinkedHashMap.newLinkedHashMap(partNet.nodes().size());
         partNet.nodes().forEach(part -> result.put(part.uuid.toString(), new RegularPartData(part)));
         return result;
     }

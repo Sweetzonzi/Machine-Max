@@ -672,10 +672,14 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     /**
      * 汇总所有子零件当前持有的子系统，返回独立的去重集合。
      *
+     * <p>顺序是装配数据的一部分：先按 {@link #subParts} 的声明序，同一子零件内按子系统安装序展开。
+     * 汇总结果用 {@link LinkedHashSet} 承载该顺序并保留 Set 的去重语义，因此装配体按本集合的
+     * 迭代序注册子系统时，执行序由安装／声明序决定，而不由哈希决定。</p>
+     *
      * @return 集合结构与内部索引分离；其中的子系统对象仍为运行时实例
      */
     public Set<AbstractSubsystem> getAllSubsystems() {
-        HashSet<AbstractSubsystem> subsystems = new HashSet<>();
+        LinkedHashSet<AbstractSubsystem> subsystems = LinkedHashSet.newLinkedHashSet(subParts.size());
         for (SubPart subPart : subParts.values()) {
             subsystems.addAll(subPart.ownSubsystems());
         }
