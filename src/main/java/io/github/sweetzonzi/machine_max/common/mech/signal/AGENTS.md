@@ -93,7 +93,7 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 | `car_control` / `move_control` | 座位 → 行驶控制器/车轮驱动器 | 行驶与移动反馈 |
 | `aim_drive_<设备>` | 武器控制器 → 炮塔驱动器 | 单台设备的瞄准驱动，载荷为 `RotationSignal` |
 | `diff_lock_control` | 座位 → 变速箱 | 差速锁 |
-| `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令 |
+| `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令（一次性按下：`RegularInputSignal` 的 `NEXT_AMMO_TYPE`／`PREV_AMMO_TYPE`，控制器消费一次后把槽位清空） |
 | `interact` | 交互区 → 子系统 | 玩家交互 |
 
 ## 约定

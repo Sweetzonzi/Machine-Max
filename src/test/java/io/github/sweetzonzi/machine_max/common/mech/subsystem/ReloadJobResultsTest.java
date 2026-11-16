@@ -40,9 +40,9 @@ class ReloadJobResultsTest {
         ReloadJobResults decoded = roundTrip(results);
 
         assertEquals(results, decoded, "结果列表必须原样往返");
-        assertEquals(List.of(7, 8, 9), decoded.entries().stream().map(ReloadJobResults.Entry::jobId).toList(),
+        assertEquals(List.of(7, 8, 9), decoded.entries().stream().map(ReloadJobResults.Entry::round).toList(),
                 "顺序必须保持");
-        assertEquals(9, decoded.lastJobId(), "最近一条结果读列表末尾");
+        assertEquals(9, decoded.lastRound(), "最近一条结果读列表末尾");
         assertTrue(decoded.lastDelivered(), "最近一条结果读列表末尾的结论");
     }
 
@@ -50,7 +50,7 @@ class ReloadJobResultsTest {
     @Test
     void emptyResultsDegradeToNoResult() {
         assertEquals(ReloadJobResults.EMPTY, roundTrip(ReloadJobResults.EMPTY));
-        assertEquals(0, ReloadJobResults.EMPTY.lastJobId());
+        assertEquals(0, ReloadJobResults.EMPTY.lastRound());
         assertFalse(ReloadJobResults.EMPTY.lastDelivered());
         assertEquals(List.of(), ReloadJobResults.EMPTY.entries());
     }

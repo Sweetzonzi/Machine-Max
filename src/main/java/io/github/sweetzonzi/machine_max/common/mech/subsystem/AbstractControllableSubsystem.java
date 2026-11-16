@@ -431,12 +431,19 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     /**
      * 设置主武器控制信号，发送到当前控制组的 mainWeaponTargets 频道。<br>
      * 复用 RegularInputSignal，支持 MAIN_FIRE / NEXT_AMMO_TYPE 等按键语义。<br>
+     * 弹种切换不改写这些频道：它是一条一次性指令，走已发现的主武器控制器的
+     * {@link WeaponControllerSubsystem#AMMO_SWITCH_CHANNEL 弹种切换线}，
+     * 见 {@link #sendAmmoSwitch(KeyInputMapping)}。<br>
      * 可被 AI 实体直接调用而不需经过控制组绑定。
      *
      * @param inputType 武器控制按键类型（如 MAIN_FIRE、NEXT_AMMO_TYPE）
      * @param tickCount 0=按下/按下中, 非0=松开
      */
     public void setMainWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
+        if (inputType == KeyInputMapping.NEXT_AMMO_TYPE || inputType == KeyInputMapping.PREV_AMMO_TYPE) {
+            sendAmmoSwitch(inputType);
+            return;
+        }
         Map<String, List<String>> targets = controlGroupSet.getMergedMainWeaponTargets();
         if (!targets.isEmpty() && this.isActive()) {
             // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
@@ -448,6 +455,22 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
             }
+        }
+    }
+
+    /**
+     * 把一次弹种切换发送给本座位当前的主武器控制器。<br>
+     * 走控制器的专用线而不借用开火频道：一条频道对每个发送者只有一格，切弹指令借走那一格，
+     * 同一发送者仍按着的扳机就从"按下中"变成了别的东西，开火要等下一次按键边沿才恢复。
+     * 控制器收到后在 {@code updateRegularInputs} 里消费掉并把槽位清空，因此一次按键只切一次。
+     */
+    private void sendAmmoSwitch(KeyInputMapping inputType) {
+        if (!isActive() || isDestroyed()) return;
+        List<WeaponControllerSubsystem> controllers = getActiveMainWeaponControllers();
+        if (controllers.isEmpty()) return;
+        RegularInputSignal command = new RegularInputSignal(inputType, 0);
+        for (WeaponControllerSubsystem controller : controllers) {
+            sendSignalToTarget(WeaponControllerSubsystem.AMMO_SWITCH_CHANNEL, controller, command);
         }
     }
 

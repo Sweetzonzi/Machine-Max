@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
@@ -34,6 +35,15 @@ public final class AmmoRackLedgerGameTest {
     private static final String RACK = "subsystem.t90a.ammo_loader";
 
     private AmmoRackLedgerGameTest() {
+    }
+
+    /**
+     * 一条路的作业身份：同一根管（宿主 SubPart 与发射器序号 0）、给定的运输者与提供者两个结构序号。
+     */
+    private static ReloadJobKey routeKey(RegularPart part, int transporterIndex, int providerIndex) {
+        int subPartId = part.rootSubPart.getId();
+        return new ReloadJobKey(subPartId, 0, new AmmoRef(subPartId, transporterIndex),
+                new AmmoRef(subPartId, providerIndex));
     }
 
     private static RegenAmmoRackSubsystem rackOf(GameTestHelper helper, RegularPart part) {
@@ -66,7 +76,7 @@ public final class AmmoRackLedgerGameTest {
             helper.assertTrue(stocked == oneBelt, "退货应整份计入库存，实际 " + stocked);
 
             // ② 预留：库存不动，可分配减少
-            ReloadJobKey first = new ReloadJobKey(part.rootSubPart.getId(), 0, 7);
+            ReloadJobKey first = routeKey(part, 1, 2);
             IAmmoSupplier.Grant grant = rack.reserve(first);
             helper.assertTrue(grant != null, "有可分配库存时应授出预留");
             int reserved = grant.reservedCount();
@@ -88,13 +98,22 @@ public final class AmmoRackLedgerGameTest {
             helper.assertTrue(rack.deliverReserved(first) == null, "同一身份只兑现一次");
             helper.assertTrue(!rack.holdsReservation(first, reserved), "兑现后承诺结束");
 
+            // ③b 同一根管的同一条路可以连做多轮：账本键不变，上一轮收尾后同一个键能重新授出份额
+            if (rack.getAvailableCount() == 0) {
+                helper.assertTrue(rack.returnBelt(spec.freshCopy(oneBelt)), "空架应能再收下一份");
+            }
+            helper.assertTrue(rack.reserve(first) != null, "同一条路上下一轮应能在同一个键上重新受理");
+            helper.assertTrue(rack.getReservedTotal() > 0, "新一轮按当轮可分配库存重新取份额");
+            rack.releaseReservation(first);
+            helper.assertTrue(rack.getReservedTotal() == 0, "撤销新一轮后 R 归零");
+
             // ④ 撤销：只减少承诺，不补弹
             if (rack.getAvailableCount() == 0) {
                 // 交付可能刚好把整份库存取空（容量等于一份的发数）；补一份再验证撤销不改库存
                 helper.assertTrue(rack.returnBelt(spec.freshCopy(oneBelt)), "空架应能再收下一份");
             }
             int beforeRelease = rack.getAmmoCount();
-            ReloadJobKey second = new ReloadJobKey(part.rootSubPart.getId(), 0, 8);
+            ReloadJobKey second = routeKey(part, 1, 3);
             helper.assertTrue(rack.reserve(second) != null, "撤销量之前应能再授出预留");
             int secondReserved = rack.getReservedTotal();
             rack.releaseReservation(second);
@@ -122,7 +141,7 @@ public final class AmmoRackLedgerGameTest {
         try {
             RegenAmmoRackSubsystem rack = rackOf(helper, part);
             helper.assertTrue(rack.getAmmoCount() == 0, "夹具起始库存为零");
-            ReloadJobKey key = new ReloadJobKey(part.rootSubPart.getId(), 0, 1);
+            ReloadJobKey key = routeKey(part, 1, 2);
             helper.assertTrue(rack.reserve(key) == null, "空架不授出预留");
             helper.assertTrue(rack.getReservedTotal() == 0, "失败尝试不产生份额");
             helper.succeed();

@@ -16,7 +16,6 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.Signal;
-import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 
@@ -51,6 +50,16 @@ import java.util.function.Predicate;
  */
 @Getter
 public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHost {
+
+    /**
+     * 座位 → 武器控制器的弹种切换线。<br>
+     * 切换是一条一次性指令，走这条专用频道而不借用开火频道的槽位：一条频道对每个发送者只有一格，
+     * 借走那一格会把同一发送者仍按着的扳机从"按下中"变成别的东西，开火要等下一次按键边沿才恢复。
+     */
+    public static final String AMMO_SWITCH_CHANNEL = "ammo_switch";
+
+    /** 弹种切换线的读取列表。只有一条，三键排序在这里退化成"取唯一那个有效槽位"。 */
+    private static final List<String> AMMO_SWITCH_CHANNELS = List.of(AMMO_SWITCH_CHANNEL);
 
     public final WeaponControllerSubsystemAttr attr;
 
@@ -113,16 +122,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 调试自动开火：内部循环计数器。
      */
     private int debugFireTickCounter = 0;
-
-    /**
-     * 弹药切换信号（来自座椅透传的按键信号）
-     */
-    private volatile boolean ammoSwitchPressed = false;
-
-    /**
-     * 弹药切换防抖计数器
-     */
-    private int ammoSwitchCooldown = 0;
 
     /**
      * 轮射模式下当前发射的索引
@@ -272,15 +271,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         // 排在 readInputSignals 之后：它要覆盖通用扫描的结论（标准化指令压过通道扫描）。
         // 读信号与用信号分离——这里定下 firing，本 tick 的物理步进再拿它下开火指令。
         updateRegularInputs();
-
-        // 弹药切换：readInputSignals 刚写下 ammoSwitchPressed，这里同 tick 消费，
-        // 使路由与 HUD 立刻看到新弹链
-        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
-            cycleSelectedBelt(false);
-            ammoSwitchPressed = false;
-            ammoSwitchCooldown = 10; // 10 tick 防抖
-        }
-        if (ammoSwitchCooldown > 0) ammoSwitchCooldown--;
 
         // 弹药路由：与装弹机的装填计时、发射器的取弹同在主线程
         routeAmmoToLaunchers();
@@ -1019,12 +1009,11 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     // ==================== 输入信号 ====================
 
     /**
-     * 主线程读取开火、弹药切换和调试开关；物理线程直接读取频道中的完整瞄准目标
+     * 主线程读取开火与调试开关；物理线程直接读取频道中的完整瞄准目标
      */
     private void readInputSignals() {
         // 读取开火指令：频道里只有表达"开火"的信号才算开火，判据见 isFireSignal。
-        // 弹种切换指令走的是同一批频道（座位的开火目标频道就是 crew_<岗位>_fire），它不算开火，
-        // 因此不能按"频道里有东西"来判，否则按一次切换弹种键就会打出一发。
+        // 同一个槽位还可能是松开时写下的 EmptySignal、按键绑定写的裸值，按"频道里有东西"判会一直开火。
         // 归属随开火指令一起取：谁能开火，谁就是这一发的 owner。
         this.firing = false;
         this.operator = null;
@@ -1033,13 +1022,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (fireSlot != null) {
             this.firing = true;
             this.operator = operatorOf(fireSlot.getKey());
-        }
-
-        // 读取弹药切换指令：轮询 ammo_switch 频道
-        this.ammoSwitchPressed = false;
-        SignalChannel ammoSwitchChannel = getSignalChannel("ammo_switch");
-        if (!ammoSwitchChannel.isEmpty() && !(ammoSwitchChannel.getFirstSignal() instanceof EmptySignal)) {
-            this.ammoSwitchPressed = true;
         }
 
         // 调试自动开火：周期性发射，由 debugTriggerInterval / debugFireDuration 控制
@@ -1074,10 +1056,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 信号是否表达"开火"。<br>
-     * 开火频道与弹种切换指令共用线路（座位的开火目标频道就是 {@code crew_<岗位>_fire}），
-     * 所以判定必须看信号语义，不能只看"频道里有东西"：
+     * 开火频道按值的语义判定，不能只看"频道里有东西"：
      * <ul>
-     *   <li>{@link RegularInputSignal}：主武器、副武器开火指令算开火；弹种切换等其余按键语义不算</li>
+     *   <li>{@link RegularInputSignal}：主武器、副武器开火指令算开火；其余按键语义不算</li>
      *   <li>Boolean：仅 {@code true} 算开火</li>
      *   <li>数值（ControlBinding 的 HOLD/PRESS/TOGGLE 写入）：仅非 0 算开火，
      *       因此开关型绑定拨到关（0）不会残留开火</li>
@@ -1098,7 +1079,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 从 fireInputs 频道读取标准化的 RegularInputSignal 武器控制指令。<br>
+     * 读取标准化的 RegularInputSignal 武器控制指令：hold 语义的开火取自 fireInputs 频道，
+     * 弹种切换取自 {@link #AMMO_SWITCH_CHANNEL} 线（见 {@link #consumeAmmoSwitch()}）。<br>
      * 在 {@link #readInputSignals()} 之后由 {@link #onTick()} 调用，与它同在主线程：
      * 两者都写 {@link #firing}，同线程才谈得上确定的覆盖顺序（标准化指令压过通道扫描）。
      * 指令由玩家按键（边沿触发，按下/松开各一包）或 AI 直发，速率远低于 tick，无需按物理步进频率轮询。
@@ -1106,38 +1088,47 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * AI 实体可通过发送 RegularInputSignal 到此子系统直接控制武器，无需经过控制组绑定。
      */
     private void updateRegularInputs() {
+        consumeAmmoSwitch();
+
         // 与开火扫描同一把尺子：标准化指令也只认三键排序后的那一条，
         // 否则低档频道里的一条松开指令会盖掉越级频道里的按下。
         Map.Entry<ISignalSender, Object> slot = selectInputSlot(attr.staticAttribute.getFireInputs(),
                 WeaponControllerSubsystem::isRegularCommand);
         if (slot == null) return;
         RegularInputSignal activeRegular = (RegularInputSignal) slot.getValue();
-        int tickCount = activeRegular.getInputTickCount();
         switch (activeRegular.getInputType()) {
             case MAIN_FIRE:
             case SECONDARY_FIRE:
                 // hold 语义：tickCount==0 表示按下中，非0表示松开
-                this.firing = tickCount == 0;
+                this.firing = activeRegular.getInputTickCount() == 0;
                 // 归属只在"按下中"成立：松开即释放开火权，也就没有主人可记
                 this.operator = this.firing ? operatorOf(slot.getKey()) : null;
-                break;
-            case NEXT_AMMO_TYPE:
-                // 一次性事件：仅 tickCount==0（按下瞬间）触发
-                if (tickCount == 0) {
-                    cycleSelectedBelt(false);
-                    slot.setValue(EmptySignal.INSTANCE);
-                }
-                break;
-            case PREV_AMMO_TYPE:
-                // 循环反向切换弹链
-                if (tickCount == 0) {
-                    cycleSelectedBelt(true);
-                    slot.setValue(EmptySignal.INSTANCE);
-                }
                 break;
             default:
                 break;
         }
+    }
+
+    /**
+     * 消费弹种切换指令：{@link #AMMO_SWITCH_CHANNEL} 上的一条按下就是一次切换。<br>
+     * 处理完把这个槽位清掉，下一次按下才是一份新指令——它是一条一次性事件，不是按住就重复的开关。
+     * 它不占用开火频道的槽位，因此按住扳机时切弹种不会把这一路开火指令顶掉。
+     */
+    private void consumeAmmoSwitch() {
+        Map.Entry<ISignalSender, Object> slot = selectInputSlot(AMMO_SWITCH_CHANNELS,
+                WeaponControllerSubsystem::isBeltSwitchCommand);
+        if (slot == null) return;
+        RegularInputSignal command = (RegularInputSignal) slot.getValue();
+        if (command.getInputTickCount() != 0) return;
+        cycleSelectedBelt(command.getInputType() == KeyInputMapping.PREV_AMMO_TYPE);
+        slot.setValue(EmptySignal.INSTANCE);
+    }
+
+    /** 弹种切换指令：两个方向都算，方向由信号自身携带。 */
+    private static boolean isBeltSwitchCommand(Object value) {
+        return value instanceof RegularInputSignal regular
+                && (regular.getInputType() == KeyInputMapping.NEXT_AMMO_TYPE
+                || regular.getInputType() == KeyInputMapping.PREV_AMMO_TYPE);
     }
 
     /**
@@ -1232,7 +1223,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         List<String> channels = new ArrayList<>(staticAttr.getAimInputs().size() + staticAttr.getFireInputs().size() + 1);
         channels.addAll(staticAttr.getAimInputs());
         channels.addAll(staticAttr.getFireInputs());
-        channels.add("ammo_switch");
+        channels.add(AMMO_SWITCH_CHANNEL);
         return channels;
     }
 

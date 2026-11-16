@@ -79,7 +79,11 @@ public class MMPayloadRegistry {
         // 18.0.0 对应删掉两个没有消费方的同步字段：装弹机的槽位拥有者与弹药架的已预留总量。两者都只由服务端
         // 写入、客户端从未读取，客户端的对应表由本端作业收发维护；序列化器 reload_job_key 随之移除，
         // 访问器编号整体前移。
-        final PayloadRegistrar sync = event.registrar("sync:18.0.0");
+        // 19.0.0 对应作业身份改为结构三元组、作业编号字段删除：发射器不再下发 NEXT_JOB_ID，两端各自按
+        // (宿主 SubPart ID, 发射器序号, 运输者, 提供者) 算出同一个键；作业的两支样本与结束结果里的编号换成
+        // 本管交付轮次（ReloadJobSpec.round / ReloadJobProgress.round / ReloadJobResults.Entry.round），
+        // 线宽不变，类内访问器少一个。
+        final PayloadRegistrar sync = event.registrar("sync:19.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

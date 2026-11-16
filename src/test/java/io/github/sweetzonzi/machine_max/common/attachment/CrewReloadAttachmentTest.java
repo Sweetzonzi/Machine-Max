@@ -22,12 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * {@link CrewReloadAttachment} 的两条契约：个人倍率被规整到可用区间，认领一次只服务一条作业。<br>
  * 认领带自检——被认领的消费者收尾或换了作业时，这条认领按不存在处理，因此漏掉一次释放不会把一个人
- * 永久锁在旧作业上；释放与查询都按作业身份，旧作业的回调摘不掉新作业的认领。
+ * 永久锁在旧作业上；释放与查询都按作业身份，另一条路上的释放摘不掉这条路上的认领。
  */
 class CrewReloadAttachmentTest {
 
-    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, 7);
-    private static final ReloadJobKey OTHER_KEY = new ReloadJobKey(3, 2, 8);
+    private static final AmmoRef PROVIDER = new AmmoRef(3, 1);
+    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, AmmoRef.NONE, PROVIDER);
+    /** 同一根管、另一台架：结构身份不同的一条路 */
+    private static final ReloadJobKey OTHER_KEY = new ReloadJobKey(3, 2, AmmoRef.NONE, new AmmoRef(3, 2));
     private static final AmmoBelt SPEC = new AmmoBelt(null, "test_belt",
             List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("machine_max:test_round"), 5)), 5, 5, null);
 
@@ -84,8 +86,7 @@ class CrewReloadAttachmentTest {
 
     /** 只满足认领自检所需的消费者：当前作业可写，其余入口不需要。 */
     private static final class FakeConsumer implements IAmmoConsumer {
-        ReloadJob job = new ReloadJob(KEY, AmmoRef.NONE, AmmoRef.NONE,
-                SPEC, 5, 100);
+        ReloadJob job = new ReloadJob(KEY, 1, SPEC, 5, 100);
 
         @Override
         public AmmoPath getCurrentRoute() {

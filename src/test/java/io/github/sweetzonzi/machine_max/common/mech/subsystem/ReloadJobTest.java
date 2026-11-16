@@ -20,8 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 因此客户端跑在前面时不会被一条更旧的基线拉回；而阶段切换与换人重定时换了坐标系，
  * 由 {@link ReloadJob#alignRemote(ReloadJob.Stage, int, int)} 整体重设。
  * <p>
- * 受理时定下的四项分配（身份、交付目标、实际来源、冻结规格与份额）在作业存续期间不变：机构占用与
- * 架预留按它们匹配，换架或换规格要作废旧作业并重新申请。
+ * 受理时定下的三项分配（身份即"哪根管 + 哪条路"、冻结规格与份额）在作业存续期间不变：机构占用与
+ * 架预留按身份匹配，换架或换规格要作废旧作业并重新申请。轮次不是身份的一部分——同一根管的同一条路
+ * 连续送很多轮，账本键不变。
  * <p>
  * 两个阶段的契约：人工段的时长已经把岗位倍率与个人倍率折进去，机械段不乘人员倍率；换人只改剩余量，
  * 完成比例不倒退（{@link ReloadJob#retimeHuman(double)}）。
@@ -32,10 +33,10 @@ class ReloadJobTest {
     private static final AmmoRef ORIGIN = new AmmoRef(5, 1);
     private static final AmmoBelt SPEC = new AmmoBelt(null, "test_belt",
             List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("machine_max:test_round"), 5)), 5, 5, null);
-    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, 7);
+    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, TARGET, ORIGIN);
 
     private static ReloadJob job(int totalTicks) {
-        return new ReloadJob(KEY, TARGET, ORIGIN, SPEC, 5, totalTicks);
+        return new ReloadJob(KEY, 7, SPEC, 5, totalTicks);
     }
 
     @Test
@@ -138,7 +139,7 @@ class ReloadJobTest {
     void allocationIsKeptAsGivenAndNeverRewrittenByAdvance() {
         ReloadJob job = job(5);
         assertEquals(KEY, job.key());
-        assertEquals(7, job.jobId());
+        assertEquals(7, job.round());
         assertEquals(TARGET, job.transporter());
         assertEquals(ORIGIN, job.provider());
         assertEquals(5, job.reservedCount());
@@ -152,15 +153,40 @@ class ReloadJobTest {
     }
 
     @Test
+    void consecutiveRoundsShareTheLedgerKeyAndDifferOnlyByRound() {
+        ReloadJob first = new ReloadJob(KEY, 7, SPEC, 5, 9);
+        ReloadJob second = new ReloadJob(KEY, 8, SPEC, 5, 9);
+        assertEquals(first.key(), second.key(), "同一根管的同一条路上，下一轮的账本键必须不变");
+        assertEquals(7, first.round());
+        assertEquals(8, second.round());
+    }
+
+    @Test
+    void adoptingTheAuthorityRoundChangesNeitherKeyNorProgress() {
+        ReloadJob job = new ReloadJob(KEY, 7, SPEC, 5, 9);
+        job.advance(4);
+
+        job.adoptRound(12);
+
+        assertEquals(12, job.round(), "轮次按权威改，账本键不动");
+        assertEquals(KEY, job.key());
+        assertEquals(4, job.elapsedTicks(), "改轮次不是一次进度重设");
+        assertEquals(5, job.reservedCount());
+
+        job.adoptRound(0);
+        assertEquals(12, job.round(), "非正轮次不是一次改写");
+    }
+
+    @Test
     void negativeReservationIsClampedToZero() {
-        ReloadJob job = new ReloadJob(KEY, TARGET, ORIGIN, SPEC, -2, 5);
+        ReloadJob job = new ReloadJob(KEY, 7, SPEC, -2, 5);
         assertEquals(0, job.reservedCount());
     }
 
     // ==================== 阶段 ====================
 
     private static ReloadJob humanJob(int totalTicks, double rate) {
-        return new ReloadJob(KEY, TARGET, ORIGIN, SPEC, 5, ReloadJob.Stage.HUMAN, totalTicks, rate);
+        return new ReloadJob(KEY, 7, SPEC, 5, ReloadJob.Stage.HUMAN, totalTicks, rate);
     }
 
     @Test

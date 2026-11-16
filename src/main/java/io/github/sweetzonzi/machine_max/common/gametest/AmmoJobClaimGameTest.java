@@ -32,12 +32,12 @@ import java.util.Map;
 /**
  * 一条装填作业的受理与占用归属，用 T90A 炮塔上真实相连的一组零件固定。
  *
- * <p>契约有五条：① 有现货时受理并建作业，作业带服务端分配的编号、来源与份额，进度记在管上；
+ * <p>契约有五条：① 有现货时受理并建作业，作业带本管的交付轮次、来源与份额，进度记在管上；
  * ② 受理同时占用来源架的一份弹药——可分配库存减少而实际库存不动；③ 独占机构受理后对别的管表现为
- * 已占用，但不算自己；④ 释放与预留撤销都按身份匹配——旧编号的释放不能摘掉同一条输弹线上的新作业；
+ * 已占用，但不算自己；④ 释放与预留撤销都按身份匹配——另一条路的释放不能摘掉这条路上的作业；
  * ⑤ 没有可分配的库存时不建作业，也就不会占住机器；预留被撤销时作业按失效收尾。</p>
  *
- * <p>收尾还发布一对结束结果（原 {@code jobId} ＋ 已交付／未交付），服务端的成功交付与预留撤销各走一条，
+ * <p>收尾还发布一条结束结果（原轮次 ＋ 已交付／未交付），服务端的成功交付与预留撤销各走一条，
  * 客户端据它结束身份匹配的本地作业——两条都在 {@code deliveredJobFillsTheBreechAndPublishesItsResult}
  * 与上面这条用例里固定。</p>
  *
@@ -101,7 +101,7 @@ public final class AmmoJobClaimGameTest {
                     "受理机关会在发现结果里，tickReload 不得因此丢掉指认");
             ReloadJob job = launcher.getReloadJob();
             helper.assertTrue(job != null, "有现货时应受理一份作业并开始推进");
-            helper.assertTrue(job.jobId() > 0, "受理的作业必须带服务端分配的编号");
+            helper.assertTrue(job.round() > 0, "受理的作业必须带本管的交付轮次");
             helper.assertTrue(job.elapsedTicks() == 1, "受理后的第一个 tick 由机构放行推进一次");
             helper.assertTrue(!autoloader.isClaimedByOther(launcher), "本管自己的占用不算别人的");
             helper.assertTrue(autoloader.isClaimedByOther(otherLauncher),
@@ -125,9 +125,9 @@ public final class AmmoJobClaimGameTest {
             helper.assertTrue(rack.holdsReservation(job.key(), job.reservedCount()),
                     "受理后提供者必须承认这份预留");
 
-            // 释放与撤销按身份匹配：旧编号不能摘掉同一条输弹线上的新作业
+            // 释放与撤销按身份匹配：另一条路的释放不能摘掉这条路的占用
             ReloadJobKey staleKey = new ReloadJobKey(job.key().subPartId(), job.key().launcherIndex(),
-                    job.jobId() + 1);
+                    new AmmoRef(9999, 9999), job.key().provider());
             autoloader.releaseClaim(launcher, staleKey);
             helper.assertTrue(autoloader.isClaimedByOther(otherLauncher),
                     "身份不匹配的释放不得摘掉占用");
@@ -142,7 +142,7 @@ public final class AmmoJobClaimGameTest {
                     "预留撤销后提供者不得再承认这份预留");
             launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "承诺失效时必须收尾作业");
-            helper.assertTrue(launcher.lastEndedJobId() == job.jobId(),
+            helper.assertTrue(launcher.lastEndedRound() == job.round(),
                     "撤销导致的收尾必须带原作业编号");
             helper.assertTrue(!launcher.lastEndWasDelivered(), "预留被撤销时结束结果必须是未交付");
             helper.assertTrue(rack.getReservedTotal() == 0, "收尾后不得留下预留");
@@ -151,7 +151,8 @@ public final class AmmoJobClaimGameTest {
             // 没有可分配的库存时不建作业、不占槽：等待供弹的请求不进占用表。
             // 清空库存按新入口重建夹具：一次预留只发一份，反复预留并兑现在直到没有现货
             ReloadJobKey scratch = new ReloadJobKey(launcher.getSubPart().getId(),
-                    launcher.getSubPart().subsystemIndex(launcher), 9999);
+                    launcher.getSubPart().subsystemIndex(launcher),
+                    new AmmoRef(9999, 9999), new AmmoRef(9999, 9999));
             while (rack.hasAmmo()) {
                 helper.assertTrue(rack.reserve(scratch) != null, "架上还有现货时应能预留在手");
                 helper.assertTrue(rack.deliverReserved(scratch) != null, "兑现预留应扣掉库存");
@@ -202,7 +203,7 @@ public final class AmmoJobClaimGameTest {
             launcher.onPostTick();
             ReloadJobProgress sample = launcher.getReloadProgressSample().orElse(null);
             helper.assertTrue(sample != null, "有作业时必须下发动态样本");
-            helper.assertTrue(sample.jobId() == job.jobId(), "样本的编号必须是当前作业的编号");
+            helper.assertTrue(sample.round() == job.round(), "样本的轮次必须是当前作业的轮次");
             helper.assertTrue(sample.elapsed() == job.elapsedTicks(),
                     "基线必须是本 tick 结束时的进度，客户端下一个业务 tick 从它起算");
             helper.assertTrue(sample.elapsed() == 1, "受理那一 tick 的末尾已经推进过一次");
@@ -222,10 +223,10 @@ public final class AmmoJobClaimGameTest {
     }
 
     /**
-     * 走完一条作业：交付成功的结论、原编号与落到本管的内容。
+     * 走完一条作业：交付成功的结论、原轮次与落到本管的内容。
      *
      * <p>契约：① 机械段走完即兑现预留——实际库存按预留份额扣一次，可分配数量与已预留总量都归零；
-     * ② 收尾发布带原 {@code jobId} 的已交付结论，客户端据它结束本地作业；③ 交付内容写进本管的膛室
+     * ② 收尾发布带原轮次的已交付结论，客户端据它结束本地作业；③ 交付内容写进本管的膛室
      * （125mm 是单发装填），机器随之重新可用。这里只跑发射器自己的 tick：机构与架不进 tick，
      * 因此这 100 多个 tick 里不会有再生掺进来。</p>
      */
@@ -254,8 +255,8 @@ public final class AmmoJobClaimGameTest {
 
             for (int i = 0; i < 200 && launcher.getReloadJob() != null; i++) launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "机械段走完后作业必须收尾");
-            helper.assertTrue(launcher.lastEndedJobId() == job.jobId(),
-                    "结束结果必须带原作业编号，客户端才能认出是哪一条作业结束了");
+            helper.assertTrue(launcher.lastEndedRound() == job.round(),
+                    "结束结果必须带原轮次，客户端才能认出是哪一轮结束了");
             helper.assertTrue(launcher.lastEndWasDelivered(), "兑现出一份时结束结果必须是已交付");
             helper.assertTrue(launcher.getChamberedType() != null,
                     "单发装填的管交付后膛内必须有一发");
@@ -277,7 +278,7 @@ public final class AmmoJobClaimGameTest {
      * 这根管的发现结果里没有自动装弹机，却有自己的弹药架；② 受理的是人工段：标准人力的时长按岗位倍率与
      * 个人倍率折算，机械段尚未开始；③ 人工段走完后才进入机械段，库存持有者没有机械动作，因此紧接着的
      * 那一 tick 就兑现；④ 开工只取预留、不扣实际库存，交付时按预留份额扣一次，膛内有一发，结束结果带原
-     * 编号与已交付结论。</p>
+     * 轮次与已交付结论。</p>
      *
      * <p>这里用 M1A2 SEP 炮塔的 120mm 炮：它的自动装弹机已从内容里移除，装填手座位上放一个假乘员即可推进
      * 人工段。人工段只读实际乘员的引用与人工装填能力，因此不必走完整的登乘流程。</p>
@@ -326,7 +327,7 @@ public final class AmmoJobClaimGameTest {
 
             for (int i = 0; i < 300 && launcher.getReloadJob() != null; i++) launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "走完后作业必须收尾");
-            helper.assertTrue(launcher.lastEndedJobId() == job.jobId(), "结束结果必须带原作业编号");
+            helper.assertTrue(launcher.lastEndedRound() == job.round(), "结束结果必须带原作业编号");
             helper.assertTrue(launcher.lastEndWasDelivered(), "兑现出一份时结束结果必须是已交付");
             helper.assertTrue(launcher.getChamberedType() != null, "单发装填的管交付后膛内必须有一发");
             helper.assertTrue(rack.getAmmoCount() == stock - job.reservedCount(),

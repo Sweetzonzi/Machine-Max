@@ -10,9 +10,14 @@ import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
  * （{@link IAmmoTransporter#getAdvanceTicks(IAmmoConsumer)}），不另持一份针对同次操作的计时。
  * 一台管同一时刻只有一个作业，因此进度、总时长与这条路上的一对身份各是一个值。
  * <p>
- * <b>身份：</b>{@link #key()} 由持有它的 Launcher 在受理时分配，{@code jobId} 自增。运输者的机械槽与提供者的
- * 弹药预留都以这个身份为键：释放、交付与结束只对身份完全匹配的作业生效，因此旧作业的
- * 回调不会摘掉同一条输弹线上的新作业。作业不跨存档延续，读档后重新受理会拿到新的编号。
+ * <b>身份：</b>{@link #key()} 是"哪根管 + 哪条路"，由路由给出的两个引用拼成（见 {@link ReloadJobKey}），
+ * 不靠分配。运输者的机械槽与提供者的弹药预留都以这个身份为键：释放、交付与结束只对身份完全匹配的作业
+ * 生效。作业不跨存档延续，读档后重新受理，身份由当时的路重新给出。
+ * <p>
+ * <b>轮次：</b>{@link #round()} 是"本管第几次受理"，受理时取本管已受理轮次加一，成功后把计数推到它。它不参与
+ * 身份，只让两支同步样本与结束结果能判断"这一笔说的是不是本端手上这一轮"——同一根管的同一条路会连续送
+ * 很多轮，单看身份分不出先后。计数按受理推进而不是按交付推进：中止的作业同样占掉一个轮次，否则它那条
+ * 终态收据会与紧接着受理的新作业撞号。
  * <p>
  * <b>分配在受理时冻结：</b>{@link #transporter()}（本段的执行者）、{@link #provider()}（这批弹出自哪台架）、
  * {@link #spec()}（交付规格）与 {@link #reservedCount()}（整次作业的弹药预留量）都在受理那一刻确定。
@@ -46,14 +51,11 @@ public final class ReloadJob {
         MACHINE
     }
 
-    /** 作业身份：宿主 SubPart ID + 发射器序号 + 编号 */
+    /** 作业身份：宿主 SubPart ID + 发射器序号 + 运输者 + 提供者 */
     private final ReloadJobKey key;
 
-    /** 本次运输的执行者；{@link AmmoRef#NONE} = 人力运输者（本管自己的装填手） */
-    private final AmmoRef transporter;
-
-    /** 本次交付的弹药来源。机构路径是装弹机的上游架，人力直取路径是本管自己发现到的架 */
-    private final AmmoRef provider;
+    /** 本管第几次受理；样本与收据的先后标记，不参与身份 */
+    private int round;
 
     /** 本次交付的冻结规格：内容、长度与回充配置在受理时定下，交付实例只可能比它少发 */
     private final AmmoBelt spec;
@@ -90,20 +92,18 @@ public final class ReloadJob {
     private double humanRate;
 
     /**
-     * @param key             作业身份
-     * @param transporter     本次运输的运输者身份
-     * @param provider        本次交付的提供者身份
+     * @param key             作业身份（含运输者与提供者两个引用）
+     * @param round           本管第几次受理
      * @param spec            冻结规格
      * @param reservedCount   预留份额
      * @param stage           起始阶段
      * @param totalTicks      起始阶段的实际时长（tick，0 表示没有可等的动作，作业立即完成）
      * @param humanRate       人工段的时间倍率（机械段传 1）
      */
-    public ReloadJob(ReloadJobKey key, AmmoRef transporter, AmmoRef provider,
+    public ReloadJob(ReloadJobKey key, int round,
                      AmmoBelt spec, int reservedCount, Stage stage, int totalTicks, double humanRate) {
         this.key = key;
-        this.transporter = transporter;
-        this.provider = provider;
+        this.round = Math.max(0, round);
         this.spec = spec;
         this.reservedCount = Math.max(0, reservedCount);
         this.stage = stage;
@@ -112,9 +112,8 @@ public final class ReloadJob {
     }
 
     /** 只有机械段的作业：从一开始就处于机械段。 */
-    public ReloadJob(ReloadJobKey key, AmmoRef transporter, AmmoRef provider,
-                     AmmoBelt spec, int reservedCount, int totalTicks) {
-        this(key, transporter, provider, spec, reservedCount, Stage.MACHINE, totalTicks, 1.0);
+    public ReloadJob(ReloadJobKey key, int round, AmmoBelt spec, int reservedCount, int totalTicks) {
+        this(key, round, spec, reservedCount, Stage.MACHINE, totalTicks, 1.0);
     }
 
     /** 作业身份；机构占用与架预留都以它为准 */
@@ -122,19 +121,30 @@ public final class ReloadJob {
         return key;
     }
 
-    /** 作业编号，是 {@link #key()} 的第三项 */
-    public int jobId() {
-        return key.jobId();
+    /** 本管第几次受理；同一身份上的相邻作业靠它分先后 */
+    public int round() {
+        return round;
+    }
+
+    /**
+     * 改成本管另一次受理的轮次。<br>
+     * 只由接收者在改认权威作业时调用：两端的受理计数可能短暂差一拍，权威把同一条作业记成哪个轮次就以哪个
+     * 为准。轮次不是身份，因此这一步不碰机械槽与预留，只让两支样本与终态收据重新对上。
+     *
+     * @param newRound 权威这一条作业的轮次
+     */
+    public void adoptRound(int newRound) {
+        if (newRound > 0) this.round = newRound;
     }
 
     /** 本次运输的运输者身份；{@link AmmoRef#NONE} = 人力运输者 */
     public AmmoRef transporter() {
-        return transporter;
+        return key.transporter();
     }
 
     /** 本次交付的提供者身份；{@link AmmoRef#NONE} 只应出现在没有作业的情况下，作业里恒有提供者 */
     public AmmoRef provider() {
-        return provider;
+        return key.provider();
     }
 
     /** 本次交付的冻结规格 */
@@ -148,20 +158,19 @@ public final class ReloadJob {
     }
 
     /**
-     * 本作业的冻结分配是否与一份权威样本一致：编号、运输者、提供者、冻结规格与预留份额。
+     * 本作业的冻结分配是否与一份权威样本一致：运输者、提供者、冻结规格与预留份额。
      *
-     * <p>用途是区分"同一条作业又收到一次更新"与"两条不同的作业碰巧用了同一个编号"。后者必须按分叉处理：
-     * 沿用本地进度会让本端按另一份规格继续推进，交付内容也与权威不同。规格比较走
+     * <p>用途是区分"同一条作业又收到一次更新"与"同一个身份上的另一份分配"。轮次由调用方另判：同一根管的
+     * 同一条路会连续送很多轮，轮次不同即是另一轮，而分配仍可能完全一致。规格比较走
      * {@link AmmoBelt#sameDeliverySpec(AmmoBelt)}，比到回充配置本身；进度、本阶段时长与阶段不参与——
      * 它们在一条作业的生命周期里本来就会变。</p>
      *
      * @param snapshot 权威样本
-     * @return true 表示这是同一条作业的离散更新
+     * @return true 表示冻结分配一致
      */
     public boolean allocationMatches(ReloadJobSpec snapshot) {
-        return jobId() == snapshot.jobId()
-                && transporter.equals(snapshot.transporter())
-                && provider.equals(snapshot.provider())
+        return key.transporter().equals(snapshot.transporter())
+                && key.provider().equals(snapshot.provider())
                 && reservedCount == snapshot.reserved()
                 && spec.sameDeliverySpec(snapshot.spec());
     }

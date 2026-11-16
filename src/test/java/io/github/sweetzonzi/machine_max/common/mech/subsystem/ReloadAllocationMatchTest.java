@@ -26,7 +26,8 @@ class ReloadAllocationMatchTest {
     private static final ResourceLocation CONTAINER = ResourceLocation.parse("machine_max:test_rack");
     private static final AmmoRef TRANSPORTER = new AmmoRef(4, 2);
     private static final AmmoRef PROVIDER = new AmmoRef(7, 1);
-    private static final ReloadJobKey KEY = new ReloadJobKey(12, 0, 42);
+    /** 本管第几次交付：同一根管的同一条路靠它分出相邻两轮 */
+    private static final int ROUND = 42;
 
     private static AmmoBelt belt(ResourceLocation containerId, String label, int length,
                                  int remaining, AmmoBelt.Recharge recharge) {
@@ -39,11 +40,11 @@ class ReloadAllocationMatchTest {
     }
 
     private static ReloadJob job(AmmoBelt spec, int reserved, AmmoRef provider) {
-        return new ReloadJob(KEY, TRANSPORTER, provider, spec, reserved, 60);
+        return new ReloadJob(new ReloadJobKey(12, 0, TRANSPORTER, provider), ROUND, spec, reserved, 60);
     }
 
     private static ReloadJobSpec snapshot(AmmoBelt spec, int reserved, AmmoRef provider) {
-        return new ReloadJobSpec(KEY.jobId(), TRANSPORTER, provider, spec, reserved);
+        return new ReloadJobSpec(ROUND, TRANSPORTER, provider, spec, reserved);
     }
 
     // ==================== 交付规格同一性 ====================
@@ -100,7 +101,7 @@ class ReloadAllocationMatchTest {
 
     // ==================== 作业冻结分配的同一性 ====================
 
-    /** 编号、运输者、提供者、预留份额与规格都一致时，这是同一条作业的离散更新。 */
+    /** 轮次、运输者、提供者、预留份额与规格都一致时，这是同一次交付的离散更新。 */
     @Test
     void matchingSnapshotKeepsTheLocalJob() {
         ReloadJob local = job(belt(), 6, PROVIDER);
@@ -109,20 +110,20 @@ class ReloadAllocationMatchTest {
                 "同一条作业的进度更新不应判成分叉");
     }
 
-    /** 编号相同但分配不同，说明是另一条作业碰巧用了同一个编号。 */
+    /** 同一轮但分配不同，说明本端那条不是权威这一条。 */
     @Test
-    void sameJobIdWithDifferentAllocationIsADivergence() {
+    void sameRoundWithDifferentAllocationIsADivergence() {
         ReloadJob local = job(belt(), 6, PROVIDER);
 
-        assertFalse(local.allocationMatches(new ReloadJobSpec(KEY.jobId(), TRANSPORTER, new AmmoRef(7, 2), belt(), 6)), "提供者不同即分叉");
-        assertFalse(local.allocationMatches(new ReloadJobSpec(KEY.jobId(), new AmmoRef(4, 3), PROVIDER, belt(), 6)), "运输者不同即分叉");
+        assertFalse(local.allocationMatches(new ReloadJobSpec(ROUND, TRANSPORTER, new AmmoRef(7, 2), belt(), 6)), "提供者不同即分叉");
+        assertFalse(local.allocationMatches(new ReloadJobSpec(ROUND, new AmmoRef(4, 3), PROVIDER, belt(), 6)), "运输者不同即分叉");
         assertFalse(local.allocationMatches(snapshot(belt(), 7, PROVIDER)), "预留份额不同即分叉");
-        assertFalse(local.allocationMatches(new ReloadJobSpec(KEY.jobId() + 1, TRANSPORTER, PROVIDER, belt(), 6)), "作业编号不同即不同作业");
+        assertTrue(local.allocationMatches(new ReloadJobSpec(ROUND + 1, TRANSPORTER, PROVIDER, belt(), 6)), "轮次不参与分配判据：同一根管的同一条路上另一轮仍是同一份分配");
     }
 
     /** 规格里的回充配置不同也必须是分叉：沿用本地进度会让本端按另一份规格交付。 */
     @Test
-    void sameJobIdWithDifferentRechargeSpecIsADivergence() {
+    void sameRoundWithDifferentRechargeSpecIsADivergence() {
         ReloadJob local = job(belt(CONTAINER, "test belt", 8, 8, new AmmoBelt.Recharge(30f, 0f, 0f)), 6, PROVIDER);
 
         assertFalse(local.allocationMatches(snapshot(
@@ -136,7 +137,7 @@ class ReloadAllocationMatchTest {
     @Test
     void stageAndProgressLiveInTheProgressSample() {
         ReloadJob local = job(belt(), 6, PROVIDER);
-        ReloadJobProgress humanStageAtZero = new ReloadJobProgress(KEY.jobId(), 0, 120, ReloadJob.Stage.HUMAN);
+        ReloadJobProgress humanStageAtZero = new ReloadJobProgress(ROUND, 0, 120, ReloadJob.Stage.HUMAN);
 
         assertTrue(local.allocationMatches(snapshot(belt(), 6, PROVIDER)), "换段与进度基线变化不是分叉");
         assertNotEquals(local.stage(), humanStageAtZero.stage(), "夹具应确实换了阶段");

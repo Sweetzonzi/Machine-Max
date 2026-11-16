@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
@@ -20,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSu
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.VehicleStructureChangeEvent;
+import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -29,6 +31,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +135,57 @@ public final class SignalPipelineGameTest {
     private static Object delivered(ISignalReceiver receiver, String channel, ISignalSender sender) {
         SignalChannel slot = receiver.getSignalInputChannels().get(channel);
         return slot == null ? null : slot.get(sender);
+    }
+
+    /**
+     * 切弹种不得顶掉仍按着的扳机：切换指令走控制器的专用线，一次按下只切一次。<br>
+     * 开火频道对每个发送者只有一格（{@link SignalChannel}），切换指令若借用那一格，按住扳机时按一次
+     * 切换键就会把自己那条开火指令变成别的东西，开火要等下一次按键边沿才恢复。
+     */
+    @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
+    public static void beltSwitchRidesItsOwnChannelAndLeavesTheTriggerHeld(GameTestHelper helper) {
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("t90a:t90a_turret"));
+        RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            var turret = part.subParts.get("sub_part.t90a.turret");
+            var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
+            Set<String> fireChannels = seat.getControlGroupSet().getMergedMainWeaponTargets().keySet();
+            helper.assertTrue(!fireChannels.isEmpty(), "预设控制组给这个座位配了主武器频道");
+            helper.assertTrue(seat.getActiveMainWeaponControllers().contains(weapon),
+                    "主武器频道指向的控制器由座位发现出来，切换指令按它投递");
+
+            seat.setMainWeaponInputSignal(KeyInputMapping.MAIN_FIRE, 0);
+            Map<String, Object> held = new LinkedHashMap<>();
+            for (String channel : fireChannels) {
+                Object command = delivered(weapon, channel, seat);
+                helper.assertTrue(command instanceof RegularInputSignal regular
+                                && regular.getInputType() == KeyInputMapping.MAIN_FIRE
+                                && regular.getInputTickCount() == 0,
+                        "按下扳机后这条主武器频道留着一条开火指令: " + channel);
+                held.put(channel, command);
+            }
+
+            seat.setMainWeaponInputSignal(KeyInputMapping.NEXT_AMMO_TYPE, 0);
+            for (String channel : fireChannels) {
+                helper.assertTrue(delivered(weapon, channel, seat) == held.get(channel),
+                        "切弹种不得改写仍按着的那条开火指令: " + channel);
+            }
+            helper.assertTrue(delivered(weapon, WeaponControllerSubsystem.AMMO_SWITCH_CHANNEL, seat)
+                            instanceof RegularInputSignal switched
+                            && switched.getInputType() == KeyInputMapping.NEXT_AMMO_TYPE,
+                    "切换指令走控制器的专用线");
+
+            weapon.onTick();
+            helper.assertTrue(weapon.isFiring(), "切一次弹种之后扳机仍在按下中");
+            helper.assertTrue(delivered(weapon, WeaponControllerSubsystem.AMMO_SWITCH_CHANNEL, seat)
+                            == EmptySignal.INSTANCE,
+                    "切换指令被消费掉，同一次按下不会再切一次");
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
     }
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
