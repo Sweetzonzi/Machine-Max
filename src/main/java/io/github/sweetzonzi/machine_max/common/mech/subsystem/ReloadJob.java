@@ -10,8 +10,8 @@ import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
  * （{@link IAmmoTransporter#getAdvanceTicks(IAmmoConsumer)}），不另持一份针对同次操作的计时。
  * 一台管同一时刻只有一个作业，因此进度、总时长与这条路上的一对身份各是一个值。
  * <p>
- * <b>身份：</b>{@link #key()} 由持有它的 Launcher 在受理时分配，{@code jobId} 自增。运输者的占用、提供者的
- * 弹药预留与独占运输者的槽位拥有者都以这个身份为键：释放、交付与结束只对身份完全匹配的作业生效，因此旧作业的
+ * <b>身份：</b>{@link #key()} 由持有它的 Launcher 在受理时分配，{@code jobId} 自增。运输者的机械槽与提供者的
+ * 弹药预留都以这个身份为键：释放、交付与结束只对身份完全匹配的作业生效，因此旧作业的
  * 回调不会摘掉同一条输弹线上的新作业。作业不跨存档延续，读档后重新受理会拿到新的编号。
  * <p>
  * <b>分配在受理时冻结：</b>{@link #transporter()}（本段的执行者）、{@link #provider()}（这批弹出自哪台架）、

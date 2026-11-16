@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobProgress;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
@@ -159,6 +160,61 @@ public final class AmmoJobClaimGameTest {
             launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "没有可分配库存时不得建作业");
             helper.assertTrue(!autoloader.isClaimedByOther(otherLauncher), "未被受理的请求不得占用机器");
+            helper.succeed();
+        } finally {
+            vehicle.onRemoveFromLevel();
+        }
+    }
+
+    /**
+     * 下发的进度基线是本 tick 结束时的进度。
+     *
+     * <p>契约：客户端拿到动态样本后要到<b>下一个</b>业务 tick 才开始按基线推进，因此基线早一拍，镜像出来
+     * 的作业就永远比服务端晚一拍。晚一拍不只是抖动：服务端交付那一 tick 就开火了，同一 tick 的终态收据又会
+     * 把本端这条还没交付的作业按"已交付"收尾，那一发在本端于是只剩投射物飞出去、没有声音与炮口特效。
+     * 受理发生在 tick 中途，那一刻写下的基线还差本 tick 那一次推进，必须由 tick 收尾刷成末尾值。</p>
+     *
+     * <p>同一条用例固定另一半：样本不逐 tick 重发——没有新的写盘时基线停在定稿值上，作业继续往后走。
+     * 两条合起来才是"基线是起点，不是当前进度"。</p>
+     */
+    @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
+    public static void publishedBaselineIsTheProgressAtTheEndOfTheTick(GameTestHelper helper) {
+        RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse(PART));
+        helper.assertTrue(type != null, "T90A 炮塔的部件定义必须已加载");
+        RegularPart part = PartFactory.createRegular(type, VARIANT, helper.getLevel());
+        VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
+        try {
+            Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            LauncherSubsystem launcher = require(helper, byName, LAUNCHER, LauncherSubsystem.class);
+            AmmoLoaderSubsystem autoloader = require(helper, byName, AUTOLOADER, AmmoLoaderSubsystem.class);
+            RegenAmmoRackSubsystem rack = require(helper, byName, RACK, RegenAmmoRackSubsystem.class);
+            vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+
+            AmmoBelt spec = rack.getDeliverySpec();
+            helper.assertTrue(rack.returnBelt(spec.freshCopy(spec.length())), RACK + " 应接受一份现货");
+            launcher.setCurrentRoute(requireRoute(helper, launcher, autoloader));
+
+            launcher.onTick();
+            ReloadJob job = launcher.getReloadJob();
+            helper.assertTrue(job != null, "有现货时应受理一份作业");
+            helper.assertTrue(job.elapsedTicks() == 1, "受理后的第一个 tick 由机构放行推进一次");
+
+            launcher.onPostTick();
+            ReloadJobProgress sample = launcher.getReloadProgressSample().orElse(null);
+            helper.assertTrue(sample != null, "有作业时必须下发动态样本");
+            helper.assertTrue(sample.jobId() == job.jobId(), "样本的编号必须是当前作业的编号");
+            helper.assertTrue(sample.elapsed() == job.elapsedTicks(),
+                    "基线必须是本 tick 结束时的进度，客户端下一个业务 tick 从它起算");
+            helper.assertTrue(sample.elapsed() == 1, "受理那一 tick 的末尾已经推进过一次");
+            helper.assertTrue(sample.total() == job.totalTicks() && sample.stage() == job.stage(),
+                    "样本的时长与阶段必须与当前作业一致");
+
+            // 没有新的写盘就不重发：基线停在定稿值，作业继续往后走
+            launcher.onTick();
+            launcher.onPostTick();
+            helper.assertTrue(job.elapsedTicks() == 2, "作业每 tick 推进一次");
+            helper.assertTrue(launcher.getReloadProgressSample().orElseThrow().elapsed() == 1,
+                    "作业推进不是写盘，不得为逐 tick 的进度重发样本");
             helper.succeed();
         } finally {
             vehicle.onRemoveFromLevel();

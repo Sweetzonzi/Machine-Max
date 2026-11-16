@@ -1,12 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-
 /**
  * 一条装填作业的身份：{@code (宿主 SubPart ID, 发射器序号, jobId)}。<br>
- * <b>用途：</b>运输者的占用、提供者的弹药预留与独占运输者的槽位拥有者都用这一个形状做键。三项一起用是
+ * <b>用途：</b>运输者的机械槽与提供者的弹药预留都用这一个形状做键。三项一起用是
  * 必要的：同一个 {@code jobId} 会在不同发射器上重复出现（各管自己从 1 开始编号），只看编号分不清两条
  * 作业；只看发射器分不清同一台管先后两次作业，旧作业的回调就会摘掉新作业的占用。
  * <p>
@@ -26,13 +22,6 @@ public record ReloadJobKey(int subPartId, int launcherIndex, int jobId)
 
     /** 没有作业 */
     public static final ReloadJobKey NONE = new ReloadJobKey(-1, -1, 0);
-
-    /** 随同步值传输的编解码器：宿主 ID + 声明序序号 + 作业编号 */
-    public static final StreamCodec<ByteBuf, ReloadJobKey> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, ReloadJobKey::subPartId,
-            ByteBufCodecs.VAR_INT, ReloadJobKey::launcherIndex,
-            ByteBufCodecs.VAR_INT, ReloadJobKey::jobId,
-            ReloadJobKey::new);
 
     /** 是否为空值 */
     public boolean isNone() {

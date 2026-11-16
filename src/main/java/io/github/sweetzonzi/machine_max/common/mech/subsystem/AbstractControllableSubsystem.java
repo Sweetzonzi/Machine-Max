@@ -347,19 +347,44 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 清除当前控制组所有输出频道的信号，包括武器频道。<br>
-     * 切换控制组时必须调用，防止上一组的高优先级信号残留。
+     * 清除当前控制组所有输出频道的信号，包括视点、移动与武器。<br>
+     * 操作者离座、子系统失活、摧毁、装机变化、控制组切换与"视点设备已失效"时调用，防止上一组的高优先级
+     * 信号残留。只是换视点或换主武器控制器时不要用这个：那会连玩家仍按着的油门与扳机一起清掉，
+     * 见 {@link #clearViewSignals()}。
      */
     public void clearInputSignals() {
-        viewSourcePart = -1;
-        viewSourceName = "";
+        clearViewSignals();
         Map<String, List<String>> all = new HashMap<>();
         all.putAll(controlGroupSet.getAllMoveTargets());
         all.putAll(controlGroupSet.getAllRegularTargets());
-        all.putAll(controlGroupSet.getAllViewTargets());
         all.putAll(controlGroupSet.getAllMainWeaponTargets());
         all.putAll(controlGroupSet.getAllSecondaryWeaponTargets());
-        for (String signalKey : all.keySet()) {
+        clearTargets(all);
+    }
+
+    /**
+     * 只清除视点输出（记录中的视点身份与视点频道），保留移动、常规与武器频道。<br>
+     * 换视点、换主武器控制器时用这个：视点必须按新机构重新起算，但玩家手上的油门与扳机没有松开，
+     * 一并清掉只会让"按住"这件事在本端消失——服务端仍按它自己的频道继续开火，本端要等到下一次按键
+     * 边沿才恢复，中间那几发就成了"投射物飞出去了，本端这一发没有声音与炮口特效"。
+     * <p><b>调用线程：</b>客户端主线程（{@code CameraController} 换视点时）。
+     */
+    public void clearViewSignals() {
+        viewSourcePart = -1;
+        viewSourceName = "";
+        clearTargets(controlGroupSet.getAllViewTargets());
+    }
+
+    /**
+     * 把一组频道置空，并记录实际被丢弃的非空信号。<br>
+     * 插桩只在打开的档位里多一次空表检查：它把"按键没丢、频道被清"与"输入包丢了"区分开——两者在开火侧
+     * 观察到的现象相同（本端不再有开火指令），只有知道是哪一端、清了哪条频道才分得清。
+     */
+    private void clearTargets(Map<String, List<String>> targets) {
+        for (String signalKey : targets.keySet()) {
+            if (WeaponTrace.isEnabled() && !getSignalChannel(signalKey).isEmpty()) {
+                WeaponTrace.log(getLevel(), "input-clear subsystem={} channel={}", name, signalKey);
+            }
             this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
         }
     }

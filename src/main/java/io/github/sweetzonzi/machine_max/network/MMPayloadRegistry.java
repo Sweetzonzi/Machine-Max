@@ -76,7 +76,10 @@ public class MMPayloadRegistry {
         // 换成 optional_reload_job_spec 与 optional_reload_job_progress，访问器编号随之改变。
         // 17.0.0 对应结束结果由一对标量改成一串有序结果（ReloadJobResults）：同一轮可以结束不止一条作业，
         // 标量只留得下最后一次；序列化器 reload_job_results。
-        final PayloadRegistrar sync = event.registrar("sync:17.0.0");
+        // 18.0.0 对应删掉两个没有消费方的同步字段：装弹机的槽位拥有者与弹药架的已预留总量。两者都只由服务端
+        // 写入、客户端从未读取，客户端的对应表由本端作业收发维护；序列化器 reload_job_key 随之移除，
+        // 访问器编号整体前移。
+        final PayloadRegistrar sync = event.registrar("sync:18.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

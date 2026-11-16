@@ -91,7 +91,7 @@ client/
 
 - **渲染数学仅用 JOML**：`org.joml.*`。服务端物理数据是 JME — 渲染前通过 `SparkMathKt.*` 转换。
 - **PartEntityRenderer 模式**：线框（装配）、全纹理（完成）、淡入（新部件）、命中闪白、销毁淡出。
-- **输入管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。
+- **输入管线**：RawInputHandler → KeyBinding → 网络载荷 → 服务端信号系统。客户端要释放输出时分两档：`CameraController` 换视点/换主武器控制器只用 `clearViewSignals()`（扳机与油门还按着），离座与换世界才用 `clearInputSignals()`；用错档会让"按住"只在本端消失，服务端继续开火，那几发就成了"投射物飞出去、本端没有声音与炮口特效"。
 - **VisualEffectHelper**（位于 `common/visual/VisualEffectHelper.java`）：存储客户端只渲染对象（附着点、包围盒、投射）。
 - **3D HUD**：使用 `Hud3DRenderer` 配合自定义姿态栈和顶点消费者。
 - **后处理的世界深度只在 `AFTER_LEVEL` 有效**：更晚读主目标深度，无光影会话下拿到的是被抹平的远平面、光影会话下却看似正常。硬约束、会静默出错的点与诊断配方见 `render/post/AGENTS.md`。

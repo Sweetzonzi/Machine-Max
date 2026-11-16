@@ -3,12 +3,8 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -37,9 +33,8 @@ import java.util.Map;
  * 占用，也不开始计时；机构据此既不挡别人也不承诺自己没有的弹。占用表只记消费者引用与作业身份，来源绑定
  * 只有一份——它在来源架的预留表里，本机不另存"某作业用哪个上游"。
  * <p>
- * 并发产能沿用布尔语义：{@code can_supply_multiple=false} 的机构一次只为一条作业推进（独占且满速），并把
- * 槽位拥有者下发；{@code true} 时不限槽位、各作业分别满速，没有独占槽位。客户端据下发的拥有者建立本地镜像，
- * 不运行第二套抢占判定。
+ * 并发产能沿用布尔语义：{@code can_supply_multiple=false} 的机构一次只为一条作业推进（独占且满速），
+ * {@code true} 时不限槽位、各作业分别满速。两端都按本端占用表判定，客户端的受理因此也会失败。
  * <p>
  * 进度音效属于本机配置，但<b>触发源是接收者的作业进度</b>：接收者的每个客户端 tick 把当前进度交给
  * {@link #tickStageSounds(IAmmoConsumer, float)}。人工段的声音定位在发射器上（人把弹交到炮闩跟前），
@@ -50,31 +45,12 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
     public final AmmoLoaderSubsystemAttr attr;
 
     /**
-     * 独占机构的槽位拥有者（网络同步）。<br>
-     * 值是唯一实际占用记录里那一条作业的身份；{@link ReloadJobKey#NONE} 表示没有作业占用本机。
-     * {@code can_supply_multiple=true} 没有独占槽位，本字段不下发（保持空值），各接收者跟随自己作业的
-     * 受理状态。客户端用它建立本地占用镜像，不自行分配。
-     */
-    private static final EntityDataAccessor<ReloadJobKey> SLOT_OWNER_ID =
-            SynchedEntityData.defineId(AmmoLoaderSubsystem.class, MMEntityDataSerializers.getRELOAD_JOB_KEY());
-
-    /**
      * 已受理作业的占用表：消费者 → 该作业的身份。<br>
      * <b>两端都维护</b>：只在受理点（{@link #claim}／{@link #claimForMachineStage}）写入，由接收者按身份释放，
      * 旧作业的回调因此摘不掉新作业的占用。只记消费者引用与身份，不复制作业内容；不入存档。人工段不在这张表里
      * ——那时还没有机械动作。客户端的这一份是预测运行态，是独占与并发判定的唯一依据。
      */
     private final Map<IAmmoConsumer, ReloadJobKey> claimedJobs = new LinkedHashMap<>();
-
-    /**
-     * 独占槽的<b>权威</b>拥有者镜像（客户端）。<br>
-     * 正常路径不读它——两端的放行与承诺判定都读本端 {@link #claimedJobs}；它的用途是给分叉重建（§9）
-     * 提供一份可比对的权威基线，因此仍在 {@link #onPostTick()} 统一落地。
-     */
-    private ReloadJobKey slotOwner = ReloadJobKey.NONE;
-
-    /** 客户端是否有待落地的槽位拥有者 */
-    private boolean pendingSlotOwner;
 
     /**
      * 每个消费者在本阶段的音效游标：已播到的进度比例与它是哪一段。<br>
@@ -103,35 +79,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
         this.attr = attr;
         this.loaders = new LoaderRoster(this, attr.loaderDiscoveryTargets,
                 attr.loaderTimeMultipliers);
-    }
-
-    // ==================== 同步数据 ====================
-
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(SLOT_OWNER_ID, ReloadJobKey.NONE);
-    }
-
-    @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
-        super.onSyncedDataUpdated(dataAccessor);
-        if (!getLevel().isClientSide()) return;
-        if (dataAccessor.equals(SLOT_OWNER_ID)) pendingSlotOwner = true;
-    }
-
-    /**
-     * 客户端在 tick 收尾落地槽位拥有者镜像。<br>
-     * 本 tick 的放行判定读的是上一轮落地的值，因此一次拥有者变化不会让同一个 tick 内出现
-     * "前半 tick 允许、后半 tick 拒绝"的中间态。
-     * <p><b>调用线程：</b>主线程（客户端 tick 收尾）。
-     */
-    @Override
-    public void onPostTick() {
-        super.onPostTick();
-        if (!getLevel().isClientSide() || !pendingSlotOwner) return;
-        pendingSlotOwner = false;
-        slotOwner = getSynchedData().get(SLOT_OWNER_ID);
     }
 
     // ==================== 上游与人员发现 ====================
@@ -263,7 +210,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
     private boolean takeSlot(IAmmoConsumer consumer, ReloadJobKey key) {
         if (!canServeMultipleConsumers() && hasOtherClaim(consumer)) return false;
         claimedJobs.put(consumer, key);
-        publishSlotOwner();
         return true;
     }
 
@@ -339,7 +285,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
         loaders.release(key);
         if (ownsClaim(consumer, key)) {
             claimedJobs.remove(consumer);
-            publishSlotOwner();
         }
     }
 
@@ -395,7 +340,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
             if (isStaleClaim(entry.getKey(), entry.getValue())) {
                 releaseReservationEverywhere(entry.getValue());
                 it.remove();
-                publishSlotOwner();
             }
         }
     }
@@ -416,13 +360,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
         if (route == null || route.transporter() != this) return true;
         ReloadJob job = consumer.getReloadJob();
         return job == null || !job.key().equals(key);
-    }
-
-    /** 把独占机构的槽位拥有者推给客户端；并发机构没有独占槽位，不下发。 */
-    private void publishSlotOwner() {
-        if (getLevel().isClientSide() || canServeMultipleConsumers()) return;
-        ReloadJobKey owner = claimedJobs.values().stream().findFirst().orElse(ReloadJobKey.NONE);
-        getSynchedData().set(SLOT_OWNER_ID, owner);
     }
 
     // ==================== 音效 ====================

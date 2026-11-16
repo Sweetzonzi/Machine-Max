@@ -272,8 +272,9 @@ public final class CameraController {
             if (fixedSight != null && fixedSight != sight) {
                 fixedSight.setAimController(null);
             }
-            // 换视点或主 WC 时释放旧输出，使用新机构实际角建立输入初值。
-            controllingSeat.clearInputSignals();
+            // 换视点或主 WC 时释放旧视点输出，使用新机构实际角建立输入初值。
+            // 只清视点频道：扳机多半还按着，清掉会让本端丢掉按住的事实而服务端照旧开火
+            controllingSeat.clearViewSignals();
             aimTarget = null;
             fixedSight = sight;
             fixedController = controller;
@@ -282,7 +283,7 @@ public final class CameraController {
         if (mode() != AimTargetState.Mode.WORLD && geometry == null) {
             // 物理线程尚未发布当前机构时，画面可用，但不发送错误零位目标。
             if (aimTarget != null) {
-                controllingSeat.clearInputSignals();
+                controllingSeat.clearViewSignals();
             }
             aimTarget = null;
             logicalView = new ViewMath.Snapshot(actual, point(actual));

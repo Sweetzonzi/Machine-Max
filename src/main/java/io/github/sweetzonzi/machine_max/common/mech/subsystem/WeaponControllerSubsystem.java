@@ -679,12 +679,18 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * 弹药路由：为每根管选定一条路（{@link LauncherSubsystem#getCurrentRoute()}）。<br>
      * 由 {@link #onTick()} 在主线程调用，与运输者的装填计时、发射器的取弹同步。
      * <p>
-     * <b>仅服务端执行：</b>指认是权威决策，客户端经发射器上的两个身份同步值整对跟随
-     * （见 {@code LauncherSubsystem#ROUTE_TRANSPORTER_ID}），不自行挑选——两端各自跑一遍路由会因为
-     * 本机计时器与滞后一个往返的余弹读数而摊出不同的配对。
+     * <b>两端都执行。</b>指认是装填预测的起点：发射器受理作业要先有一条路，客户端等权威下发就只能晚一个
+     * 业务 tick 才受理，服务端那一份已经在推进——它只好改认，而镜像作业永远比服务端晚一拍。两端跑的是
+     * 同一套判据（发现结果、本端占用表、本端库存与估价，后两者 P2 起两端各自维护），同一批输入给出同一
+     * 对配对，于是同一 tick 受理同一份作业（编号也同号）。
+     * <p>
+     * 本端选出来的只是一个预测，权威那一对由服务端下发：服务端只在它的选择变化时写
+     * {@code ROUTE_TRANSPORTER_ID}／{@code ROUTE_PROVIDER_ID}，客户端在收尾处按整对收口
+     * （{@code LauncherSubsystem#applySyncedRoute}）。两端算得一样时那一次是空操作
+     * （{@code setCurrentRoute} 比对相等就返回），算得不一样时按权威重新指认并收尾本端的在途预测——
+     * 预测的弹种错了比丢一拍进度更糟，所以分歧一律向权威收口。
      */
     private void routeAmmoToLaunchers() {
-        if (getLevel().isClientSide()) return;
         if (!isActive() || isDestroyed()) return;
 
         // 弹药池尚未重建（handshake 未完成），跳过路由，等待下一次 onTick 重建

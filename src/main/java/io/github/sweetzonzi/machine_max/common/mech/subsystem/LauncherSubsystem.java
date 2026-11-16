@@ -196,9 +196,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * {@link ReloadJobSpec}：这五项在作业存续期间不变，受理时一起定下。进度、本阶段时长与阶段另由
      * {@link #JOB_PROGRESS_ID} 承载，因为它们在换段与换人重定时都要变，而这份规格不必跟着重发。
      * <p>
-     * 编号与宿主 SubPart ID、本子系统序号组成作业身份 {@link ReloadJobKey}：运输者的占用、提供者的预留与
-     * 独占运输者的槽位拥有者都用它匹配。客户端据编号区分"同一条作业又收到一次更新"与"换了一条作业"
-     * ——前者保留本地已推进的进度，后者从基线重新开始。
+     * 编号与宿主 SubPart ID、本子系统序号组成作业身份 {@link ReloadJobKey}：运输者的机械槽与提供者的预留
+     * 都用它匹配。客户端据编号区分"同一条作业又收到一次更新"与"换了一条作业"
+     * ——前者保留本地已推进的进度，后者按身份收尾本地那一条后从基线重新开始。
      */
     private static final EntityDataAccessor<Optional<ReloadJobSpec>> JOB_SPEC_ID =
             SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getOPTIONAL_RELOAD_JOB_SPEC());
@@ -266,6 +266,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /** 客户端已经应用过的结束结果编号，用来忽略同一结果的重复到达。 */
     private int lastAppliedResultId;
+
+    /**
+     * 本 tick 写过进度样本（服务端）：那一笔写的是"写的那一刻"的基线，要在本 tick 收尾定稿。<br>
+     * 客户端拿到样本后的下一个业务 tick 才开始按它推进，所以样本必须等于服务端本 tick 结束时的进度。
+     * 受理与换段都发生在 tick 中途，写下的基线还差本 tick 那一次推进；客户端照它起算会永远比服务端
+     * 晚一拍，见 {@link #settleProgressBaseline()}。
+     */
+    private boolean progressDraft;
 
     /**
      * 暂停超时：作业连续这么多 tick 推不动就按未交付终止并释放资源。<br>
@@ -416,16 +424,23 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 客户端在本轮模拟结束后统一落地待处理同步值。<br>
-     * 顺序是先指认、再作业、最后膛内弹与已装 Belt：指认变化会先按身份结束旧作业，作业字段随后组成
-     * 新状态，弹药内容最后覆盖本地副本，因此一次收到的多项变化不会出现"作业已换而膛内还是旧的那发"
-     * 中间态。服务端没有待应用值，本方法直接返回。
-     * <p><b>调用线程：</b>主线程（客户端 tick 收尾，由 {@code SubsystemController#postTick()} 统一调用）。
+     * 两端都在本轮模拟结束后收尾：客户端统一落地待处理同步值，服务端把本 tick 写过的进度样本定稿。<br>
+     * 客户端的顺序是先指认、再作业、最后膛内弹与已装 Belt：指认变化会先按身份结束旧作业，作业字段随后
+     * 组成新状态，弹药内容最后覆盖本地副本，因此一次收到的多项变化不会出现"作业已换而膛内还是旧的那发"
+     * 中间态。
+     * <p><b>调用线程：</b>主线程（tick 收尾，由 {@code SubsystemController#postTick()} 统一调用）。
      */
     @Override
     public void onPostTick() {
         super.onPostTick();
-        if (!getLevel().isClientSide()) return;
+        if (!getLevel().isClientSide()) {
+            // 本 tick 写过的进度样本在这里定稿成 tick 末尾的值：客户端下一个业务 tick 才按它推进
+            if (progressDraft) {
+                progressDraft = false;
+                settleProgressBaseline();
+            }
+            return;
+        }
         if (pendingRoute) {
             pendingRoute = false;
             applySyncedRoute();
@@ -465,10 +480,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 全量补推前把进度样本里的基线刷成当前进度。<br>
-     * {@link ReloadJobProgress#elapsed()} 平时只在作业开始与离散重建时写，直接推给新加入的客户端会让它从 0
-     * 开始模拟一份已经进行到一半的作业；这一刻刷新一次，客户端拿到的基线就是"现在"。基线没变时不重写，
-     * 否则一个值都没变的样本会留下脏标记，随下一次变化广播发给维度内的其他玩家。冻结规格不需要刷新：
-     * 它在作业存续期间不变，访问器里那份就是当前值。
+     * {@link ReloadJobProgress#elapsed()} 是客户端起算的起点，不是每 tick 的当前进度，因此样本停在
+     * 写下它的那一刻：直接推给新加入的客户端会让它从"受理那一拍"开始模拟一份已经进行到一半的作业。
+     * 这一刻刷新一次，客户端拿到的基线就是"现在"（{@link #settleProgressBaseline()}）。
+     * 冻结规格不需要刷新：它在作业存续期间不变，访问器里那份就是当前值。
      * <p><b>调用线程：</b>主线程（服务端，{@code SubsystemController#pushAllTo}）。
      */
     @Override
@@ -476,9 +491,24 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (getLevel().isClientSide()) return;
         // 编号是"载入后通常不再变化"的值，只能靠全量补推给新加入的客户端
         publishNextJobId();
+        settleProgressBaseline();
+    }
+
+    /**
+     * 把进度样本里的基线刷成当前进度；没有作业或样本已经是当前值时不写。<br>
+     * 基线是客户端起算的起点，而客户端要等下一个业务 tick 才开始按它推进，因此它必须是服务端<b>本 tick
+     * 结束时的进度</b>。两个调用点都满足这一条：tick 收尾（{@link #onPostTick()}，本 tick 写过样本时）
+     * 与全量补推（{@link #refreshSyncBaseline()}，此刻的进度就是最近一 tick 的末尾值）。受理与换段写在
+     * tick 中途，那一刻的进度还差本 tick 那一次推进——基线早一拍，镜像作业就永远比服务端晚一拍：交付落在
+     * 服务端开火之后，而同一 tick 的终态收据已经把这条本地作业按"已交付"收尾，本端于是连"晚一拍"的
+     * 那一发都没有，只剩投射物飞出去、没有声音与炮口特效。
+     * <p><b>调用线程：</b>主线程（服务端）。
+     */
+    private void settleProgressBaseline() {
         ReloadJob job = reloadJob;
+        if (job == null) return;
         Optional<ReloadJobProgress> synced = getSynchedData().get(JOB_PROGRESS_ID);
-        if (job == null || synced.isEmpty()) return;
+        if (synced.isEmpty()) return;
         ReloadJobProgress progress = synced.get();
         if (progress.elapsed() == job.elapsedTicks()) return;
         getSynchedData().set(JOB_PROGRESS_ID, Optional.of(progress.withElapsed(job.elapsedTicks())));
@@ -493,27 +523,27 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 客户端按同步样本组成本地作业。<br>
      * 先应用结束结果，再落地作业：结果只影响身份匹配的那一条本地作业，两条样本才是"现在有哪份作业"。
-     * 静态样本为空表示权威已收尾：本地作业结束，客户端不释放占用或预留——那些由服务端按身份释放，
-     * 本端只是镜像。两条样本必须编号一致才算一份作业，配不上时本轮不应用（也不清本地作业：清掉会让
-     * 一条仍在权威里存在的作业从本端消失）。<br>
+     * 本地作业只经 {@link #finishReloadJob(boolean)} 消失——换作业与清空都先按身份收尾，释放它在
+     * 本端占着的执行资源与预留。这一条纪律对本端自己受理的预测尤其必要：那份作业的占用只有本端知道，
+     * 服务端从未受理过它，也就不会有任何权威消息来释放它。<br>
+     * 两条样本必须编号一致才算一份作业，配不上时本轮不应用（也不清本地作业：清掉会让一条仍在权威里
+     * 存在的作业从本端消失）。<br>
      * 编号与本地当前作业相同表示同一条作业的离散更新（进度基线、阶段时长）：沿用本地已推进的进度，
-     * 只向前对齐基线，不让进度倒退；编号不同则是新作业，从基线重新起算。
+     * 只向前对齐基线，不让进度倒退；编号不同则是另一份作业，本地那一条收尾后改认权威这一条
+     * （{@link #adoptSyncedJob}）。<br>
+     * <b>权威样本为空时不收尾本地作业：</b>两端的受理差一拍是常态——本端刚为这一发建好预测，权威那条
+     * 要后一个业务 tick 才受理，中间这段快照就是空的，而同一轮往往还带着上一条作业的结束结果。在这里收尾
+     * 会杀掉本端正在推进的预测，让本端在服务端那一发已经在飞的 tick 上膛内为空
+     * （{@code fire-end … reason=no-round}）：服务端打出去了，本端这一发却没有声音与炮口特效。
+     * 预测的终态只由它自己的交付、或权威关于同一编号的结束结果给出；服务端最终没有受理的那一条最多
+     * 白预测一次（§7.2）。
      */
     private void applySyncedJob() {
         applyJobResult();
-        // 权威编号只做下界：服务端已经用掉的编号本地不能再发；比本地小只是确认得晚，不改本地尾部
-        int authoritativeNext = getSynchedData().get(NEXT_JOB_ID);
-        if (authoritativeNext > nextJobId) {
-            WeaponTrace.log(getLevel(), "reload-next-id launcher={} local={} authority={}", traceId(),
-                    nextJobId, authoritativeNext);
-            nextJobId = authoritativeNext;
-        }
         Optional<ReloadJobSpec> specSynced = getSynchedData().get(JOB_SPEC_ID);
         if (specSynced.isEmpty()) {
-            if (reloadJob != null) {
-                WeaponTrace.log(getLevel(), "reload-mirror-clear launcher={} job={}", traceId(), reloadJob.jobId());
-            }
-            reloadJob = null;
+            // 权威此刻没有作业，但它的计数器仍领先：已经用掉的那些编号本地不能再拿
+            adoptAuthorityFloor(getSynchedData().get(NEXT_JOB_ID) - 1);
             return;
         }
         ReloadJobSpec spec = specSynced.get();
@@ -537,11 +567,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                         WeaponTrace.ref(current.transporter()), WeaponTrace.ref(current.provider()),
                         current.reservedCount(), WeaponTrace.ref(spec.transporter()),
                         WeaponTrace.ref(spec.provider()), spec.reserved());
-                // 先按本端身份释放这一条的预测占用与预留，再改写成本端镜像：直接替换会把这几个预测
+                // 先按本端身份释放这一条的预测占用与预留，再改认权威这一条：直接替换会把这几个预测
                 // 资源留在本端表里，权威那条作业根本不知道它们，之后也没有别的路径会回收
                 finishReloadJob(false);
-                reloadJob = spec.toLocalJob(key, progress);
-                adoptNextJobId(spec.jobId());
+                if (adoptSyncedJob(spec, progress, key)) adoptAuthorityFloor(spec.jobId());
                 return;
             }
             // 同一条作业的离散更新：阶段变了就按新阶段从基线起算（人工段走完换成机械段），
@@ -556,29 +585,67 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
         // 本地已经替这一条交过了：只等权威结束结果，把它建回来会再交一次
         if (spec.jobId() == lastLocalDeliveryId) return;
-        reloadJob = spec.toLocalJob(key, progress);
-        adoptNextJobId(spec.jobId());
-        WeaponTrace.log(getLevel(), "reload-mirror launcher={} job={} stage={} stageTicks={} baseline={} transporter={} provider={}",
-                traceId(), spec.jobId(), progress.stage(), progress.total(), progress.elapsed(),
-                WeaponTrace.ref(spec.transporter()), WeaponTrace.ref(spec.provider()));
+        // 编号不同：本地这一条是另一份作业（本机先受理、权威后来才受理了它自己的那一份），
+        // 先按本端身份收尾再改认权威这一条，否则它的占用与预留会留在本端表里无人回收
+        finishReloadJob(false);
+        if (adoptSyncedJob(spec, progress, key)) adoptAuthorityFloor(spec.jobId());
     }
 
     /**
-     * 收下一个编号已经用掉的镜像作业之后，把本地计数推到它之后。<br>
-     * 本地自主受理与权威受理各用一份计数器，收下一个镜像作业后不能再拿同一个编号去受理，
-     * 否则两条不同的作业会共用身份；编号接近上限时不再前进，编号重置由服务端下发回退后的权威值
-     * （§7.3 的边界，尚待落地）。
+     * 采纳权威的那条作业：在本端按同一套受理顺序取得执行资源与弹药预留，再按权威的编号与进度基线建作业。<br>
+     * 冻结分配取权威那一份（作业上那一对是权威），本端只是把它的承诺也落在自己的表里。不这么做，采纳来的
+     * 作业下一 tick 就会在「承诺分两半」的检查里被判失效（{@code reload-end … delivered=false progress=0/9}），
+     * 本端从此只剩"权威受理、本端不预测"的降级态；更糟的是每次补建预测都要换一个新编号，而服务端那一条
+     * 已经用掉了原来那个——两端编号一旦错开就再没有路径能重新对齐。<br>
+     * 取得不了（路还没解析出来、机器已被别的作业占着、架上没有可分配库存）就不建作业：不预测比建一条拿不到
+     * 弹的作业好，权威的终态仍会按结束结果落地。
+     * <p><b>调用线程：</b>主线程（客户端 tick 收尾）。
+     *
+     * @return 采纳成功时 true；false 表示本端这一轮不持有作业
      */
-    private void adoptNextJobId(int jobId) {
-        int nextLocalId = jobId + 1;
-        if (jobId >= nextJobId && nextLocalId > 0) nextJobId = nextLocalId;
+    private boolean adoptSyncedJob(ReloadJobSpec spec, ReloadJobProgress progress, ReloadJobKey key) {
+        IAmmoTransporter transporter = resolveTransporter(spec.transporter());
+        IAmmoSupplier provider = resolveProvider(spec.provider());
+        boolean adopted = false;
+        if (transporter != null && provider != null && transporter.claim(this, key)) {
+            if (provider.reserve(key) != null) {
+                beginReloadJob(spec.toLocalJob(key, progress));
+                adopted = true;
+            } else {
+                transporter.releaseClaim(this, key);
+            }
+        }
+        if (adopted) {
+            WeaponTrace.log(getLevel(), "reload-mirror launcher={} job={} stage={} stageTicks={} baseline={} transporter={} provider={}",
+                    traceId(), spec.jobId(), progress.stage(), progress.total(), progress.elapsed(),
+                    WeaponTrace.ref(spec.transporter()), WeaponTrace.ref(spec.provider()));
+        } else {
+            WeaponTrace.log(getLevel(), "reload-mirror-skip launcher={} job={}", traceId(), spec.jobId());
+        }
+        return adopted;
+    }
+
+    /**
+     * 把本地计数推到"权威已经用过的编号"之后。<br>
+     * 本地自主受理与权威受理各用一份计数器，同一个编号不能再被两条不同的作业共用。只在采纳成功时推进：
+     * 采纳失败说明本端没接这一条，编号留在原处，本端紧接着自己受理的那一条就会与权威同号，
+     * 走"同一条作业的离散更新"那条路径对齐。编号不设重置：上限是每业务 tick 一个编号，真到溢出时编号
+     * 变成负数仍互不重复，坏的只有终态收据的编号水位（§7.3）。
+     */
+    private void adoptAuthorityFloor(int usedJobId) {
+        int floor = usedJobId + 1;
+        if (floor > nextJobId && floor > 0) {
+            WeaponTrace.log(getLevel(), "reload-next-id launcher={} local={} authority={}", traceId(),
+                    nextJobId, floor);
+            nextJobId = floor;
+        }
     }
 
     /**
      * 应用结束结果（客户端）。<br>
      * 身份匹配才算本机的事：要么就是当前这条本地作业，要么是刚才本地替它交过的那一条（本地先完成、
-     * 权威结果后到）。匹配时结束本地作业，并把膛内弹与已装 Belt 按权威值收口——本地预测的内容不得活过
-     * 终态，否则一条被撤销的作业会在本机留下一份多出来的弹。不匹配的是更早作业的结果：只当作已经
+     * 权威结果后到）。匹配时按身份收尾本地作业，并把膛内弹与已装 Belt 按权威值收口——本地预测的内容不得
+     * 活过终态，否则一条被撤销的作业会在本机留下一份多出来的弹。不匹配的是更早作业的结果：只当作已经
      * 应用过，既不结束当前作业，也不改它的进度与弹药内容（库存与预留本就按各自的同步值校准）。
      * <p>列表按发生顺序逐条应用，因此同一轮里连续结束的两条作业都能被看到——第一条结束、第二条才
      * 建得起来。编号水位只用于忽略重复到达：一轮里出现的新条目的最大编号会推进水位，已经应用过的
@@ -595,7 +662,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             WeaponTrace.log(getLevel(), "reload-result launcher={} job={} delivered={} mine={}", traceId(),
                     result.jobId(), result.delivered(), mine);
             if (!mine) continue;
-            reloadJob = null;
+            // 终态即收尾：本地这一刻还活着的作业按身份还回它占用的执行资源与预留，再按权威值收口弹药内容
+            finishReloadJob(result.delivered());
             applySyncedBelt();
             applySyncedChamber();
         }
@@ -660,15 +728,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 设置当前指认的路，由 WeaponController 的服务端路由调用。<br>
+     * 设置当前指认的路：两端都调用它，服务端由 {@code WeaponControllerSubsystem#routeAmmoToLaunchers} 选路，
+     * 客户端由同一段选路代码选出、再由同步来的两个引用收口（{@link #applySyncedRoute()}）。<br>
      * 指认变化时先按旧身份收尾本管进行中的作业：那份作业是"点名给本管的"，本管一走它就无人认领，旧运输者
      * 会一直把槽位或乘员占着，新的一份既不会开始也不会给别人。旧作业的库存从未扣减（扣减只发生在交付那
      * 一刻），丢弃它不退还任何东西。清理放在这里而不是交给调用方，是为了不存在"换路忘了归还"的路径。
      * <p>
-     * 指认随之写入 {@link #ROUTE_TRANSPORTER_ID}／{@link #ROUTE_PROVIDER_ID} 推给客户端。客户端不调用本
-     * 方法：它的指认由同步值经 {@link #applySyncedRoute()} 落到同一字段上，两端因此不会各自决策出不同结果。
-     * <p>
-     * <b>调用线程：</b>主线程（{@link WeaponControllerSubsystem#onTick()} 内的弹药路由）。
+     * 只有服务端把它写进 {@link #ROUTE_TRANSPORTER_ID}／{@link #ROUTE_PROVIDER_ID}：客户端那一对来自服务端，
+     * 它自己选出来的是预测，不参与下发。
+     * <p><b>调用线程：</b>主线程（{@link WeaponControllerSubsystem#onTick()} 内的弹药路由，两端）。
      *
      * @param route 新路，null 表示没有路由（不装填，仍可发射膛内已有弹药）
      */
@@ -722,9 +790,13 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 客户端按同步来的两个引用解析整条路。<br>
+     * 客户端按同步来的两个引用解析整条路，作为本端选路的收口。<br>
      * 提供者为 {@link AmmoRef#NONE} 表示服务端此刻没有路由；任一侧解析不到（发现结果还没到）就保留上一帧的
-     * 整对，不替换、也不因此收尾作业——两个字段不会拼成一条服务端从未指认的路。
+     * 整对，不替换、也不因此收尾作业——两个字段不会拼成一条服务端从未指认的路。<br>
+     * 两端各自选路（{@code WeaponControllerSubsystem#routeAmmoToLaunchers}），判据与输入相同，所以这一对
+     * 通常就是本端刚选出来的那一条，落下来是一次空操作（{@link #setCurrentRoute} 比对相等即返回）。真不一
+     * 致时以权威为准：预测的弹种错了比丢一拍进度更糟，这一次换路会按身份收尾本端的在途作业，随后由作业快照
+     * 重新建在权威那一对上。
      */
     private void applySyncedRoute() {
         AmmoRef providerRef = getSynchedData().get(ROUTE_PROVIDER_ID);
@@ -906,17 +978,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 这与装弹机库存殉爆是同一条口径——残骸上的炮闩照样起爆，宿主零件整体移除后子系统不再 tick，
      * 自然不起爆。
      * <p>
-     * 客户端也会收到 {@code DATA_DESTROYED_ID} 的同步并回调本方法，但起爆只在服务端发生：客户端首行
-     * 即返回，只保留基类的音效等表现。
+     * 两端都先按身份收尾作业：摧毁是本管作业的终态，之后不再 tick，留着那一份会让本端的执行资源与预留
+     * 永远占住（服务端的结束结果与会话无关，客户端的预测占用更是只有本端知道）。客户端的收尾只动本端表，
+     * 起爆仍然只在服务端发生。
      * <p>
      * <b>调用线程：</b>主线程。
      */
     @Override
     public void onDestroyed() {
         super.onDestroyed();
-        if (getLevel().isClientSide()) return;
         // 摧毁即收尾：按身份释放机构占用并丢弃进行中的作业，客户端随之清空进度显示（库存未扣，不退还任何东西）
         finishReloadJob();
+        if (getLevel().isClientSide()) return;
         detonateStoredAmmo();
     }
 
@@ -1161,6 +1234,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
+     * 本管下发的动态样本：客户端按里面的进度基线建镜像作业，再各自往上面累计（同步值，空 = 没有作业）。<br>
+     * 基线是本管 tick 末尾的进度，见 {@link #settleProgressBaseline()}；镜像作业晚一拍起算就会一直晚一拍，
+     * 因此它就是"两端装填节奏是否对齐"的现场可核对值。
+     */
+    public Optional<ReloadJobProgress> getReloadProgressSample() {
+        return getSynchedData().get(JOB_PROGRESS_ID);
+    }
+
+    /**
      * 这条路上的作业还要多久交付，是控制器比较「保持当前路还是换路」的唯一输入。<br>
      * 只剩一次转发：各类加成（人工段的岗位倍率与个人倍率、机械段的基准时长）都由运输者折算，接收者与武器
      * 控制器都只读这一个值。
@@ -1232,8 +1314,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 按身份收尾当前作业。<br>
-     * 已在本类的各处入口调用，不另提供"只清进度"的路径。
+     * 受理后落一条新作业：写入字段并把两支样本推给客户端。<br>
+     * 调用方必须先收尾旧作业——作业字段因此只有这一处被写成新值，{@link #finishReloadJob(boolean)}
+     * 是唯一把它清空的入口，两者合起来就是"本地作业只经收尾消失"。
      */
     private void beginReloadJob(ReloadJob job) {
         reloadJob = job;
@@ -1242,13 +1325,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 统一收尾：先按作业身份释放运输者的执行资源与提供者的预留，再发布结束结果并清空作业。<br>
-     * 成功交付、取消、换路、摧毁、路径失效与暂停超时都走这一口，因此不存在"只清进度不释放承诺"的分支；
-     * 释放只按身份删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
-     * 重复收尾因此安全。<br>
+     * 成功交付、取消、换路、摧毁、路径失效、暂停超时、换作业与清空本地镜像都走这一口，因此不存在
+     * "只清进度不释放承诺"的分支；释放只按身份删除记录，不退还库存（库存扣减只发生在交付那一刻）。
+     * 作业为空时是无操作，重复收尾因此安全。<br>
+     * 释放按<b>作业冻结的那一对身份</b>解析，不读当前指认：客户端的指认与作业分两批到达，作业存续而指认
+     * 还没落地（或已被换掉）是正常情况，按指认释放会漏掉真正持有占用的那一台，那份占用之后无人回收。
+     * 解析不到时（结构变化已把那一台移出发现结果）留给运输者的失效清理，那一处会按身份代撤销。<br>
      * 结束结果带原 {@code jobId} 与已交付／未交付结论，客户端据它结束身份匹配的本地作业；结论分开记是
      * 因为"作业字段被清 0"不足以说明这一份到底交成了没有。
-     * <p><b>调用线程：</b>主线程（客户端经 {@link #setCurrentRoute} 也会走到这里，那一侧不发布结果——
-     * 结果只由服务端写）。
+     * <p><b>调用线程：</b>主线程（客户端也会走到这里，那一侧不发布结果——结果只由服务端写）。
      */
     private void finishReloadJob(boolean delivered) {
         ReloadJob job = reloadJob;
@@ -1256,11 +1341,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         WeaponTrace.log(getLevel(), "reload-end launcher={} job={} delivered={} stage={} progress={}/{}",
                 traceId(), job.jobId(), delivered, job.stage(), job.elapsedTicks(), job.totalTicks());
         AmmoPath route = currentRoute;
-        if (route != null) {
-            route.transporter().releaseClaim(this, job.key());
-        }
-        // 撤销归接收者：只对作业指名的那台提供者按身份撤销；解析不到时（结构变化已把它移出发现结果）留给
-        // 运输者的失效清理，那一处会按身份在它的喂弹线里代撤销，避免预留永久占住库存
+        IAmmoTransporter transporter = route != null && AmmoRef.ofTransporter(route.transporter()).equals(job.transporter())
+                ? route.transporter()
+                : resolveTransporter(job.transporter());
+        if (transporter != null) transporter.releaseClaim(this, job.key());
+        // 撤销归接收者：只对作业指名的那台提供者按身份撤销；解析不到时同上，留给运输者的失效清理，
+        // 避免预留永久占住库存
         IAmmoSupplier provider = route != null && AmmoRef.ofProvider(route.provider()).equals(job.provider())
                 ? route.provider()
                 : resolveProvider(job.provider());
@@ -1293,7 +1379,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 把当前作业的冻结分配与动态样本一起推给客户端。<br>
      * 只在作业开始与收尾时调用：受理定下分配，收尾清空两条样本。之后只有进度会变，那些时刻走
-     * {@link #pushReloadJobProgress()}，不必重发白字节级的交付规格。<br>
+     * {@link #pushReloadJobProgress()}，不必重发白字节级的交付规格。两条样本写的是"写的那一刻"的值，
+     * 有作业时由 tick 收尾把进度基线定稿成末尾值（见 {@link #settleProgressBaseline()}）。<br>
      * 结束结果（{@link #JOB_RESULTS_ID}）不在这里写：它只描述
      * 已经结束的那一条作业，新作业开始时不覆盖它。
      */
@@ -1303,18 +1390,22 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         getSynchedData().set(JOB_SPEC_ID, job == null ? Optional.empty() : Optional.of(ReloadJobSpec.of(job)));
         getSynchedData().set(JOB_PROGRESS_ID,
                 job == null ? Optional.empty() : Optional.of(ReloadJobProgress.of(job)));
+        // 有作业就等 tick 收尾把基线定稿成末尾值；清空那一次没有基线可定
+        progressDraft = job != null;
     }
 
     /**
      * 只推动态样本：换段、换人重定时这类"分配没变、进度坐标变了"的时刻用这条。<br>
      * 写的是"新的本阶段时长 + 新的进度基线"，客户端因此从新基线继续跑，比例不倒退。作业已经收尾时
-     * 是无操作——收尾由 {@link #pushReloadJob()} 清空两条样本。
+     * 是无操作——收尾由 {@link #pushReloadJob()} 清空两条样本。基线在这里是 tick 中途的值，随后由
+     * {@link #settleProgressBaseline()} 定稿成末尾值。
      */
     private void pushReloadJobProgress() {
         if (getLevel().isClientSide()) return;
         ReloadJob job = reloadJob;
         if (job == null) return;
         getSynchedData().set(JOB_PROGRESS_ID, Optional.of(ReloadJobProgress.of(job)));
+        progressDraft = true;
     }
 
     /**

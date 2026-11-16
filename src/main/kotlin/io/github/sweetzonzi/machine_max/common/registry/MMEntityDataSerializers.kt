@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobProgress
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobResults
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobSpec
@@ -43,15 +42,6 @@ object MMEntityDataSerializers {
     @JvmStatic
     val AMMO_REF: EntityDataSerializer<AmmoRef> =
         EntityDataSerializer.forValueType(AmmoRef.STREAM_CODEC)
-
-    /**
-     * 作业身份：宿主 SubPart ID + 发射器名 + 作业编号。
-     *
-     * 独占装弹机构用它下发槽位拥有者；空值用 [ReloadJobKey.NONE] 表达。
-     */
-    @JvmStatic
-    val RELOAD_JOB_KEY: EntityDataSerializer<ReloadJobKey> =
-        EntityDataSerializer.forValueType(ReloadJobKey.STREAM_CODEC)
 
     /**
      * 可空的资源地址（`Optional<ResourceLocation>`）。
@@ -115,10 +105,6 @@ object MMEntityDataSerializers {
         MachineMax.REGISTER.entityDataSerializer<AmmoRef> {
             id = "ammo_ref"
             factory = { AMMO_REF }
-        }
-        MachineMax.REGISTER.entityDataSerializer<ReloadJobKey> {
-            id = "reload_job_key"
-            factory = { RELOAD_JOB_KEY }
         }
         MachineMax.REGISTER.entityDataSerializer<Optional<ResourceLocation>> {
             id = "optional_resource_location"
