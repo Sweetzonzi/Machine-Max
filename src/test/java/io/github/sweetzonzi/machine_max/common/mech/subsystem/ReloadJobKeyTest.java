@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * {@link ReloadJobKey} 的排序契约。<br>
  * 实际架在强制损失后按这个全序排列预留键、再从末尾（键值最大者）开始撤销，因此顺序必须是
- * "宿主 SubPart ID 按整数 → 发射器名按 {@code String.compareTo} → 作业编号按整数"升序，
+ * "宿主 SubPart ID 按整数 → 发射器声明序序号按整数 → 作业编号按整数"升序，
  * 不能依赖哈希顺序。
  */
 class ReloadJobKeyTest {
@@ -20,35 +20,35 @@ class ReloadJobKeyTest {
     @Test
     void noneIsRecognisedByJobIdSoAnUnpublishedJobNeverCollides() {
         assertTrue(ReloadJobKey.NONE.isNone());
-        assertFalse(new ReloadJobKey(0, "launcher", 1).isNone());
+        assertFalse(new ReloadJobKey(0, 0, 1).isNone());
     }
 
     @Test
-    void ordersBySubPartIdThenNameThenJobId() {
+    void ordersBySubPartIdThenLauncherIndexThenJobId() {
         List<ReloadJobKey> keys = new ArrayList<>(List.of(
-                new ReloadJobKey(7, "b", 1),
-                new ReloadJobKey(3, "z", 9),
-                new ReloadJobKey(7, "a", 5),
-                new ReloadJobKey(7, "a", 2),
-                new ReloadJobKey(3, "a", 9)
+                new ReloadJobKey(7, 2, 1),
+                new ReloadJobKey(3, 9, 9),
+                new ReloadJobKey(7, 1, 5),
+                new ReloadJobKey(7, 1, 2),
+                new ReloadJobKey(3, 1, 9)
         ));
         keys.sort(ReloadJobKey::compareTo);
 
         assertEquals(List.of(
-                new ReloadJobKey(3, "a", 9),
-                new ReloadJobKey(3, "z", 9),
-                new ReloadJobKey(7, "a", 2),
-                new ReloadJobKey(7, "a", 5),
-                new ReloadJobKey(7, "b", 1)
+                new ReloadJobKey(3, 1, 9),
+                new ReloadJobKey(3, 9, 9),
+                new ReloadJobKey(7, 1, 2),
+                new ReloadJobKey(7, 1, 5),
+                new ReloadJobKey(7, 2, 1)
         ), keys);
     }
 
     @Test
     void equalityCoversAllThreeFieldsSoOldAndNewJobsDoNotClaimEachOther() {
-        ReloadJobKey job = new ReloadJobKey(3, "launcher", 1);
-        assertEquals(job, new ReloadJobKey(3, "launcher", 1));
-        assertFalse(job.equals(new ReloadJobKey(3, "launcher", 2)));
-        assertFalse(job.equals(new ReloadJobKey(4, "launcher", 1)));
-        assertFalse(job.equals(new ReloadJobKey(3, "other", 1)));
+        ReloadJobKey job = new ReloadJobKey(3, 2, 1);
+        assertEquals(job, new ReloadJobKey(3, 2, 1));
+        assertFalse(job.equals(new ReloadJobKey(3, 2, 2)));
+        assertFalse(job.equals(new ReloadJobKey(4, 2, 1)));
+        assertFalse(job.equals(new ReloadJobKey(3, 3, 1)));
     }
 }

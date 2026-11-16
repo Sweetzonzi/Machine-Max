@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -28,11 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ReloadJobTest {
 
-    private static final SupplierRef TARGET = new SupplierRef(4, "m1a2_sep.ammo_autoloader");
-    private static final SupplierRef ORIGIN = new SupplierRef(5, "m1a2_sep.ammo_loader");
+    private static final AmmoRef TARGET = new AmmoRef(4, 3);
+    private static final AmmoRef ORIGIN = new AmmoRef(5, 1);
     private static final AmmoBelt SPEC = new AmmoBelt(null, "test_belt",
             List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("machine_max:test_round"), 5)), 5, 5, null);
-    private static final ReloadJobKey KEY = new ReloadJobKey(3, "m1a2_sep.launcher", 7);
+    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, 7);
 
     private static ReloadJob job(int totalTicks) {
         return new ReloadJob(KEY, TARGET, ORIGIN, SPEC, 5, totalTicks);
@@ -139,14 +139,14 @@ class ReloadJobTest {
         ReloadJob job = job(5);
         assertEquals(KEY, job.key());
         assertEquals(7, job.jobId());
-        assertEquals(TARGET, job.deliveryTarget());
-        assertEquals(ORIGIN, job.upstreamOrigin());
+        assertEquals(TARGET, job.transporter());
+        assertEquals(ORIGIN, job.provider());
         assertEquals(5, job.reservedCount());
         assertEquals(SPEC, job.spec());
 
         job.advance(3);
         assertEquals(KEY, job.key());
-        assertEquals(ORIGIN, job.upstreamOrigin());
+        assertEquals(ORIGIN, job.provider());
         assertEquals(SPEC, job.spec());
         assertEquals(5, job.reservedCount());
     }

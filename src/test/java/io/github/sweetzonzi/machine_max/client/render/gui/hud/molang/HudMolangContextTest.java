@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud.molang;
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import io.github.sweetzonzi.machine_max.common.visual.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -28,7 +28,7 @@ class HudMolangContextTest {
     }
 
     static HudWeaponSnapshot.Tube tube(int key, double fill, boolean aimed) {
-        return new HudWeaponSnapshot.Tube(new SupplierRef(key, "launcher"),
+        return new HudWeaponSnapshot.Tube(new AmmoRef(key, 0),
                 "AP", "reloading", "loading", fill, 2, "2.0s", "HE belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "HE belt", 4, 30),
@@ -97,11 +97,11 @@ class HudMolangContextTest {
 
     @Test void tubePhaseAndSourceAreReadableInsideAndOutsideTheScope() {
         var element = new WeaponHudElement(null, element());
-        var stalled = new HudWeaponSnapshot.Tube(new SupplierRef(7, "launcher"),
+        var stalled = new HudWeaponSnapshot.Tube(new AmmoRef(7, 0),
                 "AP", "reloading", "regenerating", 40, 12, "12.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 new HudWeaponSnapshot.Reserve(30, 120, false), false);
-        var orphan = new HudWeaponSnapshot.Tube(new SupplierRef(8, "launcher"),
+        var orphan = new HudWeaponSnapshot.Tube(new AmmoRef(8, 0),
                 "HE", "empty", "idle", 0, 0, "", "", false, false,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 HudWeaponSnapshot.Reserve.EMPTY, false);
@@ -147,13 +147,13 @@ class HudMolangContextTest {
     @Test void chamberMagazineAndReserveStaySeparateNumbers() {
         var element = new WeaponHudElement(null, element());
         // 装填中的管：膛内 1 发、弹链 17 发、备弹 0（弹链是从备弹里取走的，两边不重叠）
-        var loaded = new HudWeaponSnapshot.Tube(new SupplierRef(11, "launcher"),
+        var loaded = new HudWeaponSnapshot.Tube(new AmmoRef(11, 0),
                 "AP", "reloading", "loading", 60, 3, "3.0s", "AP belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 17, 150),
                 new HudWeaponSnapshot.Reserve(0, 300, false), false);
         // 换装中的管：膛内仍压着 1 发，但此刻打不出去
-        var swapping = new HudWeaponSnapshot.Tube(new SupplierRef(12, "launcher"),
+        var swapping = new HudWeaponSnapshot.Tube(new AmmoRef(12, 0),
                 "AP", "reloading", "loading", 30, 6, "6.0s", "HE belt", true, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
                 new HudWeaponSnapshot.Magazine(true, "AP belt", 8, 150),

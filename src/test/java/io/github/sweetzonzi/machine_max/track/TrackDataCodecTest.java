@@ -64,7 +64,7 @@ class TrackDataCodecTest {
         UUID partUuid = UUID.randomUUID();
         TrackMemberRef sprocket = new TrackMemberRef(partUuid, "sprocket");
         TrackLinkData link = link(sprocket, List.of(sprocket), 600f, false, true);
-        VehicleData data = new VehicleData("tracked", UUID.randomUUID().toString(),
+        VehicleData data = new VehicleData("tracked", UUID.randomUUID(),
                 Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, 1f, Map.of(), List.of(), List.of(link),
                 io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta.EMPTY);
 
@@ -79,7 +79,7 @@ class TrackDataCodecTest {
         UUID partUuid = UUID.randomUUID();
         TrackMemberRef sprocket = new TrackMemberRef(partUuid, "sprocket");
         TrackLinkData damaged = link(sprocket, List.of(sprocket), 12f, true, true, 55);
-        VehicleData data = new VehicleData("tracked", UUID.randomUUID().toString(),
+        VehicleData data = new VehicleData("tracked", UUID.randomUUID(),
                 Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, 0.5f, Map.of(), List.of(), List.of(damaged),
                 io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintMeta.EMPTY);
 

@@ -52,7 +52,9 @@ public final class HudBallisticTable {
         float speed = 0;
         for (var tube : tubes) {
             ProjectileType type = tube.getChamberedType();
-            if (type == null && tube.getCurrentSupplier() != null) type = tube.getCurrentSupplier().getSuppliedType();
+            if (type == null && tube.getCurrentRoute() != null) {
+                type = tube.getCurrentRoute().provider().getSuppliedType();
+            }
             if (!(type instanceof BallisticProjectileType candidate) || type.getRegistryKey() == null
                     || !snapshot.activeAmmo().equals(type.getRegistryKey().toString())) continue;
             if (candidate.hasGuidance() || candidate.hasThrust()) return EMPTY;

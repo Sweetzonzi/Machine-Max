@@ -7,41 +7,49 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractCo
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.util.data.PosRot;
 import lombok.Getter;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+
 @Getter
 public class ConnectionData {
-    public final String partUuidA;
+    public final UUID partUuidA;
     public final String subPartNameA;
     public final String advConnectorName;//要链接的连接点中存在非连接点的特殊接口时，必须放置于第一个位置
     public final PosRot posRotA;
-    public final String partUuidS;
+    public final UUID partUuidS;
     public final String subPartNameS;
     public final String simpleConnectorName;
     public final PosRot posRotS;
 
+    /** JSON 存档/蓝图编解码：UUID 字段用 {@link UUIDUtil#STRING_CODEC} 落盘为字符串，兼容既有模板。 */
     public static final Codec<ConnectionData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("partUuidA").forGetter(ConnectionData::getPartUuidA),
+            UUIDUtil.STRING_CODEC.fieldOf("partUuidA").forGetter(ConnectionData::getPartUuidA),
             Codec.STRING.fieldOf("subPartNameA").forGetter(ConnectionData::getSubPartNameA),
             Codec.STRING.fieldOf("advConnectorName").forGetter(ConnectionData::getAdvConnectorName),
             PosRot.CODEC.fieldOf("posRotA").forGetter(ConnectionData::getPosRotA),
-            Codec.STRING.fieldOf("partUuidS").forGetter(ConnectionData::getPartUuidS),
+            UUIDUtil.STRING_CODEC.fieldOf("partUuidS").forGetter(ConnectionData::getPartUuidS),
             Codec.STRING.fieldOf("subPartNameS").forGetter(ConnectionData::getSubPartNameS),
             Codec.STRING.fieldOf("simplePointConnectorName").forGetter(ConnectionData::getSimpleConnectorName),
             PosRot.CODEC.fieldOf("posRotS").forGetter(ConnectionData::getPosRotS)
     ).apply(instance, ConnectionData::new));
 
+    /**
+     * 网络编码：部件 UUID 以双 long 传输（16 字节），字段本身即为 UUID，无需字符串转换。
+     * JSON 落盘/蓝图走 {@link #CODEC}，保持字符串 UUID 不变。
+     */
     public static final StreamCodec<FriendlyByteBuf, ConnectionData> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull ConnectionData decode(FriendlyByteBuf buffer) {
-            String partUuidA = buffer.readUtf();
+            UUID partUuidA = buffer.readUUID();
             String subPartNameA = buffer.readUtf();
             String adv = buffer.readUtf();
             PosRot posRotA = PosRot.STREAM_CODEC.decode(buffer);
-            String partUuidS = buffer.readUtf();
+            UUID partUuidS = buffer.readUUID();
             String subPartNameS = buffer.readUtf();
             String simple = buffer.readUtf();
             PosRot posRotS = PosRot.STREAM_CODEC.decode(buffer);
@@ -50,19 +58,19 @@ public class ConnectionData {
 
         @Override
         public void encode(FriendlyByteBuf buffer, ConnectionData connectionData) {
-            buffer.writeUtf(connectionData.partUuidA);
+            buffer.writeUUID(connectionData.partUuidA);
             buffer.writeUtf(connectionData.subPartNameA);
             buffer.writeUtf(connectionData.getAdvConnectorName());
             PosRot.STREAM_CODEC.encode(buffer, connectionData.posRotA);
-            buffer.writeUtf(connectionData.partUuidS);
+            buffer.writeUUID(connectionData.partUuidS);
             buffer.writeUtf(connectionData.subPartNameS);
             buffer.writeUtf(connectionData.getSimpleConnectorName());
             PosRot.STREAM_CODEC.encode(buffer, connectionData.posRotS);
         }
     };
 
-    public ConnectionData(String partUuidA, String subPartNameA, String advancedConnectorName, PosRot posRotA,
-                          String partUuidS, String subPartNameS, String simpleConnectorName, PosRot posRotS) {
+    public ConnectionData(UUID partUuidA, String subPartNameA, String advancedConnectorName, PosRot posRotA,
+                          UUID partUuidS, String subPartNameS, String simpleConnectorName, PosRot posRotS) {
         this.partUuidA = partUuidA;
         this.subPartNameA = subPartNameA;
         this.advConnectorName = advancedConnectorName;
@@ -74,11 +82,11 @@ public class ConnectionData {
     }
 
     public ConnectionData(AbstractConnector connectorA, SimpleConnector connectorB){
-        this.partUuidA = connectorA.subPart.part.uuid.toString();
+        this.partUuidA = connectorA.subPart.part.uuid;
         this.advConnectorName = connectorA.name;
         this.subPartNameA = connectorA.subPart.name;
         this.posRotA = new PosRot(connectorA.actualTransform);
-        this.partUuidS = connectorB.subPart.part.uuid.toString();
+        this.partUuidS = connectorB.subPart.part.uuid;
         this.simpleConnectorName = connectorB.name;
         this.subPartNameS = connectorB.subPart.name;
         this.posRotS = new PosRot(connectorB.actualTransform);

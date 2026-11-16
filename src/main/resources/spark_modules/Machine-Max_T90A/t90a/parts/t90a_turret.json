@@ -302,7 +302,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "reload_operator_discovery_inputs": [],
+              "loader_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation"
             },
@@ -315,7 +315,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "reload_operator_discovery_inputs": [],
+              "loader_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_orientation_third"
             },
@@ -457,7 +457,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "reload_operator_discovery_inputs": [],
+              "loader_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation",
               "allow_use_items": false

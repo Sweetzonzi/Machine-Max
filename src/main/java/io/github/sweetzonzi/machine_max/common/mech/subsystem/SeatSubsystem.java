@@ -64,7 +64,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         super(owner, name, attr);
         this.attr = attr;
         this.acceptedChannels = mergeAcceptedChannels(
-                attr.staticAttribute.getAcceptedChannels(), attr.getReloadOperatorDiscoveryInputs());
+                attr.staticAttribute.getAcceptedChannels(), attr.getLoaderDiscoveryInputs());
         // 从动态属性加载摄像机发现目标
         this.cameraDiscoveryTargets = attr.getCameraDiscoveryTargets();
         //从动态属性加载控制组预设

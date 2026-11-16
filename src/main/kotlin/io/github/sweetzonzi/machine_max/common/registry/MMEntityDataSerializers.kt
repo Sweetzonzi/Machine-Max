@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobSync
 import net.minecraft.network.codec.ByteBufCodecs
@@ -32,15 +32,15 @@ object MMEntityDataSerializers {
     }
 
     /**
-     * 子系统身份：宿主 SubPart 的 int ID + 子系统名。
+     * 弹药端身份：宿主 SubPart 的 int ID + 子系统在该子零件声明序中的位置。
      *
-     * 传输开销为一个变长整数加一个 UTF-8 名称；空值用 [IAmmoSupplier.SupplierRef.NONE] 表达。
+     * 传输开销为两个变长整数；空值用 [AmmoRef.NONE] 表达。
      * 这个值只在一次会话内指认同一台机器（服务端创建载体时分配 SubPart ID，随载具数据下发），
      * 来源关系本身不持久化，因此不需要重启后仍然有效。
      */
     @JvmStatic
-    val SUPPLIER_REF: EntityDataSerializer<IAmmoSupplier.SupplierRef> =
-        EntityDataSerializer.forValueType(IAmmoSupplier.SupplierRef.STREAM_CODEC)
+    val AMMO_REF: EntityDataSerializer<AmmoRef> =
+        EntityDataSerializer.forValueType(AmmoRef.STREAM_CODEC)
 
     /**
      * 作业身份：宿主 SubPart ID + 发射器名 + 作业编号。
@@ -92,9 +92,9 @@ object MMEntityDataSerializers {
         EntityDataSerializer.forValueType(ByteBufCodecs.optional(ReloadJobSync.STREAM_CODEC))
 
     init {
-        MachineMax.REGISTER.entityDataSerializer<IAmmoSupplier.SupplierRef> {
-            id = "supplier_ref"
-            factory = { SUPPLIER_REF }
+        MachineMax.REGISTER.entityDataSerializer<AmmoRef> {
+            id = "ammo_ref"
+            factory = { AMMO_REF }
         }
         MachineMax.REGISTER.entityDataSerializer<ReloadJobKey> {
             id = "reload_job_key"

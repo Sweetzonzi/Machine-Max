@@ -560,7 +560,7 @@
                 "hull_exit_left",
                 "hull_exit_right"
               ],
-              "reload_operator_discovery_inputs": [],
+              "loader_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation"
             }

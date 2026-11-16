@@ -16,6 +16,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.level.Level;
@@ -42,7 +43,7 @@ public class VehicleData {
     private static final double MAX_COORDINATE = 3.0E7;
 
     public final String name;
-    public final String uuid;
+    public final UUID uuid;
     public final Vec3 pos;
     public final Vec3 min;
     public final Vec3 max;
@@ -54,9 +55,10 @@ public class VehicleData {
     /** 设计元信息（作者 / 时间 / 描述），只进 JSON，不参与网络传输与身份判等 */
     public final BlueprintMeta meta;
 
+    /** JSON 存档/蓝图编解码：UUID 字段用 {@link UUIDUtil#STRING_CODEC} 落盘为字符串，兼容既有模板。 */
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("name", "Vehicle").forGetter(VehicleData::getName),
-            Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
+            UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),
             Vec3.CODEC.optionalFieldOf("max", Vec3.ZERO).forGetter(VehicleData::getMax),
@@ -68,11 +70,15 @@ public class VehicleData {
             BlueprintMeta.CODEC.optionalFieldOf("meta", BlueprintMeta.EMPTY).forGetter(VehicleData::getMeta)
     ).apply(instance, VehicleData::new));
 
+    /**
+     * 网络编码：载具 UUID 以双 long 传输（16 字节），字段本身即为 UUID，无需字符串转换。
+     * JSON 落盘/蓝图走 {@link #CODEC}，保持字符串 UUID 不变。
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleData> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull VehicleData decode(RegistryFriendlyByteBuf buffer) {
             String name = buffer.readUtf();
-            String uuid = buffer.readUtf();
+            UUID uuid = buffer.readUUID();
             double x = buffer.readFloat();
             double y = buffer.readFloat();
             double z = buffer.readFloat();
@@ -97,7 +103,7 @@ public class VehicleData {
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, @NotNull VehicleData value) {
             buffer.writeUtf(value.name);
-            buffer.writeUtf(value.uuid);
+            buffer.writeUUID(value.uuid);
             buffer.writeFloat((float) value.pos.x);
             buffer.writeFloat((float) value.pos.y);
             buffer.writeFloat((float) value.pos.z);
@@ -114,20 +120,20 @@ public class VehicleData {
         }
     };
 
-    public VehicleData(String name, String uuid,
+    public VehicleData(String name, UUID uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections) {
         this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), BlueprintMeta.EMPTY);
     }
 
-    public VehicleData(String name, String uuid,
+    public VehicleData(String name, UUID uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections,
                        BlueprintMeta meta) {
         this(name, uuid, pos, min, max, hpRatio, parts, connections, List.of(), meta);
     }
 
-    public VehicleData(String name, String uuid,
+    public VehicleData(String name, UUID uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hpRatio, Map<String, RegularPartData> parts, List<ConnectionData> connections,
                        List<TrackLinkData> trackLinks, BlueprintMeta meta) {
@@ -150,7 +156,7 @@ public class VehicleData {
      */
     public VehicleData(VehicleCore vehicle) {
         this.name = vehicle.name;
-        this.uuid = vehicle.getUuid().toString();
+        this.uuid = vehicle.getUuid();
         this.pos = vehicle.getPosition();
         AABB aabb = vehicle.getAABB();
         this.min = aabb.getMinPosition().subtract(pos);
@@ -318,14 +324,13 @@ public class VehicleData {
         checkFiniteVec(problems, "min", min);
         checkFiniteVec(problems, "max", max);
 
-        Set<String> partUuids = new HashSet<>(parts.size());
+        Set<UUID> partUuids = new HashSet<>(parts.size());
         for (Map.Entry<String, RegularPartData> entry : parts.entrySet()) {
             RegularPartData part = entry.getValue();
-            partUuids.add(part.uuid);
 
             // UUID 可解析
             try {
-                UUID.fromString(part.uuid);
+                partUuids.add(UUID.fromString(part.uuid));
             } catch (IllegalArgumentException e) {
                 problems.add(BlueprintProblem.invalidValue("非法 uuid: " + part.uuid));
             }
@@ -386,7 +391,7 @@ public class VehicleData {
     }
 
     public VehicleData withNewUUID(UUID uuid) {
-        return new VehicleData(name, uuid.toString(), pos, min, max, hpRatio, parts, connections,
+        return new VehicleData(name, uuid, pos, min, max, hpRatio, parts, connections,
                 trackLinks, meta);
     }
 

@@ -2,8 +2,11 @@ package io.github.sweetzonzi.machine_max.common.attachment;
 
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoPath;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoTransporter;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
 import net.minecraft.resources.ResourceLocation;
@@ -23,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class CrewReloadAttachmentTest {
 
-    private static final ReloadJobKey KEY = new ReloadJobKey(3, "m1a2_sep.launcher", 7);
-    private static final ReloadJobKey OTHER_KEY = new ReloadJobKey(3, "m1a2_sep.launcher", 8);
+    private static final ReloadJobKey KEY = new ReloadJobKey(3, 2, 7);
+    private static final ReloadJobKey OTHER_KEY = new ReloadJobKey(3, 2, 8);
     private static final AmmoBelt SPEC = new AmmoBelt(null, "test_belt",
             List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("machine_max:test_round"), 5)), 5, 5, null);
 
@@ -81,35 +84,39 @@ class CrewReloadAttachmentTest {
 
     /** 只满足认领自检所需的消费者：当前作业可写，其余入口不需要。 */
     private static final class FakeConsumer implements IAmmoConsumer {
-        ReloadJob job = new ReloadJob(KEY, IAmmoSupplier.SupplierRef.NONE, IAmmoSupplier.SupplierRef.NONE,
+        ReloadJob job = new ReloadJob(KEY, AmmoRef.NONE, AmmoRef.NONE,
                 SPEC, 5, 100);
 
         @Override
-        public IAmmoSupplier getCurrentSupplier() {
+        public AmmoPath getCurrentRoute() {
             return null;
         }
 
         @Override
-        public void setCurrentSupplier(IAmmoSupplier supplier) {
+        public void setCurrentRoute(AmmoPath route) {
+        }
+
+        @Override
+        public List<AmmoPath> getRoutes() {
+            return List.of();
+        }
+
+        @Override
+        public IAmmoSupplier resolveProvider(AmmoRef ref) {
+            return null;
+        }
+
+        @Override
+        public void addTransporter(IAmmoTransporter transporter, String channelName) {
+        }
+
+        @Override
+        public void addProvider(IAmmoSupplier provider, String channelName) {
         }
 
         @Override
         public ReloadJob getReloadJob() {
             return job;
-        }
-
-        @Override
-        public List<IAmmoSupplier> getSuppliers() {
-            return List.of();
-        }
-
-        @Override
-        public Map<String, List<IAmmoSupplier>> getSupplierChannels() {
-            return Map.of();
-        }
-
-        @Override
-        public void addSupplier(IAmmoSupplier supplier, String channelName) {
         }
 
         @Override

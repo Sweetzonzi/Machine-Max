@@ -7,7 +7,7 @@ import com.sighs.apricityui.parser.HTML;
 import com.sighs.apricityui.style.Text;
 import io.github.sweetzonzi.machine_max.client.render.renderable.AuiHudAnimatable;
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import io.github.sweetzonzi.machine_max.common.visual.AuiHudStyle;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
@@ -166,7 +166,7 @@ class WeaponHudComponentsTest {
 
     @Test void regeneratingRowKeepsItsCountdownButHidesTheLoadingSource() throws Exception {
         var page = create("tubes");
-        var regen = new HudWeaponSnapshot.Tube(new SupplierRef(9, "launcher"),
+        var regen = new HudWeaponSnapshot.Tube(new AmmoRef(9, 0),
                 "9M133", "reloading", "regenerating", 50, 15, "15.0s", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 new HudWeaponSnapshot.Reserve(0, 4, false), false);
@@ -179,7 +179,7 @@ class WeaponHudComponentsTest {
             assertTrue(document.querySelector(".loading-source").getClassList().contains("is-regenerating"));
         });
 
-        var empty = new HudWeaponSnapshot.Tube(new SupplierRef(10, "launcher"),
+        var empty = new HudWeaponSnapshot.Tube(new AmmoRef(10, 0),
                 "AP", "empty", "idle", 0, 0, "", "", false, true,
                 HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
                 HudWeaponSnapshot.Reserve.EMPTY, false);

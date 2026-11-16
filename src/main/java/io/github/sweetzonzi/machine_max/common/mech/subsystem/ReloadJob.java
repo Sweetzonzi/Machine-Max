@@ -1,23 +1,22 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+
 
 /**
  * 一份装填作业：某台 {@link LauncherSubsystem} 当前正在取的那一份交付。
  * <p>
- * <b>归属：</b>进度随消费者的当前作业，供给者只回答"放行条件"与"本 tick 可推进多少"
- * （{@link IAmmoSupplier#getAdvanceTicks(IAmmoConsumer)}），不另持一份针对同次操作的计时。
- * 一台管同一时刻只有一个作业，因此进度、总时长与交付目标各是一个值。
+ * <b>归属：</b>进度随接收者的当前作业，运输者只回答"执行资源"与"本 tick 可推进多少"
+ * （{@link IAmmoTransporter#getAdvanceTicks(IAmmoConsumer)}），不另持一份针对同次操作的计时。
+ * 一台管同一时刻只有一个作业，因此进度、总时长与这条路上的一对身份各是一个值。
  * <p>
- * <b>身份：</b>{@link #key()} 由持有它的 Launcher 在受理时分配，{@code jobId} 自增。机构占用、实际架弹药
- * 预留与独占机构的槽位拥有者都以这个身份为键：释放、交付与结束只对身份完全匹配的作业生效，因此旧作业的
+ * <b>身份：</b>{@link #key()} 由持有它的 Launcher 在受理时分配，{@code jobId} 自增。运输者的占用、提供者的
+ * 弹药预留与独占运输者的槽位拥有者都以这个身份为键：释放、交付与结束只对身份完全匹配的作业生效，因此旧作业的
  * 回调不会摘掉同一条输弹线上的新作业。作业不跨存档延续，读档后重新受理会拿到新的编号。
  * <p>
- * <b>分配在受理时冻结：</b>{@link #deliveryTarget()}（交出这一份的机器）、{@link #upstreamOrigin()}
- * （这批弹实际出自哪台弹药架；人力直取下与交付目标同一台）、{@link #spec()}（交付规格）与
- * {@link #reservedCount()}（整次作业的弹药预留量）都在 {@link IAmmoSupplier#claimFor} 受理那一刻确定。
- * 此后供给者的交付规格、库存或来源列表变化都不改写这几个值：换架或换规格要作废旧作业并重新申请，
+ * <b>分配在受理时冻结：</b>{@link #transporter()}（本段的执行者）、{@link #provider()}（这批弹出自哪台架）、
+ * {@link #spec()}（交付规格）与 {@link #reservedCount()}（整次作业的弹药预留量）都在受理那一刻确定。
+ * 此后提供者的交付规格、库存或来源列表变化都不改写这几个值：换架或换规格要作废旧作业并重新申请，
  * 不能把已受理的作业静默换成另一份。
  * <p>
  * <b>两个阶段：</b>{@link Stage#HUMAN}（人工准备，由乘员推进）→ {@link Stage#MACHINE}（机械运行，由机构推进）。
@@ -38,7 +37,7 @@ public final class ReloadJob {
     /**
      * 装填阶段。<br>
      * 固定顺序是"人工准备 → 机械运行"：纯机械流程只有后者，人工段的乘员在段完成时释放，机械段的槽位在
-     * 进入该段时才申请（见 {@link IAmmoSupplier#claimFor}）。
+     * 进入该段时才申请（见 {@link IAmmoTransporter#claimForMachineStage}）。
      */
     public enum Stage {
         /** 人工准备：由乘员从来源取弹、放上托盘；岗位倍率与个人能力折进本阶段时长 */
@@ -47,14 +46,14 @@ public final class ReloadJob {
         MACHINE
     }
 
-    /** 作业身份：宿主 SubPart ID + 发射器名 + 编号 */
+    /** 作业身份：宿主 SubPart ID + 发射器序号 + 编号 */
     private final ReloadJobKey key;
 
-    /** 本次交付的目标：交出这一份的供给者（机构路径是机构，纯人工直取路径是弹药架） */
-    private final SupplierRef deliveryTarget;
+    /** 本次运输的执行者；{@link AmmoRef#NONE} = 人力运输者（本管自己的装填手） */
+    private final AmmoRef transporter;
 
-    /** 本次交付的实际来源弹药架；纯人工直取路径与 {@link #deliveryTarget} 相同，机构路径为上游架 */
-    private final SupplierRef upstreamOrigin;
+    /** 本次交付的弹药来源。机构路径是装弹机的上游架，人力直取路径是本管自己发现到的架 */
+    private final AmmoRef provider;
 
     /** 本次交付的冻结规格：内容、长度与回充配置在受理时定下，交付实例只可能比它少发 */
     private final AmmoBelt spec;
@@ -92,19 +91,19 @@ public final class ReloadJob {
 
     /**
      * @param key             作业身份
-     * @param deliveryTarget  交付目标
-     * @param upstreamOrigin  实际来源（机构路径为上游架）
+     * @param transporter     本次运输的运输者身份
+     * @param provider        本次交付的提供者身份
      * @param spec            冻结规格
      * @param reservedCount   预留份额
      * @param stage           起始阶段
      * @param totalTicks      起始阶段的实际时长（tick，0 表示没有可等的动作，作业立即完成）
      * @param humanRate       人工段的时间倍率（机械段传 1）
      */
-    public ReloadJob(ReloadJobKey key, SupplierRef deliveryTarget, SupplierRef upstreamOrigin,
+    public ReloadJob(ReloadJobKey key, AmmoRef transporter, AmmoRef provider,
                      AmmoBelt spec, int reservedCount, Stage stage, int totalTicks, double humanRate) {
         this.key = key;
-        this.deliveryTarget = deliveryTarget;
-        this.upstreamOrigin = upstreamOrigin;
+        this.transporter = transporter;
+        this.provider = provider;
         this.spec = spec;
         this.reservedCount = Math.max(0, reservedCount);
         this.stage = stage;
@@ -113,9 +112,9 @@ public final class ReloadJob {
     }
 
     /** 只有机械段的作业：从一开始就处于机械段。 */
-    public ReloadJob(ReloadJobKey key, SupplierRef deliveryTarget, SupplierRef upstreamOrigin,
+    public ReloadJob(ReloadJobKey key, AmmoRef transporter, AmmoRef provider,
                      AmmoBelt spec, int reservedCount, int totalTicks) {
-        this(key, deliveryTarget, upstreamOrigin, spec, reservedCount, Stage.MACHINE, totalTicks, 1.0);
+        this(key, transporter, provider, spec, reservedCount, Stage.MACHINE, totalTicks, 1.0);
     }
 
     /** 作业身份；机构占用与架预留都以它为准 */
@@ -128,17 +127,14 @@ public final class ReloadJob {
         return key.jobId();
     }
 
-    /** 本次交付的目标供给者身份 */
-    public SupplierRef deliveryTarget() {
-        return deliveryTarget;
+    /** 本次运输的运输者身份；{@link AmmoRef#NONE} = 人力运输者 */
+    public AmmoRef transporter() {
+        return transporter;
     }
 
-    /**
-     * 本次交付的实际来源弹药架身份。<br>
-     * 机构路径下由机构在受理时挑定，纯人工直取路径下与 {@link #deliveryTarget()} 相同。
-     */
-    public SupplierRef upstreamOrigin() {
-        return upstreamOrigin;
+    /** 本次交付的提供者身份；{@link AmmoRef#NONE} 只应出现在没有作业的情况下，作业里恒有提供者 */
+    public AmmoRef provider() {
+        return provider;
     }
 
     /** 本次交付的冻结规格 */

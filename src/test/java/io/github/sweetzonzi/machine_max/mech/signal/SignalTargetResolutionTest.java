@@ -245,15 +245,15 @@ class SignalTargetResolutionTest {
     void localFirstHopExpandsPartSubscribersAndStopsAtTheBus() {
         TestSender sender = new TestSender();
         TestBus partBus = new TestBus("local");
-        TestReceiver seat = new TestReceiver("turret_seat", List.of("reload_operator"));
+        TestReceiver seat = new TestReceiver("turret_seat", List.of("loader_reload"));
         TestReceiver unrelated = new TestReceiver("unrelated", List.of("other_channel"));
-        sender.target("reload_operator", partBus);
+        sender.target("loader_reload", partBus);
         partBus.subscribe(seat);
         partBus.subscribe(unrelated);
 
-        Map<String, List<ISignalReceiver>> resolved = sender.resolveTargets("reload_operator");
+        Map<String, List<ISignalReceiver>> resolved = sender.resolveTargets("loader_reload");
 
-        assertEquals(Map.of("reload_operator", List.of(seat)), resolved,
+        assertEquals(Map.of("loader_reload", List.of(seat)), resolved,
                 "local 按订阅者声明展开，Part 本身不作为终端");
         assertFalse(resolved.values().stream().flatMap(List::stream).anyMatch(receiver -> receiver == partBus),
                 "总线对象不进入终端列表");
@@ -265,9 +265,9 @@ class SignalTargetResolutionTest {
     void busWithoutSubscribersHasNoTerminal() {
         TestSender sender = new TestSender();
         TestBus idleBus = new TestBus("local");
-        sender.target("reload_operator", idleBus);
+        sender.target("loader_reload", idleBus);
 
-        assertTrue(sender.resolveTargets("reload_operator").isEmpty(),
+        assertTrue(sender.resolveTargets("loader_reload").isEmpty(),
                 "没有订阅者的 local 总线不产生终端，也不回退为 Part 自身");
     }
 }

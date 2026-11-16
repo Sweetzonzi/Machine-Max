@@ -19,7 +19,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.Signal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
@@ -178,7 +178,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      * key = 交付规格，value = 提供该规格的所有 Loader 条目（按装填速度升序）。
      * 载具结构变化时由 onVehicleStructureChanged 触发完整重建，volatile 保证跨线程可见。
      */
-    private volatile Map<AmmoBelt, List<LoaderEntry>> ammoPool = Map.of();
+    private volatile Map<AmmoBelt, List<RouteEntry>> ammoPool = Map.of();
 
     /**
      * 自上次完整重建以来的 tick 计数，用于每 10 tick 轻量刷新 availableCount。
@@ -194,15 +194,20 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private boolean needsAmmoPoolUpdate = true;
 
     /**
-     * Loader 条目（弹药池视图中的元素，供 HUD 和路由使用）。
+     * 弹药池条目：一条路、它的交付规格与此刻可申请的数量。<br>
+     * 池是"HUD 弹链选项卡与数量"的数据源，控制器级、跨所有管共享，因此条目里<b>不存逐消费者的量</b>
+     * （例如某根管的预计耗时）——那等于把一根管的估计贴到所有管上。路由不读池，它从
+     * {@code launcher.getRoutes()} 取候选并现算代价。
      */
-    public record LoaderEntry(
-            IAmmoSupplier loader,
-            AmmoBelt belt,                     // 该 Loader 的交付规格（满额模板）
-            int availableCount,                // 该 Loader 的可用弹药数
-            int reloadTimeTicks,               // 一份交付的装填耗时
-            String channel                     // 所属频道名（HUD 显示用，不影响路由）
+    public record RouteEntry(
+            AmmoPath route,                    // 一条路：运输者 + 提供者
+            AmmoBelt belt,                     // 该提供者的交付规格（满额模板）
+            int availableCount                 // 该提供者此刻可申请的数量
     ) {
+        /** 该条的提供者（HUD 的计数与文案都读它）。 */
+        public IAmmoSupplier provider() {
+            return route.provider();
+        }
     }
 
     public WeaponControllerSubsystem(ISubsystemHost owner, String name, WeaponControllerSubsystemAttr attr) {
@@ -397,40 +402,29 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 弹药池完整重建。<br>
-     * 由 onVehicleStructureChanged() 和首次初始化触发，
-     * 遍历所有 launcher 的 supplierChannels，按弹链（展平列表）分组重建 ammoPool。
-     * <p>
-     * 只有带弹链概念的供给者（再生装弹机）进入弹药池：池是"HUD 弹链选项卡 + 弹链选择"的数据源，
-     * 而 {@code AmmoLoaderSubsystem} 的物理弹仓按装填顺序出弹，没有可枚举的弹链。
-     * 无弹链的供给者仍可被路由选中，见 {@link #findSupplier}。
+     * 由 onVehicleStructureChanged() 和首次初始化触发：遍历所有 launcher 的
+     * {@link LauncherSubsystem#getRoutes()}，按交付规格分组。<br>
+     * 池是"HUD 弹链选项卡 + 弹链选择"的数据源，条目只描述"哪条路给哪种弹链、此刻还有多少"；路由不读池
+     * ——它从 {@code launcher.getRoutes()} 取候选并现算代价（见 {@link #findSupplier}），因为池是控制器级、
+     * 跨所有管共享的，装不下逐消费者的量。
      */
     private void rebuildAmmoPool() {
-        Map<AmmoBelt, List<LoaderEntry>> pool = new HashMap<>();
+        Map<AmmoBelt, List<RouteEntry>> pool = new HashMap<>();
         Set<IAmmoSupplier> visited = new HashSet<>();
 
         for (LauncherSubsystem launcher : launchers.keySet()) {
             if (launcher.isDestroyed() || !launcher.isActive()) continue;
-            for (Map.Entry<String, List<IAmmoSupplier>> channelEntry : launcher.getSupplierChannels().entrySet()) {
-                String channel = channelEntry.getKey();
-                for (IAmmoSupplier loader : channelEntry.getValue()) {
-                    if (!visited.add(loader)) continue; // 去重
+            for (AmmoPath route : launcher.getRoutes()) {
+                IAmmoSupplier provider = route.provider();
+                if (!visited.add(provider)) continue; // 同一台架只进池一次
 
-                    AmmoBelt belt = loader.getDeliverySpec();
-                    if (belt == null) continue;
-                    pool.computeIfAbsent(belt, k -> new ArrayList<>())
-                            .add(new LoaderEntry(
-                                    loader, belt,
-                                    loader.getRemainingCount(),
-                                    loader.getReloadTimeTicks(),
-                                    channel));
-                }
+                AmmoBelt belt = provider.getDeliverySpec();
+                if (belt == null) continue;
+                pool.computeIfAbsent(belt, k -> new ArrayList<>())
+                        .add(new RouteEntry(route, belt, provider.getRemainingCount()));
             }
         }
 
-        // 每个弹链内：按 reloadTimeTicks 升序排序
-        for (Map.Entry<AmmoBelt, List<LoaderEntry>> entry : pool.entrySet()) {
-            entry.getValue().sort(Comparator.comparingInt(LoaderEntry::reloadTimeTicks));
-        }
         this.ammoPool = Collections.unmodifiableMap(pool);
         this.tickSincePoolRebuild = 0;
         selectDefaultBelt();
@@ -450,19 +444,18 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 轻量刷新弹药池 availableCount（不改变结构，仅更新数量）。<br>
-     * 每 10 tick 调用一次，通过 LoaderEntry 中保存的 IAmmoSupplier 引用获取实时计数。
+     * 每 10 tick 调用一次，通过条目里那条路的提供者获取实时计数。
      */
     private void refreshAmmoPoolCounts() {
-        Map<AmmoBelt, List<LoaderEntry>> pool = this.ammoPool;
+        Map<AmmoBelt, List<RouteEntry>> pool = this.ammoPool;
         if (pool.isEmpty()) return;
-        Map<AmmoBelt, List<LoaderEntry>> updated = new HashMap<>();
-        for (Map.Entry<AmmoBelt, List<LoaderEntry>> entry : pool.entrySet()) {
+        Map<AmmoBelt, List<RouteEntry>> updated = new HashMap<>();
+        for (Map.Entry<AmmoBelt, List<RouteEntry>> entry : pool.entrySet()) {
             AmmoBelt belt = entry.getKey();
-            List<LoaderEntry> updatedEntries = new ArrayList<>(entry.getValue().size());
-            for (LoaderEntry le : entry.getValue()) {
-                int count = le.loader().getRemainingCount();
-                updatedEntries.add(new LoaderEntry(
-                        le.loader(), le.belt(), count, le.reloadTimeTicks(), le.channel()));
+            List<RouteEntry> updatedEntries = new ArrayList<>(entry.getValue().size());
+            for (RouteEntry le : entry.getValue()) {
+                updatedEntries.add(new RouteEntry(le.route(), le.belt(),
+                        le.provider().getRemainingCount()));
             }
             updated.put(belt, Collections.unmodifiableList(updatedEntries));
         }
@@ -532,129 +525,144 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 供给者是否可被某个发射器选中：运行中、能接受该弹种、且当前有弹药。<br>
-     * 弹种尚未解码（内容包缺投射物定义）时不做否决，交由发射器取弹时按炮闩判定。
-     *
-     * @return true 表示可以选中该供给者
+     * 这条路的提供者交付的规格是否就是选中的那条弹链。<br>
+     * 规格为 null（没有可交付内容）时不算——没有规格的提供者不进入候选。
      */
-    private static boolean canSupplyTo(IAmmoSupplier supplier, LauncherSubsystem launcher) {
-        return supplyTypeAccepted(supplier, launcher) && supplier.hasAmmo();
+    private static boolean deliversBelt(IAmmoSupplier provider, @Nullable AmmoBelt belt) {
+        if (belt == null) return true;
+        AmmoBelt spec = provider.getDeliverySpec();
+        return spec != null && AmmoBelt.compareSpec(spec, belt) == 0;
     }
 
     /**
-     * 供给者是否仍算这根管的合法供给者：此刻具备交付能力，且正在供的弹种炮闩能吃。<br>
-     * 与 {@link #canSupplyTo} 的区别是不要求"此刻有余弹"——装填中的装弹机弹仓里
-     * 那一发已被认领，余弹数可能已经归零，但它仍在为这根管服务，不该被判为失效。
-     * <p>
-     * 能力判定读 {@link IAmmoSupplier#isSupplyOperational()} 的实时结果，不用弹药池里的快照：
-     * 机构在这一 tick 被打坏时就该立刻换人，等到下一次池刷新会有最多 10 tick 的窗口继续向坏机构要弹。
+     * 这条路的提供者此刻是否能把这一份交到炮闩里：有交付规格，且炮闩接受它。<br>
+     * 弹种尚未解码（内容包缺投射物定义）时交付规格本身能解码但炮闩不接受，交给这条判定拒绝。
      */
-    private static boolean supplyTypeAccepted(IAmmoSupplier supplier, LauncherSubsystem launcher) {
-        if (!supplier.isSupplyOperational()) return false;
-        AmmoBelt spec = supplier.getDeliverySpec();
+    private static boolean deliversAccepted(IAmmoSupplier provider, LauncherSubsystem launcher) {
+        AmmoBelt spec = provider.getDeliverySpec();
         return spec != null && launcher.canAcceptBelt(spec);
     }
 
     /**
-     * 从弹药池里取指定弹链的全部供给者（按装填耗时升序，同耗时保持池内插入顺序）。<br>
-     * 弹药池是每 10 tick 刷新一次的快照，这里只借用它的排序，命中判定仍以实时接口为准。
-     *
-     * @param belt 选中的弹链；{@code null}（未选弹链）时返回空列表
+     * 路是否合法：四个硬条件全部成立才算候选。<br>
+     * <ol>
+     *   <li>运输者可工作：{@link IAmmoTransporter#isOperational()}</li>
+     *   <li>提供者可工作：{@link IAmmoSupplier#isSupplyOperational()}</li>
+     *   <li>本管炮闩接受提供者的交付规格：{@link #deliversAccepted}</li>
+     * </ol>
+     * 第四条"运输者没被别人的作业占着"由调用方按 {@link IAmmoTransporter#isClaimedByOther} 判——它要把
+     * 当前路自己排除在外时更好读。硬条件与代价分工固定：条件决定"能不能选"，代价只决定"选哪条"。
      */
-    private static List<IAmmoSupplier> beltSuppliers(WeaponControllerSubsystem controller,
-                                                     @Nullable AmmoBelt belt) {
-        if (belt == null) return List.of();
-        List<LoaderEntry> entries = controller.ammoPool.get(belt);
-        if (entries == null || entries.isEmpty()) return List.of();
-        List<IAmmoSupplier> suppliers = new ArrayList<>(entries.size());
-        for (LoaderEntry entry : entries) {
-            suppliers.add(entry.loader());
-        }
-        return suppliers;
+    private static boolean isLegal(AmmoPath route, LauncherSubsystem launcher) {
+        if (!route.transporter().isOperational()) return false;
+        IAmmoSupplier provider = route.provider();
+        return provider.isSupplyOperational() && deliversAccepted(provider, launcher);
     }
 
     /**
-     * 当前供给者是否值得留：一次合法性判定加一次代价比较。<br>
+     * 一条路的代价，按路缓存：同一次选路内同一条路只算一次（人力路的估价要扫座位，是最贵的一次读）。<br>
+     * 缓存随调用丢弃，不跨 tick 保留，也不写回发现表或弹药池。
+     */
+    private static int cost(AmmoPath route, LauncherSubsystem launcher, Map<AmmoPath, Integer> costs) {
+        Integer cached = costs.get(route);
+        if (cached != null) return cached;
+        int value = launcher.ticksToNextRound(route);
+        costs.put(route, value);
+        return value;
+    }
+
+    /**
+     * 路的身份全序：先按运输者、再按提供者的 {@link AmmoRef}（宿主 SubPart ID → 声明序序号）。<br>
+     * 只用于代价相等时的决胜，使同一份载具状态下每次摊派的结果一致。
+     */
+    private static int compareIdentity(AmmoPath a, AmmoPath b) {
+        int byTransporter = AmmoRef.ofTransporter(a.transporter()).compareTo(AmmoRef.ofTransporter(b.transporter()));
+        if (byTransporter != 0) return byTransporter;
+        return AmmoRef.ofProvider(a.provider()).compareTo(AmmoRef.ofProvider(b.provider()));
+    }
+
+    /**
+     * 当前路是否值得留：合法性判定、选中链成员与代价比较，三段依次判定。<br>
      * <ol>
-     *   <li>合法性（硬条件）：机构可用、弹种被炮闩接受、仍在选中弹链上。不成立立刻换人，
-     *       不等在途的那一发——切链与路由在同一 tick 内先后执行，推迟一步就会从旧链取到一发
-     *       与选项卡不符的弹</li>
-     *   <li>代价比较：候选严格更早拿到下一份才换，相等或更慢都保持。判据是
-     *       {@link LauncherSubsystem#ticksToNextRound(IAmmoSupplier)}，已备好一份是 {@code 0}，
-     *       空匣是 {@link Integer#MAX_VALUE}——因此打空的机器会被有现货的候选顶替</li>
+     *   <li>合法性（四个硬条件）：不成立立刻换路，不等在途的那一发——切链与路由在同一 tick 内先后执行，
+     *       推迟一步就会从旧链取到一发与选项卡不符的弹</li>
+     *   <li>选中链成员：提供者的交付规格必须就是选项卡上那条链，否则切链后还会从旧链取弹</li>
+     *   <li>代价比较：候选严格更早拿到下一份才换，相等或更慢都保持；代价取自
+     *       {@link #findSupplier} 建好的同一份局部估价，两条路不会被算两次</li>
      * </ol>
-     * 没排上候选时由 {@link #findSupplier} 的兜底分支返回当前供给者本身，那一路在路由的
-     * {@code candidate == current} 处就保持绑定，不走本方法。
+     * 没排上候选时由 {@link #findSupplier} 的兜底分支返回当前路本身，那一路在路由的相等判定处就保持绑定，
+     * 不走本方法。
      *
      * @param current   当前指认，可为 null（此时一律该换）
      * @param candidate {@link #findSupplier} 给出的最优候选，非 null 且不等于 current
      * @param belt      选中的弹链，null = 未选
-     * @return true 表示留着当前供给者
+     * @param costs     本次选路的代价缓存（已含两条路）
+     * @return true 表示留着当前路
      */
-    private boolean isWorthKeeping(LauncherSubsystem launcher, @Nullable IAmmoSupplier current,
-                                   IAmmoSupplier candidate, @Nullable AmmoBelt belt) {
-        if (current == null || !supplyTypeAccepted(current, launcher)) return false;
-        if (belt != null && !beltSuppliers(this, belt).contains(current)) return false;
-        return launcher.ticksToNextRound(candidate) >= launcher.ticksToNextRound(current);
+    private boolean isWorthKeeping(LauncherSubsystem launcher, @Nullable AmmoPath current,
+                                   AmmoPath candidate, @Nullable AmmoBelt belt,
+                                   Map<AmmoPath, Integer> costs) {
+        if (current == null || !isLegal(current, launcher)) return false;
+        if (!deliversBelt(current.provider(), belt)) return false;
+        return cost(candidate, launcher, costs) >= cost(current, launcher, costs);
     }
 
     /**
-     * 为发射器选定供给者：先取选中弹链的供给者，没有再退到任意可用供给者。<br>
-     * 兜底覆盖面更广——{@code AmmoLoaderSubsystem} 不在弹药池里（物理弹仓没有弹链），
-     * 只认池内条目的实现会让这类装弹机永远选不上。
+     * 为发射器选定一条路：先取选中弹链上的路，没有再退到任意可用的路。<br>
+     * 兜底覆盖面更广——同一条频道上也可能出现没有弹链概念的提供者，只认选中链会让它永远选不上。
      * <p>
-     * 兜底还有一个前提：<b>选中弹链上确实没有能接这活的供给者</b>。弹链上有人、只是暂时没弹时应当
-     * 等它，而不是跑去用别的弹链——否则每 tick 都会在两条弹链之间来回换（换人 → 取消在途交付 →
-     * 下个 tick 又换回来），一发都装不上。守住当前供给者时同样要求它位于选中弹链上：选中链
-     * 暂时空着就等它再生，不从别的链借弹，打出去的弹种因此总是选项卡上写的那一种。
+     * 兜底还有一个前提：<b>选中弹链上确实没有能接这活的提供者</b>。弹链上有人、只是暂时没弹时应当等它，
+     * 而不是跑去用别的弹链——否则每 tick 都会在两条弹链之间来回换（换路 → 取消在途交付 → 下个 tick 又
+     * 换回来），一发都装不上。守住当前路时同样要求它在选中弹链上：选中链暂时空着就等它再生，不从别的链
+     * 借弹，打出去的弹种因此总是选项卡上写的那一种。
      * <p>
-     * 每条路都按「装填耗时升序 → 供给者身份」排序。候选都是没被占用的机器（已有别的作业占着的独占
-     * 机器不进候选，见 {@link IAmmoSupplier#isClaimedByOther(IAmmoConsumer)}），因此排序键与换人比较
-     * 同源：对空着的机器，拿到下一发的时间就是它的装填耗时。身份是稳定的决胜键，使同一份载具状态下
-     * 每次摊派的结果一致。
+     * 候选都是没被占用的运输者（已有别的作业占着的独占运输者不进候选，见
+     * {@link IAmmoTransporter#isClaimedByOther}）；排序键是 {@link LauncherSubsystem#ticksToNextRound}
+     * ——"沿这条路拿到下一份还要多久"，含人工段的全部加成，与换路比较同源。代价相等时按路的身份决胜。
      *
-     * @return 选定的供给者；无可用供给者时返回 null
+     * @param costs 每次调用新建的代价缓存，供 {@link #isWorthKeeping} 复用
+     * @return 选定的路；无可用路时返回 null
      */
     @Nullable
-    private IAmmoSupplier findSupplier(LauncherSubsystem launcher,
-                                       @Nullable AmmoBelt selectedBelt) {
-        List<IAmmoSupplier> usable = new ArrayList<>();
-        List<IAmmoSupplier> beltLoaders = beltSuppliers(this, selectedBelt);
-        for (IAmmoSupplier loader : beltLoaders) {
-            if (loader != launcher.getCurrentSupplier() && canSupplyTo(loader, launcher)
-                    && !loader.isClaimedByOther(launcher)) usable.add(loader);
+    private AmmoPath findSupplier(LauncherSubsystem launcher, @Nullable AmmoBelt selectedBelt,
+                                  Map<AmmoPath, Integer> costs) {
+        List<AmmoPath> routes = launcher.getRoutes();
+        List<AmmoPath> beltRoutes = new ArrayList<>(routes.size());
+        for (AmmoPath route : routes) {
+            if (deliversBelt(route.provider(), selectedBelt)) beltRoutes.add(route);
         }
-        boolean beltHasTaker = beltLoaders.stream().anyMatch(loader -> supplyTypeAccepted(loader, launcher));
+
+        List<AmmoPath> usable = new ArrayList<>();
+        for (AmmoPath route : beltRoutes) {
+            if (isLegal(route, launcher) && !route.transporter().isClaimedByOther(launcher)) usable.add(route);
+        }
+        boolean beltHasTaker = beltRoutes.stream().anyMatch(route -> isLegal(route, launcher));
         if (usable.isEmpty() && !beltHasTaker) {
-            Map<IAmmoSupplier, Boolean> seen = new HashMap<>();
-            for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
-                for (IAmmoSupplier loader : channelLoaders) {
-                    if (seen.put(loader, Boolean.TRUE) != null) continue;
-                    if (canSupplyTo(loader, launcher) && !loader.isClaimedByOther(launcher)) usable.add(loader);
-                }
+            for (AmmoPath route : routes) {
+                if (usable.contains(route)) continue;
+                if (isLegal(route, launcher) && !route.transporter().isClaimedByOther(launcher)) usable.add(route);
             }
         }
         if (usable.isEmpty()) {
-            // 没有更该选的：当前供给者要同时满足"还能供弹"和"在选中弹链上"才守住它。
+            // 没有更该选的：当前路要同时满足"还能供弹"和"在选中弹链上"才守住它。
             // 只判前者会在切到一条暂时空着的链后继续从旧链取弹，打出去的弹种和选项卡对不上。
-            IAmmoSupplier current = launcher.getCurrentSupplier();
-            if (current == null || !supplyTypeAccepted(current, launcher)) return null;
-            boolean onSelectedBelt = selectedBelt == null
-                    || beltSuppliers(this, selectedBelt).contains(current);
-            return onSelectedBelt ? current : null;
+            AmmoPath current = launcher.getCurrentRoute();
+            if (current == null || !isLegal(current, launcher)) return null;
+            return deliversBelt(current.provider(), selectedBelt) ? current : null;
         }
-        usable.sort(Comparator
-                .comparingInt(IAmmoSupplier::getReloadTimeTicks)
-                .thenComparing(SupplierRef::of));
-        return usable.getFirst();
+        return usable.stream()
+                .min(Comparator
+                        .comparingInt((AmmoPath route) -> cost(route, launcher, costs))
+                        .thenComparing((a, b) -> compareIdentity(a, b)))
+                .orElse(null);
     }
 
     /**
-     * 弹药路由：为每根管选定它的装弹机（{@code currentSupplier}）。<br>
-     * 由 {@link #onTick()} 在主线程调用，与装弹机的装填计时、发射器的取弹同步。
+     * 弹药路由：为每根管选定一条路（{@link LauncherSubsystem#getCurrentRoute()}）。<br>
+     * 由 {@link #onTick()} 在主线程调用，与运输者的装填计时、发射器的取弹同步。
      * <p>
-     * <b>仅服务端执行：</b>指认是权威决策，客户端经发射器上的供给者身份同步值跟随
-     * （见 {@code LauncherSubsystem.SUPPLIER_ID}），不自行挑选——两端各自跑一遍路由会因为
+     * <b>仅服务端执行：</b>指认是权威决策，客户端经发射器上的两个身份同步值整对跟随
+     * （见 {@code LauncherSubsystem#ROUTE_TRANSPORTER_ID}），不自行挑选——两端各自跑一遍路由会因为
      * 本机计时器与滞后一个往返的余弹读数而摊出不同的配对。
      */
     private void routeAmmoToLaunchers() {
@@ -664,12 +672,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         // 弹药池尚未重建（handshake 未完成），跳过路由，等待下一次 onTick 重建
         if (needsAmmoPoolUpdate) return;
 
-        // 释放：已经不能发射的管不再持有作业，它占的独占机器必须让给别人。
+        // 释放：已经不能发射的管不再持有作业，它占的独占运输者必须让给别人。
         // 控制器自己被停用或摧毁时不走这条——发射器的 onTick 在开火指令判定之前就取弹，
-        // 机器确实还在被使用，此时释放占用会允许第二根管占上同一台独占机器。
+        // 机器确实还在被使用，此时释放占用会允许第二根管占上同一台独占运输者。
         for (LauncherSubsystem launcher : new ArrayList<>(launchers.keySet())) {
-            if ((launcher.isDestroyed() || !launcher.isActive()) && launcher.getCurrentSupplier() != null) {
-                launcher.setCurrentSupplier(null);
+            if ((launcher.isDestroyed() || !launcher.isActive()) && launcher.getCurrentRoute() != null) {
+                launcher.setCurrentRoute(null);
             }
         }
 
@@ -682,32 +690,33 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
         AmmoBelt belt = selectedBelt;
         for (LauncherSubsystem launcher : activeLaunchers) {
-            IAmmoSupplier current = launcher.getCurrentSupplier();
+            AmmoPath current = launcher.getCurrentRoute();
 
-            // ① 占用检查：独占机器已被别的活跃作业占着 → 本管置空（旧存档里的双重绑定由此消解）。
+            // ① 占用检查：独占运输者已被别的活跃作业占着 → 本管置空（旧存档里的双重绑定由此消解）。
             //    置空收尾的是本管自己的作业，别人的占用不受影响，因此下面重选时那台机器仍不会进候选
-            if (current != null && current.isClaimedByOther(launcher)) {
-                launcher.setCurrentSupplier(null);
+            if (current != null && current.transporter().isClaimedByOther(launcher)) {
+                launcher.setCurrentRoute(null);
                 current = null;
             }
 
-            IAmmoSupplier candidate = findSupplier(launcher, belt);
+            Map<AmmoPath, Integer> costs = new HashMap<>();
+            AmmoPath candidate = findSupplier(launcher, belt, costs);
 
-            // ④ 没有更该选的（含兜底返回当前供给者）：保持。占用随作业存续，不需要在这里续写
-            if (candidate == current) continue;
+            // ④ 没有更该选的（含兜底返回当前路）：保持。占用随作业存续，不需要在这里续写
+            if (candidate == current || (candidate != null && candidate.equals(current))) continue;
 
-            // ③ 选中弹链上已无合法供给者：清掉指认，膛内那发照打（退膛是显式操作）
+            // ③ 选中弹链上已无合法路：清掉指认，膛内那发照打（退膛是显式操作）
             if (candidate == null) {
-                launcher.setCurrentSupplier(null);
+                launcher.setCurrentRoute(null);
                 continue;
             }
 
-            // ⑤⑥ 当前不合法，或候选严格更早拿到下一发 → 换人；否则保持
-            if (isWorthKeeping(launcher, current, candidate, belt)) continue;
+            // ⑤⑥ 当前不合法，或候选严格更早拿到下一份 → 换路；否则保持
+            if (isWorthKeeping(launcher, current, candidate, belt, costs)) continue;
 
-            // 换人：assignSupplier 内部按身份收尾本管在旧机器上的作业。
-            // 旧作业的库存从未扣减（扣减只发生在交付那一刻），因此换人不丢失任何一份弹药
-            launcher.setCurrentSupplier(candidate);
+            // 换路：setCurrentRoute 内部按身份收尾本管在旧路上的作业。
+            // 旧作业的库存从未扣减（扣减只发生在交付那一刻），因此换路不丢失任何一份弹药
+            launcher.setCurrentRoute(candidate);
         }
 
     }

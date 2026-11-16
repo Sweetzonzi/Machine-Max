@@ -19,8 +19,8 @@ import java.util.Map;
  * <ul>
  *   <li>{@code ammo_discovery_inputs} — 本机构接受的供弹服务频道，下游按它发现本机</li>
  *   <li>{@code ammo_discovery_targets} — 本机构查询上游弹药架用的频道与目标</li>
- *   <li>{@code reload_operator_discovery_targets} — 本机构为人工段查询座位用的频道与目标；
- *       座位在自己的 {@code reload_operator_discovery_inputs} 里声明同一频道</li>
+ *   <li>{@code loader_discovery_targets} — 本机构为人工段查询座位用的频道与目标；
+ *       座位在自己的 {@code loader_discovery_inputs} 里声明同一频道</li>
  * </ul>
  * 上游查询只接受库存持有者（弹药架），机构之间不互认上游，机械链因此不会成环；座位查询只认座位，
  * 命中的座位取它的实际乘员作为人工段执行者。
@@ -40,14 +40,14 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
      * 常规写法是 {@code {"crew_loader_reload": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位
      * 只要在自己的实例字段里声明同一频道就会被发现。两个独立炮塔做在两个 Part 里时，{@code local} 天然隔离。
      */
-    public final Map<String, List<String>> reloadOperatorDiscoveryTargets;
+    public final Map<String, List<String>> loaderDiscoveryTargets;
 
     /**
      * 岗位时间倍率 {@code P}：装填人员频道 → 该位置的乘员为本机构操作时的便利程度（装填手 1.0、炮手 2.0）。<br>
      * 它只属于"本机构 → 该座位"这条发现关系，不是座位的全局能力；同一个座位替另一门武器装填可以是别的倍率。
      * 未声明的频道按 1.0 处理。
      */
-    public final Map<String, Double> reloadOperatorTimeMultipliers;
+    public final Map<String, Double> loaderTimeMultipliers;
 
     public static final MapCodec<AmmoLoaderSubsystemAttr> CODEC =
             RecordCodecBuilder.<AmmoLoaderSubsystemAttr>mapCodec(instance -> instance.group(
@@ -58,11 +58,11 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
                             .optionalFieldOf("ammo_discovery_targets", Map.of())
                             .forGetter(AmmoLoaderSubsystemAttr::getAmmoDiscoveryTargets),
                     AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC
-                            .optionalFieldOf("reload_operator_discovery_targets", Map.of())
-                            .forGetter(AmmoLoaderSubsystemAttr::getReloadOperatorDiscoveryTargets),
+                            .optionalFieldOf("loader_discovery_targets", Map.of())
+                            .forGetter(AmmoLoaderSubsystemAttr::getLoaderDiscoveryTargets),
                     Codec.unboundedMap(Codec.STRING, Codec.DOUBLE)
-                            .optionalFieldOf("reload_operator_time_multipliers", Map.of())
-                            .forGetter(AmmoLoaderSubsystemAttr::getReloadOperatorTimeMultipliers)
+                            .optionalFieldOf("loader_time_multipliers", Map.of())
+                            .forGetter(AmmoLoaderSubsystemAttr::getLoaderTimeMultipliers)
             ).apply(instance, AmmoLoaderSubsystemAttr::new))
                     .validate(AmmoLoaderSubsystemAttr::validateMultipliers);
 
@@ -70,14 +70,14 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
             ResourceLocation modelName,
             List<String> ammoDiscoveryInputs,
             Map<String, List<String>> ammoDiscoveryTargets,
-            Map<String, List<String>> reloadOperatorDiscoveryTargets,
-            Map<String, Double> reloadOperatorTimeMultipliers) {
+            Map<String, List<String>> loaderDiscoveryTargets,
+            Map<String, Double> loaderTimeMultipliers) {
         super(modelName);
         this.staticAttribute = (AmmoLoaderSubsystemStaticAttr) getStaticAttr();
         this.ammoDiscoveryInputs = ammoDiscoveryInputs;
         this.ammoDiscoveryTargets = ammoDiscoveryTargets;
-        this.reloadOperatorDiscoveryTargets = reloadOperatorDiscoveryTargets;
-        this.reloadOperatorTimeMultipliers = reloadOperatorTimeMultipliers;
+        this.loaderDiscoveryTargets = loaderDiscoveryTargets;
+        this.loaderTimeMultipliers = loaderTimeMultipliers;
     }
 
     /**
@@ -85,10 +85,10 @@ public class AmmoLoaderSubsystemAttr extends BasicSubsystemDynamicAttr {
      * 未列出的频道取 1.0，因此只有真的写了一个坏值才拒绝。
      */
     private static DataResult<AmmoLoaderSubsystemAttr> validateMultipliers(AmmoLoaderSubsystemAttr attr) {
-        for (Map.Entry<String, Double> entry : attr.reloadOperatorTimeMultipliers.entrySet()) {
+        for (Map.Entry<String, Double> entry : attr.loaderTimeMultipliers.entrySet()) {
             double value = entry.getValue();
             if (!Double.isFinite(value) || value <= 0) {
-                return DataResult.error(() -> "reload_operator_time_multipliers[" + entry.getKey()
+                return DataResult.error(() -> "loader_time_multipliers[" + entry.getKey()
                         + "] 必须是有限正数，实际为 " + value);
             }
         }

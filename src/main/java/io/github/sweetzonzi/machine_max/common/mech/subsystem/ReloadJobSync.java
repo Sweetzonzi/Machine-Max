@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -20,11 +19,20 @@ import net.minecraft.network.codec.StreamCodec;
  * <p>
  * <b>值而不持有：</b>{@link #spec()} 是受理时冻结规格的副本（见 {@link AmmoBelt#syncCopy()}），
  * {@link #elapsed()} 是进度基线而非每 tick 的镜像。两端拿到的都是一份可以各自推着走的快照。
+ *
+ * @param jobId       本管范围内的作业编号
+ * @param transporter 本作业的运输者身份；{@link AmmoRef#NONE} = 人力运输者
+ * @param provider    本作业的提供者身份；{@link AmmoRef#NONE} = 没有作业（仅与空快照同时出现）
+ * @param spec        受理时冻结的交付规格
+ * @param reserved    整次作业的预留份额
+ * @param elapsed     进度基线（进度坐标）
+ * @param total       本阶段实际时长
+ * @param stage       当前阶段
  */
 public record ReloadJobSync(
         int jobId,
-        SupplierRef target,
-        SupplierRef origin,
+        AmmoRef transporter,
+        AmmoRef provider,
         AmmoBelt spec,
         int reserved,
         int elapsed,
@@ -41,7 +49,7 @@ public record ReloadJobSync(
      * @param job 当前作业
      */
     public static ReloadJobSync of(ReloadJob job) {
-        return new ReloadJobSync(job.jobId(), job.deliveryTarget(), job.upstreamOrigin(),
+        return new ReloadJobSync(job.jobId(), job.transporter(), job.provider(),
                 job.spec().syncCopy(), job.reservedCount(), job.elapsedTicks(), job.totalTicks(), job.stage());
     }
 
@@ -53,24 +61,24 @@ public record ReloadJobSync(
      * @param newElapsed 当前的进度坐标
      */
     public ReloadJobSync withElapsed(int newElapsed) {
-        return new ReloadJobSync(jobId, target, origin, spec, reserved, newElapsed, total, stage);
+        return new ReloadJobSync(jobId, transporter, provider, spec, reserved, newElapsed, total, stage);
     }
 
     /**
      * 按这份快照建一条本端作业，进度落在基线上。
      *
-     * @param key 作业身份（宿主 SubPart ID 与子系统名由本端补上，编号取自快照）
+     * @param key 作业身份（宿主 SubPart ID 与发射器序号由本端补上，编号取自快照）
      */
     public ReloadJob toLocalJob(ReloadJobKey key) {
-        ReloadJob job = new ReloadJob(key, target, origin, spec, reserved, stage, total, 1.0);
+        ReloadJob job = new ReloadJob(key, transporter, provider, spec, reserved, stage, total, 1.0);
         job.advanceTo(elapsed);
         return job;
     }
 
     private static void write(ByteBuf buf, ReloadJobSync value) {
         ByteBufCodecs.VAR_INT.encode(buf, value.jobId);
-        SupplierRef.STREAM_CODEC.encode(buf, value.target);
-        SupplierRef.STREAM_CODEC.encode(buf, value.origin);
+        AmmoRef.STREAM_CODEC.encode(buf, value.transporter);
+        AmmoRef.STREAM_CODEC.encode(buf, value.provider);
         AmmoBelt.STREAM_CODEC.encode(buf, value.spec);
         ByteBufCodecs.VAR_INT.encode(buf, value.reserved);
         ByteBufCodecs.VAR_INT.encode(buf, value.elapsed);
@@ -80,13 +88,13 @@ public record ReloadJobSync(
 
     private static ReloadJobSync read(ByteBuf buf) {
         int jobId = ByteBufCodecs.VAR_INT.decode(buf);
-        SupplierRef target = SupplierRef.STREAM_CODEC.decode(buf);
-        SupplierRef origin = SupplierRef.STREAM_CODEC.decode(buf);
+        AmmoRef transporter = AmmoRef.STREAM_CODEC.decode(buf);
+        AmmoRef provider = AmmoRef.STREAM_CODEC.decode(buf);
         AmmoBelt spec = AmmoBelt.STREAM_CODEC.decode(buf);
         int reserved = ByteBufCodecs.VAR_INT.decode(buf);
         int elapsed = ByteBufCodecs.VAR_INT.decode(buf);
         int total = ByteBufCodecs.VAR_INT.decode(buf);
         ReloadJob.Stage stage = buf.readBoolean() ? ReloadJob.Stage.MACHINE : ReloadJob.Stage.HUMAN;
-        return new ReloadJobSync(jobId, target, origin, spec, reserved, elapsed, total, stage);
+        return new ReloadJobSync(jobId, transporter, provider, spec, reserved, elapsed, total, stage);
     }
 }

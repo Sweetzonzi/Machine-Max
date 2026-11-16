@@ -117,7 +117,7 @@
               "first_hud_layout": "machine_max:sdkfz234_driver",
               "third_hud_layout": "machine_max:sdkfz234_driver",
               "control_group_preset": "machine_max:default_gunner",
-              "reload_operator_discovery_inputs": [
+              "loader_discovery_inputs": [
                 "crew_gunner_reload"
               ],
               "passenger_num_outputs": {
@@ -139,7 +139,7 @@
               "first_hud_layout": "machine_max:sdkfz234_driver",
               "third_hud_layout": "machine_max:sdkfz234_driver",
               "control_group_preset": "machine_max:default_commander",
-              "reload_operator_discovery_inputs": [
+              "loader_discovery_inputs": [
                 "crew_commander_reload"
               ],
               "passenger_num_outputs": {
@@ -291,7 +291,7 @@
                   "local"
                 ]
               },
-              "reload_operator_discovery_targets": {
+              "loader_discovery_targets": {
                 "crew_gunner_reload": [
                   "local"
                 ],
@@ -299,7 +299,7 @@
                   "local"
                 ]
               },
-              "reload_operator_time_multipliers": {
+              "loader_time_multipliers": {
                 "crew_gunner_reload": 1.0,
                 "crew_commander_reload": 1.0
               }

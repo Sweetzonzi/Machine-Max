@@ -170,7 +170,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         this.level = level;
         this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
-        this.uuid = UUID.fromString(savedData.uuid);
+        this.uuid = savedData.uuid;
         // 血量以比例持久化：待部件重建并重算上限后再换算为绝对值
         final float savedHpRatio = Math.clamp(savedData.hpRatio, 0f, 1f);
         this.position = savedData.pos;
@@ -195,8 +195,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             }
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
-                RegularPart partA = partMap.get(UUID.fromString(connectionData.partUuidA));
-                RegularPart partB = partMap.get(UUID.fromString(connectionData.partUuidS));
+                RegularPart partA = partMap.get(connectionData.partUuidA);
+                RegularPart partB = partMap.get(connectionData.partUuidS);
                 if (partA != null && partB != null) {
                     AbstractConnector advConnector = partA.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.getAdvConnectorName());
                     AbstractConnector simpleConnector = partB.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.getSimpleConnectorName());
@@ -237,8 +237,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      * 只校验路径存在，实际连接器配对与几何关系由后续连接流程检查。</p>
      */
     private static void validateSavedConnector(Level level, Map<UUID, RegularPartData> parts,
-                                               String uuid, String child, String connector) {
-        RegularPartData data = parts.get(UUID.fromString(uuid));
+                                               UUID uuid, String child, String connector) {
+        RegularPartData data = parts.get(uuid);
         if (data == null || !data.subParts.containsKey(child)) throw new IllegalArgumentException("Missing connected part: " + uuid + "/" + child);
         var attr = PartFactory.resolve(level.isClientSide(), data.registryKey).getVariant(data.variant).subParts.get(child);
         if (attr == null || !attr.connectors.containsKey(connector)) throw new IllegalArgumentException("Missing connected connector: " + uuid + "/" + child + "/" + connector);
@@ -1117,8 +1117,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     @Nullable
     private Pair<AbstractConnector, SimpleConnector> connectionDataToConnectorPair(ConnectionData connection) {
         try {
-            RegularPart partA = this.partMap.get(UUID.fromString(connection.partUuidA));
-            RegularPart partB = this.partMap.get(UUID.fromString(connection.partUuidS));
+            RegularPart partA = this.partMap.get(connection.partUuidA);
+            RegularPart partB = this.partMap.get(connection.partUuidS);
             if (partA == null || partB == null) {
                 MachineMax.LOGGER.error("载具{}中未找到连接关系对应部件: {}", this.uuid, connection);
                 return null;

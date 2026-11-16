@@ -134,7 +134,7 @@ public final class PartFoundationGameTest {
             });
             RegularPartData saved = source.save();
             var before = RegularPartData.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, saved).getOrThrow();
-            VehicleData vehicleData = new VehicleData("mode comparison", UUID.randomUUID().toString(),
+            VehicleData vehicleData = new VehicleData("mode comparison", UUID.randomUUID(),
                     net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec3.ZERO,
                     1f, Map.of(saved.uuid, saved), List.of(), List.of(), BlueprintMeta.EMPTY).normalized();
             fullVehicle = ((io.github.sweetzonzi.machine_max.common.item.prop.BaseVehicleItem)

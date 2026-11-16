@@ -44,7 +44,7 @@ class RegularPartDataContractTest {
         assertEquals("default", saved.textureName);
     }
 
-    @Test void jsonAndBinaryPreserveAllStateWithoutChangingWireLayout() {
+    @Test void jsonAndBinaryPreserveAllStateWithUuidAsTwoLongs() {
         var original = data();
         var encoded = RegularPartData.CODEC.encodeStart(JsonOps.INSTANCE, original).getOrThrow();
         var decoded = RegularPartData.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
@@ -54,7 +54,7 @@ class RegularPartDataContractTest {
             RegularPartData.STREAM_CODEC.encode(buffer, original);
             assertEquals(original.registryKey, buffer.readResourceLocation());
             assertEquals(original.name, buffer.readUtf());
-            assertEquals(original.uuid, buffer.readUtf());
+            assertEquals(java.util.UUID.fromString(original.uuid), buffer.readUUID());
             assertEquals(original.variant, buffer.readUtf());
             assertEquals(original.assemblingProgress, buffer.readFloat());
             assertEquals(original.sharedDurabilityRatio, buffer.readFloat());
@@ -75,7 +75,7 @@ class RegularPartDataContractTest {
     @Test void normalizationPreservesPartResourcesAndInputData() {
         var saved = data();
         var originalJson = RegularPartData.CODEC.encodeStart(JsonOps.INSTANCE, saved).getOrThrow();
-        VehicleData vehicle = new VehicleData("legacy", UUID.randomUUID().toString(), new Vec3(10, 20, 30),
+        VehicleData vehicle = new VehicleData("legacy", UUID.randomUUID(), new Vec3(10, 20, 30),
                 Vec3.ZERO, Vec3.ZERO, 0.2f, Map.of(saved.uuid, saved), List.of(), List.of(), BlueprintMeta.EMPTY);
         var normalized = vehicle.normalized();
         var result = normalized.parts.get(saved.uuid);

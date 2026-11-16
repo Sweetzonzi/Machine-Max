@@ -2,42 +2,35 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 弹药供给者接口。<br>
- * 供给者提供的是<b>可工作条件</b>、<b>库存承诺</b>与<b>交付本身</b>：消费者（{@link LauncherSubsystem}）
- * 在自己的 {@link ReloadJob} 里推进这份装填的时间，每 tick 向供给者索取"本 tick 能推进多少"
- * （{@link #getAdvanceTicks(IAmmoConsumer)}），走完后兑现那份预留、取走一份 {@link AmmoBelt}。
- * 供给者为任何消费者都不保存并行计时，也不向消费者推送进度。
+ * 弹药提供者接口：库存的持有者，也是交付实例的制造者。<br>
+ * 它只回答三件事——<b>可工作条件</b>、<b>库存承诺</b>（整次作业一份预留）与<b>交付本身</b>；本段的时间、
+ * 执行资源与推进量归运输者（{@link IAmmoTransporter}），进度与阶段归接收者的 {@link ReloadJob}。
  * <p>
- * <b>两段承诺：</b>受理时（{@link #claimFor}）一次取得本条作业的弹药预留与机构槽位，此后这条作业按
- * 自己的预留推进，不受其他作业抢走可分配库存的影响；交付时（{@link #consumeReadyBelt}）把预留兑现成
- * 实际扣减。取消、换人、来源失效与摧毁都按身份释放预留（{@link #releaseClaim}），释放只减少承诺、
- * 不给库存补数。
+ * <b>提供者不认识接收者。</b>预留、兑现与撤销只按作业身份 {@link ReloadJobKey} 记账，参数里没有消费者；
+ * "哪根管占着这一份"由身份里的宿主 SubPart ID 与序号表达。一次作业一份预留，预留量
+ * {@code q = min(可分配库存, 规格长度)}，{@code 0 ≤ Σq ≤ N}，按身份撤销与兑现。
  * <p>
- * 交付单位是一份 Belt 实例：{@link #getDeliverySpec()} 预览下一份的满额规格，
- * {@link #consumeReadyBelt(IAmmoConsumer)} 兑现并交出独立实例，{@link #returnBelt(AmmoBelt)}
- * 全收或全拒地回收。校验在消费者拉到交付之后执行——供给者不判断消费者收不收。
+ * <b>交付单位是一份 {@link AmmoBelt}：</b>{@link #getDeliverySpec()} 预览下一份的满额规格，
+ * {@link #deliverReserved} 兑现预留并交出独立实例（发数是该作业的 {@code q}），
+ * {@link #returnBelt} 全收或全拒地回收。校验在接收者拉到交付之后执行——提供者不判断接收者收不收。
  * <p>
- * <b>双端契约：</b>"哪根管由哪台供给者供弹"是服务端单方面的决定，客户端经
- * {@link IAmmoConsumer} 上的同步指认与作业字段跟随（身份由 {@link SupplierRef} 表达）。分配、占用与
- * 预留只在服务端决定；客户端按同一份已发布状态自行推进计时并显示，不重做竞争与库存扣减。
+ * <b>撤销归一：</b>正常收尾由接收者调用 {@link #releaseReservation}；运输者只在失效清理（消费者已无机会
+ * 收尾）时按身份代撤销。{@link #holdsReservation} 是"那份预留还在吗"的读口，服务端读预留表，客户端按
+ * "实际库存不少于该作业份额"保守回答。
  */
 public interface IAmmoSupplier {
 
     /**
-     * 装填阶段：消费者此刻等的是哪一段。<br>
-     * 作业本身的推进由消费者的 {@link ReloadJob} 表达；本枚举只描述"没有作业时供给者在忙什么"，
-     * 以及显示层该用哪种进度口径。
+     * 装填阶段：没有进行中的作业时提供者此刻在忙什么。作业本身的推进由接收者的 {@link ReloadJob} 表达；
+     * 本枚举只服务显示层——它据它区分"等待供弹"与"等待再生"。
      */
     enum ReloadPhase {
         /** 没有进行中的装填或再生 */
         IDLE,
-        /** 一份交付正在推进（消费者有作业） */
+        /** 一份交付正在推进（接收者有作业） */
         LOADING,
         /** 弹仓补货中：按速率逐发再生下一发 */
         REGENERATING,
@@ -46,35 +39,40 @@ public interface IAmmoSupplier {
     }
 
     /**
-     * 此刻是否有可供<b>新作业</b>申请的弹药。<br>
-     * 读的是可分配数量（实际库存减去已预留总量），已被其他作业预留的那一份不再对外供应；已有预留的作业
-     * 不看这个值（见 {@link #getAdvanceTicks(IAmmoConsumer)}）。判据是"有没有可分配的弹"，不是"够不够
-     * 一整份"：不足一份时交付剩余的全部，具体发数由 {@link #consumeReadyBelt(IAmmoConsumer)} 返回的
-     * 实例表达。
+     * 受理结果：本条作业被接单时授予的分配。<br>
+     * 只在 {@link #reserve} 成功时产生一次，由接收者立刻写进自己的 {@link ReloadJob}；它不是一个可长期
+     * 持有的状态对象。来源由调用方指名的那台提供者给出，消费方把它写成 {@link AmmoRef#ofProvider}，
+     * 因此不需要第三个字段。
+     *
+     * @param spec          本次交付的规格（模式、长度、标签与回充配置）
+     * @param reservedCount 为本次作业预留的弹药数量 {@code q}，{@code > 0}
      */
-    boolean hasAmmo();
+    record Grant(AmmoBelt spec, int reservedCount) {
+    }
 
     /**
-     * 供给者自身此刻是否具备交付能力：机构启用、未摧毁、供能条件满足。<br>
-     * 这是三个判断里的第一个（机构自身可工作），与"有没有可分配的弹"（{@link #hasAmmo()}）和
-     * "本次作业有没有有效预留"（{@link #getAdvanceTicks(IAmmoConsumer)}）分开：空仓但机构健康为 true
-     * （它照常再生），满仓但机构损坏为 false。上游架是否存在、是否可工作属于来源可用性，由供给者
-     * 在受理与交付时按作业的来源判定，不并入本方法——否则一台暂时没接弹药架的机构会被报成"机械故障"。
+     * 提供者自身此刻是否具备交付能力：机构启用、未摧毁（含 30% 恢复锁存）、供能条件满足。<br>
+     * 与"有没有可分配的弹"（{@link #hasAmmo()}）和"本次作业有没有有效预留"（{@link #holdsReservation}）
+     * 分开：空仓但机构健康为 true（它照常再生），满仓但机构损坏为 false。
      * <p>
-     * 不启动计时、不修改库存，因此可以在每个 tick 的路由里调用。修理完成后无需重新握手，
-     * 调用方下次判定即看到 true。
-     * <p>
-     * 武器控制器用它在选取、保持与回退供给者时实时过滤；供给者自己也要用它在
-     * {@link #getAdvanceTicks(IAmmoConsumer)} 与 {@link #consumeReadyBelt(IAmmoConsumer)}
-     * 两个入口挡下请求，否则绕过控制器的直接请求仍能取走弹药。
+     * 不启动计时、不修改库存，因此可以在每个 tick 的路由里调用。修理完成后无需重新握手。
      */
     boolean isSupplyOperational();
 
     /**
-     * 剩余弹药计数，供显示与选择：按供给者的口径报<b>可申请</b>的数量（已按身份预留的那一份不计入）。
+     * 剩余弹药计数，供显示与选择：按提供者的口径报<b>可申请</b>的数量（已按身份预留的那一份不计入）。
      * -1 表示无计数概念（如无限供给）。
      */
     int getRemainingCount();
+
+    /**
+     * 此刻是否有可供<b>新作业</b>申请的弹药：{@link #getRemainingCount()} 大于 0（-1 表示无计数概念，
+     * 按有货）。判据是"有没有可分配的弹"，不是"够不够一整份"：不足一份时交付剩余的全部。
+     */
+    default boolean hasAmmo() {
+        int count = getRemainingCount();
+        return count < 0 || count > 0;
+    }
 
     /** 下一发的弹种，null = 无弹药或无交付规格 */
     @Nullable ProjectileType getSuppliedType();
@@ -83,216 +81,78 @@ public interface IAmmoSupplier {
      * 下一份交付的内容规格：满额模板（{@code remaining} 等于 {@code length}，回充运行态为零）。<br>
      * 供路由在取货前检查长度与全部弹种，也用作弹药池的分组键；查询不扣库存、不启动计时。
      * 实际交付的实例可以比它少发（源库存不足一份时按剩余发数交付），规格本身仍是这一份。
-     * 没有可交付规格的供给者（例如物品读写尚未实现的装弹机）返回 null，不进入候选。
      * <p>
-     * 返回的对象是共享的只读模板，调用方不得原地推进它；要交付就返回 {@link #consumeReadyBelt} 的实例。
+     * 返回的对象是共享的只读模板，调用方不得原地推进它；要交付就返回 {@link #deliverReserved} 的实例。
      */
     @Nullable AmmoBelt getDeliverySpec();
 
     /**
-     * 交付一份 Belt 的机械段基准时长（tick）。<br>
-     * 消费者在开工时把它写进 {@link ReloadJob#totalTicks()}，此后不再改读本方法。
-     */
-    int getReloadTimeTicks();
-
-    /** 是否允许多个消费者同时等待装填 */
-    boolean canSupplyMultiple();
-
-    /**
-     * 受理结果：本条作业被接单时授予的分配。<br>
-     * 只在 {@link #claimFor} 受理成功时产生一次，由消费者立刻写进自己的 {@link ReloadJob}；它不是一个可长期
-     * 持有的状态对象，消费者之外的任何地方都不保存它。
-     *
-     * @param origin        本次交付的实际来源弹药架
-     * @param spec          本次交付的规格（模式、长度、标签与回充配置）
-     * @param reservedCount 为本次作业预留的弹药数量 {@code q}，{@code > 0}
-     */
-    record Grant(SupplierRef origin, AmmoBelt spec, int reservedCount) {
-    }
-
-    /**
-     * 为一条作业占用本机，并取得本次交付的弹药预留。<br>
-     * 受理点只有一处：消费者在开工时用即将写进自己作业的身份调用本方法。两项资源在同一次调用里取得——
-     * 机构槽位（仅独占机构）与实际架的 {@code q} 发预留；任一项失败就撤销本次已取得的资源并返回
-     * {@code null}，消费者因此不建作业、不开始计时，下个 tick 再问一次。未被受理的请求不写记录，
-     * 所以它既不占槽也不挡别人。
-     * <p>
-     * <b>已有本作业预留时只取槽位：</b>带人工段的流程在人工段开工前就用 {@link #reserveFor} 取了预留
-     * （那时还不占机械槽），进入机械段时再调用本方法补齐槽位；这时授予仍带同一个来源与份额，
-     * 但消费者以作业上冻结的规格为准，不拿它覆盖受理时的分配。
-     * <p>
-     * 记录里只有消费者引用与该作业的身份，不复制作业内容；预留记在来源弹药架上，键是同一个身份。
-     * 两者都不入存档：读档后第一次受理重新建立。消费者写作业与调用本方法是同一次受理，
-     * 因此记录里的身份总能与对方当前作业对上。
-     *
-     * @param consumer 申请开工的消费者
-     * @param key      它即将写进作业的身份
-     * @return 本次授予的来源与份额；{@code null} 表示本 tick 接不了单
-     */
-    @Nullable Grant claimFor(IAmmoConsumer consumer, ReloadJobKey key);
-
-    // ==================== 人工段 ====================
-
-    /**
-     * 本机构流程中人工准备段的基准时长（tick）；0 表示没有人工段（全自动流程）。<br>
-     * 这是"标准人力"下的秒数，还要乘岗位倍率 {@code P} 与乘员个人倍率 {@code A} 才是实际时长
-     * （见装填计划 §2.2）；换算由持有作业的消费者做，本机只报基准值。
-     */
-    default int getHumanReloadTimeTicks() {
-        return 0;
-    }
-
-    /**
-     * 只取得整次作业的弹药预留，<b>不占机械槽</b>。<br>
-     * 人工段开工时用：这时还没有机械动作，占着机构槽位会让别的管白白等。人工段结束后要机械动作时，
-     * 消费者再调用 {@link #claimFor} 补齐槽位——那份预留已经在，只需登记槽位。
-     * <p>没有人工段的机构不需要这个入口，默认实现与 {@link #claimFor} 相同。
-     *
-     * @param consumer 申请开工的消费者
-     * @param key      它即将写进作业的身份
-     * @return 本次授予的来源与份额；{@code null} 表示没有可交付的库存
-     */
-    @Nullable
-    default Grant reserveFor(IAmmoConsumer consumer, ReloadJobKey key) {
-        return claimFor(consumer, key);
-    }
-
-    /**
-     * 为人工段认领一名执行者（坐在这台座位上的实际乘员）。<br>
-     * 由机构按自己的装填人员发现表选人：候选是"有效座位的存活乘员"，每个座位一个候选（多条线路到达同一座位
-     * 时只留其中最低的岗位倍率），取预计完成时间最小者（§4.3）。选不到人时返回 {@code false}，
-     * 消费者因此不建作业、不占预留，下个 tick 再问一次。
-     * <p>没有人工段的机构不需要这个入口，默认实现恒为 {@code true}（没有人要认领）。
-     *
-     * @param consumer 申请开工的消费者
-     * @param key      它即将写进作业的身份
-     * @return true 表示这次作业此刻有人可干
-     */
-    default boolean claimOperator(IAmmoConsumer consumer, ReloadJobKey key) {
-        return true;
-    }
-
-    /**
-     * 这条作业的人工段是否仍有可用执行者。<br>
-     * 乘员离座、死亡或实体移除时立即变为 {@code false}：人工段不能空跑，消费者据此换人或暂停
-     * （原库存预留与已取得的机械槽位都保持，见 §9 第 3 条）。
-     * <p>没有人工段的机构默认恒为 {@code true}。
-     *
-     * @param consumer 询问的消费者
-     */
-    default boolean holdsOperator(IAmmoConsumer consumer) {
-        return true;
-    }
-
-    /**
-     * 按身份释放人工段的执行者认领。<br>
-     * 人工段完成、作业终止、换人都是这个入口；身份不匹配时无操作，旧作业的回调因此摘不掉新作业的认领。
-     * 释放不改变已完成的人工进度。
-     *
-     * @param consumer 结束人工段或结束作业的消费者
-     * @param key      这条作业的身份
-     */
-    default void releaseOperator(IAmmoConsumer consumer, ReloadJobKey key) {
-    }
-
-    /**
-     * 已认领执行者的人工段时间倍率（岗位倍率 {@code P} × 个人倍率 {@code A}）。<br>
-     * 消费者用它在换人后重新换算剩余时长（{@link ReloadJob#retimeHuman(double)}）：倍率变小时剩余 tick 变少，
-     * 变大时变多，进度比例不倒退。没有人工段或没有认领时返回 1。
-     *
-     * @param consumer 询问的消费者
-     */
-    default double getOperatorTimeScale(IAmmoConsumer consumer) {
-        return 1.0;
-    }
-
-    /**
-     * 按身份释放占用与弹药预留。<br>
-     * 只有记录里的身份与给定值相同才处理：旧作业的回调因此不会摘掉同一消费者的新作业，也不会释放新作业
-     * 的预留。释放只减少承诺，不改动实际库存、不补弹。重复释放、释放别人、释放一条已经不存在的记录
-     * 都是无操作。
-     *
-     * @param consumer 结束作业的消费者
-     * @param key      这条作业的身份，必须是当初 {@link #claimFor} 收到的那个值
-     */
-    void releaseClaim(IAmmoConsumer consumer, ReloadJobKey key);
-
-    /**
-     * 询问的消费者之外，是否已有活跃作业占着本机。<br>
-     * 路由用它把忙着的独占机构排除在候选之外——被占的机器根本不进候选，N 根管不会轮抢同一台，
-     * 只会摊到 N 台上；摊不开时那根管如实显示无供给者。这比"排到末位"更强，也免得等待方每 tick
-     * 被选上又拿不到推进量。
-     * <p>
-     * 读之前先剔除失效记录（消费者已摧毁／失活、指认已换、当前作业缺失或编号对不上），因此
-     * 返回值反映的是此刻真正在推进的作业，而不是历史残骸。{@code can_supply_multiple=true} 的机构
-     * 允许并行，恒为 {@code false}。
-     *
-     * @param consumer 询问的消费者
-     * @return true 表示本机已被属于别人的作业占着
-     */
-    boolean isClaimedByOther(IAmmoConsumer consumer);
-
-    /**
-     * 该消费者的作业在本机是否仍有有效承诺：占用还在，且该身份的弹药预留还在。<br>
-     * {@code false} 表示这份作业已经推不动也不会有交付——机构换了手、来源架失效、份额被撤销或已兑现。
-     * 消费者据此按失效收尾并让路由重选，不必等暂停超时；把它与"本 tick 推不动"分开，是因为暂停只是
-     * 暂时不前进，承诺本身还在。
-     * <p>
-     * 读之前同样先剔除失效占用，因此返回值反映的是此刻这条作业的真实状态。
-     *
-     * @param consumer 询问的消费者
-     * @return true 表示本机仍为这条作业保留着承诺
-     */
-    boolean holdsCommitment(IAmmoConsumer consumer);
-
-    /**
-     * 本 tick 能为该消费者的作业推进多少 tick。<br>
-     * 这是供给者唯一的"放行"入口：{@code 0} 表示本 tick 推不动（机构损坏、供能不足、槽位被别的作业
-     * 占着、本作业的来源预留已不存在），正数表示推进量。调用方把返回值累计进
-     * {@link ReloadJob#advance(int)}，因此推进速度由供给者表达，进度仍归消费者。
-     * <p>
-     * 已受理的作业按<b>自己的预留</b>推进：只要该身份的预留还在、机构还能工作，可分配数量为 0 也不
-     * 影响它——那份弹已经记在这条作业名下。反过来，预留被撤销（来源失效、强制损失、作业被终止）时
-     * 本方法返回 {@code 0}，消费者随后按失效路径收尾。
-     * <p>
-     * 本方法与 {@link #consumeReadyBelt(IAmmoConsumer)} 都必须用 {@link #isSupplyOperational()}
-     * 挡下失效的机构，否则绕过控制器的直接请求仍能取走弹药。
-     * <p>
-     * {@code can_supply_multiple=false} 的机构一次只为一条作业推进：别的活跃作业已经占着本机时，
-     * 未占用者拿到 {@code 0}——一条输弹线一次只移动一份，等待方下个 tick 再问。
-     *
-     * @param consumer 请求放行的消费者
-     * @return 本 tick 可推进的 tick 数；{@code 0} 表示本 tick 推不动
-     */
-    int getAdvanceTicks(IAmmoConsumer consumer);
-
-    /**
-     * 兑现一份预留，把它变成一份交付实例。<br>
-     * 消费者在作业走完后调用。交付量取作业的预留份额：实际库存已按该份额预留，因此这一步只把承诺变成
-     * 实际扣减，不需要再争抢库存。同一身份最多兑现一次——预留被兑现后即删除，重复调用返回
-     * {@code null}，不会扣第二次。
-     * <p>
-     * 返回的实例发数为预留量 {@code q}，规格与作业的 {@link ReloadJob#spec()} 一致（模式、长度、标签、
-     * 回充），只有 {@code remaining} 可能小于规格长度。实例归消费者所有，源不再持有或更新它。
-     *
-     * @param consumer 走完本阶段、来兑现的消费者
-     * @return 一份独立实例的 {@link AmmoBelt}；本机不可交付、作业缺失或该身份没有预留时返回 null
-     */
-    @Nullable AmmoBelt consumeReadyBelt(IAmmoConsumer consumer);
-
-    /**
-     * 供给者的最大容量。-1 表示无容量概念（如无限供给）。
-     * 由 {@code AmmoLoaderSubsystem} 等具体实现类重写返回各自容量；机构不持有库存，
-     * 返回值取自它的上游弹药架。
+     * 提供者的最大容量。-1 表示无容量概念（如无限供给）。
      */
     default int getCapacity() {
         return -1;
     }
 
     /**
-     * 没有进行中的作业时，供给者在忙哪一段。<br>
+     * 为一条作业预留整次作业的弹药：可分配库存立即减少，实际库存不动。<br>
+     * 预留量取 {@code q = min(可分配库存, 规格长度)}，不足一份也能开工（交付时按 {@code q} 发）。
+     * 同一身份重复申请沿用原份额，不叠加；{@link AmmoRef#NONE} 与客户端调用都不产生预留。
+     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     *
+     * @param key 作业身份
+     * @return 本次授予的规格与份额；没有可分配库存或本机不可工作时返回 {@code null}
+     */
+    @Nullable Grant reserve(ReloadJobKey key);
+
+    /**
+     * 兑现一条作业的预留：按该身份扣减实际库存并交出独立实例。<br>
+     * 同一身份只兑现一次——预留在此处删除，重复调用返回 {@code null}，不会扣第二次。
+     * <p><b>调用线程：</b>主线程（服务端交付点）。
+     *
+     * @param key 作业身份
+     * @return 交付实例，发数等于该作业的预留量；没有预留时返回 {@code null}
+     */
+    @Nullable AmmoBelt deliverReserved(ReloadJobKey key);
+
+    /**
+     * 按身份撤销一条作业的预留：只减少承诺，不改动实际库存、不补弹。<br>
+     * 重复撤销、撤销不存在的身份都是无操作。正常收尾只有接收者在写这张表。
+     * <p><b>调用线程：</b>主线程（服务端）。
+     */
+    void releaseReservation(ReloadJobKey key);
+
+    /**
+     * 该作业的预留是否还在。<br>
+     * 服务端读预留表（忽略 {@code reservedCount}）；客户端没有整张表，只能按"实际库存不少于本作业份额"
+     * 回答，{@code reservedCount} 就是那个份额。两端问的是同一个问题——"你手上还有这一份吗"——
+     * 只是证据不同。
+     *
+     * @param key           作业身份
+     * @param reservedCount 该作业的份额 {@code q}
+     */
+    boolean holdsReservation(ReloadJobKey key, int reservedCount);
+
+    /**
+     * 接收一份退还的弹药。<br>
+     * <b>收不收由提供者自己判</b>——内容里的弹种是不是自己允许的、弹仓当前能不能储存、剩余容量是否装得下，
+     * 都是提供者内部的规则。全收或全拒：拒收时不改动传入对象。
+     *
+     * @param belt 退还的那一份弹药
+     * @return true 表示已收下
+     */
+    boolean returnBelt(AmmoBelt belt);
+
+    /**
+     * HUD 弹链名。<br>
+     * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。需要标识弹链时用 {@link #getDeliverySpec()} 的内容
+     * 规格，需要标识弹种时用 {@link #getSuppliedType()}。
+     * <p><b>仅在客户端调用</b>：文本取自玩家语言的翻译键。
+     */
+    String getLabel();
+
+    /**
+     * 没有进行中的作业时，提供者此刻在忙哪一段。<br>
      * 默认不区分再生形态（{@link ReloadPhase#IDLE}）：只有按速率补货的实现才覆写。
-     * 显示层用它把"等待供弹"与"等待再生"分开，秒数才算在正确的阶段上。
      */
     default ReloadPhase getRefillPhase() {
         return ReloadPhase.IDLE;
@@ -307,97 +167,4 @@ public interface IAmmoSupplier {
     default int getRefillRemainingTicks() {
         return 0;
     }
-
-    /**
-     * 按消费者作业的当前进度播放本机负责的那一段装填音效。<br>
-     * 机械段的声音定位在装弹机上，因此由供给者自己播放；消费者只交来进度，已播阈值由供给者记录，
-     * 同一段不重播。默认空实现：没有进度音效的供给者不必覆写。
-     * <p>
-     * <b>仅在客户端调用</b>，每个客户端 tick 一次。
-     *
-     * @param consumer 正在装填的消费者
-     * @param progress 该消费者当前作业的进度（0~1）
-     */
-    default void tickStageSounds(IAmmoConsumer consumer, float progress) {
-    }
-
-    /**
-     * 接收一份退还的弹药。<br>
-     * <b>收不收由供给者自己判</b>——内容里的弹种是不是自己允许的、弹仓当前能不能储存
-     * （坏掉的弹仓不收，否则等于往里灌弹药）、剩余容量是否装得下这一份，都是供给者内部的规则，
-     * 消费者不该替它做判断，因此本方法返回是否收下。全收或全拒：拒收时不改动传入对象。
-     * <p>
-     * 典型调用点是发射器退膛与整份换装：被拒时由消费者保留这一份，不能原地丢弃。
-     *
-     * @param belt 退还的那一份弹药
-     * @return true 表示已收下；false 表示未接收（弹种不被允许、弹仓不可储存或容量不足）
-     */
-    boolean returnBelt(AmmoBelt belt);
-
-    /**
-     * HUD 弹链名。
-     * <p>
-     * 返回值<b>仅供显示</b>：不得用于比对、查找或路由。名字是给玩家读的语义标签，
-     * 两条构成不同的弹链可以合法地显示同一个名字（例如都以穿甲弹开头的两条弹链）。
-     * 需要标识弹链时用 {@link #getDeliverySpec()} 的内容规格，
-     * 需要标识弹种时用 {@link #getSuppliedType()} 返回的 {@link ProjectileType} 实例。
-     * <p>
-     * <b>仅在客户端调用</b>：文本取自玩家语言的翻译键，服务端的语言表不含内容包的键。
-     */
-    String getLabel();
-
-    /**
-     * 子系统身份：宿主 SubPart 的 int ID + 子系统名。<br>
-     * 作用域是<b>本次会话内的这一台载具</b>：SubPart 的 int ID 由服务端创建载体时分配并随载具数据下发，
-     * 客户端拿到的就是服务端那一份；子系统名由内容包定义。两端因此用同一个值指认同一台机器，
-     * 不需要跨端传对象引用。
-     * <p>
-     * 同一形状承担两个角色，不是两种地址：{@code deliveryTarget} 指本次把弹药交到手上的对象，
-     * {@code upstreamOrigin} 指机构为这次作业挑中的上游弹药架。作业不保存第三个"来源"字段。
-     * <p>
-     * 用这个短地址而不是宿主 Part 的 uuid：uuid 随载具模板重建而重新生成，来源关系又不持久化
-     * （读档后作业重新受理），没有需要它在重启后保持稳定的地方。
-     * <p>
-     * 空值用 {@link #NONE} 表达（{@code subPartId} 为 {@code -1}；真实 SubPart ID 非负）。
-     * <p>
-     * {@link #compareTo} 给出与内容无关的全序，供路由在候选排序里做稳定的决胜键。
-     */
-    record SupplierRef(int subPartId, String subsystemName)
-            implements Comparable<SupplierRef> {
-
-        /** 无供给者 */
-        public static final SupplierRef NONE = new SupplierRef(-1, "");
-
-        /** 通过网络传输的编解码器：宿主 ID + UTF-8 子系统名 */
-        public static final StreamCodec<ByteBuf, SupplierRef> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.VAR_INT, SupplierRef::subPartId,
-                ByteBufCodecs.STRING_UTF8, SupplierRef::subsystemName,
-                SupplierRef::new);
-
-        /** 是否为空值 */
-        public boolean isNone() {
-            return subPartId < 0;
-        }
-
-        /**
-         * 取某台供给者的身份：宿主 SubPart ID ＋ 子系统名。<br>
-         * "交出这一份的机器"与"机构为本次作业挑中的上游弹药架"都用这个形状指认，因此它同时服务两个角色；
-         * 人力直取路径下两者是同一台弹药架。供给者不是子系统时返回 {@link #NONE}。
-         */
-        public static SupplierRef of(@Nullable IAmmoSupplier supplier) {
-            return supplier instanceof AbstractSubsystem sub
-                    ? new SupplierRef(sub.getSubPart().getId(), sub.getName())
-                    : NONE;
-        }
-
-        /**
-         * 先按宿主 SubPart ID、再按子系统名的全序。
-         */
-        @Override
-        public int compareTo(SupplierRef other) {
-            int bySubPart = Integer.compare(subPartId, other.subPartId);
-            return bySubPart != 0 ? bySubPart : subsystemName.compareTo(other.subsystemName);
-        }
-    }
-
 }

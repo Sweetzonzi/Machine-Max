@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoPath;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
@@ -297,11 +298,14 @@ public final class M1A2MountWiringGameTest {
             AbstractSubsystem autoloader = require(helper, byName, mount.autoloader());
             assertReachesOnly(helper, launcher, mount.ammoChannel(), autoloader, launchers);
             // 发现结果要真的登记进本管：查询可达与实际取弹来源是两件事。
-            List<IAmmoSupplier> registered = ((IAmmoConsumer) launcher).getSuppliers();
-            helper.assertTrue(registered.size() == 1,
-                    launcher.name + " 应恰好登记一个供给者，实际 " + registered.size());
-            helper.assertTrue(registered.getFirst() == autoloader,
-                    launcher.name + " 登记的供给者必须是 " + autoloader.name);
+            List<AmmoPath> routes = ((IAmmoConsumer) launcher).getRoutes();
+            helper.assertTrue(!routes.isEmpty(),
+                    launcher.name + " 必须至少有一条路");
+            for (AmmoPath route : routes) {
+                helper.assertTrue(route.transporter() == autoloader,
+                        launcher.name + " 的运输者必须是 " + autoloader.name + "，实际是 "
+                                + route.transporter());
+            }
         }
     }
 

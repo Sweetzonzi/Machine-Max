@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-15",
+  "bundled_on": "2026-11-16",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "97950b2eaf681437d1c54c016482a8f17d33e49b",
+    "revision": "ebadceb71a08a1564cbbc69a573738795d113250",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -176,8 +176,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_loader_dynamic_attr.schema.json",
-        "bytes": 3631,
-        "sha256": "14a55da5ff2f2e5b410dd384b356da6fe77ff6de1064179572778c8a8e12a936"
+        "bytes": 3586,
+        "sha256": "e59ef7d2ba122183422c75ca802dd4cfcb4188aa9aa8f21d09ffb26dc1f9a116"
       },
       {
         "path": "references/schemas/subsystem/dynamic/ammo_rack_dynamic_attr.schema.json",
@@ -216,8 +216,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
-        "bytes": 3631,
-        "sha256": "21a8e556fff5091e9068df075602b7ef9d0e9606d71323a646b5743ab3d6e581"
+        "bytes": 3604,
+        "sha256": "c6e8147fad0634ea65a44f213a2d72685284e3fca37c8e82b84a48fb33079701"
       },
       {
         "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
@@ -246,8 +246,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/seat_dynamic_attr.schema.json",
-        "bytes": 3904,
-        "sha256": "8b9a450b09f7603a0d6906387f77dbfca0fc58520ebe8c436d28d13545b2782a"
+        "bytes": 3877,
+        "sha256": "ca38fc3e4a786c971a279bbf169ef5ba8462088c4552c0044464496b5a4fef8c"
       },
       {
         "path": "references/schemas/subsystem/dynamic/sight_dynamic_attr.schema.json",
@@ -326,8 +326,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 11525,
-        "sha256": "b73fea0ba60c23726d034dd68392c99de284ad05a305e8e5dd62703807e80d7c"
+        "bytes": 11609,
+        "sha256": "c78481f49408a4dfc82074f114f709873cc4b215abad022a4875a342ee42da4e"
       },
       {
         "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",

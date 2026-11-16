@@ -182,7 +182,7 @@ public class MMJeiPlugin implements IModPlugin {
         }
         VehicleData vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
         if (vehicleData != null) {
-            appendString(key, "vehicle_uuid", vehicleData.getUuid());
+            appendString(key, "vehicle_uuid", vehicleData.getUuid().toString());
         }
     }
 

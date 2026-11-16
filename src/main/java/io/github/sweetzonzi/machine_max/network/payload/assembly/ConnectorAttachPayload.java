@@ -8,7 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -28,24 +28,24 @@ public record ConnectorAttachPayload(
     public static final CustomPacketPayload.Type<ConnectorAttachPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "connector_attach_payload")
     );
-    public static final StreamCodec<FriendlyByteBuf, ConnectorAttachPayload> STREAM_CODEC = new StreamCodec<>() {
+    public static final StreamCodec<RegistryFriendlyByteBuf, ConnectorAttachPayload> STREAM_CODEC = new StreamCodec<>() {
 
         @Override
-        public @NotNull ConnectorAttachPayload decode(@NotNull FriendlyByteBuf buffer) {
+        public @NotNull ConnectorAttachPayload decode(@NotNull RegistryFriendlyByteBuf buffer) {
             UUID vehicleUuid = buffer.readUUID();
-            List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
+            List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
             boolean hasNewPart = buffer.readBoolean();
             RegularPartData partData = null;
-            if (hasNewPart) partData = buffer.readJsonWithCodec(RegularPartData.CODEC);
+            if (hasNewPart) partData = RegularPartData.STREAM_CODEC.decode(buffer);
             return new ConnectorAttachPayload(vehicleUuid, connections, hasNewPart, partData);
         }
 
         @Override
-        public void encode(@NotNull FriendlyByteBuf buffer, @NotNull ConnectorAttachPayload value) {
+        public void encode(@NotNull RegistryFriendlyByteBuf buffer, @NotNull ConnectorAttachPayload value) {
             buffer.writeUUID(value.vehicleUuid);
-            buffer.writeJsonWithCodec(ConnectionData.CODEC.listOf(), value.connections);
+            buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
             buffer.writeBoolean(value.hasNewPart);
-            if (value.hasNewPart && value.partData != null) buffer.writeJsonWithCodec(RegularPartData.CODEC, value.partData);
+            if (value.hasNewPart && value.partData != null) RegularPartData.STREAM_CODEC.encode(buffer, value.partData);
         }
     };
 
@@ -66,8 +66,8 @@ public record ConnectorAttachPayload(
         }
         for (ConnectionData connection : payload.connections) {
             vehicle.attachConnector(
-                    vehicle.partMap.get(UUID.fromString(connection.partUuidA)).subParts.get(connection.subPartNameA).connectors.get(connection.getAdvConnectorName()),
-                    vehicle.partMap.get(UUID.fromString(connection.partUuidS)).subParts.get(connection.subPartNameS).connectors.get(connection.getSimpleConnectorName()),
+                    vehicle.partMap.get(connection.partUuidA).subParts.get(connection.subPartNameA).connectors.get(connection.getAdvConnectorName()),
+                    vehicle.partMap.get(connection.partUuidS).subParts.get(connection.subPartNameS).connectors.get(connection.getSimpleConnectorName()),
                     null
             );
         }

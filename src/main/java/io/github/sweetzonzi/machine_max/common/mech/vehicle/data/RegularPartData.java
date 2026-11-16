@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 普通部件的动态存档 DTO，包含公共实例状态与制造进度。
@@ -55,6 +56,8 @@ public class RegularPartData extends AbstractPartData {
 
     /**
      * 单个普通部件的固定字段序网络编码；读写必须同步维护，不支持直接写入扩展种类 DTO。
+     * <p>UUID 字段以双 long 传输（16 字节），字段本身仍是 String，编解码时做 String ↔ UUID 转换。
+     * JSON 落盘/蓝图走 {@link #CODEC}，保持字符串 UUID 不变。</p>
      */
     public static final StreamCodec<RegistryFriendlyByteBuf, RegularPartData> STREAM_CODEC = new StreamCodec<>() {
 
@@ -65,7 +68,7 @@ public class RegularPartData extends AbstractPartData {
         public @NotNull RegularPartData decode(RegistryFriendlyByteBuf buffer) {
             ResourceLocation registryKey = buffer.readResourceLocation();
             String name = buffer.readUtf();
-            String uuid = buffer.readUtf();
+            String uuid = buffer.readUUID().toString();
             String variant = buffer.readUtf();
             float assemblingProgress = buffer.readFloat();
             float sharedDurabilityRatio = buffer.readFloat();
@@ -85,7 +88,7 @@ public class RegularPartData extends AbstractPartData {
         public void encode(RegistryFriendlyByteBuf buffer, @NotNull RegularPartData value) {
             buffer.writeResourceLocation(value.registryKey);
             buffer.writeUtf(value.name);
-            buffer.writeUtf(value.uuid);
+            buffer.writeUUID(UUID.fromString(value.uuid));
             buffer.writeUtf(value.variant);
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeFloat(value.sharedDurabilityRatio);

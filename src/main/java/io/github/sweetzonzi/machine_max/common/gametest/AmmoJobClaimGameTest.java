@@ -6,7 +6,8 @@ import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoLoaderSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoPath;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AmmoRef;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.RegenAmmoRackSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
@@ -77,10 +78,11 @@ public final class AmmoJobClaimGameTest {
             AmmoLoaderSubsystem autoloader = require(helper, byName, AUTOLOADER, AmmoLoaderSubsystem.class);
             RegenAmmoRackSubsystem rack = require(helper, byName, RACK, RegenAmmoRackSubsystem.class);
 
-            // 发现结果先落地：发射器要认可这台装弹机确实是自己的来源，否则作业走不到受理
+            // 发现结果先落地：发射器要认可这台装弹机确实是自己的运输者，否则作业走不到受理
             vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
-            helper.assertTrue(launcher.getSuppliers().contains(autoloader),
-                    LAUNCHER + " 必须发现 " + AUTOLOADER);
+            AmmoPath route = requireRoute(helper, launcher, autoloader);
+            helper.assertTrue(route.provider() == rack,
+                    LAUNCHER + " 的 " + AUTOLOADER + " 喂弹线必须是 " + RACK);
             helper.assertTrue(launcher.isActive() && autoloader.isActive(),
                     "两个子系统都必须在可工作状态");
 
@@ -88,13 +90,13 @@ public final class AmmoJobClaimGameTest {
             AmmoBelt spec = rack.getDeliverySpec();
             helper.assertTrue(rack.returnBelt(spec.freshCopy(spec.length())),
                     RACK + " 应接受一份与自身规格一致的弹药");
-            helper.assertTrue(autoloader.isSupplyOperational() && autoloader.hasAmmo(),
+            helper.assertTrue(autoloader.isOperational() && rack.hasAmmo(),
                     AUTOLOADER + " 应能从上游架读到现货并可交付");
 
-            launcher.setCurrentSupplier(autoloader);
-            helper.assertTrue(launcher.getCurrentSupplier() == autoloader, "指认必须先落地");
+            launcher.setCurrentRoute(route);
+            helper.assertTrue(launcher.getCurrentRoute() == route, "指认必须先落地");
             launcher.onTick();
-            helper.assertTrue(launcher.getCurrentSupplier() == autoloader,
+            helper.assertTrue(launcher.getCurrentRoute() == route,
                     "受理机关会在发现结果里，tickReload 不得因此丢掉指认");
             ReloadJob job = launcher.getReloadJob();
             helper.assertTrue(job != null, "有现货时应受理一份作业并开始推进");
@@ -112,14 +114,18 @@ public final class AmmoJobClaimGameTest {
             helper.assertTrue(rack.getAvailableCount() == stock - job.reservedCount(),
                     "可分配库存必须是实际库存减去已预留总量");
             helper.assertTrue(rack.getAmmoCount() == stock, "开工预留不得提前扣减实际库存");
-            helper.assertTrue(job.upstreamOrigin().equals(SupplierRef.of(rack)),
-                    "作业的实际来源必须是受理时挑中的那台架");
+            helper.assertTrue(job.transporter().equals(AmmoRef.ofTransporter(autoloader)),
+                    "作业的运输者必须是受理时的那台装弹机");
+            helper.assertTrue(job.provider().equals(AmmoRef.ofProvider(rack)),
+                    "作业的提供者必须是受理时挑中的那台架");
             helper.assertTrue(AmmoBelt.compareSpec(job.spec(), spec) == 0,
                     "作业的冻结规格必须与来源架的交付规格一致");
             helper.assertTrue(autoloader.holdsCommitment(launcher), "受理后机构必须仍持有这条作业的承诺");
+            helper.assertTrue(rack.holdsReservation(job.key(), job.reservedCount()),
+                    "受理后提供者必须承认这份预留");
 
             // 释放与撤销按身份匹配：旧编号不能摘掉同一条输弹线上的新作业
-            ReloadJobKey staleKey = new ReloadJobKey(job.key().subPartId(), job.key().launcherName(),
+            ReloadJobKey staleKey = new ReloadJobKey(job.key().subPartId(), job.key().launcherIndex(),
                     job.jobId() + 1);
             autoloader.releaseClaim(launcher, staleKey);
             helper.assertTrue(autoloader.isClaimedByOther(otherLauncher),
@@ -128,9 +134,11 @@ public final class AmmoJobClaimGameTest {
             launcher.onTick();
             helper.assertTrue(job.elapsedTicks() == 2, "占用还在时机构继续放行推进");
 
-            // 预留被撤销 → 机构不再承诺这条作业，管按失效收尾并让机器重新可用
+            // 预留被撤销 → 提供者不再承认这份预留，管按失效收尾并让机器重新可用。
+            // 承诺分两半：运输者那一半（占用）还在，消失的是提供者那一半
             rack.releaseReservation(job.key());
-            helper.assertTrue(!autoloader.holdsCommitment(launcher), "预留撤销后不得再声称持有承诺");
+            helper.assertTrue(!rack.holdsReservation(job.key(), job.reservedCount()),
+                    "预留撤销后提供者不得再承认这份预留");
             launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "承诺失效时必须收尾作业");
             helper.assertTrue(launcher.lastEndedJobId() == job.jobId(),
@@ -139,10 +147,14 @@ public final class AmmoJobClaimGameTest {
             helper.assertTrue(rack.getReservedTotal() == 0, "收尾后不得留下预留");
             helper.assertTrue(!autoloader.isClaimedByOther(otherLauncher), "收尾后机器必须重新可用");
 
-            // 没有可分配的库存时不建作业、不占槽：等待供弹的请求不进占用表
-            ReloadJobKey scratch = new ReloadJobKey(launcher.getSubPart().getId(), LAUNCHER, 9999);
-            helper.assertTrue(rack.reserve(scratch, Integer.MAX_VALUE) > 0, "清空库存前应能预留整架");
-            helper.assertTrue(rack.deliverReserved(scratch) != null, "兑现预留应扣掉整架库存");
+            // 没有可分配的库存时不建作业、不占槽：等待供弹的请求不进占用表。
+            // 清空库存按新入口重建夹具：一次预留只发一份，反复预留并兑现在直到没有现货
+            ReloadJobKey scratch = new ReloadJobKey(launcher.getSubPart().getId(),
+                    launcher.getSubPart().subsystemIndex(launcher), 9999);
+            while (rack.hasAmmo()) {
+                helper.assertTrue(rack.reserve(scratch) != null, "架上还有现货时应能预留在手");
+                helper.assertTrue(rack.deliverReserved(scratch) != null, "兑现预留应扣掉库存");
+            }
             helper.assertTrue(!rack.hasAmmo(), "本例需要把架清空");
             launcher.onTick();
             helper.assertTrue(launcher.getReloadJob() == null, "没有可分配库存时不得建作业");
@@ -178,7 +190,7 @@ public final class AmmoJobClaimGameTest {
             AmmoBelt spec = rack.getDeliverySpec();
             helper.assertTrue(rack.returnBelt(spec.freshCopy(spec.length())), RACK + " 应接受一份现货");
             int stock = rack.getAmmoCount();
-            launcher.setCurrentSupplier(autoloader);
+            launcher.setCurrentRoute(requireRoute(helper, launcher, autoloader));
             launcher.onTick();
             ReloadJob job = launcher.getReloadJob();
             helper.assertTrue(job != null, "有现货时应受理一份作业");
@@ -229,8 +241,6 @@ public final class AmmoJobClaimGameTest {
             vehicle.onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
 
             helper.assertTrue(launcher.getHumanReloadTimeTicks() > 0, "本管必须声明完整人力流程");
-            helper.assertTrue(launcher.getSuppliers().contains(rack),
-                    "声明了人工段的管必须把弹药架当作交付目标");
 
             AmmoBelt spec = rack.getDeliverySpec();
             helper.assertTrue(rack.returnBelt(spec.freshCopy(spec.length())), MANUAL_RACK + " 应接受一份现货");
@@ -240,11 +250,19 @@ public final class AmmoJobClaimGameTest {
             helper.getLevel().addFreshEntity(loaderEntity);
             seat.passenger = loaderEntity;
 
-            launcher.setCurrentSupplier(rack);
+            AmmoPath manual = launcher.getRoutes().stream()
+                    .filter(candidate -> candidate.transporter().isHuman())
+                    .findFirst().orElse(null);
+            helper.assertTrue(manual != null && manual.provider() == rack,
+                    "声明了人工段的管必须有一条从弹药架直取的人力路");
+            launcher.setCurrentRoute(manual);
             launcher.onTick();
             ReloadJob job = launcher.getReloadJob();
             helper.assertTrue(job != null, "有人与现货时应受理一份作业");
             helper.assertTrue(job.stage() == ReloadJob.Stage.HUMAN, "人力直取的作业从人工段开始");
+            helper.assertTrue(job.transporter().isNone(), "人力直取的运输者身份必须为空值（人力运输者）");
+            helper.assertTrue(job.provider().equals(AmmoRef.ofProvider(rack)),
+                    "人力直取的提供者必须是那台弹药架");
             helper.assertTrue(job.totalTicks() == launcher.getHumanReloadTimeTicks(),
                     "标准人力的本阶段时长等于型号的基准时长");
             helper.assertTrue(job.reservedCount() > 0 && rack.getAmmoCount() == stock,
@@ -263,6 +281,23 @@ public final class AmmoJobClaimGameTest {
             if (loaderEntity != null) loaderEntity.discard();
             vehicle.onRemoveFromLevel();
         }
+    }
+
+    /**
+     * 取一条以给定装弹机为运输者的路：发现结果必须已经把装弹机登记进来，并且它有一条非空的喂弹线。
+     *
+     * @param launcher    发射器（路的一方）
+     * @param transporter 期望的运输者
+     * @return 命中的路；没有时让用例失败
+     */
+    private static AmmoPath requireRoute(GameTestHelper helper, LauncherSubsystem launcher,
+                                         AmmoLoaderSubsystem transporter) {
+        AmmoPath route = launcher.getRoutes().stream()
+                .filter(candidate -> candidate.transporter() == transporter)
+                .findFirst().orElse(null);
+        helper.assertTrue(route != null,
+                launcher.name + " 必须有一条以 " + transporter.name + " 为运输者的路");
+        return route;
     }
 
     private static Map<String, AbstractSubsystem> collectSubsystems(RegularPart part) {

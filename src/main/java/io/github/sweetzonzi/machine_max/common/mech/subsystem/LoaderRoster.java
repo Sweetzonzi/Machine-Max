@@ -13,13 +13,14 @@ import java.util.Map;
 
 /**
  * 一台装填需求方的"人工段用人"：查询到的座位，以及此刻在为哪条作业派谁。<br>
- * 人工段属于<b>需求方</b>的流程：坐在这台座位上的实际乘员替谁装填、多久装完，由发起装填的那台机器表达。
- * 目前有两台这样的机器——自动装弹机（人工准备 → 机械运行）与声明了人工段的发射器（人力直取：从弹药架
- * 直接取弹、全程由乘员装填）。两者用同一份实现，选人口径因此只有一处。
+ * 它同时是<b>人力运输者</b>（{@link IAmmoTransporter}）：整条运输由一名乘员完成，没有机械段、没有喂弹线、
+ * 不占机械槽，{@code isHuman()} 恒为真。目前有两台这样的机器——自动装弹机（人工准备 → 机械运行）与声明了
+ * 完整人力流程的发射器（人力直取：从弹药架直接取弹、全程由乘员装填）。两者用同一份实现，选人口径因此只有
+ * 一处。
  * <p>
  * <b>三个量分开：</b>座位表是只读发现结果（结构变化时整体重建）、认领是"此刻替哪条作业干活"（按作业身份
  * 写入与释放，不入存档）、个人倍率记在人物身上（{@link CrewReloadAttachment}）。本类不持有装填进度——
- * 进度归消费者的 {@link ReloadJob}。
+ * 进度归接收者的 {@link ReloadJob}。
  * <p>
  * <b>倍率不是状态：</b>岗位倍率在发现时定到座位上（同一座位经多条线路可达时取其中最低的那条），个人倍率
  * 读人物，两者相乘即得，不在认领里再存一份副本——两份同义值迟早会走岔。认领因此只记"坐哪个座位、派的是
@@ -27,7 +28,7 @@ import java.util.Map;
  * <p>
  * <b>只在服务端有意义：</b>选人和倍率都由服务端算，客户端只跟随同步下来的本阶段时长。
  */
-final class ReloadOperatorRoster {
+final class LoaderRoster implements IAmmoTransporter {
 
     /** 发现表的宿主：座位查询从它出发，警告也按它的名字记 */
     private final AbstractSubsystem host;
@@ -50,6 +51,12 @@ final class ReloadOperatorRoster {
     @Nullable
     private Claim claim;
 
+    /**
+     * 本需求方人工段的基准时长（标准人力 tick）；0 表示它没有人工段，因此不作为人力运输者进入路由。<br>
+     * 由 {@link #discover(int)} 每次结构变化时写入一次，认领与估价都读它，签名里因此不必再传。
+     */
+    private int standardTicks;
+
     /** 已经就有没有执行者这件事告过警，避免每次结构变化重复刷屏 */
     private boolean warnedNoOperator;
 
@@ -58,24 +65,27 @@ final class ReloadOperatorRoster {
      * @param discoveryTargets  装填人员频道 → 目标名称列表
      * @param timeMultipliers   岗位倍率表，未声明的频道按 1.0
      */
-    ReloadOperatorRoster(AbstractSubsystem host,
-                         Map<String, List<String>> discoveryTargets,
-                         Map<String, Double> timeMultipliers) {
+    LoaderRoster(AbstractSubsystem host,
+                 Map<String, List<String>> discoveryTargets,
+                 Map<String, Double> timeMultipliers) {
         this.host = host;
         this.discoveryTargets = discoveryTargets;
         this.timeMultipliers = timeMultipliers;
     }
 
+    // ==================== 发现 ====================
+
     /**
-     * 按发现表重新查询可达的座位；结果整体替换，不累积历史。<br>
+     * 按发现表重新查询可达的座位，并记下本方的基准时长；结果整体替换，不累积历史。<br>
      * 座位只作为发现结果保存，实际是否有人由每个 tick 读 {@code passenger}——乘员上下座不触发结构变化，
      * 不能只在发现时判定一次。同一座位经多条线路到达时只留其中最低的岗位倍率（见 {@link #seats}）。
      * 配置了人工段却一个座位都没查到是一处内容错误，只告警一次。
      * <p><b>调用线程：</b>主线程（挂载与结构变化）。
      *
-     * @param standardTicks 人工段的基准时长；{@code <= 0} 表示本方没有人工段，不做告警判定
+     * @param standardTicks 人工段的基准时长；{@code <= 0} 表示本方没有人工段，此时本类不作为运输者进入路由
      */
     void discover(int standardTicks) {
+        this.standardTicks = Math.max(0, standardTicks);
         Map<SeatSubsystem, Double> found = new LinkedHashMap<>();
         for (String channel : discoveryTargets.keySet()) {
             double multiplier = multiplierFor(channel);
@@ -90,7 +100,7 @@ final class ReloadOperatorRoster {
         seats.clear();
         seats.putAll(found);
 
-        if (standardTicks > 0 && seats.isEmpty()) {
+        if (this.standardTicks > 0 && seats.isEmpty()) {
             if (!warnedNoOperator) {
                 warnedNoOperator = true;
                 MachineMax.LOGGER.warn("{} 配置了人工段，但没有任何座位声明装填人员频道 {}；"
@@ -108,23 +118,60 @@ final class ReloadOperatorRoster {
                 == host.getOwner().getSubPart().getPart().assembly;
     }
 
+    // ==================== IAmmoTransporter ====================
+
+    /** 人力运输者：整条运输由一名乘员完成。 */
+    @Override
+    public boolean isHuman() {
+        return true;
+    }
+
+    /** 人力运输者没有机构条件，恒为可工作；它是否进入路由由基准时长与座位的发现结果决定。 */
+    @Override
+    public boolean isOperational() {
+        return true;
+    }
+
+    /** 一名乘员一次只推进一段人工装填。 */
+    @Override
+    public boolean canServeMultipleConsumers() {
+        return false;
+    }
+
+    @Override
+    public int getHumanReloadTimeTicks() {
+        return standardTicks;
+    }
+
+    /** 人力运输者没有机械段。 */
+    @Override
+    public int getReloadTimeTicks() {
+        return 0;
+    }
+
+    /** 人力运输者没有喂弹线：提供者取接收者自己发现到的架。 */
+    @Override
+    public List<IAmmoSupplier> getFeedSources() {
+        return List.of();
+    }
+
     /**
-     * 为人工段认领一名执行者，或在已有更好的人时换人。<br>
+     * 为本阶段认领一名执行者，或在已有更好的人时换人。<br>
      * 候选是"有效座位的存活乘员"，代价是剩余人工段的实际用时（剩余标准人力时间 × 该座位的岗位倍率 ×
      * 个人倍率）。当前执行者仍然可用时，只有严格更便宜的候选才换人，相等时保持。
      * <p>换人前先按身份释放旧认领，因此本方法自己就能处理"原来的人已经离座"——调用方不必先问一次
      * {@link #holds(IAmmoConsumer)} 再释放。
-     * <p>选不到人时返回 false：消费者据此暂停（作业与预留都还在），暂停超过上限才终止。
-     * <p><b>调用线程：</b>主线程（服务端，消费者的每个装填 tick）。
+     * <p>选不到人时返回 false：接收者据此暂停（作业与预留都还在），暂停超过上限才终止。
+     * <p><b>调用线程：</b>主线程（服务端，接收者的每个装填 tick）。
      *
-     * @param consumer      申请人工段的消费者
-     * @param key           它即将写进作业的身份
-     * @param standardTicks 人工段的基准时长（标准人力，未乘倍率）
+     * @param consumer 申请人工段的接收者
+     * @param key      它即将写进作业的身份
      * @return true 表示此刻这条作业有人可干
      */
-    boolean claim(IAmmoConsumer consumer, ReloadJobKey key, int standardTicks) {
+    @Override
+    public boolean claim(IAmmoConsumer consumer, ReloadJobKey key) {
         if (host.getLevel().isClientSide()) return true;
-        if (standardTicks <= 0) return true;
+        if (standardTicks <= 0) return false;
 
         double remaining = remainingStandardTicks(consumer, standardTicks);
         Candidate best = bestOperator(consumer, remaining);
@@ -144,7 +191,7 @@ final class ReloadOperatorRoster {
      * 乘员离座、死亡、实体移除、座位被摧毁、这条作业的座位已经不在本轮发现结果里，或者认领已经不在原作业上，
      * 都算不可用；此时人工段不能空跑。客户端不判断人员（人员状态由服务端判定，实际时长也已经随同步值发布）。
      *
-     * @param consumer 询问的消费者
+     * @param consumer 询问的接收者
      */
     boolean holds(IAmmoConsumer consumer) {
         if (host.getLevel().isClientSide()) return true;
@@ -158,10 +205,77 @@ final class ReloadOperatorRoster {
     }
 
     /**
+     * 人工段能不能往前走：有人就 1，没有就 0（接收者据此暂停并等待换人）。<br>
+     * 人离场不构成承诺消失——下一 tick 可能换一个人；承诺里属于"预留"的那一半由接收者向提供者判。
+     */
+    @Override
+    public int getAdvanceTicks(IAmmoConsumer consumer) {
+        return holds(consumer) ? 1 : 0;
+    }
+
+    /**
+     * 人力运输者没有占用可摘：一份认领就是一名乘员，人走了只暂停、不构成承诺消失。<br>
+     * 因此本方法恒为 {@code true}，承诺的另外两半（提供者的预留、接收者自身）由接收者判。
+     */
+    @Override
+    public boolean holdsCommitment(IAmmoConsumer consumer) {
+        return true;
+    }
+
+    /** 一台 roster 只服务自己的接收者，不存在"被别人占着"这回事。 */
+    @Override
+    public boolean isClaimedByOther(IAmmoConsumer consumer) {
+        return false;
+    }
+
+    /**
      * 按身份释放执行者认领。<br>
      * 人工段完成、作业终止、换人都是这个入口；身份不匹配时无操作，旧作业的回调因此摘不掉新作业的认领。
-     * 释放不改变已完成的人工进度。
+     * 释放不改变已完成的人工进度，也不碰提供者的预留表。
      * <p>释放的对象是认领记下的那个人：人已经离座时座位不再答得出他是谁，所以认领本身要记着人。
+     *
+     * @param key 这条作业的身份
+     */
+    @Override
+    public void releaseClaim(IAmmoConsumer consumer, ReloadJobKey key) {
+        release(key);
+    }
+
+    /**
+     * 已认领执行者的时间倍率（岗位倍率 {@code P} × 个人倍率 {@code A}）。<br>
+     * 接收者每个装填 tick 拿它比对作业上记的倍率，换人与人物能力变化都经
+     * {@link ReloadJob#retimeHuman(double)} 折算成新的剩余量。没有认领时按标准人力 1。
+     * <p>这里读而不是存：存一份副本的话，换人或人物的能力被改过，副本不会跟着变。{@code P} 是发现时定到
+     * 座位上的值，所以换座位会换倍率、换人只换 {@code A}。
+     */
+    @Override
+    public double getOperatorTimeScale(IAmmoConsumer consumer) {
+        return timeScale();
+    }
+
+    /**
+     * 人力路的代价：作业已在这条路上就报本阶段剩余，否则按"选出乘员的 {@code P × A}"折算整段基准时长。<br>
+     * 估价只读——不认领、不改预留，与 {@link #claim} 共用同一批候选与同一个比较纯函数。
+     */
+    @Override
+    public int estimateTicks(IAmmoConsumer consumer, IAmmoSupplier provider) {
+        if (provider == null || !provider.isSupplyOperational()) return Integer.MAX_VALUE;
+        ReloadJob job = consumer.getReloadJob();
+        boolean onThisRoute = job != null
+                && job.transporter().isNone()
+                && job.provider().equals(AmmoRef.ofProvider(provider));
+        if (onThisRoute) return Math.max(0, job.remainingTicks());
+        if (standardTicks <= 0) return Integer.MAX_VALUE;
+        if (provider.getRemainingCount() == 0) return Integer.MAX_VALUE;
+        double rate = estimateRate(consumer, standardTicks);
+        if (!Double.isFinite(rate) || rate <= 0) return Integer.MAX_VALUE;
+        return humanStageTicks(standardTicks, rate);
+    }
+
+    // ==================== 内部 ====================
+
+    /**
+     * 按身份释放认领。
      *
      * @param key 这条作业的身份
      */
@@ -172,13 +286,7 @@ final class ReloadOperatorRoster {
         claim = null;
     }
 
-    /**
-     * 已认领执行者的时间倍率（岗位倍率 {@code P} × 个人倍率 {@code A}）。<br>
-     * 消费者每个装填 tick 拿它比对作业上记的倍率，换人与人物能力变化都经
-     * {@link ReloadJob#retimeHuman(double)} 折算成新的剩余量。没有认领时按标准人力 1。
-     * <p>这里读而不是存：存一份副本的话，换人或人物的能力被改过，副本不会跟着变。{@code P} 是发现时定到
-     * 座位上的值，所以换座位会换倍率、换人只换 {@code A}。
-     */
+    /** 已认领执行者的时间倍率（见 {@link #getOperatorTimeScale(IAmmoConsumer)}）。 */
     double timeScale() {
         Claim current = claim;
         if (current == null || host.getLevel().isClientSide()) return 1.0;
@@ -188,10 +296,35 @@ final class ReloadOperatorRoster {
         return value > 0 && Double.isFinite(value) ? value : 1.0;
     }
 
+    /**
+     * 只读估一次本方人工段的倍率（岗位倍率 × 个人倍率），供机械运输者把它折进整条路的代价。<br>
+     * 不认领、不改预留；没有人可用且没有在位执行者时返回 {@code NaN}（调用方按不可达处理）。
+     */
+    double estimateTimeScale(IAmmoConsumer consumer) {
+        return estimateRate(consumer, standardTicks);
+    }
+
     /** 某条发现关系上的岗位倍率；未声明时按标准 1.0。 */
     private double multiplierFor(String channel) {
         Double value = timeMultipliers.get(channel);
         return value == null ? 1.0 : value;
+    }
+
+    /**
+     * 只读地估一次"这段人工段由最合适的乘员来做要多久"的倍率。<br>
+     * 与 {@link #claim} 共用 {@link #bestOperator}，区别是这里不写认领；没人可换但当前执行者仍在位时按他的
+     * 倍率报，两条都没有时返回 {@code NaN}（调用方按不可达处理）。
+     */
+    private double estimateRate(IAmmoConsumer consumer, int standardTicks) {
+        if (host.getLevel().isClientSide()) return 1.0;
+        double remaining = remainingStandardTicks(consumer, standardTicks);
+        if (remaining <= 0) return 1.0;
+        Candidate best = bestOperator(consumer, remaining);
+        if (best != null) {
+            double rate = best.estimateTicks() / remaining;
+            return rate > 0 && Double.isFinite(rate) ? rate : 1.0;
+        }
+        return claim != null && holds(consumer) ? timeScale() : Double.NaN;
     }
 
     /**
@@ -239,6 +372,12 @@ final class ReloadOperatorRoster {
         if (candidateSeat.isDestroyed() || !candidateSeat.isActive()) return null;
         if (CrewReloadAttachment.of(person).isClaimedByOther(consumer)) return null;
         return person;
+    }
+
+    /** 人工段实际时长：标准人力 tick 乘上岗位倍率与个人倍率。 */
+    private static int humanStageTicks(int standardTicks, double rate) {
+        double safe = rate > 0 && Double.isFinite(rate) ? rate : 1.0;
+        return Math.max(1, (int) Math.round(standardTicks * safe));
     }
 
     /**

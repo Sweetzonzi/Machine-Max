@@ -295,7 +295,7 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "m1a2_sep:m1a2_gunner",
-              "reload_operator_discovery_inputs": [
+              "loader_discovery_inputs": [
                 "crew_gunner_reload"
               ],
               "camera_discovery_targets": {
@@ -317,7 +317,7 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
               "control_group_preset": "m1a2_sep:m1a2_commander",
-              "reload_operator_discovery_inputs": [
+              "loader_discovery_inputs": [
                 "crew_commander_reload"
               ],
               "camera_discovery_targets": {
@@ -345,7 +345,7 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "loader_seat",
               "control_group_preset": "m1a2_sep:m1a2_loader",
-              "reload_operator_discovery_inputs": [
+              "loader_discovery_inputs": [
                 "crew_loader_reload"
               ],
               "camera_discovery_targets": {
@@ -1008,7 +1008,7 @@
                   "local"
                 ]
               },
-              "reload_operator_discovery_targets": {
+              "loader_discovery_targets": {
                 "crew_loader_reload": [
                   "local"
                 ],
@@ -1019,7 +1019,7 @@
                   "local"
                 ]
               },
-              "reload_operator_time_multipliers": {
+              "loader_time_multipliers": {
                 "crew_loader_reload": 1.0,
                 "crew_commander_reload": 1.25,
                 "crew_gunner_reload": 1.25

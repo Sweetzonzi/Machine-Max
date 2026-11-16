@@ -57,8 +57,8 @@ public record ConnectorDetachPayload(
                 if (vehicle == null) throw new NullPointerException("未找到载具: " + payload.vehicleUuid);
                 List<Pair<AbstractConnector, SimpleConnector>> connections = new ArrayList<>();
                 for (ConnectionData connection : payload.connections) {
-                    AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.getAdvConnectorName()));
-                    AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.getSimpleConnectorName()));
+                    AbstractConnector connectorA = vehicle.partMap.get(connection.partUuidA).externalConnectors.get(Pair.of(connection.subPartNameA,connection.getAdvConnectorName()));
+                    AbstractConnector connectorB = vehicle.partMap.get(connection.partUuidS).externalConnectors.get(Pair.of(connection.subPartNameS,connection.getSimpleConnectorName()));
                     if (connectorA == null || connectorB == null)
                         throw new NullPointerException("未找到连接点: " + payload.connections);
                     connections.add(Pair.of(connectorA, (SimpleConnector) connectorB));

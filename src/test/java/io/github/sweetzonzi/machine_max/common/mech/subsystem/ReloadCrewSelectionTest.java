@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 人工段选人的比较契约：取预计完成时间最小者，代价相同时按座位与人物身份决胜。<br>
- * 进来的是"每个座位一条代价"：多条发现线路到达同一座位时，负责发现的 {@link ReloadOperatorRoster} 已经把该
+ * 进来的是"每个座位一条代价"：多条发现线路到达同一座位时，负责发现的 {@link LoaderRoster} 已经把该
  * 座位收成一个岗位倍率，因此这里没有"同一个人多条线路取最有利"的分支，那条规则在发现侧，不在这层。
  */
 class ReloadCrewSelectionTest {

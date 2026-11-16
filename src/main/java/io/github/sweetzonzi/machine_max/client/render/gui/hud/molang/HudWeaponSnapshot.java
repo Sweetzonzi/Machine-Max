@@ -4,7 +4,6 @@ import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.ReloadPhase;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -50,7 +49,7 @@ public record HudWeaponSnapshot(String name, String state,
      * {@code swapping} 表示本管正在替换已装的那一份，此时射击锁定，即使膛内有弹也不算就绪；
      * {@code aimed} 表示本管此刻满足开火门限：与观察者瞄准点、含火控修正的有效发射方向的夹角在控制器瞄准容差内，与装填状态无关。
      */
-    public record Tube(SupplierRef key, String roundLabel, String state, String phase,
+    public record Tube(AmmoRef key, String roundLabel, String state, String phase,
                        double fill, double reloadRemaining, String reloadText, String loadingBeltLabel,
                        boolean swapping, boolean hasSource,
                        Chamber chamber, Magazine magazine, Reserve reserve, boolean aimed) {
@@ -91,7 +90,7 @@ public record HudWeaponSnapshot(String name, String state,
         List<Belt> belts = new ArrayList<>();
         for (AmmoBelt belt : available) {
             var entries = pool.getOrDefault(belt, List.of());
-            List<IAmmoSupplier> suppliers = entries.stream().map(e -> (IAmmoSupplier) e.loader()).toList();
+            List<IAmmoSupplier> suppliers = entries.stream().map(WeaponControllerSubsystem.RouteEntry::provider).toList();
             belts.add(new Belt(belt, belt.displayLabel(), totals(suppliers).remaining(), belt.equals(selected)));
         }
         List<Tube> tubes = new ArrayList<>();
@@ -103,7 +102,8 @@ public record HudWeaponSnapshot(String name, String state,
         int magazineRemaining = 0;
         for (var launcher : launchers) {
             ProjectileType round = launcher.getChamberedType();
-            IAmmoSupplier supplier = launcher.getCurrentSupplier();
+            AmmoPath route = launcher.getCurrentRoute();
+            IAmmoSupplier supplier = route == null ? null : route.provider();
             AmmoBelt belt = launcher.getLoadedBelt();
             boolean swapping = launcher.isSwapping();
             if (chambered == null) chambered = round;
@@ -155,7 +155,7 @@ public record HudWeaponSnapshot(String name, String state,
         }
         var entries = selected == null ? null : pool.get(selected);
         Totals total = totals(entries == null ? bound
-                : entries.stream().map(e -> (IAmmoSupplier) e.loader()).toList());
+                : entries.stream().map(WeaponControllerSubsystem.RouteEntry::provider).toList());
         ProjectileType active = chambered != null ? chambered
                 : firstSupplier != null ? firstSupplier.getSuppliedType() : null;
         ProjectileType labelRound = offBelt != null ? offBelt : chambered;
@@ -179,11 +179,11 @@ public record HudWeaponSnapshot(String name, String state,
     }
 
     /**
-     * 一根管的稳定键：宿主 SubPart ID + 该管的子系统名。<br>
+     * 一根管的稳定键：宿主 SubPart ID + 该管在子系统声明序里的位置。<br>
      * 只用于 HUD 在同一台载具的两帧之间认出"还是这根管"，不参与路由或占用判定。
      */
-    public static SupplierRef key(LauncherSubsystem launcher) {
-        return new SupplierRef(launcher.getSubPart().getId(), launcher.getName());
+    public static AmmoRef key(LauncherSubsystem launcher) {
+        return new AmmoRef(launcher.getSubPart().getId(), launcher.getSubPart().subsystemIndex(launcher));
     }
 
     private record Totals(int remaining, int capacity, boolean infinite) {}

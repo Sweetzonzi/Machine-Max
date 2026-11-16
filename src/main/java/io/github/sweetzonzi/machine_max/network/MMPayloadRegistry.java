@@ -59,9 +59,16 @@ public class MMPayloadRegistry {
         // 重定时都会改写本阶段时长与进度基线，客户端按阶段分别推进。
         // 8.0.0 对应装填作业改为整包同步：发射器的八个作业访问器收成一个可选快照（ReloadJobSync，经
         // MMEntityDataSerializers 的自定义序列化器下发，结果两项仍在外面），访问器编号整体后移。
-        final PayloadRegistrar sync = event.registrar("sync:9.0.0");
+        // 10.0.0 / 3.0.0 对应 DTO 的 uuid 线上编码统一改为双 long（16 字节）：
+        // VehicleData.uuid、RegularPartData.uuid、ConnectionData.partUuidA/S 由 writeUtf 改为 writeUUID；
+        // ConnectorAttachPayload 的 connections/partData 由 JSON Codec 改为二进制 STREAM_CODEC，与 Detach 对齐。
+        // 仅网络线格式变更，JSON 落盘/蓝图 CODEC 仍为字符串 UUID，存档兼容不受影响。
+        // 11.0.0 对应弹药三角色拆分：发射器的供给者身份收成一对路由引用（ROUTE_TRANSPORTER / ROUTE_PROVIDER，
+        // 类型 AmmoRef = 宿主 SubPart ID + 声明序序号），装填作业快照里的两个引用改为运输者与提供者；
+        // SupplierRef 被 AmmoRef 取代，序列化器 id 由 supplier_ref 改为 ammo_ref，作业身份改按子系统序号编码。
+        final PayloadRegistrar sync = event.registrar("sync:11.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
-        final PayloadRegistrar misc = event.registrar("misc:2.0.0");
+        final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置

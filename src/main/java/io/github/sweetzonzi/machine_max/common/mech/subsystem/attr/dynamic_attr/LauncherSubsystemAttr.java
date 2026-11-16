@@ -41,14 +41,14 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
      * {@code {"crew_loader_reload": ["local"]}}：{@code local} 是本 Part 的全部 SubPart，座位只要在自己的
      * 实例字段里声明同一频道就会被发现。
      */
-    public final Map<String, List<String>> reloadOperatorDiscoveryTargets;
+    public final Map<String, List<String>> loaderDiscoveryTargets;
 
     /**
      * 岗位时间倍率 {@code P}：装填人员频道 → 该位置的乘员为本管装填时的便利程度（装填手 1.0、炮手 2.0）。<br>
      * 它只属于"本管 → 该座位"这条发现关系，不是座位的全局能力；同一个座位替另一门武器装填可以是别的倍率。
      * 未声明的频道按 1.0 处理。
      */
-    public final Map<String, Double> reloadOperatorTimeMultipliers;
+    public final Map<String, Double> loaderTimeMultipliers;
 
     public static final MapCodec<LauncherSubsystemAttr> CODEC =
             RecordCodecBuilder.<LauncherSubsystemAttr>mapCodec(instance -> instance.group(
@@ -60,11 +60,11 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
                     AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("ammo_discovery_targets", Map.of())
                             .forGetter(LauncherSubsystemAttr::getAmmoDiscoveryTargets),
                     AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC
-                            .optionalFieldOf("reload_operator_discovery_targets", Map.of())
-                            .forGetter(LauncherSubsystemAttr::getReloadOperatorDiscoveryTargets),
+                            .optionalFieldOf("loader_discovery_targets", Map.of())
+                            .forGetter(LauncherSubsystemAttr::getLoaderDiscoveryTargets),
                     Codec.unboundedMap(Codec.STRING, Codec.DOUBLE)
-                            .optionalFieldOf("reload_operator_time_multipliers", Map.of())
-                            .forGetter(LauncherSubsystemAttr::getReloadOperatorTimeMultipliers)
+                            .optionalFieldOf("loader_time_multipliers", Map.of())
+                            .forGetter(LauncherSubsystemAttr::getLoaderTimeMultipliers)
             ).apply(instance, LauncherSubsystemAttr::new))
                     .validate(LauncherSubsystemAttr::validateMultipliers);
 
@@ -74,16 +74,16 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
             String fireAnimation,
             Map<String, List<String>> ammoCountOutputs,
             Map<String, List<String>> ammoDiscoveryTargets,
-            Map<String, List<String>> reloadOperatorDiscoveryTargets,
-            Map<String, Double> reloadOperatorTimeMultipliers) {
+            Map<String, List<String>> loaderDiscoveryTargets,
+            Map<String, Double> loaderTimeMultipliers) {
         super(modelName);
         this.staticAttribute = (LauncherSubsystemStaticAttr) getStaticAttr();
         this.locator = locator;
         this.fireAnimation = fireAnimation;
         this.ammoCountOutputs = ammoCountOutputs;
         this.ammoDiscoveryTargets = ammoDiscoveryTargets;
-        this.reloadOperatorDiscoveryTargets = reloadOperatorDiscoveryTargets;
-        this.reloadOperatorTimeMultipliers = reloadOperatorTimeMultipliers;
+        this.loaderDiscoveryTargets = loaderDiscoveryTargets;
+        this.loaderTimeMultipliers = loaderTimeMultipliers;
     }
 
     /**
@@ -91,10 +91,10 @@ public class LauncherSubsystemAttr extends BasicSubsystemDynamicAttr {
      * 未列出的频道取 1.0，因此只有真的写了一个坏值才拒绝。
      */
     private static DataResult<LauncherSubsystemAttr> validateMultipliers(LauncherSubsystemAttr attr) {
-        for (Map.Entry<String, Double> entry : attr.reloadOperatorTimeMultipliers.entrySet()) {
+        for (Map.Entry<String, Double> entry : attr.loaderTimeMultipliers.entrySet()) {
             double value = entry.getValue();
             if (!Double.isFinite(value) || value <= 0) {
-                return DataResult.error(() -> "reload_operator_time_multipliers[" + entry.getKey()
+                return DataResult.error(() -> "loader_time_multipliers[" + entry.getKey()
                         + "] 必须是有限正数，实际为 " + value);
             }
         }

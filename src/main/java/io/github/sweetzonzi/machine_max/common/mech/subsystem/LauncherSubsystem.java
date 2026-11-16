@@ -23,7 +23,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierRef;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
@@ -56,17 +55,18 @@ import java.util.function.Consumer;
  * 代表炮闩、导弹挂架、火箭发射管等单个发射口。<br>
  * 从locator位置沿其朝向发射数据驱动的投射物，初速和精度受子系统属性与投射物类型共同影响。<br>
  * 实现 {@link IAmmoConsumer} 接口以支持弹药消耗与供给，膛内弹药状态由 chamberedType 管理。<br>
- * 投射物类型由当前供给者提供，而非静态属性直接指定。<br>
+ * 投射物类型由当前路的提供者给出，而非静态属性直接指定。<br>
  * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
- * Launcher 仅执行 currentSupplier 上的装填和发射。
+ * Launcher 仅执行当前路由上的装填和发射。
  * <p>
  * <b>膛内那发是独立的一份库存单元：</b>炮闩（唯一的关键模块）归零时，膛内那发按自己的发射药与
- * 战斗部 {@code cookoff} 贡献合成一次普通爆炸并被消耗，见 {@link #onDestroyed()}。它已经从供给者
+ * 战斗部 {@code cookoff} 贡献合成一次普通爆炸并被消耗，见 {@link #onDestroyed()}。它已经从提供者
  * 的弹仓里扣掉，因此与装弹机的库存殉爆互不重复计数。
  * <p>
- * <b>供给者指认的双端口径：</b>"本管由哪台机器供弹"是服务端的决定，经 {@link #SUPPLIER_ID}
- * 同步给客户端；客户端据此解析出本机的供给者实例，挑选只发生在服务端。指认变化时旧供给者那边
- * 尚未取走的交付由 {@link #assignSupplier} 取消，两端都不会留下无人认领的输弹线。
+ * <b>路由指认的双端口径：</b>"本管走哪条路"是服务端的决定，经 {@link #ROUTE_TRANSPORTER_ID} 与
+ * {@link #ROUTE_PROVIDER_ID} 一对引用同步给客户端；客户端按整对解析出本机的两个实例，挑选只发生在
+ * 服务端。指认变化时旧路上尚未取走的交付由 {@link #setCurrentRoute} 取消，两端都不会留下无人认领的
+ * 输弹线。
  */
 public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
 
@@ -180,21 +180,24 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private AmmoBelt loadedBelt;
 
     /**
-     * 本管当前供给者的<b>身份</b>（网络同步）。<br>
-     * 身份由 {@link SupplierRef} 表达：宿主 SubPart ID + 子系统名，同一会话内两端一致。
+     * 本管当前路由的<b>运输者</b>身份（网络同步）。{@link AmmoRef#NONE} = 人力运输者（本管自己的装填手）。<br>
      * <p>
-     * <b>写者：</b>服务端路由（{@link #setCurrentSupplier}）。客户端在
-     * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把它解析成本机的供给者实例
-     * （{@link #resolveSyncedSupplier()}），因此两端的指认由服务端单方面决定：
-     * 客户端的路由不参与决策，只跟随。
+     * <b>写者：</b>服务端路由（{@link #setCurrentRoute}）。客户端在
+     * {@link #onSyncedDataUpdated(EntityDataAccessor)} 里把这一对引用解析成本机实例
+     * （{@link #applySyncedRoute()}），因此两端的指认由服务端单方面决定：客户端的路由不参与决策，只跟随。
+     * <p>
+     * <b>两个字段是一对量：</b>{@link #ROUTE_PROVIDER_ID} 为 {@code NONE} 表示没有路由；单独一个先到不构成
+     * 一条路。客户端按整对解析与替换（§4.4），任一解析失败就保留上一帧的整对。
      * <p>
      * <b>初值来源是补推，不是变化推送：</b>指认是"服务端每 tick 现算、载入后往往不再变化"的值，
-     * 载具在客户端建好那一刻由 {@code SubsystemController.pushAllTo(ServerPlayer)} 补一份全量快照
-     * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}）；此后只有真的换人时才走变化广播。
-     * 本字段因此不进存档。
+     * 载具在客户端建好那一刻由 {@code SubsystemController.pushAllTo(ServerPlayer)} 补一份全量快照。
      */
-    private static final EntityDataAccessor<SupplierRef> SUPPLIER_ID =
-            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getSUPPLIER_REF());
+    private static final EntityDataAccessor<AmmoRef> ROUTE_TRANSPORTER_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getAMMO_REF());
+
+    /** 本管当前路由的<b>提供者</b>身份（网络同步）；{@link AmmoRef#NONE} = 没有路由。 */
+    private static final EntityDataAccessor<AmmoRef> ROUTE_PROVIDER_ID =
+            SynchedEntityData.defineId(LauncherSubsystem.class, MMEntityDataSerializers.getAMMO_REF());
 
     /**
      * 已装弹药（网络同步）。<br>
@@ -214,8 +217,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * {@link ReloadJobSync}：这八项只在同一批事件里一起变，客户端也必须凑齐才能建作业，逐项下发只会
      * 制造"字段到齐没有"这个中间状态，并让每次字段扩展都推动访问器编号后移。
      * <p>
-     * 编号与宿主 SubPart ID、本子系统名组成作业身份 {@link ReloadJobKey}：机构占用、实际架预留与
-     * 独占机构的槽位拥有者都用它匹配。客户端据编号区分"同一条作业又收到一次更新"与"换了一条作业"
+     * 编号与宿主 SubPart ID、本子系统序号组成作业身份 {@link ReloadJobKey}：运输者的占用、提供者的预留与
+     * 独占运输者的槽位拥有者都用它匹配。客户端据编号区分"同一条作业又收到一次更新"与"换了一条作业"
      * ——前者保留本地已推进的进度，后者从基线重新开始。
      */
     private static final EntityDataAccessor<Optional<ReloadJobSync>> JOB_SYNC_ID =
@@ -254,7 +257,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 客户端待落地的同步项：回调只记"哪几项变了"，模拟结束后在 {@link #onPostTick()} 统一应用。<br>
      * 分项记是因为落地的顺序有语义（指认 → 作业 → 弹药内容），而回调的到达顺序不保证。服务端不读写。
      */
-    private boolean pendingSupplier;
+    private boolean pendingRoute;
     private boolean pendingJob;
     private boolean pendingBelt;
     private boolean pendingChambered;
@@ -278,37 +281,41 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 下一份作业的编号，本机自增。<br>
-     * 与宿主 SubPart 的 int ID、本子系统名组成 {@code (subPartId, name, jobId)}：机构占用与架预留都
-     * 以这个三元组为键，因此同一台管先后两次作业不会互相认领，旧作业的回调也摘不掉新作业的占用。
+     * 与宿主 SubPart 的 int ID、本子系统序号组成 {@code (subPartId, subsystemIndex, jobId)}：运输者的占用与
+     * 提供者的预留都以这个三元组为键，因此同一台管先后两次作业不会互相认领，旧作业的回调也摘不掉新作业的占用。
      * 不存档——作业本身不跨存档延续，读档后从 1 重新分配即可。
      */
     private int nextJobId = 1;
 
     /**
-     * 当前选中的供给者引用。<br>
-     * 服务端由 WeaponController 的路由决策设置；客户端由 {@link #SUPPLIER_ID} 同步值解析得到。
-     * null 表示无供给者（不装填，可发射膛内已有弹药）。
+     * 本管当前指认的那条路：运输者 + 提供者。<br>
+     * 服务端由 WeaponController 的路由决策设置；客户端由 {@link #ROUTE_TRANSPORTER_ID}／
+     * {@link #ROUTE_PROVIDER_ID} 两个同步值整对解析得到。null 表示没有路由（不装填，可发射膛内已有弹药）。
+     * <p>
+     * 内容是<b>当前拓扑的发现结果</b>的一个组合，不累积历史：每次结构变化先清空两张发现表
+     * （{@link #onVehicleStructurePreChanged()}），再由本管的发现阶段与装弹机的喂弹线重新合成。
      */
     @Nullable
-    private IAmmoSupplier currentSupplier = null;
+    private AmmoPath currentRoute = null;
 
     /**
-     * 按频道分组的供给者映射。<br>
-     * key = 发现频道名（对应 LauncherStaticAttr.ammo_inputs 声明顺序）。<br>
-     * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
-     * <p>
-     * 内容是<b>当前拓扑的发现结果</b>，每次结构变化由
-     * {@link #onVehicleStructurePreChanged()} 清空、再由各装弹机重新发现填回，因此不会累积历史残留。
-     * 频道键随首次登记产生，某个频道再也没有供给者时会在下一次结构变化后被移除。
+     * 发现到的运输者（装弹机），按到达顺序保存。<br>
+     * 频道只是登记键：路由不按频道分组，也不把频道写进池条目。
      */
-    private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
+    private final List<IAmmoTransporter> transporters = new ArrayList<>();
 
     /**
-     * 本机自己负责的人工段用人（人力直取路径）。<br>
-     * 交付方自己声明了人工段时由它负责用人，本字段闲置；两者共用
-     * {@link ReloadOperatorRoster}，选人口径因此只有一处。
+     * 发现到的提供者（弹药架），按到达顺序保存。<br>
+     * 只有本型号声明了完整人力流程时才登记：它证明"这条管自己有一条人力路"，机械段为零的架不能在没有
+     * 人工段的型号上充当提供者。
      */
-    private final ReloadOperatorRoster operators;
+    private final List<IAmmoSupplier> providers = new ArrayList<>();
+
+    /**
+     * 本机的人工段用人，同时是人力运输者（人力直取路径）。<br>
+     * `human_reload_time` 为 0 时它不进入路由（{@link #discoverRoutes()} 不合成人力路）。
+     */
+    private final LoaderRoster loaders;
 
     /**
      * 客户端：本机人工段已播到的进度比例；负数表示本段还没有游标。<br>
@@ -346,8 +353,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.operators = new ReloadOperatorRoster(this, attr.reloadOperatorDiscoveryTargets,
-                attr.reloadOperatorTimeMultipliers);
+        this.loaders = new LoaderRoster(this, attr.loaderDiscoveryTargets,
+                attr.loaderTimeMultipliers);
         if (attr.locator == null || attr.locator.isEmpty()) {
             MachineMax.LOGGER.error("发射器子系统 {} 未配置发射点locator", name);
         }
@@ -377,7 +384,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(SUPPLIER_ID, SupplierRef.NONE);
+        builder.define(ROUTE_TRANSPORTER_ID, AmmoRef.NONE);
+        builder.define(ROUTE_PROVIDER_ID, AmmoRef.NONE);
         builder.define(BELT_ID, Optional.empty());
         builder.define(CHAMBERED_ID, Optional.empty());
         builder.define(JOB_SYNC_ID, Optional.empty());
@@ -397,8 +405,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
         super.onSyncedDataUpdated(dataAccessor);
         if (!getLevel().isClientSide()) return;
-        if (dataAccessor.equals(SUPPLIER_ID)) {
-            pendingSupplier = true;
+        if (dataAccessor.equals(ROUTE_TRANSPORTER_ID) || dataAccessor.equals(ROUTE_PROVIDER_ID)) {
+            pendingRoute = true;
         } else if (dataAccessor.equals(BELT_ID)) {
             pendingBelt = true;
         } else if (dataAccessor.equals(CHAMBERED_ID)) {
@@ -421,9 +429,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public void onPostTick() {
         super.onPostTick();
         if (!getLevel().isClientSide()) return;
-        if (pendingSupplier) {
-            pendingSupplier = false;
-            applySyncedSupplier();
+        if (pendingRoute) {
+            pendingRoute = false;
+            applySyncedRoute();
         }
         if (pendingJob) {
             pendingJob = false;
@@ -488,7 +496,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         ReloadJobSync snapshot = synced.get();
-        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), snapshot.jobId());
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(),
+                getSubPart().subsystemIndex(this), snapshot.jobId());
         ReloadJob current = reloadJob;
         if (current != null && current.key().equals(key)) {
             // 同一条作业的离散更新：阶段变了就按新阶段从基线起算（人工段走完换成机械段），
@@ -558,7 +567,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 写入已装 Belt 并同步；客户端不写。<br>
-     * 旧内容的退回目标是"当前合法且接受它的机器"，不记账：换装提交时按当前供给者与已发现的供给者
+     * 旧内容的去处是"当前路的提供者，其次本装配体里其它提供者"，不记账：换装提交时按 {@link #getRoutes()}
      * 依次询问，因此不需要把产出它的那台机器存下来——那份来源关系既不持久化，也不参与路由。
      */
     private void setLoadedBelt(@Nullable AmmoBelt belt) {
@@ -574,192 +583,195 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     @Override
     @Nullable
-    public IAmmoSupplier getCurrentSupplier() {
-        return currentSupplier;
+    public AmmoPath getCurrentRoute() {
+        return currentRoute;
     }
 
     /**
-     * 设置当前供给者，由 WeaponController 的服务端路由调用。<br>
-     * 引用发生变化时丢弃本管进行中的作业并把自己从旧供给者的认领集合里摘掉：那份作业是"点名给本管的"，
-     * 本管一走它就无人认领，旧装弹机会一直把输弹线占着，新的一份既不会开始也不会给别人；
-     * 独占机器还会因此永远无法被别的管选中。旧作业的库存从未扣减（扣减只发生在交付那一刻），
-     * 丢弃它不退还任何东西。清理放在这里而不是交给调用方，是为了不存在"换人忘了归还"的路径。
+     * 设置当前指认的路，由 WeaponController 的服务端路由调用。<br>
+     * 指认变化时先按旧身份收尾本管进行中的作业：那份作业是"点名给本管的"，本管一走它就无人认领，旧运输者
+     * 会一直把槽位或乘员占着，新的一份既不会开始也不会给别人。旧作业的库存从未扣减（扣减只发生在交付那
+     * 一刻），丢弃它不退还任何东西。清理放在这里而不是交给调用方，是为了不存在"换路忘了归还"的路径。
      * <p>
-     * 指认随之写入 {@link #SUPPLIER_ID} 推给客户端。客户端不调用本方法：它的指认由同步值经
-     * {@link #applySyncedSupplier()} 落到同一字段上，两端因此不会各自决策出不同结果。
+     * 指认随之写入 {@link #ROUTE_TRANSPORTER_ID}／{@link #ROUTE_PROVIDER_ID} 推给客户端。客户端不调用本
+     * 方法：它的指认由同步值经 {@link #applySyncedRoute()} 落到同一字段上，两端因此不会各自决策出不同结果。
      * <p>
      * <b>调用线程：</b>主线程（{@link WeaponControllerSubsystem#onTick()} 内的弹药路由）。
      *
-     * @param supplier 新供给者，null 表示无供给者（不装填，仍可发射膛内已有弹药）
+     * @param route 新路，null 表示没有路由（不装填，仍可发射膛内已有弹药）
      */
     @Override
-    public void setCurrentSupplier(@Nullable IAmmoSupplier supplier) {
-        assignSupplier(supplier);
-        if (!getLevel().isClientSide()) {
-            getSynchedData().set(SUPPLIER_ID, SupplierRef.of(supplier));
-        }
-    }
-
-    /**
-     * 把指认落到本机字段上，并按身份收尾旧供给者上属于本管的那条作业。<br>
-     * 不含任何同步动作，也不动膛内那发：换指认只影响<b>后续</b>装填，膛内已经压好的那发照打
-     * （它属于哪条弹链由玩家的显式退膛操作决定，不在这里替玩家丢）。服务端由
-     * {@link #setCurrentSupplier} 追加写入同步值，客户端由 {@link #applySyncedSupplier()}
-     * （跟随推送）与 {@link #resolveSyncedSupplier()}（载入播种）调用。
-     */
-    private void assignSupplier(@Nullable IAmmoSupplier supplier) {
-        IAmmoSupplier previous = this.currentSupplier;
-        if (previous == supplier) return;
-        // 换人等于放弃这一份作业：先按旧身份收尾（此时字段还是旧值），再改指认。
-        // 供给者那边的库存本来就没扣，本管重新开工从 0 起算
+    public void setCurrentRoute(@Nullable AmmoPath route) {
+        if (Objects.equals(currentRoute, route)) return;
+        // 换路等于放弃这一份作业：先按旧身份收尾（此时字段还是旧值），再改指认
         finishReloadJob();
-        this.currentSupplier = supplier;
-    }
-
-    /**
-     * 应用服务端推来的指认（客户端）。<br>
-     * 值非空表示"这台机器派给了本管"，解析成本机实例；值为空表示服务端当前没给本管派供给者。
-     * 两种情形都只改指认，不动膛内那发——与服务端的口径一致（换指认只影响后续装填）。
-     */
-    private void applySyncedSupplier() {
-        SupplierRef ref = getSynchedData().get(SUPPLIER_ID);
-        if (ref.isNone()) {
-            assignSupplier(null);
-            return;
+        currentRoute = route;
+        if (!getLevel().isClientSide()) {
+            getSynchedData().set(ROUTE_TRANSPORTER_ID,
+                    route == null ? AmmoRef.NONE : AmmoRef.ofTransporter(route.transporter()));
+            getSynchedData().set(ROUTE_PROVIDER_ID,
+                    route == null ? AmmoRef.NONE : AmmoRef.ofProvider(route.provider()));
         }
-        IAmmoSupplier target = findSupplierByRef(ref);
-        // 发现结果里还没出现这台机器：保持现状，等 onTick 的重试
-        if (target == null || target == currentSupplier) return;
-        assignSupplier(target);
     }
 
     /**
-     * 按 {@link #SUPPLIER_ID} 里的身份在本机已发现的供给者中找出实例并指认。<br>
-     * 身份是"宿主 RegularPart uuid + SubPart 名 + 子系统名"，同一台机器在两端、在重启前后都是这个值，
-     * 因此不需要跨端传对象引用，也不需要额外的查表。客户端在刚载入时（还没收到任何推送）用它把
-     * 存档带回来的指认落地，服务端同样用它把存档里的指认在发现完成后落地。
-     * <p>
-     * 本方法只认领、不改变膛内状态：载入时的膛内弹药是存档里的既成事实，
-     * 退不退由玩家显式操作决定。
+     * 本管此刻可用的全部路：机械运输者 × 它的喂弹线，加人力路（本管的 roster × 自己发现到的架）。<br>
+     * 现算，同一对对象只出一条；结构变化后立即生效，没有缓存也没有跨 tick 状态。
+     * <p><b>调用线程：</b>主线程（服务端路由、客户端解析与 HUD）。
      */
-    private void resolveSyncedSupplier() {
-        SupplierRef ref = getSynchedData().get(SUPPLIER_ID);
-        if (ref.isNone()) return;
-        IAmmoSupplier target = findSupplierByRef(ref);
-        if (target != null && target != currentSupplier) assignSupplier(target);
+    @Override
+    public List<AmmoPath> getRoutes() {
+        Set<AmmoPath> routes = new LinkedHashSet<>();
+        for (IAmmoTransporter transporter : transporters) {
+            for (IAmmoSupplier provider : transporter.getFeedSources()) {
+                if (provider != null) routes.add(new AmmoPath(transporter, provider));
+            }
+        }
+        // 人力路只在本人力流程存在时合成：基准时长为 0 的型号没有"自己用人"这条路的时长可算
+        if (loaders.getHumanReloadTimeTicks() > 0) {
+            for (IAmmoSupplier provider : providers) {
+                routes.add(new AmmoPath(loaders, provider));
+            }
+        }
+        return new ArrayList<>(routes);
     }
 
-    /**
-     * 在本机已发现的供给者里按身份找实例。
-     *
-     * @return 对应实例；身份为空或发现结果里还没有这台机器时返回 null
-     */
+    @Override
     @Nullable
-    private IAmmoSupplier findSupplierByRef(SupplierRef ref) {
-        if (ref.isNone()) return null;
-        for (IAmmoSupplier supplier : getSuppliers()) {
-            if (SupplierRef.of(supplier).equals(ref)) return supplier;
+    public IAmmoSupplier resolveProvider(AmmoRef ref) {
+        if (ref == null || ref.isNone()) return null;
+        for (AmmoPath route : getRoutes()) {
+            IAmmoSupplier provider = route.provider();
+            if (AmmoRef.ofProvider(provider).equals(ref)) return provider;
         }
         return null;
     }
 
-    @Override
-    public List<IAmmoSupplier> getSuppliers() {
-        // 返回所有频道的扁平列表
-        List<IAmmoSupplier> all = new ArrayList<>();
-        for (List<IAmmoSupplier> channelList : supplierChannels.values()) {
-            all.addAll(channelList);
+    /**
+     * 客户端按同步来的两个引用解析整条路。<br>
+     * 提供者为 {@link AmmoRef#NONE} 表示服务端此刻没有路由；任一侧解析不到（发现结果还没到）就保留上一帧的
+     * 整对，不替换、也不因此收尾作业——两个字段不会拼成一条服务端从未指认的路。
+     */
+    private void applySyncedRoute() {
+        AmmoRef providerRef = getSynchedData().get(ROUTE_PROVIDER_ID);
+        if (providerRef.isNone()) {
+            setCurrentRoute(null);
+            return;
         }
-        return all;
-    }
-
-    @Override
-    public Map<String, List<IAmmoSupplier>> getSupplierChannels() {
-        return supplierChannels;
-    }
-
-    @Override
-    public void addSupplier(IAmmoSupplier supplier) {
-        addSupplier(supplier, "unknown");
+        IAmmoTransporter transporter = resolveTransporter(getSynchedData().get(ROUTE_TRANSPORTER_ID));
+        IAmmoSupplier provider = resolveProvider(providerRef);
+        if (transporter == null || provider == null) return;
+        setCurrentRoute(new AmmoPath(transporter, provider));
     }
 
     /**
-     * 结构变化的第一阶段：清空供给者登记表。<br>
-     * 登记表是"当前拓扑能发现到的供给者"的缓存，<b>不是</b>历史累积：装弹机只在自己的
-     * {@link AbstractSubsystem#onAttach()} 与结构变化时广播发现，已经不再连到本管的机器不会再来声明，
-     * 不清空就会一直留着——那些机器可能已经跟着拆下来的部件换到了别的载具上。
-     * 那会让两端的集合不一致（服务端逐件组装会留下中间态的残留，客户端只看到终局拓扑），
-     * 并让已失效的供给者继续出现在 HUD 的兜底取数里。
+     * 按身份解析运输者；{@link AmmoRef#NONE} 表示人力运输者——本管自己的 roster，且本型号必须有完整人力
+     * 流程，否则那条同步值没有对应的对象。
+     */
+    @Nullable
+    private IAmmoTransporter resolveTransporter(AmmoRef ref) {
+        if (ref == null || ref.isNone()) {
+            return loaders.getHumanReloadTimeTicks() > 0 ? loaders : null;
+        }
+        for (IAmmoTransporter transporter : transporters) {
+            if (AmmoRef.ofTransporter(transporter).equals(ref)) return transporter;
+        }
+        return null;
+    }
+
+    /**
+     * 客户端载入播种：本机还空着时（刚载入、发现尚未完成）按同步值里的身份认一次。<br>
+     * 少了它，载入后头几个 tick 本管处于"无路由"，膛内那发会在路由里被当作无主而退掉。
+     */
+    private void resolveSyncedRoute() {
+        if (currentRoute != null) return;
+        AmmoRef providerRef = getSynchedData().get(ROUTE_PROVIDER_ID);
+        if (providerRef.isNone()) return;
+        IAmmoTransporter transporter = resolveTransporter(getSynchedData().get(ROUTE_TRANSPORTER_ID));
+        IAmmoSupplier provider = resolveProvider(providerRef);
+        if (transporter != null && provider != null) setCurrentRoute(new AmmoPath(transporter, provider));
+    }
+
+    /**
+     * 结构变化的第一阶段：清空两张发现表。<br>
+     * 登记表是"当前拓扑能发现到的东西"的缓存，<b>不是</b>历史累积：机器只在自己的
+     * {@link AbstractSubsystem#onAttach()} 与结构变化时被查询，已经不再连到本管的不会再来声明，
+     * 不清空就会一直留着——那些机器可能已经跟着拆下来的部件换到了别的载具上。那会让两端的集合不一致
+     * （服务端逐件组装会留下中间态的残留，客户端只看到终局拓扑），并让已失效的机器继续出现在路由与 HUD 里。
      * <p>
-     * 清空写在第一阶段而不是 {@link #onVehicleStructureChanged()}：后者是装弹机重新广播发现的阶段，
-     * 两者若挤在同一趟遍历里，本管排在装弹机之后就等于把本轮发现结果清掉。
+     * 清空写在第一阶段而不是 {@link #onVehicleStructureChanged()}：后者是重新发现的阶段，两者若挤在同一趟
+     * 遍历里，本管排在产生查询结果的机器之后就等于把本轮发现结果清掉。
      * <p>
      * <b>调用线程：</b>主线程。
      */
     @Override
     public void onVehicleStructurePreChanged() {
-        for (List<IAmmoSupplier> channelSuppliers : supplierChannels.values()) {
-            channelSuppliers.clear();
-        }
-        supplierChannels.values().removeIf(List::isEmpty);
+        transporters.clear();
+        providers.clear();
     }
 
     /**
-     * 带频道名的供给者注册。<br>
-     * 由装弹机在结构变化的发现阶段调用；频道名必须是 {@code ammo_inputs} 中声明的到达频道。
-     * 声明外的登记直接拒绝，不建对应列表。
-     * <p>
-     * 同一台重复发现不重复登记（一次结构变化里可能有多个装弹机广播同一条发现频道）。
-     * 这里不写指认：谁给本管供弹由服务端的路由决定，登记只负责让本管知道"有哪些供给者存在"。
+     * 登记一台被发现的运输者。<br>
+     * 频道只是登记键：路由不按频道分组，也不把频道写进池条目。同一台重复发现不重复登记。
+     * 这里不写指认：走哪条路由服务端的路由决定，登记只负责让本管知道"有哪些运输者存在"。
      */
     @Override
-    public void addSupplier(IAmmoSupplier supplier, String channelName) {
-        List<IAmmoSupplier> channelSuppliers = supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>());
-        if (channelSuppliers.contains(supplier)) return;
-        channelSuppliers.add(supplier);
+    public void addTransporter(IAmmoTransporter transporter, String channelName) {
+        if (!transporters.contains(transporter)) transporters.add(transporter);
     }
 
     /**
-     * 挂载后与结构变化后重新发现供弹来源。<br>
-     * 需求方发起查询：对 {@code ammo_discovery_targets} 的每个频道做一次只读终端查询，命中的
-     * {@link IAmmoSupplier} 登记进本管的供给者表。自动装弹机与库存持有者（弹药架）都是供给者，区别在于
-     * 库存持有者没有机械段：直接向它取弹属于人力直取，只有本型号声明了人工段时才登记，否则这根管只经
-     * 机构装填（见 {@link #discoverSuppliers()}）。
+     * 登记一台被发现的提供者。<br>
+     * 只有本型号声明了完整人力流程（{@code human_reload_time > 0}）时才调用：库存持有者没有机械段，
+     * 它在人力路上充当提供者，没有人工段的型号不能让"取弹不花时间"成立。
+     */
+    @Override
+    public void addProvider(IAmmoSupplier provider, String channelName) {
+        if (!providers.contains(provider)) providers.add(provider);
+    }
+
+    /**
+     * 挂载后与结构变化后重新发现弹药端的两类对象。<br>
+     * 需求方发起查询：对 {@code ammo_discovery_targets} 的每个频道做一次只读终端查询，命中的对象按角色登记
+     * ——装弹机是运输者，弹药架是提供者。配对在 {@link #getRoutes()} 里按需合成，不在发现阶段固定成表：
+     * 同一个集合里各子系统的重建顺序不确定，装弹机的喂弹线可能比本管的发现晚一拍就绪，把配对写死会把空来源
+     * 留在表里。
      * <p><b>调用线程：</b>主线程（挂载与结构变化）。
      */
     @Override
     public void onAttach() {
         super.onAttach();
-        discoverSuppliers();
-        operators.discover(getHumanReloadTimeTicks());
+        discoverRoutes();
+        loaders.discover(getHumanReloadTimeTicks());
     }
 
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        discoverSuppliers();
-        operators.discover(getHumanReloadTimeTicks());
+        discoverRoutes();
+        loaders.discover(getHumanReloadTimeTicks());
     }
 
     /**
-     * 按 {@code ammo_discovery_targets} 做只读发现并登记供给者；结果已在结构变化的第一阶段清空。<br>
-     * 库存持有者只有在本人力流程存在时才进候选：它的机械段为零，人工段由本管负责，因此不能在没有人工段的
-     * 型号上充当交付目标——那会变成"取弹不花时间"。同一频道上同时有机构与库存持有时两者都登记，
-     * 由路由按预计完成时间二选一（见 {@link #ticksToNextRound(IAmmoSupplier)}）。
+     * 按 {@code ammo_discovery_targets} 做只读发现并登记；结果已在结构变化的第一阶段清空。<br>
+     * 装弹机与弹药架是两类对象，登记后由 {@link #getRoutes()} 合成路：机械运输者配它的喂弹线，人力运输者
+     * 配本管自己发现到的架。
      */
-    private void discoverSuppliers() {
+    private void discoverRoutes() {
         for (String channel : attr.ammoDiscoveryTargets.keySet()) {
             for (Map.Entry<String, List<ISignalReceiver>> arrival : resolveTargets(channel).entrySet()) {
                 for (ISignalReceiver terminal : arrival.getValue()) {
                     if (terminal == this) continue;
-                    if (!(terminal instanceof IAmmoSupplier supplier)) continue;
-                    if (terminal instanceof RegenAmmoRackSubsystem && getHumanReloadTimeTicks() <= 0) continue;
-                    if (terminal instanceof AbstractSubsystem sub
-                            && sub.getOwner().getSubPart().getPart().assembly
+                    if (!(terminal instanceof AbstractSubsystem sub)) continue;
+                    if (sub.getOwner().getSubPart().getPart().assembly
                             != getOwner().getSubPart().getPart().assembly) {
                         continue;
                     }
-                    addSupplier(supplier, arrival.getKey());
+                    if (terminal instanceof IAmmoTransporter transporter) {
+                        addTransporter(transporter, arrival.getKey());
+                    } else if (terminal instanceof IAmmoSupplier provider && getHumanReloadTimeTicks() > 0) {
+                        addProvider(provider, arrival.getKey());
+                    }
                 }
             }
         }
@@ -786,8 +798,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 退膛：返回膛内弹药并清空。<br>
-     * 退出的一发包装成单发交付还给当前供给者；收不收由供给者自己判，被拒时弹药从膛内消失且未入库
-     * ——掉落物品的落地位置与物品映射尚未实现。
+     * 退出的一发包装成单发交付，先交给当前路的提供者，再按 {@link #getRoutes()} 询问本装配体的其它提供者；
+     * 收不收由提供者自己判。两级都不收时丢弃并记一条警告——掉落物品的落地位置与物品映射尚未实现。
      *
      * @return 退出的弹药类型，空膛返回 null
      */
@@ -798,11 +810,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         setChambered(null);
 
         // 单发交付：退膛只涉及膛内这一发，与已装 Belt 无关
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier != null && round.getRegistryKey() != null) {
-            supplier.returnBelt(new AmmoBelt(null, "", List.of(new AmmoBelt.PatternEntry(round.getRegistryKey(), 1)), 1, 1, null));
+        if (round.getRegistryKey() != null) {
+            AmmoBelt single = new AmmoBelt(null, "",
+                    List.of(new AmmoBelt.PatternEntry(round.getRegistryKey(), 1)), 1, 1, null);
+            IAmmoSupplier preferred = currentRoute == null ? null : currentRoute.provider();
+            if (!returnBeltToProviders(single, preferred)) {
+                MachineMax.LOGGER.warn("Launcher {} 退膛的一发没有任何弹药架接收，按规则丢弃 {}", name, single);
+            }
         }
-        // TODO: 供给者拒收时，生成 ItemEntity 掉落于发射器 locator 位置
         return round;
     }
 
@@ -835,7 +850,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * 本管库存殉爆：按膛内那一发与已装 Belt 的实际贡献合成一次普通爆炸。
      * <p>
      * 合成范围是本管持有的全部弹药——膛内至多一发，已装 Belt 按余量逐弹种计入；两者都已经从供给者的
-     * 弹仓扣掉（{@link IAmmoSupplier#consumeReadyBelt}），所以炮闩殉爆与装弹机库存殉爆不会把同一份
+     * 弹仓扣掉（{@link IAmmoSupplier#deliverReserved}），所以炮闩殉爆与装弹机库存殉爆不会把同一份
      * 算两次。
      * <p>
      * {@code P、D、J} 全为零时没有可生成爆炸的贡献，不消耗这些弹药、不起爆；发射器已毁，弹药也
@@ -908,7 +923,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.onTick();
         // 指认的种子：本机字段还空着时（刚载入、发现尚未完成）按同步值里的身份认一次。
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
-        if (currentSupplier == null) resolveSyncedSupplier();
+        if (currentRoute == null) resolveSyncedRoute();
 
         // 两端都推进本管的弹药内容：首次装填、整份换装、从已装 Belt 补膛与射击扣弹各跑一份，客户端那一份
         // 是本地镜像。库存、预留、占用与投射物归服务端；回充也只由服务端推进——它的余量与进度都在已装
@@ -1068,90 +1083,59 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 这份作业还要多久交付，是控制器比较「保持当前供给者还是换人」的唯一输入。<br>
-     * 分档：本管正在为它推进的那一份 = 本阶段剩余 tick（还停在人工段时再加上整段机械时长）；供给者可交付且
-     * 有余弹但还没开工 = 人工段基准时长加整段机械时长；无余弹或供给者不可交付 = {@link Integer#MAX_VALUE}
-     * （现货优先：空匣的机器即使下一 tick 就会回充出一发也不值得留）。
-     * <p>还没开工的那一档按<b>标准人力</b>估人工段：选人之后的实际倍率只有受理时才定，而这里比较的是
-     * "换不换供给者"，含人工段的型号因此排在同样机械时长但不带人工段的型号之后——这正是它的实际代价。
-     * 人工段的基准时长取本条作业真正的用人方（见 {@link #humanStageStandardTicks(IAmmoSupplier)}）。
+     * 这条路上的作业还要多久交付，是控制器比较「保持当前路还是换路」的唯一输入。<br>
+     * 只剩一次转发：各类加成（人工段的岗位倍率与个人倍率、机械段的基准时长）都由运输者折算，接收者与武器
+     * 控制器都只读这一个值。
      *
-     * @param supplier 候选或当前供给者，可为 null（一律该换）
+     * @param route 候选或当前指认的路，可为 null（一律该换）
      * @return 还要多少 tick；{@link Integer#MAX_VALUE} 表示此刻给不出
      */
-    public int ticksToNextRound(@Nullable IAmmoSupplier supplier) {
-        if (supplier == null || !supplier.isSupplyOperational()) return Integer.MAX_VALUE;
-        ReloadJob job = reloadJob;
-        if (job != null && job.deliveryTarget().equals(SupplierRef.of(supplier))) {
-            int remaining = job.remainingTicks();
-            if (job.stage() == ReloadJob.Stage.HUMAN) remaining += supplier.getReloadTimeTicks();
-            return remaining;
-        }
-        if (!supplier.hasAmmo()) return Integer.MAX_VALUE;
-        return Math.max(0, humanStageStandardTicks(supplier) + supplier.getReloadTimeTicks());
+    public int ticksToNextRound(@Nullable AmmoPath route) {
+        if (route == null) return Integer.MAX_VALUE;
+        return route.transporter().estimateTicks(this, route.provider());
     }
 
     /**
      * 受理一条新作业。<br>
-     * 有判定流程的型号先认领执行者，再只取整次作业的弹药预留：人工段没有机械动作，占着机构槽位会让别的管
-     * 白白等。任一步失败都释放本次已取得的资源、不建作业。
-     * 没有人工段的型号一次取得预留与机构槽位，两种资源在同一份授予里返回。
+     * 先向运输者取本阶段的执行资源，再向提供者取整次作业的弹药预留：两者来自两个对象，取得顺序固定，
+     * 任一步失败就撤销先取得的那一份（{@link IAmmoTransporter#releaseClaim}），因此不建作业、不开始计时。
+     * 有人工段时先认领乘员、只取预留；人工段结束时才补机械槽位（{@link #finishHumanStage}）。
      *
-     * @param supplier 当前供给者
+     * @param route 当前路
      * @return 新建的作业；本 tick 接不了单时返回 null
      */
     @Nullable
-    private ReloadJob acceptNewJob(IAmmoSupplier supplier) {
+    private ReloadJob acceptNewJob(AmmoPath route) {
         // 编号只在受理成功后推进：等待期间反复尝试不消耗编号
-        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getName(), nextJobId);
-        int humanTicks = humanStageStandardTicks(supplier);
-        if (humanTicks > 0) {
-            if (!claimOperator(supplier, key)) return null; // 没有执行者：不占弹也不开工
-            IAmmoSupplier.Grant grant = supplier.reserveFor(this, key);
-            if (grant == null) {
-                releaseOperator(supplier, key);
-                return null;
-            }
-            nextJobId++;
-            double rate = operatorTimeScale(supplier);
-            ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
-                    grant.reservedCount(), ReloadJob.Stage.HUMAN, humanStageTicks(humanTicks, rate), rate);
-            beginReloadJob(job);
-            return job;
+        ReloadJobKey key = new ReloadJobKey(getSubPart().getId(), getSubPart().subsystemIndex(this), nextJobId);
+        IAmmoTransporter transporter = route.transporter();
+        IAmmoSupplier provider = route.provider();
+        int humanTicks = transporter.getHumanReloadTimeTicks();
+        if (!transporter.claim(this, key)) return null; // 没有执行者或槽位：不占弹也不开工
+        IAmmoSupplier.Grant grant = provider.reserve(key);
+        if (grant == null) {
+            transporter.releaseClaim(this, key);
+            return null;
         }
-        IAmmoSupplier.Grant grant = supplier.claimFor(this, key);
-        if (grant == null) return null;
         nextJobId++;
-        ReloadJob job = new ReloadJob(key, SupplierRef.of(supplier), grant.origin(), grant.spec(),
-                grant.reservedCount(), supplier.getReloadTimeTicks());
+        ReloadJob job;
+        if (humanTicks > 0) {
+            double rate = transporter.getOperatorTimeScale(this);
+            job = new ReloadJob(key, AmmoRef.ofTransporter(transporter), AmmoRef.ofProvider(provider),
+                    grant.spec(), grant.reservedCount(), ReloadJob.Stage.HUMAN,
+                    humanStageTicks(humanTicks, rate), rate);
+        } else {
+            job = new ReloadJob(key, AmmoRef.ofTransporter(transporter), AmmoRef.ofProvider(provider),
+                    grant.spec(), grant.reservedCount(), transporter.getReloadTimeTicks());
+        }
         beginReloadJob(job);
         return job;
     }
 
     /**
-     * 本管是否为这条作业的人工段负责用人。<br>
-     * 交付方自己声明了人工段时由它负责（机构型号的 {@code human_reload_time}）；否则由本管负责，条件是本型号
-     * 声明了完整人力流程——这就是人力直取路径：交付方是库存持有者，机械段为零，取弹与装填都归乘员。
-     * 两处都声明时以交付方为准，一条作业因此只有一段人工段。
-     *
-     * @param supplier 当前供给者
-     */
-    private boolean ownsHumanStage(IAmmoSupplier supplier) {
-        return supplier.getHumanReloadTimeTicks() <= 0 && getHumanReloadTimeTicks() > 0;
-    }
-
-    /**
-     * 本条作业人工段的基准时长（标准人力 tick）；{@code 0} 表示没有人工段。
-     *
-     * @param supplier 当前供给者
-     */
-    private int humanStageStandardTicks(IAmmoSupplier supplier) {
-        return ownsHumanStage(supplier) ? getHumanReloadTimeTicks() : supplier.getHumanReloadTimeTicks();
-    }
-
-    /**
-     * 本型号完整人力流程的基准时长：{@code human_reload_time} 秒换算成 tick；0 表示不支持该路径。<br>
-     * 这是标准人力下的时长，岗位倍率与个人倍率由 {@link #humanStageTicks(int, double)} 乘上去。
+     * 本型号完整人力流程的基准时长：{@code human_reload_time} 秒换算成 tick；0 表示没有人力路。<br>
+     * 这是标准人力下的时长，岗位倍率与个人倍率由 {@link #humanStageTicks(int, double)} 乘上去。它也决定
+     * 本管的 roster 是否作为人力运输者进入路由。
      */
     public int getHumanReloadTimeTicks() {
         float seconds = attr.staticAttribute.getHumanReloadTime();
@@ -1159,53 +1143,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return Math.max(1, (int) (seconds * 20f));
     }
 
-    /**
-     * 为人工段认领一名执行者：由本条作业真正的用人方处理。
-     *
-     * @param supplier 当前供给者
-     * @param key      作业身份
-     * @return true 表示此刻这条作业有人可干
-     */
-    private boolean claimOperator(IAmmoSupplier supplier, ReloadJobKey key) {
-        return ownsHumanStage(supplier)
-                ? operators.claim(this, key, getHumanReloadTimeTicks())
-                : supplier.claimOperator(this, key);
-    }
-
-    /** 这条作业的人工段是否仍有可用执行者，由用人方回答。 */
-    private boolean holdsOperator(IAmmoSupplier supplier) {
-        return ownsHumanStage(supplier) ? operators.holds(this) : supplier.holdsOperator(this);
-    }
-
-    /** 按身份释放执行者认领，由用人方处理；没有认领的一方是无操作。 */
-    private void releaseOperator(IAmmoSupplier supplier, ReloadJobKey key) {
-        if (ownsHumanStage(supplier)) {
-            operators.release(key);
-        } else {
-            supplier.releaseOperator(this, key);
-        }
-    }
-
-    /** 已认领执行者的人工段时间倍率（岗位倍率 × 个人倍率），由用人方回答。 */
-    private double operatorTimeScale(IAmmoSupplier supplier) {
-        return ownsHumanStage(supplier) ? operators.timeScale() : supplier.getOperatorTimeScale(this);
+    /** 人工段实际时长：标准人力 tick 乘上岗位倍率与个人倍率。 */
+    private static int humanStageTicks(int standardTicks, double rate) {
+        double safe = rate > 0 && Double.isFinite(rate) ? rate : 1.0;
+        return Math.max(1, (int) Math.round(standardTicks * safe));
     }
 
     /**
-     * 本 tick 人工段能推进多少。<br>
-     * 人工段由本管负责时只看人还在不在（时长已经把倍率折进去）；由交付方负责时问它——机构的放行条件
-     * 归它自己表达。
-     */
-    private int humanStageAdvance(IAmmoSupplier supplier) {
-        if (!ownsHumanStage(supplier)) return supplier.getAdvanceTicks(this);
-        return holdsOperator(supplier) ? 1 : 0;
-    }
-
-    /**
-     * 受理一份新作业：写入当前作业并把它的身份、分配与进度推给客户端（仅服务端写同步值）。<br>
-     * 受理前必须已经取得交付方授予的资源（{@link IAmmoSupplier#claimFor}，或有人工段时
-     * {@link IAmmoSupplier#reserveFor} 加执行者认领），因此这里不重复判断。
-     * 客户端按同步字段建自己的作业，走 {@link #applySyncedJob()}，不调用本方法。
+     * 按身份收尾当前作业。<br>
+     * 已在本类的各处入口调用，不另提供"只清进度"的路径。
      */
     private void beginReloadJob(ReloadJob job) {
         reloadJob = job;
@@ -1213,24 +1159,28 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 统一收尾：先按作业身份释放人物占用、机构占用与实际架预留，再发布结束结果并清空作业。<br>
-     * 成功交付、取消、换人、摧毁、路径失效与暂停超时都走这一口，因此不存在"只清进度不释放承诺"的分支；
+     * 统一收尾：先按作业身份释放运输者的执行资源与提供者的预留，再发布结束结果并清空作业。<br>
+     * 成功交付、取消、换路、摧毁、路径失效与暂停超时都走这一口，因此不存在"只清进度不释放承诺"的分支；
      * 释放只按身份删除记录，不退还库存（库存扣减只发生在交付那一刻）。作业为空时是无操作，
      * 重复收尾因此安全。<br>
      * 结束结果带原 {@code jobId} 与已交付／未交付结论，客户端据它结束身份匹配的本地作业；结论分开记是
      * 因为"作业字段被清 0"不足以说明这一份到底交成了没有。
-     * <p><b>调用线程：</b>主线程（客户端经 {@link #assignSupplier} 也会走到这里，那一侧不发布结果——
+     * <p><b>调用线程：</b>主线程（客户端经 {@link #setCurrentRoute} 也会走到这里，那一侧不发布结果——
      * 结果只由服务端写）。
      */
     private void finishReloadJob(boolean delivered) {
         ReloadJob job = reloadJob;
         if (job == null) return;
-        IAmmoSupplier supplier = currentSupplier;
-        // 人工段可能由交付方负责，也可能由本管负责（人力直取）：两个入口都按身份释放，
-        // 没有认领的那一方是无操作，因此这里不必反推是哪一个
-        if (supplier != null) supplier.releaseOperator(this, job.key());
-        operators.release(job.key());
-        if (supplier != null) supplier.releaseClaim(this, job.key());
+        AmmoPath route = currentRoute;
+        if (route != null) {
+            route.transporter().releaseClaim(this, job.key());
+        }
+        // 撤销归接收者：只对作业指名的那台提供者按身份撤销；解析不到时（结构变化已把它移出发现结果）留给
+        // 运输者的失效清理，那一处会按身份在它的喂弹线里代撤销，避免预留永久占住库存
+        IAmmoSupplier provider = route != null && AmmoRef.ofProvider(route.provider()).equals(job.provider())
+                ? route.provider()
+                : resolveProvider(job.provider());
+        if (provider != null) provider.releaseReservation(job.key());
         reloadJob = null;
         if (!getLevel().isClientSide()) {
             getSynchedData().set(JOB_RESULT_ID, job.jobId());
@@ -1260,35 +1210,35 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 推进本管的装填作业。<br>
-     * 首次装填与整份换装走同一条作业：目标都是当前供给者的一份交付。开工前先向供给者申请受理——
-     * 有判定流程时它同时认领一名执行者并只取弹药预留，没有人工段的流程则一次取得机构槽位与该次作业的
-     * 弹药预留；接不了单（不可工作、没有可分配库存、没有人、独占槽位被别的作业占着）就不建作业、
-     * 不开始计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
+     * 首次装填与整份换装走同一条作业：目标都是当前路的一份交付。开工前先向运输者取执行资源、再向提供者取
+     * 预留；接不了单（运输者不可工作、没有可分配库存、没有人、独占槽位被别的作业占着）就不建作业、不开始
+     * 计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
      * <p>
-     * 有判定流程的作业先走人工段（{@link #tickHumanStage}）：人工段完成才申请机械槽位，进入机械段后按供给者
-     * 给的推进量走完、兑现预留、交给装填或换装的分支。
+     * 有人工段的作业先走人工段（{@link #tickHumanStage}）：人工段完成才申请机械槽位，进入机械段后按运输者
+     * 给的推进量走完、兑现预留、交给装填或换装的分支。人力运输者没有机械段，人工段走完即交付。
      * <p>
-     * 作业的交付目标与来源不会在作业存续期间漂移：指认只经 {@link #assignSupplier} 变更，而它在换人前
-     * 就收尾了旧作业；来源只由受理时授予，换架要重建作业。
+     * 作业的两个身份不会在作业存续期间漂移：指认只经 {@link #setCurrentRoute} 变更，而它在换路前就收尾了
+     * 旧作业；提供者只由受理时授予，换架要重建作业。
      * <p>
-     * <b>暂停与超时：</b>受理成立后本 tick 的推进量可能为 0（机构受阻、供能不足、执行者离场且无人替补、
-     * 人工段结束却拿不到机械槽位），承诺仍在，因此不立刻收尾而是等它恢复；连续推不动
-     * {@link #PAUSE_TIMEOUT_TICKS} 个 tick 才按未交付终止并释放全部资源（人员、机构槽位与架预留），
-     * 与显式取消共用同一条结束结果。这个上限只作用于"有作业、有承诺"的暂停；还没受理的等待没有作业，
-     * 也就不计时。
+     * <b>暂停与超时：</b>受理成立后本 tick 的推进量可能为 0（运输者受阻、乘员离场且无人替补、人工段结束却
+     * 拿不到机械槽位），承诺仍在，因此不立刻收尾而是等它恢复；连续推不动 {@link #PAUSE_TIMEOUT_TICKS} 个
+     * tick 才按未交付终止并释放全部资源（乘员、机械槽位与架预留），与显式取消共用同一条结束结果。这个上限
+     * 只作用于"有作业、有承诺"的暂停；还没受理的等待没有作业，也就不计时。承诺整体消失（运输者的占用被按
+     * 身份摘掉、提供者的预留被撤销）时立刻收尾，不等这个上限。
      * <p><b>调用线程：</b>主线程（仅服务端：库存、选人与交付都在这一侧执行）。
      */
     private void tickReload() {
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier != null && !isStillDiscovered(supplier)) {
+        AmmoPath route = currentRoute;
+        if (route != null && !isRouteValid(route)) {
             // 结构变化后旧路径已不可达（拆件、跨载具转移）：先按身份收尾再丢指认，
             // 不能带着已经不在本装配体内的占用继续推进
-            setCurrentSupplier(null);
+            setCurrentRoute(null);
             return;
         }
-        boolean swapping = supplier != null && pendingSwapTarget() != null;
-        boolean want = supplier != null
-                && supplier.isSupplyOperational()
+        boolean swapping = route != null && pendingSwapTarget() != null;
+        boolean want = route != null
+                && route.transporter().isOperational()
+                && route.provider().isSupplyOperational()
                 && (swapping || needsBelt());
         if (!want) {
             finishReloadJob();
@@ -1297,76 +1247,73 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
         ReloadJob job = reloadJob;
         if (job == null) {
-            job = acceptNewJob(supplier);
+            job = acceptNewJob(route);
             if (job == null) return; // 未受理：不入占用、不占预留、不开始计时
         }
-        if (!supplier.holdsCommitment(this)) {
-            // 占用或预留已不存在（来源失效、份额被撤销）：按失效收尾，由路由重选
+        // 承诺整体消失：运输者的执行资源被摘掉，或提供者的那份预留被撤销
+        if (!route.transporter().holdsCommitment(this)
+                || !route.provider().holdsReservation(job.key(), job.reservedCount())) {
             finishReloadJob();
             return;
         }
         if (job.stage() == ReloadJob.Stage.HUMAN) {
-            tickHumanStage(supplier, job);
+            tickHumanStage(route, job);
             return;
         }
-        job.advance(supplier.getAdvanceTicks(this));
+        job.advance(route.transporter().getAdvanceTicks(this));
         if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
             finishReloadJob();
             return;
         }
         if (!job.isComplete()) return;
-
-        AmmoBelt delivered = supplier.consumeReadyBelt(this);
-        finishReloadJob(delivered != null);
-        if (delivered == null) return; // 兑现不出这一份：下个 tick 重开作业
-        if (swapping) {
-            commitBeltSwap(supplier, delivered);
-        } else {
-            acceptDelivery(supplier, delivered);
-        }
+        deliver(route, job);
     }
 
     /**
      * 推进人工段：有人就往前走，人走了先换人、换不到就暂停，走完后释放人员并申请机械槽位。<br>
      * 换人保留已完成的进度，只按新倍率换算剩余量（{@link ReloadJob#retimeHuman(double)}）；倍率变了就重发
-     * 一次时长与基线，客户端的进度条因此不会倒退。离场者的认领由用人方在换人时按身份释放
-     * （见 {@link ReloadOperatorRoster#claim}），人工段因此不会把人锁在已经下车的座位上。
+     * 一次时长与基线，客户端的进度条因此不会倒退。离场者的认领由运输者在换人时按身份释放
+     * （见 {@link LoaderRoster#claim}），人工段因此不会把人锁在已经下车的座位上。
      *
-     * @param supplier 当前供给者（人工段的用人方由它或本管承担，见 {@link #ownsHumanStage(IAmmoSupplier)}）
-     * @param job      处于人工段的作业
+     * @param route 当前路（人工段的用人方就是它的运输者）
+     * @param job   处于人工段的作业
      */
-    private void tickHumanStage(IAmmoSupplier supplier, ReloadJob job) {
-        if (!claimOperator(supplier, job.key())) {
+    private void tickHumanStage(AmmoPath route, ReloadJob job) {
+        IAmmoTransporter transporter = route.transporter();
+        if (!transporter.claim(this, job.key())) {
             pauseReloadJob(job);
             return;
         }
-        if (job.retimeHuman(operatorTimeScale(supplier))) pushReloadJob();
+        if (job.retimeHuman(transporter.getOperatorTimeScale(this))) pushReloadJob();
         if (!job.isComplete()) {
-            job.advance(humanStageAdvance(supplier));
+            job.advance(1);
             if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
                 finishReloadJob();
                 return;
             }
         }
-        if (job.isComplete()) finishHumanStage(supplier, job);
+        if (job.isComplete()) finishHumanStage(route, job);
     }
 
     /**
-     * 人工段完成：先释放人员，再取得本段的执行资源，都成立了才进入机械段。<br>
-     * 交付方是机构时这里申请的是它的机械槽位；交付方是库存持有者时它没有机械动作，同一次调用只是确认
-     * 那份预留仍在（{@link IAmmoSupplier#claimFor} 对已有身份沿用原份额），机械段因此只有一个 tick。
+     * 人工段完成：人力运输者当场交付；机械运输者先交还乘员、再取得机械槽位，成立了才进入机械段。<br>
      * 槽位一时拿不到时作业停在人工段末端等（原库存预留保持），由暂停上限兜底。
      *
-     * @param supplier 当前供给者
-     * @param job      刚走完人工段的作业
+     * @param route 当前路
+     * @param job   刚走完人工段的作业
      */
-    private void finishHumanStage(IAmmoSupplier supplier, ReloadJob job) {
-        releaseOperator(supplier, job.key());
-        if (supplier.claimFor(this, job.key()) == null) {
+    private void finishHumanStage(AmmoPath route, ReloadJob job) {
+        IAmmoTransporter transporter = route.transporter();
+        if (transporter.isHuman()) {
+            // 人力运输者没有机械段：人工段走完即交付
+            deliver(route, job);
+            return;
+        }
+        if (!transporter.claimForMachineStage(this, job.key())) {
             pauseReloadJob(job);
             return;
         }
-        job.enterMachineStage(supplier.getReloadTimeTicks());
+        job.enterMachineStage(transporter.getReloadTimeTicks());
         pushReloadJob();
     }
 
@@ -1376,36 +1323,45 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) finishReloadJob();
     }
 
-    /** 人工段实际时长：标准人力 tick 乘上岗位倍率与个人倍率。 */
-    private static int humanStageTicks(int standardTicks, double rate) {
-        double safe = rate > 0 && Double.isFinite(rate) ? rate : 1.0;
-        return Math.max(1, (int) Math.round(standardTicks * safe));
+    /**
+     * 兑现这条作业的预留，并交给首次装填或整份换装。<br>
+     * 兑现不出这一份（预留已不存在）时按未交付收尾，下个 tick 重开作业。
+     */
+    private void deliver(AmmoPath route, ReloadJob job) {
+        boolean swapping = pendingSwapTarget() != null;
+        IAmmoSupplier provider = route.provider();
+        AmmoBelt delivered = provider.deliverReserved(job.key());
+        finishReloadJob(delivered != null);
+        if (delivered == null) return;
+        if (swapping) {
+            commitBeltSwap(provider, delivered);
+        } else {
+            acceptDelivery(provider, delivered);
+        }
     }
 
     /**
-     * 指认的供给者是否仍在当前发现结果里。<br>
-     * 结构变化会整体重建供给者表：拆下来的机器跟着部件去了别的装配体，它不会再来登记，占着它的作业
-     * 因此必须收尾——继续推进等于让弹药跨装配体流动。判定读表本身而不是空间距离，因为"可达"由接线
-     * 与频道决定，不由距离决定。
+     * 这条指认的路是否仍然可达：两张发现表重建后，配对仍能由 {@link #getRoutes()} 合成。<br>
+     * 判定读表本身而不是空间距离，因为"可达"由接线与频道决定，不由距离决定。可工作性由调用方另判。
      *
-     * @param supplier 当前指认的供给者
+     * @param route 当前指认的路
      * @return true 表示它仍在本管这一轮发现结果里
      */
-    private boolean isStillDiscovered(IAmmoSupplier supplier) {
-        for (List<IAmmoSupplier> channelSuppliers : supplierChannels.values()) {
-            if (channelSuppliers.contains(supplier)) return true;
+    private boolean isRouteValid(AmmoPath route) {
+        for (AmmoPath known : getRoutes()) {
+            if (known.equals(route)) return true;
         }
         return false;
     }
 
     /**
      * 接受一份交付：按本管的装填模式写入膛室或已装数据。<br>
-     * 不通过整份校验的交付原样退回供给者，等下一次作业重来。
+     * 不通过整份校验的交付原样退回提供者，等下一次作业重来。
      */
-    private void acceptDelivery(IAmmoSupplier supplier, AmmoBelt pulled) {
+    private void acceptDelivery(IAmmoSupplier provider, AmmoBelt pulled) {
         if (!canAcceptBelt(pulled)) {
             MachineMax.LOGGER.warn("Launcher {} 收到不兼容的交付 {}，整份退回并等待路由", name, pulled);
-            supplier.returnBelt(pulled);
+            provider.returnBelt(pulled);
             return;
         }
         if (singleRoundLoading()) {
@@ -1439,57 +1395,59 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             tickReloadSounds();
             return;
         }
-        IAmmoSupplier supplier = deliverySupplier(job);
-        if (supplier == null) {
-            // 指认与作业目标还没对齐（同步先后顺序）：先不推进，也不按别的机器放行
+        AmmoPath route = deliveryRoute(job);
+        if (route == null) {
+            // 作业上的那一对还没解析出来（同步先后顺序）：先不推进，也不按别的机器放行
             tickReloadSounds();
             return;
         }
-        job.advance(supplier.getAdvanceTicks(this));
+        job.advance(route.transporter().getAdvanceTicks(this));
         tickReloadSounds();
         if (!job.isComplete()) return;
-        // 人工段走完只是这一段完成：机械段还没开始，交付要等权威把阶段推过来
-        if (job.stage() == ReloadJob.Stage.HUMAN) return;
+        // 机械运输者的人工准备段走完只是这一段完成：机械段还没开始，交付要等权威把阶段推过来。
+        // 人力运输者没有机械段，人工段走完即本端交付
+        if (job.stage() == ReloadJob.Stage.HUMAN && !route.transporter().isHuman()) return;
 
         boolean swapping = isSwapping();
         AmmoBelt delivered = job.spec().freshCopy(job.reservedCount());
         reloadJob = null;
         lastLocalDeliveryId = job.jobId();
         if (swapping) {
-            commitBeltSwap(supplier, delivered);
+            commitBeltSwap(route.provider(), delivered);
         } else {
-            acceptDelivery(supplier, delivered);
+            acceptDelivery(route.provider(), delivered);
         }
     }
 
     /**
-     * 本管当前作业的交付目标实例：只有指认与作业上的目标一致时才返回它。<br>
-     * 两者在同步先后顺序上可能短暂不一致，那时不能用别的机器回答"本 tick 能推进多少"——放行条件与
-     * 交付都按这条作业自己的目标算。
+     * 作业上指名的那条路：两个身份都解析成功才算数。<br>
+     * 作业是权威——同步先后顺序让指认与作业短暂不一致时，仍然按作业上那一对推进与交付；机械路的提供者不在
+     * 本管的发现表里（它由装填机自己发现），因此必须经 {@link #resolveProvider} 合成。
      */
     @Nullable
-    private IAmmoSupplier deliverySupplier(ReloadJob job) {
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier == null || !job.deliveryTarget().equals(SupplierRef.of(supplier))) return null;
-        return supplier;
+    private AmmoPath deliveryRoute(ReloadJob job) {
+        IAmmoTransporter transporter = resolveTransporter(job.transporter());
+        IAmmoSupplier provider = resolveProvider(job.provider());
+        return transporter == null || provider == null ? null : new AmmoPath(transporter, provider);
     }
 
     /**
-     * 客户端把当前作业进度交给音效持有者：机械段的声音定位在机构上，人工段的声音定位在装填动作发生的地方。<br>
-     * 人工段由交付方负责时（机构型号的人工准备）由它自己播；由本管负责时（人力直取）本管按自己的音效表播，
-     * 播放位置就是本管。已播游标归各自的持有者，本管只提供进度。
+     * 客户端把当前作业进度交给音效持有者：机械段的声音定位在运输者上，人工段的声音定位在装填动作发生的
+     * 地方。<br>
+     * 机械运输者（含它的人工准备段）按自己的游标播；人力运输者没有对象可定位，人工段由本管按自己的音效表播。
+     * 已播游标归各自的持有者，本管只提供进度。
      */
     private void tickReloadSounds() {
         ReloadJob job = reloadJob;
         if (job == null) return;
-        IAmmoSupplier supplier = deliverySupplier(job);
-        // 指认与作业目标还没对齐（同步先后顺序）时不播：声音定位在实际交付的那台机器上
-        if (supplier == null) return;
-        if (job.stage() == ReloadJob.Stage.HUMAN && ownsHumanStage(supplier)) {
+        AmmoPath route = deliveryRoute(job);
+        // 作业上那一对还没解析出来（同步先后顺序）时不播：声音定位在实际运输的那台机器上
+        if (route == null) return;
+        if (route.transporter().isHuman()) {
             tickOwnHumanSounds(job);
             return;
         }
-        supplier.tickStageSounds(this, job.progress());
+        route.transporter().tickStageSounds(this, job.progress());
     }
 
     /**
@@ -1580,9 +1538,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     // ==================== 整份换装 ====================
 
     /**
-     * 换装是否进行中：当前供给者要交付的规格与本机已装内容不是同一份。<br>
-     * 换装没有自己的时长与进度——它与首次装填共用同一条 {@link ReloadJob}，按供给者的机械段计时，
-     * 本管只在它备好时取走那一份、把旧的一份交给当前合法且接受它的机器。进行中时射击锁定，
+     * 换装是否进行中：当前路的提供者要交付的规格与本机已装内容不是同一份。<br>
+     * 换装没有自己的时长与进度——它与首次装填共用同一条 {@link ReloadJob}，按运输者那一段计时，
+     * 本管只在它备好时取走那一份、把旧的一份交给当前合法且接受它的提供者。进行中时射击锁定，
      * 已装内容与膛内弹都留在原位。
      */
     public boolean isSwapping() {
@@ -1591,26 +1549,27 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 在途换装的交付来源。<br>
-     * 返回 null 表示没有在途换装：没有供给者指认、没有已装数据（单发装填的管始终如此），
-     * 或者供给者要给的规格与已装内容已经一致。
+     * 返回 null 表示没有在途换装：没有路由、没有已装数据（单发装填的管始终如此），
+     * 或者提供者要给的规格与已装内容已经一致。
      */
     @Nullable
     private IAmmoSupplier pendingSwapTarget() {
-        IAmmoSupplier supplier = getCurrentSupplier();
+        AmmoPath route = currentRoute;
         AmmoBelt loaded = loadedBelt;
-        if (supplier == null || loaded == null) return null;
-        AmmoBelt spec = supplier.getDeliverySpec();
+        if (route == null || loaded == null) return null;
+        IAmmoSupplier provider = route.provider();
+        AmmoBelt spec = provider.getDeliverySpec();
         if (spec == null || AmmoBelt.compareSpec(loaded, spec) == 0) return null;
-        return supplier;
+        return provider;
     }
 
     /**
      * 在主线程验证并提交整份交换。<br>
-     * 新的一份不通过校验时原样退回、整笔放弃。旧的一份交给当前合法且接受它的机器——先问本次交付的
-     * 来源，再问当前指认，最后按发现顺序尝试其余供给者；都拒收时丢弃并记一条警告，不做"原路退回"
-     * 的强制要求（来源关系不持久化，重新拾取到哪台由机器自己的收弹规则决定）。
+     * 新的一份不通过校验时原样退回、整笔放弃。旧的一份交给当前路的提供者；它拒收时按 {@link #getRoutes()}
+     * 询问本装配体里其它提供者。都拒收时丢弃并记一条警告，不做"原路退回"的强制要求（来源关系不持久化，
+     * 重新拾取到哪台由机器自己的收弹规则决定）。
      *
-     * @param target   本次换装的交付来源，由 {@link #pendingSwapTarget()} 给出
+     * @param target   本次换装的提供者，由 {@link #pendingSwapTarget()} 给出
      * @param incoming 已从该来源取走的一份
      */
     private void commitBeltSwap(IAmmoSupplier target, AmmoBelt incoming) {
@@ -1620,35 +1579,38 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         AmmoBelt previous = loadedBelt;
-        if (previous != null && !returnBeltToAnySupplier(previous, target)) {
-            MachineMax.LOGGER.warn("Launcher {} 换装时旧的一份没有任何机器接收，按规则丢弃 {}", name, previous);
+        if (previous != null && !returnBeltToProviders(previous, target)) {
+            MachineMax.LOGGER.warn("Launcher {} 换装时旧的一份没有任何弹药架接收，按规则丢弃 {}", name, previous);
         }
         setLoadedBelt(incoming);
         refillChamberFromBelt();
     }
 
     /**
-     * 把一份旧内容交给当前合法且接受它的机器。<br>
-     * 收不收由机器自己判定（弹种、可储存状态与剩余容量），本管只按顺序询问。
+     * 把一份旧内容交给本装配体里接受它的提供者：先问当前路的那一台，再按 {@link #getRoutes()} 逐台询问，
+     * 每台一次。<br>
+     * 弹链只有提供者能收，因此去处不经运输者转发；这里没有第三级兜底。收不收由提供者自己判定
+     * （弹种、可储存状态与剩余容量），本管只按顺序询问。
      *
      * @param belt      要交还的一份
-     * @param preferred 优先询问的机器，可为 null
-     * @return true 表示已由某台机器收下
+     * @param preferred 优先询问的提供者，可为 null（没有当前路）
+     * @return true 表示已由某台提供者收下
      */
-    private boolean returnBeltToAnySupplier(AmmoBelt belt, @Nullable IAmmoSupplier preferred) {
+    private boolean returnBeltToProviders(AmmoBelt belt, @Nullable IAmmoSupplier preferred) {
         if (preferred != null && preferred.returnBelt(belt)) return true;
-        IAmmoSupplier current = getCurrentSupplier();
-        if (current != null && current != preferred && current.returnBelt(belt)) return true;
-        for (IAmmoSupplier supplier : getSuppliers()) {
-            if (supplier == preferred || supplier == current) continue;
-            if (supplier.returnBelt(belt)) return true;
+        Set<IAmmoSupplier> asked = new LinkedHashSet<>();
+        if (preferred != null) asked.add(preferred);
+        for (AmmoPath route : getRoutes()) {
+            IAmmoSupplier provider = route.provider();
+            if (!asked.add(provider)) continue;
+            if (provider.returnBelt(belt)) return true;
         }
         return false;
     }
 
     private void abortBeltSwap(String reason) {
         MachineMax.LOGGER.warn("Launcher {} 换装中止：{}", name, reason);
-        // 作业已随交付取走而清空；下一 tick 重开一份，目标仍是当前供给者
+        // 作业已随交付取走而清空；下一 tick 重开一份，目标仍是当前路的提供者
     }
 
     /**
@@ -2217,7 +2179,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 获取当前弹药类型（按优先级）。<br>
-     * 依次取膛内那一发、已装 Belt 的下一发、当前供给者即将交付的弹种。
+     * 依次取膛内那一发、已装 Belt 的下一发、当前路提供者即将交付的弹种。
      *
      * @return 当前弹药类型，完全无弹药信息时返回 null
      */
@@ -2229,8 +2191,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             ProjectileType next = AmmoBelt.resolve(getLevel(), belt.nextRoundId());
             if (next != null) return next;
         }
-        IAmmoSupplier supplier = getCurrentSupplier();
-        return supplier != null ? supplier.getSuppliedType() : null;
+        IAmmoSupplier provider = currentRoute == null ? null : currentRoute.provider();
+        return provider != null ? provider.getSuppliedType() : null;
     }
 
     /**
@@ -2373,7 +2335,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Map<String, List<String>> result = new HashMap<>(4);
         result.putAll(attr.ammoCountOutputs);
         result.putAll(attr.ammoDiscoveryTargets);
-        result.putAll(attr.reloadOperatorDiscoveryTargets);
+        result.putAll(attr.loaderDiscoveryTargets);
         return result;
     }
 }

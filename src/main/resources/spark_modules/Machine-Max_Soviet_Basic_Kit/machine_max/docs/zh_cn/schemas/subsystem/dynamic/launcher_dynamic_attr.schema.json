@@ -36,14 +36,14 @@
       "default": {},
       "description": "供弹来源查询表：服务频道到目标名称列表。本管在结构变化时按这张表做只读发现：命中自动装弹机时由机构装填；命中弹药架时只有本型号声明了人工段（human_reload_time > 0）才把它当成交付目标——那是人力直取路径。同一频道上同时有机构与弹药架时两者都进候选，由路由按预计完成时间二选一。"
     },
-    "reload_operator_discovery_targets": {
+    "loader_discovery_targets": {
       "allOf": [
         { "$ref": "../base/signal_targets.json" }
       ],
       "default": {},
-      "description": "人工段的用人查询表：装填人员频道到目标名称列表。只有人力直取路径用它——机构有自己的那张表（人工段属于机构的流程）。常规写法是 {\"crew_loader_reload\": [\"local\"]}——local 是本 Part 的全部 SubPart，座位只要在自己的 reload_operator_discovery_inputs 里声明同一频道就会被发现；两个炮塔做在两个 Part 里时 local 天然隔离。只有型号配置了 human_reload_time 时才有意义。频道只用于握手发现，不承载装填指令。"
+      "description": "人工段的用人查询表：装填人员频道到目标名称列表。只有人力直取路径用它——机构有自己的那张表（人工段属于机构的流程）。常规写法是 {\"crew_loader_reload\": [\"local\"]}——local 是本 Part 的全部 SubPart，座位只要在自己的 loader_discovery_inputs 里声明同一频道就会被发现；两个炮塔做在两个 Part 里时 local 天然隔离。只有型号配置了 human_reload_time 时才有意义。频道只用于握手发现，不承载装填指令。"
     },
-    "reload_operator_time_multipliers": {
+    "loader_time_multipliers": {
       "type": "object",
       "default": {},
       "description": "岗位时间倍率：装填人员频道到该位置的乘员为本管装填时的便利程度（装填手 1.0、炮手 2.0），键是查询表里的频道名。它只属于这条发现关系，不是座位的全局能力；同一个人替另一门武器装填可以是别的倍率。未声明的频道按 1.0；零、负值与非有限值是解码错误。两个座位填同一个数就是同样的装填速度。同一座位经多条线路可达时取其中最低的倍率：一个座位只出一个候选，倍率不叠加。",
