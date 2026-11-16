@@ -193,9 +193,9 @@ public class ObjectManager {
      * 给单个玩家补发该维度内全部载具的运行时同步字段。<br>
      * 同样必须紧跟在维度载具创建包之后调用，顺序要求与单台版本一致。
      * <p>
-     * 取的是服务端内存里的载具，而不是 {@code LEVEL_VEHICLES} 存档快照：补推要的是
-     * "当前值"，存档快照的写入时机与它无关。手上的载具在服务端不存在（例如客户端专用
-     * 世界或数据尚未落地）时该项跳过，不抛异常。
+     * 遍历的是服务端内存里的载具表，取值也是当前值；发出创建包的
+     * {@link #snapshotVehicles(Level)} 同样按内存现状序列化，所以两半描述同一棵部件树。
+     * 遍历范围内在服务端不存在的载具不会出现，无需额外跳过。
      * <p>
      * <b>调用线程：</b>主线程（服务端）。
      *
@@ -528,18 +528,37 @@ public class ObjectManager {
         }
     }
 
-    public static void saveVehicles(ServerLevel serverLevel) {
-        Set<VehicleData> savedVehicles = new HashSet<>();
-        for (VehicleCore vehicle : levelVehicles.getOrDefault(serverLevel, Map.of()).values()) {
-            savedVehicles.add(new VehicleData(vehicle));
+    /**
+     * 按服务端内存里的载具现状生成一份载具数据集合。<br>
+     * 每次调用都按当前状态重新序列化，因此结果反映的是"此刻"：部件树、连接器、
+     * 子系统实例与子系统存档字段都取当前值。与 {@code LEVEL_VEHICLES} 里已有的内容无关，
+     * 那份是上一次落盘的快照。
+     * <p>
+     * 两个用途都要求"此刻"：发给客户端的载具数据包必须与紧随其后的
+     * {@link #pushVehicleRuntimeState(VehicleCore, ServerPlayer)} 描述同一棵部件树，
+     * 否则同步值会寻址到客户端不存在（或已消失）的结构上；落盘同样用这份结果覆盖快照。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     *
+     * @param level 载具所在维度
+     * @return 该维度当前全部载具的数据；维度内没有载具时为空集
+     */
+    public static Set<VehicleData> snapshotVehicles(Level level) {
+        Set<VehicleData> snapshot = new HashSet<>();
+        for (VehicleCore vehicle : levelVehicles.getOrDefault(level, Map.of()).values()) {
+            snapshot.add(new VehicleData(vehicle));
         }
-        serverLevel.setData(MMAttachments.getLEVEL_VEHICLES(), savedVehicles);
+        return snapshot;
+    }
+
+    public static void saveVehicles(ServerLevel serverLevel) {
+        serverLevel.setData(MMAttachments.getLEVEL_VEHICLES(), snapshotVehicles(serverLevel));
     }
 
     @SubscribeEvent
     public static void transmitVehicleData(PlayerEvent.PlayerLoggedInEvent event) {
         Level level = event.getEntity().level();
-        Set<VehicleData> dataToSend = level.getData(MMAttachments.getLEVEL_VEHICLES());
+        Set<VehicleData> dataToSend = snapshotVehicles(level);
         int packetNum = dataToSend.size();//计算分包数量，每个载具单独一包
         Iterator<VehicleData> iterator = dataToSend.iterator();
         for (int i = 0; i < packetNum; i++) {

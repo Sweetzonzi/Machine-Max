@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.Registries;
@@ -39,15 +38,14 @@ public record ClientRequestVehicleDataPayload(
     public static void handle(ClientRequestVehicleDataPayload payload, IPayloadContext context) {
         if (payload.dimension == context.player().level().dimension()) {
             context.enqueueWork(()->{
-                Set<VehicleData> dataToSend = context.player().level().getData(MMAttachments.getLEVEL_VEHICLES());
-                int packetNum = dataToSend.size();//计算分包数量，5个载具为一包
+                Set<VehicleData> dataToSend = ObjectManager.snapshotVehicles(context.player().level());
+                int packetNum = dataToSend.size();//计算分包数量，每个载具单独一包
                 Iterator<VehicleData> iterator = dataToSend.iterator();
                 for (int i = 0; i < packetNum; i++) {
                     PacketDistributor.sendToPlayer((ServerPlayer) context.player(), new LevelVehicleDataPayload(payload.dimension, iterator.next(), packetNum));
                 }
                 // 创建包发完再补运行时同步字段：与上面的载荷相邻发送，顺序由同一条连接保证
-                // （见 ObjectManager.pushVehicleRuntimeState）。
-                // 取的是服务端内存里的载具而非上面那份存档快照：补推要的是当前值。
+                // （见 ObjectManager.pushVehicleRuntimeState）。两半都按内存现状取值，描述同一棵部件树。
                 ObjectManager.pushVehicleRuntimeState(context.player().level(), (ServerPlayer) context.player());
             });
         } else

@@ -52,6 +52,7 @@ common/mech/
 - **机械功率流**：Engine/Motor → Gearbox → Transmission → WheelDriver/JointDriver，通过连接器上的 MechPowerPort 传递。
 - **公共动画体归属**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`（共享 `ModelPose`），`SubPart` 只负责刚体与骨骼子树渲染；动画 tick 由 `VehicleCore` 驱动、双端且两侧同门控。
 - **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，保留地址 `"local"` = Part、`"global"` = 装配体；`getName()` 仅身份/日志。
+- **下发的载具数据取内存现状**：登录补发与客户端维度请求都调 `ObjectManager.snapshotVehicles(Level)`，按 `levelVehicles` 当场序列化；`levelVehicles` 与 `LEVEL_VEHICLES` 存的是同一个集合，但后者只在载具增删与世界存档时重写，焊接、拆件都不刷新，读它会把旧结构发给新加入的客户端。持久化与重启恢复仍用 `LEVEL_VEHICLES`。
 
 ## 反模式
 
