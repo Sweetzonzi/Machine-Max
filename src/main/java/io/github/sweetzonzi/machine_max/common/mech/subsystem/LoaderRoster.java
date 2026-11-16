@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 一台装填需求方的"人工段用人"：查询到的座位，以及此刻在为哪条作业派谁。<br>
@@ -26,7 +28,11 @@ import java.util.Map;
  * 读人物，两者相乘即得，不在认领里再存一份副本——两份同义值迟早会走岔。认领因此只记"坐哪个座位、派的是
  * 谁"这一件事。
  * <p>
- * <b>只在服务端有意义：</b>选人和倍率都由服务端算，客户端只跟随同步下来的本阶段时长。
+ * <b>两端同源：</b>候选、代价与比较在两端用同一套代码；只有"认领记在哪里"这一处分端——服务端记在人物实体的
+ * {@link CrewReloadAttachment} 上，客户端没有实体附件，按人物 UUID 记在
+ * {@link io.github.sweetzonzi.machine_max.common.mech.ObjectManager} 的客户端 Level 表里。候选身份因此来自
+ * {@link SeatSubsystem#loaderCandidate()}，客户端不读 {@code passenger} 引用，也不会从"座位有人"推出一个倍率
+ * 1.0 的装填手。
  */
 final class LoaderRoster implements IAmmoTransporter {
 
@@ -170,7 +176,6 @@ final class LoaderRoster implements IAmmoTransporter {
      */
     @Override
     public boolean claim(IAmmoConsumer consumer, ReloadJobKey key) {
-        if (host.getLevel().isClientSide()) return true;
         if (standardTicks <= 0) return false;
 
         double remaining = remainingStandardTicks(consumer, standardTicks);
@@ -181,26 +186,44 @@ final class LoaderRoster implements IAmmoTransporter {
             release(key);
         }
         if (best == null) return false;
-        if (!CrewReloadAttachment.of(best.person()).claim(consumer, key)) return false;
-        claim = new Claim(best.seat(), best.person());
+        if (!takeCrew(best, consumer, key)) return false;
+        claim = new Claim(best.seat(), best.crew().personId(), best.person());
         return true;
+    }
+
+    /**
+     * 把这条作业的认领记到这个人身上。
+     *
+     * <p>这是唯一分端的一步：服务端写实体附件，客户端写客户端 Level 的 UUID 表。两边的受理判据相同，
+     * 因此"这个人已经被别人的作业占着"在两端给出同样的结论。</p>
+     */
+    private boolean takeCrew(Candidate best, IAmmoConsumer consumer, ReloadJobKey key) {
+        if (host.getLevel().isClientSide()) {
+            return ObjectManager.claimCrew(host.getLevel(), best.crew().personId(), consumer, key);
+        }
+        LivingEntity person = best.person();
+        return person != null && CrewReloadAttachment.of(person).claim(consumer, key);
     }
 
     /**
      * 这条作业的人工段是否仍有可用执行者。<br>
      * 乘员离座、死亡、实体移除、座位被摧毁、这条作业的座位已经不在本轮发现结果里，或者认领已经不在原作业上，
-     * 都算不可用；此时人工段不能空跑。客户端不判断人员（人员状态由服务端判定，实际时长也已经随同步值发布）。
+     * 都算不可用；此时人工段不能空跑。两端都判，判据相同。
      *
      * @param consumer 询问的接收者
      */
     boolean holds(IAmmoConsumer consumer) {
-        if (host.getLevel().isClientSide()) return true;
         Claim current = claim;
         if (current == null || !seats.containsKey(current.seat())) return false;
-        LivingEntity person = current.person();
-        if (person.isRemoved() || person.isDeadOrDying()) return false;
-        if (current.seat().getPassenger() != person) return false;
+        SeatSubsystem.LoaderCandidate crew = current.seat().loaderCandidate();
+        if (crew == null || !crew.usable() || !crew.personId().equals(current.personId())) return false;
         if (current.seat().isDestroyed() || !current.seat().isActive()) return false;
+        if (host.getLevel().isClientSide()) {
+            return ObjectManager.crewHolds(host.getLevel(), current.personId(), consumer);
+        }
+        LivingEntity person = current.person();
+        if (person == null || person.isRemoved() || person.isDeadOrDying()) return false;
+        if (current.seat().getPassenger() != person) return false;
         return CrewReloadAttachment.of(person).holdsClaim(consumer);
     }
 
@@ -275,24 +298,45 @@ final class LoaderRoster implements IAmmoTransporter {
     // ==================== 内部 ====================
 
     /**
-     * 按身份释放认领。
+     * 按身份释放认领。两端都释放，且只清掉身份匹配的那一条。
      *
      * @param key 这条作业的身份
      */
     void release(ReloadJobKey key) {
         Claim current = claim;
-        if (current == null || host.getLevel().isClientSide()) return;
-        if (!CrewReloadAttachment.of(current.person()).release(key)) return;
+        if (current == null) return;
+        if (host.getLevel().isClientSide()) {
+            if (ObjectManager.releaseCrewClaim(host.getLevel(), current.personId(), key)) claim = null;
+            return;
+        }
+        LivingEntity person = current.person();
+        if (person == null) {
+            claim = null;
+            return;
+        }
+        if (!CrewReloadAttachment.of(person).release(key)) return;
         claim = null;
     }
 
     /** 已认领执行者的时间倍率（见 {@link #getOperatorTimeScale(IAmmoConsumer)}）。 */
     double timeScale() {
         Claim current = claim;
-        if (current == null || host.getLevel().isClientSide()) return 1.0;
+        if (current == null) return 1.0;
         Double standard = seats.get(current.seat());
         if (standard == null) return 1.0;
-        double value = standard * CrewReloadAttachment.of(current.person()).multiplier();
+        double personal;
+        if (host.getLevel().isClientSide()) {
+            // 客户端没有实体附件：个人倍率取自己座位下发的候选快照，换人与能力变化随同步值更新
+            SeatSubsystem.LoaderCandidate crew = current.seat().loaderCandidate();
+            personal = crew != null && crew.personId().equals(current.personId())
+                    ? crew.multiplier()
+                    : CrewReloadAttachment.DEFAULT_MULTIPLIER;
+        } else {
+            LivingEntity person = current.person();
+            if (person == null) return 1.0;
+            personal = CrewReloadAttachment.of(person).multiplier();
+        }
+        double value = standard * personal;
         return value > 0 && Double.isFinite(value) ? value : 1.0;
     }
 
@@ -316,7 +360,6 @@ final class LoaderRoster implements IAmmoTransporter {
      * 倍率报，两条都没有时返回 {@code NaN}（调用方按不可达处理）。
      */
     private double estimateRate(IAmmoConsumer consumer, int standardTicks) {
-        if (host.getLevel().isClientSide()) return 1.0;
         double remaining = remainingStandardTicks(consumer, standardTicks);
         if (remaining <= 0) return 1.0;
         Candidate best = bestOperator(consumer, remaining);
@@ -340,6 +383,9 @@ final class LoaderRoster implements IAmmoTransporter {
     /**
      * 挑出剩余人工段用时最短的候选。
      *
+     * <p>候选身份取座位的装填候选快照（两端同源），代价与比较用同一套公式；只有"这个人是否正替别人的作业
+     * 干活"这一处分端——服务端问实体附件，客户端问本端 UUID 表。</p>
+     *
      * @param remainingStandard 剩余标准人力 tick
      * @return 最优候选；没有可用乘员时返回 null
      */
@@ -349,29 +395,27 @@ final class LoaderRoster implements IAmmoTransporter {
         List<Candidate> candidates = new ArrayList<>(seats.size());
         for (Map.Entry<SeatSubsystem, Double> entry : seats.entrySet()) {
             SeatSubsystem candidateSeat = entry.getKey();
-            LivingEntity person = usableOperator(candidateSeat, consumer);
-            if (person == null) continue;
-            double estimate = remainingStandard * entry.getValue() * CrewReloadAttachment.of(person).multiplier();
-            keys.add(new ReloadCrewSelection.Candidate(person.getUUID(), candidateSeat.getSubPart().getId(),
+            if (candidateSeat.isDestroyed() || !candidateSeat.isActive()) continue;
+            SeatSubsystem.LoaderCandidate crew = candidateSeat.loaderCandidate();
+            if (crew == null || !crew.usable()) continue;
+            if (claimedByOther(candidateSeat, crew, consumer)) continue;
+            LivingEntity person = host.getLevel().isClientSide() ? null : candidateSeat.getPassenger();
+            double estimate = remainingStandard * entry.getValue() * crew.multiplier();
+            keys.add(new ReloadCrewSelection.Candidate(crew.personId(), candidateSeat.getSubPart().getId(),
                     candidateSeat.name, estimate));
-            candidates.add(new Candidate(candidateSeat, person, estimate));
+            candidates.add(new Candidate(candidateSeat, crew, person, estimate));
         }
         int index = ReloadCrewSelection.bestIndex(keys);
         return index < 0 ? null : candidates.get(index);
     }
 
-    /**
-     * 座位上此刻能不能派人：有人、人还在、座位在、这个人没在替别的作业干活。
-     *
-     * @return 可用的乘员；任一项不成立时返回 null
-     */
-    @Nullable
-    private static LivingEntity usableOperator(SeatSubsystem candidateSeat, IAmmoConsumer consumer) {
-        LivingEntity person = candidateSeat.getPassenger();
-        if (person == null || person.isRemoved() || person.isDeadOrDying()) return null;
-        if (candidateSeat.isDestroyed() || !candidateSeat.isActive()) return null;
-        if (CrewReloadAttachment.of(person).isClaimedByOther(consumer)) return null;
-        return person;
+    /** 这个人是否正替别的作业干活：服务端问实体附件，客户端问本端预测表。 */
+    private boolean claimedByOther(SeatSubsystem seat, SeatSubsystem.LoaderCandidate crew, IAmmoConsumer consumer) {
+        if (host.getLevel().isClientSide()) {
+            return ObjectManager.crewClaimedByOther(host.getLevel(), crew.personId(), consumer);
+        }
+        LivingEntity person = seat.getPassenger();
+        return person != null && CrewReloadAttachment.of(person).isClaimedByOther(consumer);
     }
 
     /** 人工段实际时长：标准人力 tick 乘上岗位倍率与个人倍率。 */
@@ -381,21 +425,23 @@ final class LoaderRoster implements IAmmoTransporter {
     }
 
     /**
-     * 一个候选执行者：谁、坐在哪、干完剩余人工段还要多久。
+     * 一个候选执行者：坐在哪、候选快照、实际乘员与预计用时。
      *
      * @param seat          候选座位
-     * @param person        实际乘员
+     * @param crew          候选快照（人物 UUID、可用性、个人倍率）
+     * @param person        服务端解析到的乘员实体；客户端为 {@code null}
      * @param estimateTicks 预计完成剩余人工段所需的 tick
      */
-    private record Candidate(SeatSubsystem seat, LivingEntity person, double estimateTicks) {
+    private record Candidate(SeatSubsystem seat, SeatSubsystem.LoaderCandidate crew,
+                             @Nullable LivingEntity person, double estimateTicks) {
     }
 
     /**
      * 一次认领：坐哪个座位、派的是谁。<br>
-     * 两者一起成立，缺一个就不该存在，因此合成一个值而不是两个各自可空的字段：座位给出"人还在不在位"
-     * （每 tick 读它的乘员，上下座不触发结构变化）与岗位倍率，人物是认领的实际持有者
-     * （{@link CrewReloadAttachment} 上的认领记在他身上，离座之后座位答不出他是谁，释放只能靠这个引用）。
+     * 座位给出"人还在不在位"（候选快照每 tick 刷新，上下座不触发结构变化）与岗位倍率；人物 UUID 是两端
+     * 通用的身份，服务端的 {@code person} 额外用来读写实体附件上的认领（离座之后座位答不出他是谁，
+     * 释放只能靠这个引用），客户端没有实体因此只记 UUID。
      */
-    private record Claim(SeatSubsystem seat, LivingEntity person) {
+    private record Claim(SeatSubsystem seat, UUID personId, @Nullable LivingEntity person) {
     }
 }

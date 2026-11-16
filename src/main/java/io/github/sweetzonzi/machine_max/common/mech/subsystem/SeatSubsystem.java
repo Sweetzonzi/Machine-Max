@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
 import io.github.sweetzonzi.machine_max.common.visual.HudView;
 import io.github.sweetzonzi.machine_max.common.visual.IHudHost;
@@ -32,6 +33,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 @Getter
 public class SeatSubsystem extends AbstractControllableSubsystem implements IHudHost {
@@ -47,6 +51,22 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     /** 占用状态的同步值：变化极少，每 tick 的脏数据推送即可覆盖 */
     private static final EntityDataAccessor<Boolean> DATA_OCCUPIED_ID =
             SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.BOOLEAN);
+
+    /**
+     * 装填候选的人物 UUID（同步）。空值表示本座位此刻没有候选。<br>
+     * 客户端不能读 {@link #passenger}（它只有服务端有值），因此候选身份必须随同步值下发；
+     * 只有 {@link #occupied} 也无法推出"有一个倍率 1.0 的装填手"。
+     */
+    private static final EntityDataAccessor<Optional<UUID>> DATA_LOADER_ID =
+            SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.OPTIONAL_UUID);
+
+    /** 候选是否仍可作为存活执行者：乘员未移除、未濒死。 */
+    private static final EntityDataAccessor<Boolean> DATA_LOADER_USABLE_ID =
+            SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.BOOLEAN);
+
+    /** 候选的个人时间倍率 {@code A}。 */
+    private static final EntityDataAccessor<Float> DATA_LOADER_MULTIPLIER_ID =
+            SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.FLOAT);
     /**
      * 该座位的上车点，表达为所在 SubPart 刚体的局部坐标；null 表示本座位尚无车外登入记录。
      * <p>只在「从车外登入」时采样覆盖，或在「同一装配体内换座」时由旧座位经世界坐标换算交接过来；
@@ -105,6 +125,8 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         for (String channel : attr.passengerNumSignalTargets.keySet()) {
             sendSignalToAllTargets(channel, occupied ? 1f : 0f);
         }
+        // 装填候选是人员条件的权威采样：上下座与个人能力变化都不触发结构变化，只能逐轮采样
+        publishLoaderCandidate();
     }
 
     @Override
@@ -121,6 +143,79 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_OCCUPIED_ID, false);
+        builder.define(DATA_LOADER_ID, Optional.empty());
+        builder.define(DATA_LOADER_USABLE_ID, false);
+        builder.define(DATA_LOADER_MULTIPLIER_ID, (float) CrewReloadAttachment.DEFAULT_MULTIPLIER);
+    }
+
+    /**
+     * 装填候选快照：人物 UUID、是否可作为存活执行者、个人时间倍率。
+     *
+     * <p>服务端由乘员实体现算，客户端由同步值组装——两端的业务判据因此是同一套字段，
+     * 客户端不需要 {@code passenger} 引用，也不会把"座位占了人"当成"有人能装填"。</p>
+     *
+     * @param personId   人物 UUID
+     * @param usable     是否可作为存活执行者
+     * @param multiplier 个人时间倍率 {@code A}
+     */
+    public record LoaderCandidate(UUID personId, boolean usable, double multiplier) {
+    }
+
+    /**
+     * 本座位此刻的装填候选。
+     *
+     * <p>服务端读乘员实体；客户端读同步值（见 {@link #DATA_LOADER_ID}），因此候选身份在两端同源。
+     * 座位自身的启用／摧毁状态由调用方另判——那是座位条件，不是人的条件。</p>
+     *
+     * @return 候选；没有乘员时返回 {@code null}
+     */
+    @Nullable
+    public LoaderCandidate loaderCandidate() {
+        if (getLevel().isClientSide()) {
+            Optional<UUID> id = synchedData.get(DATA_LOADER_ID);
+            if (id.isEmpty()) return null;
+            return new LoaderCandidate(id.get(), synchedData.get(DATA_LOADER_USABLE_ID),
+                    synchedData.get(DATA_LOADER_MULTIPLIER_ID));
+        }
+        LivingEntity person = passenger;
+        if (person == null) return null;
+        boolean usable = !person.isRemoved() && !person.isDeadOrDying();
+        return new LoaderCandidate(person.getUUID(), usable,
+                CrewReloadAttachment.of(person).multiplier());
+    }
+
+    /**
+     * 服务端：把本座位的装填候选采样进同步值，人物或倍率变化时才写。
+     * <p>乘员上下座与人物能力变化都不触发结构变化，因此每轮业务 tick 采一次；值相等时
+     * 不写同步字段，也就不会产生无谓的包。
+     */
+    private void publishLoaderCandidate() {
+        if (getLevel().isClientSide()) return;
+        LivingEntity person = passenger;
+        Optional<UUID> id = person == null
+                ? Optional.empty()
+                : Optional.of(person.getUUID());
+        boolean usable = person != null && !person.isRemoved() && !person.isDeadOrDying();
+        float multiplier = person == null
+                ? (float) CrewReloadAttachment.DEFAULT_MULTIPLIER
+                : (float) CrewReloadAttachment.of(person).multiplier();
+        if (!Objects.equals(synchedData.get(DATA_LOADER_ID), id)) {
+            synchedData.set(DATA_LOADER_ID, id);
+        }
+        if (synchedData.get(DATA_LOADER_USABLE_ID) != usable) {
+            synchedData.set(DATA_LOADER_USABLE_ID, usable);
+        }
+        if (Float.compare(synchedData.get(DATA_LOADER_MULTIPLIER_ID), multiplier) != 0) {
+            synchedData.set(DATA_LOADER_MULTIPLIER_ID, multiplier);
+        }
+    }
+
+    /**
+     * 全量补推之前把装填候选刷成当前值：新加入的客户端要能立刻按候选选人，而不是等到下一次采样。
+     */
+    @Override
+    public void refreshSyncBaseline() {
+        publishLoaderCandidate();
     }
 
     @Override

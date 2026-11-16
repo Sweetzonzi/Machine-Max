@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
  * 这条认领按不存在处理（见 {@link #isClaimAlive()}），所以漏掉一次释放不会把一个人永久锁在旧作业上。
  * <p>
  * <b>只在服务端有意义：</b>倍率由服务端读来算人工段时长，客户端不读它；认领也只由服务端写入与查询。
+ * 客户端的同一份契约由 {@link io.github.sweetzonzi.machine_max.common.mech.ObjectManager} 的客户端 Level
+ * 认领表承担（按人物 UUID 记录，判据与本类相同），因此选人与承诺判据在两端是同一套业务条件。
  */
 public class CrewReloadAttachment {
 

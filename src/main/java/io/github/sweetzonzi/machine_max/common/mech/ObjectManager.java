@@ -8,6 +8,10 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJob;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ReloadJobKey;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPartImpulse;
@@ -55,6 +59,19 @@ public class ObjectManager {
      * 物理侧在受控边界按 {@code ALL → PRE} 承接本批命令。</p>
      */
     private static final Map<Level, List<SubPartImpulse>> levelImpulses = new ConcurrentHashMap<>();
+
+    /**
+     * 客户端人员预测认领：Level → (人物 UUID → 认领)。<br>
+     * 与实体附件上的 {@link io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment}
+     * 是同一份契约的两端实现：服务端把认领记在人身上，客户端没有实体附件，因此按人物 UUID 记在这里。
+     * 作用域是**整个客户端 Level**，因此同一 UUID 在跨装配体换座期间也不会同时被两份预测作业取得。
+     * 只在客户端写入，Level 卸载时整体丢弃。
+     */
+    private static final Map<Level, Map<UUID, CrewClaim>> clientCrewClaims = new ConcurrentHashMap<>();
+
+    /** 一次客户端人员预测认领：谁在替哪条作业干活。 */
+    public record CrewClaim(IAmmoConsumer consumer, ReloadJobKey key) {
+    }
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> serverVehiclesToAdd = new HashMap<>();
@@ -283,6 +300,82 @@ public class ObjectManager {
             else vehicle = serverVehiclesToAdd.get(uuid);
         }
         return vehicle;
+    }
+
+    /**
+     * 客户端：替一条预测作业认领一个人。<br>
+     * 判据与服务端的 {@link io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment#claim}
+     * 相同：已经为别人的作业认领时返回 false，同一消费者重复认领按成功并把身份换成新值，失效的旧认领不阻挡新人。
+     *
+     * @param level    当前客户端 Level（认领的作用域）
+     * @param personId 人物 UUID
+     * @param consumer 认领这条作业的消费者
+     * @param key      作业身份
+     * @return true 表示此刻这条认领归给定作业所有
+     */
+    public static boolean claimCrew(Level level, UUID personId, IAmmoConsumer consumer, ReloadJobKey key) {
+        if (key == null || key.isNone()) return false;
+        CrewClaim existing = clientCrewClaims
+                .computeIfAbsent(level, k -> new ConcurrentHashMap<>())
+                .get(personId);
+        if (existing != null && isCrewClaimAlive(existing) && existing.consumer() != consumer) return false;
+        clientCrewClaims.computeIfAbsent(level, k -> new ConcurrentHashMap<>())
+                .put(personId, new CrewClaim(consumer, key));
+        return true;
+    }
+
+    /**
+     * 客户端：这条认领是否就是给定消费者此刻的那条作业。
+     *
+     * @param level    当前客户端 Level
+     * @param personId 人物 UUID
+     * @param consumer 询问的消费者
+     * @return true 表示这个人的预测认领归该消费者
+     */
+    public static boolean crewHolds(Level level, UUID personId, IAmmoConsumer consumer) {
+        CrewClaim existing = clientCrewClaims.getOrDefault(level, Map.of()).get(personId);
+        return existing != null && isCrewClaimAlive(existing) && existing.consumer() == consumer;
+    }
+
+    /**
+     * 客户端：这个人是否正替<em>别人</em>的作业干活。
+     *
+     * @param level    当前客户端 Level
+     * @param personId 人物 UUID
+     * @param consumer 询问的消费者
+     * @return true 表示已被别的消费者的活跃作业占着
+     */
+    public static boolean crewClaimedByOther(Level level, UUID personId, IAmmoConsumer consumer) {
+        CrewClaim existing = clientCrewClaims.getOrDefault(level, Map.of()).get(personId);
+        return existing != null && isCrewClaimAlive(existing) && existing.consumer() != consumer;
+    }
+
+    /**
+     * 客户端：按作业身份释放认领；身份不匹配时无操作。<br>
+     * 只按 UUID 与原作业身份同时匹配释放，因此换座后同一个人在新装配体取得的新认领不会被旧作业的结果摘掉。
+     *
+     * @param level    当前客户端 Level
+     * @param personId 人物 UUID
+     * @param key      结束的那条作业的身份
+     * @return true 表示这条认领确实因本次调用被清掉
+     */
+    public static boolean releaseCrewClaim(Level level, UUID personId, ReloadJobKey key) {
+        if (key == null || key.isNone()) return false;
+        Map<UUID, CrewClaim> claims = clientCrewClaims.get(level);
+        if (claims == null) return false;
+        CrewClaim existing = claims.get(personId);
+        if (existing == null || !existing.key().equals(key)) return false;
+        claims.remove(personId);
+        return true;
+    }
+
+    /** 一条客户端认领是否仍指向一条真的在进行的作业；判据与服务端的实体附件相同。 */
+    private static boolean isCrewClaimAlive(CrewClaim claim) {
+        if (claim.consumer() instanceof AbstractSubsystem sub && (sub.isDestroyed() || !sub.isActive())) {
+            return false;
+        }
+        ReloadJob job = claim.consumer().getReloadJob();
+        return job != null && job.key().equals(claim.key());
     }
 
     /**
@@ -574,6 +667,7 @@ public class ObjectManager {
         if (level.isClientSide()) {
             levelVehicles.remove(level);
             levelDestroyableObjects.remove(level);
+            clientCrewClaims.remove(level);
             clearClientVehicleCache();
             VisualEffectHelper.attachPoints.clear();
             VisualEffectHelper.boundingBox = null;

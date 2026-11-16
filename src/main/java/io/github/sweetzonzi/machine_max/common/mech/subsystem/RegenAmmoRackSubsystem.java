@@ -40,6 +40,11 @@ import java.util.Set;
  * 抢走可分配库存的影响；预留被撤销（来源失效、强制损失、作业终止）时只减少承诺，不补弹。
  * 任意时刻 {@code 0 ≤ R = Σq ≤ N}，{@link #trimReservationsToStock} 维护这条不变量。
  * <p>
+ * <b>两端账本：</b>预留表、本端库存与三项累计量（产出／收回／交付）在两端都维护，因此受理、交付与
+ * 退弹在客户端也是真实的状态变更，只是不产生物品、不扣真实能源。客户端收到权威样本时按
+ * "权威库存 + 未确认产出 + 未确认收回 − 未确认交付"重算本端库存；库存代次变化（殉爆、强制损失）
+ * 或投影越界即放弃本端尾部、整体改认权威值。需要付费的产出只由服务端完成，客户端等权威结果。
+ * <p>
  * 交付单位是一份 {@link AmmoBelt}：每次兑现按模板给一份独立实例，发数是该作业的预留量；
  * 取走后按 {@code regen_delay} 暂停，再按 {@code regen_per_minute} 与 {@code regen_round_by_round}
  * 决定逐发产出还是整批回满。
@@ -60,19 +65,75 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
             SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
 
     /**
-     * 已预留总量 {@code R}（网络同步）。<br>
-     * 已经包含本作业自己的份额：显示可分配数量时只算 {@code N - R}，本作业的 {@code q} 就在 {@code R} 里面。
-     * 逐作业的预留表 {@link #reservations} 只在服务端有内容，客户端跟随这个总量。
+     * 已预留总量 {@code R} 的权威值（网络同步）。<br>
+     * 服务端按自己的预留表写入；客户端不写它——客户端的运行态 {@code R} 由本端预留表求和得到，
+     * 见 {@link #getReservedTotal()}。
      */
     private static final EntityDataAccessor<Integer> RESERVED_ID =
             SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
 
+    /** 累计成功产出（权威值；客户端本地另有一份，见 {@link #producedRounds}）。 */
+    private static final EntityDataAccessor<Long> PRODUCED_ROUNDS_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.LONG);
+
+    /** 累计收回（旧弹链退弹、整份换装返还）。 */
+    private static final EntityDataAccessor<Long> RETURNED_ROUNDS_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.LONG);
+
+    /** 累计已交付（兑现预留时扣掉的发数）。 */
+    private static final EntityDataAccessor<Long> DELIVERED_ROUNDS_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.LONG);
+
+    /**
+     * 库存代次：殉爆、强制损失这类<b>非预测业务</b>改变库存时由服务端递增。<br>
+     * 客户端收到新代次即放弃本地投影，直接改认权威库存与权威累计量。
+     */
+    private static final EntityDataAccessor<Integer> STOCK_EPOCH_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
+
+    /** 免费再生进度（0~1），只在离散点与完整基线下发。 */
+    private static final EntityDataAccessor<Float> REGEN_PROGRESS_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.FLOAT);
+
+    /** 整批再生的已消耗 tick 数，只在离散点与完整基线下发。 */
+    private static final EntityDataAccessor<Integer> BATCH_ELAPSED_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
+
+    /** 是否正在整批再生。 */
+    private static final EntityDataAccessor<Boolean> BATCH_ACTIVE_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.BOOLEAN);
+
+    /** 再生延迟剩余 tick。 */
+    private static final EntityDataAccessor<Integer> REGEN_DELAY_ID =
+            SynchedEntityData.defineId(RegenAmmoRackSubsystem.class, EntityDataSerializers.INT);
+
     /**
      * 各作业的预留量 {@code q}：作业身份 → 份数。<br>
-     * 只在服务端写：受理时新增（{@link #reserve}），交付（{@link #deliverReserved}）与释放
-     * （{@link #releaseReservation}）时整笔删除，没有部分兑现。不入存档——读档后未完成的装填重新申请。
+     * <b>两端都维护</b>：受理时新增（{@link #reserve}），交付（{@link #deliverReserved}）与释放
+     * （{@link #releaseReservation}）时整笔删除，没有部分兑现。服务端那一份是权威并写进 {@link #RESERVED_ID}；
+     * 客户端那一份是预测运行态，随本地受理与交付增减，收到权威样本时按 §6.2 的投影校正。
+     * 不入存档——读档后未完成的装填重新申请。
      */
     private final Map<ReloadJobKey, Integer> reservations = new LinkedHashMap<>();
+
+    /**
+     * 本端运行态库存：{@link #getAmmoCount()} 的唯一来源。
+     * <p>服务端恒等于同步值；客户端是"权威库存 + 未确认本地产出 + 未确认本地收回 − 未确认本地交付"
+     * 的投影结果，因此在服务端确认之前就能给出本端受理与交付所需的数字。</p>
+     */
+    private int runtimeAmmoCount;
+
+    /**
+     * 本端累计数量。服务端这三项是权威值并写进同步字段；客户端是本端累计值，包含尚未被权威确认的部分。
+     * 未确认量 = 本端累计 − 权威累计，按<b>数量</b>计，不按调用次数计。
+     */
+    private long producedRounds;
+    private long returnedRounds;
+    private long deliveredRounds;
+
+    /** 库存代次；服务端递增并下发，客户端跟随。 */
+    private int stockEpoch;
+
 
     /** 逐发再生的进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发） */
     private float regenProgress = 0f;
@@ -100,22 +161,64 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         super.defineSynchedData(builder);
         builder.define(AMMO_COUNT_ID, 0);
         builder.define(RESERVED_ID, 0);
+        builder.define(PRODUCED_ROUNDS_ID, 0L);
+        builder.define(RETURNED_ROUNDS_ID, 0L);
+        builder.define(DELIVERED_ROUNDS_ID, 0L);
+        builder.define(STOCK_EPOCH_ID, 0);
+        builder.define(REGEN_PROGRESS_ID, 0f);
+        builder.define(BATCH_ELAPSED_ID, 0);
+        builder.define(BATCH_ACTIVE_ID, false);
+        builder.define(REGEN_DELAY_ID, 0);
     }
 
     // ==================== 库存 ====================
 
-    /** 当前弹药计数 */
+    /**
+     * 本端运行态弹药计数。
+     *
+     * <p>两端都读这一份；服务端它与同步值恒等，客户端它是投影结果。库存对外只有一个读口，
+     * 因此"可分配多少、能不能交付、要不要再生"在两端用同一套判据。</p>
+     */
     public int getAmmoCount() {
-        return getSynchedData().get(AMMO_COUNT_ID);
+        return runtimeAmmoCount;
     }
 
+    /**
+     * 服务端：写入权威库存并同步；客户端：只写本端运行态。
+     *
+     * <p>客户端不能把预测值写进同步字段——那是权威镜像，写进去会让后续投影以预测为基线。</p>
+     */
     private void setAmmoCount(int count) {
-        getSynchedData().set(AMMO_COUNT_ID, count);
+        int clamped = Math.clamp(count, 0, getCapacity());
+        runtimeAmmoCount = clamped;
+        if (!getLevel().isClientSide()) getSynchedData().set(AMMO_COUNT_ID, clamped);
     }
 
-    /** 已预留总量 {@code R}：各作业 {@code q} 之和，已包含本作业份额 */
+    /** 服务端：把三项累计量与库存代次写进同步字段。 */
+    private void publishLedger() {
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(PRODUCED_ROUNDS_ID, producedRounds);
+        getSynchedData().set(RETURNED_ROUNDS_ID, returnedRounds);
+        getSynchedData().set(DELIVERED_ROUNDS_ID, deliveredRounds);
+        getSynchedData().set(STOCK_EPOCH_ID, stockEpoch);
+    }
+
+    /**
+     * 已预留总量 {@code R}：各作业 {@code q} 之和，已包含本作业份额。
+     *
+     * <p>服务端读同步值（它自己写的权威总量）；客户端按本端预留表求和——预测运行态的
+     * {@code R} 由本端受理与撤销直接改变，不再把权威 {@code R} 加一遍。</p>
+     */
     public int getReservedTotal() {
+        if (getLevel().isClientSide()) return localReservedTotal();
         return getSynchedData().get(RESERVED_ID);
+    }
+
+    /** 本端预留表的份额之和。 */
+    private int localReservedTotal() {
+        int total = 0;
+        for (int granted : reservations.values()) total += granted;
+        return total;
     }
 
     /** 可分配库存 {@code N - R}：可供尚未受理的作业申请的份数 */
@@ -124,9 +227,9 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
     }
 
     /**
-     * 该作业在本架的预留量。<br>
-     * 预留表只在服务端有内容，客户端读到 0；客户端按作业上同步的 {@code reservedCount} 与这里的总量
-     * 判断这条作业的承诺是否还在。
+     * 该作业在本端的预留量。
+     *
+     * <p>两端都读自己的预留表：客户端受理时会真的写入这一份，因此承诺判据与服务端同一口径。</p>
      *
      * @param key 作业身份
      * @return 该作业的 {@code q}；没有预留时为 0
@@ -138,15 +241,16 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
     /**
      * 为一条作业预留弹药：可分配库存立即减少，实际库存不动。<br>
      * 预留量取 {@code q = min(可分配库存, wanted)}，不足一份也能开工（交付时按 {@code q} 发）。
-     * 同一身份重复申请沿用原份额，不叠加；{@link ReloadJobKey#NONE} 与客户端调用都不产生预留。
-     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     * 同一身份重复申请沿用原份额，不叠加；{@link ReloadJobKey#NONE} 不产生预留。
+     * <p>两头都写本端预留表：服务端写权威并下发 {@code R}，客户端只改预测运行态。
+     * <p><b>调用线程：</b>主线程（受理点，两端通用）。
      *
      * @param key    作业身份
      * @param wanted 本次最多想预留多少发（通常是交付规格的长度）
      * @return 实际预留量 {@code q}；没有可分配库存时返回 0
      */
     private int reserveCount(ReloadJobKey key, int wanted) {
-        if (getLevel().isClientSide() || key.isNone() || wanted <= 0) return 0;
+        if (key.isNone() || wanted <= 0) return 0;
         int existing = reservedFor(key);
         if (existing > 0) return existing;
         int granted = Math.min(getAvailableCount(), wanted);
@@ -159,12 +263,12 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
     /**
      * 为一条作业取得整次作业的弹药预留：可分配库存立即减少，实际库存不动。<br>
      * 份额取 {@code q = min(可分配库存, 规格长度)}；同一身份重复申请沿用原份额。
-     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     * <p><b>调用线程：</b>主线程（受理点，两端通用）。
      */
     @Override
     @Nullable
     public IAmmoSupplier.Grant reserve(ReloadJobKey key) {
-        if (getLevel().isClientSide() || key.isNone() || !isOperational()) return null;
+        if (key.isNone() || !isOperational()) return null;
         AmmoBelt spec = attr.beltDefinition;
         int granted = reserveCount(key, spec.length());
         if (granted <= 0) return null;
@@ -174,39 +278,41 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
     /**
      * 按身份撤销一条作业的预留：只减少承诺，不改动实际库存、不补弹。<br>
      * 重复撤销、撤销不存在的身份都是无操作。
-     * <p><b>调用线程：</b>主线程（服务端）。
+     * <p><b>调用线程：</b>主线程（两端通用）。
      *
      * @param key 作业身份
      */
     public void releaseReservation(ReloadJobKey key) {
-        if (getLevel().isClientSide() || key.isNone()) return;
+        if (key.isNone()) return;
         if (reservations.remove(key) != null) publishReserved();
     }
 
     /**
-     * 兑现一条作业的预留：按该身份扣减实际库存并生成交付实例。<br>
+     * 兑现一条作业的预留：按该身份扣减本端库存并生成交付实例。<br>
      * 同一身份只兑现一次——预留在此处删除，重复调用返回 {@code null}，不会扣第二次。
-     * <p><b>调用线程：</b>主线程（服务端交付点）。
+     * 客户端的兑现只改预测运行态与本地累计量，交付实例是独立 {@link AmmoBelt}，不产生真实物品。
+     * <p><b>调用线程：</b>主线程（交付点，两端通用）。
      *
      * @param key 作业身份
      * @return 交付实例，发数等于该作业的预留量；没有预留时返回 {@code null}
      */
     @Nullable
     public AmmoBelt deliverReserved(ReloadJobKey key) {
-        if (getLevel().isClientSide() || key.isNone()) return null;
+        if (key.isNone()) return null;
         Integer granted = reservations.remove(key);
         if (granted == null || granted <= 0) return null;
         publishReserved();
-        setAmmoCount(getAmmoCount() - granted);
+        deliveredRounds += granted;
+        setAmmoCount(runtimeAmmoCount - granted);
         applyDeliveryDelay();
+        publishLedger();
         return attr.beltDefinition.freshCopy(granted);
     }
 
-    /** 把预留表的总量写进同步值 {@code R}。 */
+    /** 把预留表的总量写进同步值 {@code R}；客户端不写同步字段。 */
     private void publishReserved() {
-        int total = 0;
-        for (int granted : reservations.values()) total += granted;
-        getSynchedData().set(RESERVED_ID, total);
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(RESERVED_ID, localReservedTotal());
     }
 
     /**
@@ -280,6 +386,7 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         regenDelayRemainingTicks = (int) (delay * 20f); // 秒 → tick
         // 延迟刷新时重置再生进度；库存已归零时保留已有进度（避免空仓丢进度）
         if (getAmmoCount() > 0) regenProgress = 0f;
+        publishRegenState();
     }
 
     /**
@@ -287,8 +394,7 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
      * 收下条件三条，都由本架自己判：① 本架可储存（未摧毁、非恢复锁存）；② 内容里的弹种都在本架允许范围内
      * ——收进发不出去的弹种只会让计数与实际供给能力脱节；③ 剩余容量装得下这一份的余量。
      * 三条都满足才按剩余发数计入库存，并丢弃弹序与容器信息（架只记数量）。
-     * <p>
-     * 计数只在服务端递增（客户端跟随服务端推送）。
+     * <p>两端都收：退还属于免费业务，服务端写权威与累计量，客户端只改预测运行态。
      *
      * @param belt 退还的那一份弹药
      * @return true 表示已收下并计入库存
@@ -300,7 +406,9 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         int amount = belt.remaining();
         if (amount <= 0) return true;
         if (getAmmoCount() + amount > getCapacity()) return false;
-        if (!getLevel().isClientSide()) setAmmoCount(getAmmoCount() + amount);
+        returnedRounds += amount;
+        setAmmoCount(runtimeAmmoCount + amount);
+        publishLedger();
         return true;
     }
 
@@ -331,16 +439,14 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
     }
 
     /**
-     * 该作业的预留是否还在。<br>
-     * 服务端读预留表；客户端没有整张表，按"实际库存不少于该作业份额"这条保守判据回答——份额被撤销时服务端
-     * 会结束作业并下发新的分配，本地这几 tick 的提前停推不会造成多发。
+     * 该作业的预留是否还在。
+     *
+     * <p>两端读各自的预留表，判据相同：客户端受理时真的写下了一份，因此承诺消失能立刻发现，
+     * 不必靠"实际库存还够"这类保守近似。</p>
      */
     @Override
     public boolean holdsReservation(ReloadJobKey key, int reservedCount) {
         if (key == null || key.isNone()) return false;
-        if (getLevel().isClientSide()) {
-            return reservedCount > 0 && getAmmoCount() >= reservedCount;
-        }
         return reservedFor(key) > 0;
     }
 
@@ -473,8 +579,11 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         Entity attacker = getLastDamageAttacker();
         // 先消耗库存再交给普通爆炸服务：本次起爆后该单元不再有弹药可供
         setAmmoCount(0);
+        // 殉爆属于非预测业务：代次前进，让客户端放弃本地投影，直接改认权威库存
+        stockEpoch++;
         // 库存归零之后，架内已预留的份额也没有弹可兑现：按身份整笔撤销，不留 R > N
         trimReservationsToStock();
+        publishLedger();
         ExplosionManager.get(getLevel()).detonate(
                 origin, composition.toExplosionParams(), getLevel().random.nextLong(), ignoredKeys, attacker);
     }
@@ -511,9 +620,15 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         batchElapsedTicks = 0;
         isBatchReloading = false;
         regenDelayRemainingTicks = 0;
+        publishRegenState();
     }
 
-    /** 随打随产：每 tick 累积再生进度，达到 1.0 时产出一发。 */
+    /**
+     * 随打随产：每 tick 累积再生进度，达到 1.0 时产出一发。
+     *
+     * <p>免费再生两端都跑：没有能源支出的产出属于可预测业务，客户端各自推进同一套进度。
+     * 需要付费的产出只由服务端完成——客户端没有能源支出预测，等权威库存与累计量到达。</p>
+     */
     private void tickRegenRoundByRound() {
         float perMinute = attr.staticAttribute.getRegenPerMinute();
         if (perMinute <= 0f) return;
@@ -523,11 +638,34 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         regenProgress += perMinute / 1200f;
 
         while (regenProgress >= 1.0f && getAmmoCount() < getCapacity()) {
-            float energyCost = attr.staticAttribute.getEnergyCostPerRound();
-            if (energyCost > 0f && !tryConsumeEnergy(energyCost)) break; // 能量不足，暂停再生
-            if (!getLevel().isClientSide()) setAmmoCount(getAmmoCount() + 1);
+            if (!canProduceLocally()) break;
+            produceRounds(1);
             regenProgress -= 1.0f;
         }
+    }
+
+    /**
+     * 本次产出一发是否可以在本端完成：免费产出两端都行；需要付费的产出只有服务端能做。
+     *
+     * <p>服务端付费时从能源网瞬时抽取，抽不到就暂停这一批；客户端不扣真实能源，直接等权威产出。</p>
+     */
+    private boolean canProduceLocally() {
+        float energyCost = attr.staticAttribute.getEnergyCostPerRound();
+        if (energyCost <= 0f) return true;
+        if (getLevel().isClientSide()) return false;
+        return tryConsumeEnergy(energyCost);
+    }
+
+    /**
+     * 记一次成功产出：推进本端累计量与本端库存；服务端同时写同步字段。
+     *
+     * @param rounds 本次产出数量
+     */
+    private void produceRounds(int rounds) {
+        if (rounds <= 0) return;
+        producedRounds += rounds;
+        setAmmoCount(runtimeAmmoCount + rounds);
+        publishLedger();
     }
 
     /**
@@ -541,20 +679,29 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         return Math.max(1, (int) (getCapacity() / perMinute * 1200));
     }
 
-    /** 批量产出：打空后触发冷却，冷却结束后一次性回满。 */
+    /**
+     * 批量产出：打空后触发冷却，冷却结束后一次性回满。
+     *
+     * <p>整批产出同样按是否付费分流：免费批次两端都跑；付费批次只在服务端成立，客户端等权威
+     * 库存回来，不预支能源额度。</p>
+     */
     private void tickBatchReload() {
         if (getAmmoCount() == 0 && !isBatchReloading) {
             float perMinute = attr.staticAttribute.getRegenPerMinute();
             if (perMinute <= 0f) return;
 
-            // 扣除整批能量
+            // 扣除整批能量（客户端不扣，也不自建这一批）
             float totalEnergy = getCapacity() * attr.staticAttribute.getEnergyCostPerRound();
-            if (totalEnergy > 0f && !tryConsumeEnergy(totalEnergy)) return; // 能量不够整批，等下一 tick 再试
+            if (totalEnergy > 0f) {
+                if (getLevel().isClientSide()) return;
+                if (!tryConsumeEnergy(totalEnergy)) return; // 能量不够整批，等下一 tick 再试
+            }
 
             // 冷却时长由 batchTotalTicks() 现算，这里只把已消耗量归零；
             // 本次 tick 随即计入一格，因此"触发那一 tick 本身算作冷却的第一 tick"
             batchElapsedTicks = 0;
             isBatchReloading = true;
+            publishRegenState();
         }
 
         if (isBatchReloading) {
@@ -562,8 +709,8 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
             if (batchElapsedTicks >= batchTotalTicks()) {
                 isBatchReloading = false;
                 batchElapsedTicks = 0;
-                // 库存计数只有服务端写：客户端等下一次同步，避免把权威值改在本地
-                if (!getLevel().isClientSide()) setAmmoCount(getCapacity());
+                produceRounds(getCapacity() - runtimeAmmoCount);
+                publishRegenState();
             }
         }
     }
@@ -598,6 +745,96 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         return Map.of();
     }
 
+    // ==================== 双端账本投影 ====================
+
+    /** 服务端：把再生进度、整批状态与延迟写进同步字段（只在离散点调用）。 */
+    private void publishRegenState() {
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(REGEN_PROGRESS_ID, regenProgress);
+        getSynchedData().set(BATCH_ELAPSED_ID, batchElapsedTicks);
+        getSynchedData().set(BATCH_ACTIVE_ID, isBatchReloading);
+        getSynchedData().set(REGEN_DELAY_ID, regenDelayRemainingTicks);
+    }
+
+    /**
+     * 全量补推之前把离散写过的值刷成当前值。
+     *
+     * <p>库存、累计量、预留总量与再生状态平时只在变化点写；新加入的客户端必须拿到"现在"，
+     * 否则它会从一个空基线开始预测。</p>
+     */
+    @Override
+    public void refreshSyncBaseline() {
+        if (getLevel().isClientSide()) return;
+        getSynchedData().set(AMMO_COUNT_ID, runtimeAmmoCount);
+        publishReserved();
+        publishLedger();
+        publishRegenState();
+    }
+
+    /**
+     * 一批权威值落地之后重算本端库存投影。
+     *
+     * <p>公式：{@code 预测 N = 权威 N + 未确认产出 + 未确认收回 − 未确认交付}，每一项都是
+     * "本端累计 − 权威累计"，按数量计。库存代次变化、投影越界（含 {@code R > N}）都表示本端
+     * 追不上权威，直接改认权威值与本端累计量。</p>
+     */
+    private void reconcileFromAuthority() {
+        int authorityCount = getSynchedData().get(AMMO_COUNT_ID);
+        long authorityProduced = getSynchedData().get(PRODUCED_ROUNDS_ID);
+        long authorityReturned = getSynchedData().get(RETURNED_ROUNDS_ID);
+        long authorityDelivered = getSynchedData().get(DELIVERED_ROUNDS_ID);
+        int authorityEpoch = getSynchedData().get(STOCK_EPOCH_ID);
+
+        boolean epochChanged = authorityEpoch != stockEpoch;
+        stockEpoch = authorityEpoch;
+        long predicted = (long) authorityCount
+                + Math.max(0L, producedRounds - authorityProduced)
+                + Math.max(0L, returnedRounds - authorityReturned)
+                - Math.max(0L, deliveredRounds - authorityDelivered);
+        if (epochChanged
+                || predicted < 0L
+                || predicted > getCapacity()
+                || predicted < localReservedTotal()) {
+            adoptAuthority(authorityCount, authorityProduced, authorityReturned, authorityDelivered);
+            return;
+        }
+        runtimeAmmoCount = (int) predicted;
+    }
+
+    /** 放弃本端尾部：库存与三项累计量整体改认权威值。 */
+    private void adoptAuthority(int count, long produced, long returned, long delivered) {
+        producedRounds = produced;
+        returnedRounds = returned;
+        deliveredRounds = delivered;
+        runtimeAmmoCount = Math.clamp(count, 0, getCapacity());
+    }
+
+    @Override
+    public void onSyncedDataUpdated(List<SynchedEntityData.DataValue<?>> values) {
+        if (!getLevel().isClientSide()) return;
+        reconcileFromAuthority();
+    }
+
+    /**
+     * 再生状态按字段逐个跟随权威值。
+     *
+     * <p>这些字段只在离散点下发，因此收到就等于"服务端在这一刻的采样"，直接落在本端同样的字段上。</p>
+     */
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
+        super.onSyncedDataUpdated(accessor);
+        if (!getLevel().isClientSide()) return;
+        if (accessor == REGEN_PROGRESS_ID) {
+            regenProgress = getSynchedData().get(REGEN_PROGRESS_ID);
+        } else if (accessor == BATCH_ELAPSED_ID) {
+            batchElapsedTicks = getSynchedData().get(BATCH_ELAPSED_ID);
+        } else if (accessor == BATCH_ACTIVE_ID) {
+            isBatchReloading = getSynchedData().get(BATCH_ACTIVE_ID);
+        } else if (accessor == REGEN_DELAY_ID) {
+            regenDelayRemainingTicks = getSynchedData().get(REGEN_DELAY_ID);
+        }
+    }
+
     // ==================== 持久化 ====================
 
     @Override
@@ -608,9 +845,15 @@ public class RegenAmmoRackSubsystem extends BasicSubsystem implements IAmmoSuppl
         if (data.contains("batch_elapsed")) batchElapsedTicks = data.getInt("batch_elapsed");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
         if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
-        // 预留不入存档：读档后未完成的装填重新申请，R 从 0 起
+        // 预留与三项累计量不入存档：读档后未完成的装填重新申请，预测窗口从零开始，R 从 0 起
         reservations.clear();
+        producedRounds = 0L;
+        returnedRounds = 0L;
+        deliveredRounds = 0L;
+        stockEpoch = 0;
         publishReserved();
+        publishLedger();
+        publishRegenState();
         // 恢复锁存下不把上一段生命周期的那批产出带进来：存档可能写在归零的同一 tick
         // （那时摧毁边沿还没走，onDestroyed 的清理来不及发生），读档也不会补发摧毁回调
         if (isDestroyed()) clearRegenState();

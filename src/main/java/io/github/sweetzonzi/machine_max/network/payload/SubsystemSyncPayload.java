@@ -20,27 +20,24 @@ import java.util.UUID;
 /**
  * 一轮子系统同步批次（服务端→客户端）。
  *
- * <p>发送单元是<b>同一个控制器的一轮批次</b>，不是单个子系统：先是装配体身份、同步代次、
- * 递增批次序号、服务端采样步与是否为完整样本，再按条目列出本轮有变化的子系统。条目仍以
- * {@code (子零件 ID, 子系统序号)} 定位：序号是子系统在该子零件声明序中的位置，双端解同一份
- * 内容定义、构造序相同，因此可以只传 varint。名字仍是存档键与翻译键，不上线。</p>
+ * <p>发送单元是<b>同一个控制器的一轮批次</b>，不是单个子系统：外层只有装配体身份，然后按条目
+ * 列出本轮有变化的子系统。条目仍以 {@code (子零件 ID, 子系统序号)} 定位：序号是子系统在该子零件
+ * 声明序中的位置，双端解同一份内容定义、构造序相同，因此可以只传 varint。名字仍是存档键与翻译键，
+ * 不上线。</p>
  *
- * <p>客户端不在收到时落地：整包入控制器的待应用队列，由本端业务 tick 收尾统一按批次序应用，
- * 因此同一个客户端 tick 内到达的多份批次仍然有序，且不会在模拟中途被逐项写入。</p>
+ * <p>批次不携带代次、序号或"是否全量"的标记：同步值是值表而不是事件流，客户端按
+ * {@code (子零件 ID, 子系统序号, 数据项 ID)} 合并，同一字段后到的覆盖先到的。服务端在主线程上
+ * 采样与发送成对发生、连接内传输有序，因此后到的批次采样一定更晚，覆盖总是朝新值方向进行；
+ * 全量补推与变化广播因此只是"条目覆盖的字段多少"不同，不需要在线上区分。</p>
+ *
+ * <p>客户端不在收到时落地：条目并入控制器的待应用值表，由本端业务 tick 收尾统一写入，因此不会在
+ * 模拟中途被逐项应用。</p>
  *
  * @param assemblyId 装配体身份，用于核对批次归属
- * @param generation 同步代次；结构迁移使其递增，新代次使此前排队的批次作废
- * @param batchSeq   服务端递增的批次序号，用于顺序诊断
- * @param sampleStep 服务端采样步（游戏时间）
- * @param full       是否为完整样本；完整样本覆盖此前排队的同代次批次
  * @param entries    本轮有变化的子系统条目
  */
 public record SubsystemSyncPayload(
         UUID assemblyId,
-        int generation,
-        int batchSeq,
-        long sampleStep,
-        boolean full,
         List<Entry> entries
 ) implements CustomPacketPayload {
 
@@ -73,23 +70,15 @@ public record SubsystemSyncPayload(
         @Override
         public @NotNull SubsystemSyncPayload decode(RegistryFriendlyByteBuf buffer) {
             UUID assemblyId = buffer.readUUID();
-            int generation = buffer.readVarInt();
-            int batchSeq = buffer.readVarInt();
-            long sampleStep = buffer.readVarLong();
-            boolean full = buffer.readBoolean();
             int count = buffer.readVarInt();
             List<Entry> entries = new ArrayList<>(count);
             for (int i = 0; i < count; i++) entries.add(Entry.read(buffer));
-            return new SubsystemSyncPayload(assemblyId, generation, batchSeq, sampleStep, full, entries);
+            return new SubsystemSyncPayload(assemblyId, entries);
         }
 
         @Override
         public void encode(@NotNull RegistryFriendlyByteBuf buffer, SubsystemSyncPayload value) {
             buffer.writeUUID(value.assemblyId());
-            buffer.writeVarInt(value.generation());
-            buffer.writeVarInt(value.batchSeq());
-            buffer.writeVarLong(value.sampleStep());
-            buffer.writeBoolean(value.full());
             buffer.writeVarInt(value.entries().size());
             for (Entry entry : value.entries()) entry.write(buffer);
         }
@@ -101,7 +90,7 @@ public record SubsystemSyncPayload(
     }
 
     /**
-     * 按批次里的第一个条目定位装配体与控制器，然后整包交给待应用队列。
+     * 按批次里的第一个条目定位装配体与控制器，然后交给待应用值表。
      *
      * <p>定位走"子零件 → 所属部件 → 装配体"，因此不假设宿主一定是载具；装配体身份再与批次
      * 头部核对一次，不一致即整包丢弃。成员缺失时整包丢弃：条目序号对不上说明两端结构定义已经
@@ -122,6 +111,6 @@ public record SubsystemSyncPayload(
             return;
         }
         SubsystemController controller = subPart.part.assembly.getSubsystemController();
-        controller.enqueueSyncBatch(payload);
+        controller.mergeSyncBatch(payload);
     }
 }

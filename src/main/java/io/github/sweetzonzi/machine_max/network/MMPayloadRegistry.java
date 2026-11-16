@@ -67,9 +67,11 @@ public class MMPayloadRegistry {
         // 类型 AmmoRef = 宿主 SubPart ID + 声明序序号），装填作业快照里的两个引用改为运输者与提供者；
         // SupplierRef 被 AmmoRef 取代，序列化器 id 由 supplier_ref 改为 ammo_ref，作业身份改按子系统序号编码。
         // 12.0.0 对应子系统同步改为一轮一批：SubsystemSyncPayload 由"单个子系统一个包"变成
-        // "同一控制器一轮一份批次"，头部带装配体身份、同步代次、批次序号、采样步与完整标记，
-        // 条目内仍是 (子零件 ID, 声明序序号, 变化值)。线格式整体变化，两端必须同版本。
-        final PayloadRegistrar sync = event.registrar("sync:12.0.0");
+        // "同一控制器一轮一份批次"，条目内是 (子零件 ID, 声明序序号, 变化值)。
+        // 15.0.0 两处：发射器下发权威的下一个作业编号（NEXT_JOB_ID），客户端据它把本地计数推到下界之后；
+        // 批次头收成装配体身份 + 条目列表——同步值是值表，客户端按 (子零件, 序号, 数据项) 合并，
+        // 代次、批次序号、采样步与 full 标记连同随队列作废的机制一并去掉。
+        final PayloadRegistrar sync = event.registrar("sync:15.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:3.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");

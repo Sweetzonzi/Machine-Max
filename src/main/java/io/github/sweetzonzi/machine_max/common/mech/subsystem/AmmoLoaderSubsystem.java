@@ -60,15 +60,16 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
 
     /**
      * 已受理作业的占用表：消费者 → 该作业的身份。<br>
-     * 只在受理点（{@link #claim}／{@link #claimForMachineStage}）写入，由接收者按身份释放：旧作业的回调因此
-     * 摘不掉新作业的占用。只记消费者引用与身份，不复制作业内容；不入存档。人工段不在这张表里——那时还没有
-     * 机械动作。
+     * <b>两端都维护</b>：只在受理点（{@link #claim}／{@link #claimForMachineStage}）写入，由接收者按身份释放，
+     * 旧作业的回调因此摘不掉新作业的占用。只记消费者引用与身份，不复制作业内容；不入存档。人工段不在这张表里
+     * ——那时还没有机械动作。客户端的这一份是预测运行态，是独占与并发判定的唯一依据。
      */
     private final Map<IAmmoConsumer, ReloadJobKey> claimedJobs = new LinkedHashMap<>();
 
     /**
-     * 客户端镜像的槽位拥有者；服务端读 {@link #claimedJobs}。<br>
-     * 在 {@link #onPostTick()} 落地，因此一次收到的拥有者变化不会在模拟中途改变本 tick 的放行判定。
+     * 独占槽的<b>权威</b>拥有者镜像（客户端）。<br>
+     * 正常路径不读它——两端的放行与承诺判定都读本端 {@link #claimedJobs}；它的用途是给分叉重建（§9）
+     * 提供一份可比对的权威基线，因此仍在 {@link #onPostTick()} 统一落地。
      */
     private ReloadJobKey slotOwner = ReloadJobKey.NONE;
 
@@ -229,11 +230,12 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
      * 为本阶段取得（或维持）执行资源。<br>
      * 有人工段时认领一名乘员（每 tick 调用，因此换人与"还有没有人"是同一个入口）；没有人工段时取机械槽。
      * 可重入且幂等：同一身份重复调用只补本阶段资源，不追加预留、不重置进度。
-     * <p><b>调用线程：</b>主线程（服务端受理点）。
+     * <p>两端都走这里：客户端的独占槽与并发判定读本端占用表，因此受理在客户端也可以失败，
+     * 不是恒成功。
+     * <p><b>调用线程：</b>主线程（受理点，两端通用）。
      */
     @Override
     public boolean claim(IAmmoConsumer consumer, ReloadJobKey key) {
-        if (getLevel().isClientSide()) return true;
         if (key.isNone()) return false;
         sweepStaleClaims();
         if (!isOperational()) return false;
@@ -250,7 +252,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
      */
     @Override
     public boolean claimForMachineStage(IAmmoConsumer consumer, ReloadJobKey key) {
-        if (getLevel().isClientSide()) return true;
         if (key.isNone()) return false;
         sweepStaleClaims();
         if (!isOperational()) return false;
@@ -269,21 +270,15 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
     /**
      * 本 tick 能为该接收者的作业推进多少。<br>
      * 人工段只看人还在不在：时长已经把倍率折进去，本机不再按秒数算推进量。机械段认两条：本机受理过这条作业
-     * 且槽位归它、该作业的提供者仍承认那份预留。客户端用同一套判据的镜像——人工段恒为 1（人员状态由服务端
-     * 判定），机械段看下发的槽位拥有者与作业上的那一台提供者。
+     * 且槽位归它、该作业的提供者仍承认那份预留。两端读同一份本端占用表，因此客户端也会因"槽被别人占着"
+     * 或"预留不在了"而停推。
      */
     @Override
     public int getAdvanceTicks(IAmmoConsumer consumer) {
         if (!isOperational()) return 0;
         ReloadJob job = consumer.getReloadJob();
         if (job == null) return 0;
-        boolean human = job.stage() == ReloadJob.Stage.HUMAN;
-        if (getLevel().isClientSide()) {
-            if (human) return 1;
-            if (!canServeMultipleConsumers() && !slotOwner.equals(job.key())) return 0;
-            return reservationStillThere(job) ? 1 : 0;
-        }
-        if (human) return loaders.holds(consumer) ? 1 : 0;
+        if (job.stage() == ReloadJob.Stage.HUMAN) return loaders.holds(consumer) ? 1 : 0;
         sweepStaleClaims();
         if (!ownsClaim(consumer, job.key())) return 0;
         return reservationStillThere(job) ? 1 : 0;
@@ -300,17 +295,14 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
 
     /**
      * 本机是否仍为这条作业保留执行资源。<br>
-     * 人工段恒为 true：乘员离场只让推进量变成 0，人可以在下一 tick 换一个，不构成承诺消失。机械段看占用表
-     * （客户端看槽位拥有者镜像）。承诺里属于"提供者预留"的那一半由接收者直接向提供者判。
+     * 人工段恒为 true：乘员离场只让推进量变成 0，人可以在下一 tick 换一个，不构成承诺消失。机械段读本端
+     * 占用表。承诺里属于"提供者预留"的那一半由接收者直接向提供者判。
      */
     @Override
     public boolean holdsCommitment(IAmmoConsumer consumer) {
         ReloadJob job = consumer.getReloadJob();
         if (job == null) return false;
         if (job.stage() == ReloadJob.Stage.HUMAN) return true;
-        if (getLevel().isClientSide()) {
-            return canServeMultipleConsumers() || slotOwner.equals(job.key());
-        }
         sweepStaleClaims();
         return ownsClaim(consumer, job.key());
     }
@@ -345,7 +337,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoTranspor
     public void releaseClaim(IAmmoConsumer consumer, ReloadJobKey key) {
         if (key == null || key.isNone()) return;
         loaders.release(key);
-        if (getLevel().isClientSide()) return;
         if (ownsClaim(consumer, key)) {
             claimedJobs.remove(consumer);
             publishSlotOwner();

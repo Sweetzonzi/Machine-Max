@@ -499,6 +499,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 本地已经替这一条交过了：只等权威结束结果，把它建回来会再交一次
         if (snapshot.jobId() == lastLocalDeliveryId) return;
         reloadJob = snapshot.toLocalJob(key);
+        // 本地编号推到镜像作业之后：本地自主受理与权威受理各用一份计数器，收下一个镜像作业后
+        // 不能再拿同一个编号去受理，否则两条不同的作业会共用身份
+        int nextLocalId = snapshot.jobId() + 1;
+        if (snapshot.jobId() >= nextJobId && nextLocalId > 0) nextJobId = nextLocalId;
         WeaponTrace.log(getLevel(), "reload-mirror launcher={} job={} stage={} stageTicks={} baseline={} transporter={} provider={}",
                 traceId(), snapshot.jobId(), snapshot.stage(), snapshot.total(), snapshot.elapsed(),
                 WeaponTrace.ref(snapshot.transporter()), WeaponTrace.ref(snapshot.provider()));
@@ -925,12 +929,9 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 少了它，载入后头几个 tick 本管处于"无供给者"，膛内那发会在路由里被当作无主而退掉。
         if (currentRoute == null) resolveSyncedRoute();
 
-        // 两端都推进本管的弹药内容：首次装填、整份换装、从已装 Belt 补膛与射击扣弹各跑一份，客户端那一份
-        // 是本地镜像。库存、预留、占用与投射物归服务端；回充也只由服务端推进——它的余量与进度都在已装
-        // 同步值里，客户端跟随即可（见 tickBeltRecharge 的说明）。
-        if (getLevel().isClientSide()) {
-            tickClientReload();
-        } else if (isActive() && !isDestroyed()) {
+        // 两端都推进本管的弹药内容：首次装填、整份换装、从已装 Belt 补膛、作业推进与射击扣弹各跑一份，
+        // 客户端那一份是本地预测。库存、预留、占用、投射物与真实能源的权威结果仍只由服务端产生。
+        if (isActive() && !isDestroyed()) {
             tickBeltRecharge();
             tickReload();
         }
@@ -1218,7 +1219,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 推进本管的装填作业。<br>
+     * 推进本管的装填作业，两端走同一套业务流程。<br>
      * 首次装填与整份换装走同一条作业：目标都是当前路的一份交付。开工前先向运输者取执行资源、再向提供者取
      * 预留；接不了单（运输者不可工作、没有可分配库存、没有人、独占槽位被别的作业占着）就不建作业、不开始
      * 计时，下个 tick 再试，因此等待中的管既不占槽也不占预留。
@@ -1234,39 +1235,55 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * tick 才按未交付终止并释放全部资源（乘员、机械槽位与架预留），与显式取消共用同一条结束结果。这个上限
      * 只作用于"有作业、有承诺"的暂停；还没受理的等待没有作业，也就不计时。承诺整体消失（运输者的占用被按
      * 身份摘掉、提供者的预留被撤销）时立刻收尾，不等这个上限。
-     * <p><b>调用线程：</b>主线程（仅服务端：库存、选人与交付都在这一侧执行）。
+     * <p>
+     * <b>端别：</b>只有"不再需要这一份"与"路已不可达"两处收尾分端——服务端立刻按身份收尾，客户端的作业是
+     * 权威镜像，只按本地交付或权威结束结果结束，避免因为一时解析不到的路或一时读不到的库存把作业清掉。
+     * <p><b>调用线程：</b>主线程（两端）。
      */
     private void tickReload() {
-        AmmoPath route = currentRoute;
-        if (route != null && !isRouteValid(route)) {
+        AmmoPath route = reloadRoute();
+        if (route == null) {
+            // 服务端：没有可用的路就不该留着作业；客户端：作业上那一对可能还没解析出来，等它
+            if (!getLevel().isClientSide()) finishReloadJob();
+            tickReloadSounds();
+            return;
+        }
+        if (!getLevel().isClientSide() && !isRouteValid(route)) {
             // 结构变化后旧路径已不可达（拆件、跨载具转移）：先按身份收尾再丢指认，
             // 不能带着已经不在本装配体内的占用继续推进
             setCurrentRoute(null);
+            finishReloadJob();
+            tickReloadSounds();
             return;
         }
-        boolean swapping = route != null && pendingSwapTarget() != null;
-        boolean want = route != null
-                && route.transporter().isOperational()
+        boolean swapping = pendingSwapTarget() != null;
+        boolean want = route.transporter().isOperational()
                 && route.provider().isSupplyOperational()
                 && (swapping || needsBelt());
         if (!want) {
-            finishReloadJob();
+            if (!getLevel().isClientSide()) finishReloadJob();
+            tickReloadSounds();
             return;
         }
 
         ReloadJob job = reloadJob;
         if (job == null) {
             job = acceptNewJob(route);
-            if (job == null) return; // 未受理：不入占用、不占预留、不开始计时
+            if (job == null) {
+                tickReloadSounds();
+                return; // 未受理：不入占用、不占预留、不开始计时
+            }
         }
         // 承诺整体消失：运输者的执行资源被摘掉，或提供者的那份预留被撤销
         if (!route.transporter().holdsCommitment(this)
                 || !route.provider().holdsReservation(job.key(), job.reservedCount())) {
             finishReloadJob();
+            tickReloadSounds();
             return;
         }
         if (job.stage() == ReloadJob.Stage.HUMAN) {
             tickHumanStage(route, job);
+            tickReloadSounds();
             return;
         }
         int advance = route.transporter().getAdvanceTicks(this);
@@ -1276,10 +1293,26 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
         if (job.pausedTicks() >= PAUSE_TIMEOUT_TICKS) {
             finishReloadJob();
+            tickReloadSounds();
             return;
         }
+        tickReloadSounds();
         if (!job.isComplete()) return;
         deliver(route, job);
+    }
+
+    /**
+     * 本轮要推进的路：优先当前指认；客户端在指认还没落地时用作业上冻结的那一对。
+     *
+     * <p>服务端不这样兜底：那边指认为空就是"没有路"，作业该收尾；客户端的作业是权威镜像，
+     * 路与作业分两批到达是正常情况，不能因此把作业清掉。</p>
+     */
+    @Nullable
+    private AmmoPath reloadRoute() {
+        if (currentRoute != null) return currentRoute;
+        if (!getLevel().isClientSide()) return null;
+        ReloadJob job = reloadJob;
+        return job == null ? null : deliveryRoute(job);
     }
 
     /**
@@ -1358,6 +1391,12 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
                 WeaponTrace.ref(job.provider()));
         finishReloadJob(delivered != null);
         if (delivered == null) return;
+        if (getLevel().isClientSide()) {
+            // 客户端本地交付的收据：权威结果到达时按这个编号认出"已经交过了"，不再建回来重交一次
+            lastLocalDeliveryId = job.jobId();
+            WeaponTrace.log(getLevel(), "reload-local-deliver launcher={} job={} stage={} rounds={}", traceId(),
+                    job.jobId(), job.stage(), delivered.remaining());
+        }
         if (swapping) {
             commitBeltSwap(provider, delivered);
         } else {
@@ -1395,60 +1434,6 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             return;
         }
         setLoadedBelt(pulled);
-    }
-
-    /**
-     * 客户端推进本管的装填作业，并在走完时按本管的装填模式本地提交这一份交付。<br>
-     * 计时在两端各自累计：服务端只给分配、基线与运行条件，客户端每个 tick 按执行者给出的推进量前进，
-     * 不等待逐 tick 的进度包。走完后用作业上冻结的规格与份额生成同一份交付，交给首次装填或整份换装
-     * ——这是"本地先交付"那一半：交出什么不由本端推导，规格与份额都是受理时定死的。<br>
-     * 人工段的推进量恒为 1（时长已把岗位倍率与个人倍率折进去，人员状态由服务端判定），走完也只表示这一段
-     * 完成：机械段还没开始，因此不在本地交付，等权威把阶段推过来再继续跑机械段。人员中途离场时服务端的
-     * 作业会暂停，本端会先跑完人工段——这份预测差异由随后的权威结果覆盖。
-     * <p>本端不建立真实预留、不扣实际库存（那些只在服务端），因此这份交付内容会在权威结果到达时被覆盖：
-     * 交付成功时覆盖成同一份，作业被撤销时覆盖成撤销后的样子。同一 {@code jobId} 只交一次。
-     * <p><b>调用线程：</b>主线程（客户端）。
-     */
-    private void tickClientReload() {
-        ReloadJob job = reloadJob;
-        if (job == null) {
-            tickReloadSounds();
-            return;
-        }
-        if (!isActive() || isDestroyed()) {
-            // 本管已被摧毁：本地不做交付，等权威结果把作业清掉
-            tickReloadSounds();
-            return;
-        }
-        AmmoPath route = deliveryRoute(job);
-        if (route == null) {
-            // 作业上的那一对还没解析出来（同步先后顺序）：先不推进，也不按别的机器放行
-            tickReloadSounds();
-            return;
-        }
-        int advance = route.transporter().getAdvanceTicks(this);
-        if (advance <= 0 && job.pausedTicks() == 0) {
-            WeaponTrace.log(getLevel(), "reload-stall-local launcher={} job={} stage={}", traceId(),
-                    job.jobId(), job.stage());
-        }
-        job.advance(advance);
-        tickReloadSounds();
-        if (!job.isComplete()) return;
-        // 机械运输者的人工准备段走完只是这一段完成：机械段还没开始，交付要等权威把阶段推过来。
-        // 人力运输者没有机械段，人工段走完即本端交付
-        if (job.stage() == ReloadJob.Stage.HUMAN && !route.transporter().isHuman()) return;
-
-        boolean swapping = isSwapping();
-        AmmoBelt delivered = job.spec().freshCopy(job.reservedCount());
-        reloadJob = null;
-        lastLocalDeliveryId = job.jobId();
-        WeaponTrace.log(getLevel(), "reload-local-deliver launcher={} job={} stage={} rounds={}", traceId(),
-                job.jobId(), job.stage(), delivered.remaining());
-        if (swapping) {
-            commitBeltSwap(route.provider(), delivered);
-        } else {
-            acceptDelivery(route.provider(), delivered);
-        }
     }
 
     /**
@@ -1646,11 +1631,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     }
 
     /**
-     * 推进已装 Belt 的自身回充。<br>
-     * 只有服务端推进：回充要按发取电，而取电是真实扣费。客户端不做这件事也不会落后——余量与零碎的
-     * 回充进度都在已装同步值里（进度按 1/20 取整后才推送），补出一发的那一刻服务端就推了新余量。
-     * 成功射击已经通过 {@link AmmoBelt#onShot()} 重置过延迟，这里只按速率补额度；
-     * 取电由本机所在的能源网格提供，取不到时停在当前进度等待下一 tick。
+     * 推进已装 Belt 的自身回充，两端都跑。<br>
+     * 回充要按发取电，而取电是真实扣费：服务端从能源网抽，客户端不预支能源额度，只在<b>不需要付费</b>时
+     * 推进（见 {@link #payRechargeEnergy(float)}）。付费回充在客户端等权威结果——补出一发的那一刻服务端就
+     * 推了新余量。成功射击已经通过 {@link AmmoBelt#onShot()} 重置过延迟，这里只按速率补额度。
      */
     private void tickBeltRecharge() {
         AmmoBelt belt = loadedBelt;
@@ -1664,7 +1648,14 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
     }
 
+    /**
+     * 回充取电：服务端从能源网真实抽取；客户端只在这次回充不需要付费时才放行。
+     *
+     * <p>客户端没有能源支出预测，因此不允许"先记成已回充、以后再扣费"——那会让本地余量跑到权威前面，
+     * 而且永远无法用权威值收敛。</p>
+     */
     private boolean payRechargeEnergy(float amount) {
+        if (getLevel().isClientSide()) return amount <= 0f;
         EnergyGrid grid = getOwner().getEnergyGrid();
         if (grid == null) return false;
         return grid.consumeEnergy(amount) >= amount - 0.001f;

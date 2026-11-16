@@ -48,20 +48,8 @@ public class SubsystemController implements ISignalBus {
     /** 是否已经跑过首次订阅；此前加入的子系统由 {@link #initAllSubsystems()} 统一 attach。 */
     private boolean initialized;
 
-    /** 待应用批次的上限；超过即丢弃本域队列，等下一份完整样本重建。 */
-    private static final int MAX_PENDING_BATCHES = 64;
-
-    /** 服务端同步代次；结构迁移使其递增，客户端据此作废跨迁移排队的批次。 */
-    private int syncGeneration = 1;
-
-    /** 服务端递增批次序号，仅用于顺序诊断。 */
-    private int nextBatchSeq = 1;
-
-    /** 客户端已收到的最新代次；换代次时排队中的批次整体作废。 */
-    private int inboxGeneration;
-
-    /** 客户端待应用批次，按到达顺序排列，业务 tick 收尾统一落地。 */
-    private final Deque<SubsystemSyncPayload> pendingBatches = new ArrayDeque<>();
+    /** 客户端待应用的权威同步值，业务 tick 收尾统一落地。 */
+    private final SyncValueBuffer pendingValues = new SyncValueBuffer();
 
     public SubsystemController(Level level) {
         this.level = level;
@@ -97,16 +85,17 @@ public class SubsystemController implements ISignalBus {
     /**
      * 本轮子系统业务 tick 之后的统一落地边界。
      *
-     * <p>先应用客户端待处理的权威批次，再逐个调用 {@link AbstractSubsystem#onPostTick()}。
-     * 分成两趟而不是在同一次遍历里做，是因为一个子系统的收尾可能依赖别的子系统本 tick 的结果：
-     * 客户端把同步到的分配、库存与作业一起落地时，读的必须是同一轮已推进完的状态。</p>
+     * <p>先把客户端收到的权威值写进各子系统的同步数据，再逐个调用
+     * {@link AbstractSubsystem#onPostTick()}。分成两趟而不是在同一次遍历里做，是因为一个子系统的
+     * 收尾可能依赖别的子系统本 tick 的结果：客户端把同步到的分配、库存与作业一起落地时，读的
+     * 必须是同一轮已推进完的状态。</p>
      *
      * <p>由 {@code VehicleCore#preTick()} 在 {@link #tick()} 之后紧接着调用。它既不是物理线程的
      * {@code postPhysicsTick}，也不在 {@code LevelTickEvent.Post}：粒度是"这台载具的子系统本轮跑完了"，
      * 因此同一个 tick 内到达的同步值只会被应用一次。</p>
      */
     public void postTick() {
-        applyPendingBatches();
+        applyPendingValues();
         Set<AbstractSubsystem> snapshot = allSubsystems;
         for (AbstractSubsystem subsystem : snapshot) {
             if (subsystem != null) {
@@ -116,60 +105,55 @@ public class SubsystemController implements ISignalBus {
     }
 
     /**
-     * 客户端：按到达顺序把所有待应用批次写入各子系统的同步数据。
+     * 客户端：把待应用的权威值按宿主聚合后写入各子系统的同步数据。
      *
-     * <p>写入即触发各子系统自己的变化回调，因此"哪些字段变了"的判定发生在同一处，业务收尾随后
-     * 读取的就是本轮已落地的权威值。成员缺失的条目跳过并记一次日志：序号对不上说明两端结构定义
-     * 已经不一致，回退不到别的子系统。</p>
+     * <p>一个子系统在本边界只 <b>assignValues 一次</b>：合并表里同一字段只留最后的值，因此每轮
+     * 收尾看到的是"本边界之后的当前值"，而不是一串中间态。写入即触发各子系统的变化回调，业务收尾
+     * 随后读到的就是本轮已落地的权威值。</p>
+     *
+     * <p>成员缺失的条目整组跳过并记一次日志：序号对不上说明两端结构定义已经不一致，回退不到别的
+     * 子系统。</p>
      */
-    private void applyPendingBatches() {
-        if (!level.isClientSide() || pendingBatches.isEmpty()) return;
-        while (!pendingBatches.isEmpty()) {
-            SubsystemSyncPayload batch = pendingBatches.pollFirst();
-            for (SubsystemSyncPayload.Entry entry : batch.entries()) {
-                DestroyableObject holder = ObjectManager.getDestroyableObject(level, entry.subPartId());
-                if (!(holder instanceof SubPart subPart)) {
-                    MachineMax.LOGGER.warn("丢弃子系统同步条目：维度{}没有子零件 id={}",
-                            level.dimension().location(), entry.subPartId());
-                    continue;
-                }
-                AbstractSubsystem subsystem = subPart.subsystemAt(entry.subsystemIndex());
+    private void applyPendingValues() {
+        if (!level.isClientSide() || pendingValues.isEmpty()) return;
+        Map<Integer, Map<Integer, List<SynchedEntityData.DataValue<?>>>> grouped = new LinkedHashMap<>();
+        pendingValues.forEach((key, value) -> grouped
+                .computeIfAbsent(key.subPartId(), id -> new LinkedHashMap<>())
+                .computeIfAbsent(key.subsystemIndex(), index -> new ArrayList<>())
+                .add(value));
+        pendingValues.clear();
+        for (Map.Entry<Integer, Map<Integer, List<SynchedEntityData.DataValue<?>>>> byPart : grouped.entrySet()) {
+            DestroyableObject holder = ObjectManager.getDestroyableObject(level, byPart.getKey());
+            if (!(holder instanceof SubPart subPart)) {
+                MachineMax.LOGGER.warn("丢弃子系统同步条目：维度{}没有子零件 id={}",
+                        level.dimension().location(), byPart.getKey());
+                continue;
+            }
+            for (Map.Entry<Integer, List<SynchedEntityData.DataValue<?>>> byIndex : byPart.getValue().entrySet()) {
+                AbstractSubsystem subsystem = subPart.subsystemAt(byIndex.getKey());
                 if (subsystem == null) {
                     MachineMax.LOGGER.warn("丢弃子系统同步条目：SubPart(id={}) 上没有序号为 {} 的子系统",
-                            entry.subPartId(), entry.subsystemIndex());
+                            byPart.getKey(), byIndex.getKey());
                     continue;
                 }
-                subsystem.getSynchedData().assignValues(entry.values());
+                subsystem.getSynchedData().assignValues(byIndex.getValue());
             }
         }
     }
 
     /**
-     * 客户端：收下一轮权威批次。
+     * 客户端：收下一轮权威批次，按字段并入待应用值表。
      *
-     * <p>代次变化说明结构迁移过，排队中的批次整体作废；完整样本覆盖同代次已排队的部分样本
-     * （它是在那些字段之后采样的）。队列有界，超限即丢空本域队列并记日志——此时本域需要一份
-     * 新的完整样本，而不是继续拿不连续的值。</p>
+     * <p>同步值是值表，不是事件流：同一字段在一轮里收到多次只有最后那次有意义，所以并入即可，
+     * 不需要保存批次顺序。服务端"采样与发送成对发生"、连接内有序，后到的批次一定采样更晚，因此
+     * 覆盖总是朝新值方向进行。合并后的条目数上界是本装配体已定义的同步字段总数。</p>
      *
      * <p><b>调用线程：</b>主线程（网络批次处理器）。</p>
      *
      * @param batch 收到的批次
      */
-    public void enqueueSyncBatch(SubsystemSyncPayload batch) {
-        if (!level.isClientSide()) return;
-        if (batch.generation() != inboxGeneration) {
-            inboxGeneration = batch.generation();
-            pendingBatches.clear();
-        } else if (batch.full()) {
-            pendingBatches.clear();
-        }
-        if (pendingBatches.size() >= MAX_PENDING_BATCHES) {
-            pendingBatches.clear();
-            MachineMax.LOGGER.warn("子系统同步队列超过 {} 份，丢弃本域队列：批次 seq={}",
-                    MAX_PENDING_BATCHES, batch.batchSeq());
-            return;
-        }
-        pendingBatches.addLast(batch);
+    public void mergeSyncBatch(SubsystemSyncPayload batch) {
+        pendingValues.merge(batch.entries());
     }
 
     /**
@@ -195,10 +179,8 @@ public class SubsystemController implements ISignalBus {
             entries.add(new SubsystemSyncPayload.Entry(host.getId(), host.subsystemIndex(subsystem), dirty));
         }
         if (entries.isEmpty()) return;
-        int seq = nextBatchSeq;
-        nextBatchSeq = nextBatchSeq == Integer.MAX_VALUE ? 1 : nextBatchSeq + 1;
         PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                new SubsystemSyncPayload(assemblyId, syncGeneration, seq, level.getGameTime(), false, entries));
+                new SubsystemSyncPayload(assemblyId, entries));
     }
 
     /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */    public void prePhysicsTick() {
@@ -305,8 +287,6 @@ public class SubsystemController implements ISignalBus {
     }
 
     public void onVehicleStructureChanged() {
-        // 结构迁移使同步代次前进：跨迁移排队的批次不能与新的成员集合拼成一份可执行状态
-        syncGeneration = syncGeneration == Integer.MAX_VALUE ? 1 : syncGeneration + 1;
         // 重建总线订阅
         rebuildSubscriptions();
         initialized = true;
@@ -331,8 +311,8 @@ public class SubsystemController implements ISignalBus {
      * 用在载具刚在客户端建好之后：那些"载入后不再变化"的值走不到变化广播
      * （见 {@link AbstractSubsystem#forEachSyncedValue(Consumer)}），只能由这里补一次。
      * <p>
-     * 整份快照打成一个 {@code full} 批次（{@link SubsystemSyncPayload}），与变化批次同一格式：
-     * 客户端先清空本域待应用队列再落地，因此"半份旧状态 + 半份新状态"拼不出可执行状态。
+     * 全量样本与变化批次用同一种包（{@link SubsystemSyncPayload}）：它携带着每个字段的当前值，
+     * 客户端按字段并入待应用值表，因此后到的值与先到的增量不会拼出中间态。
      * <b>不改动任何同步状态</b>：既不清脏标记，也不强制标脏，因此其他在线玩家不会因此多收包。
      * <p>
      * <b>调用线程：</b>主线程（服务端）。
@@ -354,10 +334,7 @@ public class SubsystemController implements ISignalBus {
             entries.add(new SubsystemSyncPayload.Entry(host.getId(), host.subsystemIndex(subsystem), values));
         }
         if (entries.isEmpty()) return;
-        int seq = nextBatchSeq;
-        nextBatchSeq = nextBatchSeq == Integer.MAX_VALUE ? 1 : nextBatchSeq + 1;
-        PacketDistributor.sendToPlayer(player,
-                new SubsystemSyncPayload(assemblyId, syncGeneration, seq, level.getGameTime(), true, entries));
+        PacketDistributor.sendToPlayer(player, new SubsystemSyncPayload(assemblyId, entries));
     }
 
     public void rebuildAllEnergyPaths() {
