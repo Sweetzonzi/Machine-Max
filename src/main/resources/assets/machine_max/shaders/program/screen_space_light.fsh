@@ -13,10 +13,10 @@
 //      o_i = max((1 − NormalWeight) + NormalWeight·dot(N, L̂), 0) 是表面朝向响应（S4）：
 //      N 是视空间表面法线、L̂ 是表面点指向光心的单位向量。NormalWeight = 1 时即完整 Lambert 项，
 //      = 0 时 o_i 恒为 1（不乘法线项），中间值让掠射面保留 (1 − NormalWeight) 的底，并允许部分背光响应。
-//      v_i 是表面点 P 能否看见光心 C 的屏幕空间可见性（S3）：沿 P→C 用深度层级排除空段，
-//      可能相交的格下钻至原始像素后检测有限厚度相交，
-//      确认命中时按受光点到光源的距离权重抑制表面项；范围末端25%平滑淡出阴影，范围外跳过查询。
-//      完整未命中与证据不足均放行为 1。它只作用于表面项，不参与光晕与星芒。
+//      v_i 是 S3 的柔和遮挡响应：在 P→C 的屏幕线段上取32个中点，将单边软深度响应平均。
+//      采样覆盖线段参数[0.06,0.88]，偏置0.08m+0.002z、过渡宽度0.25m；没有有限后界。
+//      平均遮挡按受光点到光源的距离加权；范围末端25%平滑淡出，范围外跳过查询。
+//      它是稳定的局部遮光近似，只作用于表面项，不参与光晕与星芒。
 //   2. 求和得到逐通道响应 e = Σ E_i：先求和再合成，因此结果与光源遍历顺序无关。
 //   3. C_out = 1 − (1 − C)/(1 + e·q)，q = C + β(1 − C)：输出恒在 [0,1]，渐近饱和、不硬截断。
 //   4. 光晕：glow_i = Scatter · k_i · c_i · I_i · I0_i · win(b/Rg_i)，逐通道钳到 GLOW_MAX 后与
@@ -67,8 +67,7 @@
 // 屏幕空间遮挡；LightOcclusion 逐盏选择 NONE 或 SOURCE_DEPTH（S2），只门禁星芒。锥光（SPOT）
 // 与逐盏 S3 模式（SCREEN_RAY）在光源表提交处被报告为不支持，不会走到这里——锥光的字段与分支在 P5 增加。
 //
-// S3 见 traceLightRay()：米制端点排除 → 近裁面/视口裁剪 → min/max深度层级遍历。
-// 粗格的深度区间只排除不可能相交的区域；原始像素确认有限厚度相交才遮挡，命中立即结束。
+// S3 见 averagedLightVisibility()；traceLightRay()及深度层级仅供诊断硬命中算法。
 //
 // 两条包围剔除缺一不可：
 //   perp2 > Rc²  视线到光心的垂距超过 Rc —— 必要，视线完全不穿过球时球内任何点都不在此视线上
@@ -76,8 +75,7 @@
 // 只留前者会漏（视线穿过球但表面点远在球外），只留后者则失去提前退出的收益。
 // Rc = max(R, Rg)：光晕球可能比照明球大，垂距剔除处不能把光晕一起丢掉。
 //
-// 光源循环上限为 LightCount（≤16）；S3 深度读取另受全部光源共用的 OCCL_PIXEL_STEPS 限制。
-// 光源表按优先级、投影大小排序，后续光源拿不到预算时按未知放光，开销与覆盖率须同时测量。
+// 光源循环上限为 LightCount（≤16）；每盏参与表面遮挡的光源至多读取32次深度。
 
 uniform sampler2D DiffuseSampler;   // 上一 pass 的画面
 uniform sampler2D MCDepthSampler;   // 链内世界深度快照（AFTER_LEVEL 从主目标拷入）
@@ -106,7 +104,7 @@ uniform float CaptureSamples;       // >0：等距点覆盖完整屏幕线段；
 uniform float CaptureThickness;
 uniform float CaptureOutput;        // >0：按光源聚合显示未命中的原因
 uniform float CaptureLegacy;        // >0：重放 §10 定义的 7 点、单边深度、命中平均基线
-uniform float CaptureTraversal;     // 0分层；1主轴像素DDA；2原始像素格的完整参考
+uniform float CaptureTraversal;     // -1默认32点平均；0分层硬命中；1主轴像素DDA；2完整像素格
 uniform float CaptureNormalThickness; // 只用于完整像素参考：按局部法线厚度换算前向后界
 uniform float CaptureOcclusionOff;
 uniform float CaptureOnlyLight;     // 0所有光源，i+1只保留槽i
@@ -118,7 +116,7 @@ const float CaptureSamples = 0.0;
 const float CaptureThickness = 0.0;
 const float CaptureOutput = 0.0;
 const float CaptureLegacy = 0.0;
-const float CaptureTraversal = 0.0;
+const float CaptureTraversal = -1.0;
 const float CaptureNormalThickness = 0.0;
 const float CaptureOcclusionOff = 0.0;
 const float CaptureOnlyLight = 0.0;
@@ -152,7 +150,10 @@ const float OCCL_START_M   = 0.05;  // 从受光点沿光线排除的长度（m�
 const float OCCL_END_M     = 0.15;  // 光心一端排除的长度（m），与星芒的 LightTol 独立
 const float OCCL_BIAS_M    = 0.03;  // 场景厚度层前的空隙（m），同深度不会命中
 const float OCCL_BIAS_REL_Z = 0.001; // 空隙随前向深度的增长量（m/m）
-const float OCCL_THICKNESS_M = 0.25; // 空隙之后的有限厚度（m）；射线可从这层后方穿过
+const float OCCL_THICKNESS_REL_Z = 0.005; // 有限层厚度按场景前向深度的比例给出
+const float OCCL_THICKNESS_MIN_M = 0.05;  // 有限层厚度的米制下界
+const float OCCL_THICKNESS_MAX_M = 0.15;  // 有限层厚度的米制上界
+const float OCCL_EDGE_REL_INV_Z = 0.02;   // 四邻域倒数深度跨度超过该比例时使用点深度
 const int   RAY_HIT        = 0;
 const int   RAY_CLEAR      = 1;
 const int   RAY_UNKNOWN    = 2;
@@ -251,14 +252,35 @@ bool clipRayAxis(float origin, float delta, float limit, inout float t0, inout f
     return t0 <= t1;
 }
 
+// 厚度用于细节遮挡的保守近似；诊断可显式指定固定米制厚度。
+float occlusionThickness(float sceneInv) {
+    if (CaptureThickness > 0.0) return CaptureThickness;
+    return clamp(OCCL_THICKNESS_REL_Z / sceneInv, OCCL_THICKNESS_MIN_M, OCCL_THICKNESS_MAX_M);
+}
+
+// 连续表面用透视正确的双线性深度；物体轮廓使用点深度，避免跨物体插值侵蚀细杆。
+float filteredSceneInv(vec2 pixel, float invDepthB, float sceneInv) {
+    vec2 tap = pixel - 0.5;
+    ivec2 base = ivec2(floor(tap));
+    vec2 f = fract(tap);
+    ivec2 limit = ivec2(OutSize) - 1;
+    float a = texelFetch(MCDepthSampler, clamp(base, ivec2(0), limit), 0).r;
+    float b = texelFetch(MCDepthSampler, clamp(base + ivec2(1, 0), ivec2(0), limit), 0).r;
+    float c = texelFetch(MCDepthSampler, clamp(base + ivec2(0, 1), ivec2(0), limit), 0).r;
+    float d = texelFetch(MCDepthSampler, clamp(base + ivec2(1, 1), ivec2(0), limit), 0).r;
+    float spread = (max(max(a, b), max(c, d)) - min(min(a, b), min(c, d))) * abs(invDepthB);
+    if (spread > sceneInv * OCCL_EDGE_REL_INV_Z) return sceneInv;
+    return max(0.0, (mix(mix(a, b, f.x), mix(c, d, f.x), f.y) + DepthA) * invDepthB);
+}
+
 // 原始像素的有限厚度判据。单层相机深度只提供近似几何，未命中不能补回隐藏几何。
 // 分层遍历、完整像素参考和全程点诊断共用此函数；rayInv端点相等时检测一个点。
-int sampleLightRay(vec2 cell, vec2 rayInv, vec4 plane, bool ignorePlane, float invDepthB) {
+int sampleLightRay(vec2 cell, vec2 rayInv, vec2 samplePixel, vec4 plane, bool ignorePlane, float invDepthB) {
     float sceneRaw = texelFetch(MCDepthSampler, ivec2(cell), 0).r;
     if (sceneRaw <= 0.0 || sceneRaw >= 1.0) return RAY_UNKNOWN;
     float sceneInv = (sceneRaw + DepthA) * invDepthB;
     if (!(sceneInv > 0.0 && sceneInv < 1.0 / NEAR_Z)) return RAY_UNKNOWN;
-    float thickness = CaptureThickness > 0.0 ? CaptureThickness : OCCL_THICKNESS_M;
+    float thickness = occlusionThickness(sceneInv);
     if (CaptureNormalThickness > 0.5) {
         vec3 normal = vec3(0.0, 0.0, 1.0);
         if (viewNormal((cell + 0.5) / OutSize, 1.0 / sceneInv, normal)) {
@@ -271,7 +293,15 @@ int sampleLightRay(vec2 cell, vec2 rayInv, vec4 plane, bool ignorePlane, float i
     if (min(rayInv.x, rayInv.y) * frontScale <= sceneInv
             && max(rayInv.x, rayInv.y) * backScale >= sceneInv) {
         float planeError = abs(dot(plane.xy, cell + 0.5) + plane.z - plane.w * sceneInv);
-        if (!(ignorePlane && planeError <= OCCL_BIAS_M * sceneInv + OCCL_BIAS_REL_Z)) return RAY_HIT;
+        if (ignorePlane && planeError <= OCCL_BIAS_M * sceneInv + OCCL_BIAS_REL_Z) return RAY_CLEAR;
+        // 只有点深度候选命中才读取插值邻域；光线须同时进入两种深度的有限层。
+        float smoothInv = filteredSceneInv(samplePixel, invDepthB, sceneInv);
+        float frontInv = min(sceneInv, smoothInv);
+        float backInv = max(sceneInv, smoothInv);
+        frontScale = 1.0 + OCCL_BIAS_REL_Z + OCCL_BIAS_M * frontInv;
+        backScale = 1.0 + OCCL_BIAS_REL_Z + (OCCL_BIAS_M + thickness) * backInv;
+        if (min(rayInv.x, rayInv.y) * frontScale <= frontInv
+                && max(rayInv.x, rayInv.y) * backScale >= backInv) return RAY_HIT;
     }
     return RAY_CLEAR;
 }
@@ -285,7 +315,6 @@ int traceHierarchy(vec2 origin, vec2 travel, vec2 invZ, vec4 plane, bool ignoreP
     bool pixelReference = CaptureTraversal > 1.5;
     int level = pixelReference ? -1 : clamp(int(floor(log2(max(majorLength / 32.0, 1.0)))) - 1, 0, top);
     float enterT = 0.0;
-    float thickness = CaptureThickness > 0.0 ? CaptureThickness : OCCL_THICKNESS_M;
     vec2 inverseTravel = vec2(0.0);
     if (abs(travel.x) > 1.0e-6) inverseTravel.x = 1.0 / travel.x;
     if (abs(travel.y) > 1.0e-6) inverseTravel.y = 1.0 / travel.y;
@@ -304,7 +333,7 @@ int traceHierarchy(vec2 origin, vec2 travel, vec2 invZ, vec4 plane, bool ignoreP
         steps++;
         if (level < 0) {
             cell = clamp(cell, vec2(0.0), OutSize - 1.0);
-            int result = sampleLightRay(cell, rayInv, plane, ignorePlane, invDepthB);
+            int result = sampleLightRay(cell, rayInv, origin + travel * ((enterT + exitT) * 0.5), plane, ignorePlane, invDepthB);
             if (result == RAY_HIT) { reason = 0; return RAY_HIT; }
             if (result == RAY_UNKNOWN) reason |= REASON_DEPTH;
         } else {
@@ -313,7 +342,7 @@ int traceHierarchy(vec2 origin, vec2 travel, vec2 invZ, vec4 plane, bool ignoreP
             bool overlap = false;
             if (range.y > 0.0) {
                 float sceneLo = abs(range.x), sceneHi = range.y;
-                float backScale = 1.0 + OCCL_BIAS_REL_Z + (OCCL_BIAS_M + thickness) * sceneLo;
+                float backScale = 1.0 + OCCL_BIAS_REL_Z + (OCCL_BIAS_M + occlusionThickness(sceneLo)) * sceneLo;
                 float frontScale = 1.0 + OCCL_BIAS_REL_Z + OCCL_BIAS_M * sceneHi;
                 overlap = max(rayInv.x, rayInv.y) * backScale >= sceneLo
                         && min(rayInv.x, rayInv.y) * frontScale <= sceneHi;
@@ -396,7 +425,7 @@ int traceLightRay(vec3 P, vec3 C, float distancePC, vec3 receiverNormal, bool ha
             float t = (float(k) + 0.5) / float(samples);
             vec2 cell = clamp(floor(origin + travel * t), vec2(0.0), OutSize - 1.0);
             float rayInv = mix(invZ.x, invZ.y, t);
-            int sampleResult = sampleLightRay(cell, vec2(rayInv), plane, ignoreReceiverPlane, invDepthB);
+            int sampleResult = sampleLightRay(cell, vec2(rayInv), origin + travel * t, plane, ignoreReceiverPlane, invDepthB);
             steps++;
             if (sampleResult == RAY_HIT) { reason = 0; return RAY_HIT; }
             if (sampleResult == RAY_UNKNOWN) reason |= REASON_DEPTH;
@@ -430,7 +459,7 @@ int traceLightRay(vec3 P, vec3 C, float distancePC, vec3 receiverNormal, bool ha
         // 裁剪已保证在视口内；钳制浮点边界误差，避免最后一列的 texelFetch 越界。
         cell = clamp(cell, vec2(0.0), OutSize - 1.0);
         float rayEndInv = mix(invZ.x, invZ.y, exitT);
-        int sampleResult = sampleLightRay(cell, vec2(rayStartInv, rayEndInv), plane, ignoreReceiverPlane, invDepthB);
+        int sampleResult = sampleLightRay(cell, vec2(rayStartInv, rayEndInv), origin + travel * ((enterT + exitT) * 0.5), plane, ignoreReceiverPlane, invDepthB);
         steps++;
         if (sampleResult == RAY_HIT) { reason = 0; return RAY_HIT; }
         if (sampleResult == RAY_UNKNOWN) reason |= REASON_DEPTH;
@@ -443,7 +472,30 @@ int traceLightRay(vec3 P, vec3 C, float distancePC, vec3 receiverNormal, bool ha
     return RAY_UNKNOWN;
 }
 
-// 诊断基线：固定 7 点覆盖全程，只有深度下界，并将沿线命中取平均。
+// 柔和遮挡：每个采样响应至多贡献1/32。越界样本按无遮挡计，分母固定，避免视口边缘跳变。
+// 0.25m是单边响应的过渡宽度；它不表示物体背面的有限厚度。
+float averagedLightVisibility(vec3 P, vec3 C) {
+    if (-C.z <= NEAR_Z) return 1.0;
+    vec2 a = OutSize * 0.5 + FocalPx * P.xy / (-P.z);
+    vec2 b = OutSize * 0.5 + FocalPx * C.xy / (-C.z);
+    float rawA = DepthB / (-P.z) - DepthA;
+    float rawB = DepthB / (-C.z) - DepthA;
+    float depthSign = DepthB < 0.0 ? -1.0 : 1.0;
+    float occ = 0.0;
+    for (int i = 0; i < 32; i++) {
+        float t = mix(0.06, 0.88, (float(i) + 0.5) / 32.0);
+        vec2 uv = mix(a, b, t) / OutSize;
+        if (any(lessThan(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) continue;
+        float ray = mix(rawA, rawB, t);
+        float rel = abs(ray + DepthA);
+        float perM = max(rel * rel / abs(DepthB), 1e-12);
+        float diff = (texture(MCDepthSampler, uv).r - ray) * depthSign - (0.08 * perM + 0.002 * rel);
+        occ += clamp(diff / (0.25 * perM) + 0.5, 0.0, 1.0);
+    }
+    return clamp(1.0 - occ / 32.0, 0.0, 1.0);
+}
+
+// 诊断基线：固定7点t=k/8，单边软深度响应平均；与32点共享米制偏置和过渡宽度。
 float legacyLightVisibility(vec3 P, vec3 C) {
     float zc = -C.z;
     if (zc <= NEAR_Z) return 1.0;
@@ -500,12 +552,11 @@ void main() {
         tHit = zfwd * L;                     // 射线参数 t 对应真实距离 t·L，不是 t
     }
 
-    // 四邻域法线同时供 S4 朝向响应与 S3 的接收平面排除使用。
-    // S3 开启时即使 NormalWeight = 0 也要取平面，避免朝向权重改变遮挡判据。
+    // 四邻域法线供S4使用；诊断硬命中算法还用它排除接收平面。
     float nw   = clamp(NormalWeight, 0.0, 1.0);
     vec3  N    = vec3(0.0, 0.0, 1.0);
     bool  hasN = false;
-    if (hasSurface && (nw > 0.0 || OCCL_MAX_STEPS > 0 || CaptureRayBudget > 0.0)) hasN = viewNormal(texCoord, zfwd, N);
+    if (hasSurface && (nw > 0.0 || (CaptureTraversal >= 0.0 && CaptureLegacy <= 0.0))) hasN = viewNormal(texCoord, zfwd, N);
 
     // 逐通道响应：e 是表面辐照度之和，glow 是空气散射、glare 是星芒，后两者都是线性、都不进合成曲线
     vec3 e     = vec3(0.0);
@@ -515,6 +566,7 @@ void main() {
     int captureReasons = 0;
     bool captureHit = false;
     bool captureEvaluated = false;
+    float captureShadow = 0.0;
 
     for (int i = 0; i < int(LightCount); i++) {
         if (CaptureOnlyLight > 0.0 && i != int(CaptureOnlyLight) - 1) continue;
@@ -567,7 +619,7 @@ void main() {
         // 星芒的光源级可见性（S2）：在光源自身的屏幕位置采一次深度，显著更近即判定光源在几何体之后。
         // 容差按来源折算（绝对分量）+ 前向深度（相对分量）取较大者：容差太小则光源
         // 自身的模型会把光源剔掉、星芒凭空消失，太大则近处遮挡物漏光。
-        // **它只门禁星芒**：表面项由 S3 的 traceLightRay() 逐像素决定，光晕由 t_hit 逐像素截断。
+        // **它只门禁星芒**：表面项由S3的32点平均逐像素决定，光晕由t_hit逐像素截断。
         // glareIn 已经保证光心投影在画面内，这里的采样恒落在 [0,1]²，不需要越界兜底。
         bool sourceVisible = true;
         if (glareIn && LightOcclusion[i] > 0.5) {
@@ -600,14 +652,14 @@ void main() {
                     orient = max(mix(1.0, dot(N, (C - P) / d), nw), 0.0);
                 }
 
-                // S3：不透明点光只问有没有一次有效相交，沿同一条射线的命中次数不代表半影。
+                // S3默认平均软深度响应；硬命中和7点平均是独立的诊断对照。
                 float visible = 1.0;
                 float shadowWeight = surfaceShadowWeight(d);
                 if (orient > 0.0 && intensity > 0.0 && shadowWeight > 0.0) {
                     int steps = 0;
                     int reason = 0;
                     int result = RAY_CLEAR;
-                    if (CaptureLegacy <= 0.0 && CaptureOcclusionOff < 0.5) {
+                    if (CaptureTraversal >= 0.0 && CaptureLegacy <= 0.0 && CaptureOcclusionOff < 0.5) {
                         result = traceLightRay(P, C, d, N, hasN, remainingRaySteps, steps, reason);
                     }
                     remainingRaySteps -= steps;
@@ -627,7 +679,11 @@ void main() {
                         return;
                     }
                     visible = result == RAY_HIT ? 1.0 - shadowWeight : 1.0;
-                    if (CaptureLegacy > 0.0) visible = mix(1.0, legacyLightVisibility(P, C), shadowWeight);
+                    if (CaptureOcclusionOff < 0.5) {
+                        if (CaptureLegacy > 0.0) visible = mix(1.0, legacyLightVisibility(P, C), shadowWeight);
+                        else if (CaptureTraversal < 0.0) visible = mix(1.0, averagedLightVisibility(P, C), shadowWeight);
+                    }
+                    captureShadow = max(captureShadow, 1.0 - visible);
                 }
 
                 // 逐光源钳制：曲线本身有界，但内容里的强度没有上界，先兜住异常输入
@@ -674,6 +730,11 @@ void main() {
     }
 
     if (CaptureOutput > 0.0) {
+        // 平均算法显示参与光源的最大加权遮挡量：黑=无遮挡，白=完全抑制表面光。
+        if (CaptureTraversal < 0.0 || CaptureLegacy > 0.0) {
+            fragColor = vec4(vec3(captureShadow), 1.0);
+            return;
+        }
         vec3 diagnostic = vec3(0.08);
         if (captureEvaluated) {
             diagnostic = (captureReasons & REASON_BUDGET) != 0 ? vec3(1.0, 0.5, 0.0)

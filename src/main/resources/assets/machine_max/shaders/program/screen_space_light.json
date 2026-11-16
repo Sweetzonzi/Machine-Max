@@ -4,11 +4,9 @@
     "attributes": ["Position"],
     "samplers": [
         { "name": "DiffuseSampler" },
-        { "name": "MCDepthSampler" },
-        { "name": "DepthHierarchySampler" }
+        { "name": "MCDepthSampler" }
     ],
     "uniforms": [
-        { "name": "HierarchyLevels", "type": "float", "count": 1, "values": [0.0] },
         { "name": "FocalPx",         "type": "float",     "count": 1,  "values": [1.0] },
         { "name": "DepthA",          "type": "float",     "count": 1,  "values": [0.0] },
         { "name": "DepthB",          "type": "float",     "count": 1,  "values": [1.0] },

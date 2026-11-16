@@ -34,9 +34,9 @@
 
 | `-Preset` | 内容 |
 | --- | --- |
-| `current`（默认） | 使用输入帧参数，所有`Capture*`控制复位为0；附原因图 |
+| `current`（默认） | 使用输入帧参数，使用所选源码的默认算法；工作区源码设`CaptureTraversal=-1`、其余控制为0，附遮挡量图 |
 | `captured` | 按`frame.json`中实际记录的`comparisons`回放，适合复现截取时的整组结果 |
-| `budget` | 所选源码默认算法的单条/像素共享查询预算各64、128、256、512 |
+| `budget` | 分层硬命中参考（`CaptureTraversal=0`），单条/像素共享预算各64、128、256、512；32点平均不使用这些预算 |
 | `range` | 关闭S3及8/16/64m范围；保留光照、光晕和星芒 |
 | `thickness` | 2/5/10/25cm厚度；使用完整原始像素格参考与逐灯充足预算，排除共享预算竞争 |
 | `all` | 使用`ScreenSpaceLightDiagnosticPreset.forFrame`，与开发截取共用全部预设 |
@@ -62,9 +62,9 @@
 
 `changed_pixels`统计RGB任一通道差值**大于**阈值的像素数，默认阈值2，使用`-Threshold`调整。`nonidentical_pixels`统计任一RGB差值非零的像素，`exact_rgb_match`只在全部RGB逐位一致时为true。Alpha不参与比较。`mean_absolute_channel_difference`是全部RGB通道的平均绝对差，单位为8位显示值。
 
-原因图为所有参与光源的聚合诊断：橙=预算耗尽、紫=裁剪、蓝=缺深度、青=点间未检查、红=确认命中、绿=完整未命中、灰=未查询。高优先级未知原因可以覆盖其他灯的命中显示。没有差异只证明同输入下的数值复现，不证明阴影的几何正确性。
+工作区32点平均及逐灯组的`_reasons.png`是参与光源最大加权遮挡量，黑=0、白=1。硬命中参考与历史硬命中源码的原因图为所有参与光源的聚合诊断：橙=预算耗尽、紫=裁剪、蓝=缺深度、青=点间未检查、红=确认命中、绿=完整未命中、灰=未查询。高优先级未知原因可以覆盖其他灯的命中显示。没有差异只证明同输入下的数值复现，不证明阴影的几何正确性。
 
-`tiled_render_wall_ms`包含分块提交、同步及回读；**它不是生产GPU绘制耗时**，不能用它声称游戏帧率提升。需要成本测量时运行实际生产程序的GPU探针：
+`tiled_render_wall_ms`包含分块提交、同步及回读；**它不是生产GPU绘制耗时**，不能用它声称游戏帧率提升。下方探针测合成压力图；其中预算档位只改变硬命中参考，32点生产程序不受预算影响，额外计时的层级构建不计入32点生产成本：
 
 ```powershell
 $env:MM_S3_BENCHMARK = '1'
@@ -74,7 +74,7 @@ Remove-Item Env:MM_S3_BENCHMARK
 
 ## 像素查询
 
-`-Pixel X,Y -Light N`读取PNG左上角坐标，对指定光源独立调用所选源码中的`traceLightRay`。报告给出HIT/CLEAR/UNKNOWN、层级／原始深度查询次数（不含法线邻域读取）、原因位、表面可见性，以及GPU重建的视空间位置与到光源距离。
+`-Pixel X,Y -Light N`读取PNG左上角坐标，对指定光源独立求值。工作区默认32点平均报告`state=AVERAGED`、`sample_slots=32`及加权`surface_visibility`；sample_slots是采样槽数，屏外槽不读纹理。硬命中参考调用`traceLightRay`。报告给出HIT/CLEAR/UNKNOWN、层级／原始深度查询次数（不含法线邻域读取）、原因位、表面可见性，以及GPU重建的视空间位置与到光源距离。
 
 原因位：1=预算、2=裁剪、4=缺有效深度、8=点采样间隔未检查。查询使用该组的单灯/像素预算，不模拟正常画面中其他光源已经消耗的共享预算。它适合检查“这一盏灯的这条射线”，不能将独立结果解释成完整多灯通路的预算分配。关闭S3和7点平均基线组会标注有限深度追踪不适用。
 
@@ -113,4 +113,4 @@ PowerShell脚本只是参数转发；直接运行Gradle也可以：
 
 其他属性为`shaderOutput`、`shaderVariants`、`shaderBaseline`、`shaderThreshold`、`shaderPixel`（如`1350,1470`）、`shaderLight`、`shaderReducer`、`shaderCompareLeft`和`shaderCompareRight`。所有路径通过独立参数传递，不解析为可执行命令。
 
-`shaderDiagnosticsTest`为无需GPU的输入校验与图像差异契约，纳入`check`。实际GPU解析几何仍由`ScreenSpaceLightProbe`验证。独立源码集只编译入口、共享诊断预设和生产层级构建器/GL状态保存器，不加入模组发布jar。
+`shaderDiagnosticsTest`为无需GPU的输入校验与图像差异契约，纳入`check`。实际GPU平均响应与硬命中参考解析几何由`ScreenSpaceLightProbe`验证。独立源码集只编译入口、共享诊断预设和生产层级构建器/GL状态保存器，不加入模组发布jar。

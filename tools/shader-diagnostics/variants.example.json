@@ -1,17 +1,25 @@
 [
   {
     "name": "thin5cm",
-    "uniforms": { "CaptureThickness": 0.05 },
+    "uniforms": {
+      "CaptureThickness": 0.05,
+      "CaptureTraversal": 0
+    },
     "reasons": true
   },
   {
     "name": "light_end50cm",
-    "uniforms": { "CaptureEndExclusion": 0.5 },
+    "uniforms": {
+      "CaptureEndExclusion": 0.5,
+      "CaptureTraversal": 0
+    },
     "reasons": true
   },
   {
     "name": "without_surface_shadow",
-    "uniforms": { "CaptureOcclusionOff": 1 },
+    "uniforms": {
+      "CaptureOcclusionOff": 1
+    },
     "reasons": false
   }
 ]

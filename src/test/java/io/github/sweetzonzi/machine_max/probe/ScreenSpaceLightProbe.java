@@ -16,7 +16,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
 
 /**
- * 手工 GPU 探针：隐藏 GLFW 窗口，编译生产 GLSL，在合成深度图上核对解析几何与有限预算。
+ * 手工GPU探针：编译生产GLSL，核对软平均响应及硬命中诊断参考的解析几何与预算。
  * 不启动 Minecraft；不测世界深度快照、Iris 接线或游戏画面。
  * 运行：gradlew --offline probeTest --tests '*ScreenSpaceLightProbe'。
  * 环境变量 MM_S3_BENCHMARK=1 时额外测 1080p / 3840×2019 的完整片元程序。
@@ -83,20 +83,23 @@ class ScreenSpaceLightProbe {
             hierarchy = new Hierarchy();
             String source = Files.readString(SHADER);
             int production = program(source);
+            assertEquals(-1, glGetUniformLocation(production, "DepthHierarchySampler"), "生产平均算法不应依赖深度层级");
             glUseProgram(0); glDeleteProgram(production); // 完整 main 也必须编译、链接成功。
             String captureSource = source.replaceFirst("#version 150", "#version 150\n#define MM_LIGHT_CAPTURE 1");
             int captureMain = program(captureSource);
             glUseProgram(0); glDeleteProgram(captureMain);
             String functions = source.substring(0, source.indexOf("void main()"));
+            verifiesSoftAverage(functions);
+            verifiesDetailDepthModel(functions, captureSource);
             verifiesHierarchy(functions, captureSource);
             verifiesShadowRange(functions);
-            String ddaFunctions = withBudget(functions.replace("const float CaptureTraversal = 0.0;", "const float CaptureTraversal = 1.0;"), 128);
+            String ddaFunctions = withBudget(functions.replace("const float CaptureTraversal = -1.0;", "const float CaptureTraversal = 1.0;"), 128);
             int trace = program(ddaFunctions + TRACE_MAIN);
             try {
                 float[] standard = renderTrace(trace, 256, 64, 20, 5, 0, 32, 96, 104, 10, false);
                 double front = 10 + parameter(source, "OCCL_BIAS_M") + parameter(source, "OCCL_BIAS_REL_Z") * 10;
                 verifySingleBand(standard, 256, 32, 105, 180, front,
-                        front + parameter(source, "OCCL_THICKNESS_M"), 20, 5, 96, 104);
+                        front + detailThickness(10), 20, 5, 96, 104);
                 saveStates("thin-blocker", standard, 256, 64);
                 float[] reversed = renderTrace(trace, 256, 64, 20, 5, 0, 32, 96, 104, 10, true);
                 for (int x = 105; x < 180; x++) {
@@ -142,12 +145,14 @@ class ScreenSpaceLightProbe {
                     double z = 10 * scale;
                     double frontScaled = z + parameter(source, "OCCL_BIAS_M") + parameter(source, "OCCL_BIAS_REL_Z") * z;
                     verifySingleBand(scaled, 256, 32, 105, 180, frontScaled,
-                            frontScaled + parameter(source, "OCCL_THICKNESS_M"), 20 * scale, 5 * scale, 96, 104);
+                            frontScaled + detailThickness(z), 20 * scale, 5 * scale, 96, 104);
                 }
                 float[] diagonal = renderTrace(trace, 256, 256, 20, 5, 0, 0, 96, 104, 10, false);
                 verifySingleBand(diagonal, 256, 220, 105, 180, front,
-                        front + parameter(source, "OCCL_THICKNESS_M"), 20, 5, 96, 104);
-                float[] prefix = renderTrace(trace, 512, 64, 20, 5, 0, 32, 336, 348, 10.5f, false);
+                        front + detailThickness(10), 20, 5, 96, 104);
+                // 64点的第18个中点在x≈343.25、z≈10.77；10.7m薄层包含它，且位于128像素前缀外。
+                float distantBlockerZ = 10.7f;
+                float[] prefix = renderTrace(trace, 512, 64, 20, 5, 0, 32, 336, 348, distantBlockerZ, false);
                 assertEquals(2, state(prefix, 512, 480, 32));
                 assertEquals(1, Math.round(prefix[(32 * 512 + 480) * 4 + 2]), "逐像素前缀应报告预算耗尽");
                 int comparison = program(captureSource.substring(0, captureSource.indexOf("void main()")) + TRACE_MAIN);
@@ -155,14 +160,14 @@ class ScreenSpaceLightProbe {
                     glUseProgram(comparison);
                     glUniform1f(glGetUniformLocation(comparison, "CaptureSamples"), 64);
                     glUniform1f(glGetUniformLocation(comparison, "CaptureRayBudget"), 64);
-                    float[] points = renderTrace(comparison, 512, 64, 20, 5, 0, 32, 336, 348, 10.5f, false);
+                    float[] points = renderTrace(comparison, 512, 64, 20, 5, 0, 32, 336, 348, distantBlockerZ, false);
                     assertEquals(0, state(points, 512, 480, 32), "64点全路径采样应能检测这个前缀预算之外的有限层");
                     assertTrue(points[(32 * 512 + 480) * 4 + 1] <= 64, "点采样命中后必须早退");
                     glUniform1f(glGetUniformLocation(comparison, "CaptureSamples"), 0);
                     glUniform1f(glGetUniformLocation(comparison, "CaptureTraversal"), 1);
                     glUniform1f(glGetUniformLocation(comparison, "CaptureRayBudget"), 1024);
                     glUniform1f(glGetUniformLocation(comparison, "CapturePixelBudget"), 1024);
-                    float[] complete = renderTrace(comparison, 512, 64, 20, 5, 0, 32, 336, 348, 10.5f, false);
+                    float[] complete = renderTrace(comparison, 512, 64, 20, 5, 0, 32, 336, 348, distantBlockerZ, false);
                     assertEquals(0, state(complete, 512, 480, 32), "完整DDA参考也应命中同一有限层");
                 } finally {
                     glUseProgram(0); glDeleteProgram(comparison);
@@ -225,6 +230,79 @@ class ScreenSpaceLightProbe {
             glfwTerminate();
             glfwSetErrorCallback(null);
             errors.free();
+        }
+    }
+
+    private static double detailThickness(double sceneZ) {
+        return Math.clamp(.005 * sceneZ, .05, .15);
+    }
+
+    private static void verifiesSoftAverage(String functions) {
+        int average = program(functions + """
+                uniform float ProbeReceiverZ;
+                uniform vec3 ProbeLight;
+                void main() {
+                    vec3 p = viewPos(vec2(0.0, 0.5), ProbeReceiverZ);
+                    float visibility = averagedLightVisibility(p, ProbeLight);
+                    fragColor = vec4(visibility, 0.0, 0.0, 1.0);
+                }
+                """);
+        try {
+            for (boolean reversed : new boolean[]{false, true}) {
+                float a = reversed ? 0 : -1, b = reversed ? .05f : -.05f;
+                float[] depth = new float[128 * 2];
+                Arrays.fill(depth, b / 30 - a);
+                float clear = renderTraceDepth(average, 128, 2, 20, 20, 128, 1, a, b, depth, false)[0];
+                assertEquals(1, clear, 1e-6, "场景在射线后方应放光");
+                depth[42] = depth[128 + 42] = b / 10 - a;
+                float single = renderTraceDepth(average, 128, 2, 20, 20, 128, 1, a, b, depth, false)[0];
+                assertEquals(1 - 1f / 32, single, 2e-5, "一个充分遮挡的采样只贡献1/32，不能整条硬遮挡");
+                Arrays.fill(depth, b / 10 - a);
+                float blocked = renderTraceDepth(average, 128, 2, 20, 20, 128, 1, a, b, depth, false)[0];
+                assertEquals(0, blocked, 1e-6, "连续前景覆盖应能完全抑制表面光");
+                float offscreen = renderTraceDepth(average, 128, 2, 20, 20, 512, 1, a, b, depth, false)[0];
+                assertTrue(offscreen > .5 && offscreen < 1, "越界样本按放光计，不能钳在边缘或缩小分母");
+                float near = renderTraceDepth(average, 128, 2, 20, .01f, 128, 1, a, b, depth, false)[0];
+                assertEquals(1, near, 1e-6, "近裁面内光源缺少可用投影，应放光");
+            }
+        } finally { glUseProgram(0); glDeleteProgram(average); }
+    }
+
+    private static void verifiesDetailDepthModel(String functions, String captureSource) {
+        String main = """
+                uniform float ProbeReceiverZ;
+                void main() {
+                    float sceneInv = (texelFetch(MCDepthSampler, ivec2(gl_FragCoord.xy), 0).r + DepthA) / DepthB;
+                    float smoothInv = filteredSceneInv(gl_FragCoord.xy + vec2(0.25, 0.0), 1.0 / DepthB, sceneInv);
+                    fragColor = vec4(occlusionThickness(1.0 / ProbeReceiverZ), sceneInv, smoothInv, 1.0);
+                }
+                """;
+        int model = program(functions + main);
+        int diagnostic = program(captureSource.substring(0, captureSource.indexOf("void main()")) + main);
+        try {
+            float[] continuous = new float[16];
+            for (int y = 0; y < 2; y++) for (int x = 0; x < 8; x++)
+                continuous[y * 8 + x] = 1 - .05f * (.1f + .0003f * x);
+            for (float z : new float[]{2, 10, 15, 30, 100}) {
+                float[] values = renderTraceDepth(model, 8, 2, z, 5, 0, 0, -1, -.05f, continuous, false);
+                assertEquals(detailThickness(z), values[0], 1e-6, "细节厚度须满足相对深度及米制上下界 z=" + z);
+                int offset = 3 * 4;
+                assertEquals(.0003 * .25, values[offset + 2] - values[offset + 1], 2e-6,
+                        "连续表面应保留射线亚像素位置的深度斜率");
+            }
+            float[] edge = new float[16];
+            for (int y = 0; y < 2; y++) for (int x = 0; x < 8; x++)
+                edge[y * 8 + x] = 1 - .05f * (x < 4 ? .1f : .2f);
+            float[] edgeValues = renderTraceDepth(model, 8, 2, 15, 5, 0, 0, -1, -.05f, edge, false);
+            assertEquals(edgeValues[3 * 4 + 1], edgeValues[3 * 4 + 2], 1e-7,
+                    "物体深度断层应使用点深度，避免插值侵蚀细杆边缘");
+            glUseProgram(diagnostic);
+            glUniform1f(glGetUniformLocation(diagnostic, "CaptureThickness"), .25f);
+            float[] overridden = renderTraceDepth(diagnostic, 8, 2, 15, 5, 0, 0, -1, -.05f, continuous, false);
+            assertEquals(.25, overridden[0], 1e-6, "诊断显式厚度应覆盖相对深度模型");
+            System.out.println("PASS: bounded relative thickness / continuous subpixel depth / silhouette guard / fixed diagnostic override");
+        } finally {
+            glUseProgram(0); glDeleteProgram(model); glDeleteProgram(diagnostic);
         }
     }
 
@@ -308,7 +386,7 @@ class ScreenSpaceLightProbe {
             assertEquals(0, state(longRay, 512, 480, 32), "分层遍历必须找到128像素前缀以外的相交");
             assertTrue(longRay[(32 * 512 + 480) * 4 + 1] < 128, "粗格跨越应给细查留下预算");
             float rayZ = (float) (1.0 / (.05 + .15 * (1 - 1505.5 / 1900.5)));
-            float thinZ = (rayZ - .03f - .125f) / 1.001f;
+            float thinZ = (rayZ - .03f - (float) detailThickness(rayZ) * .5f) / 1.001f;
             float[] thin = renderTrace(trace, 2048, 64, 20, 5, 0, 32, 1505, 1506, thinZ, false);
             assertEquals(0, state(thin, 2048, 1900, 32), "粗层必须覆盖稀疏采样点之间的单像素遮挡");
             int sparse = program(captureSource.substring(0, captureSource.indexOf("void main()")) + TRACE_MAIN);
@@ -321,7 +399,7 @@ class ScreenSpaceLightProbe {
             } finally { glUseProgram(0); glDeleteProgram(sparse); }
             float[] standard = renderTrace(trace, 256, 64, 20, 5, 0, 32, 96, 104, 10, false);
             double front = 10.0 + .03 + .001 * 10.0;
-            verifySingleBand(standard, 256, 32, 105, 180, front, front + .25, 20, 5, 96, 104);
+            verifySingleBand(standard, 256, 32, 105, 180, front, front + detailThickness(10), 20, 5, 96, 104);
             float[] reversed = renderTrace(trace, 256, 64, 20, 5, 0, 32, 96, 104, 10, true);
             for (int x = 105; x < 180; x++) assertEquals(state(standard, 256, x, 32), state(reversed, 256, x, 32));
             assertNoHits(renderTrace(trace, 256, 64, 20, 12, 0, 32, 96, 104, 10, false), "有限层后方穿越不能命中");

@@ -186,17 +186,6 @@ public class ScreenSpaceLightEffect {
         // 标量经链写入（对未声明该 uniform 的 pass 是空操作），数组必须拿到 pass 引用全量写入
         float[] depth = BlastProjectionUtil.calibrateDepth(projectionMatrix, CALIB_Z_NEAR, CALIB_Z_FAR);
         float shadowRange = MMClientConfig.getScreenSpaceLightShadowRange();
-        if (hierarchy == null || hierarchyFailed) return;
-        if (shadowRange > 0f || capture.isRequested()) {
-            try {
-                hierarchy.build(worldDepth.getDepthTextureId(), width, height, depth[0], depth[1]);
-            } catch (RuntimeException e) {
-                hierarchyFailed = true;
-                MachineMax.LOGGER.error("屏幕空间光照：深度层级构建失败，暂停本效果直至重新进入世界", e);
-                return;
-            }
-        }
-        chain.setUniform("HierarchyLevels", hierarchy.levels());
         chain.setUniform("FocalPx", focalPx);
         chain.setUniform("DepthA", depth[0]);
         chain.setUniform("DepthB", depth[1]);
@@ -212,8 +201,10 @@ public class ScreenSpaceLightEffect {
         lightGlowUniform.set(buffer.glow());
         lightGlareUniform.set(buffer.glare());
 
-        capture.capture(mc.getMainRenderTarget(), worldDepth, hierarchy, frame, buffer, depth[0], depth[1],
-                MMClientConfig.getScreenSpaceLightNormalWeight(), SOURCE_DEPTH_RELATIVE_TOLERANCE, shadowRange);
+        if (capture.isRequested() && prepareCaptureHierarchy(width, height, depth[0], depth[1])) {
+            capture.capture(mc.getMainRenderTarget(), worldDepth, hierarchy, frame, buffer, depth[0], depth[1],
+                    MMClientConfig.getScreenSpaceLightNormalWeight(), SOURCE_DEPTH_RELATIVE_TOLERANCE, shadowRange);
+        }
 
         chain.process(partialTick);
         mc.getMainRenderTarget().bindWrite(true);
@@ -224,20 +215,37 @@ public class ScreenSpaceLightEffect {
         capture.request();
     }
 
+    /** 深度层级只供F6的硬命中对照使用；诊断初始化失败时表面光照照常绘制。 */
+    private boolean prepareCaptureHierarchy(int width, int height, float depthA, float depthB) {
+        if (hierarchyFailed) {
+            capture.cancel();
+            return false;
+        }
+        try {
+            if (hierarchy == null) {
+                var resources = Minecraft.getInstance().getResourceManager();
+                try (var stream = resources.getResourceOrThrow(DEPTH_REDUCE_LOCATION).open()) {
+                    hierarchy = new ScreenSpaceDepthPyramid(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
+                }
+            }
+            hierarchy.build(worldDepth.getDepthTextureId(), width, height, depthA, depthB);
+            return true;
+        } catch (IOException | RuntimeException e) {
+            hierarchyFailed = true;
+            capture.cancel();
+            MachineMax.LOGGER.error("屏幕空间光照：诊断深度层级构建失败，重新进入世界后可重试截取", e);
+            return false;
+        }
+    }
+
     /**
      * 加载或重新加载 PostChain 资源，并取出数组 uniform 的引用。
      */
     public void load() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.getResourceManager() == null) return;
-        ScreenSpaceDepthPyramid newHierarchy = null;
         PostChain newChain = null;
         try {
-            String reduceSource;
-            try (var stream = mc.getResourceManager().getResourceOrThrow(DEPTH_REDUCE_LOCATION).open()) {
-                reduceSource = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-            }
-            newHierarchy = new ScreenSpaceDepthPyramid(reduceSource);
             newChain = new PostChain(
                     mc.getTextureManager(),
                     mc.getResourceManager(),
@@ -247,7 +255,7 @@ public class ScreenSpaceLightEffect {
             if (chain != null) chain.close();
             if (hierarchy != null) hierarchy.close();
             chain = newChain;
-            hierarchy = newHierarchy;
+            hierarchy = null;
             hierarchyFailed = false;
             cachedWidth = mc.getWindow().getWidth();
             cachedHeight = mc.getWindow().getHeight();
@@ -259,7 +267,6 @@ public class ScreenSpaceLightEffect {
             MachineMax.LOGGER.debug("屏幕空间光照后处理已加载");
         } catch (IOException | RuntimeException e) {
             if (newChain != null && newChain != chain) newChain.close();
-            if (newHierarchy != null && newHierarchy != hierarchy) newHierarchy.close();
             MachineMax.LOGGER.error("屏幕空间光照后处理加载失败", e);
             loaded = true; // 标记已尝试，不再重复失败
         }
@@ -309,7 +316,6 @@ public class ScreenSpaceLightEffect {
         lightGlareUniform = null;
         for (PostPass pass : ((PostChainAccessor) newChain).machineMax$getPasses()) {
             if (!PASS_NAME.equals(pass.getName())) continue;
-            pass.addAuxAsset("DepthHierarchySampler", hierarchy::texture, 1, 1);
             lightViewUniform = pass.getEffect().getUniform("LightView");
             lightColorUniform = pass.getEffect().getUniform("LightColor");
             lightTolUniform = pass.getEffect().getUniform("LightTol");

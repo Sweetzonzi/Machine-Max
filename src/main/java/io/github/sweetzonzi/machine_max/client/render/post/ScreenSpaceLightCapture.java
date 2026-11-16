@@ -145,7 +145,7 @@ final class ScreenSpaceLightCapture {
                 item.addProperty("ray_budget_override", preset.rayBudget());
                 item.addProperty("pixel_budget_override", preset.pixelBudget());
                 item.addProperty("whole_path_samples", preset.samples());
-                item.addProperty("traversal", preset.traversal() == 0 ? "hierarchy" : preset.traversal() == 1 ? "major_axis_dda" : "pixel_grid");
+                item.addProperty("traversal", preset.traversal() < 0 ? "soft_average32" : preset.traversal() == 0 ? "hierarchy" : preset.traversal() == 1 ? "major_axis_dda" : "pixel_grid");
                 item.addProperty("thickness_override_m", preset.thickness());
                 item.addProperty("legacy_seven_point_average", preset.legacy());
                 item.addProperty("normal_space_thickness", preset.normalThickness());
@@ -161,25 +161,27 @@ final class ScreenSpaceLightCapture {
             Files.writeString(directory.resolve("README.txt"), """
                     所有图片使用同一帧的颜色、世界深度、投影和光源，世界画面不含手部/HUD。
                     可用仓库tools/shader-diagnostics/diagnose.ps1独立回放，使用说明见该目录README.md。
-                    01_current：当前分层深度遍历；02_dda512：逐像素DDA，单条/像素总预算均为512。
+                    01_current：32点单边软深度响应平均；02_dda512：逐像素DDA，单条/像素总预算均为512。
                     03_uniform64、04_uniform128：每盏灯64/128个中点覆盖全程，有限厚度，命中即早退。
                     05_full：逐像素走完整可见路径，各灯均有完整预算；不表示补回隐藏/离屏几何。
                     06_full_thickness1m：只把05的厚度改为1m，用于判断厚度敏感性，不代表几何正确答案。
-                    07_legacy7：7点覆盖全程、单边深度、沿线命中平均；只重放旧遮挡算子。
+                    07_legacy7：7点t=k/8、单边软深度响应平均，使用与32点相同的米制偏置和过渡宽度。
                     08_hierarchy128：分层查询预算128；09_hierarchy_full：分层遍历的充足预算参考。
                     10_normal_thickness：完整遍历，0.25m沿局部法线给出；仅为斜角候选，不是默认模型。
                     11_without_surface_shadow：只关闭表面项S3，保留法线/衰减/光晕/星芒。
-                    12_lightN：独立保留槽N光源与原因图，各有完整默认预算；可对照frame.json的光心。
-                    13_end05、14_end10：光心端排除0.5m/1m，定位炮口邻近的自遮挡。
+                    12_lightN：独立保留槽N光源的32点平均与遮挡量图；可对照frame.json的光心。
+                    13_end05、14_end10：分层硬命中参考，光心端排除0.5m/1m，定位炮口邻近的自遮挡。
                     15_range8、16_range16、17_range64：只调整遮挡计算范围为8/16/64米，范围末端25%平滑淡出。
-                    其余各组使用frame.json的ShadowRange；范围内检查完整P→C，full表示预算充足，仍受范围限制。
+                    其余各组使用frame.json的ShadowRange；32点覆盖P→C的[0.06,0.88]，full表示硬命中参考预算充足，受范围限制。
                     法线厚度候选的步数只计主深度查询，不含额外邻域法线采样；仅用于离线对照。
-                    原因图按所有参与表面光源聚合：橙=预算耗尽，紫=裁剪，蓝=缺有效深度，
+                    平均算法的_reasons图显示参与光源的最大加权遮挡量：黑=无遮挡，白=完全抑制表面光。
+                    硬命中原因图按所有参与表面光源聚合：橙=预算耗尽，紫=裁剪，蓝=缺有效深度，
                     青=全程点采样未命中（点间部分未检查），红=命中，绿=完整未命中，暗灰=未查询S3（无表面贡献或超范围）。
                     多原因同时存在时依次优先显示橙、紫、蓝、青；有灯命中不消除其他灯的未知原因。
                     depth.f32be：大端float32，OpenGL自下而上行序；PNG已翻转为自上而下。
                     frame.json包含全部光源数组、投影/视图矩阵和标定参数；fragment.fsh、vertex.vsh是本次实际重放的源码；SHA-256记录在元数据中。
-                    override=0表示使用源码默认值。render_wall_ms含分块提交/同步，不是正式GPU帧时间基准。
+                    预算/厚度/端点override=0表示使用源码默认值；CaptureTraversal=-1表示32点平均，0/1/2表示硬命中参考。
+                    render_wall_ms含分块提交/同步，不是正式GPU帧时间基准。
                     """, StandardCharsets.UTF_8);
             saved = true;
         } catch (IOException | RuntimeException e) {

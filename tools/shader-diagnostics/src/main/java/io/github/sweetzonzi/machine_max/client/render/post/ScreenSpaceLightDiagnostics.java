@@ -114,6 +114,10 @@ public final class ScreenSpaceLightDiagnostics {
                 if (variant.reasons && gpu.uniform("CaptureOutput") >= 0) {
                     BufferedImage reasons = gpu.render(variant, true);
                     writeImage(reasons, output.resolve(variant.name + "_reasons.png"));
+                    boolean average = fragment.contains("float averagedLightVisibility(")
+                            && (gpu.effectiveUniforms(variant).getOrDefault("CaptureTraversal", -1f) < 0
+                            || gpu.effectiveUniforms(variant).getOrDefault("CaptureLegacy", 0f) > 0);
+                    item.addProperty("diagnostic_view", average ? "maximum_weighted_occlusion" : "trace_reasons");
                     item.add("reason_counts", reasonCounts(reasons));
                 }
                 if (pixel != null) item.add("pixel", gpu.pixel(variant, pixel[0], pixel[1], light));
@@ -172,7 +176,7 @@ public final class ScreenSpaceLightDiagnostics {
             }
             case "budget" -> {
                 for (int budget : new int[]{64, 128, 256, 512}) result.add(new Variant("budget" + budget,
-                        Map.of("CaptureRayBudget", (float) budget, "CapturePixelBudget", (float) budget), true));
+                        Map.of("CaptureTraversal", 0f, "CaptureRayBudget", (float) budget, "CapturePixelBudget", (float) budget), true));
             }
             case "thickness" -> {
                 float full = frame.width + frame.height + 2;
@@ -193,7 +197,7 @@ public final class ScreenSpaceLightDiagnostics {
                         for (var key : flags) if (saved.has(key[0])) values.put(key[1], saved.get(key[0]).getAsBoolean() ? 1f : 0f);
                         if (saved.has("only_light_slot")) values.put("CaptureOnlyLight", saved.get("only_light_slot").getAsFloat() + 1);
                         if (saved.has("traversal")) values.put("CaptureTraversal", switch (saved.get("traversal").getAsString()) {
-                            case "hierarchy" -> 0f; case "major_axis_dda" -> 1f; case "pixel_grid" -> 2f;
+                            case "soft_average32" -> -1f; case "hierarchy" -> 0f; case "major_axis_dda" -> 1f; case "pixel_grid" -> 2f;
                             default -> throw new IllegalArgumentException("Unknown captured traversal");
                         });
                     }
@@ -354,7 +358,8 @@ public final class ScreenSpaceLightDiagnostics {
         JsonObject pixel(Variant variant, int x, int y, int light) {
             JsonObject result = new JsonObject();
             result.addProperty("x", x); result.addProperty("y", y); result.addProperty("light_slot", light);
-            result.addProperty("budget_scope", "independent single light; not the normal shared-light competition");
+            boolean averaged = source.contains("float averagedLightVisibility(") && effectiveUniforms(variant).getOrDefault("CaptureTraversal", -1f) < 0;
+            result.addProperty("budget_scope", averaged ? "independent 32-point average" : "independent single light; not the reference shared-light competition");
             if (variant.uniforms.getOrDefault("CaptureLegacy", 0f) > 0 || variant.uniforms.getOrDefault("CaptureOcclusionOff", 0f) > 0) {
                 result.addProperty("trace", "not applicable: finite-depth trace is bypassed"); return result;
             }
@@ -381,12 +386,18 @@ public final class ScreenSpaceLightDiagnostics {
                             float orient = hasN && d > 0.0001 ? max(mix(1.0, dot(N, (C-P)/d), clamp(NormalWeight, 0.0, 1.0)), 0.0) : 1.0;
                             int steps = 0, reason = 0, state = RAY_CLEAR;
                             if (d < LightView[i*4+3] && orient > 0.0 && LightColor[i*4+3] > 0.0 && weight > 0.0) {
+                                AVERAGE
                                 int available = CapturePixelBudget > 0.0 ? int(CapturePixelBudget) : OCCL_PIXEL_STEPS;
                                 state = traceLightRay(P, C, d, N, hasN, available, steps, reason);
                             }
                             fragColor = vec4(float(state), float(steps), float(reason), state == RAY_HIT ? 1.0-weight : 1.0);
                         }
-                        """.replace("WEIGHT", weight));
+                        """.replace("WEIGHT", weight).replace("AVERAGE", source.contains("float averagedLightVisibility(") ? """
+                                if (CaptureTraversal < 0.0) {
+                                    float visibility = mix(1.0, averagedLightVisibility(P, C), weight);
+                                    fragColor = vec4(-1.0, 32.0, 0.0, visibility); return;
+                                }
+                                """ : ""));
             }
             int pixelTexture = texture(GL_RGBA32F, GL_RGBA, GL_FLOAT, null, 1, 1), pixelFbo = glGenFramebuffers();
             try {
@@ -395,8 +406,8 @@ public final class ScreenSpaceLightDiagnostics {
                 glUniform2f(glGetUniformLocation(traceProgram, "DiagnosticPixel"), x + .5f, frame.height - y - .5f);
                 set(traceProgram, "DiagnosticLight", light); set(traceProgram, "DiagnosticMode", 0);
                 glDrawArrays(GL_TRIANGLES, 0, 3); float[] values = new float[4]; glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, values);
-                result.addProperty("state", switch (Math.round(values[0])) { case 0 -> "HIT"; case 1 -> "CLEAR"; default -> "UNKNOWN"; });
-                result.addProperty("queries", Math.round(values[1])); result.addProperty("reason_bits", Math.round(values[2])); result.addProperty("surface_visibility", values[3]);
+                result.addProperty("state", switch (Math.round(values[0])) { case -1 -> "AVERAGED"; case 0 -> "HIT"; case 1 -> "CLEAR"; default -> "UNKNOWN"; });
+                result.addProperty(averaged ? "sample_slots" : "queries", Math.round(values[1])); result.addProperty("reason_bits", Math.round(values[2])); result.addProperty("surface_visibility", values[3]);
                 set(traceProgram, "DiagnosticMode", 1); glDrawArrays(GL_TRIANGLES, 0, 3); glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, values);
                 result.addProperty("has_surface", values[3] >= 0);
                 if (values[3] >= 0) result.add("view_position_xyz_and_light_distance", JSON.toJsonTree(values));
@@ -524,7 +535,7 @@ public final class ScreenSpaceLightDiagnostics {
                 <div id="view"><img src="{{REFERENCE}}"><img id="candidate" src="{{FIRST}}"></div>
                 <p><a href="report.json">完整参数、输入来源及像素查询</a> · <a href="metrics.csv">差异CSV</a> · <a href="overview.png">对照拼图</a></p>
                 <p>changed_pixels：RGB任一通道差值超过指定阈值的像素数；exact_rgb_match按全部RGB逐位比较。分块回放耗时含提交和同步，不是正式GPU性能基准。</p>
-                <p>原因图：橙=预算，紫=裁剪，蓝=缺深度，青=点间未检查，红=命中，绿=完整未命中，灰=未查询。未知区域按放光处理。</p>
+                <p>平均算法诊断图为最大加权遮挡量：黑=0，白=1。硬命中原因图：橙=预算，紫=裁剪，蓝=缺深度，青=点间未检查，红=命中，绿=完整未命中，灰=未查询；未知区域放光。</p>
                 <table><tr><th>候选</th><th>changed_pixels</th><th>输出</th></tr>{{ROWS}}</table>
                 <h2>全组预览</h2><img class="overview" src="overview.png">
                 <script>const v=document.getElementById('variant'),c=document.getElementById('candidate'),s=document.getElementById('split');v.onchange=()=>c.src=v.value;s.oninput=()=>c.style.clipPath='inset(0 '+(100-s.value)+'% 0 0)';</script></html>
