@@ -272,6 +272,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private static final int PAUSE_TIMEOUT_TICKS = 200;
 
     /**
+     * 分辨"本端在途的射击"与"权威只做过的减少"所用的单向延迟上限（业务 tick）。<br>
+     * 权威样本与本端副本的余量差，只有超出本端这段时间里可能打掉的发数，才算权威独有的减少，
+     * 见 {@link #inFlightShotBound()}。取 6 tick（300 ms 单程、600 ms 往返）：这是单人载具场景下
+     * 该上界的保守值，延迟再高时两种来源本来就分不开，宁可多保留本端一会——判错的代价是多打几发，
+     * 而照抄的代价是本端那几发没有声音与炮口特效。
+     */
+    private static final int SHIFT_CEILING_TICKS = 6;
+
+    /**
      * 本管已经受理过的轮次数，下一次受理取它加一。<br>
      * 这是轮次的唯一来源：本端每成功受理一份作业就推进一次，改认权威作业时改成权威那一份的轮次。它只作样本
      * 与收据的先后标记，不参与作业身份，因此不会像取号那样让两端的账本键错开——机械槽与预留的键是结构三元组
@@ -441,29 +450,101 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         }
         if (pendingBelt) {
             pendingBelt = false;
-            applySyncedBelt();
+            applySyncedBelt(false);
         }
         if (pendingChambered) {
             pendingChambered = false;
-            applySyncedChamber();
+            applySyncedChamber(false);
         }
     }
 
     /**
      * 按同步值重建已装 Belt 的本地副本。<br>
      * 必须是副本：客户端会就地消耗它（取一发进膛、射击扣额度），不能改到同步基线本身。
+     *
+     * @param force true 表示无条件按同步值收口（本端替这一轮交过一份、而权威判它未交付时用）
      */
-    private void applySyncedBelt() {
+    private void applySyncedBelt(boolean force) {
         AmmoBelt synced = getSynchedData().get(BELT_ID).orElse(null);
+        int inFlightBound = inFlightShotBound();
+        if (!force && !AmmoBelt.sampleOverrides(loadedBelt, synced, inFlightBound)) {
+            traceBelt(loadedBelt, synced, inFlightBound, true);
+            return;
+        }
         loadedBelt = synced == null ? null : synced.copy();
-        WeaponTrace.log(getLevel(), "sync-belt launcher={} loaded={}", traceId(),
-                loadedBelt == null ? "-" : loadedBelt.remaining() + "/" + loadedBelt.length());
+        traceBelt(loadedBelt, synced, inFlightBound, false);
     }
 
-    /** 按同步值重建膛内那一发。 */
-    private void applySyncedChamber() {
+    /**
+     * 打印一次已装 Belt 的落地：本端副本与权威样本两份读数的余量、头部弹种与回充运行态。<br>
+     * 三样一起打是因为头部弹种由余量按模式取模推出（{@link AmmoBelt#nextRoundId()}），两份余量的奇偶差
+     * 直接表现成"下一发是哪一型"不同；而回充是余量在射击之外唯一会动的地方，本端那份回充由本端自己推进，
+     * 因此进度与延迟各记一份。{@code keep} 说明这一次是留本端还是按权威落地。<br>
+     * 余量相同则头部弹种必然相同；反过来两端的余量差正好是模式总发数的整数倍时弹种也相同，因此两个字段都要看。
+     *
+     * @param local     落地后的本端副本，可为 null
+     * @param synced    权威样本，可为 null
+     * @param bound     这一次比对用的在途上界
+     * @param keepLocal true 表示保留了本端副本
+     */
+    private void traceBelt(@Nullable AmmoBelt local, @Nullable AmmoBelt synced, int bound, boolean keepLocal) {
+        if (!WeaponTrace.isEnabled()) return;
+        WeaponTrace.log(getLevel(), "sync-belt launcher={} local={} synced={} head={} rech={} bound={} keep={}",
+                traceId(), beltCount(local), beltCount(synced), beltHead(local) + "/" + beltHead(synced),
+                beltRecharge(local) + "/" + beltRecharge(synced), bound, keepLocal ? "local" : "authority");
+    }
+
+    /** 插桩用的余量写法：{@code 余量/长度}；没有副本时 {@code -}。 */
+    private static String beltCount(@Nullable AmmoBelt belt) {
+        return belt == null ? "-" : belt.remaining() + "/" + belt.length();
+    }
+
+    /** 插桩用的头部弹种：没有副本、或余量为零取不到弹种时 {@code -}。 */
+    private static String beltHead(@Nullable AmmoBelt belt) {
+        if (belt == null) return "-";
+        ResourceLocation head = belt.nextRoundId();
+        return head == null ? "-" : head.toString();
+    }
+
+    /** 插桩用的回充运行态：{@code 零碎进度:延迟tick}；没有回充配置时 {@code -}。 */
+    private static String beltRecharge(@Nullable AmmoBelt belt) {
+        if (belt == null || !belt.hasRecharge()) return "-";
+        return (Math.round(belt.rechargeProgress() * 100f) / 100f) + ":" + belt.rechargeDelayTicks();
+    }
+
+    /**
+     * 本端在途射击最多可能有几发：权威写下样本之后、本端落地之前，这段时间里本端还能打掉几发。<br>
+     * 本端时间线比权威晚一个单程，因此两者的余量差只有在这一档以内才解释得成"本端还没打的那几发"。
+     * 由射速把 {@link #SHIFT_CEILING_TICKS} 折成发数，再加跨在窗口边界上的那一发；射速不可用时按一发
+     * 算——折算不出来的武器不靠这条判据细分，差额超过一发即按权威收口。
+     */
+    private int inFlightShotBound() {
+        long intervalU = FirePhase.intervalUFor(attr.staticAttribute.getBreech().fireRate());
+        if (intervalU <= 0L) return 1;
+        long intervalTicks = (intervalU + FirePhase.TICK_UNITS - 1) / FirePhase.TICK_UNITS;
+        return (int) (SHIFT_CEILING_TICKS / intervalTicks + 1);
+    }
+
+    /**
+     * 按同步值重建膛内那一发。<br>
+     * 权威的膛内样本取的是它那一 tick 末尾的值，而它在交付那一 tick 就开火清膛了；本端这一发还要等
+     * 下一次相位到期才打出去。这段窗口里样本是空的，照抄就等于把本端手里那一发抹掉——服务端打出去了，
+     * 本端这一发没有声音与炮口特效。<br>
+     * 因此空样本不清本端膛内的弹：本端这一发是自己时间线上的那一发，权威的空样本说的是"它已经把它打掉了"，
+     * 而不是"本端不该有这一发"。非空样本一律覆盖，权威手里有弹时本端就按它那一发（换装、换弹种这类
+     * 本端产不出来的变化由此落地）。撤回是另一回事：那里必须按权威值收口，走 {@code force = true}。
+     *
+     * @param force true 表示无条件按同步值收口（本端替这一轮交过一发、而权威判它未交付时用）
+     */
+    private void applySyncedChamber(boolean force) {
         ProjectileType stored = AmmoBelt.resolve(getLevel(), getSynchedData().get(CHAMBERED_ID).orElse(null));
-        chamberedType = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
+        BallisticProjectileType synced = stored instanceof BallisticProjectileType kinetic ? kinetic : null;
+        if (!force && synced == null && chamberedType != null) {
+            WeaponTrace.log(getLevel(), "sync-chamber launcher={} ammo={} keep=local", traceId(),
+                    chamberedType.getRegistryKey());
+            return;
+        }
+        chamberedType = synced;
         WeaponTrace.log(getLevel(), "sync-chamber launcher={} ammo={}", traceId(),
                 chamberedType == null ? "-" : chamberedType.getRegistryKey());
     }
@@ -636,43 +717,68 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 应用结束结果（客户端）。<br>
-     * 轮次匹配才算本机的事：要么就是当前这条本地作业，要么是刚才本地替它交过的那一条（本地先完成、
-     * 权威结果后到）。匹配时按身份收尾本地作业，并把膛内弹与已装 Belt 按权威值收口——本地预测的内容不得
-     * 活过终态，否则一条被撤销的作业会在本机留下一份多出来的弹。不匹配的是更早作业的结果：只当作已经
-     * 应用过，既不结束当前作业，也不改它的进度与弹药内容（库存与预留本就按各自的同步值校准）。
+     * 轮次匹配才算本机的事，两种匹配分开处理：轮次等于<b>当前这条本地作业</b>时，这条终态就是它自己的
+     * 结局；轮次等于<b>刚才本地交付过的那一条</b>时，本端已经自己走到了终点，终态只是收据。两者可以同时
+     * 成立——本端替上一轮交过一发，下一轮已经在手——因此不能压成一个"是否匹配本机"的判断：收据只许动
+     * 弹药内容，不许结束正在推进的那一条作业。<br>
+     * 不匹配的是更早作业的结果：只当作已经应用过，既不结束当前作业，也不改它的进度与弹药内容
+     * （库存与预留本就按各自的同步值校准）。
+     * <p><b>已交付的终态要在本端兑现内容：</b>两端的受理可以差一拍（切换弹种、指认晚到），于是权威的
+     * 终态可能先到、本端这条预测还差一两 tick 没走完。这时不能只把作业按已交付收尾——那样本端什么也没交，
+     * 而同一批里的膛内样本已经是打空的那一发（服务端在交付那一 tick 就开火并清膛），本端于是既没有弹也
+     * 没有作业：服务端打出去了，本端这一发没有声音与炮口特效。按本端受理时取得的那份预留把这一份兑现掉
+     * （{@link #deliverAuthorized(ReloadJob)}），本端就不少这一发，下一 tick 按相位补射。
      * <p>列表按发生顺序逐条应用，因此同一轮里连续结束的两条作业都能被看到——第一条结束、第二条才
      * 建得起来。轮次水位只用于忽略重复到达：一轮里出现的新条目的最大轮次会推进水位，已经应用过的
      * 旧条目不再重复处理。
      * <p><b>白预测的撤回：</b>本端替某一轮交过一发、而权威判它未交付时，那一发是白预测。弹药内容按权威值
-     * 收口（上面那一步就是主动重取一次同步值），本地交付收据随即清掉，别让它再匹配下一轮。轮次不退回：
-     * 它按受理计，而那次受理确实发生过。
+     * 收口（主动重取一次同步值），本地交付收据随即清掉，别让它再匹配下一轮。轮次不退回：它按受理计，
+     * 而那次受理确实发生过。
      */
     private void applyJobResult() {
         ReloadJobResults results = getSynchedData().get(JOB_RESULTS_ID);
         for (ReloadJobResults.Entry result : results.entries()) {
             if (result.round() <= lastAppliedResultRound) continue;
             ReloadJob current = reloadJob;
-            boolean mine = current != null
-                    ? current.round() == result.round()
-                    : result.round() == lastLocalDeliveryRound;
+            boolean onLiveJob = current != null && current.round() == result.round();
+            boolean onReceipt = !onLiveJob && result.round() == lastLocalDeliveryRound;
             WeaponTrace.log(getLevel(), "reload-result launcher={} round={} delivered={} mine={}", traceId(),
-                    result.round(), result.delivered(), mine);
-            if (!mine) {
-                lastAppliedResultRound = Math.max(lastAppliedResultRound, result.round());
-                continue;
-            }
-            // 终态即收尾：本地这一刻还活着的作业按身份还回它占用的执行资源与预留，再按权威值收口弹药内容
-            finishReloadJob(result.delivered());
-            applySyncedBelt();
-            applySyncedChamber();
-            if (result.round() == lastLocalDeliveryRound) {
-                if (!result.delivered()) {
-                    WeaponTrace.log(getLevel(), "reload-retract launcher={} round={}", traceId(), result.round());
+                    result.round(), result.delivered(), onLiveJob || onReceipt);
+            if (onLiveJob) {
+                if (result.delivered()) {
+                    WeaponTrace.log(getLevel(), "reload-terminal-deliver launcher={} round={} progress={}/{}",
+                            traceId(), current.round(), current.elapsedTicks(), current.totalTicks());
+                    deliverAuthorized(current);
+                } else {
+                    finishReloadJob(false);
                 }
-                lastLocalDeliveryRound = 0;
+            } else if (onReceipt && !result.delivered()) {
+                WeaponTrace.log(getLevel(), "reload-retract launcher={} round={}", traceId(), result.round());
+                // 这一轮的交付作废：内容按权威值收口，两项都强制落地，本端不该再留着它
+                applySyncedBelt(true);
+                applySyncedChamber(true);
             }
+            if (result.round() == lastLocalDeliveryRound) lastLocalDeliveryRound = 0;
             lastAppliedResultRound = Math.max(lastAppliedResultRound, result.round());
         }
+    }
+
+    /**
+     * 权威判这一轮已交付、而本端这条预测还没走完时，在本端把它交付掉。<br>
+     * 内容来自本端受理时取得的那份预留（{@link #deliver} 走的就是这条路），因此交付的弹种与份额与权威
+     * 那一份相同，不另建一条"按同步值补发"的旁路。路解析不出来（结构变化把运输者或提供者移出了发现结果）
+     * 就只按已交付收尾：内容交不出来，至少有正确的终态，不把作业挂在这里等它。
+     * <p><b>调用线程：</b>主线程（客户端 tick 收尾）。
+     *
+     * @param job 轮次与权威终态一致的本地作业
+     */
+    private void deliverAuthorized(ReloadJob job) {
+        AmmoPath route = reloadRoute();
+        if (route == null) {
+            finishReloadJob(true);
+            return;
+        }
+        deliver(route, job);
     }
 
     // ——— IAmmoConsumer 实现 ———
@@ -701,7 +807,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         return true;
     }
 
-    /** 写入膛内那一发并同步；客户端不写。 */
+    /**
+     * 写入膛内那一发并同步；客户端不写。<br>
+     * 换内容只走这一条路：射击、退膛、从已装 Belt 补膛、交付与读档都经过它。
+     */
     private void setChambered(@Nullable BallisticProjectileType round) {
         if (chamberedType == round) return;
         chamberedType = round;
@@ -1166,8 +1275,10 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         });
 
         if (firedCount > 0 && WeaponTrace.isEnabled()) {
-            WeaponTrace.log(getLevel(), "fire-shot launcher={} n={} intervalU={} phaseU={} cooldownU={}", traceId(),
-                    firedCount, intervalU, firePhase.phaseU(), firePhase.cooldownU());
+            // ammo 只记第一发：一个业务 tick 打出多发时两端的发数与相位已经对齐，弹种看第一发即可
+            WeaponTrace.log(getLevel(), "fire-shot launcher={} n={} ammo={} intervalU={} phaseU={} cooldownU={}",
+                    traceId(), firedCount, firedTypes.getFirst().getRegistryKey(),
+                    intervalU, firePhase.phaseU(), firePhase.cooldownU());
         }
 
         // 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）

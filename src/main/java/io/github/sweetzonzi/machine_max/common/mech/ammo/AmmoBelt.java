@@ -349,6 +349,34 @@ public final class AmmoBelt {
     }
 
     /**
+     * 权威样本能不能直接落地成本端副本。<br>
+     * 样本里的余量与本端副本的余量是同一串弹上的两个读数。差出来的那几发只在两种情况下存在：本端的
+     * 在途射击（权威先打掉了、本端还要再打）与权威独有的动作（付费回充、外部退弹回收、强制减少）。
+     * 前者照抄会把本端还要打的那几发一起抹掉——投射物飞出去了，本端这几发连声音与炮口特效都没有；
+     * 后者不落地，本端就会一直多打那几发。
+     * <p>
+     * 分界是本端在途射击最多能有几发，它有个上界：本端比权威晚一个单程，这段时间里最多打掉
+     * {@code shortfallBound} 发，因此差额超出这个上界就不可能是"本端还没打的那几发"，而是权威只做过
+     * 的减少。权威样本变空同理：只剩末几发才解释得成"本端还在打这条弹链"。
+     * <p>
+     * 余量变大不做这个判断——本端产不出来的加法只有权威有（付费回充一次一发，本端没有能源支出预测；
+     * 外部退弹回收也只有权威知道），而它的错判是自愈的：多出来的一发打掉之后，下一份样本就把差额收回。
+     *
+     * @param local          本端当前的副本，可为 null
+     * @param synced         权威样本，可为 null
+     * @param shortfallBound 本端在途射击最多可能有几发（调用方按射速把一个单程折成发数）
+     * @return true 表示按权威样本重建副本
+     */
+    public static boolean sampleOverrides(@Nullable AmmoBelt local, @Nullable AmmoBelt synced, int shortfallBound) {
+        if (local == null) return true;
+        int bound = Math.max(0, shortfallBound);
+        if (synced == null) return local.remaining > bound;
+        if (!local.sameDeliverySpec(synced)) return true;
+        if (synced.remaining > local.remaining) return true;
+        return local.remaining - synced.remaining > bound;
+    }
+
+    /**
      * 弹链显示名：{@link #label()} 非空时按字面返回，否则取首发弹种的语言键文本。
      * <p>
      * <b>仅在客户端调用</b>：内容包的翻译键只在客户端语言表里。
