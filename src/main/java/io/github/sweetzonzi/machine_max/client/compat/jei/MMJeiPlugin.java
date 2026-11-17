@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.compat.jei;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.compat.jei.category.BlueprintResearchRecipeCategory;
 import io.github.sweetzonzi.machine_max.client.compat.jei.category.FabricatingRecipeCategory;
+import io.github.sweetzonzi.machine_max.common.item.prop.FittingItem;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlocks;
@@ -49,6 +50,12 @@ public class MMJeiPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(
                 MMItems.getPART_ITEM().get(),
                 interpreter(MMJeiPlugin::buildPartSubtypeKey)
+        );
+        // 配件（当前只有履带）与零件同构：一个物品注册项、型号在 machine_max:fitting_type 里。
+        // 新增配件种类时，把它对应的物品也登记进来。
+        registration.registerSubtypeInterpreter(
+                MMItems.getTRACK().get(),
+                interpreter(MMJeiPlugin::buildTrackSubtypeKey)
         );
         registration.registerSubtypeInterpreter(
                 MMItems.getPART_FABRICATING_BLUEPRINT().get(),
@@ -131,6 +138,20 @@ public class MMJeiPlugin implements IModPlugin {
         if (context == UidContext.Ingredient || partType == null) {
             appendLocation(key, "recipe_type", recipeType);
         }
+        return finishKey(key);
+    }
+
+    /**
+     * 履带在 JEI 里的身份：型号 id。
+     *
+     * <p>履带只有一个物品 {@code machine_max:track}，型号全在
+     * {@code machine_max:fitting_type} 组件里。取 id 用
+     * {@link FittingItem#idOf}，与名称、图标同一条口径：缺组件的栈等同于
+     * {@code machine_max:default}，不会在 JEI 里多出一个没型号的条目。</p>
+     */
+    private static Object buildTrackSubtypeKey(ItemStack stack, UidContext context) {
+        StringBuilder key = new StringBuilder(48);
+        appendLocation(key, "fitting_type", FittingItem.idOf(stack));
         return finishKey(key);
     }
 

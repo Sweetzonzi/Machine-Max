@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": {
+      "tag": "c:ingots/iron"
+    },
+    "m": {
+      "item": "minecraft:iron_bars"
+    }
+  },
+  "pattern": [
+    " m ",
+    "iii"
+  ],
+  "result": {
+    "id": "machine_max:track",
+    "count": 64,
+    "components": {
+      "machine_max:fitting_type": "t90a:t90a_track"
+    }
+  }
+}

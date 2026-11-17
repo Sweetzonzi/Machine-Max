@@ -26,6 +26,9 @@
 //     命名空间，按名解析的作用域是单个 Part；重名时运行期只命中其中一个，解码期
 //     （VariantAttr#validateUniqueNames）抛 PackContentException 让该部件类型双端都不出现。
 //     这里把同一判据提前到构建期，作者不必进游戏才发现自己的内容被整条剔除。
+//  9. 履带临时配方与型号对齐。履带物品只有一个 machine_max:track，型号由合成结果的
+//     result.components 给出；型号 id 写错时配方照常加载，游戏里只是物品铺不上、模型回落
+//     默认型号。反过来漏了配方则型号在生存里拿不到。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -44,6 +47,9 @@
 //    .NO_CONTROL_GROUP_PRESET），从不落地成文件，引用它不算缺失。
 //  - 语言键的可达性按“有没有消费方”判：字面量出现在包内非 lang、非 docs 的文件或模组源码
 //    里，或能由内容 id 按固定规则拼出。判据取宽，宁可漏报也不误报。
+//  - 原版合成配方落在 data/machine_max/recipe/ 下，按严格 JSON 读：读数据包时 GsonHelper
+//    不启用宽松模式，注释与尾逗号都会让整份文件被跳过。只查 recipe/fittings/ 一层，与
+//    履带临时配方的落点一致。
 
 import groovy.io.FileType
 import groovy.json.JsonSlurper
@@ -296,7 +302,7 @@ packs.sort { it.name }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，语言键的可达性与中英配对，以及单变体内三类信号名字的唯一性'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，语言键的可达性与中英配对，单变体内三类信号名字的唯一性，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -782,6 +788,135 @@ tasks.register('checkContent') {
             }
         }
 
+        // 9. 履带临时配方与型号对齐
+        //
+        // 履带物品只有一个 machine_max:track，型号写在合成结果的 result.components 里
+        // （ShapedRecipe 用 ItemStack.STRICT_CODEC 解 result，组件随之进产物）。这里查两个方向：
+        // 每条配方指向的型号真实存在且是履带，每个第一方履带型号都有配方。
+        // 这批判配方是临时的：内容包的正式履带节配方落地时，它与本节一起删掉。
+        Map<String, List<String>> trackTypes = [:]
+        packs.each { pack ->
+            File dir = new File(pack.dir, 'fittings')
+            if (!dir.isDirectory()) {
+                return
+            }
+            dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                String relative = pack.dir.toPath().relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+                Object fitting
+                try {
+                    fitting = readJsonc(file)
+                } catch (Exception ignored) {
+                    return
+                }
+                if (fitting instanceof Map && ((Map) fitting).get('type') == 'track') {
+                    String id = pack.namespace + ':' + file.name.substring(0, file.name.length() - 5)
+                    trackTypes[id] = (trackTypes[id] ?: []) + [pack.name + '/' + relative]
+                }
+            }
+        }
+
+        File fittingRecipeDir = new File(projectDir, 'src/main/resources/data/machine_max/recipe/fittings')
+        Map<String, String> recipeByTrackType = [:]
+        int trackRecipeCount = 0
+        List<File> trackRecipeFiles = fittingRecipeDir.isDirectory()
+                ? fittingRecipeDir.listFiles()
+                        .findAll { it.isFile() && it.name.toLowerCase(Locale.ROOT).endsWith('.json') }
+                        .sort { it.name }
+                : []
+        trackRecipeFiles.each { File file ->
+            String label = 'data/machine_max/recipe/fittings/' + file.name
+            String text = file.getText('UTF-8')
+            if (stripJsonc(text) != text) {
+                problems << label + '：含注释或尾逗号（data/ 下的配方按严格 JSON 读，' +
+                        '整份文件会被跳过，配方等于不存在）'
+            }
+            Object raw
+            try {
+                raw = new JsonSlurper().parseText(text)
+            } catch (Exception e) {
+                problems << label + '：不是合法 JSON（' + e.message + '）'
+                return
+            }
+            if (!(raw instanceof Map)) {
+                problems << label + '：顶层不是对象'
+                return
+            }
+            Map recipe = (Map) raw
+            String kind = recipe.get('type') == null ? '' : recipe.get('type').toString()
+            if (kind != 'minecraft:crafting_shaped' && kind != 'minecraft:crafting_shapeless') {
+                problems << label + '：type 是 ' + kind + '，只接受原版有序 / 无序合成'
+                return
+            }
+            if (kind == 'minecraft:crafting_shaped') {
+                Object pattern = recipe.get('pattern')
+                Object key = recipe.get('key')
+                if (!(pattern instanceof List) || !(key instanceof Map)) {
+                    problems << label + '：有序合成缺 pattern 或 key'
+                    return
+                }
+                Set<String> symbols = ((Map) key).keySet()*.toString() as Set<String>
+                Set<String> unknown = new LinkedHashSet<>()
+                ((List) pattern).each { Object row ->
+                    row.toString().each { String symbol ->
+                        if (symbol != ' ' && !symbols.contains(symbol)) {
+                            unknown << symbol
+                        }
+                    }
+                }
+                if (unknown) {
+                    problems << label + '：pattern 用了 key 里没有的符号 ' + unknown.join('、') +
+                            '（解码期报错，整条配方读不出来）'
+                }
+                int width = pattern.isEmpty() ? 0 : pattern[0].toString().length()
+                if (pattern.size() > 3 || width > 3) {
+                    problems << label + '：pattern 是 ' + pattern.size() + ' 行 × ' + width +
+                            ' 列，超出 3×3'
+                }
+            }
+            Object rawResult = recipe.get('result')
+            if (!(rawResult instanceof Map)) {
+                problems << label + '：缺 result'
+                return
+            }
+            Map result = (Map) rawResult
+            if (result.get('id') != 'machine_max:track') {
+                problems << label + '：产物是 ' + result.get('id') + '，不是履带物品 machine_max:track'
+                return
+            }
+            Object count = result.get('count')
+            if (!(count instanceof Number) || ((Number) count).intValue() < 1 || ((Number) count).intValue() > 64) {
+                problems << label + '：一次合成 ' + count + ' 节，不在 1..64（TrackItem 的 stacksTo(64)）'
+            }
+            Object rawComponents = result.get('components')
+            Object rawTrackType = rawComponents instanceof Map
+                    ? ((Map) rawComponents).get('machine_max:fitting_type')
+                    : null
+            if (rawTrackType == null) {
+                problems << label + '：result.components 里没有 machine_max:fitting_type，' +
+                        '合成出来的是缺型号的回落物品'
+                return
+            }
+            String trackTypeId = rawTrackType.toString()
+            if (!trackTypes.containsKey(trackTypeId)) {
+                problems << label + '：型号 ' + trackTypeId + ' 不是内容包里的履带型号' +
+                        '（要找 type 为 track 的 fittings/<名>.json）'
+                return
+            }
+            String previous = recipeByTrackType.put(trackTypeId, label)
+            if (previous != null) {
+                problems << label + '：与 ' + previous + ' 都产出 ' + trackTypeId + '，合成台只会用其中一条'
+                return
+            }
+            trackRecipeCount++
+        }
+        (trackTypes.keySet() - recipeByTrackType.keySet()).sort().each { String id ->
+            problems << '履带型号 ' + id + ' 没有配方（' + trackTypes[id].join('、') + '）：在生存里拿不到它的履带节'
+        }
+
         packs.each { pack ->
             int ownTemplates = templates.values().count { it.pack == pack.name }
             int ownAssemblies = assemblies.values().count { it.pack == pack.name }
@@ -809,7 +944,8 @@ tasks.register('checkContent') {
                 partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + referenceCount + ' 处资源引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
-                priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键）。')
+                priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键，' +
+                trackRecipeCount + ' 条履带临时配方（' + trackTypes.size() + ' 个型号全覆盖））。')
     }
 }
 

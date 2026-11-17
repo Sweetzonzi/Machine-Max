@@ -175,7 +175,7 @@ io.github.sweetzonzi.machine_max/
 ./gradlew runData            # 重新生成 src/generated/resources/
 ./gradlew syncSchemas        # 从 builtin 同步内容包 schema 副本（见「内容包 schema 同步」）
 ./gradlew checkSchemas       # 校验内容包 schema 副本（check 依赖它）
-./gradlew checkContent       # 校验装配体/蓝图对齐与资源引用（check 依赖它，见「内容包引用检查」）
+./gradlew checkContent       # 校验装配体/蓝图对齐、资源引用与履带配方（check 依赖它，见「内容包引用检查」）
 ```
 
 ### 开发期 mod 目录（两个）
@@ -265,7 +265,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 ./gradlew checkContent     # 只读校验；check 依赖它，CI 的 build 因此也会跑
 ```
 
-读各包的 JSON，查五类编译期发现不了、进游戏才表现为「物品在但放不出车」「紫黑格子 / 空模型」「打中装甲不出火花、不出烟尘」或「坐进去以后按什么键都没反应」的问题：
+读各包的 JSON 与 `data/machine_max/recipe/fittings/` 下的原版合成配方，查编译期发现不了、进游戏才表现为「物品在但放不出车」「紫黑格子 / 空模型」「打中装甲不出火花、不出烟尘」「坐进去以后按什么键都没反应」或「合出来的履带铺不上车」的问题：
 
 | 检查 | 判据 |
 |------|------|
@@ -274,6 +274,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 | 碰撞箱的命中火花引用 | 材质的 `particles` 段按键声明表现粒子（`hit_pen` / `hit_un_pen` …），每个值按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；客户端解析不到定义时静默跳过，因此只能在这里拦 |
 | 粒子定义之间的事件引用 | 粒子 JSON 的 `events` 里用 `particle_effect` 生成另一个效果时，`effect` 同样按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；拼错只会让子效果不出现，日志里没有痕迹 |
 | 座位控制组预设 | 任何 JSON 里出现的 `control_group_preset`（只由座位安装块的 `SeatSubsystemAttr` 读取）按 `<namespace>:<control_groups/ 下的文件名>` 在全部包合并后的索引里找；拼错时 `SeatSubsystem` 构造器打一条 WARN 就按空控制组继续，乘员按什么键都没反应，控制面板里也列不出组 |
+| 履带临时配方 | `recipe/fittings/*.json` 的 `result.components["machine_max:fitting_type"]` 必须指向 `type` 为 `track` 的 `fittings/<名>.json`，且每个第一方履带型号恰好有一条配方；型号写错时配方照常加载，游戏里只表现为物品铺不上、模型回落默认型号 |
 
 - **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。
 - **索引按所有包合并**：内容 id 是 `<namespace>/<路径>`，与所在包无关，车包引用 kit 或 builtin 的贴图、模型是正常用法。按包隔离会把这些引用判成缺失。
