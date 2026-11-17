@@ -158,6 +158,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     private AmmoBelt loadedBelt;
 
     /**
+     * "此刻能不能打"的主线程快照，供物理线程的火控轮射挑管读取。<br>
+     * 内容为"已启用、未摧毁、不在换装中，且{@link #hasRoundToFire()} 为真"。弹药内容由业务线程逐 tick
+     * 推进，物理线程直接读 {@link #loadedBelt}／{@link #chamberedType} 会与扣弹撞在同一份可变状态上，
+     * 因此这一位在 {@link #onTick()} 里定值，物理线程只读它——与 {@code CollisionEffectManager} 的
+     * {@code latestWheelSnapshot} 同一种「业务线程写、物理线程取最新值」的写法。
+     */
+    private volatile boolean fireReady;
+
+    /**
      * 本管当前路由的<b>运输者</b>身份（网络同步）。{@link AmmoRef#NONE} = 人力运输者（本管自己的装填手）。<br>
      * <p>
      * <b>写者：</b>服务端路由（{@link #setCurrentRoute}）。客户端在
@@ -1199,11 +1208,15 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         // 原始扳机事实：本端武器可用、未换装锁定且确有开火指令。它与"处于一次连射中"是两件事，
         // 因此不共用一个标记——前者每轮重算，后者只在相位推进里播种与清除。
         boolean triggerHeld = isActive() && !isDestroyed() && !isSwapping() && getActiveFireCommand() != null;
-        if (!triggerHeld) {
+        if (triggerHeld) {
+            advanceFirePhase();
+        } else {
             ceaseBurst(ceaseReason());
-            return;
         }
-        advanceFirePhase();
+
+        // 轮射挑管的依据：本 tick 的弹药内容与射击都已定稿后才定值（刚打掉的那发因此不再算可打），
+        // 物理线程只读这一位，不碰本管那份逐 tick 变动的弹药状态。
+        fireReady = isActive() && !isDestroyed() && !isSwapping() && hasRoundToFire();
     }
 
     /** 本轮停火的原因，只用于插桩。 */
@@ -1327,6 +1340,16 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         if (chamberedType != null) return true;
         AmmoBelt belt = loadedBelt;
         return belt != null && belt.hasRecharge() && belt.remaining() > 0;
+    }
+
+    /**
+     * 本管此刻能不能打出下一发——{@link #hasRoundToFire()} 再并上换装锁定，取
+     * {@link #onTick()} 定下的那一份快照。<br>
+     * <b>供物理线程读</b>：火控轮射在物理步里挑"这一轮让哪根管打"，读的就是这一位。
+     * 显示层要区分"换装中"与"没弹"时仍分开读 {@link #isSwapping()} 与 {@link #hasRoundToFire()}。
+     */
+    public boolean isFireReady() {
+        return fireReady;
     }
 
     /**

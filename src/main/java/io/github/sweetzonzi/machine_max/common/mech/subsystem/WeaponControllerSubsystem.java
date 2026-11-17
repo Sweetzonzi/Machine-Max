@@ -124,11 +124,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private int debugFireTickCounter = 0;
 
     /**
-     * 轮射模式下当前发射的索引
+     * 轮射模式下的轮转位置：下一次从 {@code aimedLaunchers} 的这一个下标开始找能打的管。
+     * <p>
+     * 它是"位置"而不是"当前管"：每次选中一根管后移到它的下一根，一根都选不中时原地不动，
+     * 因此装填中的管只让位一次，不会把轮转推回队首。
      */
     private int rippleIndex = 0;
     /**
-     * 轮射模式下的tick计时器
+     * 轮射模式下的 tick 计时器：{@code > 0} 时本模式只倒计时不下指令，到 0 才选下一根管。
      */
     private int rippleTickCounter = 0;
 
@@ -793,33 +796,62 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 轮射：按顺序每次只让一个发射器开火，间隔由 rippleInterval 控制。
+     * 轮射：每一轮只让一根管开火，两次之间隔 {@code ripple_interval}。<br>
+     * 每轮从轮转位置起沿序列找<b>第一根此刻能打的管</b>：装填中、膛内空或换装锁定的管只让位一轮，
+     * 这一次发火的机会给后面那根；一根都不能打时本步不下开火指令、轮转位置原地不动，下一物理步再试。
+     * 一根管的装填因此只影响它自己的那一轮。
+     * <p>
+     * 能打的判据是 {@link LauncherSubsystem#isFireReady()}——"膛内或可回充弹链有弹，且不在换装中"的
+     * 主线程快照，与 HUD 的就绪口径一致。两端各跑一份同条件的选择，客户端的炮口特效因此仍落在本端
+     * 选中的那根管上。
+     * <p><b>调用线程：</b>物理线程（{@link #onPrePhysicsTick()}）。
      */
     private void fireRipple(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos) {
         if (aimedLaunchers.isEmpty()) return;
-
-        float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
-        int interval = (int) (attr.staticAttribute.getRippleInterval() * 20f); // 秒 → tick
-
-        if (rippleTickCounter <= 0) {
-            // 先停火所有发射器
-            for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
-            }
-            // 只让当前索引的发射器开火
-            if (rippleIndex < aimedLaunchers.size()) {
-                LauncherSubsystem launcher = aimedLaunchers.get(rippleIndex);
-                String channel = launchers.get(launcher);
-                if (channel != null) {
-                    sendSignalToTarget(channel, launcher,
-                            new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true, operator));
-                }
-            }
-            rippleIndex = (rippleIndex + 1) % aimedLaunchers.size();
-            rippleTickCounter = interval;
-        } else {
+        if (rippleTickCounter > 0) {
             rippleTickCounter--;
+            return;
         }
+
+        // 先释放上一轮的开火权：本模式一次只有一根管持有扳机
+        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
+            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
+        }
+
+        LauncherSubsystem launcher = nextReadyLauncher(aimedLaunchers);
+        if (launcher == null) return; // 全都在装填：不占轮转位置，下一物理步再看
+
+        String channel = launchers.get(launcher);
+        if (channel == null) return;
+        sendSignalToTarget(channel, launcher,
+                new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos),
+                        attr.staticAttribute.getFireCorrectionAngleDeg(), true, operator));
+        // 计数单位是物理子步（onPrePhysicsTick 每子步跑一次），而一游戏 tick 跑 tps/20 个子步：
+        // 服务端 100 Hz、客户端 60 Hz，按"每 tick 一步"折算会让同一份 ripple_interval 差出 3～5 倍。
+        rippleTickCounter = Math.round(attr.staticAttribute.getRippleInterval() * getPhysicsLevel().getTps());
+    }
+
+    /**
+     * 从轮转位置开始沿序列找第一根此刻能开火的管，并把轮转位置移到它的下一根。
+     * <p>
+     * 就绪判据读 {@link LauncherSubsystem#isFireReady()}：它是发射器在主线程定值、物理线程只读的
+     * 快照（未摧毁、已启用、不在换装中、膛内或可回充弹链有弹），物理步因此不碰发射器那份可变弹药状态。
+     * <p>
+     * 一根都不能开火时轮转位置不动并返回 {@code null}——下一次尝试仍从同一根开始，
+     * 顺序不会因为一段装填而整体错位。
+     */
+    @Nullable
+    private LauncherSubsystem nextReadyLauncher(List<LauncherSubsystem> aimedLaunchers) {
+        int size = aimedLaunchers.size();
+        int start = Math.floorMod(rippleIndex, size);
+        for (int offset = 0; offset < size; offset++) {
+            int index = (start + offset) % size;
+            LauncherSubsystem candidate = aimedLaunchers.get(index);
+            if (!candidate.isFireReady()) continue;
+            rippleIndex = (index + 1) % size;
+            return candidate;
+        }
+        return null;
     }
 
     /**
