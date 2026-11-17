@@ -110,7 +110,7 @@ public class ItemInteractHandler {
     }
 
     /**
-     * 右键：没有草稿时以目标轮为主动轮开始铺设；有草稿时依次追加负重轮，
+     * 右键：没有草稿时以目标轮为主动轮开始铺设；有草稿时依次追加履带轮，
      * 再次右键起始主动轮则闭合成一条履带。
      */
     private static void advance(Player player, VehicleCore vehicle, SubPart subPart) {
@@ -132,7 +132,7 @@ public class ItemInteractHandler {
             return;
         }
         if (subPart == draft.sprocket()) {
-            if (draft.wheels().size() + 1 < TrackLink.MIN_MEMBERS) {
+            if (draft.memberCount() < TrackLink.MIN_MEMBERS) {
                 message(player, MMLanguageRegistry.MESSAGE_TRACK_MIN_MEMBERS, TrackLink.MIN_MEMBERS);
                 return;
             }
@@ -146,7 +146,7 @@ public class ItemInteractHandler {
         if (!canJoin(player, vehicle, subPart)) return;
         draft.add(subPart);
         message(player, MMLanguageRegistry.MESSAGE_TRACK_WHEEL_ADDED,
-                Component.translatable(subPart.name), draft.wheels().size());
+                Component.translatable(subPart.name), draft.memberCount());
     }
 
     /** 闭合草稿：装配候选 → 扣料 → 注册。料不够时保留草稿并丢弃候选。 */
@@ -173,7 +173,7 @@ public class ItemInteractHandler {
     }
 
     /**
-     * 潜行右键：铺设中撤销最后一个负重轮（撤到只剩主动轮再按一次则取消草稿）。
+     * 潜行右键：铺设中撤销最后一个履带轮（撤到只剩主动轮再按一次则取消草稿）。
      * 已闭合的履带不在这里改动，拆卸履带请用撬棍。
      */
     private static void undo(Player player, VehicleCore vehicle, SubPart subPart) {
@@ -275,6 +275,11 @@ public class ItemInteractHandler {
 
         private SubPart removeLast() {
             return wheels.remove(wheels.size() - 1);
+        }
+
+        /** 本次铺设已包含的履带轮数：已追加的轮子加主动轮，与闭合时报告的成员数同口径。 */
+        private int memberCount() {
+            return wheels.size() + 1;
         }
 
         private VehicleCore vehicle() {

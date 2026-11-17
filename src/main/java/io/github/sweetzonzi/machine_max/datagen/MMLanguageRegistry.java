@@ -703,8 +703,8 @@ public enum MMLanguageRegistry {
             en_us, "Track: this item carries no valid track fitting"
     )),
     MESSAGE_TRACK_DRAFT_STARTED("message.machine_max.track.draft_started", ImmutableMap.of(
-            zh_cn, "履带：主动轮 %1$s，依次右键负重轮，最后右键主动轮闭合",
-            en_us, "Track: sprocket %1$s — right-click road wheels in order, then the sprocket again to close"
+            zh_cn, "履带：主动轮 %1$s，依次右键其余履带轮，最后右键主动轮闭合",
+            en_us, "Track: sprocket %1$s — right-click the other track wheels in order, then the sprocket again to close"
     )),
     MESSAGE_TRACK_OTHER_VEHICLE("message.machine_max.track.other_vehicle", ImmutableMap.of(
             zh_cn, "履带：请先闭合或取消另一辆载具上的履带",
@@ -747,8 +747,8 @@ public enum MMLanguageRegistry {
             en_us, "Track: that wheel is already part of this layout"
     )),
     MESSAGE_TRACK_WHEEL_ADDED("message.machine_max.track.wheel_added", ImmutableMap.of(
-            zh_cn, "履带：加入 %1$s（%2$s 个负重轮）",
-            en_us, "Track: added %1$s (%2$s road wheels)"
+            zh_cn, "履带：加入 %1$s（共 %2$s 个履带轮）",
+            en_us, "Track: added %1$s (%2$s track wheels)"
     )),
     MESSAGE_TRACK_WHEEL_UNDONE("message.machine_max.track.wheel_undone", ImmutableMap.of(
             zh_cn, "履带：撤销 %1$s",
