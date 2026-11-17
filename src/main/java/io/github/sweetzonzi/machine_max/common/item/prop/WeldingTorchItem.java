@@ -93,27 +93,27 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
                     if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
                         return;
-                    if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下按「轮子 → 零件 → 履带 → 车体」串行焊接
+                    if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下按「装配 → 轮子 → 履带 → 车体」串行焊接
                         float repairStep = 5;
                         float assembleStep = 5;
                         boolean progressed = false;
-                        // 1. 轮子优先：子部件耐久 / 子系统 / 连接点
-                        progressed = subPart.repair(
-                                repairStep * SUBPART_REPAIR_PER_TICK,
-                                repairStep * SUBSYSTEM_REPAIR_PER_TICK,
-                                repairStep * CONNECTOR_REPAIR_PER_TICK);
+                        // 1. 零件装配：进度先走，耐久按增量跟着补，后面的维修才有更高的上限可修
                         boolean assembled = false;
-                        // 2. 零件装配（研发门禁：未通过则不推进进度，仅提示）
                         BlueprintAttachment blueprint = player.getData(MMAttachments.getBLUEPRINT());
                         if (blueprint.canAdvanceAssembly(player, part)) {
-                            if (!progressed) {
-                                assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                                progressed = assembled;
-                            }
+                            assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                            progressed = assembled;
                         } else {
                             player.displayClientMessage(Component.translatable(
                                     MMLanguageRegistry.MESSAGE_ASSEMBLY_LOCKED.tag,
                                     Component.translatable(part.getName())), true);
+                        }
+                        // 2. 轮子：子部件耐久 / 子系统 / 连接点。装配有进展的拍不再分给它
+                        if (!progressed) {
+                            progressed = subPart.repair(
+                                    repairStep * SUBPART_REPAIR_PER_TICK,
+                                    repairStep * SUBSYSTEM_REPAIR_PER_TICK,
+                                    repairStep * CONNECTOR_REPAIR_PER_TICK);
                         }
                         // 3. 履带：建造或维修。履带要焊时本拍不再给车体 HP——「缺料」的提示
                         //    若被车体维修顶掉，玩家永远看不到原因
@@ -150,10 +150,14 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                             progressed = subPart.getPart().getAssembly() instanceof VehicleCore vc
                                     && vc.repair(repairStep * VEHICLE_REPAIR_PER_TICK);
                         }
-                        if (assembled && remainingUseDuration % 10 == 0)
-                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
-                        if (progressed && remainingUseDuration % 10 == 0)
-                            BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
+                        // 研发点按本拍实际做的那件事记：装配与维修互斥，同一拍不重复记两份
+                        if (remainingUseDuration % 10 == 0) {
+                            if (assembled) {
+                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                            } else if (progressed) {
+                                BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
+                            }
+                        }
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);

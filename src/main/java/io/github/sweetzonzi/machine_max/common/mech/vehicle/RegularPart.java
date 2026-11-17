@@ -186,6 +186,9 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
      * <p>有配方时以加工时间换算进度，并按目标进度向上取整计算所需材料档位；材料不足时在已供给上限停止。
      * 客户端与无限材料玩家只推进记录、不扣物品。无配方时每单位输入增加 0.01 进度。</p>
      *
+     * <p>进度涨多少，子零件耐久就按同一增量补多少（见 {@link #advanceAssemblyProgress(float)}）：
+     * 装到上限的部件同时拿到那一段耐久，不需要再靠维修补上。</p>
+     *
      * @param container 用于取得材料的容器
      * @param progress 本次投入的非负加工时间，单位为 tick
      * @return 组装进度是否改变；材料记录可能在返回假时发生调整
@@ -207,7 +210,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
             int totalMaterials = manualAssembleList.size(); // 手动组装总材料数量（ceil折算后）
             if (totalMaterials <= 0) {
                 if (newProgress != assemblingProgress) {
-                    setAssemblingProgress(newProgress);
+                    advanceAssemblyProgress(newProgress);
                     return true;
                 }
                 return false;
@@ -252,15 +255,75 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
             // Clamp进度并设置
             newProgress = Math.min(newProgress, (float) materialProgress / totalMaterials);
             if (newProgress != assemblingProgress) {
-                setAssemblingProgress(newProgress);
+                advanceAssemblyProgress(newProgress);
                 return true;
             }
         } else if (recipe == null && getAssemblingProgress() < 1f) {
             // 无制造配方（无材料需求）的零件直接涨进度
-            setAssemblingProgress(getAssemblingProgress() + progress * 0.01f);
+            advanceAssemblyProgress(getAssemblingProgress() + progress * 0.01f);
             return true;
         }
         return false;
+    }
+
+    /**
+     * 装配推进的唯一写入口：先抬组装进度，再按增量补子零件耐久。
+     *
+     * <p>顺序不能反。进度决定耐久写入上限（{@link #durabilityLimitRatio()}），先写进度，新上限才容得下
+     * 随后补上的那一段耐久。</p>
+     *
+     * @param newProgress 目标组装完成比例
+     */
+    private void advanceAssemblyProgress(float newProgress) {
+        float oldProgress = getAssemblingProgress();
+        setAssemblingProgress(newProgress);
+        raiseDurabilityForAssembly(getAssemblingProgress() - oldProgress);
+    }
+
+    /**
+     * 按本次进度增量抬高每个子零件的耐久，受击留下的缺口原样保留。
+     *
+     * <p>上限随进度涨多少，耐久就补多少，而不是直接补到新上限：进度 0.7、耐久 0.5 的部件装到 0.8 后
+     * 耐久 0.6，与上限之间仍差 0.2。已摧毁的子零件不参与——残骸不能被装配抬活。</p>
+     *
+     * <p><b>调用线程：</b>主线程；客户端只接收耐久同步，不在此写入。</p>
+     *
+     * @param deltaRatio 本次进度增量；非正数不做任何写入
+     */
+    private void raiseDurabilityForAssembly(float deltaRatio) {
+        if (deltaRatio <= 0f || level.isClientSide()) return;
+        if (type.shareDurability) {
+            setSharedDurability(getSharedDurability() + deltaRatio * getSharedMaxDurability());
+            return;
+        }
+        for (SubPart subPart : subParts.values()) {
+            if (subPart.isDestroyed()) continue;
+            subPart.setRawDurability(subPart.getRawDurability() + deltaRatio * subPart.getMaxDurability());
+        }
+    }
+
+    /**
+     * 把超过当前写入上限的耐久钳回上限；已在上限之下的子零件不动。
+     *
+     * <p>上限只由组装进度决定，所以每一处进度下调都在 {@link #setAssemblingProgress(float)} 里统一收口：
+     * 拆解、蓝图骨架恢复与外部改写进度都不必各自再写一遍耐久。反方向不在这里做——装配推进的抬升在
+     * {@link #advanceAssemblyProgress(float)} 里按增量补，直接补到上限会把已有的损伤一起修掉。</p>
+     *
+     * <p>上限本身留了 5% 的地板，因此钳制不会把耐久推到零，拆卸不会凭进度判摧毁。
+     * 服务端权威：客户端只接收耐久同步，自行写入会与随后的同步值打架。</p>
+     */
+    private void clampDurabilityToLimit() {
+        if (level.isClientSide()) return;
+        float limitRatio = durabilityLimitRatio();
+        if (type.shareDurability) {
+            float cap = getSharedMaxDurability() * limitRatio;
+            if (getSharedDurability() > cap) setSharedDurability(cap);
+            return;
+        }
+        for (SubPart subPart : subParts.values()) {
+            float cap = subPart.getMaxDurability() * limitRatio;
+            if (subPart.getRawDurability() > cap) subPart.setRawDurability(cap);
+        }
     }
 
     /**
@@ -268,6 +331,9 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
      *
      * <p>有配方时以加工时间换算进度，并向下取整计算保留材料档位。容器无法容纳返还物品时，
      * 服务端在根子零件位置掉落。客户端与无限材料玩家不返还物品；没有配方则不处理拆解。</p>
+     *
+     * <p>进度下调后超出新上限的耐久由 {@link #setAssemblingProgress(float)} 一并钳回，拆解不单独写耐久，
+     * 拆多少就少多少，与装配时按增量补上正好对称。</p>
      *
      * @param container 接收返还材料的容器
      * @param progress 本次拆解时间，单位为 tick；负数按零处理
@@ -397,7 +463,8 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
 
     /**
      * <p>根据子部件耐久度重新计算部件组装进度和材料进度上限。</p>
-     * <p>有手动配方时，材料进度仅会被下调；无手动配方时，不限制材料进度。</p>
+     * <p>有手动配方时，材料进度仅会被下调，组装进度只按材料档位下调：耐久跌穿一档才掉一档材料，
+     * 一档之内的损伤只留在耐久上。无手动配方时，组装进度直接跟随耐久比例。</p>
      *
      * @return 是否发生变化
      */
@@ -424,7 +491,9 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
             int durabilityTier = getMaterialTierByDurabilityRatio(durabilityRatio, totalMaterials);
             materialProgress = Math.min(materialProgress, durabilityTier);
             float materialCap = (float) materialProgress / totalMaterials;
-            setAssemblingProgress(Math.min(durabilityRatio, materialCap));
+            // 进度不被耐久比例直接压：档位内的损伤不拆掉已经装好的部分，
+            // 否则维修把耐久补回一档以内时，进度又会跟着跳回去
+            setAssemblingProgress(Math.min(getAssemblingProgress(), materialCap));
         }
 
         if (oldMaterialProgress != materialProgress && oldProgress == this.assemblingProgress) {
@@ -444,9 +513,11 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 主线程设置 [0, 1] 组装进度，并安排重力与客户端同步更新。
+     * 主线程设置 [0, 1] 组装进度，并安排重力、耐久上限与客户端同步更新。
      *
-     * <p>进度影响后续耐久写入的上限，本方法不直接重设现有耐久。重力更新提交到 PRE 物理阶段并按部件 UUID
+     * <p>进度是耐久写入上限的唯一来源，所以下调进度时顺带把超出的耐久钳回新上限
+     * （见 {@link #clampDurabilityToLimit()}）；上调不抬耐久，抬升只发生在装配推进处。</p>
+     * <p>重力更新提交到 PRE 物理阶段并按部件 UUID
      * 去重：骨架使用世界重力的 10%，其他情况恢复正常重力并激活刚体。设计质量不按进度缩放。</p>
      * <p>服务端进度从阈值下方达到工作阈值时关闭组装形态；状态变化按需向所在维度广播。</p>
      *
@@ -457,6 +528,7 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
         if (progress != this.assemblingProgress) {
             float oldProgress = this.assemblingProgress;
             this.assemblingProgress = progress;
+            clampDurabilityToLimit();
             submitGravityUpdate();
             float functionalThreshold = type.getFunctionalThreshold();
             if (!level.isClientSide() && assembling

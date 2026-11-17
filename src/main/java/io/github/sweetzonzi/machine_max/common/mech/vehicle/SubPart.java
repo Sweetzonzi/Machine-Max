@@ -1115,6 +1115,10 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * {@link TrackLink#buildTrack(net.minecraft.world.Container)}，不经过这里——
      * 留着履带分支，焊枪链式分工的第一步就会把履带修掉，「轮子优先」永远轮不到。</p>
      *
+     * <p>零件耐久止于两个上限的较小者：材料供给进度（{@code repairLimitRatio()}）决定能修到哪，
+     * 组装进度（{@code durabilityLimitRatio()}）决定能写进哪里。已经封顶时本方法返回 {@code false}，
+     * 焊枪据此把这一拍让给装配、履带与车体，而不是每拍重做一次写不进去的空维修。</p>
+     *
      * @param amount          零件维修量 (>0) sub-part repair damageAmount (>0)
      * @param subSystemAmount 子系统维修量 (>0) subsystem repair damageAmount (>0)
      * @param connectorAmount 连接点结构完整性加固量 (>0) connector integrity strengthen damageAmount (>0)
@@ -1124,12 +1128,13 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         if (!level.isClientSide && part.permitsRepair()) {
             part.onRepairAttempt(); // 尝试维修时重置为线框模式
             // 修理零件
+            float durabilityBefore = getDurability();
             float repairAmount = 0f;
             float requestedRepairAmount = Math.max(amount, 0f);
             float maxDurability = getMaxDurability();
-            float currentDurability = getDurability();
+            float currentDurability = durabilityBefore;
             if (requestedRepairAmount > 0f && maxDurability > 0f && currentDurability < maxDurability) {
-                float maxRepairRatio = part.repairLimitRatio();
+                float maxRepairRatio = Math.min(part.repairLimitRatio(), part.durabilityLimitRatio());
                 float currentRatio = Math.clamp(currentDurability / maxDurability, 0f, 1f);
                 float repairDeltaRatio = requestedRepairAmount / maxDurability;
                 float targetRatio = Math.min(currentRatio + repairDeltaRatio, maxRepairRatio);
@@ -1175,10 +1180,12 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 }
             }
             part.onDurabilityChanged();
-            // 「有进展」的结论在同步之前定下来：焊枪的链式分工每拍都先调本方法，
-            // 无事可做的拍不该再发出一个空的 SubPartSyncPayload
-            boolean changed = !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount
-                    && connectorAmount == connectorsRepairAmount);
+            // 「有进展」按实际写入判定：目标已被上面的上限钳住，再拿请求量对比就会把
+            // 「想修但修不进去」当成有进展，焊枪的链式分工会被永远占住。
+            // 结论在同步之前定下来：无事可做的拍不该再发出一个空的 SubPartSyncPayload
+            boolean changed = getDurability() > durabilityBefore
+                    || subSystemAmount != subsystemsRepairAmount
+                    || connectorAmount != connectorsRepairAmount;
             if (changed) syncToClient();
             return changed;
         } else return false;
