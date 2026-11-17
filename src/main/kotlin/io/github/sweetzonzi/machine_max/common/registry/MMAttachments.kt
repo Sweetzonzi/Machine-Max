@@ -31,13 +31,11 @@ object MMAttachments {
         serializer = ControlPreferenceAttachment.CODEC
     }
 
-    //实体的人工装填能力：个人倍率与当前认领的作业
+    //实体的人工装填能力：有效时间倍率由属性与药水效果现算，本附件只承载"此刻在替哪条作业干活"的认领
     @JvmStatic
     val ENTITY_CREW_RELOAD = MachineMax.REGISTER.attachment {
         id = "crew_reload"
-        factory = { _ -> CrewReloadAttachment() }
-        copyOnDeath = true
-        serializer = CrewReloadAttachment.CODEC
+        factory = { holder -> CrewReloadAttachment(holder as LivingEntity) }
     }
 
     //实体保存的蓝图与研发点

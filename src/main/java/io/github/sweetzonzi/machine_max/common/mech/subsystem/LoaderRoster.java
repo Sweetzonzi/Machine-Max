@@ -21,15 +21,16 @@ import java.util.UUID;
  * 一处。
  * <p>
  * <b>三个量分开：</b>座位表是只读发现结果（结构变化时整体重建）、认领是"此刻替哪条作业干活"（按作业身份
- * 写入与释放，不入存档）、个人倍率记在人物身上（{@link CrewReloadAttachment}）。本类不持有装填进度——
+ * 写入与释放，不入存档）、有效时间倍率 {@code A_eff} 由人物现算（
+ * {@link CrewReloadAttachment#effectiveMultiplier()}：装填速度属性 × 药水效果）。本类不持有装填进度——
  * 进度归接收者的 {@link ReloadJob}。
  * <p>
- * <b>倍率不是状态：</b>岗位倍率在发现时定到座位上（同一座位经多条线路可达时取其中最低的那条），个人倍率
+ * <b>倍率不是状态：</b>岗位倍率在发现时定到座位上（同一座位经多条线路可达时取其中最低的那条），有效时间倍率
  * 读人物，两者相乘即得，不在认领里再存一份副本——两份同义值迟早会走岔。认领因此只记"坐哪个座位、派的是
- * 谁"这一件事。
+ * 谁"这一件事。读而不是存还让药水的进出立刻生效：效果一上，下一 tick 的重定时就按新倍率折剩余量。
  * <p>
  * <b>两端同源：</b>候选、代价与比较在两端用同一套代码；只有"认领记在哪里"这一处分端——服务端记在人物实体的
- * {@link CrewReloadAttachment} 上，客户端没有实体附件，按人物 UUID 记在
+ * {@link CrewReloadAttachment} 上，客户端没有乘员实体，按人物 UUID 记在
  * {@link io.github.sweetzonzi.machine_max.common.mech.ObjectManager} 的客户端 Level 表里。候选身份因此来自
  * {@link SeatSubsystem#loaderCandidate()}，客户端不读 {@code passenger} 引用，也不会从"座位有人"推出一个倍率
  * 1.0 的装填手。
@@ -164,7 +165,7 @@ final class LoaderRoster implements IAmmoTransporter {
     /**
      * 为本阶段认领一名执行者，或在已有更好的人时换人。<br>
      * 候选是"有效座位的存活乘员"，代价是剩余人工段的实际用时（剩余标准人力时间 × 该座位的岗位倍率 ×
-     * 个人倍率）。当前执行者仍然可用时，只有严格更便宜的候选才换人，相等时保持。
+     * 有效时间倍率）。当前执行者仍然可用时，只有严格更便宜的候选才换人，相等时保持。
      * <p>换人前先按身份释放旧认领，因此本方法自己就能处理"原来的人已经离座"——调用方不必先问一次
      * {@link #holds(IAmmoConsumer)} 再释放。
      * <p>选不到人时返回 false：接收者据此暂停（作业与预留都还在），暂停超过上限才终止。
@@ -265,11 +266,13 @@ final class LoaderRoster implements IAmmoTransporter {
     }
 
     /**
-     * 已认领执行者的时间倍率（岗位倍率 {@code P} × 个人倍率 {@code A}）。<br>
-     * 接收者每个装填 tick 拿它比对作业上记的倍率，换人与人物能力变化都经
+     * 已认领执行者的时间倍率（岗位倍率 {@code P} × 有效时间倍率 {@code A_eff}）。<br>
+     * 接收者每个装填 tick 拿它比对作业上记的倍率，换人与人物能力（属性或药水）变化都经
      * {@link ReloadJob#retimeHuman(double)} 折算成新的剩余量。没有认领时按标准人力 1。
      * <p>这里读而不是存：存一份副本的话，换人或人物的能力被改过，副本不会跟着变。{@code P} 是发现时定到
-     * 座位上的值，所以换座位会换倍率、换人只换 {@code A}。
+     * 座位上的值，所以换座位会换倍率、换人只换 {@code A_eff}。
+     * <p>两端读同一个入口：座位的候选快照服务端由乘员现算、客户端随同步值更新，因此人的能力一变化，
+     * 两端下一 tick 都按同一条新倍率折剩余量。
      */
     @Override
     public double getOperatorTimeScale(IAmmoConsumer consumer) {
@@ -324,18 +327,10 @@ final class LoaderRoster implements IAmmoTransporter {
         if (current == null) return 1.0;
         Double standard = seats.get(current.seat());
         if (standard == null) return 1.0;
-        double personal;
-        if (host.getLevel().isClientSide()) {
-            // 客户端没有实体附件：个人倍率取自己座位下发的候选快照，换人与能力变化随同步值更新
-            SeatSubsystem.LoaderCandidate crew = current.seat().loaderCandidate();
-            personal = crew != null && crew.personId().equals(current.personId())
-                    ? crew.multiplier()
-                    : CrewReloadAttachment.DEFAULT_MULTIPLIER;
-        } else {
-            LivingEntity person = current.person();
-            if (person == null) return 1.0;
-            personal = CrewReloadAttachment.of(person).multiplier();
-        }
+        SeatSubsystem.LoaderCandidate crew = current.seat().loaderCandidate();
+        double personal = crew != null && crew.personId().equals(current.personId())
+                ? crew.multiplier()
+                : CrewReloadAttachment.DEFAULT_MULTIPLIER;
         double value = standard * personal;
         return value > 0 && Double.isFinite(value) ? value : 1.0;
     }
@@ -428,7 +423,7 @@ final class LoaderRoster implements IAmmoTransporter {
      * 一个候选执行者：坐在哪、候选快照、实际乘员与预计用时。
      *
      * @param seat          候选座位
-     * @param crew          候选快照（人物 UUID、可用性、个人倍率）
+     * @param crew          候选快照（人物 UUID、可用性、有效时间倍率）
      * @param person        服务端解析到的乘员实体；客户端为 {@code null}
      * @param estimateTicks 预计完成剩余人工段所需的 tick
      */

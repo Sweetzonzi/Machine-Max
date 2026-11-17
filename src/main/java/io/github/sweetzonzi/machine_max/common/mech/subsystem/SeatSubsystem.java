@@ -64,7 +64,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     private static final EntityDataAccessor<Boolean> DATA_LOADER_USABLE_ID =
             SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.BOOLEAN);
 
-    /** 候选的个人时间倍率 {@code A}。 */
+    /** 候选的有效时间倍率 {@code A_eff}：属性层与药水效果的合成，由人物现算后人下发。 */
     private static final EntityDataAccessor<Float> DATA_LOADER_MULTIPLIER_ID =
             SynchedEntityData.defineId(SeatSubsystem.class, EntityDataSerializers.FLOAT);
     /**
@@ -149,14 +149,15 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
     }
 
     /**
-     * 装填候选快照：人物 UUID、是否可作为存活执行者、个人时间倍率。
+     * 装填候选快照：人物 UUID、是否可作为存活执行者、有效时间倍率。
      *
      * <p>服务端由乘员实体现算，客户端由同步值组装——两端的业务判据因此是同一套字段，
      * 客户端不需要 {@code passenger} 引用，也不会把"座位占了人"当成"有人能装填"。</p>
      *
      * @param personId   人物 UUID
      * @param usable     是否可作为存活执行者
-     * @param multiplier 个人时间倍率 {@code A}
+     * @param multiplier 有效时间倍率 {@code A_eff}（属性层 × 药水层，见
+     *                   {@link CrewReloadAttachment#effectiveMultiplier()}）
      */
     public record LoaderCandidate(UUID personId, boolean usable, double multiplier) {
     }
@@ -181,7 +182,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         if (person == null) return null;
         boolean usable = !person.isRemoved() && !person.isDeadOrDying();
         return new LoaderCandidate(person.getUUID(), usable,
-                CrewReloadAttachment.of(person).multiplier());
+                CrewReloadAttachment.of(person).effectiveMultiplier());
     }
 
     /**
@@ -198,7 +199,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         boolean usable = person != null && !person.isRemoved() && !person.isDeadOrDying();
         float multiplier = person == null
                 ? (float) CrewReloadAttachment.DEFAULT_MULTIPLIER
-                : (float) CrewReloadAttachment.of(person).multiplier();
+                : (float) CrewReloadAttachment.of(person).effectiveMultiplier();
         if (!Objects.equals(synchedData.get(DATA_LOADER_ID), id)) {
             synchedData.set(DATA_LOADER_ID, id);
         }

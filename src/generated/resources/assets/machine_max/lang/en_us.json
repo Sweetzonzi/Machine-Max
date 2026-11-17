@@ -1,4 +1,5 @@
 {
+  "attribute.machine_max.crew_reload_speed": "Crew Loading Speed",
   "attribute.machine_max.grab_strength": "Grab Strength",
   "block.machine_max.fabricator": "Fabricator(WIP)",
   "block.machine_max.research_table": "Research Table",

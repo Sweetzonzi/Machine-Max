@@ -1,4 +1,5 @@
 {
+  "attribute.machine_max.crew_reload_speed": "乘员装填速度",
   "attribute.machine_max.grab_strength": "抓取力量",
   "block.machine_max.fabricator": "制造器(WIP)",
   "block.machine_max.research_table": "研究台",

@@ -1,18 +1,19 @@
 package io.github.sweetzonzi.machine_max.common.gametest;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.CrewReloadAttachment;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartDefinitions;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartFactory;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.registry.MMAttributes;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -58,7 +59,8 @@ public final class SeatLoaderCandidateGameTest {
 
             operator = new ArmorStand(EntityType.ARMOR_STAND, helper.getLevel());
             helper.getLevel().addFreshEntity(operator);
-            CrewReloadAttachment.of(operator).setMultiplier(0.5);
+            // 装填速度 2.0 = 用时减半（A_eff 0.5）：能力记在属性上，候选快照取的是它的倒数
+            crewSpeed(operator).setBaseValue(2.0);
             seat.passenger = operator;
             // 与 onTick 里的逐轮采样走同一个入口：全量补推也经它刷新
             seat.refreshSyncBaseline();
@@ -68,10 +70,10 @@ public final class SeatLoaderCandidateGameTest {
             helper.assertTrue(candidate.personId().equals(operator.getUUID()), "候选身份必须是乘员本人");
             helper.assertTrue(candidate.usable(), "存活的乘员应可作为执行者");
             helper.assertTrue(Math.abs(candidate.multiplier() - 0.5) < 1.0e-6,
-                    "个人倍率取人物能力，实际 " + candidate.multiplier());
+                    "有效时间倍率取人物能力，实际 " + candidate.multiplier());
 
             // 人物能力变化不需要结构变化，下一次采样就跟随
-            CrewReloadAttachment.of(operator).setMultiplier(2.0);
+            crewSpeed(operator).setBaseValue(0.5);
             seat.refreshSyncBaseline();
             helper.assertTrue(Math.abs(seat.loaderCandidate().multiplier() - 2.0) < 1.0e-6,
                     "倍率变化应被重新采样");
@@ -89,5 +91,12 @@ public final class SeatLoaderCandidateGameTest {
             if (operator != null && !operator.isRemoved()) operator.discard();
             vehicle.onRemoveFromLevel();
         }
+    }
+
+    /** 乘员身上的装填速度属性；夹具必须能取到实例，取不到说明属性没挂到盔甲架上。 */
+    private static AttributeInstance crewSpeed(LivingEntity operator) {
+        AttributeInstance attribute = operator.getAttribute(MMAttributes.CREW_RELOAD_SPEED);
+        if (attribute == null) throw new IllegalStateException("乘员身上没有 crew_reload_speed 属性实例");
+        return attribute;
     }
 }

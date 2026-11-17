@@ -111,6 +111,10 @@ public enum MMLanguageRegistry {
             zh_cn, "抓取力量",
             en_us, "Grab Strength"
     )),
+    ATTRIBUTE_CREW_RELOAD_SPEED("attribute.machine_max.crew_reload_speed", ImmutableMap.of(
+            zh_cn, "乘员装填速度",
+            en_us, "Crew Loading Speed"
+    )),
     // 控制组名称
     CONTROL_GROUP_BASE("controlGroup.machine_max.base", ImmutableMap.of(
             zh_cn, "基础",
