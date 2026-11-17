@@ -261,7 +261,8 @@ public final class CreativePartBrowser {
     private final List<AbstractWidget> widgets = new ArrayList<>();
 
     private boolean active;
-    private boolean mainSearchFocused = true;
+    /** 弹层展开前主搜索框是否有焦点；关闭弹层时按此恢复。 */
+    private boolean resumeMainSearchFocus;
     private boolean consumeRelease;
 
     /** 当前页完整候选。 */
@@ -694,10 +695,7 @@ public final class CreativePartBrowser {
                 return true;
             }
         }
-        if (this.mainSearchFocused) {
-            this.mainSearchFocused = false;
-            if (this.mainSearch != null) this.mainSearch.setFocused(false);
-        }
+        if (isMainSearchFocused()) this.mainSearch.setFocused(false);
         return false;
     }
 
@@ -737,13 +735,9 @@ public final class CreativePartBrowser {
             this.picker.keyPressed(keyCode, scanCode, modifiers);
             return true;
         }
-        if (!isMainSearchFocused()) {
-            // EditBox 不检查自身焦点就会处理编辑键；失焦时把改动还原，字符输入由 charTyped 另行拦截。
-            String before = this.mainSearch.getValue();
-            boolean handled = this.mainSearch.keyPressed(keyCode, scanCode, modifiers);
-            if (!before.equals(this.mainSearch.getValue())) this.mainSearch.setValue(before);
-            return handled;
-        }
+        // 失焦的 EditBox 自己就不处理编辑键（keyPressed 与 charTyped 都先看焦点），
+        // 直接放行给屏幕：Esc 关屏、数字键存快捷栏、背包键关屏都照常走原版。
+        if (!isMainSearchFocused()) return false;
         if (keyCode == 256) return false;
         String before = this.mainSearch.getValue();
         this.mainSearch.keyPressed(keyCode, scanCode, modifiers);
@@ -765,21 +759,22 @@ public final class CreativePartBrowser {
         return false;
     }
 
-    /** 主搜索失焦且弹层未打开时需要拦截字符输入。 */
-    public boolean shouldBlockUntargetedCharTyped() {
-        return this.active && !this.picker.isOpen() && !isMainSearchFocused();
-    }
-
     // ==================== 页切换与焦点 ====================
 
     /**
      * 当前页切换后同步控件状态。
+     *
+     * <p>进入本页时主搜索框一律失焦：原版 {@code selectTab} 对带搜索栏的页强制聚焦搜索框，
+     * 而本页的搜索框只是三个筛选条件之一，焦点常驻会吃掉全部键盘输入（连 Esc 与背包键都要靠
+     * 特判）。玩家点一下搜索框才进入输入模式，点击别处或切页即退出。</p>
      *
      * @param target       是否为本期目标页
      * @param displayItems 当前页完整候选
      */
     public void onTabChanged(boolean target, Collection<ItemStack> displayItems) {
         this.active = target;
+        // 切页即退出输入模式：弹层随后关闭时也不再恢复上一页的焦点。
+        this.resumeMainSearchFocus = false;
         if (!target) {
             this.picker.close();
             for (AbstractWidget widget : this.widgets) widget.visible = false;
@@ -788,24 +783,25 @@ public final class CreativePartBrowser {
         for (AbstractWidget widget : this.widgets) widget.visible = true;
         this.updateContents(displayItems);
         if (this.mainSearch != null) {
+            // canLoseFocus 必须先改回 true：原版刚把搜索框设成不可失焦，失焦请求会被它忽略。
             this.mainSearch.setCanLoseFocus(true);
             this.mainSearch.setMaxLength(SEARCH_MAX_LENGTH);
             if (!this.mainSearch.getValue().equals(rememberedQuery)) {
                 this.mainSearch.setValue(rememberedQuery);
             }
-            this.mainSearch.setFocused(this.mainSearchFocused);
+            this.mainSearch.setFocused(false);
         }
         this.refreshRequest.run();
     }
 
     /** 弹层关闭后恢复展开前的焦点。 */
     void restoreMainSearchFocus() {
-        if (this.mainSearch != null) this.mainSearch.setFocused(this.mainSearchFocused);
+        if (this.mainSearch != null) this.mainSearch.setFocused(this.resumeMainSearchFocus);
     }
 
     /** 展开弹层前记下主搜索焦点并让出焦点。 */
     void suspendMainSearchFocus() {
-        this.mainSearchFocused = isMainSearchFocused();
+        this.resumeMainSearchFocus = isMainSearchFocused();
         if (this.mainSearch != null) this.mainSearch.setFocused(false);
     }
 

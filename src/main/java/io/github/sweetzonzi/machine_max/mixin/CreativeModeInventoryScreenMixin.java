@@ -33,8 +33,10 @@ import java.util.Set;
  * （主搜索框、滚动位置、标签提示集合、当前页）、以及在装载未就绪时跳过原版的页刷新。过滤本身全部
  * 在 {@code CreativePartBrowser} 与 {@code SeriesPickerWidget} 里。</p>
  *
- * <p>焦点约定：主搜索框由本 Mixin 直接管理焦点标记，不写 {@code Screen#setFocused}，避免两套焦点
- * 记录互相清除；原版 {@code selectTab} 对目标页强制的 {@code setCanLoseFocus(false)} 在 TAIL 处改回。</p>
+ * <p>焦点约定：主搜索框的焦点由 {@link CreativePartBrowser} 直接用 {@code EditBox#setFocused} 管理，
+ * 不经过 {@code Screen#setFocused}，避免两套焦点记录互相清除。原版 {@code selectTab} 对带搜索栏的页
+ * 强制 {@code setCanLoseFocus(false)} 并聚焦搜索框，两者都在 TAIL 处改回：进入目标页时搜索框失焦，
+ * 玩家点一下才进入输入模式。</p>
  *
  * <p>线程：主线程（20tps）。</p>
  */
@@ -116,7 +118,7 @@ public abstract class CreativeModeInventoryScreenMixin {
         if (CreativePartBrowser.isFilterTab(selectedTab)) this.machineMax$browser.captureQuery();
     }
 
-    /** 切页后同步控件显隐、关闭弹层、恢复主搜索框设置与焦点。 */
+    /** 切页后同步控件显隐、关闭弹层、恢复主搜索串并让搜索框失焦。 */
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void machineMax$selectTabTail(CreativeModeTab tab, CallbackInfo ci) {
         if (this.machineMax$browser == null || this.searchBox == null) return;
@@ -174,7 +176,8 @@ public abstract class CreativeModeInventoryScreenMixin {
     }
 
     /**
-     * 键盘入口：弹层打开时独占输入；主搜索有焦点时编辑键先给搜索框，数字键因此不再落进原版快捷栏分支。
+     * 键盘入口：弹层打开时独占输入；主搜索有焦点时编辑键先给搜索框并消费，数字键因此不会落进原版
+     * 快捷栏分支；失焦时不做拦截，按键照常交给屏幕。
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void machineMax$keyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
@@ -190,9 +193,7 @@ public abstract class CreativeModeInventoryScreenMixin {
         if (this.machineMax$browser == null) return;
         if (this.machineMax$browser.charTyped(codePoint, modifiers)) {
             cir.setReturnValue(true);
-            return;
         }
-        if (this.machineMax$browser.shouldBlockUntargetedCharTyped()) cir.setReturnValue(false);
     }
 
     // ==================== 目录、滚动与绘制 ====================
