@@ -442,7 +442,7 @@
   "message.machine_max.track.other_vehicle": "履带：请先闭合或取消另一辆载具上的履带",
   "message.machine_max.track.use_crowbar": "履带：拆卸履带请用撬棍",
   "message.machine_max.track.waiting_wheels": "履带：其他轮组尚未装配完成",
-  "message.machine_max.track.wheel_added": "履带：加入 %1$s（共 %2$s 个履带轮）",
+  "message.machine_max.track.wheel_added": "履带：加入 %1$s（共 %2$s 个履带轮，需 %3$s 节，持有 %4$s 节）",
   "message.machine_max.track.wheel_undone": "履带：撤销 %1$s",
   "message.machine_max.vehicle.place_failed": "部署载具失败: %1$s",
   "message.machine_max.watch_interact_box_info": "[%1$s]",

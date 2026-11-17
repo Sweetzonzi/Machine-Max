@@ -89,10 +89,10 @@ public class TrackRenderer extends VisualEffectRenderer {
         PROCEDURAL
     }
 
-    /** 程序化回退的单节宽度（米）；模型路径以模型横向尺寸为准。 */
-    private static final double LINK_WIDTH = 0.35;
+    /** 程序化回退的单节宽度（米）；模型路径以模型横向尺寸为准。铺设预览共用同一几何。 */
+    static final double LINK_WIDTH = 0.35;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
-    private static final double LINK_LENGTH_RATIO = 0.92;
+    static final double LINK_LENGTH_RATIO = 0.92;
     /** 线框节的顶点色：偏亮的灰，与实体节的基色区分。 */
     private static final int WIRE_COLOR = 0xFFB8B4AA;
 
@@ -116,8 +116,8 @@ public class TrackRenderer extends VisualEffectRenderer {
     private static long renderFrame;
     private static long previousFrameTime;
     private static double sagBlend;
-    /** 程序化回退的贴图：原版 4×4 纯白纹理。 */
-    private static final ResourceLocation LINK_TEXTURE =
+    /** 程序化节的贴图：原版 4×4 纯白纹理。铺设预览的实体节框共用。 */
+    static final ResourceLocation LINK_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     /** 程序化回退的单节统一基色。 */
     private static final int LINK_COLOR = 0xFF9A968C;
@@ -564,8 +564,7 @@ public class TrackRenderer extends VisualEffectRenderer {
                 if (wire) {
                     // 骨骼没有立方体（纯网格）时这套描边画不出东西，退回程序化长方体的线框
                     if (!hasCubes(slot.bones())) {
-                        renderProceduralLinkOutline(poseStack, bufferSource, halfLength, halfThickness,
-                                halfWidth, packedLight);
+                        renderLinkOutline(poseStack, bufferSource, halfLength, halfThickness, halfWidth);
                     } else {
                         PartEntityRenderer.renderBonesAsLines(slot.bones(), visual.pose(), 1f,
                                 poseStack, bufferSource, packedLight, WIRE_COLOR);
@@ -577,10 +576,10 @@ public class TrackRenderer extends VisualEffectRenderer {
                 poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
                         .mul(TrackLinkPose.procedural(tangent, normal, point, wheelAxis, halfThickness)));
                 if (wire) {
-                    renderProceduralLinkOutline(poseStack, bufferSource, halfLength, halfThickness,
-                            halfWidth, packedLight);
+                    renderLinkOutline(poseStack, bufferSource, halfLength, halfThickness, halfWidth);
                 } else {
-                    renderProceduralLink(poseStack, proceduralConsumer, halfLength, halfThickness, halfWidth, packedLight);
+                    renderProceduralLink(poseStack, proceduralConsumer, halfLength, halfThickness,
+                            halfWidth, packedLight, LINK_COLOR);
                 }
             }
             poseStack.popPose();
@@ -632,39 +631,38 @@ public class TrackRenderer extends VisualEffectRenderer {
      *
      * <p>与未装配部件的线框同一种表现，用于未建造的整圈骨架与补焊中的缺口。</p>
      */
-    private static void renderProceduralLinkOutline(PoseStack poseStack, MultiBufferSource bufferSource,
-                                                    float halfLength, float halfThickness, float halfWidth,
-                                                    int packedLight) {
+    static void renderLinkOutline(PoseStack poseStack, MultiBufferSource bufferSource,
+                                  float halfLength, float halfThickness, float halfWidth) {
         VertexConsumer lines = bufferSource.getBuffer(RenderType.lines());
         PoseStack.Pose pose = poseStack.last();
         float x0 = -halfLength, x1 = halfLength;
         float y0 = -halfThickness, y1 = halfThickness;
         float z0 = -halfWidth, z1 = halfWidth;
         // 底 / 顶两圈
-        edge(lines, pose, packedLight, x0, y0, z0, x1, y0, z0);
-        edge(lines, pose, packedLight, x1, y0, z0, x1, y0, z1);
-        edge(lines, pose, packedLight, x1, y0, z1, x0, y0, z1);
-        edge(lines, pose, packedLight, x0, y0, z1, x0, y0, z0);
-        edge(lines, pose, packedLight, x0, y1, z0, x1, y1, z0);
-        edge(lines, pose, packedLight, x1, y1, z0, x1, y1, z1);
-        edge(lines, pose, packedLight, x1, y1, z1, x0, y1, z1);
-        edge(lines, pose, packedLight, x0, y1, z1, x0, y1, z0);
+        edge(lines, pose, WIRE_COLOR, x0, y0, z0, x1, y0, z0);
+        edge(lines, pose, WIRE_COLOR, x1, y0, z0, x1, y0, z1);
+        edge(lines, pose, WIRE_COLOR, x1, y0, z1, x0, y0, z1);
+        edge(lines, pose, WIRE_COLOR, x0, y0, z1, x0, y0, z0);
+        edge(lines, pose, WIRE_COLOR, x0, y1, z0, x1, y1, z0);
+        edge(lines, pose, WIRE_COLOR, x1, y1, z0, x1, y1, z1);
+        edge(lines, pose, WIRE_COLOR, x1, y1, z1, x0, y1, z1);
+        edge(lines, pose, WIRE_COLOR, x0, y1, z1, x0, y1, z0);
         // 四条竖棱
-        edge(lines, pose, packedLight, x0, y0, z0, x0, y1, z0);
-        edge(lines, pose, packedLight, x1, y0, z0, x1, y1, z0);
-        edge(lines, pose, packedLight, x1, y0, z1, x1, y1, z1);
-        edge(lines, pose, packedLight, x0, y0, z1, x0, y1, z1);
+        edge(lines, pose, WIRE_COLOR, x0, y0, z0, x0, y1, z0);
+        edge(lines, pose, WIRE_COLOR, x1, y0, z0, x1, y1, z0);
+        edge(lines, pose, WIRE_COLOR, x1, y0, z1, x1, y1, z1);
+        edge(lines, pose, WIRE_COLOR, x0, y0, z1, x0, y1, z1);
     }
 
-    private static void edge(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+    private static void edge(VertexConsumer consumer, PoseStack.Pose pose, int color,
                              float x0, float y0, float z0, float x1, float y1, float z1) {
         float nx = x1 - x0, ny = y1 - y0, nz = z1 - z0;
         float scale = (float) (1.0 / Math.sqrt(nx * nx + ny * ny + nz * nz));
         consumer.addVertex(pose, x0, y0, z0)
-                .setColor(WIRE_COLOR)
+                .setColor(color)
                 .setNormal(pose, nx * scale, ny * scale, nz * scale);
         consumer.addVertex(pose, x1, y1, z1)
-                .setColor(WIRE_COLOR)
+                .setColor(color)
                 .setNormal(pose, nx * scale, ny * scale, nz * scale);
     }
 
@@ -758,11 +756,14 @@ public class TrackRenderer extends VisualEffectRenderer {
 
     /**
      * 画一节扁长方体。每个面按外法线顺序给出逆时针顶点，正面剔除下从外面可见；
-     * 明暗由 {@link RenderType#entitySolid} 的实体着色器（两向光照 + 光照图）计算。
+     * 明暗由实体着色器（两向光照 + 光照图）计算。
+     *
+     * <p>顶点色与渲染类型由调用方给定：实体履带用 {@link #LINK_COLOR} + {@link RenderType#entitySolid}，
+     * 铺设预览用半透明实体类型 + 放置预览的绿 / 红，两者共用同一份节几何。</p>
      */
-    private static void renderProceduralLink(PoseStack poseStack, VertexConsumer consumer,
-                                             float halfLength, float halfThickness, float halfWidth,
-                                             int packedLight) {
+    static void renderProceduralLink(PoseStack poseStack, VertexConsumer consumer,
+                                     float halfLength, float halfThickness, float halfWidth,
+                                     int packedLight, int color) {
         PoseStack.Pose pose = poseStack.last();
 
         float x0 = -halfLength;
@@ -773,39 +774,39 @@ public class TrackRenderer extends VisualEffectRenderer {
         float z1 = halfWidth;
 
         // +Y / -Y
-        quad(consumer, pose, packedLight, 0, 1, 0,
+        quad(consumer, pose, packedLight, color, 0, 1, 0,
                 x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0);
-        quad(consumer, pose, packedLight, 0, -1, 0,
+        quad(consumer, pose, packedLight, color, 0, -1, 0,
                 x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
         // +Z / -Z
-        quad(consumer, pose, packedLight, 0, 0, 1,
+        quad(consumer, pose, packedLight, color, 0, 0, 1,
                 x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1);
-        quad(consumer, pose, packedLight, 0, 0, -1,
+        quad(consumer, pose, packedLight, color, 0, 0, -1,
                 x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0);
         // +X / -X
-        quad(consumer, pose, packedLight, 1, 0, 0,
+        quad(consumer, pose, packedLight, color, 1, 0, 0,
                 x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1);
-        quad(consumer, pose, packedLight, -1, 0, 0,
+        quad(consumer, pose, packedLight, color, -1, 0, 0,
                 x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0);
     }
 
-    private static void quad(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+    private static void quad(VertexConsumer consumer, PoseStack.Pose pose, int packedLight, int color,
                              float nx, float ny, float nz,
                              float x0, float y0, float z0,
                              float x1, float y1, float z1,
                              float x2, float y2, float z2,
                              float x3, float y3, float z3) {
-        vertex(consumer, pose, packedLight, nx, ny, nz, x0, y0, z0);
-        vertex(consumer, pose, packedLight, nx, ny, nz, x1, y1, z1);
-        vertex(consumer, pose, packedLight, nx, ny, nz, x2, y2, z2);
-        vertex(consumer, pose, packedLight, nx, ny, nz, x3, y3, z3);
+        vertex(consumer, pose, packedLight, color, nx, ny, nz, x0, y0, z0);
+        vertex(consumer, pose, packedLight, color, nx, ny, nz, x1, y1, z1);
+        vertex(consumer, pose, packedLight, color, nx, ny, nz, x2, y2, z2);
+        vertex(consumer, pose, packedLight, color, nx, ny, nz, x3, y3, z3);
     }
 
-    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, int packedLight, int color,
                                float nx, float ny, float nz,
                                float x, float y, float z) {
         consumer.addVertex(pose, x, y, z)
-                .setColor(LINK_COLOR)
+                .setColor(color)
                 .setUv(0f, 0f)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(packedLight)

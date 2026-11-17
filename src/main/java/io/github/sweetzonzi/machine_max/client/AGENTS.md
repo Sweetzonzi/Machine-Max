@@ -10,6 +10,8 @@ client/
 │   ├── renderer/                 # 实体/方块实体渲染器
 │   │   ├── PartEntityRenderer.java   # 主载具渲染器（GeoEntityRenderer）
 │   │   ├── PartAssemblyRenderer.java # 装配阶段渲染
+│   │   ├── TrackRenderer.java        # 履带节绘制 + 带速相位
+│   │   ├── TrackLayingPreview.java   # 履带铺设预览：读 TrackLayingClient 的快照画候选包络
 │   │   ├── Hud3DRenderer.java        # 3D HUD 渲染
 │   │   ├── ClientProjectileRenderer.java
 │   │   ├── ProjectileEntityRenderer.java
@@ -64,6 +66,8 @@ client/
 │   ├── jade/                     # Jade 插件（2 个文件）
 │   └── jei/                      # JEI 插件（5 个文件）
 ├── event/                        # 客户端事件（2 个文件）
+├── track/
+│   └── TrackLayingClient.java     # 履带铺设草稿（客户端持有）+ 闭合请求 + 预览快照
 ├── network/
 │   └── ClientResearchHandler.java # 客户端研究系统处理器
 ├── MachineMaxClient.java          # 客户端入口
@@ -84,6 +88,7 @@ client/
 | 新增渲染类型 | `render/MMRenderTypes.java` | LINES_ALWAYS_VISIBLE, SOLID_ALWAYS_VISIBLE |
 | 修复后处理 / 深度问题 | `render/post/` | 先读 `render/post/AGENTS.md`：深度快照时机、链目标格式、GL 状态还原 |
 | 修复方块实体渲染 | `render/renderer/block/*.java` | Fabricator, ResearchTable, TotalStation |
+| 修复履带铺设 / 预览 | `track/TrackLayingClient.java` + `render/renderer/TrackLayingPreview.java` | 草稿只在客户端持有，闭合走 `TrackCloseRequestPayload`；预览用同一份成员表画候选包络 |
 | 新增 JEI/Jade 集成 | `compat/jei/` 或 `compat/jade/` | 客户端配方/信息显示 |
 | 客户端网络处理 | `network/ClientResearchHandler.java` | 研究系统客户端处理 |
 

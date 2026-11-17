@@ -98,6 +98,8 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
         renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
         renderVehicleProjection(camPos, poseStack, bufferSource, partialTick);
+        // 履带铺设预览：草稿在客户端，几何与真正的履带同源，见 TrackLayingPreview
+        TrackLayingPreview.render(camPos, poseStack, bufferSource, partialTick);
     }
 
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {

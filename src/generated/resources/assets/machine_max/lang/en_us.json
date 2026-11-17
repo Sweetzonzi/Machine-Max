@@ -421,7 +421,7 @@
   "message.machine_max.track.other_vehicle": "Track: close or cancel the track on the other vehicle first",
   "message.machine_max.track.use_crowbar": "Track: use a crowbar to remove the track",
   "message.machine_max.track.waiting_wheels": "Track: the other wheel groups are not assembled yet",
-  "message.machine_max.track.wheel_added": "Track: added %1$s (%2$s track wheels)",
+  "message.machine_max.track.wheel_added": "Track: added %1$s (%2$s track wheels, %3$s links needed, %4$s held)",
   "message.machine_max.track.wheel_undone": "Track: removed %1$s",
   "message.machine_max.vehicle.place_failed": "Failed to deploy vehicle: %1$s",
   "message.machine_max.watch_interact_box_info": "[%1$s]",

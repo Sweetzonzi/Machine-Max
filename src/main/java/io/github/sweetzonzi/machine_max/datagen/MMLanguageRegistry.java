@@ -747,8 +747,8 @@ public enum MMLanguageRegistry {
             en_us, "Track: that wheel is already part of this layout"
     )),
     MESSAGE_TRACK_WHEEL_ADDED("message.machine_max.track.wheel_added", ImmutableMap.of(
-            zh_cn, "履带：加入 %1$s（共 %2$s 个履带轮）",
-            en_us, "Track: added %1$s (%2$s track wheels)"
+            zh_cn, "履带：加入 %1$s（共 %2$s 个履带轮，需 %3$s 节，持有 %4$s 节）",
+            en_us, "Track: added %1$s (%2$s track wheels, %3$s links needed, %4$s held)"
     )),
     MESSAGE_TRACK_WHEEL_UNDONE("message.machine_max.track.wheel_undone", ImmutableMap.of(
             zh_cn, "履带：撤销 %1$s",

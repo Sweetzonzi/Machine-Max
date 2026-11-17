@@ -36,7 +36,9 @@ public class MMPayloadRegistry {
         // 载荷里的「子零件 ID + writeUtf(名字)」换成「varint 子零件 ID + varint 序号」，接收方按同一份内容定义
         // 重建的同一个子零件用 SubPart#subsystemAt / #connectorAt / #interactBoxAt 反查。序号越界即整包丢弃，
         // 不回退按名字再查；名字仍是存档键与翻译键。
-        final PayloadRegistrar input = event.registrar("input:3.0.0");
+        // 4.0.0 新增 TrackCloseRequestPayload：履带闭合是一次请求，携带载具 UUID、型号 id 与按铺设顺序
+        // 排列的成员表（主动轮在首位）。
+        final PayloadRegistrar input = event.registrar("input:4.0.0");
         // TrackLinkData#STREAM_CODEC 依次编码 clockwise 绕向、track_type 型号 id 与 link_count 节数，
         // VehicleData 的同步和蓝图载荷使用同一格式。
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。
@@ -183,6 +185,11 @@ public class MMPayloadRegistry {
                 PartAssemblyRequestPayload.TYPE,
                 PartAssemblyRequestPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartAssemblyRequestPayload::serverHandler)
+        );
+        input.playToServer(//履带闭合请求（载具 + 型号 + 按铺设顺序的成员表，服务端重做全部判定）
+                TrackCloseRequestPayload.TYPE,
+                TrackCloseRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(TrackCloseRequestPayload::serverHandler)
         );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
