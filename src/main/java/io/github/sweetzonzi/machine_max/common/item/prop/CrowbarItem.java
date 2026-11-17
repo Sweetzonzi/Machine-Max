@@ -18,6 +18,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -58,6 +60,17 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {
+                // 履带包在轮子外面：撬棍对准任一履带成员时先拆整条带，早于零件的撬棍许可检查。
+                // 带拆掉后该轮 trackLink 为 null，同一次右键再落到轮上时走的是轮子自身的处理
+                TrackLink track = subPart.trackLink;
+                if (track != null && !track.isDisposed() && track.vehicle() == subPart.part.assembly) {
+                    track.dissolve(player, subPart.getPresentationPosition());
+                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"), 32f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                    player.resetAttackStrengthTicker();
+                    crowbar.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+                    return InteractionResultHolder.success(player.getItemInHand(usedHand));
+                }
                 if (!(subPart.part instanceof RegularPart part) || !part.crowbarRemovable)
                     return InteractionResultHolder.pass(player.getItemInHand(usedHand));
                 RegularPartType partType = part.type;
@@ -90,6 +103,9 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                         });
                     }
                 } else {
+                    // 零件内若含履带成员，先整条结算并掉落在零件位置：等 SubPart.destroy() 里的
+                    // onMemberDestroyed 再处理，那条带只会静默解散、材料凭空消失
+                    TrackLink.dissolveTracksIn(part.subParts.values(), player, player.position());
                     part.assembly.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
                         ItemStack itemStack = null;
@@ -129,6 +145,13 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
+                // 右键在带在位时先拆整条带，提示必须指向同一件事
+                TrackLink track = subPart.trackLink;
+                if (track != null && !track.isDisposed() && track.vehicle() == subPart.part.assembly) {
+                    player.displayClientMessage(Component.translatable(MMLanguageRegistry.TOOLTIP_CROWBAR_DETACH_TRACK.tag,
+                            Component.translatable(FittingType.nameKey(track.typeId()))), true);
+                    return;
+                }
                 if (!(subPart.part instanceof RegularPart part) || !part.crowbarRemovable) return;
                 boolean hasConnection = false;
                 for (AbstractConnector connector : part.externalConnectors.values()) {

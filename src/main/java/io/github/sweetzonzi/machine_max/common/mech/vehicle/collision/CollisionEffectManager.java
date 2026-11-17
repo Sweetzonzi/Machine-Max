@@ -202,10 +202,10 @@ public class CollisionEffectManager {
         bodySound.tick(freshBody);
     }
 
-    /** 健康履带的轮面音由 TrackLink 管理，普通刮擦由本管理器处理。 */
+    /** 在位的履带的轮面音由 TrackLink 管理，普通刮擦由本管理器处理。 */
     private boolean isTrackOwned() {
         TrackLink track = subPart.trackLink;
-        return track != null && !track.isDisposed() && !track.isBroken();
+        return track != null && !track.isDisposed() && track.isBuilt() && !track.isBroken();
     }
 
     /** 主线程：销毁或卸载区块时立即释放接触声源，恢复 tick 后允许重新播放。 */

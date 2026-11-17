@@ -4,7 +4,7 @@
   "tags": ["machine_max:series/t90a"],
   "material": "machine_max:track_steel",
   "thickness_mm": 65.625,
-  "durability_per_link": 20,
+  "durability_per_link": 12,
   "length_per_link": 0.1875,
   "tension": {
     "enabled": true,

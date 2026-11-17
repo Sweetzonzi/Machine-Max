@@ -769,29 +769,32 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /**
      * 该 SubPart 的垂直等效装甲厚度（mm RHA），已计入耐久衰减，不含入射角修正。
      *
+     * <p>履带存活时取履带装甲层，耐久比例取**命中该成员时它所压的那一块材料扇区**：
+     * 同一发命中的装甲判定与耐久扣减因此落在同一段带上。</p>
+     *
      * @param hitBox 命中的碰撞箱；为 {@code null} 时只可能走履带装甲层
      */
     public float getRHA(@Nullable HitBox hitBox) {
         TrackLink track = this.trackLink;
         if (hasLiveTrack(track)) {
             return ArmorUtil.rha(track.attr().armor(), track.attr().thicknessMm(),
-                    track.durabilityRatio());
+                    track.sectorRatio(this));
         }
         return hitBox == null ? 0f : hitBox.getRHA(this);
     }
 
     /**
-     * 履带接触的唯一判据：履带存活，且命中的是本零件轮的轮面。
+     * 履带接触的唯一判据：履带在位（已建造且未断带），且命中的是本零件轮的轮面。
      *
      * <p>{@code setupFriction} 与 {@code setupContactFriction} 共用该判定；非轮面的
-     * 碰撞箱（车体、悬挂等）仍走自身材料。</p>
+     * 碰撞箱（车体、悬挂等）仍走自身材料。未建造的带只有设计、没有材料，不提供轮面摩擦；
+     * 断带后轮面退回各轮自身的材质，表现为明显打滑。</p>
      *
      * @param hitBoxIndex 碰撞点索引
      */
     public boolean isTrackContact(int hitBoxIndex) {
         TrackLink track = this.trackLink;
-        return track != null && !track.isDisposed()
-                && isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex);
+        return hasLiveTrack(track) && isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex);
     }
 
     /**
@@ -831,15 +834,21 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public float modifyArmorDamage(@Nullable HitBox hitBox, DamageSource source, float amount) {
         MaterialAttr.ArmorAttr armor = armorMaterial(hitBox).armor();
         float ratio = hasLiveTrack(trackLink)
-                ? trackLink.durabilityRatio()
+                ? trackLink.sectorRatio(this)
                 : getMaxDurability() > 0f ? Math.clamp(getDurability() / getMaxDurability(), 0f, 1f) : 1f;
         float dmg = armor.damageModifiers().apply(source, amount);
         dmg = Math.max(0f, dmg - ArmorUtil.resist(armor, ratio));
         return dmg * ArmorUtil.mult(armor, ratio);
     }
 
+    /**
+     * 「履带能否替成员轮吃下这一发」。
+     *
+     * <p>三件事必须同时成立：履带没被释放、已经建造（材料扇区非空）、没有断带。未建造的带只有
+     * 设计没有材料，既不能吸伤害，也不能作为机械件存在——这一条是所有履带门控的唯一来源。</p>
+     */
     private static boolean hasLiveTrack(@Nullable TrackLink track) {
-        return track != null && !track.isDisposed() && !track.isBroken();
+        return track != null && !track.isDisposed() && track.isBuilt() && !track.isBroken();
     }
 
     /** 本次伤害是否由普通碰撞发起（见 {@link MMDamageExtensions#COLLISION_IMPACT}）。 */
@@ -999,7 +1008,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         accumulateHit(event, trackAbsorbed);
         if (event.isCanceled()) return false;
         if (trackAbsorbed) {
-            track.damage(amount);
+            // 伤害落到「命中那一刻该成员压着的那一块材料扇区」，与装甲两步用同一条派生规则
+            track.damage(track.sectorOf(this), amount);
             return true;
         }
         // 命中音效与火花的表现在主线程结算阶段随命中记录一并发出，本方法不直接播表现
@@ -1100,6 +1110,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      * <p>维修零件和子系统并加固连接点</p>
      * <p>Repairs the sub-part and subsystems and strengthen the connectors</p>
      *
+     * <p>本方法只服务轮子自身：子部件耐久、子系统与连接点。履带的建造与维修由焊枪直接调用
+     * {@link TrackLink#repair(net.minecraft.world.Container, float)} 与
+     * {@link TrackLink#buildTrack(net.minecraft.world.Container)}，不经过这里——
+     * 留着履带分支，焊枪链式分工的第一步就会把履带修掉，「轮子优先」永远轮不到。</p>
+     *
      * @param amount          零件维修量 (>0) sub-part repair damageAmount (>0)
      * @param subSystemAmount 子系统维修量 (>0) subsystem repair damageAmount (>0)
      * @param connectorAmount 连接点结构完整性加固量 (>0) connector integrity strengthen damageAmount (>0)
@@ -1107,14 +1122,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
         if (!level.isClientSide && part.permitsRepair()) {
-            // 履带成员轮子的维修量优先用于履带耐久；履带不是独立刚体，破坏后由这里恢复
-            TrackLink track = this.trackLink;
-            if (track != null && !track.isDisposed() && amount > 0f
-                    && (track.isBroken() || track.durability() < track.maxDurability())) {
-                track.repair(amount);
-                part.onRepairAttempt();
-                return true;
-            }
             part.onRepairAttempt(); // 尝试维修时重置为线框模式
             // 修理零件
             float repairAmount = 0f;
@@ -1168,8 +1175,12 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 }
             }
             part.onDurabilityChanged();
-            syncToClient();
-            return !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount && connectorAmount == connectorsRepairAmount);
+            // 「有进展」的结论在同步之前定下来：焊枪的链式分工每拍都先调本方法，
+            // 无事可做的拍不该再发出一个空的 SubPartSyncPayload
+            boolean changed = !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount
+                    && connectorAmount == connectorsRepairAmount);
+            if (changed) syncToClient();
+            return changed;
         } else return false;
     }
 

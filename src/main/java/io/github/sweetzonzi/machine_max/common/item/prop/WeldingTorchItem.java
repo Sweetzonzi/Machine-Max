@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -92,26 +93,66 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
                     if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
                         return;
-                    if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
+                    if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下按「轮子 → 零件 → 履带 → 车体」串行焊接
                         float repairStep = 5;
-                        boolean repaired = subPart.repair(
+                        float assembleStep = 5;
+                        boolean progressed = false;
+                        // 1. 轮子优先：子部件耐久 / 子系统 / 连接点
+                        progressed = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
-                                repairStep * CONNECTOR_REPAIR_PER_TICK)
-                                || (subPart.getPart().getAssembly() instanceof VehicleCore vc && vc.repair(repairStep * VEHICLE_REPAIR_PER_TICK));
-                        // 尝试同时组装部件（研发门禁：未通过则不推进进度，仅提示）
-                        float assembleStep = 5;
+                                repairStep * CONNECTOR_REPAIR_PER_TICK);
+                        boolean assembled = false;
+                        // 2. 零件装配（研发门禁：未通过则不推进进度，仅提示）
                         BlueprintAttachment blueprint = player.getData(MMAttachments.getBLUEPRINT());
                         if (blueprint.canAdvanceAssembly(player, part)) {
-                            boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                            if (assembled && remainingUseDuration % 10 == 0)
-                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                            if (!progressed) {
+                                assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                                progressed = assembled;
+                            }
                         } else {
                             player.displayClientMessage(Component.translatable(
                                     MMLanguageRegistry.MESSAGE_ASSEMBLY_LOCKED.tag,
                                     Component.translatable(part.getName())), true);
                         }
-                        if (repaired && remainingUseDuration % 10 == 0)
+                        // 3. 履带：建造或维修。履带要焊时本拍不再给车体 HP——「缺料」的提示
+                        //    若被车体维修顶掉，玩家永远看不到原因
+                        boolean trackPending = false;
+                        if (!progressed) {
+                            TrackLink track = subPart.trackLink;
+                            if (track != null && !track.isDisposed() && track.needsWelding()) {
+                                trackPending = true;
+                                if (!track.canWeld()) {
+                                    player.displayClientMessage(Component.translatable(
+                                            MMLanguageRegistry.MESSAGE_TRACK_WAITING_WHEELS.tag), true);
+                                } else if (track.needsBuild()) {
+                                    int cost = track.linkCount();
+                                    if (track.buildTrack(player.getInventory())) {
+                                        progressed = true;
+                                    } else {
+                                        player.displayClientMessage(Component.translatable(
+                                                MMLanguageRegistry.MESSAGE_TRACK_BUILD_NEED.tag, cost,
+                                                track.heldLinks(player.getInventory())), true);
+                                    }
+                                } else if (track.repair(player.getInventory(), repairStep)) {
+                                    progressed = true;
+                                } else {
+                                    int need = track.missingTornLinks();
+                                    player.displayClientMessage(need > 0
+                                            ? Component.translatable(MMLanguageRegistry.MESSAGE_TRACK_BREACH_NEED.tag,
+                                            need, track.heldLinks(player.getInventory()))
+                                            : Component.translatable(MMLanguageRegistry.MESSAGE_TRACK_FULL.tag), true);
+                                }
+                            }
+                        }
+                        // 4. 车体 HP 是最后一个口袋
+                        if (!progressed && !trackPending) {
+                            progressed = subPart.getPart().getAssembly() instanceof VehicleCore vc
+                                    && vc.repair(repairStep * VEHICLE_REPAIR_PER_TICK);
+                        }
+                        if (assembled && remainingUseDuration % 10 == 0)
+                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        if (progressed && remainingUseDuration % 10 == 0)
                             BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
@@ -121,6 +162,8 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 livingEntity.stopUsingItem();
                             }
                         } else { // 对0进度的部件再次潜行使用物品才会拆除
+                            // 零件内若含履带成员，先整条结算并掉落在零件位置
+                            TrackLink.dissolveTracksIn(part.subParts.values(), player, player.position());
                             part.assembly.removePart(part);
                         }
                     }
@@ -215,6 +258,11 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             }
         if (!shouldPlayEffect)
             shouldPlayEffect = subPart.part instanceof RegularPart regular && regular.getAssemblingProgress() < 1;
+        // 履带要焊（未建造 / 断口 / 战损）就冒火花：判据是「未满」，缺料时照常冒火花——
+        // 火花不能接在 repair(...) 的返回值上，缺料与整条已满这两种 false 的表现相反
+        if (!shouldPlayEffect && subPart.trackLink != null && !subPart.trackLink.isDisposed()) {
+            shouldPlayEffect = subPart.trackLink.needsWelding();
+        }
         return shouldPlayEffect;
     }
 

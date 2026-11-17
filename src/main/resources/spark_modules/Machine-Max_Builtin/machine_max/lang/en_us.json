@@ -4,7 +4,7 @@
   "machine_max.ammo.he": "HE",
   "machine_max.ammo.tracer": "TRACER",
   "machine_max.ammo.atgm": "ATGM",
-  "machine_max.fitting.default": "Track",
+  "machine_max.fitting.default": "Track Link",
   "connector.machine_max.hull_left_wheel_1": "Hull Left Wheel 1",
   "connector.machine_max.hull_left_wheel_2": "Hull Left Wheel 2",
   "connector.machine_max.hull_left_wheel_3": "Hull Left Wheel 3",

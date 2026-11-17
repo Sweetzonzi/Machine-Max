@@ -159,11 +159,16 @@ public final class RegularPart extends AbstractPart<RegularPartType> {
     }
 
     /**
-     * 维修尝试进入时开启组装形态，并按需要向客户端同步；不表示此次一定恢复了耐久。
+     * 维修尝试进入时，未达成工作阈值的部件回到组装形态（线框），并按需要向客户端同步。
+     *
+     * <p>已达阈值的部件保持完成形态：线框条件是“组装形态且进度低于工作阈值”，
+     * 对完成的部件置位不改变画面，却会多出一次同步广播与一次重力更新提交。
+     * 判定“轮组是否已组好”应读 {@link #permitsSubsystemWork()}，不要读这个标记——
+     * 它是表现标志，拆解回到阈值以下时也不会被自动翻回来。</p>
      */
     @Override
     public void onRepairAttempt() {
-        setAssembling(true);
+        if (getAssemblingProgress() < type.functionalThreshold) setAssembling(true);
     }
 
     /**

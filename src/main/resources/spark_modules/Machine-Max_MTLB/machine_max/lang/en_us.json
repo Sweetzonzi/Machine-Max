@@ -71,7 +71,7 @@
   "subsystem.machine_max.passenger_seat_8": "Passenger Seat 8",
   "machine_max.research.mtlb": "MT-LB",
   "research.machine_max.mtlb_blueprint.desc": "Integrated MT-LB part holding the hull, engine bay and both running gear assemblies.",
-  "machine_max.fitting.mtlb_track": "MT-LB Track",
+  "machine_max.fitting.mtlb_track": "MT-LB Track Link",
   "machine_max.pkt_turret": "PKT Machine Gun Turret",
   "machine_max.research.pkt_turret": "PKT Machine Gun Turret",
   "research.machine_max.pkt_turret_blueprint.desc": "A PKT machine gun turret that fits any vehicle with a matching ring mount; the ring, gun and loader are one part.",

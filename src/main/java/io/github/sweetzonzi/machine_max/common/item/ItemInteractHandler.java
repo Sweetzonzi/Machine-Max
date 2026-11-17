@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -61,14 +62,17 @@ public class ItemInteractHandler {
     }
 
     /**
-     * 履带测试物品：右键主动轮开始铺设，依次右键各负重轮，最后再次右键主动轮闭合。
+     * 履带物品：右键主动轮开始铺设，依次右键各负重轮，最后再次右键主动轮闭合。
      *
-     * <p>闭合后由 {@link VehicleCore#createTrack} 建立一条 {@link TrackLink}；铺设
-     * 顺序即成员顺序（主动轮在首位）。左/右两条履带只是两次独立的铺设过程，
-     * 物品本身不按车体坐标分侧。</p>
+     * <p>闭合分三步：{@link TrackLink#assemble} 建出**未注册**的候选、按候选节数从背包扣
+     * 同型号履带节、扣成功才注册并 {@link TrackLink#onAssembled()}。扣料必须发生在注册之前：
+     * 注册即拥有身份、约束与同步，撤销就要走返还，等于没付钱却拿回 N 节。
+     * 料不够时候选清掉成员的反向引用后丢弃，草稿保留让玩家补料。</p>
      *
-     * <p>潜行右键：铺设中撤销最后一个负重轮；没有草稿时从已闭合的履带中移除目标轮，
-     * 移除主动轮即解散整条履带。</p>
+     * <p>左/右两条履带只是两次独立的铺设过程，物品本身不按车体坐标分侧。</p>
+     *
+     * <p>潜行右键：铺设中撤销最后一个负重轮。已闭合的履带只能由撬棍整条拆除，
+     * 履带物品不提供逐成员移除。</p>
      *
      * <p>交互事件双端触发；草稿与成员变更只在服务端执行，客户端只取消交互以获得手感反馈。</p>
      */
@@ -86,7 +90,7 @@ public class ItemInteractHandler {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getWheelSubPart();
             if (subPart == null) {
-                message(player, "履带：准星没有指向可用的轮子");
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_NO_WHEEL);
             } else if (subPart.part.assembly instanceof VehicleCore vehicle) {
                 if (player.isShiftKeyDown()) {
                     undo(player, vehicle, subPart);
@@ -116,81 +120,95 @@ public class ItemInteractHandler {
             if (!canJoin(player, vehicle, subPart)) return;
             TrackType type = TrackItem.resolveType(player.level(), stack);
             if (type == null) {
-                message(player, "履带：物品没有有效的履带型号");
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_INVALID_TYPE);
                 return;
             }
             TRACK_DRAFTS.put(player.getUUID(), new TrackDraft(vehicle, subPart, type));
-            message(player, "履带：主动轮 " + subPart.name + "，依次右键负重轮，最后右键主动轮闭合");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_DRAFT_STARTED, Component.translatable(subPart.name));
             return;
         }
         if (draft.vehicle() != vehicle) {
-            message(player, "履带：请先闭合或取消另一辆载具上的履带");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_OTHER_VEHICLE);
             return;
         }
         if (subPart == draft.sprocket()) {
             if (draft.wheels().size() + 1 < TrackLink.MIN_MEMBERS) {
-                message(player, "履带：至少需要 " + TrackLink.MIN_MEMBERS + " 个轮子（含主动轮）");
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_MIN_MEMBERS, TrackLink.MIN_MEMBERS);
                 return;
             }
-            TrackLink link = vehicle.createTrack(draft.sprocket(), draft.wheels(), draft.type());
-            if (link == null) {
-                // 装配被拒绝（厚度不成形等）：保留草稿，玩家可以补轮或换型号后再闭合
-                message(player, "履带：闭合失败，检查轮组与履带厚度");
-                return;
-            }
-            TRACK_DRAFTS.remove(player.getUUID());
-            // 节数由包络周长推导，是这条履带的实际用料；当前只报告，不消耗物品
-            message(player, "履带闭合：" + link.members().size() + " 个轮子，"
-                    + link.linkCount() + " 节");
+            closeDraft(player, vehicle, draft);
             return;
         }
         if (draft.contains(subPart)) {
-            message(player, "履带：该轮已在本次铺设中");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_DUPLICATE_WHEEL);
             return;
         }
         if (!canJoin(player, vehicle, subPart)) return;
         draft.add(subPart);
-        message(player, "履带：加入 " + subPart.name + "（" + draft.wheels().size() + " 个负重轮）");
+        message(player, MMLanguageRegistry.MESSAGE_TRACK_WHEEL_ADDED,
+                Component.translatable(subPart.name), draft.wheels().size());
+    }
+
+    /** 闭合草稿：装配候选 → 扣料 → 注册。料不够时保留草稿并丢弃候选。 */
+    private static void closeDraft(Player player, VehicleCore vehicle, TrackDraft draft) {
+        TrackLink link = TrackLink.assemble(vehicle, draft.sprocket(), draft.wheels(), draft.type());
+        if (link == null) {
+            // 成员不合格（厚度不成形等）：保留草稿，玩家可以补轮或换型号后再闭合
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_CLOSE_FAILED);
+            return;
+        }
+        int cost = link.linkCount();
+        if (!TrackLink.takeLinks(player.getInventory(), draft.type().getRegistryKey(), cost)) {
+            // 料不够：候选从未注册、没有约束、没有同步，所以只需要清掉成员的反向引用。
+            // 不撤销会留下「幽灵履带」——hasLiveTrack 判真，把轮子的命中吸走
+            link.abandonCandidate();
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_NEED_LINKS, cost,
+                    TrackLink.countLinks(player.getInventory(), draft.type().getRegistryKey()));
+            return;
+        }
+        vehicle.registerTrackLink(link);
+        link.onAssembled();
+        TRACK_DRAFTS.remove(player.getUUID());
+        message(player, MMLanguageRegistry.MESSAGE_TRACK_CLOSED, link.members().size(), cost);
     }
 
     /**
-     * 潜行右键：铺设中撤销最后一个负重轮（撤到只剩主动轮再按一次则取消草稿）；
-     * 没有草稿时从已闭合的履带中移除目标轮，移除主动轮会解散整条履带。
+     * 潜行右键：铺设中撤销最后一个负重轮（撤到只剩主动轮再按一次则取消草稿）。
+     * 已闭合的履带不在这里改动，拆卸履带请用撬棍。
      */
     private static void undo(Player player, VehicleCore vehicle, SubPart subPart) {
         TrackDraft draft = currentDraft(player);
         if (draft != null) {
             if (draft.vehicle() != vehicle) {
-                message(player, "履带：请先闭合或取消另一辆载具上的履带");
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_OTHER_VEHICLE);
                 return;
             }
             if (!draft.wheels().isEmpty()) {
                 SubPart removed = draft.removeLast();
-                message(player, "履带：撤销 " + removed.name);
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_WHEEL_UNDONE, Component.translatable(removed.name));
             } else {
                 TRACK_DRAFTS.remove(player.getUUID());
-                message(player, "履带：已取消铺设");
+                message(player, MMLanguageRegistry.MESSAGE_TRACK_DRAFT_CANCELLED);
             }
             return;
         }
         TrackLink link = subPart.trackLink;
         if (link != null && link.vehicle() == vehicle) {
-            boolean removed = link.removeMember(subPart);
-            message(player, removed ? "履带：移除 " + subPart.name : "履带：移除失败");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_USE_CROWBAR);
             return;
         }
-        message(player, "履带：该轮不在履带中");
+        message(player, MMLanguageRegistry.MESSAGE_TRACK_NOT_IN_TRACK);
     }
 
     /** 草稿与闭合履带共用的成员资格检查。 */
     private static boolean canJoin(Player player, VehicleCore vehicle, SubPart subPart) {
         if (subPart.isDestroyed() || subPart.part.assembly != vehicle) return false;
         if (subPart.getMaxWheelRadius() <= 0f) {
-            message(player, "履带：该零件没有轮半径，不能作为履带成员");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_NO_WHEEL_RADIUS);
             return false;
         }
         if (subPart.trackLink != null) {
-            message(player, "履带：该轮已属于另一条履带");
+            message(player, MMLanguageRegistry.MESSAGE_TRACK_OTHER_TRACK);
             return false;
         }
         return true;
@@ -207,8 +225,18 @@ public class ItemInteractHandler {
         return draft;
     }
 
-    private static void message(Player player, String text) {
-        player.displayClientMessage(Component.literal(text), true);
+    /**
+     * actionbar 提示。{@code args} 里已是 {@link Component} 的按组件占位，
+     * 其余按数字 / 文本占位。
+     */
+    private static void message(Player player, MMLanguageRegistry key, Object... args) {
+        Object[] translated = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            translated[i] = args[i] instanceof Component component ? component
+                    : args[i] instanceof Integer || args[i] instanceof Float ? args[i]
+                    : Component.literal(String.valueOf(args[i]));
+        }
+        player.displayClientMessage(Component.translatable(key.tag, translated), true);
     }
 
     /** 服务端单线程访问；草稿只持有 SubPart 引用与型号，不持有刚体或约束。 */

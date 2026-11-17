@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisua
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackEnvelope2D;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackSectors;
 import io.github.sweetzonzi.machine_max.util.geometry.BeltPath2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Circle2D;
 import io.github.sweetzonzi.machine_max.util.geometry.Vec2;
@@ -92,6 +93,19 @@ public class TrackRenderer extends VisualEffectRenderer {
     private static final double LINK_WIDTH = 0.35;
     /** 节长占节距的比例，剩余部分作为节间小间隙。 */
     private static final double LINK_LENGTH_RATIO = 0.92;
+    /** 线框节的顶点色：偏亮的灰，与实体节的基色区分。 */
+    private static final int WIRE_COLOR = 0xFFB8B4AA;
+
+    /**
+     * 一节链板的三档表现，与未装配部件的线框语言同构。
+     *
+     * <ul>
+     *   <li>{@link #SOLID}：材料在位。非断口扇区即使有战损也画实体，战损只体现在装甲与 HUD。</li>
+     *   <li>{@link #WIRE}：设计在位、材料没成形——未建造的整圈骨架，或已上料、正在补焊的断口。</li>
+     *   <li>{@link #HIDDEN}：材料被打掉、还没补（断口扇区材料为 0）。</li>
+     * </ul>
+     */
+    private enum LinkState { SOLID, WIRE, HIDDEN }
     private static final double TICK_SECONDS = 1.0 / 20.0;
     /** 垂度跟随支撑变化的一阶低通时间常数（秒）。 */
     private static final double SAG_SECONDS = 0.15;
@@ -356,8 +370,10 @@ public class TrackRenderer extends VisualEffectRenderer {
                 long now = vehicle.level.getGameTime();
                 double elapsed = state.phase == null ? TICK_SECONDS : (now - state.sampleTick) * TICK_SECONDS;
                 TrackBeltPhase next = state.phase == null ? new TrackBeltPhase() : new TrackBeltPhase(state.phase);
+                // 未建造与断带都不推进节相位：骨架不随主动轮转动，断口位置也保持冻结
+                boolean frozen = !link.isBuilt() || link.isBroken();
                 next.advance(wheel, contact.startAngle() + wheel,
-                        link.sprocketOmegaX() * elapsed, link.isBroken());
+                        frozen ? 0 : link.sprocketOmegaX() * elapsed, frozen);
                 state.sampleTick = now;
                 state.phase = next;
             }
@@ -438,6 +454,16 @@ public class TrackRenderer extends VisualEffectRenderer {
         double wheel = wheelAngle(link, envelope, partialTick);
         double label = phase.label(wheel, contact.startAngle() + wheel, partialTick,
                 base.inputCircles().getFirst().radius() / pitch, Math.signum(contact.sweep()));
+        // 断带时整条带的节相位改用服务端权威的 sector_phase（折算成节）：这样遍历索引就是材料节号，
+        // 断口按节号画。客户端自己的积分相位在断带那一刻会跳一下，对称节模型看不出来
+        if (link.isBroken() && link.sectors().isBuilt()) {
+            double mid = pathMidArc(base, contact);
+            if (!Double.isNaN(mid)) {
+                double start = base.distanceAt(contact.contactPoints().getFirst());
+                double linksPerSector = (double) count / link.sectors().size();
+                label = (start - mid) / pitch - link.sectorPhase() * linksPerSector;
+            }
+        }
         // 相位从基础路径的主动轮切点求出，变形只更新路径累计距离与非啮合节距。
         BeltPath2D path = state.saggedPath(link, envelope, sagBlend);
         TrackBeltLayout layout = new TrackBeltLayout(path, contact, count, pitch, label);
@@ -512,7 +538,14 @@ public class TrackRenderer extends VisualEffectRenderer {
         // 程序化节使用同一个不透明实体缓冲，保留实体光照与阴影，每条履带取一次。
         VertexConsumer proceduralConsumer = visual == null
                 ? bufferSource.getBuffer(RenderType.entitySolid(LINK_TEXTURE)) : null;
+        // 扇区状态与节数在整条带的绘制期间是同一版快照，取一次就够
+        TrackSectors sectors = link.sectors();
+        int links = link.linkCount();
+        int tornLinks = sectors.isBuilt() ? TrackSectors.tornLinks(links, sectors.size()) : 0;
         for (int i = 0; i < layout.count(); i++) {
+            LinkState state = linkState(sectors, links, tornLinks, i);
+            if (state == LinkState.HIDDEN) continue;
+            boolean wire = state == LinkState.WIRE;
             BeltPath2D.Sample sample = layout.sample(i);
             float halfLength = (float) (layout.spacing(sample) * LINK_LENGTH_RATIO * 0.5);
             Vec2 point = sample.point();
@@ -528,14 +561,111 @@ public class TrackRenderer extends VisualEffectRenderer {
                         .mul(TrackLinkPose.model(tangent, normal, point, wheelAxis, thickness)));
                 // 槽位骨骼的 pivot 不用对齐到采样点，平移量把该节自己的参考点送到采样点
                 poseStack.translate(-slot.refX(), -slot.refY(), -slot.refZ());
-                renderSlot(poseStack, bufferSource, visual, slot, packedLight);
+                if (wire) {
+                    // 骨骼没有立方体（纯网格）时这套描边画不出东西，退回程序化长方体的线框
+                    if (!hasCubes(slot.bones())) {
+                        renderProceduralLinkOutline(poseStack, bufferSource, halfLength, halfThickness,
+                                halfWidth, packedLight);
+                    } else {
+                        PartEntityRenderer.renderBonesAsLines(slot.bones(), visual.pose(), 1f,
+                                poseStack, bufferSource, packedLight, WIRE_COLOR);
+                    }
+                } else {
+                    renderSlot(poseStack, bufferSource, visual, slot, packedLight);
+                }
             } else {
                 poseStack.mulPose(new Matrix4f(envelope.sprocketWorld())
                         .mul(TrackLinkPose.procedural(tangent, normal, point, wheelAxis, halfThickness)));
-                renderProceduralLink(poseStack, proceduralConsumer, halfLength, halfThickness, halfWidth, packedLight);
+                if (wire) {
+                    renderProceduralLinkOutline(poseStack, bufferSource, halfLength, halfThickness,
+                            halfWidth, packedLight);
+                } else {
+                    renderProceduralLink(poseStack, proceduralConsumer, halfLength, halfThickness, halfWidth, packedLight);
+                }
             }
             poseStack.popPose();
         }
+    }
+
+    /**
+     * 一节链板该画成哪一档。
+     *
+     * <p>未建造（材料扇区为空）时整圈都是线框骨架。断口的节号按材料扇区算：
+     * 扇区 {@code j} 的断口占它起点起的 {@code R} 节，按节号数而不是按弧长窗口，
+     * 这样非啮合段节距被拉开时缺口仍恰好 {@code R} 节、相邻扇区的缺口也自动连成一段。</p>
+     *
+     * @param sectors   整条带的材料扇区（同一版快照）
+     * @param links     节数 N
+     * @param tornLinks 每个断口缺的节数 R
+     * @param index     遍历索引；断带时它等于材料节号（相位换成服务端权威值）
+     */
+    private static LinkState linkState(TrackSectors sectors, int links, int tornLinks, int index) {
+        if (!sectors.isBuilt()) return LinkState.WIRE;
+        int sectorCount = sectors.size();
+        if (links <= 0 || sectorCount <= 0) return LinkState.SOLID;
+        for (int j = 0; j < sectorCount; j++) {
+            if (!sectors.isTorn(j)) continue;
+            int start = (int) Math.ceil((double) j * links / sectorCount);
+            if (Math.floorMod(index - start, links) < tornLinks) {
+                return sectors.fill(j) <= 0f ? LinkState.HIDDEN : LinkState.WIRE;
+            }
+        }
+        return LinkState.SOLID;
+    }
+
+    private static boolean hasCubes(List<OBone> bones) {
+        for (OBone bone : bones) {
+            if (!bone.getCubes().isEmpty()) return true;
+        }
+        return false;
+    }
+
+    /** 主动轮接触弧中点的路径弧长；包络里没有有效接触时返回 NaN。 */
+    private static double pathMidArc(BeltPath2D path, BeltPath2D.ArcContact contact) {
+        List<Vec2> points = contact.contactPoints();
+        if (points.isEmpty()) return Double.NaN;
+        return path.distanceAt(points.get(points.size() / 2));
+    }
+
+    /**
+     * 程序化节的线框描边：十二棱，用 {@link RenderType#lines()} 画。
+     *
+     * <p>与未装配部件的线框同一种表现，用于未建造的整圈骨架与补焊中的缺口。</p>
+     */
+    private static void renderProceduralLinkOutline(PoseStack poseStack, MultiBufferSource bufferSource,
+                                                    float halfLength, float halfThickness, float halfWidth,
+                                                    int packedLight) {
+        VertexConsumer lines = bufferSource.getBuffer(RenderType.lines());
+        PoseStack.Pose pose = poseStack.last();
+        float x0 = -halfLength, x1 = halfLength;
+        float y0 = -halfThickness, y1 = halfThickness;
+        float z0 = -halfWidth, z1 = halfWidth;
+        // 底 / 顶两圈
+        edge(lines, pose, packedLight, x0, y0, z0, x1, y0, z0);
+        edge(lines, pose, packedLight, x1, y0, z0, x1, y0, z1);
+        edge(lines, pose, packedLight, x1, y0, z1, x0, y0, z1);
+        edge(lines, pose, packedLight, x0, y0, z1, x0, y0, z0);
+        edge(lines, pose, packedLight, x0, y1, z0, x1, y1, z0);
+        edge(lines, pose, packedLight, x1, y1, z0, x1, y1, z1);
+        edge(lines, pose, packedLight, x1, y1, z1, x0, y1, z1);
+        edge(lines, pose, packedLight, x0, y1, z1, x0, y1, z0);
+        // 四条竖棱
+        edge(lines, pose, packedLight, x0, y0, z0, x0, y1, z0);
+        edge(lines, pose, packedLight, x1, y0, z0, x1, y1, z0);
+        edge(lines, pose, packedLight, x1, y0, z1, x1, y1, z1);
+        edge(lines, pose, packedLight, x0, y0, z1, x0, y1, z1);
+    }
+
+    private static void edge(VertexConsumer consumer, PoseStack.Pose pose, int packedLight,
+                             float x0, float y0, float z0, float x1, float y1, float z1) {
+        float nx = x1 - x0, ny = y1 - y0, nz = z1 - z0;
+        float scale = (float) (1.0 / Math.sqrt(nx * nx + ny * ny + nz * nz));
+        consumer.addVertex(pose, x0, y0, z0)
+                .setColor(WIRE_COLOR)
+                .setNormal(pose, nx * scale, ny * scale, nz * scale);
+        consumer.addVertex(pose, x1, y1, z1)
+                .setColor(WIRE_COLOR)
+                .setNormal(pose, nx * scale, ny * scale, nz * scale);
     }
 
     /**

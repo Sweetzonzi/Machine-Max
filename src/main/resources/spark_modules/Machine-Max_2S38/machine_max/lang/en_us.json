@@ -80,7 +80,7 @@
   "research.machine_max.2s38_turret_blueprint.desc": "Unmanned turret of the 2S38 with the 57mm 2A90 autocannon, a coaxial PKTM and two sights.",
   "machine_max.research.2s38_addon_armor": "2S38 Add-on Armor",
   "research.machine_max.2s38_addon_armor_blueprint.desc": "Interchangeable skirt armor for the 2S38, four plates per side.",
-  "machine_max.fitting.2s38_track": "2S38 Track",
+  "machine_max.fitting.2s38_track": "2S38 Track Link",
   "connector.machine_max.hull_turret_axis": "Hull Turret Axis",
   "connector.machine_max.hull_left_wheel_1": "Hull Left Wheel 1",
   "connector.machine_max.hull_left_wheel_2": "Hull Left Wheel 2",

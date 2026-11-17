@@ -19,7 +19,9 @@ import java.util.Optional;
  * 缺失时构造直接失败，由内容包加载器记为内容包错误。</p>
  *
  * <p>耐久按节声明：{@link #durabilityPerLink()} 是每节耐久，整条带的节数 {@code N} 由包络
- * 总长与 {@link #lengthPerLink()} 推导，最大耐久为 {@code durabilityPerLink × max(1, N)}。</p>
+ * 总长与 {@link #lengthPerLink()} 推导，整条带满材料点数为 {@code durabilityPerLink × max(1, N)}。
+ * 伤害落在沿带面分成的材料扇区上（见 {@link TrackLink#sectorOf(SubPart)}），
+ * 单个扇区的上限是 {@code durabilityPerLink × N / S}。</p>
  */
 public final class TrackAttr {
     private final float durabilityPerLink;
@@ -119,13 +121,13 @@ public final class TrackAttr {
         return tension;
     }
 
-    /** 整条履带的最大耐久：每节耐久 × 节数，节数至少按 1 计。 */
+    /** 整条履带的满材料点数：每节耐久 × 节数，节数至少按 1 计。 */
     public float maxDurability(int linkCount) {
         return durabilityPerLink * Math.max(1, linkCount);
     }
 
     public static final MapCodec<TrackAttr> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("durability_per_link", 20f).forGetter(TrackAttr::durabilityPerLink),
+            Codec.FLOAT.optionalFieldOf("durability_per_link", 12f).forGetter(TrackAttr::durabilityPerLink),
             Codec.FLOAT.optionalFieldOf("length_per_link", 0.2f).forGetter(TrackAttr::lengthPerLink),
             Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
             ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),

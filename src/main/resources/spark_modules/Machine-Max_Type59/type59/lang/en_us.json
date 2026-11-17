@@ -1,7 +1,7 @@
 {
   "type59.type59": "Type 59 Medium Tank",
   "machine_max.series.type59": "Type 59",
-  "type59.fitting.type59_track": "Type 59 Track",
+  "type59.fitting.type59_track": "Type 59 Track Link",
   "controlGroup.type59.type59_gunner": "Type 59 Gunner",
   "controlGroup.type59.type59_aa": "Loader / Roof Machine Gun",
   "controlGroup.type59.type59_observer": "Commander Driving / Observation",

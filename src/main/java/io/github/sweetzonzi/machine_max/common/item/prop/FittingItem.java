@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 /**
- * 载具配件物品：一件物品表示一个配件，具体型号由 {@code machine_max:fitting_type} 组件给出。
+ * 载具配件物品：一件物品表示一个配件单元，具体型号由 {@code machine_max:fitting_type} 组件给出。
  *
  * <p>本类只负责通用的表现：名称取型号 id 的翻译键、物品栏优先画型号自带的 2D 图标、
  * 没有图标时改画单节 3D 模型。各类配件自己的交互与玩法由子类承担
- * （履带是 {@link TrackItem}），基类不预设任何履带字段。</p>
+ * （履带是 {@link TrackItem}，一件 = 一节链板），基类不预设任何履带字段。</p>
  *
  * <p>型号是内容包数据，物品只保存型号 id：同一个物品注册项下的不同型号靠
  * {@code machine_max:fitting_type} 组件区分，与零件物品用 {@code machine_max:part_type}
@@ -40,8 +40,21 @@ public class FittingItem extends Item implements ICustomModelItem {
     /** 单节模型在手持 / 掉落物里的放大倍数。 */
     private static final float MODEL_SCALE_HAND = 1.0f;
 
+    /** 基类缺省一件一个：配件按套计，只有履带按节计。 */
     public FittingItem() {
-        super(new Properties().stacksTo(1));
+        this(single());
+    }
+
+    /**
+     * 供子类改堆叠上限：{@link Item.Properties} 只能由最外层构造器传入，
+     * 基类无法在子类设置之后再改。
+     */
+    protected FittingItem(Properties properties) {
+        super(properties);
+    }
+
+    private static Properties single() {
+        return new Properties().stacksTo(1);
     }
 
     /**

@@ -4,7 +4,7 @@
   "tags": ["machine_max:series/mtlb"],
   "material": "machine_max:track_steel",
   "thickness_mm": 50.0,
-  "durability_per_link": 20.0,
+  "durability_per_link": 12.0,
   "length_per_link": 0.19,
   "tension": {
     "enabled": true,

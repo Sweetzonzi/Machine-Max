@@ -3,7 +3,7 @@
   "type": "track",
   "material": "machine_max:track_steel",
   "thickness_mm": 65.625,
-  "durability_per_link": 20,
+  "durability_per_link": 12,
   "length_per_link": 0.165625,
   "tension": {
     "enabled": true,

@@ -601,6 +601,14 @@ public enum MMLanguageRegistry {
             zh_cn, "互动以强行拆除%1$s (可能损坏部件)",
             en_us, "Interact to force disassemble %1$s (Could damage part)"
     )),
+    TOOLTIP_CROWBAR_DETACH_TRACK("tooltip.machine_max.crowbar.detach_track", ImmutableMap.of(
+            zh_cn, "互动以拆下整条%1$s（按完好比例返还履带节）",
+            en_us, "Interact to remove the whole %1$s (returns links by remaining material)"
+    )),
+    TOOLTIP_TRACK_LINK_UNIT("tooltip.machine_max.track.link_unit", ImmutableMap.of(
+            zh_cn, "1 件 = 1 节链板，堆叠数就是节数",
+            en_us, "One item is one link plate; the stack count is the number of links"
+    )),
     TOOLTIP_WRENCH_DISASSEMBLY("tooltip.machine_max.wrench.disassembly", ImmutableMap.of(
             zh_cn, "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定",
             en_us, "Integrity: %1$s/%2$s Interact to safely unbolt %3$s"
@@ -684,6 +692,87 @@ public enum MMLanguageRegistry {
     MESSAGE_PART_PLACE_FAILED("message.machine_max.part.place_failed", ImmutableMap.of(
             zh_cn, "放置部件失败: %1$s",
             en_us, "Failed to place part: %1$s"
+    )),
+    // 履带：铺设、建造、维修与拆除
+    MESSAGE_TRACK_NO_WHEEL("message.machine_max.track.no_wheel", ImmutableMap.of(
+            zh_cn, "履带：准星没有指向可用的轮子",
+            en_us, "Track: no usable wheel under the crosshair"
+    )),
+    MESSAGE_TRACK_INVALID_TYPE("message.machine_max.track.invalid_type", ImmutableMap.of(
+            zh_cn, "履带：物品没有有效的履带型号",
+            en_us, "Track: this item carries no valid track fitting"
+    )),
+    MESSAGE_TRACK_DRAFT_STARTED("message.machine_max.track.draft_started", ImmutableMap.of(
+            zh_cn, "履带：主动轮 %1$s，依次右键负重轮，最后右键主动轮闭合",
+            en_us, "Track: sprocket %1$s — right-click road wheels in order, then the sprocket again to close"
+    )),
+    MESSAGE_TRACK_OTHER_VEHICLE("message.machine_max.track.other_vehicle", ImmutableMap.of(
+            zh_cn, "履带：请先闭合或取消另一辆载具上的履带",
+            en_us, "Track: close or cancel the track on the other vehicle first"
+    )),
+    MESSAGE_TRACK_MIN_MEMBERS("message.machine_max.track.min_members", ImmutableMap.of(
+            zh_cn, "履带：至少需要 %1$s 个轮子（含主动轮）",
+            en_us, "Track: at least %1$s wheels are required (sprocket included)"
+    )),
+    MESSAGE_TRACK_CLOSE_FAILED("message.machine_max.track.close_failed", ImmutableMap.of(
+            zh_cn, "履带：闭合失败，检查轮组与履带厚度",
+            en_us, "Track: closing failed — check the wheel set and the track thickness"
+    )),
+    MESSAGE_TRACK_NEED_LINKS("message.machine_max.track.need_links", ImmutableMap.of(
+            zh_cn, "履带：需要 %1$s 节，持有 %2$s 节",
+            en_us, "Track: %1$s links required, %2$s held"
+    )),
+    MESSAGE_TRACK_BUILD_NEED("message.machine_max.track.build_need", ImmutableMap.of(
+            zh_cn, "履带：建造需要 %1$s 节，持有 %2$s 节",
+            en_us, "Track: building needs %1$s links, %2$s held"
+    )),
+    MESSAGE_TRACK_BREACH_NEED("message.machine_max.track.breach_need", ImmutableMap.of(
+            zh_cn, "履带：该断口需要 %1$s 节，持有 %2$s 节",
+            en_us, "Track: this breach needs %1$s links, %2$s held"
+    )),
+    MESSAGE_TRACK_FULL("message.machine_max.track.full", ImmutableMap.of(
+            zh_cn, "履带：本条带已满",
+            en_us, "Track: this belt is already full"
+    )),
+    MESSAGE_TRACK_WAITING_WHEELS("message.machine_max.track.waiting_wheels", ImmutableMap.of(
+            zh_cn, "履带：其他轮组尚未装配完成",
+            en_us, "Track: the other wheel groups are not assembled yet"
+    )),
+    MESSAGE_TRACK_CLOSED("message.machine_max.track.closed", ImmutableMap.of(
+            zh_cn, "履带闭合：%1$s 个轮子，%2$s 节",
+            en_us, "Track closed: %1$s wheels, %2$s links"
+    )),
+    MESSAGE_TRACK_DUPLICATE_WHEEL("message.machine_max.track.duplicate_wheel", ImmutableMap.of(
+            zh_cn, "履带：该轮已在本次铺设中",
+            en_us, "Track: that wheel is already part of this layout"
+    )),
+    MESSAGE_TRACK_WHEEL_ADDED("message.machine_max.track.wheel_added", ImmutableMap.of(
+            zh_cn, "履带：加入 %1$s（%2$s 个负重轮）",
+            en_us, "Track: added %1$s (%2$s road wheels)"
+    )),
+    MESSAGE_TRACK_WHEEL_UNDONE("message.machine_max.track.wheel_undone", ImmutableMap.of(
+            zh_cn, "履带：撤销 %1$s",
+            en_us, "Track: removed %1$s"
+    )),
+    MESSAGE_TRACK_DRAFT_CANCELLED("message.machine_max.track.draft_cancelled", ImmutableMap.of(
+            zh_cn, "履带：已取消铺设",
+            en_us, "Track: layout cancelled"
+    )),
+    MESSAGE_TRACK_USE_CROWBAR("message.machine_max.track.use_crowbar", ImmutableMap.of(
+            zh_cn, "履带：拆卸履带请用撬棍",
+            en_us, "Track: use a crowbar to remove the track"
+    )),
+    MESSAGE_TRACK_NOT_IN_TRACK("message.machine_max.track.not_in_track", ImmutableMap.of(
+            zh_cn, "履带：该轮不在履带中",
+            en_us, "Track: that wheel is not part of a track"
+    )),
+    MESSAGE_TRACK_NO_WHEEL_RADIUS("message.machine_max.track.no_wheel_radius", ImmutableMap.of(
+            zh_cn, "履带：该零件没有轮半径，不能作为履带成员",
+            en_us, "Track: that part has no wheel radius and cannot be a track member"
+    )),
+    MESSAGE_TRACK_OTHER_TRACK("message.machine_max.track.other_track", ImmutableMap.of(
+            zh_cn, "履带：该轮已属于另一条履带",
+            en_us, "Track: that wheel already belongs to another track"
     )),
     // 蓝图终端
     MESSAGE_PDA_DEPOSIT_SUCCESS("message.machine_max.pda.deposit.success", ImmutableMap.of(
@@ -836,6 +925,27 @@ public enum MMLanguageRegistry {
     GUI_CANCEL("gui.machine_max.cancel", ImmutableMap.of(
             zh_cn, "取消",
             en_us, "Cancel"
+    )),
+    // 载具控制面板：履带状态（徽标四态 + links/N）
+    GUI_PANEL_TRACKS("gui.machine_max.panel.tracks", ImmutableMap.of(
+            zh_cn, "履带",
+            en_us, "TRACKS"
+    )),
+    GUI_PANEL_TRACK_INTACT("gui.machine_max.panel.track.intact", ImmutableMap.of(
+            zh_cn, "完整",
+            en_us, "INTACT"
+    )),
+    GUI_PANEL_TRACK_DAMAGED("gui.machine_max.panel.track.damaged", ImmutableMap.of(
+            zh_cn, "受损",
+            en_us, "DAMAGED"
+    )),
+    GUI_PANEL_TRACK_BROKEN("gui.machine_max.panel.track.broken", ImmutableMap.of(
+            zh_cn, "断开",
+            en_us, "BROKEN"
+    )),
+    GUI_PANEL_TRACK_UNBUILT("gui.machine_max.panel.track.unbuilt", ImmutableMap.of(
+            zh_cn, "未建造",
+            en_us, "UNBUILT"
     )),
     GUI_ENTER_VEHICLE_NAME("gui.machine_max.enter_vehicle_name", ImmutableMap.of(
             zh_cn, "设置载具名称",

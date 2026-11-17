@@ -11,6 +11,7 @@
     "base_accuracy_mil": 1.6
   },
   "terminal": {
+    "damage_type": "machine_max:blast",
     "base_penetration": 30,
     "base_damage": 90,
     "penetration_velocity_coefficient": 0.8,

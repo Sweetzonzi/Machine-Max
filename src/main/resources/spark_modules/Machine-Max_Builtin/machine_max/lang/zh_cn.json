@@ -4,7 +4,7 @@
   "machine_max.ammo.he": "HE",
   "machine_max.ammo.tracer": "曳光",
   "machine_max.ammo.atgm": "ATGM",
-  "machine_max.fitting.default": "履带",
+  "machine_max.fitting.default": "履带节",
   "connector.machine_max.hull_left_wheel_1": "车体左轮1挂点",
   "connector.machine_max.hull_left_wheel_2": "车体左轮2挂点",
   "connector.machine_max.hull_left_wheel_3": "车体左轮3挂点",

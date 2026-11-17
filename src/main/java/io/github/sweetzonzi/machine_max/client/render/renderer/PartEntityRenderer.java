@@ -2,11 +2,13 @@ package io.github.sweetzonzi.machine_max.client.render.renderer;
 
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
+import cn.solarmoon.spark_core.animation.model.ModelPose;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
@@ -213,6 +215,43 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
                             light, overlay, color, false);
                 }
                 i++;
+            }
+            poseStack.popPose();
+        }
+    }
+
+    /* ==================== 线框工具 ==================== */
+
+    /**
+     * 把一组骨骼的立方体按 {@link RenderType#lines()} 描边。
+     *
+     * <p>未装配部件的线框与履带的缺节共用这一条路径：两者都是「设计在位、材料没成形」，
+     * 表现语言相同。调用方负责把 {@code poseStack} 摆到该节的位置——本方法只叠加每根骨骼
+     * 自身的父链变换。骨骼没有立方体（纯网格）时该骨骼不产生描边，调用方应改用程序化外形。</p>
+     *
+     * <p>{@code bone.applyTransformWithParents} 内部是累乘，因此每根骨骼都从单位阵重新开始，
+     * 否则变换会逐骨骼累积。</p>
+     *
+     * @param bones       该节要描边的骨骼
+     * @param pose        该模型的静态姿态
+     * @param partialTick 帧间插值系数
+     * @param poseStack   已定位到该节的姿态栈
+     * @param packedLight 打包光照
+     * @param color       ARGB 顶点色
+     */
+    public static void renderBonesAsLines(Iterable<OBone> bones, ModelPose pose, float partialTick,
+                                          PoseStack poseStack, MultiBufferSource bufferSource,
+                                          int packedLight, int color) {
+        VertexConsumer lines = bufferSource.getBuffer(RenderType.lines());
+        Matrix4f transform = new Matrix4f();
+        for (OBone bone : bones) {
+            if (bone.getCubes().isEmpty()) continue;
+            transform.identity();
+            bone.applyTransformWithParents(pose, transform, partialTick);
+            poseStack.pushPose();
+            poseStack.mulPose(transform);
+            for (OCube cube : bone.getCubes()) {
+                cube.renderVertexes(poseStack, lines, packedLight, OverlayTexture.NO_OVERLAY, color, false);
             }
             poseStack.popPose();
         }

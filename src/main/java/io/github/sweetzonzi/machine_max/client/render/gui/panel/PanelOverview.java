@@ -3,12 +3,22 @@ package io.github.sweetzonzi.machine_max.client.render.gui.panel;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackSectors;
+import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Tab 01 载具概览面板。<br>
- * 显示控制组切换条、载具状态条、警告信息列表和控制模式。
+ * 显示控制组切换条、载具状态条、警告信息列表和控制模式。<br>
+ * 履带状态块（{@code links/N} + 四态徽标）读真实载具数据；其余状态条仍是占位的演示数据，
+ * 等 {@code 界面-载具状态HUD数据接入设计} 落地后一起替换。
  */
 @OnlyIn(Dist.CLIENT)
 public class PanelOverview {
@@ -35,6 +45,8 @@ public class PanelOverview {
                 appendStatBar(doc, statusColContent, "THRUST", 40, "#7aacff");
                 appendStatBar(doc, statusColContent, "SPEED", 30, "#4ac87a");
                 appendNumericSection(doc, statusColContent);
+                appendTrackSection(doc, statusColContent,
+                        ControlDataAccessor.getControlledVehicle(Minecraft.getInstance()));
             }
         }
 
@@ -57,6 +69,91 @@ public class PanelOverview {
                 appendModeInfoRow(doc, extraColContent, "BINDINGS", "8 CONFIGURED");
                 appendModeInfoRow(doc, extraColContent, "NETWORK SYNC", "ONLINE");
             }
+        }
+    }
+
+    /**
+     * 追加履带状态块：每条带一行「四态徽标 + 主动轮名 + links/N」。
+     *
+     * <p>主读数取 {@code links/N}（已上料节数 / 总节数）。断带时 {@code links} 只从 {@code N}
+     * 掉到 {@code N − R}，单看数字像轻伤，所以「断开」必须由徽标明确给出——两者一起才是完整读数。
+     * 没有真实载具时不画这一块，不编造履带数据。</p>
+     *
+     * @param vehicle 受控载具；{@code null}（未坐在载具里）时整块跳过
+     */
+    private static void appendTrackSection(Document doc, Element container, @Nullable VehicleCore vehicle) {
+        if (vehicle == null || vehicle.trackLinks.isEmpty()) return;
+        Element section = doc.createElement("div");
+        section.setAttribute("class", "stat-numeric-section");
+
+        Element header = doc.createElement("div");
+        header.setAttribute("class", "stat-numeric-label");
+        header.innerText = Component.translatable(MMLanguageRegistry.GUI_PANEL_TRACKS.tag).getString();
+        section.append(header);
+
+        for (TrackLink link : vehicle.trackLinks) {
+            if (link == null || link.isDisposed()) continue;
+            appendTrackRow(doc, section, link);
+        }
+        container.append(section);
+    }
+
+    /** 一条履带的读数行：着色徽标 + 主动轮名 + {@code links/N}。 */
+    private static void appendTrackRow(Document doc, Element container, TrackLink link) {
+        TrackState state = trackState(link);
+        Element row = doc.createElement("div");
+        row.setAttribute("class", "mode-info-row");
+
+        Element keyEl = doc.createElement("span");
+        keyEl.setAttribute("style", "color:" + state.color);
+        keyEl.innerText = Component.translatable(state.key.tag).getString()
+                + " " + trackLabel(link);
+        row.append(keyEl);
+
+        Element valEl = doc.createElement("span");
+        valEl.setAttribute("class", "mir-value");
+        valEl.innerText = link.links() + "/" + link.linkCount();
+        row.append(valEl);
+
+        container.append(row);
+    }
+
+    /** 履带的名字取主动轮的子零件翻译键（内容包已按左右命名）；取不到时退回型号名。 */
+    private static String trackLabel(TrackLink link) {
+        var sprocket = link.sprocket();
+        return sprocket != null
+                ? Component.translatable(sprocket.name).getString()
+                : Component.translatable(FittingType.nameKey(link.typeId())).getString();
+    }
+
+    /**
+     * 四态：未建造（材料扇区为空）→ 断开（还有没焊满的断口）→ 受损（任一扇区材料没到满）→ 完整。
+     *
+     * <p>顺序即判据优先级：断带时扇区比例一定不为满，受损与断开必须靠在前的两档分开。</p>
+     */
+    private static TrackState trackState(TrackLink link) {
+        if (!link.isBuilt()) return TrackState.UNBUILT;
+        if (link.isBroken()) return TrackState.BROKEN;
+        TrackSectors sectors = link.sectors();
+        for (int j = 0; j < sectors.size(); j++) {
+            if (sectors.fill(j) < 1f) return TrackState.DAMAGED;
+        }
+        return TrackState.INTACT;
+    }
+
+    /** 履带四态：徽标文案与颜色。 */
+    private enum TrackState {
+        INTACT(MMLanguageRegistry.GUI_PANEL_TRACK_INTACT, "#4ac87a"),
+        DAMAGED(MMLanguageRegistry.GUI_PANEL_TRACK_DAMAGED, "#D8A631"),
+        BROKEN(MMLanguageRegistry.GUI_PANEL_TRACK_BROKEN, "#ff4444"),
+        UNBUILT(MMLanguageRegistry.GUI_PANEL_TRACK_UNBUILT, "#7a8a99");
+
+        private final MMLanguageRegistry key;
+        private final String color;
+
+        TrackState(MMLanguageRegistry key, String color) {
+            this.key = key;
+            this.color = color;
         }
     }
 

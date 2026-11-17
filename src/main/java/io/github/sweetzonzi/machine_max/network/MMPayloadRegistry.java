@@ -83,9 +83,13 @@ public class MMPayloadRegistry {
         // (宿主 SubPart ID, 发射器序号, 运输者, 提供者) 算出同一个键；作业的两支样本与结束结果里的编号换成
         // 本管交付轮次（ReloadJobSpec.round / ReloadJobProgress.round / ReloadJobResults.Entry.round），
         // 线宽不变，类内访问器少一个。
-        final PayloadRegistrar sync = event.registrar("sync:19.0.0");
+        // 20.0.0 对应履带状态改成材料扇区：TrackLinkData 的绝对耐久与断带布尔位换成每扇区剩余材料比例
+        // （section_fill，空数组 = 未建造）、断口标记（torn）与相位（sector_phase）。线格式与 JSON 同序，
+        // 旧存档不做迁移（缺 section_fill 按满载载入），但两端必须同版本。
+        final PayloadRegistrar sync = event.registrar("sync:20.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
-        final PayloadRegistrar misc = event.registrar("misc:3.0.0");
+        // 4.0.0 与 sync 同因：蓝图取出 / 收纳的载具数据里也带 TrackLinkData。
+        final PayloadRegistrar misc = event.registrar("misc:4.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置

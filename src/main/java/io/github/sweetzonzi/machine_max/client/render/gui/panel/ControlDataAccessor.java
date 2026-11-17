@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.panel;
 
 import io.github.sweetzonzi.machine_max.common.mech.control.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.ControlGroupSetEditPayload;
 import io.github.sweetzonzi.machine_max.network.payload.GuiActionPayload;
@@ -128,6 +129,20 @@ public class ControlDataAccessor {
                 ),
                 0
         );
+    }
+
+    /**
+     * 当前受控载具；玩家不在载具控制下时返回 {@code null}。
+     *
+     * <p>面板读真实状态（履带材料、断口、节数）都从这里取载具，而不是看座位上是否有人。
+     * 客户端 `VehicleCore.trackLinks` 由 `TrackLinkSyncPayload` 维护，读到的就是服务端权威的
+     * `section_fill` / `torn` / `sector_phase`。</p>
+     */
+    @Nullable
+    public static VehicleCore getControlledVehicle(Minecraft mc) {
+        AbstractControllableSubsystem sub = getControllingSubsystem(mc);
+        if (sub == null) return null;
+        return sub.getSubPart().part.assembly instanceof VehicleCore vehicle ? vehicle : null;
     }
 
     /**

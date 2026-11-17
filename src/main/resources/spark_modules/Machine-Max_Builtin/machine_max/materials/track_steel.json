@@ -13,15 +13,34 @@
     "block_damage_factor": 1.0
   },
   "armor": {
-    "rha": 0.6,
+    "rha": 0.5, //满耐久等效 RHA 降到 25～33 mm：125mm HE 能击穿、57mm HE 在薄带能击穿
     "angle_effect": true,
     "dmg_resist": 1.0,
     "dmg_mult": 0.95,
-    "decay_rha": 0.3,
+    "decay_rha": 0.3, //破损端恒为 thickness_mm × 0.3（与 rha 无关），衰减区间被压缩
     "decay_dmg_resist": 0.0,
     "decay_dmg_mult": 1.0,
     "decay_power": 1.5,
-    "unpen_power": 0.6
+    "unpen_power": 1.5, //纯钝伤显著变弱；HE 另吃下面的爆破乘数
+    // 完整表替换默认表：必须把 DamageModifier.DEFAULT_DAMAGE_MODIFIERS 的四条一起抄入，
+    // optionalFieldOf 不合并列表，只写一条会丢掉默认的 add -5 @ c:is_impact
+    "damage_modifiers": [
+      { "operation": "add", "value": -5, "condition": { "type": "damage_tag", "id": "c:is_impact" } },
+      { "operation": "multiply", "value": 0.05, "condition": { "type": "damage_type", "id": "minecraft:sweet_berry_bush" } },
+      { "operation": "multiply", "value": 0.05, "condition": { "type": "entity_type", "id": "minecraft:slime" } },
+      { "operation": "multiply", "value": 0.1, "condition": { "type": "entity_type", "id": "minecraft:magma_cube" } },
+      {
+        "operation": "multiply",
+        "value": 1.8,
+        "condition": {
+          "type": "or",
+          "conditions": [
+            { "type": "damage_type", "id": "machine_max:blast" },
+            { "type": "damage_tag", "id": "minecraft:is_explosion" }
+          ]
+        }
+      }
+    ]
   },
   "particles": {
     "hit_pen": "machine_max:armor_spall",//击穿时的命中火花：顺着弹道喷出的金属碎屑

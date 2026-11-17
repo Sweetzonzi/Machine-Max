@@ -208,7 +208,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             //履带在部件与连接关系之后重建；GearJoint 等到 onAddToLevel（刚体入世）再建
-            for (TrackLinkData linkData : savedData.trackLinks) {
+            for (TrackLinkData savedLink : savedData.trackLinks) {
+                // 蓝图只带「零件与履带的组装关系」，不含内容物数据与组装进度：一律按方案重建，
+                // 放出来是 0/N，由焊枪扣 N 节建成；装配体物品（FULL_STATE）按保存的材料状态原样恢复
+                TrackLinkData linkData = restoreMode == PartRestoreMode.STRUCTURE_ONLY
+                        ? savedLink.asPlan() : savedLink;
                 // 存档加载：型号缺失即丢弃该条履带，不回退默认型号
                 TrackLink link = TrackLink.fromData(this, linkData, false);
                 if (link != null) trackLinks.add(link);
@@ -1546,27 +1550,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
 
     public void removeTrackLink(TrackLink link) {
         trackLinks.remove(link);
-    }
-
-    /**
-     * 服务端：把一次铺设的结果闭合成一条新履带。
-     *
-     * <p>铺设草稿不创建 {@link TrackLink}；只有玩家再次右键起始主动轮时到这里，
-     * 因此半条履带不参与物理、不同步、也不进入存档。履带以列表项存在，不需要名字。</p>
-     *
-     * @param wheels 按铺设顺序排列的负重轮（不含主动轮）；主动轮由 {@code sprocket}
-     *               参数补入成员表首位
-     * @return 成员不足 {@link TrackLink#MIN_MEMBERS} 或厚度不小于成员轮半径时返回
-     *         {@code null}；调用方据此保留草稿并提示，不要读成员表
-     */
-    @Nullable
-    public TrackLink createTrack(@NotNull SubPart sprocket, @NotNull List<SubPart> wheels,
-                                 @NotNull TrackType type) {
-        TrackLink link = TrackLink.assemble(this, sprocket, wheels, type);
-        if (link == null) return null;
-        registerTrackLink(link);
-        link.onAssembled();
-        return link;
     }
 
     /**

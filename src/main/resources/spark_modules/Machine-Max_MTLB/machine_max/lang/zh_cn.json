@@ -71,7 +71,7 @@
   "subsystem.machine_max.passenger_seat_8": "Passenger Seat 8",
   "machine_max.research.mtlb": "MT-LB 装甲运输车",
   "research.machine_max.mtlb_blueprint.desc": "MT-LB 的整车集成件：车体、动力舱与两侧行走机构都在这一件上。",
-  "machine_max.fitting.mtlb_track": "MT-LB 履带",
+  "machine_max.fitting.mtlb_track": "MT-LB 履带节",
   "machine_max.pkt_turret": "PKT 机枪塔",
   "machine_max.research.pkt_turret": "PKT 机枪塔",
   "research.machine_max.pkt_turret_blueprint.desc": "可换装到多种载具上的 PKT 机枪塔：座圈、机枪与装弹机自成一件，由乘员操控。",

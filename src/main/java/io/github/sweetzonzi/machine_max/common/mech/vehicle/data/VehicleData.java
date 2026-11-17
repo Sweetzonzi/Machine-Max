@@ -351,20 +351,23 @@ public class VehicleData {
     }
 
     /**
-     * 蓝图专用：在 {@link #rebased()} 基础上把血量比例归满。
+     * 蓝图专用：在 {@link #rebased()} 基础上把血量比例归满，并清空履带的内容物状态。
      *
      * <p>「骨架」语义由放置时的 {@code readAdditionalData=false} 保证（进度、材料进度、耐久比例与
      * 连接器 / 子系统数据都不读），因此这里不再重复清零这些字段。</p>
+     *
+     * <p>履带走 {@link TrackLinkData#asPlan()}：材料状态清空、相位归零，放出来是 0/N 的方案，
+     * 装配完成后由焊枪扣 N 节建成。装配体物品（收纳）走 {@link #rebased()}，原样保留真实状态。</p>
      *
      * @return 归一化后的新实例
      */
     public VehicleData normalized() {
         VehicleData rebased = rebased();
-        List<TrackLinkData> normalizedTracks = rebased.trackLinks.stream()
-                .map(TrackLinkData::normalized)
+        List<TrackLinkData> plannedTracks = rebased.trackLinks.stream()
+                .map(TrackLinkData::asPlan)
                 .toList();
         return new VehicleData(rebased.name, rebased.uuid, rebased.pos, rebased.min, rebased.max,
-                1f, rebased.parts, rebased.connections, normalizedTracks, rebased.meta);
+                1f, rebased.parts, rebased.connections, plannedTracks, rebased.meta);
     }
 
     /**

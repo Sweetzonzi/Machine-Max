@@ -4,7 +4,7 @@
   "tags": ["machine_max:series/m1a2"],
   "material": "machine_max:track_steel",
   "thickness_mm": 59.201875,
-  "durability_per_link": 20,
+  "durability_per_link": 12,
   "length_per_link": 0.148005,
   "tension": {
     "enabled": true,

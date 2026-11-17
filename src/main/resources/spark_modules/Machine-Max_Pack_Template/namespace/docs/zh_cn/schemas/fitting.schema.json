@@ -39,8 +39,8 @@
     "durability_per_link": {
       "type": "number",
       "exclusiveMinimum": 0,
-      "default": 20.0,
-      "description": "每节耐久（点）。整条带的最大耐久 = durability_per_link × 节数。"
+      "default": 12.0,
+      "description": "每节耐久（点）。整条带的满材料点数 = durability_per_link × 节数；伤害落在沿带面分成的材料扇区上，单个扇区的上限是 durability_per_link × 节数 / 扇区数，扇区数等于成员轮数。"
     },
     "length_per_link": {
       "type": "number",
@@ -248,7 +248,7 @@
       "type": "track",
       "material": "machine_max:track_steel",
       "thickness_mm": 50.0,
-      "durability_per_link": 20.0,
+      "durability_per_link": 12.0,
       "length_per_link": 0.2,
       "tension": {
         "enabled": true,
