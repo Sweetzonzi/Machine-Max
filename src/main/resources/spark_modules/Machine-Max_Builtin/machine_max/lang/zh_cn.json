@@ -6,7 +6,6 @@
   "machine_max.ammo.atgm": "ATGM",
   "machine_max.fitting.default": "履带节",
   "subsystem.machine_max.driver_seat": "驾驶座",
-  "subsystem.machine_max.main_weapon": "主武器",
   "subsystem.machine_max.coax_controller": "并列机枪火控",
   "subsystem.machine_max.seat": "座椅",
   "subsystem.machine_max.trunk": "后备箱",

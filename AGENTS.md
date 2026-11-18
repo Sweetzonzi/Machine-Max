@@ -293,6 +293,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 | 交互区目标 | 交互区的 `signal_targets` 必须落在本变体内的子系统或连接点上（跨零件写连接点名）。交互区只发不收：点击直接调目标子系统的 `onInteract`，目标写成保留地址、另一个交互区或不存在的名字时解析不出终端，交互区会静默地完全不激活——提示不亮、射线也选不中 |
 | 履带临时配方 | `recipe/fittings/*.json` 的 `result.components["machine_max:fitting_type"]` 必须指向 `type` 为 `track` 的 `fittings/<名>.json`，且每个第一方履带型号恰好有一条配方；型号写错时配方照常加载，游戏里只表现为物品铺不上、模型回落默认型号 |
 | 名字键的构形与译文 | 子零件 / 子系统 / 连接点 / 交互区 / 控制组五类名字必须是 `<类别>.<命名空间>.<名字>` 三段（名字段不含点），且在该命名空间的合并语言表里有 `zh_cn` 与 `en_us` 条目。名字直接交给 `Component.translatable`，缺一条就原样显示 `connector.machine_max.axis`（装配 HUD 的连接点提示、载具信息面板、交互提示都吃这些键）。语言表按命名空间合并，所以 `machine_max` 命名空间的名字写在 builtin 那一份才保证别的包也查得到 |
+| 名字引用的可达性 | 名字除了是键位，还会被当字符串引用：变体里的 `condition` MoLang 与 `subsystem` / `connector` / `signal_targets` / `control_outputs`，动画的 `local.has_connector` / `connector_offset` / `subsystem_destroyed` 等查询，模板的 `advConnectorName` / `simplePointConnectorName`。解析不到时条件恒假、动画查询恒为 0、装配体少一组约束，全都没有日志。作用域：变体内按本变体，动画按引用它的变体并集，模板按全部包并集；音效 id（`sounds/*.json` 的键也形如 `subsystem.gearbox.up.light`）不算名字 |
 
 - **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。
 - **索引按所有包合并**：内容 id 是 `<namespace>/<路径>`，与所在包无关，车包引用 kit 或 builtin 的贴图、模型是正常用法。按包隔离会把这些引用判成缺失。

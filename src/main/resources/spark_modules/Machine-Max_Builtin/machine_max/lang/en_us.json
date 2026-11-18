@@ -6,7 +6,6 @@
   "machine_max.ammo.atgm": "ATGM",
   "machine_max.fitting.default": "Track Link",
   "subsystem.machine_max.driver_seat": "Driver Seat",
-  "subsystem.machine_max.main_weapon": "Main Weapon",
   "subsystem.machine_max.coax_controller": "Coaxial MG Fire Control",
   "subsystem.machine_max.seat": "Seat",
   "subsystem.machine_max.trunk": "Trunk",

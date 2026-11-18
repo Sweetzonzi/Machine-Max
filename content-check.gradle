@@ -40,6 +40,9 @@
 //     （local / global）或写成另一个交互区时，解析结果为空，这个交互区会静默地完全不激活
 //     ——提示不亮、射线选不中，进游戏只表现为“这扇门没反应”。
 // 12. 五类名字键（子零件 / 子系统 / 连接点 / 交互区 / 控制组）的构形与译文。名字就是完整翻译键，缺一条界面上就原样显示 connector.machine_max.axis；语言表按命名空间合并，所以 machine_max 命名空间的名字必须写进 builtin 那一份，车包私有命名空间的写自己那份。名字还要恰好三段：带点的名字（interact.machine_max.golden.seat）能翻得出来，但对不上「类别.命名空间.名字」这套规则，拼写检查与词表都会漏掉它。
+// 13. 动画与模板里的名字引用。动画的 MoLang 用完整名字键查本部件，模板用完整名字键把两个零件的
+//     连接点配成一条线；名字改过而引用没跟随时查不到东西，表现是悬架不跟动、爆反挡板不缩、装配体
+//     少一组约束，全都没有日志。动画按引用它的变体们的名字并集核对，没有变体引用的动画（HUD）不查。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -221,6 +224,24 @@ walkStrings = { Object node, Closure onString ->
     }
 }
 
+// 名字键（五类）的完整形态：<类别>.<命名空间>.<名字>。前面的断言排除
+// `machine_max:subsystem.engine.i4_1000` 这类 id —— 音效 id 也占用 subsystem. 前缀空间
+// （见 sounds/*.json 与 subtitles），去掉前缀后与名字键同形。
+def nameKeyToken = ~/(?<![A-Za-z0-9_:.\/-])(sub_part|subsystem|connector|interact|controlGroup)\.[a-z0-9_]+\.[a-z0-9_]+\b/
+def collectNameRefs
+collectNameRefs = { Object node, Collection<String> out ->
+    if (node instanceof Map) {
+        ((Map) node).values().each { collectNameRefs(it, out) }
+    } else if (node instanceof Collection) {
+        ((Collection) node).each { collectNameRefs(it, out) }
+    } else if (node instanceof CharSequence) {
+        def matcher = nameKeyToken.matcher(node.toString())
+        while (matcher.find()) {
+            out << matcher.group(0)
+        }
+    }
+}
+
 // 收集材质的表现粒子：材质的 particles 段是「表现用途 → 粒子 id」的表（hit_pen、hit_un_pen 等）
 def walkMaterialParticles
 walkMaterialParticles = { Object node, Closure onMaterialParticle ->
@@ -314,7 +335,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -1047,6 +1068,8 @@ tasks.register('checkContent') {
         int interactTargetCount = 0
         // 第 12 节用：五类名字键（子零件 / 子系统 / 连接点 / 交互区）的声明点，遍历 parts 时顺手收集。
         Map<String, String> nameDeclarations = [:]
+        // 第 13 节用：每个变体的名字集合与它使用的动画名，同样在遍历 parts 时收集。
+        List<Map> variantScopes = []
         packs.each { pack ->
             File partsDir = new File(pack.dir, 'parts')
             if (!partsDir.isDirectory()) {
@@ -1134,6 +1157,30 @@ tasks.register('checkContent') {
                     }
                     interactBoxes.keySet().each { String name ->
                         nameDeclarations.putIfAbsent(name, declarationLabel)
+                    }
+                    // 第 13 节用：本变体自己声明的名字集合 + 它使用的动画名（忽略前导目录）。
+                    Set<String> ownNames = new LinkedHashSet<>()
+                    subPartEntries.keySet().each { Object name -> ownNames << name.toString() }
+                    ownNames.addAll(subsystems.keySet())
+                    ownNames.addAll(connectors.keySet())
+                    ownNames.addAll(interactBoxes.keySet())
+                    Object animationRaw = ((Map) variantRaw).get('animations')
+                    String animationName = animationRaw instanceof CharSequence
+                            ? animationRaw.toString().substring(animationRaw.toString().indexOf(':') + 1)
+                            : null
+                    variantScopes << [label: declarationLabel, variant: variantName.toString(),
+                                      names: ownNames, animation: animationName]
+                    // 13. 名字引用：变体内以字符串出现的名字键必须落在本变体自己的子零件里。
+                    // `AbstractPart#findConnector` / `#findSubsystem` 只查本部件，所以引用了本变体
+                    // 没声明的名字时，MoLang 条件恒假、动画查询恒为 0，既不报错也不刷日志。
+                    List<String> referenced = []
+                    collectNameRefs(variantRaw, referenced)
+                    referenced.unique().each { String ref ->
+                        if (ownNames.contains(ref)) {
+                            return
+                        }
+                        problems << relative + '：变体 ' + variantName + ' 引用的名字 ' + ref +
+                                ' 不在本变体内（碰撞箱 / 交互区条件恒假、动画查询恒为 0，没有日志）'
                     }
                     // 交互区只发不收：目标只能是本变体内存在的子系统，或跨零件用的本变体连接点。
                     // 解析不到终端的交互区会静默地完全不激活（提示不亮、射线选不中也点不动）。
@@ -1307,6 +1354,83 @@ tasks.register('checkContent') {
             }
         }
 
+        // 13. 动画与模板里的名字引用
+        //
+        // 动画的 MoLang 用完整名字键查本部件：`local.connector_offset('connector.machine_max.left_wheel_1', 1)`
+        // 查不到连接点时返回 0，悬架摆臂就不跟动；`local.subsystem_destroyed('...')` 查不到子系统时
+        // 条件恒为「未摧毁」，爆反挡板永远缩着。两种都只是画面不对，没有日志。
+        //
+        // 变体的 `animations` 是「忽略前导目录的目录名」（machine_max:ae86 命中 animations/ 下目录名
+        // 为 ae86 的所有动画文件），一份动画可能被同一装配体的多个变体共用，每个变体只认自己有的
+        // 连接点，所以按引用方的名字并集核对；没有变体引用的动画（HUD 动画）不查。
+        Map<String, Set<String>> animationScopes = [:]
+        variantScopes.each { Map scope ->
+            if (scope.animation) {
+                animationScopes.computeIfAbsent(scope.animation as String) { new LinkedHashSet<String>() }
+                        .addAll(scope.names as Set<String>)
+            }
+        }
+        int animationNameRefCount = 0
+        packs.each { pack ->
+            File animationsDir = new File(pack.dir, 'animations')
+            if (!animationsDir.isDirectory()) {
+                return
+            }
+            animationsDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.animation.json')) {
+                    return
+                }
+                Set<String> scopeNames = new LinkedHashSet<>()
+                pack.dir.toPath().relativize(file.toPath()).each { Object segment ->
+                    Set<String> names = animationScopes.get(segment.toString())
+                    if (names != null) {
+                        scopeNames.addAll(names)
+                    }
+                }
+                if (scopeNames.isEmpty()) {
+                    return
+                }
+                List<String> referenced = []
+                collectNameRefs(file.getText('UTF-8'), referenced)
+                referenced.unique().each { String ref ->
+                    animationNameRefCount++
+                    if (scopeNames.contains(ref)) {
+                        return
+                    }
+                    problems << pack.name + '/' + pack.dir.toPath().relativize(file.toPath())
+                            .toString().replace(File.separatorChar, '/' as char) +
+                            '：动画引用的名字 ' + ref + ' 不在引用它的变体里' +
+                            '（MoLang 查询恒为 0，动画不跟动且没有日志）'
+                }
+            }
+        }
+        // 模板把各零件的连接点配成一条线（advConnectorName / simplePointConnectorName），
+        // 名字写错时这一对配不上，装配体少一组约束，车开到一半才散架。
+        int templateNameRefCount = 0
+        packs.each { pack ->
+            File templatesDir = new File(pack.dir, 'templates')
+            if (!templatesDir.isDirectory()) {
+                return
+            }
+            templatesDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                List<String> referenced = []
+                collectNameRefs(file.getText('UTF-8'), referenced)
+                referenced.unique().each { String ref ->
+                    templateNameRefCount++
+                    if (nameDeclarations.containsKey(ref)) {
+                        return
+                    }
+                    problems << pack.name + '/' + pack.dir.toPath().relativize(file.toPath())
+                            .toString().replace(File.separatorChar, '/' as char) +
+                            '：模板引用的名字 ' + ref + ' 不在任何内容包里' +
+                            '（这条连接配不上，装配体少一组约束）'
+                }
+            }
+        }
+
         // 10. 履带临时配方与型号对齐
         //
         // 履带物品只有一个 machine_max:track，型号写在合成结果的 result.components 里
@@ -1467,7 +1591,8 @@ tasks.register('checkContent') {
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
                 priorityKeyCount + ' 条越级量键，' + nameKeyCount + ' 个名字键（' +
-                nameTranslationGaps.size() + ' 条缺译），' + languageKeyCount + ' 条语言键（' +
+                nameTranslationGaps.size() + ' 条缺译），' + animationNameRefCount +
+                ' 处动画名字引用、' + templateNameRefCount + ' 处模板名字引用，' + languageKeyCount + ' 条语言键（' +
                 untranslatedValueCount + ' 条中文缺译），' +
                 trackRecipeCount + ' 条履带临时配方（' + trackTypes.size() + ' 个型号全覆盖））。')
     }
