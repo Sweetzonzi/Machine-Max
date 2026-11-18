@@ -78,7 +78,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_01": {
+      "sub_part.mtlb.left_road_wheel_01": {
         "start_bone": "Roadwheel_Left_1",
         "end_bones": [],
         "durability": 3.75,
@@ -111,7 +111,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_01": {
+      "sub_part.mtlb.right_road_wheel_01": {
         "start_bone": "Roadwheel_Right_1",
         "end_bones": [],
         "durability": 3.75,
@@ -144,7 +144,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_02": {
+      "sub_part.mtlb.left_road_wheel_02": {
         "start_bone": "Roadwheel_Left_2",
         "end_bones": [],
         "durability": 3.75,
@@ -177,7 +177,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_02": {
+      "sub_part.mtlb.right_road_wheel_02": {
         "start_bone": "Roadwheel_Right_2",
         "end_bones": [],
         "durability": 3.75,
@@ -210,7 +210,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_03": {
+      "sub_part.mtlb.left_road_wheel_03": {
         "start_bone": "Roadwheel_Left_3",
         "end_bones": [],
         "durability": 3.75,
@@ -243,7 +243,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_03": {
+      "sub_part.mtlb.right_road_wheel_03": {
         "start_bone": "Roadwheel_Right_3",
         "end_bones": [],
         "durability": 3.75,
@@ -276,7 +276,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_04": {
+      "sub_part.mtlb.left_road_wheel_04": {
         "start_bone": "Roadwheel_Left_4",
         "end_bones": [],
         "durability": 3.75,
@@ -309,7 +309,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_04": {
+      "sub_part.mtlb.right_road_wheel_04": {
         "start_bone": "Roadwheel_Right_4",
         "end_bones": [],
         "durability": 3.75,
@@ -342,7 +342,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_05": {
+      "sub_part.mtlb.left_road_wheel_05": {
         "start_bone": "Roadwheel_Left_5",
         "end_bones": [],
         "durability": 3.75,
@@ -375,7 +375,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_05": {
+      "sub_part.mtlb.right_road_wheel_05": {
         "start_bone": "Roadwheel_Right_5",
         "end_bones": [],
         "durability": 3.75,
@@ -408,7 +408,7 @@
           }
         }
       },
-      "sub_part.mtlb.left_roadwheel_06": {
+      "sub_part.mtlb.left_road_wheel_06": {
         "start_bone": "Roadwheel_Left_6",
         "end_bones": [],
         "durability": 3.75,
@@ -441,7 +441,7 @@
           }
         }
       },
-      "sub_part.mtlb.right_roadwheel_06": {
+      "sub_part.mtlb.right_road_wheel_06": {
         "start_bone": "Roadwheel_Right_6",
         "end_bones": [],
         "durability": 3.75,

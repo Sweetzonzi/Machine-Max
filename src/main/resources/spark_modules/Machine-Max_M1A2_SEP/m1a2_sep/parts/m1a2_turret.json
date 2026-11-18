@@ -945,7 +945,7 @@
             }
           }
         },
-        "sub_part.m1a2_sep.gun_barrel": {
+        "sub_part.m1a2_sep.barrel": {
           "start_bone": "bone13",
           "end_bones": [],
           "durability": 55,

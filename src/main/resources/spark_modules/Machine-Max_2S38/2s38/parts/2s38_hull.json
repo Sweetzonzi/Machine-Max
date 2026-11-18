@@ -440,7 +440,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_01": {
+        "sub_part.2s38.left_road_wheel_01": {
           "start_bone": "LeftWheel_1",
           "end_bones": [],
           "durability": 2.5,
@@ -480,7 +480,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_02": {
+        "sub_part.2s38.left_road_wheel_02": {
           "start_bone": "LeftWheel_2",
           "end_bones": [],
           "durability": 2.5,
@@ -520,7 +520,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_03": {
+        "sub_part.2s38.left_road_wheel_03": {
           "start_bone": "LeftWheel_3",
           "end_bones": [],
           "durability": 2.5,
@@ -560,7 +560,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_04": {
+        "sub_part.2s38.left_road_wheel_04": {
           "start_bone": "LeftWheel_4",
           "end_bones": [],
           "durability": 2.5,
@@ -600,7 +600,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_05": {
+        "sub_part.2s38.left_road_wheel_05": {
           "start_bone": "LeftWheel_5",
           "end_bones": [],
           "durability": 2.5,
@@ -640,7 +640,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_06": {
+        "sub_part.2s38.left_road_wheel_06": {
           "start_bone": "LeftWheel_6",
           "end_bones": [],
           "durability": 2.5,
@@ -680,7 +680,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_07": {
+        "sub_part.2s38.left_road_wheel_07": {
           "start_bone": "LeftWheel_7",
           "end_bones": [],
           "durability": 2.5,
@@ -720,7 +720,7 @@
             }
           }
         },
-        "sub_part.2s38.left_wheel_08": {
+        "sub_part.2s38.left_road_wheel_08": {
           "start_bone": "LeftWheel_8",
           "end_bones": [],
           "durability": 2.5,
@@ -760,7 +760,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_01": {
+        "sub_part.2s38.right_road_wheel_01": {
           "start_bone": "RightWheel_1",
           "end_bones": [],
           "durability": 2.5,
@@ -800,7 +800,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_02": {
+        "sub_part.2s38.right_road_wheel_02": {
           "start_bone": "RightWheel_2",
           "end_bones": [],
           "durability": 2.5,
@@ -840,7 +840,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_03": {
+        "sub_part.2s38.right_road_wheel_03": {
           "start_bone": "RightWheel_3",
           "end_bones": [],
           "durability": 2.5,
@@ -880,7 +880,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_04": {
+        "sub_part.2s38.right_road_wheel_04": {
           "start_bone": "RightWheel_4",
           "end_bones": [],
           "durability": 2.5,
@@ -920,7 +920,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_05": {
+        "sub_part.2s38.right_road_wheel_05": {
           "start_bone": "RightWheel_5",
           "end_bones": [],
           "durability": 2.5,
@@ -960,7 +960,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_06": {
+        "sub_part.2s38.right_road_wheel_06": {
           "start_bone": "RightWheel_6",
           "end_bones": [],
           "durability": 2.5,
@@ -1000,7 +1000,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_07": {
+        "sub_part.2s38.right_road_wheel_07": {
           "start_bone": "RightWheel_7",
           "end_bones": [],
           "durability": 2.5,
@@ -1040,7 +1040,7 @@
             }
           }
         },
-        "sub_part.2s38.right_wheel_08": {
+        "sub_part.2s38.right_road_wheel_08": {
           "start_bone": "RightWheel_8",
           "end_bones": [],
           "durability": 2.5,

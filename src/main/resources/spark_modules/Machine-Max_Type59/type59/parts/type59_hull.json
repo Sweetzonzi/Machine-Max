@@ -568,7 +568,7 @@
             }
           }
         },
-        "sub_part.type59.left_road_01": {
+        "sub_part.type59.left_road_wheel_01": {
           "start_bone": "MM_left_road_1",
           "end_bones": [],
           "durability": 55,
@@ -601,7 +601,7 @@
             }
           }
         },
-        "sub_part.type59.left_road_02": {
+        "sub_part.type59.left_road_wheel_02": {
           "start_bone": "MM_left_road_2",
           "end_bones": [],
           "durability": 55,
@@ -634,7 +634,7 @@
             }
           }
         },
-        "sub_part.type59.left_road_03": {
+        "sub_part.type59.left_road_wheel_03": {
           "start_bone": "MM_left_road_3",
           "end_bones": [],
           "durability": 55,
@@ -667,7 +667,7 @@
             }
           }
         },
-        "sub_part.type59.left_road_04": {
+        "sub_part.type59.left_road_wheel_04": {
           "start_bone": "MM_left_road_4",
           "end_bones": [],
           "durability": 55,
@@ -700,7 +700,7 @@
             }
           }
         },
-        "sub_part.type59.left_road_05": {
+        "sub_part.type59.left_road_wheel_05": {
           "start_bone": "MM_left_road_5",
           "end_bones": [],
           "durability": 55,
@@ -799,7 +799,7 @@
             }
           }
         },
-        "sub_part.type59.right_road_01": {
+        "sub_part.type59.right_road_wheel_01": {
           "start_bone": "MM_right_road_1",
           "end_bones": [],
           "durability": 55,
@@ -832,7 +832,7 @@
             }
           }
         },
-        "sub_part.type59.right_road_02": {
+        "sub_part.type59.right_road_wheel_02": {
           "start_bone": "MM_right_road_2",
           "end_bones": [],
           "durability": 55,
@@ -865,7 +865,7 @@
             }
           }
         },
-        "sub_part.type59.right_road_03": {
+        "sub_part.type59.right_road_wheel_03": {
           "start_bone": "MM_right_road_3",
           "end_bones": [],
           "durability": 55,
@@ -898,7 +898,7 @@
             }
           }
         },
-        "sub_part.type59.right_road_04": {
+        "sub_part.type59.right_road_wheel_04": {
           "start_bone": "MM_right_road_4",
           "end_bones": [],
           "durability": 55,
@@ -931,7 +931,7 @@
             }
           }
         },
-        "sub_part.type59.right_road_05": {
+        "sub_part.type59.right_road_wheel_05": {
           "start_bone": "MM_right_road_5",
           "end_bones": [],
           "durability": 55,
