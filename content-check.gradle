@@ -48,6 +48,13 @@
 //     打方向没有反应。运行时的兜底是改用车控宿主子零件的质心当转向中心并打一条 WARN，代价是
 //     转弯半径翻倍；构建期仍按错误拦，因为第一方内容应当把后轮也接上。判定用连接点的 yr 行程
 //     分转向轮与非转向轮，再用模型的定位器量出这些轮子的纵向跨度。
+// 15. 音效事件引用可达。内容包里的音效一律写成 { "sound_id": <事件 id>, "range": <格> }，
+//     事件 id 必须在某个内容包的 sounds/sounds.json 或 mod 自己的 assets/<命名空间>/sounds.json
+//     里有同名键（前者由 Spark 的 SoundModule 合并后注入客户端资源包，键就是原版 sounds.json
+//     的事件名，事件 id 为 <命名空间>:<键>）。引用到没注册的事件时客户端解析不到音频缓冲，
+//     那一处静默无声——既不报错也不刷日志。只核对内容命名空间里的事件，minecraft 与外部 mod
+//     的事件无法离线核对，原样跳过。基础名没注册、只有 <id>_interior 时有注册是合法配置：
+//     车内听者由播放器换成该变体，车外没有录音因此静音（弹壳音就是只有车内录音）。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -299,6 +306,23 @@ walkControlGroupPresets = { Object node, Closure onPreset ->
     }
 }
 
+// 收集音效事件引用：音效字段统一是 { "sound_id": ..., "range": ... }（SoundEvent.DIRECT_CODEC
+// 的形态），所以按键名扫即可，不必先认外层是哪个属性类的字段。
+def walkSoundRefs
+walkSoundRefs = { Object node, Closure onSoundRef ->
+    if (node instanceof Map) {
+        node.each { Object key, Object value ->
+            if (key == 'sound_id' && value != null) {
+                onSoundRef(value.toString())
+            } else {
+                walkSoundRefs(value, onSoundRef)
+            }
+        }
+    } else if (node instanceof Collection) {
+        ((Collection) node).each { walkSoundRefs(it, onSoundRef) }
+    }
+}
+
 def readJsonc = { File file ->
     new JsonSlurper().parseText(stripJsonc(file.getText('UTF-8')))
 }
@@ -340,7 +364,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型、音效事件与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -377,6 +401,36 @@ tasks.register('checkContent') {
                     String name = file.name.substring(0, file.name.length() - '.particle.json'.length())
                     particleIds << pack.namespace + ':' + name
                 }
+            }
+        }
+
+        // 音效事件索引：内容包的 sounds.json 由 Spark 的 SoundModule 合并后注入客户端资源包，
+        // 键就是原版 sounds.json 的事件名，事件 id 为 <命名空间>:<键>。mod 自己的
+        // assets/<命名空间>/sounds.json 走同一条解析，一并并进来；命名空间集合取这两处的并集，
+        // 用来区分"内容包自己的事件"与"minecraft / 外部 mod 的事件"。
+        Set<String> soundEvents = new LinkedHashSet<>()
+        Set<String> soundNamespaces = new LinkedHashSet<>()
+        packs.each { pack ->
+            soundNamespaces << pack.namespace
+            pack.dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.name != 'sounds.json') {
+                    return
+                }
+                if (file.toPath().any { it.toString() == 'docs' }) {
+                    return
+                }
+                readJsonc(file).keySet().each { soundEvents << pack.namespace + ':' + it }
+            }
+        }
+        File soundAssetsDir = new File(projectDir, 'src/main/resources/assets')
+        if (soundAssetsDir.isDirectory()) {
+            soundAssetsDir.eachDir { File namespaceDir ->
+                File soundsFile = new File(namespaceDir, 'sounds.json')
+                if (!soundsFile.isFile()) {
+                    return
+                }
+                soundNamespaces << namespaceDir.name
+                readJsonc(soundsFile).keySet().each { soundEvents << namespaceDir.name + ':' + it }
             }
         }
 
@@ -461,6 +515,7 @@ tasks.register('checkContent') {
         int particleReferenceCount = 0
         int childParticleCount = 0
         int presetReferenceCount = 0
+        int soundReferenceCount = 0
         // 贴图 / 模型只校验内置与模板命名空间，外部命名空间留给对应 mod 自己管
         def referencePattern = ~/^(machine_max|namespace):([A-Za-z0-9_.\/-]+\.(png|geo))$/
         // 说明页面按 AUI 文档根解析：namespace:tooltips/x.html → <包>/<namespace>/documents/tooltips/x.html
@@ -515,6 +570,22 @@ tasks.register('checkContent') {
                                 ' 找不到控制组预设（control_groups/<名>.json）'
                         details.append('    缺预设  ').append(label).append(' → ')
                                 .append(subsystem).append(' = ').append(preset).append('\n')
+                    }
+                }
+                // 15. 音效事件引用（sound_id 指向已注册的事件，或它的 _interior 变体）
+                walkSoundRefs(data) { String eventId ->
+                    int colon = eventId.indexOf(':')
+                    String namespace = colon > 0 ? eventId.substring(0, colon) : ''
+                    if (!soundNamespaces.contains(namespace)) {
+                        return
+                    }
+                    soundReferenceCount++
+                    // 只有 <id>_interior 有录音是合法配置：车内换成该变体，车外静音
+                    if (!soundEvents.contains(eventId) && !soundEvents.contains(eventId + '_interior')) {
+                        problems << label + '：音效事件 ' + eventId + ' 没有注册（sounds/sounds.json 与 assets/' +
+                                namespace + '/sounds.json 里既没有它，也没有 ' + eventId + '_interior）'
+                        details.append('    缺音效  ').append(label).append(' → ')
+                                .append(eventId).append('\n')
                     }
                 }
                 walkStrings(data) { String value ->
@@ -1762,6 +1833,7 @@ tasks.register('checkContent') {
                 referenceCount + ' 处资源引用，' +
                 documentReferenceCount + ' 处样式表引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
+                soundReferenceCount + ' 处音效事件引用（' + soundEvents.size() + ' 个已注册事件），' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
                 priorityKeyCount + ' 条越级量键，' + nameKeyCount + ' 个名字键（' +
                 nameTranslationGaps.size() + ' 条缺译），' + animationNameRefCount +

@@ -29,8 +29,8 @@
       "range": 64
     },
     "working": {
-      "1000.0": {
-        "sound_id": "machine_max:subsystem.engine.i4_1000",
+      "800.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_800",
         "range": 64
       },
       "2000.0": {

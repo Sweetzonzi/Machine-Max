@@ -288,6 +288,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 | JSON 里的资源引用 | `machine_max:…png` 按内容目录内的相对路径精确匹配，`machine_max:…geo` 按文件名在 `models/` 下递归找 |
 | 碰撞箱的命中火花引用 | 材质的 `particles` 段按键声明表现粒子（`hit_pen` / `hit_un_pen` …），每个值按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；客户端解析不到定义时静默跳过，因此只能在这里拦 |
 | 粒子定义之间的事件引用 | 粒子 JSON 的 `events` 里用 `particle_effect` 生成另一个效果时，`effect` 同样按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；拼错只会让子效果不出现，日志里没有痕迹 |
+| 音效事件引用 | 所有 `sound_id` 按 `<命名空间>:<事件名>` 在内容包的 `sounds/sounds.json` 与 `assets/<命名空间>/sounds.json` 的键里找；引用到没注册的事件时客户端解析不到音频缓冲，那一处静默无声、不报错也不刷日志。只核对内容命名空间里的事件（`minecraft:` 与外部 mod 的事件离线无法核对，跳过）；基础名没注册、只有 `<事件名>_interior` 有录音是合法配置——车内换成该变体、车外静音，弹壳音就是这么配的 |
 | 座位控制组预设 | 任何 JSON 里出现的 `control_group_preset`（只由座位安装块的 `SeatSubsystemAttr` 读取）按 `<namespace>:<control_groups/ 下的文件名>` 在全部包合并后的索引里找；拼错时 `SeatSubsystem` 构造器打一条 WARN 就按空控制组继续，乘员按什么键都没反应，控制面板里也列不出组 |
 | 连接点信号表 | `signal_targets` 的目标若是本变体内的子系统，按该类型的接受频道字段（座位的 `interact_inputs`、引擎与变速箱的 `control_inputs`、武器控制器的 `aim_inputs` / `fire_inputs` 等）核对到达频道，不在列表里时 `SignalPort` 转发会静默丢弃；`signal_translations` 的每个目标频道必须在同一张 `signal_targets` 里；内部连接点（`"internal": true`）两端同属一个 Part，不得配置这两张表——同件直连写子系统名即可 |
 | 交互区目标 | 交互区的 `signal_targets` 必须落在本变体内的子系统或连接点上（跨零件写连接点名）。交互区只发不收：点击直接调目标子系统的 `onInteract`，目标写成保留地址、另一个交互区或不存在的名字时解析不出终端，交互区会静默地完全不激活——提示不亮、射线也选不中 |
