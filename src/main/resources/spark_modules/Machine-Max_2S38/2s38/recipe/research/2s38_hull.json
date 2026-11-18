@@ -1,0 +1,9 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["2s38:2s38"],
+  "research_cost": 500,
+  "icon": "2s38:textures/icon/2s38/2s38_hull.png",
+  "description": "research.2s38.2s38_hull_blueprint.desc",
+  "unlock_recipe": "2s38:part_fabricating/2s38_hull"
+}

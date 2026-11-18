@@ -1,0 +1,327 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "sdkfz234:textures/icon/sdkfz234/sdkfz234_hull.png",
+  "vehicle_durability_rate": 0.9,
+  "variants": {
+    "sdkfz234_2": {
+      "model": "sdkfz234:sdkfz234_2.geo",
+      "textures": {
+        "default": "sdkfz234:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "sdkfz234:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:category/structural",
+        "machine_max:type/land",
+        "machine_max:series/sdkfz234"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllHull",
+          "end_bones": [],
+          "durability": 335,
+          "mass": 9600,
+          "mass_center": "hull_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "hit_boxes": {
+            "FrontArmorHitBox": {
+              "id": "front",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+              ] } }
+            },
+            "LeftArmoHitBox": {
+              "id": "left",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 8,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
+            },
+            "RightArmorHitBox": {
+              "id": "right",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 8,
+              "overwrite": { "armor": { "impact_modifiers": [
+                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+              ] } }
+            },
+            "TopBackArmorHitBox": {
+              "id": "back",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 5
+            },
+            "BackCaseHitBox": {
+              "id": "case",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 2
+            },
+            "EngineHitBox": {
+              "id": "engine",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.sdkfz234.engine"
+            }
+          },
+          "interact_boxes": {
+            "interact.sdkfz234.driver_cover_interact": {
+              "bone": "DriverCoverInteract",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.sdkfz234.driver_seat",
+                  "subsystem.sdkfz234.radio_seat"
+                ]
+              }
+            },
+            "interact.sdkfz234.back_case_interact": {
+              "bone": "BackCaseInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.sdkfz234.item_storage"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.sdkfz234.hull_left_wheel_1": {
+              "locator": "hull_left_wheel_1",
+              "definition": "sdkfz234:sdkfz234_left_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_left_wheel_2": {
+              "locator": "hull_left_wheel_2",
+              "definition": "sdkfz234:sdkfz234_left_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_left_wheel_3": {
+              "locator": "hull_left_wheel_3",
+              "definition": "sdkfz234:sdkfz234_left_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_left_wheel_4": {
+              "locator": "hull_left_wheel_4",
+              "definition": "sdkfz234:sdkfz234_left_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_right_wheel_1": {
+              "locator": "hull_right_wheel_1",
+              "definition": "sdkfz234:sdkfz234_right_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_right_wheel_2": {
+              "locator": "hull_right_wheel_2",
+              "definition": "sdkfz234:sdkfz234_right_wheel",
+              "signal_translations": {
+                "new_source": "new_target"
+              },
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_right_wheel_3": {
+              "locator": "hull_right_wheel_3",
+              "definition": "sdkfz234:sdkfz234_right_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_right_wheel_4": {
+              "locator": "hull_right_wheel_4",
+              "definition": "sdkfz234:sdkfz234_right_wheel",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_back_wheel": {
+              "locator": "hull_back_wheel",
+              "definition": "machine_max:fixed_back",
+              "overwrite": {}
+            },
+            "connector.sdkfz234.hull_turret_axis": {
+              "locator": "hull_turret_axis",
+              "definition": "machine_max:fixed_up",
+              "signal_targets": {
+                "move_control": [
+                  "subsystem.sdkfz234.car_controller"
+                ]
+              },
+              "overwrite": {
+                "integrity": 1200,
+                "impact_absorption": 1.0,
+                "impact_reduction": 10
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.sdkfz234.engine": {
+              "type": "machine_max:engine",
+              "definition": "sdkfz234:sdkfz234_engine",
+              "power_output": "subsystem.sdkfz234.gearbox",
+              "speed_outputs": {
+                "engine_speed": [
+                  "local",
+                  "global"
+                ]
+              }
+            },
+            "subsystem.sdkfz234.gearbox": {
+              "type": "machine_max:gearbox",
+              "definition": "sdkfz234:sdkfz234_gearbox",
+              "power_output": "subsystem.sdkfz234.transmission",
+              "gear_outputs": {
+                "gear": [
+                  "local",
+                  "global"
+                ]
+              }
+            },
+            "subsystem.sdkfz234.transmission": {
+              "type": "machine_max:transmission",
+              "definition": "sdkfz234:sdkfz234_transmission",
+              "power_outputs": {
+                "subsystem.sdkfz234.left_wheel_1": 1,
+                "subsystem.sdkfz234.left_wheel_2": 1,
+                "subsystem.sdkfz234.left_wheel_3": 1,
+                "subsystem.sdkfz234.left_wheel_4": 1,
+                "subsystem.sdkfz234.right_wheel_1": 1,
+                "subsystem.sdkfz234.right_wheel_2": 1,
+                "subsystem.sdkfz234.right_wheel_3": 1,
+                "subsystem.sdkfz234.right_wheel_4": 1
+              }
+            },
+            "subsystem.sdkfz234.car_controller": {
+              "type": "machine_max:car_controller",
+              "definition": "sdkfz234:sdkfz234_car_controller",
+              "control_outputs": {
+                "car_control": [
+                  "subsystem.sdkfz234.engine",
+                  "subsystem.sdkfz234.gearbox",
+                  "subsystem.sdkfz234.left_wheel_1",
+                  "subsystem.sdkfz234.left_wheel_2",
+                  "subsystem.sdkfz234.left_wheel_3",
+                  "subsystem.sdkfz234.left_wheel_4",
+                  "subsystem.sdkfz234.right_wheel_1",
+                  "subsystem.sdkfz234.right_wheel_2",
+                  "subsystem.sdkfz234.right_wheel_3",
+                  "subsystem.sdkfz234.right_wheel_4"
+                ]
+              },
+              "speed_outputs": {
+                "vehicle_speed": [
+                  "local",
+                  "global"
+                ]
+              },
+              "throttle_outputs": {
+                "throttle": [
+                  "local",
+                  "global"
+                ]
+              },
+              "steering_outputs": {
+                "steering": [
+                  "local",
+                  "global"
+                ]
+              },
+              "brake_outputs": {
+                "brake": [
+                  "local",
+                  "global"
+                ]
+              },
+              "handbrake_outputs": {
+                "handbrake": [
+                  "local",
+                  "global"
+                ]
+              }
+            },
+            "subsystem.sdkfz234.left_wheel_1": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_left_wheel_1"
+            },
+            "subsystem.sdkfz234.item_storage": {
+              "type": "machine_max:item_storage",
+              "definition": "sdkfz234:sdkfz234_trunk"
+            },
+            "subsystem.sdkfz234.left_wheel_2": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_left_wheel_2"
+            },
+            "subsystem.sdkfz234.left_wheel_3": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_left_wheel_3"
+            },
+            "subsystem.sdkfz234.left_wheel_4": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_left_wheel_4"
+            },
+            "subsystem.sdkfz234.right_wheel_1": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_right_wheel_1"
+            },
+            "subsystem.sdkfz234.right_wheel_2": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_right_wheel_2"
+            },
+            "subsystem.sdkfz234.right_wheel_3": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_right_wheel_3"
+            },
+            "subsystem.sdkfz234.right_wheel_4": {
+              "type": "machine_max:wheel_driver",
+              "definition": "sdkfz234:sdkfz234_wheel_driver",
+              "connector": "connector.sdkfz234.hull_right_wheel_4"
+            },
+            "subsystem.sdkfz234.driver_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_driver_seat",
+              "first_hud_layout": "sdkfz234:sdkfz234_driver",
+              "third_hud_layout": "sdkfz234:sdkfz234_driver",
+              "locator": "driver_seat",
+              "control_group_preset": "machine_max:default_driver",
+              "passenger_num_outputs": {
+                "passenger_num": [
+                  "local",
+                  "global"
+                ]
+              },
+              "dismount_locators": []
+            },
+            "subsystem.sdkfz234.radio_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_3rd_passenger_seat",
+              "first_hud_layout": "sdkfz234:sdkfz234_driver",
+              "third_hud_layout": "sdkfz234:sdkfz234_driver",
+              "locator": "radio_seat",
+              "control_group_preset": "machine_max:default_passenger",
+              "passenger_num_outputs": {
+                "passenger_num": [
+                  "local",
+                  "global"
+                ]
+              },
+              "dismount_locators": []
+            }
+          }
+        }
+      }
+    }
+  }
+}

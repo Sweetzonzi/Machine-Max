@@ -1,0 +1,98 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "sdkfz234:textures/icon/sdkfz234/sdkfz234_wheel.png",
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0,
+  "max_stack_size": 4,
+  "variants": {
+    "left": {
+      "model": "sdkfz234:sdkfz234_2.geo",
+      "textures": {
+        "default": "sdkfz234:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "sdkfz234:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/mobility",
+        "machine_max:type/land",
+        "machine_max:series/sdkfz234"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "LeftWheel_1",
+          "end_bones": [],
+          "durability": 65,
+          "mass": 100,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "LeftWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "sdkfz234:sdkfz234_tire",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.sdkfz234.left_wheel_hull": {
+              "locator": "left_wheel_hull",
+              "definition": "sdkfz234:sdkfz234_wheel_hub_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "model": "sdkfz234:sdkfz234_2.geo",
+      "textures": {
+        "default": "sdkfz234:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "sdkfz234:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/mobility",
+        "machine_max:type/land",
+        "machine_max:series/sdkfz234"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "RightWheel_1",
+          "end_bones": [],
+          "durability": 65,
+          "mass": 100,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "RightWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "sdkfz234:sdkfz234_tire",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.sdkfz234.right_wheel_hull": {
+              "locator": "right_wheel_hull",
+              "definition": "sdkfz234:sdkfz234_wheel_hub_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

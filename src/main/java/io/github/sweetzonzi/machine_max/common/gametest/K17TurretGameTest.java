@@ -43,7 +43,7 @@ public final class K17TurretGameTest {
 
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void fourAtgmTubesBindTheirOwnLauncher(GameTestHelper helper) {
-        RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:k17_turret"));
+        RegularPartType type = PartDefinitions.regular(false).get(ResourceLocation.parse("k17:k17_turret"));
         helper.assertTrue(type != null, "K17 炮塔的部件定义必须已加载");
         // K17 的部件 JSON 用单变体写法（variants 直接是一个配置），解码后的变体名是 "default"。
         RegularPart part = PartFactory.createRegular(type, "default", helper.getLevel());

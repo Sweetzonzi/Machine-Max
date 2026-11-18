@@ -1,0 +1,29 @@
+{
+  "base_group": {
+    "name": "controlGroup.machine_max.base",
+    "control_mode": "inherit",
+    "view_targets": {
+      "crew_gunner_aim": ["global"]
+    }
+  },
+  "groups": [
+    {
+      "name": "controlGroup.k17.autocannon_control",
+      "control_mode": "inherit",
+      "main_weapon_targets": {
+        "crew_gunner_fire": ["global"]
+      },
+      "secondary_weapon_targets": {
+        "crew_gunner_secondary_fire": ["global"]
+      }
+    },
+    {
+      "name": "controlGroup.k17.atgm_control",
+      "control_mode": "inherit",
+      "main_weapon_targets": {
+        "crew_gunner_fire_atgm": ["global"]
+      }
+    }
+  ],
+  "active_index": 0
+}

@@ -37,7 +37,7 @@ public final class PartFoundationGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmPartFoundation", timeoutTicks = 100)
     public static void interactionBodiesFollowSubPartLifecycle(GameTestHelper helper) {
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_turret"));
         var part = PartFactory.createRegular(type, "sdkfz234_2", helper.getLevel());
         var connector = part.subParts.values().stream().flatMap(sub -> sub.connectors.values().stream())
                 .filter(point -> !point.internal && !point.hasPart()).findFirst().orElseThrow();
@@ -88,7 +88,7 @@ public final class PartFoundationGameTest {
     @GameTest(template = "part_foundation", batch = "mmPartFoundation", timeoutTicks = 100)
     public static void discardingCandidateKeepsRegisteredSubPart(GameTestHelper helper) {
         var level = helper.getLevel();
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_turret"));
         var registered = PartFactory.createRegular(type, "sdkfz234_2", level);
         var candidate = PartFactory.createRegular(type, "sdkfz234_2", level);
         try {

@@ -47,8 +47,8 @@ public abstract class FittingType {
     /**
      * 型号 id 对应的名称翻译键。
      *
-     * <p>格式是 {@code <命名空间>.fitting.<型号名>}，例如 {@code machine_max:2s38_track}
-     * 对应 {@code machine_max.fitting.2s38_track}。内容包在自己的 {@code lang/} 里提供，
+     * <p>格式是 {@code <命名空间>.fitting.<型号名>}，例如 {@code 2s38:2s38_track}
+     * 对应 {@code 2s38.fitting.2s38_track}。内容包在自己的 {@code lang/} 里提供，
      * 物品名与创造栏条目都取这个键。</p>
      *
      * @param id 型号 id

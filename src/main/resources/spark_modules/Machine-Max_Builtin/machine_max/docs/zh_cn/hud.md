@@ -124,6 +124,8 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 - **page** (必需): AUI 页面键，形式为 `<内容包命名空间>/<相对路径>`，例如内容包里的 `documents/weapon_hud_element/weapon_ammo.html` 对应 `machine_max/weapon_hud_element/weapon_ammo.html`
 - **defaults** (可选): 写进页面 `body` 的 CSS 变量，页面样式表可用 `var(...)` 读取。`--mm-accent` 可被客户端配置 `hud.accent_color` 全局覆盖：配置为合法 CSS 颜色时，所有 AUI HUD 页面优先使用该颜色；留空或无法解析时使用本字段或页面样式表给出的颜色。
 
+页面里的 `<link rel="stylesheet">` 与样式表的 `@import` 按 AUI 的规则解析：相对路径基于页面文件所在目录，以 `/` 开头则按绝对逻辑路径。跨命名空间共用同一份样式表时写绝对路径即可，例如 `<link rel="stylesheet" href="/machine_max/weapon_hud_components/hud.css">`，不必把同一份文件复制到每个包。解析不到时页面照常打开，只是整页丢样式——`checkContent` 会拦下这类引用。
+
 页面按内容收缩：运行时给 `body` 加上 `mm-hud` 类并设置 `inline-block`、无外边距、透明背景的内联规则。页面描述组件内容，布局决定投放位置与投影；需要暗底时，在组件容器上设置背景。布局的 `perspective: false` 选择正交叠层，`perspective: true` 选择透视平面；该字段默认是 `true`，屏幕锚定的 AUI 元素应显式写 `false`。
 
 AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文字与裁剪，不保证复杂 `backdrop-filter` 等屏幕采样效果。

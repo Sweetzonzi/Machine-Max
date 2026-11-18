@@ -16,9 +16,11 @@
 //  5. 座位控制组预设可达。座位安装块的 control_group_preset 指向 control_groups/<名>.json，
 //     拼错一个字母时 SeatSubsystem 构造器打一条 WARN 就按空控制组继续——座位仍在，乘员按
 //     什么键都没有反应，面板里也列不出任何组。
-//  6. 语言键可达且中英成对。零件改名后残留的旧键、写错前缀的键（fitting.<ns>.<id> 与
-//     FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现为屏幕上一段原始键名；
-//     只有一边语言有的键则让另一边显示原始键名。两者都不报错。
+//  6. 语言键可达、中英成对且中文值真的写了中文。零件改名后残留的旧键、写错前缀的键
+//     （fitting.<ns>.<id> 与 FittingType.nameKey 的 <ns>.fitting.<id> 相反）在游戏里只表现
+//     为屏幕上一段原始键名；只有一边语言有的键则让另一边显示原始键名；而键集齐全、中文值
+//     却是英文时，中文客户端会直接显示英文。三者都不报错。型号名与弹种 / 弹链标签刻意保留
+//     英文，不计入缺译。
 //  7. 控制组预设的越级量表只写自己会发出的频道。priorities 的键拼错时，这一条频道就按
 //     越级量 0 处理——表现是"超控没反应"，既不报错也不刷日志。解码期只能校验值的范围
 //     （负值被 Codec.intRange 拒绝），看不到基础组，所以键只能在这里对。
@@ -29,6 +31,10 @@
 //  9. 履带临时配方与型号对齐。履带物品只有一个 machine_max:track，型号由合成结果的
 //     result.components 给出；型号 id 写错时配方照常加载，游戏里只是物品铺不上、模型回落
 //     默认型号。反过来漏了配方则型号在生存里拿不到。
+// 10. 文档页面的样式表可达。documents/ 下的 <link rel="stylesheet"> 与 CSS 的 @import 按
+//     AUI 的 Loader.resolve 解析（以 / 开头是绝对逻辑路径，否则相对页面所在目录，折叠 . 与
+//     ..），结果必须落在某个内容包的 documents/ 里。解析不到时页面照常打开，只是整页丢掉
+//     样式——既不报错也不刷日志，只有肉眼看得出“文字样式不对”。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -302,7 +308,7 @@ packs.sort { it.name }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，语言键的可达性与中英配对，单变体内三类信号名字的唯一性，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，单变体内三类信号名字的唯一性，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -515,6 +521,112 @@ tasks.register('checkContent') {
             }
         }
 
+        // 3. 文档页面的样式表引用
+        //
+        // documents/ 下的文件在运行期挂成 apricity/<命名空间>/<相对路径>，<link href> 与
+        // CSS 的 @import 都走 AUI 的 Loader.resolve。跨命名空间引用写绝对逻辑路径即可
+        // （例如 /machine_max/weapon_hud_components/hud.css），不必把同一份样式表复制到每个包。
+        int documentReferenceCount = 0
+        Set<String> documentPaths = new LinkedHashSet<>()
+        packs.each { pack ->
+            File documents = new File(pack.dir, 'documents')
+            if (!documents.isDirectory()) {
+                return
+            }
+            documents.eachFileRecurse(FileType.FILES) { File file ->
+                documentPaths << pack.namespace + '/' + documents.toPath()
+                        .relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+            }
+        }
+        def resolveDocumentPath = { String context, String raw ->
+            String clean = raw.trim()
+            int cut = clean.indexOf('#')
+            if (cut >= 0) {
+                clean = clean.substring(0, cut)
+            }
+            cut = clean.indexOf('?')
+            if (cut >= 0) {
+                clean = clean.substring(0, cut)
+            }
+            if (clean.isEmpty()) {
+                return ''
+            }
+            if (clean.startsWith('/')) {
+                return clean.substring(1)
+            }
+            String base = context.contains('/') ? context.substring(0, context.lastIndexOf('/')) : ''
+            def stack = new ArrayDeque<String>()
+            (base + '/' + clean).split('/').each { String part ->
+                if (part.isEmpty() || part == '.') {
+                    return
+                }
+                if (part == '..') {
+                    if (!stack.isEmpty()) {
+                        stack.pollLast()
+                    }
+                } else {
+                    stack.addLast(part)
+                }
+            }
+            return stack.join('/')
+        }
+        packs.each { pack ->
+            File documents = new File(pack.dir, 'documents')
+            if (!documents.isDirectory()) {
+                return
+            }
+            documents.eachFileRecurse(FileType.FILES) { File file ->
+                String lower = file.name.toLowerCase(Locale.ROOT)
+                if (!lower.endsWith('.html') && !lower.endsWith('.css')) {
+                    return
+                }
+                String relative = documents.toPath().relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+                String context = pack.namespace + '/' + relative
+                String label = pack.name + '/' + pack.namespace + '/documents/' + relative
+                String text = file.getText('UTF-8')
+                List<String> references = []
+                if (lower.endsWith('.html')) {
+                    def linkMatcher = (text =~ /<link\b[^>]*>/)
+                    while (linkMatcher.find()) {
+                        String tag = linkMatcher.group()
+                        def relMatcher = (tag =~ /\brel\s*=\s*["']([^"']*)["']/)
+                        if (!relMatcher.find() ||
+                                !relMatcher.group(1).toLowerCase(Locale.ROOT).contains('stylesheet')) {
+                            continue
+                        }
+                        def hrefMatcher = (tag =~ /\bhref\s*=\s*["']([^"']+)["']/)
+                        if (hrefMatcher.find()) {
+                            references << hrefMatcher.group(1)
+                        }
+                    }
+                } else {
+                    def importMatcher = (text =~ /@import\s+(?:url\()?\s*["']([^"')]+)["']/)
+                    while (importMatcher.find()) {
+                        references << importMatcher.group(1)
+                    }
+                }
+                references.each { String raw ->
+                    String trimmed = raw.trim()
+                    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') ||
+                            trimmed.startsWith('data:')) {
+                        return
+                    }
+                    String resolved = resolveDocumentPath(context, trimmed)
+                    if (resolved.isEmpty()) {
+                        return
+                    }
+                    if (documentPaths.contains(resolved)) {
+                        documentReferenceCount++
+                        return
+                    }
+                    problems << label + '：样式表 ' + trimmed + ' 解析为 ' + resolved +
+                            '，不在任何内容包的 documents/ 下'
+                }
+            }
+        }
+
         // 6. 语言键可达 + 中英键集一致
         //
         // 一条键“可达”指下列任一路径能取到它：
@@ -527,6 +639,8 @@ tasks.register('checkContent') {
         //      标签 machine_max:series/ae86 与研发分组 type59:type59_turret 都走这条。
         def resourceIdPattern = ~/^[a-z0-9_.-]+:[a-z0-9_.\/-]+$/
         def languageKeys = [:] as Map
+        // 中文语言文件的原始键值，供下面的“中文值是否真的写了中文”检查使用
+        def zhLanguageValues = [:] as Map
         packs.each { pack ->
             File langDir = new File(pack.dir, 'lang')
             if (!langDir.isDirectory()) {
@@ -539,6 +653,9 @@ tasks.register('checkContent') {
                 }
                 Object data = readJsonc(file)
                 perFile[file.name] = data instanceof Map ? data.keySet().collect { it.toString() } as Set : [] as Set
+                if (file.name == 'zh_cn.json' && data instanceof Map) {
+                    zhLanguageValues[pack.name] = data
+                }
             }
             if (perFile) {
                 languageKeys[pack.name] = perFile
@@ -633,6 +750,7 @@ tasks.register('checkContent') {
         }
 
         int languageKeyCount = 0
+        int untranslatedValueCount = 0
         languageKeys.sort { it.key }.each { String packName, Map perFile ->
             perFile.sort { it.key }.each { String fileName, Set keys ->
                 String label = packName + '/lang/' + fileName
@@ -652,6 +770,31 @@ tasks.register('checkContent') {
             }
             (zh - en).sort().each { problems << packName + '：语言键 ' + it + ' 只有中文，英文缺' }
             (en - zh).sort().each { problems << packName + '：语言键 ' + it + ' 只有英文，中文缺' }
+
+            // 中文值必须真的写了中文。描述型键最终显示在装配界面、载具信息面板与蓝图文案里，
+            // 若照抄英文，中文客户端会直接显示英文；键集齐全并不代表翻译完成。
+            // 型号名（<ns>.<型号>、machine_max.series.*）与弹种 / 弹链标签（machine_max.ammo.*、
+            // 投射物名）刻意保留英文，不在此列。
+            Map zhValues = (Map) zhLanguageValues[packName]
+            if (zhValues != null) {
+                def descriptiveKey = ~/^(subsystem|sub_part|connector|interact|controlGroup|title|description|notes|author|research)\./
+                def hanPattern = ~/[\u4e00-\u9fff]/
+                zhValues.each { Object rawKey, Object rawValue ->
+                    String key = rawKey == null ? '' : rawKey.toString()
+                    if (!descriptiveKey.matcher(key).find()) {
+                        return
+                    }
+                    if (!(rawValue instanceof String)) {
+                        return
+                    }
+                    if (hanPattern.matcher((String) rawValue).find()) {
+                        return
+                    }
+                    untranslatedValueCount++
+                    problems << packName + '/lang/zh_cn.json：语言键 ' + key + ' 的中文值 “' +
+                            rawValue + '” 不含汉字（应翻译；型号名与弹种标签除外）'
+                }
+            }
         }
 
         // 7. 控制组预设的越级量表键可达
@@ -942,9 +1085,11 @@ tasks.register('checkContent') {
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + partDefinitionCount + ' 份部件定义 / ' +
                 partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + referenceCount + ' 处资源引用，' +
+                documentReferenceCount + ' 处样式表引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
-                priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键，' +
+                priorityKeyCount + ' 条越级量键，' + languageKeyCount + ' 条语言键（' +
+                untranslatedValueCount + ' 条中文缺译），' +
                 trackRecipeCount + ' 条履带临时配方（' + trackTypes.size() + ' 个型号全覆盖））。')
     }
 }

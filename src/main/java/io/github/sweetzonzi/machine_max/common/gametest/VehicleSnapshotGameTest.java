@@ -35,7 +35,7 @@ import java.util.Set;
 @PrefixGameTestTemplate(false)
 public final class VehicleSnapshotGameTest {
     private static final String BATCH = "mmVehicleSnapshot";
-    private static final String WHEEL = "machine_max:k17_wheel";
+    private static final String WHEEL = "k17:k17_wheel";
 
     private VehicleSnapshotGameTest() {
     }

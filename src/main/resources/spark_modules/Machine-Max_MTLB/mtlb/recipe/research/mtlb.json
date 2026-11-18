@@ -1,0 +1,9 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["mtlb:mtlb"],
+  "research_cost": 420,
+  "icon": "mtlb:textures/icon/mtlb/mtlb_hull.png",
+  "description": "research.mtlb.mtlb_blueprint.desc",
+  "unlock_recipe": "mtlb:part_fabricating/mtlb"
+}

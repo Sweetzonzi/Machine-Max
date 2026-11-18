@@ -1,0 +1,19 @@
+[
+  {
+    "style": "machine_max:vehicle_status_heading",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -22, 0],
+    "scale": [1, 1, 1]
+  },
+  {
+    "style": "sdkfz234:sdkfz234_driver",
+    "perspective": false,
+    "anchor": "bottom_left",
+    "offset": [8, -22, 0],
+    "scale": [1, 1, 1],
+    "scope_behavior": "screen_fixed",
+    "ignore_zoom": true,
+    "selection_visibility": "always"
+  }
+]

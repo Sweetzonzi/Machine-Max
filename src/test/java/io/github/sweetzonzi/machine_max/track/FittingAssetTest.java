@@ -136,7 +136,7 @@ class FittingAssetTest {
         return mesh != null && !mesh.isJsonNull();
     }
 
-    /** {@code machine_max:2s38_track.geo} → 任一内容包的 {@code <ns>/models/fitting/2s38_track.geo.json}。 */
+    /** {@code 2s38:2s38_track.geo} → 任一内容包的 {@code <ns>/models/fitting/2s38_track.geo.json}。 */
     private static Optional<Path> resolveModel(String id) throws IOException {
         String[] parts = id.split(":", 2);
         if (parts.length != 2) return Optional.empty();

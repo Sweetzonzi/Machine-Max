@@ -1,0 +1,1003 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "mtlb:textures/icon/mtlb/mtlb_hull.png",
+  "vehicle_durability_rate": 0.9,
+  "variants": {
+    "model": "mtlb:mtlb.geo",
+    "textures": "mtlb:textures/part/mtlb/mtlb.png",
+    "animations": "mtlb:mtlb",
+    "tags": [
+      "machine_max:category/structural",
+      "machine_max:type/land",
+      "machine_max:series/mtlb"
+    ],
+    "sub_parts": {
+      "sub_part.mtlb.left_sprocket": {
+        "start_bone": "SprocketWheel_Left",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 70,
+        "mass_center": "left_sprocket_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftSprocketHitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_sprocket": {
+            "locator": "left_sprocket_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_sprocket": {
+        "start_bone": "SprocketWheel_Right",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 70,
+        "mass_center": "right_sprocket_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightSprocketHitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_sprocket": {
+            "locator": "right_sprocket_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_1": {
+        "start_bone": "Roadwheel_Left_1",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_1_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel1HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_1": {
+            "locator": "left_roadwheel_1_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_1": {
+        "start_bone": "Roadwheel_Right_1",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_1_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel1HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_1": {
+            "locator": "right_roadwheel_1_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_2": {
+        "start_bone": "Roadwheel_Left_2",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_2_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel2HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_2": {
+            "locator": "left_roadwheel_2_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_2": {
+        "start_bone": "Roadwheel_Right_2",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_2_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel2HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_2": {
+            "locator": "right_roadwheel_2_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_3": {
+        "start_bone": "Roadwheel_Left_3",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_3_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel3HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_3": {
+            "locator": "left_roadwheel_3_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_3": {
+        "start_bone": "Roadwheel_Right_3",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_3_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel3HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_3": {
+            "locator": "right_roadwheel_3_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_4": {
+        "start_bone": "Roadwheel_Left_4",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_4_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel4HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_4": {
+            "locator": "left_roadwheel_4_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_4": {
+        "start_bone": "Roadwheel_Right_4",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_4_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel4HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_4": {
+            "locator": "right_roadwheel_4_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_5": {
+        "start_bone": "Roadwheel_Left_5",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_5_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel5HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_5": {
+            "locator": "left_roadwheel_5_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_5": {
+        "start_bone": "Roadwheel_Right_5",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_5_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel5HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_5": {
+            "locator": "right_roadwheel_5_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_roadwheel_6": {
+        "start_bone": "Roadwheel_Left_6",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_roadwheel_6_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftRoadwheel6HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_roadwheel_6": {
+            "locator": "left_roadwheel_6_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_roadwheel_6": {
+        "start_bone": "Roadwheel_Right_6",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_roadwheel_6_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightRoadwheel6HitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_roadwheel_6": {
+            "locator": "right_roadwheel_6_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.left_idler": {
+        "start_bone": "IdlerWheel_Left",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "left_idler_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "LeftIdlerHitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_left_idler": {
+            "locator": "left_idler_hull",
+            "definition": "machine_max:fixed_left",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.right_idler": {
+        "start_bone": "IdlerWheel_Right",
+        "end_bones": [],
+        "durability": 3.75,
+        "mass": 40,
+        "mass_center": "right_idler_hull",
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": true,
+        "hit_boxes": {
+          "RightIdlerHitBox": {
+            "id": "part",
+            "type": "wheel",
+            "material": "machine_max:off_road_tire",
+            "thickness": 5
+          }
+        },
+        "connectors": {
+          "connector.mtlb.wheel_right_idler": {
+            "locator": "right_idler_hull",
+            "definition": "machine_max:fixed_right",
+            "internal": true,
+            "overwrite": {
+              "required_tags": []
+            }
+          }
+        }
+      },
+      "sub_part.mtlb.main": {
+        "start_bone": "AllHull",
+        "end_bones": [],
+        "durability": 300,
+        "mass": 11220,
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "climb_assist": false,
+        "hit_boxes": {
+          "HullUpperFrontArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 7,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+            ] } }
+          },
+          "HullBellyArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 4
+          },
+          "HullLowerFrontArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 7,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
+            ] } }
+          },
+          "HullSideLeftSponson": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
+          },
+          "EngineHitBox": {
+            "id": "engine",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 5,
+            "subsystem": "subsystem.mtlb.engine"
+          },
+          "HullSideRightLower": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
+          },
+          "HullRoofArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 4
+          },
+          "HullSideLeftLower": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
+          },
+          "HullRearArmor": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 5
+          },
+          "HullSideRightSponson": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:rha",
+            "thickness": 5,
+            "overwrite": { "armor": { "impact_modifiers": [
+              { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
+            ] } }
+          }
+        },
+        "interact_boxes": {
+          "interact.mtlb.driver_hatch_interact": {
+            "bone": "DriverHatchInteract",
+            "signal_targets": {
+              "interact": [
+                "subsystem.mtlb.driver_seat"
+              ]
+            }
+          },
+          "interact.mtlb.commander_hatch_interact": {
+            "bone": "CommanderHatchInteract",
+            "signal_targets": {
+              "interact": [
+                "subsystem.mtlb.commander_seat"
+              ]
+            }
+          },
+          "interact.mtlb.rear_door_interact": {
+            "bone": "RearDoorInteract",
+            "signal_targets": {
+              "interact": [
+                "subsystem.mtlb.passenger_seat_1",
+                "subsystem.mtlb.passenger_seat_2",
+                "subsystem.mtlb.passenger_seat_3",
+                "subsystem.mtlb.passenger_seat_4",
+                "subsystem.mtlb.passenger_seat_5",
+                "subsystem.mtlb.passenger_seat_6",
+                "subsystem.mtlb.passenger_seat_7",
+                "subsystem.mtlb.passenger_seat_8"
+              ]
+            }
+          },
+          "interact.mtlb.passenger_roof_interact": {
+            "bone": "PassengerRoofInteract",
+            "signal_targets": {
+              "interact": [
+                "subsystem.mtlb.passenger_seat_1",
+                "subsystem.mtlb.passenger_seat_2",
+                "subsystem.mtlb.passenger_seat_3",
+                "subsystem.mtlb.passenger_seat_4",
+                "subsystem.mtlb.passenger_seat_5",
+                "subsystem.mtlb.passenger_seat_6",
+                "subsystem.mtlb.passenger_seat_7",
+                "subsystem.mtlb.passenger_seat_8"
+              ]
+            }
+          }
+        },
+        "connectors": {
+          "connector.mtlb.hull_left_sprocket": {
+            "locator": "hull_left_sprocket",
+            "definition": "machine_max:track_sprocket_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_sprocket": {
+            "locator": "hull_right_sprocket",
+            "definition": "machine_max:track_sprocket_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_1": {
+            "locator": "hull_left_roadwheel_1",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_1": {
+            "locator": "hull_right_roadwheel_1",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_2": {
+            "locator": "hull_left_roadwheel_2",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_2": {
+            "locator": "hull_right_roadwheel_2",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_3": {
+            "locator": "hull_left_roadwheel_3",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_3": {
+            "locator": "hull_right_roadwheel_3",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_4": {
+            "locator": "hull_left_roadwheel_4",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_4": {
+            "locator": "hull_right_roadwheel_4",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_5": {
+            "locator": "hull_left_roadwheel_5",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_5": {
+            "locator": "hull_right_roadwheel_5",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_roadwheel_6": {
+            "locator": "hull_left_roadwheel_6",
+            "definition": "machine_max:track_road_wheel_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_roadwheel_6": {
+            "locator": "hull_right_roadwheel_6",
+            "definition": "machine_max:track_road_wheel_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_left_idler": {
+            "locator": "hull_left_idler",
+            "definition": "machine_max:track_idler_left",
+            "internal": true
+          },
+          "connector.mtlb.hull_right_idler": {
+            "locator": "hull_right_idler",
+            "definition": "machine_max:track_idler_right",
+            "internal": true
+          },
+          "connector.mtlb.hull_pkt_axis": {
+            "locator": "hull_pkt_axis",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 1200.0,
+              "impact_absorption": 1.0,
+              "impact_reduction": 10.0
+            }
+          }
+        },
+        "subsystems": {
+          "subsystem.mtlb.engine": {
+            "type": "machine_max:engine",
+            "definition": "mtlb:mtlb_engine",
+            "power_output": "subsystem.mtlb.gearbox",
+            "speed_outputs": {
+              "engine_speed": [
+                "global",
+                "local"
+              ]
+            }
+          },
+          "subsystem.mtlb.gearbox": {
+            "type": "machine_max:gearbox",
+            "definition": "mtlb:mtlb_gearbox",
+            "power_output": "subsystem.mtlb.transmission",
+            "gear_outputs": {
+              "gear": [
+                "local",
+                "global"
+              ]
+            }
+          },
+          "subsystem.mtlb.transmission": {
+            "type": "machine_max:transmission",
+            "definition": "mtlb:mtlb_transmission",
+            "power_outputs": {
+              "subsystem.mtlb.track_left": 1,
+              "subsystem.mtlb.track_right": 1
+            }
+          },
+          "subsystem.mtlb.driver_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_driver_seat",
+            "locator": "driver_seat",
+            "control_group_preset": "machine_max:default_driver",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.commander_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_seat",
+            "locator": "commander_seat",
+            "control_group_preset": "machine_max:mtlb_commander",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_1": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_1",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_2": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_2",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_3": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_3",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_4": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_4",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_5": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_5",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_6": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_6",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_7": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_7",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.passenger_seat_8": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_3rd_passenger_seat",
+            "locator": "passenger_seat_8",
+            "control_group_preset": "machine_max:default_passenger",
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "local",
+                "global"
+              ]
+            },
+            "dismount_locators": [],
+            "third_hud_layout": "machine_max:morden_ground_basic_third"
+          },
+          "subsystem.mtlb.track_controller": {
+            "type": "machine_max:track_controller",
+            "definition": "machine_max:track_controller_standard",
+            "control_outputs": {
+              "car_control": [
+                "subsystem.mtlb.engine",
+                "subsystem.mtlb.gearbox",
+                "subsystem.mtlb.track_left",
+                "subsystem.mtlb.track_right"
+              ]
+            },
+            "speed_outputs": {
+              "vehicle_speed": [
+                "local",
+                "global"
+              ]
+            }
+          },
+          "subsystem.mtlb.track_left": {
+            "type": "machine_max:track_drive",
+            "definition": "mtlb:mtlb_track_drive",
+            "connector": "connector.mtlb.hull_left_sprocket",
+            "speed_outputs": {
+              "track_speed": [
+                "local",
+                "global"
+              ]
+            },
+            "force_outputs": {
+              "track_force": [
+                "local",
+                "global"
+              ]
+            }
+          },
+          "subsystem.mtlb.track_right": {
+            "type": "machine_max:track_drive",
+            "definition": "mtlb:mtlb_track_drive",
+            "connector": "connector.mtlb.hull_right_sprocket",
+            "speed_outputs": {
+              "track_speed": [
+                "local",
+                "global"
+              ]
+            },
+            "force_outputs": {
+              "track_force": [
+                "local",
+                "global"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

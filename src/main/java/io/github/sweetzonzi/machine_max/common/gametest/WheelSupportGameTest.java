@@ -32,7 +32,7 @@ public final class WheelSupportGameTest {
     @GameTest(template = "part_foundation", batch = "mmWheelSupport", timeoutTicks = 180)
     public static void sleepingWheelRetainsSupportAndClearsItOnTheFirstAirborneStep(GameTestHelper helper) {
         var level = helper.getLevel();
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:k17_wheel"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("k17:k17_wheel"));
         var part = PartFactory.createRegular(type, "left", level);
         var wheel = part.rootSubPart;
         var vehicle = new VehicleCore(level, part);

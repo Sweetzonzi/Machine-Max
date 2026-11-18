@@ -143,10 +143,10 @@ class K17Test(unittest.TestCase):
     def test_wheel_torque_limit_caps_gear_force(self):
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:k17"], "k17")
-        source = mmcal.Engine.from_entry(registry.need("subsystems", "machine_max:k17_engine", "test"))
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["k17:pack"], "k17")
+        source = mmcal.Engine.from_entry(registry.need("subsystems", "k17:k17_engine", "test"))
         gearbox = mmcal.Gearbox.from_entry(
-            registry.need("subsystems", "machine_max:k17_gearbox", "test"))
+            registry.need("subsystems", "k17:k17_gearbox", "test"))
         material = mmcal.Material.from_entry(
             registry.need("materials", "machine_max:off_road_tire", "test"))
         drive = mmcal.drive_system(vehicle, registry)
@@ -361,7 +361,7 @@ class TrackTest(unittest.TestCase):
     def test_drive_system_skips_roadwheels(self):
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["mtlb:pack"], "mtlb")
         drive = mmcal.drive_system(vehicle, registry)
         self.assertEqual(drive["kind"], "track")
         self.assertEqual(len(drive["ends"]), 2)
@@ -412,11 +412,11 @@ class TrackTest(unittest.TestCase):
         """履带主动轮的角速度上限是一条独立的极速上限。"""
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["mtlb:pack"], "mtlb")
         source = mmcal.Engine.from_entry(
-            registry.need("subsystems", "machine_max:mtlb_engine", "test"))
+            registry.need("subsystems", "mtlb:mtlb_engine", "test"))
         gearbox = mmcal.Gearbox.from_entry(
-            registry.need("subsystems", "machine_max:mtlb_gearbox", "test"))
+            registry.need("subsystems", "mtlb:mtlb_gearbox", "test"))
         material = mmcal.Material.from_entry(
             registry.need("materials", "machine_max:off_road_tire", "test"))
         drive = mmcal.drive_system(vehicle, registry)
@@ -521,7 +521,7 @@ class SuspensionTest(unittest.TestCase):
     def test_2s38_has_own_suspension(self):
         """2S38 负重轮走自己的连接点：120 kN/m、7.2 kN·s/m，钳位下限 41 kg。"""
         rows = [r for r in self.two["rows"]
-                if r["connector"] == "machine_max:2s38_track_road_wheel_left"]
+                if r["connector"] == "2s38:2s38_track_road_wheel_left"]
         self.assertEqual(len(rows), 6)
         for row in rows:
             self.assertAlmostEqual(row["stiffness"], 120000.0, places=1)
@@ -614,7 +614,7 @@ class CliTest(unittest.TestCase):
     def test_list(self):
         code, text = run_cli(calibrate, ["--pack-root", str(PACK_ROOT), "--list"])
         self.assertEqual(code, 0)
-        self.assertIn("machine_max:k17", text)
+        self.assertIn("k17:pack", text)
 
     def test_unknown_pack(self):
         with self.assertRaises(SystemExit):

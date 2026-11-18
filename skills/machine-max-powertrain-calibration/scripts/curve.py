@@ -177,7 +177,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="动力源扭矩/功率曲线评估")
     add_common(parser)
     parser.add_argument("--template", help="模板名；包内有多个模板时必填")
-    parser.add_argument("--subsystem", help="直接指定动力源定义 id，如 machine_max:k17_engine")
+    parser.add_argument("--subsystem", help="直接指定动力源定义 id，如 k17:k17_engine")
     parser.add_argument("--points", type=int, default=11, help="采样点数，默认 11")
     parser.add_argument("--csv", action="store_true", help="逐 rpm 输出 CSV（可直接画图）")
     parser.add_argument("--step", type=float, default=50.0, help="CSV 的转速步长 rpm，默认 50")

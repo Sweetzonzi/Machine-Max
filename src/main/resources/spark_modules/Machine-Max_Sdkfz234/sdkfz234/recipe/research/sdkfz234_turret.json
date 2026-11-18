@@ -1,0 +1,10 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["sdkfz234:sdkfz234"],
+  "research_cost": 350,
+  "prerequisites": ["sdkfz234:research/sdkfz234_hull"],
+  "icon": "sdkfz234:textures/icon/sdkfz234/sdkfz234_turret.png",
+  "description": "research.sdkfz234.sdkfz234_turret_blueprint.desc",
+  "unlock_recipe": "sdkfz234:part_fabricating/sdkfz234_turret"
+}

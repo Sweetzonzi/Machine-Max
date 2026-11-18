@@ -46,7 +46,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class ViewpointGameTest {
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
     public static void everyActiveMainWeaponIsSelectedOnce(GameTestHelper helper) {
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:k17_turret"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("k17:k17_turret"));
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         try {
             var main = part.subParts.get("sub_part.machine_max.main");
@@ -129,7 +129,7 @@ public final class ViewpointGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 200)
     public static void oneControllerDrivesEveryHandshakeAxis(GameTestHelper helper) {
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:k17_turret"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("k17:k17_turret"));
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         var main = part.subParts.get("sub_part.machine_max.main");
         var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
@@ -275,7 +275,7 @@ public final class ViewpointGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 200)
     public static void sdkfzUnstableTargetUsesTheMainMechanism(GameTestHelper helper) {
-        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
+        var type = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_turret"));
         RegularPart part = PartFactory.createRegular(type, "sdkfz234_2", helper.getLevel());
         var main = part.subParts.get("sub_part.machine_max.main");
         var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
@@ -343,8 +343,8 @@ public final class ViewpointGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 200)
     public static void reticleGeometryUsesTheInterpolatedBaseAndOptic(GameTestHelper helper) {
-        var turretType = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_turret"));
-        var hullType = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:sdkfz234_hull"));
+        var turretType = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_turret"));
+        var hullType = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_hull"));
         RegularPart turret = PartFactory.createRegular(turretType, "sdkfz234_2", helper.getLevel());
         RegularPart hull = PartFactory.createRegular(hullType, hullType.variants.keySet().iterator().next(), helper.getLevel());
         var main = turret.subParts.get("sub_part.machine_max.main");

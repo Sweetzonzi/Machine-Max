@@ -23,24 +23,6 @@
           "start_bone": "M1",
           "end_bones": [
             "PaoTa",
-            "MM_left_idler",
-            "MM_left_road_1",
-            "MM_left_road_2",
-            "MM_left_road_3",
-            "MM_left_road_4",
-            "MM_left_road_5",
-            "MM_left_road_6",
-            "MM_left_road_7",
-            "MM_left_sprocket",
-            "MM_right_idler",
-            "MM_right_road_1",
-            "MM_right_road_2",
-            "MM_right_road_3",
-            "MM_right_road_4",
-            "MM_right_road_5",
-            "MM_right_road_6",
-            "MM_right_road_7",
-            "MM_right_sprocket",
             "MM_HullArmorLeft",
             "MM_HullArmorRight"
           ],
@@ -72,9 +54,19 @@
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 38.1,
-              "overwrite": { "armor": { "impact_modifiers": [
-                { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } }
-              ] } }
+              "overwrite": {
+                "armor": {
+                  "impact_modifiers": [
+                    {
+                      "operation": "multiply",
+                      "value": 0.3,
+                      "condition": {
+                        "type": "always"
+                      }
+                    }
+                  ]
+                }
+              }
             },
             "MM_HullFrontLower": {
               "id": "part",
@@ -83,9 +75,17 @@
               "thickness": 268,
               "overwrite": {
                 "armor": {
-                  "impact_modifiers": [ { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } } ],
+                  "impact_modifiers": [
+                    {
+                      "operation": "multiply",
+                      "value": 0.3,
+                      "condition": {
+                        "type": "always"
+                      }
+                    }
+                  ],
                   "rha": 1,
-                  "decay_rha": 0.2777777777777778
+                  "decay_rha": 0.27778
                 }
               }
             },
@@ -100,18 +100,38 @@
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 35,
-              "overwrite": { "armor": { "impact_modifiers": [
-                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
-              ] } }
+              "overwrite": {
+                "armor": {
+                  "impact_modifiers": [
+                    {
+                      "operation": "multiply",
+                      "value": 0.5,
+                      "condition": {
+                        "type": "always"
+                      }
+                    }
+                  ]
+                }
+              }
             },
             "MM_SideRight": {
               "id": "part",
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 35,
-              "overwrite": { "armor": { "impact_modifiers": [
-                { "operation": "multiply", "value": 0.5, "condition": { "type": "always" } }
-              ] } }
+              "overwrite": {
+                "armor": {
+                  "impact_modifiers": [
+                    {
+                      "operation": "multiply",
+                      "value": 0.5,
+                      "condition": {
+                        "type": "always"
+                      }
+                    }
+                  ]
+                }
+              }
             },
             "MM_Engine": {
               "id": "engine",
@@ -127,9 +147,17 @@
               "thickness": 268,
               "overwrite": {
                 "armor": {
-                  "impact_modifiers": [ { "operation": "multiply", "value": 0.3, "condition": { "type": "always" } } ],
+                  "impact_modifiers": [
+                    {
+                      "operation": "multiply",
+                      "value": 0.3,
+                      "condition": {
+                        "type": "always"
+                      }
+                    }
+                  ],
                   "rha": 1,
-                  "decay_rha": 0.2777777777777778
+                  "decay_rha": 0.27778
                 }
               }
             },
@@ -160,7 +188,7 @@
                   "m1a2_sep:turret"
                 ],
                 "integrity": 2400,
-                "impact_absorption": 1.0,
+                "impact_absorption": 1,
                 "impact_reduction": 10,
                 "impact_multiplier": 1
               }
@@ -477,7 +505,7 @@
                   "m1a2_sep:armor/hull_left"
                 ],
                 "integrity": 2400,
-                "impact_absorption": 1.0,
+                "impact_absorption": 1,
                 "impact_reduction": 10
               }
             },
@@ -489,7 +517,7 @@
                   "m1a2_sep:armor/hull_right"
                 ],
                 "integrity": 2400,
-                "impact_absorption": 1.0,
+                "impact_absorption": 1,
                 "impact_reduction": 10
               }
             }
@@ -586,6 +614,7 @@
                 "hull_exit_left",
                 "hull_exit_right"
               ],
+              "reload_operator_discovery_inputs": [],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             }

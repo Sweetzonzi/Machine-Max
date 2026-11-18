@@ -197,6 +197,41 @@
               "type": "box",
               "material": "machine_max:rha",
               "thickness": 60
+            },
+            "MM_AmmoCarouselLeft": {
+              "id": "2a46m_ap_ammo",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.t90a.ammo_loader"
+            },
+            "MM_AmmoCarouselRight": {
+              "id": "2a46m_he_ammo",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.t90a.ammo_loader_he"
+            },
+            "MM_Autoloader": {
+              "id": "2a46m_autoloader",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.t90a.ammo_autoloader"
+            },
+            "MM_AzimuthDrive": {
+              "id": "azim",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.t90a.azimuth_driver"
+            },
+            "MM_AzimuthRace": {
+              "id": "azim",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.t90a.azimuth_driver"
             }
           },
           "interact_boxes": {
@@ -302,7 +337,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "loader_discovery_inputs": [],
+              "reload_operator_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation"
             },
@@ -315,7 +350,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "loader_discovery_inputs": [],
+              "reload_operator_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_orientation_third"
             },
@@ -370,7 +405,8 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_125mm": [
-                  "subsystem.t90a.ammo_loader"
+                  "subsystem.t90a.ammo_loader",
+                  "subsystem.t90a.ammo_loader_he"
                 ]
               }
             },
@@ -390,18 +426,6 @@
               "ammo_discovery_inputs": [
                 "ammo_125mm"
               ]
-            },
-            "subsystem.t90a.ammo_autoloader_he": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:125mm_2a46m_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_125mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_125mm": [
-                  "subsystem.t90a.ammo_loader_he"
-                ]
-              }
             },
             "subsystem.t90a.coax_controller": {
               "type": "machine_max:weapon_controller",
@@ -457,7 +481,7 @@
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "loader_discovery_inputs": [],
+              "reload_operator_discovery_inputs": [],
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation",
               "allow_use_items": false

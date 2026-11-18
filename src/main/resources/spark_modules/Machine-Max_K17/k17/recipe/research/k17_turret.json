@@ -1,0 +1,10 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["k17:k17"],
+  "research_cost": 400,
+  "prerequisites": ["k17:research/k17_hull"],
+  "icon": "k17:textures/icon/k17/k17_turret.png",
+  "description": "research.k17.k17_turret_blueprint.desc",
+  "unlock_recipe": "k17:part_fabricating/k17_turret"
+}

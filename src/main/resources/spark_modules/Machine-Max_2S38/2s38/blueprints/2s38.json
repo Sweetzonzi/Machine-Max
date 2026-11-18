@@ -1,0 +1,6 @@
+{
+  "template": "2s38:2s38", // 蓝图对应的装配体模板资源路径
+  "tooltip": "2s38:tooltips/2s38.html", // (可选) 描述页面：documents/tooltips/ 下的 AUI 页面
+  "icon": "2s38:textures/icon/2s38/2s38.png", // (可选) 蓝图物品图标资源路径
+  "render_background": true // (可选，默认true) 是否在图标后渲染背景
+}

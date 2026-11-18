@@ -1,0 +1,92 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "k17:textures/icon/k17/k17_wheel.png",
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0,
+  "max_stack_size": 4,
+  "variants": {
+    "left": {
+      "model": "k17:k17.geo",
+      "textures": "k17:textures/part/k17/k17.png",
+      "tags": [
+        "machine_max:direction/left",
+        "machine_max:category/mobility",
+        "machine_max:type/land",
+        "machine_max:series/k17"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "LeftWheel_1",
+          "end_bones": [],
+          "durability": 80,
+          "mass": 150,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "LeftWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.k17.left_wheel_hull": {
+              "locator": "left_wheel_hull",
+              "definition": "k17:k17_wheel_hub_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "model": "k17:k17.geo",
+      "textures": "k17:textures/part/k17/k17.png",
+      "tags": [
+        "machine_max:direction/right",
+        "machine_max:category/mobility",
+        "machine_max:type/land",
+        "machine_max:series/k17"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "RightWheel_1",
+          "end_bones": [],
+          "durability": 80,
+          "mass": 150,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "RightWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 20
+            }
+          },
+          "connectors": {
+            "connector.k17.right_wheel_hull": {
+              "locator": "right_wheel_hull",
+              "definition": "k17:k17_wheel_hub_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

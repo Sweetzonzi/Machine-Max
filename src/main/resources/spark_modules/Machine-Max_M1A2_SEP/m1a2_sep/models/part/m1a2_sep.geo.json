@@ -16608,20 +16608,8 @@
 					"pivot": [15, 44, -9.5],
 					"cubes": [
 						{
-							"origin": [7, 40, -17],
-							"size": [16, 8, 15],
-							"uv": {}
-						}
-					]
-				},
-				{
-					"name": "MM_Interact_rws",
-					"parent": "PaoTa",
-					"pivot": [-15.5, 57, -23],
-					"cubes": [
-						{
-							"origin": [-25, 52, -30],
-							"size": [19, 10, 14],
+							"origin": [7, 34, -18],
+							"size": [16, 32, 16],
 							"uv": {}
 						}
 					]
@@ -16629,11 +16617,11 @@
 				{
 					"name": "MM_Interact_loader",
 					"parent": "PaoTa",
-					"pivot": [15, 43.5, 16.5],
+					"pivot": [15, 43.5, 9.5],
 					"cubes": [
 						{
-							"origin": [7, 40, 8],
-							"size": [16, 7, 17],
+							"origin": [7, 34, 0],
+							"size": [16, 32, 16],
 							"uv": {}
 						}
 					]
@@ -18138,18 +18126,6 @@
 					]
 				},
 				{
-					"name": "MM_Interact_port_mg",
-					"parent": "PaoTa",
-					"pivot": [18, 57, -4],
-					"cubes": [
-						{
-							"origin": [10, 53, -9],
-							"size": [16, 8, 10],
-							"uv": {}
-						}
-					]
-				},
-				{
 					"name": "MM_TurretArmorLeft",
 					"parent": "PaoTa",
 					"pivot": [34.43, 38.485, 9.435],
@@ -18668,11 +18644,11 @@
 				{
 					"name": "MM_Interact_commander",
 					"parent": "PaoTa",
-					"pivot": [15, 53, -19.5],
+					"pivot": [-10, 46, 0.5],
 					"cubes": [
 						{
-							"origin": [8, 50, -26],
-							"size": [14, 6, 13],
+							"origin": [-19, 37, -7],
+							"size": [16, 32, 16],
 							"uv": {}
 						}
 					]
@@ -18807,8 +18783,8 @@
 					"pivot": [0, 27, -37.5],
 					"cubes": [
 						{
-							"origin": [-9, 24, -46],
-							"size": [18, 6, 17],
+							"origin": [-19, 11, -79],
+							"size": [38, 19, 50],
 							"uv": {}
 						}
 					]

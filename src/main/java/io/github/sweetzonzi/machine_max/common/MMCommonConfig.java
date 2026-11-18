@@ -26,10 +26,10 @@ public class MMCommonConfig {
     /** 可被玩家改动、因此允许关掉覆盖的第一方内容包。 */
     private static final Set<String> OVERRIDABLE_PACK_IDS = Set.of(
             "machine_max:civilian",
-            "machine_max:2s38",
-            "machine_max:k17",
-            "machine_max:mtlb",
-            "machine_max:sdkfz234"
+            "2s38:pack",
+            "k17:pack",
+            "mtlb:pack",
+            "sdkfz234:pack"
     );
 
     static {

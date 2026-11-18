@@ -17,7 +17,7 @@
     "id": "machine_max:track",
     "count": 64,
     "components": {
-      "machine_max:fitting_type": "machine_max:2s38_track"
+      "machine_max:fitting_type": "2s38:2s38_track"
     }
   }
 }
