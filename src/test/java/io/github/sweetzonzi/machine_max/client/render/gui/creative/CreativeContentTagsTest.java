@@ -30,8 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 规则全部由数据自身推出，不维护包清单，也不维护免检清单：</p>
  *
  * <ol>
- *   <li>变体上的系列标签必须与路径推出的系列一致——{@code parts/<系列>/} 取目录名，
- *       {@code parts/<系列>_*.json} 取第一个下划线前的部分——且一个变体最多挂一个；</li>
+ *   <li>系列标签与零件所在的位置一致：放进 {@code parts/<系列>/} 子目录的文件，变体上的系列标签必须是
+ *       该目录名；文件直接放在 {@code parts/} 下时，它是「这一款车的某个件」，文件名不承担车族名
+ *       （{@code m153_crows} 是 {@code m1a2} 家族的一件），因此那一层只要求一个变体最多挂一个系列标签；</li>
  *   <li>不写系列标签是允许的：货箱、黄金马桶这类不归属车族的独立物件与通用机枪塔都属于这种；</li>
  *   <li>每个出现过的系列都要有译名 {@code machine_max.series.<系列>}；同一内容包里同时存在研发组
  *       译名 {@code machine_max.<系列>} 时，两者取值必须一致；</li>
@@ -53,7 +54,7 @@ class CreativeContentTagsTest {
 
         for (Path file : partFiles()) {
             String relative = ContentFiles.describe(file);
-            String expected = seriesFromPath(relative);
+            String directorySeries = seriesFromDirectory(relative);
             for (List<String> tags : variantTagLists(ContentFiles.json(file))) {
                 List<String> series = tags.stream().filter(tag -> tag.startsWith(SERIES_PREFIX)).toList();
                 if (series.isEmpty()) continue;
@@ -61,10 +62,11 @@ class CreativeContentTagsTest {
                 if (series.size() > 1) {
                     problems.add(relative + " 的一个变体挂了多个系列标签：" + series);
                 }
+                if (directorySeries == null) continue;
                 for (String tag : series) {
-                    if (!tag.equals(SERIES_PREFIX + expected)) {
-                        problems.add(relative + " 的系列标签 " + tag + " 与路径推出的系列 "
-                                + SERIES_PREFIX + expected + " 不一致");
+                    if (!tag.equals(SERIES_PREFIX + directorySeries)) {
+                        problems.add(relative + " 的系列标签 " + tag + " 与所在目录 "
+                                + SERIES_PREFIX + directorySeries + " 不一致");
                     }
                 }
             }
@@ -195,15 +197,12 @@ class CreativeContentTagsTest {
     }
 
     /**
-     * 路径推出的系列：{@code parts/<系列目录>/} 取目录名，
-     * {@code parts/} 根下取文件名第一个下划线之前的部分。
+     * 目录推出的系列：{@code parts/<系列>/} 取目录名。文件直接放在 {@code parts/} 下时没有目录可言，
+     * 返回 {@code null}——见类注释第 1 条。
      */
-    private static String seriesFromPath(String relative) {
+    private static String seriesFromDirectory(String relative) {
         String after = relative.split("/parts/", 2)[1];
-        if (after.contains("/")) return after.substring(0, after.indexOf('/'));
-        String stem = after.substring(0, after.length() - ".json".length());
-        int underscore = stem.indexOf('_');
-        return underscore < 0 ? stem : stem.substring(0, underscore);
+        return after.contains("/") ? after.substring(0, after.indexOf('/')) : null;
     }
 
     /** 取一份定义里全部变体的 tags；单配置 variants 作为一份内联变体统计。 */
