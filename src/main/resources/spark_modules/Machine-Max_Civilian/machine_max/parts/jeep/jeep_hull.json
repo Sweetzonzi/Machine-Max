@@ -47,32 +47,32 @@
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_left_1": {
+          "connector.machine_max.top_left_01": {
             "locator": "top_left_1",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_left_2": {
+          "connector.machine_max.top_left_02": {
             "locator": "top_left_2",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_left_3": {
+          "connector.machine_max.top_left_03": {
             "locator": "top_left_3",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_right_1": {
+          "connector.machine_max.top_right_01": {
             "locator": "top_right_1",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_right_2": {
+          "connector.machine_max.top_right_02": {
             "locator": "top_right_2",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }
           },
-          "connector.machine_max.top_right_3": {
+          "connector.machine_max.top_right_03": {
             "locator": "top_right_3",
             "definition": "machine_max:fixed_up",
             "overwrite": { "integrity": 10.0, "impact_absorption": 0.50, "impact_reduction": 1.0 }

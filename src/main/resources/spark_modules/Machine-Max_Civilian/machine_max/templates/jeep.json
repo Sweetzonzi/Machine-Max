@@ -185,13 +185,13 @@
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
           "connector_data": {
-            "connector.machine_max.top_left_2": {
+            "connector.machine_max.top_left_02": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.top_front": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_left_1": {
+            "connector.machine_max.top_left_01": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.chassis_connection": {
@@ -200,16 +200,16 @@
             "connector.machine_max.backup_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_1": {
+            "connector.machine_max.top_right_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_3": {
+            "connector.machine_max.top_right_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_2": {
+            "connector.machine_max.top_right_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_left_3": {
+            "connector.machine_max.top_left_03": {
               "integrity_ratio": 1.0
             }
           },

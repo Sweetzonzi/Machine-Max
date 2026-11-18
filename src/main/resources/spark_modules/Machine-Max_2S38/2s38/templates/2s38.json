@@ -314,40 +314,40 @@
       "link_count": 88,
       "sprocket": {
         "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-        "sub_part": "sub_part.2s38.left_wheel_8"
+        "sub_part": "sub_part.2s38.left_wheel_08"
       },
       "members": [
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_8"
+          "sub_part": "sub_part.2s38.left_wheel_08"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_7"
+          "sub_part": "sub_part.2s38.left_wheel_07"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_6"
+          "sub_part": "sub_part.2s38.left_wheel_06"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_5"
+          "sub_part": "sub_part.2s38.left_wheel_05"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_4"
+          "sub_part": "sub_part.2s38.left_wheel_04"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_3"
+          "sub_part": "sub_part.2s38.left_wheel_03"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_2"
+          "sub_part": "sub_part.2s38.left_wheel_02"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.left_wheel_1"
+          "sub_part": "sub_part.2s38.left_wheel_01"
         }
       ]
     },
@@ -357,40 +357,40 @@
       "link_count": 88,
       "sprocket": {
         "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-        "sub_part": "sub_part.2s38.right_wheel_8"
+        "sub_part": "sub_part.2s38.right_wheel_08"
       },
       "members": [
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_8"
+          "sub_part": "sub_part.2s38.right_wheel_08"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_7"
+          "sub_part": "sub_part.2s38.right_wheel_07"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_6"
+          "sub_part": "sub_part.2s38.right_wheel_06"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_5"
+          "sub_part": "sub_part.2s38.right_wheel_05"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_4"
+          "sub_part": "sub_part.2s38.right_wheel_04"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_3"
+          "sub_part": "sub_part.2s38.right_wheel_03"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_2"
+          "sub_part": "sub_part.2s38.right_wheel_02"
         },
         {
           "part": "2911a81d-9620-4065-b3fd-3b19ab2f951b",
-          "sub_part": "sub_part.2s38.right_wheel_1"
+          "sub_part": "sub_part.2s38.right_wheel_01"
         }
       ]
     }
@@ -995,7 +995,7 @@
           },
           "id": 25
         },
-        "sub_part.2s38.right_wheel_7": {
+        "sub_part.2s38.right_wheel_07": {
           "pos_rot_vel_vel": {
             "position": [
               -1.5010986,
@@ -1026,7 +1026,7 @@
           },
           "id": 40
         },
-        "sub_part.2s38.right_wheel_8": {
+        "sub_part.2s38.right_wheel_08": {
           "pos_rot_vel_vel": {
             "position": [
               -1.4852905,
@@ -1057,7 +1057,7 @@
           },
           "id": 41
         },
-        "sub_part.2s38.right_wheel_5": {
+        "sub_part.2s38.right_wheel_05": {
           "pos_rot_vel_vel": {
             "position": [
               -1.5687256,
@@ -1088,7 +1088,7 @@
           },
           "id": 38
         },
-        "sub_part.2s38.right_wheel_6": {
+        "sub_part.2s38.right_wheel_06": {
           "pos_rot_vel_vel": {
             "position": [
               -1.5349121,
@@ -1119,7 +1119,7 @@
           },
           "id": 39
         },
-        "sub_part.2s38.right_wheel_3": {
+        "sub_part.2s38.right_wheel_03": {
           "pos_rot_vel_vel": {
             "position": [
               -1.636383,
@@ -1150,7 +1150,7 @@
           },
           "id": 36
         },
-        "sub_part.2s38.right_wheel_4": {
+        "sub_part.2s38.right_wheel_04": {
           "pos_rot_vel_vel": {
             "position": [
               -1.6025696,
@@ -1181,7 +1181,7 @@
           },
           "id": 37
         },
-        "sub_part.2s38.right_wheel_1": {
+        "sub_part.2s38.right_wheel_01": {
           "pos_rot_vel_vel": {
             "position": [
               -1.6976929,
@@ -1212,7 +1212,7 @@
           },
           "id": 34
         },
-        "sub_part.2s38.right_wheel_2": {
+        "sub_part.2s38.right_wheel_02": {
           "pos_rot_vel_vel": {
             "position": [
               -1.670227,
@@ -1243,7 +1243,7 @@
           },
           "id": 35
         },
-        "sub_part.2s38.left_wheel_6": {
+        "sub_part.2s38.left_wheel_06": {
           "pos_rot_vel_vel": {
             "position": [
               1.6191406,
@@ -1274,7 +1274,7 @@
           },
           "id": 31
         },
-        "sub_part.2s38.left_wheel_7": {
+        "sub_part.2s38.left_wheel_07": {
           "pos_rot_vel_vel": {
             "position": [
               1.6529846,
@@ -1305,7 +1305,7 @@
           },
           "id": 32
         },
-        "sub_part.2s38.left_wheel_8": {
+        "sub_part.2s38.left_wheel_08": {
           "pos_rot_vel_vel": {
             "position": [
               1.6991272,
@@ -1336,7 +1336,7 @@
           },
           "id": 33
         },
-        "sub_part.2s38.left_wheel_2": {
+        "sub_part.2s38.left_wheel_02": {
           "pos_rot_vel_vel": {
             "position": [
               1.4838257,
@@ -1367,7 +1367,7 @@
           },
           "id": 27
         },
-        "sub_part.2s38.left_wheel_3": {
+        "sub_part.2s38.left_wheel_03": {
           "pos_rot_vel_vel": {
             "position": [
               1.5176697,
@@ -1398,7 +1398,7 @@
           },
           "id": 28
         },
-        "sub_part.2s38.left_wheel_4": {
+        "sub_part.2s38.left_wheel_04": {
           "pos_rot_vel_vel": {
             "position": [
               1.5514832,
@@ -1429,7 +1429,7 @@
           },
           "id": 29
         },
-        "sub_part.2s38.left_wheel_5": {
+        "sub_part.2s38.left_wheel_05": {
           "pos_rot_vel_vel": {
             "position": [
               1.5853271,
@@ -1460,7 +1460,7 @@
           },
           "id": 30
         },
-        "sub_part.2s38.left_wheel_1": {
+        "sub_part.2s38.left_wheel_01": {
           "pos_rot_vel_vel": {
             "position": [
               1.4563599,

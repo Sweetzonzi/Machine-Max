@@ -58,10 +58,10 @@
           "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
           "definition": "machine_max:dayun_transmission", //子系统型号, 需要与子系统类型相匹配
           "power_outputs": { //动力输出目标及减速比
-            "subsystem.machine_max.left_back_wheel_1_driver": 1.0,
-            "subsystem.machine_max.left_back_wheel_2_driver": 1.0,
-            "subsystem.machine_max.right_back_wheel_1_driver": 1.0,
-            "subsystem.machine_max.right_back_wheel_2_driver": 1.0
+            "subsystem.machine_max.left_back_wheel_01_driver": 1.0,
+            "subsystem.machine_max.left_back_wheel_02_driver": 1.0,
+            "subsystem.machine_max.right_back_wheel_01_driver": 1.0,
+            "subsystem.machine_max.right_back_wheel_02_driver": 1.0
           }
         },
         "subsystem.machine_max.left_front_wheel_driver": {
@@ -74,25 +74,25 @@
           "definition": "machine_max:dayun_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
           "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
         },
-        "subsystem.machine_max.left_back_wheel_1_driver": {
+        "subsystem.machine_max.left_back_wheel_01_driver": {
           "type": "machine_max:wheel_driver",
           "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-          "connector": "connector.machine_max.left_back_wheel_1"
+          "connector": "connector.machine_max.left_back_wheel_01"
         },
-        "subsystem.machine_max.left_back_wheel_2_driver": {
+        "subsystem.machine_max.left_back_wheel_02_driver": {
           "type": "machine_max:wheel_driver",
           "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-          "connector": "connector.machine_max.left_back_wheel_2"
+          "connector": "connector.machine_max.left_back_wheel_02"
         },
-        "subsystem.machine_max.right_back_wheel_1_driver": {
+        "subsystem.machine_max.right_back_wheel_01_driver": {
           "type": "machine_max:wheel_driver",
           "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-          "connector": "connector.machine_max.right_back_wheel_1"
+          "connector": "connector.machine_max.right_back_wheel_01"
         },
-        "subsystem.machine_max.right_back_wheel_2_driver": {
+        "subsystem.machine_max.right_back_wheel_02_driver": {
           "type": "machine_max:wheel_driver",
           "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-          "connector": "connector.machine_max.right_back_wheel_2"
+          "connector": "connector.machine_max.right_back_wheel_02"
         }
       },
       "connectors": { //子部件用于与其他零件连接的连接点列表
@@ -100,11 +100,11 @@
           "locator": "left_front_wheel",
           "definition": "machine_max:dayun_left_steering_wheel"
         },
-        "connector.machine_max.left_back_wheel_1": {
+        "connector.machine_max.left_back_wheel_01": {
           "locator": "left_back_wheel",
           "definition": "machine_max:dayun_left_wheel"
         },
-        "connector.machine_max.left_back_wheel_2": {
+        "connector.machine_max.left_back_wheel_02": {
           "locator": "left_back_wheel2",
           "definition": "machine_max:dayun_left_wheel"
         },
@@ -112,11 +112,11 @@
           "locator": "right_front_wheel",
           "definition": "machine_max:dayun_right_steering_wheel"
         },
-        "connector.machine_max.right_back_wheel_1": {
+        "connector.machine_max.right_back_wheel_01": {
           "locator": "right_back_wheel",
           "definition": "machine_max:dayun_right_wheel"
         },
-        "connector.machine_max.right_back_wheel_2": {
+        "connector.machine_max.right_back_wheel_02": {
           "locator": "right_back_wheel2",
           "definition": "machine_max:dayun_right_wheel"
         },
@@ -129,10 +129,10 @@
               "subsystem.machine_max.gearbox",
               "subsystem.machine_max.left_front_wheel_driver",
               "subsystem.machine_max.right_front_wheel_driver",
-              "subsystem.machine_max.left_back_wheel_1_driver",
-              "subsystem.machine_max.left_back_wheel_2_driver",
-              "subsystem.machine_max.right_back_wheel_1_driver",
-              "subsystem.machine_max.right_back_wheel_2_driver"
+              "subsystem.machine_max.left_back_wheel_01_driver",
+              "subsystem.machine_max.left_back_wheel_02_driver",
+              "subsystem.machine_max.right_back_wheel_01_driver",
+              "subsystem.machine_max.right_back_wheel_02_driver"
             ]
           }
         },

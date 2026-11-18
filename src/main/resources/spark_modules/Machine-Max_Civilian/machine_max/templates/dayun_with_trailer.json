@@ -240,13 +240,13 @@
             "connector.machine_max.left_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_back_wheel_1": {
+            "connector.machine_max.left_back_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_back_wheel_2": {
+            "connector.machine_max.left_back_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_back_wheel_1": {
+            "connector.machine_max.right_back_wheel_01": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.right_front_wheel": {
@@ -258,7 +258,7 @@
             "connector.machine_max.hull_axis": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_back_wheel_2": {
+            "connector.machine_max.right_back_wheel_02": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.trailer": {
@@ -278,19 +278,19 @@
             "subsystem.machine_max.right_front_wheel_driver": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_back_wheel_2_driver": {
+            "subsystem.machine_max.right_back_wheel_02_driver": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.transmission": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_back_wheel_1_driver": {
+            "subsystem.machine_max.left_back_wheel_01_driver": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_back_wheel_2_driver": {
+            "subsystem.machine_max.left_back_wheel_02_driver": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_back_wheel_1_driver": {
+            "subsystem.machine_max.right_back_wheel_01_driver": {
               "durability_ratio": 1.0
             }
           },
@@ -627,70 +627,70 @@
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.dayun.1",
           "connector_data": {
-            "connector.machine_max.right_1": {
+            "connector.machine_max.right_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_4": {
+            "connector.machine_max.right_04": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_5": {
+            "connector.machine_max.right_05": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_2": {
+            "connector.machine_max.right_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_3": {
+            "connector.machine_max.right_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_5": {
+            "connector.machine_max.left_05": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_wheel_1": {
+            "connector.machine_max.left_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.mid_1": {
+            "connector.machine_max.mid_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_2": {
+            "connector.machine_max.left_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_wheel_2": {
+            "connector.machine_max.left_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_wheel_1": {
+            "connector.machine_max.right_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_1": {
+            "connector.machine_max.left_01": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_wheel_3": {
+            "connector.machine_max.left_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_4": {
+            "connector.machine_max.left_04": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_3": {
+            "connector.machine_max.left_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.mid_5": {
+            "connector.machine_max.mid_05": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.mid_4": {
+            "connector.machine_max.mid_04": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_wheel_2": {
+            "connector.machine_max.right_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.mid_3": {
+            "connector.machine_max.mid_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_wheel_3": {
+            "connector.machine_max.right_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.mid_2": {
+            "connector.machine_max.mid_02": {
               "integrity_ratio": 1.0
             }
           },
@@ -858,7 +858,7 @@
       },
       "partUuidA": "e16ed018-bd1a-4b63-979f-68401021c6b9",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_back_wheel_1",
+      "advConnectorName": "connector.machine_max.right_back_wheel_01",
       "posRotA": {
         "position": [
           1.3847188,
@@ -892,7 +892,7 @@
       },
       "partUuidA": "e16ed018-bd1a-4b63-979f-68401021c6b9",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_back_wheel_2",
+      "advConnectorName": "connector.machine_max.right_back_wheel_02",
       "posRotA": {
         "position": [
           1.3847188,
@@ -926,7 +926,7 @@
       },
       "partUuidA": "e16ed018-bd1a-4b63-979f-68401021c6b9",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_back_wheel_2",
+      "advConnectorName": "connector.machine_max.left_back_wheel_02",
       "posRotA": {
         "position": [
           -1.3847188,
@@ -960,7 +960,7 @@
       },
       "partUuidA": "e16ed018-bd1a-4b63-979f-68401021c6b9",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_back_wheel_1",
+      "advConnectorName": "connector.machine_max.left_back_wheel_01",
       "posRotA": {
         "position": [
           -1.3847188,
@@ -1096,7 +1096,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_wheel_3",
+      "advConnectorName": "connector.machine_max.right_wheel_03",
       "posRotA": {
         "position": [
           1.3847188,
@@ -1130,7 +1130,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_wheel_3",
+      "advConnectorName": "connector.machine_max.left_wheel_03",
       "posRotA": {
         "position": [
           -1.3847188,
@@ -1164,7 +1164,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_wheel_1",
+      "advConnectorName": "connector.machine_max.left_wheel_01",
       "posRotA": {
         "position": [
           -1.3847188,
@@ -1198,7 +1198,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_wheel_2",
+      "advConnectorName": "connector.machine_max.left_wheel_02",
       "posRotA": {
         "position": [
           -1.3847188,
@@ -1232,7 +1232,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_wheel_2",
+      "advConnectorName": "connector.machine_max.right_wheel_02",
       "posRotA": {
         "position": [
           1.3847188,
@@ -1266,7 +1266,7 @@
       },
       "partUuidA": "52c1f867-faca-4b2a-8ec7-704e36efef35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_wheel_1",
+      "advConnectorName": "connector.machine_max.right_wheel_01",
       "posRotA": {
         "position": [
           1.3847188,

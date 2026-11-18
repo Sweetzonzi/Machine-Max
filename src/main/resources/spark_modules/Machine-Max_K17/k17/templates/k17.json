@@ -71,34 +71,34 @@
             "subsystem.k17.transmission": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_3": {
+            "subsystem.k17.left_wheel_03": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_4": {
+            "subsystem.k17.left_wheel_04": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_1": {
+            "subsystem.k17.left_wheel_01": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_2": {
+            "subsystem.k17.left_wheel_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_1": {
+            "subsystem.k17.right_wheel_01": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.gearbox": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_2": {
+            "subsystem.k17.right_wheel_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_3": {
+            "subsystem.k17.right_wheel_03": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.commander_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_4": {
+            "subsystem.k17.right_wheel_04": {
               "durability_ratio": 1.0
             }
           },

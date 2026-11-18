@@ -424,16 +424,16 @@
             "subsystem.machine_max.left_main_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.light1": {
+            "subsystem.machine_max.light_01": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.light2": {
+            "subsystem.machine_max.light_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.light3": {
+            "subsystem.machine_max.light_03": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.light4": {
+            "subsystem.machine_max.light_04": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_fog_light": {

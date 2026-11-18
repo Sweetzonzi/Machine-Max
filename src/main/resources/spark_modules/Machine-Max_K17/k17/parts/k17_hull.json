@@ -174,14 +174,14 @@
             "type": "machine_max:transmission",
             "definition": "k17:k17_transmission",
             "power_outputs": {
-              "subsystem.k17.left_wheel_1": 1,
-              "subsystem.k17.left_wheel_2": 1,
-              "subsystem.k17.left_wheel_3": 1,
-              "subsystem.k17.left_wheel_4": 1,
-              "subsystem.k17.right_wheel_1": 1,
-              "subsystem.k17.right_wheel_2": 1,
-              "subsystem.k17.right_wheel_3": 1,
-              "subsystem.k17.right_wheel_4": 1
+              "subsystem.k17.left_wheel_01": 1,
+              "subsystem.k17.left_wheel_02": 1,
+              "subsystem.k17.left_wheel_03": 1,
+              "subsystem.k17.left_wheel_04": 1,
+              "subsystem.k17.right_wheel_01": 1,
+              "subsystem.k17.right_wheel_02": 1,
+              "subsystem.k17.right_wheel_03": 1,
+              "subsystem.k17.right_wheel_04": 1
             }
           },
           "subsystem.k17.car_controller": {
@@ -191,14 +191,14 @@
               "car_control": [
                 "subsystem.k17.engine",
                 "subsystem.k17.gearbox",
-                "subsystem.k17.left_wheel_1",
-                "subsystem.k17.left_wheel_2",
-                "subsystem.k17.left_wheel_3",
-                "subsystem.k17.left_wheel_4",
-                "subsystem.k17.right_wheel_1",
-                "subsystem.k17.right_wheel_2",
-                "subsystem.k17.right_wheel_3",
-                "subsystem.k17.right_wheel_4"
+                "subsystem.k17.left_wheel_01",
+                "subsystem.k17.left_wheel_02",
+                "subsystem.k17.left_wheel_03",
+                "subsystem.k17.left_wheel_04",
+                "subsystem.k17.right_wheel_01",
+                "subsystem.k17.right_wheel_02",
+                "subsystem.k17.right_wheel_03",
+                "subsystem.k17.right_wheel_04"
               ]
             },
             "speed_outputs": {
@@ -232,42 +232,42 @@
               ]
             }
           },
-          "subsystem.k17.left_wheel_1": {
+          "subsystem.k17.left_wheel_01": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_01"
           },
-          "subsystem.k17.left_wheel_2": {
+          "subsystem.k17.left_wheel_02": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_02"
           },
-          "subsystem.k17.left_wheel_3": {
+          "subsystem.k17.left_wheel_03": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_03"
           },
-          "subsystem.k17.left_wheel_4": {
+          "subsystem.k17.left_wheel_04": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_04"
           },
-          "subsystem.k17.right_wheel_1": {
+          "subsystem.k17.right_wheel_01": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_01"
           },
-          "subsystem.k17.right_wheel_2": {
+          "subsystem.k17.right_wheel_02": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_02"
           },
-          "subsystem.k17.right_wheel_3": {
+          "subsystem.k17.right_wheel_03": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_03"
           },
-          "subsystem.k17.right_wheel_4": {
+          "subsystem.k17.right_wheel_04": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_04"

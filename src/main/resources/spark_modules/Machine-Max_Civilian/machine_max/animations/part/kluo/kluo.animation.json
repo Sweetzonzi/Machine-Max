@@ -83,16 +83,16 @@
 					"scale": "local.subsystem_active('subsystem.machine_max.left_main_light')"
 				},
 				"ysmGlowGt1": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light1')"
+					"scale": "local.subsystem_active('subsystem.machine_max.light_01')"
 				},
 				"ysmGlowGt2": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light2')"
+					"scale": "local.subsystem_active('subsystem.machine_max.light_02')"
 				},
 				"ysmGlowGt3": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light3')"
+					"scale": "local.subsystem_active('subsystem.machine_max.light_03')"
 				},
 				"ysmGlowGt4": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light4')"
+					"scale": "local.subsystem_active('subsystem.machine_max.light_04')"
 				},
 				"ysmGlowGtLeftFog": {
 					"scale": "local.subsystem_active('subsystem.machine_max.left_fog_light')"

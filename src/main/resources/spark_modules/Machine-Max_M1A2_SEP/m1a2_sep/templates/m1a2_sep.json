@@ -87,7 +87,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_1": {
+        "sub_part.m1a2_sep.left_road_01": {
           "id": 5,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -116,7 +116,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_2": {
+        "sub_part.m1a2_sep.left_road_02": {
           "id": 6,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -145,7 +145,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_3": {
+        "sub_part.m1a2_sep.left_road_03": {
           "id": 7,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -174,7 +174,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_4": {
+        "sub_part.m1a2_sep.left_road_04": {
           "id": 8,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -203,7 +203,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_5": {
+        "sub_part.m1a2_sep.left_road_05": {
           "id": 9,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -232,7 +232,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_6": {
+        "sub_part.m1a2_sep.left_road_06": {
           "id": 10,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -261,7 +261,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.left_road_7": {
+        "sub_part.m1a2_sep.left_road_07": {
           "id": 11,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -348,7 +348,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_1": {
+        "sub_part.m1a2_sep.right_road_01": {
           "id": 14,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -377,7 +377,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_2": {
+        "sub_part.m1a2_sep.right_road_02": {
           "id": 15,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -406,7 +406,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_3": {
+        "sub_part.m1a2_sep.right_road_03": {
           "id": 16,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -435,7 +435,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_4": {
+        "sub_part.m1a2_sep.right_road_04": {
           "id": 17,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -464,7 +464,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_5": {
+        "sub_part.m1a2_sep.right_road_05": {
           "id": 18,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -493,7 +493,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_6": {
+        "sub_part.m1a2_sep.right_road_06": {
           "id": 19,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -522,7 +522,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.right_road_7": {
+        "sub_part.m1a2_sep.right_road_07": {
           "id": 20,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -1288,31 +1288,31 @@
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_7"
+          "sub_part": "sub_part.m1a2_sep.left_road_07"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_6"
+          "sub_part": "sub_part.m1a2_sep.left_road_06"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_5"
+          "sub_part": "sub_part.m1a2_sep.left_road_05"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_4"
+          "sub_part": "sub_part.m1a2_sep.left_road_04"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_3"
+          "sub_part": "sub_part.m1a2_sep.left_road_03"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_2"
+          "sub_part": "sub_part.m1a2_sep.left_road_02"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.left_road_1"
+          "sub_part": "sub_part.m1a2_sep.left_road_01"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
@@ -1337,31 +1337,31 @@
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_7"
+          "sub_part": "sub_part.m1a2_sep.right_road_07"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_6"
+          "sub_part": "sub_part.m1a2_sep.right_road_06"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_5"
+          "sub_part": "sub_part.m1a2_sep.right_road_05"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_4"
+          "sub_part": "sub_part.m1a2_sep.right_road_04"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_3"
+          "sub_part": "sub_part.m1a2_sep.right_road_03"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_2"
+          "sub_part": "sub_part.m1a2_sep.right_road_02"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",
-          "sub_part": "sub_part.m1a2_sep.right_road_1"
+          "sub_part": "sub_part.m1a2_sep.right_road_01"
         },
         {
           "part": "6e79b1a2-1200-4a21-9e65-202610270001",

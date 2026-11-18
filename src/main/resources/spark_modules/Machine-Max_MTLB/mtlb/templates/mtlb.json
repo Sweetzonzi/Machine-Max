@@ -15,27 +15,27 @@
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_1"
+          "sub_part": "sub_part.mtlb.left_roadwheel_01"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_2"
+          "sub_part": "sub_part.mtlb.left_roadwheel_02"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_4"
+          "sub_part": "sub_part.mtlb.left_roadwheel_04"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_3"
+          "sub_part": "sub_part.mtlb.left_roadwheel_03"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_6"
+          "sub_part": "sub_part.mtlb.left_roadwheel_06"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.left_roadwheel_5"
+          "sub_part": "sub_part.mtlb.left_roadwheel_05"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
@@ -57,27 +57,27 @@
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_1"
+          "sub_part": "sub_part.mtlb.right_roadwheel_01"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_2"
+          "sub_part": "sub_part.mtlb.right_roadwheel_02"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_4"
+          "sub_part": "sub_part.mtlb.right_roadwheel_04"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_3"
+          "sub_part": "sub_part.mtlb.right_roadwheel_03"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_6"
+          "sub_part": "sub_part.mtlb.right_roadwheel_06"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-          "sub_part": "sub_part.mtlb.right_roadwheel_5"
+          "sub_part": "sub_part.mtlb.right_roadwheel_05"
         },
         {
           "part": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
@@ -124,7 +124,7 @@
           },
           "id": 96
         },
-        "sub_part.mtlb.right_roadwheel_6": {
+        "sub_part.mtlb.right_roadwheel_06": {
           "pos_rot_vel_vel": {
             "position": [
               -1.493042,
@@ -233,23 +233,23 @@
             }
           },
           "subsystem_data": {
-            "subsystem.mtlb.passenger_seat_8": {
+            "subsystem.mtlb.passenger_seat_08": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_6": {
+            "subsystem.mtlb.passenger_seat_06": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_7": {
+            "subsystem.mtlb.passenger_seat_07": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_4": {
+            "subsystem.mtlb.passenger_seat_04": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_5": {
+            "subsystem.mtlb.passenger_seat_05": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -273,11 +273,11 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_2": {
+            "subsystem.mtlb.passenger_seat_02": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_3": {
+            "subsystem.mtlb.passenger_seat_03": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -285,7 +285,7 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_1": {
+            "subsystem.mtlb.passenger_seat_01": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -300,7 +300,7 @@
           },
           "id": 97
         },
-        "sub_part.mtlb.right_roadwheel_5": {
+        "sub_part.mtlb.right_roadwheel_05": {
           "pos_rot_vel_vel": {
             "position": [
               -1.4638672,
@@ -331,7 +331,7 @@
           },
           "id": 92
         },
-        "sub_part.mtlb.left_roadwheel_4": {
+        "sub_part.mtlb.left_roadwheel_04": {
           "pos_rot_vel_vel": {
             "position": [
               1.5231018,
@@ -362,7 +362,7 @@
           },
           "id": 89
         },
-        "sub_part.mtlb.left_roadwheel_5": {
+        "sub_part.mtlb.left_roadwheel_05": {
           "pos_rot_vel_vel": {
             "position": [
               1.6096802,
@@ -393,7 +393,7 @@
           },
           "id": 91
         },
-        "sub_part.mtlb.left_roadwheel_2": {
+        "sub_part.mtlb.left_roadwheel_02": {
           "pos_rot_vel_vel": {
             "position": [
               1.4949341,
@@ -424,7 +424,7 @@
           },
           "id": 85
         },
-        "sub_part.mtlb.left_roadwheel_3": {
+        "sub_part.mtlb.left_roadwheel_03": {
           "pos_rot_vel_vel": {
             "position": [
               1.5523376,
@@ -455,7 +455,7 @@
           },
           "id": 87
         },
-        "sub_part.mtlb.right_roadwheel_2": {
+        "sub_part.mtlb.right_roadwheel_02": {
           "pos_rot_vel_vel": {
             "position": [
               -1.5785828,
@@ -486,7 +486,7 @@
           },
           "id": 86
         },
-        "sub_part.mtlb.left_roadwheel_1": {
+        "sub_part.mtlb.left_roadwheel_01": {
           "pos_rot_vel_vel": {
             "position": [
               1.4657898,
@@ -517,7 +517,7 @@
           },
           "id": 83
         },
-        "sub_part.mtlb.right_roadwheel_1": {
+        "sub_part.mtlb.right_roadwheel_01": {
           "pos_rot_vel_vel": {
             "position": [
               -1.6077576,
@@ -579,7 +579,7 @@
           },
           "id": 81
         },
-        "sub_part.mtlb.right_roadwheel_4": {
+        "sub_part.mtlb.right_roadwheel_04": {
           "pos_rot_vel_vel": {
             "position": [
               -1.550415,
@@ -610,7 +610,7 @@
           },
           "id": 90
         },
-        "sub_part.mtlb.right_roadwheel_3": {
+        "sub_part.mtlb.right_roadwheel_03": {
           "pos_rot_vel_vel": {
             "position": [
               -1.5212402,
@@ -703,7 +703,7 @@
           },
           "id": 95
         },
-        "sub_part.mtlb.left_roadwheel_6": {
+        "sub_part.mtlb.left_roadwheel_06": {
           "pos_rot_vel_vel": {
             "position": [
               1.5805054,
