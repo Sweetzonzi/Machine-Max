@@ -25,7 +25,7 @@
             }
           },
           "interact_boxes": {//交互判定区列表
-            "interact.machine_max.interact_left_door_slide": {//键:交互判定区名称
+            "interact.machine_max.left_back_door": {//键:交互判定区名称
               "bone": "interact_left_door_slide", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "signal_targets": {
                 "interact_left_back_door": ["connector.machine_max.left_back_door_axis"]//将交互信号转发给驾驶座
@@ -65,7 +65,7 @@
             }
           },
           "interact_boxes": {//交互判定区列表
-            "interact.machine_max.interact_right_door_slide": {//键:交互判定区名称
+            "interact.machine_max.right_back_door": {//键:交互判定区名称
               "bone": "interact_right_door_slide", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "signal_targets": {
                 "interact_right_back_door": ["connector.machine_max.right_back_door_axis"]//将交互信号转发给驾驶座

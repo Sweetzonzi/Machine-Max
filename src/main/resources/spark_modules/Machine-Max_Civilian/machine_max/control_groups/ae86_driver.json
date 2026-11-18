@@ -1,6 +1,6 @@
 {
     "base_group": {
-        "name": "base",
+        "name": "controlGroup.machine_max.base",
         "control_mode": "inherit",
         "move_targets": {
             "crew_driver_move": ["connector.machine_max.chassis_connection"]
