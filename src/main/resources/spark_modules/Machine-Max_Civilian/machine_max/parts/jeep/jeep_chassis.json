@@ -60,6 +60,23 @@
               "right_glove_box_interact": ["subsystem.machine_max.right_glove_box"]
             },
             "interact_mode": "accurate"
+          },
+          //车门区在车体两侧，走 fast 接触判定；舱内的座位与货箱走 accurate 射线判定，
+          //两者体积不重叠，所以贴着车门时选这里，坐进舱内时选座位那一块。
+          "interact.machine_max.left_door": {
+            "bone": "LeftDoorInteract",
+            "signal_targets": {
+              //同件具名直连：座位与交互区同属车架，不需要经连接点转译
+              "interact": ["subsystem.machine_max.driver_seat"]
+            },
+            "interact_mode": "fast"
+          },
+          "interact.machine_max.right_door": {
+            "bone": "RightDoorInteract",
+            "signal_targets": {
+              "interact": ["subsystem.machine_max.copilot_seat"]
+            },
+            "interact_mode": "fast"
           }
         },
         "subsystems": {
@@ -67,22 +84,13 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_seat",
             "locator": "seat_point_left",
-            "control_group_preset": "machine_max:civilian_driver",
-            //左前门交互区经车体→车架的连接点送进来的是 interact_left_door，不是型号默认的 interact
-            "interact_inputs": ["interact_left_door"],
-            "passenger_num_outputs": {
-              "driver_occupied": ["interact.machine_max.left_seat", "connector.machine_max.hull_connection"]
-            }
+            "control_group_preset": "machine_max:civilian_driver"
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "seat_point_right",
-            "control_group_preset": "machine_max:civilian_copilot",
-            "interact_inputs": ["interact_right_door"],
-            "passenger_num_outputs": {
-              "copilot_occupied": ["interact.machine_max.right_seat", "connector.machine_max.hull_connection"]
-            }
+            "control_group_preset": "machine_max:civilian_copilot"
           },
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller",
@@ -202,11 +210,7 @@
           "connector.machine_max.hull_connection": {
             "locator": "hull",
             "definition": "machine_max:fixed_up",
-            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
-            "signal_targets": {
-              "interact_left_door": ["subsystem.machine_max.driver_seat"],
-              "interact_right_door": ["subsystem.machine_max.copilot_seat"]
-            }
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           },
           "connector.machine_max.trunk": {
             "locator": "trunk",

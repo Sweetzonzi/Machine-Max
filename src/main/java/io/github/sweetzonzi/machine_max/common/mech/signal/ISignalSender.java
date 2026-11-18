@@ -291,8 +291,12 @@ public interface ISignalSender {
                     targets.add(subSystem);
                 }
             } else if (interactBoxes.containsKey(targetName)) {
-                InteractBox interactBox = interactBoxes.get(targetName);
-                targets.add(interactBox);
+                // 交互区只发不收：它是玩家点击的入口，点击由 InteractBox#interact 直接调子系统的 onInteract，
+                // 不经过信号槽。把它写成信号目标的内容需要改成指向真正的接收者。
+                MachineMax.LOGGER.error("目标 {} 是交互区，交互区只发不收（发送者 {}，所在 SubPart {}）",
+                        targetName,
+                        this instanceof AbstractSubsystem subsystem ? subsystem.getName() : getClass().getSimpleName(),
+                        ownerPart.name);
             } else if (ports.containsKey(targetName)) {
                 SignalPort signalPort = ports.get(targetName);
                 targets.add(signalPort);

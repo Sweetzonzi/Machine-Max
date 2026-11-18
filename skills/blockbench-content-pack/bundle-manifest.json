@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "abf6c4b184eb0a536dce0616417ac9a0e32379ec",
+    "revision": "81cc04785a204c9932e5091458892393b9dba6fe",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -121,8 +121,8 @@
       },
       {
         "path": "references/schemas/part/subpart/interact_box_attr.schema.json",
-        "bytes": 2106,
-        "sha256": "dc4adb6e53e9d906ec8141f411643765e8128a12cdc95a052e5600dfa4680e78"
+        "bytes": 3350,
+        "sha256": "6c45340d915dc1a1d8b16c2f019c4ffa207f3b20ae7764da04d24d427e86fca1"
       },
       {
         "path": "references/schemas/part/subpart/sub_part_attr.schema.json",
@@ -220,9 +220,9 @@
         "sha256": "c6e8147fad0634ea65a44f213a2d72685284e3fca37c8e82b84a48fb33079701"
       },
       {
-        "path": "references/schemas/subsystem/dynamic/lighting_dynamic_attr.schema.json",
-        "bytes": 1005,
-        "sha256": "b11b994ef38a3d1a3ac646de1e91e8dbf865c26a81c6096865315a4fcb07021e"
+        "path": "references/schemas/subsystem/dynamic/light_dynamic_attr.schema.json",
+        "bytes": 993,
+        "sha256": "194b57d6207926fd68cebc20debcb2a2017b9fe4d4972684c55c8f8550100e1b"
       },
       {
         "path": "references/schemas/subsystem/dynamic/motor_dynamic_attr.schema.json",
@@ -330,9 +330,9 @@
         "sha256": "68f3c5e9c73f2556183bc824186764d86a79e8f5572d12eeeae101120d9ddad8"
       },
       {
-        "path": "references/schemas/subsystem/static/lighting_static_attr.schema.json",
-        "bytes": 3613,
-        "sha256": "e8d0cf678072a524f1f421eddcc5234f24514422d8f7ae00249150a862451b87"
+        "path": "references/schemas/subsystem/static/light_static_attr.schema.json",
+        "bytes": 3601,
+        "sha256": "63b3016b935760e49a12c14e71af52242a52ffe389e022e2da51e57d7ff86089"
       },
       {
         "path": "references/schemas/subsystem/static/motor_static_attr.schema.json",
@@ -401,13 +401,13 @@
       },
       {
         "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",
-        "bytes": 7956,
-        "sha256": "4cd7eef01aa77d2138d68c151eabc8e97703a013ede63e10d57e8824524c7799"
+        "bytes": 7947,
+        "sha256": "f4792577ebcf4fdf62a729e165245568b63fbb815c0b88ad7586a27b1def835d"
       },
       {
         "path": "references/schemas/subsystem/subsystem_static_attr.schema.json",
-        "bytes": 7700,
-        "sha256": "a1c8a5bfbaf860b1ed23dccebda9f620ad25295d0b58cd4a0b65e75130bab699"
+        "bytes": 7691,
+        "sha256": "b86db646eb434437f408c99272d0c62019e682d9fde72e0e865451e4eeef9865"
       }
     ]
   },

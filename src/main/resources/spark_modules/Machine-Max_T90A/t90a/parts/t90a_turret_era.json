@@ -17,8 +17,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "t90a:armor/turret_era_left",
+        "machine_max:armor",
+        "machine_max:armor/turret_left",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -104,7 +104,7 @@
               "overwrite": {
                 "direction": "xp",
                 "required_tags": [
-                  "t90a:turret"
+                  "machine_max:turret"
                 ]
               }
             }
@@ -152,8 +152,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "t90a:armor/turret_era_right",
+        "machine_max:armor",
+        "machine_max:armor/turret_right",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -239,7 +239,7 @@
               "overwrite": {
                 "direction": "xn",
                 "required_tags": [
-                  "t90a:turret"
+                  "machine_max:turret"
                 ]
               }
             }

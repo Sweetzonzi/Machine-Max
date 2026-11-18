@@ -25,7 +25,6 @@ signal/
 ├── RotationSignal.java          # 旋转/角度信号
 ├── MotorControlSignal.java      # 马达控制信号
 ├── WheelControlSignal.java      # 车轮控制信号
-└── InteractSignal.java          # 交互信号
 ```
 
 ## 快速定位
@@ -94,7 +93,8 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 | `aim_drive_<设备>` | 武器控制器 → 炮塔驱动器 | 单台设备的瞄准驱动，载荷为 `RotationSignal` |
 | `diff_lock_control` | 座位 → 变速箱 | 差速锁 |
 | `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令（一次性按下：`RegularInputSignal` 的 `NEXT_AMMO_TYPE`／`PREV_AMMO_TYPE`，控制器消费一次后把槽位清空） |
-| `interact` | 交互区 → 子系统 | 玩家交互 |
+
+玩家交互不占频道：`InteractBox` 只发不收，点击直接调目标子系统的 `onInteract`（见下面「交互区只发不收」）。
 
 ## 约定
 
@@ -107,12 +107,13 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。
 - **存储写入自述**：发送端只调用 `getSignalStorage()`，由 Part / SubsystemController 自行提供存储表，不按具体类型 `instanceof` 分派。
 - **Part 订阅随结构自动订退**：结构构造期 `AbstractPart` 按声明序为每个子零件调用 `SubPart#installSubsystem`，子系统在这一步进入容器并订阅所属 Part，`SubPart#destroy`（含构造失败回收）退出。显式退订不改变物理归属与 global 订阅；结构变化只清 `signalInputChannels` 与 `signalStorage`，不退订。
-- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控与火控的执行器发现都用它，发现过程不发空信号。同名频道的两个控制组可以各查各的：`resolveTargets(outputChannel, firstHopNames)` 只用列出的那几条首跳，名字按给定顺序保留、表里没有的直接跳过，空列表即「这条频道在本组不到达任何终端」。首跳的键就是配置里的目标名（子系统名、`"local"`、`"global"`、交互区名、连接点名），所以第二个重载是对首跳表做过滤，不重新按名解析。
+- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控、火控的执行器发现与交互区的目标解析都用它，发现过程不发空信号。同名频道的两个控制组可以各查各的：`resolveTargets(outputChannel, firstHopNames)` 只用列出的那几条首跳，名字按给定顺序保留、表里没有的直接跳过，空列表即「这条频道在本组不到达任何终端」。首跳的键就是配置里的目标名（子系统名、`"local"`、`"global"`、连接点名；交互区名只可能出现在交互区自己的表里），所以第二个重载是对首跳表做过滤，不重新按名解析。
 - **执行器读输入槽**：火控把 `RotationSignal` / `LauncherSubsystem.FireCommand` 作为信号值，经实例重载写入炮塔/发射器的到达频道；执行器按自己的 `control_inputs` 顺序读取当前槽，`EmptySignal` 表示该来源已释放。结构变化清空输入槽后不需要逐个目标调用释放 setter。
 - **控制组按自己的声明投递**：控制组的类目出口（`setMoveInputSignal`、`setViewInputSignal`、主／副武器与常规输入）遍历 base 与活动子组合并后的「频道 → 目标名」，逐个 `sendSignalToTarget(channel, name, value)`；首跳表本身是 base 与全部子组的并集，所以缺省行为与「发给该频道全部首跳」一致，而两组把同一频道指向不同接收者时各发各的。清空有两档：`clearInputSignals`（离座、切组、失活、摧毁、装机变化、视点设备失效）按并集把可能发过的全部频道置空；`clearViewSignals` 只置空视点频道与记录中的视点身份，换视点、换主武器控制器时用它——那两种时刻扳机和油门多半还按着，一并清掉会让"按住"只在本端消失，而服务端的频道里那条开火指令还在，它会按那个值一路打到下一次按键边沿。
-- **目标名解析作用域是 Part**：`setTargetFromNames` 在建首跳表时聚合发送者所属**整个 Part** 的子系统 / 交互区 / 连接点（一趟 `subParts` 现场遍历，不设常驻索引），三类名字共用一套命名空间、在 Part 内唯一（解码期 `VariantAttr#validateUniqueNames` 强制）。跨子零件的具名目标因此可达；`getReceiversFromNames` 的形参签名保持不变（JS Hook 契约），改造只更换传入的表内容。名字通路只保证"两个对象同属一个 Part"，不保证线路连通；需要"线断了信号就断"时写连接点名走 `SignalPort`。`global`（`SubsystemController` 总线按每个订阅者声明的接受列表广播）与 `SignalPort`（`signal_targets` 加频道转译）是另外两条通路。首跳表在 `onAttach`、换组与结构变化时整体重建，配置里删掉的频道不会留在表中。按名读取子零件的口是 `SubPart#findOwnSubsystem`（存档恢复、MoLang、能源端口按 `(子零件, 名字)` 定位），跨 Part 全域解析走 `AbstractPart#findSubsystem` / `#findConnector` / `#findInteractBox`。网络载荷对子系统与连接点不走名字：它们按 `(子零件 ID, 声明序序号)` 寻址（`SubPart#subsystemIndex` / `#subsystemAt` 等），理由与约束见 `docs/plan/已实现/信号系统-Part级名字解析与子系统封装.md` §3.6；交互区活表是并发容器且没有声明序（物理线程读、主线程销毁时清空），`SubsystemInteractPayload` 保持交互区名。
+- **目标名解析作用域是 Part**：`setTargetFromNames` 在建首跳表时聚合发送者所属**整个 Part** 的子系统 / 交互区 / 连接点（一趟 `subParts` 现场遍历，不设常驻索引），三类名字共用一套命名空间、在 Part 内唯一（解码期 `VariantAttr#validateUniqueNames` 强制）。三类里交互区只当节点名（命名唯一性与 `SubsystemInteractPayload` 的寻址），不是信号目标——`getReceiversFromNames` 碰到它会记一条错误日志，因为交互区只发不收。跨子零件的具名目标因此可达；`getReceiversFromNames` 的形参签名保持不变（JS Hook 契约），改造只更换传入的表内容。名字通路只保证"两个对象同属一个 Part"，不保证线路连通；需要"线断了信号就断"时写连接点名走 `SignalPort`。`global`（`SubsystemController` 总线按每个订阅者声明的接受列表广播）与 `SignalPort`（`signal_targets` 加频道转译）是另外两条通路。首跳表在 `onAttach`、换组、结构变化与载具入世时整体重建，配置里删掉的频道不会留在表中。按名读取子零件的口是 `SubPart#findOwnSubsystem`（存档恢复、MoLang、能源端口按 `(子零件, 名字)` 定位），跨 Part 全域解析走 `AbstractPart#findSubsystem` / `#findConnector` / `#findInteractBox`。网络载荷对子系统与连接点不走名字：它们按 `(子零件 ID, 声明序序号)` 寻址（`SubPart#subsystemIndex` / `#subsystemAt` 等），理由与约束见 `docs/plan/已实现/信号系统-Part级名字解析与子系统封装.md` §3.6；交互区活表是并发容器且没有声明序（物理线程读、主线程销毁时清空），`SubsystemInteractPayload` 保持交互区名。
 - **同 Part 内一律具名直连**：既然名字在 Part 内全域可达，同一 Part 里的连线（含跨子零件，如炮塔里的火控与并列机枪）就写子系统名，不经连接点。内部连接点（`"internal": true`）由 `AbstractPart#autoAttachInternalConnectors` 按「高级 + 简单、不同子零件、几何对齐」自动配对，两端必然同 Part，在它上面配 `signal_targets` / `signal_translations` 只会多一条几何配对依赖，配不上时整条线静默断开；`checkContent` 把这种写法判为失败。连接点只用于跨 Part。
 - **端口的表在接收侧**：`SignalPort#onSignalUpdated` 用 `owner.attachedConnector.signalPort` 的 `signal_translations` 与 `signal_targets` 投递，即信号到达哪一侧端口，就用**对侧**（接收方零件）连接点的两张表。因此在端口表里读到的键是"跨过关节之后本零件要收的到达频道"，投递前还要过接收者的 `getAcceptedChannels()`（`acceptAllRoutingInput()` 为真时跳过）。`resolveTargets` 走同一套（`ISignalSender#resolveSignalLine` 同样先 `other.translateChannel` 再查 `other.getTargets()`），所以发现与投递不会给出两套答案。
+- **交互区只发不收**：`InteractBox` 不实现 `ISignalReceiver`，点击路径不写任何人的输入槽，也不会在槽里留下一个持有实体的交互值。结构变化与载具入世时它用 `resolveTargets` 把 `signal_targets` 解析成**终端子系统表**（按频道与声明序展平、去重，跨零件经连接点到达对侧座位），点击按表序逐个调 `onInteract`：`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个。激活要三件事同时成立——终端表非空、`condition` 的 MoLang 门控成立（主线程每 tick 求值一次；写错则恒不可交互并留一条错误日志）、任一终端 `isInteractable()`。物理线程只做"这个子形状是哪个交互区"的几何筛选，激活判定全在主线程。交互区名因此只是节点名（命名唯一性与 `SubsystemInteractPayload` 的寻址），把它写成信号目标会在装载期被拒。
 
 ## 反模式
 

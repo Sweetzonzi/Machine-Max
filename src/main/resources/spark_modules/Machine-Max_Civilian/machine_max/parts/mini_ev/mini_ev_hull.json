@@ -106,37 +106,25 @@
             "type": "machine_max:seat", //子系统类型
             "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "locator": "LeftFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-            "control_group_preset": "machine_max:civilian_driver",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.left_front_door"]
-            }
+            "control_group_preset": "machine_max:civilian_driver"
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-            "control_group_preset": "machine_max:civilian_copilot",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.right_front_door"]
-            }
+            "control_group_preset": "machine_max:civilian_copilot"
           },
           "subsystem.machine_max.left_back_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "LeftBackSeatPoint",
-            "control_group_preset": "machine_max:default_passenger",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.left_back_door"]
-            }
+            "control_group_preset": "machine_max:default_passenger"
           },
           "subsystem.machine_max.right_back_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "RightBackSeatPoint",
-            "control_group_preset": "machine_max:default_passenger",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.right_back_door"]
-            }
+            "control_group_preset": "machine_max:default_passenger"
           },
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller",

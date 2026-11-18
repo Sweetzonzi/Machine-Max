@@ -244,9 +244,10 @@ public class ConnectorAttr {
             if (entry.getKey().isEmpty()) continue;// 空频道名在运行时被跳过
             for (String target : entry.getValue()) {
                 if (VariantAttr.RESERVED_SIGNAL_NAMES.contains(target)) continue;
+                // 目标只能是子系统或连接点：交互区只发不收，写成目标在装载期就拒绝，
+                // 不要留到运行期让一次投递静默落空。
                 if (!subPart.getSubsystems().containsKey(target)
-                        && !subPart.getConnectors().containsKey(target)
-                        && !subPart.getInteractBoxes().containsKey(target)) {
+                        && !subPart.getConnectors().containsKey(target)) {
                     throw new PackContentException(
                             MMLanguageRegistry.ERROR_PART_CONNECTOR_SIGNAL_TARGET_NOT_FOUND.component(
                                     model, subPartName, connectorName, entry.getKey(), target));

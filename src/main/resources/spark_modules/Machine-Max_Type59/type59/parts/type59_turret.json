@@ -14,7 +14,7 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/structural",
-        "type59:turret"
+        "machine_max:turret", "machine_max:series/type59"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -656,7 +656,7 @@
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
                 "required_tags": [
-                  "type59:hull"
+                  "machine_max:hull"
                 ]
               }
             },

@@ -50,11 +50,11 @@
             "definition": "machine_max:default_glass"
           },
           "subsystem.machine_max.left_back_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_back_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           }
         },

@@ -23,7 +23,7 @@
           }
         },
         "interact_boxes": {
-          "interact.machine_max.golden.seat": {
+          "interact.machine_max.golden_seat": {
             "bone": "interact",
             "signal_targets": {
               "interact": ["subsystem.machine_max.seat"]
@@ -38,7 +38,7 @@
             "locator": "sit_point",
             "control_group_preset": "machine_max:default_driver",
             "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.golden.seat", "connector.machine_max.chassis_connection"]
+              "occupied": ["connector.machine_max.chassis_connection"]
             }
           }
         },

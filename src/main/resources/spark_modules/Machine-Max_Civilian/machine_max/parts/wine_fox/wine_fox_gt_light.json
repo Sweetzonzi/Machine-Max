@@ -70,31 +70,31 @@
         },
         "subsystems": {
           "subsystem.machine_max.left_main_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_main_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.middle_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_fog_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_fog_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           }
         },

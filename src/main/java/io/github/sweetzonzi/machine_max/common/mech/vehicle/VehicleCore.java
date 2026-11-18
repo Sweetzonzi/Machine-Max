@@ -347,12 +347,6 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             for (AbstractConnector connector : part.allConnectors.values()) {
                 connector.signalPort.getSignalInputChannels().clear();
             }
-            for (SubPart subPart : part.subParts.values()) {
-                if (subPart.interactBoxes == null) continue;
-                for (InteractBox interactBox : subPart.interactBoxes.values()) {
-                    interactBox.getSignalInputChannels().clear();
-                }
-            }
         }
     }
 
@@ -361,6 +355,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      * <p>
      * 合并、分裂与拆件之后，旧表可能仍指向已离开的装配体或已删除的频道；先在局部解析并整体替换，
      * 再进入子系统发现，读者因此不会看到半张表。首跳表只在本端主线程构建与读取。
+     * <p>
+     * 调用点有两处：{@link #onStructureChanged} 覆盖运行期的合并、分裂与拆件；{@link #onAddToLevel}
+     * 覆盖"载具构造完成后的第一次"。后者不能省——模板与存档载具的接线发生在构造期，而那时载具尚未入世，
+     * {@code attachConnectorInSameVehicle} 会跳过 {@code onStructureChanged}（它同时负责发事件与发包），
+     * 于是跨零件的交互区停在一个接线尚未完成的快照上。
      */
     public void rebuildSignalTargets() {
         for (RegularPart part : partMap.values()) {
@@ -864,13 +863,9 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
         }
-        for (SubPart subPart : part.subParts.values()) {//连接部件内交互判定区的信号传输关系
-            if (subPart.interactBoxes != null) {
-                for (InteractBox interactBox : subPart.interactBoxes.values()) {
-                    interactBox.setTargetFromNames();
-                }
-            }
-        }
+        // 交互区的终端表不在这里建：它要沿连接点读到对侧零件的表，而此刻接线还没做（本方法在
+        // attachConnector 里先于 attach 被调用）。子系统的表是纯具名的、端口的表也只解析本零件内的名字，
+        // 两者与接线无关；交互区则统一交给 onStructureChanged 与 onAddToLevel 重建。
         partMap.put(part.uuid, part);
         partNet.addNode(part);
         subSystemController.addSubsystems(part.getAllSubsystems());
@@ -1486,6 +1481,11 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         // 此处保持先刚体后关节的顺序作为工程惯例：连接器 addToLevel 内部经 submitImmediateTask 保证刚体入世界后再 addJoint
         partMap.values().forEach(RegularPart::addToLevel);
         trackLinks.forEach(TrackLink::onAddToLevel);
+        // 装配完成后的第一次全量重建。模板与存档载具在构造期不在世界里，每次接线都会跳过
+        // onStructureChanged（它同时负责发事件与发包），于是构造期按部件逐个建立的表就停在
+        // "接线尚未完成"的那一刻：跨零件的交互区在 addPart 时解析不到对侧端口，终端表因此为空，
+        // 直到下一次结构变化才恢复。入世是装配真正完成的时刻，在这里补一次重建。
+        rebuildSignalTargets();
         if (!level.isClientSide()) {
             // 服务端：召唤/加载后立即发起下方地形保活，避免地形异步构建期间载具坠落穿透
             updateVehicleTerrainHold();

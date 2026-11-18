@@ -110,9 +110,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                         eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
                             InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
-                            if (interactBox != null
-                                    && interactBox.interactMode == InteractBox.InteractMode.ACCURATE
-                                    && interactBox.isEnabled())
+                            // 物理线程只判几何：门控与目标可用性都要读主线程状态，统一留到主线程的选取里判。
+                            if (interactBox != null && interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
                                 eyesight.sortedTargets.add(interactBox);
                         } else {
                             eyesight.sortedTargets.add(PhysicsBodyExtensionKt.getOwner(body));
@@ -318,7 +317,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         if (!sortedTargetCache.isEmpty()) {
             for (Object owner : sortedTargetCache) {
                 if (owner instanceof InteractBox interactBox
-                        && interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled()) {
+                        && interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.canInteract()) {
                     return interactBox;
                 } else if (owner instanceof AbstractConnector) {
                     continue;
@@ -331,7 +330,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public InteractBox getFastInteractBox() {
         if (!fastInteractBoxCache.isEmpty()) {
             for (InteractBox interactBox : fastInteractBoxCache) {
-                if (interactBox.isEnabled()) {
+                if (interactBox.canInteract()) {
                     return interactBox;
                 }
             }

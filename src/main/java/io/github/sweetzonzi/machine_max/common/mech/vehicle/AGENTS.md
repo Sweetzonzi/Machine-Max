@@ -82,7 +82,7 @@ vehicle/
 | 修改命中音效 / 火花 | `SubPart.java` + `SubPartHitEffects.java` + `attr/MaterialAttr.java` | 在结算阶段按同一笔命中记录决定，音效与火花都取自材质（`sounds` / `particles`），客户端按碰撞箱身份回放 |
 | 新增属性字段 | `attr/SubPartAttr.java` | 加字段 + JSON Codec |
 | 新增事件 | `event/` | 继承对应事件基类，注册到 NeoForge 总线 |
-| 修改交互框 | `interact/InteractBox.java` | 玩家右键交互、命中检测 |
+| 修改交互框 | `interact/InteractBox.java` | 玩家右键交互：结构变化与载具入世时解析终端子系统，点击按声明序调 `onInteract`；激活 = 终端非空 ∧ MoLang 门控 ∧ 任一终端 `isInteractable()` |
 | 修改实体碰撞 | `CollisionManager.java` | 实体碰撞冲量映射 |
 | 修复物理线程崩溃 | `VehicleCore.java` | 勿用运动学模式冻结参与关节的刚体；见「已知问题」 |
 
@@ -112,6 +112,11 @@ VehicleCore (IPartAssembly)
 - **序列化**：使用 Mojang Codec（JSON） + StreamCodec（网络）。`data/` 包处理全量序列化。
 - **公共动画体归属**：`AbstractPart<T> implements IAnimatable<AbstractPart<?>>`，独占共享 `ModelPose`；由 `VehicleCore` 驱动 `AbstractPart.onTick()`（主线程发布）/ `AbstractPart.onPrePhysicsTick()`（物理线程混合），双端运行且两侧同门控（`inLoadedChunk`）。`setChanged()` 唯一发布者。
 - **信号寻址**：`ISignalReceiver.getSignalAddress()` 参与路由，`getName()` 仅身份/日志。保留地址 `"local"` = Part、`"global"` = 装配体。
+- **交互区只发不收**：`InteractBox` 不是信号接收者，点击直接调终端子系统的 `onInteract`（`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个）。`signal_targets` 在结构变化与载具入世时由 `resolveTargets` 解析成终端子系统表（只保留子系统，按声明序展平去重），`interact()` 就按这张表走；激活 = 终端表非空 ∧ `condition` 的 MoLang 门控成立（`SubPart#preTick` 在主线程求值，写错则恒不可交互）∧ 任一终端 `isInteractable()`。物理线程只做几何筛选（射线/接触挑出是哪个交互区），激活判定留给主线程的 `getAccurateInteractBox` / `getFastInteractBox` 与服务端载荷处理器。
+- **交互区放哪个零件：只管生命周期，不管凑不凑得到**：`fast` 是玩家包围盒与交互区体积的接触判定，`accurate` 是射线命中交互区体积，两者都只看交互区的世界位置，与它挂在哪个零件上无关（`accurate` 另有一条：射线上的任何零件碰撞箱都会排在交互区前面，`getAccurateInteractBox` 遇到非交互区即返回，所以它只适合用在玩家已经身处其中的位置，如座位、货箱）。因此"放哪里"的实际判据只有两条：
+  - **提示该随谁消失**：交互区跟着所属子零件销毁，所以放进"它没了这提示就该没"的那个零件——通常是持有目标子系统的车体/座舱，而不是可被打掉的车壳。
+  - **接线成本**：同一零件里的目标是一条纯具名引用（`"interact": ["subsystem.…"]`），不依赖连接点配对；跨零件要写连接点名并在对侧配到达频道表，漏配或没接上时交互区静默完全不激活（提示不亮、射线也选不中，只有 F3+B 能看到框还在）。
+  跨零件只在"想出提示的那个零件本身就是可拆的独立件、拆掉它就该没有提示"时才值得，典型是可卸下的车门零件。
 - **Molang 命名空间**：`local.*` = Part（耐久取 `rootSubPart`、按名寻址连接点/子系统），`global.*` = 装配体（HP/能源/信号存储）。
 - **涂装 Part 级统一**：`Part.applyTexture()` 只做本地状态变更，广播由调用方负责（`SprayCanItem` / `PartPaintPayload`）。
 

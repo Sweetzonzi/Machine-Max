@@ -15,7 +15,7 @@
         "machine_max:type/land",
         "machine_max:category/structural",
         "machine_max:hull",
-        "type59:hull"
+        "machine_max:series/type59"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -206,7 +206,7 @@
               "definition": "machine_max:fixed_up",
               "overwrite": {
                 "required_tags": [
-                  "type59:turret"
+                  "machine_max:turret"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1.0,

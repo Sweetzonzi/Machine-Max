@@ -15,7 +15,6 @@ import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyProducer;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.mech.signal.InteractSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
@@ -518,14 +517,26 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        SignalResult result = ISignalReceiver.super.onSignalUpdated(channelName, sender);
-        Object signal = getSignalValueFrom(channelName, sender);
-        if (signal instanceof InteractSignal interactSignal) {
-            // 交互结果原样回传给交互区：CONSUME 表示已接管，PASS/FAIL 表示本次未能接管（如座位被占），
-            // 交互区据此决定是否继续尝试下一个目标。
-            return onInteract(interactSignal.getEntity());
-        }
-        return result;
+        return ISignalReceiver.super.onSignalUpdated(channelName, sender);
+    }
+
+    /**
+     * 此刻这个子系统能否被玩家交互：交互区靠它决定要不要亮出提示，玩家的点击最终由
+     * {@link #onInteract(LivingEntity)} 裁决。
+     * <p>
+     * <b>默认 false。</b>能被交互是一种能力声明，不是所有子系统都有：只有提供了玩家可直接使用
+     * 的功能（座位、储物箱……）才覆写本方法。交互区的目标解析会丢掉全部非子系统，因此
+     * 这里返回 false 的子系统不会让提示亮起来。
+     * <p>
+     * <b>双端都会被调用：</b>客户端每 tick 对指针下的交互区问一次（决定提示），服务端在收到交互
+     * 请求时再问一次（挡住拿着过期状态的客户端）。实现里只许读两端同步值（如座位的
+     * {@code occupied}、{@link #isActive()}），不得做服务端独有的写操作。
+     * <p>
+     * 本方法只是预报：预报与 {@link #onInteract(LivingEntity)} 的实际结果不一致是允许的
+     * （客户端永远晚一个单程），交互区在 {@code CONSUME} 之前会继续试下一个目标。
+     */
+    public boolean isInteractable() {
+        return false;
     }
 
     /**

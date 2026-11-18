@@ -18,7 +18,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public final AbstractConnector owner;
     public final Map<String, List<String>> targetNames;//接收哪些信号
     public final Map<String, String> signalTranslation;//信号频道转译映射（原始频道->转译后频道）
-    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//频道名->接收方名->接收方
+    public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();//频道名->接收方名->接收方（保序，顺序即声明序：多目标线按它决定先试哪一个）
     public ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();//仅应被查询
 
     /**

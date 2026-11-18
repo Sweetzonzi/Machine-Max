@@ -17,8 +17,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "m1a2_sep:armor/hull_left",
+        "machine_max:armor",
+        "machine_max:armor/hull_left",
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
@@ -151,7 +151,7 @@
               "definition": "machine_max:fixed_right",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:hull"
+                  "machine_max:hull"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -226,8 +226,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "m1a2_sep:armor/hull_right",
+        "machine_max:armor",
+        "machine_max:armor/hull_right",
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
@@ -360,7 +360,7 @@
               "definition": "machine_max:fixed_left",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:hull"
+                  "machine_max:hull"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,

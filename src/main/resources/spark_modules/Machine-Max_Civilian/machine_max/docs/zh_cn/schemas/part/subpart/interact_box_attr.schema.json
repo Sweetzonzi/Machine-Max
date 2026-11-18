@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/interact_box_attr.schema.json",
   "title": "交互箱属性",
-  "description": "定义交互箱的属性，用于玩家与部件的交互。交互箱通常对应模型中的骨骼，当玩家点击时触发信号。",
+  "description": "定义交互箱的属性，用于玩家与部件的交互。交互箱通常对应模型中的骨骼：玩家瞄准（accurate）或碰到（fast）它并按下交互键时，交互区按 signal_targets 的顺序逐个询问目标子系统。交互区只看它在世界里的位置，写在哪个零件的 JSON 里不影响玩家能不能碰到它；写在哪里决定它随哪个子零件一起消失，也决定目标要不要跨零件接线。",
   "type": "object",
   "properties": {
     "bone": {
@@ -15,7 +15,7 @@
         "type": "array",
         "items": { "type": "string" }
       },
-      "description": "信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/global）。例如：{\"door_interact\": [\"door_controller\"]}。"
+      "description": "交互目标，键为频道名，值为目标列表。目标写同部件的子系统名，或写连接点名让交互跨零件到达对侧的子系统；只有子系统能接管交互，写别的名字在装载期报错。列表顺序就是尝试顺序：一扇门通往多个座位时从第一个空位开始坐，被占的座位只让位不终止遍历。同零件直连时频道名只是分组标签，跨零件时它是连接点对侧要认的到达频道。目标在结构变化与载具入世时解析成终端子系统表；跨零件的线没接上、或对侧没配这张到达频道时解析结果为空，交互区因此完全不激活——提示不亮、射线也选不中。"
     },
     "interact_mode": {
       "type": "string",
@@ -25,9 +25,8 @@
     },
     "condition": {
       "type": "string",
-      "enum": ["AND", "OR", "NAND", "NOR", "XOR", "XNOR"],
-      "default": "NOR",
-      "description": "交互区可用的条件，AND: 所有输入信号都不为0；OR: 任意一个输入信号不为0；NAND: 所有输入信号都为0；NOR: 任意一个输入信号为0；XOR: 只有一个输入信号为1；XNOR: 只有一个输入信号为0。"
+      "default": "true",
+      "description": "门控表达式：MoLang 脚本，求值大于 0 表示这个交互区此刻可用，上下文是宿主部件的 local.* 与 global.*（可读子系统状态、信号存储、装配体数值）。不写或写 true 表示不门控。表达式写错不会阻止加载，但该交互区会恒不可用并留下一条错误日志。"
     }
   },
   "required": ["bone", "signal_targets"],
@@ -36,19 +35,28 @@
     {
       "bone": "DoorHandle",
       "signal_targets": {
-        "door_interact": ["door_controller"]
+        "left_front_door": ["subsystem.machine_max.driver_seat"]
       },
-      "condition": "NOR",
-      "description": "门把手交互箱，触发门控制器"
+      "description": "车门拉手：同零件直连到驾驶座"
     },
     {
-      "bone": "Lever",
+      "bone": "RearHatch",
       "signal_targets": {
-        "lever_pull": ["engine_start", "lights"]
+        "interact": [
+          "subsystem.machine_max.commander_seat",
+          "subsystem.machine_max.gunner_seat"
+        ]
       },
       "interact_mode": "accurate",
-      "condition": "OR",
-      "description": "控制杆交互箱，切换引擎和灯光状态"
+      "description": "后舱盖：车长位优先，被占则落到炮手位"
+    },
+    {
+      "bone": "TrunkLid",
+      "signal_targets": {
+        "trunk_interact": ["subsystem.machine_max.trunk"]
+      },
+      "condition": "local.subsystem_active('subsystem.machine_max.engine') == 0",
+      "description": "后备箱：引擎熄火才能打开，跨零件时把目标写成连接点名"
     }
   ]
 }

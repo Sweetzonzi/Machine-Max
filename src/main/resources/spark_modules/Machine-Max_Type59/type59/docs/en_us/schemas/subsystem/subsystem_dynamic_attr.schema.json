@@ -23,7 +23,7 @@
           "machine_max:transmission",
           "machine_max:wheel_driver",
           "machine_max:turret_driver",
-          "machine_max:lighting",
+          "machine_max:light",
           "machine_max:launcher",
           "machine_max:ammo_loader",
           "machine_max:ammo_rack",
@@ -208,12 +208,12 @@
       "if": {
         "properties": {
           "type": {
-            "const": "machine_max:lighting"
+            "const": "machine_max:light"
           }
         }
       },
       "then": {
-        "$ref": "dynamic/lighting_dynamic_attr.schema.json"
+        "$ref": "dynamic/light_dynamic_attr.schema.json"
       }
     },
     {

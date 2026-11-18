@@ -132,7 +132,7 @@ public final class SubsystemKinds {
         register("turret_driver", TurretDriverSubsystemAttr.CODEC, TurretDriverSubsystemStaticAttr.CODEC);
         // register("scriptable", ScriptableSubsystemAttr.CODEC, ScriptableSubsystemStaticAttr.CODEC);
         // register("battery", BatterySubsystemAttr.CODEC, BatterySubsystemStaticAttr.CODEC);
-        register("lighting", LightingSubsystemAttr.CODEC, LightingSubsystemStaticAttr.CODEC);
+        register("light", LightingSubsystemAttr.CODEC, LightingSubsystemStaticAttr.CODEC);
         register("launcher", LauncherSubsystemAttr.CODEC, LauncherSubsystemStaticAttr.CODEC);
         register("ammo_loader", AmmoLoaderSubsystemAttr.CODEC, AmmoLoaderSubsystemStaticAttr.CODEC);
         register("ammo_rack", AmmoRackSubsystemAttr.CODEC, AmmoRackSubsystemStaticAttr.CODEC);

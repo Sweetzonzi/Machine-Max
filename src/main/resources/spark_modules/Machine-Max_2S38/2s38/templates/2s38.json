@@ -540,7 +540,7 @@
             "subsystem.2s38.2a90_ap_autoloader": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.pktm_weapon": {
+            "subsystem.machine_max.coax_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },

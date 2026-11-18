@@ -51,6 +51,15 @@ public class ItemStorageSubsystem extends BasicSubsystem implements MenuProvider
         popItems();
     }
 
+    /**
+     * 储物箱只要还在工作就能被打开：{@link #onInteract(LivingEntity)} 的判据也是
+     * {@link #isActive()}（另加服务端玩家这一条，那是"谁在点"而不是"能不能点"）。
+     */
+    @Override
+    public boolean isInteractable() {
+        return isActive();
+    }
+
     @Override
     public SignalResult onInteract(LivingEntity entity) {
         SignalResult result = super.onInteract(entity);

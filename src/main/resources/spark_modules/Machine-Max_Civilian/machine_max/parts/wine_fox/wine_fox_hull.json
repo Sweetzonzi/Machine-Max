@@ -148,19 +148,13 @@
             "type": "machine_max:seat", //子系统类型
             "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "locator": "LeftFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-            "control_group_preset": "machine_max:civilian_driver",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.left_seat", "interact.machine_max.left_seat_fast"]
-            }
+            "control_group_preset": "machine_max:civilian_driver"
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat", //子系统类型
             "definition": "machine_max:default_passenger_seat", //子系统型号, 需要与子系统类型相匹配
             "locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-            "control_group_preset": "machine_max:civilian_copilot",
-            "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.right_seat", "interact.machine_max.right_seat_fast"]
-            }
+            "control_group_preset": "machine_max:civilian_copilot"
           },
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller", //子系统类型
@@ -256,19 +250,19 @@
             "definition": "machine_max:default_glass"
           },
           "subsystem.machine_max.left_front_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_front_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_back_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_back_light": {
-            "type": "machine_max:lighting",
+            "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_front_fog_light": {

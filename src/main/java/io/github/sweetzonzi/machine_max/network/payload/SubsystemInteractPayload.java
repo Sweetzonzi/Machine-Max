@@ -91,10 +91,16 @@ public class SubsystemInteractPayload implements CustomPacketPayload {
         DestroyableObject object = ObjectManager.getDestroyableObject(level, payload.getSubPartId());
         if (object instanceof SubPart subPart) {
             InteractBox interactBox = subPart.interactBoxes.get(payload.getInteractBoxName());
-            if (interactBox != null)
-                context.enqueueWork(() -> interactBox.interact(executingPlayer));
-            else
+            if (interactBox == null) {
                 MachineMax.LOGGER.error("SubPart(id={})中未找到交互框{}，无法互动。", payload.getSubPartId(), payload.getInteractBoxName());
+                return;
+            }
+            context.enqueueWork(() -> {
+                // 客户端的提示与服务端之间差一个单程：座位可能刚被占、结构可能刚变、门控可能刚关。
+                // 这里以服务端此刻的判定为准，静默丢弃这条过期请求。
+                if (!interactBox.canInteract()) return;
+                interactBox.interact(executingPlayer);
+            });
         } else
             MachineMax.LOGGER.error("维度{}中不存在SubPart(id={})，无法互动。",
                     level.dimension().location(), payload.getSubPartId());

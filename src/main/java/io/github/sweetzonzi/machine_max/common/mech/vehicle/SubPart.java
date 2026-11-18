@@ -496,6 +496,11 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     public void preTick() {
         super.preTick();
         syncDerivedBodyPose();
+        // 交互区的门控表达式在主线程求值：它的两个读点（客户端提示、服务端点击）都在主线程，
+        // 没必要按物理子步重复算。
+        if (interactBoxes != null) {
+            for (InteractBox interactBox : interactBoxes.values()) interactBox.updateCondition();
+        }
         if (entity != null && (part.assembly == null || !part.assembly.usesMMPartEntities())) {
             entity.subPart = null;
             entity.discard();

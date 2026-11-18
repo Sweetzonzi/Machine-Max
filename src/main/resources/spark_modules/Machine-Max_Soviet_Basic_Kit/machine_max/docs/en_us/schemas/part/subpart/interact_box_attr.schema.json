@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/interact_box_attr.schema.json",
   "title": "Interaction Box Attributes",
-  "description": "Defines the attributes of an interaction box, used for player interaction with parts. The interaction box typically corresponds to bones in the model, triggering signals when the player clicks.",
+  "description": "Defines the attributes of an interaction box, used for player interaction with parts. An interaction box usually corresponds to bones in the model: when the player aims at (accurate) or touches (fast) it and presses the interact key, the box asks the target subsystems in signal_targets order one by one. What counts is where the box sits in the world, not which part's JSON declares it; the declaring part decides which sub-part's destruction removes the box, and whether the target needs cross-part wiring.",
   "type": "object",
   "properties": {
     "bone": {
@@ -15,7 +15,7 @@
         "type": "array",
         "items": { "type": "string" }
       },
-      "description": "Signal transmission targets, key is signal channel, value is target list (subsystem/connection point name/part/global). For example: {\"door_interact\": [\"door_controller\"]}."
+      "description": "Interaction targets: the key is a channel name, the value is a target list. A target is a subsystem name in the same part, or a connector name so the interaction reaches a subsystem on the other part across parts; only subsystems can take over an interaction, any other name is rejected at load time. List order is the order they are tried: a door leading to several seats fills the first free one and an occupied seat only yields without ending the walk. For same-part links the channel name is just a grouping label; across parts it is the arrival channel the opposite connector's table recognises. Targets are resolved into a terminal subsystem list on structure change and when the vehicle enters the level; an unwired cross-part line, or a missing arrival channel on the opposite side, leaves that list empty and the box completely inactive - no prompt, and the aim ray cannot pick it either."
     },
     "interact_mode": {
       "type": "string",
@@ -25,9 +25,8 @@
     },
     "condition": {
       "type": "string",
-      "enum": ["AND", "OR", "NAND", "NOR", "XOR", "XNOR"],
-      "default": "NOR",
-      "description": "Conditions for interaction area availability, AND: all input signals are non-zero; OR: any input signal is non-zero; NAND: all input signals are zero; NOR: any input signal is zero; XOR: only one input signal is 1; XNOR: only one input signal is 0."
+      "default": "true",
+      "description": "Gate expression: a MoLang script whose value above 0 means the interaction box is usable right now, evaluated in the host part's local.* and global.* context (subsystem state, signal storage, assembly values). Omit it or write true for no gate. A broken expression does not block loading, but this interaction box stays permanently unusable and leaves an error log."
     }
   },
   "required": ["bone", "signal_targets"],
@@ -36,19 +35,28 @@
     {
       "bone": "DoorHandle",
       "signal_targets": {
-        "door_interact": ["door_controller"]
+        "left_front_door": ["subsystem.machine_max.driver_seat"]
       },
-      "condition": "NOR",
-      "description": "Door handle interaction box, triggers door controller"
+      "description": "Door handle: direct same-part link to the driver seat"
     },
     {
-      "bone": "Lever",
+      "bone": "RearHatch",
       "signal_targets": {
-        "lever_pull": ["engine_start", "lights"]
+        "interact": [
+          "subsystem.machine_max.commander_seat",
+          "subsystem.machine_max.gunner_seat"
+        ]
       },
       "interact_mode": "accurate",
-      "condition": "OR",
-      "description": "Lever interaction box, toggles engine and light status"
+      "description": "Rear hatch: commander seat first, gunner seat when that one is taken"
+    },
+    {
+      "bone": "TrunkLid",
+      "signal_targets": {
+        "trunk_interact": ["subsystem.machine_max.trunk"]
+      },
+      "condition": "local.subsystem_active('subsystem.machine_max.engine') == 0",
+      "description": "Trunk lid: opens only with the engine off; across parts write the connector name as the target"
     }
   ]
 }

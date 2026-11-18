@@ -15,7 +15,7 @@
         "machine_max:type/land",
         "machine_max:category/structural",
         "machine_max:category/weapon",
-        "t90a:turret",
+        "machine_max:turret",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -269,7 +269,7 @@
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
                 "required_tags": [
-                  "t90a:hull"
+                  "machine_max:hull"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -302,7 +302,7 @@
               "definition": "machine_max:fixed_left",
               "overwrite": {
                 "required_tags": [
-                  "t90a:armor/turret_era_left"
+                  "machine_max:armor/turret_left"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 0.1,
@@ -314,7 +314,7 @@
               "definition": "machine_max:fixed_right",
               "overwrite": {
                 "required_tags": [
-                  "t90a:armor/turret_era_right"
+                  "machine_max:armor/turret_right"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 0.1,

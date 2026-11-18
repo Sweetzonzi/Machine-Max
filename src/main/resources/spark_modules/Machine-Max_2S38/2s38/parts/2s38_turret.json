@@ -171,7 +171,7 @@
               "third_hud_layout": "2s38:2s38_weapon_feed",
               "scope_hud_layout": "2s38:2s38_weapon_feed"
             },
-            "subsystem.machine_max.pktm_weapon": {
+            "subsystem.machine_max.coax_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:secondary_weapon_controller",
               "control_outputs": {

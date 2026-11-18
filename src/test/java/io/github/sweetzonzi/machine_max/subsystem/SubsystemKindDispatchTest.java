@@ -32,7 +32,7 @@ class SubsystemKindDispatchTest {
     static final List<String> BUILTIN_IDS = List.of(
             "basic", "seat", "item_storage", "engine", "motor", "car_controller",
             "motorbike_controller", "track_controller", "track_drive", "gearbox", "transmission",
-            "wheel_driver", "turret_driver", "lighting",
+            "wheel_driver", "turret_driver", "light",
             "launcher", "ammo_loader", "ammo_rack", "weapon_controller", "camera", "sight",
             "regen_ammo_rack", "reactive_armor");
 

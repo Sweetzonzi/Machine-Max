@@ -1,27 +1,67 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
-import io.github.sweetzonzi.machine_max.common.mech.signal.*;
+import cn.solarmoon.spark_core.molang.MolangContextRegistry;
+import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.InteractBoxAttr;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
+/**
+ * 玩家交互判定区：一块模型骨骼包围出的空间，配合射线（{@code accurate}）或碰撞箱接触（{@code fast}）被选中，
+ * 点击后依次询问解析出的子系统。
+ *
+ * <p><b>能不能交互</b>由三件事同时决定，缺一不可：</p>
+ * <ol>
+ *   <li>结构：{@code signal_targets} 解析出至少一个终端子系统（{@link #interactTargets}）。
+ *       解析在结构变化与载具入世时整体重建：模板载具的接线发生在入世之前，入世那一次才是第一次
+ *       完整解析。零件单独摆在地上、跨零件的门没接上时解析结果就是空的，交互区因此完全不会激活，
+ *       而不是亮着提示却点不出反应。</li>
+ *   <li>内容门控：{@code condition} 的 MoLang 表达式（主线程每 tick 求值一次），写错的表达式
+ *       让这个交互区恒不可用并留一条错误日志。</li>
+ *   <li>运行时可用性：任一终端子系统此刻返回 {@link AbstractSubsystem#isInteractable()}。
+ *       座位被占、子系统损坏时提示随之消失，不需要内容里再接线把它"报"给交互区。</li>
+ * </ol>
+ *
+ * <p><b>只发不收：</b>交互区不是信号接收者。玩家点击是一次事件，{@link #interact(LivingEntity)} 直接调
+ * 目标的 {@link AbstractSubsystem#onInteract(LivingEntity)}，不写任何人的输入槽、不经连接点转译，
+ * 所以也不存在"点击残留一个持有实体的信号值"这种事。</p>
+ *
+ * <p><b>线程：</b>{@link #setTargetFromNames()}、{@link #updateCondition()}、{@link #interact(LivingEntity)}
+ * 与 {@link #canInteract()} 都在主线程；物理线程只做"这个子形状属于哪个交互区"的几何筛选，不读本类的状态。</p>
+ */
 @Getter
-public class InteractBox implements ISignalSender, ISignalReceiver {
+public class InteractBox implements ISignalSender {
     public final String name;
     public final InteractBoxAttr attr;
     public final Map<String, List<String>> targetNames;
-    public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();//信号频道名->接收者名称->接收者（保序，顺序即目标声明顺序）
-    public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
+    /** 首跳表：频道 → 目标名 → 目标实例，由 {@link #setTargetFromNames()} 保序写入。解析终端与调试都读它。 */
+    public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();
     public final SubPart subPart;
     public final InteractMode interactMode;
-    public boolean enabled = true;//是否处于启用状态的开关
+
+    /** {@code condition} 为空或字面量 {@code true}：不门控，恒可用。 */
+    private final boolean alwaysActive;
+    /** 预编译的门控表达式；不门控或编译失败时为 {@code null}。 */
+    @Nullable
+    private final MolangExpression condition;
+    /** 门控表达式最近一次求值结果。编译失败时恒为 {@code false}，即该交互区永远不可交互。 */
+    private volatile boolean conditionHolds;
+    /** 解析后的交互目标：只保留子系统，按 {@code signal_targets} 的频道与目标声明序展平。 */
+    private volatile List<AbstractSubsystem> interactTargets = List.of();
+    private boolean conditionErrorLogged;
 
     public enum InteractMode {
         FAST,
@@ -33,159 +73,119 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
         this.name = name;
         this.attr = attr;
         this.targetNames = attr.getSignalTargets();
-        this.interactMode = InteractMode.valueOf(attr.getMode().toUpperCase());
-    }
+        this.interactMode = InteractMode.valueOf(attr.getMode().toUpperCase(Locale.ROOT));
 
-    /** 交互区以自身名称为寻址名 */
-    @Override
-    public String getSignalAddress() {
-        return name;
-    }
-
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        ISignalReceiver.super.onSignalUpdated(channelName, sender);
-        boolean isSignalValid;
-        int trueCount = 0;
-        outerLoop:
-        switch (attr.condition) {
-            case AND:
-                //全1出1
-                isSignalValid = false;
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isFalseSignal(signal)) {
-                            break outerLoop;
-                        }
-                    }
-                }
-                isSignalValid = true;
-                break;
-            case OR:
-                //有1出1
-                isSignalValid = false;
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isTrueSignal(signal)) {
-                            isSignalValid = true;
-                            break outerLoop;
-                        }
-                    }
-                }
-                break;
-            case NAND:
-                //全1出0
-                isSignalValid = true;
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isFalseSignal(signal)) {
-                            break outerLoop;
-                        }
-                    }
-                }
-                break;
-            case NOR:
-                //有1出0
-                isSignalValid = true;
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isTrueSignal(signal)) {
-                            isSignalValid = false;
-                            break outerLoop;
-                        }
-                    }
-                }
-                break;
-            case XOR:
-                // XOR: 有奇数个真信号时为真
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isTrueSignal(signal)) {
-                            trueCount++;
-                        }
-                    }
-                }
-                isSignalValid = (trueCount % 2 == 1);
-                break;
-            case XNOR:
-                // XNOR: 有偶数个真信号时为真 (包括0个)
-                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
-                    SignalChannel signalChannel = entry.getValue();
-                    for (Object signal : signalChannel.values()) {
-                        if (isTrueSignal(signal)) {
-                            trueCount++;
-                        }
-                    }
-                }
-                isSignalValid = (trueCount % 2 == 0);
-                break;
-            default:
-                isSignalValid = true;
+        String source = attr.getCondition();
+        this.alwaysActive = source == null || source.isBlank() || source.equalsIgnoreCase(InteractBoxAttr.ALWAYS);
+        MolangExpression compiled = null;
+        if (!alwaysActive) {
+            try {
+                compiled = MolangContextRegistry.compile(source, subPart.part.getSparkMolangContext());
+            } catch (Exception e) {
+                // 内容写错不该崩游戏：这个交互区从此恒为不可交互，并在装配时留下一条可查的日志。
+                MachineMax.LOGGER.error("交互区 {}-{} 的门控表达式无法编译，将永远不可交互：{}（{}）",
+                        subPart.part.name, name, source, e.getMessage());
+            }
         }
-        this.enabled = isSignalValid;
-        return enabled ? SignalResult.PASS : SignalResult.PASS;
+        this.condition = compiled;
+        this.conditionHolds = alwaysActive;
     }
-
 
     /**
-     * 按 {@code signal_targets} 中的声明顺序逐个尝试接收者，由第一个真正接管交互的目标结束本次交互。
+     * 结构变化时重建首跳表并重新解析终端。
      * <p>
-     * 只有 {@link SignalResult#CONSUME} 结束遍历；{@link SignalResult#PASS}（目标不处理）与
-     * {@link SignalResult#FAIL}（目标应处理但当前接不了，如座位已被占用）都继续试下一个目标。
-     * 同一交互区列出多个座位的场景（一扇门通往车长位与炮手位、后门通往整排载员位）依赖这条规则：
-     * 从列表第一个空位开始坐，前排被占也不影响后排。
+     * 由 {@code VehicleCore#rebuildSignalTargets()} 在 {@code onStructureChanged(...)} 内统一调用：
+     * 那一刻拓扑已经改完（attach/detach/merge/split 都已落地），所以这里解析到的是变化之后的结构。
      * <p>
-     * 顺序由 {@link ISignalSender#setTargetFromNames()} 保序写入的接收者表保证，不能依赖 Map 的哈希顺序。
+     * <b>调用线程：</b>主线程。
      */
-    public void interact(LivingEntity entity) {
-        for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()) {
-            String channelName = entry.getKey();
-            Map<String, ISignalReceiver> receivers = entry.getValue();
-            for (ISignalReceiver receiver : receivers.values()) {
-                SignalResult result = sendSignalToTarget(channelName, receiver.getSignalAddress(), new InteractSignal(entity));
-                if (result == SignalResult.CONSUME) {
-                    return;
+    @Override
+    public void setTargetFromNames() {
+        ISignalSender.super.setTargetFromNames();
+        this.interactTargets = resolveInteractTargets();
+    }
+
+    /**
+     * 沿首跳把每条频道推进到终端，只保留子系统，按声明序展平并去重。
+     * <p>
+     * 频道名对同 Part 直连只是标签；跨零件时它是连接点对侧要认的到达频道，因此逐频道解析而不是一次合并。
+     * 同一子系统经两条频道可达时只保留第一次出现的位置（先到先试）。
+     */
+    private List<AbstractSubsystem> resolveInteractTargets() {
+        LinkedHashSet<AbstractSubsystem> ordered = new LinkedHashSet<>();
+        for (String channel : targets.keySet()) {
+            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
+                for (ISignalReceiver terminal : terminals) {
+                    if (terminal instanceof AbstractSubsystem subsystem) {
+                        ordered.add(subsystem);
+                    }
                 }
+            }
+        }
+        if (ordered.isEmpty() && !targets.isEmpty()) {
+            MachineMax.LOGGER.debug("交互区 {} 没有解析到可交互的子系统（目标不可达或不是子系统）：{}",
+                    name, targets.keySet());
+        }
+        return List.copyOf(ordered);
+    }
+
+    /**
+     * 主线程：求值门控表达式。不门控时没有开销；编译失败时保持 {@code false}，即永远不可交互。
+     * <p>
+     * 由 {@code SubPart#preTick()} 每 tick 调一次——本方法的两个读点（提示与点击）都在主线程，
+     * 没必要按物理子步重复求值。
+     */
+    public void updateCondition() {
+        if (alwaysActive) return;
+        MolangExpression expr = condition;
+        if (expr == null) return;// 编译失败：conditionHolds 恒为 false
+        try {
+            conditionHolds = expr.evaluate(subPart.part.getSparkMolangContext()) > 0;
+        } catch (Exception e) {
+            conditionHolds = false;
+            if (!conditionErrorLogged) {
+                conditionErrorLogged = true;
+                MachineMax.LOGGER.error("交互区 {}-{} 的门控表达式求值失败，按不可交互处理：{}（{}）",
+                        subPart.part.name, name, attr.getCondition(), e.getMessage());
             }
         }
     }
 
-    public void destroy() {
-        resetSignalOutputs();
-        targets.clear();
-    }
-
-    // 辅助方法：判断信号是否为真
-    private boolean isTrueSignal(Object signal) {
-        if (signal instanceof Float) {
-            return ((Float) signal) != 0f;
-        } else if (signal instanceof Integer) {
-            return ((Integer) signal) != 0;
-        } else if (signal instanceof Double) {
-            return ((Double) signal) != 0.0;
-        } else if (signal instanceof Boolean) {
-            return (Boolean) signal;
-        } else if (signal instanceof EmptySignal) {
-            return false;
+    /**
+     * 此刻这个交互区能不能用：门控成立，且至少有一个终端子系统宣告自己可交互。
+     * <p>
+     * 客户端用它决定要不要亮提示，服务端用它挡住拿着过期状态的点击。终端表为空时恒为 {@code false}——
+     * 没有接收者的交互区完全不激活。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    public boolean canInteract() {
+        if (!conditionHolds) return false;
+        for (AbstractSubsystem target : interactTargets) {
+            if (target.isInteractable()) return true;
         }
         return false;
     }
 
-    // 辅助方法：判断信号是否为假
-    private boolean isFalseSignal(Object signal) {
-        if (signal instanceof Float) {
-            return ((Float) signal) == 0f;
-        } else if (signal instanceof Boolean) {
-            return !(Boolean) signal;
-        } else if (signal instanceof EmptySignal) {
-            return true;
+    /**
+     * 按解析顺序逐个尝试终端，第一个 {@link SignalResult#CONSUME} 结束本次交互。
+     * <p>
+     * {@link SignalResult#PASS}（目标不处理）与 {@link SignalResult#FAIL}（目标该处理却接不了，如座位已被占）
+     * 都继续试下一个：一扇门通往多个座位的交互区因此从列表第一个空位开始坐，前排被占不影响后排。
+     * 顺序由 {@link ISignalSender#setTargetFromNames()} 保序写入的接收者表与终端的声明序共同保证，
+     * 不能依赖 Map 的哈希顺序。
+     * <p>
+     * <b>调用线程：</b>主线程（服务端）。
+     */
+    public void interact(LivingEntity entity) {
+        for (AbstractSubsystem target : interactTargets) {
+            if (target.onInteract(entity) == SignalResult.CONSUME) return;
         }
-        return true;
     }
 
+    /** 主线程。丢弃解析结果与首跳表，不再有任何引用。 */
+    public void destroy() {
+        interactTargets = List.of();
+        targets.clear();
+    }
 }

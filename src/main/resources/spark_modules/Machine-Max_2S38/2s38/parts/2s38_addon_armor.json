@@ -13,7 +13,7 @@
         "machine_max:direction/left",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_1",
+        "machine_max:armor/hull_left_01",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -65,7 +65,7 @@
         "machine_max:direction/right",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_1",
+        "machine_max:armor/hull_right_01",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -117,7 +117,7 @@
         "machine_max:direction/left",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_2",
+        "machine_max:armor/hull_left_02",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -169,7 +169,7 @@
         "machine_max:direction/right",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_2",
+        "machine_max:armor/hull_right_02",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -221,7 +221,7 @@
         "machine_max:direction/left",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_3",
+        "machine_max:armor/hull_left_03",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -273,7 +273,7 @@
         "machine_max:direction/right",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_3",
+        "machine_max:armor/hull_right_03",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -325,7 +325,7 @@
         "machine_max:direction/left",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/left_4",
+        "machine_max:armor/hull_left_04",
         "machine_max:series/2s38"
       ],
       "sub_parts": {
@@ -377,7 +377,7 @@
         "machine_max:direction/right",
         "machine_max:category/decoration",
         "machine_max:type/land",
-        "machine_max:addon_armor/right_4",
+        "machine_max:armor/hull_right_04",
         "machine_max:series/2s38"
       ],
       "sub_parts": {

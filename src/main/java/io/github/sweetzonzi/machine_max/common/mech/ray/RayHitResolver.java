@@ -83,7 +83,7 @@ public final class RayHitResolver {
             } else if (owner instanceof InteractBoxes interactBoxes) {
                 InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
                 if (interactBox == null) continue;
-                hits.add(new InteractBoxRayHit(fraction, interactBox, interactBox.isEnabled(), point, normal));
+                hits.add(new InteractBoxRayHit(fraction, interactBox, point, normal));
             } else if (owner instanceof PhysicsChunkSection section) {
                 hits.add(new TerrainRayHit(fraction, section, point, normal));
             } else if (owner instanceof Entity entity) {

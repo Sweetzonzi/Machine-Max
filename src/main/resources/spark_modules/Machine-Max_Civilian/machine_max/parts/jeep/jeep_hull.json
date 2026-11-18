@@ -36,31 +36,11 @@
             "thickness": 2
           }
         },
-        "interact_boxes": {
-          "interact.machine_max.left_front_door": {
-            "bone": "LeftDoorInteract",
-            "signal_targets": {
-              "interact_left_door": ["connector.machine_max.chassis_connection"]
-            },
-            "interact_mode": "fast"
-          },
-          "interact.machine_max.right_front_door": {
-            "bone": "RightDoorInteract",
-            "signal_targets": {
-              "interact_right_door": ["connector.machine_max.chassis_connection"]
-            },
-            "interact_mode": "fast"
-          }
-        },
         "connectors": {
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator",
             "definition": "machine_max:fixed_down",
-            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 },
-            "signal_targets": {
-              "driver_occupied": ["interact.machine_max.left_front_door"],
-              "copilot_occupied": ["interact.machine_max.right_front_door"]
-            }
+            "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           },
           "connector.machine_max.top_front": {
             "locator": "top_front",

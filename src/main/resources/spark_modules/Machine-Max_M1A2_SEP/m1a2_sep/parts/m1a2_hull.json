@@ -15,7 +15,6 @@
         "machine_max:type/land",
         "machine_max:category/structural",
         "machine_max:hull",
-        "m1a2_sep:hull",
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
@@ -185,7 +184,7 @@
               "definition": "machine_max:fixed_up",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:turret"
+                  "machine_max:turret"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -502,7 +501,7 @@
               "definition": "machine_max:fixed_left",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:armor/hull_left"
+                  "machine_max:armor/hull_left"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -514,7 +513,7 @@
               "definition": "machine_max:fixed_right",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:armor/hull_right"
+                  "machine_max:armor/hull_right"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,

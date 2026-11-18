@@ -129,6 +129,18 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         publishLoaderCandidate();
     }
 
+    /**
+     * 空座且完好时才算「可交互」。{@code occupied} 与 {@link #isActive()} 都是两端同步值：
+     * 客户端据此决定要不要亮门与座椅的提示，服务端据此挡下拿着过期状态的点击请求。
+     * <p>
+     * 一扇门通往多个座位的交互区在试到被占的座位时会继续试下一个，本方法只负责预报——
+     * 预报与 {@link #onInteract(LivingEntity)} 的结果不一致由那段遍历兜住。
+     */
+    @Override
+    public boolean isInteractable() {
+        return !occupied && isActive();
+    }
+
     @Override
     public SignalResult onInteract(LivingEntity entity) {
         SignalResult result = super.onInteract(entity);

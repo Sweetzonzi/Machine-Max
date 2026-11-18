@@ -80,10 +80,7 @@
           "locator": "left_seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
           "control_group_preset": "machine_max:civilian_driver",
           "first_hud_layout": "machine_max:seat_dashboard_2",
-          "third_hud_layout": "machine_max:seat_dashboard_2_third",
-          "passenger_num_outputs": {
-            "occupied": ["interact.machine_max.left_seat", "interact.machine_max.left_seat_fast"]
-          }
+          "third_hud_layout": "machine_max:seat_dashboard_2_third"
         },
         "subsystem.machine_max.right_seat": {
           "type": "machine_max:seat", //子系统类型
@@ -91,14 +88,11 @@
           "locator": "right_seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
           "control_group_preset": "machine_max:civilian_copilot",
           "first_hud_layout": "machine_max:seat_dashboard_2",
-          "third_hud_layout": "machine_max:seat_dashboard_2_third",
-          "passenger_num_outputs": {
-            "occupied": ["interact.machine_max.right_seat", "interact.machine_max.right_seat_fast"]
-          },
-          "subsystem.machine_max.glove_box": {
-            "type": "machine_max:item_storage",
-            "definition": "machine_max:glove_box"
-          }
+          "third_hud_layout": "machine_max:seat_dashboard_2_third"
+        },
+        "subsystem.machine_max.glove_box": {
+          "type": "machine_max:item_storage",
+          "definition": "machine_max:glove_box"
         }
       },
       "connectors": { //子部件用于与其他零件连接的连接点列表

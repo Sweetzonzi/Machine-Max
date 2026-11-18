@@ -4284,19 +4284,6 @@
 					]
 				},
 				{
-					"name": "LeftDoorInteract",
-					"parent": "Root",
-					"pivot": [7, -9, 1.5],
-					"cubes": [
-						{
-							"origin": [17.13506, -17.5381, -14.09095],
-							"size": [24, 47, 33],
-							"inflate": 0.01,
-							"uv": {}
-						}
-					]
-				},
-				{
 					"name": "collision",
 					"parent": "Root",
 					"pivot": [0, -9, 1.5],
@@ -4955,19 +4942,6 @@
 							"size": [2, 11.75, 2],
 							"pivot": [-18.69279, 12.76503, -6.20416],
 							"rotation": [-22.5, 0, 7.5],
-							"uv": {}
-						}
-					]
-				},
-				{
-					"name": "RightDoorInteract",
-					"parent": "Root",
-					"pivot": [-7, -9, 1.5],
-					"cubes": [
-						{
-							"origin": [-41.13506, -17.5381, -14.09095],
-							"size": [24, 47, 33],
-							"inflate": 0.01,
 							"uv": {}
 						}
 					]

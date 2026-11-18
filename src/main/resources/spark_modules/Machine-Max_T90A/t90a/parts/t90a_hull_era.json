@@ -14,8 +14,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "t90a:armor/hull_era_front",
+        "machine_max:armor",
+        "machine_max:armor/hull_front",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -93,7 +93,7 @@
               "overwrite": {
                 "direction": "zp",
                 "required_tags": [
-                  "t90a:hull"
+                  "machine_max:hull"
                 ]
               }
             }
@@ -137,8 +137,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "t90a:armor/hull_era_left",
+        "machine_max:armor",
+        "machine_max:armor/hull_left",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -192,7 +192,7 @@
               "overwrite": {
                 "direction": "xp",
                 "required_tags": [
-                  "t90a:hull"
+                  "machine_max:hull"
                 ]
               }
             }
@@ -224,8 +224,8 @@
       "tags": [
         "machine_max:type/land",
         "machine_max:category/decoration",
-        "machine_max:addon_armor",
-        "t90a:armor/hull_era_right",
+        "machine_max:armor",
+        "machine_max:armor/hull_right",
         "machine_max:series/t90a"
       ],
       "sub_parts": {
@@ -279,7 +279,7 @@
               "overwrite": {
                 "direction": "xn",
                 "required_tags": [
-                  "t90a:hull"
+                  "machine_max:hull"
                 ]
               }
             }

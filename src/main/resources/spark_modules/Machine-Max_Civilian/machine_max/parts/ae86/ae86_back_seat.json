@@ -47,7 +47,7 @@
             //车门交互信号经连接点转译成 left_interact，型号默认的 interact 只覆盖舱内交互区
             "interact_inputs": ["left_interact"],
             "passenger_num_outputs": {
-              "left_occupied": ["interact.machine_max.left_seat", "connector.machine_max.chassis_connection"]
+              "left_occupied": ["connector.machine_max.chassis_connection"]
             }
           },
           "subsystem.machine_max.right_seat": {
@@ -57,7 +57,7 @@
             "control_group_preset": "machine_max:default_passenger",
             "interact_inputs": ["right_interact"],
             "passenger_num_outputs": {
-              "right_occupied": ["interact.machine_max.right_seat", "connector.machine_max.chassis_connection"]
+              "right_occupied": ["connector.machine_max.chassis_connection"]
             }
           }
         },

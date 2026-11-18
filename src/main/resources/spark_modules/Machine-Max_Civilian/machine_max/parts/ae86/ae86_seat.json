@@ -37,7 +37,7 @@
             "locator": "SeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "control_group_preset": "machine_max:ae86_driver",
             "passenger_num_outputs": {
-              "occupied": ["interact.machine_max.seat", "connector.machine_max.chassis_connection"]
+              "occupied": ["connector.machine_max.chassis_connection"]
             }
           }
         },

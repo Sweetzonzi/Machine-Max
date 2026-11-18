@@ -15,7 +15,7 @@
         "machine_max:type/land",
         "machine_max:category/structural",
         "machine_max:category/weapon",
-        "m1a2_sep:turret",
+        "machine_max:turret",
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
@@ -227,7 +227,7 @@
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:hull"
+                  "machine_max:hull"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -278,7 +278,7 @@
               "definition": "machine_max:fixed_left",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:armor/turret_left"
+                  "machine_max:armor/turret_left"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,
@@ -290,7 +290,7 @@
               "definition": "machine_max:fixed_right",
               "overwrite": {
                 "required_tags": [
-                  "m1a2_sep:armor/turret_right"
+                  "machine_max:armor/turret_right"
                 ],
                 "integrity": 2400,
                 "impact_absorption": 1,

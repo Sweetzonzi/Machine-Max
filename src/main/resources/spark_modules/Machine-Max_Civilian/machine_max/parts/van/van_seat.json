@@ -40,7 +40,7 @@
               "locator": "left_front_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
               "control_group_preset": "machine_max:civilian_driver",
               "passenger_num_outputs": {
-                "occupied": ["interact.machine_max.seat", "connector.machine_max.left_front_seat"]
+                "occupied": ["connector.machine_max.left_front_seat"]
               }
             }
           },
@@ -98,7 +98,7 @@
               "locator": "left_back_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
               "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
-                "occupied": ["interact.machine_max.seat", "connector.machine_max.left_back_seat"]
+                "occupied": ["connector.machine_max.left_back_seat"]
               }
             }
           },
@@ -156,7 +156,7 @@
               "locator": "right_front_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
               "control_group_preset": "machine_max:civilian_copilot",
               "passenger_num_outputs": {
-                "occupied": ["interact.machine_max.seat", "connector.machine_max.right_front_seat"]
+                "occupied": ["connector.machine_max.right_front_seat"]
               }
             }
           },
@@ -214,7 +214,7 @@
               "locator": "right_back_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
               "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
-                "occupied": ["interact.machine_max.seat", "connector.machine_max.right_back_seat"]
+                "occupied": ["connector.machine_max.right_back_seat"]
               }
             }
           },
