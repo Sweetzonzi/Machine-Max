@@ -127,6 +127,8 @@ public class TrackLink {
     /** 带速缓存的归属游戏时间：同一 tick 内多条上报共用一次刚体读数。 */
     private long beltTick = -1;
     private float beltCache;
+    /** 与 {@link #beltCache} 同一次读数得到的主动轮角速度（rad/s），随 {@link #beltSpeed()} 一并填充。 */
+    private float beltOmegaCache;
     @Nullable
     private TrackAudio audio;
 
@@ -1234,11 +1236,19 @@ public class TrackLink {
 
     private float measureBeltSpeed() {
         SubPart sp = sprocket;
-        if (sp == null) return 0f;
+        if (sp == null) {
+            beltOmegaCache = 0f;
+            return 0f;
+        }
+        float omega = sprocketOmegaX();
+        if (!Float.isFinite(omega)) {
+            beltOmegaCache = 0f;
+            return 0f;
+        }
+        beltOmegaCache = omega;
         float radius = sp.getMaxWheelRadius();
         if (!Float.isFinite(radius) || radius <= 0f) return 0f;
-        float omega = sprocketOmegaX();
-        return Float.isFinite(omega) ? Math.abs(omega) * radius : 0f;
+        return Math.abs(omega) * radius;
     }
 
     /**
@@ -1256,9 +1266,11 @@ public class TrackLink {
         Level level = vehicle.level;
         long now = level.getGameTime();
         boolean contact = contactTick >= 0 && now - contactTick <= CONTACT_GRACE_TICKS;
-        if (audio == null) audio = new TrackAudio(level);
+        if (audio == null) audio = new TrackAudio(level, type.attr().fmod());
+        // 带速与主动轮角速度由同一次刚体读数算出，这里先取带速填缓存，再从字段读角速度
+        float belt = beltSpeed();
         float inv = contactCount > 0 ? 1f / contactCount : 0f;
-        audio.tick(contact, beltSpeed(), contactSlip,
+        audio.tick(contact, belt, beltOmegaCache, contactSlip,
                 contactCentroidSum.x * inv, contactCentroidSum.y * inv, contactCentroidSum.z * inv);
     }
 

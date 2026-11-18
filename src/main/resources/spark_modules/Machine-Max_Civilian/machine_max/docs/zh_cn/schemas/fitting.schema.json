@@ -203,6 +203,32 @@
       },
       "additionalProperties": false
     },
+    "fmod": {
+      "type": "object",
+      "description": "履带两层的 FMOD 事件组，两层各一个持续事件。滚动层在带速超过一小档后起声、按主动轮转速写 rpm；滑移层按带速与接地成员对地速度之差写 amount。未配置的那一层回落到 OGG 采样；配置了但实例起不来（bank 未加载、事件缺失）时同一层同样回落 OGG，两层不会同时发声。",
+      "properties": {
+        "bank": {
+          "description": "FMOD bank ID",
+          "type": "string"
+        },
+        "roll": {
+          "type": "string",
+          "pattern": "^event:/.+",
+          "description": "滚动层持续事件。按型谱取 tracks_light（轻）、tracks_medium（中）、tracks_heavy（重）或 tracks_muted（挂胶／橡胶履带）。事件只写 rpm：0～100，满刻度为主动轮 1200 r/min。"
+        },
+        "screech": {
+          "type": "string",
+          "pattern": "^event:/.+",
+          "description": "滑移层持续事件，通常取 track_screech。事件只写 amount：0～1，按带速与对地速度之差换算，差小于 0.5 m/s 时不起声。"
+        }
+      },
+      "required": ["bank"],
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["roll"] },
+        { "required": ["screech"] }
+      ]
+    },
     "link_bones": {
       "type": "array",
       "items": {

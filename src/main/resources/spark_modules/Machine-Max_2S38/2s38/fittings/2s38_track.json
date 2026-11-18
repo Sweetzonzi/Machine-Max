@@ -14,6 +14,11 @@
     "slack": 0.015,
     "max_force": 800.0
   },
+  "fmod": {
+    "bank": "machine_max:basic_vehicle_sounds",
+    "roll": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/tracks_medium",
+    "screech": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/track_screech"
+  },
   "visual": {
     "model": "2s38:2s38_track.geo",
     "texture": "2s38:textures/part/2s38/2s38.png",

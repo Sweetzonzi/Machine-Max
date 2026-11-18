@@ -14,6 +14,11 @@
     "slack": 0.015,
     "max_force": 800
   },
+  "fmod": {
+    "bank": "machine_max:basic_vehicle_sounds",
+    "roll": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/tracks_heavy",
+    "screech": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/track_screech"
+  },
   "visual": {
     "model": "t90a:t90a_track.geo",
     "texture": "t90a:textures/part/t90a.png",

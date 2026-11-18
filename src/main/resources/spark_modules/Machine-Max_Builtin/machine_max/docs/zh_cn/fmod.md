@@ -82,7 +82,23 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 
 物理线程在物理步完成后发布不可变接触快照。每个 SubPart 持有轮胎、普通接触和轮胎尖叫三个独立声源，空间位置使用各自最近的接触点，多普勒速度使用零件平动速度；轮胎自转仅参与业务参数。静止或断触时将强度及 rpm 置 0，保留实例两 tick 后请求 Studio 停止过渡。部件销毁、载具区块卸载时立即停止实例；听者的 interior 按第一人称且正在控制任一子系统的规则实时维护。生命周期实现见 `CollisionEffectManager.java#ContactSound` 与 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/VehicleCore.java#setInLoadedChunk`。
 
-健康履带的轮面由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/track/TrackAudio.java#tick` 管理。断带或解散的成员轮面进入本节的轮胎路径。普通接触面的持续刮擦接线涵盖原版地形和 Create 装置方块，撞击单次音效与 Master FX 接线独立。
+健康履带的轮面由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/track/TrackAudio.java#tick` 管理，接线见本文“履带运行时接线”。断带或解散的成员轮面进入本节的轮胎路径。普通接触面的持续刮擦接线涵盖原版地形和 Create 装置方块，撞击单次音效与 Master FX 接线独立。
+
+### 履带运行时接线
+
+一条履带的两层音由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/track/TrackAudio.java#tick` 在客户端合成，一条履带一组声源，与它有多少个负重轮无关。型号在履带型号 JSON 的 `fmod` 里配置 bank 与事件，两层各自独立：
+
+| 层 | 型号字段 | 事件 | 参数 | 起声条件 |
+| --- | --- | --- | --- | --- |
+| 滚动 | `fmod.roll` | `tracks_light`／`tracks_medium`／`tracks_heavy`／`tracks_muted` | `rpm` | 有成员接地且带速高于 `TrackAudio.ROLL_FLOOR`（0.2 m/s） |
+| 滑移 | `fmod.screech` | `track_screech` | `amount` | 带速与接地成员对地速度之差大于 `TrackAudio.SLIP_FLOOR`（0.5 m/s） |
+
+- `rpm` 与接触音同一个含义：`clamp(主动轮实际转速 / 1200, 0, 1) × 100`。同一辆车在同一带速下，`tracks_*` 与 `tire_noise` 落在同一刻度上。满刻度 1200 r/min 是代码侧的统一基准。
+- `amount` 与 `tire_screech` 同一组常量：`clamp((滑移差 − 0.5) / (8 − 0.5), 0, 1)`，滑移差单位为 m/s。
+- 两层各自回落：写了事件的那一层由 FMOD 发声，实例起不来（bank 未加载、事件缺失、参数写不进去）时该层在同一 tick 回落 OGG 采样并每 20 tick 重试一次；写空的那一层直接走 OGG 采样。同层两路不同时响；型号不写 `fmod` 时，整条履带的音只由 OGG 采样发声。
+- 停住的履带没有滚动音：履带常年压在地面上，`contact` 在停车时同样成立，因此滚动层的 FMOD 另设 0.2 m/s 的起声带速，避免一条常驻的 rpm=0 循环音。
+- 断带、解散、摧毁与部件移除都经 `TrackLink#dispose` → `TrackAudio#stop`，两层的 OGG 实例与 FMOD 实例一起停。断带之后的成员轮面由本文“接触音效运行时接线”的轮胎路径播放。
+- 车内听者由播放器写入 `interior`。两层回落用的 `tire_metal`、`tire_extra_slip` 没有 `_interior` 变体，车内车外是同一份录音。
 
 ### 机枪
 
@@ -467,11 +483,13 @@ bank ID 为 `machine_max:abrams`。
 
 轮胎与普通零件的地形接触已接入 tire_noise，轮胎尖叫已接入 tire_screech，参数与生命周期见本文“接触音效运行时接线”。
 
+履带滚动与滑移已接入：第一方履带型号在 `fmod` 里按型谱选滚动层事件——M1A2、T-90A 与 59 式取 `tracks_heavy`，2S38 取 `tracks_medium`，MT-LB 取 `tracks_light`，Builtin 的 `default` 示例履带取 `tracks_muted`（挂胶／橡胶履带）；六份型号都配了 `track_screech` 作为滑移层。规则见本文“履带运行时接线”。
+
 第一方变速箱和地面车控已配置 FMOD 换挡与手刹单次事件，触发规则见本文“换挡与手刹运行时接线”。
 
 炮塔双机已接入：第一方主炮的方位／俯仰驱动型号配置了液压那一对事件，T-90A 与 59 式的高射机枪配置了手摇那一对，规则见本文“炮塔双机运行时接线”。Builtin 的基础驱动型号按机构分两对——`basic_azimuth_driver`／`basic_elevation_driver` 是动力型，取液压那一对事件，转速 90／30 °/s；`basic_manual_azimuth_driver`／`basic_manual_elevation_driver` 是手摇型，取手摇那一对事件，转速 20／8 °/s。2S38 与 K17 的高低机引用动力型，Sd.Kfz.234 与 MT-LB 的手摇炮塔引用手摇型。美系车包的 RWS、CITV 与航向机枪塔驱动没有配置 `sounds.fmod`，走 `sounds.turn` 的 OGG 兜底。
 
-电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿与 Master FX 的 FMOD 运行时触发接线待实现。
+电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。传动打齿与 Master FX 的 FMOD 运行时触发接线待实现。
 
 ## 可复核记录
 

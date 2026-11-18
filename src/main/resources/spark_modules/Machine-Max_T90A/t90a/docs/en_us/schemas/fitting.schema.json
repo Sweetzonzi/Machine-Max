@@ -215,6 +215,32 @@
       },
       "additionalProperties": false
     },
+    "fmod": {
+      "type": "object",
+      "description": "FMOD events for the two track layers, one sustained event each. The rolling layer starts once the belt speed passes a small floor and writes rpm from the drive sprocket; the slip layer writes amount from the difference between belt speed and the grounded members' ground speed. A layer without an event falls back to OGG samples; a configured layer whose instance cannot start (bank not loaded, event missing) falls back to OGG as well, so the two never sound together.",
+      "properties": {
+        "bank": {
+          "description": "FMOD bank ID",
+          "type": "string"
+        },
+        "roll": {
+          "type": "string",
+          "pattern": "^event:/.+",
+          "description": "Sustained rolling-layer event. Pick by track class: tracks_light, tracks_medium, tracks_heavy or tracks_muted (rubber-padded). The event only takes rpm: 0 to 100, full scale at 1200 r/min of the drive sprocket."
+        },
+        "screech": {
+          "type": "string",
+          "pattern": "^event:/.+",
+          "description": "Sustained slip-layer event, usually track_screech. The event only takes amount: 0 to 1, derived from the difference between belt speed and ground speed; below 0.5 m/s the layer stays silent."
+        }
+      },
+      "required": ["bank"],
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["roll"] },
+        { "required": ["screech"] }
+      ]
+    },
     "link_bones": {
       "type": "array",
       "items": {

@@ -427,6 +427,7 @@ class TrackDataCodecTest {
         assertEquals(50f, attr.thicknessMm(), 1.0e-6f);
         assertEquals(0.05f, attr.thicknessMeters(), 1.0e-6f);
         assertEquals(TrackAttr.Tension.DEFAULT, attr.tension());
+        assertTrue(attr.fmod().isEmpty());
         assertTrue(attr.sounds().fmod().isEmpty());
         assertEquals(MaterialAttr.MaterialSoundAttr.DEFAULT, attr.sounds());
         assertEquals(12f, attr.maxDurability(1), 1.0e-6f);
@@ -437,6 +438,44 @@ class TrackDataCodecTest {
     void trackAttrCodecRejectsMissingMaterial() {
         var json = JsonParser.parseString("""
                 { "material": "test:missing_material" }
+                """);
+        assertThrows(RuntimeException.class,
+                () -> TrackAttr.MAP_CODEC.codec().parse(JsonOps.INSTANCE, json).getOrThrow());
+    }
+
+    @Test
+    void trackAttrFmodDecodesBothLayers() {
+        registerMaterial("test:steel");
+        var json = JsonParser.parseString("""
+                {
+                  "material": "test:steel",
+                  "fmod": {
+                    "bank": "test:track_bank",
+                    "roll": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/tracks_heavy",
+                    "screech": "event:/Default_Vehicles/Transmission/Tracks_and_Tires/track_screech"
+                  }
+                }
+                """);
+        TrackAttr attr = TrackAttr.MAP_CODEC.codec().parse(JsonOps.INSTANCE, json).getOrThrow();
+
+        TrackAttr.FmodSounds fmod = attr.fmod().orElseThrow();
+        assertEquals(ResourceLocation.parse("test:track_bank"), fmod.bank());
+        assertEquals("event:/Default_Vehicles/Transmission/Tracks_and_Tires/tracks_heavy",
+                fmod.roll().orElseThrow());
+        assertEquals("event:/Default_Vehicles/Transmission/Tracks_and_Tires/track_screech",
+                fmod.screech().orElseThrow());
+        // 型号级的 fmod 与材料音效是两处配置，互不影响
+        assertTrue(attr.sounds().fmod().isEmpty());
+    }
+
+    @Test
+    void trackAttrFmodRejectsNonEventPath() {
+        registerMaterial("test:steel");
+        var json = JsonParser.parseString("""
+                {
+                  "material": "test:steel",
+                  "fmod": { "bank": "test:track_bank", "roll": "tracks_heavy" }
+                }
                 """);
         assertThrows(RuntimeException.class,
                 () -> TrackAttr.MAP_CODEC.codec().parse(JsonOps.INSTANCE, json).getOrThrow());

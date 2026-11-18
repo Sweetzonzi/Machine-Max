@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.pack.diagnostic.SparkPackIssues;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -30,6 +31,7 @@ public final class TrackAttr {
     private final ResourceLocation materialId;
     private final Optional<HitBoxAttr.OverwriteAttr> overwrite;
     private final Tension tension;
+    private final Optional<FmodSounds> fmod;
     /** 构造时由 {@link #materialId} + {@link #overwrite} 解析出的有效材料。 */
     private final MaterialAttr resolved;
 
@@ -38,7 +40,8 @@ public final class TrackAttr {
                      float thicknessMm,
                      ResourceLocation materialId,
                      Optional<HitBoxAttr.OverwriteAttr> overwrite,
-                     Tension tension) {
+                     Tension tension,
+                     Optional<FmodSounds> fmod) {
         if (!Float.isFinite(durabilityPerLink) || !(durabilityPerLink > 0f)) {
             throw new IllegalArgumentException("durability_per_link 必须是有限正数: " + durabilityPerLink);
         }
@@ -66,6 +69,7 @@ public final class TrackAttr {
         this.materialId = materialId;
         this.overwrite = overwrite;
         this.tension = tension;
+        this.fmod = fmod;
         this.resolved = material;
     }
 
@@ -121,6 +125,11 @@ public final class TrackAttr {
         return tension;
     }
 
+    /** 型号级的 Studio 事件；空表示滚动与滑移两层都用 OGG 采样。 */
+    public Optional<FmodSounds> fmod() {
+        return fmod;
+    }
+
     /** 整条履带的满材料点数：每节耐久 × 节数，节数至少按 1 计。 */
     public float maxDurability(int linkCount) {
         return durabilityPerLink * Math.max(1, linkCount);
@@ -132,7 +141,8 @@ public final class TrackAttr {
             Codec.FLOAT.optionalFieldOf("thickness_mm", 50f).forGetter(TrackAttr::thicknessMm),
             ResourceLocation.CODEC.fieldOf("material").forGetter(TrackAttr::materialId),
             HitBoxAttr.OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(TrackAttr::overwrite),
-            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension)
+            Tension.CODEC.optionalFieldOf("tension", Tension.DEFAULT).forGetter(TrackAttr::tension),
+            FmodSounds.CODEC.optionalFieldOf("fmod").forGetter(TrackAttr::fmod)
     ).apply(instance, TrackAttr::new));
 
     /**
@@ -168,6 +178,26 @@ public final class TrackAttr {
                 throw new IllegalArgumentException(name + " 必须是有限非负数: " + value);
             }
         }
+    }
+
+    /**
+     * 履带两层的 Studio 事件，共用同一个 bank。
+     *
+     * <p>两层各自独立回落：写空的那一层继续用 OGG 采样；写了事件的那一层由 FMOD 发声，
+     * 实例起不来（bank 未加载、事件缺失）时同一层回落到 OGG 采样。</p>
+     *
+     * @param bank     SparkCore 内容包中的 bank ID
+     * @param roll     滚动层事件，如 {@code event:/Default_Vehicles/Transmission/Tracks_and_Tires/tracks_heavy}
+     * @param screech  滑移层事件，通常是 {@code event:/Default_Vehicles/Transmission/Tracks_and_Tires/track_screech}
+     */
+    public record FmodSounds(ResourceLocation bank, Optional<String> roll, Optional<String> screech) {
+        public static final MapCodec<FmodSounds> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("bank").forGetter(FmodSounds::bank),
+                FmodSoundAttr.EVENT_PATH_CODEC.optionalFieldOf("roll").forGetter(FmodSounds::roll),
+                FmodSoundAttr.EVENT_PATH_CODEC.optionalFieldOf("screech").forGetter(FmodSounds::screech)
+        ).apply(instance, FmodSounds::new));
+
+        public static final Codec<FmodSounds> CODEC = MAP_CODEC.codec();
     }
 
 }
