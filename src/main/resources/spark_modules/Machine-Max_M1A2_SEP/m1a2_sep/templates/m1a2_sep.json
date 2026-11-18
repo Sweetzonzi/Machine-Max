@@ -1073,7 +1073,7 @@
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.m1a2_sep.turret_hull",
+      "advConnectorName": "connector.machine_max.turret_hull_axis",
       "posRotA": {
         "position": [
           0.014101875,
@@ -1089,7 +1089,7 @@
       },
       "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270001",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.m1a2_sep.hull_turret",
+      "simplePointConnectorName": "connector.machine_max.hull_turret_axis",
       "posRotS": {
         "position": [
           0.014101875,
@@ -1107,7 +1107,7 @@
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270001",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.m1a2_sep.hull_armor_left",
+      "advConnectorName": "connector.machine_max.hull_era_left",
       "posRotA": {
         "position": [
           -2.005,
@@ -1123,7 +1123,7 @@
       },
       "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270003",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.m1a2_sep.hull_armor_left_host",
+      "simplePointConnectorName": "connector.machine_max.hull_era_left_host",
       "posRotS": {
         "position": [
           0.3075000000000001,
@@ -1141,7 +1141,7 @@
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270001",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.m1a2_sep.hull_armor_right",
+      "advConnectorName": "connector.machine_max.hull_era_right",
       "posRotA": {
         "position": [
           2.005,
@@ -1157,7 +1157,7 @@
       },
       "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270004",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.m1a2_sep.hull_armor_right_host",
+      "simplePointConnectorName": "connector.machine_max.hull_era_right_host",
       "posRotS": {
         "position": [
           -0.3103125000000002,
@@ -1175,7 +1175,7 @@
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.m1a2_sep.turret_armor_left",
+      "advConnectorName": "connector.machine_max.turret_era_left",
       "posRotA": {
         "position": [
           -1.925,
@@ -1191,7 +1191,7 @@
       },
       "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270005",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.m1a2_sep.turret_armor_left_host",
+      "simplePointConnectorName": "connector.machine_max.turret_era_left_host",
       "posRotS": {
         "position": [
           0.22687499999999994,
@@ -1209,7 +1209,7 @@
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270002",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.m1a2_sep.turret_armor_right",
+      "advConnectorName": "connector.machine_max.turret_era_right",
       "posRotA": {
         "position": [
           1.925,
@@ -1225,7 +1225,7 @@
       },
       "partUuidS": "6e79b1a2-1200-4a21-9e65-202610270006",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.m1a2_sep.turret_armor_right_host",
+      "simplePointConnectorName": "connector.machine_max.turret_era_right_host",
       "posRotS": {
         "position": [
           -0.22687499999999994,

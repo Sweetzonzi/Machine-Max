@@ -97,52 +97,52 @@
             }
           },
           "connectors": {
-            "connector.sdkfz234.hull_left_wheel_1": {
+            "connector.machine_max.hull_left_wheel_01": {
               "locator": "hull_left_wheel_1",
               "definition": "sdkfz234:sdkfz234_left_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_left_wheel_2": {
+            "connector.machine_max.hull_left_wheel_02": {
               "locator": "hull_left_wheel_2",
               "definition": "sdkfz234:sdkfz234_left_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_left_wheel_3": {
+            "connector.machine_max.hull_left_wheel_03": {
               "locator": "hull_left_wheel_3",
               "definition": "sdkfz234:sdkfz234_left_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_left_wheel_4": {
+            "connector.machine_max.hull_left_wheel_04": {
               "locator": "hull_left_wheel_4",
               "definition": "sdkfz234:sdkfz234_left_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_right_wheel_1": {
+            "connector.machine_max.hull_right_wheel_01": {
               "locator": "hull_right_wheel_1",
               "definition": "sdkfz234:sdkfz234_right_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_right_wheel_2": {
+            "connector.machine_max.hull_right_wheel_02": {
               "locator": "hull_right_wheel_2",
               "definition": "sdkfz234:sdkfz234_right_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_right_wheel_3": {
+            "connector.machine_max.hull_right_wheel_03": {
               "locator": "hull_right_wheel_3",
               "definition": "sdkfz234:sdkfz234_right_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_right_wheel_4": {
+            "connector.machine_max.hull_right_wheel_04": {
               "locator": "hull_right_wheel_4",
               "definition": "sdkfz234:sdkfz234_right_wheel",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_back_wheel": {
+            "connector.machine_max.hull_back_wheel": {
               "locator": "hull_back_wheel",
               "definition": "machine_max:fixed_back",
               "overwrite": {}
             },
-            "connector.sdkfz234.hull_turret_axis": {
+            "connector.machine_max.hull_turret_axis": {
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "overwrite": {
@@ -240,7 +240,7 @@
             "subsystem.sdkfz234.left_wheel_1": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_left_wheel_1"
+              "connector": "connector.machine_max.hull_left_wheel_01"
             },
             "subsystem.sdkfz234.item_storage": {
               "type": "machine_max:item_storage",
@@ -249,37 +249,37 @@
             "subsystem.sdkfz234.left_wheel_2": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_left_wheel_2"
+              "connector": "connector.machine_max.hull_left_wheel_02"
             },
             "subsystem.sdkfz234.left_wheel_3": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_left_wheel_3"
+              "connector": "connector.machine_max.hull_left_wheel_03"
             },
             "subsystem.sdkfz234.left_wheel_4": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_left_wheel_4"
+              "connector": "connector.machine_max.hull_left_wheel_04"
             },
             "subsystem.sdkfz234.right_wheel_1": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_right_wheel_1"
+              "connector": "connector.machine_max.hull_right_wheel_01"
             },
             "subsystem.sdkfz234.right_wheel_2": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_right_wheel_2"
+              "connector": "connector.machine_max.hull_right_wheel_02"
             },
             "subsystem.sdkfz234.right_wheel_3": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_right_wheel_3"
+              "connector": "connector.machine_max.hull_right_wheel_03"
             },
             "subsystem.sdkfz234.right_wheel_4": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
-              "connector": "connector.sdkfz234.hull_right_wheel_4"
+              "connector": "connector.machine_max.hull_right_wheel_04"
             },
             "subsystem.sdkfz234.driver_seat": {
               "type": "machine_max:seat",

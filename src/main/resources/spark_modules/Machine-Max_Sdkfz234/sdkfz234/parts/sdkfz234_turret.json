@@ -93,7 +93,7 @@
             }
           },
           "connectors": {
-            "connector.sdkfz234.turret_hull_axis": {
+            "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
@@ -102,7 +102,7 @@
                 "impact_reduction": 10
               }
             },
-            "connector.sdkfz234.turret_gun_axis": {
+            "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -157,12 +157,12 @@
             "subsystem.sdkfz234.azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "machine_max:basic_azimuth_driver",
-              "connector": "connector.sdkfz234.turret_hull_axis"
+              "connector": "connector.machine_max.turret_hull_axis"
             },
             "subsystem.sdkfz234.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "machine_max:basic_elevation_driver",
-              "connector": "connector.sdkfz234.turret_gun_axis"
+              "connector": "connector.machine_max.turret_gun_axis"
             },
             "subsystem.sdkfz234.main_weapon": {
               "type": "machine_max:weapon_controller",

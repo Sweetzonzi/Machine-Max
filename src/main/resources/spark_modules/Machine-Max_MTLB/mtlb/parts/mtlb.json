@@ -35,7 +35,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_sprocket": {
+          "connector.machine_max.hub_left_sprocket_wheel": {
             "locator": "left_sprocket_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -68,7 +68,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_sprocket": {
+          "connector.machine_max.hub_right_sprocket_wheel": {
             "locator": "right_sprocket_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -101,7 +101,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_1": {
+          "connector.machine_max.hub_left_road_wheel_01": {
             "locator": "left_roadwheel_1_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -134,7 +134,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_1": {
+          "connector.machine_max.hub_right_road_wheel_01": {
             "locator": "right_roadwheel_1_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -167,7 +167,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_2": {
+          "connector.machine_max.hub_left_road_wheel_02": {
             "locator": "left_roadwheel_2_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -200,7 +200,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_2": {
+          "connector.machine_max.hub_right_road_wheel_02": {
             "locator": "right_roadwheel_2_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -233,7 +233,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_3": {
+          "connector.machine_max.hub_left_road_wheel_03": {
             "locator": "left_roadwheel_3_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -266,7 +266,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_3": {
+          "connector.machine_max.hub_right_road_wheel_03": {
             "locator": "right_roadwheel_3_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -299,7 +299,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_4": {
+          "connector.machine_max.hub_left_road_wheel_04": {
             "locator": "left_roadwheel_4_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -332,7 +332,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_4": {
+          "connector.machine_max.hub_right_road_wheel_04": {
             "locator": "right_roadwheel_4_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -365,7 +365,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_5": {
+          "connector.machine_max.hub_left_road_wheel_05": {
             "locator": "left_roadwheel_5_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -398,7 +398,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_5": {
+          "connector.machine_max.hub_right_road_wheel_05": {
             "locator": "right_roadwheel_5_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -431,7 +431,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_roadwheel_6": {
+          "connector.machine_max.hub_left_road_wheel_06": {
             "locator": "left_roadwheel_6_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -464,7 +464,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_roadwheel_6": {
+          "connector.machine_max.hub_right_road_wheel_06": {
             "locator": "right_roadwheel_6_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -497,7 +497,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_left_idler": {
+          "connector.machine_max.hub_left_idler_wheel": {
             "locator": "left_idler_hull",
             "definition": "machine_max:fixed_left",
             "internal": true,
@@ -530,7 +530,7 @@
           }
         },
         "connectors": {
-          "connector.mtlb.wheel_right_idler": {
+          "connector.machine_max.hub_right_idler_wheel": {
             "locator": "right_idler_hull",
             "definition": "machine_max:fixed_right",
             "internal": true,
@@ -683,82 +683,82 @@
           }
         },
         "connectors": {
-          "connector.mtlb.hull_left_sprocket": {
+          "connector.machine_max.hull_left_sprocket_wheel": {
             "locator": "hull_left_sprocket",
             "definition": "machine_max:track_sprocket_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_sprocket": {
+          "connector.machine_max.hull_right_sprocket_wheel": {
             "locator": "hull_right_sprocket",
             "definition": "machine_max:track_sprocket_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_1": {
+          "connector.machine_max.hull_left_road_wheel_01": {
             "locator": "hull_left_roadwheel_1",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_1": {
+          "connector.machine_max.hull_right_road_wheel_01": {
             "locator": "hull_right_roadwheel_1",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_2": {
+          "connector.machine_max.hull_left_road_wheel_02": {
             "locator": "hull_left_roadwheel_2",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_2": {
+          "connector.machine_max.hull_right_road_wheel_02": {
             "locator": "hull_right_roadwheel_2",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_3": {
+          "connector.machine_max.hull_left_road_wheel_03": {
             "locator": "hull_left_roadwheel_3",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_3": {
+          "connector.machine_max.hull_right_road_wheel_03": {
             "locator": "hull_right_roadwheel_3",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_4": {
+          "connector.machine_max.hull_left_road_wheel_04": {
             "locator": "hull_left_roadwheel_4",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_4": {
+          "connector.machine_max.hull_right_road_wheel_04": {
             "locator": "hull_right_roadwheel_4",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_5": {
+          "connector.machine_max.hull_left_road_wheel_05": {
             "locator": "hull_left_roadwheel_5",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_5": {
+          "connector.machine_max.hull_right_road_wheel_05": {
             "locator": "hull_right_roadwheel_5",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_roadwheel_6": {
+          "connector.machine_max.hull_left_road_wheel_06": {
             "locator": "hull_left_roadwheel_6",
             "definition": "machine_max:track_road_wheel_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_roadwheel_6": {
+          "connector.machine_max.hull_right_road_wheel_06": {
             "locator": "hull_right_roadwheel_6",
             "definition": "machine_max:track_road_wheel_right",
             "internal": true
           },
-          "connector.mtlb.hull_left_idler": {
+          "connector.machine_max.hull_left_idler_wheel": {
             "locator": "hull_left_idler",
             "definition": "machine_max:track_idler_left",
             "internal": true
           },
-          "connector.mtlb.hull_right_idler": {
+          "connector.machine_max.hull_right_idler_wheel": {
             "locator": "hull_right_idler",
             "definition": "machine_max:track_idler_right",
             "internal": true
@@ -965,7 +965,7 @@
           "subsystem.mtlb.track_left": {
             "type": "machine_max:track_drive",
             "definition": "mtlb:mtlb_track_drive",
-            "connector": "connector.mtlb.hull_left_sprocket",
+            "connector": "connector.machine_max.hull_left_sprocket_wheel",
             "speed_outputs": {
               "track_speed": [
                 "local",
@@ -982,7 +982,7 @@
           "subsystem.mtlb.track_right": {
             "type": "machine_max:track_drive",
             "definition": "mtlb:mtlb_track_drive",
-            "connector": "connector.mtlb.hull_right_sprocket",
+            "connector": "connector.machine_max.hull_right_sprocket_wheel",
             "speed_outputs": {
               "track_speed": [
                 "local",

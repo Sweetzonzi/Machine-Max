@@ -146,7 +146,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.hull_armor_left_host": {
+            "connector.machine_max.hull_era_left_host": {
               "locator": "hull_armor_left_mount",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -355,7 +355,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.hull_armor_right_host": {
+            "connector.machine_max.hull_era_right_host": {
               "locator": "hull_armor_right_mount",
               "definition": "machine_max:fixed_left",
               "overwrite": {

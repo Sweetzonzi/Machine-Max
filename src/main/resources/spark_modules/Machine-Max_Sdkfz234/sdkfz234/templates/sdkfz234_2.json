@@ -107,10 +107,10 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.turret_gun_axis": {
+            "connector.machine_max.turret_gun_axis": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.turret_hull_axis": {
+            "connector.machine_max.turret_hull_axis": {
               "integrity_ratio": 1.0
             }
           },
@@ -304,34 +304,34 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.hull_back_wheel": {
+            "connector.machine_max.hull_back_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_left_wheel_1": {
+            "connector.machine_max.hull_left_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_right_wheel_1": {
+            "connector.machine_max.hull_right_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_left_wheel_2": {
+            "connector.machine_max.hull_left_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_left_wheel_3": {
+            "connector.machine_max.hull_left_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_left_wheel_4": {
+            "connector.machine_max.hull_left_wheel_04": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_right_wheel_4": {
+            "connector.machine_max.hull_right_wheel_04": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_right_wheel_3": {
+            "connector.machine_max.hull_right_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_right_wheel_2": {
+            "connector.machine_max.hull_right_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.sdkfz234.hull_turret_axis": {
+            "connector.machine_max.hull_turret_axis": {
               "integrity_ratio": 1.0
             }
           },
@@ -653,7 +653,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_right_wheel_4",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_04",
       "posRotA": {
         "position": [
           1.0125,
@@ -687,7 +687,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_left_wheel_4",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_04",
       "posRotA": {
         "position": [
           -1.0125,
@@ -721,7 +721,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_left_wheel_3",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_03",
       "posRotA": {
         "position": [
           -1.0125,
@@ -755,7 +755,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_left_wheel_2",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_02",
       "posRotA": {
         "position": [
           -1.0125,
@@ -789,7 +789,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_left_wheel_1",
+      "advConnectorName": "connector.machine_max.hull_left_wheel_01",
       "posRotA": {
         "position": [
           -1.0125,
@@ -823,7 +823,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_right_wheel_2",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_02",
       "posRotA": {
         "position": [
           1.0125,
@@ -857,7 +857,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_right_wheel_3",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_03",
       "posRotA": {
         "position": [
           1.0125,
@@ -891,7 +891,7 @@
       },
       "partUuidA": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.hull_right_wheel_1",
+      "advConnectorName": "connector.machine_max.hull_right_wheel_01",
       "posRotA": {
         "position": [
           1.0125,
@@ -909,7 +909,7 @@
     {
       "partUuidS": "92610814-fbf0-4d0a-bfdf-04c6f094784d",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.hull_turret_axis",
+      "simplePointConnectorName": "connector.machine_max.hull_turret_axis",
       "posRotS": {
         "position": [
           0.0,
@@ -925,7 +925,7 @@
       },
       "partUuidA": "f67ad9a2-b9ef-4f75-91fb-f20d63dce939",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.sdkfz234.turret_hull_axis",
+      "advConnectorName": "connector.machine_max.turret_hull_axis",
       "posRotA": {
         "position": [
           0.0,

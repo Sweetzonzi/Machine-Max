@@ -629,7 +629,7 @@
     {
       "partUuidA": "0dadc0e1-6d67-47b0-a158-96db2b9d50d0",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.type59.turret_hull",
+      "advConnectorName": "connector.machine_max.turret_hull_axis",
       "posRotA": {
         "position": [
           0.01751125,
@@ -645,7 +645,7 @@
       },
       "partUuidS": "7910c76e-9386-46e4-a080-1daf9e542647",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.type59.hull_turret",
+      "simplePointConnectorName": "connector.machine_max.hull_turret_axis",
       "posRotS": {
         "position": [
           0.01751125,

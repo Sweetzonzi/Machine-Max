@@ -118,7 +118,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_idler": {
+            "connector.machine_max.hub_right_idler_wheel": {
               "integrity_ratio": 1.0
             }
           },
@@ -149,7 +149,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_6": {
+            "connector.machine_max.hub_right_road_wheel_06": {
               "integrity_ratio": 1.0
             }
           },
@@ -180,55 +180,55 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.hull_right_roadwheel_6": {
+            "connector.machine_max.hull_right_road_wheel_06": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_idler": {
+            "connector.machine_max.hull_left_idler_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_idler": {
+            "connector.machine_max.hull_right_idler_wheel": {
               "integrity_ratio": 1.0
             },
             "connector.mtlb.hull_pkt_axis": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_sprocket": {
+            "connector.machine_max.hull_right_sprocket_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_6": {
+            "connector.machine_max.hull_left_road_wheel_06": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_5": {
+            "connector.machine_max.hull_left_road_wheel_05": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_sprocket": {
+            "connector.machine_max.hull_left_sprocket_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_2": {
+            "connector.machine_max.hull_left_road_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_1": {
+            "connector.machine_max.hull_left_road_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_4": {
+            "connector.machine_max.hull_left_road_wheel_04": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_roadwheel_1": {
+            "connector.machine_max.hull_right_road_wheel_01": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_left_roadwheel_3": {
+            "connector.machine_max.hull_left_road_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_roadwheel_2": {
+            "connector.machine_max.hull_right_road_wheel_02": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_roadwheel_3": {
+            "connector.machine_max.hull_right_road_wheel_03": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_roadwheel_4": {
+            "connector.machine_max.hull_right_road_wheel_04": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_right_roadwheel_5": {
+            "connector.machine_max.hull_right_road_wheel_05": {
               "integrity_ratio": 1.0
             }
           },
@@ -325,7 +325,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_5": {
+            "connector.machine_max.hub_right_road_wheel_05": {
               "integrity_ratio": 1.0
             }
           },
@@ -356,7 +356,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_4": {
+            "connector.machine_max.hub_left_road_wheel_04": {
               "integrity_ratio": 1.0
             }
           },
@@ -387,7 +387,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_5": {
+            "connector.machine_max.hub_left_road_wheel_05": {
               "integrity_ratio": 1.0
             }
           },
@@ -418,7 +418,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_2": {
+            "connector.machine_max.hub_left_road_wheel_02": {
               "integrity_ratio": 1.0
             }
           },
@@ -449,7 +449,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_3": {
+            "connector.machine_max.hub_left_road_wheel_03": {
               "integrity_ratio": 1.0
             }
           },
@@ -480,7 +480,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_2": {
+            "connector.machine_max.hub_right_road_wheel_02": {
               "integrity_ratio": 1.0
             }
           },
@@ -511,7 +511,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_1": {
+            "connector.machine_max.hub_left_road_wheel_01": {
               "integrity_ratio": 1.0
             }
           },
@@ -542,7 +542,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_1": {
+            "connector.machine_max.hub_right_road_wheel_01": {
               "integrity_ratio": 1.0
             }
           },
@@ -573,7 +573,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_sprocket": {
+            "connector.machine_max.hub_left_sprocket_wheel": {
               "integrity_ratio": 1.0
             }
           },
@@ -604,7 +604,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_4": {
+            "connector.machine_max.hub_right_road_wheel_04": {
               "integrity_ratio": 1.0
             }
           },
@@ -635,7 +635,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_roadwheel_3": {
+            "connector.machine_max.hub_right_road_wheel_03": {
               "integrity_ratio": 1.0
             }
           },
@@ -666,7 +666,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_right_sprocket": {
+            "connector.machine_max.hub_right_sprocket_wheel": {
               "integrity_ratio": 1.0
             }
           },
@@ -697,7 +697,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_idler": {
+            "connector.machine_max.hub_left_idler_wheel": {
               "integrity_ratio": 1.0
             }
           },
@@ -728,7 +728,7 @@
             ]
           },
           "connector_data": {
-            "connector.mtlb.wheel_left_roadwheel_6": {
+            "connector.machine_max.hub_left_road_wheel_06": {
               "integrity_ratio": 1.0
             }
           },

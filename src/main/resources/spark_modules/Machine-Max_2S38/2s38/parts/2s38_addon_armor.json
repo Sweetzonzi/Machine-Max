@@ -49,7 +49,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_left_1_hull": {
+            "connector.machine_max.skirt_left_01": {
               "locator": "skirt_left_1_mount",
               "definition": "machine_max:fixed_left",
               "overwrite": {}
@@ -101,7 +101,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_right_1_hull": {
+            "connector.machine_max.skirt_right_01": {
               "locator": "skirt_right_1_mount",
               "definition": "machine_max:fixed_right",
               "overwrite": {}
@@ -153,7 +153,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_left_2_hull": {
+            "connector.machine_max.skirt_left_02": {
               "locator": "skirt_left_2_mount",
               "definition": "machine_max:fixed_left",
               "overwrite": {}
@@ -205,7 +205,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_right_2_hull": {
+            "connector.machine_max.skirt_right_02": {
               "locator": "skirt_right_2_mount",
               "definition": "machine_max:fixed_right",
               "overwrite": {}
@@ -257,7 +257,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_left_3_hull": {
+            "connector.machine_max.skirt_left_03": {
               "locator": "skirt_left_3_mount",
               "definition": "machine_max:fixed_left",
               "overwrite": {}
@@ -309,7 +309,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_right_3_hull": {
+            "connector.machine_max.skirt_right_03": {
               "locator": "skirt_right_3_mount",
               "definition": "machine_max:fixed_right",
               "overwrite": {}
@@ -361,7 +361,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_left_4_hull": {
+            "connector.machine_max.skirt_left_04": {
               "locator": "skirt_left_4_mount",
               "definition": "machine_max:fixed_left",
               "overwrite": {}
@@ -413,7 +413,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.skirt_right_4_hull": {
+            "connector.machine_max.skirt_right_04": {
               "locator": "skirt_right_4_mount",
               "definition": "machine_max:fixed_right",
               "overwrite": {}

@@ -130,7 +130,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.hull_turret_axis": {
+            "connector.machine_max.hull_turret_axis": {
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "overwrite": {
@@ -139,87 +139,87 @@
                 "impact_reduction": 10
               }
             },
-            "connector.2s38.hull_left_wheel_1": {
+            "connector.machine_max.hull_left_road_wheel_01": {
               "locator": "hull_left_wheel_1",
               "definition": "machine_max:track_idler_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_2": {
+            "connector.machine_max.hull_left_road_wheel_02": {
               "locator": "hull_left_wheel_2",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_3": {
+            "connector.machine_max.hull_left_road_wheel_03": {
               "locator": "hull_left_wheel_3",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_4": {
+            "connector.machine_max.hull_left_road_wheel_04": {
               "locator": "hull_left_wheel_4",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_5": {
+            "connector.machine_max.hull_left_road_wheel_05": {
               "locator": "hull_left_wheel_5",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_6": {
+            "connector.machine_max.hull_left_road_wheel_06": {
               "locator": "hull_left_wheel_6",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_7": {
+            "connector.machine_max.hull_left_road_wheel_07": {
               "locator": "hull_left_wheel_7",
               "definition": "2s38:2s38_track_road_wheel_left",
               "internal": true
             },
-            "connector.2s38.hull_left_wheel_8": {
+            "connector.machine_max.hull_left_road_wheel_08": {
               "locator": "hull_left_wheel_8",
               "definition": "machine_max:track_sprocket_left",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_1": {
+            "connector.machine_max.hull_right_road_wheel_01": {
               "locator": "hull_right_wheel_1",
               "definition": "machine_max:track_idler_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_2": {
+            "connector.machine_max.hull_right_road_wheel_02": {
               "locator": "hull_right_wheel_2",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_3": {
+            "connector.machine_max.hull_right_road_wheel_03": {
               "locator": "hull_right_wheel_3",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_4": {
+            "connector.machine_max.hull_right_road_wheel_04": {
               "locator": "hull_right_wheel_4",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_5": {
+            "connector.machine_max.hull_right_road_wheel_05": {
               "locator": "hull_right_wheel_5",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_6": {
+            "connector.machine_max.hull_right_road_wheel_06": {
               "locator": "hull_right_wheel_6",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_7": {
+            "connector.machine_max.hull_right_road_wheel_07": {
               "locator": "hull_right_wheel_7",
               "definition": "2s38:2s38_track_road_wheel_right",
               "internal": true
             },
-            "connector.2s38.hull_right_wheel_8": {
+            "connector.machine_max.hull_right_road_wheel_08": {
               "locator": "hull_right_wheel_8",
               "definition": "machine_max:track_sprocket_right",
               "internal": true
             },
-            "connector.2s38.hull_skirt_left_1": {
+            "connector.machine_max.hull_skirt_left_01": {
               "locator": "hull_skirt_left_1",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -229,7 +229,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_left_2": {
+            "connector.machine_max.hull_skirt_left_02": {
               "locator": "hull_skirt_left_2",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -239,7 +239,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_left_3": {
+            "connector.machine_max.hull_skirt_left_03": {
               "locator": "hull_skirt_left_3",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -249,7 +249,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_left_4": {
+            "connector.machine_max.hull_skirt_left_04": {
               "locator": "hull_skirt_left_4",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -259,7 +259,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_right_1": {
+            "connector.machine_max.hull_skirt_right_01": {
               "locator": "hull_skirt_right_1",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -269,7 +269,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_right_2": {
+            "connector.machine_max.hull_skirt_right_02": {
               "locator": "hull_skirt_right_2",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -279,7 +279,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_right_3": {
+            "connector.machine_max.hull_skirt_right_03": {
               "locator": "hull_skirt_right_3",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -289,7 +289,7 @@
                 ]
               }
             },
-            "connector.2s38.hull_skirt_right_4": {
+            "connector.machine_max.hull_skirt_right_04": {
               "locator": "hull_skirt_right_4",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -352,7 +352,7 @@
             "subsystem.2s38.track_left": {
               "type": "machine_max:track_drive",
               "definition": "2s38:2s38_track_drive",
-              "connector": "connector.2s38.hull_left_wheel_8",
+              "connector": "connector.machine_max.hull_left_road_wheel_08",
               "speed_outputs": {
                 "track_speed": [
                   "local",
@@ -369,7 +369,7 @@
             "subsystem.2s38.track_right": {
               "type": "machine_max:track_drive",
               "definition": "2s38:2s38_track_drive",
-              "connector": "connector.2s38.hull_right_wheel_8",
+              "connector": "connector.machine_max.hull_right_road_wheel_08",
               "speed_outputs": {
                 "track_speed": [
                   "local",
@@ -470,7 +470,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_1": {
+            "connector.machine_max.hub_left_road_wheel_01": {
               "locator": "left_wheel_1_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -510,7 +510,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_2": {
+            "connector.machine_max.hub_left_road_wheel_02": {
               "locator": "left_wheel_2_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -550,7 +550,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_3": {
+            "connector.machine_max.hub_left_road_wheel_03": {
               "locator": "left_wheel_3_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -590,7 +590,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_4": {
+            "connector.machine_max.hub_left_road_wheel_04": {
               "locator": "left_wheel_4_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -630,7 +630,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_5": {
+            "connector.machine_max.hub_left_road_wheel_05": {
               "locator": "left_wheel_5_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -670,7 +670,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_6": {
+            "connector.machine_max.hub_left_road_wheel_06": {
               "locator": "left_wheel_6_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -710,7 +710,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_7": {
+            "connector.machine_max.hub_left_road_wheel_07": {
               "locator": "left_wheel_7_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -750,7 +750,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_left_8": {
+            "connector.machine_max.hub_left_road_wheel_08": {
               "locator": "left_wheel_8_hub",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -790,7 +790,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_1": {
+            "connector.machine_max.hub_right_road_wheel_01": {
               "locator": "right_wheel_1_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -830,7 +830,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_2": {
+            "connector.machine_max.hub_right_road_wheel_02": {
               "locator": "right_wheel_2_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -870,7 +870,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_3": {
+            "connector.machine_max.hub_right_road_wheel_03": {
               "locator": "right_wheel_3_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -910,7 +910,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_4": {
+            "connector.machine_max.hub_right_road_wheel_04": {
               "locator": "right_wheel_4_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -950,7 +950,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_5": {
+            "connector.machine_max.hub_right_road_wheel_05": {
               "locator": "right_wheel_5_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -990,7 +990,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_6": {
+            "connector.machine_max.hub_right_road_wheel_06": {
               "locator": "right_wheel_6_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -1030,7 +1030,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_7": {
+            "connector.machine_max.hub_right_road_wheel_07": {
               "locator": "right_wheel_7_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -1070,7 +1070,7 @@
             }
           },
           "connectors": {
-            "connector.2s38.wheel_right_8": {
+            "connector.machine_max.hub_right_road_wheel_08": {
               "locator": "right_wheel_8_hub",
               "definition": "machine_max:fixed_right",
               "internal": true,

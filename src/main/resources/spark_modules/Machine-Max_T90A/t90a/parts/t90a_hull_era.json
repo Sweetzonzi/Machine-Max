@@ -87,7 +87,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.hull_era_front_host": {
+            "connector.machine_max.hull_era_front_host": {
               "locator": "hull_era_front_mount",
               "definition": "t90a:armor_front",
               "overwrite": {
@@ -186,7 +186,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.hull_era_left_host": {
+            "connector.machine_max.hull_era_left_host": {
               "locator": "hull_era_left_mount",
               "definition": "t90a:armor_right",
               "overwrite": {
@@ -273,7 +273,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.hull_era_right_host": {
+            "connector.machine_max.hull_era_right_host": {
               "locator": "hull_era_right_mount",
               "definition": "t90a:armor_left",
               "overwrite": {

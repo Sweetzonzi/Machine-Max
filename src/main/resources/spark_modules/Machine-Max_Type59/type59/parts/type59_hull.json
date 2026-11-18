@@ -201,7 +201,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hull_turret": {
+            "connector.machine_max.hull_turret_axis": {
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "overwrite": {
@@ -213,13 +213,13 @@
                 "impact_reduction": 10
               }
             },
-            "connector.type59.hull_left_idler": {
+            "connector.machine_max.hull_left_idler_wheel": {
               "locator": "hull_left_idler",
               "definition": "machine_max:track_idler_left",
               "internal": true,
               "overwrite": {}
             },
-            "connector.type59.hull_left_road_1": {
+            "connector.machine_max.hull_left_road_wheel_01": {
               "locator": "hull_left_road_1",
               "definition": "machine_max:track_road_wheel_left",
               "internal": true,
@@ -239,7 +239,7 @@
                 }
               }
             },
-            "connector.type59.hull_left_road_2": {
+            "connector.machine_max.hull_left_road_wheel_02": {
               "locator": "hull_left_road_2",
               "definition": "machine_max:track_road_wheel_left",
               "internal": true,
@@ -259,7 +259,7 @@
                 }
               }
             },
-            "connector.type59.hull_left_road_3": {
+            "connector.machine_max.hull_left_road_wheel_03": {
               "locator": "hull_left_road_3",
               "definition": "machine_max:track_road_wheel_left",
               "internal": true,
@@ -279,7 +279,7 @@
                 }
               }
             },
-            "connector.type59.hull_left_road_4": {
+            "connector.machine_max.hull_left_road_wheel_04": {
               "locator": "hull_left_road_4",
               "definition": "machine_max:track_road_wheel_left",
               "internal": true,
@@ -299,7 +299,7 @@
                 }
               }
             },
-            "connector.type59.hull_left_road_5": {
+            "connector.machine_max.hull_left_road_wheel_05": {
               "locator": "hull_left_road_5",
               "definition": "machine_max:track_road_wheel_left",
               "internal": true,
@@ -319,19 +319,19 @@
                 }
               }
             },
-            "connector.type59.hull_left_sprocket": {
+            "connector.machine_max.hull_left_sprocket_wheel": {
               "locator": "hull_left_sprocket",
               "definition": "machine_max:track_sprocket_left",
               "internal": true,
               "overwrite": {}
             },
-            "connector.type59.hull_right_idler": {
+            "connector.machine_max.hull_right_idler_wheel": {
               "locator": "hull_right_idler",
               "definition": "machine_max:track_idler_right",
               "internal": true,
               "overwrite": {}
             },
-            "connector.type59.hull_right_road_1": {
+            "connector.machine_max.hull_right_road_wheel_01": {
               "locator": "hull_right_road_1",
               "definition": "machine_max:track_road_wheel_right",
               "internal": true,
@@ -351,7 +351,7 @@
                 }
               }
             },
-            "connector.type59.hull_right_road_2": {
+            "connector.machine_max.hull_right_road_wheel_02": {
               "locator": "hull_right_road_2",
               "definition": "machine_max:track_road_wheel_right",
               "internal": true,
@@ -371,7 +371,7 @@
                 }
               }
             },
-            "connector.type59.hull_right_road_3": {
+            "connector.machine_max.hull_right_road_wheel_03": {
               "locator": "hull_right_road_3",
               "definition": "machine_max:track_road_wheel_right",
               "internal": true,
@@ -391,7 +391,7 @@
                 }
               }
             },
-            "connector.type59.hull_right_road_4": {
+            "connector.machine_max.hull_right_road_wheel_04": {
               "locator": "hull_right_road_4",
               "definition": "machine_max:track_road_wheel_right",
               "internal": true,
@@ -411,7 +411,7 @@
                 }
               }
             },
-            "connector.type59.hull_right_road_5": {
+            "connector.machine_max.hull_right_road_wheel_05": {
               "locator": "hull_right_road_5",
               "definition": "machine_max:track_road_wheel_right",
               "internal": true,
@@ -431,7 +431,7 @@
                 }
               }
             },
-            "connector.type59.hull_right_sprocket": {
+            "connector.machine_max.hull_right_sprocket_wheel": {
               "locator": "hull_right_sprocket",
               "definition": "machine_max:track_sprocket_right",
               "internal": true,
@@ -490,7 +490,7 @@
             "subsystem.type59.track_left": {
               "type": "machine_max:track_drive",
               "definition": "type59:type59_track_drive",
-              "connector": "connector.type59.hull_left_sprocket",
+              "connector": "connector.machine_max.hull_left_sprocket_wheel",
               "speed_outputs": {
                 "track_speed": [
                   "local",
@@ -507,7 +507,7 @@
             "subsystem.type59.track_right": {
               "type": "machine_max:track_drive",
               "definition": "type59:type59_track_drive",
-              "connector": "connector.type59.hull_right_sprocket",
+              "connector": "connector.machine_max.hull_right_sprocket_wheel",
               "speed_outputs": {
                 "track_speed": [
                   "local",
@@ -558,7 +558,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_idler": {
+            "connector.machine_max.hub_left_idler_wheel": {
               "locator": "hub_left_idler",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -591,7 +591,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_road_1": {
+            "connector.machine_max.hub_left_road_wheel_01": {
               "locator": "hub_left_road_1",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -624,7 +624,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_road_2": {
+            "connector.machine_max.hub_left_road_wheel_02": {
               "locator": "hub_left_road_2",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -657,7 +657,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_road_3": {
+            "connector.machine_max.hub_left_road_wheel_03": {
               "locator": "hub_left_road_3",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -690,7 +690,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_road_4": {
+            "connector.machine_max.hub_left_road_wheel_04": {
               "locator": "hub_left_road_4",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -723,7 +723,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_road_5": {
+            "connector.machine_max.hub_left_road_wheel_05": {
               "locator": "hub_left_road_5",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -756,7 +756,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_left_sprocket": {
+            "connector.machine_max.hub_left_sprocket_wheel": {
               "locator": "hub_left_sprocket",
               "definition": "machine_max:fixed_left",
               "internal": true,
@@ -789,7 +789,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_idler": {
+            "connector.machine_max.hub_right_idler_wheel": {
               "locator": "hub_right_idler",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -822,7 +822,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_road_1": {
+            "connector.machine_max.hub_right_road_wheel_01": {
               "locator": "hub_right_road_1",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -855,7 +855,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_road_2": {
+            "connector.machine_max.hub_right_road_wheel_02": {
               "locator": "hub_right_road_2",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -888,7 +888,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_road_3": {
+            "connector.machine_max.hub_right_road_wheel_03": {
               "locator": "hub_right_road_3",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -921,7 +921,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_road_4": {
+            "connector.machine_max.hub_right_road_wheel_04": {
               "locator": "hub_right_road_4",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -954,7 +954,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_road_5": {
+            "connector.machine_max.hub_right_road_wheel_05": {
               "locator": "hub_right_road_5",
               "definition": "machine_max:fixed_right",
               "internal": true,
@@ -987,7 +987,7 @@
             }
           },
           "connectors": {
-            "connector.type59.hub_right_sprocket": {
+            "connector.machine_max.hub_right_sprocket_wheel": {
               "locator": "hub_right_sprocket",
               "definition": "machine_max:fixed_right",
               "internal": true,

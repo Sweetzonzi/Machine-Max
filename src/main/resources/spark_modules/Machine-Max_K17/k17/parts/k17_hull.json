@@ -97,7 +97,7 @@
           }
         },
         "connectors": {
-          "connector.k17.hull_turret_axis": {
+          "connector.machine_max.hull_turret_axis": {
             "locator": "hull_turret_axis",
             "definition": "machine_max:fixed_up",
             "overwrite": {
@@ -106,42 +106,42 @@
               "impact_reduction": 10
             }
           },
-          "connector.k17.hull_right_wheel_1": {
+          "connector.machine_max.hull_right_wheel_01": {
             "locator": "hull_right_wheel_1",
             "definition": "k17:k17_right_front_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_left_wheel_1": {
+          "connector.machine_max.hull_left_wheel_01": {
             "locator": "hull_left_wheel_1",
             "definition": "k17:k17_left_front_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_right_wheel_2": {
+          "connector.machine_max.hull_right_wheel_02": {
             "locator": "hull_right_wheel_2",
             "definition": "k17:k17_right_front_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_left_wheel_2": {
+          "connector.machine_max.hull_left_wheel_02": {
             "locator": "hull_left_wheel_2",
             "definition": "k17:k17_left_front_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_right_wheel_3": {
+          "connector.machine_max.hull_right_wheel_03": {
             "locator": "hull_right_wheel_3",
             "definition": "k17:k17_right_back_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_left_wheel_3": {
+          "connector.machine_max.hull_left_wheel_03": {
             "locator": "hull_left_wheel_3",
             "definition": "k17:k17_left_back_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_right_wheel_4": {
+          "connector.machine_max.hull_right_wheel_04": {
             "locator": "hull_right_wheel_4",
             "definition": "k17:k17_right_back_wheel",
             "overwrite": {}
           },
-          "connector.k17.hull_left_wheel_4": {
+          "connector.machine_max.hull_left_wheel_04": {
             "locator": "hull_left_wheel_4",
             "definition": "k17:k17_left_back_wheel",
             "overwrite": {}
@@ -235,42 +235,42 @@
           "subsystem.k17.left_wheel_1": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
-            "connector": "connector.k17.hull_left_wheel_1"
+            "connector": "connector.machine_max.hull_left_wheel_01"
           },
           "subsystem.k17.left_wheel_2": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
-            "connector": "connector.k17.hull_left_wheel_2"
+            "connector": "connector.machine_max.hull_left_wheel_02"
           },
           "subsystem.k17.left_wheel_3": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
-            "connector": "connector.k17.hull_left_wheel_3"
+            "connector": "connector.machine_max.hull_left_wheel_03"
           },
           "subsystem.k17.left_wheel_4": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
-            "connector": "connector.k17.hull_left_wheel_4"
+            "connector": "connector.machine_max.hull_left_wheel_04"
           },
           "subsystem.k17.right_wheel_1": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
-            "connector": "connector.k17.hull_right_wheel_1"
+            "connector": "connector.machine_max.hull_right_wheel_01"
           },
           "subsystem.k17.right_wheel_2": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
-            "connector": "connector.k17.hull_right_wheel_2"
+            "connector": "connector.machine_max.hull_right_wheel_02"
           },
           "subsystem.k17.right_wheel_3": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
-            "connector": "connector.k17.hull_right_wheel_3"
+            "connector": "connector.machine_max.hull_right_wheel_03"
           },
           "subsystem.k17.right_wheel_4": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
-            "connector": "connector.k17.hull_right_wheel_4"
+            "connector": "connector.machine_max.hull_right_wheel_04"
           },
           "subsystem.k17.driver_seat": {
             "type": "machine_max:seat",

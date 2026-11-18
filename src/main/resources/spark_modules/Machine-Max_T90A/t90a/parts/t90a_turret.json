@@ -264,7 +264,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.turret_hull": {
+            "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
@@ -277,7 +277,7 @@
                 "impact_multiplier": 1
               }
             },
-            "connector.t90a.turret_gun": {
+            "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -291,13 +291,13 @@
                 }
               }
             },
-            "connector.t90a.turret_aa": {
+            "connector.machine_max.turret_aa": {
               "locator": "turret_mg_axis",
               "definition": "machine_max:fixed_up",
               "internal": true,
               "overwrite": {}
             },
-            "connector.t90a.turret_era_left": {
+            "connector.machine_max.turret_era_left": {
               "locator": "turret_era_left_socket",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -309,7 +309,7 @@
                 "impact_reduction": 8
               }
             },
-            "connector.t90a.turret_era_right": {
+            "connector.machine_max.turret_era_right": {
               "locator": "turret_era_right_socket",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -357,12 +357,12 @@
             "subsystem.t90a.azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:t90a_azimuth",
-              "connector": "connector.t90a.turret_hull"
+              "connector": "connector.machine_max.turret_hull_axis"
             },
             "subsystem.t90a.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:t90a_elevation",
-              "connector": "connector.t90a.turret_gun"
+              "connector": "connector.machine_max.turret_gun_axis"
             },
             "subsystem.t90a.main_weapon": {
               "type": "machine_max:weapon_controller",
@@ -521,13 +521,13 @@
             }
           },
           "connectors": {
-            "connector.t90a.gun_turret": {
+            "connector.machine_max.gun_turret_axis": {
               "locator": "gun_turret_axis",
               "definition": "machine_max:fixed_back",
               "internal": true,
               "overwrite": {}
             },
-            "connector.t90a.cradle_barrel": {
+            "connector.machine_max.cradle_barrel": {
               "locator": "cradle_barrel_mount",
               "definition": "t90a:barrel_mount",
               "internal": true,
@@ -574,7 +574,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.aa_turret": {
+            "connector.machine_max.aa_turret": {
               "locator": "mg_turret_axis",
               "definition": "machine_max:turret_azimuth_axis",
               "internal": true,
@@ -588,7 +588,7 @@
                 }
               }
             },
-            "connector.t90a.aa_elevation": {
+            "connector.machine_max.aa_elevation": {
               "locator": "mg_pitch_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -607,12 +607,12 @@
             "subsystem.t90a.aa_yaw_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_yaw_driver",
-              "connector": "connector.t90a.aa_turret"
+              "connector": "connector.machine_max.aa_turret"
             },
             "subsystem.t90a.aa_pitch_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_pitch_driver",
-              "connector": "connector.t90a.aa_elevation"
+              "connector": "connector.machine_max.aa_elevation"
             },
             "subsystem.t90a.aa_controller": {
               "type": "machine_max:weapon_controller",
@@ -686,7 +686,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.aa_pitch_lock": {
+            "connector.machine_max.aa_pitch_lock": {
               "locator": "mg_yaw_axis",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -727,7 +727,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.barrel_cradle": {
+            "connector.machine_max.barrel_cradle": {
               "locator": "barrel_cradle_mount",
               "definition": "machine_max:fixed_back",
               "internal": true,

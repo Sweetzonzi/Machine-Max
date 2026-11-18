@@ -222,7 +222,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.turret_hull": {
+            "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
               "definition": "machine_max:turret_azimuth_axis",
               "overwrite": {
@@ -235,7 +235,7 @@
                 "impact_multiplier": 1
               }
             },
-            "connector.m1a2_sep.turret_gun": {
+            "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -273,7 +273,7 @@
               "internal": true,
               "overwrite": {}
             },
-            "connector.m1a2_sep.turret_armor_left": {
+            "connector.machine_max.turret_era_left": {
               "locator": "turret_armor_left_socket",
               "definition": "machine_max:fixed_left",
               "overwrite": {
@@ -285,7 +285,7 @@
                 "impact_reduction": 10
               }
             },
-            "connector.m1a2_sep.turret_armor_right": {
+            "connector.machine_max.turret_era_right": {
               "locator": "turret_armor_right_socket",
               "definition": "machine_max:fixed_right",
               "overwrite": {
@@ -374,12 +374,12 @@
             "subsystem.m1a2_sep.azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:m1a2_azimuth",
-              "connector": "connector.m1a2_sep.turret_hull"
+              "connector": "connector.machine_max.turret_hull_axis"
             },
             "subsystem.m1a2_sep.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:m1a2_elevation",
-              "connector": "connector.m1a2_sep.turret_gun"
+              "connector": "connector.machine_max.turret_gun_axis"
             },
             "subsystem.m1a2_sep.main_weapon": {
               "type": "machine_max:weapon_controller",
@@ -573,13 +573,13 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.gun_turret": {
+            "connector.machine_max.gun_turret_axis": {
               "locator": "gun_turret_axis",
               "definition": "machine_max:fixed_back",
               "internal": true,
               "overwrite": {}
             },
-            "connector.m1a2_sep.mount_barrel": {
+            "connector.machine_max.cradle_barrel": {
               "locator": "mount_barrel",
               "definition": "machine_max:fixed_front",
               "internal": true,
@@ -966,7 +966,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.barrel_mount": {
+            "connector.machine_max.barrel_cradle": {
               "locator": "barrel_mount",
               "definition": "machine_max:fixed_back",
               "internal": true,

@@ -98,7 +98,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.turret_era_left_host": {
+            "connector.machine_max.turret_era_left_host": {
               "locator": "turret_era_left_mount",
               "definition": "t90a:armor_right",
               "overwrite": {
@@ -233,7 +233,7 @@
             }
           },
           "connectors": {
-            "connector.t90a.turret_era_right_host": {
+            "connector.machine_max.turret_era_right_host": {
               "locator": "turret_era_right_mount",
               "definition": "t90a:armor_left",
               "overwrite": {

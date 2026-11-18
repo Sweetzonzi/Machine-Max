@@ -14,40 +14,40 @@
 				// 不是摆臂方块自身的几何中心），负重轮骨骼挂在 Wheel_Left / Wheel_Right 下而不是挂在摆臂下——
 				// 否则负重轮会同时收到关节位移与摆臂转角，横向位移被叠加两次。
 				"TorsionBarSuspension_Left_1": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_1', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_01', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Left_2": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_2', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_02', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Left_3": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_3', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_03', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Left_4": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_4', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_04', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Left_5": {
-					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_5', 1), -0.4984)+175.411)", 0, 0]
+					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_05', 1), -0.4984)+175.411)", 0, 0]
 				},
 				"TorsionBarSuspension_Left_6": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_left_roadwheel_6', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_left_road_wheel_06', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Right_1": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_1', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_01', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Right_2": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_2', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_02', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Right_3": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_3', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_03', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Right_4": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_4', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_04', 1), 0.5066)+4.515", 0, 0]
 				},
 				"TorsionBarSuspension_Right_5": {
-					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_5', 1), -0.4984)+175.411)", 0, 0]
+					"rotation": ["math.min_angle(math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_05', 1), -0.4984)+175.411)", 0, 0]
 				},
 				"TorsionBarSuspension_Right_6": {
-					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.mtlb.hull_right_roadwheel_6', 1), 0.5066)+4.515", 0, 0]
+					"rotation": ["math.atan2(-0.04+local.connector_offset('connector.machine_max.hull_right_road_wheel_06', 1), 0.5066)+4.515", 0, 0]
 				}
 			}
 		}

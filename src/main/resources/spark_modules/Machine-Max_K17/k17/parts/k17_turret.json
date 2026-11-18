@@ -62,7 +62,7 @@
           }
         },
         "connectors": {
-          "connector.k17.turret_gun_axis": {
+          "connector.machine_max.turret_gun_axis": {
             "locator": "turret_gun_axis",
             "definition": "machine_max:turret_elevation_axis",
             "internal": true,
@@ -80,7 +80,7 @@
             "internal": true,
             "overwrite": {}
           },
-          "connector.k17.turret_hull_axis": {
+          "connector.machine_max.turret_hull_axis": {
             "locator": "turret_hull_axis",
             "definition": "machine_max:turret_azimuth_axis",
             "overwrite": {
@@ -94,12 +94,12 @@
           "subsystem.k17.azimuth_driver": {
             "type": "machine_max:turret_driver",
             "definition": "k17:k17_azimuth_driver",
-            "connector": "connector.k17.turret_hull_axis"
+            "connector": "connector.machine_max.turret_hull_axis"
           },
           "subsystem.k17.elevation_driver": {
             "type": "machine_max:turret_driver",
             "definition": "k17:k17_elevation_driver",
-            "connector": "connector.k17.turret_gun_axis"
+            "connector": "connector.machine_max.turret_gun_axis"
           },
           "subsystem.k17.left_atgm_elevation_driver": {
             "type": "machine_max:turret_driver",
@@ -262,7 +262,7 @@
           }
         },
         "connectors": {
-          "connector.k17.gun_turret_lock": {
+          "connector.machine_max.gun_turret_lock": {
             "locator": "gun_turret_lock",
             "definition": "machine_max:fixed_back",
             "internal": true,
