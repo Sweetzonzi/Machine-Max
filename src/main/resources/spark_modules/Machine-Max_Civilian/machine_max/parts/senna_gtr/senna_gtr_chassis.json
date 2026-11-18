@@ -154,19 +154,19 @@
             "locator": "right_back_wheel",
             "definition": "machine_max:senna_gtr_right_wheel"
           },
-          "connector.machine_max.front_bumper_left": {
+          "connector.machine_max.left_front_bumper": {
             "locator": "chassis_front_bumper_left",
             "definition": "machine_max:senna_gtr_front_bumper_left"
           },
-          "connector.machine_max.front_bumper_right": {
+          "connector.machine_max.right_front_bumper": {
             "locator": "chassis_front_bumper_right",
             "definition": "machine_max:senna_gtr_front_bumper_right"
           },
-          "connector.machine_max.back_bumper_left": {
+          "connector.machine_max.left_back_bumper": {
             "locator": "chassis_back_bumper_left",
             "definition": "machine_max:senna_gtr_back_bumper_left"
           },
-          "connector.machine_max.back_bumper_right": {
+          "connector.machine_max.right_back_bumper": {
             "locator": "chassis_back_bumper_right",
             "definition": "machine_max:senna_gtr_back_bumper_right"
           },

@@ -5,13 +5,13 @@
 			"loop": true,
 			"bones": {
 				"ysmGlow_collision_front_left_main_light": {
-					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.left_main_lamp')"
 				},
 				"ysmGlow_collision_front_right_main_light": {
-					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.right_main_lamp')"
 				},
 				"ysmGlow_collision_back_left_light": {
-					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.left_tail_lamp')"
 				},
 				"collision_left_mirror": {
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
@@ -20,7 +20,7 @@
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
 				},
 				"ysmGlow_collision_back_right_light": {
-					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.left_tail_lamp')"
 				},
 				"FXP": {
 					"rotation": [

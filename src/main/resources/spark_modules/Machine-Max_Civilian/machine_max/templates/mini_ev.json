@@ -189,13 +189,13 @@
             "connector.machine_max.right_back_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.back_right": {
+            "connector.machine_max.right_back_mount": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.back_left": {
+            "connector.machine_max.left_back_mount": {
               "integrity_ratio": 1.0
             }
           },

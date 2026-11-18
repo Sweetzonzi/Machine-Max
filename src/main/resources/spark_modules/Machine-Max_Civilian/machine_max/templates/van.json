@@ -322,16 +322,16 @@
             }
           },
           "subsystem_data": {
-            "subsystem.machine_max.glow_left_main_light": {
+            "subsystem.machine_max.left_main_lamp": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.glow_back_left_light": {
+            "subsystem.machine_max.left_tail_lamp": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.glow_right_main_light": {
+            "subsystem.machine_max.right_main_lamp": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.glow_back_right_light": {
+            "subsystem.machine_max.right_tail_lamp": {
               "durability_ratio": 1.0
             }
           },

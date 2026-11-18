@@ -39,20 +39,20 @@
           },
           "ysmGlowGtLeft": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.left_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_light')",
+            "subsystem": "subsystem.machine_max.left_marker_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_marker_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtMiddle": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.middle_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.middle_light')",
+            "subsystem": "subsystem.machine_max.middle_marker_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.middle_marker_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtRight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.right_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_light')",
+            "subsystem": "subsystem.machine_max.right_marker_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_marker_light')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtLeftFog": {
@@ -77,15 +77,15 @@
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.left_light": {
+          "subsystem.machine_max.left_marker_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.middle_light": {
+          "subsystem.machine_max.middle_marker_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.right_light": {
+          "subsystem.machine_max.right_marker_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },

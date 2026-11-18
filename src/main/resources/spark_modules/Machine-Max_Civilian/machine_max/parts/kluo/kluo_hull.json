@@ -62,42 +62,42 @@
           },
           "LeftFrontHeadLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.left_front_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_front_light')",
+            "subsystem": "subsystem.machine_max.left_main_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_main_light')",
             "material": "machine_max:glass",
             "thickness": 1
           },
           "RightFrontHeadLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.right_front_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_front_light')",
+            "subsystem": "subsystem.machine_max.right_main_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_main_light')",
             "material": "machine_max:glass",
             "thickness": 1
           },
           "LeftRearLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.left_back_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_back_light')",
+            "subsystem": "subsystem.machine_max.left_tail_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_tail_light')",
             "material": "machine_max:glass",
             "thickness": 1
           },
           "RightRearLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.right_back_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_back_light')",
+            "subsystem": "subsystem.machine_max.right_tail_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_tail_light')",
             "material": "machine_max:glass",
             "thickness": 1
           },
           "ysmGlowLeftFogLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.left_front_fog_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_front_fog_light')",
+            "subsystem": "subsystem.machine_max.left_fog_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_fog_lamp')",
             "material": "machine_max:glass"
           },
           "ysmGlowRightFogLight": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.right_front_fog_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_front_fog_light')",
+            "subsystem": "subsystem.machine_max.right_fog_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_fog_lamp')",
             "material": "machine_max:glass"
           }
         },
@@ -253,29 +253,29 @@
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.left_front_light": {
+          "subsystem.machine_max.left_main_light": {
             "type": "machine_max:light",
             "definition": "machine_max:beam_light",
             "locator": "left_main_light"
           },
-          "subsystem.machine_max.right_front_light": {
+          "subsystem.machine_max.right_main_light": {
             "type": "machine_max:light",
             "definition": "machine_max:beam_light",
             "locator": "right_main_light"
           },
-          "subsystem.machine_max.left_back_light": {
+          "subsystem.machine_max.left_tail_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.right_back_light": {
+          "subsystem.machine_max.right_tail_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.left_front_fog_light": {
+          "subsystem.machine_max.left_fog_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.right_front_fog_light": {
+          "subsystem.machine_max.right_fog_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           }
@@ -297,27 +297,27 @@
             "locator": "right_back_wheel",
             "definition": "machine_max:kluo_right_back_wheel"
           },
-          "connector.machine_max.front_bumper_left": {
+          "connector.machine_max.left_front_bumper": {
             "locator": "hull_front_bumper_left",
             "definition": "machine_max:kluo_front_bumper_left"
           },
-          "connector.machine_max.front_bumper_right": {
+          "connector.machine_max.right_front_bumper": {
             "locator": "hull_front_bumper_right",
             "definition": "machine_max:kluo_front_bumper_right"
           },
-          "connector.machine_max.front_light_left": {
+          "connector.machine_max.left_front_light": {
             "locator": "hull_front_light_left",
             "definition": "machine_max:kluo_front_light_left"
           },
-          "connector.machine_max.front_light_right": {
+          "connector.machine_max.right_front_light": {
             "locator": "hull_front_light_right",
             "definition": "machine_max:kluo_front_light_right"
           },
-          "connector.machine_max.back_bumper_left": {
+          "connector.machine_max.left_back_bumper": {
             "locator": "hull_back_bumper_left",
             "definition": "machine_max:kluo_back_bumper_left"
           },
-          "connector.machine_max.back_bumper_right": {
+          "connector.machine_max.right_back_bumper": {
             "locator": "hull_back_bumper_right",
             "definition": "machine_max:kluo_back_bumper_right"
           },

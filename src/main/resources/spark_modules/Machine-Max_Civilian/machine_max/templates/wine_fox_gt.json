@@ -260,10 +260,10 @@
             "connector.machine_max.left_door_axis": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.back_bumper_right": {
+            "connector.machine_max.right_back_bumper": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.front_light_right": {
+            "connector.machine_max.right_front_light": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.hood_lock": {
@@ -278,22 +278,22 @@
             "connector.machine_max.right_back_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.back_bumper_left": {
+            "connector.machine_max.left_back_bumper": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.front_bumper_left": {
+            "connector.machine_max.left_front_bumper": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.right_door_axis": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.front_bumper_right": {
+            "connector.machine_max.right_front_bumper": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.right_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.front_light_left": {
+            "connector.machine_max.left_front_light": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.top_right_back": {
@@ -311,7 +311,7 @@
             "subsystem.machine_max.left_back_glass": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_front_fog_light": {
+            "subsystem.machine_max.left_fog_lamp": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.engine": {
@@ -332,7 +332,7 @@
             "subsystem.machine_max.left_back_wheel_driver": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_front_fog_light": {
+            "subsystem.machine_max.right_fog_lamp": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.glove_box": {
@@ -345,13 +345,13 @@
             "subsystem.machine_max.right_back_glass": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_back_light": {
+            "subsystem.machine_max.left_tail_light": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_back_wheel_driver": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_front_light": {
+            "subsystem.machine_max.right_main_light": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.gearbox": {
@@ -360,10 +360,10 @@
             "subsystem.machine_max.driver_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_back_light": {
+            "subsystem.machine_max.right_tail_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_front_light": {
+            "subsystem.machine_max.left_main_light": {
               "durability_ratio": 1.0
             }
           },
@@ -419,19 +419,19 @@
             "subsystem.machine_max.left_main_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.left_light": {
+            "subsystem.machine_max.left_marker_light": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.left_fog_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.middle_light": {
+            "subsystem.machine_max.middle_marker_light": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_fog_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_light": {
+            "subsystem.machine_max.right_marker_light": {
               "durability_ratio": 1.0
             }
           },
@@ -712,10 +712,10 @@
             }
           },
           "subsystem_data": {
-            "subsystem.machine_max.left_back_light": {
+            "subsystem.machine_max.left_tail_light": {
               "durability_ratio": 1.0
             },
-            "subsystem.machine_max.right_back_light": {
+            "subsystem.machine_max.right_tail_light": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.glass": {
@@ -1048,7 +1048,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_bumper_left",
+      "advConnectorName": "connector.machine_max.left_front_bumper",
       "posRotA": {
         "position": [
           -1.0,
@@ -1082,7 +1082,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_bumper_right",
+      "advConnectorName": "connector.machine_max.right_front_bumper",
       "posRotA": {
         "position": [
           0.9999947,
@@ -1116,7 +1116,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.back_bumper_left",
+      "advConnectorName": "connector.machine_max.left_back_bumper",
       "posRotA": {
         "position": [
           -1.0,
@@ -1150,7 +1150,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.back_bumper_right",
+      "advConnectorName": "connector.machine_max.right_back_bumper",
       "posRotA": {
         "position": [
           0.99999595,
@@ -1388,7 +1388,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_light_right",
+      "advConnectorName": "connector.machine_max.right_front_light",
       "posRotA": {
         "position": [
           0.40625,
@@ -1422,7 +1422,7 @@
       },
       "partUuidA": "d77c5b39-1e82-459d-a6b3-1f3d7fe4fdba",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_light_left",
+      "advConnectorName": "connector.machine_max.left_front_light",
       "posRotA": {
         "position": [
           -0.40624425,

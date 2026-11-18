@@ -26,43 +26,43 @@
           },
           "ysmGlow_collision_front_left_main_light": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.glow_left_main_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')",
+            "subsystem": "subsystem.machine_max.left_main_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_main_lamp')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_front_right_main_light": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.glow_right_main_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')",
+            "subsystem": "subsystem.machine_max.right_main_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_main_lamp')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_back_left_light": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.glow_back_left_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')",
+            "subsystem": "subsystem.machine_max.left_tail_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_tail_lamp')",
             "material": "machine_max:glass"
           },
           "ysmGlow_collision_back_right_light": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.glow_back_right_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.glow_back_right_light')",
+            "subsystem": "subsystem.machine_max.right_tail_lamp",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_tail_lamp')",
             "material": "machine_max:glass"
           }
         },
         "subsystems": {
-          "subsystem.machine_max.glow_left_main_light": {
+          "subsystem.machine_max.left_main_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.glow_right_main_light": {
+          "subsystem.machine_max.right_main_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.glow_back_left_light": {
+          "subsystem.machine_max.left_tail_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.glow_back_right_light": {
+          "subsystem.machine_max.right_tail_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           }

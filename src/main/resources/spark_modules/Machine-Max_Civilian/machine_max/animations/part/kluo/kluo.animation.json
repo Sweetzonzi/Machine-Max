@@ -26,10 +26,10 @@
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.front_glass')"
 				},
 				"ysmGlowTrunkRightLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.right_back_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_tail_light')"
 				},
 				"ysmGlowTrunkLeftLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.left_back_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_tail_light')"
 				},
 				"LeftBackGlass": {
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.left_back_glass')"
@@ -38,22 +38,22 @@
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.right_back_glass')"
 				},
 				"ysmGlowLeftRearLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.left_back_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_tail_light')"
 				},
 				"ysmGlowRightRearLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.right_back_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_tail_light')"
 				},
 				"ysmGlowLeftFrontHeadLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.left_front_light') && !local.has_connector('connector.machine_max.front_light_left')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_main_light') && !local.has_connector('connector.machine_max.left_front_light')"
 				},
 				"ysmGlowRightFrontHeadLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.right_front_light') && !local.has_connector('connector.machine_max.front_light_right')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_main_light') && !local.has_connector('connector.machine_max.right_front_light')"
 				},
 				"LeftFrontHeadLight": {
-					"scale": "!local.has_connector('connector.machine_max.front_light_left')"
+					"scale": "!local.has_connector('connector.machine_max.left_front_light')"
 				},
 				"RightFrontHeadLight": {
-					"scale": "!local.has_connector('connector.machine_max.front_light_right')"
+					"scale": "!local.has_connector('connector.machine_max.right_front_light')"
 				},
 				"LeftFrontGlass": {
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glass')"
@@ -65,10 +65,10 @@
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.glass')"
 				},
 				"ysmGlowLeftFogLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.left_front_fog_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_fog_lamp')"
 				},
 				"ysmGlowRightFogLight": {
-					"scale": "local.subsystem_active('subsystem.machine_max.right_front_fog_light')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_fog_lamp')"
 				},
 				"RightDoorMirror": {
 					"scale": "!local.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
@@ -83,16 +83,16 @@
 					"scale": "local.subsystem_active('subsystem.machine_max.left_main_light')"
 				},
 				"ysmGlowGt1": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light_01')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_marker_light_01')"
 				},
 				"ysmGlowGt2": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light_02')"
+					"scale": "local.subsystem_active('subsystem.machine_max.right_marker_light_02')"
 				},
 				"ysmGlowGt3": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light_03')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_marker_light_02')"
 				},
 				"ysmGlowGt4": {
-					"scale": "local.subsystem_active('subsystem.machine_max.light_04')"
+					"scale": "local.subsystem_active('subsystem.machine_max.left_marker_light_01')"
 				},
 				"ysmGlowGtLeftFog": {
 					"scale": "local.subsystem_active('subsystem.machine_max.left_fog_light')"

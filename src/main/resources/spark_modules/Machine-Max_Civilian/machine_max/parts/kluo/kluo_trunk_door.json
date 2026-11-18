@@ -33,15 +33,15 @@
             "type": "box",
             "thickness": 1,
             "material": "machine_max:glass",
-            "subsystem": "subsystem.machine_max.left_back_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_back_light')"
+            "subsystem": "subsystem.machine_max.left_tail_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.left_tail_light')"
           },
           "TrunkRightLight": {
             "type": "box",
             "thickness": 1,
             "material": "machine_max:glass",
-            "subsystem": "subsystem.machine_max.right_back_light",
-            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_back_light')"
+            "subsystem": "subsystem.machine_max.right_tail_light",
+            "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_tail_light')"
           }
         },
         "subsystems": {
@@ -49,11 +49,11 @@
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.left_back_light": {
+          "subsystem.machine_max.left_tail_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           },
-          "subsystem.machine_max.right_back_light": {
+          "subsystem.machine_max.right_tail_light": {
             "type": "machine_max:light",
             "definition": "machine_max:dummy_light"
           }

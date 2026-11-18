@@ -212,11 +212,11 @@
             "locator": "right_back_wheel",
             "definition": "machine_max:mini_ev_right_back_wheel"
           },
-          "connector.machine_max.back_left":{
+          "connector.machine_max.left_back_mount":{
           "locator": "BackLeft",
           "definition": "machine_max:fixed_left"
           },
-          "connector.machine_max.back_right":{
+          "connector.machine_max.right_back_mount":{
             "locator": "BackRight",
             "definition": "machine_max:fixed_right"
           }
