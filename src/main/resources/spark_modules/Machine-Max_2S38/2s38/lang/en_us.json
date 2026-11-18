@@ -52,7 +52,7 @@
   "subsystem.2s38.commander_seat": "Commander Seat",
   "subsystem.2s38.azimuth_driver": "Azimuth Driver",
   "subsystem.2s38.elevation_driver": "Elevation Driver",
-  "subsystem.2s38.main_controller": "Main Gun Fire Control",
+  "subsystem.2s38.main_controller": "Main Gun",
   "sub_part.2s38.gun": "Gun",
   "subsystem.2s38.coax_launcher": "Coaxial Machine Gun",
   "subsystem.2s38.coax_rack": "Coaxial Machine Gun Ammo Rack",

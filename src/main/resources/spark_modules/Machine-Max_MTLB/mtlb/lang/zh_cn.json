@@ -2,7 +2,7 @@
   "subsystem.mtlb.main_launcher": "机枪",
   "subsystem.mtlb.main_rack": "机枪弹药架",
   "subsystem.mtlb.main_loader": "机枪自动装弹机",
-  "subsystem.mtlb.main_controller": "机枪火控",
+  "subsystem.mtlb.main_controller": "机枪",
   "mtlb.mtlb": "MT-LB 装甲运输车",
   "mtlb.mtlb_pkt": "MT-LB 装甲运输车（PKT 机枪塔）",
   "machine_max.series.mtlb": "MT-LB 装甲运输车",

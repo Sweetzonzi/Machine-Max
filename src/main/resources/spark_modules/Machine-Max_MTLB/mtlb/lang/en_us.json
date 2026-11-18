@@ -2,7 +2,7 @@
   "subsystem.mtlb.main_launcher": "Machine Gun",
   "subsystem.mtlb.main_rack": "Machine Gun Ammo Rack",
   "subsystem.mtlb.main_loader": "Machine Gun Autoloader",
-  "subsystem.mtlb.main_controller": "Machine Gun Fire Control",
+  "subsystem.mtlb.main_controller": "Machine Gun",
   "mtlb.mtlb": "MT-LB",
   "mtlb.mtlb_pkt": "MT-LB (PKT MG Mount)",
   "machine_max.series.mtlb": "MT-LB",

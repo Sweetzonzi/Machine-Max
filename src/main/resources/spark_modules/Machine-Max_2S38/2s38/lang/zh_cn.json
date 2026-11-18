@@ -52,7 +52,7 @@
   "subsystem.2s38.commander_seat": "车长座",
   "subsystem.2s38.azimuth_driver": "方向机",
   "subsystem.2s38.elevation_driver": "高低机",
-  "subsystem.2s38.main_controller": "主炮火控",
+  "subsystem.2s38.main_controller": "主炮",
   "sub_part.2s38.gun": "火炮",
   "subsystem.2s38.coax_launcher": "并列机枪",
   "subsystem.2s38.coax_rack": "并列机枪弹药架",
