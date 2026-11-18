@@ -11,7 +11,7 @@
       "machine_max:type/land"
     ],
     "sub_parts": {
-      "sub_part.mtlb.main": {
+      "sub_part.machine_max.main": {
         "start_bone": "PKTTurret",
         "end_bones": [
           "PKT_"

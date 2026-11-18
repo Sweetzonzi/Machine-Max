@@ -2,7 +2,7 @@
   "connections": [
     {
       "partUuidS": "8b32835d-c83a-4ddf-a9f0-06d5db4da3c0",
-      "subPartNameS": "sub_part.mtlb.main",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.mtlb.hull_pkt_axis",
       "posRotS": {
         "position": [
@@ -18,7 +18,7 @@
         ]
       },
       "partUuidA": "bfb318ed-d6fc-460e-a840-55a60446f472",
-      "subPartNameA": "sub_part.mtlb.main",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.mtlb.pkt_hull_axis",
       "posRotA": {
         "position": [
@@ -190,7 +190,7 @@
           },
           "id": 94
         },
-        "sub_part.mtlb.main": {
+        "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
             "position": [
               0.43823242,
@@ -778,7 +778,7 @@
     },
     "bfb318ed-d6fc-460e-a840-55a60446f472": {
       "sub_parts": {
-        "sub_part.mtlb.main": {
+        "sub_part.machine_max.main": {
           "pos_rot_vel_vel": {
             "position": [
               -0.43823242,

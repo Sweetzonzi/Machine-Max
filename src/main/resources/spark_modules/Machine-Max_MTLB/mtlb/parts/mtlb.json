@@ -540,7 +540,7 @@
           }
         }
       },
-      "sub_part.mtlb.main": {
+      "sub_part.machine_max.main": {
         "start_bone": "AllHull",
         "end_bones": [],
         "durability": 300,

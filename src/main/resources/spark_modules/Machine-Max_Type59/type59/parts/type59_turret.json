@@ -17,7 +17,7 @@
         "type59:turret"
       ],
       "sub_parts": {
-        "sub_part.type59.turret": {
+        "sub_part.machine_max.main": {
           "start_bone": "PaoTa",
           "end_bones": [
             "bone",

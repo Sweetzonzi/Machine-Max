@@ -85,7 +85,6 @@
   "author.mtlb.blueprint.mtlb_pkt": "待补充",
   "interact.mtlb.driver_hatch_interact": "驾驶员舱口",
   "sub_part.mtlb.gun": "机枪",
-  "sub_part.mtlb.main": "车体",
   "subsystem.mtlb.azimuth_driver": "方向机",
   "subsystem.mtlb.elevation_driver": "高低机",
   "subsystem.mtlb.commander_seat": "车长座",

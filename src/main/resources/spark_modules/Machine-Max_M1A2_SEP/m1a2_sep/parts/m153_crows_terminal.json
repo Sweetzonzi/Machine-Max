@@ -15,7 +15,7 @@
       "m1a2_sep:m153_crows_terminal"
     ],
     "sub_parts": {
-      "sub_part.m1a2_sep.main": {
+      "sub_part.machine_max.main": {
         "durability": 20,
         "mass": 3,
         "hit_boxes": {

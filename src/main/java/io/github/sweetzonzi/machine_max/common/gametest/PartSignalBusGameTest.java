@@ -109,7 +109,7 @@ public final class PartSignalBusGameTest {
     @GameTest(template = "part_foundation", batch = "mmSignal", timeoutTicks = 100)
     public static void crossSubPartSubscribersAreReached(GameTestHelper helper) {
         RegularPart part = turret(helper);
-        SubPart turretSubPart = part.subParts.get("sub_part.t90a.turret");
+        SubPart turretSubPart = part.subParts.get("sub_part.machine_max.main");
         SubPart gunSubPart = part.subParts.get("sub_part.t90a.gun");
         ProbeEndpoint inTurret = new ProbeEndpoint("probe_turret", List.of(CHANNEL), turretSubPart);
         ProbeEndpoint inGun = new ProbeEndpoint("probe_gun", List.of(CHANNEL), gunSubPart);
@@ -296,7 +296,7 @@ public final class PartSignalBusGameTest {
     public static void namedTargetsResolveAcrossSubParts(GameTestHelper helper) {
         RegularPart part = turret(helper);
         try {
-            SubPart turretSub = part.getSubParts().get("sub_part.t90a.turret");
+            SubPart turretSub = part.getSubParts().get("sub_part.machine_max.main");
             SubPart gunSub = part.getSubParts().get("sub_part.t90a.gun");
             helper.assertTrue(turretSub != null && gunSub != null && turretSub != gunSub,
                     "夹具部件应把炮塔与火炮分在两个子零件上");

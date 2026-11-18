@@ -31,7 +31,7 @@ public final class CameraDiscoveryGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            SubPart turret = part.subParts.get("sub_part.t90a.turret");
+            SubPart turret = part.subParts.get("sub_part.machine_max.main");
             SubPart gun = part.subParts.get("sub_part.t90a.gun");
             var gunnerSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var gunnerSight = (AbstractViewpointSubsystem) gun.findOwnSubsystem("subsystem.t90a.gunner_sight");

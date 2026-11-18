@@ -29,7 +29,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.hull": {
+        "sub_part.machine_max.main": {
           "id": 1,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -535,7 +535,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.hull_era_front": {
+        "sub_part.machine_max.main": {
           "id": 18,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -577,7 +577,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.hull_era_left": {
+        "sub_part.machine_max.main": {
           "id": 19,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -619,7 +619,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.hull_era_right": {
+        "sub_part.machine_max.main": {
           "id": 20,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -661,7 +661,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.turret": {
+        "sub_part.machine_max.main": {
           "id": 21,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -819,7 +819,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.turret_era_left": {
+        "sub_part.machine_max.main": {
           "id": 25,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -861,7 +861,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.t90a.turret_era_right": {
+        "sub_part.machine_max.main": {
           "id": 26,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -896,7 +896,7 @@
   "connections": [
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000005",
-      "subPartNameA": "sub_part.t90a.turret",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.turret_hull",
       "posRotA": {
         "position": [
@@ -912,7 +912,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000001",
-      "subPartNameS": "sub_part.t90a.hull",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.hull_turret",
       "posRotS": {
         "position": [
@@ -930,7 +930,7 @@
     },
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000002",
-      "subPartNameA": "sub_part.t90a.hull_era_front",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.hull_era_front_host",
       "posRotA": {
         "position": [
@@ -946,7 +946,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000001",
-      "subPartNameS": "sub_part.t90a.hull",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.hull_era_front",
       "posRotS": {
         "position": [
@@ -964,7 +964,7 @@
     },
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000003",
-      "subPartNameA": "sub_part.t90a.hull_era_left",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.hull_era_left_host",
       "posRotA": {
         "position": [
@@ -980,7 +980,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000001",
-      "subPartNameS": "sub_part.t90a.hull",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.hull_era_left",
       "posRotS": {
         "position": [
@@ -998,7 +998,7 @@
     },
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000004",
-      "subPartNameA": "sub_part.t90a.hull_era_right",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.hull_era_right_host",
       "posRotA": {
         "position": [
@@ -1014,7 +1014,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000001",
-      "subPartNameS": "sub_part.t90a.hull",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.hull_era_right",
       "posRotS": {
         "position": [
@@ -1032,7 +1032,7 @@
     },
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000006",
-      "subPartNameA": "sub_part.t90a.turret_era_left",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.turret_era_left_host",
       "posRotA": {
         "position": [
@@ -1048,7 +1048,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000005",
-      "subPartNameS": "sub_part.t90a.turret",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.turret_era_left",
       "posRotS": {
         "position": [
@@ -1066,7 +1066,7 @@
     },
     {
       "partUuidA": "b090a100-2026-4028-9000-000000000007",
-      "subPartNameA": "sub_part.t90a.turret_era_right",
+      "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.t90a.turret_era_right_host",
       "posRotA": {
         "position": [
@@ -1082,7 +1082,7 @@
         ]
       },
       "partUuidS": "b090a100-2026-4028-9000-000000000005",
-      "subPartNameS": "sub_part.t90a.turret",
+      "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.t90a.turret_era_right",
       "posRotS": {
         "position": [

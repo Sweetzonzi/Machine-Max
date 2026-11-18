@@ -52,7 +52,7 @@ public final class SignalPipelineGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            var turret = part.subParts.get("sub_part.t90a.turret");
+            var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
             helper.assertTrue(seat.getTargets().containsKey("crew_gunner_aim"), "预设控制组的频道先进入首跳表");
@@ -83,7 +83,7 @@ public final class SignalPipelineGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            var turret = part.subParts.get("sub_part.t90a.turret");
+            var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
             var azimuth = turret.findOwnSubsystem("subsystem.t90a.azimuth_driver");
@@ -148,7 +148,7 @@ public final class SignalPipelineGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            var turret = part.subParts.get("sub_part.t90a.turret");
+            var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
             Set<String> fireChannels = seat.getControlGroupSet().getMergedMainWeaponTargets().keySet();
@@ -222,7 +222,7 @@ public final class SignalPipelineGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            var turret = part.subParts.get("sub_part.t90a.turret");
+            var turret = part.subParts.get("sub_part.machine_max.main");
             var gun = part.subParts.get("sub_part.t90a.gun");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var sight = gun.findOwnSubsystem("subsystem.t90a.gunner_sight");

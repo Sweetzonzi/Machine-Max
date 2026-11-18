@@ -85,7 +85,6 @@
   "author.mtlb.blueprint.mtlb_pkt": "TBD",
   "interact.mtlb.driver_hatch_interact": "Driver hatch",
   "sub_part.mtlb.gun": "Machine gun",
-  "sub_part.mtlb.main": "Hull",
   "subsystem.mtlb.azimuth_driver": "Traverse drive",
   "subsystem.mtlb.elevation_driver": "Elevation drive",
   "subsystem.mtlb.commander_seat": "Commander seat",

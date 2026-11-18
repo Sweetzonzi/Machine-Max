@@ -18,7 +18,7 @@
         "type59:hull"
       ],
       "sub_parts": {
-        "sub_part.type59.hull": {
+        "sub_part.machine_max.main": {
           "start_bone": "CheTi",
           "end_bones": [
             "PaoTa",

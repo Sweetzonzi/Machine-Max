@@ -76,7 +76,7 @@ public final class StructureSequenceGameTest {
     public static void sequenceIsScopedToSubPartNotPart(GameTestHelper helper) {
         RegularPart part = turret(helper);
         try {
-            SubPart first = part.subParts.get("sub_part.t90a.turret");
+            SubPart first = part.subParts.get("sub_part.machine_max.main");
             SubPart second = part.subParts.get("sub_part.t90a.gun");
             helper.assertTrue(first != null && second != null, "夹具部件的两个子零件都应存在");
             AbstractSubsystem firstOfFirst = first.subsystemAt(0);

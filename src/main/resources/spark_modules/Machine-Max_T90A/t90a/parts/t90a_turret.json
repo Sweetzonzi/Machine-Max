@@ -19,7 +19,7 @@
         "machine_max:series/t90a"
       ],
       "sub_parts": {
-        "sub_part.t90a.turret": {
+        "sub_part.machine_max.main": {
           "start_bone": "MainBattery",
           "end_bones": [
             "Bt",

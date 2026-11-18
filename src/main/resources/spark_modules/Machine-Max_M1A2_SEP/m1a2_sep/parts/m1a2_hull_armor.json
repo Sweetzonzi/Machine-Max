@@ -22,7 +22,7 @@
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
-        "sub_part.m1a2_sep.hull_armor_left": {
+        "sub_part.machine_max.main": {
           "start_bone": "MM_HullArmorLeft",
           "end_bones": [],
           "durability": 100,
@@ -231,7 +231,7 @@
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
-        "sub_part.m1a2_sep.hull_armor_right": {
+        "sub_part.machine_max.main": {
           "start_bone": "MM_HullArmorRight",
           "end_bones": [],
           "durability": 100,

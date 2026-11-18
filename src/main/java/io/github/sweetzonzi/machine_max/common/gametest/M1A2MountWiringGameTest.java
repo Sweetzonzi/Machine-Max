@@ -158,7 +158,7 @@ public final class M1A2MountWiringGameTest {
         RegularPart part = PartFactory.createRegular(type, null, helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
-            SubPart main = part.subParts.get("sub_part.m1a2_sep.main");
+            SubPart main = part.subParts.get("sub_part.machine_max.main");
             helper.assertTrue(main != null, "火控终端必须只有一个主零件");
             helper.assertTrue(!main.hitBoxes.isEmpty(), "几何里的碰撞骨必须建成碰撞箱");
             helper.assertTrue(main.connectors.containsKey("connector.m1a2_sep.crows_terminal_mount"),
@@ -338,7 +338,7 @@ public final class M1A2MountWiringGameTest {
         RegularPart rws = PartFactory.createRegular(type, "desert", helper.getLevel());
         AbstractConnector advanced = rws.subParts.get("sub_part.m1a2_sep.rws_yaw")
                 .connectors.get("connector.m1a2_sep.rws_turret");
-        AbstractConnector simple = turret.subParts.get("sub_part.m1a2_sep.turret")
+        AbstractConnector simple = turret.subParts.get("sub_part.machine_max.main")
                 .connectors.get("connector.m1a2_sep.turret_rws");
         vehicle.attachConnector(advanced, simple, rws);
         helper.assertTrue(advanced.hasPart(), "遥控武器站必须挂到炮塔的武器站挂点上");
