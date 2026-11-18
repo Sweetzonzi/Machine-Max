@@ -11,7 +11,7 @@
 					"position": [0, 0, "-global.get('throttle')"]
 				},
 				"Fxpw": {
-					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.left_front_wheel', 1) + local.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.hull_left_front_wheel', 1) + local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1))*2"]
 				},
 				"ZhiZhen": {
 					"rotation": [0, 0, "-225*(math.abs(global.get('engine_speed')??0)*30/math.pi)/9000"]
@@ -29,10 +29,10 @@
 					"position": [0, 0, "-1.0*global.get('brake')"]
 				},
 				"LeftFrontTyres": {
-					"rotation": [0, "local.connector_rotation('connector.machine_max.left_front_wheel', 1)", 0]
+					"rotation": [0, "local.connector_rotation('connector.machine_max.hull_left_front_wheel', 1)", 0]
 				},
 				"RightFrontTyres": {
-					"rotation": [0, "local.connector_rotation('connector.machine_max.right_front_wheel', 1)", 0]
+					"rotation": [0, "local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1)", 0]
 				}
 			}
 		}

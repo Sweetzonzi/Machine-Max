@@ -102,23 +102,23 @@
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:van_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_left_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:van_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_right_front_wheel" //控制的连接点名称
           },
           //后轮只跟刹车与手刹: 型号的驱动力矩与转向力矩都是 0, 只保留制动力矩
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:van_back_wheel_driver",
-            "connector": "connector.machine_max.left_back_wheel"
+            "connector": "connector.machine_max.hull_left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:van_back_wheel_driver",
-            "connector": "connector.machine_max.right_back_wheel"
+            "connector": "connector.machine_max.hull_right_back_wheel"
           }
         },
         "connectors": {
@@ -133,19 +133,19 @@
               "interact_right_back_door": ["connector.machine_max.right_back_seat"]
             }
           },
-          "connector.machine_max.left_front_wheel": {
+          "connector.machine_max.hull_left_front_wheel": {
             "locator": "left_front_wheel",
             "definition": "machine_max:van_left_front_wheel"
           },
-          "connector.machine_max.right_front_wheel": {
+          "connector.machine_max.hull_right_front_wheel": {
             "locator": "right_front_wheel",
             "definition": "machine_max:van_right_front_wheel"
           },
-          "connector.machine_max.left_back_wheel": {
+          "connector.machine_max.hull_left_back_wheel": {
             "locator": "left_back_wheel",
             "definition": "machine_max:van_left_back_wheel"
           },
-          "connector.machine_max.right_back_wheel": {
+          "connector.machine_max.hull_right_back_wheel": {
             "locator": "right_back_wheel",
             "definition": "machine_max:van_right_back_wheel"
           },

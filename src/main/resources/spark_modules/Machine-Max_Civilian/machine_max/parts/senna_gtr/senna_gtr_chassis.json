@@ -119,38 +119,38 @@
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:senna_gtr_front_wheel_driver",
-            "connector": "connector.machine_max.left_front_wheel"
+            "connector": "connector.machine_max.hull_left_front_wheel"
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:senna_gtr_front_wheel_driver",
-            "connector": "connector.machine_max.right_front_wheel"
+            "connector": "connector.machine_max.hull_right_front_wheel"
           },
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:senna_gtr_back_wheel_driver",
-            "connector": "connector.machine_max.left_back_wheel"
+            "connector": "connector.machine_max.hull_left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:senna_gtr_back_wheel_driver",
-            "connector": "connector.machine_max.right_back_wheel"
+            "connector": "connector.machine_max.hull_right_back_wheel"
           }
         },
         "connectors": {
-          "connector.machine_max.left_front_wheel": {
+          "connector.machine_max.hull_left_front_wheel": {
             "locator": "left_front_wheel",
             "definition": "machine_max:senna_gtr_left_steering_wheel"
           },
-          "connector.machine_max.left_back_wheel": {
+          "connector.machine_max.hull_left_back_wheel": {
             "locator": "left_back_wheel",
             "definition": "machine_max:senna_gtr_left_wheel"
           },
-          "connector.machine_max.right_front_wheel": {
+          "connector.machine_max.hull_right_front_wheel": {
             "locator": "right_front_wheel",
             "definition": "machine_max:senna_gtr_right_steering_wheel"
           },
-          "connector.machine_max.right_back_wheel": {
+          "connector.machine_max.hull_right_back_wheel": {
             "locator": "right_back_wheel",
             "definition": "machine_max:senna_gtr_right_wheel"
           },

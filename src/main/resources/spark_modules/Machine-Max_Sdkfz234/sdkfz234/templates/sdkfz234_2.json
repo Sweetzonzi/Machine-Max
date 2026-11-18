@@ -304,7 +304,7 @@
             ]
           },
           "connector_data": {
-            "connector.machine_max.hull_back_wheel": {
+            "connector.machine_max.hull_back_mount": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.hull_left_wheel_01": {

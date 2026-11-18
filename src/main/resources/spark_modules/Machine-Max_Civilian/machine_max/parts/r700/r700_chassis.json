@@ -131,20 +131,20 @@
           "subsystem.machine_max.front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:r700_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:r700_back_wheel_driver",
-            "connector": "connector.machine_max.back_wheel"
+            "connector": "connector.machine_max.hull_back_wheel"
           }
         },
         "connectors": {
-          "connector.machine_max.front_wheel": { //连接点名称
+          "connector.machine_max.hull_front_wheel": { //连接点名称
             "locator": "front_wheel", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:r700_front_wheel"
           },
-          "connector.machine_max.back_wheel": {
+          "connector.machine_max.hull_back_wheel": {
             "locator": "back_wheel",
             "definition": "machine_max:r700_back_wheel"
           }

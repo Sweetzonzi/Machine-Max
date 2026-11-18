@@ -36,7 +36,7 @@ MODULES = os.path.join(ROOT, "src", "main", "resources", "spark_modules")
 
 KINDS = ("subsystem", "sub_part", "connector", "interact")
 DIR_RANK = {"top": 0, "bottom": 0, "middle": 0, "left": 1, "right": 1, "front": 2, "back": 2}
-DIR_SYNONYMS = {"aft", "port", "rear", "up", "down", "center"}
+DIR_SYNONYMS = {"aft", "port", "rear", "up", "down", "center", "mid"}
 # 型号名与口径都不属于角色词
 MODEL_WORDS = {"pktm", "pkt", "mg34", "2a42", "2a90", "50mm", "csamm", "crows", "762"}
 AXIS_WORDS = {"yaw", "pitch"}
@@ -233,6 +233,45 @@ RULES = {
 }
 
 
+def bare_name_hits():
+    """同一变体内同类型安装块超过一个时，裸名（名字就是类型短名）违反 3.4。
+
+    单名判据（RULES 里的那些）看不到「本变体里同类有几件」，所以这条单独走一遍变体。
+    裸名本身合法，只有在同型多件、需要靠名字区分彼此时才失败。
+    """
+    hits = []
+    for path in content_files():
+        try:
+            data = load_jsonc(path)
+        except ValueError:
+            continue
+        if not isinstance(data, dict) or not isinstance(data.get("variants"), dict):
+            continue
+        variants = data["variants"]
+        if "sub_parts" in variants:
+            pairs = [("default", variants)]
+        else:
+            pairs = [(k, v) for k, v in variants.items() if isinstance(v, dict)]
+        for _variant_name, variant in pairs:
+            section = variant.get("sub_parts")
+            if not isinstance(section, dict):
+                continue
+            if any(f in section for f in ("hit_boxes", "start_bone", "connectors", "subsystems")):
+                attrs = [section]      # 简写：整段就是一个子零件
+            else:
+                attrs = [v for v in section.values() if isinstance(v, dict)]
+            by_type = collections.defaultdict(list)
+            for attr in attrs:
+                for name, sub in (attr.get("subsystems") or {}).items():
+                    if isinstance(sub, dict) and "type" in sub:
+                        by_type[str(sub["type"]).split(":")[-1]].append(name)
+            for short, group in by_type.items():
+                if len(group) < 2:
+                    continue
+                hits.extend(sorted(n for n in group if tail(n) == short))
+    return hits
+
+
 def cmd_scan(args):
     names, types = collect()
     total = 0
@@ -247,6 +286,14 @@ def cmd_scan(args):
                     hits.append(full)
         total += len(hits)
         print("[%s] %d" % (rule_name, len(hits)))
+        if args.verbose:
+            for full in hits:
+                print("    " + full)
+
+    if args.rule in (None, "all", "bare"):
+        hits = bare_name_hits()
+        total += len(hits)
+        print("[bare] %d" % len(hits))
         if args.verbose:
             for full in hits:
                 print("    " + full)
@@ -334,7 +381,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
 
     scan = sub.add_parser("scan", help="按词表规则列出违规项")
-    scan.add_argument("--rule", help="只跑一条规则：%s、lang、term、all" % "、".join(RULES))
+    scan.add_argument("--rule", help="只跑一条规则：%s、bare、lang、term、all" % "、".join(RULES))
     scan.add_argument("-v", "--verbose", action="store_true", help="列出每个违规键")
     scan.set_defaults(func=cmd_scan)
 

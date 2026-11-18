@@ -26,20 +26,20 @@
 					"rotation": [
 						0,
 						0,
-						"-(local.connector_rotation('connector.machine_max.left_front_wheel', 1) + local.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"
+						"-(local.connector_rotation('connector.machine_max.hull_left_front_wheel', 1) + local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1))*2"
 					]
 				},
 				"XGDown_Left": {
-					"rotation": [0, 0, "-math.atan2(local.connector_offset('connector.machine_max.left_front_wheel', 1)*16,12.263)"]
+					"rotation": [0, 0, "-math.atan2(local.connector_offset('connector.machine_max.hull_left_front_wheel', 1)*16,12.263)"]
 				},
 				"XGDown_Right": {
-					"rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.right_front_wheel', 1)*16,12.263)"]
+					"rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.hull_right_front_wheel', 1)*16,12.263)"]
 				},
 				"XGDown_Left3": {
-					"rotation": [0, 0, "-math.atan2(local.connector_offset('connector.machine_max.left_back_wheel', 1)*16,12.263)"]
+					"rotation": [0, 0, "-math.atan2(local.connector_offset('connector.machine_max.hull_left_back_wheel', 1)*16,12.263)"]
 				},
 				"XGDown_Right3": {
-					"rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.right_back_wheel', 1)*16,12.263)"]
+					"rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.hull_right_back_wheel', 1)*16,12.263)"]
 				}
 			}
 		}

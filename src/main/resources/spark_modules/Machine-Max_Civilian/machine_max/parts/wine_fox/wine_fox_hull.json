@@ -220,22 +220,22 @@
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:wine_fox_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_left_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:wine_fox_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_right_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:wine_fox_back_wheel_driver",
-            "connector": "connector.machine_max.left_back_wheel"
+            "connector": "connector.machine_max.hull_left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:wine_fox_back_wheel_driver",
-            "connector": "connector.machine_max.right_back_wheel"
+            "connector": "connector.machine_max.hull_right_back_wheel"
           },
           "subsystem.machine_max.front_glass": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
@@ -275,19 +275,19 @@
           }
         },
         "connectors": {
-          "connector.machine_max.left_front_wheel": {
+          "connector.machine_max.hull_left_front_wheel": {
             "locator": "left_front_wheel",
             "definition": "machine_max:wine_fox_left_front_wheel"
           },
-          "connector.machine_max.left_back_wheel": {
+          "connector.machine_max.hull_left_back_wheel": {
             "locator": "left_back_wheel",
             "definition": "machine_max:wine_fox_left_back_wheel"
           },
-          "connector.machine_max.right_front_wheel": {
+          "connector.machine_max.hull_right_front_wheel": {
             "locator": "right_front_wheel",
             "definition": "machine_max:wine_fox_right_front_wheel"
           },
-          "connector.machine_max.right_back_wheel": {
+          "connector.machine_max.hull_right_back_wheel": {
             "locator": "right_back_wheel",
             "definition": "machine_max:wine_fox_right_back_wheel"
           },

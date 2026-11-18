@@ -180,19 +180,19 @@
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.white",
           "connector_data": {
-            "connector.machine_max.left_front_wheel": {
+            "connector.machine_max.hull_left_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_front_wheel": {
+            "connector.machine_max.hull_right_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_back_wheel": {
+            "connector.machine_max.hull_right_back_wheel": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.right_back_mount": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_back_wheel": {
+            "connector.machine_max.hull_left_back_wheel": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.left_back_mount": {
@@ -292,7 +292,7 @@
       },
       "partUuidA": "88b3aa04-f5c8-47be-8258-e8efc0daf02d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "advConnectorName": "connector.machine_max.hull_right_front_wheel",
       "posRotA": {
         "position": [
           0.9686475,
@@ -326,7 +326,7 @@
       },
       "partUuidA": "88b3aa04-f5c8-47be-8258-e8efc0daf02d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "advConnectorName": "connector.machine_max.hull_right_back_wheel",
       "posRotA": {
         "position": [
           0.9686475,
@@ -360,7 +360,7 @@
       },
       "partUuidA": "88b3aa04-f5c8-47be-8258-e8efc0daf02d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "advConnectorName": "connector.machine_max.hull_left_back_wheel",
       "posRotA": {
         "position": [
           -0.9686475,
@@ -394,7 +394,7 @@
       },
       "partUuidA": "88b3aa04-f5c8-47be-8258-e8efc0daf02d",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "advConnectorName": "connector.machine_max.hull_left_front_wheel",
       "posRotA": {
         "position": [
           -0.9686475,

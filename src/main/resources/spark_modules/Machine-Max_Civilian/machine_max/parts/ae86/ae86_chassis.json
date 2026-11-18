@@ -95,38 +95,38 @@
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
             "definition": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_left_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
+            "connector": "connector.machine_max.hull_right_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_back_wheel"
+            "connector": "connector.machine_max.hull_left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_back_wheel"
+            "connector": "connector.machine_max.hull_right_back_wheel"
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表
-          "connector.machine_max.left_front_wheel": {//连接点名称
+          "connector.machine_max.hull_left_front_wheel": {//连接点名称
             "locator": "LeftFrontWheel",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:ae86_left_front_wheel"
           },
-          "connector.machine_max.left_back_wheel": {
+          "connector.machine_max.hull_left_back_wheel": {
             "locator": "LeftBackWheel",
             "definition": "machine_max:ae86_left_back_wheel"
           },
-          "connector.machine_max.right_front_wheel": {
+          "connector.machine_max.hull_right_front_wheel": {
             "locator": "RightFrontWheel",
             "definition": "machine_max:ae86_right_front_wheel"
           },
-          "connector.machine_max.right_back_wheel": {
+          "connector.machine_max.hull_right_back_wheel": {
             "locator": "RightBackWheel",
             "definition": "machine_max:ae86_right_back_wheel"
           },

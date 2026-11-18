@@ -5,7 +5,7 @@
 			"loop": true,
 			"bones": {
 				"FXP": {
-					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.left_front_wheel', 1) + local.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+					"rotation": [0, 0, "-(local.connector_rotation('connector.machine_max.hull_left_front_wheel', 1) + local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1))*2"]
 				},
 				"Ym": {
 					"position": [0, 0, "-1.0*global.get('throttle')"]

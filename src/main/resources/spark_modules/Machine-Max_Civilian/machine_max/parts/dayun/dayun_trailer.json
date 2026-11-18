@@ -41,87 +41,87 @@
             "definition": "machine_max:fixed_down",
             "overwrite": { "integrity": 50.0, "impact_absorption": 0.25, "impact_reduction": 5.0 }
           },
-          "connector.machine_max.left_wheel_01": {
+          "connector.machine_max.hull_left_wheel_01": {
             "locator": "wheel_left_1",
             "definition": "machine_max:dayun_left_wheel"
           },
-          "connector.machine_max.left_wheel_02": {
+          "connector.machine_max.hull_left_wheel_02": {
             "locator": "wheel_left_2",
             "definition": "machine_max:dayun_left_wheel"
           },
-          "connector.machine_max.left_wheel_03": {
+          "connector.machine_max.hull_left_wheel_03": {
             "locator": "wheel_left_3",
             "definition": "machine_max:dayun_left_wheel"
           },
-          "connector.machine_max.right_wheel_01": {
+          "connector.machine_max.hull_right_wheel_01": {
             "locator": "wheel_right_1",
             "definition": "machine_max:dayun_right_wheel"
           },
-          "connector.machine_max.right_wheel_02": {
+          "connector.machine_max.hull_right_wheel_02": {
             "locator": "wheel_right_2",
             "definition": "machine_max:dayun_right_wheel"
           },
-          "connector.machine_max.right_wheel_03": {
+          "connector.machine_max.hull_right_wheel_03": {
             "locator": "wheel_right_3",
             "definition": "machine_max:dayun_right_wheel"
           },
-          "connector.machine_max.left_01": {
+          "connector.machine_max.left_mount_01": {
             "locator": "left1",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.mid_01": {
+          "connector.machine_max.middle_mount_01": {
             "locator": "mid1",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.right_01": {
+          "connector.machine_max.right_mount_01": {
             "locator": "right1",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.left_02": {
+          "connector.machine_max.left_mount_02": {
             "locator": "left2",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.mid_02": {
+          "connector.machine_max.middle_mount_02": {
             "locator": "mid2",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.right_02": {
+          "connector.machine_max.right_mount_02": {
             "locator": "right2",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.left_03": {
+          "connector.machine_max.left_mount_03": {
             "locator": "left3",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.mid_03": {
+          "connector.machine_max.middle_mount_03": {
             "locator": "mid3",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.right_03": {
+          "connector.machine_max.right_mount_03": {
             "locator": "right3",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.left_04": {
+          "connector.machine_max.left_mount_04": {
             "locator": "left4",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.mid_04": {
+          "connector.machine_max.middle_mount_04": {
             "locator": "mid4",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.right_04": {
+          "connector.machine_max.right_mount_04": {
             "locator": "right4",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.left_05": {
+          "connector.machine_max.left_mount_05": {
             "locator": "left5",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.mid_05": {
+          "connector.machine_max.middle_mount_05": {
             "locator": "mid5",
             "definition": "machine_max:fixed_up"
           },
-          "connector.machine_max.right_05": {
+          "connector.machine_max.right_mount_05": {
             "locator": "right5",
             "definition": "machine_max:fixed_up"
           }

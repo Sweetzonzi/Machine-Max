@@ -137,7 +137,7 @@
               "definition": "sdkfz234:sdkfz234_right_wheel",
               "overwrite": {}
             },
-            "connector.machine_max.hull_back_wheel": {
+            "connector.machine_max.hull_back_mount": {
               "locator": "hull_back_wheel",
               "definition": "machine_max:fixed_back",
               "overwrite": {}

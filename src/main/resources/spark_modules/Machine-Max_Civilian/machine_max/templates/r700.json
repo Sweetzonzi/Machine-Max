@@ -11,10 +11,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.front_wheel": {
+            "connector.machine_max.hull_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.back_wheel": {
+            "connector.machine_max.hull_back_wheel": {
               "integrity_ratio": 1.0
             }
           },
@@ -181,7 +181,7 @@
       },
       "partUuidA": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.back_wheel",
+      "advConnectorName": "connector.machine_max.hull_back_wheel",
       "posRotA": {
         "position": [
           0.0,
@@ -215,7 +215,7 @@
       },
       "partUuidA": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_wheel",
+      "advConnectorName": "connector.machine_max.hull_front_wheel",
       "posRotA": {
         "position": [
           0.0,

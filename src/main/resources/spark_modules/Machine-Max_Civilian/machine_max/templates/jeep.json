@@ -185,31 +185,31 @@
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
           "connector_data": {
-            "connector.machine_max.top_left_02": {
+            "connector.machine_max.top_left_mount_02": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.top_front": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_left_01": {
+            "connector.machine_max.top_left_mount_01": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.backup_wheel": {
+            "connector.machine_max.hull_back_mount": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_01": {
+            "connector.machine_max.top_right_mount_01": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_03": {
+            "connector.machine_max.top_right_mount_03": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_right_02": {
+            "connector.machine_max.top_right_mount_02": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.top_left_03": {
+            "connector.machine_max.top_left_mount_03": {
               "integrity_ratio": 1.0
             }
           },
@@ -252,16 +252,16 @@
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
           "connector_data": {
-            "connector.machine_max.left_front_wheel": {
+            "connector.machine_max.hull_left_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_back_wheel": {
+            "connector.machine_max.hull_right_back_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_front_wheel": {
+            "connector.machine_max.hull_right_front_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_back_wheel": {
+            "connector.machine_max.hull_left_back_wheel": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.hull_connection": {
@@ -407,7 +407,7 @@
       },
       "partUuidA": "caa212a7-eafb-4eec-a0ee-b42606e0ac35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "advConnectorName": "connector.machine_max.hull_left_front_wheel",
       "posRotA": {
         "position": [
           -1.242002,
@@ -441,7 +441,7 @@
       },
       "partUuidA": "caa212a7-eafb-4eec-a0ee-b42606e0ac35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "advConnectorName": "connector.machine_max.hull_left_back_wheel",
       "posRotA": {
         "position": [
           -1.226377,
@@ -475,7 +475,7 @@
       },
       "partUuidA": "caa212a7-eafb-4eec-a0ee-b42606e0ac35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "advConnectorName": "connector.machine_max.hull_right_back_wheel",
       "posRotA": {
         "position": [
           1.257998,
@@ -509,7 +509,7 @@
       },
       "partUuidA": "caa212a7-eafb-4eec-a0ee-b42606e0ac35",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "advConnectorName": "connector.machine_max.hull_right_front_wheel",
       "posRotA": {
         "position": [
           1.257998,
@@ -577,7 +577,7 @@
       },
       "partUuidA": "50f3e1d8-3fd4-4dfe-a3d3-c427d3605e42",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.backup_wheel",
+      "advConnectorName": "connector.machine_max.hull_back_mount",
       "posRotA": {
         "position": [
           1.3514666E-4,
