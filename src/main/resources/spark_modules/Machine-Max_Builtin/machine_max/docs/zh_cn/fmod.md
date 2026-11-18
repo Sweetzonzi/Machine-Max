@@ -148,6 +148,17 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 
 变速箱的离合接合／分离音使用 clutch_in／clutch_out 配置的 OGG，与换挡音分别按状态变化触发。脚刹与气刹使用轮驱的 brake_on／brake_off 配置。当前 bank 没有独立的离合、踏板或气刹事件，gears_grind 没有运行时触发判据。
 
+### 引擎启停音运行时接线
+
+引擎的启停音挂在运行边沿上，判据是 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/AbstractSubsystem.java#isActive`：组装进度跨过零件定义的工作阈值、子系统失活与摧毁都会翻转它。客户端每 tick 比对一次这个状态（`src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#updateEngineRunEdge`），翻转时播放一次：配置了 `sounds.fmod.start`／`stop`、bank 已加载且实例启动成功时用 FMOD 单次事件，否则播放 `sounds.on_activate`／`on_deactivate` 的样本（`EngineSubsystem#playEngineRunSound`）。
+
+- 运行状态按未运行起算，因此引擎第一次以运行状态出现在客户端（载具入世、以及载具进入视野后客户端首次 tick 到它）同样算一次启动，播一次启动音。
+- 玩家侧能观察到的启动边沿是组装进度跨过零件定义的工作阈值；引擎没有独立的点火开关，已装好的车在客户端出现时就是运行状态。
+- 启停样本沿用子系统的声音绑定：位置与平动速度取引擎所在的子零件，播放器维护 interior 与自动空间效果；单次事件播放结束后由 SparkCore 释放实例。
+- 引擎不采用 `BasicSubsystem#onActive`／`onDisabled` 上的那一份启停样本：引擎默认就是 active，两条边沿与运行状态不同时成立，同一档启停会叠成双声。
+- `drive` 与启停音各自独立：bank 没有提供事件时长，工况音在引擎运行期间按自身规则持续播放。
+- 没有配置 `start`／`stop` 也没有配置 `on_activate`／`on_deactivate` 的引擎启停无声，Builtin 的 motorcycle_engine 与 sport_car_engine 属于这一类。
+
 ## 完整事件目录
 
 每个路径均已通过 Studio 按路径解析，并核对属于对应 bank。参数名对应本文“参数定义域与控制方式”中的范围与默认值。
@@ -421,7 +432,7 @@ bank ID 为 `machine_max:abrams`。
 
 ## 当前接入边界
 
-发动机持续工况由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#tickFmodSound` 播放。以下定义同时配置同系列的 drive、start 和 stop，运行时持续工况读取 drive。除 M1A2 使用 `machine_max:abrams` 外，其余使用 `machine_max:basic_vehicle_sounds`。
+发动机持续工况由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/EngineSubsystem.java#tickFmodSound` 播放，启停单次事件由同类的 `#playEngineRunSound` 播放。以下定义同时配置同系列的 drive、start 和 stop，运行时分别取持续工况与启停。除 M1A2 使用 `machine_max:abrams` 外，其余使用 `machine_max:basic_vehicle_sounds`。
 
 | 发动机定义对应对象 | 持续工况事件 |
 | --- | --- |
@@ -443,7 +454,7 @@ bank ID 为 `machine_max:abrams`。
 
 第一方变速箱和地面车控已配置 FMOD 换挡与手刹单次事件，触发规则见本文“换挡与手刹运行时接线”。
 
-引擎的 sounds.fmod.start／stop、电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
+电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
 
 ## 可复核记录
 

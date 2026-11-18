@@ -68,7 +68,7 @@
   },
   "sounds": {
     "hit_un_pen": {
-      "sound_id": "machine_max:hit_box.hit.up_pen.glass",
+      "sound_id": "minecraft:block.glass.step",
       "range": 48
     },
     "hit_pen": {

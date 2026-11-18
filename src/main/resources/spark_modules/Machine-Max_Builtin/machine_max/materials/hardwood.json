@@ -68,11 +68,11 @@
   },
   "sounds": {
     "hit_un_pen": {
-      "sound_id": "machine_max:hit_box.hit.up_pen.wood_hard",
+      "sound_id": "minecraft:block.wood.step",
       "range": 48
     },
     "hit_pen": {
-      "sound_id": "machine_max:hit_box.hit.pen.wood_hard",
+      "sound_id": "minecraft:block.wood.break",
       "range": 48
     }
   }

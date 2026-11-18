@@ -41,6 +41,13 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     private boolean fmodAttempted;
     private static final int RETRIGGER_TICKS = 20;
 
+    /** 启停用的 FMOD 单次事件，未配置的用途为空。 */
+    private final @Nullable FmodSoundAttr fmodStartSound;
+    private final @Nullable FmodSoundAttr fmodStopSound;
+
+    /** 客户端上一次观察到的运行状态。引擎第一次以运行状态出现在客户端时算一次启动。 */
+    private boolean engineRunning;
+
     /**
      * 声音通道缓存：每个转速档位一个通道。
      */
@@ -60,8 +67,15 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.fmodSound = attr.getStaticAttribute().getSounds().fmod()
+        var fmodSounds = attr.getStaticAttribute().getSounds().fmod();
+        this.fmodSound = fmodSounds
                 .flatMap(sounds -> sounds.drive().map(path -> new FmodSoundAttr(sounds.bank(), path)))
+                .orElse(null);
+        this.fmodStartSound = fmodSounds
+                .flatMap(sounds -> sounds.start().map(path -> new FmodSoundAttr(sounds.bank(), path)))
+                .orElse(null);
+        this.fmodStopSound = fmodSounds
+                .flatMap(sounds -> sounds.stop().map(path -> new FmodSoundAttr(sounds.bank(), path)))
                 .orElse(null);
         RED_LINE_SPEED = attr.staticAttribute.redLineRpm * Math.PI / 30.0;//红线转速(rad/s)
         MAX_TORQUE_SPEED = attr.staticAttribute.maxTorqueRpm * Math.PI / 30.0;//最大扭矩转速(rad/s)
@@ -95,6 +109,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
 
     /** 客户端主线程更新持续工况音，每台活跃引擎只选择一条播放路径。 */
     private void tickClientSound() {
+        updateEngineRunEdge();
         if (!isActive()) {
             if (fmodVoice != null) fadeFmodSound(fmodVoice);
             fmodVoice = null;
@@ -118,6 +133,35 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         } else {
             clearChannelWeights();
         }
+    }
+
+    /**
+     * 运行边沿：客户端每次看到运行状态翻转，播放一次启停音。
+     * <p>
+     * 引擎的“运行”就是 {@link #isActive()}，组装进度跨过工作阈值、子系统失活与摧毁都会翻转它。
+     * 状态默认按未运行起算，因此引擎第一次以运行状态出现在客户端（例如载具入世）也算一次启动。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（{@link #tickClientSound()}）。
+     */
+    private void updateEngineRunEdge() {
+        boolean running = isActive();
+        if (running == engineRunning) return;
+        engineRunning = running;
+        playEngineRunSound(running);
+    }
+
+    /**
+     * 播放一次启停音：FMOD 单次事件优先，未配置、bank 未加载或实例启动失败时播放原版启停样本。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（{@link #tickClientSound()}）。
+     */
+    private void playEngineRunSound(boolean starting) {
+        FmodSoundAttr fmod = starting ? fmodStartSound : fmodStopSound;
+        if (fmod != null && tryPlayFmodSound(fmod.bank(), fmod.event(), SoundSource.PLAYERS, Map.of()) != null) {
+            return;
+        }
+        EngineSubsystemStaticAttr.EngineSoundAttr sounds = attr.getStaticAttribute().getSounds();
+        playLifecycleSound(starting ? sounds.basicSounds().onActivated() : sounds.basicSounds().onDeactivated());
     }
 
     /** 将实际转速映射到 Studio 的 0–100，以服务端同步的油门开度驱动 load。 */
@@ -152,6 +196,21 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     public void onDetach() {
         stopClientFmodSound();
         super.onDetach();
+    }
+
+    /**
+     * 引擎的启停音由运行边沿播放，基类的 active 边沿不再出声。
+     * <p>
+     * 引擎默认就是 active，而 {@link BasicSubsystem} 只在 {@code setActive} 的边沿播放启停样本：
+     * 组装进度跨过工作阈值时不会调用它，摧毁时又会在 {@code setActive(false)} 上放一次停机音，
+     * 与运行边沿的那一次叠在一起。启停样本因此统一交给 {@link #playEngineRunSound(boolean)}。
+     */
+    @Override
+    public void onActive() {
+    }
+
+    @Override
+    public void onDisabled() {
     }
 
     /** 客户端主线程停止 FMOD 工况音，重新载入区块时可再尝试启动。 */
@@ -426,7 +485,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     @Override
     public float getMasterVolume(UUID uuid) {
         if (getSubPart().isRemoved() || !isActive()) return 0f;
-        return 0.3f + 0.7f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
+        return 0.5f + 0.5f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
     }
 
     @Override

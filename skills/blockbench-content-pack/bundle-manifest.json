@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "eada1e07f704d3cbcc7327223035da7fd4ac24ed",
+    "revision": "8fc04442cdbcbfb76d939c65ed76771199542567",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -311,8 +311,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
-        "bytes": 6905,
-        "sha256": "4548a0d195fcf7ee112dfc56386ee8f02ac058944d4e13695574ae72bd3fa583"
+        "bytes": 7035,
+        "sha256": "da8633a0b155a6998a6507e2cd24cd84646e2c2ecdd16aa268eb7e40652df8fe"
       },
       {
         "path": "references/schemas/subsystem/static/gearbox_static_attr.schema.json",
