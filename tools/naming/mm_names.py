@@ -40,6 +40,10 @@ DIR_SYNONYMS = {"aft", "port", "rear", "up", "down", "center", "mid"}
 # 型号名与口径都不属于角色词
 MODEL_WORDS = {"pktm", "pkt", "mg34", "2a42", "2a90", "50mm", "csamm", "crows", "762"}
 AXIS_WORDS = {"yaw", "pitch"}
+# 英文译文标题式的例外：单位保持小写，虚词只在非首词位置保持小写
+EN_UNIT = {"mm", "km/h", "km", "kg", "t", "m", "x", "s"}
+EN_STOP = {"of", "and", "the", "with", "for", "in", "on", "to", "a", "an", "or", "per", "at", "by", "vs"}
+EN_KIND_PREFIXES = ("subsystem.", "sub_part.", "connector.", "interact.", "controlGroup.")
 
 # 名字末段 ↔ 子系统类型
 TYPE_SUFFIX = {
@@ -272,6 +276,39 @@ def bare_name_hits():
     return hits
 
 
+def en_case_hits():
+    """英文译文用标题式：实词首字母大写，缩写全大写（4.2）。
+
+    判据落在词上：词首小写即命中。放过单位（`mm`）、非首词的虚词（`of` / `and`），
+    以及带大写字母或数字的词——型号 `M256`、`6P49`、`T-90A` 一类不需要再判断。
+    """
+    en = {}
+    for path in lang_files():
+        if os.path.basename(path) != "en_us.json":
+            continue
+        en.update(load_jsonc(path))
+    hits = []
+    for full in sorted(en):
+        if not full.startswith(EN_KIND_PREFIXES):
+            continue
+        value = en[full]
+        if not isinstance(value, str):
+            continue
+        for idx, token in enumerate(value.split(" ")):
+            word = re.sub(r"^[^A-Za-z0-9]+|[^A-Za-z0-9]+$", "", token)
+            if not word:
+                continue
+            low = word.lower()
+            if low in EN_UNIT or (idx and low in EN_STOP):
+                continue
+            if any(c.isupper() for c in word) or any(c.isdigit() for c in word):
+                continue
+            if word[0].islower():
+                hits.append("%s = %s" % (full, value))
+                break
+    return hits
+
+
 def cmd_scan(args):
     names, types = collect()
     total = 0
@@ -328,6 +365,14 @@ def cmd_scan(args):
         for key, value in hits:
             print("    %s = %s" % (key, value))
 
+    if args.rule in (None, "all", "en"):
+        hits = en_case_hits()
+        total += len(hits)
+        print("[en_case] %d" % len(hits))
+        if args.verbose:
+            for hit in hits:
+                print("    " + hit)
+
     print("合计违规（含重叠）：%d" % total)
     return 0
 
@@ -381,7 +426,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
 
     scan = sub.add_parser("scan", help="按词表规则列出违规项")
-    scan.add_argument("--rule", help="只跑一条规则：%s、bare、lang、term、all" % "、".join(RULES))
+    scan.add_argument("--rule", help="只跑一条规则：%s、bare、en、lang、term、all" % "、".join(RULES))
     scan.add_argument("-v", "--verbose", action="store_true", help="列出每个违规键")
     scan.set_defaults(func=cmd_scan)
 

@@ -7,7 +7,7 @@
   "subsystem.m1a2_sep.track_controller": "履带行驶控制器",
   "subsystem.m1a2_sep.track_left": "左履带驱动",
   "subsystem.m1a2_sep.track_right": "右履带驱动",
-  "subsystem.m1a2_sep.driver_seat": "驾驶员",
+  "subsystem.m1a2_sep.driver_seat": "驾驶座",
   "interact.m1a2_sep.gunner": "进入炮手座",
   "interact.m1a2_sep.commander": "进入车长座",
   "interact.m1a2_sep.loader": "进入装填手座",
