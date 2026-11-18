@@ -109,11 +109,11 @@ class TrackLeverBrakeTest {
     }
 
     @Test
-    void leverBrakesTheTankLikeInnerSideInForwardAndReverse() {
-        assertTrue(TrackMath.leverBrakesLeft(1f, 1f));
-        assertFalse(TrackMath.leverBrakesLeft(1f, -1f));
-        assertFalse(TrackMath.leverBrakesLeft(-1f, 1f));
-        assertTrue(TrackMath.leverBrakesLeft(-1f, -1f));
-        assertFalse(TrackMath.leverBrakesLeft(0f, 1f));
+    void leverAlwaysBrakesTheSameSideRegardlessOfTravelDirection() {
+        assertTrue(TrackMath.leverBrakesLeft(1f));
+        assertFalse(TrackMath.leverBrakesLeft(-1f));
+        assertFalse(TrackMath.leverBrakesLeft(0f));
+        // 制动侧与行进方向无关，倒挡只反转带速：同一输入的偏航方向因此随行进方向反转。
+        // 该反转由 SingleFlowTrackControlTest#reverseGearControlsSteeringDirectionEvenWithPositiveThrottle 覆盖。
     }
 }

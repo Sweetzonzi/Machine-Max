@@ -24,9 +24,10 @@ import java.util.Map;
  * 履带车辆控制器（单流开环拉杆制动）。
  *
  * <p>通过 {@code control_outputs} 发现发动机/电机/变速箱与 {@link TrackDriveSubsystem}。
- * A/D 是转向拉杆，按横向位置把基础制动偏置到内侧、释放外侧；拉杆超过死区后内侧离合断开，
- * 让开放差速器把动力集中到外侧。W/S 是纵向意图，负责加速或制动。意图模式的纯转向请求
- * 当前行进方向的动力，使车体绕内侧附近转动。</p>
+ * A/D 是转向拉杆：A 始终制动左侧、D 始终制动右侧，按横向位置把基础制动偏置到该侧、释放另一侧；
+ * 拉杆超过死区后该侧离合断开，让开放差速器把动力集中到另一侧。制动侧不随行进方向改变，
+ * 所以倒挡时车头偏航方向随带速一起反转：前进按 A 车头向左摆，倒车按 A 车头向右摆、车尾向左移动。
+ * W/S 是纵向意图，负责加速或制动。意图模式的纯转向请求当前行进方向的动力，使车体绕制动侧附近转动。</p>
  *
  * <p>绑定表在主线程握手/结构变化时重建，物理线程只读取 volatile 快照。</p>
  */
@@ -170,11 +171,11 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
         float lever = TrackMath.leverBrake(steering);
         float travel = TrackMath.travelDirection(actualThrottle, speed, lastTravelDirection);
         lastTravelDirection = travel;
-        boolean innerLeft = TrackMath.leverBrakesLeft(steering, travel);
+        boolean innerLeft = TrackMath.leverBrakesLeft(steering);
 
         float vBase = computeBaseSpeed(bindings, travel);
         baseSpeed = vBase;
-        yawRateCmd = width < 0.1f ? 0f : steering * lever * Math.abs(vBase) / width;
+        yawRateCmd = width < 0.1f ? 0f : steering * lever * vBase / width;
 
         List<TrackBinding> all = trackBindings;
         float[] brakes = new float[all.size()];

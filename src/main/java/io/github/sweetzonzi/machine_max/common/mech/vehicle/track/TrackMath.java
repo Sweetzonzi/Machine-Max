@@ -86,9 +86,15 @@ public final class TrackMath {
         return lastDirection < -0.01f ? -1f : 1f;
     }
 
-    /** 坦克式侧别：前进时 A 左、D 右；倒车时 A 右、D 左，A/D 的偏航方向不随挡位翻转。 */
-    public static boolean leverBrakesLeft(float steering, float travelDirection) {
-        return steering * travelDirection > 0f;
+    /**
+     * 拉杆侧别：A（正输入）始终制动左侧、D（负输入）始终制动右侧，与行进方向无关。
+     *
+     * <p>倒挡只把两侧带速反向，制动侧不变，车头偏航方向因此随行进方向反转：前进按 A
+     * 车头向左摆，倒车按 A 车头向右摆、车尾向左移动。同一转向输入在两个方向上制动同一条
+     * 履带，与轮式车把方向盘打向同一侧等价。</p>
+     */
+    public static boolean leverBrakesLeft(float steering) {
+        return steering > 0f;
     }
 
     /** 基础制动在内侧的偏置。 */
