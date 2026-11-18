@@ -55,11 +55,11 @@
 
 ```json
 "connectors": {
-  "connector.machine_max.up": {
+  "connector.machine_max.top": {
     "locator": "up",
     "definition": "machine_max:fixed_up"
   },
-  "connector.machine_max.down": {
+  "connector.machine_max.bottom": {
     "locator": "down",
     "definition": "machine_max:fixed_down"
   }
@@ -67,7 +67,7 @@
 ```
 
 说明：
-- `connector.machine_max.up` 是你在此 subpart 内部使用的连接点名称。
+- `connector.machine_max.top` 是你在此 subpart 内部使用的连接点名称。
 - `locator` 必须对应模型中真实存在的 locator 名。
 - `definition` 必须指向 `connectors/*.json` 的注册路径。
 

@@ -31,11 +31,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.type.mecha", "机甲");
         this.add("attribute.machine_max.grab_strength", "抓取力量");
 
-        // 控制组名称
-        this.add("controlGroup.machine_max.base", "基础");
-        this.add("controlGroup.machine_max.backup_fire_control", "备用火控");
-        this.add("controlGroup.machine_max.commander_override", "车长超控");
-
         // 按键类别
         this.add("key.category.machine_max.general", "Machine Max:通用");
         this.add("key.category.machine_max.ground", "Machine Max:地面载具");

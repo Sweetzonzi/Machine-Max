@@ -115,19 +115,6 @@ public enum MMLanguageRegistry {
             zh_cn, "乘员装填速度",
             en_us, "Crew Loading Speed"
     )),
-    // 控制组名称
-    CONTROL_GROUP_BASE("controlGroup.machine_max.base", ImmutableMap.of(
-            zh_cn, "基础",
-            en_us, "Base"
-    )),
-    CONTROL_GROUP_BACKUP_FIRE_CONTROL("controlGroup.machine_max.backup_fire_control", ImmutableMap.of(
-            zh_cn, "备用火控",
-            en_us, "Backup Fire Control"
-    )),
-    CONTROL_GROUP_COMMANDER_OVERRIDE("controlGroup.machine_max.commander_override", ImmutableMap.of(
-            zh_cn, "车长超控",
-            en_us, "Commander Override"
-    )),
     // 按键类别
     KEY_CATEGORY_GENERAL("key.category.machine_max.general", ImmutableMap.of(
             zh_cn, "Machine Max:通用",

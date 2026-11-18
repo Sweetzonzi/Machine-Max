@@ -38,7 +38,7 @@
           }
         },
         "connectors": {
-          "connector.machine_max.up": {
+          "connector.machine_max.top": {
             "locator": "up",
             "definition": "machine_max:fixed_up"
           },
@@ -50,7 +50,7 @@
             "locator": "side_right",
             "definition": "machine_max:fixed_right"
           },
-          "connector.machine_max.down": {
+          "connector.machine_max.bottom": {
             "locator": "down",
             "definition": "machine_max:fixed_down"
           },

@@ -31,11 +31,6 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.type.mecha", "Mecha");
         this.add("attribute.machine_max.grab_strength", "Grab Strength");
 
-        // 控制组名称
-        this.add("controlGroup.machine_max.base", "Base");
-        this.add("controlGroup.machine_max.backup_fire_control", "Backup Fire Control");
-        this.add("controlGroup.machine_max.commander_override", "Commander Override");
-
         //Key categories
         this.add("key.category.machine_max.general", "Machine Max:General");
         this.add("key.category.machine_max.ground", "Machine Max:Ground");
