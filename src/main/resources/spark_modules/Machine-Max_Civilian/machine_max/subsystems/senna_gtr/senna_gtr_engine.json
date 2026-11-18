@@ -21,7 +21,7 @@
       "sound_id": "machine_max:subsystem.engine.v8_stop",
       "range": 64
     },
-    "working_sounds": {
+    "working": {
       "800.0": {
         "sound_id": "machine_max:subsystem.engine.v8_800",
         "range": 64

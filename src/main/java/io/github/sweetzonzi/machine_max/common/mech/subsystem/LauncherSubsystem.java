@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractModuleAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BarrelModuleAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.module.BreechModuleAttr;
 
@@ -131,6 +132,36 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /** 本轮连射已打的弹数（用于检测首发射击） */
     private int roundsFiredThisBurst = 0;
+
+    /**
+     * 开火音的 FMOD 配置；为空、bank 未加载或实例启动失败时开火音只走本型号的传播音效。
+     */
+    @Nullable
+    private final LauncherSubsystemStaticAttr.LauncherFmodSoundAttr fmodFire;
+
+    /**
+     * 本次连射持有的 FMOD 实例。<br>
+     * 只有能写 {@code firing} 的持续事件（机枪循环）会保留它：一次连射只起一个实例，后续发射不再重复启动。
+     * 单发事件（主炮）打完即交给播放器回收，本字段保持空。
+     */
+    @Nullable
+    private UUID fmodFireVoice;
+
+    /** 已把 {@code firing} 交回 0 的尾音实例，等工程自行结束或超过兜底寿命。 */
+    @Nullable
+    private UUID fmodTailVoice;
+
+    /** {@link #fmodTailVoice} 交回尾音时的 tick，用于兜底停止。 */
+    private int fmodTailTick;
+
+    /** 尾音实例的兜底寿命：工程未自行结束时到点强制停止，避免实例滞留。 */
+    private static final int FMOD_TAIL_TICKS = 100;
+
+    /**
+     * 事件能否写 {@code firing} 是 bank 的属性，每个客户端会话只探测一次。<br>
+     * 键为 bank 与事件路径拼接，值为 {@code true} = 持续事件（循环），{@code false} = 单发事件。
+     */
+    private static final Map<String, Boolean> FMOD_FIRING_EVENTS = new ConcurrentHashMap<>();
 
     /**
      * 开火动画是否已被判定为不可用（零件动画集中不存在该名称）。
@@ -368,6 +399,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         this.attr = attr;
         this.loaders = new LoaderRoster(this, attr.loaderDiscoveryTargets,
                 attr.loaderTimeMultipliers);
+        this.fmodFire = attr.getStaticAttribute().getLauncherSounds().fmod().orElse(null);
         if (attr.locator == null || attr.locator.isEmpty()) {
             MachineMax.LOGGER.error("发射器子系统 {} 未配置发射点locator", name);
         }
@@ -1213,6 +1245,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } else {
             ceaseBurst(ceaseReason());
         }
+        // 停火后交回 firing=0 的实例还要自行播完尾音；它只在这条路径上收尾，不受扳机状态影响。
+        if (getLevel().isClientSide()) tickFmodTail();
 
         // 轮射挑管的依据：本 tick 的弹药内容与射击都已定稿后才定值（刚打掉的那发因此不再算可打），
         // 物理线程只读这一位，不碰本管那份逐 tick 变动的弹药状态。
@@ -1245,7 +1279,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /** 是否还有本次连射未收尾的射击音效；服务端的三个标记恒为空，因此只对客户端有意义。 */
     private boolean hasLiveFireSound() {
-        return currentAutoFireUuid != null || currentShellSoundUuid != null || roundsFiredThisBurst > 0;
+        return currentAutoFireUuid != null || currentShellSoundUuid != null
+                || fmodFireVoice != null || roundsFiredThisBurst > 0;
     }
 
     /**
@@ -2384,68 +2419,63 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
             currentFireRateTierKey = null;
         }
 
-        // 淡出弹壳循环音效
+        // 弹壳循环音效
         if (currentShellSoundUuid != null) {
             fadeSound(currentShellSoundUuid);
             currentShellSoundUuid = null;
             currentShellRateTierKey = null;
         }
 
-        // 播放停火尾音
-        ProjectileType ammo = getCurrentAmmoType();
-        if (ammo != null) {
-            SoundEvent ceaseSound = ammo.getCeaseFireSound();
-            if (ceaseSound != null && ceaseSound != ProjectileType.ProjectileSoundAttr.NO_SOUND) {
-                playSpreadingSound(ceaseSound, SoundSource.NEUTRAL);
-            }
+        // FMOD 开火音：持续事件交回 firing=0 由工程播尾音，单发事件没有活动实例需要收尾
+        ceaseFmodFire();
 
-            // 停火时播放最后一枚弹壳音效（单发）
-            SoundEvent shellSound = ammo.getShellSounds().get("0.0");
-            if (shellSound != null) {
-                playSpreadingSound(shellSound, SoundSource.NEUTRAL);
-            }
+        // 播放停火尾音
+        attr.staticAttribute.getCeaseFireSound()
+                .ifPresent(sound -> playSpreadingSound(sound, SoundSource.NEUTRAL));
+
+        // 停火时播放最后一枚弹壳音效（单发）
+        SoundEvent shellSound = attr.staticAttribute.getShellSounds().get("0.0");
+        if (shellSound != null) {
+            playSpreadingSound(shellSound, SoundSource.NEUTRAL);
         }
 
         roundsFiredThisBurst = 0;
     }
 
     /**
-     * 处理开火音效：遍历本 tick 发射的弹药类型，按首发/连发分别播放音效。
+     * 处理开火音效：一个业务 tick 内的所有发射共用这一次触发。
      * <p>
-     * 使用调用方传入的本地快照列表 {@code firedTypes}，而非直接遍历
-     * {@link #pendingFires}，避免与物理线程的并发 poll 冲突。
+     * 本型号的开火音、弹壳音与连射档位都由发射器型号决定，与这一 tick 打出的是哪个弹种无关，
+     * 因此不按 {@code firedTypes} 逐项播放——一个 tick 打两种弹也只响一次。
      * </p>
      * <p>
      * <b>调用线程：</b>主线程（{@link #onTick()}）。
      * </p>
      *
-     * @param firedTypes      本 tick 发射的弹药类型快照
+     * @param firedTypes      本 tick 发射的弹药类型快照，只用于统计发数
      * @param burstJustStarted 是否为本 burst 首帧
      */
     private void handleFiringSounds(List<ProjectileType> firedTypes, boolean burstJustStarted) {
-        for (ProjectileType type : firedTypes) {
-            if (type == null) continue;
+        boolean isFirstRound = burstJustStarted && roundsFiredThisBurst == 0;
+        roundsFiredThisBurst += firedTypes.size();
 
-            roundsFiredThisBurst++;
-            boolean isFirstRound = burstJustStarted && roundsFiredThisBurst == 1;
-
-            tickFireSound(type, isFirstRound);
-            tickShellSound(type, isFirstRound);
-        }
+        // FMOD 按发射管绑定事件而非按弹种，一个 tick 里打出的所有弹共用这一次触发
+        boolean fmodHandled = playFmodFireSound();
+        if (!fmodHandled) tickFireSound(isFirstRound);
+        tickShellSound(isFirstRound);
     }
 
     /**
-     * 处理单发/连发开火音效。
+     * 处理单发/连发开火音，是 FMOD 没有接手时的回退路径。
      * <p>
      * 首发射击（或未配置循环音效）→ 逐发播放 {@code "0.0"} 键的单发音效（不循环）。<br>
      * 后续连射 → 启动/维持循环音效，通过 {@link ISoundSpreader} 追踪枪口，RPM 跨档位时交叉淡入。
      * </p>
      *
-     * @param type         弹药类型
      * @param isFirstRound 是否为首发
      */
-    private void tickFireSound(ProjectileType type, boolean isFirstRound) {
-        Map<String, SoundEvent> fireSounds = type.getFireSounds();
+    private void tickFireSound(boolean isFirstRound) {
+        Map<String, SoundEvent> fireSounds = attr.staticAttribute.getFireSounds();
         if (fireSounds.isEmpty()) return;
 
         // 检查是否有非0.0的循环音效key
@@ -2479,8 +2509,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 处理弹壳音效，逻辑与开火音效相同。
      */
-    private void tickShellSound(ProjectileType type, boolean isFirstRound) {
-        Map<String, SoundEvent> shellSounds = type.getShellSounds();
+    private void tickShellSound(boolean isFirstRound) {
+        Map<String, SoundEvent> shellSounds = attr.staticAttribute.getShellSounds();
         if (shellSounds.isEmpty()) return;
 
         boolean hasAutoKeys = shellSounds.keySet().stream().anyMatch(k -> !"0.0".equals(k));
@@ -2534,6 +2564,105 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         } catch (NumberFormatException e) {
             return Float.NaN;
         }
+    }
+
+    // ——— FMOD 开火音 ———
+
+    /**
+     * 播放本 tick 的 FMOD 开火音，返回是否由 FMOD 接手这一层音效；返回 {@code false} 时调用方走本型号的传播音效。
+     * <p>
+     * 事件形态由 bank 自己决定：能写 {@code firing} 的是持续事件（机枪循环），一次连射只起一个实例，
+     * 停火时把 {@code firing} 交回 0 让工程播尾音；不能写的是单发事件（主炮），有发射就新起一个实例。
+     * 弹壳音与停火音没有对应事件，仍读本型号的 {@code shell} 与 {@code cease_fire}。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（{@link #handleFiringSounds}）。
+     */
+    private boolean playFmodFireSound() {
+        if (fmodFire == null || !getLevel().isClientSide()) return false;
+        // bank 缺失时整局都不必再试，直接留在传播音效路径上
+        if (!isFmodBankLoaded(fmodFire.bank())) return false;
+
+        String key = fmodFire.bank() + "|" + fmodFire.fire();
+        Boolean looping = FMOD_FIRING_EVENTS.get(key);
+        if (looping == null) {
+            // 探测：持续事件的 firing 可写并立即进入连射，单发事件写不进去、创建在这里就失败
+            UUID probe = tryPlayFmodSound(fmodFire.bank(), fmodFire.fire(), SoundSource.NEUTRAL,
+                    Map.of("firing", 1f));
+            if (probe != null) {
+                FMOD_FIRING_EVENTS.put(key, true);
+                fmodFireVoice = probe;
+                return true;
+            }
+            boolean played = tryPlayFmodSound(fmodFire.bank(), fmodFire.fire(), SoundSource.NEUTRAL, Map.of()) != null;
+            // 两条路径都失败（事件缺失、实例上限等）时不落缓存，下一发重试并回退传播音效
+            if (!played) return false;
+            FMOD_FIRING_EVENTS.put(key, false);
+            return true;
+        }
+
+        if (looping) {
+            // 还活着就维持 firing=1；实例被播放器回收（换维度、bank 重载）时重新起一个
+            if (fmodFireVoice != null && setFmodParameter(fmodFireVoice, "firing", 1f)) return true;
+            fmodFireVoice = tryPlayFmodSound(fmodFire.bank(), fmodFire.fire(), SoundSource.NEUTRAL,
+                    Map.of("firing", 1f));
+            return fmodFireVoice != null;
+        }
+        return tryPlayFmodSound(fmodFire.bank(), fmodFire.fire(), SoundSource.NEUTRAL, Map.of()) != null;
+    }
+
+    /**
+     * 停掉 FMOD 开火音：持续事件把 {@code firing} 交回 0，由工程完成自身尾音；单发事件没有活动实例。<br>
+     * 实例交给播放器自然结束，{@link #tickFmodTail()} 负责清引用与兜底停止。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（{@link #handleCeaseFire()}）。
+     */
+    private void ceaseFmodFire() {
+        if (!getLevel().isClientSide() || fmodFireVoice == null) return;
+        // 上一段尾音还没播完就又停一次时，先收掉它，保证同一条管最多只留一个尾音实例
+        if (fmodTailVoice != null) {
+            stopFmodSound(fmodTailVoice);
+            fmodTailVoice = null;
+        }
+        if (setFmodParameter(fmodFireVoice, "firing", 0f)) {
+            fmodTailVoice = fmodFireVoice;
+            fmodTailTick = tickCount;
+        } else {
+            stopFmodSound(fmodFireVoice);
+        }
+        fmodFireVoice = null;
+    }
+
+    /**
+     * 尾音实例的收尾：已自行结束的实例由播放器释放，这里只清引用；超过兜底寿命仍未结束时强制停止。
+     * <p>
+     * <b>调用线程：</b>客户端主线程（{@link #onTick()}）。
+     */
+    private void tickFmodTail() {
+        if (fmodTailVoice == null) return;
+        boolean alive = setFmodParameter(fmodTailVoice, "firing", 0f);
+        if (!alive || tickCount - fmodTailTick > FMOD_TAIL_TICKS) {
+            stopFmodSound(fmodTailVoice);
+            fmodTailVoice = null;
+        }
+    }
+
+    /**
+     * 主线程移除部件、载具离开已加载区块时，停止仍在循环或收尾的开火音。
+     * <p>
+     * <b>调用线程：</b>主线程。
+     */
+    public void stopClientFmodFire() {
+        if (!getLevel().isClientSide()) return;
+        if (fmodFireVoice != null) stopFmodSound(fmodFireVoice);
+        if (fmodTailVoice != null) stopFmodSound(fmodTailVoice);
+        fmodFireVoice = null;
+        fmodTailVoice = null;
+    }
+
+    @Override
+    public void onDetach() {
+        stopClientFmodFire();
+        super.onDetach();
     }
 
     // ——— ISoundSpreader 实现 ———

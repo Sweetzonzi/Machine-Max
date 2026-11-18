@@ -18,6 +18,17 @@
     ]
   },
   "sounds": {
+    //开火音未配置，取缺省的单发音效
+    "shell": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "750.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    },
     "fmod": {
       "bank": "machine_max:abrams",
       "fire": "event:/Abrams/Armament/mg_762_abrams"

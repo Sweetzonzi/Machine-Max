@@ -53,15 +53,15 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
     }
 
     /** 引擎的生命周期短音效和持续工况音，FMOD 不可用时使用对应的原版音效配置。 */
-    public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,
+    public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> working,
                                   Optional<EngineFmodSoundAttr> fmod) {
         public static final EngineSoundAttr DEFAULT = new EngineSoundAttr(BasicSoundAttr.DEFAULT, Map.of(), Optional.empty());
 
         public static final Codec<EngineSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(EngineSoundAttr::basicSounds),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
-                        .optionalFieldOf("working_sounds", Map.of())
-                        .forGetter(EngineSoundAttr::workingSounds),
+                        .optionalFieldOf("working", Map.of())
+                        .forGetter(EngineSoundAttr::working),
                 EngineFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(EngineSoundAttr::fmod)
         ).apply(instance, EngineSoundAttr::new));
     }
@@ -127,13 +127,13 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
 
     public void createSounds() {
         workingStates.clear();
-        if (!sounds.workingSounds().isEmpty()) {
-            sounds.workingSounds().entrySet().stream()
+        if (!sounds.working().isEmpty()) {
+            sounds.working().entrySet().stream()
                     .sorted((a, b) -> Float.compare(parseRpm(a.getKey()), parseRpm(b.getKey())))
                     .forEach(entry -> {
                         float rpm = parseRpm(entry.getKey());
                         if (!Float.isFinite(rpm)) {
-                            MachineMax.LOGGER.warn("Invalid engine working_sounds rpm key '{}', skipped.", entry.getKey());
+                            MachineMax.LOGGER.warn("Invalid engine working rpm key '{}', skipped.", entry.getKey());
                             return;
                         }
                         ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();

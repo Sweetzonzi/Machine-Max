@@ -18,6 +18,22 @@
     ]
   },
   "sounds": {
+    "fire": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.small",
+        "range": 128.0
+      }
+    },
+    "shell": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    },
     "fmod": {
       "bank": "machine_max:abrams",
       "fire": "event:/Abrams/Armament/mg_127_abrams"

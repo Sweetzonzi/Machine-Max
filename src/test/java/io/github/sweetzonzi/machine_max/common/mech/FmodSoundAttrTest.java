@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.LauncherSubsystemStaticAttr.LauncherSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.EngineSubsystemStaticAttr.EngineSoundAttr;
@@ -167,6 +168,38 @@ class FmodSoundAttrTest {
     }
 
     @Test
+    void launcherFireLayerSoundsRoundTrip() {
+        var codec = LauncherSoundAttr.CODEC;
+        var plain = codec.parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).getOrThrow();
+        assertEquals(java.util.Set.of("0.0"), plain.fire().keySet());
+        assertTrue(plain.ceaseFire().isEmpty());
+        assertTrue(plain.shell().isEmpty());
+
+        var sounds = codec.parse(JsonOps.INSTANCE, JsonParser.parseString("""
+                {
+                  "fire": { "0.0": { "sound_id": "test:fire", "range": 128 },
+                                   "600.0": { "sound_id": "test:loop", "range": 128 } },
+                  "cease_fire": { "sound_id": "test:tail", "range": 128 },
+                  "shell": { "0.0": { "sound_id": "test:shell", "range": 16 } }
+                }
+                """)).getOrThrow();
+        assertEquals(java.util.Set.of("0.0", "600.0"), sounds.fire().keySet());
+        assertEquals(ResourceLocation.parse("test:tail"), sounds.ceaseFire().orElseThrow().getLocation());
+        assertEquals(java.util.Set.of("0.0"), sounds.shell().keySet());
+
+        var encoded = codec.encodeStart(JsonOps.INSTANCE, sounds).getOrThrow();
+        var reparsed = codec.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+        // SoundEvent 没有 equals，按位置逐一比对
+        assertEquals(sounds.fire().keySet(), reparsed.fire().keySet());
+        assertEquals(sounds.fire().get("600.0").getLocation(),
+                reparsed.fire().get("600.0").getLocation());
+        assertEquals(sounds.ceaseFire().orElseThrow().getLocation(),
+                reparsed.ceaseFire().orElseThrow().getLocation());
+        assertEquals(sounds.shell().get("0.0").getLocation(),
+                reparsed.shell().get("0.0").getLocation());
+    }
+
+    @Test
     void configuredOperationSoundsDecodeWithTheirSubsystemCodec() throws Exception {
         try (var paths = Files.walk(ContentFiles.PACKS)) {
             for (var path : paths.filter(Files::isRegularFile)
@@ -176,6 +209,7 @@ class FmodSoundAttrTest {
                 var input = ContentFiles.json(path);
                 if (!input.has("type")) continue;
                 var codec = switch (input.get("type").getAsString()) {
+                    case "machine_max:launcher" -> LauncherSubsystemStaticAttr.CODEC.codec();
                     case "machine_max:gearbox" -> GearboxSubsystemStaticAttr.CODEC.codec();
                     case "machine_max:car_controller" -> CarControllerSubsystemStaticAttr.CODEC.codec();
                     case "machine_max:motorbike_controller" -> MotorbikeControllerSubsystemStaticAttr.CODEC.codec();

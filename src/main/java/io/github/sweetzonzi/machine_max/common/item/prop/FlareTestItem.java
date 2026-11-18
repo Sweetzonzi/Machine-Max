@@ -22,8 +22,8 @@ import net.minecraft.world.phys.Vec3;
  * 信号弹测试物品。
  * <p>
  * 开发调试用：右键沿视线打出一发固定的信号弹弹种（{@code machine_max:flare_illum}），弹种自己带
- * 低重力、长寿命与几十米的显式照射半径，因此这一发会在空中飘一段并照亮落点周围。音量与音效同样
- * 来自弹种的 {@code sounds.fire_sounds}（内容包里配的是原版烟花升空音），与发射器走同一条读取路径。
+ * 低重力、长寿命与几十米的显式照射半径，因此这一发会在空中飘一段并照亮落点周围。开火音由本物品
+ * 自己给定：开火音属于发射器型号，而这个物品没有发射器，因此它固定播放原版烟花升空音。
  * <p>
  * 它同时是"显式光源字段"（{@code tracer_light_radius} / {@code tracer_light_color} /
  * {@code tracer_light_enabled}）的最小验收载体：改弹种 JSON 即可改变光斑，不需要动代码。
@@ -38,6 +38,10 @@ public class FlareTestItem extends Item {
 
     /** 出膛位置相对眼睛的前移距离（m），与投射物测试物品同量级 */
     private static final double SPAWN_OFFSET_M = 1.0;
+
+    /** 开火音：本物品没有发射器型号，固定取原版烟花升空音，传播距离与炮口音同量级 */
+    private static final SoundEvent FIRE_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath("minecraft", "entity.firework_rocket.launch"), 128f);
     /** 连发冷却（tick） */
     private static final int COOLDOWN_TICKS = 20;
 
@@ -75,13 +79,10 @@ public class FlareTestItem extends Item {
         Vector3f jmeVel = PhysicsHelperKt.toBVector3f(look).multLocal(flare.getBaseVelocity());
         flare.create(level, jmePos, jmeVel, player);
 
-        SoundEvent fireSound = flare.getFireSounds().get("0.0");
-        if (fireSound != null) {
-            SpreadingSoundHelper.playSpreadingSound(
-                    level, fireSound, SoundSource.PLAYERS,
-                    new Vec3(jmePos.x, jmePos.y, jmePos.z),
-                    Vec3.ZERO, 1.0f, 1.0f);
-        }
+        SpreadingSoundHelper.playSpreadingSound(
+                level, FIRE_SOUND, SoundSource.PLAYERS,
+                new Vec3(jmePos.x, jmePos.y, jmePos.z),
+                Vec3.ZERO, 1.0f, 1.0f);
 
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
         return InteractionResultHolder.success(stack);

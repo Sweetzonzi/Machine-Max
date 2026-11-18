@@ -142,7 +142,7 @@
           ],
           "additionalProperties": false
         },
-        "working_sounds": {
+        "working": {
           "type": "object",
           "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
           "patternProperties": {

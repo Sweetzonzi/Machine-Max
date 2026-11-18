@@ -97,6 +97,23 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 
 `firing` 的 bank 默认值是 1，单发需要显式传入初始值 0。工程师说明中的尾音由参数变化触发。SparkCore 的 `fadeFmodSound` 对应 Studio 停止命令，入口见 `../Spark-Core/src/main/kotlin/cn/solarmoon/spark_core/client/sound/FModSoundPlayer.kt#fadeOut`。
 
+### 发射器开火音运行时接线
+
+发射器型号的 `sounds.fmod` 配置 `bank` 与 `fire`，由 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/LauncherSubsystem.java#playFmodFireSound` 在客户端主线程播放。事件的形态决定调用方式，型号侧不需要额外字段：
+
+| 事件形态 | 判据 | 调用方式 |
+| --- | --- | --- |
+| 持续（机枪循环） | 事件能写 `firing` 参数 | 一次连射只起一个实例，首发起 `firing=1`；停火、打空或断发时设为 0，由工程完成尾音 |
+| 单发（主炮） | 事件写不进 `firing` | 每个有发射的 tick 新起一个实例，实例自行结束 |
+
+- 形态探测按 bank 与事件路径缓存在客户端会话内，每个事件至多多付一次失败创建；两条路径都失败时（事件缺失、实例创建失败）不缓存，下一发重试并回落传播音效。
+- 弹壳音 `shell`、停火音 `cease_fire`、空膛音 `dry_fire` 没有对应的 Studio 事件，仍读发射器型号的 `sounds`。它们与开火音分层：FMOD 接手的只是开火这一层。这几个事件名写基础名，车内听者由播放器换成 `<事件名>_interior`；抛壳只有车内录音，因此车外不响。
+- FMOD 没有接手时（未配置 `fmod`、bank 未加载、实例启动失败）开火音回到本型号的 `fire`：单发逐发播放 `"0.0"`，连射按 RPM 档位在 `"0.0"` 与循环音效之间切换并交叉淡入。
+- `overheat`、`broken`、`turn_speed` 没有运行时来源：武器没有过热机制，故障混音与炮塔转速属于另一路待接线功能，这些参数在发射器路径上保持 bank 默认值。
+- 循环事件的射速由工程固定，不随型号的 `breech.fire_rate` 变化；`fire` 按实际 RPM 调音高与换档的做法在 FMOD 路径上没有对应参数，因此高射速武器应选射速接近的那一个事件。
+- 一个发射管只有一个 `fmod.fire` 事件，同一门炮换弹种不换开火音。这一层与弹种无关：`fire`、`cease_fire`、`shell` 都配置在发射器型号上，弹种的 `sounds` 只留给命中与飞掠这一类声音。
+- 实例在部件移除（`onDetach`）与载具离开已加载区块（`VehicleCore#setInLoadedChunk`）时停止；交回 `firing=0` 的尾音实例超过 100 tick 仍未结束时强制停止。
+
 ### Master FX
 
 | 分类 | 事件行为与选择依据 |
@@ -416,7 +433,11 @@ bank ID 为 `machine_max:abrams`。
 
 各发动机将自身怠速到红线的区间归一化为 rpm=0～100，load 使用同步的油门开度。K17 与 Sd.Kfz.234 使用通用军用引擎音色。Builtin 的通用定义与各车专用定义分别配置，专用定义由相应车包的零件引用。单缸的 R700、Builtin motorcycle_engine 和 V8 的 Senna GTR、Builtin sport_car_engine 使用其采样或合成工况音；当前 bank 的汽车系列为 2c、4c、6c、dsl。
 
-美系型谱包的发射器属性 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，发射器运行时的 FMOD 播放接线待实现。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
+美系型谱包的发射器属性 sounds.fmod.fire 携带 `event:/Abrams/Armament/main_gun_abrams`、`event:/Abrams/Armament/mg_127_abrams` 或 `event:/Abrams/Armament/mg_762_abrams` 引用，bank 为 `machine_max:abrams`。开火音已按本文“发射器开火音运行时接线”接入。属性入口见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/attr/static_attr/LauncherSubsystemStaticAttr.java#LauncherSoundAttr`。
+
+苏系与中系型谱包的机枪取 `machine_max:basic_vehicle_sounds` 里的通用机枪事件，不依赖美系包的 bank：12.7mm 的 NSVT 与 54 式高射机枪取 `event:/Default_Vehicles/Armament/Guns/Loop/m2hb`，7.62mm 的 PKTM 与 59 式坦克机枪取 `event:/Default_Vehicles/Armament/Guns/Loop/762fast`。这四个事件都是 3D 持续事件，带 `firing`、`overheat`、`interior` 与自动 `Distance`，与 abrams 里的机枪事件同形，运行时只写 `firing`。
+
+其余发射器没有配置 `sounds.fmod`，开火音走本型号的 `fire`。将来给这些炮接 FMOD 时，单发炮按口径选通用事件 `event:/Default_Vehicles/Armament/Guns/Single/main_gun_{small,medium,large,big,huge}`。
 
 轮胎与普通零件的地形接触已接入 tire_noise，轮胎尖叫已接入 tire_screech，参数与生命周期见本文“接触音效运行时接线”。
 

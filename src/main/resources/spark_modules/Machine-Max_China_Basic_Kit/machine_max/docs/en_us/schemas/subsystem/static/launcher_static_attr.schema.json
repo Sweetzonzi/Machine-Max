@@ -95,14 +95,30 @@
             "range": 16
           }
         },
-        "human_progress_sounds": {
+        "human_progress": {
           "type": "object",
           "description": "Progress sound marks of the human stage: the key is a decimal string from '0.0' to '1.0' and the value plays at that progress. Threshold 0 is the stage start and 1 is the stage end; neither takes part in the crossing loop, and every threshold crossed by one advance plays in ascending order. Sounds are positioned on the weapon itself — the manual path has no machine. Only used for human stages this model owns; a delivery target that declares its own human stage plays its own.",
           "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
+        "fire": {
+          "type": "object",
+          "description": "Firing sound map: keys are RPM threshold strings. '0.0' is the single shot, played per shot for the first round of a burst and whenever no burst tier applies; every other key is a burst loop tier. At runtime the highest tier not above breech.fire_rate wins, falling back to '0.0', and a tier change cross-fades. The whole block may be omitted; the default is one sound per shot.",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
+        "cease_fire": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Cease-fire tail, played once when a burst stops. Omit it when this model has no tail."
+        },
+        "shell": {
+          "type": "object",
+          "description": "Shell casing sound map, keyed like fire. Omit it when this model plays no casing sounds.",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
         "fmod": {
           "type": "object",
-          "description": "Firing event. Machine gun single shots, bursts and tails use firing. Playback integration pending.",
+          "description": "Firing event. A persistent event (writable firing) keeps one instance per burst and gets firing back to 0 for the tail on cease; a one-shot event gets one instance per shot. Missing config, unloaded bank or a failed instance falls back to this model's fire. Shell, cease and dry-fire sounds are unaffected.",
           "properties": {
             "bank": {
               "description": "FMOD bank ID",
@@ -122,7 +138,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Launcher sound attributes, including basic sounds, dry fire and an optional FMOD firing event reference."
+      "description": "Launcher sound attributes — the firing, burst and casing layer. All of it is a property of the model: rate decides the burst tier and cadence, the breech mechanism throws the casings, so swapping ammunition in the same gun does not change this layer. Field names carry no _sound / _sounds suffix: this object already says the layer is made of sounds. Event names are always base names without an _interior suffix: for a listener inside the vehicle the player swaps in <name>_interior, falls back to the base name when that variant is missing, and plays nothing when neither exists — which is how the casing layer stays silent outside the hull."
     },
     "barrel": {
       "type": "object",
@@ -300,7 +316,7 @@
       "single_round_loading": true,
       "human_reload_time": 5,
       "sounds": {
-        "human_progress_sounds": {
+        "human_progress": {
           "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
           "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
           "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }

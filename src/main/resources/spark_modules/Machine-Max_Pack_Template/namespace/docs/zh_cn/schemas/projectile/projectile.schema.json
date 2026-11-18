@@ -214,7 +214,7 @@
     "sounds": {
       "type": "object",
       "additionalProperties": true,
-      "description": "音效属性 — 开火音效（fire_sounds）、停火尾音（cease_fire_sound）与弹壳音效（shell_sounds），key 为 RPM 阈值字符串，value 为音效事件。整块可省略，缺省使用内置默认值。"
+      "description": "弹种侧音效占位：飞掠、命中、穿透这一类由打中了什么决定的声音将来写在这里，目前没有消费方，写进来的字段不会被读取。击发、连射与抛壳这一层属于发射器型号，配置在子系统的 sounds 里。"
     }
   },
   "$defs": {

@@ -18,5 +18,32 @@
       "machine_max:caliber/30mm"
     ]
   },
+  //开火这一层的声音都按本型号配置：0.0 是单发，其余键是连射循环档位（按 fire_rate 取最近的一档）
+  "sounds": {
+    "fire": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.fire.30mm_2a42",
+        "range": 160.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.fire.30mm_2a42_loop",
+        "range": 160.0
+      }
+    },
+    "cease_fire": {
+      "sound_id": "machine_max:projectile.fire.30mm_2a42_tail",
+      "range": 160.0
+    },
+    "shell": {
+      "0.0": {
+        "sound_id": "machine_max:projectile.shell.fall",
+        "range": 16.0
+      },
+      "550.0": {
+        "sound_id": "machine_max:projectile.shell.shells_fall",
+        "range": 16.0
+      }
+    }
+  },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

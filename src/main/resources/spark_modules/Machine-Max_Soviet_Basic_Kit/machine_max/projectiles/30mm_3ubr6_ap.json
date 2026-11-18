@@ -28,31 +28,5 @@
     "tracer_alpha": 220,
     "tracer_light_intensity": 4.5,
     "muzzle_flash": { "intensity": 42.3, "glow": 4.0 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.fire.30mm_2a42",
-        "range": 160.0
-      },
-      "550.0": {
-        "sound_id": "machine_max:projectile.fire.30mm_2a42_loop",
-        "range": 160.0
-      }
-    },
-    "cease_fire_sound": {
-      "sound_id": "machine_max:projectile.fire.30mm_2a42_tail",
-      "range": 160.0
-    },
-    "shell_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.shell.fall",
-        "range": 16.0
-      },
-      "550.0": {
-        "sound_id": "machine_max:projectile.shell.shells_fall",
-        "range": 16.0
-      }
-    }
   }
 }

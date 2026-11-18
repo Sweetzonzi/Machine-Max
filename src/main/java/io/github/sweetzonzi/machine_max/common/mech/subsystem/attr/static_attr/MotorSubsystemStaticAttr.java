@@ -48,18 +48,18 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
      * 电机音效配置。
      *
      * @param basicSounds 子系统生命周期音效
-     * @param workingSounds 按转速索引的工况音效，空映射表示自动合成
+     * @param working 按转速索引的工况音效，空映射表示自动合成
      * @param fmod 持续工况音的可选 FMOD 事件引用
      */
-    public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds,
+    public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> working,
                                  Optional<MotorFmodSoundAttr> fmod) {
         public static final MotorSoundAttr DEFAULT = new MotorSoundAttr(BasicSoundAttr.DEFAULT, Map.of(), Optional.empty());
 
         public static final Codec<MotorSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(MotorSoundAttr::basicSounds),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
-                        .optionalFieldOf("working_sounds", Map.of())
-                        .forGetter(MotorSoundAttr::workingSounds),
+                        .optionalFieldOf("working", Map.of())
+                        .forGetter(MotorSoundAttr::working),
                 MotorFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(MotorSoundAttr::fmod)
         ).apply(instance, MotorSoundAttr::new));
     }
@@ -119,13 +119,13 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
     @Override
     public void createSounds() {
         workingStates.clear();
-        if (!sounds.workingSounds().isEmpty()) {
-            sounds.workingSounds().entrySet().stream()
+        if (!sounds.working().isEmpty()) {
+            sounds.working().entrySet().stream()
                     .sorted((a, b) -> Float.compare(parseRpm(a.getKey()), parseRpm(b.getKey())))
                     .forEach(entry -> {
                         float rpm = parseRpm(entry.getKey());
                         if (!Float.isFinite(rpm)) {
-                            MachineMax.LOGGER.warn("Invalid motor working_sounds rpm key '{}', skipped.", entry.getKey());
+                            MachineMax.LOGGER.warn("Invalid motor working rpm key '{}', skipped.", entry.getKey());
                             return;
                         }
                         ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();

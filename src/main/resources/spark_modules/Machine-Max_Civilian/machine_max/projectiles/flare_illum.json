@@ -31,13 +31,5 @@
     "tracer_light_color": [255, 238, 205],
     "tracer_glare": 2.5,
     "muzzle_flash": { "intensity": 90.3 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "minecraft:entity.firework_rocket.launch",
-        "range": 128.0
-      }
-    }
   }
 }

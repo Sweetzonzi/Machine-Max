@@ -95,14 +95,30 @@
             "range": 16
           }
         },
-        "human_progress_sounds": {
+        "human_progress": {
           "type": "object",
           "description": "人工段的进度分段音效：键是 '0.0'~'1.0' 的十进制字符串，值是该进度阈值上播放的音效。阈值 0 是段开始音、1 是段走完的音，两者不进越过循环；一次推进跨过多个阈值时按阈值升序逐个播放。声音定位在本管上——人力直取路径没有机构。只有交付方自己声明了人工段时由它播，本表用于本型号自己负责的人工段。",
           "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
+        "fire": {
+          "type": "object",
+          "description": "开火音效映射：键是 RPM 阈值字符串。'0.0' 是单发，本 burst 的第一发与没有连射档位时都逐发播放它；其余键是连射循环档位，运行时按 breech.fire_rate 取不超过它的最大一档，取不到就退回 '0.0'，跨档位时交叉淡入。整块可省略，缺省是一发一响的单发音效。",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
+        "cease_fire": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "停火尾音：连射停下时播放一次。省略表示本型号没有尾音。"
+        },
+        "shell": {
+          "type": "object",
+          "description": "弹壳音效映射：键的写法与 fire 相同。省略表示本型号不播弹壳音。",
+          "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
+        },
         "fmod": {
           "type": "object",
-          "description": "开火事件。机枪单发、连射和尾音由 firing 参数控制，播放接线待实现。",
+          "description": "开火事件。持续事件（能写 firing）一次连射只起一个实例，停火时 firing 交回 0 播尾音；单发事件每发一个实例。未配置、bank 未加载或实例启动失败时回退本型号的 fire。弹壳音、停火音与空膛音不受它影响。",
           "properties": {
             "bank": {
               "description": "FMOD bank ID",
@@ -119,6 +135,19 @@
             "fire"
           ],
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "发射器音效属性——击发、连射与抛壳这一层的声音。它们由型号决定：射速决定连射档位与节奏，抛壳由炮闩机构完成，因此同一门炮换弹种不换这一层。字段名不带 _sound / _sounds 后缀：本对象已经说明这一层是音效。事件名一律写基础名，不要带 _interior：车内听者由播放器自动换成 <事件名>_interior，没有该变体时回落到基础名，基础名也没有录音时这一层不响——弹壳音在车外就是这种情形。"
+    },
+    "barrel": {
+      "type": "object",
+      "properties": {
+        "durability_weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "模块耐久权重。子系统总耐久按各模块权重比例分配。"
         },
         "decay_power": {
           "type": "number",
@@ -287,7 +316,7 @@
       "single_round_loading": true,
       "human_reload_time": 5,
       "sounds": {
-        "human_progress_sounds": {
+        "human_progress": {
           "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
           "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
           "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }

@@ -48,13 +48,5 @@
     "tracer_alpha": 180,
     "tracer_light_intensity": 7.0,
     "muzzle_flash": { "intensity": 90.3, "glow": 4.0 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.fire.50mm_kwk",
-        "range": 128.0
-      }
-    }
   }
 }

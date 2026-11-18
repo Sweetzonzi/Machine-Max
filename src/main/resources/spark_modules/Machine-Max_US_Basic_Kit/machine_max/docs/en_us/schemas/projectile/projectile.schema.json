@@ -214,7 +214,7 @@
     "sounds": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Sound properties — fire sounds (fire_sounds), cease-fire tail (cease_fire_sound) and shell sounds (shell_sounds); keys are RPM threshold strings and values are sound events. The whole block may be omitted and falls back to built-in defaults."
+      "description": "Projectile-side sound placeholder: flyby, impact and penetration sounds — everything decided by what the round hit — will live here. Nothing consumes this block yet, so fields written into it are not read. The firing, burst and casing layer belongs to the launcher model and is configured in the subsystem's sounds."
     }
   },
   "$defs": {

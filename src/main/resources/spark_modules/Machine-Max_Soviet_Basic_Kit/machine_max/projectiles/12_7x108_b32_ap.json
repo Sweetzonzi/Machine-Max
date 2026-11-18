@@ -26,19 +26,5 @@
     "tracer_alpha": 0,
     "tracer_light_intensity": 0,
     "muzzle_flash": { "intensity": 9.9 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.fire.small",
-        "range": 128.0
-      }
-    },
-    "shell_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.shell.fall_interior",
-        "range": 16.0
-      }
-    }
   }
 }

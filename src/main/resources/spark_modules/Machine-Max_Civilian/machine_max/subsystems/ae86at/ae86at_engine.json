@@ -28,7 +28,7 @@
       "sound_id": "machine_max:subsystem.engine.i4_stop",
       "range": 64
     },
-    "working_sounds": {
+    "working": {
       "1000.0": {
         "sound_id": "machine_max:subsystem.engine.i4_1000",
         "range": 64

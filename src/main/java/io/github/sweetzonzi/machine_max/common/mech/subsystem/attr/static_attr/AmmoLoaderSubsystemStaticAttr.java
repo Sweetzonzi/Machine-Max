@@ -38,14 +38,14 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * 自动装弹机音效属性 — 基础音效加人工段、机械段各自的进度分段音效。
      *
      * @param basicSounds        基础音效（onDestroyed / onActivated / onDeactivated）
-     * @param progressSounds     机械段进度阈值到音效的映射，键是 {@code "0.0"}~{@code "1.0"} 的十进制字符串
-     * @param humanProgressSounds 人工段进度阈值到音效的映射，键的写法同上；声音定位在发射器上
+     * @param progress           机械段进度阈值到音效的映射，键是 {@code "0.0"}~{@code "1.0"} 的十进制字符串
+     * @param humanProgress      人工段进度阈值到音效的映射，键的写法同上；声音定位在发射器上
      * @param fmod               可选的 FMOD 装填事件引用
      */
     public record AmmoLoaderSoundAttr(
             BasicSoundAttr basicSounds,
-            Map<String, SoundEvent> progressSounds,
-            Map<String, SoundEvent> humanProgressSounds,
+            Map<String, SoundEvent> progress,
+            Map<String, SoundEvent> humanProgress,
             Optional<ReloadFmodSoundAttr> fmod
     ) {
         public static final AmmoLoaderSoundAttr DEFAULT = new AmmoLoaderSoundAttr(
@@ -58,11 +58,11 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         public static final Codec<AmmoLoaderSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BasicSoundAttr.basicSounds(AmmoLoaderSoundAttr::basicSounds),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
-                        .optionalFieldOf("progress_sounds", Map.of())
-                        .forGetter(AmmoLoaderSoundAttr::progressSounds),
+                        .optionalFieldOf("progress", Map.of())
+                        .forGetter(AmmoLoaderSoundAttr::progress),
                 Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
-                        .optionalFieldOf("human_progress_sounds", Map.of())
-                        .forGetter(AmmoLoaderSoundAttr::humanProgressSounds),
+                        .optionalFieldOf("human_progress", Map.of())
+                        .forGetter(AmmoLoaderSoundAttr::humanProgress),
                 ReloadFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(AmmoLoaderSoundAttr::fmod)
         ).apply(instance, AmmoLoaderSoundAttr::new));
     }
@@ -150,7 +150,7 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /** 进度阈值到音效的映射（键是 {@code "0.0"}~{@code "1.0"} 的十进制字符串） */
     public Map<String, SoundEvent> getProgressSounds() {
-        return ammoLoaderSoundAttr.progressSounds();
+        return ammoLoaderSoundAttr.progress();
     }
 
     /**
@@ -158,7 +158,7 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * <p>人工段的声音定位在发射器上（人把弹交到炮闩跟前），机械段的声音定位在本机。
      */
     public Map<String, SoundEvent> getHumanProgressSounds() {
-        return ammoLoaderSoundAttr.humanProgressSounds();
+        return ammoLoaderSoundAttr.humanProgress();
     }
 
     @Override

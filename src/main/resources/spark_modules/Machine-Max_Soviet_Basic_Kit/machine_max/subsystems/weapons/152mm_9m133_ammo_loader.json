@@ -5,7 +5,7 @@
   "reload_time": 10, //(必填, 秒)把一份交付送进膛的机械段时间，0 表示没有机械段（交付瞬时完成，节奏由上游弹药架的回充决定）
   "can_supply_multiple": true, //(可选, 默认false)false=独占一槽满速；true=不限槽位、各作业分别满速
   "sounds": {
-    "progress_sounds": {
+    "progress": {
       "0.0": {
         "sound_id": "machine_max:subsystem.loader.reload_start",
         "range": 16

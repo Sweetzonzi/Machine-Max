@@ -32,34 +32,60 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     }
 
     /**
-     * 发射器音效属性 — 包含基础音效和发射器特有音效。
+     * 发射器音效属性 — 击发、连射与抛壳这一层的声音全部按型号配置。<br>
+     * 它们都是"怎么把这一发打出去"的声音：射速决定连射档位与节奏，抛壳由炮闩机构完成，
+     * 停火尾音是自动机复位。弹种只决定打出去什么，不参与这一层。
+     * <p>
+     * 字段名不带 {@code _sound} / {@code _sounds} 后缀：所在的 {@code sounds} 对象已经说明这一层是音效，
+     * 后缀只是把上下文重复一遍。
      *
      * @param basicSounds  基础音效（onDestroyed / onActivated / onDeactivated）
-     * @param dryFireSound 空膛击发音效（扣扳机但无弹药）
-     * @param humanProgressSounds 人工段进度阈值到音效的映射，键是 {@code "0.0"}~{@code "1.0"} 的十进制字符串
+     * @param dryFire 空膛击发音效（扣扳机但无弹药）
+     * @param humanProgress 人工段进度阈值到音效的映射，键是 {@code "0.0"}~{@code "1.0"} 的十进制字符串
+     * @param fire   开火音效映射，键是 RPM 阈值字符串；{@code "0.0"} 是单发，其余键是连射循环档位
+     * @param ceaseFire 停火尾音；空表示本型号没有尾音
+     * @param shell  弹壳音效映射，键的写法与 {@code fire} 相同
      * @param fmod 实际开火的可选 FMOD 事件引用
      */
     public record LauncherSoundAttr(
         BasicSoundAttr basicSounds,
-        SoundEvent dryFireSound,
-        Map<String, SoundEvent> humanProgressSounds,
+        SoundEvent dryFire,
+        Map<String, SoundEvent> humanProgress,
+        Map<String, SoundEvent> fire,
+        Optional<SoundEvent> ceaseFire,
+        Map<String, SoundEvent> shell,
         Optional<LauncherFmodSoundAttr> fmod
     ) {
+        /** 缺省开火音：单发，传播距离 128 m。 */
+        public static final SoundEvent DEFAULT_FIRE_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile.fire.mini"), 128f);
+
         public static final LauncherSoundAttr DEFAULT = new LauncherSoundAttr(
             BasicSoundAttr.DEFAULT,
             SoundEvent.createFixedRangeEvent(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.launcher.dry_fire"), 16),
+            Map.of(),
+            Map.of("0.0", DEFAULT_FIRE_SOUND),
+            Optional.empty(),
             Map.of(),
             Optional.empty()
         );
 
         public static final Codec<LauncherSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BasicSoundAttr.basicSounds(LauncherSoundAttr::basicSounds),
-            SoundEvent.DIRECT_CODEC.optionalFieldOf("dry_fire", DEFAULT.dryFireSound)
-                .forGetter(LauncherSoundAttr::dryFireSound),
+            SoundEvent.DIRECT_CODEC.optionalFieldOf("dry_fire", DEFAULT.dryFire)
+                .forGetter(LauncherSoundAttr::dryFire),
             Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
-                .optionalFieldOf("human_progress_sounds", Map.of())
-                .forGetter(LauncherSoundAttr::humanProgressSounds),
+                .optionalFieldOf("human_progress", Map.of())
+                .forGetter(LauncherSoundAttr::humanProgress),
+            Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                .optionalFieldOf("fire", DEFAULT.fire)
+                .forGetter(LauncherSoundAttr::fire),
+            SoundEvent.DIRECT_CODEC.optionalFieldOf("cease_fire")
+                .forGetter(LauncherSoundAttr::ceaseFire),
+            Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                .optionalFieldOf("shell", Map.of())
+                .forGetter(LauncherSoundAttr::shell),
             LauncherFmodSoundAttr.CODEC.optionalFieldOf("fmod").forGetter(LauncherSoundAttr::fmod)
         ).apply(instance, LauncherSoundAttr::new));
     }
@@ -149,7 +175,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /** 获取空膛击发音效 */
     public SoundEvent getDryFireSound() {
-        return launcherSoundAttr.dryFireSound();
+        return launcherSoundAttr.dryFire();
     }
 
     /** 获取发射器完整音效属性 */
@@ -162,7 +188,25 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * 人力直取路径的两段声音都定位在本管上——人把弹取到炮闩跟前，机构不存在。
      */
     public Map<String, SoundEvent> getHumanProgressSounds() {
-        return launcherSoundAttr.humanProgressSounds();
+        return launcherSoundAttr.humanProgress();
+    }
+
+    /**
+     * 开火音效映射：键是 RPM 阈值，{@code "0.0"} 是单发、其余键是连射循环档位。<br>
+     * 同一门炮换弹种不换开火音——它由型号决定，弹种不参与。
+     */
+    public Map<String, SoundEvent> getFireSounds() {
+        return launcherSoundAttr.fire();
+    }
+
+    /** 停火尾音；空表示本型号没有尾音。 */
+    public Optional<SoundEvent> getCeaseFireSound() {
+        return launcherSoundAttr.ceaseFire();
+    }
+
+    /** 弹壳音效映射：键的写法与 {@link #getFireSounds()} 相同。 */
+    public Map<String, SoundEvent> getShellSounds() {
+        return launcherSoundAttr.shell();
     }
 
     @Override

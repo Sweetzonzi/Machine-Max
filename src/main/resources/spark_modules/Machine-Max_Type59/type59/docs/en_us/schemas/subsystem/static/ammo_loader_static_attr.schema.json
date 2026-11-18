@@ -19,14 +19,14 @@
         "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on destruction." },
         "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on activation." },
         "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on deactivation." },
-        "progress_sounds": {
+        "progress": {
           "type": "object",
           "description": "Progress markers of the mechanical stage: keys are decimal strings '0.0'..'1.0', values the sound played at that progress. Threshold 0 is the stage start and 1 the stage completion; neither takes part in the crossing loop. A single advance that crosses several markers plays each of them in ascending order. Their sounds are positioned at the loader.",
           "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
-        "human_progress_sounds": {
+        "human_progress": {
           "type": "object",
-          "description": "Progress markers of the human preparation stage, keyed like progress_sounds. Their sounds are positioned at the launcher (the crew hands the round over at the breech), not at the loader. On a stage switch the remaining markers of the previous stage are played first, then the new stage starts.",
+          "description": "Progress markers of the human preparation stage, keyed like progress. Their sounds are positioned at the launcher (the crew hands the round over at the breech), not at the loader. On a stage switch the remaining markers of the previous stage are played first, then the new stage starts.",
           "additionalProperties": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }] }
         },
         "fmod": {
@@ -61,7 +61,7 @@
       "reload_time": 10,
       "can_supply_multiple": true,
       "sounds": {
-        "progress_sounds": {
+        "progress": {
           "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
           "0.5": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 },
           "0.9": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
@@ -75,11 +75,11 @@
       "human_reload_time": 2,
       "reload_time": 4,
       "sounds": {
-        "human_progress_sounds": {
+        "human_progress": {
           "0.0": { "sound_id": "machine_max:subsystem.loader.reload_start", "range": 16 },
           "0.8": { "sound_id": "machine_max:subsystem.loader.reload_shell", "range": 16 }
         },
-        "progress_sounds": {
+        "progress": {
           "0.6": { "sound_id": "machine_max:subsystem.loader.reload_close", "range": 16 }
         }
       }

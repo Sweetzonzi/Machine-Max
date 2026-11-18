@@ -142,7 +142,7 @@
           ],
           "additionalProperties": false
         },
-        "working_sounds": {
+        "working": {
           "type": "object",
           "description": "Manual working sound map. Keys are RPM strings (e.g. \"800\", \"4500.0\"), values are sound events. Uses auto synthesis when empty.",
           "patternProperties": {

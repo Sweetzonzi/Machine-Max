@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "81cc04785a204c9932e5091458892393b9dba6fe",
+    "revision": "eada1e07f704d3cbcc7327223035da7fd4ac24ed",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -141,8 +141,8 @@
       },
       {
         "path": "references/schemas/projectile/projectile.schema.json",
-        "bytes": 14825,
-        "sha256": "36e1d08a2af9d8f65d730709fb0f1d084332812b3016839a359fa038b3ffbbae"
+        "bytes": 14867,
+        "sha256": "4d83950b0f9cf92abe04f6071b7b7335f240ab4dd0a164432ff90a1e842c69a2"
       },
       {
         "path": "references/schemas/recipe/blueprint_research_recipe.schema.json",
@@ -286,8 +286,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/ammo_loader_static_attr.schema.json",
-        "bytes": 5846,
-        "sha256": "77d8086b83dd5284149bba23172eedcd7dd8e553e66906a8ce7802f62479ba14"
+        "bytes": 5804,
+        "sha256": "c52bad6fe919256863a664e7dd54977cf36803d6dba7a6572be668edb8442a6a"
       },
       {
         "path": "references/schemas/subsystem/static/ammo_rack_static_attr.schema.json",
@@ -311,8 +311,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/engine_static_attr.schema.json",
-        "bytes": 6912,
-        "sha256": "440da1a70baeb04eabf90b5f70c4d93dc0f72e74945ca6de02e17e92503aaf59"
+        "bytes": 6905,
+        "sha256": "4548a0d195fcf7ee112dfc56386ee8f02ac058944d4e13695574ae72bd3fa583"
       },
       {
         "path": "references/schemas/subsystem/static/gearbox_static_attr.schema.json",
@@ -326,8 +326,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 11603,
-        "sha256": "68f3c5e9c73f2556183bc824186764d86a79e8f5572d12eeeae101120d9ddad8"
+        "bytes": 13698,
+        "sha256": "ad1b356a947c3ce47ea269bf4c72097d431b413b4d0532910703a7bf0f44db6e"
       },
       {
         "path": "references/schemas/subsystem/static/light_static_attr.schema.json",
@@ -336,8 +336,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/motor_static_attr.schema.json",
-        "bytes": 5760,
-        "sha256": "a3376877dde35ea143867ef968b83a8d21191eed1a149933f2131e7d1146acc5"
+        "bytes": 5753,
+        "sha256": "fd71b74a464d1a02324a38deaae791d912a7c2e9099e05715860dd1416991129"
       },
       {
         "path": "references/schemas/subsystem/static/motorbike_controller_static_attr.schema.json",

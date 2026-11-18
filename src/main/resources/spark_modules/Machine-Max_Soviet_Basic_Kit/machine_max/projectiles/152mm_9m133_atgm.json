@@ -68,13 +68,5 @@
     "texture": "machine_max:textures/projectile/9m133.png",
     "tracer_light_intensity": 15.9,
     "muzzle_flash": { "intensity": 616 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "machine_max:projectile.fire.atgm_9m133",
-        "range": 200.0
-      }
-    }
   }
 }

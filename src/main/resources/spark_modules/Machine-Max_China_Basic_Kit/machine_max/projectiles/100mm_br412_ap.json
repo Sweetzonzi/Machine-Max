@@ -26,13 +26,5 @@
     "tracer_alpha": 200,
     "tracer_light_intensity": 5,
     "muzzle_flash": { "intensity": 90, "glow": 4 }
-  },
-  "sounds": {
-    "fire_sounds": {
-      "0.0": {
-        "sound_id": "minecraft:entity.generic.explode",
-        "range": 128
-      }
-    }
   }
 }
