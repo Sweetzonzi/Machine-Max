@@ -195,7 +195,10 @@ public final class M1A2MountWiringGameTest {
         RegularPart part = PartFactory.createRegular(type, "desert", helper.getLevel());
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), part);
         try {
+            // 武器站是独立零件：车长预设要带动它，先按挂点装上，同 rwsAimCrossesTheMountConnector。
+            RegularPart rws = attachRws(helper, vehicle, part);
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
+            byName.putAll(collectSubsystems(rws));
             AbstractSubsystem seat = require(helper, byName, "subsystem.m1a2_sep.commander_seat");
             WeaponControllerSubsystem mainGun =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.main_weapon");

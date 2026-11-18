@@ -50,8 +50,8 @@ public final class ViewpointGameTest {
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         try {
             var main = part.subParts.get("sub_part.machine_max.main");
-            var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
-            var secondary = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.secondary_weapon");
+            var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.k17.main_weapon");
+            var secondary = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.k17.secondary_weapon");
             var extra = new WeaponControllerSubsystem(main, "probe_extra_main", original.attr);
             var other = new WeaponControllerSubsystem(main, "probe_other_group", original.attr);
             var disabled = new WeaponControllerSubsystem(main, "probe_disabled_main", original.attr);
@@ -91,10 +91,12 @@ public final class ViewpointGameTest {
 
     @GameTest(template = "part_foundation", batch = "mmViewpoints", timeoutTicks = 100)
     public static void deviceTypesAndOpticalSources(GameTestHelper helper) {
-        for (String name : List.of("2s38_turret", "k17_turret", "sdkfz234_turret")) {
-            var type = PartDefinitions.regular(false).get(ResourceLocation.parse("machine_max:" + name));
+        for (String name : List.of("2s38:2s38_turret", "k17:k17_turret", "sdkfz234:sdkfz234_turret")) {
+            var type = PartDefinitions.regular(false).get(ResourceLocation.parse(name));
             helper.assertTrue(type != null, "部件定义必须加载：" + name);
-            String variant = name.equals("2s38_turret") ? "2s38" : name.equals("sdkfz234_turret") ? "sdkfz234_2" : type.variants.keySet().iterator().next();
+            String variant = name.equals("2s38:2s38_turret") ? "2s38"
+                    : name.equals("sdkfz234:sdkfz234_turret") ? "sdkfz234_2"
+                    : type.variants.keySet().iterator().next();
             RegularPart part = PartFactory.createRegular(type, variant, helper.getLevel());
             try {
                 int fixed = 0;
@@ -116,8 +118,8 @@ public final class ViewpointGameTest {
                     }
                 }
                 // 只有 SdKfz234 的炮手镜是随炮管俯仰的固定炮镜；2S38 与 K17 的两台观瞄都是可转镜头
-                int expectedFixed = name.equals("sdkfz234_turret") ? 1 : 0;
-                int expectedRotatable = name.equals("sdkfz234_turret") ? 0 : 2;
+                int expectedFixed = name.equals("sdkfz234:sdkfz234_turret") ? 1 : 0;
+                int expectedRotatable = name.equals("sdkfz234:sdkfz234_turret") ? 0 : 2;
                 helper.assertTrue(fixed == expectedFixed, "样例的固定炮镜数量必须与安装配置一致：" + name);
                 helper.assertTrue(rotatable == expectedRotatable, "样例的可转镜头数量必须与安装配置一致：" + name);
             } finally {
@@ -132,7 +134,7 @@ public final class ViewpointGameTest {
         var type = PartDefinitions.regular(false).get(ResourceLocation.parse("k17:k17_turret"));
         RegularPart part = PartFactory.createRegular(type, type.variants.keySet().iterator().next(), helper.getLevel());
         var main = part.subParts.get("sub_part.machine_max.main");
-        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
+        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.k17.main_weapon");
         var drivers = main.ownSubsystems().stream().filter(TurretDriverSubsystem.class::isInstance)
                 .map(TurretDriverSubsystem.class::cast).toList();
         var names = drivers.stream().map(TurretDriverSubsystem::getName).toList();
@@ -152,8 +154,8 @@ public final class ViewpointGameTest {
                 com.google.gson.JsonParser.parseString("{\"definition\":\"machine_max:default_3rd_seat\","
                         + "\"locator\":\"probe\",\"control_group_preset\":\"machine_max:default_gunner\"}")).getOrThrow();
         var insideSeat = new SeatSubsystem(main, "probe_inside_seat", seatAttr);
-        var secondary = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.secondary_weapon");
-        var gun = part.subParts.get("sub_part.machine_max.gun");
+        var secondary = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.k17.secondary_weapon");
+        var gun = part.subParts.get("sub_part.k17.gun");
         // K17 的两台瞄具都是可转镜头；机构采样用一台挂在炮管上的探针固定炮镜验证。
         var fixedSight = new SightSubsystem(gun, "probe_fixed_sight",
                 new SightSubsystemAttr(ResourceLocation.parse("machine_max:gunner_sight"), "gun_turret_lock"));
@@ -278,7 +280,7 @@ public final class ViewpointGameTest {
         var type = PartDefinitions.regular(false).get(ResourceLocation.parse("sdkfz234:sdkfz234_turret"));
         RegularPart part = PartFactory.createRegular(type, "sdkfz234_2", helper.getLevel());
         var main = part.subParts.get("sub_part.machine_max.main");
-        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
+        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.sdkfz234.main_weapon");
         var drivers = main.ownSubsystems().stream().filter(TurretDriverSubsystem.class::isInstance)
                 .map(TurretDriverSubsystem.class::cast).toList();
         var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(),
@@ -287,9 +289,9 @@ public final class ViewpointGameTest {
         var controller = new WeaponControllerSubsystem(main, "probe_sdkfz_controller", attr);
         controller.setTargetFromNames();
         controller.onAttach();
-        var sight = (SightSubsystem) part.subParts.get("sub_part.machine_max.gun_shield")
-                .findOwnSubsystem("subsystem.machine_max.gunner_sight");
-        var seat = (SeatSubsystem) main.findOwnSubsystem("subsystem.machine_max.gunner_seat");
+        var sight = (SightSubsystem) part.subParts.get("sub_part.sdkfz234.gun_shield")
+                .findOwnSubsystem("subsystem.sdkfz234.gunner_sight");
+        var seat = (SeatSubsystem) main.findOwnSubsystem("subsystem.sdkfz234.gunner_seat");
         seat.getWeaponControllersByGroup().put("base", List.of(controller));
         helper.assertTrue(seat.getActiveMainWeaponController() == controller, "SDKFZ 炮手必须选中主 WC");
         CompletableFuture<Void> result = physics(controller, () -> {
@@ -348,7 +350,7 @@ public final class ViewpointGameTest {
         RegularPart turret = PartFactory.createRegular(turretType, "sdkfz234_2", helper.getLevel());
         RegularPart hull = PartFactory.createRegular(hullType, hullType.variants.keySet().iterator().next(), helper.getLevel());
         var main = turret.subParts.get("sub_part.machine_max.main");
-        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.machine_max.main_weapon");
+        var original = (WeaponControllerSubsystem) main.findOwnSubsystem("subsystem.sdkfz234.main_weapon");
         var drivers = main.ownSubsystems().stream().filter(TurretDriverSubsystem.class::isInstance)
                 .map(TurretDriverSubsystem.class::cast).toList();
         var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(),
@@ -357,8 +359,8 @@ public final class ViewpointGameTest {
         var controller = new WeaponControllerSubsystem(main, "probe_render_controller", attr);
         controller.setTargetFromNames();
         controller.onAttach();
-        var sight = (SightSubsystem) turret.subParts.get("sub_part.machine_max.gun_shield")
-                .findOwnSubsystem("subsystem.machine_max.gunner_sight");
+        var sight = (SightSubsystem) turret.subParts.get("sub_part.sdkfz234.gun_shield")
+                .findOwnSubsystem("subsystem.sdkfz234.gunner_sight");
         sight.setAimController(controller);
         CompletableFuture<Void> result = physics(controller, () -> {
             var baseBody = hull.rootSubPart.body;
