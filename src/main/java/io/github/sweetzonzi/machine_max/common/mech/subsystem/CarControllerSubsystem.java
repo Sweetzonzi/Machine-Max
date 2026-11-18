@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.WheelControlSignal;
@@ -18,6 +19,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Getter
@@ -53,11 +55,18 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
 
     /**
      * 根据已装配车轮几何位置自动计算的转向中心，用于阿克曼转向和漂移判断。
-     * <p>取非转向轮的平均位置；全是转向轮时取全部轮的平均位置（例如八轮全转的装甲车）。因此转向轮
-     * 不能全挤在同一根轴上——那样中心落在这根轴上、纵向距离恒为 0，{@link #ackermannSteering}
-     * 算出的转角恒为 0，车能开能刹却打不动方向。{@code checkContent} 第 14 条拦这种布局。</p>
+     * <p>有非转向轮时取它们的平均位置；全是转向轮时取全部轮的平均位置（例如八轮全转的装甲车）；
+     * 全是转向轮但挤在一根轴上时退回宿主子零件质心（见 {@link #recalculateSteeringCenter()}）。</p>
      */
     protected volatile Vec3 computedSteeringCenter = Vec3.ZERO;
+
+    /**
+     * 判定「转向轮全挤在同一根轴上」的最大纵向偏移（格），量的是每根轴到它们均值的距离。
+     * <p>这种布局没有第二根轴可以定出转向中心，{@link #ackermannSteering} 的纵向距离恒为 0、
+     * 转角恒为 0，车能开能刹却打不动方向。{@code checkContent} 第 14 条用的是同一个量与同一个阈值，
+     * 只是那边量的是模型定位器。</p>
+     */
+    private static final float MIN_STEER_AXLE_DEVIATION = 0.5f;
 
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
@@ -123,15 +132,20 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
 
     /**
      * 根据已装配车轮的关节枢轴位置自动计算转向中心。<br>
-     * 遍历所有受控车轮驱动子系统，读取关节 Y 轴旋转限位以区分转向/非转向轮，<br>
-     * 用非转向轮枢轴的 Z 均值作为转向参考轴（X 取左右对称中心），<br>
-     * 若全为转向轮则回退到全部车轮的几何中心。
+     * 遍历所有受控车轮驱动子系统，读取关节 Y 轴旋转限位以区分转向/非转向轮：
+     * 有非转向轮时取它们的枢轴均值（常规车即后轴，X 自然落在左右对称中心）；
+     * 全是转向轮时取全部车轮的枢轴均值（八轮全转的装甲车绕车心转向，后四轮随之反打）；
+     * 全是转向轮、且每根轴到它们均值的纵向偏移都不足 {@link #MIN_STEER_AXLE_DEVIATION} 格时，
+     * 没有第二根轴可用，退回宿主子零件质心——刚体局部原点就是质心（{@code SubPartAttr} 建碰撞形状时
+     * 按 {@code mass_center} 定位器或子形状均值把它移到原点），也就是这个零件在模型里的几何中心。
+     * 这一档同时打一条 WARN：纵向距离只剩「轴心到车心」，转弯半径约为型号标定值的两倍。
      */
     protected void recalculateSteeringCenter() {
         float sumNonSteerX = 0, sumNonSteerZ = 0;
         int nonSteerCount = 0;
         float sumAllX = 0, sumAllZ = 0;
         int allCount = 0;
+        float minZ = Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
 
         var carBody = getOwner().getSubPart().body;
 
@@ -162,6 +176,8 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
             sumAllX += carLocalPivot.x;
             sumAllZ += carLocalPivot.z;
             allCount++;
+            minZ = Math.min(minZ, carLocalPivot.z);
+            maxZ = Math.max(maxZ, carLocalPivot.z);
         }
 
         float avgX, avgZ;
@@ -169,9 +185,24 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
             avgX = sumNonSteerX / nonSteerCount;
             avgZ = sumNonSteerZ / nonSteerCount;
         } else if (allCount > 0) {
-            avgX = sumAllX / allCount;
-            avgZ = sumAllZ / allCount;
+            float meanZ = sumAllZ / allCount;
+            float deviation = Math.max(Math.abs(minZ - meanZ), Math.abs(maxZ - meanZ));
+            if (deviation >= MIN_STEER_AXLE_DEVIATION) {
+                avgX = sumAllX / allCount;
+                avgZ = meanZ;
+            } else {
+                // 全轮转向却挤在一根轴上：转向中心退回宿主子零件质心，即刚体局部原点，
+                // 投影到车体局部坐标系后它就是 (0,0,0)。
+                MachineMax.LOGGER.warn(
+                        "车控 {} 绑定的 {} 个轮驱动全是转向轮，最外侧轴只偏离它们的均值 {} 格，"
+                                + "定不出转向中心，改以宿主零件质心为转向中心。这种布局通常是漏装了后轮驱动"
+                                + "（后轮即使不驱动，也要提供制动与转向基准）",
+                        getName(), allCount, String.format(Locale.ROOT, "%.2f", deviation));
+                avgX = 0;
+                avgZ = 0;
+            }
         } else {
+            // 一个受控车轮都没有（握手前、或底盘上没装轮驱动）：同样只有宿主子零件质心可用。
             avgX = 0;
             avgZ = 0;
         }
