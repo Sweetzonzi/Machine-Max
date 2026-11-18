@@ -51,7 +51,12 @@ public class CarControllerSubsystem extends AbstractGroundControllerSubsystem {
     /** 当前车体局部 Y 轴角速度，由 onGroundControlBegin 读取 */
     protected float bodyYawRate = 0f;
 
-    /** 根据已装配车轮几何位置自动计算的转向中心，用于阿克曼转向和漂移判断 */
+    /**
+     * 根据已装配车轮几何位置自动计算的转向中心，用于阿克曼转向和漂移判断。
+     * <p>取非转向轮的平均位置；全是转向轮时取全部轮的平均位置（例如八轮全转的装甲车）。因此转向轮
+     * 不能全挤在同一根轴上——那样中心落在这根轴上、纵向距离恒为 0，{@link #ackermannSteering}
+     * 算出的转角恒为 0，车能开能刹却打不动方向。{@code checkContent} 第 14 条拦这种布局。</p>
+     */
     protected volatile Vec3 computedSteeringCenter = Vec3.ZERO;
 
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {

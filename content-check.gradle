@@ -43,6 +43,10 @@
 // 13. 动画与模板里的名字引用。动画的 MoLang 用完整名字键查本部件，模板用完整名字键把两个零件的
 //     连接点配成一条线；名字改过而引用没跟随时查不到东西，表现是悬架不跟动、爆反挡板不缩、装配体
 //     少一组约束，全都没有日志。动画按引用它的变体们的名字并集核对，没有变体引用的动画（HUD）不查。
+// 14. 转向轮布局。车控拿「非转向轮的平均位置」当转向中心算阿克曼转角（全是转向轮时改用
+//     全部轮的平均位置），所以转向轮全挤在同一根轴上时纵向距离恒为 0、转角恒为 0：车能开能刹，
+//     打方向没有反应，日志里什么都没有。判定用连接点的 yr 行程分转向轮与非转向轮，再用模型的
+//     定位器刻度出这些轮子的纵向跨度。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -335,7 +339,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -978,17 +982,29 @@ tasks.register('checkContent') {
         // （ISignalSender#setTargetFromNames），所以把目标直接写成子系统名即可到达。绕经它的线路多一条
         // 几何配对依赖：配不上（或配对有歧义被跳过）时端口对不上，线静默断开，内容里看不出来。
         Map<String, File> subsystemDefinitions = [:]
+        // 第 14 节用：连接点型号（joint_attrs 在这里），按 <命名空间>:<文件名> 索引。
+        Map<String, File> connectorDefinitions = [:]
         packs.each { pack ->
             File dir = new File(pack.dir, 'subsystems')
-            if (!dir.isDirectory()) {
+            if (dir.isDirectory()) {
+                dir.eachFileRecurse(FileType.FILES) { File file ->
+                    if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                        return
+                    }
+                    String stem = file.name.substring(0, file.name.length() - '.json'.length())
+                    subsystemDefinitions[pack.namespace + ':' + stem] = file
+                }
+            }
+            File connectorsDir = new File(pack.dir, 'connectors')
+            if (!connectorsDir.isDirectory()) {
                 return
             }
-            dir.eachFileRecurse(FileType.FILES) { File file ->
+            connectorsDir.eachFileRecurse(FileType.FILES) { File file ->
                 if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
                     return
                 }
                 String stem = file.name.substring(0, file.name.length() - '.json'.length())
-                subsystemDefinitions[pack.namespace + ':' + stem] = file
+                connectorDefinitions[pack.namespace + ':' + stem] = file
             }
         }
 
@@ -1066,6 +1082,97 @@ tasks.register('checkContent') {
 
         int portWireCount = 0
         int interactTargetCount = 0
+        // 第 14 节用：连接点的关节属性（含 overwrite 覆盖），按型号 JSON 缓存。
+        Map<String, Object> connectorDefinitionCache = [:]
+        def jointAttrsOf = { Map connectorBlock ->
+            if (connectorBlock == null) {
+                return null
+            }
+            Object overwrite = connectorBlock.get('overwrite')
+            if (overwrite instanceof Map && ((Map) overwrite).get('joint_attrs') instanceof Map) {
+                return (Map) ((Map) overwrite).get('joint_attrs')
+            }
+            Object definitionId = connectorBlock.get('definition')
+            if (definitionId == null) {
+                return null
+            }
+            String id = definitionId.toString()
+            if (!connectorDefinitionCache.containsKey(id)) {
+                File file = connectorDefinitions[id]
+                Object parsed = null
+                if (file != null) {
+                    try {
+                        parsed = readJsonc(file)
+                    } catch (Exception ignored) {
+                        // 型号 JSON 读不出来由解码期拒绝，这里按「没有关节属性」继续
+                    }
+                }
+                connectorDefinitionCache[id] = parsed
+            }
+            Object parsed = connectorDefinitionCache[id]
+            return parsed instanceof Map ? (Map) ((Map) parsed).get('joint_attrs') : null
+        }
+
+        // 第 14 节用：模型里的定位器位置。只在「轮驱动全是转向轮」的变体上真的读模型。
+        Map<String, File> modelFiles = [:]
+        packs.each { pack ->
+            File dir = new File(pack.dir, 'models')
+            if (!dir.isDirectory()) {
+                return
+            }
+            dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.geo.json')) {
+                    return
+                }
+                String stem = file.name.substring(0, file.name.length() - '.json'.length())
+                modelFiles[pack.namespace + ':' + stem] = file
+            }
+        }
+        Map<String, Map<String, List<Double>>> modelLocatorCache = [:]
+        def collectLocators
+        collectLocators = { Object node, Map<String, List<Double>> out ->
+            if (node instanceof Map) {
+                Object locators = ((Map) node).get('locators')
+                if (locators instanceof Map) {
+                    ((Map) locators).each { Object locatorName, Object locatorValue ->
+                        Object raw = locatorValue instanceof Map
+                                ? ((Map) locatorValue).get('position') : locatorValue
+                        if (raw instanceof List) {
+                            List<Double> position = []
+                            ((List) raw).each { Object component ->
+                                if (component instanceof Number) {
+                                    position << ((Number) component).doubleValue()
+                                }
+                            }
+                            out[locatorName.toString()] = position
+                        }
+                    }
+                }
+                ((Map) node).values().each { collectLocators(it, out) }
+            } else if (node instanceof List) {
+                ((List) node).each { collectLocators(it, out) }
+            }
+        }
+        def modelLocatorsOf = { Map variantRaw, Map<String, Map<String, List<Double>>> cache ->
+            Object modelId = variantRaw.get('model')
+            if (modelId == null) {
+                return (Map<String, List<Double>>) [:]
+            }
+            String id = modelId.toString()
+            if (!cache.containsKey(id)) {
+                File file = modelFiles[id]
+                Map<String, List<Double>> locators = [:]
+                if (file != null) {
+                    try {
+                        collectLocators(readJsonc(file), locators)
+                    } catch (Exception ignored) {
+                        // 模型读不出来时按「没有定位器」继续，不重复报
+                    }
+                }
+                cache[id] = locators
+            }
+            return cache[id]
+        }
         // 第 12 节用：五类名字键（子零件 / 子系统 / 连接点 / 交互区）的声明点，遍历 parts 时顺手收集。
         Map<String, String> nameDeclarations = [:]
         // 第 13 节用：每个变体的名字集合与它使用的动画名，同样在遍历 parts 时收集。
@@ -1206,6 +1313,69 @@ tasks.register('checkContent') {
                                     problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
                                             ' 的目标 ' + target + ' 不是本变体内的子系统或连接点' +
                                             '（跨零件写连接点名；交互区只发不收，不能当目标）'
+                                }
+                            }
+                        }
+                    }
+                    // 14. 转向轮不能挤在同一根轴上
+                    //
+                    // CarControllerSubsystem 拿「非转向轮的平均位置」当转向中心（阿克曼几何），
+                    // 轮胎转角按 atan(该轮到中心的纵向距离 / 转向半径) 求；全是转向轮时改用全部轮的
+                    // 平均位置。两种取法都要求转向轴与转向中心在纵向错开：一个变体的转向轮如果全
+                    // 集中在一根轴上，中心就落在那根轴上，纵向距离恒为 0、转角恒为 0——车能开能刹，
+                    // 打方向却没反应，日志里什么都没有。判定与 updateSteeringCenter 同口径
+                    // （|upper - lower| > 1e-4 算转向轮），纵向位置取连接点定位器在模型里的 z。
+                    if (subsystems.values().any { Map install ->
+                        install.get('type') != null && install.get('type').toString() == 'machine_max:car_controller'
+                    }) {
+                        List<Map> steeringWheels = []
+                        int straightWheelCount = 0
+                        subsystems.each { Object wheelName, Map wheelInstall ->
+                            if (wheelInstall.get('type') == null ||
+                                    wheelInstall.get('type').toString() != 'machine_max:wheel_driver') {
+                                return
+                            }
+                            Map connectorBlock = (Map) connectors[wheelInstall.get('connector')?.toString()]
+                            Map jointAttrs = jointAttrsOf(connectorBlock)
+                            Object yr = jointAttrs == null ? null : jointAttrs.get('yr')
+                            boolean steering = false
+                            if (yr instanceof Map) {
+                                Object lower = ((Map) yr).get('lower_limit')
+                                Object upper = ((Map) yr).get('upper_limit')
+                                if (lower instanceof Number && upper instanceof Number) {
+                                    steering = Math.abs(((Number) lower).doubleValue()
+                                            - ((Number) upper).doubleValue()) > 1e-4
+                                }
+                            }
+                            if (steering) {
+                                steeringWheels << [install: wheelInstall, connector: connectorBlock]
+                            } else {
+                                straightWheelCount++
+                            }
+                        }
+                        if (!steeringWheels.isEmpty() && straightWheelCount == 0) {
+                            // 全是转向轮时才需要看几何：这些轮子的定位器是不是挤在同一根轴上
+                            Map<String, List<Double>> locators = modelLocatorsOf(variantRaw, modelLocatorCache)
+                            List<Double> zs = []
+                            steeringWheels.each { Map wheel ->
+                                Object locatorName = wheel.connector == null ? null
+                                        : ((Map) wheel.connector).get('locator')
+                                List<Double> position = locatorName == null ? null
+                                        : locators.get(locatorName.toString())
+                                if (position != null && position.size() >= 3) {
+                                    zs << position[2]
+                                }
+                            }
+                            if (zs.size() == steeringWheels.size() && zs.size() > 1) {
+                                double mean = zs.sum() / zs.size()
+                                double spread = zs.collect { Math.abs(it - mean) }.max()
+                                if (spread < 0.5) {
+                                    problems << relative + '：变体 ' + variantName + ' 的 ' + zs.size() +
+                                            ' 个轮驱动全是转向轮，且都在同一根轴附近（定位器纵向跨度 ' +
+                                            String.format(Locale.ROOT, '%.2f', spread * 2) +
+                                            ' 格）——车控拿轮子平均位置当转向中心，纵向距离恒为 0、转角恒为 0' +
+                                            '（车能开能刹，打方向没反应，没有日志）；给不转向的车轮补 wheel_driver，' +
+                                            '型号的 max_drive_force 与 steering.max_force 写 0，只留制动力矩与手刹力矩'
                                 }
                             }
                         }
@@ -1356,7 +1526,7 @@ tasks.register('checkContent') {
 
         // 13. 动画与模板里的名字引用
         //
-        // 动画的 MoLang 用完整名字键查本部件：`local.connector_offset('connector.machine_max.left_wheel_1', 1)`
+        // 动画的 MoLang 用完整名字键查本部件：`local.connector_offset('connector.machine_max.left_wheel_01', 1)`
         // 查不到连接点时返回 0，悬架摆臂就不跟动；`local.subsystem_destroyed('...')` 查不到子系统时
         // 条件恒为「未摧毁」，爆反挡板永远缩着。两种都只是画面不对，没有日志。
         //
