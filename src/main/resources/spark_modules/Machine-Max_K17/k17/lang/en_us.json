@@ -58,8 +58,6 @@
   "subsystem.k17.driver_seat": "Driver Seat",
   "subsystem.k17.commander_seat": "Commander Seat",
   "subsystem.k17.gunner_seat": "Gunner Seat",
-  "connector.k17.left_wheel_hull": "Left Wheel Hull",
-  "connector.k17.right_wheel_hull": "Right Wheel Hull",
   "connector.k17.turret_gun_axis": "Turret Gun Axis",
   "connector.k17.turret_hull_axis": "Turret Hull Axis",
   "subsystem.k17.azimuth_driver": "Azimuth Driver",

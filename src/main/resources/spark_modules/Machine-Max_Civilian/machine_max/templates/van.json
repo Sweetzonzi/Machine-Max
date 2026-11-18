@@ -11,10 +11,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.left_front_door_axis": {
+            "connector.machine_max.axis": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_front_door_lock": {
+            "connector.machine_max.lock": {
               "integrity_ratio": 1.0
             }
           },
@@ -108,10 +108,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.left_back_door_axis": {
+            "connector.machine_max.axis": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.left_back_door_lock": {
+            "connector.machine_max.lock": {
               "integrity_ratio": 1.0
             }
           },
@@ -200,7 +200,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.right_front_wheel": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -242,10 +242,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.right_back_door_lock": {
+            "connector.machine_max.lock": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_back_door_axis": {
+            "connector.machine_max.axis": {
               "integrity_ratio": 1.0
             }
           },
@@ -420,10 +420,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.trunk_door_lock": {
+            "connector.machine_max.lock": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.trunk_door_axis": {
+            "connector.machine_max.axis": {
               "integrity_ratio": 1.0
             }
           },
@@ -555,7 +555,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.left_front_wheel_locator": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -597,7 +597,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.left_front_wheel_locator": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -639,7 +639,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.right_front_wheel": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -681,10 +681,10 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.right_front_door_lock": {
+            "connector.machine_max.lock": {
               "integrity_ratio": 1.0
             },
-            "connector.machine_max.right_front_door_axis": {
+            "connector.machine_max.axis": {
               "integrity_ratio": 1.0
             }
           },
@@ -778,7 +778,7 @@
     {
       "partUuidS": "16ccd4fd-381d-4d54-b6a0-f7a0041f0d34",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_front_wheel_locator",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           5.5873394E-4,
@@ -812,7 +812,7 @@
     {
       "partUuidS": "0ae11c34-a6a8-4046-b76e-87764b53696b",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_front_wheel",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -5.5873394E-4,
@@ -846,7 +846,7 @@
     {
       "partUuidS": "5a80a1cd-567e-43cb-982b-e7a2a18512d3",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_front_wheel",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -5.5873394E-4,
@@ -880,7 +880,7 @@
     {
       "partUuidS": "6f46b4fe-3bb5-4144-8256-e0cb598c4b76",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_front_wheel_locator",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           5.5873394E-4,
@@ -1084,7 +1084,7 @@
     {
       "partUuidS": "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.trunk_door_lock",
+      "simplePointConnectorName": "connector.machine_max.lock",
       "posRotS": {
         "position": [
           -0.02400625,
@@ -1118,7 +1118,7 @@
     {
       "partUuidS": "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.trunk_door_axis",
+      "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
         "position": [
           6.145565E-6,
@@ -1152,7 +1152,7 @@
     {
       "partUuidS": "5cba7c89-b3ee-4641-8f1b-b889df96b893",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_front_door_axis",
+      "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
         "position": [
           -0.0211488,
@@ -1202,7 +1202,7 @@
       },
       "partUuidA": "5cba7c89-b3ee-4641-8f1b-b889df96b893",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_front_door_lock",
+      "advConnectorName": "connector.machine_max.lock",
       "posRotA": {
         "position": [
           -0.0055155787,
@@ -1220,7 +1220,7 @@
     {
       "partUuidS": "f3e4fb76-36c6-4284-8e09-6c1e62ccc227",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_front_door_axis",
+      "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
         "position": [
           0.0211488,
@@ -1270,7 +1270,7 @@
       },
       "partUuidA": "f3e4fb76-36c6-4284-8e09-6c1e62ccc227",
       "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_front_door_lock",
+      "advConnectorName": "connector.machine_max.lock",
       "posRotA": {
         "position": [
           0.0055136513,
@@ -1288,7 +1288,7 @@
     {
       "partUuidS": "8eb2af35-91f8-45ae-b64b-8a5037efabab",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_back_door_lock",
+      "simplePointConnectorName": "connector.machine_max.lock",
       "posRotS": {
         "position": [
           0.06870353,
@@ -1322,7 +1322,7 @@
     {
       "partUuidS": "8eb2af35-91f8-45ae-b64b-8a5037efabab",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_back_door_axis",
+      "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
         "position": [
           0.06869618,
@@ -1356,7 +1356,7 @@
     {
       "partUuidS": "202a4f12-7829-45fb-9b16-fa3cbdd46b5e",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_back_door_lock",
+      "simplePointConnectorName": "connector.machine_max.lock",
       "posRotS": {
         "position": [
           -0.06870353,
@@ -1390,7 +1390,7 @@
     {
       "partUuidS": "202a4f12-7829-45fb-9b16-fa3cbdd46b5e",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_back_door_axis",
+      "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
         "position": [
           -0.06872709,

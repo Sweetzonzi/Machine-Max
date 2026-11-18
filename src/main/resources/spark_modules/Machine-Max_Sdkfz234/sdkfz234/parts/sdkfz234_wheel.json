@@ -41,7 +41,7 @@
             }
           },
           "connectors": {
-            "connector.sdkfz234.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "locator": "left_wheel_hull",
               "definition": "sdkfz234:sdkfz234_wheel_hub_left",
               "overwrite": {}
@@ -85,7 +85,7 @@
             }
           },
           "connectors": {
-            "connector.sdkfz234.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "locator": "right_wheel_hull",
               "definition": "sdkfz234:sdkfz234_wheel_hub_right",
               "overwrite": {}

@@ -27,7 +27,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -67,7 +67,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -419,7 +419,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -459,7 +459,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -499,7 +499,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -539,7 +539,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -579,7 +579,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -619,7 +619,7 @@
             ]
           },
           "connector_data": {
-            "connector.sdkfz234.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -637,7 +637,7 @@
     {
       "partUuidS": "9637eec5-da9d-42ae-bd22-3c28eb8ee3e9",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.09749997,
@@ -671,7 +671,7 @@
     {
       "partUuidS": "720da790-0156-4f87-8e45-03349b463b3a",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.09749985,
@@ -705,7 +705,7 @@
     {
       "partUuidS": "53471c64-35fc-46cd-aeaf-22841940919d",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.09749985,
@@ -739,7 +739,7 @@
     {
       "partUuidS": "8919fcd4-3b51-47ca-8c43-47940b478a1f",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.09749985,
@@ -773,7 +773,7 @@
     {
       "partUuidS": "b564a9f4-d80e-46cd-8547-9d5647795331",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.09749985,
@@ -807,7 +807,7 @@
     {
       "partUuidS": "e80b211f-128d-497c-ad20-6511af273194",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.09749997,
@@ -841,7 +841,7 @@
     {
       "partUuidS": "6e096252-9044-4e8a-9841-019e6e4ea96e",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.09749997,
@@ -875,7 +875,7 @@
     {
       "partUuidS": "85d8a55f-3198-41c4-ad52-4aba5ae31c22",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.sdkfz234.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.09749997,

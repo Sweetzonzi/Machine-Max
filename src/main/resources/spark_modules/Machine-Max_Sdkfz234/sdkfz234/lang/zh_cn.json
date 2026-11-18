@@ -62,8 +62,6 @@
   "subsystem.sdkfz234.right_wheel_3": "右负重轮 3",
   "subsystem.sdkfz234.right_wheel_4": "右负重轮 4",
   "subsystem.sdkfz234.driver_seat": "驾驶座",
-  "connector.sdkfz234.left_wheel_hull": "左轮毂—车体连接座",
-  "connector.sdkfz234.right_wheel_hull": "右轮毂—车体连接座",
   "connector.sdkfz234.turret_hull_axis": "炮塔—车体座圈",
   "connector.sdkfz234.turret_gun_axis": "炮塔—火炮俯仰轴",
   "subsystem.sdkfz234.gunner_seat": "炮手座",

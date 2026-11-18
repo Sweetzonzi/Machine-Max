@@ -26,7 +26,7 @@
             }
           },
           "connectors": {//子部件用于与其他零件连接的连接点列表
-            "connector.machine_max.left_front_wheel_locator": {//连接点名称
+            "connector.machine_max.chassis_connection": {//连接点名称
               "locator": "left_front_wheel_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
               "definition": "machine_max:fixed_right"
             }
@@ -65,7 +65,7 @@
             }
           },
           "connectors": {//子部件用于与其他零件连接的连接点列表
-            "connector.machine_max.right_front_wheel": {//连接点名称
+            "connector.machine_max.chassis_connection": {//连接点名称
               "locator": "right_front_wheel_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
               "definition": "machine_max:fixed_left"
             }

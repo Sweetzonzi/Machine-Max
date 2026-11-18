@@ -38,7 +38,7 @@
             }
           },
           "connectors": {
-            "connector.k17.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "locator": "left_wheel_hull",
               "definition": "k17:k17_wheel_hub_left",
               "overwrite": {}
@@ -79,7 +79,7 @@
             }
           },
           "connectors": {
-            "connector.k17.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "locator": "right_wheel_hull",
               "definition": "k17:k17_wheel_hub_right",
               "overwrite": {}

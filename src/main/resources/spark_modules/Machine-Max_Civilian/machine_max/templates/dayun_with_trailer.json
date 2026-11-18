@@ -374,7 +374,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
-            "connector.machine_max.right_front_wheel_chassis": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -808,7 +808,7 @@
     {
       "partUuidS": "86344c64-9881-4f46-a81a-7b9a5e8f311f",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_front_wheel_chassis",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0781225,

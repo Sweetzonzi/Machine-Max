@@ -138,7 +138,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -178,7 +178,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -218,7 +218,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -258,7 +258,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -543,7 +543,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -583,7 +583,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.left_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -626,7 +626,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -669,7 +669,7 @@
             ]
           },
           "connector_data": {
-            "connector.k17.right_wheel_hull": {
+            "connector.machine_max.chassis_connection": {
               "integrity_ratio": 1.0
             }
           },
@@ -690,7 +690,7 @@
     {
       "partUuidS": "261a2654-bd2f-4470-bde3-7a82a9b96daa",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0546875,
@@ -724,7 +724,7 @@
     {
       "partUuidS": "7e3aac88-a1d1-4d6c-9a8f-9efbbf4d26b8",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.0546875,
@@ -758,7 +758,7 @@
     {
       "partUuidS": "88c33b8e-84bd-4595-9bff-436a4c103fa6",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.0546875,
@@ -792,7 +792,7 @@
     {
       "partUuidS": "3a633c99-0c10-46fa-ba45-dff9287a0a43",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.0546875,
@@ -826,7 +826,7 @@
     {
       "partUuidS": "b93169ff-5421-4e79-8319-1f13cb69a7c2",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0546875,
@@ -860,7 +860,7 @@
     {
       "partUuidS": "a30dd424-06f7-4969-8b7a-89ad83357946",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0546875,
@@ -894,7 +894,7 @@
     {
       "partUuidS": "4035ede9-8625-46b4-be71-03ae31fbe63c",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.left_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0546875,
@@ -928,7 +928,7 @@
     {
       "partUuidS": "b7e65aec-be19-4556-b050-ede734a3325d",
       "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.k17.right_wheel_hull",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           -0.0546875,
