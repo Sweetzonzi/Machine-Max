@@ -52,16 +52,22 @@ TYPE_SUFFIX = {
     "launcher": "_launcher",
     "seat": "_seat",
 }
-# 中文译文里不采用的写法（docs/内容包命名词表.md 4.1）
+# 中文译文里不采用的写法（docs/内容包命名词表.md 4.1）。只收录能按子串判定的词：
+# `控制`、`电机`、`装弹机` 这类与正词重叠的写法（`自动装弹机` 含 `装弹机`）不收，靠人工过。
 BAD_TERMS = {
     "动力系统": "发动机",
     "传动机构": "传动系统",
     "车控系统": "行驶控制器",
     "履带控制器": "履带行驶控制器",
-    "驾驶位": "驾驶座",
     "驾驶员入口": "进入驾驶座",
+    "入口": "进入<角色>座",
+    "舱口": "进入<角色>座",
     "头灯": "前照灯",
 }
+# 有角色词时座位写「座」（`进入车长座`），不写「位」；只有方位或排数时才写「座位」。
+BAD_PATTERNS = (
+    re.compile(r"(?:驾驶|车长|炮手|装填手|载员|乘员)位"),
+)
 
 
 def strip_jsonc(text):
@@ -268,7 +274,8 @@ def cmd_scan(args):
         hits = [
             (k, v)
             for k, v in zh.items()
-            if isinstance(v, str) and not k.startswith("description.") and any(b in v for b in BAD_TERMS)
+            if isinstance(v, str) and not k.startswith("description.")
+            and (any(b in v for b in BAD_TERMS) or any(p.search(v) for p in BAD_PATTERNS))
         ]
         print("[term] %d" % len(hits))
         for key, value in hits:
@@ -303,7 +310,9 @@ def cmd_rename(args):
             hits = len(pattern.findall(text))
             if not hits:
                 continue
-            if new in text:
+            # 撞名判据同样带右边界：新名是旧名的前缀时（`driver_hatch` ⊂ `driver_hatch_interact`）
+            # 不算撞名；只有同一个完整键已经存在才拒绝改写该文件。
+            if re.search(re.escape(new) + r"(?![0-9a-z_])", text):
                 print("! %s 已出现在 %s，跳过该文件以免撞名" % (new, os.path.relpath(path, ROOT)), file=sys.stderr)
                 continue
             touched += hits

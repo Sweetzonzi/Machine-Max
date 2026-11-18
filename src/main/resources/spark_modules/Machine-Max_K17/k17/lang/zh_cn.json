@@ -1,6 +1,6 @@
 {
   "k17.k17_hull": "K-17车体",
-  "interact.k17.back_hatch_interact": "进入乘员舱",
+  "interact.k17.back_hatch": "进入乘员舱",
   "k17.k17_wheel": "K-17车轮",
   "k17.k17_turret": "K-17炮塔",
   "connector.k17.turret_left_atgm_axis": "炮塔左反坦克导弹轴",
@@ -33,7 +33,7 @@
   "research.k17.k17_turret_blueprint.desc": "K-17 的炮塔：2A42 机炮、PKTM 机枪与两侧反坦克导弹发射器。",
   "k17.research.k17_wheel": "K-17 车轮",
   "research.k17.k17_wheel_blueprint.desc": "K-17 的车轮：两侧各四只，按对制造。",
-  "interact.k17.driver_hatch_interact": "进入驾驶位",
+  "interact.k17.driver_hatch": "进入驾驶座",
   "subsystem.k17.engine": "发动机",
   "subsystem.k17.gearbox": "变速箱",
   "subsystem.k17.transmission": "传动系统",

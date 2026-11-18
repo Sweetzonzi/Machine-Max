@@ -19,7 +19,7 @@
   },
   "groups": [
     {
-      "name": "controlGroup.m1a2_sep.gunner_coax762",
+      "name": "controlGroup.m1a2_sep.gunner_coax",
       "control_mode": "inherit",
       "view_targets": {
         "crew_gunner_aim_coax762": [
@@ -33,7 +33,7 @@
       }
     },
     {
-      "name": "controlGroup.m1a2_sep.gunner_csamm",
+      "name": "controlGroup.m1a2_sep.gunner_antimateriel",
       "control_mode": "inherit",
       "view_targets": {
         "crew_gunner_aim_csamm": [

@@ -41,7 +41,7 @@ import java.util.Map;
 @PrefixGameTestTemplate(false)
 public final class InteractBoxGameTest {
     private static final String BATCH = "mmInteractBox";
-    private static final String HATCH = "interact.k17.back_hatch_interact";
+    private static final String HATCH = "interact.k17.back_hatch";
     private static final String COMMANDER = "subsystem.k17.commander_seat";
     private static final String GUNNER = "subsystem.k17.gunner_seat";
 

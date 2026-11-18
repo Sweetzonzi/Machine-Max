@@ -1,8 +1,8 @@
 {
   "2s38.2s38_hull": "2S38 车体",
-  "interact.2s38.driver_hatch": "进入驾驶位",
-  "interact.2s38.gunner_hatch": "进入炮手位",
-  "interact.2s38.commander_hatch": "进入车长位",
+  "interact.2s38.driver_hatch": "进入驾驶座",
+  "interact.2s38.gunner_hatch": "进入炮手座",
+  "interact.2s38.commander_hatch": "进入车长座",
   "sub_part.2s38.left_road_wheel_01": "左负重轮 01",
   "sub_part.2s38.left_road_wheel_02": "左负重轮 02",
   "sub_part.2s38.left_road_wheel_03": "左负重轮 03",

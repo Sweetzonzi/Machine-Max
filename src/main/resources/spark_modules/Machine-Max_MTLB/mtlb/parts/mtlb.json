@@ -635,7 +635,7 @@
           }
         },
         "interact_boxes": {
-          "interact.mtlb.driver_hatch_interact": {
+          "interact.mtlb.driver_hatch": {
             "bone": "DriverHatchInteract",
             "signal_targets": {
               "interact": [
@@ -643,7 +643,7 @@
               ]
             }
           },
-          "interact.mtlb.commander_hatch_interact": {
+          "interact.mtlb.commander_hatch": {
             "bone": "CommanderHatchInteract",
             "signal_targets": {
               "interact": [
@@ -666,7 +666,7 @@
               ]
             }
           },
-          "interact.mtlb.passenger_roof_interact": {
+          "interact.mtlb.passenger_roof": {
             "bone": "PassengerRoofInteract",
             "signal_targets": {
               "interact": [

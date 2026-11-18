@@ -1,6 +1,6 @@
 {
   "k17.k17_hull": "K17 Hull",
-  "interact.k17.back_hatch_interact": "Back Hatch Interact",
+  "interact.k17.back_hatch": "Enter Crew Compartment",
   "k17.k17_wheel": "K17 Wheel",
   "k17.k17_turret": "K17 Turret",
   "connector.k17.turret_left_atgm_axis": "Turret Left Atgm Axis",
@@ -33,7 +33,7 @@
   "research.k17.k17_turret_blueprint.desc": "K-17 turret with the 2A42 autocannon, a PKTM and two anti-tank missile launchers.",
   "k17.research.k17_wheel": "K-17 Wheel",
   "research.k17.k17_wheel_blueprint.desc": "Wheel of the K-17, four per side; crafted in pairs.",
-  "interact.k17.driver_hatch_interact": "Driver Hatch Interact",
+  "interact.k17.driver_hatch": "Enter Driver Seat",
   "subsystem.k17.engine": "Engine",
   "subsystem.k17.gearbox": "Gearbox",
   "subsystem.k17.transmission": "Transmission",

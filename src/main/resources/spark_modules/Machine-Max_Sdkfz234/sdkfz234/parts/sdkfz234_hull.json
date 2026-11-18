@@ -77,7 +77,7 @@
             }
           },
           "interact_boxes": {
-            "interact.sdkfz234.driver_cover_interact": {
+            "interact.sdkfz234.driver_cover": {
               "bone": "DriverCoverInteract",
               "signal_targets": {
                 "interact": [
@@ -86,7 +86,7 @@
                 ]
               }
             },
-            "interact.sdkfz234.back_case_interact": {
+            "interact.sdkfz234.back_case": {
               "bone": "BackCaseInteract",
               "interact_mode": "accurate",
               "signal_targets": {

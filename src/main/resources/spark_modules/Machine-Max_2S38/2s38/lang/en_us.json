@@ -1,8 +1,8 @@
 {
   "2s38.2s38_hull": "2s38 Hull",
-  "interact.2s38.driver_hatch": "Driver Hatch",
-  "interact.2s38.gunner_hatch": "Gunner Hatch",
-  "interact.2s38.commander_hatch": "Commander Hatch",
+  "interact.2s38.driver_hatch": "Enter Driver Seat",
+  "interact.2s38.gunner_hatch": "Enter Gunner Seat",
+  "interact.2s38.commander_hatch": "Enter Commander Seat",
   "sub_part.2s38.left_road_wheel_01": "Left Road Wheel 01",
   "sub_part.2s38.left_road_wheel_02": "Left Road Wheel 02",
   "sub_part.2s38.left_road_wheel_03": "Left Road Wheel 03",

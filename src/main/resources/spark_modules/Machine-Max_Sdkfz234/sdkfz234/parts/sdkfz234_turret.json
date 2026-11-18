@@ -73,7 +73,7 @@
             }
           },
           "interact_boxes": {
-            "interact.sdkfz234.gunner_cover_interact": {
+            "interact.sdkfz234.gunner_cover": {
               "bone": "GunnerCoverInteract",
               "interact_mode": "accurate",
               "signal_targets": {
@@ -82,7 +82,7 @@
                 ]
               }
             },
-            "interact.sdkfz234.commander_cover_interact": {
+            "interact.sdkfz234.commander_cover": {
               "bone": "CommanderCoverInteract",
               "interact_mode": "accurate",
               "signal_targets": {

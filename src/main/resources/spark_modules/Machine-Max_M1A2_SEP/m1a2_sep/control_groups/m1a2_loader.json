@@ -1,6 +1,6 @@
 {
   "base_group": {
-    "name": "controlGroup.m1a2_sep.loader_m240",
+    "name": "controlGroup.m1a2_sep.loader_mg",
     "control_mode": "inherit",
     "move_targets": {},
     "regular_targets": {},

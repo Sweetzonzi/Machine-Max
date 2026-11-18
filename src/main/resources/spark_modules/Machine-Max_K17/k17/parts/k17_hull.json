@@ -78,7 +78,7 @@
           }
         },
         "interact_boxes": {
-          "interact.k17.driver_hatch_interact": {
+          "interact.k17.driver_hatch": {
             "bone": "DriverHatchInteract",
             "signal_targets": {
               "interact": [
@@ -86,7 +86,7 @@
               ]
             }
           },
-          "interact.k17.back_hatch_interact": {
+          "interact.k17.back_hatch": {
             "bone": "BackHatchInteract",
             "signal_targets": {
               "interact": [

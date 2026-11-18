@@ -30,7 +30,7 @@
   },
   "groups": [
     {
-      "name": "controlGroup.type59.type59_observer",
+      "name": "controlGroup.type59.observer",
       "control_mode": "inherit",
       "move_targets": {},
       "regular_targets": {},
