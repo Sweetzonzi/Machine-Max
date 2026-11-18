@@ -274,6 +274,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 | 碰撞箱的命中火花引用 | 材质的 `particles` 段按键声明表现粒子（`hit_pen` / `hit_un_pen` …），每个值按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；客户端解析不到定义时静默跳过，因此只能在这里拦 |
 | 粒子定义之间的事件引用 | 粒子 JSON 的 `events` 里用 `particle_effect` 生成另一个效果时，`effect` 同样按 `<namespace>:<文件名>` 在 `particles/**/*.particle.json` 里找；拼错只会让子效果不出现，日志里没有痕迹 |
 | 座位控制组预设 | 任何 JSON 里出现的 `control_group_preset`（只由座位安装块的 `SeatSubsystemAttr` 读取）按 `<namespace>:<control_groups/ 下的文件名>` 在全部包合并后的索引里找；拼错时 `SeatSubsystem` 构造器打一条 WARN 就按空控制组继续，乘员按什么键都没反应，控制面板里也列不出组 |
+| 连接点信号表 | `signal_targets` 的目标若是本变体内的子系统，按该类型的接受频道字段（座位的 `interact_inputs`、引擎与变速箱的 `control_inputs`、武器控制器的 `aim_inputs` / `fire_inputs` 等）核对到达频道，不在列表里时 `SignalPort` 转发会静默丢弃；`signal_translations` 的每个目标频道必须在同一张 `signal_targets` 里；内部连接点（`"internal": true`）两端同属一个 Part，不得配置这两张表——同件直连写子系统名即可 |
 | 履带临时配方 | `recipe/fittings/*.json` 的 `result.components["machine_max:fitting_type"]` 必须指向 `type` 为 `track` 的 `fittings/<名>.json`，且每个第一方履带型号恰好有一条配方；型号写错时配方照常加载，游戏里只表现为物品铺不上、模型回落默认型号 |
 
 - **为什么要求同名**：创造栏两个页签按 `MMDynamicRes.TEMPLATES` 生成物品，物品里存的是**模板 id**，`AssemblyItem` / `VehicleBlueprintItem` 再拿这个 id 去 `assemblies/`、`blueprints/` 查条目。文件名与模板不同名、`template` 多带了 `.json` 后缀、或整条缺失，物品都在但取不到 `template`，放置失败。

@@ -31,6 +31,15 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
      * 两者在 {@code SeatSubsystem#getAcceptedChannels()} 里取并集。频道只用于发现握手，不承载装填指令。
      */
     public final List<String> loaderDiscoveryInputs;
+    /**
+     * 本座位额外接受的交互输入频道（安装级）。<br>
+     * 型号的 {@code interact_inputs} 描述这类座位的默认交互输入（默认 {@code ["interact"]}），
+     * 本字段用于同一个型号装在不同位置时接受各自的交互频道——例如车门交互区经连接点送进来的是
+     * {@code interact_left_door}、后排车门送进来的是 {@code left_interact}。两者在
+     * {@code SeatSubsystem#getAcceptedChannels()} 里取并集，因此安装级只需写"额外"的那几条，
+     * 型号声明的 {@code interact} 不会被顶掉。
+     */
+    public final List<String> interactInputs;
     /** 下车 locator 名称列表，顺序即优先级；空列表表示该座位未声明下车点 */
     public final List<String> dismountLocators;
     /**
@@ -52,6 +61,8 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             SIGNAL_TARGETS_CODEC.optionalFieldOf("camera_discovery_targets", Map.of()).forGetter(SeatSubsystemAttr::getCameraDiscoveryTargets),
             Codec.STRING.listOf().optionalFieldOf("loader_discovery_inputs", List.of())
                     .forGetter(SeatSubsystemAttr::getLoaderDiscoveryInputs),
+            Codec.STRING.listOf().optionalFieldOf("interact_inputs", List.of())
+                    .forGetter(SeatSubsystemAttr::getInteractInputs),
             Codec.STRING.listOf().optionalFieldOf("dismount_locators", List.of()).forGetter(SeatSubsystemAttr::getDismountLocators),
             ResourceLocation.CODEC.optionalFieldOf("first_hud_layout").forGetter(SeatSubsystemAttr::getFirstHudLayoutOverride),
             ResourceLocation.CODEC.optionalFieldOf("third_hud_layout").forGetter(SeatSubsystemAttr::getThirdHudLayoutOverride),
@@ -65,6 +76,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
             Map<String, List<String>> passengerNumSignalTargets,
             Map<String, List<String>> cameraDiscoveryTargets,
             List<String> loaderDiscoveryInputs,
+            List<String> interactInputs,
             List<String> dismountLocators,
             Optional<ResourceLocation> firstHudLayoutOverride,
             Optional<ResourceLocation> thirdHudLayoutOverride,
@@ -78,6 +90,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.passengerNumSignalTargets = passengerNumSignalTargets;
         this.cameraDiscoveryTargets = cameraDiscoveryTargets;
         this.loaderDiscoveryInputs = List.copyOf(loaderDiscoveryInputs);
+        this.interactInputs = List.copyOf(interactInputs);
         this.dismountLocators = checkDismountLocators(dismountLocators);
         this.firstHudLayoutOverride = firstHudLayoutOverride;
         this.thirdHudLayoutOverride = thirdHudLayoutOverride;

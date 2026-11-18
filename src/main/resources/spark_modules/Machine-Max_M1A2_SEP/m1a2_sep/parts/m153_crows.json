@@ -55,11 +55,6 @@
             "connector.m1a2_sep.rws_elevation": {
               "locator": "rws_elevation",
               "definition": "machine_max:turret_elevation_axis",
-              "signal_targets": {
-                "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.rws_autoloader"
-                ]
-              },
               "internal": true,
               "overwrite": {
                 "joint_attrs": {
@@ -92,7 +87,7 @@
                   "subsystem.m1a2_sep.rws_pitch_driver"
                 ],
                 "weapon.mg.m2hb": [
-                  "connector.m1a2_sep.rws_elevation"
+                  "subsystem.m1a2_sep.rws_launcher"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
@@ -153,14 +148,6 @@
             "connector.m1a2_sep.rws_pitch_lock": {
               "locator": "rws_pitch_lock",
               "definition": "machine_max:fixed_back",
-              "signal_targets": {
-                "weapon.mg.m2hb": [
-                  "subsystem.m1a2_sep.rws_launcher"
-                ],
-                "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.rws_launcher"
-                ]
-              },
               "internal": true,
               "overwrite": {}
             }
@@ -172,7 +159,7 @@
               "locator": "rws_muzzle",
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "connector.m1a2_sep.rws_pitch_lock"
+                  "subsystem.m1a2_sep.rws_autoloader"
                 ]
               }
             },

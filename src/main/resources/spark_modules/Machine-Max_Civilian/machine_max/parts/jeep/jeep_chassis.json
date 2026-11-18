@@ -68,6 +68,8 @@
             "definition": "machine_max:default_seat",
             "locator": "seat_point_left",
             "control_group_preset": "machine_max:civilian_driver",
+            //左前门交互区经车体→车架的连接点送进来的是 interact_left_door，不是型号默认的 interact
+            "interact_inputs": ["interact_left_door"],
             "passenger_num_outputs": {
               "driver_occupied": ["interact.machine_max.left_seat", "connector.machine_max.hull_connection"]
             }
@@ -77,6 +79,7 @@
             "definition": "machine_max:default_passenger_seat",
             "locator": "seat_point_right",
             "control_group_preset": "machine_max:civilian_copilot",
+            "interact_inputs": ["interact_right_door"],
             "passenger_num_outputs": {
               "copilot_occupied": ["interact.machine_max.right_seat", "connector.machine_max.hull_connection"]
             }

@@ -614,7 +614,7 @@
                 "hull_exit_left",
                 "hull_exit_right"
               ],
-              "reload_operator_discovery_inputs": [],
+              "loader_discovery_inputs": [],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             }

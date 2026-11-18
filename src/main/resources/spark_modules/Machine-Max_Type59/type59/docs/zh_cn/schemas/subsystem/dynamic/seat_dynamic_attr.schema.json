@@ -43,6 +43,12 @@
       "default": [],
       "description": "本座位被装填需求方发现的频道（安装级）。例如装填手座位写 [\"crew_loader_reload\"]，炮手座位写 [\"crew_gunner_reload\"]；装弹机的 loader_discovery_targets 在这些频道上查询，命中的座位把实际乘员交给人工段。与型号的 interact_inputs 取并集，频道只用于握手发现，不承载装填指令。"
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "本座位额外接受的交互输入频道（安装级）。型号的 interact_inputs 描述这类座位的默认交互输入，本字段用于同一个型号装在不同位置时接受各自的交互频道——车门交互区经连接点送进来的是 interact_left_door、left_interact 这类转译后的频道，与舱内交互区直接送的 interact 不同。与型号的 interact_inputs 取并集，因此只写额外的那几条；跨连接点转发时接收者必须声明到达频道，否则信号被端口丢掉。"
+    },
     "dismount_locators": {
       "type": "array",
       "items": { "type": "string" },
@@ -82,6 +88,13 @@
       "locator": "loader_seat",
       "control_group_preset": "machine_max:empty",
       "loader_discovery_inputs": ["crew_loader_reload"]
+    },
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "interact_inputs": ["interact_left_door"]
     }
   ]
 }

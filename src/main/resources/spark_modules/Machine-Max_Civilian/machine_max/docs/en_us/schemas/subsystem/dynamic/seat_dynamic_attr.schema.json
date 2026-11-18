@@ -43,6 +43,12 @@
       "default": [],
       "description": "Per-installation channels on which loading demanders discover this seat. e.g. the loader seat writes [\"crew_loader_reload\"] and the gunner seat [\"crew_gunner_reload\"]; the autoloader queries these channels in its loader_discovery_targets and hands the actual occupant to its human stage. Unioned with the model's interact_inputs; channels are handshakes for discovery only and carry no loading commands."
     },
+    "interact_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Additional interactive input channels accepted by this installation. The model's interact_inputs describes the default interactive inputs of the type; this field lets one model installed in different places accept its own channels — a door interact box routed through a connector arrives on a translated channel such as interact_left_door or left_interact, not on the in-cabin interact. Unioned with the model's interact_inputs, so list only the extra names; a receiver behind a connector must declare the arrival channel or the port drops the signal."
+    },
     "dismount_locators": {
       "type": "array",
       "items": { "type": "string" },
@@ -82,6 +88,13 @@
       "locator": "loader_seat",
       "control_group_preset": "machine_max:empty",
       "loader_discovery_inputs": ["crew_loader_reload"]
+    },
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:default_seat",
+      "locator": "driver_seat",
+      "control_group_preset": "machine_max:default_driver",
+      "interact_inputs": ["interact_left_door"]
     }
   ]
 }

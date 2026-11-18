@@ -125,9 +125,6 @@
             "connector.sdkfz234.hull_right_wheel_2": {
               "locator": "hull_right_wheel_2",
               "definition": "sdkfz234:sdkfz234_right_wheel",
-              "signal_translations": {
-                "new_source": "new_target"
-              },
               "overwrite": {}
             },
             "connector.sdkfz234.hull_right_wheel_3": {
@@ -148,11 +145,6 @@
             "connector.sdkfz234.hull_turret_axis": {
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
-              "signal_targets": {
-                "move_control": [
-                  "subsystem.sdkfz234.car_controller"
-                ]
-              },
               "overwrite": {
                 "integrity": 1200,
                 "impact_absorption": 1.0,

@@ -309,7 +309,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，单变体内三类信号名字的唯一性，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -932,7 +932,241 @@ tasks.register('checkContent') {
             }
         }
 
-        // 9. 履带临时配方与型号对齐
+        // 9. 跨连接点的信号线：到达频道必须被目标子系统接受
+        //
+        // 连接点的 signal_targets 键是「转译之后」的到达频道：对侧端口转发时先用本连接点的
+        // signal_translations 转译，再按这个键取目标表。真正投递前端口会核对目标子系统声明的接受频道
+        // （SignalPort 的 accepts 检查，acceptAllRoutingInput 为真时跳过），不在列表里的接收者被直接
+        // continue，既不写输入槽也不打日志。症状是「车门交互区看得见、按了没反应」或「座位占用传不到
+        // 车门」，而且内容里它与一条正常的线长得一样——同件具名直送不看频道名，所以只有跨连接点的
+        // 线路会出现这种错位。
+        //
+        // 接受频道取自各类型 getAcceptedChannels() 实际读的字段：型号 JSON 的字段用下面表里的默认值
+        // （与属性 Codec 的 optionalFieldOf 默认值一致，改 Codec 默认值要同步这张表）；安装块里的字段
+        // 同样按表读取。表里没有的类型不检查，目标写 local / global / 连接点 / 交互区的线也不检查——
+        // 前者没有排他性的接受列表，后三者不按频道筛选。
+        //
+        // 本节还拦第二种写法：内部连接点（"internal": true）上的 signal_targets / signal_translations。
+        // 内部连接点由 AbstractPart#autoAttachInternalConnectors 在同一 Part 内按「高级 + 简单、不同子零件、
+        // 几何对齐」自动配对，两端必然同属一个 Part，而名字解析的作用域就是整个 Part
+        // （ISignalSender#setTargetFromNames），所以把目标直接写成子系统名即可到达。绕经它的线路多一条
+        // 几何配对依赖：配不上（或配对有歧义被跳过）时端口对不上，线静默断开，内容里看不出来。
+        Map<String, File> subsystemDefinitions = [:]
+        packs.each { pack ->
+            File dir = new File(pack.dir, 'subsystems')
+            if (!dir.isDirectory()) {
+                return
+            }
+            dir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                String stem = file.name.substring(0, file.name.length() - '.json'.length())
+                subsystemDefinitions[pack.namespace + ':' + stem] = file
+            }
+        }
+
+        def acceptedChannelFields = [
+                'machine_max:seat'                : [static : [interact_inputs: ['interact']],
+                                                     install: [interact_inputs: [], loader_discovery_inputs: []]],
+                'machine_max:item_storage'        : [static : [interact_inputs: ['interact']], install: [:]],
+                'machine_max:engine'              : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:motor'               : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:gearbox'             : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:transmission'        : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:wheel_driver'        : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:track_drive'         : [static : [control_inputs: ['car_control']], install: [:]],
+                'machine_max:turret_driver'       : [static : [control_inputs: ['weapon_control']], install: [:]],
+                'machine_max:car_controller'      : [static : [control_inputs: ['crew_driver_move', 'crew_driver_regular',
+                                                                                'crew_commander_move', 'crew_commander_regular']],
+                                                     install: [:]],
+                'machine_max:track_controller'    : [static : [control_inputs: ['crew_driver_move', 'crew_driver_regular',
+                                                                                'crew_commander_move', 'crew_commander_regular']],
+                                                     install: [:]],
+                'machine_max:motorbike_controller': [static : [control_inputs: ['crew_driver_move', 'crew_commander_move']],
+                                                     install: [:]],
+                'machine_max:weapon_controller'   : [static : [aim_inputs : ['crew_gunner_aim', 'crew_commander_aim', 'crew_any_aim'],
+                                                                fire_inputs: ['crew_gunner_fire', 'crew_commander_fire', 'crew_any_fire']],
+                                                     install: [:],
+                                                     always: ['ammo_switch']],
+                // control_inputs 为空时 acceptAllRoutingInput() 为真，等于接受任意频道
+                'machine_max:launcher'            : [static : [control_inputs: ['weapon_control']], install: [:],
+                                                     acceptsAllWhenEmpty: true],
+                'machine_max:camera'              : [static : [discovery_inputs      : ['camera_sight'],
+                                                               tracking_target_inputs: ['tracking_target']], install: [:]],
+                'machine_max:sight'               : [static : [discovery_inputs: ['camera_sight']], install: [:]],
+                'machine_max:lighting'            : [static : [:], install: [:], always: ['toggle_light']],
+                'machine_max:ammo_loader'         : [static : [:], install: [ammo_discovery_inputs: []]],
+                'machine_max:regen_ammo_rack'     : [static : [:], install: [ammo_discovery_inputs: []]]
+        ]
+
+        Map<String, Object> definitionCache = [:]
+        def acceptedChannelsOf = { Map fields, Map install ->
+            Set<String> channels = new LinkedHashSet<>()
+            ((List) (fields.get('always') ?: [])).each { channels << it.toString() }
+            Map definition = null
+            Object definitionRaw = install.get('definition')
+            if (definitionRaw != null) {
+                def definitionId = definitionRaw.toString()
+                File definitionFile = subsystemDefinitions[definitionId]
+                if (definitionFile != null) {
+                    if (!definitionCache.containsKey(definitionId)) {
+                        Object parsed = null
+                        try {
+                            parsed = readJsonc(definitionFile)
+                        } catch (Exception ignored) {
+                            // 型号 JSON 读不出来由解码期拒绝，这里按默认值继续，不重复报
+                        }
+                        definitionCache[definitionId] = parsed
+                    }
+                    Object cached = definitionCache[definitionId]
+                    if (cached instanceof Map) {
+                        definition = (Map) cached
+                    }
+                }
+            }
+            ((Map) (fields.get('static') ?: [:])).each { String field, Object fallback ->
+                Object value = definition == null ? null : definition.get(field)
+                List list = value instanceof List ? (List) value : (List) fallback
+                list.each { channels << it.toString() }
+            }
+            ((Map) (fields.get('install') ?: [:])).each { String field, Object fallback ->
+                Object value = install.get(field)
+                List list = value instanceof List ? (List) value : (List) fallback
+                list.each { channels << it.toString() }
+            }
+            channels
+        }
+
+        int portWireCount = 0
+        packs.each { pack ->
+            File partsDir = new File(pack.dir, 'parts')
+            if (!partsDir.isDirectory()) {
+                return
+            }
+            partsDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (!file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    return
+                }
+                Object data
+                try {
+                    data = readJsonc(file)
+                } catch (Exception ignored) {
+                    return // 解析失败已由第 8 节报出
+                }
+                if (!(data instanceof Map)) {
+                    return
+                }
+                Object variantsRaw = ((Map) data).get('variants')
+                if (!(variantsRaw instanceof Map)) {
+                    return
+                }
+                Map variantsObj = (Map) variantsRaw
+                Map variantEntries = variantsObj.get('sub_parts') instanceof Map
+                        ? ['default': variantsObj]
+                        : variantsObj
+                String relative = pack.name + '/' + pack.dir.toPath().relativize(file.toPath()).toString()
+                        .replace(File.separatorChar, '/' as char)
+                variantEntries.each { Object variantName, Object variantRaw ->
+                    if (!(variantRaw instanceof Map)) {
+                        return
+                    }
+                    Object subPartsRaw = ((Map) variantRaw).get('sub_parts')
+                    if (!(subPartsRaw instanceof Map)) {
+                        return
+                    }
+                    Map<String, Map> subsystems = [:]
+                    Map<String, Map> connectors = [:]
+                    ((Map) subPartsRaw).each { Object subPartName, Object subPartRaw ->
+                        if (!(subPartRaw instanceof Map)) {
+                            return
+                        }
+                        Object subsRaw = ((Map) subPartRaw).get('subsystems')
+                        if (subsRaw instanceof Map) {
+                            ((Map) subsRaw).each { Object name, Object block ->
+                                if (block instanceof Map) {
+                                    subsystems[name.toString()] = (Map) block
+                                }
+                            }
+                        }
+                        Object connectorsRaw = ((Map) subPartRaw).get('connectors')
+                        if (connectorsRaw instanceof Map) {
+                            ((Map) connectorsRaw).each { Object name, Object block ->
+                                if (block instanceof Map) {
+                                    connectors[name.toString()] = (Map) block
+                                }
+                            }
+                        }
+                    }
+                    connectors.each { Object connectorName, Map connector ->
+                        Object targetsRaw = connector.get('signal_targets')
+                        Object translationsRaw = connector.get('signal_translations')
+                        if (Boolean.TRUE == connector.get('internal')) {
+                            List<String> samePartTables = []
+                            if (targetsRaw instanceof Map) {
+                                samePartTables << 'signal_targets'
+                            }
+                            if (translationsRaw instanceof Map) {
+                                samePartTables << 'signal_translations'
+                            }
+                            if (samePartTables) {
+                                problems << relative + '：变体 ' + variantName + ' 的内部连接点 ' + connectorName +
+                                        ' 配了 ' + samePartTables.join(' / ') +
+                                        '——内部连接点两端在同一个 Part 内，把目标改成子系统名直连即可；' +
+                                        '绕经它多一条几何自动配对依赖，配不上时这条线静默断开'
+                            }
+                        }
+                        if (!(targetsRaw instanceof Map)) {
+                            return
+                        }
+                        Map targets = (Map) targetsRaw
+                        if (translationsRaw instanceof Map) {
+                            ((Map) translationsRaw).each { Object original, Object translated ->
+                                if (!targets.containsKey(translated)) {
+                                    problems << relative + '：变体 ' + variantName + ' 的连接点 ' + connectorName +
+                                            ' 把频道 ' + original + ' 转译成 ' + translated +
+                                            '，但 signal_targets 里没有这个频道（对侧按转译后的名字查目标表，查不到就丢弃）'
+                                }
+                            }
+                        }
+                        targets.each { Object channelRaw, Object namesRaw ->
+                            if (!(namesRaw instanceof List)) {
+                                return
+                            }
+                            String channel = channelRaw.toString()
+                            ((List) namesRaw).each { Object nameRaw ->
+                                String name = nameRaw.toString()
+                                Map install = subsystems[name]
+                                if (install == null) {
+                                    return // local / global / 连接点 / 交互区
+                                }
+                                String typeId = install.get('type') == null ? '' : install.get('type').toString()
+                                Map fields = (Map) acceptedChannelFields[typeId]
+                                if (fields == null) {
+                                    return // 表里没有的类型不检查
+                                }
+                                Set<String> accepted = acceptedChannelsOf(fields, install)
+                                if (fields.get('acceptsAllWhenEmpty') && accepted.isEmpty()) {
+                                    portWireCount++
+                                    return
+                                }
+                                portWireCount++
+                                if (accepted.contains(channel)) {
+                                    return
+                                }
+                                problems << relative + '：变体 ' + variantName + ' 的连接点 ' + connectorName +
+                                        ' 把到达频道 ' + channel + ' 送给 ' + name + '（' + typeId + '），' +
+                                        '但它只接受 ' + (accepted.isEmpty() ? '（空表，当前语义为不接受任何频道）' : accepted) +
+                                        '——跨连接点转发会静默丢掉这条信号' +
+                                        '（改 signal_translations 转译成它声明的频道，或在安装块里补声明）'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 10. 履带临时配方与型号对齐
         //
         // 履带物品只有一个 machine_max:track，型号写在合成结果的 result.components 里
         // （ShapedRecipe 用 ItemStack.STRICT_CODEC 解 result，组件随之进产物）。这里查两个方向：
@@ -1085,7 +1319,8 @@ tasks.register('checkContent') {
         }
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + partDefinitionCount + ' 份部件定义 / ' +
-                partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + referenceCount + ' 处资源引用，' +
+                partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + portWireCount + ' 条跨连接点信号线（到达频道都在目标声明内，且没有一条挂在内部连接点上），' +
+                referenceCount + ' 处资源引用，' +
                 documentReferenceCount + ' 处样式表引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +
                 presetReferenceCount + ' 处座位控制组引用（' + controlGroupPresets.size() + ' 份预设），' +
