@@ -98,9 +98,6 @@
                 "subsystem.machine_max.right_back_wheel_driver",
                 "subsystem.machine_max.right_front_wheel_driver"
               ]
-            },
-            "gearbox_outputs": {
-              "gearbox_control": ["subsystem.machine_max.gearbox"]
             }
           },
           "subsystem.machine_max.engine": {
