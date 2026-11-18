@@ -109,7 +109,7 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 - 形态探测按 bank 与事件路径缓存在客户端会话内，每个事件至多多付一次失败创建；两条路径都失败时（事件缺失、实例创建失败）不缓存，下一发重试并回落传播音效。
 - 弹壳音 `shell`、停火音 `cease_fire`、空膛音 `dry_fire` 没有对应的 Studio 事件，仍读发射器型号的 `sounds`。它们与开火音分层：FMOD 接手的只是开火这一层。这几个事件名写基础名，车内听者由播放器换成 `<事件名>_interior`；抛壳只有车内录音，因此车外不响。
 - FMOD 没有接手时（未配置 `fmod`、bank 未加载、实例启动失败）开火音回到本型号的 `fire`：单发逐发播放 `"0.0"`，连射按 RPM 档位在 `"0.0"` 与循环音效之间切换并交叉淡入。
-- `overheat`、`broken`、`turn_speed` 没有运行时来源：武器没有过热机制，故障混音与炮塔转速属于另一路待接线功能，这些参数在发射器路径上保持 bank 默认值。
+- `overheat` 与 `broken` 没有运行时来源：武器没有过热机制，故障混音属于待接线功能；炮塔被摧毁时直接收声，也不写 `broken`。`turn_speed` 的来源在炮塔驱动上，见本文“炮塔双机运行时接线”。
 - 循环事件的射速由工程固定，不随型号的 `breech.fire_rate` 变化；`fire` 按实际 RPM 调音高与换档的做法在 FMOD 路径上没有对应参数，因此高射速武器应选射速接近的那一个事件。
 - 一个发射管只有一个 `fmod.fire` 事件，同一门炮换弹种不换开火音。这一层与弹种无关：`fire`、`cease_fire`、`shell` 都配置在发射器型号上，弹种的 `sounds` 只留给命中与飞掠这一类声音。
 - 实例在部件移除（`onDetach`）与载具离开已加载区块（`VehicleCore#setInLoadedChunk`）时停止；交回 `firing=0` 的尾音实例超过 100 tick 仍未结束时强制停止。
@@ -136,7 +136,7 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 | Default_Vehicles/Armament/Turret/*_manual | 手摇炮塔双机，horizontal 对应水平，vertical 对应俯仰。均为 3D 持续 |
 | Default_Vehicles/Armament/Turret/*_hydraulic | 自动炮塔双机，按工程命名为液压型，horizontal 对应水平，vertical 对应俯仰。均为 3D 持续 |
 
-四个炮塔事件各自使用 `turn_speed`、`broken`、`interior` 与自动 `Distance`。手摇／自动通过选择不同事件表达。
+四个炮塔事件各自使用 `turn_speed`、`broken`、`interior` 与自动 `Distance`。手摇／自动通过选择不同事件表达，选哪一个由炮塔型号的 `sounds.fmod` 写死。
 
 ### 换挡与手刹运行时接线
 
@@ -158,6 +158,21 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 - 引擎不采用 `BasicSubsystem#onActive`／`onDisabled` 上的那一份启停样本：引擎默认就是 active，两条边沿与运行状态不同时成立，同一档启停会叠成双声。
 - `drive` 与启停音各自独立：bank 没有提供事件时长，工况音在引擎运行期间按自身规则持续播放。
 - 没有配置 `start`／`stop` 也没有配置 `on_activate`／`on_deactivate` 的引擎启停无声，Builtin 的 motorcycle_engine 与 sport_car_engine 属于这一类。
+
+### 炮塔双机运行时接线
+
+炮塔驱动子系统按两条轴各自的角速度发声，与瞄准输入无关：角速度由关节角的一步差分得到，按该轴 `max_speed`（°/s）归一化到 0～1 再做一阶平滑，因此同一套映射对所有炮塔通用，不随型号的转速上限改变。慢速回转也有声、停转即淡出，伺服保持力矩时的微小抖动按静止处理（死区 0.05）。
+
+| 层次 | 配置 | 写入内容 |
+| --- | --- | --- |
+| FMOD | 型号的 `sounds.fmod` 里 `bank` 与两条轴的事件路径 `horizontal`／`vertical` | `turn_speed` 写归一化角速度（0 静止、1 为该轴最大角速度），`interior` 由播放器维护 |
+| OGG 兜底 | 型号的 `sounds.turn`，两条轴共用 | 通道权重按归一化角速度（取平方根，低速也听得到），音高 0.8～1.25 随角速度线性升高 |
+
+- 事件型式由内容包选事件表达：手摇炮塔取 `*_manual`，动力炮塔取 `*_hydraulic`。Builtin 的两个基础型号各分动力与手摇两种，差别在事件与 `max_speed`（手摇 20／8 °/s，动力 90／30 °/s），力矩相同。第一方主炮的方位／俯仰型号取液压那一对；T-90A 与 59 式的高射机枪、Sd.Kfz.234 与 MT-LB 的手摇炮塔取手摇那一对。
+- 某一轴没有配置事件、bank 未加载或实例启动失败时，该轴单独回落到 `sounds.turn`，两条轴互不牵连。FMOD 已在发声的轴把 OGG 通道权重压到 0，不会两路同时响。
+- `sounds.turn` 默认取电机运转音 `machine_max:subsystem.motor.elec_3000`，因此没有配置 `sounds` 的炮塔也有双机声；想换音色只改型号，不改代码。
+- 摧毁即收声：子系统不是工作状态（被摧毁、失活、组装进度未达工作阈值）时停掉两条轴的全部实例。这时伺服不再施加力矩，关节变成自由关节、会被车体带着转，按角速度继续发声等于给一台打坏的机器配运转音。部件移除与载具离开已加载区块走同一个停止入口。
+- 实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/subsystem/TurretDriverSubsystem.java#tickClientSound` 与同类的 `#updateTurnSpeed`、`#getPitch`、`#stopClientSound`。
 
 ## 完整事件目录
 
@@ -454,7 +469,9 @@ bank ID 为 `machine_max:abrams`。
 
 第一方变速箱和地面车控已配置 FMOD 换挡与手刹单次事件，触发规则见本文“换挡与手刹运行时接线”。
 
-电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿、炮塔和 Master FX 的 FMOD 运行时触发接线待实现。
+炮塔双机已接入：第一方主炮的方位／俯仰驱动型号配置了液压那一对事件，T-90A 与 59 式的高射机枪配置了手摇那一对，规则见本文“炮塔双机运行时接线”。Builtin 的基础驱动型号按机构分两对——`basic_azimuth_driver`／`basic_elevation_driver` 是动力型，取液压那一对事件，转速 90／30 °/s；`basic_manual_azimuth_driver`／`basic_manual_elevation_driver` 是手摇型，取手摇那一对事件，转速 20／8 °/s。2S38 与 K17 的高低机引用动力型，Sd.Kfz.234 与 MT-LB 的手摇炮塔引用手摇型。美系车包的 RWS、CITV 与航向机枪塔驱动没有配置 `sounds.fmod`，走 `sounds.turn` 的 OGG 兜底。
+
+电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。履带持续运转音、传动打齿与 Master FX 的 FMOD 运行时触发接线待实现。
 
 ## 可复核记录
 

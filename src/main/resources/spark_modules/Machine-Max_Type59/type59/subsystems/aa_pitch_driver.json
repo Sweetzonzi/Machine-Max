@@ -8,5 +8,11 @@
   },
   "control_inputs": [
     "aim_drive_aa"
-  ]
+  ],
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "vertical": "event:/Default_Vehicles/Armament/Turret/vertical_manual"
+    }
+  }
 }

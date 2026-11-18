@@ -104,6 +104,42 @@
             "sound_id": "machine_max:empty_sound",
             "range": 16
           }
+        },
+        "turn": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "Fallback traverse sound shared by the yaw and pitch axes. Used when the axis has no usable FMOD event, pitched up by angular speed, with volume following angular speed and a fade-out on stop. Defaults to the electric motor loop.",
+          "default": {
+            "sound_id": "machine_max:subsystem.motor.elec_3000",
+            "range": 64
+          }
+        },
+        "fmod": {
+          "type": "object",
+          "description": "Traverse FMOD event group. One continuous event per axis. At runtime the normalized angular speed of the axis is written to turn_speed (0 at rest, 1 at that axis's max_speed). An axis without an event falls back to the turn OGG channel; destroying the subsystem, deactivating it or detaching the part silences both axes.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "horizontal": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "Continuous azimuth (horizontal traverse) event. Hand-cranked turrets use *_manual, powered ones use *_hydraulic."
+            },
+            "vertical": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "Continuous elevation (pitch) event. Hand-cranked turrets use *_manual, powered ones use *_hydraulic."
+            }
+          },
+          "required": ["bank"],
+          "additionalProperties": false,
+          "anyOf": [
+            { "required": ["horizontal"] },
+            { "required": ["vertical"] }
+          ]
         }
       },
       "additionalProperties": false,

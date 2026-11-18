@@ -8,25 +8,34 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
+import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
+import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader.SoundChannel;
 import io.github.sweetzonzi.machine_max.MachineMax;
 
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TurretDriverSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import jme3utilities.math.MyMath;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * 炮塔驱动子系统。<br>
@@ -50,9 +59,31 @@ import java.util.Map;
  * </ul>
  * 遵守本约定可确保 {@link #computeAimAngles(Vec3)} 在各场景下均返回正确的绝对角度。
  * <br>
+ * <b>双机运转音：</b><br>
+ * 客户端每 tick 按两条轴各自的实际角速度（由关节角差分得到，按该轴的 {@code max_speed} 归一化）驱动声音。
+ * 配置了 {@code sounds.fmod} 的轴优先用 FMOD 持续事件，把归一化角速度写进 {@code turn_speed}；
+ * 该轴没有可用事件、或实例启动失败时回落到 {@code sounds.turn} 的 OGG 通道，
+ * 音量按归一化角速度、音高随角速度升高。停转即淡出；被摧毁、失活或部件移除时收声。
+ * <br>
  * TODO: 后续可引入是否耗电的可配置项
  */
-public class TurretDriverSubsystem extends BasicSubsystem {
+public class TurretDriverSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader {
+
+    /** 双机运转音的通道键，与 {@link #AXIS_CHANNEL} 的下标一一对应。 */
+    private static final String HORIZONTAL_CHANNEL = "horizontal";
+    private static final String VERTICAL_CHANNEL = "vertical";
+    private static final String[] AXIS_CHANNEL = {HORIZONTAL_CHANNEL, VERTICAL_CHANNEL};
+    private static final int HORIZONTAL = 0;
+    private static final int VERTICAL = 1;
+    private static final int RETRIGGER_TICKS = 20;
+    private static final int SOUND_FADE_TICKS = 8;
+    /** 归一化角速度低于此值按静止处理，伺服微抖不会持续发响。 */
+    private static final float TURN_DEADZONE = 0.05f;
+    /** 归一化角速度 0 与 1 处的音高倍数。 */
+    private static final float PITCH_AT_CRAWL = 0.8f;
+    private static final float PITCH_AT_FULL = 1.25f;
+    /** 物理线程每个步向当步读数靠拢的比例，用于平滑角速度。 */
+    private static final float TURN_SMOOTHING = 0.25f;
 
     public final TurretDriverSubsystemAttr attr;
     public final AdvancedConnector connector;
@@ -62,6 +93,24 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     private final float yawMaxSpeed;
     private final float pitchMaxForce;
     private final float pitchMaxSpeed;
+
+    /** 双机 OGG 通道，按轴各一条；两条轴共用同一段兜底运转音。 */
+    private final Map<String, SoundChannel> soundChannels = new LinkedHashMap<>();
+    /** 内容包给出的 FMOD 事件，按 {@link #HORIZONTAL} / {@link #VERTICAL} 索引，缺省为 null。 */
+    private final FmodSoundAttr[] axisFmodSound = new FmodSoundAttr[AXIS_CHANNEL.length];
+    /** 双机 FMOD 实例与"本会话已试过"标记，只在客户端主线程读写。 */
+    private final UUID[] fmodVoice = new UUID[AXIS_CHANNEL.length];
+    private final boolean[] fmodAttempted = new boolean[AXIS_CHANNEL.length];
+    /** 本 tick 归一化的角速度，客户端主线程在 {@link #tickClientSound()} 写入，供音量与音高共用。 */
+    private float horizontalTurn;
+    private float verticalTurn;
+    /** 物理线程写、客户端主线程读的平滑角速度，按轴各一份。 */
+    private volatile float horizontalTurnSpeed;
+    private volatile float verticalTurnSpeed;
+    /** 物理线程的差分基准，用于把关节角的一步增量换成角速度。 */
+    private float lastYawAngle;
+    private float lastPitchAngle;
+    private boolean hasAngleSample;
 
     /**
      * 空闲锁止角 (pitch, yaw, roll)，单位弧度。<br>
@@ -94,6 +143,29 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             this.connector = null;
             MachineMax.LOGGER.error("炮塔驱动子系统 {} 无法找到高级连接点 {}", name, this.attr.controlledConnector);
         }
+        initSoundChannels();
+        initAxisFmodSounds();
+    }
+
+    /** 按已配置的轴建立双机通道；两条轴共用静态属性里的兜底运转音。 */
+    private void initSoundChannels() {
+        soundChannels.clear();
+        var turnSound = attr.staticAttribute.getSounds().turn();
+        if (hasYaw) soundChannels.put(HORIZONTAL_CHANNEL, new SoundChannel(HORIZONTAL_CHANNEL, turnSound, RETRIGGER_TICKS));
+        if (hasPitch) soundChannels.put(VERTICAL_CHANNEL, new SoundChannel(VERTICAL_CHANNEL, turnSound, RETRIGGER_TICKS));
+    }
+
+    /** 把内容包的 FMOD 事件按轴摊成可直接播放的引用，未配置的轴留空。 */
+    private void initAxisFmodSounds() {
+        var fmod = attr.staticAttribute.getSounds().fmod().orElse(null);
+        if (fmod == null) return;
+        axisFmodSound[HORIZONTAL] = toFmodSound(fmod, fmod.horizontal());
+        axisFmodSound[VERTICAL] = toFmodSound(fmod, fmod.vertical());
+    }
+
+    @Nullable
+    private static FmodSoundAttr toFmodSound(TurretDriverSubsystemStaticAttr.TurretFmodSoundAttr fmod, Optional<String> event) {
+        return event.map(path -> new FmodSoundAttr(fmod.bank(), path)).orElse(null);
     }
 
     public boolean hasYawAxis() { return hasYaw; }
@@ -102,7 +174,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
-
+        if (getLevel().isClientSide()) tickClientSound();
     }
 
     @Override
@@ -192,6 +264,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         super.onPostPhysicsTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             Vector3f relativeAngle = getRelativeAngle();
+            updateTurnSpeed(relativeAngle.x, relativeAngle.y);
             // 反馈当前三轴角度（弧度）: x=pitch, y=yaw, z=roll
             // pitch 取自 XR，yaw 取自 YR（取负以与输入符号约定一致）
             Vector3f feedbackAngle = new Vector3f(
@@ -388,6 +461,151 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         Vector3f result = new Vector3f();
         connector.joint.getAngles(result);
         return result;
+    }
+
+    /**
+     * <b>调用线程：</b>物理线程。把关节角的一步增量换成角速度、按该轴的
+     * {@code max_speed} 归一化，再做一阶平滑，写进供客户端主线程读取的快照。
+     *
+     * <p>用实际关节角的差分而不是控制器下发的前馈转速：没有稳轴时前馈为 0，
+     * 而炮塔照样在转，取前馈会让双机在动却不发响。</p>
+     */
+    private void updateTurnSpeed(float pitchAngle, float yawAngle) {
+        if (!hasAngleSample) {
+            lastPitchAngle = pitchAngle;
+            lastYawAngle = yawAngle;
+            hasAngleSample = true;
+            return;
+        }
+        float dt = 1f / Math.max(getPhysicsLevel().getTps(), 1f);
+        float yawRate = (float) (Math.IEEEremainder(yawAngle - lastYawAngle, 2 * Math.PI) / dt);
+        float pitchRate = (pitchAngle - lastPitchAngle) / dt;
+        lastPitchAngle = pitchAngle;
+        lastYawAngle = yawAngle;
+        horizontalTurnSpeed = smoothTurnSpeed(horizontalTurnSpeed, normalizeTurnSpeed(yawRate, yawMaxSpeed));
+        verticalTurnSpeed = smoothTurnSpeed(verticalTurnSpeed, normalizeTurnSpeed(pitchRate, pitchMaxSpeed));
+    }
+
+    /** 角速度（rad/s）按该轴最大角速度归一化到 [0, 1]；未配置或读数非有限时按静止处理。 */
+    private static float normalizeTurnSpeed(float rate, float maxSpeed) {
+        if (maxSpeed <= 0f || !Float.isFinite(rate)) return 0f;
+        return Math.clamp(Math.abs(rate) / maxSpeed, 0f, 1f);
+    }
+
+    private static float smoothTurnSpeed(float previous, float current) {
+        return previous + (current - previous) * TURN_SMOOTHING;
+    }
+
+    /**
+     * <b>调用线程：</b>客户端主线程。按两条轴的角速度驱动双机音：优先 FMOD，
+     * 该轴没有可用事件或实例启动失败时回落到 OGG 通道。
+     *
+     * <p>子系统不再是工作状态（被摧毁、失活、组装进度未达工作阈值）时直接收声：
+     * 此时伺服不再施加力矩，关节变成自由关节，会被车体带着转，按角速度发声等于
+     * 给一台已经打坏的机器配运转音。</p>
+     */
+    private void tickClientSound() {
+        if (!isActive()) {
+            stopClientSound();
+            return;
+        }
+        horizontalTurn = aboveDeadzone(horizontalTurnSpeed);
+        verticalTurn = aboveDeadzone(verticalTurnSpeed);
+        boolean horizontalFmod = tickAxisFmod(HORIZONTAL, hasYaw, horizontalTurn);
+        boolean verticalFmod = tickAxisFmod(VERTICAL, hasPitch, verticalTurn);
+        // FMOD 已在发声的轴把 OGG 通道压低，避免两路同时响
+        setChannelWeight(HORIZONTAL_CHANNEL, horizontalFmod ? 0f : turnWeight(horizontalTurn));
+        setChannelWeight(VERTICAL_CHANNEL, verticalFmod ? 0f : turnWeight(verticalTurn));
+        if (horizontalFmod && verticalFmod) return;
+        tickSoundChannels(SoundSource.NEUTRAL, tickCount, SOUND_FADE_TICKS, SOUND_FADE_TICKS);
+    }
+
+    /**
+     * <b>调用线程：</b>客户端主线程。停掉两条轴的 FMOD 实例并清空 OGG 通道权重。
+     * 摧毁、失活与部件移除都走这里；载具离开已加载区块时由
+     * {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore#setInLoadedChunk} 调用。
+     */
+    public void stopClientSound() {
+        for (int axis = 0; axis < AXIS_CHANNEL.length; axis++) {
+            if (fmodVoice[axis] != null) stopFmodSound(fmodVoice[axis]);
+            fmodVoice[axis] = null;
+            fmodAttempted[axis] = false;
+        }
+        horizontalTurn = 0f;
+        verticalTurn = 0f;
+        for (String channelKey : AXIS_CHANNEL) setChannelWeight(channelKey, 0f);
+    }
+
+    /** 主线程移除部件时，先停止两条轴的运转音。 */
+    @Override
+    public void onDetach() {
+        stopClientSound();
+        super.onDetach();
+    }
+
+    /** 死区内的读数按静止处理：伺服保持力矩时的微小抖动不该持续发响。 */
+    private static float aboveDeadzone(float normalized) {
+        return normalized < TURN_DEADZONE ? 0f : normalized;
+    }
+
+    /**
+     * <b>调用线程：</b>客户端主线程。按一根轴的归一化角速度驱动它的 FMOD 实例：
+     * 起转时播放并写入初值，运转中每 tick 更新 {@code turn_speed}，停转时淡出。
+     *
+     * @return true 表示这一 tick 该轴由 FMOD 发声
+     */
+    private boolean tickAxisFmod(int axis, boolean present, float normalized) {
+        UUID voice = fmodVoice[axis];
+        if (!present || normalized <= 0f) {
+            if (voice != null) fadeFmodSound(voice);
+            fmodVoice[axis] = null;
+            fmodAttempted[axis] = false;
+            return false;
+        }
+        FmodSoundAttr fmod = axisFmodSound[axis];
+        if (fmod == null) return false;
+        if (voice == null) {
+            if (fmodAttempted[axis]) return false;
+            fmodAttempted[axis] = true;
+            fmodVoice[axis] = tryPlayFmodSound(fmod.bank(), fmod.event(), SoundSource.NEUTRAL,
+                    Map.of("turn_speed", normalized));
+            return fmodVoice[axis] != null;
+        }
+        if (!setFmodParameter(voice, "turn_speed", normalized)) {
+            stopFmodSound(voice);
+            fmodVoice[axis] = null;
+            fmodAttempted[axis] = false;
+            return false;
+        }
+        return true;
+    }
+
+    private void setChannelWeight(String channelKey, float weight) {
+        SoundChannel channel = soundChannels.get(channelKey);
+        if (channel != null) channel.setWeight(weight);
+    }
+
+    /** 归一化角速度 → 通道音量权重。取平方根，低速回转也听得到。 */
+    private static float turnWeight(float normalized) {
+        return (float) Math.sqrt(Math.clamp(normalized, 0f, 1f));
+    }
+
+    /** 归一化角速度 → 音高倍数。低速压到 {@link #PITCH_AT_CRAWL}，满速升到 {@link #PITCH_AT_FULL}。 */
+    private static float turnPitch(float normalized) {
+        float t = Math.clamp(normalized, 0f, 1f);
+        return PITCH_AT_CRAWL + (PITCH_AT_FULL - PITCH_AT_CRAWL) * t;
+    }
+
+    @Override
+    public float getPitch(UUID uuid) {
+        SoundChannel channel = getChannel(uuid);
+        if (channel == null) return 1f;
+        return turnPitch(HORIZONTAL_CHANNEL.equals(channel.getChannelKey()) ? horizontalTurn : verticalTurn);
+    }
+
+    @Override
+    public @NotNull Map<String, SoundChannel> getSoundChannels() {
+        return soundChannels;
     }
 
     @Override

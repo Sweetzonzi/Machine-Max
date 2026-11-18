@@ -7,5 +7,12 @@
     "max_force": 35000, //最大驱动力矩(N·m)，35kN·m足以支撑炮管/发射器俯仰
     "max_speed": 30.0 //最大角速度(°/s)，30°/s为典型俯仰速度，低于回转速度保证瞄准稳定性
   },
-  "control_inputs": ["weapon_control"] //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+  "control_inputs": ["weapon_control"], //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      //动力高低机，取液压那一对事件；手摇型见 basic_manual_elevation_driver（转速远低于本型号）
+      "vertical": "event:/Default_Vehicles/Armament/Turret/vertical_hydraulic"
+    }
+  }
 }

@@ -8,5 +8,11 @@
   },
   "control_inputs": [
     "weapon_control"
-  ]
+  ],
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "horizontal": "event:/Default_Vehicles/Armament/Turret/horizontal_hydraulic"
+    }
+  }
 }

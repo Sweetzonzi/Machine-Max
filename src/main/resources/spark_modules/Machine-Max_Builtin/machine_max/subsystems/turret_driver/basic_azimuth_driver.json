@@ -7,5 +7,12 @@
     "max_force": 80000, //最大驱动力矩(N·m)，80kN·m足以驱动中型炮塔回转
     "max_speed": 90.0 //最大角速度(°/s)，45°/s为中等回转速度，兼顾响应与瞄准精度
   },
-  "control_inputs": ["weapon_control"] //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+  "control_inputs": ["weapon_control"], //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      //动力方向机，取液压那一对事件；手摇型见 basic_manual_azimuth_driver（转速远低于本型号）
+      "horizontal": "event:/Default_Vehicles/Armament/Turret/horizontal_hydraulic"
+    }
+  }
 }

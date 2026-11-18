@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "8fc04442cdbcbfb76d939c65ed76771199542567",
+    "revision": "4c15e859c078c7b4930d73cfbcceddf95af86df8",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -381,8 +381,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/turret_driver_static_attr.schema.json",
-        "bytes": 5094,
-        "sha256": "2be7194b4a9a448daff30e4a8d09cb2ec1fd2b51c82bcfe7c7f1221bf9c188d4"
+        "bytes": 6752,
+        "sha256": "129e838bcfa0a66fc83e6c2428757d6647d88362e089adc3cea13e69906d77c0"
       },
       {
         "path": "references/schemas/subsystem/static/view_attr.schema.json",

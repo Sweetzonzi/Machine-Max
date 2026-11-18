@@ -104,6 +104,42 @@
             "sound_id": "machine_max:empty_sound",
             "range": 16
           }
+        },
+        "turn": {
+          "allOf": [
+            { "$ref": "../../base/sound_event.schema.json" }
+          ],
+          "description": "双机运转音的兜底事件，方向机与高低机共用。该轴没有可用的 FMOD 事件时按角速度升调播放，音量随角速度变化，停转即淡出。默认取电机运转音。",
+          "default": {
+            "sound_id": "machine_max:subsystem.motor.elec_3000",
+            "range": 64
+          }
+        },
+        "fmod": {
+          "type": "object",
+          "description": "双机 FMOD 事件组。两条轴各一个持续事件，运行时按该轴归一化角速度写 turn_speed（0 为静止、1 为该轴 max_speed）。未配置该轴的轴回落到 turn 的 OGG 通道；子系统被摧毁、失活或部件移除时两条轴全部收声。",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID",
+              "type": "string"
+            },
+            "horizontal": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "方向机（水平回转）持续事件。手摇炮塔取 *_manual，动力炮塔取 *_hydraulic。"
+            },
+            "vertical": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "高低机（俯仰）持续事件。手摇炮塔取 *_manual，动力炮塔取 *_hydraulic。"
+            }
+          },
+          "required": ["bank"],
+          "additionalProperties": false,
+          "anyOf": [
+            { "required": ["horizontal"] },
+            { "required": ["vertical"] }
+          ]
         }
       },
       "additionalProperties": false,

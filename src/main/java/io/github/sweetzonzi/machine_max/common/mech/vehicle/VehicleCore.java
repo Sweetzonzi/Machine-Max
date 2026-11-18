@@ -36,6 +36,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.EngineSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.TurretDriverSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
@@ -1464,12 +1465,13 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         }
     }
 
-    /** 主线程更新区块状态。客户端卸载区块时，停止由载具 tick 维护的发动机、开火与接触音效。 */
+    /** 主线程更新区块状态。客户端卸载区块时，停止由载具 tick 维护的发动机、开火、炮塔与接触音效。 */
     public void setInLoadedChunk(boolean loadedChunk) {
         if (inLoadedChunk && !loadedChunk && level.isClientSide()) {
             for (AbstractSubsystem subsystem : subSystemController.getAllSubsystems()) {
                 if (subsystem instanceof EngineSubsystem engine) engine.stopClientFmodSound();
                 if (subsystem instanceof LauncherSubsystem launcher) launcher.stopClientFmodFire();
+                if (subsystem instanceof TurretDriverSubsystem turret) turret.stopClientSound();
             }
             for (RegularPart part : partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) subPart.collisionHandler.effectManager.stopAll();

@@ -1,0 +1,18 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:turret_driver", //炮塔驱动器，可配置方向机(Yaw)和/或高低机(Pitch)轴
+  "basic_durability": 30, //高低机耐久度，支撑炮管俯仰运动
+  "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
+  "pitch": { //俯仰轴（高低机），垂直方向俯仰驱动参数
+    "max_force": 35000, //最大驱动力矩(N·m)，与动力型一致，保证手摇也能压住炮管
+    "max_speed": 8.0 //最大角速度(°/s)，手摇远低于动力型的30
+  },
+  "control_inputs": ["weapon_control"], //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      //手摇高低机，取手摇那一对事件；动力型见 basic_elevation_driver
+      "vertical": "event:/Default_Vehicles/Armament/Turret/vertical_manual"
+    }
+  }
+}
