@@ -178,7 +178,7 @@ T-90A — MachineMax 内容包 0.1.11
 安装
 将 Machine-Max_T90A-0.1.14.zip 放入目标游戏实例的 spark_modules 文件夹，或将 Machine-Max_T90A 文件夹放入该目录；两种方式选一种。
 环境：Minecraft 1.21.1 + NeoForge + 当前工作区的 Machine-Max，依赖 machine_max:builtin。
-生成“T-90A 七件式四席完整装配体”或相应蓝图，才能同时获得七个零件和两条已连接的履带。模板 ID：t90a:t90a；内容包 ID：t90a:pack。
+生成“T-90A 七件式四席完整装配体”或相应蓝图，才能同时获得七个零件和两条已连接的履带。模板 ID：t90a:t90a；内容包 ID：machine_max:t90a。
 0.1.2 增加第四席位、开放机枪手与车长、转换社区 1G46 分划并完善炮塔爆反组件。更新后重启客户端，建议重新生成完整装配体核对。尚未做完整游戏内实测。
 
 工程

@@ -200,7 +200,7 @@ io.github.sweetzonzi.machine_max/
 
 ## 内容包分层
 
-`src/main/resources/spark_modules/` 下是十一个第一方内容包。目录名统一 `Machine-Max_` 前缀，包内内容目录统一 `machine_max/`，包 id 是 `machine_max:<小写名>`：
+`src/main/resources/spark_modules/` 下是十三个第一方内容包（外加 `Machine-Max_Pack_Template` 空骨架）。目录名统一 `Machine-Max_` 前缀；包 id 统一 `machine_max:<小写名>`，只用于标识包自身。包内第一层子目录是内容命名空间，一个包可以有多个——内容 id 由 `<命名空间>/<文件名>` 决定，与包 id 无关：
 
 | 层 | 目录 | id | 承担 |
 | --- | --- | --- | --- |
@@ -211,7 +211,7 @@ io.github.sweetzonzi.machine_max/
 | L1 | `Machine-Max_China_Basic_Kit` | `machine_max:china_basic_kit` | 中系共用型谱：59 式 100mm 线膛炮、54 式 12.7mm 高射机枪、59 式 7.62mm 并列机枪与配套弹种；硬依赖苏系 kit，复用 12.7×108 / 7.62×54R 弹种 |
 | L1 | `Machine-Max_Civilian` | `machine_max:civilian` | 13 款民用载具（集合包，不单独建 kit） |
 | L2 | `Machine-Max_2S38`、`_K17`、`_MTLB`、`_Sdkfz234` | `machine_max:2s38` 等 | 单车 / 车族：几何、挂点、接线、装配体、蓝图、模板、配方、HUD |
-| L2 | `Machine-Max_M1A2_SEP`、`_T90A`、`_Type59` | `m1a2_sep:pack` 等 | 单车：几何、挂点、接线、装配体、蓝图、模板、配方、HUD；武器与弹种取自对应 kit |
+| L2 | `Machine-Max_M1A2_SEP`、`_T90A`、`_Type59` | `machine_max:m1a2_sep` 等 | 单车：几何、挂点、接线、装配体、蓝图、模板、配方、HUD；武器与弹种取自对应 kit |
 | — | `Machine-Max_Pack_Template` | `machine_max:template` | 空骨架，供作者复制 |
 
 依赖链是 `车包 → kit → builtin`：载具包只声明最具体的那一册，链上的定义自动带入。跨包引用（车包直接用 builtin 的座椅、某个车包用兄弟车包的加装件）靠「所有包先读完再统一注册」成立，`dependencies` 只决定加载顺序与同 id 覆盖。

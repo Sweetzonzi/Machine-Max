@@ -288,7 +288,11 @@ def presetChannels = { Object group ->
     channels
 }
 
-// 包目录 → 内容目录（meta.json 的 id 前缀就是 namespace）
+// 包目录 → 内容目录。包 id 只是包的身份，与内容命名空间无关：包内第一层子目录各自是一个
+// 命名空间（Spark 的 ReadablePathType.readAsPackage 就是按「第一段路径」分组的），
+// 所以同一个包可以同时提供多个命名空间，和原版资源包 / 数据包一样；反过来，多个包也可以
+// 共用同一个命名空间（builtin 与各国 kit 共用 machine_max）。
+// 这里为每个 (包, 命名空间) 记一条，后面的检查全部按命名空间目录展开。
 def packs = []
 if (sparkModulesDir.isDirectory()) {
     sparkModulesDir.eachDir { File packDir ->
@@ -296,15 +300,12 @@ if (sparkModulesDir.isDirectory()) {
         if (!meta.isFile()) {
             return
         }
-        String packId = (String) readJsonc(meta).get('id')
-        String namespace = packId.contains(':') ? packId.substring(0, packId.indexOf(':')) : packId
-        File contentDir = new File(packDir, namespace)
-        if (contentDir.isDirectory()) {
-            packs << [name: packDir.name, namespace: namespace, dir: contentDir]
+        packDir.eachDir { File contentDir ->
+            packs << [name: packDir.name, namespace: contentDir.name, dir: contentDir]
         }
     }
 }
-packs.sort { it.name }
+packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'

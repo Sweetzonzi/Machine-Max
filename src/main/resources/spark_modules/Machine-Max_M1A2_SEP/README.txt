@@ -59,7 +59,7 @@ M1A2 SEP 艾布拉姆斯主战坦克内容包，包含七个席位、M240 常规
 
 安装
 
-将 Machine-Max_M1A2_SEP-0.5.7.zip 或同名文件夹装入 spark_modules，只保留一种安装形式。包 ID m1a2_sep:pack，依赖 machine_max:builtin。配套语言资源包为 MMX_Addon_Languages.zip。
+将 Machine-Max_M1A2_SEP-0.5.7.zip 或同名文件夹装入 spark_modules，只保留一种安装形式。包 ID machine_max:m1a2_sep，依赖 machine_max:builtin。配套语言资源包为 MMX_Addon_Languages.zip。
 重启客户端并重新生成完整装配体（m1a2_sep:m1a2_sep），使新增的 M240 发射器和供弹器生效。模组 JAR 无需替换。
 
 朝向 HUD

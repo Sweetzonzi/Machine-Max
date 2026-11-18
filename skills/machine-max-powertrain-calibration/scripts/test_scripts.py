@@ -143,7 +143,7 @@ class K17Test(unittest.TestCase):
     def test_wheel_torque_limit_caps_gear_force(self):
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["k17:pack"], "k17")
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:k17"], "k17")
         source = mmcal.Engine.from_entry(registry.need("subsystems", "k17:k17_engine", "test"))
         gearbox = mmcal.Gearbox.from_entry(
             registry.need("subsystems", "k17:k17_gearbox", "test"))
@@ -361,7 +361,7 @@ class TrackTest(unittest.TestCase):
     def test_drive_system_skips_roadwheels(self):
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["mtlb:pack"], "mtlb")
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
         drive = mmcal.drive_system(vehicle, registry)
         self.assertEqual(drive["kind"], "track")
         self.assertEqual(len(drive["ends"]), 2)
@@ -412,7 +412,7 @@ class TrackTest(unittest.TestCase):
         """履带主动轮的角速度上限是一条独立的极速上限。"""
         registry = mmcal.Registry()
         registry.load_root(PACK_ROOT)
-        vehicle = mmcal.resolve_vehicle(registry, registry.packs["mtlb:pack"], "mtlb")
+        vehicle = mmcal.resolve_vehicle(registry, registry.packs["machine_max:mtlb"], "mtlb")
         source = mmcal.Engine.from_entry(
             registry.need("subsystems", "mtlb:mtlb_engine", "test"))
         gearbox = mmcal.Gearbox.from_entry(
@@ -614,7 +614,7 @@ class CliTest(unittest.TestCase):
     def test_list(self):
         code, text = run_cli(calibrate, ["--pack-root", str(PACK_ROOT), "--list"])
         self.assertEqual(code, 0)
-        self.assertIn("k17:pack", text)
+        self.assertIn("machine_max:k17", text)
 
     def test_unknown_pack(self):
         with self.assertRaises(SystemExit):

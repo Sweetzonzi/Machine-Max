@@ -14,22 +14,27 @@ import java.util.Set;
  * {@code auto_override_official_pack} 的开关：关掉后，磁盘上已有的内容包副本不再被 jar 内版本覆盖，
  * 玩家改过的包因此能保留下来。
  *
- * <p>开关只覆盖叶子包（民用包与车包）。{@code machine_max:builtin} 与两个 {@code *_basic_kit}
- * 始终跟随 jar：它们是依赖链的下层，其它包硬依赖它们的定义；留在旧版本只会让缺定义、型号对不上的
- * 报错更难查，而玩家通常也不会去改货架件与共用武器。
+ * <p>开关只覆盖叶子包（民用包与车包）。{@code machine_max:builtin} 与四个 {@code *_basic_kit}
+ * 始终跟随 jar，不受开关影响：它们是依赖链的下层，其它包硬依赖它们的定义；留在旧版本只会让缺定义、
+ * 型号对不上的报错更难查。
+ *
+ * <p>{@code machine_max:template} 也不在名单里：它只是供作者复制的空骨架，不是内容。
  */
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class MMCommonConfig {
     public static final ModConfigSpec COMMON_SPEC;
     private static final ModConfigSpec.BooleanValue AUTO_OVERRIDE_FIRST_PARTY_PACKS;
 
-    /** 可被玩家改动、因此允许关掉覆盖的第一方内容包。 */
-    private static final Set<String> OVERRIDABLE_PACK_IDS = Set.of(
+    /** 可被玩家改动、因此允许关掉覆盖的第一方内容包。包级可见，供用例与 meta.json 对照。 */
+    static final Set<String> OVERRIDABLE_PACK_IDS = Set.of(
             "machine_max:civilian",
-            "2s38:pack",
-            "k17:pack",
-            "mtlb:pack",
-            "sdkfz234:pack"
+            "machine_max:2s38",
+            "machine_max:k17",
+            "machine_max:mtlb",
+            "machine_max:sdkfz234",
+            "machine_max:m1a2_sep",
+            "machine_max:t90a",
+            "machine_max:type59"
     );
 
     static {

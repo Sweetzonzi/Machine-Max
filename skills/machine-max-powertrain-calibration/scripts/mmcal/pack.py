@@ -43,6 +43,7 @@ def default_pack_root(script_dir: Path) -> Path:
 class Registry:
     def __init__(self):
         self.packs: dict[str, Pack] = {}
+        self.all_packs: list[Pack] = []
         self.entries: dict[str, dict[str, Entry]] = {k: {} for k in KINDS}
         self.warnings: list[str] = []
 
@@ -59,11 +60,14 @@ class Registry:
                 self.warnings.append(f"{meta_file}: 解析失败 ({exc})")
                 continue
             pack_id = str(meta.get("id", child.name))
-            namespace = pack_id.split(":")[0]
-            pack = Pack(child, pack_id, namespace, child / namespace,
-                        meta.get("dependencies") or [])
-            self.packs[pack_id] = pack
-            self._index(pack)
+            deps = meta.get("dependencies") or []
+            # 包 id 只是包的身份；命名空间是包内第一层目录（Spark 按第一段路径分组），
+            # 一个包可以提供多个命名空间，因此逐个目录建 Pack。
+            for content_dir in sorted(p for p in child.iterdir() if p.is_dir()):
+                pack = Pack(child, pack_id, content_dir.name, content_dir, deps)
+                self.packs.setdefault(pack_id, pack)
+                self.all_packs.append(pack)
+                self._index(pack)
 
     def _index(self, pack: Pack):
         for kind in KINDS:
