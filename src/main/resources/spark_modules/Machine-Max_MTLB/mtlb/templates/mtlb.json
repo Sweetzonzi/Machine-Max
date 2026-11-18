@@ -189,7 +189,7 @@
             "connector.machine_max.hull_right_idler_wheel": {
               "integrity_ratio": 1.0
             },
-            "connector.mtlb.hull_pkt_axis": {
+            "connector.machine_max.hull_turret_axis": {
               "integrity_ratio": 1.0
             },
             "connector.machine_max.hull_right_sprocket_wheel": {

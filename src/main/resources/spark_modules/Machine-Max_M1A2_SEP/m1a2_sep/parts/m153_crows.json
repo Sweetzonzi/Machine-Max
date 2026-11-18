@@ -18,7 +18,7 @@
         "machine_max:series/m1a2"
       ],
       "sub_parts": {
-        "sub_part.m1a2_sep.rws_yaw": {
+        "sub_part.m1a2_sep.rws_azimuth": {
           "start_bone": "MM_RWS_Yaw",
           "end_bones": [
             "MM_RWS_Pitch"
@@ -68,12 +68,12 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.rws_yaw_driver": {
+            "subsystem.m1a2_sep.rws_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:rws_yaw_driver",
               "connector": "connector.m1a2_sep.rws_turret"
             },
-            "subsystem.m1a2_sep.rws_pitch_driver": {
+            "subsystem.m1a2_sep.rws_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:rws_pitch_driver",
               "connector": "connector.m1a2_sep.rws_elevation"
@@ -83,8 +83,8 @@
               "definition": "m1a2_sep:rws_controller",
               "control_outputs": {
                 "aim_drive_rws": [
-                  "subsystem.m1a2_sep.rws_yaw_driver",
-                  "subsystem.m1a2_sep.rws_pitch_driver"
+                  "subsystem.m1a2_sep.rws_azimuth_driver",
+                  "subsystem.m1a2_sep.rws_elevation_driver"
                 ],
                 "weapon.mg.m2hb": [
                   "subsystem.m1a2_sep.rws_launcher"
@@ -94,7 +94,7 @@
               "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
               "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"
             },
-            "subsystem.m1a2_sep.rws_loader": {
+            "subsystem.m1a2_sep.rws_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
@@ -111,7 +111,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.m1a2_sep.rws_autoloader": {
+            "subsystem.m1a2_sep.rws_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_m2hb_ammo_loader",
               "ammo_discovery_inputs": [
@@ -119,13 +119,13 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.rws_loader"
+                  "subsystem.m1a2_sep.rws_rack"
                 ]
               }
             }
           }
         },
-        "sub_part.m1a2_sep.rws_pitch": {
+        "sub_part.m1a2_sep.rws_elevation": {
           "start_bone": "MM_RWS_Pitch",
           "end_bones": [],
           "mass": 40,
@@ -145,7 +145,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.rws_pitch_lock": {
+            "connector.m1a2_sep.rws_elevation_lock": {
               "locator": "rws_pitch_lock",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -159,7 +159,7 @@
               "locator": "rws_muzzle",
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.rws_autoloader"
+                  "subsystem.m1a2_sep.rws_loader"
                 ]
               }
             },

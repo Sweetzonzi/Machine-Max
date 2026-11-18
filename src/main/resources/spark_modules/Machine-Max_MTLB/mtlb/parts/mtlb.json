@@ -651,7 +651,7 @@
               ]
             }
           },
-          "interact.mtlb.rear_door_interact": {
+          "interact.mtlb.back_door": {
             "bone": "RearDoorInteract",
             "signal_targets": {
               "interact": [
@@ -763,7 +763,7 @@
             "definition": "machine_max:track_idler_right",
             "internal": true
           },
-          "connector.mtlb.hull_pkt_axis": {
+          "connector.machine_max.hull_turret_axis": {
             "locator": "hull_pkt_axis",
             "definition": "machine_max:fixed_up",
             "overwrite": {

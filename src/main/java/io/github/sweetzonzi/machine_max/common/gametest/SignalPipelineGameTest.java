@@ -54,19 +54,19 @@ public final class SignalPipelineGameTest {
         try {
             var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
-            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_controller");
             helper.assertTrue(seat.getTargets().containsKey("crew_gunner_aim"), "预设控制组的频道先进入首跳表");
 
             Map<String, List<String>> move = Map.of("probe_shared", List.of("subsystem.t90a.azimuth_driver"));
             Map<String, List<String>> weapons = Map.of(
-                    "probe_shared", List.of("subsystem.t90a.main_weapon"),
-                    "probe_fire", List.of("subsystem.t90a.main_weapon"));
+                    "probe_shared", List.of("subsystem.t90a.main_controller"),
+                    "probe_fire", List.of("subsystem.t90a.main_controller"));
             ControlGroup base = new ControlGroup("probe_base", ControlMode.INHERIT,
                     move, Map.of(), Map.of(), weapons, Map.of(), List.of());
             seat.setControlGroupSet(new ControlGroupSet(base, List.of(), List.of(), -1));
 
             helper.assertTrue(seat.getTargets().get("probe_shared").keySet().equals(new LinkedHashSet<>(List.of(
-                            "subsystem.t90a.azimuth_driver", "subsystem.t90a.main_weapon"))),
+                            "subsystem.t90a.azimuth_driver", "subsystem.t90a.main_controller"))),
                     "同一频道跨类别取有序并集，先移动后武器");
             helper.assertTrue(!seat.getTargets().containsKey("crew_gunner_aim"), "配置删去的频道退出首跳表");
             helper.assertTrue(seat.getWeaponControllersByGroup().getOrDefault("base", List.of()).equals(List.of(weapon)),
@@ -85,14 +85,14 @@ public final class SignalPipelineGameTest {
         try {
             var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
-            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_controller");
             var azimuth = turret.findOwnSubsystem("subsystem.t90a.azimuth_driver");
             String aim = "probe_shared_aim";
             String fire = "probe_shared_fire";
 
             // 第一段：同一开火频道在两组里指向不同接收者，发现按组各自成立。
             ControlGroup fireBase = new ControlGroup("probe_fire_base", ControlMode.INHERIT, Map.of(), Map.of(),
-                    Map.of(), Map.of(fire, List.of("subsystem.t90a.main_weapon")), Map.of(), List.of());
+                    Map.of(), Map.of(fire, List.of("subsystem.t90a.main_controller")), Map.of(), List.of());
             ControlGroup fireSub = new ControlGroup("probe_fire_sub", ControlMode.INHERIT, Map.of(), Map.of(),
                     Map.of(), Map.of(fire, List.of("subsystem.t90a.azimuth_driver")), Map.of(), List.of());
             seat.setControlGroupSet(new ControlGroupSet(fireBase, List.of(fireSub), List.of(), -1));
@@ -105,7 +105,7 @@ public final class SignalPipelineGameTest {
             ControlGroup aimBase = new ControlGroup("probe_aim_base", ControlMode.INHERIT, Map.of(),
                     Map.of(aim, List.of("subsystem.t90a.azimuth_driver")), Map.of(), Map.of(), Map.of(), List.of());
             ControlGroup aimSub = new ControlGroup("probe_aim_sub", ControlMode.INHERIT, Map.of(),
-                    Map.of(aim, List.of("subsystem.t90a.main_weapon")), Map.of(), Map.of(), Map.of(), List.of());
+                    Map.of(aim, List.of("subsystem.t90a.main_controller")), Map.of(), Map.of(), Map.of(), List.of());
 
             seat.setControlGroupSet(new ControlGroupSet(aimBase, List.of(aimSub), List.of(), -1));
             helper.assertTrue(seat.setViewInputSignal(
@@ -150,7 +150,7 @@ public final class SignalPipelineGameTest {
         try {
             var turret = part.subParts.get("sub_part.machine_max.main");
             var seat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
-            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_weapon");
+            var weapon = (WeaponControllerSubsystem) turret.findOwnSubsystem("subsystem.t90a.main_controller");
             Set<String> fireChannels = seat.getControlGroupSet().getMergedMainWeaponTargets().keySet();
             helper.assertTrue(!fireChannels.isEmpty(), "预设控制组给这个座位配了主武器频道");
             helper.assertTrue(seat.getActiveMainWeaponControllers().contains(weapon),

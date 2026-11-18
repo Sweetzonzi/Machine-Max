@@ -43,9 +43,9 @@ public final class AmmoBeltReplaceGameTest {
     private static final String PART = "k17:k17_turret";
     /** K17 的部件 JSON 用单变体写法（variants 直接是一个配置），解码后的变体名是 "default"。 */
     private static final String VARIANT = "default";
-    private static final String LAUNCHER = "subsystem.k17.2a42";
-    private static final String AUTOLOADER = "subsystem.k17.2a42_ammo_autoloader";
-    private static final String RACK = "subsystem.k17.2a42_ammo_loader";
+    private static final String LAUNCHER = "subsystem.k17.main_launcher";
+    private static final String AUTOLOADER = "subsystem.k17.main_loader";
+    private static final String RACK = "subsystem.k17.main_rack";
 
     private AmmoBeltReplaceGameTest() {
     }

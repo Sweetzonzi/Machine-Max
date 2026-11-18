@@ -58,7 +58,7 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 12,
-            "subsystem": "subsystem.k17.2a42_ammo_loader"
+            "subsystem": "subsystem.k17.main_rack"
           }
         },
         "connectors": {
@@ -111,7 +111,7 @@
             "definition": "machine_max:basic_elevation_driver",
             "connector": "connector.k17.turret_right_atgm_axis"
           },
-          "subsystem.k17.main_weapon": {
+          "subsystem.k17.main_controller": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:main_weapon_controller",
             "control_outputs": {
@@ -126,7 +126,7 @@
             "third_hud_layout": "k17:k17_weapon_feed",
             "scope_hud_layout": "k17:k17_weapon_feed"
           },
-          "subsystem.k17.secondary_weapon": {
+          "subsystem.k17.coax_controller": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:secondary_weapon_controller",
             "control_outputs": {
@@ -138,7 +138,7 @@
             "third_hud_layout": "k17:k17_weapon_compact",
             "scope_hud_layout": "k17:k17_weapon_compact"
           },
-          "subsystem.k17.2a42_ammo_loader": {
+          "subsystem.k17.main_rack": {
             "type": "machine_max:regen_ammo_rack",
             "definition": "machine_max:30mm_2a42_regen_ammo_rack",
             "belt_definition": {
@@ -154,7 +154,7 @@
               "ammo_30mm"
             ]
           },
-          "subsystem.k17.2a42_ammo_autoloader": {
+          "subsystem.k17.main_loader": {
             "type": "machine_max:ammo_loader",
             "definition": "machine_max:30mm_2a42_ammo_loader",
             "ammo_discovery_inputs": [
@@ -162,11 +162,11 @@
             ],
             "ammo_discovery_targets": {
               "ammo_30mm": [
-                "subsystem.k17.2a42_ammo_loader"
+                "subsystem.k17.main_rack"
               ]
             }
           },
-          "subsystem.k17.pktm_ammo_loader": {
+          "subsystem.k17.coax_rack": {
             "type": "machine_max:regen_ammo_rack",
             "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
             "belt_definition": {
@@ -181,7 +181,7 @@
               "ammo_7_62mm"
             ]
           },
-          "subsystem.k17.pktm_ammo_autoloader": {
+          "subsystem.k17.coax_loader": {
             "type": "machine_max:ammo_loader",
             "definition": "machine_max:7_62mm_pktm_ammo_loader",
             "ammo_discovery_inputs": [
@@ -189,11 +189,11 @@
             ],
             "ammo_discovery_targets": {
               "ammo_7_62mm": [
-                "subsystem.k17.pktm_ammo_loader"
+                "subsystem.k17.coax_rack"
               ]
             }
           },
-          "subsystem.k17.atgm_weapon": {
+          "subsystem.k17.atgm_controller": {
             "type": "machine_max:weapon_controller",
             "definition": "machine_max:atgm_weapon_controller",
             "control_outputs": {
@@ -205,7 +205,7 @@
             "third_hud_layout": "k17:k17_weapon_tubes_third",
             "scope_hud_layout": "k17:k17_weapon_tubes"
           },
-          "subsystem.k17.atgm_ammo_loader": {
+          "subsystem.k17.atgm_rack": {
             "type": "machine_max:regen_ammo_rack",
             "definition": "machine_max:152mm_9m133_regen_ammo_rack",
             "belt_definition": {
@@ -218,7 +218,7 @@
               "ammo_atgm"
             ]
           },
-          "subsystem.k17.atgm_ammo_autoloader": {
+          "subsystem.k17.atgm_loader": {
             "type": "machine_max:ammo_loader",
             "definition": "machine_max:152mm_9m133_ammo_loader",
             "ammo_discovery_inputs": [
@@ -226,7 +226,7 @@
             ],
             "ammo_discovery_targets": {
               "ammo_atgm": [
-                "subsystem.k17.atgm_ammo_loader"
+                "subsystem.k17.atgm_rack"
               ]
             }
           },
@@ -258,7 +258,7 @@
             "type": "box",
             "material": "machine_max:structural_steel",
             "thickness": 15,
-            "subsystem": "subsystem.k17.2a42"
+            "subsystem": "subsystem.k17.main_launcher"
           }
         },
         "connectors": {
@@ -270,7 +270,7 @@
           }
         },
         "subsystems": {
-          "subsystem.k17.2a42": {
+          "subsystem.k17.main_launcher": {
             "type": "machine_max:launcher",
             "definition": "machine_max:30mm_2a42_launcher",
             "locator": "2a42_launch_point",
@@ -281,7 +281,7 @@
             },
             "fire_animation": "2a42_fire"
           },
-          "subsystem.k17.pktm": {
+          "subsystem.k17.coax_launcher": {
             "type": "machine_max:launcher",
             "definition": "machine_max:7_62mm_pktm_launcher",
             "locator": "mg_launch_point",
@@ -315,16 +315,16 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 2,
-            "condition": "!local.subsystem_destroyed('subsystem.k17.left_atgm_tube_1')",
-            "subsystem": "subsystem.k17.left_atgm_tube_1"
+            "condition": "!local.subsystem_destroyed('subsystem.k17.left_atgm_launcher_01')",
+            "subsystem": "subsystem.k17.left_atgm_launcher_01"
           },
           "LeftAtgm2HitBox": {
             "id": "left_atgm_tube_2",
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 2,
-            "condition": "!local.subsystem_destroyed('subsystem.k17.left_atgm_tube_2')",
-            "subsystem": "subsystem.k17.left_atgm_tube_2"
+            "condition": "!local.subsystem_destroyed('subsystem.k17.left_atgm_launcher_02')",
+            "subsystem": "subsystem.k17.left_atgm_launcher_02"
           }
         },
         "connectors": {
@@ -336,7 +336,7 @@
           }
         },
         "subsystems": {
-          "subsystem.k17.left_atgm_tube_1": {
+          "subsystem.k17.left_atgm_launcher_01": {
             "type": "machine_max:launcher",
             "definition": "machine_max:152mm_9m133_launcher",
             "locator": "left_atgm1_launch_point",
@@ -346,7 +346,7 @@
               ]
             }
           },
-          "subsystem.k17.left_atgm_tube_2": {
+          "subsystem.k17.left_atgm_launcher_02": {
             "type": "machine_max:launcher",
             "definition": "machine_max:152mm_9m133_launcher",
             "locator": "left_atgm2_launch_point",
@@ -380,16 +380,16 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 2,
-            "condition": "!local.subsystem_destroyed('subsystem.k17.right_atgm_tube_1')",
-            "subsystem": "subsystem.k17.right_atgm_tube_1"
+            "condition": "!local.subsystem_destroyed('subsystem.k17.right_atgm_launcher_01')",
+            "subsystem": "subsystem.k17.right_atgm_launcher_01"
           },
           "RightAtgm2HitBox": {
             "id": "right_atgm_tube_2",
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 2,
-            "condition": "!local.subsystem_destroyed('subsystem.k17.right_atgm_tube_2')",
-            "subsystem": "subsystem.k17.right_atgm_tube_2"
+            "condition": "!local.subsystem_destroyed('subsystem.k17.right_atgm_launcher_02')",
+            "subsystem": "subsystem.k17.right_atgm_launcher_02"
           }
         },
         "connectors": {
@@ -401,7 +401,7 @@
           }
         },
         "subsystems": {
-          "subsystem.k17.right_atgm_tube_1": {
+          "subsystem.k17.right_atgm_launcher_01": {
             "type": "machine_max:launcher",
             "definition": "machine_max:152mm_9m133_launcher",
             "locator": "right_atgm1_launch_point",
@@ -411,7 +411,7 @@
               ]
             }
           },
-          "subsystem.k17.right_atgm_tube_2": {
+          "subsystem.k17.right_atgm_launcher_02": {
             "type": "machine_max:launcher",
             "definition": "machine_max:152mm_9m133_launcher",
             "locator": "right_atgm2_launch_point",

@@ -26,7 +26,7 @@
           }
         },
         "subsystems": {
-          "subsystem.m1a2_sep.crows_terminal": {
+          "subsystem.m1a2_sep.rws_terminal_controller": {
             "type": "machine_max:weapon_controller",
             "definition": "m1a2_sep:rws_controller",
             "control_outputs": {
@@ -43,7 +43,7 @@
           }
         },
         "connectors": {
-          "connector.m1a2_sep.crows_terminal_mount": {
+          "connector.m1a2_sep.rws_terminal_mount": {
             "locator": "down",
             "definition": "machine_max:fixed_down"
           }

@@ -30,7 +30,7 @@
   "subsystem.machine_max.rearview_mirror": "后视镜",
   "sub_part.machine_max.main": "主体",
   "connector.machine_max.aa_elevation": "高射机枪俯仰连接座",
-  "connector.machine_max.aa_pitch_lock": "高射机枪俯仰固定座",
+  "connector.machine_max.aa_elevation_lock": "高射机枪俯仰固定座",
   "connector.machine_max.aa_turret": "高射机枪—炮塔安装座",
   "connector.machine_max.back": "后方连接点",
   "connector.machine_max.barrel_cradle": "炮管—炮架固定座",

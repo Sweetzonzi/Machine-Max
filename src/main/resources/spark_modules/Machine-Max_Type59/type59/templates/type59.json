@@ -564,7 +564,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.type59.aa_yaw": {
+        "sub_part.type59.aa_azimuth": {
           "id": 19,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -593,7 +593,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.type59.aa_pitch": {
+        "sub_part.type59.aa_elevation": {
           "id": 20,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {

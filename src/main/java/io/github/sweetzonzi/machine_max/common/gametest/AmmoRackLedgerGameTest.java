@@ -32,7 +32,7 @@ import java.util.Map;
 public final class AmmoRackLedgerGameTest {
     private static final String BATCH = "mmAmmoRackLedger";
     private static final String TURRET = "t90a:t90a_turret";
-    private static final String RACK = "subsystem.t90a.ammo_loader";
+    private static final String RACK = "subsystem.t90a.main_ap_rack";
 
     private AmmoRackLedgerGameTest() {
     }

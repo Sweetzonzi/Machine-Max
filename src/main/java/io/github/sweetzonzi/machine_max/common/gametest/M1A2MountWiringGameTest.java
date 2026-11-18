@@ -57,21 +57,21 @@ public final class M1A2MountWiringGameTest {
     }
 
     private static final List<Mount> MOUNTS = List.of(
-            new Mount("subsystem.m1a2_sep.coax_controller", "weapon.mg.m2hb",
+            new Mount("subsystem.m1a2_sep.antimateriel_controller", "weapon.mg.m2hb",
+                    "subsystem.m1a2_sep.antimateriel_launcher",
+                    "subsystem.m1a2_sep.antimateriel_loader", "ammo_12_7mm"),
+            new Mount("subsystem.m1a2_sep.coax_controller", "weapon.mg.m240",
                     "subsystem.m1a2_sep.coax_launcher",
-                    "subsystem.m1a2_sep.coax_autoloader", "ammo_12_7mm"),
-            new Mount("subsystem.m1a2_sep.coax_762_controller", "weapon.mg.m240",
-                    "subsystem.m1a2_sep.coax_762_launcher",
-                    "subsystem.m1a2_sep.coax_762_autoloader", "ammo_7_62mm"),
+                    "subsystem.m1a2_sep.coax_loader", "ammo_7_62mm"),
             new Mount("subsystem.m1a2_sep.rws_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.rws_launcher",
-                    "subsystem.m1a2_sep.rws_autoloader", "ammo_12_7mm"),
-            new Mount("subsystem.m1a2_sep.port_mg_controller", "weapon.mg.m240",
-                    "subsystem.m1a2_sep.port_mg_launcher",
-                    "subsystem.m1a2_sep.port_mg_autoloader", "ammo_7_62mm"),
-            new Mount("subsystem.m1a2_sep.aft_mg_controller", "weapon.mg.m2hb",
-                    "subsystem.m1a2_sep.aft_mg_launcher",
-                    "subsystem.m1a2_sep.aft_mg_autoloader", "ammo_12_7mm"));
+                    "subsystem.m1a2_sep.rws_loader", "ammo_12_7mm"),
+            new Mount("subsystem.m1a2_sep.loader_mg_controller", "weapon.mg.m240",
+                    "subsystem.m1a2_sep.loader_mg_launcher",
+                    "subsystem.m1a2_sep.loader_mg_loader", "ammo_7_62mm"),
+            new Mount("subsystem.m1a2_sep.aa_controller", "weapon.mg.m2hb",
+                    "subsystem.m1a2_sep.aa_launcher",
+                    "subsystem.m1a2_sep.aa_loader", "ammo_12_7mm"));
 
     private M1A2MountWiringGameTest() {
     }
@@ -123,8 +123,8 @@ public final class M1A2MountWiringGameTest {
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
             byName.putAll(collectSubsystems(rws));
             AbstractSubsystem controller = require(helper, byName, "subsystem.m1a2_sep.rws_controller");
-            AbstractSubsystem yawDriver = require(helper, byName, "subsystem.m1a2_sep.rws_yaw_driver");
-            AbstractSubsystem pitchDriver = require(helper, byName, "subsystem.m1a2_sep.rws_pitch_driver");
+            AbstractSubsystem yawDriver = require(helper, byName, "subsystem.m1a2_sep.rws_azimuth_driver");
+            AbstractSubsystem pitchDriver = require(helper, byName, "subsystem.m1a2_sep.rws_elevation_driver");
 
             assertAimReachesStation(helper, controller, yawDriver, pitchDriver);
             // 结构变化后首跳表整体重建、发现重做，接线结果必须与初次装车一致。
@@ -161,10 +161,10 @@ public final class M1A2MountWiringGameTest {
             SubPart main = part.subParts.get("sub_part.machine_max.main");
             helper.assertTrue(main != null, "火控终端必须只有一个主零件");
             helper.assertTrue(!main.hitBoxes.isEmpty(), "几何里的碰撞骨必须建成碰撞箱");
-            helper.assertTrue(main.connectors.containsKey("connector.m1a2_sep.crows_terminal_mount"),
+            helper.assertTrue(main.connectors.containsKey("connector.m1a2_sep.rws_terminal_mount"),
                     "火控终端必须有挂点连接点");
             AbstractSubsystem subsystem = require(helper, collectSubsystems(part),
-                    "subsystem.m1a2_sep.crows_terminal");
+                    "subsystem.m1a2_sep.rws_terminal_controller");
             helper.assertTrue(subsystem instanceof WeaponControllerSubsystem,
                     "火控终端持有的必须是武器控制器子系统，实际 " + subsystem.getClass().getSimpleName());
             Map<String, List<String>> targets = subsystem.getTargetNames();
@@ -201,7 +201,7 @@ public final class M1A2MountWiringGameTest {
             byName.putAll(collectSubsystems(rws));
             AbstractSubsystem seat = require(helper, byName, "subsystem.m1a2_sep.commander_seat");
             WeaponControllerSubsystem mainGun =
-                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.main_weapon");
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.main_controller");
             WeaponControllerSubsystem crows =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.rws_controller");
 
@@ -227,9 +227,9 @@ public final class M1A2MountWiringGameTest {
             helper.assertTrue(groups.groups.size() == 2,
                     "车长预设只应有备用火控与超控两个子组，实际 " + groups.groups.size());
             WeaponControllerSubsystem coax762 =
-                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.coax_762_controller");
-            WeaponControllerSubsystem csamm =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.coax_controller");
+            WeaponControllerSubsystem csamm =
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.antimateriel_controller");
             List<WeaponControllerSubsystem> allWeapons = List.of(crows, mainGun, coax762, csamm);
 
             // 备用火控：武器站与主炮／机枪一起动，不带越级量——炮长在位时由炮长优先。
@@ -339,7 +339,7 @@ public final class M1A2MountWiringGameTest {
                 .get(ResourceLocation.parse("m1a2_sep:m153_crows"));
         helper.assertTrue(type != null, "M1A2 SEP 遥控武器站的部件定义必须已加载");
         RegularPart rws = PartFactory.createRegular(type, "desert", helper.getLevel());
-        AbstractConnector advanced = rws.subParts.get("sub_part.m1a2_sep.rws_yaw")
+        AbstractConnector advanced = rws.subParts.get("sub_part.m1a2_sep.rws_azimuth")
                 .connectors.get("connector.m1a2_sep.rws_turret");
         AbstractConnector simple = turret.subParts.get("sub_part.machine_max.main")
                 .connectors.get("connector.m1a2_sep.turret_rws");

@@ -36,7 +36,7 @@ public final class CameraDiscoveryGameTest {
             var gunnerSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
             var gunnerSight = (AbstractViewpointSubsystem) gun.findOwnSubsystem("subsystem.t90a.gunner_sight");
             var commanderSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.external_commander_seat");
-            var commanderSight = (AbstractViewpointSubsystem) turret.findOwnSubsystem("subsystem.t90a.commander_day_sight");
+            var commanderSight = (AbstractViewpointSubsystem) turret.findOwnSubsystem("subsystem.t90a.commander_optics");
 
             helper.assertTrue(gunnerSeat.getTargets().getOrDefault("gunner_sight", Map.of()).containsKey("global"),
                     "炮手席的镜头发现线路以装配体为首跳");

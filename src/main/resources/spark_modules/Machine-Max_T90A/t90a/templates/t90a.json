@@ -719,7 +719,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.t90a.aa_yaw": {
+        "sub_part.t90a.aa_azimuth": {
           "id": 23,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -748,7 +748,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.t90a.aa_pitch": {
+        "sub_part.t90a.aa_elevation": {
           "id": 24,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {

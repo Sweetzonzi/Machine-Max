@@ -323,10 +323,10 @@
             "subsystem.k17.commander_optics": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.secondary_weapon": {
+            "subsystem.k17.coax_controller": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.2a42_ammo_loader": {
+            "subsystem.k17.main_rack": {
               "ammo_count": 54,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -335,10 +335,10 @@
               "batch_cooldown": 0,
               "regen_progress": 0.083333254
             },
-            "subsystem.k17.2a42_ammo_autoloader": {
+            "subsystem.k17.main_loader": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.main_weapon": {
+            "subsystem.k17.main_controller": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.left_atgm_elevation_driver": {
@@ -346,7 +346,7 @@
               "brake_pitch": 0.044628497,
               "durability_ratio": 1.0
             },
-            "subsystem.k17.pktm_ammo_loader": {
+            "subsystem.k17.coax_rack": {
               "ammo_count": 382,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -355,13 +355,13 @@
               "batch_cooldown": 0,
               "regen_progress": 0.249987
             },
-            "subsystem.k17.pktm_ammo_autoloader": {
+            "subsystem.k17.coax_loader": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.atgm_weapon": {
+            "subsystem.k17.atgm_controller": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.atgm_ammo_loader": {
+            "subsystem.k17.atgm_rack": {
               "ammo_count": 4,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -370,7 +370,7 @@
               "batch_cooldown": 0,
               "regen_progress": 0.0
             },
-            "subsystem.k17.atgm_ammo_autoloader": {
+            "subsystem.k17.atgm_loader": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.azimuth_driver": {
@@ -416,7 +416,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.k17.2a42": {
+            "subsystem.k17.main_launcher": {
               "chambered_type": "machine_max:30mm_3ubr6_ap",
               "modules": {
                 "barrel": {
@@ -430,7 +430,7 @@
               },
               "durability_ratio": 1.0
             },
-            "subsystem.k17.pktm": {
+            "subsystem.k17.coax_launcher": {
               "chambered_type": "machine_max:7_62x54r_b32_ap",
               "modules": {
                 "barrel": {

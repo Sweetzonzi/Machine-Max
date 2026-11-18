@@ -30,7 +30,7 @@
   "subsystem.machine_max.rearview_mirror": "Rearview Mirror",
   "sub_part.machine_max.main": "Main",
   "connector.machine_max.aa_elevation": "AA Machine Gun Elevation Joint",
-  "connector.machine_max.aa_pitch_lock": "AA Machine Gun Elevation Lock",
+  "connector.machine_max.aa_elevation_lock": "AA Machine Gun Elevation Lock",
   "connector.machine_max.aa_turret": "AA Machine Gun to Turret Mount",
   "connector.machine_max.back": "Back Connector",
   "connector.machine_max.barrel_cradle": "Barrel to Cradle Mount",

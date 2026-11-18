@@ -115,7 +115,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.sdkfz234.mg34_ammo_loader": {
+            "subsystem.sdkfz234.coax_rack": {
               "ammo_count": 150,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -124,7 +124,7 @@
               "batch_cooldown": 0,
               "regen_progress": 0.33333337
             },
-            "subsystem.sdkfz234.mg34_ammo_autoloader": {
+            "subsystem.sdkfz234.coax_loader": {
               "durability_ratio": 1.0
             },
             "subsystem.sdkfz234.elevation_driver": {
@@ -132,7 +132,7 @@
               "brake_pitch": -0.03680334,
               "durability_ratio": 1.0
             },
-            "subsystem.sdkfz234.50mm_ammo_loader": {
+            "subsystem.sdkfz234.main_ap_rack": {
               "ammo_count": 6,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -141,7 +141,7 @@
               "batch_cooldown": 0,
               "regen_progress": 0.9499953
             },
-            "subsystem.sdkfz234.50mm_he_ammo_loader": {
+            "subsystem.sdkfz234.main_he_rack": {
               "ammo_count": 6,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -153,10 +153,10 @@
             "subsystem.sdkfz234.commander_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.sdkfz234.secondary_weapon": {
+            "subsystem.sdkfz234.coax_controller": {
               "durability_ratio": 1.0
             },
-            "subsystem.sdkfz234.main_weapon": {
+            "subsystem.sdkfz234.main_controller": {
               "durability_ratio": 1.0
             },
             "subsystem.sdkfz234.gunner_seat": {
@@ -200,7 +200,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.sdkfz234.50mm": {
+            "subsystem.sdkfz234.main_launcher": {
               "chambered_type": "machine_max:50mm_pzgr39_apcbc",
               "modules": {
                 "barrel": {
@@ -250,7 +250,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.sdkfz234.mg34": {
+            "subsystem.sdkfz234.coax_launcher": {
               "chambered_type": "machine_max:7_92x57_smk_ap",
               "modules": {
                 "barrel": {

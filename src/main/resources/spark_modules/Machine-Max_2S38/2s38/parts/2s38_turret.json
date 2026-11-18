@@ -91,28 +91,28 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.2s38.2a90_ap_loader"
+              "subsystem": "subsystem.2s38.main_ap_rack"
             },
             "RightAmmoStorageHitBox": {
               "id": "2a90_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.2s38.2a90_he_loader"
+              "subsystem": "subsystem.2s38.main_he_rack"
             },
             "LeftAutoloaderHitBox": {
               "id": "part",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.2s38.2a90_ap_autoloader"
+              "subsystem": "subsystem.2s38.main_ap_loader"
             },
             "RightAutoloaderHitBox": {
               "id": "part",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.2s38.2a90_he_autoloader"
+              "subsystem": "subsystem.2s38.main_he_loader"
             },
             "GunAzimDriverHitBox": {
               "id": "part",
@@ -138,7 +138,7 @@
               "internal": true,
               "overwrite": {}
             },
-            "connector.2s38.turret_pktm_axis": {
+            "connector.2s38.turret_coax_axis": {
               "locator": "turret_pktm_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -151,12 +151,12 @@
               "definition": "2s38:2s38_azimuth_driver",
               "connector": "connector.machine_max.turret_hull_axis"
             },
-            "subsystem.2s38.gun_elevation_driver": {
+            "subsystem.2s38.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "2s38:2s38_elevation_driver",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.2s38.main_weapon": {
+            "subsystem.2s38.main_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
@@ -183,7 +183,7 @@
               "third_hud_layout": "2s38:2s38_weapon_compact",
               "scope_hud_layout": "2s38:2s38_weapon_compact"
             },
-            "subsystem.2s38.2a90_ap_loader": {
+            "subsystem.2s38.main_ap_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:57mm_2a90_regen_ammo_rack",
               "belt_definition": {
@@ -197,7 +197,7 @@
                 "ammo_57mm"
               ]
             },
-            "subsystem.2s38.2a90_ap_autoloader": {
+            "subsystem.2s38.main_ap_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:57mm_2a90_ammo_loader",
               "ammo_discovery_inputs": [
@@ -205,11 +205,11 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_57mm": [
-                  "subsystem.2s38.2a90_ap_loader"
+                  "subsystem.2s38.main_ap_rack"
                 ]
               }
             },
-            "subsystem.2s38.2a90_he_loader": {
+            "subsystem.2s38.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:57mm_2a90_regen_ammo_rack",
               "belt_definition": {
@@ -223,7 +223,7 @@
                 "ammo_57mm"
               ]
             },
-            "subsystem.2s38.2a90_he_autoloader": {
+            "subsystem.2s38.main_he_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:57mm_2a90_ammo_loader",
               "ammo_discovery_inputs": [
@@ -231,21 +231,21 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_57mm": [
-                  "subsystem.2s38.2a90_he_loader"
+                  "subsystem.2s38.main_he_rack"
                 ]
               }
             },
-            "subsystem.2s38.commander_sight": {
+            "subsystem.2s38.commander_optics": {
               "type": "machine_max:camera",
               "definition": "2s38:2s38_commander_sight",
               "locator": "commander_sight"
             },
-            "subsystem.2s38.pktm_elevation_driver": {
+            "subsystem.2s38.coax_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "machine_max:basic_elevation_driver",
-              "connector": "connector.2s38.turret_pktm_axis"
+              "connector": "connector.2s38.turret_coax_axis"
             },
-            "subsystem.2s38.gunner_sight": {
+            "subsystem.2s38.gunner_optics": {
               "type": "machine_max:camera",
               "definition": "2s38:2s38_gunner_sight",
               "locator": "gunner_sight"
@@ -276,7 +276,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 20,
-              "subsystem": "subsystem.2s38.2a90"
+              "subsystem": "subsystem.2s38.main_launcher"
             },
             "GunBreechHitBox": {
               "id": "part",
@@ -292,7 +292,7 @@
             }
           },
           "subsystems": {
-            "subsystem.2s38.2a90": {
+            "subsystem.2s38.main_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:57mm_2a90_launcher",
               "locator": "main_gun_muzzle",
@@ -328,18 +328,18 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 20,
-              "subsystem": "subsystem.2s38.pktm"
+              "subsystem": "subsystem.2s38.coax_launcher"
             },
             "PKTMAmmoBoxHitBox": {
               "id": "part",
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.2s38.pktm_ammo_loader"
+              "subsystem": "subsystem.2s38.coax_rack"
             }
           },
           "connectors": {
-            "connector.2s38.pktm_turret_lock": {
+            "connector.2s38.coax_turret_lock": {
               "locator": "pktm_trunnion_lock",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -347,7 +347,7 @@
             }
           },
           "subsystems": {
-            "subsystem.2s38.pktm": {
+            "subsystem.2s38.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_pktm_launcher",
               "locator": "pktm_muzzle",
@@ -357,7 +357,7 @@
                 ]
               }
             },
-            "subsystem.2s38.pktm_ammo_loader": {
+            "subsystem.2s38.coax_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
               "belt_definition": {
@@ -372,7 +372,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.2s38.pktm_ammo_autoloader": {
+            "subsystem.2s38.coax_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_pktm_ammo_loader",
               "ammo_discovery_inputs": [
@@ -380,7 +380,7 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.2s38.pktm_ammo_loader"
+                  "subsystem.2s38.coax_rack"
                 ]
               }
             }

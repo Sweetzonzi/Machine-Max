@@ -203,21 +203,21 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.ammo_loader"
+              "subsystem": "subsystem.t90a.main_ap_rack"
             },
             "MM_AmmoCarouselRight": {
               "id": "2a46m_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.ammo_loader_he"
+              "subsystem": "subsystem.t90a.main_he_rack"
             },
             "MM_Autoloader": {
               "id": "2a46m_autoloader",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.ammo_autoloader"
+              "subsystem": "subsystem.t90a.main_loader"
             },
             "MM_AzimuthDrive": {
               "id": "azim",
@@ -364,7 +364,7 @@
               "definition": "t90a:t90a_elevation",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.t90a.main_weapon": {
+            "subsystem.t90a.main_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
@@ -380,7 +380,7 @@
               "third_hud_layout": "t90a:main_feed",
               "scope_hud_layout": "t90a:scope_main_feed"
             },
-            "subsystem.t90a.ammo_loader": {
+            "subsystem.t90a.main_ap_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
@@ -397,7 +397,7 @@
                 "ammo_125mm"
               ]
             },
-            "subsystem.t90a.ammo_autoloader": {
+            "subsystem.t90a.main_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:125mm_2a46m_ammo_loader",
               "ammo_discovery_inputs": [
@@ -405,12 +405,12 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_125mm": [
-                  "subsystem.t90a.ammo_loader",
-                  "subsystem.t90a.ammo_loader_he"
+                  "subsystem.t90a.main_ap_rack",
+                  "subsystem.t90a.main_he_rack"
                 ]
               }
             },
-            "subsystem.t90a.ammo_loader_he": {
+            "subsystem.t90a.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
@@ -438,7 +438,7 @@
               "first_hud_layout": "t90a:coax_feed",
               "third_hud_layout": "t90a:coax_feed_third"
             },
-            "subsystem.t90a.coax_loader": {
+            "subsystem.t90a.coax_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
               "belt_definition": {
@@ -455,7 +455,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.t90a.coax_autoloader": {
+            "subsystem.t90a.coax_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_pktm_ammo_loader",
               "ammo_discovery_inputs": [
@@ -463,7 +463,7 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.t90a.coax_loader"
+                  "subsystem.t90a.coax_rack"
                 ]
               }
             },
@@ -474,7 +474,7 @@
               "control_group_preset": "t90a:t90a_observer",
               "camera_discovery_targets": {
                 "commander_day_sight": [
-                  "subsystem.t90a.commander_day_sight"
+                  "subsystem.t90a.commander_optics"
                 ]
               },
               "dismount_locators": [
@@ -486,7 +486,7 @@
               "third_hud_layout": "t90a:t90a_ground_orientation",
               "allow_use_items": false
             },
-            "subsystem.t90a.commander_day_sight": {
+            "subsystem.t90a.commander_optics": {
               "type": "machine_max:camera",
               "definition": "t90a:t90a_commander_day_sight",
               "locator": "commander_day_optic"
@@ -552,7 +552,7 @@
             }
           }
         },
-        "sub_part.t90a.aa_yaw": {
+        "sub_part.t90a.aa_azimuth": {
           "start_bone": "MM_MGYaw",
           "end_bones": [
             "MM_MGPitch"
@@ -604,12 +604,12 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.aa_yaw_driver": {
+            "subsystem.t90a.aa_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_yaw_driver",
               "connector": "connector.machine_max.aa_turret"
             },
-            "subsystem.t90a.aa_pitch_driver": {
+            "subsystem.t90a.aa_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_pitch_driver",
               "connector": "connector.machine_max.aa_elevation"
@@ -619,8 +619,8 @@
               "definition": "t90a:aa_controller",
               "control_outputs": {
                 "aim_drive_aa": [
-                  "subsystem.t90a.aa_yaw_driver",
-                  "subsystem.t90a.aa_pitch_driver"
+                  "subsystem.t90a.aa_azimuth_driver",
+                  "subsystem.t90a.aa_elevation_driver"
                 ],
                 "weapon.mg.nsvt": [
                   "global"
@@ -629,7 +629,7 @@
               "first_hud_layout": "t90a:aa_feed",
               "third_hud_layout": "t90a:aa_feed"
             },
-            "subsystem.t90a.aa_loader": {
+            "subsystem.t90a.aa_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_nsvt_regen_ammo_rack",
               "belt_definition": {
@@ -646,7 +646,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.t90a.aa_autoloader": {
+            "subsystem.t90a.aa_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_nsvt_ammo_loader",
               "ammo_discovery_inputs": [
@@ -654,13 +654,13 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.t90a.aa_loader"
+                  "subsystem.t90a.aa_rack"
                 ]
               }
             }
           }
         },
-        "sub_part.t90a.aa_pitch": {
+        "sub_part.t90a.aa_elevation": {
           "start_bone": "MM_MGPitch",
           "end_bones": [],
           "durability": 50,
@@ -686,7 +686,7 @@
             }
           },
           "connectors": {
-            "connector.machine_max.aa_pitch_lock": {
+            "connector.machine_max.aa_elevation_lock": {
               "locator": "mg_yaw_axis",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -723,7 +723,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 35,
-              "subsystem": "subsystem.t90a.launcher"
+              "subsystem": "subsystem.t90a.main_launcher"
             }
           },
           "connectors": {
@@ -735,7 +735,7 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.launcher": {
+            "subsystem.t90a.main_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:125mm_2a46m_launcher",
               "locator": "main_muzzle",

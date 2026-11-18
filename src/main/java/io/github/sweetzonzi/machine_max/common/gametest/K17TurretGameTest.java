@@ -33,10 +33,10 @@ public final class K17TurretGameTest {
     }
 
     private static final List<Tube> TUBES = List.of(
-            new Tube("sub_part.k17.left_atgm", "LeftAtgm1HitBox", "subsystem.k17.left_atgm_tube_1"),
-            new Tube("sub_part.k17.left_atgm", "LeftAtgm2HitBox", "subsystem.k17.left_atgm_tube_2"),
-            new Tube("sub_part.k17.right_atgm", "RightAtgm1HitBox", "subsystem.k17.right_atgm_tube_1"),
-            new Tube("sub_part.k17.right_atgm", "RightAtgm2HitBox", "subsystem.k17.right_atgm_tube_2"));
+            new Tube("sub_part.k17.left_atgm", "LeftAtgm1HitBox", "subsystem.k17.left_atgm_launcher_01"),
+            new Tube("sub_part.k17.left_atgm", "LeftAtgm2HitBox", "subsystem.k17.left_atgm_launcher_02"),
+            new Tube("sub_part.k17.right_atgm", "RightAtgm1HitBox", "subsystem.k17.right_atgm_launcher_01"),
+            new Tube("sub_part.k17.right_atgm", "RightAtgm2HitBox", "subsystem.k17.right_atgm_launcher_02"));
 
     private K17TurretGameTest() {
     }

@@ -182,14 +182,14 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.m1a2_sep.ammo_loader"
+              "subsystem": "subsystem.m1a2_sep.main_ap_rack"
             },
             "MM_Hit_ammo_rack_he": {
               "id": "m256_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.m1a2_sep.ammo_loader_he"
+              "subsystem": "subsystem.m1a2_sep.main_he_rack"
             }
           },
           "interact_boxes": {
@@ -261,13 +261,13 @@
                 "impact_reduction": 10
               }
             },
-            "connector.m1a2_sep.turret_port_mg": {
+            "connector.m1a2_sep.turret_loader_mg": {
               "locator": "turret_port_mg_mount",
               "definition": "machine_max:fixed_up",
               "internal": true,
               "overwrite": {}
             },
-            "connector.m1a2_sep.turret_aft_mg": {
+            "connector.machine_max.turret_aa": {
               "locator": "turret_aft_mg_mount",
               "definition": "machine_max:fixed_up",
               "internal": true,
@@ -312,9 +312,9 @@
               "control_group_preset": "m1a2_sep:m1a2_gunner",
               "camera_discovery_targets": {
                 "gunner_sight": [
-                  "subsystem.m1a2_sep.gunner_sight",
-                  "subsystem.m1a2_sep.gunner_sight_medium",
-                  "subsystem.m1a2_sep.gunner_sight_high"
+                  "subsystem.m1a2_sep.gunner_optics",
+                  "subsystem.m1a2_sep.gunner_medium_optics",
+                  "subsystem.m1a2_sep.gunner_high_optics"
                 ]
               },
               "dismount_locators": [
@@ -335,9 +335,9 @@
                   "global"
                 ],
                 "gunner_sight": [
-                  "subsystem.m1a2_sep.gunner_sight",
-                  "subsystem.m1a2_sep.gunner_sight_medium",
-                  "subsystem.m1a2_sep.gunner_sight_high"
+                  "subsystem.m1a2_sep.gunner_optics",
+                  "subsystem.m1a2_sep.gunner_medium_optics",
+                  "subsystem.m1a2_sep.gunner_high_optics"
                 ],
                 "sight_rws": [
                   "global"
@@ -381,7 +381,7 @@
               "definition": "m1a2_sep:m1a2_elevation",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.m1a2_sep.main_weapon": {
+            "subsystem.m1a2_sep.main_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
@@ -397,7 +397,7 @@
               "third_hud_layout": "m1a2_sep:m1a2_gun_feed",
               "scope_hud_layout": "m1a2_sep:m1a2_gps_weapon"
             },
-            "subsystem.m1a2_sep.ammo_loader": {
+            "subsystem.m1a2_sep.main_ap_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:120mm_m256_regen_ammo_rack",
               "belt_definition": {
@@ -414,19 +414,19 @@
                 "ammo_120mm"
               ]
             },
-            "subsystem.m1a2_sep.coax_controller": {
+            "subsystem.m1a2_sep.antimateriel_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "m1a2_sep:coax_controller",
               "control_outputs": {
                 "weapon.mg.m2hb": [
-                  "subsystem.m1a2_sep.coax_launcher"
+                  "subsystem.m1a2_sep.antimateriel_launcher"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_coax_feed",
               "third_hud_layout": "m1a2_sep:m1a2_coax_feed_third",
               "scope_hud_layout": "m1a2_sep:m1a2_coax_feed"
             },
-            "subsystem.m1a2_sep.coax_loader": {
+            "subsystem.m1a2_sep.antimateriel_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
@@ -443,7 +443,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.m1a2_sep.coax_autoloader": {
+            "subsystem.m1a2_sep.antimateriel_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_m2hb_ammo_loader",
               "ammo_discovery_inputs": [
@@ -451,11 +451,11 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.coax_loader"
+                  "subsystem.m1a2_sep.antimateriel_rack"
                 ]
               }
             },
-            "subsystem.m1a2_sep.ammo_loader_he": {
+            "subsystem.m1a2_sep.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:120mm_m256_regen_ammo_rack",
               "belt_definition": {
@@ -472,19 +472,19 @@
                 "ammo_120mm"
               ]
             },
-            "subsystem.m1a2_sep.coax_762_controller": {
+            "subsystem.m1a2_sep.coax_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "m1a2_sep:coax_762_controller",
               "control_outputs": {
                 "weapon.mg.m240": [
-                  "subsystem.m1a2_sep.coax_762_launcher"
+                  "subsystem.m1a2_sep.coax_launcher"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_coax_762_feed",
               "third_hud_layout": "m1a2_sep:m1a2_coax_762_feed_third",
               "scope_hud_layout": "m1a2_sep:m1a2_coax_762_feed"
             },
-            "subsystem.m1a2_sep.coax_762_loader": {
+            "subsystem.m1a2_sep.coax_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_m240_regen_ammo_rack",
               "belt_definition": {
@@ -501,7 +501,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.m1a2_sep.coax_762_autoloader": {
+            "subsystem.m1a2_sep.coax_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_m240_ammo_loader",
               "ammo_discovery_inputs": [
@@ -509,21 +509,21 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.m1a2_sep.coax_762_loader"
+                  "subsystem.m1a2_sep.coax_rack"
                 ]
               }
             },
-            "subsystem.m1a2_sep.gunner_sight": {
+            "subsystem.m1a2_sep.gunner_optics": {
               "type": "machine_max:camera",
               "definition": "m1a2_sep:m1a2_gunner_sight",
               "locator": "gunner_optic"
             },
-            "subsystem.m1a2_sep.gunner_sight_medium": {
+            "subsystem.m1a2_sep.gunner_medium_optics": {
               "type": "machine_max:camera",
               "definition": "m1a2_sep:m1a2_gunner_sight_medium",
               "locator": "gunner_optic"
             },
-            "subsystem.m1a2_sep.gunner_sight_high": {
+            "subsystem.m1a2_sep.gunner_high_optics": {
               "type": "machine_max:camera",
               "definition": "m1a2_sep:m1a2_gunner_sight_high",
               "locator": "gunner_optic"
@@ -555,21 +555,21 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.coax_launcher"
+              "subsystem": "subsystem.m1a2_sep.antimateriel_launcher"
             },
             "MM_CoaxBarrelHit": {
               "id": "part",
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.coax_launcher"
+              "subsystem": "subsystem.m1a2_sep.antimateriel_launcher"
             },
             "MM_Coax762Hit": {
               "id": "part",
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.coax_762_launcher"
+              "subsystem": "subsystem.m1a2_sep.coax_launcher"
             }
           },
           "connectors": {
@@ -589,29 +589,29 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.coax_launcher": {
+            "subsystem.m1a2_sep.antimateriel_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_m2hb_launcher",
               "locator": "coax_muzzle",
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.coax_autoloader"
+                  "subsystem.m1a2_sep.antimateriel_loader"
                 ]
               }
             },
-            "subsystem.m1a2_sep.coax_762_launcher": {
+            "subsystem.m1a2_sep.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_m240_launcher",
               "locator": "coax_762_muzzle",
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.m1a2_sep.coax_762_autoloader"
+                  "subsystem.m1a2_sep.coax_loader"
                 ]
               }
             }
           }
         },
-        "sub_part.m1a2_sep.port_mg_yaw": {
+        "sub_part.m1a2_sep.loader_mg_azimuth": {
           "start_bone": "MM_PortMG_Yaw",
           "end_bones": [
             "MM_PortMG_Pitch"
@@ -632,7 +632,7 @@
             }
           },
           "connectors": {
-            "connector.m1a2_sep.port_mg_turret": {
+            "connector.m1a2_sep.loader_mg_turret": {
               "locator": "port_mg_turret_mount",
               "definition": "machine_max:turret_azimuth_axis",
               "internal": true,
@@ -646,7 +646,7 @@
                 }
               }
             },
-            "connector.m1a2_sep.port_mg_elevation": {
+            "connector.m1a2_sep.loader_mg_elevation": {
               "locator": "port_mg_elevation",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -662,32 +662,32 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.port_mg_yaw_driver": {
+            "subsystem.m1a2_sep.loader_mg_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:port_mg_yaw_driver",
-              "connector": "connector.m1a2_sep.port_mg_turret"
+              "connector": "connector.m1a2_sep.loader_mg_turret"
             },
-            "subsystem.m1a2_sep.port_mg_pitch_driver": {
+            "subsystem.m1a2_sep.loader_mg_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:port_mg_pitch_driver",
-              "connector": "connector.m1a2_sep.port_mg_elevation"
+              "connector": "connector.m1a2_sep.loader_mg_elevation"
             },
-            "subsystem.m1a2_sep.port_mg_controller": {
+            "subsystem.m1a2_sep.loader_mg_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "m1a2_sep:port_mg_controller",
               "control_outputs": {
                 "aim_drive_port_mg": [
-                  "subsystem.m1a2_sep.port_mg_yaw_driver",
-                  "subsystem.m1a2_sep.port_mg_pitch_driver"
+                  "subsystem.m1a2_sep.loader_mg_azimuth_driver",
+                  "subsystem.m1a2_sep.loader_mg_elevation_driver"
                 ],
                 "weapon.mg.m240": [
-                  "subsystem.m1a2_sep.port_mg_launcher"
+                  "subsystem.m1a2_sep.loader_mg_launcher"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_m240_feed",
               "third_hud_layout": "m1a2_sep:m1a2_m240_feed"
             },
-            "subsystem.m1a2_sep.port_mg_loader": {
+            "subsystem.m1a2_sep.loader_mg_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_m240_regen_ammo_rack",
               "belt_definition": {
@@ -704,7 +704,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.m1a2_sep.port_mg_autoloader": {
+            "subsystem.m1a2_sep.loader_mg_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_m240_ammo_loader",
               "ammo_discovery_inputs": [
@@ -712,13 +712,13 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.m1a2_sep.port_mg_loader"
+                  "subsystem.m1a2_sep.loader_mg_rack"
                 ]
               }
             }
           }
         },
-        "sub_part.m1a2_sep.port_mg_pitch": {
+        "sub_part.m1a2_sep.loader_mg_elevation": {
           "start_bone": "MM_PortMG_Pitch",
           "end_bones": [],
           "mass": 40,
@@ -734,11 +734,11 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.port_mg_launcher"
+              "subsystem": "subsystem.m1a2_sep.loader_mg_launcher"
             }
           },
           "connectors": {
-            "connector.m1a2_sep.port_mg_pitch_lock": {
+            "connector.m1a2_sep.loader_mg_elevation_lock": {
               "locator": "port_mg_pitch_lock",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -746,24 +746,24 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.port_mg_launcher": {
+            "subsystem.m1a2_sep.loader_mg_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_m240_launcher",
               "locator": "port_mg_muzzle",
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.m1a2_sep.port_mg_autoloader"
+                  "subsystem.m1a2_sep.loader_mg_loader"
                 ]
               }
             },
-            "subsystem.m1a2_sep.port_mg_sight": {
+            "subsystem.m1a2_sep.loader_mg_sight": {
               "type": "machine_max:sight",
               "definition": "m1a2_sep:port_mg_sight",
               "locator": "port_mg_optic"
             }
           }
         },
-        "sub_part.m1a2_sep.aft_mg_yaw": {
+        "sub_part.m1a2_sep.aa_azimuth": {
           "start_bone": "bone8",
           "end_bones": [
             "MM_AftMG_Pitch"
@@ -784,18 +784,18 @@
             }
           },
           "interact_boxes": {
-            "interact.m1a2_sep.aft_mg": {
+            "interact.m1a2_sep.commander_external": {
               "bone": "MM_Interact_aft_mg",
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.aft_mg_seat"
+                  "subsystem.m1a2_sep.aa_seat"
                 ]
               }
             }
           },
           "connectors": {
-            "connector.m1a2_sep.aft_mg_turret": {
+            "connector.machine_max.aa_turret": {
               "locator": "aft_mg_turret_mount",
               "definition": "machine_max:turret_azimuth_axis",
               "internal": true,
@@ -809,7 +809,7 @@
                 }
               }
             },
-            "connector.m1a2_sep.aft_mg_elevation": {
+            "connector.machine_max.aa_elevation": {
               "locator": "aft_mg_elevation",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
@@ -825,32 +825,32 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.aft_mg_yaw_driver": {
+            "subsystem.m1a2_sep.aa_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:aft_mg_yaw_driver",
-              "connector": "connector.m1a2_sep.aft_mg_turret"
+              "connector": "connector.machine_max.aa_turret"
             },
-            "subsystem.m1a2_sep.aft_mg_pitch_driver": {
+            "subsystem.m1a2_sep.aa_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:aft_mg_pitch_driver",
-              "connector": "connector.m1a2_sep.aft_mg_elevation"
+              "connector": "connector.machine_max.aa_elevation"
             },
-            "subsystem.m1a2_sep.aft_mg_controller": {
+            "subsystem.m1a2_sep.aa_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "m1a2_sep:aft_mg_controller",
               "control_outputs": {
                 "aim_drive_aft_mg": [
-                  "subsystem.m1a2_sep.aft_mg_yaw_driver",
-                  "subsystem.m1a2_sep.aft_mg_pitch_driver"
+                  "subsystem.m1a2_sep.aa_azimuth_driver",
+                  "subsystem.m1a2_sep.aa_elevation_driver"
                 ],
                 "weapon.mg.m2hb": [
-                  "subsystem.m1a2_sep.aft_mg_launcher"
+                  "subsystem.m1a2_sep.aa_launcher"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
               "third_hud_layout": "m1a2_sep:m1a2_m2_feed"
             },
-            "subsystem.m1a2_sep.aft_mg_loader": {
+            "subsystem.m1a2_sep.aa_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_m2hb_regen_ammo_rack",
               "belt_definition": {
@@ -867,7 +867,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.m1a2_sep.aft_mg_autoloader": {
+            "subsystem.m1a2_sep.aa_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_m2hb_ammo_loader",
               "ammo_discovery_inputs": [
@@ -875,11 +875,11 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.aft_mg_loader"
+                  "subsystem.m1a2_sep.aa_rack"
                 ]
               }
             },
-            "subsystem.m1a2_sep.aft_mg_seat": {
+            "subsystem.m1a2_sep.aa_seat": {
               "type": "machine_max:seat",
               "definition": "m1a2_sep:external_mg_seat",
               "locator": "aft_mg_seat",
@@ -900,7 +900,7 @@
             }
           }
         },
-        "sub_part.m1a2_sep.aft_mg_pitch": {
+        "sub_part.m1a2_sep.aa_elevation": {
           "start_bone": "MM_AftMG_Pitch",
           "end_bones": [],
           "mass": 40,
@@ -916,11 +916,11 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.aft_mg_launcher"
+              "subsystem": "subsystem.m1a2_sep.aa_launcher"
             }
           },
           "connectors": {
-            "connector.m1a2_sep.aft_mg_pitch_lock": {
+            "connector.machine_max.aa_elevation_lock": {
               "locator": "aft_mg_pitch_lock",
               "definition": "machine_max:fixed_back",
               "internal": true,
@@ -928,17 +928,17 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.aft_mg_launcher": {
+            "subsystem.m1a2_sep.aa_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_m2hb_launcher",
               "locator": "aft_mg_muzzle",
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.m1a2_sep.aft_mg_autoloader"
+                  "subsystem.m1a2_sep.aa_loader"
                 ]
               }
             },
-            "subsystem.m1a2_sep.aft_mg_sight": {
+            "subsystem.m1a2_sep.aa_sight": {
               "type": "machine_max:sight",
               "definition": "m1a2_sep:aft_mg_sight",
               "locator": "aft_mg_optic"
@@ -962,7 +962,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 25,
-              "subsystem": "subsystem.m1a2_sep.launcher"
+              "subsystem": "subsystem.m1a2_sep.main_launcher"
             }
           },
           "connectors": {
@@ -974,7 +974,7 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.launcher": {
+            "subsystem.m1a2_sep.main_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:120mm_m256_launcher",
               "locator": "main_gun_muzzle",
@@ -994,7 +994,7 @@
             }
           }
         },
-        "sub_part.m1a2_sep.citv_yaw": {
+        "sub_part.m1a2_sep.citv_azimuth": {
           "start_bone": "MM_CITV_Yaw",
           "end_bones": [],
           "mass": 10,
@@ -1010,7 +1010,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.m1a2_sep.commander_citv"
+              "subsystem": "subsystem.m1a2_sep.citv_optics"
             }
           },
           "connectors": {
@@ -1030,12 +1030,12 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.commander_citv": {
+            "subsystem.m1a2_sep.citv_optics": {
               "type": "machine_max:camera",
               "definition": "m1a2_sep:m1a2_commander_citv",
               "locator": "commander_optic"
             },
-            "subsystem.m1a2_sep.citv_yaw_driver": {
+            "subsystem.m1a2_sep.citv_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "m1a2_sep:citv_yaw_driver",
               "connector": "connector.m1a2_sep.citv_turret"
@@ -1045,7 +1045,7 @@
               "definition": "m1a2_sep:citv_controller",
               "control_outputs": {
                 "aim_drive_citv": [
-                  "subsystem.m1a2_sep.citv_yaw_driver"
+                  "subsystem.m1a2_sep.citv_azimuth_driver"
                 ]
               }
             }

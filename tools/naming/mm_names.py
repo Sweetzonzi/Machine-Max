@@ -8,12 +8,16 @@
     python tools/naming/mm_names.py rename --map m.json    # 预演改名，不写盘
     python tools/naming/mm_names.py rename --map m.json --apply
 
-映射文件是一个扁平 JSON 对象，键为完整旧键、值为完整新键：
+映射文件是一个扁平 JSON 对象，键为完整旧键、值为完整新键（下例用占位名，避免示例本身
+随迁移过时）：
 
     {
-      "subsystem.2s38.pktm": "subsystem.2s38.coax",
-      "subsystem.2s38.pktm_ammo_loader": "subsystem.2s38.coax_rack"
+      "subsystem.<命名空间>.旧名": "subsystem.<命名空间>.新名",
+      "connector.<车包命名空间>.旧名": "connector.machine_max.新名"
     }
+
+跨命名空间改名（把接口通名收进 `machine_max`）同样写在映射里；语言键需要跟着搬到目标
+命名空间的语言文件，`rename` 不代劳这一点。
 
 改名按文本替换执行，因此保留 JSONC 注释、缩进与原文件的换行风格。替换带边界断言，
 `subsystem.x.foo` 不会命中 `subsystem.x.foo_bar`。
@@ -203,6 +207,10 @@ def rule_suffix(full, type_name=None):
     if not suffix:
         return False
     name = tail(full)
+    # 编号跟在它所区分的名词之后（3.2），因此判后缀前先剥掉末尾的 `_<数字>`：
+    # `left_atgm_launcher_01` 判作 `left_atgm_launcher`，`passenger_seat_3` 判作
+    # `passenger_seat`（3.4 的 `passenger_seat_<编号>` 一行）。
+    name = re.sub(r"_\d+$", "", name)
     if name == short:  # 裸名，只能在唯一件上出现，不由本规则判定
         return False
     return not name.endswith(suffix)

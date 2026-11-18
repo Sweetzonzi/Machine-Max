@@ -51,16 +51,16 @@ public final class AmmoJobClaimGameTest {
     private static final String BATCH = "mmAmmoJobClaim";
     private static final String PART = "t90a:t90a_turret";
     private static final String VARIANT = "standard";
-    private static final String LAUNCHER = "subsystem.t90a.launcher";
+    private static final String LAUNCHER = "subsystem.t90a.main_launcher";
     private static final String OTHER_LAUNCHER = "subsystem.t90a.coax_launcher";
-    private static final String AUTOLOADER = "subsystem.t90a.ammo_autoloader";
-    private static final String RACK = "subsystem.t90a.ammo_loader";
+    private static final String AUTOLOADER = "subsystem.t90a.main_loader";
+    private static final String RACK = "subsystem.t90a.main_ap_rack";
 
     /** 人力直取用例的夹具：M1A2 SEP 炮塔的 120mm 炮，它的自动装弹机已从内容里移除 */
     private static final String MANUAL_PART = "m1a2_sep:m1a2_turret";
     private static final String MANUAL_VARIANT = "desert";
-    private static final String MANUAL_LAUNCHER = "subsystem.m1a2_sep.launcher";
-    private static final String MANUAL_RACK = "subsystem.m1a2_sep.ammo_loader";
+    private static final String MANUAL_LAUNCHER = "subsystem.m1a2_sep.main_launcher";
+    private static final String MANUAL_RACK = "subsystem.m1a2_sep.main_ap_rack";
     private static final String MANUAL_SEAT = "subsystem.m1a2_sep.loader_seat";
 
     private AmmoJobClaimGameTest() {

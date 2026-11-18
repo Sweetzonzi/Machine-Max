@@ -653,7 +653,7 @@
         },
 
 
-        "sub_part.m1a2_sep.port_mg_yaw": {
+        "sub_part.m1a2_sep.loader_mg_azimuth": {
           "id": 24,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -682,7 +682,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.port_mg_pitch": {
+        "sub_part.m1a2_sep.loader_mg_elevation": {
           "id": 25,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -711,7 +711,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.aft_mg_yaw": {
+        "sub_part.m1a2_sep.aa_azimuth": {
           "id": 26,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -740,7 +740,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.aft_mg_pitch": {
+        "sub_part.m1a2_sep.aa_elevation": {
           "id": 27,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -798,7 +798,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.citv_yaw": {
+        "sub_part.m1a2_sep.citv_azimuth": {
           "id": 35,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -840,7 +840,7 @@
       "shared_durability_ratio": 1,
       "texture_name": "default",
       "sub_parts": {
-        "sub_part.m1a2_sep.rws_yaw": {
+        "sub_part.m1a2_sep.rws_azimuth": {
           "id": 22,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -869,7 +869,7 @@
           "connector_data": {},
           "subsystem_data": {}
         },
-        "sub_part.m1a2_sep.rws_pitch": {
+        "sub_part.m1a2_sep.rws_elevation": {
           "id": 23,
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
@@ -1242,7 +1242,7 @@
     },
     {
       "partUuidA": "6e79b1a2-1200-4a21-9e65-202610270007",
-      "subPartNameA": "sub_part.m1a2_sep.rws_yaw",
+      "subPartNameA": "sub_part.m1a2_sep.rws_azimuth",
       "advConnectorName": "connector.m1a2_sep.rws_turret",
       "posRotA": {
         "position": [
