@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import net.minecraft.network.chat.Component;
@@ -66,6 +67,8 @@ public class SprayCanItem extends Item implements ICustomModelItem {
     public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
+            // 座位上禁止使用物品时不给喷涂提示
+            if (!SeatSubsystem.canUseItems(player)) return;
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart part = eyesight.getSubPart();
             if (part != null) {//提示信息

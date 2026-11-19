@@ -99,6 +99,19 @@ public class SeatSubsystem extends AbstractControllableSubsystem implements IHud
         this.disableVanillaActions = !this.attr.isAllowUseItems();
     }
 
+    /**
+     * 该玩家此刻能否使用物品：没有座位控制（不在载具座位上）时恒为 true；
+     * 坐在座位上时取该座位的 {@code allow_use_items}（型号默认值叠加安装级覆盖）。
+     * <p><b>调用线程：</b>主线程（客户端与服务端）。</p>
+     */
+    public static boolean canUseItems(Player player) {
+        if (player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+            return seat.attr.isAllowUseItems();
+        }
+        return true;
+    }
+
     @Override
     public void onDetach() {
         super.onDetach();

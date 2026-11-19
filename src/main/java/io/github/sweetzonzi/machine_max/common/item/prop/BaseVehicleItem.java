@@ -13,6 +13,7 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
@@ -144,6 +145,9 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         if (level.isClientSide) {
             try {
+                // 座位上禁止使用物品时不重建投影与包围盒：渲染侧同一判据，
+                // 这里提前返回只省掉每 tick 的射线与物理接触测试
+                if (entity instanceof Player player && !SeatSubsystem.canUseItems(player)) return;
                 VehicleData vehicleData = getVehicleData(stack);
                 if (vehicleData == null) return;
                 if (isSelected) {

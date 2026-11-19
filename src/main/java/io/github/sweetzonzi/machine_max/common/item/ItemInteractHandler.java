@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.prop.FittingItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
@@ -48,11 +49,58 @@ public class ItemInteractHandler {
     private static final double MAX_INTERACTION_DISTANCE = 6.0;
 
     /**
+     * 座位上禁止使用物品时，物品右键在两端都拒绝。
+     *
+     * <p>客户端的 {@code RawInputHandler} 只在原版按键触发的路径上取消
+     * {@code InteractionKeyMappingTriggered}；服务端收到 {@code ServerboundUseItemPacket} 后仍会
+     * 照常调用 {@link ItemStack#use}。本事件在 {@code ServerPlayerGameMode#useItem} 调用
+     * {@code use} 之前发出，取消后直接返回取消结果，物品不会被使用；客户端侧的同一取消
+     * 顺带压掉本地预测。</p>
+     */
+    @SubscribeEvent
+    private static void blockItemUseOnSeat(PlayerInteractEvent.RightClickItem event) {
+        if (SeatSubsystem.canUseItems(event.getEntity())) return;
+        event.setCanceled(true);
+    }
+
+    /**
+     * 座位上禁止使用物品时，对准方块的右键也拒绝：放置方块、骨粉、打火石等都走
+     * {@code useItemOn}，事件在服务端同样早于 {@code Block#useItemOn} / {@code Item#useOn}。
+     * <p>取消结果取 {@link InteractionResult#FAIL}：客户端 {@code startUseItem} 遇到 FAIL 会直接
+     * 收手，不再滑到“空中使用”那条路径。</p>
+     */
+    @SubscribeEvent
+    private static void blockBlockUseOnSeat(PlayerInteractEvent.RightClickBlock event) {
+        if (SeatSubsystem.canUseItems(event.getEntity())) return;
+        event.setCancellationResult(InteractionResult.FAIL);
+        event.setCanceled(true);
+    }
+
+    /**
+     * 座位上禁止使用物品时，对准实体的右键同样拒绝：实体自身交互与物品交互都在
+     * {@code Player#interactOn} 里被这条事件挡住。
+     */
+    @SubscribeEvent
+    private static void blockEntityInteractOnSeat(PlayerInteractEvent.EntityInteract event) {
+        if (SeatSubsystem.canUseItems(event.getEntity())) return;
+        event.setCanceled(true);
+    }
+
+    /** 带局部命中点的实体交互是另一条事件，与 {@link PlayerInteractEvent.EntityInteract} 互不替代。 */
+    @SubscribeEvent
+    private static void blockEntityInteractSpecificOnSeat(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (SeatSubsystem.canUseItems(event.getEntity())) return;
+        event.setCanceled(true);
+    }
+
+    /**
      * 命名牌与载具互动可修改载具名称
      */
     @SubscribeEvent
     private static void interact(PlayerInteractEvent.EntityInteract event) {
         Player player = event.getEntity();
+        // 事件即使被座位门禁取消，其他监听器仍会继续执行，命名牌这里按同一判据放行
+        if (!SeatSubsystem.canUseItems(player)) return;
         ItemStack stack = player.getMainHandItem();
         if (stack.getItem() instanceof NameTagItem) {
             if (event.getTarget() instanceof MMPartEntity partEntity && partEntity.subPart != null) {
@@ -78,6 +126,8 @@ public class ItemInteractHandler {
     @SubscribeEvent
     private static void interactWithTrackItem(PlayerInteractEvent.EntityInteract event) {
         Player player = event.getEntity();
+        // 座位门禁已取消该事件时不再改写取消结果，免得把拒绝覆盖成一次成功挥手
+        if (!SeatSubsystem.canUseItems(player)) return;
         if (!(player.getMainHandItem().getItem() instanceof TrackItem)) return;
         if (!(event.getTarget() instanceof MMPartEntity)) return;
         event.setCancellationResult(InteractionResult.sidedSuccess(player.level().isClientSide));

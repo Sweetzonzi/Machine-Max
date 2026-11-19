@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.prop.FittingItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.TrackItem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.TrackType;
@@ -128,6 +129,11 @@ public final class TrackLayingClient {
             lastLevel = player.level();
             clear();
         }
+        // 座位上禁止使用物品时不画预览；草稿保留，离座后仍可继续
+        if (!SeatSubsystem.canUseItems(player)) {
+            preview = null;
+            return;
+        }
         Draft current = draft;
         if (current == null) {
             preview = null;
@@ -150,6 +156,8 @@ public final class TrackLayingClient {
     private static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         Player player = event.getEntity();
         if (!player.level().isClientSide) return;
+        // 座位上禁止使用物品时既不推进铺设，也不给任何逐步提示
+        if (!SeatSubsystem.canUseItems(player)) return;
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof TrackItem)) return;
         if (!(event.getTarget() instanceof MMPartEntity)) return;

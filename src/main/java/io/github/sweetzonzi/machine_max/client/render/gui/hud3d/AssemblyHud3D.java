@@ -23,6 +23,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BasicSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
@@ -113,7 +114,8 @@ public class AssemblyHud3D implements IHud3DElement {
     @Override
     public boolean shouldRender(LocalPlayer player) {
         // 检查视线是否聚焦在部件上
-        boolean flag = (player.getMainHandItem().getItem() instanceof WeldingTorchItem
+        boolean flag = SeatSubsystem.canUseItems(player)
+                && (player.getMainHandItem().getItem() instanceof WeldingTorchItem
                 || player.getOffhandItem().getItem() instanceof WeldingTorchItem
                 || player.getMainHandItem().getItem() instanceof CrowbarItem
                 || player.getOffhandItem().getItem() instanceof CrowbarItem);
@@ -127,7 +129,8 @@ public class AssemblyHud3D implements IHud3DElement {
         // 获取数据上下文
         float currentTime = TimeSource.getTimeSeconds(ctx.mc, ctx.partialTicks);
         LivingEntityEyesightAttachment eyesight = ctx.player.getData(MMAttachments.getENTITY_EYESIGHT());
-        boolean flag = (ctx.player.getMainHandItem().getItem() instanceof WeldingTorchItem
+        boolean flag = SeatSubsystem.canUseItems(ctx.player)
+                && (ctx.player.getMainHandItem().getItem() instanceof WeldingTorchItem
                 || ctx.player.getOffhandItem().getItem() instanceof WeldingTorchItem
                 || ctx.player.getMainHandItem().getItem() instanceof CrowbarItem
                 || ctx.player.getOffhandItem().getItem() instanceof CrowbarItem);
