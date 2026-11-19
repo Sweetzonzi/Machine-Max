@@ -58,7 +58,7 @@
   "sub_part.m1a2_sep.rws_elevation": "遥控武器站枪体",
   "connector.m1a2_sep.rws_elevation_lock": "遥控武器站枪体连接点",
   "subsystem.m1a2_sep.rws_launcher": "遥控武器站发射器",
-  "subsystem.m1a2_sep.rws_sight": "遥控武器站瞄具",
+  "subsystem.m1a2_sep.rws_sight": "遥控武器站瞄准镜",
   "sub_part.m1a2_sep.loader_mg_azimuth": "装填手机枪枪架",
   "connector.m1a2_sep.loader_mg_turret": "装填手机枪回转轴",
   "connector.m1a2_sep.loader_mg_elevation": "装填手机枪俯仰轴",

@@ -56,7 +56,7 @@
   "subsystem.t90a.aa_rack": "高射机枪弹药架",
   "subsystem.t90a.aa_loader": "高射机枪自动装弹机",
   "sub_part.t90a.aa_elevation": "高射机枪俯仰座",
-  "subsystem.t90a.aa_launcher": "12.7 毫米 6P49 Kord 车顶机枪",
+  "subsystem.t90a.aa_launcher": "12.7 毫米 6P49 Kord 高射机枪",
   "part.t90a.t90a_turret_era": "T-90A 炮塔独立爆反组件",
   "t90a.t90a_turret_era": "T-90A 炮塔独立爆反组件",
   "research.t90a.t90a_turret_era.desc": "解锁T-90A 炮塔独立爆反组件制造。",
