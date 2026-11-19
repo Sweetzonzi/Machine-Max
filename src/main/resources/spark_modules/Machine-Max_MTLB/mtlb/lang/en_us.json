@@ -48,15 +48,6 @@
   "notes.mtlb.blueprint.mtlb_pkt": "Military Vehicle Blueprint",
   "author.mtlb.blueprint.mtlb_pkt": "TBD",
   "interact.mtlb.driver_hatch": "Enter Driver Seat",
-  "sub_part.mtlb.gun": "Machine Gun",
-  "subsystem.mtlb.azimuth_driver": "Azimuth Driver",
-  "subsystem.mtlb.elevation_driver": "Elevation Driver",
-  "subsystem.mtlb.commander_seat": "Commander Seat",
-  "subsystem.mtlb.driver_seat": "Driver Seat",
-  "subsystem.mtlb.engine": "Engine",
-  "subsystem.mtlb.gearbox": "Gearbox",
-  "subsystem.mtlb.transmission": "Transmission",
-  "subsystem.mtlb.track_controller": "Track Drive Controller",
-  "subsystem.mtlb.track_left": "Left Track",
-  "subsystem.mtlb.track_right": "Right Track"
+  "sub_part.mtlb.gun": "Machine Gun"
 }
+

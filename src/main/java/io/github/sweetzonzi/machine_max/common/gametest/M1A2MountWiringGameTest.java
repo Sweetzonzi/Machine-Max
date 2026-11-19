@@ -60,18 +60,18 @@ public final class M1A2MountWiringGameTest {
             new Mount("subsystem.m1a2_sep.antimateriel_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.antimateriel_launcher",
                     "subsystem.m1a2_sep.antimateriel_loader", "ammo_12_7mm"),
-            new Mount("subsystem.m1a2_sep.coax_controller", "weapon.mg.m240",
-                    "subsystem.m1a2_sep.coax_launcher",
-                    "subsystem.m1a2_sep.coax_loader", "ammo_7_62mm"),
+            new Mount("subsystem.machine_max.coax_controller", "weapon.mg.m240",
+                    "subsystem.machine_max.coax_launcher",
+                    "subsystem.machine_max.coax_loader", "ammo_7_62mm"),
             new Mount("subsystem.m1a2_sep.rws_controller", "weapon.mg.m2hb",
                     "subsystem.m1a2_sep.rws_launcher",
                     "subsystem.m1a2_sep.rws_loader", "ammo_12_7mm"),
             new Mount("subsystem.m1a2_sep.loader_mg_controller", "weapon.mg.m240",
                     "subsystem.m1a2_sep.loader_mg_launcher",
                     "subsystem.m1a2_sep.loader_mg_loader", "ammo_7_62mm"),
-            new Mount("subsystem.m1a2_sep.aa_controller", "weapon.mg.m2hb",
-                    "subsystem.m1a2_sep.aa_launcher",
-                    "subsystem.m1a2_sep.aa_loader", "ammo_12_7mm"));
+            new Mount("subsystem.machine_max.aa_controller", "weapon.mg.m2hb",
+                    "subsystem.machine_max.aa_launcher",
+                    "subsystem.machine_max.aa_loader", "ammo_12_7mm"));
 
     private M1A2MountWiringGameTest() {
     }
@@ -201,7 +201,7 @@ public final class M1A2MountWiringGameTest {
             byName.putAll(collectSubsystems(rws));
             AbstractSubsystem seat = require(helper, byName, "subsystem.m1a2_sep.commander_seat");
             WeaponControllerSubsystem mainGun =
-                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.main_controller");
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.machine_max.main_controller");
             WeaponControllerSubsystem crows =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.rws_controller");
 
@@ -227,7 +227,7 @@ public final class M1A2MountWiringGameTest {
             helper.assertTrue(groups.groups.size() == 2,
                     "车长预设只应有备用火控与超控两个子组，实际 " + groups.groups.size());
             WeaponControllerSubsystem coax762 =
-                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.coax_controller");
+                    (WeaponControllerSubsystem) require(helper, byName, "subsystem.machine_max.coax_controller");
             WeaponControllerSubsystem csamm =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.m1a2_sep.antimateriel_controller");
             List<WeaponControllerSubsystem> allWeapons = List.of(crows, mainGun, coax762, csamm);

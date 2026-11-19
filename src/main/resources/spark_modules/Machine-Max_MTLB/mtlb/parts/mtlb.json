@@ -592,7 +592,7 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 5,
-            "subsystem": "subsystem.mtlb.engine"
+            "subsystem": "subsystem.machine_max.engine"
           },
           "HullSideRightLower": {
             "id": "part",
@@ -639,7 +639,7 @@
             "bone": "DriverHatchInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.mtlb.driver_seat"
+                "subsystem.machine_max.driver_seat"
               ]
             }
           },
@@ -647,7 +647,7 @@
             "bone": "CommanderHatchInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.mtlb.commander_seat"
+                "subsystem.machine_max.commander_seat"
               ]
             }
           },
@@ -774,10 +774,10 @@
           }
         },
         "subsystems": {
-          "subsystem.mtlb.engine": {
+          "subsystem.machine_max.engine": {
             "type": "machine_max:engine",
             "definition": "mtlb:mtlb_engine",
-            "power_output": "subsystem.mtlb.gearbox",
+            "power_output": "subsystem.machine_max.gearbox",
             "speed_outputs": {
               "engine_speed": [
                 "global",
@@ -785,10 +785,10 @@
               ]
             }
           },
-          "subsystem.mtlb.gearbox": {
+          "subsystem.machine_max.gearbox": {
             "type": "machine_max:gearbox",
             "definition": "mtlb:mtlb_gearbox",
-            "power_output": "subsystem.mtlb.transmission",
+            "power_output": "subsystem.machine_max.transmission",
             "gear_outputs": {
               "gear": [
                 "local",
@@ -796,15 +796,15 @@
               ]
             }
           },
-          "subsystem.mtlb.transmission": {
+          "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission",
             "definition": "mtlb:mtlb_transmission",
             "power_outputs": {
-              "subsystem.mtlb.track_left": 1,
-              "subsystem.mtlb.track_right": 1
+              "subsystem.machine_max.left_track": 1,
+              "subsystem.machine_max.right_track": 1
             }
           },
-          "subsystem.mtlb.driver_seat": {
+          "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_driver_seat",
             "locator": "driver_seat",
@@ -818,7 +818,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.commander_seat": {
+          "subsystem.machine_max.commander_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
@@ -944,15 +944,15 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.track_controller": {
+          "subsystem.machine_max.track_controller": {
             "type": "machine_max:track_controller",
             "definition": "machine_max:track_controller_standard",
             "control_outputs": {
               "car_control": [
-                "subsystem.mtlb.engine",
-                "subsystem.mtlb.gearbox",
-                "subsystem.mtlb.track_left",
-                "subsystem.mtlb.track_right"
+                "subsystem.machine_max.engine",
+                "subsystem.machine_max.gearbox",
+                "subsystem.machine_max.left_track",
+                "subsystem.machine_max.right_track"
               ]
             },
             "speed_outputs": {
@@ -962,7 +962,7 @@
               ]
             }
           },
-          "subsystem.mtlb.track_left": {
+          "subsystem.machine_max.left_track": {
             "type": "machine_max:track_drive",
             "definition": "mtlb:mtlb_track_drive",
             "connector": "connector.machine_max.hull_left_sprocket_wheel",
@@ -979,7 +979,7 @@
               ]
             }
           },
-          "subsystem.mtlb.track_right": {
+          "subsystem.machine_max.right_track": {
             "type": "machine_max:track_drive",
             "definition": "mtlb:mtlb_track_drive",
             "connector": "connector.machine_max.hull_right_sprocket_wheel",

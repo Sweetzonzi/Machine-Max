@@ -518,17 +518,17 @@
             }
           },
           "subsystem_data": {
-            "subsystem.2s38.elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "destroyed": 0,
               "brake_yaw": -3.87418E-7,
               "brake_pitch": 2.549962E-7,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.commander_optics": {
+            "subsystem.machine_max.commander_optics": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.main_ap_rack": {
+            "subsystem.machine_max.main_ap_rack": {
               "ammo_count": 74,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -537,14 +537,14 @@
               "regen_progress": 8.702278E-6,
               "batch_elapsed": 0
             },
-            "subsystem.2s38.main_ap_loader": {
+            "subsystem.machine_max.main_ap_loader": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.coax_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.main_controller": {
+            "subsystem.machine_max.main_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -554,7 +554,7 @@
               "brake_pitch": 2.8351076E-7,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.main_he_rack": {
+            "subsystem.machine_max.main_he_rack": {
               "ammo_count": 74,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -563,16 +563,16 @@
               "regen_progress": 8.821487E-6,
               "batch_elapsed": 0
             },
-            "subsystem.2s38.main_he_loader": {
+            "subsystem.machine_max.main_he_loader": {
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.azimuth_driver": {
+            "subsystem.machine_max.azimuth_driver": {
               "destroyed": 0,
               "brake_yaw": -8.2326125E-8,
               "brake_pitch": -6.266027E-9,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.gunner_optics": {
+            "subsystem.machine_max.gunner_optics": {
               "destroyed": 0,
               "durability_ratio": 1.0
             }
@@ -609,7 +609,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.2s38.main_launcher": {
+            "subsystem.machine_max.main_launcher": {
               "chambered_type": "machine_max:57mm_br281_ap",
               "modules": {
                 "barrel": {
@@ -656,7 +656,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.2s38.coax_launcher": {
+            "subsystem.machine_max.coax_launcher": {
               "chambered_type": "machine_max:7_62x54r_b32_ap",
               "modules": {
                 "barrel": {
@@ -670,7 +670,7 @@
               },
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.coax_rack": {
+            "subsystem.machine_max.coax_rack": {
               "ammo_count": 1999,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -679,7 +679,7 @@
               "regen_progress": 0.0,
               "batch_elapsed": 0
             },
-            "subsystem.2s38.coax_loader": {
+            "subsystem.machine_max.coax_loader": {
               "durability_ratio": 1.0
             }
           },
@@ -956,39 +956,39 @@
             }
           },
           "subsystem_data": {
-            "subsystem.2s38.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.engine": {
+            "subsystem.machine_max.engine": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.track_left": {
+            "subsystem.machine_max.left_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.transmission": {
+            "subsystem.machine_max.transmission": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.track_right": {
+            "subsystem.machine_max.right_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             }

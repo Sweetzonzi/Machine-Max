@@ -203,35 +203,35 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.main_ap_rack"
+              "subsystem": "subsystem.machine_max.main_ap_rack"
             },
             "MM_AmmoCarouselRight": {
               "id": "2a46m_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.main_he_rack"
+              "subsystem": "subsystem.machine_max.main_he_rack"
             },
             "MM_Autoloader": {
               "id": "2a46m_autoloader",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.main_loader"
+              "subsystem": "subsystem.machine_max.main_loader"
             },
             "MM_AzimuthDrive": {
               "id": "azim",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.azimuth_driver"
+              "subsystem": "subsystem.machine_max.azimuth_driver"
             },
             "MM_AzimuthRace": {
               "id": "azim",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.azimuth_driver"
+              "subsystem": "subsystem.machine_max.azimuth_driver"
             }
           },
           "interact_boxes": {
@@ -240,25 +240,25 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.t90a.gunner_seat"
+                  "subsystem.machine_max.gunner_seat"
                 ]
               }
             },
-            "interact.t90a.commander": {
+            "interact.t90a.aa": {
               "bone": "MM_Interact_commander",
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.t90a.commander_seat"
+                  "subsystem.t90a.aa_seat"
                 ]
               }
             },
-            "interact.t90a.external_commander": {
+            "interact.t90a.commander": {
               "bone": "MM_Interact_external_commander",
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.t90a.external_commander_seat"
+                  "subsystem.machine_max.commander_seat"
                 ]
               }
             }
@@ -323,7 +323,7 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
@@ -341,7 +341,7 @@
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation"
             },
-            "subsystem.t90a.commander_seat": {
+            "subsystem.t90a.aa_seat": {
               "type": "machine_max:seat",
               "definition": "t90a:open_roof_seat",
               "locator": "commander_seat",
@@ -354,23 +354,23 @@
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_orientation_third"
             },
-            "subsystem.t90a.azimuth_driver": {
+            "subsystem.machine_max.azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:t90a_azimuth",
               "connector": "connector.machine_max.turret_hull_axis"
             },
-            "subsystem.t90a.elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:t90a_elevation",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.t90a.main_controller": {
+            "subsystem.machine_max.main_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
                 "weapon_control": [
-                  "subsystem.t90a.azimuth_driver",
-                  "subsystem.t90a.elevation_driver"
+                  "subsystem.machine_max.azimuth_driver",
+                  "subsystem.machine_max.elevation_driver"
                 ],
                 "weapon.gun.2a46m": [
                   "global"
@@ -380,7 +380,7 @@
               "third_hud_layout": "t90a:main_feed",
               "scope_hud_layout": "t90a:scope_main_feed"
             },
-            "subsystem.t90a.main_ap_rack": {
+            "subsystem.machine_max.main_ap_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
@@ -397,7 +397,7 @@
                 "ammo_125mm"
               ]
             },
-            "subsystem.t90a.main_loader": {
+            "subsystem.machine_max.main_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:125mm_2a46m_ammo_loader",
               "ammo_discovery_inputs": [
@@ -405,12 +405,12 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_125mm": [
-                  "subsystem.t90a.main_ap_rack",
-                  "subsystem.t90a.main_he_rack"
+                  "subsystem.machine_max.main_ap_rack",
+                  "subsystem.machine_max.main_he_rack"
                 ]
               }
             },
-            "subsystem.t90a.main_he_rack": {
+            "subsystem.machine_max.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:125mm_2a46m_regen_ammo_rack",
               "belt_definition": {
@@ -427,7 +427,7 @@
                 "ammo_125mm"
               ]
             },
-            "subsystem.t90a.coax_controller": {
+            "subsystem.machine_max.coax_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "t90a:coax_controller",
               "control_outputs": {
@@ -438,7 +438,7 @@
               "first_hud_layout": "t90a:coax_feed",
               "third_hud_layout": "t90a:coax_feed_third"
             },
-            "subsystem.t90a.coax_rack": {
+            "subsystem.machine_max.coax_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_pktm_regen_ammo_rack",
               "belt_definition": {
@@ -455,7 +455,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.t90a.coax_loader": {
+            "subsystem.machine_max.coax_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_pktm_ammo_loader",
               "ammo_discovery_inputs": [
@@ -463,18 +463,18 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.t90a.coax_rack"
+                  "subsystem.machine_max.coax_rack"
                 ]
               }
             },
-            "subsystem.t90a.external_commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
               "definition": "t90a:closed_commander_seat",
               "locator": "external_commander_seat",
               "control_group_preset": "t90a:t90a_observer",
               "camera_discovery_targets": {
                 "commander_day_sight": [
-                  "subsystem.t90a.commander_optics"
+                  "subsystem.machine_max.commander_optics"
                 ]
               },
               "dismount_locators": [
@@ -486,7 +486,7 @@
               "third_hud_layout": "t90a:t90a_ground_orientation",
               "allow_use_items": false
             },
-            "subsystem.t90a.commander_optics": {
+            "subsystem.machine_max.commander_optics": {
               "type": "machine_max:camera",
               "definition": "t90a:t90a_commander_day_sight",
               "locator": "commander_day_optic"
@@ -535,7 +535,7 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.coax_launcher": {
+            "subsystem.machine_max.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_pktm_launcher",
               "locator": "coax_muzzle",
@@ -545,7 +545,7 @@
                 ]
               }
             },
-            "subsystem.t90a.gunner_sight": {
+            "subsystem.machine_max.gunner_sight": {
               "type": "machine_max:sight",
               "definition": "t90a:t90a_gunner_sight",
               "locator": "gunner_optic"
@@ -604,23 +604,23 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.aa_azimuth_driver": {
+            "subsystem.machine_max.aa_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_yaw_driver",
               "connector": "connector.machine_max.aa_turret"
             },
-            "subsystem.t90a.aa_elevation_driver": {
+            "subsystem.machine_max.aa_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "t90a:aa_pitch_driver",
               "connector": "connector.machine_max.aa_elevation"
             },
-            "subsystem.t90a.aa_controller": {
+            "subsystem.machine_max.aa_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "t90a:aa_controller",
               "control_outputs": {
                 "aim_drive_aa": [
-                  "subsystem.t90a.aa_azimuth_driver",
-                  "subsystem.t90a.aa_elevation_driver"
+                  "subsystem.machine_max.aa_azimuth_driver",
+                  "subsystem.machine_max.aa_elevation_driver"
                 ],
                 "weapon.mg.nsvt": [
                   "global"
@@ -629,7 +629,7 @@
               "first_hud_layout": "t90a:aa_feed",
               "third_hud_layout": "t90a:aa_feed"
             },
-            "subsystem.t90a.aa_rack": {
+            "subsystem.machine_max.aa_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_nsvt_regen_ammo_rack",
               "belt_definition": {
@@ -646,7 +646,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.t90a.aa_loader": {
+            "subsystem.machine_max.aa_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_nsvt_ammo_loader",
               "ammo_discovery_inputs": [
@@ -654,7 +654,7 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.t90a.aa_rack"
+                  "subsystem.machine_max.aa_rack"
                 ]
               }
             }
@@ -694,7 +694,7 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.aa_launcher": {
+            "subsystem.machine_max.aa_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_nsvt_launcher",
               "locator": "mg_muzzle",
@@ -723,7 +723,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 35,
-              "subsystem": "subsystem.t90a.main_launcher"
+              "subsystem": "subsystem.machine_max.main_launcher"
             }
           },
           "connectors": {
@@ -735,7 +735,7 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.main_launcher": {
+            "subsystem.machine_max.main_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:125mm_2a46m_launcher",
               "locator": "main_muzzle",

@@ -50,12 +50,12 @@
           }
         },
         "subsystems": {
-          "subsystem.mtlb.azimuth_driver": {
+          "subsystem.machine_max.azimuth_driver": {
             "type": "machine_max:turret_driver",
             "definition": "machine_max:basic_manual_azimuth_driver",
             "connector": "connector.machine_max.turret_hull_axis"
           },
-          "subsystem.mtlb.elevation_driver": {
+          "subsystem.machine_max.elevation_driver": {
             "type": "machine_max:turret_driver",
             "definition": "machine_max:basic_manual_elevation_driver",
             "connector": "connector.machine_max.turret_gun_axis"

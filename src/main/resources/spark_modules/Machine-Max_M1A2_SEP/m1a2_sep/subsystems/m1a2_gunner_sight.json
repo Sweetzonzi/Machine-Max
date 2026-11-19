@@ -5,7 +5,7 @@
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
   "base_zoom": 3,
-  "max_zoom": 3,
+  "max_zoom": 12,
   "scope_hud_layout": "m1a2_sep:m1a2_gps",
   "discovery_inputs": [
     "gunner_sight"

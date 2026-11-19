@@ -79,7 +79,7 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.2s38.engine"
+              "subsystem": "subsystem.machine_max.engine"
             },
             "HullLeftArmor": {
               "id": "part",
@@ -106,7 +106,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.2s38.driver_seat"
+                  "subsystem.machine_max.driver_seat"
                 ]
               }
             },
@@ -115,7 +115,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.2s38.gunner_seat"
+                  "subsystem.machine_max.gunner_seat"
                 ]
               }
             },
@@ -124,7 +124,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.2s38.commander_seat"
+                  "subsystem.machine_max.commander_seat"
                 ]
               }
             }
@@ -301,10 +301,10 @@
             }
           },
           "subsystems": {
-            "subsystem.2s38.engine": {
+            "subsystem.machine_max.engine": {
               "type": "machine_max:engine",
               "definition": "2s38:2s38_engine",
-              "power_output": "subsystem.2s38.gearbox",
+              "power_output": "subsystem.machine_max.gearbox",
               "speed_outputs": {
                 "engine_speed": [
                   "global",
@@ -312,10 +312,10 @@
                 ]
               }
             },
-            "subsystem.2s38.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "type": "machine_max:gearbox",
               "definition": "2s38:2s38_gearbox",
-              "power_output": "subsystem.2s38.transmission",
+              "power_output": "subsystem.machine_max.transmission",
               "gear_outputs": {
                 "gear": [
                   "local",
@@ -323,23 +323,23 @@
                 ]
               }
             },
-            "subsystem.2s38.transmission": {
+            "subsystem.machine_max.transmission": {
               "type": "machine_max:transmission",
               "definition": "2s38:2s38_transmission",
               "power_outputs": {
-                "subsystem.2s38.track_left": 1,
-                "subsystem.2s38.track_right": 1
+                "subsystem.machine_max.left_track": 1,
+                "subsystem.machine_max.right_track": 1
               }
             },
-            "subsystem.2s38.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "type": "machine_max:track_controller",
               "definition": "machine_max:track_controller_standard",
               "control_outputs": {
                 "car_control": [
-                  "subsystem.2s38.engine",
-                  "subsystem.2s38.gearbox",
-                  "subsystem.2s38.track_left",
-                  "subsystem.2s38.track_right"
+                  "subsystem.machine_max.engine",
+                  "subsystem.machine_max.gearbox",
+                  "subsystem.machine_max.left_track",
+                  "subsystem.machine_max.right_track"
                 ]
               },
               "speed_outputs": {
@@ -349,7 +349,7 @@
                 ]
               }
             },
-            "subsystem.2s38.track_left": {
+            "subsystem.machine_max.left_track": {
               "type": "machine_max:track_drive",
               "definition": "2s38:2s38_track_drive",
               "connector": "connector.machine_max.hull_left_road_wheel_08",
@@ -366,7 +366,7 @@
                 ]
               }
             },
-            "subsystem.2s38.track_right": {
+            "subsystem.machine_max.right_track": {
               "type": "machine_max:track_drive",
               "definition": "2s38:2s38_track_drive",
               "connector": "connector.machine_max.hull_right_road_wheel_08",
@@ -383,7 +383,7 @@
                 ]
               }
             },
-            "subsystem.2s38.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_driver_seat",
               "locator": "driver_seat",
@@ -397,7 +397,7 @@
               "dismount_locators": [],
               "third_hud_layout": "machine_max:morden_ground_basic_third"
             },
-            "subsystem.2s38.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
@@ -416,7 +416,7 @@
               "dismount_locators": [],
               "third_hud_layout": "machine_max:morden_ground_basic_third"
             },
-            "subsystem.2s38.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",

@@ -33,10 +33,10 @@ public final class CameraDiscoveryGameTest {
         try {
             SubPart turret = part.subParts.get("sub_part.machine_max.main");
             SubPart gun = part.subParts.get("sub_part.t90a.gun");
-            var gunnerSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.gunner_seat");
-            var gunnerSight = (AbstractViewpointSubsystem) gun.findOwnSubsystem("subsystem.t90a.gunner_sight");
-            var commanderSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.t90a.external_commander_seat");
-            var commanderSight = (AbstractViewpointSubsystem) turret.findOwnSubsystem("subsystem.t90a.commander_optics");
+            var gunnerSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.machine_max.gunner_seat");
+            var gunnerSight = (AbstractViewpointSubsystem) gun.findOwnSubsystem("subsystem.machine_max.gunner_sight");
+            var commanderSeat = (SeatSubsystem) turret.findOwnSubsystem("subsystem.machine_max.commander_seat");
+            var commanderSight = (AbstractViewpointSubsystem) turret.findOwnSubsystem("subsystem.machine_max.commander_optics");
 
             helper.assertTrue(gunnerSeat.getTargets().getOrDefault("gunner_sight", Map.of()).containsKey("global"),
                     "炮手席的镜头发现线路以装配体为首跳");

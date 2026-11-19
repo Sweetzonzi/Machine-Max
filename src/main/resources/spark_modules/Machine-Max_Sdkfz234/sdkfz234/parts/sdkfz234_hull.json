@@ -73,7 +73,7 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.sdkfz234.engine"
+              "subsystem": "subsystem.machine_max.engine"
             }
           },
           "interact_boxes": {
@@ -81,7 +81,7 @@
               "bone": "DriverCoverInteract",
               "signal_targets": {
                 "interact": [
-                  "subsystem.sdkfz234.driver_seat",
+                  "subsystem.machine_max.driver_seat",
                   "subsystem.sdkfz234.radio_seat"
                 ]
               }
@@ -153,10 +153,10 @@
             }
           },
           "subsystems": {
-            "subsystem.sdkfz234.engine": {
+            "subsystem.machine_max.engine": {
               "type": "machine_max:engine",
               "definition": "sdkfz234:sdkfz234_engine",
-              "power_output": "subsystem.sdkfz234.gearbox",
+              "power_output": "subsystem.machine_max.gearbox",
               "speed_outputs": {
                 "engine_speed": [
                   "local",
@@ -164,10 +164,10 @@
                 ]
               }
             },
-            "subsystem.sdkfz234.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "type": "machine_max:gearbox",
               "definition": "sdkfz234:sdkfz234_gearbox",
-              "power_output": "subsystem.sdkfz234.transmission",
+              "power_output": "subsystem.machine_max.transmission",
               "gear_outputs": {
                 "gear": [
                   "local",
@@ -175,35 +175,35 @@
                 ]
               }
             },
-            "subsystem.sdkfz234.transmission": {
+            "subsystem.machine_max.transmission": {
               "type": "machine_max:transmission",
               "definition": "sdkfz234:sdkfz234_transmission",
               "power_outputs": {
-                "subsystem.sdkfz234.left_wheel_01": 1,
-                "subsystem.sdkfz234.left_wheel_02": 1,
-                "subsystem.sdkfz234.left_wheel_03": 1,
-                "subsystem.sdkfz234.left_wheel_04": 1,
-                "subsystem.sdkfz234.right_wheel_01": 1,
-                "subsystem.sdkfz234.right_wheel_02": 1,
-                "subsystem.sdkfz234.right_wheel_03": 1,
-                "subsystem.sdkfz234.right_wheel_04": 1
+                "subsystem.machine_max.left_wheel_01": 1,
+                "subsystem.machine_max.left_wheel_02": 1,
+                "subsystem.machine_max.left_wheel_03": 1,
+                "subsystem.machine_max.left_wheel_04": 1,
+                "subsystem.machine_max.right_wheel_01": 1,
+                "subsystem.machine_max.right_wheel_02": 1,
+                "subsystem.machine_max.right_wheel_03": 1,
+                "subsystem.machine_max.right_wheel_04": 1
               }
             },
-            "subsystem.sdkfz234.car_controller": {
+            "subsystem.machine_max.car_controller": {
               "type": "machine_max:car_controller",
               "definition": "sdkfz234:sdkfz234_car_controller",
               "control_outputs": {
                 "car_control": [
-                  "subsystem.sdkfz234.engine",
-                  "subsystem.sdkfz234.gearbox",
-                  "subsystem.sdkfz234.left_wheel_01",
-                  "subsystem.sdkfz234.left_wheel_02",
-                  "subsystem.sdkfz234.left_wheel_03",
-                  "subsystem.sdkfz234.left_wheel_04",
-                  "subsystem.sdkfz234.right_wheel_01",
-                  "subsystem.sdkfz234.right_wheel_02",
-                  "subsystem.sdkfz234.right_wheel_03",
-                  "subsystem.sdkfz234.right_wheel_04"
+                  "subsystem.machine_max.engine",
+                  "subsystem.machine_max.gearbox",
+                  "subsystem.machine_max.left_wheel_01",
+                  "subsystem.machine_max.left_wheel_02",
+                  "subsystem.machine_max.left_wheel_03",
+                  "subsystem.machine_max.left_wheel_04",
+                  "subsystem.machine_max.right_wheel_01",
+                  "subsystem.machine_max.right_wheel_02",
+                  "subsystem.machine_max.right_wheel_03",
+                  "subsystem.machine_max.right_wheel_04"
                 ]
               },
               "speed_outputs": {
@@ -237,7 +237,7 @@
                 ]
               }
             },
-            "subsystem.sdkfz234.left_wheel_01": {
+            "subsystem.machine_max.left_wheel_01": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_01"
@@ -246,42 +246,42 @@
               "type": "machine_max:item_storage",
               "definition": "sdkfz234:sdkfz234_trunk"
             },
-            "subsystem.sdkfz234.left_wheel_02": {
+            "subsystem.machine_max.left_wheel_02": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_02"
             },
-            "subsystem.sdkfz234.left_wheel_03": {
+            "subsystem.machine_max.left_wheel_03": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_03"
             },
-            "subsystem.sdkfz234.left_wheel_04": {
+            "subsystem.machine_max.left_wheel_04": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_04"
             },
-            "subsystem.sdkfz234.right_wheel_01": {
+            "subsystem.machine_max.right_wheel_01": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_right_wheel_01"
             },
-            "subsystem.sdkfz234.right_wheel_02": {
+            "subsystem.machine_max.right_wheel_02": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_right_wheel_02"
             },
-            "subsystem.sdkfz234.right_wheel_03": {
+            "subsystem.machine_max.right_wheel_03": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_right_wheel_03"
             },
-            "subsystem.sdkfz234.right_wheel_04": {
+            "subsystem.machine_max.right_wheel_04": {
               "type": "machine_max:wheel_driver",
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_right_wheel_04"
             },
-            "subsystem.sdkfz234.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_driver_seat",
               "first_hud_layout": "sdkfz234:sdkfz234_driver",

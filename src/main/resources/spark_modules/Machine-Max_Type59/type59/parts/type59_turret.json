@@ -627,7 +627,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.type59.gunner_seat"
+                  "subsystem.machine_max.gunner_seat"
                 ]
               }
             },
@@ -636,7 +636,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.type59.commander_seat"
+                  "subsystem.machine_max.commander_seat"
                 ]
               }
             },
@@ -682,23 +682,23 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.azimuth_driver": {
+            "subsystem.machine_max.azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "type59:type59_azimuth",
               "connector": "connector.machine_max.turret_hull_axis"
             },
-            "subsystem.type59.elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "type59:type59_elevation",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.type59.main_controller": {
+            "subsystem.machine_max.main_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
                 "weapon_control": [
-                  "subsystem.type59.azimuth_driver",
-                  "subsystem.type59.elevation_driver"
+                  "subsystem.machine_max.azimuth_driver",
+                  "subsystem.machine_max.elevation_driver"
                 ],
                 "weapon.gun.type59": [
                   "global"
@@ -708,7 +708,7 @@
               "third_hud_layout": "type59:main_feed",
               "scope_hud_layout": "type59:scope_main_feed"
             },
-            "subsystem.type59.main_ap_rack": {
+            "subsystem.machine_max.main_ap_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:100mm_type59_regen_ammo_rack",
               "belt_definition": {
@@ -722,7 +722,7 @@
                 "ammo_100mm"
               ]
             },
-            "subsystem.type59.main_ap_loader": {
+            "subsystem.machine_max.main_ap_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:100mm_type59_ammo_loader",
               "ammo_discovery_inputs": [
@@ -730,11 +730,11 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_100mm": [
-                  "subsystem.type59.main_ap_rack"
+                  "subsystem.machine_max.main_ap_rack"
                 ]
               }
             },
-            "subsystem.type59.main_he_rack": {
+            "subsystem.machine_max.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:100mm_type59_regen_ammo_rack",
               "belt_definition": {
@@ -748,7 +748,7 @@
                 "ammo_100mm"
               ]
             },
-            "subsystem.type59.main_he_loader": {
+            "subsystem.machine_max.main_he_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:100mm_type59_ammo_loader",
               "ammo_discovery_inputs": [
@@ -756,11 +756,11 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_100mm": [
-                  "subsystem.type59.main_he_rack"
+                  "subsystem.machine_max.main_he_rack"
                 ]
               }
             },
-            "subsystem.type59.coax_controller": {
+            "subsystem.machine_max.coax_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "type59:coax_controller",
               "control_outputs": {
@@ -771,7 +771,7 @@
               "first_hud_layout": "type59:coax_feed",
               "third_hud_layout": "type59:coax_feed_third"
             },
-            "subsystem.type59.coax_rack": {
+            "subsystem.machine_max.coax_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:7_62mm_type59t_regen_ammo_rack",
               "belt_definition": {
@@ -785,7 +785,7 @@
                 "ammo_7_62mm"
               ]
             },
-            "subsystem.type59.coax_loader": {
+            "subsystem.machine_max.coax_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:7_62mm_type59t_ammo_loader",
               "ammo_discovery_inputs": [
@@ -793,16 +793,16 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_7_62mm": [
-                  "subsystem.type59.coax_rack"
+                  "subsystem.machine_max.coax_rack"
                 ]
               }
             },
-            "subsystem.type59.commander_optics": {
+            "subsystem.machine_max.commander_optics": {
               "type": "machine_max:camera",
               "definition": "type59:type59_commander_day_sight",
               "locator": "commander_day_optic"
             },
-            "subsystem.type59.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
@@ -819,14 +819,14 @@
               "first_hud_layout": "type59:type59_orientation",
               "third_hud_layout": "type59:type59_ground_orientation"
             },
-            "subsystem.type59.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
               "definition": "type59:closed_commander_seat",
               "locator": "commander_seat",
               "control_group_preset": "type59:type59_observer",
               "camera_discovery_targets": {
                 "commander_day_sight": [
-                  "subsystem.type59.commander_optics"
+                  "subsystem.machine_max.commander_optics"
                 ]
               },
               "dismount_locators": [
@@ -952,7 +952,7 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.coax_launcher": {
+            "subsystem.machine_max.coax_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:7_62mm_type59t_launcher",
               "locator": "coax_muzzle",
@@ -962,7 +962,7 @@
                 ]
               }
             },
-            "subsystem.type59.gunner_sight": {
+            "subsystem.machine_max.gunner_sight": {
               "type": "machine_max:sight",
               "definition": "type59:type59_gunner_sight",
               "locator": "gunner_optic"
@@ -986,7 +986,7 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 25,
-              "subsystem": "subsystem.type59.main_launcher"
+              "subsystem": "subsystem.machine_max.main_launcher"
             }
           },
           "connectors": {
@@ -998,7 +998,7 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.main_launcher": {
+            "subsystem.machine_max.main_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:100mm_type59_launcher",
               "locator": "main_muzzle",
@@ -1062,23 +1062,23 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.aa_azimuth_driver": {
+            "subsystem.machine_max.aa_azimuth_driver": {
               "type": "machine_max:turret_driver",
               "definition": "type59:aa_yaw_driver",
               "connector": "connector.machine_max.aa_turret"
             },
-            "subsystem.type59.aa_elevation_driver": {
+            "subsystem.machine_max.aa_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "type59:aa_pitch_driver",
               "connector": "connector.machine_max.aa_elevation"
             },
-            "subsystem.type59.aa_controller": {
+            "subsystem.machine_max.aa_controller": {
               "type": "machine_max:weapon_controller",
               "definition": "type59:aa_controller",
               "control_outputs": {
                 "aim_drive_aa": [
-                  "subsystem.type59.aa_azimuth_driver",
-                  "subsystem.type59.aa_elevation_driver"
+                  "subsystem.machine_max.aa_azimuth_driver",
+                  "subsystem.machine_max.aa_elevation_driver"
                 ],
                 "weapon.mg.type54": [
                   "global"
@@ -1087,7 +1087,7 @@
               "first_hud_layout": "type59:aa_feed",
               "third_hud_layout": "type59:aa_feed"
             },
-            "subsystem.type59.aa_rack": {
+            "subsystem.machine_max.aa_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:12_7mm_type54_regen_ammo_rack",
               "belt_definition": {
@@ -1101,7 +1101,7 @@
                 "ammo_12_7mm"
               ]
             },
-            "subsystem.type59.aa_loader": {
+            "subsystem.machine_max.aa_loader": {
               "type": "machine_max:ammo_loader",
               "definition": "machine_max:12_7mm_type54_ammo_loader",
               "ammo_discovery_inputs": [
@@ -1109,7 +1109,7 @@
               ],
               "ammo_discovery_targets": {
                 "ammo_12_7mm": [
-                  "subsystem.type59.aa_rack"
+                  "subsystem.machine_max.aa_rack"
                 ]
               }
             }
@@ -1149,7 +1149,7 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.aa_launcher": {
+            "subsystem.machine_max.aa_launcher": {
               "type": "machine_max:launcher",
               "definition": "machine_max:12_7mm_type54_launcher",
               "locator": "mg_muzzle",

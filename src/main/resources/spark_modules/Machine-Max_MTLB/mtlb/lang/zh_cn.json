@@ -48,15 +48,6 @@
   "notes.mtlb.blueprint.mtlb_pkt": "军事载具蓝图",
   "author.mtlb.blueprint.mtlb_pkt": "待补充",
   "interact.mtlb.driver_hatch": "进入驾驶座",
-  "sub_part.mtlb.gun": "机枪",
-  "subsystem.mtlb.azimuth_driver": "方向机",
-  "subsystem.mtlb.elevation_driver": "高低机",
-  "subsystem.mtlb.commander_seat": "车长座",
-  "subsystem.mtlb.driver_seat": "驾驶座",
-  "subsystem.mtlb.engine": "发动机",
-  "subsystem.mtlb.gearbox": "变速箱",
-  "subsystem.mtlb.transmission": "传动系统",
-  "subsystem.mtlb.track_controller": "履带行驶控制器",
-  "subsystem.mtlb.track_left": "左履带",
-  "subsystem.mtlb.track_right": "右履带"
+  "sub_part.mtlb.gun": "机枪"
 }
+

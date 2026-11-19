@@ -195,7 +195,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.type59.driver_seat"
+                  "subsystem.machine_max.driver_seat"
                 ]
               }
             }
@@ -442,7 +442,7 @@
             "subsystem.type59.engine": {
               "type": "machine_max:engine",
               "definition": "type59:type59_engine",
-              "power_output": "subsystem.type59.gearbox",
+              "power_output": "subsystem.machine_max.gearbox",
               "speed_outputs": {
                 "engine_speed": [
                   "local",
@@ -450,10 +450,10 @@
                 ]
               }
             },
-            "subsystem.type59.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "type": "machine_max:gearbox",
               "definition": "type59:type59_gearbox",
-              "power_output": "subsystem.type59.transmission",
+              "power_output": "subsystem.machine_max.transmission",
               "gear_outputs": {
                 "gear": [
                   "local",
@@ -461,23 +461,23 @@
                 ]
               }
             },
-            "subsystem.type59.transmission": {
+            "subsystem.machine_max.transmission": {
               "type": "machine_max:transmission",
               "definition": "type59:type59_transmission",
               "power_outputs": {
-                "subsystem.type59.track_left": 1,
-                "subsystem.type59.track_right": 1
+                "subsystem.machine_max.left_track": 1,
+                "subsystem.machine_max.right_track": 1
               }
             },
-            "subsystem.type59.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "type": "machine_max:track_controller",
               "definition": "machine_max:track_controller_standard",
               "control_outputs": {
                 "car_control": [
                   "subsystem.type59.engine",
-                  "subsystem.type59.gearbox",
-                  "subsystem.type59.track_left",
-                  "subsystem.type59.track_right"
+                  "subsystem.machine_max.gearbox",
+                  "subsystem.machine_max.left_track",
+                  "subsystem.machine_max.right_track"
                 ]
               },
               "speed_outputs": {
@@ -487,7 +487,7 @@
                 ]
               }
             },
-            "subsystem.type59.track_left": {
+            "subsystem.machine_max.left_track": {
               "type": "machine_max:track_drive",
               "definition": "type59:type59_track_drive",
               "connector": "connector.machine_max.hull_left_sprocket_wheel",
@@ -504,7 +504,7 @@
                 ]
               }
             },
-            "subsystem.type59.track_right": {
+            "subsystem.machine_max.right_track": {
               "type": "machine_max:track_drive",
               "definition": "type59:type59_track_drive",
               "connector": "connector.machine_max.hull_right_sprocket_wheel",
@@ -521,7 +521,7 @@
                 ]
               }
             },
-            "subsystem.type59.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_driver_seat",
               "locator": "driver_seat",

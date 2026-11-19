@@ -288,23 +288,23 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.engine": {
+            "subsystem.machine_max.engine": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_left": {
+            "subsystem.machine_max.left_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.transmission": {
+            "subsystem.machine_max.transmission": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -316,7 +316,7 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -324,11 +324,11 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_right": {
+            "subsystem.machine_max.right_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             }
@@ -811,13 +811,13 @@
             }
           },
           "subsystem_data": {
-            "subsystem.mtlb.elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "destroyed": 0,
               "brake_yaw": 2.9182862E-8,
               "brake_pitch": 1.9625257E-7,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.azimuth_driver": {
+            "subsystem.machine_max.azimuth_driver": {
               "destroyed": 0,
               "brake_yaw": -5.70932E-9,
               "brake_pitch": -1.3096195E-7,

@@ -253,23 +253,23 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.engine": {
+            "subsystem.machine_max.engine": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_left": {
+            "subsystem.machine_max.left_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.transmission": {
+            "subsystem.machine_max.transmission": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -281,7 +281,7 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -289,11 +289,11 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.track_right": {
+            "subsystem.machine_max.right_track": {
               "destroyed": 0,
               "durability_ratio": 1.0
             }

@@ -56,49 +56,49 @@
             }
           },
           "subsystem_data": {
-            "subsystem.k17.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.engine": {
+            "subsystem.machine_max.engine": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.car_controller": {
+            "subsystem.machine_max.car_controller": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.transmission": {
+            "subsystem.machine_max.transmission": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_03": {
+            "subsystem.machine_max.left_wheel_03": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_04": {
+            "subsystem.machine_max.left_wheel_04": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_01": {
+            "subsystem.machine_max.left_wheel_01": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.left_wheel_02": {
+            "subsystem.machine_max.left_wheel_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_01": {
+            "subsystem.machine_max.right_wheel_01": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_02": {
+            "subsystem.machine_max.right_wheel_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_03": {
+            "subsystem.machine_max.right_wheel_03": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.right_wheel_04": {
+            "subsystem.machine_max.right_wheel_04": {
               "durability_ratio": 1.0
             }
           },
@@ -312,18 +312,18 @@
             }
           },
           "subsystem_data": {
-            "subsystem.k17.elevation_driver": {
+            "subsystem.machine_max.elevation_driver": {
               "brake_yaw": 7.512365E-6,
               "brake_pitch": 0.039648905,
               "durability_ratio": 1.0
             },
-            "subsystem.k17.gunner_optics": {
+            "subsystem.machine_max.gunner_optics": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.commander_optics": {
+            "subsystem.machine_max.commander_optics": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.coax_controller": {
+            "subsystem.machine_max.coax_controller": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.main_rack": {
@@ -335,10 +335,10 @@
               "batch_cooldown": 0,
               "regen_progress": 0.083333254
             },
-            "subsystem.k17.main_loader": {
+            "subsystem.machine_max.main_loader": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.main_controller": {
+            "subsystem.machine_max.main_controller": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.left_atgm_elevation_driver": {
@@ -346,7 +346,7 @@
               "brake_pitch": 0.044628497,
               "durability_ratio": 1.0
             },
-            "subsystem.k17.coax_rack": {
+            "subsystem.machine_max.coax_rack": {
               "ammo_count": 382,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,
@@ -355,7 +355,7 @@
               "batch_cooldown": 0,
               "regen_progress": 0.249987
             },
-            "subsystem.k17.coax_loader": {
+            "subsystem.machine_max.coax_loader": {
               "durability_ratio": 1.0
             },
             "subsystem.k17.atgm_controller": {
@@ -373,7 +373,7 @@
             "subsystem.k17.atgm_loader": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.azimuth_driver": {
+            "subsystem.machine_max.azimuth_driver": {
               "brake_yaw": -0.0027556438,
               "brake_pitch": 1.5945652E-6,
               "durability_ratio": 1.0
@@ -416,7 +416,7 @@
             }
           },
           "subsystem_data": {
-            "subsystem.k17.main_launcher": {
+            "subsystem.machine_max.main_launcher": {
               "chambered_type": "machine_max:30mm_3ubr6_ap",
               "modules": {
                 "barrel": {
@@ -430,7 +430,7 @@
               },
               "durability_ratio": 1.0
             },
-            "subsystem.k17.coax_launcher": {
+            "subsystem.machine_max.coax_launcher": {
               "chambered_type": "machine_max:7_62x54r_b32_ap",
               "modules": {
                 "barrel": {

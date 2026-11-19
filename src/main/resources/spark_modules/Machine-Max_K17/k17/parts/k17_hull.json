@@ -68,7 +68,7 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 12,
-            "subsystem": "subsystem.k17.engine"
+            "subsystem": "subsystem.machine_max.engine"
           },
           "HullBottomArmor": {
             "id": "part",
@@ -82,7 +82,7 @@
             "bone": "DriverHatchInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.k17.driver_seat"
+                "subsystem.machine_max.driver_seat"
               ]
             }
           },
@@ -90,8 +90,8 @@
             "bone": "BackHatchInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.k17.commander_seat",
-                "subsystem.k17.gunner_seat"
+                "subsystem.machine_max.commander_seat",
+                "subsystem.machine_max.gunner_seat"
               ]
             }
           }
@@ -148,10 +148,10 @@
           }
         },
         "subsystems": {
-          "subsystem.k17.engine": {
+          "subsystem.machine_max.engine": {
             "type": "machine_max:engine",
             "definition": "k17:k17_engine",
-            "power_output": "subsystem.k17.gearbox",
+            "power_output": "subsystem.machine_max.gearbox",
             "speed_outputs": {
               "engine_speed": [
                 "global",
@@ -159,10 +159,10 @@
               ]
             }
           },
-          "subsystem.k17.gearbox": {
+          "subsystem.machine_max.gearbox": {
             "type": "machine_max:gearbox",
             "definition": "k17:k17_gearbox",
-            "power_output": "subsystem.k17.transmission",
+            "power_output": "subsystem.machine_max.transmission",
             "gear_outputs": {
               "gear": [
                 "local",
@@ -170,35 +170,35 @@
               ]
             }
           },
-          "subsystem.k17.transmission": {
+          "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission",
             "definition": "k17:k17_transmission",
             "power_outputs": {
-              "subsystem.k17.left_wheel_01": 1,
-              "subsystem.k17.left_wheel_02": 1,
-              "subsystem.k17.left_wheel_03": 1,
-              "subsystem.k17.left_wheel_04": 1,
-              "subsystem.k17.right_wheel_01": 1,
-              "subsystem.k17.right_wheel_02": 1,
-              "subsystem.k17.right_wheel_03": 1,
-              "subsystem.k17.right_wheel_04": 1
+              "subsystem.machine_max.left_wheel_01": 1,
+              "subsystem.machine_max.left_wheel_02": 1,
+              "subsystem.machine_max.left_wheel_03": 1,
+              "subsystem.machine_max.left_wheel_04": 1,
+              "subsystem.machine_max.right_wheel_01": 1,
+              "subsystem.machine_max.right_wheel_02": 1,
+              "subsystem.machine_max.right_wheel_03": 1,
+              "subsystem.machine_max.right_wheel_04": 1
             }
           },
-          "subsystem.k17.car_controller": {
+          "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller",
             "definition": "k17:k17_car_controller",
             "control_outputs": {
               "car_control": [
-                "subsystem.k17.engine",
-                "subsystem.k17.gearbox",
-                "subsystem.k17.left_wheel_01",
-                "subsystem.k17.left_wheel_02",
-                "subsystem.k17.left_wheel_03",
-                "subsystem.k17.left_wheel_04",
-                "subsystem.k17.right_wheel_01",
-                "subsystem.k17.right_wheel_02",
-                "subsystem.k17.right_wheel_03",
-                "subsystem.k17.right_wheel_04"
+                "subsystem.machine_max.engine",
+                "subsystem.machine_max.gearbox",
+                "subsystem.machine_max.left_wheel_01",
+                "subsystem.machine_max.left_wheel_02",
+                "subsystem.machine_max.left_wheel_03",
+                "subsystem.machine_max.left_wheel_04",
+                "subsystem.machine_max.right_wheel_01",
+                "subsystem.machine_max.right_wheel_02",
+                "subsystem.machine_max.right_wheel_03",
+                "subsystem.machine_max.right_wheel_04"
               ]
             },
             "speed_outputs": {
@@ -232,47 +232,47 @@
               ]
             }
           },
-          "subsystem.k17.left_wheel_01": {
+          "subsystem.machine_max.left_wheel_01": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_01"
           },
-          "subsystem.k17.left_wheel_02": {
+          "subsystem.machine_max.left_wheel_02": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_02"
           },
-          "subsystem.k17.left_wheel_03": {
+          "subsystem.machine_max.left_wheel_03": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_03"
           },
-          "subsystem.k17.left_wheel_04": {
+          "subsystem.machine_max.left_wheel_04": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_left_wheel_04"
           },
-          "subsystem.k17.right_wheel_01": {
+          "subsystem.machine_max.right_wheel_01": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_01"
           },
-          "subsystem.k17.right_wheel_02": {
+          "subsystem.machine_max.right_wheel_02": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_front_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_02"
           },
-          "subsystem.k17.right_wheel_03": {
+          "subsystem.machine_max.right_wheel_03": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_03"
           },
-          "subsystem.k17.right_wheel_04": {
+          "subsystem.machine_max.right_wheel_04": {
             "type": "machine_max:wheel_driver",
             "definition": "k17:k17_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_wheel_04"
           },
-          "subsystem.k17.driver_seat": {
+          "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_driver_seat",
             "locator": "driver_seat",
@@ -286,7 +286,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.k17.commander_seat": {
+          "subsystem.machine_max.commander_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "commander_seat",
@@ -308,7 +308,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.k17.gunner_seat": {
+          "subsystem.machine_max.gunner_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_seat",
             "locator": "gunner_seat",

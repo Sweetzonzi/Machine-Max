@@ -132,7 +132,7 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.t90a.engine"
+              "subsystem": "subsystem.machine_max.engine"
             },
             "MM_HullEngineDeck": {
               "id": "part",
@@ -147,7 +147,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.t90a.driver_seat"
+                  "subsystem.machine_max.driver_seat"
                 ]
               }
             }
@@ -468,10 +468,10 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.engine": {
+            "subsystem.machine_max.engine": {
               "type": "machine_max:engine",
               "definition": "t90a:t90a_engine",
-              "power_output": "subsystem.t90a.gearbox",
+              "power_output": "subsystem.machine_max.gearbox",
               "speed_outputs": {
                 "engine_speed": [
                   "local",
@@ -479,10 +479,10 @@
                 ]
               }
             },
-            "subsystem.t90a.gearbox": {
+            "subsystem.machine_max.gearbox": {
               "type": "machine_max:gearbox",
               "definition": "t90a:t90a_gearbox",
-              "power_output": "subsystem.t90a.transmission",
+              "power_output": "subsystem.machine_max.transmission",
               "gear_outputs": {
                 "gear": [
                   "local",
@@ -490,23 +490,23 @@
                 ]
               }
             },
-            "subsystem.t90a.transmission": {
+            "subsystem.machine_max.transmission": {
               "type": "machine_max:transmission",
               "definition": "t90a:t90a_transmission",
               "power_outputs": {
-                "subsystem.t90a.track_left": 1,
-                "subsystem.t90a.track_right": 1
+                "subsystem.machine_max.left_track": 1,
+                "subsystem.machine_max.right_track": 1
               }
             },
-            "subsystem.t90a.track_controller": {
+            "subsystem.machine_max.track_controller": {
               "type": "machine_max:track_controller",
               "definition": "machine_max:track_controller_standard",
               "control_outputs": {
                 "car_control": [
-                  "subsystem.t90a.engine",
-                  "subsystem.t90a.gearbox",
-                  "subsystem.t90a.track_left",
-                  "subsystem.t90a.track_right"
+                  "subsystem.machine_max.engine",
+                  "subsystem.machine_max.gearbox",
+                  "subsystem.machine_max.left_track",
+                  "subsystem.machine_max.right_track"
                 ]
               },
               "speed_outputs": {
@@ -516,7 +516,7 @@
                 ]
               }
             },
-            "subsystem.t90a.track_left": {
+            "subsystem.machine_max.left_track": {
               "type": "machine_max:track_drive",
               "definition": "t90a:t90a_track_drive",
               "connector": "connector.machine_max.hull_left_sprocket_wheel",
@@ -533,7 +533,7 @@
                 ]
               }
             },
-            "subsystem.t90a.track_right": {
+            "subsystem.machine_max.right_track": {
               "type": "machine_max:track_drive",
               "definition": "t90a:t90a_track_drive",
               "connector": "connector.machine_max.hull_right_sprocket_wheel",
@@ -550,7 +550,7 @@
                 ]
               }
             },
-            "subsystem.t90a.driver_seat": {
+            "subsystem.machine_max.driver_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_driver_seat",
               "locator": "driver_seat",
