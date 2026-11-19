@@ -615,10 +615,11 @@ public abstract class ProjectileType {
      * 这一层只承载"随打中的东西变化"的声音，与发射器型号的 {@code sounds}（击发、连射、抛壳）
      * 分工，因此同一个弹种挂在哪个炮管上都用同一份命中音。
      * <p>
-     * 目前只有 FMOD 一层（{@link #fmod()}）。今后要加 OGG 覆盖（某个弹种自带命中采样）就在本对象
-     * 里加字段，播放端按既有的分层规则取用：FMOD 接住的那一层不再播 OGG。
+     * 只有 FMOD 一层（{@link #fmod()}）。它叠在被击中方那一层之上：装甲命中同时响材质的
+     * {@code sounds}，地形命中同时响方块的 {@code SoundType.getHitSound}，两层互不替代。
+     * 今后要加 OGG 覆盖（某个弹种自带命中采样）就在本对象里加字段，播放端按同一套叠加规则取用。
      *
-     * @param fmod FMOD bank 与命中事件；空表示这一层全部走材质（装甲）与方块（地形）的既有 OGG
+     * @param fmod FMOD bank 与命中事件；空表示命中点只有被击中方那一层的声音
      */
     public record Sounds(Optional<FmodSounds> fmod) {
 
@@ -633,18 +634,20 @@ public abstract class ProjectileType {
     /**
      * 弹种命中音的两层 Studio 事件，共用同一个 bank。
      * <p>
-     * 两层各自独立回落：写空的那一层留在既有 OGG 上（装甲命中取材质 {@code sounds}、地形命中取
-     * 方块 {@code SoundType.getHitSound}）；写了事件的那一层由 FMOD 发声，实例起不来
-     * （bank 未加载、事件缺失、实例上限）时同一层回落。
+     * <b>两层与被击中方叠加，不替代</b>：装甲命中时材质的 {@code sounds} 照常发声，地形命中时方块的
+     * {@code SoundType.getHitSound} 照常发声，这里的事件是在同一命中点上再加一层弹头的声音。没写事件
+     * 或实例起不来（bank 未加载、事件缺失、实例上限）时只有弹种这一层静默，被击中方那一层不受影响。
      * <p>
      * <b>事件按"打中了什么"选，不按穿没穿甲选</b>：{@code Shells_Hit} 每组只有一条
      * {@code hit_armour}，参数只有自动的 {@code Distance} 与播放器维护的 {@code interior}，
-     * 没有能把同一实例翻成"未击穿"的量。因此这条事件只接手<b>击穿</b>那一半；未击穿仍走材质的
-     * {@code hit_un_pen}，按材质区分——打穿了是弹的爆音，没打穿是装甲挨了一下，两边各有各的数据。
+     * 没有能把同一实例翻成"未击穿"的量。因此这条事件只出现在<b>击穿</b>那一半；
+     * 未击穿只有材质的 {@code hit_un_pen}——打穿了是弹的爆音叠装甲被撕开，没打穿是装甲挨了一下，
+     * 两边各有各的数据。
      * <p>
      * <b>档位由作者按弹种写死</b>：{@code Small} / {@code Medium} / {@code Big} 三组之间没有推导规则，
      * 口径也不是判据（次口径弹的 {@code external.caliber} 是弹芯直径，同一门炮的穿甲弹与榴弹
-     * 口径可以差一个档）。换档位是换事件路径，不是改字段。
+     * 口径可以差一个档）。第一方内容按弹体大小取档：7.62／7.92／12.7／30 mm 取 {@code Small}，
+     * 50／57／100 mm 取 {@code Medium}，120／125／152 mm 取 {@code Big}。换档位是换事件路径，不是改字段。
      * <p>
      * <b>两个事件至少要写一个</b>：整块的用途就是点名事件，只写 bank 的配置解码期直接失败——
      * 否则它看起来配好了，实际什么都不播。

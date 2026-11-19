@@ -79,7 +79,7 @@ vehicle/
 | 新增连接器类型 | `connector/AbstractConnector.java` | 继承、实现关节类型和信号端口 |
 | 修改碰撞逻辑 | `collision/CollisionHandler.java` | 地形高度场、实体碰撞、Create 兼容 |
 | 修改碰撞特效 | `collision/CollisionEffectManager.java` | 火花/声音/轮子快照 |
-| 修改命中音效 / 火花 | `SubPart.java` + `SubPartHitEffects.java` + `attr/MaterialAttr.java` | 在结算阶段按同一笔命中记录决定，音效与火花都取自材质（`sounds` / `particles`），客户端按碰撞箱身份回放 |
+| 修改命中音效 / 火花 | `SubPart.java` + `SubPartHitEffects.java` + `attr/MaterialAttr.java` | 在结算阶段按同一笔命中记录决定，客户端按碰撞箱身份回放：火花取自材质的 `particles`，音效是被击中方的材质 `sounds` 与弹头方的弹种 `sounds.fmod.hit_armour` 两层叠加 |
 | 新增属性字段 | `attr/SubPartAttr.java` | 加字段 + JSON Codec |
 | 新增事件 | `event/` | 继承对应事件基类，注册到 NeoForge 总线 |
 | 修改交互框 | `interact/InteractBox.java` | 玩家右键交互：结构变化与载具入世时解析终端子系统，点击按声明序调 `onInteract`；激活 = 终端非空 ∧ MoLang 门控 ∧ 任一终端 `isInteractable()` |

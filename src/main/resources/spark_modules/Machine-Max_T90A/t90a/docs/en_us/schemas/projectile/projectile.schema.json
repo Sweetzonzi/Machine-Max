@@ -217,7 +217,7 @@
       "properties": {
         "fmod": {
           "type": "object",
-          "description": "Two FMOD impact events sharing one bank. Each layer falls back on its own: a configured layer is played by FMOD, and when the instance cannot start (bank not loaded, event missing) or no event is configured that layer returns to the OGG the material or the block already provides — armour hits take the material's sounds (hit_pen when penetrated, hit_un_pen otherwise), terrain hits take the block's SoundType hit sound; the two never sound together. Events are chosen by what was hit, not by whether the round penetrated: Shells_Hit has a single hit_armour per size class with no event that can express 'did not penetrate', so it takes over the penetrating half only and non-penetrating hits stay material-driven. The size class (Small, Medium, Big) is written per ammunition type; there is no derivation rule and external.caliber is not a criterion — sub-calibre rounds declare their penetrator diameter.",
+          "description": "Two FMOD impact events sharing one bank. They layer on top of the side that was hit instead of replacing it: armour hits keep the material's sounds (hit_pen when penetrated, hit_un_pen otherwise) and terrain hits keep the block's SoundType hit sound, while these events add the round's own voice at the same impact point; when no event is configured or the instance cannot start (bank not loaded, event missing) only this layer stays silent. Events are chosen by what was hit, not by whether the round penetrated: Shells_Hit has a single hit_armour per size class with no event that can express 'did not penetrate', so the round layer only appears on penetration and non-penetrating hits stay material-driven. The size class (Small, Medium, Big) is written per ammunition type; there is no derivation rule and external.caliber is not a criterion — sub-calibre rounds declare their penetrator diameter.",
           "properties": {
             "bank": {
               "description": "FMOD bank ID; Shells_Hit lives in machine_max:mfx",
@@ -226,12 +226,12 @@
             "hit_armour": {
               "type": "string",
               "pattern": "^event:/.+",
-              "description": "Event played when the round penetrates armour, e.g. event:/Master_FX/Shells_Hit/Medium/hit_armour. Played on penetration only; non-penetrating hits keep the material's hit_un_pen."
+              "description": "Event played when the round penetrates armour, e.g. event:/Master_FX/Shells_Hit/Medium/hit_armour. Layered on top of the material's hit_pen; non-penetrating hits only get the material's hit_un_pen."
             },
             "hit_ground": {
               "type": "string",
               "pattern": "^event:/.+",
-              "description": "Event played when the round hits terrain, e.g. event:/Master_FX/Shells_Hit/Medium/hit_ground. Played whenever the hit block is not air, regardless of penetration."
+              "description": "Event played when the round hits terrain, e.g. event:/Master_FX/Shells_Hit/Medium/hit_ground. Played whenever the hit block is not air, regardless of penetration, layered on top of the block's SoundType hit sound."
             }
           },
           "required": ["bank"],

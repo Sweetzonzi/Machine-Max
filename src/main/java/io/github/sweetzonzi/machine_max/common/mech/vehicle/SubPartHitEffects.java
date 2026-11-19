@@ -19,9 +19,10 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>音效与火花共用同一个判据（{@code SubPart#isArmorPenetrated}）与同一个命中点，
  * 因此不可能出现"音效说击穿、火花说没击穿"这类错配。火花取自<b>材质</b>的 {@code particles}
- * （{@code hit_pen} / {@code hit_un_pen}），碰撞箱可以在 {@code overwrite} 里覆写；音效同样按材质取，
- * 但击穿那一半可以被<b>弹种</b>的 {@code sounds.fmod.hit_armour} 接手（分层规则见
- * {@link ProjectileType.FmodSounds}）。履带装甲层吸收的命中整套改取履带型号的材质，
+ * （{@code hit_pen} / {@code hit_un_pen}），碰撞箱可以在 {@code overwrite} 里覆写；音效是
+ * 两个发声体的叠加——被击中方按材质取，弹头方在击穿时取<b>弹种</b>的
+ * {@code sounds.fmod.hit_armour}（规则见 {@link ProjectileType.FmodSounds}）。
+ * 履带装甲层吸收的命中整套改取履带型号的材质，
  * 与"吸收这件事发生在履带上"一致。</p>
  *
  * <p><b>调用线程：</b>客户端主线程（由命中表现包的处理器调用）。</p>
@@ -43,9 +44,10 @@ public final class SubPartHitEffects {
      *
      * <p>非客户端调用直接返回：服务端不播表现，表现一律由客户端按同一份内容包配置重建。</p>
      *
-     * <p>音效按层取：击穿时先让弹种的 {@code sounds.fmod.hit_armour} 接手，接住了就不再播材质的
-     * {@code hit_pen}；没接住（未配事件、bank 未加载、实例起不来）与未击穿一律走材质音。未击穿不用
-     * 弹种事件是因为 {@code Shells_Hit} 只有一条 {@code hit_armour}，没有能表达"没打穿"的同档事件。</p>
+     * <p>音效是两层叠加：被击中方按材质取 {@code hit_pen}／{@code hit_un_pen} 并始终发声；击穿时再加
+     * 一层弹种的 {@code sounds.fmod.hit_armour}——打穿了是弹的爆音叠装甲被撕开，没打穿只有装甲挨了一下。
+     * 未击穿不加弹种事件是因为 {@code Shells_Hit} 只有一条 {@code hit_armour}，没有能表达"没打穿"的
+     * 同档事件。弹种这一层没配事件、bank 未加载或客户端查不到这一发时静默，材质那一层不受影响。</p>
      *
      * @param level         维度（客户端）
      * @param subPart       被命中的子部件
@@ -64,15 +66,16 @@ public final class SubPartHitEffects {
 
         Vec3 pos = subPart.getPresentationPosition().add(offset);
 
+        // 两个发声体各响一层：弹头层只在击穿时存在（Shells_Hit 每组只有一条 hit_armour），
+        // 被击中方那一层始终在响。
+        if (penetrated) {
+            ProjectileHitSounds.playArmourHit(level, projectileId, pos);
+        }
         MaterialAttr material = resolveMaterial(subPart, hitBox, trackAbsorbed);
         MaterialAttr.MaterialSoundAttr sounds = material.sounds();
-        boolean fmodPlayed = penetrated
-                && ProjectileHitSounds.playArmourHit(level, projectileId, pos);
-        if (!fmodPlayed) {
-            SoundEvent sound = penetrated ? sounds.onHitPen() : sounds.onHitUnPen();
-            level.playLocalSound(pos.x, pos.y, pos.z, sound, SoundSource.NEUTRAL,
-                    trackAbsorbed ? TRACK_VOLUME : HIT_BOX_VOLUME, 1.0f, false);
-        }
+        SoundEvent sound = penetrated ? sounds.onHitPen() : sounds.onHitUnPen();
+        level.playLocalSound(pos.x, pos.y, pos.z, sound, SoundSource.NEUTRAL,
+                trackAbsorbed ? TRACK_VOLUME : HIT_BOX_VOLUME, 1.0f, false);
 
         MaterialAttr.MaterialParticleAttr particles = material.particles();
         ResourceLocation particle = penetrated ? particles.hitPen() : particles.hitUnPen();
