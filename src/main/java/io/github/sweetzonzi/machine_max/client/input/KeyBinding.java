@@ -234,8 +234,8 @@ public class KeyBinding {
 
     public static KeyMapping generalCameraZoomKey = new KeyMapping(CAMERA_ZOOM_KEY,
             KeyCategory.GENERAL,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_Z,
+            InputConstants.Type.MOUSE,
+            GLFW.GLFW_MOUSE_BUTTON_2,
             KeyCategory.GENERAL.getCategory()
     );
 
