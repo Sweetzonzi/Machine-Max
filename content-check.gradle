@@ -84,7 +84,8 @@
 import groovy.io.FileType
 import groovy.json.JsonSlurper
 
-def sparkModulesDir = new File(projectDir, 'src/main/resources/spark_modules')
+def contentProjectDir = layout.projectDirectory.asFile
+def sparkModulesDir = new File(contentProjectDir, 'src/main/resources/spark_modules')
 
 // 去注释：内容包 JSON 是 JSONC。字符串内的 // 不能被当成注释，所以要逐字符扫。
 //
@@ -214,7 +215,8 @@ def findObjectTrailingComma = { String text ->
 }
 
 // 字符下标 → 1 起的行列，用于把上面扫到的位置报成编辑器能跳的位置
-def lineColumnOf = { String text, int index ->
+// 配置缓存会序列化闭包的参数类型；Gradle 8.8 / 8.9 无法还原 primitive int 的 Class。
+def lineColumnOf = { String text, Integer index ->
     int line = 1
     int column = 1
     for (int i = 0; i < index && i < text.length(); i++) {
@@ -426,7 +428,7 @@ tasks.register('checkContent') {
                 readJsonc(file).keySet().each { soundEvents << pack.namespace + ':' + it }
             }
         }
-        File soundAssetsDir = new File(projectDir, 'src/main/resources/assets')
+        File soundAssetsDir = new File(contentProjectDir, 'src/main/resources/assets')
         if (soundAssetsDir.isDirectory()) {
             soundAssetsDir.eachDir { File namespaceDir ->
                 File soundsFile = new File(namespaceDir, 'sounds.json')
@@ -788,7 +790,7 @@ tasks.register('checkContent') {
             }
         }
         ['java', 'kotlin'].each { String sourceSet ->
-            File sourceDir = new File(projectDir, 'src/main/' + sourceSet)
+            File sourceDir = new File(contentProjectDir, 'src/main/' + sourceSet)
             if (!sourceDir.isDirectory()) {
                 return
             }
@@ -1805,7 +1807,7 @@ tasks.register('checkContent') {
             }
         }
 
-        File fittingRecipeDir = new File(projectDir, 'src/main/resources/data/machine_max/recipe/fittings')
+        File fittingRecipeDir = new File(contentProjectDir, 'src/main/resources/data/machine_max/recipe/fittings')
         Map<String, String> recipeByTrackType = [:]
         int trackRecipeCount = 0
         List<File> trackRecipeFiles = fittingRecipeDir.isDirectory()
