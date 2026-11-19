@@ -37,6 +37,11 @@
                 "global"
               ]
             },
+            "camera_discovery_targets": {
+              "sight_rws": [
+                "global"
+              ]
+            },
             "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
             "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
             "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"

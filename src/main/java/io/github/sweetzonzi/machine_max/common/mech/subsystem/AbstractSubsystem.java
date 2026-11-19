@@ -40,7 +40,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -288,6 +291,37 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     /** 是否已经完成初次 attach；由 {@link SubsystemController} 维护。 */
     boolean isAttached() {
         return attached;
+    }
+
+    /**
+     * 按发现表解析视点：遍历频道，取 {@link #resolveTargets(String)} 的终端并筛出同装配体的
+     * {@link AbstractViewpointSubsystem}，按实例去重并保持首次出现顺序。<br>
+     * 只读发现：不写信号槽、不建输入频道，也不赋予对这些视点的控制权。
+     * <p>
+     * 放在子系统基类而不是 {@link ISignalSender}：端口、交互区与总线各有各的发现语义，
+     * 只有子系统会把另一类子系统当作发现结果。
+     * <p><b>调用线程：</b>主线程（attach 与结构变化回调）。
+     *
+     * @param discoveryTargets 频道 → 目标名；空频道跳过
+     * @return 不可变列表，没有可到达的视点时为 {@link List#of()}
+     */
+    protected List<AbstractViewpointSubsystem> resolveViewpoints(Map<String, List<String>> discoveryTargets) {
+        List<AbstractViewpointSubsystem> viewpoints = new ArrayList<>();
+        Set<AbstractViewpointSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (String channel : discoveryTargets.keySet()) {
+            if (channel.isEmpty()) continue;
+            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
+                for (ISignalReceiver terminal : terminals) {
+                    if (terminal instanceof AbstractViewpointSubsystem viewpoint
+                            && viewpoint.getSubPart().getPart().assembly
+                            == this.getSubPart().getPart().assembly
+                            && seen.add(viewpoint)) {
+                        viewpoints.add(viewpoint);
+                    }
+                }
+            }
+        }
+        return List.copyOf(viewpoints);
     }
 
     public void onDisabled() {

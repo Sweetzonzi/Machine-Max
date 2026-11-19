@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "881d8000d8f54d247d4d22987d3c22f6b48e00c7",
+    "revision": "e48a275c3a31472c760c592dbadf32772f1483fc",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -276,8 +276,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.schema.json",
-        "bytes": 2425,
-        "sha256": "836b5010d89d6479bdd686da423ff9c4e7fb1d3145ba6f40da71361f73e24600"
+        "bytes": 2894,
+        "sha256": "89dec49d747bca7de978f6f0d75e849d1ebab2e93c13bb9f96c1641039712533"
       },
       {
         "path": "references/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.schema.json",

@@ -76,6 +76,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     private volatile Map<LauncherSubsystem, String> launchers = Map.of();
 
     /**
+     * 本火控负责的视点，按发现顺序去重后整体替换发布。<br>
+     * 只读发现结果：它不参与瞄准路由，由座椅汇总成候选供切换与校验使用。
+     */
+    private volatile List<AbstractViewpointSubsystem> discoveredViewpoints = List.of();
+
+    /**
      * 物理线程按有效来源求出的世界目标，主线程读取用于 HUD 与持久数据
      */
     private volatile Vec3 targetPosition = null;
@@ -1208,6 +1214,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     public void onAttach() {
         super.onAttach();
         handShake();
+        refreshDiscoveredViewpoints();
     }
 
     @Override
@@ -1217,6 +1224,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         this.turrets = Map.of();
         this.launchers = Map.of();
         handShake();
+        refreshDiscoveredViewpoints();
         // 载具结构变化后标记重建弹药池，实际重建延迟到下一个 onTick
         needsAmmoPoolUpdate = true;
     }
@@ -1249,6 +1257,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         return subsystem.getSubPart().getPart().assembly == getSubPart().getPart().assembly;
     }
 
+    /**
+     * 按 {@link WeaponControllerSubsystemAttr#cameraDiscoveryTargets} 重新解析本火控负责的视点。
+     *
+     * <p>与 {@link #handShake()} 同两处调用但互不影响：握手只读 {@code control_outputs}。
+     * 解析只读接线，不写信号槽、不建输入频道；本类在 attach 之后不调用
+     * {@link #resetSignalOutputs()}，因此发现频道不会在运行期被写成空信号。</p>
+     *
+     * <p><b>调用线程：</b>主线程（attach 与结构变化回调）。</p>
+     */
+    private void refreshDiscoveredViewpoints() {
+        this.discoveredViewpoints = resolveViewpoints(attr.cameraDiscoveryTargets);
+    }
+
     @Override
     public List<String> getAcceptedChannels() {
         var staticAttr = attr.staticAttribute;
@@ -1259,9 +1280,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         return channels;
     }
 
+    /**
+     * 首跳表的两张来源：命令输出与视点发现。<br>
+     * 发现表只加频道与目标名，不改变任何命令频道的含义；同一频道出现在两张表里时取有序并集。
+     */
     @Override
     public Map<String, List<String>> getTargetNames() {
-        return new HashMap<>(attr.controlOutputTargets);
+        Map<String, List<String>> names = new LinkedHashMap<>(attr.controlOutputTargets);
+        attr.cameraDiscoveryTargets.forEach((channel, targets) ->
+                names.merge(channel, targets, AbstractControllableSubsystem::unionTargets));
+        return names;
     }
 
     /**

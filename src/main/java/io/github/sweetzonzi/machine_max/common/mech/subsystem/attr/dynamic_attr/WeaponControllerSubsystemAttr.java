@@ -26,6 +26,13 @@ public class WeaponControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
     /** 控制信号输出频道 → 目标名称列表（同时用于握手发现下属子系统） */
     public final Map<String, List<String>> controlOutputTargets;
 
+    /**
+     * 本火控负责的视点发现表：频道 → 目标名称列表。<br>
+     * 只读发现，与 {@link #controlOutputTargets} 分开：那张表是命令输出，混入发现会让
+     * “输出”和“发现”共用一张表。缺省空表，表示本火控不声明任何视点。
+     */
+    public final Map<String, List<String>> cameraDiscoveryTargets;
+
     /** 第一人称视角使用的 HUD 布局；{@link HudLayout#EMPTY} 表示该视角不显示 HUD */
     public final ResourceLocation firstHudLayout;
 
@@ -38,6 +45,7 @@ public class WeaponControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
     public static final MapCodec<WeaponControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("control_outputs", Map.of()).forGetter(WeaponControllerSubsystemAttr::getControlOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("camera_discovery_targets", Map.of()).forGetter(WeaponControllerSubsystemAttr::getCameraDiscoveryTargets),
             ResourceLocation.CODEC.optionalFieldOf("first_hud_layout", HudLayout.EMPTY)
                     .forGetter(WeaponControllerSubsystemAttr::getFirstHudLayout),
             ResourceLocation.CODEC.optionalFieldOf("third_hud_layout", HudLayout.EMPTY)
@@ -49,12 +57,14 @@ public class WeaponControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
     public WeaponControllerSubsystemAttr(
             ResourceLocation modelName,
             Map<String, List<String>> controlOutputTargets,
+            Map<String, List<String>> cameraDiscoveryTargets,
             ResourceLocation firstHudLayout,
             ResourceLocation thirdHudLayout,
             ResourceLocation scopeHudLayout) {
         super(modelName);
         this.staticAttribute = (WeaponControllerSubsystemStaticAttr) getStaticAttr();
         this.controlOutputTargets = controlOutputTargets;
+        this.cameraDiscoveryTargets = cameraDiscoveryTargets;
         this.firstHudLayout = firstHudLayout;
         this.thirdHudLayout = thirdHudLayout;
         this.scopeHudLayout = scopeHudLayout;

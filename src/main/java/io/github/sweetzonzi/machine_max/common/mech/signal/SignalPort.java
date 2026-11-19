@@ -24,6 +24,9 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     /**
      * 为部件连接点创建信号传输端口
      *
+     * <p>两张配置表各复制一份：端口的表是运行时按内容重建的那一份（{@code setTargetFromNames}
+     * 读它、结构变化时整体重算），复制把可写的端口表与解码后的内容属性分开，同时保留声明顺序。</p>
+     *
      * @param owner             部件连接器
      * @param signalTargets     信号提供目标
      * @param signalTranslation 信号频道转译映射（原始频道->转译后频道）
@@ -31,8 +34,8 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public SignalPort(AbstractConnector owner, Map<String, List<String>> signalTargets, Map<String, String> signalTranslation) {
         this.name = owner.name;
         this.owner = owner;
-        this.targetNames = signalTargets;
-        this.signalTranslation = signalTranslation;
+        this.targetNames = new LinkedHashMap<>(signalTargets);
+        this.signalTranslation = new LinkedHashMap<>(signalTranslation);
     }
 
     /** 信号端口以连接点名为寻址名 */

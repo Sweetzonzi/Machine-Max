@@ -190,6 +190,20 @@
               "material": "machine_max:internal_machinery",
               "thickness": 5,
               "subsystem": "subsystem.machine_max.main_he_rack"
+            },
+            "MM_AzimuthDrive": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.azimuth_driver"
+            },
+            "MM_AzimuthRace": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.azimuth_driver"
             }
           },
           "interact_boxes": {
@@ -310,16 +324,14 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "m1a2_sep:m1a2_gunner",
-              "camera_discovery_targets": {
-                "gunner_sight": [
-                  "subsystem.machine_max.gunner_optics"
-                ]
-              },
+              "loader_discovery_inputs": [
+                "crew.reload.gunner"
+              ],
+              "interact_inputs": [],
               "dismount_locators": [
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "loader_discovery_inputs": [],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
@@ -331,19 +343,16 @@
               "camera_discovery_targets": {
                 "commander_citv": [
                   "global"
-                ],
-                "gunner_sight": [
-                  "subsystem.machine_max.gunner_optics"
-                ],
-                "sight_rws": [
-                  "global"
                 ]
               },
+              "loader_discovery_inputs": [
+                "crew.reload.commander"
+              ],
+              "interact_inputs": [],
               "dismount_locators": [
                 "turret_exit_left",
                 "turret_exit_right"
               ],
-              "loader_discovery_inputs": [],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
@@ -352,17 +361,13 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "loader_seat",
               "control_group_preset": "m1a2_sep:m1a2_loader",
-              "camera_discovery_targets": {
-                "sight_port_mg": [
-                  "global"
-                ]
-              },
+              "loader_discovery_inputs": [
+                "crew.reload.loader"
+              ],
+              "interact_inputs": [],
               "dismount_locators": [
                 "turret_exit_left",
                 "turret_exit_right"
-              ],
-              "loader_discovery_inputs": [
-                "crew.reload.loader"
               ],
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
@@ -870,16 +875,12 @@
               "definition": "m1a2_sep:external_mg_seat",
               "locator": "aft_mg_seat",
               "control_group_preset": "m1a2_sep:m1a2_aft_mg",
-              "camera_discovery_targets": {
-                "sight_aft_mg": [
-                  "global"
-                ]
-              },
+              "loader_discovery_inputs": [],
+              "interact_inputs": [],
               "dismount_locators": [
                 "aft_mg_exit_left",
                 "aft_mg_exit_right"
               ],
-              "loader_discovery_inputs": [],
               "first_hud_layout": "m1a2_sep:m1a2_ground_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third",
               "allow_use_items": false
@@ -972,10 +973,18 @@
               "loader_discovery_targets": {
                 "crew.reload.loader": [
                   "local"
+                ],
+                "crew.reload.gunner": [
+                  "local"
+                ],
+                "crew.reload.commander": [
+                  "local"
                 ]
               },
               "loader_time_multipliers": {
-                "crew.reload.loader": 1
+                "crew.reload.loader": 1,
+                "crew.reload.gunner": 0.5,
+                "crew.reload.commander": 0.5
               }
             }
           }

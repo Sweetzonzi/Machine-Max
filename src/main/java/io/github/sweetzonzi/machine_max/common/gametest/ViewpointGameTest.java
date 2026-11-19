@@ -140,7 +140,7 @@ public final class ViewpointGameTest {
         var names = drivers.stream().map(TurretDriverSubsystem::getName).toList();
         // 测试只填写已有 control_outputs，以普通名称寻址触发真实握手。
         var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(), Map.of("weapon_control", names),
-                original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
+                Map.of(), original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
         var controller = new WeaponControllerSubsystem(original.getOwner(), "probe_weapon_controller", attr);
         controller.setTargetFromNames();
         controller.onAttach();
@@ -285,7 +285,7 @@ public final class ViewpointGameTest {
                 .map(TurretDriverSubsystem.class::cast).toList();
         var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(),
                 Map.of("weapon_control", drivers.stream().map(TurretDriverSubsystem::getName).toList()),
-                original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
+                Map.of(), original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
         var controller = new WeaponControllerSubsystem(main, "probe_sdkfz_controller", attr);
         controller.setTargetFromNames();
         controller.onAttach();
@@ -355,7 +355,7 @@ public final class ViewpointGameTest {
                 .map(TurretDriverSubsystem.class::cast).toList();
         var attr = new WeaponControllerSubsystemAttr(original.attr.getModelName(),
                 Map.of("weapon_control", drivers.stream().map(TurretDriverSubsystem::getName).toList()),
-                original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
+                Map.of(), original.attr.firstHudLayout, original.attr.thirdHudLayout, original.attr.scopeHudLayout);
         var controller = new WeaponControllerSubsystem(main, "probe_render_controller", attr);
         controller.setTargetFromNames();
         controller.onAttach();

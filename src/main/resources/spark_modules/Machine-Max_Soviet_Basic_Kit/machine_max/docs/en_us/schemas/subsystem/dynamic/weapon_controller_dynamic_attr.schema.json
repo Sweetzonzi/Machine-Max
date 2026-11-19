@@ -22,6 +22,15 @@
       "default": {},
       "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."
     },
+    "camera_discovery_targets": {
+      "allOf": [
+        {
+          "$ref": "../base/signal_targets.json"
+        }
+      ],
+      "default": {},
+      "description": "Viewpoint discovery table owned by this fire control. Within the same Part write subsystem names (crossing sub-parts is fine); across Parts write a connector name or global. The connector and broadcast paths require the viewpoint to declare the channel in its own discovery_inputs. Discovery is read-only: it writes no signal slot and grants no control over the sight."
+    },
     "first_hud_layout": {
       "allOf": [
         {

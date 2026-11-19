@@ -53,10 +53,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
-        if (viewSourcePart >= 0 && discoveredCameras.stream().noneMatch(view ->
-                view.getSubPart().getId() == viewSourcePart && view.getName().equals(viewSourceName)
-                        && view.isActive() && !view.isDestroyed() && !view.getSubPart().isRemoved
-                        && view.getSubPart().getPart().assembly == getSubPart().getPart().assembly)) {
+        if (viewSourcePart >= 0 && !hasViewCandidate(viewSourcePart, viewSourceName)) {
             clearInputSignals();
         }
     }
@@ -94,8 +91,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     // ===== 摄像机发现 =====
 
     /**
-     * 当前接线上可达的观察设备，按发现顺序去重。<br>
+     * 当前接线上可达的观察设备，只表达内容里的静态发现，按发现顺序去重。<br>
      * 每次结构变化整体替换为不可变快照：主线程写，主线程与渲染线程读。
+     * <p>
+     * 玩家实际能切到的镜头由 {@link #getViewCandidates()} 给出：它还并入了当前活动武器控制器
+     * 发现的视点。本列表保留原义，供内容声明与既有读点区分“座位写了什么”与“此刻能看什么”。
      */
     @Getter
     protected volatile List<AbstractViewpointSubsystem> discoveredCameras = List.of();
@@ -112,26 +112,129 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     /**
      * 从 {@link #cameraDiscoveryTargets} 声明的输出频道解析观察设备。<br>
-     * 只读接线：不使用回调频道，也不写任何信号槽。跨件与 {@code global} 线路由
-     * {@link ISignalSender#resolveTargets(String)} 展开，断开的线路不会出现在结果里。
+     * 解析规则见 {@link AbstractSubsystem#resolveViewpoints(Map)}：只读接线、同装配体、按实例去重。
      */
     protected void resolveCameras() {
-        List<AbstractViewpointSubsystem> cameras = new ArrayList<>();
+        this.discoveredCameras = resolveViewpoints(cameraDiscoveryTargets);
+    }
+
+    // ===== 视点候选 =====
+
+    /**
+     * 一个可切换视点，以及发现它的那台活动武器控制器。
+     *
+     * <p>两个字段都有读点：{@code viewpoint} 用于循环、有效性与服务端校验；
+     * {@code controller} 用于固定炮镜的机构采样配对。它不是把已有对象的字段搬一遍，
+     * 而是把“哪台视点属于哪台武器”这一发现结果固定成一次读取的值。</p>
+     *
+     * @param viewpoint  视点实例
+     * @param controller 首次发现它的活动武器控制器；座位静态声明且没有控制器发现它时为 {@code null}
+     */
+    public record ViewCandidate(AbstractViewpointSubsystem viewpoint,
+                                @Nullable WeaponControllerSubsystem controller) {
+    }
+
+    /**
+     * 此刻可切换的视点：静态发现 ∪ 当前活动武器控制器发现的视点。
+     *
+     * <p>构成与顺序：静态 {@link #discoveredCameras} 按声明顺序在前；随后按活动集合
+     * （base → 当前子组）顺序展开每台控制器的发现结果。活动集合取
+     * {@link #getActiveWeaponControllers()}，因此副武器线上的设备（遥控武器站一类）同样算数。
+     * 同一实例只出现一次，保留首次出现的位置。</p>
+     *
+     * <p>过滤四条——与座椅同装配体、{@code isActive()}、未摧毁、宿主子零件未移除——对视点与
+     * 武器控制器都成立。这是各读点判定的并集（最严的一份），因此被拆下的子零件上的视点不会
+     * 留在切换列表里。</p>
+     *
+     * <p>配对取首次发现该视点的活动控制器；静态列表里的视点若同时被某台活动控制器发现，
+     * 同样填该控制器，否则为 {@code null}。</p>
+     *
+     * <p>每次调用按当前控制组现算，不缓存到结构变化点：活动组索引两端已同步，所以客户端与服务端
+     * 由同一段代码得出同一结论。</p>
+     *
+     * @return 不可变候选列表，没有可切换视点时为空列表
+     */
+    public List<ViewCandidate> getViewCandidates() {
+        List<WeaponControllerSubsystem> controllers = getActiveWeaponControllers();
+        Map<AbstractViewpointSubsystem, WeaponControllerSubsystem> discoveredBy = new IdentityHashMap<>();
+        for (WeaponControllerSubsystem controller : controllers) {
+            if (!isViewCandidateController(controller)) continue;
+            for (AbstractViewpointSubsystem viewpoint : controller.getDiscoveredViewpoints()) {
+                discoveredBy.putIfAbsent(viewpoint, controller);
+            }
+        }
+
+        List<ViewCandidate> candidates = new ArrayList<>(discoveredCameras.size() + discoveredBy.size());
         Set<AbstractViewpointSubsystem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (String channel : cameraDiscoveryTargets.keySet()) {
-            if (channel.isEmpty()) continue;
-            for (List<ISignalReceiver> terminals : resolveTargets(channel).values()) {
-                for (ISignalReceiver terminal : terminals) {
-                    if (terminal instanceof AbstractViewpointSubsystem camera
-                            && camera.getOwner().getSubPart().getPart().assembly
-                            == this.getOwner().getSubPart().getPart().assembly
-                            && seen.add(camera)) {
-                        cameras.add(camera);
-                    }
+        for (AbstractViewpointSubsystem viewpoint : discoveredCameras) {
+            if (isViewCandidate(viewpoint) && seen.add(viewpoint)) {
+                candidates.add(new ViewCandidate(viewpoint, discoveredBy.get(viewpoint)));
+            }
+        }
+        for (WeaponControllerSubsystem controller : controllers) {
+            if (!isViewCandidateController(controller)) continue;
+            for (AbstractViewpointSubsystem viewpoint : controller.getDiscoveredViewpoints()) {
+                if (isViewCandidate(viewpoint) && seen.add(viewpoint)) {
+                    candidates.add(new ViewCandidate(viewpoint, controller));
                 }
             }
         }
-        this.discoveredCameras = List.copyOf(cameras);
+        return List.copyOf(candidates);
+    }
+
+    /**
+     * 按实例判定：该视点此刻是否在候选里。服务端校验与切换路径用它。
+     *
+     * @param viewpoint 视点实例
+     * @return 在候选里为 true
+     */
+    public boolean hasViewCandidate(AbstractViewpointSubsystem viewpoint) {
+        for (ViewCandidate candidate : getViewCandidates()) {
+            if (candidate.viewpoint() == viewpoint) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 按结构地址判定：只记录 {@code (子零件 ID, 名字)} 的读点用它。
+     *
+     * @param subPartId 视点所属子零件 ID
+     * @param name      视点子系统名
+     * @return 在候选里为 true
+     */
+    public boolean hasViewCandidate(int subPartId, String name) {
+        for (ViewCandidate candidate : getViewCandidates()) {
+            AbstractViewpointSubsystem viewpoint = candidate.viewpoint();
+            if (viewpoint.getSubPart().getId() == subPartId && viewpoint.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 该视点在候选里的配对控制器；不在候选、或没有被活动武器控制器发现时为 {@code null}。
+     *
+     * @param viewpoint 视点实例
+     * @return 配对的武器控制器或 {@code null}
+     */
+    @Nullable
+    public WeaponControllerSubsystem getViewCandidateController(AbstractViewpointSubsystem viewpoint) {
+        for (ViewCandidate candidate : getViewCandidates()) {
+            if (candidate.viewpoint() == viewpoint) return candidate.controller();
+        }
+        return null;
+    }
+
+    /** 候选里的视点四条：同装配体、启用、未摧毁、宿主子零件未移除。 */
+    private boolean isViewCandidate(AbstractViewpointSubsystem viewpoint) {
+        return viewpoint.getSubPart().getPart().assembly == getSubPart().getPart().assembly
+                && viewpoint.isActive() && !viewpoint.isDestroyed() && !viewpoint.getSubPart().isRemoved;
+    }
+
+    /** 候选里的武器控制器三条：启用、未摧毁、宿主子零件未移除。 */
+    private static boolean isViewCandidateController(WeaponControllerSubsystem controller) {
+        return controller.isActive() && !controller.isDestroyed() && !controller.getSubPart().isRemoved;
     }
 
     // ===== 武器控制器发现 =====
@@ -317,7 +420,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         from.forEach((channel, targets) -> into.merge(channel, targets, AbstractControllableSubsystem::unionTargets));
     }
 
-    private static List<String> unionTargets(List<String> first, List<String> second) {
+    /**
+     * 同一频道的两组目标名取有序并集，重复项只保留首次出现。<br>
+     * 座位合并控制组各类目时用它，武器控制器合并命令输出与视点发现时也用它。
+     */
+    static List<String> unionTargets(List<String> first, List<String> second) {
         Set<String> union = new LinkedHashSet<>(first.size() + second.size());
         union.addAll(first);
         union.addAll(second);

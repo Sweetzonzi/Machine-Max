@@ -168,9 +168,8 @@ public final class CameraController {
             aimDirection = CLIENT.player.getLookAngle();
             return;
         }
-        // 发现关系、激活或耐久状态失效时退回座椅观察，让失效设备退出输入来源。
-        if (activeCamera != null && (!seat.getDiscoveredCameras().contains(activeCamera)
-                || !activeCamera.isActive() || activeCamera.isDestroyed())) {
+        // 候选之外的视点（所属控制器离开活动集合、宿主子零件被移除）退回座椅观察，让失效设备退出输入来源。
+        if (activeCamera != null && !seat.hasViewCandidate(activeCamera)) {
             exitCameraMode();
         }
         if (seat.getSubPart().getPart().assembly instanceof VehicleCore vehicle) {
@@ -266,7 +265,11 @@ public final class CameraController {
     private static void updateFixed() {
         SightSubsystem sight = (SightSubsystem) activeCamera;
         AimPose actual = sight.samplePose(1);
-        WeaponControllerSubsystem controller = controllingSeat.getActiveMainWeaponController();
+        // 机构取自该视点在候选里的配对控制器；没有配对时回落到现行主 WC 口径。
+        WeaponControllerSubsystem controller = controllingSeat.getViewCandidateController(sight);
+        if (controller == null) {
+            controller = controllingSeat.getActiveMainWeaponController();
+        }
         sight.setAimController(controller);
         if (fixedSight != sight || fixedController != controller) {
             if (fixedSight != null && fixedSight != sight) {
@@ -490,9 +493,10 @@ public final class CameraController {
         if (controllingSeat == null) {
             return;
         }
-        // 发现顺序决定循环顺序；仅允许有效且启用循环切换的设备进入列表。
-        List<AbstractViewpointSubsystem> devices = controllingSeat.getDiscoveredCameras().stream()
-                .filter(c -> c.isActive() && !c.isDestroyed() && c.attr.staticAttribute.allowCycle).toList();
+        // 切换时按候选顺序循环；仅允许启用循环切换的设备进入列表。
+        List<AbstractViewpointSubsystem> devices = controllingSeat.getViewCandidates().stream()
+                .map(candidate -> candidate.viewpoint())
+                .filter(c -> c.attr.staticAttribute.allowCycle).toList();
         if (devices.isEmpty()) {
             return;
         }

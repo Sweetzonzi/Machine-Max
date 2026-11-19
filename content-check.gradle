@@ -55,6 +55,10 @@
 //     那一处静默无声——既不报错也不刷日志。只核对内容命名空间里的事件，minecraft 与外部 mod
 //     的事件无法离线核对，原样跳过。基础名没注册、只有 <id>_interior 时有注册是合法配置：
 //     车内听者由播放器换成该变体，车外没有录音因此静音（弹壳音就是只有车内录音）。
+// 16. 视点发现表（座位与武器控制器的 camera_discovery_targets）的取值域与频道。这张表决定
+//     座位 / 火控能发现哪些视点：具名目标不走接收侧接受频道，名字写错或指向别的类型时发现
+//     结果为空、频道写错也照样命中；local / global 与连接点名要过视点的 discovery_inputs，
+//     写错时永远命中不了。两种情况都只表现为"少一个视角"，没有日志。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -364,7 +368,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型、音效事件与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型、音效事件与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，视点发现表的取值域与广播频道，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -1080,6 +1084,29 @@ tasks.register('checkContent') {
             }
         }
 
+        // 第 16 节用：所有 camera / sight 型号声明过的接受频道。视点发现表里的 local / global
+        // 由接收侧按自己的 discovery_inputs 筛选，频道不在这个并集里就永远命中不了。
+        Set<String> viewpointDiscoveryChannels = new LinkedHashSet<>()
+        subsystemDefinitions.each { String id, File file ->
+            try {
+                Object parsed = readJsonc(file)
+                if (!(parsed instanceof Map)) {
+                    return
+                }
+                Object type = ((Map) parsed).get('type')
+                if (type == null
+                        || (type.toString() != 'machine_max:camera' && type.toString() != 'machine_max:sight')) {
+                    return
+                }
+                Object inputs = ((Map) parsed).get('discovery_inputs')
+                if (inputs instanceof List) {
+                    ((List) inputs).each { Object channel -> viewpointDiscoveryChannels << channel.toString() }
+                }
+            } catch (Exception ignored) {
+                // 型号 JSON 读不出来由解码期拒绝，这里不重复报
+            }
+        }
+
         def acceptedChannelFields = [
                 'machine_max:seat'                : [static : [interact_inputs: ['interact']],
                                                      install: [interact_inputs: [], loader_discovery_inputs: []]],
@@ -1154,6 +1181,7 @@ tasks.register('checkContent') {
 
         int portWireCount = 0
         int interactTargetCount = 0
+        int viewpointDiscoveryTargetCount = 0
         // 第 14 节用：连接点的关节属性（含 overwrite 覆盖），按型号 JSON 缓存。
         Map<String, Object> connectorDefinitionCache = [:]
         def jointAttrsOf = { Map connectorBlock ->
@@ -1386,6 +1414,77 @@ tasks.register('checkContent') {
                                             ' 的目标 ' + target + ' 不是本变体内的子系统或连接点' +
                                             '（跨零件写连接点名；交互区只发不收，不能当目标）'
                                 }
+                            }
+                        }
+                    }
+                    // 16. 视点发现表：取值域、广播频道与禁用 camera_sight
+                    //
+                    // 座位与武器控制器的 camera_discovery_targets 由 resolveTargets 解析成视点。
+                    // 具名目标不走接收侧接受频道（最后一行直接当终端收下），所以名字写错或指向
+                    // 别的类型时发现结果为空；local / global 与连接点名要过视点的 discovery_inputs，
+                    // 频道写错时永远命中不了。两种都只表现为「少一个视角」，没有日志。
+                    // 作用域是安装块所在变体的 sub_parts，也就是运行期这一个 Part 实例
+                    // （setTargetFromNames 扫的就是 owner.part.subParts）。
+                    subsystems.each { Object viewpointOwnerName, Map viewpointOwner ->
+                        Object discoveryRaw = viewpointOwner.get('camera_discovery_targets')
+                        if (!(discoveryRaw instanceof Map)) {
+                            return
+                        }
+                        ((Map) discoveryRaw).each { Object channelRaw, Object namesRaw ->
+                            String discoveryChannel = channelRaw.toString()
+                            if (!(namesRaw instanceof List)) {
+                                problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                        ' 的视点发现频道 ' + discoveryChannel + ' 不是目标名列表'
+                                return
+                            }
+                            if (discoveryChannel == 'camera_sight') {
+                                problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                        ' 的视点发现频道写成了 camera_sight——那是每台视点未声明接受频道时的' +
+                                        '默认值，等于把全车所有视点都算进来；要表达「这台视点归谁」，' +
+                                        '频道名必须是内容自己的设备词（sight_rws、sight_port_mg …）'
+                            }
+                            boolean discoveryBroadcast = false
+                            ((List) namesRaw).each { Object targetRaw ->
+                                String viewTarget = targetRaw.toString()
+                                viewpointDiscoveryTargetCount++
+                                if (viewTarget == 'local' || viewTarget == 'global') {
+                                    discoveryBroadcast = true
+                                    return
+                                }
+                                if (viewTarget.startsWith('subsystem.')) {
+                                    Map install = subsystems[viewTarget]
+                                    if (install == null) {
+                                        problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                                ' 的视点发现目标 ' + viewTarget + ' 不在本变体内' +
+                                                '（作用域是这一个 Part 实例；跨 Part 只能写连接点名或 global）'
+                                        return
+                                    }
+                                    String targetType = install.get('type') == null
+                                            ? '' : install.get('type').toString()
+                                    if (targetType != 'machine_max:camera' && targetType != 'machine_max:sight') {
+                                        problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                                ' 的视点发现目标 ' + viewTarget + ' 的类型是 ' + targetType +
+                                                '——按名解析不报错，但发现结果只留视点，这条线路等于不通'
+                                    }
+                                    return
+                                }
+                                if (viewTarget.startsWith('connector.')) {
+                                    if (!connectors.containsKey(viewTarget)) {
+                                        problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                                ' 的视点发现目标是连接点 ' + viewTarget +
+                                                '，但本变体里没有这个连接点'
+                                    }
+                                    return
+                                }
+                                problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                        ' 的视点发现目标 ' + viewTarget + ' 的写法不认识——只能写' +
+                                        ' subsystem.<命名空间>.<名字>、connector.<…>、local 或 global'
+                            }
+                            if (discoveryBroadcast && !viewpointDiscoveryChannels.contains(discoveryChannel)) {
+                                problems << relative + '：变体 ' + variantName + ' 的 ' + viewpointOwnerName +
+                                        ' 的视点发现频道 ' + discoveryChannel + ' 走 local / global 广播，' +
+                                        '但没有一台 camera / sight 在 discovery_inputs 里声明它——' +
+                                        '接收侧按自己的接受频道筛选，这条线路永远命中不了'
                             }
                         }
                     }
@@ -1830,6 +1929,7 @@ tasks.register('checkContent') {
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + partDefinitionCount + ' 份部件定义 / ' +
                 partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + portWireCount + ' 条跨连接点信号线（到达频道都在目标声明内，且没有一条挂在内部连接点上），' +
                 interactTargetCount + ' 条交互区目标（都是本变体内的子系统或连接点），' +
+                viewpointDiscoveryTargetCount + ' 条视点发现目标（取值域在本变体内，广播频道都有视点声明），' +
                 referenceCount + ' 处资源引用，' +
                 documentReferenceCount + ' 处样式表引用，' +
                 particleReferenceCount + ' 处材质粒子引用，' + childParticleCount + ' 处子效果引用，' +

@@ -22,6 +22,15 @@
       "default": {},
       "description": "控制信号输出频道及目标列表。武器控制器通过这些频道向炮塔驱动和发射器发送控制信号，同时用于握手发现并绑定同载具内的下属子系统。"
     },
+    "camera_discovery_targets": {
+      "allOf": [
+        {
+          "$ref": "../base/signal_targets.json"
+        }
+      ],
+      "default": {},
+      "description": "本火控负责的视点发现表。同一 Part 内写子系统名（可跨子零件），跨 Part 写连接点名或 global；连接点与广播两条线路要求视点在自己的 discovery_inputs 里声明该频道。只读发现，不写信号槽，也不赋予对镜头的控制权。"
+    },
     "first_hud_layout": {
       "allOf": [
         {

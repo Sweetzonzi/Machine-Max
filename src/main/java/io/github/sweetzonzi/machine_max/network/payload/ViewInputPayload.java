@@ -99,13 +99,11 @@ public record ViewInputPayload(int subPartId, int seatIndex,
             AimTargetState.Mode mode = AimTargetState.Mode.WORLD;
             String viewName = "seat";
             if (payload.viewPartId >= 0) {
-                // 视点序号在视点所属子零件内定位；发现关系只用于确认设备来源，武器的接收范围由座椅控制组决定。
+                // 视点序号在视点所属子零件内定位；候选口径（同装配体、启用、未摧毁、宿主未移除）
+                // 与座椅、客户端切换路径同一份，武器的接收范围仍由座椅控制组决定。
                 if (!(ObjectManager.getDestroyableObject(context.player().level(), payload.viewPartId) instanceof SubPart viewPart)
                         || !(viewPart.subsystemAt(payload.viewIndex) instanceof AbstractViewpointSubsystem view)
-                        || !seat.getDiscoveredCameras().contains(view)
-                        || !view.isActive() || view.isDestroyed()
-                        || viewPart.isRemoved
-                        || viewPart.getPart().assembly != part.getPart().assembly) {
+                        || !seat.hasViewCandidate(view)) {
                     return;
                 }
                 viewName = view.getName();
