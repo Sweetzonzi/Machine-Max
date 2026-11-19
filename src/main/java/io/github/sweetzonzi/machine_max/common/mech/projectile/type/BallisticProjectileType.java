@@ -103,7 +103,7 @@ public class BallisticProjectileType extends ProjectileType {
     @Getter(AccessLevel.NONE)
     private ThrustProfile thrustProfile;
 
-    // ==================== CODEC（11 字段，远低于 16 上限） ====================
+    // ==================== CODEC（12 字段，远低于 16 上限） ====================
 
     /**
      * Mojang MapCodec：将 JSON 反序列化为 {@link BallisticProjectileType}。
@@ -134,10 +134,13 @@ public class BallisticProjectileType extends ProjectileType {
         WorldEffect.CODEC.listOf().optionalFieldOf("warheads", List.of())
             .forGetter(BallisticProjectileType::getWarheads),
         VisualProperties.CODEC.optionalFieldOf("visual", VisualProperties.DEFAULT)
-            .forGetter(ProjectileType::getVisual)
-    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, cookoff, vulnerability, hitDetection, guidance, warheads, visual) ->
+            .forGetter(ProjectileType::getVisual),
+        // 弹种侧音效（命中这一类）：整块可选，缺省没有任何弹种侧音效
+        Sounds.CODEC.optionalFieldOf("sounds", Sounds.EMPTY)
+            .forGetter(ProjectileType::getSounds)
+    ).apply(instance, (tags, maxLifetime, bulletNum, external, terminal, cookoff, vulnerability, hitDetection, guidance, warheads, visual, sounds) ->
         new BallisticProjectileType(tags, maxLifetime, bulletNum, external, terminal, cookoff,
-            vulnerability.orElse(null), hitDetection, guidance.orElse(null), warheads, visual)));
+            vulnerability.orElse(null), hitDetection, guidance.orElse(null), warheads, visual, sounds)));
 
     // ==================== 构造函数 ====================
 
@@ -152,9 +155,10 @@ public class BallisticProjectileType extends ProjectileType {
         HitDetection hitDetection,
         @Nullable GuidanceLaw guidance,
         List<WorldEffect> warheads,
-        VisualProperties visual
+        VisualProperties visual,
+        Sounds sounds
     ) {
-        super(tags, maxLifetime, bulletNum, visual, cookoff);
+        super(tags, maxLifetime, bulletNum, visual, cookoff, sounds);
         this.external = external;
         this.terminal = terminal;
         this.vulnerability = vulnerability;

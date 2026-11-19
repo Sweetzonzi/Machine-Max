@@ -127,8 +127,27 @@ surface 使用接触方块状态：雪与覆雪方块为 0.4，冰为 1，泥与
 - FMOD 没有接手时（未配置 `fmod`、bank 未加载、实例启动失败）开火音回到本型号的 `fire`：单发逐发播放 `"0.0"`，连射按 RPM 档位在 `"0.0"` 与循环音效之间切换并交叉淡入。
 - `overheat` 与 `broken` 没有运行时来源：武器没有过热机制，故障混音属于待接线功能；炮塔被摧毁时直接收声，也不写 `broken`。`turn_speed` 的来源在炮塔驱动上，见本文“炮塔双机运行时接线”。
 - 循环事件的射速由工程固定，不随型号的 `breech.fire_rate` 变化；`fire` 按实际 RPM 调音高与换档的做法在 FMOD 路径上没有对应参数，因此高射速武器应选射速接近的那一个事件。
-- 一个发射管只有一个 `fmod.fire` 事件，同一门炮换弹种不换开火音。这一层与弹种无关：`fire`、`cease_fire`、`shell` 都配置在发射器型号上，弹种的 `sounds` 只留给命中与飞掠这一类声音。
+- 一个发射管只有一个 `fmod.fire` 事件，同一门炮换弹种不换开火音。这一层与弹种无关：`fire`、`cease_fire`、`shell` 都配置在发射器型号上。弹种的 `sounds` 只承载"随打中的东西变化"的声音——命中已接入（见本文“弹种命中音运行时接线”），飞掠仍未接。
 - 实例在部件移除（`onDetach`）与载具离开已加载区块（`VehicleCore#setInLoadedChunk`）时停止；交回 `firing=0` 的尾音实例超过 100 tick 仍未结束时强制停止。
+
+### 弹种命中音运行时接线
+
+命中音由弹种的 `sounds.fmod` 配置，事件取自 `machine_max:mfx` 里的 `Shells_Hit` 三组，按打中的东西选：
+
+| 字段 | 触发条件 | 它接手的原音效 |
+| --- | --- | --- |
+| `hit_armour` | 击穿装甲 | 材质的 `sounds.hit_pen` |
+| `hit_ground` | 命中非空气方块 | 方块的 `SoundType.getHitSound()` |
+
+- **每个档位只有一条 `hit_armour`**：事件参数只有自动的 `Distance` 与播放器维护的 `interior`，没有能翻转"击穿／未击穿"的量。因此这条事件只接手击穿那一半，未击穿继续按材质区分（`hit_un_pen`，钢、复合、反应装甲各不相同）——打穿了是弹的爆音，没打穿是装甲挨了一下。工程将来补出未击穿事件时，加一个同形状的字段即可。
+- **档位由作者按弹种写死**：`Small`、`Medium`、`Big` 之间没有推导规则，口径也不是判据——`machine_max:120mm_m829_apfsds` 的 `external.caliber` 是 26 mm 弹芯，档位仍是 `Big`。第一方内容按炮弹本身的大小取档：30 mm 取 `Small`，50／57／100 mm 取 `Medium`，120／125／152 mm 取 `Big`；7.62／7.92／12.7 mm 机枪弹与信号弹不配这一层，继续走材质与方块的原生音。
+- **换弹种换命中音，换炮管不换**：这一层在弹种上，开火音在发射器型号上，两者正交。同一门炮打穿甲弹与榴弹的命中音因此可以不同。
+- 两层各自独立回落：没配事件、bank 未加载或实例起不来时，同一层回到材质／方块的原音，两层不会同时响。
+- 播放位置是命中点，速度取零（命中点在世界里静止，多普勒没有意义）；3D 单次事件播完由播放器释放实例。音量类别与它所替代的音效同档——装甲命中 `NEUTRAL`、地形命中 `BLOCKS`，玩家拉音量滑块时行为不变。听者在第一人称下正控制着某个子系统时按车内混音写 `interior=1`，与接触音、引擎音共用同一条判据。
+- 身份只传投射物 id：地面命中读命中包本来就有的 `objId`，装甲命中由服务端在**击穿**时随表现条目下发打出这一击的那一发 id（未击穿、或该弹种没配 `hit_armour` 时不下发）。客户端按 id 现查弹种再取事件，弹种注册键、bank 与事件路径都不上线。
+- 同组的 `hit_water` 暂不接入：投射物管线里没有命中水体的判据，也没有对应的客户端表现通道。等水体命中做出来再接，配置形状与 `hit_ground` 相同。
+
+实现见 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/projectile/ProjectileHitSounds.java`。装甲命中的调用点是 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPartHitEffects.java#play`，地形命中在 `src/main/java/io/github/sweetzonzi/machine_max/network/payload/projectile/ProjectilesHitPayload.java#handle`，下发投射物 id 的判定在 `src/main/java/io/github/sweetzonzi/machine_max/common/mech/vehicle/SubPart.java#firedProjectileId`。
 
 ### Master FX
 
@@ -489,7 +508,9 @@ bank ID 为 `machine_max:abrams`。
 
 炮塔双机已接入：第一方主炮的方位／俯仰驱动型号配置了液压那一对事件，T-90A 与 59 式的高射机枪配置了手摇那一对，规则见本文“炮塔双机运行时接线”。Builtin 的基础驱动型号按机构分两对——`basic_azimuth_driver`／`basic_elevation_driver` 是动力型，取液压那一对事件，转速 90／30 °/s；`basic_manual_azimuth_driver`／`basic_manual_elevation_driver` 是手摇型，取手摇那一对事件，转速 20／8 °/s。2S38 与 K17 的高低机引用动力型，Sd.Kfz.234 与 MT-LB 的手摇炮塔引用手摇型。美系车包的 RWS、CITV 与航向机枪塔驱动没有配置 `sounds.fmod`，走 `sounds.turn` 的 OGG 兜底。
 
-电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。传动打齿与 Master FX 的 FMOD 运行时触发接线待实现。
+Master FX 的 `Shells_Hit` 已接入命中音：第一方 30 mm 到 152 mm 的 13 个弹种配置了 `hit_armour` 与 `hit_ground`，档位按炮弹大小取，规则见本文“弹种命中音运行时接线”。同组的 `Explode`（`he_small`／`he_big`）与 `Flyby`、`Destruction`、`Effects/deaf` 仍未接运行时触发，爆炸音目前由战斗部的 OGG 表现承担。
+
+电机的 sounds.fmod.drive、装填的 sounds.fmod.reload 已提供配置入口，运行时触发接线待实现。材料的 sounds.fmod 预留 bank。传动打齿待实现。
 
 ## 可复核记录
 

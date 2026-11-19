@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-19",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "90666ab8ac6b80c312caeae21b0335055156c341",
+    "revision": "8e9a52635eb7ecf228f3aa252c15d29b736696da",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -141,8 +141,8 @@
       },
       {
         "path": "references/schemas/projectile/projectile.schema.json",
-        "bytes": 14867,
-        "sha256": "4d83950b0f9cf92abe04f6071b7b7335f240ab4dd0a164432ff90a1e842c69a2"
+        "bytes": 16979,
+        "sha256": "f72615c96e71429dea9f25a204fd86c737dc78f0d1c428075a5537c8fcda5978"
       },
       {
         "path": "references/schemas/recipe/blueprint_research_recipe.schema.json",

@@ -68,5 +68,12 @@
     "texture": "machine_max:textures/projectile/9m133.png",
     "tracer_light_intensity": 15.9,
     "muzzle_flash": { "intensity": 616 }
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:mfx",
+      "hit_armour": "event:/Master_FX/Shells_Hit/Big/hit_armour",
+      "hit_ground": "event:/Master_FX/Shells_Hit/Big/hit_ground"
+    }
   }
 }

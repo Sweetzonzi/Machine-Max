@@ -88,7 +88,10 @@ public class MMPayloadRegistry {
         // 20.0.0 对应履带状态改成材料扇区：TrackLinkData 的绝对耐久与断带布尔位换成每扇区剩余材料比例
         // （section_fill，空数组 = 未建造）、断口标记（torn）与相位（sector_phase）。线格式与 JSON 同序，
         // 旧存档不做迁移（缺 section_fill 按满载载入），但两端必须同版本。
-        final PayloadRegistrar sync = event.registrar("sync:20.0.0");
+        // 21.0.0 对应命中表现包的条目增加投射物身份：SubPartHitEffectPayload 的标志位多一位「后随 varint 投射物 id」，
+        // 击穿装甲的条目因此带上打出这一击的那一发（客户端按 id 查弹种，再取 sounds.fmod.hit_armour）。
+        // 地面命中不新增字段：ProjectilesHitPayload 的条目本来就带 objId，客户端按同一个 id 查弹种。
+        final PayloadRegistrar sync = event.registrar("sync:21.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         // 4.0.0 与 sync 同因：蓝图取出 / 收纳的载具数据里也带 TrackLinkData。
         final PayloadRegistrar misc = event.registrar("misc:4.0.0");

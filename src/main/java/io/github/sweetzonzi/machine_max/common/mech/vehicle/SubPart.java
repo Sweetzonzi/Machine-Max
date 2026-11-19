@@ -23,6 +23,8 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IModularSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
@@ -1309,7 +1311,29 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
                 hitBox.getHitBoxKey(),
                 (float) offset.x, (float) offset.y, (float) offset.z,
                 (float) sprayDir.x, (float) sprayDir.y, (float) sprayDir.z,
-                penetrated, trackAbsorbed));
+                penetrated, trackAbsorbed,
+                penetrated ? firedProjectileId(ctx) : 0));
+    }
+
+    /**
+     * 打出这一击的投射物 id，只在本次命中确实会用到弹种音效时给出，否则 {@code 0}。
+     *
+     * <p>身份取 {@link BFDamageContext#handler()}——它就是发炮那一发自己的
+     * {@code BallisticProjectile}，与 {@code DamageSource} 里的直接实体不同，后者是可能尚未创建的
+     * {@code MMProjectileEntity} 投影，近距离命中时它还不存在。别的伤害来源（近战、爆炸、碰撞冲击、
+     * 其他模组的投射物）在这里没有投射物身份，客户端照常按材质取音。</p>
+     *
+     * <p>两个条件缺一不可：这一击要<b>击穿</b>（{@code Shells_Hit} 没有"没打穿"的同档事件），
+     * 弹种也要<b>配了</b> {@code sounds.fmod.hit_armour}（没配就没有可播的事件，不必让 id 上线）。
+     * 下发的是投射物 id 而不是弹种注册键：客户端按 id 现查弹种，一条条目只多一两个字节。</p>
+     *
+     * <p><b>调用线程：</b>主线程（统一结算阶段）。</p>
+     */
+    private static int firedProjectileId(BFDamageContext ctx) {
+        if (!(ctx.handler() instanceof BallisticProjectile projectile)) return 0;
+        ProjectileType type = projectile.getProjectileType();
+        if (type.getSounds().fmod().flatMap(ProjectileType.FmodSounds::hitArmour).isEmpty()) return 0;
+        return projectile.getId();
     }
 
     /**

@@ -22,7 +22,7 @@ class SubPartHitEffectPayloadTest {
     private static SubPartHitEffectPayload.Entry entry(String hitBoxKey, boolean penetrated, float offset) {
         return new SubPartHitEffectPayload.Entry(hitBoxKey,
                 offset, offset + 0.5f, offset - 0.5f,
-                0f, 0f, -1f, penetrated, false);
+                0f, 0f, -1f, penetrated, false, 0);
     }
 
     /** 构造 n 条互不相同的条目，模拟一次霰弹或一次殉爆在同一子部件上累积的命中点。 */
@@ -34,15 +34,23 @@ class SubPartHitEffectPayloadTest {
         return list;
     }
 
-    /** 一轮编码解码后字段原样还原，击穿与履带吸收两个标志各自独立。 */
+    /**
+     * 一轮编码解码后字段原样还原，击穿、履带吸收与投射物身份三者各自独立。
+     *
+     * <p>投射物 id 只在击穿那一条上出现，正是为了固定"标志位与后随字段成对"：漏写后随的
+     * {@code writeVarInt} 会让后面的条目整体错位，而这种错位在单条条目上看不出来。</p>
+     */
     @Test
     void roundTripsEveryEntryField() {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
             SubPartHitEffectPayload payload = new SubPartHitEffectPayload(0x2A1,
-                    List.of(entry("HullFrontUpperArmor", true, 1.25f),
+                    List.of(new SubPartHitEffectPayload.Entry("HullFrontUpperArmor",
+                                    1.25f, 1.75f, 0.75f, 0f, 0f, -1f, true, false, 0x5EC7),
                             new SubPartHitEffectPayload.Entry("TrackLink",
-                                    -3f, 0f, 7.5f, 0f, 1f, 0f, false, true)));
+                                    -3f, 0f, 7.5f, 0f, 1f, 0f, false, true, 0),
+                            // 击穿但没有投射物身份：没有可播的弹种命中音，客户端按材质取音
+                            entry("HullSide", true, 4f)));
             SubPartHitEffectPayload.STREAM_CODEC.encode(buffer, payload);
             assertEquals(payload, SubPartHitEffectPayload.STREAM_CODEC.decode(buffer));
             assertFalse(buffer.isReadable());

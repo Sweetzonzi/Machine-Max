@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.client.input.CameraShakeController;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.BallisticProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileHitSounds;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.util.NonFiniteDiagnostics;
 import net.minecraft.core.BlockPos;
@@ -130,7 +131,8 @@ public record ProjectilesHitPayload(
     /**
      * 客户端处理：逐条更新 SoA 状态并播放地形命中特效。
      * <p>
-     * {@code hitBlockPos != null}：地形命中，客户端查方块类型播放原生粒子/音效。
+     * {@code hitBlockPos != null}：地形命中，客户端查方块类型播放原生粒子，命中音先让弹种的
+     * {@code sounds.fmod.hit_ground} 接手，接不住再播方块自己的 {@code SoundType}。
      * {@code hitBlockPos == null}：SubPart/Entity 命中，仅做弹道状态同步，特效自理。
      * <p>
      * <b>调用线程：</b>主线程（NeoForge 网络处理器）。
@@ -188,11 +190,14 @@ public record ProjectilesHitPayload(
                                 new BlockParticleOption(ParticleTypes.BLOCK, state),
                                 hitPoint.x, hitPoint.y, hitPoint.z,
                                 hitNormal.x, hitNormal.y, hitNormal.z);
-                        // 方块原生命中音效
-                        SoundType soundType = state.getSoundType();
-                        level.playLocalSound(hitPoint.x, hitPoint.y, hitPoint.z,
-                                soundType.getHitSound(), net.minecraft.sounds.SoundSource.BLOCKS,
-                                soundType.getVolume(), soundType.getPitch(), false);
+                        // 方块原生命中音效：弹种配了 sounds.fmod.hit_ground 且实例起来了就由 FMOD 接手，
+                        // 否则保持方块自己的 SoundType（两层只响一层，见 ProjectileType.FmodSounds）
+                        if (!ProjectileHitSounds.playGroundHit(level, e.objId, hitPoint)) {
+                            SoundType soundType = state.getSoundType();
+                            level.playLocalSound(hitPoint.x, hitPoint.y, hitPoint.z,
+                                    soundType.getHitSound(), net.minecraft.sounds.SoundSource.BLOCKS,
+                                    soundType.getVolume(), soundType.getPitch(), false);
+                        }
                     }
                 }
                 // 若 hitBlockPos == null：SubPart/Entity 命中，命中包仅做弹道状态同步

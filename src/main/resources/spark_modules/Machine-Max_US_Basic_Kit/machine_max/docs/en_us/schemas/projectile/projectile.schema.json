@@ -213,8 +213,36 @@
     },
     "sounds": {
       "type": "object",
-      "additionalProperties": true,
-      "description": "Projectile-side sound placeholder: flyby, impact and penetration sounds — everything decided by what the round hit — will live here. Nothing consumes this block yet, so fields written into it are not read. The firing, burst and casing layer belongs to the launcher model and is configured in the subsystem's sounds."
+      "description": "Projectile-side sounds — the layer decided by what the round hit, kept separate from the launcher model's sounds (firing, burst, casing), so one ammunition type sounds the same whichever barrel fires it. The whole block may be omitted; firing, burst and casing are never written here.",
+      "properties": {
+        "fmod": {
+          "type": "object",
+          "description": "Two FMOD impact events sharing one bank. Each layer falls back on its own: a configured layer is played by FMOD, and when the instance cannot start (bank not loaded, event missing) or no event is configured that layer returns to the OGG the material or the block already provides — armour hits take the material's sounds (hit_pen when penetrated, hit_un_pen otherwise), terrain hits take the block's SoundType hit sound; the two never sound together. Events are chosen by what was hit, not by whether the round penetrated: Shells_Hit has a single hit_armour per size class with no event that can express 'did not penetrate', so it takes over the penetrating half only and non-penetrating hits stay material-driven. The size class (Small, Medium, Big) is written per ammunition type; there is no derivation rule and external.caliber is not a criterion — sub-calibre rounds declare their penetrator diameter.",
+          "properties": {
+            "bank": {
+              "description": "FMOD bank ID; Shells_Hit lives in machine_max:mfx",
+              "type": "string"
+            },
+            "hit_armour": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "Event played when the round penetrates armour, e.g. event:/Master_FX/Shells_Hit/Medium/hit_armour. Played on penetration only; non-penetrating hits keep the material's hit_un_pen."
+            },
+            "hit_ground": {
+              "type": "string",
+              "pattern": "^event:/.+",
+              "description": "Event played when the round hits terrain, e.g. event:/Master_FX/Shells_Hit/Medium/hit_ground. Played whenever the hit block is not air, regardless of penetration."
+            }
+          },
+          "required": ["bank"],
+          "additionalProperties": false,
+          "anyOf": [
+            { "required": ["hit_armour"] },
+            { "required": ["hit_ground"] }
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {
@@ -271,7 +299,14 @@
           "cookoff": { "penetration": 40.0, "damage": 40.0, "impulse": 18.0 }
         }
       ],
-      "description": "HE shell — the propellant contribution lives on the root object, the warhead's sympathetic-detonation contribution on the machine_max:blast inside warheads"
+      "sounds": {
+        "fmod": {
+          "bank": "machine_max:mfx",
+          "hit_armour": "event:/Master_FX/Shells_Hit/Big/hit_armour",
+          "hit_ground": "event:/Master_FX/Shells_Hit/Big/hit_ground"
+        }
+      },
+      "description": "HE shell — the propellant contribution lives on the root object, the warhead's sympathetic-detonation contribution on the machine_max:blast inside warheads; impact sound takes the Big class by shell size"
     }
   ]
 }

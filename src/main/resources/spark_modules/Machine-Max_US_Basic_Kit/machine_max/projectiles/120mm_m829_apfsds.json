@@ -27,5 +27,12 @@
     "tracer_light_intensity": 3.85,
     // 弹芯口径 26 mm 只能折算到 5.9 m，按 120 mm 炮口写显式半径
     "muzzle_flash": { "radius": 20.0, "intensity": 400 }
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:mfx",
+      "hit_armour": "event:/Master_FX/Shells_Hit/Big/hit_armour",
+      "hit_ground": "event:/Master_FX/Shells_Hit/Big/hit_ground"
+    }
   }
 }

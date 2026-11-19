@@ -3,8 +3,10 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.explosion.CookoffContribution;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
@@ -71,6 +73,14 @@ public abstract class ProjectileType {
      */
     private final CookoffContribution cookoff;
 
+    /**
+     * 音效 — 由"打中了什么"决定的那一层，按弹种配置（JSON 的 {@code sounds} 子对象）。
+     * <p>
+     * 整块可缺省，缺省 {@link Sounds#EMPTY}。击发、连射与抛壳不在这里：那一层属于发射器型号
+     * （{@code LauncherSubsystem} 的 {@code sounds}），同一门炮换弹种不换开火音。
+     */
+    private final Sounds sounds;
+
     /** 注册键，由 {@link ProjectileModule} 加载时赋值（服务端与客户端各自持有独立实例） */
     private ResourceLocation registryKey;
 
@@ -81,13 +91,15 @@ public abstract class ProjectileType {
         float maxLifetime,
         int bulletNum,
         VisualProperties visual,
-        CookoffContribution cookoff
+        CookoffContribution cookoff,
+        Sounds sounds
     ) {
         this.tags = tags;
         this.maxLifetime = maxLifetime;
         this.bulletNum = bulletNum;
         this.visual = visual;
         this.cookoff = cookoff == null ? CookoffContribution.ZERO : cookoff;
+        this.sounds = sounds == null ? Sounds.EMPTY : sounds;
     }
 
     // ==================== 类型分派 ====================
@@ -595,5 +607,63 @@ public abstract class ProjectileType {
             ResourceLocation.CODEC.optionalFieldOf("texture")
                 .forGetter(VisualProperties::texture)
         ).apply(instance, VisualProperties::new));
+    }
+
+    /**
+     * 弹种侧音效 — 内容包 {@code sounds} 子对象。
+     * <p>
+     * 这一层只承载"随打中的东西变化"的声音，与发射器型号的 {@code sounds}（击发、连射、抛壳）
+     * 分工，因此同一个弹种挂在哪个炮管上都用同一份命中音。
+     * <p>
+     * 目前只有 FMOD 一层（{@link #fmod()}）。今后要加 OGG 覆盖（某个弹种自带命中采样）就在本对象
+     * 里加字段，播放端按既有的分层规则取用：FMOD 接住的那一层不再播 OGG。
+     *
+     * @param fmod FMOD bank 与命中事件；空表示这一层全部走材质（装甲）与方块（地形）的既有 OGG
+     */
+    public record Sounds(Optional<FmodSounds> fmod) {
+
+        /** 整块缺省值：没有弹种侧音效，命中音由材质与方块决定。 */
+        public static final Sounds EMPTY = new Sounds(Optional.empty());
+
+        public static final Codec<Sounds> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            FmodSounds.CODEC.optionalFieldOf("fmod").forGetter(Sounds::fmod)
+        ).apply(instance, Sounds::new));
+    }
+
+    /**
+     * 弹种命中音的两层 Studio 事件，共用同一个 bank。
+     * <p>
+     * 两层各自独立回落：写空的那一层留在既有 OGG 上（装甲命中取材质 {@code sounds}、地形命中取
+     * 方块 {@code SoundType.getHitSound}）；写了事件的那一层由 FMOD 发声，实例起不来
+     * （bank 未加载、事件缺失、实例上限）时同一层回落。
+     * <p>
+     * <b>事件按"打中了什么"选，不按穿没穿甲选</b>：{@code Shells_Hit} 每组只有一条
+     * {@code hit_armour}，参数只有自动的 {@code Distance} 与播放器维护的 {@code interior}，
+     * 没有能把同一实例翻成"未击穿"的量。因此这条事件只接手<b>击穿</b>那一半；未击穿仍走材质的
+     * {@code hit_un_pen}，按材质区分——打穿了是弹的爆音，没打穿是装甲挨了一下，两边各有各的数据。
+     * <p>
+     * <b>档位由作者按弹种写死</b>：{@code Small} / {@code Medium} / {@code Big} 三组之间没有推导规则，
+     * 口径也不是判据（次口径弹的 {@code external.caliber} 是弹芯直径，同一门炮的穿甲弹与榴弹
+     * 口径可以差一个档）。换档位是换事件路径，不是改字段。
+     * <p>
+     * <b>两个事件至少要写一个</b>：整块的用途就是点名事件，只写 bank 的配置解码期直接失败——
+     * 否则它看起来配好了，实际什么都不播。
+     *
+     * @param bank      SparkCore 内容包中的 bank ID；{@code Shells_Hit} 在 {@code machine_max:mfx}
+     * @param hitArmour 击穿装甲的事件，如 {@code event:/Master_FX/Shells_Hit/Medium/hit_armour}
+     * @param hitGround 命中地形的事件，如 {@code event:/Master_FX/Shells_Hit/Medium/hit_ground}
+     */
+    public record FmodSounds(ResourceLocation bank, Optional<String> hitArmour, Optional<String> hitGround) {
+
+        public static final MapCodec<FmodSounds> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("bank").forGetter(FmodSounds::bank),
+            FmodSoundAttr.EVENT_PATH_CODEC.optionalFieldOf("hit_armour").forGetter(FmodSounds::hitArmour),
+            FmodSoundAttr.EVENT_PATH_CODEC.optionalFieldOf("hit_ground").forGetter(FmodSounds::hitGround)
+        ).apply(instance, FmodSounds::new));
+
+        public static final Codec<FmodSounds> CODEC = MAP_CODEC.codec().validate(sounds ->
+            sounds.hitArmour().isPresent() || sounds.hitGround().isPresent()
+                ? DataResult.success(sounds)
+                : DataResult.error(() -> "sounds.fmod 至少要写 hit_armour 与 hit_ground 之一"));
     }
 }

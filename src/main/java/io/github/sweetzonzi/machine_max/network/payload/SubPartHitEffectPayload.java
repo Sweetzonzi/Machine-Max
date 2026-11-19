@@ -26,10 +26,12 @@ import java.util.List;
  * 零件命中表现包（服务端 → 客户端）：一次结算批次内该子部件受到的命中表现，每笔命中一条。
  *
  * <p>载荷只带<b>身份与几何</b>——子部件 id、碰撞箱骨骼名、命中点相对子部件的偏移、
- * 喷射轴，以及击穿/履带吸收两个标志。<b>音效事件与粒子效果 id 都不上线</b>：两者都由
- * 客户端按碰撞箱身份回查内容包里的同一份配置得到（音效走材质的 {@code sounds}，
- * 火花走材质的 {@code particles}，两者都可被碰撞箱的 {@code overwrite} 覆写），
- * 因此两端不可能出现"音效说击穿、火花说没击穿"这类错配，改效果也不需要动协议。</p>
+ * 喷射轴、击穿/履带吸收两个标志，以及击穿时打出这一击的投射物 id。<b>音效事件与粒子效果 id 都不上线</b>：
+ * 两者都由客户端按身份回查内容包里的同一份配置得到（音效走材质的 {@code sounds}、击穿时先试弹种的
+ * {@code sounds.fmod.hit_armour}，火花走材质的 {@code particles}，后者都可被碰撞箱的
+ * {@code overwrite} 覆写），因此两端不可能出现"音效说击穿、火花说没击穿"这类错配，
+ * 改效果也不需要动协议。投射物只以 id 上线（与 {@code ProjectilesHitPayload} 同一套身份），
+ * 弹种、bank 与事件路径仍由客户端自己查。</p>
  *
  * <p><b>喷射轴由服务端定</b>：击穿取命中速度方向（弹体穿出方向），未击穿与跳弹取命中面
  * 法线（火花沿装甲表面弹回）。客户端只负责把发射器的局部 +Z 旋到该轴上。</p>
@@ -59,13 +61,16 @@ public record SubPartHitEffectPayload(
      * @param dirZ           喷射轴 Z
      * @param penetrated     是否击穿
      * @param trackAbsorbed  是否被履带装甲层吸收（决定音效取履带型号而不是碰撞箱）
+     * @param projectileId   打出这一击的投射物 id；只在这一击会用到弹种音效时下发（击穿且该弹种配了
+     *                       {@code sounds.fmod.hit_armour}），其余为 {@code 0}，客户端按材质取音
      */
     public record Entry(
             String hitBoxKey,
             float offsetX, float offsetY, float offsetZ,
             float dirX, float dirY, float dirZ,
             boolean penetrated,
-            boolean trackAbsorbed
+            boolean trackAbsorbed,
+            int projectileId
     ) {
         /** 偏移与轴向要能安全写进粒子发射器的位姿。 */
         public boolean isFinite() {
@@ -91,6 +96,8 @@ public record SubPartHitEffectPayload(
     private static final int FLAG_PENETRATED = 1;
     /** 标志位：被履带吸收。 */
     private static final int FLAG_TRACK_ABSORBED = 1 << 1;
+    /** 标志位：后随一个投射物 id。 */
+    private static final int FLAG_PROJECTILE_ID = 1 << 2;
 
     public static final Type<SubPartHitEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subpart_hit_effect"));
@@ -116,7 +123,8 @@ public record SubPartHitEffectPayload(
                         int flags = buf.readByte();
                         entries.add(new Entry(hitBoxKey, ox, oy, oz, dx, dy, dz,
                                 (flags & FLAG_PENETRATED) != 0,
-                                (flags & FLAG_TRACK_ABSORBED) != 0));
+                                (flags & FLAG_TRACK_ABSORBED) != 0,
+                                (flags & FLAG_PROJECTILE_ID) != 0 ? buf.readVarInt() : 0));
                     }
                     return new SubPartHitEffectPayload(subPartId, entries);
                 }
@@ -134,8 +142,10 @@ public record SubPartHitEffectPayload(
                         buf.writeFloat(e.dirY());
                         buf.writeFloat(e.dirZ());
                         int flags = (e.penetrated() ? FLAG_PENETRATED : 0)
-                                | (e.trackAbsorbed() ? FLAG_TRACK_ABSORBED : 0);
+                                | (e.trackAbsorbed() ? FLAG_TRACK_ABSORBED : 0)
+                                | (e.projectileId() > 0 ? FLAG_PROJECTILE_ID : 0);
                         buf.writeByte(flags);
+                        if (e.projectileId() > 0) buf.writeVarInt(e.projectileId());
                     }
                 }
             };
@@ -189,7 +199,7 @@ public record SubPartHitEffectPayload(
             SubPartHitEffects.play(level, subPart, hitBox,
                     new Vec3(e.offsetX(), e.offsetY(), e.offsetZ()),
                     new Vec3(e.dirX(), e.dirY(), e.dirZ()),
-                    e.penetrated(), e.trackAbsorbed());
+                    e.penetrated(), e.trackAbsorbed(), e.projectileId());
         }
     }
 }

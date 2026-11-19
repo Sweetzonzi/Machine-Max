@@ -28,5 +28,12 @@
     "tracer_alpha": 220,
     "tracer_light_intensity": 6.0,
     "muzzle_flash": { "intensity": 120.0, "glow": 5.0 }
+  },
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:mfx",
+      "hit_armour": "event:/Master_FX/Shells_Hit/Medium/hit_armour",
+      "hit_ground": "event:/Master_FX/Shells_Hit/Medium/hit_ground"
+    }
   }
 }
