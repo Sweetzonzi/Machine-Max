@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.FmodSoundAttr;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;

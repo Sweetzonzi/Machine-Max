@@ -311,7 +311,7 @@ n_peak = clamp( (b − r·a) / (2(1 − r)),  a, b )
 | 挡位减速与断流 | `common/mech/subsystem/GearboxSubsystem.java` `distributePower` |
 | 传动分发 | `common/mech/subsystem/TransmissionSubsystem.java` `distributeOpenDiff` |
 | 关节刚度/阻尼钳位 | `common/mech/vehicle/connector/AbstractConnector.java` `adjustJoint` |
-| 轮端速度伺服（目标转速 = 动力链转速） | `common/mech/subsystem/WheelDriverSubsystem.java` `onPrePhysicsTick` |
+| 轮端限扭矩速度电机（输入轴速加持续动态偏置） | `common/mech/subsystem/WheelDriverSubsystem.java` `onPrePhysicsTick` |
 | 履带速度伺服与功率反推扭矩 | `common/mech/subsystem/TrackDriveSubsystem.java` + `vehicle/track/TrackMath.java` `singleFlowMotor` |
 | 动力源转速积分（`inertia` 在这里） | `common/mech/subsystem/EngineSubsystem.java` `onPrePhysicsTick` |
 | 行车记录仪（服务端 CSV 采样） | `common/mech/subsystem/DriveTelemetry.java` + `AbstractGroundControllerSubsystem#sampleTelemetry` |
@@ -339,7 +339,7 @@ n_peak = clamp( (b − r·a) / (2(1 − r)),  a, b )
 8. **传动箱减速比是独立一段。** `power_outputs` 写在部件 JSON 的 `subsystem_data` 里：既不在变速箱的属性里，也不在传动箱的静态属性里。查总传动比时三段都要读到，否则单速电车会按 1:1 算成极速二三十 km/h。
 
 9. **钳位只在装配时算一次。** `adjustJoint()` 在 `attachJoint()` 里跑，之后改部件质量、换子系统都不会重算；改完质量要重新组装，否则关节还停在旧质量对应的上限上。
-10. **轮端指令是转速，不是扭矩。** 决定整车能多快提速的不是轮端力矩上限，而是动力源转速能爬多快（`inertia`）；档位表里的牵引加速度只是接触面能承受的上限。低挡大速比会把转子放大成几百吨的等效质量，见 §十二。
+10. **输入轴速是末端应追随的目标。** 末端围绕该目标持续施加动态牵引偏置，发动机 `inertia`、反馈与接触共同影响加速。理想刚性轴系的折算质量只作模型对照；动态起步需结合输入目标、实际电机冲量与接触观测，见 §十二。
 
 ## 十、实测口径
 
@@ -372,23 +372,29 @@ c_max = 0.95·(4 − k/(tps²·m_eff))/2·m_eff·tps
 
 装配后的静平衡位置是 `equilibrium + m_簧上·g/k`。越过 `lower_limit`/`upper_limit` 说明没有行程余量，整车压在关节限位上，弹簧不再承重。`equilibrium < 0` 是承重轮的固定写法：把平衡位置压到装配位以下，让车体被抬起来并留出压缩行程；不受车重的成员（如履带诱导轮）写 `0`。
 
-## 十二、起步：动力源转子折算成的等效质量
+## 十二、起步：动态牵引与刚性轴系对照
 
-轮端执行器不是力矩源，是**速度伺服**：`WheelDriverSubsystem` 与 `TrackDriveSubsystem` 把滚动电机的 `TargetVelocity` 设成动力链下发的转速（`receivedPower.speed()`），`MaxMotorForce` 才是由功率反推的扭矩 `P/|ω|`。动力链下发的这个转速就是动力源当前转速除以该挡总传动比，所以车轮的角速度被钉在动力源转速上：
+`WheelDriverSubsystem` 与 `TrackDriveSubsystem` 先用 `P / max(abs(speed), 0.25)` 还原扭矩预算，再施加设备限扭。正功率以输入轴速加动态偏置为电机目标，实测轴速超过补偿后目标时由速度电机回拖；反拖和制动使用零速电机目标。输入轴速及功率预算不含末端牵引余量。
 
-```
-ω_轮 = ω_src / i ,   v = ω_src·r/i ,   v̇ = (τ_net / I)·r/i
-```
-
-`I` 是动力源的 `inertia`（kg·m²）。整车的动能有一部分存在这个转子里，折算成平动质量：
+对于自由滚动轴，Bullet 的速度电机按速度误差与约束行有效惯量求角冲量，并将角冲量限制到 `±τ_max·dt`。末端使用世界关节轴 `a`、两端刚体的世界逆惯量张量和本步时长，在输入目标 `ω_input` 上计算牵引补偿：
 
 ```
-m_转子 = I·i²/r²          起步段可用加速度 a₁ ≈ (τ_max/I)·(r/i₁)
+K = aᵀ · (I_A⁻¹ + I_B⁻¹) · a
+Δω_margin = τ_budget · K · dt
+ω_motor = ω_input + sign(ω_input) · Δω_margin
 ```
 
-- **只与 `i₁²` 成正比，与整车质量无关。** 同样的 `I`，挡位浅的车（`i₁ ≈ 10~15`）折算几十千克，越野车与履带（`i₁ = 30~50`）折算几百吨。2S38（`inertia = 10`、`i₁ = 44.77`、`r = 0.384`）折成 **136 t**，是 21.5 t 车重的 6.3 倍，一挡起步 `a₁ = 1.29 m/s²`；同一台车若沿用 builtin 卡车柴油机的 `inertia = 50`，折算变成 680 t、`a₁ = 0.26 m/s²`：0→8 km/h 要 9 秒，而档位表按接触面力算给出 6.18 m/s²。
-- **高速段与它无关。** 极速和高速加速由功率与阻力决定，转子只把低挡段拖慢，所以症状是「起步像挂了拖车、极速正常」，容易被当成传动或悬挂问题。
-- **量它的办法是空挡自由加速。** 动力源在无负载时的转速积分是 `ω += τ_net/I·dt`，怠速到红线的时间约为 `I·Δω/τ_净`。2S38 的 `I = 10` 对应 1.5 秒左右，`I = 50` 要 7~8 秒，而物理上 500 hp 柴油机是 0.5~1 秒；这个读数不用上车，进游戏空挡踩一脚就能看出来。
-- **两个旋钮**：`inertia` 按机型的真实曲轴+飞轮取值（乘用车 0.2~0.4，卡车 1~3），以及一挡总传动比。一挡下限由爬坡与轮端力矩上限决定，2S38 按 35° 爬坡只需要 `i₁ ≈ 33`，44.77 是十二挡等比分挡带出来的。
+`τ_budget` 是非负牵引扭矩预算。补偿量为一个物理步的自由升速量，由 `util.control.RotationalMotorControl` 计算。补偿幅度由扭矩、关节惯量与步长决定，不随目标误差衰减，也不因超速而关闭；电机在有限扭矩下收敛到补偿后目标。零速目标保持零速。设备转速上限与履带转向限速在补偿后裁剪；差速锁在 `MechPower.speed` 中给出同步后的轴速目标，载荷只有 `power` 和 `speed` 两项。关节原生目标的符号在末端统一转换。速度补偿不提供功率限幅：实际机械功率等于实际扭矩乘实测轴速，正向做功时可能超过载荷中的功率预算。
 
-静态脚本只把 `m_转子` 与 `a₁` 报出来（「整车」表的 `一挡折算惯量`），不把起步过程积分成秒数：真值取决于伺服跟随与打滑，属于游戏内实测。
+轮驱、履带反馈及 ABS 使用 `getRollingSpeed()`，把两端相对角速度投影到 Bullet 实际关节轴，并统一为前进为正。发动机 JSON 的 `inertia` 参与源自身转速积分；源还受到轮速反馈、阻尼及怠速策略影响。当前模型没有把源转子的惯性反作用作为完整轴系动力学结算，不能把源转子的动能视为已经从轮端做功中扣除。
+
+静态脚本保留理想刚性轴系的两个对照量：
+
+```
+launch.equivalent_mass = I_source · i₁² / r²
+launch.accel = (τ_max / I_source) · r / i₁
+```
+
+这些值的成立前提是源轴与轮轴刚性同步、源转子惯量实际折算到轮端。它们不表示末端动态牵引的起步加速上限。报告的相关行与提示明确标注这个假设。
+
+验收动态出力应读滚动电机这一约束行的角冲量；整个 New6Dof 的总反馈还含其他轴及限位，不能直接当轮轴驱动扭矩。接触、其他关节与有限求解迭代会影响实际出力，起步时间和轮胎打滑需要游戏内测量。

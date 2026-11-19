@@ -66,7 +66,7 @@ class Engine(PowerCurve):
     """与 `EngineSubsystem.getTorqueAtSpeed` 同口径的四段折线 + 功率上限。"""
 
     kind = "内燃机"
-    # JSON 的 inertia（kg·m²），由 from_entry 覆盖；只用于折算起步等效质量
+    # JSON 的 inertia（kg·m²），由 from_entry 覆盖；用于理想刚性轴系对照，不代表末端起步上限。
     inertia = 10.0
 
     def __init__(self, max_power: float, max_torque: float, idle_rpm: float, idle_ratio: float,

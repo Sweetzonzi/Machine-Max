@@ -4,7 +4,6 @@ import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.joints.motors.RotationMotor;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
@@ -17,7 +16,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackMath;
-import jme3utilities.math.MyQuaternion;
+import io.github.sweetzonzi.machine_max.util.control.RotationalMotorControl;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -121,13 +120,26 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
         float handBrakeTorque = control.handBrakeControl() > 0.01f
                 ? control.handBrakeControl() * MAX_HAND_BRAKE_TORQUE : 0f;
         float targetOmega = Float.isFinite(control.targetSpeed()) ? control.targetSpeed() / radius() : Float.NaN;
+        Vector3f axis = joint.getAxis(0, null);
+        float actualSpeed = getRollingSpeed();
         TrackMath.MotorCommand command = TrackMath.singleFlowMotor(
-                Math.clamp(omega, -MAX_SPEED, MAX_SPEED), torque, -getRelativeAngularVel().x,
+                Math.clamp(omega, -MAX_SPEED, MAX_SPEED), torque, actualSpeed,
                 targetOmega, brakeTorque + handBrakeTorque, MAX_BRAKE_TORQUE);
+        float motorSpeed = command.speed();
+        if (command.driveTorque() != 0f) {
+            float inverseInertia = RotationalMotorControl.projectedInverseInertia(joint.getBodyA().getInverseInertiaWorld(null), axis)
+                    + RotationalMotorControl.projectedInverseInertia(joint.getBodyB().getInverseInertiaWorld(null), axis);
+            motorSpeed = RotationalMotorControl.driveTarget(command.speed(), command.maxTorque(),
+                    inverseInertia, 1f / getPhysicsLevel().getTps());
+            float direction = Math.signum(command.driveTorque());
+            if (Float.isFinite(targetOmega)) {
+                motorSpeed = direction * Math.min(motorSpeed * direction, targetOmega * direction);
+            }
+        }
         this.driveTorque = command.driveTorque();
         rollingMotor.setMotorEnabled(command.maxTorque() > 0f);
         rollingMotor.set(MotorParam.MaxMotorForce, command.maxTorque());
-        rollingMotor.set(MotorParam.TargetVelocity, -command.speed());
+        rollingMotor.set(MotorParam.TargetVelocity, -Math.clamp(motorSpeed, -MAX_SPEED, MAX_SPEED));
     }
 
     @Override
@@ -144,8 +156,7 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
             }
             return;
         }
-        Vector3f relativeAngularVel = getRelativeAngularVel();
-        this.feedbackSpeed = -relativeAngularVel.get(0);
+        this.feedbackSpeed = getRollingSpeed();
 
         float radius = radius();
         for (String signalKey : attr.speedOutputs.keySet()) {
@@ -276,16 +287,13 @@ public class TrackDriveSubsystem extends BasicSubsystem implements IMechPowerCon
         return FAIL_SAFE_CONTROL;
     }
 
-    public Vector3f getRelativeAngularVel() {
-        Vector3f result = new Vector3f();
-        if (connector.joint != null) {
-            Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
-            Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
-            Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
-            Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-            MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
-        }
-        return result;
+    /** 物理线程：按 Bullet 的关节轴读取前进为正的实测滚动速度。 */
+    public float getRollingSpeed() {
+        if (connector == null || !(connector.joint instanceof New6Dof joint)) return 0f;
+        Vector3f axis = joint.getAxis(0, null);
+        Vector3f velocityA = joint.getBodyA().isDynamic() ? joint.getBodyA().getAngularVelocity(null) : Vector3f.ZERO;
+        Vector3f velocityB = joint.getBodyB().isDynamic() ? joint.getBodyB().getAngularVelocity(null) : Vector3f.ZERO;
+        return axis.dot(velocityB.subtract(velocityA));
     }
 
     @Override

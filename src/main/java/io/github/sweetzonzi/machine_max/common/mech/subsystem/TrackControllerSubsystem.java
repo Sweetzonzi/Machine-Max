@@ -221,13 +221,13 @@ public class TrackControllerSubsystem extends AbstractGroundControllerSubsystem 
     }
 
     /**
-     * 追加单流基准、横摆估计与每条履带的六元组：本步下发的制动量与离合、传动箱给出的伺服目标带速、
-     * 履带实际带速、下发给滚动轴电机的驱动扭矩、主动轮半径。
+     * 追加单流基准、横摆估计与每条履带的六元组：本步下发的制动量与离合、动力链输入参考带速、
+     * 履带实际带速、下发给滚动轴电机的驱动扭矩预算、主动轮半径。
      *
      * <p>{@code _brk} 是拉杆偏置后真正下发的制动量；{@code _clu} 是下发的离合（0 断开、1 结合）；
-     * {@code _in} 是传动箱输出目标，等于「动力链折算到主动轮的转速 + {@code LOCK_DRIVE_BIAS}」，
-     * 与 {@code _spd} 的差是速度伺服在这一步的误差。{@code _trq} 贴着 {@code max_drive_torque}
-     * 而 {@code _spd} 追不上目标，说明接触面吃不下这份力矩。{@code _brk} 为 NaN 表示该侧不可用。</p>
+     * {@code _in} 是输入轴速乘主动轮半径，不含末端牵引补偿及电机限速裁剪；
+     * {@code _spd} 是实际带速。{@code _trq} 是驱动扭矩预算，实际电机出力须读滚动轴约束行的求解冲量。
+     * {@code _brk} 为 NaN 表示该侧不可用。</p>
      */
     @Override
     protected void appendTelemetrySample(StringBuilder row) {

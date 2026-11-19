@@ -4,7 +4,6 @@ import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.joints.motors.RotationMotor;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
@@ -13,7 +12,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WheelDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
-import jme3utilities.math.MyQuaternion;
+import io.github.sweetzonzi.machine_max.util.control.RotationalMotorControl;
 import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
 
@@ -112,7 +111,7 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
             if (this.isActive() && !isDestroyed() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
                 //处理轮胎旋转 Handle rolling
                 rollingMotor.setMotorEnabled(true);
-                float torque = 0;
+                float torque;
                 float brakeTorque = wheelControlSignal.getBrakeControl() * MAX_BRAKE_FORCE;
                 if (brakeTorque > 0.05 * MAX_BRAKE_FORCE && !isBraking) {
                     isBraking = true;
@@ -125,8 +124,13 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
                 torque = Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE);//限制最大驱动力 Limit maximum drive force
                 torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
                 rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
-                if (torque > 0) {//加速过程 Accelerating：直接跟随动力链下发的目标转速，超出部分由速度伺服自动拖曳制动
-                    rollingMotor.set(MotorParam.TargetVelocity, -Math.clamp(speed, -MAX_SPEED, MAX_SPEED));
+                if (torque > 0 && speed != 0f) {
+                    Vector3f axis = joint.getAxis(0, null);
+                    float inverseInertia = RotationalMotorControl.projectedInverseInertia(joint.getBodyA().getInverseInertiaWorld(null), axis)
+                            + RotationalMotorControl.projectedInverseInertia(joint.getBodyB().getInverseInertiaWorld(null), axis);
+                    float target = RotationalMotorControl.driveTarget(speed, torque,
+                            inverseInertia, 1f / getPhysicsLevel().getTps());
+                    rollingMotor.set(MotorParam.TargetVelocity, -Math.clamp(target, -MAX_SPEED, MAX_SPEED));
                 } else {//减速过程 Decelerating
                     rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }
@@ -151,12 +155,11 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
         super.onPostPhysicsTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof) {
             Vector3f relativeAngle = getRelativeAngle();
-            Vector3f relativeAngularVel = getRelativeAngularVel();
+            feedbackSpeed = getRollingSpeed();
             for (String signalKey : attr.rollingSpeedOutputs.keySet())//转动速度信号
-                publishFeedback(signalKey, relativeAngularVel.get(0));
+                publishFeedback(signalKey, -feedbackSpeed);//信号沿关节旋转符号，动力反馈沿前进符号
             for (String signalKey : attr.steeringAngleOutputs.keySet())//转向位置信号
                 publishFeedback(signalKey, relativeAngle.get(1));
-            feedbackSpeed = - relativeAngularVel.get(0);//反馈转动速度信号，正值表示前进，因此需要取反
         }
     }
 
@@ -198,22 +201,19 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
         return result;
     }
 
-    public Vector3f getRelativeAngularVel() {
-        Vector3f result = new Vector3f();
-        if (connector.joint != null) {
-            Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
-            Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
-            Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
-            Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-            MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
-        }
-        return result;
+    /** 物理线程：按 Bullet 的关节轴读取前进为正的实测滚动速度。 */
+    public float getRollingSpeed() {
+        if (connector == null || !(connector.joint instanceof New6Dof joint)) return 0f;
+        Vector3f axis = joint.getAxis(0, null);
+        Vector3f velocityA = joint.getBodyA().isDynamic() ? joint.getBodyA().getAngularVelocity(null) : Vector3f.ZERO;
+        Vector3f velocityB = joint.getBodyB().isDynamic() ? joint.getBodyB().getAngularVelocity(null) : Vector3f.ZERO;
+        return axis.dot(velocityB.subtract(velocityA));
     }
 
     /**
      * 物理线程：轮毂自身及一跳胎面的最大激活半径（m），无轮面时为 0。
      * 胎面连接的 y/z 平移和 yr/zr 旋转须锁定；x/xr 可带自由度或弹簧阻尼。
-     * 连接器 X 轴按轮轴布置，原驱动连接及车身不参与候选；轮速由 {@link #getRelativeAngularVel()} 提供。
+     * 连接器 X 轴按轮轴布置，原驱动连接及车身不参与候选；轮速由 {@link #getRollingSpeed()} 提供。
      */
     public float getRollingRadius() {
         if (connector == null || connector.joint == null) return 0f;

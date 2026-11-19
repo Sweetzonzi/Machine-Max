@@ -21,16 +21,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     private boolean diffLock = false;
     private float avgFeedBackSpeed = 0f;
 
-    /**
-     * 差速锁驱动偏置(rad/s)：输出端反馈转速落后于同步参考转速时，在其之上额外给出的目标转速，
-     * 使车轮的速度伺服持续输出驱动力矩，保证起步与牵引力。
-     * 取值沿用旧实现中固定的 +30 rad/s 超速偏置（约等于半米级车轮 50 km/h 的转速当量）。
-     */
-    private static final float LOCK_DRIVE_BIAS = 30f;
-    /**
-     * 滑移死区(rad/s)：反馈转速超出同步参考转速不超过该值时，驱动偏置线性衰减到零，
-     * 避免在参考转速附近驱动与拖曳反复切换引起抖动。
-     */
+    /** 输出端超过目标轴速的同步死区(rad/s)。 */
     private static final float LOCK_SLIP_DEADBAND = 2f;
     /**
      * 输入轴转速的数值下限(rad/s)：低于该值时功率链视为没有确定的扭矩，直接下发空功率。
@@ -165,143 +156,75 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     }
 
     /**
-     * 差速锁功率分配：扭矩再分配 + 目标转速牵引
-     * <p>
-     * 扭矩侧（模拟摩擦片式限滑差速器的扭矩转移）：
-     * <ol>
-     *   <li>输入扭矩均分至各输出端：τ_base = τ_in / N</li>
-     *   <li>转速偏差驱动扭矩从快端向慢端转移（摩擦离合器效应）：
-     *       Δτ_i = k × (ω_avg - ω_fb_i)，偏慢的输出端获得额外扭矩，偏快的释放扭矩</li>
-     *   <li>负扭矩钳位至零后归一化，保证 Στ_out = τ_in（扭矩守恒）</li>
-     *   <li>输出功率 P_i = τ_i × gearRatio_i × |v_target_i|，使车轮端按 P/|v| 还原出扭矩
-     *       τ_i × gearRatio_i（ΣP_i = P_in，能量自动守恒）</li>
-     * </ol>
-     * 转速侧：每个输出端下发目标转速，牵引与拖曳由车轮端的速度伺服实现，
-     * 见 {@link #computeTargetSpeed(float, float, float)}。
-     *
-     * @param totalPower 输入总功率
-     * @param inputSpeed 输入轴转速（正=前进，负=倒车）
-     * @param feedbacks  各输出端原始反馈转速（输出端坐标系，未乘减速比）
+     * 差速锁按实测轴速差将正驱动预算从快端转移到慢端，各输出功率份额之和等于输入预算。
+     * 负功率按端数均分，交给末端反拖制动。目标轴速按减速比折算；
+     * 快端按限滑强度向这个轴速回拖，牵引补偿由末端执行器处理。
      */
     private void distributeDiffLock(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
-        int n = feedbacks.size();
-
-        // 输入扭矩 τ_in = P_in / |ω_in|
-        float absInputSpeed = Math.abs(inputSpeed);
-        if (absInputSpeed < MIN_INPUT_SPEED) {
+        int count = countDrivenTargets(feedbacks);
+        if (count == 0 || Math.abs(inputSpeed) < MIN_INPUT_SPEED) {
             pushMechPower(MechPower.EMPTY);
             return;
         }
-        float tauIn = totalPower / absInputSpeed;
-        float tauBase = tauIn / n; // 基础均分扭矩
-
-        // 平均反馈转速（折算至输入端坐标系），用于扭矩再分配
-        float avgInputSpeed = 0f;
+        float baseTorque = totalPower / Math.abs(inputSpeed) / count;
+        float meanSpeed = 0f;
         for (var entry : feedbacks.entrySet()) {
-            Float gearRatio = attr.getPowerOutputs().get(entry.getKey());
-            if (gearRatio == null) continue;
-            avgInputSpeed += entry.getValue() * gearRatio;
+            Float ratio = attr.getPowerOutputs().get(entry.getKey());
+            if (ratio != null && ratio != 0f) meanSpeed += entry.getValue() * ratio;
         }
-        avgInputSpeed /= n;
+        meanSpeed /= count;
 
-        // 耦合刚度 k：控制扭矩转移的激进程度，值越大转速偏差导致的扭矩转移越多
-        float k = attr.staticAttribute.diffLockSensitivity;
-
-        // 第一遍：计算各输出端原始扭矩
-        Map<String, Float> rawTorques = new HashMap<>();
-        float totalPositiveTorque = 0f;
-
+        float sensitivity = attr.staticAttribute.diffLockSensitivity;
+        Map<String, Float> weights = new HashMap<>();
+        float totalWeight = 0f;
         for (var entry : feedbacks.entrySet()) {
-            String name = entry.getKey();
-            Float gearRatio = attr.getPowerOutputs().get(name);
-            if (gearRatio == null || gearRatio == 0f) continue;
-            // 偏差 = 平均转速 - 当前反馈转速（输入端坐标系）
-            // 正偏差(+): 该端偏慢（负载重），应获得额外扭矩
-            // 负偏差(-): 该端偏快（负载轻/打滑），应释放扭矩
-            float deviation = avgInputSpeed - entry.getValue() * gearRatio;
-            float torque = tauBase + k * deviation;
-            if (torque < 0f) torque = 0f; // 负扭矩钳位：打滑轮不输出动力
-            rawTorques.put(name, torque);
-            totalPositiveTorque += torque;
+            Float ratio = attr.getPowerOutputs().get(entry.getKey());
+            if (ratio == null || ratio == 0f) continue;
+            float deviation = Math.signum(inputSpeed) * (meanSpeed - entry.getValue() * ratio);
+            float weight = totalPower > 0f ? Math.max(0f, baseTorque + sensitivity * deviation) : 1f;
+            weights.put(entry.getKey(), weight);
+            totalWeight += weight;
         }
 
-        // 第二遍：归一化保证 Στ = τ_in，并下发目标转速
         Map<String, MechPower> outputs = new HashMap<>();
-        float normalizer = totalPositiveTorque > 0f ? tauIn / totalPositiveTorque : 1f;
-
         for (var entry : feedbacks.entrySet()) {
             String name = entry.getKey();
-            Float gearRatio = attr.getPowerOutputs().get(name);
-            if (gearRatio == null || gearRatio == 0f) continue;
-
-            float torque = rawTorques.getOrDefault(name, 0f) * normalizer; // 归一化保证扭矩守恒
-            float refSpeed = inputSpeed / gearRatio;                        // 差速锁同步参考转速
-            float targetSpeed = computeTargetSpeed(refSpeed, entry.getValue(), k);
-            float power = torque * gearRatio * Math.abs(targetSpeed);       // P = τ × r × |ω|
-
-            outputs.put(name, new MechPower(power, targetSpeed));
+            Float ratio = attr.getPowerOutputs().get(name);
+            if (ratio == null || ratio == 0f) continue;
+            float share = totalWeight > 0f ? weights.get(name) / totalWeight : 1f / count;
+            float reference = inputSpeed / ratio;
+            float target = totalPower > 0f ? computeTargetSpeed(reference, entry.getValue(), sensitivity) : reference;
+            outputs.put(name, new MechPower(totalPower * share, target));
         }
-
         pushMechPower(outputs);
     }
 
-    /**
-     * 差速器模式功率分配：各输出端驱动扭矩相等，转速允许自由差速
-     * <p>
-     * 输入轴扭矩 {@code τ_in = P_in / |ω_in|}（{@code ω_in} 是本级的同步转速，变速箱已折算过总减速比），
-     * 均分到每个参与驱动的输出端并按该端的减速比放大：{@code τ_i = τ_in × r_i / N}。
-     * 扭矩只由传动比决定，与轮端实际转速无关——某个轮子打滑不会把公共扭矩抢走，
-     * 传动比也不会因为输出端转速之和偏小而失效。
-     * <p>
-     * 目标转速由 {@link #computeTargetSpeed(float, float, float)} 给出（gain 取 0，不做拖曳），
-     * 下发的功率按 {@code P_i = τ_i × |ω_target_i|} 折算，使车轮端按 {@code P / |ω|} 还原出的
-     * 扭矩正好是 {@code τ_i}。
-     *
-     * @param totalPower 输入功率
-     * @param inputSpeed 输入转速
-     * @param feedbacks 各输出端原始反馈转速（输出端坐标系，未乘减速比）
-     */
+    /** 开放差速按有效端数均分功率，目标轴速按各端减速比折算。 */
     private void distributeOpenDiff(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
-        if (totalPower == 0f) {
+        int count = countDrivenTargets(feedbacks);
+        if (count == 0 || Math.abs(inputSpeed) < MIN_INPUT_SPEED) {
             pushMechPower(MechPower.EMPTY);
             return;
         }
-        float absInputSpeed = Math.abs(inputSpeed);
-        if (absInputSpeed < MIN_INPUT_SPEED) {
-            pushMechPower(MechPower.EMPTY);
-            return;
-        }
-        //参与驱动的输出端数量（减速比为 0 或缺失的端口不参与分配）
-        int receiverCount = 0;
-        for (var entry : feedbacks.entrySet()) {
-            Float gearRatio = attr.getPowerOutputs().get(entry.getKey());
-            if (gearRatio != null && gearRatio != 0f) receiverCount++;
-        }
-        if (receiverCount == 0) {
-            pushMechPower(MechPower.EMPTY);
-            return;
-        }
-        float tauIn = totalPower / absInputSpeed;//输入轴扭矩
-        float torquePerReceiver = tauIn / receiverCount;//各输出端扭矩相等
-
         Map<String, MechPower> outputs = new HashMap<>();
-        for (var entry : feedbacks.entrySet()) {
-            String name = entry.getKey();
-            Float gearRatio = attr.getPowerOutputs().get(name);
-            if (gearRatio == null || gearRatio == 0f) continue;
-            float refSpeed = inputSpeed / gearRatio;
-            float targetSpeed = computeTargetSpeed(refSpeed, entry.getValue(), 0f);
-            float power = torquePerReceiver * gearRatio * Math.abs(targetSpeed);
-            outputs.put(name, new MechPower(power, targetSpeed));
+        for (String name : feedbacks.keySet()) {
+            Float ratio = attr.getPowerOutputs().get(name);
+            if (ratio == null || ratio == 0f) continue;
+            outputs.put(name, new MechPower(totalPower / count, inputSpeed / ratio));
         }
         pushMechPower(outputs);
     }
 
-    /**
-     * 收集所有输出端的原始反馈转速（输出端坐标系，未乘减速比）
-     *
-     * @return 输出端名称 -&gt; 原始反馈转速
-     */
+    private int countDrivenTargets(Map<String, Float> feedbacks) {
+        int count = 0;
+        for (String name : feedbacks.keySet()) {
+            Float ratio = attr.getPowerOutputs().get(name);
+            if (ratio != null && ratio != 0f) count++;
+        }
+        return count;
+    }
+
+    /** 物理线程：读取输出端原始反馈(rad/s)，不乘减速比。 */
     private Map<String, Float> collectRawFeedbackSpeeds() {
         Map<String, Float> result = new HashMap<>();
         for (var entry : getMechPowerTargets().entrySet()) {
@@ -313,42 +236,12 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         return result;
     }
 
-    /**
-     * 计算某个输出端的目标转速（输出端坐标系，有符号）
-     * <p>
-     * 目标转速下发给车轮端的速度伺服：目标高于当前转速时电机加速，低于当前转速时电机拖曳制动，
-     * 因此限滑能力只通过速度环体现，不需要在物理关节上额外增加约束。
-     * <ul>
-     *   <li>反馈转速不高于同步参考转速：给出 {@link #LOCK_DRIVE_BIAS} 的驱动偏置，保证起步与牵引力；</li>
-     *   <li>超出参考转速但不超过 {@link #LOCK_SLIP_DEADBAND}：偏置线性衰减到零，避免驱动与拖曳来回抖动；</li>
-     *   <li>超出死区（打滑或悬空）：按 {@code gain} 的比例向参考转速回拖，
-     *       {@code gain = 1} 时目标即同步参考转速（等效刚性锁止），{@code gain = 0} 时不拖曳。</li>
-     * </ul>
-     * 平衡状态下反馈转速收敛于同步参考转速，与 {@code gain} 的取值无关，{@code gain} 只决定收敛快慢。
-     *
-     * @param refSpeed  动力链给出的同步参考转速（输出端坐标系，正负表示行进方向）
-     * @param selfSpeed 该输出端本 tick 的反馈转速（输出端坐标系）
-     * @param gain      限滑强度，内部钳位至 0~1
-     * @return 该输出端的目标转速（输出端坐标系）
-     */
-    private float computeTargetSpeed(float refSpeed, float selfSpeed, float gain) {
-        float direction = Math.signum(refSpeed);
-        if (direction == 0f) return 0f;//无动力链参考转速时不驱动，避免静止时凭空产生转速
-        float refForward = refSpeed * direction;//沿行进方向的参考转速，恒为非负
-        float selfForward = selfSpeed * direction;
-        float excess = selfForward - refForward;//超出参考转速的部分，即滑移量
-        float targetForward;
-        if (excess <= 0f) {
-            //落后于参考转速：给出驱动偏置，保证车轮能顶到参考转速
-            targetForward = refForward + LOCK_DRIVE_BIAS;
-        } else if (excess < LOCK_SLIP_DEADBAND) {
-            //临界区：驱动偏置线性衰减，避免在参考转速附近驱动与拖曳反复切换
-            targetForward = refForward + LOCK_DRIVE_BIAS * (1f - excess / LOCK_SLIP_DEADBAND);
-        } else {
-            //打滑区：按 gain 比例向参考转速回拖
-            targetForward = refForward + excess * (1f - Math.clamp(gain, 0f, 1f));
-        }
-        return targetForward * direction;
+    /** 快端超过目标轴速死区时按强度回拖；其余情况直接追随输入轴速。 */
+    private float computeTargetSpeed(float reference, float selfSpeed, float gain) {
+        float direction = Math.signum(reference);
+        float excess = (selfSpeed - reference) * direction;
+        if (direction == 0f || excess <= LOCK_SLIP_DEADBAND) return reference;
+        return reference + direction * excess * (1f - Math.clamp(gain, 0f, 1f));
     }
 
     /**
@@ -360,8 +253,9 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         Map<String, Float> result = new HashMap<>();
         for (var entry : getMechPowerTargets().entrySet()) {
             var consumer = entry.getValue();
-            if (consumer != null && consumer.isPowerPathConnected(getName())) {
-                result.put(entry.getKey(), consumer.getFeedbackSpeed(getName()) * attr.getPowerOutputs().get(entry.getKey()));
+            Float ratio = attr.getPowerOutputs().get(entry.getKey());
+            if (consumer != null && ratio != null && ratio != 0f && consumer.isPowerPathConnected(getName())) {
+                result.put(entry.getKey(), consumer.getFeedbackSpeed(getName()) * ratio);
             }
         }
         return result;
