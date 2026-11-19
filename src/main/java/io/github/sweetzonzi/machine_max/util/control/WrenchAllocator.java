@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.util;
+package io.github.sweetzonzi.machine_max.util.control;
 
 import java.util.Arrays;
 import java.util.Objects;

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util;
 
+import io.github.sweetzonzi.machine_max.util.control.WrenchAllocator;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.probe;
 
-import io.github.sweetzonzi.machine_max.util.WrenchAllocator;
+import io.github.sweetzonzi.machine_max.util.control.WrenchAllocator;
 
 import java.util.Arrays;
 import java.util.Random;
