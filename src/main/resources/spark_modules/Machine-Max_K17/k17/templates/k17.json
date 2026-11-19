@@ -326,7 +326,7 @@
             "subsystem.machine_max.coax_controller": {
               "durability_ratio": 1.0
             },
-            "subsystem.k17.main_rack": {
+            "subsystem.machine_max.main_rack": {
               "ammo_count": 54,
               "is_batch_reloading": 0,
               "durability_ratio": 1.0,

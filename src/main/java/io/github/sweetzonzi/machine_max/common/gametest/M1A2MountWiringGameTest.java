@@ -199,7 +199,7 @@ public final class M1A2MountWiringGameTest {
             RegularPart rws = attachRws(helper, vehicle, part);
             Map<String, AbstractSubsystem> byName = collectSubsystems(part);
             byName.putAll(collectSubsystems(rws));
-            AbstractSubsystem seat = require(helper, byName, "subsystem.m1a2_sep.commander_seat");
+            AbstractSubsystem seat = require(helper, byName, "subsystem.machine_max.commander_seat");
             WeaponControllerSubsystem mainGun =
                     (WeaponControllerSubsystem) require(helper, byName, "subsystem.machine_max.main_controller");
             WeaponControllerSubsystem crows =
@@ -242,7 +242,7 @@ public final class M1A2MountWiringGameTest {
                     "备用火控组不得带越级量：它只在炮长缺席时生效，抢不走在位的炮长");
 
             // 超控：同样的频道与目标，越级量 1 才压得过炮长。
-            ControlGroup override = group(groups, "controlGroup.m1a2_sep.commander_override");
+            ControlGroup override = group(groups, "controlGroup.machine_max.commander_override");
             helper.assertTrue(override != null, "车长预设必须带超控组");
             for (WeaponControllerSubsystem weapon : allWeapons) {
                 assertDrives(helper, "超控组", override, weapon, true);

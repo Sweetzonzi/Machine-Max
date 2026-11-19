@@ -21,7 +21,6 @@
   "sub_part.2s38.right_road_wheel_08": "Right Road Wheel 08",
   "2s38.2s38_turret": "2S38 Turret",
   "connector.2s38.turret_coax_axis": "Turret to Coaxial Machine Gun Elevation Axis",
-  "subsystem.2s38.coax_elevation_driver": "Coaxial Machine Gun Elevation Driver",
   "sub_part.2s38.mg": "Machine Gun Weapon Station",
   "connector.2s38.coax_turret_lock": "Coaxial Machine Gun Turret Lock",
   "2s38.2s38_addon_armor": "Skirt Add-on Armor",

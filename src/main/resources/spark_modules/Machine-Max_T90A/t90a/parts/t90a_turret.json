@@ -249,7 +249,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.t90a.aa_seat"
+                  "subsystem.machine_max.aa_seat"
                 ]
               }
             },
@@ -341,7 +341,7 @@
               "first_hud_layout": "t90a:t90a_orientation",
               "third_hud_layout": "t90a:t90a_ground_orientation"
             },
-            "subsystem.t90a.aa_seat": {
+            "subsystem.machine_max.aa_seat": {
               "type": "machine_max:seat",
               "definition": "t90a:open_roof_seat",
               "locator": "commander_seat",

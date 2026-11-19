@@ -291,7 +291,7 @@ walkChildParticles = { Object node, Closure onChildParticle ->
 
 // 收集座位安装块的控制组预设引用：control_group_preset 由 SeatSubsystemAttr 的 codec 声明，
 // 是唯一读取该字段的地方，所以按字段名扫即可、不必先认 type。键名取外层映射的键（即子系统
-// 名，如 subsystem.m1a2_sep.commander_seat），报错时直接指得到 JSON 里的那一行。
+// 名，如 subsystem.machine_max.commander_seat），报错时直接指得到 JSON 里的那一行。
 def walkControlGroupPresets
 walkControlGroupPresets = { Object node, Closure onPreset ->
     if (node instanceof Map) {

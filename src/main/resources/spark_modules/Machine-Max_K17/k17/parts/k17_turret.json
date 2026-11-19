@@ -58,7 +58,7 @@
             "type": "box",
             "material": "machine_max:internal_machinery",
             "thickness": 12,
-            "subsystem": "subsystem.k17.main_rack"
+            "subsystem": "subsystem.machine_max.main_rack"
           }
         },
         "connectors": {
@@ -138,7 +138,7 @@
             "third_hud_layout": "k17:k17_weapon_compact",
             "scope_hud_layout": "k17:k17_weapon_compact"
           },
-          "subsystem.k17.main_rack": {
+          "subsystem.machine_max.main_rack": {
             "type": "machine_max:regen_ammo_rack",
             "definition": "machine_max:30mm_2a42_regen_ammo_rack",
             "belt_definition": {
@@ -162,7 +162,7 @@
             ],
             "ammo_discovery_targets": {
               "ammo_30mm": [
-                "subsystem.k17.main_rack"
+                "subsystem.machine_max.main_rack"
               ]
             }
           },

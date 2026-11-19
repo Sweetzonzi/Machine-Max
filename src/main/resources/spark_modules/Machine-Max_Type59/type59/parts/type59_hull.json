@@ -72,7 +72,7 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.type59.engine"
+              "subsystem": "subsystem.machine_max.engine"
             },
             "MM_Shell_001": {
               "id": "part",
@@ -439,7 +439,7 @@
             }
           },
           "subsystems": {
-            "subsystem.type59.engine": {
+            "subsystem.machine_max.engine": {
               "type": "machine_max:engine",
               "definition": "type59:type59_engine",
               "power_output": "subsystem.machine_max.gearbox",
@@ -474,7 +474,7 @@
               "definition": "machine_max:track_controller_standard",
               "control_outputs": {
                 "car_control": [
-                  "subsystem.type59.engine",
+                  "subsystem.machine_max.engine",
                   "subsystem.machine_max.gearbox",
                   "subsystem.machine_max.left_track",
                   "subsystem.machine_max.right_track"

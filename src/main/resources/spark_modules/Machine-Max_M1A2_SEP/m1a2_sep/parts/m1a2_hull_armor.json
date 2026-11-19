@@ -45,104 +45,104 @@
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_01')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_01"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_01')",
+              "subsystem": "subsystem.machine_max.hull_era_left_01"
             },
             "MM_HullAddonLeftHit_02": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_02')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_02"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_02')",
+              "subsystem": "subsystem.machine_max.hull_era_left_02"
             },
             "MM_HullAddonLeftHit_03": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_03')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_03"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_03')",
+              "subsystem": "subsystem.machine_max.hull_era_left_03"
             },
             "MM_HullAddonLeftHit_04": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_04')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_04"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_04')",
+              "subsystem": "subsystem.machine_max.hull_era_left_04"
             },
             "MM_HullAddonLeftHit_05": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_05')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_05"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_05')",
+              "subsystem": "subsystem.machine_max.hull_era_left_05"
             },
             "MM_HullAddonLeftHit_06": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_06')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_06"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_06')",
+              "subsystem": "subsystem.machine_max.hull_era_left_06"
             },
             "MM_HullAddonLeftHit_07": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_07')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_07"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_07')",
+              "subsystem": "subsystem.machine_max.hull_era_left_07"
             },
             "MM_HullAddonLeftHit_08": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_08')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_08"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_08')",
+              "subsystem": "subsystem.machine_max.hull_era_left_08"
             },
             "MM_HullAddonLeftHit_09": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_09')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_09"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_09')",
+              "subsystem": "subsystem.machine_max.hull_era_left_09"
             },
             "MM_HullAddonLeftHit_10": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_10')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_10"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_10')",
+              "subsystem": "subsystem.machine_max.hull_era_left_10"
             },
             "MM_HullAddonLeftHit_11": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_11')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_11"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_11')",
+              "subsystem": "subsystem.machine_max.hull_era_left_11"
             },
             "MM_HullAddonLeftHit_12": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_12')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_12"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_12')",
+              "subsystem": "subsystem.machine_max.hull_era_left_12"
             },
             "MM_HullAddonLeftHit_13": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_13')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_left_13"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_13')",
+              "subsystem": "subsystem.machine_max.hull_era_left_13"
             }
           },
           "connectors": {
@@ -160,55 +160,55 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.hull_era_left_01": {
+            "subsystem.machine_max.hull_era_left_01": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_02": {
+            "subsystem.machine_max.hull_era_left_02": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_03": {
+            "subsystem.machine_max.hull_era_left_03": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_04": {
+            "subsystem.machine_max.hull_era_left_04": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_05": {
+            "subsystem.machine_max.hull_era_left_05": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_06": {
+            "subsystem.machine_max.hull_era_left_06": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_07": {
+            "subsystem.machine_max.hull_era_left_07": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_08": {
+            "subsystem.machine_max.hull_era_left_08": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_09": {
+            "subsystem.machine_max.hull_era_left_09": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_10": {
+            "subsystem.machine_max.hull_era_left_10": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_11": {
+            "subsystem.machine_max.hull_era_left_11": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_12": {
+            "subsystem.machine_max.hull_era_left_12": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_left_13": {
+            "subsystem.machine_max.hull_era_left_13": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             }
@@ -254,104 +254,104 @@
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_01')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_01"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_01')",
+              "subsystem": "subsystem.machine_max.hull_era_right_01"
             },
             "MM_HullAddonRightHit_02": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_02')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_02"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_02')",
+              "subsystem": "subsystem.machine_max.hull_era_right_02"
             },
             "MM_HullAddonRightHit_03": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_03')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_03"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_03')",
+              "subsystem": "subsystem.machine_max.hull_era_right_03"
             },
             "MM_HullAddonRightHit_04": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_04')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_04"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_04')",
+              "subsystem": "subsystem.machine_max.hull_era_right_04"
             },
             "MM_HullAddonRightHit_05": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_05')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_05"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_05')",
+              "subsystem": "subsystem.machine_max.hull_era_right_05"
             },
             "MM_HullAddonRightHit_06": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_06')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_06"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_06')",
+              "subsystem": "subsystem.machine_max.hull_era_right_06"
             },
             "MM_HullAddonRightHit_07": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_07')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_07"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_07')",
+              "subsystem": "subsystem.machine_max.hull_era_right_07"
             },
             "MM_HullAddonRightHit_08": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_08')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_08"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_08')",
+              "subsystem": "subsystem.machine_max.hull_era_right_08"
             },
             "MM_HullAddonRightHit_09": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_09')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_09"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_09')",
+              "subsystem": "subsystem.machine_max.hull_era_right_09"
             },
             "MM_HullAddonRightHit_10": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_10')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_10"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_10')",
+              "subsystem": "subsystem.machine_max.hull_era_right_10"
             },
             "MM_HullAddonRightHit_11": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_11')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_11"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_11')",
+              "subsystem": "subsystem.machine_max.hull_era_right_11"
             },
             "MM_HullAddonRightHit_12": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_12')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_12"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_12')",
+              "subsystem": "subsystem.machine_max.hull_era_right_12"
             },
             "MM_HullAddonRightHit_13": {
               "id": "part",
               "type": "box",
               "material": "machine_max:arat_ii",
               "thickness": 65,
-              "condition": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_13')",
-              "subsystem": "subsystem.m1a2_sep.hull_era_right_13"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_13')",
+              "subsystem": "subsystem.machine_max.hull_era_right_13"
             }
           },
           "connectors": {
@@ -369,55 +369,55 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.hull_era_right_01": {
+            "subsystem.machine_max.hull_era_right_01": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_02": {
+            "subsystem.machine_max.hull_era_right_02": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_03": {
+            "subsystem.machine_max.hull_era_right_03": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_04": {
+            "subsystem.machine_max.hull_era_right_04": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_05": {
+            "subsystem.machine_max.hull_era_right_05": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_06": {
+            "subsystem.machine_max.hull_era_right_06": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_07": {
+            "subsystem.machine_max.hull_era_right_07": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_08": {
+            "subsystem.machine_max.hull_era_right_08": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_09": {
+            "subsystem.machine_max.hull_era_right_09": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_10": {
+            "subsystem.machine_max.hull_era_right_10": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_11": {
+            "subsystem.machine_max.hull_era_right_11": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_12": {
+            "subsystem.machine_max.hull_era_right_12": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             },
-            "subsystem.m1a2_sep.hull_era_right_13": {
+            "subsystem.machine_max.hull_era_right_13": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:arat_ii_tile"
             }

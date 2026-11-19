@@ -1,6 +1,6 @@
 {
   "base_group": {
-    "name": "controlGroup.t90a.aa",
+    "name": "controlGroup.machine_max.aa",
     "control_mode": "inherit",
     "move_targets": {},
     "regular_targets": {},

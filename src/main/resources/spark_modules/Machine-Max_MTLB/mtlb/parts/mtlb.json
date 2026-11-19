@@ -655,14 +655,14 @@
             "bone": "RearDoorInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.mtlb.passenger_seat_01",
-                "subsystem.mtlb.passenger_seat_02",
-                "subsystem.mtlb.passenger_seat_03",
-                "subsystem.mtlb.passenger_seat_04",
-                "subsystem.mtlb.passenger_seat_05",
-                "subsystem.mtlb.passenger_seat_06",
-                "subsystem.mtlb.passenger_seat_07",
-                "subsystem.mtlb.passenger_seat_08"
+                "subsystem.machine_max.passenger_seat_01",
+                "subsystem.machine_max.passenger_seat_02",
+                "subsystem.machine_max.passenger_seat_03",
+                "subsystem.machine_max.passenger_seat_04",
+                "subsystem.machine_max.passenger_seat_05",
+                "subsystem.machine_max.passenger_seat_06",
+                "subsystem.machine_max.passenger_seat_07",
+                "subsystem.machine_max.passenger_seat_08"
               ]
             }
           },
@@ -670,14 +670,14 @@
             "bone": "PassengerRoofInteract",
             "signal_targets": {
               "interact": [
-                "subsystem.mtlb.passenger_seat_01",
-                "subsystem.mtlb.passenger_seat_02",
-                "subsystem.mtlb.passenger_seat_03",
-                "subsystem.mtlb.passenger_seat_04",
-                "subsystem.mtlb.passenger_seat_05",
-                "subsystem.mtlb.passenger_seat_06",
-                "subsystem.mtlb.passenger_seat_07",
-                "subsystem.mtlb.passenger_seat_08"
+                "subsystem.machine_max.passenger_seat_01",
+                "subsystem.machine_max.passenger_seat_02",
+                "subsystem.machine_max.passenger_seat_03",
+                "subsystem.machine_max.passenger_seat_04",
+                "subsystem.machine_max.passenger_seat_05",
+                "subsystem.machine_max.passenger_seat_06",
+                "subsystem.machine_max.passenger_seat_07",
+                "subsystem.machine_max.passenger_seat_08"
               ]
             }
           }
@@ -832,7 +832,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_01": {
+          "subsystem.machine_max.passenger_seat_01": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_1",
@@ -846,7 +846,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_02": {
+          "subsystem.machine_max.passenger_seat_02": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_2",
@@ -860,7 +860,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_03": {
+          "subsystem.machine_max.passenger_seat_03": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_3",
@@ -874,7 +874,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_04": {
+          "subsystem.machine_max.passenger_seat_04": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_4",
@@ -888,7 +888,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_05": {
+          "subsystem.machine_max.passenger_seat_05": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_5",
@@ -902,7 +902,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_06": {
+          "subsystem.machine_max.passenger_seat_06": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_6",
@@ -916,7 +916,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_07": {
+          "subsystem.machine_max.passenger_seat_07": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_7",
@@ -930,7 +930,7 @@
             "dismount_locators": [],
             "third_hud_layout": "machine_max:morden_ground_basic_third"
           },
-          "subsystem.mtlb.passenger_seat_08": {
+          "subsystem.machine_max.passenger_seat_08": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_3rd_passenger_seat",
             "locator": "passenger_seat_8",

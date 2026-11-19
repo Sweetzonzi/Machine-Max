@@ -30,7 +30,7 @@ public final class SeatLoaderCandidateGameTest {
     private static final String BATCH = "mmSeatCandidate";
     private static final String TURRET = "m1a2_sep:m1a2_turret";
     /** 本用例需要挡位倍率可参与比较的装填座位 */
-    private static final String SEAT = "subsystem.m1a2_sep.loader_seat";
+    private static final String SEAT = "subsystem.machine_max.loader_seat";
 
     private SeatLoaderCandidateGameTest() {
     }

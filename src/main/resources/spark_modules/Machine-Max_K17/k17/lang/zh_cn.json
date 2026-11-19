@@ -11,7 +11,6 @@
   "connector.k17.left_atgm_turret": "左反坦克导弹炮塔挂点",
   "sub_part.k17.right_atgm": "右反坦克导弹发射器",
   "connector.k17.right_atgm_turret": "右反坦克导弹炮塔挂点",
-  "subsystem.k17.main_rack": "主炮弹药架",
   "subsystem.k17.left_atgm_launcher_01": "左反坦克导弹发射器 01",
   "subsystem.k17.left_atgm_launcher_02": "左反坦克导弹发射器 02",
   "subsystem.k17.right_atgm_launcher_01": "右反坦克导弹发射器 01",

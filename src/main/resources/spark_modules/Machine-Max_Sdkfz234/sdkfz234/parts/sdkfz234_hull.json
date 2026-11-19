@@ -82,7 +82,7 @@
               "signal_targets": {
                 "interact": [
                   "subsystem.machine_max.driver_seat",
-                  "subsystem.sdkfz234.radio_seat"
+                  "subsystem.machine_max.radio_seat"
                 ]
               }
             },
@@ -91,7 +91,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.sdkfz234.item_storage"
+                  "subsystem.machine_max.back_case"
                 ]
               }
             }
@@ -242,7 +242,7 @@
               "definition": "sdkfz234:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_01"
             },
-            "subsystem.sdkfz234.item_storage": {
+            "subsystem.machine_max.back_case": {
               "type": "machine_max:item_storage",
               "definition": "sdkfz234:sdkfz234_trunk"
             },
@@ -296,7 +296,7 @@
               },
               "dismount_locators": []
             },
-            "subsystem.sdkfz234.radio_seat": {
+            "subsystem.machine_max.radio_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_passenger_seat",
               "first_hud_layout": "sdkfz234:sdkfz234_driver",

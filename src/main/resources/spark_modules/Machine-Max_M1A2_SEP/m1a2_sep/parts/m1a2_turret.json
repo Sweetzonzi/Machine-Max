@@ -198,7 +198,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.gunner_seat"
+                  "subsystem.machine_max.gunner_seat"
                 ]
               }
             },
@@ -207,7 +207,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.commander_seat"
+                  "subsystem.machine_max.commander_seat"
                 ]
               }
             },
@@ -216,7 +216,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.loader_seat"
+                  "subsystem.machine_max.loader_seat"
                 ]
               }
             }
@@ -305,7 +305,7 @@
             }
           },
           "subsystems": {
-            "subsystem.m1a2_sep.gunner_seat": {
+            "subsystem.machine_max.gunner_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
@@ -323,7 +323,7 @@
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
-            "subsystem.m1a2_sep.commander_seat": {
+            "subsystem.machine_max.commander_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "commander_seat",
@@ -347,7 +347,7 @@
               "first_hud_layout": "m1a2_sep:m1a2_orientation",
               "third_hud_layout": "m1a2_sep:m1a2_ground_orientation_third"
             },
-            "subsystem.m1a2_sep.loader_seat": {
+            "subsystem.machine_max.loader_seat": {
               "type": "machine_max:seat",
               "definition": "machine_max:default_3rd_seat",
               "locator": "loader_seat",
@@ -742,7 +742,7 @@
                 ]
               }
             },
-            "subsystem.m1a2_sep.loader_mg_sight": {
+            "subsystem.machine_max.loader_mg_sight": {
               "type": "machine_max:sight",
               "definition": "m1a2_sep:port_mg_sight",
               "locator": "port_mg_optic"
@@ -775,7 +775,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.m1a2_sep.aa_seat"
+                  "subsystem.machine_max.aa_seat"
                 ]
               }
             }
@@ -865,7 +865,7 @@
                 ]
               }
             },
-            "subsystem.m1a2_sep.aa_seat": {
+            "subsystem.machine_max.aa_seat": {
               "type": "machine_max:seat",
               "definition": "m1a2_sep:external_mg_seat",
               "locator": "aft_mg_seat",
@@ -924,7 +924,7 @@
                 ]
               }
             },
-            "subsystem.m1a2_sep.aa_sight": {
+            "subsystem.machine_max.aa_sight": {
               "type": "machine_max:sight",
               "definition": "m1a2_sep:aft_mg_sight",
               "locator": "aft_mg_optic"

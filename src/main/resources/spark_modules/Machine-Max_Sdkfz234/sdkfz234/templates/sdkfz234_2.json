@@ -366,14 +366,14 @@
             "subsystem.machine_max.right_wheel_02": {
               "durability_ratio": 1.0
             },
-            "subsystem.sdkfz234.item_storage": {
+            "subsystem.machine_max.back_case": {
               "Items": [],
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_wheel_03": {
               "durability_ratio": 1.0
             },
-            "subsystem.sdkfz234.radio_seat": {
+            "subsystem.machine_max.radio_seat": {
               "durability_ratio": 1.0
             },
             "subsystem.machine_max.right_wheel_04": {

@@ -233,23 +233,23 @@
             }
           },
           "subsystem_data": {
-            "subsystem.mtlb.passenger_seat_08": {
+            "subsystem.machine_max.passenger_seat_08": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_06": {
+            "subsystem.machine_max.passenger_seat_06": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_07": {
+            "subsystem.machine_max.passenger_seat_07": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_04": {
+            "subsystem.machine_max.passenger_seat_04": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_05": {
+            "subsystem.machine_max.passenger_seat_05": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -273,11 +273,11 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_02": {
+            "subsystem.machine_max.passenger_seat_02": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_03": {
+            "subsystem.machine_max.passenger_seat_03": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },
@@ -285,7 +285,7 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.mtlb.passenger_seat_01": {
+            "subsystem.machine_max.passenger_seat_01": {
               "destroyed": 0,
               "durability_ratio": 1.0
             },

@@ -548,7 +548,7 @@
               "destroyed": 0,
               "durability_ratio": 1.0
             },
-            "subsystem.2s38.coax_elevation_driver": {
+            "subsystem.machine_max.coax_elevation_driver": {
               "destroyed": 0,
               "brake_yaw": 2.33599E-7,
               "brake_pitch": 2.8351076E-7,

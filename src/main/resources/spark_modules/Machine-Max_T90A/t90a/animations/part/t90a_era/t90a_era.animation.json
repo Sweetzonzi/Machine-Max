@@ -9,82 +9,82 @@
 			"loop": true,
 			"bones": {
 				"MM_hull_era_front_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_01')"
 				},
 				"MM_hull_era_front_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_02')"
 				},
 				"MM_hull_era_front_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_03')"
 				},
 				"MM_hull_era_front_04": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_04')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_04')"
 				},
 				"MM_hull_era_front_05": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_05')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_05')"
 				},
 				"MM_hull_era_front_06": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_06')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_06')"
 				},
 				"MM_hull_era_left_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_01')"
 				},
 				"MM_hull_era_left_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_02')"
 				},
 				"MM_hull_era_left_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_03')"
 				},
 				"MM_hull_era_right_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_01')"
 				},
 				"MM_hull_era_right_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_02')"
 				},
 				"MM_hull_era_right_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_03')"
 				},
 				"MM_turret_era_left_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_01')"
 				},
 				"MM_turret_era_left_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_02')"
 				},
 				"MM_turret_era_left_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_03')"
 				},
 				"MM_turret_era_left_04": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_04')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_04')"
 				},
 				"MM_turret_era_left_05": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_05')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_05')"
 				},
 				"MM_turret_era_left_06": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_06')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_06')"
 				},
 				"MM_turret_era_left_07": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_left_07')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_left_07')"
 				},
 				"MM_turret_era_right_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_01')"
 				},
 				"MM_turret_era_right_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_02')"
 				},
 				"MM_turret_era_right_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_03')"
 				},
 				"MM_turret_era_right_04": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_04')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_04')"
 				},
 				"MM_turret_era_right_05": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_05')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_05')"
 				},
 				"MM_turret_era_right_06": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_06')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_06')"
 				},
 				"MM_turret_era_right_07": {
-					"scale": "!local.subsystem_destroyed('subsystem.t90a.turret_era_right_07')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.turret_era_right_07')"
 				}
 			}
 		}

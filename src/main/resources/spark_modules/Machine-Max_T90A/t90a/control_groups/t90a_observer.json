@@ -1,6 +1,6 @@
 {
   "base_group": {
-    "name": "controlGroup.t90a.commander_base",
+    "name": "controlGroup.machine_max.commander_base",
     "control_mode": "ground",
     "move_targets": {
       "crew_commander_move": [
@@ -30,7 +30,7 @@
   },
   "groups": [
     {
-      "name": "controlGroup.t90a.observer",
+      "name": "controlGroup.machine_max.observer",
       "control_mode": "inherit",
       "move_targets": {},
       "regular_targets": {},
@@ -40,7 +40,7 @@
       "secondary_weapon_targets": {}
     },
     {
-      "name": "controlGroup.t90a.commander_override",
+      "name": "controlGroup.machine_max.commander_override",
       "control_mode": "inherit",
       "priorities": {
         "crew_commander_aim": 1,

@@ -61,7 +61,7 @@ public final class AmmoJobClaimGameTest {
     private static final String MANUAL_VARIANT = "desert";
     private static final String MANUAL_LAUNCHER = "subsystem.machine_max.main_launcher";
     private static final String MANUAL_RACK = "subsystem.machine_max.main_ap_rack";
-    private static final String MANUAL_SEAT = "subsystem.m1a2_sep.loader_seat";
+    private static final String MANUAL_SEAT = "subsystem.machine_max.loader_seat";
 
     private AmmoJobClaimGameTest() {
     }

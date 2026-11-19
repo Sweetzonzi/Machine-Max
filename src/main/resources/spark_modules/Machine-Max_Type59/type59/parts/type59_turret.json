@@ -645,7 +645,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact": [
-                  "subsystem.type59.loader_seat"
+                  "subsystem.machine_max.loader_seat"
                 ]
               }
             }
@@ -836,7 +836,7 @@
               "first_hud_layout": "type59:type59_orientation",
               "third_hud_layout": "type59:type59_ground_orientation"
             },
-            "subsystem.type59.loader_seat": {
+            "subsystem.machine_max.loader_seat": {
               "type": "machine_max:seat",
               "definition": "type59:open_roof_seat",
               "locator": "loader_seat",

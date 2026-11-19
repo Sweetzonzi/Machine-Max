@@ -42,48 +42,48 @@
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_01')",
-              "subsystem": "subsystem.t90a.hull_era_front_01"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_01')",
+              "subsystem": "subsystem.machine_max.hull_era_front_01"
             },
             "MM_Hit_hull_era_front_02": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_02')",
-              "subsystem": "subsystem.t90a.hull_era_front_02"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_02')",
+              "subsystem": "subsystem.machine_max.hull_era_front_02"
             },
             "MM_Hit_hull_era_front_03": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_03')",
-              "subsystem": "subsystem.t90a.hull_era_front_03"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_03')",
+              "subsystem": "subsystem.machine_max.hull_era_front_03"
             },
             "MM_Hit_hull_era_front_04": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_04')",
-              "subsystem": "subsystem.t90a.hull_era_front_04"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_04')",
+              "subsystem": "subsystem.machine_max.hull_era_front_04"
             },
             "MM_Hit_hull_era_front_05": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_05')",
-              "subsystem": "subsystem.t90a.hull_era_front_05"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_05')",
+              "subsystem": "subsystem.machine_max.hull_era_front_05"
             },
             "MM_Hit_hull_era_front_06": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_front_06')",
-              "subsystem": "subsystem.t90a.hull_era_front_06"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_front_06')",
+              "subsystem": "subsystem.machine_max.hull_era_front_06"
             }
           },
           "connectors": {
@@ -99,27 +99,27 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.hull_era_front_01": {
+            "subsystem.machine_max.hull_era_front_01": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_front_02": {
+            "subsystem.machine_max.hull_era_front_02": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_front_03": {
+            "subsystem.machine_max.hull_era_front_03": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_front_04": {
+            "subsystem.machine_max.hull_era_front_04": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_front_05": {
+            "subsystem.machine_max.hull_era_front_05": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_front_06": {
+            "subsystem.machine_max.hull_era_front_06": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             }
@@ -165,24 +165,24 @@
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_01')",
-              "subsystem": "subsystem.t90a.hull_era_left_01"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_01')",
+              "subsystem": "subsystem.machine_max.hull_era_left_01"
             },
             "MM_Hit_hull_era_left_02": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_02')",
-              "subsystem": "subsystem.t90a.hull_era_left_02"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_02')",
+              "subsystem": "subsystem.machine_max.hull_era_left_02"
             },
             "MM_Hit_hull_era_left_03": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_left_03')",
-              "subsystem": "subsystem.t90a.hull_era_left_03"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_03')",
+              "subsystem": "subsystem.machine_max.hull_era_left_03"
             }
           },
           "connectors": {
@@ -198,15 +198,15 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.hull_era_left_01": {
+            "subsystem.machine_max.hull_era_left_01": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_left_02": {
+            "subsystem.machine_max.hull_era_left_02": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_left_03": {
+            "subsystem.machine_max.hull_era_left_03": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             }
@@ -252,24 +252,24 @@
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_01')",
-              "subsystem": "subsystem.t90a.hull_era_right_01"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_01')",
+              "subsystem": "subsystem.machine_max.hull_era_right_01"
             },
             "MM_Hit_hull_era_right_02": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_02')",
-              "subsystem": "subsystem.t90a.hull_era_right_02"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_02')",
+              "subsystem": "subsystem.machine_max.hull_era_right_02"
             },
             "MM_Hit_hull_era_right_03": {
               "id": "part",
               "type": "box",
               "material": "machine_max:kontakt5",
               "thickness": 30,
-              "condition": "!local.subsystem_destroyed('subsystem.t90a.hull_era_right_03')",
-              "subsystem": "subsystem.t90a.hull_era_right_03"
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_03')",
+              "subsystem": "subsystem.machine_max.hull_era_right_03"
             }
           },
           "connectors": {
@@ -285,15 +285,15 @@
             }
           },
           "subsystems": {
-            "subsystem.t90a.hull_era_right_01": {
+            "subsystem.machine_max.hull_era_right_01": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_right_02": {
+            "subsystem.machine_max.hull_era_right_02": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             },
-            "subsystem.t90a.hull_era_right_03": {
+            "subsystem.machine_max.hull_era_right_03": {
               "type": "machine_max:reactive_armor",
               "definition": "machine_max:kontakt5_tile"
             }

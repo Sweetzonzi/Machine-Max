@@ -51,27 +51,27 @@ machine_max:structural_steel、thickness 10 mm。它在瓦被打掉之后仍然�
 
 车体首上 sub_part.t90a.hull_era_front（7 条：1 底衬 + 6 瓦）
   MM_Hit_hull_era_rack       底衬，无条件
-  MM_Hit_hull_era_front_01   下排（z≈-27）左侧      subsystem.t90a.hull_era_front_01
-  MM_Hit_hull_era_front_02   下排右侧               subsystem.t90a.hull_era_front_02
-  MM_Hit_hull_era_front_03   上排（z≈-17）最左      subsystem.t90a.hull_era_front_03
-  MM_Hit_hull_era_front_04   上排左中              subsystem.t90a.hull_era_front_04
-  MM_Hit_hull_era_front_05   上排右中              subsystem.t90a.hull_era_front_05
-  MM_Hit_hull_era_front_06   上排最右              subsystem.t90a.hull_era_front_06
+  MM_Hit_hull_era_front_01   下排（z≈-27）左侧      subsystem.machine_max.hull_era_front_01
+  MM_Hit_hull_era_front_02   下排右侧               subsystem.machine_max.hull_era_front_02
+  MM_Hit_hull_era_front_03   上排（z≈-17）最左      subsystem.machine_max.hull_era_front_03
+  MM_Hit_hull_era_front_04   上排左中              subsystem.machine_max.hull_era_front_04
+  MM_Hit_hull_era_front_05   上排右中              subsystem.machine_max.hull_era_front_05
+  MM_Hit_hull_era_front_06   上排最右              subsystem.machine_max.hull_era_front_06
 
 车体左侧 sub_part.t90a.hull_era_left（4 条：1 底衬 + 3 瓦）
   MM_Hit_hull_era_rack_left  底衬，无条件
-  MM_Hit_hull_era_left_01    最前一块（z 由 -26 起）   subsystem.t90a.hull_era_left_01
-  MM_Hit_hull_era_left_02    中间一块                subsystem.t90a.hull_era_left_02
-  MM_Hit_hull_era_left_03    最后一块                subsystem.t90a.hull_era_left_03
+  MM_Hit_hull_era_left_01    最前一块（z 由 -26 起）   subsystem.machine_max.hull_era_left_01
+  MM_Hit_hull_era_left_02    中间一块                subsystem.machine_max.hull_era_left_02
+  MM_Hit_hull_era_left_03    最后一块                subsystem.machine_max.hull_era_left_03
 
 车体右侧 sub_part.t90a.hull_era_right（4 条：1 底衬 + 3 瓦）
   骨骼名与左侧同构，left 段写作 right；子系统 id 同规则，编号与左侧镜像一致。
 
 炮塔左侧 sub_part.t90a.turret_era_left（8 条：1 底衬 + 7 瓦）
   MM_Hit_turret_era_rack_left  底衬，无条件
-  MM_Hit_turret_era_left_01    前部四块小瓦合为一块   subsystem.t90a.turret_era_left_01
+  MM_Hit_turret_era_left_01    前部四块小瓦合为一块   subsystem.machine_max.turret_era_left_01
   MM_Hit_turret_era_left_02…07 六块主砖（1.5×9.5×6.5 与 1.5×6×6.5 交替）
-                               各自的 subsystem.t90a.turret_era_left_0N
+                               各自的 subsystem.machine_max.turret_era_left_0N
 
   小瓦合并的理由：前部四片是同一段安装面上的四块窄瓦，打在任意一片上表现一致，拆成四个
   子系统会让炮塔正面的判定碎得没有意义。合并后一块 subsystem 覆盖四片，可见骨骼
@@ -104,7 +104,8 @@ M1A2 车体侧每侧 13 块，T-90A 车体侧每侧 3 块、炮塔侧 7 块，�
 六、挂点耐久
 
 附加装甲的挂点由两侧各一个连接点组成：模块侧 t90a:armor_front / armor_left / armor_right，
-车体或炮塔侧 connector.t90a.hull_era_* / connector.t90a.turret_era_*（覆写自
+车体或炮塔侧 connector.machine_max.hull_era_front / hull_era_left / hull_era_right、
+turret_era_left / turret_era_right（模块侧同名加 _host；覆写自
 machine_max:fixed_front / fixed_left / fixed_right）。两侧统一写成：
 
   integrity 2400

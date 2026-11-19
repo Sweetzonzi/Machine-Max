@@ -8,82 +8,82 @@
 			"loop": true,
 			"bones": {
 				"MM_HullArmorLeft_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_01')"
 				},
 				"MM_HullArmorLeft_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_02')"
 				},
 				"MM_HullArmorLeft_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_03')"
 				},
 				"MM_HullArmorLeft_04": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_04')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_04')"
 				},
 				"MM_HullArmorLeft_05": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_05')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_05')"
 				},
 				"MM_HullArmorLeft_06": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_06')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_06')"
 				},
 				"MM_HullArmorLeft_07": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_07')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_07')"
 				},
 				"MM_HullArmorLeft_08": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_08')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_08')"
 				},
 				"MM_HullArmorLeft_09": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_09')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_09')"
 				},
 				"MM_HullArmorLeft_10": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_10')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_10')"
 				},
 				"MM_HullArmorLeft_11": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_11')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_11')"
 				},
 				"MM_HullArmorLeft_12": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_12')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_12')"
 				},
 				"MM_HullArmorLeft_13": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_left_13')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_left_13')"
 				},
 				"MM_HullArmorRight_01": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_01')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_01')"
 				},
 				"MM_HullArmorRight_02": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_02')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_02')"
 				},
 				"MM_HullArmorRight_03": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_03')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_03')"
 				},
 				"MM_HullArmorRight_04": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_04')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_04')"
 				},
 				"MM_HullArmorRight_05": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_05')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_05')"
 				},
 				"MM_HullArmorRight_06": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_06')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_06')"
 				},
 				"MM_HullArmorRight_07": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_07')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_07')"
 				},
 				"MM_HullArmorRight_08": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_08')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_08')"
 				},
 				"MM_HullArmorRight_09": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_09')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_09')"
 				},
 				"MM_HullArmorRight_10": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_10')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_10')"
 				},
 				"MM_HullArmorRight_11": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_11')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_11')"
 				},
 				"MM_HullArmorRight_12": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_12')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_12')"
 				},
 				"MM_HullArmorRight_13": {
-					"scale": "!local.subsystem_destroyed('subsystem.m1a2_sep.hull_era_right_13')"
+					"scale": "!local.subsystem_destroyed('subsystem.machine_max.hull_era_right_13')"
 				}
 			}
 		}

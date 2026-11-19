@@ -240,7 +240,7 @@
               "definition": "2s38:2s38_commander_sight",
               "locator": "commander_sight"
             },
-            "subsystem.2s38.coax_elevation_driver": {
+            "subsystem.machine_max.coax_elevation_driver": {
               "type": "machine_max:turret_driver",
               "definition": "machine_max:basic_elevation_driver",
               "connector": "connector.2s38.turret_coax_axis"

@@ -45,7 +45,7 @@ public final class AmmoBeltReplaceGameTest {
     private static final String VARIANT = "default";
     private static final String LAUNCHER = "subsystem.machine_max.main_launcher";
     private static final String AUTOLOADER = "subsystem.machine_max.main_loader";
-    private static final String RACK = "subsystem.k17.main_rack";
+    private static final String RACK = "subsystem.machine_max.main_rack";
 
     private AmmoBeltReplaceGameTest() {
     }

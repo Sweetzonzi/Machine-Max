@@ -59,7 +59,7 @@
       }
     },
     {
-      "name": "controlGroup.m1a2_sep.commander_override",
+      "name": "controlGroup.machine_max.commander_override",
       "control_mode": "inherit",
       "view_targets": {
         "crew_commander_aim": [

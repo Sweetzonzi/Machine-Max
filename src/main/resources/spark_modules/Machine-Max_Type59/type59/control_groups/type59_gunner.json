@@ -1,6 +1,6 @@
 {
   "base_group": {
-    "name": "controlGroup.type59.gunner",
+    "name": "controlGroup.machine_max.gunner",
     "control_mode": "inherit",
     "move_targets": {},
     "regular_targets": {},
