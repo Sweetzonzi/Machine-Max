@@ -401,6 +401,7 @@
   "message.machine_max.blueprint_pass": "未选中任何载具，取消保存蓝图",
   "message.machine_max.blueprint_saved": "蓝图已保存至蓝图库",
   "message.machine_max.control_group_switched": "已切换控制组：%s",
+  "message.machine_max.crowbar.occupied_vehicle": "载具上仍有乘员，非创造模式下无法用撬棍改动结构",
   "message.machine_max.leaving_vehicle": "长按[%1$s]键%2$s/0.50秒以离开载具",
   "message.machine_max.light_capture.armed": "光照对照已准备，请在5秒内产生光源。截取期间画面会停顿。",
   "message.machine_max.light_capture.empty": "5秒内没有可截取的光源。请开启光照效果后重试。",

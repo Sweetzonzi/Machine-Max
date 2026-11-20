@@ -384,6 +384,7 @@
   "message.machine_max.blueprint_pass": "No vehicle selected, skipping blueprint save",
   "message.machine_max.blueprint_saved": "Blueprint has been saved to the blueprint library",
   "message.machine_max.control_group_switched": "Control Group: %s",
+  "message.machine_max.crowbar.occupied_vehicle": "A vehicle with occupants cannot be modified with a crowbar outside Creative mode",
   "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.50s to leave the vehicle.",
   "message.machine_max.part.place_failed": "Failed to place part: %1$s",
   "message.machine_max.pda.deposit.rejected": "%1$s blueprint(s) already stored",

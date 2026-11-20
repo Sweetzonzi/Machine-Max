@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLink;
@@ -61,6 +62,11 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {
+                // This must precede track, connector, and part paths; each can mutate vehicle structure.
+                if (isBlockedByOccupiedVehicle(player, subPart)) {
+                    player.displayClientMessage(Component.translatable(MMLanguageRegistry.MESSAGE_CROWBAR_OCCUPIED_VEHICLE.tag), true);
+                    return InteractionResultHolder.fail(player.getItemInHand(usedHand));
+                }
                 // 履带包在轮子外面：撬棍对准任一履带成员时先拆整条带，早于零件的撬棍许可检查。
                 // 带拆掉后该轮 trackLink 为 null，同一次右键再落到轮上时走的是轮子自身的处理
                 TrackLink track = subPart.trackLink;
@@ -148,6 +154,10 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
+                if (isBlockedByOccupiedVehicle(player, subPart)) {
+                    player.displayClientMessage(Component.translatable(MMLanguageRegistry.MESSAGE_CROWBAR_OCCUPIED_VEHICLE.tag), true);
+                    return;
+                }
                 // 右键在带在位时先拆整条带，提示必须指向同一件事
                 TrackLink track = subPart.trackLink;
                 if (track != null && !track.isDisposed() && track.vehicle() == subPart.part.assembly) {
@@ -177,6 +187,12 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                             Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
+    }
+
+    private static boolean isBlockedByOccupiedVehicle(Player player, SubPart subPart) {
+        return !player.isCreative()
+                && subPart.part.assembly instanceof VehicleCore vehicle
+                && vehicle.hasOccupiedSeats();
     }
 
     public static ItemAttributeModifiers createAttributes(Tier tier, float attackDamage, float attackSpeed) {

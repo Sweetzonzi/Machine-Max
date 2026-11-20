@@ -572,6 +572,10 @@ public enum MMLanguageRegistry {
             zh_cn, "长按[%1$s]键%2$s/0.50秒以离开载具",
             en_us, "Hold [%1$s] %2$s/0.50s to leave the vehicle."
     )),
+    MESSAGE_CROWBAR_OCCUPIED_VEHICLE("message.machine_max.crowbar.occupied_vehicle", ImmutableMap.of(
+            zh_cn, "载具上仍有乘员，非创造模式下无法用撬棍改动结构",
+            en_us, "A vehicle with occupants cannot be modified with a crowbar outside Creative mode"
+    )),
     MESSAGE_WATCH_INTERACT_BOX_INFO("message.machine_max.watch_interact_box_info", ImmutableMap.of(
             zh_cn, "[%1$s]",
             en_us, "[%1$s]"

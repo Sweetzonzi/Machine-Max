@@ -1751,6 +1751,18 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     }
 
     /**
+     * 载具是否有任何已占用座位。
+     *
+     * <p>占用位由服务端权威维护并同步到客户端，可供撬棍提示与服务端操作门禁共用。</p>
+     */
+    public boolean hasOccupiedSeats() {
+        for (AbstractSubsystem subsystem : subSystemController.getAllSubsystems()) {
+            if (subsystem instanceof SeatSubsystem seat && seat.occupied) return true;
+        }
+        return false;
+    }
+
+    /**
      * 获取载具上所有未被占用的座位，顺序同 {@link #getAllSeats()}。
      */
     public List<SeatSubsystem> getEmptySeats() {
