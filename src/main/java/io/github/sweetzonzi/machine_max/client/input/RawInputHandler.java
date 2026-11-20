@@ -2,14 +2,13 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
+import io.github.sweetzonzi.machine_max.client.assembly.VehicleAssemblyClientHelper;
 import io.github.sweetzonzi.machine_max.client.render.renderer.VehicleInspectorRenderer;
-import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.mech.control.BindingAction;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -24,6 +23,7 @@ import io.github.sweetzonzi.machine_max.network.payload.physics_test.PhysicsTest
 import io.github.sweetzonzi.machine_max.util.MMJoystickHandler;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import io.github.sweetzonzi.machine_max.util.environment.EnvironmentWrapper;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -269,24 +269,11 @@ public class RawInputHandler {
             event.setCanceled(true);
             return;
         }
-        // 获取窗口
-        long windowHandle = Minecraft.getInstance().getWindow().getWindow();
-        // 检查特定按键是否被按下（原生输入）
-        boolean isAltPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_ALT) == GLFW.GLFW_PRESS;
-        boolean isShiftPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS;
-        boolean isCtrlPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS;
-        if (client.player.getMainHandItem().getItem() instanceof PartAssemblyItem) {
-            if (event.getScrollDeltaY() != 0) {
-                if (isAltPressed) {
-                    // 本地演化安装角，无需服务端往返
-                    VehicleAssemblyHelper.getInstance().cycleAttachAngle(event.getScrollDeltaY() > 0);
-                } else if (isCtrlPressed) {
+    }
 
-                } else if (isShiftPressed) {
-
-                }
-            }
-        }
+    private static boolean canUseAssemblyInput() {
+        if (client == null) client = Minecraft.getInstance();
+        return client.player != null && VehicleAssemblyClientHelper.getInstance().canUseAssemblyInput(client.player);
     }
 
 
@@ -451,18 +438,26 @@ public class RawInputHandler {
          */
             //切换部件安装角
             KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
-                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleAttachAngle(true));
+                    .OnKeyDown(() -> {
+                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(true);
+                    });
 
             KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
-                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleAttachAngle(false));
+                    .OnKeyDown(() -> {
+                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(false);
+                    });
 
             //切换部件连接点
             KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
-                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleConnectors());
+                    .OnKeyDown(() -> {
+                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleConnectors();
+                    });
 
             //切换部件变体类型
             KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
-                    .OnKeyDown(() -> VehicleAssemblyHelper.getInstance().cycleVariants());
+                    .OnKeyDown(() -> {
+                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleVariants();
+                    });
 
             /*
               摄像机控制
@@ -516,6 +511,16 @@ public class RawInputHandler {
                 KeyHooks.EVENT(KeyBinding.generalPrevAmmoTypeKey)
                         .OnKeyDown(() -> PacketDistributor.sendToServer(
                                 new RegularInputPayload(KeyInputMapping.PREV_AMMO_TYPE.getValue(), 0)));
+
+                // 按可用弹链顺序直选（单次触发）；换座数字组合键优先
+                KeyHooks.EVENT(KeyBinding.generalSelectAmmoType1Key)
+                        .OnKeyDown(() -> sendAmmoSelection(KeyInputMapping.SELECT_AMMO_TYPE_1));
+                KeyHooks.EVENT(KeyBinding.generalSelectAmmoType2Key)
+                        .OnKeyDown(() -> sendAmmoSelection(KeyInputMapping.SELECT_AMMO_TYPE_2));
+                KeyHooks.EVENT(KeyBinding.generalSelectAmmoType3Key)
+                        .OnKeyDown(() -> sendAmmoSelection(KeyInputMapping.SELECT_AMMO_TYPE_3));
+                KeyHooks.EVENT(KeyBinding.generalSelectAmmoType4Key)
+                        .OnKeyDown(() -> sendAmmoSelection(KeyInputMapping.SELECT_AMMO_TYPE_4));
             }
 
             /*
@@ -550,6 +555,11 @@ public class RawInputHandler {
 
     }
 
+    private static void sendAmmoSelection(KeyInputMapping input) {
+        if (client.screen != null || SeatSwitchClient.isChordArmed()) return;
+        PacketDistributor.sendToServer(new RegularInputPayload(input.getValue(), 0));
+    }
+
     @SubscribeEvent
     public static void handVanillaInputs(InputEvent.InteractionKeyMappingTriggered event) {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
@@ -570,8 +580,9 @@ public class RawInputHandler {
 
     @SubscribeEvent
     public static void handleVanillaInputs(InputEvent.Key event) {
+        Minecraft minecraft = Minecraft.getInstance();
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
-        LocalPlayer player = Minecraft.getInstance().player;
+        LocalPlayer player = minecraft.player;
         if (player instanceof IEntityMixin passenger &&
                 passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             // 炮镜模式下始终屏蔽物品栏/丢弃/副手等原版功能
@@ -602,9 +613,29 @@ public class RawInputHandler {
             // 炮镜模式下屏蔽快捷栏切换键（数字键1-9）
             if (CameraController.isCameraMode()) {
                 for (int i = 0; i < 9; i++) {
-                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
-                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
+                    if (minecraft.options.keyHotbarSlots[i].consumeClick()) {
+                        minecraft.options.keyHotbarSlots[i].setDown(false);
                     }
+                }
+            } else if (minecraft.screen == null && !SeatSwitchClient.isChordArmed()) {
+                consumeAmmoSelectionHotbarClicks(minecraft);
+            }
+        }
+    }
+
+    private static void consumeAmmoSelectionHotbarClicks(Minecraft minecraft) {
+        KeyMapping[] ammoKeys = {
+                KeyBinding.generalSelectAmmoType1Key,
+                KeyBinding.generalSelectAmmoType2Key,
+                KeyBinding.generalSelectAmmoType3Key,
+                KeyBinding.generalSelectAmmoType4Key
+        };
+        for (KeyMapping hotbarKey : minecraft.options.keyHotbarSlots) {
+            for (KeyMapping ammoKey : ammoKeys) {
+                if (!ammoKey.isUnbound() && ammoKey.getKey().equals(hotbarKey.getKey())
+                        && hotbarKey.consumeClick()) {
+                    hotbarKey.setDown(false);
+                    break;
                 }
             }
         }

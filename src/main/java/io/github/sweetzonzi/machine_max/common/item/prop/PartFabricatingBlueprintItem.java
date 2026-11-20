@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -39,7 +38,7 @@ public class PartFabricatingBlueprintItem extends FabricatingBlueprintItem imple
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
         if (level.isClientSide()) {
-            PartAssemblyRequestPayload request = VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack);
+            PartAssemblyRequestPayload request = buildAssemblyRequest(player, usedHand, stack);
             if (request == null) return InteractionResultHolder.pass(stack);
             PacketDistributor.sendToServer(request);
             return InteractionResultHolder.success(stack);

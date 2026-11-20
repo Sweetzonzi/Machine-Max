@@ -537,18 +537,20 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     /**
      * 设置主武器控制信号，发送到当前控制组的 mainWeaponTargets 频道。<br>
-     * 复用 RegularInputSignal，支持 MAIN_FIRE / NEXT_AMMO_TYPE 等按键语义。<br>
-     * 弹种切换不改写这些频道：它是一条一次性指令，走已发现的主武器控制器的
+     * 复用 RegularInputSignal，支持 MAIN_FIRE 与弹种循环/直选等按键语义。<br>
+     * 弹种操作不改写这些频道：它是一条一次性指令，走已发现的主武器控制器的
      * {@link WeaponControllerSubsystem#AMMO_SWITCH_CHANNEL 弹种切换线}，
-     * 见 {@link #sendAmmoSwitch(KeyInputMapping)}。<br>
+     * 见 {@link #sendAmmoSelection(KeyInputMapping)}。<br>
      * 可被 AI 实体直接调用而不需经过控制组绑定。
      *
      * @param inputType 武器控制按键类型（如 MAIN_FIRE、NEXT_AMMO_TYPE）
      * @param tickCount 0=按下/按下中, 非0=松开
      */
     public void setMainWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (inputType == KeyInputMapping.NEXT_AMMO_TYPE || inputType == KeyInputMapping.PREV_AMMO_TYPE) {
-            sendAmmoSwitch(inputType);
+        if (inputType == KeyInputMapping.NEXT_AMMO_TYPE || inputType == KeyInputMapping.PREV_AMMO_TYPE
+                || inputType == KeyInputMapping.SELECT_AMMO_TYPE_1 || inputType == KeyInputMapping.SELECT_AMMO_TYPE_2
+                || inputType == KeyInputMapping.SELECT_AMMO_TYPE_3 || inputType == KeyInputMapping.SELECT_AMMO_TYPE_4) {
+            sendAmmoSelection(inputType);
             return;
         }
         Map<String, List<String>> targets = controlGroupSet.getMergedMainWeaponTargets();
@@ -566,12 +568,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 把一次弹种切换发送给本座位当前的主武器控制器。<br>
-     * 走控制器的专用线而不借用开火频道：一条频道对每个发送者只有一格，切弹指令借走那一格，
-     * 同一发送者仍按着的扳机就从"按下中"变成了别的东西，开火要等下一次按键边沿才恢复。
-     * 控制器收到后在 {@code updateRegularInputs} 里消费掉并把槽位清空，因此一次按键只切一次。
+     * 把一次弹种循环或直选发送给本座位当前的主武器控制器。<br>
+     * 走控制器的专用线而不借用开火频道：每个发送者在每条频道只有一个槽位，若把切弹指令写进开火频道，
+     * 就会覆盖仍按住的扳机状态。控制器收到后在 {@code updateRegularInputs} 里消费并清空该槽位，因此一次按键只操作一次。
      */
-    private void sendAmmoSwitch(KeyInputMapping inputType) {
+    private void sendAmmoSelection(KeyInputMapping inputType) {
         if (!isActive() || isDestroyed()) return;
         List<WeaponControllerSubsystem> controllers = getActiveMainWeaponControllers();
         if (controllers.isEmpty()) return;

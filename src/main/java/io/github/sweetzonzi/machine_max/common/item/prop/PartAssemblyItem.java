@@ -4,11 +4,15 @@ import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -62,6 +66,12 @@ public interface PartAssemblyItem {
             return item.getPartType(stack, level);
         }
         return null;
+    }
+
+    /** 根据共通装配选择状态构造本次放置请求。 */
+    @Nullable
+    default PartAssemblyRequestPayload buildAssemblyRequest(Player player, InteractionHand hand, ItemStack stack) {
+        return VehicleAssemblyHelper.getInstance().buildRequest(player, hand, stack);
     }
 
     /**

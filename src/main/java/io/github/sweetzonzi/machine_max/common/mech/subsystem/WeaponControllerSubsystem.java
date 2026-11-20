@@ -1148,7 +1148,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
     }
 
     /**
-     * 消费弹种切换指令：{@link #AMMO_SWITCH_CHANNEL} 上的一条按下就是一次切换。<br>
+     * 消费弹种切换或直选指令：{@link #AMMO_SWITCH_CHANNEL} 上的一条按下就是一次操作。<br>
      * 处理完把这个槽位清掉，下一次按下才是一份新指令——它是一条一次性事件，不是按住就重复的开关。
      * 它不占用开火频道的槽位，因此按住扳机时切弹种不会把这一路开火指令顶掉。
      */
@@ -1158,15 +1158,34 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (slot == null) return;
         RegularInputSignal command = (RegularInputSignal) slot.getValue();
         if (command.getInputTickCount() != 0) return;
-        cycleSelectedBelt(command.getInputType() == KeyInputMapping.PREV_AMMO_TYPE);
+        switch (command.getInputType()) {
+            case NEXT_AMMO_TYPE -> cycleSelectedBelt(false);
+            case PREV_AMMO_TYPE -> cycleSelectedBelt(true);
+            case SELECT_AMMO_TYPE_1 -> selectBeltAt(0);
+            case SELECT_AMMO_TYPE_2 -> selectBeltAt(1);
+            case SELECT_AMMO_TYPE_3 -> selectBeltAt(2);
+            case SELECT_AMMO_TYPE_4 -> selectBeltAt(3);
+            default -> { }
+        }
         slot.setValue(EmptySignal.INSTANCE);
     }
 
-    /** 弹种切换指令：两个方向都算，方向由信号自身携带。 */
+    /** 按可用弹链列表的稳定顺序直选；不存在对应条目时保留当前选择。 */
+    private void selectBeltAt(int index) {
+        List<AmmoBelt> belts = getAvailableBelts();
+        if (index < 0 || index >= belts.size()) return;
+        selectedBelt = belts.get(index);
+        pushSyncedBelt();
+    }
+
+    /** 弹种循环与直选指令。 */
     private static boolean isBeltSwitchCommand(Object value) {
-        return value instanceof RegularInputSignal regular
-                && (regular.getInputType() == KeyInputMapping.NEXT_AMMO_TYPE
-                || regular.getInputType() == KeyInputMapping.PREV_AMMO_TYPE);
+        if (!(value instanceof RegularInputSignal regular)) return false;
+        return switch (regular.getInputType()) {
+            case NEXT_AMMO_TYPE, PREV_AMMO_TYPE,
+                    SELECT_AMMO_TYPE_1, SELECT_AMMO_TYPE_2, SELECT_AMMO_TYPE_3, SELECT_AMMO_TYPE_4 -> true;
+            default -> false;
+        };
     }
 
     /**

@@ -7,9 +7,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +43,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
         if (level.isClientSide()) {
-            PartAssemblyRequestPayload request = VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack);
+            var request = buildAssemblyRequest(player, usedHand, stack);
             if (request == null) return InteractionResultHolder.pass(stack);
             PacketDistributor.sendToServer(request);
             return InteractionResultHolder.success(stack);

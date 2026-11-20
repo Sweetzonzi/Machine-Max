@@ -121,7 +121,8 @@ public class RegularInputPayload implements CustomPacketPayload {
              *  弹种切换与开火共用这条路（内容包里是 crew_<岗位>_fire 与 crew_<岗位>_secondary_fire），
              *  接收侧按指令类型区分，不按"频道非空"判定。
              */
-            case MAIN_FIRE, NEXT_AMMO_TYPE, PREV_AMMO_TYPE:
+            case MAIN_FIRE, NEXT_AMMO_TYPE, PREV_AMMO_TYPE,
+                    SELECT_AMMO_TYPE_1, SELECT_AMMO_TYPE_2, SELECT_AMMO_TYPE_3, SELECT_AMMO_TYPE_4:
                 handleWeaponInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count(), true);
                 break;
             case SECONDARY_FIRE:

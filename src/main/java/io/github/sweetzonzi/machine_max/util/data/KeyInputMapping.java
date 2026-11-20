@@ -20,6 +20,10 @@ public enum KeyInputMapping {
     SECONDARY_FIRE(201),         // 副武器开火（hold 类型）
     NEXT_AMMO_TYPE(202),         // 下一个弹种
     PREV_AMMO_TYPE(203),         // 上一个弹种
+    SELECT_AMMO_TYPE_1(204),     // 选择第 1 个可用弹种
+    SELECT_AMMO_TYPE_2(205),     // 选择第 2 个可用弹种
+    SELECT_AMMO_TYPE_3(206),     // 选择第 3 个可用弹种
+    SELECT_AMMO_TYPE_4(207),     // 选择第 4 个可用弹种
 
     /* 控制组轮换 (300号段) */
     CYCLE_CONTROL_GROUP(300);    // 轮换激活控制组

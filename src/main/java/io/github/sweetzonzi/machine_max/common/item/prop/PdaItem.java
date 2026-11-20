@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.recipe.PartFabricatingRecipe;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyRequestPayload;
@@ -76,7 +75,7 @@ public class PdaItem extends Item implements PartAssemblyItem {
             return InteractionResultHolder.success(stack);
         }
         if (PdaHelper.getData(stack).designMode()) {
-            PartAssemblyRequestPayload request = VehicleAssemblyHelper.getInstance().buildRequest(player, usedHand, stack);
+            PartAssemblyRequestPayload request = buildAssemblyRequest(player, usedHand, stack);
             if (request != null) PacketDistributor.sendToServer(request);
             return InteractionResultHolder.success(stack);
         }

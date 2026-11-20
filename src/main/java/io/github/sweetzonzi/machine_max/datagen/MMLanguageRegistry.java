@@ -208,6 +208,22 @@ public enum MMLanguageRegistry {
             zh_cn, "上一个弹种",
             en_us, "Previous Ammo Type"
     )),
+    KEY_GENERAL_SELECT_AMMO_TYPE_1("key.machine_max.general.select_ammo_type_1", ImmutableMap.of(
+            zh_cn, "选择弹种 1",
+            en_us, "Select Ammo Type 1"
+    )),
+    KEY_GENERAL_SELECT_AMMO_TYPE_2("key.machine_max.general.select_ammo_type_2", ImmutableMap.of(
+            zh_cn, "选择弹种 2",
+            en_us, "Select Ammo Type 2"
+    )),
+    KEY_GENERAL_SELECT_AMMO_TYPE_3("key.machine_max.general.select_ammo_type_3", ImmutableMap.of(
+            zh_cn, "选择弹种 3",
+            en_us, "Select Ammo Type 3"
+    )),
+    KEY_GENERAL_SELECT_AMMO_TYPE_4("key.machine_max.general.select_ammo_type_4", ImmutableMap.of(
+            zh_cn, "选择弹种 4",
+            en_us, "Select Ammo Type 4"
+    )),
     KEY_GENERAL_CYCLE_CONTROL_GROUP("key.machine_max.general.cycle_control_group", ImmutableMap.of(
             zh_cn, "轮换控制组",
             en_us, "Cycle Control Group"
@@ -1438,6 +1454,26 @@ public enum MMLanguageRegistry {
     HUD_KEY_DETACH("hud.key.machine_max.detach", ImmutableMap.of(
             zh_cn, "[%1$s+%2$s] 断开连接点",
             en_us, "[%1$s+%2$s] Detach connector"
+    )),
+    HUD_KEY_ASSEMBLY_PLACE("hud.key.machine_max.assembly.place", ImmutableMap.of(
+            zh_cn, "[%1$s] 放置 / 连接",
+            en_us, "[%1$s] Place / connect"
+    )),
+    HUD_KEY_ASSEMBLY_CYCLE_CONNECTOR("hud.key.machine_max.assembly.cycle_connector", ImmutableMap.of(
+            zh_cn, "[%1$s] 切换连接点",
+            en_us, "[%1$s] Cycle connector"
+    )),
+    HUD_KEY_ASSEMBLY_CYCLE_VARIANT("hud.key.machine_max.assembly.cycle_variant", ImmutableMap.of(
+            zh_cn, "[%1$s] 切换变体",
+            en_us, "[%1$s] Cycle variant"
+    )),
+    HUD_KEY_ASSEMBLY_ADD_ANGLE("hud.key.machine_max.assembly.add_angle", ImmutableMap.of(
+            zh_cn, "[%1$s] 旋转零件 (+)",
+            en_us, "[%1$s] Rotate part (+)"
+    )),
+    HUD_KEY_ASSEMBLY_SUB_ANGLE("hud.key.machine_max.assembly.sub_angle", ImmutableMap.of(
+            zh_cn, "[%1$s] 旋转零件 (-)",
+            en_us, "[%1$s] Rotate part (-)"
     )),
     // 研究点显示HUD
     HUD_HINT_RP_ADD_REASON_EXP("hud.hint.machine_max.rp_add_reason.exp", ImmutableMap.of(
