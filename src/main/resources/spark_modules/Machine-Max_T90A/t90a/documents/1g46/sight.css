@@ -4,3 +4,10 @@
 .community-reticle{position:absolute;left:-500px;top:-500px;width:1600px;height:1920px;display:block}.mask-frame{z-index:2}.reticle-anchor{z-index:1}.caption{z-index:3}
 
 .caption{top:3%;color:#b6cb91}.readout{background:#0e120b;border:1px solid #334126}
+
+.load .regen-status{display:none;color:var(--mm-accent,#a8f15d);margin-left:6px}.load .regen-status.is-regenerating,.load .regen-status.is-refilling{display:inline-block}
+.load .regen-track{display:inline-block;vertical-align:middle;width:48px;height:2px;background:#ffffff30}.load .regen-track i{display:block;height:2px;width:var(--regen-fill,0%);background:var(--mm-accent,#a8f15d)}
+.readout{color:var(--mm-accent,#a8f15d)}
+.load .regen-status{display:inline-block;visibility:hidden}
+.load .regen-status.is-regenerating,.load .regen-status.is-refilling{visibility:visible}
+.pending.is-hide{display:block;visibility:hidden}

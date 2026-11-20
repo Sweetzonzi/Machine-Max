@@ -1,4 +1,7 @@
 {
   "type": "machine_max:aui_hud",
-  "page": "machine_max/weapon_hud_live/index.html"
+  "page": "machine_max/weapon_hud_live/index.html",
+  "defaults": {
+    "--mm-accent": "#a4ff80"
+  }
 }

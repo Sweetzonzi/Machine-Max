@@ -11,13 +11,14 @@
   <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
     <div class="hud-panel grain-tube" data-mm-class="weapon.state">
     <div class="identity"><span class="level">TUBES</span><b data-mm-text="weapon.name"></b></div>
-    <div class="caption"><div class="stock-label"><span>STORE</span><b data-mm-text="weapon.reserve_text"></b></div><span data-mm-text="weapon.reload_text"></span></div>
-    <div class="selected-stock"><div class="stock-label" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'"><span>FEED /</span><span data-mm-text="belt.label"></span></div></div>
+    <div class="caption"><div class="stock-label"><span>STORE</span><b data-mm-text="weapon.reserve_text"></b></div><span data-mm-text="weapon.state_text"></span></div>
+    <div class="selected-stock"><div class="stock-label" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'"><span>FEED /</span><span data-mm-text="ammo_option.label"></span></div></div>
     <div class="tubes">
       <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
-        <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
-        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></b></div>
-        <div class="loading-source" data-mm-class="tube.phase"><span>LOADING /</span><span data-mm-text="tube.loading_belt_label"></span></div>
+        <i class="row-fill" data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
+        <i class="regen-fill" data-mm-class="tube.supply_refill_phase" data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i>
+        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><div class="loading-source" data-mm-class="tube.loading_phase"><span>LOADING /</span><span data-mm-text="tube.loading_source_label"></span></div><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : (tube.loading_phase != 'idle' ? tube.loading_time_text : 'WAIT'))"></b></div>
+        <div class="regen-status"><span>AMMO /</span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : 'READY'"></span></div>
       </div>
     </div>
     <div class="scanlines" aria-hidden="true"></div>

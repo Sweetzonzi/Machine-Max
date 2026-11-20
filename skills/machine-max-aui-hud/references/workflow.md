@@ -64,17 +64,17 @@ ExamplePack/
         <div class="line">
           <span data-mm-text="tube.index + 1">-</span>
           <span data-mm-text="tube.round_label">--</span>
-          <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)">STANDBY</span>
+          <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.loading_time_text)">STANDBY</span>
         </div>
         <div class="track">
-          <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
+          <i data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
         </div>
       </div>
     </div>
     <div class="belts">
-      <div class="line belt" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'">
-        <span data-mm-text="belt.label">BELT</span>
-        <b data-mm-text="belt.remaining">--</b>
+      <div class="line belt" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'">
+        <span data-mm-text="ammo_option.label">BELT</span>
+        <b><span data-mm-text="ammo_option.reserve_remaining">--</span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity">--</span></b>
       </div>
     </div>
   </div>
@@ -119,7 +119,7 @@ body { display: inline-block; }
 <b data-mm-text="weapon.reserve_text">-- / --</b>
 <span data-mm-text="global.get('vehicle_speed') ?? 0">0</span>
 <div class="track">
-  <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
+  <i data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
 </div>
 ```
 

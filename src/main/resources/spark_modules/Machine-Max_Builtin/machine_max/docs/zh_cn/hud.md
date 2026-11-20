@@ -130,6 +130,36 @@ HUD样式定义一个 HUD 的内部外观，不包含位置、旋转、缩放或
 
 AUI HUD 不向页面转发鼠标输入。透视模式支持页面的几何、文字与裁剪，不保证复杂 `backdrop-filter` 等屏幕采样效果。
 
+### 武器 HUD MoLang 查询
+
+武器查询读取该 HUD 元素绑定的武器控制器（WC）。`data-mm-repeat="weapon.tubes"` 建立逐管作用域，`tube.*` 只在该模板及其后代可用；`data-mm-repeat="weapon.ammo_options"` 建立可选供弹项作用域，`ammo_option.*` 只在该模板及其后代可用。下标从 0 开始。区域外可用 `weapon.tube_<查询>(i)` 或 `weapon.ammo_option_<查询>(i)` 查询对应条目；参数不能省略。查询只接受 `namespace.property`，不支持 `tube.belt.remaining` 这样的多段点路径，也不保留旧查询名别名。
+
+| 查询 | 类型与含义 |
+| --- | --- |
+| `weapon.name` | 字符串，武器控制器名称。 |
+| `weapon.selected`、`weapon.aimed` | 数值布尔：当前观察者是否选中该武器；全部有效管是否满足瞄准门限。 |
+| `weapon.state`、`weapon.state_text` | 字符串：`ready` / `reloading` / `empty` 的机器状态及本地化显示文字。 |
+| `weapon.loaded_rounds` | 数值，待发总数 = 膛内发数 + 所有管已装弹链余量。 |
+| `weapon.loaded_belt_rounds`、`weapon.chambered_count` | 数值，所有管已装弹链余量合计（不含膛内）及膛内发数。 |
+| `weapon.reserve_remaining`、`weapon.reserve_capacity`、`weapon.reserve_infinite`、`weapon.reserve_text` | 当前选中供弹项的备弹量、容量、是否无限容量及格式化文字；无选中项时汇总已绑定供弹源。无限容量时容量为 -1，显示文字为 `∞`。 |
+| `weapon.tube_count`、`weapon.ammo_option_count` | 数值，有效发射管数及可选供弹项数。 |
+| `weapon.round_label`、`weapon.chambered_round_mismatch` | 字符串显示弹药标签；数值布尔表示膛内弹是否与当前选中弹链不匹配。 |
+| `weapon.active_ammo_id` | 字符串，弹道表使用的弹种注册键。 |
+| `weapon.bdc_hold_rad(distance)` | 距离（米）对应的标准弹道抬角（弧度）；不是对当前目标的完整火控解。 |
+| `tube.index`、`tube.state`、`tube.round_label` | 当前管的零基下标、`ready` / `reloading` / `empty` 状态及显示弹药标签。 |
+| `tube.loading_phase`、`tube.loading_progress`、`tube.loading_time_remaining`、`tube.loading_time_text` | 发射管装入一份弹链的作业阶段、进度、剩余秒数及格式化时间。进度范围 0～1；无作业时进度为 0、数值时间为 -1、文字为空。阶段为 `human`、`machine` 或 `idle`。 |
+| `tube.supply_refill_phase`、`tube.supply_refill_progress`、`tube.supply_refill_time_remaining`、`tube.supply_refill_time_text` | 供弹源逐发再生或整批回充的阶段、进度、剩余秒数及格式化时间。进度范围 0～1；阶段为 `regenerating`、`refilling` 或 `idle`。它与发射管装填是独立流程。 |
+| `tube.has_supply_source` | 数值布尔，路由是否为该管分配了供弹源；没有来源与有来源但已耗尽是不同状态。 |
+| `tube.loaded_rounds`、`tube.chambered`、`tube.chambered_ammo_label` | 当前管待发总数、膛内是否有弹及膛内弹显示标签。 |
+| `tube.has_belt`、`tube.belt_remaining`、`tube.belt_capacity`、`tube.belt_label` | 当前实际装入该管的弹链是否存在、余量、整份长度及标签。容量不是剩余可装数量。 |
+| `tube.loading_source_label` | 当前装填作业实际来源的显示标签；无作业时为空。 |
+| `tube.source_reserve_remaining`、`tube.source_reserve_capacity`、`tube.source_reserve_infinite` | 当前管供弹源的备弹量、容量及无限容量标记；无限容量时容量为 -1。共享供弹源可能在多管重复显示同一库存。 |
+| `tube.swapping`、`tube.aimed` | 数值布尔，是否正在替换已装弹链（此时射击锁定）及炮管是否满足观察者的瞄准门限。 |
+| `ammo_option.index`、`ammo_option.label`、`ammo_option.selected` | 当前可选供弹项的零基下标、显示标签及是否选中。 |
+| `ammo_option.reserve_remaining`、`ammo_option.reserve_capacity`、`ammo_option.reserve_infinite` | 该供弹项对应供弹源的备弹量、容量及无限容量标记。容量是备弹上限，不含膛内弹和已装入各管的弹链；无限容量时容量为 -1。 |
+
+管作用域内的字段均可在区域外用同名后缀索引，例如 `tube.loading_progress` 对应 `weapon.tube_loading_progress(i)`、`tube.belt_remaining` 对应 `weapon.tube_belt_remaining(i)`。供弹项同理，例如 `ammo_option.reserve_capacity` 对应 `weapon.ammo_option_reserve_capacity(i)`。字符串查询无值时为空；无效索引的数值查询返回 0（剩余时间返回 -1），字符串查询返回空。进度条若以 CSS 百分数显示，应使用 `tube.loading_progress * 100` 或 `tube.supply_refill_progress * 100`，不要混用两条进度。
+
 ### 载具模型与座位图
 
 布局可以引用 builtin 的独立布局 `machine_max:vehicle_seat_map`，也可以在已有布局数组中加入以下条目。座椅使用 `views.first_hud_layout` 或 `views.third_hud_layout`，瞄具、相机和武器控制器使用各自的视角布局字段。布局只绘制声明的条目。

@@ -14,48 +14,50 @@ import java.util.*;
 /**
  * 客户端 tick 生成的单控制器业务值；不包含观察者身份或可变子系统引用。<br>
  * 弹药分三层计数，彼此不包含：<b>膛内</b>是已压进膛、下一发就打的那一发；
- * <b>弹匣</b>是本管已装的那一份 Belt；<b>备弹</b>是供给者手里还能给出的数量。
- * 一份 Belt 从供给者交到本管时，这些发数从备弹转到弹匣；压进膛时从弹匣转到膛内。
+ * <b>已装弹链</b>是本管实际装着的那一份；<b>备弹</b>是供给者手里还能给出的数量。
+ * 一份弹链从供给者交到本管时，这些发数从备弹转到已装弹链；压进膛时从弹链转到膛内。
  * <p>
  * {@code capture} 接收观察者的瞄准点，因此 {@link Tube#aimed()} 与它同一口径——
  * 同一控制器被不同观察者看到时，对准读数随观察者变化，与 {@code weapon.selected} 同类。
  */
 public record HudWeaponSnapshot(String name, String state,
                                 int reserveRemaining, int reserveCapacity, boolean reserveInfinite, String reserveText,
-                                int magazineRemaining, int chamberedCount,
-                                String roundLabel, boolean roundMismatch, String reloadText, String activeAmmo,
-                                List<Tube> tubes, List<Belt> belts) {
+                                int loadedBeltRounds, int chamberedCount,
+                                String roundLabel, boolean chamberedRoundMismatch, String stateText, String activeAmmoId,
+                                List<Tube> tubes, List<AmmoOption> ammoOptions) {
     public static final HudWeaponSnapshot EMPTY = new HudWeaponSnapshot("", "empty", 0, 0, false, "0/0",
             0, 0, "", false, "", "", List.of(), List.of());
 
     public HudWeaponSnapshot {
         tubes = List.copyOf(tubes);
-        belts = List.copyOf(belts);
+        ammoOptions = List.copyOf(ammoOptions);
     }
 
     /**
-     * 待发发数：膛内 + 弹匣。<br>
+     * 待发发数：膛内 + 已装弹链。<br>
      * HUD 把它与 {@link #reserveRemaining()} 配成"现在能打的 / 还能补的"；
      * 两者相加是这支武器全部可用的发数。
      */
-    public int loaded() {
-        return chamberedCount + magazineRemaining;
+    public int loadedRounds() {
+        return chamberedCount + loadedBeltRounds;
     }
 
     /**
      * 单根管的一帧读数。<br>
-     * {@code phase} 把 {@code reloading} 拆成输弹、逐发再生与整批回充三段，页面据此选择文案与显隐；
-     * {@code hasSource} 表达"路由没给它摊到装弹机"，与"有机器但打空"区分开；
+     * 装填作业与供弹源再生分别提供进度与剩余时间，两者可同时推进；
+     * {@code hasSupplySource} 表达"路由没给它摊到装弹机"，与"有机器但打空"区分开；
      * {@code swapping} 表示本管正在替换已装的那一份，此时射击锁定，即使膛内有弹也不算就绪；
      * {@code aimed} 表示本管此刻满足开火门限：与观察者瞄准点、含火控修正的有效发射方向的夹角在控制器瞄准容差内，与装填状态无关。
      */
-    public record Tube(AmmoRef key, String roundLabel, String state, String phase,
-                       double fill, double reloadRemaining, String reloadText, String loadingBeltLabel,
-                       boolean swapping, boolean hasSource,
-                       Chamber chamber, Magazine magazine, Reserve reserve, boolean aimed) {
-        /** 本管待发发数：膛内那一发（至多 1）加弹链余量。 */
-        public int loaded() {
-            return (chamber.loaded() ? 1 : 0) + magazine.remaining();
+    public record Tube(AmmoRef key, String roundLabel, String state,
+                       String loadingPhase, double loadingProgress, double loadingTimeRemaining, String loadingTimeText,
+                       String supplyRefillPhase, double supplyRefillProgress, double supplyRefillTimeRemaining, String supplyRefillTimeText,
+                       String loadingSourceLabel,
+                       boolean swapping, boolean hasSupplySource,
+                       Chamber chamber, LoadedBelt belt, Reserve sourceReserve, boolean aimed) {
+        /** 本管待发发数：膛内那一发（至多 1）加已装弹链余量。 */
+        public int loadedRounds() {
+            return (chamber.loaded() ? 1 : 0) + belt.remaining();
         }
     }
 
@@ -64,9 +66,9 @@ public record HudWeaponSnapshot(String name, String state,
         public static final Chamber EMPTY = new Chamber(false, "");
     }
 
-    /** 已装的那一份 Belt：{@code capacity} 是整份长度，不是剩余容量。 */
-    public record Magazine(boolean loaded, String label, int remaining, int capacity) {
-        public static final Magazine EMPTY = new Magazine(false, "", 0, 0);
+    /** 本管当前实际装着的弹链；{@code capacity} 是整份长度，不是剩余容量。 */
+    public record LoadedBelt(boolean loaded, String label, int remaining, int capacity) {
+        public static final LoadedBelt EMPTY = new LoadedBelt(false, "", 0, 0);
     }
 
     /** 供给者储备：{@code infinite} 为真时容量无上限，{@code capacity} 报 -1。 */
@@ -74,7 +76,9 @@ public record HudWeaponSnapshot(String name, String state,
         public static final Reserve EMPTY = new Reserve(0, 0, false);
     }
 
-    public record Belt(AmmoBelt key, String label, int remaining, boolean selected) {}
+    /** 可选弹种/弹链及其对应供弹源的备弹库存。 */
+    public record AmmoOption(AmmoBelt key, String label, int reserveRemaining, int reserveCapacity,
+                            boolean reserveInfinite, boolean selected) {}
 
     public static HudWeaponSnapshot capture(WeaponControllerSubsystem controller, @Nullable Vec3 aimPoint) {
         var launchers = controller.getLaunchers().keySet().stream()
@@ -87,11 +91,13 @@ public record HudWeaponSnapshot(String name, String state,
         var available = controller.getAvailableBelts();
         var selected = controller.getSelectedBelt();
         var pool = controller.getAmmoPool();
-        List<Belt> belts = new ArrayList<>();
+        List<AmmoOption> ammoOptions = new ArrayList<>();
         for (AmmoBelt belt : available) {
             var entries = pool.getOrDefault(belt, List.of());
             List<IAmmoSupplier> suppliers = entries.stream().map(WeaponControllerSubsystem.RouteEntry::provider).toList();
-            belts.add(new Belt(belt, belt.displayLabel(), totals(suppliers).remaining(), belt.equals(selected)));
+            Totals total = totals(suppliers);
+            ammoOptions.add(new AmmoOption(belt, belt.displayLabel(), total.remaining(), total.capacity(),
+                    total.infinite(), belt.equals(selected)));
         }
         List<Tube> tubes = new ArrayList<>();
         ProjectileType chambered = null;
@@ -99,7 +105,7 @@ public record HudWeaponSnapshot(String name, String state,
         IAmmoSupplier firstSupplier = null;
         List<IAmmoSupplier> bound = new ArrayList<>();
         int chamberedCount = 0;
-        int magazineRemaining = 0;
+        int loadedBeltRounds = 0;
         for (var launcher : launchers) {
             ProjectileType round = launcher.getChamberedType();
             AmmoPath route = launcher.getCurrentRoute();
@@ -115,40 +121,39 @@ public record HudWeaponSnapshot(String name, String state,
             if (firstSupplier == null) firstSupplier = supplier;
             if (supplier != null) bound.add(supplier);
             if (round != null) chamberedCount++;
-            if (belt != null) magazineRemaining += belt.remaining();
+            if (belt != null) loadedBeltRounds += belt.remaining();
 
             // 状态描述这根管此刻能不能打：换装中一律不算就绪，哪怕膛内还压着一发
             ReloadJob job = launcher.getReloadJob();
             boolean canFire = launcher.hasRoundToFire();
             // 补给还指望得上：机构可工作，且已有一条作业在推进、有可分配的弹，或正在再生／回充。
             // 作业在推进就够——那份弹已按作业身份预留，可分配数量为 0 不代表这一份不会到
+            ReloadPhase regenPhase = supplier == null ? ReloadPhase.IDLE : supplier.getRefillPhase();
+            boolean regenerating = regenPhase == ReloadPhase.REGENERATING || regenPhase == ReloadPhase.REFILLING;
             boolean supplyComing = supplier != null
                     && supplier.isSupplyOperational()
-                    && (job != null || supplier.hasAmmo() || supplier.getRefillPhase() != ReloadPhase.IDLE);
+                    && (job != null || supplier.hasAmmo() || regenerating);
             String state = swapping ? "reloading"
                     : canFire ? "ready"
                     : supplyComing ? "reloading" : "empty";
-            boolean loading = state.equals("reloading");
-            // 有作业 = 这一份正在推进；否则报供给者此刻在忙的那一段（逐发再生 / 整批回充）
-            ReloadPhase phase = !loading ? ReloadPhase.IDLE
-                    : job != null ? ReloadPhase.LOADING
-                    : supplier != null ? supplier.getRefillPhase() : ReloadPhase.IDLE;
-            double progress = state.equals("ready") ? 1
-                    : job != null ? finiteProgress(job.progress())
-                    : loading && phase != ReloadPhase.IDLE ? finiteProgress(supplier.getRefillProgress()) : 0;
-            // 秒数只按当前阶段的剩余 tick 折算：再生与整批回充的耗时都不是 reload_time
-            int ticks = job != null ? job.remainingTicks()
-                    : loading && phase != ReloadPhase.IDLE ? supplier.getRefillRemainingTicks() : -1;
-            double seconds = !loading ? 0 : ticks >= 0 ? ticks / 20.0 : -1;
+            String loadingPhase = job == null ? "idle" : job.stage().name().toLowerCase(Locale.ROOT);
+            double loadingProgress = job == null ? 0 : finiteProgress(job.progress());
+            int loadingTicks = job == null ? -1 : job.remainingTicks();
+            double loadingTimeRemaining = loadingTicks >= 0 ? loadingTicks / 20.0 : -1;
+            String loadingTimeText = timeText(loadingTimeRemaining);
+            double regenProgress = regenerating ? finiteProgress(supplier.getRefillProgress()) : 0;
+            int regenTicks = regenerating ? supplier.getRefillRemainingTicks() : -1;
+            double regenTimeRemaining = regenTicks >= 0 ? regenTicks / 20.0 : -1;
+            String regenTimeText = timeText(regenTimeRemaining);
             Totals reserve = supplier == null ? null : totals(List.of(supplier));
             tubes.add(new Tube(key(launcher), round != null ? round.getDisplayLabel() : roundLabel(supplier),
-                    state, phase(phase), progress * 100, seconds,
-                    loading ? reloadText(seconds, progress) : "",
-                    phase == ReloadPhase.LOADING ? beltLabel(supplier) : "",
+                    state, loadingPhase, loadingProgress, loadingTimeRemaining, loadingTimeText,
+                    supplyRefillPhase(regenPhase), regenProgress, regenTimeRemaining, regenTimeText,
+                    job != null ? beltLabel(supplier) : "",
                     swapping, supplier != null,
                     new Chamber(round != null, round != null ? round.getDisplayLabel() : ""),
-                    belt == null ? Magazine.EMPTY
-                            : new Magazine(true, belt.displayLabel(), belt.remaining(), belt.length()),
+                    belt == null ? LoadedBelt.EMPTY
+                            : new LoadedBelt(true, belt.displayLabel(), belt.remaining(), belt.length()),
                     reserve == null ? Reserve.EMPTY
                             : new Reserve(reserve.remaining(), reserve.capacity(), reserve.infinite()),
                     aimPoint != null && launcher.isAimedAt(aimPoint, aimTolerance)));
@@ -163,19 +168,14 @@ public record HudWeaponSnapshot(String name, String state,
         boolean anyReloading = tubes.stream().anyMatch(t -> t.state().equals("reloading"));
         boolean anyReady = tubes.stream().anyMatch(t -> t.state().equals("ready"));
         String state = tubes.isEmpty() ? "empty" : anyReady ? "ready" : anyReloading ? "reloading" : "empty";
-        double remaining = tubes.stream().filter(t -> t.state().equals("reloading"))
-                .mapToDouble(Tube::reloadRemaining).max().orElse(-1);
-        double progress = tubes.stream().filter(t -> t.state().equals("reloading"))
-                .mapToDouble(t -> t.fill() / 100).max().orElse(0);
-        String tail = anyReloading ? reloadText(remaining, progress)
-                : Component.translatable("gui.machine_max.weapon_hud." + state).getString();
+        String stateText = Component.translatable("gui.machine_max.weapon_hud." + state).getString();
         return new HudWeaponSnapshot(Component.translatable(controller.getName()).getString(), state,
                 total.remaining(), total.capacity(), total.infinite(),
                 total.infinite() ? "∞" : total.remaining() + "/" + total.capacity(),
-                magazineRemaining, chamberedCount,
-                label, offBelt != null, tail,
+                loadedBeltRounds, chamberedCount,
+                label, offBelt != null, stateText,
                 active == null || active.getRegistryKey() == null ? "" : active.getRegistryKey().toString(),
-                tubes, belts);
+                tubes, ammoOptions);
     }
 
     /**
@@ -207,18 +207,16 @@ public record HudWeaponSnapshot(String name, String state,
         return Double.isFinite(progress) ? Math.clamp(progress, 0, 1) : 0;
     }
 
-    private static String phase(ReloadPhase phase) {
+    private static String supplyRefillPhase(ReloadPhase phase) {
         return switch (phase) {
-            case LOADING -> "loading";
             case REGENERATING -> "regenerating";
             case REFILLING -> "refilling";
-            case IDLE -> "idle";
+            case IDLE, LOADING -> "idle";
         };
     }
 
-    private static String reloadText(double seconds, double progress) {
-        return seconds >= 0 ? String.format(Locale.ROOT, "%.1fs", seconds)
-                : String.format(Locale.ROOT, "%d%%", Math.round(progress * 100));
+    private static String timeText(double seconds) {
+        return seconds >= 0 ? String.format(Locale.ROOT, "%.1fs", seconds) : "";
     }
 
     private static String beltLabel(IAmmoSupplier supplier) {

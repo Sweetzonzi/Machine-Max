@@ -29,20 +29,21 @@ class HudMolangContextTest {
 
     static HudWeaponSnapshot.Tube tube(int key, double fill, boolean aimed) {
         return new HudWeaponSnapshot.Tube(new AmmoRef(key, 0),
-                "AP", "reloading", "loading", fill, 2, "2.0s", "HE belt", false, true,
+                "AP", "reloading", "machine", fill / 100, 2, "2.0s",
+                "idle", 0, -1, "", "HE belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
-                new HudWeaponSnapshot.Magazine(true, "HE belt", 4, 30),
+                new HudWeaponSnapshot.LoadedBelt(true, "HE belt", 4, 30),
                 new HudWeaponSnapshot.Reserve(12, 100, false), aimed);
     }
 
     static HudWeaponSnapshot snapshot(List<HudWeaponSnapshot.Tube> tubes) {
         return new HudWeaponSnapshot("gun", "reloading", 12, 30, false, "12/30",
-                tubes.stream().mapToInt(t -> t.magazine().remaining()).sum(),
+                tubes.stream().mapToInt(t -> t.belt().remaining()).sum(),
                 (int) tubes.stream().filter(t -> t.chamber().loaded()).count(),
-                "AP", true, "2.0s", "test:ap", tubes,
-                List.of(new HudWeaponSnapshot.Belt(
+                "AP", true, "RELOADING", "test:ap", tubes,
+                List.of(new HudWeaponSnapshot.AmmoOption(
                         new AmmoBelt(null, "", List.of(new AmmoBelt.PatternEntry(ResourceLocation.parse("test:ap"), 1)), 1, 1, null),
-                        "AP belt", 12, true)));
+                        "AP belt", 12, 30, false, true)));
     }
 
     @Test void compiledQueriesShareCodeButKeepElementAndObserverValuesSeparate() {
@@ -61,11 +62,36 @@ class HudMolangContextTest {
         assertEquals(0, number("hud.view_heading_deg", b));
         assertEquals(8.5, number("global.get('vehicle_speed')", a));
         assertEquals("12/30", MolangContextRegistry.compileString("weapon.reserve_text", a).evaluate(a));
-        assertEquals(75, number("weapon.tube_fill(1)", a));
-        assertEquals(0, number("weapon.tube_fill(-1)", a));
-        assertEquals(0, number("weapon.tube_fill(0.5)", a));
-        assertEquals("", MolangContextRegistry.compileString("weapon.belt_label(9)", a).evaluate(a));
+        assertEquals(0.75, number("weapon.tube_loading_progress(1)", a));
+        assertEquals(0, number("weapon.tube_loading_progress(-1)", a));
+        assertEquals(0, number("weapon.tube_loading_progress(0.5)", a));
+        assertEquals("", MolangContextRegistry.compileString("weapon.ammo_option_label(9)", a).evaluate(a));
+        assertEquals(12, number("weapon.ammo_option_reserve_remaining(0)", a));
+        assertEquals(30, number("weapon.ammo_option_reserve_capacity(0)", a));
+        assertEquals(0, number("weapon.ammo_option_reserve_infinite(0)", a));
         assertNotSame(a, CompletableFuture.supplyAsync(first::getMolangContext).join());
+    }
+
+    @Test void ammoOptionCapacityDistinguishesFiniteAndInfiniteSupply() {
+        var finite = snapshot(List.of()).ammoOptions().getFirst();
+        var infiniteBelt = new AmmoBelt(null, "", List.of(
+                new AmmoBelt.PatternEntry(ResourceLocation.parse("test:he"), 1)), 1, 1, null);
+        var infinite = new HudWeaponSnapshot.AmmoOption(infiniteBelt, "HE belt", 80, -1, true, false);
+        var data = new HudWeaponSnapshot("gun", "ready", 12, 30, false, "12/30",
+                0, 0, "", false, "READY", "", List.of(), List.of(finite, infinite));
+        var element = new WeaponHudElement(null, element());
+        element.publish(HudPartSnapshot.EMPTY, data, true);
+        var context = (WeaponHudMolangContext) element.getMolangContext();
+
+        assertEquals(30, number("weapon.ammo_option_reserve_capacity(0)", context));
+        assertEquals(0, number("weapon.ammo_option_reserve_infinite(0)", context));
+        assertEquals(-1, number("weapon.ammo_option_reserve_capacity(1)", context));
+        assertEquals(1, number("weapon.ammo_option_reserve_infinite(1)", context));
+        try (var ignored = context.enterRepeat("weapon.ammo_options", infinite.key(), null)) {
+            assertEquals(-1, number("ammo_option.reserve_capacity", context));
+            assertEquals(1, number("ammo_option.reserve_infinite", context));
+            assertEquals(80, number("ammo_option.reserve_remaining", context));
+        }
     }
 
     @Test void itemScopesResolveIdentityInEachFrameAndRestoreOnExceptions() {
@@ -76,48 +102,67 @@ class HudMolangContextTest {
         context.getVariableStorage().set("row", Value.of(42));
         assertThrows(IllegalStateException.class, () -> {
             try (var ignored = context.enterRepeat("weapon.tubes", two.key(), "row")) {
-                assertEquals(75, number("tube.fill", context));
+                assertEquals(0.75, number("tube.loading_progress", context));
                 assertEquals(1, number("tube.index", context));
                 assertEquals(1, number("v.row", context));
                 assertThrows(IllegalArgumentException.class, () -> context.getVariableStorage().set("row", Value.of(9)));
-                assertThrows(IllegalStateException.class, context::belt_label);
+                assertThrows(IllegalStateException.class, context::ammo_option_label);
                 throw new IllegalStateException("slot failure");
             }
         });
         assertEquals(42, number("variable.row", context));
-        assertThrows(IllegalStateException.class, context::tube_fill);
+        assertThrows(IllegalStateException.class, context::tube_loading_progress);
+        try (var ignored = context.enterRepeat("weapon.ammo_options", snapshot(List.of(one)).ammoOptions().getFirst().key(), null)) {
+            assertEquals("AP belt", MolangContextRegistry.compileString("ammo_option.label", context).evaluate(context));
+            assertEquals(12, number("ammo_option.reserve_remaining", context));
+            assertEquals(30, number("ammo_option.reserve_capacity", context));
+            assertEquals(1, number("ammo_option.selected", context));
+        }
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(two, one)), false);
         assertEquals(1, number("weapon.selected", context), "the previous evaluation frame stays pinned");
         var next = (WeaponHudMolangContext) element.getMolangContext();
         try (var ignored = next.enterRepeat("weapon.tubes", two.key(), null)) {
             assertEquals(0, number("tube.index", next));
-            assertEquals(75, number("tube.fill", next));
+            assertEquals(0.75, number("tube.loading_progress", next));
         }
     }
 
-    @Test void tubePhaseAndSourceAreReadableInsideAndOutsideTheScope() {
+    @Test void loadingAndSourceRegenerationRemainIndependentInsideAndOutsideTheScope() {
         var element = new WeaponHudElement(null, element());
         var stalled = new HudWeaponSnapshot.Tube(new AmmoRef(7, 0),
-                "AP", "reloading", "regenerating", 40, 12, "12.0s", "", false, true,
-                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
+                "AP", "reloading", "human", 0.4, 4, "4.0s",
+                "regenerating", 0.4, 12, "12.0s", "", false, true,
+                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.LoadedBelt.EMPTY,
                 new HudWeaponSnapshot.Reserve(30, 120, false), false);
         var orphan = new HudWeaponSnapshot.Tube(new AmmoRef(8, 0),
-                "HE", "empty", "idle", 0, 0, "", "", false, false,
-                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.Magazine.EMPTY,
+                "HE", "empty", "idle", 0, -1, "", "idle", 0, -1, "", "", false, false,
+                HudWeaponSnapshot.Chamber.EMPTY, HudWeaponSnapshot.LoadedBelt.EMPTY,
                 HudWeaponSnapshot.Reserve.EMPTY, false);
         element.publish(HudPartSnapshot.EMPTY, snapshot(List.of(stalled, orphan)), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();
         try (var ignored = context.enterRepeat("weapon.tubes", stalled.key(), null)) {
             assertEquals("reloading", MolangContextRegistry.compileString("tube.state", context).evaluate(context));
-            assertEquals("regenerating", MolangContextRegistry.compileString("tube.phase", context).evaluate(context));
-            assertEquals(1, number("tube.has_source", context));
+            assertEquals("human", MolangContextRegistry.compileString("tube.loading_phase", context).evaluate(context));
+            assertEquals(0.4, number("tube.loading_progress", context));
+            assertEquals(4, number("tube.loading_time_remaining", context));
+            assertEquals("regenerating", MolangContextRegistry.compileString("tube.supply_refill_phase", context).evaluate(context));
+            assertEquals(0.4, number("tube.supply_refill_progress", context));
+            assertEquals(12, number("tube.supply_refill_time_remaining", context));
+            assertEquals(1, number("tube.has_supply_source", context));
         }
-        assertEquals("regenerating", MolangContextRegistry.compileString("weapon.tube_phase(0)", context).evaluate(context));
-        assertEquals("idle", MolangContextRegistry.compileString("weapon.tube_phase(1)", context).evaluate(context));
-        assertEquals(1, number("weapon.tube_has_source(0)", context));
-        assertEquals(0, number("weapon.tube_has_source(1)", context));
-        assertEquals("", MolangContextRegistry.compileString("weapon.tube_phase(5)", context).evaluate(context));
-        assertEquals(0, number("weapon.tube_has_source(5)", context));
+        assertEquals("human", MolangContextRegistry.compileString("weapon.tube_loading_phase(0)", context).evaluate(context));
+        assertEquals(0.4, number("weapon.tube_loading_progress(0)", context));
+        assertEquals(4, number("weapon.tube_loading_time_remaining(0)", context));
+        assertEquals("regenerating", MolangContextRegistry.compileString("weapon.tube_supply_refill_phase(0)", context).evaluate(context));
+        assertEquals(12, number("weapon.tube_supply_refill_time_remaining(0)", context));
+        assertEquals("idle", MolangContextRegistry.compileString("weapon.tube_loading_phase(1)", context).evaluate(context));
+        assertEquals(0, number("weapon.tube_loading_progress(1)", context));
+        assertEquals(-1, number("weapon.tube_loading_time_remaining(1)", context));
+        assertEquals("idle", MolangContextRegistry.compileString("weapon.tube_supply_refill_phase(1)", context).evaluate(context));
+        assertEquals(1, number("weapon.tube_has_supply_source(0)", context));
+        assertEquals(0, number("weapon.tube_has_supply_source(1)", context));
+        assertEquals("", MolangContextRegistry.compileString("weapon.tube_supply_refill_phase(5)", context).evaluate(context));
+        assertEquals(0, number("weapon.tube_has_supply_source(5)", context));
     }
 
     @Test void boreAlignmentIsReadPerTubeAndAggregatesOnlyWhenEveryTubeAligns() {
@@ -148,43 +193,43 @@ class HudMolangContextTest {
         var element = new WeaponHudElement(null, element());
         // 装填中的管：膛内 1 发、弹链 17 发、备弹 0（弹链是从备弹里取走的，两边不重叠）
         var loaded = new HudWeaponSnapshot.Tube(new AmmoRef(11, 0),
-                "AP", "reloading", "loading", 60, 3, "3.0s", "AP belt", false, true,
+                "AP", "reloading", "machine", 0.6, 3, "3.0s", "idle", 0, -1, "", "AP belt", false, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
-                new HudWeaponSnapshot.Magazine(true, "AP belt", 17, 150),
+                new HudWeaponSnapshot.LoadedBelt(true, "AP belt", 17, 150),
                 new HudWeaponSnapshot.Reserve(0, 300, false), false);
         // 换装中的管：膛内仍压着 1 发，但此刻打不出去
         var swapping = new HudWeaponSnapshot.Tube(new AmmoRef(12, 0),
-                "AP", "reloading", "loading", 30, 6, "6.0s", "HE belt", true, true,
+                "AP", "reloading", "machine", 0.3, 6, "6.0s", "idle", 0, -1, "", "HE belt", true, true,
                 new HudWeaponSnapshot.Chamber(true, "AP"),
-                new HudWeaponSnapshot.Magazine(true, "AP belt", 8, 150),
+                new HudWeaponSnapshot.LoadedBelt(true, "AP belt", 8, 150),
                 new HudWeaponSnapshot.Reserve(200, 300, false), false);
         element.publish(HudPartSnapshot.EMPTY, new HudWeaponSnapshot("gun", "reloading", 200, 600, false, "200/600",
-                25, 2, "AP", false, "6.0s", "test:ap", List.of(loaded, swapping), List.of()), true);
+                25, 2, "AP", false, "RELOADING", "test:ap", List.of(loaded, swapping), List.of()), true);
         var context = (WeaponHudMolangContext) element.getMolangContext();
-        assertEquals(27, number("weapon.loaded", context), "待发 = 膛内 2 + 弹链 25");
+        assertEquals(27, number("weapon.loaded_rounds", context), "待发 = 膛内 2 + 弹链 25");
         assertEquals(200, number("weapon.reserve_remaining", context));
-        assertEquals(18, number("weapon.tube_loaded(0)", context));
-        assertEquals(9, number("weapon.tube_loaded(1)", context));
-        assertEquals(25, number("weapon.magazine_remaining", context));
+        assertEquals(18, number("weapon.tube_loaded_rounds(0)", context));
+        assertEquals(9, number("weapon.tube_loaded_rounds(1)", context));
+        assertEquals(25, number("weapon.loaded_belt_rounds", context));
         assertEquals(2, number("weapon.chambered_count", context));
         try (var ignored = context.enterRepeat("weapon.tubes", loaded.key(), null)) {
             assertEquals(1, number("tube.chambered", context));
-            assertEquals(1, number("tube.magazine", context));
-            assertEquals(17, number("tube.magazine_remaining", context));
-            assertEquals(150, number("tube.magazine_capacity", context));
-            assertEquals("AP belt", MolangContextRegistry.compileString("tube.magazine_label", context).evaluate(context));
-            assertEquals(0, number("tube.reserve_remaining", context));
+            assertEquals(1, number("tube.has_belt", context));
+            assertEquals(17, number("tube.belt_remaining", context));
+            assertEquals(150, number("tube.belt_capacity", context));
+            assertEquals("AP belt", MolangContextRegistry.compileString("tube.belt_label", context).evaluate(context));
+            assertEquals(0, number("tube.source_reserve_remaining", context));
             assertEquals(0, number("tube.swapping", context));
         }
         try (var ignored = context.enterRepeat("weapon.tubes", swapping.key(), null)) {
             assertEquals(1, number("tube.chambered", context));
             assertEquals(1, number("tube.swapping", context));
-            assertEquals(8, number("tube.magazine_remaining", context));
-            assertEquals(200, number("tube.reserve_remaining", context));
+            assertEquals(8, number("tube.belt_remaining", context));
+            assertEquals(200, number("tube.source_reserve_remaining", context));
         }
         assertEquals(0, number("weapon.tube_swapping(0)", context));
         assertEquals(1, number("weapon.tube_swapping(1)", context));
-        assertEquals(17, number("weapon.tube_magazine_remaining(0)", context));
+        assertEquals(17, number("weapon.tube_belt_remaining(0)", context));
         assertEquals(0, number("weapon.tube_chambered(9)", context));
     }
 
@@ -233,10 +278,18 @@ class HudMolangContextTest {
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("vehicle.missing", ordinary, null));
         assertDoesNotThrow(() -> HudExpression.validate("vehicle.seat_name(vehicle.next_seat_number)", ordinary, null));
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.fill", weapon, null));
-        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("belt.label", weapon, "weapon.tubes"));
-        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.tube_fill()", weapon, null));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.fill", weapon, "weapon.tubes"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.reload_text", weapon, "weapon.tubes"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("belt.remaining", weapon, "weapon.ammo_options"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("ammo_option.label", weapon, "weapon.tubes"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.belt.remaining", weapon, "weapon.tubes"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("tube.ammo_option.reserve_remaining", weapon, "weapon.tubes"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.loaded", weapon, null));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.belts", weapon, null));
+        assertDoesNotThrow(() -> HudExpression.validate("ammo_option.reserve_capacity", weapon, "weapon.ammo_options"));
+        assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("weapon.tube_loading_progress()", weapon, null));
         assertThrows(IllegalArgumentException.class, () -> HudExpression.validate("v.row = 4", weapon, "weapon.tubes", "row"));
-        assertDoesNotThrow(() -> HudExpression.validate("weapon.tube_fill(math.max(0, 1))", weapon, null));
+        assertDoesNotThrow(() -> HudExpression.validate("weapon.tube_loading_progress(math.max(0, 1))", weapon, null));
         assertDoesNotThrow(() -> HudExpression.validate("'weapon.missing'", ordinary, null));
         assertDoesNotThrow(() -> HudExpression.validate("variable.row == 4", weapon, "weapon.tubes", "row"));
     }

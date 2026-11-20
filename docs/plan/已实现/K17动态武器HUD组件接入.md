@@ -26,9 +26,9 @@ WC 配置位于 `src/main/resources/spark_modules/Machine-Max_K17/machine_max/pa
 | `tubes.html` | 库存与容量、选中供弹链、各管的弹药标签、准备进度、剩余时间和装填来源 |
 | `feed.html` | 逐管信息、各条供弹链的库存与选中箭头、膛内弹种与选中供弹链不匹配时的提示 |
 
-页面通过 `data-mm-text`、`data-mm-num` 和 `data-mm-class` 绑定 MoLang。管和弹链使用同级 `data-mm-repeat`，没有嵌套重复区域。身份重排、条目增减、作用域与异常处理由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#refresh` 负责。
+页面通过 `data-mm-text`、`data-mm-num` 和 `data-mm-class` 绑定 MoLang。发射管与可选供弹项使用同级 `data-mm-repeat`，没有嵌套重复区域。身份重排、条目增减、作用域与异常处理由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#refresh` 负责。
 
-库存不包含膛内弹。即使库存为零，就绪发射管也显示完整进度和 `RDY`。选中箭头由 `belt.selected` 决定；逐管标签、进度和来源分别读取 `tube.round_label`、`tube.fill`、`tube.loading_belt_label`。供弹选择与实际装填来源可以不同。进度显示在独立的管行中，不根据标签文本推断来源身份或合并进某条弹链行。
+库存不包含膛内弹。就绪发射管显示 `RDY`；没有活动装填作业时，装填进度为 0，不伪装成满格。整行底色只表示发射管装填作业，框底细线和独立时间只表示供弹源再生/回充；两者可同时推进。选中箭头由 `ammo_option.selected` 决定；逐管标签、装填进度、装填时间、再生进度、再生时间和实际装填来源分别读取 `tube.round_label`、`tube.loading_progress`、`tube.loading_time_text`、`tube.supply_refill_progress`、`tube.supply_refill_time_text`、`tube.loading_source_label`。备弹列表使用 `ammo_option.reserve_remaining` / `ammo_option.reserve_capacity` 显示数量与容量；无限容量由 `ammo_option.reserve_infinite` 标记。数值进度为 0～1，数值剩余时间以秒计；供弹选择与实际装填来源可以不同。页面不再使用旧的混合查询，也不保留兼容别名。
 
 查询数据由 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudWeaponSnapshot.java#capture` 在客户端 tick 发布，查询实现位于 `src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/WeaponHudMolangContext.java#WeaponHudMolangContext`。名称使用 WC 的翻译键；没有翻译的名称按原文本显示。页面没有 JavaScript 模拟计时器和固定武器状态。
 

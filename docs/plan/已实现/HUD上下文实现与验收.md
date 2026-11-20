@@ -21,7 +21,7 @@ HUD 模型沿用 Spark 的物理动画管线。`src/main/java/io/github/sweetzon
 
 ## 页面绑定
 
-`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#refresh` 支持 `data-mm-text`、`data-mm-num` / `data-mm-var` / `data-mm-unit`、`data-mm-class`，以及 `weapon.tubes` / `weapon.belts` 重复区域。
+`src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/hud/molang/HudPageBinding.java#refresh` 支持 `data-mm-text`、`data-mm-num` / `data-mm-var` / `data-mm-unit`、`data-mm-class`，以及 `weapon.tubes` / `weapon.ammo_options` 重复区域。
 
 模板通过 `Document.createHTML` 使用 AUI 的 HTML 解析顺序实例化，属性与子树就绪后执行 DOM 初始化；不调用 `cloneNode`。注释节点标记重复区域边界，按稳定键增删和重排条目，同一身份复用节点。当前项由 `WeaponHudMolangContext.java#enterRepeat` 安装，退出及异常时恢复；下标别名位于上下文覆盖层，不写入 Part 或共享变量表。普通元素、错误集合类型、缺少当前项和省略显式索引得到诊断。
 

@@ -37,7 +37,7 @@ Spark 的基础变量桥接存在已实测的断层：编译后的 `v.*` 目前�
 
 占用已知但名字暂缺时显示 `…`；空位的玩家栏显示 `---`；不可用状态独立于是否有人占用。当前席位和下个可换目标单独标记，在途请求不提前改变当前席位。服务端执行换座可用性校验。
 
-`HudPageBinding` 接受 weapon.tubes、weapon.belts 和 vehicle.seats 三种集合。座位集合可用于普通和武器 HUD；管／弹链集合要求武器宿主。座位身份和观察者状态由快照提供。
+`HudPageBinding` 接受 weapon.tubes、weapon.ammo_options 和 vehicle.seats 三种集合。座位集合可用于普通和武器 HUD；管／供弹项集合要求武器宿主。座位身份和观察者状态由快照提供。
 
 ## 4. 图形模型与履带
 

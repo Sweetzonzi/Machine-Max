@@ -11,7 +11,7 @@ import java.util.Set;
 
 /** 校验 HUD 业务命名空间，阻止引擎对未绑定属性及省略索引的静默兜底。 */
 public final class HudExpression {
-    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "belt", "seat", "local", "global", "vehicle");
+    private static final Set<String> NAMESPACES = Set.of("hud", "weapon", "tube", "ammo_option", "belt", "seat", "local", "global", "vehicle");
     private HudExpression() {}
 
     public static void validate(String expression, HudMolangContext context, String collection) {
@@ -26,13 +26,19 @@ public final class HudExpression {
                         || tokens.get(i + 2).kind() != TokenKind.IDENTIFIER) continue;
                 String ns = tokens.get(i).value().toLowerCase(Locale.ROOT);
                 String name = tokens.get(i + 2).value().toLowerCase(Locale.ROOT);
+                if (ns.equals("belt")) {
+                    throw new IllegalArgumentException("HUD 命名空间 belt.* 已移除，请使用 ammo_option.*");
+                }
+                if (NAMESPACES.contains(ns) && i + 3 < tokens.size() && tokens.get(i + 3).kind() == TokenKind.DOT) {
+                    throw new IllegalArgumentException("HUD 查询只支持 namespace.property，不支持多段点路径: " + ns + "." + name);
+                }
                 if (alias != null && (ns.equals("variable") || ns.equals("v")) && alias.equals(name)
                         && i + 3 < tokens.size() && tokens.get(i + 3).kind() == TokenKind.EQ) {
                     throw new IllegalArgumentException("重复项下标为只读变量: " + alias);
                 }
                 if (!NAMESPACES.contains(ns)) continue;
                 if (ns.equals("tube") && !"weapon.tubes".equals(collection)
-                        || ns.equals("belt") && !"weapon.belts".equals(collection)
+                        || ns.equals("ammo_option") && !"weapon.ammo_options".equals(collection)
                         || ns.equals("seat") && !"vehicle.seats".equals(collection)) {
                     throw new IllegalArgumentException(ns + ".* 缺少对应的当前项作用域");
                 }

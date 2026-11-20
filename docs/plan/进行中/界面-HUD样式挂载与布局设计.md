@@ -420,9 +420,9 @@ Spark 的 `MolangContextRegistry` 按“上下文类、表达式”缓存编译�
 | `data-mm-num`、`data-mm-var`、`data-mm-unit` | 将数值与单位写入指定 CSS 变量 |
 | `data-mm-class` | 将状态映射为 `is-<值>` 类名 |
 | `data-mm-repeat` | 集合标识；绑定层按集合条目实例化标记所在元素及其完整子树，规则见 §8.5 |
-| `data-mm-index` | 可选下标变量别名；在重复项及其后代提供 `variable.<名字>`，从 0 开始；默认使用 `tube.index` / `belt.index` |
+| `data-mm-index` | 可选下标变量别名；在重复项及其后代提供 `variable.<名字>`，从 0 开始；默认使用 `tube.index` / `ammo_option.index` |
 
-四根发射管的页面只需定义一份条目模板，绑定层按身份生成四项，为各数据槽安装对应管的当前项作用域；同一条 `tube.fill` 表达式分别读取四根管。`HudPageBinding#refresh` 实现这些标记，自动化验证范围见实现记录。模型载体的骨骼槽位固定，可在确定管数的样式中显式写下标。
+四根发射管的页面只需定义一份条目模板，绑定层按身份生成四项，为各数据槽安装对应管的当前项作用域；同一条 `tube.loading_progress` 表达式分别读取四根管。`HudPageBinding#refresh` 实现这些标记，自动化验证范围见实现记录。模型载体的骨骼槽位固定，可在确定管数的样式中显式写下标。
 
 **实现载体（已定）**：绑定层由本模组实现，`data-mm-*` 由绑定层扫描页面属性识别；AUI 不承担武器集合和重复标记的解析。模板实例化使用的 AUI 节点能力与前置验证见 §8.6。依据三条：
 
@@ -466,17 +466,17 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 
 内容包作者定义一项的 HTML/CSS，绑定层根据集合实例化这份模板。Java 业务代码提供数据与身份键，通用绑定器维护节点；武器业务代码不硬编码标签树、类名或排版。重复项是同一 Document 内的 DOM 子树，不各自创建 HUD 元素、Document、控制器或发射器。
 
-首批集合是 `weapon.tubes`（有效发射管）和 `weapon.belts`（可选弹链）。集合口径、身份与排序见《[武器控制器 HUD 词表与宿主接入设计](../已实现/武器系统-武器控制器HUD样式与布局设计.md)》§二、§4.1。`data-mm-repeat` 的值是绑定器解析的集合标识，不作为 MoLang 表达式求值，不要求 MoLang 返回数组。
+首批集合是 `weapon.tubes`（有效发射管）和 `weapon.ammo_options`（可选供弹项）。集合口径、身份与排序见《[武器控制器 HUD 词表与宿主接入设计](../已实现/武器系统-武器控制器HUD样式与布局设计.md)》§二、§4.1。`data-mm-repeat` 的值是绑定器解析的集合标识，不作为 MoLang 表达式求值，不要求 MoLang 返回数组。
 
 属性与作用域契约：
 
 1. `data-mm-repeat` 写在条目根上，根及完整子树共同构成模板，父容器只保留一份；模板原件不作为数据项显示，空集合生成零项。
-2. 绑定器为 `weapon.tubes` 项安装 `tube.*` 作用域，为 `weapon.belts` 项安装 `belt.*` 作用域，覆盖条目根和后代全部数据槽。`tube.index` / `belt.index` 是本轮快照下标，从 0 开始；Java 无参查询读取当前项，不根据调用次数或 DOM 位置推断序号。
+2. 绑定器为 `weapon.tubes` 项安装 `tube.*` 作用域，为 `weapon.ammo_options` 项安装 `ammo_option.*` 作用域，覆盖条目根和后代全部数据槽。`tube.index` / `ammo_option.index` 是本轮快照下标，从 0 开始；Java 无参查询读取当前项，不根据调用次数或 DOM 位置推断序号。
 3. `data-mm-index` 可选。声明时须匹配 `[a-z_][a-z0-9_]*`，例如 `row` 提供 `variable.row` / `v.row`，值与当前项的 `.index` 相同；该变量为只读保留名。每次数据槽求值前安装作用域，结束或异常时恢复原值或未定义状态，不写入 Part/动画体共享变量。表达式检查同时识别 `variable.*` 和 `v.*` 的赋值。
-4. 同级重复区域独立绑定身份与类型。首版不支持嵌套 `data-mm-repeat`；遇到嵌套须诊断并停止受影响区域展开，不静默借用外层作用域。区域外使用当前项查询、管区域访问 `belt.*` 或弹链区域访问 `tube.*`，均须按页面/模板/槽位诊断，不默认第零项。
+4. 同级重复区域独立绑定身份与类型。首版不支持嵌套 `data-mm-repeat`；遇到嵌套须诊断并停止受影响区域展开，不静默借用外层作用域。区域外使用当前项查询、管区域访问 `ammo_option.*` 或供弹项区域访问 `tube.*`，均须按页面/模板/槽位诊断，不默认第零项。
 5. 首版模板根及后代不允许固定 `id`；使用 class 和数据标记定位，避免重复 ID。未知集合、非法下标别名或固定 ID 均按区域诊断，其他区域继续刷新；省略 `data-mm-index` 是合法写法。
-6. 身份键由集合提供者定义，作者无需声明 `data-mm-key`。`tube.*` / `belt.*` 是固定类型查询，不是 `data-mm-as` 或任意对象别名；任意计数表达式、分页/过滤属性和作者自定义集合不属于首版语法。
-7. `weapon.*` 始终读取所属整台控制器。显式索引接口 `weapon.tube_fill(i)` / `weapon.belt_label(i)` 用于非重复页面、跨项比较及模型 HUD；不能把省略实参视为当前项，编译器边界见通用上下文文档 §3.3。
+6. 身份键由集合提供者定义，作者无需声明 `data-mm-key`。`tube.*` / `ammo_option.*` 是固定类型查询，不是 `data-mm-as` 或任意对象别名；任意计数表达式、分页/过滤属性和作者自定义集合不属于首版语法。
+7. `weapon.*` 始终读取所属整台控制器。显式索引接口 `weapon.tube_loading_progress(i)`、`weapon.tube_supply_refill_progress(i)` / `weapon.ammo_option_label(i)` 用于非重复页面、跨项比较及模型 HUD；不能把省略实参视为当前项，编译器边界见通用上下文文档 §3.3。
 
 普通列表由 CSS 排布。以下每项高 20px、间距 6px，相邻起点相差 26px：
 
@@ -487,9 +487,13 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 </style>
 <div class="tubes">
   <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
-    <span data-mm-text="tube.reload_text"></span>
-    <i data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"
-       style="display: block; height: 2px; width: var(--fill); background-color: white;"></i>
+    <span data-mm-text="tube.loading_time_text"></span>
+    <i data-mm-num="tube.loading_progress * 100" data-mm-var="--loading-fill" data-mm-unit="%"
+       style="display: block; height: 100%; width: var(--loading-fill); background-color: white;"></i>
+    <i data-mm-class="tube.supply_refill_phase"
+       data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"
+       style="display: block; height: 2px; width: var(--regen-fill); background-color: #ffc16b;"></i>
+    <span data-mm-text="tube.supply_refill_time_text"></span>
   </div>
 </div>
 ```
@@ -498,9 +502,9 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 
 ```html
 <div class="belts" style="display: flex; flex-direction: row; gap: 8px;">
-  <div class="belt" data-mm-repeat="weapon.belts">
-    <span data-mm-text="belt.label"></span>
-    <b data-mm-text="belt.remaining"></b>
+  <div class="ammo-option" data-mm-repeat="weapon.ammo_options">
+    <span data-mm-text="ammo_option.label"></span>
+    <b><span data-mm-text="ammo_option.reserve_remaining"></span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity"></span></b>
   </div>
 </div>
 ```
@@ -515,7 +519,8 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 <div class="custom-tubes">
   <div class="custom-tube" data-mm-repeat="weapon.tubes"
        data-mm-num="tube.index * 28" data-mm-var="--row-y" data-mm-unit="px">
-    <span data-mm-text="tube.reload_text"></span>
+    <span data-mm-text="tube.loading_time_text"></span>
+    <span data-mm-text="tube.supply_refill_time_text"></span>
   </div>
 </div>
 ```
@@ -524,7 +529,8 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 
 ```html
 <div data-mm-repeat="weapon.tubes" data-mm-index="row">
-  <span data-mm-text="weapon.tube_reload_text(variable.row)"></span>
+  <span data-mm-text="weapon.tube_loading_time_text(variable.row)"></span>
+  <span data-mm-text="weapon.tube_supply_refill_time_text(variable.row)"></span>
   <b data-mm-text="tube.chambered_ammo_label"></b>
 </div>
 ```
@@ -539,7 +545,7 @@ MoLang 不提供可靠的字符串拼接；`weapon.reserve_text` 等组合文本
 
 1. 在客户端主线程扫描模板，用开始/结束注释节点标记原位置，把模板原件保存到绑定器。通过 `Node` 插入接口维护边界内的实例，不插入额外布局容器。
 2. 按集合身份键与上一份快照比较；离开集合的项释放节点及槽位，加入的项实例化模板，保留的项复用节点。集合顺序变化时同步调整 DOM 顺序和下标；不能只比较条目数。
-3. 各行共享按“上下文类、原表达式”缓存的编译结果。每个数据槽求值先按身份从固定快照解析当前项与下标，再在本元素、本消费线程的上下文安装类型作用域及可选下标别名；结束或异常时恢复。`tube.fill` 的编译结果可复用于所有管，数据来自本次上下文，不为每行生成带常量下标的表达式，不共享全局当前项或调用计数器。Java 示意见通用上下文文档 §3.3。
+3. 各行共享按“上下文类、原表达式”缓存的编译结果。每个数据槽求值先按身份从固定快照解析当前项与下标，再在本元素、本消费线程的上下文安装类型作用域及可选下标别名；结束或异常时恢复。`tube.loading_progress` 的编译结果可复用于所有管，数据来自本次上下文，不为每行生成带常量下标的表达式，不共享全局当前项或调用计数器。Java 示意见通用上下文文档 §3.3。
 4. 普通状态、进度与选中态变化只更新变化的数据槽；不重建节点，不逐 tick 写 `innerHTML`。绑定器生成的行直接登记作用域和槽位，观察者对同一节点的通知不得再次注册模板或重复绑定。
 5. 检查 `Document#getRefreshGeneration`：换代时释放旧模板、节点句柄、作用域和观察器，在该页面下一次内容测量与绘制前重新扫描、展开和绑定；Document 销毁时释放全部关联状态。
 

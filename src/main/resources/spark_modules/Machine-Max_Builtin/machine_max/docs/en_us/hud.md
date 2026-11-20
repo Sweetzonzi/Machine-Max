@@ -164,7 +164,37 @@ The element draws the HUD host's live vehicle assembly. Angles are in degrees an
 | `vehicle.seat_chord_armed` | 1 while the switch-seat key is held, i.e. while digits address seat numbers. The built-in page uses it to light up the number-pick hint. |
 | `vehicle.seat_map_visible` | 1 when the observer occupies the same vehicle, it has at least two seats, and the GUI is visible with no open screen or active camera. The built-in page uses this query. Custom pages can use their own visibility rules. |
 
-Seat number `i` starts at 1. Missing vehicles, seats, or values give 0 for numeric queries and an empty string for text. Use `seat_has_position(i)` to distinguish a valid position at the origin. Coordinates are independent of the page size and viewing angles. `data-mm-repeat` supports the `weapon.tubes` and `weapon.belts` collections.
+Seat number `i` starts at 1. Missing vehicles, seats, or values give 0 for numeric queries and an empty string for text. Use `seat_has_position(i)` to distinguish a valid position at the origin. Coordinates are independent of the page size and viewing angles. `data-mm-repeat` supports `weapon.tubes`, `weapon.ammo_options`, and `vehicle.seats`.
+
+### Weapon HUD MoLang Queries
+
+Weapon queries read the weapon controller (WC) attached to the HUD element. `data-mm-repeat="weapon.tubes"` establishes a per-tube scope; `tube.*` is available only inside that template and its descendants. `data-mm-repeat="weapon.ammo_options"` establishes an ammunition-option scope; `ammo_option.*` is available only inside that template and its descendants. Indices start at 0. Outside a repeated region, use `weapon.tube_<query>(i)` or `weapon.ammo_option_<query>(i)` for the corresponding item; the argument is required. Queries accept only `namespace.property`; multi-part paths such as `tube.belt.remaining` and legacy aliases are not supported.
+
+| Query | Type and meaning |
+| --- | --- |
+| `weapon.name` | String, weapon-controller name. |
+| `weapon.selected`, `weapon.aimed` | Numeric booleans: whether the current observer selected the weapon; whether every active tube meets its aim threshold. |
+| `weapon.state`, `weapon.state_text` | String: machine state `ready` / `reloading` / `empty` and its localized display text. |
+| `weapon.loaded_rounds` | Numeric, total immediately available rounds = chambered rounds + remaining rounds in loaded belts across tubes. |
+| `weapon.loaded_belt_rounds`, `weapon.chambered_count` | Numeric, remaining rounds in all loaded belts (excluding chambered rounds) and number of chambered rounds. |
+| `weapon.reserve_remaining`, `weapon.reserve_capacity`, `weapon.reserve_infinite`, `weapon.reserve_text` | Selected option's reserve count, capacity, infinite-capacity flag, and formatted text; without a selected option, totals the bound supply sources. Infinite capacity is -1, and the formatted text is `∞`. |
+| `weapon.tube_count`, `weapon.ammo_option_count` | Numeric, number of active tubes and available ammunition options. |
+| `weapon.round_label`, `weapon.chambered_round_mismatch` | Display ammunition label; numeric boolean indicating whether any chambered round differs from the selected belt. |
+| `weapon.active_ammo_id` | String, ammunition registry ID used by the ballistic table. |
+| `weapon.bdc_hold_rad(distance)` | Standard ballistic elevation (radians) for a distance in meters; not a complete fire-control solution for the current target. |
+| `tube.index`, `tube.state`, `tube.round_label` | Current tube's zero-based index, `ready` / `reloading` / `empty` state, and display ammunition label. |
+| `tube.loading_phase`, `tube.loading_progress`, `tube.loading_time_remaining`, `tube.loading_time_text` | Stage, progress, remaining seconds, and formatted time for loading a belt into the tube. Progress is 0–1; with no active job, progress is 0, numeric time is -1, and text is empty. Stages are `human`, `machine`, or `idle`. |
+| `tube.supply_refill_phase`, `tube.supply_refill_progress`, `tube.supply_refill_time_remaining`, `tube.supply_refill_time_text` | Stage, progress, remaining seconds, and formatted time for per-round regeneration or full-batch refill by the supply source. Progress is 0–1; stages are `regenerating`, `refilling`, or `idle`. This is independent from tube loading. |
+| `tube.has_supply_source` | Numeric boolean: whether the route assigns a supply source to this tube. No source differs from an assigned but depleted source. |
+| `tube.loaded_rounds`, `tube.chambered`, `tube.chambered_ammo_label` | Total rounds ready in this tube, whether a round is chambered, and the chambered round's display label. |
+| `tube.has_belt`, `tube.belt_remaining`, `tube.belt_capacity`, `tube.belt_label` | Whether a belt is actually loaded in this tube, its remaining rounds, full belt length, and label. Capacity is not remaining reserve capacity. |
+| `tube.loading_source_label` | Display label for the source used by the active loading job; empty when there is no job. |
+| `tube.source_reserve_remaining`, `tube.source_reserve_capacity`, `tube.source_reserve_infinite` | Current supply source's reserve count, capacity, and infinite-capacity flag; capacity is -1 when infinite. A shared source may show the same reserve on multiple tubes. |
+| `tube.swapping`, `tube.aimed` | Numeric booleans: whether the loaded belt is being replaced (firing is locked) and whether the barrel meets the observer's aim threshold. |
+| `ammo_option.index`, `ammo_option.label`, `ammo_option.selected` | Current option's zero-based index, display label, and selected flag. |
+| `ammo_option.reserve_remaining`, `ammo_option.reserve_capacity`, `ammo_option.reserve_infinite` | Reserve count, capacity, and infinite-capacity flag for this option's supply source. Capacity is the reserve limit and excludes chambered rounds and belts already loaded in tubes; it is -1 when infinite. |
+
+Every field in the tube scope has an indexed form outside the region using the same suffix; for example, `tube.loading_progress` maps to `weapon.tube_loading_progress(i)` and `tube.belt_remaining` maps to `weapon.tube_belt_remaining(i)`. The same rule applies to ammunition options, e.g. `ammo_option.reserve_capacity` maps to `weapon.ammo_option_reserve_capacity(i)`. Missing strings are empty; invalid numeric indices return 0 (remaining-time queries return -1), and invalid string indices return an empty string. To express progress as a CSS percentage, use `tube.loading_progress * 100` or `tube.supply_refill_progress * 100`; do not conflate the two progress values.
 
 ## HUD Layouts (hud_layouts/)
 

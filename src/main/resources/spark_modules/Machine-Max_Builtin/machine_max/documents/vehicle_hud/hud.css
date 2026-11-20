@@ -22,18 +22,44 @@ machinemax-vehicle-model { position: absolute; display: block; left: 18px; top: 
 .self-label i { display: block; width: 4px; height: 10px; background: #6cff6c; }
 .current-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .seat-number { color: #6cff6c; font-size: 15px; }
-.switch-line { display: flex; align-items: center; gap: 7px; padding: 7px 6px 2px; }
-.keycap { flex-shrink: 0; min-width: 18px; padding: 0 3px; border: 1px solid #e0e9e970; text-align: center; font-size: 10px; background: #111d2459; }
-.switch-arrow { color: #4fd1ff; font-size: 15px; }
-.switch-target { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #4fd1ff; }
+.switch-line, .chord-hint {
+  display: grid;
+  align-items: center;
+  column-gap: 5px;
+  min-height: 18px;
+  color: var(--mm-accent, #7dd3fc);
+  font-size: 11px;
+  line-height: 14px;
+}
+.switch-line { position: relative; grid-template-columns: max-content max-content minmax(0, 1fr); padding: 7px 18px 2px 6px; }
+.chord-hint { grid-template-columns: max-content 22px max-content minmax(0, 1fr); padding: 4px 6px 0; }
+.keycap {
+  min-width: 18px;
+  padding: 0 3px;
+  border: 1px solid #e0e9e9b0;
+  color: #e0e9e9;
+  text-align: center;
+  font-size: 10px;
+  white-space: nowrap;
+  background: #111d2459;
+}
+.switch-prefix { grid-column: 2; color: var(--mm-accent, #7dd3fc); white-space: nowrap; }
+.switch-target { grid-column: 3; min-width: 0; padding-right: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--mm-accent, #7dd3fc); }
 .switch-full, .pending-label { display: none; }
-.switch-line.is-full .switch-target, .switch-line.is-full .switch-arrow { display: none; }
-.switch-line.is-full .switch-full { display: block; color: #a1abab; }
-.switch-line.is-pending .pending-label { display: block; color: #4fd1ff; }
-.chord-hint { display: flex; align-items: center; gap: 5px; margin: 4px 6px 0; font-size: 11px; line-height: 14px; color: #8fa4a0; }
-.chord-hint .chord-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.chord-hint.is-armed { color: #4fd1ff; }
-.chord-hint.is-armed .keycap { border-color: #4fd1ff99; color: #4fd1ff; background: #4fd1ff1f; }
+.switch-line.is-full .switch-prefix, .switch-line.is-full .switch-target { display: none; }
+.switch-line.is-full .switch-full { display: block; grid-column: 2 / 4; color: #a1abab; }
+.switch-line.is-pending .pending-label {
+  display: block;
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  z-index: 1;
+  color: var(--mm-accent, #7dd3fc);
+}
+.chord-plus { grid-column: 2; justify-self: center; color: var(--mm-accent, #7dd3fc); }
+.chord-hint .number-keycap { grid-column: 3; }
+.chord-hint .chord-label { grid-column: 4; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chord-hint.is-armed .chord-label { font-weight: 600; }
 .seat-legend { display: flex; justify-content: space-between; gap: 5px; margin: 6px 6px 0; font-size: 8px; line-height: 11px; color: #bbcecb; }
 .seat-legend span { display: flex; align-items: center; gap: 3px; }
 .seat-legend i { width: 3px; height: 3px; background: currentColor; }

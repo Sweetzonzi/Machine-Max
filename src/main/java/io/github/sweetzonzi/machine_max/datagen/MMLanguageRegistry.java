@@ -580,9 +580,13 @@ public enum MMLanguageRegistry {
             zh_cn, "占用",
             en_us, "BUSY"
     )),
+    SEAT_MAP_HINT_SWITCH("seat_map.hint.switch", ImmutableMap.of(
+            zh_cn, "切换到 >>",
+            en_us, "Switch to >>"
+    )),
     SEAT_MAP_HINT_CHORD("seat_map.hint.chord", ImmutableMap.of(
-            zh_cn, "切换到指定座位",
-            en_us, "switch to that seat"
+            zh_cn, "按座号选择",
+            en_us, "select by seat number"
     )),
     MESSAGE_LEAVING_VEHICLE("message.machine_max.leaving_vehicle", ImmutableMap.of(
             zh_cn, "长按[%1$s]键%2$s/0.50秒以离开载具",
@@ -1316,6 +1320,10 @@ public enum MMLanguageRegistry {
     GUI_WEAPON_HUD_READY("gui.machine_max.weapon_hud.ready", ImmutableMap.of(
             zh_cn, "就绪",
             en_us, "READY"
+    )),
+    GUI_WEAPON_HUD_RELOADING("gui.machine_max.weapon_hud.reloading", ImmutableMap.of(
+            zh_cn, "装填中",
+            en_us, "RELOADING"
     )),
     GUI_WEAPON_HUD_EMPTY("gui.machine_max.weapon_hud.empty", ImmutableMap.of(
             zh_cn, "空弹",

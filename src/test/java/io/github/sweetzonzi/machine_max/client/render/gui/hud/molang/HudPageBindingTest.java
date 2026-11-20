@@ -38,15 +38,15 @@ class HudPageBindingTest {
 
     @Test void rowsReuseIdentityThroughReorderAndSameCountReplacement() {
         create("<div class='list'><div class='row' data-mm-repeat='weapon.tubes' data-mm-index='row'>"
-                + "<span data-mm-text='tube.fill'></span><b data-mm-text='variable.row'></b>"
-                + "<i data-mm-num='tube.fill' data-mm-var='--fill' data-mm-unit='%'></i>"
+                + "<span data-mm-text='tube.loading_progress'></span><b data-mm-text='variable.row'></b>"
+                + "<i data-mm-num='tube.loading_progress * 100' data-mm-var='--fill' data-mm-unit='%'></i>"
                 + "</div></div>");
         var a = HudMolangContextTest.tube(1, 25); var b = HudMolangContextTest.tube(2, 75);
         publish(a, b); refresh();
         var rows = document.querySelectorAll(".row");
         assertEquals(2, rows.size());
         var first = rows.getFirst(); var second = rows.getLast();
-        assertEquals("25", document.querySelectorAll(".row span").getFirst().innerText);
+        assertEquals("0.25", document.querySelectorAll(".row span").getFirst().innerText);
         assertEquals("75%", document.querySelectorAll(".row i").getLast().getInlineStylePropertyValue("--fill"));
         publish(b, a); refresh();
         assertSame(second, document.querySelectorAll(".row").getFirst());
@@ -55,17 +55,17 @@ class HudPageBindingTest {
         publish(b, HudMolangContextTest.tube(3, 50)); refresh();
         assertSame(second, document.querySelectorAll(".row").getFirst());
         assertFalse(first.isConnected());
-        assertEquals("50", document.querySelectorAll(".row span").getLast().innerText);
+        assertEquals("0.5", document.querySelectorAll(".row span").getLast().innerText);
         publish(); refresh();
         assertTrue(document.querySelectorAll(".row").isEmpty());
     }
 
     @Test void invalidSlotsAndRegionsDoNotInterruptOtherValues() {
-        create("<span class='bad' data-mm-text='tube.fill'></span>"
+        create("<span class='bad' data-mm-text='tube.loading_progress'></span>"
                 + "<span class='good' data-mm-text='weapon.reserve_text'></span>"
                 + "<span class='badnum' data-mm-num='0/0' data-mm-var='--x' data-mm-unit='oops'></span>"
                 + "<div data-mm-repeat='weapon.tubes'><span id='duplicate'></span></div>"
-                + "<div data-mm-repeat='weapon.belts'><span data-mm-repeat='weapon.tubes'></span></div>"
+                + "<div data-mm-repeat='weapon.ammo_options'><span data-mm-repeat='weapon.tubes'></span></div>"
                 + "<div class='ok-row' data-mm-repeat='weapon.tubes' data-mm-class='tube.state'></div>");
         publish(HudMolangContextTest.tube(1, 25));
         assertDoesNotThrow(this::refresh);
@@ -81,7 +81,7 @@ class HudPageBindingTest {
         com.sighs.apricityui.init.Element.register("canvas", (owner, tag) -> new com.sighs.apricityui.element.Canvas(owner));
         create("<div class='row' data-mm-repeat='weapon.tubes'>"
                 + "<canvas width='96' height='48'></canvas><img src='test.png'>"
-                + "<button onclick='return 1;'>launch</button><span data-mm-text='tube.fill'></span></div>");
+                + "<button onclick='return 1;'>launch</button><span data-mm-text='tube.loading_progress'></span></div>");
         publish(HudMolangContextTest.tube(1, 25)); refresh();
         var canvas = document.querySelector("canvas");
         assertInstanceOf(com.sighs.apricityui.element.Canvas.class, canvas);
@@ -91,7 +91,7 @@ class HudPageBindingTest {
         assertEquals("return 1;", document.querySelector("button").getAttribute("onclick"));
         assertTrue(document.querySelector("button").EventListener.stream()
                 .anyMatch(listener -> listener.type().equals("click") && !listener.internal()));
-        assertEquals("25", document.querySelector("span").innerText);
+        assertEquals("0.25", document.querySelector("span").innerText);
     }
 
     @Test void externalNodesAndMarkerChangesAreBoundAndReleased() {
@@ -118,6 +118,18 @@ class HudPageBindingTest {
         assertEquals("12/30", node.getTextContent());
         assertEquals("12/30", node.innerText);
         assertEquals("12/30", node.getInnerText());
+    }
+
+    @Test void ammoOptionRowsExposeReserveCountAndCapacity() {
+        create("<div class='option' data-mm-repeat='weapon.ammo_options'>"
+                + "<span data-mm-text='ammo_option.label'></span>"
+                + "<b><span data-mm-text='ammo_option.reserve_remaining'></span>/"
+                + "<span data-mm-text='ammo_option.reserve_capacity'></span></b></div>");
+        publish(HudMolangContextTest.tube(1, 25)); refresh();
+        assertEquals(1, document.querySelectorAll(".option").size());
+        assertEquals("AP belt", document.querySelector(".option span").innerText);
+        assertEquals("12", document.querySelectorAll(".option b span").getFirst().innerText);
+        assertEquals("30", document.querySelectorAll(".option b span").getLast().innerText);
     }
 
     @Test void vehicleModelTagAndTextBindingsShareTheHudPage() {
@@ -151,12 +163,12 @@ class HudPageBindingTest {
     }
 
     @Test void documentRefreshRebindsNewTreeBeforeValuesAreConsumed() {
-        create("<div class='row' data-mm-repeat='weapon.tubes'><span data-mm-text='tube.fill'></span></div>");
+        create("<div class='row' data-mm-repeat='weapon.tubes'><span data-mm-text='tube.loading_progress'></span></div>");
         publish(HudMolangContextTest.tube(1, 25)); refresh();
         var old = document.querySelector(".row");
         document.refresh();
         publish(HudMolangContextTest.tube(2, 75)); refresh();
         assertNotSame(old, document.querySelector(".row"));
-        assertEquals("75", document.querySelector("span").innerText);
+        assertEquals("0.75", document.querySelector("span").innerText);
     }
 }

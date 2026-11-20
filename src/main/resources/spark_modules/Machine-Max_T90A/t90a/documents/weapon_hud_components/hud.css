@@ -29,14 +29,20 @@ body { display: inline-block; }
 .tube-row { overflow: hidden; }
 .tube-line, .belt-line { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 7px; min-height: 34px; }
 .tube-number { opacity: 0.65; min-width: 16px; }
-.round-label, .belt-label { flex: 1; }
+.round-label { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.belt-label { flex: 1; }
 .row-time, .belt-stock { white-space: nowrap; }
 .row-time { font-size: 14px; font-weight: 400; }
-.row-fill { position: absolute; left: 0; bottom: 0; width: var(--fill, 0%); height: 100%; background: var(--mm-accent, #e9d9a8); opacity: 0.2; }
+.row-fill { position: absolute; z-index: 0; left: 0; bottom: 0; width: var(--fill, 0%); height: 100%; background: var(--mm-accent, #e9d9a8); opacity: 0.2; }
 .tube-row.is-reloading .row-fill { background: repeating-linear-gradient(135deg, var(--mm-accent, #e9d9a8) 0px, var(--mm-accent, #e9d9a8) 5px, transparent 5px, transparent 7px); opacity: 0.32; }
+.regen-fill { position: absolute; z-index: 2; left: 0; bottom: 0; display: none; width: var(--regen-fill, 0%); height: 2px; background: var(--mm-accent, #e9d9a8); }
+.regen-fill.is-regenerating, .regen-fill.is-refilling { display: block; }
 .tube-row.is-empty { opacity: 0.5; }
-.loading-source { position: relative; display: none; gap: 6px; padding: 0 7px 4px; font-size: 12px; line-height: 16px; }
-.tube-row.is-reloading .loading-source { display: flex; }
+.tube-line { z-index: 1; }
+.loading-source { position: relative; z-index: 1; display: none; align-items: center; gap: 4px; min-width: 0; padding: 0 2px; font-size: 10px; line-height: 12px; white-space: nowrap; flex: none; }
+.loading-source > span:last-child { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
+.regen-status { position: relative; z-index: 1; display: flex; gap: 6px; padding: 0 7px 4px; font-size: 12px; line-height: 16px; }
+.tube-row.is-reloading .loading-source.is-human, .tube-row.is-reloading .loading-source.is-machine { display: flex; }
 .grain-feed { border-top: 1px solid var(--mm-accent, #e9d9a8); }
 .grain-feed .identity { padding-bottom: 7px; border-bottom: 1px solid var(--mm-accent, #e9d9a8); }
 .belts { display: var(--belts-display, block); margin-top: 8px; }
@@ -45,8 +51,6 @@ body { display: inline-block; }
 .selection-pointer { width: 12px; opacity: 0; }
 .belt-row.is-selected .selection-pointer { opacity: 1; }
 .belt-stock { min-width: 36px; text-align: right; font-size: 20px; }
-.chamber-note { display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--mm-accent, #e9d9a8); font-size: 12px; line-height: 16px; }
-.chamber-note.is-mismatch { display: flex; gap: 6px; }
 .grain-compact { padding: 7px 10px; border-left-width: 2px; }
 .compact-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .compact-head b { font-size: 32px; line-height: 32px; font-weight: 400; }

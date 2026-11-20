@@ -44,7 +44,7 @@ public final class HudBallisticTable {
     }
 
     public static HudBallisticTable resolve(WeaponControllerSubsystem controller, HudWeaponSnapshot snapshot) {
-        if (snapshot.activeAmmo().isEmpty()) return EMPTY;
+        if (snapshot.activeAmmoId().isEmpty()) return EMPTY;
         var tubes = controller.getLaunchers().keySet().stream()
                 .filter(l -> l.isActive() && !l.isDestroyed())
                 .sorted(TUBE_ORDER).toList();
@@ -56,7 +56,7 @@ public final class HudBallisticTable {
                 type = tube.getCurrentRoute().provider().getSuppliedType();
             }
             if (!(type instanceof BallisticProjectileType candidate) || type.getRegistryKey() == null
-                    || !snapshot.activeAmmo().equals(type.getRegistryKey().toString())) continue;
+                    || !snapshot.activeAmmoId().equals(type.getRegistryKey().toString())) continue;
             if (candidate.hasGuidance() || candidate.hasThrust()) return EMPTY;
             var barrel = tube.attr.staticAttribute.getBarrel();
             speed = candidate.getBaseVelocity() * barrel.velocityMultiplier() + barrel.velocityBonus();

@@ -10,20 +10,19 @@
   <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
     <div class="hud-panel grain-feed" data-mm-class="weapon.state">
     <div class="identity"><span class="level"><translation>hud.type59.feed</translation></span><b><translation>hud.type59.coax_name</translation></b></div>
-    <div class="caption"><translation>hud.type59.mg_stats</translation></div>
     <div class="tubes">
       <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
-        <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
-        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1">--</span><span class="round-label" data-mm-text="tube.round_label">--</span><b class="row-time"><translation data-mm-text="tube.state == 'ready' ? 'hud.type59.ready' : (tube.state == 'empty' ? 'hud.type59.empty' : tube.reload_text)">--</translation></b></div>
-        <div class="loading-source"><span><translation>hud.type59.loading</translation></span><span data-mm-text="tube.loading_belt_label">--</span></div>
+        <i class="row-fill" data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
+        <i class="regen-fill" data-mm-class="tube.supply_refill_phase" data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i>
+        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1">--</span><span class="round-label" data-mm-text="tube.round_label">--</span><div class="loading-source" data-mm-class="tube.loading_phase"><span><translation>hud.type59.loading</translation></span><span data-mm-text="tube.loading_source_label">--</span></div><b class="row-time"><translation data-mm-text="tube.state == 'ready' ? 'hud.type59.ready' : (tube.state == 'empty' ? 'hud.type59.empty' : (tube.loading_phase != 'idle' ? tube.loading_time_text : 'WAIT'))">--</translation></b></div>
+        <div class="regen-status"><span>AMMO /</span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : 'READY'">--</span></div>
       </div>
     </div>
     <div class="belts">
-      <div class="belt-row" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'">
-        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="belt.label">--</span><span class="belt-stock" data-mm-text="belt.remaining">--</span></div>
+      <div class="belt-row" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'">
+        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="ammo_option.label">--</span><span class="belt-stock"><span data-mm-text="ammo_option.reserve_remaining">--</span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity">--</span></span></div>
       </div>
     </div>
-    <div class="chamber-note" data-mm-class="weapon.round_mismatch ? 'mismatch' : 'matched'"><span><translation>hud.type59.chamber</translation></span><span data-mm-text="weapon.round_label">--</span></div>
     <div class="scanlines" aria-hidden="true"></div>
     </div>
   </div>

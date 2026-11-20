@@ -13,17 +13,17 @@
     <div class="identity"><span class="level">FEED</span><b>57 MM / 2A90</b></div>
     <div class="tubes">
       <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
-        <i class="row-fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
-        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></b></div>
-        <div class="loading-source" data-mm-class="tube.phase"><span>LOADING /</span><span data-mm-text="tube.loading_belt_label"></span></div>
+        <i class="row-fill" data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
+        <i class="regen-fill" data-mm-class="tube.supply_refill_phase" data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i>
+        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1"></span><span class="round-label" data-mm-text="tube.round_label"></span><div class="loading-source" data-mm-class="tube.loading_phase"><span>LOADING /</span><span data-mm-text="tube.loading_source_label"></span></div><b class="row-time" data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : (tube.loading_phase != 'idle' ? tube.loading_time_text : 'WAIT'))"></b></div>
+        <div class="regen-status"><span>AMMO /</span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : 'READY'"></span></div>
       </div>
     </div>
     <div class="belts">
-      <div class="belt-row" data-mm-repeat="weapon.belts" data-mm-class="belt.selected ? 'selected' : 'unselected'">
-        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="belt.label"></span><span class="belt-stock" data-mm-text="belt.remaining"></span></div>
+      <div class="belt-row" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'">
+        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="ammo_option.label"></span><span class="belt-stock"><span data-mm-text="ammo_option.reserve_remaining"></span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity"></span></span></div>
       </div>
     </div>
-    <div class="chamber-note" data-mm-class="weapon.round_mismatch ? 'mismatch' : 'matched'"><span>CHAMBER /</span><span data-mm-text="weapon.round_label"></span></div>
     <div class="scanlines" aria-hidden="true"></div>
     </div>
   </div>

@@ -26,8 +26,12 @@ class VehicleHudSeatsTest {
     }
 
     private void publish(UUID vehicle, List<HudVehicleSnapshot.Seat> seats, int current, int next) {
+        publish(vehicle, seats, current, next, 0);
+    }
+
+    private void publish(UUID vehicle, List<HudVehicleSnapshot.Seat> seats, int current, int next, int pending) {
         runtime.publish(new HudPartSnapshot(java.util.Map.of("global.hp", 60d, "global.max_hp", 100d), java.util.Map.of()),
-                HudWeaponSnapshot.EMPTY, new HudVehicleSnapshot(vehicle, seats, current, next, 0, false, "V", true), false);
+                HudWeaponSnapshot.EMPTY, new HudVehicleSnapshot(vehicle, seats, current, next, pending, false, "V", true), false);
     }
 
     private void create(String markup) {
@@ -104,22 +108,45 @@ class VehicleHudSeatsTest {
     @Test void builtinPagesBindRealSnapshotsAndMeasureTheirContents() throws Exception {
         var directory = Path.of("src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/documents/vehicle_hud");
         String css = Files.readString(directory.resolve("hud.css"));
-        for (String skin : List.of("heading", "camera", "topdown", "seat_list")) {
-            create(Files.readString(directory.resolve(skin + ".html"))
-                    .replace("<link rel=\"stylesheet\" href=\"hud.css\">", "<style>" + css + "</style>"));
+        for (String skin : List.of("heading", "camera", "topdown", "seat_list", "seat_map")) {
+            Path page = skin.equals("seat_map")
+                    ? directory.resolve("../vehicle_seat_map/index.html").normalize()
+                    : directory.resolve(skin + ".html");
+            String markup = Files.readString(page)
+                    .replace("<link rel=\"stylesheet\" href=\"hud.css\">", "<style>" + css + "</style>")
+                    .replace("<link rel=\"stylesheet\" href=\"../vehicle_hud/hud.css\">", "<style>" + css + "</style>");
+            assertTrue(markup.indexOf("class=\"switch-prefix\"") < markup.indexOf("class=\"switch-target\""), skin);
+            create(markup);
             publish(UUID.randomUUID(), List.of(seat(1, "driver", "Driver", true, "Pilot"),
                     seat(2, "gunner", "Gunner", false, "")), 1, 2);
             refresh();
+            double[] readyHeight = new double[1];
             Document.runWithContext(document, () -> {
                 document.commitStyleRecalc(); document.commitRenderState();
                 assertTrue(document.body.getOffsetWidth() > 0, skin);
                 assertTrue(document.body.getOffsetHeight() > 0, skin);
                 assertFalse(document.body.getTextContent().contains("MOLANG_ERROR"), skin);
+                assertEquals("grid", document.querySelector(".switch-line").getComputedStyle().display, skin);
+                assertEquals("grid", document.querySelector(".chord-hint").getComputedStyle().display, skin);
+                assertEquals(document.querySelector(".switch-line").getComputedStyle().color,
+                        document.querySelector(".chord-hint").getComputedStyle().color, skin);
+                assertEquals("Gunner", document.querySelector(".switch-target").innerText, skin);
+                assertNotNull(document.querySelector(".switch-prefix"), skin);
+                readyHeight[0] = document.querySelector(".switch-line").getOffsetHeight();
                 if (skin.equals("seat_list")) {
                     assertEquals(2, document.querySelectorAll(".crew-row").size());
                     assertEquals("Pilot", document.querySelector(".crew-player").innerText);
                     assertEquals("---", document.querySelectorAll(".crew-player").getLast().innerText);
                 } else assertNotNull(document.querySelector("machinemax-vehicle-model"));
+            });
+            publish(UUID.randomUUID(), List.of(seat(1, "driver", "Driver", true, "Pilot"),
+                    seat(2, "gunner", "Gunner", false, "")), 1, 2, 2);
+            refresh();
+            Document.runWithContext(document, () -> {
+                document.commitStyleRecalc(); document.commitRenderState();
+                assertTrue(document.querySelector(".switch-line").getClassList().contains("is-pending"), skin);
+                assertEquals(readyHeight[0], document.querySelector(".switch-line").getOffsetHeight(), 1e-6, skin);
+                assertEquals("block", document.querySelector(".pending-label").getComputedStyle().display, skin);
             });
             binding.close(); document.remove(); binding = null; document = null;
         }

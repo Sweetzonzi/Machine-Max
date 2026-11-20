@@ -19,7 +19,7 @@ public final class WeaponHudElement extends HudRuntimeElement {
     /** 惰性取分划表：只在首次查询或弹种变化时走求解，其余情况命中元素缓存或全局参数缓存。 */
     public HudBallisticTable ballistics() {
         var snapshot = frame().weapon();
-        String ammo = snapshot.activeAmmo();
+        String ammo = snapshot.activeAmmoId();
         HudBallisticTable table = resolvedTable;
         if (table != null && ammo.equals(resolvedAmmo)) return table;
         table = HudBallisticTable.resolve(controller, snapshot);

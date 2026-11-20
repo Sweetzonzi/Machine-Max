@@ -11,7 +11,7 @@
 | local.* / global.* | HUD 宿主所属的 Part / 装配体数据，不是任意玩家实体 |
 | weapon.* | 整台所属 WC，在重复项内也保持这个含义 |
 | tube.* | weapon.tubes 的当前管，仅限该重复项及其后代 |
-| belt.* | weapon.belts 的当前弹链，仅限该重复项及其后代 |
+| ammo_option.* | weapon.ammo_options 的当前供弹选项，仅限该重复项及其后代 |
 | seat.* | vehicle.seats 的当前座位，仅限该重复项及其后代 |
 | variable.* / v.* | 元素变量；data-mm-index 声明的下标别名只读 |
 | math.* | MoLang 数学函数，不代表任意浏览器函数均可用 |
@@ -27,7 +27,7 @@
 | data-mm-var | 合法 CSS 自定义属性名，例如 --fill |
 | data-mm-unit | 附加单位；省略表示无单位。允许 %、px、deg、rad、em、rem、vw、vh、s、ms |
 | data-mm-class | 返回一个类名片段，自动加 is- 前缀；元素的静态 class 保留 |
-| data-mm-repeat | 集合标识：weapon.tubes、weapon.belts 或 vehicle.seats，不是数组表达式 |
+| data-mm-repeat | 集合标识：weapon.tubes、weapon.ammo_options 或 vehicle.seats，不是数组表达式 |
 | data-mm-index | 可选的下标别名，格式 [a-z_][a-z0-9_]*，从零开始 |
 
 `data-mm-text` 的元素内保留可见占位文字（`--`、`0`、`EMPTY` 等），`data-mm-num` 对应的 CSS 变量在样式里写 fallback。浏览器预览不执行绑定，没有占位时页面会是空白；占位不要写成看起来像实时读数的数字。完整示例见 [组件设计与接入流程](workflow.md) 的“无数据与预览默认值”。
@@ -55,32 +55,38 @@ MoLang 不是 JavaScript。组合文字优先用已格式化查询（这类查�
   <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
     <span data-mm-text="tube.index + 1"></span>
     <span data-mm-text="tube.round_label"></span>
-    <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.reload_text)"></span>
+    <span data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : tube.loading_time_text)"></span>
     <div class="track">
-      <i class="fill" data-mm-num="tube.fill" data-mm-var="--fill" data-mm-unit="%"></i>
+      <i class="fill" data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
     </div>
+  </div>
+  <div class="ammo-option" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'">
+    <span data-mm-text="ammo_option.label"></span>
+    <b><span data-mm-text="ammo_option.reserve_remaining"></span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity"></span></b>
   </div>
 </div>
 ~~~
 
-tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text 在就绪或空管时可以为空，因此示例按状态显式选择文字。
+tube.loading_progress 与 tube.supply_refill_progress 均为 0～1；CSS 百分比需乘 100。装入发射管的进度与供弹源的逐发再生/整批回充是两套不同读数，不要共用一条进度值。
 
-可选写法：在条目根添加 data-mm-index="barrel"，然后使用 weapon.tube_fill(variable.barrel)。variable.barrel / v.barrel 是本轮当前项下标，禁止赋值；不写别名时直接使用 tube.* 即可。
+可选写法：在条目根添加 data-mm-index="barrel"，然后使用 weapon.tube_loading_progress(variable.barrel)。variable.barrel / v.barrel 是本轮当前项下标，禁止赋值；不写别名时直接使用 tube.* 即可。
 
 模板约束：
 
 - 标记所在元素及整棵子树一起复制；父容器只定义一次。空集合显示零项。
 - 支持同级重复区域，不支持嵌套 data-mm-repeat。
 - 重复模板根及后代不能有固定 id，使用 class 或数据标记定位。
-- 管区域不能使用 belt.*，弹链区域不能使用 tube.*；区域外也不能隐式读取第零项。
-- 管和弹链的稳定身份由绑定层管理。不能把下标、显示标签或列表数量当成身份；重排后下标可能变化。
+- 管区域不能使用 ammo_option.*，供弹选项区域不能使用 tube.*；区域外也不能隐式读取第零项。
+- 管和供弹选项的稳定身份由绑定层管理。不能把下标、显示标签或列表数量当成身份；重排后下标可能变化。
 - 没有 data-mm-key、data-mm-as、作者自定义集合或过滤/分页表达式的约定，不自行增加此类属性。
 
-显式索引查询可在重复区域外使用，例如 weapon.tube_fill(0)、weapon.belt_label(1)。参数不能省略；weapon.tube_fill() 不是“当前管”。非整数、负数或越界索引返回 0 或空字符串，不能据此判断查询拼写或作用域正确。
+显式索引查询可在重复区域外使用，例如 weapon.tube_loading_progress(0)、weapon.ammo_option_label(1)。参数不能省略；weapon.tube_loading_progress() 不是“当前管”。非整数、负数或越界索引返回 0 或空字符串，不能据此判断查询拼写或作用域正确。
 
 ## 4. 武器查询
 
-表中数值布尔值使用 1/0；字符串状态使用 ready、reloading、empty，装填阶段使用 loading、regenerating、refilling、idle。这些是机器可读值，页面文案可以由作者选择。MoLang 的 `==` / `!=` 在任一侧是字符串（字符串字面量、字符串查询、`??` 兜底或字符串三元）时按文本比较，两侧都是数值时按 double 比较；字符串与数字混比时数字按 `1.0` 这样的文本参与比较，所以 `'1' == 1` 为假，而 `tube.state == 'ready'` 按状态文本判断。样式切换仍交给 `data-mm-class="tube.state"`。
+HUD 业务查询使用单层 `namespace.property`，不支持对象路径式的多段点写法。带参数的查询写为 `weapon.tube_state(i)`，不要写成 `tube.state.value`。数值布尔使用 1/0；时间值单位为秒；进度值为 0～1。无活动时间的数值时间查询返回 -1，对应文本查询为空。
+
+`weapon.state` / `tube.state` 使用 `ready`、`reloading`、`empty`。`tube.loading_phase` 表示当前装入发射管的作业阶段（`human` 或 `machine`，没有作业时为 `idle`）；`tube.supply_refill_phase` 表示供弹源状态（`regenerating`、`refilling` 或 `idle`）。这是两条独立流程，装填进度与供弹源补充进度可能同时变化。MoLang 的 `==` / `!=` 在任一侧是字符串（字符串字面量、字符串查询、`??` 兜底或字符串三元）时按文本比较，两侧都是数值时按 double 比较；字符串与数字混比时数字按 `1.0` 这样的文本参与比较，所以 `'1' == 1` 为假，而 `tube.state == 'ready'` 按状态文本判断。样式切换仍交给 `data-mm-class="tube.state"`。
 
 | 查询 | 类型与口径 |
 | --- | --- |
@@ -88,61 +94,63 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 | weapon.selected | 数值布尔，本观察者是否选中该 WC |
 | weapon.aimed | 数值布尔，全部有效发射管的炮管轴线都在瞄准容差内；没有发射管时为 0，与装填就绪无关 |
 | weapon.state | 字符串，ready 表示至少一根管已备好一发（可立即开火），reloading 表示没有就绪管但至少一根在装填，empty 表示全部无弹或无供给者 |
-| weapon.loaded | 数值，待发 = 膛内 + 弹匣；与 weapon.reserve_remaining 配成“现在能打的 / 还能补的”两段 |
-| weapon.reserve_remaining | 数值，选中供弹链的备弹（装弹机里的数量），不含膛内弹与已装弹链 |
-| weapon.reserve_capacity | 数值，备弹容量；无上限时结合 reserve_infinite 判断 |
-| weapon.reserve_infinite | 数值布尔，容量是否无上限，不表示备弹一定充足 |
-| weapon.reserve_text | 字符串，格式化的备弹/容量读数 |
-| weapon.magazine_remaining | 数值，各有效管已装弹链的余量合计 |
+| weapon.loaded_rounds | 数值，待发发数 = 膛内发数 + 已装弹链余量 |
+| weapon.loaded_belt_rounds | 数值，各有效管已装弹链余量合计，不含膛内弹 |
+| weapon.reserve_remaining | 数值，当前选中供弹选项对应的备弹，不含膛内弹与已装弹链；未选中选项时汇总可用供弹源 |
+| weapon.reserve_capacity | 数值，上述备弹容量；无上限时为 -1，并可用 reserve_infinite 判断 |
+| weapon.reserve_infinite | 数值布尔，上述备弹容量是否无上限，不表示备弹一定充足 |
+| weapon.reserve_text | 字符串，格式化的备弹/容量读数；无限容量显示 ∞ |
 | weapon.chambered_count | 数值，已压弹的有效管数 |
-| weapon.reload_text | 字符串，控制器的准备状态或装填读数 |
-| weapon.tube_count / weapon.belt_count | 数值，有效管数 / 可选弹链数 |
+| weapon.tube_count / weapon.ammo_option_count | 数值，有效管数 / 可选供弹项数 |
 | weapon.round_label | 字符串，控制器显示弹药标签，不代表各管都装同一种弹 |
-| weapon.active_ammo | 字符串，弹道解使用的弹种注册键（首根有膛内弹的管；无膛内弹时取首个供给者的弹种） |
-| weapon.round_mismatch | 数值布尔，任一根膛内弹不包含在选中弹链序列中；为真时 weapon.round_label 显示那发 |
-| tube.index / belt.index | 数值，本轮当前项的零基下标 |
+| weapon.active_ammo_id | 字符串，弹道解使用的弹种注册键（首根有膛内弹的管；无膛内弹时取首个供给者的弹种） |
+| weapon.chambered_round_mismatch | 数值布尔，任一根膛内弹不包含在选中弹链序列中；为真时 weapon.round_label 显示那发 |
+| tube.index / ammo_option.index | 数值，本轮当前项的零基下标 |
 | tube.state | 字符串，该管的准备状态：ready 已备好一发、reloading 正在装填、empty 无弹 |
-| tube.phase | 字符串，该管的装填阶段：loading 正在输弹、regenerating 逐发再生、refilling 整批回充、idle 没有进行中的装填 |
-| tube.has_source | 数值布尔，该管是否已有供给者；0 表示路由没摊到装弹机，与"有机器但打空"不同 |
-| tube.fill | 数值，该管 0～100 的准备进度；输弹、再生、整批回充三种阶段各自的口径，用 tube.phase 区分 |
+| tube.loading_phase | 字符串，发射管装填作业阶段：human、machine 或 idle |
+| tube.loading_progress | 数值，当前装入发射管的进度，范围 0～1；无进行中的装填为 0 |
+| tube.loading_time_remaining | 数值，当前装填作业剩余秒数；无活动作业为 -1 |
+| tube.loading_time_text | 字符串，格式化的装填剩余时间；无活动作业为空 |
+| tube.supply_refill_phase | 字符串，供弹源补充阶段：regenerating 逐发再生、refilling 整批回充、idle 无补充 |
+| tube.supply_refill_progress | 数值，供弹源当前补充进度，范围 0～1；无活动补充为 0 |
+| tube.supply_refill_time_remaining | 数值，供弹源当前补充剩余秒数；无活动补充为 -1 |
+| tube.supply_refill_time_text | 字符串，格式化的供弹源补充剩余时间；无活动补充为空 |
+| tube.has_supply_source | 数值布尔，该管是否已有供给者；0 表示路由没摊到装弹机，与"有机器但打空"不同 |
 | tube.round_label | 字符串，该管当前显示的弹药 |
-| tube.loaded | 数值，该管待发发数 = 膛内（0 或 1）+ 弹链余量 |
+| tube.loaded_rounds | 数值，该管待发发数 = 膛内（0 或 1）+ 已装弹链余量 |
 | tube.chambered | 数值布尔，该管膛内是否有弹 |
 | tube.chambered_ammo_label | 字符串，该管实际膛内弹药，空膛可为空字符串 |
+| tube.loading_source_label | 字符串，当前装填作业来源的显示标签；无作业时为空 |
 | tube.swapping | 数值布尔，该管是否正在替换已装的那一份；为真时射击锁定，即使膛内有弹也不算就绪 |
 | tube.aimed | 数值布尔，该管炮管轴线与观察者瞄准点的夹角在控制器瞄准容差内 |
-| tube.magazine | 数值布尔，该管是否装着弹链 |
-| tube.magazine_remaining | 数值，该管已装弹链的余量 |
-| tube.magazine_capacity | 数值，该管已装弹链的整份长度，不是剩余容量 |
-| tube.magazine_label | 字符串，该管已装弹链的标签 |
-| tube.reserve_remaining | 数值，该管供给者还能给出的备弹 |
-| tube.reserve_capacity | 数值，该管供给者的备弹容量；负数表示无容量概念 |
-| tube.reserve_infinite | 数值布尔，该管供给者的容量是否无上限 |
-| tube.loading_belt_label | 字符串，该管正在换入的那一份的标签；只有 tube.phase 为 loading 时非空 |
-| tube.reload_remaining | 数值，当前阶段的剩余秒数（输弹、逐发再生或整批回充）；非装填状态为 0，无法折算时为负值，不能当成就绪判据 |
-| tube.reload_text | 字符串，格式化的装填读数 |
-| belt.label | 字符串，弹链标签 |
-| belt.remaining | 数值，该弹链库存 |
-| belt.selected | 数值布尔，该弹链是否被选中 |
+| tube.has_belt | 数值布尔，该管当前是否实际装着弹链 |
+| tube.belt_remaining | 数值，该管已装弹链余量 |
+| tube.belt_capacity | 数值，该管已装弹链的整份长度，不是剩余容量 |
+| tube.belt_label | 字符串，该管已装弹链的标签 |
+| tube.source_reserve_remaining | 数值，该管当前供给者还能提供的备弹 |
+| tube.source_reserve_capacity | 数值，该管当前供给者的备弹容量；无上限时为 -1 |
+| tube.source_reserve_infinite | 数值布尔，该管当前供给者的容量是否无上限 |
+| ammo_option.label | 字符串，可选供弹项标签 |
+| ammo_option.reserve_remaining | 数值，该选项对应供弹源的备弹数量 |
+| ammo_option.reserve_capacity | 数值，该选项对应供弹源的备弹容量；无上限时为 -1 |
+| ammo_option.reserve_infinite | 数值布尔，该选项对应供弹源的备弹容量是否无上限 |
+| ammo_option.selected | 数值布尔，该供弹项是否被选中 |
 
 逐管和逐弹链的显式索引写法：
 
 | 当前项查询 | 区域外写法 |
 | --- | --- |
-| tube.state / tube.fill | weapon.tube_state(i) / weapon.tube_fill(i) |
-| tube.round_label / tube.reload_text | weapon.tube_round_label(i) / weapon.tube_reload_text(i) |
-| tube.reload_remaining | weapon.tube_reload_remaining(i) |
-| tube.phase / tube.has_source | weapon.tube_phase(i) / weapon.tube_has_source(i) |
-| tube.loaded / tube.chambered / tube.swapping | weapon.tube_loaded(i) / weapon.tube_chambered(i) / weapon.tube_swapping(i) |
+| tube.state / tube.round_label | weapon.tube_state(i) / weapon.tube_round_label(i) |
+| tube.loading_phase / tube.loading_progress / tube.loading_time_remaining / tube.loading_time_text | weapon.tube_loading_phase(i) / weapon.tube_loading_progress(i) / weapon.tube_loading_time_remaining(i) / weapon.tube_loading_time_text(i) |
+| tube.supply_refill_phase / tube.supply_refill_progress / tube.supply_refill_time_remaining / tube.supply_refill_time_text | weapon.tube_supply_refill_phase(i) / weapon.tube_supply_refill_progress(i) / weapon.tube_supply_refill_time_remaining(i) / weapon.tube_supply_refill_time_text(i) |
+| tube.loaded_rounds / tube.chambered / tube.has_supply_source / tube.swapping / tube.aimed | weapon.tube_loaded_rounds(i) / weapon.tube_chambered(i) / weapon.tube_has_supply_source(i) / weapon.tube_swapping(i) / weapon.tube_aimed(i) |
 | tube.chambered_ammo_label | weapon.tube_chambered_ammo_label(i) |
-| tube.aimed | weapon.tube_aimed(i) |
-| tube.magazine / tube.magazine_remaining | weapon.tube_magazine(i) / weapon.tube_magazine_remaining(i) |
-| tube.magazine_capacity / tube.magazine_label | weapon.tube_magazine_capacity(i) / weapon.tube_magazine_label(i) |
-| tube.reserve_remaining / tube.reserve_capacity / tube.reserve_infinite | weapon.tube_reserve_remaining(i) / weapon.tube_reserve_capacity(i) / weapon.tube_reserve_infinite(i) |
-| tube.loading_belt_label | weapon.tube_loading_belt_label(i) |
-| belt.label / belt.remaining / belt.selected | weapon.belt_label(i) / weapon.belt_remaining(i) / weapon.belt_selected(i) |
+| tube.loading_source_label | weapon.tube_loading_source_label(i) |
+| tube.has_belt / tube.belt_remaining / tube.belt_capacity / tube.belt_label | weapon.tube_has_belt(i) / weapon.tube_belt_remaining(i) / weapon.tube_belt_capacity(i) / weapon.tube_belt_label(i) |
+| tube.source_reserve_remaining / tube.source_reserve_capacity / tube.source_reserve_infinite | weapon.tube_source_reserve_remaining(i) / weapon.tube_source_reserve_capacity(i) / weapon.tube_source_reserve_infinite(i) |
+| ammo_option.label / ammo_option.reserve_remaining / ammo_option.reserve_capacity / ammo_option.reserve_infinite / ammo_option.selected | weapon.ammo_option_label(i) / weapon.ammo_option_reserve_remaining(i) / weapon.ammo_option_reserve_capacity(i) / weapon.ammo_option_reserve_infinite(i) / weapon.ammo_option_selected(i) |
 
-三个计数按“发数现在在哪”分层，彼此不包含：膛内是已压进膛的那一发，弹匣是本管已装的那一份弹链，备弹是装弹机还能给出的数量。一份弹链交到本管时发数从备弹转到弹匣，压进膛时从弹匣转到膛内；只汇总备弹会在“多管全部上膛、装弹机余量为零”时读成 0，所以主数字写成“待发 / 备弹”：weapon.loaded / weapon.reserve_remaining。
+三个计数按“发数现在在哪”分层，彼此不包含：膛内是已压进膛的那一发，已装弹链是本管当前装着的一份，备弹是供弹源还能给出的数量。一份弹链交到本管时发数从备弹转到已装弹弹链，压进膛时从已装弹链转到膛内。需要显示选项的备弹上限时，重复 `weapon.ammo_options` 并分别读取 `ammo_option.reserve_remaining` 与 `ammo_option.reserve_capacity`；无限容量由 `ammo_option.reserve_infinite` 判别。
 
 对准读数是另一条轴，与装填无关：
 
@@ -151,7 +159,7 @@ tube.fill 是 0～100，配合 % 使用时不要再乘 100。tube.reload_text �
 - 容差设得很大的控制器（例如第一方机枪常见的 60 度）几乎恒为对准，这类条目应另配显示条件。
 - `weapon.aimed` 要求全部有效管都对准；没有发射管时为 0。单管用 `tube.aimed` 或 `weapon.tube_aimed(i)`。
 
-切弹后，选择箭头可以先变化，膛内弹和进行中的装填保持实际来源。库存为零时也可能有就绪管；满格进度表达准备状态，不表达仓库剩余量。正在等输弹、等再生还是等整批回充看 tube.phase，这根管有没有摊到供给者看 tube.has_source。单管进度合入弹链行需要可靠的来源对应关系；这些文字标签不能证明身份相同，缺少对应能力时使用独立逐管行。
+切弹后，选择箭头可以先变化，膛内弹和进行中的装填保持实际来源。库存为零时也可能有就绪管；满格进度表达准备状态，不表达仓库剩余量。装入发射管的作业用 `tube.loading_*` 查询；供弹源逐发再生或整批回充用 `tube.supply_refill_*` 查询。这根管有没有摊到供给者看 `tube.has_supply_source`。单管进度合入弹链行需要可靠的来源对应关系；这些文字标签不能证明身份相同，缺少对应能力时使用独立逐管行。
 
 weapon.bdc_hold_rad(distance) 接收距离（米），返回标准弹道抬角（弧度）。其口径为海平面、静止平台、同高目标、相对水平出射轴和零归零角，不是对当前目标的完整火控解。无解、无弹或不支持的制导/推进弹可返回 0，不能把 0 当作“求解一定成功”。
 

@@ -125,7 +125,7 @@ public final class HudPageBinding implements AutoCloseable {
             collection = template.getAttribute("data-mm-repeat");
             String index = template.getAttribute("data-mm-index");
             alias = index == null || index.isEmpty() ? null : index;
-            if (!Set.of("weapon.tubes", "weapon.belts", "vehicle.seats").contains(collection)) throw new IllegalArgumentException("未知集合: " + collection);
+            if (!Set.of("weapon.tubes", "weapon.ammo_options", "vehicle.seats").contains(collection)) throw new IllegalArgumentException("未知集合: " + collection);
             if (!collection.equals("vehicle.seats") && !(runtime instanceof WeaponHudElement))
                 throw new IllegalArgumentException("武器集合要求武器 HUD 宿主");
             if (alias != null && !alias.matches("[a-z_][a-z0-9_]*")) throw new IllegalArgumentException("非法下标别名: " + alias);
@@ -142,7 +142,7 @@ public final class HudPageBinding implements AutoCloseable {
         void reconcile(HudRuntimeElement.Frame frame) {
             var keys = switch (collection) {
                 case "weapon.tubes" -> frame.weapon().tubes().stream().map(t -> (Object) t.key()).toList();
-                case "weapon.belts" -> frame.weapon().belts().stream().map(b -> (Object) b.key()).toList();
+                case "weapon.ammo_options" -> frame.weapon().ammoOptions().stream().map(option -> (Object) option.key()).toList();
                 case "vehicle.seats" -> frame.vehicle().seats().stream()
                         .map(s -> (Object) s.identity()).toList();
                 default -> throw new IllegalArgumentException("未知集合: " + collection);
