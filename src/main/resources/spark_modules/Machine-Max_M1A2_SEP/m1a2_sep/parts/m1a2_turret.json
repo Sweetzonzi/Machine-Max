@@ -394,6 +394,11 @@
                   "global"
                 ]
               },
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "subsystem.machine_max.gunner_optics"
+                ]
+              },
               "first_hud_layout": "m1a2_sep:m1a2_gun_feed",
               "third_hud_layout": "m1a2_sep:m1a2_gun_feed",
               "scope_hud_layout": "m1a2_sep:m1a2_gps_weapon"

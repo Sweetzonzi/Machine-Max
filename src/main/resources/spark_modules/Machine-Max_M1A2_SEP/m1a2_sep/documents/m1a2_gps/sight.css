@@ -6,6 +6,7 @@ html{font-size:0;line-height:0}
 .range-panel{position:absolute;left:240px;top:350px;width:160px;height:62px;text-align:center}
 .range-value{font-size:28px;line-height:32px;letter-spacing:4px}.range-unavailable{font-size:11px;line-height:20px;opacity:.8}
 .reticle{position:absolute;left:160px;top:172px;width:320px;height:96px}
+.reticle-marks{position:absolute;inset:0;transform:scale(var(--reticle-scale,1));transform-origin:160px 48px}
 .line{position:absolute;background-color:var(--reticle,#ffd83d);box-shadow:1px 1px 0 #152015}
 .left-outer{left:0;top:47px;width:40px;height:2px}
 .left-upper{left:80px;top:31px;width:40px;height:2px}
@@ -24,8 +25,9 @@ html{font-size:0;line-height:0}
 .gun-status{position:absolute;left:22px;top:324px;width:190px}
 .feed-status{position:absolute;left:428px;top:324px;width:190px}
 .status-label{font-size:14px;line-height:22px;opacity:.8}
-.status-row{display:flex;gap:12px;align-items:center;min-height:24px;font-size:18px}
-.status-state{font-size:17px;line-height:24px}
+.status-row{display:flex;gap:8px;align-items:center;min-height:24px;font-size:16px}
+.status-row b{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis}
+.status-time{min-width:40px;text-align:right;font-size:14px}
 .progress{height:2px;width:170px;background-color:#b4ff8120;margin-top:8px}.progress i{display:block;height:2px;width:var(--fill,0%);background-color:var(--display,#b4ff81)}
 .feed{display:flex;gap:8px;min-height:24px;font-size:17px;opacity:.5}.feed.is-selected{opacity:1}.feed.is-unselected .selector{visibility:hidden}
 .pending{position:absolute;left:190px;top:426px;width:260px;text-align:center;font-size:11px;color:#ffd48a}.pending.is-hide{display:none}
@@ -41,4 +43,4 @@ html{font-size:0;line-height:0}
 
 .gps.is-narrow .range-panel{left:430px;top:230px;width:160px}
 
-.regen-progress{display:flex;visibility:hidden;align-items:center;gap:4px;width:170px;height:12px;margin-top:3px;font-size:10px;line-height:12px;color:var(--display,#b4ff81)}.regen-progress.is-regenerating,.regen-progress.is-refilling{visibility:visible}.regen-track{display:block;flex:1;height:2px;background:#b4ff8130}.regen-track i{display:block;height:2px;width:var(--regen-fill,0%);background-color:var(--display,#b4ff81)}
+.regen-progress{display:flex;visibility:hidden;align-items:center;gap:5px;width:170px;height:12px;margin-top:3px}.regen-progress.is-regenerating,.regen-progress.is-refilling{visibility:visible}.regen-label,.regen-time{flex:none;white-space:nowrap;font-size:9px;line-height:10px}.regen-time{min-width:28px;text-align:right}.regen-track{display:block;flex:1;height:2px;background:#b4ff8130}.regen-track i{display:block;height:2px;width:var(--regen-fill,0%);background-color:var(--display,#b4ff81)}

@@ -8,22 +8,14 @@
 </head>
 <body>
   <div class="weapon-component" data-mm-class="weapon.selected ? 'selected' : 'unselected'">
-    <div class="hud-panel grain-feed" data-mm-class="weapon.state">
-    <div class="identity"><span class="level"><translation>hud.type59.feed</translation></span><b><translation>hud.type59.aa_name</translation></b></div>
-    <div class="tubes">
-      <div class="tube-row" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
-        <i class="row-fill" data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i>
-        <i class="regen-fill" data-mm-class="tube.supply_refill_phase" data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i>
-        <div class="tube-line"><span class="tube-number" data-mm-text="tube.index + 1">--</span><span class="round-label" data-mm-text="tube.round_label">--</span><div class="loading-source" data-mm-class="tube.loading_phase"><span><translation>hud.type59.loading</translation></span><span data-mm-text="tube.loading_source_label">--</span></div><b class="row-time"><translation data-mm-text="tube.state == 'ready' ? 'hud.type59.ready' : (tube.state == 'empty' ? 'hud.type59.empty' : (tube.loading_phase != 'idle' ? tube.loading_time_text : 'WAIT'))">--</translation></b></div>
-        <div class="regen-status"><span>AMMO /</span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : 'READY'">--</span></div>
+    <div class="hud-panel grain-compact" data-mm-class="weapon.state">
+      <div class="compact-head"><span><translation>hud.type59.aa_name</translation></span><div class="compact-count"><b data-mm-text="weapon.loaded_rounds">--</b><span>/</span><b data-mm-text="weapon.reserve_remaining">--</b></div></div>
+      <div class="compact-subline">
+        <div class="compact-status" data-mm-repeat="weapon.tubes"><span class="compact-status-label" data-mm-class="tube.loading_phase">LOAD</span><b data-mm-text="tube.state == 'ready' ? 'RDY' : (tube.state == 'empty' ? 'EMPTY' : (tube.loading_phase != 'idle' ? tube.loading_time_text : 'WAIT'))">RDY</b></div>
+        <div class="compact-regen" data-mm-repeat="weapon.tubes" data-mm-class="tube.supply_refill_phase != 'idle' ? tube.supply_refill_phase : (tube.source_reserve_capacity > 0 ? (tube.source_reserve_remaining >= tube.source_reserve_capacity ? 'full' : 'idle') : 'idle')"><span class="compact-regen-label compact-regen-single">RESERVE +1</span><span class="compact-regen-label compact-regen-batch"><span>RESERVE +</span><b data-mm-text="tube.source_reserve_capacity">--</b></span><span class="compact-regen-label compact-regen-full">FULL</span><span class="compact-regen-track"><i data-mm-num="tube.supply_refill_phase == 'idle' ? (tube.source_reserve_capacity > 0 ? tube.source_reserve_remaining / tube.source_reserve_capacity * 100 : 0) : tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i></span><span class="compact-regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : ''"></span></div>
       </div>
-    </div>
-    <div class="belts">
-      <div class="belt-row" data-mm-repeat="weapon.ammo_options" data-mm-class="ammo_option.selected ? 'selected' : 'unselected'">
-        <div class="belt-line"><span class="selection-pointer">&gt;</span><span class="belt-label" data-mm-text="ammo_option.label">--</span><span class="belt-stock"><span data-mm-text="ammo_option.reserve_remaining">--</span>/<span data-mm-text="ammo_option.reserve_infinite ? '∞' : ammo_option.reserve_capacity">--</span></span></div>
-      </div>
-    </div>
-    <div class="scanlines" aria-hidden="true"></div>
+      <div class="compact-loading" data-mm-repeat="weapon.tubes" data-mm-class="tube.loading_phase == 'idle' ? 'idle' : 'loading'"><i data-mm-num="tube.loading_progress * 100" data-mm-var="--loading-fill" data-mm-unit="%"></i></div>
+      <div class="scanlines" aria-hidden="true"></div>
     </div>
   </div>
 </body>

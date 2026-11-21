@@ -7,6 +7,7 @@
 
 .load .regen-status{display:none;color:var(--mm-accent,#a8f15d);margin-left:6px}.load .regen-status.is-regenerating,.load .regen-status.is-refilling{display:inline-block}
 .load .regen-track{display:inline-block;vertical-align:middle;width:48px;height:2px;background:#ffffff30}.load .regen-track i{display:block;height:2px;width:var(--regen-fill,0%);background:var(--mm-accent,#a8f15d)}
+.load .regen-label,.load .regen-time{display:inline-block;vertical-align:middle;font-size:9px;line-height:10px;white-space:nowrap}.load .regen-label{margin-right:3px}.load .regen-time{min-width:28px;margin-left:3px;text-align:right}
 .readout{color:var(--mm-accent,#a8f15d)}
 .load .regen-status{display:inline-block;visibility:hidden}
 .load .regen-status.is-regenerating,.load .regen-status.is-refilling{visibility:visible}

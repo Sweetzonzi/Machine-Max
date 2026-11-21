@@ -21,9 +21,7 @@
           <span class="ready-text">ГОТОВ</span>
           <span class="empty-text">EMPTY</span>
           <span class="reload-text" data-mm-text="tube.loading_phase == 'idle' ? 'WAIT' : tube.loading_time_text"></span>
-          <span class="regen-status" data-mm-class="tube.supply_refill_phase">AMMO <span data-mm-text="tube.supply_refill_time_text"></span>
-            <span class="regen-track"><i data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i></span>
-          </span>
+          <span class="regen-status" data-mm-class="tube.supply_refill_phase"><span class="regen-label">RESERVE +1</span><span class="regen-track"><i data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i></span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : ''"></span></span>
         </span>
       </div>
       <div class="pending" data-mm-class="weapon.chambered_round_mismatch ? 'show' : 'hide'">NEXT ≠ CHAMBER</div>

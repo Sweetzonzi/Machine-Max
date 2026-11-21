@@ -242,9 +242,7 @@ public final class AuiHudAnimatable implements HudElementInstance {
     /**
      * 调用方已进入文档上下文；读取内容尺寸。
      * <p>
-     * AUI 的 {@code FrameScheduler#tick} 已经对文档做过样式/几何提交；这里不再做第二次
-     * {@code commitStyleRecalc + commitRenderState}。重复全量提交既昂贵，也会在字体/样式
-     * 异步落地前把首帧 paint list 固定下来。需要重新提交时由 AUI tick 统一处理。
+     * 绑定在绘制前刷新，因此这里先提交样式与待处理的渲染状态，再读取内容尺寸。
      */
     private DocumentDimensions prepareDocument(Document target) {
         applyPage(target);
@@ -252,6 +250,8 @@ public final class AuiHudAnimatable implements HudElementInstance {
         double width;
         double height;
         try (GeometryQueryScope geometryScope = GeometryQueryScope.open()) {
+            target.commitStyleRecalc();
+            if (target.hasPendingRenderState()) target.commitRenderState();
             Body body = target.body;
             width = body != null ? body.getOffsetWidth() : 0.0d;
             height = body != null ? body.getOffsetHeight() : 0.0d;
