@@ -329,6 +329,11 @@ public class RawInputHandler {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
 
+            //发动机启停
+            KeyHooks.EVENT(KeyBinding.generalToggleEngineKey)
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(
+                            new RegularInputPayload(KeyInputMapping.TOGGLE_ENGINE.getValue(), 0)));
+
 
             EnvironmentWrapper.run(EnvironmentWrapper.Env.DEVELOPMENT, () -> {
                 /*

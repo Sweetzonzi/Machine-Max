@@ -110,7 +110,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["crew_driver_move", "crew_commander_move"],
+      "default": ["crew_driver_move", "crew_driver_regular", "crew_commander_move", "crew_commander_regular"],
       "description": "控制输入信号键列表，优先级从高到低。"
     },
     "max_angle": {

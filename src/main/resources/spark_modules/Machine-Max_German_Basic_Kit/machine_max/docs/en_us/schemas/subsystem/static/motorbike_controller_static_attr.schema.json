@@ -110,7 +110,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["crew_driver_move", "crew_commander_move"],
+      "default": ["crew_driver_move", "crew_driver_regular", "crew_commander_move", "crew_commander_regular"],
       "description": "List of control input signal keys, from highest to lowest priority."
     },
     "max_angle": {

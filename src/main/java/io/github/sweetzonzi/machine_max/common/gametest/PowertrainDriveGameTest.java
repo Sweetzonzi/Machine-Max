@@ -25,6 +25,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedCo
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -82,6 +83,36 @@ public final class PowertrainDriveGameTest {
                 }
             }
         });
+    }
+
+    @GameTest(template = "part_foundation", batch = "mmPowertrainDrive", timeoutTicks = 100)
+    public static void subsystemActivationPersistsSeparatelyFromEffectiveState(GameTestHelper helper) {
+        RegularPart chassis = createPart(helper, "r700_chassis");
+        try {
+            AbstractSubsystem subsystem = chassis.rootSubPart.findOwnSubsystem("subsystem.machine_max.motorbike_controller");
+            subsystem.setActive(false);
+            CompoundTag saved = subsystem.saveData(new CompoundTag());
+            helper.assertTrue(saved.contains("active") && !saved.getBoolean("active"),
+                    "主动关闭状态应写入子系统存档");
+
+            subsystem.setActive(true);
+            subsystem.loadData(saved);
+            helper.assertTrue(!subsystem.saveData(new CompoundTag()).getBoolean("active"),
+                    "载入存档应恢复主动关闭状态");
+
+            subsystem.loadData(new CompoundTag());
+            helper.assertTrue(subsystem.saveData(new CompoundTag()).getBoolean("active"),
+                    "缺少 active 字段的旧存档应保持默认启用");
+            helper.assertTrue(subsystem.isActive(), "工作阈值内且主动启用的子系统应有效");
+
+            chassis.rootSubPart.setDestroyed();
+            helper.assertTrue(!subsystem.isActive(), "宿主摧毁后子系统应失去有效状态");
+            helper.assertTrue(subsystem.saveData(new CompoundTag()).getBoolean("active"),
+                    "宿主摧毁不应改写子系统主动开关");
+            helper.succeed();
+        } finally {
+            chassis.discardUnattached();
+        }
     }
 
     private static RegularPart createPart(GameTestHelper helper, String name) {

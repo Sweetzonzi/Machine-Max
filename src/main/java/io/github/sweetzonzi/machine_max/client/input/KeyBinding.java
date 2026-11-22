@@ -20,6 +20,7 @@ public class KeyBinding {
     public static final String INTERACT_KEY = MMLanguageRegistry.KEY_GENERAL_INTERACT.tag;
     public static final String LEAVE_VEHICLE_KEY = MMLanguageRegistry.KEY_GENERAL_LEAVE_VEHICLE.tag;
     public static final String GENERAL_TOGGLE_LIGHT_KEY = MMLanguageRegistry.KEY_GENERAL_TOGGLE_LIGHT.tag;
+    public static final String GENERAL_TOGGLE_ENGINE_KEY = MMLanguageRegistry.KEY_GENERAL_TOGGLE_ENGINE.tag;
     public static final String GENERAL_VEHICLE_INFO_KEY = MMLanguageRegistry.KEY_GENERAL_VEHICLE_INFO.tag;
     public static final String VIEW_VEHICLE_INTERNAL_KEY = MMLanguageRegistry.KEY_GENERAL_VIEW_VEHICLE_INTERNAL.tag;
 
@@ -67,6 +68,7 @@ public class KeyBinding {
         event.register(KeyBinding.generalInteractKey);//互动
         event.register(KeyBinding.generalLeaveVehicleKey);//离开载具
         event.register(KeyBinding.generalToggleLightKey);//灯光开关
+        event.register(KeyBinding.generalToggleEngineKey);//发动机启停
         event.register(KeyBinding.generalVehicleInfoKey);//车辆信息面板
         event.register(KeyBinding.generalViewVehicleInternalKey);//内构查看
         //地面载具
@@ -138,6 +140,12 @@ public class KeyBinding {
             KeyCategory.GENERAL,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
             GLFW.GLFW_KEY_L,//默认按键
+            KeyCategory.GENERAL.getCategory()//键位类型
+    );
+    public static KeyMapping generalToggleEngineKey = new KeyMapping(GENERAL_TOGGLE_ENGINE_KEY,//键位名称
+            KeyCategory.GENERAL,//键位冲突类型
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_I,//默认按键
             KeyCategory.GENERAL.getCategory()//键位类型
     );
 

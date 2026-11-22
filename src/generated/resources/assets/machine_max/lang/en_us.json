@@ -269,6 +269,7 @@
   "key.machine_max.general.select_ammo_type_2": "Select Ammo Type 2",
   "key.machine_max.general.select_ammo_type_3": "Select Ammo Type 3",
   "key.machine_max.general.select_ammo_type_4": "Select Ammo Type 4",
+  "key.machine_max.general.toggle_engine": "Toggle Engine",
   "key.machine_max.general.toggle_light": "Toggle Light",
   "key.machine_max.general.vehicle_info": "Vehicle Info Panel",
   "key.machine_max.general.view_vehicle_internal": "Inspect Internal",

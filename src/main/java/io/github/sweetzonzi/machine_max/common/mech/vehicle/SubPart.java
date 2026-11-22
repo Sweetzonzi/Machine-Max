@@ -107,6 +107,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /** 客户端主线程发布的同步镜像，渲染线程直接读取。 */
     @Getter(AccessLevel.NONE)
     private volatile boolean wheelSupported;
+    /** 主机摧毁时的有效停用通知不改 active 值，但需在每端各发一次。 */
+    private boolean destroyedSubsystemsNotified;
 
     /** 服务端读物理步末结果，客户端读同步镜像。 */
     public boolean isWheelSupported() {
@@ -1412,7 +1414,8 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     }
 
     /**
-     * 标记本子零件摧毁：停用全部子系统并置摧毁标记。
+     * 标记本子零件摧毁：通知主动启用的子系统进入停用回调，并置摧毁标记。
+     * 子系统的主动开关状态保持不变；有效状态由 {@link AbstractSubsystem#isActive()} 根据宿主摧毁状态推导。
      *
      * <p>倒计时不属于子零件——它由所属部件统一持有并写入本对象的 {@code DESTROY_TIME_ID} 作为网络镜像；
      * 摧毁音效也只由部件在进入倒计时时播放一次。刚体、关节、碰撞与代理实体全部保留，
@@ -1424,9 +1427,6 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
         completedWheelSupport = false;
         wheelSupported = false;
         if (!level.isClientSide()) getSyncedData().set(WHEEL_SUPPORTED_ID, false);
-        for (AbstractSubsystem subsystem : ownSubsystems()) {
-            subsystem.setActive(false);
-        }
         for (AbstractConnector connector : connectors.values()) {
             //TODO:随机锁定/解锁某个关节的自由度？
             if (connector.attr.getImpactMultiplier() > 0) {
@@ -1434,6 +1434,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
             }
         }
         markDestroyed();
+        if (!destroyedSubsystemsNotified) {
+            destroyedSubsystemsNotified = true;
+            for (AbstractSubsystem subsystem : ownSubsystems()) {
+                if (subsystem.isActivationRequested()) {
+                    subsystem.onDisabled();
+                }
+            }
+        }
         // 最后一个子零件被摧毁时，部件在同一 tick 内进入倒计时；未全部摧毁时该调用无副作用
         if (!level.isClientSide()) part.startDestroyCountdown();
     }

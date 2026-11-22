@@ -113,7 +113,7 @@ public class RegularInputPayload implements CustomPacketPayload {
             /*
              * 地面载具
              */
-            case CLUTCH, UP_SHIFT, DOWN_SHIFT, HAND_BRAKE, TOGGLE_HAND_BRAKE:
+            case CLUTCH, UP_SHIFT, DOWN_SHIFT, HAND_BRAKE, TOGGLE_HAND_BRAKE, TOGGLE_ENGINE:
                 handleRegularInputForSeatSubsystem(executingPlayer, KeyInputMapping.fromValue(payload.getKey()), payload.getTick_count());
                 break;
             /*

@@ -172,6 +172,10 @@ public enum MMLanguageRegistry {
             zh_cn, "灯光开关",
             en_us, "Toggle Light"
     )),
+    KEY_GENERAL_TOGGLE_ENGINE("key.machine_max.general.toggle_engine", ImmutableMap.of(
+            zh_cn, "发动机启停",
+            en_us, "Toggle Engine"
+    )),
     KEY_GENERAL_VEHICLE_INFO("key.machine_max.general.vehicle_info", ImmutableMap.of(
             zh_cn, "载具信息面板",
             en_us, "Vehicle Info Panel"

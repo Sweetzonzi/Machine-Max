@@ -39,6 +39,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     private @Nullable UUID fmodVoice;
     private boolean fmodAttempted;
     private static final int RETRIGGER_TICKS = 20;
+    private static final double SHUTDOWN_STOP_SPEED = 5.0 * Math.PI / 30.0;
 
     /** 启停用的 FMOD 单次事件，未配置的用途为空。 */
     private final @Nullable FmodSoundAttr fmodStartSound;
@@ -222,9 +223,12 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     @Override
     public void onPrePhysicsTick() {
         Map<String, Float> feedbacks = collectFeedbackSpeeds();
+        boolean engineActive = isActive();
         // 油门按驾驶输入取：离合器分离时没有反馈，但油门照样有效，否则空挡轰不到转速。
         updateThrottleInput();
-        if (throttleInput < 0) {
+        if (!engineActive) {
+            throttleInput = 0;
+        } else if (throttleInput < 0) {
             // 没有任何油门信号（没人驾驶、控制器没接管）时保持怠速
             throttleInput = MIN_IDLE_THROTTLE;
         } else if (isShifting()) {
@@ -232,19 +236,24 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             throttleInput = MIN_IDLE_THROTTLE;
         }
         double rotSpeed = getRotSpeed();
-        if (rotSpeed / IDLE_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
-        else throttleInput = Math.clamp(throttleInput, 0, 1);
+        if (engineActive) {
+            if (rotSpeed / IDLE_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
+            else throttleInput = Math.clamp(throttleInput, 0, 1);
+        }
         if (fmodSound != null && !getLevel().isClientSide()) {
             soundThrottle = Double.isFinite(throttleInput) ? (float) throttleInput : 0f;
         }
-        double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);
-        if (!isActive()) engineTorque = 0.0;
-        double dampingTorque = getDampingTorque(rotSpeed);
+        double engineTorque = engineActive ? throttleInput * getTorqueAtSpeed(rotSpeed) : 0.0;
+        double dampingTorque = engineActive ? getDampingTorque(rotSpeed) : calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         if (feedbacks.isEmpty()) {
             if (!getSubPart().level.isClientSide()) {
                 rotSpeed += netTorque / attr.staticAttribute.inertia / getPhysicsLevel().getTps();
-                rotSpeed = 0.995 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.005 * IDLE_SPEED;
+                if (engineActive) {
+                    rotSpeed = 0.995 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.005 * IDLE_SPEED;
+                } else {
+                    rotSpeed = clampShutdownSpeed(rotSpeed, RED_LINE_SPEED * 1.05);
+                }
                 setRotSpeed((float) rotSpeed);
             }
             pushMechPower(MechPower.ZERO);
@@ -258,14 +267,21 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             if (count > 0) avgFeedback /= count;
             double speedDiff = rotSpeed - avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
-                    this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
+                    engineActive ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,
                     0.25 * attr.getStaticAttribute().maxTorque
             ) : 0;
             if (!getSubPart().level.isClientSide()) {
                 rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / getPhysicsLevel().getTps();
-                rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
-                rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * avgFeedback;
+                if (engineActive) {
+                    rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
+                    rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * avgFeedback;
+                } else {
+                    if (avgFeedback > 0) {
+                        rotSpeed = 0.95 * Math.clamp(rotSpeed, 0, RED_LINE_SPEED * 1.05) + 0.05 * avgFeedback;
+                    }
+                    rotSpeed = clampShutdownSpeed(rotSpeed, RED_LINE_SPEED * 2);
+                }
                 setRotSpeed((float) rotSpeed);
             }
             pushMechPower(new MechPower((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));
@@ -402,12 +418,21 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
      * @return 当前转速下的内部阻力矩(N · m)
      */
     public double getDampingTorque(double rotSpeed) {
+        if (Math.abs(rotSpeed) <= IDLE_SPEED) return 0;
+        return calculateDampingTorque(rotSpeed);
+    }
+
+    private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
-        if (Math.abs(rotSpeed) <= IDLE_SPEED) return result;
         for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {
             result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
         }
         return Math.signum(rotSpeed) * result;
+    }
+
+    private double clampShutdownSpeed(double rotSpeed, double maxSpeed) {
+        double clampedSpeed = Math.clamp(rotSpeed, 0, maxSpeed);
+        return clampedSpeed <= SHUTDOWN_STOP_SPEED ? 0 : clampedSpeed;
     }
 
     /**

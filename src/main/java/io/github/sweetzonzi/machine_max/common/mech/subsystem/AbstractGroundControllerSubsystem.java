@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 地面载具控制器的共享部分。
@@ -85,6 +86,8 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     protected volatile Map<EngineSubsystem, String> engines = Map.of();
     protected volatile Map<MotorSubsystem, String> motors = Map.of();
     protected volatile Map<GearboxSubsystem, String> gearboxes = Map.of();
+    /** 物理线程只投递一次性请求，SynchedEntityData 与生命周期回调留在主线程处理。 */
+    private final AtomicBoolean engineTogglePending = new AtomicBoolean();
 
     protected float avgEngineMaxSpeed = 0f;
     protected float avgEngineMinSpeed = 0f;
@@ -189,6 +192,9 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
+        if (!getLevel().isClientSide() && engineTogglePending.getAndSet(false)) {
+            toggleEngines();
+        }
         flushTelemetry();
         for (Map.Entry<String, List<String>> entry : getSpeedOutputTargets().entrySet()) {
             String signalChannel = entry.getKey();
@@ -674,10 +680,31 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
                     }
                     activeChannel.put(activeSender, EmptySignal.INSTANCE);
                     break;
+                case TOGGLE_ENGINE:
+                    if (tickCount == 0) {
+                        engineTogglePending.set(true);
+                    }
+                    activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    break;
                 default:
                     break;
             }
         }
+    }
+
+    /** 主线程：按组切换当前可工作的发动机。 */
+    private void toggleEngines() {
+        if (!isActive()) return;
+
+        List<EngineSubsystem> switchableEngines = engines.keySet().stream()
+                .filter(engine -> !engine.isDestroyed())
+                .filter(engine -> !engine.getSubPart().isDestroyed())
+                .filter(engine -> engine.getSubPart().part.permitsSubsystemWork())
+                .toList();
+        if (switchableEngines.isEmpty()) return;
+
+        boolean activate = switchableEngines.stream().noneMatch(EngineSubsystem::isActive);
+        switchableEngines.forEach(engine -> engine.setActive(activate));
     }
 
     // ===== 控制量分配 =====
@@ -788,18 +815,26 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
      */
     protected float calculateAvgSpeedAndControl() {
         float avgEngineSpeed = 0f;
+        int activeEngineCount = 0;
+        int activeMotorCount = 0;
         for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
             sendSignalToTarget(entry.getValue(), entry.getKey(), Math.abs(actualThrottle));
-            avgEngineSpeed += (float) entry.getKey().getRotSpeed();
+            if (entry.getKey().isActive()) {
+                avgEngineSpeed += (float) entry.getKey().getRotSpeed();
+                activeEngineCount++;
+            }
         }
         for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
             sendSignalToTarget(entry.getValue(), entry.getKey(), actualThrottle);
-            avgEngineSpeed += entry.getKey().getRotSpeed();
+            if (entry.getKey().isActive()) {
+                avgEngineSpeed += entry.getKey().getRotSpeed();
+                activeMotorCount++;
+            }
         }
-        if (engineCount > 1) {
-            avgEngineSpeed /= engineCount;
-        } else if (motorCount > 1) {
-            avgEngineSpeed /= motorCount;
+        if (activeEngineCount > 1) {
+            avgEngineSpeed /= activeEngineCount;
+        } else if (activeMotorCount > 1) {
+            avgEngineSpeed /= activeMotorCount;
         }
         return avgEngineSpeed;
     }
@@ -829,6 +864,10 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
             return currentGear;
         }
 
+        boolean hasActiveEngine = engines.keySet().stream().anyMatch(EngineSubsystem::isActive);
+        boolean hasActiveMotor = motors.keySet().stream().anyMatch(MotorSubsystem::isActive);
+        if (!hasActiveEngine && !hasActiveMotor) return currentGear;
+
         byte actualDirection = direction;
         if (actualDirection == 0 && Math.abs(speed) > 0.5f) {
             actualDirection = (byte) (speed >= 0 ? 1 : -1);
@@ -848,7 +887,7 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         for (int i = 0; i < gearbox.gearRatios.length; i++) {
             double ratio = gearbox.gearRatios[i];
 
-            boolean isPureElectric = engineCount == 0 && motorCount > 0;
+            boolean isPureElectric = !hasActiveEngine && hasActiveMotor;
             if (!isPureElectric && ratio * actualDirection <= 0) continue;
 
             double predictedSpeed = outputShaftSpeed * ratio;
@@ -856,10 +895,12 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
 
             double totalTorque = 0;
             for (EngineSubsystem engine : engines.keySet()) {
+                if (!engine.isActive()) continue;
                 totalTorque += engine.getTorqueAtSpeed(predictedSpeed)
                         - Math.abs(engine.getDampingTorque(predictedSpeed));
             }
             for (MotorSubsystem motor : motors.keySet()) {
+                if (!motor.isActive()) continue;
                 totalTorque += motor.getTorqueAtSpeed(predictedSpeed)
                         - Math.abs(motor.getDampingTorque(predictedSpeed));
             }
@@ -876,10 +917,12 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
         if (Math.abs(curPredictedSpeed) >= 0.1) {
             double curTotalTorque = 0;
             for (EngineSubsystem engine : engines.keySet()) {
+                if (!engine.isActive()) continue;
                 curTotalTorque += engine.getTorqueAtSpeed(curPredictedSpeed)
                         - Math.abs(engine.getDampingTorque(curPredictedSpeed));
             }
             for (MotorSubsystem motor : motors.keySet()) {
+                if (!motor.isActive()) continue;
                 curTotalTorque += motor.getTorqueAtSpeed(curPredictedSpeed)
                         - Math.abs(motor.getDampingTorque(curPredictedSpeed));
             }

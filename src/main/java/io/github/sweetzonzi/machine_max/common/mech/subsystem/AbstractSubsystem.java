@@ -88,6 +88,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
      * 模块化子系统的摧毁状态由各模块推导，{@link ModularSubsystem#saveData} 不写这个键。
      */
     protected static final String TAG_DESTROYED = "destroyed";
+    /** 持久化的主动开关状态；与受宿主、摧毁状态影响的 {@link #isActive()} 区分。 */
+    protected static final String TAG_ACTIVE = "active";
 
     /** 当前子系统为其宿主贡献的额外质量（kg），由子类通过 setExtraMass 管理 */
     private float extraMass = 0f;
@@ -608,17 +610,22 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public boolean isActive() {
-        return synchedData.get(DATA_ACTIVE_ID)
+        return isActivationRequested()
                 && !this.isDestroyed()
                 && !getOwner().getSubPart().isDestroyed()
                 && getSubPart().part.permitsSubsystemWork();
     }
 
+    /** 主动开关的原始状态，不包含摧毁或宿主是否可工作的判定。 */
+    public boolean isActivationRequested() {
+        return synchedData.get(DATA_ACTIVE_ID);
+    }
+
     public void setActive(boolean active) {
-        if (active && !synchedData.get(DATA_ACTIVE_ID)) {
+        if (active && !isActivationRequested()) {
             synchedData.set(DATA_ACTIVE_ID, true);
             if (!getLevel().isClientSide()) this.onActive();
-        } else if (!active && synchedData.get(DATA_ACTIVE_ID)) {
+        } else if (!active && isActivationRequested()) {
             synchedData.set(DATA_ACTIVE_ID, false);
             if (!getLevel().isClientSide()) this.onDisabled();
         }
@@ -639,6 +646,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
      * 还没读入，因此它在模块读入之后再执行同一规则修正一次。
      */
     public void loadData(CompoundTag data) {
+        // 旧存档没有主动开关字段时沿用构造默认值：启用。
+        synchedData.set(DATA_ACTIVE_ID, data.contains(TAG_ACTIVE) ? data.getBoolean(TAG_ACTIVE) : true);
         //加载子系统耐久度（按比例持久化；旧数据缺失该键时视为满耐久）
         float ratio = data.contains("durability_ratio") ? data.getFloat("durability_ratio") : 1f;
         if (!Float.isFinite(ratio)) {
@@ -670,6 +679,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         data.putFloat("durability_ratio", maxDurability > 0f
                 ? Math.clamp(getDurability() / maxDurability, 0f, 1f)
                 : 1f);
+        data.putBoolean(TAG_ACTIVE, isActivationRequested());
         data.putBoolean(TAG_DESTROYED, isDestroyed());
         return data;
     }
