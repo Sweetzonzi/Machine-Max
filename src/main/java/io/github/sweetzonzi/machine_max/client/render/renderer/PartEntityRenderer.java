@@ -341,7 +341,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
     /**
      * 根据 SubPart 耐久度返回内构查看模式下的着色常量。
      * 灰(满耐久) → 黄 → 橙 → 暗红 → 黑(毁坏)，alpha 固定 128。
-     * 与子系统耐久配色（绿→红）形成视觉区分。
+     * 子系统命中框另用连续的灰白→暖色渐变表示耐久。
      */
     private static int getInspectColor(float durability, float maxDurability) {
         float ratio = maxDurability > 0 ? Math.clamp(durability / maxDurability, 0f, 1f) : 1f;

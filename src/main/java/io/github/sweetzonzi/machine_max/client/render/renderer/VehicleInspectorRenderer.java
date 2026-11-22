@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.client.fbo.FboManager;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.SubsystemDurabilityColors;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.BasicSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
@@ -46,7 +47,7 @@ import java.util.Map;
  *   <li>子系统 HitBox 耐久着色 + 连接点状态 → 主帧缓冲（不变）</li>
  * </ol></p>
  * <p>AFTER_SKY 阶段清空 input FBO；AFTER_LEVEL 阶段拷贝主深度并执行后处理描边。</p>
- * <p>子系统配色沿用 {@link io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D} 的绿→红渐变。</p>
+ * <p>子系统配色沿用 HUD 的灰白→黄→橙→红→深红耐久色带。</p>
  * <p>连接点用三根纯色线（X=红, Y=绿, Z=蓝）构成坐标轴十字标记，完整性降低时各轴沿自身方向偏移。</p>
  */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
@@ -71,15 +72,6 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
     private static final Color INSPECT_COLOR_DARK_RED  = new Color(200, 32, 0);     // 暗红
     private static final Color INSPECT_COLOR_NEAR_BLACK = new Color(64, 0, 0);     // 近黑
     private static final Color INSPECT_COLOR_BLACK     = new Color(0, 0, 0);       // 黑 — 已毁坏
-
-    /** 子系统耐久配色：绿 → 黄绿 → 黄 → 橙 → 红橙 → 红 → 暗灰（与 AssemblyHud3D 一致） */
-    private static final Color SUBSYSTEM_HP_FULL      = new Color(100, 255, 100);
-    private static final Color SUBSYSTEM_HP_80        = new Color(255, 255, 64);
-    private static final Color SUBSYSTEM_HP_60        = new Color(255, 255, 0);
-    private static final Color SUBSYSTEM_HP_40        = new Color(255, 128, 0);
-    private static final Color SUBSYSTEM_HP_20        = new Color(255, 64, 0);
-    private static final Color SUBSYSTEM_HP_0         = new Color(255, 0, 0);
-    private static final Color SUBSYSTEM_HP_DESTROYED = new Color(50, 50, 50);
 
     /** RGB 三轴颜色（纯色，不透明） */
     private static final int RED_LINE   = new Color(255, 0, 0).getRGB();   // X 轴 — 红
@@ -254,7 +246,9 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
             AbstractSubsystem subsystem = subPart.findOwnSubsystem(subsystemName);
             if (!(subsystem instanceof BasicSubsystem basicSubsystem) || basicSubsystem.isHidden()) continue;
 
-            int color = getSubsystemColorByDurability(subsystem.getDurability(), subsystem.getMaxDurability());
+            int color = SubsystemDurabilityColors.withAlpha(
+                    SubsystemDurabilityColors.colorFor(subsystem.getDurability(), subsystem.getMaxDurability()),
+                    0xFF);
             ModelRenderHelperKt.render(
                     bones.get(boneName),
                     modelInstance.getPose(),
@@ -363,7 +357,7 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
     /**
      * 根据 SubPart 耐久度返回内构查看模式下的着色常量。
      * 灰(满耐久) → 黄 → 橙 → 暗红 → 黑(毁坏)，alpha 固定 255。
-     * 与子系统耐久配色（绿→红）形成视觉区分。
+     * 子系统命中框另用连续的灰白→暖色渐变表示耐久。
      */
     private static int getInspectColor(float durability, float maxDurability) {
         float ratio = maxDurability > 0 ? Math.clamp(durability / maxDurability, 0f, 1f) : 1f;
@@ -378,18 +372,4 @@ public class VehicleInspectorRenderer extends VisualEffectRenderer {
         return (255 << 24) | (c.getRed() << 16) | (c.getGreen() << 8) | c.getBlue();
     }
 
-    /**
-     * 根据子系统耐久度返回 HitBox 填充色。
-     * 绿(满) → 黄绿 → 黄 → 橙 → 红橙 → 红 → 暗灰(毁坏)。
-     */
-    private static int getSubsystemColorByDurability(float durability, float maxDurability) {
-        float ratio = maxDurability > 0 ? Math.clamp(durability / maxDurability, 0f, 1f) : 1f;
-        if (ratio >= 1.0f)       return SUBSYSTEM_HP_FULL.getRGB();
-        else if (ratio >= 0.8f)  return SUBSYSTEM_HP_80.getRGB();
-        else if (ratio >= 0.6f)  return SUBSYSTEM_HP_60.getRGB();
-        else if (ratio >= 0.4f)  return SUBSYSTEM_HP_40.getRGB();
-        else if (ratio >= 0.2f)  return SUBSYSTEM_HP_20.getRGB();
-        else if (ratio > 0.0f)   return SUBSYSTEM_HP_0.getRGB();
-        else                     return SUBSYSTEM_HP_DESTROYED.getRGB();
-    }
 }
