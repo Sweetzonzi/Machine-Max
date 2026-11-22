@@ -70,6 +70,20 @@
               "material": "machine_max:internal_machinery",
               "thickness": 5,
               "subsystem": "subsystem.machine_max.azimuth_driver"
+            },
+            "Loader50mmAPHitBox": {
+              "id": "ap_ammo_loader",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.main_ap_rack"
+            },
+            "Loader50mmHEHitBox": {
+              "id": "he_ammo_loader",
+              "type": "box",
+              "material": "machine_max:internal_machinery",
+              "thickness": 5,
+              "subsystem": "subsystem.machine_max.main_he_rack"
             }
           },
           "interact_boxes": {
