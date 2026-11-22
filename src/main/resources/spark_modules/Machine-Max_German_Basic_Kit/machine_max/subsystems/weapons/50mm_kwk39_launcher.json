@@ -10,7 +10,7 @@
   //(可选, 默认0)完整人力装填的基准秒数：本炮直接从弹药架取弹、由乘员全程装填，0 = 不支持该路径
   "human_reload_time": 5,
   "breech": {
-    "fire_rate": 30,
+    "fire_rate": 300,
     "required_tags": [
       "machine_max:caliber/50mm"
     ]

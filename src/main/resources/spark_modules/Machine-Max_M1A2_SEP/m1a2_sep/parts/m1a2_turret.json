@@ -988,8 +988,8 @@
               },
               "loader_time_multipliers": {
                 "crew.reload.loader": 1,
-                "crew.reload.gunner": 0.5,
-                "crew.reload.commander": 0.5
+                "crew.reload.gunner": 1.5,
+                "crew.reload.commander": 1.5
               }
             }
           }

@@ -10,7 +10,7 @@
     "recoil_multiplier": 0
   },
   "breech": {
-    "fire_rate": 30,
+    "fire_rate": 300,
     "required_tags": [
       "machine_max:ammo/atgm"
     ]

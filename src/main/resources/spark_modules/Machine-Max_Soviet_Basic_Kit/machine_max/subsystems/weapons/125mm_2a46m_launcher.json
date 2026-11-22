@@ -8,7 +8,7 @@
     "weapon.gun.2a46m"
   ],
   "breech": {
-    "fire_rate": 8,
+    "fire_rate": 300,
     "required_tags": [
       "machine_max:caliber/125mm"
     ]

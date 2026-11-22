@@ -13,7 +13,7 @@
     "recoil_multiplier": 1.6
   },
   "breech": {
-    "fire_rate": 120,
+    "fire_rate": 300,
     "required_tags": [
       "machine_max:caliber/57mm"
     ]
