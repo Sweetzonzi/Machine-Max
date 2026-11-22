@@ -7,6 +7,23 @@
     "weapon.gun",
     "weapon.gun.type59"
   ],
+  "human_reload_time": 6,
+  "sounds": {
+    "human_progress": {
+      "0.0": {
+        "sound_id": "machine_max:subsystem.loader.reload_start",
+        "range": 16
+      },
+      "0.5": {
+        "sound_id": "machine_max:subsystem.loader.reload_shell",
+        "range": 16
+      },
+      "0.9": {
+        "sound_id": "machine_max:subsystem.loader.reload_close",
+        "range": 16
+      }
+    }
+  },
   "breech": {
     "fire_rate": 300,
     "required_tags": [

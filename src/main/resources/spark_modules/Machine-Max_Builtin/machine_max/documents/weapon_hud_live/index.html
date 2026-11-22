@@ -26,7 +26,7 @@
     <div class="tubes">
       <div class="tube" data-mm-repeat="weapon.tubes" data-mm-class="tube.state">
         <div class="head"><span data-mm-text="tube.round_label"></span><span data-mm-text="tube.loading_time_text"></span></div>
-        <div class="belt-readout" data-mm-class="tube.has_belt ? 'present' : 'absent'"><span>BELT / <b data-mm-text="tube.belt_label"></b></span><span><span data-mm-text="tube.belt_remaining"></span>/<span data-mm-text="tube.belt_capacity"></span></span></div>
+        <div class="belt-readout" data-mm-class="tube.has_belt || tube.chambered ? 'present' : 'absent'"><span>LOAD / <b data-mm-text="tube.has_belt ? tube.belt_label : tube.chambered_ammo_label"></b></span><span data-mm-text="tube.loaded_rounds"></span></div>
         <div class="track"><i data-mm-num="tube.loading_progress * 100" data-mm-var="--fill" data-mm-unit="%"></i></div>
         <div class="regen-meter" data-mm-class="tube.supply_refill_phase"><span class="regen-label">RESERVE +1</span><span class="regen-track"><i data-mm-num="tube.supply_refill_progress * 100" data-mm-var="--regen-fill" data-mm-unit="%"></i></span><span class="regen-time" data-mm-text="tube.supply_refill_phase != 'idle' ? tube.supply_refill_time_text : ''"></span></div>
       </div>

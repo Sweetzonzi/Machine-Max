@@ -722,18 +722,6 @@
                 "ammo_100mm"
               ]
             },
-            "subsystem.machine_max.main_ap_loader": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:100mm_type59_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_100mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_100mm": [
-                  "subsystem.machine_max.main_ap_rack"
-                ]
-              }
-            },
             "subsystem.machine_max.main_he_rack": {
               "type": "machine_max:regen_ammo_rack",
               "definition": "machine_max:100mm_type59_regen_ammo_rack",
@@ -747,18 +735,6 @@
               "ammo_discovery_inputs": [
                 "ammo_100mm"
               ]
-            },
-            "subsystem.machine_max.main_he_loader": {
-              "type": "machine_max:ammo_loader",
-              "definition": "machine_max:100mm_type59_ammo_loader",
-              "ammo_discovery_inputs": [
-                "ammo_100mm"
-              ],
-              "ammo_discovery_targets": {
-                "ammo_100mm": [
-                  "subsystem.machine_max.main_he_rack"
-                ]
-              }
             },
             "subsystem.machine_max.coax_controller": {
               "type": "machine_max:weapon_controller",
@@ -807,6 +783,9 @@
               "definition": "machine_max:default_3rd_seat",
               "locator": "gunner_seat",
               "control_group_preset": "type59:type59_gunner",
+              "loader_discovery_inputs": [
+                "crew.reload.gunner"
+              ],
               "camera_discovery_targets": {
                 "gunner_sight": [
                   "global"
@@ -824,6 +803,9 @@
               "definition": "type59:closed_commander_seat",
               "locator": "commander_seat",
               "control_group_preset": "type59:type59_observer",
+              "loader_discovery_inputs": [
+                "crew.reload.commander"
+              ],
               "camera_discovery_targets": {
                 "commander_day_sight": [
                   "subsystem.machine_max.commander_optics"
@@ -841,6 +823,9 @@
               "definition": "type59:open_roof_seat",
               "locator": "loader_seat",
               "control_group_preset": "type59:type59_aa",
+              "loader_discovery_inputs": [
+                "crew.reload.loader"
+              ],
               "dismount_locators": [
                 "turret_exit_left",
                 "turret_exit_right"
@@ -1006,6 +991,22 @@
                 "ammo_100mm": [
                   "local"
                 ]
+              },
+              "loader_discovery_targets": {
+                "crew.reload.loader": [
+                  "local"
+                ],
+                "crew.reload.gunner": [
+                  "local"
+                ],
+                "crew.reload.commander": [
+                  "local"
+                ]
+              },
+              "loader_time_multipliers": {
+                "crew.reload.loader": 1,
+                "crew.reload.gunner": 1.5,
+                "crew.reload.commander": 1.5
               }
             }
           }
