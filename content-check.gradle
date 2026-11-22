@@ -370,7 +370,7 @@ packs.sort { [it.name, it.namespace] }
 
 tasks.register('checkContent') {
     group = 'content'
-    description = '校验装配体 / 载具蓝图与模板对齐，JSON 引用的图标、模型、音效事件与座位控制组预设可达，文档页面的样式表可达，语言键的可达性、中英配对与中文缺译，五类名字键的构形与译文，单变体内三类信号名字的唯一性，跨连接点信号线的到达频道与转译表、内部连接点不得承载信号表，交互区目标必须落在本变体内的子系统或连接点上，视点发现表的取值域与广播频道，动画与模板里引用的名字落在引用方的变体内，转向轮不得全挤在同一根轴上，以及履带临时配方与型号对齐'
+    description = '校验装配体 / 载具蓝图与模板对齐，资源引用、座位瞄准偏置与俯仰范围、信号与视点接线、语言键、转向轮布局及履带临时配方'
     doLast {
         def problems = []
         def details = new StringBuilder()
@@ -1083,6 +1083,41 @@ tasks.register('checkContent') {
                 }
                 String stem = file.name.substring(0, file.name.length() - '.json'.length())
                 connectorDefinitions[pack.namespace + ':' + stem] = file
+            }
+        }
+
+        // Neutral third-person aim bias must be reachable within the seat's effective pitch bounds.
+        subsystemDefinitions.each { String id, File file ->
+            try {
+                Object parsed = readJsonc(file)
+                if (!(parsed instanceof Map) || ((Map) parsed).get('type')?.toString() != 'machine_max:seat') {
+                    return
+                }
+                Object rawViews = ((Map) parsed).get('views')
+                Map views = rawViews instanceof Map ? (Map) rawViews : [:]
+                Object rawBias = views.get('third_person_pitch_bias')
+                Object rawMin = views.get('min_pitch')
+                Object rawMax = views.get('max_pitch')
+                if (views.containsKey('third_person_pitch_bias') && !(rawBias instanceof Number)) {
+                    problems << id + '：third_person_pitch_bias 必须是数值'
+                    details.append('    无效第三人称俯仰偏置类型  ').append(file).append(' → ')
+                            .append(rawBias == null ? 'null' : rawBias.getClass().getSimpleName()).append('\n')
+                    return
+                }
+                double bias = rawBias instanceof Number ? ((Number) rawBias).doubleValue() : 15.0
+                double minPitch = rawMin instanceof Number ? ((Number) rawMin).doubleValue() : -70.0
+                double maxPitch = rawMax instanceof Number ? ((Number) rawMax).doubleValue() : 45.0
+                if (!Double.isFinite(bias) || bias < 0 || bias > 20) {
+                    problems << id + '：third_person_pitch_bias 必须是 0..20 度的有限数值'
+                    details.append('    无效第三人称俯仰偏置  ').append(file).append(' → ').append(bias).append('\n')
+                } else if (Double.isFinite(minPitch) && Double.isFinite(maxPitch)
+                        && (bias < minPitch || bias > maxPitch)) {
+                    problems << id + '：中性偏置 ' + bias + '° 超出有效俯仰范围 [' + minPitch + '°, ' + maxPitch + '°]'
+                    details.append('    中性偏置将被俯仰限位裁剪  ').append(file).append(' → bias=').append(bias)
+                            .append('°, range=[').append(minPitch).append('°, ').append(maxPitch).append('°]\n')
+                }
+            } catch (Exception ignored) {
+                // The subsystem codec reports malformed definitions during content loading.
             }
         }
 

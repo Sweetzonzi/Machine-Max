@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.visual.HudLayout;
@@ -44,6 +45,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     1.1f,
                     -70.0f,
                     45.0f,
+                    15.0f,
                     90.0f
             )).forGetter(SeatSubsystemStaticAttr::getViews),
             Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemStaticAttr::getViewInputs),
@@ -119,6 +121,7 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
              * 例如：maxPitch=60表示最多向上看60度
              */
             float maxPitch,
+            float thirdPersonPitchBias,
             /**
              * 偏航角张角限制（单位：度）
              * 零位为座椅挂点的局部前方，实际范围为 [-yawLimit/2, yawLimit/2]
@@ -126,6 +129,13 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
              */
             float yawLimit
     ) {
+        private static final Codec<Float> THIRD_PERSON_PITCH_BIAS_CODEC = Codec.FLOAT.validate(value -> {
+            if (!Float.isFinite(value) || value < 0 || value > 20) {
+                return DataResult.error(() -> "third_person_pitch_bias must be a finite value in [0, 20], got " + value);
+            }
+            return DataResult.success(value);
+        });
+
         public static final Codec<ViewAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("enable_first_person", true).forGetter(ViewAttr::enableFirstPerson),
                 ResourceLocation.CODEC.optionalFieldOf("first_hud_layout", HudLayout.EMPTY)
@@ -140,8 +150,16 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 Codec.FLOAT.optionalFieldOf("distance_scale", 1.1f).forGetter(ViewAttr::distanceScale),
                 Codec.FLOAT.optionalFieldOf("min_pitch", -70.0f).forGetter(ViewAttr::minPitch),
                 Codec.FLOAT.optionalFieldOf("max_pitch", 45.0f).forGetter(ViewAttr::maxPitch),
+                THIRD_PERSON_PITCH_BIAS_CODEC.optionalFieldOf("third_person_pitch_bias", 15.0f)
+                        .forGetter(ViewAttr::thirdPersonPitchBias),
                 Codec.FLOAT.optionalFieldOf("yaw_limit", 90.0f).forGetter(ViewAttr::yawLimit)
                 ).apply(instance, ViewAttr::new));
+
+        public ViewAttr {
+            if (!Float.isFinite(thirdPersonPitchBias) || thirdPersonPitchBias < 0 || thirdPersonPitchBias > 20) {
+                throw new IllegalArgumentException("error.machine_max.seat_subsystem.invalid_third_person_pitch_bias");
+            }
+        }
     }
 }
 

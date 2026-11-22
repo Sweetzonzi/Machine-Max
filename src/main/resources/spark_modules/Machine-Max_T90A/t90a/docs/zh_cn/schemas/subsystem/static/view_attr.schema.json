@@ -81,6 +81,13 @@
       "default": 45,
       "description": "最大俯仰角限制（单位：度）。零度对应水平方向。例如，max_pitch=60表示最多向上看60度。"
     },
+    "third_person_pitch_bias": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 20,
+      "default": 15,
+      "description": "第三人称中性瞄准方向相对座椅参考的俯仰偏置（单位：度）；设为0可关闭。实际角度仍受min_pitch和max_pitch限制。"
+    },
     "yaw_limit": {
       "type": "number",
       "minimum": 0,

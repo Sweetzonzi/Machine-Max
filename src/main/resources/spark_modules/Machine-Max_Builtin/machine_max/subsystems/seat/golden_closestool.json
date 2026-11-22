@@ -11,7 +11,8 @@
     "third_hud_layout": "machine_max:seat_dashboard_third",//(可选)第三人称视角使用的 HUD 布局，缺失表示不显示
     "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
     "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
-    "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
+    "distance_scale": 1.1, //(可选,默认1.1)第三人称视角距离倍率
+    "third_person_pitch_bias": 0 //(可选,默认15)非武器座位保持水平中性方向
   },
   "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
 }

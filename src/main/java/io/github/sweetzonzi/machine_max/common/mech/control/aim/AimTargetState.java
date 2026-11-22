@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * 操作者持有的瞄准输入状态，由客户端主线程更新。<br>
- * 世界点供稳定轴求角，相对角从主 WC 的实际机构角初始化，再累计鼠标输入。
+ * 世界点供稳定轴求角；切入视点时，相对角从继承目标反解，再累计鼠标输入。
  * 无稳轴的累计目标最多领先／落后实际角 60°；机械行程交给执行器。
  * 角度使用弧度，x=俯仰、y=偏航；连续偏航保留累计圈数。
  */
@@ -45,6 +45,21 @@ public final class AimTargetState {
 
     public AimTargetState(Mode mode, Vec3 worldPoint, Vec2 relativeAim) {
         setTarget(mode, worldPoint, relativeAim);
+    }
+
+    /**
+     * 从切换前的世界目标建立输入状态，不改写机构实际角。<br>
+     * 无稳定轴所需的相对目标由当前机构几何反解，使机构可按原执行器速度继续追赶。
+     */
+    public static AimTargetState fromWorldTarget(Mode mode, Vec3 worldPoint,
+                                                 @Nullable AimGeometrySnapshot geometry) {
+        if (mode != Mode.WORLD && geometry == null) {
+            throw new IllegalArgumentException();
+        }
+        Vec2 relativeAim = geometry == null ? Vec2.ZERO
+                : mode == Mode.WORLD ? geometry.actualAngles()
+                : AimMath.solveAim(geometry, worldPoint, geometry.actualAngles()).angles();
+        return new AimTargetState(mode, worldPoint, relativeAim);
     }
 
     /** 所属线程覆盖完整值；相同输入重复设置不会累计。 */
@@ -106,7 +121,7 @@ public final class AimTargetState {
         // 无稳控制传完整累计值；重发和物理子步只读取，不重复消费鼠标增量。
         relativeAim = relativeAim.add(accepted);
         Vec2 next = new Vec2(offset.x + accepted.x, offset.y + accepted.y);
-        worldPoint = ViewMath.follow(sight.rotation(), next, sight.position()).worldPoint();
+        worldPoint = ViewMath.follow(sight.rotation(), next, sight.position()).focusPoint();
         if (geometry != null) {
             updateGeometry(geometry);
         }

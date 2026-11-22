@@ -41,6 +41,20 @@ class ViewpointContractTest {
         assertFalse(encoded.has("min_pitch"));
         assertEquals(90,camera(false).pitchSpeed);
     }
+    @Test void seatPitchBiasDefaultsToFifteenAndAcceptsZeroWithinTheConfiguredRange() {
+        var defaults = SeatSubsystemStaticAttr.ViewAttr.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{}")).getOrThrow();
+        assertEquals(15, defaults.thirdPersonPitchBias());
+
+        var disabled = SeatSubsystemStaticAttr.ViewAttr.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"third_person_pitch_bias\":0}")).getOrThrow();
+        assertEquals(0, disabled.thirdPersonPitchBias());
+
+        assertTrue(SeatSubsystemStaticAttr.ViewAttr.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"third_person_pitch_bias\":20.1}")).result().isEmpty());
+        assertTrue(SeatSubsystemStaticAttr.ViewAttr.CODEC
+                .parse(JsonOps.INSTANCE, JsonParser.parseString("{\"third_person_pitch_bias\":-0.1}")).result().isEmpty());
+    }
     @Test void inputCodecPreservesFullTargetAndDoublePrecision() {
         var point=new Vec3(20000000.125,-10.25,-20000000.375);
         var input=new ViewInputPayload(12,3,14,5,1,point,deg(12,25));

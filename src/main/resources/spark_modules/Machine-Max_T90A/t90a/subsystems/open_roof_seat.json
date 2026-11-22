@@ -26,6 +26,7 @@
     "follow_vehicle": true,
     "focus_on_center": false,
     "distance_scale": 1.2,
+    "third_person_pitch_bias": 15,
     "min_pitch": -85,
     "max_pitch": 85,
     "yaw_limit": 360,

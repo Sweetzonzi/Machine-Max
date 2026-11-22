@@ -50,7 +50,7 @@ class ThirdPersonViewpointTest {
     @Test
     void movingMountAndMouseInputRemainImmediateWithoutChangingTheControlTarget() {
         var view = new ThirdPersonViewpoint();
-        view.enter(true, Quaternion.IDENTITY, Vec3.ZERO, new Vec3(0, 0, -1000));
+        view.enter(true, Quaternion.IDENTITY, Vec3.ZERO, new Vec3(0, 0, -1000), 0);
         view.beginReturn(new Quaternionf().rotateY((float) Math.toRadians(-60)));
         view.sampleDisplayRotation(new Quaternionf(), START);
         var reference = ViewMath.lookRotation(new Vec2(0, (float) Math.toRadians(20)));
@@ -59,7 +59,7 @@ class ThirdPersonViewpointTest {
         var desired = SparkMathKt.toQuaternionf(control.pose().rotation());
         var display = view.sampleDisplayRotation(desired, START + 100_000_000);
         assertRotation(new Quaternionf(desired).rotateY((float) Math.toRadians(-30)), display);
-        assertEquals(control.worldPoint(), view.worldPoint());
+        assertEquals(control.focusPoint(), view.focusPoint());
         assertEquals(control, view.sample(reference, Vec3.ZERO));
         assertRotation(desired, view.sampleDisplayRotation(desired, START + 200_000_000));
     }
@@ -74,8 +74,30 @@ class ThirdPersonViewpointTest {
         view.cancelReturn();
         view.beginReturn(midway);
         assertRotation(midway, view.sampleDisplayRotation(desired, START + 150_000_000));
-        view.enter(false, Quaternion.IDENTITY, Vec3.ZERO, new Vec3(0, 0, -1000));
+        view.enter(false, Quaternion.IDENTITY, Vec3.ZERO, new Vec3(0, 0, -1000), 0);
         assertRotation(desired, view.sampleDisplayRotation(desired, START + 160_000_000));
+    }
+
+    @Test
+    void renderSamplesDoNotMutateTheLogicalAimState() {
+        float bias = (float) Math.toRadians(15);
+        Quaternion reference = ViewMath.lookRotation(new Vec2((float) Math.toRadians(12), (float) Math.toRadians(-28)));
+        Vec3 anchor = new Vec3(15, 8, -30);
+        var view = new ThirdPersonViewpoint();
+        view.enter(true, reference, anchor, null, bias);
+        view.update(reference, anchor, new Vec2((float) Math.toRadians(4), (float) Math.toRadians(7)),
+                AimAxisLimit.CONTINUOUS, AimAxisLimit.CONTINUOUS);
+        Vec2 logicalLook = view.relativeLook();
+        Vec3 logicalPoint = view.focusPoint();
+
+        for (float partial : new float[]{0, .25f, .5f, .75f, 1}) {
+            Quaternion sampledReference = ViewMath.lookRotation(new Vec2(
+                    (float) Math.toRadians(12 + partial), (float) Math.toRadians(-28 + partial * 2)));
+            view.sample(sampledReference, anchor.add(partial, 0, -partial));
+        }
+
+        assertEquals(logicalLook, view.relativeLook());
+        assertEquals(logicalPoint, view.focusPoint());
     }
 
     private static void assertRotation(Quaternionf expected, Quaternionf actual) {

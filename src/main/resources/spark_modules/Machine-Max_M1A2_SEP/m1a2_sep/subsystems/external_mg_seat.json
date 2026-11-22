@@ -16,6 +16,7 @@
     "follow_vehicle": false,
     "focus_on_center": false,
     "distance_scale": 0.5,
+    "third_person_pitch_bias": 15,
     "first_person_offset": [
       0,
       0.15,

@@ -478,7 +478,7 @@ public final class ViewpointGameTest {
         helper.assertTrue(Math.abs(camera.getViewAngles().y - Math.toRadians(10)) < 1e-4,
                 "零后续输入时摄像头必须继续追到目标");
         // 切入时继承前一视点的有限世界点，不能用设备缓存角覆盖它。
-        Vec3 next = ViewMath.follow(mount.rotation(), new Vec2(0, (float) Math.toRadians(-10)), mount.position()).worldPoint();
+        Vec3 next = ViewMath.follow(mount.rotation(), new Vec2(0, (float) Math.toRadians(-10)), mount.position()).focusPoint();
         camera.enterView(next);
         helper.assertTrue(Math.abs(camera.getViewAngles().y - Math.toRadians(-10)) < 1e-4, "切入必须继承目标");
     }

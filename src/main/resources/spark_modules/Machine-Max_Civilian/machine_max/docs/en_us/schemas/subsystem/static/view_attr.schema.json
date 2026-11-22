@@ -81,6 +81,13 @@
       "default": 45,
       "description": "Maximum pitch angle in degrees. Zero degrees is horizontal. For example, max_pitch=60 means you can look up up to 60 degrees."
     },
+    "third_person_pitch_bias": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 20,
+      "default": 15,
+      "description": "Third-person neutral aim pitch offset from the seat reference, in degrees. Set to 0 to disable; the effective angle remains bounded by min_pitch and max_pitch."
+    },
     "yaw_limit": {
       "type": "number",
       "minimum": 0,

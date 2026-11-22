@@ -76,7 +76,7 @@ class AimTargetStateTest {
 
     @Test
     void stableLeadRejectsOnlyFurtherInputAndAllowsImmediateReverse() {
-        Vec3 point = ViewMath.follow(Quaternion.IDENTITY, deg(0, 28), Vec3.ZERO).worldPoint();
+        Vec3 point = ViewMath.follow(Quaternion.IDENTITY, deg(0, 28), Vec3.ZERO).focusPoint();
         var state = new AimTargetState(AimTargetState.Mode.WORLD, point, Vec2.ZERO);
         assertEquals(deg(0, 2).y, state.applyMouse(SIGHT, null, deg(0, 5)).y, 1e-6);
         Vec3 atLimit = state.getWorldPoint();
@@ -100,7 +100,7 @@ class AimTargetStateTest {
 
     private static double stableLeadSpan(boolean yaw, int direction, boolean visibleReference) {
         Vec2 limit = yaw ? deg(0, direction * 30) : deg(direction * 30, 0);
-        Vec3 point = ViewMath.follow(Quaternion.IDENTITY, limit, Vec3.ZERO).worldPoint();
+        Vec3 point = ViewMath.follow(Quaternion.IDENTITY, limit, Vec3.ZERO).focusPoint();
         var state = new AimTargetState(AimTargetState.Mode.WORLD, point, Vec2.ZERO);
         double minimum = Double.POSITIVE_INFINITY;
         double maximum = Double.NEGATIVE_INFINITY;
@@ -124,7 +124,7 @@ class AimTargetStateTest {
 
     @Test
     void relativeAxesAccumulateWithoutInferringMechanicalLimitsFromOpticalError() {
-        Vec3 distant = ViewMath.follow(Quaternion.IDENTITY, deg(50, 120), Vec3.ZERO).worldPoint();
+        Vec3 distant = ViewMath.follow(Quaternion.IDENTITY, deg(50, 120), Vec3.ZERO).focusPoint();
         for (AimTargetState.Mode mode : AimTargetState.Mode.values()) {
             var state = new AimTargetState(mode, distant, Vec2.ZERO);
             Vec2 accepted = state.applyMouse(SIGHT, geometry(SIGHT, Vec2.ZERO), deg(5, 5));
@@ -163,6 +163,28 @@ class AimTargetStateTest {
         state.updateGeometry(movedSample);
         assertEquals(AimMath.buildAimPoint(movedSample, initial), state.getWorldPoint());
         assertAngles(initial, state.getRelativeAim());
+    }
+
+    @Test
+    void inheritedTargetSeedsRelativeAimAheadOfTheActualMechanism() {
+        Vec2 actual = deg(4, 9);
+        Vec2 requested = deg(22, 37);
+        var sample = geometry(SIGHT, actual);
+        Vec3 target = AimMath.buildAimPoint(sample, requested);
+
+        for (AimTargetState.Mode mode : AimTargetState.Mode.values()) {
+            var state = AimTargetState.fromWorldTarget(mode, target, sample);
+            if (mode == AimTargetState.Mode.WORLD) {
+                assertAngles(actual, state.getRelativeAim());
+            } else {
+                assertAngles(requested, state.getRelativeAim());
+            }
+            assertEquals(target, state.getWorldPoint());
+            assertAngles(actual, sample.actualAngles());
+        }
+        assertThrows(IllegalArgumentException.class,
+                () -> AimTargetState.fromWorldTarget(AimTargetState.Mode.RELATIVE, target, null));
+        assertEquals(Vec2.ZERO, AimTargetState.fromWorldTarget(AimTargetState.Mode.WORLD, target, null).getRelativeAim());
     }
 
     @Test

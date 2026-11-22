@@ -17,7 +17,7 @@ import jme3utilities.math.MyQuaternion;
  */
 public final class ViewMath {
     private ViewMath() {}
-    public record Snapshot(AimPose pose, Vec3 worldPoint) {}
+    public record Snapshot(AimPose pose, Vec3 focusPoint) {}
 
     public static Quaternion lookRotation(Vec2 angles) {
         return new Quaternion().fromAngleNormalAxis((float) -angles.y, Vector3f.UNIT_Y)
@@ -48,9 +48,19 @@ public final class ViewMath {
         return direction.length() < 1e-9 ? Vec2.ZERO : directionAngles(
                 SparkMathKt.toVec3(MyQuaternion.rotateInverse(reference,PhysicsHelperKt.toBVector3f(direction),null)));
     }
+    public static Quaternion lookAt(Quaternion reference, Vec3 origin, Vec3 point) {
+        return reference.mult(lookRotation(inherit(reference, origin, point)));
+    }
+    /** 沿观察方向的反向放置相机；距离符号可切换第三人称前后侧。 */
+    public static Vec3 orbitPosition(Vec3 anchor, Vec3 forward, double distance) {
+        return anchor.subtract(forward.normalize().scale(distance));
+    }
     public static Snapshot follow(Quaternion reference, Vec2 look, Vec3 origin) {
+        return follow(reference, look, origin, AimMath.AIM_DISTANCE_METERS);
+    }
+    public static Snapshot follow(Quaternion reference, Vec2 look, Vec3 origin, double distance) {
         AimPose pose = new AimPose(origin, reference.mult(lookRotation(look)));
-        return new Snapshot(pose, origin.add(pose.forward().scale(AimMath.AIM_DISTANCE_METERS)));
+        return new Snapshot(pose, origin.add(pose.forward().scale(distance)));
     }
     public static Snapshot free(Vec3 point, Vec3 origin) {
         Vec3 direction = point.subtract(origin);
