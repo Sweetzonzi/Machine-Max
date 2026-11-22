@@ -68,10 +68,10 @@ public final class CameraController {
     /** 切入设备前的原版视角，退出时恢复。 */
     private static CameraType seatCameraType;
 
-    /** 第三人称跟随参考姿态的时间常数（秒）：朝向按指数衰减追上座椅挂点，鼠标偏角不经此路径。 */
-    private static final double FOLLOW_SECONDS = .12;
-    /** 跟随低通只在 tick 推进，渲染按刻内比例采样两次结果。 */
-    private static final RotationDamper followRotation = new RotationDamper(FOLLOW_SECONDS);
+    /** 第三人称实际相机朝向追赶逻辑焦点的时间常数（秒）。 */
+    private static final double FOLLOW_SECONDS = .05;
+    /** 只平滑显示相机朝向；逻辑焦点与武器目标保持即时更新。 */
+    private static final RotationDamper displayFollowRotation = new RotationDamper(FOLLOW_SECONDS);
 
     /** 速度对第三人称距离的平滑修正，每逻辑 tick 更新一次。 */
     private static float speedDistanceFactor;
@@ -182,8 +182,8 @@ public final class CameraController {
             if (following != seatFollowing || seatFirstPerson != CLIENT.options.getCameraType().isFirstPerson()) {
                 enterSeat(currentAimTargetPoint());
             }
-            advanceSeatFollow();
             updateSeat(Vec2.ZERO);
+            advanceDisplayFollow();
         } else if (activeCamera instanceof CameraSubsystem) {
             publishDevice();
         } else {
@@ -326,9 +326,7 @@ public final class CameraController {
         seatFirstPerson = CLIENT.options.getCameraType().isFirstPerson();
         seatFollowing = seatFirstPerson || ControlPreference.shouldFollowPose(controllingSeat);
         AimPose mount = seatMount(1);
-        // 以当前挂点姿态重建跟随低通，清除既有的滞后残差。
-        followRotation.reset(SparkMathKt.toQuaternionf(mount.rotation()), System.nanoTime());
-        Quaternion reference = seatReference(mount.rotation(), 1);
+        Quaternion reference = mount.rotation();
         Vec3 anchor = seatFirstPerson ? mount.position() : seatAimAnchor(mount, reference, 1);
         Vec3 inheritedFocus = inheritedAimPoint;
         if (inheritedAimPoint != null && !seatFirstPerson) {
@@ -348,6 +346,10 @@ public final class CameraController {
         fixedController = null;
         wasFreeLook = false;
         updateSeat(Vec2.ZERO);
+        AimPose currentMount = seatMount(1);
+        displayFollowRotation.reset(
+                SparkMathKt.toQuaternionf(desiredThirdPersonRotation(
+                        currentMount, logicalView.focusPoint(), 1)), System.nanoTime());
     }
 
     /**
@@ -358,8 +360,8 @@ public final class CameraController {
      */
     private static void updateSeat(Vec2 input) {
         AimPose mount = seatMount(1);
-        // 参考姿态经跟随低通；鼠标偏角在其上叠加，因此输入本身不做平滑。
-        Quaternion reference = seatReference(mount.rotation(), 1);
+        // 逻辑焦点始终使用当前挂点姿态，显示相机的追赶单独在渲染链处理。
+        Quaternion reference = mount.rotation();
         // 自由观察保留独立状态，不能让临时查看方向变成新的武器指向。
         if (RawInputHandler.freeCam && !wasFreeLook) {
             // 以逻辑瞄准锚点保存当前显示光轴，让自由观察轨道始终绕载具锚点计算。
@@ -370,9 +372,13 @@ public final class CameraController {
             FREE_LOOK.enter(false, reference, anchor, observed, 0);
             SEAT_VIEW.cancelReturn();
         } else if (!RawInputHandler.freeCam && wasFreeLook) {
-            if (renderPose != null) {
-                SEAT_VIEW.beginReturn(SparkMathKt.toQuaternionf(renderPose.rotation()));
-            }
+            Quaternionf displayed = renderPose != null
+                    ? SparkMathKt.toQuaternionf(renderPose.rotation())
+                    : (seatFirstPerson
+                    ? SparkMathKt.toQuaternionf(SEAT_VIEW.sample(reference,
+                            seatAimAnchor(mount, reference, 1)).pose().rotation())
+                    : displayFollowRotation.sample(1));
+            SEAT_VIEW.beginReturn(displayed);
         }
         wasFreeLook = RawInputHandler.freeCam;
         // 两套观察状态独立，只有普通观察可以更新待发送的武器世界点。
@@ -407,23 +413,21 @@ public final class CameraController {
                 : point(activeCamera.samplePose(1));
     }
 
-    /**
-     * 主线程按本 tick 的座椅挂点姿态推进跟随低通。<br>
-     * 逻辑观察与渲染采样都读取这份结果；渲染只在两次推进之间插值，自身不推进状态。
-     */
-    private static void advanceSeatFollow() {
-        followRotation.advance(SparkMathKt.toQuaternionf(seatMount(1).rotation()), System.nanoTime());
+    /** 主线程推进实际相机朝向追赶；不改写逻辑焦点或武器目标。 */
+    private static void advanceDisplayFollow() {
+        if (seatFirstPerson || wasFreeLook || SEAT_VIEW.isReturning() || logicalView == null) {
+            return;
+        }
+        AimPose mount = seatMount(1);
+        displayFollowRotation.advance(
+                SparkMathKt.toQuaternionf(desiredThirdPersonRotation(
+                        mount, logicalView.focusPoint(), 1)), System.nanoTime());
     }
 
-    /**
-     * 座椅观察的参考姿态。第一人称贴合舱内固定件，直接取挂点姿态；
-     * 第三人称跟随取低通结果，视角因此滞后于车体转动。
-     *
-     * @param mountRotation 本帧挂点姿态
-     * @param partialTick   刻内采样比例，逻辑更新传 1
-     */
-    private static Quaternion seatReference(Quaternion mountRotation, float partialTick) {
-        return seatFirstPerson ? mountRotation : SparkMathKt.toBQuaternion(followRotation.sample(partialTick));
+    /** 按当前相机轨道锚点直接求看向逻辑焦点的期望姿态。 */
+    private static Quaternion desiredThirdPersonRotation(AimPose mount, Vec3 focusPoint, float partialTick) {
+        Vec3 pivot = seatPivot(mount, mount.rotation(), partialTick);
+        return ViewMath.lookAt(mount.rotation(), pivot, focusPoint);
     }
 
     private static AimPose seatMount(float partialTick) {
@@ -661,7 +665,7 @@ public final class CameraController {
             } else {
                 AimPose mount = seatMount(partial);
                 ThirdPersonViewpoint view = wasFreeLook ? FREE_LOOK : SEAT_VIEW;
-                Quaternion reference = seatReference(mount.rotation(), partial);
+                Quaternion reference = mount.rotation();
                 Vec3 aimAnchor = seatAimAnchor(mount, reference, partial);
                 ViewMath.Snapshot focus = view.sample(reference, aimAnchor);
                 if (CLIENT.options.getCameraType().isFirstPerson()) {
@@ -674,9 +678,12 @@ public final class CameraController {
                     renderPose = new AimPose(aimAnchor, SparkMathKt.toBQuaternion(displayed));
                 } else {
                     Vec3 trackAnchor = seatPivot(mount, reference, partial);
-                    Quaternionf desiredDisplay = SparkMathKt.toQuaternionf(focus.pose().rotation());
-                    Quaternionf displayed = wasFreeLook ? desiredDisplay
-                            : view.sampleDisplayRotation(desiredDisplay, System.nanoTime());
+                    Quaternionf desiredDisplay = wasFreeLook
+                            ? SparkMathKt.toQuaternionf(focus.pose().rotation())
+                            : SparkMathKt.toQuaternionf(desiredThirdPersonRotation(
+                                    mount, focus.focusPoint(), partial));
+                    Quaternionf displayed = sampleThirdPersonDisplayRotation(
+                            view, desiredDisplay, partial);
                     Vector3f forward = displayed.transform(new Vector3f(0, 0, -1));
                     Vec3 cameraPosition = seatOrigin(trackAnchor, new Vec3(forward.x, forward.y, forward.z));
                     renderedSeatAimPoint = wasFreeLook ? expectedPoint
@@ -703,6 +710,25 @@ public final class CameraController {
         event.setPitch(event.getPitch() + (float) shake.x * scale);
         event.setYaw(event.getYaw() + (float) shake.y * scale);
         event.setRoll(event.getRoll() + (float) shake.z * scale);
+    }
+
+    /** 渲染阶段采样相机朝向追赶，并在自由观察回正结束时同步阻尼状态。 */
+    private static Quaternionf sampleThirdPersonDisplayRotation(
+            ThirdPersonViewpoint view, Quaternionf desired, float partialTick) {
+        if (wasFreeLook) {
+            return desired;
+        }
+        if (!view.isReturning()) {
+            return displayFollowRotation.sample(partialTick);
+        }
+        long nowNanos = System.nanoTime();
+        Quaternionf displayed = view.sampleDisplayRotation(desired, nowNanos);
+        if (!view.isReturning()) {
+            AimPose mount = seatMount(1);
+            displayFollowRotation.reset(SparkMathKt.toQuaternionf(
+                    desiredThirdPersonRotation(mount, logicalView.focusPoint(), 1)), nowNanos);
+        }
+        return displayed;
     }
 
     /** 渲染阶段按经过秒数平滑显示变焦，输入只读取当前倍率。 */

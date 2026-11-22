@@ -5,6 +5,7 @@ import com.jme3.math.Quaternion;
 import io.github.sweetzonzi.machine_max.client.input.ThirdPersonViewpoint;
 import io.github.sweetzonzi.machine_max.common.mech.control.aim.AimAxisLimit;
 import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
+import io.github.sweetzonzi.machine_max.util.RotationDamper;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -12,6 +13,7 @@ import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 验证回正只影响显示，且跨帧率、角度跨周和输入变化时保持连续。 */
 class ThirdPersonViewpointTest {
@@ -62,6 +64,59 @@ class ThirdPersonViewpointTest {
         assertEquals(control.focusPoint(), view.focusPoint());
         assertEquals(control, view.sample(reference, Vec3.ZERO));
         assertRotation(desired, view.sampleDisplayRotation(desired, START + 200_000_000));
+    }
+
+    @Test
+    void mouseDeltaIsAddedDirectlyToRelativeLook() {
+        Quaternion reference = ViewMath.lookRotation(new Vec2((float) Math.toRadians(18),
+                (float) Math.toRadians(-32)));
+        Vec3 origin = new Vec3(12, 4, -9);
+        Vec2 initialLook = new Vec2((float) Math.toRadians(7), (float) Math.toRadians(-11));
+        Vec3 inherited = ViewMath.follow(reference, initialLook, origin).focusPoint();
+        Vec2 mouseDelta = new Vec2((float) Math.toRadians(-3.5), (float) Math.toRadians(8));
+        var view = new ThirdPersonViewpoint();
+        view.enter(true, reference, origin, inherited, 0);
+
+        view.update(reference, origin, mouseDelta, AimAxisLimit.CONTINUOUS, AimAxisLimit.CONTINUOUS);
+
+        assertEquals(initialLook.x + mouseDelta.x, view.relativeLook().x, 1e-5);
+        assertEquals(initialLook.y + mouseDelta.y, view.relativeLook().y, 1e-5);
+        assertEquals(0, ViewMath.follow(reference, initialLook.add(mouseDelta), origin).focusPoint()
+                .distanceTo(view.focusPoint()), 1e-9);
+    }
+
+    @Test
+    void logicalFocusMovesImmediatelyWhileDisplayedCameraRotationCatchesUp() {
+        var view = new ThirdPersonViewpoint();
+        view.enter(true, Quaternion.IDENTITY, Vec3.ZERO, null, 0);
+        var initial = view.update(Quaternion.IDENTITY, Vec3.ZERO, Vec2.ZERO,
+                AimAxisLimit.CONTINUOUS, AimAxisLimit.CONTINUOUS);
+        Quaternionf initialRotation = SparkMathKt.toQuaternionf(initial.pose().rotation());
+        var displayFollow = new RotationDamper(.12);
+        displayFollow.reset(initialRotation, START);
+
+        Quaternion mount = ViewMath.lookRotation(new Vec2(0, (float) Math.toRadians(60)));
+        var updated = view.update(mount, Vec3.ZERO, Vec2.ZERO,
+                AimAxisLimit.CONTINUOUS, AimAxisLimit.CONTINUOUS);
+        Quaternionf desiredRotation = SparkMathKt.toQuaternionf(updated.pose().rotation());
+        Vec3 logicalFocus = ViewMath.follow(mount, Vec2.ZERO, Vec3.ZERO).focusPoint();
+
+        displayFollow.advance(desiredRotation, START + 50_000_000L);
+        Quaternionf displayedRotation = displayFollow.sample(1);
+        Vector3f initialForward = initialRotation.transform(new Vector3f(0, 0, -1));
+        Vector3f desiredForward = desiredRotation.transform(new Vector3f(0, 0, -1));
+        Vector3f displayedForward = displayedRotation.transform(new Vector3f(0, 0, -1));
+        Vector3f cameraPosition = new Vector3f(displayedForward).mul(-4);
+        Vector3f targetDirection = new Vector3f(
+                (float) logicalFocus.x - cameraPosition.x,
+                (float) logicalFocus.y - cameraPosition.y,
+                (float) logicalFocus.z - cameraPosition.z).normalize();
+
+        assertTrue(initial.focusPoint().distanceTo(logicalFocus) > 100);
+        assertEquals(0, logicalFocus.distanceTo(view.focusPoint()), 1e-8);
+        assertTrue(initialForward.distance(displayedForward) > .1f);
+        assertTrue(displayedForward.distance(desiredForward) > .1f);
+        assertTrue(targetDirection.dot(displayedForward) < .99f);
     }
 
     @Test

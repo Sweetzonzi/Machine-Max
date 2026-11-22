@@ -99,6 +99,11 @@ public final class ThirdPersonViewpoint {
         returnStartedNanos = 0;
     }
 
+    /** 判断自由观察退出后的显示回正是否仍在进行。 */
+    public boolean isReturning() {
+        return returnFrom != null || returnOffset != null;
+    }
+
     /**
      * 渲染阶段将显示残差在 0.2 秒内平滑收敛到零，输入为本帧正常观察朝向。<br>
      * 本帧正常朝向右乘残差，安装体运动和正常鼠标输入即时生效；四元数插值取最短弧。

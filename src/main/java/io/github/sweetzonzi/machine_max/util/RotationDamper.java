@@ -40,7 +40,12 @@ public final class RotationDamper {
 
     /** 推进一次。目标姿态应取自本 tick 的同一采样时刻，不在渲染阶段调用。 */
     public void advance(Quaternionf target, long nowNanos) {
-        double elapsed = Math.clamp((nowNanos - lastNanos) / 1e9, 0, MAX_STEP_SECONDS);
+        long elapsedNanos = nowNanos - lastNanos;
+        if (elapsedNanos <= 0) {
+            // 零间隔或时钟回退都不改姿态历史，避免破坏渲染插值样本。
+            return;
+        }
+        double elapsed = Math.min(elapsedNanos / 1e9, MAX_STEP_SECONDS);
         lastNanos = nowNanos;
         previous.set(current);
         current.slerp(target, (float) (1 - Math.exp(-elapsed / seconds)));
