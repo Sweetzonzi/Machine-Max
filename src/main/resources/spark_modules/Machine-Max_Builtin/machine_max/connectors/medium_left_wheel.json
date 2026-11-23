@@ -8,6 +8,10 @@
   "impact_multiplier": 1.0, //冲击吸收率
   "required_tags": ["machine_max:direction/left"], //需要左侧标签, 用于区分左右轮
   "joint_attrs": {
+    "xr": {
+      "lower_limit": 1, //下限高于上限表示绕 X 轴自由滚动
+      "upper_limit": -1
+    },
     "y": {
       "lower_limit": -0.15, //悬挂行程下限(m), 压缩时极限位置
       "upper_limit": 0.2, //悬挂行程上限(m), 拉伸时极限位置

@@ -8,6 +8,10 @@
   "impact_multiplier": 1.0, //(可选, 默认1.0)连接点冲击吸收率
   "required_tags": ["machine_max:direction/left"], //连接所需标签
   "joint_attrs": { //Advanced类型专属关节属性
+    "xr": {
+      "lower_limit": 1, //下限高于上限表示绕 X 轴自由滚动
+      "upper_limit": -1
+    },
     "y": { //悬挂轴(平移), 沿法线方向的线性弹簧阻尼器
       "lower_limit": -0.1, //下限(m)
       "upper_limit": 0.15, //上限(m)
